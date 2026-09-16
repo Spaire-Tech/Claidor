@@ -3219,6 +3219,31 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd.length).toBeLessThan(OPENCLAW_BOOTSTRAP_MAX_CHARS * 0.6);
   });
 
+  test('the exec policy reaches every agent, and a stale full-bypass default is corrected', async () => {
+    // The engine resolves an agent's policy from its own entry, then
+    // `defaults`. The sync used to write only `main`, so a second agent
+    // fell through to whatever `defaults` said, and the pinned-open era
+    // had left it at full/off: on 16 September the founder's agent ran
+    // every command without a card while the setting said "Ask every
+    // time".
+    const approvalsPath = path.join(tmpDir, '.openclaw', 'exec-approvals.json');
+    fs.mkdirSync(path.dirname(approvalsPath), { recursive: true });
+    fs.writeFileSync(approvalsPath, JSON.stringify({
+      version: 1,
+      defaults: { security: 'full', ask: 'off', autoReview: false },
+      agents: {
+        main: { security: 'allowlist', ask: 'on-miss', autoReview: false },
+        perro: { security: 'full', ask: 'off', autoReview: false, allowlist: ['git status'] },
+      },
+    }));
+    const sync = await createSync({ getExecPolicy: () => 'ask' });
+    expect(sync.sync('exec-policy-everyone').ok).toBe(true);
+    const file = JSON.parse(fs.readFileSync(approvalsPath, 'utf8'));
+    expect(file.defaults).toMatchObject({ security: 'allowlist', ask: 'on-miss', autoReview: false });
+    expect(file.agents.main).toMatchObject({ security: 'allowlist', ask: 'on-miss' });
+    expect(file.agents.perro).toMatchObject({ security: 'allowlist', ask: 'on-miss', allowlist: ['git status'] });
+  });
+
   test('before step one has played, the brief says nothing about the person', async () => {
     const sync = await createSync();
     expect(sync.sync('no-work-type').ok).toBe(true);
