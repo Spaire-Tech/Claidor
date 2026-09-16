@@ -3279,6 +3279,17 @@ seventeen self-published services above, add the ones with sign-in to
 the connections catalogue as direct connectors beside the Composio
 ones, and pull the four skill packs the strongs name.
 
+**Correction, 17 September.** "Nothing built" was wrong about the
+first of the three. Eleven of the seventeen were already in the
+catalogue as direct connectors when this was written (the 15 September
+sweep, and the 16 September cut kept them): Notion, Linear, Figma,
+Stripe, Supabase, Asana, Airtable, Canva, Atlassian (the Jira card),
+Ramp, Dropbox, each with the vendor's own endpoint and sign-in. The
+other six are out by the founder's own rule of 16 September: Slack as
+a channel, and Sentry, ClickUp, Granola, monday and ZoomInfo as long
+tail. What is true: no skill pack has been pulled, and Slack is still
+undecided.
+
 **Second addendum, from the next morning's thread ("WHERE IS MY
 DESIGN").** A new agent, Yone, asked for a mock Word document: the
 thread showed a bubble saying "Exit code 1", then a bubble that was a
