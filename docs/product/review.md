@@ -3479,3 +3479,19 @@ apply on this path too.
 **Where:** `desktop/src/main/libs/claudeCodeMode.ts` (+test),
 `desktop/scripts/patches/v2026.6.1/openclaw-claude-tools-ask-first.patch`,
 `desktop/scripts/apply-openclaw-patches.cjs`, `docs/product/direction.md` §0b.
+
+**Correction, 17 September, from the founder.** Above I wrote that none
+of the faults were the model's. The founder: *"the model was not the
+right one for it. the thing admited itself to me that its not the
+right one. it solves problems like a coding assistant. i asked for a
+poem for god sake … i asked what is lobster ai, HE CHECKED MY HARD
+DRIVE. an assistant would check the web."* That is right, and the
+sentence above was a defence of my own choice. What answered the
+founder was Claude Code as it is: a coding assistant's system prompt,
+a coding assistant's tools, and a coding assistant's habits, reading
+the disk before the web, printing files, pasting exit codes. Rules
+appended underneath a coding CLI's own instructions do not make it an
+assistant, and I should not have kept saying the fault lay elsewhere.
+Claude Code was the wrong model for this product. It is off, and the
+"not the model" claim in items 63 to 66 should be read with this
+paragraph over it.
