@@ -18,7 +18,7 @@ import {
   ConfirmState,
   pressConfirm,
 } from '../shell/confirm';
-import { color, font, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
+import { color, font, line, motion, radius, shadow, text, tracking } from '../tokens';
 
 /**
  * Settings.
@@ -27,6 +27,11 @@ import { color, font, glass, line, motion, radius, shadow, text, tracking } from
  * canvas's shape down to the numbers. It replaces upstream's thirteen
  * tabs, which is what the account menu opened until now — providers, API
  * keys, skins, IM platforms, a growth tour, all of it in Chinese first.
+ *
+ * Since the 17 September canvas it is not a sheet over a scrim but the
+ * pane itself: a white overlay filling its container, the rail in the
+ * window's grey, the groups in the same grey with no border. No glass —
+ * in this canvas glass is the dock and the voice orb and nothing else.
  *
  * Rows come in five kinds and no sixth, the same discipline the thread
  * has. Which rows exist is decided in `rows.ts` and tested there; this
@@ -54,6 +59,33 @@ const ICONS: Record<SettingsTab, (size: number) => JSX.Element> = {
   ),
 };
 
+/** The pointer over a control, for the canvas's `style-hover` states. */
+function useHover(): [boolean, { onMouseEnter: () => void; onMouseLeave: () => void }] {
+  const [over, setOver] = useState(false);
+  return [over, { onMouseEnter: () => setOver(true), onMouseLeave: () => setOver(false) }];
+}
+
+/** The 26px round X the canvas puts on a screen's title row. */
+function CloseButton({ onClose }: { onClose: () => void }): JSX.Element {
+  const [over, hover] = useHover();
+  return (
+    <button
+      type="button"
+      onClick={onClose}
+      aria-label="Close"
+      {...hover}
+      style={{
+        width: 26, height: 26, flex: '0 0 auto', border: 'none',
+        background: over ? color.fill : 'transparent', borderRadius: '50%', cursor: 'pointer',
+        color: over ? color.ink : color.muted,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      <CloseIcon size={13} />
+    </button>
+  );
+}
+
 export function Settings(props: SettingsProps): JSX.Element {
   const { onClose, initialTab, ...input } = props;
   const [tab, setTab] = useState<SettingsTab>(initialTab ?? SettingsTab.General);
@@ -71,29 +103,22 @@ export function Settings(props: SettingsProps): JSX.Element {
     <div
       style={{
         position: 'absolute', inset: 0, zIndex: 80, display: 'flex',
-        background: glass.scrim, backdropFilter: glass.scrimBlur,
-        animation: `fsr-message-in ${motion.messageIn.longer} ${motion.messageIn.easing} both`,
+        background: color.paper,
+        // The canvas: `animation:msgIn .18s ease-out both` (template.html:343).
+        animation: `fsr-message-in .18s ${motion.messageIn.easing} both`,
       }}
-      onClick={onClose}
-      role="presentation"
     >
       <div
-        onClick={event => event.stopPropagation()}
-        role="presentation"
         style={{
-          margin: 'auto', width: 'calc(100% - 48px)', maxWidth: 1080,
-          height: 'calc(100% - 48px)', boxSizing: 'border-box',
+          width: '100%', height: '100%', boxSizing: 'border-box',
           display: 'grid', gridTemplateColumns: '236px minmax(0,1fr)',
-          borderRadius: radius.modal, overflow: 'hidden',
-          background: glass.background, backdropFilter: glass.blur,
-          border: `1px solid ${glass.border}`,
-          boxShadow: `${shadow.modal}, ${shadow.glassInset}`,
+          overflow: 'hidden', background: color.paper,
         }}
       >
         <div
           style={{
             display: 'flex', flexDirection: 'column', gap: 4, padding: '17px 11px',
-            borderRight: `1px solid ${line.hairline}`, background: 'rgba(249,250,252,.86)',
+            borderRight: `1px solid ${line.hairline}`, background: color.window,
           }}
         >
           {SETTINGS_TABS.map(one => {
@@ -105,11 +130,13 @@ export function Settings(props: SettingsProps): JSX.Element {
                 onClick={() => setTab(one)}
                 aria-pressed={on}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 10, height: 41,
-                  padding: '0 11px', borderRadius: radius.input, cursor: 'pointer',
-                  font: 'inherit', fontSize: text.body, color: color.ink,
-                  background: on ? color.fillStrong : 'transparent',
-                  border: on ? `1px solid ${line.hairline}` : '1px solid transparent',
+                  display: 'flex', alignItems: 'center', gap: 10, height: 36,
+                  padding: '0 11px', border: 'none', borderRadius: radius.field, cursor: 'pointer',
+                  font: 'inherit', fontSize: text.body, whiteSpace: 'nowrap',
+                  // The canvas: `transition:background .14s` (template.html:2127).
+                  transition: 'background .14s',
+                  background: on ? color.divider : 'transparent',
+                  color: on ? color.ink : color.muted,
                   fontWeight: on ? 500 : 400,
                 }}
               >
@@ -117,7 +144,7 @@ export function Settings(props: SettingsProps): JSX.Element {
                   style={{
                     width: 18, height: 18, flex: '0 0 auto',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: on ? color.ink : color.muted,
+                    color: 'currentColor',
                   }}
                 >
                   {ICONS[one](15)}
@@ -133,24 +160,12 @@ export function Settings(props: SettingsProps): JSX.Element {
             <div style={{ flex: '1 1 auto', fontSize: text.screenTitle, fontWeight: 500, letterSpacing: tracking.screenTitle, color: color.ink }}>
               {tab}
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close"
-              style={{
-                width: 30, height: 30, flex: '0 0 auto', border: 'none',
-                background: 'transparent', borderRadius: '50%', cursor: 'pointer',
-                color: color.muted,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              <CloseIcon size={13} />
-            </button>
+            <CloseButton onClose={onClose} />
           </div>
 
           <div
             style={{
-              flex: '1 1 auto', minHeight: 0, overflowY: 'auto',
+              flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overflowX: 'hidden',
               padding: '5px 24px 28px', display: 'flex', flexDirection: 'column', gap: 23,
             }}
           >
@@ -168,8 +183,8 @@ function Group({ group }: { group: SettingsGroup }): JSX.Element {
       <div style={{ fontSize: text.caption, color: color.muted, paddingLeft: 3 }}>{group.title}</div>
       <div
         style={{
-          borderRadius: radius.card, background: color.fillRaised,
-          border: `1px solid ${line.hairline}`, overflow: 'hidden',
+          borderRadius: radius.card, background: color.window,
+          border: 'none', overflow: 'hidden',
           display: 'flex', flexDirection: 'column',
         }}
       >
@@ -187,6 +202,7 @@ const rowStyle = (first: boolean, stacked: boolean): CSSProperties => ({
   flexDirection: stacked ? 'column' : 'row',
   gap: stacked ? 11 : 17,
   padding: '15px 17px',
+  background: 'transparent',
   ...(first ? {} : { borderTop: `1px solid ${line.hairline}` }),
 });
 
@@ -222,7 +238,7 @@ function Control({ row }: { row: SettingsRow }): JSX.Element | null {
     case SettingsRowKind.Meter:
       return (
         <span style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
-          <span style={{ height: 7, borderRadius: radius.pill, background: '#d7dde6', overflow: 'hidden', display: 'flex' }}>
+          <span style={{ height: 7, borderRadius: radius.pill, background: color.paper, overflow: 'hidden', display: 'flex' }}>
             <span
               style={{
                 width: `${Math.round(Math.min(1, Math.max(0, row.fraction)) * 100)}%`,
@@ -289,21 +305,55 @@ function ActionButton({ row }: { row: Extract<SettingsRow, { kind: 'button' }> }
       onClick={press}
       disabled={row.busy}
       style={{
-        flex: '0 0 auto', height: 36, padding: '0 17px', borderRadius: radius.pill,
+        flex: '0 0 auto', height: 32, padding: '0 15px', borderRadius: radius.pill,
         cursor: row.busy ? 'default' : 'pointer', font: 'inherit', fontSize: text.body,
-        fontWeight: 400, whiteSpace: 'nowrap',
+        whiteSpace: 'nowrap',
         opacity: row.busy ? 0.6 : 1,
         ...(row.tone === 'primary'
-          ? { background: color.ink, color: color.paper, border: 'none' }
+          ? { background: color.accent, color: color.paper, border: 'none', fontWeight: 500 }
           : row.tone === 'danger'
-            ? { background: color.danger, color: color.paper, border: 'none' }
-            : { background: color.fill, color: color.ink, border: `1px solid ${line.field}` }),
+            ? { background: color.danger, color: color.paper, border: 'none', fontWeight: 500 }
+            : { background: color.fill, color: color.ink, border: `1px solid ${line.field}`, fontWeight: 400 }),
       }}
     >
       {row.tone === 'danger' ? confirmLabel(
         asking ? ConfirmState.Armed : ConfirmState.Ready,
         row.action,
       ) : row.action}
+    </button>
+  );
+}
+
+/**
+ * The grey pill beside a field: the canvas's Save, and the Show/Hide a
+ * secret field adds. Muted at rest, ink under the pointer.
+ */
+function FieldButton(
+  { label, onClick, disabled, pressed }: {
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+    pressed?: boolean;
+  },
+): JSX.Element {
+  const [over, hover] = useHover();
+  const live = !disabled;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      {...(pressed === undefined ? {} : { 'aria-pressed': pressed })}
+      {...hover}
+      style={{
+        height: 29, padding: '0 13px', borderRadius: radius.pill, border: 'none',
+        background: over && live ? color.window : color.fill,
+        color: over && live ? color.ink : color.muted,
+        font: 'inherit', fontSize: text.body,
+        cursor: live ? 'pointer' : 'default',
+      }}
+    >
+      {label}
     </button>
   );
 }
@@ -321,14 +371,18 @@ function Field({ row }: { row: Extract<SettingsRow, { kind: 'field' }> }): JSX.E
     setShown(false);
   }, [row.value]);
 
+  const box: CSSProperties = {
+    width: 204, height: 29, padding: '0 10px', borderRadius: radius.small,
+    border: `1px solid ${line.field}`, background: color.window,
+    fontSize: text.body, boxSizing: 'border-box',
+  };
+
   if (row.readOnly) {
     return (
       <span
         style={{
-          flex: '0 0 auto', maxWidth: 240, height: 33, display: 'flex', alignItems: 'center',
-          padding: '0 11px', borderRadius: radius.small, background: color.paper,
-          border: `1px solid ${line.field}`, fontSize: text.body, color: color.muted,
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          ...box, flex: '0 0 auto', display: 'flex', alignItems: 'center',
+          color: color.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         }}
         title={row.value}
       >
@@ -349,39 +403,14 @@ function Field({ row }: { row: Extract<SettingsRow, { kind: 'field' }> }): JSX.E
         autoComplete="off"
         spellCheck={false}
         style={{
-          width: 204, height: 33, padding: '0 11px', borderRadius: radius.small,
-          border: `1px solid ${line.field}`, background: color.paper, outline: 'none',
-          font: 'inherit', fontSize: text.body, color: color.ink,
+          ...box, outline: 'none', font: 'inherit', fontSize: text.body, color: color.ink,
           ...(row.secret ? { fontFamily: font.mono, letterSpacing: '.02em' } : {}),
         }}
       />
       {row.secret && (
-        <button
-          type="button"
-          onClick={() => setShown(one => !one)}
-          aria-pressed={shown}
-          style={{
-            height: 33, padding: '0 12px', borderRadius: radius.pill,
-            border: `1px solid ${line.field}`, background: color.fill,
-            color: color.muted, font: 'inherit', fontSize: text.body, cursor: 'pointer',
-          }}
-        >
-          {shown ? 'Hide' : 'Show'}
-        </button>
+        <FieldButton label={shown ? 'Hide' : 'Show'} onClick={() => setShown(one => !one)} pressed={shown} />
       )}
-      <button
-        type="button"
-        onClick={() => row.onSave?.(draft)}
-        disabled={!dirty}
-        style={{
-          height: 33, padding: '0 15px', borderRadius: radius.pill,
-          border: `1px solid ${line.field}`, background: color.fill,
-          color: dirty ? color.ink : color.faint, font: 'inherit', fontSize: text.body,
-          cursor: dirty ? 'pointer' : 'default',
-        }}
-      >
-        Save
-      </button>
+      <FieldButton label="Save" onClick={() => row.onSave?.(draft)} disabled={!dirty} />
     </span>
   );
 }
@@ -397,17 +426,19 @@ function Toggle(
       aria-label={label}
       onClick={onToggle}
       style={{
-        width: 44, height: 26, flex: '0 0 auto', border: 'none', borderRadius: radius.pill,
+        width: 44, height: 23, flex: '0 0 auto', border: 'none', borderRadius: radius.pill,
         cursor: 'pointer', display: 'flex', alignItems: 'center',
         justifyContent: on ? 'flex-end' : 'flex-start', padding: '0 2px',
+        // The canvas: `transition:background .18s` and the off track at
+        // `rgba(0,0,0,.09)` (template.html:1304), which is no token.
         transition: 'background .18s',
-        background: on ? color.ink : '#c4ccd8',
+        background: on ? color.accent : 'rgba(0,0,0,.09)',
       }}
     >
       <span
         style={{
           width: 19, height: 19, borderRadius: '50%', background: color.paper,
-          boxShadow: '0 1px 3px rgba(16,22,35,.25)', display: 'block',
+          boxShadow: shadow.knob, display: 'block',
         }}
       />
     </button>
@@ -420,8 +451,9 @@ const SELECT_MENU_GAP = 6;
 
 /**
  * The canvas draws a select as a value and a chevron and never opens it.
- * A real one has to open, so this is the app's popover — the same glass,
- * the same radius, the same Escape-and-click-outside as the account menu.
+ * A real one has to open, so this is the app's popover — white, the
+ * menu radius, the popover shadow, the same Escape-and-click-outside as
+ * the account menu.
  *
  * The menu is rendered at the document's root, not inside the row. Every
  * group card clips its contents (`overflow: hidden`, which is what rounds
@@ -441,6 +473,7 @@ function Select(
 ): JSX.Element {
   const [open, setOpen] = useState(false);
   const [place, setPlace] = useState<{ top: number; right: number }>();
+  const [over, hover] = useHover();
   const ref = useRef<HTMLSpanElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const current = options.find(one => one.value === value);
@@ -485,37 +518,24 @@ function Select(
       role="menu"
       style={{
         position: 'fixed', top: place.top, right: place.right, zIndex: 120,
-        width: SELECT_MENU_WIDTH, padding: 6,
+        width: SELECT_MENU_WIDTH, padding: 6, boxSizing: 'border-box',
         // A list taller than what is left below the control scrolls
         // inside itself rather than running off the bottom of the window.
         maxHeight: `calc(100vh - ${place.top + 12}px)`, overflowY: 'auto',
-        borderRadius: radius.menu, background: glass.background, backdropFilter: glass.blur,
-        border: `1px solid ${glass.border}`,
-        boxShadow: `${shadow.popover}, ${shadow.glassInset}`,
-        display: 'flex', flexDirection: 'column', gap: 4,
+        borderRadius: radius.menu, background: color.paper,
+        border: `1px solid ${line.field}`,
+        boxShadow: shadow.popover,
+        display: 'flex', flexDirection: 'column', gap: 2,
         animation: `fsr-message-in ${motion.messageIn.duration} ${motion.messageIn.easing} both`,
       }}
     >
       {options.map(option => (
-        <button
+        <MenuRow
           key={option.value}
-          type="button"
-          onClick={() => { setOpen(false); onPick(option.value); }}
-          aria-current={option.value === value}
-          style={{
-            display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start',
-            textAlign: 'left', padding: '11px 12px', borderRadius: radius.input,
-            border: 'none', cursor: 'pointer', font: 'inherit', width: '100%',
-            background: option.value === value ? color.fillStrong : 'transparent',
-          }}
-        >
-          <span style={{ fontSize: text.body, color: color.ink }}>{option.label}</span>
-          {option.hint && (
-            <span style={{ fontSize: text.caption, color: color.muted, lineHeight: 1.4 }}>
-              {option.hint}
-            </span>
-          )}
-        </button>
+          option={option}
+          current={option.value === value}
+          onPick={() => { setOpen(false); onPick(option.value); }}
+        />
       ))}
     </div>,
     document.body,
@@ -530,18 +550,48 @@ function Select(
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={label}
+        {...hover}
         style={{
-          display: 'flex', alignItems: 'center', gap: 6, height: 33,
-          padding: '0 12px 0 14px', borderRadius: radius.pill,
-          border: `1px solid ${line.field}`, background: color.paper, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', gap: 6, height: 29,
+          padding: '0 11px 0 14px', borderRadius: radius.pill,
+          border: 'none', background: over ? color.window : color.fill, cursor: 'pointer',
           font: 'inherit', fontSize: text.body, color: color.ink, whiteSpace: 'nowrap',
         }}
       >
         <span>{current?.label ?? value}</span>
-        <svg width="11.5" height="11.5" viewBox="0 0 24 24" fill="none" stroke={color.faint} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
+        <svg width="11.5" height="11.5" viewBox="0 0 24 24" fill="none" stroke={color.chevron} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
           <path d="M5 9l7 7 7-7" />
         </svg>
       </button>
     </span>
+  );
+}
+
+/** A row of the select's menu: 36px, the input radius, the fill under the pointer. */
+function MenuRow(
+  { option, current, onPick }: { option: SelectOption; current: boolean; onPick: () => void },
+): JSX.Element {
+  const [over, hover] = useHover();
+  return (
+    <button
+      type="button"
+      onClick={onPick}
+      aria-current={current}
+      {...hover}
+      style={{
+        display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start',
+        justifyContent: 'center', textAlign: 'left', minHeight: 36, boxSizing: 'border-box',
+        padding: option.hint ? '8px 12px' : '0 12px', borderRadius: radius.input,
+        border: 'none', cursor: 'pointer', font: 'inherit', width: '100%',
+        background: over || current ? color.fill : 'transparent',
+      }}
+    >
+      <span style={{ fontSize: text.body, color: color.ink }}>{option.label}</span>
+      {option.hint && (
+        <span style={{ fontSize: text.caption, color: color.muted, lineHeight: 1.4 }}>
+          {option.hint}
+        </span>
+      )}
+    </button>
   );
 }

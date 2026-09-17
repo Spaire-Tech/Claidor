@@ -8,7 +8,7 @@ import {
   SupportIcon,
   UsageIcon,
 } from '../icons';
-import { color, glass, line, radius, shadow, text } from '../tokens';
+import { color, line, motion, radius, shadow, text } from '../tokens';
 import { type Quota, usageLine } from './account';
 
 export interface AccountMenuProps {
@@ -22,7 +22,7 @@ export interface AccountMenuProps {
 }
 
 /**
- * The menu above the account row. All five of the canvas's rows.
+ * The menu beside the dock's last button. All five of the canvas's rows.
  *
  * It used to have three. I dropped Support and Add account and wrote a
  * comment justifying it — no support URL to point at, no second account
@@ -39,6 +39,10 @@ export interface AccountMenuProps {
  *    account at a time, so signing in as somebody else replaces the
  *    session — which is what a person means by adding an account to an
  *    app that has one. It is not a lie and it is not dead.
+ *
+ * Since 17 September it opens from the dock, not the sidebar: the canvas
+ * puts it at `left:76px; bottom:0` of the dock, a white card with the
+ * popover shadow, 272 wide.
  */
 export function AccountMenu({
   quota, onSettings, onUsage, onSupport, onAddAccount, onLogOut, onClose,
@@ -79,9 +83,9 @@ export function AccountMenu({
       onClick={onClick}
       disabled={!onClick}
       style={{
-        display: 'flex', alignItems: 'center', gap: 11, height: 41,
-        padding: '0 11px', border: 'none', background: 'transparent',
-        borderRadius: radius.row, cursor: onClick ? 'pointer' : 'default',
+        display: 'flex', alignItems: 'center', gap: 11, height: 36,
+        padding: '0 10px', border: 'none', background: 'transparent',
+        borderRadius: radius.input, cursor: onClick ? 'pointer' : 'default',
         font: 'inherit', color: color.muted, width: '100%',
       }}
     >
@@ -98,12 +102,12 @@ export function AccountMenu({
       ref={ref}
       role="menu"
       style={{
-        position: 'absolute', left: 2, bottom: 56, width: 272, zIndex: 40,
+        position: 'absolute', left: 76, bottom: 0, width: 272, zIndex: 40,
         padding: 6, borderRadius: radius.menu,
-        background: glass.background, backdropFilter: glass.blur,
-        border: `1px solid ${glass.border}`,
-        boxShadow: `${shadow.popover}, ${shadow.glassInset}`,
+        background: color.paper, border: `1px solid ${line.field}`,
+        boxShadow: shadow.popover,
         display: 'flex', flexDirection: 'column', gap: 4,
+        animation: `fsr-message-in ${motion.messageIn.duration} ${motion.messageIn.easing} both`,
       }}
     >
       {row(
@@ -124,7 +128,7 @@ export function AccountMenu({
               {usage.value}
             </span>
           )}
-          {onUsage && <ChevronRightIcon size={12} style={{ color: color.faint }} />}
+          <ChevronRightIcon size={12} style={{ color: color.chevron }} />
         </>,
       )}
 
@@ -132,14 +136,14 @@ export function AccountMenu({
       {usage.fraction !== undefined && (
         <div
           style={{
-            height: 4, margin: '0 12px 6px', borderRadius: 999,
+            height: 4, margin: '0 12px 6px', borderRadius: radius.pill,
             background: color.fill, overflow: 'hidden',
           }}
         >
           <div
             style={{
               width: `${usage.fraction * 100}%`, height: '100%',
-              background: usage.spent ? color.warning : color.ink,
+              background: usage.spent ? color.warning : color.accent,
             }}
           />
         </div>
@@ -149,12 +153,12 @@ export function AccountMenu({
         <SupportIcon size={15.5} />,
         'Support',
         onSupport,
-        <ChevronRightIcon size={12} style={{ color: color.faint }} />,
+        <ChevronRightIcon size={12} style={{ color: color.chevron }} />,
       )}
 
       {row(<GearIcon size={15.5} />, 'Settings', onSettings)}
 
-      <div style={{ height: 1, margin: '7px 10px', background: line.hairline }} />
+      <div style={{ height: 1, margin: '7px 10px', background: color.divider }} />
 
       {row(<AddAccountIcon size={15.5} />, 'Add account', onAddAccount)}
 

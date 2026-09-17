@@ -178,6 +178,12 @@
     "@lezer/highlight": "^1.2.3",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@nodesecure/js-x-ray": "^14.2.0",
+    "@openuidev/lang-core": "^0.3.0",
+    "@openuidev/react-headless": "^0.14.0",
+    "@openuidev/react-lang": "^0.3.0",
+    "@openuidev/react-ui": "^0.14.0",
+    "@openuidev/thesys": "^0.14.0",
+    "@radix-ui/react-tooltip": "^1.2.16",
     "@reduxjs/toolkit": "^2.2.1",
     "@replit/codemirror-indentation-markers": "^6.5.3",
     "@tanstack/react-virtual": "^3.13.24",
@@ -214,7 +220,8 @@
     "uuid": "^11.1.0",
     "xlsx": "^0.18.5",
     "yazl": "^3.3.1",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "zustand": "^4.5.7"
   },
   "overrides": {
     "@electron/osx-sign": {

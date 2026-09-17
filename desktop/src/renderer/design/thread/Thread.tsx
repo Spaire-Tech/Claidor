@@ -2,18 +2,52 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ChevronRightIcon } from '../icons';
 import { CloudBlob } from '../orb/CloudBlob';
-import { color, glass, line, motion, radius, shadow, text } from '../tokens';
+import { color, line, motion, radius, shadow, text } from '../tokens';
+import type { CardHandlers } from './CardBlock';
+import { parseChoiceId } from './fromEngine';
 import { startsTurn } from './leading';
 import {
   type AuthHandlers,
+  ChoiceDeck,
   type ChoiceHandlers,
+  type ConnectorHandlers,
   type MessageHandlers,
   type PartHandlers,
   type RosterHandlers,
   type SecretHandlers,
   ThreadItemView,
 } from './ThreadItemView';
-import type { ThreadItem } from './types';
+import { type ChoiceItem, type ThreadItem, ThreadItemKind } from './types';
+
+/**
+ * The thread's rows: every item on its own, except a run of open
+ * questions from one request, which is one card with chevrons
+ * (`ChoiceDeck`). A question the engine asked on its own stays a
+ * plain card, and a settled question stays where it was.
+ */
+export type ThreadRow =
+  | { kind: 'item'; item: ThreadItem }
+  | { kind: 'deck'; id: string; items: readonly ChoiceItem[] };
+
+export function threadRows(items: readonly ThreadItem[]): ThreadRow[] {
+  const rows: ThreadRow[] = [];
+  for (const item of items) {
+    const request = item.kind === ThreadItemKind.Choice && !item.resolved
+      ? parseChoiceId(item.id)?.requestId
+      : undefined;
+    const last = rows[rows.length - 1];
+    if (request !== undefined && last?.kind === 'deck' && parseChoiceId(last.items[0].id)?.requestId === request) {
+      last.items = [...last.items, item as ChoiceItem];
+      continue;
+    }
+    if (request !== undefined) {
+      rows.push({ kind: 'deck', id: item.id, items: [item as ChoiceItem] });
+      continue;
+    }
+    rows.push({ kind: 'item', item });
+  }
+  return rows;
+}
 
 /**
  * Scroll the thread to an earlier message: what a reference chip does.
@@ -48,6 +82,10 @@ export interface ThreadProps {
   roster?: RosterHandlers;
   /** React, reply, copy the id: the cluster beside a bubble on hover. */
   actions?: MessageHandlers;
+  /** What a pressed button in an answer card does. */
+  cards?: CardHandlers;
+  /** Install or Not now on a connector card. */
+  connector?: ConnectorHandlers;
   /**
    * The agent is working: its face hops beside a small bubble of three
    * dots, at the end of the thread. From the 15 September canvas, which
@@ -67,7 +105,7 @@ export interface ThreadProps {
  * scrolling; this does the same for the same reason.
  */
 export function Thread({
-  items, dayStamp, choice, auth, parts, secret, roster, actions, typing,
+  items, dayStamp, choice, auth, parts, secret, roster, actions, cards, connector, typing,
 }: ThreadProps): JSX.Element {
   const ref = useRef<HTMLDivElement>(null);
   // Whether the person is still at the bottom. Starts true so a freshly
@@ -154,9 +192,8 @@ export function Thread({
             transform: 'translateX(-50%)',
             display: 'flex', alignItems: 'center', gap: 7,
             height: 31, padding: '0 13px 0 15px', borderRadius: radius.pill,
-            background: glass.background, backdropFilter: glass.blur,
-            border: `1px solid ${glass.border}`,
-            boxShadow: `${shadow.popover}, ${shadow.glassInset}`,
+            background: color.paper, border: `1px solid ${line.field}`,
+            boxShadow: shadow.popover,
             font: 'inherit', fontSize: text.label, color: color.ink, cursor: 'pointer',
             animation: `fsr-message-in ${motion.messageIn.duration} ${motion.messageIn.easing} both`,
           }}
@@ -185,23 +222,29 @@ export function Thread({
         </div>
       )}
 
-      {items.map((item, index) => (
+      {threadRows(items).map(row => (row.kind === 'deck' ? (
+        <div key={row.id} data-thread-item={row.id} style={{ display: 'contents' }}>
+          <ChoiceDeck items={row.items} handlers={choice} />
+        </div>
+      ) : (
         // `data-thread-item` is what a reference chip scrolls to
         // (`scrollToThreadItem`); `display: contents` keeps the wrapper
         // out of the layout.
-        <div key={item.id} data-thread-item={item.id} style={{ display: 'contents' }}>
+        <div key={row.item.id} data-thread-item={row.item.id} style={{ display: 'contents' }}>
           <ThreadItemView
-            item={item}
+            item={row.item}
             choice={choice}
             auth={auth}
             {...(secret ? { secret } : {})}
             {...(roster ? { roster } : {})}
             {...(parts ? { parts } : {})}
             {...(actions ? { actions } : {})}
-            leading={startsTurn(items[index - 1], item)}
+            {...(cards ? { cards } : {})}
+            {...(connector ? { connector } : {})}
+            leading={startsTurn(items[items.indexOf(row.item) - 1], row.item)}
           />
         </div>
-      ))}
+      )))}
 
       {/*
         The 13 September canvas had no line here — its whole indicator
@@ -218,15 +261,14 @@ export function Thread({
             animation: `fsr-message-in ${motion.messageIn.duration} ease-out both`,
           }}
         >
-          <span style={{ width: 24, height: 24, flex: '0 0 auto', display: 'block', animation: 'fsr-think-hop 1.5s ease-in-out infinite' }}>
-            <CloudBlob avatar={typing.avatar} size={24} />
+          <span style={{ width: 21, height: 21, flex: '0 0 auto', display: 'block', animation: 'fsr-think-hop 1.5s ease-in-out infinite' }}>
+            <CloudBlob avatar={typing.avatar} size={21} />
           </span>
           <span
             style={{
-              display: 'flex', alignItems: 'center', gap: 4, height: 24, padding: '0 10px',
+              display: 'flex', alignItems: 'center', gap: 4, height: 21, padding: '0 9px',
               borderRadius: '13px 13px 13px 5px', background: color.paper,
-              border: `1px solid ${line.hairline}`,
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,.7), 0 1px 2px rgba(16,22,35,.04)',
+              border: `1px solid ${line.field}`, boxShadow: shadow.flat,
               animation: 'fsr-think-bubble 1.5s ease-in-out infinite',
             }}
           >

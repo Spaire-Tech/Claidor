@@ -9,7 +9,7 @@ import { configService } from '../../services/config';
 import type { RootState } from '../../store';
 import { ArtifactSpecialTab, selectSessionArtifacts } from '../../store/slices/artifactSlice';
 import { CloseIcon, ComputerIcon, FilesIcon, GlobeIcon } from '../icons';
-import { color, line, radius, text, tracking } from '../tokens';
+import { color, line, motion, radius, shadow, text, tracking } from '../tokens';
 
 export interface ComputerPanelProps {
   sessionId: string;
@@ -74,6 +74,7 @@ export function ComputerPanel({
   );
 
   const [tab, setTab] = useState<PanelTab>(inApp ? PanelTab.Browser : PanelTab.Files);
+  const [closeHover, setCloseHover] = useState(false);
 
   // A click on a file in the thread lands here, on Files, where the
   // artifact panel is already showing that file's preview. The Browser
@@ -82,6 +83,8 @@ export function ComputerPanel({
     if (filesRequest > 0) setTab(PanelTab.Files);
   }, [filesRequest]);
 
+  // The canvas's segmented tab (its `appTabStyle`): a pill on the fill,
+  // and the chosen one lifted onto paper with the accent for its label.
   const tabButton = (value: PanelTab, label: string, icon: JSX.Element): JSX.Element => {
     const on = tab === value;
     return (
@@ -90,12 +93,14 @@ export function ComputerPanel({
         onClick={() => setTab(value)}
         aria-pressed={on}
         style={{
-          display: 'flex', alignItems: 'center', gap: 7, height: 30,
-          padding: '0 12px', borderRadius: radius.pill, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', gap: 7, height: 33,
+          padding: '0 14px', borderRadius: radius.pill, border: 'none', cursor: 'pointer',
           font: 'inherit', fontSize: text.small, letterSpacing: tracking.body,
-          background: on ? color.paper : 'transparent',
-          color: on ? color.ink : color.muted,
-          border: on ? `1px solid ${line.hairline}` : '1px solid transparent',
+          fontWeight: on ? 500 : 400,
+          background: on ? color.paper : color.fill,
+          color: on ? color.accent : color.tabInk,
+          boxShadow: on ? shadow.raised : 'none',
+          transition: `background ${motion.hover.duration} ${motion.hover.easing}, color ${motion.hover.duration} ${motion.hover.easing}`,
         }}
       >
         {icon}
@@ -108,15 +113,15 @@ export function ComputerPanel({
     <div
       style={{
         display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0,
-        height: '100%', borderLeft: `1px solid ${line.hairline}`,
-        background: color.paper,
+        height: '100%',
+        background: color.fillRaised,
       }}
     >
       <div
         style={{
-          flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 8,
-          padding: '12px 14px', borderBottom: `1px solid ${line.hairline}`,
-          background: 'rgba(250,251,252,.92)', backdropFilter: 'blur(20px)',
+          flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 9,
+          padding: '14px 15px', borderBottom: `1px solid ${line.hairline}`,
+          fontSize: text.emphasis, fontWeight: 500, letterSpacing: tracking.title,
         }}
       >
         <ComputerIcon size={16} style={{ color: color.muted }} />
@@ -126,14 +131,19 @@ export function ComputerPanel({
           type="button"
           onClick={onClose}
           aria-label="Close the panel"
+          onMouseEnter={() => setCloseHover(true)}
+          onMouseLeave={() => setCloseHover(false)}
           style={{
-            marginLeft: 'auto', width: 28, height: 28, border: 'none',
-            background: 'transparent', cursor: 'pointer', color: color.muted,
-            borderRadius: '50%', display: 'flex', alignItems: 'center',
+            marginLeft: 'auto', width: 25, height: 25, padding: 0,
+            border: `1px solid ${closeHover ? line.hairline : 'transparent'}`,
+            background: closeHover ? color.fill : 'transparent',
+            cursor: 'pointer', color: closeHover ? color.ink : color.muted,
+            borderRadius: radius.pill, display: 'flex', alignItems: 'center',
             justifyContent: 'center',
+            transition: `background ${motion.hover.duration} ${motion.hover.easing}`,
           }}
         >
-          <CloseIcon size={13} />
+          <CloseIcon size={12} />
         </button>
       </div>
 

@@ -1,0 +1,193 @@
+/*
+ * The answer cards are OpenUI's own components, drawn by their renderer.
+ * What this file changes, and why, after the founder's first look at
+ * them full size (17 September: "the layout is disastrous, the
+ * proportions, the cards are transparants therefore we see the grid in
+ * the background, the cards also touch each other … nothing should be
+ * transparant. now whatevers that is button shape/color - use our
+ * design. not theirs."):
+ *
+ * - The face and the scale. Their typography tokens bake Inter at their
+ *   sizes into `font` shorthands on `:root`; `cards.generated.css`
+ *   redeclares each under the block with the thread's face on the
+ *   thread's scale (`tokens.css`, `generate-artifact-prompts.mjs`).
+ * - Nothing translucent. Their card surface is 2% black over whatever
+ *   is behind it, which in this app was the grid on the ground. Every
+ *   card is our paper, with the field line and the flat shadow a card
+ *   at rest has everywhere else (17 September canvas: white card,
+ *   black at .06, `0 1px 2px` black at .08).
+ * - Room between cards: their 12px grid gap is the thread's 16.
+ * - Buttons are ours: the pill, the accent on white for the first,
+ *   white with no line for the rest, 36 high. Their tags, icons,
+ *   pictures and layouts stay theirs.
+ * The artifacts keep Inter and everything else of theirs (`artifacts.css`).
+ */
+@import './cards.generated.css';
+
+.caisra-cards {
+  --openui-font-body: var(--fsr-font-ui);
+  font-family: var(--openui-font-body);
+
+  /* Surfaces: opaque, ours. */
+  --openui-background: var(--fsr-paper);
+  --openui-foreground: var(--fsr-paper);
+  --openui-sunk-light: var(--fsr-paper);
+  --openui-highlight-subtle: var(--fsr-paper);
+  --openui-sunk: var(--fsr-fill);
+  --openui-border-default: var(--fsr-line-field);
+  --openui-border-interactive: var(--fsr-line-button);
+  --openui-shadow-m: var(--fsr-shadow-flat);
+  --openui-text-neutral-primary: var(--fsr-ink);
+  --openui-text-neutral-secondary: var(--fsr-muted);
+}
+
+/* Every card kind: paper, the field line, the flat shadow. */
+.caisra-cards .c1-composite-card,
+.caisra-cards .c1-overview-card,
+.caisra-cards .c1-snippet-card,
+.caisra-cards .c1-context-card,
+.caisra-cards .c1-visual-first-card {
+  background-color: var(--fsr-paper);
+  border: 1px solid var(--fsr-line-field);
+  box-shadow: var(--fsr-shadow-flat);
+  /* Their overview card sizes as content-box: at width 100% its padding
+     and border spill 22px past the grid cell and swallow the gap, so the
+     tiles touch. Every card fits its cell. */
+  box-sizing: border-box;
+  min-width: 0;
+}
+.caisra-cards .c1-visual-first-card__bottom {
+  background-color: var(--fsr-paper);
+  border-color: var(--fsr-line-field);
+}
+/* The frame a picture sits in, empty or not. */
+.caisra-cards .c1-image-text-large__image-wrap {
+  background-color: var(--fsr-fill);
+}
+
+/*
+ * A figure tile: the value sits under the label, not under the icon,
+ * and reads as the label's figure (the founder: "theres no reson why
+ * '3 days' or '104' are on the far left like this, and not
+ * proportionate to what is above"). Their icon box is 36px with a
+ * 12px gap, so the label starts 48px in; the value starts there too,
+ * a size up, and closer to the label than their 18px.
+ */
+.caisra-cards .c1-overview-card__vertical {
+  gap: 8px;
+  justify-content: flex-start;
+}
+.caisra-cards .c1-overview-card__top-row:has(.c1-icon-text--horizontal) + .c1-overview-card__slot--bottom {
+  padding-left: 48px;
+}
+.caisra-cards .c1-overview-card .c1-metric-indicator__main-value {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+/* Room between cards. */
+.caisra-cards .c1-medium-card-block { --c1-medium-card-gap: 16px; }
+.caisra-cards .c1-small-card-block { --c1-small-card-gap: 16px; }
+.caisra-cards .openui-card { gap: 20px; }
+
+/*
+ * Their grids fold to two columns under 768px and span the odd last card
+ * across both, and the block here is never that wide (it sits in the
+ * conversation's column, 680 at most). So three tiles came out as two
+ * and one. From 480px up the rows keep their own column count, as they
+ * do on a wide page of theirs; under that, their fold stands.
+ */
+@container (min-width: 30rem) {
+  .caisra-cards .c1-small-card-block__grid--responsive,
+  .caisra-cards .c1-medium-card-block__grid--responsive {
+    display: flex;
+    flex-direction: column;
+  }
+  .caisra-cards .c1-small-card-block__grid--responsive .c1-small-card-block__row,
+  .caisra-cards .c1-medium-card-block__grid--responsive .c1-medium-card-block__row {
+    display: grid;
+  }
+  .caisra-cards .c1-small-card-block__grid--odd-count .c1-small-card-block__row:last-child > .c1-small-card-block__item:last-child,
+  .caisra-cards .c1-medium-card-block__grid--odd-count .c1-medium-card-block__row:last-child > .c1-medium-card-block__item:last-child {
+    grid-column: auto;
+  }
+}
+
+/* A hero picture is a band across the block, not the whole photograph. */
+.caisra-cards .c1-image-wrapper {
+  max-height: 300px;
+  overflow: hidden;
+  border-radius: 8px;
+}
+.caisra-cards .c1-image-wrapper .openui-image {
+  max-height: 300px;
+  width: 100%;
+  object-fit: cover;
+}
+
+/*
+ * A card's footer: the price on the left, the button on the right, one
+ * row (the founder: "put any 'book' on the right of the card,
+ * proportionate with the price"). The pill hugs its label.
+ */
+.caisra-cards .c1-composite-card__footer-content {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.caisra-cards .c1-composite-card__footer-content > * {
+  width: auto;
+  flex: 0 1 auto;
+}
+
+/*
+ * No title over a block. The founder, 17 September: "hotel in paris
+ * (showing 5 results) etc all that title things dissapears. only
+ * cards." The brief says not to write one; this makes sure one never
+ * shows if a model does.
+ */
+.caisra-cards .openui-card > .openui-header {
+  display: none;
+}
+
+/* Air between the last card and the buttons under it. */
+.caisra-cards .openui-card > .openui-buttons {
+  margin-top: 8px;
+}
+
+/* Buttons: ours. The same pill as the choice card and the roster card. */
+.caisra-cards .openui-button-base {
+  height: 36px;
+  padding: 0 17px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font: 400 13.5px/1 var(--fsr-font-ui);
+  letter-spacing: 0;
+  box-shadow: none;
+  justify-content: center;
+}
+.caisra-cards .openui-button-base-small {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+.caisra-cards .openui-button-base-primary {
+  background-color: var(--fsr-accent);
+  color: var(--fsr-paper);
+  font-weight: 500;
+}
+.caisra-cards .openui-button-base-primary:hover {
+  background-color: var(--fsr-accent-hover);
+}
+.caisra-cards .openui-button-base-secondary,
+.caisra-cards .openui-button-base-tertiary {
+  background-color: var(--fsr-paper);
+  color: var(--fsr-ink);
+  border-color: transparent;
+}
+.caisra-cards .openui-button-base-secondary:hover,
+.caisra-cards .openui-button-base-tertiary:hover {
+  background-color: var(--fsr-window);
+}

@@ -3288,7 +3288,15 @@ Ramp, Dropbox, each with the vendor's own endpoint and sign-in. The
 other six are out by the founder's own rule of 16 September: Slack as
 a channel, and Sentry, ClickUp, Granola, monday and ZoomInfo as long
 tail. What is true: no skill pack has been pulled, and Slack is still
-undecided.
+undecided. And one more thing, checked the same day when the founder
+asked how many cards are Composio's: the endpoints are in the
+catalogue, but the shelf goes Composio first for every card that has
+a Composio slug (`shelf.ts`, `actionFor`), and forty-three of the
+forty-five have one. So pressing Connect on Notion signs in through
+Composio, not through `mcp.notion.com`. The vendor route is used by
+two cards only, Fathom and Mercury, which have no slug. "Direct" in
+the catalogue means the endpoint is known, not that the button uses
+it.
 
 **Second addendum, from the next morning's thread ("WHERE IS MY
 DESIGN").** A new agent, Yone, asked for a mock Word document: the
@@ -3821,3 +3829,537 @@ have one agent working while another is open and see the dot.
 `desktop/src/main/mcp/mcpRuntime.ts`, `openclawConfigSync.ts`
 (+runtime test), `main.ts`, `preload.ts`, `renderer/types/electron.d.ts`,
 `desktop/tests/openclaw-extensions/ask-user-question/reactToMessage.live.test.ts`.
+
+## 70. Routines, and agents talking to each other — `audited; nothing built`
+
+The founder, 17 September: *"audit routines and see what we got. and
+the agents being able to talk to each other. then lmk."* Two audits,
+read against the code and spot-checked by hand. Nothing changed.
+
+**Routines.** The engine's scheduler is complete: cron expressions
+with a timezone, one-shot, every-N, a job that runs in the agent's own
+conversation or in an isolated one, run history in SQLite, failure
+alerts, restart catch-up (`openclaw/src/cron/`). The app is a full
+client for it (`desktop/src/scheduledTask/cronJobService.ts`, fourteen
+IPC handlers) and the model can create, change, run and remove jobs
+with the engine's `cron` tool, which the brief tells it to use
+(`scheduledTask/enginePrompt.ts`). What is missing is any screen: the
+new shell has no routines UI at all. The working Routines tab in
+`AgentDetail.tsx` is unmounted on purpose (item 29 flagged that and no
+ruling came); the "Routines" tab on a role card in Apps is one static
+sentence; "Teach a task" sends a prompt and schedules nothing (item
+11). So today a person can only get a routine by asking an agent for
+one in words. Two more gaps: `direction.md` §10 says a routine fires
+with the Mac shut, on the runner; the runner has `cron: { enabled:
+false }` and nothing on the server queues a routine as it comes due,
+so that is decided and not built. And `caisra-permissions.md` wants a
+routine's creation to ask; the `cron` tool asks nothing. Event
+triggers: a loopback webhook exists and is configured (`/hooks`), so a
+local script can wake an agent; nothing on the internet can reach it,
+and no named listener (Slack, GitHub, Linear) exists. "Stay quiet if
+nothing changed" is one line in the brief, not a field on a job.
+
+**Agents talking to each other.** The engine has it end to end:
+`sessions_send` with a reply-back loop of up to five turns, an
+announce step, `sessions_spawn` and subagents. The app denies none of
+those tools. But cross-agent sends are gated by
+`tools.agentToAgent.enabled`, whose default is off, and the config
+sync never writes it (`grep agentToAgent desktop/src` finds nothing).
+So an agent that tries reaches only its own session tree and is told
+"forbidden" for any other agent. Meanwhile the brief tells every agent
+to "hand work to another agent when they asked you to" and to expect
+"a message from another agent" (`openclawConfigSync.ts:546,602,618`),
+and Yodo's brief has five rules about handing work out and bringing it
+back, with only `create_agent` and `propose_team` to do it with. The
+agent is told it can do a thing the config forbids. Rooms are N
+parallel one-to-one conversations with a merged view: the person's
+message goes to each member verbatim, members never see each other's
+replies, there is no room tag on the turn, no @mention, and no way to
+create a room from the app. Subagent runs are tracked in main and
+shown nowhere in the new shell. Item 58's table said `SendToAgent` was
+covered by the engine's session tools and rooms; it is not, and it
+cited item 35, which is the approvals item. Corrected here.
+
+**What it would take, for the founder to choose from.** Agents: write
+`tools.agentToAgent.enabled: true` and `tools.sessions.visibility:
+"agent"` in the sync, name `sessions_send` in the brief with the rule
+that the person's message is relayed in the agent's own words, and let
+the thread show "Talking to another agent" (the verb already exists).
+That is a day. Routines: a Routines tab on the agent panel, over the
+client that exists. Routines with the Mac shut: the server-side queue
+decided on 15 September (`sources/README.md`), not started.
+
+## 71. The answer cards: OpenUI's language, our design — `built; run in the harness; the Mac unrun`
+
+The founder, 17 September, with four of OpenUI's pictures (hotels in
+Paris, a Tokyo itinerary, the World Cup, Seattle restaurants): *"i want
+it, cause open ui is great … i'd want my agent to give me anwers like
+this … what is important is that we still keep the text style. not
+stream. messages come like an imessage text. but this should 100% be
+our design. we can keep stuff we designed Permission cards, forms, file
+cards, choice cards, etc - but for the artifacts, openui is golden."*
+
+**What OpenUI is, checked.** `thesysdev/openui`, MIT, 9,400 stars,
+`@openuidev/lang-core` and `@openuidev/react-lang` 0.3.0 published
+15 September. The model writes a small declarative language ("root =
+Stack([a, b])", one statement a line, positional arguments); a parser
+reads it against a component library; a React renderer draws each
+component with whatever component you give it. Its "inline mode" is
+exactly the founder's rule: text plus, optionally, one fenced block.
+Verified by generating a real prompt from a five-component library
+(3,783 characters) and parsing a program with it before a line of ours
+was written.
+
+**How it fits, and the one constraint.** OpenUI expects to sit between
+the model and the screen. Our model runs inside the engine, so the fit
+is: the library is defined once (`shared/cards/library.ts`), main
+generates the section of the brief that teaches it (`## Cards`, after
+the conversation rules, 5,000-odd characters, from the same list), the
+agent writes the block in its reply, and the renderer cuts the block
+out of the reply (`shared/cards/fence.ts`, `splitCardSegments`) into a
+ninth item kind, `Card`, drawn between the bubbles where it was
+written. Nothing streams: the block arrives with the reply, whole, like
+every text. The message in the store keeps the block verbatim, so an
+old reply re-renders with whatever the library draws that day.
+
+**Ten components, ours.** Stack (the block, with a title), Banner, Text,
+Row (scrolls), Grid (two columns), Tile (the picture card: name, line,
+tag, image, action), Metric (a figure), Fact (label and value), Table,
+Button. Every one drawn in `thread/CardBlock.tsx` from the thread's
+tokens: Switzer, the ink, the hairline, the pill button, the same
+enter animation as a bubble. A Tile's action ("Book") and a Button send
+their label back to the agent as the person's next message, through
+the shell's own `onSend`, so pressing one is typing one. No forms, no
+inputs, no queries from inside a card: those are the choice card and
+the secret card, unchanged.
+
+**Two things OpenUI does that were switched off.** Its core sends a
+pseudonymous record of every generated prompt to PostHog unless told
+not to; main sets `OPENUI_TELEMETRY_DISABLED` before generating, and a
+test checks it. And its parser checks types, not formats, so a made-up
+image address gets through the schema; the renderer draws a picture
+only from a well-formed https address (`cardImageUrl`), and the brief
+says never to invent one. A picture that fails to load leaves no hole.
+
+**Run:** tsc, `compile:electron`, eslint on every touched file; the
+library, fence, prompt and adapter tests, and the config-sync runtime
+test with the Cards section (`## Cards` present, after the conversation
+rules, the brief still under the line); the whole suite; and the
+harness, which mounts the real shell: a `cards` screen with the
+restaurant answer and the Tokyo plan, photographed at
+`harness/shots/cards.png`, Switzer confirmed, no console errors. The
+photograph shows the second block whole (banner, three metrics, three
+day tiles, a button) and the tail of the first; the tiles with a Book
+button sit above the fold and were not photographed.
+
+**Unrun: the founder's Mac, and the model.** Nobody has yet seen a
+model write a block. After pulling and rebuilding: "find me the best
+restaurants in Seattle" should come back as a text, a block of tiles,
+a text. If the block comes back as raw text, the fence was not
+`openui-lang` and the log has the reply. Pictures depend on the agent
+having fetched a page with a real image address; the brief forbids
+guessing one, so the first answers may well have none.
+
+**Where:** `desktop/src/shared/cards/{library,fence}.ts` (+tests),
+`desktop/src/main/libs/cardsPrompt.ts` (+test),
+`openclawConfigSync.ts` (+runtime test),
+`desktop/src/renderer/design/thread/{types,fromEngine,CardBlock,ThreadItemView,Thread}`,
+`shell/{select,MessagesShell}`, `harness/main.tsx` (`cards`),
+`package.json` (two dependencies, MIT).
+
+**The first look was wrong, and the founder said so.** *"can i say what
+you did there looks utterly terrible … do not put it in a text box.
+separate texts and those cards … AND I WANT THE PICTURES. ITS WHAT
+MAKES IT SPECIAL. design it like them."* Two faults. The block sat in
+a grey panel, which read as one more bubble; their four pictures have
+nothing around the block, the title and subtitle are plain text on the
+page and the cards sit on the page after them. And there were no
+pictures, because I had no source for one and left it at "never
+invent". Both fixed the same evening:
+
+- `CardBlock.tsx` redrawn from the pictures. No container. A Tile
+  with a photo is the photo edge to edge, the tag over it top left in
+  a dark translucent pill with white text, the name and line in a
+  white box inset at the foot in black, and the action as a black bar
+  under. The Banner is a wide photo with white title and subtitle on
+  it. Metrics are white boxes with the label and note at left and the
+  figure at right; Facts the same without the figure.
+- **Pictures have a source.** The engine's `web_fetch` strips images
+  out of a page (`htmlToMarkdown` keeps links and headings, not `img`)
+  but returns JSON whole, and Wikipedia's summary endpoint
+  (`/api/rest_v1/page/summary/<Title>`) carries `originalimage.source`
+  and `thumbnail.source`; checked from here for Canlis, which returned
+  its front entrance. The brief now says: for a place, a landmark, a
+  dish, a company, fetch that and use the address; no page, no
+  picture. The renderer loads a picture from https or from this
+  computer's loopback (the app's own preview servers), and nothing
+  else.
+- The harness serves seven placeholder photographs from
+  `harness/shots/photos/` (ignored) so the screens can be judged; both
+  photographs were sent to the founder.
+
+Unrun as before: a model writing a block, and a model fetching a
+Wikipedia summary for a picture. Both wait on the Mac.
+
+**The founder will design the cards themselves** (*"you know what i'll
+design it myself. when it comes back make sure everything is designed
+that way."*). What is here is the mechanism and a first drawing; the
+drawing is theirs to replace, component by component, in
+`CardBlock.tsx`. The library (what the agent may name) stays unless
+their design needs a card it does not have.
+
+## 72. The artifacts: OpenUI's deck and report, whole — `built; run in the harness; the Mac unrun`
+
+The founder, 17 September, after the cards: *"i told you this for the
+artifacts, openui is golden - i meant the docs, excel (not sure if they
+do excel), slides etc... i want my artifacts to look exactly like open
+ui's. i want a complete replica here for the desing."*
+
+**What OpenUI's artifacts are, checked.** In their words an artifact is
+*"a first-class output of a conversation … not a chat message and not a
+tool result. Once it exists, it stands on its own."* Two kinds exist:
+a slide deck and a report. Their hosted service (OpenUI Cloud, a
+`THESYS_API_KEY`) generates them, and their open packages render them.
+The open repository has the artifact *framework* (a renderer registry,
+an artifacts browser, storage interfaces) and no deck or report. Those
+live in `@openuidev/thesys` on npm, 0.14.0, MIT: *"Openui-lang based
+artifacts (Presentation, Report)"*, 47 MB with its charts, maths and
+editor, shipping the two React components, their libraries
+(`presentationLibrary`, 33 components; `reportLibrary`, 34) and their
+stylesheet. The only call it makes to their cloud is a storage adapter
+for their conversations API, which we do not use: ours is SQLite.
+Loaded in Node, it works without a DOM, and its generated prompts are
+6,656 and 5,897 characters. **No spreadsheet exists anywhere in OpenUI.**
+A report can carry a table and four kinds of chart; an Excel file is a
+file the agent writes with its file tools, and already a card.
+
+**One thing their package does not say, found by rendering.** The
+viewers (`<Presentation>`, `<Report>`) parse a program whose root is
+`SlideShow(title, subtitle?, slides)` or `ReportView(title, subtitle?,
+pages)`, the shape their cloud emits; the exported libraries name their
+roots `Presentation(metadata, slides)` and `Report(metadata, pages)`,
+which the viewers do not read. The first run drew the chip with no
+title and opened onto a blank sheet. The generator now rewrites the
+root line to the viewers' and keeps everything else verbatim, and the
+tests parse the sample deck and report against libraries built the way
+the package builds them.
+
+**How it fits.** The same fence and language as the cards, told apart
+by the root (`shared/artifacts/constants.ts`, `artifactKindOf`). The
+brief gets an `## Artifacts` section after the cards: when a deck, when
+a report, one per reply, real numbers only, a spreadsheet is a file;
+then both libraries' signatures, generated from the installed package
+by `scripts/generate-artifact-prompts.mjs` into
+`prompts.generated.ts`, with a test that regenerates and compares so the
+file cannot drift. In the thread a block whose root is an artifact is
+drawn by `ArtifactBlock.tsx`: their `Presentation` or `Report` in
+preview mode, which is their chip with the title and a View button,
+and on press their full-screen viewer over the app, with thumbnails,
+page count, Show all, zoom, Escape to close. Their stylesheet and
+tokens come with it; nothing of ours restyles them. That is the
+replica, by construction.
+
+**Run:** tsc, `compile:electron`, eslint on every touched file, the
+artifact tests (roots, titles, generated file in sync, both samples
+parse clean), the config-sync runtime test (`## Cards` then
+`## Artifacts` in the brief), the whole suite; and the harness: an
+`artifacts` screen with a board deck and an arbitration memo, the
+shooter pressing each chip, three photographs sent to the founder.
+
+**The first photographs were an empty shell, and the founder said so.**
+*"where are the pictures? the contents? … can you please take this job
+seriously."* Two thin pages and five thin slides with no photographs,
+in a fallback face, proved only that the viewer ran. Redone the same
+evening: Inter bundled (`fonts/InterVariable.woff2`, Open Font Licence,
+loaded only by the artifacts), a nine-slide board deck (title with a
+photo, a hero metric over a photo, a chart with metrics, visual cards,
+a photo with body, a section break over a photo, a quote) and the
+founder's own "Big Tech 2025 Report Card" as a four-page report (front
+page with a photo, the scoreboard with metrics and a bar chart, the
+four company cards with pictures, the quarter-by-quarter table with
+sources). Six photographs sent; the report's third page is their
+picture, component for component.
+
+**Then the founder drew the line where it belongs.** *"the design for
+the q4 board update, ohada etc. that says 'view' those you can toss.
+and keep our own design, with pdf svgs, docs svgs, ppt etc. and our
+buttons like it was before. this is still artifacts. we just changed
+the design."* So OpenUI's chip is gone. In the thread a deck is our
+file card with the PowerPoint icon and "9 slides" under the name, and
+a report is the same card with the Word icon and "4 pages": the card a
+file the agent made already gets, now one component (`FileCard.tsx`)
+used by both. Pressing it opens their viewer inline, at full size, in
+a sheet of ours over the app: scrim, close in the corner, Escape.
+Their deck and report are untouched inside it. Photographed both.
+
+**Two things to know.**
+- Inter is bundled for the artifacts only; the app stays in Switzer.
+- Print mode exists in both viewers for PDF and PPTX export; the
+  exporters themselves are their cloud's. A PDF through Electron's own
+  print is a small follow-up; a `.pptx` is not something OpenUI gives.
+
+**Unrun:** a model writing a deck or a report. The brief is 12,000
+characters longer; the runtime test keeps the whole under the line.
+
+**Where:** `desktop/src/shared/artifacts/{constants,prompts.generated}.ts`
+(+tests), `desktop/scripts/generate-artifact-prompts.{mjs,d.mts}`,
+`desktop/src/main/libs/artifactsPrompt.ts` (+test),
+`openclawConfigSync.ts` (+runtime test),
+`desktop/src/renderer/design/thread/{ArtifactBlock,CardBlock,fromEngine,types}`,
+`harness/{main.tsx,shoot.mjs}`, `package.json` (five dependencies, MIT).
+
+## 73. The answer cards: OpenUI's, whole — `built; run in the harness; the Mac unrun`
+
+The founder, 17 September, after the deck and the report: *"now i want
+you to use the same logic you did for the report as you went all in
+and do the same for all the rest of the cards. i could not care less
+if it doesnt match our design. i want it exactly like openui's. i'm
+talking about Trip itineraries, restaurants etc... what they did in
+the screenshots i sent. the way they did it when asked about fifa etc.
+this is great to me and i want it. use their colors. use their style.
+perhaps keep our font but thats it. i want screenshots."*
+
+So item 71's ten components of ours are gone, and the cards are
+OpenUI's the way the artifacts are.
+
+**Which library, checked.** Two chat libraries ship in the packages we
+already have. `@openuidev/react-ui` has a generic one (58 components:
+carousels, list blocks, forms). `@openuidev/thesys` has `chatLibrary`,
+the one behind their C1 answers and the founder's four pictures: 73
+components with root `Card`, among them the image cards with a tag and
+a Book button (`CompositeCardBlock`), the picture-as-card with a tag on
+it (`VisualCardBlock`), the figure tiles (`OverviewCardBlock`), the
+Highlights rows (`EntityList`), tables, charts, steps, buttons. It
+comes with its own renderer, `OpenUIC1Component`, which is what their
+assistant answers with. That is the one.
+
+**What is theirs.** The library, the renderer, the stylesheet, the
+prompt. The brief's `## Cards` section is now the prompt OpenUI
+generates for that library, 15,400 characters, regenerated into
+`shared/cards/prompt.generated.ts` by the same script as the artifacts
+with a test that regenerates and compares; two markers in it take our
+opening (theirs says the whole reply must be code) and our rules under
+their own heading: the fence, texts stay texts, one block a reply,
+which block for what, the Wikipedia picture path, never an invented
+address, what a button's `continue_conversation` context does, and
+that every block is complete on its own. That last one matters: their
+inline mode tells the model to send only changed lines on a follow-up,
+and the thread draws each block by itself.
+
+**What is ours.** The typeface, and it took a generator to keep it.
+Their stylesheet writes thirty-three typography tokens on `:root` as
+`font` shorthands with Inter baked in, so overriding their font
+variable under the block changed nothing; the shooter said "Inter"
+and a walk up the ancestors found `.openui-card` reading the baked
+token. `cards.generated.css` redeclares every such token under the
+block with the thread's face, generated from their stylesheet and
+compared by a test, so a version bump cannot leave one out. Also ours:
+the width, and where a pressed button goes (its context as the
+person's next message; a URL is opened by their renderer).
+
+**Checked, not assumed.** Their `Image` resolves a missing `src` from
+the caption through their cloud only when an image-search provider is
+mounted above it, and none is; the shooter now fails on any request
+that leaves the loopback, and none did. Telemetry stays off. An item
+with no picture draws their empty frame (Tsukushinbo in the first
+shot), which is their behaviour and stays.
+
+**Then the founder looked at them full size.** *"the layout is
+disastrous, the proportions, the cards are transparants therefore we
+see the grid in the background, the cards also touch each other …
+nothing should be transparant. now whatevers that is button
+shape/color - use our design. not theirs."* All true, and all of it
+their stylesheet meeting our ground: their card surface is 2% black
+over whatever is behind it, which here is the grid; their grid gap is
+12px with a 6% border, so the tiles read as touching; their chat
+scale starts at 16px beside a 14px thread; their grids fold to two
+columns under 768px and span the odd card, and the block here is
+never that wide, so three tiles came out as two and one; their blue
+button. So, in `cards.css`: every card is our paper with the hairline
+and the flat shadow; 16px between cards; their type sizes mapped onto
+the thread's scale in the generator (`CARD_TYPE_SCALE`, 16 → 14, 18 →
+16, and so on, weights and leading theirs); their own three-across
+kept from 480px up inside the block; a hero picture capped at 300px;
+the block as wide as the widest bubble; and the buttons are the
+thread's pill, ink on paper and paper with the button line, hugging
+their label. Their tags, icons, pictures and layouts stay theirs.
+Re-photographed, all four.
+
+**And once more, on the clean shots.** *"hotel in paris (showing 5
+results) etc all that title things dissapears. only cards. also the
+buttons show the groups, match near me are too close to the cards …
+also put any 'book' on the right of the card, proportionate with the
+price."* So: no Header in a block, ever — the brief says the block is
+the cards themselves and the set's name goes in the text before it,
+the examples lost theirs, and the stylesheet hides one if a model
+writes it anyway; 8px more before the buttons under a block; a card's
+footer is one row, the price on the left and the small pill on the
+right. The founder is changing the design's colours and will send the
+new design; the cards read the thread's tokens, so a colour change in
+`tokens.css` reaches them without another pass here.
+
+**Photographed.** The founder's four: Seattle restaurants, Paris hotels
+("Showing 5 results", five image cards with a price and Book, the
+Highlights rows), Tokyo in three days (hero, three figure tiles, three
+day cards with the tag on the picture), the 2026 World Cup (hero, four
+figures, four feature cards). One harness screen each so every block
+is shot whole, and the shooter prints the face it drew. The programs
+the harness draws are the programs the tests parse against the
+library (`harness/cardExamples.ts`).
+
+**Unrun:** a model writing one of these. The whole brief stays under
+the engine's line (runtime test).
+
+**Where:** `desktop/src/shared/cards/{library,prompt.generated}.ts`
+(+tests), `desktop/src/main/libs/cardsPrompt.ts` (+test),
+`desktop/scripts/generate-artifact-prompts.{mjs,d.mts}`,
+`desktop/src/renderer/design/thread/{CardBlock.tsx,cards.css,cards.generated.css}`,
+`harness/{cardExamples.ts,main.tsx,shoot.mjs}`.
+
+## 74. Spatial Light: the founder's 17 September design, whole — `built; run in the harness; the Mac unrun`
+
+The founder, 17 September, with `Swens_Messages_Spatial_Light.html`:
+*"i dont want no surprise claude, design it like i did. make it fit
+mac. remember the layout logic we have, especially when you widen or
+shorten the screen etc.. i added a section for routine. you can skip
+that until we do it. i want total serious work and everything needs
+to be accurate. now i need you to bring openui to it too. so make me
+proud. then send screenshots. watch out the proportions. NOTHING
+SHOULD OPEN INSIDE ANOTHER BOX."*
+
+**What the canvas is.** A pale ground, a rounded window floating on it
+(radius 40, at most 1420×900, a soft shadow), and a glass dock beside
+the window with five round buttons: Home, Routines, Create, Apps, the
+person. Inside the window the shape is the 15 September one, a list of
+agents and a conversation, on new values: white pane with 28px
+corners, `#f6f6f6` window, `#0071e3` accent on the person's bubbles,
+the lit tab, every primary pill and every toggle, and no glass
+anywhere but the dock, the voice orb and one scrim. Recorded as
+`docs/product/design/canvas-2026-09-17-spatial-light{,-template}.html`.
+
+**Built, file by file.**
+
+- `design/tokens.ts` rewritten from the canvas's values and
+  `tokens.css` regenerated; the tokens a glass design needed
+  (`inkHover`, `disabled`, `glass.background`, `shadow.glassInset`,
+  the grid) are gone, and every file that used one was moved to what
+  the canvas draws instead.
+- `shell/layout.ts`: the frame's paddings, the dock's width, the
+  window's cap, and `frameWindowWidth(viewport)`. The width rules from
+  before are unchanged and now take the window's width: at a 1600px
+  display the window is 1420 and the sidebar a list; at 1100 it is 956
+  and the panel clamps; at 900 it is 756 and the sidebar is a rail.
+- `shell/Dock.tsx` (new), `shell/AccountMenu.tsx` (beside the dock),
+  `shell/Sidebar.tsx` (title, search, rows; the "+" and the bottom row
+  went to the dock), `shell/MessagesShell.tsx` (ground, dock, window,
+  pane, panel column), `shell/Composer.tsx`, `shell/Compose.tsx`.
+- `thread/`: bubbles, chips, the choice, auth, file, roster and secret
+  cards, the status line, the typing bubble, the message actions (both
+  popovers now in a portal, so they never clip inside the pane), the
+  answer cards' stylesheet.
+- `settings/Settings.tsx`, `shell/Apps.tsx`, `agent/AgentDetail.tsx`:
+  fill the pane edge to edge, no scrim, no sheet. `agent/AgentPanel.tsx`
+  and `panel/ComputerPanel.tsx`: the third column on `#fafafa`.
+- `shell/SignIn.tsx`, `onboarding/Onboarding.tsx`: the same ground.
+
+**Where I departed from the canvas, and why, each in a comment at the
+line:** the Settings tab icon is the label's colour (the canvas paints
+the active icon white on a grey pill, a leftover from the navy design);
+the choice card's free-text input keeps a hairline (borderless white on
+white is invisible); the secret card is not in the canvas and takes
+the choice card's surface; the onboarding's cloud veil stays, since
+making it opaque would delete the 16 September clouds.
+
+**Photographed, at three window sizes**, and the shooter gained
+`panel` and `panel-delete`, and draws `settings` inside the shell
+rather than alone: it was the one screen the film never showed in its
+place. Found on film and fixed: the composer vanished under the voice
+overlay's fade (no stacking order; the canvas gives it `z-index:7`).
+
+**Unrun:** the founder's Mac. The dock's Routines button, at the
+founder's word. Dark mode: designed, not yet sent.
+
+**Where:** `desktop/src/renderer/design/**` (25 files),
+`desktop/harness/main.tsx`, `docs/product/design/README.md`,
+`docs/product/direction.md` §1.
+
+## 75. After the first look at Spatial Light: the face alone, Settings whole, a card for connectors, the question card redrawn — `built; run in the harness; the Mac unrun`
+
+The founder, 17 September, on the screenshots of item 74: *"you did a
+good job. a few things."* Four of them.
+
+**The voice face, without its circle.** *"remove the circle in which
+the voice avatar is in. just have it there without it."* The canvas's
+124px glass disc is gone; the face sits on the fade by itself, a little
+larger (96px), and still breathes and pulses (`shell/MessagesShell.tsx`).
+
+**Settings as a whole page.** *"open settings as a full page, rather
+that letting the chat sidebar there."* Settings now covers the whole
+window, list of agents included; the dock stays. The component already
+filled whatever it was put in, so the change is where it is put.
+
+**A card when an agent proposes a connector.** *"whenever an agent is
+asked about a connector, or that he proposes a connector in the chat,
+always put the design in onboarding of 'Notes — App access requested —
+Not now — Allow access' … instead of allow access it'll be install …
+the button 'install' color to be blue tho like our design."* Until now
+the brief told the agent to say a service was not connected and to say
+where to connect it, which sent the person to Apps to find the card
+themselves. Now:
+
+- A ninth message kind, `Connector` (`thread/types.ts`): the service's
+  logo, its name, the catalogue's one line, the agent's line of why
+  when it gave one, Not now and Install in the accent. Pressing Install
+  runs the exact Connect the Apps screen runs (the browser sign-in,
+  nothing typed); the card says Connecting… until it comes back, then
+  Installed, Not now, or the failure in a sentence. Nothing on it
+  presses twice.
+- A tool for the agent, `propose_connector` (`shared/connections/proposal.ts`),
+  on its own MCP server `caisra-connectors`, generated and registered
+  like the staffing one. It names a connector by its catalogue id and
+  is refused, with the list, for anything else. It blocks on the answer
+  and is told connected, declined or failed in a sentence.
+- The bridge route, the IPC pair, the renderer hook
+  (`thread/useProposeConnector.ts`), and the brief's rule rewritten: raise
+  the card, never send them to Apps; a Not now is not raised again in
+  the conversation unless they ask. The Connect itself was lifted out of
+  the Apps screen's hook into `connections/connect.ts` so the card and
+  the screen run one function, not two copies.
+- **The brief is 31 characters under the line.** The runtime test holds
+  the managed instructions under the engine's cut (review item 63). The
+  first wording of the new rule went 81 over it, so the old clause "do
+  not read it off the browser as though a connection were there" was
+  dropped to fit. The next sentence anybody adds to the brief will hit
+  that test, which is its job.
+
+**The question card, as the founder's second screenshot.** *"if the
+agent has many question/multiple choice for the user, design it like
+screenshot 2. remove that one design we have and replace it by this."*
+The card is now the question, the options each behind a 34px lettered
+circle, and Next at the bottom right; an option lights on press and
+nothing is sent until Next. When the engine's tool asks several
+questions in one request, they used to come as a stack of cards; the
+thread now hands the set to one card with a pair of chevrons and "1 of
+3" (`Thread.tsx`, `threadRows`; `ThreadItemView.tsx`, `ChoiceDeck`).
+Next answers the one on screen and it leaves the set. The free-text
+box is gone with the old design: somebody who wants to answer in their
+own words types in the composer. The screenshot's lightbulb is not
+drawn: it is a hint button in the app it came from, and there is no
+hint behind it here, so it would be a dead control.
+
+**Photographed:** `choice`, `choice-many`, `connector` (every state of
+the card at once), `voice`, `settings`.
+
+**Unrun:** the founder's Mac; an agent actually calling
+`propose_connector` against the live gateway (the generated server is
+run against a fake bridge in its live test, as the staffing one is).
+
+**Where:** `desktop/src/shared/connections/proposal.ts` (+test),
+`desktop/src/main/libs/proposeConnectorMcpServer.ts` (+tests),
+`desktop/src/main/libs/mcpBridgeServer.ts`, `desktop/src/main/main.ts`,
+`desktop/src/main/preload.ts`, `desktop/src/main/libs/openclawConfigSync.ts`,
+`desktop/src/main/mcp/mcpRuntime.ts`,
+`desktop/src/renderer/design/connections/{connect.ts,useConnections.ts}`,
+`desktop/src/renderer/design/thread/{types.ts,connectorCards.ts,useProposeConnector.ts,ThreadItemView.tsx,Thread.tsx,threadRows.test.ts}`,
+`desktop/src/renderer/design/shell/{MessagesShell.tsx,CaisraApp.tsx}`,
+`desktop/harness/main.tsx`.

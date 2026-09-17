@@ -20,3 +20,8 @@ named first in `font.ui` in `../tokens.ts`. No other weight is bundled:
 upstream's stylesheet asks the document for weight 445, which the shell
 root overrides to 400, because a browser given only 400 and 500 rounds
 445 up to Medium.
+
+
+## Inter
+
+`InterVariable.woff2` is Inter by Rasmus Andersson (rsms.me/inter), under the SIL Open Font Licence 1.1. It is loaded only for the artifacts (`thread/artifacts.css`), whose design is OpenUI's and is set in Inter; the app itself stays in Switzer.

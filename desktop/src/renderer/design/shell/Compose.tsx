@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useMemo, useRef, useState } from 'react';
+import { type ButtonHTMLAttributes, type CSSProperties, type KeyboardEvent, useMemo, useRef, useState } from 'react';
 
 import { assignAvatar, AVATAR_COUNT, avatarFallback } from '../../../shared/agent/avatars';
 import { DEFAULT_VOICE_ID, voiceById,VOICES } from '../agents/voices';
@@ -42,6 +42,39 @@ export interface ComposeProps {
    */
   wornAvatars?: readonly number[];
 }
+
+/** A button that changes under the pointer, since inline styles cannot. */
+function HoverButton(
+  { hoverStyle, style, onMouseEnter, onMouseLeave, ...rest }:
+    ButtonHTMLAttributes<HTMLButtonElement> & { hoverStyle: CSSProperties },
+): JSX.Element {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      type="button"
+      onMouseEnter={event => { setHover(true); onMouseEnter?.(event); }}
+      onMouseLeave={event => { setHover(false); onMouseLeave?.(event); }}
+      style={{ ...style, ...(hover ? hoverStyle : {}) }}
+      {...rest}
+    />
+  );
+}
+
+/**
+ * The pills at the foot of the form and the voice picker (template.html
+ * 262–263, 335–336): the primary is the accent, 34px, weight 500; Cancel
+ * is white with no border and goes the window's grey under the pointer.
+ */
+const pill: CSSProperties = {
+  height: 34, padding: '0 18px', borderRadius: radius.pill, border: 'none',
+  font: 'inherit', fontSize: text.body, cursor: 'pointer', whiteSpace: 'nowrap',
+  transition: `background ${motion.hover.duration} ${motion.hover.easing}`,
+};
+
+const primaryPill: CSSProperties = { ...pill, background: color.accent, color: color.paper, fontWeight: 500 };
+const primaryHover: CSSProperties = { background: color.accentHover };
+const cancelPill: CSSProperties = { ...pill, background: color.paper, color: color.ink, fontWeight: 400 };
+const cancelHover: CSSProperties = { background: color.window };
 
 /**
  * Starting something: a To: line, a picker, and the new-agent form.
@@ -97,7 +130,7 @@ export function Compose({ agents, onPick, onCreate, onClose, wornAvatars = [] }:
         style={{
           display: 'flex', alignItems: 'center', gap: 9, padding: '14px 21px',
           borderBottom: `1px solid ${line.hairline}`,
-          background: 'rgba(250,251,252,.92)', backdropFilter: 'blur(20px)',
+          background: color.paper,
         }}
       >
         <span style={{ fontSize: text.emphasis, color: color.muted }}>To:</span>
@@ -115,25 +148,25 @@ export function Compose({ agents, onPick, onCreate, onClose, wornAvatars = [] }:
             fontSize: text.emphasis, color: color.ink,
           }}
         />
-        <button
-          type="button"
+        <HoverButton
           onClick={onClose}
           aria-label="Close"
           style={{
-            width: 28, height: 28, border: 'none', background: 'transparent',
+            width: 25, height: 25, border: 'none', background: 'transparent',
             cursor: 'pointer', color: color.muted, borderRadius: '50%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
+          hoverStyle={{ background: color.fill, color: color.ink }}
         >
           <CloseIcon size={12} />
-        </button>
+        </HoverButton>
       </div>
 
       <div
         style={{
-          flex: '1 1 auto', minHeight: 0, overflowY: 'auto',
+          flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overflowX: 'hidden',
           padding: '15px 21px 24px', display: 'flex', flexDirection: 'column',
-          gap: 12, alignItems: 'flex-start',
+          gap: 12, alignItems: 'flex-start', background: color.paper,
         }}
       >
         {creating ? (
@@ -158,10 +191,9 @@ export function Compose({ agents, onPick, onCreate, onClose, wornAvatars = [] }:
           <div
             style={{
               width: '100%', maxWidth: 640, boxSizing: 'border-box', padding: 6,
-              borderRadius: radius.modal, background: glass.background,
-              backdropFilter: glass.blur, border: `1px solid ${glass.border}`,
-              boxShadow: `${shadow.modal}, ${shadow.glassInset}`,
+              borderRadius: radius.panel, background: color.window, border: 'none',
               display: 'flex', flexDirection: 'column', gap: 4,
+              animation: `fsr-message-in ${motion.messageIn.duration} ${motion.messageIn.easing} both`,
             }}
           >
             {rows.length === 0 && (
@@ -170,23 +202,24 @@ export function Compose({ agents, onPick, onCreate, onClose, wornAvatars = [] }:
               </div>
             )}
             {rows.map(row => (
-              <button
+              <HoverButton
                 key={`${row.kind}:${row.id}`}
-                type="button"
                 onClick={() => take(row)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 11, height: 49,
-                  padding: '0 11px', borderRadius: radius.row, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 11, height: 43,
+                  padding: '0 10px', borderRadius: radius.row, cursor: 'pointer',
                   border: 'none', background: 'transparent', font: 'inherit',
                   textAlign: 'left', width: '100%',
+                  transition: `background ${motion.hover.duration} ${motion.hover.easing}`,
                 }}
+                hoverStyle={{ background: color.window }}
               >
                 {row.kind === ComposeRowKind.Agent ? (
-                  <CloudBlob avatar={row.avatar ?? avatarFallback(row.id)} size={28} />
+                  <CloudBlob avatar={row.avatar ?? avatarFallback(row.id)} size={25} />
                 ) : (
                   <span
                     style={{
-                      width: 28, height: 28, flex: '0 0 auto', borderRadius: '50%',
+                      width: 25, height: 25, flex: '0 0 auto', borderRadius: '50%',
                       background: color.fill, border: `1px solid ${line.hairline}`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       color: color.muted, fontSize: 16, lineHeight: 1,
@@ -197,14 +230,14 @@ export function Compose({ agents, onPick, onCreate, onClose, wornAvatars = [] }:
                 )}
                 <span
                   style={{
-                    flex: '1 1 auto', minWidth: 0, fontSize: text.emphasis, color: color.ink,
+                    flex: '1 1 auto', minWidth: 0, fontSize: text.emphasis, fontWeight: 400, color: color.ink,
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   }}
                 >
                   {row.label}
                 </span>
                 {row.key && <Shortcut digit={row.key} />}
-              </button>
+              </HoverButton>
             ))}
           </div>
         )}
@@ -220,7 +253,7 @@ export function Compose({ agents, onPick, onCreate, onClose, wornAvatars = [] }:
 
       {/* A quiet reminder of what the picked voice is, under the form. */}
       {creating && voice && (
-        <div style={{ padding: '0 24px 18px', fontSize: text.small, color: color.faint }}>
+        <div style={{ padding: '0 24px 18px', fontSize: text.small, color: color.faint, background: color.paper }}>
           {voice.name} — {voice.description.toLowerCase()}
         </div>
       )}
@@ -228,7 +261,7 @@ export function Compose({ agents, onPick, onCreate, onClose, wornAvatars = [] }:
   );
 }
 
-const keyCap: React.CSSProperties = {
+const keyCap: CSSProperties = {
   minWidth: 19, height: 19, padding: '0 4px', borderRadius: radius.key,
   background: color.fill, border: `1px solid ${line.hairline}`,
   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -244,9 +277,10 @@ function Shortcut({ digit }: { digit: string }): JSX.Element {
   );
 }
 
-const field: React.CSSProperties = {
-  height: 41, padding: '0 14px', borderRadius: radius.field,
-  border: `1px solid ${line.field}`, background: color.paper,
+/** An input in the form: white on the window's grey, no line round it. */
+const field: CSSProperties = {
+  height: 36, padding: '0 12px', borderRadius: radius.field,
+  border: 'none', background: color.paper,
   outline: 'none', font: 'inherit', fontSize: text.message, color: color.ink,
 };
 
@@ -281,10 +315,9 @@ function NewAgentForm(props: NewAgentFormProps): JSX.Element {
     <div
       style={{
         width: '100%', maxWidth: 640, boxSizing: 'border-box', padding: '21px 21px 19px',
-        borderRadius: radius.modal, background: glass.background,
-        backdropFilter: glass.blur, border: `1px solid ${glass.border}`,
-        boxShadow: `${shadow.modal}, ${shadow.glassInset}`,
+        borderRadius: radius.panel, background: color.window, border: 'none',
         display: 'flex', flexDirection: 'column', gap: 19,
+        animation: `fsr-message-in ${motion.messageIn.longer} ${motion.messageIn.easing} both`,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -296,40 +329,38 @@ function NewAgentForm(props: NewAgentFormProps): JSX.Element {
         */}
         <CloudBlob avatar={props.avatar} size={52} />
         <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ fontSize: text.agentName, fontWeight: 500, letterSpacing: tracking.title, color: color.ink }}>
+          <div style={{ fontSize: text.base, fontWeight: 500, letterSpacing: tracking.title, color: color.ink }}>
             New agent
           </div>
           <div style={{ fontSize: text.label, color: color.muted }}>Pick an avatar, a name and a voice.</div>
         </div>
-        <button
-          type="button"
+        <HoverButton
           onClick={props.onToggleAvatar}
           aria-expanded={props.avatarOpen}
           style={{
-            display: 'flex', alignItems: 'center', gap: 6, flex: '0 0 auto', height: 31,
-            padding: '0 11px', borderRadius: radius.pill, cursor: 'pointer', font: 'inherit',
-            color: color.ink, boxShadow: shadow.flat, border: `1px solid ${line.button}`,
-            background: props.avatarOpen ? color.fill : color.paper,
+            display: 'flex', alignItems: 'center', gap: 6, flex: '0 0 auto', height: 27,
+            padding: '0 10px', borderRadius: radius.pill, cursor: 'pointer', font: 'inherit',
+            color: color.ink, boxShadow: shadow.flat, border: `1px solid ${line.field}`,
+            background: props.avatarOpen ? color.window : color.paper,
           }}
+          hoverStyle={{ background: color.window }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} aria-hidden focusable="false">
             <path d="M4 20h4l10.5-10.5a2.5 2.5 0 00-3.5-3.5L4.5 16.5V20z" />
             <path d="M14.5 6.5l3 3" />
           </svg>
           <span style={{ fontSize: text.small, whiteSpace: 'nowrap' }}>Edit avatar</span>
-        </button>
+        </HoverButton>
       </div>
 
       {props.avatarOpen && (
         <div
           style={{
-            padding: 12, borderRadius: radius.row, background: color.paper,
-            border: `1px solid ${line.hairline}`,
-            boxShadow: `inset 0 1px 0 rgba(255,255,255,.7), ${shadow.flat}`,
+            padding: 12, borderRadius: radius.row, background: color.window, border: 'none',
             display: 'flex', flexDirection: 'column', gap: 10,
           }}
         >
-          <div style={{ fontSize: text.caption, color: color.muted }}>Choose an avatar</div>
+          <div style={{ fontSize: text.label, color: color.muted }}>Choose an avatar</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, minmax(0, 1fr))', gap: 6 }}>
             {Array.from({ length: AVATAR_COUNT }, (_, index) => {
               const on = index === props.avatar;
@@ -343,9 +374,9 @@ function NewAgentForm(props: NewAgentFormProps): JSX.Element {
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     width: '100%', minWidth: 0, aspectRatio: '1', padding: 0,
-                    borderRadius: 12, cursor: 'pointer',
-                    background: on ? color.fill : 'transparent',
-                    border: `1.5px solid ${on ? color.ink : line.hairline}`,
+                    borderRadius: radius.field, cursor: 'pointer',
+                    background: on ? color.window : 'transparent',
+                    border: `1.5px solid ${on ? color.ink : line.card}`,
                   }}
                 >
                   <CloudBlob avatar={index} size={31} style={{ width: '100%', height: '100%' }} />
@@ -367,15 +398,16 @@ function NewAgentForm(props: NewAgentFormProps): JSX.Element {
       ))}
 
       {group('Voice', (
-        <button
-          type="button"
+        <HoverButton
           onClick={props.onPickVoice}
           style={{
             display: 'flex', alignItems: 'center', gap: 11, alignSelf: 'flex-start',
-            height: 41, padding: '0 14px 0 5px', borderRadius: radius.pill,
+            height: 36, padding: '0 12px 0 5px', borderRadius: radius.pill,
             border: `1px solid ${line.button}`, background: color.paper,
             cursor: 'pointer', font: 'inherit',
+            transition: `background ${motion.hover.duration} ${motion.hover.easing}`,
           }}
+          hoverStyle={{ background: color.window }}
         >
           {/*
             The voice's own sphere, not the agent's face. A voice is a
@@ -384,18 +416,18 @@ function NewAgentForm(props: NewAgentFormProps): JSX.Element {
             chose wearing a colour that belongs to something else.
           */}
           {voice ? (
-            <Orb agentId={voice.id} colors={voice.colors} seed={voice.seed} size={30} mood={OrbMood.Still} />
+            <Orb agentId={voice.id} colors={voice.colors} seed={voice.seed} size={26} mood={OrbMood.Still} style={{ boxShadow: 'none' }} />
           ) : (
             <span
               style={{
-                width: 30, height: 30, flex: '0 0 auto', borderRadius: '50%',
-                background: '#dfe4ec', border: `1px solid ${line.hairline}`, display: 'block',
+                width: 26, height: 26, flex: '0 0 auto', borderRadius: '50%',
+                background: color.fill, border: `1px solid ${line.hairline}`, display: 'block',
               }}
             />
           )}
           <span style={{ fontSize: text.message, color: color.ink, whiteSpace: 'nowrap' }}>{voice?.name ?? 'No voice yet'}</span>
           <span style={{ fontSize: text.message, color: color.muted, whiteSpace: 'nowrap' }}>{voice ? 'Change' : 'Add'}</span>
-        </button>
+        </HoverButton>
       ))}
 
       {group('Label (optional)', (
@@ -420,30 +452,24 @@ function NewAgentForm(props: NewAgentFormProps): JSX.Element {
       ))}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, paddingTop: 2 }}>
-        <button
-          type="button"
+        <HoverButton
           onClick={props.onCreate}
           disabled={!ready}
           style={{
-            height: 39, padding: '0 21px', borderRadius: radius.pill, border: 'none',
-            background: ready ? color.ink : color.disabled, color: color.paper,
-            font: 'inherit', fontSize: text.body, fontWeight: 400,
+            ...pill, fontWeight: 400,
+            // Until a name is typed the button wears the hover grey and
+            // ink, and does not point (template.html 2158–2159).
+            background: ready ? color.accent : line.hover,
+            color: ready ? color.paper : color.ink,
             cursor: ready ? 'pointer' : 'default',
           }}
+          hoverStyle={ready ? primaryHover : {}}
         >
           Create agent
-        </button>
-        <button
-          type="button"
-          onClick={props.onCancel}
-          style={{
-            height: 39, padding: '0 21px', borderRadius: radius.pill,
-            border: `1px solid ${line.button}`, background: color.paper,
-            color: color.ink, font: 'inherit', fontSize: text.body, cursor: 'pointer',
-          }}
-        >
+        </HoverButton>
+        <HoverButton onClick={props.onCancel} style={cancelPill} hoverStyle={cancelHover}>
           Cancel
-        </button>
+        </HoverButton>
       </div>
     </div>
   );
@@ -482,20 +508,20 @@ function VoicePicker({ voiceId, onPick, onClose }: VoicePickerProps): JSX.Elemen
     setAt(current => (current + by + VOICES.length) % VOICES.length);
 
   const arrow = (by: number, label: string, path: string): JSX.Element => (
-    <button
-      type="button"
+    <HoverButton
       onClick={() => step(by)}
       aria-label={label}
       style={{
-        width: 33, height: 33, flex: '0 0 auto', border: 'none', borderRadius: '50%',
-        background: 'transparent', cursor: 'pointer', color: color.faint,
+        width: 29, height: 29, flex: '0 0 auto', border: 'none', borderRadius: '50%',
+        background: 'transparent', cursor: 'pointer', color: color.muted,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}
+      hoverStyle={{ color: color.ink, background: line.hover }}
     >
       <svg width="15.5" height="15.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
         <path d={path} />
       </svg>
-    </button>
+    </HoverButton>
   );
 
   return (
@@ -515,9 +541,8 @@ function VoicePicker({ voiceId, onPick, onClose }: VoicePickerProps): JSX.Elemen
         style={{
           width: '100%', maxWidth: 560, boxSizing: 'border-box',
           padding: '29px 28px 24px', borderRadius: radius.modal,
-          background: glass.background, backdropFilter: glass.blur,
-          border: `1px solid ${glass.border}`,
-          boxShadow: `${shadow.modal}, ${shadow.glassInset}`,
+          background: color.paper, border: `1px solid ${line.hairline}`,
+          boxShadow: shadow.modal,
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 21,
         }}
       >
@@ -552,37 +577,22 @@ function VoicePicker({ voiceId, onPick, onClose }: VoicePickerProps): JSX.Elemen
               aria-label={one.name}
               aria-current={index === at}
               style={{
-                width: 7, height: 7, padding: 0, borderRadius: '50%',
+                width: 9, height: 9, padding: 0, borderRadius: '50%',
                 border: 'none', cursor: 'pointer',
-                background: index === at ? color.ink : color.fillStrong,
+                transition: `background ${motion.hover.duration} ${motion.hover.easing}`,
+                background: index === at ? color.ink : color.faint,
               }}
             />
           ))}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, paddingTop: 2 }}>
-          <button
-            type="button"
-            onClick={() => onPick(voice.id)}
-            style={{
-              height: 39, padding: '0 21px', borderRadius: radius.pill, border: 'none',
-              background: color.ink, color: color.paper, font: 'inherit',
-              fontSize: text.body, fontWeight: 400, cursor: 'pointer',
-            }}
-          >
+          <HoverButton onClick={() => onPick(voice.id)} style={primaryPill} hoverStyle={primaryHover}>
             Use this voice
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              height: 39, padding: '0 21px', borderRadius: radius.pill,
-              border: `1px solid ${line.button}`, background: color.paper,
-              color: color.ink, font: 'inherit', fontSize: text.body, cursor: 'pointer',
-            }}
-          >
+          </HoverButton>
+          <HoverButton onClick={onClose} style={cancelPill} hoverStyle={cancelHover}>
             Cancel
-          </button>
+          </HoverButton>
         </div>
       </div>
     </div>

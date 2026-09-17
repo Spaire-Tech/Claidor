@@ -114,7 +114,7 @@ person. `+` opens a **To:** field with chips, exactly like Messages.
 That is the whole navigation. No tabs, no dashboard, no workspace, no
 session tree.
 
-Five surfaces, three of them modals over the chat:
+Five surfaces, and none of them a modal over the chat:
 
 1. the thread,
 2. compose (To: field, picker, ⌘1–⌘9),
@@ -123,6 +123,17 @@ Five surfaces, three of them modals over the chat:
 5. Settings (four tabs).
 
 Upstream LobsterAI has thirteen settings tabs. This has four.
+
+**Since 17 September (the "Spatial Light" canvas,
+`docs/product/design/README.md`)** the app is a rounded window on a
+pale ground with a glass dock beside it: Home, Routines, Create, Apps,
+and the person. The dock took the sidebar's "+" and its bottom row.
+Compose, Apps and an agent's page fill the conversation pane edge to
+edge, with the list of agents live beside them; Settings covers the
+whole window (17 September: "open settings as a full page"); a menu
+floats beside what opened it. The founder's rule, in capitals: *"NOTHING
+SHOULD OPEN INSIDE ANOTHER BOX."* Routines is in the dock and does
+nothing yet, at the founder's word.
 
 ## 2. The message vocabulary
 
@@ -134,7 +145,7 @@ list, and it is the discipline that makes the app feel unlike an AI app:
 | `text` | a bubble; in a group it carries the sender's orb and name |
 | `system` | a centred grey line — "Perrin can run commands on your computer from now on." |
 | `status` | orb plus a shimmering verb, deleted when the work finishes |
-| `choice` | a question card, lettered options with hints, optional free-text |
+| `choice` | a question card: the question, options behind lettered circles, Next; several questions from one request walk under a pair of chevrons (17 September) |
 | `auth` | the approval card |
 | `attachment` | a file as the whole message — an image shown, anything else named and openable |
 | `secret` | a masked field; what is typed never enters the transcript |
@@ -163,7 +174,15 @@ So:
   context, or any log.
 
 The closed list is still closed. An eighth is the same decision, asked
-the same way.
+the same way. Since then: the roster card (16 September), the answer
+cards (17 September, `review.md` 73), and the **connector card** (17
+September, `review.md` 75): an agent that needs a service the person
+has not connected raises a card with the service's logo, its name, one
+line, Not now and Install, and Install runs the same sign-in the Apps
+screen runs. The founder: *"whenever an agent is asked about a
+connector, or that he proposes a connector in the chat, always put the
+design in onboarding of 'App access requested' … instead of allow
+access it'll be install."*
 
 **The approval card is the heart of it.** Warning triangle, the device
 id, the *literal command* behind a disclosure triangle, then Always
@@ -478,6 +497,29 @@ has left the space for it, not one that has filled it with my guesses.
 1. The name is Caisra, applied; `appConstants.ts` is the one site.
 2. Messages shape; five surfaces; four settings tabs.
 3. Five message kinds, closed list; approval card with the real command.
+   From 17 September, one more thing in the thread and not a message
+   kind of the model's choosing: the answer cards. When an answer is a
+   set of things (places, options, days of a plan, figures, a
+   comparison), the agent writes one fenced block in OpenUI's language
+   (`thesysdev/openui`, MIT) and the app draws it, in our design, between
+   its texts. The founder, on OpenUI's pictures: *"text should stays
+   text, but having cards that come with it is amazing … this should
+   100% be our design."* Ten components, ours, in
+   `desktop/src/shared/cards/library.ts`; texts still arrive as texts;
+   every other card (permission, choice, secret, file, roster) is
+   unchanged (review item 71). Later that day the founder reversed the
+   design half: *"i want it exactly like openui's … use their colors.
+   use their style. perhaps keep our font but thats it."* So the cards
+   are OpenUI's chat library, renderer and stylesheet, whole, in
+   Switzer (review item 73). Texts still arrive as texts.
+   The same day, the founder said what they meant by artifacts: *"i
+   meant the docs, excel (not sure if they do excel), slides etc... i
+   want my artifacts to look exactly like open ui's. i want a complete
+   replica here for the desing."* So a deck and a report are OpenUI's
+   own components, used whole (`@openuidev/thesys`, MIT): their chip in
+   the thread, their full-screen viewer, their libraries taught to the
+   agent. OpenUI has no spreadsheet; an Excel file is a file the agent
+   writes (review item 72).
 4. The computer asks once: the first action raises the card, Allow is
    this computer until the person changes it in Settings, Not now is
    that one action. Decided 17 September from the founder's

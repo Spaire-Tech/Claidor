@@ -12,6 +12,7 @@ verbatim. Nothing in this folder is mine.
 | `grok-bot-agent-system-contract.md` | The full builder-facing contract, §§1–32 with both appendices | 15 Sep 2026 |
 | `caisra-permissions.md` | Every gate a person meets and when it asks: chat decisions, the computer (once per machine until revoked), auto-review, OS dialogs, connectors, secrets, forms, spend, and what must never re-prompt. *"a permission md from grok bot we MUST follow."* Applied 17 Sep (review item 67). | 17 Sep 2026 |
 | `caisra-chat-ui-logic.md` | How chat reacts, cause → UI → agent: delivery, progress beats, working states, the computer's education line, "N new messages", choice-card lifecycle, host cards, reactions, chips and pills, voice memos, the surface matrix, unread, rename announcements, and the gaps it says not to invent. Applied 17 Sep (review item 69). | 17 Sep 2026 |
+| `apple-hig-macos.md` | Apple's macOS guidance, retrieved from the Human Interface Guidelines data: the type scale, SF tracking, colour roles, and the rules for layout, buttons, windows, sidebars, toolbars and materials, read line by line against our tokens. The Figma kit needs a Figma login and was not retrieved; SF fonts and SF Symbols are licensed for Apple platforms only and stay out of the repo. *"based on those reference, you polish what i did."* | 17 Sep 2026 |
 
 The fifth is answered by a document of ours in the same shape:
 `../agent-contract.md`, which carries the section-by-section audit

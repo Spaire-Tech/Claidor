@@ -1,7 +1,7 @@
-import { type CSSProperties, useState } from 'react';
+import { type ButtonHTMLAttributes, type CSSProperties, useState } from 'react';
 
 import type { RosterOption } from '../../../shared/staffing/roster';
-import { color, line, motion, radius, shadow, text, tracking } from '../tokens';
+import { color, line, motion, radius, text, tracking } from '../tokens';
 import { addThird, canStandUp, justTwo, spareAlternates, swapRow } from './rosterCards';
 import type { RosterItem } from './types';
 
@@ -14,7 +14,7 @@ import type { RosterItem } from './types';
  * one, with three or four alternates for that lane; Something else, one
  * free-text line; Just two / Add a third; and the primary Stand them up.
  *
- * Drawn like the question card (the same fill, the same paper list),
+ * Drawn like the question card (the same paper, the same grey list),
  * because it is the same kind of thing: a decision put to the person in
  * the thread. It holds its own working state until it is answered, and
  * answers once.
@@ -31,14 +31,45 @@ export interface RosterHandlers {
 
 const enter = `fsr-message-in ${motion.messageIn.longer} ${motion.messageIn.easing} both`;
 
-const pill = (primary: boolean, enabled = true): CSSProperties => ({
-  height: 36, padding: primary ? '0 17px' : '0 14px', borderRadius: radius.pill,
-  border: primary ? 'none' : `1px solid ${line.field}`,
-  background: primary ? (enabled ? color.ink : color.fill) : color.fill,
-  color: primary ? (enabled ? color.paper : color.faint) : color.ink,
-  font: 'inherit', fontSize: text.body, fontWeight: 400,
-  cursor: enabled ? 'pointer' : 'default',
-});
+/**
+ * The button on a card in the thread, from the approval card of the
+ * 17 September canvas (template.html 752–754): the primary is the
+ * accent pill, 33px, weight 500, darker under the pointer; the secondary
+ * is a white pill with no border that goes the window's grey under the
+ * pointer. A primary that cannot be pressed yet wears the hover grey and
+ * ink, as the canvas's Create agent does (2158–2159).
+ *
+ * Shared by the approval, question, secret and roster cards, so the
+ * three-button pattern is one thing and not four drawings of it.
+ */
+export function CardPill(
+  { primary = false, disabled = false, style, onMouseEnter, onMouseLeave, ...rest }:
+    ButtonHTMLAttributes<HTMLButtonElement> & { primary?: boolean },
+): JSX.Element {
+  const [hover, setHover] = useState(false);
+  const live = !disabled && hover;
+  const background = primary
+    ? (disabled ? line.hover : live ? color.accentHover : color.accent)
+    : (live ? color.window : color.paper);
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onMouseEnter={event => { setHover(true); onMouseEnter?.(event); }}
+      onMouseLeave={event => { setHover(false); onMouseLeave?.(event); }}
+      style={{
+        height: 33, padding: '0 17px', borderRadius: radius.pill, border: 'none',
+        background,
+        color: primary && !disabled ? color.paper : color.ink,
+        font: 'inherit', fontSize: text.body, fontWeight: primary ? 500 : 400,
+        cursor: disabled ? 'default' : 'pointer', whiteSpace: 'nowrap',
+        transition: `background ${motion.hover.duration} ${motion.hover.easing}`,
+        ...style,
+      }}
+      {...rest}
+    />
+  );
+}
 
 const quiet: CSSProperties = {
   height: 30, padding: '0 10px', border: 'none', background: 'transparent',
@@ -114,7 +145,7 @@ function Row(
               onClick={() => onPick(one)}
               style={{
                 display: 'flex', flexDirection: 'column', gap: 2, padding: '9px 12px', textAlign: 'left',
-                borderRadius: radius.small, border: `1px solid ${line.hairline}`, background: color.fillRaised,
+                borderRadius: radius.small, border: `1px solid ${line.hairline}`, background: color.paper,
                 font: 'inherit', cursor: 'pointer',
               }}
             >
@@ -182,7 +213,7 @@ export function RosterCard({ item, handlers }: { item: RosterItem; handlers: Ros
     <div
       style={{
         maxWidth: 'min(72%, 560px)', padding: 15, borderRadius: radius.panel,
-        background: color.fill, border: `1px solid ${line.hairline}`,
+        background: color.paper, border: `1px solid ${line.field}`,
         display: 'flex', flexDirection: 'column', gap: 12, marginTop: 6, animation: enter,
       }}
     >
@@ -197,8 +228,8 @@ export function RosterCard({ item, handlers }: { item: RosterItem; handlers: Ros
 
       <div
         style={{
-          display: 'flex', flexDirection: 'column', borderRadius: radius.row, background: color.paper,
-          border: `1px solid ${line.hairline}`, overflow: 'hidden', boxShadow: shadow.flat,
+          display: 'flex', flexDirection: 'column', borderRadius: radius.row, background: color.window,
+          border: `1px solid ${line.hairline}`, overflow: 'hidden',
         }}
       >
         {rows.map((option, i) => (
@@ -218,19 +249,15 @@ export function RosterCard({ item, handlers }: { item: RosterItem; handlers: Ros
 
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
         {rows.length > 2 && (
-          <button type="button" onClick={trim} style={pill(false)}>Just two</button>
+          <CardPill onClick={trim}>Just two</CardPill>
         )}
         {rows.length < 3 && spares.length > 0 && (
-          <button type="button" onClick={grow} style={pill(false)}>Add a third</button>
+          <CardPill onClick={grow}>Add a third</CardPill>
         )}
         {!otherOpen && (
-          <button
-            type="button"
-            onClick={() => setOtherOpen(true)}
-            style={{ ...pill(false), background: 'transparent', border: `1px dashed ${line.button}`, color: color.muted }}
-          >
+          <CardPill onClick={() => setOtherOpen(true)} style={{ color: color.muted }}>
             Something else
-          </button>
+          </CardPill>
         )}
       </div>
 
@@ -247,33 +274,31 @@ export function RosterCard({ item, handlers }: { item: RosterItem; handlers: Ros
             aria-label="Something else"
             autoFocus
             style={{
-              flex: '1 1 auto', minWidth: 0, height: 38, padding: '0 12px', borderRadius: radius.small,
-              border: `1px solid ${line.field}`, background: color.paper, outline: 'none',
-              font: 'inherit', fontSize: text.body, color: color.ink,
+              flex: '1 1 auto', minWidth: 0, height: 38, padding: '0 12px', borderRadius: radius.input,
+              border: `1px solid ${line.hairline}`, background: color.paper, outline: 'none',
+              font: 'inherit', fontSize: text.message, color: color.ink,
             }}
           />
-          <button
-            type="button"
+          <CardPill
+            primary
             disabled={!otherReady}
             onClick={() => handlers.onSomethingElse(item.id, other.trim())}
-            style={pill(true, otherReady)}
           >
             Tell him
-          </button>
+          </CardPill>
           <button type="button" onClick={() => { setOtherOpen(false); setOther(''); }} style={quiet}>Back</button>
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 9 }}>
-        <button
-          type="button"
+      <div style={{ display: 'flex', gap: 8 }}>
+        <CardPill
+          primary
           disabled={!ready}
           onClick={() => handlers.onStandUp(item.id, rows.filter(one => checked.has(one.slug)).map(one => one.slug))}
-          style={pill(true, ready)}
         >
           Stand them up
-        </button>
-        <button type="button" onClick={() => handlers.onDecline(item.id)} style={pill(false)}>Not now</button>
+        </CardPill>
+        <CardPill onClick={() => handlers.onDecline(item.id)}>Not now</CardPill>
       </div>
     </div>
   );

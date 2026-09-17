@@ -9,6 +9,7 @@ import { createRoot } from 'react-dom/client';
 // can draw the list the app will actually draw.
 import { PRESET_AGENTS } from '../src/main/presetAgents';
 import { AgentDetail } from '../src/renderer/design/agent/AgentDetail';
+import { AgentPanel } from '../src/renderer/design/agent/AgentPanel';
 import { AgentTab } from '../src/renderer/design/agent/detail';
 import type { AgentDetailState } from '../src/renderer/design/agent/useAgentDetail';
 import { Onboarding } from '../src/renderer/design/onboarding/Onboarding';
@@ -18,14 +19,16 @@ import { AccountMenu } from '../src/renderer/design/shell/AccountMenu';
 import { Apps, AppsTab } from '../src/renderer/design/shell/Apps';
 import { MessagesShell, ThreadMode } from '../src/renderer/design/shell/MessagesShell';
 import { SignIn } from '../src/renderer/design/shell/SignIn';
+import { type ConnectorCardState, connectorItem } from '../src/renderer/design/thread/connectorCards';
 import type { EngineMessage, EnginePermissionRequest } from '../src/renderer/design/thread/fromEngine';
 import { toThreadItems } from '../src/renderer/design/thread/fromEngine';
 import { rosterItem } from '../src/renderer/design/thread/rosterCards';
 import { staffingItem } from '../src/renderer/design/thread/staffingCards';
 import type { ThreadItem } from '../src/renderer/design/thread/types';
-import { ThreadItemKind } from '../src/renderer/design/thread/types';
+import { ConnectorOutcome, ThreadItemKind } from '../src/renderer/design/thread/types';
 import { EVERY_ROW } from '../src/shared/settings/appUiMap';
 import { buildRoster } from '../src/shared/staffing/roster';
+import { cardExamples } from './cardExamples';
 
 /**
  * A harness for looking at the design, not part of the app.
@@ -92,6 +95,81 @@ const PACK: EngineMessage[] = [
   message({ type: 'assistant', content: 'The model is v3. [[Q4 Model v2.xlsx]] is still in Board / 2026 if you want to compare.' }, 3),
 ];
 
+/**
+ * The answer cards, 17 September: the founder's four OpenUI pictures
+ * (Seattle restaurants, Paris hotels, a Tokyo itinerary, the 2026 World
+ * Cup) as OpenUI's own chat components, with photographs. One screen
+ * each, so every block gets its photograph. The shooter serves
+ * `harness/shots/photos/` on its own loopback port (`shoot.mjs`), which
+ * is why the addresses are built from the page's origin at runtime; a
+ * fresh clone without that folder draws the same cards with no pictures.
+ */
+const photo = (name: string): string => `${location.origin}/photos/${name}.jpg`;
+const CARD_SCREENS: Record<string, EngineMessage[]> = Object.fromEntries(
+  Object.entries(cardExamples(photo)).map(([screen, example]) => [screen, [
+    message({ type: 'user', content: example.ask }, 0),
+    message({
+      type: 'assistant',
+      content: [example.before, '', '```openui-lang', ...example.program, '```', '', example.after].join('\n'),
+    }, 1),
+  ]]),
+);
+
+/**
+ * The artifacts, 17 September: a deck and a report in OpenUI's own
+ * components, reached from the thread as OpenUI's chip. The programs are
+ * the ones the tests check against OpenUI's libraries.
+ */
+const ARTIFACTS: EngineMessage[] = [
+  message({ type: 'user', content: 'make me the board deck for thursday' }, 0),
+  message({
+    type: 'assistant',
+    content: [
+      'Nine slides. The numbers are the ones from the September close; the ask is on the last slide.',
+      '',
+      '```openui-lang',
+      'root = SlideShow("Q4 Board Update", "Spaire, September 2026", [s1, s2, s3, s4, s5, s6, s7, s8, s9])',
+      `s1 = Slide("s1", StandardTitle("Q4 Board Update", "Where we are, and what we ask of you", "September 2026", {src: "${photo('board')}", alt: "The team"}, "image-right"))`,
+      `s2 = Slide("s2", HeroMetric("\u20ac1.2M", "Annual recurring revenue, up 38% on the quarter", "horizontal", "${photo('hero-market')}"))`,
+      's3 = Slide("s3", ChartWithMetrics("Revenue by month", [{metric: "\u20ac104k", description: "September, monthly recurring"}, {metric: "38%", description: "Quarter on quarter"}, {metric: "11", description: "Contracts in signature"}], BarChartV2({data: {labels: ["Apr", "May", "Jun", "Jul", "Aug", "Sep"], series: [{category: "MRR", values: [61, 66, 72, 84, 93, 104]}]}, unit: "k"})))',
+      `s4 = Slide("s4", VisualCards("Three things that moved", [{title: "Pipeline", body: "42 qualified conversations, 11 in contract", imageSrc: "${photo('pipeline')}"}, {title: "Churn", body: "Two logos lost, both under \u20ac5k", imageSrc: "${photo('meta')}"}, {title: "Hiring", body: "Two engineers start in October", imageSrc: "${photo('hiring')}"}]))`,
+      `s5 = Slide("s5", ContentWithImage("Where the growth came from", ["${photo('google')}"], "Cloud and the OHADA desk carried the quarter. Two of the three largest deals came through partners we signed in May.", "image-right"))`,
+      's6 = Slide("s6", KeyInfoWithTitle("What the next quarter needs", [{title: "Two engineers", description: "Start in October; both on the desk"}, {title: "One sales lead", description: "Francophone Africa, based in Abidjan"}, {title: "The round", description: "Series A opened in January"}], "horizontal-grid"))',
+      `s7 = Slide("s7", SectionBreakDramatic("What we ask", "Two decisions, both before the January board.", "horizontal", "${photo('tokyo-night')}"))`,
+      's8 = Slide("s8", NumberedKeyPoint([{title: "Approve the Series A timeline", body: "Open the round in January, close by April"}, {title: "Confirm the hiring plan", body: "Six roles by March, two already offered"}]))',
+      's9 = Slide("s9", PullQuote("The quarter we stopped explaining what Caisra is and started being asked for it.", "Bass Fall, founder", "title-center"))',
+      '```',
+      '',
+      'Say if you want the churn slide softened, or the quote out.',
+    ].join('\n'),
+  }, 1),
+  message({ type: 'user', content: 'and a report card on big tech 2025 against the s&p' }, 2),
+  message({
+    type: 'assistant',
+    content: [
+      '```openui-lang',
+      'root = ReportView("Big Tech 2025 Report Card", "Meta, Microsoft, Netflix, and Google versus the S&P 500", [p1, p2, p3, p4])',
+      `p1 = Page("p1", StandardFrontPage("Big Tech 2025 Report Card", "${photo('hero-market')}", TextContent("An executive comparison of four technology and media leaders, the forces behind their 2025 returns, and the signals that could shape their relative position in 2026. Full-year price return review, data as of Dec. 31, 2025. For demonstration only, not investment advice."), "Meta, Microsoft, Netflix, and Google versus the S&P 500", "title-top"))`,
+      'p2 = Page("p2", ContentPage([h2, k2, c2, t2]))',
+      'h2 = Headline("The scoreboard", "Price returns for the year, against the index", "medium")',
+      'k2 = KeyMetrics("row", [{title: "Google", text: "+65%"}, {title: "Microsoft", text: "+14.5%"}, {title: "Meta", text: "+10%"}, {title: "Netflix", text: "+5%"}, {title: "S&P 500", text: "+16%"}])',
+      'c2 = BarChartV2({data: {labels: ["GOOGL", "MSFT", "META", "NFLX", "S&P 500"], series: [{category: "2025 price return, %", values: [65, 14.5, 10, 5, 16]}]}}, "grouped", false, "", "Return, %")',
+      't2 = TextContent("Google was the only one of the four to beat the benchmark by a wide margin. Microsoft tracked the index; Meta and Netflix finished below it despite strong operating results.")',
+      'p3 = Page("p3", ContentPage([h3, v3]))',
+      'h3 = Headline("What drove the performance spread", "Each company entered 2025 with a different earnings narrative and investor expectation level.", "medium")',
+      `v3 = VisualCards([{title: "Google: AI and Cloud re-rating (+65%)", body: "Gemini adoption, Cloud acceleration and search resilience produced a 65% gain, its best year since 2009, driven by a second-half surge.", imageSrc: "${photo('google')}"}, {title: "Microsoft: steady AI monetisation (+14.5%)", body: "Azure cloud growth and enterprise Copilot adoption kept Microsoft close to the index. Total return sat marginally above the benchmark.", imageSrc: "${photo('microsoft')}"}, {title: "Netflix: stronger business, softer stock (+5%)", body: "Revenue grew 16% to $45.2B and margin expanded to 29.5%, yet valuation and M&A noise weighed on returns.", imageSrc: "${photo('netflix')}"}, {title: "Meta: ad strength vs capex intensity (+10%)", body: "AI advertising drove solid engagement, but very large capital expenditure commitments for AI infrastructure created near-term return concerns.", imageSrc: "${photo('meta')}"}])`,
+      'p4 = Page("p4", ContentPage([h4, tb4, t4, n4]))',
+      'h4 = Headline("The path mattered as much as the destination", "Key turning points in each company\u2019s 2025 trajectory.", "medium")',
+      'tb4 = Table([Column("Quarter"), Column("Key event"), Column("Market reaction"), Column("Cumulative leaders")], [["Q1 2025", "Tariff shock; S&P 500 dropped 16% from peak; GOOGL hit year low in April", "Broad tech sell-off; all five names declined", "All negative from start of year"], ["Q2 2025", "Tariff pause and trade deals; AI earnings beats; Gemini momentum builds", "GOOGL begins strong recovery, up over 100% from April low by year-end", "GOOGL breaks out"], ["Q3 2025", "Netflix Q2 earnings: 325M members; Meta ad revenue solid", "NFLX and META stabilise; MSFT steady on Azure growth", "GOOGL, MSFT near benchmark"], ["Q4 2025", "GOOGL Q3 AI-led earnings beat; Netflix WBD acquisition announced Dec 5", "GOOGL surges to +65% for the year; NFLX and META lag", "GOOGL clear leader"]])',
+      't4 = TextContent("Google\u2019s outperformance was concentrated in the second half after AI product announcements and strong Cloud earnings drove a rerating. Netflix\u2019s strong operating results did not translate into benchmark-beating stock performance. Microsoft tracked close to the index throughout the year. Meta recovered from the tariff lows but finished below the benchmark.")',
+      'n4 = TextContent("Sources: StatMuse Money, averageannualreturn.com, CNBC, SlickCharts, SPY Yahoo Finance. A full monthly return chart would require verified adjusted-close price series for all five instruments.")',
+      '```',
+      '',
+      'Four pages: the front, the scoreboard, what drove it, and the quarter by quarter. The figures are the ones you gave me; I have not added any.',
+    ].join('\n'),
+  }, 3),
+];
+
 const PENDING: (EnginePermissionRequest & { sessionId: string })[] = [
   {
     sessionId: 's1',
@@ -113,6 +191,54 @@ const CHOICE: ThreadItem = {
   freeform: true,
   at: at(7),
 };
+
+const CHOICE_MANY: ThreadItem[] = [
+  {
+    kind: ThreadItemKind.Choice, id: 'choice:req-many:0',
+    text: 'What is Chandler Bing\'s job for most of the Friends series?',
+    options: [
+      { key: 'A', label: 'Stockbroker' },
+      { key: 'B', label: 'IT procurement manager' },
+      { key: 'C', label: 'Hotel manager' },
+      { key: 'D', label: 'Advertising executive' },
+    ],
+    at: at(8),
+  },
+  {
+    kind: ThreadItemKind.Choice, id: 'choice:req-many:1',
+    text: 'Which file should I start from?',
+    options: [
+      { key: 'A', label: 'Q4 Model v3.xlsx', hint: 'The one I filed this morning' },
+      { key: 'B', label: 'Q4 Model v2.xlsx', hint: 'Still in Board / 2026' },
+    ],
+    at: at(8),
+  },
+  {
+    kind: ThreadItemKind.Choice, id: 'choice:req-many:2',
+    text: 'Flag the two slides now, or put them in a note after?',
+    options: [
+      { key: 'A', label: 'Now' },
+      { key: 'B', label: 'In a note after' },
+    ],
+    at: at(8),
+  },
+];
+
+// Built from the catalogue, as the app builds them, so the names, lines
+// and logos on film are the real ones.
+const connector = (id: string, connectionId: string, state: ConnectorCardState & { reason?: string } = {}): ThreadItem => {
+  const { reason, ...rest } = state;
+  const item = connectorItem({ requestId: id, connectionId, ...(reason ? { reason } : {}) }, rest, at(8));
+  if (!item) throw new Error(`no such connector: ${connectionId}`);
+  return item;
+};
+const CONNECTORS: ThreadItem[] = [
+  connector('c1', 'linkedin', { reason: 'To pull the three profiles you asked about.' }),
+  connector('c2', 'gmail', { busy: true }),
+  connector('c3', 'notion', { resolved: ConnectorOutcome.Connected }),
+  connector('c4', 'todoist', { resolved: ConnectorOutcome.Declined }),
+  connector('c5', 'outlook', { resolved: ConnectorOutcome.Failed, failure: 'Outlook said no to that account.' }),
+];
 
 const AGENTS = [
   { id: 'juno', name: 'Juno', preview: 'Slide 14 and slide 19 use last quarter’s headcount.', when: '9:12 AM' },
@@ -278,20 +404,10 @@ function Screens(): JSX.Element {
     };
     return <Onboarding userName="Bass" bridge={bridge} onDone={noop} />;
   }
-  if (screen === 'settings') {
-    // The screen over a blank shell, with every row the app can draw
-    // (`appUiMap.ts`'s fullest input). The select opens in a portal;
-    // `harness/settings-open.mjs` clicks it and photographs the result.
-    return (
-      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-        <Settings {...EVERY_ROW} accountName="Bass Fall" onClose={noop} />
-      </div>
-    );
-  }
   const composing = screen === 'compose';
 
   const withAuth = screen === 'auth' || screen === 'thread';
-  const items = toThreadItems(screen === 'files' ? PACK : CONVERSATION, {
+  const items = toThreadItems(screen === 'files' ? PACK : CARD_SCREENS[screen] ?? (screen === 'artifacts' ? ARTIFACTS : CONVERSATION), {
     agentId: 'juno',
     agentName: 'Juno',
     pending: withAuth ? PENDING : [],
@@ -299,6 +415,11 @@ function Screens(): JSX.Element {
     files: [{ name: 'Q4 Model v2.xlsx', path: '/Users/bass/Board/2026/Q4 Model v2.xlsx' }],
   });
   if (screen === 'choice') items.push(CHOICE);
+  // Several questions in one request: one card, walked with the chevrons.
+  if (screen === 'choice-many') items.push(...CHOICE_MANY);
+  // An agent proposing a connector, in every state the card has: asking,
+  // connecting, installed, declined, failed.
+  if (screen === 'connector') items.push(...CONNECTORS);
   // Yodo asking to stand up an agent: the permission card with the brief
   // behind its disclosure and Stand up / Not now, exactly as the app
   // draws it from a live request.
@@ -333,6 +454,7 @@ function Screens(): JSX.Element {
       choice={{ onPick: noop, onFreeAnswer: noop, onDismiss: noop }}
       auth={{ onDecide: noop }}
       roster={{ onStandUp: noop, onSomethingElse: noop, onDecline: noop }}
+      connector={{ onInstall: noop, onDecline: noop }}
       // So a file card draws its save button, which only exists when
       // there is something to save with.
       parts={{ onOpenFile: noop, onSaveCopy: noop }}
@@ -372,6 +494,18 @@ function Screens(): JSX.Element {
         />
       ) : undefined}
       onOpenAgent={noop}
+      // The third column: the agent panel, plain or with the delete
+      // question already asked (the sidebar's trash), so the two- and
+      // three-column layouts are both on film.
+      agentPanel={screen === 'panel' || screen === 'panel-delete' ? (
+        <AgentPanel
+          agent={{ id: 'juno', name: 'Juno', label: 'Reads the long things', description: 'Reads decks, models and memos before you have to, and says what does not add up.', avatar: 3, notify: true }}
+          asking={screen === 'panel-delete'}
+          onDelete={noop}
+          onChange={noop}
+          onClose={noop}
+        />
+      ) : undefined}
       agentDetail={screen.startsWith('agent-') ? (
         <AgentDetail
           detail={agentDetailFixture(screen.slice('agent-'.length) as AgentTab)}
@@ -380,6 +514,13 @@ function Screens(): JSX.Element {
           onClose={noop}
         />
       ) : undefined}
+      // Settings fills the pane, as the 17 September canvas has it; every
+      // row the app can draw (`appUiMap.ts`'s fullest input). The select
+      // opens in a portal; `harness/settings-open.mjs` clicks it and
+      // photographs the result.
+      settings={screen === 'settings' ? (
+        <Settings {...EVERY_ROW} accountName="Bass Fall" onClose={noop} />
+      ) : undefined}
       onAccount={noop}
       accountMenu={screen === 'account' || screen === 'account-spent' ? (
         <AccountMenu
@@ -387,6 +528,8 @@ function Screens(): JSX.Element {
             ? { planName: 'Trial', creditsLimit: 100, creditsUsed: 100 }
             : { planName: 'Trial', creditsLimit: 100, creditsUsed: 74 }}
           onSettings={noop}
+          onSupport={noop}
+          onAddAccount={noop}
           onLogOut={noop}
           onClose={noop}
         />

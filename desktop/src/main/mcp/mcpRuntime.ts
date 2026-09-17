@@ -7,6 +7,11 @@ import {
   AskInputIpc,
   type AskInputResponse,
 } from '../../shared/askInput/constants';
+import {
+  type ProposeConnectorAnswer,
+  ProposeConnectorBehavior,
+  ProposeConnectorIpc,
+} from '../../shared/connections/proposal';
 import { ASK_USER_QUESTION_TOOL_NAME, SESSION_AGNOSTIC_PERMISSION_SESSION_ID } from '../../shared/cowork/constants';
 import { McpIpcChannel } from '../../shared/mcp/constants';
 import { type AgentReaction, latestPersonMessageId, ReactionIpc } from '../../shared/reactions/constants';
@@ -159,6 +164,15 @@ export class McpRuntime {
   /** Stand them up, Something else, or Not now, from the roster card. */
   resolveRoster(requestId: string, answer: unknown): void {
     this.bridgeServer?.resolveRoster(requestId, answer);
+  }
+
+  getProposeConnectorCallbackUrl(): string | null {
+    return this.bridgeServer?.proposeConnectorCallbackUrl ?? null;
+  }
+
+  /** Connected, declined, or failed, from the connector card. */
+  resolveProposeConnector(requestId: string, answer: ProposeConnectorAnswer): void {
+    this.bridgeServer?.resolveProposeConnector(requestId, answer);
   }
 
   getBridgeSecret(): string {
@@ -368,6 +382,36 @@ export class McpRuntime {
         if (win.isDestroyed()) return;
         try {
           win.webContents.send(RosterIpc.Dismissed, { requestId });
+        } catch {
+          // The window is going away; the card goes with it.
+        }
+      });
+    });
+
+    // The connector card ("App access requested", with Install). Every
+    // window, like the cards above; the renderer runs the sign-in.
+    this.bridgeServer.onProposeConnector(ask => {
+      const windows = BrowserWindow.getAllWindows();
+      if (windows.length === 0) {
+        console.warn('[ProposeConnector] no window open, declining');
+        this.resolveProposeConnector(ask.requestId, { behavior: ProposeConnectorBehavior.Declined });
+        return;
+      }
+      windows.forEach(win => {
+        if (win.isDestroyed()) return;
+        try {
+          win.webContents.send(ProposeConnectorIpc.Requested, ask);
+        } catch (error) {
+          console.error('[ProposeConnector] failed to send request to window:', error);
+        }
+      });
+    });
+
+    this.bridgeServer.onProposeConnectorDismiss(requestId => {
+      BrowserWindow.getAllWindows().forEach(win => {
+        if (win.isDestroyed()) return;
+        try {
+          win.webContents.send(ProposeConnectorIpc.Dismissed, { requestId });
         } catch {
           // The window is going away; the card goes with it.
         }

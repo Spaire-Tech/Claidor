@@ -2,23 +2,25 @@ import { type CSSProperties, useState } from 'react';
 
 import { agentAvatar, avatarInk } from '../../../shared/agent/avatars';
 import { AskInputFieldKind } from '../../../shared/askInput/constants';
-import { ChevronRightIcon, CloseIcon, WarningIcon } from '../icons';
-import { logoUrl } from '../logos';
+import { APP_LOGO_DIRECTORY, connectionMonogram } from '../../../shared/connections/catalog';
+import { ChevronRightIcon, WarningIcon } from '../icons';
 import { CloudBlob } from '../orb/CloudBlob';
 import { color, font, line, motion, radius, shadow, text, tracking } from '../tokens';
 import { messageIdOf, type Reactions } from './actions';
-import { FILE_LOGO, readableSize } from './attachment';
+import { readableSize } from './attachment';
+import { CardBlock, type CardHandlers } from './CardBlock';
 import { detailsLabel } from './details';
+import { FileCard } from './FileCard';
 import { MessageActions, ReactionChip } from './MessageActions';
 import { type KnownFile, type MessagePart, PartKind, splitMessageParts } from './parts';
-// The design's PDF icon, bundled by Vite like the service logos.
-import pdfDoc from './pdf-doc.webp?url';
-import { RosterCard, type RosterHandlers } from './RosterCard';
+import { CardPill, RosterCard, type RosterHandlers } from './RosterCard';
 import {
   type AttachmentItem,
   type AuthDecision,
+  type ChoiceItem,
   type ChoiceOutcome,
-  FileKind,
+  type ConnectorItem,
+  ConnectorOutcome,
   type SecretItem,
   Speaker,
   type ThreadItem,
@@ -65,16 +67,11 @@ export interface PartHandlers {
 }
 
 /**
- * The chip. The canvas's, to the character:
+ * The chip. The canvas's, to the character (line 1893):
  *
- *   font-family:'SF Mono', …; font-size:12.5px; padding:2px 6px;
- *   margin:0 1px; border-radius:7px; background:rgba(16,22,35,.11);
+ *   font-family:'SF Mono', …; font-size:12.3px; padding:2px 6px;
+ *   margin:0 1px; border-radius:7px; background:#efefef;
  *   white-space:nowrap
- *
- * `line.hairline` is that rgba. It is a border token being used as a fill,
- * which reads oddly — but it is one value in the canvas and making a
- * second token holding the same number would be the drift this design
- * system exists to prevent.
  */
 const chipStyle: CSSProperties = {
   fontFamily: font.mono,
@@ -82,18 +79,18 @@ const chipStyle: CSSProperties = {
   padding: '2px 6px',
   margin: '0 1px',
   borderRadius: radius.fileChip,
-  background: line.hairline,
+  background: color.divider,
   whiteSpace: 'nowrap',
 };
 
 /**
- * The same chip inside the person's own bubble, which is near-black.
+ * The same chip inside the person's own bubble, which is the accent blue.
  *
  * The canvas only ever puts a chip in the agent's pale bubble, so it never
- * had to answer this. An 11%-black fill on `#1e3358` is invisible, so the
- * chip takes the same idea from the other side.
+ * had to answer this. A grey fill on blue is mud, so the chip takes the
+ * same idea from the other side: a little white.
  */
-const chipOnDark: CSSProperties = { ...chipStyle, background: 'rgba(255,255,255,.16)' };
+const chipOnDark: CSSProperties = { ...chipStyle, background: 'rgba(255,255,255,.2)' };
 
 function Part(
   { part, mine, handlers }: { part: MessagePart; mine: boolean; handlers: PartHandlers },
@@ -191,12 +188,12 @@ function ReplyGlyph(): JSX.Element {
 }
 
 /**
- * The bubble, at the canvas's measurements.
+ * The bubble, at the canvas's measurements (lines 1939–1941).
  *
  * They are not the same on both sides and that is deliberate: the agent's
  * is wider and set a half-point larger, because it is the one carrying an
- * answer, and the person's is narrower because a question is short. The
- * first build gave both the same box and a border the canvas never had.
+ * answer, and the person's is narrower because a question is short. Since
+ * 17 September the person's is the accent blue, as Messages draws it.
  */
 const bubbleBase: CSSProperties = {
   borderRadius: radius.bubble,
@@ -209,18 +206,18 @@ const bubbleBase: CSSProperties = {
 
 const mineBubble: CSSProperties = {
   ...bubbleBase,
-  maxWidth: 'min(62%, 560px)',
-  padding: '11px 15px',
-  background: color.ink,
+  maxWidth: 'min(56%, 470px)',
+  padding: '8px 13px',
+  background: color.accent,
   color: color.paper,
   fontSize: text.message,
-  lineHeight: 1.45,
+  lineHeight: 1.4,
 };
 
 const theirBubble: CSSProperties = {
   ...bubbleBase,
-  maxWidth: 'min(70%, 640px)',
-  padding: '12px 17px',
+  maxWidth: 'min(64%, 540px)',
+  padding: '9px 14px',
   background: color.fill,
   color: color.ink,
   fontSize: text.emphasis,
@@ -386,14 +383,15 @@ function StatusLine(
 ) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 3, animation: enter }}>
-      {item.agentId && <CloudBlob avatar={avatarOf(handlers, item.agentId)} size={24} />}
+      {item.agentId && <CloudBlob avatar={avatarOf(handlers, item.agentId)} size={21} />}
       <span
         style={{
           fontSize: text.message,
           // The shimmer is the whole point of a status: it says work is
           // happening without saying what, which is what the design asks
-          // for in place of a log.
-          background: `linear-gradient(90deg, ${color.shimmerInk} 0%, ${color.shimmerInk} 30%, ${color.shimmerPale} 55%, ${color.shimmerInk} 80%)`,
+          // for in place of a log. The light that runs through it is the
+          // paper's white over the faint grey (template.html 698).
+          background: `linear-gradient(90deg, ${color.faint} 0%, ${color.faint} 30%, ${color.paper} 55%, ${color.faint} 80%)`,
           backgroundSize: '220% 100%',
           WebkitBackgroundClip: 'text',
           backgroundClip: 'text',
@@ -413,12 +411,35 @@ export interface ChoiceHandlers {
   onDismiss?: (itemId: string) => void;
 }
 
+/** The question card's width: the founder's screenshot runs it wide. */
+const QUESTION_WIDTH = 'min(88%, 760px)';
+
+/** The lettered circle beside an option: 34px, a hairline, the letter in it. */
+function OptionLetter({ letter, picked }: { letter: string; picked: boolean }): JSX.Element {
+  return (
+    <span
+      aria-hidden
+      style={{
+        width: 34, height: 34, flex: '0 0 auto', borderRadius: '50%',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: text.body, fontWeight: 500,
+        background: picked ? color.accent : color.paper,
+        color: picked ? color.paper : color.ink,
+        border: `1px solid ${picked ? color.accent : line.card}`,
+        transition: `background ${motion.hover.duration} ${motion.hover.easing}, border-color ${motion.hover.duration} ${motion.hover.easing}`,
+      }}
+    >
+      {letter}
+    </span>
+  );
+}
+
 /**
  * A question card once it is settled: the prompt with the chosen answer
- * checked under it, or muted and marked Dismissed. Nothing on it presses
- * (`caisra-chat-ui-logic.md` §6).
+ * under it, its letter filled, or muted and marked Dismissed. Nothing on
+ * it presses (`caisra-chat-ui-logic.md` §6).
  */
-function ResolvedChoiceCard({ item, outcome }: { item: Extract<ThreadItem, { kind: 'choice' }>; outcome: ChoiceOutcome }) {
+function ResolvedChoiceCard({ item, outcome }: { item: ChoiceItem; outcome: ChoiceOutcome }) {
   const dismissed = 'dismissed' in outcome;
   const answer = dismissed ? undefined : outcome.answer;
   const picked = item.options.find(option => option.label === answer);
@@ -426,30 +447,21 @@ function ResolvedChoiceCard({ item, outcome }: { item: Extract<ThreadItem, { kin
     <div
       aria-label={dismissed ? 'Dismissed' : 'Answered'}
       style={{
-        maxWidth: 'min(72%, 560px)', padding: 15, marginTop: 6,
-        borderRadius: radius.panel, background: color.fill,
-        border: `1px solid ${line.hairline}`,
-        display: 'flex', flexDirection: 'column', gap: 10,
+        width: QUESTION_WIDTH, padding: '20px 24px 22px', marginTop: 6,
+        borderRadius: radius.panel, background: color.paper,
+        border: `1px solid ${line.field}`,
+        display: 'flex', flexDirection: 'column', gap: 16,
         opacity: dismissed ? 0.55 : 0.85,
       }}
     >
-      <div style={{ fontSize: text.emphasis, fontWeight: 500, lineHeight: 1.35, letterSpacing: tracking.body, textWrap: 'pretty' }}>
+      <div style={{ fontSize: text.base, lineHeight: 1.35, letterSpacing: tracking.body, textWrap: 'pretty' }}>
         {item.text}
       </div>
       {dismissed
         ? <div style={{ fontSize: text.small, color: color.muted }}>Dismissed</div>
         : (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: text.body, lineHeight: 1.35 }}>
-            <span
-              aria-hidden
-              style={{
-                width: 18, height: 18, flex: '0 0 auto', marginTop: 1, borderRadius: '50%',
-                background: color.ink, color: color.paper,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11,
-              }}
-            >
-              ✓
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: text.base, lineHeight: 1.35 }}>
+            <OptionLetter letter={picked?.key ?? '✓'} picked />
             <span style={{ color: color.ink }}>{picked?.label ?? answer}</span>
           </div>
         )}
@@ -457,114 +469,229 @@ function ResolvedChoiceCard({ item, outcome }: { item: Extract<ThreadItem, { kin
   );
 }
 
-function ChoiceCard(
-  { item, handlers }: { item: Extract<ThreadItem, { kind: 'choice' }>; handlers: ChoiceHandlers },
+/**
+ * The question card, from the founder's second screenshot of 17
+ * September: the question, the options each behind a lettered circle,
+ * Next at the bottom right, and when the agent asked several things at
+ * once, a pair of chevrons at the top right to move between them.
+ *
+ * **One card for a set of questions.** The engine's tool sends several
+ * questions in one request; they used to come as a stack of cards. The
+ * thread now hands the whole set here (`Thread.tsx` groups them by
+ * request), and the person walks them with the chevrons. Next sends
+ * the answer to the question on screen; it then leaves the set, and the
+ * card shows the next one still open.
+ *
+ * **Pick, then Next.** An option lights when pressed and nothing is sent
+ * until Next: a press on the wrong row is not an answer. Next stays grey
+ * until something is picked.
+ *
+ * **No free-text box any more.** The founder: "remove that one design
+ * we have and replace it by this." Somebody who wants to answer in their
+ * own words types in the composer, which the engine treats as the
+ * answer; the card is then moved past and marked.
+ */
+export function ChoiceDeck(
+  { items, handlers }: { items: readonly ChoiceItem[]; handlers: ChoiceHandlers },
 ) {
-  const [free, setFree] = useState('');
-  if (item.resolved) return <ResolvedChoiceCard item={item} outcome={item.resolved} />;
+  const [at, setAt] = useState(0);
+  const [picks, setPicks] = useState<Record<string, string>>({});
+  const open = items.filter(item => !item.resolved);
+  const index = Math.min(at, Math.max(0, open.length - 1));
+  const item = open[index];
+  if (!item) {
+    // Every question in the set is settled: each keeps its own card.
+    return (
+      <>
+        {items.map(one => one.resolved && <ResolvedChoiceCard key={one.id} item={one} outcome={one.resolved} />)}
+      </>
+    );
+  }
+  const picked = picks[item.id];
+  const several = open.length > 1;
+
+  const chevron = (direction: -1 | 1): JSX.Element => {
+    const target = index + direction;
+    const can = target >= 0 && target < open.length;
+    return (
+      <button
+        type="button"
+        aria-label={direction < 0 ? 'Previous question' : 'Next question'}
+        disabled={!can}
+        onClick={() => setAt(target)}
+        style={{
+          width: 30, height: 30, border: 'none', background: 'transparent', padding: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: can ? color.muted : color.chevron, cursor: can ? 'pointer' : 'default',
+          transform: direction < 0 ? 'rotate(180deg)' : undefined,
+        }}
+      >
+        <ChevronRightIcon size={15} />
+      </button>
+    );
+  };
+
   return (
     <div
       style={{
-        maxWidth: 'min(72%, 560px)',
-        padding: 15,
+        width: QUESTION_WIDTH,
+        padding: '20px 24px 22px',
         borderRadius: radius.panel,
-        background: color.fill,
-        border: `1px solid ${line.hairline}`,
+        background: color.paper,
+        border: `1px solid ${line.field}`,
         display: 'flex',
         flexDirection: 'column',
-        gap: 12,
+        gap: 18,
         // The canvas gives a question the same 6px above it as a change
         // of speaker, because that is what it is.
         marginTop: 6,
         animation: enter,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, padding: '0 2px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
         <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ fontSize: text.emphasis, fontWeight: 500, lineHeight: 1.35, letterSpacing: tracking.body, textWrap: 'pretty' }}>
+          <div style={{ fontSize: text.base, lineHeight: 1.35, letterSpacing: tracking.body, textWrap: 'pretty', paddingTop: several ? 3 : 0 }}>
             {item.text}
           </div>
           {item.note && (
             <div style={{ fontSize: text.body, color: color.muted, lineHeight: 1.4 }}>{item.note}</div>
           )}
         </div>
-        {handlers.onDismiss && (
-          <button
-            type="button"
-            aria-label="Dismiss"
-            onClick={() => handlers.onDismiss?.(item.id)}
-            style={{
-              width: 19, height: 19, border: 'none', background: 'transparent',
-              cursor: 'pointer', color: color.muted, padding: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <CloseIcon size={12} />
-          </button>
+        {several && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2, flex: '0 0 auto' }}>
+            {chevron(-1)}
+            {chevron(1)}
+            <span style={{ fontSize: text.caption, color: color.muted, marginLeft: 8, whiteSpace: 'nowrap' }}>
+              {index + 1} of {open.length}
+            </span>
+          </div>
         )}
       </div>
 
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          borderRadius: radius.row,
-          background: color.paper,
-          border: `1px solid ${line.hairline}`,
-          overflow: 'hidden',
-          boxShadow: shadow.flat,
-        }}
-      >
-        {item.options.map(option => (
-          <button
-            key={option.key}
-            type="button"
-            onClick={() => handlers.onPick(item.id, option.key)}
-            style={{
-              display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 15px',
-              border: 'none', background: 'transparent', cursor: 'pointer',
-              font: 'inherit', textAlign: 'left', width: '100%',
-              ...(item.options[0] === option ? {} : { borderTop: `1px solid ${line.hairline}` }),
-            }}
-          >
-            <span
+      <div role="radiogroup" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {item.options.map(option => {
+          const on = picked === option.key;
+          return (
+            <button
+              key={option.key}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              onClick={() => setPicks(current => ({ ...current, [item.id]: option.key }))}
               style={{
-                width: 23, height: 23, flex: '0 0 auto', marginTop: 1,
-                borderRadius: radius.chip, background: color.fill,
-                border: `1px solid ${line.hairline}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: text.code, color: color.muted,
+                display: 'flex', alignItems: 'center', gap: 16, padding: '6px 2px',
+                border: 'none', background: 'transparent', cursor: 'pointer',
+                font: 'inherit', textAlign: 'left', width: '100%',
               }}
             >
-              {option.key}
-            </span>
-            <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontSize: text.emphasis, color: color.ink, lineHeight: 1.3 }}>{option.label}</span>
-              {option.hint && (
-                <span style={{ fontSize: text.small, color: color.muted, lineHeight: 1.35 }}>{option.hint}</span>
-              )}
-            </span>
-          </button>
-        ))}
+              <OptionLetter letter={option.key} picked={on} />
+              <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <span style={{ fontSize: text.base, color: color.ink, lineHeight: 1.3, fontWeight: on ? 500 : 400 }}>{option.label}</span>
+                {option.hint && (
+                  <span style={{ fontSize: text.small, color: color.muted, lineHeight: 1.35 }}>{option.hint}</span>
+                )}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      {item.freeform && handlers.onFreeAnswer && (
-        <input
-          value={free}
-          onChange={event => setFree(event.target.value)}
-          onKeyDown={event => {
-            if (event.key === 'Enter' && free.trim()) {
-              handlers.onFreeAnswer?.(item.id, free.trim());
-              setFree('');
-            }
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <CardPill
+          primary
+          disabled={!picked}
+          onClick={() => {
+            if (!picked) return;
+            handlers.onPick(item.id, picked);
+            // The answered one leaves the set; stay on the same slot so
+            // the next open question takes its place.
+            setAt(index);
           }}
-          placeholder="Type your own answer"
-          style={{
-            height: 43, padding: '0 14px', borderRadius: radius.input,
-            border: `1px solid ${line.field}`, background: color.paper,
-            outline: 'none', font: 'inherit', fontSize: text.message, color: color.ink,
-          }}
-        />
+          style={{ height: 36, padding: '0 20px', fontSize: text.emphasis }}
+        >
+          Next
+        </CardPill>
+      </div>
+    </div>
+  );
+}
+
+function ChoiceCard(
+  { item, handlers }: { item: ChoiceItem; handlers: ChoiceHandlers },
+) {
+  if (item.resolved) return <ResolvedChoiceCard item={item} outcome={item.resolved} />;
+  return <ChoiceDeck items={[item]} handlers={handlers} />;
+}
+
+export interface ConnectorHandlers {
+  /** Install: run the sign-in, the same one the Apps screen runs. */
+  onInstall: (itemId: string) => void;
+  onDecline: (itemId: string) => void;
+}
+
+/**
+ * An agent proposing a connector: the founder's onboarding card, with
+ * Install where Allow access was. The logo, the name, the catalogue's
+ * one line, and two pills; the agent's own reason under the line when
+ * it gave one. Pressing Install starts the sign-in in the browser and
+ * the card says so until it comes back.
+ */
+function ConnectorCard(
+  { item, handlers }: { item: ConnectorItem; handlers: ConnectorHandlers },
+) {
+  const done = item.resolved;
+  const verdict = done === ConnectorOutcome.Connected
+    ? { text: 'Installed', color: color.successText }
+    : done === ConnectorOutcome.Declined
+      ? { text: 'Not now', color: color.muted }
+      : done === ConnectorOutcome.Failed
+        ? { text: item.failure ?? `${item.name} was not connected.`, color: color.deleteInk }
+        : undefined;
+  return (
+    <div
+      aria-label={verdict ? verdict.text : `Install ${item.name}?`}
+      style={{
+        width: QUESTION_WIDTH, marginTop: 6,
+        display: 'flex', alignItems: 'center', gap: 16,
+        padding: '18px 22px 18px 20px',
+        borderRadius: radius.panel, background: color.paper,
+        border: `1px solid ${line.field}`,
+        opacity: done && done !== ConnectorOutcome.Failed ? 0.85 : 1,
+        animation: enter,
+      }}
+    >
+      <span
+        style={{
+          width: 52, height: 52, flex: '0 0 auto', borderRadius: radius.input,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: color.fill, border: `1px solid ${line.hairline}`, overflow: 'hidden',
+          fontSize: text.section, fontWeight: 500, color: color.muted,
+        }}
+      >
+        {item.logo
+          // Relative on purpose: a packaged renderer is loaded over
+          // `file://`, where a leading slash is the root of the disk.
+          ? <img src={`${APP_LOGO_DIRECTORY}/${item.logo}`} alt="" width={30} height={30} style={{ objectFit: 'contain' }} />
+          : connectionMonogram(item.name)}
+      </span>
+      <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <span style={{ fontSize: text.base, fontWeight: 500, color: color.ink, lineHeight: 1.3 }}>{item.name}</span>
+        {item.line && <span style={{ fontSize: text.emphasis, color: color.muted, lineHeight: 1.35 }}>{item.line}</span>}
+        {item.reason && <span style={{ fontSize: text.small, color: color.muted, lineHeight: 1.35, marginTop: 2 }}>{item.reason}</span>}
+      </span>
+      {verdict ? (
+        <span style={{ flex: '0 0 auto', fontSize: text.body, fontWeight: 500, color: verdict.color, maxWidth: 260, textAlign: 'right', lineHeight: 1.35 }}>
+          {verdict.text}
+        </span>
+      ) : (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '0 0 auto' }}>
+          <CardPill disabled={item.busy} onClick={() => handlers.onDecline(item.id)} style={{ height: 36, padding: '0 20px', boxShadow: shadow.flat }}>
+            Not now
+          </CardPill>
+          <CardPill primary disabled={item.busy} onClick={() => handlers.onInstall(item.id)} style={{ height: 36, padding: '0 22px' }}>
+            {item.busy ? 'Connecting…' : 'Install'}
+          </CardPill>
+        </span>
       )}
     </div>
   );
@@ -580,27 +707,16 @@ function AuthCard(
 ) {
   const [open, setOpen] = useState(false);
   const button = (label: string, decision: AuthDecision, primary?: boolean): JSX.Element => (
-    <button
-      type="button"
-      onClick={() => handlers.onDecide(item.id, decision)}
-      style={{
-        height: 37, padding: '0 19px', borderRadius: radius.pill,
-        border: primary ? 'none' : `1px solid ${line.button}`,
-        background: primary ? color.ink : color.paper,
-        color: primary ? color.paper : color.ink,
-        font: 'inherit', fontSize: text.body, fontWeight: 400,
-        cursor: 'pointer',
-      }}
-    >
+    <CardPill primary={primary} onClick={() => handlers.onDecide(item.id, decision)}>
       {label}
-    </button>
+    </CardPill>
   );
 
   return (
     <div
       style={{
         maxWidth: 'min(72%, 560px)', padding: '15px 17px 17px',
-        borderRadius: radius.panel, background: color.fill,
+        borderRadius: radius.panel, background: color.paper,
         border: `1px solid ${line.hairline}`,
         display: 'flex', flexDirection: 'column', animation: enter,
       }}
@@ -658,7 +774,7 @@ function AuthCard(
             <div
               style={{
                 margin: '10px 0 0 28px', padding: '11px 13px',
-                borderRadius: radius.input, background: color.paper,
+                borderRadius: radius.input, background: color.window,
                 border: `1px solid ${line.hairline}`,
                 fontFamily: font.mono, fontSize: text.code, lineHeight: 1.6,
                 color: color.ink, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
@@ -711,8 +827,6 @@ function AttachmentCard(
   const mine = item.from === Speaker.Person;
   const open = handlers.onOpenFile ? () => handlers.onOpenFile?.(item.path) : undefined;
   const save = handlers.onSaveCopy ? () => handlers.onSaveCopy?.(item.path) : undefined;
-  const [hover, setHover] = useState(false);
-  const [saveHover, setSaveHover] = useState(false);
   const row: CSSProperties = { display: 'flex', ...(mine ? { justifyContent: 'flex-end' } : {}), animation: enter };
 
   if (item.image) {
@@ -743,88 +857,8 @@ function AttachmentCard(
   const size = readableSize(item.size);
   return (
     <div style={row}>
-      <div
-        role="button"
-        tabIndex={open ? 0 : -1}
-        onClick={open}
-        onKeyDown={event => {
-          if (open && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); open(); }
-        }}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-        title={item.path}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 12, width: 'min(70%, 440px)',
-          boxSizing: 'border-box', padding: '11px 12px', borderRadius: radius.card,
-          background: hover ? '#f6f7f9' : color.paper,
-          border: '1px solid rgba(255,255,255,.6)',
-          boxShadow: '0 1px 2px rgba(16,22,35,.04), 0 12px 32px rgba(16,22,35,.08), inset 0 1px 0 rgba(255,255,255,.7)',
-          cursor: open ? 'pointer' : 'default', textAlign: 'left', transition: 'background .15s',
-        }}
-      >
-        <FileGlyph kind={item.file} name={item.name} />
-        <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{
-            fontSize: text.message, fontWeight: 500, letterSpacing: tracking.body, color: color.shimmerInk,
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>
-            {item.name}
-          </span>
-          {size && <span style={{ fontSize: text.caption, color: color.muted }}>{size}</span>}
-        </span>
-        {save && (
-          <button
-            type="button"
-            aria-label="Save a copy"
-            title="Save a copy"
-            onClick={event => { event.stopPropagation(); save(); }}
-            onMouseEnter={() => setSaveHover(true)}
-            onMouseLeave={() => setSaveHover(false)}
-            style={{
-              width: 31, height: 31, flex: '0 0 auto', borderRadius: '50%', padding: 0,
-              border: `1px solid ${line.hairline}`, background: saveHover ? color.fillRaised : color.paper,
-              color: color.ink, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
-              <path d="M12 4v11" /><path d="M7.5 11l4.5 4.5 4.5-4.5" /><path d="M5 19.5h14" />
-            </svg>
-          </button>
-        )}
-      </div>
+      <FileCard name={item.name} caption={size} kind={item.file} title={item.path} onOpen={open} onSave={save} />
     </div>
-  );
-}
-
-/** The file's own icon — the design's four — or a paperclip for the rest. */
-function FileGlyph({ kind, name }: { kind: FileKind | undefined; name: string }): JSX.Element {
-  const logo = kind ? FILE_LOGO[kind] : undefined;
-  const url = kind === FileKind.Pdf ? pdfDoc : logo ? logoUrl(logo) : undefined;
-  if (!url) {
-    return (
-      <span style={{ width: 36, height: 36, flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <PaperclipGlyph />
-      </span>
-    );
-  }
-  return (
-    <span
-      role="img"
-      aria-label={name}
-      style={{
-        width: 36, height: 36, flex: '0 0 auto',
-        backgroundImage: `url(${url})`, backgroundSize: 'contain',
-        backgroundRepeat: 'no-repeat', backgroundPosition: 'center',
-      }}
-    />
-  );
-}
-
-function PaperclipGlyph(): JSX.Element {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color.muted} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false" style={{ flex: '0 0 auto' }}>
-      <path d="M21.4 11.1l-8.5 8.5a5 5 0 01-7.1-7.1l8.5-8.5a3.3 3.3 0 014.7 4.7l-8.5 8.5a1.7 1.7 0 01-2.4-2.4l7.8-7.8" />
-    </svg>
   );
 }
 
@@ -870,8 +904,8 @@ function SecretCard(
     <div
       style={{
         alignSelf: 'stretch', padding: '18px 20px 16px',
-        borderRadius: radius.card, background: color.fillRaised,
-        border: `1px solid ${line.hairline}`, animation: enter,
+        borderRadius: radius.panel, background: color.paper,
+        border: `1px solid ${line.field}`, animation: enter,
         display: 'flex', flexDirection: 'column', gap: 14,
       }}
     >
@@ -890,9 +924,9 @@ function SecretCard(
             setValues(current => ({ ...current, [field.name]: next }));
           const boxStyle: CSSProperties = {
             flex: '1 1 auto', minWidth: 0, padding: '9px 12px',
-            borderRadius: radius.small, border: `1px solid ${line.field}`,
+            borderRadius: radius.input, border: `1px solid ${line.hairline}`,
             background: color.paper, outline: 'none', color: color.ink,
-            font: 'inherit', fontSize: text.body,
+            font: 'inherit', fontSize: text.message,
             ...(secret ? { fontFamily: font.mono } : {}),
           };
 
@@ -929,8 +963,8 @@ function SecretCard(
                     onClick={() => setShown(one => ({ ...one, [field.name]: !one[field.name] }))}
                     aria-pressed={!!shown[field.name]}
                     style={{
-                      height: 36, padding: '0 12px', borderRadius: radius.pill,
-                      border: `1px solid ${line.field}`, background: color.fill,
+                      height: 38, padding: '0 12px', borderRadius: radius.pill,
+                      border: `1px solid ${line.hairline}`, background: color.fill,
                       color: color.muted, font: 'inherit', fontSize: text.body, cursor: 'pointer',
                       flex: '0 0 auto',
                     }}
@@ -958,32 +992,9 @@ function SecretCard(
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 9 }}>
-        <button
-          type="button"
-          disabled={!ready}
-          onClick={send}
-          style={{
-            height: 36, padding: '0 17px', borderRadius: radius.pill, border: 'none',
-            background: ready ? color.ink : color.fill,
-            color: ready ? color.paper : color.faint,
-            font: 'inherit', fontSize: text.body, fontWeight: 400,
-            cursor: ready ? 'pointer' : 'default',
-          }}
-        >
-          Send
-        </button>
-        <button
-          type="button"
-          onClick={() => handlers.onDecline?.(item.id)}
-          style={{
-            height: 36, padding: '0 16px', borderRadius: radius.pill,
-            border: `1px solid ${line.field}`, background: color.fill, color: color.ink,
-            font: 'inherit', fontSize: text.body, cursor: 'pointer',
-          }}
-        >
-          Not now
-        </button>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <CardPill primary disabled={!ready} onClick={send}>Send</CardPill>
+        <CardPill onClick={() => handlers.onDecline?.(item.id)}>Not now</CardPill>
       </div>
     </div>
   );
@@ -1013,6 +1024,10 @@ export interface ThreadItemViewProps {
   parts?: PartHandlers;
   /** React, reply, copy the id — the cluster that appears on hover. */
   actions?: MessageHandlers;
+  /** What a pressed button in an answer card does. */
+  cards?: CardHandlers;
+  /** Install or Not now on a connector card. Absent, it cannot be answered. */
+  connector?: ConnectorHandlers;
   /**
    * True when this bubble starts a turn — the one before it came from the
    * other side. The canvas puts 8px above it and nothing between bubbles
@@ -1023,16 +1038,24 @@ export interface ThreadItemViewProps {
 
 const noHandlers: PartHandlers = {};
 
+const noCards: CardHandlers = {};
+
 const noSecret: SecretHandlers = {};
 
 const noRoster: RosterHandlers = { onStandUp: () => {}, onSomethingElse: () => {}, onDecline: () => {} };
 
+const noConnector: ConnectorHandlers = { onInstall: () => {}, onDecline: () => {} };
+
 export function ThreadItemView(
-  { item, choice, auth, secret = noSecret, roster = noRoster, parts = noHandlers, actions, leading }: ThreadItemViewProps,
+  { item, choice, auth, secret = noSecret, roster = noRoster, parts = noHandlers, actions, cards = noCards, connector = noConnector, leading }: ThreadItemViewProps,
 ): JSX.Element | null {
   switch (item.kind) {
+    case ThreadItemKind.Connector:
+      return <ConnectorCard item={item} handlers={connector} />;
     case ThreadItemKind.Roster:
       return <RosterCard item={item} handlers={roster} />;
+    case ThreadItemKind.Card:
+      return <CardBlock item={item} handlers={cards} />;
     case ThreadItemKind.Text:
       return <TextBubble item={item} leading={leading} handlers={parts} actions={actions} />;
     case ThreadItemKind.System:

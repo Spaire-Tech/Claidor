@@ -1,3 +1,4 @@
+import type { ArtifactKind } from '../../../shared/artifacts/constants';
 import type { AskInputField } from '../../../shared/askInput/constants';
 import type { RosterOption } from '../../../shared/staffing/roster';
 
@@ -54,6 +55,20 @@ export const ThreadItemKind = {
    * approval card (nothing is being run yet). So it is its own kind.
    */
   Roster: 'roster',
+  /**
+   * The answer cards: a block the agent wrote in OpenUI's language,
+   * drawn by us between its texts. The founder, 17 September: *"text
+   * should stays text, but having cards that come with it is amazing."*
+   * (`shared/cards/library.ts`.)
+   */
+  Card: 'card',
+  /**
+   * An agent proposing a connector: the service's logo, its name, one
+   * line, Not now and Install. The founder, 17 September: the onboarding
+   * "App access requested" card, with Install where Allow access was.
+   * Install runs the Apps screen's Connect (`shared/connections/proposal.ts`).
+   */
+  Connector: 'connector',
 } as const;
 export type ThreadItemKind = typeof ThreadItemKind[keyof typeof ThreadItemKind];
 
@@ -254,6 +269,60 @@ export interface RosterItem {
   at: number;
 }
 
+/**
+ * A block of answer cards, in the agent's reply where it wrote it.
+ *
+ * `program` is the fenced block verbatim; the renderer parses it against
+ * the card library and draws what it can. It is kept as text rather than
+ * parsed here so the message in the store stays the source of truth and
+ * an old reply re-renders with whatever the library draws today.
+ */
+export interface CardItem {
+  kind: typeof ThreadItemKind.Card;
+  id: string;
+  program: string;
+  /**
+   * Set when the block is a deck or a report rather than answer cards:
+   * OpenUI's own chip and full-screen view draw it
+   * (`shared/artifacts/constants.ts`).
+   */
+  artifact?: ArtifactKind;
+  agentId?: string;
+  agentName?: string;
+  at: number;
+}
+
+/** What became of a connector card. */
+export const ConnectorOutcome = {
+  Connected: 'connected',
+  Declined: 'declined',
+  Failed: 'failed',
+} as const;
+export type ConnectorOutcome = typeof ConnectorOutcome[keyof typeof ConnectorOutcome];
+
+export interface ConnectorItem {
+  kind: typeof ThreadItemKind.Connector;
+  /** `connector:<requestId>` (`connectorCards.ts`). */
+  id: string;
+  /** The catalogue id: "gmail", "linkedin". */
+  connectionId: string;
+  /** The product's name, literal. */
+  name: string;
+  /** The catalogue's one line about the service. */
+  line?: string;
+  /** File name under `APP_LOGO_DIRECTORY`; none shows the monogram. */
+  logo?: string;
+  /** The agent's own line of why, when it gave one. */
+  reason?: string;
+  /** Install was pressed and the sign-in is running in the browser. */
+  busy?: boolean;
+  /** Set once decided. Nothing on the card presses after this. */
+  resolved?: ConnectorOutcome;
+  /** A sentence, when the sign-in failed. */
+  failure?: string;
+  at: number;
+}
+
 export type ThreadItem =
   | TextItem
   | SystemItem
@@ -262,7 +331,9 @@ export type ThreadItem =
   | AuthItem
   | AttachmentItem
   | SecretItem
-  | RosterItem;
+  | RosterItem
+  | CardItem
+  | ConnectorItem;
 
 /** What the person chose on an approval card. */
 export const AuthDecision = {

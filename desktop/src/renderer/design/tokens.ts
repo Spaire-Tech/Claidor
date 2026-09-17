@@ -1,10 +1,14 @@
 /**
  * The design, as values.
  *
- * Every number and colour here was counted out of the founder's canvas
- * (`docs/product/design/canvas-template.html`), not invented. Where a
- * value appears many times in the canvas the count is noted, because that
- * is what makes it a token rather than a one-off.
+ * Every number and colour here was counted out of the founder's canvas,
+ * not invented. Since 17 September that canvas is the "Spatial Light"
+ * one (`docs/product/design/canvas-2026-09-17-spatial-light.html`): the
+ * app is a floating window on a pale ground, with a glass dock beside it,
+ * and the colour is Apple's blue on white and near-black — not the navy
+ * and paper of the 15 September canvases. Where a value appears many
+ * times in the canvas the count is noted, because that is what makes it
+ * a token rather than a one-off.
  *
  * This file and `tokens.css` say the same thing twice, on purpose: CSS
  * needs custom properties, and the orb and anything else computing a
@@ -13,125 +17,139 @@
  *
  * One look, deliberately. The app carries a four-theme skinning system
  * from upstream (`renderer/theme/`) which the old shell uses; this is not
- * a fifth theme, and nothing here goes through that contract.
+ * a fifth theme, and nothing here goes through that contract. The dark
+ * mode the founder is drawing will be a second set of these values behind
+ * one switch, not a theme in that system.
  */
 
 /** Colour. */
 export const color = {
-  /** Text, and the dark fill of a primary button. 76 uses. */
-  ink: '#1e3358',
-  /** A primary button under the pointer. */
-  inkHover: '#2c4674',
-  /** Secondary text, icon strokes, every hint and caption. 72 uses. */
-  muted: '#55606f',
-  /** Chevrons and the quietest glyphs. */
-  faint: '#7d8797',
-  /** The ground, and the raised surface that sits on it. 39 uses. */
-  paper: '#fbfbfc',
-  /** Inset fills: the composer, search, a key cap, an unselected row. */
-  fill: '#e9edf2',
-  /** The same idea one step up: a settings group, a card's inner panel. */
-  fillRaised: '#eef1f5',
-  /** A chip, a selected settings row. */
+  /** Text, the account avatar, the voice picker's current dot. 90 uses. */
+  ink: '#0d0d0d',
+  /** Secondary text, icon strokes, every hint and caption. 84 uses. */
+  muted: '#676767',
+  /** Inactive dock glyphs, the other voice dots, the shimmer's dark half. */
+  faint: '#8e8e93',
+  /** The chevron at the end of a row, and nothing else. */
+  chevron: '#b0b0b5',
+  /** The label of an unselected Text/Voice or Plugins/Agents tab. */
+  tabInk: '#585858',
+  /** The page behind the window. */
+  ground: '#eff1f5',
+  /** The window itself: the sidebar, a settings group, the compose list, a card on the Apps screen. 30 uses. */
+  window: '#f6f6f6',
+  /** The conversation pane, a card in the thread, a popover, an input. 40 uses. */
+  paper: '#ffffff',
+  /** Inset fills: the agent's bubble, the composer, search, a key cap, a tag. 28 uses. */
+  fill: '#f2f2f2',
+  /** The agent panel's ground, one step off the window. */
+  fillRaised: '#fafafa',
+  /** The selected tab on an agent's page. */
   fillStrong: '#e3e8ef',
-  /** Links, and the label of a selected tab. */
-  accent: '#2b6cf5',
-  /**
-   * A primary button that cannot be pressed yet — Create agent before the
-   * name is typed. Greyed rather than hidden, because the button is what
-   * tells you the form has an end.
-   */
-  disabled: '#aab3c0',
-  /** The darker half of the shimmer that runs through a status line. */
-  shimmerInk: '#1c1f23',
-  /** The lighter half of it. */
-  shimmerPale: '#b6bcc6',
-  /** Connected, installed, done. */
+  /** A line between rows, and the inline code chip. */
+  divider: '#efefef',
+  /** The person's bubble, every primary button, links, the selected tab's label, the unread dot. 22 uses. */
+  accent: '#0071e3',
+  /** A primary button under the pointer. */
+  accentHover: '#0059b3',
+  /** "Connected", "Use": the word that replaces a button once it is done. */
+  successText: '#248a3d',
+  /** "Installed" on an agent's page, and its pale fill. */
   success: '#1a8547',
   successFill: '#e7f6ec',
   /** The triangle on an approval card. Used once, and it has to be. */
   warning: '#e8a300',
-  /** The record dot on "Teach a task", and a destructive button. */
+  /** The record dot on "Teach a task", and a destructive settings button. */
   danger: '#e0322d',
+  /** Delete agent: its text, and the trash icon under the pointer. */
+  deleteInk: '#c92a25',
+  deleteFill: '#fdeceb',
 } as const;
 
 /**
- * Lines and shadows, which the canvas writes as rgba rather than hex
- * because they sit over a surface rather than replacing it.
+ * Lines, which the canvas writes as black at a low alpha so they sit on
+ * any of the three surfaces.
  */
 export const line = {
-  /** Every border in the design is this one value. */
-  hairline: 'rgba(16,22,35,.11)',
-  /** A field's border, a shade firmer. */
-  field: 'rgba(16,22,35,.13)',
-  /** A secondary button's border, firmer still. */
-  button: 'rgba(16,22,35,.17)',
-  /** The 34px grid on the ground. Barely there, and the reason the app
-   *  does not read as a flat sheet of white. */
-  grid: 'rgba(16,22,35,.018)',
-  /** A row under the pointer. */
-  hover: 'rgba(16,22,35,.06)',
+  /** Under a header, round a row, round a pill: the quietest line. 17 uses of .05/.055. */
+  hairline: 'rgba(0,0,0,.055)',
+  /** Round a card in the thread, a popover, a settings field. */
+  field: 'rgba(0,0,0,.06)',
+  /** Round a card on the Apps screen, an unselected avatar, a chip. */
+  card: 'rgba(0,0,0,.08)',
+  /** The voice button's border, the firmest line in the design. */
+  button: 'rgba(0,0,0,.15)',
+  /** A control under the pointer, and the disabled Create button. */
+  hover: 'rgba(0,0,0,.08)',
 } as const;
 
 export const shadow = {
-  /** A button, a card at rest. */
-  flat: '0 1px 2px rgba(16,22,35,.04)',
-  /** The selected row in the sidebar. */
-  raised: '0 1px 2px rgba(16,22,35,.04), 0 6px 18px rgba(16,22,35,.11)',
-  /** A popover. */
-  popover: '0 1px 2px rgba(16,22,35,.04), 0 18px 44px rgba(16,22,35,.18)',
-  /** A full modal. */
-  modal: '0 1px 2px rgba(16,22,35,.04), 0 24px 60px rgba(16,22,35,.18)',
-  /** The white line along the top edge of every glass surface. Small, and
-   *  the whole reason the glass reads as glass. */
-  glassInset: 'inset 0 1px 0 rgba(255,255,255,.8)',
-  /** An orb, which floats a little more than anything else. */
-  orb: '0 1px 2px rgba(16,22,35,.11), 0 4px 10px rgba(16,22,35,.10)',
-  orbLarge: '0 2px 6px rgba(16,22,35,.11), 0 20px 48px rgba(16,22,35,.14)',
+  /** A card at rest, a white pill, an input in the agent panel. 19 uses. */
+  flat: '0 1px 2px rgba(0,0,0,.08)',
+  /** The selected segment of Text/Voice and Plugins/Agents. */
+  raised: '0 2px 5px rgba(0,0,0,.09), 0 0 0 1px rgba(0,0,0,.045)',
+  /** A popover: the account menu, the plus menu, share. */
+  popover: '0 1px 2px rgba(0,0,0,.08), 0 18px 44px rgba(0,0,0,.08)',
+  /** The emoji row and the message menu, which float over the thread. */
+  menu: '0 1px 2px rgba(0,0,0,.08), 0 12px 32px rgba(0,0,0,.14)',
+  /** The voice picker. */
+  modal: '0 1px 2px rgba(0,0,0,.08), 0 24px 60px rgba(0,0,0,.14)',
+  /** The window on the ground. */
+  window: '0 40px 110px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.1)',
+  /** The dock: a white line along its top, then two drops. */
+  dock: 'inset 0 1px 0 rgba(255,255,255,.9), 0 2px 6px rgba(0,0,0,.05), 0 20px 46px rgba(0,0,0,.14)',
+  /** The lit button in the dock. */
+  dockActive: '0 1px 3px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.04)',
+  /** The voice orb's glass button. */
+  voiceOrb: '0 2px 6px rgba(0,0,0,.04), 0 16px 40px rgba(0,0,0,.1)',
+  /** The 163px orb in the voice picker. */
+  orbLarge: '0 20px 48px rgba(0,0,0,.14)',
+  /** A small orb where one floats: the same idea at row size. */
+  orb: '0 1px 2px rgba(0,0,0,.08), 0 4px 10px rgba(0,0,0,.08)',
+  /** A toggle's knob. */
+  knob: '0 1px 3px rgba(0,0,0,.25)',
 } as const;
 
 /**
- * Glass: every modal, popover and raised row in the canvas is the same
- * recipe. Kept together because using three of the four is what makes a
- * surface look almost right.
+ * Glass. Two recipes in this canvas, and only two: the dock, and the
+ * voice orb's button. Everything else is opaque — a popover is white, a
+ * card is white, a settings group is the window's grey.
  */
 export const glass = {
-  background: 'rgba(255,255,255,.94)',
-  /** Lighter for a card inside a scrolling column. */
-  backgroundSoft: 'rgba(255,255,255,.88)',
-  blur: 'blur(20px)',
+  /** The dock. */
+  dock: 'rgba(255,255,255,.55)',
+  dockBlur: 'blur(30px) saturate(1.8)',
   border: 'rgba(255,255,255,.7)',
-  /** What a modal lays over the app behind it. */
-  scrim: 'rgba(195,203,214,.42)',
+  /** The voice orb's button. */
+  orb: 'rgba(255,255,255,.6)',
+  orbBlur: 'blur(24px) saturate(1.6)',
+  /** What the voice picker lays over the pane. */
+  scrim: 'rgba(0,0,0,.14)',
   scrimBlur: 'blur(10px)',
+  /** The emoji row and the message menu blur what scrolls under them. */
+  menuBlur: 'blur(20px)',
 } as const;
 
 /**
  * Type. Fourteen sizes, and they are half-pixel values because the canvas
  * was drawn at a size and then trusted — 14.5 and 15.5 do real work in it.
  *
- * **Every size came down a step on the evening of 15 September**
- * (`canvas-2026-09-15-type-template.html`): 15 became 14, 15.5 became
- * 14.5, 22 became 20.5, and so on down the scale. That canvas also set
- * the face to Switzer, which sits a little larger on the line than the
- * system font, so the smaller numbers read at about the old size.
+ * The 17 September canvas prints them a tenth off (12.3, 12.9, 13.4,
+ * 14.6, 15.1, 15.7, 17.9, 20.2, 25.2): the same scale after its export
+ * rounding. These stay, so nothing moves by a fraction of a pixel.
  */
 export const text = {
   /** A key cap, an id, a command: the mono sizes. The canvas puts them at 12. */
   code: 12,
   caption: 12.5,
-  /**
-   * The same size as `caption` since the 15 September evening canvas,
-   * which brought 13 and 13.5 together at 12.5. Two names kept, because
-   * they are two roles — a stamp beside a name, and the line under it.
-   */
+  /** The same size as `caption`; two names, because they are two roles. */
   label: 12.5,
   small: 13,
   /** The workhorse: menu rows, settings labels, buttons. 30 uses. */
   body: 13.5,
   /** Message text, inputs, descriptions. 20 uses. */
   message: 14,
-  /** A name in a list, a question card's title. */
+  /** A name in a list, a question card's title, the agent's bubble. */
   emphasis: 14.5,
   base: 15,
   agentName: 15.5,
@@ -152,27 +170,35 @@ export const tracking = {
 } as const;
 
 export const radius = {
-  /** Anything with a pill shape: the composer, search, chips, tabs. */
+  /** Anything with a pill shape: the composer, search, chips, tabs, the dock. */
   pill: 999,
   key: 6,
   /** The inline chip a file or a code span sits in, inside a sentence. */
   fileChip: 7,
   chip: 8,
+  /** A trash button, a settings tab. */
   small: 11,
   field: 12,
   control: 13,
+  /** A menu row, a text area, the delete question. */
   input: 14,
+  /** A sidebar row, a compose row, the choice list, an avatar grid. */
   row: 16,
+  /** A message bubble. 17 in this canvas; it was 20. */
+  bubble: 17,
+  /** A file card, a settings group, a connector card, the share menu. */
   card: 18,
-  /** A message bubble. The canvas says 20, not the panel's 22. */
-  bubble: 20,
+  /** The account menu, the plus menu, an agent card on the Apps screen. */
   menu: 20,
+  /** A choice card, an approval card, the compose list, the new-agent form. */
   panel: 22,
+  /** The voice picker. */
   modal: 24,
+  /** The conversation pane and the agent panel. */
+  pane: 28,
+  /** The window. */
+  window: 40,
 } as const;
-
-/** The grid the ground is drawn on. */
-export const grid = { size: 34 } as const;
 
 /**
  * Motion. Five animations, and the timings are the canvas's own.
@@ -188,7 +214,7 @@ export const motion = {
   /** An orb breathing while it waits. Slow on purpose. */
   orbIdle: { duration: '7.5s', easing: 'ease-in-out' },
   /** An orb while the agent is speaking. */
-  orbSpeak: { duration: '2.4s', easing: 'ease-in-out' },
+  orbSpeak: { duration: '1.8s', easing: 'ease-in-out' },
   /** The light that runs through "Running commands". */
   shimmer: { duration: '1.9s', easing: 'linear' },
   /** Hover and state changes. */

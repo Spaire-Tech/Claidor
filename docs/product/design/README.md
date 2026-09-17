@@ -165,3 +165,48 @@ embeds are under `desktop/public/logos/apps/` as `apple-notes.webp`,
 `macos-settings.webp` (shrunk from the bundle's 472KB PNG) and
 `imessage.webp`. Photographed by `harness/onboarding-walk.mjs`.
 
+
+## 17 September 2026 — Spatial Light: the window on a ground, the dock
+
+`canvas-2026-09-17-spatial-light.html` is the founder's bundle as
+uploaded (`Swens_Messages_Spatial_Light.html`);
+`canvas-2026-09-17-spatial-light-template.html` is its own source,
+pulled from the bundle's `__bundler/template`: markup to line 907, the
+script (bots, histories, layout maths, every style string) after it.
+The founder: *"i dont want no surprise claude, design it like i did.
+make it fit mac … NOTHING SHOULD OPEN INSIDE ANOTHER BOX."*
+
+What it changes, and where each part lives:
+
+- **The ground and the window.** The app is no longer edge to edge. A
+  pale ground (`#eff1f5` with two radial washes) carries a rounded
+  window (radius 40, at most 1420×900) and, beside it, a glass dock.
+  `desktop/src/renderer/design/shell/MessagesShell.tsx`; the frame's
+  paddings and the window's size are `shell/layout.ts`
+  (`frameWindowWidth`, `frameWindowHeight`), and every width rule from
+  before (rail under 900, the panel's clamps, the thread's floor) is
+  now decided on the window's width, not the display's.
+- **The dock** (`shell/Dock.tsx`): Home, Routines, Create, Apps, and
+  the person. It takes what the sidebar's top and bottom used to hold,
+  so the sidebar (`shell/Sidebar.tsx`) is the title, the search and the
+  rows and nothing else. Routines is drawn and inert: *"i added a
+  section for routine. you can skip that until we do it."* The account
+  menu (`shell/AccountMenu.tsx`) opens beside the dock's last button.
+- **Nothing inside another box.** Settings, Apps and an agent's page
+  fill the conversation pane edge to edge (`settings/Settings.tsx`,
+  `shell/Apps.tsx`, `agent/AgentDetail.tsx`); the sidebar stays live
+  beside them. The agent panel (`agent/AgentPanel.tsx`) is the third
+  column, on `#fafafa`, with the same 28px corners as the pane.
+- **Colour.** The accent is `#0071e3`; the person's bubbles, the lit
+  tab, the primary pill and the toggles all wear it. Every surface is
+  opaque white or one of three greys; the only glass left is the dock,
+  the voice orb and the picker's scrim. `design/tokens.ts` was
+  rewritten from this canvas and `tokens.css` regenerated.
+- **The cards** (`thread/cards.css`): OpenUI's components on our paper,
+  with the accent pill, on the same tokens as the rest of the thread.
+
+Every screen is photographed by `harness/shoot.mjs`; `settings` now
+draws inside the shell, and `panel` / `panel-delete` are new, so the
+two- and three-column layouts are both on film. Dark mode: the founder
+has designed one and will send it; nothing here assumes light only
+beyond the token values.

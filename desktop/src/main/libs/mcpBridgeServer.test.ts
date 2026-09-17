@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
+import { type ProposeConnectorAsk, ProposeConnectorBehavior } from '../../shared/connections/proposal';
 import type { RosterAsk } from '../../shared/staffing/roster';
 import { type AskUserRequest, McpBridgeServer } from './mcpBridgeServer';
 
@@ -373,5 +374,105 @@ describe('McpBridgeServer proposing a starter team', () => {
     } finally {
       await server.stop();
     }
+  });
+});
+
+describe('McpBridgeServer proposing a connector', () => {
+  const post = (url: string, secret: string, body: unknown) => fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-mcp-bridge-secret': secret },
+    body: JSON.stringify(body),
+  });
+
+  test('the card goes up with the id and the reason; Install answered connected tells the tool the name', async () => {
+    const secret = 'test-secret';
+    const server = new McpBridgeServer(secret);
+    const shown: ProposeConnectorAsk[] = [];
+    try {
+      await server.start();
+      server.onProposeConnector(ask => {
+        shown.push(ask);
+        server.resolveProposeConnector(ask.requestId, { behavior: ProposeConnectorBehavior.Connected });
+      });
+      const response = await post(server.proposeConnectorCallbackUrl!, secret, {
+        connectionId: 'Gmail', reason: 'To read the thread you named.',
+      });
+      expect(response.ok).toBe(true);
+      await expect(response.json()).resolves.toEqual({
+        behavior: 'connected', connectionId: 'gmail', name: 'Gmail',
+      });
+      expect(shown).toHaveLength(1);
+      expect(shown[0]).toMatchObject({ connectionId: 'gmail', reason: 'To read the thread you named.' });
+      expect(shown[0].requestId).toBeTruthy();
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test('Not now is a decision, and a failed sign-in carries its sentence', async () => {
+    const secret = 'test-secret';
+    const server = new McpBridgeServer(secret);
+    try {
+      await server.start();
+      server.onProposeConnector(ask =>
+        server.resolveProposeConnector(ask.requestId, { behavior: ProposeConnectorBehavior.Declined }));
+      let response = await post(server.proposeConnectorCallbackUrl!, secret, { connectionId: 'notion' });
+      await expect(response.json()).resolves.toEqual({ behavior: 'declined' });
+
+      server.onProposeConnector(ask =>
+        server.resolveProposeConnector(ask.requestId, {
+          behavior: ProposeConnectorBehavior.Failed, reason: 'Notion said no to that account.',
+        }));
+      response = await post(server.proposeConnectorCallbackUrl!, secret, { connectionId: 'notion' });
+      await expect(response.json()).resolves.toEqual({
+        behavior: 'failed', reason: 'Notion said no to that account.',
+      });
+
+      // A failure with no sentence still gets one, so the tool has
+      // something to say.
+      server.onProposeConnector(ask =>
+        server.resolveProposeConnector(ask.requestId, { behavior: ProposeConnectorBehavior.Failed }));
+      response = await post(server.proposeConnectorCallbackUrl!, secret, { connectionId: 'notion' });
+      await expect(response.json()).resolves.toMatchObject({ behavior: 'failed' });
+      expect(((await (await post(server.proposeConnectorCallbackUrl!, secret, { connectionId: 'notion' })).json()) as { reason: string }).reason).toBeTruthy();
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test('a service the catalogue does not have never reaches the card, and the tool gets the list', async () => {
+    const secret = 'test-secret';
+    const server = new McpBridgeServer(secret);
+    let shown = 0;
+    try {
+      await server.start();
+      server.onProposeConnector(() => { shown += 1; });
+      const response = await post(server.proposeConnectorCallbackUrl!, secret, { connectionId: 'myspace' });
+      expect(response.status).toBe(400);
+      const payload = await response.json() as { behavior: string; reason: string };
+      expect(payload.behavior).toBe('failed');
+      expect(payload.reason).toMatch(/"myspace" is not a connector this app can connect/);
+      expect(payload.reason).toContain('gmail');
+      expect(shown).toBe(0);
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test('with nobody to draw the card, the tool is declined rather than left waiting', async () => {
+    const secret = 'test-secret';
+    const server = new McpBridgeServer(secret);
+    try {
+      await server.start();
+      const response = await post(server.proposeConnectorCallbackUrl!, secret, { connectionId: 'gmail' });
+      await expect(response.json()).resolves.toEqual({ behavior: 'declined' });
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test('an answer for a card that is not up is ignored', async () => {
+    const server = new McpBridgeServer('test-secret');
+    expect(() => server.resolveProposeConnector('nothing', { behavior: ProposeConnectorBehavior.Connected })).not.toThrow();
   });
 });

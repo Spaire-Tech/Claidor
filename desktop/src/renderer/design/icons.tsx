@@ -53,6 +53,30 @@ export const SearchIcon = (props: IconProps): JSX.Element => svg(
   { weight: 2, ...props },
 );
 
+/** Home, in the dock: the 17 September canvas's `ornaments[0]`. */
+export const HomeIcon = (props: IconProps): JSX.Element => svg(
+  <path d="M4 11.5L12 5l8 6.5V20h-5v-5h-6v5H4z" />,
+  { weight: 1.7, ...props },
+);
+
+/** Routines, in the dock: two arrows chasing each other, `ornaments[1]`. */
+export const RoutineIcon = (props: IconProps): JSX.Element => svg(
+  <path d="M4.8 12a7.2 7.2 0 0112.3-5.1M19.2 12a7.2 7.2 0 01-12.3 5.1M17.1 3.6v3.3h-3.3M6.9 20.4v-3.3h3.3" />,
+  { weight: 1.7, ...props },
+);
+
+/** Create, in the dock: a plus, `ornaments[2]`. */
+export const PlusIcon = (props: IconProps): JSX.Element => svg(
+  <path d="M12 5v14M5 12h14" />,
+  { weight: 1.7, ...props },
+);
+
+/** Apps in the dock: the canvas's four squares, `ornaments[3]`. */
+export const DockAppsIcon = (props: IconProps): JSX.Element => svg(
+  <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" />,
+  { weight: 1.7, ...props },
+);
+
 /** Apps — four panes, the canvas's grid. */
 export const AppsIcon = (props: IconProps): JSX.Element => svg(
   <>

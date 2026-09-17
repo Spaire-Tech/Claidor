@@ -2,7 +2,6 @@ import {
   color,
   font,
   glass,
-  grid,
   line,
   motion,
   radius,
@@ -53,7 +52,6 @@ export function generateTokensCss(): string {
       'Radii',
       vars('radius', radius, (v) => px(Number(v))),
     ),
-    group('Grid', [`--fsr-grid-size: ${px(grid.size)};`]),
     group('Type faces', vars('font', font)),
     group(
       'Motion',
