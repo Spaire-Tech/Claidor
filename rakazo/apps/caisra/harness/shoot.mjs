@@ -107,6 +107,10 @@ const SCREENS = [
   "settings",
   "settings-computer",
   "account",
+  "create",
+  "create-agent",
+  "create-voice",
+  "create-avatar",
 ];
 for (const screen of SCREENS) {
   const page = await context.newPage();
@@ -116,6 +120,7 @@ for (const screen of SCREENS) {
   if (
     !screen.startsWith("cards") &&
     !screen.startsWith("settings") &&
+    !screen.startsWith("create") &&
     screen !== "proactive" &&
     screen !== "apps"
   ) {
@@ -123,6 +128,11 @@ for (const screen of SCREENS) {
       const thread = document.querySelector(".thread");
       if (thread) thread.scrollTop = thread.scrollHeight;
     });
+  }
+  if (screen.startsWith("create-")) {
+    await page.getByText("Create new agent").click();
+    if (screen === "create-voice") await page.getByText("No voice yet").click();
+    if (screen === "create-avatar") await page.getByText("Edit avatar").click();
   }
   await page.waitForTimeout(600);
   const window = page.locator(".frame");

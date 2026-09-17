@@ -252,7 +252,7 @@
   color: var(--success-text);
 }
 
-.pill {
+.statuschip {
   font-size: var(--text-caption);
   font-weight: 400;
   padding: 2px 8px;
@@ -260,14 +260,14 @@
   background: rgba(0, 0, 0, 0.055);
   color: var(--muted);
 }
-.pill--completed,
-.pill--finished {
+.statuschip--completed,
+.statuschip--finished {
   color: var(--success-text);
 }
-.pill--failed {
+.statuschip--failed {
   color: #c92a25;
 }
-.pill--running {
+.statuschip--running {
   color: var(--accent);
 }
 

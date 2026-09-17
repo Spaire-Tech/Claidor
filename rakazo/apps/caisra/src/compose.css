@@ -1,0 +1,443 @@
+/**
+ * The compose screen, at the canvas's measurements: a To: line at `14px 21px`
+ * over a hairline, a body at `15px 21px 24px`, and one card 640 wide at the
+ * panel radius in the window's grey — the picker's rows 43 high at the row
+ * radius, or the new-agent form with 19 between its groups.
+ */
+
+.compose {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  background: var(--paper);
+}
+
+.compose__to {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 14px 21px;
+  border-bottom: 1px solid var(--line-hairline);
+  background: var(--paper);
+}
+.compose__tolabel {
+  font-size: var(--text-emphasis);
+  color: var(--muted);
+}
+.compose__to input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-emphasis);
+  color: var(--ink);
+}
+
+.compose__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 15px 21px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  background: var(--paper);
+}
+
+.picker {
+  width: 100%;
+  max-width: 640px;
+  padding: 6px;
+  border-radius: var(--radius-panel);
+  background: var(--window);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.picker__empty {
+  padding: 14px 12px;
+  font-size: var(--text-body);
+  color: var(--muted);
+}
+.picker__row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  height: 43px;
+  padding: 0 10px;
+  width: 100%;
+  border: 0;
+  border-radius: var(--radius-row);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.picker__row:hover {
+  background: var(--paper);
+}
+.picker__plus {
+  width: 25px;
+  height: 25px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--fill);
+  border: 1px solid var(--line-hairline);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+}
+.picker__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--text-emphasis);
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.picker__keys {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.keycap {
+  min-width: 19px;
+  height: 19px;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: var(--fill);
+  border: 1px solid var(--line-hairline);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+  color: var(--muted);
+}
+
+.newagent {
+  width: 100%;
+  max-width: 640px;
+  padding: 21px 21px 19px;
+  border-radius: var(--radius-panel);
+  background: var(--window);
+  display: flex;
+  flex-direction: column;
+  gap: 19px;
+}
+.newagent__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.newagent__headstack {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.newagent__title {
+  font-size: var(--text-base);
+  font-weight: 500;
+  letter-spacing: var(--track-title);
+  color: var(--ink);
+}
+.newagent__hint {
+  font-size: var(--text-label);
+  color: var(--muted);
+}
+.editavatar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  height: 27px;
+  padding: 0 10px;
+  border: 1px solid var(--line-field);
+  border-radius: var(--radius-pill);
+  background: var(--paper);
+  box-shadow: var(--shadow-flat);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-small);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.editavatar:hover {
+  background: var(--window);
+}
+
+.avatars {
+  padding: 12px;
+  border-radius: var(--radius-row);
+  background: var(--window);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.avatars__title {
+  font-size: var(--text-label);
+  color: var(--muted);
+}
+.avatars__grid {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 6px;
+}
+.avatars__one {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1.5px solid var(--line-card);
+  border-radius: var(--radius-field);
+  background: transparent;
+  cursor: pointer;
+}
+.avatars__one--on {
+  background: var(--window);
+  border-color: var(--ink);
+}
+
+.newagent__actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-top: 2px;
+}
+.newagent__voicenote {
+  font-size: var(--text-small);
+  color: var(--faint);
+}
+
+.cgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cgroup__title {
+  font-size: var(--text-label);
+  color: var(--muted);
+}
+
+/* An input in the form: white on the window's grey, no line round it. */
+.cfield {
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-field);
+  background: var(--paper);
+  outline: none;
+  font: inherit;
+  font-size: var(--text-message);
+  color: var(--ink);
+}
+.cfield--area {
+  height: auto;
+  min-height: 78px;
+  padding: 11px 14px;
+  border-radius: var(--radius-input);
+  resize: none;
+  line-height: 1.45;
+}
+
+.voicepill {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  align-self: flex-start;
+  height: 36px;
+  padding: 0 12px 0 5px;
+  border: 1px solid var(--line-button);
+  border-radius: var(--radius-pill);
+  background: var(--paper);
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.voicepill:hover {
+  background: var(--window);
+}
+/* Until a voice is picked there is a plain grey disc, not a default nobody
+   chose wearing a colour that belongs to something else. */
+.voicepill__none {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--fill);
+  border: 1px solid var(--line-hairline);
+  display: block;
+}
+.voicepill__name {
+  font-size: var(--text-message);
+  color: var(--ink);
+  white-space: nowrap;
+}
+.voicepill__action {
+  font-size: var(--text-message);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.pill {
+  height: 34px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-body);
+  font-weight: 400;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.pill:hover {
+  background: var(--window);
+}
+.pill--primary {
+  background: var(--accent);
+  color: var(--paper);
+  font-weight: 500;
+}
+.pill--primary:hover {
+  background: var(--accent-hover);
+}
+/* Until a name is typed the button wears the hover grey and does not point. */
+.pill--primary:disabled {
+  background: var(--line-hover);
+  color: var(--ink);
+  font-weight: 400;
+  cursor: default;
+}
+
+/* What the voice picker lays over the screen. */
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  background: rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.voicedialog {
+  width: 100%;
+  max-width: 560px;
+  padding: 29px 28px 24px;
+  border-radius: 24px;
+  background: var(--paper);
+  border: 1px solid var(--line-hairline);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    0 24px 60px rgba(0, 0, 0, 0.14);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 21px;
+}
+.voicedialog__head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+.voicedialog__title {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: var(--track-screen-title);
+  color: var(--ink);
+}
+.voicedialog__sub {
+  font-size: var(--text-emphasis);
+  color: var(--muted);
+}
+.voicedialog__row {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  width: 100%;
+  justify-content: center;
+}
+.voicedialog__arrow {
+  width: 29px;
+  height: 29px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.voicedialog__arrow:hover {
+  color: var(--ink);
+  background: var(--line-hover);
+}
+.voicedialog__name {
+  min-width: 204px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+.voicedialog__voice {
+  font-size: var(--text-sidebar-title);
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+}
+.voicedialog__desc {
+  font-size: var(--text-message);
+  color: var(--muted);
+}
+.voicedialog__dots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.voicedialog__dot {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--faint);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.voicedialog__dot--on {
+  background: var(--ink);
+}
+.voicedialog__actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-top: 2px;
+}

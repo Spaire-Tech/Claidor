@@ -3,6 +3,7 @@ import { caisraRowsFromBlocks, ExecPolicy, SettingsTab } from "@rakazo/core";
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Apps } from "./Apps.js";
+import { Compose } from "./Compose.js";
 import {
   bots,
   cardScreens,
@@ -62,6 +63,10 @@ const SCREEN_OF: Record<string, Screen> = {
   apps: Screen.Apps,
   settings: Screen.Settings,
   "settings-computer": Screen.Settings,
+  create: Screen.Create,
+  "create-agent": Screen.Create,
+  "create-voice": Screen.Create,
+  "create-avatar": Screen.Create,
 };
 
 /**
@@ -119,6 +124,8 @@ function App() {
           />
         ) : screen === Screen.Apps ? (
           <Apps catalog={catalog} />
+        ) : screen === Screen.Create ? (
+          <Compose agents={bots} />
         ) : screen === Screen.Settings ? (
           <Settings
             input={account}

@@ -103,14 +103,35 @@ function shapeFor(seed: number) {
   };
 }
 
-export function Blob({ seed, size, label }: { seed: string; size: number; label?: string }) {
+/** How many faces there are. The create screen shows all of them. */
+export const AVATAR_COUNT = AVATARS.length;
+
+export function Blob({
+  seed,
+  size,
+  label,
+  avatar,
+}: {
+  seed: string;
+  size: number;
+  label?: string;
+  /**
+   * A chosen face, 0–24, overriding the one hashed from the id.
+   *
+   * The hash is a fallback for a bot the backend has not stored a face for.
+   * Once somebody picks one on the create screen, this is what they picked,
+   * and the face stops changing as they type the name.
+   */
+  avatar?: number;
+}) {
   const uid = useId().replace(/:/g, "");
-  const main = seed === MAIN_ID;
+  const main = avatar === undefined && seed === MAIN_ID;
+  const index = avatar ?? indexFor(seed);
   const colors = useMemo(
-    () => (main ? MAIN_COLORS : (AVATARS[indexFor(seed)] ?? MAIN_COLORS)).split(","),
-    [main, seed],
+    () => (main ? MAIN_COLORS : (AVATARS[index] ?? MAIN_COLORS)).split(","),
+    [main, index],
   );
-  const shape = useMemo(() => shapeFor(main ? MAIN_SEED : indexFor(seed) * 5 + 2), [main, seed]);
+  const shape = useMemo(() => shapeFor(main ? MAIN_SEED : index * 5 + 2), [main, index]);
 
   const bob = `caisra-blob-bob ${shape.bobDur}s ease-in-out ${shape.delay}s infinite`;
   const squish = `caisra-blob-squish ${shape.bobDur}s ease-in-out ${shape.delay}s infinite`;

@@ -69,7 +69,7 @@ function Helper({ row }: { row: Extract<ThreadRow, { kind: "helper" }> }) {
       <div className="card card--quiet">
         <div className="card__title">
           {row.name}
-          <span className={`pill pill--${row.status}`}>{row.status}</span>
+          <span className={`statuschip statuschip--${row.status}`}>{row.status}</span>
         </div>
         <div className="card__body">{row.result ?? row.task}</div>
       </div>
@@ -261,7 +261,7 @@ function CloudAgent({ row }: { row: Extract<ThreadRow, { kind: "cloud_agent" }> 
       <div className="card">
         <div className="card__title">
           {row.title}
-          <span className={`pill pill--${row.status}`}>{row.status}</span>
+          <span className={`statuschip statuschip--${row.status}`}>{row.status}</span>
         </div>
         {row.prUrl ? <div className="card__body mono">{row.prUrl}</div> : null}
       </div>

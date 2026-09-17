@@ -1,0 +1,11 @@
+/** A voice's sphere. The shadow is the design's; the drawing is not (see VoiceOrb.tsx). */
+.voiceorb {
+  flex: 0 0 auto;
+  display: block;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: var(--shadow-orb);
+}
+.voiceorb--big {
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.14);
+}
