@@ -1,0 +1,69 @@
+/**
+ * The blob's motion.
+ *
+ * Copied from `desktop/src/renderer/design/tokens.css`. They live in a
+ * stylesheet rather than a `<style>` inside the component because a sidebar of
+ * forty agents should not carry forty copies of the same five keyframes.
+ */
+
+.blob {
+  flex: 0 0 auto;
+  display: block;
+}
+.blob svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+@keyframes caisra-blob-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+@keyframes caisra-blob-squish {
+  0%,
+  100% {
+    scale: 1 1;
+  }
+  50% {
+    scale: 1.015 0.985;
+  }
+}
+@keyframes caisra-blob-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.08);
+  }
+}
+@keyframes caisra-blob-drift {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  30% {
+    transform: translate(1.6px, -1px);
+  }
+  65% {
+    transform: translate(-1.4px, 1.2px);
+  }
+}
+
+/* The blob's animations are written as inline styles, because each one carries
+   a duration and a delay the seed decided. Nothing but !important outranks an
+   inline style, so this is the one place it is used. */
+@media (prefers-reduced-motion: reduce) {
+  /* biome-ignore lint/complexity/noImportantStyles: outranks the seeded inline animation */
+  [style*="caisra-blob-"] {
+    animation: none !important;
+  }
+}

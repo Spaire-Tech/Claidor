@@ -1,14 +1,5 @@
 /** The thread's own styles. Values come from tokens.css; none is invented here. */
 
-.window {
-  width: 720px;
-  margin: 40px auto;
-  background: var(--paper);
-  border-radius: 18px;
-  box-shadow: var(--shadow-window);
-  overflow: hidden;
-}
-
 .header {
   display: flex;
   align-items: center;
@@ -17,15 +8,18 @@
   border-bottom: 1px solid var(--line-hairline);
   background: var(--window);
 }
-.header__avatar {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: linear-gradient(140deg, #6ec9b5, #3ec5a8);
+.header__stack {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 .header__name {
   font-size: var(--text-emphasis);
   font-weight: 500;
+}
+.header__sub {
+  font-size: var(--text-caption);
+  color: var(--muted);
 }
 
 .thread {
@@ -88,6 +82,21 @@
   height: 6px;
   border-radius: 50%;
   background: var(--faint);
+  animation: caisra-working 1.4s ease-in-out infinite;
+}
+@keyframes caisra-working {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .working__dot {
+    animation: none;
+  }
 }
 
 .card {
@@ -152,11 +161,15 @@
   background: rgba(0, 0, 0, 0.055);
   color: var(--muted);
 }
-.pill--completed {
+.pill--completed,
+.pill--finished {
   color: var(--success-text);
 }
 .pill--failed {
   color: #c92a25;
+}
+.pill--running {
+  color: var(--accent);
 }
 
 .choice__options {
@@ -191,4 +204,143 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+/* A teammate: the new agent's own face, its job, and the way into it. */
+.card--teammate {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 13px;
+}
+.card__stack {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.card__stack .card__body {
+  margin-top: 1px;
+}
+
+/* An answer card: key on the left, value on the right, aligned down the card. */
+.card--lines {
+  padding: 11px 15px;
+}
+.line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 5px 0;
+  font-size: var(--text-body);
+}
+.line + .line {
+  border-top: 1px solid var(--line-hairline);
+}
+.line__k {
+  color: var(--muted);
+}
+.line__v {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* The one warning colour in the design is spent on an approval. */
+.card--approval {
+  border-color: rgba(232, 163, 0, 0.35);
+}
+.warn {
+  color: var(--warning);
+  font-size: 11px;
+}
+.mono {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: var(--text-caption);
+  overflow-wrap: anywhere;
+}
+.secret {
+  margin-top: 9px;
+  padding: 8px 11px;
+  border: 1px solid var(--line-field);
+  border-radius: 10px;
+  background: var(--fill);
+  letter-spacing: 2px;
+  color: var(--faint);
+}
+
+.card__buttons {
+  display: flex;
+  gap: 8px;
+}
+.card__action--ghost {
+  background: var(--fill);
+  color: var(--ink);
+}
+
+/* A connector's mark, and a file's type, in the same square. */
+.logo,
+.filetype {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--fill);
+  color: var(--muted);
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+}
+.filetype {
+  font-size: 10px;
+  letter-spacing: 0.4px;
+}
+
+.card--chart {
+  max-width: 86%;
+  padding: 13px 13px 9px;
+}
+.chart {
+  margin-top: 8px;
+  overflow-x: auto;
+}
+.chart svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* The composer. Nothing here types yet; it is the resting shape of the bar. */
+.composer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px 16px;
+  background: var(--paper);
+}
+.composer__plus,
+.composer__send {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fill);
+  color: var(--muted);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.composer__send {
+  background: var(--accent);
+  color: #fff;
+}
+.composer__field {
+  flex: 1;
+  padding: 8px 14px;
+  border: 1px solid var(--line-field);
+  border-radius: 999px;
+  color: var(--faint);
+  font-size: var(--text-message);
 }

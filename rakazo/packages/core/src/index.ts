@@ -8,6 +8,7 @@ export * from "./avatar-motion.js";
 export * from "./avatar-shape.js";
 export * from "./bot-messages.js";
 export * from "./bot-sections.js";
+export * from "./caisra-routines.js";
 export * from "./caisra-thread.js";
 export * from "./cloud-agent.js";
 export * from "./compose-update.js";

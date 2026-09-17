@@ -240,3 +240,45 @@ cloud-blob avatars, and the Caisra brand.
 
 Onboarding, the roster and the cards come across from `desktop/` rather than
 being designed again; they are already the founder's.
+
+---
+
+## 7. What is built, 17 September
+
+`rakazo/apps/caisra` is a real Vite app in the workspace. It draws Caisra's
+screens from real data: the thread rows come out of `caisraRowsFromBlocks`
+over real `MessageBlock[]`, and the routines are real `Routine` records. A
+screenshot from it is therefore evidence about the mapping, not a picture of
+a mock-up.
+
+**Built:**
+
+- `packages/core/src/caisra-thread.ts` — every one of the 22 block kinds to a
+  row or to a commented `null`, exhaustive by a `never`, with tests that read
+  the kind list off the schema so an upstream addition fails the build.
+- `packages/core/src/caisra-routines.ts` — the routine's summary line, the
+  can-it-fire rule (the backend's, with the backend's own sentence), and the
+  eight-trigger menu with a reason on every row it cannot offer. Tested.
+- `apps/caisra/src/Thread.tsx` — all fourteen row kinds drawn, plus the
+  composer. The chart is drawn by the upstream's own `buildPlotParts`, so a
+  model-written spec never becomes markup.
+- `apps/caisra/src/Blob.tsx` — the cloud-blob avatar, ported from
+  `desktop/`, seeded from the bot id.
+- `apps/caisra/src/Shell.tsx` — the app: a list of conversations, one per
+  agent, and whatever is open beside it.
+- `apps/caisra/src/Routines.tsx` — the routines screen against the real
+  model: several schedules on one routine, the three inbound triggers with
+  their addresses, `@once` as "One-time", Test run, run history, and Save off
+  when nothing can fire it.
+- `apps/caisra/shots/` — five screenshots, taken from the built app in
+  Chromium.
+
+**Not built, and knowingly so:**
+
+- Nothing is wired to the backend. Every screen is fixtures; there is no RPC
+  client in this app yet.
+- Groups, the computer panel, connections, memory, skills and settings have
+  no Caisra screen. They are in the table in §1 and they are next.
+- Answer cards still arrive as the upstream's key/value `lines`. Our
+  openui-lang programs have no block kind to travel in; that is a backend
+  change, not a screen.
