@@ -4550,3 +4550,57 @@ the back bar and no X.
 `desktop/src/renderer/design/shell/{MessagesShell.tsx,useMessagesShell.ts,CaisraApp.tsx,Apps.tsx,Compose.tsx}`,
 `desktop/src/renderer/design/settings/Settings.tsx`,
 `desktop/src/renderer/design/agent/AgentDetail.tsx`.
+
+## 79. "terminated": the token proxy broke every connector answer on the last hop — `fixed; the Mac unrun`
+
+The founder, 18 September, having set the Composio key: *"connectors are
+just not working. i put the key and everything."* With one line:
+
+```
+[Connections] composio figma — failed: terminated
+```
+
+**`terminated` is not our word and not Composio's.** It is what Node's
+fetch says when a response body ends differently from what its headers
+promised. So the answer came back and was destroyed on the way in.
+
+**Where.** The app never calls `api.claidor.com` directly. Every Composio
+call goes to the local token proxy on loopback, which adds the account's
+bearer and forwards to `/desktop/api/proxy/composio/…`
+(`composioApi.ts`, `openclawTokenProxy.ts`). Coming back,
+`forwardRequest` copied **every** upstream header onto our response:
+
+```ts
+resp.headers.forEach((value, key) => { responseHeaders[key] = value; });
+```
+
+Electron's `net.fetch` decodes the body for us. A compressed JSON answer
+therefore arrives as plain bytes while its headers still say
+`content-encoding: gzip` and carry the **compressed** `content-length`.
+The proxy wrote that length and that encoding onto a decoded body, and
+the app's fetch gave up mid-body. Every connector, every time.
+
+**Why it never showed before.** The model routes answer
+`text/event-stream`, which nothing compresses, and they take a different
+branch anyway. Composio answers JSON, which the edge compresses. Apps was
+the first thing in the app to ask for a compressed answer through this
+proxy, so it was the first to break, and it broke completely.
+
+**Fixed:** `copyResponseHeaders` drops `content-encoding`,
+`content-length`, `transfer-encoding` and the rest of the hop-by-hop
+headers (RFC 9110 §7.6.1) before the response is written, so Node sets a
+length that matches the bytes actually sent. Three tests cover it.
+
+**A correction to item 76.** I read `responseBytes=266` on the founder's
+server log as a small error body and concluded the missing key was the
+cause. 266 was the **compressed** size of a real answer. The key was
+genuinely missing from `render.yaml` and declaring it was right, but it
+was necessary and not sufficient: with the key set, this second fault was
+still there, and it is the one that produced "terminated". Two bugs, one
+symptom, and I named only the first.
+
+**Unrun:** the founder's Mac. The proof here is three unit tests and the
+mechanism read off the code, not a connector connecting.
+
+**Where:** `desktop/src/main/libs/openclawTokenProxy.ts` (+
+`openclawTokenProxy.headers.test.ts`).

@@ -834,10 +834,7 @@ async function forwardRequest(
   const contentType = resp.headers.get('content-type') || '';
   const isStream = contentType.includes('text/event-stream');
 
-  const responseHeaders: Record<string, string> = {};
-  resp.headers.forEach((value, key) => {
-    responseHeaders[key] = value;
-  });
+  const responseHeaders = copyResponseHeaders(resp.headers);
 
   if (isStream && resp.body) {
     return {
@@ -855,6 +852,48 @@ async function forwardRequest(
     body: respBuffer,
     isStream: false,
   };
+}
+
+/**
+ * Headers that must not be copied from the upstream response onto ours.
+ *
+ * **This is what made every connector fail with "terminated".** Electron's
+ * `net.fetch` decodes the body for us: a gzipped answer arrives here as
+ * plain bytes, while `resp.headers` still says `content-encoding: gzip`
+ * and carries the *compressed* `content-length`. Copying both onto a
+ * decoded body hands the app a length that does not match and an encoding
+ * that is no longer there, and Node's fetch gives up mid-body with
+ * `TypeError: terminated`.
+ *
+ * It never showed on the model routes because those answer
+ * `text/event-stream`, which nothing compresses. Composio answers JSON,
+ * which the edge compresses, so Apps was the first thing to hit it: the
+ * key was set, the request reached Composio, and the reply was destroyed
+ * on the last hop home (18 September).
+ *
+ * The rest are hop-by-hop headers (RFC 9110 §7.6.1), which belong to one
+ * connection and are never forwarded.
+ */
+const DROPPED_RESPONSE_HEADERS = new Set([
+  'content-encoding',
+  'content-length',
+  'transfer-encoding',
+  'connection',
+  'keep-alive',
+  'upgrade',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailer',
+]);
+
+export function copyResponseHeaders(headers: Headers): Record<string, string> {
+  const copied: Record<string, string> = {};
+  headers.forEach((value, key) => {
+    if (DROPPED_RESPONSE_HEADERS.has(key.toLowerCase())) return;
+    copied[key] = value;
+  });
+  return copied;
 }
 
 function buildUpstreamRequestHeaders(
