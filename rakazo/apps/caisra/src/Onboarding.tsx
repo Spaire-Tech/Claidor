@@ -106,7 +106,6 @@ function Words({ words }: { words: readonly ShownWord[] }) {
       {words.map((word, index) => (
         <span
           // The words of a line are a fixed sequence; the position is the identity.
-          // biome-ignore lint/suspicious/noArrayIndexKey: the index is the word
           key={index}
           className={
             word.state === WordState.Hidden
@@ -180,7 +179,6 @@ export function Onboarding({
       <div className="onb__clouds" aria-hidden>
         {ambient.map((one, index) => (
           // Four fixed clouds in a fixed order.
-          // biome-ignore lint/suspicious/noArrayIndexKey: the index is the cloud
           <span key={index} style={one.place}>
             <span style={one.cloud} />
           </span>

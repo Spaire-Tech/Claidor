@@ -138,7 +138,6 @@ export function Compose({
                     <button
                       // The faces are a fixed list in a fixed order, so the
                       // position is the identity.
-                      // biome-ignore lint/suspicious/noArrayIndexKey: the index is the face
                       key={index}
                       type="button"
                       aria-label={`Avatar ${index + 1}`}

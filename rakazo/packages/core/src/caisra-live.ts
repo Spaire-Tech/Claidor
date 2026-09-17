@@ -1,4 +1,7 @@
 import type { MessageBlock, ProductEvent, ThreadMessage, ThreadSnapshot } from "@rakazo/contracts";
+import { upsertMessageById } from "./message-pages.js";
+import { userVisibleMessages } from "./message-visibility.js";
+import { ACTIVE_RUN_STATUSES, isActive } from "./run-state.js";
 
 /**
  * The live thread, reduced to what Caisra draws.
@@ -114,11 +117,8 @@ export function caisraApplyEvent(snapshot: ThreadSnapshot, event: ProductEvent):
   if (MESSAGE_EVENTS.has(event.type)) {
     const message = messageOf(event);
     if (!message) return { outcome: LiveOutcome.Refetch, snapshot };
-    const at = snapshot.messages.findIndex((one) => one.id === message.id);
-    const messages =
-      at === -1
-        ? [...snapshot.messages, message]
-        : snapshot.messages.map((one, index) => (index === at ? { ...one, ...message } : one));
+    // Theirs, from `message-pages.ts`. An earlier pass hand-rolled this.
+    const messages = upsertMessageById(snapshot.messages, message);
     return { outcome: LiveOutcome.Changed, snapshot: { ...snapshot, cursor, messages } };
   }
 
@@ -139,25 +139,64 @@ export function caisraApplyEvent(snapshot: ThreadSnapshot, event: ProductEvent):
 }
 
 /**
- * Whether the agent is mid-task, from the snapshot the server gave.
- *
- * Their `Run` carries a status; a thread with a running one is a thread whose
- * agent is working, which is the word the sidebar shows and the dots in the
- * header mean.
+ * The statuses that mean the person is being waited on rather than the agent
+ * working. Both are in `ACTIVE_RUN_STATUSES`; the difference is who moves next.
  */
-export function caisraWorking(snapshot: Pick<ThreadSnapshot, "run" | "activeRuns">): boolean {
-  if (snapshot.run?.status === "running") return true;
-  return (snapshot.activeRuns ?? []).some((run) => run.status === "running");
+const HELD: ReadonlySet<string> = new Set(["waiting_input", "waiting_takeover"]);
+
+/** Every run on the thread, whichever field the snapshot carries it in. */
+function runsOf(snapshot: Pick<ThreadSnapshot, "run" | "activeRuns">) {
+  return [...(snapshot.run ? [snapshot.run] : []), ...(snapshot.activeRuns ?? [])];
 }
 
 /**
- * Whether a card is waiting on the person.
+ * Whether the agent is mid-task.
+ *
+ * **`isActive` is theirs** (`run-state.ts`), and it is why this function was
+ * wrong before. An earlier pass here tested `status === "running"` by hand, so a
+ * run that was `queued` or `leased` — which is what a run is for the first
+ * moments after you press send — read as idle. The header showed nothing and
+ * the sidebar did not say "Working" while the agent was working. Their list is
+ * `queued, leased, running, waiting_input, waiting_takeover`, and the only
+ * reason to read it any other way is the one below: waiting is not working.
+ */
+export function caisraWorking(snapshot: Pick<ThreadSnapshot, "run" | "activeRuns">): boolean {
+  return runsOf(snapshot).some((run) => isActive(run.status) && !HELD.has(run.status));
+}
+
+/**
+ * Whether the thread is waiting on the person.
  *
  * Not the same as working: nothing is happening until they answer, so the
- * header says "Waiting for you" instead of showing the dots.
+ * header says "Waiting for you" instead of showing the dots. `waiting_takeover`
+ * counts — the computer is asking for control, and that is also the person's
+ * move.
  */
 export function caisraWaiting(snapshot: Pick<ThreadSnapshot, "run" | "activeRuns">): boolean {
-  const waiting = (status: string | undefined) => status === "waiting_input";
-  if (waiting(snapshot.run?.status)) return true;
-  return (snapshot.activeRuns ?? []).some((run) => waiting(run.status));
+  return runsOf(snapshot).some((run) => HELD.has(run.status));
 }
+
+/**
+ * The messages a person is meant to see.
+ *
+ * **Theirs** (`message-visibility.ts`). An earlier pass drew every message in
+ * the snapshot, which would have put a peer run's whole working history into
+ * the conversation. There is a rule for this and it was not ours to write.
+ *
+ * **`includePeerReceipts` is on, and that is a Caisra decision with a reason.**
+ * Their option keeps `bot_message_sent` / `bot_message_received` as compact
+ * chips while the peer's body stays hidden. The founder's 17 September
+ * decision was that every agent posts its own results into the shared
+ * conversation and each one speaks for itself — so *that* Comms took something
+ * on from Yodo belongs on screen. Caisra already draws it the quiet way: a
+ * centred grey line, not a bubble (`caisra-thread.ts`, the `system` row).
+ * Turning the option off would hide the handoffs the design exists to show.
+ */
+export function caisraVisible<T extends { runId?: string; blocks: readonly MessageBlock[] }>(
+  messages: readonly T[],
+): T[] {
+  return userVisibleMessages(messages, { includePeerReceipts: true });
+}
+
+/** Their list, re-exported so a caller can see what counts as active. */
+export { ACTIVE_RUN_STATUSES };
