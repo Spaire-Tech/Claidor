@@ -9,6 +9,7 @@ import {
   type FixtureMessage,
   morning,
   names,
+  proactive,
   routines,
   runs,
   startingUp,
@@ -39,14 +40,15 @@ function rowsOf(messages: FixtureMessage[]): ThreadRow[] {
 const screen = new URLSearchParams(window.location.search).get("screen") ?? "morning";
 
 /**
- * Where a card's pictures come from.
- *
- * The shooter serves them on its own loopback port, which is also the origin
- * this page is loaded from. Opened any other way the addresses fail, and the
- * cards close up around their text rather than drawing grey bars — which is
- * the behaviour, not an accident.
+ * Where a card's pictures come from: OpenUI's own rule, a seeded picsum
+ * address. Always resolves, always the same picture for the same seed, so a
+ * card is never empty and a screenshot does not change under us.
  */
-const cards = cardScreens((name) => `${window.location.origin}/photos/${name}.jpg`);
+const photo = (name: string) => `https://picsum.photos/seed/${name}/800/500`;
+const cards: Record<string, FixtureMessage[]> = {
+  ...cardScreens(photo),
+  proactive: proactive(photo),
+};
 
 function Screen() {
   if (screen === "routines" || screen === "routines-menu") {

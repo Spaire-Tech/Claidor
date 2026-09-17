@@ -2,14 +2,17 @@ import type { CaisraRow } from "@rakazo/core";
 import {
   CaisraFileKind,
   CaisraRowKind,
+  caisraArtifactKind,
   caisraFileKind,
   caisraFileLogo,
   caisraFileSize,
   caisraFileWord,
 } from "@rakazo/core";
+import { Artifact } from "./Artifact.js";
 import { Blob } from "./Blob.js";
 import { Cards } from "./Cards.js";
 import { Chart } from "./Chart.js";
+import { FileRow } from "./FileRow.js";
 import { logoMonogram, logoUrl } from "./logos.js";
 import "./thread.css";
 
@@ -172,51 +175,22 @@ function AnswerCard({ row }: { row: Extract<ThreadRow, { kind: "card" }> }) {
 /**
  * A file the agent made, as the whole message.
  *
- * The founder's 15 September design, in one row: the file's own icon, its
- * name, what is under it, and the round Save button. *"its pdf excel and word.
- * with their own svg."* Which icon is `caisraFileKind`'s decision, in core and
- * tested, so a spreadsheet is a spreadsheet on every surface; anything the
- * design did not draw keeps its extension in a tile and never borrows another
- * file's mark.
+ * Which mark it wears is `caisraFileKind`'s decision, in core and tested, so a
+ * spreadsheet is a spreadsheet on every surface. Anything the design did not
+ * draw keeps its extension rather than borrowing another file's icon.
  */
 function Attachment({ row }: { row: Extract<ThreadRow, { kind: "attachment" }> }) {
   const kind = caisraFileKind(row.name, row.mimeType);
-  const logo = caisraFileLogo(kind);
-  const url = logo ? logoUrl(logo) : undefined;
   const word = kind === CaisraFileKind.Image ? "Image" : (caisraFileWord(row.name) ?? "File");
-  const caption = row.size === undefined ? undefined : caisraFileSize(row.size);
-
   return (
     <div className="row row--left">
-      <div className="card card--file">
-        {url ? (
-          <img className="filemark" src={url} alt="" width={32} height={32} />
-        ) : (
-          <span className="filetype">{word}</span>
-        )}
-        <span className="card__stack">
-          <span className="card__title">{row.name}</span>
-          {caption ? <span className="card__body">{caption}</span> : null}
-        </span>
-        <button type="button" className="save" aria-label="Save a copy" title="Save a copy">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.8}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-            focusable="false"
-          >
-            <path d="M12 4v11" />
-            <path d="M7.5 11l4.5 4.5 4.5-4.5" />
-            <path d="M5 19.5h14" />
-          </svg>
-        </button>
-      </div>
+      <FileRow
+        name={row.name}
+        {...(row.size === undefined ? {} : { caption: caisraFileSize(row.size) })}
+        {...(caisraFileLogo(kind) ? { logo: caisraFileLogo(kind) } : {})}
+        word={word}
+        onSave={() => undefined}
+      />
     </div>
   );
 }
@@ -332,8 +306,17 @@ function Row({ row }: { row: ThreadRow }) {
       return <SkillDraft row={row} />;
     case CaisraRowKind.Chart:
       return <Chart block={row.block} />;
-    case CaisraRowKind.Answer:
-      return <Cards program={row.program} />;
+    case CaisraRowKind.Answer: {
+      // One language, two roots. A `SlideShow` or a `ReportView` is an
+      // artifact — our file card, opening their viewer — and everything else
+      // is answer cards.
+      const artifact = caisraArtifactKind(row.program);
+      return artifact ? (
+        <Artifact program={row.program} kind={artifact} />
+      ) : (
+        <Cards program={row.program} />
+      );
+    }
     default: {
       // Exhaustive by construction, the same way the mapping is: a row kind
       // added to `caisra-thread.ts` fails the build here rather than leaving a

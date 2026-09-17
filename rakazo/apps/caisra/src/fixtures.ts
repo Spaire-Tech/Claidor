@@ -389,6 +389,51 @@ export function cardScreens(photo: (name: string) => string): Record<string, Fix
   return screens;
 }
 
+/**
+ * Offer it before they ask.
+ *
+ * The founder, 18 September: *"i want for caisra take over in text and say
+ * i've put this as a word doc as well for you and that will be the artifact...
+ * thats how we win users. always proactive. the whole goal of the agent is
+ * that it does stuff for you. you shouldnt have to ask him he should take
+ * initiative like this."*
+ *
+ * Nothing in the code ever stopped this: the fence splitter has always walked
+ * every block, so one reply can carry text, a card, a plain line and a
+ * document, in that order. Two rules in the brief forbade it and both are
+ * gone. This is that reply, drawn.
+ */
+export function proactive(photo: (name: string) => string): FixtureMessage[] {
+  const plan = cardExamples(photo)["cards-plan"];
+  if (!plan) return [];
+  return [
+    { role: "person", blocks: [{ kind: "text", text: plan.ask }] },
+    {
+      role: "agent",
+      blocks: [
+        { kind: "text", text: plan.before },
+        { kind: "answer_card", program: plan.program.join("\n") },
+        {
+          kind: "text",
+          text: "I have written it up as a document as well, so you have something to send on.",
+        },
+        { kind: "answer_card", program: MEAL_PLAN_REPORT },
+      ],
+    },
+  ];
+}
+
+/**
+ * The document that goes with it. A report, not a `.docx`: the guard the rule
+ * came with is that Caisra never claims a Word file, a PDF or anything on disk
+ * unless the file tools actually wrote one.
+ */
+const MEAL_PLAN_REPORT = [
+  'root = ReportView("14-Day Meal Plan", "Two weeks of breakfasts, lunches and dinners", [p1, p2])',
+  'p1 = Page("p1", StandardFrontPage("14-Day Meal Plan", "https://picsum.photos/seed/mealplan/1200/700", TextContent("A fortnight of lean proteins, whole grains and vegetables, with the cooking front-loaded into two sessions. Portions are a starting point, not a prescription."), "Cook once, eat twice", "title-top"))',
+  'p2 = Page("p2", ContentWithImage("The week at a glance", ["https://picsum.photos/seed/mealprep/900/600"], "Days 2, 4 and 7 run on what you already cooked. That is the design, not laziness.", "image-right"))',
+].join("\n");
+
 function conversationOf(example: CardExample): FixtureMessage[] {
   const agent: MessageBlock[] = [
     { kind: "text", text: example.before },

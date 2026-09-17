@@ -1,0 +1,72 @@
+/*
+ * OpenUI's artifacts are set in Inter (their `--openui-font-body`), which
+ * their package does not ship. Inter is Rasmus Andersson's, under the SIL
+ * Open Font Licence 1.1 (`public/fonts/README.md`); the variable file covers
+ * every weight the deck and the report use.
+ *
+ * The app stays in Switzer. The deck and the report are theirs, whole, and
+ * that includes the face: nothing here restyles either one.
+ */
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/InterVariable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/*
+ * The sheet a viewer opens in: over the whole app, on a scrim, with the close
+ * in the corner. Escape and the scrim close it.
+ */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(8px);
+}
+.sheet__scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: default;
+}
+.sheet__body {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 18px;
+  background: var(--paper);
+  border: 1px solid var(--line-hairline);
+  box-shadow: 0 40px 110px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+.sheet__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line-hairline);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--shadow-flat);
+  cursor: pointer;
+}
+.sheet__viewer {
+  position: absolute;
+  inset: 0;
+}

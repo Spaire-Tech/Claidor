@@ -1,6 +1,8 @@
-import { readFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { mkdir, readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { extname, join } from "node:path";
+import { promisify } from "node:util";
 import { chromium } from "/home/user/Claidor/desktop/node_modules/playwright-core/index.mjs";
 
 /**
@@ -49,6 +51,35 @@ const context = await browser.newContext({
   viewport: { width: 1060, height: 860 },
   deviceScaleFactor: 2,
 });
+
+/*
+ * The cards ask picsum for their pictures, which is OpenUI's own rule and the
+ * address a real agent writes. This container reaches the internet through a
+ * proxy that Chromium is not configured for, so the request would fail here
+ * and only here. Rather than change the program — the program is the thing
+ * being photographed — each address is fetched once with curl, which does use
+ * the proxy, and served back to the page. The card still asks for exactly what
+ * it would ask for on a Mac.
+ */
+const run = promisify(execFile);
+const CACHE = new URL("../.picsum/", import.meta.url).pathname;
+await mkdir(CACHE, { recursive: true });
+const cached = new Map();
+await context.route("https://picsum.photos/**", async (route) => {
+  const url = route.request().url();
+  let body = cached.get(url);
+  if (!body) {
+    const file = join(CACHE, `${url.replace(/[^a-z0-9]+/gi, "-")}.jpg`);
+    try {
+      await readFile(file);
+    } catch {
+      await run("curl", ["-sSL", "--max-time", "30", "-o", file, url]);
+    }
+    body = await readFile(file);
+    cached.set(url, body);
+  }
+  await route.fulfill({ status: 200, contentType: "image/jpeg", body });
+});
 const SCREENS = [
   "morning",
   "starting-up",
@@ -60,6 +91,7 @@ const SCREENS = [
   "cards-trip",
   "cards-fifa",
   "cards-plan",
+  "proactive",
 ];
 for (const screen of SCREENS) {
   const page = await context.newPage();

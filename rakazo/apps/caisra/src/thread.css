@@ -409,3 +409,48 @@
   color: var(--faint);
   font-size: var(--text-message);
 }
+
+/*
+ * A card that came back short says so.
+ *
+ * The parser knows what broke — an unknown component, a name never defined, a
+ * stream that stopped mid-statement — and this is where it surfaces. A short
+ * answer nobody can see is the fault that cost the most; a visible one is a
+ * bug report.
+ */
+.cardfault {
+  margin-top: 8px;
+  padding: 9px 12px;
+  border: 1px solid rgba(232, 163, 0, 0.35);
+  border-radius: 11px;
+  background: var(--paper);
+  font-size: var(--text-body);
+  color: var(--muted);
+}
+.cardfault summary {
+  cursor: pointer;
+  color: var(--ink);
+}
+.cardfault ul {
+  margin: 8px 0 0;
+  padding-left: 16px;
+}
+.cardfault li {
+  margin-top: 4px;
+  font-size: var(--text-caption);
+}
+.cardfault__code {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  color: var(--warning);
+}
+
+/* The file row opens on its name; the mark and Save sit either side of it. */
+.file__open {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+}

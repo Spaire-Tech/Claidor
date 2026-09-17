@@ -11,10 +11,17 @@
  * something if the renderer accepted a program a real agent could write, and
  * these five have already been through OpenUI's parser.
  *
- * `photo(name)` is where a picture comes from: the shooter's loopback server.
- * With no server the addresses fail, the frames collapse, and the cards close
- * up around their text — which is the behaviour `cards.css` was given after a
- * card came back without pictures and drew grey bars where they belonged.
+ * `photo(name)` is where a picture comes from, and the rule is OpenUI's own,
+ * out of their prompt options: *"always use real accessible URLs like
+ * `https://picsum.photos/seed/KEYWORD/800/500`. Never hallucinate or invent
+ * image URLs."* A seeded address always resolves and always gives the same
+ * picture, so a card is never empty and a screenshot never changes under us.
+ *
+ * The desktop brief said the opposite — go and look every picture up, never a
+ * placeholder service — and that is why the founder's cards came back with
+ * none: it knows Tokyo, so it never searched, so it had no address, so it left
+ * `src` out every time. Zero pictures was that rule working exactly as
+ * written.
  */
 export interface CardExample {
   /** What the person asked. */
