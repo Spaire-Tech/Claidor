@@ -134,6 +134,30 @@ The macOS installer builds on GitHub Actions
 (`.github/workflows/desktop_mac.yml`), unsigned until an Apple
 certificate exists.
 
+## Before you say anything is missing (18 September 2026)
+
+**`docs/product/what-exists.md` is an inventory of what is already built and
+where. Read it before claiming any part of this product does not exist.**
+
+It exists because of one failure, repeated. I told the founder the onboarding
+Mac tasks had "genuinely nothing behind them". They are 178 lines of working
+AppleScript with 107 lines of tests in
+`desktop/src/main/onboarding/macTasks.ts`, which the founder had run many
+times, and `useOnboarding.ts` — which I had read that same session — points
+straight at them with `window.electron?.onboarding`. I reasoned forward from my
+own file instead of searching the repository.
+
+The rule: **"X does not exist" is a claim that requires a search.** Before
+writing *missing, absent, not built, nothing behind it, a hole, needs building*
+about this product, grep `desktop/src`, `server/polar`, `rakazo/packages` and
+`rakazo/apps`. If nothing is found, say what was searched for. If something is
+found, it is a port or a wiring job, not a build.
+
+**Frozen is not gone.** `desktop/` must not be added to. The code in it is a
+finished, tested parts bin: the Mac tasks, whisper speech recognition, the
+ask-input MCP server, the connections catalogue, the 23 strongs, the whole
+design. Reach for it first.
+
 ## rakazo/ — the new foundation (17 September 2026)
 
 `rakazo/` is Rakazo (Apache 2.0), vendored with `git subtree` (squashed;
