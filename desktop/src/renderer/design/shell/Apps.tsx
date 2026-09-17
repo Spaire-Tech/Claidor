@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { avatarFallback, isAvatarIndex } from '../../../shared/agent/avatars';
 import type { PresetAgent } from '../../types/agent';
 import { Connections, type ConnectionsProps, PillLogo } from '../connections/Connections';
 import { installedPill, shelfTotal } from '../connections/shelf';
-import { ChevronRightIcon, CloseIcon, SearchIcon } from '../icons';
+import { ChevronRightIcon, SearchIcon } from '../icons';
 import { CloudBlob } from '../orb/CloudBlob';
 import { color, line, motion, radius, shadow, text, tracking } from '../tokens';
 import { AGENT_TABS, agentBody, type AgentTab, matchingRoles, roleMeta } from './roles';
@@ -96,6 +96,16 @@ export function Apps({
   available, connections, installedIds, busyId, onInstall, onUse, onClose,
   initialTab = AppsTab.Plugins, initialRoleId,
 }: AppsProps): JSX.Element {
+  // Escape is the keyboard's way back, the same place the shell's back
+  // bar goes. The X that used to sit in this header is gone.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   const [tab, setTab] = useState<AppsTab>(initialTab);
   const [query, setQuery] = useState('');
   // Which role's page is open, inside the Agents tab. The canvas puts the
@@ -196,9 +206,8 @@ export function Apps({
             />
           </span>
 
-          <RoundButton size={26} label="Close" onClick={onClose}>
-            <CloseIcon size={13} />
-          </RoundButton>
+          {/* The X is gone: the shell's back bar is the way out of every
+              screen, and one door beats four (18 September). */}
         </div>
 
         <div

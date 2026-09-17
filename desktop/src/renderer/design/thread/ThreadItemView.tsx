@@ -20,7 +20,6 @@ import {
   type ChoiceItem,
   type ChoiceOutcome,
   type ConnectorItem,
-  ConnectorOutcome,
   type SecretItem,
   Speaker,
   type ThreadItem,
@@ -635,28 +634,24 @@ export interface ConnectorHandlers {
  * one line, and two pills; the agent's own reason under the line when
  * it gave one. Pressing Install starts the sign-in in the browser and
  * the card says so until it comes back.
+ *
+ * There is no answered state to draw: an answered card is consumed and
+ * replaced by one system line, the way an answered approval card is
+ * (`connectorNote`). A card that stayed on the screen after it had been
+ * dealt with is the bug the founder found on 18 September.
  */
 function ConnectorCard(
   { item, handlers }: { item: ConnectorItem; handlers: ConnectorHandlers },
 ) {
-  const done = item.resolved;
-  const verdict = done === ConnectorOutcome.Connected
-    ? { text: 'Installed', color: color.successText }
-    : done === ConnectorOutcome.Declined
-      ? { text: 'Not now', color: color.muted }
-      : done === ConnectorOutcome.Failed
-        ? { text: item.failure ?? `${item.name} was not connected.`, color: color.deleteInk }
-        : undefined;
   return (
     <div
-      aria-label={verdict ? verdict.text : `Install ${item.name}?`}
+      aria-label={`Install ${item.name}?`}
       style={{
         width: QUESTION_WIDTH, marginTop: 6,
         display: 'flex', alignItems: 'center', gap: 16,
         padding: '18px 22px 18px 20px',
         borderRadius: radius.panel, background: color.paper,
         border: `1px solid ${line.field}`,
-        opacity: done && done !== ConnectorOutcome.Failed ? 0.85 : 1,
         animation: enter,
       }}
     >
@@ -679,20 +674,14 @@ function ConnectorCard(
         {item.line && <span style={{ fontSize: text.emphasis, color: color.muted, lineHeight: 1.35 }}>{item.line}</span>}
         {item.reason && <span style={{ fontSize: text.small, color: color.muted, lineHeight: 1.35, marginTop: 2 }}>{item.reason}</span>}
       </span>
-      {verdict ? (
-        <span style={{ flex: '0 0 auto', fontSize: text.body, fontWeight: 500, color: verdict.color, maxWidth: 260, textAlign: 'right', lineHeight: 1.35 }}>
-          {verdict.text}
-        </span>
-      ) : (
-        <span style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '0 0 auto' }}>
-          <CardPill disabled={item.busy} onClick={() => handlers.onDecline(item.id)} style={{ height: 36, padding: '0 20px', boxShadow: shadow.flat }}>
-            Not now
-          </CardPill>
-          <CardPill primary disabled={item.busy} onClick={() => handlers.onInstall(item.id)} style={{ height: 36, padding: '0 22px' }}>
-            {item.busy ? 'Connecting…' : 'Install'}
-          </CardPill>
-        </span>
-      )}
+      <span style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '0 0 auto' }}>
+        <CardPill disabled={item.busy} onClick={() => handlers.onDecline(item.id)} style={{ height: 36, padding: '0 20px', boxShadow: shadow.flat }}>
+          Not now
+        </CardPill>
+        <CardPill primary disabled={item.busy} onClick={() => handlers.onInstall(item.id)} style={{ height: 36, padding: '0 22px' }}>
+          {item.busy ? 'Connecting…' : 'Install'}
+        </CardPill>
+      </span>
     </div>
   );
 }

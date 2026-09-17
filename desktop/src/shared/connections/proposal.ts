@@ -1,3 +1,4 @@
+import type { CardAudience } from '../thread/cardAudience';
 import { CONNECTION_ITEMS, type ConnectionItem, findConnection } from './catalog';
 
 /**
@@ -51,7 +52,7 @@ export interface ProposeConnectorInput {
 }
 
 /** The card, as main sends it to the renderer. */
-export interface ProposeConnectorAsk extends ProposeConnectorInput {
+export interface ProposeConnectorAsk extends ProposeConnectorInput, CardAudience {
   requestId: string;
 }
 

@@ -246,6 +246,19 @@ envVarGroups:
         sync: false
 
       # --- connections (docs/maties/connectors.md) ---
+      # Composio carries most of the Apps cards. The key lives here and
+      # nowhere else: the app never holds one ("my users should never put
+      # a key. everything happens under the hood. not a setting."), and
+      # `polar/desktop/composio.py` is the only reader. Unset, every one
+      # of the six proxied calls is refused here in a few milliseconds
+      # with 503 "Apps are not configured on this server." — Composio is
+      # never reached, and in the app every Connect and every Install
+      # fails with nothing in the log to say why. It was left out of this
+      # file when the route was built and set by hand instead; declaring
+      # it means a deploy asks for it rather than starting without it.
+      - key: CLAIDOR_COMPOSIO_API_KEY
+        sync: false
+
       # The middleman that holds the sign-in plumbing for the services a
       # person connects an account to. The client secret buys a developer
       # token that is project-wide: it can reach every customer's

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { ScheduledTask } from '../../../scheduledTask/types';
 import { formatScheduleLabel } from '../../components/scheduledTasks/utils';
@@ -87,6 +87,16 @@ export function AgentDetail({ detail, agentName, agentId, onClose }: AgentDetail
   const { agent, tab, onTab } = detail;
   const subtitle = subtitleLine(agent?.description, detail.have.length);
 
+  // Escape is the keyboard's way back, the same place the shell's back
+  // bar goes. The X that used to sit in this header is gone.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   return (
     <div
       style={{
@@ -119,9 +129,8 @@ export function AgentDetail({ detail, agentName, agentId, onClose }: AgentDetail
                   <div style={{ fontSize: text.message, color: color.muted }}>{subtitle}</div>
                 )}
               </div>
-              <RoundButton size={26} label="Close" onClick={onClose}>
-                <CloseIcon size={13} />
-              </RoundButton>
+              {/* The X is gone: the shell's back bar is the way out of
+                  every screen, and one door beats four (18 September). */}
             </div>
 
             <div style={{ height: 1, background: color.divider }} />

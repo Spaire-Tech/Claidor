@@ -4363,3 +4363,413 @@ run against a fake bridge in its live test, as the staffing one is).
 `desktop/src/renderer/design/thread/{types.ts,connectorCards.ts,useProposeConnector.ts,ThreadItemView.tsx,Thread.tsx,threadRows.test.ts}`,
 `desktop/src/renderer/design/shell/{MessagesShell.tsx,CaisraApp.tsx}`,
 `desktop/harness/main.tsx`.
+
+## 76. Connectors answer instantly and do nothing: the Composio key was never in the deploy — `found; one line fixed; the key is the founder's to set`
+
+The founder, 17 September, with a line from the production log:
+
+```
+api.claidor.com/desktop/api/proxy/composio/api/v3.1/tool_router/session
+responseTimeMS=11 responseBytes=266
+```
+
+**Eleven milliseconds is the whole answer.** A real call to Composio
+crosses the Atlantic and takes far longer. Eleven means the request
+never left our server: it was refused at the door.
+
+**What refuses it.** `polar/desktop/composio.py` forwards six paths and
+no others, adding Claidor's key. Its first line is `if not configured()`
+— and `configured()` is `bool(settings.COMPOSIO_API_KEY.strip())`.
+Unset, every call is 503 "Apps are not configured on this server."
+before any network call. The path in the log is on the allow-list and
+the route is mounted, so the allow-list is not it.
+
+**The key was never declared in `render.yaml`.** Every other secret is
+there with `sync: false`: Anthropic, OpenAI, Google, Pipedream, AWS,
+Resend. `CLAIDOR_COMPOSIO_API_KEY` was not, and this is not new — item
+60's own proof says so: *"Unrun: Composio itself — the founder sets
+`COMPOSIO_API_KEY` on Render and presses Connect on one card."* It was
+built to be set by hand and then, as far as this log shows, never was.
+A var missing from the blueprint is silent: the service starts, the
+route answers, and every card fails with nothing to say why.
+
+**Fixed here:** the key is declared in the API's env group with
+`sync: false`, beside Pipedream, with a comment saying what its absence
+does. A deploy now asks for it instead of starting without it. Setting
+the value is the founder's, in the Render dashboard, and it is never
+committed.
+
+**What this does not prove.** The log line carries no status code, and
+`responseBytes` is Render's edge number, not ours — nothing in
+`server/polar` logs that field. So 503 is the reading the evidence
+points at, not one I watched happen. Two checks settle it in a minute,
+both in Render: the API service's Environment tab either has
+`CLAIDOR_COMPOSIO_API_KEY` or it does not; and the logs either contain
+`desktop.composio.upstream_refused` or they do not. That event only
+fires when Composio itself answered with an error. If it is absent, we
+never called Composio, and the key is the cause. If it is present, the
+body is in the log and Composio refused for its own reason.
+
+**Ruled out:** the 402 entitlement gate. `CLAIDOR_CONNECTORS_ENTITLED_EMAILS`
+does gate the connector routes, but the Composio proxy takes only
+`get_desktop_session` (`endpoints.py:1150`) and has no entitlement
+dependency, so an empty list cannot produce this.
+
+**Where:** `render.yaml`.
+
+## 77. "It was blocked" with no card and the grant note twice — `two defects fixed; the cause of the block is unproven`
+
+The founder, 18 September, with a transcript from their Mac. Jude is
+asked for a Nike report, the permission note appears **twice**, and then:
+
+> *"I couldn't create the report because the document-generation script
+> was blocked before it could be written. Send the request again and
+> I'll generate the .docx directly."*
+
+**What Allow actually does, since it keeps being misread.** It answers
+that one card and sets the exec policy to Auto, "check, then ask"
+(`useMessagesShell.ts`). It is not "never ask again": from then on the
+engine's reviewer lets the everyday through and the risky still asks,
+which is what `caisra-permissions.md` §2.2 says. So a second card after
+a grant is not by itself a bug.
+
+**Defect one: a card can be answered twice.** `auth.onDecide` sent the
+answer and appended the note with no check that the request was still
+pending. The card only leaves when the engine says the request is
+resolved, a round trip later, so a second press inside that gap answered
+a settled request and appended a second note. `decisionNote` returns the
+same sentence for every Always whatever asked, so the two are
+byte-identical, under the same React key. Fixed: a decision for a
+request that is no longer pending is ignored.
+
+**Defect two: three ways to kill a tool with no card and no trace.**
+`handleExecApprovalRequested` returns early when the session cannot be
+resolved, when the session is in stop cooldown, and when a manual stop
+is suppressed. **None of them answers the engine.** The tool waits
+inside the turn until the gateway times it out, the model is told it was
+refused, and it says so in its own words — which is exactly the sentence
+above. Two of the three log a line. The first, `!sessionId`, logged
+nothing at all, so the one case with no card and no explanation also had
+no evidence. Fixed: it warns with the request id, the session key and
+the kind.
+
+**What is still unproven: which path fired here.** The paste has no
+cards in it and no log. Three candidates remain and the log decides
+between them in one command:
+
+```bash
+grep -nE "suppressed approval|approval dropped" ~/Library/Logs/Caisra/main-$(date +%F).log
+```
+
+A hit on `suppressed approval` means the session was stopped or in
+cooldown and the card was deliberately withheld. A hit on `approval
+dropped` means the session key did not resolve. Nothing at all means the
+card was raised and something downstream refused it, and the gateway log
+is the next place to look. **I have not seen the founder's log**, so
+nothing here claims to know which it was.
+
+**Not the cause:** the auto-reviewer. `exec-quick-review.ts` returns
+only `allow` or `ask`, never `deny`, so it cannot block anything on its
+own; it can only raise a card.
+
+**Gates:** tsc, eslint on both files, `compile:electron`, and the full
+suite — 4826 pass.
+
+**Where:** `desktop/src/main/libs/agentEngine/openclawApprovalController.ts`,
+`desktop/src/renderer/design/shell/useMessagesShell.ts`.
+
+## 78. The skills that hijacked a report, and navigation with no logic — `both built; run in the harness; the Mac unrun`
+
+Two things the founder found on 18 September, an hour apart.
+
+### The Nike report: a skill we ship outranked our own brief
+
+The founder asked Jude for a doc report on Nike. Jude tried a
+"document-generation script", was blocked, and handed back an old-style
+artifact. Their read: *"i think the issue is that it was trying to use
+our new openui stuff, then failed, then used our old artifact."* Right
+in shape, and the mechanism is worse than that.
+
+`SKILLs/skills.config.json` shipped **27 of 29 skills enabled**, and
+`docx` was **order 10, first in the list**. Its description fires on
+creating a document; its workflow says to write a JavaScript file with
+docx-js and export it with Packer. That is the document-generation
+script, verbatim. Our own `artifactsPrompt.ts` says a report is an
+OpenUI `Report` in a fenced block. Two instructions in one brief, and
+the skill won.
+
+The rest of the twenty-seven were upstream's: `youdaonote`, `seedream`,
+`seedance`, `daily-trending`, `music-search` and `films-search` (both of
+which search cloud drives for downloadable films and music), three
+Chinese stock skills, and a row of coding and design skills that belong
+to the app this one was carved out of. All on, on every install, in an
+app whose name is Caisra.
+
+**Five stay on:** `web-search`, `playwright` (which web-search drives),
+`local-tools` (Calendar on this Mac), `weather`, `skill-vetter` (it only
+fires before installing somebody else's skill). Twenty-two off. Nothing
+is lost that the agent could not already do: the artifacts brief already
+says to write a real file with the file tools when somebody wants an
+Excel or a Word file, so the capability stays and only the instruction
+that hijacked a report is gone.
+
+**One caveat, said plainly:** `skillManager` reads a stored per-skill
+state before the default (`state[id]?.enabled ?? defaultEnabled`), so on
+an install where a skill was ever toggled by hand, the new default does
+not reach it. A reset clears that.
+
+### Navigation: one screen, one way back, and the chat underneath
+
+The founder: *"you click on app, then you click on settings, we got two
+screens, one up the other … account drop right opens inside the setting
+tab … it's like a skin over a skin … when you click ANYWHERE, when you
+go back, you're going back to the chat. its the main screen … that x
+thing needs to GO."*
+
+- **One screen at a time.** Compose, Apps, an agent's page and Settings
+  now take the whole window, the list of agents included. Opening one
+  closes the other rather than covering it (`useMessagesShell`,
+  `CaisraApp`). The shell picks exactly one (`screen`), so they cannot
+  stack even if a caller leaves two open.
+- **Back, not close.** Every X is gone from all four screens. One back
+  bar sits above whichever screen is open: a chevron, the word Chat, and
+  the screen's name. It always goes to the conversation, never to the
+  screen before, so Create → Settings → back lands in the chat.
+- **Escape** is the keyboard's back, one listener per screen.
+- **The account menu** no longer renders while a screen is open. It used
+  to float inside the Settings tab.
+- **The dock switches directly.** Apps while Settings is open goes to
+  Apps; Home goes to the conversation from anywhere.
+
+**Photographed:** `settings`, `apps`, `compose`, all full window with
+the back bar and no X.
+
+**Unrun:** the founder's Mac.
+
+**Where:** `desktop/SKILLs/skills.config.json`,
+`desktop/src/renderer/design/shell/{MessagesShell.tsx,useMessagesShell.ts,CaisraApp.tsx,Apps.tsx,Compose.tsx}`,
+`desktop/src/renderer/design/settings/Settings.tsx`,
+`desktop/src/renderer/design/agent/AgentDetail.tsx`.
+
+## 79. "terminated": the token proxy broke every connector answer on the last hop — `fixed; the Mac unrun`
+
+The founder, 18 September, having set the Composio key: *"connectors are
+just not working. i put the key and everything."* With one line:
+
+```
+[Connections] composio figma — failed: terminated
+```
+
+**`terminated` is not our word and not Composio's.** It is what Node's
+fetch says when a response body ends differently from what its headers
+promised. So the answer came back and was destroyed on the way in.
+
+**Where.** The app never calls `api.claidor.com` directly. Every Composio
+call goes to the local token proxy on loopback, which adds the account's
+bearer and forwards to `/desktop/api/proxy/composio/…`
+(`composioApi.ts`, `openclawTokenProxy.ts`). Coming back,
+`forwardRequest` copied **every** upstream header onto our response:
+
+```ts
+resp.headers.forEach((value, key) => { responseHeaders[key] = value; });
+```
+
+Electron's `net.fetch` decodes the body for us. A compressed JSON answer
+therefore arrives as plain bytes while its headers still say
+`content-encoding: gzip` and carry the **compressed** `content-length`.
+The proxy wrote that length and that encoding onto a decoded body, and
+the app's fetch gave up mid-body. Every connector, every time.
+
+**Why it never showed before.** The model routes answer
+`text/event-stream`, which nothing compresses, and they take a different
+branch anyway. Composio answers JSON, which the edge compresses. Apps was
+the first thing in the app to ask for a compressed answer through this
+proxy, so it was the first to break, and it broke completely.
+
+**Fixed:** `copyResponseHeaders` drops `content-encoding`,
+`content-length`, `transfer-encoding` and the rest of the hop-by-hop
+headers (RFC 9110 §7.6.1) before the response is written, so Node sets a
+length that matches the bytes actually sent. Three tests cover it.
+
+**A correction to item 76.** I read `responseBytes=266` on the founder's
+server log as a small error body and concluded the missing key was the
+cause. 266 was the **compressed** size of a real answer. The key was
+genuinely missing from `render.yaml` and declaring it was right, but it
+was necessary and not sufficient: with the key set, this second fault was
+still there, and it is the one that produced "terminated". Two bugs, one
+symptom, and I named only the first.
+
+**Unrun:** the founder's Mac. The proof here is three unit tests and the
+mechanism read off the code, not a connector connecting.
+
+**Where:** `desktop/src/main/libs/openclawTokenProxy.ts` (+
+`openclawTokenProxy.headers.test.ts`).
+
+## 80. Cards in every thread, a card that would not leave, and the truth about pictures — `built; run in the harness; the Mac unrun`
+
+Three of the founder's four complaints on 18 September. The fourth, agent
+to agent, is item 81 — which also corrects an accusation made in the
+course of this one: our agent did not fabricate anything.
+
+### Every side-card appeared in every conversation
+
+> *"the card appears in every single chat of other agents. not right. should be per agents."*
+
+True, and not only the connector card. Four hooks hold cards beside the
+messages — connector, ask-input, create-agent, roster — and **none of the
+four carried any notion of whose conversation it belonged to**. Pending
+approvals have a session id and are filtered; these had nothing, so one
+agent's card was drawn in every agent's thread.
+
+**Per-agent MCP registration turned out to be impossible**, and the agent
+who did this checked before building on the assumption: `mcp.servers` is
+one global map, an agent entry takes no `mcp` block, and bundle-mcp
+namespaces tools into a single catalogue. A `CAISRA_AGENT_ID` in the
+launch env would have been a lie. The honest signal is on our side: a
+tool only ever calls from inside a turn, so main asks the router which
+sessions are streaming and answers only when they are all one agent
+(`shared/thread/cardAudience.ts`, `soleActiveAgent`). Exact whenever one
+agent is working; silent when two are. A card it cannot attribute goes to
+the main agent's thread, never to all of them. The agent id comes from
+the app and never from the tool's request body.
+
+### A card that had been answered never left
+
+> *"when the thing was terminated, it didnt disapear. the card stayed there."*
+
+The connector card waited for a `Dismissed` from main that never comes
+when the failure happens in the renderer. It now follows the approval
+card's pattern: answering consumes it and leaves one quiet line —
+"Figma is connected.", "Not now.", "Figma was not connected — <reason>."
+Busy stays visible for the whole sign-in.
+
+**Still open, and named rather than hidden:** a turn killed mid-flight
+leaves its card up until the bridge's five-minute timeout. Cancelling a
+session does not yet dismiss its open cards.
+
+### The pictures: the rule was not restrictive, it was impossible
+
+> *"openui i asked for an intineray, and first of all the pictures did not show. we need to change whatever rule you put, cause not everything is on wikipedia."*
+
+**OpenUI cannot source an image.** Their components resolve a missing
+`src` from the `alt` through a React context, and the Provider for that
+context is never rendered by the package and is not exported, so it can
+never be mounted. `OpenUIC1Component` takes five props and none is a
+resolver. Their own generated prompt says nothing about images at all.
+The earlier note in `CardBlock.tsx` — "only when a provider is mounted,
+and none is" — was right in effect and wrong in kind: it is not that we
+failed to mount one, it is that no one can.
+
+**Why ours were empty was my rule, and it was worse than limiting.** It
+said a picture must be an https address already seen in a tool result,
+and named Wikipedia's summary API as the way to get one. An itinerary is
+days and neighbourhoods, which have no article. And our web search
+returns titles, links and snippets with **no image field anywhere**, so
+the agent had never once seen an image address in a tool result. Under
+that rule, empty was the only possible outcome. A second cost: several
+deck and report layouts take a picture as a required argument, so the
+rule silently removed about a third of that vocabulary.
+
+**The fix, and the thing I nearly shipped wrong.** The first rewrite told
+the agent to read `og:image` after a `web_fetch`. A comment in the test
+file claimed the fetch tool strips images out of pages, so I checked
+instead of shipping. The comment is right: that tool turns a page into
+text and the head goes with it. But the `web-search` skill's own page
+endpoint returns `page.content()` — the whole HTML, head included
+(`SKILLs/web-search/dist/server/playwright/operations.js:48`). So the
+route is real, through the browser, not the fetch tool. The rule now says
+exactly that, keeps Wikipedia for what has an article, and forbids
+placeholder services by name: OpenUI's other library tells models to use
+`picsum.photos`, which is Lorem Ipsum for photographs — the seed makes it
+stable, not relevant.
+
+**Two holes in the card are closed.** Their markup draws the picture
+frame whether or not the image resolved, so a missing picture left a
+filled grey bar; it collapses now. And `ImageTextLarge` has no error
+handler at all, so a dead address showed the browser's broken-image glyph
+in a 180px box; `CardBlock` marks any image that fails to load and the
+stylesheet collapses its frame.
+
+**The brief is full, to the character.** These rules put the managed
+AGENTS.md at 72,000 against a 72,000 ceiling, and it took four rounds of
+trimming my own words to get under. The ceiling is 60% of the engine's
+real cut, and the margin is not there for the cut — it is there because
+72,000 characters is already about 18,000 tokens of instructions, and a
+brief that long dilutes the attention of every rule in it. **The next
+person to add a sentence must remove one.** That is a product decision
+waiting to be made, not a test to be relaxed.
+
+**Unrun:** the founder's Mac, and an agent actually fetching an
+`og:image` through the browser.
+
+**Where:** `desktop/src/shared/thread/cardAudience.ts` (+test),
+`desktop/src/main/libs/{mcpBridgeServer,cardsPrompt,artifactsPrompt,openclawConfigSync}.ts`,
+`desktop/src/main/{main.ts,mcp/mcpRuntime.ts}`,
+`desktop/src/shared/{connections/proposal,askInput/constants,staffing/constants,staffing/roster}.ts`,
+`desktop/src/renderer/design/thread/{useProposeConnector,useAskInput,useCreateAgent,useRoster,connectorCards,types,ThreadItemView,CardBlock}.ts(x)`,
+`desktop/src/renderer/design/thread/cards.css`,
+`desktop/src/renderer/design/shell/CaisraApp.tsx`.
+
+## 81. Agents can message each other, and the correction I owe — `built; run in tests; the Mac unrun`
+
+### The correction first
+
+On 18 September the founder pasted a transcript in which an agent texts
+another agent and reports back. I had it investigated, was told the rows
+in it ("Messaged New Bot", "Message from New Bot") exist nowhere in this
+codebase, and concluded our agent had fabricated the exchange. I said so
+plainly, and I was wrong.
+
+**That transcript was Grok Bot's, not ours.** The founder had said so in
+the message and I read past it. The rows are absent from our code because
+they are another product's interface. **Ours told the truth**: asked to
+talk to another agent, it said it could not, because it could not.
+
+The investigation's findings about *our* system all stand, and they are
+what made it unable:
+
+- `sessions_send` is real and ships in the engine. Two gates stood in
+  front of it, both defaulting closed, and `openclawConfigSync.ts` wrote
+  neither: `tools.sessions.visibility` (a cross-agent target is refused
+  unless `all`) and `tools.agentToAgent.enabled`.
+- The brief has told every agent since the beginning to hand work to
+  another agent and to expect a message from one. Instruction and config
+  disagreed.
+- `review.md` item 70 recorded exactly this, titled "audited; nothing
+  built", and nobody acted on it for two days. That is the real failure
+  here, and it is ours, not the model's.
+
+I should have taken "this came from Grok Bot" at its word instead of
+building a fabrication case on top of a transcript that was never ours.
+
+### What is now switched on
+
+The founder: *"any agent should be able to talk to any agent. this is
+grok bot flow."* So:
+
+- `tools.sessions.visibility: 'all'` and `tools.agentToAgent: { enabled: true }`,
+  written in `buildWebToolsConfig` where every other tool policy is.
+- **No `allow` list**, deliberately: empty means every agent
+  (`createAgentToAgentPolicy` in the runtime), which is what "any agent"
+  means.
+- **What `all` also opens, said plainly.** One flag governs sending and
+  reading. An agent can now read another agent's session history through
+  `sessions_history`, not only message it. That is the engine's design,
+  not a choice made here, and there is a per-pair `allow` list to narrow
+  it the day it matters.
+- The brief names the tool. A capability the model is not told about is a
+  capability it will not reach for — the same mistake in the other
+  direction.
+- A test pins both gates open and checks the tool is named, so this
+  cannot quietly close again.
+
+**The brief had no room for the new sentence**, being at its ceiling
+(item 80). It was paid for rather than waived: the sentence that vaguely
+promised this now names the tool, and two Chief of Staff lines that
+repeated it word for word were trimmed, since the shared brief carries it.
+
+**Unrun:** the founder's Mac. Two agents actually talking has not been
+watched happen — only the config the engine reads, in a test.
+
+**Where:** `desktop/src/main/libs/openclawConfigSync.ts` (+runtime test),
+`desktop/src/shared/agent/chiefOfStaff.ts`.

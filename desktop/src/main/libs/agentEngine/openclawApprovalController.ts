@@ -84,6 +84,15 @@ export class OpenClawApprovalController {
     const sessionId = this.options.resolveSessionId(sessionKey);
 
     if (!sessionId) {
+      // Nothing answers the engine on this path, so the tool waits until
+      // the gateway times it out and the agent reports it was blocked —
+      // with no card, and until 18 September no line anywhere saying so.
+      // A person then reads "it was blocked" and there is nothing behind
+      // it. Whatever else is wrong, it has to be findable.
+      console.warn(
+        '[EngineRuntime] approval dropped: no session for key, requestId:',
+        requestId, 'sessionKey:', sessionKey, 'kind:', kind,
+      );
       return;
     }
 

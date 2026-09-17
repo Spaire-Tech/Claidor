@@ -60,9 +60,36 @@
   background-color: var(--fsr-paper);
   border-color: var(--fsr-line-field);
 }
-/* The frame a picture sits in, empty or not. */
+/*
+ * The frame a picture sits in — and only when there is one.
+ *
+ * Their markup draws the frame whether or not the image resolved, so a
+ * card with no picture carried a filled grey bar where a photograph
+ * belongs (the founder, 18 September, on an itinerary that came back
+ * without pictures). With a picture it is the backing the image sits on;
+ * with none it collapses and the card closes up around the text.
+ */
 .caisra-cards .c1-image-text-large__image-wrap {
   background-color: var(--fsr-fill);
+}
+.caisra-cards .c1-image-text-large__image-wrap:not(:has(img)) {
+  display: none;
+}
+
+/*
+ * A picture that 404s or is blocked from hotlinking. Their renderer
+ * attaches no error handler to this one, so a dead address showed the
+ * browser's broken-image glyph inside a 180px box. `CardBlock` marks the
+ * image instead, and the frame goes with it.
+ */
+.caisra-cards img[data-broken='true'] {
+  display: none;
+}
+.caisra-cards .c1-image-text-large__image-wrap:has(img[data-broken='true']) {
+  display: none;
+}
+.caisra-cards .c1-image-wrapper:has(img[data-broken='true']) {
+  display: none;
 }
 
 /*

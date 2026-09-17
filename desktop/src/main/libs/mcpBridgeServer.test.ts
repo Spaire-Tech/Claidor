@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
+import { AskInputBehavior, type AskInputRequest } from '../../shared/askInput/constants';
 import { type ProposeConnectorAsk, ProposeConnectorBehavior } from '../../shared/connections/proposal';
 import type { RosterAsk } from '../../shared/staffing/roster';
 import { type AskUserRequest, McpBridgeServer } from './mcpBridgeServer';
@@ -474,5 +475,86 @@ describe('McpBridgeServer proposing a connector', () => {
   test('an answer for a card that is not up is ignored', async () => {
     const server = new McpBridgeServer('test-secret');
     expect(() => server.resolveProposeConnector('nothing', { behavior: ProposeConnectorBehavior.Connected })).not.toThrow();
+  });
+});
+
+/**
+ * The founder, 18 September: *"the card appears in every single chat of
+ * other agents. not right. should be per agents."* The request itself
+ * cannot say who called — the MCP servers behind these routes are
+ * registered once for the whole engine — so the bridge asks the app, at
+ * the moment the card goes up, and stamps the answer on the ask.
+ */
+describe('McpBridgeServer stamping the agent a card belongs to', () => {
+  const post = (url: string, secret: string, body: unknown) => fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-mcp-bridge-secret': secret },
+    body: JSON.stringify(body),
+  });
+
+  test('the connector card carries the agent whose turn raised it', async () => {
+    const secret = 'test-secret';
+    const server = new McpBridgeServer(secret);
+    const shown: ProposeConnectorAsk[] = [];
+    try {
+      await server.start();
+      server.setCallingAgentResolver(() => 'juno');
+      server.onProposeConnector(ask => {
+        shown.push(ask);
+        server.resolveProposeConnector(ask.requestId, { behavior: ProposeConnectorBehavior.Declined });
+      });
+      await post(server.proposeConnectorCallbackUrl!, secret, { connectionId: 'notion' });
+      expect(shown).toHaveLength(1);
+      expect(shown[0].agentId).toBe('juno');
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test('the ask-input card carries it too', async () => {
+    const secret = 'test-secret';
+    const server = new McpBridgeServer(secret);
+    const shown: AskInputRequest[] = [];
+    try {
+      await server.start();
+      server.setCallingAgentResolver(() => 'mira');
+      server.onAskInput(request => {
+        shown.push(request);
+        server.resolveAskInput(request.requestId, { behavior: AskInputBehavior.Decline });
+      });
+      await post(server.askInputCallbackUrl!, secret, {
+        prompt: 'Sign in to continue.',
+        fields: [{ name: 'password', label: 'Password', kind: 'secret' }],
+      });
+      expect(shown).toHaveLength(1);
+      expect(shown[0].agentId).toBe('mira');
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test('with no resolver, or one that cannot say, the card names no agent and goes to main\'s thread', async () => {
+    const secret = 'test-secret';
+    const server = new McpBridgeServer(secret);
+    const shown: ProposeConnectorAsk[] = [];
+    try {
+      await server.start();
+      server.onProposeConnector(ask => {
+        shown.push(ask);
+        server.resolveProposeConnector(ask.requestId, { behavior: ProposeConnectorBehavior.Declined });
+      });
+      await post(server.proposeConnectorCallbackUrl!, secret, { connectionId: 'notion' });
+      // Two turns at once: the app will not guess between them.
+      server.setCallingAgentResolver(() => undefined);
+      await post(server.proposeConnectorCallbackUrl!, secret, { connectionId: 'notion' });
+      // And a lookup that throws must not hold up the card, or the turn
+      // behind it sits there for five minutes.
+      server.setCallingAgentResolver(() => { throw new Error('the store is not open yet'); });
+      await post(server.proposeConnectorCallbackUrl!, secret, { connectionId: 'notion' });
+      expect(shown).toHaveLength(3);
+      expect(shown.map(one => one.agentId)).toEqual([undefined, undefined, undefined]);
+    } finally {
+      await server.stop();
+    }
   });
 });

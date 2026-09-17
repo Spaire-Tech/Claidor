@@ -4,6 +4,7 @@ import {
   type CreateAgentAsk,
   CreateAgentBehavior,
 } from '../../../shared/staffing/constants';
+import { cardsForAgent } from '../../../shared/thread/cardAudience';
 import { agentService } from '../../services/agent';
 import { staffingItem } from './staffingCards';
 import type { AuthItem } from './types';
@@ -19,8 +20,14 @@ import type { AuthItem } from './types';
  *
  * Every card is answered exactly once: it comes off the screen before
  * the answer is sent.
+ *
+ * **And it belongs to one conversation**: the agent whose turn asked,
+ * which main stamps on the ask (`shared/thread/cardAudience.ts`). Every
+ * pending card is held here whichever agent it belongs to, and only the
+ * open agent's are handed out — the founder, 18 September, on a card in
+ * every thread at once: *"not right. should be per agents."*
  */
-export function useCreateAgent(agentName: string | undefined): {
+export function useCreateAgent(agentName: string | undefined, openAgentId: string): {
   items: readonly AuthItem[];
   onDecide: (requestId: string, allow: boolean) => void;
 } {
@@ -64,7 +71,7 @@ export function useCreateAgent(agentName: string | undefined): {
   }, []);
 
   return {
-    items: pending.map(ask => staffingItem(ask, agentName, Date.now())),
+    items: cardsForAgent(pending, openAgentId).map(ask => staffingItem(ask, agentName, Date.now())),
     onDecide,
   };
 }

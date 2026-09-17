@@ -3,7 +3,7 @@ import '@openuidev/thesys/styles.css';
 import './cards.css';
 
 import { type C1Action, chatLibrary, OpenUIC1Component } from '@openuidev/thesys';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { motion } from '../tokens';
 import { ArtifactBlock } from './ArtifactBlock';
@@ -29,9 +29,18 @@ import type { CardItem } from './types';
  * ignored: there is no tool call from inside a card in this app.
  *
  * **Pictures.** Their `Image` resolves a missing `src` from the `alt`
- * only when an image-search provider is mounted above it, and none is,
- * so a card with no picture draws no picture and calls nothing.
- * Verified in the harness: no request leaves the loopback.
+ * through a React context — and the Provider for it is never rendered by
+ * the package and is not exported, so it can never be mounted. Their
+ * renderer cannot find a picture; a card with no `src` draws none and
+ * calls nothing. Verified in the harness: no request leaves the loopback.
+ *
+ * So every picture is one the agent found, and the brief tells it where
+ * (`cardsPrompt.ts`). Two of their layouts fail badly when an address is
+ * dead: `ImageTextLarge` has no error handler at all and would show the
+ * browser's broken-image glyph in a 180px box. The listener below marks
+ * any image that fails to load and `cards.css` collapses its frame, so a
+ * picture that 404s or refuses a hotlink leaves a tidy card rather than a
+ * torn one.
  */
 
 export interface CardHandlers {
@@ -65,10 +74,19 @@ function CardsBlock(
     if (message) handlers.onMessage?.(message);
   }, [handlers]);
 
+  // One listener for the whole block, in the capture phase: `error` does
+  // not bubble, and the images are theirs to render, so there is nowhere
+  // else to put an `onError`.
+  const onError = useCallback((event: React.SyntheticEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement | null;
+    if (target?.tagName === 'IMG') target.setAttribute('data-broken', 'true');
+  }, []);
+
   return (
     <div
       data-card-block={item.id}
       className="caisra-cards"
+      onErrorCapture={onError}
       // As wide as the widest bubble (`ThreadItemView`), so the cards
       // sit in the conversation's column and not across the whole pane.
       style={{ width: '100%', maxWidth: 'min(80%, 680px)', padding: '4px 0 6px', animation: enter }}

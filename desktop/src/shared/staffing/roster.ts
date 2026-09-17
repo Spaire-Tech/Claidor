@@ -1,3 +1,4 @@
+import type { CardAudience } from '../thread/cardAudience';
 import { type CreateAgentInput } from './constants';
 import { SOMETHING_ELSE_ALTERNATES, STARTER_TEAMS, type Strong, strongBySlug } from './strongs';
 
@@ -55,7 +56,7 @@ export interface RosterOption {
 }
 
 /** The card, as main sends it to the renderer. */
-export interface RosterAsk {
+export interface RosterAsk extends CardAudience {
   requestId: string;
   /** What Yodo said the person does; the card's first line names it. */
   workType: string;

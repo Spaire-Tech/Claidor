@@ -19,6 +19,8 @@
  * into the agent's own instructions, in the same shape every time.
  */
 
+import type { CardAudience } from '../thread/cardAudience';
+
 export const CREATE_AGENT_TOOL = 'create_agent';
 
 /** The name the gateway knows this MCP server by. */
@@ -58,7 +60,7 @@ export interface CreateAgentInput {
 }
 
 /** The card, as main sends it to the renderer. */
-export interface CreateAgentAsk extends CreateAgentInput {
+export interface CreateAgentAsk extends CreateAgentInput, CardAudience {
   requestId: string;
 }
 

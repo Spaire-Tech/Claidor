@@ -11,7 +11,7 @@ import {
   SettingsRowKind,
   SettingsTab,
 } from '../../../shared/settings/rows';
-import { CloseIcon, ComputerIcon, GearIcon, UsageIcon } from '../icons';
+import { ComputerIcon, GearIcon, UsageIcon } from '../icons';
 import {
   CONFIRM_WINDOW_MS,
   confirmLabel,
@@ -66,26 +66,6 @@ function useHover(): [boolean, { onMouseEnter: () => void; onMouseLeave: () => v
 }
 
 /** The 26px round X the canvas puts on a screen's title row. */
-function CloseButton({ onClose }: { onClose: () => void }): JSX.Element {
-  const [over, hover] = useHover();
-  return (
-    <button
-      type="button"
-      onClick={onClose}
-      aria-label="Close"
-      {...hover}
-      style={{
-        width: 26, height: 26, flex: '0 0 auto', border: 'none',
-        background: over ? color.fill : 'transparent', borderRadius: '50%', cursor: 'pointer',
-        color: over ? color.ink : color.muted,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}
-    >
-      <CloseIcon size={13} />
-    </button>
-  );
-}
-
 export function Settings(props: SettingsProps): JSX.Element {
   const { onClose, initialTab, ...input } = props;
   const [tab, setTab] = useState<SettingsTab>(initialTab ?? SettingsTab.General);
@@ -160,7 +140,8 @@ export function Settings(props: SettingsProps): JSX.Element {
             <div style={{ flex: '1 1 auto', fontSize: text.screenTitle, fontWeight: 500, letterSpacing: tracking.screenTitle, color: color.ink }}>
               {tab}
             </div>
-            <CloseButton onClose={onClose} />
+            {/* The X is gone: the shell's back bar is the way out of every
+                screen, and one door beats four (18 September). */}
           </div>
 
           <div

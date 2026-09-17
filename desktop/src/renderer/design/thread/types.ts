@@ -292,7 +292,13 @@ export interface CardItem {
   at: number;
 }
 
-/** What became of a connector card. */
+/**
+ * What became of a connector card.
+ *
+ * Not a state the card is drawn in: the card is gone by then. It is what
+ * the person's answer was, which decides the one line left in its place
+ * (`connectorNote`) and what the waiting tool is told.
+ */
 export const ConnectorOutcome = {
   Connected: 'connected',
   Declined: 'declined',
@@ -314,12 +320,14 @@ export interface ConnectorItem {
   logo?: string;
   /** The agent's own line of why, when it gave one. */
   reason?: string;
-  /** Install was pressed and the sign-in is running in the browser. */
+  /**
+   * Install was pressed and the sign-in is running in the browser.
+   *
+   * The only state the card holds. Answered, it is consumed and replaced
+   * by a system line, the way an answered approval card is — so there is
+   * no resolved connector card to draw.
+   */
   busy?: boolean;
-  /** Set once decided. Nothing on the card presses after this. */
-  resolved?: ConnectorOutcome;
-  /** A sentence, when the sign-in failed. */
-  failure?: string;
   at: number;
 }
 
