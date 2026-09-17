@@ -12,13 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { BotAvatar } from "../components/bot-avatar";
 import { ComputerModePicker } from "../components/computer-mode-picker";
-import {
-  type MobileBot,
-  type MobileMe,
-  type MobileModel,
-  type MobileModelCredential,
-  rpc,
-} from "../lib/api";
+import { type MobileBot, type MobileMe, type MobileModel, rpc } from "../lib/api";
 import { useI18n } from "../lib/i18n";
 import { presentMessageActionSheet } from "../lib/message-action-sheet";
 import { useMobileTokens, useResolvedAppearance } from "../lib/native";
@@ -54,7 +48,6 @@ export default function BotSettingsScreen() {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [modelKey, setModelKey] = useState("");
   const [thinkingLevel, setThinkingLevel] = useState("");
-  const [credentials, setCredentials] = useState<MobileModelCredential[]>([]);
   const [catalog, setCatalog] = useState<MobileModel[]>([]);
   const [me, setMe] = useState<MobileMe | null>(null);
   const [modelMetaReady, setModelMetaReady] = useState(false);
@@ -83,15 +76,10 @@ export default function BotSettingsScreen() {
   }, [botId]);
 
   useEffect(() => {
-    void Promise.all([
-      rpc<MobileMe>("me"),
-      rpc<MobileModel[]>("models/list"),
-      rpc<MobileModelCredential[]>("models/credentials"),
-    ])
-      .then(([nextMe, nextCatalog, nextCredentials]) => {
+    void Promise.all([rpc<MobileMe>("me"), rpc<MobileModel[]>("models/list")])
+      .then(([nextMe, nextCatalog]) => {
         setMe(nextMe);
         setCatalog(nextCatalog);
-        setCredentials(nextCredentials);
         setModelMetaError(null);
         setModelMetaReady(true);
       })
@@ -101,40 +89,20 @@ export default function BotSettingsScreen() {
       });
   }, [t]);
 
+  // Every model this deployment serves. No credential to cross-reference:
+  // one model service, no keys, so the menu is simply what it serves.
   const connectedOptions = useMemo(() => {
     const options: ModelOption[] = [];
     const seen = new Set<string>();
-    for (const credential of credentials) {
-      const providerModels = catalog.filter(
-        (entry) => entry.provider === credential.provider && !entry.placeholder,
-      );
-      const credentialInCatalog = Boolean(
-        credential.modelId && providerModels.some((entry) => entry.id === credential.modelId),
-      );
-      const nextOptions =
-        credential.modelId && !credentialInCatalog
-          ? [
-              {
-                key: modelOptionKey(credential.provider, credential.modelId),
-                provider: credential.provider,
-                modelId: credential.modelId,
-                label: `${credential.label} · ${credential.modelId}`,
-              },
-            ]
-          : providerModels.map((entry) => ({
-              key: modelOptionKey(entry.provider, entry.id),
-              provider: entry.provider,
-              modelId: entry.id,
-              label: `${entry.providerName ?? entry.provider} · ${entry.label}`,
-            }));
-      for (const option of nextOptions) {
-        if (seen.has(option.key)) continue;
-        seen.add(option.key);
-        options.push(option);
-      }
+    for (const entry of catalog) {
+      if (entry.placeholder) continue;
+      const key = modelOptionKey(entry.provider, entry.id);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      options.push({ key, provider: entry.provider, modelId: entry.id, label: entry.label });
     }
     return options;
-  }, [catalog, credentials]);
+  }, [catalog]);
 
   const effectiveProvider = modelKey
     ? parseModelOptionKey(modelKey)?.provider
@@ -148,14 +116,7 @@ export default function BotSettingsScreen() {
           (entry) => entry.provider === effectiveProvider && entry.id === effectiveModelId,
         )
       : undefined;
-  const effectiveCredential = credentials.find(
-    (entry) => entry.provider === effectiveProvider && entry.modelId === effectiveModelId,
-  );
-  const thinkingOptions = (
-    effectiveCredential?.thinkingLevels ??
-    effectiveEntry?.thinkingLevels ??
-    []
-  ).filter((level) => level !== "off");
+  const thinkingOptions = (effectiveEntry?.thinkingLevels ?? []).filter((level) => level !== "off");
 
   const spaceDefaultLabel = me?.defaultModel
     ? `${t("Space default")} (${catalogLabel(catalog, me.defaultProvider, me.defaultModel) ?? me.defaultModel})`

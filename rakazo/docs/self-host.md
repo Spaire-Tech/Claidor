@@ -34,7 +34,9 @@ Signup and local Docker computers work without an E2B account. Optional remote p
 `SANDBOX_PROVIDER` to `e2b`, `daytona`, or `box` and add the matching API key. The published-images
 Compose stack requires `SANDBOX_SUPERVISOR_TOKEN` for every provider; leave it empty and `compose up` fails closed.
 
-Optional: set `OPENROUTER_API_KEY` or connect a model in the UI after signup.
+Set `CLAIDOR_API_KEY` to this deployment's Claidor token; see
+[Claidor is this deployment's model service](#claidor-is-this-deployments-model-service).
+There is no model screen to connect one in after signup.
 
 The example defaults to `edge` (main builds). Every publish is multi-arch (`amd64` + `arm64`), so
 arm64 hosts need no special tag. Do not assume `latest` is present until a stable release exists.
@@ -212,14 +214,34 @@ way by default.
 Only configure an endpoint you control: prompts, attachments, and tool results sent to that model
 leave Rakazo through this URL. Leave `RAKAZO_LOCAL_MODELS` blank to disable the provider.
 
-Each user can also connect their own OpenAI-compatible endpoint from **Connect a model** /
-**Settings → Models** on web and mobile. Choose **OpenAI-compatible**, enter the server base URL
-(for example `http://127.0.0.1:8000/v1`), the exact model id, and an optional API key.
-Public hosts and ordinary hostnames need `RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1` and HTTPS.
-Literal private IP, loopback, and `host.docker.internal` targets do not. If that endpoint's model
-accepts images, enable **Supports images** under **Advanced** when connecting so attachments and
-screenshot computer tools stay available. Existing connections default to disabled. For centrally
-managed endpoints, the deployment-wide fallback remains
+### Claidor is this deployment's model service
+
+**This fork does not let a user bring their own key, and there is no screen
+that takes one.** The model service is the deployment's own, its key is held
+server-side, and every request is metered against the person's own monthly
+allowance. Set one variable and every run uses it:
+
+```env
+CLAIDOR_API_KEY=claidor_pat_…
+# Defaults; override only to point elsewhere.
+# CLAIDOR_API_BASE_URL=https://api.claidor.com/desktop/api/proxy/v1
+# CLAIDOR_MODEL=gpt-5.6-terra
+# CLAIDOR_MODELS=gpt-5.6-terra,gpt-5.6-luna
+```
+
+The key is a Claidor personal access token carrying the `model_proxy` scope —
+not a desktop session token, which lives an hour. `RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1`
+is needed because `api.claidor.com` is a public hostname.
+
+**Settings → Models** is now a list of the models Claidor serves, with the
+deployment owner able to pick which one answers. There is no provider list, no
+key field, no base URL and no OAuth, and onboarding no longer has a model step.
+What the upstream project documents here — connecting your own endpoint per
+user — was removed on purpose. The variables below still work and are kept for
+the offline test harness and the eval runner, which must run with no Claidor
+account; leave `CLAIDOR_API_KEY` blank to use them.
+
+For centrally managed endpoints, the deployment-wide vision fallback remains
 `RAKAZO_OPENAI_COMPATIBLE_VISION_MODELS=gpt4o-vision,llava`.
 
 For servers that accept standard `reasoning_effort`, enable **Supports thinking** under

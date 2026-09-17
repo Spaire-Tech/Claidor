@@ -44,9 +44,6 @@ import {
   MessagingLinkedIdentitySchema,
   MessagingStatusSchema,
   ModelCatalogEntrySchema,
-  ModelConnectInputSchema,
-  ModelCredentialSchema,
-  ModelOAuthBeginSchema,
   REPLY_QUOTE_MAX_LENGTH,
   ReorderBotsInput,
   RoutineSchema,
@@ -192,43 +189,13 @@ export const appContract = {
     check: oc.input(ServerUpdateRequestSchema).output(ServerUpdateCheckSchema),
     apply: oc.input(ServerUpdateRequestSchema).output(ServerUpdateRunSchema),
   },
+  // The models this deployment serves. There is no `connect`, no
+  // `credentials` and no OAuth here, and their absence is the point: the
+  // model service is the deployment's own and its key is held server-side,
+  // so nobody using this product is ever asked for one. What is left is the
+  // menu and a choice between the models on it.
   models: {
     list: oc.output(z.array(ModelCatalogEntrySchema)),
-    credentials: oc.output(z.array(ModelCredentialSchema)),
-    connect: oc.input(ModelConnectInputSchema).output(ModelCredentialSchema),
-    probeOpenAiCompatible: oc
-      .input(
-        z.object({
-          baseUrl: z.string(),
-          apiKey: z.string().optional(),
-        }),
-      )
-      .output(z.object({ models: z.array(z.string()) })),
-    beginOAuth: oc
-      .input(
-        z.object({
-          provider: z.string(),
-          label: z.string().optional(),
-          modelId: z.string().optional(),
-        }),
-      )
-      .output(ModelOAuthBeginSchema),
-    submitOAuthCode: oc
-      .input(z.object({ loginId: z.string(), code: z.string().trim().min(1).max(8_192) }))
-      .output(z.object({ ok: z.literal(true) })),
-    completeOAuth: oc
-      .input(z.object({ loginId: z.string() }))
-      .output(
-        z.discriminatedUnion("status", [
-          z.object({ status: z.literal("pending") }),
-          z.object({ status: z.literal("ready") }),
-          z.object({ status: z.literal("error"), error: z.string() }),
-        ]),
-      ),
-    finishOAuth: oc.input(z.object({ loginId: z.string() })).output(ModelCredentialSchema),
-    cancelOAuth: oc
-      .input(z.object({ loginId: z.string() }))
-      .output(z.object({ ok: z.literal(true) })),
     setDefault: oc
       .input(z.object({ provider: z.string(), modelId: z.string() }))
       .output(z.object({ ok: z.literal(true) })),

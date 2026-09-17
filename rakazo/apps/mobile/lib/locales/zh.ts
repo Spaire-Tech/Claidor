@@ -578,4 +578,11 @@ export const ZH_MESSAGES: Record<string, string> = {
   "Extra high": "超高",
   Low: "低",
   High: "高",
+  // The model screen. This deployment has one model service and no key
+  // fields, so these replace the whole connect flow's copy.
+  "Could not load models": "无法加载模型",
+  "Pick the model your team answers with.": "选择你的团队使用的模型。",
+  "The model your team answers with.": "你的团队使用的模型。",
+  "This deployment has no model service configured.": "此部署尚未配置模型服务。",
+  "That did not go through": "未能完成",
 };

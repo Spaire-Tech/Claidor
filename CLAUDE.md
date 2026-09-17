@@ -232,10 +232,13 @@ that is the whole burden. One trap: **Treg** is usage-metered and their
 README says hosted resale needs a written agreement — read it before
 shipping anything Treg-shaped.
 
-**`rakazo/` is the fork, whole and unchanged.** As of 18 September 2026 it is
-byte-identical to the squashed subtree merge `34325164`. Nothing of ours is in
-it: no `apps/caisra`, no `caisra-*` modules, no edits to any of their files.
-`git diff 34325164 -- rakazo/` is empty, and that is the check.
+**`rakazo/` was the pristine fork, and is no longer.** It was byte-identical
+to the squashed subtree merge `34325164` from the Caisra archive until the
+model work later the same day, which by the founder's instruction removes the
+bring-your-own-key surface from their apps. See "One model service, internal,
+and no key fields" below for exactly what is edited and what it costs at merge
+time. `git diff 34325164 -- rakazo/` is the honest list; nothing else of ours
+is in there.
 
 The Caisra build that used to live inside it was archived — see the section
 below. Do not reason from memory about what we added there; there is nothing
@@ -261,17 +264,48 @@ founder's rule, already written into their engineering doc. Every
 argument we have had about whether a brief rule works was reasoning.
 They measure. Take the harness before taking opinions.
 
-## Claidor's API is connected to Rakazo (18 September 2026)
+## One model service, internal, and no key fields (18 September 2026)
 
 **`docs/product/claidor-on-rakazo.md` is the document. Read it before
-changing anything about the model proxy.**
+changing anything about models.**
 
-The short of it: Rakazo speaks to any OpenAI-compatible server and Claidor
-is one, so the join is configuration on their side and **no change inside
-`rakazo/`** — the fork stays byte-identical. Base URL
-`https://api.claidor.com/desktop/api/proxy/v1`, models `gpt-5.6-terra` and
-`gpt-5.6-luna`, and `RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1` on the
-deployment because `api.claidor.com` is a public hostname.
+The founder: *"remove their model you can add you key api logic completely
+and make it a one api thing internal for me."* Done. Claidor is the
+deployment's one model service, and **`rakazo/` is no longer the pristine
+fork** — this is the first change that edits their apps. Set two variables
+and every run uses Claidor:
+
+```env
+CLAIDOR_API_KEY=claidor_pat_…
+RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1
+```
+
+Base URL `https://api.claidor.com/desktop/api/proxy/v1`, models
+`gpt-5.6-terra` and `gpt-5.6-luna`, all overridable
+(`CLAIDOR_API_BASE_URL`, `CLAIDOR_MODEL`, `CLAIDOR_MODELS`). The public-host
+flag is needed because `api.claidor.com` is a public hostname.
+
+**What a person sees:** Settings → Models lists what Claidor serves and the
+deployment owner picks which answers. Onboarding has no model step. No
+provider list, no key field, no base URL, no OAuth, on web or mobile. Eight
+RPC procedures were deleted from the contract, so a re-introduced key field
+would not compile.
+
+**The seam is theirs.** `resolveDeploymentModel` already chose the fallback
+provider; it just carried no base URL and nothing stopped a user connecting
+beside it. Both fixed. `setDefault` had to be rewritten — it hung off a
+credential row that no longer exists and now writes `DeploymentSettings`.
+
+**Kept on purpose:** the bring-your-own-key path still runs when
+`CLAIDOR_API_KEY` is blank, because their offline harness and eval runner
+must work with no Claidor account. Voice, memory and integration keys are
+untouched; those are separate features.
+
+**The cost, stated once:** our conflict surface was seven of their files.
+It is now `apps/web`, `apps/mobile`, `apps/api`, `packages/contracts`,
+`packages/core` and `packages/adapters`. Upstream ships ~24 commits a day,
+so `git subtree pull` will conflict where it did not. That was the
+founder's call, made knowingly.
 
 Two things changed in `server/`, and both have a reason worth keeping:
 

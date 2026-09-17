@@ -672,6 +672,7 @@ export async function createApp(
               deploymentProvider: env.defaultProvider,
               deploymentModel: env.defaultModel,
               deploymentModelKey: env.deploymentModelKey,
+              deploymentModelBaseUrl: env.deploymentModelBaseUrl,
               providerOverride: env.teamChatJudgeProvider,
               modelOverride: env.teamChatJudgeModel,
             })
@@ -682,6 +683,7 @@ export async function createApp(
               deploymentProvider: env.defaultProvider,
               deploymentModel: env.defaultModel,
               deploymentModelKey: env.deploymentModelKey,
+              deploymentModelBaseUrl: env.deploymentModelBaseUrl,
             });
       const bridge = new TeamChatBridge({
         prisma,

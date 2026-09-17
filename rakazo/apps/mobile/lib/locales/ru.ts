@@ -594,4 +594,12 @@ export const RU_MESSAGES: Record<string, string> = {
   "{name} (permission denied)": "{name} (в разрешении отказано)",
   "{name} (unsupported type)": "{name} (неподдерживаемый тип)",
   "Saved {name} locally": "{name} сохранен локально.",
+  // The model screen. This deployment has one model service and no key
+  // fields, so these replace the whole connect flow's copy.
+  "Could not load models": "Не удалось загрузить модели",
+  "Pick the model your team answers with.": "Выберите модель, которой отвечает ваша команда.",
+  "The model your team answers with.": "Модель, которой отвечает ваша команда.",
+  "This deployment has no model service configured.":
+    "В этой установке не настроен сервис моделей.",
+  "That did not go through": "Не удалось выполнить",
 };

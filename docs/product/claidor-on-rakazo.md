@@ -1,34 +1,41 @@
-# Claidor's API, connected to Rakazo
+# Claidor's API, and the one model service
 
 **Written 18 September 2026. Every claim below is tied to a file or to a
 command that was run. Where something was not run, it says so.**
 
 Rakazo is bring-your-own-key. Claidor is not: it holds the Anthropic and
 OpenAI keys, meters what a person spends, and stops them at their monthly
-allowance. This document is how the two are joined, and what it costs.
+allowance. This document is how the two were joined, and then how the
+bring-your-own-key half was taken out.
 
 ---
 
 ## The short version
 
-Rakazo already speaks to any OpenAI-compatible server. Claidor already is
-one. So the connection is configuration on Rakazo's side and no fork of
-their code at all — `rakazo/` stays byte-identical to the subtree merge.
+**One model service, internal, and no screen anywhere takes a key.** Set one
+variable on the Rakazo deployment and every run uses Claidor:
+
+```env
+CLAIDOR_API_KEY=claidor_pat_…
+RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1
+```
 
 | | |
 |---|---|
-| Base URL | `https://api.claidor.com/desktop/api/proxy/v1` |
-| Model ids | `gpt-5.6-terra`, `gpt-5.6-luna` |
-| API key | a Claidor personal access token carrying `model_proxy` |
-| One deployment setting | `RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1` |
+| Base URL | `https://api.claidor.com/desktop/api/proxy/v1` (override: `CLAIDOR_API_BASE_URL`) |
+| Model ids | `gpt-5.6-terra`, `gpt-5.6-luna` (override: `CLAIDOR_MODEL`, `CLAIDOR_MODELS`) |
+| Key | a Claidor personal access token carrying `model_proxy` |
 
-Two small things had to be added to **Claidor** to make that true. Both
-are in `server/`, neither is in `rakazo/`:
+Two things were added to **Claidor** in `server/`:
 
 1. **A credential a server can hold.** See "The one-hour problem" below.
-2. **`GET /desktop/api/proxy/v1/models`.** Rakazo asks for the model list
-   before anything else. Until now that GET fell through to the catch-all
-   and answered 404, measured live on 18 September.
+2. **`GET /desktop/api/proxy/v1/models`.** An OpenAI-compatible client asks
+   for the model list before anything else. That GET fell through to the
+   catch-all and answered 404, measured live on 18 September.
+
+And the model surface inside **`rakazo/`** was removed, which is the second
+half of this document. That part is a real fork of their code: see "What it
+costs at merge time".
 
 ---
 
@@ -77,35 +84,81 @@ profile, not the quota, not memory. There is a test for that too.
 
 ---
 
-## How a person connects it
+## One model service, and no key fields
 
-On the Rakazo deployment, once:
+The founder, 18 September: *"remove their model you can add you key api logic
+completely and make it a one api thing internal for me."*
 
-```env
-RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1
-```
+So the bring-your-own-key surface is gone from `rakazo/`. Not disabled —
+removed. What a person sees now: **Settings → Models** lists the models
+Claidor serves and the deployment owner picks which one answers. Onboarding
+has no model step at all. There is no provider list, no key field, no base
+URL, no model-id probe and no OAuth, on web or on mobile.
+
+**The seam this was built on is theirs, not a new one.**
+`resolveDeploymentModel` (`packages/adapters/src/deployment-model.ts`) already
+decided which provider a run falls back to when no user credential applies,
+and `deploymentKeyFor` in `executor.ts` already fed it to runs. Two things
+were missing and both are small: it carried no base URL, which an
+OpenAI-compatible provider needs, and nothing stopped a user connecting their
+own key beside it.
+
+| What changed | Where |
+|---|---|
+| Claidor as the deployment model, with its base URL, winning over every other provider | `packages/adapters/src/deployment-model.ts` |
+| The base URL travels with the key | `executor.ts` `deploymentKeyFor`, `apps/api/src/team-chat-judge.ts` |
+| A model Claidor serves needs no credential | `packages/adapters/src/model-selection.ts` |
+| Eight procedures deleted: `connect`, `credentials`, `probeOpenAiCompatible` and the five OAuth ones. `list` and `setDefault` remain | `packages/contracts/src/rpc.ts` |
+| Their handlers deleted (145 lines); `list` returns Claidor's menu; `setDefault` writes `DeploymentSettings` instead of a credential row | `apps/api/src/router.ts` |
+| The 1,173-line model overlay became a 170-line read-only pane | `apps/web/src/pages/ModelSettingsOverlay.tsx` |
+| The onboarding model step deleted (288 lines of markup plus its state) | `apps/web/src/pages/Onboarding.tsx` |
+| The 1,183-line mobile model screen became a 137-line pane | `apps/mobile/app/models.tsx` |
+| Bot model pickers read the catalogue instead of credentials | `bot-panel.tsx`, `bot-settings.tsx` |
+| Deleted outright | `model-auth.ts` and `use-model-oauth-signin.ts` (web), `model-auth.ts` (mobile), `model-oauth/model-probe/model-providers` (core), five e2e specs |
+
+**`setDefault` had to change, not just survive.** It used to look up a
+`userModelCredential` row and hang a `SpaceModelPreference` off it. There are
+no credential rows any more, so it would have 404'd every time. It now writes
+`DeploymentSettings.defaultModelProvider/defaultModelId`, which
+`selectConfiguredModel` already reads before falling back to the environment —
+no migration, and no new concept. It is deployment-owner only: one model
+service, one allowance, one default. A bot can still be pointed at a different
+model of its own through `bots.update`, unchanged.
+
+**What was deliberately kept.** The bring-your-own-key path still exists
+underneath and is used when `CLAIDOR_API_KEY` is blank, because
+`rakazo/docs/agent-verification.md`'s offline harness and the eval runner
+(`packages/testkit/src/cli/evals.ts`, which parses `ModelConnectInputSchema`)
+must run with no Claidor account. Deleting it would have broken the one part
+of their engineering worth copying. Voice, memory and integration keys are
+untouched — those are separate features and the founder asked about the model.
+
+### What it costs at merge time
+
+This is the first change that touches their apps. Before it, our whole
+conflict surface was seven files. It is now considerably larger: `apps/web`,
+`apps/mobile`, `apps/api`, `packages/contracts`, `packages/core` and
+`packages/adapters` all carry edits. Upstream ships roughly 24 commits a day,
+so a `git subtree pull` will now conflict where it used not to. That is the
+price of the founder's decision and it was made knowingly; it is written here
+so nobody is surprised by it later.
+
+---
+
+## How it is set up
+
+1. In Claidor, create a personal access token with the **model_proxy** scope.
+   Copy it — it is shown once and stored only as a hash.
+2. On the Rakazo deployment, set `CLAIDOR_API_KEY` to it and
+   `RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1`.
+3. That is all. Nobody signing in is asked for anything.
 
 `api.claidor.com` is a public hostname, and Rakazo blocks public model
-endpoints unless that is set
+endpoints unless that flag is set
 (`rakazo/packages/adapters/src/openai-compatible-url.ts`,
-`assertAllowedOpenAiCompatibleRequestUrl`). HTTPS is not optional either:
-an endpoint that carries a key must be `https://`
+`assertAllowedOpenAiCompatibleRequestUrl`). HTTPS is not optional either: an
+endpoint that carries a key must be `https://`
 (`assertHttpsForKeyedOpenAiCompatibleUrl`). Ours is.
-
-Then, per person:
-
-1. In Claidor, create a personal access token with the **model_proxy**
-   scope. Copy it — it is shown once and stored only as a hash.
-2. In Rakazo: **Connect a model** / **Settings → Models** →
-   **OpenAI-compatible**.
-3. Base URL: `https://api.claidor.com/desktop/api/proxy/v1`
-4. Model: the list fills itself from `/models`. Pick `gpt-5.6-terra` for
-   everyday work, `gpt-5.6-luna` for cheap and quick.
-5. API key: the token from step 1.
-6. Leave **Supports images** and **Supports thinking** off for now. See
-   the next section for why.
-
-The steps are Rakazo's own, from `rakazo/docs/self-host.md:215-234`.
 
 ---
 

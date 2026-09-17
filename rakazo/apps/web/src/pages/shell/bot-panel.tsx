@@ -6,7 +6,6 @@ import type {
   ComputerMode,
   Me,
   ModelCatalogEntry,
-  ModelCredential,
   ThinkingLevel,
   VoiceInfo,
 } from "@rakazo/contracts";
@@ -232,7 +231,6 @@ export function BotSettings({
     bot.modelProvider && bot.modelId ? modelOptionKey(bot.modelProvider, bot.modelId) : "",
   );
   const [thinkingLevel, setThinkingLevel] = useState(bot.thinkingLevel ?? "");
-  const [credentials, setCredentials] = useState<ModelCredential[]>([]);
   const [catalog, setCatalog] = useState<ModelCatalogEntry[]>([]);
   const [me, setMe] = useState<Me | null>(null);
   const [modelMetaReady, setModelMetaReady] = useState(false);
@@ -253,9 +251,8 @@ export function BotSettings({
       .voices({})
       .then(setVoices)
       .catch(() => setVoices([]));
-    void Promise.all([rpc.models.credentials(), rpc.models.list(), rpc.me()])
-      .then(([nextCredentials, nextCatalog, nextMe]) => {
-        setCredentials(nextCredentials);
+    void Promise.all([rpc.models.list(), rpc.me()])
+      .then(([nextCatalog, nextMe]) => {
         setCatalog(nextCatalog);
         setMe(nextMe);
         // Only mark ready on success — a failed catalog load must not clear
@@ -265,43 +262,27 @@ export function BotSettings({
       .catch(() => undefined);
   }, []);
 
+  // Every model this deployment serves, straight from the catalogue. There is
+  // no credential to cross-reference any more: one model service, no keys, so
+  // what the menu lists is simply what the service serves.
+  const seenOptions = new Set<string>();
   const connectedOptions: Array<{
     key: string;
     provider: string;
     modelId: string;
     label: string;
   }> = [];
-  const seenOptions = new Set<string>();
-  for (const credential of credentials) {
-    const providerModels = catalog.filter(
-      (entry) => entry.provider === credential.provider && !entry.placeholder,
-    );
-    const credentialInCatalog = Boolean(
-      credential.modelId && providerModels.some((entry) => entry.id === credential.modelId),
-    );
-    // Catalog providers expand to every model for that connection. Free-form
-    // credentials (model id not in the catalog) stay a single connected pair.
-    const options =
-      credential.modelId && !credentialInCatalog
-        ? [
-            {
-              key: modelOptionKey(credential.provider, credential.modelId),
-              provider: credential.provider,
-              modelId: credential.modelId,
-              label: `${credential.label} · ${credential.modelId}`,
-            },
-          ]
-        : providerModels.map((entry) => ({
-            key: modelOptionKey(entry.provider, entry.id),
-            provider: entry.provider,
-            modelId: entry.id,
-            label: `${entry.providerName ?? entry.provider} · ${entry.label}`,
-          }));
-    for (const option of options) {
-      if (seenOptions.has(option.key)) continue;
-      seenOptions.add(option.key);
-      connectedOptions.push(option);
-    }
+  for (const entry of catalog) {
+    if (entry.placeholder) continue;
+    const key = modelOptionKey(entry.provider, entry.id);
+    if (seenOptions.has(key)) continue;
+    seenOptions.add(key);
+    connectedOptions.push({
+      key,
+      provider: entry.provider,
+      modelId: entry.id,
+      label: entry.label,
+    });
   }
 
   const effectiveProvider = modelKey
@@ -316,15 +297,8 @@ export function BotSettings({
           (entry) => entry.provider === effectiveProvider && entry.id === effectiveModelId,
         )
       : undefined;
-  const effectiveCredential = credentials.find(
-    (entry) => entry.provider === effectiveProvider && entry.modelId === effectiveModelId,
-  );
-  const thinkingOptions = (
-    effectiveCredential?.thinkingLevels ??
-    effectiveEntry?.thinkingLevels ??
-    []
-  ).filter((level) => level !== "off");
-  const defaultThinkingLevel = effectiveCredential?.thinkingLevel ?? "medium";
+  const thinkingOptions = (effectiveEntry?.thinkingLevels ?? []).filter((level) => level !== "off");
+  const defaultThinkingLevel = "medium";
 
   async function executeSave(patchOverrides?: {
     name?: string;

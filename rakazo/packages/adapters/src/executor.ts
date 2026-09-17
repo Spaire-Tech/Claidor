@@ -4791,9 +4791,17 @@ async function runSandboxCommand(
  * only when the provider that won the resolution above is that vendor. A provider named
  * by deployment settings or a bot override gets no key rather than another vendor's.
  */
-function deploymentKeyFor(deps: ExecutorDeps, provider: string): string | undefined {
-  if (!deps.deploymentModelKey) return undefined;
-  return provider === resolveDeploymentModel().provider ? deps.deploymentModelKey : undefined;
+function deploymentKeyFor(
+  deps: ExecutorDeps,
+  provider: string,
+): { apiKey?: string; baseUrl?: string } {
+  if (!deps.deploymentModelKey) return {};
+  const deployment = resolveDeploymentModel();
+  if (provider !== deployment.provider) return {};
+  // The base URL travels with the key. An OpenAI-compatible provider is only
+  // a provider once it has an address, so handing out one without the other
+  // would produce a run pointed at nothing and a failure far from here.
+  return { apiKey: deps.deploymentModelKey, baseUrl: deployment.baseUrl };
 }
 
 async function resolveModelKey(
@@ -4827,7 +4835,7 @@ async function resolveModelKey(
       const row = await deps.prisma.secret.findFirst({
         where: { id: credential.secretId, userId, spaceId: null },
       });
-      if (!row) return { apiKey: deploymentKeyFor(deps, provider), redact: [] };
+      if (!row) return { ...deploymentKeyFor(deps, provider), redact: [] };
       const plaintext = deps.secretStore.load(row.ciphertext, row.id);
       registerSecrets?.(secretValuesToRedact(parseModelSecret(plaintext)));
       const persist = async (next: string) => {
@@ -4912,7 +4920,7 @@ async function resolveModelKey(
       };
     });
   }
-  return { apiKey: deploymentKeyFor(deps, provider), redact: [] };
+  return { ...deploymentKeyFor(deps, provider), redact: [] };
 }
 
 async function withModelCredentialLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
