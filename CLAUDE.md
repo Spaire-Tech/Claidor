@@ -164,6 +164,27 @@ transcription; and an eval harness that runs the real agent loop offline.
    is 358 lines of markdown), the Caisra brand, and the Claidor server.
 4. `desktop/` is frozen. Do not add to it.
 
+**Two more, later the same day, both product and both reversing a rule
+we shipped:**
+
+5. **Caisra has progress updates.** The desktop brief said the opposite
+   ("Interrupt them for decisions, not for progress"), which was right
+   for an app you can watch and wrong for a hosted backend where work
+   runs for minutes with nobody looking. Rakazo's `message_user` rule
+   wins: a few short, high-signal beats during long work, capped at 500
+   characters, never the final answer. **This does not reverse "no step
+   cards"** (`docs/product/direction.md`). A progress update is a text
+   message in the person's own language, not a card showing tool calls.
+   The rule against exposing the tool lifecycle stands.
+6. **Every agent posts its own results into the shared conversation.**
+   The desktop brief routed everything back through Yodo ("Bring things
+   back yourself, in a few lines"). It no longer does. Rakazo's model
+   wins: `handoff_to_bot` says "post results in the shared thread", and
+   each bot speaks for itself. **Yodo is the first person you meet and
+   who helps you, not a funnel.** In the founder's words: "ultimately
+   the idea is to have a team." Rewrite `CHIEF_OF_STAFF_RULES`
+   accordingly; do not port the relay rules.
+
 **Three facts the plan rests on, each checked against source on 17
 September rather than assumed:**
 
