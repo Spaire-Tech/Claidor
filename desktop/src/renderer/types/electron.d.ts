@@ -39,6 +39,7 @@ import type {
   BrowserDiagnosticResult,
   BrowserRuntimeProfile,
 } from '../../shared/browserWebAccess/constants';
+import type { ProposeConnectorAnswer, ProposeConnectorAsk } from '../../shared/connections/proposal';
 import type {
   BrowserAnnotationRect,
   BrowserAnnotationScreenshotRef,
@@ -700,6 +701,11 @@ interface IElectronAPI {
     onRequested: (callback: (ask: RosterAsk) => void) => () => void;
     onDismissed: (callback: (data: { requestId: string }) => void) => () => void;
     respond: (requestId: string, answer: RosterAnswer) => Promise<void>;
+  };
+  proposeConnector?: {
+    onRequested: (callback: (ask: ProposeConnectorAsk) => void) => () => void;
+    onDismissed: (callback: (data: { requestId: string }) => void) => () => void;
+    respond: (requestId: string, answer: ProposeConnectorAnswer) => Promise<void>;
   };
   platform: string;
   arch: string;

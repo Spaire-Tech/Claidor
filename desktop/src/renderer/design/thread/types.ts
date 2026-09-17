@@ -62,6 +62,13 @@ export const ThreadItemKind = {
    * (`shared/cards/library.ts`.)
    */
   Card: 'card',
+  /**
+   * An agent proposing a connector: the service's logo, its name, one
+   * line, Not now and Install. The founder, 17 September: the onboarding
+   * "App access requested" card, with Install where Allow access was.
+   * Install runs the Apps screen's Connect (`shared/connections/proposal.ts`).
+   */
+  Connector: 'connector',
 } as const;
 export type ThreadItemKind = typeof ThreadItemKind[keyof typeof ThreadItemKind];
 
@@ -285,6 +292,37 @@ export interface CardItem {
   at: number;
 }
 
+/** What became of a connector card. */
+export const ConnectorOutcome = {
+  Connected: 'connected',
+  Declined: 'declined',
+  Failed: 'failed',
+} as const;
+export type ConnectorOutcome = typeof ConnectorOutcome[keyof typeof ConnectorOutcome];
+
+export interface ConnectorItem {
+  kind: typeof ThreadItemKind.Connector;
+  /** `connector:<requestId>` (`connectorCards.ts`). */
+  id: string;
+  /** The catalogue id: "gmail", "linkedin". */
+  connectionId: string;
+  /** The product's name, literal. */
+  name: string;
+  /** The catalogue's one line about the service. */
+  line?: string;
+  /** File name under `APP_LOGO_DIRECTORY`; none shows the monogram. */
+  logo?: string;
+  /** The agent's own line of why, when it gave one. */
+  reason?: string;
+  /** Install was pressed and the sign-in is running in the browser. */
+  busy?: boolean;
+  /** Set once decided. Nothing on the card presses after this. */
+  resolved?: ConnectorOutcome;
+  /** A sentence, when the sign-in failed. */
+  failure?: string;
+  at: number;
+}
+
 export type ThreadItem =
   | TextItem
   | SystemItem
@@ -294,7 +332,8 @@ export type ThreadItem =
   | AttachmentItem
   | SecretItem
   | RosterItem
-  | CardItem;
+  | CardItem
+  | ConnectorItem;
 
 /** What the person chose on an approval card. */
 export const AuthDecision = {

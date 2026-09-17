@@ -19,12 +19,13 @@ import { AccountMenu } from '../src/renderer/design/shell/AccountMenu';
 import { Apps, AppsTab } from '../src/renderer/design/shell/Apps';
 import { MessagesShell, ThreadMode } from '../src/renderer/design/shell/MessagesShell';
 import { SignIn } from '../src/renderer/design/shell/SignIn';
+import { type ConnectorCardState, connectorItem } from '../src/renderer/design/thread/connectorCards';
 import type { EngineMessage, EnginePermissionRequest } from '../src/renderer/design/thread/fromEngine';
 import { toThreadItems } from '../src/renderer/design/thread/fromEngine';
 import { rosterItem } from '../src/renderer/design/thread/rosterCards';
 import { staffingItem } from '../src/renderer/design/thread/staffingCards';
 import type { ThreadItem } from '../src/renderer/design/thread/types';
-import { ThreadItemKind } from '../src/renderer/design/thread/types';
+import { ConnectorOutcome, ThreadItemKind } from '../src/renderer/design/thread/types';
 import { EVERY_ROW } from '../src/shared/settings/appUiMap';
 import { buildRoster } from '../src/shared/staffing/roster';
 import { cardExamples } from './cardExamples';
@@ -190,6 +191,54 @@ const CHOICE: ThreadItem = {
   freeform: true,
   at: at(7),
 };
+
+const CHOICE_MANY: ThreadItem[] = [
+  {
+    kind: ThreadItemKind.Choice, id: 'choice:req-many:0',
+    text: 'What is Chandler Bing\'s job for most of the Friends series?',
+    options: [
+      { key: 'A', label: 'Stockbroker' },
+      { key: 'B', label: 'IT procurement manager' },
+      { key: 'C', label: 'Hotel manager' },
+      { key: 'D', label: 'Advertising executive' },
+    ],
+    at: at(8),
+  },
+  {
+    kind: ThreadItemKind.Choice, id: 'choice:req-many:1',
+    text: 'Which file should I start from?',
+    options: [
+      { key: 'A', label: 'Q4 Model v3.xlsx', hint: 'The one I filed this morning' },
+      { key: 'B', label: 'Q4 Model v2.xlsx', hint: 'Still in Board / 2026' },
+    ],
+    at: at(8),
+  },
+  {
+    kind: ThreadItemKind.Choice, id: 'choice:req-many:2',
+    text: 'Flag the two slides now, or put them in a note after?',
+    options: [
+      { key: 'A', label: 'Now' },
+      { key: 'B', label: 'In a note after' },
+    ],
+    at: at(8),
+  },
+];
+
+// Built from the catalogue, as the app builds them, so the names, lines
+// and logos on film are the real ones.
+const connector = (id: string, connectionId: string, state: ConnectorCardState & { reason?: string } = {}): ThreadItem => {
+  const { reason, ...rest } = state;
+  const item = connectorItem({ requestId: id, connectionId, ...(reason ? { reason } : {}) }, rest, at(8));
+  if (!item) throw new Error(`no such connector: ${connectionId}`);
+  return item;
+};
+const CONNECTORS: ThreadItem[] = [
+  connector('c1', 'linkedin', { reason: 'To pull the three profiles you asked about.' }),
+  connector('c2', 'gmail', { busy: true }),
+  connector('c3', 'notion', { resolved: ConnectorOutcome.Connected }),
+  connector('c4', 'todoist', { resolved: ConnectorOutcome.Declined }),
+  connector('c5', 'outlook', { resolved: ConnectorOutcome.Failed, failure: 'Outlook said no to that account.' }),
+];
 
 const AGENTS = [
   { id: 'juno', name: 'Juno', preview: 'Slide 14 and slide 19 use last quarter’s headcount.', when: '9:12 AM' },
@@ -366,6 +415,11 @@ function Screens(): JSX.Element {
     files: [{ name: 'Q4 Model v2.xlsx', path: '/Users/bass/Board/2026/Q4 Model v2.xlsx' }],
   });
   if (screen === 'choice') items.push(CHOICE);
+  // Several questions in one request: one card, walked with the chevrons.
+  if (screen === 'choice-many') items.push(...CHOICE_MANY);
+  // An agent proposing a connector, in every state the card has: asking,
+  // connecting, installed, declined, failed.
+  if (screen === 'connector') items.push(...CONNECTORS);
   // Yodo asking to stand up an agent: the permission card with the brief
   // behind its disclosure and Stand up / Not now, exactly as the app
   // draws it from a live request.
@@ -400,6 +454,7 @@ function Screens(): JSX.Element {
       choice={{ onPick: noop, onFreeAnswer: noop, onDismiss: noop }}
       auth={{ onDecide: noop }}
       roster={{ onStandUp: noop, onSomethingElse: noop, onDecline: noop }}
+      connector={{ onInstall: noop, onDecline: noop }}
       // So a file card draws its save button, which only exists when
       // there is something to save with.
       parts={{ onOpenFile: noop, onSaveCopy: noop }}

@@ -4282,3 +4282,84 @@ founder's word. Dark mode: designed, not yet sent.
 **Where:** `desktop/src/renderer/design/**` (25 files),
 `desktop/harness/main.tsx`, `docs/product/design/README.md`,
 `docs/product/direction.md` §1.
+
+## 75. After the first look at Spatial Light: the face alone, Settings whole, a card for connectors, the question card redrawn — `built; run in the harness; the Mac unrun`
+
+The founder, 17 September, on the screenshots of item 74: *"you did a
+good job. a few things."* Four of them.
+
+**The voice face, without its circle.** *"remove the circle in which
+the voice avatar is in. just have it there without it."* The canvas's
+124px glass disc is gone; the face sits on the fade by itself, a little
+larger (96px), and still breathes and pulses (`shell/MessagesShell.tsx`).
+
+**Settings as a whole page.** *"open settings as a full page, rather
+that letting the chat sidebar there."* Settings now covers the whole
+window, list of agents included; the dock stays. The component already
+filled whatever it was put in, so the change is where it is put.
+
+**A card when an agent proposes a connector.** *"whenever an agent is
+asked about a connector, or that he proposes a connector in the chat,
+always put the design in onboarding of 'Notes — App access requested —
+Not now — Allow access' … instead of allow access it'll be install …
+the button 'install' color to be blue tho like our design."* Until now
+the brief told the agent to say a service was not connected and to say
+where to connect it, which sent the person to Apps to find the card
+themselves. Now:
+
+- A ninth message kind, `Connector` (`thread/types.ts`): the service's
+  logo, its name, the catalogue's one line, the agent's line of why
+  when it gave one, Not now and Install in the accent. Pressing Install
+  runs the exact Connect the Apps screen runs (the browser sign-in,
+  nothing typed); the card says Connecting… until it comes back, then
+  Installed, Not now, or the failure in a sentence. Nothing on it
+  presses twice.
+- A tool for the agent, `propose_connector` (`shared/connections/proposal.ts`),
+  on its own MCP server `caisra-connectors`, generated and registered
+  like the staffing one. It names a connector by its catalogue id and
+  is refused, with the list, for anything else. It blocks on the answer
+  and is told connected, declined or failed in a sentence.
+- The bridge route, the IPC pair, the renderer hook
+  (`thread/useProposeConnector.ts`), and the brief's rule rewritten: raise
+  the card, never send them to Apps; a Not now is not raised again in
+  the conversation unless they ask. The Connect itself was lifted out of
+  the Apps screen's hook into `connections/connect.ts` so the card and
+  the screen run one function, not two copies.
+- **The brief is 31 characters under the line.** The runtime test holds
+  the managed instructions under the engine's cut (review item 63). The
+  first wording of the new rule went 81 over it, so the old clause "do
+  not read it off the browser as though a connection were there" was
+  dropped to fit. The next sentence anybody adds to the brief will hit
+  that test, which is its job.
+
+**The question card, as the founder's second screenshot.** *"if the
+agent has many question/multiple choice for the user, design it like
+screenshot 2. remove that one design we have and replace it by this."*
+The card is now the question, the options each behind a 34px lettered
+circle, and Next at the bottom right; an option lights on press and
+nothing is sent until Next. When the engine's tool asks several
+questions in one request, they used to come as a stack of cards; the
+thread now hands the set to one card with a pair of chevrons and "1 of
+3" (`Thread.tsx`, `threadRows`; `ThreadItemView.tsx`, `ChoiceDeck`).
+Next answers the one on screen and it leaves the set. The free-text
+box is gone with the old design: somebody who wants to answer in their
+own words types in the composer. The screenshot's lightbulb is not
+drawn: it is a hint button in the app it came from, and there is no
+hint behind it here, so it would be a dead control.
+
+**Photographed:** `choice`, `choice-many`, `connector` (every state of
+the card at once), `voice`, `settings`.
+
+**Unrun:** the founder's Mac; an agent actually calling
+`propose_connector` against the live gateway (the generated server is
+run against a fake bridge in its live test, as the staffing one is).
+
+**Where:** `desktop/src/shared/connections/proposal.ts` (+test),
+`desktop/src/main/libs/proposeConnectorMcpServer.ts` (+tests),
+`desktop/src/main/libs/mcpBridgeServer.ts`, `desktop/src/main/main.ts`,
+`desktop/src/main/preload.ts`, `desktop/src/main/libs/openclawConfigSync.ts`,
+`desktop/src/main/mcp/mcpRuntime.ts`,
+`desktop/src/renderer/design/connections/{connect.ts,useConnections.ts}`,
+`desktop/src/renderer/design/thread/{types.ts,connectorCards.ts,useProposeConnector.ts,ThreadItemView.tsx,Thread.tsx,threadRows.test.ts}`,
+`desktop/src/renderer/design/shell/{MessagesShell.tsx,CaisraApp.tsx}`,
+`desktop/harness/main.tsx`.

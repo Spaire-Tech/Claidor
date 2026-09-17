@@ -128,9 +128,10 @@ Upstream LobsterAI has thirteen settings tabs. This has four.
 `docs/product/design/README.md`)** the app is a rounded window on a
 pale ground with a glass dock beside it: Home, Routines, Create, Apps,
 and the person. The dock took the sidebar's "+" and its bottom row.
-Compose, Apps, Settings and an agent's page fill the conversation pane
-edge to edge, with the list of agents live beside them; a menu floats
-beside what opened it. The founder's rule, in capitals: *"NOTHING
+Compose, Apps and an agent's page fill the conversation pane edge to
+edge, with the list of agents live beside them; Settings covers the
+whole window (17 September: "open settings as a full page"); a menu
+floats beside what opened it. The founder's rule, in capitals: *"NOTHING
 SHOULD OPEN INSIDE ANOTHER BOX."* Routines is in the dock and does
 nothing yet, at the founder's word.
 
@@ -144,7 +145,7 @@ list, and it is the discipline that makes the app feel unlike an AI app:
 | `text` | a bubble; in a group it carries the sender's orb and name |
 | `system` | a centred grey line — "Perrin can run commands on your computer from now on." |
 | `status` | orb plus a shimmering verb, deleted when the work finishes |
-| `choice` | a question card, lettered options with hints, optional free-text |
+| `choice` | a question card: the question, options behind lettered circles, Next; several questions from one request walk under a pair of chevrons (17 September) |
 | `auth` | the approval card |
 | `attachment` | a file as the whole message — an image shown, anything else named and openable |
 | `secret` | a masked field; what is typed never enters the transcript |
@@ -173,7 +174,15 @@ So:
   context, or any log.
 
 The closed list is still closed. An eighth is the same decision, asked
-the same way.
+the same way. Since then: the roster card (16 September), the answer
+cards (17 September, `review.md` 73), and the **connector card** (17
+September, `review.md` 75): an agent that needs a service the person
+has not connected raises a card with the service's logo, its name, one
+line, Not now and Install, and Install runs the same sign-in the Apps
+screen runs. The founder: *"whenever an agent is asked about a
+connector, or that he proposes a connector in the chat, always put the
+design in onboarding of 'App access requested' … instead of allow
+access it'll be install."*
 
 **The approval card is the heart of it.** Warning triangle, the device
 id, the *literal command* behind a disclosure triangle, then Always

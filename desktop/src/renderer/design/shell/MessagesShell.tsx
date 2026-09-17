@@ -10,6 +10,7 @@ import { Thread } from '../thread/Thread';
 import type {
   AuthHandlers,
   ChoiceHandlers,
+  ConnectorHandlers,
   PartHandlers,
   RosterHandlers,
   SecretHandlers,
@@ -17,7 +18,7 @@ import type {
 import type { ThreadItem } from '../thread/types';
 import { useReactions } from '../thread/useReactions';
 import { useStaggered } from '../thread/useStaggered';
-import { color, font, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
+import { color, font, line, motion, radius, shadow, text, tracking } from '../tokens';
 import { type AgentDraftSubmit, Compose } from './Compose';
 import { Composer } from './Composer';
 import { Dock, DockItem } from './Dock';
@@ -55,6 +56,8 @@ export interface MessagesShellProps {
   secret?: SecretHandlers;
   /** What the roster card ("Your starter team") can answer with. */
   roster?: RosterHandlers;
+  /** Install or Not now on a connector card an agent raised. */
+  connector?: ConnectorHandlers;
   dayStamp?: string;
   typing?: boolean;
   /**
@@ -132,7 +135,7 @@ export interface MessagesShellProps {
 export function MessagesShell(props: MessagesShellProps): JSX.Element {
   const {
     agents, activeId, activeName, items, dayStamp, typing, mode, accountName,
-    choice, auth, parts, secret, roster, onSelect, onAskDelete, onSend, onCompose, onApps, apps, onAccount, onMode, waiting,
+    choice, auth, parts, secret, roster, connector, onSelect, onAskDelete, onSend, onCompose, onApps, apps, onAccount, onMode, waiting,
     onOpenPanel, onTeach, dictation, onShareTemplate, onOpenAgent, agentDetail, agentPanel, settings,
     composing, onCloseCompose, onPickAgent, onCreateAgent, accountMenu, panel, wornAvatars,
   } = props;
@@ -312,6 +315,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
         <div
           data-window
           style={{
+            position: 'relative',
             flex: '1 1 auto', minWidth: 0, maxWidth: WINDOW_MAX_WIDTH,
             height: '100%', maxHeight: WINDOW_MAX_HEIGHT,
             display: 'grid', gridTemplateColumns: columns,
@@ -467,6 +471,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
                   auth={auth}
                   {...(secret ? { secret } : {})}
                   {...(roster ? { roster } : {})}
+                  {...(connector ? { connector } : {})}
                   {...(parts ? { parts } : {})}
                   actions={{ reactions, onReact, onReply }}
                   // A button in an answer card is the person's next message,
@@ -477,9 +482,12 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
 
                 {/*
                   Voice: the canvas fades the bottom of the thread to white and
-                  floats the agent's face in a 124px glass disc over it, above
-                  the composer. It breathes while it waits and pulses while the
-                  agent speaks. The composer stays where it is.
+                  floats the agent's face over it, above the composer. The
+                  canvas drew the face in a 124px glass disc; the founder,
+                  17 September, on seeing it: "remove the circle in which
+                  the voice avatar is in. just have it there without it."
+                  So the face alone. It breathes while it waits and pulses
+                  while the agent speaks. The composer stays where it is.
                 */}
                 {mode === ThreadMode.Voice && (
                   <div
@@ -495,15 +503,14 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
                       style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         width: 124, height: 124, padding: 0, borderRadius: '50%',
-                        border: `1px solid ${line.hairline}`,
-                        background: glass.orb, backdropFilter: glass.orbBlur, WebkitBackdropFilter: glass.orbBlur,
-                        boxShadow: shadow.voiceOrb, cursor: 'pointer', pointerEvents: 'auto',
+                        border: 'none', background: 'transparent',
+                        cursor: 'pointer', pointerEvents: 'auto',
                         animation: `fsr-orb-in ${motion.orbIn.duration} ${motion.orbIn.easing} both, ${typing
                           ? `fsr-orb-speak ${motion.orbSpeak.duration} ${motion.orbSpeak.easing} infinite`
                           : 'fsr-orb-idle 5.5s ease-in-out infinite'}`,
                       }}
                     >
-                      <CloudBlob avatar={activeAvatar} size={88} />
+                      <CloudBlob avatar={activeAvatar} size={96} />
                     </button>
                   </div>
                 )}
@@ -537,7 +544,6 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             )}
             {apps}
             {agentDetail}
-            {settings}
           </div>
 
           {layout.panel === PanelMode.Split && (
@@ -551,6 +557,19 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
               }}
             >
               {agentPanel ?? panel}
+            </div>
+          )}
+
+          {/*
+            Settings is a page of its own, over the whole window: the list
+            of agents goes too. The founder, 17 September: "open settings
+            as a full page, rather than letting the chat sidebar there."
+            The component fills whatever it is put in (`inset: 0`), so
+            putting it here rather than in the pane is the whole change.
+          */}
+          {settings && (
+            <div style={{ position: 'absolute', inset: 0, zIndex: 60 }}>
+              {settings}
             </div>
           )}
         </div>

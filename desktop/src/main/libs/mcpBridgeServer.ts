@@ -32,6 +32,16 @@ import {
   describeResponse,
 } from '../../shared/askInput/constants';
 import {
+  parseProposeConnectorInput,
+  PROPOSE_CONNECTOR_ROUTE,
+  PROPOSE_CONNECTOR_TIMEOUT_MS,
+  type ProposeConnectorAnswer,
+  type ProposeConnectorAsk,
+  ProposeConnectorBehavior,
+  type ProposeConnectorResult,
+  proposedConnection,
+} from '../../shared/connections/proposal';
+import {
   parseReactInput,
   REACT_ROUTE,
   type ReactRequest,
@@ -106,6 +116,12 @@ type PendingRoster = {
   timer: ReturnType<typeof setTimeout>;
 };
 
+type PendingProposeConnector = {
+  requestId: string;
+  resolve: (answer: ProposeConnectorAnswer) => void;
+  timer: ReturnType<typeof setTimeout>;
+};
+
 /** Who actually creates the agent once the person has said yes. */
 export type CreateAgentPerformer = (
   input: CreateAgentInput,
@@ -154,6 +170,9 @@ export class McpBridgeServer {
   private onRosterCallback: ((ask: RosterAsk) => void) | null = null;
   private onRosterDismissCallback: ((requestId: string) => void) | null = null;
   private readonly pendingRoster = new Map<string, PendingRoster>();
+  private onProposeConnectorCallback: ((ask: ProposeConnectorAsk) => void) | null = null;
+  private onProposeConnectorDismissCallback: ((requestId: string) => void) | null = null;
+  private readonly pendingProposeConnector = new Map<string, PendingProposeConnector>();
   private onAskUserDismissCallback: ((requestId: string) => void) | null = null;
   private onMediaGenerationCallback: ((request: MediaGenerationRequest) => Promise<MediaGenerationResponse>) | null = null;
   private onBrowserToolCallback: ((request: BrowserToolRequest) => Promise<BrowserToolResponse>) | null = null;
@@ -288,6 +307,35 @@ export class McpBridgeServer {
 
   onRosterDismiss(callback: (requestId: string) => void): void {
     this.onRosterDismissCallback = callback;
+  }
+
+  get proposeConnectorCallbackUrl(): string | null {
+    return this._port ? `http://127.0.0.1:${this._port}${PROPOSE_CONNECTOR_ROUTE}` : null;
+  }
+
+  /**
+   * The connector card ("App access requested", with Install). The card
+   * (`onProposeConnector`, `resolveProposeConnector`) and its coming down
+   * (`onProposeConnectorDismiss`). Unlike standing up an agent there is
+   * no performer here: the renderer owns the connect flow (it is the
+   * Apps screen's own Connect), runs it on Install, and answers with the
+   * outcome. The tool waits on the whole of it.
+   */
+  onProposeConnector(callback: (ask: ProposeConnectorAsk) => void): void {
+    this.onProposeConnectorCallback = callback;
+  }
+
+  onProposeConnectorDismiss(callback: (requestId: string) => void): void {
+    this.onProposeConnectorDismissCallback = callback;
+  }
+
+  resolveProposeConnector(requestId: string, answer: ProposeConnectorAnswer): void {
+    const pending = this.pendingProposeConnector.get(requestId);
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    this.pendingProposeConnector.delete(requestId);
+    log('INFO', `ProposeConnector answered, requestId=${requestId} behavior=${answer.behavior}`);
+    pending.resolve(answer);
   }
 
   resolveRoster(requestId: string, answer: unknown): void {
@@ -459,6 +507,11 @@ export class McpBridgeServer {
 
     if (req.url?.startsWith(PROPOSE_TEAM_ROUTE)) {
       await this.handleProposeTeam(req, res);
+      return;
+    }
+
+    if (req.url?.startsWith(PROPOSE_CONNECTOR_ROUTE)) {
+      await this.handleProposeConnector(req, res);
       return;
     }
 
@@ -715,6 +768,70 @@ export class McpBridgeServer {
       const errMsg = error instanceof Error ? error.message : String(error);
       log('ERROR', `Roster request error: ${errMsg}`);
       answer(500, { behavior: 'failed', reason: 'The request could not be read.' });
+    }
+  }
+
+  /**
+   * The connector card, from the `propose_connector` tool.
+   *
+   * The id is checked against the catalogue here, so the agent cannot
+   * put up a card for a service the app cannot connect. The card goes up
+   * and the request waits on it. Install is run by the renderer — the
+   * same Connect the Apps screen runs — and what it answers is what the
+   * tool is told: connected, with the service's name; declined, which
+   * is also what a timeout means; or failed, with a sentence.
+   */
+  private async handleProposeConnector(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+    const answer = (status: number, result: ProposeConnectorResult): void => {
+      res.writeHead(status, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
+    };
+    try {
+      const body = await this.readBody(req);
+      const parsed = parseProposeConnectorInput(JSON.parse(body));
+      if (typeof parsed === 'string') {
+        answer(400, { behavior: ProposeConnectorBehavior.Failed, reason: parsed });
+        return;
+      }
+      if (!this.onProposeConnectorCallback) {
+        // No window to draw the card in. Declining is the only honest
+        // answer; the tool's turn would otherwise sit waiting.
+        log('WARN', 'ProposeConnector callback not registered, declining');
+        answer(200, { behavior: ProposeConnectorBehavior.Declined });
+        return;
+      }
+
+      const requestId = crypto.randomUUID();
+      log('INFO', `ProposeConnector request, requestId=${requestId} connectionId=${serializeForLog(parsed.connectionId)}`);
+
+      const decision = await new Promise<ProposeConnectorAnswer>((resolve) => {
+        const timer = setTimeout(() => {
+          log('INFO', `ProposeConnector timeout, requestId=${requestId}`);
+          this.pendingProposeConnector.delete(requestId);
+          this.onProposeConnectorDismissCallback?.(requestId);
+          resolve({ behavior: ProposeConnectorBehavior.Declined });
+        }, PROPOSE_CONNECTOR_TIMEOUT_MS);
+        this.pendingProposeConnector.set(requestId, { requestId, resolve, timer });
+        this.onProposeConnectorCallback?.({ requestId, ...parsed });
+      });
+
+      if (decision.behavior === ProposeConnectorBehavior.Connected) {
+        const name = proposedConnection(parsed)?.name ?? parsed.connectionId;
+        log('INFO', `ProposeConnector connected, requestId=${requestId} connectionId=${serializeForLog(parsed.connectionId)}`);
+        answer(200, { behavior: ProposeConnectorBehavior.Connected, connectionId: parsed.connectionId, name });
+        return;
+      }
+      if (decision.behavior === ProposeConnectorBehavior.Failed) {
+        const reason = decision.reason?.trim() || 'the sign-in did not go through';
+        log('WARN', `ProposeConnector failed, requestId=${requestId}: ${reason}`);
+        answer(200, { behavior: ProposeConnectorBehavior.Failed, reason });
+        return;
+      }
+      answer(200, { behavior: ProposeConnectorBehavior.Declined });
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      log('ERROR', `ProposeConnector request error: ${errMsg}`);
+      answer(500, { behavior: ProposeConnectorBehavior.Failed, reason: 'The request could not be read.' });
     }
   }
 

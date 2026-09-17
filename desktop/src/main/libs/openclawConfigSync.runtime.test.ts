@@ -3217,6 +3217,52 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd).toContain('Never list the twenty-three in chat');
   });
 
+  test('the connectors server is registered for every agent, with its one tool, and the brief sends nobody to Apps', async () => {
+    // The founder, 17 September: a service that is not connected gets
+    // the onboarding card in the thread, with Install. The tool and the
+    // rule ship together: a rule that says "call propose_connector" with
+    // no such tool is a rule the agent cannot follow, and a tool with the
+    // old rule beside it is one the agent never reaches for.
+    const agent = (id: string, isDefault: boolean) => ({
+      id, name: id, description: '', systemPrompt: '', identity: '', model: '',
+      workingDirectory: '', icon: '', skillIds: [], subagentAllowAgentIds: [],
+      enabled: true, pinned: false, isDefault, source: 'custom', presetId: '',
+      createdAt: 1, updatedAt: 1,
+    });
+    const sync = await createSync({
+      getAgents: () => [agent('main', true), agent('yone', false)],
+      getProposeConnectorMcpStdioLaunch: () => ({
+        command: '/tmp/propose-connector-mcp/propose-connector-mcp',
+        args: [],
+        env: { ELECTRON_RUN_AS_NODE: '1' },
+      }),
+    });
+    expect(sync.sync('connectors').ok).toBe(true);
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const server = config.mcp?.servers?.['caisra-connectors'];
+    expect(server).toBeTruthy();
+    expect(server.command).toBe('/tmp/propose-connector-mcp/propose-connector-mcp');
+    expect(server.toolFilter).toEqual({ include: ['propose_connector'] });
+
+    // Every agent, not only Yodo: the rule sits in the conversation
+    // section that all of them read.
+    for (const workspace of ['workspace-main', 'workspace-yone']) {
+      const agentsMd = fs.readFileSync(path.join(stateDir, workspace, 'AGENTS.md'), 'utf8');
+      expect(agentsMd).toContain('call `propose_connector` with its id and one line of why');
+      expect(agentsMd).toContain('The card does the sign-in');
+      expect(agentsMd).toContain('If they say Not now, do not raise it again in this conversation unless they ask');
+      expect(agentsMd).toContain('Never tell them to go to Apps');
+      expect(agentsMd).not.toContain('they connect it themselves, in Apps');
+    }
+  });
+
+  test('no connectors server when the bridge is not up', async () => {
+    const sync = await createSync();
+    expect(sync.sync('no-bridge').ok).toBe(true);
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(config.mcp?.servers?.['caisra-connectors']).toBeUndefined();
+  });
+
   test('every agent is told what it is, and that nothing underneath is its to say or read', async () => {
     // 16 September: asked "so what is lobster ai", an agent read the
     // app's own source checkout on the person's Mac and answered with the

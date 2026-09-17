@@ -76,6 +76,7 @@ import {
 } from '../shared/browserWebAccess/constants';
 import { describeBuild } from '../shared/buildStamp/constants';
 import { ClipboardIpc } from '../shared/clipboard/constants';
+import { type ProposeConnectorAnswer, ProposeConnectorIpc } from '../shared/connections/proposal';
 import {
   type CoworkBrowserAnnotationMessageBatch,
   normalizeBrowserAnnotationBatches,
@@ -511,6 +512,7 @@ import {
   stopOpenClawTokenProxy,
 } from './libs/openclawTokenProxy';
 import { migrateMainAgentWorkspace } from './libs/openclawWorkspaceMigration';
+import { resolveProposeConnectorMcpStdioLaunch } from './libs/proposeConnectorMcpServer';
 import { ensurePythonRuntimeReady } from './libs/pythonRuntime';
 import { isAnalyticsEndpointUrl, sanitizeUrlForLog, serializeForLog } from './libs/sanitizeForLog';
 import { packageNodeServiceDeployment } from './libs/shareDeployment/nodeServiceDeploymentPackager';
@@ -2743,6 +2745,19 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
             electronNodeRuntimePath: getElectronNodeRuntimePath(),
             bridgeUrl,
             ...(proposeTeamUrl ? { proposeTeamUrl } : {}),
+            bridgeSecret: mcpRuntime.getBridgeSecret(),
+          },
+        );
+      },
+      getProposeConnectorMcpStdioLaunch: () => {
+        const mcpRuntime = getMcpRuntime();
+        const bridgeUrl = mcpRuntime.getProposeConnectorCallbackUrl();
+        if (!bridgeUrl) return null;
+        return resolveProposeConnectorMcpStdioLaunch(
+          path.join(getOpenClawEngineManager().getStateDir(), 'generated'),
+          {
+            electronNodeRuntimePath: getElectronNodeRuntimePath(),
+            bridgeUrl,
             bridgeSecret: mcpRuntime.getBridgeSecret(),
           },
         );
@@ -13232,6 +13247,17 @@ if (!gotTheLock) {
     (_event, requestId: string, answer: unknown) => {
       if (typeof requestId !== 'string' || !requestId) return;
       getMcpRuntime().resolveRoster(requestId, answer);
+    },
+  );
+
+  // Connected, declined, or failed, from the connector card. The
+  // renderer ran the sign-in itself (the Apps screen's own Connect); this
+  // is only the outcome on its way to the tool waiting on it.
+  ipcMain.handle(
+    ProposeConnectorIpc.Respond,
+    (_event, requestId: string, answer: ProposeConnectorAnswer) => {
+      if (typeof requestId !== 'string' || !requestId) return;
+      getMcpRuntime().resolveProposeConnector(requestId, answer);
     },
   );
 

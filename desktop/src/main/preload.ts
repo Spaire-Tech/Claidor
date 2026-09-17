@@ -47,6 +47,11 @@ import {
 } from '../shared/browserWebAccess/constants';
 import { ClipboardIpc } from '../shared/clipboard/constants';
 import { ConnectionsIpcChannel } from '../shared/connections/constants';
+import {
+  type ProposeConnectorAnswer,
+  type ProposeConnectorAsk,
+  ProposeConnectorIpc,
+} from '../shared/connections/proposal';
 import type { CoworkBrowserAnnotationMessageBatch } from '../shared/cowork/browserAnnotations';
 import type {
   CoworkBtwAbortRequest,
@@ -943,6 +948,20 @@ contextBridge.exposeInMainWorld('electron', {
     },
     respond: (requestId: string, answer: RosterAnswer) =>
       ipcRenderer.invoke(RosterIpc.Respond, requestId, answer),
+  },
+  proposeConnector: {
+    onRequested: (callback: (ask: ProposeConnectorAsk) => void) => {
+      const handler = (_event: unknown, ask: ProposeConnectorAsk) => callback(ask);
+      ipcRenderer.on(ProposeConnectorIpc.Requested, handler);
+      return () => ipcRenderer.removeListener(ProposeConnectorIpc.Requested, handler);
+    },
+    onDismissed: (callback: (data: { requestId: string }) => void) => {
+      const handler = (_event: unknown, data: { requestId: string }) => callback(data);
+      ipcRenderer.on(ProposeConnectorIpc.Dismissed, handler);
+      return () => ipcRenderer.removeListener(ProposeConnectorIpc.Dismissed, handler);
+    },
+    respond: (requestId: string, answer: ProposeConnectorAnswer) =>
+      ipcRenderer.invoke(ProposeConnectorIpc.Respond, requestId, answer),
   },
   settings: {
     getExecPolicy: () => ipcRenderer.invoke(SettingsChannel.GetExecPolicy),

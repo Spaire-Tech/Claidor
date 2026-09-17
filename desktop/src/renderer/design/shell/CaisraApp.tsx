@@ -21,6 +21,7 @@ import { useSettings } from '../settings/useSettings';
 import { composeAuthHandlers } from '../thread/staffingCards';
 import { useAskInput } from '../thread/useAskInput';
 import { useCreateAgent } from '../thread/useCreateAgent';
+import { useProposeConnector } from '../thread/useProposeConnector';
 import { useRoster } from '../thread/useRoster';
 import { supportMailto } from './account';
 import { AccountMenu } from './AccountMenu';
@@ -94,6 +95,10 @@ export function CaisraApp(): JSX.Element {
   // "Your starter team": the roster card of step two, answered through
   // the staffing bridge like the card above.
   const roster = useRoster();
+  // An agent proposing a connector: the onboarding "App access requested"
+  // card, with Install. Install runs the same Connect the Apps screen
+  // runs, and the answer goes back through the connectors bridge.
+  const connector = useProposeConnector();
   const connections = useConnections(shell.appsOpen);
 
   // `nickname` is the only display name the profile carries; everything
@@ -176,7 +181,7 @@ export function CaisraApp(): JSX.Element {
       activeName={shell.activeName}
       activeAvatar={shell.activeAvatar}
       wornAvatars={shell.wornAvatars}
-      items={[...shell.items, ...askInput.items, ...staffing.items, ...roster.items]}
+      items={[...shell.items, ...askInput.items, ...staffing.items, ...roster.items, ...connector.items]}
       dayStamp={shell.dayStamp}
       typing={shell.typing}
       mode={shell.mode}
@@ -187,6 +192,7 @@ export function CaisraApp(): JSX.Element {
       waiting={shell.waiting}
       secret={askInput.handlers}
       roster={roster.handlers}
+      connector={connector.handlers}
       onSelect={shell.onSelect}
       onAskDelete={shell.onAskDelete}
       onSend={shell.onSend}

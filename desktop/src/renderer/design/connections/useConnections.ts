@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { composioToolkit, findConnection } from '../../../shared/connections/catalog';
-import { configService } from '../../services/config';
 import { mcpService } from '../../services/mcp';
+import { composioConnected, connectFromCatalogue, rememberComposio } from './connect';
 import type { ConnectionsProps } from './Connections';
 import { connectedIds } from './shelf';
 
@@ -16,19 +16,21 @@ import { connectedIds } from './shelf';
  *
  * Composio is the one exception, and a marked one. Its sign-ins live on
  * Composio's servers; the main side confirms each one there before the
- * Connect call returns, and this hook then keeps the id in the app
- * config (`composioConnected`) so the card still says Connected after a
- * restart. The renderer has no bridge to ask Composio itself. When one
- * exists, that list goes and the read replaces it. Nothing has to be
- * typed for any of it: Claidor's key is on the server.
+ * Connect call returns, and the id is then kept in the app config
+ * (`composioConnected`, in `connect.ts`) so the card still says
+ * Connected after a restart. The renderer has no bridge to ask Composio
+ * itself. When one exists, that list goes and the read replaces it.
+ * Nothing has to be typed for any of it: Claidor's key is on the server.
+ *
+ * The sign-in itself is `connectFromCatalogue`, shared with the
+ * connector card an agent raises in the thread: Install there is this
+ * Connect, not a second one.
  */
 
 export interface ConnectionsState extends Omit<ConnectionsProps, 'query'> {
   /** Re-read after something outside this screen may have changed. */
   refresh: () => void;
 }
-
-const composioConnected = (): readonly string[] => configService.getConfig().composioConnected ?? [];
 
 export function useConnections(open: boolean): ConnectionsState {
   const [servers, setServers] = useState<readonly { name: string; enabled: boolean }[]>([]);
@@ -53,40 +55,22 @@ export function useConnections(open: boolean): ConnectionsState {
     return ids as ReadonlySet<string>;
   }, [servers, viaComposio]);
 
-  const rememberComposio = useCallback(async (id: string, isConnected: boolean) => {
-    const current = new Set(configService.getConfig().composioConnected ?? []);
-    if (isConnected) current.add(id); else current.delete(id);
-    await configService.updateConfig({ composioConnected: [...current].sort() });
-  }, []);
-
   const onConnect = useCallback(async (id: string) => {
-    const item = findConnection(id);
-    if (!item) return;
+    if (!findConnection(id)) return;
     setBusyId(id);
     // The previous failure belonged to the previous attempt. Leaving it
     // under the card while a new sign-in runs reads as the new one
     // having failed before it started.
     setFailure(undefined);
     try {
-      const result = await window.electron?.connections?.connect?.(id);
-      if (result && result.outcome !== 'connected') {
-        setFailure({ id, message: result.message || `${item.name} was not connected.` });
-      } else if (result && composioToolkit(item)) {
-        // Main went through Composio for this card (same rule as
-        // `actionFor`: a slug) and confirmed the sign-in there.
-        await rememberComposio(id, true);
-      }
-    } catch (error) {
-      setFailure({
-        id,
-        message: error instanceof Error ? error.message : `${item.name} was not connected.`,
-      });
+      const attempt = await connectFromCatalogue(id);
+      if (!attempt.connected && attempt.message) setFailure({ id, message: attempt.message });
     } finally {
       setBusyId(undefined);
       // Whatever happened, the engine's servers are the truth about it.
       await refresh();
     }
-  }, [refresh, rememberComposio]);
+  }, [refresh]);
 
   const onDisconnect = useCallback(async (id: string) => {
     const item = findConnection(id);
@@ -100,7 +84,7 @@ export function useConnections(open: boolean): ConnectionsState {
       setBusyId(undefined);
       await refresh();
     }
-  }, [refresh, rememberComposio]);
+  }, [refresh]);
 
   return {
     connected,

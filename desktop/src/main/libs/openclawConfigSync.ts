@@ -23,6 +23,10 @@ import {
   normalizeBrowserHostnamePolicyList,
   normalizeBrowserWebAccessConfig,
 } from '../../shared/browserWebAccess/constants';
+import {
+  PROPOSE_CONNECTOR_MCP_SERVER,
+  PROPOSE_CONNECTOR_TOOL,
+} from '../../shared/connections/proposal';
 import { COWORK_TEMP_DIR_NAME } from '../../shared/cowork/constants';
 import { CoworkErrorModelSource } from '../../shared/cowork/errorDetail';
 import { eventTriggerConfig } from '../../shared/eventTriggers/constants';
@@ -121,6 +125,7 @@ const gwDiagTs = (): string => {
 };
 import { findBundledExtensionsDir, findThirdPartyExtensionsDir, hasBundledOpenClawExtension, hasRuntimeBundledOpenClawExtension, resolveOpenClawExtensionPluginId } from './openclawLocalExtensions';
 import { getOpenClawTokenProxyPort } from './openclawTokenProxy';
+import type { ProposeConnectorMcpStdioLaunch } from './proposeConnectorMcpServer';
 import { getActiveSystemProxyUrl, isSystemProxyEnabled } from './systemProxy';
 
 export type AskUserCallbackConfig = {
@@ -556,7 +561,7 @@ const MANAGED_CONVERSATION_PROMPT = [
   '',
   '### Two things worth offering',
   '- When they ask for the same thing a second time, or describe something "every morning" or "whenever this happens", offer to make it a routine rather than doing it by hand again. One line, after the result, not instead of it.',
-  '- When a service they keep asking about is not connected, say so once and say where: they connect it themselves, in Apps. Do not read it off the browser as though a connection were there, and do not ask again next time.',
+  '- When a service is not connected and they ask about it, or you need it, call `propose_connector` with its id and one line of why. The card does the sign-in. If they say Not now, do not raise it again in this conversation unless they ask. Never tell them to go to Apps.',
   '',
   '### An acknowledgement is not the answer',
   '- "On it" does not finish the job. If they are waiting on something, come back with the thing itself before you stop.',
@@ -2284,6 +2289,8 @@ type OpenClawConfigSyncDeps = {
   getAskInputMcpStdioLaunch?: () => AskInputMcpStdioLaunch | null;
   /** Launches the tool that lets Yodo stand up an agent, through a card. */
   getCreateAgentMcpStdioLaunch?: () => CreateAgentMcpStdioLaunch | null;
+  /** Launches the tool that lets any agent propose a connector, through a card. */
+  getProposeConnectorMcpStdioLaunch?: () => ProposeConnectorMcpStdioLaunch | null;
   /** Every project, so each agent can be told about its own. */
   getProjects?: () => readonly Project[];
   getMcpBridgeSecret?: () => string;
@@ -2361,6 +2368,7 @@ export class OpenClawConfigSync {
   private readonly getLobsterBrowserMcpStdioLaunch?: () => LobsterBrowserMcpStdioLaunch | null;
   private readonly getAskInputMcpStdioLaunch?: () => AskInputMcpStdioLaunch | null;
   private readonly getCreateAgentMcpStdioLaunch?: () => CreateAgentMcpStdioLaunch | null;
+  private readonly getProposeConnectorMcpStdioLaunch?: () => ProposeConnectorMcpStdioLaunch | null;
   private readonly getProjects?: () => readonly Project[];
   private readonly getMcpBridgeSecret?: () => string;
   private readonly getSkillsList?: () => Array<{ id: string; name: string; enabled: boolean }>;
@@ -2401,6 +2409,7 @@ export class OpenClawConfigSync {
     this.getLobsterBrowserMcpStdioLaunch = deps.getLobsterBrowserMcpStdioLaunch;
     this.getAskInputMcpStdioLaunch = deps.getAskInputMcpStdioLaunch;
     this.getCreateAgentMcpStdioLaunch = deps.getCreateAgentMcpStdioLaunch;
+    this.getProposeConnectorMcpStdioLaunch = deps.getProposeConnectorMcpStdioLaunch;
     this.getProjects = deps.getProjects;
     this.getMcpBridgeSecret = deps.getMcpBridgeSecret;
     this.getSkillsList = deps.getSkillsList;
@@ -3318,6 +3327,21 @@ export class OpenClawConfigSync {
         args: [...createAgentLaunch.args],
         ...(Object.keys(createAgentLaunch.env).length > 0 ? { env: createAgentLaunch.env } : {}),
         toolFilter: { include: [CREATE_AGENT_TOOL, PROPOSE_TEAM_TOOL] },
+      };
+    }
+
+    // Proposing a connector from a conversation. The founder, 17
+    // September: the onboarding card — logo, name, one line, Not now,
+    // Install — wherever an agent is asked about a service or needs one.
+    // For every agent, because every agent reads a connected service;
+    // the renderer runs the same Connect the Apps screen runs.
+    const proposeConnectorLaunch = this.getProposeConnectorMcpStdioLaunch?.();
+    if (proposeConnectorLaunch) {
+      nativeMcpServers[PROPOSE_CONNECTOR_MCP_SERVER] = {
+        command: proposeConnectorLaunch.command,
+        args: [...proposeConnectorLaunch.args],
+        ...(Object.keys(proposeConnectorLaunch.env).length > 0 ? { env: proposeConnectorLaunch.env } : {}),
+        toolFilter: { include: [PROPOSE_CONNECTOR_TOOL] },
       };
     }
 
