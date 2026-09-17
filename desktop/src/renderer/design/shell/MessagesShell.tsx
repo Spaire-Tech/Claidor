@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { avatarFallback } from '../../../shared/agent/avatars';
-import { CloseIcon, ComputerIcon, SearchIcon, ShareIcon } from '../icons';
+import { ChevronRightIcon, CloseIcon, ComputerIcon, SearchIcon, ShareIcon } from '../icons';
 import { CloudBlob } from '../orb/CloudBlob';
 import { replyQuote } from '../thread/actions';
 import { findInThread, matchLabel, stepMatch } from '../thread/search';
@@ -96,8 +96,16 @@ export interface MessagesShellProps {
    * never open together.
    */
   agentPanel?: React.ReactNode;
-  /** Settings, when open. Fills the pane, like `apps`. */
+  /** Settings, when open. Takes the whole window, like every screen. */
   settings?: React.ReactNode;
+  /**
+   * Back to the conversation, from any screen.
+   *
+   * The parent closes everything it has open. One handler for all of
+   * them on purpose: back means the chat, never the screen before, so
+   * there is no history for anybody to keep.
+   */
+  onBackToChat?: () => void;
   onAccount: () => void;
   /** Rendered beside the dock's last button when the account menu is open. */
   accountMenu?: React.ReactNode;
@@ -136,7 +144,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
   const {
     agents, activeId, activeName, items, dayStamp, typing, mode, accountName,
     choice, auth, parts, secret, roster, connector, onSelect, onAskDelete, onSend, onCompose, onApps, apps, onAccount, onMode, waiting,
-    onOpenPanel, onTeach, dictation, onShareTemplate, onOpenAgent, agentDetail, agentPanel, settings,
+    onOpenPanel, onTeach, dictation, onShareTemplate, onOpenAgent, agentDetail, agentPanel, settings, onBackToChat,
     composing, onCloseCompose, onPickAgent, onCreateAgent, accountMenu, panel, wornAvatars,
   } = props;
   const activeAvatar = props.activeAvatar ?? avatarFallback(activeId);
@@ -263,6 +271,41 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
     <HoverButton label={label} onClick={onClick} {...extra}>{glyph}</HoverButton>
   );
 
+  // Exactly one screen, or none. Settings first, then an agent's page,
+  // then Apps, then Create: the order only decides what wins if a parent
+  // ever leaves two open, and the parent's own state is what normally
+  // makes that impossible.
+  const screen = settings
+    ? { label: 'Settings', node: settings }
+    : agentDetail
+      ? { label: activeName, node: agentDetail }
+      : apps
+        ? { label: 'Apps', node: apps }
+        : composing && onCloseCompose && onPickAgent && onCreateAgent
+          ? {
+            label: 'New message',
+            node: (
+              <Compose
+                agents={agents}
+                onPick={onPickAgent}
+                onCreate={onCreateAgent}
+                onClose={onCloseCompose}
+                {...(wornAvatars ? { wornAvatars } : {})}
+              />
+            ),
+          }
+          : undefined;
+
+  // Back is always the conversation. The parent closes whatever is open;
+  // `onBackToChat` is the one handler for all of them, so a screen never
+  // has to know which screen came before it.
+  const backToChat = useCallback(() => {
+    if (onBackToChat) { onBackToChat(); return; }
+    // No parent handler (the harness, and older callers): close what we
+    // can reach ourselves rather than trapping somebody on a screen.
+    if (composing) onCloseCompose?.();
+  }, [onBackToChat, composing, onCloseCompose]);
+
   const columns = [
     `${layout.sidebarWidth}px`,
     'minmax(0,1fr)',
@@ -305,11 +348,15 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
         <Dock
           active={dockActive}
           accountName={accountName}
-          onHome={() => { if (composing) onCloseCompose?.(); }}
+          onHome={backToChat}
           onCreate={onCompose}
           onApps={onApps}
           onYou={onAccount}
-          accountMenu={accountMenu}
+          // Never over a screen: it used to open inside the Settings tab,
+          // a menu floating on top of a page that had nothing to do with
+          // it (the founder, 18 September: "account drop right opens
+          // inside the setting tab").
+          {...(screen ? {} : { accountMenu })}
         />
 
         <div
@@ -341,16 +388,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
               borderRadius: radius.pane, overflow: 'hidden', background: color.paper,
             }}
           >
-            {composing && onCloseCompose && onPickAgent && onCreateAgent ? (
-              <Compose
-                agents={agents}
-                onPick={onPickAgent}
-                onCreate={onCreateAgent}
-                onClose={onCloseCompose}
-                {...(wornAvatars ? { wornAvatars } : {})}
-              />
-            ) : (
-              <>
+            <>
                 <div
                   style={{
                     position: 'relative', display: 'flex', alignItems: 'center', gap: 10,
@@ -522,14 +560,12 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
                   {...(replySeed ? { seed: replySeed } : {})}
                   {...(dictation ? { dictation } : {})}
                 />
-              </>
-            )}
+            </>
 
             {/*
-              Over the pane, filling it: the panel when the window is too
-              narrow for a third column, and the screens the canvas lays
-              over the conversation — Apps, Settings, an agent's page. The
-              sidebar stays live beside them, as it does in the canvas.
+              Over the pane: only the computer panel, when the window is
+              too narrow to give it a column of its own. The screens no
+              longer land here — they take the whole window (see below).
             */}
             {layout.panel === PanelMode.Cover && (
               <div
@@ -542,8 +578,6 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
                 {agentPanel ?? panel}
               </div>
             )}
-            {apps}
-            {agentDetail}
           </div>
 
           {layout.panel === PanelMode.Split && (
@@ -561,15 +595,39 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
           )}
 
           {/*
-            Settings is a page of its own, over the whole window: the list
-            of agents goes too. The founder, 17 September: "open settings
-            as a full page, rather than letting the chat sidebar there."
-            The component fills whatever it is put in (`inset: 0`), so
-            putting it here rather than in the pane is the whole change.
+            One screen at a time, over the whole window, with one way
+            back. The founder, 18 September: "you click on app, then you
+            click on settings, we got two screens, one up the other …
+            it's like a skin over a skin … when you click ANYWHERE, when
+            you go back, you're going back to the chat. its the main
+            screen."
+
+            So: whichever of these is open takes the whole window, the
+            list of agents included, and the only control on it goes
+            back to the conversation — never to whatever was open before.
+            A person who opens Create, wanders into Settings and presses
+            back lands in the chat, because the chat is the app and the
+            rest are errands. The screens cannot stack: `screen` picks
+            exactly one, so opening a second closes the first rather
+            than covering it.
+
+            The X on each screen is gone with this. It said "close" in a
+            place where the only question is "back to what?", and with
+            two screens open it closed the wrong one.
           */}
-          {settings && (
-            <div style={{ position: 'absolute', inset: 0, zIndex: 60 }}>
-              {settings}
+          {screen && (
+            <div
+              style={{
+                position: 'absolute', inset: 0, zIndex: 60,
+                display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0,
+                background: color.paper, borderRadius: radius.window, overflow: 'hidden',
+                animation: `fsr-message-in ${motion.messageIn.duration} ${motion.messageIn.easing} both`,
+              }}
+            >
+              <BackBar label={screen.label} onBack={backToChat} />
+              <div style={{ position: 'relative', flex: '1 1 auto', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                {screen.node}
+              </div>
             </div>
           )}
         </div>
@@ -696,6 +754,49 @@ function FindBar({ query, label, onQuery, onStep, onClose }: FindBarProps): JSX.
       >
         <CloseIcon size={12} />
       </button>
+    </div>
+  );
+}
+
+/**
+ * The one control on a screen: back to the conversation.
+ *
+ * It replaced an X on each of them. An X asks "close what?", and with
+ * two screens open it answered wrongly; this says where it goes. The
+ * screen's name sits beside it so a person can see where they are
+ * without reading the page.
+ */
+function BackBar({ label, onBack }: { label: string; onBack: () => void }): JSX.Element {
+  const [hover, setHover] = useState(false);
+  return (
+    <div
+      style={{
+        flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 10,
+        padding: '13px 16px', borderBottom: `1px solid ${line.hairline}`,
+        WebkitAppRegion: 'drag',
+      } as React.CSSProperties}
+    >
+      <button
+        type="button"
+        onClick={onBack}
+        aria-label="Back to the conversation"
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6, height: 30,
+          padding: '0 12px 0 8px', borderRadius: radius.pill, border: 'none',
+          background: hover ? color.fill : 'transparent',
+          color: color.ink, font: 'inherit', fontSize: text.body, cursor: 'pointer',
+          transition: `background ${motion.hover.duration} ${motion.hover.easing}`,
+          WebkitAppRegion: 'no-drag',
+        } as React.CSSProperties}
+      >
+        <span style={{ display: 'inline-flex', transform: 'rotate(180deg)', color: color.muted }}>
+          <ChevronRightIcon size={14} />
+        </span>
+        Chat
+      </button>
+      <span style={{ fontSize: text.body, color: color.muted }}>{label}</span>
     </div>
   );
 }

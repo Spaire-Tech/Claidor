@@ -4477,3 +4477,76 @@ suite — 4826 pass.
 
 **Where:** `desktop/src/main/libs/agentEngine/openclawApprovalController.ts`,
 `desktop/src/renderer/design/shell/useMessagesShell.ts`.
+
+## 78. The skills that hijacked a report, and navigation with no logic — `both built; run in the harness; the Mac unrun`
+
+Two things the founder found on 18 September, an hour apart.
+
+### The Nike report: a skill we ship outranked our own brief
+
+The founder asked Jude for a doc report on Nike. Jude tried a
+"document-generation script", was blocked, and handed back an old-style
+artifact. Their read: *"i think the issue is that it was trying to use
+our new openui stuff, then failed, then used our old artifact."* Right
+in shape, and the mechanism is worse than that.
+
+`SKILLs/skills.config.json` shipped **27 of 29 skills enabled**, and
+`docx` was **order 10, first in the list**. Its description fires on
+creating a document; its workflow says to write a JavaScript file with
+docx-js and export it with Packer. That is the document-generation
+script, verbatim. Our own `artifactsPrompt.ts` says a report is an
+OpenUI `Report` in a fenced block. Two instructions in one brief, and
+the skill won.
+
+The rest of the twenty-seven were upstream's: `youdaonote`, `seedream`,
+`seedance`, `daily-trending`, `music-search` and `films-search` (both of
+which search cloud drives for downloadable films and music), three
+Chinese stock skills, and a row of coding and design skills that belong
+to the app this one was carved out of. All on, on every install, in an
+app whose name is Caisra.
+
+**Five stay on:** `web-search`, `playwright` (which web-search drives),
+`local-tools` (Calendar on this Mac), `weather`, `skill-vetter` (it only
+fires before installing somebody else's skill). Twenty-two off. Nothing
+is lost that the agent could not already do: the artifacts brief already
+says to write a real file with the file tools when somebody wants an
+Excel or a Word file, so the capability stays and only the instruction
+that hijacked a report is gone.
+
+**One caveat, said plainly:** `skillManager` reads a stored per-skill
+state before the default (`state[id]?.enabled ?? defaultEnabled`), so on
+an install where a skill was ever toggled by hand, the new default does
+not reach it. A reset clears that.
+
+### Navigation: one screen, one way back, and the chat underneath
+
+The founder: *"you click on app, then you click on settings, we got two
+screens, one up the other … account drop right opens inside the setting
+tab … it's like a skin over a skin … when you click ANYWHERE, when you
+go back, you're going back to the chat. its the main screen … that x
+thing needs to GO."*
+
+- **One screen at a time.** Compose, Apps, an agent's page and Settings
+  now take the whole window, the list of agents included. Opening one
+  closes the other rather than covering it (`useMessagesShell`,
+  `CaisraApp`). The shell picks exactly one (`screen`), so they cannot
+  stack even if a caller leaves two open.
+- **Back, not close.** Every X is gone from all four screens. One back
+  bar sits above whichever screen is open: a chevron, the word Chat, and
+  the screen's name. It always goes to the conversation, never to the
+  screen before, so Create → Settings → back lands in the chat.
+- **Escape** is the keyboard's back, one listener per screen.
+- **The account menu** no longer renders while a screen is open. It used
+  to float inside the Settings tab.
+- **The dock switches directly.** Apps while Settings is open goes to
+  Apps; Home goes to the conversation from anywhere.
+
+**Photographed:** `settings`, `apps`, `compose`, all full window with
+the back bar and no X.
+
+**Unrun:** the founder's Mac.
+
+**Where:** `desktop/SKILLs/skills.config.json`,
+`desktop/src/renderer/design/shell/{MessagesShell.tsx,useMessagesShell.ts,CaisraApp.tsx,Apps.tsx,Compose.tsx}`,
+`desktop/src/renderer/design/settings/Settings.tsx`,
+`desktop/src/renderer/design/agent/AgentDetail.tsx`.

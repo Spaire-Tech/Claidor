@@ -131,6 +131,8 @@ export interface MessagesShellState {
   appsOpen: boolean;
   onApps: () => void;
   onCloseApps: () => void;
+  /** Close every screen this hook owns. The chat is what is left. */
+  onBackToChat: () => void;
   /** The twelve roles, whether or not they are already here. */
   presets: readonly PresetAgent[];
   /** Which of them are already agents. */
@@ -891,7 +893,11 @@ export function useMessagesShell(): MessagesShellState {
   useEffect(() => () => { if (editTimer.current) { window.clearTimeout(editTimer.current); flushEdit(); } }, [flushEdit]);
 
 
-  const onCompose = useCallback(() => setComposing(true), []);
+  // Opening one screen closes the other. They used to stack — Apps under
+  // Settings, both over the conversation, and the X on top closed the
+  // wrong one (the founder, 18 September: "it's like a skin over a
+  // skin"). There is one screen or none.
+  const onCompose = useCallback(() => { setAppsOpen(false); setComposing(true); }, []);
   const onCloseCompose = useCallback(() => setComposing(false), []);
 
   const onPickAgent = useCallback((agentId: string) => {
@@ -940,8 +946,10 @@ export function useMessagesShell(): MessagesShellState {
 
   const installedIds = useMemo(() => installedPresetIds(agents), [agents]);
 
-  const onApps = useCallback(() => setAppsOpen(true), []);
+  const onApps = useCallback(() => { setComposing(false); setAppsOpen(true); }, []);
   const onCloseApps = useCallback(() => setAppsOpen(false), []);
+  /** Back: the conversation, from wherever. Never the screen before. */
+  const onBackToChat = useCallback(() => { setComposing(false); setAppsOpen(false); }, []);
 
   const onInstallPreset = useCallback(async (presetId: string) => {
     setBusyPresetId(presetId);
@@ -1062,6 +1070,7 @@ export function useMessagesShell(): MessagesShellState {
     appsOpen,
     onApps,
     onCloseApps,
+    onBackToChat,
     presets,
     installedIds,
     busyPresetId,

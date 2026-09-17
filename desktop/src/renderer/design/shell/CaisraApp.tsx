@@ -201,11 +201,11 @@ export function CaisraApp(): JSX.Element {
       dictation={dictation}
       onShareTemplate={shell.onShareTemplate}
       composing={shell.composing}
-      onCompose={shell.onCompose}
+      onCompose={() => { setSettingsOpen(false); shell.onCompose(); }}
       onCloseCompose={shell.onCloseCompose}
       onPickAgent={shell.onPickAgent}
       onCreateAgent={shell.onCreateAgent}
-      onApps={shell.onApps}
+      onApps={() => { setSettingsOpen(false); shell.onApps(); }}
       apps={shell.appsOpen && (
         <Apps
           connections={connections}
@@ -217,11 +217,19 @@ export function CaisraApp(): JSX.Element {
           onClose={shell.onCloseApps}
         />
       )}
+      // Back is the conversation, from any screen: Settings is this
+      // file's state, the rest are the hook's, and both close together.
+      onBackToChat={() => {
+        setSettingsOpen(false);
+        setSettingsTab(undefined);
+        setAccountOpen(false);
+        shell.onBackToChat();
+      }}
       onAccount={() => setAccountOpen(open => !open)}
       accountMenu={accountOpen && (
         <AccountMenu
           quota={quota}
-          onSettings={() => { setAccountOpen(false); setSettingsOpen(true); }}
+          onSettings={() => { setAccountOpen(false); shell.onBackToChat(); setSettingsOpen(true); }}
           onSupport={() => {
             setAccountOpen(false);
             void window.electron?.shell?.openExternal?.(supportMailto({

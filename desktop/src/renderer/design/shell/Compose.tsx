@@ -2,7 +2,6 @@ import { type ButtonHTMLAttributes, type CSSProperties, type KeyboardEvent, useM
 
 import { assignAvatar, AVATAR_COUNT, avatarFallback } from '../../../shared/agent/avatars';
 import { DEFAULT_VOICE_ID, voiceById,VOICES } from '../agents/voices';
-import { CloseIcon } from '../icons';
 import { CloudBlob } from '../orb/CloudBlob';
 import { Orb, OrbMood } from '../orb/Orb';
 import { color, font, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
@@ -148,18 +147,8 @@ export function Compose({ agents, onPick, onCreate, onClose, wornAvatars = [] }:
             fontSize: text.emphasis, color: color.ink,
           }}
         />
-        <HoverButton
-          onClick={onClose}
-          aria-label="Close"
-          style={{
-            width: 25, height: 25, border: 'none', background: 'transparent',
-            cursor: 'pointer', color: color.muted, borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-          hoverStyle={{ background: color.fill, color: color.ink }}
-        >
-          <CloseIcon size={12} />
-        </HoverButton>
+        {/* The X is gone: the shell's back bar is the way out of every
+            screen, and one door beats four (18 September). */}
       </div>
 
       <div
