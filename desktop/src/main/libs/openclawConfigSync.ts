@@ -127,6 +127,7 @@ import { findBundledExtensionsDir, findThirdPartyExtensionsDir, hasBundledOpenCl
 import { getOpenClawTokenProxyPort } from './openclawTokenProxy';
 import type { ProposeConnectorMcpStdioLaunch } from './proposeConnectorMcpServer';
 import { getActiveSystemProxyUrl, isSystemProxyEnabled } from './systemProxy';
+import { pruneUpstreamBrief } from './upstreamBrief';
 
 export type AskUserCallbackConfig = {
   callbackUrl: string;
@@ -552,12 +553,18 @@ const MANAGED_CONVERSATION_PROMPT = [
   '- Silence reads as broken. Nobody watching a still screen assumes work is happening.',
   '- **This rule is for a turn the person opened, and only that.** A turn that began somewhere else — a scheduled job, a message from another agent, something arriving from a connected service, a group room — is the other way round: do the work first, then send once, and send nothing at all if there is nothing worth saying. Nobody is sitting there waiting for an acknowledgement.',
   '',
-  '### Decide, rather than asking',
-  '- The default is to go ahead. Make the ordinary call yourself, say which way you went in a few words, and carry on.',
-  '- Stop and ask only when one of these is true: the action is hard to undo (deleting, sending, paying, publishing, overwriting); the request genuinely reads two ways and nothing you can look up settles it; or it turns on something only they know — which account, which of two real matches, what they prefer.',
-  '- "Which would you like?" about something you could have looked up is worse than picking wrong, because it costs them a turn and tells them you were not paying attention.',
-  '- If you assumed, say so in the same breath as the answer: "Went with the invoices folder — say the word if you meant the archive." That is one sentence, not a question.',
-  '- Do the thing they asked for. Do not widen it because you noticed something else along the way; mention what you noticed and let them choose.',
+  // Whether to ask is decided in exactly one place, "User Choices &
+  // Decisions". This section used to decide it too, in the opposite
+  // direction, under a heading that was itself an instruction — and it
+  // came 46,000 characters earlier, so it won. That is how the founder
+  // got "Assuming Tokyo as your base" instead of a question
+  // (`docs/product/brief-audit.md` §1). What is left here is the part
+  // that never conflicted: do not ask for what you could find out, and
+  // do not go beyond the job.
+  '### Work it out yourself where you can',
+  '- Anything you could settle by looking — reading the file, checking the folder, searching — you settle by looking. "Which would you like?" about something you could have found out is worse than picking wrong: it costs them a turn and tells them you were not paying attention.',
+  '- Whether to ask them about a *preference* is decided under "User Choices & Decisions", and only there. Follow that, not your instinct to get on with it.',
+  '- Do the job they asked for, not the one next to it. If you notice something else worth doing, say so in a line and let them choose; do not go and do it. Offering the same answer in another form — the write-up of a plan you just made — is not going beyond the job, and is covered under Artifacts.',
   '',
   '### Two things worth offering',
   '- When they ask for the same thing a second time, or describe something "every morning" or "whenever this happens", offer to make it a routine rather than doing it by hand again. One line, after the result, not instead of it.',
@@ -580,7 +587,13 @@ const MANAGED_CONVERSATION_PROMPT = [
   '### How it should read',
   '- Like a sharp colleague, not a support desk. Contractions. No "Certainly", "Of course", "I would be happy to".',
   '- Lead with the result, then the detail if it is needed. One or two sentences is usually right; match their length.',
-  '- Two or three short messages beat one long one. Prose beats bullets unless the content is genuinely a list.',
+  // "Prose beats bullets unless the content is genuinely a list" used to
+  // live here, 217 lines before the Cards section says a block is the
+  // normal way to answer. A fourteen-day meal plan is not "genuinely a
+  // list" by any natural reading, so this one won and the founder got a
+  // wall of text (`docs/product/brief-audit.md` §2). Whether something
+  // is a card is decided in the Cards section now, and only there.
+  '- Two or three short messages beat one long one. Inside a message, never reach for bullets: anything with enough shape to want them is a card, which the Cards section decides.',
   '- Paths, commands, identifiers and snippets go in `code` spans.',
   '- Emoji are rare, mirror theirs, and go at the end if at all.',
   '- Do not describe having feelings and do not claim to be a person.',
@@ -910,6 +923,26 @@ const MANAGED_DELIVERABLE_LINKS_PROMPT = [
   '  anything the user should keep must be saved outside of it.',
   '- Only link files that exist on disk after your work. Never link files you merely read.',
 ].join('\n');
+
+/**
+ * The managed prose sections, for `briefConsistency.test.ts`.
+ *
+ * Only the ones that state behaviour: the generated component
+ * signatures and the per-install sections (projects, skills paths,
+ * scheduled tasks) carry no rules to contradict. Kept next to the
+ * constants so a new prose section is one line away from being checked
+ * for arguing with the rest.
+ */
+export const managedBriefSectionsForTest = (): readonly string[] => [
+  MANAGED_IDENTITY_PROMPT,
+  MANAGED_CONVERSATION_PROMPT,
+  MANAGED_ESCALATION_PROMPT,
+  MANAGED_WEB_SEARCH_POLICY_PROMPT,
+  MANAGED_BROWSER_POLICY_PROMPT,
+  MANAGED_EXEC_SAFETY_PROMPT,
+  MANAGED_DELIVERABLE_LINKS_PROMPT,
+  MANAGED_MEMORY_POLICY_PROMPT,
+];
 
 const MANAGED_MATH_FORMAT_PROMPT = [
   '## Math Formula Formatting',
@@ -4647,7 +4680,13 @@ export class OpenClawConfigSync {
       const markerIdx = findAgentsMdManagedMarker(existingContent)?.index ?? -1;
       const userContent =
         markerIdx >= 0 ? existingContent.slice(0, markerIdx).trimEnd() : existingContent.trimEnd();
-      const preservedUserContent = userContent || readBundledOpenClawAgentsTemplate();
+      // The half above the marker is not ours and is read first by every
+      // agent. Upstream's template carries instructions that work against
+      // this brief — bullet lists, a text-to-speech tool we do not ship,
+      // and "update AGENTS.md", which is the agent editing the one half
+      // nothing reads. Those named sections go; anything a person wrote
+      // stays (`upstreamBrief.ts`, `docs/product/brief-audit.md` §0).
+      const preservedUserContent = pruneUpstreamBrief(userContent || readBundledOpenClawAgentsTemplate());
 
       if (sections.length === 0) {
         // No managed content — remove the managed section if present,

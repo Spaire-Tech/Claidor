@@ -3706,8 +3706,14 @@ describe('OpenClawConfigSync runtime config output', () => {
       path.join(stateDir, 'workspace-main', 'AGENTS.md'),
       'utf8',
     );
-    expect(agentsMd).toContain('### Decide, rather than asking');
-    expect(agentsMd).toContain('The default is to go ahead.');
+    // Whether to ask is decided once, under "User Choices & Decisions".
+    // This section used to decide it too, in the opposite direction,
+    // under a heading that was itself an instruction — and 46,000
+    // characters earlier, so it won (`docs/product/brief-audit.md` §1).
+    expect(agentsMd).toContain('### Work it out yourself where you can');
+    expect(agentsMd).not.toContain('### Decide, rather than asking');
+    expect(agentsMd).not.toContain('The default is to go ahead.');
+    expect(agentsMd).toContain('is decided under "User Choices & Decisions", and only there');
     expect(agentsMd).toContain('**This rule is for a turn the person opened, and only that.**');
     expect(agentsMd).toContain('### Turns that nobody typed');
     expect(agentsMd).toContain('Act on them. Never mention them.');
