@@ -105,6 +105,17 @@ export function build() {
  * `List` for `ListBlock`, `SectionBlock` present under its own name.
  * The picture rule is deliberately not theirs; see `cardsPrompt.ts`.
  */
+// OpenUI's generator emits one rule of its own above ours: "Choose
+// components that best represent the content (tables for comparisons,
+// charts for trends, forms for input, etc.)". Forms are pruned from the
+// signatures here and forbidden two rules later — a password, a key and
+// a question all have their own cards, reached through their own tools —
+// so that clause recommends something the model cannot write and must
+// not want. Dropped (18 September audit).
+const OPENUI_RULES_DROPPED = [
+  'Choose components that best represent the content',
+];
+
 const CHAT_RULES = [
   'Every response is a single `root = Card([...])`; its children stack vertically on their own. Card takes no layout arguments.',
   'Card is the only container. There is no Stack here. Use `Tabs` to switch between sections, and a card block\'s `"carousel"` layout for horizontal scroll.',
@@ -158,7 +169,7 @@ export function buildCards() {
   if (faults.length) {
     throw new Error(`The card examples are not valid programs for this library:\n  - ${faults.join('\n  - ')}`);
   }
-  const prompt = generateSystemPrompt({
+  let prompt = generateSystemPrompt({
     library: spec,
     promptOptions: {
       toolCalls: false,
@@ -170,6 +181,11 @@ export function buildCards() {
   });
   for (const marker of Object.values(CARD_PROMPT_MARKERS)) {
     if (!prompt.includes(marker)) throw new Error(`OpenUI dropped the ${marker} marker; update this script.`);
+  }
+  for (const dropped of OPENUI_RULES_DROPPED) {
+    const line = new RegExp(`^- ${dropped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*$\n?`, 'm');
+    if (!line.test(prompt)) throw new Error(`OpenUI no longer emits "${dropped}"; drop it from OPENUI_RULES_DROPPED.`);
+    prompt = prompt.replace(line, '');
   }
   if (/## Inline Mode/.test(prompt)) {
     throw new Error('Inline mode came back into the generated prompt; it tells the model to answer questions in plain text.');
