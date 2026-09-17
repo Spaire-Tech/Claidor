@@ -208,6 +208,38 @@ that is the whole burden. One trap: **Treg** is usage-metered and their
 README says hosted resale needs a written agreement — read it before
 shipping anything Treg-shaped.
 
+**What we have changed inside their tree, and what it costs at merge time.**
+Checked 18 September against the subtree merge. We have touched **none of
+their apps** — not `apps/web`, `apps/desktop`, `apps/api`, `apps/mobile`,
+`apps/worker` or `apps/www`. Ours is `apps/caisra`, which is entirely new, plus
+eleven new files under `packages/`. The whole conflict surface is seven of
+their files, 64 lines added and 12 removed:
+
+| Their file | Ours | Why |
+|---|---|---|
+| `packages/contracts/src/events.ts` | +13 | the `answer_card` block kind |
+| `packages/adapters/src/pi-oauth.ts` | +28 −5 | Caisra in the sign-in table |
+| `packages/adapters/src/pi-oauth.test.ts` | +7 −4 | the same, tested |
+| `pi-models.ts`, `pi-runtime.ts`, `model-vision.ts` | +4 −1 each | Caisra in each catalogue |
+| `packages/core/src/index.ts` | +4 | the `caisra-*` exports |
+| `vitest.config.ts` | +1 | collect `apps/caisra` tests |
+
+Three consequences worth knowing before anyone is surprised by them:
+
+- **`answer_card` draws nothing in `apps/web`.** Their thread is a chain of 29
+  `block.kind === …` tests with no final else, so a kind they do not know
+  renders as absent. That is their existing behaviour for any unknown kind,
+  and it is left alone on purpose: editing their Shell would trade a silent
+  blank in an app we do not ship for a permanent merge conflict in one we do.
+- **Adding a block kind needs no migration.** `blocks` is a Prisma `Json`
+  column and the only validation is the zod union, so a new member is
+  additive. Their search only reads `text` blocks and skips the rest.
+- **Two gates fail in this container and neither is code.** `apps/mobile`'s
+  check runs `expo install --check`, which needs the network and dies on a TLS
+  handshake here; its `tsc` is clean. And one desktop test binds `[::1]`, which
+  this container has no route for. Both pass on a machine with ordinary
+  network.
+
 **Pulling upstream:**
 `git subtree pull --prefix=rakazo https://github.com/elie222/rakazo main --squash`.
 `Spaire-Tech/rakazo` is the founder's fork, kept for contributing back;
