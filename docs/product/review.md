@@ -4416,3 +4416,64 @@ does gate the connector routes, but the Composio proxy takes only
 dependency, so an empty list cannot produce this.
 
 **Where:** `render.yaml`.
+
+## 77. "It was blocked" with no card and the grant note twice — `two defects fixed; the cause of the block is unproven`
+
+The founder, 18 September, with a transcript from their Mac. Jude is
+asked for a Nike report, the permission note appears **twice**, and then:
+
+> *"I couldn't create the report because the document-generation script
+> was blocked before it could be written. Send the request again and
+> I'll generate the .docx directly."*
+
+**What Allow actually does, since it keeps being misread.** It answers
+that one card and sets the exec policy to Auto, "check, then ask"
+(`useMessagesShell.ts`). It is not "never ask again": from then on the
+engine's reviewer lets the everyday through and the risky still asks,
+which is what `caisra-permissions.md` §2.2 says. So a second card after
+a grant is not by itself a bug.
+
+**Defect one: a card can be answered twice.** `auth.onDecide` sent the
+answer and appended the note with no check that the request was still
+pending. The card only leaves when the engine says the request is
+resolved, a round trip later, so a second press inside that gap answered
+a settled request and appended a second note. `decisionNote` returns the
+same sentence for every Always whatever asked, so the two are
+byte-identical, under the same React key. Fixed: a decision for a
+request that is no longer pending is ignored.
+
+**Defect two: three ways to kill a tool with no card and no trace.**
+`handleExecApprovalRequested` returns early when the session cannot be
+resolved, when the session is in stop cooldown, and when a manual stop
+is suppressed. **None of them answers the engine.** The tool waits
+inside the turn until the gateway times it out, the model is told it was
+refused, and it says so in its own words — which is exactly the sentence
+above. Two of the three log a line. The first, `!sessionId`, logged
+nothing at all, so the one case with no card and no explanation also had
+no evidence. Fixed: it warns with the request id, the session key and
+the kind.
+
+**What is still unproven: which path fired here.** The paste has no
+cards in it and no log. Three candidates remain and the log decides
+between them in one command:
+
+```bash
+grep -nE "suppressed approval|approval dropped" ~/Library/Logs/Caisra/main-$(date +%F).log
+```
+
+A hit on `suppressed approval` means the session was stopped or in
+cooldown and the card was deliberately withheld. A hit on `approval
+dropped` means the session key did not resolve. Nothing at all means the
+card was raised and something downstream refused it, and the gateway log
+is the next place to look. **I have not seen the founder's log**, so
+nothing here claims to know which it was.
+
+**Not the cause:** the auto-reviewer. `exec-quick-review.ts` returns
+only `allow` or `ask`, never `deny`, so it cannot block anything on its
+own; it can only raise a card.
+
+**Gates:** tsc, eslint on both files, `compile:electron`, and the full
+suite — 4826 pass.
+
+**Where:** `desktop/src/main/libs/agentEngine/openclawApprovalController.ts`,
+`desktop/src/renderer/design/shell/useMessagesShell.ts`.

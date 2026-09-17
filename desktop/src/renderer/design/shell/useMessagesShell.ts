@@ -789,6 +789,12 @@ export function useMessagesShell(): MessagesShellState {
     onDecide: (itemId, decision) => {
       // `auth:<requestId>` — the mapper builds it, this takes it apart.
       const requestId = itemId.replace(/^auth:/, '');
+      // Once, and only once. The card leaves when the engine says the
+      // request is resolved, which is a round trip away, and a second
+      // press inside that gap used to answer a settled request and append
+      // a second identical note — the same sentence twice, under the same
+      // React key. The founder saw exactly that on 18 September.
+      if (!pendingPermissions.some(one => one.requestId === requestId)) return;
       const allow = decision !== AuthDecision.Never;
       void coworkService.respondToPermission(
         requestId,
