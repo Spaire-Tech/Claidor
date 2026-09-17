@@ -4363,3 +4363,56 @@ run against a fake bridge in its live test, as the staffing one is).
 `desktop/src/renderer/design/thread/{types.ts,connectorCards.ts,useProposeConnector.ts,ThreadItemView.tsx,Thread.tsx,threadRows.test.ts}`,
 `desktop/src/renderer/design/shell/{MessagesShell.tsx,CaisraApp.tsx}`,
 `desktop/harness/main.tsx`.
+
+## 76. Connectors answer instantly and do nothing: the Composio key was never in the deploy — `found; one line fixed; the key is the founder's to set`
+
+The founder, 17 September, with a line from the production log:
+
+```
+api.claidor.com/desktop/api/proxy/composio/api/v3.1/tool_router/session
+responseTimeMS=11 responseBytes=266
+```
+
+**Eleven milliseconds is the whole answer.** A real call to Composio
+crosses the Atlantic and takes far longer. Eleven means the request
+never left our server: it was refused at the door.
+
+**What refuses it.** `polar/desktop/composio.py` forwards six paths and
+no others, adding Claidor's key. Its first line is `if not configured()`
+— and `configured()` is `bool(settings.COMPOSIO_API_KEY.strip())`.
+Unset, every call is 503 "Apps are not configured on this server."
+before any network call. The path in the log is on the allow-list and
+the route is mounted, so the allow-list is not it.
+
+**The key was never declared in `render.yaml`.** Every other secret is
+there with `sync: false`: Anthropic, OpenAI, Google, Pipedream, AWS,
+Resend. `CLAIDOR_COMPOSIO_API_KEY` was not, and this is not new — item
+60's own proof says so: *"Unrun: Composio itself — the founder sets
+`COMPOSIO_API_KEY` on Render and presses Connect on one card."* It was
+built to be set by hand and then, as far as this log shows, never was.
+A var missing from the blueprint is silent: the service starts, the
+route answers, and every card fails with nothing to say why.
+
+**Fixed here:** the key is declared in the API's env group with
+`sync: false`, beside Pipedream, with a comment saying what its absence
+does. A deploy now asks for it instead of starting without it. Setting
+the value is the founder's, in the Render dashboard, and it is never
+committed.
+
+**What this does not prove.** The log line carries no status code, and
+`responseBytes` is Render's edge number, not ours — nothing in
+`server/polar` logs that field. So 503 is the reading the evidence
+points at, not one I watched happen. Two checks settle it in a minute,
+both in Render: the API service's Environment tab either has
+`CLAIDOR_COMPOSIO_API_KEY` or it does not; and the logs either contain
+`desktop.composio.upstream_refused` or they do not. That event only
+fires when Composio itself answered with an error. If it is absent, we
+never called Composio, and the key is the cause. If it is present, the
+body is in the log and Composio refused for its own reason.
+
+**Ruled out:** the 402 entitlement gate. `CLAIDOR_CONNECTORS_ENTITLED_EMAILS`
+does gate the connector routes, but the Composio proxy takes only
+`get_desktop_session` (`endpoints.py:1150`) and has no entitlement
+dependency, so an empty list cannot produce this.
+
+**Where:** `render.yaml`.
