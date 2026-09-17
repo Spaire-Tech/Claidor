@@ -6,7 +6,7 @@ import {
   filterConnectionCatalogItems,
 } from "@rakazo/core";
 import { useMemo, useState } from "react";
-import { monogram } from "./filemarks.js";
+import { markFor, monogram } from "./marks.js";
 import "./apps.css";
 
 /**
@@ -41,7 +41,10 @@ export function Apps({
           <Tile
             key={tile.id}
             name={tile.label}
-            {...(tile.item?.logo ? { logo: tile.item.logo } : {})}
+            {...(() => {
+              const mark = markFor(tile.item?.logo, tile.id, tile.label);
+              return mark ? { logo: mark } : {};
+            })()}
             connected={tile.item?.connected ?? false}
             // A featured app the catalogue does not carry cannot be connected,
             // and says so rather than offering a button that fails.
@@ -73,7 +76,10 @@ export function Apps({
             <Tile
               key={item.connectorId}
               name={item.name}
-              {...(item.logo ? { logo: item.logo } : {})}
+              {...(() => {
+                const mark = markFor(item.logo, item.slug, item.name);
+                return mark ? { logo: mark } : {};
+              })()}
               connected={item.connected}
               {...(onConnect ? { onConnect: () => onConnect(item) } : {})}
             />

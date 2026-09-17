@@ -14,7 +14,7 @@ import { Blob } from "./Blob.js";
 import { Cards } from "./Cards.js";
 import { Chart } from "./Chart.js";
 import { FileRow } from "./FileRow.js";
-import { monogram } from "./filemarks.js";
+import { markFor, monogram } from "./marks.js";
 import "./thread.css";
 
 /**
@@ -136,12 +136,14 @@ function Connector({ row }: { row: Extract<ThreadRow, { kind: "connector" }> }) 
   // A dead address becomes a service with no mark, which the design already
   // draws, rather than the browser's broken-image glyph.
   const [broken, setBroken] = useState(false);
+  // Ours first, then the address the catalogue served, then the monogram.
+  const mark = markFor(row.logo, row.provider, row.label);
   return (
     <div className="row row--left">
       <div className="card card--connector">
         <span className="tile" style={row.colour ? { background: row.colour } : undefined}>
-          {row.logo && !broken ? (
-            <img src={row.logo} alt="" width={30} height={30} onError={() => setBroken(true)} />
+          {mark && !broken ? (
+            <img src={mark} alt="" width={30} height={30} onError={() => setBroken(true)} />
           ) : (
             <span className={row.colour ? "tile__letter tile__letter--on-colour" : undefined}>
               {row.initial ?? monogram(row.label)}
