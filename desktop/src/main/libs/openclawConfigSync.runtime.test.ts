@@ -3339,7 +3339,16 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.agents.defaults.bootstrapTotalMaxChars).toBe(OPENCLAW_BOOTSTRAP_TOTAL_MAX_CHARS);
     const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
     expect(agentsMd.length).toBeGreaterThan(20_000);
-    expect(agentsMd.length).toBeLessThan(OPENCLAW_BOOTSTRAP_MAX_CHARS * 0.6);
+    // The headroom under the engine's cut. Was 0.6 until 18 September,
+    // when OpenUI's four worked examples and their chat rules went into
+    // the Cards section and the brief reached 74,000. 0.6 was a margin
+    // picked out of the air, not a limit: the engine cuts at
+    // OPENCLAW_BOOTSTRAP_MAX_CHARS and nothing else reads this number.
+    // Raised to 0.7 only after pruning 4,800 characters the brief should
+    // never have carried — a form system the rules forbid in the next
+    // breath (`CARDS_NOT_TAUGHT`) — so this buys room for content that
+    // earns it and not for sprawl.
+    expect(agentsMd.length).toBeLessThan(OPENCLAW_BOOTSTRAP_MAX_CHARS * 0.7);
   });
 
   test('every agent is taught the answer cards, after the conversation rules', async () => {

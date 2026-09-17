@@ -22,9 +22,38 @@ describe('the generated card prompt', () => {
     expect(generated.CARD_PROMPT).toContain(`- ${CARD_PROMPT_MARKERS.rules}`);
     expect(generated.CARD_PROMPT).toContain('## Component Signatures');
     expect(generated.CARD_PROMPT).toContain('Card(children?:');
-    expect(generated.CARD_PROMPT).toContain('## Inline Mode');
     // Theirs, not ours: the opening that says the whole reply must be code.
     expect(generated.CARD_PROMPT).not.toContain('Your ENTIRE response must be valid openui-lang');
+  });
+
+  /**
+   * Inline mode is OpenUI's dashboard-editor mode. It carries a section
+   * telling the model that a QUESTION gets a plain-text answer and no
+   * openui-lang, which in a messages app means no cards at all: every
+   * message here is a question. It was on until 18 September and it is
+   * why the founder's two threads came back as prose.
+   */
+  test('is not generated in inline mode, and carries their worked examples', () => {
+    expect(generated.CARD_PROMPT).not.toContain('## Inline Mode');
+    expect(generated.CARD_PROMPT).not.toContain('Do NOT output any openui-lang code');
+    expect(generated.CARD_PROMPT).toContain('## Examples');
+    expect(generated.CARD_PROMPT).toContain('Every response is a single `root = Card([...])`');
+  });
+
+  /**
+   * A form in an answer card is forbidden by the rules two sections
+   * later, so teaching eighteen form components was 4,800 characters of
+   * contradiction. OpenUI's own reliability guidance puts simplifying
+   * the schema first.
+   */
+  test('does not teach components this app forbids or cannot run', () => {
+    for (const name of ['Form(', 'FormControl(', 'Input(', 'Select(', 'Chips(', 'OptionCards(', 'DatePicker(', 'Slider(', 'EditableTable(']) {
+      expect(generated.CARD_PROMPT).not.toContain(name);
+    }
+    // Still taught: the parts a composed answer is actually made of.
+    for (const name of ['Header(', 'CalloutV2(', 'Table(', 'Tabs(', 'Steps(', 'Accordion(', 'FollowUpBlock(', 'SectionBlock(']) {
+      expect(generated.CARD_PROMPT).toContain(name);
+    }
   });
 
   test('the typeface stylesheet matches what the installed package needs', () => {

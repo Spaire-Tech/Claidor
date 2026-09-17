@@ -170,12 +170,85 @@
 }
 
 /*
- * No title over a block. The founder, 17 September: "hotel in paris
- * (showing 5 results) etc all that title things dissapears. only
- * cards." The brief says not to write one; this makes sure one never
- * shows if a model does.
+ * The header over a block, and why it came back.
+ *
+ * It was hidden outright on 17 September, on the founder's word: "hotel
+ * in paris (showing 5 results) etc all that title things dissapears.
+ * only cards." What they were looking at was a title that restated
+ * their own question with a count after it, over three hotel cards and
+ * nothing else.
+ *
+ * On 18 September they sent OpenUI's own answers and said "its
+ * perfect", and those open with exactly this: "14-Day Meal Plan" over
+ * "Balanced breakfasts, lunches, dinners, and snacks", then prose, then
+ * the parts. In a composed answer the header is what holds the sections
+ * together; over a bare strip of cards it is the noise they objected
+ * to. So the rule moved into the brief, where it can tell those apart
+ * ("names it and adds something the person does not already know…
+ * never restate their question"), and the CSS stopped deciding.
+ *
+ * It is set in the thread's face and scale rather than theirs.
  */
 .caisra-cards .openui-card > .openui-header {
+  margin-bottom: 4px;
+}
+
+/*
+ * A section head inside a composed answer. Their own type is already
+ * close and the face token above makes it Switzer; all this adds is air
+ * above, so a new section reads as a break rather than another row.
+ */
+.caisra-cards .c1-inline-header {
+  margin-top: 8px;
+}
+
+/*
+ * What to say next, at the foot of an answer.
+ *
+ * Their block is a list of full-width rows under a heading reading
+ * "Related Queries" — their words, in their product's voice, and the
+ * one string in a card a person can read that is not ours. The heading
+ * goes, and the rows become the thread's pills: the same shape as the
+ * choice card's options and the roster card's, so a suggestion looks
+ * like something to press rather than a search engine's footer.
+ *
+ * Class names here are the ones the renderer actually emits, read off
+ * the DOM (`harness/cards-plan-walk.mjs` prints them). An earlier pass
+ * of this file guessed at `__element` names that do not exist, so the
+ * rules were dead and the block kept their styling.
+ */
+.caisra-cards .openui-follow-up-block__header {
+  display: none;
+}
+.caisra-cards .openui-follow-up-block {
+  display: flex;
+  /* Theirs is a column of full-width rows; without this the pills stack. */
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 6px;
+  border-top: 1px solid var(--fsr-line-field);
+  padding-top: 16px;
+}
+.caisra-cards .openui-follow-up-item {
+  width: auto;
+  flex: 0 0 auto;
+  border: 1px solid var(--fsr-line-button);
+  border-radius: 999px;
+  padding: 7px 15px;
+  background: var(--fsr-paper);
+  cursor: pointer;
+}
+.caisra-cards .openui-follow-up-item:hover {
+  background: var(--fsr-window);
+}
+.caisra-cards .openui-follow-up-item-text {
+  font: 400 13.5px/1.15 var(--fsr-font-ui);
+  color: var(--fsr-ink);
+}
+/* Their trailing plus; the pill already reads as pressable. */
+.caisra-cards .openui-follow-up-item-icon {
   display: none;
 }
 

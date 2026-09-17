@@ -23,8 +23,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 process.env.OPENUI_TELEMETRY_DISABLED = '1';
-const { generateSystemPrompt } = await import('@openuidev/lang-core');
+const { generateSystemPrompt, createParser } = await import('@openuidev/lang-core');
 const { chatLibrary, presentationLibrary, reportLibrary } = await import('@openuidev/thesys');
+const { CARD_EXAMPLES, checkCardExamples } = await import('./cardExamples.mjs');
 
 /** Where our words go in the generated card prompt. `cardsPrompt.ts` replaces them. */
 export const CARD_PROMPT_MARKERS = { preamble: '@@CAISRA_PREAMBLE@@', rules: '@@CAISRA_RULES@@' };
@@ -74,25 +75,104 @@ export function build() {
 }
 
 /**
- * The answer cards: OpenUI's whole prompt for its chat library, in
- * inline mode (texts outside the fence, a block inside), with our
- * opening in place of theirs and a marker in their rules list where
- * ours are appended. The signatures, the grammar and the streaming
- * advice are theirs verbatim.
+ * The answer cards: OpenUI's whole prompt for its chat library, with
+ * their own chat rules and four worked examples in ours
+ * (`cardExamples.mjs`), and a marker where this app's rules are
+ * appended. The signatures, the grammar and the streaming advice are
+ * theirs verbatim.
+ *
+ * **What changed on 18 September, and why.** This used to pass
+ * `inlineMode: true` and replace `examples` and `additionalRules` with
+ * two markers. Three things followed from that, all bad:
+ *
+ * - Inline mode injects a section written for OpenUI's *dashboard
+ *   editor*: "If the user asks a QUESTION … Do NOT output any
+ *   openui-lang code. The existing dashboard stays unchanged." There is
+ *   no dashboard in a messages app and every message is a question, so
+ *   that one section forbade cards outright. It is gone.
+ * - Replacing `examples` meant passing none. The model read the grammar
+ *   and 12,000 characters of signatures and never saw one finished
+ *   answer.
+ * - Replacing `additionalRules` threw away all thirteen of OpenUI's own
+ *   (`openuiChatAdditionalRules`), including "Every response is a
+ *   single Card", "Use FollowUpBlock at the END" and "Use SectionBlock
+ *   to group long responses".
+ *
+ * Their thirteen are adapted rather than copied, because they name
+ * components from `openuiChatLibrary` and we render with the thesys
+ * `chatLibrary` superset: no `Stack` here either way, `Tabs` and the
+ * blocks' own `"carousel"` layout instead of a `Carousel` component,
+ * `List` for `ListBlock`, `SectionBlock` present under its own name.
+ * The picture rule is deliberately not theirs; see `cardsPrompt.ts`.
  */
+const CHAT_RULES = [
+  'Every response is a single `root = Card([...])`; its children stack vertically on their own. Card takes no layout arguments.',
+  'Card is the only container. There is no Stack here. Use `Tabs` to switch between sections, and a card block\'s `"carousel"` layout for horizontal scroll.',
+  'Use `FollowUpBlock` at the END of a Card to suggest what the person can do or ask next.',
+  'Use `List` when presenting a set of options or steps the person can read down.',
+  'Use `SectionBlock` to group a long answer into collapsible sections; each `SectionBlockItem` needs a unique value, a trigger label and its content.',
+  'When asked about data you cannot look up, say so rather than inventing figures. Never present a guess as a fact inside a card, where it reads as checked.',
+  'Every item in a card block must have the same shape as its siblings: if one has a picture, a tag and a price, they all do.',
+  'Define one reference per part on its own line and keep the parts shallow. Deeply nested inline calls stream badly and are hard to correct.',
+];
+
+/**
+ * Components the brief does not teach, and why.
+ *
+ * OpenUI's own reliability guidance puts this first: *"Simplify the
+ * component schema… Remove overlapping components and use
+ * componentGroups to group related components."* The signatures were
+ * the largest section of the whole brief at 12,400 characters, and a
+ * third of it was a form system this app forbids in the very next
+ * breath: the rules say never put a form or a question that needs an
+ * answer in a card, because those have their own cards reached through
+ * their own tools. Teaching eighteen form components and then banning
+ * them is a contradiction the model has to resolve for itself.
+ *
+ * The renderer still draws every one of these. They are only untaught,
+ * so nothing that already works stops working.
+ */
+const CARDS_NOT_TAUGHT = new Set([
+  // A form belongs to `ask_user_input` and the question card, never to an answer.
+  'Form', 'FormControl', 'Input', 'TextArea', 'Select', 'SelectItem',
+  'Chips', 'ChipItem', 'OptionCard', 'OptionCards',
+  'CheckBoxGroup', 'CheckBoxItem', 'RadioGroup', 'RadioItem',
+  'SwitchGroup', 'SwitchItem', 'DatePicker', 'Slider',
+  // Editing a table writes state back, which needs the v0.5 runtime this app does not wire.
+  'EditableTable',
+  // Overlapping with Composite/Overview/Visual, which the rules name by job.
+  'ContextCardBlock', 'ContextCardItem', 'SnippetCardBlock', 'SnippetCardItem',
+  // Bar, line, area and pie cover an answer; these are dashboard shapes.
+  'RadarChart', 'ScatterChart', 'RadialChart', 'SegmentedBar',
+]);
+
 export function buildCards() {
+  const full = chatLibrary.toSpec();
+  const kept = Object.fromEntries(
+    Object.entries(full.components).filter(([name]) => !CARDS_NOT_TAUGHT.has(name)),
+  );
+  const missing = [...CARDS_NOT_TAUGHT].filter(name => !(name in full.components));
+  if (missing.length) throw new Error(`These are not in the chat library any more; drop them from CARDS_NOT_TAUGHT: ${missing.join(', ')}`);
+  const spec = { ...full, components: kept };
+  const faults = checkCardExamples(program => createParser(spec.schema, spec.root).parse(program));
+  if (faults.length) {
+    throw new Error(`The card examples are not valid programs for this library:\n  - ${faults.join('\n  - ')}`);
+  }
   const prompt = generateSystemPrompt({
-    library: chatLibrary.toSpec(),
+    library: spec,
     promptOptions: {
-      inlineMode: true,
       toolCalls: false,
       bindings: false,
       preamble: CARD_PROMPT_MARKERS.preamble,
-      additionalRules: [CARD_PROMPT_MARKERS.rules],
+      examples: CARD_EXAMPLES,
+      additionalRules: [...CHAT_RULES, CARD_PROMPT_MARKERS.rules],
     },
   });
   for (const marker of Object.values(CARD_PROMPT_MARKERS)) {
     if (!prompt.includes(marker)) throw new Error(`OpenUI dropped the ${marker} marker; update this script.`);
+  }
+  if (/## Inline Mode/.test(prompt)) {
+    throw new Error('Inline mode came back into the generated prompt; it tells the model to answer questions in plain text.');
   }
   return { version, root: chatLibrary.root, prompt };
 }

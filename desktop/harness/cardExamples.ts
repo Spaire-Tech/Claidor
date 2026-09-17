@@ -92,5 +92,63 @@ export function cardExamples(photo: (name: string) => string): Record<string, Ca
       ],
       after: 'Want the groups, or the matches nearest to you?',
     },
+
+    /*
+     * The composed answer, 18 September.
+     *
+     * The founder asked Caisra for a fourteen-day meal plan and got
+     * forty-two lines of markdown: "it just gave me a chat gpt list. a
+     * claude list. lots of writing." They asked OpenUI the same thing
+     * and got a header, prose, a note, a picture grid, a table, tabbed
+     * categories, numbered prep and an accordion of swaps: "i've never
+     * seen anything quite like this. its perfect."
+     *
+     * Their answer was never one widget. It was a dozen parts stacked
+     * inside one Card, and our brief told the model to pick one widget
+     * or write prose. This is the shape it now teaches, drawn here so
+     * the picture can be checked against theirs rather than described.
+     *
+     * The oats tile deliberately carries no picture, as one of theirs
+     * did: a missing `src` has to close up cleanly, because the rule
+     * now says leave it out rather than go hunting.
+     */
+    'cards-plan': {
+      ask: 'write me a meal plan. 14 days meal plan',
+      before: 'Two weeks, built so you cook once and eat twice.',
+      program: [
+        'root = Card([head, intro, note, meals, calHead, table, shopHead, tabs, prep, swaps, next])',
+        'head = Header("14-Day Meal Plan", "Balanced breakfasts, lunches and dinners")',
+        'intro = TextContent("A fortnight of lean proteins, whole grains and vegetables, with the cooking front-loaded into two sessions. Adjust portions to your appetite.")',
+        'note = CalloutV2("info", "Quick note", "I have assumed no restrictions. If you have allergies, or a goal like fat loss or vegetarian, press one below and I will redo it.")',
+        'meals = VisualCardBlock([m1, m2, m3], "grid", true, {type: "continue_conversation", context: "Give me the recipe for this"})',
+        `m1 = VisualCardItem(BoldText("text", "Chicken Burrito Bowl", "Cooks once, feeds three lunches"), "burrito", "${photo('spinasse')}", Tag("High protein", "success"), "A burrito bowl")`,
+        'm2 = VisualCardItem(BoldText("text", "Berry Overnight Oats", "Made the night before, no cooking"), "oats", "", Tag("Breakfast", "info"), "")',
+        `m3 = VisualCardItem(BoldText("text", "Salmon Quinoa Plate", "Twenty minutes start to finish"), "salmon", "${photo('walrus')}", Tag("Heart healthy", "success"), "A salmon plate")`,
+        'calHead = InlineHeader("Daily meal calendar", "Repeat a favourite if you want to simplify the shop")',
+        'table = Table([Col("Day"), Col("Breakfast"), Col("Dinner")], rows)',
+        'rows = [["Day 1", "Greek yogurt, berries, granola", "Sheet-pan chicken and potatoes"], ["Day 2", "Overnight oats", "Salmon, rice, green beans"], ["Day 3", "Scrambled eggs on rye", "Turkey chilli"], ["Day 4", "Banana and spinach smoothie", "Chicken stir-fry"], ["Day 5", "Cottage cheese and walnuts", "Pasta and turkey meatballs"], ["Day 6", "Eggs and sauteed spinach", "Tacos, slaw, avocado"], ["Day 7", "Oatmeal, apple, cinnamon", "Baked cod and sweet potato"]]',
+        'shopHead = InlineHeader("Grocery list", "Core ingredients for the fortnight")',
+        'tabs = Tabs([tProtein, tProduce, tPantry])',
+        'tProtein = TabItem("protein", "Proteins", [lProtein], Icon("beef"))',
+        'lProtein = List([ListItem("Chicken thighs, salmon fillets, turkey mince", "The week\'s mains", Icon("drumstick")), ListItem("Eggs, Greek yogurt, cottage cheese", "Breakfasts and snacks", Icon("egg"))], "icon")',
+        'tProduce = TabItem("produce", "Produce", [lProduce], Icon("carrot"))',
+        'lProduce = List([ListItem("Spinach, peppers, broccoli, green beans", "Buy twice so nothing wilts", Icon("leaf")), ListItem("Bananas, apples, berries, avocado", "Breakfast and snacking", Icon("apple"))], "icon")',
+        'tPantry = TabItem("pantry", "Pantry", [lPantry], Icon("package"))',
+        'lPantry = List([ListItem("Brown rice, quinoa, oats, pasta", "Cook the grains in one batch", Icon("wheat")), ListItem("Olive oil, salsa, hummus, chilli powder", "What keeps repeats interesting", Icon("flame"))], "icon")',
+        'prep = Steps([s1, s2, s3], "Weekly prep", "Ninety minutes on Sunday and the plan cooks itself")',
+        's1 = StepsItem("Cook the grains", "A large batch of brown rice and quinoa, stored airtight.")',
+        's2 = StepsItem("Roast the proteins", "Chicken thighs and a tray of vegetables; portion straight into boxes.")',
+        's3 = StepsItem("Use leftovers on purpose", "Days 2, 4 and 7 run on what you already cooked. That is the design, not laziness.")',
+        'swaps = Accordion([sw1, sw2, sw3], "Easy swaps", "Adjust it without rewriting it")',
+        'sw1 = AccordionItem("veg", "Make it vegetarian", [swt1])',
+        'swt1 = TextContent("Lentils, tofu and halloumi replace the chicken and turkey. Keep the salmon or drop it; the protein still lands.")',
+        'sw2 = AccordionItem("carb", "Make it lower-carb", [swt2])',
+        'swt2 = TextContent("Halve the rice and pasta, double the green vegetables, and move the oats to eggs.")',
+        'sw3 = AccordionItem("budget", "Make it budget-friendly", [swt3])',
+        'swt3 = TextContent("Eggs, oats, beans, frozen vegetables and store-brand yogurt. Repeat meals more often to cut waste.")',
+        'next = FollowUpBlock(["Make it vegetarian", "Cut it to 7 days", "Write me the shopping list"])',
+      ],
+      after: '',
+    },
   };
 }
