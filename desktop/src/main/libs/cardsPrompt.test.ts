@@ -37,7 +37,11 @@ describe('the Cards section of the brief', () => {
   });
 
   test('says the rules in our words: one block, whole blocks, no invented pictures', () => {
-    expect(section).toContain('One block per reply at most.');
+    // One card block, and the artifact that may follow it. The founder,
+    // 18 September: the agent should write the plan up as a document in
+    // the same reply, unasked. Two of my rules forbade that and neither
+    // was a limit of the code.
+    expect(section).toContain('One card block per reply; a reply may also carry one artifact block after it');
     expect(section).toContain('Every block is complete on its own.');
     expect(section).toContain('Never invent, guess or pattern-match an image address');
     // The picture rule no longer sends the agent on a browser detour per
