@@ -11,6 +11,7 @@ import {
 } from "@rakazo/core";
 import { Blob } from "./Blob.js";
 import type { FixtureRun } from "./fixtures.js";
+import { Switch } from "./Switch.js";
 import "./routines.css";
 
 /**
@@ -53,11 +54,11 @@ export function Routines({
 
   return (
     <div className="routines">
-      <header className="header">
+      <header className="rhead">
         <Blob seed={agentId} size={28} />
-        <span className="header__stack">
-          <span className="header__name">{agentName}</span>
-          <span className="header__sub">Routines</span>
+        <span className="rhead__stack">
+          <span className="rhead__name">{agentName}</span>
+          <span className="rhead__sub">Routines</span>
         </span>
         <button type="button" className="routines__new">
           New routine
@@ -108,10 +109,8 @@ function Editor({
   return (
     <div className="editor">
       <div className="editor__bar">
-        <span className="toggle">
-          <span className={`toggle__track ${open.active ? "toggle__track--on" : ""}`}>
-            <span className="toggle__knob" />
-          </span>
+        <span className="activerow">
+          <Switch on={open.active} label="Active" />
           Active
         </span>
         <span className="editor__buttons">
@@ -124,20 +123,20 @@ function Editor({
         </span>
       </div>
 
-      <div className="field">
+      <div className="rfield">
         Name
         <span className="input">{open.name}</span>
       </div>
 
-      <div className="field">
+      <div className="rfield">
         What it should do
         <span className="input input--area">{open.prompt}</span>
       </div>
 
-      <div className="field">
-        <span className="field__row">
+      <div className="rfield">
+        <span className="rfield__row">
           When to run
-          <span className="field__aside">{open.timezone}</span>
+          <span className="rfield__aside">{open.timezone}</span>
         </span>
 
         <div className="triggers">
@@ -167,7 +166,7 @@ function Editor({
             />
           ) : null}
           {isOneShotRoutineCrons(open.crons) && !open.lastRunAt ? (
-            <div className="field field--tight">
+            <div className="rfield rfield--tight">
               Run at
               <span className="input">18 September 2026, 09:00</span>
             </div>
@@ -202,10 +201,10 @@ function Editor({
         </button>
       </div>
 
-      <div className="field">
+      <div className="rfield">
         Run history
         {runs.length === 0 ? (
-          <div className="field__aside field__aside--own">No runs yet</div>
+          <div className="rfield__aside rfield__aside--own">No runs yet</div>
         ) : (
           <div className="runs">
             {runs.map((run) => (

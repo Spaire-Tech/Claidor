@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -48,11 +48,13 @@ function group(source: string, name: string): Map<string, string> {
   const block = new RegExp(`export const ${name} = \\{([\\s\\S]*?)\\n\\} as const;`).exec(source);
   if (!block) throw new Error(`the design has no \`${name}\` group any more`);
   const found = new Map<string, string>();
-  for (const line of block[1].split("\n")) {
+  for (const line of (block[1] ?? "").split("\n")) {
     // `key: value,` with the value either quoted or a bare number. Comment
     // lines and blank lines fall through.
     const pair = /^\s{2}([A-Za-z][A-Za-z0-9]*): (?:'([^']*)'|([-\d.]+)),/.exec(line);
-    if (pair) found.set(pair[1], pair[2] ?? pair[3]);
+    const key = pair?.[1];
+    const value = pair?.[2] ?? pair?.[3];
+    if (key && value !== undefined) found.set(key, value);
   }
   return found;
 }
@@ -61,7 +63,8 @@ function group(source: string, name: string): Map<string, string> {
 function customProperties(source: string): Map<string, string> {
   const found = new Map<string, string>();
   for (const match of source.matchAll(/^\s*(--[a-z0-9-]+):\s*([^;]+);/gm)) {
-    found.set(match[1], match[2].replace(/\s+/g, " ").trim());
+    const [, property, value] = match;
+    if (property && value) found.set(property, value.replace(/\s+/g, " ").trim());
   }
   return found;
 }
@@ -164,7 +167,7 @@ describe("the design is the founder's, and this is how we know", () => {
         wrong.push(`${property} is in no group of the design`);
         continue;
       }
-      const theirs = groups.get(source.group)?.get(source.key) as string;
+      const theirs = groups.get(source.group)?.get(source.key) ?? "";
       if (normalise(theirs) !== normalise(value)) {
         wrong.push(`${property} is ${value}, and ${source.group}.${source.key} is ${theirs}`);
       }
@@ -172,18 +175,25 @@ describe("the design is the founder's, and this is how we know", () => {
     expect(wrong).toEqual([]);
   });
 
+  /** A property we know is there, or a failure that names it. */
+  const value = (property: string): string => {
+    const found = ours.get(property);
+    if (found === undefined) throw new Error(`tokens.css no longer defines ${property}`);
+    return normalise(found);
+  };
+
   test("the shapes that decide how the app reads are the canvas's", () => {
     // Named one by one because these are the ones that were wrong on screen
     // and nobody but the founder noticed. A regression here is the regression.
-    expect(normalise(ours.get("--radius-window") as string)).toBe("40");
-    expect(normalise(ours.get("--radius-pane") as string)).toBe("28");
-    expect(normalise(ours.get("--radius-row") as string)).toBe("16");
-    expect(normalise(ours.get("--radius-bubble") as string)).toBe("17");
-    expect(normalise(ours.get("--text-sidebar-title") as string)).toBe("18");
+    expect(value("--radius-window")).toBe("40");
+    expect(value("--radius-pane")).toBe("28");
+    expect(value("--radius-row")).toBe("16");
+    expect(value("--radius-bubble")).toBe("17");
+    expect(value("--text-sidebar-title")).toBe("18");
   });
 
   test("the frame is the one layout.ts counted out of the canvas", () => {
-    const px = (property: string) => Number(normalise(ours.get(property) as string));
+    const px = (property: string) => Number(value(property));
     expect(px("--frame-pad-x")).toBe(FRAME_PAD_X);
     expect(px("--frame-pad-y")).toBe(FRAME_PAD_Y);
     expect(px("--frame-gap")).toBe(FRAME_GAP);
@@ -199,5 +209,51 @@ describe("the design is the founder's, and this is how we know", () => {
     expect(dock).toContain(`width: ${DOCK_WIDTH}px`);
     expect(dock).toContain("width: 52px");
     expect(dock).toContain("padding: 11px");
+  });
+});
+
+/**
+ * Two stylesheets, one document.
+ *
+ * Every `*.css` in this app is imported into the same page, so a class name
+ * used by two components is one component silently restyling the other. It
+ * happened: Settings and Routines each drew a switch, each called its parts
+ * `.toggle` and `.toggle__knob`, and the settings knob inherited
+ * `position: absolute` from the routines rule and flew to the corner of the
+ * window. Nothing failed. It took a screenshot and a DOM probe to find.
+ *
+ * A shared name is sometimes right — `.card`, `.btn` — so this does not ban
+ * them. It bans the ones nobody declared: a name is either used in one
+ * stylesheet, or listed below as deliberately shared.
+ */
+const SHARED = new Set<string>([
+  // shell.css places the thread inside the pane (`flex: 1; overflow-y: auto`);
+  // thread.css styles what is in it. Two files, one element, on purpose.
+  "thread",
+]);
+
+describe("no stylesheet quietly restyles another", () => {
+  test("every class name belongs to one file, or is declared shared", () => {
+    const sheets = readdirSync(HERE).filter((name) => name.endsWith(".css"));
+    const owners = new Map<string, Set<string>>();
+    for (const sheet of sheets) {
+      const source = readFileSync(join(HERE, sheet), "utf8");
+      // Selectors only: everything before a `{`, with comments and the
+      // declarations themselves left out.
+      for (const rule of source.replace(/\/\*[\s\S]*?\*\//g, "").split("}")) {
+        const selector = rule.split("{")[0] ?? "";
+        for (const found of selector.matchAll(/\.([a-zA-Z][\w-]*)/g)) {
+          const name = found[1];
+          if (!name) continue;
+          const set = owners.get(name) ?? new Set<string>();
+          set.add(sheet);
+          owners.set(name, set);
+        }
+      }
+    }
+    const collisions = [...owners]
+      .filter(([name, files]) => files.size > 1 && !SHARED.has(name))
+      .map(([name, files]) => `.${name} is styled by ${[...files].sort().join(" and ")}`);
+    expect(collisions).toEqual([]);
   });
 });

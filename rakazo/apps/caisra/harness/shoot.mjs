@@ -104,13 +104,21 @@ const SCREENS = [
   "cards-plan",
   "proactive",
   "apps",
+  "settings",
+  "settings-computer",
+  "account",
 ];
 for (const screen of SCREENS) {
   const page = await context.newPage();
   await page.goto(`http://127.0.0.1:${port}/?screen=${screen}`, { waitUntil: "networkidle" });
   // A thread opens at the bottom, where the newest message is. A card screen
   // opens at the top, because the card is the answer and it is long.
-  if (!screen.startsWith("cards") && screen !== "proactive" && screen !== "apps") {
+  if (
+    !screen.startsWith("cards") &&
+    !screen.startsWith("settings") &&
+    screen !== "proactive" &&
+    screen !== "apps"
+  ) {
     await page.evaluate(() => {
       const thread = document.querySelector(".thread");
       if (thread) thread.scrollTop = thread.scrollHeight;

@@ -51,11 +51,14 @@ export function Dock({
   active,
   accountName,
   onGo,
+  accountMenu,
 }: {
   /** Which one is lit, if any. Settings lights none of them. */
   active?: DockItem;
   accountName: string;
   onGo: (item: DockItem) => void;
+  /** The account menu when it is open, anchored beside the last button. */
+  accountMenu?: React.ReactNode;
 }) {
   return (
     <nav className="dock" aria-label="Caisra">
@@ -95,6 +98,7 @@ export function Dock({
           {(accountName.trim()[0] ?? "?").toUpperCase()}
         </span>
       </button>
+      {accountMenu}
     </nav>
   );
 }

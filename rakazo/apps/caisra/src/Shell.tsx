@@ -1,5 +1,7 @@
+import type { Quota } from "@rakazo/core";
 import { frameWindowWidth, SidebarMode, shellLayout } from "@rakazo/core";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { AccountMenu, supportMailto } from "./AccountMenu.js";
 import { Blob } from "./Blob.js";
 import { Dock, type DockItem } from "./Dock.js";
 import type { FixtureBot } from "./fixtures.js";
@@ -103,6 +105,8 @@ export function Shell({
   screen,
   accountName,
   onGo,
+  quota,
+  initialAccountOpen,
   errand,
   children,
 }: {
@@ -111,12 +115,20 @@ export function Shell({
   screen: Screen;
   accountName: string;
   onGo: (screen: Screen) => void;
+  /** The account's allowance, for the menu's first row. Absent until asked. */
+  quota?: Quota | null;
+  /** The account menu open on first paint. The harness photographs it. */
+  initialAccountOpen?: boolean;
   /** What a full-width screen shows. The conversation stays mounted under it. */
   errand?: ReactNode;
   /** The conversation. Always rendered, whatever else is open over it. */
   children: ReactNode;
 }) {
   const full = FULL_WIDTH[screen];
+  // The account menu is the dock's, and Settings is reached from it rather than
+  // from a button of its own. Closed on any move to another screen, so it
+  // cannot be left hanging beside something it has nothing to do with.
+  const [accountOpen, setAccountOpen] = useState(initialAccountOpen ?? false);
 
   // How the window is divided right now, decided on the window's width and not
   // the display's: the frame around it is fixed, so the window is what gets
@@ -136,9 +148,40 @@ export function Shell({
   return (
     <div className="frame">
       <Dock
-        active={DOCK_OF[screen]}
+        // The account button is lit by its menu being open, not by where you
+        // ended up: that is what the canvas does, and Settings lights nothing.
+        active={accountOpen ? "you" : DOCK_OF[screen]}
         accountName={accountName}
-        onGo={(item) => onGo(SCREEN_OF[item])}
+        onGo={(item) => {
+          if (item === "you") {
+            setAccountOpen((one) => !one);
+            return;
+          }
+          setAccountOpen(false);
+          onGo(SCREEN_OF[item]);
+        }}
+        // Never over a screen. The founder, on the build where it was:
+        // *"account drop right opens inside the setting tab."*
+        {...(accountOpen && !full
+          ? {
+              accountMenu: (
+                <AccountMenu
+                  {...(quota ? { quota } : {})}
+                  onClose={() => setAccountOpen(false)}
+                  onSettings={() => {
+                    setAccountOpen(false);
+                    onGo(Screen.Settings);
+                  }}
+                  onSupport={() => {
+                    setAccountOpen(false);
+                    window.location.href = supportMailto();
+                  }}
+                  onAddAccount={() => setAccountOpen(false)}
+                  onLogOut={() => setAccountOpen(false)}
+                />
+              ),
+            }
+          : {})}
       />
       <div
         className="window"

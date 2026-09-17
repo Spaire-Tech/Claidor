@@ -1,4 +1,5 @@
-import { caisraRowsFromBlocks } from "@rakazo/core";
+import type { SettingsInput } from "@rakazo/core";
+import { caisraRowsFromBlocks, ExecPolicy, SettingsTab } from "@rakazo/core";
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Apps } from "./Apps.js";
@@ -18,6 +19,7 @@ import {
   yodo,
 } from "./fixtures.js";
 import { Routines } from "./Routines.js";
+import { Settings } from "./Settings.js";
 import { Screen, Shell } from "./Shell.js";
 import { Thread, ThreadMode, type ThreadRow } from "./Thread.js";
 import "./tokens.css";
@@ -58,6 +60,24 @@ const SCREEN_OF: Record<string, Screen> = {
   routines: Screen.Routines,
   "routines-menu": Screen.Routines,
   apps: Screen.Apps,
+  settings: Screen.Settings,
+  "settings-computer": Screen.Settings,
+};
+
+/**
+ * What Settings is looking at. Real values rather than placeholders, so a
+ * screenshot from here shows what somebody would actually read.
+ */
+const account: SettingsInput = {
+  accountName: "Bass Fall",
+  accountEmail: "bass@caisra.com",
+  computerName: "Bass\u2019s MacBook Pro",
+  workingDirectory: "~/Work/Caisra",
+  execPolicy: ExecPolicy.Auto,
+  memoryEnabled: true,
+  usage: { fraction: 0.74, value: "74%", desc: "Renews in 9 days" },
+  version: "2026.9.17",
+  updateNote: "You\u2019re up to date",
 };
 
 function App() {
@@ -81,6 +101,8 @@ function App() {
       openId={open.bot.id}
       screen={screen}
       accountName="Bass"
+      quota={{ planName: "Caisra", creditsLimit: 1000, creditsUsed: 740 }}
+      {...(asked === "account" ? { initialAccountOpen: true } : {})}
       onGo={setScreen}
       // What an errand shows. The conversation below it is never taken down,
       // so pressing back lands where you left off rather than at the top.
@@ -97,6 +119,11 @@ function App() {
           />
         ) : screen === Screen.Apps ? (
           <Apps catalog={catalog} />
+        ) : screen === Screen.Settings ? (
+          <Settings
+            input={account}
+            {...(asked === "settings-computer" ? { initialTab: SettingsTab.Computer } : {})}
+          />
         ) : null
       }
     >
