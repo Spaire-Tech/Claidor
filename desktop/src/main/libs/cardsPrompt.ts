@@ -1,4 +1,4 @@
-import { CARD_FENCE, CARD_ROOT } from '../../shared/cards/library';
+import { CARD_FENCE } from '../../shared/cards/library';
 import { CARD_PROMPT } from '../../shared/cards/prompt.generated';
 
 /**
@@ -17,30 +17,44 @@ import { CARD_PROMPT } from '../../shared/cards/prompt.generated';
 /** The two markers the generator leaves in the prompt for our words. Same strings as the generator's. */
 const MARKERS = { preamble: '@@CAISRA_PREAMBLE@@', rules: '@@CAISRA_RULES@@' } as const;
 
-const PREAMBLE = 'Some answers are better as cards than as sentences: a few places to choose from, the days of a plan, a set of figures, a comparison. For those, put one fenced block in your reply, written in openui-lang, a small declarative language described below. The app draws the block as cards between your texts.';
+const PREAMBLE = 'An answer with any shape to it belongs in a card, not in sentences. A set of places, the days of a plan, a comparison, figures, steps, anything you would otherwise write as a long list: put it in one fenced block, written in openui-lang, a small declarative language described below. The app draws the block in the conversation, between your texts.';
 
 const RULES: readonly string[] = [
-  `The fence is \`\`\`${CARD_FENCE} on its own line, the program, then \`\`\` on its own line. One block per reply at most.`,
-  'Your texts stay texts. Say what you have to say in plain sentences before or after the block; the block is the set of things, not the answer to a question.',
-  'Use a block only when the answer is a set of things: places, options, days, figures, a comparison. A question, an explanation, a yes or no, a plan in prose: no block.',
-  `Every block is one \`root = ${CARD_ROOT}([...])\`; its children stack. No Header and no title line: the block is the cards themselves, and the name of the set, if it needs one, goes in your text before the block. End with a ButtonGroup of what the person can do next if there is something to do.`,
+  `The fence is \`\`\`${CARD_FENCE} on its own line, the program, then \`\`\` on its own line. One card block per reply; a reply may also carry one artifact block after it, which is a different thing (see Artifacts).`,
+  'A block is the normal way to answer, not a special occasion. If the answer has a shape — several things, a plan, a table, a set of numbers, anything you would write as more than about four bullets — it is a block. Reach for one first and write prose only when a block would be silly.',
+  'Sentences are still sentences. A short reply, a yes or no, a clarification, an explanation with no parts to it: plain text, no block. Two lines of conversation do not become a card because they can.',
+  'The block can be the whole answer, and your prose goes inside it as `TextContent`. Open with a `Header`, whose two arguments are not treated alike here: the app draws only the second one, so put the line that is worth reading there, and keep the first to a short plain name. `Header("14-Day Meal Plan", "Balanced breakfasts, lunches and dinners")` shows the second line only. Never restate their question back at them, and never write "showing 5 results".',
+  'Compose it. A long answer is one Card holding several parts in order: a Header, a line or two of TextContent, a CalloutV2 for a caveat, a block of cards, an InlineHeader before each new section, a Table, Tabs, Steps, an Accordion, and FollowUpBlock at the end. One widget on its own is rarely the best answer to anything.',
+  'Which part for what. Places, hotels, restaurants, products: CompositeCardBlock, each item an ImageTextLarge header, a TagBlock body, and a footer with the price as BoldText and a Button. Days of a plan, or picture-led options: VisualCardBlock, the picture as the card with a Tag on it. Figures: OverviewCardBlock, an IconText above a MetricIndicatorInline. Label and value down a list: EntityList. Anything with rows and columns, and any plan longer than about five items: Table. Ordered work: Steps. Alternatives the person might want: Accordion. Categories: Tabs.',
+  'Offer the next move instead of asking for it. When you would otherwise ask a question with a handful of likely answers, answer first on your best assumption, say the assumption in one line, and put the alternatives under it as a ButtonGroup. A question that genuinely blocks the work still goes through the question tool, not into a card.',
   'Every block is complete on its own. The app draws each block by itself, in the message it came in, so a change is a whole new block, never only the changed lines.',
-  'Which block for what. Places, hotels, restaurants, products: CompositeCardBlock, each item with an ImageTextLarge header (picture, name, one line), a TagBlock in the body, and a footer with the price as BoldText and a Button. The days of a plan, or a set of options: VisualCardBlock, the picture as the card, a Tag ("Day 1") on it. Figures: OverviewCardBlock, an IconText on top and a MetricIndicatorInline under it. Highlights: EntityList, a label on the left and its value on the right. A comparison on the same points: Table. Steps in order: Steps.',
-  'Pictures make a card. Two routes to a real one. Wikipedia, for anything with an article: `web_fetch` `https://en.wikipedia.org/api/rest_v1/page/summary/<Title_With_Underscores>` and take `originalimage.source` or `thumbnail.source` — JSON, so it comes back whole. Everything else, and most of a plan has no article: open the page with the web-search skill\'s browser and take `og:image` from the HTML. `web_fetch` drops the head, so it will not do.',
-  'A src must be a real https URL seen in a tool result here. Never invent, guess or "typical" one. Never a placeholder service either: a photograph of the wrong place is worse than none.',
-  'A Button whose action is {type: "continue_conversation", context: "..."} sends its context back to you as the person\'s next message; then do what it says. A block\'s own action does the same with the card they pressed. {type: "open_url", url: "..."} opens the page in their browser.',
+  'Pictures make a card, and a picture you already have the address of costs nothing. When your search results carried image URLs, use them: prefer the place\'s own site, then a reputable publication. Write the address into `src` exactly as you saw it.',
+  'Never invent, guess or pattern-match an image address, and never use a placeholder service: a photograph of the wrong place is worse than none. When you have no real address for an item, leave `src` out. The card closes up around the text and still looks right, so a picture is never worth a detour, and never worth a lie.',
+  'A Button whose action is {type: "continue_conversation", context: "..."} sends its context back to you as the person\'s next message; then do what it says. A block\'s own action does the same with the card they pressed. {type: "open_url", url: "..."} opens the page in their browser. Write actions as object literals; `Action([...])` and `@` builtins are part of the language this app does not run, and a button written that way does nothing.',
   'An Icon is a Lucide icon by name, kebab-case: "map-pin", "utensils", "calendar", "plane", "trophy".',
-  'Never put a password, a key, a command to run, a form, or a question that needs an answer in a card. Those have their own cards in this app, which you reach through their tools.',
+  'Never put a password, a key, or a command to run in a card. Those have their own cards in this app, which you reach through their tools.',
 ];
+
+/**
+ * OpenUI's generator appends every extra rule *after* its own
+ * `## Final Verification` checklist, so a reader meets the closing
+ * check and then eleven more rules with no heading over them. Ours read
+ * as an afterthought and theirs as the conclusion, which is half of why
+ * the rules in this section were ignored. The checklist is lifted out
+ * and put back at the end, where a closing check belongs.
+ */
+const FINAL_VERIFICATION = /\n## Final Verification\n[\s\S]*?(?=\n\n)/;
 
 export function buildManagedCardsPrompt(): string {
   for (const marker of Object.values(MARKERS)) {
     if (!CARD_PROMPT.includes(marker)) throw new Error(`The generated card prompt lost its ${marker} marker; regenerate it.`);
   }
+  const check = CARD_PROMPT.match(FINAL_VERIFICATION);
+  if (!check) throw new Error('OpenUI moved its Final Verification checklist; update this file.');
   const prompt = CARD_PROMPT
+    .replace(FINAL_VERIFICATION, '')
     .replace(MARKERS.preamble, PREAMBLE)
-    // OpenUI appends extra rules as one list item at the very end, after
-    // its verification list; ours get their own heading there.
-    .replace(`- ${MARKERS.rules}`, `## Rules in this app\n- ${RULES.join('\n- ')}`);
-  return `## Cards\n\n${prompt.trim()}`;
+    .replace(`- ${MARKERS.rules}`, `\n## Rules in this app\n\n- ${RULES.join('\n- ')}`)
+    .trimEnd();
+  return `## Cards\n\n${prompt}\n${check[0].trim()}\n`;
 }

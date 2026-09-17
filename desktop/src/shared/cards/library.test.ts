@@ -30,10 +30,17 @@ describe('the card library', () => {
     expect(result.root?.typeName).toBe(CARD_ROOT);
   });
 
+  /**
+   * A reply is a text, the block, and a text after it when there is one
+   * to write. Not every answer has one: a composed block that opens with
+   * its own header and closes with follow-ups says everything it has to
+   * say, which is how OpenUI's own answers end and what the brief now
+   * teaches. So the trailing text is optional and the block is not.
+   */
   test.each(Object.entries(EXAMPLES))('the %s example is a card, not an artifact, once fenced in a reply', (_screen, example) => {
-    const reply = `${example.before}\n\n\`\`\`${CARD_FENCE}\n${example.program.join('\n')}\n\`\`\`\n\n${example.after}`;
+    const reply = `${example.before}\n\n\`\`\`${CARD_FENCE}\n${example.program.join('\n')}\n\`\`\`${example.after ? `\n\n${example.after}` : ''}`;
     const segments = splitCardSegments(reply);
-    expect(segments.map(one => one.kind)).toEqual(['text', 'card', 'text']);
+    expect(segments.map(one => one.kind)).toEqual(example.after ? ['text', 'card', 'text'] : ['text', 'card']);
     const card = segments[1];
     if (card.kind !== 'card') throw new Error('not a card');
     expect(artifactKindOf(card.program)).toBeUndefined();

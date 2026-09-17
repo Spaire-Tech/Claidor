@@ -170,6 +170,47 @@ const ARTIFACTS: EngineMessage[] = [
   }, 3),
 ];
 
+/**
+ * Proactive: the card, then the document, in one reply.
+ *
+ * The founder, 18 September: *"i want for caisra take over in text and
+ * say i've put this as a word doc as well for you and that will be the
+ * artifact… thats how we win users. always proactive. the whole goal of
+ * the agent is that it does stuff for you. you shouldnt have to ask him
+ * he should take initiative like this."*
+ *
+ * Two of my own rules forbade this and neither was a limit of the code:
+ * the Cards section said "one block per reply at most" and the Artifacts
+ * section said "one artifact per reply, and no cards in the same reply".
+ * `splitCardSegments` has always walked every fence in a message, so the
+ * thread renders text, card, text, chip in order. This screen is the
+ * proof, and the reason the two rules are gone.
+ */
+const PROACTIVE: EngineMessage[] = [
+  message({ type: 'user', content: 'write me a meal plan. 14 days meal plan' }, 0),
+  message({
+    type: 'assistant',
+    content: [
+      'Two weeks, built so you cook once and eat twice.',
+      '',
+      '```openui-lang',
+      ...cardExamples(photo)['cards-plan'].program,
+      '```',
+      '',
+      'I have written it up as a document as well, so you have something to print or send on.',
+      '',
+      '```openui-lang',
+      'root = ReportView("14-Day Meal Plan", "Two weeks of breakfasts, lunches and dinners, with the shop and the prep", [d1, d2])',
+      `d1 = Page("d1", StandardFrontPage("14-Day Meal Plan", "${photo('spinasse')}", TextContent("A fortnight of lean proteins, whole grains and vegetables, with the cooking front-loaded into two sessions. Portions are a starting point, not a prescription."), "Two weeks of breakfasts, lunches and dinners", "title-top"))`,
+      'd2 = Page("d2", ContentPage([dh, dk, dt]))',
+      'dh = Headline("The fortnight at a glance", "What you cook, and what it costs in time", "medium")',
+      'dk = KeyMetrics("row", [{title: "Prep sessions", text: "2"}, {title: "Cook once, eat twice", text: "6 days"}, {title: "Shop", text: "Twice"}])',
+      'dt = TextContent("Days 2, 4 and 7 run on what you already cooked, which is the design rather than laziness. The grocery list is grouped by aisle so a single pass through the shop covers the week.")',
+      '```',
+    ].join('\n'),
+  }, 1),
+];
+
 const PENDING: (EnginePermissionRequest & { sessionId: string })[] = [
   {
     sessionId: 's1',
@@ -407,7 +448,7 @@ function Screens(): JSX.Element {
   const composing = screen === 'compose';
 
   const withAuth = screen === 'auth' || screen === 'thread';
-  const items = toThreadItems(screen === 'files' ? PACK : CARD_SCREENS[screen] ?? (screen === 'artifacts' ? ARTIFACTS : CONVERSATION), {
+  const items = toThreadItems(screen === 'files' ? PACK : CARD_SCREENS[screen] ?? (screen === 'artifacts' ? ARTIFACTS : screen === 'proactive' ? PROACTIVE : CONVERSATION), {
     agentId: 'juno',
     agentName: 'Juno',
     pending: withAuth ? PENDING : [],

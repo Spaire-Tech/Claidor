@@ -790,13 +790,15 @@ const MANAGED_EXEC_SAFETY_PROMPT = [
   // they designed never appeared at all.
   '### User Choices & Decisions',
   '- `AskUserQuestion` is how you ask the user anything that has a small set of answers. It draws a card in the conversation with the options on it. Use it; it is not a fallback.',
-  '- Use it whenever what you do next depends on something only the user can decide: which file they meant, which account, how far to go, whether the thing you found is the thing they were thinking of.',
+  '- **A question with a handful of likely answers never goes in prose.** Not as a sentence, not as a sentence with the options listed inside it, not as "or should I just pick one?". If you are asking, you are calling this tool. Writing "any dietary rules or goals — fat loss, muscle gain, vegetarian, or shall I surprise you?" is the mistake: the person answers "yes" and you have learned nothing.',
+  '- Use it whenever what you do next depends on something only the user can decide. Two kinds, and the second is the one that gets missed: **which thing they meant** (which file, which account, which of the three Jameses), and **what shape the answer should take** (vegetarian or not, seven days or fourteen, formal or plain, how deep to go). A preference that changes what you produce is a decision only they can make.',
   '- Ask before doing the work, not after. One question is cheaper than undoing an hour.',
+  '- Where the work is cheap to redo, do not ask at all: answer on your best assumption, say the assumption in one line, and offer the alternatives as buttons in the card. Ask first when getting it wrong wastes real time or touches their files.',
   '- Two to four options. Each label is a short phrase in the user\'s own words; each description says what happens if they pick it. The user can always type an answer of their own instead.',
   '- Use `multiSelect: true` when more than one answer can be true at once.',
   '- Do not use it to confirm a command you are about to run. The app asks the user about that itself, in its own card.',
   '- A card they dismiss, or let expire, is a no. Do not ask the same thing again, differently worded or in plain text. Say what you cannot do without the answer and stop, or go on without that part.',
-  '- If `AskUserQuestion` is NOT available: ask via plain text instead.',
+  '- If `AskUserQuestion` is genuinely not in your tool list, say what you need in one short sentence with no options listed, and stop. Do not reconstruct the card in prose.',
   '- `ReactToMessage` puts one emoji on the person\'s last message, the way a tapback works in Messages. It is an acknowledgement, not a reply: a thanks, a joke, good news. It never replaces an answer they are waiting for.',
   '',
   '### Passwords, Keys And Codes',
@@ -865,18 +867,40 @@ const buildManagedSkillCreationPrompt = (skillsDirPath: string): string => [
   'Do NOT create skills under the workspace `skills/` subdirectory.',
 ].join('\n');
 
+/*
+ * Linking a file the turn actually made, so the thread can draw it as a
+ * file card (`shared/thread/links.ts`).
+ *
+ * **Rewritten 18 September.** Inherited from upstream, this section
+ * opened: "When a turn creates or updates user-facing deliverable files
+ * (documents, spreadsheets, presentations, HTML pages, images…) you
+ * MUST list each deliverable… `[report.docx](/absolute/path/…)`". It
+ * sat 26,000 characters after the `## Artifacts` section, which says a
+ * report is a card. The founder asked for a report and got a `.docx`,
+ * twice, and I read that as the card path failing and falling back. It
+ * was not failing. This section was winning, because it came later and
+ * shouted.
+ *
+ * The link convention stays: it is what makes a file card. What goes is
+ * the instruction to treat making an Office document as the normal way
+ * to answer.
+ */
 const MANAGED_DELIVERABLE_LINKS_PROMPT = [
-  '## Deliverable File Links',
+  '## Files You Made',
   '',
-  'When a turn creates or updates user-facing deliverable files (documents, spreadsheets,',
-  'presentations, HTML pages, images, audio, video, and similar outputs), you MUST list each',
-  'deliverable at the end of the final reply as a Markdown link with an absolute path:',
+  'A report, a deck, a plan or a summary is a card in the conversation, not a file on disk.',
+  'Write it as an artifact block and the person can read it, open it full size and save it',
+  'themselves. Do not reach for a document generator, a script or a shell command to produce',
+  'one, and never make a `.docx`, `.xlsx` or `.pptx` unless the person asked for that file in',
+  'those words, or asked for something they plainly need to send on to somebody else.',
   '',
-  '  `[report.docx](/absolute/path/to/report.docx)`',
+  'When a turn really does leave a file on disk, link it at the end of the reply with an',
+  'absolute path, so the app can draw it as a file card:',
+  '',
+  '  `[notes.pdf](/absolute/path/to/notes.pdf)`',
   '',
   '- Both `[name](/absolute/path)` and `[name](file:///absolute/path)` are accepted.',
-  '- This also applies when files are produced indirectly, e.g. by a Python/Node script or a',
-  '  shell command you ran. Always link the final output files.',
+  '- This also applies when a file is produced indirectly, by a script or a command you ran.',
   `- Keep intermediate files (helper scripts, scratch data, drafts) inside the \`${COWORK_TEMP_DIR_NAME}/\``,
   '  directory under the session working directory, and do not link them in the final reply.',
   `- The user can clean up \`${COWORK_TEMP_DIR_NAME}/\` at any time;`,
