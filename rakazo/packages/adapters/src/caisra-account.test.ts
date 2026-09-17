@@ -52,6 +52,8 @@ describe("Caisra account", () => {
         state: "state-1",
       });
       const url = new URL(href);
+      // The /desktop prefix is part of the base, not something a caller adds.
+      // Every route of this protocol hangs off it; without it the server 404s.
       expect(url.origin).toBe("https://api.claidor.com");
       expect(url.pathname).toBe("/desktop/login");
       expect(url.searchParams.get("redirect_uri")).toBe("http://127.0.0.1:53127/auth/callback");
@@ -64,14 +66,29 @@ describe("Caisra account", () => {
       ).toThrow(/loopback callback or its caisra:\/\/ deep link/);
     });
 
-    it("honours a staging account URL", () => {
-      process.env.CAISRA_ACCOUNT_URL = "https://staging.claidor.com";
-      expect(caisraAccountUrl()).toBe("https://staging.claidor.com");
+    it("honours a staging base, keeping whatever prefix it carries", () => {
+      // The override supplies the whole base including its prefix, so a
+      // deployment can move the protocol without every caller learning a path.
+      process.env.CAISRA_ACCOUNT_URL = "https://staging.claidor.com/desktop/";
+      expect(caisraAccountUrl()).toBe("https://staging.claidor.com/desktop");
       expect(
         caisraSignInUrl({ redirectUri: "caisra://auth/callback", state: "s" }).startsWith(
           "https://staging.claidor.com/desktop/login",
         ),
       ).toBe(true);
+    });
+
+    it("posts the exchange under the same prefix as sign-in", async () => {
+      const urls: string[] = [];
+      const capture = (async (url: string) => {
+        urls.push(String(url));
+        return new Response(JSON.stringify(SESSION), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }) as unknown as typeof globalThis.fetch;
+      await exchangeCaisraAuthCode("code-1", { fetch: capture });
+      expect(urls[0]).toBe("https://api.claidor.com/desktop/api/auth/exchange");
     });
 
     it("refuses an account URL that is not absolute HTTP(S) or carries credentials", () => {

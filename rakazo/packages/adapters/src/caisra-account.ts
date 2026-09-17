@@ -26,8 +26,16 @@
  * third shape, which is a change on the Caisra side and not here.
  */
 
-/** The account API. Overridable so a deployment can point at a staging server. */
-const DEFAULT_ACCOUNT_URL = "https://api.claidor.com";
+/**
+ * The account API base, path included.
+ *
+ * It is an origin plus `/desktop`, not a bare origin, because every route of
+ * this protocol hangs off that prefix — sign-in, token exchange, and the model
+ * proxy alike. The value matches `SERVER_API_BASE_URL` in the desktop client,
+ * which is the one that demonstrably works against the live server. Returning
+ * only the origin here would drop the prefix and answer 404 on the first call.
+ */
+const DEFAULT_ACCOUNT_URL = "https://api.claidor.com/desktop";
 
 export function caisraAccountUrl(): string {
   const value = process.env.CAISRA_ACCOUNT_URL?.trim() || DEFAULT_ACCOUNT_URL;
@@ -43,7 +51,8 @@ export function caisraAccountUrl(): string {
   if (url.username || url.password) {
     throw new Error("CAISRA_ACCOUNT_URL must not contain credentials");
   }
-  return url.origin;
+  // Keep the path, drop a trailing slash: callers append their own leading one.
+  return `${url.origin}${url.pathname.replace(/\/+$/, "")}`;
 }
 
 /**
@@ -74,7 +83,7 @@ export function caisraSignInUrl(input: { redirectUri: string; state: string }): 
       "Caisra returns an auth code only to the app's loopback callback or its caisra:// deep link",
     );
   }
-  const url = new URL("/desktop/login", caisraAccountUrl());
+  const url = new URL(`${caisraAccountUrl()}/login`);
   url.searchParams.set("redirect_uri", input.redirectUri);
   url.searchParams.set("state", input.state);
   url.searchParams.set("source", "rakazo");
@@ -122,7 +131,7 @@ async function post(
   opts?: { fetch?: typeof globalThis.fetch; signal?: AbortSignal },
 ): Promise<unknown> {
   const doFetch = opts?.fetch ?? globalThis.fetch;
-  const response = await doFetch(new URL(path, caisraAccountUrl()).href, {
+  const response = await doFetch(`${caisraAccountUrl()}${path}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
@@ -146,7 +155,7 @@ export async function exchangeCaisraAuthCode(
 ): Promise<CaisraSession> {
   const code = authCode.trim();
   if (!code) throw new Error("Caisra returned no auth code");
-  return readSession(await post("/desktop/api/auth/exchange", { authCode: code }, opts));
+  return readSession(await post("/api/auth/exchange", { authCode: code }, opts));
 }
 
 /** Swap an expiring access token for a fresh pair. */
@@ -156,7 +165,7 @@ export async function refreshCaisraSession(
 ): Promise<CaisraSession> {
   const token = refreshToken.trim();
   if (!token) throw new Error("Caisra returned no account token");
-  return readSession(await post("/desktop/api/auth/refresh", { refreshToken: token }, opts));
+  return readSession(await post("/api/auth/refresh", { refreshToken: token }, opts));
 }
 
 /**

@@ -55,7 +55,7 @@ export function caisraVisionModelIds(): ReadonlySet<string> {
   return declaredVisionModelIds(CAISRA_VISION_MODELS_ENV);
 }
 
-const DEFAULT_BASE_URL = "https://api.claidor.com/api/proxy/v1";
+const DEFAULT_BASE_URL = "https://api.claidor.com/desktop/api/proxy/v1";
 const DEFAULT_CONTEXT_WINDOW = 200_000;
 const DEFAULT_MAX_TOKENS = 32_000;
 

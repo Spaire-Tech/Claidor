@@ -47,7 +47,7 @@ describe("Caisra model provider", () => {
     setEnv("CAISRA_MODELS", "claude-opus-5, gpt-5.6-luna");
     const models = registerCaisraProvider(builtinModels());
     const opus = models.getModel(CAISRA_PROVIDER_ID, "claude-opus-5");
-    expect(opus?.baseUrl).toBe("https://api.claidor.com/api/proxy/v1");
+    expect(opus?.baseUrl).toBe("https://api.claidor.com/desktop/api/proxy/v1");
     expect(models.getModel(CAISRA_PROVIDER_ID, "gpt-5.6-luna")).toBeDefined();
   });
 
@@ -132,6 +132,6 @@ describe("Caisra model provider", () => {
       expires: Date.now() + 60_000,
     });
     expect(auth?.apiKey).toBe("access-1");
-    expect(auth?.baseUrl).toBe("https://api.claidor.com/api/proxy/v1");
+    expect(auth?.baseUrl).toBe("https://api.claidor.com/desktop/api/proxy/v1");
   });
 });
