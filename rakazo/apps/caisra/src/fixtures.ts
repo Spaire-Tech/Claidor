@@ -84,37 +84,34 @@ export const bots: FixtureBot[] = [yodo, comms, expenses, frontDesk];
  * it to draw the screen honestly, including one entry with no mark at all so
  * the monogram fallback is on screen rather than assumed.
  */
-export const LOGO: Record<string, string> = {
-  gmail: "https://cdn.simpleicons.org/gmail/EA4335",
-  "google-calendar": "https://cdn.simpleicons.org/googlecalendar/4285F4",
-  "google-drive": "https://cdn.simpleicons.org/googledrive/4285F4",
-  notion: "https://cdn.simpleicons.org/notion/000000",
-  xero: "https://cdn.simpleicons.org/xero/13B5EA",
-  github: "https://cdn.simpleicons.org/github/181717",
-  linear: "https://cdn.simpleicons.org/linear/5E6AD2",
-  stripe: "https://cdn.simpleicons.org/stripe/635BFF",
-  asana: "https://cdn.simpleicons.org/asana/F06A6A",
-  dropbox: "https://cdn.simpleicons.org/dropbox/0061FF",
-  hubspot: "https://cdn.simpleicons.org/hubspot/FF7A59",
-};
-
-function app(
-  slug: string,
-  name: string,
-  connected = false,
-  logo: string | null = LOGO[slug] ?? null,
-): ConnectionCatalogItem {
-  return { connectorId: slug, slug, name, logo, connected, noAuth: false };
+/**
+ * The connector catalogue, in the fork's own shape and with its own honesty
+ * about marks.
+ *
+ * `ConnectionCatalogItem` is theirs and so is everything that reads it. The
+ * mark is `logo`, and it is an address the **provider** serves — Composio puts
+ * `toolkit.logo` there (`composio-connector.ts`), Pipedream puts
+ * `app.img_src` (`pipedream-connector.ts`). There is no Caisra logo service
+ * and no third-party icon CDN in this product.
+ *
+ * So these carry `null`, exactly as every catalogue fixture in the fork's own
+ * tests does, and every tile draws its monogram. That is what the screen looks
+ * like before a provider is connected, which is the state worth photographing
+ * honestly. With Composio or Pipedream configured the same tiles draw the
+ * marks those services return, and nothing in the screen changes to allow it.
+ *
+ * An earlier version of this file invented `cdn.simpleicons.org` addresses for
+ * a prettier screenshot. That was a picture of a product we do not ship.
+ */
+function app(slug: string, name: string, connected = false): ConnectionCatalogItem {
+  return { connectorId: slug, slug, name, logo: null, connected, noAuth: false };
 }
 
 export const catalog: ConnectionCatalogItem[] = [
   app("gmail", "Gmail", true),
   app("google-calendar", "Google Calendar", true),
   app("google-drive", "Google Drive"),
-  // Slack is not in the icon set used here, so this entry carries no mark:
-  // one of the five featured apps drawing its monogram, which is the case
-  // that matters most and would otherwise never be on screen.
-  app("slack", "Slack", true, null),
+  app("slack", "Slack", true),
   app("notion", "Notion"),
   app("github", "GitHub"),
   app("linear", "Linear"),
@@ -123,9 +120,7 @@ export const catalog: ConnectionCatalogItem[] = [
   app("asana", "Asana"),
   app("dropbox", "Dropbox"),
   app("hubspot", "HubSpot"),
-  // No mark in the catalogue: the tile draws the initial rather than leaving a
-  // hole or fetching a favicon from a third party.
-  app("revolut-business", "Revolut Business", false, null),
+  app("revolut-business", "Revolut Business"),
 ];
 
 export const morning: FixtureMessage[] = [
@@ -247,7 +242,7 @@ export const startingUp: FixtureMessage[] = [
         provider: "gmail",
         name: "Gmail",
         description: "Receipts arrive here",
-        logo: LOGO.gmail ?? null,
+        logo: null,
         status: "pending",
       },
       {
@@ -255,7 +250,7 @@ export const startingUp: FixtureMessage[] = [
         provider: "googledrive",
         name: "Google Drive",
         description: "Where the reports land",
-        logo: LOGO["google-drive"] ?? null,
+        logo: null,
         status: "connected",
       },
     ],
@@ -413,7 +408,7 @@ export const everythingElse: FixtureMessage[] = [
         provider: "xero",
         name: "Xero",
         description: "Where the ledger lives",
-        logo: LOGO.xero ?? null,
+        logo: null,
         status: "pending",
       },
       {

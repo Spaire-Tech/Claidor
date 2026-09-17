@@ -65,15 +65,14 @@ const run = promisify(execFile);
 const CACHE = new URL("../.picsum/", import.meta.url).pathname;
 await mkdir(CACHE, { recursive: true });
 const cached = new Map();
-await context.route(/https:\/\/(picsum\.photos|cdn\.simpleicons\.org)\//, async (route) => {
+await context.route("https://picsum.photos/**", async (route) => {
   const url = route.request().url();
   let body = cached.get(url);
   if (!body) {
     // A fetch that fails leaves the route unfulfilled with a 404, which is
     // what the browser would have got anyway; the page falls back to its
     // monogram rather than showing a broken glyph.
-    const svg = url.includes("simpleicons");
-    const file = join(CACHE, `${url.replace(/[^a-z0-9]+/gi, "-")}${svg ? ".svg" : ".jpg"}`);
+    const file = join(CACHE, `${url.replace(/[^a-z0-9]+/gi, "-")}.jpg`);
     try {
       await readFile(file);
     } catch {
@@ -89,11 +88,7 @@ await context.route(/https:\/\/(picsum\.photos|cdn\.simpleicons\.org)\//, async 
     }
     cached.set(url, body);
   }
-  await route.fulfill({
-    status: 200,
-    contentType: url.includes("simpleicons") ? "image/svg+xml" : "image/jpeg",
-    body,
-  });
+  await route.fulfill({ status: 200, contentType: "image/jpeg", body });
 });
 const SCREENS = [
   "morning",

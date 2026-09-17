@@ -4,9 +4,15 @@
  * the dock and the window.
  */
 
+/*
+ * The dock is a pill, not a rail: it hugs its five buttons and sits centred
+ * beside the window. Their frame is `alignItems: center`, and an earlier pass
+ * here said `stretch`, which drew it as a bar down the whole side.
+ */
 .frame {
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  justify-content: center;
   gap: var(--frame-gap);
   padding: var(--frame-pad-y) var(--frame-pad-x);
   min-height: 100vh;
