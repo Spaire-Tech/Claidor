@@ -120,6 +120,9 @@ const SCREENS = [
   "create-avatar",
   "computer",
   "signin",
+  "onboarding",
+  "onboarding-roles",
+  "onboarding-tasks",
 ];
 for (const screen of SCREENS) {
   const page = await context.newPage();
@@ -137,6 +140,22 @@ for (const screen of SCREENS) {
       const thread = document.querySelector(".thread");
       if (thread) thread.scrollTop = thread.scrollHeight;
     });
+  }
+  if (screen.startsWith("onboarding")) {
+    // Skip lands the current phase at once, which is the canvas's own control
+    // and the only honest way to photograph a stream.
+    await page
+      .getByText("Skip")
+      .click({ timeout: 10_000 })
+      .catch(() => undefined);
+    if (screen !== "onboarding") {
+      await page.getByText("Founder / Business Owner").click({ timeout: 10_000 });
+      await page
+        .getByText("Skip")
+        .click()
+        .catch(() => undefined);
+    }
+    await page.waitForTimeout(1200);
   }
   if (screen.startsWith("create-")) {
     await page.getByText("Create new agent").click();

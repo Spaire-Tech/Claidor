@@ -99,6 +99,12 @@ importers:
       '@openuidev/thesys':
         specifier: 0.14.0
         version: 0.14.0(c5yph7iyo4irgzi5excpmtci5e)
+      '@orpc/client':
+        specifier: 1.15.0
+        version: 1.15.0(@opentelemetry/api@1.9.1)
+      '@orpc/contract':
+        specifier: 1.15.0
+        version: 1.15.0(@opentelemetry/api@1.9.1)
       '@rakazo/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts

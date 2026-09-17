@@ -20,6 +20,7 @@ import {
   startingUp,
   yodo,
 } from "./fixtures.js";
+import { Onboarding } from "./Onboarding.js";
 import { Routines } from "./Routines.js";
 import { Settings } from "./Settings.js";
 import { Screen, Shell } from "./Shell.js";
@@ -91,6 +92,10 @@ function App() {
   // The door. Before any of this there is one screen, and it is the whole
   // window rather than something inside it.
   if (asked === "signin") return <SignIn />;
+  // Yodo's first step. Served from a browser there is no Mac to reach, so no
+  // bridge is passed and the three task cards say "Not yet" — the design's own
+  // answer for a task this computer cannot do.
+  if (asked.startsWith("onboarding")) return <Onboarding userName="Bass" />;
 
   // One value, not a stack. Two screens cannot be open at once because there
   // is nowhere to put the second one.
