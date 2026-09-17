@@ -1,0 +1,58 @@
+/**
+ * Caisra's design, as custom properties.
+ *
+ * Every value is copied from `desktop/src/renderer/design/tokens.ts`, which was
+ * counted out of the founder's canvas rather than invented. Nothing here is a
+ * new decision; where a value looks arbitrary it is because the canvas says so.
+ */
+
+@font-face {
+  font-family: "Switzer";
+  src: url("/fonts/Switzer-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Switzer";
+  src: url("/fonts/Switzer-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+
+:root {
+  --ink: #0d0d0d;
+  --muted: #676767;
+  --faint: #8e8e93;
+  --ground: #eff1f5;
+  --window: #f6f6f6;
+  --paper: #ffffff;
+  --fill: #f2f2f2;
+  --divider: #efefef;
+  --accent: #0071e3;
+  --success-text: #248a3d;
+  --warning: #e8a300;
+
+  --line-hairline: rgba(0, 0, 0, 0.055);
+  --line-field: rgba(0, 0, 0, 0.06);
+  --line-card: rgba(0, 0, 0, 0.08);
+
+  --shadow-flat: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-window: 0 40px 110px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.1);
+
+  --text-caption: 12.5px;
+  --text-body: 13.5px;
+  --text-message: 14px;
+  --text-emphasis: 14.5px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "Switzer", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
