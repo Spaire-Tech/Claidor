@@ -48,18 +48,25 @@ code in it is gone. It is the opposite: it is a finished, tested parts bin.
 | **The artifacts prompt** | `main/libs/artifactsPrompt.ts` | 50 | Works |
 | **The whole design** | `src/renderer/design/` | 8,334 tsx | The source of truth for every screen |
 
-## Already ported into `rakazo/`
+## Was ported into `rakazo/`, and is now archived
 
-| What | Where |
+**Archived 18 September 2026.** None of the rows below are in the working tree.
+`rakazo/` is the complete fork and nothing else. They are in this branch's
+history at commit `4118ac0f` — `git show 4118ac0f:<path>` reads any of them.
+
+| What | Where, at `4118ac0f` |
 |---|---|
-| The design tokens | `apps/caisra/src/tokens.css`, held against `desktop`'s `tokens.ts` by `design.test.ts` |
-| Yodo's onboarding script, verbatim, with the founder's 12 tests | `packages/core/src/caisra-onboarding.ts` |
-| The onboarding screen, clouds and clock | `apps/caisra/src/Onboarding.tsx`, `useOnboarding.ts`, `ambientClouds.ts` |
-| Message blocks to rows | `packages/core/src/caisra-thread.ts` |
-| Cards and artifacts (OpenUI) | `packages/core/src/caisra-cards.ts` |
-| Layout, files, routines, settings, compose | `packages/core/src/caisra-*.ts` |
-| The live thread reducer | `packages/core/src/caisra-live.ts` |
-| Every screen | `apps/caisra/src/` |
+| The design tokens | `rakazo/apps/caisra/src/tokens.css`, held against `desktop`'s `tokens.ts` by `design.test.ts` |
+| Yodo's onboarding script, verbatim, with the founder's 12 tests | `rakazo/packages/core/src/caisra-onboarding.ts` |
+| The onboarding screen, clouds and clock | `rakazo/apps/caisra/src/Onboarding.tsx`, `useOnboarding.ts`, `ambientClouds.ts` |
+| Message blocks to rows | `rakazo/packages/core/src/caisra-thread.ts` |
+| Cards and artifacts (OpenUI) | `rakazo/packages/core/src/caisra-cards.ts` |
+| Layout, files, routines, settings, compose | `rakazo/packages/core/src/caisra-*.ts` |
+| The live thread reducer | `rakazo/packages/core/src/caisra-live.ts` |
+| Every screen | `rakazo/apps/caisra/src/` |
+
+The parts bin above it is untouched: `desktop/src` is still there, still
+frozen, still the place to reach for.
 
 ## The server, live right now
 
@@ -74,12 +81,16 @@ See the root `CLAUDE.md` for the detail.
 
 Stated only because each was searched for and not found:
 
+Written 18 September, before the archive. All three are now moot in the same
+way: there is no Caisra app in the tree to build them into.
+
 - **A Caisra desktop shell.** `rakazo/apps/desktop` is the fork's Electron app
   and has `main.ts`, `ipcMain` and a preload, but nothing of ours is registered
-  on it. This is the one thing standing between the onboarding Mac tasks and
+  on it. This was the one thing standing between the onboarding Mac tasks and
   working again: move the three files in, register the channels, pass the
   bridge. A port, not a build.
-- **Caisra's screens on live data.** `apps/caisra/src/live/` exists and is
-  typed against their contract; `main.tsx` still renders fixtures.
+- **Caisra's screens on live data.** At `4118ac0f`,
+  `rakazo/apps/caisra/src/live/` existed and was typed against their contract;
+  `main.tsx` still rendered fixtures. Nothing ever ran against a live server.
 - **Voice output in Caisra.** The server serves text-to-speech at
-  `/api/proxy/v1/audio/speech`; nothing in `apps/caisra` calls it.
+  `/api/proxy/v1/audio/speech`; nothing of ours ever called it.

@@ -95,19 +95,6 @@ export const MessageBlock = z.discriminatedUnion("kind", [
     lines: z.array(z.object({ k: z.string(), v: z.string() })),
   }),
   z.object({
-    /**
-     * A rich answer card: an openui-lang program the agent wrote, rendered by
-     * OpenUI's own chat library. `card` above is key/value lines and cannot
-     * carry one, which is why this is its own kind rather than a field.
-     *
-     * The program is data, never code: openui-lang has no escape into
-     * JavaScript, and the renderer resolves component names against a fixed
-     * library. A name the library does not hold draws nothing.
-     */
-    kind: z.literal("answer_card"),
-    program: z.string(),
-  }),
-  z.object({
     kind: z.literal("ask"),
     text: z.string(),
     approvalEffectId: Id.optional(),

@@ -15,7 +15,6 @@ import {
   ThinkingLevelSchema,
 } from "@rakazo/contracts";
 import { createManualAnthropicOAuthLogin } from "./pi-anthropic-oauth.js";
-import { CAISRA_PROVIDER_ID, registerCaisraProvider } from "./pi-caisra-provider.js";
 
 export const CHATGPT_OAUTH_PROVIDER = "openai-codex";
 export const COPILOT_OAUTH_PROVIDER = "github-copilot";
@@ -50,15 +49,6 @@ export const SUBSCRIPTION_SIGN_IN_PROVIDERS: Record<
     loginLabel: "Sign in with Claude Pro/Max",
     hint: "Claude Pro/Max / key",
     // Button + "Or paste an API key" already explain the choices; no extra paragraph.
-    billing: "",
-  },
-  // The one entry here that is not a person's own model subscription: a Caisra
-  // account is billed by Caisra, and its proxy holds the provider keys, so
-  // there is no key to paste and nothing for the person to choose between.
-  [CAISRA_PROVIDER_ID]: {
-    mode: "auth-url",
-    loginLabel: "Sign in to Caisra",
-    hint: "Caisra account",
     billing: "",
   },
 };
@@ -235,16 +225,8 @@ export function loadProviderOAuth(providerId: string): OAuthAuth | undefined {
 
 let cachedProviderCatalog: ReturnType<typeof builtinModels> | undefined;
 
-/**
- * Providers that can be signed in to.
- *
- * Built-in providers plus the ones registered from configuration. A provider
- * missing here has no OAuth handler to find, so its sign-in fails with "no
- * OAuth handler" however complete the provider itself is — which is what
- * happens if this list and the runtime's model catalog drift apart.
- */
 function providerCatalog() {
-  cachedProviderCatalog ??= registerCaisraProvider(builtinModels());
+  cachedProviderCatalog ??= builtinModels();
   return cachedProviderCatalog;
 }
 
@@ -307,12 +289,9 @@ export class PiOAuthLogins {
     signal?: AbortSignal;
   }): Promise<PiOAuthBegin> {
     if (!SUBSCRIPTION_SIGN_IN_PROVIDERS[input.provider]) {
-      // Named from the table rather than written out, so adding a provider
-      // cannot leave this sentence claiming it is unsupported.
-      const supported = Object.values(SUBSCRIPTION_SIGN_IN_PROVIDERS)
-        .map((entry) => entry.hint)
-        .join(", ");
-      throw new Error(`In-app sign-in is only available for: ${supported}.`);
+      throw new Error(
+        "In-app subscription sign-in is only available for ChatGPT Plus/Pro, Claude Pro/Max, GitHub Copilot, and SuperGrok.",
+      );
     }
     if (input.signal?.aborted) {
       throw input.signal.reason ?? new Error("Sign-in cancelled.");
@@ -613,9 +592,7 @@ function defaultLogin(
   if (providerId === ANTHROPIC_OAUTH_PROVIDER) {
     return createManualAnthropicOAuthLogin()(interaction);
   }
-  // The configured catalog, not the built-in one: a provider registered
-  // from configuration has a login here or the sign-in cannot complete.
-  return providerCatalog().login(providerId, type, interaction);
+  return builtinModels().login(providerId, type, interaction);
 }
 
 function deferred<T>() {
