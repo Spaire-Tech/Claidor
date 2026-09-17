@@ -6,6 +6,7 @@ import {
   caisraProvider,
   registerCaisraProvider,
 } from "./pi-caisra-provider.js";
+import { SUBSCRIPTION_SIGN_IN_PROVIDERS } from "./pi-oauth.js";
 
 const ENV_KEYS = [
   "CAISRA_MODELS",
@@ -121,6 +122,20 @@ describe("Caisra model provider", () => {
     // Their other sign-ins spend a person's own ChatGPT or Claude plan. A
     // Caisra account is billed by us, so it is not a subscription sign-in.
     expect(auth?.oauth?.isSubscription).toBe(false);
+  });
+
+  it("is reachable by the sign-in machinery, which keeps its own catalog", () => {
+    // The sign-in path resolves a handler from its own catalog, separate from
+    // the one the runtime uses for models. A provider present in one and
+    // absent from the other looks complete and still fails with "no OAuth
+    // handler", so this pins both halves rather than the provider alone.
+    setEnv("CAISRA_MODELS", "claude-opus-5");
+    const signIn = SUBSCRIPTION_SIGN_IN_PROVIDERS[CAISRA_PROVIDER_ID];
+    expect(signIn?.mode).toBe("auth-url");
+    expect(signIn?.loginLabel).toBe("Sign in to Caisra");
+    const found = registerCaisraProvider(builtinModels()).getProvider(CAISRA_PROVIDER_ID)?.auth
+      .oauth;
+    expect(typeof found?.login).toBe("function");
   });
 
   it("sends the account's access token and the proxy's base URL to a request", async () => {

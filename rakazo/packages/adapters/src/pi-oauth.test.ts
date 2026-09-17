@@ -119,11 +119,14 @@ describe("model secrets", () => {
 });
 
 describe("PiOAuthLogins", () => {
-  it("rejects providers without a subscription sign-in flow", async () => {
+  it("rejects a provider with no in-app sign-in flow, naming the ones there are", async () => {
     const logins = new PiOAuthLogins();
-    await expect(
-      logins.begin({ userId: "u", spaceId: "w", provider: "openrouter" }),
-    ).rejects.toThrow(/ChatGPT Plus\/Pro, Claude Pro\/Max, GitHub Copilot, and SuperGrok/);
+    const rejection = logins.begin({ userId: "u", spaceId: "w", provider: "openrouter" });
+    await expect(rejection).rejects.toThrow(/In-app sign-in is only available for:/);
+    // The list comes from the table, so adding a provider cannot leave this
+    // sentence calling it unsupported. Asserting one entry keeps that honest
+    // without pinning the whole string to today's set.
+    await expect(rejection).rejects.toThrow(/Claude Pro\/Max/);
   });
 
   it("runs the anthropic auth-url flow via submitted code", async () => {
