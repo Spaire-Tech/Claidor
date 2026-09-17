@@ -3040,8 +3040,12 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd).toContain('the one line and the first tool call go in the same response, always');
     expect(agentsMd).toContain('Once they have said go ahead');
     expect(agentsMd).toContain('do not say you cannot draw a confirmation card');
-    expect(agentsMd).toContain('### An acknowledgement is not the answer');
-    expect(agentsMd).toContain('Never end a turn having only promised.');
+    // Said once now, under "Answer before you work", where the turn is
+    // explained. It used to be said four times across two sections, and
+    // repetition in a 74,000-character brief dilutes rather than
+    // emphasises (18 September audit).
+    expect(agentsMd).not.toContain('### An acknowledgement is not the answer');
+    expect(agentsMd).toContain('do not apologise and end another one');
     expect(agentsMd).toContain('Do not narrate commands.');
     expect(agentsMd).toContain('end the turn with no message at all');
     expect(agentsMd).toContain('Say you do not know.');
