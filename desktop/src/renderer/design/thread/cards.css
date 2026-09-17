@@ -189,8 +189,30 @@
  *
  * It is set in the thread's face and scale rather than theirs.
  */
+/*
+ * The block's opening line.
+ *
+ * Their header is two rows: a bold title over a grey line. The founder
+ * wanted the title gone and kept the line under it — 18 September, "i
+ * dont want the title. i have my reason. im okay with it starting with
+ * the sub title." So the title row is hidden and the block opens on the
+ * grey line, which is also why the brief tells the agent to put the
+ * useful sentence there and not in the title.
+ *
+ * Hidden rather than dropped from the program: `Header(title,
+ * subtitle?)` takes the title first and there is no way to write only
+ * the second line. The title still carries the answer's name for
+ * anything reading the program rather than the screen.
+ */
 .caisra-cards .openui-card > .openui-header {
   margin-bottom: 4px;
+}
+.caisra-cards .openui-card > .openui-header > .openui-header-top {
+  display: none;
+}
+.caisra-cards .openui-card > .openui-header > .openui-header-bottom {
+  font: 400 15px/1.5 var(--fsr-font-ui);
+  color: var(--fsr-muted);
 }
 
 /*
