@@ -47,8 +47,15 @@ const browser = await chromium.launch({
   executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
   args: ["--no-sandbox"],
 });
+/*
+ * A MacBook Air's logical size, which is what the founder actually opens the
+ * app on. It was 1060 x 860, and at that width `shellLayout` puts the computer
+ * panel over the conversation instead of beside it — correct behaviour, but a
+ * photograph of a window nobody has. Everything is shot at the real size now,
+ * so the screenshots show what a person sees.
+ */
 const context = await browser.newContext({
-  viewport: { width: 1060, height: 860 },
+  viewport: { width: 1440, height: 900 },
   deviceScaleFactor: 2,
 });
 
@@ -111,6 +118,8 @@ const SCREENS = [
   "create-agent",
   "create-voice",
   "create-avatar",
+  "computer",
+  "signin",
 ];
 for (const screen of SCREENS) {
   const page = await context.newPage();
@@ -135,8 +144,13 @@ for (const screen of SCREENS) {
     if (screen === "create-avatar") await page.getByText("Edit avatar").click();
   }
   await page.waitForTimeout(600);
-  const window = page.locator(".frame");
-  await window.screenshot({ path: join(SHOTS, `${screen}.png`) });
+  // Every screen but sign-in draws the dock and the window inside `.frame`.
+  // Sign-in is the whole ground with one card on it and has no frame, so it is
+  // photographed as the page.
+  const framed = await page.locator(".frame").count();
+  const shot = { path: join(SHOTS, `${screen}.png`) };
+  if (framed > 0) await page.locator(".frame").screenshot(shot);
+  else await page.screenshot(shot);
   console.log(`shot ${screen}`);
   await page.close();
 }

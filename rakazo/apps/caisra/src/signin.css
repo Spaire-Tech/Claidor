@@ -1,0 +1,54 @@
+/**
+ * The sign-in door, at the canvas's measurements: one 420px card on the ground,
+ * `40px 32px 32px` with 26 between its parts.
+ *
+ * The button is `.pill pill--primary` from compose.css, which is the same pill
+ * the canvas uses for every primary action. One button in the app, not two that
+ * drift apart.
+ */
+
+.signin {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+.signin__card {
+  width: 100%;
+  max-width: 420px;
+  padding: 40px 32px 32px;
+  border-radius: 24px;
+  background: var(--paper);
+  border: 1px solid var(--line-hairline);
+  box-shadow: var(--shadow-window);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+}
+.signin__words {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.signin__title {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: var(--track-screen-title);
+}
+.signin__sub {
+  font-size: var(--text-emphasis);
+  color: var(--muted);
+  text-wrap: pretty;
+}
+/* A failure is a sentence in the same grey as everything else. */
+.signin__error {
+  font-size: var(--text-small);
+  color: var(--muted);
+  text-align: center;
+  text-wrap: pretty;
+  max-width: 90%;
+}

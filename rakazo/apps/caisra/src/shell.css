@@ -65,6 +65,35 @@
 }
 
 /*
+ * The computer panel as a column: inset like the conversation pane, on the
+ * raised fill.
+ */
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  margin: 8px 8px 8px 0;
+  border-radius: var(--radius-pane);
+  overflow: hidden;
+  background: var(--fill-raised);
+}
+
+/* And as a cover, when there is no room for a column. Never refused: somebody
+   who asks for the computer wants to see the computer, and can see the
+   conversation again by closing it. */
+.cover {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--paper);
+}
+
+/*
  * A screen — Apps, Create, Settings — takes the whole window, the list of
  * agents included, and carries one control: back to the conversation. It is
  * laid over the window rather than swapped into the grid so the thread keeps

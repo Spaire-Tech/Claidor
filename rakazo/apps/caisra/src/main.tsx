@@ -4,6 +4,7 @@ import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Apps } from "./Apps.js";
 import { Compose } from "./Compose.js";
+import { Computer } from "./Computer.js";
 import {
   bots,
   cardScreens,
@@ -22,6 +23,7 @@ import {
 import { Routines } from "./Routines.js";
 import { Settings } from "./Settings.js";
 import { Screen, Shell } from "./Shell.js";
+import { SignIn } from "./SignIn.js";
 import { Thread, ThreadMode, type ThreadRow } from "./Thread.js";
 import "./tokens.css";
 
@@ -86,6 +88,10 @@ const account: SettingsInput = {
 };
 
 function App() {
+  // The door. Before any of this there is one screen, and it is the whole
+  // window rather than something inside it.
+  if (asked === "signin") return <SignIn />;
+
   // One value, not a stack. Two screens cannot be open at once because there
   // is nowhere to put the second one.
   const [screen, setScreen] = useState<Screen>(SCREEN_OF[asked] ?? Screen.Chat);
@@ -108,6 +114,27 @@ function App() {
       accountName="Bass"
       quota={{ planName: "Caisra", creditsLimit: 1000, creditsUsed: 740 }}
       {...(asked === "account" ? { initialAccountOpen: true } : {})}
+      // The panel's files are the conversation's own attachments, so the list
+      // and the messages cannot disagree.
+      {...(asked === "computer"
+        ? {
+            panel: (
+              <Computer
+                files={open.rows.flatMap((row) =>
+                  row.kind === "attachment"
+                    ? [
+                        {
+                          name: row.name,
+                          ...(row.size === undefined ? {} : { size: row.size }),
+                          ...(row.mimeType ? { mimeType: row.mimeType } : {}),
+                        },
+                      ]
+                    : [],
+                )}
+              />
+            ),
+          }
+        : {})}
       onGo={setScreen}
       // What an errand shows. The conversation below it is never taken down,
       // so pressing back lands where you left off rather than at the top.

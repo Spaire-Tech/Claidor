@@ -1,5 +1,5 @@
 import type { Quota } from "@rakazo/core";
-import { frameWindowWidth, SidebarMode, shellLayout } from "@rakazo/core";
+import { frameWindowWidth, PanelMode, SidebarMode, shellLayout } from "@rakazo/core";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { AccountMenu, supportMailto } from "./AccountMenu.js";
 import { Blob } from "./Blob.js";
@@ -108,6 +108,7 @@ export function Shell({
   quota,
   initialAccountOpen,
   errand,
+  panel,
   children,
 }: {
   bots: readonly FixtureBot[];
@@ -121,6 +122,16 @@ export function Shell({
   initialAccountOpen?: boolean;
   /** What a full-width screen shows. The conversation stays mounted under it. */
   errand?: ReactNode;
+  /**
+   * The computer panel, when it is open.
+   *
+   * Whether it gets a column beside the conversation or covers it is
+   * `shellLayout`'s business, not the caller's: the thread has a floor and
+   * never yields, so on a narrow window the panel covers rather than squeezing
+   * it. The button always works; what changes is whether the two sit side by
+   * side.
+   */
+  panel?: ReactNode;
   /** The conversation. Always rendered, whatever else is open over it. */
   children: ReactNode;
 }) {
@@ -134,7 +145,10 @@ export function Shell({
   // the display's: the frame around it is fixed, so the window is what gets
   // narrower. Below 900 the list becomes a rail of faces.
   const viewport = useViewportWidth();
-  const layout = useMemo(() => shellLayout(frameWindowWidth(viewport)), [viewport]);
+  const layout = useMemo(
+    () => shellLayout(frameWindowWidth(viewport), Boolean(panel)),
+    [viewport, panel],
+  );
 
   // Escape is the keyboard's back, and it goes where the bar goes.
   useEffect(() => {
@@ -185,12 +199,24 @@ export function Shell({
       />
       <div
         className="window"
-        style={{ gridTemplateColumns: `${layout.sidebarWidth}px minmax(0,1fr)` }}
+        style={{
+          gridTemplateColumns: [
+            `${layout.sidebarWidth}px`,
+            "minmax(0,1fr)",
+            ...(layout.panel === PanelMode.Split ? [`${layout.panelWidth}px`] : []),
+          ].join(" "),
+        }}
       >
         <Conversations bots={bots} openId={openId} rail={layout.sidebar === SidebarMode.Rail} />
         {/* The conversation is always here, under whatever is open. It is the
             main screen; an errand is something laid on top of it for a moment. */}
-        <section className="pane">{children}</section>
+        <section className="pane">
+          {children}
+          {/* Over the conversation, and only when the window is too narrow to
+              give the panel a column of its own. */}
+          {layout.panel === PanelMode.Cover ? <div className="cover">{panel}</div> : null}
+        </section>
+        {layout.panel === PanelMode.Split ? <aside className="panel">{panel}</aside> : null}
 
         {/*
           One screen at a time, over the whole window, with one way back. Laid
