@@ -52,7 +52,8 @@ export function Dock({
   accountName,
   onGo,
 }: {
-  active: DockItem;
+  /** Which one is lit, if any. Settings lights none of them. */
+  active?: DockItem;
   accountName: string;
   onGo: (item: DockItem) => void;
 }) {

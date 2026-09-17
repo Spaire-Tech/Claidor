@@ -76,27 +76,36 @@ function App() {
           : { bot: yodo, rows: rowsOf(morning) };
 
   return (
-    <Shell bots={bots} openId={open.bot.id} screen={screen} accountName="Bass" onGo={setScreen}>
-      {screen === Screen.Routines ? (
-        <Routines
-          agentId={yodo.id}
-          agentName={yodo.name}
-          routines={routines}
-          openId={asked === "routines-menu" ? "rt_3" : "rt_1"}
-          runs={asked === "routines-menu" ? [] : runs}
-          menuOpen={asked === "routines-menu"}
-          slackAvailable
-        />
-      ) : screen === Screen.Apps ? (
-        <Apps catalog={catalog} />
-      ) : (
-        <Thread
-          title={open.bot.name}
-          seed={open.bot.id}
-          rows={open.rows}
-          mode={asked === "voice" ? ThreadMode.Voice : ThreadMode.Text}
-        />
-      )}
+    <Shell
+      bots={bots}
+      openId={open.bot.id}
+      screen={screen}
+      accountName="Bass"
+      onGo={setScreen}
+      // What an errand shows. The conversation below it is never taken down,
+      // so pressing back lands where you left off rather than at the top.
+      errand={
+        screen === Screen.Routines ? (
+          <Routines
+            agentId={yodo.id}
+            agentName={yodo.name}
+            routines={routines}
+            openId={asked === "routines-menu" ? "rt_3" : "rt_1"}
+            runs={asked === "routines-menu" ? [] : runs}
+            menuOpen={asked === "routines-menu"}
+            slackAvailable
+          />
+        ) : screen === Screen.Apps ? (
+          <Apps catalog={catalog} />
+        ) : null
+      }
+    >
+      <Thread
+        title={open.bot.name}
+        seed={open.bot.id}
+        rows={open.rows}
+        mode={asked === "voice" ? ThreadMode.Voice : ThreadMode.Text}
+      />
     </Shell>
   );
 }

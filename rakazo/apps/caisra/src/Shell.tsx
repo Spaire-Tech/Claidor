@@ -46,17 +46,32 @@ export const Screen = {
 } as const;
 export type Screen = (typeof Screen)[keyof typeof Screen];
 
-/** Which dock button is lit for a screen. Settings belongs to the person. */
-const DOCK_OF: Record<Screen, DockItem> = {
+/**
+ * Which dock button is lit for a screen.
+ *
+ * Settings lights nothing, as the canvas has it: it is reached from the account
+ * menu, and the account button is lit by that menu being open rather than by
+ * where you ended up. An earlier pass here lit "you" for Settings, which was
+ * mine and not the design's.
+ */
+const DOCK_OF: Partial<Record<Screen, DockItem>> = {
   chat: "home",
   routines: "routines",
   create: "create",
   apps: "apps",
-  settings: "you",
 };
 
-/** A screen that takes the whole window, and what its back bar says it is. */
+/**
+ * A screen that takes the whole window, and what its back bar says it is.
+ *
+ * Every dock destination that is not the conversation is here, Routines
+ * included: *"have the + open in full without the chat left side bar … same for
+ * apps."* An earlier pass kept Routines in the pane beside the list, on the
+ * reasoning that a routine belongs to an agent. That was taste against a stated
+ * rule, and it also meant opening Routines unmounted the thread.
+ */
 const FULL_WIDTH: Partial<Record<Screen, string>> = {
+  routines: "Routines",
   create: "New message",
   apps: "Apps",
   settings: "Settings",
@@ -88,6 +103,7 @@ export function Shell({
   screen,
   accountName,
   onGo,
+  errand,
   children,
 }: {
   bots: readonly FixtureBot[];
@@ -95,6 +111,9 @@ export function Shell({
   screen: Screen;
   accountName: string;
   onGo: (screen: Screen) => void;
+  /** What a full-width screen shows. The conversation stays mounted under it. */
+  errand?: ReactNode;
+  /** The conversation. Always rendered, whatever else is open over it. */
   children: ReactNode;
 }) {
   const full = FULL_WIDTH[screen];
@@ -126,20 +145,23 @@ export function Shell({
         style={{ gridTemplateColumns: `${layout.sidebarWidth}px minmax(0,1fr)` }}
       >
         <Conversations bots={bots} openId={openId} rail={layout.sidebar === SidebarMode.Rail} />
-        {/* Routines keeps the list beside it: it is a thing an agent has, so
-            you pick the agent the way you always do. Create, Apps and Settings
-            are errands and take the window. */}
-        <section className="pane">{full ? null : children}</section>
+        {/* The conversation is always here, under whatever is open. It is the
+            main screen; an errand is something laid on top of it for a moment. */}
+        <section className="pane">{children}</section>
 
         {/*
-          One screen at a time, over the whole window, with one way back. It is
-          laid over rather than swapped into the grid so the conversation keeps
-          its place while an errand is open.
+          One screen at a time, over the whole window, with one way back. Laid
+          over rather than swapped into the grid, so the thread it covers keeps
+          its scroll position and comes back where you left it.
+
+          An earlier pass wrote that sentence in this comment while rendering
+          nothing in the pane, which made it false: the thread unmounted every
+          time an errand opened and came back at the top.
         */}
         {full ? (
           <div className="screen">
             <BackBar title={full} onBack={() => onGo(Screen.Chat)} />
-            <div className="screen__body">{children}</div>
+            <div className="screen__body">{errand}</div>
           </div>
         ) : null}
       </div>
