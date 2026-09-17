@@ -4,6 +4,7 @@ import {
   AskInputBehavior,
   type AskInputRequest,
 } from '../../../shared/askInput/constants';
+import { cardsForAgent } from '../../../shared/thread/cardAudience';
 import type { SecretHandlers } from './ThreadItemView';
 import { type SecretItem, ThreadItemKind } from './types';
 
@@ -20,8 +21,16 @@ import { type SecretItem, ThreadItemKind } from './types';
  * Every card is answered exactly once. A second press does nothing: the
  * card comes out of the list before the answer is sent, so a double
  * click cannot send a password twice.
+ *
+ * **And it belongs to one conversation**: the agent whose turn asked,
+ * which main stamps on the request (`shared/thread/cardAudience.ts`).
+ * Every pending card is held here whichever agent it belongs to — a card
+ * must still be there when the person comes back to that thread — and
+ * only the open agent's are handed out. Until 18 September every card
+ * was handed out in every thread, which is the founder's *"should be per
+ * agents"*.
  */
-export function useAskInput(): { items: readonly SecretItem[]; handlers: SecretHandlers } {
+export function useAskInput(openAgentId: string): { items: readonly SecretItem[]; handlers: SecretHandlers } {
   const [pending, setPending] = useState<readonly AskInputRequest[]>([]);
 
   useEffect(() => {
@@ -75,7 +84,7 @@ export function useAskInput(): { items: readonly SecretItem[]; handlers: SecretH
   };
 
   return {
-    items: pending.map(request => ({
+    items: cardsForAgent(pending, openAgentId).map(request => ({
       kind: ThreadItemKind.Secret,
       id: request.requestId,
       text: request.prompt,

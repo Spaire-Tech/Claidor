@@ -72,6 +72,7 @@ import {
   type StoodUpAgent,
 } from '../../shared/staffing/roster';
 import { strongBySlug } from '../../shared/staffing/strongs';
+import type { CardAudience } from '../../shared/thread/cardAudience';
 
 export type AskUserRequest = {
   requestId: string;
@@ -176,6 +177,7 @@ export class McpBridgeServer {
   private onAskUserDismissCallback: ((requestId: string) => void) | null = null;
   private onMediaGenerationCallback: ((request: MediaGenerationRequest) => Promise<MediaGenerationResponse>) | null = null;
   private onBrowserToolCallback: ((request: BrowserToolRequest) => Promise<BrowserToolResponse>) | null = null;
+  private callingAgentResolver: (() => string | undefined) | null = null;
 
   constructor(secret: string) {
     this.secret = secret;
@@ -364,6 +366,35 @@ export class McpBridgeServer {
 
   onBrowserTool(callback: (request: BrowserToolRequest) => Promise<BrowserToolResponse>): void {
     this.onBrowserToolCallback = callback;
+  }
+
+  /**
+   * Who to put the card on.
+   *
+   * Every card this bridge raises belongs to one conversation — the
+   * founder, 18 September: *"should be per agents"* — and the request
+   * that raises it cannot say which. The MCP servers behind these routes
+   * are registered once for the whole engine and launched with a static
+   * env, so nothing of the session reaches them. What the app knows is
+   * which turns are running, and a tool only calls from inside one. The
+   * resolver is asked at the moment the card goes up, not before, so it
+   * is answering about the turn that is calling right now.
+   */
+  setCallingAgentResolver(resolver: () => string | undefined): void {
+    this.callingAgentResolver = resolver;
+  }
+
+  /** The agent to stamp on a card, or nothing, which means main's thread. */
+  private raisingAgent(): CardAudience {
+    try {
+      const agentId = this.callingAgentResolver?.()?.trim();
+      return agentId ? { agentId } : {};
+    } catch (error) {
+      // A card in one thread too few is a bug; a card that never appears
+      // because looking up its thread threw is a stuck turn.
+      log('WARN', `Calling agent could not be resolved: ${error instanceof Error ? error.message : String(error)}`);
+      return {};
+    }
   }
 
   /**
@@ -659,7 +690,8 @@ export class McpBridgeServer {
       }
 
       const requestId = crypto.randomUUID();
-      log('INFO', `CreateAgent request, requestId=${requestId} name=${serializeForLog(parsed.name)}`);
+      const audience = this.raisingAgent();
+      log('INFO', `CreateAgent request, requestId=${requestId} name=${serializeForLog(parsed.name)} agentId=${audience.agentId ?? ''}`);
 
       const decision = await new Promise<CreateAgentAnswer>((resolve) => {
         const timer = setTimeout(() => {
@@ -669,7 +701,7 @@ export class McpBridgeServer {
           resolve({ behavior: CreateAgentBehavior.Decline });
         }, CREATE_AGENT_TIMEOUT_MS);
         this.pendingCreateAgent.set(requestId, { requestId, resolve, timer });
-        this.onCreateAgentCallback?.({ requestId, ...parsed });
+        this.onCreateAgentCallback?.({ requestId, ...parsed, ...audience });
       });
 
       if (decision.behavior !== CreateAgentBehavior.Allow) {
@@ -725,8 +757,12 @@ export class McpBridgeServer {
       }
 
       const requestId = crypto.randomUUID();
-      const ask: RosterAsk = { requestId, ...roster };
-      log('INFO', `Roster request, requestId=${requestId} workType=${serializeForLog(ask.workType)} team=${ask.team.map(one => one.slug).join(',')}`);
+      // In practice this is always the main agent — the roster is step two
+      // of onboarding and Yodo raises it — but it is stamped like every
+      // other card rather than assumed, so a role agent that reaches for
+      // `propose_team` puts the card in its own thread and not in his.
+      const ask: RosterAsk = { requestId, ...roster, ...this.raisingAgent() };
+      log('INFO', `Roster request, requestId=${requestId} workType=${serializeForLog(ask.workType)} team=${ask.team.map(one => one.slug).join(',')} agentId=${ask.agentId ?? ''}`);
 
       const decision = await new Promise<RosterAnswer>((resolve) => {
         const timer = setTimeout(() => {
@@ -802,7 +838,8 @@ export class McpBridgeServer {
       }
 
       const requestId = crypto.randomUUID();
-      log('INFO', `ProposeConnector request, requestId=${requestId} connectionId=${serializeForLog(parsed.connectionId)}`);
+      const audience = this.raisingAgent();
+      log('INFO', `ProposeConnector request, requestId=${requestId} connectionId=${serializeForLog(parsed.connectionId)} agentId=${audience.agentId ?? ''}`);
 
       const decision = await new Promise<ProposeConnectorAnswer>((resolve) => {
         const timer = setTimeout(() => {
@@ -812,7 +849,7 @@ export class McpBridgeServer {
           resolve({ behavior: ProposeConnectorBehavior.Declined });
         }, PROPOSE_CONNECTOR_TIMEOUT_MS);
         this.pendingProposeConnector.set(requestId, { requestId, resolve, timer });
-        this.onProposeConnectorCallback?.({ requestId, ...parsed });
+        this.onProposeConnectorCallback?.({ requestId, ...parsed, ...audience });
       });
 
       if (decision.behavior === ProposeConnectorBehavior.Connected) {
@@ -849,8 +886,9 @@ export class McpBridgeServer {
       }
 
       const requestId = crypto.randomUUID();
+      const audience = this.raisingAgent();
       const masked = fields.filter(field => field.kind === 'secret').length;
-      log('INFO', `AskInput request, requestId=${requestId} fields=${fields.length} masked=${masked}`);
+      log('INFO', `AskInput request, requestId=${requestId} fields=${fields.length} masked=${masked} agentId=${audience.agentId ?? ''}`);
 
       const answer = await new Promise<AskInputResponse>((resolve) => {
         const timer = setTimeout(() => {
@@ -872,6 +910,7 @@ export class McpBridgeServer {
             ...(typeof input.sessionKey === 'string' && input.sessionKey.trim()
               ? { sessionKey: input.sessionKey.trim() }
               : {}),
+            ...audience,
           });
         } else {
           // No window to draw the card in. Declining is the only honest

@@ -81,24 +81,34 @@ export function CaisraApp(): JSX.Element {
   }, [settings]);
   const dictation = useDictation();
   const shell = useMessagesShell();
+  // The four hooks below hold the cards that sit beside the messages, and
+  // every one of them is asked for the open agent's cards only. A card
+  // belongs to the agent whose turn raised it — the founder, 18
+  // September: *"the card appears in every single chat of other agents.
+  // not right. should be per agents."* Each hook keeps all its pending
+  // cards, so the ones raised elsewhere are still there when the person
+  // goes to that thread.
+  //
   // The cards asking for something typed. Kept beside the messages rather
   // than inside them: a password prompt is not a message, and it must not
   // scroll back into view a week later with an empty box.
-  const askInput = useAskInput();
+  const askInput = useAskInput(shell.activeId);
   // Yodo asking to stand up an agent: the permission card, answered
   // through the staffing bridge rather than the engine's approval.
-  const staffing = useCreateAgent(shell.activeName);
+  const staffing = useCreateAgent(shell.activeName, shell.activeId);
   const auth = useMemo(
     () => composeAuthHandlers(shell.auth, { onDecide: staffing.onDecide }),
     [shell.auth, staffing.onDecide],
   );
   // "Your starter team": the roster card of step two, answered through
   // the staffing bridge like the card above.
-  const roster = useRoster();
+  const roster = useRoster(shell.activeId);
   // An agent proposing a connector: the onboarding "App access requested"
   // card, with Install. Install runs the same Connect the Apps screen
   // runs, and the answer goes back through the connectors bridge.
-  const connector = useProposeConnector();
+  // An agent proposing a connector also leaves a line behind once the
+  // card is answered, so this one hands back cards and notes together.
+  const connector = useProposeConnector(shell.activeId);
   const connections = useConnections(shell.appsOpen);
 
   // `nickname` is the only display name the profile carries; everything

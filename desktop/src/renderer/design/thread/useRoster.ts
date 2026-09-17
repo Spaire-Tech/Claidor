@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { type RosterAnswer, type RosterAsk, RosterBehavior } from '../../../shared/staffing/roster';
+import { cardsForAgent } from '../../../shared/thread/cardAudience';
 import type { RosterHandlers } from './RosterCard';
 import { rosterItem, rosterRequestId } from './rosterCards';
 import type { RosterItem } from './types';
@@ -13,8 +14,16 @@ import type { RosterItem } from './types';
  *
  * Every card is answered exactly once: it comes off the screen before
  * the answer is sent.
+ *
+ * **It belongs to one conversation**, like the other cards held beside
+ * the messages. In practice that is always the main agent's — the roster
+ * is step two of onboarding and Yodo raises it, and a card main cannot
+ * attribute lands in his thread anyway — but it is filtered by the agent
+ * the ask names rather than pinned to main, so a role agent reaching for
+ * `propose_team` gets its card in its own thread
+ * (`shared/thread/cardAudience.ts`).
  */
-export function useRoster(): { items: readonly RosterItem[]; handlers: RosterHandlers } {
+export function useRoster(openAgentId: string): { items: readonly RosterItem[]; handlers: RosterHandlers } {
   const [pending, setPending] = useState<readonly RosterAsk[]>([]);
 
   useEffect(() => {
@@ -53,7 +62,7 @@ export function useRoster(): { items: readonly RosterItem[]; handlers: RosterHan
   }), [answer]);
 
   return {
-    items: pending.map(ask => rosterItem(ask, Date.now())),
+    items: cardsForAgent(pending, openAgentId).map(ask => rosterItem(ask, Date.now())),
     handlers,
   };
 }

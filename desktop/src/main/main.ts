@@ -219,6 +219,7 @@ import {
   CreateAgentIpc,
 } from '../shared/staffing/constants';
 import { RosterIpc } from '../shared/staffing/roster';
+import { soleActiveAgent } from '../shared/thread/cardAudience';
 import { AgentManager } from './agentManager';
 import {
   APP_HOME_DIR_NAME,
@@ -3772,6 +3773,26 @@ const getMcpRuntime = (): McpRuntime => {
       getStore,
       getCoworkStore,
       syncOpenClawConfig,
+      // Which conversation a bridge card belongs to. A tool only calls
+      // from inside a turn, so the agents with a turn in flight are the
+      // possible callers; one of them means one answer. The stdio MCP
+      // servers behind these tools are registered once for the whole
+      // engine and their launch env is static, so the request itself
+      // cannot say — this is the honest signal the app does have
+      // (`shared/thread/cardAudience.ts`).
+      resolveCallingAgentId: () => {
+        try {
+          const store = getCoworkStore();
+          return soleActiveAgent(
+            getCoworkEngineRouter().getActiveSessionIds()
+              .map(sessionId => store.getSession(sessionId, 0)?.agentId)
+              .filter((agentId): agentId is string => !!agentId),
+          );
+        } catch (error) {
+          console.warn('[Cards] could not resolve the calling agent:', error);
+          return undefined;
+        }
+      },
       onAskUserRequested: (sessionId, request) => {
         getDesktopNotificationManager().handlePermissionRequest(sessionId, request);
       },

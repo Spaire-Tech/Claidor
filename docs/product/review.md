@@ -4604,3 +4604,107 @@ mechanism read off the code, not a connector connecting.
 
 **Where:** `desktop/src/main/libs/openclawTokenProxy.ts` (+
 `openclawTokenProxy.headers.test.ts`).
+
+## 80. Cards in every thread, a card that would not leave, and the truth about pictures — `built; run in the harness; the Mac unrun`
+
+Three of the founder's four complaints on 18 September. The fourth, agent
+to agent, is item 81.
+
+### Every side-card appeared in every conversation
+
+> *"the card appears in every single chat of other agents. not right. should be per agents."*
+
+True, and not only the connector card. Four hooks hold cards beside the
+messages — connector, ask-input, create-agent, roster — and **none of the
+four carried any notion of whose conversation it belonged to**. Pending
+approvals have a session id and are filtered; these had nothing, so one
+agent's card was drawn in every agent's thread.
+
+**Per-agent MCP registration turned out to be impossible**, and the agent
+who did this checked before building on the assumption: `mcp.servers` is
+one global map, an agent entry takes no `mcp` block, and bundle-mcp
+namespaces tools into a single catalogue. A `CAISRA_AGENT_ID` in the
+launch env would have been a lie. The honest signal is on our side: a
+tool only ever calls from inside a turn, so main asks the router which
+sessions are streaming and answers only when they are all one agent
+(`shared/thread/cardAudience.ts`, `soleActiveAgent`). Exact whenever one
+agent is working; silent when two are. A card it cannot attribute goes to
+the main agent's thread, never to all of them. The agent id comes from
+the app and never from the tool's request body.
+
+### A card that had been answered never left
+
+> *"when the thing was terminated, it didnt disapear. the card stayed there."*
+
+The connector card waited for a `Dismissed` from main that never comes
+when the failure happens in the renderer. It now follows the approval
+card's pattern: answering consumes it and leaves one quiet line —
+"Figma is connected.", "Not now.", "Figma was not connected — <reason>."
+Busy stays visible for the whole sign-in.
+
+**Still open, and named rather than hidden:** a turn killed mid-flight
+leaves its card up until the bridge's five-minute timeout. Cancelling a
+session does not yet dismiss its open cards.
+
+### The pictures: the rule was not restrictive, it was impossible
+
+> *"openui i asked for an intineray, and first of all the pictures did not show. we need to change whatever rule you put, cause not everything is on wikipedia."*
+
+**OpenUI cannot source an image.** Their components resolve a missing
+`src` from the `alt` through a React context, and the Provider for that
+context is never rendered by the package and is not exported, so it can
+never be mounted. `OpenUIC1Component` takes five props and none is a
+resolver. Their own generated prompt says nothing about images at all.
+The earlier note in `CardBlock.tsx` — "only when a provider is mounted,
+and none is" — was right in effect and wrong in kind: it is not that we
+failed to mount one, it is that no one can.
+
+**Why ours were empty was my rule, and it was worse than limiting.** It
+said a picture must be an https address already seen in a tool result,
+and named Wikipedia's summary API as the way to get one. An itinerary is
+days and neighbourhoods, which have no article. And our web search
+returns titles, links and snippets with **no image field anywhere**, so
+the agent had never once seen an image address in a tool result. Under
+that rule, empty was the only possible outcome. A second cost: several
+deck and report layouts take a picture as a required argument, so the
+rule silently removed about a third of that vocabulary.
+
+**The fix, and the thing I nearly shipped wrong.** The first rewrite told
+the agent to read `og:image` after a `web_fetch`. A comment in the test
+file claimed the fetch tool strips images out of pages, so I checked
+instead of shipping. The comment is right: that tool turns a page into
+text and the head goes with it. But the `web-search` skill's own page
+endpoint returns `page.content()` — the whole HTML, head included
+(`SKILLs/web-search/dist/server/playwright/operations.js:48`). So the
+route is real, through the browser, not the fetch tool. The rule now says
+exactly that, keeps Wikipedia for what has an article, and forbids
+placeholder services by name: OpenUI's other library tells models to use
+`picsum.photos`, which is Lorem Ipsum for photographs — the seed makes it
+stable, not relevant.
+
+**Two holes in the card are closed.** Their markup draws the picture
+frame whether or not the image resolved, so a missing picture left a
+filled grey bar; it collapses now. And `ImageTextLarge` has no error
+handler at all, so a dead address showed the browser's broken-image glyph
+in a 180px box; `CardBlock` marks any image that fails to load and the
+stylesheet collapses its frame.
+
+**The brief is full, to the character.** These rules put the managed
+AGENTS.md at 72,000 against a 72,000 ceiling, and it took four rounds of
+trimming my own words to get under. The ceiling is 60% of the engine's
+real cut, and the margin is not there for the cut — it is there because
+72,000 characters is already about 18,000 tokens of instructions, and a
+brief that long dilutes the attention of every rule in it. **The next
+person to add a sentence must remove one.** That is a product decision
+waiting to be made, not a test to be relaxed.
+
+**Unrun:** the founder's Mac, and an agent actually fetching an
+`og:image` through the browser.
+
+**Where:** `desktop/src/shared/thread/cardAudience.ts` (+test),
+`desktop/src/main/libs/{mcpBridgeServer,cardsPrompt,artifactsPrompt,openclawConfigSync}.ts`,
+`desktop/src/main/{main.ts,mcp/mcpRuntime.ts}`,
+`desktop/src/shared/{connections/proposal,askInput/constants,staffing/constants,staffing/roster}.ts`,
+`desktop/src/renderer/design/thread/{useProposeConnector,useAskInput,useCreateAgent,useRoster,connectorCards,types,ThreadItemView,CardBlock}.ts(x)`,
+`desktop/src/renderer/design/thread/cards.css`,
+`desktop/src/renderer/design/shell/CaisraApp.tsx`.

@@ -21,6 +21,8 @@
  * asked and nowhere else. The card says so, in the card.
  */
 
+import type { CardAudience } from '../thread/cardAudience';
+
 export const ASK_INPUT_TOOL = 'ask_user_input';
 
 /** The name the gateway knows this MCP server by. */
@@ -49,7 +51,7 @@ export interface AskInputField {
   optional?: boolean;
 }
 
-export interface AskInputRequest {
+export interface AskInputRequest extends CardAudience {
   requestId: string;
   /** The sentence above the fields — what this is for, and why. */
   prompt: string;

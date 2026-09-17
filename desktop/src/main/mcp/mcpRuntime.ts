@@ -56,6 +56,13 @@ export interface McpRuntimeDeps {
     restartGatewayIfRunning?: boolean;
     expectedImpact?: OpenClawConfigImpact;
   }) => Promise<{ success: boolean; changed: boolean }>;
+  /**
+   * The agent whose turn is calling a bridge tool right now, when the app
+   * can be sure of it. Every card the bridge raises is stamped with it so
+   * it is drawn in that agent's thread and nowhere else
+   * (`shared/thread/cardAudience.ts`).
+   */
+  resolveCallingAgentId?: () => string | undefined;
   /** Fired when an AskUserQuestion request is surfaced to the renderer. */
   onAskUserRequested?: (sessionId: string, request: { requestId: string; toolName: string }) => void;
   /** Fired when a pending AskUserQuestion request is dismissed upstream. */
@@ -201,6 +208,9 @@ export class McpRuntime {
     console.log('[AskUser] starting HTTP callback server...');
     await this.bridgeServer.start();
 
+    const resolveCallingAgentId = this.deps.resolveCallingAgentId;
+    if (resolveCallingAgentId) this.bridgeServer.setCallingAgentResolver(resolveCallingAgentId);
+
     this.bridgeServer.onAskUser(request => {
       const sessionId = request.sessionKey
         ? resolveLocalDesktopCoworkSessionIdByOpenClawSessionKey(
@@ -297,7 +307,8 @@ export class McpRuntime {
     // window rather than routed by session: unlike a question card this
     // is not about a conversation's content, it is a person being asked
     // for a password, and it must reach whatever window they are looking
-    // at.
+    // at. Which *thread* it is drawn in is the `agentId` the bridge
+    // stamped on it, which every window then honours.
     this.bridgeServer.onAskInput(request => {
       const windows = BrowserWindow.getAllWindows();
       if (windows.length === 0) {
@@ -329,7 +340,8 @@ export class McpRuntime {
     });
 
     // The card asking whether to stand up an agent. Every window, like
-    // ask-input: it is a person being asked, wherever they are looking.
+    // ask-input: it is a person being asked, wherever they are looking —
+    // and in the thread of the agent that asked.
     this.bridgeServer.onCreateAgent(ask => {
       const windows = BrowserWindow.getAllWindows();
       if (windows.length === 0) {

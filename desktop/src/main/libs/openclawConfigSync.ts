@@ -3302,6 +3302,16 @@ export class OpenClawConfigSync {
         };
       }
     }
+    // The three servers below are registered once, for the whole engine,
+    // and they cannot be registered per agent: `mcp.servers` is a single
+    // global map (the engine's configuration reference), an entry in
+    // `agents.list` takes no `mcp` block, and the gateway spawns a stdio
+    // server with the env this config gives it and nothing of the session
+    // added. So a card these tools raise cannot learn whose turn raised
+    // it from its own launch env, and the app works it out on the other
+    // side instead, from the turns in flight when the card goes up
+    // (`shared/thread/cardAudience.ts`, `McpBridgeServer.raisingAgent`).
+    //
     // The tool that asks the person to type something. Not conditional on
     // the browser, unlike the credential tool above: a password may be
     // needed for a connector, a shell step or a site, and "never ask for
