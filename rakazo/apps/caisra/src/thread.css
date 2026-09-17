@@ -273,28 +273,93 @@
   display: flex;
   gap: 8px;
 }
+.card__buttons--inline {
+  flex: 0 0 auto;
+}
+.card__buttons--inline .card__action {
+  margin-top: 0;
+}
 .card__action--ghost {
   background: var(--fill);
   color: var(--ink);
 }
 
-/* A connector's mark, and a file's type, in the same square. */
-.logo,
+/*
+ * A connector asking to be connected: the founder's onboarding card, in the
+ * thread. The tile is 52px because that is the size the logos were cut for.
+ */
+.card--connector {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px 18px;
+  /* One width for every card of a kind, so a column of them lines up rather
+     than each one hugging its own text. */
+  width: 100%;
+  max-width: min(84%, 520px);
+}
+.tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  background: var(--fill);
+  border: 1px solid var(--line-hairline);
+  overflow: hidden;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.tile img {
+  object-fit: contain;
+}
+
+/* The file card: the file's own mark, its name, the size, and Save. */
+.card--file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  width: 100%;
+  max-width: min(78%, 440px);
+}
+.filemark {
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+/* No mark of its own: the extension, in the shape the mark would have had. */
 .filetype {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
   border-radius: 8px;
   background: var(--fill);
   color: var(--muted);
-  font-size: var(--text-caption);
-  text-transform: uppercase;
-}
-.filetype {
   font-size: 10px;
   letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.save {
+  width: 27px;
+  height: 27px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.save:hover {
+  background: var(--window);
 }
 
 .card--chart {

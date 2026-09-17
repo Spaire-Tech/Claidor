@@ -3,7 +3,7 @@ import type { MessageBlock } from "@rakazo/contracts";
 /**
  * What Caisra's thread draws, from what the backend sends.
  *
- * The backend speaks in message blocks — twenty-two kinds of them. Caisra's
+ * The backend speaks in message blocks — twenty-three kinds of them. Caisra's
  * thread draws a much smaller vocabulary of rows, because the founder's design
  * says a conversation is texts with occasional cards between them, not a feed
  * of machine events. This is the one place those two vocabularies meet.
@@ -37,8 +37,10 @@ export const CaisraRowKind = {
   Secret: "secret",
   /** A file or an image as the whole message. */
   Attachment: "attachment",
-  /** An answer card: the openui-lang block the agent wrote. */
+  /** Their card: the key/value lines the agent sent. */
   Card: "card",
+  /** Caisra's answer card: the openui-lang program the agent wrote. */
+  Answer: "answer",
   /** A chart the agent rendered. */
   Chart: "chart",
   /** A connector offering to be connected. */
@@ -66,10 +68,25 @@ export type CaisraRow =
     }
   | { kind: typeof CaisraRowKind.Auth; title: string; detail?: string; needsOAuth?: boolean }
   | { kind: typeof CaisraRowKind.Secret; question: string; purpose?: string; answered: boolean }
-  | { kind: typeof CaisraRowKind.Attachment; artifactId: string; name: string; mimeType: string }
+  | {
+      kind: typeof CaisraRowKind.Attachment;
+      artifactId: string;
+      name: string;
+      mimeType: string;
+      /** Bytes. Only a `file` block carries one; an `image` does not. */
+      size?: number;
+    }
   | { kind: typeof CaisraRowKind.Card; lines: readonly { k: string; v: string }[] }
+  | { kind: typeof CaisraRowKind.Answer; program: string }
   | { kind: typeof CaisraRowKind.Chart; block: Extract<MessageBlock, { kind: "chart" }> }
-  | { kind: typeof CaisraRowKind.Connector; provider: string; label: string; connected: boolean }
+  | {
+      kind: typeof CaisraRowKind.Connector;
+      provider: string;
+      label: string;
+      connected: boolean;
+      /** The one line under the name. The card draws it when the block has one. */
+      line?: string;
+    }
   | {
       kind: typeof CaisraRowKind.Helper;
       name: string;
@@ -217,6 +234,7 @@ export function caisraRowFromBlock(block: MessageBlock, names?: CaisraNames): Ca
         provider: block.provider,
         label: block.name,
         connected: block.status === "connected",
+        ...(block.description ? { line: block.description } : {}),
       };
 
     case "connect":
@@ -235,13 +253,16 @@ export function caisraRowFromBlock(block: MessageBlock, names?: CaisraNames): Ca
         artifactId: block.artifactId,
         name: block.name,
         mimeType: block.mimeType,
+        ...("size" in block ? { size: block.size } : {}),
       };
 
     case "card":
-      // Their card is key/value lines. Caisra's answer cards are an
-      // openui-lang program, which no block kind carries: shipping those on
-      // this backend needs a block of its own, and that is not this change.
       return { kind: CaisraRowKind.Card, lines: block.lines };
+
+    case "answer_card":
+      // Caisra's own kind, added to the contract because their `card` is
+      // key/value lines and an openui-lang program had nowhere to travel.
+      return { kind: CaisraRowKind.Answer, program: block.program };
 
     case "chart":
       return { kind: CaisraRowKind.Chart, block };

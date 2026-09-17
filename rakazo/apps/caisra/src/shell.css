@@ -144,3 +144,7 @@
   flex: 1;
   overflow-y: auto;
 }
+/* A window that grew for one long answer scrolls as a page, not as a thread. */
+.app--tall .pane .thread {
+  overflow-y: visible;
+}

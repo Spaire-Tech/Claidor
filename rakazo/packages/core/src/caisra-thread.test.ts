@@ -31,6 +31,7 @@ describe("Caisra thread rows", () => {
     const samples: Record<string, MessageBlock> = {
       text: block("text", { text: "hello" }),
       card: block("card", { lines: [{ k: "Where", v: "Lisbon" }] }),
+      answer_card: block("answer_card", { program: "root = Card([])" }),
       ask: block("ask", { text: "Which one?" }),
       choice: block("choice", { question: "What first?", options: [] }),
       app_connect: block("app_connect", {

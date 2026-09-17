@@ -3,6 +3,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import {
   bots,
+  cardScreens,
   everythingElse,
   expenses,
   type FixtureMessage,
@@ -37,6 +38,16 @@ function rowsOf(messages: FixtureMessage[]): ThreadRow[] {
 
 const screen = new URLSearchParams(window.location.search).get("screen") ?? "morning";
 
+/**
+ * Where a card's pictures come from.
+ *
+ * The shooter serves them on its own loopback port, which is also the origin
+ * this page is loaded from. Opened any other way the addresses fail, and the
+ * cards close up around their text rather than drawing grey bars — which is
+ * the behaviour, not an accident.
+ */
+const cards = cardScreens((name) => `${window.location.origin}/photos/${name}.jpg`);
+
 function Screen() {
   if (screen === "routines" || screen === "routines-menu") {
     return (
@@ -49,6 +60,20 @@ function Screen() {
           runs={screen === "routines-menu" ? [] : runs}
           menuOpen={screen === "routines-menu"}
           slackAvailable
+        />
+      </Shell>
+    );
+  }
+
+  const conversation = cards[screen];
+  if (conversation) {
+    return (
+      <Shell bots={bots} openId={yodo.id} tab="chat" tall>
+        <Thread
+          title={yodo.name}
+          subtitle={yodo.title}
+          seed={yodo.id}
+          rows={rowsOf(conversation)}
         />
       </Shell>
     );

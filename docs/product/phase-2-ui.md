@@ -282,3 +282,41 @@ a mock-up.
 - Answer cards still arrive as the upstream's key/value `lines`. Our
   openui-lang programs have no block kind to travel in; that is a backend
   change, not a screen.
+
+---
+
+## 8. The second pass, same day
+
+The founder on the first screenshots: *"dont forget things like the word svg,
+excel etc. openui, the connectors in the chat and their logo. that screenshot
+is genuinely missing a crazy amount of stuff."* Right, and all three already
+existed in `desktop/`. This pass moved them rather than designing them again.
+
+**OpenUI answer cards.** `apps/caisra/src/Cards.tsx` is
+`OpenUIC1Component` over `chatLibrary`, and `cards.css` is
+`desktop/src/renderer/design/thread/cards.css` with the token names swapped —
+about three hundred lines in which nearly every rule is a correction the
+founder made in front of the real thing on 17 and 18 September (opaque
+surfaces, the 16px grid gap, the hidden title row, the price and the button on
+one row, their follow-ups as our pills, our buttons, their everything else).
+Losing those and rediscovering them would have been the expensive mistake.
+
+**The block kind it needed.** Their `card` is key/value lines, so
+`packages/contracts/src/events.ts` gained `answer_card`, carrying the
+openui-lang program as a string. That is an edit to a file upstream touches
+often; it is eighteen lines and worth the merge.
+
+**Logos.** The 41 service marks and the PDF mark moved to
+`apps/caisra/src/logos/`, with `logos.ts` carrying across the rule that made
+them safe: a logo is a file we ship or it is the service's initial, and no
+favicon is ever fetched from DuckDuckGo or Google.
+
+**File kinds.** `packages/core/src/caisra-files.ts` decides what a file is —
+the four office kinds with their own marks, a picture and a drawing apart from
+each other, everything else named and never given a borrowed icon. Extension
+first, media type only as a fallback, with tests on each.
+
+**What the screenshots now show:** an xlsx with Excel's mark, a pdf with the
+PDF mark, an svg with the word SVG, Gmail and Google Drive and Xero with their
+own logos, Revolut with a monogram because we ship no file for it, and five
+OpenUI answers including the composed fourteen-day plan.

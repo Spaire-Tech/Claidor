@@ -62,8 +62,8 @@
    a duration and a delay the seed decided. Nothing but !important outranks an
    inline style, so this is the one place it is used. */
 @media (prefers-reduced-motion: reduce) {
-  /* biome-ignore lint/complexity/noImportantStyles: outranks the seeded inline animation */
   [style*="caisra-blob-"] {
+    /* biome-ignore lint/complexity/noImportantStyles: outranks the seeded inline animation */
     animation: none !important;
   }
 }

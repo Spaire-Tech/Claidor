@@ -1,7 +1,16 @@
 import type { CaisraRow } from "@rakazo/core";
-import { CaisraRowKind } from "@rakazo/core";
+import {
+  CaisraFileKind,
+  CaisraRowKind,
+  caisraFileKind,
+  caisraFileLogo,
+  caisraFileSize,
+  caisraFileWord,
+} from "@rakazo/core";
 import { Blob } from "./Blob.js";
+import { Cards } from "./Cards.js";
 import { Chart } from "./Chart.js";
+import { logoMonogram, logoUrl } from "./logos.js";
 import "./thread.css";
 
 /**
@@ -106,18 +115,38 @@ function Choice({ row }: { row: Extract<ThreadRow, { kind: "choice" }> }) {
   );
 }
 
+/**
+ * An agent asking to connect something.
+ *
+ * The founder's onboarding card, in the thread: the service's own logo, its
+ * name, the catalogue's one line, and two pills. The logo is a file we ship or
+ * it is the service's initial on a tile — never a favicon fetched from
+ * DuckDuckGo or Google, which is what the canvas did and what `logos.ts`
+ * exists to stop.
+ */
 function Connector({ row }: { row: Extract<ThreadRow, { kind: "connector" }> }) {
+  const url = logoUrl(row.provider) ?? logoUrl(row.label);
   return (
     <div className="row row--left">
-      <div className="card card--inline">
-        <span className="logo">{row.label.slice(0, 1)}</span>
-        <span className="card__title card__title--inline">{row.label}</span>
+      <div className="card card--connector">
+        <span className="tile">
+          {url ? <img src={url} alt="" width={30} height={30} /> : logoMonogram(row.label)}
+        </span>
+        <span className="card__stack">
+          <span className="card__title">{row.label}</span>
+          {row.line ? <span className="card__body">{row.line}</span> : null}
+        </span>
         {row.connected ? (
           <span className="connected">Connected</span>
         ) : (
-          <button type="button" className="card__action card__action--inline">
-            Connect
-          </button>
+          <span className="card__buttons card__buttons--inline">
+            <button type="button" className="card__action card__action--ghost">
+              Not now
+            </button>
+            <button type="button" className="card__action">
+              Connect
+            </button>
+          </span>
         )}
       </div>
     </div>
@@ -140,18 +169,52 @@ function AnswerCard({ row }: { row: Extract<ThreadRow, { kind: "card" }> }) {
   );
 }
 
-/** A file or image the agent made, as the whole message. */
+/**
+ * A file the agent made, as the whole message.
+ *
+ * The founder's 15 September design, in one row: the file's own icon, its
+ * name, what is under it, and the round Save button. *"its pdf excel and word.
+ * with their own svg."* Which icon is `caisraFileKind`'s decision, in core and
+ * tested, so a spreadsheet is a spreadsheet on every surface; anything the
+ * design did not draw keeps its extension in a tile and never borrows another
+ * file's mark.
+ */
 function Attachment({ row }: { row: Extract<ThreadRow, { kind: "attachment" }> }) {
-  const kind = row.mimeType.startsWith("image/")
-    ? "Image"
-    : row.name.split(".").pop()?.toUpperCase();
+  const kind = caisraFileKind(row.name, row.mimeType);
+  const logo = caisraFileLogo(kind);
+  const url = logo ? logoUrl(logo) : undefined;
+  const word = kind === CaisraFileKind.Image ? "Image" : (caisraFileWord(row.name) ?? "File");
+  const caption = row.size === undefined ? undefined : caisraFileSize(row.size);
+
   return (
     <div className="row row--left">
-      <div className="card card--inline">
-        <span className="filetype">{kind}</span>
-        <span className="card__title card__title--inline">{row.name}</span>
-        <button type="button" className="card__action card__action--ghost">
-          Save a copy
+      <div className="card card--file">
+        {url ? (
+          <img className="filemark" src={url} alt="" width={32} height={32} />
+        ) : (
+          <span className="filetype">{word}</span>
+        )}
+        <span className="card__stack">
+          <span className="card__title">{row.name}</span>
+          {caption ? <span className="card__body">{caption}</span> : null}
+        </span>
+        <button type="button" className="save" aria-label="Save a copy" title="Save a copy">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+            focusable="false"
+          >
+            <path d="M12 4v11" />
+            <path d="M7.5 11l4.5 4.5 4.5-4.5" />
+            <path d="M5 19.5h14" />
+          </svg>
         </button>
       </div>
     </div>
@@ -269,6 +332,8 @@ function Row({ row }: { row: ThreadRow }) {
       return <SkillDraft row={row} />;
     case CaisraRowKind.Chart:
       return <Chart block={row.block} />;
+    case CaisraRowKind.Answer:
+      return <Cards program={row.program} />;
     default: {
       // Exhaustive by construction, the same way the mapping is: a row kind
       // added to `caisra-thread.ts` fails the build here rather than leaving a

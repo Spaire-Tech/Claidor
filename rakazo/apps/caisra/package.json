@@ -11,6 +11,11 @@
     "shots": "node harness/shoot.mjs"
   },
   "dependencies": {
+    "@openuidev/lang-core": "0.3.0",
+    "@openuidev/react-headless": "0.14.0",
+    "@openuidev/react-lang": "0.3.0",
+    "@openuidev/react-ui": "0.14.0",
+    "@openuidev/thesys": "0.14.0",
     "@rakazo/contracts": "workspace:*",
     "@rakazo/core": "workspace:*",
     "react": "19.2.3",

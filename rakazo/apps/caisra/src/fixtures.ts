@@ -1,4 +1,5 @@
 import type { MessageBlock, Routine } from "@rakazo/contracts";
+import { type CardExample, cardExamples } from "./cardExamples.js";
 
 /**
  * A morning with a team working.
@@ -296,6 +297,22 @@ export const everythingElse: FixtureMessage[] = [
         name: "August close.xlsx",
         size: 48_211,
       },
+      {
+        kind: "file",
+        artifactId: "art_2",
+        mimeType: "application/pdf",
+        name: "August close.pdf",
+        size: 212_004,
+      },
+      {
+        // No mark of its own in the design, so the card says SVG rather than
+        // borrowing another file's icon.
+        kind: "file",
+        artifactId: "art_3",
+        mimeType: "image/svg+xml",
+        name: "spend-by-month.svg",
+        size: 8_140,
+      },
     ],
   },
   {
@@ -336,6 +353,16 @@ export const everythingElse: FixtureMessage[] = [
     role: "agent",
     blocks: [
       {
+        kind: "app_connect",
+        provider: "xero",
+        name: "Xero",
+        description: "Where the ledger lives",
+        logo: null,
+        status: "pending",
+      },
+      {
+        // Nothing we ship a logo for: the tile draws the initial, and no
+        // favicon is fetched from anyone to cover for it.
         kind: "connect",
         name: "Revolut Business",
         initial: "R",
@@ -345,6 +372,34 @@ export const everythingElse: FixtureMessage[] = [
     ],
   },
 ];
+
+/**
+ * The answer cards, as conversations.
+ *
+ * Each of the founder's OpenUI pictures, in the shape a real turn has: what
+ * they asked, the sentence before the block, the block itself as an
+ * `answer_card`, and the sentence after. The programs are unchanged from the
+ * ones OpenUI's parser has already accepted.
+ */
+export function cardScreens(photo: (name: string) => string): Record<string, FixtureMessage[]> {
+  const screens: Record<string, FixtureMessage[]> = {};
+  for (const [name, example] of Object.entries(cardExamples(photo))) {
+    screens[name] = conversationOf(example);
+  }
+  return screens;
+}
+
+function conversationOf(example: CardExample): FixtureMessage[] {
+  const agent: MessageBlock[] = [
+    { kind: "text", text: example.before },
+    { kind: "answer_card", program: example.program.join("\n") },
+  ];
+  if (example.after) agent.push({ kind: "text", text: example.after });
+  return [
+    { role: "person", blocks: [{ kind: "text", text: example.ask }] },
+    { role: "agent", blocks: agent },
+  ];
+}
 
 /**
  * Real routines.

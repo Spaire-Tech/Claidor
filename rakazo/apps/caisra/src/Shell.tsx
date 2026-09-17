@@ -19,18 +19,21 @@ export function Shell({
   bots,
   openId,
   tab,
+  tall,
   children,
 }: {
   bots: readonly FixtureBot[];
   openId: string;
   /** Which of the open agent's screens is showing. */
   tab: "chat" | "routines";
+  /** A thread holding one long answer grows rather than scrolling it away. */
+  tall?: boolean;
   children: ReactNode;
 }) {
   return (
     // The routines screen is as tall as it needs to be; a thread is a fixed
     // window with its composer pinned to the bottom of it.
-    <div className={`app ${tab === "routines" ? "app--tall" : ""}`}>
+    <div className={`app ${tab === "routines" || tall ? "app--tall" : ""}`}>
       <aside className="sidebar">
         <div className="sidebar__head">
           <span className="sidebar__title">Caisra</span>
