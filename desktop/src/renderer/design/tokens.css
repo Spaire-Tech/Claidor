@@ -8,46 +8,58 @@
 
 :root {
   /* Colour */
-  --fsr-ink: #1e3358;
-  --fsr-ink-hover: #2c4674;
-  --fsr-muted: #55606f;
-  --fsr-faint: #7d8797;
-  --fsr-paper: #fbfbfc;
-  --fsr-fill: #e9edf2;
-  --fsr-fill-raised: #eef1f5;
+  --fsr-ink: #0d0d0d;
+  --fsr-muted: #676767;
+  --fsr-faint: #8e8e93;
+  --fsr-chevron: #b0b0b5;
+  --fsr-tab-ink: #585858;
+  --fsr-ground: #eff1f5;
+  --fsr-window: #f6f6f6;
+  --fsr-paper: #ffffff;
+  --fsr-fill: #f2f2f2;
+  --fsr-fill-raised: #fafafa;
   --fsr-fill-strong: #e3e8ef;
-  --fsr-accent: #2b6cf5;
-  --fsr-disabled: #aab3c0;
-  --fsr-shimmer-ink: #1c1f23;
-  --fsr-shimmer-pale: #b6bcc6;
+  --fsr-divider: #efefef;
+  --fsr-accent: #0071e3;
+  --fsr-accent-hover: #0059b3;
+  --fsr-success-text: #248a3d;
   --fsr-success: #1a8547;
   --fsr-success-fill: #e7f6ec;
   --fsr-warning: #e8a300;
   --fsr-danger: #e0322d;
+  --fsr-delete-ink: #c92a25;
+  --fsr-delete-fill: #fdeceb;
 
   /* Lines */
-  --fsr-line-hairline: rgba(16,22,35,.11);
-  --fsr-line-field: rgba(16,22,35,.13);
-  --fsr-line-button: rgba(16,22,35,.17);
-  --fsr-line-grid: rgba(16,22,35,.018);
-  --fsr-line-hover: rgba(16,22,35,.06);
+  --fsr-line-hairline: rgba(0,0,0,.055);
+  --fsr-line-field: rgba(0,0,0,.06);
+  --fsr-line-card: rgba(0,0,0,.08);
+  --fsr-line-button: rgba(0,0,0,.15);
+  --fsr-line-hover: rgba(0,0,0,.08);
 
   /* Shadows */
-  --fsr-shadow-flat: 0 1px 2px rgba(16,22,35,.04);
-  --fsr-shadow-raised: 0 1px 2px rgba(16,22,35,.04), 0 6px 18px rgba(16,22,35,.11);
-  --fsr-shadow-popover: 0 1px 2px rgba(16,22,35,.04), 0 18px 44px rgba(16,22,35,.18);
-  --fsr-shadow-modal: 0 1px 2px rgba(16,22,35,.04), 0 24px 60px rgba(16,22,35,.18);
-  --fsr-shadow-glass-inset: inset 0 1px 0 rgba(255,255,255,.8);
-  --fsr-shadow-orb: 0 1px 2px rgba(16,22,35,.11), 0 4px 10px rgba(16,22,35,.10);
-  --fsr-shadow-orb-large: 0 2px 6px rgba(16,22,35,.11), 0 20px 48px rgba(16,22,35,.14);
+  --fsr-shadow-flat: 0 1px 2px rgba(0,0,0,.08);
+  --fsr-shadow-raised: 0 2px 5px rgba(0,0,0,.09), 0 0 0 1px rgba(0,0,0,.045);
+  --fsr-shadow-popover: 0 1px 2px rgba(0,0,0,.08), 0 18px 44px rgba(0,0,0,.08);
+  --fsr-shadow-menu: 0 1px 2px rgba(0,0,0,.08), 0 12px 32px rgba(0,0,0,.14);
+  --fsr-shadow-modal: 0 1px 2px rgba(0,0,0,.08), 0 24px 60px rgba(0,0,0,.14);
+  --fsr-shadow-window: 0 40px 110px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.1);
+  --fsr-shadow-dock: inset 0 1px 0 rgba(255,255,255,.9), 0 2px 6px rgba(0,0,0,.05), 0 20px 46px rgba(0,0,0,.14);
+  --fsr-shadow-dock-active: 0 1px 3px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.04);
+  --fsr-shadow-voice-orb: 0 2px 6px rgba(0,0,0,.04), 0 16px 40px rgba(0,0,0,.1);
+  --fsr-shadow-orb-large: 0 20px 48px rgba(0,0,0,.14);
+  --fsr-shadow-orb: 0 1px 2px rgba(0,0,0,.08), 0 4px 10px rgba(0,0,0,.08);
+  --fsr-shadow-knob: 0 1px 3px rgba(0,0,0,.25);
 
   /* Glass */
-  --fsr-glass-background: rgba(255,255,255,.94);
-  --fsr-glass-background-soft: rgba(255,255,255,.88);
-  --fsr-glass-blur: blur(20px);
+  --fsr-glass-dock: rgba(255,255,255,.55);
+  --fsr-glass-dock-blur: blur(30px) saturate(1.8);
   --fsr-glass-border: rgba(255,255,255,.7);
-  --fsr-glass-scrim: rgba(195,203,214,.42);
+  --fsr-glass-orb: rgba(255,255,255,.6);
+  --fsr-glass-orb-blur: blur(24px) saturate(1.6);
+  --fsr-glass-scrim: rgba(0,0,0,.14);
   --fsr-glass-scrim-blur: blur(10px);
+  --fsr-glass-menu-blur: blur(20px);
 
   /* Type */
   --fsr-text-code: 12px;
@@ -81,14 +93,13 @@
   --fsr-radius-control: 13px;
   --fsr-radius-input: 14px;
   --fsr-radius-row: 16px;
+  --fsr-radius-bubble: 17px;
   --fsr-radius-card: 18px;
-  --fsr-radius-bubble: 20px;
   --fsr-radius-menu: 20px;
   --fsr-radius-panel: 22px;
   --fsr-radius-modal: 24px;
-
-  /* Grid */
-  --fsr-grid-size: 34px;
+  --fsr-radius-pane: 28px;
+  --fsr-radius-window: 40px;
 
   /* Type faces */
   --fsr-font-ui: 'Switzer', 'Switzer Variable', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -103,7 +114,7 @@
   --fsr-motion-orb-in-easing: cubic-bezier(.22,.68,.36,1);
   --fsr-motion-orb-idle-duration: 7.5s;
   --fsr-motion-orb-idle-easing: ease-in-out;
-  --fsr-motion-orb-speak-duration: 2.4s;
+  --fsr-motion-orb-speak-duration: 1.8s;
   --fsr-motion-orb-speak-easing: ease-in-out;
   --fsr-motion-shimmer-duration: 1.9s;
   --fsr-motion-shimmer-easing: linear;

@@ -20,7 +20,19 @@ import { useStaggered } from '../thread/useStaggered';
 import { color, font, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
 import { type AgentDraftSubmit, Compose } from './Compose';
 import { Composer } from './Composer';
-import { PanelMode, PanelWant, shellLayout, titleBarInset, useWindowWidth } from './layout';
+import { Dock, DockItem } from './Dock';
+import {
+  FRAME_GAP,
+  FRAME_PAD_X,
+  FRAME_PAD_Y,
+  frameWindowWidth,
+  PanelMode,
+  PanelWant,
+  shellLayout,
+  useWindowWidth,
+  WINDOW_MAX_HEIGHT,
+  WINDOW_MAX_WIDTH,
+} from './layout';
 import { Sidebar, type SidebarAgent } from './Sidebar';
 import type { DictationHandle } from './useDictation';
 
@@ -69,11 +81,11 @@ export interface MessagesShellProps {
   onPickAgent?: (agentId: string) => void;
   onCreateAgent?: (draft: AgentDraftSubmit) => void;
   onApps: () => void;
-  /** The roles list, when open. Lies over the whole app, sidebar included. */
+  /** The roles list, when open. Fills the conversation pane. */
   apps?: React.ReactNode;
   /** Tapping the name at the top of the conversation. */
   onOpenAgent?: () => void;
-  /** The agent's five tabs, when open. Over everything, like `apps`. */
+  /** The agent's five tabs, when open. Fills the pane, like `apps`. */
   agentDetail?: React.ReactNode;
   /**
    * The agent panel — the third column from the 15 September canvas —
@@ -81,15 +93,15 @@ export interface MessagesShellProps {
    * never open together.
    */
   agentPanel?: React.ReactNode;
-  /** Settings, when open. Over everything, like `apps`. */
+  /** Settings, when open. Fills the pane, like `apps`. */
   settings?: React.ReactNode;
   onAccount: () => void;
-  /** Rendered inside the sidebar's footer when the account menu is open. */
+  /** Rendered beside the dock's last button when the account menu is open. */
   accountMenu?: React.ReactNode;
   onMode: (mode: ThreadMode) => void;
   /** The computer icon: opens the panel where you watch the agent work. */
   onOpenPanel: () => void;
-  /** The panel itself, when open. Splits the conversation pane. */
+  /** The panel itself, when open. Splits the window or covers the pane. */
   panel?: React.ReactNode;
   /** "Teach a task" in the composer's `+` menu. */
   onTeach?: () => void;
@@ -100,14 +112,22 @@ export interface MessagesShellProps {
 }
 
 /**
- * The whole app: a list of agents, and a conversation.
+ * The whole app, as the 17 September canvas draws it: a pale ground, a
+ * glass dock, and a rounded window floating beside it.
  *
- * 300px of sidebar and everything else. No tabs, no dashboard, no
- * session tree — the navigation is the conversation list, exactly as
- * Messages does it.
+ * Inside the window the shape is the one from before: a list of agents,
+ * and a conversation. No tabs, no dashboard, no session tree — the
+ * navigation is the conversation list, exactly as Messages does it. What
+ * the dock took from the sidebar is its "+", Apps and the account row.
  *
- * The ground carries a 34px grid at 1.8% opacity. It is almost invisible
- * and it is the reason the app does not read as a flat sheet of white.
+ * **Nothing opens inside another box.** Settings, Apps and an agent's
+ * page fill the conversation pane edge to edge. A menu floats beside
+ * what opened it. The only things that sit in a box are the things the
+ * canvas draws in one: a list in a card, a form in a card.
+ *
+ * **The window has no title bar.** The ground is the handle: the whole
+ * of it drags the window, and the dock and the window opt out so their
+ * controls stay controls.
  */
 export function MessagesShell(props: MessagesShellProps): JSX.Element {
   const {
@@ -118,13 +138,13 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
   } = props;
   const activeAvatar = props.activeAvatar ?? avatarFallback(activeId);
 
-  // How the window is divided right now. Re-read on every resize, which
-  // is the piece that was missing: the old columns stretched but never
-  // reconsidered, so leaving full screen changed nothing but the numbers.
-  const width = useWindowWidth();
+  // How the window is divided right now. Re-read on every resize, and
+  // decided on the window's width, not the display's: the frame around
+  // it is fixed, so the window is what gets narrower.
+  const viewport = useWindowWidth();
+  const windowWidth = frameWindowWidth(viewport);
   const wanted = agentPanel ? PanelWant.Agent : panel ? PanelWant.Computer : PanelWant.None;
-  const layout = useMemo(() => shellLayout(width, wanted), [width, wanted]);
-  const inset = titleBarInset(window.electron?.platform);
+  const layout = useMemo(() => shellLayout(windowWidth, wanted), [windowWidth, wanted]);
 
   // Finding something in this conversation. Closed, it costs nothing;
   // open, the thread shows only what matched, which is the cheapest
@@ -196,6 +216,16 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
     };
   }, [shareOpen]);
 
+  // Which dock button is lit: what fills the pane, or the menu that is
+  // open, else Home. Settings is reached from the account menu and lights
+  // nothing, as in the canvas.
+  const dockActive = accountMenu ? DockItem.You
+    : apps ? DockItem.Apps
+      : composing ? DockItem.Create
+        : DockItem.Home;
+
+  // The canvas's `tabStyle`: 34 high, 84 wide at least, the lit one white
+  // with the accent for a label and a soft ring under it.
   const tab = (label: string, value: ThreadMode): JSX.Element => {
     const on = mode === value;
     return (
@@ -204,19 +234,37 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
         onClick={() => onMode(value)}
         aria-pressed={on}
         style={{
-          height: 28, padding: '0 15px', borderRadius: radius.pill, cursor: 'pointer',
-          font: 'inherit', fontSize: text.label, letterSpacing: tracking.body,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          height: 34, minWidth: 84, padding: '0 20px', borderRadius: radius.pill, cursor: 'pointer',
+          border: 'none', font: 'inherit', fontSize: text.body, letterSpacing: tracking.body, whiteSpace: 'nowrap',
           background: on ? color.paper : 'transparent',
-          color: on ? color.accent : color.muted,
+          color: on ? color.accent : color.tabInk,
           fontWeight: on ? 500 : 400,
-          border: on ? '1px solid rgba(255,255,255,.7)' : '1px solid transparent',
           boxShadow: on ? shadow.raised : 'none',
+          transition: 'background .2s ease, color .2s ease',
         }}
       >
         {label}
       </button>
     );
   };
+
+  // The canvas's 27px round header buttons: nothing at rest, the fill
+  // and a hairline under the pointer.
+  const headerButton = (
+    label: string,
+    onClick: (() => void) | undefined,
+    glyph: JSX.Element,
+    extra?: { 'aria-expanded'?: boolean },
+  ): JSX.Element => (
+    <HoverButton label={label} onClick={onClick} {...extra}>{glyph}</HoverButton>
+  );
+
+  const columns = [
+    `${layout.sidebarWidth}px`,
+    'minmax(0,1fr)',
+    ...(layout.panel === PanelMode.Split ? [`${layout.panelWidth}px`] : []),
+  ].join(' ');
 
   return (
     <div
@@ -229,292 +277,343 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
         // the document, and with two static weights a browser rounds 445
         // up to Medium, which would set the whole app in bold.
         fontFamily: font.ui, fontWeight: 400,
-      }}
+        WebkitFontSmoothing: 'antialiased',
+        // The ground: the canvas's flat colour with a white light at the
+        // top left and a cooler one at the bottom right.
+        background: color.ground,
+        WebkitAppRegion: 'drag',
+      } as React.CSSProperties}
     >
       <div
+        aria-hidden
         style={{
-          display: 'grid', gridTemplateColumns: `${layout.sidebarWidth}px minmax(0,1fr)`,
-          height: '100%', minHeight: 0, overflow: 'hidden',
-          background: color.paper,
-          backgroundImage:
-            `linear-gradient(${line.grid} 1px, transparent 1px), linear-gradient(90deg, ${line.grid} 1px, transparent 1px)`,
-          backgroundSize: '34px 34px',
-          backgroundPosition: '-1px -1px',
+          position: 'absolute', inset: 0, zIndex: 0,
+          background: 'radial-gradient(75% 60% at 26% 8%, #ffffff 0%, rgba(255,255,255,0) 68%), radial-gradient(70% 60% at 82% 88%, #e6ebf4 0%, rgba(230,235,244,0) 66%)',
+        }}
+      />
+
+      <div
+        style={{
+          position: 'absolute', inset: 0, zIndex: 1,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          gap: FRAME_GAP, padding: `${FRAME_PAD_Y}px ${FRAME_PAD_X}px`, boxSizing: 'border-box',
         }}
       >
-        <Sidebar
-          agents={rows}
-          activeId={activeId}
-          onSelect={onSelect}
-          {...(onAskDelete ? { onAskDelete } : {})}
-          onCompose={onCompose}
-          onApps={onApps}
+        <Dock
+          active={dockActive}
           accountName={accountName}
-          onAccount={onAccount}
+          onHome={() => { if (composing) onCloseCompose?.(); }}
+          onCreate={onCompose}
+          onApps={onApps}
+          onYou={onAccount}
           accountMenu={accountMenu}
-          mode={layout.sidebar}
-          topInset={inset}
         />
 
-        {composing && onCloseCompose && onPickAgent && onCreateAgent ? (
-          <Compose
-            agents={agents}
-            onPick={onPickAgent}
-            onCreate={onCreateAgent}
-            onClose={onCloseCompose}
-            {...(wornAvatars ? { wornAvatars } : {})}
-          />
-        ) : (
         <div
+          data-window
           style={{
-            display: 'grid',
-            // Two columns only when the panel has earned one. A panel that
-            // cannot have `PANEL_MIN` without taking the thread below
-            // `THREAD_MIN` is drawn over the conversation instead, which is
-            // the difference between a narrow window and a broken one.
-            gridTemplateColumns: layout.panel === PanelMode.Split
-              ? `minmax(0,1fr) ${layout.panelWidth}px`
-              : 'minmax(0,1fr)',
-            position: 'relative',
-            minWidth: 0, minHeight: 0, overflow: 'hidden',
-          }}
+            flex: '1 1 auto', minWidth: 0, maxWidth: WINDOW_MAX_WIDTH,
+            height: '100%', maxHeight: WINDOW_MAX_HEIGHT,
+            display: 'grid', gridTemplateColumns: columns,
+            minHeight: 0, overflow: 'hidden',
+            borderRadius: radius.window, background: color.window,
+            border: `1px solid ${line.field}`, boxShadow: shadow.window,
+            WebkitAppRegion: 'no-drag',
+          } as React.CSSProperties}
         >
-        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
+          <Sidebar
+            agents={rows}
+            activeId={activeId}
+            onSelect={onSelect}
+            {...(onAskDelete ? { onAskDelete } : {})}
+            mode={layout.sidebar}
+          />
+
           <div
+            data-pane
             style={{
-              position: 'relative', display: 'flex', alignItems: 'center', gap: 10,
-              padding: `${14 + inset}px 21px 14px`,
-              borderBottom: `1px solid ${line.hairline}`,
-              background: 'rgba(250,251,252,.92)', backdropFilter: 'blur(20px)',
-              // The other half of the window you can pick up. Controls
-              // inside set `no-drag` for themselves.
-              WebkitAppRegion: 'drag',
-            } as React.CSSProperties}
+              position: 'relative', display: 'flex', flexDirection: 'column',
+              minWidth: 0, minHeight: 0, margin: '8px 8px 8px 0',
+              borderRadius: radius.pane, overflow: 'hidden', background: color.paper,
+            }}
           >
-            {/*
-              The name at the top opens the agent, which is the gesture
-              Messages already teaches: the person you are talking to is
-              up here, and tapping them tells you about them. A button
-              rather than a click handler on a span, so it is reachable
-              from the keyboard like everything else in the header.
-            */}
-            <button
-              type="button"
-              onClick={onOpenAgent}
-              disabled={!onOpenAgent}
-              aria-label={onOpenAgent ? `About ${activeName}` : undefined}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10, padding: '2px 8px 2px 2px',
-                margin: 0, border: '1px solid transparent', borderRadius: radius.pill,
-                background: 'transparent', font: 'inherit', color: 'inherit',
-                cursor: onOpenAgent ? 'pointer' : 'default',
-              }}
-            >
-              <CloudBlob avatar={activeAvatar} size={26} />
-              <span style={{ fontSize: text.base, fontWeight: 500, letterSpacing: tracking.title }}>
-                {activeName}
-              </span>
-            </button>
-            {/*
-              Three small dots, from the 15 September canvas, in place of
-              the word "typing". The thread carries the same dots at full
-              size beside the agent's face; this is the same thing seen
-              from the header.
-            */}
-            {waiting && (
-              <span style={{ fontSize: text.caption, color: color.muted, letterSpacing: tracking.body }}>
-                Waiting for you
-              </span>
-            )}
-            {saysTyping && !waiting && (
-              <span aria-label="Working" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                {[0, 0.16, 0.32].map(delay => (
-                  <span
-                    key={delay}
-                    style={{
-                      width: 4.5, height: 4.5, borderRadius: '50%', background: color.muted,
-                      animation: `fsr-think-dot 1.2s ease-in-out ${delay}s infinite`,
-                    }}
-                  />
-                ))}
-              </span>
-            )}
+            {composing && onCloseCompose && onPickAgent && onCreateAgent ? (
+              <Compose
+                agents={agents}
+                onPick={onPickAgent}
+                onCreate={onCreateAgent}
+                onClose={onCloseCompose}
+                {...(wornAvatars ? { wornAvatars } : {})}
+              />
+            ) : (
+              <>
+                <div
+                  style={{
+                    position: 'relative', display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '20px 21px 14px',
+                    borderBottom: `1px solid ${line.hairline}`,
+                    background: 'transparent',
+                  }}
+                >
+                  <CloudBlob avatar={activeAvatar} size={23} />
+                  {/*
+                    The name at the top opens the agent, which is the gesture
+                    Messages already teaches: the person you are talking to is
+                    up here, and tapping them tells you about them. A button
+                    rather than a click handler on a span, so it is reachable
+                    from the keyboard like everything else in the header.
+                  */}
+                  <NameButton name={activeName} onClick={onOpenAgent} />
+                  {/*
+                    Three small dots, from the 15 September canvas, in place of
+                    the word "typing". The thread carries the same dots at full
+                    size beside the agent's face; this is the same thing seen
+                    from the header.
+                  */}
+                  {waiting && (
+                    <span style={{ fontSize: text.caption, color: color.muted, letterSpacing: tracking.body }}>
+                      Waiting for you
+                    </span>
+                  )}
+                  {saysTyping && !waiting && (
+                    <span aria-label="Working" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {[0, 0.16, 0.32].map(delay => (
+                        <span
+                          key={delay}
+                          style={{
+                            width: 4.5, height: 4.5, borderRadius: '50%', background: color.muted,
+                            animation: `fsr-think-dot 1.2s ease-in-out ${delay}s infinite`,
+                          }}
+                        />
+                      ))}
+                    </span>
+                  )}
 
-            <div
-              style={{
-                position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-                display: 'flex', alignItems: 'center', padding: 2,
-                borderRadius: radius.pill, background: 'rgba(241,243,246,.72)',
-                backdropFilter: 'blur(20px) saturate(1.4)',
-                border: '1px solid rgba(255,255,255,.6)',
-                boxShadow: `${shadow.raised}, ${shadow.glassInset}`,
-              }}
-            >
-              {tab('Text', ThreadMode.Text)}
-              {tab('Voice', ThreadMode.Voice)}
-            </div>
-
-            {/*
-              The computer icon. Behind it is the whole of the panel the
-              app inherits — the agent's live browser, the files it has
-              made, what it delegated, what you gave it. One icon, because
-              the design says so; everything behind it, because throwing
-              that away would be the most expensive thing in the app.
-            */}
-            <button
-              type="button"
-              onClick={() => { setFinding(true); }}
-              aria-label="Find in this conversation"
-              style={{
-                marginLeft: 'auto', width: 31, height: 31, borderRadius: radius.pill,
-                border: '1px solid transparent', background: 'transparent',
-                cursor: 'pointer', color: color.muted,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              <SearchIcon size={15} />
-            </button>
-
-            {/*
-              Share. The canvas puts it between the search and the
-              computer, with one row behind it, and it was simply not
-              built. The row is only offered when something can actually
-              be shared — an empty conversation has no agent worth
-              passing on yet.
-            */}
-            {onShareTemplate && (
-              <span ref={shareRef} style={{ position: 'relative', display: 'flex' }}>
-                {shareOpen && (
                   <div
-                    role="menu"
                     style={{
-                      position: 'absolute', right: 0, top: 42, zIndex: 40, padding: 6,
-                      borderRadius: radius.card, background: glass.background,
-                      backdropFilter: glass.blur, border: `1px solid ${glass.border}`,
-                      boxShadow: `${shadow.popover}, ${shadow.glassInset}`,
-                      animation: `fsr-message-in ${motion.messageIn.duration} ${motion.messageIn.easing} both`,
+                      position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: 4,
+                      display: 'flex', alignItems: 'center', padding: 0,
+                      borderRadius: radius.pill, background: color.window, border: 'none',
+                    }}
+                  >
+                    {tab('Text', ThreadMode.Text)}
+                    {tab('Voice', ThreadMode.Voice)}
+                  </div>
+
+                  <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    {headerButton('Find in this conversation', () => { setFinding(true); }, <SearchIcon size={15} />)}
+
+                    {/*
+                      Share. The canvas puts it between the search and the
+                      computer, with one row behind it. The row is only offered
+                      when something can actually be shared — an empty
+                      conversation has no agent worth passing on yet.
+                    */}
+                    {onShareTemplate && (
+                      <span ref={shareRef} style={{ position: 'relative', display: 'flex' }}>
+                        {shareOpen && (
+                          <div
+                            role="menu"
+                            style={{
+                              position: 'absolute', right: 0, top: 42, zIndex: 40, padding: 6,
+                              borderRadius: radius.card, background: color.paper,
+                              border: `1px solid ${line.field}`, boxShadow: shadow.popover,
+                              animation: `fsr-message-in ${motion.messageIn.duration} ${motion.messageIn.easing} both`,
+                            }}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => { setShareOpen(false); onShareTemplate(); }}
+                              style={{
+                                display: 'flex', alignItems: 'center', height: 36, padding: '0 12px',
+                                border: 'none', background: 'transparent', borderRadius: radius.input,
+                                cursor: 'pointer', font: 'inherit', fontSize: text.body,
+                                color: color.ink, whiteSpace: 'nowrap',
+                              }}
+                            >
+                              Share as template
+                            </button>
+                          </div>
+                        )}
+                        {headerButton('Share this conversation', () => setShareOpen(open => !open), <ShareIcon size={15} />, { 'aria-expanded': shareOpen })}
+                      </span>
+                    )}
+
+                    {/*
+                      The computer icon. Behind it is the whole of the panel the
+                      app inherits — the agent's live browser, the files it has
+                      made, what it delegated, what you gave it. One icon, because
+                      the design says so; everything behind it, because throwing
+                      that away would be the most expensive thing in the app.
+                    */}
+                    {headerButton('Watch the agent work', onOpenPanel, <ComputerIcon size={15} />)}
+                  </span>
+                </div>
+
+                {finding && (
+                  <FindBar
+                    query={query}
+                    label={matchLabel(query, found.count, at)}
+                    onQuery={value => { setQuery(value); setAt(0); }}
+                    onStep={by => setAt(current => stepMatch(found.count, current, by))}
+                    onClose={() => { setFinding(false); setQuery(''); setAt(0); }}
+                  />
+                )}
+
+                <Thread
+                  items={staged}
+                  dayStamp={dayStamp}
+                  choice={choice}
+                  auth={auth}
+                  {...(secret ? { secret } : {})}
+                  {...(roster ? { roster } : {})}
+                  {...(parts ? { parts } : {})}
+                  actions={{ reactions, onReact, onReply }}
+                  // A button in an answer card is the person's next message,
+                  // sent as if typed: "Book: Canlis".
+                  cards={{ onMessage: onSend }}
+                  typing={saysTyping && !waiting ? { avatar: activeAvatar } : undefined}
+                />
+
+                {/*
+                  Voice: the canvas fades the bottom of the thread to white and
+                  floats the agent's face in a 124px glass disc over it, above
+                  the composer. It breathes while it waits and pulses while the
+                  agent speaks. The composer stays where it is.
+                */}
+                {mode === ThreadMode.Voice && (
+                  <div
+                    style={{
+                      position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 6, pointerEvents: 'none',
+                      height: 268, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: 78,
+                      background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.92) 46%, #ffffff 72%)',
                     }}
                   >
                     <button
                       type="button"
-                      onClick={() => { setShareOpen(false); onShareTemplate(); }}
+                      aria-label={`${activeName} is listening`}
                       style={{
-                        display: 'flex', alignItems: 'center', height: 41, padding: '0 14px',
-                        border: 'none', background: 'transparent', borderRadius: radius.input,
-                        cursor: 'pointer', font: 'inherit', fontSize: text.body,
-                        color: color.ink, whiteSpace: 'nowrap',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: 124, height: 124, padding: 0, borderRadius: '50%',
+                        border: `1px solid ${line.hairline}`,
+                        background: glass.orb, backdropFilter: glass.orbBlur, WebkitBackdropFilter: glass.orbBlur,
+                        boxShadow: shadow.voiceOrb, cursor: 'pointer', pointerEvents: 'auto',
+                        animation: `fsr-orb-in ${motion.orbIn.duration} ${motion.orbIn.easing} both, ${typing
+                          ? `fsr-orb-speak ${motion.orbSpeak.duration} ${motion.orbSpeak.easing} infinite`
+                          : 'fsr-orb-idle 5.5s ease-in-out infinite'}`,
                       }}
                     >
-                      Share as template
+                      <CloudBlob avatar={activeAvatar} size={88} />
                     </button>
                   </div>
                 )}
-                <button
-                  type="button"
-                  onClick={() => setShareOpen(open => !open)}
-                  aria-label="Share this conversation"
-                  aria-expanded={shareOpen}
-                  style={{
-                    width: 31, height: 31, borderRadius: radius.pill,
-                    border: '1px solid transparent', background: 'transparent',
-                    cursor: 'pointer', color: color.muted,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >
-                  <ShareIcon size={15} />
-                </button>
-              </span>
+
+                <Composer
+                  placeholder={`Message ${activeName}`}
+                  onSend={onSend}
+                  {...(onTeach ? { onTeach } : {})}
+                  {...(replySeed ? { seed: replySeed } : {})}
+                  {...(dictation ? { dictation } : {})}
+                />
+              </>
             )}
 
-            <button
-              type="button"
-              onClick={onOpenPanel}
-              aria-label="Watch the agent work"
-              style={{
-                width: 31, height: 31, borderRadius: radius.pill,
-                border: '1px solid transparent', background: 'transparent',
-                cursor: 'pointer', color: color.muted,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              <ComputerIcon size={15} />
-            </button>
-          </div>
-
-          {finding && (
-            <FindBar
-              query={query}
-              label={matchLabel(query, found.count, at)}
-              onQuery={value => { setQuery(value); setAt(0); }}
-              onStep={by => setAt(current => stepMatch(found.count, current, by))}
-              onClose={() => { setFinding(false); setQuery(''); setAt(0); }}
-            />
-          )}
-
-          <Thread
-            items={staged}
-            dayStamp={dayStamp}
-            choice={choice}
-            auth={auth}
-            {...(secret ? { secret } : {})}
-            {...(roster ? { roster } : {})}
-            {...(parts ? { parts } : {})}
-            actions={{ reactions, onReact, onReply }}
-            // A button in an answer card is the person's next message,
-            // sent as if typed: "Book: Canlis".
-            cards={{ onMessage: onSend }}
-            typing={saysTyping && !waiting ? { avatar: activeAvatar } : undefined}
-          />
-
-          {mode === ThreadMode.Voice && (
-            <div style={{ flex: '0 0 auto', padding: '9px 21px 3px', display: 'flex', justifyContent: 'center' }}>
-              <span
+            {/*
+              Over the pane, filling it: the panel when the window is too
+              narrow for a third column, and the screens the canvas lays
+              over the conversation — Apps, Settings, an agent's page. The
+              sidebar stays live beside them, as it does in the canvas.
+            */}
+            {layout.panel === PanelMode.Cover && (
+              <div
                 style={{
-                  display: 'block',
-                  animation: typing
-                    ? `fsr-orb-speak ${motion.orbSpeak.duration} ${motion.orbSpeak.easing} infinite`
-                    : `fsr-orb-idle ${motion.orbIdle.duration} ${motion.orbIdle.easing} infinite`,
+                  position: 'absolute', inset: 0, zIndex: 40,
+                  display: 'flex', flexDirection: 'column',
+                  minWidth: 0, minHeight: 0, background: color.paper,
                 }}
               >
-                <CloudBlob avatar={activeAvatar} size={96} label={`${activeName} is listening`} />
-              </span>
+                {agentPanel ?? panel}
+              </div>
+            )}
+            {apps}
+            {agentDetail}
+            {settings}
+          </div>
+
+          {layout.panel === PanelMode.Split && (
+            <div
+              data-panel
+              style={{
+                display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0,
+                margin: '8px 8px 8px 0', borderRadius: radius.pane, overflow: 'hidden',
+                background: color.fillRaised,
+                animation: `fsr-message-in ${motion.messageIn.longer} ${motion.messageIn.easing} both`,
+              }}
+            >
+              {agentPanel ?? panel}
             </div>
           )}
-
-          <Composer
-            placeholder={`Message ${activeName}`}
-            onSend={onSend}
-            {...(onTeach ? { onTeach } : {})}
-            {...(replySeed ? { seed: replySeed } : {})}
-            {...(dictation ? { dictation } : {})}
-          />
         </div>
-        {layout.panel === PanelMode.Split && (agentPanel ?? panel)}
-        {layout.panel === PanelMode.Cover && (
-          // Over the conversation, filling it. Not a third column squeezed
-          // to nothing, and not a button that quietly refuses.
-          <div
-            style={{
-              position: 'absolute', inset: 0, zIndex: 40,
-              display: 'flex', flexDirection: 'column',
-              minWidth: 0, minHeight: 0, background: color.paper,
-            }}
-          >
-            {agentPanel ?? panel}
-          </div>
-        )}
-        </div>
-        )}
       </div>
-      {/*
-        Outside the grid, over all of it. A modal that covered only the
-        conversation would leave the sidebar live behind it, and clicking
-        an agent through the scrim would change what you came back to.
-      */}
-      {apps}
-      {agentDetail}
-      {settings}
     </div>
+  );
+}
+
+/**
+ * The agent's name in the header: the canvas's button, with a chevron,
+ * quiet until the pointer is on it.
+ */
+function NameButton({ name, onClick }: { name: string; onClick?: () => void }): JSX.Element {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!onClick}
+      aria-label={onClick ? `About ${name}` : undefined}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 6, height: 25, padding: '0 8px 0 6px', marginLeft: -4,
+        border: `1px solid ${hover && onClick ? line.hairline : 'transparent'}`, borderRadius: 10,
+        background: hover && onClick ? color.fill : 'transparent',
+        cursor: onClick ? 'pointer' : 'default', font: 'inherit',
+        fontSize: text.emphasis, fontWeight: 500, letterSpacing: tracking.title, color: color.ink,
+      }}
+    >
+      <span>{name}</span>
+      {onClick && (
+        <svg width="10.5" height="10.5" viewBox="0 0 24 24" fill="none" stroke={color.muted} strokeWidth={2.2} aria-hidden focusable="false">
+          <path d="M6 9.5l6 6 6-6" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
+/** The canvas's 27px round header button: nothing at rest, a fill and a hairline under the pointer. */
+function HoverButton(
+  { label, onClick, children, ...rest }: { label: string; onClick?: () => void; children: JSX.Element; 'aria-expanded'?: boolean },
+): JSX.Element {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      aria-expanded={rest['aria-expanded']}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        width: 27, height: 27, borderRadius: radius.pill,
+        border: `1px solid ${hover ? line.hairline : 'transparent'}`,
+        background: hover ? color.fill : 'transparent',
+        cursor: 'pointer', color: color.muted, padding: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -540,7 +639,7 @@ function FindBar({ query, label, onQuery, onStep, onClose }: FindBarProps): JSX.
       style={{
         flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 9,
         padding: '9px 21px', borderBottom: `1px solid ${line.hairline}`,
-        background: color.fill,
+        background: color.window,
       }}
     >
       <SearchIcon size={14} style={{ color: color.muted }} />

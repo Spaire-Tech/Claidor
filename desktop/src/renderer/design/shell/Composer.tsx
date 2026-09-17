@@ -2,7 +2,7 @@ import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 
 import { i18nService } from '../../services/i18n';
 import { AttachIcon, CloseIcon, MicIcon, SendIcon } from '../icons';
-import { color, glass, line, motion, radius, shadow, text } from '../tokens';
+import { color, line, motion, radius, shadow, text } from '../tokens';
 import { attachmentLines, basenameOf } from './attach';
 import type { DictationHandle } from './useDictation';
 
@@ -139,7 +139,7 @@ export function Composer({
       type="button"
       onClick={onClick}
       style={{
-        display: 'flex', alignItems: 'center', gap: 11, height: 41, padding: '0 11px',
+        display: 'flex', alignItems: 'center', gap: 11, height: 36, padding: '0 10px',
         border: 'none', background: 'transparent', borderRadius: radius.input,
         cursor: 'pointer', font: 'inherit', color: color.muted, width: '100%',
       }}
@@ -150,7 +150,9 @@ export function Composer({
   );
 
   return (
-    <div style={{ padding: '12px 21px 19px' }}>
+    // Above the voice overlay's fade (canvas: z-index 7 over its 6), or
+    // the pill vanishes under white the moment the mode changes.
+    <div style={{ position: 'relative', zIndex: 7, padding: '12px 21px 19px' }}>
       {/* What is going with the next message. Above the pill, so the pill
           keeps the shape the canvas gives it however many files there are. */}
       {attached.length > 0 && (
@@ -162,7 +164,7 @@ export function Composer({
               style={{
                 display: 'flex', alignItems: 'center', gap: 7, height: 30,
                 padding: '0 6px 0 12px', borderRadius: radius.pill,
-                background: color.fillRaised, border: `1px solid ${line.hairline}`,
+                background: color.fill, border: `1px solid ${line.hairline}`,
                 fontSize: text.label, color: color.ink, maxWidth: 280,
               }}
             >
@@ -190,13 +192,13 @@ export function Composer({
         style={{
           display: 'flex',
           alignItems: 'center',
+          // The canvas's pill: 44 high, the fill, no line round it.
           gap: 11,
-          minHeight: 49,
-          padding: '5px 6px 5px 5px',
+          minHeight: 44,
+          padding: '5px 7px 5px 6px',
           borderRadius: radius.pill,
           background: color.fill,
-          border: `1px solid ${line.hairline}`,
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,.7)',
+          border: 'none',
         }}
       >
         <div ref={plusRef} style={{ position: 'relative', flex: '0 0 auto' }}>
@@ -206,9 +208,8 @@ export function Composer({
               style={{
                 position: 'absolute', left: 0, bottom: 52, width: 216, zIndex: 40,
                 padding: 6, borderRadius: radius.menu,
-                background: glass.background, backdropFilter: glass.blur,
-                border: `1px solid ${glass.border}`,
-                boxShadow: `${shadow.popover}, ${shadow.glassInset}`,
+                background: color.paper, border: `1px solid ${line.field}`,
+                boxShadow: shadow.popover,
                 display: 'flex', flexDirection: 'column', gap: 4,
                 animation: `fsr-message-in ${motion.messageIn.duration} ${motion.messageIn.easing} both`,
               }}
@@ -237,9 +238,10 @@ export function Composer({
             aria-label="More"
             aria-expanded={plusOpen}
             style={{
-              width: 37, height: 37, borderRadius: '50%',
-              border: `1px solid ${line.hairline}`, background: color.paper,
-              color: color.muted, fontSize: 18, lineHeight: 1, cursor: 'pointer',
+              // Canvas line 815: a 34px disc of 5% black with the flat shadow.
+              width: 34, height: 34, borderRadius: '50%',
+              border: 'none', background: 'rgba(0,0,0,.05)',
+              color: color.ink, fontSize: 18, lineHeight: 1, cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: shadow.flat,
             }}
@@ -275,8 +277,8 @@ export function Composer({
           aria-label={listening ? 'Stop' : (has ? 'Send' : 'Speak')}
           aria-pressed={listening}
           style={{
-            width: 37, height: 37, flex: '0 0 auto', borderRadius: '50%',
-            border: 'none', background: listening ? color.danger : color.ink,
+            width: 34, height: 34, flex: '0 0 auto', borderRadius: '50%',
+            border: 'none', background: listening ? color.danger : color.accent,
             cursor: disabled ? 'default' : 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             opacity: disabled ? 0.5 : 1, color: color.paper,

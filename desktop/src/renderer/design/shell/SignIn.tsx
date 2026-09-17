@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { Orb, OrbMood } from '../orb/Orb';
-import { color, font, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
+import { color, font, line, motion, radius, shadow, text, tracking } from '../tokens';
 
 export interface SignInProps {
   /** Opens the browser and waits for the callback. */
@@ -29,6 +29,7 @@ export interface SignInProps {
  */
 export function SignIn({ onSignIn, error }: SignInProps): JSX.Element {
   const [busy, setBusy] = useState(false);
+  const [hover, setHover] = useState(false);
 
   const go = async (): Promise<void> => {
     if (busy) return;
@@ -48,13 +49,13 @@ export function SignIn({ onSignIn, error }: SignInProps): JSX.Element {
         alignItems: 'center',
         justifyContent: 'center',
         padding: 32,
-        background: color.paper,
+        background: color.ground,
+        // The two lights on the ground, from the 17 September canvas, line 77.
         backgroundImage:
-          `linear-gradient(${line.grid} 1px, transparent 1px), linear-gradient(90deg, ${line.grid} 1px, transparent 1px)`,
-        backgroundSize: '34px 34px',
-        backgroundPosition: '-1px -1px',
+          'radial-gradient(75% 60% at 26% 8%, #ffffff 0%, rgba(255,255,255,0) 68%), radial-gradient(70% 60% at 82% 88%, #e6ebf4 0%, rgba(230,235,244,0) 66%)',
         color: color.ink,
         fontFamily: font.ui, fontWeight: 400,
+        WebkitFontSmoothing: 'antialiased',
       }}
     >
       <div
@@ -62,10 +63,9 @@ export function SignIn({ onSignIn, error }: SignInProps): JSX.Element {
           width: '100%', maxWidth: 420,
           padding: '40px 32px 32px',
           borderRadius: radius.modal,
-          background: glass.background,
-          backdropFilter: glass.blur,
-          border: `1px solid ${glass.border}`,
-          boxShadow: `${shadow.modal}, ${shadow.glassInset}`,
+          background: color.paper,
+          border: `1px solid ${line.hairline}`,
+          boxShadow: shadow.window,
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 26,
           animation: `fsr-message-in ${motion.messageIn.longer} ${motion.messageIn.easing} both`,
         }}
@@ -91,10 +91,13 @@ export function SignIn({ onSignIn, error }: SignInProps): JSX.Element {
           type="button"
           onClick={() => { void go(); }}
           disabled={busy}
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => setHover(false)}
           style={{
-            height: 41, padding: '0 24px', borderRadius: radius.pill,
-            border: 'none', background: color.ink, color: color.paper,
-            font: 'inherit', fontSize: text.body, fontWeight: 400,
+            height: 34, padding: '0 18px', borderRadius: radius.pill,
+            border: 'none', background: hover && !busy ? color.accentHover : color.accent, color: color.paper,
+            font: 'inherit', fontSize: text.body, fontWeight: 500,
+            transition: `background ${motion.hover.duration} ${motion.hover.easing}`,
             cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.7 : 1,
           }}
         >

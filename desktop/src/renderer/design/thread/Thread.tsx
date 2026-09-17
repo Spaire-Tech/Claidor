@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ChevronRightIcon } from '../icons';
 import { CloudBlob } from '../orb/CloudBlob';
-import { color, glass, line, motion, radius, shadow, text } from '../tokens';
+import { color, line, motion, radius, shadow, text } from '../tokens';
 import type { CardHandlers } from './CardBlock';
 import { startsTurn } from './leading';
 import {
@@ -157,9 +157,8 @@ export function Thread({
             transform: 'translateX(-50%)',
             display: 'flex', alignItems: 'center', gap: 7,
             height: 31, padding: '0 13px 0 15px', borderRadius: radius.pill,
-            background: glass.background, backdropFilter: glass.blur,
-            border: `1px solid ${glass.border}`,
-            boxShadow: `${shadow.popover}, ${shadow.glassInset}`,
+            background: color.paper, border: `1px solid ${line.field}`,
+            boxShadow: shadow.popover,
             font: 'inherit', fontSize: text.label, color: color.ink, cursor: 'pointer',
             animation: `fsr-message-in ${motion.messageIn.duration} ${motion.messageIn.easing} both`,
           }}
@@ -222,15 +221,14 @@ export function Thread({
             animation: `fsr-message-in ${motion.messageIn.duration} ease-out both`,
           }}
         >
-          <span style={{ width: 24, height: 24, flex: '0 0 auto', display: 'block', animation: 'fsr-think-hop 1.5s ease-in-out infinite' }}>
-            <CloudBlob avatar={typing.avatar} size={24} />
+          <span style={{ width: 21, height: 21, flex: '0 0 auto', display: 'block', animation: 'fsr-think-hop 1.5s ease-in-out infinite' }}>
+            <CloudBlob avatar={typing.avatar} size={21} />
           </span>
           <span
             style={{
-              display: 'flex', alignItems: 'center', gap: 4, height: 24, padding: '0 10px',
+              display: 'flex', alignItems: 'center', gap: 4, height: 21, padding: '0 9px',
               borderRadius: '13px 13px 13px 5px', background: color.paper,
-              border: `1px solid ${line.hairline}`,
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,.7), 0 1px 2px rgba(16,22,35,.04)',
+              border: `1px solid ${line.field}`, boxShadow: shadow.flat,
               animation: 'fsr-think-bubble 1.5s ease-in-out infinite',
             }}
           >

@@ -114,7 +114,7 @@ person. `+` opens a **To:** field with chips, exactly like Messages.
 That is the whole navigation. No tabs, no dashboard, no workspace, no
 session tree.
 
-Five surfaces, three of them modals over the chat:
+Five surfaces, and none of them a modal over the chat:
 
 1. the thread,
 2. compose (To: field, picker, ⌘1–⌘9),
@@ -123,6 +123,16 @@ Five surfaces, three of them modals over the chat:
 5. Settings (four tabs).
 
 Upstream LobsterAI has thirteen settings tabs. This has four.
+
+**Since 17 September (the "Spatial Light" canvas,
+`docs/product/design/README.md`)** the app is a rounded window on a
+pale ground with a glass dock beside it: Home, Routines, Create, Apps,
+and the person. The dock took the sidebar's "+" and its bottom row.
+Compose, Apps, Settings and an agent's page fill the conversation pane
+edge to edge, with the list of agents live beside them; a menu floats
+beside what opened it. The founder's rule, in capitals: *"NOTHING
+SHOULD OPEN INSIDE ANOTHER BOX."* Routines is in the dock and does
+nothing yet, at the founder's word.
 
 ## 2. The message vocabulary
 

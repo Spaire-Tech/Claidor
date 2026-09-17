@@ -12,13 +12,14 @@
  *   redeclares each under the block with the thread's face on the
  *   thread's scale (`tokens.css`, `generate-artifact-prompts.mjs`).
  * - Nothing translucent. Their card surface is 2% black over whatever
- *   is behind it, which in this app is the grid on the ground. Every
- *   card is our paper, with the hairline and the flat shadow a card at
- *   rest has everywhere else.
+ *   is behind it, which in this app was the grid on the ground. Every
+ *   card is our paper, with the field line and the flat shadow a card
+ *   at rest has everywhere else (17 September canvas: white card,
+ *   black at .06, `0 1px 2px` black at .08).
  * - Room between cards: their 12px grid gap is the thread's 16.
- * - Buttons are ours: the pill, ink on paper for the first, paper with
- *   the button line for the rest, 36 high. Their tags, icons, pictures
- *   and layouts stay theirs.
+ * - Buttons are ours: the pill, the accent on white for the first,
+ *   white with no line for the rest, 36 high. Their tags, icons,
+ *   pictures and layouts stay theirs.
  * The artifacts keep Inter and everything else of theirs (`artifacts.css`).
  */
 @import './cards.generated.css';
@@ -33,21 +34,21 @@
   --openui-sunk-light: var(--fsr-paper);
   --openui-highlight-subtle: var(--fsr-paper);
   --openui-sunk: var(--fsr-fill);
-  --openui-border-default: var(--fsr-line-hairline);
+  --openui-border-default: var(--fsr-line-field);
   --openui-border-interactive: var(--fsr-line-button);
   --openui-shadow-m: var(--fsr-shadow-flat);
   --openui-text-neutral-primary: var(--fsr-ink);
   --openui-text-neutral-secondary: var(--fsr-muted);
 }
 
-/* Every card kind: paper, hairline, the flat shadow. */
+/* Every card kind: paper, the field line, the flat shadow. */
 .caisra-cards .c1-composite-card,
 .caisra-cards .c1-overview-card,
 .caisra-cards .c1-snippet-card,
 .caisra-cards .c1-context-card,
 .caisra-cards .c1-visual-first-card {
   background-color: var(--fsr-paper);
-  border: 1px solid var(--fsr-line-hairline);
+  border: 1px solid var(--fsr-line-field);
   box-shadow: var(--fsr-shadow-flat);
   /* Their overview card sizes as content-box: at width 100% its padding
      and border spill 22px past the grid cell and swallow the gap, so the
@@ -57,7 +58,7 @@
 }
 .caisra-cards .c1-visual-first-card__bottom {
   background-color: var(--fsr-paper);
-  border-color: var(--fsr-line-hairline);
+  border-color: var(--fsr-line-field);
 }
 /* The frame a picture sits in, empty or not. */
 .caisra-cards .c1-image-text-large__image-wrap {
@@ -173,19 +174,20 @@
   font-size: 13px;
 }
 .caisra-cards .openui-button-base-primary {
-  background-color: var(--fsr-ink);
+  background-color: var(--fsr-accent);
   color: var(--fsr-paper);
+  font-weight: 500;
 }
 .caisra-cards .openui-button-base-primary:hover {
-  background-color: var(--fsr-ink-hover);
+  background-color: var(--fsr-accent-hover);
 }
 .caisra-cards .openui-button-base-secondary,
 .caisra-cards .openui-button-base-tertiary {
-  background-color: var(--fsr-fill);
+  background-color: var(--fsr-paper);
   color: var(--fsr-ink);
-  border-color: var(--fsr-line-field);
+  border-color: transparent;
 }
 .caisra-cards .openui-button-base-secondary:hover,
 .caisra-cards .openui-button-base-tertiary:hover {
-  background-color: var(--fsr-fill-raised);
+  background-color: var(--fsr-window);
 }

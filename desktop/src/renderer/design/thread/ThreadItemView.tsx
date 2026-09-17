@@ -4,7 +4,7 @@ import { agentAvatar, avatarInk } from '../../../shared/agent/avatars';
 import { AskInputFieldKind } from '../../../shared/askInput/constants';
 import { ChevronRightIcon, CloseIcon, WarningIcon } from '../icons';
 import { CloudBlob } from '../orb/CloudBlob';
-import { color, font, line, motion, radius, shadow, text, tracking } from '../tokens';
+import { color, font, line, motion, radius, text, tracking } from '../tokens';
 import { messageIdOf, type Reactions } from './actions';
 import { readableSize } from './attachment';
 import { CardBlock, type CardHandlers } from './CardBlock';
@@ -12,7 +12,7 @@ import { detailsLabel } from './details';
 import { FileCard } from './FileCard';
 import { MessageActions, ReactionChip } from './MessageActions';
 import { type KnownFile, type MessagePart, PartKind, splitMessageParts } from './parts';
-import { RosterCard, type RosterHandlers } from './RosterCard';
+import { CardPill, RosterCard, type RosterHandlers } from './RosterCard';
 import {
   type AttachmentItem,
   type AuthDecision,
@@ -63,16 +63,11 @@ export interface PartHandlers {
 }
 
 /**
- * The chip. The canvas's, to the character:
+ * The chip. The canvas's, to the character (line 1893):
  *
- *   font-family:'SF Mono', …; font-size:12.5px; padding:2px 6px;
- *   margin:0 1px; border-radius:7px; background:rgba(16,22,35,.11);
+ *   font-family:'SF Mono', …; font-size:12.3px; padding:2px 6px;
+ *   margin:0 1px; border-radius:7px; background:#efefef;
  *   white-space:nowrap
- *
- * `line.hairline` is that rgba. It is a border token being used as a fill,
- * which reads oddly — but it is one value in the canvas and making a
- * second token holding the same number would be the drift this design
- * system exists to prevent.
  */
 const chipStyle: CSSProperties = {
   fontFamily: font.mono,
@@ -80,18 +75,18 @@ const chipStyle: CSSProperties = {
   padding: '2px 6px',
   margin: '0 1px',
   borderRadius: radius.fileChip,
-  background: line.hairline,
+  background: color.divider,
   whiteSpace: 'nowrap',
 };
 
 /**
- * The same chip inside the person's own bubble, which is near-black.
+ * The same chip inside the person's own bubble, which is the accent blue.
  *
  * The canvas only ever puts a chip in the agent's pale bubble, so it never
- * had to answer this. An 11%-black fill on `#1e3358` is invisible, so the
- * chip takes the same idea from the other side.
+ * had to answer this. A grey fill on blue is mud, so the chip takes the
+ * same idea from the other side: a little white.
  */
-const chipOnDark: CSSProperties = { ...chipStyle, background: 'rgba(255,255,255,.16)' };
+const chipOnDark: CSSProperties = { ...chipStyle, background: 'rgba(255,255,255,.2)' };
 
 function Part(
   { part, mine, handlers }: { part: MessagePart; mine: boolean; handlers: PartHandlers },
@@ -189,12 +184,12 @@ function ReplyGlyph(): JSX.Element {
 }
 
 /**
- * The bubble, at the canvas's measurements.
+ * The bubble, at the canvas's measurements (lines 1939–1941).
  *
  * They are not the same on both sides and that is deliberate: the agent's
  * is wider and set a half-point larger, because it is the one carrying an
- * answer, and the person's is narrower because a question is short. The
- * first build gave both the same box and a border the canvas never had.
+ * answer, and the person's is narrower because a question is short. Since
+ * 17 September the person's is the accent blue, as Messages draws it.
  */
 const bubbleBase: CSSProperties = {
   borderRadius: radius.bubble,
@@ -207,18 +202,18 @@ const bubbleBase: CSSProperties = {
 
 const mineBubble: CSSProperties = {
   ...bubbleBase,
-  maxWidth: 'min(62%, 560px)',
-  padding: '11px 15px',
-  background: color.ink,
+  maxWidth: 'min(56%, 470px)',
+  padding: '8px 13px',
+  background: color.accent,
   color: color.paper,
   fontSize: text.message,
-  lineHeight: 1.45,
+  lineHeight: 1.4,
 };
 
 const theirBubble: CSSProperties = {
   ...bubbleBase,
-  maxWidth: 'min(70%, 640px)',
-  padding: '12px 17px',
+  maxWidth: 'min(64%, 540px)',
+  padding: '9px 14px',
   background: color.fill,
   color: color.ink,
   fontSize: text.emphasis,
@@ -384,14 +379,15 @@ function StatusLine(
 ) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 3, animation: enter }}>
-      {item.agentId && <CloudBlob avatar={avatarOf(handlers, item.agentId)} size={24} />}
+      {item.agentId && <CloudBlob avatar={avatarOf(handlers, item.agentId)} size={21} />}
       <span
         style={{
           fontSize: text.message,
           // The shimmer is the whole point of a status: it says work is
           // happening without saying what, which is what the design asks
-          // for in place of a log.
-          background: `linear-gradient(90deg, ${color.shimmerInk} 0%, ${color.shimmerInk} 30%, ${color.shimmerPale} 55%, ${color.shimmerInk} 80%)`,
+          // for in place of a log. The light that runs through it is the
+          // paper's white over the faint grey (template.html 698).
+          background: `linear-gradient(90deg, ${color.faint} 0%, ${color.faint} 30%, ${color.paper} 55%, ${color.faint} 80%)`,
           backgroundSize: '220% 100%',
           WebkitBackgroundClip: 'text',
           backgroundClip: 'text',
@@ -425,8 +421,8 @@ function ResolvedChoiceCard({ item, outcome }: { item: Extract<ThreadItem, { kin
       aria-label={dismissed ? 'Dismissed' : 'Answered'}
       style={{
         maxWidth: 'min(72%, 560px)', padding: 15, marginTop: 6,
-        borderRadius: radius.panel, background: color.fill,
-        border: `1px solid ${line.hairline}`,
+        borderRadius: radius.panel, background: color.paper,
+        border: `1px solid ${line.field}`,
         display: 'flex', flexDirection: 'column', gap: 10,
         opacity: dismissed ? 0.55 : 0.85,
       }}
@@ -466,8 +462,8 @@ function ChoiceCard(
         maxWidth: 'min(72%, 560px)',
         padding: 15,
         borderRadius: radius.panel,
-        background: color.fill,
-        border: `1px solid ${line.hairline}`,
+        background: color.paper,
+        border: `1px solid ${line.field}`,
         display: 'flex',
         flexDirection: 'column',
         gap: 12,
@@ -507,10 +503,9 @@ function ChoiceCard(
           display: 'flex',
           flexDirection: 'column',
           borderRadius: radius.row,
-          background: color.paper,
+          background: color.window,
           border: `1px solid ${line.hairline}`,
           overflow: 'hidden',
-          boxShadow: shadow.flat,
         }}
       >
         {item.options.map(option => (
@@ -527,7 +522,7 @@ function ChoiceCard(
           >
             <span
               style={{
-                width: 23, height: 23, flex: '0 0 auto', marginTop: 1,
+                width: 20, height: 20, flex: '0 0 auto', marginTop: 1,
                 borderRadius: radius.chip, background: color.fill,
                 border: `1px solid ${line.hairline}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -558,8 +553,10 @@ function ChoiceCard(
           }}
           placeholder="Type your own answer"
           style={{
-            height: 43, padding: '0 14px', borderRadius: radius.input,
-            border: `1px solid ${line.field}`, background: color.paper,
+            height: 38, padding: '0 12px', borderRadius: radius.input,
+            // The canvas draws this input borderless (727) on a card that
+            // was still glass; on white paper it needs the hairline to exist.
+            border: `1px solid ${line.hairline}`, background: color.paper,
             outline: 'none', font: 'inherit', fontSize: text.message, color: color.ink,
           }}
         />
@@ -578,27 +575,16 @@ function AuthCard(
 ) {
   const [open, setOpen] = useState(false);
   const button = (label: string, decision: AuthDecision, primary?: boolean): JSX.Element => (
-    <button
-      type="button"
-      onClick={() => handlers.onDecide(item.id, decision)}
-      style={{
-        height: 37, padding: '0 19px', borderRadius: radius.pill,
-        border: primary ? 'none' : `1px solid ${line.button}`,
-        background: primary ? color.ink : color.paper,
-        color: primary ? color.paper : color.ink,
-        font: 'inherit', fontSize: text.body, fontWeight: 400,
-        cursor: 'pointer',
-      }}
-    >
+    <CardPill primary={primary} onClick={() => handlers.onDecide(item.id, decision)}>
       {label}
-    </button>
+    </CardPill>
   );
 
   return (
     <div
       style={{
         maxWidth: 'min(72%, 560px)', padding: '15px 17px 17px',
-        borderRadius: radius.panel, background: color.fill,
+        borderRadius: radius.panel, background: color.paper,
         border: `1px solid ${line.hairline}`,
         display: 'flex', flexDirection: 'column', animation: enter,
       }}
@@ -656,7 +642,7 @@ function AuthCard(
             <div
               style={{
                 margin: '10px 0 0 28px', padding: '11px 13px',
-                borderRadius: radius.input, background: color.paper,
+                borderRadius: radius.input, background: color.window,
                 border: `1px solid ${line.hairline}`,
                 fontFamily: font.mono, fontSize: text.code, lineHeight: 1.6,
                 color: color.ink, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
@@ -786,8 +772,8 @@ function SecretCard(
     <div
       style={{
         alignSelf: 'stretch', padding: '18px 20px 16px',
-        borderRadius: radius.card, background: color.fillRaised,
-        border: `1px solid ${line.hairline}`, animation: enter,
+        borderRadius: radius.panel, background: color.paper,
+        border: `1px solid ${line.field}`, animation: enter,
         display: 'flex', flexDirection: 'column', gap: 14,
       }}
     >
@@ -806,9 +792,9 @@ function SecretCard(
             setValues(current => ({ ...current, [field.name]: next }));
           const boxStyle: CSSProperties = {
             flex: '1 1 auto', minWidth: 0, padding: '9px 12px',
-            borderRadius: radius.small, border: `1px solid ${line.field}`,
+            borderRadius: radius.input, border: `1px solid ${line.hairline}`,
             background: color.paper, outline: 'none', color: color.ink,
-            font: 'inherit', fontSize: text.body,
+            font: 'inherit', fontSize: text.message,
             ...(secret ? { fontFamily: font.mono } : {}),
           };
 
@@ -845,8 +831,8 @@ function SecretCard(
                     onClick={() => setShown(one => ({ ...one, [field.name]: !one[field.name] }))}
                     aria-pressed={!!shown[field.name]}
                     style={{
-                      height: 36, padding: '0 12px', borderRadius: radius.pill,
-                      border: `1px solid ${line.field}`, background: color.fill,
+                      height: 38, padding: '0 12px', borderRadius: radius.pill,
+                      border: `1px solid ${line.hairline}`, background: color.fill,
                       color: color.muted, font: 'inherit', fontSize: text.body, cursor: 'pointer',
                       flex: '0 0 auto',
                     }}
@@ -874,32 +860,9 @@ function SecretCard(
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 9 }}>
-        <button
-          type="button"
-          disabled={!ready}
-          onClick={send}
-          style={{
-            height: 36, padding: '0 17px', borderRadius: radius.pill, border: 'none',
-            background: ready ? color.ink : color.fill,
-            color: ready ? color.paper : color.faint,
-            font: 'inherit', fontSize: text.body, fontWeight: 400,
-            cursor: ready ? 'pointer' : 'default',
-          }}
-        >
-          Send
-        </button>
-        <button
-          type="button"
-          onClick={() => handlers.onDecline?.(item.id)}
-          style={{
-            height: 36, padding: '0 16px', borderRadius: radius.pill,
-            border: `1px solid ${line.field}`, background: color.fill, color: color.ink,
-            font: 'inherit', fontSize: text.body, cursor: 'pointer',
-          }}
-        >
-          Not now
-        </button>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <CardPill primary disabled={!ready} onClick={send}>Send</CardPill>
+        <CardPill onClick={() => handlers.onDecline?.(item.id)}>Not now</CardPill>
       </div>
     </div>
   );

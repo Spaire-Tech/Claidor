@@ -4215,3 +4215,70 @@ the engine's line (runtime test).
 `desktop/scripts/generate-artifact-prompts.{mjs,d.mts}`,
 `desktop/src/renderer/design/thread/{CardBlock.tsx,cards.css,cards.generated.css}`,
 `harness/{cardExamples.ts,main.tsx,shoot.mjs}`.
+
+## 74. Spatial Light: the founder's 17 September design, whole — `built; run in the harness; the Mac unrun`
+
+The founder, 17 September, with `Swens_Messages_Spatial_Light.html`:
+*"i dont want no surprise claude, design it like i did. make it fit
+mac. remember the layout logic we have, especially when you widen or
+shorten the screen etc.. i added a section for routine. you can skip
+that until we do it. i want total serious work and everything needs
+to be accurate. now i need you to bring openui to it too. so make me
+proud. then send screenshots. watch out the proportions. NOTHING
+SHOULD OPEN INSIDE ANOTHER BOX."*
+
+**What the canvas is.** A pale ground, a rounded window floating on it
+(radius 40, at most 1420×900, a soft shadow), and a glass dock beside
+the window with five round buttons: Home, Routines, Create, Apps, the
+person. Inside the window the shape is the 15 September one, a list of
+agents and a conversation, on new values: white pane with 28px
+corners, `#f6f6f6` window, `#0071e3` accent on the person's bubbles,
+the lit tab, every primary pill and every toggle, and no glass
+anywhere but the dock, the voice orb and one scrim. Recorded as
+`docs/product/design/canvas-2026-09-17-spatial-light{,-template}.html`.
+
+**Built, file by file.**
+
+- `design/tokens.ts` rewritten from the canvas's values and
+  `tokens.css` regenerated; the tokens a glass design needed
+  (`inkHover`, `disabled`, `glass.background`, `shadow.glassInset`,
+  the grid) are gone, and every file that used one was moved to what
+  the canvas draws instead.
+- `shell/layout.ts`: the frame's paddings, the dock's width, the
+  window's cap, and `frameWindowWidth(viewport)`. The width rules from
+  before are unchanged and now take the window's width: at a 1600px
+  display the window is 1420 and the sidebar a list; at 1100 it is 956
+  and the panel clamps; at 900 it is 756 and the sidebar is a rail.
+- `shell/Dock.tsx` (new), `shell/AccountMenu.tsx` (beside the dock),
+  `shell/Sidebar.tsx` (title, search, rows; the "+" and the bottom row
+  went to the dock), `shell/MessagesShell.tsx` (ground, dock, window,
+  pane, panel column), `shell/Composer.tsx`, `shell/Compose.tsx`.
+- `thread/`: bubbles, chips, the choice, auth, file, roster and secret
+  cards, the status line, the typing bubble, the message actions (both
+  popovers now in a portal, so they never clip inside the pane), the
+  answer cards' stylesheet.
+- `settings/Settings.tsx`, `shell/Apps.tsx`, `agent/AgentDetail.tsx`:
+  fill the pane edge to edge, no scrim, no sheet. `agent/AgentPanel.tsx`
+  and `panel/ComputerPanel.tsx`: the third column on `#fafafa`.
+- `shell/SignIn.tsx`, `onboarding/Onboarding.tsx`: the same ground.
+
+**Where I departed from the canvas, and why, each in a comment at the
+line:** the Settings tab icon is the label's colour (the canvas paints
+the active icon white on a grey pill, a leftover from the navy design);
+the choice card's free-text input keeps a hairline (borderless white on
+white is invisible); the secret card is not in the canvas and takes
+the choice card's surface; the onboarding's cloud veil stays, since
+making it opaque would delete the 16 September clouds.
+
+**Photographed, at three window sizes**, and the shooter gained
+`panel` and `panel-delete`, and draws `settings` inside the shell
+rather than alone: it was the one screen the film never showed in its
+place. Found on film and fixed: the composer vanished under the voice
+overlay's fade (no stacking order; the canvas gives it `z-index:7`).
+
+**Unrun:** the founder's Mac. The dock's Routines button, at the
+founder's word. Dark mode: designed, not yet sent.
+
+**Where:** `desktop/src/renderer/design/**` (25 files),
+`desktop/harness/main.tsx`, `docs/product/design/README.md`,
+`docs/product/direction.md` §1.

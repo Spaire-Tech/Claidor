@@ -87,6 +87,36 @@ export const PANEL_SHARE = 0.38;
  */
 export const TITLE_BAR_INSET = 28;
 
+/**
+ * The frame, from the 17 September canvas ("Spatial Light").
+ *
+ * The app is no longer the whole of its window. It is a rounded window
+ * floating on a pale ground, with a glass dock beside it: the canvas's
+ * outer div is `padding:26px 24px; gap:22px`, the dock is five 52px
+ * buttons with 11px of padding round them, and the window is
+ * `max-width:1420px; max-height:900px`, centred. Everything the rules
+ * above decide — rail or list, split or cover — is decided on the
+ * window's width, not the display's, because the window is what the
+ * columns divide.
+ */
+export const FRAME_PAD_X = 24;
+export const FRAME_PAD_Y = 26;
+export const FRAME_GAP = 22;
+/** 52px buttons inside 11px of padding. */
+export const DOCK_WIDTH = 74;
+export const WINDOW_MAX_WIDTH = 1420;
+export const WINDOW_MAX_HEIGHT = 900;
+
+/** How wide the window is at a given display width. */
+export function frameWindowWidth(viewportWidth: number): number {
+  return Math.max(0, Math.min(WINDOW_MAX_WIDTH, viewportWidth - FRAME_PAD_X * 2 - DOCK_WIDTH - FRAME_GAP));
+}
+
+/** How tall, at a given display height. */
+export function frameWindowHeight(viewportHeight: number): number {
+  return Math.max(0, Math.min(WINDOW_MAX_HEIGHT, viewportHeight - FRAME_PAD_Y * 2));
+}
+
 export const SidebarMode = {
   /** Orb, name, time, preview. */
   List: 'list',

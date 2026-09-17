@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { type ButtonHTMLAttributes, type CSSProperties, useEffect, useState } from 'react';
 
 import { AVATAR_COUNT } from '../../../shared/agent/avatars';
 import { CloseIcon } from '../icons';
@@ -6,7 +6,8 @@ import { CloudBlob } from '../orb/CloudBlob';
 import { color, line, motion, radius, shadow, text, tracking } from '../tokens';
 
 /**
- * The agent panel: the third column, from the 15 September canvas.
+ * The agent panel: the third column, from the 15 September canvas and
+ * measured against the 17 September one (template.html 831–903).
  *
  * Opened two ways and it is the same panel both times — by the agent's
  * name in the conversation header, and by the trash icon on the active
@@ -54,21 +55,39 @@ export interface AgentPanelProps {
   onClose: () => void;
 }
 
-const fieldStyle: React.CSSProperties = {
-  height: 39, padding: '0 12px', borderRadius: radius.field,
-  border: `1px solid ${line.button}`, background: color.paper,
+/** A button that changes under the pointer, since inline styles cannot. */
+function HoverButton(
+  { hoverStyle, style, onMouseEnter, onMouseLeave, ...rest }:
+    ButtonHTMLAttributes<HTMLButtonElement> & { hoverStyle: CSSProperties },
+): JSX.Element {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      type="button"
+      onMouseEnter={event => { setHover(true); onMouseEnter?.(event); }}
+      onMouseLeave={event => { setHover(false); onMouseLeave?.(event); }}
+      style={{ ...style, ...(hover ? hoverStyle : {}) }}
+      {...rest}
+    />
+  );
+}
+
+/** An input on the panel's grey: white, no line, the flat shadow. */
+const fieldStyle: CSSProperties = {
+  height: 34, padding: '0 11px', borderRadius: radius.field,
+  border: 'none', background: color.paper,
   outline: 'none', font: 'inherit', fontSize: text.message, color: color.ink,
   boxShadow: shadow.flat, boxSizing: 'border-box', width: '100%',
 };
 
-const labelStyle: React.CSSProperties = { fontSize: text.caption, color: color.muted };
+const labelStyle: CSSProperties = { fontSize: text.label, color: color.muted };
 
-/** The canvas's card: paper on paper, an inset white line, a soft edge. */
-const cardStyle: React.CSSProperties = {
-  borderRadius: radius.row, background: color.paper,
-  border: `1px solid ${line.hairline}`,
-  boxShadow: `inset 0 1px 0 rgba(255,255,255,.7), ${shadow.flat}`,
+/** A group on the panel: the window's grey, no line round it. */
+const boxStyle: CSSProperties = {
+  borderRadius: radius.row, background: color.window, border: 'none',
 };
+
+const hoverTransition = `background ${motion.hover.duration} ${motion.hover.easing}`;
 
 export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose }: AgentPanelProps): JSX.Element {
   const [name, setName] = useState(agent.name);
@@ -92,8 +111,8 @@ export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose 
     <div
       style={{
         display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0, overflow: 'hidden',
-        borderLeft: `1px solid ${line.hairline}`,
-        background: 'rgba(249,250,252,.86)', backdropFilter: 'blur(20px)',
+        // One step off the window's grey; the rounded corner is the shell's.
+        background: color.fillRaised,
         animation: `fsr-message-in ${motion.messageIn.duration} ease-out both`,
       }}
     >
@@ -106,18 +125,19 @@ export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose 
         <span style={{ flex: '1 1 auto', fontSize: text.emphasis, fontWeight: 500, letterSpacing: tracking.title }}>
           Agent settings
         </span>
-        <button
-          type="button"
+        <HoverButton
           onClick={onClose}
           aria-label="Close"
           style={{
-            width: 28, height: 28, borderRadius: radius.pill, border: '1px solid transparent',
+            width: 25, height: 25, borderRadius: radius.pill, border: '1px solid transparent',
             background: 'transparent', cursor: 'pointer', color: color.muted,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: hoverTransition,
           }}
+          hoverStyle={{ background: color.fill, borderColor: line.hairline }}
         >
           <CloseIcon size={12} />
-        </button>
+        </HoverButton>
       </div>
 
       <div
@@ -128,23 +148,23 @@ export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose 
       >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, padding: '2px 0' }}>
           <CloudBlob avatar={agent.avatar} size={70} />
-          <button
-            type="button"
+          <HoverButton
             onClick={() => setPickerOpen(open => !open)}
             aria-expanded={pickerOpen}
             style={{
-              height: 30, padding: '0 12px', borderRadius: radius.pill,
-              border: `1px solid ${line.button}`, background: color.paper,
+              height: 26, padding: '0 11px', borderRadius: radius.pill,
+              border: 'none', background: color.paper,
               cursor: 'pointer', font: 'inherit', fontSize: text.caption, color: color.ink,
-              whiteSpace: 'nowrap', boxShadow: shadow.flat,
+              whiteSpace: 'nowrap', boxShadow: shadow.flat, transition: hoverTransition,
             }}
+            hoverStyle={{ background: color.window }}
           >
             {pickerOpen ? 'Done' : 'Edit avatar'}
-          </button>
+          </HoverButton>
         </div>
 
         {pickerOpen && (
-          <div style={{ ...cardStyle, padding: 11, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ ...boxStyle, padding: 11, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={labelStyle}>Choose an avatar</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 6 }}>
               {Array.from({ length: AVATAR_COUNT }, (_, index) => {
@@ -159,9 +179,9 @@ export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose 
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       width: '100%', minWidth: 0, aspectRatio: '1', padding: 0,
-                      borderRadius: 13, cursor: 'pointer',
-                      background: on ? color.fill : 'transparent',
-                      border: `1.5px solid ${on ? color.ink : line.hairline}`,
+                      borderRadius: radius.control, cursor: 'pointer',
+                      background: on ? color.window : 'transparent',
+                      border: `1.5px solid ${on ? color.ink : line.card}`,
                     }}
                   >
                     <CloudBlob avatar={index} size={36} style={{ width: '100%', height: '100%' }} />
@@ -205,7 +225,7 @@ export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose 
           />
         </div>
 
-        <div style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 11, padding: '12px 13px' }}>
+        <div style={{ ...boxStyle, display: 'flex', alignItems: 'center', gap: 11, padding: '12px 13px' }}>
           <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
             <div style={{ fontSize: text.body, fontWeight: 500, color: color.ink }}>Notifications</div>
             <div style={{ fontSize: text.label, color: color.muted, lineHeight: 1.4 }}>
@@ -219,73 +239,80 @@ export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose 
             aria-label="Notifications"
             onClick={() => onChange({ notify: !agent.notify })}
             style={{
-              position: 'relative', width: 41, height: 24, flex: '0 0 auto', padding: 0,
+              position: 'relative', width: 36, height: 21, flex: '0 0 auto', padding: 0,
               border: 'none', borderRadius: radius.pill, cursor: 'pointer',
-              transition: 'background .16s ease',
-              background: agent.notify ? color.ink : '#c4ccd8',
+              transition: hoverTransition,
+              // The track when off: 9% black, the canvas's one value for it (template.html 1999).
+              background: agent.notify ? color.accent : 'rgba(0,0,0,.09)',
             }}
           >
             <span
               style={{
                 position: 'absolute', top: 3, left: agent.notify ? 21 : 3,
                 width: 17, height: 17, borderRadius: '50%', background: color.paper,
-                transition: 'left .16s ease', boxShadow: '0 1px 2px rgba(16,22,35,.18)',
+                transition: `left ${motion.hover.duration} ${motion.hover.easing}`, boxShadow: shadow.flat,
               }}
             />
           </button>
         </div>
 
         {onDelete && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 12, borderTop: `1px solid ${line.hairline}` }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 12, borderTop: `1px solid ${line.field}` }}>
             {!askingDelete ? (
-              <button
-                type="button"
+              <HoverButton
                 onClick={() => setAskingDelete(true)}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  height: 39, padding: '0 17px', borderRadius: radius.pill,
-                  border: '1px solid rgba(201,42,37,.2)', background: '#fdeceb', color: color.danger,
+                  height: 34, padding: '0 15px', borderRadius: radius.pill,
+                  // The red's own lines and hover, drawn once in the canvas (template.html 886).
+                  border: '1px solid rgba(201,42,37,.2)', background: color.deleteFill, color: color.deleteInk,
                   font: 'inherit', fontSize: text.body, whiteSpace: 'nowrap', cursor: 'pointer',
+                  transition: hoverTransition,
                 }}
+                hoverStyle={{ background: '#fbdedc' }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} aria-hidden focusable="false" style={{ flex: '0 0 auto' }}>
                   <path d="M4 7h16" /><path d="M9 7V5h6v2" /><path d="M6 7l1 13h10l1-13" /><path d="M10 11v6M14 11v6" />
                 </svg>
                 <span>Delete agent</span>
-              </button>
+              </HoverButton>
             ) : (
               <div
                 style={{
                   display: 'flex', flexDirection: 'column', gap: 9, padding: 12,
-                  borderRadius: radius.input, background: '#fdeceb', border: '1px solid rgba(201,42,37,.16)',
+                  // The question's line, drawn once in the canvas (template.html 892).
+                  borderRadius: radius.input, background: color.deleteFill, border: '1px solid rgba(201,42,37,.16)',
                 }}
               >
-                <div style={{ fontSize: text.label, lineHeight: 1.45, color: color.danger, textWrap: 'pretty' }}>
+                <div style={{ fontSize: text.label, lineHeight: 1.45, color: color.deleteInk, textWrap: 'pretty' }}>
                   Delete {shownName} and this conversation? This can&apos;t be undone.
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <button
-                    type="button"
+                  <HoverButton
                     onClick={onDelete}
                     style={{
-                      flex: '1 1 auto', height: 36, borderRadius: radius.pill, border: 'none',
-                      background: color.danger, color: color.paper,
+                      flex: '1 1 auto', height: 32, borderRadius: radius.pill, border: 'none',
+                      background: color.deleteInk, color: color.paper,
                       font: 'inherit', fontSize: text.small, fontWeight: 400, cursor: 'pointer',
+                      transition: hoverTransition,
                     }}
+                    // The pressed red, drawn once in the canvas (template.html 895).
+                    hoverStyle={{ background: '#b02420' }}
                   >
                     Delete
-                  </button>
-                  <button
-                    type="button"
+                  </HoverButton>
+                  <HoverButton
                     onClick={() => setAskingDelete(false)}
                     style={{
-                      flex: '1 1 auto', height: 36, borderRadius: radius.pill,
-                      border: `1px solid ${line.button}`, background: color.paper, color: color.ink,
+                      flex: '1 1 auto', height: 32, borderRadius: radius.pill,
+                      border: 'none', background: color.paper, color: color.ink,
                       font: 'inherit', fontSize: text.small, cursor: 'pointer',
+                      transition: hoverTransition,
                     }}
+                    hoverStyle={{ background: color.window }}
                   >
                     Keep
-                  </button>
+                  </HoverButton>
                 </div>
               </div>
             )}

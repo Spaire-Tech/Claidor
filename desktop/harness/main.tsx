@@ -9,6 +9,7 @@ import { createRoot } from 'react-dom/client';
 // can draw the list the app will actually draw.
 import { PRESET_AGENTS } from '../src/main/presetAgents';
 import { AgentDetail } from '../src/renderer/design/agent/AgentDetail';
+import { AgentPanel } from '../src/renderer/design/agent/AgentPanel';
 import { AgentTab } from '../src/renderer/design/agent/detail';
 import type { AgentDetailState } from '../src/renderer/design/agent/useAgentDetail';
 import { Onboarding } from '../src/renderer/design/onboarding/Onboarding';
@@ -354,16 +355,6 @@ function Screens(): JSX.Element {
     };
     return <Onboarding userName="Bass" bridge={bridge} onDone={noop} />;
   }
-  if (screen === 'settings') {
-    // The screen over a blank shell, with every row the app can draw
-    // (`appUiMap.ts`'s fullest input). The select opens in a portal;
-    // `harness/settings-open.mjs` clicks it and photographs the result.
-    return (
-      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-        <Settings {...EVERY_ROW} accountName="Bass Fall" onClose={noop} />
-      </div>
-    );
-  }
   const composing = screen === 'compose';
 
   const withAuth = screen === 'auth' || screen === 'thread';
@@ -448,6 +439,18 @@ function Screens(): JSX.Element {
         />
       ) : undefined}
       onOpenAgent={noop}
+      // The third column: the agent panel, plain or with the delete
+      // question already asked (the sidebar's trash), so the two- and
+      // three-column layouts are both on film.
+      agentPanel={screen === 'panel' || screen === 'panel-delete' ? (
+        <AgentPanel
+          agent={{ id: 'juno', name: 'Juno', label: 'Reads the long things', description: 'Reads decks, models and memos before you have to, and says what does not add up.', avatar: 3, notify: true }}
+          asking={screen === 'panel-delete'}
+          onDelete={noop}
+          onChange={noop}
+          onClose={noop}
+        />
+      ) : undefined}
       agentDetail={screen.startsWith('agent-') ? (
         <AgentDetail
           detail={agentDetailFixture(screen.slice('agent-'.length) as AgentTab)}
@@ -456,6 +459,13 @@ function Screens(): JSX.Element {
           onClose={noop}
         />
       ) : undefined}
+      // Settings fills the pane, as the 17 September canvas has it; every
+      // row the app can draw (`appUiMap.ts`'s fullest input). The select
+      // opens in a portal; `harness/settings-open.mjs` clicks it and
+      // photographs the result.
+      settings={screen === 'settings' ? (
+        <Settings {...EVERY_ROW} accountName="Bass Fall" onClose={noop} />
+      ) : undefined}
       onAccount={noop}
       accountMenu={screen === 'account' || screen === 'account-spent' ? (
         <AccountMenu
@@ -463,6 +473,8 @@ function Screens(): JSX.Element {
             ? { planName: 'Trial', creditsLimit: 100, creditsUsed: 100 }
             : { planName: 'Trial', creditsLimit: 100, creditsUsed: 74 }}
           onSettings={noop}
+          onSupport={noop}
+          onAddAccount={noop}
           onLogOut={noop}
           onClose={noop}
         />

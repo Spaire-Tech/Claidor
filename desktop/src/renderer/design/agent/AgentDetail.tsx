@@ -5,7 +5,8 @@ import { formatScheduleLabel } from '../../components/scheduledTasks/utils';
 import type { CoworkUserMemoryEntry } from '../../types/cowork';
 import { CloseIcon, FilesIcon, GlobeIcon, WarningIcon } from '../icons';
 import { Orb, OrbMood } from '../orb/Orb';
-import { color, glass, line, radius, shadow, text, tracking } from '../tokens';
+import { AGENT_TABS as ROLE_TABS } from '../shell/roles';
+import { color, line, motion, radius, shadow, text, tracking } from '../tokens';
 import {
   AGENT_TABS,
   AgentTab,
@@ -25,6 +26,48 @@ export interface AgentDetailProps {
 }
 
 /**
+ * The note under each tab's name, which the canvas writes beside the tab
+ * (`detailTabs`, template.html:2079) and `shell/roles.ts` already carries
+ * verbatim. The two tab lists name the same five things; this joins them
+ * by the label rather than copying five strings a second time.
+ */
+const TAB_NOTES: ReadonlyMap<string, string> = new Map(ROLE_TABS.map(one => [one.id, one.note]));
+
+/** The pointer over a control, for the canvas's `style-hover` states. */
+function useHover(): [boolean, { onMouseEnter: () => void; onMouseLeave: () => void }] {
+  const [over, setOver] = useState(false);
+  return [over, { onMouseEnter: () => setOver(true), onMouseLeave: () => setOver(false) }];
+}
+
+/** The canvas's round icon button: transparent, the fill under the pointer. */
+function RoundButton(
+  { size, label, onClick, children }: {
+    size: number;
+    label: string;
+    onClick: () => void;
+    children: React.ReactNode;
+  },
+): JSX.Element {
+  const [over, hover] = useHover();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      {...hover}
+      style={{
+        width: size, height: size, flex: '0 0 auto', border: 'none',
+        background: over ? color.fill : 'transparent', borderRadius: '50%', cursor: 'pointer',
+        color: over ? color.ink : color.muted,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+/**
  * The agent, opened.
  *
  * Reached by tapping the name at the top of the conversation, which is
@@ -34,6 +77,11 @@ export interface AgentDetailProps {
  * Five tabs, all reading things that already existed — the agent record,
  * the workspace MEMORY.md, the skill manager, the cron service and the
  * MCP store. Nothing here is a new subsystem, and that is the point.
+ *
+ * Drawn as the 17 September canvas draws an agent's page inside Apps: a
+ * white ground filling the pane, the face at 82px beside the name, a
+ * 240px column of tabs with a note under each, and the body in a panel
+ * of the inset fill. No glass, and no scrim — this is the pane itself.
  */
 export function AgentDetail({ detail, agentName, agentId, onClose }: AgentDetailProps): JSX.Element {
   const { agent, tab, onTab } = detail;
@@ -43,88 +91,87 @@ export function AgentDetail({ detail, agentName, agentId, onClose }: AgentDetail
     <div
       style={{
         position: 'absolute', inset: 0, zIndex: 55, display: 'flex',
-        alignItems: 'center', justifyContent: 'center', padding: 32,
-        background: glass.scrim, backdropFilter: glass.scrimBlur,
+        background: color.paper,
+        // The canvas: `animation:msgIn .18s ease-out both` (template.html:437).
+        animation: `fsr-message-in .18s ${motion.messageIn.easing} both`,
       }}
-      onClick={onClose}
-      role="presentation"
     >
       <div
-        onClick={event => event.stopPropagation()}
-        role="presentation"
         style={{
-          width: '100%', maxWidth: 680, height: '100%', maxHeight: 680,
-          boxSizing: 'border-box', display: 'flex', flexDirection: 'column',
-          borderRadius: radius.modal, background: glass.background,
-          backdropFilter: glass.blur, border: `1px solid ${glass.border}`,
-          boxShadow: `${shadow.modal}, ${shadow.glassInset}`, overflow: 'hidden',
+          width: '100%', height: '100%', boxSizing: 'border-box',
+          display: 'flex', flexDirection: 'column', overflow: 'hidden', background: color.paper,
         }}
       >
-        <div style={{ flex: '0 0 auto', padding: '22px 24px 0', display: 'flex', gap: 14 }}>
-          <Orb agentId={agentId} size={52} mood={OrbMood.Still} />
-          <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3, paddingTop: 4 }}>
-            <div style={{ fontSize: text.dialogTitle, fontWeight: 500, letterSpacing: tracking.screenTitle }}>
-              {agentName}
-            </div>
-            {subtitle && (
-              <div style={{ fontSize: text.small, color: color.muted }}>{subtitle}</div>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            style={{
-              flex: '0 0 auto', width: 28, height: 28, border: 'none',
-              background: 'transparent', cursor: 'pointer', color: color.muted,
-              borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <CloseIcon size={13} />
-          </button>
-        </div>
-
         <div
-          role="tablist"
           style={{
-            flex: '0 0 auto', display: 'flex', gap: 2, padding: '16px 20px 0',
-            borderBottom: `1px solid ${line.hairline}`,
+            flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overflowX: 'hidden',
+            padding: '26px 29px 38px', display: 'flex', flexDirection: 'column',
           }}
         >
-          {AGENT_TABS.map(one => {
-            const on = tab === one.id;
-            return (
-              <button
-                key={one.id}
-                type="button"
-                role="tab"
-                aria-selected={on}
-                onClick={() => onTab(one.id)}
+          <div style={{ width: '100%', maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 31 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 19 }}>
+              <Orb agentId={agentId} size={82} mood={OrbMood.Still} />
+              <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 6 }}>
+                <div style={{ fontSize: text.detailTitle, fontWeight: 500, letterSpacing: tracking.detailTitle, lineHeight: 1.2, color: color.ink }}>
+                  {agentName}
+                </div>
+                {subtitle && (
+                  <div style={{ fontSize: text.message, color: color.muted }}>{subtitle}</div>
+                )}
+              </div>
+              <RoundButton size={26} label="Close" onClick={onClose}>
+                <CloseIcon size={13} />
+              </RoundButton>
+            </div>
+
+            <div style={{ height: 1, background: color.divider }} />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '240px minmax(0,1fr)', gap: 28, alignItems: 'start', paddingBottom: 6 }}>
+              <div role="tablist" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {AGENT_TABS.map(one => {
+                  const on = tab === one.id;
+                  const note = TAB_NOTES.get(one.label);
+                  return (
+                    <button
+                      key={one.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={on}
+                      onClick={() => onTab(one.id)}
+                      style={{
+                        display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start',
+                        textAlign: 'left', padding: '14px 15px', borderRadius: radius.row,
+                        cursor: 'pointer', font: 'inherit',
+                        // The canvas's `detailTabs`: `transition:background .14s` (template.html:2087).
+                        transition: 'background .14s',
+                        background: on ? color.fillStrong : 'transparent',
+                        border: on ? `1px solid ${line.hairline}` : '1px solid transparent',
+                      }}
+                    >
+                      <span style={{ fontSize: text.emphasis, color: color.ink }}>{one.label}</span>
+                      {note && <span style={{ fontSize: text.small, color: color.muted }}>{note}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div
+                role="tabpanel"
                 style={{
-                  padding: '8px 12px 10px', border: 'none', background: 'transparent',
-                  font: 'inherit', fontSize: text.body, cursor: 'pointer',
-                  letterSpacing: tracking.body,
-                  color: on ? color.ink : color.muted,
-                  fontWeight: on ? 500 : 400,
-                  boxShadow: on ? `inset 0 -2px 0 ${color.accent}` : 'none',
+                  minHeight: 280, padding: '24px 26px', borderRadius: radius.menu,
+                  background: color.fill, border: `1px solid ${line.hairline}`,
+                  display: 'flex', flexDirection: 'column', gap: 17,
                 }}
               >
-                {one.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <div
-          role="tabpanel"
-          style={{
-            flex: '1 1 auto', minHeight: 0, overflowY: 'auto',
-            padding: '16px 24px 20px', display: 'flex', flexDirection: 'column', gap: 10,
-          }}
-        >
-          {detail.loading
-            ? <Quiet>Reading…</Quiet>
-            : <Panel detail={detail} agentName={agentName} />}
+                <div style={{ fontSize: text.caption, color: color.muted }}>
+                  {AGENT_TABS.find(one => one.id === tab)?.label}
+                </div>
+                {detail.loading
+                  ? <Quiet>Reading…</Quiet>
+                  : <Panel detail={detail} agentName={agentName} />}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -141,22 +188,26 @@ function Panel({ detail, agentName }: { detail: AgentDetailState; agentName: str
   }
 }
 
-/** The one grey sentence a tab shows when it has nothing. */
+/** The one sentence a tab shows when it has nothing: the panel's body type, muted. */
 function Quiet({ children }: { children: React.ReactNode }): JSX.Element {
   return (
-    <div style={{ fontSize: text.body, color: color.muted, lineHeight: 1.5, maxWidth: 46 * 14 }}>
+    <div style={{ fontSize: text.emphasis, color: color.muted, lineHeight: 1.65, maxWidth: '62ch', textWrap: 'pretty' }}>
       {children}
     </div>
   );
 }
 
-/** A row: something on the left, a control on the right. */
+/**
+ * A row: something on the left, a control on the right. The panel is the
+ * inset fill, so a row sits on it the way a skill chip does — the window's
+ * grey with the card line.
+ */
 function Row({ children }: { children: React.ReactNode }): JSX.Element {
   return (
     <div
       style={{
-        display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px',
-        borderRadius: radius.row, background: color.fill,
+        display: 'flex', alignItems: 'center', gap: 12, padding: '11px 13px',
+        borderRadius: radius.row, background: color.window, border: `1px solid ${line.card}`,
       }}
     >
       {children}
@@ -164,6 +215,7 @@ function Row({ children }: { children: React.ReactNode }): JSX.Element {
   );
 }
 
+/** The settings toggle, so a switch is one shape everywhere. */
 function Switch({ on, onChange, label }: {
   on: boolean; onChange: (on: boolean) => void; label: string;
 }): JSX.Element {
@@ -175,26 +227,38 @@ function Switch({ on, onChange, label }: {
       aria-label={label}
       onClick={() => onChange(!on)}
       style={{
-        flex: '0 0 auto', width: 41, height: 24, padding: 2, cursor: 'pointer',
-        borderRadius: radius.pill, border: `1px solid ${line.button}`,
-        background: on ? color.accent : color.fillStrong,
-        display: 'flex', justifyContent: on ? 'flex-end' : 'flex-start',
-        transition: `background ${'.15s'} ease`,
+        width: 44, height: 23, flex: '0 0 auto', border: 'none', borderRadius: radius.pill,
+        cursor: 'pointer', display: 'flex', alignItems: 'center',
+        justifyContent: on ? 'flex-end' : 'flex-start', padding: '0 2px',
+        // The canvas: `transition:background .18s` and the off track at
+        // `rgba(0,0,0,.09)` (template.html:1304), which is no token.
+        transition: 'background .18s',
+        background: on ? color.accent : 'rgba(0,0,0,.09)',
       }}
     >
       <span
         style={{
-          width: 18, height: 18, borderRadius: '50%', background: color.paper,
-          boxShadow: shadow.flat,
+          width: 19, height: 19, borderRadius: '50%', background: color.paper,
+          boxShadow: shadow.knob, display: 'block',
         }}
       />
     </button>
   );
 }
 
+/** The 26px round X on a row that can be taken away. */
+function RowClose({ label, onClick }: { label: string; onClick: () => void }): JSX.Element {
+  return (
+    <RoundButton size={26} label={label} onClick={onClick}>
+      <CloseIcon size={11} />
+    </RoundButton>
+  );
+}
+
 function Instructions({ detail, agentName }: { detail: AgentDetailState; agentName: string }): JSX.Element {
   const dirty = instructionsChanged(detail.savedInstructions, detail.instructions);
   const empty = !detail.savedInstructions.trim() && !detail.instructions.trim();
+  const live = dirty && !detail.saving;
 
   return (
     <>
@@ -206,8 +270,8 @@ function Instructions({ detail, agentName }: { detail: AgentDetailState; agentNa
         spellCheck={false}
         style={{
           flex: '1 1 auto', minHeight: 260, resize: 'none', padding: 14,
-          borderRadius: radius.field, background: color.fill,
-          border: `1px solid ${line.hairline}`, outline: 'none',
+          borderRadius: radius.input, background: color.window,
+          border: `1px solid ${line.field}`, outline: 'none',
           font: 'inherit', fontSize: text.message, lineHeight: 1.55, color: color.ink,
         }}
       />
@@ -218,12 +282,13 @@ function Instructions({ detail, agentName }: { detail: AgentDetailState; agentNa
         <button
           type="button"
           onClick={detail.onSaveInstructions}
-          disabled={!dirty || detail.saving}
+          disabled={!live}
           style={{
-            flex: '0 0 auto', height: 33, padding: '0 17px', borderRadius: radius.pill,
-            border: 'none', font: 'inherit', fontSize: text.body, color: color.paper,
-            background: dirty && !detail.saving ? color.ink : color.disabled,
-            cursor: dirty && !detail.saving ? 'pointer' : 'default',
+            flex: '0 0 auto', height: 32, padding: '0 15px', borderRadius: radius.pill,
+            border: 'none', font: 'inherit', fontSize: text.body, fontWeight: 500,
+            color: live ? color.paper : color.muted,
+            background: live ? color.accent : line.hover,
+            cursor: live ? 'pointer' : 'default',
           }}
         >
           {detail.saving ? 'Saving…' : 'Save'}
@@ -236,6 +301,7 @@ function Instructions({ detail, agentName }: { detail: AgentDetailState; agentNa
 function Memories({ detail, agentName }: { detail: AgentDetailState; agentName: string }): JSX.Element {
   const [draft, setDraft] = useState('');
   const add = (): void => { detail.onAddMemory(draft); setDraft(''); };
+  const live = draft.trim().length > 0;
 
   return (
     <>
@@ -247,22 +313,22 @@ function Memories({ detail, agentName }: { detail: AgentDetailState; agentName: 
           placeholder={`Something ${agentName} should know`}
           aria-label={`Something ${agentName} should know`}
           style={{
-            flex: '1 1 auto', minWidth: 0, height: 36, padding: '0 13px',
-            borderRadius: radius.pill, background: color.fill,
-            border: `1px solid ${line.hairline}`, outline: 'none',
-            font: 'inherit', fontSize: text.small, color: color.ink,
+            flex: '1 1 auto', minWidth: 0, height: 32, padding: '0 13px',
+            borderRadius: radius.pill, background: color.window,
+            border: `1px solid ${line.field}`, outline: 'none',
+            font: 'inherit', fontSize: text.body, color: color.ink,
           }}
         />
         <button
           type="button"
           onClick={add}
-          disabled={!draft.trim()}
+          disabled={!live}
           style={{
-            flex: '0 0 auto', height: 36, padding: '0 15px', borderRadius: radius.pill,
-            border: `1px solid ${line.button}`, background: color.paper,
-            font: 'inherit', fontSize: text.small,
-            color: draft.trim() ? color.ink : color.disabled,
-            cursor: draft.trim() ? 'pointer' : 'default',
+            flex: '0 0 auto', height: 32, padding: '0 15px', borderRadius: radius.pill,
+            border: `1px solid ${line.field}`, background: color.window,
+            font: 'inherit', fontSize: text.body, fontWeight: 400,
+            color: live ? color.ink : color.faint,
+            cursor: live ? 'pointer' : 'default',
           }}
         >
           Add
@@ -283,21 +349,10 @@ function MemoryRow({ entry, onDelete }: {
 }): JSX.Element {
   return (
     <Row>
-      <span style={{ flex: '1 1 auto', minWidth: 0, fontSize: text.body, lineHeight: 1.45 }}>
+      <span style={{ flex: '1 1 auto', minWidth: 0, fontSize: text.body, lineHeight: 1.45, color: color.ink }}>
         {entry.text}
       </span>
-      <button
-        type="button"
-        onClick={() => onDelete(entry.id)}
-        aria-label={`Forget: ${entry.text}`}
-        style={{
-          flex: '0 0 auto', width: 26, height: 26, border: 'none', background: 'transparent',
-          cursor: 'pointer', color: color.muted, borderRadius: '50%',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}
-      >
-        <CloseIcon size={11} />
-      </button>
+      <RowClose label={`Forget: ${entry.text}`} onClick={() => onDelete(entry.id)} />
     </Row>
   );
 }
@@ -320,7 +375,7 @@ function Skills({ detail, agentName }: { detail: AgentDetailState; agentName: st
             <WarningIcon size={15} />
           </span>
           <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: text.body, fontWeight: 500 }}>{id}</span>
+            <span style={{ fontSize: text.body, fontWeight: 500, color: color.ink }}>{id}</span>
             <span style={{ fontSize: text.caption, color: color.muted }}>
               Named by {agentName}, but not installed on this computer.
             </span>
@@ -338,7 +393,7 @@ function Skills({ detail, agentName }: { detail: AgentDetailState; agentName: st
             <FilesIcon size={16} />
           </span>
           <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: text.body, fontWeight: 500 }}>{skill.name}</span>
+            <span style={{ fontSize: text.body, fontWeight: 500, color: color.ink }}>{skill.name}</span>
             {skill.description && (
               <span style={{ fontSize: text.caption, color: color.muted, lineHeight: 1.4 }}>
                 {skill.description}
@@ -383,7 +438,7 @@ function RoutineRow({ task, onToggle, onDelete }: {
   return (
     <Row>
       <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <span style={{ fontSize: text.body, fontWeight: 500 }}>{task.name}</span>
+        <span style={{ fontSize: text.body, fontWeight: 500, color: color.ink }}>{task.name}</span>
         <span style={{ fontSize: text.caption, color: color.muted }}>
           {/*
             The schedule is read by the app's own cron reader rather than
@@ -393,12 +448,12 @@ function RoutineRow({ task, onToggle, onDelete }: {
           */}
           {formatScheduleLabel(task.schedule)}
           {' · '}
-          <span style={{ color: failed ? color.danger : color.muted }}>
+          <span style={{ color: failed ? color.deleteInk : color.muted }}>
             {lastRunLine(task)}
           </span>
         </span>
         {failed && task.state.lastError && (
-          <span style={{ fontSize: text.caption, color: color.danger, lineHeight: 1.4 }}>
+          <span style={{ fontSize: text.caption, color: color.deleteInk, lineHeight: 1.4 }}>
             {task.state.lastError}
           </span>
         )}
@@ -408,18 +463,7 @@ function RoutineRow({ task, onToggle, onDelete }: {
         onChange={on => onToggle(task.id, on)}
         label={`Run ${task.name} on its schedule`}
       />
-      <button
-        type="button"
-        onClick={() => onDelete(task.id)}
-        aria-label={`Delete ${task.name}`}
-        style={{
-          flex: '0 0 auto', width: 26, height: 26, border: 'none', background: 'transparent',
-          cursor: 'pointer', color: color.muted, borderRadius: '50%',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}
-      >
-        <CloseIcon size={11} />
-      </button>
+      <RowClose label={`Delete ${task.name}`} onClick={() => onDelete(task.id)} />
     </Row>
   );
 }
@@ -436,7 +480,7 @@ function Integrations({ detail, agentName }: { detail: AgentDetailState; agentNa
             <GlobeIcon size={16} />
           </span>
           <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: text.body, fontWeight: 500 }}>{server.name}</span>
+            <span style={{ fontSize: text.body, fontWeight: 500, color: color.ink }}>{server.name}</span>
             {server.description && (
               <span style={{ fontSize: text.caption, color: color.muted, lineHeight: 1.4 }}>
                 {server.description}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { logoUrl } from '../logos';
-import { color, line, radius, text, tracking } from '../tokens';
+import { color, line, motion, radius, text, tracking } from '../tokens';
 import { FILE_LOGO } from './attachment';
 // The design's PDF icon, bundled by Vite like the service logos.
 import pdfDoc from './pdf-doc.webp?url';
@@ -17,6 +17,10 @@ import { FileKind } from './types';
  * 17 September, for a deck or a report (`ArtifactBlock`): *"keep our own
  * design, with pdf svgs, docs svgs, ppt etc. and our buttons like it
  * was before. this is still artifacts. we just changed the design."*
+ *
+ * The measurements are the 17 September canvas's (template.html
+ * 759–769): white paper with a hairline and no shadow, which goes
+ * transparent under the pointer, in a column no wider than 440px.
  */
 export function FileCard(
   { name, caption, kind, title, onOpen, onSave }: {
@@ -44,18 +48,18 @@ export function FileCard(
       onMouseLeave={() => setHover(false)}
       title={title}
       style={{
-        display: 'flex', alignItems: 'center', gap: 12, width: 'min(70%, 440px)',
+        display: 'flex', alignItems: 'center', gap: 12, width: '100%', maxWidth: 'min(70%, 440px)',
         boxSizing: 'border-box', padding: '11px 12px', borderRadius: radius.card,
-        background: hover ? '#f6f7f9' : color.paper,
-        border: '1px solid rgba(255,255,255,.6)',
-        boxShadow: '0 1px 2px rgba(16,22,35,.04), 0 12px 32px rgba(16,22,35,.08), inset 0 1px 0 rgba(255,255,255,.7)',
-        cursor: onOpen ? 'pointer' : 'default', textAlign: 'left', transition: 'background .15s',
+        background: hover ? 'transparent' : color.paper,
+        border: `1px solid ${line.hairline}`,
+        cursor: onOpen ? 'pointer' : 'default', textAlign: 'left',
+        transition: `background ${motion.hover.duration} ${motion.hover.easing}`,
       }}
     >
       <FileGlyph kind={kind} name={name} />
       <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
         <span style={{
-          fontSize: text.message, fontWeight: 500, letterSpacing: tracking.body, color: color.shimmerInk,
+          fontSize: text.message, fontWeight: 500, letterSpacing: tracking.body, color: color.ink,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         }}>
           {name}
@@ -71,8 +75,8 @@ export function FileCard(
           onMouseEnter={() => setSaveHover(true)}
           onMouseLeave={() => setSaveHover(false)}
           style={{
-            width: 31, height: 31, flex: '0 0 auto', borderRadius: '50%', padding: 0,
-            border: `1px solid ${line.hairline}`, background: saveHover ? color.fillRaised : color.paper,
+            width: 27, height: 27, flex: '0 0 auto', borderRadius: '50%', padding: 0,
+            border: 'none', background: saveHover ? color.window : color.paper,
             color: color.ink, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
@@ -91,7 +95,7 @@ export function FileGlyph({ kind, name }: { kind: FileKind | undefined; name: st
   const url = kind === FileKind.Pdf ? pdfDoc : logo ? logoUrl(logo) : undefined;
   if (!url) {
     return (
-      <span style={{ width: 36, height: 36, flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span style={{ width: 32, height: 32, flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <PaperclipGlyph />
       </span>
     );
@@ -101,7 +105,7 @@ export function FileGlyph({ kind, name }: { kind: FileKind | undefined; name: st
       role="img"
       aria-label={name}
       style={{
-        width: 36, height: 36, flex: '0 0 auto',
+        width: 32, height: 32, flex: '0 0 auto',
         backgroundImage: `url(${url})`, backgroundSize: 'contain',
         backgroundRepeat: 'no-repeat', backgroundPosition: 'center',
       }}

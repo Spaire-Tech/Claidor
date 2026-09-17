@@ -5,7 +5,7 @@ import { APP_LOGO_DIRECTORY } from '../../../shared/connections/catalog';
 import { ONBOARDING_LOGOS } from '../../../shared/onboarding/constants';
 import { OnboardingPhase, OTHER_PLACEHOLDER, type ShownWord, WordState } from '../../../shared/onboarding/script';
 import { CloudBlob } from '../orb/CloudBlob';
-import { color, font } from '../tokens';
+import { color, font, line, motion, radius, shadow } from '../tokens';
 import { type AmbientCloud, cloudGeometry, cloudGradient, renderCloudImage } from './ambientClouds';
 import { type OnboardingBridge, type OnboardingState, type TaskCard, useOnboarding } from './useOnboarding';
 
@@ -43,13 +43,19 @@ export interface OnboardingProps {
   onDone: (work: { workType: string; ownWords: boolean }) => void;
 }
 
+/*
+ * The colour is the 17 September canvas's ("Spatial Light"): ink and
+ * muted on white, the accent for the person's pill and every primary
+ * button, black at a low alpha for lines. The 16 September canvas's own
+ * navy-tinted greys went with the rest of the navy.
+ */
 const INK = color.ink;
-const PAPER = '#fbfbfc';
-const QUIET = '#6e6e73';
-const LINE = 'rgba(16,22,35,.11)';
-const FIELD = 'rgba(16,22,35,.14)';
-const HOVER = '#eef1f5';
-const CARD_SHADOW = '0 1px 2px rgba(16,22,35,.04), 0 10px 28px rgba(16,22,35,.06)';
+const PAPER = color.paper;
+const QUIET = color.muted;
+const LINE = line.field;
+const HOVER = color.window;
+const CARD_SHADOW = shadow.flat;
+const HOVER_TRANSITION = `background ${motion.hover.duration} ${motion.hover.easing}`;
 
 /** The canvas's keyframes, once per page. */
 const KEYFRAMES = `
@@ -67,7 +73,7 @@ const KEYFRAMES = `
 @keyframes onb-drift-b { 0%,100% { transform:translate3d(24%,16%,0) scale(1.08); } 40% { transform:translate3d(-28%,-18%,0) scale(.86); } 70% { transform:translate3d(-8%,28%,0) scale(1.24); } }
 @keyframes onb-drift-c { 0%,100% { transform:translate3d(8%,24%,0) scale(.9); } 45% { transform:translate3d(-26%,-10%,0) scale(1.26); } 75% { transform:translate3d(28%,6%,0) scale(1.04); } }
 .onb-hover:hover { background: ${HOVER} !important; }
-.onb-hover-ink:hover { background: ${color.inkHover} !important; }
+.onb-hover-accent:hover { background: ${color.accentHover} !important; }
 .onb-hover-quiet:hover { color: ${INK} !important; }
 `;
 
@@ -104,26 +110,29 @@ function useAmbientClouds(): readonly { place: CSSProperties; cloud: CSSProperti
 const lineStyle: CSSProperties = { whiteSpace: 'pre-wrap', fontSize: 17, lineHeight: 1.6, color: INK, textWrap: 'pretty' };
 const linesBlock: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 16 };
 
+/* The canvas's secondary button: white, no line, the flat shadow; the window's grey under the pointer. */
 const pill = (extra: CSSProperties): CSSProperties => ({
-  height: 42, padding: '0 20px', borderRadius: 999, border: `1px solid ${FIELD}`, background: PAPER,
+  height: 42, padding: '0 20px', borderRadius: radius.pill, border: 'none', background: PAPER,
   color: INK, fontFamily: 'inherit', fontSize: 15.5, fontWeight: 400, whiteSpace: 'nowrap',
-  cursor: 'pointer', transition: 'background .15s', ...extra,
+  boxShadow: CARD_SHADOW, cursor: 'pointer', transition: HOVER_TRANSITION, ...extra,
 });
 
+/* The canvas's primary button: the accent, white type at 500. */
 const primary = (extra: CSSProperties = {}): CSSProperties => ({
-  height: 42, padding: '0 22px', borderRadius: 999, border: 'none', background: INK, color: PAPER,
-  fontFamily: 'inherit', fontSize: 15.5, fontWeight: 400, whiteSpace: 'nowrap', cursor: 'pointer',
-  transition: 'background .15s', ...extra,
+  height: 42, padding: '0 22px', borderRadius: radius.pill, border: 'none', background: color.accent, color: PAPER,
+  fontFamily: 'inherit', fontSize: 15.5, fontWeight: 500, whiteSpace: 'nowrap', cursor: 'pointer',
+  transition: HOVER_TRANSITION, ...extra,
 });
 
+/* The person's pill is the person's bubble: the accent. */
 const userPill: CSSProperties = {
   display: 'inline-flex', alignItems: 'center', maxWidth: '70%', height: 44, padding: '0 21px',
-  borderRadius: 999, background: INK, color: PAPER, fontSize: 16, whiteSpace: 'nowrap',
+  borderRadius: radius.pill, background: color.accent, color: PAPER, fontSize: 16, whiteSpace: 'nowrap',
   overflow: 'hidden', textOverflow: 'ellipsis',
 };
 
 const card: CSSProperties = {
-  display: 'flex', alignItems: 'center', gap: 16, padding: '15px 17px', borderRadius: 18,
+  display: 'flex', alignItems: 'center', gap: 16, padding: '15px 17px', borderRadius: radius.card,
   background: PAPER, border: `1px solid ${LINE}`, boxShadow: CARD_SHADOW,
   animation: 'onb-block-in .4s ease-out both',
 };
@@ -181,7 +190,10 @@ export function Onboarding({ userName, bridge, onDone }: OnboardingProps): JSX.E
     <div
       style={{
         height: '100vh', boxSizing: 'border-box', position: 'relative', display: 'flex', alignItems: 'stretch',
-        overflow: 'hidden', background: 'radial-gradient(120% 90% at 50% 0%, #fdfdfe 0%, #f0f1f3 100%)',
+        overflow: 'hidden', background: color.ground,
+        // The two lights on the ground, from the 17 September canvas, line 77.
+        backgroundImage:
+          'radial-gradient(75% 60% at 26% 8%, #ffffff 0%, rgba(255,255,255,0) 68%), radial-gradient(70% 60% at 82% 88%, #e6ebf4 0%, rgba(230,235,244,0) 66%)',
         fontFamily: font.ui, color: INK, WebkitFontSmoothing: 'antialiased',
       }}
     >
@@ -193,13 +205,14 @@ export function Onboarding({ userName, bridge, onDone }: OnboardingProps): JSX.E
         ))}
       </div>
 
-      {/* The canvas's glass at 88% white. Its backdrop blur is not here: the
-          clouds are blurred already and blurring the window again every
-          frame was half the lag; its saturate(1.15) is baked into them. */}
+      {/* The 16 September canvas's veil at 88% white, over the clouds; no
+          blur behind it (the clouds are blurred already, and blurring the
+          window again every frame was half the lag). It is paper at .88, so
+          the clouds show through it as the tint that canvas drew. */}
       <div
         style={{
           flex: '1 1 auto', minWidth: 0, position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column',
-          overflow: 'hidden', background: 'rgba(253,253,254,.88)',
+          overflow: 'hidden', background: 'rgba(255,255,255,.88)',
         }}
       >
         {state.intro && (
@@ -245,16 +258,19 @@ export function Onboarding({ userName, bridge, onDone }: OnboardingProps): JSX.E
                     autoFocus
                     aria-label={OTHER_PLACEHOLDER}
                     style={{
-                      flex: '1 1 auto', minWidth: 0, height: 50, padding: '0 20px', borderRadius: 999,
-                      border: `1px solid ${FIELD}`, background: PAPER, outline: 'none', fontFamily: 'inherit',
-                      fontSize: 16.5, color: INK, boxShadow: '0 1px 2px rgba(16,22,35,.04)',
+                      flex: '1 1 auto', minWidth: 0, height: 50, padding: '0 20px', borderRadius: radius.pill,
+                      border: `1px solid ${LINE}`, background: PAPER, outline: 'none', fontFamily: 'inherit',
+                      fontSize: 16.5, color: INK, boxShadow: CARD_SHADOW,
                     }}
                   />
                   <button
                     type="button"
                     onClick={state.submitOther}
-                    className={otherReady ? 'onb-hover-ink' : undefined}
-                    style={primary({ background: otherReady ? INK : '#c4ccd8', cursor: otherReady ? 'pointer' : 'default' })}
+                    className={otherReady ? 'onb-hover-accent' : undefined}
+                    style={primary(otherReady
+                      ? {}
+                      /* Not ready: the canvas's disabled button, the hover line's grey with muted type. */
+                      : { background: line.hover, color: QUIET, cursor: 'default' })}
                   >
                     Tell him
                   </button>
@@ -270,7 +286,7 @@ export function Onboarding({ userName, bridge, onDone }: OnboardingProps): JSX.E
               ) : (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9, animation: 'onb-block-in .3s ease-out both' }}>
                   {state.roles.map(role => (
-                    <button key={role.label} type="button" onClick={role.pick} className="onb-hover" style={pill({ boxShadow: '0 1px 2px rgba(16,22,35,.04)', border: '1px solid rgba(16,22,35,.13)' })}>
+                    <button key={role.label} type="button" onClick={role.pick} className="onb-hover" style={pill({})}>
                       {role.label}
                     </button>
                   ))}
@@ -278,7 +294,7 @@ export function Onboarding({ userName, bridge, onDone }: OnboardingProps): JSX.E
                     type="button"
                     onClick={state.openOther}
                     className="onb-hover"
-                    style={pill({ display: 'flex', alignItems: 'center', gap: 8, border: '1px dashed rgba(16,22,35,.22)', background: 'transparent', color: QUIET })}
+                    style={pill({ display: 'flex', alignItems: 'center', gap: 8, border: `1px dashed ${line.button}`, background: 'transparent', boxShadow: 'none', color: QUIET })}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" style={{ flex: '0 0 auto' }} aria-hidden focusable="false">
                       <path d="M4 18.5l1-4L16 3.5a2.1 2.1 0 013 3L8 17.5l-4 1z" />
@@ -310,11 +326,11 @@ export function Onboarding({ userName, bridge, onDone }: OnboardingProps): JSX.E
                         aria-disabled={!one.pressable}
                         style={{
                           display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 26, minHeight: 152,
-                          padding: 20, borderRadius: 16, textAlign: 'left', fontFamily: 'inherit',
+                          padding: 20, borderRadius: radius.row, textAlign: 'left', fontFamily: 'inherit',
                           transition: 'background .18s, border-color .18s, opacity .18s',
                           cursor: one.pressable ? 'pointer' : 'default',
                           background: one.chosen ? HOVER : PAPER,
-                          border: `1.5px solid ${one.chosen ? INK : LINE}`,
+                          border: `1.5px solid ${one.chosen ? color.accent : LINE}`,
                           opacity: one.dim ? 0.42 : 1,
                           boxShadow: one.chosen || one.dim ? 'none' : CARD_SHADOW,
                         }}
@@ -351,7 +367,7 @@ export function Onboarding({ userName, bridge, onDone }: OnboardingProps): JSX.E
                     {!state.working && (
                       <span style={{ display: 'flex', alignItems: 'center', gap: 9, flex: '0 0 auto' }}>
                         <button type="button" onClick={state.deny} className="onb-hover" style={pill({})}>Not now</button>
-                        <button type="button" onClick={state.allow} className="onb-hover-ink" style={primary()}>Allow access</button>
+                        <button type="button" onClick={state.allow} className="onb-hover-accent" style={primary()}>Allow access</button>
                       </span>
                     )}
                   </div>
@@ -387,10 +403,10 @@ export function Onboarding({ userName, bridge, onDone }: OnboardingProps): JSX.E
                         <button
                           type="button"
                           onClick={() => onDone({ workType: state.roleLabel, ownWords: state.ownWords })}
-                          className="onb-hover-ink"
+                          className="onb-hover-accent"
                           style={{
-                            width: 'min(560px, 100%)', height: 56, borderRadius: 999, border: 'none', background: INK, color: PAPER,
-                            fontFamily: 'inherit', fontSize: 17, fontWeight: 400, letterSpacing: '-.005em', cursor: 'pointer', transition: 'background .15s',
+                            width: 'min(560px, 100%)', height: 56, borderRadius: radius.pill, border: 'none', background: color.accent, color: PAPER,
+                            fontFamily: 'inherit', fontSize: 17, fontWeight: 500, letterSpacing: '-.005em', cursor: 'pointer', transition: HOVER_TRANSITION,
                           }}
                         >
                           Get Started
@@ -420,9 +436,9 @@ export function Onboarding({ userName, bridge, onDone }: OnboardingProps): JSX.E
               <span
                 key={n}
                 style={{
-                  width: n === state.stage ? 22 : 14, height: 5, borderRadius: 999,
+                  width: n === state.stage ? 22 : 14, height: 5, borderRadius: radius.pill,
                   transition: 'width .22s ease, background .22s ease',
-                  background: n === state.stage ? INK : 'rgba(16,22,35,.16)',
+                  background: n === state.stage ? INK : line.button,
                 }}
               />
             ))}

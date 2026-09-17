@@ -21,10 +21,10 @@ export interface ConnectionsProps {
  * The shelf of services, as the canvas draws it.
  *
  * A section per category — its name at 14.5 and a count beside it — and
- * a `minmax(320px, 1fr)` grid of cards. A card is a 39px logo tile, the
- * name, a tag line under it when there is one, and a button on the
- * right: black "Connect", or green "Connected". That is the whole card;
- * there is no description line. The first build put one there, and put
+ * a `minmax(320px, 1fr)` grid of cards. A card is a 34px logo tile, the
+ * name, a tag line under it when there is one, and a word on the right:
+ * blue "Connect", or green "Connected". That is the whole card; there is
+ * no description line. The first build put one there, and put
  * grey statements where the button goes, and the founder said it was
  * "100% different" from what they drew. It was.
  *
@@ -44,7 +44,7 @@ export function Connections(props: ConnectionsProps): JSX.Element {
 
   if (groups.length === 0) {
     return (
-      <div style={{ fontSize: text.message, color: color.muted, textAlign: 'center', padding: '48px 0' }}>
+      <div style={{ fontSize: text.message, color: color.muted, textAlign: 'center', padding: '41px 0' }}>
         Nothing matches that search.
       </div>
     );
@@ -97,7 +97,7 @@ function Card({ item, row, failure, onConnect, onDisconnect }: CardProps): JSX.E
     <div
       style={{
         display: 'flex', alignItems: 'center', gap: 14, padding: '17px 19px',
-        background: color.paper, border: `1px solid ${line.hairline}`,
+        background: color.window, border: `1px solid ${line.card}`,
         borderRadius: radius.card, boxShadow: shadow.flat,
       }}
     >
@@ -112,7 +112,7 @@ function Card({ item, row, failure, onConnect, onDisconnect }: CardProps): JSX.E
           {item.name}
         </span>
         {/*
-          The canvas's tag line, 13.5 and muted, under the name. A card
+          The canvas's tag line, 12.5 and muted, under the name. A card
           with a button has nothing to say here; a card without one says
           why — and while a sign-in runs, that it is running.
         */}
@@ -120,29 +120,28 @@ function Card({ item, row, failure, onConnect, onDisconnect }: CardProps): JSX.E
           <span style={{ fontSize: text.label, color: color.muted }}>{row.label}</span>
         )}
         {failure && (
-          <span style={{ fontSize: text.label, color: color.danger, lineHeight: 1.4 }}>
+          <span style={{ fontSize: text.label, color: color.deleteInk, lineHeight: 1.4 }}>
             {failure}
           </span>
         )}
       </span>
 
+      {/*
+        The canvas's `btnStyle`: a word, not a pill. Blue "Connect", green
+        "Connected", no border and no fill.
+      */}
       {(row.pressable || working) && (
         <button
           type="button"
           disabled={working}
           onClick={() => (connected ? onDisconnect(item.id) : onConnect(item.id))}
           style={{
-            flex: '0 0 auto', height: 31, padding: '0 14px', borderRadius: radius.pill,
-            font: 'inherit', fontSize: text.small, fontWeight: 400,
+            flex: '0 0 auto', height: 27, padding: '0 4px', border: 'none',
+            background: 'transparent',
+            font: 'inherit', fontSize: text.small, fontWeight: 500,
             whiteSpace: 'nowrap', cursor: working ? 'default' : 'pointer',
             opacity: working ? 0.6 : 1,
-            ...(connected
-              ? {
-                background: color.successFill,
-                color: color.success,
-                border: '1px solid rgba(26,133,71,.22)',
-              }
-              : { background: color.ink, color: color.paper, border: 'none' }),
+            color: connected ? color.successText : color.accent,
           }}
         >
           {/*
@@ -160,10 +159,10 @@ function Card({ item, row, failure, onConnect, onDisconnect }: CardProps): JSX.E
 /** The service's mark, or its initial when we have no file for it. */
 function Logo({ item }: { item: ConnectionItem }): JSX.Element {
   const box: React.CSSProperties = {
-    flex: '0 0 auto', position: 'relative', width: 39, height: 39,
+    flex: '0 0 auto', position: 'relative', width: 34, height: 34,
     borderRadius: radius.control,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: color.fillRaised, border: `1px solid ${line.hairline}`,
+    background: color.fill, border: `1px solid ${line.hairline}`,
     overflow: 'hidden',
   };
   if (item.logo) {
@@ -177,29 +176,29 @@ function Logo({ item }: { item: ConnectionItem }): JSX.Element {
         <img
           src={`${APP_LOGO_DIRECTORY}/${item.logo}`}
           alt=""
-          width={24}
-          height={24}
+          width={21}
+          height={21}
           style={{ objectFit: 'contain' }}
         />
       </span>
     );
   }
   return (
-    <span style={{ ...box, fontSize: text.base, fontWeight: 500, color: color.muted }}>
+    <span style={{ ...box, fontSize: text.emphasis, fontWeight: 500, color: color.muted }}>
       {connectionMonogram(item.name)}
     </span>
   );
 }
 
 /**
- * A small logo tile for the installed pill: 24px, radius 8, overlapping
+ * A small logo tile for the installed pill: 21px, radius 8, overlapping
  * the one before it by 7px, exactly as the canvas draws them.
  */
 export function PillLogo({ item, first }: { item: ConnectionItem; first: boolean }): JSX.Element {
   const box: React.CSSProperties = {
-    position: 'relative', width: 24, height: 24, flex: '0 0 auto', borderRadius: radius.chip,
-    background: color.paper, border: `1px solid ${line.hairline}`,
-    boxShadow: '0 1px 2px rgba(16,22,35,.06)',
+    position: 'relative', width: 21, height: 21, flex: '0 0 auto', borderRadius: radius.chip,
+    background: color.window, border: `1px solid ${line.card}`,
+    boxShadow: 'none',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     overflow: 'hidden',
     ...(first ? {} : { marginLeft: -7 }),
