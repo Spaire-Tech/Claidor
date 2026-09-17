@@ -134,6 +134,73 @@ The macOS installer builds on GitHub Actions
 (`.github/workflows/desktop_mac.yml`), unsigned until an Apple
 certificate exists.
 
+## rakazo/ — the new foundation (17 September 2026)
+
+`rakazo/` is Rakazo (Apache 2.0), vendored with `git subtree` (squashed;
+upstream `elie222/rakazo` commit `1f69485c`, named in the vendoring
+commit). It is **not a reference copy**. On 17 September the founder
+decided it is the foundation Caisra is built on, and that development on
+`desktop/` stops.
+
+Rakazo calls itself "an open source Grok Bot alternative for persistent
+AI teammates" (`rakazo/apps/www/src/site.ts`). It is what Caisra was
+being built toward: persistent bots with their own threads, memory,
+routines and computers; web, Electron and Expo from one API; connectors
+through Composio, Pipedream, MCP, OpenAPI and GraphQL; four sandbox
+providers plus the user's own Mac; four voice providers with
+transcription; and an eval harness that runs the real agent loop offline.
+
+**The four decisions of 17 September, from the founder:**
+
+1. Rakazo is the base. We add `apps/caisra` as a sibling and do **not**
+   delete `apps/web`, because leaving it alone keeps upstream merges
+   close to clean while they ship roughly 24 commits a day.
+2. The backend is hosted by us. Their desktop app already supports it:
+   `setup-config.ts` takes `mode: "existing"` with a `serverUrl`. This is
+   what makes a routine fire with the laptop shut.
+3. Keep from our tree: the renderer and the Messages design, onboarding,
+   Yodo, the 23 strongs, the roster card, Chief of Staff, the OpenUI
+   cards and artifacts (Rakazo has no equivalent; its `chat-ui` package
+   is 358 lines of markdown), the Caisra brand, and the Claidor server.
+4. `desktop/` is frozen. Do not add to it.
+
+**Three facts the plan rests on, each checked against source on 17
+September rather than assumed:**
+
+- A bot can run on the user's own Mac. `host-aware-sandbox.ts`:
+  `if (envKind === "docker" && computerHost === "this-mac") return "desktop"`.
+  It is per bot, so one bot works in a container while another works on
+  the real disk at real paths. "It opens your file where it lives"
+  survives the move.
+- Our metered proxy becomes a model provider through
+  `pi-openai-compatible-provider.ts` (`OPENAI_COMPATIBLE_PROVIDER_ID`).
+  Rakazo is bring-your-own-key and we are not; this is the seam where
+  "my users should never put a key" is kept. Config, not a build.
+- Their runtime is **Pi** (`@earendil-works/pi-agent-core`), not OpenClaw
+  and not Claude Code. The Claude Code routing work (review items 47, 59,
+  63, 65, 74) does not port. It is rework, against `ExecutionRunner` and
+  the cloud-agent tools.
+
+**Apache 2.0 obligations.** Keep the licence text and copyright notices,
+and state that files were changed. There is no NOTICE file upstream, so
+that is the whole burden. One trap: **Treg** is usage-metered and their
+README says hosted resale needs a written agreement — read it before
+shipping anything Treg-shaped.
+
+**Pulling upstream:**
+`git subtree pull --prefix=rakazo https://github.com/elie222/rakazo main --squash`.
+`Spaire-Tech/rakazo` is the founder's fork, kept for contributing back;
+the subtree tracks upstream directly so merges do not route through it.
+
+**Where their engineering is ahead of ours, and it is the part to copy
+first.** `rakazo/docs/agent-verification.md` runs the real agent loop
+against a local model fixture, offline, with no keys, plus 16 eval cases
+graded on actual effects over three trials. Its rule — "Missing live
+credentials mean **not run**, not a passing model evaluation" — is the
+founder's rule, already written into their engineering doc. Every
+argument we have had about whether a brief rule works was reasoning.
+They measure. Take the harness before taking opinions.
+
 ## Quick Start
 
 ```bash
