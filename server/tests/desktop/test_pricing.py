@@ -7,6 +7,7 @@ read and run by itself — `pytest --noconftest tests/desktop/test_pricing.py`.
 from polar.desktop.pricing import (
     CREDIT_USD_PER_MILLION_INPUT,
     MODELS,
+    MODELS_OWNER,
     PROVIDER_TOKEN_WEIGHTS,
     DesktopProvider,
     ModelRole,
@@ -17,6 +18,7 @@ from polar.desktop.pricing import (
     UsageTally,
     credits_for,
     model_by_id,
+    openai_models_list,
     tally_for,
     usage_from_answer,
 )
@@ -297,3 +299,68 @@ class TestTallies:
         tally.feed(b'data: {"choices":[{"delta":{"content":"x"}}],"usage":null}\n\n')
         tally.feed(b"data: [DONE]\n\n")
         assert tally.finish() == Usage()
+
+
+class TestTheMenuAnOpenAiCompatibleClientReads:
+    """`GET /v1/models`, which is how a client that knows nothing about
+    Claidor finds out what it may name.
+
+    Written when Claidor was connected to Rakazo, a server we did not
+    write. Its model connection speaks plain OpenAI and asks this one
+    question before any other
+    (`rakazo/packages/adapters/src/pi-openai-compatible-provider.ts`,
+    `probeOpenAiCompatibleModels`).
+    """
+
+    def test_the_completions_wire_offers_openai_models_and_not_claude(self) -> None:
+        # Not a policy about Claude. Nothing in the proxy translates a Chat
+        # Completions request into an Anthropic one, so naming Claude here
+        # would earn a 400 on the very next request. A menu that lists a
+        # dish the kitchen refuses is worse than a short menu.
+        listed = openai_models_list(MODELS, SpokenApi.openai_completions)
+        ids = [row["id"] for row in listed["data"]]
+        assert "gpt-5.6-terra" in ids
+        assert "gpt-5.6-luna" in ids
+        assert "claude-sonnet-5" not in ids
+        assert all(model_by_id(one).provider is DesktopProvider.openai for one in ids)
+
+    def test_the_anthropic_wire_offers_claude_and_not_the_gpts(self) -> None:
+        listed = openai_models_list(MODELS, SpokenApi.anthropic_messages)
+        ids = [row["id"] for row in listed["data"]]
+        assert "claude-sonnet-5" in ids
+        assert not [one for one in ids if one.startswith("gpt-")]
+
+    def test_it_is_openais_shape_and_not_the_desktop_apps_envelope(self) -> None:
+        # The whole point of this route: every other route here answers
+        # `{"code": 0, "data": …}`, which the vendored client unwraps. An
+        # OpenAI-compatible client reads `data` as the list of models. Hand
+        # it the envelope and it parses a 200 and finds no models at all.
+        listed = openai_models_list(MODELS, SpokenApi.openai_completions)
+        assert listed["object"] == "list"
+        assert isinstance(listed["data"], list)
+        assert "code" not in listed
+        for row in listed["data"]:
+            assert row["object"] == "model"
+            assert row["owned_by"] == MODELS_OWNER
+            # No invented `created`: we hold no publication date for these,
+            # and a made-up timestamp is worse than an absent field.
+            assert set(row) == {"id", "object", "owned_by"}
+
+    def test_the_list_and_the_route_cannot_drift_apart(self) -> None:
+        # Both ask `reachable_on`, so a model that appears on a wire's menu
+        # is by construction a model that wire accepts. This test exists so
+        # that stays true if either side is rewritten.
+        for spoken in SpokenApi:
+            for row in openai_models_list(MODELS, spoken)["data"]:
+                model = model_by_id(row["id"])
+                assert model is not None
+                assert model.reachable_on(spoken), (row["id"], spoken)
+
+    def test_an_empty_catalogue_is_an_empty_list_not_a_failure(self) -> None:
+        # `offered_models()` drops every model of a provider Claidor holds
+        # no key for. With no OpenAI key the honest answer is a menu with
+        # nothing on it, which a client reads as "nothing to connect".
+        assert openai_models_list([], SpokenApi.openai_completions) == {
+            "object": "list",
+            "data": [],
+        }

@@ -261,6 +261,44 @@ founder's rule, already written into their engineering doc. Every
 argument we have had about whether a brief rule works was reasoning.
 They measure. Take the harness before taking opinions.
 
+## Claidor's API is connected to Rakazo (18 September 2026)
+
+**`docs/product/claidor-on-rakazo.md` is the document. Read it before
+changing anything about the model proxy.**
+
+The short of it: Rakazo speaks to any OpenAI-compatible server and Claidor
+is one, so the join is configuration on their side and **no change inside
+`rakazo/`** — the fork stays byte-identical. Base URL
+`https://api.claidor.com/desktop/api/proxy/v1`, models `gpt-5.6-terra` and
+`gpt-5.6-luna`, and `RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1` on the
+deployment because `api.claidor.com` is a public hostname.
+
+Two things changed in `server/`, and both have a reason worth keeping:
+
+- **`Scope.model_proxy` and `get_proxy_caller`.** A desktop access token
+  lives one hour and the app refreshes it; a server is handed one static
+  key and has no refresh loop, so a session token would answer 401 an hour
+  in, mid-conversation. A `claidor_pat_` personal access token carrying
+  that scope is the right credential — and it reaches the proxy and
+  nothing else, because every other `/desktop` route asks for a session.
+- **`GET /api/proxy/v1/models`.** Rakazo probes `<base URL>/models` before
+  it will show a model list. That GET answered 404 until now, measured
+  live.
+
+**Claude is not reachable over that connection**, and that is not a
+policy. An OpenAI-compatible client speaks Chat Completions only, and
+nothing in the proxy translates it into an Anthropic request, so
+`/models` lists the two GPTs and asking for Claude earns a 400 that says
+why. Making it reachable is a translation layer, a real build, not
+started.
+
+**What has never been run:** a real model request through this connection.
+The offline evidence is `scripts/rakazo/wire-check.mts`, which drives
+Rakazo's own adapter code against a stand-in whose model list our own
+Python generates. The server's nine new endpoint tests need Postgres and a
+final Python 3.14 and have not executed. Say "designed and checked", not
+"working", until somebody sends a message through it.
+
 ## Caisra on Rakazo — archived (18 September 2026)
 
 The Caisra build that sat inside the fork is archived. The founder ended it:

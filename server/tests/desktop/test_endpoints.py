@@ -30,8 +30,15 @@ from polar.desktop.skill_store import (
     skill_md_with_version,
 )
 from polar.desktop.skill_store import catalog as skill_store_catalog
+from polar.kit.crypto import generate_token_hash_pair
 from polar.kit.utils import utc_now
-from polar.models import DesktopSession, DesktopUsage, User
+from polar.models import (
+    DesktopSession,
+    DesktopUsage,
+    PersonalAccessToken,
+    User,
+)
+from polar.personal_access_token.service import TOKEN_PREFIX as PAT_TOKEN_PREFIX
 from polar.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 
@@ -1207,4 +1214,258 @@ class TestComposio:
                 "/desktop/api/proxy/composio/api/v3.1/tool_router/session", json={}
             )
             assert not anything.called
+        assert response.status_code == 401
+
+
+async def _model_proxy_token(
+    save_fixture: SaveFixture, user: User, *, scopes: str = "model_proxy"
+) -> str:
+    """A personal access token for the user, saved and handed back in
+    plaintext.
+
+    Built here rather than through `personal_access_token.create` because
+    that service refuses any caller not holding a reserved scope — it will
+    only mint from a live browser session, which is the right rule and not
+    the thing under test. What is under test is what the proxy does when
+    such a token arrives.
+    """
+    token, token_hash = generate_token_hash_pair(
+        secret=settings.SECRET, prefix=PAT_TOKEN_PREFIX
+    )
+    await save_fixture(
+        PersonalAccessToken(
+            token=token_hash,
+            scope=scopes,
+            expires_at=utc_now() + timedelta(days=365),
+            comment="Rakazo",
+            user_id=user.id,
+        )
+    )
+    return token
+
+
+@pytest.mark.asyncio
+class TestTheProxyFromAServerWeDidNotWrite:
+    """Rakazo, and anything else that speaks plain OpenAI.
+
+    Such a client is handed a base URL, a model id and one static key, and
+    then never asked anything again — there is no refresh loop for it to
+    run. A desktop access token lives an hour
+    (`settings.DESKTOP_ACCESS_TOKEN_TTL`), so it is the wrong credential
+    for this and the failure would arrive an hour in, mid-conversation. A
+    personal access token carrying `model_proxy` is the right one.
+    """
+
+    async def test_a_personal_access_token_reaches_the_proxy_and_meters(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        save_fixture: SaveFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        token = await _model_proxy_token(save_fixture, user)
+        with respx.mock(assert_all_called=True) as mock:
+            route = mock.post(
+                f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/chat/completions"
+            ).mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "id": "c1",
+                        "choices": [{"message": {"content": "Hello"}}],
+                        "usage": {"prompt_tokens": 100, "completion_tokens": 20},
+                    },
+                )
+            )
+            response = await client.post(
+                "/desktop/api/proxy/v1/chat/completions",
+                headers={"Authorization": f"Bearer {token}"},
+                json={"model": "gpt-5.6-luna", "messages": []},
+            )
+        assert response.status_code == 200
+        # Claidor's key went up, never the caller's token.
+        assert route.calls[0].request.headers["authorization"] == "Bearer sk-openai"
+
+        usage = (
+            await session.execute(
+                DesktopUsage.__table__.select().where(DesktopUsage.user_id == user.id)
+            )
+        ).all()
+        assert len(usage) == 1
+        row = usage[0]
+        assert row.model == "gpt-5.6-luna"
+        assert row.credits > 0
+        # No session, and that is not a gap: the column has always been
+        # nullable. What a token cannot answer is which client sent the
+        # request, and it is not asked to.
+        assert row.session_id is None
+
+    async def test_the_allowance_is_the_same_allowance(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        save_fixture: SaveFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        # The point of the proxy is that a person has one monthly allowance
+        # however they reach it. A second door that did not meter would be
+        # a hole, not a feature.
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        token = await _model_proxy_token(save_fixture, user)
+        await save_fixture(
+            DesktopUsage(
+                user_id=user.id,
+                model="gpt-5.6-luna",
+                credits=settings.DESKTOP_MONTHLY_CREDITS,
+                upstream_status=200,
+            )
+        )
+        with respx.mock(assert_all_called=False) as mock:
+            route = mock.post(f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/chat/completions")
+            response = await client.post(
+                "/desktop/api/proxy/v1/chat/completions",
+                headers={"Authorization": f"Bearer {token}"},
+                json={"model": "gpt-5.6-luna", "messages": []},
+            )
+            assert not route.called
+        assert response.status_code == 402
+
+    async def test_a_token_without_the_scope_does_not_reach_the_proxy(
+        self,
+        client: httpx.AsyncClient,
+        user: User,
+        save_fixture: SaveFixture,
+    ) -> None:
+        token = await _model_proxy_token(save_fixture, user, scopes="user:read")
+        response = await client.post(
+            "/desktop/api/proxy/v1/chat/completions",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"model": "gpt-5.6-luna", "messages": []},
+        )
+        assert response.status_code == 401
+
+    async def test_the_scope_opens_the_proxy_and_nothing_else(
+        self,
+        client: httpx.AsyncClient,
+        user: User,
+        save_fixture: SaveFixture,
+    ) -> None:
+        # The grant is deliberately narrow. Every other route on this
+        # router asks for a desktop session, and a token is not one, so a
+        # leaked `model_proxy` token spends an allowance and reads nothing.
+        token = await _model_proxy_token(save_fixture, user)
+        headers = {"Authorization": f"Bearer {token}"}
+        for path in (
+            "/desktop/api/user/profile",
+            "/desktop/api/user/quota",
+            "/desktop/api/memory",
+        ):
+            response = await client.get(path, headers=headers)
+            assert response.status_code == 401, path
+
+    async def test_a_desktop_session_still_reaches_the_proxy(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        # The app's own credential is unchanged. This is the test that
+        # would have caught widening the door and closing the old one.
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        access, _ = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            mock.post(f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/chat/completions").mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "id": "c1",
+                        "choices": [{"message": {"content": "Hi"}}],
+                        "usage": {"prompt_tokens": 10, "completion_tokens": 2},
+                    },
+                )
+            )
+            response = await client.post(
+                "/desktop/api/proxy/v1/chat/completions",
+                headers={"Authorization": f"Bearer {access}"},
+                json={"model": "gpt-5.6-luna", "messages": []},
+            )
+        assert response.status_code == 200
+
+    async def test_claude_is_refused_on_the_completions_wire_and_says_why(
+        self,
+        client: httpx.AsyncClient,
+        user: User,
+        save_fixture: SaveFixture,
+    ) -> None:
+        # The limit worth knowing about before somebody hits it: nothing in
+        # the proxy translates a Chat Completions request into an Anthropic
+        # one, and an OpenAI-compatible client speaks no other wire. So
+        # Claude is not reachable from such a client, and the refusal names
+        # the reason rather than failing vaguely.
+        token = await _model_proxy_token(save_fixture, user)
+        response = await client.post(
+            "/desktop/api/proxy/v1/chat/completions",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"model": "claude-sonnet-5", "messages": []},
+        )
+        assert response.status_code == 400
+        assert "anthropic" in response.json()["error"]["message"]
+
+
+@pytest.mark.asyncio
+class TestTheModelsListOnTheProxy:
+    """`GET /desktop/api/proxy/v1/models`.
+
+    Before this route existed the GET fell through to the catch-all and
+    answered 404, so an OpenAI-compatible client had no way to discover a
+    model id and the person had to know one by heart.
+    """
+
+    async def test_it_lists_the_models_that_wire_will_accept(
+        self,
+        client: httpx.AsyncClient,
+        user: User,
+        save_fixture: SaveFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-anthropic")
+        token = await _model_proxy_token(save_fixture, user)
+        response = await client.get(
+            "/desktop/api/proxy/v1/models",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        # OpenAI's shape, not the desktop app's envelope: a client reads
+        # `data` as the list itself.
+        assert body["object"] == "list"
+        ids = [row["id"] for row in body["data"]]
+        assert "gpt-5.6-luna" in ids
+        assert "claude-sonnet-5" not in ids
+
+    async def test_a_desktop_session_may_read_it_too(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        access, _ = await _signed_in(client, session, user)
+        response = await client.get(
+            "/desktop/api/proxy/v1/models",
+            headers={"Authorization": f"Bearer {access}"},
+        )
+        assert response.status_code == 200
+
+    async def test_it_is_not_public(self, client: httpx.AsyncClient) -> None:
+        # Which models a person may name is their business. This also keeps
+        # the route consistent with `/api/models/available`, which has
+        # always been authenticated.
+        response = await client.get("/desktop/api/proxy/v1/models")
         assert response.status_code == 401
