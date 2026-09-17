@@ -4,6 +4,11 @@
  * Every value is copied from `desktop/src/renderer/design/tokens.ts`, which was
  * counted out of the founder's canvas rather than invented. Nothing here is a
  * new decision; where a value looks arbitrary it is because the canvas says so.
+ *
+ * An earlier version of this file carried about a third of them, and the third
+ * it left out was the third that decides how the app looks: the window's 40px
+ * radius, the pane's 28, the glass on the dock, the tracking, the raised shadow
+ * under a lit tab. Screens drawn against a subset are screens drawn from taste.
  */
 
 @font-face {
@@ -20,26 +25,51 @@
 }
 
 :root {
+  /* Colour. */
   --ink: #0d0d0d;
   --muted: #676767;
   --faint: #8e8e93;
+  --chevron: #b0b0b5;
+  --tab-ink: #585858;
   --ground: #eff1f5;
   --window: #f6f6f6;
   --paper: #ffffff;
   --fill: #f2f2f2;
+  --fill-raised: #fafafa;
+  --fill-strong: #e3e8ef;
   --divider: #efefef;
   --accent: #0071e3;
   --accent-hover: #0059b3;
   --success-text: #248a3d;
+  --success: #1a8547;
+  --success-fill: #e7f6ec;
   --warning: #e8a300;
+  --danger: #e0322d;
+  --delete-ink: #c92a25;
+  --delete-fill: #fdeceb;
 
+  /* Lines: black at a low alpha, so one line sits on all three surfaces. */
   --line-hairline: rgba(0, 0, 0, 0.055);
   --line-field: rgba(0, 0, 0, 0.06);
   --line-card: rgba(0, 0, 0, 0.08);
   --line-button: rgba(0, 0, 0, 0.15);
+  --line-hover: rgba(0, 0, 0, 0.08);
 
   --shadow-flat: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-raised: 0 2px 5px rgba(0, 0, 0, 0.09), 0 0 0 1px rgba(0, 0, 0, 0.045);
+  --shadow-popover: 0 1px 2px rgba(0, 0, 0, 0.08), 0 18px 44px rgba(0, 0, 0, 0.08);
+  --shadow-menu: 0 1px 2px rgba(0, 0, 0, 0.08), 0 12px 32px rgba(0, 0, 0, 0.14);
   --shadow-window: 0 40px 110px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.1);
+  --shadow-dock:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 6px rgba(0, 0, 0, 0.05),
+    0 20px 46px rgba(0, 0, 0, 0.14);
+  --shadow-dock-active: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --shadow-orb: 0 1px 2px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.08);
+
+  /* Glass. Two recipes in the canvas and only two; this is the dock's. */
+  --glass-dock: rgba(255, 255, 255, 0.55);
+  --glass-dock-blur: blur(30px) saturate(1.8);
+  --glass-border: rgba(255, 255, 255, 0.7);
 
   /* The floating frame, from the canvas: the window sits in from the edges
      with the dock beside it. */
@@ -49,13 +79,43 @@
   --window-max-w: 1420px;
   --window-max-h: 900px;
   --sidebar-w: 272px;
+  --rail-w: 73px;
 
+  /* Type. Half-pixel values because the canvas was drawn at a size and then
+     trusted: 14.5 and 15.5 do real work in it. */
+  --text-code: 12px;
   --text-caption: 12.5px;
+  --text-label: 12.5px;
+  --text-small: 13px;
   --text-body: 13.5px;
   --text-message: 14px;
   --text-emphasis: 14.5px;
+  --text-base: 15px;
+  --text-agent-name: 15.5px;
+  --text-section: 16px;
+  --text-sidebar-title: 18px;
+  --text-screen-title: 20.5px;
+
+  /* Tracking tightens as type grows, which is the whole of the system. */
+  --track-body: 0;
+  --track-title: -0.01em;
+  --track-screen-title: -0.015em;
+
+  --radius-pill: 999px;
+  --radius-chip: 8px;
+  --radius-small: 11px;
+  --radius-field: 12px;
+  --radius-input: 14px;
+  --radius-row: 16px;
+  --radius-bubble: 17px;
+  --radius-card: 18px;
+  --radius-menu: 20px;
+  --radius-panel: 22px;
+  --radius-pane: 28px;
+  --radius-window: 40px;
 
   --font-ui: "Switzer", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 * {
@@ -64,8 +124,13 @@
 
 body {
   margin: 0;
-  background: var(--ground);
+  /* The ground: the canvas's flat colour with a white light at the top left
+     and a cooler one at the bottom right. */
+  background:
+    radial-gradient(75% 60% at 26% 8%, #ffffff 0%, rgba(255, 255, 255, 0) 68%),
+    radial-gradient(70% 60% at 82% 88%, #e6ebf4 0%, rgba(230, 235, 244, 0) 66%), var(--ground);
   color: var(--ink);
   font-family: var(--font-ui);
+  font-weight: 400;
   -webkit-font-smoothing: antialiased;
 }

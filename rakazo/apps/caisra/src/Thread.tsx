@@ -346,55 +346,164 @@ function Row({ row }: { row: ThreadRow }) {
 function Composer({ name }: { name: string }) {
   return (
     <div className="composer">
-      <button type="button" className="composer__plus" aria-label="Add">
-        +
-      </button>
-      <span className="composer__field">Message {name}</span>
-      <button type="button" className="composer__send" aria-label="Send">
-        ↑
-      </button>
+      <div className="composer__pill">
+        <button type="button" className="composer__plus" aria-label="More">
+          +
+        </button>
+        <span className="composer__field">Message {name}</span>
+        {/* One control, two jobs: empty it is a microphone, with a draft an
+            arrow. No dead button is ever shown. */}
+        <button type="button" className="composer__send" aria-label="Speak">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+            focusable="false"
+          >
+            <rect x="9" y="3" width="6" height="11" rx="3" />
+            <path d="M5 11a7 7 0 0014 0" />
+            <path d="M12 18v3" />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }
 
+/** A 24×24 glyph off the canvas, stroked in the button's own colour. */
+function Glyph({ d, size = 15, weight = 1.7 }: { d: string; size?: number; weight?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={weight}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      focusable="false"
+      style={{ flex: "0 0 auto", display: "block" }}
+    >
+      <path d={d} />
+    </svg>
+  );
+}
+
 /**
- * The conversation's header.
+ * The conversation's header, laid out as the canvas draws it.
  *
- * The canvas centres the Text/Voice pill in it, with the agent on the left and
- * the tools on the right. Voice is drawn and not yet built; it is in the
- * design, so it is here, and pressing it is the one thing this screen cannot
- * do yet.
+ * Left: the agent's face at 23px and their name as a button with a chevron —
+ * tapping the person you are talking to tells you about them, which is the
+ * gesture Messages already teaches. Middle: the Text/Voice pill, pinned to the
+ * centre of the bar. Right: three 27px round buttons, quiet at rest — find in
+ * this conversation, share it, and the computer, behind which sits the whole
+ * panel where you watch the agent work.
+ *
+ * An earlier pass drew a name over a subtitle on the left and the pill at the
+ * end of the row, with none of the three buttons. That was written from memory
+ * of the screenshot rather than from `MessagesShell.tsx`.
  */
 function Header({
   title,
-  subtitle,
   seed,
   mode,
   waiting,
+  typing,
 }: {
   title: string;
-  subtitle?: string;
   seed: string;
   mode: ThreadMode;
   waiting?: boolean;
+  typing?: boolean;
 }) {
   return (
     <header className="header">
-      <Blob seed={seed} size={28} />
-      <span className="header__stack">
-        <span className="header__name">{title}</span>
-        {/* A card is waiting on the person: the header says so rather than
-            showing the typing dots, because nothing is happening until they
-            answer. */}
-        <span className="header__sub">{waiting ? "Waiting for you" : subtitle}</span>
-      </span>
-      <span className="modes">
-        <span className={`modes__tab ${mode === ThreadMode.Text ? "modes__tab--on" : ""}`}>
+      <Blob seed={seed} size={23} />
+      <button type="button" className="header__name">
+        <span>{title}</span>
+        <span className="header__chevron">
+          <Glyph d="M6 9.5l6 6 6-6" size={10.5} weight={2.2} />
+        </span>
+      </button>
+
+      {/* A card is waiting on the person: the header says so rather than
+          showing the dots, because nothing is happening until they answer.
+          Otherwise, three small dots in place of the word "typing". */}
+      {waiting ? <span className="header__waiting">Waiting for you</span> : null}
+      {typing && !waiting ? (
+        <span className="header__dots" role="status" aria-label="Working">
+          {[0, 0.16, 0.32].map((delay) => (
+            <span key={delay} className="header__dot" style={{ animationDelay: `${delay}s` }} />
+          ))}
+        </span>
+      ) : null}
+
+      <div className="modes">
+        <button
+          type="button"
+          className={`modes__tab ${mode === ThreadMode.Text ? "modes__tab--on" : ""}`}
+          aria-pressed={mode === ThreadMode.Text}
+        >
           Text
-        </span>
-        <span className={`modes__tab ${mode === ThreadMode.Voice ? "modes__tab--on" : ""}`}>
+        </button>
+        <button
+          type="button"
+          className={`modes__tab ${mode === ThreadMode.Voice ? "modes__tab--on" : ""}`}
+          aria-pressed={mode === ThreadMode.Voice}
+        >
           Voice
-        </span>
+        </button>
+      </div>
+
+      <span className="header__tools">
+        <button type="button" className="header__tool" aria-label="Find in this conversation">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+            focusable="false"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="M20 20l-4-4" />
+          </svg>
+        </button>
+        <button type="button" className="header__tool" aria-label="Share this conversation">
+          <Glyph d="M12 16V4M7 9l5-5 5 5M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" weight={1.8} />
+        </button>
+        {/* The computer. Behind it is the whole panel the app inherits: the
+            agent's live browser, the files it has made, what it delegated. One
+            icon, because the design says so. */}
+        <button type="button" className="header__tool" aria-label="Watch the agent work">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.7}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+            focusable="false"
+          >
+            <rect x="3" y="4" width="18" height="12" rx="2.5" />
+            <path d="M9 20h6M12 16v4" />
+          </svg>
+        </button>
       </span>
     </header>
   );
@@ -410,16 +519,16 @@ export function Thread({
   rows,
   title,
   seed,
-  subtitle,
   mode = ThreadMode.Text,
   waiting,
+  typing,
 }: {
   rows: readonly ThreadRow[];
   title: string;
   seed: string;
-  subtitle?: string;
   mode?: ThreadMode;
   waiting?: boolean;
+  typing?: boolean;
 }) {
   return (
     <>
@@ -427,8 +536,8 @@ export function Thread({
         title={title}
         seed={seed}
         mode={mode}
-        {...(subtitle ? { subtitle } : {})}
         {...(waiting ? { waiting } : {})}
+        {...(typing ? { typing } : {})}
       />
       <div className="thread">
         {rows.map((row, index) => (
@@ -438,6 +547,22 @@ export function Thread({
           <Row key={`${index}-${row.kind}`} row={row} />
         ))}
       </div>
+
+      {/*
+        Voice: the canvas fades the bottom of the thread to white and floats the
+        agent's face over it, above the composer. The canvas drew the face in a
+        124px glass disc; the founder, 17 September, on seeing it: *"remove the
+        circle in which the voice avatar is in. just have it there without it."*
+        So the face alone. The composer stays where it is.
+      */}
+      {mode === ThreadMode.Voice ? (
+        <div className="voice">
+          <button type="button" className="voice__face" aria-label={`${title} is listening`}>
+            <Blob seed={seed} size={96} />
+          </button>
+        </div>
+      ) : null}
+
       <Composer name={title} />
     </>
   );

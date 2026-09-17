@@ -19,7 +19,7 @@ import {
 } from "./fixtures.js";
 import { Routines } from "./Routines.js";
 import { Screen, Shell } from "./Shell.js";
-import { Thread, type ThreadRow } from "./Thread.js";
+import { Thread, ThreadMode, type ThreadRow } from "./Thread.js";
 import "./tokens.css";
 
 /**
@@ -92,9 +92,9 @@ function App() {
       ) : (
         <Thread
           title={open.bot.name}
-          subtitle={open.bot.title}
           seed={open.bot.id}
           rows={open.rows}
+          mode={asked === "voice" ? ThreadMode.Voice : ThreadMode.Text}
         />
       )}
     </Shell>

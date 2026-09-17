@@ -1,106 +1,209 @@
-/** Apps: the five that lead, then everything else behind a search. */
+/**
+ * The Apps screen, at the canvas's measurements.
+ *
+ * Read out of `desktop/src/renderer/design/shell/Apps.tsx` (the header row) and
+ * `connections/Connections.tsx` (the shelf and the card) rather than arranged
+ * here. The two that an earlier pass got wrong and that the design is explicit
+ * about: the search is pinned right at `min(300px, 42%)` rather than run full
+ * width under the featured row, and the action on a card is a word, not a pill.
+ */
 
 .apps {
-  padding: 4px 26px 32px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+  background: var(--paper);
 }
 
-/* The five sit on their own row, larger, because they are the answer for most
-   people and the rest is a long tail. */
-.apps__lead {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
-  gap: 10px;
+.apps__head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 19px 23px 14px;
+  border-bottom: 1px solid var(--line-hairline);
 }
-
+.apps__title {
+  margin: 0;
+  font-size: var(--text-screen-title);
+  font-weight: 500;
+  letter-spacing: var(--track-screen-title);
+  color: var(--ink);
+}
 .apps__search {
+  margin-left: auto;
   display: flex;
   align-items: center;
   gap: 9px;
-  margin: 22px 0 14px;
-  padding: 9px 14px;
-  border: 1px solid var(--line-field);
-  border-radius: 999px;
-  background: var(--paper);
-}
-.apps__searchmark {
-  color: var(--faint);
-  font-size: 15px;
+  width: min(300px, 42%);
+  height: 33px;
+  padding: 0 12px;
+  border-radius: var(--radius-pill);
+  background: var(--fill);
+  border: 1px solid var(--line-hairline);
+  color: var(--muted);
 }
 .apps__search input {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
   border: 0;
-  outline: 0;
+  outline: none;
   background: transparent;
   font: inherit;
   font-size: var(--text-message);
   color: var(--ink);
+  appearance: none;
 }
-.apps__search input::placeholder {
-  color: var(--faint);
+.apps__search input::-webkit-search-cancel-button {
+  display: none;
 }
 
-.apps__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
-  gap: 10px;
+.apps__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 26px 29px 38px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.apps__lede {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  padding: 0 2px;
+}
+.apps__lede-name {
+  font-size: var(--text-agent-name);
+  font-weight: 500;
+  letter-spacing: var(--track-title);
+  color: var(--ink);
+}
+.apps__lede-count {
+  font-size: var(--text-message);
+  color: var(--muted);
+}
+.apps__blurb {
+  margin: 0;
+  padding: 6px 2px 0;
+  max-width: 74ch;
+  font-size: var(--text-message);
+  color: var(--muted);
+  line-height: 1.55;
+  text-wrap: pretty;
 }
 
 .apps__empty,
 .apps__more {
-  margin: 14px 2px 0;
-  font-size: var(--text-body);
+  margin: 0;
+  padding: 41px 0;
+  text-align: center;
+  font-size: var(--text-message);
   color: var(--muted);
 }
+.apps__more {
+  padding: 22px 0 0;
+}
 
-.apptile {
+.shelf {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 31px;
+}
+.shelf__head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0 2px;
+}
+.shelf__title {
+  font-size: var(--text-emphasis);
+  font-weight: 500;
+  letter-spacing: var(--track-body);
+  color: var(--ink);
+}
+.shelf__count {
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+.shelf__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.appcard {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 11px 13px;
-  border: 1px solid var(--line-field);
-  border-radius: 13px;
-  background: var(--paper);
+  gap: 14px;
+  padding: 17px 19px;
+  background: var(--window);
+  border: 1px solid var(--line-card);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-flat);
 }
-.apptile--on {
+.appcard__mark {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
   background: var(--fill);
-  border-color: transparent;
-  box-shadow: none;
-}
-.tile--app {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  font-size: 14px;
-}
-.apptile__name {
-  flex: 1;
-  min-width: 0;
-  font-size: var(--text-message);
+  border: 1px solid var(--line-hairline);
+  overflow: hidden;
+  font-size: var(--text-emphasis);
   font-weight: 500;
+  color: var(--muted);
+}
+.appcard__mark img {
+  object-fit: contain;
+}
+.appcard__stack {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.appcard__name {
+  font-size: var(--text-emphasis);
+  font-weight: 400;
+  color: var(--ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.apptile__state {
-  flex: 0 0 auto;
-  font-size: var(--text-caption);
-  color: var(--faint);
+/* The canvas's tag line, under the name. A card with a button has nothing to
+   say here; a card without one says why. */
+.appcard__note {
+  font-size: var(--text-label);
+  color: var(--muted);
 }
-.apptile__state--on {
-  color: var(--success-text);
-}
-.apptile__connect {
+
+/* The canvas's `btnStyle`: a word, not a pill. Blue "Connect", green
+   "Connected", no border and no fill. */
+.appcard__word {
   flex: 0 0 auto;
-  border: 1px solid var(--line-button);
-  border-radius: 999px;
-  background: var(--paper);
-  color: var(--ink);
+  height: 27px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
   font: inherit;
-  font-size: var(--text-body);
-  padding: 5px 13px;
+  font-size: var(--text-small);
+  font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
+  color: var(--accent);
 }
-.apptile__connect:hover {
-  background: var(--window);
+/* A connected card keeps one control, and pressing it disconnects, rather than
+   growing a second button nobody wants next to the one they do. */
+.appcard__word--on {
+  color: var(--success-text);
 }

@@ -1,32 +1,117 @@
 /** The thread's own styles. Values come from tokens.css; none is invented here. */
 
+/*
+ * The conversation's header, at the canvas's measurements: the agent on the
+ * left, the Text/Voice pill pinned to the middle of the bar, the tools on the
+ * right. Transparent, not the window's grey — the pane it sits in is already
+ * white paper floating in the window.
+ */
 .header {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 18px;
+  padding: 20px 21px 14px;
   border-bottom: 1px solid var(--line-hairline);
-  background: var(--window);
+  background: transparent;
 }
-.header__stack {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
+
+/*
+ * The agent's name opens the agent, which is the gesture Messages already
+ * teaches: the person you are talking to is up here, and tapping them tells you
+ * about them. A button rather than a handler on a span, so it is reachable from
+ * the keyboard like everything else in the header.
+ */
 .header__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 25px;
+  padding: 0 8px 0 6px;
+  margin-left: -4px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  font: inherit;
   font-size: var(--text-emphasis);
   font-weight: 500;
+  letter-spacing: var(--track-title);
+  color: var(--ink);
+  cursor: pointer;
 }
-.header__sub {
+.header__name:hover {
+  background: var(--fill);
+  border-color: var(--line-hairline);
+}
+.header__chevron {
+  display: inline-flex;
+  color: var(--muted);
+}
+
+/* A card is waiting on the person: the header says so rather than showing the
+   dots, because nothing is happening until they answer. */
+.header__waiting {
   font-size: var(--text-caption);
   color: var(--muted);
+  letter-spacing: var(--track-body);
+}
+
+/* Three small dots in place of the word "typing". */
+.header__dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.header__dot {
+  width: 4.5px;
+  height: 4.5px;
+  border-radius: 50%;
+  background: var(--muted);
+  animation: caisra-think-dot 1.2s ease-in-out infinite;
+}
+@keyframes caisra-think-dot {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+/* The canvas's 27px round header buttons: nothing at rest, a fill and a
+   hairline under the pointer. */
+.header__tools {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.header__tool {
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.header__tool:hover {
+  background: var(--fill);
+  border-color: var(--line-hairline);
 }
 
 .thread {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 22px 18px 28px;
+  gap: 9px;
+  padding: 24px 21px 17px;
 }
 
 .row {
@@ -42,20 +127,34 @@
   justify-content: center;
 }
 
+/*
+ * The two bubbles are not the same, and that is deliberate: the agent's is
+ * wider and set a half-point larger, because it is the one carrying an answer,
+ * and the person's is narrower because a question is short.
+ *
+ * `pre-wrap` because the engine's text carries its own newlines where the
+ * canvas's fixtures never did; collapsing them runs two paragraphs together.
+ */
 .bubble {
-  max-width: 78%;
-  padding: 9px 13px;
-  border-radius: 17px;
-  font-size: var(--text-message);
-  line-height: 1.45;
+  border-radius: var(--radius-bubble);
+  line-height: 1.4;
+  text-wrap: pretty;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .bubble--mine {
+  max-width: min(56%, 470px);
+  padding: 8px 13px;
   background: var(--accent);
-  color: #fff;
+  color: var(--paper);
+  font-size: var(--text-message);
 }
 .bubble--theirs {
+  max-width: min(64%, 540px);
+  padding: 9px 14px;
   background: var(--fill);
   color: var(--ink);
+  font-size: var(--text-emphasis);
 }
 
 /* Agent-to-agent traffic. Quiet on purpose: a bubble each would bury the
@@ -375,37 +474,96 @@
   max-width: 100%;
 }
 
-/* The composer. Nothing here types yet; it is the resting shape of the bar. */
-.composer {
+/*
+ * Voice. The canvas fades the bottom of the thread to white and floats the
+ * agent's face over it. There is no disc around the face: the canvas drew one
+ * and the founder took it out — *"remove the circle in which the voice avatar
+ * is in. just have it there without it."*
+ */
+.voice {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6;
+  pointer-events: none;
+  height: 268px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 78px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.92) 46%,
+    #ffffff 72%
+  );
+}
+.voice__face {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 16px 16px;
-  background: var(--paper);
+  justify-content: center;
+  width: 124px;
+  height: 124px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/*
+ * The composer: the canvas's pill, 44 high, the fill, no line round it. Above
+ * the voice overlay's fade, or it vanishes under white the moment the mode
+ * changes.
+ *
+ * Nothing here types yet; it is the resting shape of the bar. The two discs are
+ * 34px, the `+` a 5% black one with the flat shadow and the send the accent —
+ * one control, two jobs, never a dead button.
+ */
+.composer {
+  position: relative;
+  z-index: 7;
+  padding: 12px 21px 19px;
+}
+.composer__pill {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 44px;
+  padding: 5px 7px 5px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--fill);
 }
 .composer__plus,
 .composer__send {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   flex: 0 0 auto;
+  padding: 0;
   border: 0;
   border-radius: 50%;
-  background: var(--fill);
-  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font: inherit;
-  font-size: 16px;
   line-height: 1;
   cursor: pointer;
 }
+.composer__plus {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--ink);
+  font-size: 18px;
+  box-shadow: var(--shadow-flat);
+}
 .composer__send {
   background: var(--accent);
-  color: #fff;
+  color: var(--paper);
 }
 .composer__field {
-  flex: 1;
-  padding: 8px 14px;
-  border: 1px solid var(--line-field);
-  border-radius: 999px;
+  flex: 1 1 auto;
+  min-width: 0;
   color: var(--faint);
   font-size: var(--text-message);
 }
@@ -455,30 +613,46 @@
   cursor: pointer;
 }
 
-/* Text and Voice, centred in the header: the canvas pins the pill to the
-   middle of the bar rather than letting it sit after the name. */
-.header {
-  position: relative;
-}
+/*
+ * Text and Voice, pinned to the middle of the bar rather than sitting after the
+ * name. The canvas's `tabStyle`: 34 high, 84 wide at least, the lit one white
+ * with the accent for a label and a soft ring under it.
+ */
 .modes {
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  display: inline-flex;
+  z-index: 4;
+  display: flex;
   align-items: center;
-  padding: 2px;
-  border-radius: 999px;
-  background: var(--fill);
+  padding: 0;
+  border-radius: var(--radius-pill);
+  background: var(--window);
 }
 .modes__tab {
-  padding: 5px 14px;
-  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  min-width: 84px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  font: inherit;
   font-size: var(--text-body);
-  color: var(--muted);
+  letter-spacing: var(--track-body);
+  white-space: nowrap;
+  color: var(--tab-ink);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
 }
 .modes__tab--on {
   background: var(--paper);
-  color: var(--ink);
-  box-shadow: var(--shadow-flat);
+  color: var(--accent);
+  font-weight: 500;
+  box-shadow: var(--shadow-raised);
 }

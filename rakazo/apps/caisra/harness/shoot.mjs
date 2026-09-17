@@ -92,6 +92,7 @@ await context.route("https://picsum.photos/**", async (route) => {
 });
 const SCREENS = [
   "morning",
+  "voice",
   "starting-up",
   "everything",
   "routines",
