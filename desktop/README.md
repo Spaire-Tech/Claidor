@@ -294,12 +294,21 @@ npm run electron:dev            # after that
 ```
 
 **"The app is damaged"** on first launch of a built installer is
-Gatekeeper's quarantine flag, not the app: there is no Apple certificate
-yet, so nothing is signed. Right-click the app and choose Open, or:
+Gatekeeper's quarantine flag, not the app: there is no Apple Developer
+ID certificate yet, so the build is not signed and not notarized. Strip
+the flag:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/<the app>.app
 ```
+
+That terminal line is now the only way in. Right-click → Open stopped
+working in macOS 15.0, and 15.1 took away the "Open Anyway" button in
+System Settings → Privacy & Security as well; macOS 26 is stricter
+again. So this build can be installed by someone who will run a
+command, and by nobody else. Shipping to anyone else needs the Apple
+Developer Program ($99/year) for a Developer ID certificate and
+notarization — see `docs/product/plan.md` §9.
 
 ### By hand
 

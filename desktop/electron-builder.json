@@ -89,10 +89,10 @@
     "entitlementsInherit": "build/entitlements.mac.plist",
     "extendInfo": {
       "CFBundleIconName": "icon",
-      "NSMicrophoneUsageDescription": "LobsterAI 需要访问您的麦克风来录制语音输入并进行语音识别。",
-      "NSCalendarsUsageDescription": "LobsterAI 需要访问您的日历来帮助您查看和管理日程安排，例如查找事件、创建会议等。",
-      "NSRemindersUsageDescription": "LobsterAI 需要访问您的提醒事项来帮助您管理待办事项。",
-      "NSAppleEventsUsageDescription": "LobsterAI 需要使用 Apple Events 来控制 Calendar 应用执行自动化操作。"
+      "NSMicrophoneUsageDescription": "Caisra uses your microphone so you can talk to your agents instead of typing.",
+      "NSCalendarsUsageDescription": "Caisra reads and writes your calendar so your agents can check your schedule and set up meetings.",
+      "NSRemindersUsageDescription": "Caisra reads and writes your reminders so your agents can keep track of what you asked for.",
+      "NSAppleEventsUsageDescription": "Caisra controls the Calendar app so your agents can make changes for you."
     },
     "extraResources": [
       {
@@ -252,8 +252,8 @@
       }
     ],
     "desktop": {
-      "Name": "LobsterAI",
-      "Comment": "AI-assisted coding and productivity tool",
+      "Name": "Caisra",
+      "Comment": "Your agents, on your computer",
       "Terminal": "false"
     }
   },
