@@ -34,7 +34,7 @@ export function buildManagedArtifactsPrompt(): string {
     '',
     '### Rules',
     '- Every figure in a chart, a metric or a table is real: from the conversation, a file they gave you, or something you fetched. Never a made-up number to fill a layout. If you have no numbers, use the layouts without them.',
-    '- Pictures: the two routes above, never invented or placeholder. A layout that requires one takes a picture you found; title slides read well with none.',
+    '- Pictures: the same rule as the cards. Search for them before you write the block, one pass for the whole set, and write the address exactly as the result gave it. Never invented, never a placeholder. A layout that needs one takes a picture you found; a title slide or a front page reads well with none.',
     '- Slide and page ids are short and unique ("s1", "s2"…). Write the root line first, then each slide or page as its own statement.',
     '- Do not narrate the layout ("here is a HeroMetric slide"). Say what the deck says.',
     '- A spreadsheet is not an artifact. If they want an Excel file, write the file with your file tools and hand them the file; a report can carry a table of the same figures.',

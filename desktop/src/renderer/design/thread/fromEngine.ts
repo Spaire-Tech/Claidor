@@ -1,4 +1,5 @@
 import { artifactKindOf } from '../../../shared/artifacts/constants';
+import { normaliseCardProgram } from '../../../shared/cards/aliases';
 import { splitCardSegments } from '../../../shared/cards/fence';
 import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
 import { peelAttachments } from './attachment';
@@ -424,11 +425,20 @@ export function toThreadItems(
 
         for (const segment of segments) {
           if (segment.kind === 'card') {
-            const artifact = artifactKindOf(segment.program);
+            // The near-miss names, corrected before anything reads the
+            // program. A model that learned OpenUI from their public
+            // docs writes `CardHeader` where this library wants
+            // `Header`, and an unknown component takes every sibling
+            // after it down with it, silently (`aliases.ts`).
+            const { program, corrected } = normaliseCardProgram(segment.program);
+            if (corrected.length) {
+              console.log(`[Cards] corrected component names from OpenUI's other chat library: ${corrected.join(', ')}`);
+            }
+            const artifact = artifactKindOf(program);
             items.push({
               kind: ThreadItemKind.Card,
               id: `${message.id}:c${cardIndex}`,
-              program: segment.program,
+              program,
               ...(artifact ? { artifact } : {}),
               ...sender,
               at,
