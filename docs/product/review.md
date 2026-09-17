@@ -4608,7 +4608,8 @@ mechanism read off the code, not a connector connecting.
 ## 80. Cards in every thread, a card that would not leave, and the truth about pictures — `built; run in the harness; the Mac unrun`
 
 Three of the founder's four complaints on 18 September. The fourth, agent
-to agent, is item 81.
+to agent, is item 81 — which also corrects an accusation made in the
+course of this one: our agent did not fabricate anything.
 
 ### Every side-card appeared in every conversation
 
@@ -4708,3 +4709,67 @@ waiting to be made, not a test to be relaxed.
 `desktop/src/renderer/design/thread/{useProposeConnector,useAskInput,useCreateAgent,useRoster,connectorCards,types,ThreadItemView,CardBlock}.ts(x)`,
 `desktop/src/renderer/design/thread/cards.css`,
 `desktop/src/renderer/design/shell/CaisraApp.tsx`.
+
+## 81. Agents can message each other, and the correction I owe — `built; run in tests; the Mac unrun`
+
+### The correction first
+
+On 18 September the founder pasted a transcript in which an agent texts
+another agent and reports back. I had it investigated, was told the rows
+in it ("Messaged New Bot", "Message from New Bot") exist nowhere in this
+codebase, and concluded our agent had fabricated the exchange. I said so
+plainly, and I was wrong.
+
+**That transcript was Grok Bot's, not ours.** The founder had said so in
+the message and I read past it. The rows are absent from our code because
+they are another product's interface. **Ours told the truth**: asked to
+talk to another agent, it said it could not, because it could not.
+
+The investigation's findings about *our* system all stand, and they are
+what made it unable:
+
+- `sessions_send` is real and ships in the engine. Two gates stood in
+  front of it, both defaulting closed, and `openclawConfigSync.ts` wrote
+  neither: `tools.sessions.visibility` (a cross-agent target is refused
+  unless `all`) and `tools.agentToAgent.enabled`.
+- The brief has told every agent since the beginning to hand work to
+  another agent and to expect a message from one. Instruction and config
+  disagreed.
+- `review.md` item 70 recorded exactly this, titled "audited; nothing
+  built", and nobody acted on it for two days. That is the real failure
+  here, and it is ours, not the model's.
+
+I should have taken "this came from Grok Bot" at its word instead of
+building a fabrication case on top of a transcript that was never ours.
+
+### What is now switched on
+
+The founder: *"any agent should be able to talk to any agent. this is
+grok bot flow."* So:
+
+- `tools.sessions.visibility: 'all'` and `tools.agentToAgent: { enabled: true }`,
+  written in `buildWebToolsConfig` where every other tool policy is.
+- **No `allow` list**, deliberately: empty means every agent
+  (`createAgentToAgentPolicy` in the runtime), which is what "any agent"
+  means.
+- **What `all` also opens, said plainly.** One flag governs sending and
+  reading. An agent can now read another agent's session history through
+  `sessions_history`, not only message it. That is the engine's design,
+  not a choice made here, and there is a per-pair `allow` list to narrow
+  it the day it matters.
+- The brief names the tool. A capability the model is not told about is a
+  capability it will not reach for — the same mistake in the other
+  direction.
+- A test pins both gates open and checks the tool is named, so this
+  cannot quietly close again.
+
+**The brief had no room for the new sentence**, being at its ceiling
+(item 80). It was paid for rather than waived: the sentence that vaguely
+promised this now names the tool, and two Chief of Staff lines that
+repeated it word for word were trimmed, since the shared brief carries it.
+
+**Unrun:** the founder's Mac. Two agents actually talking has not been
+watched happen — only the config the engine reads, in a test.
+
+**Where:** `desktop/src/main/libs/openclawConfigSync.ts` (+runtime test),
+`desktop/src/shared/agent/chiefOfStaff.ts`.

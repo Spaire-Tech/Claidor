@@ -606,7 +606,7 @@ const MANAGED_CONVERSATION_PROMPT = [
   '- Keep it short. One or two messages, not three, and no preamble: they are reading several replies to one question.',
   '- Do not repeat what somebody else has already said, and do not summarise the room. If you agree and have nothing to add, say nothing.',
   '- If you disagree with another agent, say so plainly and say why. That is the reason several of you are here.',
-  '- Bringing in other agents is the person\'s call. Hand work to another agent when they asked you to, or when you are set up to; otherwise propose it in one line and let them say. Four agents woken unasked is four replies to one question.',
+  '- Bringing in other agents is the person\'s call. `sessions_send` messages any other agent; their reply comes back later, not in this turn, so say who you asked and why, and bring the answer back yourself. Ask when they asked you to; otherwise propose it in one line. Four agents woken unasked is four replies to one question.',
   '',
   '### Not every surface can draw a card',
   '- In this app a question card, an approval card and a card asking for a password all draw properly. Everywhere else they do not exist.',
@@ -2545,6 +2545,31 @@ export class OpenClawConfigSync {
         ...MANAGED_TOOL_DENY
       ],
       loopDetection: MANAGED_TOOL_LOOP_DETECTION,
+      // Agents can message each other, and until 18 September they could
+      // not. The engine ships `sessions_send` and gates it twice: every
+      // target belonging to another agent is refused unless
+      // `sessions.visibility` is `all`, and cross-agent sends are refused
+      // again unless `agentToAgent.enabled` is true. The default for both
+      // is closed, and this file never wrote either, so an agent asked to
+      // bring in another one was told "forbidden" — which is what the
+      // founder saw, and what ours honestly reported. The brief has told
+      // agents to hand work to each other since the beginning
+      // (`MANAGED_CONVERSATION_PROMPT`, the Chief of Staff's own brief),
+      // so the instruction and the config disagreed for two days;
+      // `review.md` item 70 recorded it and nobody acted.
+      //
+      // Any agent may reach any other: `agentToAgent.allow` is left off,
+      // and an empty allow list means everyone
+      // (`createAgentToAgentPolicy`). The founder: "any agent should be
+      // able to talk to any agent. this is grok bot flow."
+      //
+      // **What `all` also opens, said plainly.** One flag governs sending
+      // and reading: with it, an agent can read another agent's session
+      // history through `sessions_history`, not only message it. That is
+      // the engine's design, not a choice here. There is a per-pair
+      // `allow` list to narrow it the day that matters.
+      sessions: { visibility: 'all' },
+      agentToAgent: { enabled: true },
       // The exec policy's mode, because review (`auto`) is switched on by
       // this and by nothing in the approvals file. The reviewer that
       // judges the middle runs on the account's cheap model when the

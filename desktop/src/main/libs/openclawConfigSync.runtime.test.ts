@@ -3383,6 +3383,25 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(file.agents.perro).toMatchObject({ security: 'allowlist', ask: 'on-miss', allowlist: ['git status'] });
   });
 
+  test('any agent may message any other: both gates are written open', async () => {
+    // The engine refuses a cross-agent target unless `sessions.visibility`
+    // is `all`, and refuses the send again unless `agentToAgent.enabled`
+    // is true. Both default closed and this file wrote neither, so until
+    // 18 September an agent asked to bring in another was told
+    // "forbidden" and said so. `allow` stays off on purpose: an empty
+    // allow list means every agent (`createAgentToAgentPolicy`), which is
+    // the founder's "any agent should be able to talk to any agent".
+    const sync = await createSync({});
+    expect(sync.sync('a2a').ok).toBe(true);
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(config.tools.sessions).toEqual({ visibility: 'all' });
+    expect(config.tools.agentToAgent).toEqual({ enabled: true });
+    expect(config.tools.agentToAgent.allow).toBeUndefined();
+    // And the brief names the tool, or the model will not reach for it.
+    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(agentsMd).toContain('`sessions_send`');
+  });
+
   test('the exec mode reaches the engine, and review runs on the cheap model', async () => {
     // Review ("Check, then ask") is switched on by `tools.exec.mode`
     // alone; the approvals file's autoReview field is not read by the
