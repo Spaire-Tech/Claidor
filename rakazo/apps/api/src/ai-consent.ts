@@ -4,6 +4,7 @@ import {
   aiRecipient,
   cloudAgentsEnabled,
   parseModelSecret,
+  resolveDeploymentVoice,
   selectConfiguredModel,
   toStringRecord,
 } from "@rakazo/adapters";
@@ -159,6 +160,12 @@ export async function aiConsentStatus(
       );
     }
   }
+  // The deployment's own voice provider is a recipient like any other. It has
+  // no credential row to be found by the query above — the key is the
+  // operator's — and a consent screen that failed to name the vendor actually
+  // receiving the text would be worse than no screen at all.
+  const deploymentVoice = uses.includes("voice") ? resolveDeploymentVoice() : null;
+  if (deploymentVoice) add(aiRecipient({ provider: deploymentVoice.provider, use: "voice" }));
   for (const voice of voices)
     add(aiRecipient({ provider: voice.credential.provider, use: "voice" }));
   if (memory)

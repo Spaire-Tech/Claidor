@@ -67,7 +67,6 @@ import {
   UpdateGroupInput,
   UsageRecordSchema,
   VoiceCatalogEntrySchema,
-  VoiceCredentialSchema,
   VoiceInfoSchema,
   VoiceStatusSchema,
 } from "./domain.js";
@@ -715,19 +714,13 @@ export const appContract = {
   runs: {
     list: oc.input(z.object({ filter: z.enum(["active", "recent"]) })).output(RunsListOutputSchema),
   },
+  // The voice this deployment speaks with. As with models, there is no
+  // `connect` and no `credentials`: one provider, keyed by the operator, and
+  // no screen that asks anybody for a key. `setVoice` chooses which voice,
+  // never whose key.
   voice: {
     catalog: oc.output(z.array(VoiceCatalogEntrySchema)),
     status: oc.output(VoiceStatusSchema),
-    credentials: oc.output(z.array(VoiceCredentialSchema)),
-    connect: oc
-      .input(
-        z.object({
-          provider: z.string(),
-          apiKey: z.string().min(8),
-          voiceId: z.string().max(120).optional(),
-        }),
-      )
-      .output(VoiceCredentialSchema),
     setVoice: oc
       .input(z.object({ voiceId: z.string().min(1).max(120), provider: z.string().optional() }))
       .output(VoiceStatusSchema),

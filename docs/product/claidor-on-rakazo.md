@@ -1,4 +1,4 @@
-# Claidor's API, and the one model service
+# Claidor's API, one model service, one voice
 
 **Written 18 September 2026. Every claim below is tied to a file or to a
 command that was run. Where something was not run, it says so.**
@@ -132,6 +132,54 @@ underneath and is used when `CLAIDOR_API_KEY` is blank, because
 must run with no Claidor account. Deleting it would have broken the one part
 of their engineering worth copying. Voice, memory and integration keys are
 untouched — those are separate features and the founder asked about the model.
+Voice changed next, and is the section below.
+
+## The voice, the same way
+
+The founder, 18 September: *"Let eleven labs be the main voice provider. I
+already have the key on render."*
+
+**ElevenLabs was already a first-class adapter in the fork** —
+`packages/adapters/src/elevenlabs-voice.ts`, 128 lines, Flash v2.5 for speech
+and `scribe_v1` for transcription — alongside OpenAI, Cartesia and Fish Audio.
+What did not exist was any way for the deployment to hold the key. Every voice
+key was a per-user `UserVoiceCredential` row, entered on a screen. So this was
+the same job as the model, with one extra piece.
+
+| What changed | Where |
+|---|---|
+| `resolveDeploymentVoice()`: ElevenLabs by default, keyed from `ELEVENLABS_API_KEY`, a row per provider | `packages/adapters/src/deployment-voice.ts` (new) |
+| Every voice path resolves the deployment's voice before any per-user row | `apps/api/src/voice.ts` `loadVoiceCredential` |
+| `voice.connect` and `voice.credentials` deleted; `catalog`, `status`, `setVoice`, `voices`, `prepare` remain | `packages/contracts/src/rpc.ts` |
+| Their handlers and `persistVoiceCredential` deleted | `apps/api/src/router.ts`, `voice.ts` |
+| The 317-line voice overlay became a voice picker with a sample button | `apps/web/src/pages/VoiceSettingsOverlay.tsx` |
+| The 265-line mobile voice screen became the same | `apps/mobile/app/voice.tsx` |
+| The e2e that connected a key now asserts there is no field to connect one | `apps/web/e2e/voice.spec.ts`, `group-chats.spec.ts` |
+
+**The extra piece: a migration.** `voice.setVoice` wrote a
+`SpaceVoicePreference`, whose `credentialId` is a non-null foreign key to
+`UserVoiceCredential`. With no credential rows it would have failed exactly as
+`models.setDefault` would have. The model had somewhere to go —
+`DeploymentSettings` already had `defaultModelProvider`/`defaultModelId`. Voice
+had nothing, so `defaultVoiceId` was added:
+`packages/db/prisma/migrations/20260918120000_deployment_default_voice`, one
+nullable text column, hand-written in their style. **It has not been applied
+anywhere.** The API runs `prisma migrate deploy` before it serves, so a
+deployment picks it up on the next start; nothing here has a database to try it
+against.
+
+**What is kept.** All four adapters. `VOICE_PROVIDER` plus that provider's own
+key switches between them, and a provider named without its key yields no voice
+rather than another vendor's. The scripted provider still speaks with no key
+at all under `AGENT_RUNTIME=scripted`, which is how the e2e suite runs.
+
+**One bug this caught in my own code.** The first version of
+`resolveDeploymentVoice` read `AGENT_RUNTIME` from `process.env` through their
+`scriptedVoiceEnabled()` while taking `env` as a parameter for everything else.
+The test suite runs with `AGENT_RUNTIME=scripted`, so it answered "scripted" to
+every question and six of seven new tests failed. It reads the env it is handed
+now. Worth recording because the failure was loud; a function that is pure
+except for one line is the shape that hides this.
 
 ### What it costs at merge time
 

@@ -41,10 +41,8 @@ test("create group from + and see two bots in one transcript", async ({ page }, 
     name: "Review team",
     botIds: [researcherId, writerId],
   });
-  await rpc(page, "voice/connect", {
-    provider: "scripted",
-    apiKey: "fake-group-voice-key",
-  });
+  // No voice to connect: the deployment speaks, and under AGENT_RUNTIME=scripted
+  // that is the scripted provider with no key at all.
   await page.reload();
   await expect(page).toHaveURL(groupUrl);
   await expect(page.getByRole("combobox", { name: "Message Draft team" })).toBeVisible();

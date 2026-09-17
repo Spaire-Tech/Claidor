@@ -66,6 +66,7 @@ import {
   replaceComputer,
   resolveAutoReviewChecker,
   resolveBotWorkspacePath,
+  resolveDeploymentVoice,
   sanitizeComposioError,
   savePushToken,
   scheduleComputerControlExpiry,
@@ -108,7 +109,6 @@ import {
   createThreadMessageInTransaction,
   deleteEmptySpaceForMember,
   findDefaultModelCredential,
-  findDefaultVoiceCredential,
   findModelCredential,
   findSpaceMemoryConfig,
   formatMessagingLinkCode,
@@ -116,8 +116,7 @@ import {
   IsolationError,
   issueMessagingLinkCode,
   lockOwnedGroup,
-  newestVoiceCredentialOrder,
-  Prisma,
+  type Prisma,
   parseComputerMode,
   releaseSpaceDeletionClaim,
   renewSpaceDeletionClaim,
@@ -126,7 +125,6 @@ import {
   SpaceLimitError,
   SpaceNotEmptyError,
   SpaceNotFoundError,
-  selectSpaceVoicePreference,
   touchGroupUpdatedAt,
 } from "@rakazo/db";
 import { getLogger } from "@rakazo/logging";
@@ -158,7 +156,6 @@ import {
 import { listSpaceRuns } from "./runs.js";
 import { addScreenProxyCapability } from "./screen-proxy.js";
 import { querySpaceSearch } from "./search.js";
-import { withSerializableRetry } from "./serializable-retry.js";
 import type { UpdaterProxyConfig } from "./server-update.js";
 import {
   applyServerUpdate,
@@ -186,9 +183,7 @@ import {
   listVoiceCatalog,
   loadDefaultVoiceCredential,
   loadVoiceCredential,
-  persistVoiceCredential,
   prepareVoice,
-  toVoiceCredential,
   toVoiceStatus,
   voiceContext,
 } from "./voice.js";
@@ -4452,67 +4447,43 @@ export function createRouter(deps: RouterDeps) {
     voice: {
       catalog: authed.voice.catalog.handler(async () => listVoiceCatalog()),
       status: authed.voice.status.handler(async ({ context }) => {
-        const cred = await findDefaultVoiceCredential(deps.prisma, context.actor);
-        return toVoiceStatus(cred);
+        const loaded = await loadDefaultVoiceCredential(deps, context.actor);
+        return toVoiceStatus(loaded?.cred ?? null);
       }),
-      credentials: authed.voice.credentials.handler(async ({ context }) => {
-        const rows = await deps.prisma.userVoiceCredential.findMany({
-          where: { userId: context.actor.userId },
-          include: {
-            preferences: {
-              where: { userId: context.actor.userId, spaceId: context.actor.spaceId },
-            },
-          },
-          orderBy: newestVoiceCredentialOrder,
-        });
-        return rows.map((row) => {
-          const preference = row.preferences[0];
-          return toVoiceCredential({
-            ...row,
-            isDefault: preference?.isDefault ?? false,
-            voiceId: preference?.voiceId ?? "",
-          });
-        });
-      }),
-      connect: authed.voice.connect.handler(async ({ context, input }) =>
-        persistVoiceCredential(deps, context.actor, {
-          provider: input.provider,
-          plaintext: input.apiKey,
-          voiceId: input.voiceId,
-          signal: context.signal,
-        }),
-      ),
+      /**
+       * Which voice this deployment speaks with.
+       *
+       * It used to find a per-user voice credential and hang a
+       * SpaceVoicePreference off it. There are no credential rows now — the
+       * key is the deployment's — so the choice lives on DeploymentSettings
+       * beside the default model. `loadVoiceCredential` reads it back.
+       *
+       * A bot still has its own voice through `bots.update`, unchanged, and it
+       * still wins over this one.
+       */
       setVoice: authed.voice.setVoice.handler(async ({ context, input }) => {
-        const cred = await withSerializableRetry(() =>
-          deps.prisma.$transaction(
-            async (tx) => {
-              const found = input.provider
-                ? await tx.userVoiceCredential.findFirst({
-                    where: { userId: context.actor.userId, provider: input.provider },
-                    orderBy: newestVoiceCredentialOrder,
-                  })
-                : (
-                    await tx.spaceVoicePreference.findFirst({
-                      where: {
-                        userId: context.actor.userId,
-                        spaceId: context.actor.spaceId,
-                        isDefault: true,
-                      },
-                      include: { credential: true },
-                      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
-                    })
-                  )?.credential;
-              if (!found) {
-                throw new ORPCError("BAD_REQUEST", { message: "Connect a voice provider first." });
-              }
-              // Picking a voice also makes its provider the one speak/transcribe use.
-              await selectSpaceVoicePreference(tx, context.actor, found.id, input.voiceId);
-              return { ...found, voiceId: input.voiceId, isDefault: true };
-            },
-            { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-          ),
-        );
-        return toVoiceStatus(cred);
+        const configured = resolveDeploymentVoice();
+        if (!configured) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "This deployment has no voice provider configured.",
+          });
+        }
+        if (input.provider && input.provider !== configured.provider) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: `This deployment speaks with ${configured.provider}.`,
+          });
+        }
+        if (!context.actor.isDeploymentOwner) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "Only the deployment owner can change the voice.",
+          });
+        }
+        await deps.prisma.deploymentSettings.upsert({
+          where: { id: "default" },
+          create: { id: "default", defaultVoiceId: input.voiceId },
+          update: { defaultVoiceId: input.voiceId },
+        });
+        return toVoiceStatus({ provider: configured.provider, voiceId: input.voiceId });
       }),
       voices: authed.voice.voices.handler(async ({ context, input }) => {
         const loaded = await loadDefaultVoiceCredential(deps, context.actor);

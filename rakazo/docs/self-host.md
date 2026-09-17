@@ -663,6 +663,33 @@ service's trust boundary, and configure `SIGNUPS_ENABLED` and `SIGNUP_ALLOWLIST`
 first start.
 The optional marketing site in `apps/www` can be hosted separately.
 
+## The voice service
+
+ElevenLabs is what this deployment speaks with, and — as with the model — the
+key is the operator's. There is no provider list and no key field in Settings,
+on web or mobile, and nobody signing in is asked for one.
+
+```env
+ELEVENLABS_API_KEY=sk-…
+# Optional: the voice everybody gets until the deployment owner picks another
+# in Settings, which is then stored on the deployment rather than here.
+# ELEVENLABS_VOICE_ID=…      (VOICE_ID is the provider-neutral spelling)
+```
+
+Leave the key blank and the product does not speak; `voice.status` reports
+`configured: false` and the Voice screen says so rather than offering a form.
+
+The other three adapters this build ships — OpenAI, Cartesia and Fish Audio —
+are still here and are chosen with `VOICE_PROVIDER` plus that provider's own
+key (`CARTESIA_API_KEY`, `FISH_AUDIO_API_KEY`, `VOICE_OPENAI_API_KEY` which
+falls back to `OPENAI_API_KEY`). A provider named without its key means no
+voice, never another vendor's.
+
+**Settings → Voice** is now the list of that provider's voices, with the
+deployment owner choosing which one. A bot can still be given a voice of its
+own in its own settings, and that one wins. What the upstream project
+documents — a per-user voice key — was removed on purpose.
+
 ## Connect mobile clients
 
 The iOS and Android app can also point at a self-hosted origin at runtime. On the sign-in screen, tap **Use a custom server** and enter the same HTTPS origin as `WEB_ORIGIN` (for example `https://app.example.com`). Store builds still default to `EXPO_PUBLIC_API_URL`; the in-app setting is an override for people running their own API. Changing the server signs the device out of any previous session.

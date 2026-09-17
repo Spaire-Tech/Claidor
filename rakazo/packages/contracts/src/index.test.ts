@@ -223,6 +223,19 @@ describe("contracts", () => {
       expect(appContract.models, gone).not.toHaveProperty(gone);
     }
     expect(Object.keys(appContract.models).sort()).toEqual(["list", "setDefault"]);
+
+    // Voice is the same rule: one provider, keyed by the operator. `setVoice`
+    // chooses which voice, never whose key.
+    for (const gone of ["connect", "credentials"]) {
+      expect(appContract.voice, gone).not.toHaveProperty(gone);
+    }
+    expect(Object.keys(appContract.voice).sort()).toEqual([
+      "catalog",
+      "prepare",
+      "setVoice",
+      "status",
+      "voices",
+    ]);
   });
 
   it("exposes the product rpc surface", () => {

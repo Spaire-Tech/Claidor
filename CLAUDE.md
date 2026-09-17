@@ -264,7 +264,7 @@ founder's rule, already written into their engineering doc. Every
 argument we have had about whether a brief rule works was reasoning.
 They measure. Take the harness before taking opinions.
 
-## One model service, internal, and no key fields (18 September 2026)
+## One model service, one voice, and no key fields (18 September 2026)
 
 **`docs/product/claidor-on-rakazo.md` is the document. Read it before
 changing anything about models.**
@@ -300,6 +300,17 @@ credential row that no longer exists and now writes `DeploymentSettings`.
 `CLAIDOR_API_KEY` is blank, because their offline harness and eval runner
 must work with no Claidor account. Voice, memory and integration keys are
 untouched; those are separate features.
+
+**Voice went the same way (18 September).** ElevenLabs is the deployment's
+voice provider, keyed from `ELEVENLABS_API_KEY`; `voice.connect` and
+`voice.credentials` are gone from the contract and the two voice screens are
+voice pickers with no key field. All four of their adapters remain, switched
+with `VOICE_PROVIDER`. One thing here needs a database: `setVoice` used to hang
+off a per-user credential row, so `DeploymentSettings.defaultVoiceId` was added
+with a hand-written migration —
+`packages/db/prisma/migrations/20260918120000_deployment_default_voice`. **It
+has not been applied anywhere**; the API runs `prisma migrate deploy` before it
+serves, so a deployment takes it on the next start.
 
 **The cost, stated once:** our conflict surface was seven of their files.
 It is now `apps/web`, `apps/mobile`, `apps/api`, `packages/contracts`,

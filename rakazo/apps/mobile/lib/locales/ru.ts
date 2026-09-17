@@ -602,4 +602,14 @@ export const RU_MESSAGES: Record<string, string> = {
   "This deployment has no model service configured.":
     "В этой установке не настроен сервис моделей.",
   "That did not go through": "Не удалось выполнить",
+  // The voice screen. One provider, keyed by the operator, so these replace
+  // the connect flow's copy.
+  "Could not load voices": "Не удалось загрузить голоса",
+  "Could not play a test clip": "Не удалось воспроизвести пример",
+  "Every agent speaks with this unless it has one of its own.":
+    "Этим голосом говорит каждый агент, если у него нет своего.",
+  "Chosen for this workspace. An agent can still have one of its own.":
+    "Выбрано для этого рабочего пространства. У агента может быть свой голос.",
+  "This deployment has no voice provider configured.":
+    "В этой установке не настроен сервис голоса.",
 };
