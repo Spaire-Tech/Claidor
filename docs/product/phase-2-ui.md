@@ -14,9 +14,22 @@ it was counted, not estimated.
 ## 1. The render matrix, which is the real gap
 
 `rakazo/packages/contracts/src/events.ts:91` declares `MessageBlock` as a
-discriminated union of **21 kinds**. The founder's direction names five message
+discriminated union of **22 kinds**. The founder's direction names five message
 kinds. A thread that cannot draw a kind does not degrade — the block is simply
 not rendered, and the person sees a gap where the agent spoke.
+
+Two corrections to the first version of this section, both found by writing the
+mapping rather than by reading harder. It is 22, not 21: `chart` joins the union
+by name rather than as a literal, so counting `kind: z.literal` misses it. And
+"nine kinds have no rendering" was true of Caisra and false of the repository —
+`apps/web/src/pages/Shell.tsx:5774` onward draws every one of them. Their
+renderings are reference material, not a blank page, which makes this a port.
+
+`packages/core/src/caisra-thread.ts` is where the two vocabularies meet, and the
+mapping is exhaustive by construction: the closing `never` assignment turns a
+kind added upstream into a build failure, and `caisra-thread.test.ts` reads the
+kinds off the schema so it fails there too. A silently dropped block has cost
+this project once already.
 
 | Kind | What it is | Ours today |
 | --- | --- | --- |
