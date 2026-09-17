@@ -613,7 +613,9 @@ function defaultLogin(
   if (providerId === ANTHROPIC_OAUTH_PROVIDER) {
     return createManualAnthropicOAuthLogin()(interaction);
   }
-  return builtinModels().login(providerId, type, interaction);
+  // The configured catalog, not the built-in one: a provider registered
+  // from configuration has a login here or the sign-in cannot complete.
+  return providerCatalog().login(providerId, type, interaction);
 }
 
 function deferred<T>() {
