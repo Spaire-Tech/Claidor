@@ -134,6 +134,30 @@ The macOS installer builds on GitHub Actions
 (`.github/workflows/desktop_mac.yml`), unsigned until an Apple
 certificate exists.
 
+## Before you say anything is missing (18 September 2026)
+
+**`docs/product/what-exists.md` is an inventory of what is already built and
+where. Read it before claiming any part of this product does not exist.**
+
+It exists because of one failure, repeated. I told the founder the onboarding
+Mac tasks had "genuinely nothing behind them". They are 178 lines of working
+AppleScript with 107 lines of tests in
+`desktop/src/main/onboarding/macTasks.ts`, which the founder had run many
+times, and `useOnboarding.ts` — which I had read that same session — points
+straight at them with `window.electron?.onboarding`. I reasoned forward from my
+own file instead of searching the repository.
+
+The rule: **"X does not exist" is a claim that requires a search.** Before
+writing *missing, absent, not built, nothing behind it, a hole, needs building*
+about this product, grep `desktop/src`, `server/polar`, `rakazo/packages` and
+`rakazo/apps`. If nothing is found, say what was searched for. If something is
+found, it is a port or a wiring job, not a build.
+
+**Frozen is not gone.** `desktop/` must not be added to. The code in it is a
+finished, tested parts bin: the Mac tasks, whisper speech recognition, the
+ask-input MCP server, the connections catalogue, the 23 strongs, the whole
+design. Reach for it first.
+
 ## rakazo/ — the new foundation (17 September 2026)
 
 `rakazo/` is Rakazo (Apache 2.0), vendored with `git subtree` (squashed;
@@ -208,6 +232,21 @@ that is the whole burden. One trap: **Treg** is usage-metered and their
 README says hosted resale needs a written agreement — read it before
 shipping anything Treg-shaped.
 
+**`rakazo/` is the fork, whole and unchanged.** As of 18 September 2026 it is
+byte-identical to the squashed subtree merge `34325164`. Nothing of ours is in
+it: no `apps/caisra`, no `caisra-*` modules, no edits to any of their files.
+`git diff 34325164 -- rakazo/` is empty, and that is the check.
+
+The Caisra build that used to live inside it was archived — see the section
+below. Do not reason from memory about what we added there; there is nothing
+there.
+
+**Two of their gates fail in this container and neither is code.**
+`apps/mobile`'s check runs `expo install --check`, which needs the network and
+dies on a TLS handshake here; its `tsc` is clean. And one desktop test binds
+`[::1]`, which this container has no route for. Both pass on a machine with
+ordinary network.
+
 **Pulling upstream:**
 `git subtree pull --prefix=rakazo https://github.com/elie222/rakazo main --squash`.
 `Spaire-Tech/rakazo` is the founder's fork, kept for contributing back;
@@ -221,6 +260,43 @@ credentials mean **not run**, not a passing model evaluation" — is the
 founder's rule, already written into their engineering doc. Every
 argument we have had about whether a brief rule works was reasoning.
 They measure. Take the harness before taking opinions.
+
+## Caisra on Rakazo — archived (18 September 2026)
+
+The Caisra build that sat inside the fork is archived. The founder ended it:
+"no we're done here i think. i've no choice but to start over. there's too much
+damage. its done", then "archive that whole thing we did. only leave in
+claidors repo the complete fork of rakazo."
+
+**Where it is.** In this branch's history, not in the working tree. The last
+state is commit `4118ac0f`, and the work is the 56 commits in
+`34325164..4118ac0f`. To read it: `git show 4118ac0f:<path>`, or
+`git checkout 4118ac0f` in a worktree. An annotated tag `caisra-final` points
+at it locally; it is **not** on the remote, because this session's credentials
+are refused on `refs/tags/*` with HTTP 403 — the branch carries the history
+either way, so nothing is lost, but anyone with push rights should run
+`git push origin caisra-final` so the name survives the container.
+
+**What it was.** `rakazo/apps/caisra` (5,693 lines: the founder's design as a
+working shell — dock, floating frame, thread, compose, apps, settings,
+computer, onboarding), twelve `caisra-*` modules under `packages/core/src`
+(layout, settings, compose, onboarding, thread, cards, files, routines, live),
+a metered-proxy model provider and account adapter under `packages/adapters`,
+and the `answer_card` block kind in their contract.
+
+**What was removed to get back to the fork.** 145 files of ours deleted, and
+nine of their files restored to the subtree merge. The fork is now
+byte-identical to `34325164`.
+
+**What was kept, on purpose.** `docs/product/caisra-build-map.md` and
+`docs/product/what-exists.md` are the documents of record. The first is the
+audit the founder asked for — what Rakazo ships, module by module, and every
+place I rebuilt logic they already had. The second is the inventory of
+`desktop/src`. Both outlive the code they describe.
+
+Do not extend it, and do not restore parts of it into `rakazo/` on a hunch.
+Answer questions about it from those two documents and from
+`git show 4118ac0f`, never from memory.
 
 ## Quick Start
 
