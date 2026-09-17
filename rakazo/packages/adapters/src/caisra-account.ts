@@ -158,3 +158,11 @@ export async function refreshCaisraSession(
   if (!token) throw new Error("Caisra returned no account token");
   return readSession(await post("/desktop/api/auth/refresh", { refreshToken: token }, opts));
 }
+
+/**
+ * How long a Caisra access token is valid, from the account server's own
+ * configuration (`DESKTOP_ACCESS_TOKEN_TTL`). The refresh token lasts thirty
+ * days. Kept here because the exchange response carries no expiry of its own,
+ * so a caller has nothing else to derive one from.
+ */
+export const CAISRA_ACCESS_TOKEN_TTL_MS = 60 * 60 * 1000;

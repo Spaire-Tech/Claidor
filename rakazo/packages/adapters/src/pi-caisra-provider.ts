@@ -1,3 +1,6 @@
+import { randomUUID } from "node:crypto";
+
+import type { OAuthCredential, ProviderAuthInteraction } from "@earendil-works/pi-ai";
 import {
   createProvider,
   type Model,
@@ -6,43 +9,44 @@ import {
 } from "@earendil-works/pi-ai";
 import { openAICompletionsApi } from "@earendil-works/pi-ai/api/openai-completions.lazy";
 
+import {
+  CAISRA_ACCESS_TOKEN_TTL_MS,
+  caisraSignInUrl,
+  exchangeCaisraAuthCode,
+  refreshCaisraSession,
+} from "./caisra-account.js";
 import { declaredVisionModelIds, inputModalities } from "./model-modalities.js";
 
 /**
- * Caisra's metered model proxy.
+ * Caisra's metered model proxy, as a provider the runtime already knows how to
+ * sign in to.
  *
- * Caisra's users never hold a provider key. The proxy at `CAISRA_MODELS_URL`
- * holds the Anthropic and OpenAI keys server-side, meters the call against the
- * signed-in account, and forwards it. From Pi's side it is an ordinary
- * OpenAI-compatible endpoint, so this registers it the way
- * `pi-local-provider.ts` registers a local model server: a catalog entry built
- * from environment configuration, because Pi's built-in catalog only ships
- * providers it knows.
+ * Caisra's users never hold a provider key. The proxy holds the Anthropic and
+ * OpenAI keys server-side, meters the call against the signed-in account, and
+ * forwards it. From the runtime's side it is an ordinary OpenAI-compatible
+ * endpoint, registered the way `pi-local-provider.ts` registers a local model
+ * server: a catalog built from environment configuration, because the built-in
+ * catalog only ships providers it knows.
  *
- * Two things differ from the local provider, and both matter:
+ * Two things differ from the local provider, and both matter.
  *
  * The base URL is fixed by the operator, never typed by a user. That is why
  * this is its own provider rather than a connection through
  * `pi-openai-compatible-provider.ts`, whose URLs are user-supplied and
  * therefore refuse public hosts unless `RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1`.
- * Turning that switch on to admit one trusted host would admit every other
- * host to every user-entered connection as well, which is the SSRF hole that
- * check exists to close.
+ * Turning that switch on to admit one trusted host would admit every other host
+ * to every user-entered connection as well, which is the SSRF hole that check
+ * exists to close.
  *
- * And the key is per user, not per deployment. `resolve` returns a placeholder
- * so Models counts the provider as configured and lists its models; the real
- * bearer is the signed-in account's Caisra token, which reaches the request as
- * the run's `apiKey` through the same path a saved model connection uses.
- * A deployment-wide key would bill every account to one meter.
+ * And the credential is an account session rather than a key, so it uses the
+ * runtime's OAuth slot. A Caisra access token lives an hour and its refresh
+ * token thirty days; the OAuth credential is `{ access, refresh, expires }`,
+ * which is exactly that session, and `Models` refreshes it under its store lock
+ * when it expires. An api-key credential has nowhere to put the refresh token,
+ * which is what made an earlier attempt here hand-roll a session holder that
+ * this slot already provides.
  */
 export const CAISRA_PROVIDER_ID = "caisra";
-
-/**
- * Stands in for the bearer before the account is connected. Deliberately not a
- * credential shape: it must never look like one in a log, and the proxy must
- * refuse it.
- */
-export const CAISRA_UNAUTHENTICATED_KEY = "caisra-not-connected";
 
 /** Model ids the proxy serves with vision, declared by the operator. */
 export const CAISRA_VISION_MODELS_ENV = "CAISRA_VISION_MODELS";
@@ -120,6 +124,54 @@ function caisraModel(id: string): Model<"openai-completions"> {
   };
 }
 
+/** An account session as the runtime's canonical OAuth credential. */
+function toOAuthCredential(session: {
+  accessToken: string;
+  refreshToken: string;
+}): OAuthCredential {
+  return {
+    type: "oauth",
+    access: session.accessToken,
+    refresh: session.refreshToken,
+    // Caisra does not return an expiry, so it is derived from the account
+    // server's own access-token lifetime, less a skew so a token is replaced
+    // before a long turn can outlive it mid-request.
+    expires: Date.now() + CAISRA_ACCESS_TOKEN_TTL_MS - 5 * 60 * 1000,
+  };
+}
+
+/**
+ * Sign in: send the person to Caisra, take the code their callback received.
+ *
+ * `prompt` is how the runtime asks a surface for that code; the desktop app's
+ * loopback listener answers it. Caisra hands a code only to that listener or to
+ * the `caisra://` deep link, so a hosted web origin cannot complete this.
+ */
+async function caisraOAuthLogin(interaction: ProviderAuthInteraction): Promise<OAuthCredential> {
+  const redirectUri = process.env.CAISRA_REDIRECT_URI?.trim() || "caisra://auth/callback";
+  const state = randomUUID();
+  interaction.notify({
+    type: "auth_url",
+    url: caisraSignInUrl({ redirectUri, state }),
+    instructions: "Sign in to Caisra in your browser to connect your account.",
+  });
+  const code = await interaction.prompt({
+    type: "manual_code",
+    message: "Paste the code from the Caisra sign-in callback:",
+    placeholder: redirectUri,
+    signal: interaction.signal,
+  });
+  return toOAuthCredential(await exchangeCaisraAuthCode(code, { signal: interaction.signal }));
+}
+
+/** Exchange the refresh token. Throws on rejection; `Models` holds the lock. */
+async function caisraOAuthRefresh(
+  credential: OAuthCredential,
+  signal: AbortSignal,
+): Promise<OAuthCredential> {
+  return toOAuthCredential(await refreshCaisraSession(credential.refresh, { signal }));
+}
+
 /** The provider, or undefined when no Caisra models are configured. */
 export function caisraProvider(): Provider | undefined {
   const ids = caisraModelIds();
@@ -129,18 +181,24 @@ export function caisraProvider(): Provider | undefined {
     name: "Caisra",
     baseUrl: caisraBaseUrl(),
     auth: {
-      apiKey: {
+      // The runtime's own OAuth slot, not a hand-rolled session. It stores the
+      // access and refresh pair, notices the expiry, and runs `refresh` under
+      // its store lock, so concurrent runs share one refresh instead of racing
+      // to spend the refresh token. That is the whole reason this is `oauth`
+      // and not an api key: a Caisra access token lives an hour, and an api-key
+      // credential has nowhere to keep the refresh token or the expiry.
+      //
+      // `isSubscription` stays false. The runtime's other sign-ins are a
+      // person's own ChatGPT or Claude plan; a Caisra account is billed by us.
+      oauth: {
         name: "Caisra account",
-        // The signed-in account's Caisra token when one is stored, and a
-        // placeholder otherwise. The fallback is not decoration: Models hides
-        // every model of a provider whose auth does not resolve, so returning
-        // undefined before sign-in would empty the picker the user is meant to
-        // sign in from. The placeholder is never a working bearer — the proxy
-        // rejects it — so an unauthenticated call fails at the proxy with a
-        // 401 it can explain, rather than silently disappearing from the UI.
-        resolve: async ({ credential }) => ({
-          auth: { apiKey: credential?.key ?? CAISRA_UNAUTHENTICATED_KEY, baseUrl: caisraBaseUrl() },
-          source: "Caisra account",
+        loginLabel: "Sign in to Caisra",
+        isSubscription: false,
+        login: caisraOAuthLogin,
+        refresh: caisraOAuthRefresh,
+        toAuth: async (credential) => ({
+          apiKey: credential.access,
+          baseUrl: caisraBaseUrl(),
         }),
       },
     },

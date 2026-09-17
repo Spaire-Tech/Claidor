@@ -2,7 +2,6 @@ import { builtinModels } from "@earendil-works/pi-ai/providers/all";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   CAISRA_PROVIDER_ID,
-  CAISRA_UNAUTHENTICATED_KEY,
   caisraBaseUrl,
   caisraProvider,
   registerCaisraProvider,
@@ -109,26 +108,30 @@ describe("Caisra model provider", () => {
     expect(() => caisraProvider()).toThrow(/positive integer/);
   });
 
-  it("hands the signed-in account's token to the proxy when one is stored", async () => {
+  it("signs in through the runtime's OAuth slot, not an api key", () => {
+    // An api-key credential has nowhere to hold the refresh token or the
+    // expiry, so a one-hour access token would sign the person out hourly.
+    // The OAuth credential is {access, refresh, expires} and Models refreshes
+    // it under its store lock, which is why this slot is the right one.
     setEnv("CAISRA_MODELS", "claude-opus-5");
-    const resolve = caisraProvider()?.auth?.apiKey?.resolve;
-    const resolved = await resolve?.({
-      ctx: {},
-      signal: new AbortController().signal,
-      credential: { key: "account-token" },
-    } as never);
-    expect(resolved?.auth.apiKey).toBe("account-token");
-    expect(resolved?.auth.baseUrl).toBe("https://api.claidor.com/api/proxy/v1");
+    const auth = caisraProvider()?.auth;
+    expect(auth?.apiKey).toBeUndefined();
+    expect(typeof auth?.oauth?.login).toBe("function");
+    expect(typeof auth?.oauth?.refresh).toBe("function");
+    // Their other sign-ins spend a person's own ChatGPT or Claude plan. A
+    // Caisra account is billed by us, so it is not a subscription sign-in.
+    expect(auth?.oauth?.isSubscription).toBe(false);
   });
 
-  it("still resolves before sign-in, so the models do not vanish from the picker", async () => {
+  it("sends the account's access token and the proxy's base URL to a request", async () => {
     setEnv("CAISRA_MODELS", "claude-opus-5");
-    const resolve = caisraProvider()?.auth?.apiKey?.resolve;
-    const resolved = await resolve?.({ ctx: {}, signal: new AbortController().signal } as never);
-    // Models hides every model of a provider whose auth resolves to undefined,
-    // which would empty the picker the user signs in from. The placeholder is
-    // not a working bearer; the proxy answers 401 and that is explainable.
-    expect(resolved?.auth.apiKey).toBe(CAISRA_UNAUTHENTICATED_KEY);
-    expect(resolved?.auth.apiKey).not.toMatch(/^sk-|^claidor_/);
+    const auth = await caisraProvider()?.auth?.oauth?.toAuth({
+      type: "oauth",
+      access: "access-1",
+      refresh: "refresh-1",
+      expires: Date.now() + 60_000,
+    });
+    expect(auth?.apiKey).toBe("access-1");
+    expect(auth?.baseUrl).toBe("https://api.claidor.com/api/proxy/v1");
   });
 });
