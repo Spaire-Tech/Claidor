@@ -86,6 +86,18 @@ export type CaisraRow =
       connected: boolean;
       /** The one line under the name. The card draws it when the block has one. */
       line?: string;
+      /**
+       * The service's own mark, as an address the connector provider serves.
+       *
+       * Caisra ships no service logos. An earlier pass bundled forty-one of
+       * them and ignored this field, which was both more code and less
+       * coverage: the catalogue behind these blocks runs to thousands of apps
+       * and carries a mark for each. When there is none, `initial` and
+       * `colour` are what the block itself offers as the fallback.
+       */
+      logo?: string;
+      initial?: string;
+      colour?: string;
     }
   | {
       kind: typeof CaisraRowKind.Helper;
@@ -235,15 +247,19 @@ export function caisraRowFromBlock(block: MessageBlock, names?: CaisraNames): Ca
         label: block.name,
         connected: block.status === "connected",
         ...(block.description ? { line: block.description } : {}),
+        ...(block.logo ? { logo: block.logo } : {}),
       };
 
     case "connect":
-      // No provider id on this one, only what to show: use the name.
+      // No provider id on this one, only what to show: the name, and the
+      // monogram the block carries for a service with no mark.
       return {
         kind: CaisraRowKind.Connector,
         provider: block.name,
         label: block.name,
         connected: block.status === "connected",
+        initial: block.initial,
+        colour: block.color,
       };
 
     case "image":

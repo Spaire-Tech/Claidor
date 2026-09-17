@@ -8,12 +8,13 @@ import {
   caisraFileSize,
   caisraFileWord,
 } from "@rakazo/core";
+import { useState } from "react";
 import { Artifact } from "./Artifact.js";
 import { Blob } from "./Blob.js";
 import { Cards } from "./Cards.js";
 import { Chart } from "./Chart.js";
 import { FileRow } from "./FileRow.js";
-import { logoMonogram, logoUrl } from "./logos.js";
+import { monogram } from "./filemarks.js";
 import "./thread.css";
 
 /**
@@ -121,19 +122,31 @@ function Choice({ row }: { row: Extract<ThreadRow, { kind: "choice" }> }) {
 /**
  * An agent asking to connect something.
  *
- * The founder's onboarding card, in the thread: the service's own logo, its
- * name, the catalogue's one line, and two pills. The logo is a file we ship or
- * it is the service's initial on a tile — never a favicon fetched from
- * DuckDuckGo or Google, which is what the canvas did and what `logos.ts`
- * exists to stop.
+ * The founder's onboarding card, in the thread: the service's mark, its name,
+ * the catalogue's one line, and two pills.
+ *
+ * **The mark is the fork's, not ours.** `app_connect` carries a `logo`
+ * address served by whichever provider holds the catalogue, and `connect`
+ * carries an initial and a colour for a service that has none. Caisra ships no
+ * service logos of its own: the catalogue behind these blocks runs to
+ * thousands of apps, and forty-one bundled files was both more code and less
+ * coverage than reading the field that was already there.
  */
 function Connector({ row }: { row: Extract<ThreadRow, { kind: "connector" }> }) {
-  const url = logoUrl(row.provider) ?? logoUrl(row.label);
+  // A dead address becomes a service with no mark, which the design already
+  // draws, rather than the browser's broken-image glyph.
+  const [broken, setBroken] = useState(false);
   return (
     <div className="row row--left">
       <div className="card card--connector">
-        <span className="tile">
-          {url ? <img src={url} alt="" width={30} height={30} /> : logoMonogram(row.label)}
+        <span className="tile" style={row.colour ? { background: row.colour } : undefined}>
+          {row.logo && !broken ? (
+            <img src={row.logo} alt="" width={30} height={30} onError={() => setBroken(true)} />
+          ) : (
+            <span className={row.colour ? "tile__letter tile__letter--on-colour" : undefined}>
+              {row.initial ?? monogram(row.label)}
+            </span>
+          )}
         </span>
         <span className="card__stack">
           <span className="card__title">{row.label}</span>
@@ -342,26 +355,79 @@ function Composer({ name }: { name: string }) {
   );
 }
 
+/**
+ * The conversation's header.
+ *
+ * The canvas centres the Text/Voice pill in it, with the agent on the left and
+ * the tools on the right. Voice is drawn and not yet built; it is in the
+ * design, so it is here, and pressing it is the one thing this screen cannot
+ * do yet.
+ */
+function Header({
+  title,
+  subtitle,
+  seed,
+  mode,
+  waiting,
+}: {
+  title: string;
+  subtitle?: string;
+  seed: string;
+  mode: ThreadMode;
+  waiting?: boolean;
+}) {
+  return (
+    <header className="header">
+      <Blob seed={seed} size={28} />
+      <span className="header__stack">
+        <span className="header__name">{title}</span>
+        {/* A card is waiting on the person: the header says so rather than
+            showing the typing dots, because nothing is happening until they
+            answer. */}
+        <span className="header__sub">{waiting ? "Waiting for you" : subtitle}</span>
+      </span>
+      <span className="modes">
+        <span className={`modes__tab ${mode === ThreadMode.Text ? "modes__tab--on" : ""}`}>
+          Text
+        </span>
+        <span className={`modes__tab ${mode === ThreadMode.Voice ? "modes__tab--on" : ""}`}>
+          Voice
+        </span>
+      </span>
+    </header>
+  );
+}
+
+export const ThreadMode = {
+  Text: "text",
+  Voice: "voice",
+} as const;
+export type ThreadMode = (typeof ThreadMode)[keyof typeof ThreadMode];
+
 export function Thread({
   rows,
   title,
   seed,
   subtitle,
+  mode = ThreadMode.Text,
+  waiting,
 }: {
   rows: readonly ThreadRow[];
   title: string;
   seed: string;
   subtitle?: string;
+  mode?: ThreadMode;
+  waiting?: boolean;
 }) {
   return (
     <>
-      <header className="header">
-        <Blob seed={seed} size={28} />
-        <span className="header__stack">
-          <span className="header__name">{title}</span>
-          {subtitle ? <span className="header__sub">{subtitle}</span> : null}
-        </span>
-      </header>
+      <Header
+        title={title}
+        seed={seed}
+        mode={mode}
+        {...(subtitle ? { subtitle } : {})}
+        {...(waiting ? { waiting } : {})}
+      />
       <div className="thread">
         {rows.map((row, index) => (
           // A thread only ever grows at the end, so the position is the row's

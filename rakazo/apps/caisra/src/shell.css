@@ -1,22 +1,69 @@
-/** The window: a list of conversations, and whatever is open beside it. */
+/**
+ * The frame: the window floats on the ground with the dock beside it, at the
+ * canvas's measurements — 24 in from the sides, 26 top and bottom, 22 between
+ * the dock and the window.
+ */
 
-.app {
-  width: 980px;
-  height: 760px;
-  margin: 36px auto;
+.frame {
+  display: flex;
+  align-items: stretch;
+  gap: var(--frame-gap);
+  padding: var(--frame-pad-y) var(--frame-pad-x);
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.window {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: var(--window-max-w);
+  min-height: 748px;
   display: flex;
   background: var(--paper);
   border-radius: 18px;
   box-shadow: var(--shadow-window);
   overflow: hidden;
 }
-.app--tall {
-  height: auto;
-  min-height: 760px;
+/* A screen that takes the whole window stacks its bar above its body. */
+.window:has(.backbar) {
+  flex-direction: column;
+}
+
+/*
+ * The one back bar. It names where it goes, because an X named nothing and
+ * closed the wrong screen when two were open.
+ */
+.backbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--line-hairline);
+  background: var(--window);
+}
+.backbar__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px 5px 8px;
+  border: 1px solid var(--line-field);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-body);
+  cursor: pointer;
+}
+.backbar__back:hover {
+  background: var(--window);
+}
+.backbar__title {
+  font-size: var(--text-emphasis);
+  font-weight: 500;
 }
 
 .sidebar {
-  width: 286px;
+  width: var(--sidebar-w);
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
@@ -38,12 +85,13 @@
 .sidebar__icon {
   width: 28px;
   height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
   border-radius: 8px;
   background: transparent;
   color: var(--muted);
-  font: inherit;
-  font-size: 15px;
   cursor: pointer;
 }
 .sidebar__icon:hover {
@@ -70,9 +118,7 @@
   color: var(--ink);
   cursor: pointer;
 }
-.convo:hover {
-  background: var(--fill);
-}
+.convo:hover,
 .convo--open {
   background: var(--fill);
 }
@@ -117,18 +163,6 @@
   background: var(--accent);
 }
 
-.sidebar__foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px 14px 18px;
-  border-top: 1px solid var(--line-hairline);
-}
-.sidebar__you {
-  font-size: var(--text-body);
-  color: var(--muted);
-}
-
 .pane {
   flex: 1;
   min-width: 0;
@@ -136,15 +170,11 @@
   flex-direction: column;
   background: var(--paper);
 }
-/* The routines screen scrolls as one page; the thread pins its composer. */
-.pane--flat {
+/* A full-width screen scrolls as a page; a thread pins its composer. */
+.pane--full {
   overflow-y: auto;
 }
 .pane .thread {
   flex: 1;
   overflow-y: auto;
-}
-/* A window that grew for one long answer scrolls as a page, not as a thread. */
-.app--tall .pane .thread {
-  overflow-y: visible;
 }

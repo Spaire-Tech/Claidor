@@ -1,4 +1,4 @@
-import { logoUrl } from "./logos.js";
+import { fileMarkUrl } from "./filemarks.js";
 
 /**
  * The file card: the founder's 15 September design, *"its pdf excel and word.
@@ -31,7 +31,7 @@ export function FileRow({
   onOpen?: () => void;
   onSave?: () => void;
 }) {
-  const url = logo ? logoUrl(logo) : undefined;
+  const url = logo ? fileMarkUrl(logo) : undefined;
   return (
     <div className="card card--file">
       {url ? (

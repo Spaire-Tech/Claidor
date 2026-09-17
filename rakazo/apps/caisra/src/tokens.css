@@ -41,6 +41,15 @@
   --shadow-flat: 0 1px 2px rgba(0, 0, 0, 0.08);
   --shadow-window: 0 40px 110px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.1);
 
+  /* The floating frame, from the canvas: the window sits in from the edges
+     with the dock beside it. */
+  --frame-pad-x: 24px;
+  --frame-pad-y: 26px;
+  --frame-gap: 22px;
+  --window-max-w: 1420px;
+  --window-max-h: 900px;
+  --sidebar-w: 272px;
+
   --text-caption: 12.5px;
   --text-body: 13.5px;
   --text-message: 14px;

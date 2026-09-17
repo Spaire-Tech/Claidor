@@ -1,4 +1,4 @@
-import type { MessageBlock, Routine } from "@rakazo/contracts";
+import type { ConnectionCatalogItem, MessageBlock, Routine } from "@rakazo/contracts";
 import { type CardExample, cardExamples } from "./cardExamples.js";
 
 /**
@@ -71,6 +71,62 @@ export const frontDesk: FixtureBot = {
 };
 
 export const bots: FixtureBot[] = [yodo, comms, expenses, frontDesk];
+
+/**
+ * The connector catalogue, in the fork's own shape.
+ *
+ * `ConnectionCatalogItem` is theirs and so is everything that reads it: which
+ * five lead, how an entry matches one of them, how search filters, how many
+ * come back in a page. Caisra ships no service logos — the mark is the address
+ * the provider serves on the item, which is why these carry real ones.
+ *
+ * Their catalogue runs to thousands of apps in production; this is enough of
+ * it to draw the screen honestly, including one entry with no mark at all so
+ * the monogram fallback is on screen rather than assumed.
+ */
+export const LOGO: Record<string, string> = {
+  gmail: "https://cdn.simpleicons.org/gmail/EA4335",
+  "google-calendar": "https://cdn.simpleicons.org/googlecalendar/4285F4",
+  "google-drive": "https://cdn.simpleicons.org/googledrive/4285F4",
+  notion: "https://cdn.simpleicons.org/notion/000000",
+  xero: "https://cdn.simpleicons.org/xero/13B5EA",
+  github: "https://cdn.simpleicons.org/github/181717",
+  linear: "https://cdn.simpleicons.org/linear/5E6AD2",
+  stripe: "https://cdn.simpleicons.org/stripe/635BFF",
+  asana: "https://cdn.simpleicons.org/asana/F06A6A",
+  dropbox: "https://cdn.simpleicons.org/dropbox/0061FF",
+  hubspot: "https://cdn.simpleicons.org/hubspot/FF7A59",
+};
+
+function app(
+  slug: string,
+  name: string,
+  connected = false,
+  logo: string | null = LOGO[slug] ?? null,
+): ConnectionCatalogItem {
+  return { connectorId: slug, slug, name, logo, connected, noAuth: false };
+}
+
+export const catalog: ConnectionCatalogItem[] = [
+  app("gmail", "Gmail", true),
+  app("google-calendar", "Google Calendar", true),
+  app("google-drive", "Google Drive"),
+  // Slack is not in the icon set used here, so this entry carries no mark:
+  // one of the five featured apps drawing its monogram, which is the case
+  // that matters most and would otherwise never be on screen.
+  app("slack", "Slack", true, null),
+  app("notion", "Notion"),
+  app("github", "GitHub"),
+  app("linear", "Linear"),
+  app("stripe", "Stripe", true),
+  app("xero", "Xero"),
+  app("asana", "Asana"),
+  app("dropbox", "Dropbox"),
+  app("hubspot", "HubSpot"),
+  // No mark in the catalogue: the tile draws the initial rather than leaving a
+  // hole or fetching a favicon from a third party.
+  app("revolut-business", "Revolut Business", false, null),
+];
 
 export const morning: FixtureMessage[] = [
   {
@@ -191,7 +247,7 @@ export const startingUp: FixtureMessage[] = [
         provider: "gmail",
         name: "Gmail",
         description: "Receipts arrive here",
-        logo: null,
+        logo: LOGO.gmail ?? null,
         status: "pending",
       },
       {
@@ -199,7 +255,7 @@ export const startingUp: FixtureMessage[] = [
         provider: "googledrive",
         name: "Google Drive",
         description: "Where the reports land",
-        logo: null,
+        logo: LOGO["google-drive"] ?? null,
         status: "connected",
       },
     ],
@@ -357,7 +413,7 @@ export const everythingElse: FixtureMessage[] = [
         provider: "xero",
         name: "Xero",
         description: "Where the ledger lives",
-        logo: null,
+        logo: LOGO.xero ?? null,
         status: "pending",
       },
       {

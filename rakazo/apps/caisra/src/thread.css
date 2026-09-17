@@ -454,3 +454,31 @@
   padding: 0;
   cursor: pointer;
 }
+
+/* Text and Voice, centred in the header: the canvas pins the pill to the
+   middle of the bar rather than letting it sit after the name. */
+.header {
+  position: relative;
+}
+.modes {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--fill);
+}
+.modes__tab {
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: var(--text-body);
+  color: var(--muted);
+}
+.modes__tab--on {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--shadow-flat);
+}

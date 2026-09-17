@@ -1,0 +1,66 @@
+/**
+ * The dock's glass, straight off the canvas: 74 wide, 52px buttons, 14 of gap,
+ * 11 of padding, a white line along the top and two drops beneath.
+ */
+
+.dock {
+  position: relative;
+  z-index: 30;
+  flex: 0 0 auto;
+  width: 74px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(30px) saturate(1.8);
+  -webkit-backdrop-filter: blur(30px) saturate(1.8);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 2px 6px rgba(0, 0, 0, 0.05),
+    0 20px 46px rgba(0, 0, 0, 0.14);
+}
+
+.dock__button {
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background 0.16s,
+    box-shadow 0.16s;
+}
+/* The canvas lights the pressed one white with a soft ring, glyph in accent. */
+.dock__button--on {
+  background: var(--paper);
+  color: var(--accent);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+.dock__you {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--faint);
+  color: var(--paper);
+  font-size: var(--text-message);
+  font-weight: 500;
+}
+.dock__you--on {
+  background: var(--ink);
+}

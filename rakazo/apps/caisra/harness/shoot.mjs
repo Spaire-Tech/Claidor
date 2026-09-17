@@ -65,20 +65,35 @@ const run = promisify(execFile);
 const CACHE = new URL("../.picsum/", import.meta.url).pathname;
 await mkdir(CACHE, { recursive: true });
 const cached = new Map();
-await context.route("https://picsum.photos/**", async (route) => {
+await context.route(/https:\/\/(picsum\.photos|cdn\.simpleicons\.org)\//, async (route) => {
   const url = route.request().url();
   let body = cached.get(url);
   if (!body) {
-    const file = join(CACHE, `${url.replace(/[^a-z0-9]+/gi, "-")}.jpg`);
+    // A fetch that fails leaves the route unfulfilled with a 404, which is
+    // what the browser would have got anyway; the page falls back to its
+    // monogram rather than showing a broken glyph.
+    const svg = url.includes("simpleicons");
+    const file = join(CACHE, `${url.replace(/[^a-z0-9]+/gi, "-")}${svg ? ".svg" : ".jpg"}`);
     try {
       await readFile(file);
     } catch {
-      await run("curl", ["-sSL", "--max-time", "30", "-o", file, url]);
+      // `-f` so a 404 is an error rather than a zero-byte file that the page
+      // would then draw as a broken image.
+      await run("curl", ["-fsSL", "--max-time", "30", "-o", file, url]).catch(() => undefined);
     }
-    body = await readFile(file);
+    try {
+      body = await readFile(file);
+    } catch {
+      await route.fulfill({ status: 404, body: "" });
+      return;
+    }
     cached.set(url, body);
   }
-  await route.fulfill({ status: 200, contentType: "image/jpeg", body });
+  await route.fulfill({
+    status: 200,
+    contentType: url.includes("simpleicons") ? "image/svg+xml" : "image/jpeg",
+    body,
+  });
 });
 const SCREENS = [
   "morning",
@@ -92,20 +107,21 @@ const SCREENS = [
   "cards-fifa",
   "cards-plan",
   "proactive",
+  "apps",
 ];
 for (const screen of SCREENS) {
   const page = await context.newPage();
   await page.goto(`http://127.0.0.1:${port}/?screen=${screen}`, { waitUntil: "networkidle" });
   // A thread opens at the bottom, where the newest message is. A card screen
   // opens at the top, because the card is the answer and it is long.
-  if (!screen.startsWith("cards")) {
+  if (!screen.startsWith("cards") && screen !== "proactive" && screen !== "apps") {
     await page.evaluate(() => {
       const thread = document.querySelector(".thread");
       if (thread) thread.scrollTop = thread.scrollHeight;
     });
   }
   await page.waitForTimeout(600);
-  const window = page.locator(".app");
+  const window = page.locator(".frame");
   await window.screenshot({ path: join(SHOTS, `${screen}.png`) });
   console.log(`shot ${screen}`);
   await page.close();
