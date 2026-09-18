@@ -114,10 +114,77 @@ a box.
   attachment. Reasonable for them; we have no voice memo and should not invent
   the flag before the feature.
 
-## Open, for the founder
+## Decided, 18 September — three briefs an agent can pick up
 
-1. **Rooms: text only, or files too?** (gap 4 above.)
-2. **Which kinds to add**, and whether each gets its own icon or shares the
-   paperclip with a better label.
-3. **Alt text**: who writes it — the agent, always, or only when the picture is
-   not obvious from the prose?
+The founder took the recommendation on all three. Each is written here as a
+brief rather than built, because the implementation is being staffed.
+
+### A. Files are allowed in rooms
+
+**Decided: keep files in rooms.** Grok Bot bans attachments in a group turn and
+DMs the file instead; that reads as a limit of their transport — their room turns
+degrade cards generally — not a principle. In our app a room is merged threads
+and a file card draws correctly in one. Banning it would mean "the Finance agent
+made your report, now go and find it in another conversation".
+
+**The work is to make this deliberate rather than accidental.** It is already
+what `mergeRoomThread` does, by not filtering. So:
+
+- a test that a room thread carries an attachment from a member, named so its
+  purpose is obvious (`a file a member made appears in the room`);
+- one line in the brief's room section, so the agent knows it may attach in a
+  room and need not DM the file;
+- nothing else. No code change is expected — if one is needed, the behaviour was
+  not what this audit found and that should be reported before "fixing" it.
+
+### B. Three new file kinds: archive, video, audio
+
+**Decided: add archive, video and audio.** Those are the three where the icon
+says something the filename does not. `.md`, `.json` and `.txt` fold into **one**
+`Text` kind with a better label rather than three more icons.
+
+`FileKind` today is `Pdf | Word | Excel | Slides`
+(`renderer/design/thread/types.ts`), mapped from the extension by `fileKindOf()`
+in `thread/attachment.ts`. The change is that function, the enum, and the icon
+each draws.
+
+**Blocked on artwork, and this is the founder's.** The current set is brand
+logos — `word.webp`, `excel.webp`, `powerpoint.webp` in `design/logos/` — plus
+`pdf-doc.webp` beside the card. There is **no** archive, video, audio or generic
+text artwork anywhere in the tree, and `icons.tsx` is UI chrome (search, home,
+gear), not file types. So this brief needs four drawings before it can finish:
+archive, video, audio, text. Until they exist, the kinds can be added and will
+fall back to the paperclip, which is still an improvement on nothing because the
+label improves.
+
+Extensions to map, from the Grok source: archive — `.zip .tar .gz .tgz .rar .7z`;
+video — `.mp4 .mov .m4v .webm .ogv`; audio — `.mp3 .m4a .wav .aac .flac .ogg
+.opus`; text — `.md .markdown .mdx .json .txt .log .csv`… **except** `.csv`,
+which stays Excel: both stacks decided a spreadsheet is a spreadsheet.
+
+### C. Alt text: always written, never shown on hover
+
+**Decided: the agent writes an `alt` for every image, and the app does not show
+it on hover.** The two halves are one decision. "Always" is the only setting that
+works for somebody using a screen reader, and not showing it on hover is what
+makes "always" costless — a description that repeats the sentence above it is
+noise if everyone sees it, and harmless if only a screen reader does.
+
+The work:
+
+- `alt?: string` on `AttachmentItem` (`thread/types.ts`) — today there is
+  nowhere to put one;
+- the renderer puts it on the image's accessible name and in the fullscreen
+  view, and **not** in a `title` attribute, which is what would make it a hover
+  tooltip;
+- a line in the brief telling the agent to write one, in the same place the
+  document rules live;
+- a test that an image attachment without an `alt` is still drawn — a missing
+  description degrades, it does not break the card.
+
+### Still open
+
+- **Gap 1 above — an image inside a sentence renders as a paperclip.** That is a
+  defect rather than a decision and is the first thing to fix once images work.
+- **Gap 5 — size.** Nothing knows about file size yet, and it wants a number
+  before files cross to a box.
