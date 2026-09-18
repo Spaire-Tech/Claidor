@@ -778,7 +778,7 @@ async def proxy_chat_completions(
     It is, however, the wire every general OpenAI-compatible client
     speaks, and Rakazo is one of them — its model connection posts here
     and nowhere else
-    (`rakazo/packages/adapters/src/pi-openai-compatible-provider.ts`,
+    (the Rakazo attempt, removed 18 September; see `docs/product/going-back-brief.md`,
     which builds every model with `api: "openai-completions"`). So this
     route stopped being a courtesy to old clients the day Claidor was
     connected to a server it did not write.
@@ -822,7 +822,7 @@ async def proxy_models(
     expects, because such a client knows nothing about Claidor and asks
     the one question its own protocol defines. Rakazo asks it while a
     person is connecting a model, and fills the list it is given
-    (`rakazo/packages/adapters/src/pi-openai-compatible-provider.ts`,
+    (the Rakazo attempt, removed 18 September; see `docs/product/going-back-brief.md`,
     `probeOpenAiCompatibleModels`, which GETs `<base URL>/models`).
 
     Until this route existed that GET fell through to the catch-all below

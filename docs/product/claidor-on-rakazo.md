@@ -1,5 +1,10 @@
 # Claidor's API, one model service, one voice
 
+> **Archived, 18 September 2026.** This describes the Rakazo foundation, which
+> was removed from the tree the same day. Caisra is the Mac app under
+> `desktop/`. Kept as a record of what was tried and what it cost; see
+> `docs/product/going-back-brief.md`. Do not follow it as instructions.
+
 **Written 18 September 2026. Every claim below is tied to a file or to a
 command that was run. Where something was not run, it says so.**
 

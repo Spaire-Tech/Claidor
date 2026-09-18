@@ -363,7 +363,7 @@ def openai_models_list(
     to find out what it may name. Rakazo is one such client: it GETs
     `<base URL>/models` and reads `data[].id`, falling back to a hand-typed
     model id when the call fails
-    (`rakazo/packages/adapters/src/pi-openai-compatible-provider.ts`,
+    (the Rakazo attempt, removed 18 September; see `docs/product/going-back-brief.md`,
     `probeOpenAiCompatibleModels`).
 
     Filtered by `reachable_on`, so what the list offers is what the next
