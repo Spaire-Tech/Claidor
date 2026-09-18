@@ -49,9 +49,33 @@ a choice you can make; not building it is not.
 
 ## 2. Decide four things first
 
-**The address.** You own `claidor.com`, so a subdomain is free. This document
-writes `caisra.claidor.com`. It appears in four environment values and in every
-client, so changing it later means re-signing people in.
+**The address is `app.claidor.com`**, the founder's decision on 18 September,
+taken with the costs below stated and judged not to matter at zero users:
+*"those things you mentioned are not big deals. im trying to get this working
+asap. it will change later."* It appears in four environment values and in
+every client, so a later move re-signs everybody in.
+
+That name currently serves the Claidor dashboard from Vercel, and taking it
+over costs six things, five of which only serve screens nobody uses: Google
+sign-in for the dashboard, the S3 CORS rule for browser uploads, the Word
+add-in's panel and manifests, and two stale Render values
+(`CLAIDOR_ALLOWED_HOSTS`, `CLAIDOR_CORS_ORIGINS`). A seventh is not a break but
+is worth knowing: `CLAIDOR_USER_SESSION_COOKIE_DOMAIN` is `.claidor.com`, so
+the browser sends the `claidor_session` cookie to this deployment too. Rakazo
+ignores it; it is still a session credential travelling where it has no
+business. Narrowing that value to the dashboard's eventual host is the fix.
+
+**The sixth one is an ordering constraint, not a cost, and it is the only thing
+here that can actually strand you.** `CLAIDOR_ACCESS_TOKEN` is minted by a
+button on `app.claidor.com` (Account → Developer → Connect the app), so once
+that name points at the new server the button is gone. **Mint the token before
+moving the DNS.** It lasts a year, which makes this a sequencing detail rather
+than a problem. To mint another one later, add a host such as
+`dash.claidor.com` to the same Vercel project and name it in those two Render
+values.
+
+Also remove `app.claidor.com` from the Vercel project before repointing, or it
+keeps trying to claim the name.
 
 **The server.** 8 GB RAM, 4 vCPU, 80 GB disk, Ubuntu 24.04. The Compose file's
 own memory limits total about 6.3 GB (postgres 2 g, worker 2 g, api 1.5 g, web
@@ -100,12 +124,12 @@ One record, wherever `claidor.com`'s DNS lives:
 
 | Type | Name | Value |
 |---|---|---|
-| `A` | `caisra` | the server's IP |
+| `A` | `app` | the server's IP |
 
 Verify from your Mac before continuing:
 
 ```bash
-dig +short caisra.claidor.com
+dig +short app.claidor.com
 ```
 
 It must print the IP. **Do not continue until it does.** Caddy proves control
@@ -196,10 +220,10 @@ Set these. Everything not listed stays as it ships.
 NODE_ENV=production
 
 # The address. All three origins are the same.
-RAKAZO_HOST=caisra.claidor.com
-BETTER_AUTH_URL=https://caisra.claidor.com
-WEB_ORIGIN=https://caisra.claidor.com
-API_URL=https://caisra.claidor.com
+RAKAZO_HOST=app.claidor.com
+BETTER_AUTH_URL=https://app.claidor.com
+WEB_ORIGIN=https://app.claidor.com
+API_URL=https://app.claidor.com
 
 # Who may register.
 SIGNUPS_ENABLED=true
@@ -282,10 +306,10 @@ than silently starting.
 ### A10. Verify
 
 ```bash
-curl --fail https://caisra.claidor.com/health
+curl --fail https://app.claidor.com/health
 ```
 
-Then open **https://caisra.claidor.com** in a browser. The first account
+Then open **https://app.claidor.com** in a browser. The first account
 registered becomes the deployment owner — make it yours before anyone else's.
 
 Confirm the pieces individually:
@@ -317,7 +341,7 @@ screen.
 The desktop app's first-run screen (`apps/desktop/src/setup.html`) offers two
 choices: **This computer** and **Existing instance**. Existing instance takes a
 URL — its placeholder is literally `https://rakazo.example.com`. Enter
-`https://caisra.claidor.com` and the app is a window onto your deployment.
+`https://app.claidor.com` and the app is a window onto your deployment.
 `setup-config.ts` accepts any host for `existing`, and restricts `new` to
 loopback.
 
