@@ -149,3 +149,45 @@ to the agents.
 |---|---|---|
 | — | 18 Sep 22:22Z | Three agents created. |
 | — | 18 Sep 22:30Z | Cadence set to 30 minutes; first sweep moved to 23:00Z. |
+| — | 18 Sep 22:38Z | Scope corrected: done means the whole workstream. All three re-briefed. |
+| — | 18 Sep 22:47Z | **The base was wrong, and it was the Chief of Staff's error.** All three were created from `main`, which does not carry this branch's work. So every decision document they were told to read was absent, and Brief triaged a brief that still contained OpenUI — 7,718 of its 46,397 characters are already deleted here. All three told to merge `claude/caisra-mac-app-ouliez`. Brief also unblocked (see below). |
+
+### The base error, so it is not repeated
+
+**Create a child session from the branch that holds the work, not from `main`.**
+`create_session` takes `source_revision` beside `source_url`; it was omitted, so
+all three cloned `main`. The decision records, the OpenUI removal, the
+documents-as-files rewrite and the agent-to-agent rules all live on
+`claude/caisra-mac-app-ouliez` and none of it has been merged.
+
+Cost: Brief's triage counted two sections that no longer exist and will need
+re-running, and its extraction now has to reconcile against a heavily edited
+version of the same file. Recoverable, but it was an hour of good work aimed at
+the wrong tree.
+
+### Brief's two questions, answered by the Chief of Staff rather than the founder
+
+Neither needed the founder, which is why neither was escalated.
+
+1. **The where-to-look axis** — yes, add it. A live contradiction caught by the
+   consistency test is exactly what that mechanism is for.
+2. **Section C is not a blanket delete.** The refinement given: **the incident
+   test is for rules about behaviour, not for facts about this build's
+   configuration.** "Prefer prose over bullets" is a theory and must cite an
+   incident; "`web_search` is disabled in this workspace" is a fact — it really
+   is denied — and deleting it would leave an agent reaching for a tool that is
+   not there. So C1 (heartbeat, duplicated by code) and C2 (maths, zero
+   incidents) go; C3 keeps only its facts and folds the rest into
+   `## Where To Look First`, which owns the escalation order.
+
+### What Brief actually delivered, checked not believed
+
+Task Zero is sound. The brief is now 15 modules under `libs/brief/`,
+`openclawConfigSync.ts` is 571 lines lighter, and **no test was touched** — the
+tripwire held, so it was a real move. The triage (`docs/product/brief-triage.md`,
+320 lines) is honest work: every search named, every heading classified, nothing
+waved through. 71% cite an incident, 20% cite a decision or source, 9% cite
+nothing.
+
+It is **not done** — it stopped at pieces 3 and 4 (the registry rewrite and
+`direction.md` §10) to ask its two questions. It has been unblocked and sent on.
