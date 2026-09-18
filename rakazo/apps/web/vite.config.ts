@@ -153,11 +153,21 @@ function attachNovncProxy(server: ViteDevServer | PreviewServer, secret: string,
     requestUpstream();
   });
 
+  // Every failure below ends as a destroyed socket, which the browser reports as
+  // noVNC "Connection closed (code: 1006)" and the server reports as nothing at
+  // all. Three different causes — an unauthorised capability, an unreachable
+  // sandbox, a TLS refusal — are one silent close, and a screen that never
+  // connects leaves no trace on either side to tell them apart. So each one says
+  // which it was. Hostname and port only; the sealed path and the secret stay out.
+  const screenSocketFailed = (reason: string, detail?: string) =>
+    console.error(`[novnc] ${reason}${detail ? `: ${detail}` : ""}`);
+
   server.httpServer?.on("upgrade", async (req, socket, head) => {
     if (!req.url?.startsWith("/novnc/")) return;
     const target = await resolveNovncTarget(req.url, secret, api);
     if (socket.destroyed) return;
     if (!target) {
+      screenSocketFailed("refused, no screen target");
       socket.destroy();
       return;
     }
@@ -165,6 +175,12 @@ function attachNovncProxy(server: ViteDevServer | PreviewServer, secret: string,
       target.protocol === "https:"
         ? tls.connect({ port: target.port, host: target.hostname, servername: target.hostname })
         : net.connect(target.port, target.hostname);
+    upstream.on("error", (error: NodeJS.ErrnoException) =>
+      screenSocketFailed(
+        `upstream ${target.hostname}:${target.port} failed`,
+        error.code ?? error.message,
+      ),
+    );
     const stopChecking = watchScreenAuthorization(
       async () => Boolean(await resolveNovncTarget(req.url, secret, api)),
       () => {
