@@ -1,102 +1,123 @@
-# Putting Caisra on the internet
+# Caisra in production
 
-A step-by-step runbook for deploying this fork to a single Linux server, so the
-product is reachable at a real HTTPS address from any device, with nothing
-installed on a laptop.
+Everything needed to run this fork on a real server, at a real HTTPS address,
+so that handing someone a link or an app is a thing you can actually do.
 
-Every claim here is tied to a file in `rakazo/`. Where something has never been
-run, it says so.
+Written against `rakazo/docs/self-host.md`, `self-host-secrets.md`,
+`self-host-sandbox-providers.md`, `desktop-release.md`, `mobile-release.md`,
+`infra/compose/docker-compose.prod.yml`, `infra/compose/Caddyfile.prod` and
+`apps/desktop/src/setup-config.ts`. Every claim names its file.
 
-**Status: never executed.** This is written from
-`rakazo/docs/self-host.md`, `rakazo/infra/compose/docker-compose.prod.yml` and
-`rakazo/infra/compose/Caddyfile.prod`. Nobody has deployed this fork to a
-server. Expect to hit something the docs do not mention, and read the error
-rather than guessing — the same rule the rest of this repository runs on.
-
----
-
-## Why a server and not Render
-
-Rakazo gives every agent its own computer, and that computer is a Docker
-container (`rakazo/docs/self-host.md`, "Choosing a computer provider"). Render
-runs your code *inside* a container and will not let you start containers from
-there, so the agents have nowhere to live.
-
-The production stack also ships as one Compose file with five services that
-talk to each other over private networks
-(`infra/compose/docker-compose.prod.yml`: postgres, api, worker, web, caddy).
-Splitting that into separate Render services is a rewrite, and every upstream
-change would have to be re-split by hand. Upstream ships roughly 24 commits a
-day.
-
-Render stays right for the Claidor API, which is already there and is a single
-Python service. It is wrong for this.
+**Status: never executed.** No part of this has been run. There is no Docker in
+the container this was written in, and nobody has deployed this fork anywhere.
+Treat it as a careful reading of their documentation, not a tested procedure.
+When something fails, read the error before changing anything — the whole
+history of this repository says guessing costs more.
 
 ---
 
-## What this costs and what you need first
+## 1. The shape of it
 
-**A server.** 8 GB RAM, 4 vCPU, 80 GB disk. The Compose file's own memory
-limits add up to about 6.3 GB across the five services (2 g postgres, 1.5 g
-api, 2 g worker, 512 m web, 256 m caddy), and the first build compiles the
-whole monorepo on the machine, which is the heaviest moment. 4 GB may finish
-the build by swapping; 8 GB will not make you find out. Roughly $20–40 a month
-at Hetzner or DigitalOcean.
+Five containers on one Linux server, from
+`infra/compose/docker-compose.prod.yml`:
 
-**A domain you control.** You own `claidor.com` already, so a subdomain costs
-nothing: `caisra.claidor.com`, or whatever you prefer. This runbook writes it
-as `YOUR-DOMAIN` throughout.
+| Service | What it is | Exposed? |
+|---|---|---|
+| `caddy` | HTTPS front door. Gets certificates from Let's Encrypt by itself. | Yes — ports 80, 443 |
+| `web` | The interface. Vite preview serving the built SPA. | No — internal only |
+| `api` | Hono + oRPC. Also runs database migrations before it serves. | No — internal only |
+| `worker` | Background jobs, routines, anything that runs while nobody is watching. | No |
+| `postgres` | The database. | No |
 
-**An E2B account**, at e2b.dev, for the API key. This is the one third-party
-signup, and here is exactly why it is needed: the production Compose file runs
-no sandbox supervisor, on purpose — `self-host.md` says it "uses E2B for bot
-computers, so the VM never exposes a Docker supervisor or browser containers."
-So on this stack the agents' computers run at E2B rather than on your server.
-`SANDBOX_PROVIDER` defaults to `e2b` in that file, and `daytona` and `box` are
-the documented alternatives if you would rather use one of those.
+Caddy routes by path (`Caddyfile.prod`): `/health`, `/api/*` and `/rpc/*` go to
+the API; everything else goes to the web app. One address, no CORS puzzle.
 
-**Your Claidor token**, from Account → Developer → Connect the app.
+**Agent computers do not run on this server.** The production Compose file
+deliberately ships no sandbox supervisor — `self-host.md` says it "uses E2B for
+bot computers, so the VM never exposes a Docker supervisor or browser
+containers." `SANDBOX_PROVIDER` defaults to `e2b` in that file. So an E2B
+account is required here, not optional. `daytona` and `box` are the documented
+alternatives.
 
-**Your ElevenLabs key.**
+**The web app is not optional either.** `apps/desktop/src/main.ts` calls
+`loadURL(origin)` — the Mac app is a window onto the deployed web origin, and
+`apps/desktop/package.json` builds `@rakazo/web` before packaging. Their
+AGENTS.md states it: "Electron hosts the web UI." Not publishing the address is
+a choice you can make; not building it is not.
 
 ---
 
-## Step 1 — Create the server
+## 2. Decide four things first
 
-At Hetzner Cloud or DigitalOcean, create a machine with:
+**The address.** You own `claidor.com`, so a subdomain is free. This document
+writes `caisra.claidor.com`. It appears in four environment values and in every
+client, so changing it later means re-signing people in.
 
-- **Ubuntu 24.04 LTS**
-- **8 GB RAM, 4 vCPU, 80 GB disk**
-- **Your SSH key** added during creation, not a password
+**The server.** 8 GB RAM, 4 vCPU, 80 GB disk, Ubuntu 24.04. The Compose file's
+own memory limits total about 6.3 GB (postgres 2 g, worker 2 g, api 1.5 g, web
+512 m, caddy 256 m) and the first build compiles the monorepo on the machine,
+which is the heaviest moment. Roughly $20–40/month at Hetzner or DigitalOcean.
 
-Write down the IP address it gives you.
+**Whether anyone but you can register.** `SIGNUP_ALLOWLIST` takes a list of
+addresses or whole domains (`you@example.com,@company.com`). Leave it empty on
+a public address and anyone who finds it can sign up and spend the Claidor
+allowance, because every run in the deployment bills one account — see
+`claidor-on-rakazo.md`.
 
-## Step 2 — Point the domain at it
+**Whether you want password recovery.** This one is easy to skip and annoying
+to discover later. Forgotten-password recovery only appears on the sign-in
+screen when a transactional email provider is configured, and the offline email
+emulator is **forcibly disabled when `NODE_ENV=production`**
+(`self-host.md`, "Verification and password recovery email"). So with no SMTP,
+a forgotten password is unrecoverable from the UI. Resend takes ten minutes:
+host `smtp.resend.com`, username `resend`, an API key as the password.
 
-In whatever manages DNS for `claidor.com`, add one record:
+---
+
+## 3. Accounts and keys to have in hand
+
+| What | Where from | Why |
+|---|---|---|
+| Server | Hetzner / DigitalOcean | Runs everything |
+| DNS record | Wherever `claidor.com` is managed | The address |
+| E2B API key | e2b.dev | Agent computers |
+| Claidor token | app.claidor.com → Account → Developer → Connect the app | The model service |
+| ElevenLabs key | Your Render dashboard, or elevenlabs.io | Voice |
+| SMTP credentials | Resend or SES (optional) | Password recovery |
+
+---
+
+## Part A — The server
+
+### A1. Create it
+
+Ubuntu 24.04 LTS, 8 GB RAM, 4 vCPU, 80 GB disk, **your SSH key added at
+creation**, not a password. Note the IP.
+
+### A2. Point the domain
+
+One record, wherever `claidor.com`'s DNS lives:
 
 | Type | Name | Value |
 |---|---|---|
-| `A` | `caisra` | the server's IP address |
+| `A` | `caisra` | the server's IP |
 
-That makes `caisra.claidor.com` resolve to the server. DNS can take a few
-minutes. Check it from your Mac:
+Verify from your Mac before continuing:
 
 ```bash
 dig +short caisra.claidor.com
 ```
 
-It should print the IP. **Do not continue until it does** — Caddy asks Let's
-Encrypt for a certificate by proving it controls that name, and that fails if
-the name does not point at the server yet.
+It must print the IP. **Do not continue until it does.** Caddy proves control
+of the name to get a certificate, and that fails if the name points nowhere.
 
-## Step 3 — Log in and make a deploy user
+### A3. A user that isn't root
 
 ```bash
 ssh root@THE-IP
 ```
 
-Then, on the server:
+On the server:
 
 ```bash
 adduser --disabled-password --gecos "" deploy
@@ -108,51 +129,28 @@ chmod 700 /home/deploy/.ssh
 chmod 600 /home/deploy/.ssh/authorized_keys
 ```
 
-**Now open a second terminal on your Mac and prove it works before going
-further:**
+**Open a second terminal and verify before going further:**
 
 ```bash
 ssh deploy@THE-IP
 ```
 
-If that logs in, keep both terminals open and continue in the new one.
+Continue in that window.
 
-## Step 4 — Harden the server (recommended, not required)
-
-Rakazo ships a script for this. It disables SSH passwords and root login,
-rate-limits SSH, closes every port but SSH/HTTP/HTTPS, and turns on fail2ban,
-unattended security updates, AppArmor and audit rules
-(`rakazo/infra/compose/harden-host.sh`).
-
-Run it **after** Step 3 is verified, because it locks out root:
-
-```bash
-sudo DEPLOY_USER=deploy bash /srv/rakazo/rakazo/infra/compose/harden-host.sh
-```
-
-(You will have the checkout by Step 6; run this then, or skip it for now.)
-
-**Keep your provider's web console open until a fresh SSH login succeeds after
-this runs.** That console is the way back in if the script locks you out.
-
-## Step 5 — Install Docker on the server
+### A4. Docker
 
 ```bash
 curl -fsSL https://get.docker.com | sudo sh
 sudo usermod -aG docker deploy
 ```
 
-Log out and back in so the group takes effect, then check:
+Log out, log back in, check:
 
 ```bash
-docker --version
-docker compose version
+docker --version && docker compose version
 ```
 
-## Step 6 — Get the code onto the server
-
-The path matters. `/srv/rakazo` is the supported Linux layout and the default
-that `RAKAZO_DEPLOY_DIR` falls back to in the Compose file.
+### A5. The code
 
 ```bash
 sudo mkdir -p /srv/rakazo
@@ -161,47 +159,61 @@ git clone https://github.com/Spaire-Tech/Claidor.git /srv/rakazo
 cd /srv/rakazo/rakazo
 ```
 
-Note the double name: the repository is Claidor, and the fork is the `rakazo`
-folder inside it. Every command below runs from `/srv/rakazo/rakazo`.
+The repository is Claidor; the fork is the `rakazo` folder inside it. Every
+command below runs from `/srv/rakazo/rakazo`.
 
-Because of that nesting, set `RAKAZO_DEPLOY_DIR=/srv/rakazo/rakazo` in the
-`.env` — it must equal the directory the Compose file is run from, or the
-updater's bind mounts resolve somewhere else. This is the one place where our
-layout differs from theirs, and it is the most likely thing in this runbook to
-be wrong on first contact.
+### A6. Secrets
 
-## Step 7 — Write the `.env`
+Generate them on the server, in the shapes their own installer uses
+(`self-host-secrets.md`):
+
+```bash
+openssl rand -hex 16   # POSTGRES_PASSWORD — hex keeps it URI-safe
+openssl rand -hex 32   # BETTER_AUTH_SECRET
+openssl rand -hex 32   # ENCRYPTION_KEY
+openssl rand -hex 32   # SCREEN_PROXY_SECRET
+```
+
+**Their distinctness rule, quoted:** `BETTER_AUTH_SECRET`, `ENCRYPTION_KEY`,
+`SCREEN_PROXY_SECRET` and `SANDBOX_SUPERVISOR_TOKEN` "must be **independent**
+random values (do not copy-paste the same secret into multiple keys)." Run
+`openssl` once per key.
+
+`POSTGRES_PASSWORD` must stay URI-safe — Compose interpolates it into
+`DATABASE_URL`, and `@ : / ? # %` break it. Hex is safe, which is why theirs is
+`-hex 16`.
+
+### A7. The `.env`
 
 ```bash
 cp .env.example .env
 nano .env
 ```
 
-Change these. **Generate fresh secrets for the server — do not reuse the ones
-from a laptop.**
+Set these. Everything not listed stays as it ships.
 
 ```env
 NODE_ENV=production
 
-# The public name. All three origins are the same address.
+# The address. All three origins are the same.
 RAKAZO_HOST=caisra.claidor.com
 BETTER_AUTH_URL=https://caisra.claidor.com
 WEB_ORIGIN=https://caisra.claidor.com
 API_URL=https://caisra.claidor.com
 
-# Keep it private while it is yours. Only these addresses can register.
+# Who may register.
 SIGNUPS_ENABLED=true
 SIGNUP_ALLOWLIST=you@example.com
 
-# Agent computers run at E2B on this stack, not on the server.
+# Agent computers, hosted at E2B.
 SANDBOX_PROVIDER=e2b
-E2B_API_KEY=your-e2b-key
+E2B_API_KEY=...
 
 DATA_DIR=/data
 RAKAZO_DEPLOY_DIR=/srv/rakazo/rakazo
 RAKAZO_IMAGE_TAG=local
 
-# Fresh secrets, server only.
+# Four independent values from A6.
 POSTGRES_PASSWORD=...
 BETTER_AUTH_SECRET=...
 ENCRYPTION_KEY=...
@@ -211,26 +223,43 @@ SCREEN_PROXY_SECRET=...
 CLAIDOR_ACCESS_TOKEN=claidor_pat_...
 RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1
 ELEVENLABS_API_KEY=...
+
+# Optional, for password recovery.
+SMTP_URL=smtps://resend:YOUR_RESEND_KEY@smtp.resend.com:465
+EMAIL_FROM=Caisra <no-reply@claidor.com>
+
+# Must be empty or absent in production; it is refused there anyway.
+EMAIL_EMULATOR=
 ```
 
-Generate each secret on the server:
+Two notes on values that look wrong and are not:
+
+- `DATABASE_URL` in the file is ignored here. The Compose file sets it per
+  service to reach the `postgres` container over a private network, overriding
+  the `.env`.
+- `RAKAZO_DEPLOY_DIR` names `/srv/rakazo/rakazo`, not `/srv/rakazo`. Their
+  layout assumes the repository root and the app root are the same folder; ours
+  nests the fork one level down. It "must equal the host path it is mounted
+  from, or every relative bind mount in this file would resolve somewhere
+  else," in the Compose file's own comment.
+
+### A8. Harden the server (recommended)
+
+`infra/compose/harden-host.sh` disables SSH passwords and root login,
+rate-limits SSH, allows only SSH/HTTP/HTTPS through UFW, and enables fail2ban,
+unattended security updates, AppArmor and audit rules.
 
 ```bash
-openssl rand -hex 16    # POSTGRES_PASSWORD (URL-safe: hex has no @ : / ? # %)
-openssl rand -hex 32    # ENCRYPTION_KEY (must be 64 hex characters)
-openssl rand -base64 36 # BETTER_AUTH_SECRET
-openssl rand -base64 36 # SCREEN_PROXY_SECRET
+sudo DEPLOY_USER=deploy bash infra/compose/harden-host.sh
 ```
 
-`DATABASE_URL` in the file is ignored here: the Compose file sets it per
-service to reach the `postgres` container over the private network, overriding
-whatever the `.env` says.
+**Keep your provider's web console open until a fresh SSH login succeeds after
+this runs.** It reloads SSH, and the console is the way back in if it locks you
+out. Their own instruction, and worth obeying.
 
-## Step 8 — Build and start
+### A9. Build and start
 
 ```bash
-cd /srv/rakazo/rakazo
-
 docker compose --env-file .env -f infra/compose/docker-compose.prod.yml \
   build --build-arg GIT_SHA=$(git rev-parse HEAD)
 
@@ -238,82 +267,182 @@ docker compose --env-file .env -f infra/compose/docker-compose.prod.yml \
   up -d --wait --pull never
 ```
 
-The build compiles the monorepo and takes a long time on first run — allow
-fifteen minutes and do not panic at the silence. `--pull never` is deliberate:
-the image tag is `local`, which no registry serves, so a pull would fail.
+The build compiles the whole monorepo. Allow fifteen minutes of silence.
 
-The API runs `prisma migrate deploy` before it starts serving
-(the `command:` on the `api` service), so the database schema — including our
-`defaultVoiceId` migration — is applied automatically on first boot.
+`--pull never` is deliberate and not a shortcut: the image tag is `local`,
+which no registry serves, so a pull would fail. The Compose file's own comment
+explains the choice.
 
-## Step 9 — Check it
+`--wait` does not return until the API reports healthy. The API's start command
+is `prisma migrate deploy && pnpm --filter @rakazo/api start`, so the schema —
+including our `defaultVoiceId` migration, which has never been applied anywhere
+— is created before it serves, and a migration failure keeps health red rather
+than silently starting.
+
+### A10. Verify
 
 ```bash
 curl --fail https://caisra.claidor.com/health
 ```
 
-Certificates are automatic: Caddy gets one from Let's Encrypt the first time
-someone hits the address, which is why Step 2 had to be finished first.
+Then open **https://caisra.claidor.com** in a browser. The first account
+registered becomes the deployment owner — make it yours before anyone else's.
 
-Then open **https://caisra.claidor.com** in a browser, on any device, and
-create your account. The first account registered becomes the deployment
-owner.
+Confirm the pieces individually:
 
-## Step 10 — Living with it
-
-All from `/srv/rakazo/rakazo`, and all needing `--env-file .env -f
-infra/compose/docker-compose.prod.yml`. Define it once per session:
-
-```bash
-alias dc='docker compose --env-file .env -f infra/compose/docker-compose.prod.yml'
-```
-
-Then:
-
-```bash
-dc ps              # what is running
-dc logs -f api     # follow the API's logs
-dc logs -f worker  # the worker's
-dc restart api     # restart one service
-dc down            # stop everything (keeps data)
-```
-
-**To deploy a change you have pushed:**
-
-```bash
-cd /srv/rakazo && git pull && cd rakazo
-dc build --build-arg GIT_SHA=$(git rev-parse HEAD)
-dc up -d --wait --pull never
-```
-
-**Backups.** The data lives in two Docker volumes, `pgdata` and `appdata`. See
-`rakazo/docs/self-host.md`, "Backup" — nothing here is a substitute for reading
-that before the data matters.
+- **Model.** Send a message. If it fails, `dc logs -f api` and read the
+  provider's own sentence in the error.
+- **Voice.** Settings → Voice should list ElevenLabs voices. If it says voice
+  is not configured, the key is missing or wrong; `voice.status` reports
+  `configured: false` rather than offering a form.
+- **Computers.** `self-host-sandbox-providers.md` says to confirm `sandbox`
+  equals the intended provider through the health output rather than assuming.
 
 ---
 
-## Where this is most likely to break
+## Part B — How someone connects
 
-Listed because guessing at these afterwards costs more than reading them now.
+Three ways in. All three point at the same address.
 
-1. **The nested path.** Their layout assumes the checkout root is the Compose
-   root. Ours has the fork one level down, so `RAKAZO_DEPLOY_DIR` has to name
-   `/srv/rakazo/rakazo` and not `/srv/rakazo`. If bind mounts resolve
-   strangely, this is why.
+### B1. A browser
+
+Send the link. They sign up, if their address is on the allowlist.
+
+This is the ten-second demo, and it is the reason to keep the web app even
+though the product is app-first: nobody installs 200 MB before they have seen a
+screen.
+
+### B2. The Mac app
+
+The desktop app's first-run screen (`apps/desktop/src/setup.html`) offers two
+choices: **This computer** and **Existing instance**. Existing instance takes a
+URL — its placeholder is literally `https://rakazo.example.com`. Enter
+`https://caisra.claidor.com` and the app is a window onto your deployment.
+`setup-config.ts` accepts any host for `existing`, and restricts `new` to
+loopback.
+
+Building it, from `/srv/rakazo/rakazo` or your Mac:
+
+```bash
+pnpm --filter @rakazo/desktop pack
+```
+
+**Unsigned, it will fight the person you give it to.** macOS refuses to open an
+app from an unidentified developer on a double-click; they have to right-click
+→ Open and confirm. For yourself that is fine. For a stranger it reads as
+broken.
+
+Signing needs an Apple Developer ID. `desktop-release.md` lists the five
+repository secrets the release workflow wants: `DESKTOP_MAC_CSC_LINK`,
+`DESKTOP_MAC_CSC_KEY_PASSWORD`, `APPLE_API_KEY_ID`, `APPLE_API_ISSUER`,
+`APPLE_API_KEY_P8`. With those, tagging `v<version>` on `main` builds, signs,
+notarizes and publishes it. Without them, hand-built and unsigned is the
+option. This is a $99/year Apple account and an afternoon, not a build.
+
+### B3. The phone
+
+`mobile-release.md`, quoted: "Self-hosters normally do not need to publish
+their own mobile app: the Rakazo client can select a compatible server from the
+sign-in screen." And from `self-host.md`: on the sign-in screen, tap **Use a
+custom server** and enter the same HTTPS origin as `WEB_ORIGIN`. Changing the
+server signs the device out of any previous session.
+
+Two caveats, and the second is a product problem rather than a technical one:
+
+1. **I have not verified that a published Rakazo app exists in the App Store.**
+   Their doc asserts the capability; I read the doc, not the store.
+2. **That app is Rakazo-branded.** Handing someone a competitor's app and
+   telling them to type your server address into it is not a product demo. A
+   Caisra-branded build means your own Expo project, your own store accounts,
+   `EXPO_PUBLIC_API_URL` set in the EAS build environment, and App Store
+   review. That is a real project.
+
+So for now: browser for showing people, Mac app for yourself, phone later.
+
+---
+
+## Part C — Living with it
+
+Define the long command once per session:
+
+```bash
+cd /srv/rakazo/rakazo
+alias dc='docker compose --env-file .env -f infra/compose/docker-compose.prod.yml'
+```
+
+```bash
+dc ps               # what is running
+dc logs -f api      # follow the API
+dc logs -f worker   # follow the worker
+dc restart api      # restart one service
+dc down             # stop everything, keep the data
+```
+
+### Deploying a change
+
+On the `local` tag, one command rebuilds and recreates
+(`self-host.md`, "Upgrade"):
+
+```bash
+cd /srv/rakazo && git pull && cd rakazo
+GIT_SHA=$(git rev-parse HEAD) dc up -d --wait --pull never --build api worker web
+```
+
+`up --wait` does not report success until the new API is healthy. A failed
+recreate does **not** roll back by itself; recover by rebuilding and running it
+again.
+
+### Backups
+
+```bash
+./scripts/backup.sh
+```
+
+Dumps Postgres and archives `data/` into `backups/<stamp>/`. `scripts/restore.sh`
+is the other half. The state lives in two Docker volumes, `pgdata` and
+`appdata`.
+
+**`docker compose down -v` deletes all Postgres state.** Never reach for `-v`
+to fix something.
+
+---
+
+## What will bite you
+
+In the order I would bet on.
+
+1. **`RAKAZO_DEPLOY_DIR`.** Their layout assumes the checkout root is the app
+   root; ours nests one level. If bind mounts resolve strangely, this is why.
+   The single most likely thing in this document to be wrong on first contact.
 2. **DNS not propagated when Caddy first asks.** The certificate request fails
    and the site serves nothing. Fix the record, then `dc restart caddy`.
-3. **E2B.** No key, or a key without quota, means agents boot with no computer.
-   `self-host-sandbox-providers.md` says to confirm the provider through the
-   health output rather than assuming it.
-4. **The build running out of memory** on a smaller machine. It dies without
-   saying why. This is the argument for 8 GB.
-5. **`SIGNUP_ALLOWLIST` left empty** on a public address, which lets anyone
-   register and spend the Claidor allowance, because every run bills one
-   account — see `claidor-on-rakazo.md`.
+3. **The build running out of memory** on a smaller machine. It dies without
+   explaining itself. This is the whole argument for 8 GB.
+4. **E2B missing or out of quota.** Agents boot with no computer. Confirm the
+   provider through the health output.
+5. **`SIGNUP_ALLOWLIST` empty** on a public address — strangers registering and
+   spending the one Claidor allowance that bills every run.
+6. **No SMTP, then a forgotten password.** Recovery does not appear on the
+   sign-in screen at all, and the emulator is refused in production.
+7. **Reusing one random string across several secrets.** Their distinctness
+   rule exists for a reason; run `openssl` once per key.
 
-## What is still Rakazo's, not Caisra's
+---
 
-The model and voice plumbing is ours: one internal model service, no key
-fields, ElevenLabs. Everything a person looks at — the sign-up, the shell, the
-name — is still upstream's. That work was archived on 18 September and has not
-been redone on this foundation.
+## What is not done
+
+Said plainly, because the gap between "deployed" and "a product" is the part
+that matters now.
+
+- **Nothing about this has been run.** Not the deployment, not a model request
+  through the Claidor connection, not a voice synthesis, not the migration.
+- **The face is still Rakazo's.** The sign-up screen, the shell, the name. The
+  model and voice plumbing underneath is ours; everything a person looks at is
+  upstream's. That work was archived on 18 September and has not been rebuilt
+  on this foundation.
+- **The Mac app is unsigned** until there is an Apple Developer account.
+- **There is no Caisra mobile app**, only Rakazo's client pointed at your
+  server — and I have not confirmed that client is published anywhere.
+- **One token pays for everyone.** Usage meters against the Claidor account
+  that owns `CLAIDOR_ACCESS_TOKEN`. Fine while you are the only user and you
+  are paying. A token per person is a build, and it is not started.
