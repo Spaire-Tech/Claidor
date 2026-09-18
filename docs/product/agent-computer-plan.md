@@ -413,3 +413,105 @@ the person actually feels when they first ask for something; and whether the
 sandbox browser works *at all*, on Docker, on anyone's machine — nobody here has
 run it, so "Docker has a working browser and E2B would not" is a claim about
 code I read, not about software I watched work.
+
+---
+
+## 8. What is built, and what has never run
+
+Built on 18 September, all of it in this branch.
+
+| Piece | Where | Verified by |
+| --- | --- | --- |
+| The box as an engine sandbox backend | `desktop/openclaw-extensions/box/` | 7 integration tests driving it through the engine's own `resolveSandboxContext` |
+| The exec bridge that stands in for a process | `…/box/execBridge.mjs` | 14 tests spawning the real bridge against a local HTTP broker |
+| Broker client | `…/box/brokerClient.ts` | 17 tests against a fake fetch |
+| Turning the sandbox on | `desktop/src/main/libs/boxSandboxSettings.ts` | 11 tests |
+| box-doctor | `desktop/src/main/box/doctor.ts` | 17 tests, including the generated script run through a real shell |
+| File custody guards | `desktop/src/main/box/custody.ts` | 17 tests |
+| Update / Reset | `desktop/src/main/box/operations.ts` | 11 tests |
+| The seven IPC calls | `desktop/src/main/ipcHandlers/box/` | 16 tests through the bridge itself |
+
+**Never run, and this is the important row.** Nothing has contacted E2B or the
+Caisra server. This container refuses both — `api.e2b.dev` and
+`api.claidor.com` are denied by its egress proxy, which I checked rather than
+assumed (`curl` returns `http=000`; the proxy's own status log names
+`connect_rejected … api.e2b.dev:443`). **No pod has ever been started, no
+broker route has ever answered, and the box has never been driven by a real
+agent turn.** Every test above replaces the broker with a fake. They prove the
+code does what it says against a contract; they cannot prove the contract
+matches what the server will actually serve.
+
+The first person with a Mac and a running server should expect the first
+attempt to fail somewhere in §9's contract, and should read the gateway log
+line `[EngineConfigSync] sandbox mode: …` — it now says *why*, not just what.
+
+**Also not done:** the browser in the box (§3c — it needs engine changes
+outside the plugin surface), and interactive terminal sessions (§6 — the
+account proxy cannot carry a two-way connection).
+
+---
+
+## 9. The routes the server needs to serve
+
+**For the Server agent. I do not touch `server/`.**
+
+Everything sits under `/api/proxy/box/…`, because the app reaches the server
+through the local token proxy, which prefixes `/api/proxy` and injects the
+account's bearer (§6). **The sandbox credential stays on the server. The app
+never sees it, and no route may return it.** Every route is scoped to the
+account the token belongs to; a box id from one account must be invisible to
+another.
+
+| Method | Path | Body | Answer |
+| --- | --- | --- | --- |
+| POST | `/box/sandboxes` | `{scopeKey, template?}` | `{boxId, running, template, createdAtMs, workspaceDir, agentWorkspaceDir}` |
+| GET | `/box/sandboxes/{boxId}` | — | same shape |
+| DELETE | `/box/sandboxes/{boxId}` | — | 204; a 404 is fine and is treated as already gone |
+| POST | `/box/sandboxes/{boxId}/shell` | `{script, args[], stdinBase64?}` | `{stdoutBase64, stderrBase64, exitCode}` |
+| POST | `/box/sandboxes/{boxId}/exec` | `{command, workdir?, env{}, pty, stdinBase64?}` | **streamed NDJSON**, see below |
+| PUT | `/box/sandboxes/{boxId}/file` | `{path, contentBase64}` | 200 |
+| GET | `/box/sandboxes/{boxId}/file?path=` | — | `{contentBase64}` |
+| POST | `/box/sandboxes/{boxId}/update` | — | the new `{boxId, …}` |
+| POST | `/box/sandboxes/{boxId}/reset` | — | the new `{boxId, …}` |
+| GET | `/box/machines` | — | `{machines: [{id, kind, label, state, template, createdAtMs}]}` |
+
+**`/exec` is the one with sharp edges.** One JSON object per line,
+`Content-Type: application/x-ndjson`:
+
+```
+{"t":"stdout","d":"<base64>"}
+{"t":"stderr","d":"<base64>"}
+{"t":"exit","code":0}
+```
+
+or `{"t":"error","message":"…"}` when the command could not be run at all.
+
+Four things it must do, each because the bridge depends on it:
+
+1. **Flush every frame as it happens.** Buffering until the command ends turns
+   a three-minute build into three minutes of silence, and the agent cannot
+   tell that from a hang.
+2. **Always send an `exit` frame.** A stream that ends without one is treated
+   as a failure, on purpose — reporting success when the box never said how the
+   command finished would be a lie the agent then acts on.
+3. **Kill the command in the box when the client disconnects.** That
+   disconnect is how an aborted tool call reaches the box; without it, an
+   abandoned command runs on, billing.
+4. **`pty: true` may be refused.** The bridge already refuses it before
+   connecting (§6), so the server never needs to support it — but it should not
+   pretend to.
+
+**`/box/sandboxes` (POST) is ensure, not create.** Given the same account and
+`scopeKey`, it must return the box that is already running rather than starting
+another. `scope: "shared"` means one box for every agent, and each accidental
+extra box is a second bill.
+
+**Two things the plugin has no way to do and the server must.** Keep the box
+alive while it is in use — E2B sandboxes die on an idle timeout, and the person
+should not lose their session because the agent was thinking. And take the
+snapshot that `/reset` restores from; the plugin only asks for the restore.
+
+**`workspaceDir` in the answer is not decoration.** The plugin treats its own
+`/home/user/workspace` as a default and prefers whatever the broker names,
+because the broker started the template and is the one that knows. A
+non-absolute answer is ignored rather than guessed at.
