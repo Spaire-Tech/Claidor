@@ -83,8 +83,16 @@ appear, or sooner only if one starts blocking.
    unlike `create_agent` which draws a card. Flagged in the agent-to-agent audit;
    costs nothing until the room tool is built.
 
+## Sweep cadence
+
+**Every 30 minutes**, while any work is live, set by the founder. Each sweep
+re-schedules the next with `send_later`. A sweep that finds nothing to do is one
+line in the table below and nothing else — no message to the founder, no message
+to the agents.
+
 ## Sweep history
 
 | # | When | What happened |
 |---|---|---|
-| — | 18 Sep 22:22Z | Three agents created. First sweep scheduled for 23:13Z. |
+| — | 18 Sep 22:22Z | Three agents created. |
+| — | 18 Sep 22:30Z | Cadence set to 30 minutes; first sweep moved to 23:00Z. |
