@@ -129,12 +129,68 @@ Marked as the founder's, mine, or answerable by reading.
    Chinese banner. My recommendation is to delete it in the same change that
    builds the real one, rather than leave a second thing called computerUse.
 
+### Substrate: what a sandbox provider gives us (checked 18 September)
+
+The founder asked whether something like **E2B** could be the box. On the shape
+of the problem, yes — and it reframes question 1 rather than answering it.
+
+**What the box needs from a substrate**, taken from the spec: persist a
+filesystem and browser logins across turns and days; resume fast enough that a
+message does not stall; a real Linux desktop with mouse, keyboard and a
+watchable stream; per-user isolation; and a snapshot/restore pair to implement
+Update and Reset.
+
+**E2B, as documented in September 2026:**
+
+- Pause saves **filesystem and memory** — running processes and loaded
+  variables included. Resume is about **1 second**; pausing costs about
+  **4 seconds per GiB of RAM**.
+- While paused, **compute billing stops** and only storage accrues.
+- It offers a screen — mouse, keyboard and a live stream — aimed at
+  computer-use agents, which is the spec's desktop requirement.
+- Compute is about **$0.0504/vCPU-hr and $0.0162/GiB-hr**, billed per second
+  (rates quoted for April–June 2026). A 2 vCPU / 4 GiB box is roughly
+  **$0.17/hour while awake**.
+
+**Two catches, and the first is load-bearing:**
+
+1. **Paused sandboxes appear to be auto-deleted after 30 days.** Sources
+   conflict — E2B's own persistence page is quoted as saying paused sandboxes
+   are kept indefinitely with no TTL, and several third-party write-ups say
+   30 days. **This must be verified against E2B directly, not a blog.** It
+   matters more than the price: our box holds the person's browser logins, and a
+   dormant user losing theirs silently is the kind of failure that ends trust. If
+   it is real, it needs either a keep-alive that resumes each box monthly, or an
+   export, or a different provider.
+2. **Awake time is the cost, and it is per user.** At ~$0.17/hour, a person
+   whose agents work two hours a day is roughly $10/month in compute alone,
+   before a single token. That is the standing cost question from (1) above, now
+   with a number on it.
+
+**EC2 is the wrong shape** for this, if that was the question. It gives raw
+VMs; every part the spec needs — pause/resume with memory, snapshot, "move to a
+fresh instance keeping files and logins", a desktop stack, per-user
+provisioning — is a lifecycle layer we would build and operate ourselves. Stopped
+instances do keep an EBS volume cheaply, so it is *possible*, but it is
+months of infrastructure to arrive where a sandbox provider starts.
+
+**Others in the same category**, named but not evaluated: Modal, Daytona,
+Northflank, Blaxel, Beam, Morph, Vercel Sandbox. Worth a comparison when the
+decision is live; not worth one before.
+
+**What this changes:** question 1 stops being "hosted box versus Docker on the
+person's Mac" and becomes "which sandbox provider, at what awake-hours per
+user". It also makes the question cheap to answer for real — one box, one
+agent, one afternoon, measured rather than argued.
+
 ### Answerable by reading, before anything is built
 
 - What does OpenClaw's `sandbox.mode: 'all'` actually provision — a container,
   a chroot, a VM? Is it a candidate substrate for the box, or unrelated?
 - Does the engine's browser `target: "sandbox"` reach that same sandbox?
 - What does the maty runner actually do today, end to end?
+- Does E2B's own documentation say paused sandboxes survive past 30 days? The
+  answer decides whether a hosted box can hold a login at all.
 
 ### Deliberately not yet asked
 
