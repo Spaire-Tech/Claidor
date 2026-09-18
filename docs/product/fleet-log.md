@@ -85,38 +85,46 @@ appear, or sooner only if one starts blocking.
    unlike `create_agent` which draws a card. Flagged in the agent-to-agent audit;
    costs nothing until the room tool is built.
 
-## What "done" means for each, and the catch
+## What "done" means — the founder's definition, 18 September 22:38Z
 
-Stated plainly because the founder asked, and because the catch matters.
+> "i dont want to come back to hey, first task done. i want to come back with a
+> computer. for example. i wanna come back to all 3 done. and completely done.
+> not task done."
 
-- **Server is done** when the server can make an image: a route that calls
-  OpenAI, meters it against the person's account like any other model call, and
-  tests. **It is NOT done when a person sees a picture** — Server may not touch
-  `desktop/`, so a separate app-side change is still needed after it. That change
-  has no owner yet (see Open, item 1).
-- **Brief is done** in two parts. The rulebook moves out of a 5,191-line config
-  file into its own folder, changing no behaviour — proven by the existing tests
-  passing untouched. Then the triage produces a list: every rule that cannot name
-  the incident that caused it. **Brief brings the list back rather than deleting**;
-  the deletions are a decision, probably the founder's.
-- **Box is done when the computer is built.** Box owns it end to end and is the
-  agent that builds it: the E2B sandbox backend as an OpenClaw plugin, the
-  registry (ListMachines, CopyToBox / CopyFromBox), Update and Reset, box-doctor,
-  the per-agent desktop.
+**An agent is done when its whole workstream is done, not when a piece lands.**
+Nobody stops between pieces. When one lands they start the next themselves. The
+Chief of Staff's job on a sweep is therefore not "did it finish" but **"is it
+still moving, and if a piece landed did it pick up the next one"** — an idle
+agent with work left is a fault to correct, immediately, not a result to log.
 
-  **Its FIRST TASK is a measurement, which is not the same thing**, and the
-  Chief of Staff conflated the two once already and confused the founder. The
-  measurement comes first only because if the engine cannot drive a remote
-  sandbox acceptably from a Mac, the design changes and a build done before
-  knowing that is wasted. It is step one, not the job. Box was corrected on this
-  at 22:45Z and told to keep going without waiting.
+All three were re-briefed with full scope at 22:50–22:54Z.
 
-**The catch:** Server and Brief, finished, change nothing a person can see —
-Server leaves images one app-side edit away, and Brief is a refactor plus a list.
-Box is the one that builds something real, and it is also the longest. They were chosen because they are the questions that could change
-everything downstream, not because they ship visible product. The agents that
-produce visible change are **Files** (the image-in-a-sentence defect, alt text,
-file kinds) and **Cards** — neither started.
+### Server — done when all three are built, tested, and each has a PR
+1. The image route, metered, plus the desktop-side change written down.
+2. Box brokering: a box record per account, ensure / pause / resume / Update /
+   Reset, awake-seconds metering. The app never holds `CLAIDOR_E2B_API_KEY`.
+3. maty: keep the queue, move the executor onto a box, then relax the tool
+   policy deliberately.
+
+### Brief — done when all four land and the consistency test still passes
+1. Task Zero, the extraction.
+2. The triage **executed**, not listed. Obvious deletions applied; only genuinely
+   contentious ones parked under "Open" here, and it keeps going meanwhile.
+3. The brief rewritten for the registry — "their computer asks once" is written
+   for one machine; the approval card names no machine; the browser policy still
+   says there is no sandbox and no other machine.
+4. `direction.md` §10 rewritten. It is the last thing describing one computer.
+
+### Box — done when a person could actually use a box
+It starts, the agent works on it, a file copies on and off, it can be Updated and
+Reset, and box-doctor reports on it. **Not when there is an answer.** The
+measurement is the first hour. Then: the E2B backend plugin, turning the sandbox
+on (`mapExecutionModeToSandboxMode` returns `off` for every non-enterprise
+install), the registry, Update/Reset, box-doctor, and deleting the Windows
+`computerUse`.
+
+Box is much the largest of the three, and it is the one that produces something
+real.
 
 ## How the Chief of Staff actually reaches a child
 
