@@ -83,7 +83,7 @@ export type BoxExecSpecInput = {
 export function buildBoxExecSpec(input: BoxExecSpecInput): {
   argv: string[];
   env: NodeJS.ProcessEnv;
-  stdinMode: 'pipe-open';
+  stdinMode: 'pipe-open' | 'pipe-closed';
 } {
   return {
     argv: [process.execPath, input.execBridgePath],
@@ -97,9 +97,10 @@ export function buildBoxExecSpec(input: BoxExecSpecInput): {
       [BRIDGE_ENV.env]: JSON.stringify(input.env ?? {}),
       [BRIDGE_ENV.pty]: input.usePty ? '1' : '0',
     },
-    // The bridge always accepts stdin; it closes the box's stdin when the
-    // engine closes ours.
-    stdinMode: 'pipe-open',
+    // Mirrors the docker backend. For a non-pty exec the engine closes stdin
+    // immediately, which is what lets the bridge read it to EOF and send it
+    // with the request instead of hanging on a pipe that never ends.
+    stdinMode: input.usePty ? 'pipe-open' : 'pipe-closed',
   };
 }
 

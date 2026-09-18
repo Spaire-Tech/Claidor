@@ -51,7 +51,15 @@ describe('the exec spec the engine spawns', () => {
     const spec = buildBoxExecSpec(execSpecInput);
     expect(spec.argv[0]).toBe(process.execPath);
     expect(spec.argv[1]).toBe('/apps/box/execBridge.mjs');
-    expect(spec.stdinMode).toBe('pipe-open');
+  });
+
+  /**
+   * Mirrors the docker backend. A non-pty exec must have its stdin closed by
+   * the engine, or the bridge waits forever on a pipe that never ends.
+   */
+  test('closes stdin for a plain command and leaves it open only for a terminal', () => {
+    expect(buildBoxExecSpec(execSpecInput).stdinMode).toBe('pipe-closed');
+    expect(buildBoxExecSpec({ ...execSpecInput, usePty: true }).stdinMode).toBe('pipe-open');
   });
 
   test('never puts the access token in argv, which is readable in ps', () => {

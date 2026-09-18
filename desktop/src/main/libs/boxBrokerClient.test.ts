@@ -54,7 +54,7 @@ describe('talking to the broker', () => {
   test('presents the desktop token as a bearer, never in the URL', async () => {
     const { impl, calls } = fakeFetch([{ body: { boxId: 'box_1', running: true } }]);
     await new BoxBrokerClient(config, impl).ensureBox('shared');
-    expect(calls[0].url).toBe('https://api.claidor.com/api/box/sandboxes');
+    expect(calls[0].url).toBe('https://api.claidor.com/box/sandboxes');
     expect(calls[0].url).not.toContain('desktop-token');
     expect((calls[0].init.headers as Record<string, string>).Authorization)
       .toBe('Bearer desktop-token');
@@ -100,7 +100,7 @@ describe('running one shell command in the box', () => {
     }]);
     const result = await new BoxBrokerClient(config, impl).runShell('box_1', { script: 'echo hello' });
     expect(calls).toHaveLength(1);
-    expect(calls[0].url).toBe('https://api.claidor.com/api/box/sandboxes/box_1/shell');
+    expect(calls[0].url).toBe('https://api.claidor.com/box/sandboxes/box_1/shell');
     expect(result.stdout.toString('utf8')).toBe('hello\n');
     expect(result.code).toBe(0);
   });

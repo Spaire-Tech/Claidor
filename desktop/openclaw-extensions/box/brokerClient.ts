@@ -89,26 +89,26 @@ export class BoxBrokerClient {
    * asks for a scope, not for a machine.
    */
   async ensureBox(scopeKey: string): Promise<BoxState> {
-    return await this.json<BoxState>('POST', '/api/box/sandboxes', {
+    return await this.json<BoxState>('POST', '/box/sandboxes', {
       scopeKey,
       template: this.template,
     });
   }
 
   async describeBox(boxId: string): Promise<BoxState> {
-    return await this.json<BoxState>('GET', `/api/box/sandboxes/${encodeURIComponent(boxId)}`);
+    return await this.json<BoxState>('GET', `/box/sandboxes/${encodeURIComponent(boxId)}`);
   }
 
   /** Reset: the box is destroyed. E2B bills by the second, so this must really kill it. */
   async removeBox(boxId: string): Promise<void> {
-    await this.json<unknown>('DELETE', `/api/box/sandboxes/${encodeURIComponent(boxId)}`, undefined, {
+    await this.json<unknown>('DELETE', `/box/sandboxes/${encodeURIComponent(boxId)}`, undefined, {
       allowNotFound: true,
     });
   }
 
   /** The registry: this box plus the person's registered machines. */
   async listMachines(): Promise<BoxMachine[]> {
-    const result = await this.json<{ machines?: BoxMachine[] }>('GET', '/api/box/machines');
+    const result = await this.json<{ machines?: BoxMachine[] }>('GET', '/box/machines');
     return Array.isArray(result?.machines) ? result.machines : [];
   }
 
@@ -133,7 +133,7 @@ export class BoxBrokerClient {
       stdoutBase64?: string;
       stderrBase64?: string;
       exitCode?: number;
-    }>('POST', `/api/box/sandboxes/${encodeURIComponent(boxId)}/shell`, {
+    }>('POST', `/box/sandboxes/${encodeURIComponent(boxId)}/shell`, {
       script: params.script,
       args: params.args ?? [],
       stdinBase64: stdin,
@@ -160,7 +160,7 @@ export class BoxBrokerClient {
    * difference file custody makes.
    */
   async putFile(boxId: string, boxPath: string, data: Buffer): Promise<void> {
-    await this.json<unknown>('PUT', `/api/box/sandboxes/${encodeURIComponent(boxId)}/file`, {
+    await this.json<unknown>('PUT', `/box/sandboxes/${encodeURIComponent(boxId)}/file`, {
       path: boxPath,
       contentBase64: data.toString('base64'),
     });
@@ -170,7 +170,7 @@ export class BoxBrokerClient {
   async getFile(boxId: string, boxPath: string): Promise<Buffer> {
     const payload = await this.json<{ contentBase64?: string }>(
       'GET',
-      `/api/box/sandboxes/${encodeURIComponent(boxId)}/file?path=${encodeURIComponent(boxPath)}`,
+      `/box/sandboxes/${encodeURIComponent(boxId)}/file?path=${encodeURIComponent(boxPath)}`,
     );
     return Buffer.from(payload.contentBase64 ?? '', 'base64');
   }

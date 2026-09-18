@@ -62,7 +62,7 @@ were reached without them.
 - **Wrote and ran a probe** that registers a sandbox backend the engine has
   never heard of, drives `resolveSandboxContext` and the real fs bridges against
   it, counts round trips, and charges an injectable RTT for each one. It is kept
-  at `desktop/openclaw-extensions/box/probe/box-probe.test.ts` with instructions
+  at `docs/product/measurements/box-probe.test.ts` with instructions
   for re-running it. 4 tests, all passing.
 
 **Did not run, and no conclusion below depends on having run it:**
@@ -293,7 +293,7 @@ a directory.
 ## 5. The latency shape, measured
 
 Every `[probe]` number below came out of
-`desktop/openclaw-extensions/box/probe/box-probe.test.ts`, run against the
+`docs/product/measurements/box-probe.test.ts`, run against the
 engine at the pin. "Trips" is the number of times the host has to call the
 backend to finish one operation.
 
@@ -348,7 +348,41 @@ box would not even pay this cost; it would simply be driving the wrong browser.
 
 ---
 
-## 6. What I think this means
+## 6. How the app reaches the box, and what it cost us
+
+Decided while building, from a read of our own code rather than a guess.
+
+**The app never holds the sandbox credential, and it should not hold a raw
+account token either.** The pattern already in the tree is the local token
+proxy (`desktop/src/main/libs/openclawTokenProxy.ts`): a loopback HTTP server
+that injects the account's access token, refreshes it when it expires, and
+forwards to the Caisra server under `/api/proxy/…` (`openclawTokenProxy.ts:219`).
+The Composio plugin uses it precisely so no token is written into
+`openclaw.json`, where it would go stale. The box uses the same road, so its
+broker paths are `/box/…` and the server serves them at `/api/proxy/box/…`.
+
+**That proxy cannot carry a WebSocket.** It has no `upgrade` handler, and it
+strips the `upgrade` header outright (`openclawTokenProxy.ts:883` — I grepped
+`'upgrade'`, `on('upgrade'` and `WebSocket` across the file and that is the only
+hit). The first version of the bridge opened a WebSocket; it would have
+connected to nothing.
+
+So the exec transport is **one chunked POST**: stdin goes up in the request
+body, and stdout, stderr and the exit code come back as NDJSON frames as they
+happen. One request per Shell tool call, which is the same round-trip count §5
+measured.
+
+**What that costs: interactive terminal sessions.** A command cannot be fed
+after it starts, so a pty cannot work over this road. The engine only asks for
+one when `usePty` is set, and the bridge refuses that with a reason rather than
+hanging on stdin that never closes. Restoring it means either teaching the
+token proxy to proxy an upgrade, or letting the bridge talk to the server
+directly with a token of its own — the second is cheaper and worse, because it
+puts a token in a config file and loses refresh.
+
+---
+
+## 7. What I think this means
 
 **The architecture does not have to change, but one part of the promise does.**
 

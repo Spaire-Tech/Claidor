@@ -78,7 +78,7 @@ function brokerFetch(boxRoot: string): typeof fetch {
       text: async () => "",
     });
 
-    if (href.endsWith("/api/box/sandboxes") && init.method === "POST") {
+    if (href.endsWith("/box/sandboxes") && init.method === "POST") {
       // A real broker knows where its template keeps things and says so.
       return json({
         boxId: "box_integration",
@@ -160,7 +160,7 @@ describe("the real box backend, inside the engine", () => {
     expect(ctx?.runtimeId).toBe("box_integration");
     expect(ctx?.runtimeLabel).toBe("caisra-box-shared");
     // The engine asked the broker for a box exactly once to open the session.
-    expect(calls.filter((c) => c.url.endsWith("/api/box/sandboxes")).length).toBe(1);
+    expect(calls.filter((c) => c.url.endsWith("/box/sandboxes")).length).toBe(1);
   }, 30_000);
 
   it("takes its workdir from the broker, not from a hardcoded guess", async () => {

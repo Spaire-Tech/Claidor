@@ -4,41 +4,82 @@
  * The engine's sandbox exec path is argv-shaped: `buildExecSpec` hands back a
  * command line and the engine spawns it as an ordinary local child process
  * (`bash-tools.exec-runtime.ts`, `mode: "child"`). A box has no argv — it is
- * reached over the network — so the plugin spawns `execBridge.mjs`, which speaks
- * this protocol to the broker and pretends to be the process.
+ * reached over the network — so the plugin spawns `execBridge.mjs`, which
+ * speaks this protocol to the broker and pretends to be the process.
+ *
+ * **Why streamed HTTP and not a WebSocket.** The app reaches the Caisra server
+ * through a local token proxy (`openclawTokenProxy.ts`), which injects the
+ * account's access token and refreshes it when it expires — so nothing has to
+ * write a token into a config file that then goes stale. That proxy has no
+ * `upgrade` handler and strips the `upgrade` header
+ * (`openclawTokenProxy.ts:883`), so a WebSocket cannot pass through it. One
+ * chunked POST can: stdin goes up in the request body, and stdout, stderr and
+ * the exit code come back as NDJSON frames as they happen.
+ *
+ * The cost is interactive stdin: a command cannot be fed after it starts. The
+ * engine only asks for that with a pty, and the bridge refuses a pty request
+ * rather than hanging on one.
  *
  * Plain JavaScript on purpose: `execBridge.mjs` is spawned by node directly and
  * is never compiled, so the framing has to live somewhere both it and the tests
  * can import without a build step.
  */
 
-/** Frames the bridge sends to the broker. */
-export const CLIENT_FRAME_KINDS = Object.freeze(['stdin', 'stdin-close', 'signal']);
-/** Frames the broker sends back. */
+/** Frames the broker streams back, one JSON object per line. */
 export const SERVER_FRAME_KINDS = Object.freeze(['stdout', 'stderr', 'exit', 'error']);
 
-/** Encode a chunk of stdin for the box. */
-export function encodeStdin(chunk) {
-  const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-  return JSON.stringify({ t: 'stdin', d: buffer.toString('base64') });
+/** Env var names the plugin uses to hand the bridge its instructions. */
+export const BRIDGE_ENV = Object.freeze({
+  broker: 'CAISRA_BOX_BROKER',
+  token: 'CAISRA_BOX_TOKEN',
+  boxId: 'CAISRA_BOX_ID',
+  command: 'CAISRA_BOX_COMMAND',
+  workdir: 'CAISRA_BOX_WORKDIR',
+  env: 'CAISRA_BOX_ENV_JSON',
+  pty: 'CAISRA_BOX_PTY',
+});
+
+/** Exit codes that are the bridge's own, not the command's. */
+export const EXIT_BRIDGE_MISCONFIGURED = 78;
+export const EXIT_BRIDGE_TRANSPORT = 79;
+export const EXIT_BRIDGE_UNSUPPORTED = 80;
+
+/**
+ * Where the bridge posts. The token is NOT in the URL — it goes in the
+ * Authorization header, because a URL is the thing that ends up in logs.
+ */
+export function buildExecRequestUrl(brokerBaseUrl, boxId) {
+  const base = String(brokerBaseUrl ?? '').replace(/\/+$/, '');
+  if (!base) {
+    throw new Error('Box broker base URL is empty.');
+  }
+  const url = new URL(`${base}/box/sandboxes/${encodeURIComponent(String(boxId))}/exec`);
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    throw new Error(`Box broker base URL must be http or https, got ${url.protocol}`);
+  }
+  return url.toString();
 }
 
-/** Tell the box no more stdin is coming. */
-export function encodeStdinClose() {
-  return JSON.stringify({ t: 'stdin-close' });
-}
-
-/** Ask the broker to signal the command — how an aborted tool call gets killed. */
-export function encodeSignal(signal) {
-  return JSON.stringify({ t: 'signal', sig: String(signal || 'SIGTERM') });
+/** The one request body: everything the box needs to start the command. */
+export function encodeExecRequest({ command, workdir, env, usePty, stdin }) {
+  return JSON.stringify({
+    command: String(command ?? ''),
+    workdir: workdir ? String(workdir) : undefined,
+    env: env && typeof env === 'object' ? env : {},
+    pty: usePty === true,
+    stdinBase64: stdin === undefined
+      ? undefined
+      : (Buffer.isBuffer(stdin) ? stdin : Buffer.from(stdin)).toString('base64'),
+  });
 }
 
 /**
- * Parse a frame from the broker.
+ * Parse one NDJSON frame from the broker.
  *
  * Returns `{ t: 'error', message }` rather than throwing for anything
  * unparseable: a malformed frame must surface as a failed command, never as an
- * unhandled rejection inside the bridge that leaves the engine waiting forever.
+ * unhandled rejection inside the bridge that leaves the engine waiting forever
+ * on a tool call that is never coming back.
  */
 export function decodeServerFrame(raw) {
   let parsed;
@@ -54,10 +95,8 @@ export function decodeServerFrame(raw) {
     case 'stdout':
     case 'stderr':
       return { t: parsed.t, data: decodeBase64(parsed.d) };
-    case 'exit': {
-      const code = Number.isInteger(parsed.code) ? parsed.code : null;
-      return { t: 'exit', code };
-    }
+    case 'exit':
+      return { t: 'exit', code: Number.isInteger(parsed.code) ? parsed.code : null };
     case 'error':
       return {
         t: 'error',
@@ -71,54 +110,18 @@ export function decodeServerFrame(raw) {
 }
 
 function decodeBase64(value) {
-  if (typeof value !== 'string') {
-    return Buffer.alloc(0);
-  }
-  return Buffer.from(value, 'base64');
+  return typeof value === 'string' ? Buffer.from(value, 'base64') : Buffer.alloc(0);
 }
 
 /**
- * The exec request, sent once as the first frame after the socket opens.
- * `usePty` is carried even though the engine always spawns us as a plain child:
- * the box side still needs to know whether to allocate a tty.
+ * Split a byte stream into NDJSON frames.
+ *
+ * A chunk boundary can land anywhere, including inside a line, so the leftover
+ * is carried forward. Returns the complete lines and what is still pending.
  */
-export function encodeExecRequest({ command, workdir, env, usePty }) {
-  return JSON.stringify({
-    t: 'exec',
-    command: String(command ?? ''),
-    workdir: workdir ? String(workdir) : undefined,
-    env: env && typeof env === 'object' ? env : {},
-    pty: usePty === true,
-  });
-}
-
-/** Env var names the plugin uses to hand the bridge its instructions. */
-export const BRIDGE_ENV = Object.freeze({
-  broker: 'CAISRA_BOX_BROKER',
-  token: 'CAISRA_BOX_TOKEN',
-  boxId: 'CAISRA_BOX_ID',
-  command: 'CAISRA_BOX_COMMAND',
-  workdir: 'CAISRA_BOX_WORKDIR',
-  env: 'CAISRA_BOX_ENV_JSON',
-  pty: 'CAISRA_BOX_PTY',
-});
-
-/**
- * Where the bridge connects. The token is NOT in the URL — it goes in the
- * Authorization header, because a URL is the thing that ends up in logs.
- */
-export function buildExecSocketUrl(brokerBaseUrl, boxId) {
-  const base = String(brokerBaseUrl ?? '').replace(/\/+$/, '');
-  if (!base) {
-    throw new Error('Box broker base URL is empty.');
-  }
-  const url = new URL(`${base}/api/box/sandboxes/${encodeURIComponent(String(boxId))}/exec`);
-  if (url.protocol === 'https:') {
-    url.protocol = 'wss:';
-  } else if (url.protocol === 'http:') {
-    url.protocol = 'ws:';
-  } else {
-    throw new Error(`Box broker base URL must be http or https, got ${url.protocol}`);
-  }
-  return url.toString();
+export function splitFrames(pending, chunk) {
+  const buffer = pending + (typeof chunk === 'string' ? chunk : Buffer.from(chunk).toString('utf8'));
+  const parts = buffer.split('\n');
+  const rest = parts.pop() ?? '';
+  return { lines: parts.filter((line) => line.trim() !== ''), pending: rest };
 }
