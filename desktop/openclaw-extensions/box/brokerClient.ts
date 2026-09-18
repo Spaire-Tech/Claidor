@@ -9,7 +9,7 @@
  * the latency measurement in `docs/product/agent-computer-plan.md` counts: the
  * engine does not pipeline, so cost is round trips times RTT.
  */
-import type { BoxBrokerSettings } from './backendSpec';
+import { isLoopbackBroker, type BoxBrokerSettings } from './backendSpec';
 
 export type BoxState = {
   boxId: string;
@@ -76,8 +76,8 @@ export class BoxBrokerClient {
   constructor(config: BoxBrokerConfig, private readonly fetchImpl: typeof fetch = fetch) {
     this.baseUrl = normalizeBrokerBaseUrl(config.brokerBaseUrl);
     this.accessToken = String(config.accessToken ?? '').trim();
-    if (!this.accessToken) {
-      throw new Error('Box broker access token is empty.');
+    if (!this.accessToken && !isLoopbackBroker(this.baseUrl)) {
+      throw new Error('A box broker that is not on this machine needs an access token.');
     }
     this.template = config.template?.trim() || undefined;
     this.timeoutMs = config.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
@@ -189,7 +189,9 @@ export class BoxBrokerClient {
       const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
         method,
         headers: {
-          Authorization: `Bearer ${this.accessToken}`,
+          // Only when we hold one. Against the local token proxy we do not:
+          // it injects the account's token and refreshes it for us.
+          ...(this.accessToken ? { Authorization: `Bearer ${this.accessToken}` } : {}),
           'Content-Type': 'application/json',
         },
         body: body === undefined ? undefined : JSON.stringify(body),

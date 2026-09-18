@@ -45,8 +45,23 @@ describe('the broker base URL', () => {
 });
 
 describe('the client refuses to be half-built', () => {
-  test('no token means no client', () => {
-    expect(() => new BoxBrokerClient({ ...config, accessToken: '  ' })).toThrow(/token is empty/);
+  test('a remote broker with no token means no client', () => {
+    expect(() => new BoxBrokerClient({ ...config, accessToken: '  ' }))
+      .toThrow(/not on this machine needs an access token/);
+  });
+
+  /**
+   * The normal case: the broker is the app's local token proxy, which injects
+   * the account's token and refreshes it, so the plugin holds none.
+   */
+  test('a local broker needs no token, and no Authorization header is sent', async () => {
+    const { impl, calls } = fakeFetch([{ body: { boxId: 'box_1', running: true } }]);
+    const client = new BoxBrokerClient(
+      { brokerBaseUrl: 'http://127.0.0.1:8123', template: 'caisra-box-base' },
+      impl,
+    );
+    await client.ensureBox('shared');
+    expect((calls[0].init.headers as Record<string, string>).Authorization).toBeUndefined();
   });
 });
 

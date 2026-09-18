@@ -236,14 +236,40 @@ describe('the bridge, end to end against a local broker', () => {
     expect(r.stderr).toContain('box could not be started');
   });
 
-  test('a missing token is refused before any request is made', async () => {
+  /**
+   * The normal case: the broker is the app's local token proxy, which injects
+   * the account's token, so the bridge carries none and sends no header.
+   */
+  test('a local broker needs no token, and no Authorization header is sent', async () => {
     const r = await runBridge((_req, res) => {
       res.writeHead(200);
       res.end(frame({ t: 'exit', code: 0 }));
     }, { [BRIDGE_ENV.token]: '' });
+    expect(r.code).toBe(0);
+    expect(r.seen.auth).toBeUndefined();
+  });
+
+  /**
+   * Without this, a typo in the broker URL sends the command the agent was
+   * about to run, unauthenticated, to a stranger.
+   */
+  test('a remote broker with no token is refused before any request is made', async () => {
+    const r = await runBridge((_req, res) => {
+      res.writeHead(200);
+      res.end(frame({ t: 'exit', code: 0 }));
+    }, { [BRIDGE_ENV.token]: '', [BRIDGE_ENV.broker]: 'https://not-ours.example' });
     expect(r.code).toBe(EXIT_BRIDGE_MISCONFIGURED);
-    expect(r.stderr).toContain(BRIDGE_ENV.token);
+    expect(r.stderr).toContain('not on this machine');
     expect(r.seen.url).toBeUndefined();
+  });
+
+  test('a missing box id is refused before any request is made', async () => {
+    const r = await runBridge((_req, res) => {
+      res.writeHead(200);
+      res.end(frame({ t: 'exit', code: 0 }));
+    }, { [BRIDGE_ENV.boxId]: '' });
+    expect(r.code).toBe(EXIT_BRIDGE_MISCONFIGURED);
+    expect(r.stderr).toContain(BRIDGE_ENV.boxId);
   });
 
   /**

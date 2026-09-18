@@ -5,6 +5,7 @@ import {
   BOX_AGENT_WORKSPACE_ROOT,
   BOX_WORKSPACE_ROOT,
   buildBoxExecSpec,
+  isLoopbackBroker,
   readBoxConfig,
   resolveBoxRuntimePaths,
 } from '../../../openclaw-extensions/box/backendSpec';
@@ -107,9 +108,9 @@ describe('the config gate', () => {
     expect(readBoxConfig({ accessToken: 't' })).toEqual({ error: 'no brokerBaseUrl' });
   });
 
-  test('refuses a config with no token', () => {
+  test('refuses a remote broker with no token', () => {
     expect(readBoxConfig({ brokerBaseUrl: 'https://api.claidor.com' })).toEqual({
-      error: 'no accessToken',
+      error: 'a broker that is not on this machine needs an accessToken',
     });
   });
 
@@ -134,5 +135,38 @@ describe('the config gate', () => {
       template: undefined,
       requestTimeoutMs: undefined,
     });
+  });
+});
+
+describe('a broker with no token', () => {
+  test('is allowed when it is the local token proxy, which injects one', () => {
+    expect(readBoxConfig({ brokerBaseUrl: 'http://127.0.0.1:8123' })).toMatchObject({
+      brokerBaseUrl: 'http://127.0.0.1:8123',
+      accessToken: undefined,
+    });
+  });
+
+  /**
+   * Without this, a typo in the broker URL turns every box call into an
+   * unauthenticated request to a stranger, carrying the command the agent was
+   * about to run.
+   */
+  test('is refused when it is anywhere else', () => {
+    expect(readBoxConfig({ brokerBaseUrl: 'https://not-ours.example' })).toEqual({
+      error: 'a broker that is not on this machine needs an accessToken',
+    });
+  });
+
+  test('leaves the token variable out of the exec spec rather than sending "undefined"', () => {
+    const spec = buildBoxExecSpec({ ...execSpecInput, accessToken: undefined });
+    expect(Object.keys(spec.env)).not.toContain(BRIDGE_ENV.token);
+  });
+
+  test('recognizes every spelling of this machine', () => {
+    for (const url of ['http://127.0.0.1:1', 'http://localhost:1', 'http://[::1]:1']) {
+      expect(isLoopbackBroker(url)).toBe(true);
+    }
+    expect(isLoopbackBroker('https://api.claidor.com')).toBe(false);
+    expect(isLoopbackBroker('not a url')).toBe(false);
   });
 });

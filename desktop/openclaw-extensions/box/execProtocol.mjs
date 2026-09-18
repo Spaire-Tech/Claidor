@@ -48,6 +48,16 @@ export const EXIT_BRIDGE_UNSUPPORTED = 80;
  * Where the bridge posts. The token is NOT in the URL — it goes in the
  * Authorization header, because a URL is the thing that ends up in logs.
  */
+export function isLoopbackBroker(rawUrl) {
+  try {
+    const { hostname } = new URL(String(rawUrl));
+    return hostname === '127.0.0.1' || hostname === 'localhost' || hostname === '::1'
+      || hostname === '[::1]';
+  } catch {
+    return false;
+  }
+}
+
 export function buildExecRequestUrl(brokerBaseUrl, boxId) {
   const base = String(brokerBaseUrl ?? '').replace(/\/+$/, '');
   if (!base) {

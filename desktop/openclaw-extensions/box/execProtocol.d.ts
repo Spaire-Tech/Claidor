@@ -21,6 +21,7 @@ export type BoxServerFrame =
   | { t: 'exit'; code: number | null }
   | { t: 'error'; message: string };
 
+export declare function isLoopbackBroker(rawUrl: string): boolean;
 export declare function buildExecRequestUrl(brokerBaseUrl: string, boxId: string): string;
 export declare function encodeExecRequest(params: {
   command: string;

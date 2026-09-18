@@ -66,7 +66,8 @@ export type BoxExecSpecInput = {
   usePty: boolean;
   boxId: string;
   brokerBaseUrl: string;
-  accessToken: string;
+  /** Absent against the local token proxy — see `BoxBrokerSettings`. */
+  accessToken?: string;
   execBridgePath: string;
   baseEnv: NodeJS.ProcessEnv;
   defaultWorkdir: string;
@@ -90,7 +91,9 @@ export function buildBoxExecSpec(input: BoxExecSpecInput): {
     env: {
       ...input.baseEnv,
       [BRIDGE_ENV.broker]: input.brokerBaseUrl,
-      [BRIDGE_ENV.token]: input.accessToken,
+      // Left out entirely rather than set to "undefined", which spawn would
+      // pass along as the literal string.
+      ...(input.accessToken ? { [BRIDGE_ENV.token]: input.accessToken } : {}),
       [BRIDGE_ENV.boxId]: input.boxId,
       [BRIDGE_ENV.command]: input.command,
       [BRIDGE_ENV.workdir]: input.workdir ?? input.defaultWorkdir,
@@ -119,10 +122,34 @@ export function assertNoBinds(binds: readonly string[] | undefined): void {
 
 export type BoxBrokerSettings = {
   brokerBaseUrl: string;
-  accessToken: string;
+  /**
+   * Absent when the broker is the app's local token proxy, which injects the
+   * account's token itself and refreshes it (`openclawTokenProxy.ts:907`
+   * overwrites any Authorization header it is handed). That is the normal case
+   * and the reason nothing has to write a token into `openclaw.json`, where it
+   * would go stale.
+   */
+  accessToken?: string;
   template?: string;
   requestTimeoutMs?: number;
 };
+
+/**
+ * A broker with no token must be on this machine.
+ *
+ * Without this, a typo in the broker URL turns every box call into an
+ * unauthenticated request to a stranger, carrying the command the agent was
+ * about to run.
+ */
+export function isLoopbackBroker(rawUrl: string): boolean {
+  try {
+    const { hostname } = new URL(rawUrl);
+    return hostname === '127.0.0.1' || hostname === 'localhost' || hostname === '::1'
+      || hostname === '[::1]';
+  } catch {
+    return false;
+  }
+}
 
 /**
  * The plugin refuses to register a half-configured backend.
@@ -139,12 +166,12 @@ export function readBoxConfig(raw: unknown): BoxBrokerSettings | { error: string
   if (!brokerBaseUrl) {
     return { error: 'no brokerBaseUrl' };
   }
-  if (!accessToken) {
-    return { error: 'no accessToken' };
+  if (!accessToken && !isLoopbackBroker(brokerBaseUrl)) {
+    return { error: 'a broker that is not on this machine needs an accessToken' };
   }
   return {
     brokerBaseUrl,
-    accessToken,
+    accessToken: accessToken || undefined,
     template: typeof config.template === 'string' && config.template.trim()
       ? config.template.trim()
       : undefined,

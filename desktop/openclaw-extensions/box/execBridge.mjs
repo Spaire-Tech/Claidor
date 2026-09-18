@@ -23,6 +23,7 @@ import {
   EXIT_BRIDGE_MISCONFIGURED,
   EXIT_BRIDGE_TRANSPORT,
   EXIT_BRIDGE_UNSUPPORTED,
+  isLoopbackBroker,
   splitFrames,
 } from './execProtocol.mjs';
 
@@ -71,8 +72,18 @@ function exitAfterFlush(code) {
 
 async function main() {
   const broker = required(BRIDGE_ENV.broker);
-  const token = required(BRIDGE_ENV.token);
   const boxId = required(BRIDGE_ENV.boxId);
+  // Absent against the app's local token proxy, which injects the account's
+  // token itself. A broker anywhere else must hand us one, or a typo in the
+  // URL would send the agent's command unauthenticated to a stranger.
+  const token = process.env[BRIDGE_ENV.token] || '';
+  if (!token && !isLoopbackBroker(broker)) {
+    fail(
+      EXIT_BRIDGE_MISCONFIGURED,
+      `Box bridge has no ${BRIDGE_ENV.token} and ${BRIDGE_ENV.broker} is not on this machine.`,
+    );
+    return;
+  }
   // A command may legitimately be empty, so it is read without `required`.
   const command = process.env[BRIDGE_ENV.command] ?? '';
   const workdir = process.env[BRIDGE_ENV.workdir] || undefined;
@@ -115,7 +126,7 @@ async function main() {
     response = await fetch(url, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         'Content-Type': 'application/json',
         Accept: 'application/x-ndjson',
       },

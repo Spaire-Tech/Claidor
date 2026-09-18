@@ -72,7 +72,7 @@ import {
 } from '../../shared/staffing/constants';
 import { PROPOSE_TEAM_TOOL } from '../../shared/staffing/roster';
 import { APP_NAME } from '../appConstants';
-import type { Agent, CoworkConfig, CoworkExecutionMode } from '../coworkStore';
+import type { Agent, CoworkConfig } from '../coworkStore';
 import type { DiscordInstanceConfig, IMSettings, TelegramInstanceConfig } from '../im/types';
 import type { DingTalkInstanceConfig, EmailMultiInstanceConfig, FeishuInstanceConfig, NeteaseBeeChanConfig, NimInstanceConfig, PopoInstanceConfig, QQInstanceConfig, WecomInstanceConfig, WeixinOpenClawConfig } from '../im/types';
 import { getLogFilePath } from '../logger';
@@ -124,6 +124,7 @@ const gwDiagTs = (): string => {
   return `[GW-RESTART-DIAG] ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}.${p(d.getMilliseconds(), 3)}${sign}${p(Math.floor(abs / 60))}:${p(abs % 60)}`;
 };
 import { findBundledExtensionsDir, findThirdPartyExtensionsDir, hasBundledOpenClawExtension, hasRuntimeBundledOpenClawExtension, resolveOpenClawExtensionPluginId } from './openclawLocalExtensions';
+import { boxBrokerBaseUrlFor, resolveSandboxSettings } from './boxSandboxSettings';
 import { getOpenClawTokenProxyPort } from './openclawTokenProxy';
 import type { ProposeConnectorMcpStdioLaunch } from './proposeConnectorMcpServer';
 import { getActiveSystemProxyUrl, isSystemProxyEnabled } from './systemProxy';
@@ -135,21 +136,8 @@ export type AskUserCallbackConfig = {
   secret: string;
 };
 
-const mapExecutionModeToSandboxMode = (
-  mode: CoworkExecutionMode,
-  isEnterprise: boolean,
-): 'off' | 'non-main' | 'all' => {
-  if (!isEnterprise) return 'off';
-  switch (mode) {
-    case 'sandbox':
-      return 'all';
-    case 'auto':
-      return 'non-main';
-    case 'local':
-    default:
-      return 'off';
-  }
-};
+/** The local `openclaw-extensions/box` plugin, by its manifest id. */
+const BOX_PLUGIN_ID = 'caisra-box';
 
 /**
  * Drop `plugins` keys that OpenClaw owns through its plugin index (currently
@@ -2947,10 +2935,17 @@ export class OpenClawConfigSync {
     const hasModelCompatConfig = Object.keys(finalizedCompatibility.modelProfiles).length > 0
       || Object.keys(finalizedThinkingProfiles).length > 0;
 
-    const sandboxMode = mapExecutionModeToSandboxMode(
-      coworkConfig.executionMode || 'local',
-      this.isEnterprise(),
-    );
+    const boxTokenProxyPort = getOpenClawTokenProxyPort();
+    const hasBoxPlugin = isBundledPluginAvailable(BOX_PLUGIN_ID);
+    const boxBrokerBaseUrl = hasBoxPlugin && boxTokenProxyPort
+      ? boxBrokerBaseUrlFor(boxTokenProxyPort)
+      : null;
+    const sandboxSettings = resolveSandboxSettings({
+      executionMode: coworkConfig.executionMode || 'local',
+      boxBrokerBaseUrl,
+      isEnterprise: this.isEnterprise(),
+    });
+    const sandboxMode = sandboxSettings.mode;
     const availableProviders = buildProviderModelCatalog(allProvidersMap);
     const agentModelDefaults = Object.keys(perModelCustomDefaults).length > 0
       ? buildCompleteAgentModelDefaults(allProvidersMap, perModelCustomDefaults)
@@ -2978,7 +2973,10 @@ export class OpenClawConfigSync {
       }
     }
     console.log(
-      `[EngineConfigSync] sandbox mode: ${sandboxMode} (executionMode: ${coworkConfig.executionMode || 'local'}, enterprise: ${this.isEnterprise()})`,
+      `[EngineConfigSync] sandbox mode: ${sandboxMode}`
+      + `${sandboxSettings.backend ? ` on ${sandboxSettings.backend}` : ''}`
+      + ` — ${sandboxSettings.reason}`
+      + ` (executionMode: ${coworkConfig.executionMode || 'local'}, enterprise: ${this.isEnterprise()})`,
     );
 
     const mainWorkspacePath = getMainAgentWorkspacePath(this.engineManager.getStateDir());
@@ -3115,6 +3113,8 @@ export class OpenClawConfigSync {
           },
           sandbox: {
             mode: sandboxMode,
+            ...(sandboxSettings.backend ? { backend: sandboxSettings.backend } : {}),
+            ...(sandboxSettings.scope ? { scope: sandboxSettings.scope } : {}),
           },
           workspace: path.resolve(mainWorkspacePath),
           mediaMaxMb: 30,
@@ -3290,6 +3290,18 @@ export class OpenClawConfigSync {
                       enabled: true,
                       config: { baseUrl: composioBaseUrlFor(getOpenClawTokenProxyPort() as number) },
                     }
+                  : { enabled: false },
+              }
+            : {}),
+          // The box: no sandbox credential anywhere in the app. The plugin
+          // talks to the local token proxy, which forwards to Claidor's
+          // server under the account's sign-in, and the server holds the
+          // key. Written off rather than left out when the proxy is down, so
+          // a stale entry from an earlier run cannot survive the rewrite.
+          ...(hasBoxPlugin
+            ? {
+                [BOX_PLUGIN_ID]: boxBrokerBaseUrl
+                  ? { enabled: true, config: { brokerBaseUrl: boxBrokerBaseUrl } }
                   : { enabled: false },
               }
             : {}),

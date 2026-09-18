@@ -11,8 +11,7 @@
     "type": "object",
     "additionalProperties": false,
     "required": [
-      "brokerBaseUrl",
-      "accessToken"
+      "brokerBaseUrl"
     ],
     "properties": {
       "brokerBaseUrl": {
@@ -21,7 +20,7 @@
       },
       "accessToken": {
         "type": "string",
-        "description": "Desktop access token presented to the broker as a bearer."
+        "description": "Bearer presented to the broker. Left out when the broker is the app's local token proxy, which injects the account's token and refreshes it. A broker that is not on this machine must have one."
       },
       "template": {
         "type": "string",
