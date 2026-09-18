@@ -146,12 +146,111 @@ rule that a question with a handful of answers never goes in prose
 - **The 6-member channel cap** as a number. It is their host constant, not a
   principle.
 
-## For the founder
+## Decided, 18 September
 
-1. **The reading rule** (gap 1) — I would write it now; it is one line and it
-   closes a real hole.
-2. **Priority** — do you want "wake now" versus "read it later" at all? It only
-   earns its keep once routines run.
-3. **Can the person see agents talking, and where** — thread, info pane, or not
-   at all (gap 3). This one is a design.
-4. **Should an agent be able to make a room** (gap 5).
+The founder: *"go for your recommendations by being closest to true to grok bot.
+and no not yet."* So all four are taken, each resolved toward Grok Bot's answer
+where mine had drifted, and the deferral on priority is withdrawn.
+
+### 1. The reading rule — **done**
+
+Written into the shared brief, in "When you are one of several", which owns
+agent-to-agent:
+
+> **Another agent's conversation is not yours to read.** You can reach one, which
+> is not the same as being allowed to look through it… ask that agent, which is
+> what messaging is for. The exception is the person telling you to go and look.
+
+Two more went in with it, both true to their contract and both cheap:
+
+- **What the person said to you was said to you** — the substance in your own
+  words, never their complaint verbatim. This existed as a Chief of Staff rule
+  and reached one agent; it is now every agent's, and the duplicate in
+  `chiefOfStaff.ts` was removed rather than left to say the same thing twice in
+  the one file Yodo reads.
+- **A picture to another agent is a real attachment, one-to-one only**, never
+  markdown in the text, never to a room.
+
+`briefConsistency.test.ts` gains an axis — *what may be repeated to another
+agent* — so a second section cannot start deciding it.
+
+### 2. Priority — **decided, and it is an engine patch**
+
+Grok Bot's semantics, adopted as they are:
+
+- **`priority: true`** — wake the recipient now. Jumps their inbound queue. May
+  interrupt a **background** lane (a routine, a background run) with a reason
+  naming why. **Never** interrupts a user turn, nor another agent message already
+  in progress. Use when they must act, or somebody is waiting. **In doubt, true.**
+- **`priority: false`** — held, and read at the **start of their next turn**,
+  whenever that is. Status, FYI, ack, thanks.
+- **Required on every one-to-one send.** Not optional, not defaulted.
+- **Groups always land immediately**, and priority does nothing there. The ack
+  should say so.
+
+**What is established about our engine**, read at the pin `v2026.6.1`:
+
+- `sessions_send` takes `sessionKey`, `label`, `agentId`, `message`,
+  `timeoutSeconds`. **There is no priority parameter.**
+- The engine does have a lane concept — the agent-to-agent path imports
+  `resolveNestedAgentLaneForSession` from `agents/lanes.js` — so there is
+  somewhere for "interrupt a background lane but not a user turn" to live.
+
+So this is **a patch to the engine**, not a config change: the tool schema plus
+the delivery behaviour. That is the documented path
+(`desktop/scripts/patches/<tag>/`, and `desktop/CLAUDE.md`'s Patch Policy says to
+prefer an app-side hook and use a version-scoped patch when the behaviour is
+genuinely inside the engine — this is).
+
+**What must be read before writing it**, because it decides the shape: what the
+engine does today when a send arrives at a busy agent. If it already queues,
+priority is a queue-order flag. If it always interrupts, the *false* case is the
+new behaviour and the risk is the other way round.
+
+### 3. The person seeing agents talk — **Grok Bot's answer, and it needs a kind**
+
+True to Grok Bot means the traffic is **in the transcript**, not hidden in a
+pane:
+
+- outbound: `Messaged <recipient>: <text>`
+- inbound: `Message from <sender>: <text>`
+
+Today ours is a `status` item — *"Talking to another agent"* — and a `status` is
+**deleted when the work finishes**, so nothing survives the turn.
+
+**This needs a tenth thread kind, and the list is closed.** Adding one is a
+decision the founder makes each time (`thread/types.ts`). So this is the one
+piece that waits on a drawing rather than on a build: the rule is settled, the
+shape is not.
+
+One thing to hold while drawing it: our brief spends several paragraphs keeping
+machinery out of the thread ("Words that never reach them": tool names, message
+ids, internal state). Agent traffic in the transcript is the first deliberate
+exception, and it should look like a conversation between colleagues rather than
+a log.
+
+### 4. An agent may make a room — **decided, and it is a build**
+
+True to Grok Bot: an agent creates a group itself, with judgment rather than a
+card. Their rules, adopted:
+
+- name plus member ids, **ids not names**;
+- **include your own id** if you intend to post afterwards — membership gates
+  posting and updating;
+- **at most six** members; a group cannot contain a group;
+- add and remove members afterwards, and **never empty** a group;
+- **no delete tool.** The person deletes a room, and only the person;
+- **never speculatively** — only when the person asked for one, or the work
+  genuinely needs a standing group.
+
+Ours today: `coworkStore.createRoom` reached through an IPC the app calls. No
+agent tool exists (`grep create_room desktop/src/main` finds only the store and
+the handler). So the build is an MCP tool in the shape of `createAgentMcpServer`,
+plus the brief rules above.
+
+**One deliberate difference from `create_agent`, flagged rather than hidden.**
+Standing up an *agent* draws a card and waits for Stand up or Not now. Grok Bot's
+channel creation has no card — judgment only. Taking Grok Bot's answer means a
+room appears in the sidebar without being asked for, which is a real side effect
+and unlike its neighbour. That is what "closest to true to Grok Bot" buys, and it
+is worth one look from the founder before it ships.

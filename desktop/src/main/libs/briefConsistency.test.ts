@@ -110,6 +110,19 @@ const AXES: readonly Axis[] = [
     ],
   },
   {
+    // Added 18 September with the agent-to-agent audit. Grok Bot puts
+    // "never relay the user's unfiltered words" in the contract every
+    // agent reads; ours had it in the Chief of Staff's brief only, where
+    // it reached one agent out of however many the person has.
+    what: 'what may be repeated to another agent',
+    owner: /### When you are one of several/,
+    deciders: [
+      /\bwas said to you\b/i,
+      /\brelay in your own words\b/i,
+      /\bnot yours to read\b/i,
+    ],
+  },
+  {
     what: 'whether to do more than was asked',
     owner: /## Artifacts|Offer it before they ask/,
     deciders: [

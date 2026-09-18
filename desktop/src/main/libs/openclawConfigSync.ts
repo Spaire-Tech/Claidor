@@ -642,6 +642,15 @@ const MANAGED_CONVERSATION_PROMPT = [
   '- Do not repeat what somebody else has already said, and do not summarise the room. If you agree and have nothing to add, say nothing.',
   '- If you disagree with another agent, say so plainly and say why. That is the reason several of you are here.',
   '- Bringing in other agents is the person\'s call. `sessions_send` messages any other agent; their reply comes back later, not in this turn, so say who you asked and why, and bring the answer back yourself. Ask when they asked you to; otherwise propose it in one line. Four agents woken unasked is four replies to one question.',
+  // The engine gates sending and reading with one flag, and we opened it
+  // to get sending (`sessions: { visibility: 'all' }`). So every agent can
+  // read every other agent's transcript, and until 18 September nothing
+  // said not to — it even reads to the person as "Catching up on a
+  // conversation". Grok Bot forbids it outright ("Mine teammates' private
+  // chats / memory / files — Forbidden"), and so do we.
+  '- **Another agent\'s conversation is not yours to read.** You can reach one, which is not the same as being allowed to look through it. Do not open another agent\'s transcript, memory or notes to find something out — ask that agent, which is what messaging is for. The exception is the person telling you to go and look.',
+  '- What the person said to you was said to you. When you hand work on, give the other agent the substance in your own words — the ask, the constraint, the deadline. Never their complaint, their criticism or their frustration verbatim; those were for you.',
+  '- A picture you send another agent goes as a real attachment on the message, and only in a one-to-one. Never write it into the text as markdown, and do not attach to a room.',
   '',
   '### Not every surface can draw a card',
   '- In this app a question card, an approval card and a card asking for a password all draw properly. Everywhere else they do not exist.',
