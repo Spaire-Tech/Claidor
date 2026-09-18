@@ -137,7 +137,7 @@ nothing yet, at the founder's word.
 
 ## 2. The message vocabulary
 
-**Ten kinds, as of 18 September — this section said seven and was wrong.**
+**Nine kinds, as of 18 September.**
 The list is closed, and it is the discipline that makes the app feel unlike an
 AI app. The count has moved three times and this file tracked it twice: five,
 then seven (15 September), then `roster` (16 September), then `card` and
@@ -156,12 +156,13 @@ The first seven:
 | `attachment` | a file as the whole message — an image shown, anything else named and openable |
 | `secret` | a masked field; what is typed never enters the transcript |
 
-And the three that followed, each put to the founder as its own decision:
+And the two that followed, each put to the founder as its own decision.
+(A third, `card`, was added on 17 September and removed on the 18th with
+OpenUI — `docs/product/artifacts-decision.md`.)
 
 | Kind | What it is | When |
 |---|---|---|
 | `roster` | "Your starter team" — a multi-select of agents to stand up, each swappable in place | 16 September |
-| `card` | an answer card: a block the agent wrote in OpenUI's language, drawn between its texts | 17 September |
 | `connector` | an agent proposing a service: logo, name, one line, Not now and Install | 17 September |
 
 No step cards. No tool logs. No thinking blocks. No raw blobs.
@@ -549,32 +550,23 @@ has left the space for it, not one that has filled it with my guesses.
 
 1. The name is Caisra, applied; `appConstants.ts` is the one site.
 2. Messages shape; five surfaces; four settings tabs.
-3. Ten message kinds, closed list (§2; it was five, then seven, then ten —
-   this line said five until 18 September); approval card with the real
-   command.
-   From 17 September, one more thing in the thread and not a message
-   kind of the model's choosing: the answer cards. When an answer is a
-   set of things (places, options, days of a plan, figures, a
-   comparison), the agent writes one fenced block in OpenUI's language
-   (`thesysdev/openui`, MIT) and the app draws it, in our design, between
-   its texts. The founder, on OpenUI's pictures: *"text should stays
-   text, but having cards that come with it is amazing … this should
-   100% be our design."* Ten components, ours, in
-   `desktop/src/shared/cards/library.ts`; texts still arrive as texts;
-   every other card (permission, choice, secret, file, roster) is
-   unchanged (review item 71). Later that day the founder reversed the
-   design half: *"i want it exactly like openui's … use their colors.
-   use their style. perhaps keep our font but thats it."* So the cards
-   are OpenUI's chat library, renderer and stylesheet, whole, in
-   Switzer (review item 73). Texts still arrive as texts.
-   The same day, the founder said what they meant by artifacts: *"i
-   meant the docs, excel (not sure if they do excel), slides etc... i
-   want my artifacts to look exactly like open ui's. i want a complete
-   replica here for the desing."* So a deck and a report are OpenUI's
-   own components, used whole (`@openuidev/thesys`, MIT): their chip in
-   the thread, their full-screen viewer, their libraries taught to the
-   agent. OpenUI has no spreadsheet; an Excel file is a file the agent
-   writes (review item 72).
+3. Nine message kinds, closed list (§2); approval card with the real
+   command. The count has moved: five, then seven, then the roster
+   (16 September), then two more on the 17th, then back to nine on the
+   18th when the answer cards were removed.
+   **The answer cards are gone, 18 September**, and with them the whole
+   of OpenUI. They were a rendered block the agent wrote in a fenced
+   language and the app drew between the texts. The founder ended it:
+   *"remove open ui completely. we gonna start over with smarter
+   choices. turn on the way artifact was. docx, .xlsx or .pptx."* The
+   reason, in their words, is that OpenUI was meant to be the look of an
+   **artifact** — *"for reports/plans/guided doc and all ppt"* — and had
+   instead become the way every shaped answer was drawn, which is how the
+   document the person could send on stopped being made at all.
+   A shaped answer inside the thread is text. A report, plan, guide, deck
+   or spreadsheet is a **file** — `.docx`, `.pptx`, `.xlsx` — written with
+   the matching skill and drawn as a file card. The full decision and what
+   it cost is `docs/product/artifacts-decision.md`.
 4. The computer asks once: the first action raises the card, Allow is
    this computer until the person changes it in Settings, Not now is
    that one action. Decided 17 September from the founder's

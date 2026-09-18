@@ -33,8 +33,8 @@ here about what a directory contains** — including this one.
 
 What is actually in it, measured on 18 September: 2,551 files, of which 102
 under `src/` name Yodo or Caisra. The agent and its brief, the 23 strongs, the
-roster card, Chief of Staff, onboarding, the Messages design, the OpenUI cards
-and artifacts, whisper speech recognition, the Mac tasks, the connections
+roster card, Chief of Staff, onboarding, the Messages design, the document
+artifacts, whisper speech recognition, the Mac tasks, the connections
 catalogue. The tree is identical to `b41c9364`, the last commit before the fork
 was vendored, which is the state the founder judged good.
 
@@ -235,6 +235,21 @@ Grok Bot copies it to its own machine and copies it back — its words, "my
 computer ≠ your disk … we copy when needed". Maties opens the file where
 it lives. That shows up in spreadsheet formulas, links between workbooks,
 folder structure, and privacy.
+
+## Artifacts are files, and OpenUI is gone (18 September 2026)
+
+A report, plan, guide, deck or spreadsheet is a **file** — `.docx`, `.pptx`,
+`.xlsx` — written with the matching skill and drawn in the thread as a file
+card. OpenUI was removed from the product entirely on 18 September: it had been
+asked for as the *look* of an artifact and had become the way every shaped
+answer was drawn, which is how the document the person could send on stopped
+being made at all. `docs/product/artifacts-decision.md` is the record.
+
+**Images are unblocked in the app and do not work yet.** The gate that refused
+every generate call is gone and the agent is told the tool exists, but
+`GET /desktop/api/media/images/models` returns **404** — `server/polar/` serves
+no `/api/media` route. That is a server build, not a switch;
+`docs/product/images-state.md` has the measurement and the two options.
 
 ## Before you say anything is missing (18 September 2026)
 
