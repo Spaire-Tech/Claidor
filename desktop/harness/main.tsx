@@ -28,7 +28,6 @@ import type { ThreadItem } from '../src/renderer/design/thread/types';
 import { ConnectorOutcome, ThreadItemKind } from '../src/renderer/design/thread/types';
 import { EVERY_ROW } from '../src/shared/settings/appUiMap';
 import { buildRoster } from '../src/shared/staffing/roster';
-import { cardExamples } from './cardExamples';
 
 /**
  * A harness for looking at the design, not part of the app.
@@ -96,118 +95,32 @@ const PACK: EngineMessage[] = [
 ];
 
 /**
- * The answer cards, 17 September: the founder's four OpenUI pictures
- * (Seattle restaurants, Paris hotels, a Tokyo itinerary, the 2026 World
- * Cup) as OpenUI's own chat components, with photographs. One screen
- * each, so every block gets its photograph. The shooter serves
- * `harness/shots/photos/` on its own loopback port (`shoot.mjs`), which
- * is why the addresses are built from the page's origin at runtime; a
- * fresh clone without that folder draws the same cards with no pictures.
- */
-const photo = (name: string): string => `${location.origin}/photos/${name}.jpg`;
-const CARD_SCREENS: Record<string, EngineMessage[]> = Object.fromEntries(
-  Object.entries(cardExamples(photo)).map(([screen, example]) => [screen, [
-    message({ type: 'user', content: example.ask }, 0),
-    message({
-      type: 'assistant',
-      content: [example.before, '', '```openui-lang', ...example.program, '```', '', example.after].join('\n'),
-    }, 1),
-  ]]),
-);
-
-/**
- * The artifacts, 17 September: a deck and a report in OpenUI's own
- * components, reached from the thread as OpenUI's chip. The programs are
- * the ones the tests check against OpenUI's libraries.
- */
-const ARTIFACTS: EngineMessage[] = [
-  message({ type: 'user', content: 'make me the board deck for thursday' }, 0),
-  message({
-    type: 'assistant',
-    content: [
-      'Nine slides. The numbers are the ones from the September close; the ask is on the last slide.',
-      '',
-      '```openui-lang',
-      'root = SlideShow("Q4 Board Update", "Spaire, September 2026", [s1, s2, s3, s4, s5, s6, s7, s8, s9])',
-      `s1 = Slide("s1", StandardTitle("Q4 Board Update", "Where we are, and what we ask of you", "September 2026", {src: "${photo('board')}", alt: "The team"}, "image-right"))`,
-      `s2 = Slide("s2", HeroMetric("\u20ac1.2M", "Annual recurring revenue, up 38% on the quarter", "horizontal", "${photo('hero-market')}"))`,
-      's3 = Slide("s3", ChartWithMetrics("Revenue by month", [{metric: "\u20ac104k", description: "September, monthly recurring"}, {metric: "38%", description: "Quarter on quarter"}, {metric: "11", description: "Contracts in signature"}], BarChartV2({data: {labels: ["Apr", "May", "Jun", "Jul", "Aug", "Sep"], series: [{category: "MRR", values: [61, 66, 72, 84, 93, 104]}]}, unit: "k"})))',
-      `s4 = Slide("s4", VisualCards("Three things that moved", [{title: "Pipeline", body: "42 qualified conversations, 11 in contract", imageSrc: "${photo('pipeline')}"}, {title: "Churn", body: "Two logos lost, both under \u20ac5k", imageSrc: "${photo('meta')}"}, {title: "Hiring", body: "Two engineers start in October", imageSrc: "${photo('hiring')}"}]))`,
-      `s5 = Slide("s5", ContentWithImage("Where the growth came from", ["${photo('google')}"], "Cloud and the OHADA desk carried the quarter. Two of the three largest deals came through partners we signed in May.", "image-right"))`,
-      's6 = Slide("s6", KeyInfoWithTitle("What the next quarter needs", [{title: "Two engineers", description: "Start in October; both on the desk"}, {title: "One sales lead", description: "Francophone Africa, based in Abidjan"}, {title: "The round", description: "Series A opened in January"}], "horizontal-grid"))',
-      `s7 = Slide("s7", SectionBreakDramatic("What we ask", "Two decisions, both before the January board.", "horizontal", "${photo('tokyo-night')}"))`,
-      's8 = Slide("s8", NumberedKeyPoint([{title: "Approve the Series A timeline", body: "Open the round in January, close by April"}, {title: "Confirm the hiring plan", body: "Six roles by March, two already offered"}]))',
-      's9 = Slide("s9", PullQuote("The quarter we stopped explaining what Caisra is and started being asked for it.", "Bass Fall, founder", "title-center"))',
-      '```',
-      '',
-      'Say if you want the churn slide softened, or the quote out.',
-    ].join('\n'),
-  }, 1),
-  message({ type: 'user', content: 'and a report card on big tech 2025 against the s&p' }, 2),
-  message({
-    type: 'assistant',
-    content: [
-      '```openui-lang',
-      'root = ReportView("Big Tech 2025 Report Card", "Meta, Microsoft, Netflix, and Google versus the S&P 500", [p1, p2, p3, p4])',
-      `p1 = Page("p1", StandardFrontPage("Big Tech 2025 Report Card", "${photo('hero-market')}", TextContent("An executive comparison of four technology and media leaders, the forces behind their 2025 returns, and the signals that could shape their relative position in 2026. Full-year price return review, data as of Dec. 31, 2025. For demonstration only, not investment advice."), "Meta, Microsoft, Netflix, and Google versus the S&P 500", "title-top"))`,
-      'p2 = Page("p2", ContentPage([h2, k2, c2, t2]))',
-      'h2 = Headline("The scoreboard", "Price returns for the year, against the index", "medium")',
-      'k2 = KeyMetrics("row", [{title: "Google", text: "+65%"}, {title: "Microsoft", text: "+14.5%"}, {title: "Meta", text: "+10%"}, {title: "Netflix", text: "+5%"}, {title: "S&P 500", text: "+16%"}])',
-      'c2 = BarChartV2({data: {labels: ["GOOGL", "MSFT", "META", "NFLX", "S&P 500"], series: [{category: "2025 price return, %", values: [65, 14.5, 10, 5, 16]}]}}, "grouped", false, "", "Return, %")',
-      't2 = TextContent("Google was the only one of the four to beat the benchmark by a wide margin. Microsoft tracked the index; Meta and Netflix finished below it despite strong operating results.")',
-      'p3 = Page("p3", ContentPage([h3, v3]))',
-      'h3 = Headline("What drove the performance spread", "Each company entered 2025 with a different earnings narrative and investor expectation level.", "medium")',
-      `v3 = VisualCards([{title: "Google: AI and Cloud re-rating (+65%)", body: "Gemini adoption, Cloud acceleration and search resilience produced a 65% gain, its best year since 2009, driven by a second-half surge.", imageSrc: "${photo('google')}"}, {title: "Microsoft: steady AI monetisation (+14.5%)", body: "Azure cloud growth and enterprise Copilot adoption kept Microsoft close to the index. Total return sat marginally above the benchmark.", imageSrc: "${photo('microsoft')}"}, {title: "Netflix: stronger business, softer stock (+5%)", body: "Revenue grew 16% to $45.2B and margin expanded to 29.5%, yet valuation and M&A noise weighed on returns.", imageSrc: "${photo('netflix')}"}, {title: "Meta: ad strength vs capex intensity (+10%)", body: "AI advertising drove solid engagement, but very large capital expenditure commitments for AI infrastructure created near-term return concerns.", imageSrc: "${photo('meta')}"}])`,
-      'p4 = Page("p4", ContentPage([h4, tb4, t4, n4]))',
-      'h4 = Headline("The path mattered as much as the destination", "Key turning points in each company\u2019s 2025 trajectory.", "medium")',
-      'tb4 = Table([Column("Quarter"), Column("Key event"), Column("Market reaction"), Column("Cumulative leaders")], [["Q1 2025", "Tariff shock; S&P 500 dropped 16% from peak; GOOGL hit year low in April", "Broad tech sell-off; all five names declined", "All negative from start of year"], ["Q2 2025", "Tariff pause and trade deals; AI earnings beats; Gemini momentum builds", "GOOGL begins strong recovery, up over 100% from April low by year-end", "GOOGL breaks out"], ["Q3 2025", "Netflix Q2 earnings: 325M members; Meta ad revenue solid", "NFLX and META stabilise; MSFT steady on Azure growth", "GOOGL, MSFT near benchmark"], ["Q4 2025", "GOOGL Q3 AI-led earnings beat; Netflix WBD acquisition announced Dec 5", "GOOGL surges to +65% for the year; NFLX and META lag", "GOOGL clear leader"]])',
-      't4 = TextContent("Google\u2019s outperformance was concentrated in the second half after AI product announcements and strong Cloud earnings drove a rerating. Netflix\u2019s strong operating results did not translate into benchmark-beating stock performance. Microsoft tracked close to the index throughout the year. Meta recovered from the tariff lows but finished below the benchmark.")',
-      'n4 = TextContent("Sources: StatMuse Money, averageannualreturn.com, CNBC, SlickCharts, SPY Yahoo Finance. A full monthly return chart would require verified adjusted-close price series for all five instruments.")',
-      '```',
-      '',
-      'Four pages: the front, the scoreboard, what drove it, and the quarter by quarter. The figures are the ones you gave me; I have not added any.',
-    ].join('\n'),
-  }, 3),
-];
-
-/**
- * Proactive: the card, then the document, in one reply.
+ * Proactive: the answer, then the document, in one reply.
  *
- * The founder, 18 September: *"i want for caisra take over in text and
- * say i've put this as a word doc as well for you and that will be the
- * artifact… thats how we win users. always proactive. the whole goal of
- * the agent is that it does stuff for you. you shouldnt have to ask him
- * he should take initiative like this."*
+ * The founder, 18 September, and this is the whole point of the screen:
+ * *"i want for caisra take over in text and say i've put this as a word
+ * doc as well for you and that will be the artifact… thats how we win
+ * users. always proactive. the whole goal of the agent is that it does
+ * stuff for you. you shouldnt have to ask him he should take initiative
+ * like this."*
  *
- * Two of my own rules forbade this and neither was a limit of the code:
- * the Cards section said "one block per reply at most" and the Artifacts
- * section said "one artifact per reply, and no cards in the same reply".
- * `splitCardSegments` has always walked every fence in a message, so the
- * thread renders text, card, text, chip in order. This screen is the
- * proof, and the reason the two rules are gone.
+ * **It used to draw a rendered block in the bubble instead of writing a
+ * file**, which is exactly the thing the founder was asking for and did
+ * not get (`docs/product/artifacts-decision.md`). The artifact is the
+ * `.docx`. The thread shows the answer as texts and the document as a
+ * file card underneath, which is what `PACK` above already draws for
+ * files.
  */
 const PROACTIVE: EngineMessage[] = [
   message({ type: 'user', content: 'write me a meal plan. 14 days meal plan' }, 0),
   message({
     type: 'assistant',
-    content: [
-      'Two weeks, built so you cook once and eat twice.',
-      '',
-      '```openui-lang',
-      ...cardExamples(photo)['cards-plan'].program,
-      '```',
-      '',
-      'I have written it up as a document as well, so you have something to print or send on.',
-      '',
-      '```openui-lang',
-      'root = ReportView("14-Day Meal Plan", "Two weeks of breakfasts, lunches and dinners, with the shop and the prep", [d1, d2])',
-      `d1 = Page("d1", StandardFrontPage("14-Day Meal Plan", "${photo('spinasse')}", TextContent("A fortnight of lean proteins, whole grains and vegetables, with the cooking front-loaded into two sessions. Portions are a starting point, not a prescription."), "Two weeks of breakfasts, lunches and dinners", "title-top"))`,
-      'd2 = Page("d2", ContentPage([dh, dk, dt]))',
-      'dh = Headline("The fortnight at a glance", "What you cook, and what it costs in time", "medium")',
-      'dk = KeyMetrics("row", [{title: "Prep sessions", text: "2"}, {title: "Cook once, eat twice", text: "6 days"}, {title: "Shop", text: "Twice"}])',
-      'dt = TextContent("Days 2, 4 and 7 run on what you already cooked, which is the design rather than laziness. The grocery list is grouped by aisle so a single pass through the shop covers the week.")',
-      '```',
-    ].join('\n'),
+    content: 'Two weeks, built so you cook once and eat twice. Days 2, 4 and 7 run on what you already cooked, which is the design rather than laziness.',
+  }, 1),
+  message({
+    type: 'assistant',
+    content: 'I have written it up as a document as well, so you have something to print or send on.\n'
+      + '[14-Day Meal Plan.docx](file:///Users/bass/Documents/14-Day%20Meal%20Plan.docx)',
   }, 1),
 ];
 
@@ -448,7 +361,7 @@ function Screens(): JSX.Element {
   const composing = screen === 'compose';
 
   const withAuth = screen === 'auth' || screen === 'thread';
-  const items = toThreadItems(screen === 'files' ? PACK : CARD_SCREENS[screen] ?? (screen === 'artifacts' ? ARTIFACTS : screen === 'proactive' ? PROACTIVE : CONVERSATION), {
+  const items = toThreadItems(screen === 'files' ? PACK : screen === 'proactive' ? PROACTIVE : CONVERSATION, {
     agentId: 'juno',
     agentName: 'Juno',
     pending: withAuth ? PENDING : [],

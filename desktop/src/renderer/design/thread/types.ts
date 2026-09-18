@@ -1,9 +1,8 @@
-import type { ArtifactKind } from '../../../shared/artifacts/constants';
 import type { AskInputField } from '../../../shared/askInput/constants';
 import type { RosterOption } from '../../../shared/staffing/roster';
 
 /**
- * What may appear in a thread. Ten kinds, and the list is closed.
+ * What may appear in a thread. Nine kinds, and the list is closed.
  *
  * This is the discipline that makes the app feel unlike an AI app. The
  * engine emits a great deal more than this — thinking blocks, tool calls,
@@ -24,16 +23,19 @@ import type { RosterOption } from '../../../shared/staffing/roster';
  *     here never enters the transcript or the model's context.
  *
  * The eighth, `roster`, came the same way on 16 September: the founder's
- * product page draws it (see `ThreadItemKind.Roster`). Two more followed on
- * 17 September, each put to the founder as its own decision: `card`, the
- * answer cards in OpenUI's language, and `connector`, an agent proposing a
- * service. That makes ten.
+ * product page draws it (see `ThreadItemKind.Roster`). `connector`, an agent
+ * proposing a service, came on 17 September. That makes nine.
  *
- * This comment said "eight" until 18 September, after `card` and `connector`
- * had been added below it — the number is the first thing anyone reads and it
- * was the one thing not updated. Adding an eleventh is the same decision
- * again. If something does not fit these ten, the honest move is usually to
- * say it as a `text` in the agent's own voice.
+ * **`card` was the tenth and is gone, 18 September.** It drew a rendered
+ * block inside a bubble. It had become the way every shaped answer was
+ * drawn, which is what replaced the documents people actually wanted.
+ * Reports, plans and decks are files again (`.docx`, `.pptx`, `.xlsx`), and
+ * a shaped answer inside the thread is text. Nothing renders a program in a
+ * bubble any more. The decision is in `docs/product/artifacts-decision.md`.
+ *
+ * Adding a tenth is the same decision again, made by the founder. If
+ * something does not fit these nine, the honest move is usually to say it as
+ * a `text` in the agent's own voice.
  */
 
 export const ThreadItemKind = {
@@ -62,13 +64,6 @@ export const ThreadItemKind = {
    * approval card (nothing is being run yet). So it is its own kind.
    */
   Roster: 'roster',
-  /**
-   * The answer cards: a block the agent wrote in OpenUI's language,
-   * drawn by us between its texts. The founder, 17 September: *"text
-   * should stays text, but having cards that come with it is amazing."*
-   * (`shared/cards/library.ts`.)
-   */
-  Card: 'card',
   /**
    * An agent proposing a connector: the service's logo, its name, one
    * line, Not now and Install. The founder, 17 September: the onboarding
@@ -277,29 +272,6 @@ export interface RosterItem {
 }
 
 /**
- * A block of answer cards, in the agent's reply where it wrote it.
- *
- * `program` is the fenced block verbatim; the renderer parses it against
- * the card library and draws what it can. It is kept as text rather than
- * parsed here so the message in the store stays the source of truth and
- * an old reply re-renders with whatever the library draws today.
- */
-export interface CardItem {
-  kind: typeof ThreadItemKind.Card;
-  id: string;
-  program: string;
-  /**
-   * Set when the block is a deck or a report rather than answer cards:
-   * OpenUI's own chip and full-screen view draw it
-   * (`shared/artifacts/constants.ts`).
-   */
-  artifact?: ArtifactKind;
-  agentId?: string;
-  agentName?: string;
-  at: number;
-}
-
-/**
  * What became of a connector card.
  *
  * Not a state the card is drawn in: the card is gone by then. It is what
@@ -347,7 +319,6 @@ export type ThreadItem =
   | AttachmentItem
   | SecretItem
   | RosterItem
-  | CardItem
   | ConnectorItem;
 
 /** What the person chose on an approval card. */
