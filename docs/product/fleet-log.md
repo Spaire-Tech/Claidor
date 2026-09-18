@@ -59,7 +59,9 @@ verified. The `config:auto-create-pr:off` tag they inherited only prevents
 
 ## Known answers the agents will need
 
-- **The E2B key's name is `CLAIDOR_E2B_API_KEY`.** Verified: `config.py:624` sets
+- **The E2B key is IN Render**, confirmed by the founder 18 September 22:35Z. So
+  Box is no longer gated on it: the moment its measurement says the shape works,
+  it can build. **The key's name is `CLAIDOR_E2B_API_KEY`.** Verified: `config.py:624` sets
   `env_prefix="claidor_"`, so a setting declared `E2B_API_KEY` in `Settings`
   reads that env var. Same mechanism as `CLAIDOR_COMPOSIO_API_KEY`,
   `CLAIDOR_OPENAI_API_KEY` and `CLAIDOR_ANTHROPIC_API_KEY` in `render.yaml`. The
@@ -82,6 +84,34 @@ appear, or sooner only if one starts blocking.
 3. **A room appears in the sidebar unasked** under the Grok-Bot-true room rule,
    unlike `create_agent` which draws a card. Flagged in the agent-to-agent audit;
    costs nothing until the room tool is built.
+
+## What "done" means for each, and the catch
+
+Stated plainly because the founder asked, and because the catch matters.
+
+- **Server is done** when the server can make an image: a route that calls
+  OpenAI, meters it against the person's account like any other model call, and
+  tests. **It is NOT done when a person sees a picture** — Server may not touch
+  `desktop/`, so a separate app-side change is still needed after it. That change
+  has no owner yet (see Open, item 1).
+- **Brief is done** in two parts. The rulebook moves out of a 5,191-line config
+  file into its own folder, changing no behaviour — proven by the existing tests
+  passing untouched. Then the triage produces a list: every rule that cannot name
+  the incident that caused it. **Brief brings the list back rather than deleting**;
+  the deletions are a decision, probably the founder's.
+- **Box is done** when there is an evidenced answer to one question: can the
+  engine, running on the person's Mac, drive a sandbox sitting in E2B well enough
+  to use? Its first task ends in knowledge, not a feature. Whether it continues
+  into building the E2B backend depends on what it finds — and with the key now
+  in Render, nothing else gates that.
+
+**The catch, and it should be said to the founder when they next appear:** none
+of these three, finished, changes anything a person can see in the app. Server
+leaves images one app-side edit away; Brief is a refactor plus a list; Box is an
+answer. They were chosen because they are the questions that could change
+everything downstream, not because they ship visible product. The agents that
+produce visible change are **Files** (the image-in-a-sentence defect, alt text,
+file kinds) and **Cards** — neither started.
 
 ## Sweep cadence
 
