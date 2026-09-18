@@ -109,41 +109,55 @@ describe("request_secret parameters", () => {
     ).toThrow();
   });
 
-  it("keeps exclusivity when converted for the PI model", () => {
-    const converted = jsonSchemaParameters(requestSecretSchema()) as {
-      anyOf?: unknown[];
-      oneOf?: unknown[];
-    };
-    // Type.Union serializes as anyOf; the model must still see two exclusive shapes.
-    const variants = converted.anyOf ?? converted.oneOf ?? [];
-    expect(variants.length).toBe(2);
-  });
-
-  it("keeps converted destination variants closed so both destinations cannot match", () => {
-    const converted = jsonSchemaParameters(requestSecretSchema()) as {
-      anyOf?: Array<{ additionalProperties?: unknown }>;
-      oneOf?: Array<{ additionalProperties?: unknown }>;
-    };
-    const variants = converted.anyOf ?? converted.oneOf ?? [];
-    expect(variants).toHaveLength(2);
-    for (const variant of variants) {
-      expect(variant.additionalProperties).toBe(false);
-    }
-  });
-
-  it("exposes OpenAI-compatible parameters.type object for local servers", () => {
-    // LM Studio and similar validators reject tools[].function.parameters without
-    // type === "object" (and often without properties). request_secret is the
-    // builtin that previously serialized as a bare anyOf union.
-    const wire = JSON.parse(JSON.stringify(parametersFor(toolNamed("request_secret")))) as {
+  it("converts to one object the provider accepts, without a top-level union", () => {
+    const converted = JSON.parse(JSON.stringify(jsonSchemaParameters(requestSecretSchema()))) as {
       type?: unknown;
-      properties?: unknown;
-      anyOf?: unknown[];
-      oneOf?: unknown[];
+      properties?: Record<string, unknown>;
+      required?: string[];
+      additionalProperties?: unknown;
     };
+    expect(converted.type).toBe("object");
+    expect(converted).not.toHaveProperty("oneOf");
+    expect(converted).not.toHaveProperty("anyOf");
+    expect(converted).not.toHaveProperty("allOf");
+    expect(converted).not.toHaveProperty("enum");
+    expect(converted).not.toHaveProperty("const");
+    expect(converted).not.toHaveProperty("not");
+    expect(converted.properties).toHaveProperty("credential");
+    expect(converted.properties).toHaveProperty("connectionId");
+    expect(converted.properties).toHaveProperty("replace");
+    expect(converted.required?.slice().sort()).toEqual(["label", "purpose"]);
+  });
+
+  it("keeps the converted object closed so extra keys cannot sneak in", () => {
+    const converted = JSON.parse(JSON.stringify(jsonSchemaParameters(requestSecretSchema()))) as {
+      additionalProperties?: unknown;
+    };
+    expect(converted.additionalProperties).toBe(false);
+  });
+
+  it("exposes OpenAI-compatible wire parameters without forbidden top-level keys", () => {
+    // Production rejected request_secret when the wire still carried a top-level
+    // oneOf/anyOf, even after wrapping it as type: object with empty properties.
+    const wire = JSON.parse(JSON.stringify(parametersFor(toolNamed("request_secret")))) as Record<
+      string,
+      unknown
+    >;
     expect(wire.type).toBe("object");
-    expect(wire.properties).toEqual({});
-    expect((wire.anyOf ?? wire.oneOf ?? []).length).toBe(2);
+    for (const key of ["oneOf", "anyOf", "allOf", "enum", "const", "not"] as const) {
+      expect(wire).not.toHaveProperty(key);
+    }
+    const properties = wire.properties as Record<string, { properties?: Record<string, unknown> }>;
+    expect(properties).toHaveProperty("label");
+    expect(properties).toHaveProperty("purpose");
+    expect(properties).toHaveProperty("credential");
+    expect(properties).toHaveProperty("connectionId");
+    expect(properties).toHaveProperty("replace");
+    expect(Object.keys(properties.credential?.properties ?? {}).sort()).toEqual([
+      "auth",
+      "name",
+      "origin",
+    ]);
   });
 });
 
