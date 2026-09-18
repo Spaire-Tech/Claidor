@@ -16,13 +16,13 @@ bring-your-own-key half was taken out.
 variable on the Rakazo deployment and every run uses Claidor:
 
 ```env
-CLAIDOR_API_KEY=claidor_pat_…
+CLAIDOR_ACCESS_TOKEN=claidor_pat_…
 RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1
 ```
 
 | | |
 |---|---|
-| Base URL | `https://api.claidor.com/desktop/api/proxy/v1` (override: `CLAIDOR_API_BASE_URL`) |
+| Base URL | `https://api.claidor.com/desktop/api/proxy/v1` (override: `CLAIDOR_MODEL_BASE_URL`) |
 | Model ids | `gpt-5.6-terra`, `gpt-5.6-luna` (override: `CLAIDOR_MODEL`, `CLAIDOR_MODELS`) |
 | Key | a Claidor personal access token carrying `model_proxy` |
 
@@ -126,7 +126,7 @@ service, one allowance, one default. A bot can still be pointed at a different
 model of its own through `bots.update`, unchanged.
 
 **What was deliberately kept.** The bring-your-own-key path still exists
-underneath and is used when `CLAIDOR_API_KEY` is blank, because
+underneath and is used when `CLAIDOR_ACCESS_TOKEN` is blank, because
 `rakazo/docs/agent-verification.md`'s offline harness and the eval runner
 (`packages/testkit/src/cli/evals.ts`, which parses `ModelConnectInputSchema`)
 must run with no Claidor account. Deleting it would have broken the one part
@@ -206,12 +206,32 @@ rather than assumed: the guard is called from `createOpenAiCompatibleFetch`
 not just the deleted connect flow. `api.claidor.com` is a public hostname, so
 without the flag every model call is refused.
 
-### `CLAIDOR_API_KEY` — what is it, where from, is it needed?
+### `CLAIDOR_ACCESS_TOKEN` — what is it, where from, is it needed?
 
 It is a Claidor **personal access token** carrying the `model_proxy` scope. You
 make one in Claidor's own dashboard: Settings → access tokens
 (`clients/apps/web/src/components/Settings/AccessTokenSettings.tsx`, backed by
 `POST /v1/personal_access_tokens`). Shown once, stored only as a hash.
+
+**It was called `CLAIDOR_API_KEY` until the founder asked whether that meant
+`CLAIDOR_OPENAI_API_KEY`. It did not, and the name was mine and it was bad.**
+Both halves of the old naming were already taken inside Claidor and already
+meant something else:
+
+| Name | Where it lives | What it is |
+|---|---|---|
+| `CLAIDOR_OPENAI_API_KEY` | Claidor's server, on Render (`render.yaml`) | OpenAI's own key. Claidor calls OpenAI with it (`server/polar/desktop/service.py`, `provider_api_key()`; read under the `claidor_` prefix set at `server/polar/config.py`). |
+| `CLAIDOR_API_KEY` | a customer's own app | an organization access token (`claidor_oat_…`) for Claidor's public REST API — Claidor's published guides use this name (`docs/guides/laravel.mdx`). |
+| `CLAIDOR_API_BASE_URL` | the cloud runner (`runner/src/settings.ts`, set at `render.yaml`) | the API **root**, `https://api.claidor.com`. |
+| `CLAIDOR_ACCESS_TOKEN` | the Rakazo deployment | this deployment's `claidor_pat_` token with the `model_proxy` scope. |
+| `CLAIDOR_MODEL_BASE_URL` | the Rakazo deployment | the **proxy path**, `https://api.claidor.com/desktop/api/proxy/v1`. |
+
+The first three point at OpenAI or at Claidor's API root; the last two are how
+Rakazo proves who it is to Claidor's model proxy and where it sends the
+request. Two of them differ from the runner's value only by a path suffix, and
+a collision like that fails silently on a host where both services share an
+environment group. Nothing is deployed under the old names, so there is no
+alias and no migration.
 
 **Is it needed?** Yes. Claidor's proxy authenticates every request
 (`server/polar/desktop/auth.py`); without a bearer it answers 401. Something
@@ -221,7 +241,7 @@ app's session token expires in an hour.
 **But one thing about it is worth deciding rather than discovering.** Usage
 meters against the token's owner (`record_usage(user_id=caller.user.id)`), and
 the monthly allowance is that account's (`DESKTOP_MONTHLY_CREDITS`, 3,000,000
-credits). So **one `CLAIDOR_API_KEY` means the whole deployment spends one
+credits). So **one `CLAIDOR_ACCESS_TOKEN` means the whole deployment spends one
 Claidor account's allowance**, however many people use it. That is probably
 what you want while you are the only user and you are paying. It stops being
 what you want the moment you have customers who should each have their own
@@ -299,7 +319,7 @@ so nobody is surprised by it later.
 
 1. In Claidor, create a personal access token with the **model_proxy** scope.
    Copy it — it is shown once and stored only as a hash.
-2. On the Rakazo deployment, set `CLAIDOR_API_KEY` to it and
+2. On the Rakazo deployment, set `CLAIDOR_ACCESS_TOKEN` to it and
    `RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1`.
 3. That is all. Nobody signing in is asked for anything.
 

@@ -276,14 +276,25 @@ fork** — this is the first change that edits their apps. Set two variables
 and every run uses Claidor:
 
 ```env
-CLAIDOR_API_KEY=claidor_pat_…
+CLAIDOR_ACCESS_TOKEN=claidor_pat_…
 RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1
 ```
 
 Base URL `https://api.claidor.com/desktop/api/proxy/v1`, models
 `gpt-5.6-terra` and `gpt-5.6-luna`, all overridable
-(`CLAIDOR_API_BASE_URL`, `CLAIDOR_MODEL`, `CLAIDOR_MODELS`). The public-host
+(`CLAIDOR_MODEL_BASE_URL`, `CLAIDOR_MODEL`, `CLAIDOR_MODELS`). The public-host
 flag is needed because `api.claidor.com` is a public hostname.
+
+**Neither is called an API key or an API base URL, and the near-misses are the
+reason.** `CLAIDOR_OPENAI_API_KEY` is OpenAI's own key on Claidor's server
+(`render.yaml`, read under the `claidor_` prefix); `CLAIDOR_API_KEY` is a
+customer's organization access token in Claidor's published guides
+(`docs/guides/laravel.mdx`); `CLAIDOR_API_BASE_URL` is the API root that the
+cloud runner reads (`runner/src/settings.ts`). The Rakazo pair is a
+`claidor_pat_` token and the proxy path. The founder asked whether
+`CLAIDOR_API_KEY` meant `CLAIDOR_OPENAI_API_KEY`; the fact that the question
+had to be asked is what the rename answers. The table is in
+`docs/product/claidor-on-rakazo.md`.
 
 **What a person sees: no model, anywhere.** Not in Settings, not on an agent.
 The archived Caisra code settled this and I regressed it for one pass — see
@@ -308,7 +319,7 @@ beside it. Both fixed. `setDefault` had to be rewritten — it hung off a
 credential row that no longer exists and now writes `DeploymentSettings`.
 
 **Kept on purpose:** the bring-your-own-key path still runs when
-`CLAIDOR_API_KEY` is blank, because their offline harness and eval runner
+`CLAIDOR_ACCESS_TOKEN` is blank, because their offline harness and eval runner
 must work with no Claidor account. Voice, memory and integration keys are
 untouched; those are separate features.
 

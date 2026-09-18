@@ -34,7 +34,7 @@ Signup and local Docker computers work without an E2B account. Optional remote p
 `SANDBOX_PROVIDER` to `e2b`, `daytona`, or `box` and add the matching API key. The published-images
 Compose stack requires `SANDBOX_SUPERVISOR_TOKEN` for every provider; leave it empty and `compose up` fails closed.
 
-Set `CLAIDOR_API_KEY` to this deployment's Claidor token; see
+Set `CLAIDOR_ACCESS_TOKEN` to this deployment's Claidor token; see
 [Claidor is this deployment's model service](#claidor-is-this-deployments-model-service).
 There is no model screen to connect one in after signup.
 
@@ -222,17 +222,26 @@ server-side, and every request is metered against the person's own monthly
 allowance. Set one variable and every run uses it:
 
 ```env
-CLAIDOR_API_KEY=claidor_pat_…
+CLAIDOR_ACCESS_TOKEN=claidor_pat_…
 # Defaults; override only to point elsewhere.
-# CLAIDOR_API_BASE_URL=https://api.claidor.com/desktop/api/proxy/v1
+# CLAIDOR_MODEL_BASE_URL=https://api.claidor.com/desktop/api/proxy/v1
 # CLAIDOR_MODEL=gpt-5.6-terra        # every reply a person reads
 # CLAIDOR_CHEAP_MODEL=gpt-5.6-luna   # summaries and other work nobody reads
 # CLAIDOR_MODELS=gpt-5.6-terra,gpt-5.6-luna
 ```
 
-The key is a Claidor personal access token carrying the `model_proxy` scope —
-not a desktop session token, which lives an hour. `RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1`
-is needed because `api.claidor.com` is a public hostname.
+The credential is a Claidor personal access token carrying the `model_proxy`
+scope — not a desktop session token, which lives an hour.
+`RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1` is needed because `api.claidor.com` is a
+public hostname.
+
+Neither variable is called an API key or an API base URL, because both of those
+names already mean something else inside Claidor: `CLAIDOR_API_KEY` is a
+customer's own organization access token in Claidor's published guides, and
+`CLAIDOR_API_BASE_URL` is the API root `https://api.claidor.com` that the cloud
+runner reads. What this deployment needs is a `claidor_pat_` token and a URL
+pointing at the proxy path, not the root. Two values that differ only by a path
+suffix are worth keeping under different names.
 
 **There is no Models screen at all**, and no model is named anywhere a person
 can see — not in Settings, not on an agent. Which model answers is decided in
@@ -241,7 +250,7 @@ summarising and other work nobody reads. Onboarding has no model step.
 What the upstream project documents here — connecting your own endpoint per
 user — was removed on purpose. The variables below still work and are kept for
 the offline test harness and the eval runner, which must run with no Claidor
-account; leave `CLAIDOR_API_KEY` blank to use them.
+account; leave `CLAIDOR_ACCESS_TOKEN` blank to use them.
 
 For centrally managed endpoints, the deployment-wide vision fallback remains
 `RAKAZO_OPENAI_COMPATIBLE_VISION_MODELS=gpt4o-vision,llava`.

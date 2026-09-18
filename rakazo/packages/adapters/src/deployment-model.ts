@@ -2,7 +2,25 @@ import { OPENAI_COMPATIBLE_PROVIDER_ID } from "./openai-compatible-url.js";
 
 export const DEFAULT_OPENROUTER_MODEL_ID = "openai/gpt-5.6-luna";
 
-/** Claidor's metered proxy, which is this deployment's one model service. */
+/**
+ * Claidor's metered proxy, which is this deployment's one model service.
+ *
+ * **The two variables are `CLAIDOR_ACCESS_TOKEN` and `CLAIDOR_MODEL_BASE_URL`,
+ * and neither is called an API key or an API base URL, on purpose.** Both of
+ * those names are already taken inside Claidor and mean something else:
+ * `CLAIDOR_API_KEY` is a customer's own organization access token in Claidor's
+ * published guides (`docs/guides/laravel.mdx`), and `CLAIDOR_API_BASE_URL` is
+ * the API root `https://api.claidor.com` that the cloud runner reads
+ * (`runner/src/settings.ts`, set at `render.yaml`). What this deployment needs
+ * is neither: it is a `claidor_pat_` token with the `model_proxy` scope, and a
+ * URL that points at the proxy path rather than the root. A name collision
+ * between two values that differ only by a path suffix is the kind of thing
+ * that fails silently on a host where both services share an environment
+ * group.
+ *
+ * "Access token" is also the honest word. Nobody using this product enters an
+ * API key; there is no key here to enter.
+ */
 export const CLAIDOR_PROVIDER_ID = OPENAI_COMPATIBLE_PROVIDER_ID;
 export const CLAIDOR_PROVIDER_NAME = "Claidor";
 export const CLAIDOR_DEFAULT_BASE_URL = "https://api.claidor.com/desktop/api/proxy/v1";
@@ -56,7 +74,7 @@ export type ClaidorCatalogEntry = {
 
 /** The whole menu, or an empty one when Claidor is not this deployment's model service. */
 export function claidorCatalog(env: NodeJS.ProcessEnv = process.env): ClaidorCatalogEntry[] {
-  if (!env.CLAIDOR_API_KEY?.trim()) return [];
+  if (!env.CLAIDOR_ACCESS_TOKEN?.trim()) return [];
   const listed = (env.CLAIDOR_MODELS ?? "")
     .split(",")
     .map((id) => id.trim())
@@ -104,13 +122,13 @@ export type DeploymentModel = {
  * runner use them and neither should need a Claidor account to run.
  */
 export function resolveDeploymentModel(env: NodeJS.ProcessEnv = process.env): DeploymentModel {
-  const claidorKey = env.CLAIDOR_API_KEY?.trim();
-  if (claidorKey) {
+  const claidorToken = env.CLAIDOR_ACCESS_TOKEN?.trim();
+  if (claidorToken) {
     return {
       provider: CLAIDOR_PROVIDER_ID,
       model: env.CLAIDOR_MODEL?.trim() || CLAIDOR_DEFAULT_MODEL_ID,
-      key: claidorKey,
-      baseUrl: env.CLAIDOR_API_BASE_URL?.trim() || CLAIDOR_DEFAULT_BASE_URL,
+      key: claidorToken,
+      baseUrl: env.CLAIDOR_MODEL_BASE_URL?.trim() || CLAIDOR_DEFAULT_BASE_URL,
       cheapModel: env.CLAIDOR_CHEAP_MODEL?.trim() || CLAIDOR_DEFAULT_CHEAP_MODEL_ID,
     };
   }
