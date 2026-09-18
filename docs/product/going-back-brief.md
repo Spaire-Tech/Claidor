@@ -1,6 +1,11 @@
 # Going back to Caisra on the desktop
 
-A handover brief. Paste this to whoever picks the work up.
+> **Carried out, 18 September 2026.** This was written as a brief for whoever
+> picked the work up. They did. `rakazo/` is deleted, `desktop/` is restored and
+> byte-identical to `b41c9364` (`git diff b41c9364 HEAD -- desktop/` is empty),
+> and `server/` was left alone as instructed. Read it as the record of a decision
+> that was executed, not as a to-do list. Two of its "live state" items were
+> checked again on 18 September and one of them was wrong; see that section.
 
 ---
 
@@ -83,16 +88,26 @@ attempt is archived at `4118ac0f`) and take it out.
 
 Two things were changed during the Rakazo attempt and both need a decision:
 
-**`app.claidor.com` now points at the Hetzner server, not Vercel.** It was the
-Claidor dashboard's hostname and was taken over knowingly, at zero users. The
-dashboard is still deployed on Vercel; only the hostname moved. Point it back,
-or give the dashboard a new hostname and update `CLAIDOR_ALLOWED_HOSTS` and
-`CLAIDOR_CORS_ORIGINS` on Render to match. Google's OAuth JavaScript origin and
-the S3 CORS rule on `claidor-files` also name `app.claidor.com`.
+**~~`app.claidor.com` now points at the Hetzner server, not Vercel.~~ Wrong —
+measured 18 September.** The hostname is on Vercel and serving the Claidor
+dashboard:
 
-**A Hetzner server is running the Rakazo stack.** It costs money and serves
-nothing once this decision lands. Cancel it, or keep it briefly if anyone wants
-to go on reading Rakazo's behaviour rather than its source.
+```
+app.claidor.com  →  CNAME cname.vercel-dns.com  →  76.76.21.164
+GET https://app.claidor.com/  →  307 → /signup,  server: Vercel,  x-claidor-* headers
+```
+
+Whether the repoint ever happened or was reverted is not established. Either way
+there is nothing to do, and nobody should spend an afternoon "pointing it back".
+`docs/product/app-claidor-com-facts.md` is the inventory of everything that names
+this hostname — note that it, too, measured Vercel on the same day, which is the
+first sign this bullet was never true.
+
+**A Hetzner server was running the Rakazo stack.** It costs money and serves
+nothing now. Cancel it, or keep it briefly if anyone wants to go on reading
+Rakazo's behaviour rather than its source. **Not verified from here** — this
+container has no Hetzner credentials and the host is not named in the
+repository, so whether it is still billing is the founder's to check.
 
 ## The cost of going back, stated plainly
 
@@ -128,9 +143,16 @@ Not the code. These:
 ## What was learned about the comparison itself
 
 The agent the founder judged "dumb" was **stock Rakazo with no brief of ours at
-all**. Searched and confirmed: no Yodo, no Caisra brief, no
-`CHIEF_OF_STAFF_RULES` anywhere in the live tree. Task 83 — rewrite those rules
-for the new topology — was raised on 17 September and never done.
+all**. Searched and confirmed at the time: no Yodo, no Caisra brief, no
+`CHIEF_OF_STAFF_RULES` **in the Rakazo tree**. Two corrections, 18 September:
+
+- That sentence said "anywhere in the live tree". The live tree is `desktop/`
+  again, and `CHIEF_OF_STAFF_RULES` is in it, at
+  `desktop/src/shared/agent/chiefOfStaff.ts`. The writing was never lost; it was
+  never carried across.
+- There is **no task 83**. `docs/product/review.md` ends at item 81. The number
+  was invented. The work it named — rewriting the Chief of Staff rules for the
+  Rakazo topology — is moot, since that topology is gone.
 
 That does not make the founder's judgement wrong. It does mean the measured gap
 between the two builds is larger than the real one, and nobody should conclude

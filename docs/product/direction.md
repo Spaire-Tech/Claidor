@@ -137,8 +137,14 @@ nothing yet, at the founder's word.
 
 ## 2. The message vocabulary
 
-Exactly seven kinds of thing may appear in a thread. This is a closed
-list, and it is the discipline that makes the app feel unlike an AI app:
+**Ten kinds, as of 18 September — this section said seven and was wrong.**
+The list is closed, and it is the discipline that makes the app feel unlike an
+AI app. The count has moved three times and this file tracked it twice: five,
+then seven (15 September), then `roster` (16 September), then `card` and
+`connector` (17 September, and recorded below in the decided list without
+anyone updating the number here). The list in code is
+`desktop/src/renderer/design/thread/types.ts`, and it is the one to trust.
+The first seven:
 
 | Kind | What it is |
 |---|---|
@@ -149,6 +155,14 @@ list, and it is the discipline that makes the app feel unlike an AI app:
 | `auth` | the approval card |
 | `attachment` | a file as the whole message — an image shown, anything else named and openable |
 | `secret` | a masked field; what is typed never enters the transcript |
+
+And the three that followed, each put to the founder as its own decision:
+
+| Kind | What it is | When |
+|---|---|---|
+| `roster` | "Your starter team" — a multi-select of agents to stand up, each swappable in place | 16 September |
+| `card` | an answer card: a block the agent wrote in OpenUI's language, drawn between its texts | 17 September |
+| `connector` | an agent proposing a service: logo, name, one line, Not now and Install | 17 September |
 
 No step cards. No tool logs. No thinking blocks. No raw blobs.
 
@@ -240,18 +254,41 @@ founder's wording and should not be paraphrased:
 Seven voices in the picker: Concise, Balanced, Warm, Direct, Sassy,
 Curious, Formal. Those name a manner, not a speaker.
 
-**Speech is OpenAI, not ElevenLabs.** The founder's reason is cost. Note
-that the server has no speech route today — `server/polar/desktop/
-endpoints.py` has none, and nothing under `server/polar/` matches
-`speech`. This is to build, not to switch.
+**Speech is OpenAI, not ElevenLabs.** The founder's reason is cost.
+
+**Corrected 18 September.** This paragraph used to say the server "has no
+speech route today", that `endpoints.py` "has none", and that nothing under
+`server/polar/` matched `speech`. All three are false, and were false when
+written. `server/polar/desktop/endpoints.py:1046` serves
+`/api/proxy/v1/audio/speech` as the `desktop:speech` route; it proxies OpenAI's
+own `/v1/audio/speech` shape and meters the result. What is true is the other
+half: **nothing in `desktop/` calls it** — `grep -rn "audio/speech" desktop/src`
+returns nothing. So this is a wiring job on the app side, not a build on the
+server side.
+
+Speech recognition is the mirror image and is already done: the recogniser is
+local whisper.cpp (`main/speech/whisperServer.ts`), wired through
+`useDictation.ts`, and the server is not involved.
 
 ## 5. The orb
 
 The orb replaces every avatar, model logo and icon. A fragment-shader
 cloud disc, five colours plus a seed.
 
-The design ships four palettes. **The founder wants fifteen**, and a
-palette picked at random per agent, so two agents rarely look alike.
+**Corrected 18 September: it is twenty-five, and they are not random.**
+This section said "four palettes, the founder wants fifteen, picked at random".
+What shipped is twenty-five three-colour gradients in
+`desktop/src/shared/agent/avatars.ts`, with the founder's rule in their own
+words: *"make sure that the first 25 created agents always have a different
+color. after 25, we re-do."* `assignAvatar` hands out the unworn ones first,
+then the least-worn, with chance only among equals — so the first twenty-five
+agents are guaranteed to differ, which random assignment would not give. A
+person can also pick any of the twenty-five by hand. Yodo's face sits outside
+the set and is never handed out.
+
+The four palettes were the bug, not the design: the face used to be a hash of
+the agent's id against four seeds, so there were four faces in the whole app and
+the create screen showed one while the saved agent wore another.
 
 ## 6. Kits are the role agents — confirmed in code
 
@@ -277,10 +314,17 @@ palette. A role agent is therefore *a kit plus an agent record*. The
 `agents` table already holds `skillIds`, so the join already exists.
 
 **And the pipe is already built and live.** `server/polar/desktop/
-endpoints.py:442` serves `/api/kit-store` and returns an empty list,
-with the docstring "The kit store. Empty until Claidor curates one."
-Same for `/api/skill-store` and `/api/mcp-marketplace`. We do not build
-a store. We fill one.
+endpoints.py:513` serves `/api/kit-store` and returns an empty list — measured
+from this container on 18 September:
+`GET https://api.claidor.com/desktop/api/kit-store` → `200`,
+`{"code":0,"data":{"value":{"kits":[]}}}`. Same for `/api/skill-store` (:447)
+and `/api/mcp-marketplace` (:551), the last of which serves 15 servers in 7
+categories. We do not build a store. We fill one.
+
+(The line number here was `442` and the docstring quoted — "Empty until Claidor
+curates one" — no longer exists; it was replaced by a longer one explaining that
+the emptiness is structural, because installing a kit always downloads a zip and
+there is no install-from-what-you-already-have path.)
 
 The twelve roles in the design: Engineering Lead, Design Lead,
 Operations Manager, Product Manager, Head of People, Marketing Lead,
@@ -438,11 +482,20 @@ in OpenClaw config (`src/config/types.agent-defaults.ts`):
 App-side cheap work — chat titles, sidebar previews, intent sorting —
 also Luna.
 
-**Astra is not offered.** On `/v1/chat/completions` OpenAI refuses
-`reasoning_effort` alongside function tools, so our proxy sends
-`reasoning_effort: "none"` whenever tools are present, which for an agent
-is always. Astra costs five times Terra for a capability we then switch
-off. It comes back when `/v1/responses` exists, and not before.
+**Astra is still not offered, but the reason written here expired.** This
+paragraph said Astra was withheld because `/v1/chat/completions` refuses
+`reasoning_effort` alongside function tools, and that it "comes back when
+`/v1/responses` exists, and not before". `/v1/responses` exists: the proxy has
+served it since 13 September (`endpoints.py:790`, `desktop:responses`) and every
+OpenAI model is listed with `transportApi: "openai-responses"`. On that wire
+reasoning and tools travel together and nothing is forced to `none`, so Astra
+would actually reason.
+
+`pricing.py` carries the real reason, and it is a different one: Astra has no
+`role`, and a role is a job. Every job is filled — a second `primary` would mean
+nothing decides which model answers. Astra belongs to escalation (the person
+asks, a step has failed twice, or the agent asks), and escalation is not built.
+It comes back the day it is, as a decision rather than a leftover.
 
 **Escalation, when it exists, is on evidence and never on prediction:**
 the person asks, a step has failed twice, or the agent asks. And it is
@@ -496,7 +549,9 @@ has left the space for it, not one that has filled it with my guesses.
 
 1. The name is Caisra, applied; `appConstants.ts` is the one site.
 2. Messages shape; five surfaces; four settings tabs.
-3. Five message kinds, closed list; approval card with the real command.
+3. Ten message kinds, closed list (§2; it was five, then seven, then ten —
+   this line said five until 18 September); approval card with the real
+   command.
    From 17 September, one more thing in the thread and not a message
    kind of the model's choosing: the answer cards. When an answer is a
    set of things (places, options, days of a plan, figures, a
@@ -531,8 +586,12 @@ has left the space for it, not one that has filled it with my guesses.
    question card.
 5. Text arrives as texts; only speech streams.
 6. The voice brief above, verbatim.
-7. Speech from OpenAI. Build it; there is no speech route today.
-8. Fifteen orb palettes, assigned at random per agent.
+7. Speech from OpenAI. The server route exists
+   (`/api/proxy/v1/audio/speech`); nothing in `desktop/` calls it yet.
+   Recognition is local whisper and is wired.
+8. Twenty-five orb faces, handed out unworn-first so the first twenty-five
+   agents all differ, and pickable by hand. (This line said "fifteen, at
+   random" until 18 September.)
 9. Role agents are kits; the kit store endpoint already exists and is empty.
 10. The computer icon opens LobsterAI's artifact and browser panel, whole.
 11. One computer for files: this one. No second machine, and no cloud

@@ -3,7 +3,7 @@ import type { AskInputField } from '../../../shared/askInput/constants';
 import type { RosterOption } from '../../../shared/staffing/roster';
 
 /**
- * What may appear in a thread. Eight kinds, and the list is closed.
+ * What may appear in a thread. Ten kinds, and the list is closed.
  *
  * This is the discipline that makes the app feel unlike an AI app. The
  * engine emits a great deal more than this — thinking blocks, tool calls,
@@ -24,9 +24,16 @@ import type { RosterOption } from '../../../shared/staffing/roster';
  *     here never enters the transcript or the model's context.
  *
  * The eighth, `roster`, came the same way on 16 September: the founder's
- * product page draws it (see `ThreadItemKind.Roster`). Adding a ninth is
- * the same decision again. If something does not fit these eight, the
- * honest move is usually to say it as a `text` in the agent's own voice.
+ * product page draws it (see `ThreadItemKind.Roster`). Two more followed on
+ * 17 September, each put to the founder as its own decision: `card`, the
+ * answer cards in OpenUI's language, and `connector`, an agent proposing a
+ * service. That makes ten.
+ *
+ * This comment said "eight" until 18 September, after `card` and `connector`
+ * had been added below it — the number is the first thing anyone reads and it
+ * was the one thing not updated. Adding an eleventh is the same decision
+ * again. If something does not fit these ten, the honest move is usually to
+ * say it as a `text` in the agent's own voice.
  */
 
 export const ThreadItemKind = {
