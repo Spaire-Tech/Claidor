@@ -16,7 +16,7 @@ the pin, not in this repository:
 ```sh
 git clone --depth 1 --branch v2026.6.1 https://github.com/openclaw/openclaw.git
 cd openclaw && pnpm install --ignore-scripts
-cp <claidor>/desktop/openclaw-extensions/box/probe/box-probe.test.ts src/agents/sandbox/
+cp <claidor>/docs/product/measurements/box-probe.test.ts src/agents/sandbox/
 npx vitest run --project agents-core --reporter=verbose src/agents/sandbox/box-probe.test.ts
 ```
 
@@ -35,3 +35,35 @@ Read the `[probe]` and `[probe-remote]` lines. The numbers they printed on
   an E2B backend would have to supply, because a pod has no bind mount).
 - Wall time for the same work at RTT 0 / 40 / 120 ms, which shows whether the
   engine pipelines its trips or serialises them.
+
+## `box-integration.test.ts`
+
+The same idea one level up: it imports the **real** plugin from
+`desktop/openclaw-extensions/box` and drives the engine's own
+`resolveSandboxContext` against it, with the broker replaced by a fake that runs
+the box's shell scripts in a temp directory standing in for the pod. It proves
+the engine holds a session on the actual backend, that files land in the pod and
+not on the host disk, and that bind mounts are refused.
+
+```sh
+# in the same engine clone as above
+cp -r <claidor>/desktop/openclaw-extensions/box box-plugin
+cp <claidor>/docs/product/measurements/box-integration.test.ts src/agents/sandbox/
+npx vitest run --project agents-core src/agents/sandbox/box-integration.test.ts
+```
+
+It contacts neither E2B nor the Caisra server.
+
+## `box-bridge-e2e.mjs`
+
+`execBridge.mjs` stands in for a process that is not on this machine, so nothing
+about it can be verified by reading it. This script stands up a local WebSocket
+server playing the broker, spawns the real bridge against it, and asserts on
+what the engine would have seen — stdout, stderr and the child's exit code.
+
+```sh
+# needs `ws`, which the desktop app does not depend on
+WS_MODULE_PATH=<engine-clone>/node_modules/ws node docs/product/measurements/box-bridge-e2e.mjs
+```
+
+13/13 checks passed on 18 September 2026.

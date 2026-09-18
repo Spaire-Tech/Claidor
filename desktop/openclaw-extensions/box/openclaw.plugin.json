@@ -1,0 +1,37 @@
+{
+  "id": "caisra-box",
+  "name": "Caisra Box",
+  "description": "The agent's computer: a remote sandbox the engine drives as a sandbox backend, brokered by the Caisra server.",
+  "contracts": {
+    "sandboxBackends": [
+      "box"
+    ]
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "brokerBaseUrl",
+      "accessToken"
+    ],
+    "properties": {
+      "brokerBaseUrl": {
+        "type": "string",
+        "description": "Caisra server that brokers the box. The E2B credential lives there and never reaches this machine."
+      },
+      "accessToken": {
+        "type": "string",
+        "description": "Desktop access token presented to the broker as a bearer."
+      },
+      "template": {
+        "type": "string",
+        "description": "Box template to start. Absent, the broker picks its default."
+      },
+      "requestTimeoutMs": {
+        "type": "integer",
+        "minimum": 1000,
+        "description": "Per-request timeout for broker calls. Default 120000."
+      }
+    }
+  }
+}
