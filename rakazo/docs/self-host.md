@@ -34,7 +34,9 @@ Signup and local Docker computers work without an E2B account. Optional remote p
 `SANDBOX_PROVIDER` to `e2b`, `daytona`, or `box` and add the matching API key. The published-images
 Compose stack requires `SANDBOX_SUPERVISOR_TOKEN` for every provider; leave it empty and `compose up` fails closed.
 
-Optional: set `OPENROUTER_API_KEY` or connect a model in the UI after signup.
+Set `CLAIDOR_ACCESS_TOKEN` to this deployment's Claidor token; see
+[Claidor is this deployment's model service](#claidor-is-this-deployments-model-service).
+There is no model screen to connect one in after signup.
 
 The example defaults to `edge` (main builds). Every publish is multi-arch (`amd64` + `arm64`), so
 arm64 hosts need no special tag. Do not assume `latest` is present until a stable release exists.
@@ -212,14 +214,46 @@ way by default.
 Only configure an endpoint you control: prompts, attachments, and tool results sent to that model
 leave Rakazo through this URL. Leave `RAKAZO_LOCAL_MODELS` blank to disable the provider.
 
-Each user can also connect their own OpenAI-compatible endpoint from **Connect a model** /
-**Settings → Models** on web and mobile. Choose **OpenAI-compatible**, enter the server base URL
-(for example `http://127.0.0.1:8000/v1`), the exact model id, and an optional API key.
-Public hosts and ordinary hostnames need `RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1` and HTTPS.
-Literal private IP, loopback, and `host.docker.internal` targets do not. If that endpoint's model
-accepts images, enable **Supports images** under **Advanced** when connecting so attachments and
-screenshot computer tools stay available. Existing connections default to disabled. For centrally
-managed endpoints, the deployment-wide fallback remains
+### Claidor is this deployment's model service
+
+**This fork does not let a user bring their own key, and there is no screen
+that takes one.** The model service is the deployment's own, its key is held
+server-side, and every request is metered against the person's own monthly
+allowance. Set one variable and every run uses it:
+
+```env
+CLAIDOR_ACCESS_TOKEN=claidor_pat_…
+# Defaults; override only to point elsewhere.
+# CLAIDOR_MODEL_BASE_URL=https://api.claidor.com/desktop/api/proxy/v1
+# CLAIDOR_MODEL=gpt-5.6-terra        # every reply a person reads
+# CLAIDOR_CHEAP_MODEL=gpt-5.6-luna   # summaries and other work nobody reads
+# CLAIDOR_MODELS=gpt-5.6-terra,gpt-5.6-luna
+```
+
+The credential is a Claidor personal access token carrying the `model_proxy`
+scope — not a desktop session token, which lives an hour. Make one in Claidor's
+dashboard under **Account → Developer → Connect the app**; it is shown once.
+`RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1` is needed because `api.claidor.com` is a
+public hostname.
+
+Neither variable is called an API key or an API base URL, because both of those
+names already mean something else inside Claidor: `CLAIDOR_API_KEY` is a
+customer's own organization access token in Claidor's published guides, and
+`CLAIDOR_API_BASE_URL` is the API root `https://api.claidor.com` that the cloud
+runner reads. What this deployment needs is a `claidor_pat_` token and a URL
+pointing at the proxy path, not the root. Two values that differ only by a path
+suffix are worth keeping under different names.
+
+**There is no Models screen at all**, and no model is named anywhere a person
+can see — not in Settings, not on an agent. Which model answers is decided in
+code: `CLAIDOR_MODEL` for every reply somebody reads, `CLAIDOR_CHEAP_MODEL` for
+summarising and other work nobody reads. Onboarding has no model step.
+What the upstream project documents here — connecting your own endpoint per
+user — was removed on purpose. The variables below still work and are kept for
+the offline test harness and the eval runner, which must run with no Claidor
+account; leave `CLAIDOR_ACCESS_TOKEN` blank to use them.
+
+For centrally managed endpoints, the deployment-wide vision fallback remains
 `RAKAZO_OPENAI_COMPATIBLE_VISION_MODELS=gpt4o-vision,llava`.
 
 For servers that accept standard `reasoning_effort`, enable **Supports thinking** under
@@ -640,6 +674,33 @@ proxy routes. Choose a [computer provider](#choosing-a-computer-provider) approp
 service's trust boundary, and configure `SIGNUPS_ENABLED` and `SIGNUP_ALLOWLIST` before the API's
 first start.
 The optional marketing site in `apps/www` can be hosted separately.
+
+## The voice service
+
+ElevenLabs is what this deployment speaks with, and — as with the model — the
+key is the operator's. There is no provider list and no key field in Settings,
+on web or mobile, and nobody signing in is asked for one.
+
+```env
+ELEVENLABS_API_KEY=sk-…
+# Optional: the voice everybody gets until the deployment owner picks another
+# in Settings, which is then stored on the deployment rather than here.
+# ELEVENLABS_VOICE_ID=…      (VOICE_ID is the provider-neutral spelling)
+```
+
+Leave the key blank and the product does not speak; `voice.status` reports
+`configured: false` and the Voice screen says so rather than offering a form.
+
+The other three adapters this build ships — OpenAI, Cartesia and Fish Audio —
+are still here and are chosen with `VOICE_PROVIDER` plus that provider's own
+key (`CARTESIA_API_KEY`, `FISH_AUDIO_API_KEY`, `VOICE_OPENAI_API_KEY` which
+falls back to `OPENAI_API_KEY`). A provider named without its key means no
+voice, never another vendor's.
+
+**Settings → Voice** is now the list of that provider's voices, with the
+deployment owner choosing which one. A bot can still be given a voice of its
+own in its own settings, and that one wins. What the upstream project
+documents — a per-user voice key — was removed on purpose.
 
 ## Connect mobile clients
 

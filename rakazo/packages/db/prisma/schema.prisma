@@ -257,6 +257,9 @@ model DeploymentSettings {
   signupPolicyInitialized         Boolean  @default(false)
   defaultModelProvider            String?
   defaultModelId                  String?
+  // The voice everybody speaks with. Not a SpaceVoicePreference, because that
+  // hangs off a per-user credential row and a deployment-keyed voice has none.
+  defaultVoiceId                  String?
   deploymentModelCredentialCipher String?
   computerHost                    String?
   createdAt                       DateTime @default(now())

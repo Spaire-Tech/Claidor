@@ -28161,6 +28161,7 @@ export interface components {
       | 'organization_access_tokens:write'
       | 'redline:read'
       | 'redline:write'
+      | 'model_proxy'
     /** SearchResultCustomer */
     SearchResultCustomer: {
       /**

@@ -578,4 +578,20 @@ export const ZH_MESSAGES: Record<string, string> = {
   "Extra high": "超高",
   Low: "低",
   High: "高",
+  // The model screen. This deployment has one model service and no key
+  // fields, so these replace the whole connect flow's copy.
+  "Could not load models": "无法加载模型",
+  "Pick the model your team answers with.": "选择你的团队使用的模型。",
+  "The model your team answers with.": "你的团队使用的模型。",
+  "This deployment has no model service configured.": "此部署尚未配置模型服务。",
+  "That did not go through": "未能完成",
+  // The voice screen. One provider, keyed by the operator, so these replace
+  // the connect flow's copy.
+  "Could not load voices": "无法加载语音",
+  "Could not play a test clip": "无法播放试听",
+  "Every agent speaks with this unless it has one of its own.":
+    "除非代理另有设置，否则都使用此语音。",
+  "Chosen for this workspace. An agent can still have one of its own.":
+    "已为此工作区选定。代理仍可拥有自己的语音。",
+  "This deployment has no voice provider configured.": "此部署尚未配置语音服务。",
 };

@@ -107,6 +107,8 @@ interface ModelTeamChatEngagementJudgeDeps {
   deploymentProvider: string;
   deploymentModel: string;
   deploymentModelKey?: string;
+  /** Only an OpenAI-compatible deployment provider has one. */
+  deploymentModelBaseUrl?: string;
   providerOverride?: string;
   modelOverride?: string;
   timeoutMs?: number;
@@ -215,9 +217,19 @@ export class ModelTeamChatEngagementJudge implements TeamChatEngagementJudge {
     if (!provider || !modelId) return null;
 
     if (!credential) {
-      const apiKey =
-        provider === this.deps.deploymentProvider ? this.deps.deploymentModelKey : undefined;
-      return { model: { provider, id: modelId, ...(apiKey ? { apiKey } : {}) } };
+      const isDeployment = provider === this.deps.deploymentProvider;
+      const apiKey = isDeployment ? this.deps.deploymentModelKey : undefined;
+      // The base URL travels with the key, as it does in the executor: an
+      // OpenAI-compatible provider without an address is pointed at nothing.
+      const baseUrl = isDeployment ? this.deps.deploymentModelBaseUrl : undefined;
+      return {
+        model: {
+          provider,
+          id: modelId,
+          ...(apiKey ? { apiKey } : {}),
+          ...(baseUrl ? { baseUrl } : {}),
+        },
+      };
     }
 
     const secret = await this.deps.prisma.secret.findFirst({

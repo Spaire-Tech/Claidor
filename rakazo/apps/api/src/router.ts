@@ -33,10 +33,10 @@ import {
   applyTeachingDesktopInput,
   archiveBot,
   buildMcpCredentialBlob,
-  buildModelConnectPlaintext,
   ComputerBusyError,
   cancelComputerRunWork,
   checkpointAndRecordComputerWorkspace,
+  claidorCatalog,
   clearInactiveUserComputerControl,
   computerSupportsUpdate,
   computerUpdateView,
@@ -60,20 +60,19 @@ import {
   planLiveConnectionSync,
   prepareApiInstall,
   prepareGraphqlInstall,
-  probeOpenAiCompatibleModels,
   provisionComputer,
   queueComputerUpdate,
   releaseComputerExecutionLease,
   replaceComputer,
   resolveAutoReviewChecker,
   resolveBotWorkspacePath,
+  resolveDeploymentVoice,
   sanitizeComposioError,
   savePushToken,
   scheduleComputerControlExpiry,
   scheduleComputerSleep,
   screenLeaseIdForRun,
   scriptedCatalogEntry,
-  serializeModelSecret,
   takeoverLeaseMs,
   toComputerRef,
   touchRunningComputer,
@@ -109,9 +108,7 @@ import {
   createSpaceForMember,
   createThreadMessageInTransaction,
   deleteEmptySpaceForMember,
-  deleteUnreferencedCredentialSecret,
   findDefaultModelCredential,
-  findDefaultVoiceCredential,
   findModelCredential,
   findSpaceMemoryConfig,
   formatMessagingLinkCode,
@@ -119,9 +116,7 @@ import {
   IsolationError,
   issueMessagingLinkCode,
   lockOwnedGroup,
-  newestModelCredentialOrder,
-  newestVoiceCredentialOrder,
-  Prisma,
+  type Prisma,
   parseComputerMode,
   releaseSpaceDeletionClaim,
   renewSpaceDeletionClaim,
@@ -130,8 +125,6 @@ import {
   SpaceLimitError,
   SpaceNotEmptyError,
   SpaceNotFoundError,
-  selectSpaceModelPreference,
-  selectSpaceVoicePreference,
   touchGroupUpdatedAt,
 } from "@rakazo/db";
 import { getLogger } from "@rakazo/logging";
@@ -163,7 +156,6 @@ import {
 import { listSpaceRuns } from "./runs.js";
 import { addScreenProxyCapability } from "./screen-proxy.js";
 import { querySpaceSearch } from "./search.js";
-import { withSerializableRetry } from "./serializable-retry.js";
 import type { UpdaterProxyConfig } from "./server-update.js";
 import {
   applyServerUpdate,
@@ -191,9 +183,7 @@ import {
   listVoiceCatalog,
   loadDefaultVoiceCredential,
   loadVoiceCredential,
-  persistVoiceCredential,
   prepareVoice,
-  toVoiceCredential,
   toVoiceStatus,
   voiceContext,
 } from "./voice.js";
@@ -766,171 +756,27 @@ export function createRouter(deps: RouterDeps) {
       }),
     },
     models: {
-      list: authed.models.list.handler(async () => [...listPiCatalog(), scriptedCatalogEntry]),
-      credentials: authed.models.credentials.handler(async ({ context }) => {
-        const rows = await deps.prisma.userModelCredential.findMany({
-          where: { userId: context.actor.userId },
-          include: {
-            preferences: {
-              where: { userId: context.actor.userId, spaceId: context.actor.spaceId },
-            },
-          },
-          orderBy: newestModelCredentialOrder,
-        });
-        const compatibleRows = rows.filter((row) => row.provider === OPENAI_COMPATIBLE_PROVIDER_ID);
-        const secrets = compatibleRows.length
-          ? await deps.prisma.secret.findMany({
-              where: {
-                id: { in: compatibleRows.map((row) => row.secretId) },
-                userId: context.actor.userId,
-                spaceId: null,
-              },
-              select: { id: true, ciphertext: true },
-            })
-          : [];
-        const ciphertextById = new Map(secrets.map((secret) => [secret.id, secret.ciphertext]));
-        return rows.map((row) => {
-          const preference = row.preferences[0];
-          const selected = {
-            ...row,
-            isDefault: preference?.isDefault ?? false,
-            defaultModel: preference?.modelId ?? null,
-          };
-          const ciphertext = ciphertextById.get(row.secretId);
-          if (!ciphertext) return modelCredentialDto(selected);
-          try {
-            return modelCredentialDto(selected, deps.secrets.load(ciphertext, row.secretId));
-          } catch {
-            return modelCredentialDto(selected);
-          }
-        });
+      // One menu: the models this deployment's own service serves. There is
+      // no per-user credential to consult because there is no per-user key —
+      // see `claidorCatalog`. Falls back to Pi's own catalogue when Claidor is
+      // not configured, which is how the offline harness and the eval runner
+      // still work without a Claidor account.
+      list: authed.models.list.handler(async () => {
+        const claidor = claidorCatalog();
+        return claidor.length ? claidor : [...listPiCatalog(), scriptedCatalogEntry];
       }),
-      connect: authed.models.connect.handler(async ({ context, input }) => {
-        let plaintext: string;
-        try {
-          let previousPlaintext: string | undefined;
-          let omitVisionModelIds = false;
-          if (input.provider === OPENAI_COMPATIBLE_PROVIDER_ID) {
-            const credential = await findModelCredential(
-              deps.prisma,
-              context.actor,
-              input.provider,
-            );
-            if (credential) {
-              const secret = await deps.prisma.secret.findFirst({
-                where: { id: credential.secretId, userId: context.actor.userId, spaceId: null },
-                select: { ciphertext: true },
-              });
-              if (secret) {
-                try {
-                  previousPlaintext = deps.secrets.load(secret.ciphertext, credential.secretId);
-                } catch (error) {
-                  // Explicit key replacement must still succeed when the prior
-                  // ciphertext is unreadable. Omit visionModelIds so a partial
-                  // one-model list does not wipe other enabled models; DB
-                  // supportsImages + defaultModel remain the legacy fallback.
-                  if (input.apiKey === undefined) throw error;
-                  omitVisionModelIds = true;
-                }
-              }
-            }
-          }
-          plaintext = buildModelConnectPlaintext(input, previousPlaintext, {
-            omitVisionModelIds,
-          });
-        } catch (error) {
-          throw new ORPCError("BAD_REQUEST", {
-            message: error instanceof Error ? error.message : "Invalid model connection",
-          });
-        }
-        return persistModelCredential(deps, context.actor, {
-          provider: input.provider,
-          plaintext,
-          label: input.label,
-          modelId: input.modelId,
-          supportsImages: input.supportsImages,
-          signal: context.signal,
-        });
-      }),
-      probeOpenAiCompatible: authed.models.probeOpenAiCompatible.handler(
-        async ({ context, input }) => {
-          try {
-            const models = await probeOpenAiCompatibleModels(input, undefined, context.signal);
-            return { models };
-          } catch (error) {
-            throw new ORPCError("BAD_REQUEST", {
-              message: error instanceof Error ? error.message : "Could not list models",
-            });
-          }
-        },
-      ),
-      beginOAuth: authed.models.beginOAuth.handler(async ({ context, input }) => {
-        return deps.oauthLogins.begin({
-          userId: context.actor.userId,
-          spaceId: context.actor.spaceId,
-          provider: input.provider,
-          modelId: input.modelId,
-          label: input.label,
-          signal: context.signal,
-        });
-      }),
-      submitOAuthCode: authed.models.submitOAuthCode.handler(async ({ context, input }) => {
-        return deps.oauthLogins.submit(input.loginId, context.actor, input.code);
-      }),
-      completeOAuth: authed.models.completeOAuth.handler(async ({ context, input }) => {
-        const result = await deps.oauthLogins.complete(input.loginId, {
-          userId: context.actor.userId,
-          spaceId: context.actor.spaceId,
-        });
-        return result.status === "connected" ? { status: "ready" as const } : result;
-      }),
-      finishOAuth: authed.models.finishOAuth.handler(async ({ context, input }) => {
-        throwIfAborted(context.signal);
-        const result = await deps.oauthLogins.finish(
-          input.loginId,
-          context.actor,
-          async (login) => {
-            return persistModelCredential(deps, context.actor, {
-              provider: login.provider,
-              plaintext: serializeModelSecret({ kind: "oauth", credential: login.credential }),
-              label: login.label ?? "ChatGPT Plus/Pro",
-              modelId: login.modelId,
-              signal: login.signal,
-            });
-          },
-        );
-        if (result.status === "pending") {
-          throw new ORPCError("CONFLICT", { message: "Sign-in has not finished yet." });
-        }
-        if (result.status === "error") {
-          throw new ORPCError("NOT_FOUND", { message: result.error });
-        }
-        return result.value;
-      }),
-      cancelOAuth: authed.models.cancelOAuth.handler(async ({ context, input }) => {
-        await deps.oauthLogins.cancel(input.loginId, context.actor);
-        return { ok: true as const };
-      }),
-      setDefault: authed.models.setDefault.handler(async ({ context, input }) => {
-        await withSerializableRetry(() =>
-          deps.prisma.$transaction(
-            async (tx) => {
-              const credential = await tx.userModelCredential.findFirst({
-                where: { userId: context.actor.userId, provider: input.provider },
-                orderBy: newestModelCredentialOrder,
-              });
-              if (!credential) {
-                throw new ORPCError("NOT_FOUND", {
-                  message: `No model credential is connected for ${input.provider}.`,
-                });
-              }
-              await selectSpaceModelPreference(tx, context.actor, credential.id, input.modelId);
-            },
-            { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-          ),
-        );
-        return { ok: true as const };
-      }),
+      /**
+       * Which of this deployment's models answers by default.
+       *
+       * It used to hang the choice off a per-user credential row. There are no
+       * credential rows any more, so the choice lives where the rest of the
+       * deployment's model configuration already lives: `DeploymentSettings`,
+       * which `selectConfiguredModel` reads before it falls back to the
+       * environment. One model service, one allowance, one default.
+       *
+       * A bot can still be pointed at a different model of its own; that path
+       * is `bots.update` and is unchanged.
+       */
     },
     bots: {
       list: authed.bots.list.handler(async ({ context }) => repos.listBots(context.actor)),
@@ -4578,67 +4424,43 @@ export function createRouter(deps: RouterDeps) {
     voice: {
       catalog: authed.voice.catalog.handler(async () => listVoiceCatalog()),
       status: authed.voice.status.handler(async ({ context }) => {
-        const cred = await findDefaultVoiceCredential(deps.prisma, context.actor);
-        return toVoiceStatus(cred);
+        const loaded = await loadDefaultVoiceCredential(deps, context.actor);
+        return toVoiceStatus(loaded?.cred ?? null);
       }),
-      credentials: authed.voice.credentials.handler(async ({ context }) => {
-        const rows = await deps.prisma.userVoiceCredential.findMany({
-          where: { userId: context.actor.userId },
-          include: {
-            preferences: {
-              where: { userId: context.actor.userId, spaceId: context.actor.spaceId },
-            },
-          },
-          orderBy: newestVoiceCredentialOrder,
-        });
-        return rows.map((row) => {
-          const preference = row.preferences[0];
-          return toVoiceCredential({
-            ...row,
-            isDefault: preference?.isDefault ?? false,
-            voiceId: preference?.voiceId ?? "",
-          });
-        });
-      }),
-      connect: authed.voice.connect.handler(async ({ context, input }) =>
-        persistVoiceCredential(deps, context.actor, {
-          provider: input.provider,
-          plaintext: input.apiKey,
-          voiceId: input.voiceId,
-          signal: context.signal,
-        }),
-      ),
+      /**
+       * Which voice this deployment speaks with.
+       *
+       * It used to find a per-user voice credential and hang a
+       * SpaceVoicePreference off it. There are no credential rows now — the
+       * key is the deployment's — so the choice lives on DeploymentSettings
+       * beside the default model. `loadVoiceCredential` reads it back.
+       *
+       * A bot still has its own voice through `bots.update`, unchanged, and it
+       * still wins over this one.
+       */
       setVoice: authed.voice.setVoice.handler(async ({ context, input }) => {
-        const cred = await withSerializableRetry(() =>
-          deps.prisma.$transaction(
-            async (tx) => {
-              const found = input.provider
-                ? await tx.userVoiceCredential.findFirst({
-                    where: { userId: context.actor.userId, provider: input.provider },
-                    orderBy: newestVoiceCredentialOrder,
-                  })
-                : (
-                    await tx.spaceVoicePreference.findFirst({
-                      where: {
-                        userId: context.actor.userId,
-                        spaceId: context.actor.spaceId,
-                        isDefault: true,
-                      },
-                      include: { credential: true },
-                      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
-                    })
-                  )?.credential;
-              if (!found) {
-                throw new ORPCError("BAD_REQUEST", { message: "Connect a voice provider first." });
-              }
-              // Picking a voice also makes its provider the one speak/transcribe use.
-              await selectSpaceVoicePreference(tx, context.actor, found.id, input.voiceId);
-              return { ...found, voiceId: input.voiceId, isDefault: true };
-            },
-            { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-          ),
-        );
-        return toVoiceStatus(cred);
+        const configured = resolveDeploymentVoice();
+        if (!configured) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "This deployment has no voice provider configured.",
+          });
+        }
+        if (input.provider && input.provider !== configured.provider) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: `This deployment speaks with ${configured.provider}.`,
+          });
+        }
+        if (!context.actor.isDeploymentOwner) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "Only the deployment owner can change the voice.",
+          });
+        }
+        await deps.prisma.deploymentSettings.upsert({
+          where: { id: "default" },
+          create: { id: "default", defaultVoiceId: input.voiceId },
+          update: { defaultVoiceId: input.voiceId },
+        });
+        return toVoiceStatus({ provider: configured.provider, voiceId: input.voiceId });
       }),
       voices: authed.voice.voices.handler(async ({ context, input }) => {
         const loaded = await loadDefaultVoiceCredential(deps, context.actor);
@@ -5072,90 +4894,6 @@ function computerHostFor(
   if (sandboxProvider !== "docker") return null;
   if (stored === "this-mac" || stored === "docker") return stored;
   return null;
-}
-
-async function persistModelCredential(
-  deps: RouterDeps,
-  actor: Actor,
-  input: {
-    provider: string;
-    plaintext: string;
-    label?: string;
-    modelId?: string;
-    supportsImages?: boolean;
-    signal?: AbortSignal;
-  },
-) {
-  throwIfAborted(input.signal);
-  const stored = await deps.secrets.put(input.plaintext, {
-    operationId: "cred",
-    traceId: "cred",
-    spaceId: actor.spaceId,
-    userId: actor.userId,
-    signal: input.signal ?? new AbortController().signal,
-  });
-  throwIfAborted(input.signal);
-  const cred = await withSerializableRetry(() =>
-    deps.prisma.$transaction(
-      async (tx) => {
-        throwIfAborted(input.signal);
-        const existing = await tx.userModelCredential.findFirst({
-          where: { userId: actor.userId, provider: input.provider },
-          orderBy: newestModelCredentialOrder,
-        });
-        throwIfAborted(input.signal);
-        const secret = await tx.secret.create({
-          data: {
-            id: stored.id,
-            userId: actor.userId,
-            spaceId: null,
-            kind: "model",
-            ciphertext: stored.ciphertext,
-          },
-        });
-        throwIfAborted(input.signal);
-        const credential = !existing
-          ? await tx.userModelCredential.create({
-              data: {
-                userId: actor.userId,
-                provider: input.provider,
-                label: input.label ?? input.provider,
-                secretId: secret.id,
-                supportsImages: input.supportsImages ?? false,
-              },
-            })
-          : await tx.userModelCredential.update({
-              where: { id: existing.id },
-              data: {
-                label: input.label ?? input.provider,
-                secretId: secret.id,
-                ...(input.supportsImages !== undefined
-                  ? { supportsImages: input.supportsImages }
-                  : {}),
-              },
-            });
-        throwIfAborted(input.signal);
-        const defaultModel = input.modelId ?? deps.env.defaultModel;
-        await selectSpaceModelPreference(tx, actor, credential.id, defaultModel);
-        throwIfAborted(input.signal);
-        if (existing) {
-          await deleteUnreferencedCredentialSecret(tx, {
-            credentialKind: "model",
-            credentialId: existing.id,
-            secretId: existing.secretId,
-          });
-          throwIfAborted(input.signal);
-        }
-        return { ...credential, isDefault: true, defaultModel };
-      },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-    ),
-  );
-  return modelCredentialDto(cred, input.plaintext);
-}
-
-function throwIfAborted(signal?: AbortSignal) {
-  if (signal?.aborted) throw signal.reason ?? new Error("Request cancelled");
 }
 
 function nextRoutineDate(crons: string[], timezone: string): Date {

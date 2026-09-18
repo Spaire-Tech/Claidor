@@ -1,4 +1,5 @@
 import AccessTokensSettings from '@/components/Settings/AccessTokenSettings'
+import ConnectAppSettings from '@/components/Settings/ConnectAppSettings'
 import ConnectWordSettings from '@/components/Settings/ConnectWordSettings'
 import OAuthSettings from '@/components/Settings/OAuth/OAuthSettings'
 import { Section, SectionDescription } from '@/components/Settings/Section'
@@ -21,6 +22,14 @@ export default function Page() {
         />
 
         <ConnectWordSettings />
+      </Section>
+      <Section id="connect-app">
+        <SectionDescription
+          title="Connect the app"
+          description="Give the app's server a token so it can send messages through your allowance"
+        />
+
+        <ConnectAppSettings />
       </Section>
       <Section id="oauth">
         <SectionDescription

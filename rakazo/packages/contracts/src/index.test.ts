@@ -205,10 +205,46 @@ describe("contracts", () => {
     ).toBe(false);
   });
 
+  it("offers no way for a person to hand over an API key", () => {
+    // The product rule, as a test, because an accidental re-export would be
+    // invisible otherwise: the model service is the deployment's own and its
+    // key is held server-side. Nobody is asked for one, so there is nothing
+    // here to ask with.
+    for (const gone of [
+      "connect",
+      "credentials",
+      "probeOpenAiCompatible",
+      "beginOAuth",
+      "submitOAuthCode",
+      "completeOAuth",
+      "finishOAuth",
+      "cancelOAuth",
+    ]) {
+      expect(appContract.models, gone).not.toHaveProperty(gone);
+    }
+    // And no `setDefault`: which model answers is decided in code, not picked.
+    // The founder: "You don't see this in grok bot. You dont see what they
+    // use. Its the same for us."
+    expect(appContract.models).not.toHaveProperty("setDefault");
+    expect(Object.keys(appContract.models)).toEqual(["list"]);
+
+    // Voice is the same rule: one provider, keyed by the operator. `setVoice`
+    // chooses which voice, never whose key.
+    for (const gone of ["connect", "credentials"]) {
+      expect(appContract.voice, gone).not.toHaveProperty(gone);
+    }
+    expect(Object.keys(appContract.voice).sort()).toEqual([
+      "catalog",
+      "prepare",
+      "setVoice",
+      "status",
+      "voices",
+    ]);
+  });
+
   it("exposes the product rpc surface", () => {
-    expect(appContract.models.beginOAuth).toBeTruthy();
+    expect(appContract.models.list).toBeTruthy();
     expect(appContract.bootstrap).toBeTruthy();
-    expect(appContract.models.completeOAuth).toBeTruthy();
     expect(appContract.bots.create).toBeTruthy();
     expect(appContract.bots.reorder).toBeTruthy();
     expect(appContract.bots.archive).toBeTruthy();

@@ -12,26 +12,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { BotAvatar } from "../components/bot-avatar";
 import { ComputerModePicker } from "../components/computer-mode-picker";
-import {
-  type MobileBot,
-  type MobileMe,
-  type MobileModel,
-  type MobileModelCredential,
-  rpc,
-} from "../lib/api";
+import { type MobileBot, type MobileMe, type MobileModel, rpc } from "../lib/api";
 import { useI18n } from "../lib/i18n";
 import { presentMessageActionSheet } from "../lib/message-action-sheet";
 import { useMobileTokens, useResolvedAppearance } from "../lib/native";
 
 type BotSettingsRecord = MobileBot & {
   description?: string;
-};
-
-type ModelOption = {
-  key: string;
-  provider: string;
-  modelId: string;
-  label: string;
 };
 
 type PickerChoice = {
@@ -54,7 +41,6 @@ export default function BotSettingsScreen() {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [modelKey, setModelKey] = useState("");
   const [thinkingLevel, setThinkingLevel] = useState("");
-  const [credentials, setCredentials] = useState<MobileModelCredential[]>([]);
   const [catalog, setCatalog] = useState<MobileModel[]>([]);
   const [me, setMe] = useState<MobileMe | null>(null);
   const [modelMetaReady, setModelMetaReady] = useState(false);
@@ -83,15 +69,10 @@ export default function BotSettingsScreen() {
   }, [botId]);
 
   useEffect(() => {
-    void Promise.all([
-      rpc<MobileMe>("me"),
-      rpc<MobileModel[]>("models/list"),
-      rpc<MobileModelCredential[]>("models/credentials"),
-    ])
-      .then(([nextMe, nextCatalog, nextCredentials]) => {
+    void Promise.all([rpc<MobileMe>("me"), rpc<MobileModel[]>("models/list")])
+      .then(([nextMe, nextCatalog]) => {
         setMe(nextMe);
         setCatalog(nextCatalog);
-        setCredentials(nextCredentials);
         setModelMetaError(null);
         setModelMetaReady(true);
       })
@@ -101,40 +82,8 @@ export default function BotSettingsScreen() {
       });
   }, [t]);
 
-  const connectedOptions = useMemo(() => {
-    const options: ModelOption[] = [];
-    const seen = new Set<string>();
-    for (const credential of credentials) {
-      const providerModels = catalog.filter(
-        (entry) => entry.provider === credential.provider && !entry.placeholder,
-      );
-      const credentialInCatalog = Boolean(
-        credential.modelId && providerModels.some((entry) => entry.id === credential.modelId),
-      );
-      const nextOptions =
-        credential.modelId && !credentialInCatalog
-          ? [
-              {
-                key: modelOptionKey(credential.provider, credential.modelId),
-                provider: credential.provider,
-                modelId: credential.modelId,
-                label: `${credential.label} · ${credential.modelId}`,
-              },
-            ]
-          : providerModels.map((entry) => ({
-              key: modelOptionKey(entry.provider, entry.id),
-              provider: entry.provider,
-              modelId: entry.id,
-              label: `${entry.providerName ?? entry.provider} · ${entry.label}`,
-            }));
-      for (const option of nextOptions) {
-        if (seen.has(option.key)) continue;
-        seen.add(option.key);
-        options.push(option);
-      }
-    }
-    return options;
-  }, [catalog, credentials]);
+  // No model picker. Which model answers is decided in code, through the
+  // metered proxy, and is never a thing a person sees or sets.
 
   const effectiveProvider = modelKey
     ? parseModelOptionKey(modelKey)?.provider
@@ -148,32 +97,7 @@ export default function BotSettingsScreen() {
           (entry) => entry.provider === effectiveProvider && entry.id === effectiveModelId,
         )
       : undefined;
-  const effectiveCredential = credentials.find(
-    (entry) => entry.provider === effectiveProvider && entry.modelId === effectiveModelId,
-  );
-  const thinkingOptions = (
-    effectiveCredential?.thinkingLevels ??
-    effectiveEntry?.thinkingLevels ??
-    []
-  ).filter((level) => level !== "off");
-
-  const spaceDefaultLabel = me?.defaultModel
-    ? `${t("Space default")} (${catalogLabel(catalog, me.defaultProvider, me.defaultModel) ?? me.defaultModel})`
-    : t("Space default");
-
-  const modelChoices: PickerChoice[] = useMemo(() => {
-    const choices: PickerChoice[] = [{ key: "", label: spaceDefaultLabel }];
-    if (modelKey && !connectedOptions.some((option) => option.key === modelKey)) {
-      choices.push({
-        key: modelKey,
-        label: parseModelOptionKey(modelKey)?.modelId ?? modelKey,
-      });
-    }
-    for (const option of connectedOptions) {
-      choices.push({ key: option.key, label: option.label });
-    }
-    return choices;
-  }, [connectedOptions, modelKey, spaceDefaultLabel]);
+  const thinkingOptions = (effectiveEntry?.thinkingLevels ?? []).filter((level) => level !== "off");
 
   const thinkingChoices: PickerChoice[] = useMemo(
     () => [
@@ -186,29 +110,8 @@ export default function BotSettingsScreen() {
     [t, thinkingOptions],
   );
 
-  const selectedModelLabel =
-    modelChoices.find((choice) => choice.key === modelKey)?.label ?? spaceDefaultLabel;
   const selectedThinkingLabel =
     thinkingChoices.find((choice) => choice.key === thinkingLevel)?.label ?? t("Default (medium)");
-
-  function selectModel(key: string) {
-    if (key === modelKey) return;
-    setModelKey(key);
-    setThinkingLevel("");
-  }
-
-  function openModelPicker() {
-    presentMessageActionSheet({
-      title: t("Model"),
-      actions: modelChoices.map((choice) => ({
-        text: choice.label,
-        onPress: () => selectModel(choice.key),
-      })),
-      colorScheme,
-      cancel: t("Cancel"),
-      more: t("More"),
-    });
-  }
 
   function openThinkingPicker() {
     presentMessageActionSheet({
@@ -391,31 +294,9 @@ export default function BotSettingsScreen() {
         </Pressable>
         {advancedOpen ? (
           <View>
-            <Text
-              style={{
-                color: tokens.mutedForeground,
-                marginTop: 8,
-                marginBottom: 8,
-                fontSize: 14,
-              }}
-            >
-              {t("Model")}
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("Model")}
-              onPress={openModelPicker}
-              style={{
-                borderWidth: 1,
-                borderColor: tokens.border,
-                backgroundColor: tokens.muted,
-                borderRadius: 11,
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-              }}
-            >
-              <Text style={{ color: tokens.foreground }}>{selectedModelLabel}</Text>
-            </Pressable>
+            {/* No model row: which model answers is decided in code, through
+                the metered proxy, and is never shown. Thinking stays -- that
+                is about how hard it tries, not who serves it. */}
             {thinkingOptions.length ? (
               <>
                 <Text
@@ -482,15 +363,6 @@ function parseModelOptionKey(key: string) {
   const separator = key.indexOf("::");
   if (separator <= 0) return null;
   return { provider: key.slice(0, separator), modelId: key.slice(separator + 2) };
-}
-
-function catalogLabel(
-  catalog: MobileModel[],
-  provider: string | null | undefined,
-  modelId: string,
-) {
-  if (!provider) return undefined;
-  return catalog.find((entry) => entry.provider === provider && entry.id === modelId)?.label;
 }
 
 function thinkingLevelLabel(level: ThinkingLevel, t: (message: string) => string) {

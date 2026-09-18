@@ -6,7 +6,6 @@ import type {
   ComputerMode,
   Me,
   ModelCatalogEntry,
-  ModelCredential,
   ThinkingLevel,
   VoiceInfo,
 } from "@rakazo/contracts";
@@ -228,11 +227,12 @@ export function BotSettings({
   const [autoSpeak, setAutoSpeak] = useState(bot.autoSpeak);
   const [voiceId, setVoiceId] = useState(bot.voiceId ?? "");
   const [voices, setVoices] = useState<VoiceInfo[]>([]);
-  const [modelKey, setModelKey] = useState(
+  // Read only, and kept: a bot saved with a model override before the picker
+  // was removed keeps it through a save rather than being silently reset.
+  const [modelKey] = useState(
     bot.modelProvider && bot.modelId ? modelOptionKey(bot.modelProvider, bot.modelId) : "",
   );
   const [thinkingLevel, setThinkingLevel] = useState(bot.thinkingLevel ?? "");
-  const [credentials, setCredentials] = useState<ModelCredential[]>([]);
   const [catalog, setCatalog] = useState<ModelCatalogEntry[]>([]);
   const [me, setMe] = useState<Me | null>(null);
   const [modelMetaReady, setModelMetaReady] = useState(false);
@@ -253,9 +253,8 @@ export function BotSettings({
       .voices({})
       .then(setVoices)
       .catch(() => setVoices([]));
-    void Promise.all([rpc.models.credentials(), rpc.models.list(), rpc.me()])
-      .then(([nextCredentials, nextCatalog, nextMe]) => {
-        setCredentials(nextCredentials);
+    void Promise.all([rpc.models.list(), rpc.me()])
+      .then(([nextCatalog, nextMe]) => {
         setCatalog(nextCatalog);
         setMe(nextMe);
         // Only mark ready on success — a failed catalog load must not clear
@@ -264,45 +263,6 @@ export function BotSettings({
       })
       .catch(() => undefined);
   }, []);
-
-  const connectedOptions: Array<{
-    key: string;
-    provider: string;
-    modelId: string;
-    label: string;
-  }> = [];
-  const seenOptions = new Set<string>();
-  for (const credential of credentials) {
-    const providerModels = catalog.filter(
-      (entry) => entry.provider === credential.provider && !entry.placeholder,
-    );
-    const credentialInCatalog = Boolean(
-      credential.modelId && providerModels.some((entry) => entry.id === credential.modelId),
-    );
-    // Catalog providers expand to every model for that connection. Free-form
-    // credentials (model id not in the catalog) stay a single connected pair.
-    const options =
-      credential.modelId && !credentialInCatalog
-        ? [
-            {
-              key: modelOptionKey(credential.provider, credential.modelId),
-              provider: credential.provider,
-              modelId: credential.modelId,
-              label: `${credential.label} · ${credential.modelId}`,
-            },
-          ]
-        : providerModels.map((entry) => ({
-            key: modelOptionKey(entry.provider, entry.id),
-            provider: entry.provider,
-            modelId: entry.id,
-            label: `${entry.providerName ?? entry.provider} · ${entry.label}`,
-          }));
-    for (const option of options) {
-      if (seenOptions.has(option.key)) continue;
-      seenOptions.add(option.key);
-      connectedOptions.push(option);
-    }
-  }
 
   const effectiveProvider = modelKey
     ? parseModelOptionKey(modelKey)?.provider
@@ -316,15 +276,8 @@ export function BotSettings({
           (entry) => entry.provider === effectiveProvider && entry.id === effectiveModelId,
         )
       : undefined;
-  const effectiveCredential = credentials.find(
-    (entry) => entry.provider === effectiveProvider && entry.modelId === effectiveModelId,
-  );
-  const thinkingOptions = (
-    effectiveCredential?.thinkingLevels ??
-    effectiveEntry?.thinkingLevels ??
-    []
-  ).filter((level) => level !== "off");
-  const defaultThinkingLevel = effectiveCredential?.thinkingLevel ?? "medium";
+  const thinkingOptions = (effectiveEntry?.thinkingLevels ?? []).filter((level) => level !== "off");
+  const defaultThinkingLevel = "medium";
 
   async function executeSave(patchOverrides?: {
     name?: string;
@@ -489,35 +442,12 @@ export function BotSettings({
             <KnowledgeSection botId={bot.id} onSkillsChange={onSkillsChange} />
           ) : null}
         </Suspense>
-        <label htmlFor={`${ids}-model`} className={fieldLabelClass}>
-          <Trans>Model</Trans>
-          <NativeSelect
-            id={`${ids}-model`}
-            className="mt-2 w-full"
-            value={modelKey}
-            onChange={(event) => {
-              setModelKey(event.target.value);
-              setThinkingLevel("");
-            }}
-          >
-            <NativeSelectOption value="">
-              {t`Space default`}
-              {me?.defaultModel
-                ? ` (${catalogLabel(catalog, me.defaultProvider, me.defaultModel) ?? me.defaultModel})`
-                : ""}
-            </NativeSelectOption>
-            {modelKey && !connectedOptions.some((option) => option.key === modelKey) ? (
-              <NativeSelectOption value={modelKey}>
-                {parseModelOptionKey(modelKey)?.modelId ?? modelKey}
-              </NativeSelectOption>
-            ) : null}
-            {connectedOptions.map((option) => (
-              <NativeSelectOption key={option.key} value={option.key}>
-                {option.label}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </label>
+        {/* No model picker. Which model answers is decided in code, through
+            the metered proxy, and is never a thing a person sees or sets --
+            the founder, on the same question about Settings: "my users should
+            never put a key. everything happens under the hood. not a setting."
+            Thinking stays: that is about how hard it tries, not about who
+            serves it. */}
         {thinkingOptions.length ? (
           <label htmlFor={`${ids}-thinking`} className={fieldLabelClass}>
             <Trans>Thinking</Trans>
@@ -645,13 +575,4 @@ function parseModelOptionKey(key: string) {
   const separator = key.indexOf("::");
   if (separator <= 0) return null;
   return { provider: key.slice(0, separator), modelId: key.slice(separator + 2) };
-}
-
-function catalogLabel(
-  catalog: ModelCatalogEntry[],
-  provider: string | null | undefined,
-  modelId: string,
-) {
-  if (!provider) return undefined;
-  return catalog.find((entry) => entry.provider === provider && entry.id === modelId)?.label;
 }

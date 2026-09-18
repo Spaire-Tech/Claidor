@@ -24,6 +24,7 @@ model. See `CREDIT_USD_PER_MILLION_INPUT`.
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass, field, replace
 from enum import StrEnum
 from math import ceil
@@ -187,6 +188,19 @@ class DesktopModel:
             else SpokenApi.openai_responses
         )
 
+    def reachable_on(self, spoken: SpokenApi) -> bool:
+        """Whether this model can be asked for in that language.
+
+        The one rule, in one place. Nothing in the proxy translates
+        between an Anthropic request and an OpenAI one, so a model is
+        reachable on a wire only when its provider is the one that speaks
+        it. `polar.desktop.endpoints._proxy` refuses the request when this
+        is false, and the model list served on a wire shows only the
+        models for which it is true — a menu offering a model the next
+        request would refuse is worse than a short menu.
+        """
+        return self.provider is spoken.provider
+
     @property
     def weights(self) -> TokenWeights:
         """This model's price list: its provider's, with the one
@@ -331,6 +345,44 @@ MODELS: tuple[DesktopModel, ...] = (
 def model_by_id(model_id: str) -> DesktopModel | None:
     wanted = model_id.strip()
     return next((one for one in MODELS if one.model_id == wanted), None)
+
+
+#: Who the models belong to, in OpenAI's `owned_by` field. Their own
+#: servers put the vendor there; ours puts us, because from a client's
+#: side of the proxy these are Claidor's models at Claidor's prices,
+#: whoever runs the hardware.
+MODELS_OWNER = "claidor"
+
+
+def openai_models_list(
+    models: Sequence[DesktopModel], spoken: SpokenApi
+) -> dict[str, Any]:
+    """`GET /v1/models`, in OpenAI's shape, for one wire.
+
+    An OpenAI-compatible client asks this before it asks anything else,
+    to find out what it may name. Rakazo is one such client: it GETs
+    `<base URL>/models` and reads `data[].id`, falling back to a hand-typed
+    model id when the call fails
+    (`rakazo/packages/adapters/src/pi-openai-compatible-provider.ts`,
+    `probeOpenAiCompatibleModels`).
+
+    Filtered by `reachable_on`, so what the list offers is what the next
+    request will accept. On the Chat Completions wire that means the
+    OpenAI models and not the Anthropic ones — not because Claude is
+    withheld, but because nothing here translates a Chat Completions
+    request into an Anthropic one, so naming Claude on that wire would
+    earn a 400. `created` is omitted rather than invented: these models
+    have no publication date we hold, and a made-up timestamp is worse
+    than an absent field.
+    """
+    return {
+        "object": "list",
+        "data": [
+            {"id": one.model_id, "object": "model", "owned_by": MODELS_OWNER}
+            for one in models
+            if one.reachable_on(spoken)
+        ],
+    }
 
 
 # --- credits --------------------------------------------------------------------

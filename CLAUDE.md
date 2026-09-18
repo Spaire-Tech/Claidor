@@ -232,10 +232,13 @@ that is the whole burden. One trap: **Treg** is usage-metered and their
 README says hosted resale needs a written agreement — read it before
 shipping anything Treg-shaped.
 
-**`rakazo/` is the fork, whole and unchanged.** As of 18 September 2026 it is
-byte-identical to the squashed subtree merge `34325164`. Nothing of ours is in
-it: no `apps/caisra`, no `caisra-*` modules, no edits to any of their files.
-`git diff 34325164 -- rakazo/` is empty, and that is the check.
+**`rakazo/` was the pristine fork, and is no longer.** It was byte-identical
+to the squashed subtree merge `34325164` from the Caisra archive until the
+model work later the same day, which by the founder's instruction removes the
+bring-your-own-key surface from their apps. See "One model service, internal,
+and no key fields" below for exactly what is edited and what it costs at merge
+time. `git diff 34325164 -- rakazo/` is the honest list; nothing else of ours
+is in there.
 
 The Caisra build that used to live inside it was archived — see the section
 below. Do not reason from memory about what we added there; there is nothing
@@ -260,6 +263,118 @@ credentials mean **not run**, not a passing model evaluation" — is the
 founder's rule, already written into their engineering doc. Every
 argument we have had about whether a brief rule works was reasoning.
 They measure. Take the harness before taking opinions.
+
+## One model service, one voice, and no key fields (18 September 2026)
+
+**`docs/product/claidor-on-rakazo.md` is the document. Read it before
+changing anything about models.**
+
+The founder: *"remove their model you can add you key api logic completely
+and make it a one api thing internal for me."* Done. Claidor is the
+deployment's one model service, and **`rakazo/` is no longer the pristine
+fork** — this is the first change that edits their apps. Set two variables
+and every run uses Claidor:
+
+```env
+CLAIDOR_ACCESS_TOKEN=claidor_pat_…
+RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1
+```
+
+Base URL `https://api.claidor.com/desktop/api/proxy/v1`, models
+`gpt-5.6-terra` and `gpt-5.6-luna`, all overridable
+(`CLAIDOR_MODEL_BASE_URL`, `CLAIDOR_MODEL`, `CLAIDOR_MODELS`). The public-host
+flag is needed because `api.claidor.com` is a public hostname.
+
+**Neither is called an API key or an API base URL, and the near-misses are the
+reason.** `CLAIDOR_OPENAI_API_KEY` is OpenAI's own key on Claidor's server
+(`render.yaml`, read under the `claidor_` prefix); `CLAIDOR_API_KEY` is a
+customer's organization access token in Claidor's published guides
+(`docs/guides/laravel.mdx`); `CLAIDOR_API_BASE_URL` is the API root that the
+cloud runner reads (`runner/src/settings.ts`). The Rakazo pair is a
+`claidor_pat_` token and the proxy path. The founder asked whether
+`CLAIDOR_API_KEY` meant `CLAIDOR_OPENAI_API_KEY`; the fact that the question
+had to be asked is what the rename answers. The table is in
+`docs/product/claidor-on-rakazo.md`.
+
+**Where the token comes from: Account → Developer → Connect the app**
+(`clients/apps/web/src/components/Settings/ConnectAppSettings.tsx`). One
+button, one scope, shown once. **It did not exist until the founder asked where
+to get the token**, and this file and the doc both said it did — I had read
+`AccessTokenSettings.tsx`, which only lists and deletes, and assumed the page
+that showed tokens also made them. The only create button was the Word one,
+hardcoded to `redline:read`. Minting from a browser session is not a
+convenience: `personal_access_token.service.create` refuses any caller that is
+not one, so a token can never mint a token.
+
+**What a person sees: no model, anywhere.** Not in Settings, not on an agent.
+The archived Caisra code settled this and I regressed it for one pass — see
+`git show 4118ac0f:rakazo/packages/core/src/caisra-settings.ts`, whose own
+comment reads *"No Models group … Which models run is decided in code, through
+the metered proxy"*, with a test that failed if any settings row mentioned a
+model. The Models screen, the mobile Models route, the per-agent model row and
+`models.setDefault` are all gone; `models.list` stays because the app must know
+what it speaks to, and is never drawn as a menu. Nine RPC procedures were
+deleted from the contract, so a re-introduced picker or key field would not
+compile.
+
+**The cost design is Claidor's roles, not a picker.** `ModelRole` in
+`server/polar/desktop/pricing.py`: `primary` is every reply a person reads,
+`cheap` is machinery they never see, `fallback` is never shown. Rakazo had no
+cheap tier — checked, not assumed — so summarising a thread ran on the everyday
+model. `CLAIDOR_CHEAP_MODEL` now exists and history compaction uses it.
+
+**The seam is theirs.** `resolveDeploymentModel` already chose the fallback
+provider; it just carried no base URL and nothing stopped a user connecting
+beside it. Both fixed. `setDefault` had to be rewritten — it hung off a
+credential row that no longer exists and now writes `DeploymentSettings`.
+
+**Kept on purpose:** the bring-your-own-key path still runs when
+`CLAIDOR_ACCESS_TOKEN` is blank, because their offline harness and eval runner
+must work with no Claidor account. Voice, memory and integration keys are
+untouched; those are separate features.
+
+**Voice went the same way (18 September).** ElevenLabs is the deployment's
+voice provider, keyed from `ELEVENLABS_API_KEY`; `voice.connect` and
+`voice.credentials` are gone from the contract and the two voice screens are
+voice pickers with no key field. All four of their adapters remain, switched
+with `VOICE_PROVIDER`. One thing here needs a database: `setVoice` used to hang
+off a per-user credential row, so `DeploymentSettings.defaultVoiceId` was added
+with a hand-written migration —
+`packages/db/prisma/migrations/20260918120000_deployment_default_voice`. **It
+has not been applied anywhere**; the API runs `prisma migrate deploy` before it
+serves, so a deployment takes it on the next start.
+
+**The cost, stated once:** our conflict surface was seven of their files.
+It is now `apps/web`, `apps/mobile`, `apps/api`, `packages/contracts`,
+`packages/core` and `packages/adapters`. Upstream ships ~24 commits a day,
+so `git subtree pull` will conflict where it did not. That was the
+founder's call, made knowingly.
+
+Two things changed in `server/`, and both have a reason worth keeping:
+
+- **`Scope.model_proxy` and `get_proxy_caller`.** A desktop access token
+  lives one hour and the app refreshes it; a server is handed one static
+  key and has no refresh loop, so a session token would answer 401 an hour
+  in, mid-conversation. A `claidor_pat_` personal access token carrying
+  that scope is the right credential — and it reaches the proxy and
+  nothing else, because every other `/desktop` route asks for a session.
+- **`GET /api/proxy/v1/models`.** Rakazo probes `<base URL>/models` before
+  it will show a model list. That GET answered 404 until now, measured
+  live.
+
+**Claude is not reachable over that connection**, and that is not a
+policy. An OpenAI-compatible client speaks Chat Completions only, and
+nothing in the proxy translates it into an Anthropic request, so
+`/models` lists the two GPTs and asking for Claude earns a 400 that says
+why. Making it reachable is a translation layer, a real build, not
+started.
+
+**What has never been run:** a real model request through this connection.
+The offline evidence is `scripts/rakazo/wire-check.mts`, which drives
+Rakazo's own adapter code against a stand-in whose model list our own
+Python generates. The server's nine new endpoint tests need Postgres and a
+final Python 3.14 and have not executed. Say "designed and checked", not
+"working", until somebody sends a message through it.
 
 ## Caisra on Rakazo — archived (18 September 2026)
 

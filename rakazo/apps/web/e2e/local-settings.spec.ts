@@ -26,19 +26,16 @@ test("local settings open and save integrations without an app session", async (
             connected = true;
             json = { ok: true };
           } else if (procedure === "models/list") {
+            // One model service, no credentials: the menu is what it serves.
             json = [
               {
                 provider: "openai-compatible",
-                providerName: "OpenAI-compatible",
-                id: "custom",
-                label: "Custom model",
-                billing: "",
-                placeholder: true,
-                auth: "api-key",
+                providerName: "Claidor",
+                id: "gpt-5.6-terra",
+                label: "Everyday",
+                billing: "Included. Your monthly allowance covers it.",
               },
             ];
-          } else if (procedure === "models/credentials") {
-            json = [];
           } else if (procedure === "me") {
             json = {
               userId: "owner",
@@ -46,9 +43,9 @@ test("local settings open and save integrations without an app session", async (
               email: "owner@example.test",
               name: "Owner",
               isDeploymentOwner: true,
-              needsModel: true,
+              needsModel: false,
               defaultProvider: "openai-compatible",
-              defaultModel: "custom",
+              defaultModel: "gpt-5.6-terra",
               computerHost: "local",
               canChooseHostComputer: true,
               sandboxProvider: "docker",

@@ -130,6 +130,23 @@ class Scope(StrEnum):
     tieout_read = "tieout:read"
     tieout_write = "tieout:write"
 
+    # The model proxy, for a client that is not our desktop app.
+    #
+    # The desktop app holds a session: an access token good for one hour
+    # (`settings.DESKTOP_ACCESS_TOKEN_TTL`) that it refreshes behind the
+    # person's back. That is right for an app and wrong for a server, which
+    # is handed a credential once, stores it, and has no refresh loop to
+    # run — Rakazo's OpenAI-compatible model connection is exactly that
+    # shape (`rakazo/docs/self-host.md`, "Connect a model"). Given a
+    # session token such a connection would work for an hour and then
+    # answer 401 in the middle of somebody's conversation.
+    #
+    # So a personal access token carries this instead: user-scoped,
+    # revocable, a year by default, and able to reach nothing but the
+    # model proxy. It is deliberately not a session — it cannot read
+    # memory, the profile, or anything else under `/desktop`.
+    model_proxy = "model_proxy"
+
     @classmethod
     def __get_pydantic_json_schema__(
         cls, core_schema: cs.CoreSchema, handler: GetJsonSchemaHandler
@@ -219,6 +236,7 @@ SCOPES_SUPPORTED_DISPLAY_NAMES: dict[Scope, str] = {
     Scope.redline_write: "Apply fixes to documents",
     Scope.tieout_read: "See which figures tie back to the model",
     Scope.tieout_write: "Upload files and confirm what a figure refers to",
+    Scope.model_proxy: "Send messages to models through your allowance",
 }
 
 

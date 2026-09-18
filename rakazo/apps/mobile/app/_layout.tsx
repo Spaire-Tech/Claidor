@@ -86,7 +86,6 @@ export default function Layout() {
                     sheetGrabberVisible: true,
                   }}
                 />
-                <Stack.Screen name="models" options={{ title: t("Models") }} />
                 <Stack.Screen name="voice" options={{ title: t("Voice") }} />
                 <Stack.Screen name="integrations" options={{ title: t("Integrations") }} />
                 <Stack.Screen

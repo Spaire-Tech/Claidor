@@ -5,6 +5,7 @@ import {
   findModelCredential,
   type PrismaClient,
 } from "@rakazo/db";
+import { claidorCatalog } from "./deployment-model.js";
 import { listPiCatalog, scriptedCatalogEntry } from "./pi-models.js";
 import { OPENAI_COMPATIBLE_PROVIDER_ID } from "./pi-openai-compatible-provider.js";
 
@@ -22,6 +23,16 @@ export async function validateConnectedModelChoice(
   provider: string,
   modelId: string,
 ) {
+  // A model this deployment's own service serves needs no credential, because
+  // there is no per-user key to connect: the key is the deployment's and is
+  // held server-side. Checked before the credential lookup, which would
+  // otherwise refuse every choice on such a deployment.
+  const offered = claidorCatalog();
+  if (offered.length) {
+    return offered.some((entry) => entry.provider === provider && entry.id === modelId)
+      ? undefined
+      : "That model is not one this deployment serves";
+  }
   const credential = await findModelCredential(prisma, actor, provider);
   if (!credential) return "Connect that model provider first";
   if (isCatalogModelChoice(provider, modelId)) return undefined;

@@ -56,14 +56,19 @@ from polar.openapi import APITag
 from polar.postgres import AsyncSession, get_db_session
 from polar.routing import APIRouter
 
-from .auth import bearer_token, get_desktop_session
+from .auth import ProxyCaller, bearer_token, get_desktop_session, get_proxy_caller
 from .composio import forward as composio_forward
 
 # Straight from the price list rather than through `service`, which
 # re-exports only what it uses itself — a name it merely passed through
 # is one `ruff --fix` away from disappearing, and the failure would be an
 # ImportError at boot.
-from .pricing import SPEECH_MAX_CHARACTERS, SPEECH_MODEL, SPEECH_VOICE
+from .pricing import (
+    SPEECH_MAX_CHARACTERS,
+    SPEECH_MODEL,
+    SPEECH_VOICE,
+    openai_models_list,
+)
 from .service import (
     AUTH_CODE_INVALID,
     MEMORY_FILE_LIMIT,
@@ -744,13 +749,13 @@ def _error(kind: str, message: str, status: int) -> JSONResponse:
 @router.post("/api/proxy/v1/messages", name="desktop:messages", response_model=None)
 async def proxy_messages(
     request: Request,
-    desktop_session: DesktopSession = Depends(get_desktop_session),
+    caller: ProxyCaller = Depends(get_proxy_caller),
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse | StreamingResponse:
     """Anthropic's Messages API, behind Claidor's key and the person's
     monthly allowance. The body goes through untouched; the usage
     Anthropic reports comes back as credits."""
-    return await _proxy(request, desktop_session, session, SpokenApi.anthropic_messages)
+    return await _proxy(request, caller, session, SpokenApi.anthropic_messages)
 
 
 @router.post(
@@ -760,17 +765,25 @@ async def proxy_messages(
 )
 async def proxy_chat_completions(
     request: Request,
-    desktop_session: DesktopSession = Depends(get_desktop_session),
+    caller: ProxyCaller = Depends(get_proxy_caller),
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse | StreamingResponse:
     """OpenAI's older Chat Completions API, behind Claidor's key and the
     same allowance.
 
-    Kept, but not what the engine is pointed at: this wire refuses
-    reasoning alongside function tools, and an agent always carries tools.
-    See `/api/proxy/v1/responses`.
+    Not what our own engine is pointed at: this wire refuses reasoning
+    alongside function tools, and an agent always carries tools. See
+    `/api/proxy/v1/responses`.
+
+    It is, however, the wire every general OpenAI-compatible client
+    speaks, and Rakazo is one of them — its model connection posts here
+    and nowhere else
+    (`rakazo/packages/adapters/src/pi-openai-compatible-provider.ts`,
+    which builds every model with `api: "openai-completions"`). So this
+    route stopped being a courtesy to old clients the day Claidor was
+    connected to a server it did not write.
     """
-    return await _proxy(request, desktop_session, session, SpokenApi.openai_completions)
+    return await _proxy(request, caller, session, SpokenApi.openai_completions)
 
 
 @router.post(
@@ -780,7 +793,7 @@ async def proxy_chat_completions(
 )
 async def proxy_responses(
     request: Request,
-    desktop_session: DesktopSession = Depends(get_desktop_session),
+    caller: ProxyCaller = Depends(get_proxy_caller),
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse | StreamingResponse:
     """OpenAI's Responses API, behind Claidor's key and the person's
@@ -791,7 +804,46 @@ async def proxy_responses(
     same request. The engine implements it natively
     (`openai-transport-stream.ts`); nothing here translates anything.
     """
-    return await _proxy(request, desktop_session, session, SpokenApi.openai_responses)
+    return await _proxy(request, caller, session, SpokenApi.openai_responses)
+
+
+@router.get(
+    "/api/proxy/v1/models",
+    name="desktop:proxy_models",
+    include_in_schema=False,
+)
+async def proxy_models(
+    caller: ProxyCaller = Depends(get_proxy_caller),
+) -> JSONResponse:
+    """The menu, in OpenAI's own words.
+
+    `/api/models/available` is the same question answered in the desktop
+    app's vocabulary. This is the answer an OpenAI-compatible client
+    expects, because such a client knows nothing about Claidor and asks
+    the one question its own protocol defines. Rakazo asks it while a
+    person is connecting a model, and fills the list it is given
+    (`rakazo/packages/adapters/src/pi-openai-compatible-provider.ts`,
+    `probeOpenAiCompatibleModels`, which GETs `<base URL>/models`).
+
+    Until this route existed that GET fell through to the catch-all below
+    and answered 404, so connecting meant typing a model id from memory
+    with no way to discover it. That was the whole of the gap.
+
+    Scoped to the Chat Completions wire, because that is the only one an
+    OpenAI-compatible client speaks — see `openai_models_list`. It is
+    authenticated like everything else here: which models a person may
+    name is their business, not the public's.
+
+    **Not `_ok`.** Every other route on this router answers in the desktop
+    app's envelope, `{"code": 0, "data": …}`, because the vendored client
+    unwraps it. This one must not: an OpenAI-compatible client reads
+    `data` as the array of models, and wrapping would hand it an object
+    where it expects a list — a 200 that parses and then finds no models,
+    which is the worst kind of failure to debug.
+    """
+    return JSONResponse(
+        openai_models_list(offered_models(), SpokenApi.openai_completions)
+    )
 
 
 #: How much of a refusal to keep. Provider errors say what is wrong in
@@ -828,7 +880,7 @@ def _log_upstream_refusal(model: DesktopModel, status: int, body: bytes | None) 
 
 async def _proxy(
     request: Request,
-    desktop_session: DesktopSession,
+    caller: ProxyCaller,
     session: AsyncSession,
     spoken: SpokenApi,
 ) -> JSONResponse | StreamingResponse:
@@ -846,7 +898,7 @@ async def _proxy(
             "This model is not offered by the desktop app.",
             400,
         )
-    if model.provider is not spoken.provider:
+    if not model.reachable_on(spoken):
         # The path is one provider's language and the model is served by
         # another. Nothing here translates between the two, so this is a
         # mistake in the caller, not something to paper over.
@@ -858,7 +910,7 @@ async def _proxy(
         )
     if not provider_configured(model.provider):
         return _error("api_error", "The model service is not configured.", 503)
-    user = desktop_session.user
+    user = caller.user
     if await desktop.exhausted(session, user):
         return JSONResponse(
             {
@@ -879,7 +931,7 @@ async def _proxy(
     url = f"{provider_base_url(model.provider)}{wire.upstream_path}"
     headers = wire.headers(request)
     body = wire.body(payload, raw, model)
-    user_id, session_id = user.id, desktop_session.id
+    user_id, session_id = user.id, caller.session_id
 
     # The request's own session is committed when the handler returns,
     # before a stream has ended, so the usage row is written through a
@@ -998,7 +1050,7 @@ async def _proxy(
 )
 async def proxy_speech(
     request: Request,
-    desktop_session: DesktopSession = Depends(get_desktop_session),
+    caller: ProxyCaller = Depends(get_proxy_caller),
     session: AsyncSession = Depends(get_db_session),
 ) -> Response:
     """Turn a reply into a voice.
@@ -1039,7 +1091,7 @@ async def proxy_speech(
     if not provider_configured(DesktopProvider.openai):
         return _error("api_error", "The speech service is not configured.", 503)
 
-    user = desktop_session.user
+    user = caller.user
     if await desktop.exhausted(session, user):
         return JSONResponse(
             {
@@ -1069,7 +1121,7 @@ async def proxy_speech(
     if isinstance(instructions, str) and instructions.strip():
         body["instructions"] = instructions
 
-    user_id, session_id = user.id, desktop_session.id
+    user_id, session_id = user.id, caller.session_id
     sessionmaker: AsyncSessionMaker | None = getattr(
         request.state, "async_sessionmaker", None
     )

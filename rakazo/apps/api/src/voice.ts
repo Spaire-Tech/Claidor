@@ -3,28 +3,23 @@ import type { AdapterContext } from "@rakazo/adapter-kit";
 import {
   createVoiceProvider,
   type EncryptedSecretStore,
-  isVoiceProviderId,
   listVoiceCatalog,
   MAX_SPEAK_CHARS,
   MAX_TRANSCRIBE_BYTES,
   NoVoiceConfigured,
+  resolveDeploymentVoice,
   voiceCatalogEntry,
 } from "@rakazo/adapters";
 import type { Actor, VoiceCredential, VoiceStatus } from "@rakazo/contracts";
 import { toUtterances } from "@rakazo/core";
 import {
-  deleteUnreferencedCredentialSecret,
   findDefaultVoiceCredential,
   findVoiceCredential,
   IsolationError,
-  newestVoiceCredentialOrder,
-  Prisma,
   type PrismaClient,
-  selectSpaceVoicePreference,
 } from "@rakazo/db";
 import type { Context, Hono } from "hono";
 import { readBoundedBody } from "./http-body.js";
-import { withSerializableRetry } from "./serializable-retry.js";
 
 export interface VoiceDeps {
   prisma: PrismaClient;
@@ -78,11 +73,47 @@ export function toVoiceCredential(row: {
   };
 }
 
+/**
+ * The deployment's own voice, as the rest of this module expects a credential
+ * to look.
+ *
+ * `id` is a constant rather than a row id: nothing loads this by id, and a
+ * fabricated cuid would invite somebody to try. The voice comes from
+ * `DeploymentSettings.defaultVoiceId` when the owner has chosen one, and from
+ * the environment otherwise.
+ */
+export const DEPLOYMENT_VOICE_CREDENTIAL_ID = "deployment";
+
+async function deploymentVoiceCredential(deps: VoiceDeps, provider?: string) {
+  const configured = resolveDeploymentVoice();
+  if (!configured) return null;
+  // Asked for a specific provider that is not the one this deployment speaks
+  // with: say no, rather than quietly answering as a different vendor.
+  if (provider && provider !== configured.provider) return null;
+  const settings = await deps.prisma.deploymentSettings.findUnique({ where: { id: "default" } });
+  return {
+    cred: {
+      id: DEPLOYMENT_VOICE_CREDENTIAL_ID,
+      provider: configured.provider,
+      voiceId: settings?.defaultVoiceId?.trim() || configured.voiceId,
+      isDefault: true,
+      secretId: "",
+    },
+    apiKey: configured.apiKey,
+  };
+}
+
 export async function loadDefaultVoiceCredential(deps: VoiceDeps, actor: Actor) {
   return loadVoiceCredential(deps, actor);
 }
 
 export async function loadVoiceCredential(deps: VoiceDeps, actor: Actor, provider?: string) {
+  // The deployment's key wins, and is checked first so that no per-user row can
+  // shadow it. On a deployment that has one, nobody was ever asked for a key
+  // and there are no such rows to find.
+  const deployment = await deploymentVoiceCredential(deps, provider);
+  if (deployment) return deployment;
+
   const cred = provider
     ? await findVoiceCredential(deps.prisma, actor, provider)
     : await findDefaultVoiceCredential(deps.prisma, actor);
@@ -113,86 +144,6 @@ export async function resolveVoiceTarget(
   const voiceId = input.voiceId || botVoiceId || loaded.cred.voiceId;
   if (!voiceId) throw new NoVoiceConfigured("voice");
   return { ...loaded, voiceId };
-}
-
-export async function persistVoiceCredential(
-  deps: VoiceDeps,
-  actor: Actor,
-  input: {
-    provider: string;
-    plaintext: string;
-    voiceId?: string;
-    signal?: AbortSignal;
-  },
-): Promise<VoiceCredential> {
-  if (!isVoiceProviderId(input.provider)) {
-    throw new ORPCError("BAD_REQUEST", { message: "Unknown voice provider." });
-  }
-  const provider = createVoiceProvider(input.provider);
-  const verified = await provider.verify(input.plaintext, voiceContext(actor, input.signal));
-  if (!verified.ok) {
-    throw new ORPCError("BAD_REQUEST", { message: verified.message ?? "That key was rejected." });
-  }
-  let voiceId = input.voiceId?.trim() ?? "";
-  if (!voiceId) {
-    const voices = await provider.listVoices(input.plaintext, voiceContext(actor, input.signal));
-    voiceId = voices[0]?.id ?? "";
-  }
-  const stored = await deps.secrets.put(input.plaintext, voiceContext(actor, input.signal));
-  const cred = await withSerializableRetry(() =>
-    deps.prisma.$transaction(
-      async (tx) => {
-        const existing = await tx.userVoiceCredential.findFirst({
-          where: { userId: actor.userId, provider: input.provider },
-          orderBy: newestVoiceCredentialOrder,
-        });
-        const secret = await tx.secret.create({
-          data: {
-            id: stored.id,
-            userId: actor.userId,
-            spaceId: null,
-            kind: "voice",
-            ciphertext: stored.ciphertext,
-          },
-        });
-        const credential = !existing
-          ? await tx.userVoiceCredential.create({
-              data: {
-                userId: actor.userId,
-                provider: input.provider,
-                secretId: secret.id,
-              },
-            })
-          : await tx.userVoiceCredential.update({
-              where: { id: existing.id },
-              data: { secretId: secret.id },
-            });
-        const previousPreference = existing
-          ? await tx.spaceVoicePreference.findUnique({
-              where: {
-                spaceId_userId_credentialId: {
-                  spaceId: actor.spaceId,
-                  userId: actor.userId,
-                  credentialId: existing.id,
-                },
-              },
-            })
-          : null;
-        const selectedVoiceId = voiceId || previousPreference?.voiceId || "";
-        await selectSpaceVoicePreference(tx, actor, credential.id, selectedVoiceId);
-        if (existing) {
-          await deleteUnreferencedCredentialSecret(tx, {
-            credentialKind: "voice",
-            credentialId: existing.id,
-            secretId: existing.secretId,
-          });
-        }
-        return { ...credential, isDefault: true, voiceId: selectedVoiceId };
-      },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-    ),
-  );
-  return toVoiceCredential(cred);
 }
 
 export async function prepareVoice(

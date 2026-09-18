@@ -44,9 +44,6 @@ import {
   MessagingLinkedIdentitySchema,
   MessagingStatusSchema,
   ModelCatalogEntrySchema,
-  ModelConnectInputSchema,
-  ModelCredentialSchema,
-  ModelOAuthBeginSchema,
   REPLY_QUOTE_MAX_LENGTH,
   ReorderBotsInput,
   RoutineSchema,
@@ -70,7 +67,6 @@ import {
   UpdateGroupInput,
   UsageRecordSchema,
   VoiceCatalogEntrySchema,
-  VoiceCredentialSchema,
   VoiceInfoSchema,
   VoiceStatusSchema,
 } from "./domain.js";
@@ -192,46 +188,20 @@ export const appContract = {
     check: oc.input(ServerUpdateRequestSchema).output(ServerUpdateCheckSchema),
     apply: oc.input(ServerUpdateRequestSchema).output(ServerUpdateRunSchema),
   },
+  // What this deployment talks to, and nothing a person acts on.
+  //
+  // No `connect`, no `credentials`, no OAuth — the key is the deployment's and
+  // nobody is ever asked for one. And no `setDefault` either: which model
+  // answers is decided in code, through the metered proxy, exactly as it was
+  // in the Caisra build. The founder, on seeing a model named in Settings:
+  // "You don't see this in grok bot. You dont see what they use. Its the same
+  // for us."
+  //
+  // `list` survives because the app still has to know what it is speaking to —
+  // capabilities, not choices. It is read by the agent panel and by the
+  // AI-data-sharing screen, never drawn as a menu.
   models: {
     list: oc.output(z.array(ModelCatalogEntrySchema)),
-    credentials: oc.output(z.array(ModelCredentialSchema)),
-    connect: oc.input(ModelConnectInputSchema).output(ModelCredentialSchema),
-    probeOpenAiCompatible: oc
-      .input(
-        z.object({
-          baseUrl: z.string(),
-          apiKey: z.string().optional(),
-        }),
-      )
-      .output(z.object({ models: z.array(z.string()) })),
-    beginOAuth: oc
-      .input(
-        z.object({
-          provider: z.string(),
-          label: z.string().optional(),
-          modelId: z.string().optional(),
-        }),
-      )
-      .output(ModelOAuthBeginSchema),
-    submitOAuthCode: oc
-      .input(z.object({ loginId: z.string(), code: z.string().trim().min(1).max(8_192) }))
-      .output(z.object({ ok: z.literal(true) })),
-    completeOAuth: oc
-      .input(z.object({ loginId: z.string() }))
-      .output(
-        z.discriminatedUnion("status", [
-          z.object({ status: z.literal("pending") }),
-          z.object({ status: z.literal("ready") }),
-          z.object({ status: z.literal("error"), error: z.string() }),
-        ]),
-      ),
-    finishOAuth: oc.input(z.object({ loginId: z.string() })).output(ModelCredentialSchema),
-    cancelOAuth: oc
-      .input(z.object({ loginId: z.string() }))
-      .output(z.object({ ok: z.literal(true) })),
-    setDefault: oc
-      .input(z.object({ provider: z.string(), modelId: z.string() }))
-      .output(z.object({ ok: z.literal(true) })),
   },
   bots: {
     list: oc.output(z.array(BotSchema)),
@@ -748,19 +718,13 @@ export const appContract = {
   runs: {
     list: oc.input(z.object({ filter: z.enum(["active", "recent"]) })).output(RunsListOutputSchema),
   },
+  // The voice this deployment speaks with. As with models, there is no
+  // `connect` and no `credentials`: one provider, keyed by the operator, and
+  // no screen that asks anybody for a key. `setVoice` chooses which voice,
+  // never whose key.
   voice: {
     catalog: oc.output(z.array(VoiceCatalogEntrySchema)),
     status: oc.output(VoiceStatusSchema),
-    credentials: oc.output(z.array(VoiceCredentialSchema)),
-    connect: oc
-      .input(
-        z.object({
-          provider: z.string(),
-          apiKey: z.string().min(8),
-          voiceId: z.string().max(120).optional(),
-        }),
-      )
-      .output(VoiceCredentialSchema),
     setVoice: oc
       .input(z.object({ voiceId: z.string().min(1).max(120), provider: z.string().optional() }))
       .output(VoiceStatusSchema),
