@@ -396,6 +396,14 @@ proposal queue.
 
 ## 10. There is one computer, and it is this one
 
+> **Under revision, 18 September 2026.** The founder is designing a computer of
+> our own: *"we'll do it just like them. we'll soon design a computer too. so
+> everything there should be."* That reverses the decision this section records.
+> **Do not build to this section until it is rewritten** — it is kept as it was
+> written because the reasoning below is what the new design has to answer,
+> particularly the sentence about where a file is when it is worked on.
+> `docs/product/cards-plan.md` has what is still open.
+
 The founder, on the design's own Settings → Computer and Settings →
 Updates: *"there is no 'which computer' — that was a design mistake by
 me. same for the cloud computer."*
