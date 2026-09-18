@@ -164,6 +164,11 @@ function attachNovncProxy(server: ViteDevServer | PreviewServer, secret: string,
 
   server.httpServer?.on("upgrade", async (req, socket, head) => {
     if (!req.url?.startsWith("/novnc/")) return;
+    // Logged on arrival, not only on failure. Silence in this handler is
+    // ambiguous otherwise: a websocket that never reached this process and one
+    // that connected perfectly look the same from here, and the first is a
+    // problem in front of the app while the second is not a problem at all.
+    console.error("[novnc] upgrade received");
     const target = await resolveNovncTarget(req.url, secret, api);
     if (socket.destroyed) return;
     if (!target) {
