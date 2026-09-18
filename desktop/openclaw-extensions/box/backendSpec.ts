@@ -7,7 +7,11 @@
  * the engine spawns, and the config gate — and `backend.ts` wires them to the
  * SDK types.
  */
+import { isLoopbackBroker, type BoxBrokerSettings } from './brokerClient';
 import { BRIDGE_ENV } from './execProtocol.mjs';
+
+export type { BoxBrokerSettings } from './brokerClient';
+export { isLoopbackBroker } from './brokerClient';
 
 /**
  * Where the box keeps the agent's working files, when the broker does not say.
@@ -117,37 +121,6 @@ export function assertNoBinds(binds: readonly string[] | undefined): void {
     throw new Error(
       'The box backend does not support sandbox.docker.binds — files reach the box by import.',
     );
-  }
-}
-
-export type BoxBrokerSettings = {
-  brokerBaseUrl: string;
-  /**
-   * Absent when the broker is the app's local token proxy, which injects the
-   * account's token itself and refreshes it (`openclawTokenProxy.ts:907`
-   * overwrites any Authorization header it is handed). That is the normal case
-   * and the reason nothing has to write a token into `openclaw.json`, where it
-   * would go stale.
-   */
-  accessToken?: string;
-  template?: string;
-  requestTimeoutMs?: number;
-};
-
-/**
- * A broker with no token must be on this machine.
- *
- * Without this, a typo in the broker URL turns every box call into an
- * unauthenticated request to a stranger, carrying the command the agent was
- * about to run.
- */
-export function isLoopbackBroker(rawUrl: string): boolean {
-  try {
-    const { hostname } = new URL(rawUrl);
-    return hostname === '127.0.0.1' || hostname === 'localhost' || hostname === '::1'
-      || hostname === '[::1]';
-  } catch {
-    return false;
   }
 }
 

@@ -286,6 +286,7 @@ import { registerCoworkSubagentHandlers } from './ipcHandlers/coworkSubagent';
 import { ensureDshEngineReady, registerDshHandlers } from './ipcHandlers/dsh/handlers';
 import { registerEnterpriseAccountHandlers } from './ipcHandlers/enterpriseAccount';
 import { registerKitHandlers } from './ipcHandlers/kits';
+import { registerBoxIpcHandlers } from './ipcHandlers/box/handlers';
 import { registerMcpHandlers } from './ipcHandlers/mcp';
 import { registerNimQrLoginHandlers } from './ipcHandlers/nimQrLogin';
 import { registerOnboardingIpcHandlers } from './ipcHandlers/onboarding/handlers';
@@ -506,6 +507,7 @@ import {
   migrateLegacyOpenClawPluginInstalls,
   OpenClawPluginInstallMigrationStatus,
 } from './libs/openclawPluginInstallMigration';
+import { boxBrokerBaseUrlFor } from './libs/boxSandboxSettings';
 import { collectReferencedEnvVarNames, pickReferencedSecretEnvVars } from './libs/openclawSecretEnv';
 import {
   getOpenClawTokenProxyPort,
@@ -13480,6 +13482,16 @@ if (!gotTheLock) {
   // The first step of onboarding: Yodo's three small tasks on this Mac
   // (a riddle in Notes, the appearance switch; Messages not yet).
   registerOnboardingIpcHandlers();
+
+  // The agent's computer. The broker is read fresh on every call because the
+  // token proxy's port changes between runs and the person can sign out
+  // mid-session; a box that cannot be reached is answered, not thrown.
+  registerBoxIpcHandlers({
+    getBrokerSettings: () => {
+      const port = getOpenClawTokenProxyPort();
+      return port ? { brokerBaseUrl: boxBrokerBaseUrlFor(port) } : null;
+    },
+  });
 
   // Speech recognition on this computer (whisper.cpp). The recogniser is
   // made once and brought up on the first dictation; its status events go
