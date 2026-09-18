@@ -188,16 +188,20 @@ export const appContract = {
     check: oc.input(ServerUpdateRequestSchema).output(ServerUpdateCheckSchema),
     apply: oc.input(ServerUpdateRequestSchema).output(ServerUpdateRunSchema),
   },
-  // The models this deployment serves. There is no `connect`, no
-  // `credentials` and no OAuth here, and their absence is the point: the
-  // model service is the deployment's own and its key is held server-side,
-  // so nobody using this product is ever asked for one. What is left is the
-  // menu and a choice between the models on it.
+  // What this deployment talks to, and nothing a person acts on.
+  //
+  // No `connect`, no `credentials`, no OAuth — the key is the deployment's and
+  // nobody is ever asked for one. And no `setDefault` either: which model
+  // answers is decided in code, through the metered proxy, exactly as it was
+  // in the Caisra build. The founder, on seeing a model named in Settings:
+  // "You don't see this in grok bot. You dont see what they use. Its the same
+  // for us."
+  //
+  // `list` survives because the app still has to know what it is speaking to —
+  // capabilities, not choices. It is read by the agent panel and by the
+  // AI-data-sharing screen, never drawn as a menu.
   models: {
     list: oc.output(z.array(ModelCatalogEntrySchema)),
-    setDefault: oc
-      .input(z.object({ provider: z.string(), modelId: z.string() }))
-      .output(z.object({ ok: z.literal(true) })),
   },
   bots: {
     list: oc.output(z.array(BotSchema)),

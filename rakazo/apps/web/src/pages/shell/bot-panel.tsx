@@ -227,7 +227,9 @@ export function BotSettings({
   const [autoSpeak, setAutoSpeak] = useState(bot.autoSpeak);
   const [voiceId, setVoiceId] = useState(bot.voiceId ?? "");
   const [voices, setVoices] = useState<VoiceInfo[]>([]);
-  const [modelKey, setModelKey] = useState(
+  // Read only, and kept: a bot saved with a model override before the picker
+  // was removed keeps it through a save rather than being silently reset.
+  const [modelKey] = useState(
     bot.modelProvider && bot.modelId ? modelOptionKey(bot.modelProvider, bot.modelId) : "",
   );
   const [thinkingLevel, setThinkingLevel] = useState(bot.thinkingLevel ?? "");
@@ -261,29 +263,6 @@ export function BotSettings({
       })
       .catch(() => undefined);
   }, []);
-
-  // Every model this deployment serves, straight from the catalogue. There is
-  // no credential to cross-reference any more: one model service, no keys, so
-  // what the menu lists is simply what the service serves.
-  const seenOptions = new Set<string>();
-  const connectedOptions: Array<{
-    key: string;
-    provider: string;
-    modelId: string;
-    label: string;
-  }> = [];
-  for (const entry of catalog) {
-    if (entry.placeholder) continue;
-    const key = modelOptionKey(entry.provider, entry.id);
-    if (seenOptions.has(key)) continue;
-    seenOptions.add(key);
-    connectedOptions.push({
-      key,
-      provider: entry.provider,
-      modelId: entry.id,
-      label: entry.label,
-    });
-  }
 
   const effectiveProvider = modelKey
     ? parseModelOptionKey(modelKey)?.provider
@@ -463,35 +442,12 @@ export function BotSettings({
             <KnowledgeSection botId={bot.id} onSkillsChange={onSkillsChange} />
           ) : null}
         </Suspense>
-        <label htmlFor={`${ids}-model`} className={fieldLabelClass}>
-          <Trans>Model</Trans>
-          <NativeSelect
-            id={`${ids}-model`}
-            className="mt-2 w-full"
-            value={modelKey}
-            onChange={(event) => {
-              setModelKey(event.target.value);
-              setThinkingLevel("");
-            }}
-          >
-            <NativeSelectOption value="">
-              {t`Space default`}
-              {me?.defaultModel
-                ? ` (${catalogLabel(catalog, me.defaultProvider, me.defaultModel) ?? me.defaultModel})`
-                : ""}
-            </NativeSelectOption>
-            {modelKey && !connectedOptions.some((option) => option.key === modelKey) ? (
-              <NativeSelectOption value={modelKey}>
-                {parseModelOptionKey(modelKey)?.modelId ?? modelKey}
-              </NativeSelectOption>
-            ) : null}
-            {connectedOptions.map((option) => (
-              <NativeSelectOption key={option.key} value={option.key}>
-                {option.label}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </label>
+        {/* No model picker. Which model answers is decided in code, through
+            the metered proxy, and is never a thing a person sees or sets --
+            the founder, on the same question about Settings: "my users should
+            never put a key. everything happens under the hood. not a setting."
+            Thinking stays: that is about how hard it tries, not about who
+            serves it. */}
         {thinkingOptions.length ? (
           <label htmlFor={`${ids}-thinking`} className={fieldLabelClass}>
             <Trans>Thinking</Trans>
@@ -619,13 +575,4 @@ function parseModelOptionKey(key: string) {
   const separator = key.indexOf("::");
   if (separator <= 0) return null;
   return { provider: key.slice(0, separator), modelId: key.slice(separator + 2) };
-}
-
-function catalogLabel(
-  catalog: ModelCatalogEntry[],
-  provider: string | null | undefined,
-  modelId: string,
-) {
-  if (!provider) return undefined;
-  return catalog.find((entry) => entry.provider === provider && entry.id === modelId)?.label;
 }

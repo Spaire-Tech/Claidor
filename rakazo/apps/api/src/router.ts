@@ -777,29 +777,6 @@ export function createRouter(deps: RouterDeps) {
        * A bot can still be pointed at a different model of its own; that path
        * is `bots.update` and is unchanged.
        */
-      setDefault: authed.models.setDefault.handler(async ({ context, input }) => {
-        const offered = claidorCatalog();
-        if (offered.length && !offered.some((entry) => entry.id === input.modelId)) {
-          throw new ORPCError("NOT_FOUND", {
-            message: `${input.modelId} is not one of the models this deployment serves.`,
-          });
-        }
-        if (!context.actor.isDeploymentOwner) {
-          throw new ORPCError("FORBIDDEN", {
-            message: "Only the deployment owner can change the default model.",
-          });
-        }
-        await deps.prisma.deploymentSettings.upsert({
-          where: { id: "default" },
-          create: {
-            id: "default",
-            defaultModelProvider: input.provider,
-            defaultModelId: input.modelId,
-          },
-          update: { defaultModelProvider: input.provider, defaultModelId: input.modelId },
-        });
-        return { ok: true as const };
-      }),
     },
     bots: {
       list: authed.bots.list.handler(async ({ context }) => repos.listBots(context.actor)),

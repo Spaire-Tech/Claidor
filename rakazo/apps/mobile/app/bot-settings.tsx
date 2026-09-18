@@ -21,13 +21,6 @@ type BotSettingsRecord = MobileBot & {
   description?: string;
 };
 
-type ModelOption = {
-  key: string;
-  provider: string;
-  modelId: string;
-  label: string;
-};
-
 type PickerChoice = {
   key: string;
   label: string;
@@ -89,20 +82,8 @@ export default function BotSettingsScreen() {
       });
   }, [t]);
 
-  // Every model this deployment serves. No credential to cross-reference:
-  // one model service, no keys, so the menu is simply what it serves.
-  const connectedOptions = useMemo(() => {
-    const options: ModelOption[] = [];
-    const seen = new Set<string>();
-    for (const entry of catalog) {
-      if (entry.placeholder) continue;
-      const key = modelOptionKey(entry.provider, entry.id);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      options.push({ key, provider: entry.provider, modelId: entry.id, label: entry.label });
-    }
-    return options;
-  }, [catalog]);
+  // No model picker. Which model answers is decided in code, through the
+  // metered proxy, and is never a thing a person sees or sets.
 
   const effectiveProvider = modelKey
     ? parseModelOptionKey(modelKey)?.provider
@@ -118,24 +99,6 @@ export default function BotSettingsScreen() {
       : undefined;
   const thinkingOptions = (effectiveEntry?.thinkingLevels ?? []).filter((level) => level !== "off");
 
-  const spaceDefaultLabel = me?.defaultModel
-    ? `${t("Space default")} (${catalogLabel(catalog, me.defaultProvider, me.defaultModel) ?? me.defaultModel})`
-    : t("Space default");
-
-  const modelChoices: PickerChoice[] = useMemo(() => {
-    const choices: PickerChoice[] = [{ key: "", label: spaceDefaultLabel }];
-    if (modelKey && !connectedOptions.some((option) => option.key === modelKey)) {
-      choices.push({
-        key: modelKey,
-        label: parseModelOptionKey(modelKey)?.modelId ?? modelKey,
-      });
-    }
-    for (const option of connectedOptions) {
-      choices.push({ key: option.key, label: option.label });
-    }
-    return choices;
-  }, [connectedOptions, modelKey, spaceDefaultLabel]);
-
   const thinkingChoices: PickerChoice[] = useMemo(
     () => [
       { key: "", label: t("Default (medium)") },
@@ -147,29 +110,8 @@ export default function BotSettingsScreen() {
     [t, thinkingOptions],
   );
 
-  const selectedModelLabel =
-    modelChoices.find((choice) => choice.key === modelKey)?.label ?? spaceDefaultLabel;
   const selectedThinkingLabel =
     thinkingChoices.find((choice) => choice.key === thinkingLevel)?.label ?? t("Default (medium)");
-
-  function selectModel(key: string) {
-    if (key === modelKey) return;
-    setModelKey(key);
-    setThinkingLevel("");
-  }
-
-  function openModelPicker() {
-    presentMessageActionSheet({
-      title: t("Model"),
-      actions: modelChoices.map((choice) => ({
-        text: choice.label,
-        onPress: () => selectModel(choice.key),
-      })),
-      colorScheme,
-      cancel: t("Cancel"),
-      more: t("More"),
-    });
-  }
 
   function openThinkingPicker() {
     presentMessageActionSheet({
@@ -352,31 +294,9 @@ export default function BotSettingsScreen() {
         </Pressable>
         {advancedOpen ? (
           <View>
-            <Text
-              style={{
-                color: tokens.mutedForeground,
-                marginTop: 8,
-                marginBottom: 8,
-                fontSize: 14,
-              }}
-            >
-              {t("Model")}
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("Model")}
-              onPress={openModelPicker}
-              style={{
-                borderWidth: 1,
-                borderColor: tokens.border,
-                backgroundColor: tokens.muted,
-                borderRadius: 11,
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-              }}
-            >
-              <Text style={{ color: tokens.foreground }}>{selectedModelLabel}</Text>
-            </Pressable>
+            {/* No model row: which model answers is decided in code, through
+                the metered proxy, and is never shown. Thinking stays -- that
+                is about how hard it tries, not who serves it. */}
             {thinkingOptions.length ? (
               <>
                 <Text
@@ -443,15 +363,6 @@ function parseModelOptionKey(key: string) {
   const separator = key.indexOf("::");
   if (separator <= 0) return null;
   return { provider: key.slice(0, separator), modelId: key.slice(separator + 2) };
-}
-
-function catalogLabel(
-  catalog: MobileModel[],
-  provider: string | null | undefined,
-  modelId: string,
-) {
-  if (!provider) return undefined;
-  return catalog.find((entry) => entry.provider === provider && entry.id === modelId)?.label;
 }
 
 function thinkingLevelLabel(level: ThinkingLevel, t: (message: string) => string) {

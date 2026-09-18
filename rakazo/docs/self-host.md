@@ -225,7 +225,8 @@ allowance. Set one variable and every run uses it:
 CLAIDOR_API_KEY=claidor_pat_…
 # Defaults; override only to point elsewhere.
 # CLAIDOR_API_BASE_URL=https://api.claidor.com/desktop/api/proxy/v1
-# CLAIDOR_MODEL=gpt-5.6-terra
+# CLAIDOR_MODEL=gpt-5.6-terra        # every reply a person reads
+# CLAIDOR_CHEAP_MODEL=gpt-5.6-luna   # summaries and other work nobody reads
 # CLAIDOR_MODELS=gpt-5.6-terra,gpt-5.6-luna
 ```
 
@@ -233,9 +234,10 @@ The key is a Claidor personal access token carrying the `model_proxy` scope —
 not a desktop session token, which lives an hour. `RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1`
 is needed because `api.claidor.com` is a public hostname.
 
-**Settings → Models** is now a list of the models Claidor serves, with the
-deployment owner able to pick which one answers. There is no provider list, no
-key field, no base URL and no OAuth, and onboarding no longer has a model step.
+**There is no Models screen at all**, and no model is named anywhere a person
+can see — not in Settings, not on an agent. Which model answers is decided in
+code: `CLAIDOR_MODEL` for every reply somebody reads, `CLAIDOR_CHEAP_MODEL` for
+summarising and other work nobody reads. Onboarding has no model step.
 What the upstream project documents here — connecting your own endpoint per
 user — was removed on purpose. The variables below still work and are kept for
 the offline test harness and the eval runner, which must run with no Claidor

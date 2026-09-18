@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   CLAIDOR_DEFAULT_BASE_URL,
+  CLAIDOR_DEFAULT_CHEAP_MODEL_ID,
   CLAIDOR_DEFAULT_MODEL_ID,
   CLAIDOR_PROVIDER_ID,
   CLAIDOR_PROVIDER_NAME,
@@ -38,6 +39,7 @@ describe("Claidor, when it is configured", () => {
       model: CLAIDOR_DEFAULT_MODEL_ID,
       key: "claidor_pat_x",
       baseUrl: CLAIDOR_DEFAULT_BASE_URL,
+      cheapModel: CLAIDOR_DEFAULT_CHEAP_MODEL_ID,
     });
   });
 
@@ -69,6 +71,7 @@ describe("Claidor, when it is configured", () => {
       model: "gpt-5.6-luna",
       key: "claidor_pat_x",
       baseUrl: "http://127.0.0.1:8000/desktop/api/proxy/v1",
+      cheapModel: CLAIDOR_DEFAULT_CHEAP_MODEL_ID,
     });
   });
 
@@ -134,5 +137,30 @@ describe("the menu Claidor serves", () => {
         CLAIDOR_MODEL: "gpt-5.6-luna",
       }).map((one) => one.id),
     ).toEqual(["gpt-5.6-luna"]);
+  });
+});
+
+describe("the cheap model, for work nobody reads", () => {
+  it("comes with Claidor, and is not the everyday one", () => {
+    // Claidor's own catalogue declares these as roles: primary for every reply
+    // a person reads, cheap for sub-agents, compaction and previews. Summaries
+    // run through this one.
+    const resolved = resolveDeploymentModel({ CLAIDOR_API_KEY: "claidor_pat_x" });
+    expect(resolved.model).toBe(CLAIDOR_DEFAULT_MODEL_ID);
+    expect(resolved.cheapModel).toBe(CLAIDOR_DEFAULT_CHEAP_MODEL_ID);
+    expect(resolved.cheapModel).not.toBe(resolved.model);
+  });
+
+  it("is the operator's when they name one", () => {
+    expect(
+      resolveDeploymentModel({ CLAIDOR_API_KEY: "claidor_pat_x", CLAIDOR_CHEAP_MODEL: "gpt-5.6-x" })
+        .cheapModel,
+    ).toBe("gpt-5.6-x");
+  });
+
+  it("is absent on the bring-your-own-key providers", () => {
+    // Those are somebody else's endpoint; naming one of our model ids there
+    // would be a summary request for a model that does not exist.
+    expect(resolveDeploymentModel({ OPENROUTER_API_KEY: "or-key" }).cheapModel).toBeUndefined();
   });
 });

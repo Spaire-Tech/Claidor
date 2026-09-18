@@ -407,7 +407,6 @@ export default function Account() {
         <Pressable
           accessibilityRole="button"
           disabled={pending}
-          onPress={() => router.push("/models")}
           style={({ pressed }) => [styles.settingsButton, pressed && styles.pressed]}
         >
           <Text style={styles.settingsTitle}>{t("Models")}</Text>

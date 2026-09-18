@@ -134,6 +134,108 @@ of their engineering worth copying. Voice, memory and integration keys are
 untouched — those are separate features and the founder asked about the model.
 Voice changed next, and is the section below.
 
+## No model is named anywhere (18 September, second pass)
+
+The founder, on seeing a model list in Settings: *"should not be anywhere. You
+don't see this in grok bot. You dont see what they use. Its the same for us.
+Please remove that from everywhere, research how we used to handle these two
+models. It was cost efficient and made sense. Check caisra old code."*
+
+They were right, and the archived Caisra code says so in its own words.
+`git show 4118ac0f:rakazo/packages/core/src/caisra-settings.ts`:
+
+> **And what is deliberately not here.** No Models group. There was one for a
+> day … the founder: *"i told you only use my claude code account. i told you
+> to remove that settings for api keys."* And on keys in general: *"my users
+> should never put a key. everything happens under the hood. not a setting."*
+> **Which models run is decided in code, through the metered proxy.**
+
+It had a test to keep it that way: `expect(everything.some((row) =>
+row.id.includes("model"))).toBe(false)`. I shipped a picker in the first pass.
+That was a straight regression against a written decision.
+
+**Removed:** the Models section in web Settings, the whole
+`ModelSettingsOverlay`, the mobile Models screen and its route, the per-agent
+model row on both agent panels, and `models.setDefault` from the contract, with
+a test that fails if it returns. `models.list` survives because the app still
+has to know what it is speaking to — capabilities, not choices — and is never
+drawn as a menu.
+
+### The cost design, which is what "made sense" meant
+
+Claidor's catalogue does not name models to the app. It declares **roles**
+(`server/polar/desktop/pricing.py`, `ModelRole`), and its reasoning is worth
+quoting because it is the whole answer:
+
+> The app does not choose a model per message — it cannot know how hard a task
+> is before doing it, the extra round trip costs a beat in an app whose whole
+> feel is timing, and a price that moves for reasons a person cannot see makes
+> the usage meter untrustworthy. Instead there is one model they talk to and
+> cheap ones for machinery they never see.
+
+- `primary` — every reply the person reads. `gpt-5.6-terra`.
+- `cheap` — sub-agents, compaction, memory flushes, heartbeats, titles,
+  previews. Never read as "the agent". `gpt-5.6-luna`.
+- `fallback` — when the primary's provider is down. Never shown, never a menu.
+
+**Rakazo had no such notion**, checked rather than assumed: there is no
+`smallModel`, `cheapModel` or `summaryModel` anywhere in their tree, and
+`history-compaction.ts:258` says in its own comment that it matches *"normal
+run model selection"*. So summarising a long thread — reading the whole
+conversation back to write text nobody opens — ran on the everyday model.
+
+`CLAIDOR_CHEAP_MODEL` now exists and compaction uses it, but only when the run
+is already on this deployment's provider: a bot on somebody else's endpoint
+keeps its own model, because our model id would mean nothing there.
+
+## Three questions about the setup, answered from source
+
+### `RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1` — what is that, and is it ours?
+
+It is **their** variable, not ours, and the name goes away whenever the fork is
+renamed; it is a string in their code, nothing more.
+
+What it does: Rakazo refuses to send a model request to a public hostname
+unless it is set (`packages/adapters/src/openai-compatible-url.ts`,
+`assertAllowedOpenAiCompatibleRequestUrl`). It is an SSRF guard — without it a
+misconfigured endpoint could be pointed at something internal.
+
+**Is it still needed now that the connect screen is gone?** Yes, and I checked
+rather than assumed: the guard is called from `createOpenAiCompatibleFetch`
+(`pi-openai-compatible-provider.ts:167`), which wraps **every runtime request**,
+not just the deleted connect flow. `api.claidor.com` is a public hostname, so
+without the flag every model call is refused.
+
+### `CLAIDOR_API_KEY` — what is it, where from, is it needed?
+
+It is a Claidor **personal access token** carrying the `model_proxy` scope. You
+make one in Claidor's own dashboard: Settings → access tokens
+(`clients/apps/web/src/components/Settings/AccessTokenSettings.tsx`, backed by
+`POST /v1/personal_access_tokens`). Shown once, stored only as a hash.
+
+**Is it needed?** Yes. Claidor's proxy authenticates every request
+(`server/polar/desktop/auth.py`); without a bearer it answers 401. Something
+has to carry one, and a token is the only credential a server can hold — the
+app's session token expires in an hour.
+
+**But one thing about it is worth deciding rather than discovering.** Usage
+meters against the token's owner (`record_usage(user_id=caller.user.id)`), and
+the monthly allowance is that account's (`DESKTOP_MONTHLY_CREDITS`, 3,000,000
+credits). So **one `CLAIDOR_API_KEY` means the whole deployment spends one
+Claidor account's allowance**, however many people use it. That is probably
+what you want while you are the only user and you are paying. It stops being
+what you want the moment you have customers who should each have their own
+allowance — at which point Rakazo would need to mint a token per person, which
+is a build, not a setting. Not started.
+
+### The `/models` endpoint I added to Claidor is now unused
+
+Commit `d9a10d62` added `GET /desktop/api/proxy/v1/models` because Rakazo's
+Connect screen probed it. That screen is deleted, and
+`probeOpenAiCompatibleModels` now has no callers anywhere. The endpoint still
+works and is still the honest answer to "what do you serve", but nothing in
+Rakazo calls it today. Said here rather than left to be found.
+
 ## The voice, the same way
 
 The founder, 18 September: *"Let eleven labs be the main voice provider. I

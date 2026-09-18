@@ -1,7 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import type { AvatarStyle, SpaceMemoryConfig } from "@rakazo/contracts";
 import { Button, Dialog, DialogClose, DialogContent, DialogTitle } from "@rakazo/ui-web";
-import { Brain, CloudDownload, Cpu, Gauge, Monitor, Settings, Volume2, XIcon } from "lucide-react";
+import { Brain, CloudDownload, Gauge, Monitor, Settings, Volume2, XIcon } from "lucide-react";
 import { type ComponentType, useEffect, useRef, useState } from "react";
 import { computersAreUnavailable } from "../components/ComputersUnavailableHint";
 import {
@@ -11,17 +11,9 @@ import {
   UsageSettingsPanel,
 } from "./AccountSettingsOverlay";
 import { MemorySettingsOverlay } from "./MemorySettingsOverlay";
-import { ModelSettingsOverlay } from "./ModelSettingsOverlay";
 import { VoiceSettingsOverlay } from "./VoiceSettingsOverlay";
 
-export type SettingsSection =
-  | "general"
-  | "models"
-  | "memory"
-  | "voice"
-  | "usage"
-  | "computer"
-  | "updates";
+export type SettingsSection = "general" | "memory" | "voice" | "usage" | "computer" | "updates";
 
 type NavItem = {
   id: SettingsSection;
@@ -81,7 +73,6 @@ export function SettingsOverlay({
 
   const navItems: NavItem[] = [
     { id: "general", label: t`General`, icon: Settings },
-    { id: "models", label: t`Models`, icon: Cpu },
     { id: "memory", label: t`Memory`, icon: Brain },
     { id: "voice", label: t`Voice`, icon: Volume2 },
     { id: "usage", label: t`Usage`, icon: Gauge },
@@ -94,13 +85,11 @@ export function SettingsOverlay({
     (section === "general" ? t`General` : t`Settings`);
 
   const closeLabel =
-    section === "models"
-      ? t`Close model settings`
-      : section === "memory"
-        ? t`Close memory settings`
-        : section === "voice"
-          ? t`Close voice settings`
-          : t`Close user settings`;
+    section === "memory"
+      ? t`Close memory settings`
+      : section === "voice"
+        ? t`Close voice settings`
+        : t`Close user settings`;
 
   async function refreshVoiceStatus() {
     await onVoiceStatusMaybeChanged?.();
@@ -115,7 +104,7 @@ export function SettingsOverlay({
     leaveSettings(onClose);
   }
 
-  const widePane = section === "models" || section === "voice";
+  const widePane = section === "voice" || section === "memory";
 
   return (
     <Dialog
@@ -189,7 +178,7 @@ export function SettingsOverlay({
 
             <div
               className={`min-h-0 flex-1 ${
-                section === "models" || section === "voice" || section === "memory"
+                widePane
                   ? "flex flex-col overflow-hidden"
                   : "rk-scroll overflow-y-auto overscroll-contain px-6 pb-6 pt-5 sm:px-8 sm:pb-8"
               }`}
@@ -213,9 +202,6 @@ export function SettingsOverlay({
               {section === "computer" && showComputer ? <ComputerSettingsPanel /> : null}
               {section === "updates" ? (
                 <UpdatesSettingsPanel isDeploymentOwner={isDeploymentOwner} />
-              ) : null}
-              {section === "models" ? (
-                <ModelSettingsOverlay embedded onClose={requestClose} />
               ) : null}
               {section === "memory" ? (
                 <MemorySettingsOverlay

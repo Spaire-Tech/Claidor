@@ -3,7 +3,6 @@ import { Button } from "@rakazo/ui-web";
 import { useEffect, useState } from "react";
 import { IntegrationSetup } from "../components/integrations/IntegrationSetup";
 import { rpc } from "../lib/rpc";
-import { ModelSettingsOverlay } from "./ModelSettingsOverlay";
 
 export function LocalSettingsPage() {
   const [section, setSection] = useState<"models" | "integrations" | null>(null);
@@ -42,9 +41,6 @@ export function LocalSettingsPage() {
                 <Trans>Server integrations</Trans>
               </Button>
             </nav>
-            {section === "models" ? (
-              <ModelSettingsOverlay onClose={() => setSection(null)} localOwner />
-            ) : null}
             {section === "integrations" ? <IntegrationSetup serverSetup managedOnly /> : null}
           </>
         ) : null}

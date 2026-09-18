@@ -222,7 +222,11 @@ describe("contracts", () => {
     ]) {
       expect(appContract.models, gone).not.toHaveProperty(gone);
     }
-    expect(Object.keys(appContract.models).sort()).toEqual(["list", "setDefault"]);
+    // And no `setDefault`: which model answers is decided in code, not picked.
+    // The founder: "You don't see this in grok bot. You dont see what they
+    // use. Its the same for us."
+    expect(appContract.models).not.toHaveProperty("setDefault");
+    expect(Object.keys(appContract.models)).toEqual(["list"]);
 
     // Voice is the same rule: one provider, keyed by the operator. `setVoice`
     // chooses which voice, never whose key.
@@ -241,7 +245,6 @@ describe("contracts", () => {
   it("exposes the product rpc surface", () => {
     expect(appContract.models.list).toBeTruthy();
     expect(appContract.bootstrap).toBeTruthy();
-    expect(appContract.models.setDefault).toBeTruthy();
     expect(appContract.bots.create).toBeTruthy();
     expect(appContract.bots.reorder).toBeTruthy();
     expect(appContract.bots.archive).toBeTruthy();

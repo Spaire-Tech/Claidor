@@ -285,11 +285,22 @@ Base URL `https://api.claidor.com/desktop/api/proxy/v1`, models
 (`CLAIDOR_API_BASE_URL`, `CLAIDOR_MODEL`, `CLAIDOR_MODELS`). The public-host
 flag is needed because `api.claidor.com` is a public hostname.
 
-**What a person sees:** Settings → Models lists what Claidor serves and the
-deployment owner picks which answers. Onboarding has no model step. No
-provider list, no key field, no base URL, no OAuth, on web or mobile. Eight
-RPC procedures were deleted from the contract, so a re-introduced key field
-would not compile.
+**What a person sees: no model, anywhere.** Not in Settings, not on an agent.
+The archived Caisra code settled this and I regressed it for one pass — see
+`git show 4118ac0f:rakazo/packages/core/src/caisra-settings.ts`, whose own
+comment reads *"No Models group … Which models run is decided in code, through
+the metered proxy"*, with a test that failed if any settings row mentioned a
+model. The Models screen, the mobile Models route, the per-agent model row and
+`models.setDefault` are all gone; `models.list` stays because the app must know
+what it speaks to, and is never drawn as a menu. Nine RPC procedures were
+deleted from the contract, so a re-introduced picker or key field would not
+compile.
+
+**The cost design is Claidor's roles, not a picker.** `ModelRole` in
+`server/polar/desktop/pricing.py`: `primary` is every reply a person reads,
+`cheap` is machinery they never see, `fallback` is never shown. Rakazo had no
+cheap tier — checked, not assumed — so summarising a thread ran on the everyday
+model. `CLAIDOR_CHEAP_MODEL` now exists and history compaction uses it.
 
 **The seam is theirs.** `resolveDeploymentModel` already chose the fallback
 provider; it just carried no base URL and nothing stopped a user connecting

@@ -7,6 +7,23 @@ export const CLAIDOR_PROVIDER_ID = OPENAI_COMPATIBLE_PROVIDER_ID;
 export const CLAIDOR_PROVIDER_NAME = "Claidor";
 export const CLAIDOR_DEFAULT_BASE_URL = "https://api.claidor.com/desktop/api/proxy/v1";
 export const CLAIDOR_DEFAULT_MODEL_ID = "gpt-5.6-terra";
+/**
+ * The model for machinery nobody reads as "the agent".
+ *
+ * Claidor's own catalogue declares this as a role rather than a name
+ * (`server/polar/desktop/pricing.py`, `ModelRole`): `primary` is every reply a
+ * person reads, `cheap` is sub-agents, compaction, memory flushes, heartbeats,
+ * titles and previews. Their words for why: *"The app does not choose a model
+ * per message — it cannot know how hard a task is before doing it … Instead
+ * there is one model they talk to and cheap ones for machinery they never
+ * see."*
+ *
+ * Rakazo has no such notion; everything it does, including summarising a long
+ * thread, runs on whatever model the bot is set to. Reading a whole
+ * conversation back through the everyday model to write a summary nobody sees
+ * is the expensive half of the bill, and it buys nothing.
+ */
+export const CLAIDOR_DEFAULT_CHEAP_MODEL_ID = "gpt-5.6-luna";
 
 /**
  * The models Claidor's proxy serves on the Chat Completions wire, and what to
@@ -67,6 +84,8 @@ export type DeploymentModel = {
   key: string | undefined;
   /** Only an OpenAI-compatible endpoint has one; the vendors are fixed. */
   baseUrl?: string;
+  /** The model for work nobody reads. Absent on the vendor providers. */
+  cheapModel?: string;
 };
 
 /**
@@ -92,6 +111,7 @@ export function resolveDeploymentModel(env: NodeJS.ProcessEnv = process.env): De
       model: env.CLAIDOR_MODEL?.trim() || CLAIDOR_DEFAULT_MODEL_ID,
       key: claidorKey,
       baseUrl: env.CLAIDOR_API_BASE_URL?.trim() || CLAIDOR_DEFAULT_BASE_URL,
+      cheapModel: env.CLAIDOR_CHEAP_MODEL?.trim() || CLAIDOR_DEFAULT_CHEAP_MODEL_ID,
     };
   }
 
