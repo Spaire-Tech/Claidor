@@ -21,6 +21,92 @@ measured on 18 September.
 
 ---
 
+## Lock these two before drawing more cards
+
+The founder, 18 September, after the computer decision:
+
+> "Both questions are load-bearing… Until those are fixed, every screen/file/
+> permission card will keep thrashing."
+
+**Nothing below is settled until these two are.** They are not card questions;
+they are the questions every screen, file and permission card is an expression
+of. A card drawn before they are locked will be redrawn.
+
+### Decision A — file custody
+
+Three possible answers:
+
+| | What it means |
+|---|---|
+| **Box-ephemeral** | Files exist on the box only for the job, then go |
+| **User-home** | Files never leave the person's machine; the agent reaches in |
+| **Explicit import** | Files live on the person's machine; moving one to the box is a deliberate copy, never ambient |
+
+**How Grok Bot answers it today**, in the founder's words: *"no, not by default.
+The box is where I work (browser, desktop, shell). Bass's files live on his Mac
+(or another registered machine). Moving a workbook onto the box is an explicit
+copy (CopyToBox / chat attach), not ambient."* That is **explicit import**.
+
+And the consequence they drew, which is the important part for us:
+
+> Captcha / SSO / passkey handoff → cheap. It's "take over my screen," not "put
+> your stuff here." Box-handoff card stays light.
+>
+> "Edit this spreadsheet" / "sign this PDF on disk" → expensive. That either
+> stays on his machine (machine-scoped tools + approvals) or pays a copy onto
+> the box.
+
+**So: control handoff and file custody are two different card families, and
+must not be merged.** Box handoff means "take my screen". It must never come to
+mean "your Documents are here now". The cost of touching a file shows up in a
+card about *which files*, not a card about *which site*.
+
+This is also the answer to whether `direction.md` §10's sentence survives a box.
+It does, under explicit import: the box is where work happens, not where files
+live.
+
+### Decision B — the machine model
+
+| | What it means | What it costs |
+|---|---|---|
+| **Box only** | The agent's machine is the only workspace | Handoff and captcha stay simple; file cards must import/export; no "which computer" picker — **but laptop-closed and local-app work dies** |
+| **Registry** (box + N user machines) | Grok Bot's current shape | "Which computer" returns for file, shell and UI automation; box handoff stays box-scoped; needs a **separate** user-machine handoff card |
+| **User machine only** | No box at all — today's Caisra | Handoff becomes "take my Mac"; captcha couples to their desktop; **no isolated agent browser** |
+
+The founder's correction to §10, which I had wrong: *"'Which computer?' was
+struck as a mistake only if you pretend there's a single workspace. The moment
+the box is a second machine, 'which computer' returns."*
+
+And what it infects, named:
+
+- every card that implies a screen (box handoff is box-only today);
+- every card that implies files (a form filling the box browser is not a file on
+  the Mac);
+- Settings — Computers, local execution, Update / Reset Computer, which is the
+  box;
+- auto-review and permission surfaces — Shell on the box is not Shell on the Mac.
+
+That last one is the sharpest for us: our approval card today says *"Allow
+Perrin to continue — running commands on your computer?"* with one device id on
+it. Under a registry that sentence has to name **which** computer, and the
+`## Command Execution & User Interaction Policy` section of the brief — built
+entirely around "their computer asks once" — is written for a world with one.
+
+### Where this leaves us
+
+Caisra is **user machine only** today, by construction and by `direction.md`
+§10. The founder has said *"we'll do it just like them"*, and Grok Bot is a
+**registry** with **explicit import**. That is the reading I am working to, but
+it is a reading and not a lock, and it is the single highest-value thing to
+settle before any more card work.
+
+Locking it is one line from the founder. Until then, the cards that do **not**
+depend on it are the ones worth building: Choice, Secret, the form's typed
+fields, draft composer, routine confirm. The ones that do — box handoff,
+cookie-origin, permission surfaces, the form's fill targets — wait.
+
+---
+
 ## Where we start
 
 Five exist, one is half-built, five are to build, and three are to re-decide
@@ -101,14 +187,9 @@ knowingly, and when it is made, §10 is the paragraph to rewrite. It is marked
 there now so that whoever reads it next does not build to a thesis that has been
 retired.
 
-Two things to settle in that design, because they decide the card rules:
-
-- **Does the person's own file go to it?** §10's sentence survives if the box is
-  a place work *happens* and not a place files *live*. A handoff for a captcha
-  costs nothing; copying a workbook there costs the sentence.
-- **Is it one machine or a registry?** §10 struck "which computer" as a design
-  mistake. If the box is a second machine, "which computer" comes back, and with
-  it every card and setting that names one.
+Two things have to be settled in that design before any more cards are drawn.
+They are decisions A and B in the preamble at the top of this file, and they are
+stated there once rather than here as well.
 
 ## What #4 actually needs
 
@@ -173,6 +254,7 @@ scaling.
 
 ## Not decided
 
+- **Decisions A and B** (top of this file). Everything else waits on them.
 - Which of the five missing families we want at all. #13 (spend) and #11
   (cookies) carry real risk and may not belong in v1.
 - Whether #14 (routine confirm) comes before Routines does anything.
