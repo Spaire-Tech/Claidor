@@ -209,9 +209,24 @@ without the flag every model call is refused.
 ### `CLAIDOR_ACCESS_TOKEN` — what is it, where from, is it needed?
 
 It is a Claidor **personal access token** carrying the `model_proxy` scope. You
-make one in Claidor's own dashboard: Settings → access tokens
-(`clients/apps/web/src/components/Settings/AccessTokenSettings.tsx`, backed by
-`POST /v1/personal_access_tokens`). Shown once, stored only as a hash.
+make one in Claidor's dashboard, under **Account → Developer → Connect the
+app**: one button, which mints the token with that one scope and shows it once
+(`clients/apps/web/src/components/Settings/ConnectAppSettings.tsx`, backed by
+`POST /v1/personal_access_tokens`). Only a hash is stored, so a lost token is
+replaced rather than looked up.
+
+**That button did not exist until 18 September, and an earlier version of this
+paragraph said it did.** It pointed at `AccessTokenSettings.tsx` and called it
+"Settings → access tokens". That component only lists and deletes; the one
+create button on the page was `ConnectWordSettings.tsx`, hardcoded to
+`redline:read`. So the founder asked where to get the token and the honest
+answer was nowhere. The button is the fix, and it is a copy of the Word one for
+the same reasons that one is a button rather than a form.
+
+**It has to be minted from a browser.** `personal_access_token.service.create`
+refuses any caller that is not a web session, with its own reason: a token that
+could mint a token would put a narrow scope one request away from a wide one,
+and revoking the first would not revoke what it had already issued.
 
 **It was called `CLAIDOR_API_KEY` until the founder asked whether that meant
 `CLAIDOR_OPENAI_API_KEY`. It did not, and the name was mine and it was bad.**
@@ -317,8 +332,8 @@ so nobody is surprised by it later.
 
 ## How it is set up
 
-1. In Claidor, create a personal access token with the **model_proxy** scope.
-   Copy it — it is shown once and stored only as a hash.
+1. In Claidor: **Account → Developer → Connect the app → Create a token for the
+   app**. Copy it — it is shown once and stored only as a hash.
 2. On the Rakazo deployment, set `CLAIDOR_ACCESS_TOKEN` to it and
    `RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1`.
 3. That is all. Nobody signing in is asked for anything.

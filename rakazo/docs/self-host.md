@@ -231,7 +231,8 @@ CLAIDOR_ACCESS_TOKEN=claidor_pat_…
 ```
 
 The credential is a Claidor personal access token carrying the `model_proxy`
-scope — not a desktop session token, which lives an hour.
+scope — not a desktop session token, which lives an hour. Make one in Claidor's
+dashboard under **Account → Developer → Connect the app**; it is shown once.
 `RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC=1` is needed because `api.claidor.com` is a
 public hostname.
 

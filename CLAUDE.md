@@ -296,6 +296,16 @@ cloud runner reads (`runner/src/settings.ts`). The Rakazo pair is a
 had to be asked is what the rename answers. The table is in
 `docs/product/claidor-on-rakazo.md`.
 
+**Where the token comes from: Account → Developer → Connect the app**
+(`clients/apps/web/src/components/Settings/ConnectAppSettings.tsx`). One
+button, one scope, shown once. **It did not exist until the founder asked where
+to get the token**, and this file and the doc both said it did — I had read
+`AccessTokenSettings.tsx`, which only lists and deletes, and assumed the page
+that showed tokens also made them. The only create button was the Word one,
+hardcoded to `redline:read`. Minting from a browser session is not a
+convenience: `personal_access_token.service.create` refuses any caller that is
+not one, so a token can never mint a token.
+
 **What a person sees: no model, anywhere.** Not in Settings, not on an agent.
 The archived Caisra code settled this and I regressed it for one pass — see
 `git show 4118ac0f:rakazo/packages/core/src/caisra-settings.ts`, whose own
