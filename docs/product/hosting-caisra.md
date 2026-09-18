@@ -8,11 +8,45 @@ Written against `rakazo/docs/self-host.md`, `self-host-secrets.md`,
 `infra/compose/docker-compose.prod.yml`, `infra/compose/Caddyfile.prod` and
 `apps/desktop/src/setup-config.ts`. Every claim names its file.
 
-**Status: never executed.** No part of this has been run. There is no Docker in
-the container this was written in, and nobody has deployed this fork anywhere.
-Treat it as a careful reading of their documentation, not a tested procedure.
-When something fails, read the error before changing anything — the whole
-history of this repository says guessing costs more.
+**Status: deployed 18 September 2026.** Written before any of it had been run,
+then confirmed against the live machine. The layout below is what is actually
+running; anything still unverified is marked where it appears.
+
+---
+
+## 0. The live deployment
+
+Confirmed on the server on 18 September:
+
+| | |
+|---|---|
+| Host | Ubuntu 24.04 LTS, hostname `claidor`, login user `deploy` |
+| Compose project | `rakazo-prod`, five services running |
+| Compose file | `/srv/rakazo/rakazo/infra/compose/docker-compose.prod.yml` |
+| Checkout | `/srv/rakazo/rakazo` |
+
+The checkout path matched the prediction in §A5 — the repository clones to
+`/srv/rakazo` and the fork sits one level down inside it, so every Compose
+command runs from `/srv/rakazo/rakazo`.
+
+**The IP address is deliberately not written down here, and neither is
+anything else that would help someone log in. This repository is public** —
+`Spaire-Tech/Claidor` reports `visibility: public`, and `rakazo/AGENTS.md`
+opens by saying to assume all tracked content and diffs are public. A
+production host's address next to its SSH username is half a credential. Keep
+it in a password manager.
+
+**Never guess this layout; ask the machine.** One command answers it, needs no
+path, and is the right first move on any server whose arrangement you are not
+certain of:
+
+```bash
+docker compose ls
+```
+
+It prints the project name, how many services are up, and the absolute path of
+the compose file in use. That is what confirmed everything in the table above,
+after the founder rightly challenged a path I had assumed rather than checked.
 
 ---
 
