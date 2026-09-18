@@ -396,13 +396,26 @@ proposal queue.
 
 ## 10. There is one computer, and it is this one
 
-> **Under revision, 18 September 2026.** The founder is designing a computer of
-> our own: *"we'll do it just like them. we'll soon design a computer too. so
-> everything there should be."* That reverses the decision this section records.
-> **Do not build to this section until it is rewritten** — it is kept as it was
-> written because the reasoning below is what the new design has to answer,
-> particularly the sentence about where a file is when it is worked on.
-> `docs/product/cards-plan.md` has what is still open.
+> **Retired, 18 September 2026. Do not build to this section.** The founder is
+> designing a computer of our own and has locked two decisions that this section
+> contradicts: **file custody is explicit import**, and **the machine model is a
+> registry** — the box plus the person's registered machines.
+>
+> **What survives:** the thesis. Under explicit import the box is where work
+> happens and not where files live, so "we open the file where it lives" is
+> still true of the person's own documents, and moving one to the box is a
+> deliberate copy with a visible cost.
+>
+> **What does not:** "there is no 'which computer'". The founder's correction:
+> *"'Which computer?' was struck as a mistake only if you pretend there's a
+> single workspace. The moment the box is a second machine, 'which computer'
+> returns."* So the second machine, Settings → Computers, and per-machine
+> execution all come back.
+>
+> This section is kept unrewritten until the computer is designed, because the
+> reasoning below is what that design has to answer.
+> `docs/product/cards-plan.md` holds the lock and the six things it obliges us
+> to change.
 
 The founder, on the design's own Settings → Computer and Settings →
 Updates: *"there is no 'which computer' — that was a design mistake by

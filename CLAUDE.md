@@ -226,7 +226,21 @@ touching code. The line that decides it is
 `[EngineConfigSync] browser profile=…` (the tag was `[OpenClawConfigSync]`
 until 15 September), which on a fallback names which half was missing.
 
-**Why there is no machine registry, and what actually differs.** Grok Bot
+**A machine registry is coming, decided 18 September 2026.** Two decisions are
+locked: **file custody is explicit import** (the person's files live on their
+machine; moving one to the agent's box is a deliberate copy, never ambient) and
+**the machine model is a registry** (the box plus the person's registered
+machines). `docs/product/cards-plan.md` holds both and the six things they
+oblige us to change — the approval card has to name a machine, the brief's
+"their computer asks once" section is written for a world with one, and box
+handoff must never come to mean "your files are here now".
+
+`direction.md` §10 is **retired** and marked as such. Its thesis survives — under
+explicit import the box is where work happens, not where files live — but its
+"there is no 'which computer'" does not. The paragraph below is what §10 argued
+and is kept for the same reason §10 is: it is what the new design has to answer.
+
+**Why §10 said there was no machine registry.** Grok Bot
 needs registered computers because it lives in the cloud and has to reach
 in. Maties runs on the machine, so there is no "which computer", only
 this computer. Two laptops is a v2 problem, and by then we will know

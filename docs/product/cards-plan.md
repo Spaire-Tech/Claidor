@@ -21,16 +21,22 @@ measured on 18 September.
 
 ---
 
-## Lock these two before drawing more cards
+## The two locked decisions
 
 The founder, 18 September, after the computer decision:
 
 > "Both questions are load-bearing… Until those are fixed, every screen/file/
 > permission card will keep thrashing."
 
-**Nothing below is settled until these two are.** They are not card questions;
-they are the questions every screen, file and permission card is an expression
-of. A card drawn before they are locked will be redrawn.
+**Both are now locked**, decided by the founder the same day:
+
+> **A — file custody: explicit import.**
+> **B — machine model: registry (box + N user machines).**
+
+Which is Grok Bot's shape, and what *"we'll do it just like them"* meant. The
+reasoning for each is below; what they oblige us to change is at the end of this
+section. Every screen, file and permission card is an expression of these two,
+so a card that contradicts them is wrong even if it looks right.
 
 ### Decision A — file custody
 
@@ -42,10 +48,10 @@ Three possible answers:
 | **User-home** | Files never leave the person's machine; the agent reaches in |
 | **Explicit import** | Files live on the person's machine; moving one to the box is a deliberate copy, never ambient |
 
-**How Grok Bot answers it today**, in the founder's words: *"no, not by default.
-The box is where I work (browser, desktop, shell). Bass's files live on his Mac
-(or another registered machine). Moving a workbook onto the box is an explicit
-copy (CopyToBox / chat attach), not ambient."* That is **explicit import**.
+**Locked: explicit import.** In the founder's words: *"no, not by default. The
+box is where I work (browser, desktop, shell). Bass's files live on his Mac (or
+another registered machine). Moving a workbook onto the box is an explicit copy
+(CopyToBox / chat attach), not ambient."*
 
 And the consequence they drew, which is the important part for us:
 
@@ -73,9 +79,11 @@ live.
 | **Registry** (box + N user machines) | Grok Bot's current shape | "Which computer" returns for file, shell and UI automation; box handoff stays box-scoped; needs a **separate** user-machine handoff card |
 | **User machine only** | No box at all — today's Caisra | Handoff becomes "take my Mac"; captcha couples to their desktop; **no isolated agent browser** |
 
-The founder's correction to §10, which I had wrong: *"'Which computer?' was
-struck as a mistake only if you pretend there's a single workspace. The moment
-the box is a second machine, 'which computer' returns."*
+**Locked: registry.** The box is the agent's computer; the person's Mac, and
+any other machine, are registered. The founder's correction to §10, which I had
+wrong: *"'Which computer?' was struck as a mistake only if you pretend there's a
+single workspace. The moment the box is a second machine, 'which computer'
+returns."*
 
 And what it infects, named:
 
@@ -92,18 +100,49 @@ it. Under a registry that sentence has to name **which** computer, and the
 `## Command Execution & User Interaction Policy` section of the brief — built
 entirely around "their computer asks once" — is written for a world with one.
 
-### Where this leaves us
+### What the lock obliges us to change
 
-Caisra is **user machine only** today, by construction and by `direction.md`
-§10. The founder has said *"we'll do it just like them"*, and Grok Bot is a
-**registry** with **explicit import**. That is the reading I am working to, but
-it is a reading and not a lock, and it is the single highest-value thing to
-settle before any more card work.
+Caisra is **user-machine-only** today, by construction and by `direction.md`
+§10. Registry plus explicit import is a real change, and these are the places it
+lands. None of them is done.
 
-Locking it is one line from the founder. Until then, the cards that do **not**
-depend on it are the ones worth building: Choice, Secret, the form's typed
-fields, draft composer, routine confirm. The ones that do — box handoff,
-cookie-origin, permission surfaces, the form's fill targets — wait.
+1. **`direction.md` §10 is retired and must be rewritten.** It is marked under
+   revision. Its *thesis* survives the lock — under explicit import the box is
+   where work happens and not where files live, so "we open the file where it
+   lives" is still true of the person's own documents. What does not survive is
+   "there is no 'which computer'".
+
+2. **The approval card has to name a machine.** Today it carries one device id
+   and reads *"Allow Perrin to continue — running commands on your computer?"*
+   (`thread/fromEngine.ts`, `authQuestion`). Under a registry, "your computer"
+   is ambiguous and Shell-on-the-box is not Shell-on-the-Mac. This is a change
+   to a card the founder has already designed, so it needs their eye.
+
+3. **The brief's `## Command Execution & User Interaction Policy` is written for
+   one machine.** "Their computer asks once" is its spine. Under a registry the
+   grant is per machine, and the cheap-because-isolated box probably should not
+   ask the way the person's own Mac does.
+
+4. **Two handoff families, not one.** Box handoff is box-scoped: "take my
+   screen". Controlling the person's own machine is a different card with a
+   different cost, and merging them is the specific mistake the founder named.
+
+5. **A file card that names custody.** "Copy this onto the box" is a decision
+   with a cost, and it needs to be visible as one — a card about *which files*,
+   not a card about *which site*.
+
+6. **Settings gains Computers**, and Update / Reset Computer means the box.
+   `direction.md` §10 struck exactly these; they come back.
+
+### What is safe to build now
+
+Unblocked by the lock, and not waiting on the computer's design: **Choice**,
+**Secret**, the form's **typed fields**, **draft composer**, **routine
+confirm**.
+
+Still waiting on the computer design itself: **box handoff**, **cookie-origin**,
+the **permission surfaces**, and the form's **fill targets** — the last of which
+also waits on the browser being run at all.
 
 ---
 
