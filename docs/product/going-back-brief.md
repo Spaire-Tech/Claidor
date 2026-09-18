@@ -118,8 +118,12 @@ shut").
 
 There is a partial cloud path already built for the desktop architecture — the
 maty job queue under `server/polar/maty/` and the `claidor-maty-runner` service
-in `render.yaml`, both live. **How complete it is has not been established.**
-Establish that before promising anyone that routines fire overnight.
+in `render.yaml`, both live. ~~How complete it is has not been established.~~
+**Established 18 September:** the queue answers, the runner is built and tested,
+and **nothing creates a job** — there is no maty client in `desktop/src` at all.
+A finished pipe with no input. The decision that followed is in
+`docs/product/box-substrate-read.md`: keep the queue, change the executor to a
+box.
 
 ## Two things worth taking from the Rakazo attempt
 

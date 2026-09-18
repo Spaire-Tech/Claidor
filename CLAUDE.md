@@ -46,10 +46,22 @@ queue under `polar/maty/`, and the cloud runner. `render.yaml` and the deployed
 services are unchanged and the API answers now.
 
 **The cost of running on the Mac.** The engine runs locally, so nothing runs
-with the laptop shut. The maty queue and `claidor-maty-runner` are a cloud path
-for exactly this and are live, but **how complete they are has never been
-established**. Establish it before promising anyone that routines fire
-overnight.
+with the laptop shut. The maty queue and `claidor-maty-runner` are the cloud path
+for exactly this, and **their completeness is now established**, 18 September:
+the queue is live (`POST /maty/runner/claim` → 401), both routers are mounted,
+the runner matches its README line for line — and **nothing produces a job**.
+`grep -ril maty desktop/src` returns nothing. It is a finished pipe with nothing
+plugged into the input, so no routine has ever fired overnight, because none can
+be created.
+
+**The decision, 18 September: keep the queue, change the executor.** The claim /
+lease / heartbeat / scoped-token / memory-in-memory-out half is the hard part and
+is tested. The other half is a Render container with no Docker, which is why
+shell, web and browser are switched off in `runner/src/engineConfig.ts` — its own
+README says so. The box on E2B removes that constraint, so a routine and an
+interactive turn end up on one substrate. **Do not wire the app to the queue
+first**: a producer against today's executor ships routines that can read a file
+and call a model and nothing else. See `docs/product/box-substrate-read.md`.
 
 **Speech, checked 15 September:** the server serves text-to-speech at
 `/api/proxy/v1/audio/speech` (`server/polar/desktop/endpoints.py`, the

@@ -168,10 +168,10 @@ Marked as the founder's, mine, or answerable by reading.
    The alternative is Docker on the person's Mac: no infrastructure, better
    privacy, and it keeps files nearer — but the laptop-closed problem stays, and
    it asks a normal person to install Docker.
-2. **Does the box replace `claidor-maty-runner`, or sit beside it?** The maty
-   queue and the runner are deployed and live, and how complete they are has
-   never been established. If the box is where routines fire when the Mac is
-   shut, they overlap.
+2. ~~**Does the box replace `claidor-maty-runner`, or sit beside it?**~~
+   **Answered 18 September: neither.** Its queue is kept and its executor becomes
+   a box, so a routine and an interactive turn run on one substrate. The read and
+   the decision are in `docs/product/box-substrate-read.md`.
 3. **Per-agent desktops from day one?** The spec has one machine with a desktop
    per agent — forked X displays, one `computerUse` at a time per desktop. One
    shared desktop is simpler and visibly worse when two agents work at once.

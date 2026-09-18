@@ -107,10 +107,11 @@ can queue jobs, the runner can take them, and no code anywhere creates one. That
 is the answer to "how complete is it", which `CLAUDE.md` and the going-back
 brief have both said was never established. It is complete and unreachable.
 
-### The recommendation
+### The decision
 
-**Do not build a producer for the runner as it stands, and do not retire it.
-Keep its queue and change its executor.**
+**Decided by the founder, 18 September 2026: keep the queue, change the
+executor.** Do not build a producer for the runner as it stands, and do not
+retire it.
 
 The runner is two things stacked. The top half — claim, lease, heartbeat,
 per-job scoped token that dies with the lease, memory in and memory out, delete
