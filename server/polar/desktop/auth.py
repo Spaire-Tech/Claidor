@@ -96,7 +96,7 @@ async def get_proxy_caller(
     and then answer 401 in the middle of somebody's conversation. Rakazo's
     OpenAI-compatible model connection is precisely that shape — the base
     URL, the model id and one static key, entered once
-    (`rakazo/docs/self-host.md`, "Connect a model").
+    (the Rakazo attempt, removed 18 September; see `docs/product/going-back-brief.md`).
 
     The scope is the whole grant. A token holding it reaches the three
     proxy routes, speech, and the model list; it reaches nothing else here,

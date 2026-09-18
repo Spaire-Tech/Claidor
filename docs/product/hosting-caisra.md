@@ -1,5 +1,10 @@
 # Caisra in production
 
+> **Archived, 18 September 2026.** This describes the Rakazo foundation, which
+> was removed from the tree the same day. Caisra is the Mac app under
+> `desktop/`. Kept as a record of what was tried and what it cost; see
+> `docs/product/going-back-brief.md`. Do not follow it as instructions.
+
 Everything needed to run this fork on a real server, at a real HTTPS address,
 so that handing someone a link or an app is a thing you can actually do.
 

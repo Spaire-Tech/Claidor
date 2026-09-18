@@ -308,7 +308,7 @@ class TestTheMenuAnOpenAiCompatibleClientReads:
     Written when Claidor was connected to Rakazo, a server we did not
     write. Its model connection speaks plain OpenAI and asks this one
     question before any other
-    (`rakazo/packages/adapters/src/pi-openai-compatible-provider.ts`,
+    (the Rakazo attempt, removed 18 September; see `docs/product/going-back-brief.md`,
     `probeOpenAiCompatibleModels`).
     """
 
