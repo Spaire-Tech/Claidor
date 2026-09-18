@@ -30,6 +30,7 @@ import { isToolPauseResult } from "./approval-effect.js";
 import { builtinAgentTools, DELEGATION_TOOL_NAMES } from "./builtin-tools.js";
 import { DEFAULT_OPENROUTER_MODEL_ID } from "./deployment-model.js";
 import {
+  flattenTopLevelToolParameters,
   normalizeOpenAiToolParameters,
   openAiToolParametersNeedNormalization,
 } from "./openai-tool-parameters.js";
@@ -1161,7 +1162,6 @@ async function executeSubagent(host: ToolHost, executionId: string, args: Record
 /** Build AgentTool.parameters for a connector tool, including OpenAI wire fidelity. */
 export function parametersFor(tool: ConnectorTool) {
   const schema = builtinParameters(tool) ?? safeJsonSchemaParameters(tool);
-  // Type.Union (top-level oneOf/anyOf) serializes without type/properties.
   // Re-wrap only when needed so Type.Object schemas keep TypeBox Kind metadata.
   if (!openAiToolParametersNeedNormalization(schema)) return schema;
   return Type.Unsafe(
@@ -1334,21 +1334,14 @@ function isAgentToolExecutionResult(result: unknown): result is AgentToolExecuti
 export function jsonSchemaParameters(
   schema: Record<string, unknown>,
 ): ReturnType<typeof Type.Object> {
-  // Top-level oneOf/anyOf (e.g. request_secret's credential XOR connectionId)
-  // must stay a union. Falling through to properties would drop the exclusivity
-  // and re-expose both destinations as optional siblings.
-  const alternatives = Array.isArray(schema.oneOf)
-    ? schema.oneOf
-    : Array.isArray(schema.anyOf)
-      ? schema.anyOf
-      : undefined;
-  if (alternatives && alternatives.length > 0 && schema.properties == null) {
-    return Type.Union(
-      alternatives.map((variant) => jsonSchemaParameters(variant as Record<string, unknown>)),
-    ) as unknown as ReturnType<typeof Type.Object>;
-  }
-  const properties = (schema.properties ?? {}) as Record<string, unknown>;
-  const required = new Set(Array.isArray(schema.required) ? schema.required.map(String) : []);
+  // Providers reject top-level oneOf/anyOf/allOf/enum/const/not on function
+  // parameters. Flatten unions into one object; XOR exclusivity (e.g.
+  // request_secret's credential vs connectionId) is enforced by the executor.
+  const objectSchema = flattenTopLevelToolParameters(schema);
+  const properties = (objectSchema.properties ?? {}) as Record<string, unknown>;
+  const required = new Set(
+    Array.isArray(objectSchema.required) ? objectSchema.required.map(String) : [],
+  );
   const fields: Record<string, ReturnType<typeof Type.Optional>> = {};
   for (const [key, spec] of Object.entries(properties)) {
     const field = jsonField(spec);
@@ -1356,10 +1349,8 @@ export function jsonSchemaParameters(
       typeof Type.Optional
     >;
   }
-  // Preserve closed objects (e.g. request_secret destination oneOf branches).
-  // Type.Object defaults to open, which would let connectionId+replace match both
-  // anyOf variants after conversion.
-  return schema.additionalProperties === false
+  // Preserve closed objects so converted schemas do not accept extra keys.
+  return objectSchema.additionalProperties === false
     ? Type.Object(fields, { additionalProperties: false })
     : Type.Object(fields);
 }

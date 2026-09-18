@@ -22,7 +22,7 @@ describe("normalizeOpenAiToolParameters", () => {
     });
   });
 
-  it("forces type object when a union discriminator is missing", () => {
+  it("flattens a top-level union into one object with merged properties", () => {
     const normalized = normalizeOpenAiToolParameters({
       anyOf: [
         { type: "object", properties: { a: { type: "string" } }, required: ["a"] },
@@ -30,8 +30,12 @@ describe("normalizeOpenAiToolParameters", () => {
       ],
     });
     expect(normalized.type).toBe("object");
-    expect(normalized.properties).toEqual({});
-    expect(normalized.anyOf).toHaveLength(2);
+    expect(normalized.properties).toEqual({
+      a: { type: "string" },
+      b: { type: "string" },
+    });
+    expect(normalized).not.toHaveProperty("anyOf");
+    expect(normalized).not.toHaveProperty("required");
   });
 
   it("preserves required, additionalProperties, and existing properties", () => {
@@ -83,6 +87,13 @@ describe("openAiToolParametersNeedNormalization", () => {
     expect(openAiToolParametersNeedNormalization({ anyOf: [] })).toBe(true);
     expect(openAiToolParametersNeedNormalization({ type: "object", properties: [] })).toBe(true);
     expect(openAiToolParametersNeedNormalization({ type: "string", properties: {} })).toBe(true);
+    expect(
+      openAiToolParametersNeedNormalization({
+        type: "object",
+        properties: {},
+        oneOf: [{ type: "object", properties: {} }],
+      }),
+    ).toBe(true);
   });
 });
 
@@ -98,17 +109,19 @@ describe("parametersFor OpenAI wire fidelity", () => {
     expect(wire.properties).toEqual({});
   });
 
-  it("serializes request_secret union with type object and empty properties", () => {
+  it("serializes request_secret as one object without forbidden top-level keys", () => {
     const tool = builtinAgentTools.find((entry) => entry.name === "request_secret");
     if (!tool) throw new Error("missing request_secret");
-    const wire = JSON.parse(JSON.stringify(parametersFor(tool))) as {
-      type?: unknown;
-      properties?: unknown;
-      anyOf?: unknown[];
-      oneOf?: unknown[];
-    };
+    const wire = JSON.parse(JSON.stringify(parametersFor(tool))) as Record<string, unknown>;
     expect(wire.type).toBe("object");
-    expect(wire.properties).toEqual({});
-    expect((wire.anyOf ?? wire.oneOf ?? []).length).toBe(2);
+    for (const key of ["oneOf", "anyOf", "allOf", "enum", "const", "not"] as const) {
+      expect(wire).not.toHaveProperty(key);
+    }
+    expect(wire.properties).toEqual(
+      expect.objectContaining({
+        credential: expect.any(Object),
+        connectionId: expect.any(Object),
+      }),
+    );
   });
 });
