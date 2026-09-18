@@ -90,6 +90,56 @@ the box is unknown from here** — the OpenClaw source is not in this tree
 actually provisions has not been read. That is the first thing to find out, and
 it is a read, not a build.
 
+## What the agent browses in today, and the three browsers
+
+Asked directly — *"right now everything the agent do is thru the user's browser
+or no?"* — the answer is **no, and by design it never is.** Traced 18 September.
+
+**The default path.** `defaultBrowserWebAccessConfig` is `profileMode: managed`
+and `displayMode: in-app`, which resolves to the runtime profile
+`caisra-in-app` with `driver: 'existing-session'` and `attachOnly: true`
+(`openclawConfigSync.ts:2579`). That is **Caisra's own Chromium** — Electron
+`WebContentsView`s inside the app, drawn in the computer panel. Its cookies live
+in a separate Electron session partition, `persist:lobster-agent-browser`, so
+nothing it signs into touches the person's own browsing.
+
+**What Playwright is for.** `agentBrowserPlaywright.ts` drives those same
+in-app views. Electron starts with `--remote-debugging-port=0`, Chromium writes
+the chosen port to `DevToolsActivePort`, and Playwright connects to it. It can
+see every page the app has, including the app's own window, so the driver hands
+out only views looked up by the DevTools target id the host read from the view
+itself — the agent gets the pages it opened and nothing else. The founder chose
+it over hand-written DevTools calls: *"lets use Playwright."* It replaced a
+synthetic `element.click()` and a hand-cut accessibility tree.
+
+**Three browsers exist in this product, and that is worth knowing before the
+box adds a fourth:**
+
+| | What | When it runs |
+|---|---|---|
+| `caisra-in-app` | Electron `WebContentsView`s, Playwright-driven, drawn in the panel | The default |
+| `openclaw` (managed) | The engine's own separate Chromium | Fallback when an in-app half is missing |
+| `user` | **The person's real Chrome** | Never — the brief forbids `profile: "user"` outright |
+| the `web-search` / `playwright` skills | Their own Playwright process, from the terminal | Whenever the agent runs those skills |
+
+The last row is the surprise: the `web-search` skill drives its **own**
+Playwright browser out of `SKILLs/web-search/dist/`, separate from the agent
+browser entirely, and the `playwright` skill is a CLI wrapper doing the same.
+Both are enabled. So "the agent's browser" is already two different things
+depending on which path it took, before the box introduces a third that lives on
+a different machine.
+
+**None of this has been run.** `CLAUDE.md` still says nobody has run the browser
+in this tree, and that stands. The line that settles which profile is actually in
+charge on a given Mac is `[EngineConfigSync] browser profile=…`, and on a
+fallback it names which half was missing.
+
+**What this means for the box.** Today the agent browses on the person's machine,
+inside the app, with its own cookie jar. On E2B it will browse on the box, in the
+box's Chrome, with the box's logins — which is the spec's model and is *why*
+cookie-origin import exists there. The two are not the same browser and must not
+be described to a person as if they were.
+
 ## What the spec obliges that we already knew
 
 From `cards-plan.md`, unchanged and now confirmed by the source:
@@ -129,10 +179,14 @@ Marked as the founder's, mine, or answerable by reading.
    Chinese banner. My recommendation is to delete it in the same change that
    builds the real one, rather than leave a second thing called computerUse.
 
-### Substrate: what a sandbox provider gives us (checked 18 September)
+### Substrate: E2B — locked 18 September 2026
 
-The founder asked whether something like **E2B** could be the box. On the shape
-of the problem, yes — and it reframes question 1 rather than answering it.
+The founder: *"i did mean e2b. lets lock e2b. we're review the 30 days claim in
+due time."*
+
+**The box runs on E2B.** That answers question 1's *where*, and reframes rather
+than removes its *what it costs*. The 30-day question below is deferred, not
+dismissed, and it is the one thing that could unpick this.
 
 **What the box needs from a substrate**, taken from the spec: persist a
 filesystem and browser logins across turns and days; resume fast enough that a
@@ -157,11 +211,12 @@ Update and Reset.
 1. **Paused sandboxes appear to be auto-deleted after 30 days.** Sources
    conflict — E2B's own persistence page is quoted as saying paused sandboxes
    are kept indefinitely with no TTL, and several third-party write-ups say
-   30 days. **This must be verified against E2B directly, not a blog.** It
-   matters more than the price: our box holds the person's browser logins, and a
-   dormant user losing theirs silently is the kind of failure that ends trust. If
-   it is real, it needs either a keep-alive that resumes each box monthly, or an
-   export, or a different provider.
+   30 days. **Deferred by the founder, to review in due time**, and it must be
+   verified against E2B directly rather than a blog. It matters more than the
+   price: our box holds the person's browser logins, and a dormant user losing
+   theirs silently is the kind of failure that ends trust. If it is real the fix
+   is probably a keep-alive that resumes each box monthly, which is cheap — so
+   this is a thing to know, not a thing to fear.
 2. **Awake time is the cost, and it is per user.** At ~$0.17/hour, a person
    whose agents work two hours a day is roughly $10/month in compute alone,
    before a single token. That is the standing cost question from (1) above, now
