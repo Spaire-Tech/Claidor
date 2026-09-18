@@ -99,19 +99,34 @@ Stated plainly because the founder asked, and because the catch matters.
   passing untouched. Then the triage produces a list: every rule that cannot name
   the incident that caused it. **Brief brings the list back rather than deleting**;
   the deletions are a decision, probably the founder's.
-- **Box is done** when there is an evidenced answer to one question: can the
-  engine, running on the person's Mac, drive a sandbox sitting in E2B well enough
-  to use? Its first task ends in knowledge, not a feature. Whether it continues
-  into building the E2B backend depends on what it finds — and with the key now
-  in Render, nothing else gates that.
+- **Box is done when the computer is built.** Box owns it end to end and is the
+  agent that builds it: the E2B sandbox backend as an OpenClaw plugin, the
+  registry (ListMachines, CopyToBox / CopyFromBox), Update and Reset, box-doctor,
+  the per-agent desktop.
 
-**The catch, and it should be said to the founder when they next appear:** none
-of these three, finished, changes anything a person can see in the app. Server
-leaves images one app-side edit away; Brief is a refactor plus a list; Box is an
-answer. They were chosen because they are the questions that could change
+  **Its FIRST TASK is a measurement, which is not the same thing**, and the
+  Chief of Staff conflated the two once already and confused the founder. The
+  measurement comes first only because if the engine cannot drive a remote
+  sandbox acceptably from a Mac, the design changes and a build done before
+  knowing that is wasted. It is step one, not the job. Box was corrected on this
+  at 22:45Z and told to keep going without waiting.
+
+**The catch:** Server and Brief, finished, change nothing a person can see —
+Server leaves images one app-side edit away, and Brief is a refactor plus a list.
+Box is the one that builds something real, and it is also the longest. They were chosen because they are the questions that could change
 everything downstream, not because they ship visible product. The agents that
 produce visible change are **Files** (the image-in-a-sentence defect, alt text,
 file kinds) and **Cards** — neither started.
+
+## How the Chief of Staff actually reaches a child
+
+**`SendMessage` does NOT reach these agents.** It only sees Claude sessions on
+this machine, and the children are separate cloud containers — `ListAgents`
+returns "no reachable agents" even with three live.
+
+The channel that works is `create_trigger` with `persistent_session_id` set to
+the child's session id and `run_once_at` a minute or two out. That delivers the
+prompt into that session. Learnt 18 September at 22:35Z, after a failed send.
 
 ## Sweep cadence
 
