@@ -157,7 +157,7 @@ import {
   requestBrowserNotificationPermission,
   shouldNotifyBrowser,
 } from "../lib/browser-notifications";
-import { loadComputerScreen } from "../lib/computer-screen";
+import { loadComputerScreen, screenWasRevoked } from "../lib/computer-screen";
 import { desktopBridge } from "../lib/desktop";
 import { scheduleFocusPrompt } from "../lib/focus-prompt";
 import { localTimezone } from "../lib/local-timezone";
@@ -2404,6 +2404,17 @@ export function ShellPage() {
     const timer = window.setInterval(ping, 60_000);
     return () => window.clearInterval(timer);
   }, [panel, computerOpen, active?.id, computer?.state]);
+
+  // A computer that pauses for idleness and resumes has had every screen URL
+  // revoked behind it, so the one held here is dead and the picture is frozen.
+  // Fetch a live one rather than leave a black rectangle and no explanation.
+  const lastComputerState = useRef<string | null>(null);
+  useEffect(() => {
+    const previous = lastComputerState.current;
+    lastComputerState.current = computer?.state ?? null;
+    if (!active || !computerVisible.current) return;
+    if (screenWasRevoked(previous, computer?.state)) void refreshComputerScreen(active.id);
+  }, [active?.id, computer?.state]);
 
   async function openComputer() {
     if (!active) return;

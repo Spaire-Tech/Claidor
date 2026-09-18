@@ -1,5 +1,32 @@
 import { describe, expect, it, vi } from "vitest";
-import { loadComputerScreen } from "./computer-screen";
+import { loadComputerScreen, screenWasRevoked } from "./computer-screen";
+
+describe("a screen revoked by the server", () => {
+  it("is refetched when a paused computer comes back", () => {
+    expect(screenWasRevoked("paused", "running")).toBe(true);
+    expect(screenWasRevoked("stopped", "running")).toBe(true);
+  });
+
+  it("is left alone while the computer is still going away", () => {
+    expect(screenWasRevoked("running", "paused")).toBe(false);
+    expect(screenWasRevoked("running", "stopped")).toBe(false);
+  });
+
+  it("is left alone on a first boot, which revokes nothing", () => {
+    // The trigger exempts booting -> running precisely so that a first start
+    // does not invalidate the URL it is about to hand out.
+    expect(screenWasRevoked("booting", "running")).toBe(false);
+  });
+
+  it("is left alone when nothing changed, so a re-render costs no request", () => {
+    expect(screenWasRevoked("running", "running")).toBe(false);
+  });
+
+  it("is left alone before any state has been observed", () => {
+    expect(screenWasRevoked(null, "running")).toBe(false);
+    expect(screenWasRevoked(undefined, "running")).toBe(false);
+  });
+});
 
 describe("computer screen requests", () => {
   it("shows connection failures and lets a successful retry clear them", async () => {
