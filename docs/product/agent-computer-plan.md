@@ -234,9 +234,43 @@ Northflank, Blaxel, Beam, Morph, Vercel Sandbox. Worth a comparison when the
 decision is live; not worth one before.
 
 **What this changes:** question 1 stops being "hosted box versus Docker on the
-person's Mac" and becomes "which sandbox provider, at what awake-hours per
-user". It also makes the question cheap to answer for real — one box, one
-agent, one afternoon, measured rather than argued.
+person's Mac" and becomes "at what awake-hours per user". It also makes the
+question cheap to answer for real — one box, one agent, one afternoon, measured
+rather than argued.
+
+### What the lock decides on its own: the server brokers the box
+
+This follows from the lock plus a rule the founder already set, so it is not a
+new decision so much as an unavoidable consequence — but it decides where the
+work goes, so it is written down.
+
+The founder, 16 September: *"my users should never put a key. everything happens
+under the hood. not a setting."* So the E2B key is **Claidor's**, not the
+person's. And a key that ships inside an Electron app is a key that is published:
+anyone with the app has it, and one extracted key bills every box we run.
+
+**Therefore the desktop app never talks to E2B.** `server/polar/desktop/` brokers
+the box exactly as it already brokers the models: the key stays on the server, the
+app authenticates with its existing desktop session token, and the server creates,
+pauses, resumes and kills boxes on the person's behalf and meters what they use.
+This is the shape that already exists twice — the metered model proxy, and
+Composio's key in `polar/connectors/`. It is not a new pattern to invent.
+
+What that implies, and none of it is built:
+
+- a box record per account on the server, with its E2B sandbox id and state;
+- routes to ensure-a-box, pause it, resume it, and recover it (Update / Reset);
+- metering of awake seconds against the same account the models bill to, since
+  the box is the first thing this product sells that costs money while idle;
+- the app holding only an opaque handle and a stream URL, never a key.
+
+**The open question this raises**, and it is a real one: the agent process runs on
+the person's Mac, and the box is in E2B. Every Shell call, every Screenshot, every
+`computerUse` click is a round trip from their laptop to a pod. Grok Bot does not
+have this problem — its agent runs beside the box. Whether our engine drives the
+box acceptably from the other side of the internet, or whether the agent itself
+eventually has to move, is the thing to measure first and the thing most likely
+to change the architecture.
 
 ### Answerable by reading, before anything is built
 
