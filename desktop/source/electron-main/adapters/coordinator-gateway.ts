@@ -56,6 +56,7 @@ export function createProductionCoordinatorGatewayBinding(): Pick<
         recreate?: (...args: any[]) => unknown;
         forceRecreate?: (...args: any[]) => unknown;
         issueLocalExecDaemonCredential?: (...args: any[]) => unknown;
+        issueInferenceCredential?: (...args: any[]) => unknown;
       };
       requireFunction(remote?.connect, "generated gateway connector.connect()");
       requireFunction(
@@ -65,12 +66,14 @@ export function createProductionCoordinatorGatewayBinding(): Pick<
       const wrappedBase: {
         connect(): Promise<BoxConnectionInfo>;
         issueLocalExecDaemonCredential(...args: any[]): unknown;
+        issueInferenceCredential?: (...args: any[]) => unknown;
         recreate?: (...args: any[]) => unknown;
         forceRecreate?: (...args: any[]) => unknown;
       } = {
         connect: async () => await remote.connect() as BoxConnectionInfo,
         issueLocalExecDaemonCredential: remote.issueLocalExecDaemonCredential.bind(remote),
       };
+      if (remote.issueInferenceCredential != null) wrappedBase.issueInferenceCredential = remote.issueInferenceCredential.bind(remote);
       if (remote.recreate != null) wrappedBase.recreate = remote.recreate.bind(remote);
       if (remote.forceRecreate != null) wrappedBase.forceRecreate = remote.forceRecreate.bind(remote);
       return context.connectorEgress.wrap(wrappedBase) as unknown as ProductionCoordinatorGatewayConnector;

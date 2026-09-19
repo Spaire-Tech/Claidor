@@ -8,6 +8,7 @@ import { jsonSchema, streamText, tool, type CoreMessage, type LanguageModelV1, t
 
 import { BasePromptBuilder, BasePromptExecutor } from "../../../packages/chat-inference/base.js";
 import type { SandInferenceProvider } from "../../../shared/inference-router.js";
+import { getConfiguredBackendUrl } from "../../../shared/node/cursor-token.js";
 import { resolveClaudeCodeCliPath } from "../../../shared/node/inference-router-local.js";
 import { getSandRootDir } from "../../host-paths.js";
 import { SandSettingsStore } from "../../../shared/node/settings/sand-settings-store.js";
@@ -46,6 +47,39 @@ function openRouterCredential(): string {
   const value = process.env.OPENROUTER_API_KEY?.trim() || persistedSecrets().OPENROUTER_API_KEY?.trim();
   if (value == null || value.length === 0) throw new Error("OpenRouter needs OPENROUTER_API_KEY. Add it in Settings → Router.");
   return value;
+}
+
+export interface ClaidorCredentialSource {
+  readonly getAccessToken: () => Promise<string>;
+  readonly backendUrl?: string;
+}
+
+export const DEFAULT_CLAIDOR_MODEL = "gpt-5.6-terra";
+
+// The Claidor provider is the signed-in account. Which process holds that
+// credential differs: the host reads it from its auth service, the coordinator
+// asks electron-main over the control port. Each registers its source once.
+let claidorCredentialSource: ClaidorCredentialSource | null = null;
+
+export function setClaidorCredentialSource(source: ClaidorCredentialSource | null): void {
+  claidorCredentialSource = source;
+}
+
+export function configuredClaidorModel(): string {
+  return process.env.SAND_CLAIDOR_MODEL?.trim() || DEFAULT_CLAIDOR_MODEL;
+}
+
+export function claidorProxyBaseUrl(backendUrl: string = getConfiguredBackendUrl()): string {
+  return new URL("api/proxy/v1", backendUrl.endsWith("/") ? backendUrl : `${backendUrl}/`).toString();
+}
+
+function claidorAuthenticatedFetch(source: ClaidorCredentialSource): typeof fetch {
+  return async (input, init) => {
+    const accessToken = await source.getAccessToken();
+    const headers = new Headers(init?.headers);
+    headers.set("authorization", `Bearer ${accessToken}`);
+    return await fetch(input, { ...init, headers });
+  };
 }
 
 function providerPrompt(messages: readonly ProviderMessage[]): string {
@@ -254,9 +288,23 @@ function openRouterExecutor(messages: readonly ProviderMessage[], invocationId: 
   return { fullStream: result.fullStream, response: result.response, usage: result.usage, extendedUsage, providerMetadata: result.providerMetadata, invocationId: Promise.resolve(invocationId) };
 }
 
+// Claidor's metered proxy, on the Responses wire: the one that takes reasoning
+// and function tools in the same request (server/polar/desktop/endpoints.py).
+function claidorExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void) {
+  const source = claidorCredentialSource;
+  if (source == null) throw new Error("Claidor is the selected provider, but this process has no signed-in credential source. Sign in to Claidor and try again.");
+  const model: LanguageModelV1 = createOpenAI({ apiKey: "claidor-desktop-access-token", baseURL: claidorProxyBaseUrl(source.backendUrl), name: "claidor", fetch: claidorAuthenticatedFetch(source) }).responses(configuredClaidorModel());
+  const tools = toToolSet(definitions, executeTool);
+  const result = streamText({ model, system: GROK_ROUTER_SYSTEM_PROMPT, messages: messages as CoreMessage[], ...(tools === undefined ? {} : { tools }), toolCallStreaming: true, maxSteps: tools === undefined ? 1 : 8 });
+  const extendedUsage = result.usage.then(value => ({ inputTokens: value.promptTokens, outputTokens: value.completionTokens, cacheReadTokens: 0, cacheWriteTokens: 0, maxTokens: 0 }));
+  if (onUsage != null) void extendedUsage.then(onUsage);
+  return { fullStream: result.fullStream, response: result.response, usage: result.usage, extendedUsage, providerMetadata: result.providerMetadata, invocationId: Promise.resolve(invocationId) };
+}
+
 class ProviderPromptExecutor extends BasePromptExecutor<ProviderMessage> {
   constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void) { super(new BasePromptBuilder(initialMessages)); }
   stream(_ctx: unknown, invocationId = crypto.randomUUID(), definitions?: readonly Loose[]) {
+    if (this.provider === "claidor") return claidorExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage);
     if (this.provider === "codex") return codexExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage);
     if (this.provider === "claude-code") return claudeExecutor(this.getMessages(), invocationId, this.onUsage);
     return openRouterExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage);
@@ -264,7 +312,7 @@ class ProviderPromptExecutor extends BasePromptExecutor<ProviderMessage> {
 }
 
 export function createProviderPromptSession(provider: RoutedProvider): { getModelId(): string; getExecutor(state?: unknown): PromptExecutor } {
-  const modelId = provider === "codex" ? configuredCodexModel() : provider === "claude-code" ? "claude-code" : process.env.SAND_OPENROUTER_MODEL?.trim() || "openai/gpt-5.2";
+  const modelId = provider === "claidor" ? configuredClaidorModel() : provider === "codex" ? configuredCodexModel() : provider === "claude-code" ? "claude-code" : process.env.SAND_OPENROUTER_MODEL?.trim() || "openai/gpt-5.2";
   return { getModelId: () => modelId, getExecutor: state => new ProviderPromptExecutor(provider, Array.isArray(state) ? state as ProviderMessage[] : undefined, usage => recordRoutedUsage(provider, usage)) };
 }
 
@@ -276,11 +324,13 @@ export async function runRoutedProviderText(provider: RoutedProvider, messages: 
 }): Promise<string> {
   const invocationId = crypto.randomUUID();
   const onUsage = (usage: UsageRecord) => recordRoutedUsage(provider, usage);
-  const result = provider === "codex"
-    ? codexExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage)
-    : provider === "claude-code"
-      ? claudeExecutor(messages, invocationId, onUsage, options?.mcpServerUrl)
-      : openRouterExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage);
+  const result = provider === "claidor"
+    ? claidorExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage)
+    : provider === "codex"
+      ? codexExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage)
+      : provider === "claude-code"
+        ? claudeExecutor(messages, invocationId, onUsage, options?.mcpServerUrl)
+        : openRouterExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage);
   let text = "";
   for await (const event of result.fullStream) {
     if (event.type === "text-delta" && typeof event.textDelta === "string") {

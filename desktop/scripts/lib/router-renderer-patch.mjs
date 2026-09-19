@@ -12,6 +12,7 @@ const COMPONENT_ANCHOR = 'function Sa(s){';
 const COMPONENT_SOURCE = String.raw`
 const RRouterProviders=[
   {value:"cursor",label:"Cursor",description:"Use your signed-in Cursor account.",kind:"account"},
+  {value:"claidor",label:"Claidor",description:"Use your signed-in Claidor account and its metered models.",kind:"account"},
   {value:"claude-code",label:"Claude Code",description:"Use your existing Claude Code sign-in and Grok Bot's connected plugins.",kind:"local",localKey:"claude-code"},
   {value:"codex",label:"Codex",description:"Use your existing ChatGPT sign-in from Codex with Grok Bot's connected plugins.",kind:"local",localKey:"codex"},
   {value:"openrouter",label:"OpenRouter",description:"Route through your OpenRouter account and selected model.",kind:"key",secret:"OPENROUTER_API_KEY"}
