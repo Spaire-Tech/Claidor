@@ -3,7 +3,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 import { runRoutedProviderText } from "../host/extensions/inference/provider-session.js";
-import { SAND_INFERENCE_PROVIDERS, type SandInferenceProvider } from "../shared/inference-router.js";
+import { resolveProductInferenceProvider, SAND_INFERENCE_PROVIDERS, type SandInferenceProvider } from "../shared/inference-router.js";
 import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
 import { createRoutedMcpBridge } from "./routed-mcp-bridge.js";
 
@@ -54,13 +54,13 @@ export function projectInferenceRouterTranscriptEntry(entry: StoredEntry): Recor
 
 export const SAND_CLAIDOR_FULL_AGENT_ENV = "SAND_CLAIDOR_FULL_AGENT";
 
-// By default a non-Cursor provider runs here, on the Mac, with connector tools
-// only. The host's full agent loop (shell, files, computer use) dispatches the
-// same providers through createProviderPromptSession; whether a turn completes
-// on that path is not yet measured. This switch sends claidor turns there so
-// that measurement can be made without a code change.
+// Product turns are Claidor. They leave this connector-only path and run on
+// the host's full agent loop (OpenAI through the Claidor proxy) unless a
+// test sets SAND_CLAIDOR_FULL_AGENT=off.
 export function routesClaidorThroughHost(env: NodeJS.ProcessEnv = process.env): boolean {
-  return /^(1|true|yes)$/i.test(env[SAND_CLAIDOR_FULL_AGENT_ENV]?.trim() ?? "");
+  const raw = env[SAND_CLAIDOR_FULL_AGENT_ENV]?.trim() ?? "";
+  if (raw.length === 0) return true;
+  return /^(1|true|yes)$/i.test(raw);
 }
 
 export function createCoordinatorInferenceRouter(options: {
@@ -209,9 +209,9 @@ export function createCoordinatorInferenceRouter(options: {
   };
 
   return {
-    provider(): SandInferenceProvider { return settings.getInferenceProvider(); },
+    provider(): SandInferenceProvider { return resolveProductInferenceProvider(options.env ?? process.env); },
     async dispatch(method: string, args: unknown): Promise<{ handled: boolean; value?: unknown }> {
-      const provider = settings.getInferenceProvider();
+      const provider = resolveProductInferenceProvider(options.env ?? process.env);
       if (method === "reactToMessage") {
         const record = asRecord(args) ?? {};
         const agentId = typeof record.agentId === "string" ? record.agentId : "";

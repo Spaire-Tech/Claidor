@@ -28,9 +28,8 @@ import {
   usageMetersFromSummary,
   type SettingsDesktopSnapshot
 } from "./desktop";
-import { GeneralSettingsPanel, RouterSettingsPanel, UpdatesSettingsPanel, UsageSettingsPanel } from "./panels";
+import { GeneralSettingsPanel, UpdatesSettingsPanel, UsageSettingsPanel } from "./panels";
 import { SettingsModalShell, type SettingsSectionId } from "./view";
-import { DEFAULT_ROUTER_PROVIDER, loadRouterProvider, saveRouterProvider, type RouterProviderId } from "./router";
 import type { AutoReviewSettings } from "./auto-review";
 import type { SettingsComputerMount } from "./computer";
 import { SettingsNoticeView, settingsNoticeFromEvent, type SettingsNotice } from "./notice";
@@ -57,8 +56,6 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
   const [reload, setReload] = useState(0);
   const [surfaceNotice, setSurfaceNotice] = useState<SettingsNotice | null>(null);
   const [cancelTrialDialogOpen, setCancelTrialDialogOpen] = useState(false);
-  const [routerProvider, setRouterProvider] = useState<RouterProviderId>(DEFAULT_ROUTER_PROVIDER);
-  const [routerPending, setRouterPending] = useState(false);
   const handleCancelTrialDialogOpen = useCallback((open: boolean) => setCancelTrialDialogOpen(open), []);
   const handleNotice = useCallback((event: SettingsNoticeEvent) => {
     setSurfaceNotice(settingsNoticeFromEvent(event));
@@ -132,17 +129,6 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
       unsubscribe();
     };
   }, [bridge, coordinatorClient, handleNotice, isOpen, onStatus, reload]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    let active = true;
-    void loadRouterProvider(bridge.agent.clientPersistence).then((provider) => {
-      if (active) setRouterProvider(provider);
-    }).catch(() => {
-      if (active) setRouterProvider(DEFAULT_ROUTER_PROVIDER);
-    });
-    return () => { active = false; };
-  }, [bridge, isOpen]);
 
   const mutate = async <Value,>(action: () => Promise<Value>, operation: SettingsNoticeEvent["operation"], apply: (value: Value) => void): Promise<Value> => {
     try {
@@ -246,28 +232,6 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
             onRetry={refreshUsage}
             onUpgrade={(action) => runUsageUpgradeActionAndRefresh(bridge, action, refreshUsage)}
             state={snapshot.usage}
-            provider={routerProvider}
-          />
-        );
-        if (section === "router") return (
-          <RouterSettingsPanel
-            onChange={async (provider) => {
-              if (routerPending || provider === routerProvider) return;
-              const previous = routerProvider;
-              setRouterProvider(provider);
-              setRouterPending(true);
-              try {
-                await saveRouterProvider(bridge.agent.clientPersistence, provider);
-              } catch (reason) {
-                setRouterProvider(previous);
-                const message = reason instanceof Error ? reason.message : String(reason);
-                publishSurfaceNotice({ kind: "error", operation: "settings-router-provider", message }, handleNotice, onStatus);
-              } finally {
-                setRouterPending(false);
-              }
-            }}
-            pending={routerPending}
-            provider={routerProvider}
           />
         );
         return (
@@ -300,7 +264,7 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
           />
         );
       }}
-      showUsage={snapshot != null && (routerProvider !== "cursor" || shouldShowUsageSettings(snapshot.usagePageFeatureGateEnabled, snapshot.usage))}
+      showUsage={snapshot != null && shouldShowUsageSettings(snapshot.usagePageFeatureGateEnabled, snapshot.usage)}
       iconPlatform={bridge.platform === "win32" ? "windows" : "mac"}
       closeOnBackdrop={!cancelTrialDialogOpen}
       closeOnEscape={!cancelTrialDialogOpen}

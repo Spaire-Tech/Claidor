@@ -54,14 +54,17 @@ async function waitFor(predicate, timeoutMs = 8_000) {
 
 test("a routed turn completes when every box call fails", async () => {
   const loaded = await loadRouter();
+  const previous = process.env.SAND_INFERENCE_PROVIDER;
   try {
     const events = [];
     const remoteCalls = [];
     const dataDir = path.join(loaded.dataDir, "data");
     await mkdir(dataDir, { recursive: true });
     await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "openrouter" }));
+    process.env.SAND_INFERENCE_PROVIDER = "openrouter";
     const router = loaded.module.createCoordinatorInferenceRouter({
       dataDir,
+      env: { SAND_CLAIDOR_FULL_AGENT: "off", SAND_INFERENCE_PROVIDER: "openrouter" },
       postEvent: (family, payload) => events.push({ family, payload }),
       dispatchRemote: async (method) => { remoteCalls.push(method); throw new Error(`box unreachable (${method})`); },
     });
@@ -88,15 +91,19 @@ test("a routed turn completes when every box call fails", async () => {
     // the turn was numbered from the local store alone.
     assert.ok(events.some((event) => event.family === "transcript" && event.payload.entry?.id === "t0u"));
   } finally {
+    if (previous === undefined) delete process.env.SAND_INFERENCE_PROVIDER;
+    else process.env.SAND_INFERENCE_PROVIDER = previous;
     await loaded.dispose();
   }
 });
 
 test("the transcript tail still answers from local history when the box is down", async () => {
   const loaded = await loadRouter();
+  const previous = process.env.SAND_INFERENCE_PROVIDER;
   try {
     const dataDir = path.join(loaded.dataDir, "data");
     await mkdir(dataDir, { recursive: true });
+    process.env.SAND_INFERENCE_PROVIDER = "codex";
     await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "codex" }));
     await writeFile(path.join(dataDir, "inference-router-transcript.json"), JSON.stringify({
       schemaVersion: 2,
@@ -104,6 +111,7 @@ test("the transcript tail still answers from local history when the box is down"
     }));
     const router = loaded.module.createCoordinatorInferenceRouter({
       dataDir,
+      env: { SAND_CLAIDOR_FULL_AGENT: "off", SAND_INFERENCE_PROVIDER: "codex" },
       postEvent: () => {},
       dispatchRemote: async () => { throw new Error("box unreachable"); },
     });
@@ -113,6 +121,8 @@ test("the transcript tail still answers from local history when the box is down"
     assert.equal(result.value.entries[0].id, "t0u");
     assert.equal(result.value.entries[0].content, "earlier");
   } finally {
+    if (previous === undefined) delete process.env.SAND_INFERENCE_PROVIDER;
+    else process.env.SAND_INFERENCE_PROVIDER = previous;
     await loaded.dispose();
   }
 });

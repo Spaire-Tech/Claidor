@@ -16,14 +16,13 @@ async function read(relative) {
 
 test("Settings copy names Claidor and Caisra, not Cursor or Grok Bot", async () => {
   const patch = await read("scripts/lib/router-renderer-patch.mjs");
+  const view = await read("frontend/src/recovered/features/settings/overlay/view.tsx");
   const router = await read("frontend/src/recovered/features/settings/overlay/router.ts");
   const panels = await read("frontend/src/recovered/features/settings/overlay/panels.tsx");
-  assert.match(patch, /value:"cursor"/);
-  assert.match(patch, /label:"Claidor"/);
-  assert.doesNotMatch(patch, /label:"Cursor"/);
+  assert.doesNotMatch(patch, /id:"router",label:"Router"/);
+  assert.doesNotMatch(view, /id: "router"/);
   assert.doesNotMatch(patch, /Grok Bot/);
-  assert.match(router, /id: "cursor"/);
-  assert.match(router, /label: "Claidor"/);
+  assert.match(router, /DEFAULT_ROUTER_PROVIDER: RouterProviderId = "claidor"/);
   assert.doesNotMatch(router, /signed-in Cursor account/);
   assert.match(panels, /Sign In with Claidor/);
   assert.doesNotMatch(panels, /Sign In with Cursor/);

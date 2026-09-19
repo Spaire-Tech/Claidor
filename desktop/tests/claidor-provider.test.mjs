@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -78,11 +78,11 @@ test("claidor turns run on the Mac by default and pass through to the host's ful
       dataDir, env, postEvent: (family, payload) => events.push({ family, payload }), dispatchRemote: async () => { throw new Error("box unreachable"); },
     });
 
-    assert.equal(router.module.routesClaidorThroughHost({}), false);
+    assert.equal(router.module.routesClaidorThroughHost({}), true);
     assert.equal(router.module.routesClaidorThroughHost({ SAND_CLAIDOR_FULL_AGENT: "1" }), true);
     assert.equal(router.module.routesClaidorThroughHost({ SAND_CLAIDOR_FULL_AGENT: "off" }), false);
 
-    const local = await make({}).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
+    const local = await make({ SAND_CLAIDOR_FULL_AGENT: "off" }).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
     assert.equal(local.handled, true);
     assert.equal(local.value.provider, "claidor");
     // The local turn runs in the background; with no credential source registered
@@ -194,5 +194,51 @@ test("every connector wrapper between electron-main and the coordinator forwards
   } finally {
     await egress.dispose();
     await pause.dispose();
+  }
+});
+
+test("the product lock ignores stored providers and leftover Claude Code", async () => {
+  const shared = await loadModule("source/shared/inference-router.ts", "product-inference-lock");
+  const storeLoaded = await loadModule("source/shared/node/settings/sand-settings-store.ts", "settings-store-lock");
+  const router = await loadModule("source/node-agent-coordinator/inference-router.ts", "coordinator-lock");
+  const previousClaude = process.env.CAISRA_CLAUDE_CODE;
+  const previousOverride = process.env.SAND_INFERENCE_PROVIDER;
+  try {
+    delete process.env.CAISRA_CLAUDE_CODE;
+    delete process.env.SAND_INFERENCE_PROVIDER;
+
+    const { resolveProductInferenceProvider, PRODUCT_INFERENCE_PROVIDER } = shared.module;
+    assert.equal(PRODUCT_INFERENCE_PROVIDER, "claidor");
+    assert.equal(resolveProductInferenceProvider({}), "claidor");
+    assert.equal(resolveProductInferenceProvider({ CAISRA_CLAUDE_CODE: "1" }), "claude-code");
+    assert.equal(resolveProductInferenceProvider({ CAISRA_CLAUDE_CODE: "0", SAND_INFERENCE_PROVIDER: "openrouter" }), "openrouter");
+    assert.equal(resolveProductInferenceProvider({ SAND_INFERENCE_PROVIDER: "not-a-provider" }), "claidor");
+
+    const settingsPath = path.join(storeLoaded.dataDir, "settings.json");
+    await writeFile(settingsPath, JSON.stringify({ version: 1, inferenceProvider: "claude-code" }));
+    const store = new storeLoaded.module.SandSettingsStore(settingsPath);
+    assert.equal(store.getInferenceProvider(), "claidor");
+    store.setInferenceProvider("openrouter");
+    assert.equal(store.getInferenceProvider(), "claidor");
+    assert.equal(JSON.parse(await readFile(settingsPath, "utf8")).inferenceProvider, "claidor");
+
+    const dataDir = path.join(router.dataDir, "data");
+    await mkdir(dataDir, { recursive: true });
+    await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "claude-code" }));
+    const created = router.module.createCoordinatorInferenceRouter({
+      dataDir,
+      env: {},
+      postEvent: () => {},
+      dispatchRemote: async () => { throw new Error("unused"); },
+    });
+    assert.equal(created.provider(), "claidor");
+  } finally {
+    if (previousClaude === undefined) delete process.env.CAISRA_CLAUDE_CODE;
+    else process.env.CAISRA_CLAUDE_CODE = previousClaude;
+    if (previousOverride === undefined) delete process.env.SAND_INFERENCE_PROVIDER;
+    else process.env.SAND_INFERENCE_PROVIDER = previousOverride;
+    await shared.dispose();
+    await storeLoaded.dispose();
+    await router.dispose();
   }
 });

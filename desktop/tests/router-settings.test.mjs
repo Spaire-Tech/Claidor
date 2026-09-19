@@ -15,12 +15,12 @@ async function loadRouterModule() {
   return import(`data:text/javascript;base64,${Buffer.from(output).toString("base64")}`);
 }
 
-test("router provider preference defaults to Cursor and round-trips every provider", async () => {
+test("router provider preference defaults to Claidor and round-trips every provider", async () => {
   const router = await loadRouterModule();
   assert.deepEqual(router.ROUTER_PROVIDERS.map(({ id }) => id), ["cursor", "claidor", "claude-code", "codex", "openrouter"]);
-  assert.equal(router.parseRouterProviderPreference(null), "cursor");
-  assert.equal(router.parseRouterProviderPreference("not-json"), "cursor");
-  assert.equal(router.parseRouterProviderPreference(JSON.stringify({ schemaVersion: 1, provider: "unknown" })), "cursor");
+  assert.equal(router.parseRouterProviderPreference(null), "claidor");
+  assert.equal(router.parseRouterProviderPreference("not-json"), "claidor");
+  assert.equal(router.parseRouterProviderPreference(JSON.stringify({ schemaVersion: 1, provider: "unknown" })), "claidor");
 
   let stored = null;
   const persistence = {
@@ -39,7 +39,8 @@ test("router provider preference defaults to Cursor and round-trips every provid
   }
 });
 
-test("settings registry exposes Router with the native settings icon contract", async () => {
+test("settings registry does not expose Router", async () => {
   const source = await readFile(path.join(repoRoot, "frontend/src/recovered/features/settings/overlay/view.tsx"), "utf8");
-  assert.match(source, /\{ id: "router", label: "Router", icon: "git-branch" \}/);
+  assert.doesNotMatch(source, /id: "router"/);
+  assert.match(source, /\{ id: "general", label: "General", icon: "settings-gear" \}/);
 });
