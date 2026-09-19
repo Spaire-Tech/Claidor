@@ -1,6 +1,6 @@
 import type { AgentDesktopBridge } from "../../../contracts/desktop-bridge";
 
-export type RouterProviderId = "cursor" | "claude-code" | "codex" | "openrouter";
+export type RouterProviderId = "cursor" | "claidor" | "claude-code" | "codex" | "openrouter";
 
 export interface RouterProvider {
   readonly id: RouterProviderId;
@@ -20,6 +20,13 @@ export const ROUTER_PROVIDERS: readonly RouterProvider[] = [
     description: "Use your signed-in Cursor account and its hosted agent models.",
     usageDescription: "Included and on-demand usage from your Cursor account.",
     usageSource: "cursor"
+  },
+  {
+    id: "claidor",
+    label: "Claidor",
+    description: "Use your signed-in Claidor account and its metered models.",
+    usageDescription: "Requests and tokens recorded locally; credits are metered by your Claidor account.",
+    usageSource: "external"
   },
   {
     id: "claude-code",

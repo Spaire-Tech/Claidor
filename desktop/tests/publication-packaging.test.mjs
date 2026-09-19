@@ -104,7 +104,14 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.doesNotMatch(rendererPatch, /ANTHROPIC_API_KEY|OPENAI_API_KEY/);
   assert.match(turnShell, /inferenceProvider === "cursor"/);
   assert.match(turnShell, /createProviderPromptSession\(inferenceProvider\)/);
-  assert.match(coordinator, /method !== "sendPrompt" \|\| provider === "cursor"/);
+  assert.match(coordinator, /method !== "sendPrompt" \|\| !handledLocally\(provider\)/);
+  assert.match(coordinator, /provider !== "cursor" && !\(provider === "claidor" && routesClaidorThroughHost\(options\.env\)\)/);
+  assert.match(coordinator, /STORED_PROVIDERS\.includes\(String\(row\.provider\)\)/);
+  assert.match(coordinatorMain, /command<[^>]*>\(commands, "mintInferenceCredential", \{\}\)/);
+  assert.match(providers, /\.responses\(configuredClaidorModel\(\)\)/);
+  assert.match(providers, /new URL\("api\/proxy\/v1"/);
+  assert.match(providers, /headers\.set\("authorization", `Bearer \$\{accessToken\}`\)/);
+  assert.match(inference, /setClaidorCredentialSource\(\{ getAccessToken: \(\) => auth\.getAccessToken\(\) \}\)/);
   assert.match(coordinator, /executeTool: async \(definition, toolArgs, toolCallId\)/);
   assert.match(coordinatorMain, /command\(commands, "listRoutedMcpTools", args\)/);
   assert.match(coordinator, /inference-router-transcript\.json/);

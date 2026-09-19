@@ -3,7 +3,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 import { runRoutedProviderText } from "../host/extensions/inference/provider-session.js";
-import type { SandInferenceProvider } from "../shared/inference-router.js";
+import { SAND_INFERENCE_PROVIDERS, type SandInferenceProvider } from "../shared/inference-router.js";
 import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
 import { createRoutedMcpBridge } from "./routed-mcp-bridge.js";
 
@@ -20,6 +20,9 @@ type StoredEntry = {
 type Store = { readonly schemaVersion: 2; readonly agents: Readonly<Record<string, readonly StoredEntry[]>> };
 
 const EMPTY_STORE: Store = { schemaVersion: 2, agents: {} };
+// Every provider the router can run locally. Derived from the shared list so a
+// provider added there cannot be silently dropped from stored history here.
+const STORED_PROVIDERS: readonly string[] = SAND_INFERENCE_PROVIDERS.filter(provider => provider !== "cursor");
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value != null && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -34,7 +37,7 @@ export function parseInferenceRouterTranscriptStore(value: unknown): Store {
     const entries: StoredEntry[] = [];
     for (const raw of rawEntries) {
       const row = asRecord(raw);
-      if (row == null || !["codex", "claude-code", "openrouter"].includes(String(row.provider)) || !["user", "assistant"].includes(String(row.role)) || typeof row.content !== "string" || typeof row.id !== "string" || typeof row.timestampMs !== "number" || (row.clientNonce !== undefined && typeof row.clientNonce !== "string") || (row.richText !== undefined && typeof row.richText !== "string")) continue;
+      if (row == null || !STORED_PROVIDERS.includes(String(row.provider)) || !["user", "assistant"].includes(String(row.role)) || typeof row.content !== "string" || typeof row.id !== "string" || typeof row.timestampMs !== "number" || (row.clientNonce !== undefined && typeof row.clientNonce !== "string") || (row.richText !== undefined && typeof row.richText !== "string")) continue;
       if (row.reactions !== undefined && (!Array.isArray(row.reactions) || row.reactions.some(reaction => asRecord(reaction) == null || typeof asRecord(reaction)!.emoji !== "string" || typeof asRecord(reaction)!.by !== "string"))) continue;
       entries.push(row as unknown as StoredEntry);
     }
@@ -49,13 +52,27 @@ export function projectInferenceRouterTranscriptEntry(entry: StoredEntry): Recor
     : { kind: "send-message", id: entry.id, message: { type: "text", content: entry.content }, timestampMs: entry.timestampMs, ...(entry.reactions === undefined ? {} : { reactions: entry.reactions }) };
 }
 
+export const SAND_CLAIDOR_FULL_AGENT_ENV = "SAND_CLAIDOR_FULL_AGENT";
+
+// By default a non-Cursor provider runs here, on the Mac, with connector tools
+// only. The host's full agent loop (shell, files, computer use) dispatches the
+// same providers through createProviderPromptSession; whether a turn completes
+// on that path is not yet measured. This switch sends claidor turns there so
+// that measurement can be made without a code change.
+export function routesClaidorThroughHost(env: NodeJS.ProcessEnv = process.env): boolean {
+  return /^(1|true|yes)$/i.test(env[SAND_CLAIDOR_FULL_AGENT_ENV]?.trim() ?? "");
+}
+
 export function createCoordinatorInferenceRouter(options: {
   readonly dataDir: string;
   readonly postEvent: (family: string, payload: unknown) => void;
   readonly dispatchRemote: (method: string, args: unknown) => Promise<unknown>;
   readonly now?: () => number;
+  readonly env?: NodeJS.ProcessEnv;
 }) {
   const settings = new SandSettingsStore(join(options.dataDir, "settings.json"));
+  const handledLocally = (provider: SandInferenceProvider): provider is Exclude<SandInferenceProvider, "cursor"> =>
+    provider !== "cursor" && !(provider === "claidor" && routesClaidorThroughHost(options.env));
   const storePath = join(options.dataDir, "inference-router-transcript.json");
   const now = options.now ?? Date.now;
   const queues = new Map<string, Promise<unknown>>();
@@ -118,6 +135,13 @@ export function createCoordinatorInferenceRouter(options: {
     await persist({ schemaVersion: 2, agents: { ...current.agents, [agentId]: nextEntries } });
     return projectInferenceRouterTranscriptEntry(updated);
   };
+  // A routed turn runs the model on this machine; the box only contributes the
+  // remote transcript tail and the connector tools. When the box is down those
+  // contributions are lost, not the turn.
+  const remoteOrUndefined = async (method: string, args: unknown): Promise<unknown> => {
+    try { return await options.dispatchRemote(method, args); }
+    catch { return undefined; }
+  };
   const execute = async (provider: Exclude<SandInferenceProvider, "cursor">, args: Record<string, unknown>) => {
     const agentId = typeof args.agentId === "string" ? args.agentId : "";
     const prompt = typeof args.prompt === "string" ? args.prompt : "";
@@ -125,7 +149,7 @@ export function createCoordinatorInferenceRouter(options: {
     const clientNonce = typeof args.clientNonce === "string" ? args.clientNonce : randomUUID();
     if (agentId.length === 0 || prompt.length === 0) throw new Error("Local inference routing requires an agentId and prompt");
     const timestampMs = now();
-    const [remote, beforeUser] = await Promise.all([options.dispatchRemote("getAgentTranscriptTail", { id: agentId }), load()]);
+    const [remote, beforeUser] = await Promise.all([remoteOrUndefined("getAgentTranscriptTail", { id: agentId }), load()]);
     const remoteEntries = Array.isArray(asRecord(remote)?.entries) ? asRecord(remote)!.entries as unknown[] : [];
     const remoteTurn = remoteEntries.reduce<number>((highest, raw) => {
       const id = asRecord(raw)?.id;
@@ -160,10 +184,10 @@ export function createCoordinatorInferenceRouter(options: {
       assistantStreamStarted = true;
     };
     const bridge = provider === "claude-code" ? await createRoutedMcpBridge({
-      listTools: () => options.dispatchRemote("listRoutedMcpTools", {}),
+      listTools: () => remoteOrUndefined("listRoutedMcpTools", {}),
       callTool: tool => options.dispatchRemote("executeRoutedMcpTool", { ...tool, agentId }),
     }) : null;
-    const directTools = bridge == null ? await options.dispatchRemote("listRoutedMcpTools", {}) : undefined;
+    const directTools = bridge == null ? await remoteOrUndefined("listRoutedMcpTools", {}) : undefined;
     const tools = Array.isArray(directTools) ? directTools as Record<string, any>[] : undefined;
     const onTextDelta = (_delta: string, accumulated: string) => emitAssistant(accumulated, true);
     try { content = await runRoutedProviderText(provider, messages, bridge == null ? {
@@ -199,17 +223,17 @@ export function createCoordinatorInferenceRouter(options: {
           return { handled: true, value: undefined };
         }
       }
-      if (provider !== "cursor" && ["getAgentTranscriptTail", "openAgentTail", "getAgentTranscriptWindow"].includes(method)) {
+      if (handledLocally(provider) && ["getAgentTranscriptTail", "openAgentTail", "getAgentTranscriptWindow"].includes(method)) {
         const record = asRecord(args) ?? {};
         const agentId = typeof record.id === "string" ? record.id : "";
-        const [remote, local] = await Promise.all([options.dispatchRemote(method, args), load()]);
-        const result = asRecord(remote);
-        if (result == null || !Array.isArray(result.entries) || agentId.length === 0) return { handled: true, value: remote };
+        const [remote, local] = await Promise.all([remoteOrUndefined(method, args), load()]);
+        const result = asRecord(remote) ?? { entries: [] };
+        if (!Array.isArray(result.entries) || agentId.length === 0) return { handled: true, value: remote };
         const entries = [...result.entries, ...(local.agents[agentId] ?? []).map(projectInferenceRouterTranscriptEntry)];
         const limit = typeof record.limit === "number" && Number.isInteger(record.limit) && record.limit > 0 ? record.limit : 500;
         return { handled: true, value: { ...result, entries: entries.slice(-limit) } };
       }
-      if (method !== "sendPrompt" || provider === "cursor") return { handled: false };
+      if (method !== "sendPrompt" || !handledLocally(provider)) return { handled: false };
       const record = asRecord(args) ?? {};
       const agentId = typeof record.agentId === "string" ? record.agentId : "";
       const previous = queues.get(agentId) ?? Promise.resolve();

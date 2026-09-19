@@ -5,6 +5,7 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { getConfiguredBackendUrl } from "../../shared/node/cursor-token.js";
 import type { SandSettingsStore } from "../../shared/node/settings/sand-settings-store.js";
 import type { RecreateResult } from "./box-recreate-commands.js";
 import type { SandRemoteHostConnector } from "./box-host-connector.js";
@@ -162,6 +163,18 @@ async function localAuthMountArguments(): Promise<string[]> {
   return mounts;
 }
 
+// The box image carries its own default backend host. The container must be
+// told ours on every creation, not only when the optional credential race was
+// won: a container created without one would otherwise send whatever token it
+// is later handed to the image's default host.
+export function localDockerInferenceEnvironmentArguments(inferenceCredential?: Pick<InferenceCredential, "backendUrl">, env: NodeJS.ProcessEnv = process.env): string[] {
+  const backendUrl = inferenceCredential?.backendUrl ?? getConfiguredBackendUrl(env);
+  return [
+    "--env", `SAND_BACKEND_URL=${backendUrl}`,
+    ...(inferenceCredential == null ? [] : ["--env", "SAND_DEV_INFERENCE_TOKEN_FILE=/run/grok-bot/inference.json"]),
+  ];
+}
+
 async function ensureLocalDockerBox(settingsPath: string, inferenceCredential?: InferenceCredential): Promise<GatewayConnection> {
   const token = await readOrCreateToken(settingsPath);
   const hostBundle = await stageCurrentHostBundle(settingsPath);
@@ -190,7 +203,7 @@ async function ensureLocalDockerBox(settingsPath: string, inferenceCredential?: 
       "--label", `com.grok-bot.local-vm.schema-version=${LOCAL_DOCKER_SCHEMA_VERSION}`,
       "--platform", "linux/amd64", "--restart", "unless-stopped",
       "--env", "SAND_SUPERVISOR_ENABLED=1", "--env", "SAND_BOX_AUTO_UPDATE=0", "--env", "SAND_USE_EXISTING_BOX_EXEC_DAEMON=1", "--env", "SAND_TREE_SITTER_NODE_DEPS=/home/box/deps", "--env", "NODE_PATH=/home/box/deps", "--env", "SAND_GATEWAY_BIND_HOST=0.0.0.0", "--env", "SAND_HOST_PORT=1340", "--env", `SAND_GATEWAY_TOKEN=${token}`,
-      ...(inferenceCredential == null ? [] : ["--env", "SAND_DEV_INFERENCE_TOKEN_FILE=/run/grok-bot/inference.json", "--env", `SAND_BACKEND_URL=${inferenceCredential.backendUrl}`]),
+      ...localDockerInferenceEnvironmentArguments(inferenceCredential),
       "--publish", "127.0.0.1:1337:1337", "--publish", "127.0.0.1:1339:1339", "--publish", "127.0.0.1:1340:1340",
       "--publish", "127.0.0.1:6080:6080", "--publish", "127.0.0.1:6081:6081", "--publish", "127.0.0.1:8790:8790",
       "--volume", "grok-bot-local-vm-workspace:/workspace", "--volume", "grok-bot-local-vm-data:/home/box/sand-data",

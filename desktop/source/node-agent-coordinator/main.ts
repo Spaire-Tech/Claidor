@@ -20,6 +20,7 @@ import { createWebAuthnProvider } from "./webauthn/provider.js";
 import { createSpawnedWebAuthnSigner, resolveWebAuthnSignerPath } from "./webauthn/signer.js";
 import { ClientSideToolV2Relay } from "./client-side-tool-v2-relay.js";
 import { createCoordinatorInferenceRouter } from "./inference-router.js";
+import { setClaidorCredentialSource } from "../host/extensions/inference/provider-session.js";
 
 export interface McpOAuthPending {
   readonly serverName: string;
@@ -211,6 +212,13 @@ export async function composeCoordinator(dependencies: ComposeCoordinatorDepende
   }
 
   const gatewayDispatch = createGatewayRequestDispatch(gatewayClient);
+  setClaidorCredentialSource({
+    getAccessToken: async () => {
+      const issued = await command<{ accessToken?: unknown; backendUrl?: unknown } | null>(commands, "mintInferenceCredential", {});
+      if (typeof issued?.accessToken !== "string" || issued.accessToken.length === 0) throw new Error("Claidor is the selected provider, but the desktop has no signed-in credential to lend. Sign in to Claidor and try again.");
+      return issued.accessToken;
+    },
+  });
   const inferenceRouter = createCoordinatorInferenceRouter({
     dataDir: bootstrap.processConfig.dataDir,
     postEvent: (family, payload) => server.postEvent(family, payload),
