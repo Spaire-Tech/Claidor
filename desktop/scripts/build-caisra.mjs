@@ -57,10 +57,20 @@ async function bundleProcess({ name, entry, outfile }) {
     entryPoints: [path.join(repoRoot, entry)],
     bundle: true,
     platform: "node",
-    target: "node26",
+    // Not node26, even though package.json pins that. The source uses TC39
+    // explicit resource management (`using x = ...`), which a node26 target
+    // passes through untouched and any older runtime fails to parse. Naming an
+    // older target makes esbuild downlevel it, so the bundles load on whatever
+    // Node the machine happens to have and on whatever Node Electron ships.
+    target: "node22",
     format: "cjs",
     outfile: path.join(outRoot, outfile),
     external: EXTERNAL,
+    // jsonc-parser's default entry is a UMD bundle whose factory takes `require`
+    // as a parameter, so esbuild cannot see through its `require("./impl/format")`
+    // and the bundle throws MODULE_NOT_FOUND at load. Its package declares
+    // `module: lib/esm/main.js`; point at that instead.
+    alias: { "jsonc-parser": "jsonc-parser/lib/esm/main.js" },
     sourcemap: "linked",
     logLevel: "error",
     metafile: true,
