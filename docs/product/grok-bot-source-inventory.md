@@ -320,3 +320,81 @@ The founder asked about calling the agent. It is not in 0.18.
 
 So: dictation, well built, no calling. A voice call is new work for us whichever
 foundation we stand on.
+
+## Validation pass, 19 September 01:15 UTC — measured, not assumed
+
+Everything below was run in this container. No DMG, no bootstrap, no Anysphere
+binary, no credentials.
+
+| check | command | result |
+| --- | --- | --- |
+| host + libraries typecheck | `tsc --project source/tsconfig.json --noEmit` | **exit 0**, strict |
+| renderer typecheck | `tsc --project frontend/tsconfig.json --noEmit` | **exit 0**, strict |
+| renderer builds | `vite build --config frontend/vite.config.ts` | **built in 3.14s**, exit 0 |
+| host resolves | `esbuild source/host/main.ts --bundle --platform=node` | **13.1 MB, exit 0** |
+| their test suite | `npm test` | **17 of 18 pass** |
+
+The esbuild result is the one that matters most after the typecheck: it is real
+module resolution across all 471 host files and the 852 under `packages/`, not
+type-level agreement. Every import resolves to a real file. The only warnings
+were `import.meta` complaints caused by my choosing `cjs` output.
+
+**The single failing test is ours.** `research-archives.test.mjs` —
+"preserved 0.18.0 installers match the exact public release inventory" — fails
+`ENOENT` on `research-archives/original/0.18.0/artifacts.json`, the directory we
+deliberately excluded when vendoring. It asserts the presence of the signed
+installers we chose not to carry. Delete the test; we are never carrying them.
+
+### The residual list, which is short and enumerated
+
+`scripts/host-production-activation.mjs` keeps a machine-readable inventory of
+every production seam. I misread it at first and nearly reported the opposite,
+so the correction matters: **`hostProductionBindingInventorySpecs` lists eight
+required bindings, and all eight carry `classification: "recovered-source"` with
+a local `module:` path.** The `artifactAnchors` beside them are byte/line
+references into the shipped bundle used to *prove* the reconstruction has not
+drifted — provenance annotations, not imports, the same discipline the frontend
+README describes for its `@evidence` comments. The eight resolve to
+`box-copy-in.ts`, `box/generated-production.ts`,
+`production-binding-providers.ts` (three of them),
+`runner-context-production-provider.ts`,
+`transcript-mirror/production-provider.ts` and
+`extensions/local-exec/production.ts`. The DMG is needed to *verify* the anchors
+at build time, not to supply any code.
+
+**`mandatoryLocalExecRuntimeBlockers` are both resolved.** The script computes
+them by inspecting the source; I checked each condition directly:
+
+```
+production-executor.ts  new BaseShellCoreExecutor        → present
+production-executor.ts  createDefaultTerminalExecutor    → present (3×)
+production-executor.ts  new LocalBackgroundShellExecutor → present
+shell-stream.ts         MissingShellExecutionBindingError    → 0 occurrences
+background-shell.ts     MissingBackgroundShellBindingError   → 0 occurrences
+```
+
+Both blockers compute to empty. Local shell execution on the person's own
+machine is bound.
+
+**What genuinely remains unrecovered**, from their own declarations:
+
+1. `conditionalRunnerSemanticGaps` — two modules,
+   `runner/sand-auto-review-tool-escalations.ts` and
+   `runner/sand-shell-auto-review-enrichment.ts`: the shell/MCP
+   approval-provider projection is absent.
+2. `toolLocalSemanticMismatches` — one: `runner/tools/tool-input-error.ts`,
+   "tool-local invalid-input error identity is not yet exact".
+3. `unavailableAgentCapabilities` — `pdfTextExtraction` on `externalRead` is
+   fail-closed: "pdf-worker.{js,ts} is absent from both shipped host carriers",
+   so it was never recoverable from the binary at all.
+4. `PRODUCTION_RENDERER_GAPS` — `broadcast`, which the shipped app also marked
+   unavailable.
+
+Four items across a 471-file host and a 279-file renderer.
+
+**Still not shown: that it runs.** `source/host/main.ts` exports
+`startProductionHost` and does not self-start; booting it needs the extension
+ports supplied. Booting it *unmodified* would mean supplying Anysphere
+credentials, which we do not have and should not use. The honest next step is
+not a probe but the port itself: stand it up with Claidor seams in place of the
+six `production.ts` files.
