@@ -96,7 +96,19 @@ async function bundleProcess([entry, outfile]) {
     sourcemap: "linked",
     logLevel: "error",
     metafile: true,
-    define: { "process.env.CAISRA_BUILD": JSON.stringify("clean-source") },
+    // The source uses import.meta.url in several places — most importantly
+    // coordinator/production-root-provider.ts, which passes it as
+    // electronMainModuleUrl so the coordinator can locate dist/electron-main
+    // and fork from there. In a cjs bundle import.meta is empty, so that
+    // arrives as "" and validateProductionPorts throws "Production coordinator
+    // requires electronMainModuleUrl." esbuild warns about this; the upstream
+    // activation scripts answer it with exactly this banner and define, and so
+    // does this build.
+    banner: { js: 'const __import_meta_url = require("node:url").pathToFileURL(__filename).href;' },
+    define: {
+      "process.env.CAISRA_BUILD": JSON.stringify("clean-source"),
+      "import.meta.url": "__import_meta_url",
+    },
   });
   const bytes = Object.entries(result.metafile.outputs)
     .filter(([file]) => !file.endsWith(".map"))
