@@ -235,3 +235,88 @@ run either.
 
 **Consequence.** Porting `source/host/` into our Electron app is a port, not an
 excavation. The blocker I named does not exist.
+
+## Correction, 19 September 01:05 UTC: there IS a frontend, and it is substantial
+
+**This file said "the renderer was never recovered" and "we get the engine and
+the control plane, we do not get the UI." That is wrong.** I wrote it from the
+top-level README's disclaimer instead of opening the directory. The founder
+asked me to verify rather than assume. Verified:
+
+```
+frontend/src:  119 .tsx   160 .ts   28 .css
+frontend total lines (ts/tsx/css/html):  54,556
+```
+
+| area | lines | files |
+| --- | ---: | ---: |
+| `src/recovered/features/` | 39,391 | 250 |
+| `src/production/` | 7,352 | 26 |
+| `src/recovered/ui/` — the design system | 5,423 | 13 |
+| `src/recovered/runtime/` | 950 | 7 |
+| `src/recovered/contracts/` | 703 | 4 |
+| `src/dev/` | 527 | 3 |
+
+**What the features actually are**, not inferred from names but from the file
+tree: the conversation workspace (transcript, composer, sidebar, chat header,
+rich-text editor, find-in-chat, reply threads, conversation outline, media
+viewer, PDF viewer, spreadsheet viewer, mermaid, math); a ~45-file
+transcript-card system with views for attachment, auto-review approval, cloud
+agent, connector, email draft, link card, listener connect, local-tool
+permission, secret request, Slack draft and widget, plus reactions, an emoji
+picker and threads; the routines UI (~2,300 lines: view, schedule editor,
+trigger schema, run history); the computer shell **including
+`vnc-webview.tsx`**; teach-recording; an org chart with graph, layout and
+inspector; onboarding with a character and scene; settings; a plugins
+marketplace browser; roster; window chrome; and
+`ui/sand-*-primitives` — their design system, 5,423 lines.
+
+**The strongest evidence of completeness is the reconstructor's own gap list.**
+`frontend/src/production/evidence.ts` carries `PRODUCTION_UI_EVIDENCE`: 27
+surfaces, each pinned to a byte offset in the shipped bundle with the exact UI
+strings asserted present, so a test can verify them. Beside it,
+`PRODUCTION_RENDERER_GAPS` — "artifact-backed surfaces whose full interaction
+state is not yet cleanly recovered" — has **exactly one entry**:
+
+```ts
+broadcast: "The shipped command availability explicitly marks broadcast
+            unavailable because it has no current user path."
+```
+
+One gap, and it is a feature that did not work in the original either.
+
+`frontend/src/main.tsx` mounts `ProductionRenderer` and reports 13 live
+surfaces: shell, account, sign-in, conversation, transcript, composer, sidebar,
+agents, settings, plugins, updates, deep-links, desktop-bridge. It records
+`upstreamEntry: false` and `cleanEntrypoint: "frontend/src/main.tsx"`.
+
+**Why the top-level README misleads.** There are two build paths.
+`scripts/clean-build.mjs` exports both. `npm run package` calls
+`buildFidelityReconstructedAsar()`, which keeps the checksum-pinned **original**
+renderer and patches one settings screen into it — that is a fidelity exercise,
+chasing byte-identity with the shipped app. The other path,
+`scripts/renderer-production-build.mjs`, builds `frontend/src/main.tsx` with
+Vite to `dist/renderer` and audits it with `auditRendererClosure` and
+`auditUiProvenance`. **The clean renderer is a first-class supported build, not
+a sketch.** Their default script prefers the original because their goal was
+fidelity. Ours is not, and shipping their renderer chunks would be the wrong
+thing anyway.
+
+## Voice, settled
+
+The founder asked about calling the agent. It is not in 0.18.
+
+- Zero hits across all 2,002 `.ts` files for WebRTC, LiveKit, realtime audio,
+  peer connections, call sessions or audio streaming.
+- `frontend/manifests/component-names.json`, recovered from the shipped
+  renderer, contains exactly one voice string: **"Start voice input"**.
+- The one implementation, `frontend/src/recovered/features/conversation/
+  workspace/voice.tsx`, is 486 lines of MediaRecorder push-to-talk: opus/webm
+  capture, echo cancellation, noise suppression, auto gain, permission and
+  error states, a 5-minute ceiling, 1-second timeslices, feeding a
+  `VoiceTranscriber`.
+- The host side, `electron-main/account/cursor-transcribe.ts`, uploads the clip
+  to Anysphere and returns text. No local model.
+
+So: dictation, well built, no calling. A voice call is new work for us whichever
+foundation we stand on.
