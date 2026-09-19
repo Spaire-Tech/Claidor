@@ -6,7 +6,7 @@ from uuid import UUID
 
 from sqlalchemy import func, select
 
-from polar.kit.repository import RepositoryBase
+from polar.kit.repository import RepositoryBase, RepositorySoftDeletionMixin
 from polar.models import (
     DesktopAuthCode,
     DesktopBox,
@@ -16,27 +16,57 @@ from polar.models import (
 )
 
 
-class DesktopBoxRepository(RepositoryBase[DesktopBox]):
+class DesktopBoxRepository(
+    RepositorySoftDeletionMixin[DesktopBox], RepositoryBase[DesktopBox]
+):
     """The person's computer.
 
-    One row per account — the unique constraint on `user_id` is the
-    product decision (*there is no "which computer", only this
-    computer*), so `get_by_user` returning at most one row is a
-    guarantee of the schema rather than a convention of this method.
+    Unique on (`user_id`, `scope_key`), which is what makes
+    `POST /box/sandboxes` mean « ensure » rather than « create »: the
+    engine asks for a scope and gets back the box that is already there.
+    The product uses one scope, so in practice there is one row per
+    account — *there is no "which computer", only this computer*.
+
+    **Every read here takes a `user_id`.** There is deliberately no
+    `get(box_id)`: a box id from one account has to be invisible to
+    another, and the only way that cannot be forgotten is for no method
+    to exist that returns a row without the owner in the where clause.
     """
 
     model = DesktopBox
 
-    async def get_by_user(self, user_id: UUID) -> DesktopBox | None:
-        statement = self.get_base_statement().where(DesktopBox.user_id == user_id)
+    async def get_by_scope(self, user_id: UUID, scope_key: str) -> DesktopBox | None:
+        """The box this account already has for this scope, if any.
+
+        What makes `POST /box/sandboxes` « ensure » rather than
+        « create ». Each accidental extra box is a second bill.
+        """
+        statement = self.get_base_statement().where(
+            DesktopBox.user_id == user_id, DesktopBox.scope_key == scope_key
+        )
         return await self.get_one_or_none(statement)
+
+    async def get_for_user(self, user_id: UUID, box_id: UUID) -> DesktopBox | None:
+        """One box, **scoped to its owner in the query itself.**
+
+        Not « fetch, then check the owner »: a box id from one account
+        has to be invisible to another, and the only way that cannot be
+        forgotten is for there to be no method that returns a row
+        without the account in the where clause.
+        """
+        statement = self.get_base_statement().where(
+            DesktopBox.id == box_id, DesktopBox.user_id == user_id
+        )
+        return await self.get_one_or_none(statement)
+
+    async def list_for_user(self, user_id: UUID) -> Sequence[DesktopBox]:
+        statement = self.get_base_statement().where(DesktopBox.user_id == user_id)
+        return await self.get_all(statement)
 
     async def get_by_sandbox_id(self, sandbox_id: str) -> DesktopBox | None:
         """Used when E2B tells us about a box rather than the other way
         round — a webhook, or a sweep for sandboxes nobody owns."""
-        statement = self.get_base_statement().where(
-            DesktopBox.sandbox_id == sandbox_id
-        )
+        statement = self.get_base_statement().where(DesktopBox.sandbox_id == sandbox_id)
         return await self.get_one_or_none(statement)
 
 

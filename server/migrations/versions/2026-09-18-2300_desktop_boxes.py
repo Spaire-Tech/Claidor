@@ -7,11 +7,13 @@ Create Date: 2026-09-18 23:00:00.000000
 One new table and nothing else touched. See polar/models/desktop.py,
 polar/desktop/boxes.py and docs/product/agent-computer-plan.md.
 
-The unique constraint on user_id is the product decision, not a hint:
-one person has one computer (`CLAUDE.md` — *Maties runs on the machine,
-so there is no "which computer", only this computer*). Two laptops is a
-v2 problem, and when it arrives this constraint is the thing that has to
-be dropped deliberately rather than a second row appearing by accident.
+The unique constraint is on (user_id, scope_key), and that pair is what
+makes `POST /box/sandboxes` mean « ensure » rather than « create »: the
+engine asks for a scope and the broker decides whether that is a box it
+already has. The product uses one scope, `shared` — one box for all of
+a person's agents — so in practice there is one row per account, which
+is the founder's rule (*there is no "which computer", only this
+computer*). Each accidental extra row would be a second bill.
 """
 
 import sqlalchemy as sa
@@ -32,6 +34,7 @@ def upgrade() -> None:
         sa.Column("modified_at", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.Column("deleted_at", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.Column("user_id", sa.Uuid(), nullable=False),
+        sa.Column("scope_key", sa.String(length=128), nullable=False),
         sa.Column("sandbox_id", sa.String(length=128), nullable=True),
         sa.Column("template_id", sa.String(length=128), nullable=False),
         sa.Column("snapshot_id", sa.String(length=128), nullable=True),
@@ -46,7 +49,19 @@ def upgrade() -> None:
             ondelete="cascade",
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("desktop_boxes_pkey")),
-        sa.UniqueConstraint("user_id", name=op.f("desktop_boxes_user_id_key")),
+    )
+    # Unique among **live** rows only, and the partial predicate is the
+    # whole point. A deleted box is soft-deleted, so its row keeps
+    # holding (user_id, scope_key) forever; with a plain unique
+    # constraint the next `ensure` after somebody deletes their computer
+    # is refused by the database, which is the obvious thing to do after
+    # a reset that went badly.
+    op.create_index(
+        "ix_desktop_boxes_live_scope",
+        "desktop_boxes",
+        ["user_id", "scope_key"],
+        unique=True,
+        postgresql_where=sa.text("deleted_at IS NULL"),
     )
     op.create_index(
         op.f("ix_desktop_boxes_created_at"),

@@ -25,6 +25,7 @@ never a key.
 
 from __future__ import annotations
 
+import base64
 import functools
 import json
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -58,7 +59,13 @@ from polar.postgres import AsyncSession, get_db_session
 from polar.routing import APIRouter
 
 from .auth import ProxyCaller, bearer_token, get_desktop_session, get_proxy_caller
-from .boxes import BoxNotConfigured, BoxUpstreamError, BoxView, box_service
+from .boxes import (
+    DEFAULT_SCOPE_KEY,
+    BoxNotConfigured,
+    BoxNotFound,
+    BoxUpstreamError,
+    box_service,
+)
 from .composio import forward as composio_forward
 
 # Straight from the price list rather than through `service`, which
@@ -1664,6 +1671,379 @@ def _image_data_urls(answer: Any, output_format: str) -> list[str]:
     return urls
 
 
+# --- the computer -----------------------------------------------------------
+#
+# The person's box, brokered. `polar/desktop/boxes.py` holds the whole of
+# the reasoning and the E2B calls; these ten routes are the contract the
+# engine's box plugin was written against
+# (`docs/product/agent-computer-plan.md` §9, and
+# `openclaw-extensions/box/brokerClient.ts`, which is the contract in
+# executable form).
+#
+# **They live under `/api/proxy/box/…` and they are declared here for a
+# reason.** The app reaches this server through its local token proxy,
+# which prefixes `/api/proxy` and injects the account's bearer
+# (`openclawTokenProxy.ts:219`). FastAPI takes the first route that
+# matches, and `/api/proxy/{path:path}` below would swallow every one of
+# these and answer 404 — the same trap the Composio block underneath
+# already documents. Moving these after it silently kills the box.
+#
+# **Nothing here returns a key, and nothing returns an E2B sandbox id.**
+# `boxId` is this server's own row id. The key would bill every box we
+# run; the sandbox id would name a machine to whoever holds it.
+#
+# These answer in **plain JSON, not the app's `{code, data}` envelope**,
+# because their caller is not the app: it is the engine's plugin, whose
+# client reads `response.ok` and the body's own fields
+# (`brokerClient.json`). Two conventions on one server is a cost; a
+# client that cannot read the answer is worse.
+
+#: The computer is not switched on for this server. Reads as « not
+#: available here », never as a fault of the person's request.
+BOX_NOT_CONFIGURED = 503
+
+#: E2B refused or could not be reached, with its own sentence attached.
+BOX_UPSTREAM_REFUSED = 502
+
+#: The allowance is gone. The box is the first thing here that spends it
+#: while nobody is looking, so it is the one refusal a person is most
+#: likely to meet without having just asked for anything.
+BOX_QUOTA_EXHAUSTED = 402
+
+
+def _box_error(status: int, message: str) -> JSONResponse:
+    return JSONResponse({"error": message}, status_code=status)
+
+
+async def _box_json(make: Callable[[], Awaitable[Any]]) -> JSONResponse:
+    """Run one box operation and turn its three failures into the shapes
+    `brokerClient` reads. Written once because every route fails the same
+    way, and a second spelling of « not configured » is a second thing to
+    keep in step."""
+    try:
+        return JSONResponse(await make())
+    except BoxNotConfigured:
+        return _box_error(BOX_NOT_CONFIGURED, "The computer is not switched on here.")
+    except BoxNotFound:
+        # The same answer whether it belongs to nobody or to somebody
+        # else. That is what keeps one account's box invisible to another.
+        return _box_error(404, "No such box.")
+    except BoxUpstreamError as error:
+        return _box_error(BOX_UPSTREAM_REFUSED, error.message)
+
+
+class BoxEnsureBody(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    scopeKey: str = DEFAULT_SCOPE_KEY
+    template: str | None = None
+
+
+class BoxShellBody(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    script: str
+    args: list[str] = Field(default_factory=list)
+    stdinBase64: str | None = None
+
+
+class BoxExecBody(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    command: str
+    workdir: str | None = None
+    env: dict[str, str] = Field(default_factory=dict)
+    pty: bool = False
+    stdinBase64: str | None = None
+
+
+class BoxFileBody(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    path: str
+    contentBase64: str
+
+
+@router.post("/api/proxy/box/sandboxes", name="desktop:box_ensure")
+async def box_ensure(
+    body: BoxEnsureBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """**Ensure, not create.**
+
+    The same account and the same `scopeKey` get the box that is already
+    there rather than a second one, because each accidental extra box is
+    a second bill.
+
+    The allowance is checked **here and in no other box route**: this is
+    the only one that can start the meter. Pausing, describing or killing
+    a box has to keep working when the month has run out — refusing to
+    kill an exhausted account's box would leave it running and billing,
+    which is precisely backwards.
+    """
+    user = desktop_session.user
+    if await desktop.exhausted(session, user):
+        return _box_error(
+            BOX_QUOTA_EXHAUSTED,
+            "Monthly credits exhausted. The computer stays asleep until the "
+            "allowance resets at the start of next month.",
+        )
+    return await _box_json(
+        lambda: _box_state_payload(
+            box_service.ensure(
+                session, user, scope_key=body.scopeKey, template=body.template
+            )
+        )
+    )
+
+
+@router.get("/api/proxy/box/machines", name="desktop:box_machines")
+async def box_machines(
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """The registry. Declared before `/sandboxes/{box_id}` would ever be
+    consulted for it — different prefix, so no clash, but the ordering is
+    kept obvious rather than left to chance."""
+    return await _box_json(
+        lambda: _machines_payload(box_service.machines(session, desktop_session.user))
+    )
+
+
+@router.get("/api/proxy/box/sandboxes/{box_id}", name="desktop:box_describe")
+async def box_describe(
+    box_id: str,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    return await _box_json(
+        lambda: _box_state_payload(
+            box_service.describe(session, desktop_session.user, box_id)
+        )
+    )
+
+
+@router.delete(
+    "/api/proxy/box/sandboxes/{box_id}",
+    name="desktop:box_remove",
+    status_code=204,
+    response_model=None,
+)
+async def box_remove(
+    box_id: str,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> Response:
+    """204, and a 404 is fine — the client treats it as already gone.
+
+    E2B bills by the second, so this really kills the machine rather than
+    forgetting the row: a forgotten row is a machine nobody can now reach
+    to stop.
+    """
+    try:
+        await box_service.remove(session, desktop_session.user, box_id)
+    except BoxNotConfigured:
+        return _box_error(BOX_NOT_CONFIGURED, "The computer is not switched on here.")
+    except BoxNotFound:
+        return Response(status_code=404)
+    except BoxUpstreamError as error:
+        return _box_error(BOX_UPSTREAM_REFUSED, error.message)
+    return Response(status_code=204)
+
+
+@router.post("/api/proxy/box/sandboxes/{box_id}/update", name="desktop:box_update")
+async def box_update(
+    box_id: str,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    return await _box_json(
+        lambda: _box_state_payload(
+            box_service.update(session, desktop_session.user, box_id)
+        )
+    )
+
+
+@router.post("/api/proxy/box/sandboxes/{box_id}/reset", name="desktop:box_reset")
+async def box_reset(
+    box_id: str,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    return await _box_json(
+        lambda: _box_state_payload(
+            box_service.reset(session, desktop_session.user, box_id)
+        )
+    )
+
+
+@router.post("/api/proxy/box/sandboxes/{box_id}/shell", name="desktop:box_shell")
+async def box_shell(
+    box_id: str,
+    body: BoxShellBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """One script, run to completion.
+
+    A non-zero exit comes back **in the body, not as an HTTP error**: the
+    filesystem bridge builds every file operation out of this and decides
+    for itself whether a failure matters (`brokerClient.runShell`,
+    `allowFailure`).
+    """
+    stdin = _decode_base64(body.stdinBase64)
+    if stdin is _BAD_BASE64:
+        return _box_error(400, "stdinBase64 is not base64.")
+    return await _box_json(
+        lambda: box_service.shell(
+            session,
+            desktop_session.user,
+            box_id,
+            script=body.script,
+            args=body.args,
+            stdin=stdin,
+        )
+    )
+
+
+@router.put("/api/proxy/box/sandboxes/{box_id}/file", name="desktop:box_put_file")
+async def box_put_file(
+    box_id: str,
+    body: BoxFileBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """Import: the only way a file from the person's machine gets into
+    the box. A deliberate copy, never ambient."""
+    content = _decode_base64(body.contentBase64)
+    if content is _BAD_BASE64 or content is None:
+        return _box_error(400, "contentBase64 is not base64.")
+    return await _box_json(
+        lambda: _ok_dict(
+            box_service.put_file(
+                session, desktop_session.user, box_id, path=body.path, content=content
+            )
+        )
+    )
+
+
+@router.get("/api/proxy/box/sandboxes/{box_id}/file", name="desktop:box_get_file")
+async def box_get_file(
+    box_id: str,
+    path: str = Query(...),
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """Export: take a file back out of the box."""
+    return await _box_json(
+        lambda: _file_payload(
+            box_service.get_file(session, desktop_session.user, box_id, path=path)
+        )
+    )
+
+
+@router.post(
+    "/api/proxy/box/sandboxes/{box_id}/exec",
+    name="desktop:box_exec",
+    response_model=None,
+)
+async def box_exec(
+    box_id: str,
+    body: BoxExecBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> Response:
+    """The streamed one. NDJSON, one JSON object per line.
+
+    `media_type` is `application/x-ndjson` and `cache-control: no-store`,
+    and the frames are yielded the moment they arrive rather than
+    collected — buffering a three-minute build into three minutes of
+    silence is indistinguishable from a hang, from the agent's side.
+    Killing the command when the client goes away is
+    `BoxService.exec_frames`'s `finally`, which is reached when Starlette
+    closes the generator.
+    """
+    frames = box_service.exec_frames(
+        session,
+        desktop_session.user,
+        box_id,
+        command=body.command,
+        workdir=body.workdir,
+        env=body.env,
+        pty=body.pty,
+    )
+    return StreamingResponse(
+        _box_stream(frames),
+        status_code=200,
+        media_type="application/x-ndjson",
+        headers={"cache-control": "no-store"},
+    )
+
+
+async def _box_stream(frames: AsyncIterator[bytes]) -> AsyncIterator[bytes]:
+    """The three failures, as frames rather than as a status.
+
+    By the time a command is streaming, the status line is long gone, so
+    a failure has to arrive in the body. And every one of these still
+    ends in an `exit` frame: a stream that stops without one is treated
+    as a failure by the bridge, on purpose, and leaving it to infer that
+    from a closed socket is how a lie gets told about a command that
+    never ran.
+    """
+    try:
+        async for frame in frames:
+            yield frame
+    except BoxNotConfigured:
+        yield (
+            json.dumps(
+                {"t": "error", "message": "The computer is not switched on here."}
+            ).encode()
+            + b"\n"
+        )
+        yield b'{"t":"exit","code":1}\n'
+    except BoxNotFound:
+        yield b'{"t":"error","message":"No such box."}\n'
+        yield b'{"t":"exit","code":1}\n'
+    except BoxUpstreamError as error:
+        yield (
+            json.dumps(
+                {"t": "error", "message": error.message}, separators=(",", ":")
+            ).encode()
+            + b"\n"
+        )
+        yield b'{"t":"exit","code":1}\n'
+
+
+#: A sentinel, because `None` is a legitimate answer for « nothing was
+#: sent » and « that was not base64 » must not read as the same thing.
+_BAD_BASE64 = object()
+
+
+def _decode_base64(raw: str | None) -> Any:
+    if raw is None:
+        return None
+    try:
+        return base64.b64decode(raw, validate=True)
+    except (ValueError, TypeError):
+        return _BAD_BASE64
+
+
+async def _box_state_payload(awaitable: Awaitable[Any]) -> dict[str, Any]:
+    return (await awaitable).payload()
+
+
+async def _machines_payload(
+    awaitable: Awaitable[list[dict[str, Any]]],
+) -> dict[str, Any]:
+    return {"machines": await awaitable}
+
+
+async def _file_payload(awaitable: Awaitable[bytes]) -> dict[str, Any]:
+    return {"contentBase64": base64.b64encode(await awaitable).decode()}
+
+
+async def _ok_dict(awaitable: Awaitable[None]) -> dict[str, Any]:
+    await awaitable
+    return {"ok": True}
+
+
 # Apps through Composio: the app's six calls, forwarded with Claidor's
 # key and the account's own Composio user id (`composio.py`). Declared
 # before the catch-all below, because FastAPI takes the first route
@@ -1693,130 +2073,6 @@ async def proxy_other(path: str) -> JSONResponse:
         {"error": {"type": "not_found_error", "message": f"/{path} is not proxied."}},
         status_code=404,
     )
-
-
-# --- the computer -----------------------------------------------------------
-#
-# The person's box, brokered. `polar/desktop/boxes.py` holds the whole of
-# the reasoning and the E2B calls; these five routes are the app's door
-# onto it, in the app's own `{code, data}` envelope like everything else
-# under `/api/`.
-#
-# **Nothing here returns a key or a sandbox id.** The app gets a handle,
-# a state, and — only while the box is up — an address to show a screen
-# at. That is the point of the module: a key inside an Electron app is a
-# published key.
-
-#: The computer is not switched on for this server. Reads as « not
-#: available here », never as a fault of the person's request — the same
-#: rule a missing model key follows.
-BOX_NOT_CONFIGURED = 50310
-
-#: E2B refused or could not be reached, with its own sentence attached.
-BOX_UPSTREAM_REFUSED = 50210
-
-#: The allowance is gone. The box is the first thing here that spends it
-#: while nobody is looking, so this is the one refusal a person is most
-#: likely to meet without having just asked for anything.
-BOX_QUOTA_EXHAUSTED = 40205
-
-
-async def _box_answer(
-    make: Callable[[], Awaitable[BoxView]],
-) -> JSONResponse:
-    """Run one box operation and turn its two failures into the app's
-    shape. Written once because all five routes fail identically, and a
-    second spelling of « the computer is not configured » is a second
-    thing to keep in step."""
-    try:
-        return _ok((await make()).payload())
-    except BoxNotConfigured:
-        return _fail(BOX_NOT_CONFIGURED, "The computer is not switched on here.")
-    except BoxUpstreamError as error:
-        return _fail(BOX_UPSTREAM_REFUSED, error.message)
-
-
-@router.get("/api/box", name="desktop:box")
-async def box_state(
-    desktop_session: DesktopSession = Depends(get_desktop_session),
-    session: AsyncSession = Depends(get_db_session),
-) -> JSONResponse:
-    """What the person's computer is doing.
-
-    Reconciles against E2B before answering, so this is not Claidor's
-    memory of the box but the box. It also settles the awake time it
-    finds, which means simply *looking* keeps the meter honest.
-    """
-    return await _box_answer(lambda: box_service.view(session, desktop_session.user))
-
-
-@router.post("/api/box/ensure", name="desktop:box_ensure")
-async def box_ensure(
-    desktop_session: DesktopSession = Depends(get_desktop_session),
-    session: AsyncSession = Depends(get_db_session),
-) -> JSONResponse:
-    """Give this person a running computer, whatever state it is in.
-
-    The one call the app makes before the agent touches the box. It
-    covers no box, a paused box, a running box and a box E2B has lost,
-    because the app should not have to know which it is in.
-
-    The allowance is checked **here and not in the other four**: this is
-    the only route that can start the meter running. Pausing, or looking
-    at, a box that is already awake must keep working when the month has
-    run out — refusing to pause an exhausted account's box would leave it
-    awake and billing, which is precisely backwards.
-    """
-    user = desktop_session.user
-    if await desktop.exhausted(session, user):
-        return _fail(
-            BOX_QUOTA_EXHAUSTED,
-            "Monthly credits exhausted. The computer stays asleep until the "
-            "allowance resets at the start of next month.",
-        )
-    return await _box_answer(lambda: box_service.ensure(session, user))
-
-
-@router.post("/api/box/pause", name="desktop:box_pause")
-async def box_pause(
-    desktop_session: DesktopSession = Depends(get_desktop_session),
-    session: AsyncSession = Depends(get_db_session),
-) -> JSONResponse:
-    """Stop the bill without losing the computer.
-
-    Paused, never killed: E2B keeps the filesystem and the memory, so the
-    person's logins and open work survive and only the compute stops.
-    """
-    return await _box_answer(lambda: box_service.pause(session, desktop_session.user))
-
-
-@router.post("/api/box/update", name="desktop:box_update")
-async def box_update(
-    desktop_session: DesktopSession = Depends(get_desktop_session),
-    session: AsyncSession = Depends(get_db_session),
-) -> JSONResponse:
-    """Recovery that keeps the person's files and logins.
-
-    Snapshot, discard, rebuild from the snapshot. For a box that is
-    wedged rather than one that is wrong. See `BoxService.update` for the
-    one place this differs from the spec it comes from.
-    """
-    return await _box_answer(lambda: box_service.update(session, desktop_session.user))
-
-
-@router.post("/api/box/reset", name="desktop:box_reset")
-async def box_reset(
-    desktop_session: DesktopSession = Depends(get_desktop_session),
-    session: AsyncSession = Depends(get_db_session),
-) -> JSONResponse:
-    """Go back to the last snapshot Claidor holds.
-
-    **This loses work**, and with no stored snapshot it loses the whole
-    computer — files, installed tools and logins — and builds a clean one.
-    The app must ask before calling it; the server cannot ask, so it
-    cannot be the thing that decides.
-    """
-    return await _box_answer(lambda: box_service.reset(session, desktop_session.user))
 
 
 # --- the connections --------------------------------------------------------

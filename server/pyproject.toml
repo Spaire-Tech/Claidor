@@ -75,6 +75,7 @@ dependencies = [
   "formualizer>=0.8.4",
   "ironcalc>=0.8.3",
   "z3-solver>=5.1.0.0",
+  "e2b>=2.51.0",
 ]
 
 [dependency-groups]

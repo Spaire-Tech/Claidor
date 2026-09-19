@@ -213,11 +213,23 @@ class Settings(BaseSettings):
     # « not configured » rather than a stack trace, exactly as a missing
     # model key reads as « not available here ».
     E2B_API_KEY: str = ""
-    E2B_BASE_URL: str = "https://api.e2b.dev"
+    # E2B's own domain, passed to the SDK. A setting rather than a
+    # constant because E2B sells a self-hosted cluster, and the day we
+    # move onto one this is the only line that changes.
+    E2B_DOMAIN: str = "e2b.dev"
     # The template a new box is built from. E2B's own stock template
     # until we build one; a snapshot id also goes here when a box is
     # recovered, because E2B lets a snapshot stand in for a template.
     E2B_TEMPLATE_ID: str = "base"
+    # Where the box keeps the person's files, and where the agent works.
+    #
+    # Named by the server because the server started the template and is
+    # the one that knows (`agent-computer-plan.md` §9). The plugin
+    # prefers whatever we answer and falls back to its own default, and
+    # it **ignores a non-absolute answer** rather than guessing — so
+    # these must stay absolute or be left empty.
+    E2B_WORKSPACE_DIR: str = "/home/user/workspace"
+    E2B_AGENT_WORKSPACE_DIR: str = "/home/user/workspace"
     # How long E2B keeps a box awake without being told otherwise. Every
     # ensure/resume pushes it out again, so this is "how long after the
     # last word does the computer stay up", not a session length. Short,

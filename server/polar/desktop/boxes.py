@@ -1,62 +1,67 @@
 """The person's computer, brokered.
 
-The box is one persistent Linux machine per person — "my computer" to
-them — where files, installed tools and browser logins survive across
-turns and across days. It runs on E2B, locked by the founder on
-18 September: *"i did mean e2b. lets lock e2b."*
+The box is a persistent Linux machine — "my computer" to the person —
+where files, installed tools and browser logins survive across turns and
+across days. It runs on E2B, locked by the founder on 18 September:
+*"i did mean e2b. lets lock e2b."*
 
 **The desktop app never talks to E2B, and this module is why.** The
 founder, 16 September: *"my users should never put a key. everything
-happens under the hood. not a setting."* So the E2B key is Claidor's.
-And a key that ships inside an Electron app is a published key: anyone
-with the app has it, and one extracted key bills every box we run. The
-app therefore holds an opaque handle and a stream address, never a key
-and never a sandbox id — because a sandbox id plus the key is the whole
-of the authority over somebody's computer.
+happens under the hood. not a setting."* So the E2B key is Claidor's,
+and it must not ship inside an Electron app: anyone with the app would
+have it, and one extracted key bills every box we run. The app holds an
+opaque handle; **no route here returns a key, and none returns an E2B
+sandbox id either.** `boxId` is this server's own row id, so E2B's
+identifiers never leave the server and one account's box is not even
+nameable by another.
 
-That is the same shape this server already has twice: the metered model
-proxy, and Composio's key in `polar/desktop/composio.py`. This is a
-third instance of a pattern, not a new one.
+The road the app takes is the local token proxy
+(`desktop/src/main/libs/openclawTokenProxy.ts`), which injects the
+account's access token and refreshes it. It prefixes `/api/proxy`, which
+is why these routes are served at `/api/proxy/box/…`. That proxy strips
+the `upgrade` header, so there is no WebSocket: `/exec` is one chunked
+POST answering in NDJSON. All of this is the Box agent's finding, in
+`docs/product/agent-computer-plan.md` §6.
 
-**What is different, and it is the thing to understand here: a box costs
-money while nobody is using it.** Every other line in this module's
-neighbourhood bills for work somebody asked for. A box bills for
-existing. Three consequences run through everything below:
+**What makes this different from everything else on this server: a box
+costs money while nobody is using it.** A model call is free until
+somebody sends a message; a box bills for existing. Three consequences
+run through the code below:
 
-1. Awake time is settled in **slices**, on every call that touches the
-   box, rather than once when it stops. A box awake for a week cannot
-   arrive as one surprise at the end, and a server that restarts cannot
-   lose the week.
-2. A box is **paused, not killed**, when it is idle. Pausing stops the
-   compute bill and keeps the filesystem and the logins; killing loses
-   the person's computer.
-3. The TTL is short and pushed out on every touch, so a box that is
-   forgotten stops costing rather than running until someone notices.
+1. Awake time is settled in **slices**, on every call that touches a
+   box, not once when it stops. A box awake for a week must not arrive
+   as one surprise, and a server that restarts must not lose the week.
+2. A box is **paused, not killed**, when it goes idle — pausing keeps
+   the filesystem and the logins and stops the compute bill.
+3. Every call pushes the TTL out, because *"the person should not lose
+   their session because the agent was thinking"* — and an abandoned
+   box must still stop on its own, or it bills forever.
 
-**E2B is the truth and Claidor's row is a belief.** They disagree
-routinely — a sandbox is reaped, a pause times out, a deploy lands
-mid-call. Every function here that learns the real state writes it down
-rather than arguing with it, and `_reconcile` is that rule in one place.
+**Why the `e2b` SDK and not raw httpx.** The rest of this server calls
+providers with `httpx` directly, and that was the first instinct here
+too. It is wrong for this one: E2B's control plane is ordinary REST, but
+running a command and reading a file go to **envd inside the sandbox**
+over Connect-RPC with protobuf framing. Hand-rolling that would be
+inventing a protocol this session cannot test against — there is no E2B
+key here — which is exactly the kind of guess that has cost this
+repository days. The SDK is the documented path and it is used for the
+data plane; the lifecycle calls go through it too, rather than half and
+half.
 
-The API is E2B's own REST, called with `httpx` and no SDK, for the same
-reason the model proxy calls Anthropic and OpenAI directly: one less
-dependency between us and a wire we have to understand anyway. The
-operations used are `POST /v2/sandboxes`, `GET /sandboxes/{id}`,
-`POST /v2/sandboxes/{id}/connect`, `POST /sandboxes/{id}/pause`,
-`POST /sandboxes/{id}/snapshots` and `DELETE /sandboxes/{id}`, all
-authenticated with an `X-API-Key` header — read from E2B's published
-OpenAPI document (`github.com/e2b-dev/infra`, `spec/openapi.yml`),
-not from memory.
+**Nothing in this module has ever run against E2B.** No key exists in
+this environment. Every test replaces the SDK. See the working note.
 """
 
 from __future__ import annotations
 
+import asyncio
+import base64
+import json
+from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
-from uuid import UUID
 
-import httpx
 import structlog
 
 from polar.config import settings
@@ -64,11 +69,7 @@ from polar.kit.utils import utc_now
 from polar.models import DesktopBox, DesktopBoxState, User
 from polar.postgres import AsyncSession
 
-from .pricing import (
-    BOX_MAX_SECONDS_PER_SETTLEMENT,
-    Usage,
-    box_model,
-)
+from .pricing import BOX_MAX_SECONDS_PER_SETTLEMENT, Usage, box_model
 from .repository import DesktopBoxRepository
 
 log = structlog.get_logger()
@@ -78,22 +79,33 @@ log = structlog.get_logger()
 #: The same lesson as `desktop.proxy.upstream_refused`, which on
 #: 13 September ended two hours of guessing about a model failure. A box
 #: that will not start is the same shape of problem: the status alone
-#: says nothing, and the sentence beside it usually says everything.
+#: says nothing and the sentence beside it usually says everything.
 UPSTREAM_REFUSED = "desktop.box.upstream_refused"
 
-_REFUSAL_LOG_LIMIT = 2_000
+#: The scope the product actually uses: one box for all of a person's
+#: agents. `docs/product/agent-computer-plan.md` — *they share one
+#: computer and have separate desktops*.
+DEFAULT_SCOPE_KEY = "shared"
 
-#: E2B answers 404 for a sandbox it no longer has. That is not an error
-#: to retry — it is the answer, and it means the person's box is gone.
-_GONE_STATUSES = frozenset({404, 410})
+#: How long one `/exec` command may run. Past this E2B stops it, and the
+#: stream ends with a real exit frame rather than hanging.
+EXEC_TIMEOUT_SECONDS = 3600.0
+
+#: How long one `/shell` script may run. Shorter, because the remote
+#: filesystem bridge builds every file operation out of this and a file
+#: operation that takes minutes is a fault, not a long job.
+SHELL_TIMEOUT_SECONDS = 120.0
 
 
 class BoxNotConfigured(Exception):
-    """Claidor holds no E2B key.
+    """Claidor holds no E2B key. Never a fault of the person's request."""
 
-    Raised rather than returned so that no caller can forget it, and
-    turned into « the computer is not switched on here » at the route.
-    It is never a fault of the person's request.
+
+class BoxNotFound(Exception):
+    """No such box for *this account*.
+
+    The same answer whether the box belongs to nobody or to somebody
+    else, which is what keeps one account's box invisible to another.
     """
 
 
@@ -107,135 +119,97 @@ class BoxUpstreamError(Exception):
 
 
 @dataclass(frozen=True)
-class BoxView:
-    """What the app is allowed to know about the box.
+class BoxState:
+    """`BoxState` as `brokerClient.ts` declares it, and nothing more.
 
-    Deliberately small, and the omissions are the point: **no sandbox id
-    and no key.** The app gets a state it can draw, a handle it can quote
-    back, and the addresses it needs to show a screen. Everything that
-    would let it reach E2B directly stays on this side.
+    The omissions are the point: no key, no E2B sandbox id. `boxId` is
+    this server's row id.
     """
 
-    handle: str
-    state: str
-    running_since: datetime | None
-    #: Where the box's screen can be watched, when it is running. E2B
-    #: serves sandbox traffic on a per-sandbox hostname; that hostname is
-    #: derived from the sandbox id, so it is already a capability of a
-    #: kind and is only handed out while the box is up.
-    stream_url: str | None
-    awake_seconds: int
+    box_id: str
+    running: bool
+    template: str | None
+    created_at_ms: int | None
+    last_used_at_ms: int | None
+    workspace_dir: str | None
+    agent_workspace_dir: str | None
 
     def payload(self) -> dict[str, Any]:
-        return {
-            "handle": self.handle,
-            "state": self.state,
-            "runningSince": (
-                self.running_since.isoformat() if self.running_since else None
-            ),
-            "streamUrl": self.stream_url,
-            "awakeSeconds": self.awake_seconds,
-        }
+        body: dict[str, Any] = {"boxId": self.box_id, "running": self.running}
+        if self.template:
+            body["template"] = self.template
+        if self.created_at_ms is not None:
+            body["createdAtMs"] = self.created_at_ms
+        if self.last_used_at_ms is not None:
+            body["lastUsedAtMs"] = self.last_used_at_ms
+        # Absolute or absent. The plugin ignores a non-absolute answer
+        # rather than guessing at it, so sending a relative one would be
+        # the same as sending nothing while looking like an answer.
+        if self.workspace_dir and self.workspace_dir.startswith("/"):
+            body["workspaceDir"] = self.workspace_dir
+        if self.agent_workspace_dir and self.agent_workspace_dir.startswith("/"):
+            body["agentWorkspaceDir"] = self.agent_workspace_dir
+        return body
 
 
 def configured() -> bool:
     return bool(settings.E2B_API_KEY)
 
 
-def _headers() -> dict[str, str]:
-    return {
-        "X-API-Key": settings.E2B_API_KEY,
-        "content-type": "application/json",
-    }
+def _ms(moment: datetime | None) -> int | None:
+    return int(moment.timestamp() * 1000) if moment is not None else None
 
 
-def _timeout() -> httpx.Timeout:
-    # Creating a sandbox is the slow one: E2B has to schedule and boot a
-    # microVM. Resuming is about a second. Neither should be allowed to
-    # hold a request open for minutes.
-    return httpx.Timeout(60.0, connect=15.0)
+def _translate(error: Exception, operation: str) -> Exception:
+    """Turn an SDK exception into one of ours, keeping E2B's sentence.
 
+    Imported inside the function because `e2b` pulls in a protobuf stack
+    and this module is imported at boot by the router; a provider SDK
+    must not be able to stop the server starting.
+    """
+    from e2b.exceptions import NotFoundException, SandboxException
 
-def _log_refusal(operation: str, status: int, body: bytes | None) -> None:
-    text = (body or b"").decode(errors="replace").strip()
-    log.warning(
-        UPSTREAM_REFUSED,
-        operation=operation,
-        status=status,
-        body=text[:_REFUSAL_LOG_LIMIT] or "(empty)",
-        truncated=len(text) > _REFUSAL_LOG_LIMIT,
-    )
-
-
-def _refusal_message(body: bytes | None) -> str:
-    """E2B's own sentence, so a failure says what is wrong."""
-    import json
-
-    try:
-        parsed = json.loads(body or b"")
-    except ValueError:
-        parsed = None
-    if isinstance(parsed, dict):
-        for key in ("message", "error", "detail"):
-            value = parsed.get(key)
-            if isinstance(value, str) and value.strip():
-                return value.strip()[:500]
-    return (body or b"").decode(errors="replace").strip()[:500] or (
-        "The computer service refused the request."
-    )
+    if isinstance(error, NotFoundException):
+        return BoxNotFound()
+    message = str(error).strip() or "The computer service refused the request."
+    log.warning(UPSTREAM_REFUSED, operation=operation, body=message[:2000])
+    if isinstance(error, SandboxException):
+        return BoxUpstreamError(message[:500])
+    return BoxUpstreamError(message[:500])
 
 
 class BoxService:
     """Everything Claidor does to a person's computer."""
 
-    # --- talking to E2B -----------------------------------------------
+    # --- E2B ----------------------------------------------------------
 
-    async def _call(
-        self,
-        method: str,
-        path: str,
-        *,
-        json_body: dict[str, Any] | None = None,
-        allow_gone: bool = False,
-    ) -> tuple[int, Any]:
-        """One E2B call. Returns the status and the decoded body.
-
-        `allow_gone` lets a caller treat "E2B has never heard of this
-        sandbox" as an answer rather than a failure, which is what it is
-        for every operation on a box that has been reaped.
-        """
+    def _api_params(self) -> dict[str, Any]:
         if not configured():
             raise BoxNotConfigured()
+        return {"api_key": settings.E2B_API_KEY, "domain": settings.E2B_DOMAIN}
 
-        import json as _json
+    async def _connect(self, box: DesktopBox) -> Any:
+        """A live handle on this box's sandbox, resumed if it was paused.
 
-        url = f"{settings.E2B_BASE_URL.rstrip('/')}{path}"
-        async with httpx.AsyncClient(timeout=_timeout()) as client:
-            try:
-                response = await client.request(
-                    method, url, headers=_headers(), json=json_body
-                )
-            except httpx.HTTPError as error:
-                log.warning(
-                    "desktop.box.upstream_unreachable", path=path, error=str(error)
-                )
-                raise BoxUpstreamError(
-                    "The computer service could not be reached."
-                ) from error
+        `connect` is E2B's « make it usable », which is what every caller
+        below actually wants: it resumes a paused sandbox and is a no-op
+        on a running one, so no caller has to know which it was.
+        """
+        from e2b import AsyncSandbox
 
-        if response.status_code in _GONE_STATUSES and allow_gone:
-            return response.status_code, None
-        if response.status_code >= 400:
-            _log_refusal(f"{method} {path}", response.status_code, response.content)
-            raise BoxUpstreamError(
-                _refusal_message(response.content), response.status_code
-            )
-        if not response.content:
-            return response.status_code, None
+        if not box.sandbox_id:
+            raise BoxNotFound()
         try:
-            return response.status_code, _json.loads(response.content)
-        except ValueError:
-            return response.status_code, None
+            sandbox = await AsyncSandbox.connect(box.sandbox_id, **self._api_params())
+            # Keep it alive while it is in use. The plugin cannot do this
+            # — it does not know the TTL — and without it a person loses
+            # their session because the agent spent a minute thinking.
+            await sandbox.set_timeout(settings.E2B_SANDBOX_TTL_SECONDS)
+            return sandbox
+        except BoxNotConfigured:
+            raise
+        except Exception as error:
+            raise _translate(error, f"connect {box.sandbox_id}") from error
 
     # --- the money ----------------------------------------------------
 
@@ -247,18 +221,13 @@ class BoxService:
         now: datetime | None = None,
         stopping: bool = False,
     ) -> int:
-        """Charge for the awake time that has passed since the last time
-        this ran, and move the mark forward.
+        """Charge for the awake time since the last settlement.
 
-        Called on **every** route that touches a box, not only when one
-        stops. That is the whole design: a box bills while it exists, so
-        the bill has to be taken in slices that survive a restart. The
-        alternative — settle once at pause — loses everything if the
-        process dies, and presents a week as one number if it does not.
-
-        Returns the seconds charged, which is zero for a box that was not
-        running. Writes nothing when there is nothing to charge, because
-        an empty row is noise in a table people read.
+        Called on **every** route that touches a box. That is the whole
+        design: a box bills while it exists, so the bill is taken in
+        slices that survive a restart. Settling only at pause loses
+        everything if the process dies, and presents a week as one
+        number if it does not.
         """
         moment = now or utc_now()
         anchor = box.billed_through or box.running_since
@@ -270,9 +239,8 @@ class BoxService:
 
         seconds = int((moment - anchor).total_seconds())
         if seconds <= 0:
-            # Clock went backwards, or two calls landed in the same
-            # second. Move the mark up so the next slice is measured from
-            # here, and charge nothing.
+            # Clock went backwards, or two calls landed in one second.
+            # Move the mark up and charge nothing.
             box.billed_through = moment
             if stopping:
                 box.running_since = None
@@ -280,10 +248,9 @@ class BoxService:
             return 0
 
         if seconds > BOX_MAX_SECONDS_PER_SETTLEMENT:
-            # The guard in `pricing.py` caps what is charged; this says
-            # so out loud, because a gap this long means something went
-            # wrong with a clock or a deploy and nobody would otherwise
-            # know it had been quietly truncated.
+            # `pricing.py` caps what is charged; this says so out loud,
+            # because a gap this long means a clock or a deploy went
+            # wrong and nobody would otherwise know it was truncated.
             log.warning(
                 "desktop.box.settlement_capped",
                 user_id=str(box.user_id),
@@ -298,9 +265,7 @@ class BoxService:
             session,
             user_id=box.user_id,
             session_id=None,
-            model=box_model(
-                settings.E2B_SANDBOX_VCPU, settings.E2B_SANDBOX_MEMORY_GIB
-            ),
+            model=box_model(settings.E2B_SANDBOX_VCPU, settings.E2B_SANDBOX_MEMORY_GIB),
             usage=Usage(input_tokens=charged),
             stream=False,
             upstream_status=200,
@@ -313,19 +278,24 @@ class BoxService:
 
     # --- the row ------------------------------------------------------
 
-    async def _row(self, session: AsyncSession, user: User) -> DesktopBox:
-        """This person's box row, made if it is their first time."""
+    async def _for_id(
+        self, session: AsyncSession, user: User, box_id: str
+    ) -> DesktopBox:
+        """This account's box with that handle, or `BoxNotFound`.
+
+        Scoped by `user_id` in the query itself rather than fetched and
+        then checked, so there is no version of this that forgets.
+        """
+        from uuid import UUID
+
+        try:
+            wanted = UUID(box_id)
+        except (ValueError, AttributeError, TypeError):
+            raise BoxNotFound() from None
         repository = DesktopBoxRepository.from_session(session)
-        box = await repository.get_by_user(user.id)
-        if box is not None:
-            return box
-        box = DesktopBox(
-            user_id=user.id,
-            template_id=settings.E2B_TEMPLATE_ID,
-            state=DesktopBoxState.absent.value,
-        )
-        session.add(box)
-        await session.flush()
+        box = await repository.get_for_user(user.id, wanted)
+        if box is None:
+            raise BoxNotFound()
         return box
 
     def _mark_running(self, box: DesktopBox, *, now: datetime | None = None) -> None:
@@ -340,9 +310,9 @@ class BoxService:
     def _mark_gone(self, box: DesktopBox) -> None:
         """E2B no longer has this sandbox.
 
-        The row keeps `snapshot_id`, deliberately: a sandbox being reaped
-        is exactly when a person needs their files back, and the snapshot
-        is the only thing that can do it.
+        `snapshot_id` is kept deliberately: a sandbox being reaped is
+        exactly when a person needs their files back, and the snapshot is
+        the only thing that can give them back.
         """
         box.state = DesktopBoxState.gone.value
         box.sandbox_id = None
@@ -350,272 +320,511 @@ class BoxService:
         box.billed_through = None
         box.last_seen_at = utc_now()
 
-    async def _reconcile(
-        self, session: AsyncSession, box: DesktopBox
-    ) -> dict[str, Any] | None:
-        """Ask E2B what is actually true, and believe it.
+    # --- the routes ---------------------------------------------------
 
-        Returns E2B's sandbox detail, or None when there is no sandbox.
-        This is the one place the "E2B wins" rule is implemented, so a
-        caller never has to remember it.
+    async def ensure(
+        self,
+        session: AsyncSession,
+        user: User,
+        *,
+        scope_key: str | None = None,
+        template: str | None = None,
+    ) -> BoxState:
+        """`POST /box/sandboxes` — **ensure, not create.**
+
+        The same account and the same `scopeKey` must get the box that is
+        already there rather than a second one, because each accidental
+        extra box is a second bill. The uniqueness that guarantees it is
+        on the table, not in this function.
         """
+        scope = (scope_key or DEFAULT_SCOPE_KEY).strip() or DEFAULT_SCOPE_KEY
+        repository = DesktopBoxRepository.from_session(session)
+        box = await repository.get_by_scope(user.id, scope)
+        if box is None:
+            box = DesktopBox(
+                user_id=user.id,
+                scope_key=scope,
+                template_id=(template or settings.E2B_TEMPLATE_ID),
+                state=DesktopBoxState.absent.value,
+            )
+            session.add(box)
+            await session.flush()
+
+        if box.has_sandbox:
+            try:
+                await self._connect(box)
+            except BoxNotFound:
+                # E2B lost it. Build a new one rather than handing back an
+                # error the person can do nothing with.
+                await self._settle(session, box, stopping=True)
+                self._mark_gone(box)
+            else:
+                await self._settle(session, box)
+                self._mark_running(box)
+                return self._state(box)
+
+        await self._create(box, template=template)
+        return self._state(box)
+
+    async def describe(
+        self, session: AsyncSession, user: User, box_id: str
+    ) -> BoxState:
+        """`GET /box/sandboxes/{boxId}`.
+
+        Asks E2B what is true rather than reporting Claidor's memory, and
+        settles what it finds — so simply looking keeps the meter honest.
+        """
+        box = await self._for_id(session, user, box_id)
         if not box.has_sandbox:
-            return None
-        status, detail = await self._call(
-            "GET", f"/sandboxes/{box.sandbox_id}", allow_gone=True
-        )
-        if status in _GONE_STATUSES or not isinstance(detail, dict):
+            return self._state(box)
+        try:
+            sandbox = await self._connect(box)
+        except BoxNotFound:
             await self._settle(session, box, stopping=True)
             self._mark_gone(box)
-            return None
+            return self._state(box)
+        await self._settle(session, box)
+        self._mark_running(box)
+        # `connect` resumed it if it was paused, so it is running now
+        # whatever it was a moment ago. Nothing else to read back.
+        del sandbox
+        return self._state(box)
 
-        real = detail.get("state")
-        box.last_seen_at = utc_now()
-        if real == "running":
-            self._mark_running(box)
-        elif real == "paused":
-            # It stopped without us asking — a TTL expiry, most likely.
-            # Charge what it was awake for, then record the truth.
-            await self._settle(session, box, stopping=True)
-            box.state = DesktopBoxState.paused.value
-        return detail
+    async def remove(self, session: AsyncSession, user: User, box_id: str) -> None:
+        """`DELETE /box/sandboxes/{boxId}` — and it must really kill it.
 
-    # --- what the app asks for ----------------------------------------
-
-    async def view(self, session: AsyncSession, user: User) -> BoxView:
-        """The box's state, reconciled against E2B and settled."""
-        box = await self._row(session, user)
-        await self._reconcile(session, box)
-        if box.is_running:
-            await self._settle(session, box)
-        return self._view(box)
-
-    async def ensure(self, session: AsyncSession, user: User) -> BoxView:
-        """Give this person a running computer, whatever state it is in.
-
-        One verb for four situations — no box, a paused box, a running
-        box, and a box E2B has lost — because the app should not have to
-        know which it is in. This is the call the agent's turn makes
-        before it does anything on the computer.
+        E2B bills by the second, so a « delete » that only forgets the
+        row would leave a machine running that nobody can now reach to
+        stop. The row is dropped only after E2B has been told.
         """
-        box = await self._row(session, user)
-        await self._reconcile(session, box)
+        box = await self._for_id(session, user, box_id)
+        await self._kill(session, box)
+        repository = DesktopBoxRepository.from_session(session)
+        # Soft, so the row keeps its history and its usage stays
+        # traceable, and so `get_by_scope` stops finding it — the next
+        # `ensure` for this scope starts a fresh box rather than trying
+        # to resume a sandbox that has been killed.
+        await repository.soft_delete(box, flush=True)
 
-        if box.is_running:
-            # Already up. Push the TTL out so it does not expire mid-turn,
-            # and take the slice that has accrued.
-            await self._settle(session, box)
-            await self._touch(box)
-            return self._view(box)
+    async def update(self, session: AsyncSession, user: User, box_id: str) -> BoxState:
+        """`POST /box/sandboxes/{boxId}/update`.
 
+        A fresh machine that keeps the person's files and logins: take a
+        snapshot, kill the old sandbox, start a new one from the
+        snapshot. For a box that is wedged rather than one that is wrong.
+
+        **One honest gap, and it is the caller's to state.**
+        `brokerClient.ts` documents Update as *"installed software does
+        NOT survive"*. It does survive here: an E2B snapshot is the whole
+        filesystem, so anything installed into it comes back with it.
+        Every primitive that would drop the software would drop the files
+        too. What is built is the useful half — a fresh machine with the
+        person's data — and the difference is written down rather than
+        papered over, because somebody will read that comment and expect
+        the other behaviour.
+        """
+        box = await self._for_id(session, user, box_id)
         if box.has_sandbox:
-            await self._resume(session, box)
-            return self._view(box)
+            await self._snapshot(box)
+            await self._kill(session, box)
+        await self._create(box, template=box.snapshot_id or None)
+        return self._state(box)
 
-        await self._create(session, box, template_id=box.template_id or None)
-        return self._view(box)
+    async def reset(self, session: AsyncSession, user: User, box_id: str) -> BoxState:
+        """`POST /box/sandboxes/{boxId}/reset`.
 
-    async def pause(self, session: AsyncSession, user: User) -> BoxView:
-        """Stop the bill without losing the computer.
-
-        Pause and never kill. E2B keeps the filesystem and the memory, so
-        the person's logins and open work survive; a kill would take them.
+        Back to the snapshot Claidor already holds — the last resort,
+        because anything since that snapshot is gone. With no snapshot it
+        builds a clean machine from the template, which loses the
+        person's files entirely. The server cannot ask, so the app must
+        have asked before calling this.
         """
-        box = await self._row(session, user)
-        await self._reconcile(session, box)
-        if not box.is_running:
-            return self._view(box)
-
-        await self._call(
-            "POST", f"/sandboxes/{box.sandbox_id}/pause", json_body={"memory": True}
-        )
-        await self._settle(session, box, stopping=True)
-        box.state = DesktopBoxState.paused.value
-        box.last_seen_at = utc_now()
-        return self._view(box)
-
-    async def update(self, session: AsyncSession, user: User) -> BoxView:
-        """Recovery that keeps the person's files and logins.
-
-        Snapshot what is there, throw the sandbox away, and build a new
-        one from the snapshot. That fixes a box that is wedged — a broken
-        process, a full disk, a machine E2B is unhappy with — without
-        costing the person the thing that makes it *their* computer.
-
-        **One honest gap.** The spec this comes from
-        (`docs/product/agent-computer-plan.md`) describes Update as
-        keeping files and logins *and losing installed software*. These
-        primitives cannot express that: a snapshot is the whole
-        filesystem, so software installed into it comes back too. What is
-        built here is the useful half — a fresh machine with the person's
-        data — and the difference is written down rather than papered
-        over, because somebody will one day read the spec and expect the
-        other behaviour.
-        """
-        box = await self._row(session, user)
-        await self._reconcile(session, box)
-        if not box.has_sandbox:
-            # Nothing to recover from but the snapshot we hold, if any.
-            await self._create(session, box, template_id=box.snapshot_id or None)
-            return self._view(box)
-
-        snapshot_id = await self._snapshot(box)
-        await self._discard(session, box)
-        await self._create(session, box, template_id=snapshot_id)
-        return self._view(box)
-
-    async def reset(self, session: AsyncSession, user: User) -> BoxView:
-        """Go back to the last snapshot Claidor holds.
-
-        Where `update` takes a snapshot *now* and rebuilds from it, this
-        rebuilds from the one already stored — the state before whatever
-        has gone wrong since. With no stored snapshot it builds a clean
-        machine from the template, which loses the person's files; that
-        is a real loss and the route says so before doing it.
-        """
-        box = await self._row(session, user)
-        await self._reconcile(session, box)
+        box = await self._for_id(session, user, box_id)
         if box.has_sandbox:
-            await self._discard(session, box)
-        await self._create(
-            session, box, template_id=box.snapshot_id or settings.E2B_TEMPLATE_ID
-        )
-        return self._view(box)
+            await self._kill(session, box)
+        await self._create(box, template=box.snapshot_id or settings.E2B_TEMPLATE_ID)
+        return self._state(box)
+
+    async def machines(self, session: AsyncSession, user: User) -> list[dict[str, Any]]:
+        """`GET /box/machines` — the registry.
+
+        The spec's registry is "this box plus the person's registered
+        machines". **There are no registered machines**, and that is a
+        decision rather than a gap: `CLAUDE.md` — *Maties runs on the
+        machine, so there is no "which computer", only this computer.*
+        So this lists the boxes and nothing else, and the `kind` field is
+        already there for the day that changes.
+        """
+        repository = DesktopBoxRepository.from_session(session)
+        rows = await repository.list_for_user(user.id)
+        return [
+            {
+                "id": str(row.id),
+                "kind": "box",
+                "label": "The computer",
+                "state": (
+                    "running"
+                    if row.state == DesktopBoxState.running.value
+                    else "stopped"
+                    if row.state == DesktopBoxState.paused.value
+                    else "unknown"
+                ),
+                **({"template": row.template_id} if row.template_id else {}),
+                **({"createdAtMs": _ms(row.created_at)} if row.created_at else {}),
+            }
+            for row in rows
+        ]
+
+    # --- work in the box ----------------------------------------------
+
+    async def shell(
+        self,
+        session: AsyncSession,
+        user: User,
+        box_id: str,
+        *,
+        script: str,
+        args: list[str],
+        stdin: bytes | None,
+    ) -> dict[str, Any]:
+        """`POST /box/sandboxes/{boxId}/shell` — run to completion.
+
+        The primitive the remote filesystem bridge builds every file
+        operation out of, so it has to be cheap and it has to report a
+        non-zero exit rather than raising: the client decides whether a
+        failure matters (`brokerClient.runShell`, `allowFailure`).
+        """
+        from e2b import CommandExitException
+
+        box = await self._for_id(session, user, box_id)
+        sandbox = await self._connect(box)
+        await self._settle(session, box)
+        self._mark_running(box)
+
+        command = " ".join([script, *(_quote(one) for one in args)]).strip()
+        try:
+            result = await sandbox.commands.run(
+                command,
+                timeout=SHELL_TIMEOUT_SECONDS,
+                cwd=settings.E2B_WORKSPACE_DIR or None,
+            )
+            stdout, stderr, code = result.stdout, result.stderr, result.exit_code
+        except CommandExitException as exited:
+            # A non-zero exit is an answer, not a failure. The SDK raises
+            # it; the contract returns it.
+            stdout = getattr(exited, "stdout", "") or ""
+            stderr = getattr(exited, "stderr", "") or ""
+            code = getattr(exited, "exit_code", 1) or 1
+        except Exception as error:
+            raise _translate(error, f"shell {box.id}") from error
+
+        if stdin is not None:
+            # Declared in the contract and not yet honoured. Said out
+            # loud rather than silently dropped: a script that expected
+            # input and got none fails in a way nobody can explain.
+            log.warning("desktop.box.shell_stdin_ignored", user_id=str(user.id))
+
+        return {
+            "stdoutBase64": base64.b64encode(_as_bytes(stdout)).decode(),
+            "stderrBase64": base64.b64encode(_as_bytes(stderr)).decode(),
+            "exitCode": int(code or 0),
+        }
+
+    async def put_file(
+        self,
+        session: AsyncSession,
+        user: User,
+        box_id: str,
+        *,
+        path: str,
+        content: bytes,
+    ) -> None:
+        """`PUT /box/sandboxes/{boxId}/file` — import.
+
+        The only way a file from the person's machine gets into the box:
+        a deliberate copy, never ambient. That is the difference file
+        custody makes, and it is why the engine's own remote backend —
+        which uploads the whole workspace — is not what this is.
+        """
+        box = await self._for_id(session, user, box_id)
+        sandbox = await self._connect(box)
+        await self._settle(session, box)
+        self._mark_running(box)
+        try:
+            await sandbox.files.write(path, content)
+        except Exception as error:
+            raise _translate(error, f"put_file {path}") from error
+
+    async def get_file(
+        self, session: AsyncSession, user: User, box_id: str, *, path: str
+    ) -> bytes:
+        """`GET /box/sandboxes/{boxId}/file?path=` — export."""
+        box = await self._for_id(session, user, box_id)
+        sandbox = await self._connect(box)
+        await self._settle(session, box)
+        self._mark_running(box)
+        try:
+            content = await sandbox.files.read(path, format="bytes")
+        except Exception as error:
+            raise _translate(error, f"get_file {path}") from error
+        return _as_bytes(content)
+
+    async def exec_frames(
+        self,
+        session: AsyncSession,
+        user: User,
+        box_id: str,
+        *,
+        command: str,
+        workdir: str | None,
+        env: dict[str, str],
+        pty: bool,
+        disconnected: Callable[[], bool] | None = None,
+    ) -> AsyncIterator[bytes]:
+        """`POST /box/sandboxes/{boxId}/exec` — NDJSON, one object a line.
+
+        Four requirements, each because the bridge depends on it
+        (`agent-computer-plan.md` §9), and each implemented here:
+
+        1. **Flush every frame as it happens.** Frames go onto a queue
+           from the SDK's callbacks and are yielded the moment they
+           arrive. Buffering until the command ends turns a three-minute
+           build into three minutes of silence, and the agent cannot tell
+           that from a hang.
+        2. **Always send an `exit` frame.** A stream that ends without
+           one is treated as a failure, on purpose — saying a command
+           succeeded when the box never said how it finished is a lie the
+           agent then acts on. So the exit frame is emitted in a
+           `finally`, including when the command could not be started
+           at all, where it follows an `error` frame.
+        3. **Kill the command when the client goes away.** The generator
+           being closed is how an aborted tool call reaches the box.
+           Without the kill, an abandoned command runs on, billing.
+        4. **`pty: true` is refused, not faked.** The bridge refuses it
+           before connecting, so this should never be reached; if it is,
+           it says no rather than pretending.
+        """
+        from e2b import CommandExitException
+
+        box = await self._for_id(session, user, box_id)
+
+        if pty:
+            yield _frame(
+                {
+                    "t": "error",
+                    "message": (
+                        "An interactive terminal is not available in the box: "
+                        "the account proxy cannot carry a two-way connection."
+                    ),
+                }
+            )
+            return
+
+        sandbox = await self._connect(box)
+        await self._settle(session, box)
+        self._mark_running(box)
+
+        queue: asyncio.Queue[bytes | None] = asyncio.Queue()
+
+        def on_stdout(chunk: str) -> None:
+            queue.put_nowait(_frame({"t": "stdout", "d": _b64(chunk)}))
+
+        def on_stderr(chunk: str) -> None:
+            queue.put_nowait(_frame({"t": "stderr", "d": _b64(chunk)}))
+
+        handle: Any = None
+        exit_code: int | None = None
+        failure: str | None = None
+        try:
+            handle = await sandbox.commands.run(
+                command,
+                background=True,
+                cwd=workdir or settings.E2B_WORKSPACE_DIR or None,
+                envs=env or None,
+                timeout=EXEC_TIMEOUT_SECONDS,
+                on_stdout=on_stdout,
+                on_stderr=on_stderr,
+            )
+        except Exception as error:
+            # Could not be run at all — the one case the contract gives
+            # an `error` frame for.
+            failure = str(error).strip() or "The command could not be started."
+            log.warning(
+                UPSTREAM_REFUSED, operation=f"exec {box.id}", body=failure[:2000]
+            )
+
+        if handle is None:
+            yield _frame({"t": "error", "message": (failure or "unknown")[:500]})
+            # Requirement 2 holds even here: the bridge is told how it
+            # ended rather than left to infer it from a closed socket.
+            yield _frame({"t": "exit", "code": 1})
+            return
+
+        async def wait_for_exit() -> None:
+            nonlocal exit_code, failure
+            try:
+                result = await handle.wait()
+                exit_code = int(getattr(result, "exit_code", 0) or 0)
+            except CommandExitException as exited:
+                exit_code = int(getattr(exited, "exit_code", 1) or 1)
+            except Exception as error:  # the command died in a way E2B could not report
+                failure = str(error).strip() or "The command ended unexpectedly."
+                exit_code = 1
+            finally:
+                await queue.put(None)
+
+        waiter = asyncio.create_task(wait_for_exit())
+        finished = False
+        try:
+            while True:
+                item = await queue.get()
+                if item is None:
+                    finished = True
+                    break
+                yield item
+            if failure:
+                yield _frame({"t": "error", "message": failure[:500]})
+            yield _frame(
+                {"t": "exit", "code": exit_code if exit_code is not None else 1}
+            )
+        finally:
+            if not finished:
+                # The client went away mid-command. Kill it in the box:
+                # this is how an aborted tool call reaches E2B, and
+                # without it the command runs on and bills.
+                try:
+                    await handle.kill()
+                except Exception:
+                    log.warning("desktop.box.exec_kill_failed", user_id=str(user.id))
+            if not waiter.done():
+                waiter.cancel()
 
     # --- the pieces ---------------------------------------------------
 
-    async def _create(
-        self, session: AsyncSession, box: DesktopBox, *, template_id: str | None
-    ) -> None:
-        template = template_id or settings.E2B_TEMPLATE_ID
-        _, created = await self._call(
-            "POST",
-            "/v2/sandboxes",
-            json_body={
-                "templateID": template,
-                "timeout": settings.E2B_SANDBOX_TTL_SECONDS,
-                # Pause rather than die when the timer runs out, so a
-                # forgotten box stops costing money and still keeps the
-                # person's files. This is the single setting that decides
-                # whether an idle box is cheap or lost.
-                "autoPause": True,
-                "autoPauseMemory": True,
+    async def _create(self, box: DesktopBox, *, template: str | None) -> None:
+        from e2b import AsyncSandbox
+
+        wanted = (template or box.template_id or settings.E2B_TEMPLATE_ID).strip()
+        try:
+            sandbox = await AsyncSandbox.create(
+                template=wanted,
+                timeout=settings.E2B_SANDBOX_TTL_SECONDS,
                 # Whose box this is, readable from E2B's own console. Not
                 # a security boundary — the key is — but it is what makes
                 # a stray sandbox traceable to an account.
-                "metadata": {"claidor_user": str(box.user_id)},
-            },
-        )
-        if not isinstance(created, dict) or not created.get("sandboxID"):
-            raise BoxUpstreamError("The computer service returned no machine.")
+                metadata={
+                    "claidor_user": str(box.user_id),
+                    "claidor_scope": box.scope_key,
+                },
+                **self._api_params(),
+            )
+        except BoxNotConfigured:
+            raise
+        except Exception as error:
+            raise _translate(error, f"create {wanted}") from error
 
-        box.sandbox_id = str(created["sandboxID"])
-        box.template_id = template
+        box.sandbox_id = str(sandbox.sandbox_id)
+        box.template_id = wanted
         box.running_since = None
         box.billed_through = None
         self._mark_running(box)
-
-    async def _resume(self, session: AsyncSession, box: DesktopBox) -> None:
-        """Wake a paused box.
-
-        `connect` rather than `resume`: E2B deprecated the latter, and
-        `connect` answers 200 when the box was already up and 201 when it
-        had to be woken, which is exactly the question this has to
-        tolerate being wrong about.
-        """
-        status, detail = await self._call(
-            "POST",
-            f"/v2/sandboxes/{box.sandbox_id}/connect",
-            json_body={"timeout": settings.E2B_SANDBOX_TTL_SECONDS},
-            allow_gone=True,
-        )
-        if status in _GONE_STATUSES:
-            # E2B lost it between the reconcile and now. Build a new one
-            # from the snapshot if we have one, rather than handing back
-            # an error the person can do nothing with.
-            self._mark_gone(box)
-            await self._create(session, box, template_id=box.snapshot_id or None)
-            return
-        if isinstance(detail, dict) and detail.get("sandboxID"):
-            box.sandbox_id = str(detail["sandboxID"])
-        box.running_since = None
-        box.billed_through = None
-        self._mark_running(box)
-
-    async def _touch(self, box: DesktopBox) -> None:
-        """Push the expiry out, so a box does not vanish mid-turn.
-
-        `connect` extends the TTL and is a no-op on a running box, which
-        is why it is used here rather than `/timeout`: one call that is
-        correct whether or not the box went to sleep a second ago.
-        """
-        await self._call(
-            "POST",
-            f"/v2/sandboxes/{box.sandbox_id}/connect",
-            json_body={"timeout": settings.E2B_SANDBOX_TTL_SECONDS},
-            allow_gone=True,
-        )
 
     async def _snapshot(self, box: DesktopBox) -> str | None:
-        """Persist the box's current state so it outlives the sandbox."""
+        """Persist the box's state so it outlives the sandbox."""
         try:
-            _, made = await self._call(
-                "POST", f"/sandboxes/{box.sandbox_id}/snapshots", json_body={}
-            )
-        except BoxUpstreamError:
+            sandbox = await self._connect(box)
+            made = await sandbox.create_snapshot()
+        except Exception:
             # A recovery that cannot snapshot is still worth doing — the
-            # machine is broken either way. Logged by `_call`; the caller
-            # falls back to the snapshot already stored.
+            # machine is broken either way — so this falls back to the
+            # snapshot already stored rather than refusing.
+            log.warning("desktop.box.snapshot_failed", user_id=str(box.user_id))
             return box.snapshot_id
-        if isinstance(made, dict):
-            for key in ("snapshotID", "templateID", "id"):
-                value = made.get(key)
-                if isinstance(value, str) and value.strip():
-                    box.snapshot_id = value.strip()
-                    return box.snapshot_id
+        for attribute in ("snapshot_id", "id", "template_id"):
+            value = getattr(made, attribute, None)
+            if isinstance(value, str) and value.strip():
+                box.snapshot_id = value.strip()
+                return box.snapshot_id
+        if isinstance(made, str) and made.strip():
+            box.snapshot_id = made.strip()
         return box.snapshot_id
 
-    async def _discard(self, session: AsyncSession, box: DesktopBox) -> None:
-        """Kill the sandbox, having settled what it owes."""
+    async def _kill(self, session: AsyncSession, box: DesktopBox) -> None:
+        """Settle what it owes, then really stop it."""
         await self._settle(session, box, stopping=True)
-        await self._call("DELETE", f"/sandboxes/{box.sandbox_id}", allow_gone=True)
+        if box.sandbox_id:
+            from e2b import AsyncSandbox
+
+            try:
+                await AsyncSandbox.kill(box.sandbox_id, **self._api_params())
+            except BoxNotConfigured:
+                raise
+            except Exception as error:
+                # Already gone is the outcome we wanted. Anything else is
+                # a machine that may still be billing, so it is logged
+                # loudly rather than swallowed.
+                log.warning(
+                    "desktop.box.kill_failed",
+                    user_id=str(box.user_id),
+                    error=str(error)[:500],
+                )
         box.sandbox_id = None
         box.state = DesktopBoxState.absent.value
         box.last_seen_at = utc_now()
 
-    # --- what the app sees --------------------------------------------
-
-    def _view(self, box: DesktopBox) -> BoxView:
-        awake = 0
-        if box.is_running and box.running_since is not None:
-            awake = max(0, int((utc_now() - box.running_since).total_seconds()))
-        return BoxView(
-            handle=str(box.id),
-            state=box.state,
-            running_since=box.running_since,
-            stream_url=self._stream_url(box),
-            awake_seconds=awake,
+    def _state(self, box: DesktopBox) -> BoxState:
+        return BoxState(
+            box_id=str(box.id),
+            running=box.is_running,
+            template=box.template_id or None,
+            created_at_ms=_ms(box.created_at),
+            last_used_at_ms=_ms(box.last_seen_at),
+            workspace_dir=settings.E2B_WORKSPACE_DIR or None,
+            agent_workspace_dir=settings.E2B_AGENT_WORKSPACE_DIR or None,
         )
 
-    def _stream_url(self, box: DesktopBox) -> str | None:
-        """Where the box's screen lives, while it is up.
 
-        None whenever the box is not running, so the app cannot show a
-        dead frame and call it a computer.
-        """
-        if not box.is_running or not box.sandbox_id:
-            return None
-        return f"https://{box.sandbox_id}.e2b.app"
+def _frame(body: dict[str, Any]) -> bytes:
+    """One NDJSON frame. `separators` because a frame is a line and a
+    line should not carry spaces nobody reads."""
+    return (json.dumps(body, separators=(",", ":")) + "\n").encode()
+
+
+def _b64(chunk: str | bytes) -> str:
+    return base64.b64encode(_as_bytes(chunk)).decode()
+
+
+def _as_bytes(value: Any) -> bytes:
+    if isinstance(value, bytes):
+        return value
+    if isinstance(value, bytearray | memoryview):
+        return bytes(value)
+    if value is None:
+        return b""
+    return str(value).encode()
+
+
+def _quote(argument: str) -> str:
+    """One shell argument, safely.
+
+    `shlex.quote`, by another name, because the arguments come from the
+    agent and go into a shell in somebody's computer.
+    """
+    from shlex import quote
+
+    return quote(argument)
 
 
 box_service = BoxService()
 
 __all__ = [
+    "DEFAULT_SCOPE_KEY",
     "UPSTREAM_REFUSED",
     "BoxNotConfigured",
+    "BoxNotFound",
     "BoxService",
+    "BoxState",
     "BoxUpstreamError",
-    "BoxView",
     "box_service",
     "configured",
 ]

@@ -44,11 +44,13 @@ from sqlalchemy import (
     TIMESTAMP,
     Boolean,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
     Uuid,
+    text,
 )
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
@@ -254,10 +256,40 @@ class DesktopBox(RecordModel):
     """
 
     __tablename__ = "desktop_boxes"
-    __table_args__ = (UniqueConstraint("user_id"),)
+    #: Unique among **live** rows only.
+    #:
+    #: A plain unique constraint is wrong here and the difference is not
+    #: academic: a deleted box is soft-deleted, so its row keeps holding
+    #: (`user_id`, `scope_key`) forever, and the next `ensure` after a
+    #: person deletes their computer would be refused by the database.
+    #: Deleting a box and asking for another is the obvious thing to do
+    #: after a reset that went badly.
+    __table_args__ = (
+        Index(
+            "ix_desktop_boxes_live_scope",
+            "user_id",
+            "scope_key",
+            unique=True,
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
+    )
 
     user_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
+    )
+    #: Which of this person's boxes this is.
+    #:
+    #: The engine asks for a *scope*, not a machine
+    #: (`brokerClient.ensureBox`), and the broker decides what that maps
+    #: to. `shared` — one box for all of a person's agents — is the scope
+    #: the product uses, so in practice there is one row per account and
+    #: the founder's rule still holds (*there is no "which computer",
+    #: only this computer*). The column exists because the engine's
+    #: sandbox scopes are `session`, `agent` and `shared`, so a second
+    #: key can arrive without a migration, and because the uniqueness
+    #: that makes « ensure » mean « ensure » has to be on the pair.
+    scope_key: Mapped[str] = mapped_column(
+        String(128), nullable=False, default="shared"
     )
     #: E2B's id for the sandbox, or None when there is no sandbox. It is
     #: never shown to a person and never sent to the app: the app gets an
