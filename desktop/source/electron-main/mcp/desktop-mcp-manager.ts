@@ -6,7 +6,6 @@ import {
   createAccountMcpWriter,
   backfillUserPluginInstalls,
   fetchAccountMcpServers,
-  fetchEffectiveUserPlugins,
   type AccountMcpClient,
   type AccountMcpDependencies,
 } from "../../shared/node/cursor-backend/account-mcp.js";
@@ -17,6 +16,9 @@ import {
 import { pinMcpDiagnosticsReporter } from "../../shared/node/mcp/mcp-diagnostics.js";
 import { SandMcpManager } from "../../shared/node/mcp/mcp-manager.js";
 import { createMcpToolsDiscovery } from "../../shared/node/mcp/tools-discovery.js";
+import { isComposioPluginId } from "../../shared/node/composio/catalog.js";
+import { connectThroughComposio, createComposioApi, toolkitForPluginId } from "../../shared/node/composio/composio-api.js";
+import { fetchComposioEffectivePlugins, fetchComposioMarketplacePlugins } from "../../shared/node/composio/marketplace.js";
 
 export interface DesktopMcpManagerFacade {
   listServers(): Promise<unknown>;
@@ -54,6 +56,7 @@ export interface DesktopMcpManagerOptions {
   readonly listBoxMcpServers: (serverIdentifiers: unknown) => Promise<readonly Record<string, unknown>[]>;
   readonly onConnectorAuth: (report: unknown) => void;
   readonly onMcpDiagnostic?: (failure: { readonly leg: string; readonly errorClass: string }) => void;
+  readonly openExternal?: (url: string) => Promise<unknown>;
 }
 
 function generatedAccountClient(credentials: Pick<AccountMcpDependencies, "getAccessToken" | "getMachineId">): AccountMcpClient {
@@ -84,15 +87,34 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
     getMachineId: accountMcpDeps.getMachineId,
     createClient: generatedBackendClient,
   });
+  const composio = createComposioApi({
+    getAccessToken: async () => await accountMcpDeps.getAccessToken(),
+    backendUrl: getSandInferenceBackendUrl(),
+  });
   const manager = new SandMcpManager({
     settingsStore: options.settingsStore,
     onAccountScopeApplied: options.onAccountScopeApplied,
     accountServersProvider: () => fetchAccountMcpServers(accountMcpDeps),
     accountMcpWriter: createAccountMcpWriter(accountMcpDeps),
-    effectivePluginsProvider: () => fetchEffectiveUserPlugins(accountMcpDeps),
+    effectivePluginsProvider: () => fetchComposioEffectivePlugins(composio),
     getMachineId: accountMcpDeps.getMachineId,
     backendMcpExec,
     onConnectorAuth: options.onConnectorAuth,
+    fetchMarketplace: fetchComposioMarketplacePlugins,
+    connectComposioToolkit: async (toolkit: string) => {
+      const outcome = await connectThroughComposio(toolkit, {
+        api: composio,
+        ...(options.openExternal == null ? {} : { openExternal: options.openExternal }),
+      });
+      if (outcome === "connected") options.onConnectorAuth({ toolkit, status: "connected" });
+    },
+    uninstallComposioPlugin: async (pluginId: string) => {
+      if (!isComposioPluginId(pluginId) && toolkitForPluginId(pluginId) == null) return false;
+      const toolkit = toolkitForPluginId(pluginId);
+      if (toolkit == null) return false;
+      await composio.disconnect(toolkit);
+      return true;
+    },
   });
   const discovery = createMcpToolsDiscovery({
     definitionSource: manager.definitionSourceView(),

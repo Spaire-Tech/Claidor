@@ -99,6 +99,8 @@ export class SandMcpManager {
       listEffectivePlugins: () => this.listEffectivePlugins(),
       requireAccountWriter: () => this.requireAccountWriter(),
       reloadServers: () => this.reloadServers(),
+      ...(options.fetchMarketplace == null ? {} : { fetchMarketplace: options.fetchMarketplace }),
+      ...(options.connectComposioToolkit == null ? {} : { connectComposioToolkit: options.connectComposioToolkit }),
     });
     this.slots = new SandMcpAccountSlotLifecycle({
       backendMcpExec: this.backendMcpExec,
@@ -388,6 +390,12 @@ export class SandMcpManager {
       : this.effectivePluginsProvider();
   }
   async uninstallPlugin(raw: string) {
+    if (typeof this.options.uninstallComposioPlugin === "function") {
+      const removed = await this.options.uninstallComposioPlugin(raw);
+      if (removed === true) {
+        return { state: await this.reloadServers(), removed: true };
+      }
+    }
     const id = validateMarketplacePluginId(raw),
       state = await this.performPluginUninstall(id);
     let gone = this.effectivePluginsProvider == null;

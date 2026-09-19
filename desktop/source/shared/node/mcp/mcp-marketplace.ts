@@ -28,6 +28,7 @@ export interface SandMarketplacePlugin {
   connectors: Array<{ name: string; description: string }>;
   skills: Array<{ name: string; description: string; sourceUrl?: string }>;
   variableFields: PluginVariableField[];
+  composioToolkit?: string;
   marketplace?: {
     name: string;
     displayName: string;
@@ -51,6 +52,7 @@ export function marketplacePluginToView(plugin: SandMarketplacePlugin) {
       : {}),
     ...(plugin.marketplace == null ? {} : { marketplace: plugin.marketplace }),
     ...(plugin.publisher == null ? {} : { publisher: plugin.publisher }),
+    ...(plugin.composioToolkit == null ? {} : { composioToolkit: plugin.composioToolkit }),
   };
 }
 export function toRawGithubUrl(blobUrl: string): string | null {
@@ -192,56 +194,14 @@ function toPlugin(
 }
 export async function fetchMarketplaceMcpPlugins(
   getAccessToken: unknown,
-  getMachineId: unknown,
-  deps: MarketplaceListingDeps = defaultMarketplaceListingDependencies,
+  _getMachineId?: unknown,
+  _deps: MarketplaceListingDeps = defaultMarketplaceListingDependencies,
 ): Promise<{
   plugins: SandMarketplacePlugin[];
   includesPrivateMarketplaces: boolean;
 }> {
-  const client = deps.createClient(getAccessToken, getMachineId),
-    response = await client.listMarketplacePlugins(
-      { excludeCloudAgentPlugins: true },
-      { timeoutMs: deps.timeoutMs },
-    ),
-    byId = new Map<string, SandMarketplacePlugin>();
-  const add = (plugin: any) => {
-    const converted = toPlugin(plugin, deps);
-    if (converted != null) byId.set(converted.pluginId, converted);
-  };
-  response.plugins.forEach(add);
-  const includesPrivateMarketplaces =
-    (await deps.bestEffortToken(getAccessToken)) != null;
-  if (includesPrivateMarketplaces) {
-    let marketplaces: any[] = [];
-    try {
-      marketplaces = (
-        await client.listMarketplaces({}, { timeoutMs: deps.timeoutMs })
-      ).marketplaces.filter(
-        (item: any) => item.teamId != null || item.userId != null,
-      );
-    } catch {}
-    const lists = await Promise.all(
-      marketplaces.map(async (marketplace) => {
-        try {
-          return (
-            await client.listMarketplacePlugins(
-              { marketplaceId: marketplace.id, excludeCloudAgentPlugins: true },
-              { timeoutMs: deps.timeoutMs },
-            )
-          ).plugins;
-        } catch {
-          return [];
-        }
-      }),
-    );
-    lists.flat().forEach(add);
-  }
-  return {
-    plugins: [...byId.values()].sort((a, b) =>
-      a.displayName.localeCompare(b.displayName),
-    ),
-    includesPrivateMarketplaces,
-  };
+  const { fetchComposioMarketplacePlugins } = await import("../composio/marketplace.js");
+  return await fetchComposioMarketplacePlugins(getAccessToken);
 }
 const parseConfigText = (
   text: string,

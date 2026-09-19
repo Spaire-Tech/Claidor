@@ -1,8 +1,10 @@
 import { DashboardService } from "../../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
+import { isComposioPluginId } from "../../../shared/node/composio/catalog.js";
+import { connectThroughComposio, createComposioApi, toolkitForPluginId } from "../../../shared/node/composio/composio-api.js";
+import { fetchComposioEffectivePlugins, fetchComposioMarketplacePlugins } from "../../../shared/node/composio/marketplace.js";
 import {
   createAccountMcpWriter,
   fetchAccountMcpServers,
-  fetchEffectiveUserPlugins,
   type AccountMcpClient,
   type AccountMcpDependencies,
 } from "../../../shared/node/cursor-backend/account-mcp.js";
@@ -60,6 +62,12 @@ export interface CreateHostMcpOptions {
   onServerAuthenticated?: (completion: unknown) => void;
   onDiscoveryFailed?: (event: Record<string, unknown>) => void;
   onConnectorAuth?: (event: Record<string, unknown>) => void;
+  fetchMarketplace?: (
+    token: unknown,
+    machine: unknown,
+  ) => Promise<{ plugins: unknown[]; includesPrivateMarketplaces: boolean }>;
+  connectComposioToolkit?: (toolkit: string) => Promise<unknown>;
+  uninstallComposioPlugin?: (pluginId: string) => Promise<boolean>;
   log?: (message: string) => void;
 }
 interface McpManagerRuntime {
@@ -101,6 +109,9 @@ export function createHostMcp(deps: CreateHostMcpOptions): McpHostPort {
     effectivePluginsProvider: deps.effectivePluginsProvider,
     onConnectorAuth: deps.onConnectorAuth,
     getMachineId: deps.getMachineId,
+    ...(deps.fetchMarketplace == null ? {} : { fetchMarketplace: deps.fetchMarketplace }),
+    ...(deps.connectComposioToolkit == null ? {} : { connectComposioToolkit: deps.connectComposioToolkit }),
+    ...(deps.uninstallComposioPlugin == null ? {} : { uninstallComposioPlugin: deps.uninstallComposioPlugin }),
   }) as unknown as McpManagerRuntime;
   const discovery = createMcpToolsDiscovery({
     definitionSource: manager.definitionSourceView(),
@@ -196,6 +207,17 @@ export class McpHostService {
         getMachineId: credentials.getMachineId,
       }) as unknown as DashboardMcpExecClient,
     });
+    const composio = createComposioApi({
+      getAccessToken: async () => {
+        try {
+          const token = await deps.auth.getAccessToken({ backendUrl: getSandInferenceBackendUrl() });
+          return token.length > 0 ? token : null;
+        } catch {
+          return null;
+        }
+      },
+      backendUrl: getSandInferenceBackendUrl(),
+    });
     this.hostMcp = createHostMcp({
       log: deps.log,
       onServerAuthenticated: (completion) => this.emitAuthCompletion(completion),
@@ -205,7 +227,19 @@ export class McpHostService {
       getMachineId: deps.auth.getMachineId,
       accountServersProvider: () => fetchAccountMcpServers(accountMcpDeps),
       accountMcpWriter: createAccountMcpWriter(accountMcpDeps),
-      effectivePluginsProvider: () => fetchEffectiveUserPlugins(accountMcpDeps),
+      effectivePluginsProvider: () => fetchComposioEffectivePlugins(composio),
+      fetchMarketplace: fetchComposioMarketplacePlugins,
+      connectComposioToolkit: async (toolkit: string) => {
+        const outcome = await connectThroughComposio(toolkit, { api: composio });
+        if (outcome === "connected") deps.onConnectorAuth?.({ toolkit, status: "connected" });
+      },
+      uninstallComposioPlugin: async (pluginId: string) => {
+        if (!isComposioPluginId(pluginId) && toolkitForPluginId(pluginId) == null) return false;
+        const toolkit = toolkitForPluginId(pluginId);
+        if (toolkit == null) return false;
+        await composio.disconnect(toolkit);
+        return true;
+      },
       backendMcpExec,
       boxMcpExec: createBoxSandMcpExec(deps.foreverBox.box),
       settingsStore: deps.settings,

@@ -27,6 +27,7 @@ export class SandMcpCatalogFlow {
       }>;
       resolveLogo?(url: string): Promise<unknown>;
       now?: () => number;
+      connectComposioToolkit?(toolkit: string): Promise<unknown>;
     },
   ) {}
   async getCatalog(
@@ -122,6 +123,15 @@ export class SandMcpCatalogFlow {
             item.hasTeamConfiguredVariables === true,
         );
       } catch {}
+    if (plugin.composioToolkit != null) {
+      if (this.core.connectComposioToolkit == null) {
+        throw new SandMcpConfigError(
+          `Connecting "${plugin.displayName}" needs Composio on this desktop.`,
+        );
+      }
+      await this.core.connectComposioToolkit(plugin.composioToolkit);
+      return this.core.reloadServers();
+    }
     if (!teamKnown) this.assertRequired(plugin, request.values ?? {});
     await this.core
       .requireAccountWriter()
