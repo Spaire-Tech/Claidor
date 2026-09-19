@@ -62,8 +62,28 @@ a desktop credential. Sign-in is not the whole server the app wants: profile,
 usage, access and the box broker are Connect RPC and Claidor serves none of
 them. They degrade rather than fail — that is measured too, not assumed.
 
-**The renderer's styling was never missing — corrected 19 September, after six
-hours spent on the wrong answer.** `docs/product/reconstruction-audit.md` said
+**`frontend/` is not the product's UI, and I shipped it as the product for six
+hours — corrected 19 September.** The reconstruction's own documentation says
+"The packaged UI is not `frontend/` … It is never the default packaged
+renderer"; `frontend/` is its design workspace for reading recovered
+components. The shipped UI is the checksum-pinned 0.18.0 renderer in
+`src/app/dist/renderer`, hydrated by `npm run bootstrap` and kept byte-for-byte
+by `npm run package`. Both modes are first-class in
+`scripts/lib/clean-build.mjs`, and `package-macos.mjs` says which is the
+product: "Keep the checksum-pinned shipped renderer as the polished UI
+authority." **The build loop is `npm ci && npm run bootstrap && npm run check
+&& npm run package && npm run verify`, macOS arm64 only.**
+`docs/product/building-the-app.md` is the record, including what bootstrap
+needs (a real 0.18.0 app — the DMG is not in this repository and the CDN is 403
+from the container) and what is ours in the bundle (`dist/Caisra.app`,
+`CFBundleDisplayName`, and an `LSEnvironment` pointing at Claidor, without
+which a packaged build signs in to cursor.com). `scripts/build-caisra.mjs` is
+the clean-source workspace build and now says so at the top; **it is not the
+product and must never be presented as it.** Changing the shipped UI goes
+through `router-renderer-patch.mjs`'s anchored `replaceExactlyOnce` and nothing
+else.
+
+**A renderer bug I fixed on the way, in the workspace build — corrected 19 September.** `docs/product/reconstruction-audit.md` said
 the styling "does not exist and cannot be recovered". It exists: the built
 stylesheet is 142 KB and 1,122 rules, with 448 of 734 atoms, 40 of 50 semantic
 classes and 123 of 131 theme tokens defined, and a hash-locked 130-entry

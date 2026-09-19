@@ -13,18 +13,27 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const distRenderer = path.join(repoRoot, "dist", "renderer");
 
-async function builtRendererOrSkip(t) {
+/**
+ * These two facts are about the **clean-source** renderer — the one
+ * `scripts/build-caisra.mjs` emits from `frontend/src`. They must never be
+ * asserted against the checksum-pinned shipped renderer, which
+ * `npm run package` keeps byte-for-byte from the 0.18.0 ASAR and which this
+ * repository is forbidden to rewrite. `dist/caisra-build.json` is written only
+ * by the clean-source build, so it is the marker that says which one is here.
+ */
+async function cleanSourceRendererOrSkip(t) {
   try {
+    await stat(path.join(repoRoot, "dist", "caisra-build.json"));
     await stat(path.join(distRenderer, "index.html"));
     return true;
   } catch {
-    t.skip("dist/renderer is not built; run npm run build:clean-source");
+    t.skip("no clean-source renderer in dist/; run npm run build:clean-source");
     return false;
   }
 }
 
 test("the emitted index.html marks nothing crossorigin", async (t) => {
-  if (!(await builtRendererOrSkip(t))) return;
+  if (!(await cleanSourceRendererOrSkip(t))) return;
   const html = await readFile(path.join(distRenderer, "index.html"), "utf8");
 
   // A document opened with loadFile has the opaque origin `null`. A
@@ -50,7 +59,7 @@ test("the emitted index.html marks nothing crossorigin", async (t) => {
 });
 
 test("every runtime asset the renderer names by hand is emitted beside it", async (t) => {
-  if (!(await builtRendererOrSkip(t))) return;
+  if (!(await cleanSourceRendererOrSkip(t))) return;
 
   // These are asked for through rendererRuntimeAssetUrl() with the filename
   // the 0.18.0 bundle happened to emit. Nothing imports them, so no bundler

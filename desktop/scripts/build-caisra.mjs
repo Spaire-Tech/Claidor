@@ -1,13 +1,28 @@
 /**
  * Caisra clean build.
  *
- * Builds every process straight from source with no dependency on any shipped
- * upstream binary. The reconstruction's own pipeline (scripts/build.mjs ->
- * buildFidelityReconstructedAsar) deliberately starts from the extracted
- * 0.18.0 app and overlays reconstructed pieces onto it, because its goal was
- * byte-fidelity with that release. That is not our goal and not our right, so
- * this script does not use it, does not read research-archives/, and never
- * calls bootstrap-runtime.mjs.
+ * !!! THIS IS NOT THE PRODUCT'S UI, AND MUST NOT BE PRESENTED AS IT. !!!
+ *
+ * It builds `frontend/src`, which the reconstruction calls its *design
+ * workspace*: a readable recovery of the components, for reading and testing.
+ * The project's own documentation is explicit — "The packaged UI is not
+ * frontend/ … It is never the default packaged renderer." The shipped UI is
+ * the checksum-pinned 0.18.0 renderer in `src/app/dist/renderer`, which
+ * `npm run bootstrap` hydrates and `npm run package` keeps byte-for-byte. Both
+ * modes are first-class in scripts/lib/clean-build.mjs: `clean-source` (this
+ * one) emits buildKind "source-aware-reconstruction"; the packaged path emits
+ * "fidelity-hybrid-reconstruction".
+ *
+ * The paragraph that used to sit here said the fidelity path "is not our goal
+ * and not our right, so this script does not use it". That decision was mine,
+ * it was never the founder's, and it cost six hours of hunting for missing
+ * styling in a workspace that was never meant to be styled. The renderer was
+ * not broken; it was the wrong renderer. Build the product with:
+ *
+ *     npm ci && npm run bootstrap && npm run check && npm run package && npm run verify
+ *
+ * This script stays because the clean-source mode is real and the reconstruction
+ * supports it. Use it to read and test components, never to ship.
  *
  * The output layout is NOT arbitrary. The app resolves these paths itself at
  * runtime — see `executableReplacements` in scripts/lib/clean-build.mjs and

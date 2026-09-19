@@ -24,7 +24,11 @@ export const outputDir = path.join(repoRoot, "dist");
 const configuredOutputName = process.env.GROK_BOT_OUTPUT_APP_NAME?.trim();
 export const outputApp = path.join(
   outputDir,
-  configuredOutputName ? path.basename(configuredOutputName) : "Grok Bot 0.18 Reconstructed.app"
+  // The bundle on disk carries the product's name. `CFBundleName` and
+  // `CFBundleExecutable` inside it stay "Grok Bot", because Electron derives
+  // its nested helper names from them and this build reuses the ABI-matched
+  // 0.18 shell exactly; only the bundle and its display name are ours.
+  configuredOutputName ? path.basename(configuredOutputName) : "Caisra.app"
 );
 export const fidelityOutputApp = path.join(outputDir, "Grok Bot 0.18 Fidelity.app");
 export const fidelityOutputAppForAsarHash = asarHash => {
@@ -40,7 +44,33 @@ export const devProfileDir = path.join(cacheDir, "dev-profile");
 
 export const upstreamVersion = "0.18.0";
 export const reconstructedBundleId = "com.anysphere.sand.reconstructed";
-export const reconstructedName = "Grok Bot 0.18 Reconstructed";
+export const reconstructedName = process.env.CAISRA_DISPLAY_NAME?.trim() || "Caisra";
+
+/**
+ * Where the packaged app signs in.
+ *
+ * The app resolves these from `process.env` at startup
+ * (`source/shared/node/cursor-token.ts`, `getConfiguredBackendUrl`, and
+ * `packages/cursor-config/auth/login.ts`, `resolveApiBaseUrl` /
+ * `resolveWebsiteUrl`). A bundle launched from Finder inherits no shell
+ * environment, so without this a packaged build goes to cursor.com no matter
+ * what is exported in a terminal. They are written into `LSEnvironment` so the
+ * app carries its own backend.
+ *
+ * Both names are required and neither is redundant: `SAND_BACKEND_URL` is read
+ * only by `getConfiguredBackendUrl`, while the login manager that actually
+ * opens the browser reads `CURSOR_API_BASE_URL` and `CURSOR_WEBSITE_URL` and
+ * nothing else. Measured — see `docs/product/app-sign-in.md`.
+ *
+ * `SAND_AUTH_CLIENT_ID` is deliberately absent: setting it makes
+ * `isDevAuthBackend` true, and `shouldRefreshAccessToken` then returns true
+ * unconditionally, which is a token rotation before every model call.
+ */
+export const packagedEnvironment = Object.freeze({
+  CURSOR_API_BASE_URL: process.env.CAISRA_BACKEND_URL?.trim() || "https://api.claidor.com",
+  CURSOR_WEBSITE_URL: process.env.CAISRA_BACKEND_URL?.trim() || "https://api.claidor.com",
+  SAND_BACKEND_URL: process.env.CAISRA_BACKEND_URL?.trim() || "https://api.claidor.com",
+});
 export const fidelityBundleId = "com.anysphere.sand.reconstructed.fidelity";
 export const fidelityName = "Grok Bot 0.18 Fidelity";
 export const dmgUrl = "https://downloads.cursor.com/grokbot/stable/darwin-arm64/0.18.0/Grok_Bot_0.18.0.dmg";
