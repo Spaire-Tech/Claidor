@@ -378,16 +378,18 @@ class BoxService:
         if not box.has_sandbox:
             return self._state(box)
         try:
-            sandbox = await self._connect(box)
+            # The handle is discarded on purpose: `connect` is called for
+            # its effects, not its value. It resumes a paused sandbox and
+            # extends the TTL, so by the time it returns the box is
+            # running whatever it was doing a moment ago, and the row can
+            # be written from that fact alone.
+            await self._connect(box)
         except BoxNotFound:
             await self._settle(session, box, stopping=True)
             self._mark_gone(box)
             return self._state(box)
         await self._settle(session, box)
         self._mark_running(box)
-        # `connect` resumed it if it was paused, so it is running now
-        # whatever it was a moment ago. Nothing else to read back.
-        del sandbox
         return self._state(box)
 
     async def remove(self, session: AsyncSession, user: User, box_id: str) -> None:
