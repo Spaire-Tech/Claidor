@@ -147,6 +147,7 @@ import {
 } from "./model";
 import "../recovered/features/conversation/workspace/view.css";
 import "./production.css";
+import "./caisra.css";
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L132985
 
