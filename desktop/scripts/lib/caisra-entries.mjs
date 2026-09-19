@@ -120,6 +120,18 @@ function traceStartup(target) {
     const value = target[key];
     if (typeof value !== "function") { traced[key] = value; continue; }
     traced[key] = (...args) => {
+      // The binding handed to startElectronMainProduction is the telemetry
+      // ports object, not the tracker: noteFailed's body is report() followed
+      // by captureFailure(error, phase), so the only place the real startup
+      // error appears is as an argument. Print any Error we are handed.
+      for (const arg of args) {
+        if (arg instanceof Error) {
+          process.stderr.write("[caisra-startup] !! error passed to " + key + ":\\n" + (arg.stack ?? \`\${arg.name}: \${arg.message}\`) + "\\n");
+          if (arg.cause instanceof Error) {
+            process.stderr.write("[caisra-startup] !! caused by:\\n" + (arg.cause.stack ?? String(arg.cause)) + "\\n");
+          }
+        }
+      }
       process.stderr.write("[caisra-startup] -> " + key + (key === "markPhase" ? "(" + String(args[0]) + ")" : "") + "\\n");
       try {
         const result = value.apply(target, args);
