@@ -143,7 +143,7 @@ test("the host's tool loop completes a two-step turn on the claidor provider", a
 
     assert.equal(requests.length, 2);
     for (const request of requests) {
-      assert.equal(request.url, "https://api.claidor.com/api/proxy/v1/responses");
+      assert.equal(request.url, "https://api.claidor.com/desktop/api/proxy/v1/responses");
       assert.equal(request.headers.get("authorization"), "Bearer claidor_da_loop");
       assert.equal(request.body.model, "gpt-5.6-terra");
       // The host wraps tool schemas with the AI SDK's jsonSchema(); the wire

@@ -8,7 +8,7 @@ import { jsonSchema, streamText, tool, type CoreMessage, type LanguageModelV1, t
 
 import { BasePromptBuilder, BasePromptExecutor } from "../../../packages/chat-inference/base.js";
 import type { SandInferenceProvider } from "../../../shared/inference-router.js";
-import { getConfiguredBackendUrl } from "../../../shared/node/cursor-token.js";
+import { claidorProxyBaseUrl } from "../../../shared/node/cursor-backend/claidor-api.js";
 import { resolveClaudeCodeCliPath } from "../../../shared/node/inference-router-local.js";
 import { getSandRootDir } from "../../host-paths.js";
 import { SandSettingsStore } from "../../../shared/node/settings/sand-settings-store.js";
@@ -69,9 +69,10 @@ export function configuredClaidorModel(): string {
   return process.env.SAND_CLAIDOR_MODEL?.trim() || DEFAULT_CLAIDOR_MODEL;
 }
 
-export function claidorProxyBaseUrl(backendUrl: string = getConfiguredBackendUrl()): string {
-  return new URL("api/proxy/v1", backendUrl.endsWith("/") ? backendUrl : `${backendUrl}/`).toString();
-}
+// One definition of where the proxy lives, shared with the other three
+// Claidor doors; it was `api/proxy/v1` here until 19 September, which the
+// API host answers with 404 (`claidor-api.ts`).
+export { claidorProxyBaseUrl };
 
 function claidorAuthenticatedFetch(source: ClaidorCredentialSource): typeof fetch {
   return async (input, init) => {

@@ -1,7 +1,7 @@
 import { createSandAccessReader, readSandAccessOnce, type SandAccess } from "./access.js";
 import { SandCursorAuthService, type AccessTokenReader, type SandAuthStatus, type SandCursorAuthServiceOptions } from "./cursor-auth.js";
 import { fetchCursorProfile, fetchLocalToolPermissionCeiling, fetchUserPrivacyMode, updateCursorProfileName } from "./cursor-profile.js";
-import { SandTranscriptionManager, type SandTranscriptionOptions } from "./cursor-transcribe.js";
+import { SandTranscriptionManager, type SandTranscriptionOptions } from "./claidor-transcribe.js";
 import { syncSandSentryAccount } from "../telemetry/sentry.js";
 import type { PrivacyMode } from "../../shared/observability/sentry-privacy-mode.js";
 
@@ -181,16 +181,15 @@ export function createCursorAccountEdgePort(deps: {
 export function createTranscriptionManagerEnsure(deps: {
   readonly ensureCursorAuthService: () => Promise<AuthServicePort>;
   readonly getMachineId: () => Promise<string>;
-  readonly createClient?: NonNullable<SandTranscriptionOptions["createClient"]>;
+  readonly fetch?: SandTranscriptionOptions["fetch"];
 }) {
   let transcriptionManager: SandTranscriptionManager | undefined;
   return async (): Promise<SandTranscriptionManager> => {
     if (transcriptionManager != null) return transcriptionManager;
     const authService = await deps.ensureCursorAuthService();
     transcriptionManager = new SandTranscriptionManager({
-      getCursorAccessToken: (options) => authService.getValidAccessToken(options),
-      getMachineId: deps.getMachineId,
-      ...(deps.createClient == null ? {} : { createClient: deps.createClient }),
+      getAccessToken: () => authService.getValidAccessToken(),
+      ...(deps.fetch === undefined ? {} : { fetch: deps.fetch }),
     });
     return transcriptionManager;
   };

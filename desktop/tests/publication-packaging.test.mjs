@@ -109,7 +109,9 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(coordinator, /STORED_PROVIDERS\.includes\(String\(row\.provider\)\)/);
   assert.match(coordinatorMain, /command<[^>]*>\(commands, "mintInferenceCredential", \{\}\)/);
   assert.match(providers, /\.responses\(configuredClaidorModel\(\)\)/);
-  assert.match(providers, /new URL\("api\/proxy\/v1"/);
+  assert.match(providers, /from "\.\.\/\.\.\/\.\.\/shared\/node\/cursor-backend\/claidor-api\.js"/);
+  assert.match(providers, /export \{ claidorProxyBaseUrl \}/);
+  assert.match(await readFile(path.join(repoRoot, "source", "shared", "node", "cursor-backend", "claidor-api.ts"), "utf8"), /CLAIDOR_PROXY_PREFIX = "desktop\/api\/proxy\/v1"/);
   assert.match(providers, /headers\.set\("authorization", `Bearer \$\{accessToken\}`\)/);
   assert.match(inference, /setClaidorCredentialSource\(\{ getAccessToken: \(\) => auth\.getAccessToken\(\) \}\)/);
   assert.match(coordinator, /executeTool: async \(definition, toolArgs, toolCallId\)/);

@@ -119,8 +119,8 @@ test("the claidor provider speaks the Responses wire to our proxy with the signe
     };
     const { claidorProxyBaseUrl, configuredClaidorModel, setClaidorCredentialSource, runRoutedProviderText, DEFAULT_CLAIDOR_MODEL } = loaded.module;
 
-    assert.equal(claidorProxyBaseUrl("https://api.claidor.com"), "https://api.claidor.com/api/proxy/v1");
-    assert.equal(claidorProxyBaseUrl("https://api.claidor.com/"), "https://api.claidor.com/api/proxy/v1");
+    assert.equal(claidorProxyBaseUrl("https://api.claidor.com"), "https://api.claidor.com/desktop/api/proxy/v1");
+    assert.equal(claidorProxyBaseUrl("https://api.claidor.com/"), "https://api.claidor.com/desktop/api/proxy/v1");
     assert.equal(configuredClaidorModel(), DEFAULT_CLAIDOR_MODEL);
     assert.equal(DEFAULT_CLAIDOR_MODEL, "gpt-5.6-terra");
 
@@ -136,7 +136,7 @@ test("the claidor provider speaks the Responses wire to our proxy with the signe
     assert.equal(text, "bonjour");
     assert.equal(deltas.join(""), "bonjour");
     assert.equal(requests.length, 1);
-    assert.equal(requests[0].url, "https://api.claidor.com/api/proxy/v1/responses");
+    assert.equal(requests[0].url, "https://api.claidor.com/desktop/api/proxy/v1/responses");
     assert.equal(requests[0].headers.get("authorization"), "Bearer claidor_da_token_1");
     assert.equal(requests[0].body.model, "gpt-5.6-terra");
     assert.equal(requests[0].body.stream, true);

@@ -1,8 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { createContext } from "../../packages/context/core.js";
 import { loggerKey } from "../../packages/context/logger.js";
-import { SAND_DEFAULT_MODEL_ID } from "../../shared/agents/agent-model.js";
-import { createCursorGenerateImageService } from "../../shared/node/cursor-backend/cursor-generate-image.js";
+import { createClaidorGenerateImageService } from "../../shared/node/cursor-backend/claidor-generate-image.js";
 import {
   createAvatarImageEdgePort,
   registerImageContextMenu,
@@ -61,7 +60,7 @@ export function createProductionAvatarImagesAdapter(
   validatePorts(ports);
   return {
     create(context) {
-      let generator: ReturnType<typeof createCursorGenerateImageService> | undefined;
+      let generator: ReturnType<typeof createClaidorGenerateImageService> | undefined;
       const deps: AvatarImageDeps = {
         getMainWindow: () => context.getMainWindow() ?? null,
         createHiddenWindow: (options) => new ports.electron.BrowserWindow(options),
@@ -69,10 +68,8 @@ export function createProductionAvatarImagesAdapter(
         createFromPath: (path) => ports.electron.nativeImage.createFromPath(path),
         createFromBuffer: (bytes) => ports.electron.nativeImage.createFromBuffer(bytes),
         generate: async (description) => {
-          generator ??= createCursorGenerateImageService({
-            getAccessToken: (options) => context.requireAccount().getAuthService().then((auth) => auth.getValidAccessToken(options)),
-            getMachineId: () => context.machineId,
-            modelId: context.env.SAND_AGENT_MODEL ?? SAND_DEFAULT_MODEL_ID,
+          generator ??= createClaidorGenerateImageService({
+            getAccessToken: () => context.requireAccount().getAuthService().then((auth) => auth.getValidAccessToken()),
           });
           return await generator(createContext().with(loggerKey, { log() {} }), description);
         },
