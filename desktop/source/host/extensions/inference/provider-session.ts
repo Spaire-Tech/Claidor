@@ -75,6 +75,40 @@ export function configuredClaidorCheapModel(): string {
   return process.env.SAND_CLAIDOR_CHEAP_MODEL?.trim() || DEFAULT_CLAIDOR_CHEAP_MODEL;
 }
 
+export function isConfiguredClaidorModelId(value: string | undefined): boolean {
+  const id = value?.trim();
+  if (!id) return false;
+  return id === configuredClaidorModel()
+    || id === configuredClaidorCheapModel()
+    || id === DEFAULT_CLAIDOR_MODEL
+    || id === DEFAULT_CLAIDOR_CHEAP_MODEL;
+}
+
+export type ClaidorSessionModelOptions = {
+  readonly model?: string;
+  readonly modelId?: string;
+  readonly cheap?: boolean;
+  readonly isSummarizationSession?: boolean;
+  readonly isComputerUseSubagent?: boolean;
+  readonly isBrowserUseSubagent?: boolean;
+};
+
+export function claidorModelForSession(options?: ClaidorSessionModelOptions): string {
+  const named = options?.model?.trim();
+  if (named && isConfiguredClaidorModelId(named)) return named;
+  const sessionModel = options?.modelId?.trim();
+  if (sessionModel && isConfiguredClaidorModelId(sessionModel)) return sessionModel;
+  if (
+    options?.cheap === true
+    || options?.isSummarizationSession === true
+    || options?.isComputerUseSubagent === true
+    || options?.isBrowserUseSubagent === true
+  ) {
+    return configuredClaidorCheapModel();
+  }
+  return configuredClaidorModel();
+}
+
 // One definition of where the proxy lives, shared with the other three
 // Claidor doors; it was `api/proxy/v1` here until 19 September, which the
 // API host answers with 404 (`claidor-api.ts`).
@@ -402,18 +436,20 @@ function claidorExecutor(messages: readonly ProviderMessage[], invocationId: str
 }
 
 class ProviderPromptExecutor extends BasePromptExecutor<ProviderMessage> {
-  constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void) { super(new BasePromptBuilder(initialMessages)); }
+  constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void, readonly modelId?: string) { super(new BasePromptBuilder(initialMessages)); }
   stream(_ctx: unknown, invocationId = crypto.randomUUID(), definitions?: readonly Loose[]) {
-    if (this.provider === "claidor") return claidorExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage);
+    if (this.provider === "claidor") return claidorExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage, this.modelId);
     if (this.provider === "codex") return codexExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage);
     if (this.provider === "claude-code") return claudeExecutor(this.getMessages(), invocationId, this.onUsage);
     return openRouterExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage);
   }
 }
 
-export function createProviderPromptSession(provider: RoutedProvider): { getModelId(): string; getExecutor(state?: unknown): PromptExecutor } {
-  const modelId = provider === "claidor" ? configuredClaidorModel() : provider === "codex" ? configuredCodexModel() : provider === "claude-code" ? "claude-code" : process.env.SAND_OPENROUTER_MODEL?.trim() || "openai/gpt-5.2";
-  return { getModelId: () => modelId, getExecutor: state => new ProviderPromptExecutor(provider, Array.isArray(state) ? state as ProviderMessage[] : undefined, usage => recordRoutedUsage(provider, usage)) };
+export function createProviderPromptSession(provider: RoutedProvider, options?: ClaidorSessionModelOptions): { getModelId(): string; getExecutor(state?: unknown): PromptExecutor } {
+  const modelId = provider === "claidor"
+    ? claidorModelForSession(options)
+    : provider === "codex" ? configuredCodexModel() : provider === "claude-code" ? "claude-code" : process.env.SAND_OPENROUTER_MODEL?.trim() || "openai/gpt-5.2";
+  return { getModelId: () => modelId, getExecutor: state => new ProviderPromptExecutor(provider, Array.isArray(state) ? state as ProviderMessage[] : undefined, usage => recordRoutedUsage(provider, usage), modelId) };
 }
 
 export async function runRoutedProviderText(provider: RoutedProvider, messages: readonly ProviderMessage[], options?: {
@@ -422,11 +458,12 @@ export async function runRoutedProviderText(provider: RoutedProvider, messages: 
   readonly executeTool?: RoutedToolExecutor;
   readonly onTextDelta?: (delta: string, accumulated: string) => void;
   readonly model?: string;
+  readonly cheap?: boolean;
 }): Promise<string> {
   const invocationId = crypto.randomUUID();
   const onUsage = (usage: UsageRecord) => recordRoutedUsage(provider, usage);
   const result = provider === "claidor"
-    ? claidorExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage, options?.model)
+    ? claidorExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage, claidorModelForSession(options))
     : provider === "codex"
       ? codexExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage)
       : provider === "claude-code"

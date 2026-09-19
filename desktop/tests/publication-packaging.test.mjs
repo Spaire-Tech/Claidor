@@ -70,7 +70,7 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(inference, /recordInferenceUsage\(provider/);
   assert.match(inference, /routerSettings\.getInferenceProvider\(\)/);
   assert.match(inference, /typeof extendedUsage\.then === "function"/);
-  assert.match(inference, /createProviderPromptSession\(provider\)/);
+  assert.match(inference, /createProviderPromptSession\(provider, sessionOptions\)/);
   assert.match(providers, /https:\/\/chatgpt\.com\/backend-api\/codex/);
   assert.match(providers, /headers\.set\("ChatGPT-Account-Id", credentials\.accountId\)/);
   assert.match(providers, /streamCodexDirectResponses/);
@@ -87,12 +87,12 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(providers, /https:\/\/openrouter\.ai\/api\/v1/);
   assert.match(providers, /OpenRouter needs OPENROUTER_API_KEY/);
   assert.match(cursorSession, /routedProvider !== "cursor"/);
-  assert.match(cursorSession, /createProviderPromptSession\(routedProvider\)/);
+  assert.match(cursorSession, /createProviderPromptSession\(routedProvider, sessionOptions\)/);
   assert.match(cursorBackend, /routedProvider !== "cursor"/);
-  assert.match(cursorBackend, /createProviderPromptSession\(routedProvider\)/);
+  assert.match(cursorBackend, /createProviderPromptSession\(routedProvider, \{ modelId: options\.requestedModel\.modelId \}\)/);
   assert.doesNotMatch(rendererPatch, /ANTHROPIC_API_KEY|OPENAI_API_KEY/);
   assert.match(turnShell, /inferenceProvider === "cursor"/);
-  assert.match(turnShell, /createProviderPromptSession\(inferenceProvider\)/);
+  assert.match(turnShell, /createProviderPromptSession\(inferenceProvider, sessionOptions\)/);
   assert.match(coordinator, /method !== "sendPrompt" \|\| !handledLocally\(provider\)/);
   assert.match(coordinator, /provider !== "cursor" && !\(provider === "claidor" && routesClaidorThroughHost\(options\.env\)\)/);
   assert.match(coordinator, /provider\(\): SandInferenceProvider \{ return resolveProductInferenceProvider\(options\.env \?\? process\.env\); \}/);
@@ -100,6 +100,9 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(coordinatorMain, /command<[^>]*>\(commands, "mintInferenceCredential", \{\}\)/);
   assert.match(providers, /\.responses\(id\)/);
   assert.match(providers, /DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-5\.6-luna"/);
+  assert.match(providers, /export function claidorModelForSession/);
+  assert.match(inference, /cheap: true, isSummarizationSession: true/);
+  assert.match(turnShell, /cheap: true, isSummarizationSession: true/);
   assert.match(providers, /providerOptions: \{ openai: \{ strictSchemas: false \} \}/);
   assert.match(providers, /from "\.\.\/\.\.\/\.\.\/shared\/node\/cursor-backend\/claidor-api\.js"/);
   assert.match(providers, /export \{ claidorProxyBaseUrl \}/);

@@ -21,7 +21,6 @@ import {
 } from "../../groups/group-store.js";
 import {
   assertMembersAreNotGroups,
-  buildGroupRedriveNote,
   isPassContent,
   isPotentialPassPrefix,
   isSameMemberSet,
@@ -31,15 +30,10 @@ import {
   type GroupMessage,
 } from "../../groups/group-chat.js";
 import { isSandRemoteRoomDir } from "../../groups/remote-room-store.js";
-import { buildSharedRoomGuardrailPrompt } from "../../groups/xuser.js";
-import { createGroupMemberActivityTracker } from "../../sand-activity.js";
 import {
-  beginTurnTrace,
-  markTurnTraceError,
-  resolveTurnTraceOutcome,
-  resolveTurnTraceType,
-  setTurnTraceAttributes,
-} from "../../send-trace-host.js";
+  configuredClaidorCheapModel,
+  runRoutedProviderText,
+} from "../inference/provider-session.js";
 import {
   GroupChatOrchestrator,
   type GroupOrchestratorDeps,
@@ -268,9 +262,6 @@ export class GroupChatGlue {
           request,
           live,
           () => this.tm.sendPipeline.currentTurnEpoch(session) === epoch,
-          traceCtx,
-          lane,
-          requestSource,
         ),
       postMemberMessage: (member, content) => {
         this.postGroupMemberMessage(session, member, content, live);
@@ -315,169 +306,29 @@ export class GroupChatGlue {
   async runGroupMemberTurn(
     roomSession: LiveSession,
     request: { member: GroupMember; systemPrompt: string; prompt: string },
-    live: GroupMemberStream,
+    _live: GroupMemberStream,
     isRoomTurnCurrent: () => boolean,
-    traceCtx?: unknown,
-    lane = "background",
-    requestSource?: string,
   ): Promise<string[]> {
     if (isRemoteAgentId(request.member.id)) {
       return this.runRemoteGroupMemberTurn(roomSession, request.member);
     }
-    if (!this.tm.execution.canExecuteGroupMember) return [];
-
-    let effective = request;
-    if (this.tm.sharedRooms.sharedRoomConfigOf(roomSession) != null) {
-      effective = {
-        ...request,
-        systemPrompt:
-          request.systemPrompt +
-          buildSharedRoomGuardrailPrompt({
-            hostName: "",
-            isForeignHost: false,
-          }),
-      };
-    }
-
-    let memberSession: LiveSession;
+    if (!isRoomTurnCurrent()) return [];
     try {
-      memberSession = await this.pinMemberSessionForGroupTurn(
-        effective.member.id,
-      );
+      const text = (
+        await runRoutedProviderText(
+          "claidor",
+          [
+            { role: "system", content: request.systemPrompt },
+            { role: "user", content: request.prompt },
+          ],
+          { model: configuredClaidorCheapModel(), cheap: true },
+        )
+      ).trim();
+      if (!text || isPassContent(text)) return [];
+      return [text];
     } catch {
       return [];
     }
-    const sent: string[] = [];
-    let lastReactionApplied = false;
-    let trackActivity = createGroupMemberActivityTracker();
-    const transport = {
-      onUpdate: (update: any) => {
-        this.tm.runLifecycle.applyActivityTransition(
-          memberSession.id,
-          trackActivity(update),
-        );
-        if (update.type === "react-to-message") {
-          lastReactionApplied = this.applyGroupMemberReaction(
-            roomSession,
-            effective.member,
-            update,
-          );
-          return;
-        }
-        if (update.type === "send-message" && update.message?.type === "text") {
-          sent.push(update.message.content);
-        }
-        this.streamGroupMemberUpdate(
-          roomSession,
-          effective.member,
-          update,
-          live,
-        );
-      },
-      lastReactionApplied: () => lastReactionApplied,
-    };
-
-    for (let attempt = 1; attempt <= 3; attempt += 1) {
-      this.finalizeGroupMemberStream(roomSession, live);
-      lastReactionApplied = false;
-      trackActivity = createGroupMemberActivityTracker();
-      const prompt =
-        attempt === 1
-          ? effective.prompt
-          : `${effective.prompt}${buildGroupRedriveNote()}`;
-      await this.tm.runLifecycle.enqueueExclusiveRun(
-        memberSession.id,
-        async () => {
-          this.tm.turnRuntime.activeRequestSources.set(
-            memberSession.id,
-            requestSource ?? "turn",
-          );
-          let registeredRunner: any;
-          try {
-            if (attempt > 1 && !isRoomTurnCurrent()) return;
-            registeredRunner = this.tm.execution.createGroupMemberRunner(
-              memberSession,
-              this.tm.runnerRegistry.runnerHooksFor(memberSession, transport),
-              {
-                systemPrompt: effective.systemPrompt,
-                isSharedRoomTurn:
-                  this.tm.sharedRooms.sharedRoomConfigOf(roomSession) != null,
-              },
-            );
-            this.tm.runnerRegistry.activeGroupMemberRunners.set(
-              memberSession.id,
-              registeredRunner,
-            );
-            this.tm.runnerRegistry.wireRunnerLifecycle(
-              registeredRunner,
-              memberSession,
-              roomSession.id,
-            );
-            const memberTurnTrace = beginTurnTrace({
-              parentCtx: traceCtx,
-              conversationId: roomSession.id,
-              turnType: resolveTurnTraceType(
-                requestSource == null ? {} : { requestSource },
-              ),
-              attributes: {
-                "sand.is_group_member": true,
-                "sand.member_conversation_id": memberSession.id,
-                ...(attempt > 1 ? { "sand.attempt": attempt } : {}),
-              },
-            });
-            try {
-              const memberResult = await registeredRunner.run(prompt, {
-                traceCtx: memberTurnTrace?.context ?? traceCtx,
-                requestSource,
-              });
-              setTurnTraceAttributes(memberTurnTrace, {
-                "sand.outcome": resolveTurnTraceOutcome(memberResult),
-              });
-            } catch (error) {
-              markTurnTraceError(memberTurnTrace, error);
-              throw error;
-            } finally {
-              try {
-                memberTurnTrace?.span.end();
-              } catch {}
-            }
-          } catch {
-            // A failed member turn is a pass, not a room-wide failure.
-          } finally {
-            if (
-              this.tm.runnerRegistry.activeGroupMemberRunners.get(
-                memberSession.id,
-              ) === registeredRunner
-            ) {
-              this.tm.runnerRegistry.activeGroupMemberRunners.delete(
-                memberSession.id,
-              );
-            }
-            this.tm.runLifecycle.endSessionRun(memberSession);
-          }
-        },
-        { lane, source: "group-member" },
-      );
-
-      const preempted = this.dmPreemptedGroupMemberIds.delete(memberSession.id);
-      if (
-        !preempted ||
-        sent.length > 0 ||
-        lastReactionApplied ||
-        attempt >= 3 ||
-        !isRoomTurnCurrent()
-      ) {
-        break;
-      }
-      try {
-        memberSession = await this.pinMemberSessionForGroupTurn(
-          effective.member.id,
-        );
-      } catch {
-        break;
-      }
-    }
-    return sent;
   }
 
   async runRemoteGroupMemberTurn(
