@@ -177,3 +177,61 @@ replaces `desktop/`, and the rule in `CLAUDE.md` stands — **`desktop/` is the
 product, not a parts bin**, and now neither is this. This is a reference tree we
 read, not a foundation we move onto. The last time a foundation swap was tried
 it cost two days and ended with "i just wanna go back".
+
+## Measured 19 September, 00:45 UTC: `source/` stands on its own
+
+Two claims I made earlier in this repository were wrong, both stated from
+directory names instead of measurement. They are corrected here, with the
+numbers.
+
+**Wrong claim 1: "the host is wired to Anysphere's cloud ... those seams are
+most of the 471 files."** Measured:
+
+```
+host/ .ts importing cursor-backend or aiserver/v1:   29
+host/ .ts total:                                    471
+```
+
+Six percent, and **all 29 are inside `host/extensions/`**. Every core
+subsystem is clean — `runner/` (52 files), `runner/tools/` (24), `box/` (17),
+`agent-isolation/` (9), `automations/` (7), `agents/` (6), `groups/` (4) all
+import nothing from Anysphere.
+
+The host composes **36 extensions** in one file
+(`host-production-extensions.ts`), each `extension.ts` a pure interface and
+each `production.ts` the backend wiring. Only six extensions have a
+`production.ts` at all: **inference, local-exec, managed-setup, mcp, memory,
+session**. That is the whole surface where a vendor plugs in.
+
+And the seam is proven by someone who is not Anysphere.
+`shared/inference-router.ts`:
+
+```ts
+export const SAND_INFERENCE_PROVIDERS = ["cursor", "claude-code", "codex", "openrouter"] as const;
+```
+
+`inference/extension.ts` is a bare `AgentInferenceOwner` interface with no
+vendor in it. Claidor is a fifth entry in that list, not a rewrite.
+
+**Wrong claim 2: "the tree does not build by itself — it needs the DMG."**
+The DMG dependency is real but belongs to *their packaging pipeline*
+(`scripts/bootstrap-runtime.mjs`, which rebuilds the shipped macOS app). It is
+not a dependency of the source. Measured, in this container:
+
+```
+npm install --ignore-scripts        → ok
+npx tsc --project source/tsconfig.json --noEmit  → exit 0, no errors
+```
+
+No DMG, no bootstrap, no Anysphere binary. `source/tsconfig.json` is
+`"include": ["**/*.ts"]` under `strict`, `noUncheckedIndexedAccess` and
+`exactOptionalPropertyTypes` — a strict config over the whole tree, not a
+lenient one or a narrow include.
+
+**What has NOT been shown:** that it runs. A clean strict typecheck says the
+tree is internally coherent and self-contained. It does not say any of it
+executes, and nobody has executed it. The eight tests under `tests/` were not
+run either.
+
+**Consequence.** Porting `source/host/` into our Electron app is a port, not an
+excavation. The blocker I named does not exist.
