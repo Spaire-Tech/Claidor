@@ -73,13 +73,31 @@ never uploaded. (An earlier note in this repository said "Gitee LFS refuses
 free repos". The outcome was right and the reason was not — this is the
 measurement.)
 
-**GitHub mirrors: untested, and the best remaining route.** There are many
-public forks — `webdevtodayjason`, `sergiodekki`, `EpicHacker67`, `agisota`,
-`woosa0502`, `xianyu110` and others, all `grok-bot-0.18-reconstructed`. GitHub
-does store LFS objects for public repositories. They could not be tested from
-the build container: every request returned `{"message":"GitHub access to this
-repository is not enabled for this session"}`, which is Anthropic's per-session
-repository scoping and **not** a GitHub response. On an ordinary machine:
+**GitHub mirrors: confirmed working, 19 September.** This is where the DMG
+came from. `webdevtodayjason/grok-bot-0.18-reconstructed` serves it over plain
+HTTPS — no `git lfs` needed, which matters because a stock macOS git does not
+have it:
+
+```sh
+curl -L -o Grok_Bot_0.18.0.dmg \
+  "https://github.com/webdevtodayjason/grok-bot-0.18-reconstructed/raw/main/research-archives/original/0.18.0/macos-arm64/Grok_Bot_0.18.0.dmg"
+shasum -a 256 Grok_Bot_0.18.0.dmg
+#   a253ccd8aab01e083f9812a0264354c5034d8ba7f0610bbb557e82ae77d203eb   ✓ matched
+```
+
+155,793,020 bytes, digest matching the pin exactly, downloaded on the founder's
+Mac. A `curl -sIL … | grep -i content-length` on that URL answers in a second
+and costs nothing, so check before pulling 148 MB. Other forks carrying the
+same tree, untested: `sergiodekki`, `EpicHacker67`, `agisota`, `woosa0502`,
+`xianyu110`.
+
+**Why it had to be a mirror.** GitHub stores LFS objects for public
+repositories; Gitee, for this project, did not. The mirrors could not be
+tested from the build container — every request returned `{"message":"GitHub
+access to this repository is not enabled for this session"}`, which is
+Anthropic's per-session repository scoping and **not** a GitHub response, so
+the container's 403 said nothing about the file. With `git lfs` installed the
+same object comes down through git:
 
 ```sh
 git clone --filter=blob:none --no-checkout \
