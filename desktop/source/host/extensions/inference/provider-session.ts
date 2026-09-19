@@ -365,7 +365,17 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
   // The host loop's state carries its own system prompt; the router prompt is
   // for the connector-only path, where nothing else says who the agent is.
   const system = coreMessages.some(message => message.role === "system") ? undefined : GROK_ROUTER_SYSTEM_PROMPT;
-  const result = streamText({ model, ...(system === undefined ? {} : { system }), messages: coreMessages, ...(tools === undefined ? {} : { tools }), toolCallStreaming: true, maxSteps: tools === undefined || executeTool == null ? 1 : 8 });
+  // Cursor-era tool schemas (Task included) omit additionalProperties.
+  // OpenAI's Responses default is strict:true, which then refuses them.
+  const result = streamText({
+    model,
+    ...(system === undefined ? {} : { system }),
+    messages: coreMessages,
+    ...(tools === undefined ? {} : { tools }),
+    toolCallStreaming: true,
+    maxSteps: tools === undefined || executeTool == null ? 1 : 8,
+    providerOptions: { openai: { strictSchemas: false } },
+  });
   return settleAiSdkStream(result, invocationId, onUsage);
 }
 

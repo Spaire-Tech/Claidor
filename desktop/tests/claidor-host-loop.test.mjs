@@ -149,6 +149,7 @@ test("the host's tool loop completes a two-step turn on the claidor provider", a
       // The host wraps tool schemas with the AI SDK's jsonSchema(); the wire
       // must see the bare schema, not the wrapper.
       assert.deepEqual(request.body.tools[0].parameters, { type: "object", properties: { command: { type: "string", description: "the command" } }, required: ["command"] });
+      assert.notEqual(request.body.tools[0].strict, true);
       assert.equal(request.body.tools[0].name, "run_shell");
       // The state's own system prompt is the only one; the router prompt stays
       // on the connector-only path.

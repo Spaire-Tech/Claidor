@@ -1,7 +1,13 @@
+import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+
 import { PrivacyMode } from "../../shared/observability/sentry-privacy-mode.js";
 import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
 import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
+import { getSandRootDir } from "../../host/host-paths.js";
 import { getOrCreateMachineId } from "./cursor-machine-id.js";
+
+export const ACCOUNT_DISPLAY_NAME_FILE = "account-display-name";
 
 export const PROFILE_REQUEST_TIMEOUT_MS = 10_000;
 export const USAGE_REQUEST_TIMEOUT_MS = 15_000;
@@ -67,6 +73,29 @@ function profileClient(getAccessToken: AccessTokenReader, deps: CursorProfileDep
 function nonEmpty(value: string | undefined): string | undefined { const trimmed = value?.trim(); return trimmed != null && trimmed.length > 0 ? trimmed : undefined; }
 export function displayNameFromProfile(firstName?: string, lastName?: string): string { return [firstName?.trim(), lastName?.trim()].filter((part): part is string => part != null && part.length > 0).join(" "); }
 export function splitAccountName(name: string): { firstName: string; lastName: string } { const parts = name.split(/\s+/).filter(Boolean); return { firstName: parts[0] ?? "", lastName: parts.slice(1).join(" ") }; }
+export function isUnimplementedProfileError(error: unknown): boolean {
+  if (typeof error !== "object" || error == null) return false;
+  const code = (error as { code?: unknown }).code;
+  const message = error instanceof Error ? error.message : String(error);
+  return code === 12 || code === "unimplemented" || code === "UNIMPLEMENTED" || /\[?unimplemented\]?/i.test(message);
+}
+export function localAccountDisplayNamePath(root = getSandRootDir()): string { return join(root, ACCOUNT_DISPLAY_NAME_FILE); }
+export function readLocalAccountDisplayName(root = getSandRootDir()): string | undefined {
+  try {
+    return nonEmpty(readFileSync(localAccountDisplayNamePath(root), "utf8").replace(/\s+/g, " "));
+  } catch { return undefined; }
+}
+export function writeLocalAccountDisplayName(name: string, root = getSandRootDir()): string {
+  const trimmed = name.replace(/\s+/g, " ").trim();
+  const path = localAccountDisplayNamePath(root);
+  mkdirSync(dirname(path), { recursive: true });
+  if (trimmed.length === 0) {
+    try { unlinkSync(path); } catch { /* already gone */ }
+    return "";
+  }
+  writeFileSync(path, `${trimmed}\n`, "utf8");
+  return trimmed;
+} }
 export function privacyModeEnabledForMode(mode: PrivacyMode | undefined): boolean { return mode !== PrivacyMode.USAGE_DATA_TRAINING_ALLOWED && mode !== PrivacyMode.USAGE_CODEBASE_TRAINING_ALLOWED; }
 export function isLiveSandTrial(expiresAt: TimestampLike | null | undefined, nowMs: number): boolean { if (expiresAt == null) return false; const expiresMs = expiresAt.toDate().getTime(); return Number.isFinite(expiresMs) && expiresMs > nowMs; }
 export function normalizedLimitCents(value: number | undefined): number | null { return value === undefined || !Number.isFinite(value) || value <= 0 || value >= NO_LIMIT_SENTINEL_CENTS ? null : value; }
@@ -108,13 +137,18 @@ export function buildSandUsageSummary(args: { readonly sandStatus: SandUsageStat
 }
 
 export async function fetchCursorProfile(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<CursorProfile | null> {
+  const localName = readLocalAccountDisplayName();
   try {
     const client = profileClient(getAccessToken, deps);
     const [me, isAnysphereUser] = await Promise.all([client.getMe({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS }), client.getTeams({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS }).then((r) => r.teams.some((team) => team.id === ANYSPHERE_TEAM_ID && team.hasBilling && team.seats > 0)).catch((error: unknown) => { deps.reportFailure?.("cursor-profile", "teams-membership", error); return false; })]);
-    return { displayName: nonEmpty(displayNameFromProfile(me.firstName, me.lastName)), email: nonEmpty(me.email), profilePictureUrl: nonEmpty(me.profilePictureUrl), isAnysphereUser };
-  } catch { return null; }
+    return { displayName: localName ?? nonEmpty(displayNameFromProfile(me.firstName, me.lastName)), email: nonEmpty(me.email), profilePictureUrl: nonEmpty(me.profilePictureUrl), isAnysphereUser };
+  } catch { return localName == null ? null : { displayName: localName, email: undefined, profilePictureUrl: undefined, isAnysphereUser: false }; }
 }
-export async function updateCursorProfileName(getAccessToken: AccessTokenReader, name: string, deps: CursorProfileDeps): Promise<void> { await profileClient(getAccessToken, deps).updateUserName(splitAccountName(name), { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS }); }
+export async function updateCursorProfileName(getAccessToken: AccessTokenReader, name: string, deps: CursorProfileDeps): Promise<void> {
+  writeLocalAccountDisplayName(name);
+  try { await profileClient(getAccessToken, deps).updateUserName(splitAccountName(name), { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS }); }
+  catch (error) { if (!isUnimplementedProfileError(error)) throw error; }
+}
 export async function fetchUserPrivacyMode(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<PrivacyMode | undefined> { try { return (await profileClient(getAccessToken, deps).getUserPrivacyMode({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })).privacyMode; } catch { return undefined; } }
 export async function fetchUserPrivacyModeEnabled(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<boolean> { return privacyModeEnabledForMode(await fetchUserPrivacyMode(getAccessToken, deps)); }
 export async function fetchSandWeeklyUsage(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<WeeklyUsage | null> { try { const client = profileClient(getAccessToken, deps); const [status, usage] = await Promise.allSettled([client.getSandUsageStatus({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS }), client.getCurrentPeriodUsage({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })]); return status.status === "fulfilled" ? toWeeklyUsage(status.value, usage.status === "fulfilled" ? usage.value : null, (deps.now ?? Date.now)()) : null; } catch { return null; } }
