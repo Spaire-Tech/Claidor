@@ -1952,63 +1952,70 @@ async def box_exec(
 ) -> Response:
     """The streamed one. NDJSON, one JSON object per line.
 
-    `media_type` is `application/x-ndjson` and `cache-control: no-store`,
-    and the frames are yielded the moment they arrive rather than
-    collected — buffering a three-minute build into three minutes of
-    silence is indistinguishable from a hang, from the agent's side.
-    Killing the command when the client goes away is
-    `BoxService.exec_frames`'s `finally`, which is reached when Starlette
-    closes the generator.
+    **Every database touch happens here, before the response starts.**
+    `get_db_session` commits the request's session when this function
+    returns — which is the moment the `StreamingResponse` is handed back,
+    long before the body has been streamed — so a write from inside the
+    generator would land in a transaction nothing ever commits and be
+    silently lost. The box would run and the person would be charged
+    nothing, with no error anywhere. `BoxService.prepare_exec` is that
+    rule with a name on it; the model proxy solves the same problem the
+    other way, with a session of its own.
+
+    Frames are then yielded the moment they arrive rather than collected:
+    buffering a three-minute build into three minutes of silence is
+    indistinguishable from a hang, from the agent's side. Killing the
+    command when the client goes away is `exec_frames`'s `finally`,
+    reached when Starlette closes the generator.
     """
-    frames = box_service.exec_frames(
-        session,
-        desktop_session.user,
-        box_id,
-        command=body.command,
-        workdir=body.workdir,
-        env=body.env,
-        pty=body.pty,
-    )
+    try:
+        sandbox = await box_service.prepare_exec(session, desktop_session.user, box_id)
+    except BoxNotConfigured:
+        return _box_failed_stream("The computer is not switched on here.")
+    except BoxNotFound:
+        return _box_failed_stream("No such box.")
+    except BoxUpstreamError as error:
+        return _box_failed_stream(error.message)
+
     return StreamingResponse(
-        _box_stream(frames),
+        box_service.exec_frames(
+            sandbox,
+            command=body.command,
+            workdir=body.workdir,
+            env=body.env,
+            pty=body.pty,
+        ),
         status_code=200,
         media_type="application/x-ndjson",
         headers={"cache-control": "no-store"},
     )
 
 
-async def _box_stream(frames: AsyncIterator[bytes]) -> AsyncIterator[bytes]:
-    """The three failures, as frames rather than as a status.
+def _box_failed_stream(message: str) -> StreamingResponse:
+    """A failure the bridge can read, in the shape it is already parsing.
 
-    By the time a command is streaming, the status line is long gone, so
-    a failure has to arrive in the body. And every one of these still
-    ends in an `exit` frame: a stream that stops without one is treated
-    as a failure by the bridge, on purpose, and leaving it to infer that
-    from a closed socket is how a lie gets told about a command that
-    never ran.
+    A command that never started still answers NDJSON rather than a bare
+    status, because by the time the bridge is reading this it is reading
+    a stream. And it still ends in an `exit` frame: a stream that stops
+    without one is treated as a failure on purpose, and leaving the
+    bridge to infer that from a closed socket is how a lie gets told
+    about a command that never ran.
     """
-    try:
-        async for frame in frames:
-            yield frame
-    except BoxNotConfigured:
-        yield (
-            json.dumps(
-                {"t": "error", "message": "The computer is not switched on here."}
-            ).encode()
-            + b"\n"
-        )
-        yield b'{"t":"exit","code":1}\n'
-    except BoxNotFound:
-        yield b'{"t":"error","message":"No such box."}\n'
-        yield b'{"t":"exit","code":1}\n'
-    except BoxUpstreamError as error:
-        yield (
-            json.dumps(
-                {"t": "error", "message": error.message}, separators=(",", ":")
-            ).encode()
-            + b"\n"
-        )
-        yield b'{"t":"exit","code":1}\n'
+    body = (
+        json.dumps({"t": "error", "message": message}, separators=(",", ":")).encode()
+        + b"\n"
+        + b'{"t":"exit","code":1}\n'
+    )
+
+    async def once() -> AsyncIterator[bytes]:
+        yield body
+
+    return StreamingResponse(
+        once(),
+        status_code=200,
+        media_type="application/x-ndjson",
+        headers={"cache-control": "no-store"},
+    )
 
 
 #: A sentinel, because `None` is a legitimate answer for « nothing was

@@ -57,7 +57,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -569,19 +569,48 @@ class BoxService:
             raise _translate(error, f"get_file {path}") from error
         return _as_bytes(content)
 
+    async def prepare_exec(self, session: AsyncSession, user: User, box_id: str) -> Any:
+        """Everything `/exec` needs from the database, **before** the
+        response starts streaming.
+
+        This exists because of a bug that tests cannot see. A streaming
+        handler returns its `StreamingResponse` immediately, and
+        `polar.postgres.get_db_session` commits the request's session
+        when the handler returns — *before* the body has been streamed.
+        Anything written from inside the generator therefore lands in a
+        fresh transaction that nothing ever commits, and is **silently
+        lost**: the box would run, the person would be charged nothing,
+        and no error would appear anywhere.
+
+        It passes under test because the test client shares one session
+        and keeps it open, which is exactly what makes this class of bug
+        worth a named method rather than a comment. The model proxy
+        solves the same problem the other way, with a session of its own
+        (`_proxy`'s `record`); here there is nothing to write once the
+        command is running, so doing the writes first is simpler and has
+        no second session to get wrong.
+
+        Returns the live sandbox handle for the generator to use.
+        """
+        box = await self._for_id(session, user, box_id)
+        sandbox = await self._connect(box)
+        await self._settle(session, box)
+        self._mark_running(box)
+        return sandbox
+
     async def exec_frames(
         self,
-        session: AsyncSession,
-        user: User,
-        box_id: str,
+        sandbox: Any,
         *,
         command: str,
         workdir: str | None,
         env: dict[str, str],
         pty: bool,
-        disconnected: Callable[[], bool] | None = None,
     ) -> AsyncIterator[bytes]:
         """`POST /box/sandboxes/{boxId}/exec` — NDJSON, one object a line.
+
+        **Touches no database.** See `prepare_exec` for why that is a
+        rule here and not a preference.
 
         Four requirements, each because the bridge depends on it
         (`agent-computer-plan.md` §9), and each implemented here:
@@ -594,9 +623,8 @@ class BoxService:
         2. **Always send an `exit` frame.** A stream that ends without
            one is treated as a failure, on purpose — saying a command
            succeeded when the box never said how it finished is a lie the
-           agent then acts on. So the exit frame is emitted in a
-           `finally`, including when the command could not be started
-           at all, where it follows an `error` frame.
+           agent then acts on. So an exit frame follows every path out of
+           here, including the one where the command never started.
         3. **Kill the command when the client goes away.** The generator
            being closed is how an aborted tool call reaches the box.
            Without the kill, an abandoned command runs on, billing.
@@ -605,8 +633,6 @@ class BoxService:
            it says no rather than pretending.
         """
         from e2b import CommandExitException
-
-        box = await self._for_id(session, user, box_id)
 
         if pty:
             yield _frame(
@@ -618,11 +644,8 @@ class BoxService:
                     ),
                 }
             )
+            yield _frame({"t": "exit", "code": 1})
             return
-
-        sandbox = await self._connect(box)
-        await self._settle(session, box)
-        self._mark_running(box)
 
         queue: asyncio.Queue[bytes | None] = asyncio.Queue()
 
@@ -649,9 +672,7 @@ class BoxService:
             # Could not be run at all — the one case the contract gives
             # an `error` frame for.
             failure = str(error).strip() or "The command could not be started."
-            log.warning(
-                UPSTREAM_REFUSED, operation=f"exec {box.id}", body=failure[:2000]
-            )
+            log.warning(UPSTREAM_REFUSED, operation="exec", body=failure[:2000])
 
         if handle is None:
             yield _frame({"t": "error", "message": (failure or "unknown")[:500]})
@@ -695,7 +716,7 @@ class BoxService:
                 try:
                     await handle.kill()
                 except Exception:
-                    log.warning("desktop.box.exec_kill_failed", user_id=str(user.id))
+                    log.exception("desktop.box.exec_kill_failed")
             if not waiter.done():
                 waiter.cancel()
 

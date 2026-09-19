@@ -1088,3 +1088,79 @@ class TestDeleteThenStartAgain:
         second = response.json()["boxId"]
         assert second != first
         assert len(fake_e2b.created) == 2
+
+
+@pytest.mark.asyncio
+class TestExecDoesItsDatabaseWorkBeforeItStreams:
+    """A bug the ordinary tests cannot see, so it gets its own.
+
+    A streaming handler hands back its `StreamingResponse` immediately,
+    and `polar.postgres.get_db_session` commits the request's session at
+    that moment — before the body has been streamed. Anything written
+    from inside the generator lands in a transaction nothing commits and
+    is **silently lost**: the box runs, the person is charged nothing,
+    and no error appears anywhere.
+
+    It passes under the test client either way, because the client keeps
+    one session open and shares it. So these two tests do not exercise
+    the commit at all; they pin the *structure* that makes the bug
+    impossible — the session is touched before streaming starts and not
+    after.
+    """
+
+    async def test_the_meter_runs_before_the_first_frame(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        fake_e2b: type[FakeSandbox],
+    ) -> None:
+        from datetime import timedelta
+
+        from polar.kit.utils import utc_now
+
+        access, _ = await _signed_in(client, session, user)
+        box_id = (await _ensure(client, access)).json()["boxId"]
+        await session.execute(
+            DesktopBox.__table__.update()
+            .where(DesktopBox.__table__.c.id == __import__("uuid").UUID(box_id))
+            .values(billed_through=utc_now() - timedelta(minutes=30))
+        )
+        await session.flush()
+
+        fake_e2b.registry["sbx-1"].stream_chunks = [("stdout", "x")]
+        await client.post(
+            f"/desktop/api/proxy/box/sandboxes/{box_id}/exec",
+            headers={"Authorization": f"Bearer {access}"},
+            json={"command": "true", "env": {}, "pty": False},
+        )
+
+        rows = (
+            await session.execute(
+                DesktopUsage.__table__.select().where(
+                    DesktopUsage.__table__.c.model == BOX_MODEL_ID
+                )
+            )
+        ).all()
+        assert len(rows) == 1
+        assert rows[0].credits > 0
+
+    async def test_the_streaming_half_is_handed_a_sandbox_and_no_session(
+        self,
+        session: AsyncSession,
+        user: User,
+    ) -> None:
+        # The structural guard. `exec_frames` must not be able to touch
+        # the database, and the cheapest way to keep that true is for it
+        # not to be given anything it could touch it with.
+        import inspect
+
+        parameters = set(inspect.signature(BoxService.exec_frames).parameters)
+        assert "session" not in parameters
+        assert "user" not in parameters
+        assert "box_id" not in parameters
+        assert "sandbox" in parameters
+
+        # And `prepare_exec` is the one that does take a session.
+        prepare = set(inspect.signature(BoxService.prepare_exec).parameters)
+        assert {"session", "user", "box_id"} <= prepare

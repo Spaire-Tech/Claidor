@@ -95,7 +95,9 @@ expressed as **two** constants (per vCPU-hour, per GiB-hour) rather than one
 blended hourly number, so a bigger box re-prices itself without anybody
 remembering to. ⚠️ **I did not read those figures off a price page** — see §6.
 
-## 5. One bug this work found, which is worth repeating
+## 5. Two bugs this work found, both worth repeating
+
+### The one a test caught
 
 The first version had a plain unique constraint on `(user_id, scope_key)` and
 soft deletion. Those two do not compose: a deleted box's row keeps holding the
@@ -108,6 +110,36 @@ It was found by writing the test first and watching it fail with
 fix is a partial unique index, `WHERE deleted_at IS NULL`: unique among live
 rows, history kept.
 
+### The one no test could have caught
+
+`/exec` originally did its database work — find the box, settle the awake time,
+mark it running — *inside* the streaming generator.
+
+**That would have lost every exec's metering in production, silently.** A
+streaming handler hands back its `StreamingResponse` immediately, and
+`polar.postgres.get_db_session` commits the request's session at that moment,
+before the body has been streamed. A write from inside the generator lands in a
+fresh transaction that nothing ever commits. The box runs, the person is charged
+nothing, and **no error appears anywhere**.
+
+Every exec test passed anyway, because the test client shares one session and
+holds it open. The bug is invisible to the suite by construction — which is
+exactly why it is worth writing down rather than quietly fixing.
+
+It was found by reading the comment the model proxy already carries in the same
+file — *"The request's own session is committed when the handler returns, before
+a stream has ended"* — and asking whether it applied here too. It did.
+
+The fix is `BoxService.prepare_exec`: every database touch happens in the
+handler, and `exec_frames` is handed a sandbox and **no session**, so it has
+nothing to write with. There is a test asserting that signature, because a
+structural guard is the only kind of test that can defend this.
+
+**The general lesson, which is not about boxes: in this codebase a streaming
+route may not write to the request's session.** The model proxy solves it with a
+second session; this solves it by doing the writes first. Either is fine. Doing
+neither also looks fine, and that is the whole problem.
+
 ## 6. What I ran, and what I did not
 
 **Ran, and passing:**
@@ -118,8 +150,8 @@ rows, history kept.
 - `mypy polar/desktop/ polar/models/desktop.py` → **0 errors** in either. The
   27 it reports elsewhere are pre-existing.
 - `pytest --noconftest` on the three pure pricing files → **57 passed**.
-- `pytest tests/desktop/test_boxes.py` → **42 passed**.
-- Whole `tests/desktop/` → **235 passed, 6 failed**. The same 6 fail with this
+- `pytest tests/desktop/test_boxes.py` → **44 passed**.
+- Whole `tests/desktop/` → **237 passed, 6 failed**. The same 6 fail with this
   work stashed: this container has no provider keys, so `offered_models()` is
   empty and the catalogue tests find nothing.
 - **The migration was applied to a real PostgreSQL 16**, forward and back, and
