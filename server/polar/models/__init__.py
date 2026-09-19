@@ -44,6 +44,8 @@ from .customer_session import CustomerSession
 from .customer_session_code import CustomerSessionCode
 from .desktop import (
     DesktopAuthCode,
+    DesktopBox,
+    DesktopBoxState,
     DesktopMemoryFile,
     DesktopSession,
     DesktopUsage,
@@ -240,6 +242,8 @@ __all__ = [
     "DecisionKind",
     "DecisionLinkStatus",
     "DesktopAuthCode",
+    "DesktopBox",
+    "DesktopBoxState",
     "DesktopMemoryFile",
     "DesktopSession",
     "DesktopUsage",

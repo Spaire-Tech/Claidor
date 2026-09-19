@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import functools
 import json
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -58,6 +58,7 @@ from polar.postgres import AsyncSession, get_db_session
 from polar.routing import APIRouter
 
 from .auth import ProxyCaller, bearer_token, get_desktop_session, get_proxy_caller
+from .boxes import BoxNotConfigured, BoxUpstreamError, BoxView, box_service
 from .composio import forward as composio_forward
 
 # Straight from the price list rather than through `service`, which
@@ -1692,6 +1693,130 @@ async def proxy_other(path: str) -> JSONResponse:
         {"error": {"type": "not_found_error", "message": f"/{path} is not proxied."}},
         status_code=404,
     )
+
+
+# --- the computer -----------------------------------------------------------
+#
+# The person's box, brokered. `polar/desktop/boxes.py` holds the whole of
+# the reasoning and the E2B calls; these five routes are the app's door
+# onto it, in the app's own `{code, data}` envelope like everything else
+# under `/api/`.
+#
+# **Nothing here returns a key or a sandbox id.** The app gets a handle,
+# a state, and — only while the box is up — an address to show a screen
+# at. That is the point of the module: a key inside an Electron app is a
+# published key.
+
+#: The computer is not switched on for this server. Reads as « not
+#: available here », never as a fault of the person's request — the same
+#: rule a missing model key follows.
+BOX_NOT_CONFIGURED = 50310
+
+#: E2B refused or could not be reached, with its own sentence attached.
+BOX_UPSTREAM_REFUSED = 50210
+
+#: The allowance is gone. The box is the first thing here that spends it
+#: while nobody is looking, so this is the one refusal a person is most
+#: likely to meet without having just asked for anything.
+BOX_QUOTA_EXHAUSTED = 40205
+
+
+async def _box_answer(
+    make: Callable[[], Awaitable[BoxView]],
+) -> JSONResponse:
+    """Run one box operation and turn its two failures into the app's
+    shape. Written once because all five routes fail identically, and a
+    second spelling of « the computer is not configured » is a second
+    thing to keep in step."""
+    try:
+        return _ok((await make()).payload())
+    except BoxNotConfigured:
+        return _fail(BOX_NOT_CONFIGURED, "The computer is not switched on here.")
+    except BoxUpstreamError as error:
+        return _fail(BOX_UPSTREAM_REFUSED, error.message)
+
+
+@router.get("/api/box", name="desktop:box")
+async def box_state(
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """What the person's computer is doing.
+
+    Reconciles against E2B before answering, so this is not Claidor's
+    memory of the box but the box. It also settles the awake time it
+    finds, which means simply *looking* keeps the meter honest.
+    """
+    return await _box_answer(lambda: box_service.view(session, desktop_session.user))
+
+
+@router.post("/api/box/ensure", name="desktop:box_ensure")
+async def box_ensure(
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """Give this person a running computer, whatever state it is in.
+
+    The one call the app makes before the agent touches the box. It
+    covers no box, a paused box, a running box and a box E2B has lost,
+    because the app should not have to know which it is in.
+
+    The allowance is checked **here and not in the other four**: this is
+    the only route that can start the meter running. Pausing, or looking
+    at, a box that is already awake must keep working when the month has
+    run out — refusing to pause an exhausted account's box would leave it
+    awake and billing, which is precisely backwards.
+    """
+    user = desktop_session.user
+    if await desktop.exhausted(session, user):
+        return _fail(
+            BOX_QUOTA_EXHAUSTED,
+            "Monthly credits exhausted. The computer stays asleep until the "
+            "allowance resets at the start of next month.",
+        )
+    return await _box_answer(lambda: box_service.ensure(session, user))
+
+
+@router.post("/api/box/pause", name="desktop:box_pause")
+async def box_pause(
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """Stop the bill without losing the computer.
+
+    Paused, never killed: E2B keeps the filesystem and the memory, so the
+    person's logins and open work survive and only the compute stops.
+    """
+    return await _box_answer(lambda: box_service.pause(session, desktop_session.user))
+
+
+@router.post("/api/box/update", name="desktop:box_update")
+async def box_update(
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """Recovery that keeps the person's files and logins.
+
+    Snapshot, discard, rebuild from the snapshot. For a box that is
+    wedged rather than one that is wrong. See `BoxService.update` for the
+    one place this differs from the spec it comes from.
+    """
+    return await _box_answer(lambda: box_service.update(session, desktop_session.user))
+
+
+@router.post("/api/box/reset", name="desktop:box_reset")
+async def box_reset(
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """Go back to the last snapshot Claidor holds.
+
+    **This loses work**, and with no stored snapshot it loses the whole
+    computer — files, installed tools and logins — and builds a clean one.
+    The app must ask before calling it; the server cannot ask, so it
+    cannot be the thing that decides.
+    """
+    return await _box_answer(lambda: box_service.reset(session, desktop_session.user))
 
 
 # --- the connections --------------------------------------------------------

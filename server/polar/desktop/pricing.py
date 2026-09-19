@@ -683,6 +683,117 @@ def credits_for_image(size: str, count: int) -> int:
     return max(1, credits_for(IMAGE_MODEL, Usage(input_tokens=units)))
 
 
+# --- the box ----------------------------------------------------------------
+#
+# The person's computer, on E2B. This is the **first thing this product
+# sells that costs money while nobody is using it** — a model call is
+# free until somebody sends a message, and a box bills for every second
+# it is awake. That difference is why the box's price is here, in the
+# same file and the same unit as everything else, rather than in a
+# billing system of its own: a person has one allowance, and the computer
+# spends it alongside the models.
+
+#: E2B's published compute rates, per hour. Quoted in
+#: `docs/product/agent-computer-plan.md` for April–June 2026.
+#:
+#: ⚠️ **Not read off a price page by me.** They came from that document,
+#: which cites them as E2B's, and I hold no E2B account to check them
+#: against. The same warning as `SPEECH_USD_PER_MILLION_CHARACTERS` and
+#: `IMAGE_USD_PER_IMAGE` applies: nobody should be charged against these
+#: until somebody has looked. They are two constants so that looking is
+#: a two-line change with tests behind it.
+#:
+#: Two numbers rather than one blended hourly rate on purpose: the box's
+#: shape is a setting (`E2B_SANDBOX_VCPU`, `E2B_SANDBOX_MEMORY_GIB`), so
+#: a bigger box has to re-price itself without anybody remembering to.
+E2B_USD_PER_VCPU_HOUR = 0.0504
+E2B_USD_PER_GIB_HOUR = 0.0162
+
+#: The unit an awake-box usage row is counted in: one second.
+#:
+#: Seconds and not hours because E2B bills per second and because a
+#: person who wakes their computer for ten seconds must not be charged
+#: for an hour. It is also what makes the row honest to read: a row
+#: naming `BOX_MODEL` holds the seconds that box was awake, exactly as a
+#: speech row holds characters and an image row holds tenths of a cent.
+BOX_BILLING_UNIT_SECONDS = 1
+
+#: What a box usage row is called. Never a model anybody can talk to, and
+#: `model_by_id` does not find it — like speech and images, it is priced
+#: so its rows mean something and offered to nobody.
+BOX_MODEL_ID = "caisra-box"
+
+BOX_PROVIDER_NOTE = (
+    "A box row's provider column reads `openai` and the box is E2B's. "
+    "The column picks a token weight table; a box has no tokens, so no "
+    "weight is ever applied and the column is inert. See `box_model`."
+)
+
+
+def box_usd_per_hour(vcpu: int, memory_gib: int) -> float:
+    """What a box of this shape costs for an hour of being awake."""
+    return vcpu * E2B_USD_PER_VCPU_HOUR + memory_gib * E2B_USD_PER_GIB_HOUR
+
+
+def box_model(vcpu: int, memory_gib: int) -> DesktopModel:
+    """The catalogue entry for a box of this shape.
+
+    Built from the shape rather than declared as a constant, because the
+    shape is configuration and a price that does not follow it is a
+    silent undercharge the day somebody doubles the memory.
+
+    Its provider is neither Anthropic nor OpenAI — `DesktopProvider` has
+    two members and E2B is not one of them. That is deliberate and it is
+    the one thing to understand about this entry: `provider` decides
+    which *token weight table* applies, and a box has no tokens. Every
+    weight is multiplied by a count that is always zero here, so the
+    table never runs; naming `openai` keeps the row's provider column
+    meaningful for the metering code without inventing a third price
+    list that would only ever hold zeroes. `BOX_PROVIDER_NOTE` says the
+    same thing to whoever reads a usage row.
+    """
+    usd_per_second = box_usd_per_hour(vcpu, memory_gib) / 3600
+    return DesktopModel(
+        BOX_MODEL_ID,
+        "The computer",
+        "A Linux machine that keeps its files and its logins.",
+        usd_per_second
+        * BOX_BILLING_UNIT_SECONDS
+        / (CREDIT_USD_PER_MILLION_INPUT / 1_000_000),
+        provider=DesktopProvider.openai,
+    )
+
+
+#: A ceiling on what one settlement may bill, in seconds.
+#:
+#: Not a budget — a guard against a clock. Every other price in this file
+#: is multiplied by something a provider reported; this one is multiplied
+#: by elapsed wall-clock time, which is the only input here that can be
+#: wrong by a year. A row written after a clock jump, a restored backup
+#: or a `billed_through` that never got set would otherwise charge a
+#: person for a decade of computer nobody ran. Twenty-five hours: longer
+#: than any honest gap between two settlements of a box that is actually
+#: awake, shorter than anything that could quietly empty an allowance.
+BOX_MAX_SECONDS_PER_SETTLEMENT = 25 * 3600
+
+
+def credits_for_box(seconds: int, *, vcpu: int, memory_gib: int) -> int:
+    """Credits for one stretch of a box being awake.
+
+    Defined through `credits_for`, for the reason `credits_for_image` is:
+    one piece of arithmetic cannot disagree with itself.
+
+    Never zero for a box that was actually awake — the speech rule, and
+    it matters more here. A box is settled in slices, so a rule that
+    rounded a short slice to nothing would let a box that is polled often
+    enough run permanently free.
+    """
+    if seconds <= 0:
+        return 0
+    counted = min(seconds, BOX_MAX_SECONDS_PER_SETTLEMENT)
+    return max(1, credits_for(box_model(vcpu, memory_gib), Usage(input_tokens=counted)))
+
+
 @dataclass
 class SSEUsageTally:
     """Reads a provider's server-sent events as they stream past and
@@ -816,7 +927,13 @@ def usage_from_answer(spoken: SpokenApi, answer: Any) -> Usage:
 
 
 __all__ = [
+    "BOX_BILLING_UNIT_SECONDS",
+    "BOX_MAX_SECONDS_PER_SETTLEMENT",
+    "BOX_MODEL_ID",
+    "BOX_PROVIDER_NOTE",
     "CREDIT_USD_PER_MILLION_INPUT",
+    "E2B_USD_PER_GIB_HOUR",
+    "E2B_USD_PER_VCPU_HOUR",
     "IMAGE_BILLING_UNIT_USD",
     "IMAGE_MAX_IMAGES",
     "IMAGE_MODEL",
@@ -836,7 +953,10 @@ __all__ = [
     "TokenWeights",
     "Usage",
     "UsageTally",
+    "box_model",
+    "box_usd_per_hour",
     "credits_for",
+    "credits_for_box",
     "credits_for_image",
     "image_billing_units",
     "image_size_offered",

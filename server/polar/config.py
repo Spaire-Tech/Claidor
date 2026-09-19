@@ -205,6 +205,29 @@ class Settings(BaseSettings):
     COMPOSIO_API_KEY: str = ""
     COMPOSIO_BASE_URL: str = "https://backend.composio.dev"
 
+    # The person's computer, on E2B (polar/desktop/boxes.py,
+    # docs/product/agent-computer-plan.md). The key is Claidor's and
+    # stays here: the desktop app never talks to E2B, because a key
+    # shipped inside an Electron app is a published key and one extracted
+    # key bills every box we run. Left empty, every box route answers
+    # « not configured » rather than a stack trace, exactly as a missing
+    # model key reads as « not available here ».
+    E2B_API_KEY: str = ""
+    E2B_BASE_URL: str = "https://api.e2b.dev"
+    # The template a new box is built from. E2B's own stock template
+    # until we build one; a snapshot id also goes here when a box is
+    # recovered, because E2B lets a snapshot stand in for a template.
+    E2B_TEMPLATE_ID: str = "base"
+    # How long E2B keeps a box awake without being told otherwise. Every
+    # ensure/resume pushes it out again, so this is "how long after the
+    # last word does the computer stay up", not a session length. Short,
+    # because awake time is the bill.
+    E2B_SANDBOX_TTL_SECONDS: int = 300
+    # What the box is built with, and therefore what it costs per hour.
+    # Both numbers are priced in polar/desktop/pricing.py.
+    E2B_SANDBOX_VCPU: int = 2
+    E2B_SANDBOX_MEMORY_GIB: int = 4
+
     # Connections (polar/connectors/, docs/maties/connectors.md). The
     # middleman that holds the sign-in plumbing for the forty services a
     # person connects an account to. Its developer token is project-wide

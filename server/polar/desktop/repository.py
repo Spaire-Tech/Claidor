@@ -9,10 +9,35 @@ from sqlalchemy import func, select
 from polar.kit.repository import RepositoryBase
 from polar.models import (
     DesktopAuthCode,
+    DesktopBox,
     DesktopMemoryFile,
     DesktopSession,
     DesktopUsage,
 )
+
+
+class DesktopBoxRepository(RepositoryBase[DesktopBox]):
+    """The person's computer.
+
+    One row per account — the unique constraint on `user_id` is the
+    product decision (*there is no "which computer", only this
+    computer*), so `get_by_user` returning at most one row is a
+    guarantee of the schema rather than a convention of this method.
+    """
+
+    model = DesktopBox
+
+    async def get_by_user(self, user_id: UUID) -> DesktopBox | None:
+        statement = self.get_base_statement().where(DesktopBox.user_id == user_id)
+        return await self.get_one_or_none(statement)
+
+    async def get_by_sandbox_id(self, sandbox_id: str) -> DesktopBox | None:
+        """Used when E2B tells us about a box rather than the other way
+        round — a webhook, or a sweep for sandboxes nobody owns."""
+        statement = self.get_base_statement().where(
+            DesktopBox.sandbox_id == sandbox_id
+        )
+        return await self.get_one_or_none(statement)
 
 
 class DesktopAuthCodeRepository(RepositoryBase[DesktopAuthCode]):
