@@ -52,13 +52,27 @@ export function projectInferenceRouterTranscriptEntry(entry: StoredEntry): Recor
     : { kind: "send-message", id: entry.id, message: { type: "text", content: entry.content }, timestampMs: entry.timestampMs, ...(entry.reactions === undefined ? {} : { reactions: entry.reactions }) };
 }
 
+export const SAND_CLAIDOR_FULL_AGENT_ENV = "SAND_CLAIDOR_FULL_AGENT";
+
+// By default a non-Cursor provider runs here, on the Mac, with connector tools
+// only. The host's full agent loop (shell, files, computer use) dispatches the
+// same providers through createProviderPromptSession; whether a turn completes
+// on that path is not yet measured. This switch sends claidor turns there so
+// that measurement can be made without a code change.
+export function routesClaidorThroughHost(env: NodeJS.ProcessEnv = process.env): boolean {
+  return /^(1|true|yes)$/i.test(env[SAND_CLAIDOR_FULL_AGENT_ENV]?.trim() ?? "");
+}
+
 export function createCoordinatorInferenceRouter(options: {
   readonly dataDir: string;
   readonly postEvent: (family: string, payload: unknown) => void;
   readonly dispatchRemote: (method: string, args: unknown) => Promise<unknown>;
   readonly now?: () => number;
+  readonly env?: NodeJS.ProcessEnv;
 }) {
   const settings = new SandSettingsStore(join(options.dataDir, "settings.json"));
+  const handledLocally = (provider: SandInferenceProvider): provider is Exclude<SandInferenceProvider, "cursor"> =>
+    provider !== "cursor" && !(provider === "claidor" && routesClaidorThroughHost(options.env));
   const storePath = join(options.dataDir, "inference-router-transcript.json");
   const now = options.now ?? Date.now;
   const queues = new Map<string, Promise<unknown>>();
@@ -209,7 +223,7 @@ export function createCoordinatorInferenceRouter(options: {
           return { handled: true, value: undefined };
         }
       }
-      if (provider !== "cursor" && ["getAgentTranscriptTail", "openAgentTail", "getAgentTranscriptWindow"].includes(method)) {
+      if (handledLocally(provider) && ["getAgentTranscriptTail", "openAgentTail", "getAgentTranscriptWindow"].includes(method)) {
         const record = asRecord(args) ?? {};
         const agentId = typeof record.id === "string" ? record.id : "";
         const [remote, local] = await Promise.all([remoteOrUndefined(method, args), load()]);
@@ -219,7 +233,7 @@ export function createCoordinatorInferenceRouter(options: {
         const limit = typeof record.limit === "number" && Number.isInteger(record.limit) && record.limit > 0 ? record.limit : 500;
         return { handled: true, value: { ...result, entries: entries.slice(-limit) } };
       }
-      if (method !== "sendPrompt" || provider === "cursor") return { handled: false };
+      if (method !== "sendPrompt" || !handledLocally(provider)) return { handled: false };
       const record = asRecord(args) ?? {};
       const agentId = typeof record.agentId === "string" ? record.agentId : "";
       const previous = queues.get(agentId) ?? Promise.resolve();

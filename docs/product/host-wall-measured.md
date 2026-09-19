@@ -134,11 +134,27 @@ different executor.
 What is **not** established is whether the loop completes a full turn on
 that shape today with any routed provider. `openrouter` has shipped on this
 path since the router landed; no record in this repository says a shell or
-computer-use turn has been run through it. That is the first thing to run on a
-Mac after Phase 2 lands: set the provider to `claidor`, ask for a file edit
-and a command, and read the gateway log. If it completes, (a) is unnecessary.
-If it does not, the failure names what (b′) is missing — and that is the
-price, measured, not the 1,772-line guess above.
+computer-use turn has been run through it. Nothing could have: the
+coordinator intercepts `sendPrompt` for every non-Cursor provider
+(`node-agent-coordinator/inference-router.ts`, `handledLocally`) and runs the
+connector-only turn on the Mac, so the host's dispatch to
+`createProviderPromptSession` has never been reached by a real turn.
+
+**The run that decides Phase 3.** Phase 2 added the `claidor` provider and a
+switch, `SAND_CLAIDOR_FULL_AGENT=1`, that makes the coordinator pass claidor
+turns through to the host instead of running them itself
+(`routesClaidorThroughHost`). On a Mac, with the packaged app carrying that
+variable in `LSEnvironment` beside `SAND_BACKEND_URL`:
+
+1. Settings → Router → Claidor. Box runtime is local Docker by default.
+2. Ask the agent to edit a file, run a command, and take a screenshot.
+3. Read the gateway log for the turn, and watch the network.
+
+If it completes, route (a) is unnecessary and Phase 3 is done. If it does not,
+the failure names what (b′) is missing — and that is the price, measured, not
+the 1,772-line guess above. Without the switch, claidor behaves exactly like
+`openrouter`: a Cursor-free turn with connector tools, the milestone the brief
+allows and does not call the product.
 
 ## What this changes in the brief
 

@@ -66,6 +66,34 @@ test("claidor is a provider everywhere a provider is listed", async () => {
   }
 });
 
+test("claidor turns run on the Mac by default and pass through to the host's full loop on request", async () => {
+  const router = await loadModule("source/node-agent-coordinator/inference-router.ts", "coordinator-inference-router-switch");
+  try {
+    const { mkdir, writeFile } = await import("node:fs/promises");
+    const dataDir = path.join(router.dataDir, "data");
+    await mkdir(dataDir, { recursive: true });
+    await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "claidor" }));
+    const make = (env) => router.module.createCoordinatorInferenceRouter({
+      dataDir, env, postEvent: () => {}, dispatchRemote: async () => { throw new Error("should not be reached"); },
+    });
+
+    assert.equal(router.module.routesClaidorThroughHost({}), false);
+    assert.equal(router.module.routesClaidorThroughHost({ SAND_CLAIDOR_FULL_AGENT: "1" }), true);
+    assert.equal(router.module.routesClaidorThroughHost({ SAND_CLAIDOR_FULL_AGENT: "off" }), false);
+
+    const local = await make({}).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
+    assert.equal(local.handled, true);
+    assert.equal(local.value.provider, "claidor");
+
+    const passthrough = await make({ SAND_CLAIDOR_FULL_AGENT: "1" }).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
+    assert.deepEqual(passthrough, { handled: false });
+    const tail = await make({ SAND_CLAIDOR_FULL_AGENT: "1" }).dispatch("getAgentTranscriptTail", { id: "a" });
+    assert.deepEqual(tail, { handled: false });
+  } finally {
+    await router.dispose();
+  }
+});
+
 test("the claidor provider speaks the Responses wire to our proxy with the signed-in token", async () => {
   const loaded = await loadModule("source/host/extensions/inference/provider-session.ts", "provider-session");
   const previousFetch = globalThis.fetch;
