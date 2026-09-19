@@ -100,13 +100,14 @@ test("a non-rate-limit failure does not fall through to Luna", async () => {
         return stream([{ type: "text-delta", textDelta: "should not run" }], settled({ id: "gpt-5.6-luna" }));
       },
     );
+    const responseFailure = assert.rejects(() => result.response, /dashboard unavailable/);
     await assert.rejects(async () => {
       for await (const _part of result.fullStream) {
         // drain
       }
     }, /dashboard unavailable/);
     assert.equal(fallbacks, 0);
-    await assert.rejects(() => result.response, /dashboard unavailable/);
+    await responseFailure;
   } finally {
     await loaded.dispose();
   }

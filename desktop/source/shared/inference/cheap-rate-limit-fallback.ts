@@ -14,14 +14,28 @@ function deferred<T>() {
   return Promise.withResolvers<T>();
 }
 
+function ignoreSettled<TPart, TResponse, TUsage, TExtended, TMetadata>(
+  executor: CheapRateLimitStream<TPart, TResponse, TUsage, TExtended, TMetadata>,
+): void {
+  void executor.response.catch(() => undefined);
+  void executor.usage.catch(() => undefined);
+  void executor.extendedUsage.catch(() => undefined);
+  void executor.providerMetadata.catch(() => undefined);
+}
+
 export function withCheapRateLimitFallback<TPart, TResponse, TUsage, TExtended, TMetadata>(
   primary: CheapRateLimitStream<TPart, TResponse, TUsage, TExtended, TMetadata>,
   fallback: () => CheapRateLimitStream<TPart, TResponse, TUsage, TExtended, TMetadata>,
 ): CheapRateLimitStream<TPart, TResponse, TUsage, TExtended, TMetadata> {
+  ignoreSettled(primary);
   const resultResponse = deferred<TResponse>();
   const usage = deferred<TUsage>();
   const extendedUsage = deferred<TExtended>();
   const metadata = deferred<TMetadata>();
+  resultResponse.promise.catch(() => undefined);
+  usage.promise.catch(() => undefined);
+  extendedUsage.promise.catch(() => undefined);
+  metadata.promise.catch(() => undefined);
   const fail = (error: unknown) => {
     const next = asError(error);
     resultResponse.reject(next);
@@ -47,10 +61,12 @@ export function withCheapRateLimitFallback<TPart, TResponse, TUsage, TExtended, 
         throw error;
       }
       try {
-        yield* take(fallback());
-      } catch (next) {
-        fail(next);
-        throw next;
+        const cheap = fallback();
+        ignoreSettled(cheap);
+        yield* take(cheap);
+      } catch (cheapError) {
+        fail(cheapError);
+        throw cheapError;
       }
     }
   })();
