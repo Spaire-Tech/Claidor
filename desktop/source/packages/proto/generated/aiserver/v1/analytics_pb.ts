@@ -1,5 +1,5 @@
 /**
- * Complete generated Grok Bot 0.18 Analytics module recovered from
+ * Complete generated Caisra 0.18 Analytics module recovered from
  * byte-identical macOS and Windows immutable artifact regions. Do not hand-edit.
  * Evidence: src/app/dist/host/host-main.cjs:484661-485449
  * Region SHA-256: 377ad0f04c8ec8950dc4bd31393951ff5aab8f1cd2d1c4aaf4db6a7e81d8a037

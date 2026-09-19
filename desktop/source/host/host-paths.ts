@@ -7,7 +7,7 @@ import { isPathWithin } from "../shared/node/paths.js";
 import { findSystemErrno } from "../shared/system-errno.js";
 
 export const SAND_DATA_ROOT_ENV = "SAND_DATA_ROOT";
-export const SAND_PRODUCTION_DATA_DIRNAME = ".grokbot";
+export const SAND_PRODUCTION_DATA_DIRNAME = ".caisra";
 export const SAND_USER_DATA_DIR_ENV = "SAND_USER_DATA_DIR";
 export const SAND_DATA_DIRNAME = "sand-data";
 export const USER_DATA_DIR_FLAG = "--user-data-dir";

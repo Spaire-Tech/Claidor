@@ -1,5 +1,5 @@
 /**
- * Complete generated Grok Bot 0.18 BackgroundComposer closure module recovered from
+ * Complete generated Caisra 0.18 BackgroundComposer closure module recovered from
  * byte-identical macOS and Windows immutable artifact regions. Do not hand-edit.
  * Canonical evidence: src/app/dist/electron-main/main.cjs:418652-418866
  * Region SHA-256: 7ed7393d58df149134fcfa1a6a6e95cf9b49ad892a09021e8f14b24a921e07f6

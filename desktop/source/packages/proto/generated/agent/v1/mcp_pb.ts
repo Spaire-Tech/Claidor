@@ -1,5 +1,5 @@
 /**
- * Complete generated Grok Bot 0.18 shared MCP prerequisite recovered from
+ * Complete generated Caisra 0.18 shared MCP prerequisite recovered from
  * byte-identical macOS and Windows immutable artifact regions. Do not hand-edit.
  * Evidence: src/app/dist/electron-main/main.cjs:17051-17338
  * Region SHA-256: a5200b3b22b0432f1cfdbef16889d4e03d8dff8bcb6a79f2f955b93c04ab9f4b

@@ -1,5 +1,5 @@
 /**
- * Complete generated Grok Bot 0.18 BackgroundComposer service descriptor recovered
+ * Complete generated Caisra 0.18 BackgroundComposer service descriptor recovered
  * from byte-identical macOS and Windows immutable artifact regions. Do not hand-edit.
  * Canonical evidence: src/app/dist/electron-main/main.cjs:442081-444278
  * Region SHA-256: 7dc9bed8136acfa393576c003be064d21e360a5d0b6c01020742e6a2ffa3d745

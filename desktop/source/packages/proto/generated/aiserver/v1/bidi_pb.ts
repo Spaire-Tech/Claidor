@@ -1,5 +1,5 @@
 /**
- * Complete generated Grok Bot 0.18 B8 delta module recovered from
+ * Complete generated Caisra 0.18 B8 delta module recovered from
  * byte-identical macOS and Windows immutable artifact regions. Do not hand-edit.
  * Evidence: src/app/dist/host/host-main.cjs:366088-366257
  * Region SHA-256: 66cc785f5856f439dd42ffb776c611d4f0f41f868b9fa77e6b28866a170b253e
