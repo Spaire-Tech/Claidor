@@ -629,41 +629,26 @@ describe('the detail and the three-bubble split, together', () => {
   });
 });
 
-describe('the answer cards', () => {
-  const reply = [
-    'Three worth the trip.',
-    '',
-    '```openui-lang',
-    'root = Stack([a])',
-    'a = Tile("Canlis", "Fine dining")',
-    '```',
-    '',
-    'Canlis needs booking two weeks out.',
-  ].join('\n');
-
-  test('a fenced block is a card between the texts, where it was written', () => {
-    const items = toThreadItems([msg({ id: 'm1', type: 'assistant', content: reply })]);
-    expect(items.map(one => one.kind)).toEqual([ThreadItemKind.Text, ThreadItemKind.Card, ThreadItemKind.Text]);
-    expect(items[0]).toMatchObject({ id: 'm1:0', text: 'Three worth the trip.' });
-    expect(items[1]).toMatchObject({ id: 'm1:c0', program: 'root = Stack([a])\na = Tile("Canlis", "Fine dining")' });
-    expect(items[2]).toMatchObject({ id: 'm1:1', text: 'Canlis needs booking two weeks out.' });
-  });
-
-  test('a reply with no block keeps the ids it always had', () => {
+describe('a reply is text, and only text', () => {
+  test('a reply keeps the ids it always had', () => {
     const [one] = toThreadItems([msg({ id: 'm2', type: 'assistant', content: 'Just words.' })]);
     expect(one.id).toBe('m2');
     const two = toThreadItems([msg({ id: 'm3', type: 'assistant', content: 'One.\n\nTwo.' })]);
     expect(two.map(one => one.id)).toEqual(['m3:0', 'm3:1']);
   });
 
-  test('a reply that is only a block is only the card', () => {
-    const items = toThreadItems([msg({ id: 'm4', type: 'assistant', content: '```openui-lang\nroot = Stack([])\n```' })]);
-    expect(items).toHaveLength(1);
-    expect(items[0].kind).toBe(ThreadItemKind.Card);
-  });
-
-  test('in a group the card carries its sender like a bubble', () => {
-    const items = toThreadItems([msg({ id: 'm5', type: 'assistant', content: reply })], { group: true, agentId: 'juno', agentName: 'Juno' });
-    expect(items[1]).toMatchObject({ kind: ThreadItemKind.Card, agentId: 'juno', agentName: 'Juno' });
+  // 18 September: the thread used to parse a fenced block out of a reply
+  // and draw it as a rendered card. That is gone
+  // (`docs/product/artifacts-decision.md`), and a shaped answer is a
+  // document on disk instead. Nothing the agent writes becomes a program
+  // in a bubble any more, so no reply can produce anything but text.
+  test('no reply produces anything other than text, whatever it contains', () => {
+    const items = toThreadItems([msg({
+      id: 'm1',
+      type: 'assistant',
+      content: 'Three worth the trip.\n\nCanlis needs booking two weeks out.',
+    })]);
+    expect(items.every(one => one.kind === ThreadItemKind.Text)).toBe(true);
+    expect(items.map(one => one.id)).toEqual(['m1:0', 'm1:1']);
   });
 });

@@ -137,8 +137,14 @@ nothing yet, at the founder's word.
 
 ## 2. The message vocabulary
 
-Exactly seven kinds of thing may appear in a thread. This is a closed
-list, and it is the discipline that makes the app feel unlike an AI app:
+**Nine kinds, as of 18 September.**
+The list is closed, and it is the discipline that makes the app feel unlike an
+AI app. The count has moved three times and this file tracked it twice: five,
+then seven (15 September), then `roster` (16 September), then `card` and
+`connector` (17 September, and recorded below in the decided list without
+anyone updating the number here). The list in code is
+`desktop/src/renderer/design/thread/types.ts`, and it is the one to trust.
+The first seven:
 
 | Kind | What it is |
 |---|---|
@@ -149,6 +155,15 @@ list, and it is the discipline that makes the app feel unlike an AI app:
 | `auth` | the approval card |
 | `attachment` | a file as the whole message — an image shown, anything else named and openable |
 | `secret` | a masked field; what is typed never enters the transcript |
+
+And the two that followed, each put to the founder as its own decision.
+(A third, `card`, was added on 17 September and removed on the 18th with
+OpenUI — `docs/product/artifacts-decision.md`.)
+
+| Kind | What it is | When |
+|---|---|---|
+| `roster` | "Your starter team" — a multi-select of agents to stand up, each swappable in place | 16 September |
+| `connector` | an agent proposing a service: logo, name, one line, Not now and Install | 17 September |
 
 No step cards. No tool logs. No thinking blocks. No raw blobs.
 
@@ -240,18 +255,41 @@ founder's wording and should not be paraphrased:
 Seven voices in the picker: Concise, Balanced, Warm, Direct, Sassy,
 Curious, Formal. Those name a manner, not a speaker.
 
-**Speech is OpenAI, not ElevenLabs.** The founder's reason is cost. Note
-that the server has no speech route today — `server/polar/desktop/
-endpoints.py` has none, and nothing under `server/polar/` matches
-`speech`. This is to build, not to switch.
+**Speech is OpenAI, not ElevenLabs.** The founder's reason is cost.
+
+**Corrected 18 September.** This paragraph used to say the server "has no
+speech route today", that `endpoints.py` "has none", and that nothing under
+`server/polar/` matched `speech`. All three are false, and were false when
+written. `server/polar/desktop/endpoints.py:1046` serves
+`/api/proxy/v1/audio/speech` as the `desktop:speech` route; it proxies OpenAI's
+own `/v1/audio/speech` shape and meters the result. What is true is the other
+half: **nothing in `desktop/` calls it** — `grep -rn "audio/speech" desktop/src`
+returns nothing. So this is a wiring job on the app side, not a build on the
+server side.
+
+Speech recognition is the mirror image and is already done: the recogniser is
+local whisper.cpp (`main/speech/whisperServer.ts`), wired through
+`useDictation.ts`, and the server is not involved.
 
 ## 5. The orb
 
 The orb replaces every avatar, model logo and icon. A fragment-shader
 cloud disc, five colours plus a seed.
 
-The design ships four palettes. **The founder wants fifteen**, and a
-palette picked at random per agent, so two agents rarely look alike.
+**Corrected 18 September: it is twenty-five, and they are not random.**
+This section said "four palettes, the founder wants fifteen, picked at random".
+What shipped is twenty-five three-colour gradients in
+`desktop/src/shared/agent/avatars.ts`, with the founder's rule in their own
+words: *"make sure that the first 25 created agents always have a different
+color. after 25, we re-do."* `assignAvatar` hands out the unworn ones first,
+then the least-worn, with chance only among equals — so the first twenty-five
+agents are guaranteed to differ, which random assignment would not give. A
+person can also pick any of the twenty-five by hand. Yodo's face sits outside
+the set and is never handed out.
+
+The four palettes were the bug, not the design: the face used to be a hash of
+the agent's id against four seeds, so there were four faces in the whole app and
+the create screen showed one while the saved agent wore another.
 
 ## 6. Kits are the role agents — confirmed in code
 
@@ -277,10 +315,17 @@ palette. A role agent is therefore *a kit plus an agent record*. The
 `agents` table already holds `skillIds`, so the join already exists.
 
 **And the pipe is already built and live.** `server/polar/desktop/
-endpoints.py:442` serves `/api/kit-store` and returns an empty list,
-with the docstring "The kit store. Empty until Claidor curates one."
-Same for `/api/skill-store` and `/api/mcp-marketplace`. We do not build
-a store. We fill one.
+endpoints.py:513` serves `/api/kit-store` and returns an empty list — measured
+from this container on 18 September:
+`GET https://api.claidor.com/desktop/api/kit-store` → `200`,
+`{"code":0,"data":{"value":{"kits":[]}}}`. Same for `/api/skill-store` (:447)
+and `/api/mcp-marketplace` (:551), the last of which serves 15 servers in 7
+categories. We do not build a store. We fill one.
+
+(The line number here was `442` and the docstring quoted — "Empty until Claidor
+curates one" — no longer exists; it was replaced by a longer one explaining that
+the emptiness is structural, because installing a kit always downloads a zip and
+there is no install-from-what-you-already-have path.)
 
 The twelve roles in the design: Engineering Lead, Design Lead,
 Operations Manager, Product Manager, Head of People, Marketing Lead,
@@ -349,37 +394,82 @@ The engine already has the second half: `skill_workshop` in
 propose, write, revise and apply a skill, with support files and a
 proposal queue.
 
-## 10. There is one computer, and it is this one
+## 10. Which computer, and where the file is when it is worked on
 
-The founder, on the design's own Settings → Computer and Settings →
-Updates: *"there is no 'which computer' — that was a design mistake by
-me. same for the cloud computer."*
+**Rewritten 18 September 2026.** This section said "there is one computer, and
+it is this one". Half of that is now wrong and half of it is the product.
 
-So, struck from the design:
+Two decisions were locked by the founder the same day
+(`docs/product/cards-plan.md`): **file custody is explicit import**, and **the
+machine model is a registry** — the agent's own computer, plus the person's
+registered machines.
 
-- the second registered machine (`Dell7040`) and its execution setting,
-- **The Swens computer** — the shared cloud machine, its update and its
-  reset,
-- the egress tunnel that existed only to reach it.
+### What was struck, and is now back
 
-Settings → Computer keeps the current computer and its "Ask every time".
+The earlier section struck the second machine on the founder's own instruction:
 
-This is the product thesis, not a simplification. Grok Bot needs
-registered machines because it lives in the cloud and must reach in.
-Ours runs on the machine, so there is only this computer. The
-consequence that matters to a customer: **Grok Bot copies your file to
-its own disk and copies it back — its words, "my computer ≠ your disk …
-we copy when needed" — and we open the file where it lives.** That shows
-up in spreadsheet formulas, links between workbooks, folder structure,
-and privacy. Anything that reintroduces a machine the agent owns takes
-that sentence away from us.
+> *"there is no 'which computer' — that was a design mistake by me. same for
+> the cloud computer."*
 
-### The line, drawn exactly
+That was said about a product in which the agent owned no machine. It stopped
+being true the moment one was designed, and the founder's correction says so:
 
-The audit found a deployed worker, `claidor-maty-runner`, whose own
-README says it *"does a person's work when they are not at their
-computer"*. Put to the founder as a question — does a routine fire when
-the Mac is closed? — the answer was **yes, it fires**.
+> *"'Which computer?' was struck as a mistake only if you pretend there's a
+> single workspace. The moment the box is a second machine, 'which computer'
+> returns."*
+
+So these come back, and they were not mistakes:
+
+- **A second machine**, and per-machine execution settings.
+- **Settings → Computers**, plural, with Update and Reset meaning the agent's
+  own computer and not the person's.
+- **The approval card naming which machine** it is asking about. "Running
+  commands on your computer?" has one meaning when there is one computer and
+  no clear meaning when there are two.
+
+### What survives, and it is the whole differentiator
+
+The thesis was never "there is only one computer". It was this, and it is
+unchanged:
+
+> **It is about where the file is when it is worked on.**
+
+Grok Bot copies your file to its own disk and copies it back — its words, *"my
+computer ≠ your disk … we copy when needed"*. That shows up in spreadsheet
+formulas, links between workbooks, folder structure, and privacy.
+
+Explicit import is what keeps that sentence ours while the agent has a machine
+of its own. The founder's words:
+
+> *"no, not by default. The box is where I work (browser, desktop, shell).
+> Bass's files live on his Mac (or another registered machine). Moving a
+> workbook onto the box is an explicit copy (CopyToBox / chat attach), not
+> ambient."*
+
+**The box is where work happens. It is not where files live.** A person's
+documents stay on the person's machine and are opened where they are. A copy
+onto the agent's computer is a decision with a visible cost, made by the
+person, in a card about *which files* — never a side effect of anything else.
+
+### The one mistake to design against
+
+Control and custody are two different things and must stay two different cards.
+
+| Handing over | Means | Costs |
+|---|---|---|
+| **A screen** — captcha, SSO, a passkey | "take over my screen" | cheap; nothing moves |
+| **A file** — edit this spreadsheet, sign this PDF | either it stays on their machine, or it is copied | expensive, and the person decides |
+
+Box handoff must never come to mean *"your Documents are here now"*. That is
+the specific failure the founder named, and it is the one the brief's
+`### Files on their computer` now states in the agent's own words.
+
+### The line on the cloud runner, which did not move
+
+The audit found a deployed worker, `claidor-maty-runner`, whose own README says
+it *"does a person's work when they are not at their computer"*. Put to the
+founder as a question — does a routine fire when the Mac is closed? — the
+answer was **yes, it fires**.
 
 So the runner lives, and the line is not "no cloud" but this:
 
@@ -389,20 +479,21 @@ So the runner lives, and the line is not "no cloud" but this:
 | their files living on it | no files on it; memory in, memory out, directory deleted |
 | apps and packages installed on it | nothing installed, nothing to install |
 | an update and a reset surface for it | never mentioned in the app at all |
-| an egress tunnel to reach it | — |
 
-The differentiator survives because it was never about where a process
-runs. It is about **where the file is when it is worked on**. A routine
-that reads your calendar at 08:00 while the laptop is shut touches no
-file of yours on any disk. The moment the agent copies your workbook to
-a machine it owns, we lose the sentence — and that is the thing to
-guard, not the runner.
+A routine that reads your calendar at 08:00 while the laptop is shut touches no
+file of yours on any disk. That is still true, and it is true for the same
+reason the box is: **where the file is when it is worked on**, not where a
+process runs.
 
-What this means in the app: Routines is one of the five agent tabs, and
-a routine set there keeps running when the Mac sleeps. The person is
-never asked which computer, never shown the runner, and never told their
-work happens elsewhere, because as far as their files are concerned it
-does not.
+### What is actually built, as of 18 September
+
+**None of the registry is.** There is one computer today — the one the app is
+running on — and the box is a measurement, not a build
+(`docs/product/box-substrate-read.md`). The brief has been written so it is
+true now and does not need rewriting when a second machine appears: it states
+that a grant belongs to the one computer it was given for, that a second is a
+separate grant, and that an agent must never assume a second computer exists.
+What it no longer says is that there can never be one.
 
 ---
 
@@ -438,11 +529,20 @@ in OpenClaw config (`src/config/types.agent-defaults.ts`):
 App-side cheap work — chat titles, sidebar previews, intent sorting —
 also Luna.
 
-**Astra is not offered.** On `/v1/chat/completions` OpenAI refuses
-`reasoning_effort` alongside function tools, so our proxy sends
-`reasoning_effort: "none"` whenever tools are present, which for an agent
-is always. Astra costs five times Terra for a capability we then switch
-off. It comes back when `/v1/responses` exists, and not before.
+**Astra is still not offered, but the reason written here expired.** This
+paragraph said Astra was withheld because `/v1/chat/completions` refuses
+`reasoning_effort` alongside function tools, and that it "comes back when
+`/v1/responses` exists, and not before". `/v1/responses` exists: the proxy has
+served it since 13 September (`endpoints.py:790`, `desktop:responses`) and every
+OpenAI model is listed with `transportApi: "openai-responses"`. On that wire
+reasoning and tools travel together and nothing is forced to `none`, so Astra
+would actually reason.
+
+`pricing.py` carries the real reason, and it is a different one: Astra has no
+`role`, and a role is a job. Every job is filled — a second `primary` would mean
+nothing decides which model answers. Astra belongs to escalation (the person
+asks, a step has failed twice, or the agent asks), and escalation is not built.
+It comes back the day it is, as a decision rather than a leftover.
 
 **Escalation, when it exists, is on evidence and never on prediction:**
 the person asks, a step has failed twice, or the agent asks. And it is
@@ -496,30 +596,23 @@ has left the space for it, not one that has filled it with my guesses.
 
 1. The name is Caisra, applied; `appConstants.ts` is the one site.
 2. Messages shape; five surfaces; four settings tabs.
-3. Five message kinds, closed list; approval card with the real command.
-   From 17 September, one more thing in the thread and not a message
-   kind of the model's choosing: the answer cards. When an answer is a
-   set of things (places, options, days of a plan, figures, a
-   comparison), the agent writes one fenced block in OpenUI's language
-   (`thesysdev/openui`, MIT) and the app draws it, in our design, between
-   its texts. The founder, on OpenUI's pictures: *"text should stays
-   text, but having cards that come with it is amazing … this should
-   100% be our design."* Ten components, ours, in
-   `desktop/src/shared/cards/library.ts`; texts still arrive as texts;
-   every other card (permission, choice, secret, file, roster) is
-   unchanged (review item 71). Later that day the founder reversed the
-   design half: *"i want it exactly like openui's … use their colors.
-   use their style. perhaps keep our font but thats it."* So the cards
-   are OpenUI's chat library, renderer and stylesheet, whole, in
-   Switzer (review item 73). Texts still arrive as texts.
-   The same day, the founder said what they meant by artifacts: *"i
-   meant the docs, excel (not sure if they do excel), slides etc... i
-   want my artifacts to look exactly like open ui's. i want a complete
-   replica here for the desing."* So a deck and a report are OpenUI's
-   own components, used whole (`@openuidev/thesys`, MIT): their chip in
-   the thread, their full-screen viewer, their libraries taught to the
-   agent. OpenUI has no spreadsheet; an Excel file is a file the agent
-   writes (review item 72).
+3. Nine message kinds, closed list (§2); approval card with the real
+   command. The count has moved: five, then seven, then the roster
+   (16 September), then two more on the 17th, then back to nine on the
+   18th when the answer cards were removed.
+   **The answer cards are gone, 18 September**, and with them the whole
+   of OpenUI. They were a rendered block the agent wrote in a fenced
+   language and the app drew between the texts. The founder ended it:
+   *"remove open ui completely. we gonna start over with smarter
+   choices. turn on the way artifact was. docx, .xlsx or .pptx."* The
+   reason, in their words, is that OpenUI was meant to be the look of an
+   **artifact** — *"for reports/plans/guided doc and all ppt"* — and had
+   instead become the way every shaped answer was drawn, which is how the
+   document the person could send on stopped being made at all.
+   A shaped answer inside the thread is text. A report, plan, guide, deck
+   or spreadsheet is a **file** — `.docx`, `.pptx`, `.xlsx` — written with
+   the matching skill and drawn as a file card. The full decision and what
+   it cost is `docs/product/artifacts-decision.md`.
 4. The computer asks once: the first action raises the card, Allow is
    this computer until the person changes it in Settings, Not now is
    that one action. Decided 17 September from the founder's
@@ -531,8 +624,12 @@ has left the space for it, not one that has filled it with my guesses.
    question card.
 5. Text arrives as texts; only speech streams.
 6. The voice brief above, verbatim.
-7. Speech from OpenAI. Build it; there is no speech route today.
-8. Fifteen orb palettes, assigned at random per agent.
+7. Speech from OpenAI. The server route exists
+   (`/api/proxy/v1/audio/speech`); nothing in `desktop/` calls it yet.
+   Recognition is local whisper and is wired.
+8. Twenty-five orb faces, handed out unworn-first so the first twenty-five
+   agents all differ, and pickable by hand. (This line said "fifteen, at
+   random" until 18 September.)
 9. Role agents are kits; the kit store endpoint already exists and is empty.
 10. The computer icon opens LobsterAI's artifact and browser panel, whole.
 11. One computer for files: this one. No second machine, and no cloud

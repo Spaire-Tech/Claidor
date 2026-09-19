@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronRightIcon } from '../icons';
 import { CloudBlob } from '../orb/CloudBlob';
 import { color, line, motion, radius, shadow, text } from '../tokens';
-import type { CardHandlers } from './CardBlock';
 import { parseChoiceId } from './fromEngine';
 import { startsTurn } from './leading';
 import {
@@ -82,8 +81,6 @@ export interface ThreadProps {
   roster?: RosterHandlers;
   /** React, reply, copy the id: the cluster beside a bubble on hover. */
   actions?: MessageHandlers;
-  /** What a pressed button in an answer card does. */
-  cards?: CardHandlers;
   /** Install or Not now on a connector card. */
   connector?: ConnectorHandlers;
   /**
@@ -105,7 +102,7 @@ export interface ThreadProps {
  * scrolling; this does the same for the same reason.
  */
 export function Thread({
-  items, dayStamp, choice, auth, parts, secret, roster, actions, cards, connector, typing,
+  items, dayStamp, choice, auth, parts, secret, roster, actions, connector, typing,
 }: ThreadProps): JSX.Element {
   const ref = useRef<HTMLDivElement>(null);
   // Whether the person is still at the bottom. Starts true so a freshly
@@ -239,7 +236,6 @@ export function Thread({
             {...(roster ? { roster } : {})}
             {...(parts ? { parts } : {})}
             {...(actions ? { actions } : {})}
-            {...(cards ? { cards } : {})}
             {...(connector ? { connector } : {})}
             leading={startsTurn(items[items.indexOf(row.item) - 1], row.item)}
           />

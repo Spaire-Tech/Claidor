@@ -44,12 +44,27 @@ export const resolveMediaGenerationGate = (input: {
     return { allowed: true };
   }
 
+  // **No selection is no longer a refusal, 18 September 2026.**
+  //
+  // This gate came from upstream, where a person picked a media model from
+  // a picker beside the composer before the agent could make an image. That
+  // picker lives on the upstream cowork screens, and this app does not draw
+  // them: `App.tsx` mounts the Caisra shell, and nothing in
+  // `renderer/design/` ever sets a media selection. So the gate could never
+  // open, every `caisra_image_generate` call was refused with "no media
+  // generation model has been selected by the user", and the product shipped
+  // with no images at all.
+  //
+  // It is also the wrong shape for this product. The founder, 16 September:
+  // *"my users should never put a key. everything happens under the hood.
+  // not a setting."* Choosing an image model before asking for an image is a
+  // setting. The agent decides whether a picture belongs, and the app picks
+  // the model.
+  //
+  // A selection, when one exists, still wins — that is what the two checks
+  // below are for, and the skin-pack flow sets one deliberately.
   if (!input.selection || input.selection.mode === MediaSelectionMode.None) {
-    return {
-      allowed: false,
-      reason: MediaGenerationGateReason.MediaNotEnabled,
-      message: 'Tool unavailable: This media generation tool is not available in this session. No media generation model has been selected by the user. Do not retry.',
-    };
+    return { allowed: true };
   }
 
   if (input.selection?.mode === MediaSelectionMode.Image && input.tool === MediaGenerationTool.Video) {
