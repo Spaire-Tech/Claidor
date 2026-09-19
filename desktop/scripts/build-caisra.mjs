@@ -17,7 +17,7 @@
  * launch rather than at build time.
  */
 
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -112,12 +112,39 @@ async function bundleProcess([entry, outfile]) {
   return { outfile, bytes, ms: Date.now() - started };
 }
 
+/**
+ * Vite marks the emitted entry script and stylesheet `crossorigin`. Over http
+ * that is free; over file:// it is fatal. Electron loads the renderer with
+ * `loadFile` (source/electron-main/main.ts:343), which gives the document the
+ * opaque origin `null`, and a `crossorigin` subresource from a null origin is
+ * refused by CORS before it is ever parsed.
+ *
+ * Measured, headless Chromium on dist/renderer/index.html over file://:
+ *
+ *   with crossorigin      stylesheet blocked; font-family "Times New Roman";
+ *                         --cursor-font-family-sans "" ; --sand-text-primary ""
+ *   without crossorigin   stylesheet applied; font-family -apple-system, …;
+ *                         --cursor-spacing-5-5 22px ; background rgb(24,24,24)
+ *
+ * The first column is the app the founder was looking at: correct markup, no
+ * styling at all, browser default serif. One attribute.
+ */
+function stripCrossorigin() {
+  return {
+    name: "caisra-strip-crossorigin",
+    enforce: "post",
+    transformIndexHtml(html) {
+      return html.replace(/\s+crossorigin(?:=("|')[^"']*\1)?/g, "");
+    },
+  };
+}
+
 async function buildRenderer() {
   const started = Date.now();
   await viteBuild({
     root: path.join(repoRoot, "frontend"),
     configFile: false,
-    plugins: [react()],
+    plugins: [react(), stripCrossorigin()],
     // Electron loads the renderer over file://, so every emitted asset
     // reference has to stay relative to index.html.
     base: "./",
@@ -128,7 +155,17 @@ async function buildRenderer() {
     },
     logLevel: "error",
   });
-  return { outfile: "renderer/index.html", ms: Date.now() - started };
+  // The eighteen runtime assets the renderer asks for by name at runtime
+  // (frontend/src/production/runtime-assets.ts resolves them relative to the
+  // emitted bundle, so they have to sit beside it). Vite never sees them —
+  // nothing imports them, the recovered source hard-codes the shipped
+  // filenames — so nothing would emit them and nothing would warn. See
+  // scripts/make-runtime-assets.mjs.
+  const runtimeAssets = path.join(repoRoot, "frontend/runtime-assets");
+  await cp(runtimeAssets, path.join(outRoot, "renderer/assets"), { recursive: true });
+  const copied = (await readdir(runtimeAssets)).length;
+
+  return { outfile: `renderer/index.html (+${copied} runtime assets)`, ms: Date.now() - started };
 }
 
 async function main() {

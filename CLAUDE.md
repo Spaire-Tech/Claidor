@@ -62,6 +62,23 @@ a desktop credential. Sign-in is not the whole server the app wants: profile,
 usage, access and the box broker are Connect RPC and Claidor serves none of
 them. They degrade rather than fail — that is measured too, not assumed.
 
+**The renderer's styling was never missing — corrected 19 September, after six
+hours spent on the wrong answer.** `docs/product/reconstruction-audit.md` said
+the styling "does not exist and cannot be recovered". It exists: the built
+stylesheet is 142 KB and 1,122 rules, with 448 of 734 atoms, 40 of 50 semantic
+classes and 123 of 131 theme tokens defined, and a hash-locked 130-entry
+palette that runs. The app rendered in Times New Roman because Vite marks the
+emitted script and stylesheet `crossorigin`, and Electron's `loadFile` gives
+the document the opaque origin `null`, so Chromium refused the stylesheet under
+CORS before parsing it. One attribute. `scripts/build-caisra.mjs` strips it and
+`desktop/tests/renderer-file-url.test.mjs` fails if it comes back. Separately,
+the 18 runtime assets named by `rendererRuntimeAssetUrl()` were never in this
+repository at all and are now drawn by `scripts/make-runtime-assets.mjs`. **The
+lesson is the one already written at the top of this file and it was ignored
+anyway: grep the built artifact before saying a thing is absent.** I asserted
+"the atom rules were never recovered" without once looking at
+`dist/renderer/assets/*.css`.
+
 **The cost of running on the Mac.** The engine runs locally, so nothing runs
 with the laptop shut. The maty queue and `claidor-maty-runner` are the cloud path
 for exactly this, and **their completeness is now established**, 18 September:
