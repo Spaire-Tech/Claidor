@@ -14,7 +14,7 @@ import { createProductionBoxInner, type ErasedProductionBoxGeneratedPorts } from
 import type { LoopbackTelemetry } from "../../box/loopback-sand-box.js";
 
 export function isImageAutoUpdateEnabled(env: NodeJS.ProcessEnv = process.env): boolean { const raw = env.SAND_BOX_AUTO_UPDATE?.trim().toLowerCase(); return isBoxStoreSyncEnabled(env) && isBoxStoreCopyInEnabled(env) && !(raw === "0" || raw === "false" || raw === "no"); }
-export function isHostBundleAutoUpdateEnabled(env: NodeJS.ProcessEnv = process.env): boolean { const raw = env.SAND_BOX_AUTO_UPDATE?.trim().toLowerCase(); return raw !== "0" && raw !== "false" && raw !== "no"; }
+export function isHostBundleAutoUpdateEnabled(env: NodeJS.ProcessEnv = process.env): boolean { const raw = env.SAND_BOX_AUTO_UPDATE?.trim().toLowerCase(); return raw === "1" || raw === "true" || raw === "yes"; }
 export function imageWatchIntervalMs(env: NodeJS.ProcessEnv = process.env): number { const raw = Number.parseInt(env.SAND_BOX_UPDATE_WATCH_INTERVAL_MS ?? "", 10); return Number.isInteger(raw) && raw > 0 ? raw : FOREVER_BOX_IMAGE_WATCH_INTERVAL_MS; }
 export function imageWatchJitterRatio(env: NodeJS.ProcessEnv = process.env): number { const raw = Number.parseFloat(env.SAND_BOX_UPDATE_WATCH_JITTER_RATIO ?? ""); return Number.isFinite(raw) && raw >= 0 ? Math.min(1, raw) : 0.5; }
 export function initialImageWatchDelayMs(args: { intervalMs: number; ratio: number }, random: () => number = Math.random): number { return args.ratio <= 0 ? 0 : Math.round(random() * args.intervalMs); }
