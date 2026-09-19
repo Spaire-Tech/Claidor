@@ -56,6 +56,7 @@ export interface ClaidorCredentialSource {
 }
 
 export const DEFAULT_CLAIDOR_MODEL = "gpt-5.6-terra";
+export const DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-5.6-luna";
 
 // The Claidor provider is the signed-in account. Which process holds that
 // credential differs: the host reads it from its auth service, the coordinator
@@ -68,6 +69,10 @@ export function setClaidorCredentialSource(source: ClaidorCredentialSource | nul
 
 export function configuredClaidorModel(): string {
   return process.env.SAND_CLAIDOR_MODEL?.trim() || DEFAULT_CLAIDOR_MODEL;
+}
+
+export function configuredClaidorCheapModel(): string {
+  return process.env.SAND_CLAIDOR_CHEAP_MODEL?.trim() || DEFAULT_CLAIDOR_CHEAP_MODEL;
 }
 
 // One definition of where the proxy lives, shared with the other three
@@ -388,10 +393,11 @@ function openRouterExecutor(messages: readonly ProviderMessage[], invocationId: 
 
 // Claidor's metered proxy, on the Responses wire: the one that takes reasoning
 // and function tools in the same request (server/polar/desktop/endpoints.py).
-function claidorExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void) {
+function claidorExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, modelId?: string) {
   const source = claidorCredentialSource;
   if (source == null) throw new Error("Claidor is the selected provider, but this process has no signed-in credential source. Sign in to Claidor and try again.");
-  const model: LanguageModelV1 = createOpenAI({ apiKey: "claidor-desktop-access-token", baseURL: claidorProxyBaseUrl(source.backendUrl), name: "claidor", fetch: claidorAuthenticatedFetch(source) }).responses(configuredClaidorModel());
+  const id = modelId?.trim() || configuredClaidorModel();
+  const model: LanguageModelV1 = createOpenAI({ apiKey: "claidor-desktop-access-token", baseURL: claidorProxyBaseUrl(source.backendUrl), name: "claidor", fetch: claidorAuthenticatedFetch(source) }).responses(id);
   return aiSdkExecutor(model, messages, invocationId, definitions, executeTool, onUsage);
 }
 
@@ -415,11 +421,12 @@ export async function runRoutedProviderText(provider: RoutedProvider, messages: 
   readonly tools?: readonly Loose[];
   readonly executeTool?: RoutedToolExecutor;
   readonly onTextDelta?: (delta: string, accumulated: string) => void;
+  readonly model?: string;
 }): Promise<string> {
   const invocationId = crypto.randomUUID();
   const onUsage = (usage: UsageRecord) => recordRoutedUsage(provider, usage);
   const result = provider === "claidor"
-    ? claidorExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage)
+    ? claidorExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage, options?.model)
     : provider === "codex"
       ? codexExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage)
       : provider === "claude-code"

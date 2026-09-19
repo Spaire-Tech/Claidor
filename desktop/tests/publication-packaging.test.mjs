@@ -98,7 +98,8 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(coordinator, /provider\(\): SandInferenceProvider \{ return resolveProductInferenceProvider\(options\.env \?\? process\.env\); \}/);
   assert.match(coordinator, /STORED_PROVIDERS\.includes\(String\(row\.provider\)\)/);
   assert.match(coordinatorMain, /command<[^>]*>\(commands, "mintInferenceCredential", \{\}\)/);
-  assert.match(providers, /\.responses\(configuredClaidorModel\(\)\)/);
+  assert.match(providers, /\.responses\(id\)/);
+  assert.match(providers, /DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-5\.6-luna"/);
   assert.match(providers, /providerOptions: \{ openai: \{ strictSchemas: false \} \}/);
   assert.match(providers, /from "\.\.\/\.\.\/\.\.\/shared\/node\/cursor-backend\/claidor-api\.js"/);
   assert.match(providers, /export \{ claidorProxyBaseUrl \}/);
