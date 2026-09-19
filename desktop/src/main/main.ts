@@ -449,6 +449,7 @@ import {
 import { exportLogsZip } from './libs/logExport';
 import { MainLogReporter } from './libs/mainLogReporter';
 import { inferImageMimeTypeFromDataUrl, type PersistedGeneratedImageAsset, persistGeneratedImageAssets, type PersistGeneratedImageAssetsResult, persistGeneratedVideoAssets, type RemoteGeneratedMediaAsset } from './libs/mediaAssetPersistence';
+import { mediaResultLines } from './libs/mediaResultLines';
 import {
   migrateAgentModelRefs,
   parsePrimaryModelRef,
@@ -6213,7 +6214,7 @@ if (!gotTheLock) {
               `  - [${asset.filename}](${pathToFileURL(asset.filePath).toString()})`
             );
           } else {
-            resultLines = resultUrls.map((url, index) => `  - ![Generated image ${index + 1}](${url})`);
+            resultLines = mediaResultLines(resultUrls, 'image');
           }
         } else if (status === 'succeeded' && statusMediaType === 'video' && sessionId) {
           const persistResult = await persistGeneratedVideos(sessionId, assets);
@@ -6224,12 +6225,12 @@ if (!gotTheLock) {
               `  - [${asset.filename}](${pathToFileURL(asset.filePath).toString()})`
             );
           } else {
-            resultLines = resultUrls.map(url => `  - ${url}`);
+            resultLines = mediaResultLines(resultUrls, 'video');
           }
         } else {
           resultLines = statusMediaType === 'image'
             ? resultUrls.map((_url, index) => `  - Generated image ${index + 1}`)
-            : resultUrls.map(url => `  - ${url}`);
+            : mediaResultLines(resultUrls, 'video');
         }
 
         const lines = [
@@ -6654,7 +6655,11 @@ if (!gotTheLock) {
           );
           lines.push(`Results:\n${fileLines.join('\n')}`);
         } else if (assets.length > 0) {
-          const resultLines = resultUrls.map((url, index) => `  - ![Generated image ${index + 1}](${url})`);
+          // Never interpolate the URL blindly: the Caisra image route
+          // answers with the picture inline as a `data:` URL, which is
+          // 1-2 MB of base64 per image straight into the model's context
+          // (`libs/mediaResultLines.ts`).
+          const resultLines = mediaResultLines(resultUrls, 'image');
           lines.push(`Results:\n${resultLines.join('\n')}`);
         }
       } else if (status === 'succeeded' && mediaType === 'video' && sessionId) {
@@ -6667,11 +6672,16 @@ if (!gotTheLock) {
           );
           lines.push(`Results:\n${fileLines.join('\n')}`);
         } else if (assets.length > 0) {
-          const resultLines = resultUrls.map(url => `  - ${url}`);
+          const resultLines = mediaResultLines(resultUrls, 'video');
           lines.push(`Results:\n${resultLines.join('\n')}`);
         }
       } else if (status === 'succeeded' && assets.length > 0) {
-        const resultLines = resultUrls.map(url => `  - ${url}`);
+        // Reached when there is no session id, so nothing above ran and
+        // nothing was saved to disk. Same guard, same reason.
+        const resultLines = mediaResultLines(
+          resultUrls,
+          mediaType === 'image' ? 'image' : 'video',
+        );
         lines.push(`Results:\n${resultLines.join('\n')}`);
       }
 
@@ -6943,7 +6953,7 @@ if (!gotTheLock) {
                 },
               );
             } else {
-              const resultLines = resultUrls.map(url => `  - ${url}`);
+              const resultLines = mediaResultLines(resultUrls, 'video');
               emitMediaTaskMessage(
                 tracker.sessionId,
                 [
@@ -6967,7 +6977,7 @@ if (!gotTheLock) {
           } else {
             const resultLines = tracker.mediaType === 'image'
               ? resultUrls.map((_url, index) => `  - Generated image ${index + 1}`)
-              : resultUrls.map(url => `  - ${url}`);
+              : mediaResultLines(resultUrls, 'video');
             const lines = [
               `${tracker.mediaType === 'video' ? 'Video' : 'Image'} generation ${status}.`,
               `Task ID: ${taskId}`,
