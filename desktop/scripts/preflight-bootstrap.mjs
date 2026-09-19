@@ -51,7 +51,10 @@ if (major !== 26) {
     `Node ${process.versions.node} is not the pinned runtime (>=26.5.0 <27).\n` +
       `  The native parser packages are rebuilt against this ABI at package\n` +
       `  time, so a different major produces modules the app cannot load.\n` +
-      `  .node-version pins 26.5.0 — nvm use, or fnm use.`,
+      `  In desktop/:  nvm use   (or fnm use)\n` +
+      `  If that reports version 24, you are on a shell that walked up to the\n` +
+      `  monorepo root .nvmrc, which pins 24 for clients/. desktop/.nvmrc pins\n` +
+      `  26.5.0 — pull it, or run: nvm install 26.5.0 && nvm use 26.5.0`,
   );
 }
 
