@@ -25,6 +25,8 @@ import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
 import react from "@vitejs/plugin-react";
 
+import { electronMainEntrySource, hostEntrySource } from "./lib/caisra-entries.mjs";
+
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outRoot = path.join(repoRoot, "dist");
 
@@ -45,7 +47,6 @@ const EXTERNAL = [
 
 /** Entry -> output path, matching what the app expects to find. */
 const PROCESSES = [
-  ["source/electron-main/main.ts", "electron-main/main.cjs"],
   ["source/electron-dev-controls/main.ts", "electron-dev-controls/main.cjs"],
 
   ["source/electron-preload/preload.ts", "electron-preload/preload.cjs"],
@@ -53,7 +54,6 @@ const PROCESSES = [
   ["source/electron-preload/preload-webview.ts", "electron-preload/preload-webview.cjs"],
   ["source/electron-preload/preload-vnc.ts", "electron-preload/preload-vnc.cjs"],
 
-  ["source/host/main.ts", "host/host-main.cjs"],
   ["source/host/agent-isolation/agent-store-worker.ts", "host/agent-isolation/agent-store-worker.cjs"],
   ["source/host/agent-isolation/transcript-mirror-worker.ts", "host/agent-isolation/transcript-mirror-worker.cjs"],
   ["source/host/extensions/box-store-sync/box-store-vacuum-worker.ts", "host/extensions/box-store-sync/box-store-vacuum-worker.cjs"],
@@ -64,10 +64,19 @@ const PROCESSES = [
   ["source/local-exec-daemon/main.ts", "local-exec-daemon/main.cjs"],
 ];
 
+/**
+ * `entry` is either a path under source/, or {contents} for the two generated
+ * ignition entries — electron-main and host both export a start function and
+ * neither calls it, so the entry that calls it has to be generated. See
+ * scripts/lib/caisra-entries.mjs.
+ */
 async function bundleProcess([entry, outfile]) {
   const started = Date.now();
+  const input = typeof entry === "string"
+    ? { entryPoints: [path.join(repoRoot, entry)] }
+    : { stdin: { contents: entry.contents, loader: "ts", resolveDir: repoRoot, sourcefile: entry.sourcefile } };
   const result = await esbuild({
-    entryPoints: [path.join(repoRoot, entry)],
+    ...input,
     bundle: true,
     platform: "node",
     // Not node26, even though package.json pins that. The source uses TC39
@@ -118,8 +127,19 @@ async function main() {
   await rm(outRoot, { recursive: true, force: true });
   await mkdir(outRoot, { recursive: true });
 
+  const ignition = [
+    [
+      { contents: await electronMainEntrySource(), sourcefile: "scripts/build-entry/caisra-electron-main.ts" },
+      "electron-main/main.cjs",
+    ],
+    [
+      { contents: await hostEntrySource(), sourcefile: "scripts/build-entry/caisra-host.ts" },
+      "host/host-main.cjs",
+    ],
+  ];
+
   const results = [];
-  for (const proc of PROCESSES) results.push(await bundleProcess(proc));
+  for (const proc of [...ignition, ...PROCESSES]) results.push(await bundleProcess(proc));
   const renderer = await buildRenderer();
 
   await writeFile(

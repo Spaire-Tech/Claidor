@@ -1,0 +1,152 @@
+/**
+ * The ignition.
+ *
+ * `source/electron-main/main.ts` and `source/host/main.ts` both EXPORT a start
+ * function and neither calls it. Anysphere's build generated the entry that
+ * does, and the reconstruction reproduces that generation in
+ * scripts/electron-main-production-activation.mjs and
+ * scripts/host-production-activation.mjs.
+ *
+ * Those two scripts cannot run for us. Not because the wiring is missing — every
+ * binding they name resolves to a file in source/ — but because before emitting
+ * anything they verify themselves against the extracted 0.18.0 app under
+ * src/app/dist/: byte offsets in main.cjs, a runtime-deps manifest, anchor
+ * needles. That app came from a DMG which Anysphere has since locked behind a
+ * 403 and which Gitee will not serve from a free repository's LFS. So the
+ * self-check is unsatisfiable and takes the generation down with it.
+ *
+ * This module does the generation and not the self-check. It reads the same
+ * binding lists the activation scripts read, and emits the same entry source
+ * they would have emitted. Nothing here invents a binding, changes one, or
+ * substitutes a stub: every import below comes from the checked-in manifests.
+ *
+ * What is deliberately not reproduced: the artifact anchor validation, the
+ * runtime-deps cross-check, and the packaged-artifact fallbacks. Those are
+ * fidelity guarantees against a binary we do not have and are not shipping.
+ */
+
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+export const repoRoot = path.resolve(here, "..", "..");
+
+const ELECTRON_MAIN_MANIFEST = "manifests/reconstruction/electron-main-production-bindings-manifest.json";
+
+/** Import specifier for a binding, relative to repoRoot, as esbuild will resolve it. */
+function resolveModule(moduleRef, manifestDir) {
+  const absolute = path.resolve(repoRoot, manifestDir, moduleRef);
+  const relative = path.relative(repoRoot, absolute).split(path.sep).join("/");
+  return relative.startsWith(".") ? relative : `./${relative}`;
+}
+
+function importLine(binding, index) {
+  const spec = JSON.stringify(binding.resolvedModule);
+  return binding.export === "default"
+    ? `import binding${index} from ${spec};`
+    : `import { ${binding.export} as binding${index} } from ${spec};`;
+}
+
+/** `binding3()` for an access of "call", `binding3` for "value". */
+function expression(bindings, key) {
+  const index = bindings.findIndex((binding) => binding.path === key);
+  if (index < 0) throw new Error(`Binding lookup failed: ${key}`);
+  return bindings[index].access === "call" ? `binding${index}()` : `binding${index}`;
+}
+
+export async function electronMainEntrySource() {
+  const manifestDir = path.dirname(ELECTRON_MAIN_MANIFEST);
+  const manifest = JSON.parse(await readFile(path.join(repoRoot, ELECTRON_MAIN_MANIFEST), "utf8"));
+  if (manifest.schemaVersion !== 1 || !Array.isArray(manifest.bindings)) {
+    throw new Error("electron-main binding manifest must be schemaVersion 1 with a bindings array");
+  }
+  const bindings = manifest.bindings.map((binding) => ({
+    ...binding,
+    resolvedModule: resolveModule(binding.module, manifestDir),
+  }));
+
+  const adapterKeys = bindings
+    .map((binding) => binding.path)
+    .filter((key) => key.startsWith("adapters."))
+    .map((key) => key.slice("adapters.".length));
+
+  return `${bindings.map(importLine).join("\n")}
+import { app, safeStorage, ipcMain, BrowserWindow, Menu, shell, screen } from "electron";
+import { startElectronMainProduction } from "./source/electron-main/main.ts";
+import { createElectronProductionNativeBindings } from "./source/electron-main/main-production-services.ts";
+import { createElectronProductionAvatarImagesBinding } from "./source/electron-main/adapters/avatar-images.ts";
+import { createElectronProductionImageContextMenuBinding } from "./source/electron-main/adapters/avatar-images.ts";
+import { createElectronProductionCursorAccountBinding } from "./source/electron-main/adapters/account-edge.ts";
+import { composeElectronProductionCoordinatorBindings, createElectronProductionServiceFactories } from "./source/electron-main/production-adapters.ts";
+
+const coordinatorBindings = composeElectronProductionCoordinatorBindings(
+  ${expression(bindings, "adapters.coordinator")},
+  ${expression(bindings, "adapters.ipc")},
+);
+const adapters = {
+  // Constructed by the post-context root rather than by the manifest slots;
+  // they receive the live root context when the service factories run.
+  avatarImages: createElectronProductionAvatarImagesBinding(),
+  imageContextMenu: createElectronProductionImageContextMenuBinding(),
+  cursorAccount: createElectronProductionCursorAccountBinding(),
+${adapterKeys
+  .filter((key) => key !== "coordinator" && key !== "ipc")
+  .map((key) => `  ${key}: ${expression(bindings, `adapters.${key}`)},`)
+  .join("\n")}
+  ...coordinatorBindings,
+};
+
+try {
+  startElectronMainProduction({
+    native: createElectronProductionNativeBindings({ app, safeStorage, ipcMain, BrowserWindow, Menu, shell, screen }),
+    moduleDir: __dirname,
+    startup: ${expression(bindings, "startup")},
+    services: createElectronProductionServiceFactories(adapters),
+    parseAllowedExternalUrl: ${expression(bindings, "parseAllowedExternalUrl")},
+    reportFailure: ${expression(bindings, "reportFailure")},
+  });
+} catch (error) {
+  process.stderr.write("[caisra-electron-main] fatal composition failure: " + String(error) + "\\n");
+  process.exitCode = 1;
+}
+`;
+}
+
+export async function hostEntrySource() {
+  // The host's list lives in the activation script rather than a JSON manifest.
+  // Importing the constant does not run any validation; that happens inside
+  // functions we do not call.
+  const { hostProductionBindingInventorySpecs } = await import("../host-production-activation.mjs");
+  const bindings = hostProductionBindingInventorySpecs.map((spec) => ({
+    path: spec.path,
+    export: spec.binding.export,
+    access: spec.binding.access,
+    resolvedModule: resolveModule(spec.binding.module, "."),
+  }));
+
+  return `${bindings.map(importLine).join("\n")}
+import { startProductionHost } from "./source/host/main.ts";
+import { bindRecoveredProductionExtensions } from "./source/host/host-production-extensions.ts";
+
+const ports = {
+  executeBoxCopyInFromEnv: ${expression(bindings, "ports.executeBoxCopyInFromEnv")},
+  extensionHost: {
+    boxGenerated: ${expression(bindings, "ports.extensionHost.boxGenerated")},
+    convertCloudAgentConversationToTrace: ${expression(bindings, "ports.extensionHost.convertCloudAgentConversationToTrace")},
+  },
+  runnerContext: ${expression(bindings, "ports.runnerContext")},
+  createTranscriptMirror: ${expression(bindings, "ports.createTranscriptMirror")},
+};
+const extensionBindings = {
+  stateBackstop: ${expression(bindings, "extensionBindings.stateBackstop")},
+  localExecCodec: ${expression(bindings, "extensionBindings.localExecCodec")},
+  secretsContext: ${expression(bindings, "extensionBindings.secretsContext")},
+};
+
+void startProductionHost(bindRecoveredProductionExtensions(ports, extensionBindings)).catch((error) => {
+  process.stderr.write("[caisra-host] fatal: " + String(error) + "\\n");
+  process.exitCode = 1;
+});
+`;
+}
