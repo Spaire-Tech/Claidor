@@ -50,8 +50,55 @@ A genuine 0.18.0 app, resolved in this order:
    LFS. **Not in this repository and never has been** — `git log --all` over
    that path returns nothing; `.gitattributes` carries the LFS rule and no file.
 4. `https://downloads.cursor.com/grokbot/stable/darwin-arm64/0.18.0/Grok_Bot_0.18.0.dmg`
-   — **403 from the build container**, re-checked 19 September. It may not be
-   403 from a normal machine; that is untested and worth one command.
+   — **403. Confirmed on the founder's own Mac**, not only in the container,
+   19 September. It is gone for everyone.
+
+### Where the DMG actually is, measured 19 September
+
+**The upstream Gitee repository: pointer yes, object no.** The wiki documents
+`research-archives/original/0.18.0/` holding both installers under Git LFS, and
+a test for it survives in our history at `86d49feb`
+(`tests/research-archives.test.mjs`) — but the directory itself was never
+vendored. Asking Gitee for the file returns a 302 to a signed LFS URL whose
+path *is* the pinned digest:
+
+```
+https://gitee.com/xiguazhi/grok-bot-0.18-reconstructed/raw/main/research-archives/…/Grok_Bot_0.18.0.dmg
+  → 302 https://lfs.gitee.com/api/lfs/storage/projects/49881486/a253ccd8…d203eb?…
+  → 404 {"message":"'a253ccd8…d203eb' object not found"}
+```
+
+Twice, with distinct request ids. The pointer is committed; the object was
+never uploaded. (An earlier note in this repository said "Gitee LFS refuses
+free repos". The outcome was right and the reason was not — this is the
+measurement.)
+
+**GitHub mirrors: untested, and the best remaining route.** There are many
+public forks — `webdevtodayjason`, `sergiodekki`, `EpicHacker67`, `agisota`,
+`woosa0502`, `xianyu110` and others, all `grok-bot-0.18-reconstructed`. GitHub
+does store LFS objects for public repositories. They could not be tested from
+the build container: every request returned `{"message":"GitHub access to this
+repository is not enabled for this session"}`, which is Anthropic's per-session
+repository scoping and **not** a GitHub response. On an ordinary machine:
+
+```sh
+git clone --filter=blob:none --no-checkout \
+  https://github.com/<owner>/grok-bot-0.18-reconstructed.git gb && cd gb
+git lfs ls-files -l | grep -i dmg          # size without downloading 155 MB
+git lfs pull --include="research-archives/original/0.18.0/macos-arm64/*.dmg"
+shasum -a 256 research-archives/original/0.18.0/macos-arm64/Grok_Bot_0.18.0.dmg
+#   must be a253ccd8aab01e083f9812a0264354c5034d8ba7f0610bbb557e82ae77d203eb
+```
+
+Then drop it where bootstrap looks first, which is before any network call:
+
+```sh
+mkdir -p ~/Claidor/desktop/research-archives/original/0.18.0/macos-arm64
+cp Grok_Bot_0.18.0.dmg ~/Claidor/desktop/research-archives/original/0.18.0/macos-arm64/
+cd ~/Claidor/desktop && npm run bootstrap
+```
+
+A wrong or truncated file is refused by digest, so this is safe to just try.
 
 Expected DMG SHA-256
 `a253ccd8aab01e083f9812a0264354c5034d8ba7f0610bbb557e82ae77d203eb`, 155.8 MB.
