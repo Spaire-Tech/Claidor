@@ -21,9 +21,6 @@ import {
   CreateAgentIpc,
 } from '../../shared/staffing/constants';
 import { RosterBehavior, RosterIpc } from '../../shared/staffing/roster';
-import { isComputerUseKitInstalled } from '../computerUse/computerUseKit';
-import { resolveComputerUseMcpServer } from '../computerUse/computerUseMcpServer';
-import { installComputerUseRuntime } from '../computerUse/computerUseRuntime';
 import type { CoworkStore } from '../coworkStore';
 import { getElectronNodeRuntimePath } from '../libs/coworkUtil';
 import {
@@ -586,28 +583,6 @@ export class McpRuntime {
           oauthScope: server.oauthScope,
         });
       }
-    }
-
-    const askUserCallbackUrl = this.getAskUserCallbackUrl();
-    const shouldEnableComputerUse = askUserCallbackUrl !== null
-      && isComputerUseKitInstalled(this.deps.getStore());
-    if (shouldEnableComputerUse) {
-      const installResult = await installComputerUseRuntime();
-      if (!installResult.success) {
-        console.warn(`[MCP] failed to install Computer Use runtime: ${installResult.error || 'unknown error'}`);
-      }
-    }
-
-    const computerUseServer = shouldEnableComputerUse
-      ? resolveComputerUseMcpServer({
-        askUserCallbackUrl,
-        bridgeSecret: this.bridgeSecret,
-        electronNodePath: electronPath,
-      })
-      : null;
-    if (computerUseServer) {
-      resolved.push(computerUseServer);
-      builtInCount++;
     }
 
     console.log(

@@ -6,8 +6,18 @@ live from this container on 18 September 2026 (marked *measured*). Nothing here
 is from memory, and the few things that could not be verified from here are
 listed at the end as exactly that.
 
-**Why it exists:** the founder is taking this hostname over for a different
-application and wants an outside opinion on the consequences.
+**Why it exists:** the founder was taking this hostname over for a different
+application (the Rakazo build) and wanted an outside opinion on the consequences.
+
+> **Outcome, re-measured 18 September 2026.** That did not happen, or was
+> reverted. `app.claidor.com` resolves to `cname.vercel-dns.com` → `76.76.21.164`
+> and answers `307 → /signup` with `server: Vercel` and Claidor's own
+> `x-claidor-*` headers. The dashboard is on it. Nothing in §6 came to pass, and
+> §7 — the reversal — is not needed. Other documents claimed the hostname had
+> moved to a Hetzner server; they were wrong and have been corrected.
+> The consequence analysis below is kept because it is the record of a decision
+> that was weighed, and because §4 remains an accurate inventory of everything
+> that names this hostname.
 
 ---
 
@@ -176,7 +186,7 @@ Routes under `clients/apps/web/src/app`, abbreviated to the ones that matter:
 |---|---|
 | `/signup`, `/login`, `/login/code/verify` | Authentication |
 | `/dashboard` | Entry point after sign-in |
-| `/dashboard/[organization]` | **Archived.** Renders a static notice: *"The model review workspace is archived. Its code and record remain in this repository at the tag `swens-final`."* |
+| `/dashboard/[organization]` | **Archived.** Renders a static notice: *"The model review workspace is archived. Its code and record remain in this repository."* (Until 18 September that notice named a git tag `swens-final`, which does not exist — the repository has no tags. The tag name was removed from the page.) |
 | `/dashboard/account/developer` | Personal access tokens — list, delete, and two create buttons |
 | `/dashboard/account/preferences` | Account preferences |
 | `/oauth2/authorize` | OAuth consent |

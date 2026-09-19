@@ -58,7 +58,7 @@ describe('AI Skin Designer kit lifecycle', () => {
 
   test('adds one current skin kit while preserving remote and additional built-ins', () => {
     const { lifecycle } = createHarness();
-    const additionalKit = { id: 'computer-use', version: 'test' };
+    const additionalKit = { id: 'some-other-kit', version: 'test' };
     const response = lifecycle.appendToStoreResponse(JSON.stringify({
       data: {
         value: JSON.stringify({

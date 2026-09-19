@@ -1,0 +1,36 @@
+{
+  "id": "caisra-box",
+  "name": "Caisra Box",
+  "description": "The agent's computer: a remote sandbox the engine drives as a sandbox backend, brokered by the Caisra server.",
+  "contracts": {
+    "sandboxBackends": [
+      "box"
+    ]
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "brokerBaseUrl"
+    ],
+    "properties": {
+      "brokerBaseUrl": {
+        "type": "string",
+        "description": "Caisra server that brokers the box. The E2B credential lives there and never reaches this machine."
+      },
+      "accessToken": {
+        "type": "string",
+        "description": "Bearer presented to the broker. Left out when the broker is the app's local token proxy, which injects the account's token and refreshes it. A broker that is not on this machine must have one."
+      },
+      "template": {
+        "type": "string",
+        "description": "Box template to start. Absent, the broker picks its default."
+      },
+      "requestTimeoutMs": {
+        "type": "integer",
+        "minimum": 1000,
+        "description": "Per-request timeout for broker calls. Default 120000."
+      }
+    }
+  }
+}

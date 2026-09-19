@@ -8,7 +8,6 @@ import { CloudBlob } from '../orb/CloudBlob';
 import { color, font, line, motion, radius, shadow, text, tracking } from '../tokens';
 import { messageIdOf, type Reactions } from './actions';
 import { readableSize } from './attachment';
-import { CardBlock, type CardHandlers } from './CardBlock';
 import { detailsLabel } from './details';
 import { FileCard } from './FileCard';
 import { MessageActions, ReactionChip } from './MessageActions';
@@ -1013,8 +1012,6 @@ export interface ThreadItemViewProps {
   parts?: PartHandlers;
   /** React, reply, copy the id — the cluster that appears on hover. */
   actions?: MessageHandlers;
-  /** What a pressed button in an answer card does. */
-  cards?: CardHandlers;
   /** Install or Not now on a connector card. Absent, it cannot be answered. */
   connector?: ConnectorHandlers;
   /**
@@ -1027,8 +1024,6 @@ export interface ThreadItemViewProps {
 
 const noHandlers: PartHandlers = {};
 
-const noCards: CardHandlers = {};
-
 const noSecret: SecretHandlers = {};
 
 const noRoster: RosterHandlers = { onStandUp: () => {}, onSomethingElse: () => {}, onDecline: () => {} };
@@ -1036,15 +1031,13 @@ const noRoster: RosterHandlers = { onStandUp: () => {}, onSomethingElse: () => {
 const noConnector: ConnectorHandlers = { onInstall: () => {}, onDecline: () => {} };
 
 export function ThreadItemView(
-  { item, choice, auth, secret = noSecret, roster = noRoster, parts = noHandlers, actions, cards = noCards, connector = noConnector, leading }: ThreadItemViewProps,
+  { item, choice, auth, secret = noSecret, roster = noRoster, parts = noHandlers, actions, connector = noConnector, leading }: ThreadItemViewProps,
 ): JSX.Element | null {
   switch (item.kind) {
     case ThreadItemKind.Connector:
       return <ConnectorCard item={item} handlers={connector} />;
     case ThreadItemKind.Roster:
       return <RosterCard item={item} handlers={roster} />;
-    case ThreadItemKind.Card:
-      return <CardBlock item={item} handlers={cards} />;
     case ThreadItemKind.Text:
       return <TextBubble item={item} leading={leading} handlers={parts} actions={actions} />;
     case ThreadItemKind.System:

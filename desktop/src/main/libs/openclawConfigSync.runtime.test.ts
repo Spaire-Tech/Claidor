@@ -3344,31 +3344,31 @@ describe('OpenClawConfigSync runtime config output', () => {
     const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
     expect(agentsMd.length).toBeGreaterThan(20_000);
     // The headroom under the engine's cut. Was 0.6 until 18 September,
-    // when OpenUI's four worked examples and their chat rules went into
-    // the Cards section and the brief reached 74,000. 0.6 was a margin
-    // picked out of the air, not a limit: the engine cuts at
-    // OPENCLAW_BOOTSTRAP_MAX_CHARS and nothing else reads this number.
-    // Raised to 0.7 only after pruning 4,800 characters the brief should
-    // never have carried — a form system the rules forbid in the next
-    // breath (`CARDS_NOT_TAUGHT`) — so this buys room for content that
-    // earns it and not for sprawl.
+    // when a 26,000-character generated component library went into the
+    // brief. That library is gone (18 September), so the brief is back
+    // under 50,000 and the margin is comfortable again. 0.7 is not a
+    // limit: the engine cuts at OPENCLAW_BOOTSTRAP_MAX_CHARS and nothing
+    // else reads this number.
     expect(agentsMd.length).toBeLessThan(OPENCLAW_BOOTSTRAP_MAX_CHARS * 0.7);
   });
 
-  test('every agent is taught the answer cards, after the conversation rules', async () => {
+  test('every agent is told documents are files, and which skill writes each', async () => {
+    // 18 September: the in-thread rendered card is gone
+    // (`docs/product/artifacts-decision.md`). A report, a plan, a guide
+    // or a deck is a file the person can keep and send on, and this is
+    // the one section that decides that.
     const sync = await createSync({});
-    expect(sync.sync('cards').ok).toBe(true);
+    expect(sync.sync('documents').ok).toBe(true);
     const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
-    expect(agentsMd).toContain('## Cards');
-    // OpenUI's chat library, by its own signatures (`shared/cards/prompt.generated.ts`).
-    expect(agentsMd).toContain('Card(children?:');
-    expect(agentsMd).toContain('CompositeCardBlock(');
-    expect(agentsMd).toContain('## Rules in this app');
-    expect(agentsMd.indexOf('## Talking to the Person')).toBeLessThan(agentsMd.indexOf('## Cards'));
-    // The artifacts right after, taught from OpenUI's own libraries.
-    expect(agentsMd.indexOf('## Cards')).toBeLessThan(agentsMd.indexOf('## Artifacts'));
-    expect(agentsMd).toContain('SlideShow(title: string');
-    expect(agentsMd).toContain('ReportView(title: string');
+    expect(agentsMd).toContain('## Documents You Make');
+    expect(agentsMd).toContain('`docx` for a document');
+    expect(agentsMd).toContain('`pptx` for a deck');
+    expect(agentsMd).toContain('`xlsx` for a spreadsheet');
+    // Offered without being asked, which is the half that kept getting lost.
+    expect(agentsMd).toContain('And when they did not ask, but plainly want one');
+    // And nothing teaches a program-in-a-bubble any more.
+    expect(agentsMd).not.toContain('## Cards');
+    expect(agentsMd).not.toContain('openui-lang');
   });
 
   test('the exec policy reaches every agent, and a stale full-bypass default is corrected', async () => {

@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import { app, BrowserWindow, ipcMain } from 'electron';
 import extractZip from 'extract-zip';
 import fs from 'fs';
@@ -6,11 +5,6 @@ import http from 'http';
 import https from 'https';
 import path from 'path';
 
-import {
-  ComputerUseKitBundle,
-  ComputerUseKitBundleIntegrity,
-  ComputerUseKitId,
-} from '../../../shared/computerUse/constants';
 import type {
   InstalledKitRecord,
   KitSkillMetadata,
@@ -18,17 +12,6 @@ import type {
   LocalizedText,
 } from '../../../shared/kit/constants';
 import { KitStoreKey as KitStoreKeyValue } from '../../../shared/kit/constants';
-import {
-  buildComputerUseMarketplaceKit,
-  buildInstalledComputerUseKitRecord,
-  getInstalledKitsMap,
-  isComputerUseKitSupportedPlatform,
-  removeComputerUseSkillArtifacts,
-} from '../../computerUse/computerUseKit';
-import {
-  installComputerUseRuntime,
-  uninstallComputerUseRuntime,
-} from '../../computerUse/computerUseRuntime';
 import { cpRecursiveSync } from '../../fsCompat';
 import { OpenClawConfigImpact } from '../../libs/openclawConfigImpact';
 import type { SkillManager } from '../../skills/skillManager';
@@ -36,6 +19,11 @@ import { createSkinPackKitLifecycle } from '../../skins/skinPackKitLifecycle';
 import type { SqliteStore } from '../../sqliteStore';
 
 const KITS_INSTALLED_KEY: KitStoreKey = KitStoreKeyValue.Installed;
+
+/** Used to live in computerUse/computerUseKit.ts, which is gone; it was never about it. */
+function getInstalledKitsMap(store: { get<T>(key: string): T | undefined }): InstalledKitsMap {
+  return store.get<InstalledKitsMap>(KITS_INSTALLED_KEY) ?? {};
+}
 const SKILLS_DIR_NAME = 'SKILLs';
 const SKILL_FILE_NAME = 'SKILL.md';
 
@@ -73,10 +61,6 @@ export interface KitHandlerDeps {
     restartGatewayIfRunning?: boolean;
     expectedImpact?: OpenClawConfigImpact;
   }) => Promise<{ success: boolean; changed: boolean; error?: string }>;
-}
-
-function sha256Buffer(buffer: Buffer): string {
-  return crypto.createHash('sha256').update(buffer).digest('hex');
 }
 
 type InstalledKitsMap = Record<string, InstalledKitRecord>;
@@ -210,10 +194,6 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
     notifySkillsChanged,
     syncOpenClawConfig,
   });
-  const getAdditionalBuiltInKits = (): Record<string, unknown>[] => (
-    isComputerUseKitSupportedPlatform() ? [buildComputerUseMarketplaceKit()] : []
-  );
-
   // Fetch kit store catalog from overmind
   ipcMain.handle('kits:fetchStore', async () => {
     const url = getKitStoreUrl();
@@ -238,13 +218,13 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
       });
       return {
         success: true,
-        data: skinPackKitLifecycle.appendToStoreResponse(data, getAdditionalBuiltInKits()),
+        data: skinPackKitLifecycle.appendToStoreResponse(data, []),
       };
     } catch (error) {
       console.error('[KitStore] fetch failed:', error);
       return {
         success: true,
-        data: skinPackKitLifecycle.buildOfflineStoreResponse(getAdditionalBuiltInKits()),
+        data: skinPackKitLifecycle.buildOfflineStoreResponse([]),
         warning: error instanceof Error ? error.message : 'Failed to fetch kit store',
       };
     }
@@ -271,19 +251,12 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
     connectors?: unknown[] | null;
   }) => {
     const { kitId, bundleUrl, version, skillListIds: _skillListIds } = params;
-    const isComputerUseKit = kitId === ComputerUseKitId.BuiltIn;
     console.log(`[KitStore] Installing kit "${kitId}" v${version} from ${bundleUrl}`);
 
     let tempRoot: string | null = null;
     let skillWatchingStopped = false;
     let skillWatchingRestarted = false;
     try {
-      if (isComputerUseKit && bundleUrl !== ComputerUseKitBundle.BuiltIn) {
-        throw new Error('Computer Use kit bundle URL does not match the built-in catalog entry');
-      }
-      if (isComputerUseKit && !isComputerUseKitSupportedPlatform()) {
-        throw new Error('Computer Use kit is only available on Windows x64.');
-      }
       const skinPackInstallResult = await skinPackKitLifecycle.installIfHandled({ kitId, bundleUrl });
       if (skinPackInstallResult !== undefined) {
         return skinPackInstallResult;
@@ -292,14 +265,6 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
       // 1. Download zip
       tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'lobsterai-kit-'));
       const buffer = await downloadBuffer(bundleUrl);
-      if (isComputerUseKit) {
-        if (buffer.length !== ComputerUseKitBundleIntegrity.SizeBytes) {
-          throw new Error('Computer Use kit bundle size verification failed');
-        }
-        if (sha256Buffer(buffer) !== ComputerUseKitBundleIntegrity.Sha256) {
-          throw new Error('Computer Use kit bundle checksum verification failed');
-        }
-      }
       const zipPath = path.join(tempRoot, 'kit-bundle.zip');
       const extractRoot = path.join(tempRoot, 'extracted');
       fs.writeFileSync(zipPath, buffer);
@@ -323,19 +288,9 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
         throw new Error('No skills found in kit bundle (no SKILL.md detected)');
       }
 
-      if (isComputerUseKit) {
-        const runtimeResult = await installComputerUseRuntime();
-        if (!runtimeResult.success) {
-          throw new Error(runtimeResult.error || 'Computer Use runtime installation failed');
-        }
-      }
-
       const skillManager = getSkillManager();
       skillManager.stopWatching();
       skillWatchingStopped = true;
-      if (isComputerUseKit) {
-        removeComputerUseSkillArtifacts(getStore());
-      }
 
       // 4. Copy skills to user SKILLs directory
       const root = ensureSkillsRoot();
@@ -376,35 +331,22 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
 
       // 6. Persist kit installation record
       const installedMap = getInstalledKitsMap(getStore());
-      installedMap[kitId] = isComputerUseKit
-        ? buildInstalledComputerUseKitRecord(installedSkillIds, installedSkillMetadata)
-        : {
-          id: kitId,
-          version,
-          installedAt: Date.now(),
-          skills: installedSkillIds.length > 0
-            ? {
-              skillIds: installedSkillIds,
-              ...(Object.keys(installedSkillMetadata).length > 0 ? { metadata: installedSkillMetadata } : {}),
-            }
-            : null,
-          mcpServers: normalizeCapabilityList(params.mcpServers),
-          connectors: normalizeCapabilityList(params.connectors),
+      installedMap[kitId] = {
+        id: kitId,
+        version,
+        installedAt: Date.now(),
+        skills: installedSkillIds.length > 0
+          ? {
+            skillIds: installedSkillIds,
+            ...(Object.keys(installedSkillMetadata).length > 0 ? { metadata: installedSkillMetadata } : {}),
+          }
+          : null,
+        mcpServers: normalizeCapabilityList(params.mcpServers),
+        connectors: normalizeCapabilityList(params.connectors),
       };
       getStore().set(KITS_INSTALLED_KEY, installedMap);
 
-      if (isComputerUseKit) {
-        const syncResult = await syncOpenClawConfig({
-          reason: 'computer-use-kit-installed',
-          restartGatewayIfRunning: true,
-          expectedImpact: OpenClawConfigImpact.Restart,
-        });
-        if (!syncResult.success) {
-          throw new Error(syncResult.error || 'Engine config sync failed after Computer Use install');
-        }
-      }
-
-      // 7. Notify after all installation work and Computer Use config sync are complete.
+      // 7. Notify after all installation work is complete.
       skillManager.startWatching();
       skillWatchingRestarted = true;
       notifySkillsChanged();
@@ -475,18 +417,6 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
       delete installedMap[kitId];
       getStore().set(KITS_INSTALLED_KEY, installedMap);
 
-      if (kitId === ComputerUseKitId.BuiltIn) {
-        removeComputerUseSkillArtifacts(getStore());
-        await uninstallComputerUseRuntime();
-        const syncResult = await syncOpenClawConfig({
-          reason: 'computer-use-kit-uninstalled',
-          restartGatewayIfRunning: true,
-          expectedImpact: OpenClawConfigImpact.Restart,
-        });
-        if (!syncResult.success) {
-          throw new Error(syncResult.error || 'Engine config sync failed after Computer Use uninstall');
-        }
-      }
       // Notify
       skillManager.startWatching();
       skillWatchingRestarted = true;
