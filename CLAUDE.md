@@ -99,6 +99,14 @@ anyway: grep the built artifact before saying a thing is absent.** I asserted
 "the atom rules were never recovered" without once looking at
 `dist/renderer/assets/*.css`.
 
+**The commands to build the app are in `desktop/BUILD.md`.** Nothing else needs
+remembering: `git pull`, `nvm use`, `npm ci`, `npm run bootstrap`,
+`npm run package`, `npm run verify`, `open "dist/Caisra.app"`. macOS arm64
+only. One trap worth knowing, because it cost a round: **never paste a `#`
+comment on the same line as a command** — zsh without `interactive_comments`
+runs it as an argument, which turned a `git pull` into
+`git pull '#' 'or' 'merge'` and silently updated nothing.
+
 **The app's whole UI is one file, and how to get it is written down.**
 `Grok_Bot_0.18.0.dmg`, sha256 `a253ccd8…d203eb`. `npm run bootstrap` extracts
 it to `src/app/dist` and the build assembles around it; without it there is no
