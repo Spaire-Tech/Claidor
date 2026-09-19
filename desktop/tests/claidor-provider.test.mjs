@@ -73,8 +73,9 @@ test("claidor turns run on the Mac by default and pass through to the host's ful
     const dataDir = path.join(router.dataDir, "data");
     await mkdir(dataDir, { recursive: true });
     await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "claidor" }));
+    const events = [];
     const make = (env) => router.module.createCoordinatorInferenceRouter({
-      dataDir, env, postEvent: () => {}, dispatchRemote: async () => { throw new Error("should not be reached"); },
+      dataDir, env, postEvent: (family, payload) => events.push({ family, payload }), dispatchRemote: async () => { throw new Error("box unreachable"); },
     });
 
     assert.equal(router.module.routesClaidorThroughHost({}), false);
@@ -84,6 +85,14 @@ test("claidor turns run on the Mac by default and pass through to the host's ful
     const local = await make({}).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
     assert.equal(local.handled, true);
     assert.equal(local.value.provider, "claidor");
+    // The local turn runs in the background; with no credential source registered
+    // in this bundle it settles as a router error. Wait for it before disposing.
+    const deadline = Date.now() + 8_000;
+    while (!events.some((event) => event.family === "transcript" && event.payload.entry?.kind === "send-message") && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    const settled = events.find((event) => event.family === "transcript" && event.payload.entry?.kind === "send-message");
+    assert.match(settled.payload.entry.message.content, /no signed-in credential source/);
 
     const passthrough = await make({ SAND_CLAIDOR_FULL_AGENT: "1" }).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
     assert.deepEqual(passthrough, { handled: false });
