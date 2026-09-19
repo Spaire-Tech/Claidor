@@ -57,6 +57,7 @@ from polar.postgres import AsyncSession, get_db_session
 from polar.routing import APIRouter
 
 from .auth import ProxyCaller, bearer_token, get_desktop_session, get_proxy_caller
+from .capabilities import router as capabilities_router
 from .composio import forward as composio_forward
 
 # Straight from the price list rather than through `service`, which
@@ -69,6 +70,9 @@ from .pricing import (
     SPEECH_VOICE,
     openai_models_list,
 )
+from .proxy_common import error_response as _error
+from .proxy_common import log_upstream_refusal as _log_upstream_refusal
+from .proxy_common import upstream_timeout as _timeout
 from .service import (
     AUTH_CODE_INVALID,
     MEMORY_FILE_LIMIT,
@@ -733,19 +737,6 @@ _WIRES: dict[SpokenApi, _Wire] = {
 }
 
 
-def _timeout() -> httpx.Timeout:
-    return httpx.Timeout(600.0, connect=30.0)
-
-
-def _error(kind: str, message: str, status: int) -> JSONResponse:
-    """The error shape both wires use. Anthropic's and OpenAI's own error
-    bodies are already this shape, so the app reads ours the same way it
-    reads theirs."""
-    return JSONResponse(
-        {"error": {"type": kind, "message": message}}, status_code=status
-    )
-
-
 @router.post("/api/proxy/v1/messages", name="desktop:messages", response_model=None)
 async def proxy_messages(
     request: Request,
@@ -843,38 +834,6 @@ async def proxy_models(
     """
     return JSONResponse(
         openai_models_list(offered_models(), SpokenApi.openai_completions)
-    )
-
-
-#: How much of a refusal to keep. Provider errors say what is wrong in
-#: their first sentence; the rest is echoed request.
-_REFUSAL_LOG_LIMIT = 1000
-
-#: The one line to search the logs for when a model call fails.
-UPSTREAM_REFUSED = "desktop.proxy.upstream_refused"
-
-
-def _log_upstream_refusal(model: DesktopModel, status: int, body: bytes | None) -> None:
-    """Write down why the model service refused, in full, once.
-
-    Without this the reason is lost: the body is handed back to the app,
-    the app's engine reduces it to a failure kind, and what reaches the
-    person is « 400 terminated » — a status and a word, with the sentence
-    that says what is actually wrong nowhere at all. That was the state on
-    13 September, when GPT models failed and nothing anywhere recorded
-    OpenAI's own explanation. One line here ended two hours of guessing.
-
-    The body is the provider's error text. It carries no key: the key goes
-    up in a header, and a provider does not echo it back.
-    """
-    text = (body or b"").decode(errors="replace").strip()
-    log.warning(
-        UPSTREAM_REFUSED,
-        provider=model.provider.value,
-        model=model.model_id,
-        status=status,
-        body=text[:_REFUSAL_LOG_LIMIT] or "(empty)",
-        truncated=len(text) > _REFUSAL_LOG_LIMIT,
     )
 
 
@@ -1151,7 +1110,7 @@ async def proxy_speech(
             )
             await fresh.commit()
 
-    url = f"{provider_base_url(DesktopProvider.openai)}/audio/speech"
+    url = f"{provider_base_url(DesktopProvider.openai)}/v1/audio/speech"
     headers = {
         "authorization": f"Bearer {provider_api_key(DesktopProvider.openai)}",
         "content-type": "application/json",
@@ -1187,6 +1146,13 @@ async def proxy_speech(
         media_type=upstream.headers.get("content-type", "audio/mpeg"),
         headers={"cache-control": "no-store"},
     )
+
+
+# The agent's other three calls — web search, pictures, dictation — are
+# their own module (`capabilities.py`) and sit under `/api/proxy/v1`
+# like the model calls. Included before the catch-all for the same
+# reason Composio is declared before it.
+router.include_router(capabilities_router)
 
 
 # Apps through Composio: the app's six calls, forwarded with Claidor's
