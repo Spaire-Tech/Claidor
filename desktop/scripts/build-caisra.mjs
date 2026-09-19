@@ -25,7 +25,7 @@ import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
 import react from "@vitejs/plugin-react";
 
-import { electronMainEntrySource, hostEntrySource } from "./lib/caisra-entries.mjs";
+import { electronMainEntrySource, hostEntrySource, preloadEntrySource } from "./lib/caisra-entries.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outRoot = path.join(repoRoot, "dist");
@@ -49,10 +49,6 @@ const EXTERNAL = [
 const PROCESSES = [
   ["source/electron-dev-controls/main.ts", "electron-dev-controls/main.cjs"],
 
-  ["source/electron-preload/preload.ts", "electron-preload/preload.cjs"],
-  ["source/electron-preload/preload-dev-controls.ts", "electron-preload/preload-dev-controls.cjs"],
-  ["source/electron-preload/preload-webview.ts", "electron-preload/preload-webview.cjs"],
-  ["source/electron-preload/preload-vnc.ts", "electron-preload/preload-vnc.cjs"],
 
   ["source/host/agent-isolation/agent-store-worker.ts", "host/agent-isolation/agent-store-worker.cjs"],
   ["source/host/agent-isolation/transcript-mirror-worker.ts", "host/agent-isolation/transcript-mirror-worker.cjs"],
@@ -60,7 +56,7 @@ const PROCESSES = [
   ["source/host/extensions/content-search/search-index-worker.ts", "host/extensions/content-search/search-index-worker.cjs"],
 
   ["source/node-agent-coordinator/main.ts", "node-agent-coordinator/main.cjs"],
-  ["source/box-exec-daemon/main.ts", "box-exec-daemon/main.cjs"],
+  ["source/box-exec-daemon/cli.ts", "box-exec-daemon/main.cjs"],
   ["source/local-exec-daemon/main.ts", "local-exec-daemon/main.cjs"],
 ];
 
@@ -148,6 +144,10 @@ async function main() {
       { contents: await hostEntrySource(), sourcefile: "scripts/build-entry/caisra-host.ts" },
       "host/host-main.cjs",
     ],
+    ...Object.keys({ "preload": 0, "preload-dev-controls": 0, "preload-webview": 0, "preload-vnc": 0 }).map((name) => [
+      { contents: preloadEntrySource(name), sourcefile: `scripts/build-entry/caisra-${name}.ts` },
+      `electron-preload/${name}.cjs`,
+    ]),
   ];
 
   const results = [];
