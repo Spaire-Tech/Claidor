@@ -97,19 +97,52 @@ ${adapterKeys
   ...coordinatorBindings,
 };
 
+// main.ts routes every startup rejection to startup.noteFailed(), which
+// reports to telemetry — and packaging sets SAND_DISABLE_TELEMETRY=1, so the
+// error lands in a disabled sink and the app simply never opens a window with
+// nothing on stderr to say why. A startup failure that produces no window must
+// not be silent, so the tracker is wrapped to also write the error out. Nothing
+// else about it changes.
+const baseStartup = ${expression(bindings, "startup")};
+const startup = {
+  ...baseStartup,
+  noteFailed(error) {
+    const detail = error instanceof Error ? (error.stack ?? \`\${error.name}: \${error.message}\`) : String(error);
+    process.stderr.write("[caisra-startup] startup failed: " + detail + "\\n");
+    return baseStartup.noteFailed(error);
+  },
+};
+
+const baseReportFailure = ${expression(bindings, "reportFailure")};
+const reportFailure = (...args) => {
+  const error = args[0];
+  const detail = error instanceof Error ? (error.stack ?? \`\${error.name}: \${error.message}\`) : String(error);
+  process.stderr.write("[caisra-edge] " + detail + "\\n");
+  return baseReportFailure(...args);
+};
+
 try {
   startElectronMainProduction({
     native: createElectronProductionNativeBindings({ app, safeStorage, ipcMain, BrowserWindow, Menu, shell, screen }),
     moduleDir: __dirname,
-    startup: ${expression(bindings, "startup")},
+    startup,
     services: createElectronProductionServiceFactories(adapters),
     parseAllowedExternalUrl: ${expression(bindings, "parseAllowedExternalUrl")},
-    reportFailure: ${expression(bindings, "reportFailure")},
+    reportFailure,
   });
 } catch (error) {
-  process.stderr.write("[caisra-electron-main] fatal composition failure: " + String(error) + "\\n");
+  const detail = error instanceof Error ? (error.stack ?? String(error)) : String(error);
+  process.stderr.write("[caisra-electron-main] fatal composition failure: " + detail + "\\n");
   process.exitCode = 1;
 }
+
+process.on("unhandledRejection", (reason) => {
+  const detail = reason instanceof Error ? (reason.stack ?? String(reason)) : String(reason);
+  process.stderr.write("[caisra-electron-main] unhandled rejection: " + detail + "\\n");
+});
+process.on("uncaughtException", (error) => {
+  process.stderr.write("[caisra-electron-main] uncaught: " + (error?.stack ?? String(error)) + "\\n");
+});
 `;
 }
 
