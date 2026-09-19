@@ -174,3 +174,141 @@ allows and does not call the product.
 `npm run package` and `npm run verify` are macOS-only and were not run. No
 turn was run against any provider; there is no Mac and no box in this
 container. Everything above is build output and source, not runtime.
+
+---
+
+# Phase 3: the executor, measured (19 September 2026, later the same day)
+
+The section above ends with "the first step is a run, not a build", and names
+a run that needs a Mac. Rakazo's eval harness
+(`rakazo/docs/agent-verification.md` at `34325164`) shows the run does not
+need one: drive the real agent loop against a local model fixture, offline,
+and read the first failure. That is what was done here. The line numbers in
+the (b′) paragraph above (`provider-session.ts:247-264`) are the file as it
+was that morning; the executor now sits at `provider-session.ts:299-384`.
+
+## What was run
+
+`desktop/tests/claidor-host-loop.test.mjs`, with
+`tests/fixtures/claidor-host-loop-entry.ts` as its bundle entry. It builds
+the host's own tool loop — `SimplePromptToolExecutor` from
+`source/packages/agent/tool-stream-executor.ts`, the class every real turn
+runs through (`turn-run-shell.ts:226`, `turn-agent-composition.ts:202`) —
+around `createProviderPromptSession("claidor")`, gives it one tool made by
+`createZodAgentTool` (`tools/common.ts`, the wrapper every native tool goes
+through), and points `fetch` at a fake Responses server. The state starts
+with a system message and a user message, as a real turn's does. Step one:
+the fixture answers with a `function_call`. Step two: the loop has executed
+the tool and appended its result; the fixture answers with text.
+
+Before the fixes, the first step already told the story:
+
+```
+step 1 chunks   [step-start, tool-call-streaming-start, tool-call-delta, tool-call, …]
+executed        [ { command: 'ls' } ]
+step 2          FAILED: Invalid prompt: message must be a CoreMessage or a UI message
+request 1       tools[0].parameters = { "jsonSchema": { "type": "object", … } }
+                input = [developer, developer, user]
+401 mode        FAILED: step 1 hung
+```
+
+The loop is fine. The model's tool call was parsed, the tool ran with the
+right arguments, the tool-result message was built. Every failure is in the
+executor, and each is a shape the loop speaks that the AI SDK does not:
+
+1. **Tool schemas double-wrapped.** The host's tools carry `parameters`
+   already wrapped by the AI SDK's `jsonSchema()`
+   (`packages/agent/tools/common.ts:124`). `toToolSet` wrapped them again, so
+   the proxy received `"parameters": {"jsonSchema": {…}}` for every tool.
+   The coordinator's connector tools carry bare `inputSchema`, which is why
+   Phase 2's test, which only ran that path, passed.
+2. **Two system prompts.** The executor always sent the router prompt
+   ("You are Caisra, a warm, concise desktop assistant … Respond directly to
+   the user") as `system`, in front of the state's real system prompt. On
+   the host path that is the whole brief, followed by a paragraph telling
+   the model to ignore the SendMessage design.
+3. **Every turn with a tool call died at the second model call.** The loop
+   appends tool results with Cursor's wire metadata under
+   `providerOptions.cursor.highLevelToolCallResult`
+   (`tool-stream-executor.ts:741`), and `isError` in it is `undefined` for a
+   successful tool. The AI SDK validates `providerOptions` as JSON; `undefined`
+   is not JSON; the prompt is refused. This alone means no routed provider has
+   ever completed a tool call on the host path, `openrouter` included.
+4. **A proxy refusal hung the turn forever.** When the first request fails
+   (401 expired token, 402 no credits, 5xx), the AI SDK (v4.3.17) yields one
+   `error` part and closes the stream, and never settles `response`
+   (`node_modules/ai/dist/index.mjs:5469`, `recordedSteps.length === 0`
+   → return). The loop then awaits `response`
+   (`tool-stream-executor.ts:1205`, and again at `:1224` on the error path).
+   Measured: the step was still waiting at the 5-second timeout.
+5. **Images in tool results were dropped.** The Responses converter in
+   `@ai-sdk/openai` 1.3.24 emits `output: JSON.stringify(part.result)` and
+   ignores `experimental_content` (`dist/index.mjs:1931-1939`). A screenshot
+   — the computer-use tool's whole output — reached the model as
+   `output: undefined`, an invalid request; had it been valid, the model would
+   have been blind. This is the Rakazo failure `CLAUDE.md` says must be made
+   impossible.
+
+## What changed
+
+All in `source/host/extensions/inference/provider-session.ts`, shared by the
+`claidor` and `openrouter` executors, which now go through one
+`aiSdkExecutor`:
+
+- `toolParameterSchema` unwraps an AI SDK `Schema` to its bare JSON Schema
+  and leaves bare schemas alone; `codexTools` uses it too.
+- `toCoreMessages` is the copy the wire sees: text/image user parts, text/
+  tool-call/reasoning assistant parts (signatures and `providerOptions`
+  dropped), tool results with a string `result` (falling back to the rendered
+  text, then to a one-line placeholder), and every image found in a tool
+  result carried as the **next user message** — the Responses wire takes no
+  images inside a function output, so the person's model sees the screenshot
+  as an attachment that follows it. The loop keeps its own messages
+  untouched.
+- The router prompt is only sent when the messages carry no system message.
+- `settleAiSdkStream` races every promise the loop awaits against the first
+  `error` part and throws from the stream, so a refusal ends the step with
+  the provider's own sentence.
+
+After the fixes, the same harness:
+
+```
+request 1  tools[0].parameters = { "type": "object", "properties": { "command": … } }
+           input = [developer("You are the real system prompt."), user("list files")]
+step 2     response.messages = [assistant("done")]
+request 2  input = [developer, user, function_call(call_1, run_shell, {"command":"ls"}),
+                    function_call_output(call_1, "a.txt")]
+image      … function_call_output(call_1, "(the tool returned an image; it follows as an attachment)"),
+           user[input_text, input_image(data:image/png;base64,…)]
+401        response.error = "desktop access token expired", within 300 ms
+```
+
+`npm run check`: 35 tests, 33 pass, 2 skipped (as before), both typechecks
+green. The four new tests fail on the previous executor (4/4; the refusal
+test by hitting its timeout) and pass on this one.
+
+## What this establishes, and what it does not
+
+Established: the host's tool loop completes a two-step turn on the claidor
+executor, with a tool call executed in between, against a Responses server
+that answers in OpenAI's documented event shapes. The wire the proxy sees is
+what OpenAI documents. Route (a), serving `InferenceService/Stream` on Claidor,
+is not needed for this; the earlier "1,772-line guess" is retired.
+
+Not established, and still needing the Mac run above:
+
+- A live model's behaviour on the real system prompt (~38,000 characters) and
+  the full tool set. The fixture answers what it is told to.
+- Whether OpenAI accepts a `function_call` continuation without the reasoning
+  item that preceded it. The AI SDK sends none (`dist/index.mjs:1918-1926`,
+  no `id`s), which is the documented-safe form; the proxy forwards what it
+  is given. If this fails it shows in `desktop.proxy.upstream_refused`.
+- `function_call_output` is a JSON-encoded string (`"\"a.txt\""`), the AI
+  SDK's convention for every OpenAI user. Large shell output arrives with
+  escaped newlines. Not wrong; noted.
+- Whether the turn *above* this loop — `AnysphereAgent.runStream`, the
+  action handlers, summarization, self-summary — has any other provider
+  assumption. It is the same code the `SAND_AGENT_MOCK_RESPONSE` mock
+  executor already exercises in production, and the mock's contract
+  (`packages/chat-inference/mock-prompt-executor.ts`) is the one the claidor
+  executor now meets, but that is reasoning, not a run.
