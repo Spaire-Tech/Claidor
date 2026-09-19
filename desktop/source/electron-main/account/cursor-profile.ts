@@ -95,7 +95,7 @@ export function writeLocalAccountDisplayName(name: string, root = getSandRootDir
   }
   writeFileSync(path, `${trimmed}\n`, "utf8");
   return trimmed;
-} }
+}
 export function privacyModeEnabledForMode(mode: PrivacyMode | undefined): boolean { return mode !== PrivacyMode.USAGE_DATA_TRAINING_ALLOWED && mode !== PrivacyMode.USAGE_CODEBASE_TRAINING_ALLOWED; }
 export function isLiveSandTrial(expiresAt: TimestampLike | null | undefined, nowMs: number): boolean { if (expiresAt == null) return false; const expiresMs = expiresAt.toDate().getTime(); return Number.isFinite(expiresMs) && expiresMs > nowMs; }
 export function normalizedLimitCents(value: number | undefined): number | null { return value === undefined || !Number.isFinite(value) || value <= 0 || value >= NO_LIMIT_SENTINEL_CENTS ? null : value; }
