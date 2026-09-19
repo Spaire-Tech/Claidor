@@ -9,11 +9,11 @@ import { build } from "esbuild";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-async function loadProfile() {
+async function loadName() {
   const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-account-name-"));
-  const output = path.join(temporary, "cursor-profile.mjs");
+  const output = path.join(temporary, "account-display-name.mjs");
   await build({
-    entryPoints: [path.join(repoRoot, "source/electron-main/account/cursor-profile.ts")],
+    entryPoints: [path.join(repoRoot, "source/electron-main/account/account-display-name.ts")],
     outfile: output,
     bundle: true,
     format: "esm",
@@ -25,54 +25,31 @@ async function loadProfile() {
 }
 
 test("saving a name keeps it locally when the profile RPC is unimplemented", async () => {
-  const loaded = await loadProfile();
-  const previousRoot = process.env.SAND_DATA_ROOT;
+  const loaded = await loadName();
   try {
-    process.env.SAND_DATA_ROOT = loaded.dataDir;
     const calls = [];
-    const deps = {
-      createClient: () => ({
-        updateUserName: async (request) => {
-          calls.push(request);
-          const error = new Error("[unimplemented]");
-          error.code = 12;
-          throw error;
-        },
-        getMe: async () => { throw new Error("[unimplemented]"); },
-        getTeams: async () => ({ teams: [] }),
-      }),
-    };
-
-    await loaded.module.updateCursorProfileName(async () => "token", "Bass Fall", deps);
-    assert.deepEqual(calls, [{ firstName: "Bass", lastName: "Fall" }]);
+    const unimplemented = Object.assign(new Error("[unimplemented]"), { code: 12 });
+    await loaded.module.persistAccountDisplayName("Bass Fall", async () => {
+      calls.push("remote");
+      throw unimplemented;
+    }, loaded.dataDir);
+    assert.deepEqual(calls, ["remote"]);
     assert.equal((await readFile(path.join(loaded.dataDir, "account-display-name"), "utf8")).trim(), "Bass Fall");
-
-    const profile = await loaded.module.fetchCursorProfile(async () => "token", deps);
-    assert.equal(profile.displayName, "Bass Fall");
+    assert.equal(loaded.module.readLocalAccountDisplayName(loaded.dataDir), "Bass Fall");
   } finally {
-    if (previousRoot === undefined) delete process.env.SAND_DATA_ROOT;
-    else process.env.SAND_DATA_ROOT = previousRoot;
     await loaded.dispose();
   }
 });
 
 test("a real profile-name failure still throws after the local write", async () => {
-  const loaded = await loadProfile();
-  const previousRoot = process.env.SAND_DATA_ROOT;
+  const loaded = await loadName();
   try {
-    process.env.SAND_DATA_ROOT = loaded.dataDir;
     await assert.rejects(
-      () => loaded.module.updateCursorProfileName(async () => "token", "Bass", {
-        createClient: () => ({
-          updateUserName: async () => { throw new Error("dashboard unavailable"); },
-        }),
-      }),
+      () => loaded.module.persistAccountDisplayName("Bass", async () => { throw new Error("dashboard unavailable"); }, loaded.dataDir),
       /dashboard unavailable/,
     );
     assert.equal(loaded.module.readLocalAccountDisplayName(loaded.dataDir), "Bass");
   } finally {
-    if (previousRoot === undefined) delete process.env.SAND_DATA_ROOT;
-    else process.env.SAND_DATA_ROOT = previousRoot;
     await loaded.dispose();
   }
 });
