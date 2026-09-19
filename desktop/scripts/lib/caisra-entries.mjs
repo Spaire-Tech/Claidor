@@ -104,8 +104,47 @@ ${adapterKeys
 // not be silent, so the tracker is wrapped to also write the error out. Nothing
 // else about it changes.
 const baseStartup = ${expression(bindings, "startup")};
+
+// main.ts walks a fixed sequence: markPhase("move_check") -> runMoveCheck ->
+// armStuckWatchdog -> markPhase("services") -> initializeServices ->
+// markPhase("window") -> createWindow -> noteReady, with the whole chain
+// caught into noteFailed. Every one of those reports to telemetry, which
+// packaging disables, so a hang or a failure both look identical from outside:
+// a live process and no window. Tracing each call to stderr makes the last
+// line printed the place it stopped.
+const CAISRA_TRACE = process.env.CAISRA_STARTUP_TRACE !== "0";
+function traceStartup(target) {
+  if (!CAISRA_TRACE) return target;
+  const traced = {};
+  for (const key of Object.keys(target)) {
+    const value = target[key];
+    if (typeof value !== "function") { traced[key] = value; continue; }
+    traced[key] = (...args) => {
+      process.stderr.write("[caisra-startup] -> " + key + (key === "markPhase" ? "(" + String(args[0]) + ")" : "") + "\\n");
+      try {
+        const result = value.apply(target, args);
+        if (result != null && typeof result.then === "function") {
+          return result.then(
+            (settled) => { process.stderr.write("[caisra-startup] <- " + key + " ok" + (settled === undefined ? "" : " = " + String(settled)) + "\\n"); return settled; },
+            (error) => {
+              process.stderr.write("[caisra-startup] <- " + key + " THREW: " + (error?.stack ?? String(error)) + "\\n");
+              throw error;
+            },
+          );
+        }
+        process.stderr.write("[caisra-startup] <- " + key + " ok\\n");
+        return result;
+      } catch (error) {
+        process.stderr.write("[caisra-startup] <- " + key + " THREW: " + (error?.stack ?? String(error)) + "\\n");
+        throw error;
+      }
+    };
+  }
+  return traced;
+}
+
 const startup = {
-  ...baseStartup,
+  ...traceStartup(baseStartup),
   noteFailed(error) {
     const detail = error instanceof Error ? (error.stack ?? \`\${error.name}: \${error.message}\`) : String(error);
     process.stderr.write("[caisra-startup] startup failed: " + detail + "\\n");
