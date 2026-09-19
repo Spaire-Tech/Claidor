@@ -56,16 +56,20 @@ await run(SYSTEM_TOOLS.plutil, ["-insert", "CFBundleURLTypes", "-xml", "<array><
 // The packaged bundle carries its own backend. A bundle launched from Finder
 // inherits no shell environment, so a build without this signs in to
 // cursor.com however the terminal that built it was configured.
-await run(SYSTEM_TOOLS.plutil, ["-remove", "LSEnvironment", infoPlist]).catch(() => {});
-await run(SYSTEM_TOOLS.plutil, [
-  "-insert",
-  "LSEnvironment",
-  "-xml",
-  `<dict>${Object.entries(packagedEnvironment)
-    .map(([key, value]) => `<key>${key}</key><string>${value}</string>`)
-    .join("")}</dict>`,
-  infoPlist,
-]);
+//
+// Merged, never replaced. The first version of this removed LSEnvironment and
+// wrote a fresh dict, which would silently drop anything 0.18 shipped in it.
+// Nothing known depends on that today — the reconstruction disables updates,
+// Sentry and telemetry by injecting `??=` defaults into electron-main rather
+// than through the plist — but "nothing known" is not a reason to discard a
+// key somebody else set.
+for (const [key, value] of Object.entries(packagedEnvironment)) {
+  await run(SYSTEM_TOOLS.plutil, ["-replace", `LSEnvironment.${key}`, "-string", value, infoPlist])
+    .catch(async () => {
+      await run(SYSTEM_TOOLS.plutil, ["-insert", "LSEnvironment", "-xml", "<dict/>", infoPlist]).catch(() => {});
+      await run(SYSTEM_TOOLS.plutil, ["-insert", `LSEnvironment.${key}`, "-string", value, infoPlist]);
+    });
+}
 
 // Keep CFBundleName/CFBundleExecutable as "Grok Bot": Electron derives the
 // expected nested helper names from it, and this build intentionally reuses the
