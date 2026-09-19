@@ -8,6 +8,34 @@ This repository carried the Swens build (a model review platform for finance). I
 
 ## desktop/ — Caisra, and the only product (18 September 2026)
 
+**Correction, 19 September 2026 — read this before the paragraphs below.**
+`desktop/` is no longer the LobsterAI tree. Commit `ce9fc2d8` (18 September,
+"Re-found Caisra on the Grok Bot 0.18 reconstruction", 7,651 files changed)
+replaced it with a from-source reconstruction of Grok Bot 0.18.0
+(`desktop/PROVENANCE.md`). Measured on 19 September: 2,134 tracked files,
+1,724 under `source/`, and `rg -il "lobsterai|openclaw|yodo|strongs|whisper|
+macTasks|CHIEF_OF_STAFF"` over the tree (excluding `node_modules` and the
+pinned `src/app/dist`) returns **zero files**. Every paragraph in this section
+that names LobsterAI, OpenClaw, `openclaw.json`, `openclawConfigSync.ts`,
+Yodo, the 23 strongs, Chief of Staff, whisper, `useDictation.ts`,
+`macTasks.ts`, `main.ts:304` or "2,551 files" describes the tree before that
+commit and is history, not a map. The paragraphs about the pinned renderer,
+`npm run bootstrap`, `router-renderer-patch.mjs`, `SAND_BACKEND_URL` and
+app sign-in describe the current tree. `docs/product/start-here.md` and
+`docs/product/building-the-app.md` are the current map.
+
+Two facts about the current tree that are established by build output, not
+reasoning (`docs/product/host-wall-measured.md`): **every one of the 14
+runtimes, the host included, compiles from `source/`** —
+`buildFidelityDistribution()` reports `blockedFallbacks: []` with no host
+binding manifest supplied, so the "missing manifest" the ours-brief calls the
+wall is not a wall; and the agent loop still speaks
+`aiserver.v1.InferenceService/Stream`, which Claidor does not serve, so the
+real gap is the executor, not the compile. Also since 19 September: the box
+runtime defaults to `local-docker`, the container is always told
+`SAND_BACKEND_URL`, and the host-bundle update channel has no default origin
+(`desktop/tests/local-docker-box.test.mjs`, `host-bundle-source.test.mjs`).
+
 `desktop/` is Caisra: an Electron app that runs on the person's Mac, built on
 LobsterAI (NetEase Youdao, MIT), vendored with `git subtree`. Keep the MIT
 notices.
