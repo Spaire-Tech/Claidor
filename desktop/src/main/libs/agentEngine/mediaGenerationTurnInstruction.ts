@@ -56,16 +56,26 @@ export const buildMediaGenerationTurnInstruction = (
     return buildSkinPackInstruction(selection);
   }
 
+  // **No selection means the tools are available, not forbidden.**
+  // 18 September 2026: this used to return "NOT AVAILABLE" (or nothing at
+  // all), because upstream required the person to pick a media model from a
+  // picker beside the composer first. That picker is on the upstream cowork
+  // screens, which this app does not draw, so the agent was permanently told
+  // its image tools did not exist — and the product shipped with no images.
+  // See `docs/product/artifacts-decision.md` and `mediaGenerationPolicy.ts`.
+  //
+  // The agent decides whether a picture belongs; the app picks the model.
   if (!selection || selection.mode === 'none') {
-    if (hasMediaSkillActive) {
-      return [
-        '[Caisra media generation tools - NOT AVAILABLE]',
-        'The caisra_image_generate and caisra_video_generate tools are NOT available for this turn.',
-        'Do NOT call caisra_image_generate or caisra_video_generate.',
-        'However, a media generation skill (e.g. seedream, seedance) is provided in the system prompt. You may use it to fulfill image or video generation requests.',
-      ].join('\n');
-    }
-    return '';
+    return [
+      '[Caisra media generation]',
+      'You can make images. Call caisra_image_generate with action="generate" and a prompt.',
+      'Call it with action="list" first only if you need to know which models exist; otherwise just generate and let the app choose.',
+      'Use it when a picture is part of a good answer — an illustration for a plan or an itinerary, a diagram, a cover for a document, a mock-up, or anything the person asked to see — and whenever they ask you to draw, render, design or generate one.',
+      'caisra_video_generate works the same way for video. Video is slow and expensive: only on an explicit request.',
+      ...(hasMediaSkillActive
+        ? ['A media generation skill (seedream, seedance) is also available and may be used for requests these tools cannot serve.']
+        : []),
+    ].join('\n');
   }
 
   const lines = [
