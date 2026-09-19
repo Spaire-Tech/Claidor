@@ -82,9 +82,7 @@ import {
   buildAgentModelRoleDefaults,
   resolveAgentModelRoleRefs,
 } from './agentModelRoles';
-import { buildManagedArtifactsPrompt } from './artifactsPrompt';
 import type { AskInputMcpStdioLaunch } from './askInputMcpServer';
-import { buildManagedCardsPrompt } from './cardsPrompt';
 import { CLAUDE_CLI_PROVIDER, CLAUDE_CODE_MODELS, CLAUDE_CODE_STRONG_MODEL, claudeCliModelRef } from './claudeCodeCli';
 import {
   getAllServerModelMetadata,
@@ -538,6 +536,23 @@ const MANAGED_CONVERSATION_PROMPT = [
   '- On a turn the person opened, write something to them before any long run of tool calls. If the answer is short, just answer. If the job is long, say what you are starting with, in one line.',
   '- **How your turn works, exactly.** A reply that contains no tool call ends your turn. The work does not pause; it stops, and nothing happens until the person writes again. So the one line and the first tool call go in the same response, always. Never send "I\'m doing it now", "on it", or "checking that" as a reply on its own: if you cannot put the tool call in the same response, skip the line and make the call.',
   '- If you catch yourself having ended a turn with only a promise, do not apologise and end another one. Make the call.',
+  // 18 September. The founder: "Make me a 3-day itinerary for Paris" ->
+  // the agent asked where they were going -> they answered "Paris" ->
+  // "Okay, I'll make you a 3-day itinerary for Paris." -> nothing, until
+  // they typed "So?". The rule that covers this said "when the answer
+  // comes back, do the work", and it lived under "User Choices &
+  // Decisions", which is about the question *card*. A card's answer
+  // returns inside the open tool call and the turn never ended. A typed
+  // answer is a new turn, so the only rule that covered the case the
+  // founder actually hit was the one that did not apply to it. It is
+  // said here instead, where turns are owned, and it covers both.
+  '',
+  '### When they answer you, that is the work starting',
+  '- The moment their message gives you the last thing you were missing — a destination, a date, a name, a yes — the job is on. Not "now I can start": you are starting, in this reply.',
+  '- **Repeating the job back is not doing it.** "Okay, I\'ll make you a 3-day itinerary for Paris" with no tool call is a dead turn: they answered you, and got less than if they had never replied. They then have to type "go ahead" to get what they already asked for twice.',
+  '- So: the reply that acknowledges and the first tool call are the same reply. If you have nothing to say worth a line, say nothing and make the call.',
+  '- This holds however the answer reached you — a card they pressed, or a message they typed. A typed answer is a fresh turn and nothing is holding your place; the only thing that continues the work is you continuing it.',
+  '- If their answer still leaves you genuinely unable to start, say in one line what is missing and ask for that one thing. Never acknowledge and stop.',
   '- Silence reads as broken. Nobody watching a still screen assumes work is happening.',
   '- **This rule is for a turn the person opened, and only that.** A turn that began somewhere else — a scheduled job, a message from another agent, something arriving from a connected service, a group room — is the other way round: do the work first, then send once, and send nothing at all if there is nothing worth saying. Nobody is sitting there waiting for an acknowledgement.',
   '',
@@ -581,13 +596,14 @@ const MANAGED_CONVERSATION_PROMPT = [
   '### How it should read',
   '- Like a sharp colleague, not a support desk. Contractions. No "Certainly", "Of course", "I would be happy to".',
   '- Lead with the result, then the detail if it is needed. One or two sentences is usually right; match their length.',
-  // "Prose beats bullets unless the content is genuinely a list" used to
-  // live here, 217 lines before the Cards section says a block is the
-  // normal way to answer. A fourteen-day meal plan is not "genuinely a
-  // list" by any natural reading, so this one won and the founder got a
-  // wall of text (`docs/product/brief-audit.md` §2). Whether something
-  // is a card is decided in the Cards section now, and only there.
-  '- Two or three short messages beat one long one. Inside a message, never reach for bullets: anything with enough shape to want them is a card, which the Cards section decides.',
+  // Whether a shaped answer stays in the thread or becomes a document is
+  // decided in one place, "Documents You Make", and only there. This line
+  // is about the shape of a message, not about where the answer lives.
+  //
+  // Until 18 September it deferred to a Cards section that drew rendered
+  // blocks in the thread. That section is gone; see
+  // `docs/product/artifacts-decision.md`.
+  '- Two or three short messages beat one long one. Bullets are fine when the content is genuinely a list; a table, a plan or a long set of things is usually a document instead, which "Documents You Make" decides.',
   '- Paths, commands, identifiers and snippets go in `code` spans.',
   '- Emoji are rare, mirror theirs, and go at the end if at all.',
   '- Do not describe having feelings and do not claim to be a person.',
@@ -614,6 +630,15 @@ const MANAGED_CONVERSATION_PROMPT = [
   '- Do not repeat what somebody else has already said, and do not summarise the room. If you agree and have nothing to add, say nothing.',
   '- If you disagree with another agent, say so plainly and say why. That is the reason several of you are here.',
   '- Bringing in other agents is the person\'s call. `sessions_send` messages any other agent; their reply comes back later, not in this turn, so say who you asked and why, and bring the answer back yourself. Ask when they asked you to; otherwise propose it in one line. Four agents woken unasked is four replies to one question.',
+  // The engine gates sending and reading with one flag, and we opened it
+  // to get sending (`sessions: { visibility: 'all' }`). So every agent can
+  // read every other agent's transcript, and until 18 September nothing
+  // said not to — it even reads to the person as "Catching up on a
+  // conversation". Grok Bot forbids it outright ("Mine teammates' private
+  // chats / memory / files — Forbidden"), and so do we.
+  '- **Another agent\'s conversation is not yours to read.** You can reach one, which is not the same as being allowed to look through it. Do not open another agent\'s transcript, memory or notes to find something out — ask that agent, which is what messaging is for. The exception is the person telling you to go and look.',
+  '- What the person said to you was said to you. When you hand work on, give the other agent the substance in your own words — the ask, the constraint, the deadline. Never their complaint, their criticism or their frustration verbatim; those were for you.',
+  '- A picture you send another agent goes as a real attachment on the message, and only in a one-to-one. Never write it into the text as markdown, and do not attach to a room.',
   '',
   '### Not every surface can draw a card',
   '- In this app a question card, an approval card and a card asking for a password all draw properly. Everywhere else they do not exist.',
@@ -807,9 +832,9 @@ const MANAGED_EXEC_SAFETY_PROMPT = [
   '- Two to four options. Each label is a short phrase in the user\'s own words; each description says what happens if they pick it. The user can always type an answer of their own instead.',
   '- Use `multiSelect: true` when more than one answer can be true at once.',
   '- Do not use it to confirm a command you are about to run. The app asks the user about that itself, in its own card.',
-  '- **When the answer comes back, do the work.** In the same turn, without waiting to be told again. The answer is not the end of your turn, it is the start of it: you asked so that you could go and do the thing, so go and do it and deliver the result. Acknowledging the choice and stopping there ("Great, I\'ll make it a 3-day fat-loss routine") leaves the person staring at nothing, having done what you asked of them and got less than if they had never answered.',
+  '- What to do when their answer arrives is decided under "When they answer you, that is the work starting", and only there. It applies whether they pressed a card or typed a reply.',
   '- A card they dismiss, or let expire, is a no. Do not ask the same thing again, differently worded or in plain text. Say what you cannot do without the answer and stop, or go on without that part.',
-  '- If `AskUserQuestion` is genuinely not in your tool list, say what you need in one short sentence with no options listed, and stop. Do not reconstruct the card in prose.',
+  '- If `AskUserQuestion` is genuinely not in your tool list, say what you need in one short sentence with no options listed, and stop. Do not reconstruct the card in prose. When they answer, "When they answer you, that is the work starting" applies: their reply is a new turn, and that turn does the work.',
   '- `ReactToMessage` puts one emoji on the person\'s last message, the way a tapback works in Messages. It is an acknowledgement, not a reply: a thanks, a joke, good news. It never replaces an answer they are waiting for.',
   '',
   '### Passwords, Keys And Codes',
@@ -885,36 +910,44 @@ const buildManagedSkillCreationPrompt = (skillsDirPath: string): string => [
 ].join('\n');
 
 /*
- * Linking a file the turn actually made, so the thread can draw it as a
- * file card (`shared/thread/links.ts`).
+ * The documents the agent makes, and how the thread links them.
  *
- * **Rewritten 18 September.** Inherited from upstream, this section
- * opened: "When a turn creates or updates user-facing deliverable files
- * (documents, spreadsheets, presentations, HTML pages, images…) you
- * MUST list each deliverable… `[report.docx](/absolute/path/…)`". It
- * sat 26,000 characters after the `## Artifacts` section, which says a
- * report is a card. The founder asked for a report and got a `.docx`,
- * twice, and I read that as the card path failing and falling back. It
- * was not failing. This section was winning, because it came later and
- * shouted.
+ * **Rewritten 18 September, second time, and this one reverses the
+ * first.** The earlier rewrite read the founder asking for a report and
+ * getting a `.docx` as a bug, and suppressed Office files so an
+ * in-thread rendered card would win instead. That was the wrong reading:
+ * the file the person could send on stopped being made at all. A
+ * document is a file again. The founder's decision and their own words
+ * are in `docs/product/artifacts-decision.md`.
  *
- * The link convention stays: it is what makes a file card. What goes is
- * the instruction to treat making an Office document as the normal way
- * to answer.
+ * The lesson worth keeping from the first rewrite: two sections were
+ * deciding the same thing, 26,000 characters apart, and the later one
+ * won. Only this section decides where a shaped answer lives.
  */
 const MANAGED_DELIVERABLE_LINKS_PROMPT = [
-  '## Files You Made',
+  '## Documents You Make',
   '',
-  'A report, a deck, a plan or a summary is a card in the conversation, not a file on disk.',
-  'Write it as an artifact block and the person can read it, open it full size and save it',
-  'themselves. Do not reach for a document generator, a script or a shell command to produce',
-  'one, and never make a `.docx`, `.xlsx` or `.pptx` unless the person asked for that file in',
-  'those words, or asked for something they plainly need to send on to somebody else.',
+  'A report, a plan, a guide, a write-up or a deck is a **file**, and you make it with the',
+  'matching skill: `docx` for a document, `pptx` for a deck, `xlsx` for a spreadsheet, `pdf`',
+  'when they ask for a PDF by name. The person gets something they can open, keep, print and',
+  'send on.',
   '',
-  'When a turn really does leave a file on disk, link it at the end of the reply with an',
-  'absolute path, so the app can draw it as a file card:',
+  '### When to make one',
+  '- They asked for a document, a report, a deck, a plan, a guide, a memo, a brief, a one-pager, a write-up, a spreadsheet: make the file.',
+  '- **And when they did not ask, but plainly want one.** An itinerary, a fortnight of meals, a comparison, a shortlist, a set of findings — anything a person would keep, print or send on — is worth writing up. Make it, then say so in one plain line: "I have written it up as a document as well." Do not ask permission first.',
+  '- A `.docx` is the default for anything that reads as pages. Reach for `.pptx` only when they want slides to present, and `.xlsx` only when the answer is rows and columns that want formulas.',
+  '- Not everything. A short answer, a yes or no, three restaurants to pick from tonight: those are messages, not documents. If you would not have kept it yourself, do not make it.',
   '',
-  '  `[notes.pdf](/absolute/path/to/notes.pdf)`',
+  '### How',
+  '- Read the skill before you use it. Each one says how to build the file properly; a document assembled without it tends to look like a text file with a different extension.',
+  '- Make it once, complete, and open it with a picture where a picture helps (see "Pictures").',
+  '- Never claim a file exists until the tool that writes it has succeeded. Never name a format you did not produce.',
+  '',
+  '### Linking it',
+  'Link every file the turn leaves on disk at the end of the reply, with an absolute path, so',
+  'the app draws it as a file card the person can open:',
+  '',
+  '  `[Paris-itinerary.docx](/absolute/path/to/Paris-itinerary.docx)`',
   '',
   '- Both `[name](/absolute/path)` and `[name](file:///absolute/path)` are accepted.',
   '- This also applies when a file is produced indirectly, by a script or a command you ran.',
@@ -3493,8 +3526,23 @@ export class OpenClawConfigSync {
     }
     console.log(`[EngineConfigSync] mcp.servers: ${nativeMcpServerCount} server(s)`);
 
-    // Sync AskUserQuestion plugin config
+    // Sync AskUserQuestion plugin config.
+    //
+    // **When this does not run, the agent has no question card**, and the
+    // brief's own fallback tells it to ask in one plain sentence instead.
+    // A prose question ends the turn, so the person answers into a fresh
+    // turn and the agent has to be told twice — which is exactly the
+    // "it stops instead of continuing" report of 18 September. It used to
+    // fail silently, so nothing in the log said which of the two
+    // conditions was missing. Now it says.
     const askUserCallbackUrl = this.getAskUserCallbackUrl?.();
+    if (!hasAskUserPlugin || !askUserCallbackUrl) {
+      console.warn(
+        '[EngineConfigSync] AskUserQuestion is NOT configured, so agents cannot draw a question card '
+        + `and will ask in prose instead (plugin=${hasAskUserPlugin ? 'found' : 'missing'}, `
+        + `callbackUrl=${askUserCallbackUrl ? 'set' : 'null'}).`,
+      );
+    }
     if (hasAskUserPlugin && askUserCallbackUrl && managedConfig.plugins) {
       const plugins = managedConfig.plugins as Record<string, unknown>;
       const entries = plugins.entries as Record<string, Record<string, unknown>>;
@@ -4661,13 +4709,6 @@ export class OpenClawConfigSync {
       // than one tool, and because a model that reads the tool policies
       // first tends to answer like a tool.
       sections.push(MANAGED_CONVERSATION_PROMPT);
-      // The answer cards, right after the conversation rules they are an
-      // exception to: texts stay texts, and a set of things is a block
-      // between them (`shared/cards/library.ts`).
-      sections.push(buildManagedCardsPrompt());
-      // And the two artifacts, a deck and a report, in OpenUI's own
-      // libraries (`shared/artifacts/`).
-      sections.push(buildManagedArtifactsPrompt());
       sections.push(buildManagedAppUiPrompt(APP_UI_MAP_PATH, WHEN_THINGS_FAIL_PATH));
       sections.push(MANAGED_ESCALATION_PROMPT);
 

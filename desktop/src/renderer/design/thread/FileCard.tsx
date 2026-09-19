@@ -14,7 +14,7 @@ import { FileKind } from './types';
  * something to save. The whole row opens it.
  *
  * Drawn for a file the agent made (`AttachmentCard`) and, since
- * 17 September, for a deck or a report (`ArtifactBlock`): *"keep our own
+ * 17 September, for a deck or a report: *"keep our own
  * design, with pdf svgs, docs svgs, ppt etc. and our buttons like it
  * was before. this is still artifacts. we just changed the design."*
  *

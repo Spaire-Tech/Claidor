@@ -24,4 +24,4 @@ root overrides to 400, because a browser given only 400 and 500 rounds
 
 ## Inter
 
-`InterVariable.woff2` is Inter by Rasmus Andersson (rsms.me/inter), under the SIL Open Font Licence 1.1. It is loaded only for the artifacts (`thread/artifacts.css`), whose design is OpenUI's and is set in Inter; the app itself stays in Switzer.
+`InterVariable.woff2` was Inter by Rasmus Andersson (rsms.me/inter), under the SIL Open Font Licence 1.1. It was loaded only by the in-thread artifact stylesheet, which was removed on 18 September (`docs/product/artifacts-decision.md`). With nothing left to load it, the file went too. The app is in Switzer throughout.
