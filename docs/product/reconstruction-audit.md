@@ -10,10 +10,20 @@ rediscovering facts that were already written down in files nobody had opened:
 
 ## The one-paragraph version
 
+> **Corrected 19 September 2026. The paragraph below said the renderer's
+> styling "does not exist". That is false, and it cost six hours.** It was
+> written without once grepping the built stylesheet. Measured: `dist/renderer/
+> assets/index-BWGNfflp.css` is 142 KB and 1,122 rules; 448 of the 734 atoms
+> the components emit are defined, 40 of 50 semantic classes, and 123 of the
+> 131 theme tokens — and the eight that are not almost all carry inline
+> fallbacks. The app looked unstyled for a different reason entirely, in the
+> emitted `index.html` and not in the CSS at all. See **Why it looked wrong**
+> below, which is now a measurement rather than a conclusion.
+
 The **engine is real and audited**. The **renderer's structure is real**. The
-**renderer's styling does not exist** and cannot be recovered — it was
-machine-generated CSS in the shipped bundle, it was never extracted, and the
-DMG that holds it is now a 403 at Cursor and refused by Gitee's LFS. Several
+**renderer's styling is largely present** — see the correction above. What is
+genuinely gone is the 543 KB original stylesheet and the 26 binary assets, and
+the DMG that holds them is a 403 at Cursor and refused by Gitee's LFS. Several
 **electron-main binding slots are documented as not activated**, blocked on
 joins to Anysphere's cloud. What we have that is genuinely valuable is a
 complete, evidence-backed **specification of the product**: 163 IPC claims,
@@ -51,23 +61,67 @@ names each method** — none is original source:
 | `overlay:plugins` | `semantic-model` |
 | `overlay:settings` | `named-upstream-module` |
 
-### Why it looks wrong, precisely
+### Why it looked wrong — measured 19 September, and it was not the CSS
 
-Measured across `frontend/src`:
+The app rendered in Times New Roman on a white page with no spacing, and this
+document told everyone that was because the styling had never been recovered.
+It had. The cause was **one attribute in the emitted `index.html`**.
+
+Electron loads the renderer with `loadFile` (`source/electron-main/main.ts:343`),
+which gives the document the opaque origin `null`. Vite marks the emitted entry
+script and stylesheet `crossorigin`. A `crossorigin` subresource fetched from a
+null origin can never satisfy CORS, so Chromium refuses the stylesheet before
+parsing it.
+
+Headless Chromium on `dist/renderer/index.html` over `file://`, same build,
+one attribute apart:
+
+| | `--cursor-font-family-sans` | computed `font-family` | `--cursor-spacing-5-5` | background |
+| --- | --- | --- | --- | --- |
+| with `crossorigin` | *(empty)* | `"Times New Roman"` | *(empty)* | transparent |
+| without | `-apple-system, …` | `-apple-system, …` | `22px` | `rgb(24,24,24)` |
+
+The first row is exactly the screenshot. `scripts/build-caisra.mjs` now strips
+the attribute and `tests/renderer-file-url.test.mjs` fails if it returns.
+
+**What the stylesheet actually holds**, same build:
 
 ```
-class names the components emit : 1,424
-  hashed atoms (sand-104s22n…) :   606   compiled CSS-in-JS; styles never recovered
-  real semantic names           :   818
-     already styled             :   306
-     unstyled                   :   512
+atoms the components emit   : 734     defined in the built CSS : 448  (61%)
+semantic class names        :  50     defined                  :  40  (80%)
+--cursor-* tokens used      : 131     defined by the installer : 123  (94%)
 ```
 
-The original used a compiled CSS-in-JS system. The reconstructor recovered the
-*generated class names* out of the bundle but not the rules behind them, which
-is exactly why the 530 KB stylesheet is marked `unreviewed`. So the DOM carries
-hundreds of meaningless hashed classes with no rules, plus 512 real semantic
-names that were never styled.
+`runtime-theme-token-installer.ts` is a complete 130-entry palette with exact
+light and dark values, hash-locked against the shipped bundle, and it runs
+(`ProductionRenderer.tsx:2758`). Of the eight undefined tokens, six carry inline
+fallbacks (`var(--cursor-font-weight-medium,500)` and so on) and are harmless;
+only `--cursor-icon-content` and `--cursor-border-secondary`'s light mode are
+worth anything, and `--cursor-border-secondary` has a dark-grey fallback that
+is simply wrong in light mode.
+
+**What is genuinely missing is the remaining 286 atoms.** They are single
+declarations each. The original 543 KB stylesheet held them; we have 142 KB. I
+tried to recover them by hash — these are Stylex-style atoms whose class name
+is a hash of the declaration — and it does not work: 337 known
+class-to-declaration pairs were tested against murmurhash2 in twelve input
+formats and four seeds, with zero matches. The reconstruction re-hashed. They
+have to be written, not recovered.
+
+### The 18 runtime assets
+
+`frontend/manifests/renderer-runtime-assets.json` names eighteen files and
+gives each one's sha256 as 0.18.0 shipped it. **None was ever in this
+repository** — the entire vendored reconstruction contains two binary files, a
+docs screenshot and the icon webfont. The recovered source does not `import`
+them; it hard-codes the emitted filename
+(`rendererRuntimeAssetUrl("app-icon-C7NKj2u7.png")`), so no bundler emits them
+and no bundler warns. The onboarding screen drew eighteen broken-image boxes.
+
+`scripts/make-runtime-assets.mjs` draws replacements from the app's own palette
+and Chromium rasterises them; the build copies them beside the bundle and the
+test above fails if any named asset is not emitted. The twenty-nine other tool
+logos in that grid are inline data URIs and were never affected.
 
 **The components themselves are substantial.** `ProductionRenderer.tsx` is
 3,734 lines wiring roughly sixty real feature modules — composer, sidebar,
