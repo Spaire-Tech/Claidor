@@ -10,8 +10,19 @@
  * the staged copy; and `verify.mjs` demanded byte-equality between the two. It
  * could only ever fail, and it did, on `assets/index-BlqerJhg.js`.
  *
- * Loosening the check is not the answer — that inventory is the only thing
- * proving the packaged UI is the pinned artifact. Instead the patch record
+ * This is not a judgement call. The project's own documentation states the
+ * rule, under Concepts → Reconstruction boundary:
+ *
+ *   "For checksum-pinned-artifact-runtime, every packaged dist/renderer/**
+ *    file must match the embedded SHA-256 inventory except the hash-recorded
+ *    Router patch chunks."
+ *
+ * and, of the patch itself: "Records original and patched byte counts and
+ * SHA-256 for those chunks." verify.mjs simply did not implement that
+ * exception — it has no mention of the router patch anywhere.
+ *
+ * Loosening the check is not the answer either — that inventory is the only
+ * thing proving the packaged UI is the pinned artifact. Instead the patch record
  * (`dist/renderer-router-extension.json`), which already carries `original`
  * and `patched` {bytes, sha256} for every chunk it touches, becomes part of
  * the proof:
