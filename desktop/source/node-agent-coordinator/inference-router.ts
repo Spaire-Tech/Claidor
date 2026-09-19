@@ -118,6 +118,13 @@ export function createCoordinatorInferenceRouter(options: {
     await persist({ schemaVersion: 2, agents: { ...current.agents, [agentId]: nextEntries } });
     return projectInferenceRouterTranscriptEntry(updated);
   };
+  // A routed turn runs the model on this machine; the box only contributes the
+  // remote transcript tail and the connector tools. When the box is down those
+  // contributions are lost, not the turn.
+  const remoteOrUndefined = async (method: string, args: unknown): Promise<unknown> => {
+    try { return await options.dispatchRemote(method, args); }
+    catch { return undefined; }
+  };
   const execute = async (provider: Exclude<SandInferenceProvider, "cursor">, args: Record<string, unknown>) => {
     const agentId = typeof args.agentId === "string" ? args.agentId : "";
     const prompt = typeof args.prompt === "string" ? args.prompt : "";
@@ -125,7 +132,7 @@ export function createCoordinatorInferenceRouter(options: {
     const clientNonce = typeof args.clientNonce === "string" ? args.clientNonce : randomUUID();
     if (agentId.length === 0 || prompt.length === 0) throw new Error("Local inference routing requires an agentId and prompt");
     const timestampMs = now();
-    const [remote, beforeUser] = await Promise.all([options.dispatchRemote("getAgentTranscriptTail", { id: agentId }), load()]);
+    const [remote, beforeUser] = await Promise.all([remoteOrUndefined("getAgentTranscriptTail", { id: agentId }), load()]);
     const remoteEntries = Array.isArray(asRecord(remote)?.entries) ? asRecord(remote)!.entries as unknown[] : [];
     const remoteTurn = remoteEntries.reduce<number>((highest, raw) => {
       const id = asRecord(raw)?.id;
@@ -160,10 +167,10 @@ export function createCoordinatorInferenceRouter(options: {
       assistantStreamStarted = true;
     };
     const bridge = provider === "claude-code" ? await createRoutedMcpBridge({
-      listTools: () => options.dispatchRemote("listRoutedMcpTools", {}),
+      listTools: () => remoteOrUndefined("listRoutedMcpTools", {}),
       callTool: tool => options.dispatchRemote("executeRoutedMcpTool", { ...tool, agentId }),
     }) : null;
-    const directTools = bridge == null ? await options.dispatchRemote("listRoutedMcpTools", {}) : undefined;
+    const directTools = bridge == null ? await remoteOrUndefined("listRoutedMcpTools", {}) : undefined;
     const tools = Array.isArray(directTools) ? directTools as Record<string, any>[] : undefined;
     const onTextDelta = (_delta: string, accumulated: string) => emitAssistant(accumulated, true);
     try { content = await runRoutedProviderText(provider, messages, bridge == null ? {
@@ -202,9 +209,9 @@ export function createCoordinatorInferenceRouter(options: {
       if (provider !== "cursor" && ["getAgentTranscriptTail", "openAgentTail", "getAgentTranscriptWindow"].includes(method)) {
         const record = asRecord(args) ?? {};
         const agentId = typeof record.id === "string" ? record.id : "";
-        const [remote, local] = await Promise.all([options.dispatchRemote(method, args), load()]);
-        const result = asRecord(remote);
-        if (result == null || !Array.isArray(result.entries) || agentId.length === 0) return { handled: true, value: remote };
+        const [remote, local] = await Promise.all([remoteOrUndefined(method, args), load()]);
+        const result = asRecord(remote) ?? { entries: [] };
+        if (!Array.isArray(result.entries) || agentId.length === 0) return { handled: true, value: remote };
         const entries = [...result.entries, ...(local.agents[agentId] ?? []).map(projectInferenceRouterTranscriptEntry)];
         const limit = typeof record.limit === "number" && Number.isInteger(record.limit) && record.limit > 0 ? record.limit : 500;
         return { handled: true, value: { ...result, entries: entries.slice(-limit) } };
