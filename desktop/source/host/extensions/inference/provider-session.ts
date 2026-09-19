@@ -7,6 +7,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { jsonSchema, streamText, tool, type CoreMessage, type LanguageModelV1, type ToolSet } from "ai";
 
 import { BasePromptBuilder, BasePromptExecutor } from "../../../packages/chat-inference/base.js";
+import { asError } from "../../../shared/errors.js";
 import type { SandInferenceProvider } from "../../../shared/inference-router.js";
 import { claidorProxyBaseUrl } from "../../../shared/node/cursor-backend/claidor-api.js";
 import { resolveClaudeCodeCliPath } from "../../../shared/node/inference-router-local.js";
@@ -340,12 +341,12 @@ export function toCoreMessages(messages: readonly ProviderMessage[]): CoreMessag
 function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void) {
   const failure = deferred<never>();
   failure.promise.catch(() => undefined);
-  const fail = (error: unknown) => failure.reject(error instanceof Error ? error : new Error(String(error)));
+  const fail = (error: unknown) => failure.reject(asError(error));
   const fullStream = (async function* () {
     let ended = false;
     try {
       for await (const part of result.fullStream) {
-        if (part.type === "error") { fail(part.error); throw part.error instanceof Error ? part.error : new Error(String(part.error)); }
+        if (part.type === "error") { const next = asError(part.error); fail(next); throw next; }
         yield part;
       }
       ended = true;
