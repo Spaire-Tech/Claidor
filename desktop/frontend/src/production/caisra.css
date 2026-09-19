@@ -1,0 +1,435 @@
+/**
+ * Caisra component layer.
+ *
+ * Why this file exists, measured 19 September 2026:
+ *
+ * The shipped 0.18.0 renderer used a compiled CSS-in-JS system. Its output was
+ * a single 530 KB stylesheet which the reconstruction classifies as
+ * `unreviewed-stylesheet` — it was never recovered, and the DMG holding it is
+ * gone. What the reconstruction *did* recover is the markup, including the
+ * generated atom class names: 1,418 atom references across 254 of the 734
+ * elements that carry a `sand-` class, up to 30 on a single element.
+ *
+ * Those atoms carried the fine detail — display, flex, gap, padding, font size,
+ * weight, line-height. Every one of their rules is missing. That is why the app
+ * renders structurally correct and typographically naked rather than broken:
+ * the semantic skeleton classes ARE styled (and well, with byte-offset evidence
+ * comments), while a third of the DOM has no spacing or type at all.
+ *
+ * The atoms are unrecoverable, so this file replaces what they did with real
+ * rules on the semantic classes. It uses only tokens from the recovered runtime
+ * palette (`runtime-theme-token-installer.ts`, 582 tokens, light and dark,
+ * injected at runtime as `<style id="sand-cursor-theme">`) so it stays
+ * consistent with the original colour system in both themes.
+ *
+ * It is loaded after production.css and the feature stylesheets, and only ever
+ * adds — nothing here overrides an evidence-backed rule.
+ */
+
+/* ---------------------------------------------------------------- typography
+ * The atoms owned every font-size and weight in the app. Without them every
+ * element inherits 16px/400, which is the single biggest reason it reads badly.
+ */
+
+.sand-shell {
+  font-size: var(--cursor-font-size-sm);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+.sand-shell h1,
+.sand-shell h2,
+.sand-shell h3,
+.sand-shell h4 {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.sand-shell h1 { font-size: 1.35rem; }
+.sand-shell h2 { font-size: 1.1rem; }
+.sand-shell h3 { font-size: 1rem; }
+.sand-shell h4 { font-size: var(--cursor-font-size-sm); }
+.sand-shell p  { margin: 0; }
+.sand-shell small { font-size: var(--cursor-font-size-xs); }
+
+/* ------------------------------------------------------------------- sidebar
+ * .sand-agents-sidebar and .sand-agent-item have evidence-backed rules already
+ * (a 34px / 1fr / auto grid with hover). Their contents do not.
+ */
+
+.sand-agents-sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: var(--cursor-font-size-xs);
+  font-weight: 600;
+  color: var(--cursor-text-secondary);
+}
+
+.sand-agents-sidebar__new,
+.sand-agents-sidebar__broadcast {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.sand-agents-sidebar__search { padding: 6px 12px 8px; }
+
+.sand-agents-sidebar__selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sand-agents-list,
+.sand-agents-list__rows,
+.sand-agents-section__rows,
+.sand-agents-pinned {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  padding: 0 8px;
+  margin: 0;
+  list-style: none;
+}
+
+.sand-agents-pinned { padding-bottom: 6px; }
+
+.sand-agents-section__empty,
+.sand-agents-empty {
+  padding: 10px 14px;
+  font-size: var(--cursor-font-size-xs);
+  color: var(--cursor-text-tertiary);
+}
+
+/* the row's contents: name, preview, time, trailing badge */
+
+.sand-agent-item__body {
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sand-agent-item__name {
+  overflow: hidden;
+  font-size: var(--cursor-font-size-sm);
+  font-weight: 550;
+  color: var(--cursor-text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sand-agent-item__preview {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--cursor-font-size-xs);
+  line-height: 1.4;
+  color: var(--cursor-text-tertiary);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.sand-agent-item__time {
+  flex: 0 0 auto;
+  align-self: start;
+  padding-top: 2px;
+  font-size: var(--cursor-font-size-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--cursor-text-quaternary, var(--cursor-text-tertiary));
+  white-space: nowrap;
+}
+
+.sand-agent-item__trailing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.sand-agent-item[aria-current="true"],
+.sand-agent-item[data-active="true"] { background: var(--cursor-bg-active); }
+
+/* ---------------------------------------------------------------- transcript
+ * .sand-virtual-transcript owns the scroll box and the 690px measure. The rows
+ * and their contents were atom-styled.
+ */
+
+.sand-virtual-transcript__row { display: block; min-width: 0; }
+
+.sand-transcript-row > * { min-width: 0; }
+
+.sand-unread-divider__label {
+  display: inline-block;
+  padding: 2px 10px;
+  font-size: var(--cursor-font-size-xs);
+  font-weight: 600;
+  color: var(--cursor-text-accent);
+  background: var(--cursor-bg-accent-secondary);
+  border-radius: var(--cursor-radius-full);
+}
+
+.sand-sent-while-offline-notice {
+  padding: 6px 10px;
+  font-size: var(--cursor-font-size-xs);
+  color: var(--cursor-text-tertiary);
+  background: var(--cursor-bg-secondary);
+  border-radius: var(--cursor-radius-lg);
+}
+
+.sand-mention,
+.sand-channel-tag,
+.sand-workflow-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  font-size: inherit;
+  font-weight: 550;
+  line-height: 1.5;
+  color: var(--cursor-text-accent);
+  background: var(--cursor-bg-accent-secondary);
+  border-radius: var(--cursor-radius-base);
+}
+
+.sand-workflow-chip { color: var(--cursor-text-secondary); background: var(--cursor-bg-secondary); }
+
+/* --------------------------------------------------------------- the cards
+ * Transcript cards are the densest unstyled block in the app: agent cards,
+ * link cards, connector cards, box cards, widgets, hover cards.
+ */
+
+.sand-cursor-agent-card,
+.sand-link-card,
+.sand-connector-card,
+.sand-box-card,
+.sand-box-handoff-card,
+.sand-agent-hover-card,
+.sand-async-task,
+.sand-widget {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  font-size: var(--cursor-font-size-sm);
+  background: var(--cursor-bg-card, var(--cursor-bg-secondary));
+  border: 1px solid var(--cursor-stroke-tertiary);
+  border-radius: var(--cursor-radius-xl);
+}
+
+.sand-link-card { flex-direction: row; gap: 12px; align-items: flex-start; }
+
+[class*="sand-"][class$="__title"],
+[class*="sand-"][class$="__heading"] {
+  font-size: var(--cursor-font-size-sm);
+  font-weight: 600;
+  color: var(--cursor-text-primary);
+}
+
+[class*="sand-"][class$="__subtitle"],
+[class*="sand-"][class$="__description"],
+[class*="sand-"][class$="__meta"],
+[class*="sand-"][class$="__hint"] {
+  font-size: var(--cursor-font-size-xs);
+  line-height: 1.45;
+  color: var(--cursor-text-tertiary);
+}
+
+[class*="sand-"][class$="__actions"],
+[class*="sand-"][class$="__footer"] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+[class*="sand-"][class$="__row"] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sand-widget-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  border: 1px solid var(--cursor-stroke-tertiary);
+  border-radius: var(--cursor-radius-lg);
+}
+
+.sand-widget-option:hover { background: var(--cursor-bg-secondary); }
+
+/* ------------------------------------------------------------------ composer
+ * .sand-prompt-shell has its surface, border, radius and shadow. Its interior
+ * was atom-styled.
+ */
+
+.sand-prompt-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sand-prompt-cta-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.sand-prompt-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sand-prompt-attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 220px;
+  padding: 4px 8px;
+  font-size: var(--cursor-font-size-xs);
+  background: var(--cursor-bg-secondary);
+  border-radius: var(--cursor-radius-lg);
+}
+
+.sand-prompt-attachment-notice,
+.sand-prompt-voice-error,
+.sand-prompt-voice-status {
+  font-size: var(--cursor-font-size-xs);
+  color: var(--cursor-text-tertiary);
+}
+
+.sand-prompt-voice-error { color: var(--cursor-danger); }
+
+.sand-prompt-reply-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  font-size: var(--cursor-font-size-xs);
+  background: var(--cursor-bg-secondary);
+  border-radius: var(--cursor-radius-lg);
+}
+
+.sand-reply-quote {
+  padding-left: 8px;
+  overflow: hidden;
+  color: var(--cursor-text-tertiary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-left: 2px solid var(--cursor-stroke-tertiary);
+}
+
+/* ------------------------------------------------------------------- panes
+ * Info panes, async tasks and the connection states.
+ */
+
+.sand-info-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  overflow: auto;
+  border-left: 1px solid var(--cursor-stroke-tertiary);
+}
+
+.sand-async-tasks-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sand-agents-state {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.sand-agents-state__header {
+  font-size: var(--cursor-font-size-base);
+  font-weight: 600;
+  color: var(--cursor-text-primary);
+}
+
+.sand-agents-state__body,
+.sand-agents-state__label {
+  max-width: 34ch;
+  font-size: var(--cursor-font-size-xs);
+  line-height: 1.5;
+  color: var(--cursor-text-tertiary);
+}
+
+.sand-agents-state__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+/* ---------------------------------------------------------------- computer
+ * The computer overlay is the one surface the manifest marks
+ * `recovery: exact-placeholder`, so it has the least behind it.
+ */
+
+.sand-computer-stage,
+.sand-computer-preview {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--cursor-bg-chrome);
+  border-radius: var(--cursor-radius-xl);
+}
+
+.sand-computer-monitor-strip {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px;
+  overflow-x: auto;
+}
+
+.sand-box-vnc-pool { position: relative; min-height: 0; }
+
+.sand-box-vnc-pool__connecting,
+.sand-box-vnc-pool__crashed {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  font-size: var(--cursor-font-size-xs);
+  color: var(--cursor-text-tertiary);
+}
+
+/* ------------------------------------------------------------------ scrolling
+ * The atoms also owned scrollbar treatment; without it every scroll area gets
+ * the platform default, which on macOS is a heavy light-mode bar in dark UI.
+ */
+
+.sand-shell ::-webkit-scrollbar { width: 10px; height: 10px; }
+.sand-shell ::-webkit-scrollbar-track { background: transparent; }
+.sand-shell ::-webkit-scrollbar-thumb {
+  background: var(--cursor-stroke-tertiary);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: var(--cursor-radius-full);
+}
+.sand-shell ::-webkit-scrollbar-thumb:hover { background: var(--cursor-stroke-secondary); background-clip: padding-box; }

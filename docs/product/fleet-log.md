@@ -191,3 +191,47 @@ nothing.
 
 It is **not done** — it stopped at pieces 3 and 4 (the registry rewrite and
 `direction.md` §10) to ask its two questions. It has been unblocked and sent on.
+
+---
+
+## 19 September 2026, 00:02 UTC — the fleet restarted, and what happened while it was paused
+
+**All three were unpaused and fired.** Server (`session_01DLw6f…`), Brief
+(`session_01M1HpX…`), Box (`session_01CXLzH…`). Each got its blocking question
+answered and, this time, the correction that never landed the first time.
+
+**The correction, stated plainly because it cost real work.** I created all
+three sessions without `source_revision`, so all three cloned `main` and none of
+them had the Chief-of-Staff branch. Brief triaged a brief that still contained
+OpenUI — roughly 7,718 of 46,397 characters that no longer exist. Server listed
+as a blocker a gate that had already been removed. I wrote the correction once
+and then deleted the triggers when the founder said pause, so it was never
+delivered. It has now been delivered to all three, with the instruction to merge
+`origin/claude/caisra-mac-app-ouliez` before anything else.
+
+**The relay is me.** `SendMessage` does not reach cloud sessions and `ListAgents`
+returns none of them, so agents cannot talk to each other. Box asked for §9 of
+`agent-computer-plan.md` to reach Server; I carried it across verbatim — the ten
+routes, the NDJSON `/exec` contract, the flush/exit/kill/pty requirements, the
+ensure-not-create rule, the two server-only duties, the `workspaceDir` rule.
+Box has been told that anything else for Server goes in a section of that
+document addressed to them, and that I will carry it.
+
+**What had actually landed while paused** (`git ls-remote --heads origin`):
+
+| branch | head | state |
+| --- | --- | --- |
+| `claude/caisra-box` | `1a1f15d2` | the read, the plan, the registry and copy-on/copy-off design, the Windows computerUse deleted |
+| `claude/caisra-server` | `48d1b6ee` | the image route, synchronous and metered |
+| `claude/caisra-brief` | `4c02caa0` | the brief moved out of the config sync into 15 modules; triage written |
+
+Note the branch name: Server pushed to `claude/caisra-server`, not
+`claude/caisra-server-box` as its session metadata says. A fetch of the wrong
+name fails the whole command, including the refs that do exist.
+
+**The bar restated to all three, in the founder's words:** *"i dont want to come
+back to hey, first task done. i wanna come back to all 3 done. and completely
+done. not task done."* Done means merged, tests green, branch pushed, PR open,
+CI addressed until green.
+
+**Sweep re-armed** for 00:33 UTC, and every 30 minutes after.
