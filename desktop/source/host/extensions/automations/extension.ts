@@ -10,6 +10,7 @@ import { HostExtensions } from "../extension-ids.generated.js";
 import { createBackendRelaySources } from "./backend-relay-source.js";
 import { ListenerConnectWatcher } from "./listener-connect-watcher.js";
 import { createListenerIntegrationReads } from "./listener-integrations.js";
+import { isAbsentCloudAutomationService } from "./cloud-service-absence.js";
 import { SandAutomationCloudSync, type CloudSyncClient, type ScheduledCloudAutomation } from "./sand-automation-cloud-sync.js";
 import { SandAutomationFireConsumer } from "./sand-automation-fire-consumer.js";
 import { SandTriggerHub } from "./sand-trigger-hub.js";
@@ -64,7 +65,7 @@ export const automationsExtension = defineHostExtension({
       getTimeZone: () => deps.settings.getUserTimeZone(),
       inspectLocalDefinitions: (agentId: string) => inspectAgentAutomationDefinitions(join(getSandAgentsRootDir(), agentId)),
       reportShadowPrune: (report: Record<string, unknown>) => deps.telemetry.logs.reportAutomationShadowPrune({ ...report, boxUptimeMs: getBoxUptimeMs() }),
-      onFailure: ({ agentId }) => { if (agentId == null || routineSyncFailureTrayIds.has(agentId)) return; const tray = deps.trays.pushError({ agentId, title: "Routine Sync Failed", detail: "Caisra couldn't sync this agent's routines. Event routines keep running locally when safe, but scheduled routines may be delayed while Caisra retries." }); routineSyncFailureTrayIds.set(agentId, tray.id); },
+      onFailure: ({ agentId, error }) => { if (agentId == null || routineSyncFailureTrayIds.has(agentId) || isAbsentCloudAutomationService(error)) return; const tray = deps.trays.pushError({ agentId, title: "Routine Sync Failed", detail: "Caisra couldn't sync this agent's routines. Event routines keep running locally when safe, but scheduled routines may be delayed while Caisra retries." }); routineSyncFailureTrayIds.set(agentId, tray.id); },
       onRecovery: (agentId) => { const id = routineSyncFailureTrayIds.get(agentId); if (id == null) return; deps.trays.dismiss({ id }); routineSyncFailureTrayIds.delete(agentId); },
       onSchedulingAuthorityChanged: () => notifySchedulingAuthorityChanged()
     };

@@ -290,6 +290,7 @@ export function actionFailureMessage(action: string, reason: string): string { r
 export interface RemoteHostConnector<TCredential = unknown> {
   connect(): Promise<BoxConnectionInfo>;
   issueLocalExecDaemonCredential?: () => Promise<TCredential | undefined>;
+  issueInferenceCredential?: () => Promise<unknown>;
   recreate?: (args: { preserveData: boolean; force?: boolean }) => Promise<RecreateResult>;
   forceRecreate?: () => Promise<RecreateResult>;
 }
@@ -301,6 +302,7 @@ export function wrapRemoteHostConnectorWithDevBoxPlane<TCredential>(base: Remote
   return {
     connect: () => base.connect(),
     ...(base.issueLocalExecDaemonCredential == null ? {} : { issueLocalExecDaemonCredential: base.issueLocalExecDaemonCredential.bind(base) }),
+    ...(base.issueInferenceCredential == null ? {} : { issueInferenceCredential: base.issueInferenceCredential.bind(base) }),
     recreate: (args) => plane.recreate(args),
     forceRecreate: () => plane.forceRecreate(),
   };

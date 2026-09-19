@@ -35,6 +35,7 @@ import {
   type GithubTrigger,
 } from "../../../shared/automations.js";
 import { findSystemErrno } from "../../../shared/system-errno.js";
+import { isAbsentCloudAutomationService } from "./cloud-service-absence.js";
 import { stableAutomationId } from "../../automations/automation-id.js";
 import { sha256Hex } from "../../sha256.js";
 import { backendCloudTrigger, type BackendCloudTrigger } from "./sand-automation-cloud-trigger.js";
@@ -342,6 +343,7 @@ interface SchedulingAuthority { readonly desiredCloudAutomationIds: Set<string>;
 export class SandAutomationCloudSync {
   private inFlight: Promise<void> | undefined;
   private rerun = false;
+  private cloudServiceAbsent = false;
   private readonly lastSuccessfulFingerprintByAgent = new Map<string, string>();
   private readonly schedulingEvidenceByAgent = new Map<string, AnySchedulingEvidence>();
   private readonly lastNotifiedSchedulingAuthorityByAgent = new Map<string, SchedulingAuthority>();
@@ -368,6 +370,7 @@ export class SandAutomationCloudSync {
   setSettings(settings: { getUserTimeZone: () => string | undefined }): void { this.settings = settings; }
 
   shouldScheduleLocally({ agentId, automation }: { agentId: string; automation: { readonly id?: string; readonly trigger: AutomationTrigger } }): boolean {
+    if (this.cloudServiceAbsent) return true;
     if (!isServerSchedulable(automation)) return true;
     if (triggerListeners(automation.trigger).length === 0) return false;
     if (automation.id === undefined) return true;
@@ -395,6 +398,10 @@ export class SandAutomationCloudSync {
     this.pendingAgentDeletions.add(agentId);
     const initial = await this.listRemote(agentId);
     if (initial === undefined) return false;
+    if (this.cloudServiceAbsent) {
+      this.finishAgentDeletion(agentId);
+      return true;
+    }
     const remoteAutomations = initial.workflows.flatMap((entry) => entry.workflow === undefined ? [] : [entry.workflow]);
     if (remoteAutomations.length === 0) {
       this.publishKnownSchedulingEvidence(agentId, initial, NO_DESIRED_CLOUD_AUTOMATION_IDS);
@@ -453,6 +460,10 @@ export class SandAutomationCloudSync {
     const desiredCloudAutomationIds = new Set(desiredByAutomationId.keys());
     const initial = await this.listRemote(agentId);
     if (initial === undefined) return false;
+    if (this.cloudServiceAbsent) {
+      this.recordRecovery(agentId);
+      return true;
+    }
     const remoteByAutomationId = remoteShadowAutomationsById(initial);
     if (isConverged(remoteByAutomationId, desiredByAutomationId)) {
       this.publishKnownSchedulingEvidence(agentId, initial, desiredCloudAutomationIds);
@@ -494,8 +505,16 @@ export class SandAutomationCloudSync {
   }
 
   private async listRemote(agentId: string): Promise<RemoteList | undefined> {
+    if (this.cloudServiceAbsent) return { workflows: [] };
     try { return await this.deps.client.listSandAutomations(new ListSandAutomationsRequest({ sandAgentId: agentId })); }
-    catch (error) { this.recordFailure({ agentId, operation: "list-remote", error }); return undefined; }
+    catch (error) {
+      if (isAbsentCloudAutomationService(error)) {
+        this.cloudServiceAbsent = true;
+        return { workflows: [] };
+      }
+      this.recordFailure({ agentId, operation: "list-remote", error });
+      return undefined;
+    }
   }
 
   private async runMutation(agentId: string, operation: string, mutation: () => Promise<unknown>): Promise<boolean> {

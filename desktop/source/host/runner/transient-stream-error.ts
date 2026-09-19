@@ -1,3 +1,5 @@
+import { isProviderRateLimitError } from "../../shared/provider-rate-limit.js";
+
 export const TRANSIENT_ERRNO_CODES = new Set(["ECONNRESET", "ETIMEDOUT", "EPIPE", "ECONNABORTED", "ECONNREFUSED", "ENETRESET", "ENETDOWN", "ENETUNREACH", "EHOSTUNREACH", "EAI_AGAIN"]);
 export const TRANSIENT_MESSAGE_TOKENS = ["econnreset", "etimedout", "epipe", "econnaborted", "econnrefused", "enetreset", "enetunreach", "ehostunreach", "socket hang up", "premature close", "stream closed", "closed stream", "connection reset", "connection closed", "connection terminated", "network error", "the operation was aborted", "[aborted]", "[unavailable]", "[deadline_exceeded]"];
 
@@ -21,7 +23,7 @@ export function isContextOverflowDeadEnd(error: unknown): boolean {
   return visit(error, (value) => value.name === "InputTokenLimitError" || ((value.isStepRetriesExhausted === true || value.name === "StepRetriesExhaustedError") && value.reason === "summarization-retries"));
 }
 export function isRetryableProviderError(error: unknown): boolean {
-  if (isContextOverflowDeadEnd(error) || isConversationTooLargeRefusal(error)) return false;
+  if (isContextOverflowDeadEnd(error) || isConversationTooLargeRefusal(error) || isProviderRateLimitError(error)) return false;
   const retryable = isTransientStreamError(error) || visit(error, (value) => value.retryable === true);
   if (!retryable) return false;
   return !visit(error, (value) => value.terminal === true || value.name === "NonRetriableError" || value.name === "ActionRequiredError");

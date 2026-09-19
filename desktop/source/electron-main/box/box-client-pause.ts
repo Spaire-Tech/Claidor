@@ -14,6 +14,7 @@ export interface RemoteHostConnector<TConnection, TRecreateArgs = unknown, TRecr
   recreate?(args: TRecreateArgs): Promise<TRecreateResult>;
   forceRecreate?(): Promise<TRecreateResult>;
   issueLocalExecDaemonCredential?(): Promise<TCredential | undefined>;
+  issueInferenceCredential?(): Promise<unknown>;
 }
 
 export function wrapRemoteHostConnectorWithClientPause<TConnection, TRecreateArgs, TRecreateResult, TCredential>(
@@ -27,6 +28,9 @@ export function wrapRemoteHostConnectorWithClientPause<TConnection, TRecreateArg
     ...(base.forceRecreate == null ? {} : { forceRecreate: async () => { refuseWhilePaused(); return await base.forceRecreate!.call(base); } }),
     ...(base.issueLocalExecDaemonCredential == null ? {} : {
       issueLocalExecDaemonCredential: async () => isPaused() ? undefined : await base.issueLocalExecDaemonCredential!.call(base),
+    }),
+    ...(base.issueInferenceCredential == null ? {} : {
+      issueInferenceCredential: async () => isPaused() ? undefined : await base.issueInferenceCredential!.call(base),
     }),
   };
 }

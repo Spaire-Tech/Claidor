@@ -156,7 +156,7 @@ export class BoxHandoffResume {
         : "";
     await this.resumeWithHiddenPrompt(
       agentId,
-      `[${displayName} is now connected to the user's Cursor account — ${displayName} listener routines can fire. Your first action is a SendMessage telling the user it's connected, then pick up whatever you paused (e.g. finish or re-check the listener routine you were setting up).${reminder} Remember: nothing reaches the user unless it's inside a SendMessage.]`,
+      `[${displayName} is now connected to the user's Claidor account — ${displayName} listener routines can fire. Your first action is a SendMessage telling the user it's connected, then pick up whatever you paused (e.g. finish or re-check the listener routine you were setting up).${reminder} Remember: nothing reaches the user unless it's inside a SendMessage.]`,
       "Agent failed to resume after listener connect",
     );
   }

@@ -36,9 +36,9 @@ const INSTRUCTIONS_FILENAME = "INSTRUCTIONS.md";
 const STATUS_FILENAME = "STATUS.md";
 const MCP_AUTH_TOOL_NAME = "mcp_auth";
 const DEFAULT_MCP_AUTH_TOOL_DESCRIPTION = "Authenticate this MCP server so its tools can be used. Call this tool through your MCP tool-calling interface when STATUS.md indicates this server needs authentication.";
-const DEFAULT_MCP_ERROR_STATUS_MESSAGE = "The MCP server errored. If this server is important for completing the task, concisely inform the user and ask them to check the MCP status in Cursor's Customize page > MCPs; otherwise continue with a different approach.";
+const DEFAULT_MCP_ERROR_STATUS_MESSAGE = "The MCP server errored. If this server is important for completing the task, concisely inform the user and ask them to check the MCP status in Settings → Plugins; otherwise continue with a different approach.";
 const DEFAULT_MCP_NEEDS_AUTH_STATUS_MESSAGE = 'The MCP server needs authentication. Authenticate it by calling the `{authToolName}` tool for server "{serverIdentifier}" through your MCP tool-calling interface using an empty arguments object. If this server is important for completing the task, authenticate it first; otherwise continue with a different approach.';
-const DEFAULT_MCP_NEEDS_AUTH_STATUS_MESSAGE_NO_VIRTUAL_TOOL = "This MCP server requires authentication before its tools can be used. Open Cursor's Customize page > MCPs, select this server, and use Authenticate/Reopen, or refresh credentials in your MCP configuration (for example, mcp.json), then restart this environment. If this server is not required for the task, continue without it.";
+const DEFAULT_MCP_NEEDS_AUTH_STATUS_MESSAGE_NO_VIRTUAL_TOOL = "This MCP server requires authentication before its tools can be used. Open Settings → Plugins, select this server, and use Authenticate/Reopen, or refresh credentials in your MCP configuration (for example, mcp.json), then restart this environment. If this server is not required for the task, continue without it.";
 const CURSOR_DIR_GITIGNORE_MANAGED_START = "# >>> CURSOR MANAGED BLOCK >>>";
 const CURSOR_DIR_GITIGNORE_MANAGED_END = "# <<< CURSOR MANAGED BLOCK <<<";
 const CURSOR_DIR_GITIGNORE_CONTENT = [
@@ -67,7 +67,7 @@ const CURSOR_DIR_GITIGNORE_CONTENT = [
   "# Plugin cache (rules, skills, agents)",
   "!plugins/",
   "!plugins/**",
-  "# Built-in Cursor skills",
+  "# Built-in skills",
   "!skills-cursor/",
   "!skills-cursor/**",
   "# User's personal skills",

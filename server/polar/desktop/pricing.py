@@ -685,6 +685,122 @@ def usage_from_answer(spoken: SpokenApi, answer: Any) -> Usage:
     return Usage.from_payload(answer.get("usage"))
 
 
+# --- the agent's other three calls: search, pictures, dictation ------------
+#
+# The agent advertises four tools that are not a model turn: web search,
+# web fetch, image generation and audio transcription. Fetch runs on the
+# person's machine and costs nothing here. The other three are served by
+# the routes in `polar.desktop.capabilities`, each on OpenAI with
+# Claidor's key, and each priced below in the same unit as everything
+# else so the usage table keeps meaning one thing.
+#
+# ⚠️ **None of the four dollar figures below has been checked against a
+# price page.** Like `SPEECH_USD_PER_MILLION_CHARACTERS` they are single
+# constants so that looking, and correcting, is a one-line change with a
+# test behind it. Nobody should be charged against them until somebody
+# has looked.
+
+#: What OpenAI charges per call of its hosted `web_search` tool, on top
+#: of the tokens the model that reads the results spends.
+WEB_SEARCH_USD_PER_CALL = 0.01
+
+#: The model that reads the search results and writes the short answer:
+#: the cheap one, because the person never sees this turn and the
+#: searching is done by the tool, not the model.
+WEB_SEARCH_MODEL_ID = "gpt-5.6-luna"
+
+WEB_SEARCH_MAX_QUERY_CHARACTERS = 1_000
+
+#: One web search as a catalogue entry. Its input unit is **calls, not
+#: tokens**: a usage row naming this model counts the searches made,
+#: and the tokens the reading model spent go on that model's own row.
+WEB_SEARCH_CALL_MODEL = DesktopModel(
+    "openai-web-search",
+    "OpenAI web search",
+    "One search of the web, made for the agent.",
+    WEB_SEARCH_USD_PER_CALL / (CREDIT_USD_PER_MILLION_INPUT / 1_000_000),
+    provider=DesktopProvider.openai,
+)
+
+#: What OpenAI charges for `gpt-image-1`, per million tokens: text going
+#: in, reference images going in, and the picture coming out.
+IMAGE_USD_PER_MILLION_TEXT_INPUT = 5.00
+IMAGE_USD_PER_MILLION_IMAGE_INPUT = 10.00
+IMAGE_USD_PER_MILLION_IMAGE_OUTPUT = 40.00
+
+IMAGE_MODEL_ID = "gpt-image-1"
+IMAGE_MAX_PROMPT_CHARACTERS = 32_000
+IMAGE_MAX_REFERENCE_IMAGES = 4
+#: OpenAI's own ceiling on one reference image.
+IMAGE_MAX_REFERENCE_BYTES = 50 * 1024 * 1024
+
+#: Pictures as a catalogue entry. Tokens, as OpenAI reports them, with
+#: the picture's own tokens as output at their own price. A reference
+#: image's tokens cost twice a text token's and `image_usage` folds them
+#: into the input count at that ratio, so one row still adds up.
+IMAGE_MODEL = DesktopModel(
+    IMAGE_MODEL_ID,
+    "OpenAI image",
+    "Draws a picture from a description.",
+    IMAGE_USD_PER_MILLION_TEXT_INPUT / CREDIT_USD_PER_MILLION_INPUT,
+    provider=DesktopProvider.openai,
+    output_weight=IMAGE_USD_PER_MILLION_IMAGE_OUTPUT / IMAGE_USD_PER_MILLION_TEXT_INPUT,
+)
+
+
+def image_usage(payload: Any) -> Usage:
+    """The usage of one `gpt-image-1` answer: `input_tokens` split by
+    `input_tokens_details` into text and image, `output_tokens` for the
+    picture. Image input is weighed at its own price by counting each of
+    its tokens as the number of text tokens it costs."""
+    if not isinstance(payload, dict):
+        return Usage()
+    details = payload.get("input_tokens_details")
+    image = _number(details, "image_tokens") if isinstance(details, dict) else 0
+    text = _number(details, "text_tokens") if isinstance(details, dict) else 0
+    if text == 0 and image == 0:
+        text = _number(payload, "input_tokens")
+    ratio = IMAGE_USD_PER_MILLION_IMAGE_INPUT / IMAGE_USD_PER_MILLION_TEXT_INPUT
+    return Usage(
+        input_tokens=text + ceil(image * ratio),
+        output_tokens=_number(payload, "output_tokens"),
+    )
+
+
+#: What OpenAI charges to turn speech into text, per minute of audio.
+TRANSCRIPTION_USD_PER_MINUTE = 0.003
+
+TRANSCRIPTION_MODEL_ID = "gpt-4o-mini-transcribe"
+#: OpenAI's own ceiling on one upload.
+TRANSCRIPTION_MAX_BYTES = 25 * 1024 * 1024
+
+#: Dictation as a catalogue entry. Its input unit is **seconds of
+#: audio, not tokens**: a usage row naming this model counts the seconds
+#: OpenAI reported, rounded up, never zero for audio that was sent.
+TRANSCRIPTION_MODEL = DesktopModel(
+    TRANSCRIPTION_MODEL_ID,
+    "OpenAI transcription",
+    "Turns what was said into text.",
+    (TRANSCRIPTION_USD_PER_MINUTE / 60) / (CREDIT_USD_PER_MILLION_INPUT / 1_000_000),
+    provider=DesktopProvider.openai,
+)
+
+
+def transcription_seconds(payload: Any) -> int:
+    """The seconds of audio one transcription answer says it heard
+    (`usage: {type: "duration", seconds}`), rounded up. One when the
+    answer does not say: audio was sent, so something was heard, and a
+    meter that reads zero while money leaves is the wrong kind of wrong."""
+    seconds = 0.0
+    if isinstance(payload, dict):
+        usage = payload.get("usage")
+        if isinstance(usage, dict):
+            value = usage.get("seconds")
+            if isinstance(value, int | float):
+                seconds = float(value)
+    return max(1, ceil(seconds))
+
+
 __all__ = [
     "CREDIT_USD_PER_MILLION_INPUT",
     "MODELS",

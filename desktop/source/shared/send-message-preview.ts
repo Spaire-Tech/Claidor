@@ -1,9 +1,9 @@
-export const CURSOR_AGENT_FALLBACK_PREVIEW = "Cursor cloud agent";
+export const CURSOR_AGENT_FALLBACK_PREVIEW = "Cloud agent";
 
 export function cursorAgentPreviewText(title?: string | null): string {
   const trimmed = title?.trim();
   return trimmed != null && trimmed.length > 0
-    ? `Cursor agent: ${trimmed}`
+    ? `Cloud agent: ${trimmed}`
     : CURSOR_AGENT_FALLBACK_PREVIEW;
 }
 

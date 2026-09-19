@@ -15,8 +15,8 @@ import respx
 from pytest_mock import MockerFixture
 
 from polar.config import settings
-from polar.desktop import endpoints as endpoints_module
-from polar.desktop.endpoints import UPSTREAM_REFUSED
+from polar.desktop import proxy_common as proxy_common_module
+from polar.desktop.proxy_common import UPSTREAM_REFUSED
 from polar.desktop.service import (
     Usage,
     UsageTally,
@@ -813,7 +813,7 @@ class TestTwoProviders:
         app's: the body is handed back, the engine reduces it to a failure
         kind, and the person is shown « 400 terminated »."""
         mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
-        warn = mocker.patch.object(endpoints_module.log, "warning")
+        warn = mocker.patch.object(proxy_common_module.log, "warning")
         access, _ = await _signed_in(client, session, user)
         refusal = {"error": {"message": "Unsupported value: 'temperature'."}}
         with respx.mock(assert_all_called=True) as mock:
@@ -847,7 +847,7 @@ class TestTwoProviders:
         """The streaming path reads and returns the error separately from
         the non-streaming one, so it needs its own proof."""
         mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
-        warn = mocker.patch.object(endpoints_module.log, "warning")
+        warn = mocker.patch.object(proxy_common_module.log, "warning")
         access, _ = await _signed_in(client, session, user)
         with respx.mock(assert_all_called=True) as mock:
             mock.post(f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/chat/completions").mock(
