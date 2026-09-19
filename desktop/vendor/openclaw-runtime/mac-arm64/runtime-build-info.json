@@ -1,0 +1,8 @@
+{
+  "builtAt": "2026-09-17T03:05:49.846Z",
+  "source": "/Users/bassfall/Claidor/desktop/../openclaw",
+  "target": "mac-arm64",
+  "openclawVersion": "v2026.6.1",
+  "openclawCommit": "2e08f0f4221f522b60423ed6ffd83427942b28de",
+  "patchHash": "a7bf25e86debbee0228aa930ae05a658e2284cf4e865f00e21a40c7fdf8e3c4c"
+}

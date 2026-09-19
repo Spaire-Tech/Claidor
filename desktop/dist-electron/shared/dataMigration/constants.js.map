@@ -1,0 +1,1 @@
+{"version":3,"file":"constants.js","sourceRoot":"","sources":["../../../src/shared/dataMigration/constants.ts"],"names":[],"mappings":";;;AAAa,QAAA,gBAAgB,GAAG;IAC9B,MAAM,EAAE,+BAA+B;IACvC,OAAO,EAAE,gCAAgC;IACzC,oBAAoB,EAAE,6CAA6C;CAC3D,CAAC;AAKE,QAAA,0BAA0B,GAAG;IACxC,OAAO,EAAE,SAAS;IAClB,MAAM,EAAE,QAAQ;CACR,CAAC"}

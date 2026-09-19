@@ -1,1 +1,0 @@
-export const LIBRARY_ACTION_MENU_WIDTH_PX = 288;

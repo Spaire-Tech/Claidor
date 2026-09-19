@@ -1,0 +1,9 @@
+{
+  "id": "openclaw-netease-bee",
+  "channels": ["netease-bee"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}

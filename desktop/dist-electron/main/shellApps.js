@@ -1,0 +1,838 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getAppsForFile = getAppsForFile;
+exports.getBrowserApps = getBrowserApps;
+exports.openFileWithApp = openFileWithApp;
+exports.openUrlWithApp = openUrlWithApp;
+const child_process_1 = require("child_process");
+const electron_1 = require("electron");
+const fs = __importStar(require("fs"));
+const os = __importStar(require("os"));
+const path = __importStar(require("path"));
+const shellAppIconPolicy_1 = require("./shellAppIconPolicy");
+const appCache = new Map();
+const pendingAppFetches = new Map();
+const browserAppsCache = new Map();
+const pendingBrowserAppFetches = new Map();
+const iconDataUrlCache = new Map();
+const MAX_FILE_APP_CACHE_ENTRIES = 64;
+const MAX_BROWSER_APP_CACHE_ENTRIES = 32;
+const MAX_ICON_DATA_URL_CACHE_ENTRIES = 128;
+const getBoundedCacheEntry = (cache, key) => {
+    const value = cache.get(key);
+    if (value === undefined)
+        return undefined;
+    cache.delete(key);
+    cache.set(key, value);
+    return value;
+};
+const setBoundedCacheEntry = (cache, key, value, maxEntries) => {
+    // Refresh insertion order so frequently reused entries survive FIFO
+    // eviction without retaining every project or extension for process life.
+    cache.delete(key);
+    cache.set(key, value);
+    while (cache.size > maxEntries) {
+        const oldestKey = cache.keys().next().value;
+        if (oldestKey === undefined)
+            break;
+        cache.delete(oldestKey);
+    }
+};
+async function getAppsForFile(filePath) {
+    const ext = path.extname(filePath).toLowerCase();
+    if (!ext)
+        return [];
+    const cached = getBoundedCacheEntry(appCache, ext);
+    if (cached)
+        return cached;
+    const pending = pendingAppFetches.get(ext);
+    if (pending)
+        return pending;
+    const fetchPromise = fetchAppsForFile(filePath, ext).finally(() => {
+        pendingAppFetches.delete(ext);
+    });
+    pendingAppFetches.set(ext, fetchPromise);
+    return fetchPromise;
+}
+async function fetchAppsForFile(filePath, ext) {
+    let apps = [];
+    try {
+        switch (process.platform) {
+            case 'darwin':
+                apps = await getApps_macOS(filePath);
+                break;
+            case 'win32':
+                apps = await getApps_windows(ext);
+                break;
+            case 'linux':
+                apps = await getApps_linux(filePath);
+                break;
+        }
+    }
+    catch (err) {
+        console.warn('[ShellApps] failed to get apps:', err);
+    }
+    apps = curateApps(apps, ext);
+    await fetchIcons(apps);
+    for (const a of apps) {
+        delete a.iconPath;
+    }
+    // Empty results are valid too. Caching them avoids repeatedly probing the
+    // OS for an unsupported extension every time an artifact card mounts.
+    setBoundedCacheEntry(appCache, ext, apps, MAX_FILE_APP_CACHE_ENTRIES);
+    return apps;
+}
+async function getBrowserApps(input = {}) {
+    const cacheKey = input.projectDirectory?.trim() || '';
+    const cached = getBoundedCacheEntry(browserAppsCache, cacheKey);
+    if (cached)
+        return cached;
+    const pending = pendingBrowserAppFetches.get(cacheKey);
+    if (pending)
+        return pending;
+    const fetchPromise = fetchBrowserApps(input, cacheKey).finally(() => {
+        pendingBrowserAppFetches.delete(cacheKey);
+    });
+    pendingBrowserAppFetches.set(cacheKey, fetchPromise);
+    return fetchPromise;
+}
+async function fetchBrowserApps(input, cacheKey) {
+    await ensureBrowserProbeFile();
+    const browserProbeFile = await findProjectHtmlProbeFile(input.projectDirectory) ?? BROWSER_APPS_PROBE_FILE;
+    const apps = await getAppsForFile(browserProbeFile);
+    const fallbackApps = await discoverBrowserApps();
+    const byPath = new Map();
+    for (const appInfo of [...apps, ...fallbackApps]) {
+        byPath.set(appInfo.path, {
+            ...appInfo,
+            isDefault: appInfo.isDefault || byPath.get(appInfo.path)?.isDefault || false,
+        });
+    }
+    const result = curateBrowserApps(Array.from(byPath.values()));
+    await fetchIcons(result);
+    for (const appInfo of result) {
+        delete appInfo.iconPath;
+    }
+    setBoundedCacheEntry(browserAppsCache, cacheKey, result, MAX_BROWSER_APP_CACHE_ENTRIES);
+    return result;
+}
+const MAX_APPS_IN_LIST = 5;
+const HTML_EXTENSIONS = new Set(['.html', '.htm']);
+const BROWSER_APPS_PROBE_FILE = path.join(os.tmpdir(), 'lobsterai-browser-probe.html');
+const HTML_PROBE_MAX_DEPTH = 4;
+const HTML_PROBE_MAX_ENTRIES = 1200;
+const HTML_PROBE_EXCLUDED_DIRECTORIES = new Set([
+    '.git',
+    '.hg',
+    '.svn',
+    'node_modules',
+    'vendor',
+    '.next',
+    '.nuxt',
+    '.cache',
+    'coverage',
+]);
+const PREFERRED_HTML_PROBE_NAMES = new Set([
+    'index.html',
+    'index.htm',
+    'app.html',
+    'main.html',
+]);
+const MACOS_BROWSER_CANDIDATES = [
+    { name: 'Google Chrome', bundleId: 'com.google.Chrome', relativePath: 'Google Chrome.app' },
+    { name: 'Safari', bundleId: 'com.apple.Safari', relativePath: 'Safari.app' },
+    { name: 'Firefox', bundleId: 'org.mozilla.firefox', relativePath: 'Firefox.app' },
+    { name: 'Microsoft Edge', bundleId: 'com.microsoft.edgemac', relativePath: 'Microsoft Edge.app' },
+    { name: 'Brave Browser', bundleId: 'com.brave.Browser', relativePath: 'Brave Browser.app' },
+    { name: 'Arc', bundleId: 'company.thebrowser.Browser', relativePath: 'Arc.app' },
+    { name: 'Dia', bundleId: 'company.thebrowser.dia', relativePath: 'Dia.app' },
+    { name: 'Opera', bundleId: 'com.operasoftware.Opera', relativePath: 'Opera.app' },
+    { name: 'Vivaldi', bundleId: 'com.vivaldi.Vivaldi', relativePath: 'Vivaldi.app' },
+    { name: 'Chromium', bundleId: 'org.chromium.Chromium', relativePath: 'Chromium.app' },
+    { name: '豆包浏览器', bundleId: 'com.bytedance.macos.doubao.browser', relativePath: '豆包浏览器.app' },
+];
+// Bundle IDs / name fragments that are rarely useful for opening documents.
+const EXCLUDED_BUNDLE_IDS = new Set([
+    'com.google.Chrome',
+    'com.google.Chrome.canary',
+    'com.google.chrome.for.testing',
+    'org.chromium.Chromium',
+    'com.apple.Safari',
+    'com.microsoft.edgemac',
+    'com.brave.Browser',
+    'company.thebrowser.Browser', // Arc
+    'com.bytedance.macos.doubao',
+    'com.bytedance.macos.doubao.browser',
+    'com.apple.Notes',
+    'com.apple.iCal',
+]);
+const EXCLUDED_NAME_PATTERNS = [
+    /chrome/i, /chromium/i, /safari/i, /firefox/i, /edge$/i, /brave/i,
+    /doubao/i, /browser$/i,
+];
+const BROWSER_BUNDLE_IDS = new Set([
+    'com.google.Chrome',
+    'com.google.Chrome.canary',
+    'com.google.chrome.for.testing',
+    'org.chromium.Chromium',
+    'com.apple.Safari',
+    'org.mozilla.firefox',
+    'com.microsoft.edgemac',
+    'com.brave.Browser',
+    'company.thebrowser.Browser',
+    'company.thebrowser.dia',
+    'com.operasoftware.Opera',
+    'com.vivaldi.Vivaldi',
+    'com.360.Chrome',
+    'com.tencent.LemonBrowser',
+    'com.bytedance.macos.doubao.browser',
+]);
+const BROWSER_NAME_PATTERNS = [
+    /chrome/i,
+    /chromium/i,
+    /safari/i,
+    /firefox/i,
+    /microsoft edge/i,
+    /^edge$/i,
+    /brave/i,
+    /^arc$/i,
+    /\bdia\b/i,
+    /opera/i,
+    /vivaldi/i,
+    /browser/i,
+    /浏览器/i,
+];
+// Office-class keywords grouped by file family.
+const SPREADSHEET_KEYWORDS = [
+    'microsoft excel', 'excel', 'numbers',
+    'wps spreadsheet', 'wps表格', 'wps office',
+    'libreoffice calc', 'libre office calc', 'openoffice calc',
+];
+const WORD_PROCESSOR_KEYWORDS = [
+    'microsoft word', 'word', 'pages',
+    'wps writer', 'wps文字', 'wps office',
+    'libreoffice writer', 'libre office writer', 'openoffice writer',
+];
+const PRESENTATION_KEYWORDS = [
+    'microsoft powerpoint', 'powerpoint', 'keynote',
+    'wps presentation', 'wps演示', 'wps office',
+    'libreoffice impress', 'libre office impress', 'openoffice impress',
+];
+const PDF_KEYWORDS = [
+    'preview', '预览', 'adobe acrobat', 'adobe reader',
+    'pdf expert', 'skim', 'foxit',
+];
+const MARKDOWN_KEYWORDS = [
+    'typora', 'obsidian', 'macdown', 'marktext', 'mark text',
+    'bear', 'mou', 'ia writer', 'byword', 'logseq',
+];
+const EXT_OFFICE_KEYWORDS = {
+    '.csv': SPREADSHEET_KEYWORDS,
+    '.tsv': SPREADSHEET_KEYWORDS,
+    '.xls': SPREADSHEET_KEYWORDS,
+    '.xlsx': SPREADSHEET_KEYWORDS,
+    '.doc': WORD_PROCESSOR_KEYWORDS,
+    '.docx': WORD_PROCESSOR_KEYWORDS,
+    '.ppt': PRESENTATION_KEYWORDS,
+    '.pptx': PRESENTATION_KEYWORDS,
+    '.pdf': PDF_KEYWORDS,
+    '.md': MARKDOWN_KEYWORDS,
+    '.markdown': MARKDOWN_KEYWORDS,
+};
+// Common editors (next priority)
+const EDITOR_KEYWORDS = [
+    'textedit', 'visual studio code', 'vscode', 'code',
+    'cursor', 'codex', 'sublime', 'trae', 'windsurf',
+    'jetbrains', 'webstorm', 'intellij', 'pycharm', 'goland',
+    'vim', 'emacs', 'atom', 'nova',
+];
+function curateApps(apps, ext) {
+    if (HTML_EXTENSIONS.has(ext)) {
+        return curateBrowserApps(apps);
+    }
+    const officeKeywords = EXT_OFFICE_KEYWORDS[ext] ?? [];
+    const filtered = apps.filter(a => {
+        if (a.bundleId && EXCLUDED_BUNDLE_IDS.has(a.bundleId))
+            return false;
+        if (EXCLUDED_NAME_PATTERNS.some(re => re.test(a.name)))
+            return false;
+        // Drop helper apps nested inside another .app bundle.
+        const appComponents = a.path.split('.app/');
+        if (appComponents.length > 2)
+            return false;
+        // Drop browser snapshot/install paths in user library.
+        if (/chromium|chrome.*snapshots|puppeteer/i.test(a.path))
+            return false;
+        return true;
+    });
+    const tierOf = (a) => {
+        if (a.isDefault)
+            return 0;
+        const lower = a.name.toLowerCase();
+        if (officeKeywords.some(kw => lower.includes(kw)))
+            return 1;
+        if (EDITOR_KEYWORDS.some(kw => lower.includes(kw)))
+            return 2;
+        return 3;
+    };
+    filtered.sort((a, b) => {
+        const ta = tierOf(a), tb = tierOf(b);
+        if (ta !== tb)
+            return ta - tb;
+        return a.name.localeCompare(b.name);
+    });
+    return filtered.slice(0, MAX_APPS_IN_LIST);
+}
+function curateBrowserApps(apps) {
+    const filtered = apps.filter(a => {
+        if (a.bundleId && BROWSER_BUNDLE_IDS.has(a.bundleId))
+            return true;
+        if (BROWSER_NAME_PATTERNS.some(re => re.test(a.name)))
+            return true;
+        return BROWSER_NAME_PATTERNS.some(re => re.test(a.path));
+    });
+    filtered.sort((a, b) => {
+        if (a.isDefault !== b.isDefault)
+            return a.isDefault ? -1 : 1;
+        return a.name.localeCompare(b.name);
+    });
+    return filtered.slice(0, MAX_APPS_IN_LIST);
+}
+async function ensureBrowserProbeFile() {
+    try {
+        await fs.promises.writeFile(BROWSER_APPS_PROBE_FILE, '<!doctype html><meta charset="utf-8"><title>Caisra browser probe</title>', 'utf8');
+    }
+    catch {
+        // Best effort only. Browser fallback discovery does not depend on this file.
+    }
+}
+async function findProjectHtmlProbeFile(projectDirectory) {
+    const root = projectDirectory?.trim();
+    if (!root)
+        return undefined;
+    let rootStat;
+    try {
+        rootStat = await fs.promises.stat(root);
+    }
+    catch {
+        return undefined;
+    }
+    if (!rootStat.isDirectory())
+        return undefined;
+    const queue = [{ directory: root, depth: 0 }];
+    let visitedEntries = 0;
+    let firstHtmlFile;
+    while (queue.length > 0 && visitedEntries < HTML_PROBE_MAX_ENTRIES) {
+        const current = queue.shift();
+        let entries;
+        try {
+            entries = await fs.promises.readdir(current.directory, { withFileTypes: true });
+        }
+        catch {
+            continue;
+        }
+        entries.sort((left, right) => {
+            const leftPreferred = PREFERRED_HTML_PROBE_NAMES.has(left.name.toLowerCase()) ? 0 : 1;
+            const rightPreferred = PREFERRED_HTML_PROBE_NAMES.has(right.name.toLowerCase()) ? 0 : 1;
+            if (leftPreferred !== rightPreferred)
+                return leftPreferred - rightPreferred;
+            if (left.isDirectory() !== right.isDirectory())
+                return left.isDirectory() ? 1 : -1;
+            return left.name.localeCompare(right.name);
+        });
+        for (const entry of entries) {
+            visitedEntries += 1;
+            if (visitedEntries > HTML_PROBE_MAX_ENTRIES)
+                break;
+            const absolutePath = path.join(current.directory, entry.name);
+            if (entry.isFile() && HTML_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
+                if (PREFERRED_HTML_PROBE_NAMES.has(entry.name.toLowerCase())) {
+                    return absolutePath;
+                }
+                firstHtmlFile ??= absolutePath;
+                continue;
+            }
+            if (entry.isDirectory() &&
+                current.depth < HTML_PROBE_MAX_DEPTH &&
+                !HTML_PROBE_EXCLUDED_DIRECTORIES.has(entry.name)) {
+                queue.push({ directory: absolutePath, depth: current.depth + 1 });
+            }
+        }
+    }
+    return firstHtmlFile;
+}
+async function discoverBrowserApps() {
+    switch (process.platform) {
+        case 'darwin':
+            return await discoverBrowserApps_macOS();
+        case 'win32':
+            return await getApps_windows('.html');
+        case 'linux':
+            return await getApps_linux(BROWSER_APPS_PROBE_FILE);
+        default:
+            return [];
+    }
+}
+async function getDefaultBrowserPath_macOS() {
+    const script = `
+ObjC.import("AppKit");
+ObjC.import("Foundation");
+var url = $.NSURL.URLWithString("http://localhost/");
+var appURL = $.NSWorkspace.sharedWorkspace.URLForApplicationToOpenURL(url);
+appURL ? ObjC.unwrap(appURL.path) : "";`;
+    try {
+        return (await execFileAsync('osascript', ['-l', 'JavaScript', '-e', script], 5000)).trim();
+    }
+    catch {
+        return '';
+    }
+}
+async function discoverBrowserApps_macOS() {
+    const defaultPath = await getDefaultBrowserPath_macOS();
+    const searchRoots = [
+        '/Applications',
+        '/System/Applications',
+        path.join(os.homedir(), 'Applications'),
+    ];
+    const results = [];
+    for (const candidate of MACOS_BROWSER_CANDIDATES) {
+        for (const root of searchRoots) {
+            const appPath = path.join(root, candidate.relativePath);
+            if (!fs.existsSync(appPath))
+                continue;
+            results.push({
+                name: candidate.name,
+                path: appPath,
+                bundleId: candidate.bundleId,
+                isDefault: appPath === defaultPath,
+                iconPath: findMacOSAppIconPath(appPath),
+            });
+            break;
+        }
+    }
+    return results;
+}
+function findMacOSAppIconPath(appPath) {
+    const resourcesDir = path.join(appPath, 'Contents', 'Resources');
+    let entries;
+    try {
+        entries = fs.readdirSync(resourcesDir);
+    }
+    catch {
+        return undefined;
+    }
+    for (const preferredName of ['AppIcon.icns', 'app.icns']) {
+        if (entries.includes(preferredName)) {
+            return path.join(resourcesDir, preferredName);
+        }
+    }
+    const iconFile = entries.find(entry => entry.toLowerCase().endsWith('.icns') &&
+        !/document|file|toolbar/i.test(entry));
+    return iconFile ? path.join(resourcesDir, iconFile) : undefined;
+}
+async function openFileWithApp(filePath, appPath) {
+    switch (process.platform) {
+        case 'darwin':
+            await execFileAsync('open', ['-a', appPath, filePath], 5000);
+            break;
+        case 'win32':
+            (0, child_process_1.spawn)(appPath, [filePath], { detached: true, stdio: 'ignore' }).unref();
+            break;
+        case 'linux':
+            if (appPath.endsWith('.desktop')) {
+                await execFileAsync('gtk-launch', [appPath, filePath], 5000).catch(() => execFileAsync('gio', ['launch', appPath, filePath], 5000));
+            }
+            else {
+                (0, child_process_1.spawn)(appPath, [filePath], { detached: true, stdio: 'ignore' }).unref();
+            }
+            break;
+        default:
+            await electron_1.shell.openPath(filePath);
+    }
+}
+async function openUrlWithApp(url, appPath) {
+    switch (process.platform) {
+        case 'darwin':
+            await execFileAsync('open', ['-a', appPath, url], 5000);
+            break;
+        case 'win32':
+            (0, child_process_1.spawn)(appPath, [url], { detached: true, stdio: 'ignore' }).unref();
+            break;
+        case 'linux':
+            if (appPath.endsWith('.desktop')) {
+                await execFileAsync('gtk-launch', [appPath, url], 5000).catch(() => execFileAsync('gio', ['launch', appPath, url], 5000));
+            }
+            else {
+                (0, child_process_1.spawn)(appPath, [url], { detached: true, stdio: 'ignore' }).unref();
+            }
+            break;
+        default:
+            await electron_1.shell.openExternal(url);
+    }
+}
+// ── macOS: JXA via osascript ─────────────────────────────────────
+async function getApps_macOS(filePath) {
+    const script = `
+ObjC.import("AppKit");
+ObjC.import("Foundation");
+var url = $.NSURL.fileURLWithPath(${JSON.stringify(filePath)});
+var ws = $.NSWorkspace.sharedWorkspace;
+var apps = ws.URLsForApplicationsToOpenURL(url);
+var defaultApp = ws.URLForApplicationToOpenURL(url);
+var defaultPath = defaultApp ? ObjC.unwrap(defaultApp.path) : "";
+var result = [];
+for (var i = 0; i < apps.count; i++) {
+  var appURL = apps.objectAtIndex(i);
+  var bundle = $.NSBundle.bundleWithURL(appURL);
+  var name = "", bundleId = "", iconPath = "";
+  if (bundle) {
+    var info = bundle.infoDictionary;
+    var dn = info.objectForKey("CFBundleDisplayName");
+    var bn = info.objectForKey("CFBundleName");
+    name = dn ? ObjC.unwrap(dn) : (bn ? ObjC.unwrap(bn) : "");
+    var bi = bundle.bundleIdentifier;
+    bundleId = bi ? ObjC.unwrap(bi) : "";
+    var iconFile = info.objectForKey("CFBundleIconFile") || info.objectForKey("CFBundleIconName");
+    var resPath = ObjC.unwrap(appURL.path) + "/Contents/Resources/";
+    var candidates = [];
+    if (iconFile) {
+      var ic = ObjC.unwrap(iconFile);
+      candidates.push(ic);
+      if (!ic.endsWith(".icns")) candidates.push(ic + ".icns");
+    }
+    candidates.push("AppIcon.icns");
+    for (var k = 0; k < candidates.length; k++) {
+      var candidate = resPath + candidates[k];
+      if ($.NSFileManager.defaultManager.fileExistsAtPath(candidate)) {
+        iconPath = candidate;
+        break;
+      }
+    }
+  }
+  var p = ObjC.unwrap(appURL.path);
+  if (!name) {
+    var basename = p.split("/").pop() || p;
+    name = basename.replace(/\\.app$/, "");
+  }
+  result.push({ name: name, bundleId: bundleId, path: p, isDefault: p === defaultPath, iconPath: iconPath });
+}
+result.sort(function(a, b) {
+  if (a.isDefault !== b.isDefault) return a.isDefault ? -1 : 1;
+  return a.name.localeCompare(b.name);
+});
+JSON.stringify(result);`;
+    const output = await execFileAsync('osascript', ['-l', 'JavaScript', '-e', script], 5000);
+    return JSON.parse(output.trim());
+}
+// ── Windows: PowerShell registry query ───────────────────────────
+async function getApps_windows(ext) {
+    if (!ext.startsWith('.'))
+        ext = '.' + ext;
+    const psScript = `
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+$ext = "${ext}"
+$apps = @{}
+
+$key = "Registry::HKEY_CLASSES_ROOT\\$ext\\OpenWithProgids"
+if (Test-Path $key) {
+  (Get-Item $key).GetValueNames() | Where-Object { $_ -ne "" -and $_ -ne "(default)" } | ForEach-Object {
+    $apps[$_] = @{ source = "progid" }
+  }
+}
+
+$key = "Registry::HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\$ext\\OpenWithProgids"
+if (Test-Path $key) {
+  (Get-Item $key).GetValueNames() | Where-Object { $_ -ne "" -and $_ -ne "(default)" } | ForEach-Object {
+    $apps[$_] = @{ source = "progid" }
+  }
+}
+
+$key = "Registry::HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\$ext\\OpenWithList"
+if (Test-Path $key) {
+  $item = Get-Item $key
+  $mru = $item.GetValue("MRUList")
+  if ($mru) {
+    foreach ($c in $mru.ToCharArray()) {
+      $exeName = $item.GetValue([string]$c)
+      if ($exeName) { $apps["APP:$exeName"] = @{ source = "exe"; exeName = $exeName } }
+    }
+  }
+}
+
+$regApps = Get-ItemProperty "Registry::HKEY_LOCAL_MACHINE\\SOFTWARE\\RegisteredApplications" -ErrorAction SilentlyContinue
+if ($regApps) {
+  foreach ($prop in $regApps.PSObject.Properties | Where-Object { $_.Name -notmatch '^PS' }) {
+    $capPath = "Registry::HKEY_LOCAL_MACHINE\\$($prop.Value)\\FileAssociations"
+    if (Test-Path $capPath) {
+      $progId = (Get-ItemProperty $capPath -ErrorAction SilentlyContinue).$ext
+      if ($progId) { $apps[$progId] = @{ source = "registered"; appName = $prop.Name } }
+    }
+  }
+}
+
+$defaultProgId = ""
+$ucKey = "Registry::HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\$ext\\UserChoice"
+if (Test-Path $ucKey) {
+  $defaultProgId = (Get-ItemProperty $ucKey -ErrorAction SilentlyContinue).ProgId
+}
+
+$result = @()
+foreach ($entry in $apps.Keys) {
+  $progId = $entry
+  $exePath = ""
+  $displayName = ""
+
+  if ($entry.StartsWith("APP:")) {
+    $exeName = $entry.Substring(4)
+    $cmdKey = "Registry::HKEY_CLASSES_ROOT\\Applications\\$exeName\\shell\\open\\command"
+    if (Test-Path $cmdKey) {
+      $cmd = (Get-ItemProperty $cmdKey).'(default)'
+      if ($cmd -match '"([^"]+)"') { $exePath = $Matches[1] }
+      elseif ($cmd -match '^([^ ]+)') { $exePath = $Matches[1] }
+    }
+    $progId = $exeName
+  } else {
+    $cmdKey = "Registry::HKEY_CLASSES_ROOT\\$progId\\shell\\open\\command"
+    if (Test-Path $cmdKey) {
+      $cmd = (Get-ItemProperty $cmdKey).'(default)'
+      if ($cmd -match '"([^"]+)"') { $exePath = $Matches[1] }
+      elseif ($cmd -match '^([^ ]+)') { $exePath = $Matches[1] }
+    }
+    $displayName = (Get-ItemProperty "Registry::HKEY_CLASSES_ROOT\\$progId" -ErrorAction SilentlyContinue).'(default)'
+  }
+
+  if ($exePath -and (Test-Path $exePath)) {
+    $vi = (Get-Item $exePath).VersionInfo
+    if (-not $displayName) { $displayName = $vi.FileDescription }
+    if (-not $displayName) { $displayName = $vi.ProductName }
+  }
+  if (-not $displayName) {
+    $displayName = [System.IO.Path]::GetFileNameWithoutExtension($exePath)
+  }
+
+  if ($exePath -and (Test-Path $exePath)) {
+    $result += @{ name = $displayName; path = $exePath; isDefault = ($progId -eq $defaultProgId -or $entry -eq $defaultProgId) }
+  }
+}
+$result | ConvertTo-Json -Compress`;
+    const output = await execFileAsync('powershell', ['-NoProfile', '-Command', psScript], 10000);
+    const parsed = JSON.parse(output.trim() || '[]');
+    const list = (Array.isArray(parsed) ? parsed : [parsed]).map((a) => ({
+        name: a.name || path.basename(a.path, '.exe'),
+        path: a.path,
+        isDefault: !!a.isDefault,
+    }));
+    list.sort((a, b) => {
+        if (a.isDefault !== b.isDefault)
+            return a.isDefault ? -1 : 1;
+        return a.name.localeCompare(b.name);
+    });
+    return list;
+}
+// ── Linux: mimeinfo.cache + .desktop files ───────────────────────
+async function getApps_linux(filePath) {
+    let mimeType = '';
+    try {
+        mimeType = (await execFileAsync('file', ['--mime-type', '-b', filePath], 3000)).trim();
+    }
+    catch {
+        return [];
+    }
+    if (!mimeType)
+        return [];
+    const desktopFileNames = new Set();
+    const cachePaths = [
+        '/usr/share/applications/mimeinfo.cache',
+        '/usr/local/share/applications/mimeinfo.cache',
+        path.join(os.homedir(), '.local/share/applications/mimeinfo.cache'),
+    ];
+    for (const cachePath of cachePaths) {
+        try {
+            const content = fs.readFileSync(cachePath, 'utf-8');
+            for (const line of content.split('\n')) {
+                if (line.startsWith(mimeType + '=')) {
+                    for (const name of line.substring(mimeType.length + 1).split(';')) {
+                        if (name.trim())
+                            desktopFileNames.add(name.trim());
+                    }
+                }
+            }
+        }
+        catch { /* file may not exist */ }
+    }
+    let defaultDesktopFile = '';
+    try {
+        defaultDesktopFile = (await execFileAsync('xdg-mime', ['query', 'default', mimeType], 3000)).trim();
+    }
+    catch { /* xdg-mime may not be available */ }
+    const desktopDirs = [
+        '/usr/share/applications',
+        '/usr/local/share/applications',
+        path.join(os.homedir(), '.local/share/applications'),
+        '/var/lib/flatpak/exports/share/applications',
+        path.join(os.homedir(), '.local/share/flatpak/exports/share/applications'),
+    ];
+    const results = [];
+    for (const df of desktopFileNames) {
+        for (const dir of desktopDirs) {
+            const fullPath = path.join(dir, df);
+            try {
+                const content = fs.readFileSync(fullPath, 'utf-8');
+                const entry = parseDesktopEntry(content);
+                results.push({
+                    name: entry.Name || df.replace('.desktop', ''),
+                    path: df,
+                    isDefault: df === defaultDesktopFile,
+                });
+                break;
+            }
+            catch { /* not in this dir */ }
+        }
+    }
+    results.sort((a, b) => {
+        if (a.isDefault !== b.isDefault)
+            return a.isDefault ? -1 : 1;
+        return a.name.localeCompare(b.name);
+    });
+    return results;
+}
+function parseDesktopEntry(content) {
+    const result = {};
+    let inEntry = false;
+    for (const line of content.split('\n')) {
+        const trimmed = line.trim();
+        if (trimmed === '[Desktop Entry]') {
+            inEntry = true;
+            continue;
+        }
+        if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+            inEntry = false;
+            continue;
+        }
+        if (!inEntry)
+            continue;
+        const eq = trimmed.indexOf('=');
+        if (eq > 0) {
+            const key = trimmed.substring(0, eq).trim();
+            if (!key.includes('[')) {
+                result[key] = trimmed.substring(eq + 1).trim();
+            }
+        }
+    }
+    return result;
+}
+// ── Icon Extraction ──────────────────────────────────────────────
+async function fetchIcons(apps) {
+    const tasks = apps.map(async (appInfo) => {
+        if (appInfo.icon)
+            return;
+        try {
+            const icon = await extractIcon(appInfo);
+            if (icon)
+                appInfo.icon = icon;
+        }
+        catch {
+            // leave icon undefined
+        }
+    });
+    await Promise.all(tasks);
+}
+// Rendered at up to ~18px CSS (36px retina); 64px keeps payloads small and crisp.
+const ICON_RASTER_SIZE = '64';
+async function extractIcon(appInfo) {
+    // macOS: use sips to convert .icns → PNG → data URL
+    const macOSIconPath = process.platform === 'darwin'
+        ? appInfo.iconPath || findMacOSAppIconPath(appInfo.path)
+        : undefined;
+    const cacheKey = macOSIconPath || appInfo.path;
+    const cached = getBoundedCacheEntry(iconDataUrlCache, cacheKey);
+    if (cached)
+        return cached;
+    if (macOSIconPath && fs.existsSync(macOSIconPath)) {
+        const png = await icnsToPng(macOSIconPath);
+        if (png) {
+            setBoundedCacheEntry(iconDataUrlCache, cacheKey, png, MAX_ICON_DATA_URL_CACHE_ENTRIES);
+            return png;
+        }
+    }
+    // Electron does not support the "large" file icon size on macOS.
+    try {
+        if (!electron_1.app.isReady())
+            return null;
+        const img = await electron_1.app.getFileIcon(appInfo.path, {
+            size: (0, shellAppIconPolicy_1.resolveShellAppFileIconSize)(process.platform),
+        });
+        if (!img.isEmpty()) {
+            const dataUrl = img.toDataURL();
+            setBoundedCacheEntry(iconDataUrlCache, cacheKey, dataUrl, MAX_ICON_DATA_URL_CACHE_ENTRIES);
+            return dataUrl;
+        }
+    }
+    catch {
+        // ignore
+    }
+    return null;
+}
+async function icnsToPng(icnsPath) {
+    const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'lobsterai-app-icon-'));
+    const pngPath = path.join(tmpDir, 'icon.png');
+    try {
+        await execFileAsync('/usr/bin/sips', ['-s', 'format', 'png', '-z', ICON_RASTER_SIZE, ICON_RASTER_SIZE, icnsPath, '--out', pngPath], 5000);
+        const buf = await fs.promises.readFile(pngPath);
+        if (buf.byteLength === 0)
+            return null;
+        return `data:image/png;base64,${buf.toString('base64')}`;
+    }
+    catch {
+        return null;
+    }
+    finally {
+        fs.promises.rm(tmpDir, { recursive: true, force: true }).catch(() => { });
+    }
+}
+// ── Helpers ──────────────────────────────────────────────────────
+function execFileAsync(cmd, args, timeout) {
+    return new Promise((resolve, reject) => {
+        (0, child_process_1.execFile)(cmd, args, { encoding: 'utf-8', timeout }, (err, stdout) => {
+            if (err)
+                reject(err);
+            else
+                resolve(stdout);
+        });
+    });
+}
+//# sourceMappingURL=shellApps.js.map

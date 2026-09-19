@@ -1,0 +1,63 @@
+{
+  "name": "openclaw-netease-bee",
+  "version": "0.1.3",
+  "type": "module",
+  "description": "OpenClaw NetEase Bee (小蜜蜂) channel plugin",
+  "license": "MIT",
+  "files": [
+    "index.ts",
+    "src",
+    "openclaw.plugin.json",
+    "index.mjs"
+  ],
+  "keywords": [
+    "openclaw",
+    "netease",
+    "bee",
+    "xiaomifeng",
+    "im",
+    "chatbot",
+    "ai"
+  ],
+  "openclaw": {
+    "extensions": [
+      "./index.mjs"
+    ],
+    "channel": {
+      "id": "netease-bee",
+      "label": "NetEase Bee",
+      "selectionLabel": "NetEase Bee (小蜜蜂)",
+      "docsPath": "/channels/netease-bee",
+      "docsLabel": "netease-bee",
+      "blurb": "网易小蜜蜂 IM 即时通讯。",
+      "aliases": [
+        "bee",
+        "xiaomifeng"
+      ],
+      "order": 85
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "nim-web-sdk-ng": "10.9.77-alpha.4"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.10",
+    "openclaw": "2026.1.29",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.1.29"
+  },
+  "main": "./index.mjs",
+  "peerDependenciesMeta": {
+    "openclaw": {
+      "optional": true
+    }
+  }
+}
