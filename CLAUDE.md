@@ -4,7 +4,7 @@ Legal research platform for OHADA law (see README.md). Monorepo with Python/Fast
 
 ## Swens — archived (September 2026)
 
-This repository carried the Swens build (a model review platform for finance). It is archived, switched off and kept as a record: the engine under `server/polar/tieout` (routes no longer mounted; tests not collected), the screens under `clients/apps/web/src/components/Workspace` (no longer rendered), the scripts under `server/scripts`, and the documents of record under `docs/pierce` (`swens.md`, `swens-plan.md`, `notes.md`). The last working state is the git tag `swens-final`. Do not extend it; answer questions about it from those documents, never from memory.
+This repository carried the Swens build (a model review platform for finance). It is archived, switched off and kept as a record: the engine under `server/polar/tieout` (routes no longer mounted; tests not collected), the screens under `clients/apps/web/src/components/Workspace` (no longer rendered), the scripts under `server/scripts`, and the documents of record under `docs/pierce` (`swens.md`, `swens-plan.md`, `notes.md`). There is **no `swens-final` tag** — the repository has no tags at all (`git ls-remote --tags origin` returns nothing, checked 18 September). Earlier copies of this file, and a user-facing page in the dashboard, named that tag; anyone sent to it found nothing. The last Swens state is reachable only by commit or by the `swens/*` branches on the remote. Do not extend it; answer questions about it from those documents, never from memory.
 
 ## desktop/ — Caisra, and the only product (18 September 2026)
 
@@ -31,10 +31,10 @@ repository's own map described this directory as an untouched parts bin when it
 held the finished product. **Check `git diff` before believing any claim in
 here about what a directory contains** — including this one.
 
-What is actually in it, measured on 18 September: 2,552 files, of which 102
+What is actually in it, measured on 18 September: 2,551 files, of which 102
 under `src/` name Yodo or Caisra. The agent and its brief, the 23 strongs, the
-roster card, Chief of Staff, onboarding, the Messages design, the OpenUI cards
-and artifacts, whisper speech recognition, the Mac tasks, the connections
+roster card, Chief of Staff, onboarding, the Messages design, the document
+artifacts, whisper speech recognition, the Mac tasks, the connections
 catalogue. The tree is identical to `b41c9364`, the last commit before the fork
 was vendored, which is the state the founder judged good.
 
@@ -46,25 +46,59 @@ queue under `polar/maty/`, and the cloud runner. `render.yaml` and the deployed
 services are unchanged and the API answers now.
 
 **The cost of running on the Mac.** The engine runs locally, so nothing runs
-with the laptop shut. The maty queue and `claidor-maty-runner` are a cloud path
-for exactly this and are live, but **how complete they are has never been
-established**. Establish it before promising anyone that routines fire
-overnight.
+with the laptop shut. The maty queue and `claidor-maty-runner` are the cloud path
+for exactly this, and **their completeness is now established**, 18 September:
+the queue is live (`POST /maty/runner/claim` → 401), both routers are mounted,
+the runner matches its README line for line — and **nothing produces a job**.
+`grep -ril maty desktop/src` returns nothing. It is a finished pipe with nothing
+plugged into the input, so no routine has ever fired overnight, because none can
+be created.
+
+**The decision, 18 September: keep the queue, change the executor.** The claim /
+lease / heartbeat / scoped-token / memory-in-memory-out half is the hard part and
+is tested. The other half is a Render container with no Docker, which is why
+shell, web and browser are switched off in `runner/src/engineConfig.ts` — its own
+README says so. The box on E2B removes that constraint, so a routine and an
+interactive turn end up on one substrate. **Do not wire the app to the queue
+first**: a producer against today's executor ships routines that can read a file
+and call a model and nothing else. See `docs/product/box-substrate-read.md`.
 
 **Speech, checked 15 September:** the server serves text-to-speech at
 `/api/proxy/v1/audio/speech` (`server/polar/desktop/endpoints.py`, the
-`desktop:speech` route). It serves **no speech recognition**: the app's voice
-input asks `/api/asr/realtime/sessions` (`ipcHandlers/asr/handlers.ts`), which
-was NetEase's, and nothing under `server/polar/` answers it. The whisper.cpp
-recogniser in this tree is the replacement; check it is wired before calling
-voice input dead.
+`desktop:speech` route). It serves **no speech recognition**, and it does not need to.
+**Checked 18 September, and the open question here is now closed: whisper is
+wired.** The design's dictation runs entirely on the Mac —
+`renderer/design/shell/useDictation.ts` → `window.electron.speech` →
+`main/ipcHandlers/speech/handlers.ts` → `main/speech/whisperServer.ts`,
+registered at `main.ts:304` (`registerSpeechIpcHandlers`). Nothing in that path
+touches the server.
+
+The dead NetEase route survives in one place only: `ipcHandlers/asr/handlers.ts`
+still asks `/api/asr/realtime/sessions`, which nothing under `server/polar/`
+answers, and it is reached from the **upstream cowork** voice input
+(`renderer/services/voiceInput/realtimeAsrClient.ts`,
+`components/cowork/voiceInput/useCoworkVoiceInput.ts`). It is still registered
+at `main.ts:282`. So voice input is not dead — it is two paths, one live and
+one orphaned.
 
 The macOS installer builds on GitHub Actions
 (`.github/workflows/desktop_mac.yml`), unsigned until an Apple certificate
-exists. **Note that GitHub Actions currently dispatches no jobs at all in this
-repository** — checks are created and die within three seconds without ever
-receiving a runner, which is a repository or billing setting and not a code
-fault. Until that is fixed, CI confirms nothing.
+exists. The workflow is `workflow_dispatch` only — by hand, on purpose,
+because GitHub bills macOS runners at ten times the minute rate. The same build
+runs free on a Mac with `npm run mac:build`.
+
+**On CI, corrected 18 September.** This file used to say Actions "dispatches no
+jobs at all in this repository". That is false, and it was stated without
+checking. A Dependabot job took a runner (`GitHub Actions 1000013128`,
+ubuntu-latest) and ran green for 2m32s on 18 September at 16:27 UTC. What is
+true is narrower: **the repository's own workflows** get no runner — `Server`,
+`Client`, `Build and Deploy` and the scheduled jobs all fail 3–4 seconds after
+creation, and their logs 404 because no log was ever written. Dependabot runs on
+GitHub's own infrastructure and is not billed against Actions minutes, which is
+consistent with a spending limit rather than a broken repository, but **that is
+inference and not a log**. Nobody has read the Actions billing page. Until
+someone does, the cause is unproven and CI confirms nothing for our own
+workflows.
 
 ## What the Rakazo attempt left behind (17–18 September 2026)
 
@@ -107,11 +141,20 @@ plus a token-minting button at Account → Developer in the dashboard.
 a personal access token only when the bearer is not one, so the desktop path is
 unchanged.
 
-**One live thing still needs a decision:** `app.claidor.com` was pointed at the
-Rakazo server and away from the Vercel dashboard. Point it back, or give the
-dashboard another hostname and update `CLAIDOR_ALLOWED_HOSTS` and
-`CLAIDOR_CORS_ORIGINS` on Render, Google's OAuth JavaScript origin, and the S3
-CORS rule on `claidor-files`.
+**`app.claidor.com` needs no decision — measured 18 September.** This file,
+and `docs/product/going-back-brief.md`, said the hostname had been pointed at the
+Rakazo server and away from Vercel, and listed pointing it back as outstanding
+work. It is not outstanding. Measured from this container:
+
+```
+app.claidor.com  →  CNAME cname.vercel-dns.com  →  76.76.21.164
+GET https://app.claidor.com/  →  307 → /signup,  server: Vercel,  x-claidor-* headers
+```
+
+That is the Claidor dashboard on Vercel, answering now. Whether the repoint ever
+happened or was reverted is not established and does not matter; nothing is to be
+done. `docs/product/app-claidor-com-facts.md` remains the inventory of everything
+that names this hostname, and it measured Vercel too.
 
 ## The design direction (13 September 2026)
 
@@ -181,9 +224,13 @@ the running engine drove its own Chromium. The premise is true and the
 conclusion is false: those two sets govern **cowork** config, and the
 browser lives in `app_config`. `main.ts`'s `store:set` handler computes
 `hasBrowserWebAccessConfigChanged` and passes
-`restartGatewayIfRunning: true` on any change to `browserWebAccess`,
-`displayMode` included. Checked 15 September against
-`main.ts:4395` and `main.ts:4846`.
+`restartGatewayIfRunning: true` when it reports a change — `displayMode`
+included, which is the point. Re-checked 18 September: the helper is at
+`main.ts:4536`, the `store:set` handler at `main.ts:4931`, the call at
+`main.ts:4990`. (The line numbers here were `4395`/`4846` and had drifted.)
+One precision the old wording missed: it is **not** any change to
+`browserWebAccess` — the comparison blanks `credentialUseMode` and
+`credentialSaveMode`, so a change to those two alone restarts nothing.
 
 Nobody has run the browser in this tree. Do not call it broken and do not
 call it fixed — run it, and if it fails get the gateway log before
@@ -191,7 +238,21 @@ touching code. The line that decides it is
 `[EngineConfigSync] browser profile=…` (the tag was `[OpenClawConfigSync]`
 until 15 September), which on a fallback names which half was missing.
 
-**Why there is no machine registry, and what actually differs.** Grok Bot
+**A machine registry is coming, decided 18 September 2026.** Two decisions are
+locked: **file custody is explicit import** (the person's files live on their
+machine; moving one to the agent's box is a deliberate copy, never ambient) and
+**the machine model is a registry** (the box plus the person's registered
+machines). `docs/product/cards-plan.md` holds both and the six things they
+oblige us to change — the approval card has to name a machine, the brief's
+"their computer asks once" section is written for a world with one, and box
+handoff must never come to mean "your files are here now".
+
+`direction.md` §10 is **retired** and marked as such. Its thesis survives — under
+explicit import the box is where work happens, not where files live — but its
+"there is no 'which computer'" does not. The paragraph below is what §10 argued
+and is kept for the same reason §10 is: it is what the new design has to answer.
+
+**Why §10 said there was no machine registry.** Grok Bot
 needs registered computers because it lives in the cloud and has to reach
 in. Maties runs on the machine, so there is no "which computer", only
 this computer. Two laptops is a v2 problem, and by then we will know
@@ -201,9 +262,20 @@ computer ≠ your disk … we copy when needed". Maties opens the file where
 it lives. That shows up in spreadsheet formulas, links between workbooks,
 folder structure, and privacy.
 
-The macOS installer builds on GitHub Actions
-(`.github/workflows/desktop_mac.yml`), unsigned until an Apple
-certificate exists.
+## Artifacts are files, and OpenUI is gone (18 September 2026)
+
+A report, plan, guide, deck or spreadsheet is a **file** — `.docx`, `.pptx`,
+`.xlsx` — written with the matching skill and drawn in the thread as a file
+card. OpenUI was removed from the product entirely on 18 September: it had been
+asked for as the *look* of an artifact and had become the way every shaped
+answer was drawn, which is how the document the person could send on stopped
+being made at all. `docs/product/artifacts-decision.md` is the record.
+
+**Images are unblocked in the app and do not work yet.** The gate that refused
+every generate call is gone and the agent is told the tool exists, but
+`GET /desktop/api/media/images/models` returns **404** — `server/polar/` serves
+no `/api/media` route. That is a server build, not a switch;
+`docs/product/images-state.md` has the measurement and the two options.
 
 ## Before you say anything is missing (18 September 2026)
 

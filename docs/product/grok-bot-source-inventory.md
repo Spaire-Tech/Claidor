@@ -1,0 +1,400 @@
+# What the Grok Bot 0.18 reconstruction gives us
+
+**Written 19 September 2026, from the tree as it landed at `86d49feb`.**
+Provenance, permission and the removal commitment are in
+`grok-bot-source-provenance.md`. This file is the map: what is in
+`vendor/grok-bot-0.18/`, and which of our open questions it answers.
+
+**Read the honesty line first.** What follows is a survey of the tree plus a
+handful of files read in full. Directory listings and five file heads are not
+an audit. Where I have read the code I say so; where I am reading a filename I
+say that too. Do not cite this file as evidence that something works.
+
+## The shape of it
+
+2,106 files, 34 MB, of which **2,002 are TypeScript**. Eight tests. Two design
+documents (`docs/ARCHITECTURE.md`, `docs/PUBLISHING.md`).
+
+| directory | files | what it is |
+| --- | ---: | --- |
+| `source/packages/` | 852 | the libraries: agent core, exec, transcript, inference, protobuf, MCP, hooks, redaction |
+| `source/host/` | 471 | the agent host — the gateway, the runner, the box, routines, groups |
+| `source/electron-main/` | 185 | the desktop shell |
+| `source/shared/` | 165 | the contracts both sides agree on |
+| `source/electron-preload/` | 16 | the bridge |
+| `source/node-agent-coordinator/` | 24 | agent lifecycle |
+| `source/box-exec-daemon/` | 3 | what runs **inside** the box |
+| `source/local-exec-daemon/` | 3 | what runs on the **person's own machine** |
+| `frontend/` | — | a partial reconstruction, not the shipped UI |
+
+## What it is not, stated plainly
+
+The distributed app shipped minified production JavaScript with no source maps.
+**The renderer was never recovered.** `frontend/` is the reconstructor's own
+partial rebuild and their README says so directly: it "should not be mistaken
+for Anysphere's missing original frontend source or a pixel-perfect
+replacement". Their packaged build keeps the real shipped renderer as a
+checksum-pinned binary blob and patches one settings screen into it.
+
+So: **we get the engine and the control plane. We do not get the UI.** Our
+Messages design, our orb, our roster card, our cards — none of that has a
+counterpart here to copy. That work stays ours, which is the right outcome
+anyway, because the founder designed it.
+
+Also absent by our choice: `research-archives/`, the signed installers, left
+behind on purpose. `NOTICE.md` and `PROVENANCE.md` in the vendored tree still
+describe them as present. They are not present here.
+
+## The five things that answer a question we actually have
+
+### 1. The box, and it is a remote sandbox by default
+
+`source/shared/box-runtime.ts`, read in full, is six lines:
+
+```ts
+export type SandBoxRuntime = "remote" | "local-docker";
+export const DEFAULT_SAND_BOX_RUNTIME: SandBoxRuntime = "remote";
+```
+
+`remote` is upstream's. `local-docker` is the reconstructor's addition. So the
+product we were told is "miles ahead" runs its agent's computer in the cloud by
+default — which is the decision `docs/product/box-substrate-read.md` already
+reached independently, and this is the first outside confirmation of it.
+
+`source/host/box/` is seventeen files: capabilities, env, factory, file
+transfer, MCP, monitor layout, remote accessor, shell command, store-backend
+policy, transfer, windows, exec-daemon process, protected-path guard, plus
+`loopback-sand-box.ts` and `shared-desktop-sand-box.ts`.
+
+**`box-remote-accessor.ts` contradicts a decision we already made.** I read its
+first 45 lines. The transport is Connect RPC — `httpVersion: "1.1"`,
+`useBinaryFormat: true`, interceptors, and `ExecClientMessage` /
+`ExecServerMessage` generated from `agent/v1/exec_pb.js`. That is **binary
+protobuf over Connect**, not the NDJSON-over-POST that §9 of
+`agent-computer-plan.md` specifies and that Server is building right now.
+
+This is not a reason to stop Server. NDJSON is a legitimate choice and the
+contract is already written. It *is* a reason to read `box-remote-accessor.ts`
+and `source/packages/agent-exec/remote.ts` properly before that contract
+hardens, because whoever wrote this one had a running product and we do not.
+
+### 2. Routines — a finished answer to the thing maty cannot do
+
+`source/host/automations/` is seven files, and `automation.ts` is the one to
+read. I read its first forty lines and it is not a stub.
+
+A routine is a saved prompt plus a trigger. The trigger is **either** a 5-field
+cron (with `CRON_TZ=` prefixes, `@hourly`/`@daily` shorthands, and
+`@every 30s|5m|2h|1d`) **or** an event listener — Slack, GitHub, Microsoft
+Teams, Linear, Sentry, PagerDuty. Fifty per agent. Twenty runs of history each.
+They are stored as one `automation.json` per routine in a folder **on the box**,
+which the agent can read and grep with its own Shell — and the prompt is
+explicit that it must never reach for `ExternalShell`/`ExternalRead` there,
+because that folder is not on the user's machine.
+
+That last sentence is the file-custody rule from `cards-plan.md`, already
+written down and already enforced in a shipped product.
+
+**This is the gap in our build, exactly.** `CLAUDE.md` records it: the maty
+queue is live, the runner matches its README line for line, and
+`grep -ril maty desktop/src` returns nothing — a finished pipe with nothing
+plugged into the input. This directory is the missing producer, written out.
+
+The prompt writing in it is also the best argument I have seen for what Brief is
+trying to do. It does not say "create routines when appropriate". It says be
+aggressive and proactive, lists the phrasings that should trigger one ("every
+morning", "remind me", "ping me when", "watch this"), then spends four
+paragraphs on a single rule — that weekdays and waking hours are the DEFAULT,
+that `@daily` quietly fires at midnight and `@every 30m` cannot be bounded at
+all, that "check daily" is loose phrasing for "regularly" and not a request for
+round-the-clock coverage, and that leaving the window needs a reason you could
+say out loud. Then it lists the four acceptable reasons.
+
+### 3. Their brief is 69,217 characters
+
+`source/host/runner/system-prompt.ts` is 69,217 characters;
+`system-prompt-assembly.ts` is another 16,163; `sand-agent-profile-prompt.ts`
+2,482. Ours is about 38,000, and until 16 September the engine cut it at 20,000
+because nothing set `bootstrapMaxChars`.
+
+So the "the brief is too long" instinct has a number against it now, from a
+product the founder judged far better than ours. Theirs is nearly twice ours and
+assembled per-turn from composable pieces rather than concatenated whole. That
+is Brief's problem restated with evidence, and it changes the question from *cut
+it* to *assemble it*.
+
+The first thing in that file is a system reminder that plain assistant text is
+never delivered and only a real `SendMessage` tool call reaches the person. Our
+Messages design says the same thing; they enforce it with a reminder appended to
+every user message.
+
+### 4. The reviewer, and it is thirteen files
+
+`source/host/runner/` has `sand-auto-review.ts` plus specialised classifiers for
+automations, browser, cloud agents, computer, shell, subagents, and separate
+files for summaries and tool escalations. Our `direction.md` describes exactly
+this — "the engine's reviewer flags with a reason on the card", review item 68 —
+as a thing we intend. Here it is built, broken down by tool class.
+
+### 5. The tool surface
+
+`source/host/runner/tools/` — 23 files. Named: `send-message-tool.ts` (with its
+own schema and encoding files), `communicate-tool.ts`, `sand-computer-tool.ts`
+and its subagent, `sand-browser-tools.ts` with a driver source and its own
+subagent, `sand-file-transfer-tools.ts`, `sand-agent-management-tools.ts`,
+`sand-subagent-management-tools.ts`, `sand-mcp-management-tools.ts`,
+`mcp-meta-tools.ts`, `sand-permission-request.ts`, `sand-secret-request.ts`,
+`sand-spotlight-tools.ts`, `sand-state-tool.ts`, `sand-reaction-tool.ts`,
+`box-help-tool.ts`, `turn-toolset.ts`.
+
+Note `sand-permission-request.ts` and `sand-secret-request.ts` as separate
+tools — asking for permission and asking for a secret are different acts with
+different shapes. And `sand-reaction-tool.ts`: the agent can react to a message.
+
+## The rest of the map, unread
+
+- `source/host/agents/` — avatar, clone, messaging, profile, workflow
+  enablement, settings file. Our roster card and agent-to-agent work.
+- `source/host/groups/` — group chat, group store, remote room store, `xuser`.
+- `source/host/cloud-agents/` — images, tool, transcript dump.
+- `source/host/agent-isolation/` — worker pool, per-conversation blob store and
+  its GC, transcript mirror offload. How they keep agents from reading each
+  other, which is the audit in `agent-to-agent-audit.md`.
+- `source/host/local-exec/` and `source/local-exec-daemon/` — the half that runs
+  on the person's own Mac, against `source/box-exec-daemon/` which runs in the
+  box. The two-machine model `cards-plan.md` decided on, as code.
+- `source/shared/forever-box.ts`, `box-secrets.ts`, `box-migration.ts`,
+  `local-tool-permission.ts` and `local-tool-permission-machinery.ts`.
+- `source/packages/` — 852 files including `agent-core`, `agent-exec`,
+  `chat-inference`, `prompt-jsx`, `redaction`, `hooks`, `mcp-core`.
+
+`prompt-jsx` is worth a look on name alone: a brief assembled as components.
+
+## What this does not change
+
+The product is still Caisra and the design is still the founder's. Nothing here
+replaces `desktop/`, and the rule in `CLAUDE.md` stands — **`desktop/` is the
+product, not a parts bin**, and now neither is this. This is a reference tree we
+read, not a foundation we move onto. The last time a foundation swap was tried
+it cost two days and ended with "i just wanna go back".
+
+## Measured 19 September, 00:45 UTC: `source/` stands on its own
+
+Two claims I made earlier in this repository were wrong, both stated from
+directory names instead of measurement. They are corrected here, with the
+numbers.
+
+**Wrong claim 1: "the host is wired to Anysphere's cloud ... those seams are
+most of the 471 files."** Measured:
+
+```
+host/ .ts importing cursor-backend or aiserver/v1:   29
+host/ .ts total:                                    471
+```
+
+Six percent, and **all 29 are inside `host/extensions/`**. Every core
+subsystem is clean — `runner/` (52 files), `runner/tools/` (24), `box/` (17),
+`agent-isolation/` (9), `automations/` (7), `agents/` (6), `groups/` (4) all
+import nothing from Anysphere.
+
+The host composes **36 extensions** in one file
+(`host-production-extensions.ts`), each `extension.ts` a pure interface and
+each `production.ts` the backend wiring. Only six extensions have a
+`production.ts` at all: **inference, local-exec, managed-setup, mcp, memory,
+session**. That is the whole surface where a vendor plugs in.
+
+And the seam is proven by someone who is not Anysphere.
+`shared/inference-router.ts`:
+
+```ts
+export const SAND_INFERENCE_PROVIDERS = ["cursor", "claude-code", "codex", "openrouter"] as const;
+```
+
+`inference/extension.ts` is a bare `AgentInferenceOwner` interface with no
+vendor in it. Claidor is a fifth entry in that list, not a rewrite.
+
+**Wrong claim 2: "the tree does not build by itself — it needs the DMG."**
+The DMG dependency is real but belongs to *their packaging pipeline*
+(`scripts/bootstrap-runtime.mjs`, which rebuilds the shipped macOS app). It is
+not a dependency of the source. Measured, in this container:
+
+```
+npm install --ignore-scripts        → ok
+npx tsc --project source/tsconfig.json --noEmit  → exit 0, no errors
+```
+
+No DMG, no bootstrap, no Anysphere binary. `source/tsconfig.json` is
+`"include": ["**/*.ts"]` under `strict`, `noUncheckedIndexedAccess` and
+`exactOptionalPropertyTypes` — a strict config over the whole tree, not a
+lenient one or a narrow include.
+
+**What has NOT been shown:** that it runs. A clean strict typecheck says the
+tree is internally coherent and self-contained. It does not say any of it
+executes, and nobody has executed it. The eight tests under `tests/` were not
+run either.
+
+**Consequence.** Porting `source/host/` into our Electron app is a port, not an
+excavation. The blocker I named does not exist.
+
+## Correction, 19 September 01:05 UTC: there IS a frontend, and it is substantial
+
+**This file said "the renderer was never recovered" and "we get the engine and
+the control plane, we do not get the UI." That is wrong.** I wrote it from the
+top-level README's disclaimer instead of opening the directory. The founder
+asked me to verify rather than assume. Verified:
+
+```
+frontend/src:  119 .tsx   160 .ts   28 .css
+frontend total lines (ts/tsx/css/html):  54,556
+```
+
+| area | lines | files |
+| --- | ---: | ---: |
+| `src/recovered/features/` | 39,391 | 250 |
+| `src/production/` | 7,352 | 26 |
+| `src/recovered/ui/` — the design system | 5,423 | 13 |
+| `src/recovered/runtime/` | 950 | 7 |
+| `src/recovered/contracts/` | 703 | 4 |
+| `src/dev/` | 527 | 3 |
+
+**What the features actually are**, not inferred from names but from the file
+tree: the conversation workspace (transcript, composer, sidebar, chat header,
+rich-text editor, find-in-chat, reply threads, conversation outline, media
+viewer, PDF viewer, spreadsheet viewer, mermaid, math); a ~45-file
+transcript-card system with views for attachment, auto-review approval, cloud
+agent, connector, email draft, link card, listener connect, local-tool
+permission, secret request, Slack draft and widget, plus reactions, an emoji
+picker and threads; the routines UI (~2,300 lines: view, schedule editor,
+trigger schema, run history); the computer shell **including
+`vnc-webview.tsx`**; teach-recording; an org chart with graph, layout and
+inspector; onboarding with a character and scene; settings; a plugins
+marketplace browser; roster; window chrome; and
+`ui/sand-*-primitives` — their design system, 5,423 lines.
+
+**The strongest evidence of completeness is the reconstructor's own gap list.**
+`frontend/src/production/evidence.ts` carries `PRODUCTION_UI_EVIDENCE`: 27
+surfaces, each pinned to a byte offset in the shipped bundle with the exact UI
+strings asserted present, so a test can verify them. Beside it,
+`PRODUCTION_RENDERER_GAPS` — "artifact-backed surfaces whose full interaction
+state is not yet cleanly recovered" — has **exactly one entry**:
+
+```ts
+broadcast: "The shipped command availability explicitly marks broadcast
+            unavailable because it has no current user path."
+```
+
+One gap, and it is a feature that did not work in the original either.
+
+`frontend/src/main.tsx` mounts `ProductionRenderer` and reports 13 live
+surfaces: shell, account, sign-in, conversation, transcript, composer, sidebar,
+agents, settings, plugins, updates, deep-links, desktop-bridge. It records
+`upstreamEntry: false` and `cleanEntrypoint: "frontend/src/main.tsx"`.
+
+**Why the top-level README misleads.** There are two build paths.
+`scripts/clean-build.mjs` exports both. `npm run package` calls
+`buildFidelityReconstructedAsar()`, which keeps the checksum-pinned **original**
+renderer and patches one settings screen into it — that is a fidelity exercise,
+chasing byte-identity with the shipped app. The other path,
+`scripts/renderer-production-build.mjs`, builds `frontend/src/main.tsx` with
+Vite to `dist/renderer` and audits it with `auditRendererClosure` and
+`auditUiProvenance`. **The clean renderer is a first-class supported build, not
+a sketch.** Their default script prefers the original because their goal was
+fidelity. Ours is not, and shipping their renderer chunks would be the wrong
+thing anyway.
+
+## Voice, settled
+
+The founder asked about calling the agent. It is not in 0.18.
+
+- Zero hits across all 2,002 `.ts` files for WebRTC, LiveKit, realtime audio,
+  peer connections, call sessions or audio streaming.
+- `frontend/manifests/component-names.json`, recovered from the shipped
+  renderer, contains exactly one voice string: **"Start voice input"**.
+- The one implementation, `frontend/src/recovered/features/conversation/
+  workspace/voice.tsx`, is 486 lines of MediaRecorder push-to-talk: opus/webm
+  capture, echo cancellation, noise suppression, auto gain, permission and
+  error states, a 5-minute ceiling, 1-second timeslices, feeding a
+  `VoiceTranscriber`.
+- The host side, `electron-main/account/cursor-transcribe.ts`, uploads the clip
+  to Anysphere and returns text. No local model.
+
+So: dictation, well built, no calling. A voice call is new work for us whichever
+foundation we stand on.
+
+## Validation pass, 19 September 01:15 UTC — measured, not assumed
+
+Everything below was run in this container. No DMG, no bootstrap, no Anysphere
+binary, no credentials.
+
+| check | command | result |
+| --- | --- | --- |
+| host + libraries typecheck | `tsc --project source/tsconfig.json --noEmit` | **exit 0**, strict |
+| renderer typecheck | `tsc --project frontend/tsconfig.json --noEmit` | **exit 0**, strict |
+| renderer builds | `vite build --config frontend/vite.config.ts` | **built in 3.14s**, exit 0 |
+| host resolves | `esbuild source/host/main.ts --bundle --platform=node` | **13.1 MB, exit 0** |
+| their test suite | `npm test` | **17 of 18 pass** |
+
+The esbuild result is the one that matters most after the typecheck: it is real
+module resolution across all 471 host files and the 852 under `packages/`, not
+type-level agreement. Every import resolves to a real file. The only warnings
+were `import.meta` complaints caused by my choosing `cjs` output.
+
+**The single failing test is ours.** `research-archives.test.mjs` —
+"preserved 0.18.0 installers match the exact public release inventory" — fails
+`ENOENT` on `research-archives/original/0.18.0/artifacts.json`, the directory we
+deliberately excluded when vendoring. It asserts the presence of the signed
+installers we chose not to carry. Delete the test; we are never carrying them.
+
+### The residual list, which is short and enumerated
+
+`scripts/host-production-activation.mjs` keeps a machine-readable inventory of
+every production seam. I misread it at first and nearly reported the opposite,
+so the correction matters: **`hostProductionBindingInventorySpecs` lists eight
+required bindings, and all eight carry `classification: "recovered-source"` with
+a local `module:` path.** The `artifactAnchors` beside them are byte/line
+references into the shipped bundle used to *prove* the reconstruction has not
+drifted — provenance annotations, not imports, the same discipline the frontend
+README describes for its `@evidence` comments. The eight resolve to
+`box-copy-in.ts`, `box/generated-production.ts`,
+`production-binding-providers.ts` (three of them),
+`runner-context-production-provider.ts`,
+`transcript-mirror/production-provider.ts` and
+`extensions/local-exec/production.ts`. The DMG is needed to *verify* the anchors
+at build time, not to supply any code.
+
+**`mandatoryLocalExecRuntimeBlockers` are both resolved.** The script computes
+them by inspecting the source; I checked each condition directly:
+
+```
+production-executor.ts  new BaseShellCoreExecutor        → present
+production-executor.ts  createDefaultTerminalExecutor    → present (3×)
+production-executor.ts  new LocalBackgroundShellExecutor → present
+shell-stream.ts         MissingShellExecutionBindingError    → 0 occurrences
+background-shell.ts     MissingBackgroundShellBindingError   → 0 occurrences
+```
+
+Both blockers compute to empty. Local shell execution on the person's own
+machine is bound.
+
+**What genuinely remains unrecovered**, from their own declarations:
+
+1. `conditionalRunnerSemanticGaps` — two modules,
+   `runner/sand-auto-review-tool-escalations.ts` and
+   `runner/sand-shell-auto-review-enrichment.ts`: the shell/MCP
+   approval-provider projection is absent.
+2. `toolLocalSemanticMismatches` — one: `runner/tools/tool-input-error.ts`,
+   "tool-local invalid-input error identity is not yet exact".
+3. `unavailableAgentCapabilities` — `pdfTextExtraction` on `externalRead` is
+   fail-closed: "pdf-worker.{js,ts} is absent from both shipped host carriers",
+   so it was never recoverable from the binary at all.
+4. `PRODUCTION_RENDERER_GAPS` — `broadcast`, which the shipped app also marked
+   unavailable.
+
+Four items across a 471-file host and a 279-file renderer.
+
+**Still not shown: that it runs.** `source/host/main.ts` exports
+`startProductionHost` and does not self-start; booting it needs the extension
+ports supplied. Booting it *unmodified* would mean supplying Anysphere
+credentials, which we do not have and should not use. The honest next step is
+not a probe but the port itself: stand it up with Claidor seams in place of the
+six `production.ts` files.

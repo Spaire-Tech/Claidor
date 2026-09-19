@@ -22,16 +22,23 @@ Everything below was counted with `wc -l` on 18 September 2026, not recalled.
 
 Before writing any of these words about this product — *missing, absent, not
 built, nothing behind it, a hole, not yet, needs building, does not exist* —
-run a search across `desktop/src`, `server/polar`, `rakazo/packages` and
-`rakazo/apps`. If the search finds nothing, say what you searched for. If it
-finds something, the answer is a port or a wiring job, not a build.
+run a search across `desktop/src` and `server/polar`. If the search finds
+nothing, say what you searched for. If it finds something, the answer is a port
+or a wiring job, not a build.
 
-`desktop/` is frozen, which means **do not add to it**. It does not mean the
-code in it is gone. It is the opposite: it is a finished, tested parts bin.
+(Until 18 September this rule also named `rakazo/packages` and `rakazo/apps`.
+Those directories do not exist. Searching them silently finds nothing, which is
+exactly the failure this file was written to stop.)
+
+**`desktop/` is the product.** This file said twice that it was "frozen, which
+means **do not add to it**", and called it a parts bin. That was one of the two
+wrong headings the root `CLAUDE.md` now names as having cost days: the founder
+came back to the Mac app on 18 September and `desktop/` is the thing being
+built. Add to it. The code in it is finished and tested; reach for it first.
 
 ---
 
-## The parts bin: `desktop/src`, frozen but portable
+## What is in `desktop/src`, and it is the product
 
 | What | Where | Lines | State |
 |---|---|---|---|
@@ -42,17 +49,20 @@ code in it is gone. It is the opposite: it is a finished, tested parts bin.
 | **Ask-input MCP server** — the pattern behind every ask-first card | `main/libs/askInputMcpServer.ts` | 328 | Works |
 | **Agent browser through Playwright** | `main/libs/agentBrowserPlaywright.ts` | 186 | Written, never run in this tree |
 | **Connections catalogue** — the services, their marks, their reach | `shared/connections/catalog.ts` | 386 | Works |
-| **Chief of Staff brief** | `shared/agent/chiefOfStaff.ts` | 44 | Works; needs the 17 Sept rewrite (item 83) |
+| **Chief of Staff brief** | `shared/agent/chiefOfStaff.ts` | 44 | Works. (This said "needs the 17 Sept rewrite (item 83)". `review.md` has no item 83 — it ends at 81. The rewrite was for the Rakazo topology, which is gone.) |
 | **The 23 strongs** and the roster | `shared/staffing/strongs.ts`, `roster.ts` | — | Works |
-| **The 25 faces** | `shared/agent/avatars.ts` | 134 | Ported to `rakazo/apps/caisra/src/Blob.tsx` |
+| **The 25 faces** | `shared/agent/avatars.ts` | 134 | Works. (The Rakazo port it named is deleted.) |
 | **The artifacts prompt** | `main/libs/artifactsPrompt.ts` | 50 | Works |
 | **The whole design** | `src/renderer/design/` | 8,334 tsx | The source of truth for every screen |
 
-## Was ported into `rakazo/`, and is now archived
+## Was ported into `rakazo/`, and is now deleted
 
-**Archived 18 September 2026.** None of the rows below are in the working tree.
-`rakazo/` is the complete fork and nothing else. They are in this branch's
-history at commit `4118ac0f` — `git show 4118ac0f:<path>` reads any of them.
+**Deleted 18 September 2026, and `rakazo/` with it.** None of the rows below are
+in the working tree, and neither is the directory that held them. (This section
+said "`rakazo/` is the complete fork and nothing else", which was true for part
+of one day and is not true now — the whole subtree was removed.) They are in this
+branch's history at commit `4118ac0f` — `git show 4118ac0f:<path>` reads any of
+them.
 
 | What | Where, at `4118ac0f` |
 |---|---|
@@ -65,8 +75,7 @@ history at commit `4118ac0f` — `git show 4118ac0f:<path>` reads any of them.
 | The live thread reducer | `rakazo/packages/core/src/caisra-live.ts` |
 | Every screen | `rakazo/apps/caisra/src/` |
 
-The parts bin above it is untouched: `desktop/src` is still there, still
-frozen, still the place to reach for.
+`desktop/src` is untouched and is the place to reach for.
 
 ## The server, live right now
 
@@ -79,18 +88,23 @@ See the root `CLAUDE.md` for the detail.
 
 ## What genuinely is not built
 
-Stated only because each was searched for and not found:
+**Rewritten 18 September.** The three entries that stood here were all written
+against the Rakazo tree, and two of them described work that only existed
+because Caisra had been moved off the Mac app. Both are moot: there is no
+`rakazo/apps/desktop` to register channels on, and no `rakazo/apps/caisra/src/live/`
+to point at a server. `desktop/` is the shell, and it runs.
 
-Written 18 September, before the archive. All three are now moot in the same
-way: there is no Caisra app in the tree to build them into.
+What survives the move, searched for and not found in `desktop/src`:
 
-- **A Caisra desktop shell.** `rakazo/apps/desktop` is the fork's Electron app
-  and has `main.ts`, `ipcMain` and a preload, but nothing of ours is registered
-  on it. This was the one thing standing between the onboarding Mac tasks and
-  working again: move the three files in, register the channels, pass the
-  bridge. A port, not a build.
-- **Caisra's screens on live data.** At `4118ac0f`,
-  `rakazo/apps/caisra/src/live/` existed and was typed against their contract;
-  `main.tsx` still rendered fixtures. Nothing ever ran against a live server.
-- **Voice output in Caisra.** The server serves text-to-speech at
-  `/api/proxy/v1/audio/speech`; nothing of ours ever called it.
+- **Voice output.** The server serves text-to-speech at
+  `/api/proxy/v1/audio/speech` (`server/polar/desktop/endpoints.py:1046`).
+  `grep -rn "audio/speech" desktop/src` returns nothing. The route is live and
+  metered; the app has never called it. A wiring job.
+
+And one thing that is built, which this file previously implied was not:
+
+- **Speech recognition is wired.** `useDictation.ts` → `window.electron.speech`
+  → `ipcHandlers/speech/handlers.ts` → `whisperServer.ts`, registered at
+  `main.ts:304`. It runs on the Mac and never asks the server. The dead NetEase
+  route (`/api/asr/realtime/sessions`) is reached only from the upstream cowork
+  voice input, which is a different surface.
