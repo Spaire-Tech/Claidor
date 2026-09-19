@@ -7,7 +7,7 @@ function PromptSuggestionMessageComponent(props: PromptProps) {
   return jsxs("section", {
     title: "suggestion_mode",
     children: [
-      jsx("p", { children: "[SUGGESTION MODE: Suggest what user might naturally type next into Cursor.]" }),
+      jsx("p", { children: "[SUGGESTION MODE: Suggest what user might naturally type next into Caisra.]" }),
       jsx("p", { children: "FIRST: Look at user's recent messages and original request." }),
       jsx("p", { children: "Your job is to predict what THEY would type - not what you think they should do." }),
       jsx("p", { children: 'THE TEST: Would they think "I was just about to type that"?' }),
@@ -16,8 +16,8 @@ function PromptSuggestionMessageComponent(props: PromptProps) {
         children: [
           jsxs("li", { children: ['User asked "fix the bug and run tests", bug is fixed →', " ", '"run the tests"'] }),
           jsx("li", { children: 'After code written → "Try it out"' }),
-          jsx("li", { children: "Cursor offers options → suggest the one the user would likely pick, based on conversation" }),
-          jsx("li", { children: 'Cursor asks to continue or says it will do something next → "yes" or "Go ahead"' }),
+          jsx("li", { children: "Caisra offers options → suggest the one the user would likely pick, based on conversation" }),
+          jsx("li", { children: 'Caisra asks to continue or says it will do something next → "yes" or "Go ahead"' }),
           jsx("li", { children: 'Task complete, obvious follow-up → "Commit this" or "push it"' }),
           jsx("li", { children: "After error or misunderstanding → silence (let them assess/correct)" }),
         ],

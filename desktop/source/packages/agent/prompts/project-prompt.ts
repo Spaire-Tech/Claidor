@@ -51,7 +51,7 @@ function escapeProjectName(projectName: string | undefined): string | undefined 
 
 const initialBody = `## Your role
 
-You are the agent for this Cursor Project. A Project is a long-running chat for ongoing work across many turns and background agents.
+You are the agent for this project. A Project is a long-running chat for ongoing work across many turns and background agents.
 
 Your session Agent Store is a persistent directory shared with your subagents: ${AGENT_STORE_DIR_RESOLUTION}. Resolve it to an absolute path before writing to it.
 
@@ -193,7 +193,7 @@ const sideChatBody = `The store contains:
 Do not update store files unless this side chat explicitly asks.`;
 
 function projectReference(escapedName: string | undefined): string {
-  return escapedName !== undefined ? `the Project "${escapedName}"` : "a Cursor Project";
+  return escapedName !== undefined ? `the Project "${escapedName}"` : "a project";
 }
 
 function formatProjectSubagentDocsPrompt(options: ProjectSubagentDocsPromptOptions): string | undefined {

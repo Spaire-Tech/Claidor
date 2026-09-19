@@ -16,9 +16,9 @@ export const ROUTER_PROVIDER_PERSISTENCE_KEY = "settings.router-provider.v1";
 export const ROUTER_PROVIDERS: readonly RouterProvider[] = [
   {
     id: "cursor",
-    label: "Cursor",
-    description: "Use your signed-in Cursor account and its hosted agent models.",
-    usageDescription: "Included and on-demand usage from your Cursor account.",
+    label: "Claidor",
+    description: "Use your signed-in Claidor account and its hosted agent models.",
+    usageDescription: "Included and on-demand usage from your Claidor account.",
     usageSource: "cursor"
   },
   {

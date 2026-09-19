@@ -259,6 +259,14 @@ Youdao or OpenClaw, and the MCP servers the app registers are Caisra's.
 `docs/product/direction.md` §0 lists what keeps an old name as an
 internal identifier, and why.
 
+**Corrected 19 September 2026 — Phase 5.** The same rule now covers
+Cursor, Grok Bot and Anysphere. Settings, sign-in errors and the agent's
+brief say Claidor and Caisra. Internal identifiers stay (`cursor`
+provider id, `Cursor*` types, `AnysphereAgent`, IPC). The pinned 0.18.0
+renderer still says Grok Bot in onboarding and About; that is the
+shipped bytes, not a string we edit except through the Settings patch.
+Measured in `docs/product/name-measured.md`.
+
 **GPT models reason with tools, on `/v1/responses`.** OpenAI refuses
 `reasoning_effort` together with function tools on
 `/v1/chat/completions`, so on that wire the proxy sends

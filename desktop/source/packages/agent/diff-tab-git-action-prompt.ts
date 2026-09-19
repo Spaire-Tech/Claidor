@@ -31,7 +31,7 @@ function isNonEmptyString(value: string | undefined): value is string {
   return value !== undefined && value !== "";
 }
 
-const DIFF_TAB_CREATE_PR_FORGE_INSTRUCTION = "- Create the pull request with `gh pr create` (GitHub) or `origin pr create` (Cursor Origin — Cursor's PR host, not the git remote named `origin`). Prefer those over `gt`. If you use `gt`, you MUST pass `--github` or `--origin` for the intended host. If this conversation already includes preferred-host / create-command guidance, follow that instead.";
+const DIFF_TAB_CREATE_PR_FORGE_INSTRUCTION = "- Create the pull request with `gh pr create` (GitHub) or `origin pr create` (Origin — a PR host, not the git remote named `origin`). Prefer those over `gt`. If you use `gt`, you MUST pass `--github` or `--origin` for the intended host. If this conversation already includes preferred-host / create-command guidance, follow that instead.";
 
 function isDiffTabGitActionReason(simulatedMsgReason: SimulatedMsgReasonValue): boolean {
   return simulatedMsgReason === SimulatedMsgReason.DIFF_TAB_COMMIT ||

@@ -55,6 +55,10 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(rendererPatch, /desktop\.agent\.setBoxRuntime\(r\)/);
   assert.match(rendererPatch, /role:"switch"/);
   assert.match(rendererPatch, /Use local Docker VM/);
+  assert.match(rendererPatch, /label:"Claidor"/);
+  assert.match(rendererPatch, /Use your signed-in Claidor account\./);
+  assert.doesNotMatch(rendererPatch, /Grok Bot/);
+  assert.doesNotMatch(rendererPatch, /label:"Cursor"/);
   assert.match(rendererPatch, /onValueChange:l=>\{if\(l!==null\)void e\(l\)\}/);
   assert.match(rendererPatch, /desktop\.secrets\.upsert/);
   assert.doesNotMatch(rendererPatch, /settings\.router-provider\.v1/);
