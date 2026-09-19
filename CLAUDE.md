@@ -359,6 +359,14 @@ every generate call is gone and the agent is told the tool exists, but
 no `/api/media` route. That is a server build, not a switch;
 `docs/product/images-state.md` has the measurement and the two options.
 
+**Corrected 19 September 2026.** The host's generate-image tool never called
+those NetEase `/api/media` paths. It now posts to
+`POST /desktop/api/proxy/v1/images/generations`, which Claidor serves
+(`server/polar/desktop/capabilities.py`). Web search and transcription have
+matching doors; web fetch runs on the machine. Measured in
+`docs/product/capabilities-measured.md`. The `/api/media` 404 is still true
+and still unused.
+
 ## Before you say anything is missing (18 September 2026)
 
 **`docs/product/what-exists.md` is an inventory of what is already built and
