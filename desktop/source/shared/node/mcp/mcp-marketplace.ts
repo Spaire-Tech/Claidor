@@ -29,6 +29,8 @@ export interface SandMarketplacePlugin {
   skills: Array<{ name: string; description: string; sourceUrl?: string }>;
   variableFields: PluginVariableField[];
   composioToolkit?: string;
+  vendorMcpUrl?: string;
+  comingSoon?: true;
   marketplace?: {
     name: string;
     displayName: string;
@@ -182,8 +184,8 @@ export async function fetchMarketplaceMcpPlugins(
   plugins: SandMarketplacePlugin[];
   includesPrivateMarketplaces: boolean;
 }> {
-  const { fetchComposioMarketplacePlugins } = await import("../composio/marketplace.js");
-  return await fetchComposioMarketplacePlugins(getAccessToken);
+  const { fetchVendorMarketplacePlugins } = await import("../vendor-mcp/marketplace.js");
+  return await fetchVendorMarketplacePlugins(getAccessToken);
 }
 const parseConfigText = (
   text: string,

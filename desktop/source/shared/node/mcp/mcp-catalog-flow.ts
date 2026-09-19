@@ -1,4 +1,4 @@
-import { fetchComposioMarketplacePlugins } from "../composio/marketplace.js";
+import { fetchVendorMarketplacePlugins } from "../vendor-mcp/marketplace.js";
 import { CATALOG_CACHE_TTL_MS } from "./mcp-catalog-cache.js";
 import { SandMcpConfigError } from "./mcp-config-error.js";
 import { findMissingRequiredCatalogFields } from "./mcp-plugin-variables.js";
@@ -30,6 +30,7 @@ export class SandMcpCatalogFlow {
       resolveLogo?(url: string): Promise<unknown>;
       now?: () => number;
       connectComposioToolkit?(toolkit: string): Promise<unknown>;
+      connectVendorMcp?(plugin: { pluginId: string; displayName: string; vendorMcpUrl: string }): Promise<unknown>;
     },
   ) {}
   async getCatalog(
@@ -37,7 +38,7 @@ export class SandMcpCatalogFlow {
     options?: { forceRefresh?: boolean },
   ): Promise<unknown[]> {
     const bestEffort = this.core.bestEffortToken ?? bestEffortCatalogToken;
-    const fetchMarketplace = this.core.fetchMarketplace ?? fetchComposioMarketplacePlugins;
+    const fetchMarketplace = this.core.fetchMarketplace ?? fetchVendorMarketplacePlugins;
     const authenticated =
         (await bestEffort(getAccessToken)) != null,
       cached = this.viewsCache,
@@ -66,7 +67,10 @@ export class SandMcpCatalogFlow {
         this.catalog.set(plugin.pluginId, plugin);
         return marketplacePluginToView(plugin);
       })
-      .sort((a, b) => a.displayName.localeCompare(b.displayName));
+      .sort((a, b) => {
+        const soon = Number(a.comingSoon === true) - Number(b.comingSoon === true);
+        return soon !== 0 ? soon : a.displayName.localeCompare(b.displayName);
+      });
     this.viewsCache = {
       views,
       atMs: this.core.now?.() ?? Date.now(),
@@ -124,6 +128,24 @@ export class SandMcpCatalogFlow {
             item.hasTeamConfiguredVariables === true,
         );
       } catch {}
+    if (plugin.comingSoon === true) {
+      throw new SandMcpConfigError(
+        `${plugin.displayName} is coming soon.`,
+      );
+    }
+    if (plugin.vendorMcpUrl != null) {
+      if (this.core.connectVendorMcp == null) {
+        throw new SandMcpConfigError(
+          `Connecting "${plugin.displayName}" needs the desktop Plugins overlay.`,
+        );
+      }
+      await this.core.connectVendorMcp({
+        pluginId: plugin.pluginId,
+        displayName: plugin.displayName,
+        vendorMcpUrl: plugin.vendorMcpUrl,
+      });
+      return this.core.reloadServers();
+    }
     if (plugin.composioToolkit != null) {
       if (this.core.connectComposioToolkit == null) {
         throw new SandMcpConfigError(

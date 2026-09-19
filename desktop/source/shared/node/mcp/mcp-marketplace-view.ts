@@ -17,6 +17,8 @@ export function marketplacePluginToView(plugin: SandMarketplacePlugin) {
     ...(plugin.marketplace == null ? {} : { marketplace: plugin.marketplace }),
     ...(plugin.publisher == null ? {} : { publisher: plugin.publisher }),
     ...(plugin.composioToolkit == null ? {} : { composioToolkit: plugin.composioToolkit }),
+    ...(plugin.vendorMcpUrl == null ? {} : { vendorMcpUrl: plugin.vendorMcpUrl }),
+    ...(plugin.comingSoon === true ? { comingSoon: true } : {}),
   };
 }
 

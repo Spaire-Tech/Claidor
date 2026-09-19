@@ -101,6 +101,7 @@ export class SandMcpManager {
       reloadServers: () => this.reloadServers(),
       ...(options.fetchMarketplace == null ? {} : { fetchMarketplace: options.fetchMarketplace }),
       ...(options.connectComposioToolkit == null ? {} : { connectComposioToolkit: options.connectComposioToolkit }),
+      ...(options.connectVendorMcp == null ? {} : { connectVendorMcp: options.connectVendorMcp }),
     });
     this.slots = new SandMcpAccountSlotLifecycle({
       backendMcpExec: this.backendMcpExec,

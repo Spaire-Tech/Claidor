@@ -16,9 +16,11 @@ import {
 import { pinMcpDiagnosticsReporter } from "../../shared/node/mcp/mcp-diagnostics.js";
 import { SandMcpManager } from "../../shared/node/mcp/mcp-manager.js";
 import { createMcpToolsDiscovery } from "../../shared/node/mcp/tools-discovery.js";
-import { isComposioPluginId } from "../../shared/node/composio/catalog.js";
-import { connectThroughComposio, createComposioApi, toolkitForPluginId } from "../../shared/node/composio/composio-api.js";
-import { fetchComposioEffectivePlugins, fetchComposioMarketplacePlugins } from "../../shared/node/composio/marketplace.js";
+import { getSandRootDir } from "../../host/host-paths.js";
+import { isVendorMcpPluginId } from "../../shared/node/vendor-mcp/catalog.js";
+import { loadVendorMcpInstalls, removeVendorMcpInstall, upsertVendorMcpInstall } from "../../shared/node/vendor-mcp/installs.js";
+import { fetchVendorEffectivePlugins, fetchVendorMarketplacePlugins } from "../../shared/node/vendor-mcp/marketplace.js";
+import { connectThroughVendorMcp } from "../../shared/node/vendor-mcp/oauth.js";
 
 export interface DesktopMcpManagerFacade {
   listServers(): Promise<unknown>;
@@ -87,33 +89,29 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
     getMachineId: accountMcpDeps.getMachineId,
     createClient: generatedBackendClient,
   });
-  const composio = createComposioApi({
-    getAccessToken: async () => await accountMcpDeps.getAccessToken(),
-    backendUrl: getSandInferenceBackendUrl(),
-  });
+  const vendorRoot = () => getSandRootDir();
   const manager = new SandMcpManager({
     settingsStore: options.settingsStore,
     onAccountScopeApplied: options.onAccountScopeApplied,
     accountServersProvider: () => fetchAccountMcpServers(accountMcpDeps),
     accountMcpWriter: createAccountMcpWriter(accountMcpDeps),
-    effectivePluginsProvider: () => fetchComposioEffectivePlugins(composio),
+    effectivePluginsProvider: () => fetchVendorEffectivePlugins(new Set(loadVendorMcpInstalls(vendorRoot()).map((item) => item.id))),
     getMachineId: accountMcpDeps.getMachineId,
     backendMcpExec,
     onConnectorAuth: options.onConnectorAuth,
-    fetchMarketplace: fetchComposioMarketplacePlugins,
-    connectComposioToolkit: async (toolkit: string) => {
-      const outcome = await connectThroughComposio(toolkit, {
-        api: composio,
+    fetchMarketplace: fetchVendorMarketplacePlugins,
+    connectVendorMcp: async (plugin: { pluginId: string; displayName: string; vendorMcpUrl: string }) => {
+      upsertVendorMcpInstall(vendorRoot(), { id: plugin.pluginId, url: plugin.vendorMcpUrl, connected: false });
+      const outcome = await connectThroughVendorMcp({
+        pluginId: plugin.pluginId,
+        mcpUrl: plugin.vendorMcpUrl,
         ...(options.openExternal == null ? {} : { openExternal: options.openExternal }),
       });
-      if (outcome === "connected") options.onConnectorAuth({ toolkit, status: "connected" });
+      if (outcome === "started") options.onConnectorAuth({ pluginId: plugin.pluginId, status: "started" });
     },
     uninstallComposioPlugin: async (pluginId: string) => {
-      if (!isComposioPluginId(pluginId) && toolkitForPluginId(pluginId) == null) return false;
-      const toolkit = toolkitForPluginId(pluginId);
-      if (toolkit == null) return false;
-      await composio.disconnect(toolkit);
-      return true;
+      if (!isVendorMcpPluginId(pluginId)) return false;
+      return removeVendorMcpInstall(vendorRoot(), pluginId);
     },
   });
   const discovery = createMcpToolsDiscovery({

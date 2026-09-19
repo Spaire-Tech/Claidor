@@ -39,6 +39,7 @@ export interface McpPluginSummary {
   readonly installMode?: string;
   readonly connectorCount: number;
   readonly skills: readonly { readonly name: string; readonly description: string }[];
+  readonly comingSoon?: boolean;
 }
 
 export interface McpPluginDetail extends McpPluginSummary {
@@ -190,6 +191,7 @@ export function describeInstalledList(servers: readonly McpInstalledServer[]): s
 }
 
 function describePluginInstallState(plugin: McpPluginSummary): string {
+  if (plugin.comingSoon === true) return "coming-soon";
   if (!plugin.isInstalled) return "installed=no";
   return plugin.installMode != null ? `installed=yes (${plugin.installMode})` : "installed=yes";
 }
@@ -232,6 +234,7 @@ export function describePluginDetail(detail: McpPluginDetail): string {
     })].join("\n"));
   }
   if (detail.servers.length > 0) sections.push(["Its installed MCP server(s) — statuses live in GetMcpServerStatus:", ...detail.servers.map(describeInstalled)].join("\n"));
+  if (detail.comingSoon === true) sections.push("Coming soon — it cannot be connected yet.");
   if (detail.isInstalled && detail.installMode === "team-required") sections.push("Required by the user's team — it cannot be uninstalled.");
   return sections.join("\n");
 }
@@ -332,6 +335,7 @@ export function createMcpManagementTools(
       execute: guardMutation(async (_ctx, args: z.infer<typeof installPluginParameters>, deps) => {
         const before = await deps.getPlugin(args.plugin_id);
         if (before == null) return `No plugin with id "${args.plugin_id}".`;
+        if (before.comingSoon === true) return `${before.displayName} is coming soon and cannot be connected yet.`;
         await deps.install({ id: args.plugin_id, ...(args.values == null ? {} : { values: args.values }) });
         const after = await deps.getPlugin(args.plugin_id);
         if (after == null || !after.isInstalled) return `The install request for "${before.displayName}" completed, but the plugin does not read as installed yet.`;

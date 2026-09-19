@@ -64,5 +64,6 @@ test("kickstart no longer runs the full host loop for a first hello", async () =
   assert.match(lifecycle, /isProviderRateLimitError\(error\)\) return;/);
   assert.doesNotMatch(lifecycle, /SAND_ONBOARDING_KICKSTART_PROMPT/);
   assert.match(providers, /DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-5\.6-luna"/);
+  assert.match(providers, /withCheapRateLimitFallback\(start\(requested\), \(\) => start\(cheap\)\)/);
   assert.match(retry, /isProviderRateLimitError\(error\)\) return false/);
 });
