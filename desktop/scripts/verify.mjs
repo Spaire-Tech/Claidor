@@ -16,6 +16,7 @@ import { prepareReconstructedElectronMainArtifactFallback } from "./lib/build-as
 import { resolvePackagedAppArtifacts } from "./lib/packaged-app.mjs";
 import { capture, run } from "./lib/process.mjs";
 import { SYSTEM_TOOLS } from "./lib/system-tools.mjs";
+import { RENDERER_ROOT, ROUTER_EXTENSION_PATH, readRouterExtension, reconcileRendererInventory } from "./lib/renderer-inventory.mjs";
 
 function readAppArgument(argv) {
   const index = argv.indexOf("--app");
@@ -177,13 +178,20 @@ if (rendererComposition?.mode === "clean-source") {
   if (rendererProvenance.schemaVersion !== 1 || rendererProvenance.mode !== rendererComposition.mode || rendererProvenance.upstreamAppAsarSha256 !== upstreamAsarSha256) throw new Error("Packaged artifact renderer provenance has the wrong identity.");
   if (acceptance?.verdict !== "verified" || acceptance.provenance !== rendererProvenancePath || acceptance.fileCount !== rendererProvenance.fileCount || acceptance.inventorySha256 !== rendererProvenance.inventorySha256) throw new Error("Packaged artifact renderer acceptance does not match its provenance.");
   if (!Array.isArray(rendererProvenance.files) || rendererProvenance.files.length !== rendererProvenance.fileCount) throw new Error("Packaged artifact renderer provenance has an invalid file inventory.");
-  const declaredPaths = new Set();
-  for (const file of rendererProvenance.files) {
-    if (typeof file.path !== "string" || declaredPaths.has(file.path)) throw new Error("Packaged artifact renderer provenance contains a missing or duplicate path.");
-    declaredPaths.add(file.path);
-    const bytes = extractFile(builtAsar, `dist/renderer/${file.path}`);
-    if (bytes.byteLength !== file.bytes || sha256(bytes) !== file.sha256) throw new Error(`Packaged artifact renderer differs from its checksum inventory: ${file.path}`);
-  }
+  // The pinned inventory is snapshotted from src/app/dist/renderer before the
+  // Settings Router patch rewrites the staged copy, so the two disagree on
+  // exactly the chunks the patch touches. The patch record carries both sides
+  // of every chunk it changed; see scripts/lib/renderer-inventory.mjs.
+  const routerExtension = readRouterExtension(JSON.parse(extractFile(builtAsar, ROUTER_EXTENSION_PATH).toString("utf8")));
+  const { declaredPaths, patchedPaths } = reconcileRendererInventory({
+    files: rendererProvenance.files,
+    patches: routerExtension,
+    packaged: relative => {
+      const bytes = extractFile(builtAsar, `${RENDERER_ROOT}${relative}`);
+      return { bytes: bytes.byteLength, sha256: sha256(bytes) };
+    },
+  });
+  if (patchedPaths.length !== routerExtension.size) throw new Error("Packaged artifact renderer did not receive every recorded router patch.");
   const packagedPaths = rendererListing.filter(entry => entry.startsWith("dist/renderer/")).map(entry => entry.slice("dist/renderer/".length)).filter(Boolean);
   const undeclaredFiles = packagedPaths.filter(candidate => !declaredPaths.has(candidate) && ![...declaredPaths].some(file => file.startsWith(`${candidate}/`)));
   if (undeclaredFiles.length > 0 || [...declaredPaths].some(file => !packagedPaths.includes(file))) throw new Error("Packaged artifact renderer contains undeclared or missing files.");
