@@ -1,9 +1,10 @@
 # Phase 2: the interface
 
-> **Archived 18 September 2026.** The Caisra build this document plans was
-> ended by the founder and removed from the working tree; `rakazo/` is now the
-> complete fork and nothing else. The code is in this branch's history at
-> commit `4118ac0f`. **What was read out of `rakazo/` here — the render matrix,
+> **Archived 18 September 2026, and corrected the same day.** The Caisra build
+> this document plans was ended by the founder and removed from the working tree.
+> The banner used to say "`rakazo/` is now the complete fork and nothing else";
+> that held for part of one day, and `rakazo/` was then deleted outright.
+> **Every path below is a path at commit `4118ac0f`, not a path in the tree.** **What was read out of `rakazo/` here — the render matrix,
 > the block kinds, the routers — is still true of the fork.** What is proposed
 > for `apps/caisra` was not carried through.
 

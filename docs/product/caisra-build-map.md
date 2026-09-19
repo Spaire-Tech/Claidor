@@ -1,9 +1,12 @@
 # The build map: every screen, and the fork module behind it
 
-> **Archived 18 September 2026.** The founder ended the Caisra build the day
-> this was written and asked that the repository keep only the complete fork of
-> Rakazo. The code this document plans is no longer in the working tree; it is
-> in this branch's history at commit `4118ac0f`. **Part 1 — what Rakazo ships —
+> **Archived 18 September 2026, and corrected the same day.** The founder ended
+> the Caisra-on-Rakazo build the day this was written. The banner used to say the
+> repository would "keep only the complete fork of Rakazo" — that held for part of
+> one day; `rakazo/` was then deleted outright and is in history only. **Every
+> `rakazo/...` and `packages/...` path in this document is a path at commit
+> `4118ac0f` (or the subtree merge `34325164`), not a path in the tree.** Read it
+> with `git show`. **Part 1 — what Rakazo ships —
 > is still true and still the reason to read this file. Part 3 is a plan that
 > was never carried out.**
 

@@ -46,7 +46,7 @@ page.on('pageerror', e => problems.push(`pageerror: ${e.message}`));
 page.on('response', r => {
   if (r.status() >= 400) problems.push(`${r.status()}: ${r.url()}`);
 });
-// Nothing the harness draws may call out. OpenUI's chat renderer can
+// Nothing the harness draws may call out. A chat renderer can
 // resolve pictures and send analytics through its cloud when told to;
 // it is not told to, and this proves it every run.
 page.on('request', r => {
@@ -131,7 +131,7 @@ for (const screen of screens) {
     await blockEl.screenshot({ path: `harness/shots/${screen}-block.png` });
     await page.setViewportSize({ width, height });
     console.log(`shot ${screen}-block`);
-    // The face inside the block: the founder keeps ours, OpenUI's
+    // The face inside the block: the founder keeps ours, the library's
     // defaults say Inter, so the shooter says which one drew it.
     const cardFont = await page.evaluate(() => {
       const title = document.querySelector('[data-card-block] h1, [data-card-block] h2, [data-card-block] h3, [data-card-block] [class*="header"]');

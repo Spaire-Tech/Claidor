@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "description": "Default skill configuration for Caisra",
+  "description": "Default skill configuration for Caisra. Document skills (docx/xlsx/pptx/pdf) are on. Image generation is the caisra_image_generate tool, not a skill: seedream/seedance stay off because they need a user-supplied ARK_API_KEY, which this product does not ask for. See docs/product/artifacts-decision.md.",
   "defaults": {
     "docx": {
       "order": 10,
-      "enabled": false
+      "enabled": true
     },
     "web-search": {
       "order": 15,
@@ -12,15 +12,15 @@
     },
     "xlsx": {
       "order": 20,
-      "enabled": false
+      "enabled": true
     },
     "pptx": {
       "order": 30,
-      "enabled": false
+      "enabled": true
     },
     "pdf": {
       "order": 40,
-      "enabled": false
+      "enabled": true
     },
     "remotion": {
       "order": 50,

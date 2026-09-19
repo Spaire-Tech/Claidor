@@ -1,6 +1,3 @@
-import { artifactKindOf } from '../../../shared/artifacts/constants';
-import { normaliseCardProgram } from '../../../shared/cards/aliases';
-import { splitCardSegments } from '../../../shared/cards/fence';
 import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
 import { peelAttachments } from './attachment';
 import { splitReply } from './details';
@@ -8,7 +5,6 @@ import type { KnownFile } from './parts';
 import { verbForTool } from './toolVerbs';
 import {
   type AuthItem,
-  type CardItem,
   type ChoiceItem,
   type ChoiceOutcome,
   Speaker,
@@ -404,60 +400,22 @@ export function toThreadItems(
         if (meta.isStreaming && !meta.isFinal && running) break;
         if (isBlank(message.content)) break;
 
-        // The bulk comes off first, before anything is split into
-        // bubbles. `splitIntoBubbles` breaks on blank lines, so running
-        // it first would tear the fence in half and leave a bubble that
-        // is nothing but a `details` block — which, having no summary in
-        // front of it, is then quite correctly refused and shown raw.
         const sender = {
           ...(group && agentId ? { agentId } : {}),
           ...(group && agentId && options.agentName ? { agentName: options.agentName } : {}),
         };
 
-        // The answer cards come off first: a fenced `openui-lang` block
-        // is a card item where the agent wrote it, and the text on
-        // either side is bubbles as before. A reply with no block is one
-        // text segment, and ids are what they always were.
-        const segments = splitCardSegments(message.content);
-        const single = segments.length === 1 && segments[0].kind === 'text';
-        let bubbleIndex = 0;
-        let cardIndex = 0;
-
-        for (const segment of segments) {
-          if (segment.kind === 'card') {
-            // The near-miss names, corrected before anything reads the
-            // program. A model that learned OpenUI from their public
-            // docs writes `CardHeader` where this library wants
-            // `Header`, and an unknown component takes every sibling
-            // after it down with it, silently (`aliases.ts`).
-            const { program, corrected } = normaliseCardProgram(segment.program);
-            if (corrected.length) {
-              console.log(`[Cards] corrected component names from OpenUI's other chat library: ${corrected.join(', ')}`);
-            }
-            const artifact = artifactKindOf(program);
-            items.push({
-              kind: ThreadItemKind.Card,
-              id: `${message.id}:c${cardIndex}`,
-              program,
-              ...(artifact ? { artifact } : {}),
-              ...sender,
-              at,
-            } satisfies CardItem);
-            cardIndex += 1;
-            continue;
-          }
-
-          // The bulk comes off before anything is split into bubbles.
-          // `splitIntoBubbles` breaks on blank lines, so running it
-          // first would tear the fence in half and leave a bubble that
-          // is nothing but a `details` block — which, having no summary
-          // in front of it, is then quite correctly refused and shown raw.
-          const { summary, details } = splitReply(segment.text);
+        // The bulk comes off before anything is split into bubbles.
+        // `splitIntoBubbles` breaks on blank lines, so running it first
+        // would tear the fence in half and leave a bubble that is
+        // nothing but a `details` block — which, having no summary in
+        // front of it, is then quite correctly refused and shown raw.
+        {
+          const { summary, details } = splitReply(message.content);
           const parts = splitIntoBubbles(summary);
 
           parts.forEach((text, index) => {
-            const id = single && parts.length === 1 ? message.id : `${message.id}:${bubbleIndex}`;
-            bubbleIndex += 1;
+            const id = parts.length === 1 ? message.id : `${message.id}:${index}`;
 
             // The files a reply ends with are cards, not chips: one per
             // file, after whatever was said. A reply that is nothing but

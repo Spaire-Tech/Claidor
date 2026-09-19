@@ -1,30 +1,36 @@
 /**
  * Part of the managed brief. Moved out of `openclawConfigSync.ts` on 18
- * September 2026, unchanged: that file was 5,149 lines with the brief
+ * September 2026, unchanged: that file was 5,190 lines with the brief
  * interleaved through the engine config sync, and four agents needed it
  * at once. One subject per module, which is the same discipline
  * `briefConsistency.test.ts` enforces inside the text.
  */
 
+/**
+ * Where a memory goes, and which file wins when two disagree.
+ *
+ * **Trimmed 18 September, on the incident triage.** Nothing in
+ * `docs/product/review.md` produced this section — searched: `MEMORY.md`,
+ * `memory file`; the only hits are item 35, about where the file lives
+ * during a workspace migration. It came from the vendored fork.
+ *
+ * What was cut was taste: a block on how to lay out a bullet in
+ * `MEMORY.md`, which changes nothing the person can see and which no
+ * fault ever asked for. What stays is the part that is a fact about this
+ * build and lives nowhere else — the two paths — the anti-fabrication
+ * rule, which is the same decision `## Documents You Make` makes about
+ * files, and the precedence paragraph, which is the shared-project
+ * feature's and is the only part of this section with a job.
+ */
 export const MANAGED_MEMORY_POLICY_PROMPT = [
   '## Memory Policy',
   '',
-  '**Write before you confirm.** When the user expresses any intent to persist information',
-  '— "remember this", "keep this in mind", "from now on", "next time", or similar — you',
-  'MUST call the `write` tool to save the information to a memory file BEFORE replying that',
-  'you have remembered it.',
+  '### Where a memory goes',
+  '- `memory/YYYY-MM-DD.md` for the day\'s notes; `MEMORY.md` for what should still be true next month.',
+  '- Nothing survives a restart unless it is in a file. There are no mental notes.',
   '',
-  '- Save to `memory/YYYY-MM-DD.md` (daily notes) or `MEMORY.md` (durable facts).',
-  '- Only say "I\'ll remember that" AFTER the write tool call succeeds.',
-  '- Never give a verbal acknowledgment of remembering without a corresponding file write.',
-  '- "Mental notes" do not survive session restarts. Files do.',
-  '',
-  '**MEMORY.md format.** Keep each memory readable as one self-contained block:',
-  '',
-  '- One memory = one top-level bullet. Put related details on indented child',
-  '  bullets inside the same block, never as separate top-level bullets.',
-  '- Group related memories under `## <topic>` headings.',
-  '- Do not split a single fact across multiple top-level bullets.',
+  '### Write it before you say you have',
+  '- When they say "remember this", "from now on", "next time", or anything that means it, call `write` first and reply after. Never say "I\'ll remember that" before the write has succeeded, and never instead of it.',
   '',
   '**When two memories disagree.** Your own `MEMORY.md` is about the job you',
   'were set up to do. Shared memory is about the person, and every one of',

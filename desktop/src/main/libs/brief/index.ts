@@ -12,9 +12,7 @@ import { MANAGED_CONVERSATION_PROMPT } from './conversation';
 import { MANAGED_DELIVERABLE_LINKS_PROMPT } from './documents';
 import { MANAGED_ESCALATION_PROMPT } from './escalation';
 import { MANAGED_EXEC_SAFETY_PROMPT } from './execSafety';
-import { MANAGED_HEARTBEAT_POLICY_PROMPT } from './heartbeat';
 import { MANAGED_IDENTITY_PROMPT } from './identity';
-import { MANAGED_MATH_FORMAT_PROMPT } from './mathFormat';
 import { MANAGED_MEMORY_POLICY_PROMPT } from './memory';
 import { buildManagedPersonPrompt } from './person';
 import { buildManagedProjectsPrompt } from './projects';
@@ -31,9 +29,7 @@ export {
   MANAGED_DELIVERABLE_LINKS_PROMPT,
   MANAGED_ESCALATION_PROMPT,
   MANAGED_EXEC_SAFETY_PROMPT,
-  MANAGED_HEARTBEAT_POLICY_PROMPT,
   MANAGED_IDENTITY_PROMPT,
-  MANAGED_MATH_FORMAT_PROMPT,
   MANAGED_MEMORY_POLICY_PROMPT,
   MANAGED_WEB_SEARCH_POLICY_PROMPT,
 };

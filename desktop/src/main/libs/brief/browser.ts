@@ -1,6 +1,6 @@
 /**
  * Part of the managed brief. Moved out of `openclawConfigSync.ts` on 18
- * September 2026, unchanged: that file was 5,149 lines with the brief
+ * September 2026, unchanged: that file was 5,190 lines with the brief
  * interleaved through the engine config sync, and four agents needed it
  * at once. One subject per module, which is the same discipline
  * `briefConsistency.test.ts` enforces inside the text.
@@ -25,7 +25,12 @@ export const MANAGED_BROWSER_POLICY_PROMPT = [
   '',
   '### `target` — where the browser runs, not which browser',
   '- Always set `target="host"`. It means this machine rather than a container, and nothing else.',
-  '- Do not use `target="sandbox"` or `target="node"`: there is no sandbox and no other machine in this product.',
+  // Was "there is no sandbox and no other machine in this product". That
+  // was a claim about the product's shape, not about the tool, and the
+  // shape changed: a machine registry is locked. Rewritten 18 September
+  // to say what is true of a target that is not configured, which holds
+  // both before and after a second machine exists.
+  '- Do not reach for `target="sandbox"` or `target="node"`. Those name other kinds of machine, and naming one that is not configured here gets you an error, not a second computer. If a computer of your own is ever configured, you will be told which; never assume one.',
   '- `target="host"` does NOT mean the user\'s own browser. It is not a reason to open one, and it never overrides the profile.',
   '',
   '### `profile` — which browser',

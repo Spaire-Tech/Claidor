@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'vitest';
 
-import { buildManagedArtifactsPrompt } from './artifactsPrompt';
-import { buildManagedCardsPrompt } from './cardsPrompt';
 import { managedBriefSectionsForTest } from './openclawConfigSync';
 import { pruneUpstreamBrief, UPSTREAM_PHRASES_DROPPED, UPSTREAM_SECTIONS_DROPPED } from './upstreamBrief';
 
@@ -37,11 +35,7 @@ import { pruneUpstreamBrief, UPSTREAM_PHRASES_DROPPED, UPSTREAM_SECTIONS_DROPPED
  */
 
 /** The whole managed brief, as an agent reads it. */
-const brief = (): string => [
-  ...managedBriefSectionsForTest(),
-  buildManagedCardsPrompt(),
-  buildManagedArtifactsPrompt(),
-].join('\n\n');
+const brief = (): string => managedBriefSectionsForTest().join('\n\n');
 
 /** The brief split into (heading, body), so a rule can be blamed on a section. */
 function sectionsOf(text: string): { heading: string; body: string }[] {
@@ -84,29 +78,93 @@ const AXES: readonly Axis[] = [
     ],
   },
   {
-    what: 'whether an answer is a card or prose',
-    // OpenUI's generator emits its sub-headings at the same level as our
-    // `## Cards`, so "Rules in this app" is that section's own rules
-    // list, not a second section deciding the same thing.
-    owner: /## Cards|## Rules in this app/,
+    // Renamed 18 September with the artifacts decision: the question is
+    // no longer "card or prose" but "does this shaped answer become a
+    // file the person can keep, or stay a message".
+    what: 'whether a shaped answer is a document or a message',
+    // `sectionsOf` splits on every heading, so a sub-heading of the
+    // owning section reads as a section of its own. Name them, the way
+    // `## Cards|## Rules in this app` did before the artifacts decision:
+    // `### When to make one` is where this section states the rule, not
+    // a second section arguing with it.
+    owner: /## Documents You Make|### When to make one/,
     deciders: [
       /\bprose beats bullets\b/i,
       /\buse bullet lists\b/i,
       /\bis the normal way to answer\b/i,
-      /\buse a block only when\b/i,
-      /\bno block\b/i,
+      /\bmake the file\b/i,
+      /\bthose are messages, not documents\b/i,
     ],
   },
   {
-    what: 'whether to do more than was asked',
-    owner: /## Artifacts|Offer it before they ask/,
+    // Added 18 September, after the founder's Paris itinerary: the agent
+    // acknowledged their answer and ended the turn, and they had to type
+    // "So?" to get the work they had already asked for twice. The rule
+    // that covered it lived under the question *card*, which is a
+    // different path from a typed answer. One section owns it now.
+    what: 'whether an answer from the person continues the work in the same reply',
+    owner: /### When they answer you, that is the work starting/,
+    // Keyed to the decision, never to the heading's own words: a section
+    // that points here quotes the heading, and a pointer is allowed.
     deciders: [
+      /\bthe job is on\b/i,
+      /\brepeating the job back is not doing it\b/i,
+      /\bnever acknowledge and stop\b/i,
+      /\bwhen the answer comes back, do the work\b/i,
+      /\bis not the end of your turn\b/i,
+    ],
+  },
+  {
+    // Added 18 September with the agent-to-agent audit. Grok Bot puts
+    // "never relay the user's unfiltered words" in the contract every
+    // agent reads; ours had it in the Chief of Staff's brief only, where
+    // it reached one agent out of however many the person has.
+    what: 'what may be repeated to another agent',
+    owner: /### When you are one of several/,
+    deciders: [
+      /\bwas said to you\b/i,
+      /\brelay in your own words\b/i,
+      /\bnot yours to read\b/i,
+    ],
+  },
+  {
+    // Re-homed 18 September with the artifacts decision. This axis was
+    // owned by `## Artifacts` and `### Offer it before they ask`, and
+    // both went with OpenUI — so nothing decided it and the axis failed
+    // as undecided, which is the test working. The decision itself did
+    // not go anywhere: making the person a document they did not ask for
+    // is now expected, and `### When to make one` is where that is said.
+    what: 'whether to do more than was asked',
+    owner: /## Documents You Make|### When to make one/,
+    // Keyed to the decision, not to the old wording. "Do the job they
+    // asked for, not the one next to it" stays in the conversation
+    // section and points here, and a pointer is allowed — so none of
+    // these may match it.
+    deciders: [
+      /\bwhen they did not ask, but plainly want one\b/i,
+      /\bdo not ask permission first\b/i,
+      /\bis worth writing up\b/i,
       /\bdo not widen it\b/i,
-      /\bwithout being asked\b/i,
-      // Not a bare /unasked/: "four agents woken unasked" is about
-      // waking other agents, a different subject that happens to share
-      // the word. A decider has to be the decision, not a near-miss.
       /write it up .* without being asked/i,
+    ],
+  },
+  {
+    // Added 18 September, out of the incident triage. `## Web Search`
+    // was restating the escalation order — a URL means `web_fetch`,
+    // discovery means `browser` — 1,200 characters after
+    // `## Where To Look First` had decided it. Both sections were
+    // already inside this test's input and it passed them anyway,
+    // because being read is not the same as being checked. The
+    // restatement is gone; this is what stops it coming back.
+    what: 'where to look for a fact, and in what order',
+    owner: /## Where To Look First/,
+    deciders: [
+      /\bwork down this list\b/i,
+      /\bstop at the first that answers\b/i,
+      // The exact phrasings that were removed from `## Web Search`.
+      /if you (already )?have a specific URL/i,
+      /if you need search discovery/i,
+      /use `?browser`? (instead of|rather than) `?web_fetch`?/i,
     ],
   },
 ];

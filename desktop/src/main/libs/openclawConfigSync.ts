@@ -81,7 +81,6 @@ import {
   buildAgentModelRoleDefaults,
   resolveAgentModelRoleRefs,
 } from './agentModelRoles';
-import { buildManagedArtifactsPrompt } from './artifactsPrompt';
 import type { AskInputMcpStdioLaunch } from './askInputMcpServer';
 import {
   buildManagedAppUiPrompt,
@@ -93,13 +92,10 @@ import {
   MANAGED_DELIVERABLE_LINKS_PROMPT,
   MANAGED_ESCALATION_PROMPT,
   MANAGED_EXEC_SAFETY_PROMPT,
-  MANAGED_HEARTBEAT_POLICY_PROMPT,
   MANAGED_IDENTITY_PROMPT,
-  MANAGED_MATH_FORMAT_PROMPT,
   MANAGED_MEMORY_POLICY_PROMPT,
   MANAGED_WEB_SEARCH_POLICY_PROMPT,
 } from './brief';
-import { buildManagedCardsPrompt } from './cardsPrompt';
 import { CLAUDE_CLI_PROVIDER, CLAUDE_CODE_MODELS, CLAUDE_CODE_STRONG_MODEL, claudeCliModelRef } from './claudeCodeCli';
 import {
   getAllServerModelMetadata,
@@ -2950,8 +2946,23 @@ export class OpenClawConfigSync {
     }
     console.log(`[EngineConfigSync] mcp.servers: ${nativeMcpServerCount} server(s)`);
 
-    // Sync AskUserQuestion plugin config
+    // Sync AskUserQuestion plugin config.
+    //
+    // **When this does not run, the agent has no question card**, and the
+    // brief's own fallback tells it to ask in one plain sentence instead.
+    // A prose question ends the turn, so the person answers into a fresh
+    // turn and the agent has to be told twice — which is exactly the
+    // "it stops instead of continuing" report of 18 September. It used to
+    // fail silently, so nothing in the log said which of the two
+    // conditions was missing. Now it says.
     const askUserCallbackUrl = this.getAskUserCallbackUrl?.();
+    if (!hasAskUserPlugin || !askUserCallbackUrl) {
+      console.warn(
+        '[EngineConfigSync] AskUserQuestion is NOT configured, so agents cannot draw a question card '
+        + `and will ask in prose instead (plugin=${hasAskUserPlugin ? 'found' : 'missing'}, `
+        + `callbackUrl=${askUserCallbackUrl ? 'set' : 'null'}).`,
+      );
+    }
     if (hasAskUserPlugin && askUserCallbackUrl && managedConfig.plugins) {
       const plugins = managedConfig.plugins as Record<string, unknown>;
       const entries = plugins.entries as Record<string, Record<string, unknown>>;
@@ -4118,13 +4129,6 @@ export class OpenClawConfigSync {
       // than one tool, and because a model that reads the tool policies
       // first tends to answer like a tool.
       sections.push(MANAGED_CONVERSATION_PROMPT);
-      // The answer cards, right after the conversation rules they are an
-      // exception to: texts stay texts, and a set of things is a block
-      // between them (`shared/cards/library.ts`).
-      sections.push(buildManagedCardsPrompt());
-      // And the two artifacts, a deck and a report, in OpenUI's own
-      // libraries (`shared/artifacts/`).
-      sections.push(buildManagedArtifactsPrompt());
       sections.push(buildManagedAppUiPrompt(APP_UI_MAP_PATH, WHEN_THINGS_FAIL_PATH));
       sections.push(MANAGED_ESCALATION_PROMPT);
 
@@ -4136,9 +4140,7 @@ export class OpenClawConfigSync {
       sections.push(MANAGED_BROWSER_POLICY_PROMPT);
       sections.push(MANAGED_EXEC_SAFETY_PROMPT);
       sections.push(MANAGED_DELIVERABLE_LINKS_PROMPT);
-      sections.push(MANAGED_MATH_FORMAT_PROMPT);
       sections.push(MANAGED_MEMORY_POLICY_PROMPT);
-      sections.push(MANAGED_HEARTBEAT_POLICY_PROMPT);
       sections.push(buildManagedSkillCreationPrompt(resolveSkillCreationPath()));
 
       // Keep scheduled-task policy after skills so native channel sessions
