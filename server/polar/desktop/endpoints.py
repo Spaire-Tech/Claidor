@@ -25,13 +25,15 @@ never a key.
 
 from __future__ import annotations
 
+import base64
 import functools
 import json
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qsl, quote, urlencode, urlparse, urlunparse
+from uuid import uuid4
 
 import httpx
 import structlog
@@ -57,6 +59,13 @@ from polar.postgres import AsyncSession, get_db_session
 from polar.routing import APIRouter
 
 from .auth import ProxyCaller, bearer_token, get_desktop_session, get_proxy_caller
+from .boxes import (
+    DEFAULT_SCOPE_KEY,
+    BoxNotConfigured,
+    BoxNotFound,
+    BoxUpstreamError,
+    box_service,
+)
 from .composio import forward as composio_forward
 
 # Straight from the price list rather than through `service`, which
@@ -64,9 +73,17 @@ from .composio import forward as composio_forward
 # is one `ruff --fix` away from disappearing, and the failure would be an
 # ImportError at boot.
 from .pricing import (
+    IMAGE_MAX_IMAGES,
+    IMAGE_MODEL,
+    IMAGE_MODEL_ID,
+    IMAGE_QUALITY,
+    IMAGE_SIZE_DEFAULT,
+    IMAGE_USD_PER_IMAGE,
     SPEECH_MAX_CHARACTERS,
     SPEECH_MODEL,
     SPEECH_VOICE,
+    image_billing_units,
+    image_size_offered,
     openai_models_list,
 )
 from .service import (
@@ -1187,6 +1204,851 @@ async def proxy_speech(
         media_type=upstream.headers.get("content-type", "audio/mpeg"),
         headers={"cache-control": "no-store"},
     )
+
+
+# --- images -----------------------------------------------------------------
+#
+# Why these live at `/api/media/...` and not on the proxy.
+#
+# `docs/product/images-state.md` recommended a synchronous
+# `/api/proxy/v1/images/generations` mirroring the speech route, and said
+# serving the shape the app already asks for would mean "more server
+# code… it emulates an upstream API we otherwise do not use". Reading
+# `desktop/src/main/main.ts` changes both halves of that:
+#
+# 1. **The task shape does not require a task.** The app registers
+#    background polling only when the status it got back is not terminal
+#    (`main.ts:6679`). A `generate` that answers `status: "succeeded"`
+#    with the pictures already in it goes straight to
+#    `persistGeneratedImages` (`main.ts:6648`) and nothing is ever
+#    polled. So the whole polling machinery — a task table, a job, a
+#    lease — is not needed to satisfy a caller that expects it.
+#
+# 2. **Nothing needs hosting.** `mediaAssetPersistence.ts:296` decodes a
+#    base64 `data:` URL inline and only reaches for the network on an
+#    `http` one. So OpenAI's `b64_json` goes back as a data URL and is
+#    written to the session's folder without Claidor storing a byte of
+#    it.
+#
+# 3. **This is not a wire we otherwise avoid; it is the one we already
+#    speak.** The split is by caller. `/api/proxy/v1/*` is the *engine's*
+#    door and talks a provider's own language. Everything under `/api/*`
+#    is the *app's* door and talks the app's `{code, data}` envelope —
+#    which is why `_ok` and `_fail` exist at the top of this file. Image
+#    generation is an app call (`handleMediaGenerationCallback`), not an
+#    engine call, so it belongs on the app's door in the app's shape.
+#
+# What this costs, said plainly: a `taskId` that is not a task, and a
+# `tasks/{id}` route that can only answer "there was nothing to poll".
+# The day an image model is genuinely asynchronous, that route grows a
+# store. Until then the debt is one honest 404-ish message.
+
+#: An image request that cannot be served as asked — a size we do not
+#: draw, more pictures than the cap, a reference image. 400-family,
+#: beside `MEMORY_REFUSED`.
+IMAGE_REFUSED = 40010
+
+#: Quota. **Not** `QUOTA_EXHAUSTED_CODE`, and the exception is
+#: deliberate: the app's media handler knows 40203 and 40204 on this path
+#: and nothing else (`main.ts:6569`, `main.ts:6577`). Answering 40200
+#: here would fall through to its generic branch and the person would be
+#: told "Media generation request failed" instead of that their month ran
+#: out. The code the reader understands wins over the code the rest of
+#: this file uses.
+IMAGE_QUOTA_EXHAUSTED = 40204
+
+#: Claidor holds no OpenAI key. Reads as « not available here », never as
+#: a fault of the person's request.
+IMAGE_NOT_CONFIGURED = 50300
+
+#: OpenAI refused, or could not be reached. The provider's own sentence
+#: travels in the message: the lesson of 13 September is that a status
+#: without the sentence costs hours (`_log_upstream_refusal`).
+IMAGE_UPSTREAM_REFUSED = 50200
+
+#: Aspect ratios the app may send instead of a size (`params.aspectRatio`),
+#: mapped onto the three sizes OpenAI's image API actually draws. A ratio
+#: that is not here is not guessed at — `_image_size` answers None and the
+#: caller is told which sizes exist.
+IMAGE_ASPECT_RATIOS: dict[str, str] = {
+    "1:1": "1024x1024",
+    "2:3": "1024x1536",
+    "3:2": "1536x1024",
+    "9:16": "1024x1536",
+    "16:9": "1536x1024",
+}
+
+#: The formats OpenAI will return. `png` unless asked otherwise; the
+#: choice does not move the price.
+IMAGE_OUTPUT_FORMATS = frozenset({"png", "jpeg", "webp"})
+
+#: Parameters that mean « draw from this picture » rather than « draw a
+#: picture ». That is `/v1/images/edits`, a multipart endpoint with its
+#: own price, and it is not served yet. Named here so the refusal can say
+#: which one arrived instead of failing somewhere further in.
+IMAGE_REFERENCE_PARAMS = (
+    "image",
+    "images",
+    "referenceImages",
+    "media",
+    "firstFrame",
+    "lastFrame",
+)
+
+
+def _image_count(params: dict[str, Any]) -> int | str:
+    """How many pictures were asked for, or a sentence saying why that
+    cannot be served. The app sends `n`, and `count` on some paths."""
+    asked = params.get("n")
+    if asked is None:
+        asked = params.get("count")
+    if asked is None:
+        return 1
+    if isinstance(asked, bool) or not isinstance(asked, int | float):
+        return "The number of images must be a whole number."
+    number = int(asked)
+    if number < 1:
+        return "The number of images must be at least one."
+    if number > IMAGE_MAX_IMAGES:
+        # Refused rather than clamped. Drawing three when four were asked
+        # for, and charging for three, is a picture missing from a
+        # document with nothing anywhere saying why.
+        return f"At most {IMAGE_MAX_IMAGES} images can be drawn in one call."
+    return number
+
+
+def _image_size(params: dict[str, Any]) -> str | None:
+    """The size to draw at, or None if the caller named one we do not
+    serve. `size`, then `imageSize`, then `aspectRatio` — the three keys
+    the app fills in (`main.ts:6369`)."""
+    for key in ("size", "imageSize"):
+        value = params.get(key)
+        if isinstance(value, str) and value.strip():
+            return image_size_offered(value)
+    ratio = params.get("aspectRatio")
+    if isinstance(ratio, str) and ratio.strip():
+        return IMAGE_ASPECT_RATIOS.get(ratio.strip())
+    return image_size_offered(None)
+
+
+def _image_output_format(params: dict[str, Any]) -> str:
+    for key in ("outputFormat", "output_format"):
+        value = params.get(key)
+        if isinstance(value, str) and value.strip().lower() in IMAGE_OUTPUT_FORMATS:
+            return value.strip().lower()
+    return "png"
+
+
+@router.get("/api/media/images/models", name="desktop:image_models")
+async def image_models(
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+) -> JSONResponse:
+    """The image menu, which is one model long.
+
+    One model because the founder, 16 September: *"my users should never
+    put a key. everything happens under the hood. not a setting."* The
+    agent decides a picture belongs; Claidor decides what draws it. The
+    list is served at all because the agent's brief allows one `list`
+    call before drawing, and an agent that asks and is answered 404
+    concludes it cannot make pictures.
+
+    Empty when Claidor holds no OpenAI key — « not available here »
+    rather than an error at the moment somebody asks for a picture,
+    which is the same rule `offered_models()` follows.
+    """
+    if not provider_configured(DesktopProvider.openai):
+        return _ok([])
+    return _ok(
+        [
+            {
+                "modelId": IMAGE_MODEL_ID,
+                "displayName": "Caisra images",
+                "capabilities": (
+                    "Draws a picture from a description. "
+                    f"Sizes: {', '.join(sorted(IMAGE_USD_PER_IMAGE))}. "
+                    f"Up to {IMAGE_MAX_IMAGES} images in one call. "
+                    "Drawing from an existing picture is not available."
+                ),
+                "parameterSpec": {
+                    "prompt": {"type": "string", "required": True},
+                    "size": {
+                        "type": "string",
+                        "enum": sorted(IMAGE_USD_PER_IMAGE),
+                        "default": IMAGE_SIZE_DEFAULT,
+                    },
+                    "n": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": IMAGE_MAX_IMAGES,
+                        "default": 1,
+                    },
+                    "outputFormat": {
+                        "type": "string",
+                        "enum": sorted(IMAGE_OUTPUT_FORMATS),
+                        "default": "png",
+                    },
+                },
+            }
+        ]
+    )
+
+
+@router.get("/api/media/videos/models", name="desktop:video_models")
+async def video_models(
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+) -> JSONResponse:
+    """No video models, said in the app's own words rather than by a 404.
+
+    The same tool that makes pictures offers video, so the agent will ask
+    eventually. An empty list reaches it as "No video models available."
+    (`main.ts:6132`); a 404 reaches it as an unparsed failure it may
+    retry. This route exists to make a « no » legible, and for no other
+    reason.
+    """
+    return _ok([])
+
+
+@router.get(
+    "/api/media/images/tasks/{task_id}",
+    name="desktop:image_task",
+)
+async def image_task(
+    task_id: str,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+) -> JSONResponse:
+    """There is no task to poll, and saying so beats inventing one.
+
+    Drawing here is synchronous: `generate` answers `succeeded` with the
+    pictures in it, so the app never registers a poll (`main.ts:6679`)
+    and this route is only reached by an agent following the polling half
+    of its brief out of habit. It is answered with a sentence that ends
+    the loop rather than a 404 the agent may read as a transient fault.
+    """
+    return _fail(
+        IMAGE_REFUSED,
+        "Images are drawn immediately, so there is no task to check. The "
+        "pictures were in the answer to the generate call.",
+    )
+
+
+@router.post(
+    "/api/media/images/generate",
+    name="desktop:image_generate",
+    response_model=None,
+)
+async def image_generate(
+    request: Request,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """Draw a picture, meter it, and hand it back in one answer.
+
+    The speech route is the pattern this follows: one route, the provider
+    call, a usage record, a price in `pricing.py`. It differs from speech
+    in one way worth knowing — speech counts the characters it *sent*
+    because the answer is audio with no usage in it, whereas an image's
+    price is per picture, so what is counted here is what was actually
+    drawn (`credits_for_image`).
+
+    The model asked for is ignored on purpose. There is one, it is
+    Claidor's, and a caller naming another is told which one drew the
+    picture through `modelSelectionReason` — a field the app already
+    prints (`main.ts:6642`) — rather than being refused. A picture the
+    agent can see the provenance of is worth more than a refusal it has
+    to recover from.
+    """
+    raw = await request.body()
+    try:
+        payload = json.loads(raw or b"{}")
+    except ValueError:
+        return _fail(IMAGE_REFUSED, "The body is not JSON.")
+    if not isinstance(payload, dict):
+        return _fail(IMAGE_REFUSED, "The body must be an object.")
+
+    prompt = payload.get("prompt")
+    if not isinstance(prompt, str) or not prompt.strip():
+        return _fail(IMAGE_REFUSED, "There is nothing to draw.")
+
+    params = payload.get("params")
+    if not isinstance(params, dict):
+        params = {}
+
+    present = [name for name in IMAGE_REFERENCE_PARAMS if params.get(name)]
+    if present:
+        # Drawing *from* a picture is `/v1/images/edits`: a different
+        # endpoint, multipart, with its own price. Refused by name rather
+        # than quietly ignored, because an ignored reference image
+        # produces a picture that is wrong in a way the agent cannot see.
+        return _fail(
+            IMAGE_REFUSED,
+            f"Drawing from an existing picture is not available yet "
+            f"({', '.join(present)} was supplied). Describe the picture "
+            f"instead.",
+        )
+
+    count = _image_count(params)
+    if isinstance(count, str):
+        return _fail(IMAGE_REFUSED, count)
+
+    size = _image_size(params)
+    if size is None:
+        return _fail(
+            IMAGE_REFUSED,
+            f"That size is not available. The sizes drawn are "
+            f"{', '.join(sorted(IMAGE_USD_PER_IMAGE))}.",
+        )
+
+    if not provider_configured(DesktopProvider.openai):
+        return _fail(IMAGE_NOT_CONFIGURED, "Image generation is not configured.")
+
+    user = desktop_session.user
+    if await desktop.exhausted(session, user):
+        return _fail(
+            IMAGE_QUOTA_EXHAUSTED,
+            "Monthly credits exhausted. The allowance resets at the start of "
+            "next month.",
+        )
+
+    body = {
+        "model": IMAGE_MODEL_ID,
+        "prompt": prompt,
+        "n": count,
+        "size": size,
+        "quality": IMAGE_QUALITY,
+        "output_format": _image_output_format(params),
+    }
+    url = f"{provider_base_url(DesktopProvider.openai)}/images/generations"
+    headers = {
+        "authorization": f"Bearer {provider_api_key(DesktopProvider.openai)}",
+        "content-type": "application/json",
+    }
+    async with httpx.AsyncClient(timeout=_timeout()) as client:
+        try:
+            upstream = await client.post(url, headers=headers, json=body)
+        except httpx.HTTPError as error:
+            log.warning("desktop.images.upstream_unreachable", error=str(error))
+            return _fail(
+                IMAGE_UPSTREAM_REFUSED, "The drawing service could not be reached."
+            )
+
+    if upstream.status_code != 200:
+        _log_upstream_refusal(IMAGE_MODEL, upstream.status_code, upstream.content)
+        # Nothing was drawn, so nothing is charged and no row is written:
+        # unlike speech, where the provider has already done the work by
+        # the time it answers, a refused image call produced no picture.
+        return _fail(IMAGE_UPSTREAM_REFUSED, _image_refusal_message(upstream.content))
+
+    try:
+        answer = json.loads(upstream.content)
+    except ValueError:
+        answer = None
+    urls = _image_data_urls(answer, _image_output_format(params))
+    if not urls:
+        log.warning(
+            "desktop.images.no_pictures",
+            status=upstream.status_code,
+            body=upstream.content.decode(errors="replace")[:_REFUSAL_LOG_LIMIT],
+        )
+        return _fail(
+            IMAGE_UPSTREAM_REFUSED, "The drawing service returned no pictures."
+        )
+
+    # Metered on what came back, not on what was asked for. A call that
+    # was told to draw four and returned three is charged for three.
+    units = image_billing_units(size, len(urls))
+    recorded = True
+    try:
+        await desktop.record_usage(
+            session,
+            user_id=user.id,
+            session_id=desktop_session.id,
+            model=IMAGE_MODEL,
+            usage=Usage(input_tokens=units),
+            stream=False,
+            upstream_status=upstream.status_code,
+        )
+        await session.flush()
+    except Exception:
+        # A lost usage row must not swallow the picture — OpenAI has
+        # already drawn it and the person has already paid for it, so
+        # handing back a 500 loses them both the picture and the money.
+        #
+        # The rollback is the part that makes that true. `get_db_session`
+        # commits this session when the handler returns, and a session
+        # left in a failed transaction raises there instead — so without
+        # this line the "swallow" the message above forbids is exactly
+        # what would happen, one frame further out.
+        log.exception("desktop.images.usage_not_recorded")
+        recorded = False
+        try:
+            await session.rollback()
+        except Exception:
+            log.exception("desktop.images.rollback_failed")
+
+    # Read after the flush, so the figure the app is handed already has
+    # this call in it. Skipped when nothing was recorded, because the
+    # same session that could not write is unlikely to answer, and a
+    # quota that cannot be read is not worth a failed picture.
+    quota: dict[str, Any] = {}
+    if recorded:
+        try:
+            quota = await desktop.quota(session, user)
+        except Exception:
+            log.exception("desktop.images.quota_not_read")
+    return _ok(
+        {
+            # Not a task: drawing is synchronous here and the pictures are
+            # already in this answer. An id is returned because the app
+            # keys its per-account bookkeeping on one
+            # (`rememberMediaTaskOwnership`), and because a stable handle
+            # costs nothing.
+            "taskId": str(uuid4()),
+            "status": "succeeded",
+            "resultUrls": urls,
+            "model": IMAGE_MODEL_ID,
+            "modelSelectionReason": (
+                "Caisra draws with one model; the app does not ask anyone to "
+                "choose one."
+            ),
+            # Omitted rather than guessed at when it could not be read:
+            # the app prints this number to the person and only prints it
+            # when it is present (`main.ts:6644`).
+            **(
+                {"quotaRemaining": quota["creditsRemaining"]}
+                if "creditsRemaining" in quota
+                else {}
+            ),
+        }
+    )
+
+
+def _image_refusal_message(body: bytes | None) -> str:
+    """OpenAI's own sentence, so the agent is told what is actually
+    wrong. A prompt refused by the safety system is the common case here
+    and the agent can often rewrite it — but only if it is told."""
+    try:
+        parsed = json.loads(body or b"")
+    except ValueError:
+        parsed = None
+    if isinstance(parsed, dict):
+        error = parsed.get("error")
+        if isinstance(error, dict):
+            message = error.get("message")
+            if isinstance(message, str) and message.strip():
+                return message.strip()[:500]
+    return (body or b"").decode(errors="replace").strip()[:500] or (
+        "The drawing service refused the request."
+    )
+
+
+def _image_data_urls(answer: Any, output_format: str) -> list[str]:
+    """OpenAI's answer turned into data URLs the app can write to disk
+    without a second request.
+
+    `mediaAssetPersistence.ts` decodes a base64 data URL inline and
+    sniffs the bytes for the real format, so the media type below only
+    has to be an image type — it is corrected from the bytes on the way
+    to disk. A `url` in the answer is passed through untouched for the
+    same reason: the app fetches an `http` one itself.
+    """
+    if not isinstance(answer, dict):
+        return []
+    rows = answer.get("data")
+    if not isinstance(rows, list):
+        return []
+    media_type = f"image/{'jpeg' if output_format == 'jpeg' else output_format}"
+    urls: list[str] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        encoded = row.get("b64_json")
+        if isinstance(encoded, str) and encoded.strip():
+            urls.append(f"data:{media_type};base64,{encoded.strip()}")
+            continue
+        hosted = row.get("url")
+        if isinstance(hosted, str) and hosted.strip():
+            urls.append(hosted.strip())
+    return urls
+
+
+# --- the computer -----------------------------------------------------------
+#
+# The person's box, brokered. `polar/desktop/boxes.py` holds the whole of
+# the reasoning and the E2B calls; these ten routes are the contract the
+# engine's box plugin was written against
+# (`docs/product/agent-computer-plan.md` §9, and
+# `openclaw-extensions/box/brokerClient.ts`, which is the contract in
+# executable form).
+#
+# **They live under `/api/proxy/box/…` and they are declared here for a
+# reason.** The app reaches this server through its local token proxy,
+# which prefixes `/api/proxy` and injects the account's bearer
+# (`openclawTokenProxy.ts:219`). FastAPI takes the first route that
+# matches, and `/api/proxy/{path:path}` below would swallow every one of
+# these and answer 404 — the same trap the Composio block underneath
+# already documents. Moving these after it silently kills the box.
+#
+# **Nothing here returns a key, and nothing returns an E2B sandbox id.**
+# `boxId` is this server's own row id. The key would bill every box we
+# run; the sandbox id would name a machine to whoever holds it.
+#
+# These answer in **plain JSON, not the app's `{code, data}` envelope**,
+# because their caller is not the app: it is the engine's plugin, whose
+# client reads `response.ok` and the body's own fields
+# (`brokerClient.json`). Two conventions on one server is a cost; a
+# client that cannot read the answer is worse.
+
+#: The computer is not switched on for this server. Reads as « not
+#: available here », never as a fault of the person's request.
+BOX_NOT_CONFIGURED = 503
+
+#: E2B refused or could not be reached, with its own sentence attached.
+BOX_UPSTREAM_REFUSED = 502
+
+#: The allowance is gone. The box is the first thing here that spends it
+#: while nobody is looking, so it is the one refusal a person is most
+#: likely to meet without having just asked for anything.
+BOX_QUOTA_EXHAUSTED = 402
+
+
+def _box_error(status: int, message: str) -> JSONResponse:
+    return JSONResponse({"error": message}, status_code=status)
+
+
+async def _box_json(make: Callable[[], Awaitable[Any]]) -> JSONResponse:
+    """Run one box operation and turn its three failures into the shapes
+    `brokerClient` reads. Written once because every route fails the same
+    way, and a second spelling of « not configured » is a second thing to
+    keep in step."""
+    try:
+        return JSONResponse(await make())
+    except BoxNotConfigured:
+        return _box_error(BOX_NOT_CONFIGURED, "The computer is not switched on here.")
+    except BoxNotFound:
+        # The same answer whether it belongs to nobody or to somebody
+        # else. That is what keeps one account's box invisible to another.
+        return _box_error(404, "No such box.")
+    except BoxUpstreamError as error:
+        return _box_error(BOX_UPSTREAM_REFUSED, error.message)
+
+
+class BoxEnsureBody(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    scopeKey: str = DEFAULT_SCOPE_KEY
+    template: str | None = None
+
+
+class BoxShellBody(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    script: str
+    args: list[str] = Field(default_factory=list)
+    stdinBase64: str | None = None
+
+
+class BoxExecBody(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    command: str
+    workdir: str | None = None
+    env: dict[str, str] = Field(default_factory=dict)
+    pty: bool = False
+    stdinBase64: str | None = None
+
+
+class BoxFileBody(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    path: str
+    contentBase64: str
+
+
+@router.post("/api/proxy/box/sandboxes", name="desktop:box_ensure")
+async def box_ensure(
+    body: BoxEnsureBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """**Ensure, not create.**
+
+    The same account and the same `scopeKey` get the box that is already
+    there rather than a second one, because each accidental extra box is
+    a second bill.
+
+    The allowance is checked **here and in no other box route**: this is
+    the only one that can start the meter. Pausing, describing or killing
+    a box has to keep working when the month has run out — refusing to
+    kill an exhausted account's box would leave it running and billing,
+    which is precisely backwards.
+    """
+    user = desktop_session.user
+    if await desktop.exhausted(session, user):
+        return _box_error(
+            BOX_QUOTA_EXHAUSTED,
+            "Monthly credits exhausted. The computer stays asleep until the "
+            "allowance resets at the start of next month.",
+        )
+    return await _box_json(
+        lambda: _box_state_payload(
+            box_service.ensure(
+                session, user, scope_key=body.scopeKey, template=body.template
+            )
+        )
+    )
+
+
+@router.get("/api/proxy/box/machines", name="desktop:box_machines")
+async def box_machines(
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """The registry. Declared before `/sandboxes/{box_id}` would ever be
+    consulted for it — different prefix, so no clash, but the ordering is
+    kept obvious rather than left to chance."""
+    return await _box_json(
+        lambda: _machines_payload(box_service.machines(session, desktop_session.user))
+    )
+
+
+@router.get("/api/proxy/box/sandboxes/{box_id}", name="desktop:box_describe")
+async def box_describe(
+    box_id: str,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    return await _box_json(
+        lambda: _box_state_payload(
+            box_service.describe(session, desktop_session.user, box_id)
+        )
+    )
+
+
+@router.delete(
+    "/api/proxy/box/sandboxes/{box_id}",
+    name="desktop:box_remove",
+    status_code=204,
+    response_model=None,
+)
+async def box_remove(
+    box_id: str,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> Response:
+    """204, and a 404 is fine — the client treats it as already gone.
+
+    E2B bills by the second, so this really kills the machine rather than
+    forgetting the row: a forgotten row is a machine nobody can now reach
+    to stop.
+    """
+    try:
+        await box_service.remove(session, desktop_session.user, box_id)
+    except BoxNotConfigured:
+        return _box_error(BOX_NOT_CONFIGURED, "The computer is not switched on here.")
+    except BoxNotFound:
+        return Response(status_code=404)
+    except BoxUpstreamError as error:
+        return _box_error(BOX_UPSTREAM_REFUSED, error.message)
+    return Response(status_code=204)
+
+
+@router.post("/api/proxy/box/sandboxes/{box_id}/update", name="desktop:box_update")
+async def box_update(
+    box_id: str,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    return await _box_json(
+        lambda: _box_state_payload(
+            box_service.update(session, desktop_session.user, box_id)
+        )
+    )
+
+
+@router.post("/api/proxy/box/sandboxes/{box_id}/reset", name="desktop:box_reset")
+async def box_reset(
+    box_id: str,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    return await _box_json(
+        lambda: _box_state_payload(
+            box_service.reset(session, desktop_session.user, box_id)
+        )
+    )
+
+
+@router.post("/api/proxy/box/sandboxes/{box_id}/shell", name="desktop:box_shell")
+async def box_shell(
+    box_id: str,
+    body: BoxShellBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """One script, run to completion.
+
+    A non-zero exit comes back **in the body, not as an HTTP error**: the
+    filesystem bridge builds every file operation out of this and decides
+    for itself whether a failure matters (`brokerClient.runShell`,
+    `allowFailure`).
+    """
+    stdin = _decode_base64(body.stdinBase64)
+    if stdin is _BAD_BASE64:
+        return _box_error(400, "stdinBase64 is not base64.")
+    return await _box_json(
+        lambda: box_service.shell(
+            session,
+            desktop_session.user,
+            box_id,
+            script=body.script,
+            args=body.args,
+            stdin=stdin,
+        )
+    )
+
+
+@router.put("/api/proxy/box/sandboxes/{box_id}/file", name="desktop:box_put_file")
+async def box_put_file(
+    box_id: str,
+    body: BoxFileBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """Import: the only way a file from the person's machine gets into
+    the box. A deliberate copy, never ambient."""
+    content = _decode_base64(body.contentBase64)
+    if content is _BAD_BASE64 or content is None:
+        return _box_error(400, "contentBase64 is not base64.")
+    return await _box_json(
+        lambda: _ok_dict(
+            box_service.put_file(
+                session, desktop_session.user, box_id, path=body.path, content=content
+            )
+        )
+    )
+
+
+@router.get("/api/proxy/box/sandboxes/{box_id}/file", name="desktop:box_get_file")
+async def box_get_file(
+    box_id: str,
+    path: str = Query(...),
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """Export: take a file back out of the box."""
+    return await _box_json(
+        lambda: _file_payload(
+            box_service.get_file(session, desktop_session.user, box_id, path=path)
+        )
+    )
+
+
+@router.post(
+    "/api/proxy/box/sandboxes/{box_id}/exec",
+    name="desktop:box_exec",
+    response_model=None,
+)
+async def box_exec(
+    box_id: str,
+    body: BoxExecBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> Response:
+    """The streamed one. NDJSON, one JSON object per line.
+
+    **Every database touch happens here, before the response starts.**
+    `get_db_session` commits the request's session when this function
+    returns — which is the moment the `StreamingResponse` is handed back,
+    long before the body has been streamed — so a write from inside the
+    generator would land in a transaction nothing ever commits and be
+    silently lost. The box would run and the person would be charged
+    nothing, with no error anywhere. `BoxService.prepare_exec` is that
+    rule with a name on it; the model proxy solves the same problem the
+    other way, with a session of its own.
+
+    Frames are then yielded the moment they arrive rather than collected:
+    buffering a three-minute build into three minutes of silence is
+    indistinguishable from a hang, from the agent's side. Killing the
+    command when the client goes away is `exec_frames`'s `finally`,
+    reached when Starlette closes the generator.
+    """
+    try:
+        sandbox = await box_service.prepare_exec(session, desktop_session.user, box_id)
+    except BoxNotConfigured:
+        return _box_failed_stream("The computer is not switched on here.")
+    except BoxNotFound:
+        return _box_failed_stream("No such box.")
+    except BoxUpstreamError as error:
+        return _box_failed_stream(error.message)
+
+    return StreamingResponse(
+        box_service.exec_frames(
+            sandbox,
+            command=body.command,
+            workdir=body.workdir,
+            env=body.env,
+            pty=body.pty,
+        ),
+        status_code=200,
+        media_type="application/x-ndjson",
+        headers={"cache-control": "no-store"},
+    )
+
+
+def _box_failed_stream(message: str) -> StreamingResponse:
+    """A failure the bridge can read, in the shape it is already parsing.
+
+    A command that never started still answers NDJSON rather than a bare
+    status, because by the time the bridge is reading this it is reading
+    a stream. And it still ends in an `exit` frame: a stream that stops
+    without one is treated as a failure on purpose, and leaving the
+    bridge to infer that from a closed socket is how a lie gets told
+    about a command that never ran.
+    """
+    body = (
+        json.dumps({"t": "error", "message": message}, separators=(",", ":")).encode()
+        + b"\n"
+        + b'{"t":"exit","code":1}\n'
+    )
+
+    async def once() -> AsyncIterator[bytes]:
+        yield body
+
+    return StreamingResponse(
+        once(),
+        status_code=200,
+        media_type="application/x-ndjson",
+        headers={"cache-control": "no-store"},
+    )
+
+
+#: A sentinel, because `None` is a legitimate answer for « nothing was
+#: sent » and « that was not base64 » must not read as the same thing.
+_BAD_BASE64 = object()
+
+
+def _decode_base64(raw: str | None) -> Any:
+    if raw is None:
+        return None
+    try:
+        return base64.b64decode(raw, validate=True)
+    except (ValueError, TypeError):
+        return _BAD_BASE64
+
+
+async def _box_state_payload(awaitable: Awaitable[Any]) -> dict[str, Any]:
+    return (await awaitable).payload()
+
+
+async def _machines_payload(
+    awaitable: Awaitable[list[dict[str, Any]]],
+) -> dict[str, Any]:
+    return {"machines": await awaitable}
+
+
+async def _file_payload(awaitable: Awaitable[bytes]) -> dict[str, Any]:
+    return {"contentBase64": base64.b64encode(await awaitable).decode()}
+
+
+async def _ok_dict(awaitable: Awaitable[None]) -> dict[str, Any]:
+    await awaitable
+    return {"ok": True}
 
 
 # Apps through Composio: the app's six calls, forwarded with Claidor's

@@ -1,0 +1,232 @@
+# The box routes, built
+
+19 September 2026. The Server agent's working note, and the other half of
+`docs/product/agent-computer-plan.md` §9 — the half that lives in `server/`.
+
+The Box agent wrote the plugin and said what the server owed. This is what was
+built against that, what was run, and what was **not**.
+
+---
+
+## 1. What is served
+
+All ten routes of §9, at `/api/proxy/box/…` on the desktop router.
+
+| Method | Path | Answers |
+| --- | --- | --- |
+| POST | `/box/sandboxes` | ensure a box for `(account, scopeKey)` |
+| GET | `/box/sandboxes/{boxId}` | the same shape |
+| DELETE | `/box/sandboxes/{boxId}` | 204, and really kills the machine |
+| POST | `/box/sandboxes/{boxId}/shell` | `{stdoutBase64, stderrBase64, exitCode}` |
+| POST | `/box/sandboxes/{boxId}/exec` | streamed NDJSON |
+| PUT | `/box/sandboxes/{boxId}/file` | 200 |
+| GET | `/box/sandboxes/{boxId}/file?path=` | `{contentBase64}` |
+| POST | `/box/sandboxes/{boxId}/update` | the new box |
+| POST | `/box/sandboxes/{boxId}/reset` | the new box |
+| GET | `/box/machines` | `{machines: […]}` |
+
+Plus a `desktop_boxes` table, a migration, and awake-seconds pricing that meters
+into `desktop_usage` beside the models.
+
+## 2. Three things worth knowing before reading the code
+
+**The routes are declared above the `/api/proxy/{path:path}` catch-all, and that
+is load-bearing.** FastAPI takes the first route that matches. Declared below
+it, every single box call answers `{"error": {"message": "/box/… is not
+proxied."}}` — a 404 to a plugin that is asking correctly. The Composio block
+in the same file already carries this warning; the box routes now do too, and
+there is a test (`test_ensure_is_not_eaten_by_the_proxy_catch_all`) whose only
+job is to fail if somebody moves them.
+
+**`boxId` is this server's row id, not E2B's sandbox id.** §9 says the sandbox
+credential must never leave the server; I took the same rule one step further,
+because a sandbox id plus the key is the whole of the authority over somebody's
+computer, and there is no reason the app needs one. A test asserts that no
+answer from any box route contains either.
+
+**These answer plain JSON, not the app's `{code, data}` envelope.** Every other
+route under `/api/` uses the envelope because its caller is the app. This
+caller is the engine's plugin, and `brokerClient.json` reads `response.ok` and
+then the body's own fields. Two conventions on one server is a cost; a client
+that cannot parse the answer is worse.
+
+## 3. Why the `e2b` SDK, and not httpx like everything else
+
+This server calls Anthropic, OpenAI and Composio with `httpx` directly, and
+that was the first instinct here too. It is wrong for this one.
+
+E2B's **control plane** is ordinary REST — I read its OpenAPI document
+(`github.com/e2b-dev/infra`, `spec/openapi.yml`) rather than working from
+memory, which is how I know `POST /v2/sandboxes/{id}/connect` is the modern
+"resume if paused, no-op if running" and that `/resume` is deprecated. But
+**running a command and reading a file do not go there.** They go to `envd`
+inside the sandbox, over Connect-RPC with protobuf framing. Hand-rolling that
+would mean inventing a wire I have no way to test — there is no E2B key in this
+environment — and that is exactly the class of guess that has cost this
+repository days before. So the SDK does the data plane, and the lifecycle calls
+go through it as well rather than splitting the module in half.
+
+The cost is one dependency: `e2b==2.51.0`, which brings `connectrpc`,
+`protobuf-py`, `pyqwest` and `wcmatch`. It is imported **inside** the methods
+that use it, so a provider SDK failing to import cannot stop the server booting.
+
+## 4. The money, which is what makes a box different
+
+Every other thing this server sells costs nothing until somebody sends a
+message. **A box bills for existing.** Three things follow, and they are the
+design rather than details:
+
+- **Awake time is settled in slices**, on every route that touches a box, not
+  once when it stops. A box awake for a week must not arrive as one surprise,
+  and a server that restarts must not lose the week.
+- **`BOX_MAX_SECONDS_PER_SETTLEMENT` caps one settlement at 25 hours.** This is
+  the only price in `pricing.py` multiplied by wall-clock time rather than by
+  something a provider reported, so it is the only one a clock jump, a restored
+  backup or an unset `billed_through` could turn into a bill for a decade of
+  computer. A capped settlement logs loudly, because a truncation nobody sees is
+  a bug nobody finds.
+- **The allowance is checked on `ensure` and on no other box route.** Pausing,
+  describing or killing a box must keep working when the month has run out —
+  refusing to kill an exhausted account's box would leave it running and
+  billing, which is precisely backwards.
+
+The rate comes from `agent-computer-plan.md`'s quoted E2B figures and is
+expressed as **two** constants (per vCPU-hour, per GiB-hour) rather than one
+blended hourly number, so a bigger box re-prices itself without anybody
+remembering to. ⚠️ **I did not read those figures off a price page** — see §6.
+
+## 5. Two bugs this work found, both worth repeating
+
+### The one a test caught
+
+The first version had a plain unique constraint on `(user_id, scope_key)` and
+soft deletion. Those two do not compose: a deleted box's row keeps holding the
+pair forever, so **the next `ensure` after somebody deleted their computer was
+refused by the database** — and deleting and starting again is the obvious
+thing to do after a reset that went badly.
+
+It was found by writing the test first and watching it fail with
+`duplicate key value violates unique constraint`, not by reasoning about it. The
+fix is a partial unique index, `WHERE deleted_at IS NULL`: unique among live
+rows, history kept.
+
+### The one no test could have caught
+
+`/exec` originally did its database work — find the box, settle the awake time,
+mark it running — *inside* the streaming generator.
+
+**That would have lost every exec's metering in production, silently.** A
+streaming handler hands back its `StreamingResponse` immediately, and
+`polar.postgres.get_db_session` commits the request's session at that moment,
+before the body has been streamed. A write from inside the generator lands in a
+fresh transaction that nothing ever commits. The box runs, the person is charged
+nothing, and **no error appears anywhere**.
+
+Every exec test passed anyway, because the test client shares one session and
+holds it open. The bug is invisible to the suite by construction — which is
+exactly why it is worth writing down rather than quietly fixing.
+
+It was found by reading the comment the model proxy already carries in the same
+file — *"The request's own session is committed when the handler returns, before
+a stream has ended"* — and asking whether it applied here too. It did.
+
+The fix is `BoxService.prepare_exec`: every database touch happens in the
+handler, and `exec_frames` is handed a sandbox and **no session**, so it has
+nothing to write with. There is a test asserting that signature, because a
+structural guard is the only kind of test that can defend this.
+
+**The general lesson, which is not about boxes: in this codebase a streaming
+route may not write to the request's session.** The model proxy solves it with a
+second session; this solves it by doing the writes first. Either is fine. Doing
+neither also looks fine, and that is the whole problem.
+
+## 6. What I ran, and what I did not
+
+**Ran, and passing:**
+
+- `ruff format --check .` and `ruff check .` over `server/`. 21 findings, none
+  in any file I touched — **identical 21 with this work stashed**, so
+  pre-existing.
+- `mypy polar/desktop/ polar/models/desktop.py` → **0 errors** in either. The
+  27 it reports elsewhere are pre-existing.
+- `pytest --noconftest` on the three pure pricing files → **57 passed**.
+- `pytest tests/desktop/test_boxes.py` → **44 passed**.
+- Whole `tests/desktop/` → **237 passed, 6 failed**. The same 6 fail with this
+  work stashed: this container has no provider keys, so `offered_models()` is
+  empty and the catalogue tests find nothing.
+- **The migration was applied to a real PostgreSQL 16**, forward and back, and
+  the resulting table inspected — that is where the partial index was confirmed
+  to exist with its predicate.
+
+**NOT run, and none of this should be read as verified:**
+
+- **Nothing here has ever contacted E2B.** There is no E2B key in this
+  environment. Every test replaces `e2b.AsyncSandbox` with a fake. The tests
+  prove the routes exist where the plugin looks, answer in the shapes it parses,
+  scope correctly by account, meter, and obey the NDJSON rules — **they cannot
+  prove the E2B calls themselves are right.**
+- **No sandbox has ever been started, no command has ever run in a box, and no
+  file has ever crossed.** The Box agent's §8 says the same of the plugin side.
+  So the first real attempt is the first time either half meets the other, and
+  it should be expected to fail somewhere in this contract.
+- **The E2B rates were not read off a price page.** They come from
+  `agent-computer-plan.md`, which cites them as E2B's for April–June 2026. Same
+  ⚠️ as `SPEECH_USD_PER_MILLION_CHARACTERS` and `IMAGE_USD_PER_IMAGE`. Nobody
+  should be charged against them until somebody has looked.
+- **`E2B_TEMPLATE_ID` defaults to `"base"` and that is a guess about E2B's stock
+  template name.** It is one setting; if box creation fails, this is the first
+  thing to check.
+- **The suite could not be run the way CI runs it.** `server/CLAUDE.md` requires
+  Python 3.14 *final*; this container has 3.14.0rc2 and no final build is
+  available, so pydantic will not import. The conftest runs above used a local,
+  uncommitted `sitecustomize.py` dropping one `prefer_fwd_module` keyword, plus
+  a local Postgres, Redis and moto standing in for Minio. None of that is in the
+  diff.
+
+## 7. Things in the contract I did not fully honour, said out loud
+
+**`/shell` ignores `stdinBase64`.** The field is in the contract and the client
+sends it; the SDK's non-background `run` has no one-shot stdin. It is logged as
+a warning when one arrives rather than dropped silently, because a script that
+expected input and got none fails in a way nobody can explain. The filesystem
+bridge's operations do not appear to use it — `putFile` sends content in the
+JSON body, not on stdin — so this is very likely unreached, but "very likely
+unreached" is not "handled".
+
+**`/exec` ignores `stdinBase64` too**, for the same reason and with the same
+caveat. §6 already establishes that a command cannot be fed after it starts on
+this road, so the only thing lost is stdin supplied up front.
+
+**Update does not lose installed software.** `brokerClient.ts` documents Update
+as *"installed software does NOT survive"*. It does survive here: an E2B
+snapshot is the whole filesystem, so anything installed into it comes back. Every
+primitive that would drop the software would drop the person's files too, and
+the files are the point. What is built is the useful half — a fresh machine with
+the person's data and logins. **Somebody will read that comment and expect the
+other behaviour**, so it is flagged here rather than left to be discovered.
+
+**There is no machine registry.** `/box/machines` returns the account's boxes
+and nothing else. That is a decision and not a gap: `CLAUDE.md` — *Maties runs on
+the machine, so there is no "which computer", only this computer.* The `kind`
+field is already in the answer for the day that changes.
+
+## 8. What to do first when the E2B key is in Render
+
+In this order, because each answers the next one's question:
+
+1. Set `CLAIDOR_E2B_API_KEY` and `POST /desktop/api/proxy/box/sandboxes` with
+   `{"scopeKey":"shared"}`. A 503 means the key is not being read; a body with a
+   `boxId` means a real sandbox started.
+2. If it fails, **read `desktop.box.upstream_refused` in the log before
+   proposing a cause.** It carries E2B's own sentence. If `E2B_TEMPLATE_ID` is
+   wrong, that is where it will say so.
+3. Then `/shell` with `{"script":"echo","args":["hi"]}`. That exercises the
+   envd path, which is the half the control-plane spec could not tell me about.
+4. Then `/exec` with something slow (`for i in $(seq 5); do echo $i; sleep 1;
+   done`) and watch whether frames arrive **as they happen**. Requirement 1 is
+   the one a fake cannot really test: my test proves frames are emitted in
+   order, not that they are flushed rather than buffered by something between
+   here and the bridge.
+5. Then measure the round-trip from a Mac, which is the measurement
+   `agent-computer-plan.md` §7 says is the cheapest useful thing anybody can do
+   next and which no amount of server code substitutes for.
