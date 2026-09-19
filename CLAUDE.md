@@ -45,6 +45,23 @@ MCP catalogues, Pipedream Connect links from `polar/connectors/`, the maty job
 queue under `polar/maty/`, and the cloud runner. `render.yaml` and the deployed
 services are unchanged and the API answers now.
 
+**The app signs in to Claidor, added 19 September.** `server/polar/desktop/app_sign_in.py`
+answers the three routes the app actually calls — `/loginDeepControl`,
+`/auth/poll`, `/oauth/token` — at the **root** of the API host, because the app
+builds each with a leading slash and a leading slash throws away whatever path
+a base URL carried. `/desktop` is untouched. Two things here were nearly wrong
+and both are measured in `docs/product/app-sign-in.md`: **`SAND_BACKEND_URL`
+alone does not point the app at us** (login and poll stay on cursor.com and
+api2.cursor.sh — the stock `LoginManager` reads `CURSOR_API_BASE_URL` and
+`CURSOR_WEBSITE_URL` and nothing else), and **the access token has to be a
+readable JWT** or `isTokenExpiringSoon` refreshes before every call and a
+refresh sent to the wrong host signs the person out. The token is the same
+opaque `claidor_da_` value as ever, inside a signed envelope; `authenticate`
+unwraps it and looks it up by the same hash, so there is still one way to check
+a desktop credential. Sign-in is not the whole server the app wants: profile,
+usage, access and the box broker are Connect RPC and Claidor serves none of
+them. They degrade rather than fail — that is measured too, not assumed.
+
 **The cost of running on the Mac.** The engine runs locally, so nothing runs
 with the laptop shut. The maty queue and `claidor-maty-runner` are the cloud path
 for exactly this, and **their completeness is now established**, 18 September:

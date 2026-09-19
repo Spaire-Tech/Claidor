@@ -12,6 +12,8 @@ invented beyond what that code reads.
 
 from __future__ import annotations
 
+import base64
+import hashlib
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
@@ -25,6 +27,7 @@ from polar.desktop.tokens import (
     REFRESH_TOKEN_PREFIX,
 )
 from polar.exceptions import PolarError
+from polar.kit import jwt
 from polar.kit.crypto import generate_token_hash_pair, get_token_hash
 from polar.kit.utils import utc_now
 from polar.models import (
@@ -78,6 +81,21 @@ MEMORY_REFUSED = 40001
 MEMORY_FILE_MAX_BYTES = 1024 * 1024
 MEMORY_REQUEST_MAX_BYTES = 8 * 1024 * 1024
 MEMORY_FILE_LIMIT = 2000
+
+#: The JWT type of the envelope an access token travels in on the app's
+#: own sign-in path (`polar.desktop.app_sign_in`). See
+#: `envelope_access_token` for what the envelope is and is not.
+ACCESS_TOKEN_JWT_TYPE = "desktop_access"
+
+#: Everything hashed into `desktop_auth_codes.code_hash` by the app's
+#: own sign-in is namespaced, so a row of that flow can never be found
+#: by the `/desktop` flow's lookup or the other way round.
+DEEP_CONTROL_NAMESPACE = "deepcontrol"
+
+#: The app's `uuid` is a v4 UUID and its `verifier` is 32 random bytes
+#: base64url-encoded, so both are far inside this. It exists so a long
+#: query string is refused before it reaches a hash.
+DEEP_CONTROL_PARAM_MAX_LENGTH = 256
 
 
 class DesktopError(PolarError): ...
@@ -193,6 +211,90 @@ class MemorySync:
     deleted: list[str]
 
 
+# --- the envelope an access token travels in ----------------------------------
+
+# The app that signs in through `polar.desktop.app_sign_in` reads three
+# things straight off its own access token — `sub`, `email` and `exp`
+# (`desktop/source/shared/node/cursor-token.ts`, `parseJwtPayload`). An
+# opaque token has none of them, and the consequence is not cosmetic:
+# `isTokenExpiringSoon` returns true for any token it cannot read an
+# `exp` from, so every single call would refresh first, and a refresh
+# sent to the wrong host signs the person out. Hence an envelope.
+#
+# It is an envelope and not a credential. The credential inside it is
+# the same opaque `claidor_da_` token as ever, hashed into
+# `desktop_sessions.access_token_hash`, and `authenticate` still answers
+# by that hash and nothing else. There is one way to check a desktop
+# token, which is the whole point of `polar.desktop.auth`'s first
+# paragraph; this only changes what the app can read on the way in.
+#
+# The prefix is kept on the outside deliberately. `is_desktop_access_token`
+# is a prefix test with no imports, and `polar.auth.middlewares` refuses
+# every bearer it does not recognise, so an enveloped token that did not
+# carry the prefix would be turned away before any desktop route saw it.
+# Keeping it there also leaves `parseJwtPayload` working, because that
+# function reads the second dot-separated segment and never the first.
+
+
+def envelope_access_token(desktop_session: DesktopSession, access_token: str) -> str:
+    """The bearer the app stores: the opaque token, wrapped."""
+    user = desktop_session.user
+    return ACCESS_TOKEN_PREFIX + jwt.encode(
+        data={
+            "sub": str(user.id),
+            "email": user.email,
+            "jti": str(desktop_session.id),
+            "cat": access_token,
+        },
+        secret=settings.SECRET,
+        expires_at=desktop_session.access_expires_at,
+        type=ACCESS_TOKEN_JWT_TYPE,  # type: ignore[arg-type]
+    )
+
+
+def unwrap_access_token(token: str) -> str | None:
+    """The opaque token inside an envelope, or None when the bearer is
+    not one — which is the ordinary case for `/desktop`, whose tokens
+    are opaque and stay opaque."""
+    if not token.startswith(ACCESS_TOKEN_PREFIX):
+        return None
+    envelope = token[len(ACCESS_TOKEN_PREFIX) :]
+    if envelope.count(".") != 2:
+        return None
+    try:
+        payload = jwt.decode(
+            token=envelope,
+            secret=settings.SECRET,
+            type=ACCESS_TOKEN_JWT_TYPE,  # type: ignore[arg-type]
+        )
+    except Exception:
+        # A forged signature, an expired envelope, a type that is not
+        # ours: all of them mean « this is not a token of ours », and
+        # the caller answers 401 exactly as it would for any other
+        # unknown bearer.
+        return None
+    inner = payload.get("cat")
+    return inner if isinstance(inner, str) and inner else None
+
+
+def challenge_for(verifier: str) -> str:
+    """The app's own challenge derivation, byte for byte:
+    `base64url(sha256(verifier))`, unpadded
+    (`desktop/source/packages/cursor-config/auth/login.ts`)."""
+    digest = hashlib.sha256(verifier.encode("ascii")).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+
+
+def is_deep_control_param(value: str) -> bool:
+    """A `uuid` or a `verifier` this server will hash. Printable ASCII,
+    non-empty, bounded."""
+    return (
+        0 < len(value) <= DEEP_CONTROL_PARAM_MAX_LENGTH
+        and value.isascii()
+        and value.isprintable()
+    )
+
+
 # --- the service ---------------------------------------------------------------
 
 
@@ -276,10 +378,17 @@ class DesktopService:
     async def authenticate(
         self, session: AsyncSession, access_token: str
     ) -> DesktopSession | None:
-        """The live session behind a bearer token, or None."""
+        """The live session behind a bearer token, or None.
+
+        The bearer is either the opaque token itself — what `/desktop`
+        hands out — or that same token inside an envelope, which is what
+        the app's own sign-in hands out. Either way the answer comes
+        from one place: the hash in `desktop_sessions`.
+        """
         token = access_token.strip()
         if not token or not token.isascii():
             return None
+        token = unwrap_access_token(token) or token
         found = await DesktopSessionRepository.from_session(
             session
         ).get_by_access_token_hash(get_token_hash(token, secret=settings.SECRET))
@@ -334,6 +443,85 @@ class DesktopService:
         desktop_session.revoked_at = utc_now()
         session.add(desktop_session)
         await session.flush()
+
+    # the app's own sign-in
+
+    # The app asks for three things and this server answers all three
+    # (`polar.desktop.app_sign_in`). The shape is the app's, read from
+    # `desktop/source/packages/cursor-config/auth/login.ts` and
+    # `desktop/source/electron-main/account/cursor-auth.ts`; nothing
+    # here is invented beyond what that code reads.
+    #
+    # There is no new table. A pending sign-in is a `DesktopAuthCode`
+    # row whose `code_hash` is the keyed hash of the pair the app
+    # already carries — its `uuid` and the `challenge` it derived from
+    # its verifier. The app proves it is the same app by sending the
+    # verifier, from which this server recomputes the challenge; a row
+    # is found only when the pair matches, and `used_at` makes it
+    # single-use exactly as a code is.
+
+    async def begin_deep_control(
+        self, session: AsyncSession, user: User, *, uuid: str, challenge: str
+    ) -> bool:
+        """Record that this person confirmed this sign-in. True when a
+        row was written, False when one was already there — a person
+        who confirms twice has not done anything wrong."""
+        repository = DesktopAuthCodeRepository.from_session(session)
+        code_hash = get_token_hash(
+            f"{DEEP_CONTROL_NAMESPACE}:{uuid}:{challenge}", secret=settings.SECRET
+        )
+        if await repository.get_by_code_hash(code_hash) is not None:
+            return False
+        session.add(
+            DesktopAuthCode(
+                code_hash=code_hash,
+                user_id=user.id,
+                expires_at=utc_now() + settings.DESKTOP_AUTH_CODE_TTL,
+            )
+        )
+        await session.flush()
+        return True
+
+    async def complete_deep_control(
+        self,
+        session: AsyncSession,
+        *,
+        uuid: str,
+        verifier: str,
+        user_agent: str = "",
+        client_version: str | None = None,
+    ) -> tuple[DesktopSession, str, str] | None:
+        """The session behind a confirmed sign-in, or None.
+
+        None is the whole vocabulary of failure here on purpose: the app
+        reads « not yet » and « never » from the same 404, and telling
+        the two apart would tell a stranger polling with a guessed uuid
+        whether somebody is mid-sign-in.
+        """
+        if not is_deep_control_param(uuid) or not is_deep_control_param(verifier):
+            return None
+        code_hash = get_token_hash(
+            f"{DEEP_CONTROL_NAMESPACE}:{uuid}:{challenge_for(verifier)}",
+            secret=settings.SECRET,
+        )
+        pending = await DesktopAuthCodeRepository.from_session(
+            session
+        ).get_by_code_hash(code_hash)
+        if (
+            pending is None
+            or pending.used_at is not None
+            or pending.expires_at < utc_now()
+            or not pending.user.can_authenticate
+        ):
+            return None
+        pending.used_at = utc_now()
+        session.add(pending)
+        return await self._issue_session(
+            session,
+            pending.user,
+            user_agent=user_agent,
+            client_version=client_version,
+        )
 
     # what the app shows about the person
 
@@ -568,8 +756,11 @@ class DesktopService:
 desktop = DesktopService()
 
 __all__ = [
+    "ACCESS_TOKEN_JWT_TYPE",
     "ACCESS_TOKEN_PREFIX",
     "AUTH_CODE_INVALID",
+    "DEEP_CONTROL_NAMESPACE",
+    "DEEP_CONTROL_PARAM_MAX_LENGTH",
     "MEMORY_FILE_LIMIT",
     "MEMORY_FILE_MAX_BYTES",
     "MEMORY_REFUSED",
@@ -595,8 +786,11 @@ __all__ = [
     "TokenWeights",
     "Usage",
     "UsageTally",
+    "challenge_for",
     "credits_for",
     "desktop",
+    "envelope_access_token",
+    "is_deep_control_param",
     "model_by_id",
     "month_bounds",
     "offered_models",
@@ -604,5 +798,6 @@ __all__ = [
     "provider_base_url",
     "provider_configured",
     "tally_for",
+    "unwrap_access_token",
     "usage_from_answer",
 ]
