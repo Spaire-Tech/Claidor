@@ -50,7 +50,7 @@ test("the curated catalog is forty-three verified Composio slugs", async () => {
 
 test("the marketplace listing is the static Composio catalog, not Cursor", async () => {
   const marketplace = await load("source/shared/node/composio/marketplace.ts", "composio-marketplace");
-  const listing = await load("source/shared/node/mcp/mcp-marketplace.ts", "mcp-marketplace");
+  const views = await load("source/shared/node/mcp/mcp-marketplace-view.ts", "mcp-marketplace-view");
   try {
     const gmail = marketplace.module.composioConnectorToPlugin({
       id: "gmail",
@@ -70,19 +70,15 @@ test("the marketplace listing is the static Composio catalog, not Cursor", async
 
     const signedIn = await marketplace.module.fetchComposioMarketplacePlugins(async () => "claidor_da_test");
     assert.equal(signedIn.includesPrivateMarketplaces, true);
+    assert.equal(signedIn.plugins.find((plugin) => plugin.pluginId === "gmail")?.composioToolkit, "gmail");
 
-    const throughDefault = await listing.module.fetchMarketplaceMcpPlugins(async () => "token");
-    assert.equal(throughDefault.plugins.length, 43);
-    assert.equal(throughDefault.plugins.find((plugin) => plugin.pluginId === "gmail")?.composioToolkit, "gmail");
-    assert.equal(throughDefault.includesPrivateMarketplaces, true);
-
-    const view = listing.module.marketplacePluginToView(throughDefault.plugins.find((plugin) => plugin.pluginId === "notion"));
+    const view = views.module.marketplacePluginToView(signedIn.plugins.find((plugin) => plugin.pluginId === "notion"));
     assert.equal(view.id, "notion");
     assert.equal(view.composioToolkit, "notion");
     assert.equal(view.displayName, "Notion");
   } finally {
     await marketplace.dispose();
-    await listing.dispose();
+    await views.dispose();
   }
 });
 

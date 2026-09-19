@@ -36,25 +36,7 @@ export interface SandMarketplacePlugin {
   };
   publisher?: { name: string; displayName: string; isUserOwned: boolean };
 }
-export function marketplacePluginToView(plugin: SandMarketplacePlugin) {
-  return {
-    id: plugin.pluginId,
-    name: plugin.name,
-    displayName: plugin.displayName,
-    description: plugin.description,
-    category: plugin.category,
-    homepage: plugin.homepage,
-    iconUrl: plugin.logoUrl,
-    connectors: plugin.connectors,
-    skills: plugin.skills,
-    ...(plugin.variableFields.length > 0
-      ? { fields: plugin.variableFields }
-      : {}),
-    ...(plugin.marketplace == null ? {} : { marketplace: plugin.marketplace }),
-    ...(plugin.publisher == null ? {} : { publisher: plugin.publisher }),
-    ...(plugin.composioToolkit == null ? {} : { composioToolkit: plugin.composioToolkit }),
-  };
-}
+export { marketplacePluginToView } from "./mcp-marketplace-view.js";
 export function toRawGithubUrl(blobUrl: string): string | null {
   let parsed: URL;
   try {

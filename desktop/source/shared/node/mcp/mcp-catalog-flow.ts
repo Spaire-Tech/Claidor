@@ -1,7 +1,9 @@
+import { fetchComposioMarketplacePlugins } from "../composio/marketplace.js";
 import { CATALOG_CACHE_TTL_MS } from "./mcp-catalog-cache.js";
 import { SandMcpConfigError } from "./mcp-config-error.js";
 import { findMissingRequiredCatalogFields } from "./mcp-plugin-variables.js";
 import type { SandMarketplacePlugin } from "./mcp-marketplace.js";
+import { bestEffortCatalogToken, marketplacePluginToView } from "./mcp-marketplace-view.js";
 export class SandMcpCatalogFlow {
   private readonly catalog = new Map<string, SandMarketplacePlugin>();
   private viewsCache: {
@@ -34,9 +36,8 @@ export class SandMcpCatalogFlow {
     getAccessToken: unknown,
     options?: { forceRefresh?: boolean },
   ): Promise<unknown[]> {
-    const marketplace = await import("./mcp-marketplace.js");
-    const bestEffort = this.core.bestEffortToken ?? marketplace.bestEffortToken;
-    const fetchMarketplace = this.core.fetchMarketplace ?? marketplace.fetchMarketplaceMcpPlugins;
+    const bestEffort = this.core.bestEffortToken ?? bestEffortCatalogToken;
+    const fetchMarketplace = this.core.fetchMarketplace ?? fetchComposioMarketplacePlugins;
     const authenticated =
         (await bestEffort(getAccessToken)) != null,
       cached = this.viewsCache,
@@ -63,7 +64,7 @@ export class SandMcpCatalogFlow {
     const views = listing.plugins
       .map((plugin) => {
         this.catalog.set(plugin.pluginId, plugin);
-        return marketplace.marketplacePluginToView(plugin);
+        return marketplacePluginToView(plugin);
       })
       .sort((a, b) => a.displayName.localeCompare(b.displayName));
     this.viewsCache = {
