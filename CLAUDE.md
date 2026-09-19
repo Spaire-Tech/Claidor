@@ -99,6 +99,23 @@ anyway: grep the built artifact before saying a thing is absent.** I asserted
 "the atom rules were never recovered" without once looking at
 `dist/renderer/assets/*.css`.
 
+**The app's whole UI is one file, and how to get it is written down.**
+`Grok_Bot_0.18.0.dmg`, sha256 `a253ccd8…d203eb`. `npm run bootstrap` extracts
+it to `src/app/dist` and the build assembles around it; without it there is no
+app. The official CDN is **403 for everyone** (confirmed from a container and
+from the founder's Mac) and Gitee holds the LFS pointer but not the object
+(`"object not found"`, twice). It came from a public GitHub fork of the
+reconstruction, over plain HTTPS — which matters because macOS git has no `lfs`
+subcommand, so the documented `git lfs pull` route cannot even start.
+`npm run bootstrap` now tries a local app, the cache, the local archive,
+`GROK_BOT_DMG_URL`, the official URL and the known forks in that order, **each
+held to the pinned digest**, so a dead or substituted host costs an attempt
+instead of producing a wrong build. `docs/product/getting-the-pinned-dmg.md` is
+the note. **Keep a copy in
+`desktop/research-archives/original/0.18.0/macos-arm64/` and on a disk you own**
+— bootstrap checks there before any network call, and both published sources
+have already gone.
+
 **The cost of running on the Mac.** The engine runs locally, so nothing runs
 with the laptop shut. The maty queue and `claidor-maty-runner` are the cloud path
 for exactly this, and **their completeness is now established**, 18 September:

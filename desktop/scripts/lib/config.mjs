@@ -74,5 +74,44 @@ export const packagedEnvironment = Object.freeze({
 export const fidelityBundleId = "com.anysphere.sand.reconstructed.fidelity";
 export const fidelityName = "Grok Bot 0.18 Fidelity";
 export const dmgUrl = "https://downloads.cursor.com/grokbot/stable/darwin-arm64/0.18.0/Grok_Bot_0.18.0.dmg";
+
+/**
+ * Where else the pinned DMG can be had.
+ *
+ * `dmgUrl` above is the address the reconstruction documents, and it answers
+ * **403 for everyone** — confirmed 19 September 2026 from a build container
+ * and from the founder's own Mac. Gitee, which the project's own docs name as
+ * the Git LFS home of `research-archives/`, holds the pointer but not the
+ * object: it issues a signed URL whose path is the pinned digest, and that URL
+ * answers `{"message":"'a253ccd8…d203eb' object not found"}`.
+ *
+ * Public GitHub forks of the reconstruction do carry the LFS object, and
+ * GitHub serves it over ordinary HTTPS — which matters, because macOS ships
+ * git without the `lfs` subcommand, so the documented `git lfs pull` route
+ * dead-ends before it starts.
+ *
+ * Every one of these is checked against `dmgSha256` before it is used, exactly
+ * as the official URL is, so an unreachable, truncated, or substituted file is
+ * refused rather than built. That is what makes reaching for a mirror safe:
+ * the digest is the authority, not the host.
+ *
+ * `GROK_BOT_DMG_URL` is tried before all of them.
+ */
+const mirrorOwners = [
+  "webdevtodayjason",  // verified 19 September 2026: 155,793,020 bytes, digest matched
+  "sergiodekki",
+  "EpicHacker67",
+  "agisota",
+  "woosa0502",
+  "xianyu110",
+];
+
+const mirrorPath = "research-archives/original/0.18.0/macos-arm64/Grok_Bot_0.18.0.dmg";
+
+export const dmgUrls = Object.freeze([
+  ...(process.env.GROK_BOT_DMG_URL?.trim() ? [process.env.GROK_BOT_DMG_URL.trim()] : []),
+  dmgUrl,
+  ...mirrorOwners.map(owner => `https://github.com/${owner}/grok-bot-0.18-reconstructed/raw/main/${mirrorPath}`),
+]);
 export const dmgSha256 = "a253ccd8aab01e083f9812a0264354c5034d8ba7f0610bbb557e82ae77d203eb";
 export const upstreamAsarSha256 = "6665408168466f9cacc6087e917890c17f59d2e2e9c2404a5c4a59ad79c1de58";

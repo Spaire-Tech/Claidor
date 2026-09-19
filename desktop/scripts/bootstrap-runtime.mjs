@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
-import { archivedDmg, cachedDmg, cachedRuntimeApp, dmgSha256, dmgUrl } from "./lib/config.mjs";
+import { archivedDmg, cachedDmg, cachedRuntimeApp, dmgSha256, dmgUrls } from "./lib/config.mjs";
 import { run } from "./lib/process.mjs";
 import { cacheRuntimeFromApp, hydrateSourcePayloadFromRuntime, validateRuntimeApp } from "./lib/runtime.mjs";
 import { SYSTEM_TOOLS } from "./lib/system-tools.mjs";
@@ -43,20 +43,44 @@ async function downloadDmg() {
     return;
   }
 
-  console.log(`Downloading ${dmgUrl}`);
-  const response = await fetch(dmgUrl, { redirect: "follow" });
-  if (!response.ok || response.body == null) {
-    throw new Error(`Download failed: HTTP ${response.status}`);
-  }
+  // Each source is tried in turn and each is held to the same pin, so a host
+  // that is gone, throttled, or serving something else costs an attempt rather
+  // than producing a wrong build. `dmgSha256` is the authority; the URL is not.
   const partial = `${cachedDmg}.partial`;
-  await rm(partial, { force: true });
-  await pipeline(Readable.fromWeb(response.body), createWriteStream(partial, { mode: 0o600 }));
-  const digest = await sha256(partial);
-  if (digest !== dmgSha256) {
+  const failures = [];
+  for (const url of dmgUrls) {
+    console.log(`Downloading ${url}`);
     await rm(partial, { force: true });
-    throw new Error(`DMG checksum mismatch: expected ${dmgSha256}, got ${digest}`);
+    try {
+      const response = await fetch(url, { redirect: "follow" });
+      if (!response.ok || response.body == null) {
+        failures.push(`${url} — HTTP ${response.status}`);
+        continue;
+      }
+      await pipeline(Readable.fromWeb(response.body), createWriteStream(partial, { mode: 0o600 }));
+      const digest = await sha256(partial);
+      if (digest !== dmgSha256) {
+        failures.push(`${url} — checksum ${digest}`);
+        continue;
+      }
+      await rename(partial, cachedDmg);
+      return;
+    } catch (error) {
+      failures.push(`${url} — ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
-  await rename(partial, cachedDmg);
+  await rm(partial, { force: true });
+  throw new Error(
+    `Could not obtain the pinned 0.18.0 DMG (sha256 ${dmgSha256}).\n` +
+      failures.map(line => `  ${line}`).join("\n") +
+      `\n\n  Every source above is checked against that digest, so none of these\n` +
+      `  is a substitution risk — they are simply unavailable. If you have the\n` +
+      `  file or a 0.18.0 install, either of these skips the network entirely:\n` +
+      `      GROK_BOT_018_APP="/Applications/Grok Bot.app" npm run bootstrap\n` +
+      `      cp Grok_Bot_0.18.0.dmg research-archives/original/0.18.0/macos-arm64/\n` +
+      `  Or point it at one you can reach: GROK_BOT_DMG_URL=… npm run bootstrap\n` +
+      `  See docs/product/getting-the-pinned-dmg.md.`,
+  );
 }
 
 async function extractRuntime() {
