@@ -105,7 +105,16 @@ appear, or sooner only if one starts blocking.
    `thread/fromEngine.ts` (`authQuestion`), which Brief does not own, and
    `cards-plan.md` says it is a card the founder designed and needs their eye.
    Costs nothing until the box is real.
-6. **`## Math Formula Formatting` was deleted with one fact in it.** *(Brief, 18
+6. **Three media-generation tests are red on the fleet base.** *(Brief, 18
+   September, found by merging it.)* `mediaGenerationPolicy.test.ts` (2) and
+   `mediaGenerationTurnInstruction.test.ts` (1) fail on
+   `claude/caisra-mac-app-ouliez` itself — all four files byte-identical there,
+   checked with `git diff --quiet`. The gate that refused every generate call
+   was removed and the tests still assert it blocks:
+   `expected { allowed: true } to deeply equal { allowed: false, … }`. Not
+   Brief's files and not touched. Whoever finishes the images work owns it; it
+   will fail for every agent that merges this base until then.
+7. **`## Math Formula Formatting` was deleted with one fact in it.** *(Brief, 18
    September.)* The section cited no incident and went under the triage, but it
    did carry a true fact stated nowhere else: this app renders TeX with KaTeX
    (`renderer/components/MarkdownContent.tsx`) and IM channels do not. Judged
