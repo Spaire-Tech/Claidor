@@ -1,20 +1,20 @@
 /**
  * Caisra clean build.
  *
- * Builds the five processes straight from source with no dependency on any
- * shipped upstream binary. The reconstruction's own pipeline
- * (scripts/build.mjs -> buildFidelityReconstructedAsar) deliberately starts
- * from the extracted 0.18.0 app and overlays reconstructed pieces onto it,
- * because its goal was byte-fidelity with that release. That is not our goal
- * and not our right, so this script does not use it, does not read
- * research-archives/, and never calls bootstrap-runtime.mjs.
+ * Builds every process straight from source with no dependency on any shipped
+ * upstream binary. The reconstruction's own pipeline (scripts/build.mjs ->
+ * buildFidelityReconstructedAsar) deliberately starts from the extracted
+ * 0.18.0 app and overlays reconstructed pieces onto it, because its goal was
+ * byte-fidelity with that release. That is not our goal and not our right, so
+ * this script does not use it, does not read research-archives/, and never
+ * calls bootstrap-runtime.mjs.
  *
- *   source/host/main.ts             -> dist/caisra/host-main.cjs
- *   source/electron-main/main.ts    -> dist/caisra/main.cjs
- *   source/electron-preload/*.ts    -> dist/caisra/preload.cjs
- *   source/box-exec-daemon/cli.ts   -> dist/caisra/box-exec-daemon.cjs
- *   source/local-exec-daemon/*.ts   -> dist/caisra/local-exec-daemon.cjs
- *   frontend/src/main.tsx           -> dist/caisra/renderer/
+ * The output layout is NOT arbitrary. The app resolves these paths itself at
+ * runtime — see `executableReplacements` in scripts/lib/clean-build.mjs and
+ * PRODUCTION_IPC_CONTRACT in source/electron-main/production-ipc-contract.ts,
+ * which names dist/electron-preload/preload.cjs and dist/renderer/index.html
+ * directly. Renaming or flattening any of it silently breaks the app at
+ * launch rather than at build time.
  */
 
 import { mkdir, rm, writeFile } from "node:fs/promises";
@@ -26,7 +26,7 @@ import { build as viteBuild } from "vite";
 import react from "@vitejs/plugin-react";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const outRoot = path.join(repoRoot, "dist", "caisra");
+const outRoot = path.join(repoRoot, "dist");
 
 /**
  * Left unbundled. Native addons and their loaders cannot be inlined, and
@@ -43,15 +43,28 @@ const EXTERNAL = [
   "pdfjs-dist",
 ];
 
+/** Entry -> output path, matching what the app expects to find. */
 const PROCESSES = [
-  { name: "host", entry: "source/host/main.ts", outfile: "host-main.cjs" },
-  { name: "electron-main", entry: "source/electron-main/main.ts", outfile: "main.cjs" },
-  { name: "preload", entry: "source/electron-preload/preload.ts", outfile: "preload.cjs" },
-  { name: "box-exec-daemon", entry: "source/box-exec-daemon/cli.ts", outfile: "box-exec-daemon.cjs" },
-  { name: "local-exec-daemon", entry: "source/local-exec-daemon/main.ts", outfile: "local-exec-daemon.cjs" },
+  ["source/electron-main/main.ts", "electron-main/main.cjs"],
+  ["source/electron-dev-controls/main.ts", "electron-dev-controls/main.cjs"],
+
+  ["source/electron-preload/preload.ts", "electron-preload/preload.cjs"],
+  ["source/electron-preload/preload-dev-controls.ts", "electron-preload/preload-dev-controls.cjs"],
+  ["source/electron-preload/preload-webview.ts", "electron-preload/preload-webview.cjs"],
+  ["source/electron-preload/preload-vnc.ts", "electron-preload/preload-vnc.cjs"],
+
+  ["source/host/main.ts", "host/host-main.cjs"],
+  ["source/host/agent-isolation/agent-store-worker.ts", "host/agent-isolation/agent-store-worker.cjs"],
+  ["source/host/agent-isolation/transcript-mirror-worker.ts", "host/agent-isolation/transcript-mirror-worker.cjs"],
+  ["source/host/extensions/box-store-sync/box-store-vacuum-worker.ts", "host/extensions/box-store-sync/box-store-vacuum-worker.cjs"],
+  ["source/host/extensions/content-search/search-index-worker.ts", "host/extensions/content-search/search-index-worker.cjs"],
+
+  ["source/node-agent-coordinator/main.ts", "node-agent-coordinator/main.cjs"],
+  ["source/box-exec-daemon/main.ts", "box-exec-daemon/main.cjs"],
+  ["source/local-exec-daemon/main.ts", "local-exec-daemon/main.cjs"],
 ];
 
-async function bundleProcess({ name, entry, outfile }) {
+async function bundleProcess([entry, outfile]) {
   const started = Date.now();
   const result = await esbuild({
     entryPoints: [path.join(repoRoot, entry)],
@@ -66,10 +79,10 @@ async function bundleProcess({ name, entry, outfile }) {
     format: "cjs",
     outfile: path.join(outRoot, outfile),
     external: EXTERNAL,
-    // jsonc-parser's default entry is a UMD bundle whose factory takes `require`
-    // as a parameter, so esbuild cannot see through its `require("./impl/format")`
-    // and the bundle throws MODULE_NOT_FOUND at load. Its package declares
-    // `module: lib/esm/main.js`; point at that instead.
+    // jsonc-parser's default entry is a UMD bundle whose factory takes
+    // `require` as a parameter, so esbuild cannot see through its
+    // require("./impl/format") and the bundle throws MODULE_NOT_FOUND at load.
+    // Its package declares lib/esm/main.js as the module entry; use that.
     alias: { "jsonc-parser": "jsonc-parser/lib/esm/main.js" },
     sourcemap: "linked",
     logLevel: "error",
@@ -79,7 +92,7 @@ async function bundleProcess({ name, entry, outfile }) {
   const bytes = Object.entries(result.metafile.outputs)
     .filter(([file]) => !file.endsWith(".map"))
     .reduce((sum, [, o]) => sum + o.bytes, 0);
-  return { name, outfile, bytes, ms: Date.now() - started };
+  return { outfile, bytes, ms: Date.now() - started };
 }
 
 async function buildRenderer() {
@@ -98,40 +111,37 @@ async function buildRenderer() {
     },
     logLevel: "error",
   });
-  return { name: "renderer", outfile: "renderer/", ms: Date.now() - started };
+  return { outfile: "renderer/index.html", ms: Date.now() - started };
 }
 
 async function main() {
   await rm(outRoot, { recursive: true, force: true });
   await mkdir(outRoot, { recursive: true });
 
-  const processResults = [];
-  for (const proc of PROCESSES) {
-    processResults.push(await bundleProcess(proc));
-  }
-  const rendererResult = await buildRenderer();
+  const results = [];
+  for (const proc of PROCESSES) results.push(await bundleProcess(proc));
+  const renderer = await buildRenderer();
 
   await writeFile(
-    path.join(outRoot, "build.json"),
+    path.join(outRoot, "caisra-build.json"),
     `${JSON.stringify(
       {
         product: "Caisra",
         mode: "clean-source",
         upstreamBinaryUsed: false,
         builtAt: new Date().toISOString(),
-        processes: processResults,
-        renderer: rendererResult,
+        outputs: [...results, renderer],
       },
       null,
       2,
     )}\n`,
   );
 
-  for (const r of [...processResults, rendererResult]) {
+  for (const r of [...results, renderer]) {
     const size = r.bytes == null ? "" : `${(r.bytes / 1_048_576).toFixed(1)} MB`.padStart(9);
-    console.log(`  ${r.name.padEnd(18)} ${r.outfile.padEnd(24)} ${size}  ${r.ms}ms`);
+    console.log(`  ${r.outfile.padEnd(58)} ${size}  ${String(r.ms).padStart(5)}ms`);
   }
-  console.log(`\nCaisra clean build -> ${path.relative(repoRoot, outRoot)} (no upstream binary)`);
+  console.log(`\nCaisra clean build -> dist/ (no upstream binary)`);
 }
 
 await main();
