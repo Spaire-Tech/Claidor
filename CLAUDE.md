@@ -247,10 +247,19 @@ oblige us to change — the approval card has to name a machine, the brief's
 "their computer asks once" section is written for a world with one, and box
 handoff must never come to mean "your files are here now".
 
-`direction.md` §10 is **retired** and marked as such. Its thesis survives — under
-explicit import the box is where work happens, not where files live — but its
-"there is no 'which computer'" does not. The paragraph below is what §10 argued
-and is kept for the same reason §10 is: it is what the new design has to answer.
+`direction.md` §10 was retired and is now **rewritten**, 18 September, as "Which
+computer, and where the file is when it is worked on". Its thesis survives —
+under explicit import the box is where work happens, not where files live — and
+its "there is no 'which computer'" is gone, along with the strikes that followed
+from it: the second machine, Settings → Computers and per-machine execution are
+back in the design. **None of the registry is built**; there is one computer
+today and the box is still a measurement. The brief was rewritten to match and
+is deliberately true of both worlds — a grant belongs to the one computer it was
+given for, a second is a separate grant, and an agent must never assume a second
+computer exists.
+
+The paragraph below is what §10 argued before the lock. It is kept because it is
+what the new design has to answer.
 
 **Why §10 said there was no machine registry.** Grok Bot
 needs registered computers because it lives in the cloud and has to reach

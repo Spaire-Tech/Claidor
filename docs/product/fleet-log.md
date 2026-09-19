@@ -84,6 +84,33 @@ appear, or sooner only if one starts blocking.
 3. **A room appears in the sidebar unasked** under the Grok-Bot-true room rule,
    unlike `create_agent` which draws a card. Flagged in the agent-to-agent audit;
    costs nothing until the room tool is built.
+4. **`VOICE_BRIEF` decides two axes that other sections own, and no test can
+   read it.** *(Brief, 18 September.)* `shared/agent/voiceBrief.ts` goes into
+   every hand-made agent's instructions and every role agent's. It says *"Prefer
+   prose; use bullets only when the content needs them"* — the document-versus-
+   message axis, owned by `## Documents You Make` — and *"Ask at most one real
+   question at a time; otherwise decide and proceed"* — the ask-versus-assume
+   axis, owned by `### User Choices & Decisions`. Both are the axes
+   `brief-audit.md` found costing live faults. It is outside
+   `managedBriefSectionsForTest`, so `briefConsistency.test.ts` has never read
+   it. **This is genuinely the founder's**: `direction.md` §4 says it is their
+   wording and is not to be paraphrased, so Brief has changed nothing. Not
+   blocking; the brief's own sections decide correctly and this is a second
+   voice, not a contradiction inside the managed half.
+5. **The approval card still names no machine.** *(Brief, 18 September.)*
+   `cards-plan.md` item 2 — under a registry, *"Allow X to continue — running
+   commands on your computer?"* has no clear meaning. The brief now says a grant
+   belongs to one computer and never carries across, so **the prose and the card
+   disagree the day a second machine exists**. The card is
+   `thread/fromEngine.ts` (`authQuestion`), which Brief does not own, and
+   `cards-plan.md` says it is a card the founder designed and needs their eye.
+   Costs nothing until the box is real.
+6. **`## Math Formula Formatting` was deleted with one fact in it.** *(Brief, 18
+   September.)* The section cited no incident and went under the triage, but it
+   did carry a true fact stated nowhere else: this app renders TeX with KaTeX
+   (`renderer/components/MarkdownContent.tsx`) and IM channels do not. Judged
+   not worth a section — the cost of being wrong is a formula reading as plain
+   text. One commit to reverse if anyone disagrees.
 
 ## What "done" means — the founder's definition, 18 September 22:38Z
 

@@ -7,8 +7,121 @@
 > items. A rule that cannot cite one is somebody's theory, and the
 > theories are what have been wrong.
 
-This is the list. **Nothing has been deleted.** Every verdict below is a
-proposal, and the founder's decision comes first.
+---
+
+# Re-run, 18 September, against the merged brief
+
+**The first pass triaged the wrong brief, and this section says exactly
+what that cost.** My session was cut from `main` without
+`source_revision`, so the tree I read did not carry
+`claude/caisra-mac-app-ouliez` — the branch holding the artifacts
+decision. The brief I measured still contained OpenUI. That was the
+Chief of Staff's error, not a fault in the method, but the numbers below
+the line are from the old brief and some of them no longer describe
+anything.
+
+The list below is kept rather than rewritten, because a triage that
+quietly reappears with different numbers is worth nothing. This section
+is the correction.
+
+## What evaporated
+
+| Finding in the first pass | Why it is gone |
+|---|---|
+| **`## Artifacts` (3,067 chars), verdict A**, citing review items 21, 72, 80 | The section no longer exists. OpenUI was removed from the product entirely (`docs/product/artifacts-decision.md`); a report is a `.docx` again. |
+| **The answer cards (`cardsPrompt.ts`, 4,651 chars), verdict A**, citing items 71, 73, 80 | Same. `cardsPrompt.ts` and `artifactsPrompt.ts` are both deleted. |
+| **`## Files You Made` (1,230 chars)** and its reading of item 37 | Rewritten as `## Documents You Make` (2,350 chars), and the rewrite *reverses* the one the first pass was reading. My analysis called the earlier rewrite sound; the founder's decision says it was the wrong conclusion drawn from a true observation. |
+| The character totals: **46,397 across 39/12/4 headings** | The brief is now **40,434** characters. 7,718 of the difference is OpenUI; the rest is described below. |
+
+That is 8,948 characters of verdict-A analysis describing text that is no
+longer in the product — about a fifth of what the first pass measured.
+
+## What still stands, and has now been executed
+
+Every **C** finding survived the merge, because none of the four sections
+was touched by the artifacts decision. Applying the Chief of Staff's
+behaviour-versus-fact test — *does this sentence change what the agent
+does, or is it a fact the agent needs to know?* — each is now done:
+
+| | Was | Now | What was applied |
+|---|---|---|---|
+| **C1 `## Heartbeat Policy`** | 709 | **0** | Deleted. Every rule in it is behaviour decided elsewhere (`cron` belongs to `## Waiting For Something To Happen`) or enforced in code (`openclawHeartbeatRepair.ts` is imported by the config sync and rewrites the file). Its one apparent fact — reply `HEARTBEAT_OK` — is not ours to state: the engine injects *"If nothing needs attention, reply HEARTBEAT_OK"* as a message on every heartbeat poll, which `openclawRuntimeAdapter.test.ts:4698` shows arriving in the request. |
+| **C2 `## Math Formula Formatting`** | 689 | **0** | Deleted. `KaTeX`, `\bTeX\b` and `formula` return zero hits in `review.md`. **One judgement to flag:** it did contain a fact — this app renders TeX with KaTeX (`renderer/components/MarkdownContent.tsx`), and IM channels do not. I judged a one-line fact not worth a section, and the cost of being wrong is that a formula reads as plain text rather than breaking. Reversible in one commit. |
+| **C3 `## Web Search`** | 1,284 | **1,162** | Cut to facts, as instructed. The behavioural prose restated the escalation order — a URL means `web_fetch`, discovery means `browser` — which `## Where To Look First` owns. What stays is what exists here and what must not be claimed, and none of it is stated anywhere else. |
+| **C4 `## Memory Policy`** | 1,552 | **1,083** | The block on how to lay out a bullet in `MEMORY.md` is taste, cites nothing, and changes nothing a person sees: deleted. Kept: the two file paths (a fact stated nowhere else), the write-before-you-confirm rule, and the precedence paragraph, which is the shared-project feature's and is the only part with a job. |
+
+**The `VOICE_BRIEF` finding also stands.** `shared/agent/voiceBrief.ts`
+was not touched by the merge. It still decides the prose-versus-document
+axis (*"Prefer prose; use bullets only when the content needs them"*) and
+the ask-versus-assume axis (*"Ask at most one real question at a time;
+otherwise decide and proceed"*), in a file `briefConsistency.test.ts`
+cannot read. It is the founder's own wording and `direction.md` §4 says
+it is not to be paraphrased, so it stays as it is and it is written down
+in `fleet-log.md` under Open.
+
+## What the merge added that the first pass could not have found
+
+**Two axes in `briefConsistency.test.ts` were broken by the artifacts
+decision, and the suite was red on arrival.** Measured directly against
+`claude/caisra-mac-app-ouliez` with none of my code involved:
+
+1. `whether to do more than was asked` was owned by
+   `/## Artifacts|Offer it before they ask/`. Both headings went with
+   OpenUI, so nothing decided the axis and the test failed as undecided —
+   which is the test working correctly.
+2. `whether a shaped answer is a document or a message` flagged
+   `### When to make one` as a stray decider. It is not a stray: it is a
+   sub-heading *of* `## Documents You Make`, and `sectionsOf` splits on
+   every heading, so a section's own sub-heading reads as a rival.
+
+Both are fixed. The first is re-homed to `## Documents You Make`, where
+the decision actually lives now — offering a document unasked went from
+*allowed* to *expected*. The second names the sub-heading in the owner
+pattern, the same way `## Cards|## Rules in this app` did before.
+
+**A dangling pointer.** `### Work it out yourself where you can` ended
+*"…is not going beyond the job, and is covered under Artifacts"*,
+pointing at a section deleted in the same commit that deleted OpenUI.
+This is the exact fault `brief-audit.md` recorded once before — a
+pointer outliving what it points at. It now names `Documents You Make`.
+
+## The new axis, and why it mattered more than the deletion
+
+The first pass found that `## Web Search` and `## Where To Look First`
+both decide where to look for a fact, that both are inside the test's
+input, and that the test passes them anyway — because it checked three
+axes and none of them was that one. Being read is not the same as being
+checked.
+
+`briefConsistency.test.ts` now carries a fifth axis,
+`where to look for a fact, and in what order`, owned by
+`## Where To Look First`. Its deciders are keyed to the decision and to
+the exact phrasings removed from `## Web Search`, so the restatement
+fails the suite if anyone puts it back. **That is the part that stops the
+pattern; the deletion on its own would not have.**
+
+## Where the brief stands now
+
+| | Characters |
+|---|---|
+| Before the merge, as first triaged | 46,397 |
+| After the merge, before this triage executed | 41,333 |
+| **Now** | **40,434** |
+
+The 899 characters between the last two are not a single cut: 1,989
+deleted (heartbeat, math, the memory formatting block, the web-search
+restatement) against 1,090 added for the machine registry.
+
+Well under `agents.defaults.bootstrapMaxChars`, which the config sync
+sets to 120,000 and a runtime test holds the file beneath (review item
+63). **Size was never the reason to cut.** The reason is that four fewer
+sections can contradict a section with a real incident behind it.
+
+---
+
+*Everything below this line is the first pass, against the pre-merge
+brief. It is kept as the record. Read the corrections above before using
+any number in it.*
 
 ---
 

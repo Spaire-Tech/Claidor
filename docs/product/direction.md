@@ -394,58 +394,82 @@ The engine already has the second half: `skill_workshop` in
 propose, write, revise and apply a skill, with support files and a
 proposal queue.
 
-## 10. There is one computer, and it is this one
+## 10. Which computer, and where the file is when it is worked on
 
-> **Retired, 18 September 2026. Do not build to this section.** The founder is
-> designing a computer of our own and has locked two decisions that this section
-> contradicts: **file custody is explicit import**, and **the machine model is a
-> registry** — the box plus the person's registered machines.
->
-> **What survives:** the thesis. Under explicit import the box is where work
-> happens and not where files live, so "we open the file where it lives" is
-> still true of the person's own documents, and moving one to the box is a
-> deliberate copy with a visible cost.
->
-> **What does not:** "there is no 'which computer'". The founder's correction:
+**Rewritten 18 September 2026.** This section said "there is one computer, and
+it is this one". Half of that is now wrong and half of it is the product.
+
+Two decisions were locked by the founder the same day
+(`docs/product/cards-plan.md`): **file custody is explicit import**, and **the
+machine model is a registry** — the agent's own computer, plus the person's
+registered machines.
+
+### What was struck, and is now back
+
+The earlier section struck the second machine on the founder's own instruction:
+
+> *"there is no 'which computer' — that was a design mistake by me. same for
+> the cloud computer."*
+
+That was said about a product in which the agent owned no machine. It stopped
+being true the moment one was designed, and the founder's correction says so:
+
 > *"'Which computer?' was struck as a mistake only if you pretend there's a
 > single workspace. The moment the box is a second machine, 'which computer'
-> returns."* So the second machine, Settings → Computers, and per-machine
-> execution all come back.
->
-> This section is kept unrewritten until the computer is designed, because the
-> reasoning below is what that design has to answer.
-> `docs/product/cards-plan.md` holds the lock and the six things it obliges us
-> to change.
+> returns."*
 
-The founder, on the design's own Settings → Computer and Settings →
-Updates: *"there is no 'which computer' — that was a design mistake by
-me. same for the cloud computer."*
+So these come back, and they were not mistakes:
 
-So, struck from the design:
+- **A second machine**, and per-machine execution settings.
+- **Settings → Computers**, plural, with Update and Reset meaning the agent's
+  own computer and not the person's.
+- **The approval card naming which machine** it is asking about. "Running
+  commands on your computer?" has one meaning when there is one computer and
+  no clear meaning when there are two.
 
-- the second registered machine (`Dell7040`) and its execution setting,
-- **The Swens computer** — the shared cloud machine, its update and its
-  reset,
-- the egress tunnel that existed only to reach it.
+### What survives, and it is the whole differentiator
 
-Settings → Computer keeps the current computer and its "Ask every time".
+The thesis was never "there is only one computer". It was this, and it is
+unchanged:
 
-This is the product thesis, not a simplification. Grok Bot needs
-registered machines because it lives in the cloud and must reach in.
-Ours runs on the machine, so there is only this computer. The
-consequence that matters to a customer: **Grok Bot copies your file to
-its own disk and copies it back — its words, "my computer ≠ your disk …
-we copy when needed" — and we open the file where it lives.** That shows
-up in spreadsheet formulas, links between workbooks, folder structure,
-and privacy. Anything that reintroduces a machine the agent owns takes
-that sentence away from us.
+> **It is about where the file is when it is worked on.**
 
-### The line, drawn exactly
+Grok Bot copies your file to its own disk and copies it back — its words, *"my
+computer ≠ your disk … we copy when needed"*. That shows up in spreadsheet
+formulas, links between workbooks, folder structure, and privacy.
 
-The audit found a deployed worker, `claidor-maty-runner`, whose own
-README says it *"does a person's work when they are not at their
-computer"*. Put to the founder as a question — does a routine fire when
-the Mac is closed? — the answer was **yes, it fires**.
+Explicit import is what keeps that sentence ours while the agent has a machine
+of its own. The founder's words:
+
+> *"no, not by default. The box is where I work (browser, desktop, shell).
+> Bass's files live on his Mac (or another registered machine). Moving a
+> workbook onto the box is an explicit copy (CopyToBox / chat attach), not
+> ambient."*
+
+**The box is where work happens. It is not where files live.** A person's
+documents stay on the person's machine and are opened where they are. A copy
+onto the agent's computer is a decision with a visible cost, made by the
+person, in a card about *which files* — never a side effect of anything else.
+
+### The one mistake to design against
+
+Control and custody are two different things and must stay two different cards.
+
+| Handing over | Means | Costs |
+|---|---|---|
+| **A screen** — captcha, SSO, a passkey | "take over my screen" | cheap; nothing moves |
+| **A file** — edit this spreadsheet, sign this PDF | either it stays on their machine, or it is copied | expensive, and the person decides |
+
+Box handoff must never come to mean *"your Documents are here now"*. That is
+the specific failure the founder named, and it is the one the brief's
+`### Files on their computer` now states in the agent's own words.
+
+### The line on the cloud runner, which did not move
+
+The audit found a deployed worker, `claidor-maty-runner`, whose own README says
+it *"does a person's work when they are not at their computer"*. Put to the
+founder as a question — does a routine fire when the Mac is closed? — the
+answer was **yes, it fires**.
 
 So the runner lives, and the line is not "no cloud" but this:
 
@@ -455,20 +479,21 @@ So the runner lives, and the line is not "no cloud" but this:
 | their files living on it | no files on it; memory in, memory out, directory deleted |
 | apps and packages installed on it | nothing installed, nothing to install |
 | an update and a reset surface for it | never mentioned in the app at all |
-| an egress tunnel to reach it | — |
 
-The differentiator survives because it was never about where a process
-runs. It is about **where the file is when it is worked on**. A routine
-that reads your calendar at 08:00 while the laptop is shut touches no
-file of yours on any disk. The moment the agent copies your workbook to
-a machine it owns, we lose the sentence — and that is the thing to
-guard, not the runner.
+A routine that reads your calendar at 08:00 while the laptop is shut touches no
+file of yours on any disk. That is still true, and it is true for the same
+reason the box is: **where the file is when it is worked on**, not where a
+process runs.
 
-What this means in the app: Routines is one of the five agent tabs, and
-a routine set there keeps running when the Mac sleeps. The person is
-never asked which computer, never shown the runner, and never told their
-work happens elsewhere, because as far as their files are concerned it
-does not.
+### What is actually built, as of 18 September
+
+**None of the registry is.** There is one computer today — the one the app is
+running on — and the box is a measurement, not a build
+(`docs/product/box-substrate-read.md`). The brief has been written so it is
+true now and does not need rewriting when a second machine appears: it states
+that a grant belongs to the one computer it was given for, that a second is a
+separate grant, and that an agent must never assume a second computer exists.
+What it no longer says is that there can never be one.
 
 ---
 
