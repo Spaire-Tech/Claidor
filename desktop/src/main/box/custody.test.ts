@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import {
+  BOX_UPLOADS_SUBDIR,
   formatBytes,
   MAX_COPY_BYTES,
   planCopyFromBox,
@@ -8,18 +9,18 @@ import {
   resolveBoxPath,
 } from './custody';
 
-const workspaceRoot = '/home/user/workspace';
+const workspaceRoot = '/workspace';
 const file = (size = 10) => async () => ({ isFile: () => true, isDirectory: () => false, size });
 
 describe('where a copy is allowed to land in the box', () => {
   test('a bare name goes into the workspace', () => {
     expect(resolveBoxPath(workspaceRoot, 'notes.txt'))
-      .toEqual({ ok: true, path: '/home/user/workspace/notes.txt' });
+      .toEqual({ ok: true, path: '/workspace/notes.txt' });
   });
 
   test('a subfolder of the workspace is fine', () => {
     expect(resolveBoxPath(workspaceRoot, 'a/b/notes.txt'))
-      .toEqual({ ok: true, path: '/home/user/workspace/a/b/notes.txt' });
+      .toEqual({ ok: true, path: '/workspace/a/b/notes.txt' });
   });
 
   /**
@@ -32,7 +33,7 @@ describe('where a copy is allowed to land in the box', () => {
   });
 
   test('a path that only looks like the workspace is refused', () => {
-    expect(resolveBoxPath(workspaceRoot, '/home/user/workspace-other/x'))
+    expect(resolveBoxPath(workspaceRoot, '/workspace-other/x'))
       .toMatchObject({ ok: false });
   });
 
@@ -42,7 +43,11 @@ describe('where a copy is allowed to land in the box', () => {
 });
 
 describe('copying a file to the box', () => {
-  test('is allowed for an ordinary file, and defaults to its own name', async () => {
+  /**
+   * The spec names the landing folder. Files the person handed over, loose
+   * among the agent's own working files, is how custody stops being legible.
+   */
+  test('lands in /workspace/uploads under its own name when no path is chosen', async () => {
     const plan = await planCopyToBox({
       localPath: '/Users/me/notes.txt',
       boxPath: '',
@@ -52,9 +57,19 @@ describe('copying a file to the box', () => {
     expect(plan).toEqual({
       ok: true,
       localPath: '/Users/me/notes.txt',
-      boxPath: '/home/user/workspace/notes.txt',
+      boxPath: '/workspace/uploads/notes.txt',
       bytes: 12,
     });
+  });
+
+  test('a path the person chose is used as given, not forced into uploads', async () => {
+    const plan = await planCopyToBox({
+      localPath: '/Users/me/notes.txt',
+      boxPath: 'reports/q3.txt',
+      workspaceRoot,
+      stat: file(12),
+    });
+    expect(plan).toMatchObject({ boxPath: '/workspace/reports/q3.txt' });
   });
 
   /**
@@ -117,7 +132,7 @@ describe('copying a file back out of the box', () => {
       exists: async () => false,
     })).toEqual({
       ok: true,
-      boxPath: '/home/user/workspace/notes.txt',
+      boxPath: '/workspace/notes.txt',
       localPath: '/Users/me/notes.txt',
     });
   });
@@ -163,6 +178,12 @@ describe('copying a file back out of the box', () => {
       workspaceRoot,
       exists: async () => false,
     })).toMatchObject({ ok: false });
+  });
+});
+
+describe('the uploads folder', () => {
+  test('is the one the spec names', () => {
+    expect(BOX_UPLOADS_SUBDIR).toBe('uploads');
   });
 });
 

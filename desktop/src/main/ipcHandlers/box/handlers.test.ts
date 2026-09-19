@@ -17,7 +17,7 @@ vi.mock('electron', () => ({
 }));
 
 const broker = vi.hoisted(() => ({
-  ensureBox: vi.fn(async () => ({ boxId: 'box_1', workspaceDir: '/home/user/workspace' })),
+  ensureBox: vi.fn(async () => ({ boxId: 'box_1', workspaceDir: '/workspace' })),
   listMachines: vi.fn(async () => [
     { id: 'box_1', kind: 'box', label: 'The box', state: 'running' },
   ]),
@@ -109,10 +109,10 @@ describe('copying a file onto the box', () => {
     const local = path.join(tmp, 'notes.txt');
     await fs.writeFile(local, 'hello box');
     const result = await call(BoxIpc.CopyToBox, { localPath: local, boxPath: '' });
-    expect(result).toEqual({ ok: true, value: { boxPath: '/home/user/workspace/notes.txt' } });
+    expect(result).toEqual({ ok: true, value: { boxPath: '/workspace/uploads/notes.txt' } });
     expect(broker.putFile).toHaveBeenCalledWith(
       'box_1',
-      '/home/user/workspace/notes.txt',
+      '/workspace/uploads/notes.txt',
       Buffer.from('hello box'),
     );
   });

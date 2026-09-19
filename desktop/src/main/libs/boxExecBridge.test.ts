@@ -62,7 +62,7 @@ async function runBridge(broker: Broker, env: Record<string, string> = {}, stdin
       [BRIDGE_ENV.token]: 'test-token',
       [BRIDGE_ENV.boxId]: 'box_test',
       [BRIDGE_ENV.command]: 'echo hi',
-      [BRIDGE_ENV.workdir]: '/home/user/workspace',
+      [BRIDGE_ENV.workdir]: '/workspace',
       [BRIDGE_ENV.env]: JSON.stringify({ FOO: 'bar' }),
       [BRIDGE_ENV.pty]: '0',
       ...env,
@@ -179,7 +179,7 @@ describe('the bridge, end to end against a local broker', () => {
     });
     expect(r.seen.body).toMatchObject({
       command: 'echo hi',
-      workdir: '/home/user/workspace',
+      workdir: '/workspace',
       env: { FOO: 'bar' },
       pty: false,
     });

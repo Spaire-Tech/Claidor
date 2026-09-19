@@ -14,14 +14,23 @@ export type { BoxBrokerSettings } from './brokerClient';
 export { isLoopbackBroker } from './brokerClient';
 
 /**
- * Where the box keeps the agent's working files, when the broker does not say.
+ * Where the box keeps files, from the spec's own layout
+ * (`sources/grok-bot-agent-computer.md` §3): `/workspace` is the scratch and
+ * working tree, `/home/box` holds the profile, memory, routines and agent data.
  *
  * These are defaults, not law: the broker knows which template it started and
  * may lay it out differently, so `ensureBox` can override them. Either way the
  * path is inside the box and never on the Mac.
  */
-export const BOX_WORKSPACE_ROOT = '/home/user/workspace';
-export const BOX_AGENT_WORKSPACE_ROOT = '/home/user/agent';
+export const BOX_WORKSPACE_ROOT = '/workspace';
+export const BOX_AGENT_WORKSPACE_ROOT = '/home/box';
+
+/**
+ * Where a copy from the person's machine lands when they do not choose a path.
+ * The spec names it, and it matters: files arriving loose in `/workspace`
+ * mixed with the agent's own working files is how custody stops being legible.
+ */
+export const BOX_UPLOADS_DIR = '/workspace/uploads';
 
 export type BoxRuntimePaths = {
   /** Human-readable name for this scope's box, used as the registry label. */

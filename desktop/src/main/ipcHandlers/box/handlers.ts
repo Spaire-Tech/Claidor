@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 
 import { ipcMain } from 'electron';
 
+import { BOX_WORKSPACE_ROOT } from '../../../../openclaw-extensions/box/backendSpec';
 import {
   BoxBrokerClient,
   type BoxBrokerSettings,

@@ -16,6 +16,17 @@ import path from 'node:path';
 /** Above this, a copy is almost certainly a mistake or a directory. */
 export const MAX_COPY_BYTES = 100 * 1024 * 1024;
 
+/**
+ * Where a copy lands when the person names no path, from the spec
+ * (`sources/grok-bot-agent-computer.md` §4.2: "Default landing
+ * `/workspace/uploads` or chosen box path").
+ *
+ * It matters that this is its own folder: files the person handed over, mixed
+ * in with the agent's own working files, is how custody stops being legible to
+ * either of them.
+ */
+export const BOX_UPLOADS_SUBDIR = 'uploads';
+
 export type CustodyRefusal = { ok: false; reason: string };
 export type CopyPlan = { ok: true; localPath: string; boxPath: string; bytes: number };
 
@@ -66,7 +77,10 @@ export async function planCopyToBox(params: {
     return { ok: false, reason: 'Choose a file by its full path.' };
   }
 
-  const destination = resolveBoxPath(params.workspaceRoot, params.boxPath || path.basename(localPath));
+  const destination = resolveBoxPath(
+    params.workspaceRoot,
+    params.boxPath || path.posix.join(BOX_UPLOADS_SUBDIR, path.basename(localPath)),
+  );
   if (!destination.ok) {
     return destination;
   }

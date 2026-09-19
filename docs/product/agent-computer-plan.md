@@ -815,3 +815,67 @@ snapshot that `/reset` restores from; the plugin only asks for the restore.
 `/home/user/workspace` as a default and prefers whatever the broker names,
 because the broker started the template and is the one that knows. A
 non-absolute answer is ignored rather than guessed at.
+
+---
+
+## 10. Checked against the spec, once it arrived
+
+`sources/grok-bot-agent-computer.md` and `sources/grok-bot-debugging-the-box.md`
+came with the merge, after the build. Four things in the build disagreed with
+them, and all four were changed to follow the spec rather than the other way
+round.
+
+**The filesystem layout.** The box keeps its scratch and working tree at
+`/workspace` and its profile, memory and agent data at `/home/box` (§3). I had
+guessed `/home/user/workspace` and `/home/user/agent`. Corrected; they remain
+defaults the broker can override.
+
+**Where a copy lands.** `CopyToBox` defaults to `/workspace/uploads`, which the
+spec names (§4.2). I had dropped files straight into the workspace root. That
+is worse than untidy: files the person handed over, loose among the agent's own
+working files, is how custody stops being legible to either of them.
+
+**box-doctor's check list and output.** The spec's list is canonical and I was
+missing **Chrome file-descriptor pressure**; my screen check tested whether
+`DISPLAY` was set rather than whether the spec's display `:1` answers
+`xdpyinfo`. Both fixed. More importantly the output shape is
+`[box-doctor] PASS|FAIL <name>: <detail>` with a final `SUMMARY`, left at
+`/tmp/box-doctor.log` — **and that is an interface, not our private business**,
+because the spec has the agent run `box-doctor` over Shell and read that log
+itself. The script now decides PASS or FAIL inside the box and writes that log;
+it has to, or the log the agent reads would hold no verdicts. The one thing the
+box cannot know by itself is what time it is *here*, so this Mac's clock is
+passed in. Our own report keeps a third state, `warn`, for an old Chrome or a
+small clock drift; the log line stays PASS, because the documented shape has
+only two.
+
+I also added the runtime check the debugging doc leads with — `/.dockerenv`
+present means a local Docker container, absent means a brokered pod — because
+it decides where someone looks next.
+
+**Two real bugs came out of writing those checks honestly, and both would have
+made box-doctor lie:**
+
+1. **`pgrep -f` matched the doctor itself.** It scans whole command lines, and
+   the doctor's own command line names every process it hunts for. x11vnc,
+   noVNC and the compositor all reported *running* on a machine where none of
+   them was. The fix is the bracketed first letter (`'[x]11vnc'`), which cannot
+   match the literal in the script that contains it. There is a test that runs
+   the script from a file, in a clean process tree, and fails if any of the
+   three passes here.
+2. **The scratch file was a fixed path.** Two doctors running at once — the
+   startup check and a person pressing the button — appended to and counted
+   each other's lines, and both reports came out wrong. It is per-process now.
+
+**Still not built from the spec**, and named rather than quietly skipped:
+`request_box_help` (handing the person a manual step on a working desktop, for
+a login or a captcha), the `computerUse` / `browserUse` subagents, and the
+per-agent desktops. The last two need the box's desktop, which is §3c's
+blocker, not an omission.
+
+**One handoff for the Brief agent.** Part One says the browser brief needs
+rewriting: it currently tells the agent *"Do not use `target="sandbox"` or
+`target="node"`: there is no sandbox and no other machine in this product."*
+The first half of that is now false — there is a sandbox, and a box. The second
+half should stay true until §3c is solved, because the box's browser is not
+reachable yet. That sentence is the Brief agent's to change, not mine.

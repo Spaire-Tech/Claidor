@@ -147,10 +147,10 @@ describe('running one shell command in the box', () => {
 describe('file custody', () => {
   test('a file reaches the box only by an explicit import call', async () => {
     const { impl, calls } = fakeFetch([{ body: {} }]);
-    await new BoxBrokerClient(config, impl).putFile('box_1', '/home/user/workspace/a.txt', Buffer.from('hi'));
+    await new BoxBrokerClient(config, impl).putFile('box_1', '/workspace/a.txt', Buffer.from('hi'));
     expect(calls[0].init.method).toBe('PUT');
     const body = JSON.parse(String(calls[0].init.body));
-    expect(body.path).toBe('/home/user/workspace/a.txt');
+    expect(body.path).toBe('/workspace/a.txt');
     expect(Buffer.from(body.contentBase64, 'base64').toString('utf8')).toBe('hi');
   });
 
@@ -158,8 +158,8 @@ describe('file custody', () => {
     const { impl, calls } = fakeFetch([{
       body: { contentBase64: Buffer.from('out').toString('base64') },
     }]);
-    const data = await new BoxBrokerClient(config, impl).getFile('box_1', '/home/user/workspace/a.txt');
-    expect(calls[0].url).toContain('path=%2Fhome%2Fuser%2Fworkspace%2Fa.txt');
+    const data = await new BoxBrokerClient(config, impl).getFile('box_1', '/workspace/a.txt');
+    expect(calls[0].url).toContain('path=%2Fworkspace%2Fa.txt');
     expect(data.toString('utf8')).toBe('out');
   });
 });
