@@ -1,5 +1,5 @@
 /**
- * Complete generated Grok Bot 0.18 Dashboard closure module recovered from
+ * Complete generated Caisra 0.18 Dashboard closure module recovered from
  * byte-identical macOS and Windows immutable artifact regions. Do not hand-edit.
  * Canonical evidence: src/app/dist/electron-main/main.cjs:149935-160951
  * Region SHA-256: 8f3ebd21345db06aa8db2cad15d9828be8b37043d2a924ad25ac6502b09f45a8

@@ -169,8 +169,8 @@ export const UI_TEXT = {
   continueInBrowser: "Continue in your browser",
   copied: "Copied",
   copyVersionInfo: "Copy version info",
-  copyright: "Copyright © 2026 SpaceXAI",
-  feedbackIntroduction: "Tell the Grok Bot team what happened or what you want changed. Reports go straight to the team.",
+  copyright: "Copyright © 2026 Spaire",
+  feedbackIntroduction: "Tell the Caisra team what happened or what you want changed. Reports go straight to the team.",
   feedbackPlaceholder: "What happened? What did you expect?",
   helpCenter: "Help Center",
   hiddenBots: "Hidden Bots",
@@ -184,7 +184,7 @@ export const UI_TEXT = {
   signIn: "Sign in",
   signInTagline: "Your team of always-on agents that you can give real work to.",
   signOut: "Sign out",
-  signOutDescription: "You’ll need to sign in again to use your Cursor account with Grok Bot.",
+  signOutDescription: "You’ll need to sign in again to use your Cursor account with Caisra.",
   signOutTitle: "Sign out?",
-  title: "Grok Bot"
+  title: "Caisra"
 } as const;

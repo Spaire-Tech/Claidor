@@ -197,6 +197,39 @@ process.on("uncaughtException", (error) => {
 `;
 }
 
+/**
+ * The preloads have the same shape as electron-main and the host: each module
+ * exports an entrypoint and a loader, and calls neither. Bundling the module
+ * directly produces a file that defines a bridge and never installs it, so
+ * window.desktop is undefined and the renderer dies on
+ * `invariant(hasDesktopBridge(candidate.desktop))` before React mounts — a dark,
+ * empty window with the error only visible in the devtools console.
+ */
+const PRELOAD_ENTRYPOINTS = {
+  "preload": ["installPrimaryPreloadEntrypoint", "loadPrimaryPreloadElectron"],
+  "preload-dev-controls": ["installDevControlsPreloadEntrypoint", "loadDevControlsPreloadElectron"],
+  "preload-webview": ["installWebviewPreloadEntrypoint", "loadBrowserPreloadElectron"],
+  "preload-vnc": ["installVncPreloadEntrypoint", "loadVncPreloadElectron"],
+};
+
+export function preloadEntrySource(name) {
+  const entry = PRELOAD_ENTRYPOINTS[name];
+  if (entry == null) throw new Error(`Unknown preload: ${name}`);
+  const [install, load] = entry;
+  return `import { ${install}, ${load} } from "./source/electron-preload/${name}.ts";
+import * as electronNamespace from "electron";
+
+const electron = (electronNamespace as unknown as { default?: unknown }).default ?? electronNamespace;
+
+try {
+  ${install}(${load}(electron) as never);
+} catch (error) {
+  const detail = error instanceof Error ? (error.stack ?? String(error)) : String(error);
+  process.stderr.write("[caisra-${name}] preload failed: " + detail + "\\n");
+}
+`;
+}
+
 export async function hostEntrySource() {
   // The host's list lives in the activation script rather than a JSON manifest.
   // Importing the constant does not run any validation; that happens inside

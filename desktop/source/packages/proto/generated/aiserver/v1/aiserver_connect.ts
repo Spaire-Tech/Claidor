@@ -1,5 +1,5 @@
 /**
- * Complete generated Grok Bot 0.18 AI Server service descriptor recovered
+ * Complete generated Caisra 0.18 AI Server service descriptor recovered
  * from byte-identical macOS and Windows immutable artifact regions. Do not hand-edit.
  * Canonical evidence: src/app/dist/electron-main/main.cjs:202808-204693
  * Region SHA-256: 53c23b26d9df20da6a86bc1020caaf66464d90a414338d36577d63fa6f2782ba

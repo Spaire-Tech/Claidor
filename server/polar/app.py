@@ -14,6 +14,7 @@ from polar.backoffice import app as backoffice_app
 from polar.checkout import ip_geolocation
 from polar.checkout_link.app import app as checkout_link_redirect_app
 from polar.config import settings
+from polar.desktop.app_sign_in import router as desktop_app_sign_in_router
 from polar.desktop.endpoints import router as desktop_router
 from polar.exception_handlers import add_exception_handlers
 from polar.health.endpoints import router as health_router
@@ -267,6 +268,12 @@ def create_app() -> FastAPI:
 
     # /desktop: the desktop app's sign-in and model proxy
     app.include_router(desktop_router)
+
+    # /loginDeepControl, /auth/poll, /oauth/token: the sign-in the app in
+    # `desktop/` actually speaks. Root-level on purpose — it builds each
+    # of these with a leading slash, which discards any path its base URL
+    # carried, so nothing under /desktop would ever be called.
+    app.include_router(desktop_app_sign_in_router)
 
     # /maty/runner: the queue the cloud engine takes its work from
     app.include_router(maty_router)

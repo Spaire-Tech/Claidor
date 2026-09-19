@@ -1,5 +1,5 @@
 /**
- * Complete generated Grok Bot 0.18 module recovered from byte-identical
+ * Complete generated Caisra 0.18 module recovered from byte-identical
  * macOS and Windows immutable artifact regions. Do not hand-edit.
  * Evidence: src/app/dist/electron-main/main.cjs:39426-39564
  * Region SHA-256: 67e9bcda9adbec28ae29759f774e7b9dc2f154641a09a199dff7bfbc3b24f415

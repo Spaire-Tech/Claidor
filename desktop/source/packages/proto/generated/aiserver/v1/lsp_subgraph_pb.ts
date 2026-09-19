@@ -1,5 +1,5 @@
 /**
- * Complete generated Grok Bot 0.18 AI Server closure module recovered from
+ * Complete generated Caisra 0.18 AI Server closure module recovered from
  * byte-identical macOS and Windows immutable artifact regions. Do not hand-edit.
  * Canonical evidence: src/app/dist/electron-main/main.cjs:170611-170801
  * Region SHA-256: 787ca2d1e2722924a7ac74131e1a36862dcb7660e210cbedb95b1e479ec36eb6

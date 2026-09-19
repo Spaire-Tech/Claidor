@@ -1,5 +1,5 @@
 /**
- * Complete generated Grok Bot 0.18 Dashboard service descriptor recovered
+ * Complete generated Caisra 0.18 Dashboard service descriptor recovered
  * from byte-identical macOS and Windows immutable artifact regions. Do not hand-edit.
  * Canonical evidence: src/app/dist/electron-main/main.cjs:306953-312787
  * Region SHA-256: 4406b1df9a75af284f0f3d1c0ab2944999fbaaac21971a56bec0e16fa60860db
