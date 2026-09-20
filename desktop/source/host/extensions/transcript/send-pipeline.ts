@@ -582,4 +582,16 @@ export class SendPipeline {
       ),
     );
   }
+
+  async appendSendMessage(args: {
+    agentId?: string;
+    message: SendMessage;
+  }): Promise<{ id: string }> {
+    await this.tm.sessions.ensureActionTarget(args.agentId);
+    const id = nextEntryId(getTranscript(), "send-message");
+    this.appendSendMessageEntry(
+      createSendMessageEntry(id, args.message, Date.now()),
+    );
+    return { id };
+  }
 }
