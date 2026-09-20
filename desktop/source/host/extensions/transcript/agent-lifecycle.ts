@@ -21,7 +21,9 @@ import {
   INTRODUCTION_FAILED_TRAY_TITLE,
   SAND_ONBOARDING_KICKSTART_PROMPT,
   fallbackIntroductionText,
+  firstHelloText,
   introductionFailedTrayKey,
+  withLeadingHello,
 } from "../../../shared/agents/onboarding.js";
 import {
   configuredClaidorCheapModel,
@@ -196,11 +198,20 @@ export class AgentLifecycle {
     let sent = 0;
     let error: unknown;
     const emitSendMessage = async (message: Record<string, unknown>) => {
-      sent += 1;
-      return this.appendKickstartMessage(session, message);
+      const outgoing = sent === 0 ? withLeadingHello(message, firstHelloText(name)) : [message];
+      let lastId = "";
+      for (const item of outgoing) {
+        sent += 1;
+        lastId = this.appendKickstartMessage(session, item);
+      }
+      return lastId;
     };
     const dispatchRemote = async (method: string, args: unknown) => {
       if (method === "appendConnectorCard") {
+        if (sent === 0) {
+          sent += 1;
+          this.appendKickstartMessage(session, { type: "text", content: firstHelloText(name) });
+        }
         sent += 1;
         await this.tm.sendPipeline.appendConnectorCard({
           agentId: session.id,
@@ -213,8 +224,8 @@ export class AgentLifecycle {
         const message = typeof record.message === "object" && record.message != null
           ? record.message as Record<string, unknown>
           : { type: "text", content: "" };
-        sent += 1;
-        return { id: this.appendKickstartMessage(session, message) };
+        const id = await emitSendMessage(message);
+        return { id };
       }
       throw new Error(`${method} is not available during introduction`);
     };

@@ -33,6 +33,8 @@ test("Grok Bot tools are the product tools, not the Settings Router", async () =
     assert.match(CAISRA_PRODUCT_SYSTEM_PROMPT, /question widget/);
     assert.match(CAISRA_PRODUCT_SYSTEM_PROMPT, /em dash/);
     assert.match(CAISRA_PRODUCT_SYSTEM_PROMPT, /not a corporate help desk/);
+    assert.match(CAISRA_PRODUCT_SYSTEM_PROMPT, /Never open with a widget/);
+    assert.match(CAISRA_PRODUCT_SYSTEM_PROMPT, /Never call CreateAgent until they have said what it is for/);
     const identified = buildCaisraProductSystemPrompt({ agentId: "agent-9", name: "Caisra", description: "helps with the week" });
     assert.match(identified, /Your agent_id is agent-9/);
     assert.match(identified, /Title: Caisra/);
@@ -50,6 +52,16 @@ test("Grok Bot tools are the product tools, not the Settings Router", async () =
     assert.match(created, /Created agent "Research" \(id: agent-2\)/);
     assert.equal(calls[0].method, "createAgent");
     assert.equal(calls[0].args.origin, "agent");
+    const refused = await executeGrokBotTool("CreateAgent", { name: "Research" }, {
+      agentId: "main",
+      dispatchRemote: async (method, args) => {
+        calls.push({ method, args });
+        return { agent: { id: "agent-2", name: args.name } };
+      },
+      emitSendMessage: async () => "t0s0",
+    });
+    assert.match(refused, /Ask them first/);
+    assert.equal(calls.length, 1);
     const renamed = await executeGrokBotTool("UpdateAgent", { agent_id: "agent-2", name: "Ben" }, {
       agentId: "main",
       dispatchRemote: async (method, args) => {
