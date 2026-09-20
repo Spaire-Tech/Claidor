@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { join } from "node:path";
 import type { Context } from "../../packages/context/core.js";
 import type { PrivacyMode } from "../../packages/redaction/privacy-mode.js";
 import { SAND_SUMMARIZATION_MODEL_ID } from "../../shared/agents/sand-agent-model.js";
@@ -29,8 +28,6 @@ import type {
 } from "./system-prompt-assembly.js";
 import type { SummarizationPromptSession } from "../../packages/agent-summarization/summarization-handler.js";
 import { createProviderPromptSession } from "../extensions/inference/provider-session.js";
-import { getSandRootDir } from "../host-paths.js";
-import { SandSettingsStore } from "../../shared/node/settings/sand-settings-store.js";
 import type { AgentProfilePromptSnapshot } from "./sand-agent-profile-prompt.js";
 import {
   ConversationAction,
@@ -182,18 +179,9 @@ export async function createTurnAgentRunContext<ContextValue>(
     skipLabeling: input.isSubagentRunner || input.hidden === true,
     ...(input.lineage === undefined ? {} : { lineage: input.lineage }),
   };
-  const inferenceProvider = new SandSettingsStore(join(getSandRootDir(), "settings.json")).getInferenceProvider();
-  const agent = inferenceProvider === "cursor"
-    ? input.inference.createSession(input.onRequestId, sessionOptions)
-    : createProviderPromptSession(inferenceProvider, sessionOptions) as unknown as TurnAgentPromptSession;
-  const summarizationSession = inferenceProvider === "cursor" ? input.inference.createSummarizationSession?.(
-    input.onRequestId,
-    {
-      modelId: SAND_SUMMARIZATION_MODEL_ID,
-      isSummarizationSession: true,
-      ...(input.lineage === undefined ? {} : { lineage: input.lineage }),
-    },
-  ) : createProviderPromptSession(inferenceProvider, { cheap: true, isSummarizationSession: true }) as unknown as SummarizationPromptSession;
+  const inferenceProvider = "claidor" as const;
+  const agent = createProviderPromptSession(inferenceProvider, sessionOptions) as unknown as TurnAgentPromptSession;
+  const summarizationSession = createProviderPromptSession(inferenceProvider, { cheap: true, isSummarizationSession: true }) as unknown as SummarizationPromptSession;
   const summarization = summarizationSession ?? input.inference.createSession(
     input.onRequestId,
     {

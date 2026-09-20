@@ -8,10 +8,7 @@ export function envFlagEnabled(value: string | undefined): boolean {
   return /^(1|true|yes)$/i.test(value?.trim() ?? "");
 }
 
-export function resolveProductInferenceProvider(env: NodeJS.ProcessEnv = process.env): SandInferenceProvider {
-  if (envFlagEnabled(env[CAISRA_CLAUDE_CODE_ENV])) return "claude-code";
-  const override = env[SAND_INFERENCE_PROVIDER_ENV]?.trim();
-  if (override === "claidor" || override === "openrouter" || override === "codex") return override;
+export function resolveProductInferenceProvider(_env: NodeJS.ProcessEnv = process.env): SandInferenceProvider {
   return PRODUCT_INFERENCE_PROVIDER;
 }
 

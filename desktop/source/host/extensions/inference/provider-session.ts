@@ -476,10 +476,9 @@ class ProviderPromptExecutor extends BasePromptExecutor<ProviderMessage> {
   }
 }
 
-export function createProviderPromptSession(provider: RoutedProvider, options?: ClaidorSessionModelOptions): { getModelId(): string; getExecutor(state?: unknown): PromptExecutor } {
-  const modelId = provider === "claidor"
-    ? claidorModelForSession(options)
-    : provider === "codex" ? configuredCodexModel() : provider === "claude-code" ? "claude-code" : process.env.SAND_OPENROUTER_MODEL?.trim() || "openai/gpt-5.2";
+export function createProviderPromptSession(_provider: RoutedProvider, options?: ClaidorSessionModelOptions): { getModelId(): string; getExecutor(state?: unknown): PromptExecutor } {
+  const provider: RoutedProvider = "claidor";
+  const modelId = claidorModelForSession(options);
   return { getModelId: () => modelId, getExecutor: state => new ProviderPromptExecutor(provider, Array.isArray(state) ? state as ProviderMessage[] : undefined, usage => recordRoutedUsage(provider, usage), modelId) };
 }
 

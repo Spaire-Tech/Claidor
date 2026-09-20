@@ -71,7 +71,9 @@ test("a late inference credential does not tear down a running box", async () =>
     assert.match(source, /SAND_DEV_INFERENCE_TOKEN_FILE=\$\{LOCAL_DOCKER_INFERENCE_TOKEN_FILE\}/);
     assert.match(source, /dst=\/run\/grok-bot,readonly/);
     assert.match(source, /if \(late != null\) await persistInferenceCredential/);
-    assert.equal(LOCAL_DOCKER_SCHEMA_VERSION, "8");
+    assert.doesNotMatch(source, /\.claude/);
+    assert.doesNotMatch(source, /\.codex/);
+    assert.equal(LOCAL_DOCKER_SCHEMA_VERSION, "9");
     const production = await (await import("node:fs/promises")).readFile(
       path.join(repoRoot, "source/electron-main/main-production-services.ts"),
       "utf8",
