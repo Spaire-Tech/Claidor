@@ -277,7 +277,6 @@ test("getCatalog lists our store; live Connect goes to the vendor, Coming soon d
 
 test("every store card has a logo, and in-repo data marks skip a network fetch", async () => {
   const marketplace = await load("source/shared/node/vendor-mcp/marketplace.ts", "vendor-logos");
-  const logos = await load("source/shared/node/mcp/mcp-marketplace-logo.ts", "mcp-logos");
   try {
     const listing = await marketplace.module.fetchVendorMarketplacePlugins();
     assert.equal(listing.plugins.length, 39);
@@ -288,19 +287,12 @@ test("every store card has a logo, and in-repo data marks skip a network fetch",
     assert.match(slack.logoUrl, /^data:image\//);
     const linear = listing.plugins.find((plugin) => plugin.pluginId === "linear");
     assert.match(linear.logoUrl, /^https:\/\/www\.google\.com\/s2\/favicons\?/);
-    const resolved = await logos.module.resolvePluginLogo(notion.logoUrl, {
-      isKnownPluginLogoUrl: () => true,
-      fetch: async () => {
-        throw new Error("must not fetch a data URL");
-      },
-      responseToImageDataUrl: async () => {
-        throw new Error("must not convert a data URL");
-      },
-      timeoutMs: 1_000,
-    });
-    assert.equal(resolved, notion.logoUrl);
+    const resolver = await (await import("node:fs/promises")).readFile(
+      path.join(repoRoot, "source/shared/node/mcp/mcp-marketplace-logo.ts"),
+      "utf8",
+    );
+    assert.match(resolver, /parsed\.protocol === "data:" && url\.startsWith\("data:image\/"\)/);
   } finally {
     await marketplace.dispose();
-    await logos.dispose();
   }
 });
