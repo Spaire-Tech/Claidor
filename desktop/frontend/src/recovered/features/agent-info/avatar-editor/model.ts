@@ -5,6 +5,8 @@
 // @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=3495766 (qUe file decoding; SHA256 80464803b50f478598080bdc1b91da3996c6b74168e2351ea26f620f2ec62ba5)
 // @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=3496141 (jUe 256px PNG export; SHA256 80464803b50f478598080bdc1b91da3996c6b74168e2351ea26f620f2ec62ba5)
 
+import { CLOUD_BLOB_COLORS, CLOUD_BLOB_SHAPE } from "../../../../../../source/shared/agent/cloud-blobs";
+
 export const AVATAR_SOURCE_MAX_BYTES = 25 * 1024 * 1024;
 export const AVATAR_SOURCE_MAX_DIMENSION = 1_024;
 export const AVATAR_OUTPUT_SIZE = 256;
@@ -12,25 +14,13 @@ export const AVATAR_STAGE_SIZE = 260;
 export const AVATAR_MIN_ZOOM = 1;
 export const AVATAR_MAX_ZOOM = 5;
 
-// @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=22574 (PQ character palette; SHA256 ef4e9831b65d39633f09c9ad0c083b98b7ebf52e3bb558182aee5bde31f876fa)
-// @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=22574 (PQ character palette; SHA256 80464803b50f478598080bdc1b91da3996c6b74168e2351ea26f620f2ec62ba5)
-export const AVATAR_COLORS = [
-  { id: "black", label: "Black", value: "#000" },
-  { id: "brown", label: "Brown", value: "#936439" },
-  { id: "red", label: "Red", value: "#FF263C" },
-  { id: "orange", label: "Orange", value: "#FF6700" },
-  { id: "yellow", label: "Yellow", value: "#FF9800" },
-  { id: "green", label: "Green", value: "#00C972" },
-  { id: "cyan", label: "Cyan", value: "#00BCA6" },
-  { id: "blue", label: "Blue", value: "#1084FE" },
-  { id: "violet", label: "Violet", value: "#9159FE" },
-  { id: "magenta", label: "Magenta", value: "#FF309B" },
-  { id: "gray", label: "Gray", value: "#777777" },
-] as const;
+export const AVATAR_COLORS = CLOUD_BLOB_COLORS.map((color) => ({
+  id: color.id,
+  label: color.label,
+  value: color.top,
+}));
 
-// @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=22691 (Ij character shapes; SHA256 ef4e9831b65d39633f09c9ad0c083b98b7ebf52e3bb558182aee5bde31f876fa)
-// @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=22691 (Ij character shapes; SHA256 80464803b50f478598080bdc1b91da3996c6b74168e2351ea26f620f2ec62ba5)
-export const AVATAR_SHAPES = ["blob", "pebble", "squircle", "tablet", "wedge", "hex", "cloud", "teardrop"] as const;
+export const AVATAR_SHAPES = [CLOUD_BLOB_SHAPE] as const;
 
 export interface AvatarCharacter {
   readonly avatarShape: string | null;
