@@ -1,8 +1,11 @@
 import { DashboardService } from "../../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
+import { getSandRootDir } from "../../host-paths.js";
+import { isVendorMcpPluginId } from "../../../shared/node/vendor-mcp/catalog.js";
+import { loadVendorMcpInstalls, removeVendorMcpInstall, upsertVendorMcpInstall } from "../../../shared/node/vendor-mcp/installs.js";
+import { fetchVendorEffectivePlugins, fetchVendorMarketplacePlugins } from "../../../shared/node/vendor-mcp/marketplace.js";
 import {
   createAccountMcpWriter,
   fetchAccountMcpServers,
-  fetchEffectiveUserPlugins,
   type AccountMcpClient,
   type AccountMcpDependencies,
 } from "../../../shared/node/cursor-backend/account-mcp.js";
@@ -29,7 +32,7 @@ import { createBoxSandMcpExec } from "./box-mcp-exec.js";
 
 export interface McpServerSummary { id: string; name: string; serverIdentifier: string; accountKey: string; pluginId?: string | null; isTeamServer: boolean; status: string; statusDetail?: string; transport: string; toolCount: number; disabledToolCount?: number; customInstructions: string }
 export interface CatalogField { key: string; label: string; hint: string; isRequired?: boolean; isSecret?: boolean }
-export interface CatalogPlugin { id: string; name: string; displayName?: string; description?: string; category?: string; fields?: CatalogField[]; connectors?: unknown[]; skills?: Array<{ name: string; description?: string; sourceUrl?: string }> }
+export interface CatalogPlugin { id: string; name: string; displayName?: string; description?: string; category?: string; fields?: CatalogField[]; connectors?: unknown[]; skills?: Array<{ name: string; description?: string; sourceUrl?: string }>; comingSoon?: boolean; vendorMcpUrl?: string }
 export interface EffectivePlugin { pluginId: string; installMode?: string; isEnabled: boolean; hasTeamConfiguredVariables?: boolean }
 export interface ServerState { servers: McpServerSummary[] }
 export interface PluginSkillsPort { sync(trigger: string): Promise<unknown[]>; status(): unknown; removeLiveReferences?(sourceUrls: readonly string[]): void }
@@ -40,7 +43,7 @@ export function toCatalogFields(fields?: readonly CatalogField[] | null): Array<
 export function toAuthResult(result: { status: string; serverName: string; authorizationUrl?: string; message?: string }): Record<string, unknown> { if (result.status === "started") return { kind: "started", authorizationUrl: result.authorizationUrl, serverName: result.serverName }; if (result.status === "already-authenticated") return { kind: "already-authenticated", serverName: result.serverName }; if (result.status === "not-configured") return { kind: "not-configured", serverName: result.serverName }; return { kind: result.status, message: result.message, serverName: result.serverName }; }
 export function toPluginSummary(view: CatalogPlugin, effectivePlugins: readonly EffectivePlugin[] | null, servers: readonly McpServerSummary[]): Record<string, unknown> {
   const record = effectivePlugins?.find((plugin) => plugin.pluginId === view.id), effective = record != null && isEffectivePluginInstalled(record) ? record : undefined, attributed = servers.find((server) => server.pluginId === view.id), installed = effective != null || record == null && attributed != null;
-  return { pluginId: view.id, name: view.name, displayName: view.displayName, description: view.description, category: view.category, isInstalled: installed, ...(installed ? { installMode: effective?.installMode ?? "unknown" } : {}), connectorCount: view.connectors?.length ?? 1, skills: (view.skills ?? []).map(({ name, description }) => ({ name, description })) };
+  return { pluginId: view.id, name: view.name, displayName: view.displayName, description: view.description, category: view.category, isInstalled: installed, ...(installed ? { installMode: effective?.installMode ?? "unknown" } : {}), connectorCount: view.connectors?.length ?? 1, skills: (view.skills ?? []).map(({ name, description }) => ({ name, description })), ...(view.comingSoon === true ? { comingSoon: true } : {}), ...(view.vendorMcpUrl == null ? {} : { vendorMcpUrl: view.vendorMcpUrl }) };
 }
 export function syncPluginSkillsInBackground(pluginSkills: PluginSkillsPort | undefined, trigger: string): void { void pluginSkills?.sync(trigger).catch(() => {}); }
 
@@ -60,6 +63,13 @@ export interface CreateHostMcpOptions {
   onServerAuthenticated?: (completion: unknown) => void;
   onDiscoveryFailed?: (event: Record<string, unknown>) => void;
   onConnectorAuth?: (event: Record<string, unknown>) => void;
+  fetchMarketplace?: (
+    token: unknown,
+    machine: unknown,
+  ) => Promise<{ plugins: unknown[]; includesPrivateMarketplaces: boolean }>;
+  connectComposioToolkit?: (toolkit: string) => Promise<unknown>;
+  connectVendorMcp?: (plugin: { pluginId: string; displayName: string; vendorMcpUrl: string }) => Promise<unknown>;
+  uninstallComposioPlugin?: (pluginId: string) => Promise<boolean>;
   log?: (message: string) => void;
 }
 interface McpManagerRuntime {
@@ -101,6 +111,10 @@ export function createHostMcp(deps: CreateHostMcpOptions): McpHostPort {
     effectivePluginsProvider: deps.effectivePluginsProvider,
     onConnectorAuth: deps.onConnectorAuth,
     getMachineId: deps.getMachineId,
+    ...(deps.fetchMarketplace == null ? {} : { fetchMarketplace: deps.fetchMarketplace }),
+    ...(deps.connectComposioToolkit == null ? {} : { connectComposioToolkit: deps.connectComposioToolkit }),
+    ...(deps.connectVendorMcp == null ? {} : { connectVendorMcp: deps.connectVendorMcp }),
+    ...(deps.uninstallComposioPlugin == null ? {} : { uninstallComposioPlugin: deps.uninstallComposioPlugin }),
   }) as unknown as McpManagerRuntime;
   const discovery = createMcpToolsDiscovery({
     definitionSource: manager.definitionSourceView(),
@@ -205,7 +219,15 @@ export class McpHostService {
       getMachineId: deps.auth.getMachineId,
       accountServersProvider: () => fetchAccountMcpServers(accountMcpDeps),
       accountMcpWriter: createAccountMcpWriter(accountMcpDeps),
-      effectivePluginsProvider: () => fetchEffectiveUserPlugins(accountMcpDeps),
+      effectivePluginsProvider: () => fetchVendorEffectivePlugins(new Set(loadVendorMcpInstalls(getSandRootDir()).map((item) => item.id))),
+      fetchMarketplace: fetchVendorMarketplacePlugins,
+      connectVendorMcp: async (plugin: { pluginId: string; displayName: string; vendorMcpUrl: string }) => {
+        upsertVendorMcpInstall(getSandRootDir(), { id: plugin.pluginId, url: plugin.vendorMcpUrl, connected: false });
+      },
+      uninstallComposioPlugin: async (pluginId: string) => {
+        if (!isVendorMcpPluginId(pluginId)) return false;
+        return removeVendorMcpInstall(getSandRootDir(), pluginId);
+      },
       backendMcpExec,
       boxMcpExec: createBoxSandMcpExec(deps.foreverBox.box),
       settingsStore: deps.settings,

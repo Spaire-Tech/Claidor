@@ -1,7 +1,9 @@
+import { fetchVendorMarketplacePlugins } from "../vendor-mcp/marketplace.js";
 import { CATALOG_CACHE_TTL_MS } from "./mcp-catalog-cache.js";
 import { SandMcpConfigError } from "./mcp-config-error.js";
 import { findMissingRequiredCatalogFields } from "./mcp-plugin-variables.js";
 import type { SandMarketplacePlugin } from "./mcp-marketplace.js";
+import { bestEffortCatalogToken, marketplacePluginToView } from "./mcp-marketplace-view.js";
 export class SandMcpCatalogFlow {
   private readonly catalog = new Map<string, SandMarketplacePlugin>();
   private viewsCache: {
@@ -27,15 +29,16 @@ export class SandMcpCatalogFlow {
       }>;
       resolveLogo?(url: string): Promise<unknown>;
       now?: () => number;
+      connectComposioToolkit?(toolkit: string): Promise<unknown>;
+      connectVendorMcp?(plugin: { pluginId: string; displayName: string; vendorMcpUrl: string }): Promise<unknown>;
     },
   ) {}
   async getCatalog(
     getAccessToken: unknown,
     options?: { forceRefresh?: boolean },
   ): Promise<unknown[]> {
-    const marketplace = await import("./mcp-marketplace.js");
-    const bestEffort = this.core.bestEffortToken ?? marketplace.bestEffortToken;
-    const fetchMarketplace = this.core.fetchMarketplace ?? marketplace.fetchMarketplaceMcpPlugins;
+    const bestEffort = this.core.bestEffortToken ?? bestEffortCatalogToken;
+    const fetchMarketplace = this.core.fetchMarketplace ?? fetchVendorMarketplacePlugins;
     const authenticated =
         (await bestEffort(getAccessToken)) != null,
       cached = this.viewsCache,
@@ -62,9 +65,12 @@ export class SandMcpCatalogFlow {
     const views = listing.plugins
       .map((plugin) => {
         this.catalog.set(plugin.pluginId, plugin);
-        return marketplace.marketplacePluginToView(plugin);
+        return marketplacePluginToView(plugin);
       })
-      .sort((a, b) => a.displayName.localeCompare(b.displayName));
+      .sort((a, b) => {
+        const soon = Number(a.comingSoon === true) - Number(b.comingSoon === true);
+        return soon !== 0 ? soon : a.displayName.localeCompare(b.displayName);
+      });
     this.viewsCache = {
       views,
       atMs: this.core.now?.() ?? Date.now(),
@@ -122,6 +128,33 @@ export class SandMcpCatalogFlow {
             item.hasTeamConfiguredVariables === true,
         );
       } catch {}
+    if (plugin.comingSoon === true) {
+      throw new SandMcpConfigError(
+        `${plugin.displayName} is coming soon.`,
+      );
+    }
+    if (plugin.vendorMcpUrl != null) {
+      if (this.core.connectVendorMcp == null) {
+        throw new SandMcpConfigError(
+          `Connecting "${plugin.displayName}" needs the desktop Plugins overlay.`,
+        );
+      }
+      await this.core.connectVendorMcp({
+        pluginId: plugin.pluginId,
+        displayName: plugin.displayName,
+        vendorMcpUrl: plugin.vendorMcpUrl,
+      });
+      return this.core.reloadServers();
+    }
+    if (plugin.composioToolkit != null) {
+      if (this.core.connectComposioToolkit == null) {
+        throw new SandMcpConfigError(
+          `Connecting "${plugin.displayName}" needs Composio on this desktop.`,
+        );
+      }
+      await this.core.connectComposioToolkit(plugin.composioToolkit);
+      return this.core.reloadServers();
+    }
     if (!teamKnown) this.assertRequired(plugin, request.values ?? {});
     await this.core
       .requireAccountWriter()

@@ -1,9 +1,9 @@
 # Renderer source
 
 This directory contains the editable React/TypeScript renderer reconstruction.
-It is built with Vite and selected by the default macOS package. The explicit
-fidelity diagnostic path retains the checksum-pinned shipped renderer hydrated
-by `npm run bootstrap` for comparison.
+It is built with Vite for `npm run start:clean-source`. The default macOS
+package keeps the checksum-pinned 0.18.0 renderer: this tree is a recovered
+skeleton without the compiled atom stylesheet.
 
 The small files under `manifests/` identify assets and reviewed semantic
 boundaries. The upstream renderer itself is not tracked: `npm run bootstrap`

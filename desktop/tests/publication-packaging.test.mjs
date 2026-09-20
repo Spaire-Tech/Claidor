@@ -29,10 +29,23 @@ test("publication ignore rules retain reconstructed frontend source", async () =
   assert.equal(matcher.ignores("recovered/generated-output.txt"), true, "root recovery output must remain ignored");
 });
 
-test("default packaging keeps the polished checksum-pinned renderer", async () => {
+test("packaging ignites host and electron-main when artifact activation cannot", async () => {
+  const source = await readFile(path.join(repoRoot, "scripts", "caisra-ignition-activation.mjs"), "utf8");
+  assert.match(source, /export async function igniteProductionHost/);
+  assert.match(source, /export async function igniteProductionElectronMain/);
+  assert.match(source, /hostEntrySource\(\)/);
+  assert.match(source, /electronMainEntrySource\(\)/);
+  assert.match(source, /Deterministic clean-source production host/);
+});
+
+test("default packaging keeps the polished renderer and ignites the host", async () => {
   const source = await readFile(path.join(repoRoot, "scripts", "package-macos.mjs"), "utf8");
+  const activation = await readFile(path.join(repoRoot, "scripts", "clean-build.mjs"), "utf8");
   assert.match(source, /import \{ buildFidelityReconstructedAsar \} from "\.\/clean-build\.mjs"/);
   assert.match(source, /await buildFidelityReconstructedAsar\(\)/);
+  assert.doesNotMatch(source, /import \{ buildReconstructedAsar \}/);
+  assert.match(activation, /igniteProductionHost/);
+  assert.match(activation, /igniteProductionElectronMain/);
 });
 
 test("Router settings use the trusted backend and display recorded inference usage", async () => {
@@ -67,10 +80,13 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(localDocker, /SAND_BOX_AUTO_UPDATE=0/);
   assert.match(localDocker, /dst=\/home\/box\/sand-host\/host-main\.cjs,readonly/);
   assert.match(localDocker, /\.getBoxRuntime\(\) === "local-docker" \? await localConnect\(\) : await remote\.connect\(\)/);
+  assert.match(localDocker, /OPTIONAL_CREDENTIAL_WAIT_MS = 250/);
+  assert.match(localDocker, /localDockerContainerNeedsReplace\(inspected, hostBundle\.sha256\)/);
+  assert.doesNotMatch(localDocker, /inferenceCredential != null && !inspected\.hasInferenceCredential/);
   assert.match(inference, /recordInferenceUsage\(provider/);
   assert.match(inference, /routerSettings\.getInferenceProvider\(\)/);
   assert.match(inference, /typeof extendedUsage\.then === "function"/);
-  assert.match(inference, /createProviderPromptSession\(provider\)/);
+  assert.match(inference, /createProviderPromptSession\(provider, sessionOptions\)/);
   assert.match(providers, /https:\/\/chatgpt\.com\/backend-api\/codex/);
   assert.match(providers, /headers\.set\("ChatGPT-Account-Id", credentials\.accountId\)/);
   assert.match(providers, /streamCodexDirectResponses/);
@@ -87,12 +103,12 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(providers, /https:\/\/openrouter\.ai\/api\/v1/);
   assert.match(providers, /OpenRouter needs OPENROUTER_API_KEY/);
   assert.match(cursorSession, /routedProvider !== "cursor"/);
-  assert.match(cursorSession, /createProviderPromptSession\(routedProvider\)/);
+  assert.match(cursorSession, /createProviderPromptSession\(routedProvider, sessionOptions\)/);
   assert.match(cursorBackend, /routedProvider !== "cursor"/);
-  assert.match(cursorBackend, /createProviderPromptSession\(routedProvider\)/);
+  assert.match(cursorBackend, /createProviderPromptSession\(routedProvider, \{ modelId: options\.requestedModel\.modelId \}\)/);
   assert.doesNotMatch(rendererPatch, /ANTHROPIC_API_KEY|OPENAI_API_KEY/);
   assert.match(turnShell, /inferenceProvider === "cursor"/);
-  assert.match(turnShell, /createProviderPromptSession\(inferenceProvider\)/);
+  assert.match(turnShell, /createProviderPromptSession\(inferenceProvider, sessionOptions\)/);
   assert.match(coordinator, /method !== "sendPrompt" \|\| !handledLocally\(provider\)/);
   assert.match(coordinator, /provider !== "cursor" && !\(provider === "claidor" && routesClaidorThroughHost\(options\.env\)\)/);
   assert.match(coordinator, /provider\(\): SandInferenceProvider \{ return resolveProductInferenceProvider\(options\.env \?\? process\.env\); \}/);
@@ -100,6 +116,9 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(coordinatorMain, /command<[^>]*>\(commands, "mintInferenceCredential", \{\}\)/);
   assert.match(providers, /\.responses\(id\)/);
   assert.match(providers, /DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-5\.6-luna"/);
+  assert.match(providers, /export function claidorModelForSession/);
+  assert.match(inference, /cheap: true, isSummarizationSession: true/);
+  assert.match(turnShell, /cheap: true, isSummarizationSession: true/);
   assert.match(providers, /providerOptions: \{ openai: \{ strictSchemas: false \} \}/);
   assert.match(providers, /from "\.\.\/\.\.\/\.\.\/shared\/node\/cursor-backend\/claidor-api\.js"/);
   assert.match(providers, /export \{ claidorProxyBaseUrl \}/);

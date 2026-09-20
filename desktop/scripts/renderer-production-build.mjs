@@ -17,6 +17,17 @@ export const rendererProductionOutput = "dist/renderer";
 export const rendererProductionProvenance = `${rendererProductionOutput}/renderer-source-provenance.json`;
 const deterministicBanner = `"Deterministic clean-source renderer: ${rendererProductionEntrypoint}";`;
 
+/**
+ * Electron loads the renderer with `loadFile`, which gives the document the
+ * opaque origin `null`. Vite marks the emitted script and stylesheet
+ * `crossorigin`; Chromium then refuses them under CORS before parsing, and
+ * the app renders in Times New Roman. Strip the attribute. Same fix as
+ * `scripts/build-caisra.mjs`.
+ */
+export function stripCrossoriginAttributes(html) {
+  return html.replace(/\s+crossorigin(?:=("|')[^"']*\1)?/gi, "");
+}
+
 const KATEX_VERSION = "0.16.45";
 const KATEX_CSS_FILES = Object.freeze([
   { file: "katex.css", sha256: "be62cce2bb080b2af5d86b115cc4fda61ead12d782e580046bcfe5598534820b" },
@@ -312,6 +323,9 @@ export async function buildProductionRenderer({ outputRoot }) {
       renderChunk(code) {
         return { code: `${deterministicBanner}\n${code}`, map: null };
       },
+      transformIndexHtml(html) {
+        return stripCrossoriginAttributes(html);
+      },
     }],
     build: {
       assetsDir: "assets",
@@ -327,6 +341,10 @@ export async function buildProductionRenderer({ outputRoot }) {
   const assets = await copyRuntimeAssets(rendererRoot);
   const katex = await copyKatexRuntimeAssets(rendererRoot);
   const pdfAssetRewrite = await rewritePdfAssetReferences(rendererRoot);
+  const indexHtmlPath = path.join(rendererRoot, "index.html");
+  const indexHtml = await readFile(indexHtmlPath, "utf8");
+  const strippedIndexHtml = stripCrossoriginAttributes(indexHtml);
+  if (strippedIndexHtml !== indexHtml) await writeFile(indexHtmlPath, strippedIndexHtml);
   const viteManifest = normalizeRendererManifestDynamicImports(JSON.parse(await readFile(path.join(rendererRoot, ".vite", "manifest.json"), "utf8")));
   await writeFile(path.join(rendererRoot, ".vite", "manifest.json"), `${JSON.stringify(viteManifest, null, 2)}\n`);
   const emittedLazyEntries = [...(viteManifest["index.html"]?.dynamicImports ?? [])].sort();

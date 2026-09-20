@@ -48,6 +48,42 @@ test("a fresh settings store reports local Docker as the box runtime", async () 
   }
 });
 
+test("a late inference credential does not tear down a running box", async () => {
+  const loaded = await loadModule("source/electron-main/box/local-docker-host-connector.ts", "local-docker-replace");
+  try {
+    const { LOCAL_DOCKER_SCHEMA_VERSION, OPTIONAL_CREDENTIAL_WAIT_MS, localDockerContainerNeedsReplace } = loaded.module;
+    assert.equal(OPTIONAL_CREDENTIAL_WAIT_MS <= 250, true);
+    assert.equal(localDockerContainerNeedsReplace({
+      schemaVersion: LOCAL_DOCKER_SCHEMA_VERSION,
+      hostSha256: "abc",
+    }, "abc"), false);
+    assert.equal(localDockerContainerNeedsReplace({
+      schemaVersion: LOCAL_DOCKER_SCHEMA_VERSION,
+      hostSha256: "old",
+    }, "abc"), true);
+    const source = await (await import("node:fs/promises")).readFile(
+      path.join(repoRoot, "source/electron-main/box/local-docker-host-connector.ts"),
+      "utf8",
+    );
+    assert.match(source, /localDockerContainerNeedsReplace\(inspected, hostBundle\.sha256\)/);
+    assert.doesNotMatch(source, /inferenceCredential != null && !inspected\.hasInferenceCredential/);
+    assert.doesNotMatch(source, /OPTIONAL_CREDENTIAL_TIMEOUT_MS = 3_000/);
+    const production = await (await import("node:fs/promises")).readFile(
+      path.join(repoRoot, "source/electron-main/main-production-services.ts"),
+      "utf8",
+    );
+    assert.match(production, /startLocalDockerBox\(settingsStore\.settingsPath\)/);
+    const computerUse = await (await import("node:fs/promises")).readFile(
+      path.join(repoRoot, "source/host/runner/computer-use.ts"),
+      "utf8",
+    );
+    assert.match(computerUse, /box-chrome --new-window/);
+    assert.doesNotMatch(computerUse, /box-chrome --sand-prepare/);
+  } finally {
+    await loaded.dispose();
+  }
+});
+
 test("the local Docker box is always told our backend, credential or not", async () => {
   const loaded = await loadModule("source/electron-main/box/local-docker-host-connector.ts", "local-docker-host-connector");
   try {

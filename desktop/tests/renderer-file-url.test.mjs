@@ -10,16 +10,15 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { stripCrossoriginAttributes } from "../scripts/renderer-production-build.mjs";
+
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const distRenderer = path.join(repoRoot, "dist", "renderer");
 
 /**
- * These two facts are about the **clean-source** renderer — the one
- * `scripts/build-caisra.mjs` emits from `frontend/src`. They must never be
- * asserted against the checksum-pinned shipped renderer, which
- * `npm run package` keeps byte-for-byte from the 0.18.0 ASAR and which this
- * repository is forbidden to rewrite. `dist/caisra-build.json` is written only
- * by the clean-source build, so it is the marker that says which one is here.
+ * These two facts are about the **clean-source** renderer from `frontend/src`.
+ * `dist/caisra-build.json` is written only by `npm run build:clean-source`, so
+ * it is the marker that says that build is in `dist/renderer`.
  */
 async function cleanSourceRendererOrSkip(t) {
   try {
@@ -31,6 +30,14 @@ async function cleanSourceRendererOrSkip(t) {
     return false;
   }
 }
+
+test("crossorigin is stripped so file:// can load the stylesheet", () => {
+  const html = '<link rel="stylesheet" crossorigin href="./assets/index.css"><script type="module" crossorigin src="./assets/index.js"></script>';
+  const stripped = stripCrossoriginAttributes(html);
+  assert.doesNotMatch(stripped, /crossorigin/i);
+  assert.match(stripped, /href="\.\/assets\/index\.css"/);
+  assert.match(stripped, /src="\.\/assets\/index\.js"/);
+});
 
 test("the emitted index.html marks nothing crossorigin", async (t) => {
   if (!(await cleanSourceRendererOrSkip(t))) return;

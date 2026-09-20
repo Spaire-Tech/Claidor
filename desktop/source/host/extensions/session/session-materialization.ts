@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { readdir, rm, stat } from "node:fs/promises";
 import { dirname } from "node:path";
+import { assignedCloudBlobFields } from "../../../shared/agent/cloud-blobs.js";
 import { getSandProfilePath, writeSandProfileFile, type SandAgentProfile } from "../../agents/agent-profile.js";
 import { getSandSettingsPath, writeSandSettingsFile } from "../../agents/settings-file.js";
 import { SandAgentDb } from "./agent-db.js";
@@ -74,7 +75,8 @@ export class SandSessionMaterialization {
     const dbPath = getAgentDbPath(this.host.rootDir, agentId), db = new SandAgentDb(dbPath);
     try {
       db.set("agentId", agentId); db.setAgentOrigin(origin); if (purpose != null) db.setAgentPurpose(purpose);
-      writeSandProfileFile(getSandProfilePath(dirname(dbPath)), { name: profile?.name?.trim() || "Grok", description: profile?.description?.trim() ?? "", title: profile?.title?.trim() ?? "", avatarShape: profile?.avatarShape?.trim() ?? "", avatarColor: profile?.avatarColor?.trim() ?? "" });
+      const avatar = assignedCloudBlobFields(profile?.avatarColor);
+      writeSandProfileFile(getSandProfilePath(dirname(dbPath)), { name: profile?.name?.trim() || "Grok", description: profile?.description?.trim() ?? "", title: profile?.title?.trim() ?? "", avatarShape: avatar.avatarShape, avatarColor: avatar.avatarColor });
       writeSandSettingsFile(getSandSettingsPath(dirname(dbPath)), { notifyOnAgentUpdates: true });
       const session = this.compose(agentId, dbPath, db);
       for (const spec of DEFAULT_AGENT_AUTOMATIONS) session.automations.upsert(spec as never);
