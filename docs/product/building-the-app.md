@@ -25,7 +25,7 @@ Quit any running Caisra first (**Cmd+Q**). Do not open the copy in Applications 
 | agent host | recovered `source/host`, ignited, so Terra TPM still answers on Luna |
 | Electron shell | checksum-pinned 0.18.0 |
 
-`frontend/` is a recovered skeleton. It has the 19 cloud faces, and it does **not** have the atom stylesheet the 0.18.0 chrome was compiled from. Packaging it on 20 September emptied the sidebar and composer. That is why the default package is the 0.18.0 window again.
+`frontend/` is a recovered skeleton. It does **not** have the atom stylesheet the 0.18.0 chrome was compiled from. Packaging it on 20 September emptied the sidebar and composer. That is why the default package is the 0.18.0 window again.
 
 `npm run start:clean-source` still launches the reconstructed UI for reading and testing. `npm run package:diagnostic` is the fidelity bundle without ignited host fallback.
 

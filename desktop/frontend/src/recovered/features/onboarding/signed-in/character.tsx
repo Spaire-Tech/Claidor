@@ -1,24 +1,60 @@
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, type CSSProperties } from "react";
-import {
-  CLOUD_BLOB_COLORS,
-  CLOUD_BLOB_SHAPE,
-  resolveCloudBlobColor,
-} from "../../../../../../source/shared/agent/cloud-blobs";
 import type { OnboardingCharacterVisualProps } from "./view";
 import type { OnboardingCharacterState } from "./scene";
 
-const VIEWBOX = "-15 -10 259 275";
+// @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L523
+// Shipped engine geometry is the inline 259px mark, not an image asset.
+const VIEWBOX = "-15 -15 259 259";
 const CENTER = 114.2705;
 const BLOB_PATH = "M228.541 114.228C228.541 130.133 225.184 145.994 218.738 160.534C212.674 174.217 203.904 186.669 193.065 196.988C155.933 232.34 99.497 238.596 55.5255 212.24C45.097 205.99 35.6851 198.072 27.7451 188.866C19.1926 178.953 12.3686 167.569 7.65781 155.351C2.60712 142.264 0 128.257 0 114.228C0 98.3219 3.35751 82.4611 9.80315 67.9215C15.8672 54.2382 24.6377 41.7862 35.4767 31.4668C72.6081 -3.88483 129.044 -10.1413 173.016 16.2153C183.444 22.4653 192.856 30.3829 200.796 39.5896C209.349 49.5018 216.173 60.8859 220.883 73.1037C225.934 86.1906 228.541 100.198 228.541 114.228Z";
-const COLORS: Record<string, { light: string; dark: string }> = Object.fromEntries(
-  CLOUD_BLOB_COLORS.map((color) => [color.id, { light: color.top, dark: color.bottom }]),
-);
+const COLORS: Record<string, { light: string; dark: string }> = {
+  black: { light: "#000000", dark: "#FFFFFF" },
+  brown: { light: "#A27952", dark: "#855C36" },
+  red: { light: "#FF3E51", dark: "#E02135" },
+  orange: { light: "#FF781C", dark: "#FF6700" },
+  yellow: { light: "#FFAF38", dark: "#FF9800" },
+  green: { light: "#00C972", dark: "#009957" },
+  cyan: { light: "#1CC3B0", dark: "#00A592" },
+  blue: { light: "#2A92FE", dark: "#0E74E0" },
+  violet: { light: "#A97EFE", dark: "#804EE0" },
+  magenta: { light: "#FF5EB1", dark: "#E02A88" },
+  gray: { light: "#959595", dark: "#777777" },
+};
 
-export function resolvePersonaColor(agentId: string, color?: string | null): string {
-  return resolveCloudBlobColor(agentId, color);
+// @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=1412620
+// Eee/Cee's deterministic fallback selectors, kept artifact-exact.
+const SHIPPED_SHAPES = ["blob", "pebble", "squircle", "tablet", "wedge", "hex", "cloud", "teardrop"] as const;
+function shippedRandom(seed: number): () => number {
+  let value = seed >>> 0;
+  return () => {
+    value = value + 1831565813 | 0;
+    let next = Math.imul(value ^ value >>> 15, 1 | value);
+    next = next + Math.imul(next ^ next >>> 7, 61 | next) ^ next;
+    return ((next ^ next >>> 14) >>> 0) / 4294967296;
+  };
 }
-export function resolvePersonaShape(_agentId: string, _shape?: string | null): string {
-  return CLOUD_BLOB_SHAPE;
+function shippedHash(value: string): number {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) hash = Math.imul(hash ^ value.charCodeAt(index), 16777619);
+  return hash >>> 0;
+}
+function shippedColorIndex(value: string): number {
+  const seed = (shippedHash(value) ^ Math.imul(1, 2654435769)) >>> 0;
+  return Math.floor(shippedRandom((seed ^ 2654435769) >>> 0)() * 10);
+}
+function shippedShapeHash(value: string): number {
+  let hash = shippedHash(value);
+  hash = Math.imul(hash ^ hash >>> 16, 73244475);
+  hash = Math.imul(hash ^ hash >>> 13, 3266489909);
+  return (hash ^ hash >>> 16) >>> 0;
+}
+export function resolvePersonaColor(agentId: string, color?: string | null): string {
+  if (color != null && COLORS[color] != null) return color;
+  return ["brown", "red", "orange", "yellow", "green", "cyan", "blue", "violet", "magenta", "gray"][shippedColorIndex(agentId)] ?? "gray";
+}
+export function resolvePersonaShape(agentId: string, shape?: string | null): string {
+  if (shape != null && (SHIPPED_SHAPES as readonly string[]).includes(shape)) return shape;
+  return SHIPPED_SHAPES[shippedShapeHash(agentId) % SHIPPED_SHAPES.length] ?? "blob";
 }
 
 type Point = [number, number];
@@ -178,14 +214,6 @@ function normalizeArtifactPath(path: string): string {
   });
 }
 
-const CLOUD_FACE_LOBES: Array<[number, number, number]> = [
-  [CENTER, CENTER + 4, 64],
-  ...Array.from({ length: 7 }, (_, index): [number, number, number] => {
-    const angle = -Math.PI / 2 + index / 7 * Math.PI * 2;
-    return [CENTER + Math.cos(angle) * 52, CENTER + Math.sin(angle) * 47, 40];
-  }),
-];
-
 const ARTIFACT_SHAPE_PATHS: Record<string, string> = {
   blob: normalizeArtifactPath(BLOB_PATH),
   pebble: normalizeArtifactPath(sampledPath((angle) => { const radius = 108 * (1 + .075 * (Math.sin(angle * 2 + 1.1) * .6 + Math.sin(angle * 3 - 1.1) * .4)); return [CENTER + Math.cos(angle) * radius, CENTER + Math.sin(angle) * radius * .98]; })),
@@ -193,7 +221,7 @@ const ARTIFACT_SHAPE_PATHS: Record<string, string> = {
   tablet: normalizeArtifactPath(tabletPath(114, 74)),
   wedge: normalizeArtifactPath(roundedPolygon(130, 3, 60, -Math.PI / 2)),
   hex: normalizeArtifactPath(roundedPolygon(114, 6, 20, Math.PI / 6)),
-  cloud: normalizeArtifactPath(cloudPath(CLOUD_FACE_LOBES)),
+  cloud: normalizeArtifactPath(cloudPath([[CENTER - 62, CENTER + 26, 56], [CENTER + 62, CENTER + 26, 54], [CENTER, CENTER + 34, 62], [CENTER - 24, CENTER - 30, 62], [CENTER + 38, CENTER - 26, 54]])),
   teardrop: normalizeArtifactPath(teardropPath(88, CENTER - 114, CENTER + 26, 18)),
 };
 export const PERSONA_SHAPE_PATHS = ARTIFACT_SHAPE_PATHS;
@@ -220,7 +248,7 @@ export const OnboardingCharacter = forwardRef<OnboardingCharacterHandle, Onboard
   const gazeRef = useRef({ x: 0, y: 0 });
   const actionRef = useRef<"spin" | "bounce" | "burst" | null>(null);
   const resolvedColor = resolvePersonaColor(sourceId ?? "persona", color);
-  const colors = COLORS[resolvedColor] ?? COLORS.mist ?? { light: "#cbd6f2", dark: "#ccb2d6" };
+  const colors = COLORS[resolvedColor] ?? COLORS.black;
   const motion = MOTION[state] ?? MOTION.idle;
   useImperativeHandle(ref, () => ({
     spin: () => { actionRef.current = "spin"; },
@@ -280,33 +308,21 @@ export const OnboardingCharacter = forwardRef<OnboardingCharacterHandle, Onboard
     return () => cancelAnimationFrame(frame);
   }, [motion, paused, spinSignal, state]);
 
+  const background = surfaceTheme === "light" ? "#fff" : "var(--cursor-bg-editor, #fff)";
   const rootStyle: CSSProperties = { display: "block", height: sizePx, overflow: "visible", userSelect: "none", WebkitUserSelect: "none", width: sizePx };
-  const sleeping = state === "sleeping" || state === "drowsy";
-  return <svg aria-hidden="true" className={className} data-avatar-color={resolvedColor} data-avatar-shape={CLOUD_BLOB_SHAPE} data-emphasis={emphasis || undefined} data-grok-state={state} data-paused={paused || undefined} data-pointer-shown={pointerShown || undefined} data-reduced-motion={reducedMotion() ? "true" : "false"} data-source-id={sourceId || undefined} height={sizePx} style={rootStyle} viewBox={VIEWBOX} width={sizePx} xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id={`${id}-ink`} x1="0.2" x2="0.35" y1="0" y2="1"><stop offset="0" stopColor={colors.light} /><stop offset="1" stopColor={colors.dark} /></linearGradient>
-      <radialGradient id={`${id}-shade`} cx="0.5" cy="0.5" r="0.5"><stop offset="0" stopColor="#1b2430" stopOpacity=".28" /><stop offset="1" stopColor="#1b2430" stopOpacity="0" /></radialGradient>
-    </defs>
-    <ellipse cx={CENTER} cy={CENTER + 128} fill={`url(#${id}-shade)`} rx="58" ry="12" />
+  const eyeHeight = state === "sleeping" ? 2 : 7;
+  return <svg aria-hidden="true" className={className} data-emphasis={emphasis || undefined} data-grok-state={state} data-paused={paused || undefined} data-pointer-shown={pointerShown || undefined} data-reduced-motion={reducedMotion() ? "true" : "false"} data-source-id={sourceId || undefined} height={sizePx} style={rootStyle} viewBox={VIEWBOX} width={sizePx} xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id={`${id}-ink`} x1="0" x2="1" y1="0" y2="1"><stop offset="0" stopColor={colors.light} /><stop offset="1" stopColor={colors.dark} /></linearGradient></defs>
     <g ref={faceRef} transform="translate(0 0)">
-      <path d={personaShapePath(CLOUD_BLOB_SHAPE)} fill={`url(#${id}-ink)`} />
-      <g ref={eyesRef} transform="translate(0 0)">
-        <CloudEye cx={CENTER - 26} cy={CENTER - 4} sleeping={sleeping} />
-        <CloudEye cx={CENTER + 26} cy={CENTER - 4} sleeping={sleeping} />
+      <path d={personaShapePath(shape)} fill={`url(#${id}-ink)`} />
+      <g ref={eyesRef} fill={background} transform="translate(0 0)">
+        <ellipse cx={CENTER - 29} cy={CENTER - 8} rx="10" ry={eyeHeight} />
+        <ellipse cx={CENTER + 29} cy={CENTER - 8} rx="10" ry={eyeHeight} />
       </g>
-      {state === "excited" || state === "happy" || state === "celebrate" ? <path d={`M${CENTER - 16} ${CENTER + 28} Q${CENTER} ${CENTER + 40} ${CENTER + 16} ${CENTER + 28}`} fill="none" stroke="#2a3140" strokeLinecap="round" strokeWidth="4" /> : null}
+      {state === "excited" || state === "happy" || state === "celebrate" ? <path d={`M${CENTER - 20} ${CENTER + 24} Q${CENTER} ${CENTER + 38} ${CENTER + 20} ${CENTER + 24}`} fill="none" stroke={background} strokeLinecap="round" strokeWidth="5" /> : null}
     </g>
   </svg>;
 });
-
-function CloudEye({ cx, cy, sleeping }: { cx: number; cy: number; sleeping: boolean }) {
-  if (sleeping) return <path d={`M${cx - 10} ${cy} Q${cx} ${cy + 5} ${cx + 10} ${cy}`} fill="none" stroke="#2a3140" strokeLinecap="round" strokeWidth="3" />;
-  return <g>
-    <ellipse cx={cx} cy={cy} fill="#fff" rx="11" ry="13" />
-    <circle cx={cx} cy={cy + 1} fill="#1b1f27" r="5.4" />
-    <circle cx={cx + 2.4} cy={cy - 2.6} fill="#fff" r="1.8" />
-  </g>;
-}
 
 export function defaultOnboardingCharacterRenderer(props: OnboardingCharacterVisualProps) {
   return <OnboardingCharacter {...props} />;

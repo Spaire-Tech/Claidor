@@ -9,6 +9,10 @@ export class SandCredentialRenewalError extends Error {
   constructor(message: string) { super(message); this.name = "SandCredentialRenewalError"; }
 }
 
+export class SandCredentialNotReadyError extends SandCredentialRenewalError {
+  constructor(message: string) { super(message); this.name = "SandCredentialNotReadyError"; }
+}
+
 export const SAND_INFERENCE_RENEWAL_CREDENTIAL_ENV = "SAND_INFERENCE_RENEWAL_CREDENTIAL";
 export const SAND_DEV_INFERENCE_TOKEN_FILE_ENV = "SAND_DEV_INFERENCE_TOKEN_FILE";
 export const REFRESH_LEEWAY_MS = 2 * 60 * 1_000;
@@ -16,6 +20,7 @@ export const MIN_REFRESH_INTERVAL_MS = 30 * 1_000;
 export const MAX_REFRESH_INTERVAL_MS = 30 * 60 * 1_000;
 export const CREDENTIAL_RETRY_BASE_DELAY_MS = 5 * 1_000;
 export const CREDENTIAL_RETRY_MAX_DELAY_MS = 5 * 60 * 1_000;
+export const DEV_TOKEN_FILE_POLL_MS = 1_000;
 export const DEFAULT_TTL_MS = 10 * 60 * 1_000;
 export const RENEWAL_PATH = "/sand-box/inference-credential";
 
@@ -55,8 +60,18 @@ export async function readDevInferenceCredentialFile(args: {
   readonly path: string;
   readonly readFileImpl?: (path: string) => Promise<string>;
 }): Promise<InferenceCredential> {
-  const raw = await (args.readFileImpl ?? ((path) => readFile(path, "utf8")))(args.path);
-  return credentialFromPayload(JSON.parse(raw) as unknown, `Dev inference token file ${args.path} has no accessToken yet.`);
+  try {
+    const raw = await (args.readFileImpl ?? ((path) => readFile(path, "utf8")))(args.path);
+    return credentialFromPayload(JSON.parse(raw) as unknown, `Dev inference token file ${args.path} has no accessToken yet.`);
+  } catch (error) {
+    if (error instanceof SandCredentialNotReadyError) throw error;
+    if (error instanceof SandCredentialRenewalError) throw new SandCredentialNotReadyError(error.message);
+    const code = error != null && typeof error === "object" && "code" in error ? String((error as { code?: unknown }).code) : "";
+    if (code === "ENOENT" || error instanceof SyntaxError) {
+      throw new SandCredentialNotReadyError(`Dev inference token file ${args.path} has no accessToken yet.`);
+    }
+    throw error;
+  }
 }
 
 export class SandInferenceCredentialRenewer {
@@ -115,6 +130,7 @@ export class SandInferenceCredentialRenewer {
       return { kind: "refresh", delayMs: Math.min(Math.max(untilRefresh, MIN_REFRESH_INTERVAL_MS), MAX_REFRESH_INTERVAL_MS) };
     } catch (error) {
       if (this.abort.signal.aborted) return null;
+      if (error instanceof SandCredentialNotReadyError) return { kind: "refresh", delayMs: DEV_TOKEN_FILE_POLL_MS };
       this.consecutiveFailures += 1;
       this.reportResult("failed", Date.now() - cycleStartedAtMs, redactRenewalErrorForReport(error instanceof Error ? error.message : String(error)));
       return { kind: "backoff", attempt: this.consecutiveFailures };
