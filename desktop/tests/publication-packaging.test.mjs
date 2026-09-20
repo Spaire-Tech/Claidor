@@ -29,10 +29,23 @@ test("publication ignore rules retain reconstructed frontend source", async () =
   assert.equal(matcher.ignores("recovered/generated-output.txt"), true, "root recovery output must remain ignored");
 });
 
-test("default packaging keeps the polished checksum-pinned renderer", async () => {
+test("packaging ignites host and electron-main when artifact activation cannot", async () => {
+  const source = await readFile(path.join(repoRoot, "scripts", "caisra-ignition-activation.mjs"), "utf8");
+  assert.match(source, /export async function igniteProductionHost/);
+  assert.match(source, /export async function igniteProductionElectronMain/);
+  assert.match(source, /hostEntrySource\(\)/);
+  assert.match(source, /electronMainEntrySource\(\)/);
+  assert.match(source, /Deterministic clean-source production host/);
+});
+
+test("default packaging keeps the polished renderer and ignites the host", async () => {
   const source = await readFile(path.join(repoRoot, "scripts", "package-macos.mjs"), "utf8");
+  const activation = await readFile(path.join(repoRoot, "scripts", "clean-build.mjs"), "utf8");
   assert.match(source, /import \{ buildFidelityReconstructedAsar \} from "\.\/clean-build\.mjs"/);
   assert.match(source, /await buildFidelityReconstructedAsar\(\)/);
+  assert.doesNotMatch(source, /import \{ buildReconstructedAsar \}/);
+  assert.match(activation, /igniteProductionHost/);
+  assert.match(activation, /igniteProductionElectronMain/);
 });
 
 test("Router settings use the trusted backend and display recorded inference usage", async () => {

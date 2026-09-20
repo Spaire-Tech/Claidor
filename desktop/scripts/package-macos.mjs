@@ -17,9 +17,10 @@ if (process.platform !== "darwin") {
   throw new Error("The reconstructed macOS application can only be packaged on macOS.");
 }
 
-// Keep the checksum-pinned shipped renderer as the polished UI authority. Small
-// reconstructed UI extensions are installed by the clean preload, leaving the
-// original renderer chunks byte-for-byte intact.
+// Keep the checksum-pinned shipped renderer as the window chrome. Product
+// work in frontend/ is a recovered skeleton without the atom stylesheet;
+// shipping it emptied the sidebar and composer. The ignited host still
+// replaces Grok's 0.18.0 agent runtime (Terra→Luna, Claidor proxy).
 const { builtAsar, builtAsarUnpacked, runtimeApp } = await buildFidelityReconstructedAsar();
 // Keep the signed release audit separate from the reconstructed package audit:
 // the official app is reference-only and is never used as the runtime payload.

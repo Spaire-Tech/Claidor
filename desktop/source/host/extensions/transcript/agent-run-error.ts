@@ -69,7 +69,15 @@ export function getBackendErrorDetailMessage(error: unknown): string | null {
       : `${title}\n\n${message}`;
 }
 export function formatAgentRunError(error: Error): string {
-  return getBackendErrorDetailMessage(error) ?? errorMessage(error);
+  return claidorFacingProviderError(getBackendErrorDetailMessage(error) ?? errorMessage(error));
+}
+
+const OPENAI_ACCOUNT_QUOTA = /no credits remaining|insufficient_quota|platform\.openai\.com\/settings\/organization\/billing/i;
+const CLAIDOR_OPENAI_QUOTA_DETAIL =
+  "Claidor could not reach the model because OpenAI has no credits left on Claidor's account. This is not your OpenAI billing page.";
+
+export function claidorFacingProviderError(message: string): string {
+  return OPENAI_ACCOUNT_QUOTA.test(message) ? CLAIDOR_OPENAI_QUOTA_DETAIL : message;
 }
 export function formatSandUsageResetIn(
   nextResetAt: string | Date,
@@ -191,9 +199,14 @@ export function describeAgentRunError(error: unknown): Record<string, unknown> {
       detail.additionalInfo.nextResetAt,
     );
   else if (!shown) shown = formatted;
+  shown = claidorFacingProviderError(shown);
+  const facingTitle = title && OPENAI_ACCOUNT_QUOTA.test(`${title}\n${shown}`)
+    ? "Agent failed to respond"
+    : title;
+  const facingActions = actions.filter((action) => typeof action.url !== "string" || !/platform\.openai\.com/i.test(action.url));
   return {
-    ...(title ? { title } : {}),
+    ...(facingTitle ? { title: facingTitle } : {}),
     detail: shown,
-    ...(actions.length ? { actions } : {}),
+    ...(facingActions.length ? { actions: facingActions } : {}),
   };
 }

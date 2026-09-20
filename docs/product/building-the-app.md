@@ -1,43 +1,33 @@
-# Building Caisra — the pipeline, and the one I invented instead
+# Building Caisra
 
-**19 September 2026.** Read this before running anything in `desktop/`.
+**20 September 2026.** Read this before running anything in `desktop/`.
 
 ## The build loop
 
 ```sh
 cd desktop
+nvm use
 npm ci                 # lockfileVersion 3; never npm install
 npm run bootstrap      # hydrate src/app/dist from the pinned 0.18.0 ASAR
 npm run check          # typecheck + node --test — a required gate
-npm run package        # compile runtimes, patch, assemble, ad-hoc sign (macOS only)
+npm run package        # 0.18.0 window chrome + ignited Claidor host, ad-hoc sign
 npm run verify         # audit the bundle — a required gate
 open "dist/Caisra.app"
 ```
 
-That is the project's own documented sequence. Nothing else produces the app.
+Quit any running Caisra first (**Cmd+Q**). Do not open the copy in Applications or the Dock — that is the previous install.
 
-## The mistake this document exists for
+## What that `.app` actually contains
 
-**`frontend/` is not the product's UI.** It is a Vite design workspace for
-reading and testing recovered components. The reconstruction's documentation
-says so in one line: *"The packaged UI is not `frontend/` … It is never the
-default packaged renderer."* The shipped UI is the checksum-pinned 0.18.0
-renderer, preserved byte-for-byte with one anchored Settings Router patch.
+| piece | source |
+| --- | --- |
+| window UI | checksum-pinned 0.18.0 renderer (the polished chrome) |
+| agent host | recovered `source/host`, ignited, so Terra TPM still answers on Luna |
+| Electron shell | checksum-pinned 0.18.0 |
 
-Both modes are first-class in `scripts/lib/clean-build.mjs`:
+`frontend/` is a recovered skeleton. It has the 19 cloud faces, and it does **not** have the atom stylesheet the 0.18.0 chrome was compiled from. Packaging it on 20 September emptied the sidebar and composer. That is why the default package is the 0.18.0 window again.
 
-| mode | renderer source | `buildKind` |
-| --- | --- | --- |
-| `clean-source` | `frontend/src` | `source-aware-reconstruction` |
-| `checksum-pinned-artifact-runtime` | `src/app/dist/renderer` | `fidelity-hybrid-reconstruction` |
-
-`scripts/package-macos.mjs` takes the second and says why: *"Keep the
-checksum-pinned shipped renderer as the polished UI authority."*
-
-I built the first, called it the product, and then spent six hours explaining
-why its styling looked wrong — including a whole commit fixing a real CORS bug
-in a renderer that was never going to ship. The bug was real. The renderer was
-the wrong one. `scripts/build-caisra.mjs` now says this at the top of the file.
+`npm run start:clean-source` still launches the reconstructed UI for reading and testing. `npm run package:diagnostic` is the fidelity bundle without ignited host fallback.
 
 ## What `npm run bootstrap` needs
 
@@ -66,21 +56,13 @@ Only macOS on Apple Silicon can bootstrap or package — `hdiutil`, `codesign`,
 
 ## What is ours in the packaged bundle
 
-The shipped renderer is pinned, so the fork's identity goes in the places the
-packaging step already owns (`scripts/package-macos.mjs`):
-
 - **`dist/Caisra.app`** — the bundle name (`GROK_BOT_OUTPUT_APP_NAME` overrides).
 - **`CFBundleDisplayName` = `Caisra`** (`CAISRA_DISPLAY_NAME` overrides).
-  `npm run verify` checks the plist against this constant, so the two cannot
-  drift.
-- **`CFBundleIdentifier` = `com.anysphere.sand.reconstructed`**, pinned, and
-  verified. The official app is never overwritten.
-- **`LSEnvironment`** now carries `CURSOR_API_BASE_URL`, `CURSOR_WEBSITE_URL`
-  and `SAND_BACKEND_URL`, all `https://api.claidor.com`
-  (`CAISRA_BACKEND_URL` overrides). Without this the packaged app signs in to
-  cursor.com: a bundle launched from Finder inherits no shell environment,
-  however the terminal that built it was configured. All three names are needed
-  and none is redundant — see `docs/product/app-sign-in.md`.
+- **`CFBundleIdentifier` = `com.anysphere.sand.reconstructed`**, pinned.
+- **`LSEnvironment`** carries `CURSOR_API_BASE_URL`, `CURSOR_WEBSITE_URL`
+  and `SAND_BACKEND_URL`, all `https://api.claidor.com`.
+- **Host and electron-main** from recovered source when the 0.18.0 artifact
+  self-check cannot activate them (`scripts/caisra-ignition-activation.mjs`).
 
 `CFBundleName` and `CFBundleExecutable` stay `Grok Bot`, because Electron
 derives its nested helper names from them and this build reuses the ABI-matched
@@ -88,24 +70,11 @@ derives its nested helper names from them and this build reuses the ABI-matched
 
 ## Changing the shipped UI
 
-Through `scripts/lib/router-renderer-patch.mjs`'s method and no other:
-`replaceExactlyOnce` against an exact anchor string in the minified bundle,
-which throws if the anchor is missing or ambiguous. That is how the Settings
-Router panel gets in, and it is how a rebrand of visible strings would get in.
-Never by rewriting the renderer — the fidelity build accepts it only against a
-complete file-by-file SHA-256 inventory.
-
-The reconstruction's own rule applies to anything added: *"Do not invent
-screens, labels, or interactions to fill an evidence gap. Incomplete renderer
-mapping stays unmapped."* The 18 runtime assets drawn in
-`scripts/make-runtime-assets.mjs` are for the clean-source workspace only; the
-packaged renderer ships the originals, and `npm run verify` checks the app icon
-against its manifest SHA-256 — a drawn one fails that gate, correctly.
+Through `scripts/lib/router-renderer-patch.mjs`'s method against the 0.18.0
+renderer: `replaceExactlyOnce` on an exact anchor string. Cloud faces live in
+`frontend/src` today; they are not in the packaged chrome.
 
 ## Rights
 
 The wiki states plainly that this is a research reconstruction, not an official
-release, and that no upstream source licence is implied. Shipping a product on
-the pinned renderer is a different act from building one to look at. The
-founder has given the instruction and holds that call; it is recorded here so
-nobody later mistakes it for a decision that was never made.
+release, and that no upstream source licence is implied.
