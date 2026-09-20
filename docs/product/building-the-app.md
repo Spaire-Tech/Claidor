@@ -33,8 +33,9 @@ Quit any running Caisra first (**Cmd+Q**). Do not open the copy in Applications 
 
 A genuine 0.18.0 app, resolved in this order:
 
-1. `GROK_BOT_018_APP=/path/to/Grok Bot.app` — **the quickest route if 0.18.0 is
-   installed anywhere on the machine.** The version is checked.
+1. `GROK_BOT_018_APP=/path/to/Grok Bot.app` — only if `plutil` prints `0.18.0`.
+   `/Applications/Grok Bot.app` is often a newer Grok Bot (0.57.1 as of 20
+   September 2026) and must not be used.
 2. `.cache/runtime/Grok Bot.app` from a previous run.
 3. `research-archives/original/0.18.0/macos-arm64/Grok_Bot_0.18.0.dmg` via Git
    LFS. **Not in this repository and never has been** — `git log --all` over

@@ -15,13 +15,49 @@ async function exists(target) {
   }
 }
 
-export async function validateRuntimeApp(appPath) {
+export async function readRuntimeVersion(appPath) {
   const infoPlist = path.join(appPath, "Contents", "Info.plist");
+  try {
+    return await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleShortVersionString", "raw", infoPlist]);
+  } catch {
+    return null;
+  }
+}
+
+export function selectRuntimeSource({
+  configuredPath,
+  configuredVersion,
+  cachedExists,
+  expectedVersion = upstreamVersion,
+}) {
+  if (configuredPath && configuredVersion === expectedVersion) {
+    return { kind: "configured", path: configuredPath };
+  }
+  if (cachedExists) {
+    return {
+      kind: "cache",
+      skippedConfigured: Boolean(configuredPath),
+      configuredVersion: configuredPath ? configuredVersion : undefined,
+    };
+  }
+  if (configuredPath) {
+    return {
+      kind: "missing",
+      message:
+        `Expected Grok Bot ${expectedVersion}, got ${configuredVersion ?? "unreadable"} at ${configuredPath}. ` +
+        `Unset GROK_BOT_018_APP and run \`npm run bootstrap\` so it can fetch the pinned 0.18.0 DMG. ` +
+        `/Applications/Grok Bot.app is often a newer Grok Bot, not ${expectedVersion}.`,
+    };
+  }
+  return { kind: "missing", message: "Missing 0.18.0 runtime. Run `npm run bootstrap` first." };
+}
+
+export async function validateRuntimeApp(appPath) {
   const executable = path.join(appPath, "Contents", "MacOS", "Grok Bot");
   const unpacked = path.join(appPath, "Contents", "Resources", "app.asar.unpacked");
-  const version = await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleShortVersionString", "raw", infoPlist]);
+  const version = await readRuntimeVersion(appPath);
   if (version !== upstreamVersion) {
-    throw new Error(`Expected Grok Bot ${upstreamVersion}, got ${version} at ${appPath}`);
+    throw new Error(`Expected Grok Bot ${upstreamVersion}, got ${version ?? "unreadable"} at ${appPath}`);
   }
   if (!(await stat(executable)).isFile() || !(await stat(unpacked)).isDirectory()) {
     throw new Error(`Incomplete Grok Bot runtime at ${appPath}`);
@@ -31,13 +67,27 @@ export async function validateRuntimeApp(appPath) {
 
 export async function resolveRuntimeApp() {
   const configured = process.env.GROK_BOT_018_APP?.trim();
-  if (configured) {
-    return await validateRuntimeApp(path.resolve(configured));
+  const configuredPath = configured ? path.resolve(configured) : undefined;
+  const configuredVersion = configuredPath && await exists(configuredPath)
+    ? await readRuntimeVersion(configuredPath)
+    : configuredPath ? null : undefined;
+  const selection = selectRuntimeSource({
+    configuredPath,
+    configuredVersion,
+    cachedExists: await exists(cachedRuntimeApp),
+  });
+  if (selection.kind === "configured") {
+    return await validateRuntimeApp(selection.path);
   }
-  if (await exists(cachedRuntimeApp)) {
+  if (selection.kind === "cache") {
+    if (selection.skippedConfigured) {
+      console.warn(
+        `GROK_BOT_018_APP is ${selection.configuredVersion ?? "unreadable"}, not ${upstreamVersion}. Using ${cachedRuntimeApp}.`,
+      );
+    }
     return await validateRuntimeApp(cachedRuntimeApp);
   }
-  throw new Error("Missing 0.18.0 runtime. Run `npm run bootstrap` first.");
+  throw new Error(selection.message);
 }
 
 export async function cacheRuntimeFromApp(source) {

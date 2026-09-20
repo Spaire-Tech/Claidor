@@ -5,9 +5,9 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
-import { archivedDmg, cachedDmg, cachedRuntimeApp, dmgSha256, dmgUrl } from "./lib/config.mjs";
+import { archivedDmg, cachedDmg, cachedRuntimeApp, dmgSha256, dmgUrl, upstreamVersion } from "./lib/config.mjs";
 import { run } from "./lib/process.mjs";
-import { cacheRuntimeFromApp, hydrateSourcePayloadFromRuntime, validateRuntimeApp } from "./lib/runtime.mjs";
+import { cacheRuntimeFromApp, hydrateSourcePayloadFromRuntime, readRuntimeVersion, validateRuntimeApp } from "./lib/runtime.mjs";
 import { SYSTEM_TOOLS } from "./lib/system-tools.mjs";
 
 async function exists(target) {
@@ -75,10 +75,23 @@ async function extractRuntime() {
 const configuredApp = process.env.GROK_BOT_018_APP?.trim();
 let runtimeApp;
 if (configuredApp) {
-  runtimeApp = await cacheRuntimeFromApp(configuredApp);
-} else if (await exists(cachedRuntimeApp)) {
-  runtimeApp = await validateRuntimeApp(cachedRuntimeApp);
-} else {
+  const configuredVersion = await readRuntimeVersion(path.resolve(configuredApp));
+  if (configuredVersion === upstreamVersion) {
+    runtimeApp = await cacheRuntimeFromApp(configuredApp);
+  } else {
+    console.warn(
+      `GROK_BOT_018_APP is ${configuredVersion ?? "unreadable"} at ${configuredApp}, not ${upstreamVersion}. Ignoring it.`,
+    );
+  }
+}
+if (!runtimeApp && await exists(cachedRuntimeApp)) {
+  try {
+    runtimeApp = await validateRuntimeApp(cachedRuntimeApp);
+  } catch (error) {
+    console.warn(`${error.message}. Recaching from the pinned 0.18.0 DMG.`);
+  }
+}
+if (!runtimeApp) {
   await downloadDmg();
   await extractRuntime();
   runtimeApp = await validateRuntimeApp(cachedRuntimeApp);
