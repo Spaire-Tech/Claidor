@@ -7,7 +7,7 @@ import test from "node:test";
 
 import { createPackage } from "@electron/asar";
 
-import { hydrateSourcePayloadFromAsar } from "../scripts/lib/runtime.mjs";
+import { hydrateSourcePayloadFromAsar, selectRuntimeSource } from "../scripts/lib/runtime.mjs";
 
 const repositoryRoot = path.resolve(import.meta.dirname, "..");
 
@@ -60,4 +60,31 @@ test("bootstrap hydration verifies and extracts the minimum upstream runtime pay
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+test("a newer Applications Grok Bot is not the 0.18.0 runtime", () => {
+  const newer = selectRuntimeSource({
+    configuredPath: "/Applications/Grok Bot.app",
+    configuredVersion: "0.57.1",
+    cachedExists: false,
+  });
+  assert.equal(newer.kind, "missing");
+  assert.match(newer.message, /0\.57\.1/);
+  assert.match(newer.message, /Unset GROK_BOT_018_APP/);
+
+  const fallback = selectRuntimeSource({
+    configuredPath: "/Applications/Grok Bot.app",
+    configuredVersion: "0.57.1",
+    cachedExists: true,
+  });
+  assert.equal(fallback.kind, "cache");
+  assert.equal(fallback.skippedConfigured, true);
+
+  const pinned = selectRuntimeSource({
+    configuredPath: "/Volumes/old/Grok Bot.app",
+    configuredVersion: "0.18.0",
+    cachedExists: true,
+  });
+  assert.equal(pinned.kind, "configured");
+  assert.equal(pinned.path, "/Volumes/old/Grok Bot.app");
 });
