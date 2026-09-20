@@ -144,14 +144,19 @@ neither also looks fine, and that is the whole problem.
 
 **Ran, and passing:**
 
-- `ruff format --check .` and `ruff check .` over `server/`. 21 findings, none
-  in any file I touched — **identical 21 with this work stashed**, so
-  pre-existing.
-- `mypy polar/desktop/ polar/models/desktop.py` → **0 errors** in either. The
-  27 it reports elsewhere are pre-existing.
-- `pytest --noconftest` on the three pure pricing files → **57 passed**.
+Re-run on 20 September, after merging `main` (which brought PR #133 in and
+took the image half of this work out):
+
+- `ruff format --check` and `ruff check` over `polar/desktop`,
+  `polar/models/desktop.py`, `tests/desktop` and the migration → **clean**.
+  The findings elsewhere in `server/` are pre-existing and identical with this
+  work stashed.
+- `mypy polar/desktop/ polar/models/desktop.py` → **0 errors** in those files.
+  The 27 it reports elsewhere are pre-existing.
 - `pytest tests/desktop/test_boxes.py` → **44 passed**.
-- Whole `tests/desktop/` → **237 passed, 6 failed**. The same 6 fail with this
+- `test_boxes.py` and `test_capabilities.py` together → **62 passed**, so the
+  box half and #133's image half do not tread on each other.
+- Whole `tests/desktop/` → **249 passed, 6 failed**. The same 6 fail with this
   work stashed: this container has no provider keys, so `offered_models()` is
   empty and the catalogue tests find nothing.
 - **The migration was applied to a real PostgreSQL 16**, forward and back, and
@@ -171,7 +176,7 @@ neither also looks fine, and that is the whole problem.
   it should be expected to fail somewhere in this contract.
 - **The E2B rates were not read off a price page.** They come from
   `agent-computer-plan.md`, which cites them as E2B's for April–June 2026. Same
-  ⚠️ as `SPEECH_USD_PER_MILLION_CHARACTERS` and `IMAGE_USD_PER_IMAGE`. Nobody
+  ⚠️ as `SPEECH_USD_PER_MILLION_CHARACTERS`. Nobody
   should be charged against them until somebody has looked.
 - **`E2B_TEMPLATE_ID` defaults to `"base"` and that is a guess about E2B's stock
   template name.** It is one setting; if box creation fails, this is the first

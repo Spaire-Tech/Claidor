@@ -568,8 +568,8 @@ def credits_for(model: DesktopModel, usage: Usage) -> int:
 #:
 #: ⚠️ **Not read off a price page by me.** They came from that document,
 #: which cites them as E2B's, and I hold no E2B account to check them
-#: against. The same warning as `SPEECH_USD_PER_MILLION_CHARACTERS` and
-#: `IMAGE_USD_PER_IMAGE` applies: nobody should be charged against these
+#: against. The same warning as `SPEECH_USD_PER_MILLION_CHARACTERS`
+#: applies: nobody should be charged against these
 #: until somebody has looked. They are two constants so that looking is
 #: a two-line change with tests behind it.
 #:
