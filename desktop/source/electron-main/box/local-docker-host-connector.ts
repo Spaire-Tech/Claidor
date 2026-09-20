@@ -15,7 +15,8 @@ export const LOCAL_DOCKER_BOX_IMAGE = "public.ecr.aws/k0i0n2g5/cursorenvironment
 export const LOCAL_DOCKER_BOX_CONTAINER = "grok-bot-local-vm";
 export const LOCAL_DOCKER_GATEWAY_URL = "http://127.0.0.1:1340";
 export const LOCAL_DOCKER_OWNER_LABEL = "com.grok-bot.local-vm=1";
-export const LOCAL_DOCKER_SCHEMA_VERSION = "6";
+export const LOCAL_DOCKER_SCHEMA_VERSION = "7";
+export const LOCAL_DOCKER_INFERENCE_TOKEN_FILE = "/run/grok-bot/inference.json";
 const READY_TIMEOUT_MS = 180_000;
 export const OPTIONAL_CREDENTIAL_WAIT_MS = 250;
 
@@ -60,6 +61,12 @@ async function persistInferenceCredential(settingsPath: string, credential: Infe
   await rename(temporary, target);
   await chmod(target, 0o600);
   return target;
+}
+
+async function ensureInferenceCredentialDirectory(settingsPath: string): Promise<string> {
+  const target = inferenceCredentialPath(settingsPath);
+  await mkdir(dirname(target), { recursive: true });
+  return dirname(target);
 }
 
 async function readOrCreateToken(settingsPath: string): Promise<string> {
@@ -178,14 +185,15 @@ export function localDockerInferenceEnvironmentArguments(inferenceCredential?: P
   const backendUrl = inferenceCredential?.backendUrl ?? getConfiguredBackendUrl(env);
   return [
     "--env", `SAND_BACKEND_URL=${backendUrl}`,
-    ...(inferenceCredential == null ? [] : ["--env", "SAND_DEV_INFERENCE_TOKEN_FILE=/run/grok-bot/inference.json"]),
+    "--env", `SAND_DEV_INFERENCE_TOKEN_FILE=${LOCAL_DOCKER_INFERENCE_TOKEN_FILE}`,
   ];
 }
 
 async function ensureLocalDockerBox(settingsPath: string, inferenceCredential?: InferenceCredential): Promise<GatewayConnection> {
   const token = await readOrCreateToken(settingsPath);
   const hostBundle = await stageCurrentHostBundle(settingsPath);
-  const inferenceFile = inferenceCredential == null ? undefined : await persistInferenceCredential(settingsPath, inferenceCredential);
+  const inferenceDir = await ensureInferenceCredentialDirectory(settingsPath);
+  if (inferenceCredential != null) await persistInferenceCredential(settingsPath, inferenceCredential);
   const daemon = await runDocker(["info", "--format", "{{.ServerVersion}}"]).catch(() => ({ ok: false, output: "Docker is not installed." }));
   if (!daemon.ok) throw new Error(`Local Docker VM is selected, but Docker is unavailable: ${daemon.output || "start Docker and try again"}`);
   const inspected = await inspectContainer();
@@ -216,7 +224,7 @@ async function ensureLocalDockerBox(settingsPath: string, inferenceCredential?: 
       "--volume", "grok-bot-local-vm-workspace:/workspace", "--volume", "grok-bot-local-vm-data:/home/box/sand-data",
       "--mount", `type=bind,src=${hostBundle.path},dst=/home/box/sand-host/host-main.cjs,readonly`,
       "--mount", `type=bind,src=${dirname(hostBundle.boxExecDaemonPath)},dst=/home/box/box-exec-daemon,readonly`,
-      ...(inferenceFile == null ? [] : ["--mount", `type=bind,src=${dirname(inferenceFile)},dst=/run/grok-bot,readonly`]),
+      "--mount", `type=bind,src=${inferenceDir},dst=/run/grok-bot,readonly`,
       ...authMounts,
       LOCAL_DOCKER_BOX_IMAGE,
     ]);
@@ -235,8 +243,16 @@ async function ensureLocalDockerBox(settingsPath: string, inferenceCredential?: 
   throw new Error("Local Docker VM did not expose its gateway within three minutes.");
 }
 
+function queuedEnsure(settingsPath: string, inferenceCredential?: InferenceCredential): Promise<GatewayConnection> {
+  const run = ensureInFlight ?? (ensureInFlight = ensureLocalDockerBox(settingsPath, inferenceCredential).finally(() => { ensureInFlight = undefined; }));
+  return run.then(async (connection) => {
+    if (inferenceCredential != null) await persistInferenceCredential(settingsPath, inferenceCredential);
+    return connection;
+  });
+}
+
 export async function startLocalDockerBox(settingsPath: string): Promise<GatewayConnection> {
-  return await ensureLocalDockerBox(settingsPath);
+  return await queuedEnsure(settingsPath);
 }
 
 export async function stopLocalDockerBox(): Promise<void> {
@@ -252,17 +268,19 @@ export function createSettingsRoutedHostConnector(
   settings: SandSettingsStore,
 ): SandRemoteHostConnector {
   const localConnect = (): Promise<GatewayConnection> => {
-    if (ensureInFlight == null) ensureInFlight = (async () => {
-      let issued: InferenceCredential | undefined;
-      if (remote.issueInferenceCredential != null) {
-        issued = await Promise.race([
-          remote.issueInferenceCredential().catch(() => undefined),
-          new Promise<undefined>((resolve) => setTimeout(resolve, OPTIONAL_CREDENTIAL_WAIT_MS)),
-        ]);
-      }
-      return await ensureLocalDockerBox(settings.settingsPath, issued);
-    })().finally(() => { ensureInFlight = undefined; });
-    return ensureInFlight;
+    return (async () => {
+      const pending = remote.issueInferenceCredential == null
+        ? Promise.resolve(undefined)
+        : remote.issueInferenceCredential().catch(() => undefined);
+      const issued = await Promise.race([
+        pending,
+        new Promise<undefined>((resolve) => setTimeout(resolve, OPTIONAL_CREDENTIAL_WAIT_MS)),
+      ]);
+      const connection = await queuedEnsure(settings.settingsPath, issued);
+      const late = await pending;
+      if (late != null) await persistInferenceCredential(settings.settingsPath, late);
+      return connection;
+    })();
   };
   return {
     connect: async () => settings.getBoxRuntime() === "local-docker" ? await localConnect() : await remote.connect(),

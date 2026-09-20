@@ -53,13 +53,16 @@ export function projectInferenceRouterTranscriptEntry(entry: StoredEntry): Recor
 }
 
 export const SAND_CLAIDOR_FULL_AGENT_ENV = "SAND_CLAIDOR_FULL_AGENT";
+// Optional box reads (transcript tail, roster) must not stall a Mac-local turn
+// while Docker is pulling or the host is waiting for a credential.
+export const BOX_OPTIONAL_WAIT_MS = 800;
 
-// Product turns are Claidor. They leave this connector-only path and run on
-// the host's full agent loop (OpenAI through the Claidor proxy) unless a
-// test sets SAND_CLAIDOR_FULL_AGENT=off.
+// Product turns are Claidor. They answer on this Mac through the Claidor
+// proxy. The host's full agent loop (the Docker box) is opt-in:
+// SAND_CLAIDOR_FULL_AGENT=1. Defaulting that on made a hello wait forever
+// for a computer that was not ready.
 export function routesClaidorThroughHost(env: NodeJS.ProcessEnv = process.env): boolean {
   const raw = env[SAND_CLAIDOR_FULL_AGENT_ENV]?.trim() ?? "";
-  if (raw.length === 0) return true;
   return /^(1|true|yes)$/i.test(raw);
 }
 
@@ -96,7 +99,7 @@ export function createCoordinatorInferenceRouter(options: {
   const emitTranscript = (agentId: string, type: "appended" | "updated", entry: Record<string, unknown>) => options.postEvent("transcript", { type, entry, agentId });
   const beginActivity = async (agentId: string): Promise<() => void> => {
     try {
-      const remote = await options.dispatchRemote("listAgents", {});
+      const remote = await remoteOrUndefined("listAgents", {});
       if (!Array.isArray(remote)) return () => {};
       const project = (isRunning: boolean) => remote.map(raw => {
         const row = asRecord(raw);
@@ -137,10 +140,18 @@ export function createCoordinatorInferenceRouter(options: {
   };
   // A routed turn runs the model on this machine; the box only contributes the
   // remote transcript tail and the connector tools. When the box is down those
-  // contributions are lost, not the turn.
+  // contributions are lost, not the turn. A hung box must not stall the turn.
   const remoteOrUndefined = async (method: string, args: unknown): Promise<unknown> => {
-    try { return await options.dispatchRemote(method, args); }
-    catch { return undefined; }
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        options.dispatchRemote(method, args),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error("box optional wait")), BOX_OPTIONAL_WAIT_MS);
+        }),
+      ]);
+    } catch { return undefined; }
+    finally { if (timer !== undefined) clearTimeout(timer); }
   };
   const execute = async (provider: Exclude<SandInferenceProvider, "cursor">, args: Record<string, unknown>) => {
     const agentId = typeof args.agentId === "string" ? args.agentId : "";

@@ -59,6 +59,8 @@ export interface ClaidorCredentialSource {
 
 export const DEFAULT_CLAIDOR_MODEL = "gpt-5.6-terra";
 export const DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-5.6-luna";
+export const CLAIDOR_FETCH_TIMEOUT_MS = 45_000;
+export const CLAIDOR_CREDENTIAL_WAIT_MS = 5_000;
 export { CLAIDOR_WORKING_CONTEXT_TOKENS };
 
 // The Claidor provider is the signed-in account. Which process holds that
@@ -117,12 +119,32 @@ export function claidorModelForSession(options?: ClaidorSessionModelOptions): st
 // API host answers with 404 (`claidor-api.ts`).
 export { claidorProxyBaseUrl };
 
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(message)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
 function claidorAuthenticatedFetch(source: ClaidorCredentialSource): typeof fetch {
   return async (input, init) => {
-    const accessToken = await source.getAccessToken();
+    const accessToken = await withTimeout(
+      source.getAccessToken(),
+      CLAIDOR_CREDENTIAL_WAIT_MS,
+      "Timed out waiting for a Claidor sign-in.",
+    );
     const headers = new Headers(init?.headers);
     headers.set("authorization", `Bearer ${accessToken}`);
-    return await fetch(input, { ...init, headers });
+    const timeout = AbortSignal.timeout(CLAIDOR_FETCH_TIMEOUT_MS);
+    const signal = init?.signal == null ? timeout : AbortSignal.any([init.signal, timeout]);
+    return await fetch(input, { ...init, headers, signal });
   };
 }
 

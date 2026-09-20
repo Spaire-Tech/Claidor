@@ -56,6 +56,10 @@ export async function resolvePluginLogo(
     logoCache.set(url, null);
     return null;
   }
+  if (parsed.protocol === "data:" && url.startsWith("data:image/")) {
+    logoCache.set(url, url);
+    return url;
+  }
   if (parsed.protocol !== "https:") {
     logoCache.set(url, null);
     return null;
