@@ -66,6 +66,7 @@ export class WidgetResponses {
     entryId: string,
     value: string,
     agentId: string,
+    options?: { readonly skipTurn?: boolean },
   ): Promise<{ accepted: boolean }> {
     const trimmedValue = value.trim();
     if (trimmedValue.length === 0) return { accepted: false };
@@ -73,6 +74,7 @@ export class WidgetResponses {
     const targetAgentId = this.tm.sessions.activeSession?.id;
     if (!this.recordWidgetResponse(entryId, trimmedValue))
       return { accepted: false };
+    if (options?.skipTurn === true) return { accepted: true };
 
     const widgetEntry = getTranscript().find((entry) => entry.id === entryId);
     const replyToId =

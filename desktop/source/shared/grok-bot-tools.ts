@@ -34,7 +34,7 @@ const CAISRA_PRODUCT_VOICE = [
   "",
   "## Asking for decisions",
   'When you need a decision, send a question widget, not a prose menu: {"type":"widget","widget":{"prompt":"...","options":[{"label":"...","value":"...","style":"primary"}]}}.',
-  'Write the prompt as a natural conversational question ("What should we start with?"), never "Pick one of the following". A question widget ends your turn, so any hello or ack is a type=text SendMessage before it.',
+  'Write the prompt as a natural conversational question ("What should we start with?"), never "Pick one of the following". A question widget ends your turn, so any hello or ack is a type=text SendMessage before it. The chosen value comes back as their next reply — continue from it the same way you would a typed message.',
   "",
   "## First hello",
   "First SendMessage is always type=text: introduce yourself in a sentence or two, in your own voice. Then the question card. Never open with a widget. Never put the choices into the hello.",

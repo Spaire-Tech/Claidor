@@ -59,9 +59,12 @@ test("Router settings use the trusted backend and display recorded inference usa
   const codexDirect = await readFile(path.join(repoRoot, "source", "host", "extensions", "inference", "codex-direct-responses.ts"), "utf8");
   const turnShell = await readFile(path.join(repoRoot, "source", "host", "runner", "turn-run-shell.ts"), "utf8");
   const coordinator = await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "inference-router.ts"), "utf8");
+  const widgetResponses = await readFile(path.join(repoRoot, "source", "host", "extensions", "transcript", "widget-responses.ts"), "utf8");
+  const gateway = await readFile(path.join(repoRoot, "source", "host", "host-gateway-api.ts"), "utf8");
   const coordinatorMain = await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "main.ts"), "utf8");
   const mcpBridge = await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "routed-mcp-bridge.ts"), "utf8");
   const localDocker = await readFile(path.join(repoRoot, "source", "electron-main", "box", "local-docker-host-connector.ts"), "utf8");
+  const sharedRouter = await readFile(path.join(repoRoot, "source", "shared", "inference-router.ts"), "utf8");
   assert.doesNotMatch(rendererPatch, /id:"router",label:"Router"/);
   assert.match(rendererPatch, /export function patchOriginalSettingsPanel\(source\) \{\n  return source;\n\}/);
   assert.doesNotMatch(rendererPatch, /settings\.router-provider\.v1/);
@@ -79,7 +82,8 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(localDocker, /"127\.0\.0\.1:1340:1340"/);
   assert.match(localDocker, /SAND_BOX_AUTO_UPDATE=0/);
   assert.match(localDocker, /dst=\/home\/box\/sand-host\/host-main\.cjs,readonly/);
-  assert.match(localDocker, /\.getBoxRuntime\(\) === "local-docker" \? await localConnect\(\) : await remote\.connect\(\)/);
+  assert.match(localDocker, /usesLeftoverDockerHost\(\) \? await localConnect\(\) : await remote\.connect\(\)/);
+  assert.match(localDocker, /routesClaidorThroughHost\(\)/);
   assert.match(localDocker, /OPTIONAL_CREDENTIAL_WAIT_MS = 250/);
   assert.match(localDocker, /localDockerContainerNeedsReplace\(inspected, hostBundle\.sha256\)/);
   assert.doesNotMatch(localDocker, /inferenceCredential != null && !inspected\.hasInferenceCredential/);
@@ -110,6 +114,9 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(turnShell, /const inferenceProvider = "claidor"/);
   assert.match(turnShell, /createProviderPromptSession\(inferenceProvider, sessionOptions\)/);
   assert.match(coordinator, /method !== "sendPrompt" \|\| !handledLocally\(provider\)/);
+  assert.match(coordinator, /method === "respondToWidget" && handledLocally\(provider\)/);
+  assert.match(coordinator, /skipTurn: true/);
+  assert.match(coordinator, /appendUserMessage !== false/);
   assert.match(coordinator, /provider !== "cursor" && !\(provider === "claidor" && routesClaidorThroughHost\(options\.env\)\)/);
   assert.match(coordinator, /provider\(\): SandInferenceProvider \{ return resolveProductInferenceProvider\(options\.env \?\? process\.env\); \}/);
   assert.match(coordinator, /STORED_PROVIDERS\.includes\(String\(row\.provider\)\)/);
@@ -126,8 +133,9 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(providers, /headers\.set\("authorization", `Bearer \$\{accessToken\}`\)/);
   assert.match(inference, /setClaidorCredentialSource\(\{ getAccessToken: \(\) => auth\.getAccessToken\(\) \}\)/);
   assert.match(coordinator, /export const BOX_OPTIONAL_WAIT_MS = 800/);
-  assert.match(coordinator, /return \/\^\(1\|true\|yes\)\$\/i\.test\(raw\);/);
-  assert.match(coordinator, /if \(raw\.length === 0\) return false;/);
+  assert.match(sharedRouter, /export const SAND_CLAIDOR_FULL_AGENT_ENV = "SAND_CLAIDOR_FULL_AGENT"/);
+  assert.match(sharedRouter, /return envFlagEnabled\(env\[SAND_CLAIDOR_FULL_AGENT_ENV\]\)/);
+  assert.match(coordinator, /export \{ SAND_CLAIDOR_FULL_AGENT_ENV, routesClaidorThroughHost \}/);
   assert.match(coordinator, /GROK_BOT_TOOLS/);
   assert.match(coordinator, /isGrokBotToolName/);
   assert.match(providers, /CLAIDOR_FETCH_TIMEOUT_MS = 45_000/);
@@ -139,7 +147,8 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(mcpBridge, /openWorldHint: !readOnly/);
   assert.match(coordinator, /schemaVersion: 2/);
   assert.match(coordinator, /\["getAgentTranscriptTail", "openAgentTail", "getAgentTranscriptWindow"\]/);
-  assert.match(coordinator, /\.map\(projectInferenceRouterTranscriptEntry\)/);
+  assert.match(coordinator, /visibleLocalEntries/);
+  assert.match(coordinator, /\.filter\(entry => entry\.hidden !== true\)\.map\(projectInferenceRouterTranscriptEntry\)/);
   assert.match(coordinator, /readonly richText\?: string/);
   assert.match(coordinator, /richText: entry\.richText/);
   assert.match(coordinator, /setTimeout\(resolve, 1_200\)/);
@@ -148,6 +157,8 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(coordinator, /currentActivity: \{ kind: "thinking" \}/);
   assert.match(coordinator, /buildCaisraProductSystemPrompt/);
   assert.match(coordinator, /postEvent\("agents"/);
+  assert.match(widgetResponses, /options\?\.skipTurn === true/);
+  assert.match(gateway, /args\.skipTurn === true \? \{ skipTurn: true \}/);
   assert.match(coordinator, /createRoutedMcpBridge/);
   assert.match(coordinator, /listRoutedMcpTools/);
   assert.match(coordinator, /executeRoutedMcpTool/);

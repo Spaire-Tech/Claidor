@@ -226,7 +226,8 @@ export function createHostGatewayApi(
       return method(manager, "respondToWidget")(
         args.entryId,
         args.value,
-        args.agentId
+        args.agentId,
+        args.skipTurn === true ? { skipTurn: true } : undefined,
       );
     },
     resolveAutoReviewApproval: (args: any) => {
