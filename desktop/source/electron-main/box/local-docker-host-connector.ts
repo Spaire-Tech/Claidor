@@ -1,10 +1,10 @@
 import { createHash, randomBytes } from "node:crypto";
 import { spawn } from "node:child_process";
-import { chmod, mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
+import { chmod, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { CAISRA_CLAUDE_CODE_ENV, PRODUCT_INFERENCE_PROVIDER, SAND_INFERENCE_PROVIDER_ENV } from "../../shared/inference-router.js";
 import { getConfiguredBackendUrl } from "../../shared/node/cursor-token.js";
 import type { SandSettingsStore } from "../../shared/node/settings/sand-settings-store.js";
 import type { RecreateResult } from "./box-recreate-commands.js";
@@ -15,7 +15,7 @@ export const LOCAL_DOCKER_BOX_IMAGE = "public.ecr.aws/k0i0n2g5/cursorenvironment
 export const LOCAL_DOCKER_BOX_CONTAINER = "grok-bot-local-vm";
 export const LOCAL_DOCKER_GATEWAY_URL = "http://127.0.0.1:1340";
 export const LOCAL_DOCKER_OWNER_LABEL = "com.grok-bot.local-vm=1";
-export const LOCAL_DOCKER_SCHEMA_VERSION = "7";
+export const LOCAL_DOCKER_SCHEMA_VERSION = "9";
 export const LOCAL_DOCKER_INFERENCE_TOKEN_FILE = "/run/grok-bot/inference.json";
 const READY_TIMEOUT_MS = 180_000;
 export const OPTIONAL_CREDENTIAL_WAIT_MS = 250;
@@ -128,10 +128,6 @@ export async function getLocalDockerStatus(settingsPath: string): Promise<LocalD
 
 let ensureInFlight: Promise<GatewayConnection> | undefined;
 
-async function isDirectory(path: string): Promise<boolean> {
-  try { return (await stat(path)).isDirectory(); } catch { return false; }
-}
-
 async function stageCurrentHostBundle(settingsPath: string): Promise<LocalHostBundle> {
   const moduleDirectory = dirname(fileURLToPath(import.meta.url));
   const readRuntime = async (relative: string): Promise<Buffer> => {
@@ -170,11 +166,7 @@ async function stageCurrentHostBundle(settingsPath: string): Promise<LocalHostBu
 }
 
 async function localAuthMountArguments(): Promise<string[]> {
-  const mounts: string[] = [];
-  for (const [source, destination] of [[join(homedir(), ".codex"), "/root/.codex"], [join(homedir(), ".claude"), "/root/.claude"]] as const) {
-    if (await isDirectory(source)) mounts.push("--mount", `type=bind,src=${source},dst=${destination},readonly`);
-  }
-  return mounts;
+  return [];
 }
 
 // The box image carries its own default backend host. The container must be
@@ -186,6 +178,8 @@ export function localDockerInferenceEnvironmentArguments(inferenceCredential?: P
   return [
     "--env", `SAND_BACKEND_URL=${backendUrl}`,
     "--env", `SAND_DEV_INFERENCE_TOKEN_FILE=${LOCAL_DOCKER_INFERENCE_TOKEN_FILE}`,
+    "--env", `${SAND_INFERENCE_PROVIDER_ENV}=${PRODUCT_INFERENCE_PROVIDER}`,
+    "--env", `${CAISRA_CLAUDE_CODE_ENV}=0`,
   ];
 }
 

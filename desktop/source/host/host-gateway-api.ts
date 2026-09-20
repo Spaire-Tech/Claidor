@@ -3,6 +3,11 @@ import {
   parseCoordinatorAgentThreadRequest,
   parseCoordinatorTranscriptWindowRequest,
 } from "../shared/rpc/coordinator.js";
+import {
+  getPluginForGateway,
+  installPluginForGateway,
+  searchPluginsForGateway,
+} from "./host-plugin-gateway.js";
 
 export const HOST_CAPABILITIES = [
   "orderedReplicasV1",
@@ -261,6 +266,19 @@ export function createHostGatewayApi(
     },
     appendConnectorCard: (args: any) =>
       method(manager, "appendConnectorCard")(args),
+    appendSendMessage: (args: any) =>
+      method(manager, "appendSendMessage")(args),
+    searchPlugins: async (args: any) =>
+      searchPluginsForGateway(deps.extensions.api("mcp").management, typeof args?.query === "string" ? args.query : ""),
+    getPlugin: async (args: any) =>
+      getPluginForGateway(deps.extensions.api("mcp").management, typeof args?.plugin_id === "string" ? args.plugin_id : ""),
+    installPlugin: async (args: any) =>
+      installPluginForGateway(
+        deps.extensions.api("mcp").management,
+        args ?? {},
+        (card) => method(manager, "appendConnectorCard")(card),
+        typeof args?.agentId === "string" ? args.agentId : undefined,
+      ),
 
     listAgents: () => method(manager, "listAgents")(),
     countAgents: () => method(manager, "countAgentsOnDisk")(),

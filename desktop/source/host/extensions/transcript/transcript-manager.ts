@@ -414,6 +414,9 @@ export class TranscriptManager {
   appendConnectorCard(...args: any[]) {
     return invoke(this.sendPipeline, "appendConnectorCard", args);
   }
+  appendSendMessage(...args: any[]) {
+    return invoke(this.sendPipeline, "appendSendMessage", args);
+  }
   handleAgentUpdate(...args: any[]) {
     return invoke(this.turnRuntime, "handleAgentUpdate", args);
   }
