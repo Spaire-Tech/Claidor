@@ -107,7 +107,7 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(cursorBackend, /routedProvider !== "cursor"/);
   assert.match(cursorBackend, /createProviderPromptSession\(routedProvider, \{ modelId: options\.requestedModel\.modelId \}\)/);
   assert.doesNotMatch(rendererPatch, /ANTHROPIC_API_KEY|OPENAI_API_KEY/);
-  assert.match(turnShell, /inferenceProvider === "cursor"/);
+  assert.match(turnShell, /const inferenceProvider = "claidor"/);
   assert.match(turnShell, /createProviderPromptSession\(inferenceProvider, sessionOptions\)/);
   assert.match(coordinator, /method !== "sendPrompt" \|\| !handledLocally\(provider\)/);
   assert.match(coordinator, /provider !== "cursor" && !\(provider === "claidor" && routesClaidorThroughHost\(options\.env\)\)/);
@@ -127,7 +127,9 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(inference, /setClaidorCredentialSource\(\{ getAccessToken: \(\) => auth\.getAccessToken\(\) \}\)/);
   assert.match(coordinator, /export const BOX_OPTIONAL_WAIT_MS = 800/);
   assert.match(coordinator, /return \/\^\(1\|true\|yes\)\$\/i\.test\(raw\);/);
-  assert.doesNotMatch(coordinator, /if \(raw\.length === 0\) return true;/);
+  assert.match(coordinator, /if \(raw\.length === 0\) return false;/);
+  assert.match(coordinator, /GROK_BOT_TOOLS/);
+  assert.match(coordinator, /isGrokBotToolName/);
   assert.match(providers, /CLAIDOR_FETCH_TIMEOUT_MS = 45_000/);
   assert.match(providers, /Timed out waiting for a Claidor sign-in/);
   assert.match(await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "gateway", "gateway-client.ts"), "utf8"), /connectDeadline\.run\(\(signal\) => this\.resolveConnection\(signal\)\)/);
@@ -144,8 +146,7 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(coordinator, /method === "reactToMessage"/);
   assert.match(coordinator, /reaction\.by === "me"/);
   assert.match(coordinator, /currentActivity: \{ kind: "thinking" \}/);
-  assert.match(coordinator, /onTextDelta/);
-  assert.match(coordinator, /streaming/);
+  assert.match(coordinator, /CAISRA_PRODUCT_SYSTEM_PROMPT/);
   assert.match(coordinator, /postEvent\("agents"/);
   assert.match(coordinator, /createRoutedMcpBridge/);
   assert.match(coordinator, /listRoutedMcpTools/);

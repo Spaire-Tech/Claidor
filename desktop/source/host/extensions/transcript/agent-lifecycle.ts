@@ -19,6 +19,7 @@ import {
 } from "../../../shared/agents/disk-saver.js";
 import {
   INTRODUCTION_FAILED_TRAY_TITLE,
+  SAND_ONBOARDING_KICKSTART_PROMPT,
   cheapIntroductionMessages,
   fallbackIntroductionText,
   introductionFailedTrayKey,
@@ -27,16 +28,19 @@ import {
   configuredClaidorCheapModel,
   runRoutedProviderText,
 } from "../inference/provider-session.js";
+import {
+  CAISRA_PRODUCT_SYSTEM_PROMPT,
+  executeGrokBotTool,
+  GROK_BOT_TOOLS,
+  isGrokBotToolName,
+} from "../../../shared/grok-bot-tools.js";
 import { sandErrorDetail } from "../../ports/telemetry.js";
 import { SandAgentDb } from "../session/agent-db.js";
 import { checkpointSandAgentDb } from "../../storage/store-db.js";
 import { publishTranscriptMutation } from "../../transcript-mutation-events.js";
 import { describeAgentRunError } from "./agent-run-error.js";
 import { nextEntryId } from "./transcript-entry-ids.js";
-import {
-  createSendMessageEntry,
-  isUserMessageEntry,
-} from "./send-message-shaping.js";
+import { createSendMessageEntry, isUserMessageEntry, type SendMessage } from "./send-message-shaping.js";
 import { getTranscript } from "./transcript-store.js";
 import { classifyAgentError } from "./turn-runtime.js";
 import type { TranscriptManagerLike } from "./transcript-hub.js";
@@ -168,40 +172,92 @@ export class AgentLifecycle {
     return true;
   }
 
+  private appendKickstartMessage(session: any, message: Record<string, unknown>): string {
+    const entries =
+      this.tm.sessions.activeSession?.id === session.id
+        ? getTranscript()
+        : session.db.getTranscriptEntries();
+    const id = nextEntryId(entries, "send-message");
+    const typed: SendMessage = { type: typeof message.type === "string" ? message.type : "text", ...message };
+    this.tm.sendPipeline.appendSendMessageEntry(
+      createSendMessageEntry(id, typed, Date.now()),
+    );
+    return id;
+  }
+
   private async deliverCheapIntroduction(session: any): Promise<void> {
     const profile = readSandProfileFile(
       getSandProfilePath(this.tm.sessionStore.getAgentDir(session.id)),
     );
     const name =
       profile?.name?.trim() || String(session.db.get("name") ?? "").trim();
-    let greeting = "";
+    const description = profile?.description ?? "";
+    let sent = 0;
     let error: unknown;
+    const emitSendMessage = async (message: Record<string, unknown>) => {
+      sent += 1;
+      return this.appendKickstartMessage(session, message);
+    };
+    const dispatchRemote = async (method: string, args: unknown) => {
+      if (method === "appendConnectorCard") {
+        sent += 1;
+        await this.tm.sendPipeline.appendConnectorCard({
+          agentId: session.id,
+          ...(typeof args === "object" && args != null ? args as Record<string, unknown> : {}),
+        } as { agentId?: string; connector: string; variant: string; reason?: string });
+        return undefined;
+      }
+      if (method === "appendSendMessage") {
+        const record = typeof args === "object" && args != null ? args as Record<string, unknown> : {};
+        const message = typeof record.message === "object" && record.message != null
+          ? record.message as Record<string, unknown>
+          : { type: "text", content: "" };
+        sent += 1;
+        return { id: this.appendKickstartMessage(session, message) };
+      }
+      throw new Error(`${method} is not available during introduction`);
+    };
     try {
-      greeting = (
-        await runRoutedProviderText(
-          "claidor",
-          cheapIntroductionMessages({
-            name,
-            description: profile?.description ?? "",
-          }),
-          { model: configuredClaidorCheapModel() },
-        )
-      ).trim();
+      await runRoutedProviderText(
+        "claidor",
+        [
+          { role: "system", content: `${CAISRA_PRODUCT_SYSTEM_PROMPT}\nYou are ${name || "Caisra"}.${description.trim().length > 0 ? ` ${description.trim()}` : ""}` },
+          { role: "user", content: SAND_ONBOARDING_KICKSTART_PROMPT },
+        ],
+        {
+          model: configuredClaidorCheapModel(),
+          tools: GROK_BOT_TOOLS.filter(tool => tool.name === "SendMessage"),
+          executeTool: async (definition, toolArgs) => {
+            if (typeof definition.name === "string" && isGrokBotToolName(definition.name)) {
+              return await executeGrokBotTool(definition.name, toolArgs, {
+                agentId: session.id,
+                dispatchRemote,
+                emitSendMessage,
+              });
+            }
+            return undefined;
+          },
+        },
+      );
     } catch (caught) {
       error = caught;
     }
-    if (greeting.length === 0) greeting = fallbackIntroductionText(name);
-    const entries =
-      this.tm.sessions.activeSession?.id === session.id
-        ? getTranscript()
-        : session.db.getTranscriptEntries();
-    this.tm.sendPipeline.appendSendMessageEntry(
-      createSendMessageEntry(
-        nextEntryId(entries, "send-message"),
-        { type: "text", content: greeting },
-        Date.now(),
-      ),
-    );
+    if (sent === 0) {
+      let greeting = "";
+      try {
+        greeting = (
+          await runRoutedProviderText(
+            "claidor",
+            cheapIntroductionMessages({ name, description }),
+            { model: configuredClaidorCheapModel() },
+          )
+        ).trim();
+      } catch (caught) {
+        error ??= caught;
+      }
+      if (greeting.length === 0) greeting = fallbackIntroductionText(name);
+      this.appendKickstartMessage(session, { type: "text", content: greeting });
+    }
     session.db.setIntroductionPending(false);
     await this.tm.roster.emitAgentUpdate(session.id);
     if (error == null || isProviderRateLimitError(error)) return;

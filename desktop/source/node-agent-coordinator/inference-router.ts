@@ -5,6 +5,12 @@ import { dirname, join } from "node:path";
 import { runRoutedProviderText } from "../host/extensions/inference/provider-session.js";
 import { resolveProductInferenceProvider, SAND_INFERENCE_PROVIDERS, type SandInferenceProvider } from "../shared/inference-router.js";
 import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
+import {
+  CAISRA_PRODUCT_SYSTEM_PROMPT,
+  executeGrokBotTool,
+  GROK_BOT_TOOLS,
+  isGrokBotToolName,
+} from "../shared/grok-bot-tools.js";
 import { createRoutedMcpBridge } from "./routed-mcp-bridge.js";
 
 type StoredEntry = {
@@ -12,6 +18,7 @@ type StoredEntry = {
   readonly role: "user" | "assistant";
   readonly content: string;
   readonly richText?: string;
+  readonly message?: Record<string, unknown>;
   readonly id: string;
   readonly clientNonce?: string;
   readonly reactions?: readonly { readonly emoji: string; readonly by: string }[];
@@ -37,7 +44,7 @@ export function parseInferenceRouterTranscriptStore(value: unknown): Store {
     const entries: StoredEntry[] = [];
     for (const raw of rawEntries) {
       const row = asRecord(raw);
-      if (row == null || !STORED_PROVIDERS.includes(String(row.provider)) || !["user", "assistant"].includes(String(row.role)) || typeof row.content !== "string" || typeof row.id !== "string" || typeof row.timestampMs !== "number" || (row.clientNonce !== undefined && typeof row.clientNonce !== "string") || (row.richText !== undefined && typeof row.richText !== "string")) continue;
+      if (row == null || !STORED_PROVIDERS.includes(String(row.provider)) || !["user", "assistant"].includes(String(row.role)) || typeof row.content !== "string" || typeof row.id !== "string" || typeof row.timestampMs !== "number" || (row.clientNonce !== undefined && typeof row.clientNonce !== "string") || (row.richText !== undefined && typeof row.richText !== "string") || (row.message !== undefined && asRecord(row.message) == null)) continue;
       if (row.reactions !== undefined && (!Array.isArray(row.reactions) || row.reactions.some(reaction => asRecord(reaction) == null || typeof asRecord(reaction)!.emoji !== "string" || typeof asRecord(reaction)!.by !== "string"))) continue;
       entries.push(row as unknown as StoredEntry);
     }
@@ -49,7 +56,7 @@ export function parseInferenceRouterTranscriptStore(value: unknown): Store {
 export function projectInferenceRouterTranscriptEntry(entry: StoredEntry): Record<string, unknown> {
   return entry.role === "user"
     ? { kind: "message", id: entry.id, role: "user", content: entry.content, ...(entry.richText === undefined ? {} : { richText: entry.richText }), isStreaming: false, timestampMs: entry.timestampMs, ...(entry.clientNonce === undefined ? {} : { clientNonce: entry.clientNonce }), ...(entry.reactions === undefined ? {} : { reactions: entry.reactions }) }
-    : { kind: "send-message", id: entry.id, message: { type: "text", content: entry.content }, timestampMs: entry.timestampMs, ...(entry.reactions === undefined ? {} : { reactions: entry.reactions }) };
+    : { kind: "send-message", id: entry.id, message: entry.message ?? { type: "text", content: entry.content }, timestampMs: entry.timestampMs, ...(entry.reactions === undefined ? {} : { reactions: entry.reactions }) };
 }
 
 export const SAND_CLAIDOR_FULL_AGENT_ENV = "SAND_CLAIDOR_FULL_AGENT";
@@ -57,12 +64,13 @@ export const SAND_CLAIDOR_FULL_AGENT_ENV = "SAND_CLAIDOR_FULL_AGENT";
 // while Docker is pulling or the host is waiting for a credential.
 export const BOX_OPTIONAL_WAIT_MS = 800;
 
-// Product turns are Claidor. They answer on this Mac through the Claidor
-// proxy. The host's full agent loop (the Docker box) is opt-in:
-// SAND_CLAIDOR_FULL_AGENT=1. Defaulting that on made a hello wait forever
-// for a computer that was not ready.
+// Product turns are Claidor on this Mac. CreateAgent, UpdateAgent, InstallPlugin
+// and SendMessage cards are tools on that Mac path. They are not the host's
+// inference router (Claude Code / Codex / Cursor). Empty env stays on the Mac;
+// SAND_CLAIDOR_FULL_AGENT=1 is the opt-in that sends sendPrompt through Docker.
 export function routesClaidorThroughHost(env: NodeJS.ProcessEnv = process.env): boolean {
   const raw = env[SAND_CLAIDOR_FULL_AGENT_ENV]?.trim() ?? "";
+  if (raw.length === 0) return false;
   return /^(1|true|yes)$/i.test(raw);
 }
 
@@ -184,38 +192,69 @@ export function createCoordinatorInferenceRouter(options: {
     // so keep the composing state authoritative long enough for a clearly
     // perceptible rendered interval before normal token streaming begins.
     await new Promise<void>(resolve => setTimeout(resolve, 1_200));
-    const messages = (withUser.agents[agentId] ?? []).map(entry => ({ role: entry.role, content: entry.content }));
-    let content: string;
+    const history = (withUser.agents[agentId] ?? []).map(entry => ({ role: entry.role, content: entry.content }));
+    const messages = [{ role: "system" as const, content: CAISRA_PRODUCT_SYSTEM_PROMPT }, ...history];
     const assistantTimestampMs = now();
-    const assistantId = `t${turn}s0`;
-    let assistantStreamStarted = false;
-    const emitAssistant = (nextContent: string, streaming: boolean) => {
-      const entry = { kind: "send-message", id: assistantId, message: { type: "text", content: nextContent }, streaming, timestampMs: assistantTimestampMs };
-      emitTranscript(agentId, assistantStreamStarted ? "updated" : "appended", entry);
-      assistantStreamStarted = true;
+    let sendIndex = 0;
+    const emitSendMessage = async (message: Record<string, unknown>): Promise<string> => {
+      if (message.type === "widget") {
+        try {
+          const result = asRecord(await options.dispatchRemote("appendSendMessage", { agentId, message }));
+          const id = typeof result?.id === "string" ? result.id : `t${turn}s${sendIndex}`;
+          sendIndex += 1;
+          return id;
+        } catch {
+          // Host transcript is required for widget replies. Fall through to local so the card still paints.
+        }
+      }
+      const id = `t${turn}s${sendIndex++}`;
+      const content = typeof message.content === "string" ? message.content : "";
+      await append(agentId, [{ provider, role: "assistant", content, message, id, timestampMs: assistantTimestampMs }]);
+      emitTranscript(agentId, "appended", { kind: "send-message", id, message, timestampMs: assistantTimestampMs });
+      return id;
     };
     const bridge = provider === "claude-code" ? await createRoutedMcpBridge({
       listTools: () => remoteOrUndefined("listRoutedMcpTools", {}),
       callTool: tool => options.dispatchRemote("executeRoutedMcpTool", { ...tool, agentId }),
     }) : null;
     const directTools = bridge == null ? await remoteOrUndefined("listRoutedMcpTools", {}) : undefined;
-    const tools = Array.isArray(directTools) ? directTools as Record<string, any>[] : undefined;
-    const onTextDelta = (_delta: string, accumulated: string) => emitAssistant(accumulated, true);
-    try { content = await runRoutedProviderText(provider, messages, bridge == null ? {
-      ...(tools === undefined ? {} : { tools }),
-      executeTool: async (definition, toolArgs, toolCallId) => await options.dispatchRemote("executeRoutedMcpTool", {
-        providerIdentifier: definition.providerIdentifier,
-        name: definition.name,
-        toolName: definition.toolName,
-        args: toolArgs,
-        toolCallId,
-        agentId,
-      }),
-      onTextDelta,
-    } : { mcpServerUrl: bridge.url, onTextDelta }); }
-    finally { endActivity(); await bridge?.close(); }
-    await append(agentId, [{ provider, role: "assistant", content, id: assistantId, timestampMs: assistantTimestampMs }]);
-    emitAssistant(content, false);
+    const tools = [...GROK_BOT_TOOLS, ...(Array.isArray(directTools) ? directTools as Record<string, any>[] : [])];
+    let content = "";
+    try {
+      content = await runRoutedProviderText(provider, messages, bridge == null ? {
+        tools,
+        executeTool: async (definition, toolArgs, toolCallId) => {
+          if (typeof definition.name === "string" && isGrokBotToolName(definition.name)) {
+            return await executeGrokBotTool(definition.name, toolArgs, {
+              agentId,
+              dispatchRemote: options.dispatchRemote,
+              emitSendMessage,
+            });
+          }
+          return await options.dispatchRemote("executeRoutedMcpTool", {
+            providerIdentifier: definition.providerIdentifier,
+            name: definition.name,
+            toolName: definition.toolName,
+            args: toolArgs,
+            toolCallId,
+            agentId,
+          });
+        },
+      } : { mcpServerUrl: bridge.url, tools: GROK_BOT_TOOLS, executeTool: async (definition, toolArgs) => {
+        if (typeof definition.name === "string" && isGrokBotToolName(definition.name)) {
+          return await executeGrokBotTool(definition.name, toolArgs, {
+            agentId,
+            dispatchRemote: options.dispatchRemote,
+            emitSendMessage,
+          });
+        }
+        return undefined;
+      } });
+    } finally { endActivity(); await bridge?.close(); }
+    if (sendIndex === 0) {
+      const fallback = content.trim();
+      await emitSendMessage({ type: "text", content: fallback.length > 0 ? fallback : "Hey — what would you like help with first?" });
+    }
     return { accepted: true, clientNonce, provider };
   };
 
