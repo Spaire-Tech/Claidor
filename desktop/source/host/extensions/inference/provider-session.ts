@@ -8,6 +8,7 @@ import { jsonSchema, streamText, tool, type CoreMessage, type LanguageModelV1, t
 
 import { BasePromptBuilder, BasePromptExecutor } from "../../../packages/chat-inference/base.js";
 import { asError } from "../../../shared/errors.js";
+import { withCheapRateLimitFallback } from "../../../shared/inference/cheap-rate-limit-fallback.js";
 import type { SandInferenceProvider } from "../../../shared/inference-router.js";
 import { claidorProxyBaseUrl } from "../../../shared/node/cursor-backend/claidor-api.js";
 import { resolveClaudeCodeCliPath } from "../../../shared/node/inference-router-local.js";
@@ -427,12 +428,18 @@ function openRouterExecutor(messages: readonly ProviderMessage[], invocationId: 
 
 // Claidor's metered proxy, on the Responses wire: the one that takes reasoning
 // and function tools in the same request (server/polar/desktop/endpoints.py).
+function claidorLanguageModel(source: ClaidorCredentialSource, id: string): LanguageModelV1 {
+  return createOpenAI({ apiKey: "claidor-desktop-access-token", baseURL: claidorProxyBaseUrl(source.backendUrl), name: "claidor", fetch: claidorAuthenticatedFetch(source) }).responses(id);
+}
+
 function claidorExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, modelId?: string) {
   const source = claidorCredentialSource;
   if (source == null) throw new Error("Claidor is the selected provider, but this process has no signed-in credential source. Sign in to Claidor and try again.");
-  const id = modelId?.trim() || configuredClaidorModel();
-  const model: LanguageModelV1 = createOpenAI({ apiKey: "claidor-desktop-access-token", baseURL: claidorProxyBaseUrl(source.backendUrl), name: "claidor", fetch: claidorAuthenticatedFetch(source) }).responses(id);
-  return aiSdkExecutor(model, messages, invocationId, definitions, executeTool, onUsage);
+  const requested = modelId?.trim() || configuredClaidorModel();
+  const cheap = configuredClaidorCheapModel();
+  const start = (id: string) => aiSdkExecutor(claidorLanguageModel(source, id), messages, invocationId, definitions, executeTool, onUsage);
+  if (requested === cheap) return start(requested);
+  return withCheapRateLimitFallback(start(requested), () => start(cheap));
 }
 
 class ProviderPromptExecutor extends BasePromptExecutor<ProviderMessage> {
