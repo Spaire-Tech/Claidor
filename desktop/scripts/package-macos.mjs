@@ -7,7 +7,7 @@ import {
   reconstructedBundleId,
   reconstructedName
 } from "./lib/config.mjs";
-import { buildReconstructedAsar } from "./clean-build.mjs";
+import { buildFidelityReconstructedAsar } from "./clean-build.mjs";
 import { signAppBundleAdHoc } from "./lib/codesign.mjs";
 import { verifyOfficialMacReference, verifyReconstructedMacPackage } from "./lib/macos-package-verification.mjs";
 import { run } from "./lib/process.mjs";
@@ -17,10 +17,11 @@ if (process.platform !== "darwin") {
   throw new Error("The reconstructed macOS application can only be packaged on macOS.");
 }
 
-// Ship the reconstructed renderer (`frontend/src`) and ignited host. The
-// 0.18.0 Electron shell stays for ABI. The checksum-pinned Grok UI hid every
-// product change — cloud faces, Terra→Luna — because Finder opens this .app.
-const { builtAsar, builtAsarUnpacked, runtimeApp } = await buildReconstructedAsar();
+// Keep the checksum-pinned shipped renderer as the window chrome. Product
+// work in frontend/ is a recovered skeleton without the atom stylesheet;
+// shipping it emptied the sidebar and composer. The ignited host still
+// replaces Grok's 0.18.0 agent runtime (Terra→Luna, Claidor proxy).
+const { builtAsar, builtAsarUnpacked, runtimeApp } = await buildFidelityReconstructedAsar();
 // Keep the signed release audit separate from the reconstructed package audit:
 // the official app is reference-only and is never used as the runtime payload.
 await verifyOfficialMacReference({ runtimeApp });

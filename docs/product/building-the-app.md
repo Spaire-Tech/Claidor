@@ -8,30 +8,26 @@
 cd desktop
 nvm use
 npm ci                 # lockfileVersion 3; never npm install
-npm run bootstrap      # hydrate src/app/dist from the pinned 0.18.0 ASAR (Electron shell + ABI)
+npm run bootstrap      # hydrate src/app/dist from the pinned 0.18.0 ASAR
 npm run check          # typecheck + node --test — a required gate
-npm run package        # assemble dist/Caisra.app from reconstructed renderer + ignited host
+npm run package        # 0.18.0 window chrome + ignited Claidor host, ad-hoc sign
 npm run verify         # audit the bundle — a required gate
 open "dist/Caisra.app"
 ```
 
 Quit any running Caisra first (**Cmd+Q**). Do not open the copy in Applications or the Dock — that is the previous install.
 
-That sequence is the product. Finder opens `dist/Caisra.app`. `npm run start:clean-source` is the same reconstructed UI without wrapping it in the 0.18.0 shell.
-
 ## What that `.app` actually contains
-
-The 0.18.0 Grok Bot.app is still the **Electron shell** (helpers, native ABI). It is not the UI or the agent host.
 
 | piece | source |
 | --- | --- |
-| window UI | `frontend/src` (cloud faces, Messages, Settings) |
-| agent host | `source/host` ignited so Terra TPM falls back to Luna |
+| window UI | checksum-pinned 0.18.0 renderer (the polished chrome) |
+| agent host | recovered `source/host`, ignited, so Terra TPM still answers on Luna |
 | Electron shell | checksum-pinned 0.18.0 |
 
-Until 20 September, `npm run package` kept Grok's 0.18.0 renderer and host byte-for-byte. Merging product work to `main` did not change what Finder opened. That is why rebuilt apps still showed the old faces and a silent model.
+`frontend/` is a recovered skeleton. It has the 19 cloud faces, and it does **not** have the atom stylesheet the 0.18.0 chrome was compiled from. Packaging it on 20 September emptied the sidebar and composer. That is why the default package is the 0.18.0 window again.
 
-The old fidelity bundle remains at `npm run package:diagnostic`.
+`npm run start:clean-source` still launches the reconstructed UI for reading and testing. `npm run package:diagnostic` is the fidelity bundle without ignited host fallback.
 
 ## What `npm run bootstrap` needs
 
@@ -62,19 +58,11 @@ Only macOS on Apple Silicon can bootstrap or package — `hdiutil`, `codesign`,
 
 - **`dist/Caisra.app`** — the bundle name (`GROK_BOT_OUTPUT_APP_NAME` overrides).
 - **`CFBundleDisplayName` = `Caisra`** (`CAISRA_DISPLAY_NAME` overrides).
-  `npm run verify` checks the plist against this constant, so the two cannot
-  drift.
-- **`CFBundleIdentifier` = `com.anysphere.sand.reconstructed`**, pinned, and
-  verified. The official app is never overwritten.
+- **`CFBundleIdentifier` = `com.anysphere.sand.reconstructed`**, pinned.
 - **`LSEnvironment`** carries `CURSOR_API_BASE_URL`, `CURSOR_WEBSITE_URL`
-  and `SAND_BACKEND_URL`, all `https://api.claidor.com`
-  (`CAISRA_BACKEND_URL` overrides). Without this the packaged app signs in to
-  cursor.com.
-- **Renderer** from `frontend/src`. Vite's `crossorigin` attribute is stripped
-  so `loadFile` (opaque origin `null`) can apply the stylesheet.
-- **Host and electron-main** from recovered source. If the 0.18.0 artifact
-  self-check cannot activate them, packaging ignites the same entries
-  `scripts/build-caisra.mjs` uses.
+  and `SAND_BACKEND_URL`, all `https://api.claidor.com`.
+- **Host and electron-main** from recovered source when the 0.18.0 artifact
+  self-check cannot activate them (`scripts/caisra-ignition-activation.mjs`).
 
 `CFBundleName` and `CFBundleExecutable` stay `Grok Bot`, because Electron
 derives its nested helper names from them and this build reuses the ABI-matched
@@ -82,8 +70,9 @@ derives its nested helper names from them and this build reuses the ABI-matched
 
 ## Changing the shipped UI
 
-Edit `frontend/src`. `scripts/lib/router-renderer-patch.mjs` is only for the
-fidelity diagnostic bundle.
+Through `scripts/lib/router-renderer-patch.mjs`'s method against the 0.18.0
+renderer: `replaceExactlyOnce` on an exact anchor string. Cloud faces live in
+`frontend/src` today; they are not in the packaged chrome.
 
 ## Rights
 

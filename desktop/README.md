@@ -54,11 +54,13 @@ React components, names, comments, file structure, or design-system source.
 
 Recreating the complete frontend with the same polish and behavior would have
 been a separate, much larger reverse-engineering project. The practical choice
-for a long time was to reconstruct the runtime and control-plane code and keep
-the checksum-pinned shipped renderer. Product work (cloud faces, Claidor host)
-then landed only in `frontend/` and `source/`, so `npm run package` hid it.
-The default package now ships that reconstructed renderer inside the 0.18.0
-Electron shell. `npm run package:diagnostic` still builds the fidelity bundle.
+is to reconstruct the runtime and control-plane code, retain the checksum-pinned
+shipped renderer, and ignite the recovered host so Claidor inference actually
+runs. Packaging `frontend/` as the window on 20 September emptied the chrome:
+the atom stylesheet was never recovered.
+
+`frontend/` is a readable partial reconstruction. It has the 19 cloud faces.
+It is not the packaged renderer.
 
 ## Preserved original installers
 

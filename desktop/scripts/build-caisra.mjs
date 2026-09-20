@@ -2,14 +2,14 @@
  * Caisra clean build (`npm run build:clean-source` / `start:clean-source`).
  *
  * This emits `frontend/src` plus ignited electron-main/host into `dist/` and
- * launches with `electron .`. The product `.app` is `npm run package`, which
- * wraps the same reconstructed renderer and host in the 0.18.0 Electron shell
- * (`scripts/package-macos.mjs` → `buildReconstructedAsar`).
+ * launches with `electron .`. That reconstructed window is a recovered
+ * skeleton: it has the 19 clouds and it does not have the 0.18.0 atom
+ * stylesheet. The product `.app` is `npm run package`, which keeps the
+ * checksum-pinned 0.18.0 renderer and ignites the recovered host.
  *
  * Vite marks the emitted script and stylesheet `crossorigin`. Over file://
  * that is fatal: `loadFile` gives the document origin `null`, and Chromium
- * refuses the stylesheet. Both this script and `buildProductionRenderer`
- * strip the attribute.
+ * refuses the stylesheet. This script and `buildProductionRenderer` strip it.
  *
  * The output layout is NOT arbitrary. The app resolves these paths itself at
  * runtime — see `executableReplacements` in scripts/lib/clean-build.mjs and

@@ -38,16 +38,14 @@ test("packaging ignites host and electron-main when artifact activation cannot",
   assert.match(source, /Deterministic clean-source production host/);
 });
 
-test("default packaging ships the reconstructed renderer and ignited host", async () => {
+test("default packaging keeps the polished renderer and ignites the host", async () => {
   const source = await readFile(path.join(repoRoot, "scripts", "package-macos.mjs"), "utf8");
   const activation = await readFile(path.join(repoRoot, "scripts", "clean-build.mjs"), "utf8");
-  const rendererBuild = await readFile(path.join(repoRoot, "scripts", "renderer-production-build.mjs"), "utf8");
-  assert.match(source, /import \{ buildReconstructedAsar \} from "\.\/clean-build\.mjs"/);
-  assert.match(source, /await buildReconstructedAsar\(\)/);
-  assert.doesNotMatch(source, /buildFidelityReconstructedAsar/);
+  assert.match(source, /import \{ buildFidelityReconstructedAsar \} from "\.\/clean-build\.mjs"/);
+  assert.match(source, /await buildFidelityReconstructedAsar\(\)/);
+  assert.doesNotMatch(source, /import \{ buildReconstructedAsar \}/);
   assert.match(activation, /igniteProductionHost/);
   assert.match(activation, /igniteProductionElectronMain/);
-  assert.match(rendererBuild, /stripCrossoriginAttributes/);
 });
 
 test("Router settings use the trusted backend and display recorded inference usage", async () => {

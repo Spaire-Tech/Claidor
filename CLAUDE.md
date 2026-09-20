@@ -90,15 +90,14 @@ a desktop credential. Sign-in is not the whole server the app wants: profile,
 usage, access and the box broker are Connect RPC and Claidor serves none of
 them. They degrade rather than fail — that is measured too, not assumed.
 
-**`npm run package` ships `frontend/src` as the window UI, inside the 0.18.0
-Electron shell.** That changed 20 September. Until then the packaged app kept
-Grok's checksum-pinned renderer and host, so every product change on `main`
-(cloud faces, Terra→Luna) was invisible in Finder. The 0.18.0 payload is still
-required for bootstrap (helpers, native ABI). The old fidelity bundle is
-`npm run package:diagnostic`. **The build loop is `npm ci && npm run bootstrap
-&& npm run check && npm run package && npm run verify`, macOS arm64 only.**
-`docs/product/building-the-app.md` is the record. Vite's `crossorigin` attribute
-is stripped so `loadFile` can apply the stylesheet.
+**`npm run package` ships the 0.18.0 window chrome inside the 0.18.0 Electron
+shell, with the recovered host ignited so Terra→Luna actually runs.** Shipping
+`frontend/` as that window on 20 September emptied the sidebar and composer:
+the atom stylesheet was never recovered. The 19 cloud faces stay in
+`frontend/src` until they can be patched into the pinned renderer.
+`npm run package:diagnostic` is the fidelity bundle. **The build loop is
+`npm ci && npm run bootstrap && npm run check && npm run package && npm run
+verify`, macOS arm64 only.** `docs/product/building-the-app.md` is the record.
 
 
 **A renderer bug I fixed on the way, in the workspace build — corrected 19 September.** `docs/product/reconstruction-audit.md` said
