@@ -125,6 +125,12 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(await readFile(path.join(repoRoot, "source", "shared", "node", "cursor-backend", "claidor-api.ts"), "utf8"), /CLAIDOR_PROXY_PREFIX = "desktop\/api\/proxy\/v1"/);
   assert.match(providers, /headers\.set\("authorization", `Bearer \$\{accessToken\}`\)/);
   assert.match(inference, /setClaidorCredentialSource\(\{ getAccessToken: \(\) => auth\.getAccessToken\(\) \}\)/);
+  assert.match(coordinator, /export const BOX_OPTIONAL_WAIT_MS = 800/);
+  assert.match(coordinator, /return \/\^\(1\|true\|yes\)\$\/i\.test\(raw\);/);
+  assert.doesNotMatch(coordinator, /if \(raw\.length === 0\) return true;/);
+  assert.match(providers, /CLAIDOR_FETCH_TIMEOUT_MS = 45_000/);
+  assert.match(providers, /Timed out waiting for a Claidor sign-in/);
+  assert.match(await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "gateway", "gateway-client.ts"), "utf8"), /connectDeadline\.run\(\(signal\) => this\.resolveConnection\(signal\)\)/);
   assert.match(coordinator, /executeTool: async \(definition, toolArgs, toolCallId\)/);
   assert.match(coordinatorMain, /command\(commands, "listRoutedMcpTools", args\)/);
   assert.match(coordinator, /inference-router-transcript\.json/);
