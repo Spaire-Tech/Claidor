@@ -66,7 +66,7 @@ test("claidor is a provider everywhere a provider is listed", async () => {
   }
 });
 
-test("claidor turns run on the Mac by default and pass through to the host's full loop on request", async () => {
+test("claidor turns pass through to the host's full loop by default", async () => {
   const router = await loadModule("source/node-agent-coordinator/inference-router.ts", "coordinator-inference-router-switch");
   try {
     const { mkdir, writeFile } = await import("node:fs/promises");
@@ -78,11 +78,16 @@ test("claidor turns run on the Mac by default and pass through to the host's ful
       dataDir, env, postEvent: (family, payload) => events.push({ family, payload }), dispatchRemote: async () => { throw new Error("box unreachable"); },
     });
 
-    assert.equal(router.module.routesClaidorThroughHost({}), false);
+    assert.equal(router.module.routesClaidorThroughHost({}), true);
     assert.equal(router.module.routesClaidorThroughHost({ SAND_CLAIDOR_FULL_AGENT: "1" }), true);
     assert.equal(router.module.routesClaidorThroughHost({ SAND_CLAIDOR_FULL_AGENT: "off" }), false);
 
-    const local = await make({}).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
+    const passthrough = await make({}).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
+    assert.deepEqual(passthrough, { handled: false });
+    const tail = await make({}).dispatch("getAgentTranscriptTail", { id: "a" });
+    assert.deepEqual(tail, { handled: false });
+
+    const local = await make({ SAND_CLAIDOR_FULL_AGENT: "off" }).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
     assert.equal(local.handled, true);
     assert.equal(local.value.provider, "claidor");
     // The local turn runs in the background; with no credential source registered
@@ -93,11 +98,6 @@ test("claidor turns run on the Mac by default and pass through to the host's ful
     }
     const settled = events.find((event) => event.family === "transcript" && event.payload.entry?.kind === "send-message");
     assert.match(settled.payload.entry.message.content, /no signed-in credential source/);
-
-    const passthrough = await make({ SAND_CLAIDOR_FULL_AGENT: "1" }).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
-    assert.deepEqual(passthrough, { handled: false });
-    const tail = await make({ SAND_CLAIDOR_FULL_AGENT: "1" }).dispatch("getAgentTranscriptTail", { id: "a" });
-    assert.deepEqual(tail, { handled: false });
   } finally {
     await router.dispose();
   }
@@ -113,7 +113,7 @@ test("a Claidor turn does not wait on a hung box", async () => {
     const events = [];
     const hung = router.module.createCoordinatorInferenceRouter({
       dataDir,
-      env: {},
+      env: { SAND_CLAIDOR_FULL_AGENT: "off" },
       postEvent: (family, payload) => events.push({ family, payload }),
       dispatchRemote: () => new Promise(() => {}),
     });
@@ -128,6 +128,28 @@ test("a Claidor turn does not wait on a hung box", async () => {
     const settled = events.find((event) => event.family === "transcript" && event.payload.entry?.kind === "send-message");
     assert.match(settled.payload.entry.message.content, /no signed-in credential source/);
     assert.ok(Date.now() - started < 6_000, "a hung box must not stall the turn");
+  } finally {
+    await router.dispose();
+  }
+});
+
+test("a Claidor host-loop send is admitted without waiting on the box", async () => {
+  const router = await loadModule("source/node-agent-coordinator/inference-router.ts", "coordinator-inference-router-host-admit");
+  try {
+    const { mkdir, writeFile } = await import("node:fs/promises");
+    const dataDir = path.join(router.dataDir, "data");
+    await mkdir(dataDir, { recursive: true });
+    await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "claidor" }));
+    const hung = router.module.createCoordinatorInferenceRouter({
+      dataDir,
+      env: {},
+      postEvent: () => {},
+      dispatchRemote: () => new Promise(() => {}),
+    });
+    const started = Date.now();
+    const passthrough = await hung.dispatch("sendPrompt", { agentId: "a", prompt: "hello" });
+    assert.deepEqual(passthrough, { handled: false });
+    assert.ok(Date.now() - started < 500, "host-loop admission must not wait on the box");
   } finally {
     await router.dispose();
   }
