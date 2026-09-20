@@ -57,8 +57,8 @@ export function DevShell({ upstreamBoot }: DevShellProps) {
     { id: "room", name: "Recovery Room", isGroup: true, memberIds: ["lead", "writer", "reviewer"], conversationPartnerIds: [], awaitingUserResponse: null, isRunning: false, updatedAt: Date.now() - 90_000 }
   ];
   const previewPlugins: PluginsDialogShellProps["items"] = [
-    { kind: "plugin", id: "calendar", displayName: "Calendar", description: "Read events and coordinate schedules.", publisher: "Cursor", installed: false },
-    { kind: "plugin", id: "linear", displayName: "Linear", description: "Search and update issues and projects.", publisher: "Cursor", installed: true },
+    { kind: "plugin", id: "calendar", displayName: "Calendar", description: "Read events and coordinate schedules.", publisher: "Caisra", installed: false },
+    { kind: "plugin", id: "linear", displayName: "Linear", description: "Search and update issues and projects.", publisher: "Caisra", installed: true },
     { kind: "server", id: "github", displayName: "GitHub", description: "Repository tools and pull request workflows.", accountLabel: "source-lab", status: "connected" },
     { kind: "server", id: "salesforce", displayName: "Salesforce", description: "Customer and opportunity data.", status: "authentication-required" },
     { kind: "workflow", id: "release-notes", displayName: "Release notes", description: "Draft release summaries from merged work.", enabled: true, sourceUrl: "https://example.test/release-notes" }

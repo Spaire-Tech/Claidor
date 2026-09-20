@@ -38,9 +38,9 @@ function CloudAgentStatusBadge({ status }: { status: CloudAgentStatus }) {
 function CloudAgentBody({ info, onOpen, onOpenPr, disabled }: { info: CloudAgentInfo | null; onOpen: () => void; onOpenPr?: (url: string) => void; disabled: boolean }) {
   const titleId = useId();
   if (info == null) {
-    return <article aria-label="Cursor cloud agent" className="sand-cursor-agent-card" aria-busy="true"><div className="sand-cursor-agent-card__content sand-78zum5 sand-dt5ytf sand-1jnr06f sand-h8yej3 sand-euugli"><span aria-hidden="true" className="sand-cursor-agent-card__content" /><span aria-hidden="true" className="sand-cursor-agent-card__content" /><span aria-hidden="true" className="sand-cursor-agent-card__content" /></div></article>;
+    return <article aria-label="Cloud agent" className="sand-cursor-agent-card" aria-busy="true"><div className="sand-cursor-agent-card__content sand-78zum5 sand-dt5ytf sand-1jnr06f sand-h8yej3 sand-euugli"><span aria-hidden="true" className="sand-cursor-agent-card__content" /><span aria-hidden="true" className="sand-cursor-agent-card__content" /><span aria-hidden="true" className="sand-cursor-agent-card__content" /></div></article>;
   }
-  const title = info.name?.trim() || "Cursor cloud agent";
+  const title = info.name?.trim() || "Cloud agent";
   const hasPr = info.prUrl != null && info.prUrl.length > 0;
   return <article aria-labelledby={titleId} className="sand-cursor-agent-card">
     <div className="sand-cursor-agent-card__content sand-78zum5 sand-dt5ytf sand-1jnr06f sand-h8yej3 sand-euugli">

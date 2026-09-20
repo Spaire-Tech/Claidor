@@ -1,4 +1,6 @@
-export function sandErrorDetail(error: unknown): { message: string; stack?: string } { return error instanceof Error ? { message: error.message, ...(error.stack !== undefined ? { stack: error.stack } : {}) } : { message: String(error) }; }
+import { errorMessage } from "../../shared/errors.js";
+
+export function sandErrorDetail(error: unknown): { message: string; stack?: string } { return error instanceof Error ? { message: errorMessage(error), ...(error.stack !== undefined ? { stack: error.stack } : {}) } : { message: errorMessage(error) }; }
 export const SAND_BOX_BOOT_STAGES = ["entrypoint_started", "daemon_listening", "desktop_up", "ready"] as const;
 export const SAND_BOX_BOOT_ID_ENV = "SAND_BOX_BOOT_ID", SAND_BOX_BOOT_STARTED_AT_MS_ENV = "SAND_BOX_BOOT_STARTED_AT_MS", SAND_BOX_AUTH_ID_ENV = "SAND_BOX_AUTH_ID", SAND_BOX_TENANT_ID_ENV = "SAND_BOX_TENANT_ID", SAND_BOX_STORE_ID_ENV = "SAND_BOX_STORE_ID", SAND_BOX_CLUSTER_ENV = "SAND_BOX_CLUSTER";
 export function resolveSandBoxIdentityTags(env: NodeJS.ProcessEnv = process.env) { return { auth_id: env[SAND_BOX_AUTH_ID_ENV]?.trim(), tenant_id: env[SAND_BOX_TENANT_ID_ENV]?.trim(), box_store_id: env[SAND_BOX_STORE_ID_ENV]?.trim(), box_boot_id: env[SAND_BOX_BOOT_ID_ENV]?.trim(), cluster: env[SAND_BOX_CLUSTER_ENV]?.trim() }; }

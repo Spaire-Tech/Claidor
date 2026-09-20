@@ -6,7 +6,7 @@ import { SandSettingsStore } from "../../../shared/node/settings/sand-settings-s
 import { createCursorSandInference } from "./cursor-session.js";
 import type { SandInferenceProvider } from "../../../shared/inference-router.js";
 import type { PromptExecutor } from "./sand-labeling.js";
-import { createProviderPromptSession } from "./provider-session.js";
+import { createProviderPromptSession, setClaidorCredentialSource } from "./provider-session.js";
 import { getSandRootDir } from "../../host-paths.js";
 export interface HostInferenceOptions {
   auth: { getAccessToken(...args: unknown[]): Promise<string>; getMachineId(): string };
@@ -17,6 +17,7 @@ export interface HostInferenceOptions {
 export function createHostInference(options: HostInferenceOptions) {
   const { auth, experiments, settings } = options;
   const routerSettings = new SandSettingsStore(join(getSandRootDir(), "settings.json"));
+  setClaidorCredentialSource({ getAccessToken: () => auth.getAccessToken() });
   const cursor = createCursorSandInference({
     getAccessToken: auth.getAccessToken,
     getMachineId: auth.getMachineId,

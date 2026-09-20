@@ -34,7 +34,7 @@ export const ELECTRON_PRODUCTION_AREA_EVIDENCE = Object.freeze({
     injectedPorts: ["ProductionServiceContext.coordinatorLegs.legs", "electron.app", "electron.BrowserWindow", "electron.dialog", "electron.nativeImage"],
   },
   avatarImages: {
-    recoveredProviders: ["source/electron-main/media/avatar-images.ts", "source/shared/node/cursor-backend/cursor-generate-image.ts"],
+    recoveredProviders: ["source/electron-main/media/avatar-images.ts", "source/shared/node/cursor-backend/claidor-generate-image.ts"],
     injectedPorts: ["electron.dialog", "electron.BrowserWindow", "electron.nativeImage", "ProductionServiceContext.requireAccount", "ProductionServiceContext.machineId"],
   },
   cursorAccount: {

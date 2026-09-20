@@ -1,3 +1,5 @@
+import { errorMessage } from "../../../shared/errors.js";
+
 export const PROVIDER_OVERLOAD_ERROR_TITLE = "Model provider is overloaded";
 export const PROVIDER_OVERLOAD_ERROR_DETAIL =
   "The model provider is under heavy load right now. This is usually temporary — retry, or switch to another model.";
@@ -67,7 +69,7 @@ export function getBackendErrorDetailMessage(error: unknown): string | null {
       : `${title}\n\n${message}`;
 }
 export function formatAgentRunError(error: Error): string {
-  return getBackendErrorDetailMessage(error) ?? error.message;
+  return getBackendErrorDetailMessage(error) ?? errorMessage(error);
 }
 export function formatSandUsageResetIn(
   nextResetAt: string | Date,
@@ -175,9 +177,10 @@ export function mapErrorDetailButtons(
   }
   return actions;
 }
+
 export function describeAgentRunError(error: unknown): Record<string, unknown> {
   const formatted =
-      error instanceof Error ? formatAgentRunError(error) : String(error),
+      error instanceof Error ? formatAgentRunError(error) : errorMessage(error),
     detail = findBackendConnectError(error)?.findDetails()[0]?.details,
     title = detail?.title?.trim() ?? "",
     actions = mapErrorDetailButtons(detail?.buttons);

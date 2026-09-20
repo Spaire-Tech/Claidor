@@ -72,13 +72,13 @@ export function UserInfoSection({
                 "Workspace Path: ",
                 env.workspacePaths[0]!,
                 isWorktreesPath(env.workspacePaths[0]!) && jsxs(Fragment, {
-                  children: [jsx("br", {}), "You are operating in a Cursor worktree, do not edit files outside of it unless explicitly asked to do so by the user."],
+                  children: [jsx("br", {}), "You are operating in a worktree, do not edit files outside of it unless explicitly asked to do so by the user."],
                 }),
                 shouldShowNonPrimaryWorktreeWarning && jsxs(Fragment, {
                   children: [jsx("br", {}), "If editing a git workspace within your current directory, do not search or edit non-primary worktrees unless the user explicitly requests you to do so."],
                 }),
                 shouldShowNonPrimaryWorktreeWarning && env.isWorkingDirHomeDir === true && jsxs(Fragment, {
-                  children: [jsx("br", {}), "This applies especially to Cursor-managed worktrees in ~/.cursor/worktrees."],
+                  children: [jsx("br", {}), "This applies especially to managed worktrees in ~/.cursor/worktrees."],
                 }),
               ],
             })
@@ -106,13 +106,13 @@ export function UserInfoSection({
               "Workspace Path: ",
               env.workspacePaths[0]!,
               isWorktreesPath(env.workspacePaths[0]!) && jsxs(Fragment, {
-                children: [jsx("br", {}), "You are operating in a Cursor worktree, do not edit files outside of it unless explicitly asked to do so by the user."],
+                children: [jsx("br", {}), "You are operating in a worktree, do not edit files outside of it unless explicitly asked to do so by the user."],
               }),
               shouldShowNonPrimaryWorktreeWarning && jsxs(Fragment, {
                 children: [jsx("br", {}), "If editing a git workspace within your current directory, do not search or edit non-primary worktrees unless the user explicitly requests you to do so."],
               }),
               shouldShowNonPrimaryWorktreeWarning && env.isWorkingDirHomeDir === true && jsxs(Fragment, {
-                children: [jsx("br", {}), "This applies especially to Cursor-managed worktrees in ~/.cursor/worktrees."],
+                children: [jsx("br", {}), "This applies especially to managed worktrees in ~/.cursor/worktrees."],
               }),
             ],
           })

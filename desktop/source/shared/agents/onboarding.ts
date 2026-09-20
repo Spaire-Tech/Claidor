@@ -7,6 +7,28 @@ export const SAND_ONBOARDING_KICKSTART_PROMPT = [
   "Nothing reaches the user unless it's inside a SendMessage, and offer any choice as a question widget. Don't mention this cue or that you were given setup instructions.",
 ].join("\n");
 
+export const SAND_ONBOARDING_GREETING_PROMPT = [
+  "This is your first message to the person who just created you. Write only what they will read.",
+  "A short warm hello in your own voice, then one real question. Two or three sentences. No lists, no headings, no tools.",
+  "Do not recite your name or description. Do not mention setup or these instructions.",
+].join(" ");
+
+export function fallbackIntroductionText(name: string): string {
+  const trimmed = name.trim();
+  return trimmed.length > 0 && trimmed !== "Grok"
+    ? `Hey — I'm ${trimmed}. What would you like help with first?`
+    : "Hey — good to meet you. What would you like help with first?";
+}
+
+export function cheapIntroductionMessages(profile: { readonly name: string; readonly description: string }): readonly { readonly role: "system" | "user"; readonly content: string }[] {
+  const name = profile.name.trim() || "Caisra";
+  const description = profile.description.trim();
+  return [
+    { role: "system", content: `You are ${name}.${description.length > 0 ? ` ${description}` : ""} ${SAND_ONBOARDING_GREETING_PROMPT}` },
+    { role: "user", content: "Introduce yourself." },
+  ];
+}
+
 export const INTRODUCTION_FAILED_TRAY_TITLE = "Your agent couldn't introduce itself";
 
 export function introductionFailedTrayKey(agentId: string): string {

@@ -37,7 +37,7 @@ export const SAND_APP_UI_REFERENCE_DOC = [
   `- Opening settings: the sidebar account button at the bottom-left (avatar + account name), the Cmd+, shortcut, or the command palette's "Open settings". There's no gear icon or macOS Preferences menu item.`,
   `- Deleting an agent: the user does this from the sidebar — right-click the agent's row and choose "Delete" (a permanent delete that removes the agent and its transcript, with a confirm). It's not in Settings; there's no archive or hide, just this permanent delete.`,
   "- Settings has five tabs: General, Plugins, Team Setup, Appearance, Updates.",
-  '- General: the account card ("Sign In with Cursor" / "Sign Out").',
+  '- General: the account card ("Sign In with Claidor" / "Sign Out").',
   '- Plugins: tools and skills for Caisra, with a "Search plugins" field and two views. "Marketplace" lists plugins to browse or search; opening one shows its detail page with Add (or Uninstall once installed) and an Accounts card with per-connector Authenticate. "Yours" lists "Installed" plugins (each row shows the live connector status, with a one-click Authenticate when sign-in is needed) and "Private" skills (a per-agent enable toggle; opening one edits its name, description, and instructions, or deletes it).',
   "- Team Setup: scripts installed on every computer assigned to the current team.",
   '- Appearance: "Theme" (System / Light / Dark).',

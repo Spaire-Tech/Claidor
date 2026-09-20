@@ -29,7 +29,7 @@ function resolveToolDescription(tool: BuiltinTool, props: Record<string, unknown
   return tool.description;
 }
 
-const BUILTIN_TOOLS_SERVER_USE_INSTRUCTIONS = "Native Cursor tools for this session. These are highly recommended and useful tools that you should use when the right situation arises. Don't be afraid to look at one if it seems relevant, even if you don't end up using it. You MUST read the tool schemas before calling them.";
+const BUILTIN_TOOLS_SERVER_USE_INSTRUCTIONS = "Native tools for this session. These are highly recommended and useful tools that you should use when the right situation arises. Don't be afraid to look at one if it seems relevant, even if you don't end up using it. You MUST read the tool schemas before calling them.";
 
 function buildBuiltinToolsServerUseInstructions(tools: BuiltinTool[]): string {
   const lines = tools.flatMap(tool => {

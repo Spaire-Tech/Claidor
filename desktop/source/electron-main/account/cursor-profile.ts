@@ -2,6 +2,8 @@ import { PrivacyMode } from "../../shared/observability/sentry-privacy-mode.js";
 import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
 import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
 import { getOrCreateMachineId } from "./cursor-machine-id.js";
+import { persistAccountDisplayName, readLocalAccountDisplayName } from "./account-display-name.js";
+export { ACCOUNT_DISPLAY_NAME_FILE, isUnimplementedProfileError, persistAccountDisplayName, readLocalAccountDisplayName, writeLocalAccountDisplayName } from "./account-display-name.js";
 
 export const PROFILE_REQUEST_TIMEOUT_MS = 10_000;
 export const USAGE_REQUEST_TIMEOUT_MS = 15_000;
@@ -108,13 +110,16 @@ export function buildSandUsageSummary(args: { readonly sandStatus: SandUsageStat
 }
 
 export async function fetchCursorProfile(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<CursorProfile | null> {
+  const localName = readLocalAccountDisplayName();
   try {
     const client = profileClient(getAccessToken, deps);
     const [me, isAnysphereUser] = await Promise.all([client.getMe({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS }), client.getTeams({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS }).then((r) => r.teams.some((team) => team.id === ANYSPHERE_TEAM_ID && team.hasBilling && team.seats > 0)).catch((error: unknown) => { deps.reportFailure?.("cursor-profile", "teams-membership", error); return false; })]);
-    return { displayName: nonEmpty(displayNameFromProfile(me.firstName, me.lastName)), email: nonEmpty(me.email), profilePictureUrl: nonEmpty(me.profilePictureUrl), isAnysphereUser };
-  } catch { return null; }
+    return { displayName: localName ?? nonEmpty(displayNameFromProfile(me.firstName, me.lastName)), email: nonEmpty(me.email), profilePictureUrl: nonEmpty(me.profilePictureUrl), isAnysphereUser };
+  } catch { return localName == null ? null : { displayName: localName, email: undefined, profilePictureUrl: undefined, isAnysphereUser: false }; }
 }
-export async function updateCursorProfileName(getAccessToken: AccessTokenReader, name: string, deps: CursorProfileDeps): Promise<void> { await profileClient(getAccessToken, deps).updateUserName(splitAccountName(name), { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS }); }
+export async function updateCursorProfileName(getAccessToken: AccessTokenReader, name: string, deps: CursorProfileDeps): Promise<void> {
+  await persistAccountDisplayName(name, () => profileClient(getAccessToken, deps).updateUserName(splitAccountName(name), { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS }).then(() => undefined));
+}
 export async function fetchUserPrivacyMode(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<PrivacyMode | undefined> { try { return (await profileClient(getAccessToken, deps).getUserPrivacyMode({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })).privacyMode; } catch { return undefined; } }
 export async function fetchUserPrivacyModeEnabled(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<boolean> { return privacyModeEnabledForMode(await fetchUserPrivacyMode(getAccessToken, deps)); }
 export async function fetchSandWeeklyUsage(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<WeeklyUsage | null> { try { const client = profileClient(getAccessToken, deps); const [status, usage] = await Promise.allSettled([client.getSandUsageStatus({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS }), client.getCurrentPeriodUsage({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })]); return status.status === "fulfilled" ? toWeeklyUsage(status.value, usage.status === "fulfilled" ? usage.value : null, (deps.now ?? Date.now)()) : null; } catch { return null; } }

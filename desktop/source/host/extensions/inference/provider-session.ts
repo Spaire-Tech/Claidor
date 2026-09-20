@@ -7,7 +7,9 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { jsonSchema, streamText, tool, type CoreMessage, type LanguageModelV1, type ToolSet } from "ai";
 
 import { BasePromptBuilder, BasePromptExecutor } from "../../../packages/chat-inference/base.js";
+import { asError } from "../../../shared/errors.js";
 import type { SandInferenceProvider } from "../../../shared/inference-router.js";
+import { claidorProxyBaseUrl } from "../../../shared/node/cursor-backend/claidor-api.js";
 import { resolveClaudeCodeCliPath } from "../../../shared/node/inference-router-local.js";
 import { getSandRootDir } from "../../host-paths.js";
 import { SandSettingsStore } from "../../../shared/node/settings/sand-settings-store.js";
@@ -46,6 +48,45 @@ function openRouterCredential(): string {
   const value = process.env.OPENROUTER_API_KEY?.trim() || persistedSecrets().OPENROUTER_API_KEY?.trim();
   if (value == null || value.length === 0) throw new Error("OpenRouter needs OPENROUTER_API_KEY. Add it in Settings → Router.");
   return value;
+}
+
+export interface ClaidorCredentialSource {
+  readonly getAccessToken: () => Promise<string>;
+  readonly backendUrl?: string;
+}
+
+export const DEFAULT_CLAIDOR_MODEL = "gpt-5.6-terra";
+export const DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-5.6-luna";
+
+// The Claidor provider is the signed-in account. Which process holds that
+// credential differs: the host reads it from its auth service, the coordinator
+// asks electron-main over the control port. Each registers its source once.
+let claidorCredentialSource: ClaidorCredentialSource | null = null;
+
+export function setClaidorCredentialSource(source: ClaidorCredentialSource | null): void {
+  claidorCredentialSource = source;
+}
+
+export function configuredClaidorModel(): string {
+  return process.env.SAND_CLAIDOR_MODEL?.trim() || DEFAULT_CLAIDOR_MODEL;
+}
+
+export function configuredClaidorCheapModel(): string {
+  return process.env.SAND_CLAIDOR_CHEAP_MODEL?.trim() || DEFAULT_CLAIDOR_CHEAP_MODEL;
+}
+
+// One definition of where the proxy lives, shared with the other three
+// Claidor doors; it was `api/proxy/v1` here until 19 September, which the
+// API host answers with 404 (`claidor-api.ts`).
+export { claidorProxyBaseUrl };
+
+function claidorAuthenticatedFetch(source: ClaidorCredentialSource): typeof fetch {
+  return async (input, init) => {
+    const accessToken = await source.getAccessToken();
+    const headers = new Headers(init?.headers);
+    headers.set("authorization", `Bearer ${accessToken}`);
+    return await fetch(input, { ...init, headers });
+  };
 }
 
 function providerPrompt(messages: readonly ProviderMessage[]): string {
@@ -150,10 +191,19 @@ function configuredCodexReasoningEffort(): "minimal" | "low" | "medium" | "high"
   } catch { return undefined; }
 }
 
+// The host's tools arrive with `parameters` already wrapped by the AI SDK's
+// `jsonSchema()` (packages/agent/tools/common.ts); the coordinator's connector
+// tools arrive as bare JSON Schema under `inputSchema`. Both come out bare here.
+function toolParameterSchema(definition: Loose): Loose | undefined {
+  const parameters = definition.inputSchema ?? definition.parameters;
+  if (parameters == null || typeof parameters !== "object") return undefined;
+  return "jsonSchema" in parameters && typeof parameters.jsonSchema === "object" && parameters.jsonSchema != null ? parameters.jsonSchema : parameters;
+}
+
 function codexTools(definitions: readonly Loose[] | undefined): CodexDirectTool[] | undefined {
   if (definitions == null) return undefined;
   const tools = definitions.flatMap((source): CodexDirectTool[] => {
-    const parameters = source.inputSchema ?? source.parameters;
+    const parameters = toolParameterSchema(source);
     return typeof source.name === "string" && source.name.length > 0 && parameters != null ? [{
       name: source.name,
       ...(typeof source.description === "string" ? { description: source.description } : {}),
@@ -232,7 +282,7 @@ function toToolSet(definitions: readonly Loose[] | undefined, executeTool?: Rout
   const tools: ToolSet = {};
   for (const definition of definitions) {
     if (typeof definition.name !== "string" || definition.name.length === 0) continue;
-    const parameters = definition.inputSchema ?? definition.parameters;
+    const parameters = toolParameterSchema(definition);
     if (parameters == null) continue;
     const routedTool: any = {
       ...(typeof definition.description === "string" ? { description: definition.description } : {}),
@@ -244,19 +294,117 @@ function toToolSet(definitions: readonly Loose[] | undefined, executeTool?: Rout
   return Object.keys(tools).length === 0 ? undefined : tools;
 }
 
+function partText(parts: readonly Loose[]): string {
+  return parts.filter(part => part?.type === "text" && typeof part.text === "string").map(part => part.text as string).join("\n");
+}
+
+// The host loop appends messages in its own dialect of the AI SDK shape:
+// Cursor wire metadata under `providerOptions.cursor` (with `undefined` fields
+// the SDK's JSON validator refuses), tool results whose text may be empty and
+// whose images live in `experimental_content`, reasoning parts with signatures.
+// This is the copy the wire sees; the loop keeps its own.
+export function toCoreMessages(messages: readonly ProviderMessage[]): CoreMessage[] {
+  const out: Loose[] = [];
+  for (const message of messages) {
+    const { role, content } = message;
+    if (typeof content === "string") {
+      if (role === "system" || role === "user" || role === "assistant") out.push({ role, content });
+      continue;
+    }
+    const parts = content as readonly Loose[];
+    if (role === "system") { out.push({ role, content: partText(parts) }); continue; }
+    if (role === "user") {
+      out.push({ role, content: parts.flatMap((part): Loose[] => part?.type === "text" ? [{ type: "text", text: part.text }] : part?.type === "image" ? [{ type: "image", image: part.image, ...(typeof part.mimeType === "string" ? { mimeType: part.mimeType } : {}) }] : []) });
+      continue;
+    }
+    if (role === "assistant") {
+      out.push({ role, content: parts.flatMap((part): Loose[] => part?.type === "text" ? [{ type: "text", text: part.text }] : part?.type === "tool-call" ? [{ type: "tool-call", toolCallId: part.toolCallId, toolName: part.toolName, args: part.args }] : part?.type === "reasoning" && typeof part.text === "string" ? [{ type: "reasoning", text: part.text }] : []) });
+      continue;
+    }
+    if (role !== "tool") continue;
+    const images: Loose[] = [];
+    const results = parts.flatMap((part): Loose[] => {
+      if (part?.type !== "tool-result") return [];
+      const rendered: readonly Loose[] = Array.isArray(part.experimental_content) ? part.experimental_content : Array.isArray(part.content) ? part.content : [];
+      for (const item of rendered) if (item?.type === "image" && typeof item.data === "string") images.push({ type: "image", image: item.data, ...(typeof item.mimeType === "string" ? { mimeType: item.mimeType } : {}) });
+      const text = typeof part.result === "string" ? part.result : part.result === undefined ? partText(rendered) : undefined;
+      const result = text === undefined ? part.result : text.length > 0 ? text : images.length > 0 ? "(the tool returned an image; it follows as an attachment)" : "(no output)";
+      return [{ type: "tool-result", toolCallId: part.toolCallId, toolName: part.toolName, result, ...(part.isError === true ? { isError: true } : {}) }];
+    });
+    if (results.length > 0) out.push({ role, content: results });
+    // The Responses wire takes no images inside a function output; the person's
+    // model must still see the screenshot, so it follows as the next user turn.
+    if (images.length > 0) out.push({ role: "user", content: [{ type: "text", text: "Image output of the tool call(s) above." }, ...images] });
+  }
+  return out as CoreMessage[];
+}
+
+// The AI SDK (v4) never settles `response` when the first request fails: the
+// stream yields one `error` part and closes, and the host loop then waits on
+// `response` forever. Fail everything the loop awaits, with the provider's
+// own sentence, and throw from the stream the way the loop expects.
+function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void) {
+  const failure = deferred<never>();
+  failure.promise.catch(() => undefined);
+  const fail = (error: unknown) => failure.reject(asError(error));
+  const fullStream = (async function* () {
+    let ended = false;
+    try {
+      for await (const part of result.fullStream) {
+        if (part.type === "error") { const next = asError(part.error); fail(next); throw next; }
+        yield part;
+      }
+      ended = true;
+    } finally {
+      if (ended) queueMicrotask(() => fail(new Error("The model stream ended without a response.")));
+    }
+  })();
+  const race = <T>(promise: Promise<T>): Promise<T> => Promise.race([promise, failure.promise]);
+  const extendedUsage = race(result.usage).then(value => ({ inputTokens: value.promptTokens, outputTokens: value.completionTokens, cacheReadTokens: 0, cacheWriteTokens: 0, maxTokens: 0 }));
+  if (onUsage != null) void extendedUsage.then(onUsage, () => undefined);
+  return { fullStream, response: race(result.response), usage: race(result.usage), extendedUsage, providerMetadata: race(result.providerMetadata), invocationId: Promise.resolve(invocationId) };
+}
+
+function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void) {
+  const tools = toToolSet(definitions, executeTool);
+  const coreMessages = toCoreMessages(messages);
+  // The host loop's state carries its own system prompt; the router prompt is
+  // for the connector-only path, where nothing else says who the agent is.
+  const system = coreMessages.some(message => message.role === "system") ? undefined : GROK_ROUTER_SYSTEM_PROMPT;
+  // Cursor-era tool schemas (Task included) omit additionalProperties.
+  // OpenAI's Responses default is strict:true, which then refuses them.
+  const result = streamText({
+    model,
+    ...(system === undefined ? {} : { system }),
+    messages: coreMessages,
+    ...(tools === undefined ? {} : { tools }),
+    toolCallStreaming: true,
+    maxSteps: tools === undefined || executeTool == null ? 1 : 8,
+    providerOptions: { openai: { strictSchemas: false } },
+  });
+  return settleAiSdkStream(result, invocationId, onUsage);
+}
+
 function openRouterExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void) {
   const id = process.env.SAND_OPENROUTER_MODEL?.trim() || "openai/gpt-5.2";
   const model: LanguageModelV1 = createOpenAI({ apiKey: openRouterCredential(), baseURL: "https://openrouter.ai/api/v1", compatibility: "compatible", name: "openrouter", headers: { "HTTP-Referer": "https://github.com/grok-bot-reconstructed", "X-Title": "Caisra Reconstructed" } }).chat(id as any);
-  const tools = toToolSet(definitions, executeTool);
-  const result = streamText({ model, system: GROK_ROUTER_SYSTEM_PROMPT, messages: messages as CoreMessage[], ...(tools === undefined ? {} : { tools }), toolCallStreaming: true, maxSteps: tools === undefined ? 1 : 8 });
-  const extendedUsage = result.usage.then(value => ({ inputTokens: value.promptTokens, outputTokens: value.completionTokens, cacheReadTokens: 0, cacheWriteTokens: 0, maxTokens: 0 }));
-  if (onUsage != null) void extendedUsage.then(onUsage);
-  return { fullStream: result.fullStream, response: result.response, usage: result.usage, extendedUsage, providerMetadata: result.providerMetadata, invocationId: Promise.resolve(invocationId) };
+  return aiSdkExecutor(model, messages, invocationId, definitions, executeTool, onUsage);
+}
+
+// Claidor's metered proxy, on the Responses wire: the one that takes reasoning
+// and function tools in the same request (server/polar/desktop/endpoints.py).
+function claidorExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, modelId?: string) {
+  const source = claidorCredentialSource;
+  if (source == null) throw new Error("Claidor is the selected provider, but this process has no signed-in credential source. Sign in to Claidor and try again.");
+  const id = modelId?.trim() || configuredClaidorModel();
+  const model: LanguageModelV1 = createOpenAI({ apiKey: "claidor-desktop-access-token", baseURL: claidorProxyBaseUrl(source.backendUrl), name: "claidor", fetch: claidorAuthenticatedFetch(source) }).responses(id);
+  return aiSdkExecutor(model, messages, invocationId, definitions, executeTool, onUsage);
 }
 
 class ProviderPromptExecutor extends BasePromptExecutor<ProviderMessage> {
   constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void) { super(new BasePromptBuilder(initialMessages)); }
   stream(_ctx: unknown, invocationId = crypto.randomUUID(), definitions?: readonly Loose[]) {
+    if (this.provider === "claidor") return claidorExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage);
     if (this.provider === "codex") return codexExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage);
     if (this.provider === "claude-code") return claudeExecutor(this.getMessages(), invocationId, this.onUsage);
     return openRouterExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage);
@@ -264,7 +412,7 @@ class ProviderPromptExecutor extends BasePromptExecutor<ProviderMessage> {
 }
 
 export function createProviderPromptSession(provider: RoutedProvider): { getModelId(): string; getExecutor(state?: unknown): PromptExecutor } {
-  const modelId = provider === "codex" ? configuredCodexModel() : provider === "claude-code" ? "claude-code" : process.env.SAND_OPENROUTER_MODEL?.trim() || "openai/gpt-5.2";
+  const modelId = provider === "claidor" ? configuredClaidorModel() : provider === "codex" ? configuredCodexModel() : provider === "claude-code" ? "claude-code" : process.env.SAND_OPENROUTER_MODEL?.trim() || "openai/gpt-5.2";
   return { getModelId: () => modelId, getExecutor: state => new ProviderPromptExecutor(provider, Array.isArray(state) ? state as ProviderMessage[] : undefined, usage => recordRoutedUsage(provider, usage)) };
 }
 
@@ -273,14 +421,17 @@ export async function runRoutedProviderText(provider: RoutedProvider, messages: 
   readonly tools?: readonly Loose[];
   readonly executeTool?: RoutedToolExecutor;
   readonly onTextDelta?: (delta: string, accumulated: string) => void;
+  readonly model?: string;
 }): Promise<string> {
   const invocationId = crypto.randomUUID();
   const onUsage = (usage: UsageRecord) => recordRoutedUsage(provider, usage);
-  const result = provider === "codex"
-    ? codexExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage)
-    : provider === "claude-code"
-      ? claudeExecutor(messages, invocationId, onUsage, options?.mcpServerUrl)
-      : openRouterExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage);
+  const result = provider === "claidor"
+    ? claidorExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage, options?.model)
+    : provider === "codex"
+      ? codexExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage)
+      : provider === "claude-code"
+        ? claudeExecutor(messages, invocationId, onUsage, options?.mcpServerUrl)
+        : openRouterExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage);
   let text = "";
   for await (const event of result.fullStream) {
     if (event.type === "text-delta" && typeof event.textDelta === "string") {

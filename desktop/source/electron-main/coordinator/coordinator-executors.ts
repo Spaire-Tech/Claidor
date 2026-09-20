@@ -82,6 +82,7 @@ export interface WebAuthnPromptDependencies {
 export interface CoordinatorGatewayConnector {
   connect(): unknown | Promise<unknown>;
   issueLocalExecDaemonCredential?(): unknown | Promise<unknown>;
+  issueInferenceCredential?(): unknown | Promise<unknown>;
 }
 
 export interface CoordinatorTransportStageReport {
@@ -472,6 +473,9 @@ export function createCoordinatorControlExecutors(
     },
     async mintLocalExecDaemonCredential() {
       return (await connector.issueLocalExecDaemonCredential?.()) ?? null;
+    },
+    async mintInferenceCredential() {
+      return (await connector.issueInferenceCredential?.()) ?? null;
     },
     requestWebAuthnConsent: (args: WebAuthnConsentRequest) =>
       webauthnPrompt.requestConsent(args),

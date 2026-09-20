@@ -2,6 +2,14 @@
 
 18 September 2026. Measured, not recalled.
 
+**Corrected 19 September 2026.** The missing server endpoint this page
+names is now built: `POST /desktop/api/proxy/v1/images/generations`
+(`server/polar/desktop/capabilities.py`), and the app's generate-image
+tool and avatar picker call it
+(`desktop/source/shared/node/cursor-backend/claidor-generate-image.ts`).
+The NetEase `/api/media/images/...` paths below are still 404 and still
+unused by the host tool. See `docs/product/capabilities-measured.md`.
+
 ---
 
 ## The short version
