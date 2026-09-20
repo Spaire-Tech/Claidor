@@ -93,8 +93,9 @@ them. They degrade rather than fail — that is measured too, not assumed.
 **`npm run package` ships the 0.18.0 window chrome inside the 0.18.0 Electron
 shell, with the recovered host ignited so Terra→Luna actually runs.** Shipping
 `frontend/` as that window on 20 September emptied the sidebar and composer:
-the atom stylesheet was never recovered. The 19 cloud faces stay in
-`frontend/src` until they can be patched into the pinned renderer.
+the atom stylesheet was never recovered. The 19 cloud faces are painted
+over the 0.18.0 Grok marks by the clean preload, not by replacing the
+window with `frontend/`.
 `npm run package:diagnostic` is the fidelity bundle. **The build loop is
 `npm ci && npm run bootstrap && npm run check && npm run package && npm run
 verify`, macOS arm64 only.** `docs/product/building-the-app.md` is the record.

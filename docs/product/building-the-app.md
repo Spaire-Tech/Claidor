@@ -71,8 +71,10 @@ derives its nested helper names from them and this build reuses the ABI-matched
 ## Changing the shipped UI
 
 Through `scripts/lib/router-renderer-patch.mjs`'s method against the 0.18.0
-renderer: `replaceExactlyOnce` on an exact anchor string. Cloud faces live in
-`frontend/src` today; they are not in the packaged chrome.
+renderer: `replaceExactlyOnce` on an exact anchor string. The 19 cloud faces
+are painted over the 0.18.0 Grok marks by the clean preload
+(`source/electron-preload/cloud-blob-overlay.ts`) so `dist/Caisra.app` keeps
+the polished chrome and still draws the clouds.
 
 ## Rights
 

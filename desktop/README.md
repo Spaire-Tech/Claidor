@@ -59,8 +59,9 @@ shipped renderer, and ignite the recovered host so Claidor inference actually
 runs. Packaging `frontend/` as the window on 20 September emptied the chrome:
 the atom stylesheet was never recovered.
 
-`frontend/` is a readable partial reconstruction. It has the 19 cloud faces.
-It is not the packaged renderer.
+`frontend/` is a readable partial reconstruction. It is not the packaged
+renderer. The 19 cloud faces are drawn onto the 0.18.0 Grok marks by the
+clean preload.
 
 ## Preserved original installers
 
