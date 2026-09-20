@@ -41,13 +41,14 @@ test("an OpenAI TPM refusal is a rate limit, not a transient retry", async () =>
   }
 });
 
-test("introduction is a short cheap greeting, not a full Terra turn", async () => {
+test("first-run kickstart is the full host loop with widgets and connector cards", async () => {
   const loaded = await load("source/shared/agents/onboarding.ts", "onboarding");
   try {
-    const { cheapIntroductionMessages, fallbackIntroductionText } = loaded.module;
+    const { SAND_ONBOARDING_KICKSTART_PROMPT, cheapIntroductionMessages, fallbackIntroductionText } = loaded.module;
+    assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /connector card/);
+    assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /question widget/);
+    assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /\[first run\]/);
     const messages = cheapIntroductionMessages({ name: "Bass", description: "helps with the week" });
-    const chars = messages.map((message) => message.content).join("").length;
-    assert.ok(chars < 1_200, `introduction prompt was ${chars} characters`);
     assert.equal(messages.some((message) => /SendMessage|question widget|connector card/i.test(message.content)), false);
     assert.equal(fallbackIntroductionText("Bass"), "Hey — I'm Bass. What would you like help with first?");
   } finally {
@@ -55,14 +56,13 @@ test("introduction is a short cheap greeting, not a full Terra turn", async () =
   }
 });
 
-test("kickstart no longer runs the full host loop for a first hello", async () => {
+test("kickstart runs the full host loop for a first hello", async () => {
   const lifecycle = await readFile(path.join(repoRoot, "source/host/extensions/transcript/agent-lifecycle.ts"), "utf8");
   const providers = await readFile(path.join(repoRoot, "source/host/extensions/inference/provider-session.ts"), "utf8");
   const retry = await readFile(path.join(repoRoot, "source/host/runner/transient-stream-error.ts"), "utf8");
-  assert.match(lifecycle, /deliverCheapIntroduction/);
-  assert.match(lifecycle, /configuredClaidorCheapModel\(\)/);
-  assert.match(lifecycle, /isProviderRateLimitError\(error\)\) return;/);
-  assert.doesNotMatch(lifecycle, /SAND_ONBOARDING_KICKSTART_PROMPT/);
+  assert.match(lifecycle, /SAND_ONBOARDING_KICKSTART_PROMPT/);
+  assert.match(lifecycle, /kickstartWithFullRunner\(session, prompt\)/);
+  assert.doesNotMatch(lifecycle, /deliverCheapIntroduction/);
   assert.match(providers, /DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-5\.6-luna"/);
   assert.match(providers, /withCheapRateLimitFallback\(start\(requested\), \(\) => start\(cheap\)\)/);
   assert.match(retry, /isProviderRateLimitError\(error\)\) return false/);

@@ -2,15 +2,10 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { isSandAgentLimitError } from "../../../shared/agents/agents.js";
 import { errorLogTag } from "../../../shared/errors.js";
-import { isProviderRateLimitError } from "../../../shared/provider-rate-limit.js";
 import {
   cloneAgentDir,
   cloneAgentDisplayName,
 } from "../../agents/agent-clone.js";
-import {
-  getSandProfilePath,
-  readSandProfileFile,
-} from "../../agents/agent-profile.js";
 import { CANONICAL_AVATAR_FILENAME } from "../../agents/agent-avatar.js";
 import { getAgentAutomationsDir } from "../../automations/automation-store.js";
 import {
@@ -19,24 +14,15 @@ import {
 } from "../../../shared/agents/disk-saver.js";
 import {
   INTRODUCTION_FAILED_TRAY_TITLE,
-  cheapIntroductionMessages,
-  fallbackIntroductionText,
+  SAND_ONBOARDING_KICKSTART_PROMPT,
   introductionFailedTrayKey,
 } from "../../../shared/agents/onboarding.js";
-import {
-  configuredClaidorCheapModel,
-  runRoutedProviderText,
-} from "../inference/provider-session.js";
 import { sandErrorDetail } from "../../ports/telemetry.js";
 import { SandAgentDb } from "../session/agent-db.js";
 import { checkpointSandAgentDb } from "../../storage/store-db.js";
 import { publishTranscriptMutation } from "../../transcript-mutation-events.js";
 import { describeAgentRunError } from "./agent-run-error.js";
-import { nextEntryId } from "./transcript-entry-ids.js";
-import {
-  createSendMessageEntry,
-  isUserMessageEntry,
-} from "./send-message-shaping.js";
+import { isUserMessageEntry } from "./send-message-shaping.js";
 import { getTranscript } from "./transcript-store.js";
 import { classifyAgentError } from "./turn-runtime.js";
 import type { TranscriptManagerLike } from "./transcript-hub.js";
@@ -148,76 +134,12 @@ export class AgentLifecycle {
       return false;
     }
     if (!isRunReady) return false;
-    if (session.db.getAgentPurpose() === "disk-saver") {
-      if (!this.tm.execution.canExecute) return false;
-      return this.kickstartWithFullRunner(session, SAND_DISK_SAVER_KICKSTART_PROMPT);
-    }
-    if (this.tm.runLifecycle.inFlightRunCounts.has(session)) return true;
-    this.tm.runLifecycle.beginSessionRun(session);
-    void this.tm.runLifecycle.enqueueExclusiveRun(
-      session.id,
-      async () => {
-        try {
-          await this.deliverCheapIntroduction(session);
-        } finally {
-          this.tm.runLifecycle.endSessionRun(session);
-        }
-      },
-      { lane: "user", source: "kickstart" },
-    );
-    return true;
-  }
-
-  private async deliverCheapIntroduction(session: any): Promise<void> {
-    const profile = readSandProfileFile(
-      getSandProfilePath(this.tm.sessionStore.getAgentDir(session.id)),
-    );
-    const name =
-      profile?.name?.trim() || String(session.db.get("name") ?? "").trim();
-    let greeting = "";
-    let error: unknown;
-    try {
-      greeting = (
-        await runRoutedProviderText(
-          "claidor",
-          cheapIntroductionMessages({
-            name,
-            description: profile?.description ?? "",
-          }),
-          { model: configuredClaidorCheapModel() },
-        )
-      ).trim();
-    } catch (caught) {
-      error = caught;
-    }
-    if (greeting.length === 0) greeting = fallbackIntroductionText(name);
-    const entries =
-      this.tm.sessions.activeSession?.id === session.id
-        ? getTranscript()
-        : session.db.getTranscriptEntries();
-    this.tm.sendPipeline.appendSendMessageEntry(
-      createSendMessageEntry(
-        nextEntryId(entries, "send-message"),
-        { type: "text", content: greeting },
-        Date.now(),
-      ),
-    );
-    session.db.setIntroductionPending(false);
-    await this.tm.roster.emitAgentUpdate(session.id);
-    if (error == null || isProviderRateLimitError(error)) return;
-    this.tm.telemetry.reportAgentError({
-      source: "onboarding_kickstart",
-      conversationId: session.id,
-      requestId: this.tm.runLifecycle.lastRequestIdBySession.get(session.id),
-      error: classifyAgentError(error),
-      detail: sandErrorDetail(error),
-    });
-    this.tm.trayErrors.pushError({
-      agentId: session.id,
-      title: INTRODUCTION_FAILED_TRAY_TITLE,
-      ...describeAgentRunError(error),
-      dedupeKey: introductionFailedTrayKey(session.id),
-    });
+    if (!this.tm.execution.canExecute) return false;
+    const prompt =
+      session.db.getAgentPurpose() === "disk-saver"
+        ? SAND_DISK_SAVER_KICKSTART_PROMPT
+        : SAND_ONBOARDING_KICKSTART_PROMPT;
+    return this.kickstartWithFullRunner(session, prompt);
   }
 
   private kickstartWithFullRunner(session: any, prompt: string): boolean {

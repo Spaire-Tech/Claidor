@@ -54,15 +54,18 @@ export function projectInferenceRouterTranscriptEntry(entry: StoredEntry): Recor
 
 export const SAND_CLAIDOR_FULL_AGENT_ENV = "SAND_CLAIDOR_FULL_AGENT";
 // Optional box reads (transcript tail, roster) must not stall a Mac-local turn
-// while Docker is pulling or the host is waiting for a credential.
+// while Docker is pulling or the host is waiting for a credential. The
+// Mac-local path is the SAND_CLAIDOR_FULL_AGENT=off escape hatch.
 export const BOX_OPTIONAL_WAIT_MS = 800;
 
-// Product turns are Claidor. They answer on this Mac through the Claidor
-// proxy. The host's full agent loop (the Docker box) is opt-in:
-// SAND_CLAIDOR_FULL_AGENT=1. Defaulting that on made a hello wait forever
-// for a computer that was not ready.
+// Product turns are Claidor. They run the host's full agent loop by default
+// (CreateAgent, UpdateAgent, InstallPlugin, SendMessage cards). On this Mac
+// that loop lives in the local Docker VM the packaged app starts. Empty env
+// is on; SAND_CLAIDOR_FULL_AGENT=off keeps the Mac-local text-only fallback.
+// Connect/send still have deadlines so a dead box fails instead of hanging.
 export function routesClaidorThroughHost(env: NodeJS.ProcessEnv = process.env): boolean {
   const raw = env[SAND_CLAIDOR_FULL_AGENT_ENV]?.trim() ?? "";
+  if (raw.length === 0) return true;
   return /^(1|true|yes)$/i.test(raw);
 }
 
