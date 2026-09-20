@@ -41,7 +41,7 @@ test("an OpenAI TPM refusal is a rate limit, not a transient retry", async () =>
   }
 });
 
-test("first-run kickstart is the full host loop with widgets and connector cards", async () => {
+test("first-run kickstart asks Claidor for widgets, not the host inference router", async () => {
   const loaded = await load("source/shared/agents/onboarding.ts", "onboarding");
   try {
     const { SAND_ONBOARDING_KICKSTART_PROMPT, cheapIntroductionMessages, fallbackIntroductionText } = loaded.module;
@@ -56,13 +56,16 @@ test("first-run kickstart is the full host loop with widgets and connector cards
   }
 });
 
-test("kickstart runs the full host loop for a first hello", async () => {
+test("kickstart introduces over Claidor, not Claude Code", async () => {
   const lifecycle = await readFile(path.join(repoRoot, "source/host/extensions/transcript/agent-lifecycle.ts"), "utf8");
   const providers = await readFile(path.join(repoRoot, "source/host/extensions/inference/provider-session.ts"), "utf8");
   const retry = await readFile(path.join(repoRoot, "source/host/runner/transient-stream-error.ts"), "utf8");
+  const routing = await readFile(path.join(repoRoot, "source/node-agent-coordinator/inference-router.ts"), "utf8");
   assert.match(lifecycle, /SAND_ONBOARDING_KICKSTART_PROMPT/);
-  assert.match(lifecycle, /kickstartWithFullRunner\(session, prompt\)/);
-  assert.doesNotMatch(lifecycle, /deliverCheapIntroduction/);
+  assert.match(lifecycle, /deliverCheapIntroduction\(session\)/);
+  assert.match(lifecycle, /kickstartWithFullRunner\(session, SAND_DISK_SAVER_KICKSTART_PROMPT\)/);
+  assert.doesNotMatch(lifecycle, /kickstartWithFullRunner\(session, prompt\)/);
+  assert.match(routing, /if \(raw\.length === 0\) return false;/);
   assert.match(providers, /DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-5\.6-luna"/);
   assert.match(providers, /withCheapRateLimitFallback\(start\(requested\), \(\) => start\(cheap\)\)/);
   assert.match(retry, /isProviderRateLimitError\(error\)\) return false/);

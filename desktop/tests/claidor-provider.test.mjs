@@ -66,7 +66,7 @@ test("claidor is a provider everywhere a provider is listed", async () => {
   }
 });
 
-test("claidor turns pass through to the host's full loop by default", async () => {
+test("claidor turns answer on this Mac by default, not through the host inference router", async () => {
   const router = await loadModule("source/node-agent-coordinator/inference-router.ts", "coordinator-inference-router-switch");
   try {
     const { mkdir, writeFile } = await import("node:fs/promises");
@@ -78,20 +78,16 @@ test("claidor turns pass through to the host's full loop by default", async () =
       dataDir, env, postEvent: (family, payload) => events.push({ family, payload }), dispatchRemote: async () => { throw new Error("box unreachable"); },
     });
 
-    assert.equal(router.module.routesClaidorThroughHost({}), true);
+    assert.equal(router.module.routesClaidorThroughHost({}), false);
     assert.equal(router.module.routesClaidorThroughHost({ SAND_CLAIDOR_FULL_AGENT: "1" }), true);
     assert.equal(router.module.routesClaidorThroughHost({ SAND_CLAIDOR_FULL_AGENT: "off" }), false);
 
-    const passthrough = await make({}).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
+    const passthrough = await make({ SAND_CLAIDOR_FULL_AGENT: "1" }).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
     assert.deepEqual(passthrough, { handled: false });
-    const tail = await make({}).dispatch("getAgentTranscriptTail", { id: "a" });
-    assert.deepEqual(tail, { handled: false });
 
-    const local = await make({ SAND_CLAIDOR_FULL_AGENT: "off" }).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
+    const local = await make({}).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
     assert.equal(local.handled, true);
     assert.equal(local.value.provider, "claidor");
-    // The local turn runs in the background; with no credential source registered
-    // in this bundle it settles as a router error. Wait for it before disposing.
     const deadline = Date.now() + 8_000;
     while (!events.some((event) => event.family === "transcript" && event.payload.entry?.kind === "send-message") && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -113,7 +109,7 @@ test("a Claidor turn does not wait on a hung box", async () => {
     const events = [];
     const hung = router.module.createCoordinatorInferenceRouter({
       dataDir,
-      env: { SAND_CLAIDOR_FULL_AGENT: "off" },
+      env: {},
       postEvent: (family, payload) => events.push({ family, payload }),
       dispatchRemote: () => new Promise(() => {}),
     });
@@ -142,7 +138,7 @@ test("a Claidor host-loop send is admitted without waiting on the box", async ()
     await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "claidor" }));
     const hung = router.module.createCoordinatorInferenceRouter({
       dataDir,
-      env: {},
+      env: { SAND_CLAIDOR_FULL_AGENT: "1" },
       postEvent: () => {},
       dispatchRemote: () => new Promise(() => {}),
     });

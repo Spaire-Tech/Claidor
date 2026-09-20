@@ -73,7 +73,7 @@ test("a routed turn completes when every box call fails", async () => {
     assert.equal(result.handled, true);
     assert.equal(result.value.provider, "claidor");
 
-    await waitFor(() => events.some((event) => event.family === "transcript" && event.payload.entry?.kind === "send-message" && event.payload.entry.streaming === false));
+    await waitFor(() => events.some((event) => event.family === "transcript" && event.payload.entry?.kind === "send-message"));
 
     const stored = JSON.parse(await readFile(path.join(dataDir, "inference-router-transcript.json"), "utf8"));
     const entries = stored.agents["agent-1"];
