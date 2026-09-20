@@ -262,8 +262,8 @@ test("the product lock ignores stored providers and leftover Claude Code", async
     const { resolveProductInferenceProvider, PRODUCT_INFERENCE_PROVIDER } = shared.module;
     assert.equal(PRODUCT_INFERENCE_PROVIDER, "claidor");
     assert.equal(resolveProductInferenceProvider({}), "claidor");
-    assert.equal(resolveProductInferenceProvider({ CAISRA_CLAUDE_CODE: "1" }), "claude-code");
-    assert.equal(resolveProductInferenceProvider({ CAISRA_CLAUDE_CODE: "0", SAND_INFERENCE_PROVIDER: "openrouter" }), "openrouter");
+    assert.equal(resolveProductInferenceProvider({ CAISRA_CLAUDE_CODE: "1" }), "claidor");
+    assert.equal(resolveProductInferenceProvider({ CAISRA_CLAUDE_CODE: "0", SAND_INFERENCE_PROVIDER: "openrouter" }), "claidor");
     assert.equal(resolveProductInferenceProvider({ SAND_INFERENCE_PROVIDER: "claude-code" }), "claidor");
     assert.equal(resolveProductInferenceProvider({ SAND_INFERENCE_PROVIDER: "cursor" }), "claidor");
     assert.equal(resolveProductInferenceProvider({ SAND_INFERENCE_PROVIDER: "not-a-provider" }), "claidor");

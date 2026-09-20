@@ -50,6 +50,7 @@ test("an absent Automations API keeps routines local and does not raise a tray",
   assert.match(sync, /this\.cloudServiceAbsent = true;/);
   assert.match(sync, /if \(this\.cloudServiceAbsent\) \{\n      this\.recordRecovery\(agentId\);\n      return true;/);
   assert.match(extension, /isAbsentCloudAutomationService\(error\)\) return;/);
+  assert.doesNotMatch(extension, /Routine Sync Failed/);
   assert.doesNotMatch(stream, /new Error\(String\(part\.error\)\)/);
   assert.match(stream, /error = asError\(part\.error\)/);
   assert.match(errors, /export function asError/);
