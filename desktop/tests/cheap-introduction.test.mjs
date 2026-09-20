@@ -44,13 +44,24 @@ test("an OpenAI TPM refusal is a rate limit, not a transient retry", async () =>
 test("first-run kickstart asks Claidor for widgets, not the host inference router", async () => {
   const loaded = await load("source/shared/agents/onboarding.ts", "onboarding");
   try {
-    const { SAND_ONBOARDING_KICKSTART_PROMPT, cheapIntroductionMessages, fallbackIntroductionText } = loaded.module;
+    const { SAND_ONBOARDING_KICKSTART_PROMPT, cheapIntroductionMessages, fallbackIntroductionText, firstHelloText, withLeadingHello } = loaded.module;
     assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /connector card/);
     assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /question widget/);
+    assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /two SendMessages/);
+    assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /Never open with a widget/);
     assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /\[first run\]/);
     const messages = cheapIntroductionMessages({ name: "Bass", description: "helps with the week" });
     assert.equal(messages.some((message) => /SendMessage|question widget|connector card/i.test(message.content)), false);
     assert.equal(fallbackIntroductionText("Bass"), "Hey — I'm Bass. What would you like help with first?");
+    assert.equal(firstHelloText("Ben"), "Hey, I'm Ben. Glad you're here.");
+    assert.deepEqual(
+      withLeadingHello({ type: "widget", widget: { prompt: "What first?", options: [{ label: "Work" }] } }, firstHelloText("Ben")),
+      [
+        { type: "text", content: "Hey, I'm Ben. Glad you're here." },
+        { type: "widget", widget: { prompt: "What first?", options: [{ label: "Work" }] } },
+      ],
+    );
+    assert.deepEqual(withLeadingHello({ type: "text", content: "Hey." }, firstHelloText("Ben")), [{ type: "text", content: "Hey." }]);
   } finally {
     await loaded.dispose();
   }
@@ -63,6 +74,8 @@ test("kickstart introduces over Claidor, not Claude Code", async () => {
   const routing = await readFile(path.join(repoRoot, "source/node-agent-coordinator/inference-router.ts"), "utf8");
   assert.match(lifecycle, /SAND_ONBOARDING_KICKSTART_PROMPT/);
   assert.match(lifecycle, /buildCaisraProductSystemPrompt/);
+  assert.match(lifecycle, /withLeadingHello/);
+  assert.match(lifecycle, /firstHelloText/);
   assert.match(lifecycle, /CAISRA_USER_REPLY_REMINDER/);
   assert.match(lifecycle, /deliverCheapIntroduction\(session\)/);
   assert.match(lifecycle, /kickstartWithFullRunner\(session, SAND_DISK_SAVER_KICKSTART_PROMPT\)/);

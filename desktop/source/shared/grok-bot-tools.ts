@@ -34,14 +34,18 @@ const CAISRA_PRODUCT_VOICE = [
   "",
   "## Asking for decisions",
   'When you need a decision, send a question widget, not a prose menu: {"type":"widget","widget":{"prompt":"...","options":[{"label":"...","value":"...","style":"primary"}]}}.',
-  'Write the prompt as a natural conversational question ("What should we start with?"), never "Pick one of the following". A question widget ends your turn.',
-  "On first hello, if you ask how to be useful, that ask is a widget with a few real options, not three choices written into one sentence.",
+  'Write the prompt as a natural conversational question ("What should we start with?"), never "Pick one of the following". A question widget ends your turn, so any hello or ack is a type=text SendMessage before it.',
+  "",
+  "## First hello",
+  "First SendMessage is always type=text: introduce yourself in a sentence or two, in your own voice. Then the question card. Never open with a widget. Never put the choices into the hello.",
   "",
   "## Autonomy",
   "Your default is to act, not to ask. For almost every choice, pick the most sensible option, proceed, and mention the assumption. Asking is earned by a consequential or destructive action, true ambiguity, or something only they know.",
+  "Creating a teammate is consequential. Never call CreateAgent until they have said what it is for and what to call it.",
   "",
   "## Teammates and plugins",
-  "CreateAgent spins up a new teammate (name + description). UpdateAgent changes an existing agent's name and/or description — that is how a rename becomes the title they see. SearchPlugins finds connectors (Notion, Linear, …); GetPlugin then InstallPlugin after they agree. If InstallPlugin needs authentication, a connect card is shown automatically — stop and wait.",
+  "If they say create an agent and have not named the job, ask first (a question widget if there are a few real jobs, otherwise a text question). Do not invent a name or persona. After they answer, CreateAgent with that name and description.",
+  "UpdateAgent changes an existing agent's name and/or description — that is how a rename becomes the title they see. SearchPlugins finds connectors (Notion, Linear, …); GetPlugin then InstallPlugin after they agree. If InstallPlugin needs authentication, a connect card is shown automatically — stop and wait.",
   "Already-connected plugins arrive as extra tools on this request. Use them. Never ask for an API key for a plugin that is already connected.",
 ].join("\n");
 
@@ -70,8 +74,8 @@ export const CAISRA_PRODUCT_SYSTEM_PROMPT = buildCaisraProductSystemPrompt();
 
 const SEND_MESSAGE_DESCRIPTION = [
   "Say something in the Caisra chat. This is your only voice; plain assistant text is invisible.",
-  "type=text with content for a normal message.",
-  "type=widget with widget={prompt, options:[{label, value?, style?}]} for a multiple-choice question. That ends the turn.",
+  "type=text with content for a normal message. On first hello, send this before any card.",
+  "type=widget with widget={prompt, options:[{label, value?, style?}]} for a multiple-choice question. That ends the turn, so it is last.",
   "type=connector with connector (display name, e.g. Notion) and variant=connect to show a connect card in the chat.",
 ].join(" ");
 
@@ -136,11 +140,11 @@ export const GROK_BOT_TOOLS: readonly Record<string, unknown>[] = [
   },
   {
     name: "CreateAgent",
-    description: "Create a new agent (teammate) with a name and optional persona/description. Returns its id.",
+    description: "Create a teammate after the user has said what it is for and what to call it. If they only said create an agent, do not call this — ask first. Never invent a name or persona. Description is required.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
-      required: ["name"],
+      required: ["name", "description"],
       properties: {
         name: { type: "string" },
         description: { type: "string" },
@@ -265,7 +269,8 @@ async function executeCreateAgent(args: unknown, context: GrokBotToolContext): P
   const record = asRecord(args);
   const name = typeof record?.name === "string" ? record.name.trim() : "";
   if (name.length === 0) return "CreateAgent needs a name.";
-  const description = typeof record?.description === "string" ? record.description : "";
+  const description = typeof record?.description === "string" ? record.description.trim() : "";
+  if (description.length === 0) return "CreateAgent needs a description of what this teammate is for. Ask them first, then call again.";
   const created = asRecord(await context.dispatchRemote("createAgent", {
     name,
     description,
