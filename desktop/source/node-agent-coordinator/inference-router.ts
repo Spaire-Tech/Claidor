@@ -6,7 +6,9 @@ import { runRoutedProviderText } from "../host/extensions/inference/provider-ses
 import { resolveProductInferenceProvider, SAND_INFERENCE_PROVIDERS, type SandInferenceProvider } from "../shared/inference-router.js";
 import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
 import {
-  CAISRA_PRODUCT_SYSTEM_PROMPT,
+  buildCaisraProductSystemPrompt,
+  CAISRA_SENDMESSAGE_RETRY_PROMPT,
+  CAISRA_USER_REPLY_REMINDER,
   executeGrokBotTool,
   GROK_BOT_TOOLS,
   isGrokBotToolName,
@@ -192,8 +194,21 @@ export function createCoordinatorInferenceRouter(options: {
     // so keep the composing state authoritative long enough for a clearly
     // perceptible rendered interval before normal token streaming begins.
     await new Promise<void>(resolve => setTimeout(resolve, 1_200));
-    const history = (withUser.agents[agentId] ?? []).map(entry => ({ role: entry.role, content: entry.content }));
-    const messages = [{ role: "system" as const, content: CAISRA_PRODUCT_SYSTEM_PROMPT }, ...history];
+    const roster = await remoteOrUndefined("listAgents", {});
+    const self = Array.isArray(roster)
+      ? roster.map(asRecord).find(row => row?.id === agentId)
+      : null;
+    const systemPrompt = buildCaisraProductSystemPrompt({
+      agentId,
+      ...(typeof self?.name === "string" ? { name: self.name } : {}),
+      ...(typeof self?.description === "string" ? { description: self.description } : {}),
+    });
+    const history = (withUser.agents[agentId] ?? []).map((entry, index, rows) => (
+      entry.role === "user" && index === rows.length - 1
+        ? { role: entry.role, content: `${entry.content}\n\n${CAISRA_USER_REPLY_REMINDER}` }
+        : { role: entry.role, content: entry.content }
+    ));
+    const messages = [{ role: "system" as const, content: systemPrompt }, ...history];
     const assistantTimestampMs = now();
     let sendIndex = 0;
     const emitSendMessage = async (message: Record<string, unknown>): Promise<string> => {
@@ -219,28 +234,9 @@ export function createCoordinatorInferenceRouter(options: {
     }) : null;
     const directTools = bridge == null ? await remoteOrUndefined("listRoutedMcpTools", {}) : undefined;
     const tools = [...GROK_BOT_TOOLS, ...(Array.isArray(directTools) ? directTools as Record<string, any>[] : [])];
-    let content = "";
-    try {
-      content = await runRoutedProviderText(provider, messages, bridge == null ? {
-        tools,
-        executeTool: async (definition, toolArgs, toolCallId) => {
-          if (typeof definition.name === "string" && isGrokBotToolName(definition.name)) {
-            return await executeGrokBotTool(definition.name, toolArgs, {
-              agentId,
-              dispatchRemote: options.dispatchRemote,
-              emitSendMessage,
-            });
-          }
-          return await options.dispatchRemote("executeRoutedMcpTool", {
-            providerIdentifier: definition.providerIdentifier,
-            name: definition.name,
-            toolName: definition.toolName,
-            args: toolArgs,
-            toolCallId,
-            agentId,
-          });
-        },
-      } : { mcpServerUrl: bridge.url, tools: GROK_BOT_TOOLS, executeTool: async (definition, toolArgs) => {
+    const runTurn = async (turnMessages: typeof messages) => runRoutedProviderText(provider, turnMessages, bridge == null ? {
+      tools,
+      executeTool: async (definition, toolArgs, toolCallId) => {
         if (typeof definition.name === "string" && isGrokBotToolName(definition.name)) {
           return await executeGrokBotTool(definition.name, toolArgs, {
             agentId,
@@ -248,12 +244,39 @@ export function createCoordinatorInferenceRouter(options: {
             emitSendMessage,
           });
         }
-        return undefined;
-      } });
+        return await options.dispatchRemote("executeRoutedMcpTool", {
+          providerIdentifier: definition.providerIdentifier,
+          name: definition.name,
+          toolName: definition.toolName,
+          args: toolArgs,
+          toolCallId,
+          agentId,
+        });
+      },
+    } : { mcpServerUrl: bridge.url, tools: GROK_BOT_TOOLS, executeTool: async (definition, toolArgs) => {
+      if (typeof definition.name === "string" && isGrokBotToolName(definition.name)) {
+        return await executeGrokBotTool(definition.name, toolArgs, {
+          agentId,
+          dispatchRemote: options.dispatchRemote,
+          emitSendMessage,
+        });
+      }
+      return undefined;
+    } });
+    let content = "";
+    try {
+      content = await runTurn(messages);
+      if (sendIndex === 0) {
+        content = await runTurn([
+          ...messages,
+          ...(content.trim().length > 0 ? [{ role: "assistant" as const, content }] : []),
+          { role: "user" as const, content: `${CAISRA_SENDMESSAGE_RETRY_PROMPT}\n\n${CAISRA_USER_REPLY_REMINDER}` },
+        ]);
+      }
     } finally { endActivity(); await bridge?.close(); }
     if (sendIndex === 0) {
       const fallback = content.trim();
-      await emitSendMessage({ type: "text", content: fallback.length > 0 ? fallback : "Hey — what would you like help with first?" });
+      if (fallback.length > 0) await emitSendMessage({ type: "text", content: fallback });
     }
     return { accepted: true, clientNonce, provider };
   };

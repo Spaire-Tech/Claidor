@@ -20,7 +20,6 @@ import {
 import {
   INTRODUCTION_FAILED_TRAY_TITLE,
   SAND_ONBOARDING_KICKSTART_PROMPT,
-  cheapIntroductionMessages,
   fallbackIntroductionText,
   introductionFailedTrayKey,
 } from "../../../shared/agents/onboarding.js";
@@ -29,7 +28,9 @@ import {
   runRoutedProviderText,
 } from "../inference/provider-session.js";
 import {
-  CAISRA_PRODUCT_SYSTEM_PROMPT,
+  buildCaisraProductSystemPrompt,
+  CAISRA_SENDMESSAGE_RETRY_PROMPT,
+  CAISRA_USER_REPLY_REMINDER,
   executeGrokBotTool,
   GROK_BOT_TOOLS,
   isGrokBotToolName,
@@ -217,46 +218,48 @@ export class AgentLifecycle {
       }
       throw new Error(`${method} is not available during introduction`);
     };
-    try {
-      await runRoutedProviderText(
-        "claidor",
-        [
-          { role: "system", content: `${CAISRA_PRODUCT_SYSTEM_PROMPT}\nYou are ${name || "Caisra"}.${description.trim().length > 0 ? ` ${description.trim()}` : ""}` },
-          { role: "user", content: SAND_ONBOARDING_KICKSTART_PROMPT },
-        ],
-        {
-          model: configuredClaidorCheapModel(),
-          tools: GROK_BOT_TOOLS.filter(tool => tool.name === "SendMessage"),
-          executeTool: async (definition, toolArgs) => {
-            if (typeof definition.name === "string" && isGrokBotToolName(definition.name)) {
-              return await executeGrokBotTool(definition.name, toolArgs, {
-                agentId: session.id,
-                dispatchRemote,
-                emitSendMessage,
-              });
-            }
-            return undefined;
-          },
+    const introMessages = [
+      { role: "system" as const, content: buildCaisraProductSystemPrompt({ agentId: session.id, name, description }) },
+      { role: "user" as const, content: `${SAND_ONBOARDING_KICKSTART_PROMPT}\n\n${CAISRA_USER_REPLY_REMINDER}` },
+    ];
+    const introTools = GROK_BOT_TOOLS.filter(tool => tool.name === "SendMessage");
+    const runIntro = async (messages: readonly { role: "system" | "user" | "assistant"; content: string }[]) => runRoutedProviderText(
+      "claidor",
+      messages,
+      {
+        model: configuredClaidorCheapModel(),
+        tools: introTools,
+        executeTool: async (definition, toolArgs) => {
+          if (typeof definition.name === "string" && isGrokBotToolName(definition.name)) {
+            return await executeGrokBotTool(definition.name, toolArgs, {
+              agentId: session.id,
+              dispatchRemote,
+              emitSendMessage,
+            });
+          }
+          return undefined;
         },
-      );
+      },
+    );
+    let delivered = false;
+    try {
+      let leftover = await runIntro(introMessages);
+      if (sent === 0) {
+        leftover = await runIntro([
+          ...introMessages,
+          ...(leftover.trim().length > 0 ? [{ role: "assistant" as const, content: leftover }] : []),
+          { role: "user" as const, content: `${CAISRA_SENDMESSAGE_RETRY_PROMPT}\n\n${CAISRA_USER_REPLY_REMINDER}` },
+        ]);
+      }
+      if (sent === 0 && leftover.trim().length > 0) {
+        this.appendKickstartMessage(session, { type: "text", content: leftover.trim() });
+        delivered = true;
+      }
     } catch (caught) {
       error = caught;
     }
-    if (sent === 0) {
-      let greeting = "";
-      try {
-        greeting = (
-          await runRoutedProviderText(
-            "claidor",
-            cheapIntroductionMessages({ name, description }),
-            { model: configuredClaidorCheapModel() },
-          )
-        ).trim();
-      } catch (caught) {
-        error ??= caught;
-      }
-      if (greeting.length === 0) greeting = fallbackIntroductionText(name);
-      this.appendKickstartMessage(session, { type: "text", content: greeting });
+    if (sent === 0 && !delivered) {
+      this.appendKickstartMessage(session, { type: "text", content: fallbackIntroductionText(name) });
     }
     session.db.setIntroductionPending(false);
     await this.tm.roster.emitAgentUpdate(session.id);
