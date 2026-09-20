@@ -1,5 +1,6 @@
 import type { SandMarketplacePlugin } from "../mcp/mcp-marketplace.js";
 import { VENDOR_MCP_CONNECTORS, type VendorMcpConnector } from "./catalog.js";
+import { vendorPluginLogoUrl } from "./logos.js";
 
 export function vendorConnectorToPlugin(item: VendorMcpConnector): SandMarketplacePlugin {
   return {
@@ -8,7 +9,7 @@ export function vendorConnectorToPlugin(item: VendorMcpConnector): SandMarketpla
     displayName: item.name,
     description: item.description,
     category: item.category,
-    logoUrl: undefined,
+    logoUrl: vendorPluginLogoUrl(item.id),
     homepage: item.url,
     sourceUrls: [],
     connectors: [{ name: item.name, description: item.description }],

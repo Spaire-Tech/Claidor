@@ -1,8 +1,6 @@
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L20492
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L130486
 
-import { CLOUD_BLOB_COLORS, CLOUD_BLOB_SHAPE, isCloudBlobColor, pickRandomCloudBlobColor } from "../../../../../../source/shared/agent/cloud-blobs";
-
 export const ONBOARDING_STEPS = ["landing", "meet", "computer-demo", "jobs", "tools", "create"] as const;
 export const SIGNED_IN_ONBOARDING_STEPS = ["meet", "computer-demo", "jobs", "tools", "create", "hand-off"] as const;
 export type OnboardingStep = typeof ONBOARDING_STEPS[number] | "hand-off";
@@ -91,12 +89,19 @@ export const DAILY_TOOLS = [
   { logo: "mailchimp", label: "Mailchimp" },
 ] as const;
 
-export const CHARACTER_COLORS = CLOUD_BLOB_COLORS.map((color) => ({
-  id: color.id,
-  label: color.label,
-  value: color.top,
-}));
-export const CHARACTER_SHAPES = [CLOUD_BLOB_SHAPE] as const;
+export const CHARACTER_COLORS = [
+  { id: "brown", label: "Brown", value: "#936439" },
+  { id: "red", label: "Red", value: "#FF263C" },
+  { id: "orange", label: "Orange", value: "#FF6700" },
+  { id: "yellow", label: "Yellow", value: "#FF9800" },
+  { id: "green", label: "Green", value: "#00C972" },
+  { id: "cyan", label: "Cyan", value: "#00BCA6" },
+  { id: "blue", label: "Blue", value: "#1084FE" },
+  { id: "violet", label: "Violet", value: "#9159FE" },
+  { id: "magenta", label: "Magenta", value: "#FF309B" },
+  { id: "gray", label: "Gray", value: "#777777" },
+] as const;
+export const CHARACTER_SHAPES = ["blob", "pebble", "squircle", "tablet", "wedge", "hex", "cloud", "teardrop"] as const;
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5435957
 // The shipped hand-off dwell is a cancellable delay, not an unowned window timer.
@@ -171,23 +176,15 @@ export interface OnboardingDraft {
   pickedTemplateId: string | null;
 }
 
-export function createOnboardingDraft(random?: () => number): OnboardingDraft {
-  return {
-    name: "",
-    description: "",
-    color: pickRandomCloudBlobColor(random),
-    shape: CLOUD_BLOB_SHAPE,
-    pickedTemplateId: null,
-  };
-}
-
-export const INITIAL_ONBOARDING_DRAFT: OnboardingDraft = createOnboardingDraft(() => 0);
+export const INITIAL_ONBOARDING_DRAFT: OnboardingDraft = {
+  name: "", description: "", color: "", shape: "", pickedTemplateId: null,
+};
 
 export function normalizeOnboardingDraft(draft: OnboardingDraft): OnboardingDraft {
   return {
     ...draft,
-    color: isCloudBlobColor(draft.color) ? draft.color : CLOUD_BLOB_COLORS[0].id,
-    shape: CLOUD_BLOB_SHAPE,
+    color: CHARACTER_COLORS.some(({ id }) => id === draft.color) ? draft.color : "blue",
+    shape: CHARACTER_SHAPES.some((shape) => shape === draft.shape) ? draft.shape : "blob",
   };
 }
 

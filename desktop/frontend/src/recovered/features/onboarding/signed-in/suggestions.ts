@@ -103,11 +103,11 @@ function random(seed: number): () => number {
 }
 function colorFor(name: string): string {
   const seeded = (fnv1a(name) ^ Math.imul(1, 2654435769)) >>> 0;
-  return CHARACTER_COLORS[Math.floor(random((seeded ^ Math.imul(1, 2654435769)) >>> 0)() * CHARACTER_COLORS.length)]?.id ?? "mist";
+  return CHARACTER_COLORS[Math.floor(random((seeded ^ Math.imul(1, 2654435769)) >>> 0)() * CHARACTER_COLORS.length)]?.id ?? "brown";
 }
 function shapeFor(name: string): string {
   let hash = fnv1a(name); hash = Math.imul(hash ^ hash >>> 16, 73244475); hash = Math.imul(hash ^ hash >>> 13, 3266489909); hash = (hash ^ hash >>> 16) >>> 0;
-  return CHARACTER_SHAPES[hash % CHARACTER_SHAPES.length] ?? "cloud";
+  return CHARACTER_SHAPES[hash % CHARACTER_SHAPES.length] ?? "blob";
 }
 function unused(candidate: string, values: readonly string[], used: Set<string>): string {
   if (!used.has(candidate)) return candidate;

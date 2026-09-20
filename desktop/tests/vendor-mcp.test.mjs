@@ -97,6 +97,10 @@ test("the marketplace listing is our store, including Coming soon cards", async 
     assert.equal(view.id, "gmail");
     assert.equal(view.comingSoon, true);
     assert.equal(view.displayName, "Gmail");
+    assert.match(view.iconUrl, /^data:image\//);
+    const notionView = views.module.marketplacePluginToView(signedIn.plugins.find((plugin) => plugin.pluginId === "notion"));
+    assert.match(notionView.iconUrl, /^data:image\//);
+    assert.ok(signedIn.plugins.every((plugin) => typeof plugin.logoUrl === "string" && plugin.logoUrl.length > 0));
   } finally {
     await marketplace.dispose();
     await views.dispose();
@@ -268,5 +272,35 @@ test("getCatalog lists our store; live Connect goes to the vendor, Coming soon d
     await assert.rejects(() => missing.installEntry({ entryId: "notion" }, async () => "token"), /Plugins overlay/);
   } finally {
     await loaded.dispose();
+  }
+});
+
+test("every store card has a logo, and in-repo data marks skip a network fetch", async () => {
+  const marketplace = await load("source/shared/node/vendor-mcp/marketplace.ts", "vendor-logos");
+  const logos = await load("source/shared/node/mcp/mcp-marketplace-logo.ts", "mcp-logos");
+  try {
+    const listing = await marketplace.module.fetchVendorMarketplacePlugins();
+    assert.equal(listing.plugins.length, 39);
+    assert.ok(listing.plugins.every((plugin) => typeof plugin.logoUrl === "string" && plugin.logoUrl.length > 0));
+    const notion = listing.plugins.find((plugin) => plugin.pluginId === "notion");
+    assert.match(notion.logoUrl, /^data:image\//);
+    const slack = listing.plugins.find((plugin) => plugin.pluginId === "slack");
+    assert.match(slack.logoUrl, /^data:image\//);
+    const linear = listing.plugins.find((plugin) => plugin.pluginId === "linear");
+    assert.match(linear.logoUrl, /^https:\/\/www\.google\.com\/s2\/favicons\?/);
+    const resolved = await logos.module.resolvePluginLogo(notion.logoUrl, {
+      isKnownPluginLogoUrl: () => true,
+      fetch: async () => {
+        throw new Error("must not fetch a data URL");
+      },
+      responseToImageDataUrl: async () => {
+        throw new Error("must not convert a data URL");
+      },
+      timeoutMs: 1_000,
+    });
+    assert.equal(resolved, notion.logoUrl);
+  } finally {
+    await marketplace.dispose();
+    await logos.dispose();
   }
 });
