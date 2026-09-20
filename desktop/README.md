@@ -53,15 +53,12 @@ chunks: enough to inspect behavior and recover contracts, but not the authored
 React components, names, comments, file structure, or design-system source.
 
 Recreating the complete frontend with the same polish and behavior would have
-been a separate, much larger reverse-engineering project. It was not a realistic
-goal for a weekend build. The practical choice was therefore to reconstruct the
-runtime and control-plane code, retain the checksum-pinned shipped renderer,
-and make the smallest auditable UI patch needed for the new Router settings.
-
-`frontend/` is a readable partial reconstruction and design workspace. It is
-useful for understanding UI contracts and experimenting with clean components,
-but it should not be mistaken for Anysphere's missing original frontend source
-or a pixel-perfect replacement for the packaged renderer.
+been a separate, much larger reverse-engineering project. The practical choice
+for a long time was to reconstruct the runtime and control-plane code and keep
+the checksum-pinned shipped renderer. Product work (cloud faces, Claidor host)
+then landed only in `frontend/` and `source/`, so `npm run package` hid it.
+The default package now ships that reconstructed renderer inside the 0.18.0
+Electron shell. `npm run package:diagnostic` still builds the fidelity bundle.
 
 ## Preserved original installers
 

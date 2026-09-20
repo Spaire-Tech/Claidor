@@ -7,7 +7,7 @@ import {
   reconstructedBundleId,
   reconstructedName
 } from "./lib/config.mjs";
-import { buildFidelityReconstructedAsar } from "./clean-build.mjs";
+import { buildReconstructedAsar } from "./clean-build.mjs";
 import { signAppBundleAdHoc } from "./lib/codesign.mjs";
 import { verifyOfficialMacReference, verifyReconstructedMacPackage } from "./lib/macos-package-verification.mjs";
 import { run } from "./lib/process.mjs";
@@ -17,10 +17,10 @@ if (process.platform !== "darwin") {
   throw new Error("The reconstructed macOS application can only be packaged on macOS.");
 }
 
-// Keep the checksum-pinned shipped renderer as the polished UI authority. Small
-// reconstructed UI extensions are installed by the clean preload, leaving the
-// original renderer chunks byte-for-byte intact.
-const { builtAsar, builtAsarUnpacked, runtimeApp } = await buildFidelityReconstructedAsar();
+// Ship the reconstructed renderer (`frontend/src`) and ignited host. The
+// 0.18.0 Electron shell stays for ABI. The checksum-pinned Grok UI hid every
+// product change — cloud faces, Terra→Luna — because Finder opens this .app.
+const { builtAsar, builtAsarUnpacked, runtimeApp } = await buildReconstructedAsar();
 // Keep the signed release audit separate from the reconstructed package audit:
 // the official app is reference-only and is never used as the runtime payload.
 await verifyOfficialMacReference({ runtimeApp });

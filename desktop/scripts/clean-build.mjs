@@ -35,6 +35,10 @@ import {
   buildProductionElectronMainIfSupplied,
   electronMainBindingProvenancePath,
 } from "./electron-main-production-activation.mjs";
+import {
+  igniteProductionElectronMain,
+  igniteProductionHost,
+} from "./caisra-ignition-activation.mjs";
 import { applyOriginalRendererRouterPatch } from "./lib/router-renderer-patch.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
@@ -73,10 +77,28 @@ async function outputRecord(outputRoot, relative) {
 }
 
 async function prepareProductionActivations(clean, hostBindingManifest, electronMainBindingManifest, composition = runtimeComposition, { reconstructedPackage = false } = {}) {
-  const [hostActivation, electronMainActivation] = await Promise.all([
-    buildProductionHostIfSupplied({ outputRoot: clean.outputRoot, manifestPath: hostBindingManifest }),
-    buildProductionElectronMainIfSupplied({ outputRoot: clean.outputRoot, manifestPath: electronMainBindingManifest, reconstructedPackage }),
+  let [hostActivation, electronMainActivation] = await Promise.all([
+    buildProductionHostIfSupplied({ outputRoot: clean.outputRoot, manifestPath: hostBindingManifest }).catch((error) => ({
+      status: "activation-error",
+      clean: false,
+      blocker: String(error?.message ?? error),
+    })),
+    buildProductionElectronMainIfSupplied({ outputRoot: clean.outputRoot, manifestPath: electronMainBindingManifest, reconstructedPackage }).catch((error) => ({
+      status: "activation-error",
+      clean: false,
+      blocker: String(error?.message ?? error),
+    })),
   ]);
+  if (!hostActivation.clean) {
+    hostActivation = await igniteProductionHost({ outputRoot: clean.outputRoot, previous: hostActivation });
+  }
+  if (!electronMainActivation.clean) {
+    electronMainActivation = await igniteProductionElectronMain({
+      outputRoot: clean.outputRoot,
+      reconstructedPackage,
+      previous: electronMainActivation,
+    });
+  }
   const activatedComposition = compositionWithProductionActivations(hostActivation, electronMainActivation, composition);
   const excludedFallbacks = new Set(fallbackSourcesReplacedByActivations(hostActivation, electronMainActivation));
   let outputs = clean.buildManifest.outputs.filter(output => !excludedFallbacks.has(output.path));

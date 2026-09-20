@@ -1,43 +1,37 @@
-# Building Caisra — the pipeline, and the one I invented instead
+# Building Caisra
 
-**19 September 2026.** Read this before running anything in `desktop/`.
+**20 September 2026.** Read this before running anything in `desktop/`.
 
 ## The build loop
 
 ```sh
 cd desktop
+nvm use
 npm ci                 # lockfileVersion 3; never npm install
-npm run bootstrap      # hydrate src/app/dist from the pinned 0.18.0 ASAR
+npm run bootstrap      # hydrate src/app/dist from the pinned 0.18.0 ASAR (Electron shell + ABI)
 npm run check          # typecheck + node --test — a required gate
-npm run package        # compile runtimes, patch, assemble, ad-hoc sign (macOS only)
+npm run package        # assemble dist/Caisra.app from reconstructed renderer + ignited host
 npm run verify         # audit the bundle — a required gate
 open "dist/Caisra.app"
 ```
 
-That is the project's own documented sequence. Nothing else produces the app.
+Quit any running Caisra first (**Cmd+Q**). Do not open the copy in Applications or the Dock — that is the previous install.
 
-## The mistake this document exists for
+That sequence is the product. Finder opens `dist/Caisra.app`. `npm run start:clean-source` is the same reconstructed UI without wrapping it in the 0.18.0 shell.
 
-**`frontend/` is not the product's UI.** It is a Vite design workspace for
-reading and testing recovered components. The reconstruction's documentation
-says so in one line: *"The packaged UI is not `frontend/` … It is never the
-default packaged renderer."* The shipped UI is the checksum-pinned 0.18.0
-renderer, preserved byte-for-byte with one anchored Settings Router patch.
+## What that `.app` actually contains
 
-Both modes are first-class in `scripts/lib/clean-build.mjs`:
+The 0.18.0 Grok Bot.app is still the **Electron shell** (helpers, native ABI). It is not the UI or the agent host.
 
-| mode | renderer source | `buildKind` |
-| --- | --- | --- |
-| `clean-source` | `frontend/src` | `source-aware-reconstruction` |
-| `checksum-pinned-artifact-runtime` | `src/app/dist/renderer` | `fidelity-hybrid-reconstruction` |
+| piece | source |
+| --- | --- |
+| window UI | `frontend/src` (cloud faces, Messages, Settings) |
+| agent host | `source/host` ignited so Terra TPM falls back to Luna |
+| Electron shell | checksum-pinned 0.18.0 |
 
-`scripts/package-macos.mjs` takes the second and says why: *"Keep the
-checksum-pinned shipped renderer as the polished UI authority."*
+Until 20 September, `npm run package` kept Grok's 0.18.0 renderer and host byte-for-byte. Merging product work to `main` did not change what Finder opened. That is why rebuilt apps still showed the old faces and a silent model.
 
-I built the first, called it the product, and then spent six hours explaining
-why its styling looked wrong — including a whole commit fixing a real CORS bug
-in a renderer that was never going to ship. The bug was real. The renderer was
-the wrong one. `scripts/build-caisra.mjs` now says this at the top of the file.
+The old fidelity bundle remains at `npm run package:diagnostic`.
 
 ## What `npm run bootstrap` needs
 
@@ -66,21 +60,21 @@ Only macOS on Apple Silicon can bootstrap or package — `hdiutil`, `codesign`,
 
 ## What is ours in the packaged bundle
 
-The shipped renderer is pinned, so the fork's identity goes in the places the
-packaging step already owns (`scripts/package-macos.mjs`):
-
 - **`dist/Caisra.app`** — the bundle name (`GROK_BOT_OUTPUT_APP_NAME` overrides).
 - **`CFBundleDisplayName` = `Caisra`** (`CAISRA_DISPLAY_NAME` overrides).
   `npm run verify` checks the plist against this constant, so the two cannot
   drift.
 - **`CFBundleIdentifier` = `com.anysphere.sand.reconstructed`**, pinned, and
   verified. The official app is never overwritten.
-- **`LSEnvironment`** now carries `CURSOR_API_BASE_URL`, `CURSOR_WEBSITE_URL`
+- **`LSEnvironment`** carries `CURSOR_API_BASE_URL`, `CURSOR_WEBSITE_URL`
   and `SAND_BACKEND_URL`, all `https://api.claidor.com`
   (`CAISRA_BACKEND_URL` overrides). Without this the packaged app signs in to
-  cursor.com: a bundle launched from Finder inherits no shell environment,
-  however the terminal that built it was configured. All three names are needed
-  and none is redundant — see `docs/product/app-sign-in.md`.
+  cursor.com.
+- **Renderer** from `frontend/src`. Vite's `crossorigin` attribute is stripped
+  so `loadFile` (opaque origin `null`) can apply the stylesheet.
+- **Host and electron-main** from recovered source. If the 0.18.0 artifact
+  self-check cannot activate them, packaging ignites the same entries
+  `scripts/build-caisra.mjs` uses.
 
 `CFBundleName` and `CFBundleExecutable` stay `Grok Bot`, because Electron
 derives its nested helper names from them and this build reuses the ABI-matched
@@ -88,24 +82,10 @@ derives its nested helper names from them and this build reuses the ABI-matched
 
 ## Changing the shipped UI
 
-Through `scripts/lib/router-renderer-patch.mjs`'s method and no other:
-`replaceExactlyOnce` against an exact anchor string in the minified bundle,
-which throws if the anchor is missing or ambiguous. That is how the Settings
-Router panel gets in, and it is how a rebrand of visible strings would get in.
-Never by rewriting the renderer — the fidelity build accepts it only against a
-complete file-by-file SHA-256 inventory.
-
-The reconstruction's own rule applies to anything added: *"Do not invent
-screens, labels, or interactions to fill an evidence gap. Incomplete renderer
-mapping stays unmapped."* The 18 runtime assets drawn in
-`scripts/make-runtime-assets.mjs` are for the clean-source workspace only; the
-packaged renderer ships the originals, and `npm run verify` checks the app icon
-against its manifest SHA-256 — a drawn one fails that gate, correctly.
+Edit `frontend/src`. `scripts/lib/router-renderer-patch.mjs` is only for the
+fidelity diagnostic bundle.
 
 ## Rights
 
 The wiki states plainly that this is a research reconstruction, not an official
-release, and that no upstream source licence is implied. Shipping a product on
-the pinned renderer is a different act from building one to look at. The
-founder has given the instruction and holds that call; it is recorded here so
-nobody later mistakes it for a decision that was never made.
+release, and that no upstream source licence is implied.

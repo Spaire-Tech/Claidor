@@ -1,28 +1,15 @@
 /**
- * Caisra clean build.
+ * Caisra clean build (`npm run build:clean-source` / `start:clean-source`).
  *
- * !!! THIS IS NOT THE PRODUCT'S UI, AND MUST NOT BE PRESENTED AS IT. !!!
+ * This emits `frontend/src` plus ignited electron-main/host into `dist/` and
+ * launches with `electron .`. The product `.app` is `npm run package`, which
+ * wraps the same reconstructed renderer and host in the 0.18.0 Electron shell
+ * (`scripts/package-macos.mjs` → `buildReconstructedAsar`).
  *
- * It builds `frontend/src`, which the reconstruction calls its *design
- * workspace*: a readable recovery of the components, for reading and testing.
- * The project's own documentation is explicit — "The packaged UI is not
- * frontend/ … It is never the default packaged renderer." The shipped UI is
- * the checksum-pinned 0.18.0 renderer in `src/app/dist/renderer`, which
- * `npm run bootstrap` hydrates and `npm run package` keeps byte-for-byte. Both
- * modes are first-class in scripts/lib/clean-build.mjs: `clean-source` (this
- * one) emits buildKind "source-aware-reconstruction"; the packaged path emits
- * "fidelity-hybrid-reconstruction".
- *
- * The paragraph that used to sit here said the fidelity path "is not our goal
- * and not our right, so this script does not use it". That decision was mine,
- * it was never the founder's, and it cost six hours of hunting for missing
- * styling in a workspace that was never meant to be styled. The renderer was
- * not broken; it was the wrong renderer. Build the product with:
- *
- *     npm ci && npm run bootstrap && npm run check && npm run package && npm run verify
- *
- * This script stays because the clean-source mode is real and the reconstruction
- * supports it. Use it to read and test components, never to ship.
+ * Vite marks the emitted script and stylesheet `crossorigin`. Over file://
+ * that is fatal: `loadFile` gives the document origin `null`, and Chromium
+ * refuses the stylesheet. Both this script and `buildProductionRenderer`
+ * strip the attribute.
  *
  * The output layout is NOT arbitrary. The app resolves these paths itself at
  * runtime — see `executableReplacements` in scripts/lib/clean-build.mjs and
