@@ -84,7 +84,18 @@ test("new bots and the editor share the 19-cloud palette", async () => {
   assert.match(materialization, /assignedCloudBlobFields\(profile\?\.avatarColor\)/);
   assert.match(localSession, /assignedCloudBlobFields\(profile\.avatarColor\)/);
   assert.match(character, /CLOUD_BLOB_SHAPE/);
+  assert.match(character, /CLOUD_BLOB_PATH/);
   assert.match(character, /CloudEye/);
   assert.match(editor, /gridTemplateColumns: "repeat\(5, minmax\(0, 1fr\)\)"/);
   assert.doesNotMatch(editor, /Character shape/);
+});
+
+test("the packaged 0.18.0 window paints the 19 clouds through the clean preload", async () => {
+  const preload = await readFile(path.join(repoRoot, "source", "electron-preload", "preload.ts"), "utf8");
+  const overlay = await readFile(path.join(repoRoot, "source", "electron-preload", "cloud-blob-overlay.ts"), "utf8");
+  const packaging = await readFile(path.join(repoRoot, "scripts", "package-macos.mjs"), "utf8");
+  assert.match(preload, /installCloudBlobOverlay\(\)/);
+  assert.match(overlay, /sand-grok-bot-mark/);
+  assert.match(overlay, /CLOUD_BLOB_VIEWBOX/);
+  assert.match(packaging, /buildFidelityReconstructedAsar/);
 });

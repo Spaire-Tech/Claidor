@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, type CSSProperties } from "react";
+import { CLOUD_BLOB_PATH } from "../../../../../../source/shared/agent/cloud-blob-face";
 import {
   CLOUD_BLOB_COLORS,
   CLOUD_BLOB_SHAPE,
@@ -97,20 +98,6 @@ function roundedPolygon(radius: number, sides: number, cornerRadius: number, sta
   return path.close();
 }
 
-function cloudPath(points: readonly [number, number, number][], count = 160): string {
-  return sampledPath((angle) => {
-    const cos = Math.cos(angle), sin = Math.sin(angle);
-    let radius = 0;
-    for (const [x, y, circleRadius] of points) {
-      const dx = x - CENTER, dy = y - CENTER, projection = cos * dx + sin * dy;
-      const discriminant = projection * projection - (dx * dx + dy * dy) + circleRadius * circleRadius;
-      if (discriminant <= 0) continue;
-      radius = Math.max(radius, projection + Math.sqrt(discriminant));
-    }
-    return [CENTER + cos * radius, CENTER + sin * radius];
-  }, count);
-}
-
 function squirclePath(width: number, height: number, exponent: number): string {
   return sampledPath((angle) => {
     const cos = Math.cos(angle), sin = Math.sin(angle);
@@ -178,14 +165,6 @@ function normalizeArtifactPath(path: string): string {
   });
 }
 
-const CLOUD_FACE_LOBES: Array<[number, number, number]> = [
-  [CENTER, CENTER + 4, 64],
-  ...Array.from({ length: 7 }, (_, index): [number, number, number] => {
-    const angle = -Math.PI / 2 + index / 7 * Math.PI * 2;
-    return [CENTER + Math.cos(angle) * 52, CENTER + Math.sin(angle) * 47, 40];
-  }),
-];
-
 const ARTIFACT_SHAPE_PATHS: Record<string, string> = {
   blob: normalizeArtifactPath(BLOB_PATH),
   pebble: normalizeArtifactPath(sampledPath((angle) => { const radius = 108 * (1 + .075 * (Math.sin(angle * 2 + 1.1) * .6 + Math.sin(angle * 3 - 1.1) * .4)); return [CENTER + Math.cos(angle) * radius, CENTER + Math.sin(angle) * radius * .98]; })),
@@ -193,7 +172,7 @@ const ARTIFACT_SHAPE_PATHS: Record<string, string> = {
   tablet: normalizeArtifactPath(tabletPath(114, 74)),
   wedge: normalizeArtifactPath(roundedPolygon(130, 3, 60, -Math.PI / 2)),
   hex: normalizeArtifactPath(roundedPolygon(114, 6, 20, Math.PI / 6)),
-  cloud: normalizeArtifactPath(cloudPath(CLOUD_FACE_LOBES)),
+  cloud: CLOUD_BLOB_PATH,
   teardrop: normalizeArtifactPath(teardropPath(88, CENTER - 114, CENTER + 26, 18)),
 };
 export const PERSONA_SHAPE_PATHS = ARTIFACT_SHAPE_PATHS;

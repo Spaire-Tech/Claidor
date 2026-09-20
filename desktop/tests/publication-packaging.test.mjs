@@ -65,6 +65,7 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.doesNotMatch(rendererPatch, /id:"router",label:"Router"/);
   assert.match(rendererPatch, /export function patchOriginalSettingsPanel\(source\) \{\n  return source;\n\}/);
   assert.doesNotMatch(rendererPatch, /settings\.router-provider\.v1/);
+  assert.match(preload, /installCloudBlobOverlay\(\)/);
   assert.match(preload, /getInferenceRouter: \(\) => edge\("getInferenceRouter"\)/);
   assert.match(preload, /getBoxRuntime: \(\) => edge\("getBoxRuntime"\)/);
   assert.match(preload, /setBoxRuntime: \(mode: string\) => edge\("setBoxRuntime", \{ mode \}\)/);
