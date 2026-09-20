@@ -235,3 +235,70 @@ In this order, because each answers the next one's question:
 5. Then measure the round-trip from a Mac, which is the measurement
    `agent-computer-plan.md` §7 says is the cheapest useful thing anybody can do
    next and which no amount of server code substitutes for.
+
+---
+
+## 9. For the Chief of Staff: one decision, and three things I do not own
+
+Added 20 September, after merging `main` into this branch. Everything below is
+measured, and I say where.
+
+### The decision, which is not mine
+
+**Do these ten REST routes land, or be re-fitted to Connect RPC?**
+`docs/product/cards-plan.md` describes the re-founded app's box contract as
+Connect RPC — `ensureSandBox`, `recreateSandBox`, `forceRecreateSandBox` — which
+is a different shape from what is built here.
+
+What a re-fit would cost, split honestly:
+
+- **`BoxService`, the `desktop_boxes` table, the migration, the repository and
+  the awake-seconds metering are shape-independent.** They are about custody of
+  the key, scoping by account, and billing for a machine that exists. All of it
+  survives either answer.
+- **The route layer does not.** Ten handlers and their tests would be rewritten
+  against a different wire.
+
+I am not merging this, closing it, or starting that re-fit without an answer.
+
+### Three things in `desktop/` that I found and did not touch
+
+I own `server/**` and `runner/**`. These are written down instead of changed.
+
+**1. `docs/product/images-state.md` is out of date in its headline.** It measures
+`GET /desktop/api/media/images/models` answering **404** and `server/polar/`
+serving no image route. PR #133 landed `server/polar/desktop/capabilities.py`,
+which serves `POST /api/proxy/v1/images/generations`, and
+`desktop/source/shared/node/cursor-backend/claidor-generate-image.ts` calls it
+and names that file in its own header comment. The 404 is answered. Somebody who
+owns that document should correct the headline.
+
+**2. `IMAGE_MODEL_ID = "gpt-image-1"` has still never been read off a live
+catalogue.** #133 meters from OpenAI's real usage object, which is the half that
+matters, but the model id itself is the same unchecked constant mine was. One
+look at a real model list settles it. (`polar/desktop/capabilities.py` is
+server-side and *is* mine to change — I am flagging it rather than changing it
+only because I have no key here to check it against, and a guess replacing a
+guess is not progress.)
+
+**3. A defect I reported in `desktop/` no longer exists, and I am saying so
+because I reported it.** I told PR #125 that `desktop/package.json` paired
+`vite ^5.1.4` with `vitest ^4.1.0`, which cannot run together, and that it wanted
+fixing by whoever owns that build. After the merge, `desktop/package.json` carries
+`vite 8.2.1`, **no `vitest` at any version**, and `npm test` is
+`node --test tests/*.test.mjs`. The restructure removed it. Nothing to assign.
+
+### What CI proves about this work: nothing
+
+Measured on this branch's head and on `main`. The gate job `Detect changes`
+fails in two seconds with `runner_id: 0`, an empty `runner_name`, `started_at`
+equal to `created_at`, and a log that answers **404** because none was ever
+written. Every downstream job — tests, linters, migration check — is `skipped`,
+not failed. It is identical on `main`, including on #133's own merge commit
+`55714d5d`.
+
+So **no CI has executed a line of this diff, in either direction.** That is
+consistent with an Actions spending limit, and `CLAUDE.md` already says the same.
+It remains **inference and not a log**: nobody has read the repository's Actions
+billing page, and I cannot from this container. Until somebody does, §6's list of
+what I ran locally is the only evidence this work has.
