@@ -9,6 +9,7 @@ import { getConfiguredBackendUrl } from "../cursor-token.js";
 // `/desktop/api/proxy/v1/...` answers. Every caller builds its address here
 // so there is one place for that fact to live.
 export const CLAIDOR_PROXY_PREFIX = "desktop/api/proxy/v1";
+export const CLAIDOR_COMPOSIO_PREFIX = "desktop/api/proxy/composio";
 
 export interface ClaidorApiAuth {
   readonly getAccessToken: () => Promise<string>;
@@ -21,6 +22,14 @@ export function claidorProxyBaseUrl(backendUrl: string = getConfiguredBackendUrl
 
 export function claidorProxyUrl(path: string, backendUrl?: string): string {
   return `${claidorProxyBaseUrl(backendUrl)}/${path.replace(/^\/+/, "")}`;
+}
+
+export function claidorComposioBaseUrl(backendUrl: string = getConfiguredBackendUrl()): string {
+  return new URL(CLAIDOR_COMPOSIO_PREFIX, backendUrl.endsWith("/") ? backendUrl : `${backendUrl}/`).toString();
+}
+
+export function claidorComposioUrl(path: string, backendUrl?: string): string {
+  return `${claidorComposioBaseUrl(backendUrl)}/${path.replace(/^\/+/, "")}`;
 }
 
 export class ClaidorApiError extends Error {

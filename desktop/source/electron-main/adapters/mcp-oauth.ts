@@ -171,6 +171,7 @@ export function createProductionMcpOAuthPorts(): ProductionMcpOAuthPorts {
           if (token == null) throw new Error("MCP manager requires an authenticated account.");
           return token;
         },
+        openExternal: async (url) => await context.native.shell.openExternal(url),
       }),
       settingsStore: context.settings.settingsStore,
       pushBoxSecrets: () => context.secretsStores.pushBoxSecrets.push("account_scope"),

@@ -17,7 +17,7 @@ export const LOCAL_DOCKER_GATEWAY_URL = "http://127.0.0.1:1340";
 export const LOCAL_DOCKER_OWNER_LABEL = "com.grok-bot.local-vm=1";
 export const LOCAL_DOCKER_SCHEMA_VERSION = "6";
 const READY_TIMEOUT_MS = 180_000;
-const OPTIONAL_CREDENTIAL_TIMEOUT_MS = 3_000;
+export const OPTIONAL_CREDENTIAL_WAIT_MS = 250;
 
 export interface LocalDockerStatus {
   readonly available: boolean;
@@ -102,6 +102,13 @@ async function inspectContainer(): Promise<{ exists: boolean; running: boolean; 
   } catch { throw new Error("Docker returned malformed container inspection data."); }
 }
 
+export function localDockerContainerNeedsReplace(
+  inspected: { readonly schemaVersion: string; readonly hostSha256: string },
+  hostSha256: string,
+): boolean {
+  return inspected.schemaVersion !== LOCAL_DOCKER_SCHEMA_VERSION || inspected.hostSha256 !== hostSha256;
+}
+
 export async function getLocalDockerStatus(settingsPath: string): Promise<LocalDockerStatus> {
   const daemon = await runDocker(["info", "--format", "{{.ServerVersion}}"]).catch(() => ({ ok: false, output: "Docker is not installed." }));
   if (!daemon.ok) return { available: false, running: false, ready: false, containerName: LOCAL_DOCKER_BOX_CONTAINER, image: LOCAL_DOCKER_BOX_IMAGE, detail: daemon.output || "Docker is not running." };
@@ -184,11 +191,11 @@ async function ensureLocalDockerBox(settingsPath: string, inferenceCredential?: 
   const inspected = await inspectContainer();
   if (inspected.exists && !inspected.owned) throw new Error(`Local Docker VM cannot use ${LOCAL_DOCKER_BOX_CONTAINER}: an unowned container already has that name.`);
   if (inspected.exists && inspected.image !== LOCAL_DOCKER_BOX_IMAGE) throw new Error(`Local Docker VM container uses unexpected image ${inspected.image}. Remove it explicitly before changing images.`);
-  if (inspected.exists && (inspected.schemaVersion !== LOCAL_DOCKER_SCHEMA_VERSION || inspected.hostSha256 !== hostBundle.sha256 || (inferenceCredential != null && !inspected.hasInferenceCredential))) {
+  const shouldReplace = inspected.exists && localDockerContainerNeedsReplace(inspected, hostBundle.sha256);
+  if (shouldReplace) {
     const removed = await runDocker(["rm", "--force", LOCAL_DOCKER_BOX_CONTAINER]);
     if (!removed.ok) throw new Error(`Could not replace the local VM with the current app runtime: ${removed.output}`);
   }
-  const shouldReplace = inspected.exists && (inspected.schemaVersion !== LOCAL_DOCKER_SCHEMA_VERSION || inspected.hostSha256 !== hostBundle.sha256 || (inferenceCredential != null && !inspected.hasInferenceCredential));
   const current = shouldReplace ? await inspectContainer() : inspected;
   if (current.exists && !current.running) {
     const started = await runDocker(["start", LOCAL_DOCKER_BOX_CONTAINER]);
@@ -246,10 +253,13 @@ export function createSettingsRoutedHostConnector(
 ): SandRemoteHostConnector {
   const localConnect = (): Promise<GatewayConnection> => {
     if (ensureInFlight == null) ensureInFlight = (async () => {
-      const issued = remote.issueInferenceCredential == null ? undefined : await Promise.race([
-        remote.issueInferenceCredential(),
-        new Promise<undefined>((resolve) => setTimeout(resolve, OPTIONAL_CREDENTIAL_TIMEOUT_MS)),
-      ]);
+      let issued: InferenceCredential | undefined;
+      if (remote.issueInferenceCredential != null) {
+        issued = await Promise.race([
+          remote.issueInferenceCredential().catch(() => undefined),
+          new Promise<undefined>((resolve) => setTimeout(resolve, OPTIONAL_CREDENTIAL_WAIT_MS)),
+        ]);
+      }
       return await ensureLocalDockerBox(settings.settingsPath, issued);
     })().finally(() => { ensureInFlight = undefined; });
     return ensureInFlight;

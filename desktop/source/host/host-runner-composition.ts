@@ -1,4 +1,5 @@
 import { dirname } from "node:path";
+import { CLAIDOR_WORKING_CONTEXT_TOKENS } from "../shared/inference/claidor-context-window.js";
 import { TranscriptMirrorOffloadPool } from "./agent-isolation/transcript-mirror-offload.js";
 import type {
   CreateProductionRunnerRunStep,
@@ -2514,7 +2515,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             turn,
             staticConfig: {
               modelId: staticModelId,
-              agentTokenLimit: 200_000,
+              agentTokenLimit: CLAIDOR_WORKING_CONTEXT_TOKENS,
               conversationId: session.id,
               isBoxScopedSubagent: false,
               isSubagentRunner: false,

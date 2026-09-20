@@ -6,7 +6,6 @@ import {
   createAccountMcpWriter,
   backfillUserPluginInstalls,
   fetchAccountMcpServers,
-  fetchEffectiveUserPlugins,
   type AccountMcpClient,
   type AccountMcpDependencies,
 } from "../../shared/node/cursor-backend/account-mcp.js";
@@ -17,6 +16,11 @@ import {
 import { pinMcpDiagnosticsReporter } from "../../shared/node/mcp/mcp-diagnostics.js";
 import { SandMcpManager } from "../../shared/node/mcp/mcp-manager.js";
 import { createMcpToolsDiscovery } from "../../shared/node/mcp/tools-discovery.js";
+import { getSandRootDir } from "../../host/host-paths.js";
+import { isVendorMcpPluginId } from "../../shared/node/vendor-mcp/catalog.js";
+import { loadVendorMcpInstalls, removeVendorMcpInstall, upsertVendorMcpInstall } from "../../shared/node/vendor-mcp/installs.js";
+import { fetchVendorEffectivePlugins, fetchVendorMarketplacePlugins } from "../../shared/node/vendor-mcp/marketplace.js";
+import { connectThroughVendorMcp } from "../../shared/node/vendor-mcp/oauth.js";
 
 export interface DesktopMcpManagerFacade {
   listServers(): Promise<unknown>;
@@ -54,6 +58,7 @@ export interface DesktopMcpManagerOptions {
   readonly listBoxMcpServers: (serverIdentifiers: unknown) => Promise<readonly Record<string, unknown>[]>;
   readonly onConnectorAuth: (report: unknown) => void;
   readonly onMcpDiagnostic?: (failure: { readonly leg: string; readonly errorClass: string }) => void;
+  readonly openExternal?: (url: string) => Promise<unknown>;
 }
 
 function generatedAccountClient(credentials: Pick<AccountMcpDependencies, "getAccessToken" | "getMachineId">): AccountMcpClient {
@@ -84,15 +89,30 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
     getMachineId: accountMcpDeps.getMachineId,
     createClient: generatedBackendClient,
   });
+  const vendorRoot = () => getSandRootDir();
   const manager = new SandMcpManager({
     settingsStore: options.settingsStore,
     onAccountScopeApplied: options.onAccountScopeApplied,
     accountServersProvider: () => fetchAccountMcpServers(accountMcpDeps),
     accountMcpWriter: createAccountMcpWriter(accountMcpDeps),
-    effectivePluginsProvider: () => fetchEffectiveUserPlugins(accountMcpDeps),
+    effectivePluginsProvider: () => fetchVendorEffectivePlugins(new Set(loadVendorMcpInstalls(vendorRoot()).map((item) => item.id))),
     getMachineId: accountMcpDeps.getMachineId,
     backendMcpExec,
     onConnectorAuth: options.onConnectorAuth,
+    fetchMarketplace: fetchVendorMarketplacePlugins,
+    connectVendorMcp: async (plugin: { pluginId: string; displayName: string; vendorMcpUrl: string }) => {
+      upsertVendorMcpInstall(vendorRoot(), { id: plugin.pluginId, url: plugin.vendorMcpUrl, connected: false });
+      const outcome = await connectThroughVendorMcp({
+        pluginId: plugin.pluginId,
+        mcpUrl: plugin.vendorMcpUrl,
+        ...(options.openExternal == null ? {} : { openExternal: options.openExternal }),
+      });
+      if (outcome === "started") options.onConnectorAuth({ pluginId: plugin.pluginId, status: "started" });
+    },
+    uninstallComposioPlugin: async (pluginId: string) => {
+      if (!isVendorMcpPluginId(pluginId)) return false;
+      return removeVendorMcpInstall(vendorRoot(), pluginId);
+    },
   });
   const discovery = createMcpToolsDiscovery({
     definitionSource: manager.definitionSourceView(),

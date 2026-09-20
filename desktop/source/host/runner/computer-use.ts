@@ -120,7 +120,7 @@ export function createComputerUseCoordination<Context>(
         await ready.remoteAccessor.get(shellExecutorResource).execute(
           dependencies.ctx,
           buildHostShellArgs({
-            command: "box-chrome --sand-prepare",
+            command: "box-chrome --new-window",
             name: "box-chrome",
             workingDirectory: "/workspace",
             toolCallId: `sand-cua-browser-prepare-${agentId}`,

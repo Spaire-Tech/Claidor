@@ -5,7 +5,7 @@ import { createCoordinatorMainLegs } from "./coordinator/coordinator-main-legs.j
 import { createEgressConnectionObserver } from "./box/remote-connector-egress.js";
 import { createDesktopGatewayDescriptorFastPath } from "./box/gateway-descriptor-store.js";
 import { createRemoteHostConnector, type SandRemoteHostConnector } from "./box/box-host-connector.js";
-import { createSettingsRoutedHostConnector } from "./box/local-docker-host-connector.js";
+import { createSettingsRoutedHostConnector, startLocalDockerBox } from "./box/local-docker-host-connector.js";
 import { createSandClientPauseControl } from "./box/box-client-pause.js";
 import { createSandMigrationWatcher } from "./box/box-migration-watcher.js";
 import type { RecreateResult } from "./box/box-recreate-commands.js";
@@ -801,6 +801,10 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
       coordinator = track(requireDisposable(await bindings.services.createCoordinator(context), "coordinator"));
       prioritizeBoxRecoveryDisposal();
       await coordinator.start(await account.getStatus());
+      const settingsStore = requireValue(settings, "settings").settingsStore;
+      if (settingsStore.getBoxRuntime() === "local-docker") {
+        void startLocalDockerBox(settingsStore.settingsPath).catch(() => undefined);
+      }
       await experiments.ensureService();
       requireValue(clientPauseControl, "client-pause").reapplyAfterCoordinatorLaunch();
       boxRecovery.start();
