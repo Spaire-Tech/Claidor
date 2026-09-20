@@ -364,7 +364,7 @@ export class CoordinatorGatewayClient {
     const clock = this.options.timing.clock;
     const connectStartEpochMs = clock.now();
     const connectStartMonotonicMs = clock.monotonicNow();
-    const connection = await this.resolveConnection();
+    const connection = await this.options.timing.connectDeadline.run((signal) => this.resolveConnection(signal));
     state.baseUrl = connection.baseUrl;
     if (requiredBaseUrl != null && connection.baseUrl !== requiredBaseUrl) throw new Error("send retry aborted: the gateway endpoint changed mid-send");
     this.recordSendStage({ stage: "gateway-connect", attempt, clientNonce: args.clientNonce, traceparent: args.traceparent, startEpochMs: connectStartEpochMs, durationMs: clock.monotonicNow() - connectStartMonotonicMs });
