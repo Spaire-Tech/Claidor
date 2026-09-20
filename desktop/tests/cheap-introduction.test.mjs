@@ -62,10 +62,15 @@ test("kickstart introduces over Claidor, not Claude Code", async () => {
   const retry = await readFile(path.join(repoRoot, "source/host/runner/transient-stream-error.ts"), "utf8");
   const routing = await readFile(path.join(repoRoot, "source/node-agent-coordinator/inference-router.ts"), "utf8");
   assert.match(lifecycle, /SAND_ONBOARDING_KICKSTART_PROMPT/);
+  assert.match(lifecycle, /buildCaisraProductSystemPrompt/);
+  assert.match(lifecycle, /CAISRA_USER_REPLY_REMINDER/);
   assert.match(lifecycle, /deliverCheapIntroduction\(session\)/);
   assert.match(lifecycle, /kickstartWithFullRunner\(session, SAND_DISK_SAVER_KICKSTART_PROMPT\)/);
+  assert.doesNotMatch(lifecycle, /cheapIntroductionMessages/);
   assert.doesNotMatch(lifecycle, /kickstartWithFullRunner\(session, prompt\)/);
   assert.match(routing, /if \(raw\.length === 0\) return false;/);
+  assert.match(routing, /buildCaisraProductSystemPrompt/);
+  assert.match(routing, /CAISRA_SENDMESSAGE_RETRY_PROMPT/);
   assert.match(providers, /DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-5\.6-luna"/);
   assert.match(providers, /withCheapRateLimitFallback\(start\(requested\), \(\) => start\(cheap\)\)/);
   assert.match(retry, /isProviderRateLimitError\(error\)\) return false/);
