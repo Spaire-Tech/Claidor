@@ -11,7 +11,7 @@ export function envFlagEnabled(value: string | undefined): boolean {
 export function resolveProductInferenceProvider(env: NodeJS.ProcessEnv = process.env): SandInferenceProvider {
   if (envFlagEnabled(env[CAISRA_CLAUDE_CODE_ENV])) return "claude-code";
   const override = env[SAND_INFERENCE_PROVIDER_ENV]?.trim();
-  if (isSandInferenceProvider(override)) return override;
+  if (override === "claidor" || override === "openrouter" || override === "codex") return override;
   return PRODUCT_INFERENCE_PROVIDER;
 }
 

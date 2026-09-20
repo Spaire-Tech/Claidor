@@ -71,7 +71,7 @@ test("a late inference credential does not tear down a running box", async () =>
     assert.match(source, /SAND_DEV_INFERENCE_TOKEN_FILE=\$\{LOCAL_DOCKER_INFERENCE_TOKEN_FILE\}/);
     assert.match(source, /dst=\/run\/grok-bot,readonly/);
     assert.match(source, /if \(late != null\) await persistInferenceCredential/);
-    assert.equal(LOCAL_DOCKER_SCHEMA_VERSION, "7");
+    assert.equal(LOCAL_DOCKER_SCHEMA_VERSION, "8");
     const production = await (await import("node:fs/promises")).readFile(
       path.join(repoRoot, "source/electron-main/main-production-services.ts"),
       "utf8",
@@ -97,6 +97,8 @@ test("the local Docker box is always told our backend, credential or not", async
     const withoutCredential = envOf(localDockerInferenceEnvironmentArguments(undefined, env));
     assert.equal(withoutCredential.SAND_BACKEND_URL, "https://api.claidor.com/");
     assert.equal(withoutCredential.SAND_DEV_INFERENCE_TOKEN_FILE, "/run/grok-bot/inference.json");
+    assert.equal(withoutCredential.SAND_INFERENCE_PROVIDER, "claidor");
+    assert.equal(withoutCredential.CAISRA_CLAUDE_CODE, "0");
 
     const withCredential = envOf(localDockerInferenceEnvironmentArguments({ backendUrl: "https://api.claidor.com/" }, env));
     assert.equal(withCredential.SAND_BACKEND_URL, "https://api.claidor.com/");
