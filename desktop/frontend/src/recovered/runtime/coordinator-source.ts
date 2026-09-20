@@ -187,6 +187,7 @@ function adaptCoordinatorFailure(method: string, failure: CoordinatorFailure): n
 
 const REPLY_CONVERTERS: Record<ReplyKind, (value: unknown) => ConvertedReply> = {
   array: (value) => Array.isArray(value) ? value : MALFORMED_REPLY,
+  string: (value) => typeof value === "string" ? value : MALFORMED_REPLY,
   record: (value) => isSourceRecord(value) ? value : MALFORMED_REPLY,
   "record-or-null": (value) => value === null || isSourceRecord(value) ? value : MALFORMED_REPLY,
   boolean: (value) => typeof value === "boolean" ? value : MALFORMED_REPLY,
@@ -516,7 +517,9 @@ export function createStableCoordinatorSource(initial: RawPortCoordinatorSource)
 const TELEMETRY_DOMAIN_BY_METHOD: Record<CoordinatorMethod, string> = {
   getAgentTranscriptWindow: "transcript", getAgentThread: "transcript", getAgentTranscriptTail: "transcript", openAgentTail: "transcript", getConversationOutline: "transcript",
   sendPrompt: "send", promptAcceptanceStatus: "send", reactToMessage: "send",
+  appendConnectorCard: "send", appendSendMessage: "send",
   listRoutedMcpTools: "plugins", executeRoutedMcpTool: "plugins",
+  searchPlugins: "plugins", getPlugin: "plugins", installPlugin: "plugins",
   respondToWidget: "widgets", dismissWidget: "widgets", submitSecret: "widgets",
   resolveAutoReviewApproval: "approvals", resolveLocalToolPermission: "approvals",
   listAgents: "roster", countAgents: "roster", searchAgents: "roster", createAgent: "roster",
