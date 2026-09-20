@@ -84,12 +84,14 @@ test("machinery sessions stay on Luna; unknown Cursor model ids cannot steal Ter
     const {
       DEFAULT_CLAIDOR_MODEL,
       DEFAULT_CLAIDOR_CHEAP_MODEL,
+      CLAIDOR_WORKING_CONTEXT_TOKENS,
       claidorModelForSession,
       createProviderPromptSession,
       isConfiguredClaidorModelId,
     } = loaded.module;
     assert.equal(DEFAULT_CLAIDOR_MODEL, "gpt-5.6-terra");
     assert.equal(DEFAULT_CLAIDOR_CHEAP_MODEL, "gpt-5.6-luna");
+    assert.equal(CLAIDOR_WORKING_CONTEXT_TOKENS, 200_000);
     assert.equal(claidorModelForSession(), "gpt-5.6-terra");
     assert.equal(claidorModelForSession({ cheap: true }), "gpt-5.6-luna");
     assert.equal(claidorModelForSession({ isSummarizationSession: true, modelId: "gemini-2.5-flash" }), "gpt-5.6-luna");
@@ -124,4 +126,5 @@ test("local group turns are a cheap talk-only Luna call, not the host runner", a
   assert.match(orchestrator, /GROUP_MAX_ROUNDS/);
   assert.match(orchestrator, /resolveResponders/);
   assert.match(providers, /DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-5\.6-luna"/);
+  assert.match(providers, /CLAIDOR_WORKING_CONTEXT_TOKENS/);
 });

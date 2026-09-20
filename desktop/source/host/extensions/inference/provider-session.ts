@@ -9,6 +9,7 @@ import { jsonSchema, streamText, tool, type CoreMessage, type LanguageModelV1, t
 import { BasePromptBuilder, BasePromptExecutor } from "../../../packages/chat-inference/base.js";
 import { asError } from "../../../shared/errors.js";
 import { withCheapRateLimitFallback } from "../../../shared/inference/cheap-rate-limit-fallback.js";
+import { CLAIDOR_WORKING_CONTEXT_TOKENS } from "../../../shared/inference/claidor-context-window.js";
 import type { SandInferenceProvider } from "../../../shared/inference-router.js";
 import { claidorProxyBaseUrl } from "../../../shared/node/cursor-backend/claidor-api.js";
 import { resolveClaudeCodeCliPath } from "../../../shared/node/inference-router-local.js";
@@ -58,6 +59,7 @@ export interface ClaidorCredentialSource {
 
 export const DEFAULT_CLAIDOR_MODEL = "gpt-5.6-terra";
 export const DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-5.6-luna";
+export { CLAIDOR_WORKING_CONTEXT_TOKENS };
 
 // The Claidor provider is the signed-in account. Which process holds that
 // credential differs: the host reads it from its auth service, the coordinator
@@ -378,7 +380,7 @@ export function toCoreMessages(messages: readonly ProviderMessage[]): CoreMessag
 // stream yields one `error` part and closes, and the host loop then waits on
 // `response` forever. Fail everything the loop awaits, with the provider's
 // own sentence, and throw from the stream the way the loop expects.
-function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void) {
+function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0) {
   const failure = deferred<never>();
   failure.promise.catch(() => undefined);
   const fail = (error: unknown) => failure.reject(asError(error));
@@ -395,12 +397,12 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
     }
   })();
   const race = <T>(promise: Promise<T>): Promise<T> => Promise.race([promise, failure.promise]);
-  const extendedUsage = race(result.usage).then(value => ({ inputTokens: value.promptTokens, outputTokens: value.completionTokens, cacheReadTokens: 0, cacheWriteTokens: 0, maxTokens: 0 }));
+  const extendedUsage = race(result.usage).then(value => ({ inputTokens: value.promptTokens, outputTokens: value.completionTokens, cacheReadTokens: 0, cacheWriteTokens: 0, maxTokens }));
   if (onUsage != null) void extendedUsage.then(onUsage, () => undefined);
   return { fullStream, response: race(result.response), usage: race(result.usage), extendedUsage, providerMetadata: race(result.providerMetadata), invocationId: Promise.resolve(invocationId) };
 }
 
-function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void) {
+function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, maxTokens = 0) {
   const tools = toToolSet(definitions, executeTool);
   const coreMessages = toCoreMessages(messages);
   // The host loop's state carries its own system prompt; the router prompt is
@@ -417,7 +419,7 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
     maxSteps: tools === undefined || executeTool == null ? 1 : 8,
     providerOptions: { openai: { strictSchemas: false } },
   });
-  return settleAiSdkStream(result, invocationId, onUsage);
+  return settleAiSdkStream(result, invocationId, onUsage, maxTokens);
 }
 
 function openRouterExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void) {
@@ -437,7 +439,7 @@ function claidorExecutor(messages: readonly ProviderMessage[], invocationId: str
   if (source == null) throw new Error("Claidor is the selected provider, but this process has no signed-in credential source. Sign in to Claidor and try again.");
   const requested = modelId?.trim() || configuredClaidorModel();
   const cheap = configuredClaidorCheapModel();
-  const start = (id: string) => aiSdkExecutor(claidorLanguageModel(source, id), messages, invocationId, definitions, executeTool, onUsage);
+  const start = (id: string) => aiSdkExecutor(claidorLanguageModel(source, id), messages, invocationId, definitions, executeTool, onUsage, CLAIDOR_WORKING_CONTEXT_TOKENS);
   if (requested === cheap) return start(requested);
   return withCheapRateLimitFallback(start(requested), () => start(cheap));
 }
