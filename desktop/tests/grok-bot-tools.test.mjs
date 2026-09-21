@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -24,21 +24,30 @@ async function load(entry, name) {
   return { module, dispose: () => rm(temporary, { recursive: true, force: true }) };
 }
 
-test("Grok Bot tools are the product tools, not the Settings Router", async () => {
-  const loaded = await load("source/shared/grok-bot-tools.ts", "grok-bot-tools");
+test("Mac product tools and prompt are Grok Bot's, not a Caisra overlay", async () => {
+  const loadedTools = await load("source/shared/grok-bot-tools.ts", "grok-bot-tools");
+  const loadedPrompt = await load("source/host/runner/system-prompt.ts", "system-prompt");
   try {
-    const { GROK_BOT_TOOL_NAMES, CAISRA_PRODUCT_SYSTEM_PROMPT, buildCaisraProductSystemPrompt, sendMessageFromToolArgs, executeGrokBotTool } = loaded.module;
+    const { GROK_BOT_TOOL_NAMES, GROK_BOT_TOOLS, sendMessageFromToolArgs, executeGrokBotTool } = loadedTools.module;
+    const { DEFAULT_SAND_SYSTEM_PROMPT, buildSandProductSystemPrompt } = loadedPrompt.module;
     assert.deepEqual([...GROK_BOT_TOOL_NAMES], ["SendMessage", "CreateAgent", "UpdateAgent", "SearchPlugins", "GetPlugin", "InstallPlugin"]);
-    assert.match(CAISRA_PRODUCT_SYSTEM_PROMPT, /There is no Settings Router, no Claude Code/);
-    assert.match(CAISRA_PRODUCT_SYSTEM_PROMPT, /question widget/);
-    assert.match(CAISRA_PRODUCT_SYSTEM_PROMPT, /em dash/);
-    assert.match(CAISRA_PRODUCT_SYSTEM_PROMPT, /not a corporate help desk/);
-    assert.match(CAISRA_PRODUCT_SYSTEM_PROMPT, /Never open with a widget/);
-    assert.match(CAISRA_PRODUCT_SYSTEM_PROMPT, /chosen value comes back as their next reply/);
-    assert.match(CAISRA_PRODUCT_SYSTEM_PROMPT, /Never call CreateAgent until they have said what it is for/);
-    const identified = buildCaisraProductSystemPrompt({ agentId: "agent-9", name: "Caisra", description: "helps with the week" });
-    assert.match(identified, /Your agent_id is agent-9/);
-    assert.match(identified, /Title: Caisra/);
+    assert.match(DEFAULT_SAND_SYSTEM_PROMPT, /Your default is to act, not to ask/);
+    assert.match(DEFAULT_SAND_SYSTEM_PROMPT, /Don't ask a go-ahead for something they already asked for/);
+    assert.match(DEFAULT_SAND_SYSTEM_PROMPT, /A connect card is the user's own tap, so it needs no extra confirm/);
+    assert.match(DEFAULT_SAND_SYSTEM_PROMPT, /once the user agrees, install it/);
+    assert.match(DEFAULT_SAND_SYSTEM_PROMPT, /not a corporate help desk/);
+    assert.doesNotMatch(DEFAULT_SAND_SYSTEM_PROMPT, /There is no Settings Router, no Claude Code/);
+    assert.doesNotMatch(DEFAULT_SAND_SYSTEM_PROMPT, /Never open with a widget/);
+    const identified = buildSandProductSystemPrompt({ name: "Yale", description: "helps with the week" });
+    assert.match(identified, /Your agent name is "Yale"/);
+    assert.match(identified, /Title: Yale/);
+    assert.match(identified, /Description: helps with the week/);
+    assert.match(identified, /Don't ask a go-ahead for something they already asked for/);
+    const sendMessage = GROK_BOT_TOOLS.find(tool => tool.name === "SendMessage");
+    assert.match(sendMessage.description, /ask rarely: by default decide and proceed/);
+    const install = GROK_BOT_TOOLS.find(tool => tool.name === "InstallPlugin");
+    assert.match(install.description, /confirm with a question widget first/);
+    assert.match(install.description, /connect card is shown to the user automatically/);
     assert.deepEqual(sendMessageFromToolArgs({ type: "text", content: "Hey" }), { type: "text", content: "Hey" });
     assert.equal(sendMessageFromToolArgs({ type: "widget" }).error, "widget is required when type is widget");
     const calls = [];
@@ -53,16 +62,17 @@ test("Grok Bot tools are the product tools, not the Settings Router", async () =
     assert.match(created, /Created agent "Research" \(id: agent-2\)/);
     assert.equal(calls[0].method, "createAgent");
     assert.equal(calls[0].args.origin, "agent");
-    const refused = await executeGrokBotTool("CreateAgent", { name: "Research" }, {
+    assert.equal(calls[0].args.isKickstartRequested, undefined);
+    const unnamed = await executeGrokBotTool("CreateAgent", { name: "Research" }, {
       agentId: "main",
       dispatchRemote: async (method, args) => {
         calls.push({ method, args });
-        return { agent: { id: "agent-2", name: args.name } };
+        return { agent: { id: "agent-3", name: args.name } };
       },
       emitSendMessage: async () => "t0s0",
     });
-    assert.match(refused, /Ask them first/);
-    assert.equal(calls.length, 1);
+    assert.match(unnamed, /Created agent "Research" \(id: agent-3\)/);
+    assert.equal(calls[1].args.description, "");
     const renamed = await executeGrokBotTool("UpdateAgent", { agent_id: "agent-2", name: "Ben" }, {
       agentId: "main",
       dispatchRemote: async (method, args) => {
@@ -84,6 +94,7 @@ test("Grok Bot tools are the product tools, not the Settings Router", async () =
     });
     assert.match(selfRename, /Updated agent "Ben" \(id: agent-2\)/);
   } finally {
-    await loaded.dispose();
+    await loadedTools.dispose();
+    await loadedPrompt.dispose();
   }
 });

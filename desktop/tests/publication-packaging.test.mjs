@@ -154,7 +154,7 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(coordinator, /method === "reactToMessage"/);
   assert.match(coordinator, /reaction\.by === "me"/);
   assert.match(coordinator, /currentActivity: \{ kind: "thinking" \}/);
-  assert.match(coordinator, /buildCaisraProductSystemPrompt/);
+  assert.match(coordinator, /buildSandProductSystemPrompt/);
   assert.match(coordinator, /postEvent\("agents"/);
   assert.match(widgetResponses, /options\?\.skipTurn === true/);
   assert.match(gateway, /args\.skipTurn === true \? \{ skipTurn: true \}/);

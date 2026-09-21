@@ -7,6 +7,28 @@ export const USER_MESSAGE_REPLY_REMINDER = `<system_reminder>
 Reply to this message by actually invoking the SendMessage tool — make a real tool/function call, not text you write. Plain assistant text is NEVER delivered; only a real SendMessage tool invocation reaches the user, so if you don't invoke the tool they just see silence.
 </system_reminder>`;
 
+export const SEND_MESSAGE_PLAIN_TEXT_RETRY = [
+  "You wrote a reply as plain assistant text. That is invisible to the user.",
+  "Invoke the SendMessage tool now with that same reply.",
+].join(" ");
+
+export function buildSandProductSystemPrompt(identity: {
+  readonly name?: string;
+  readonly description?: string;
+} = {}): string {
+  const title = identity.name?.trim() ?? "";
+  const description = identity.description?.trim() ?? "";
+  const lines: string[] = [];
+  if (title.length > 0) {
+    lines.push(`Title: ${title}`);
+    lines.push(`Your agent name is "${title}". If the user asks for your name, answer with "${title}".`);
+  }
+  if (description.length > 0) lines.push(`Description: ${description}`);
+  return lines.length === 0
+    ? DEFAULT_SAND_SYSTEM_PROMPT
+    : `${DEFAULT_SAND_SYSTEM_PROMPT}\n\nAgent profile:\n${lines.join("\n")}`;
+}
+
 export function appendUserReplyReminder(text: string, env: NodeJS.ProcessEnv = process.env): string {
   if (env.SAND_DISABLE_USER_REPLY_REMINDER === "1") return text;
   return text.length > 0 ? `${text}\n\n${USER_MESSAGE_REPLY_REMINDER}` : USER_MESSAGE_REPLY_REMINDER;
