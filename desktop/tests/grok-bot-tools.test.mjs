@@ -121,7 +121,7 @@ test("Mac product tools and prompt are Grok Bot's, not a Caisra overlay", async 
       },
     });
     assert.equal(listed, "exit_code: 0\n\n12G\t/Users/bass");
-    assert.deepEqual(shellRuns, [{ command: "du -sh ~", workingDirectory: "/Users/bass", blockUntilMs: undefined }]);
+    assert.deepEqual(shellRuns, [{ command: "du -sh ~", workingDirectory: "/Users/bass" }]);
     const readRuns = [];
     const file = await executeGrokBotTool("ExternalRead", { path: "/Users/bass/note.txt", offset: 1, limit: 20 }, {
       agentId: "main",

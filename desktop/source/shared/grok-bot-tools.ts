@@ -444,7 +444,11 @@ export async function executeGrokBotTool(
     const workingDirectory = typeof record?.working_directory === "string" ? record.working_directory : undefined;
     const blockUntilMs = typeof record?.block_until_ms === "number" ? record.block_until_ms : undefined;
     const run = context.runExternalShell ?? defaultRunExternalShell;
-    return await run({ command, workingDirectory, blockUntilMs });
+    return await run({
+      command,
+      ...(workingDirectory == null ? {} : { workingDirectory }),
+      ...(blockUntilMs == null ? {} : { blockUntilMs }),
+    });
   }
   if (name === "ExternalRead") {
     const record = asRecord(args);
@@ -452,7 +456,11 @@ export async function executeGrokBotTool(
     const offset = typeof record?.offset === "number" ? record.offset : undefined;
     const limit = typeof record?.limit === "number" ? record.limit : undefined;
     const read = context.readExternalFile ?? defaultReadExternalFile;
-    return await read({ path, offset, limit });
+    return await read({
+      path,
+      ...(offset == null ? {} : { offset }),
+      ...(limit == null ? {} : { limit }),
+    });
   }
   return `Unknown tool: ${name}`;
 }
