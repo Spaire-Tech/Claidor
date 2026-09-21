@@ -4,6 +4,7 @@ import { homedir } from "node:os";
 import { isAbsolute, resolve } from "node:path";
 
 import { SAND_SEND_MESSAGE_TOOL_DESCRIPTION } from "../host/runner/tools/send-message-tool.js";
+import { GROK_BOT_BOX_TOOLS, GROK_BOT_HOST_TOOL_NAMES } from "./grok-bot-box-tools.js";
 
 const CREATE_AGENT_DESCRIPTION = "Create a new agent (a new teammate assistant) for your user, with a name and an optional persona/description. Returns the new agent's id so you can immediately message it with SendToAgent. Use this to spin up a focused teammate for a job. You have no tool to delete an agent, so only create one when it is genuinely useful; the user can delete an agent themselves from the sidebar (right-click the agent → \"Delete\").";
 
@@ -36,7 +37,7 @@ Text files include line numbers and support offset/limit paging. Image files (jp
 export const GROK_BOT_EXTERNAL_SHELL_DEFAULT_MS = 30_000;
 export const GROK_BOT_EXTERNAL_READ_MAX_CHARS = 100_000;
 
-export const GROK_BOT_TOOL_NAMES = [
+export const GROK_BOT_LOCAL_TOOL_NAMES = [
   "SendMessage",
   "CreateAgent",
   "UpdateAgent",
@@ -47,13 +48,30 @@ export const GROK_BOT_TOOL_NAMES = [
   "ExternalRead",
 ] as const;
 
+export const GROK_BOT_TOOL_NAMES = [
+  ...GROK_BOT_LOCAL_TOOL_NAMES,
+  ...GROK_BOT_HOST_TOOL_NAMES,
+] as const;
+
+export type GrokBotLocalToolName = (typeof GROK_BOT_LOCAL_TOOL_NAMES)[number];
+export type GrokBotHostToolName = (typeof GROK_BOT_HOST_TOOL_NAMES)[number];
 export type GrokBotToolName = (typeof GROK_BOT_TOOL_NAMES)[number];
 
-export function isGrokBotToolName(name: string): name is GrokBotToolName {
-  return (GROK_BOT_TOOL_NAMES as readonly string[]).includes(name);
+export function isGrokBotLocalToolName(name: string): name is GrokBotLocalToolName {
+  return (GROK_BOT_LOCAL_TOOL_NAMES as readonly string[]).includes(name);
 }
 
-export const GROK_BOT_TOOLS: readonly Record<string, unknown>[] = [
+export function isGrokBotHostToolName(name: string): name is GrokBotHostToolName {
+  return (GROK_BOT_HOST_TOOL_NAMES as readonly string[]).includes(name);
+}
+
+export function isGrokBotToolName(name: string): name is GrokBotToolName {
+  return isGrokBotLocalToolName(name) || isGrokBotHostToolName(name);
+}
+
+export { GROK_BOT_HOST_TOOL_NAMES };
+
+const GROK_BOT_LOCAL_TOOLS: readonly Record<string, unknown>[] = [
   {
     name: "SendMessage",
     description: SAND_SEND_MESSAGE_TOOL_DESCRIPTION,
@@ -193,6 +211,11 @@ export const GROK_BOT_TOOLS: readonly Record<string, unknown>[] = [
       },
     },
   },
+];
+
+export const GROK_BOT_TOOLS: readonly Record<string, unknown>[] = [
+  ...GROK_BOT_LOCAL_TOOLS,
+  ...GROK_BOT_BOX_TOOLS,
 ];
 
 export function asRecord(value: unknown): Record<string, unknown> | null {

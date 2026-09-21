@@ -28,9 +28,13 @@ test("Mac product tools and prompt are Grok Bot's, not a Caisra overlay", async 
   const loadedTools = await load("source/shared/grok-bot-tools.ts", "grok-bot-tools");
   const loadedPrompt = await load("source/host/runner/system-prompt.ts", "system-prompt");
   try {
-    const { GROK_BOT_TOOL_NAMES, GROK_BOT_TOOLS, sendMessageFromToolArgs, executeGrokBotTool } = loadedTools.module;
+    const { GROK_BOT_LOCAL_TOOL_NAMES, GROK_BOT_TOOL_NAMES, GROK_BOT_TOOLS, sendMessageFromToolArgs, executeGrokBotTool } = loadedTools.module;
     const { DEFAULT_SAND_SYSTEM_PROMPT, buildSandProductSystemPrompt } = loadedPrompt.module;
-    assert.deepEqual([...GROK_BOT_TOOL_NAMES], ["SendMessage", "CreateAgent", "UpdateAgent", "SearchPlugins", "GetPlugin", "InstallPlugin", "ExternalShell", "ExternalRead"]);
+    assert.deepEqual([...GROK_BOT_LOCAL_TOOL_NAMES], ["SendMessage", "CreateAgent", "UpdateAgent", "SearchPlugins", "GetPlugin", "InstallPlugin", "ExternalShell", "ExternalRead"]);
+    for (const name of ["Shell", "Read", "Computer", "Screenshot", "CopyToBox", "CopyFromBox", "Task", "WebSearch", "WebFetch", "SendToAgent", "GenerateImage", "browser_navigate", "browser_snapshot"]) {
+      assert.ok(GROK_BOT_TOOL_NAMES.includes(name), `product turns include Grok Bot ${name}`);
+      assert.ok(GROK_BOT_TOOLS.some(tool => tool.name === name), `GROK_BOT_TOOLS includes ${name}`);
+    }
     assert.match(DEFAULT_SAND_SYSTEM_PROMPT, /Your default is to act, not to ask/);
     assert.match(DEFAULT_SAND_SYSTEM_PROMPT, /Don't ask a go-ahead for something they already asked for/);
     assert.match(DEFAULT_SAND_SYSTEM_PROMPT, /A connect card is the user's own tap, so it needs no extra confirm/);

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 
 import { runRoutedProviderText } from "../host/extensions/inference/provider-session.js";
 import {
@@ -12,11 +12,17 @@ import {
 } from "../shared/inference-router.js";
 import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
 import {
+  asRecord,
   executeGrokBotTool,
   GROK_BOT_TOOLS,
+  isGrokBotHostToolName,
   isGrokBotToolName,
+  resolveUserComputerPath,
+  stringifyToolResult,
   type GrokBotToolName,
 } from "../shared/grok-bot-tools.js";
+import { chatMessageFromTranscriptEntry, mergeHostAndLocalChatHistory } from "../shared/grok-bot-transcript.js";
+import { SAND_LOCAL_TOOLS_DENIED_MESSAGE } from "../shared/local-tool-permission-machinery.js";
 import {
   buildSandProductSystemPrompt,
   SEND_MESSAGE_PLAIN_TEXT_RETRY,
@@ -44,8 +50,17 @@ const EMPTY_STORE: Store = { schemaVersion: 2, agents: {} };
 // provider added there cannot be silently dropped from stored history here.
 const STORED_PROVIDERS: readonly string[] = SAND_INFERENCE_PROVIDERS.filter(provider => provider !== "cursor");
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return typeof value === "object" && value != null && !Array.isArray(value) ? value as Record<string, unknown> : null;
+function unwrapRoutedResult(value: unknown): unknown {
+  const record = asRecord(value);
+  return record != null && "result" in record ? record.result : value;
+}
+
+function deniedLocalToolReason(value: unknown): string | null {
+  const record = asRecord(value);
+  if (record?.allowed !== false) return null;
+  return typeof record.reason === "string" && record.reason.trim().length > 0
+    ? record.reason
+    : SAND_LOCAL_TOOLS_DENIED_MESSAGE;
 }
 
 export function parseInferenceRouterTranscriptStore(value: unknown): Store {
@@ -249,7 +264,12 @@ export function createCoordinatorInferenceRouter(options: {
       ...(typeof self?.name === "string" ? { name: self.name } : {}),
       ...(typeof self?.description === "string" ? { description: self.description } : {}),
     });
-    const history = (withUser.agents[agentId] ?? []).map((entry, index, rows) => (
+    const localMessages = (withUser.agents[agentId] ?? []).flatMap(entry => {
+      const message = chatMessageFromTranscriptEntry(projectInferenceRouterTranscriptEntry(entry));
+      return message == null ? [] : [message];
+    });
+    const merged = mergeHostAndLocalChatHistory({ remoteEntries, localMessages });
+    const history = merged.map((entry, index, rows) => (
       entry.role === "user" && index === rows.length - 1
         ? { role: entry.role, content: `${entry.content}\n\n${USER_MESSAGE_REPLY_REMINDER}` }
         : { role: entry.role, content: entry.content }
@@ -280,7 +300,64 @@ export function createCoordinatorInferenceRouter(options: {
     }) : null;
     const directTools = bridge == null ? await remoteOrUndefined("listRoutedMcpTools", {}) : undefined;
     const tools = [...GROK_BOT_TOOLS, ...(Array.isArray(directTools) ? directTools as Record<string, any>[] : [])];
-    const runGrokBotTool = async (name: GrokBotToolName, toolArgs: unknown) => {
+    const runHostAgentTool = async (name: string, toolArgs: unknown, toolCallId: string): Promise<unknown> => {
+      try {
+        return unwrapRoutedResult(await options.dispatchRemote("executeRoutedAgentTool", {
+          agentId,
+          name,
+          args: toolArgs,
+          toolCallId,
+        }));
+      } catch (error) {
+        return { allowed: false, reason: `Couldn't reach your computer: ${error instanceof Error ? error.message : String(error)}` };
+      }
+    };
+    const runGrokBotTool = async (name: GrokBotToolName, toolArgs: unknown, toolCallId?: string) => {
+      const callId = toolCallId?.trim() || randomUUID();
+      if (name === "ExternalShell" || name === "ExternalRead" || name === "ExternalAwaitShell") {
+        const denied = deniedLocalToolReason(await runHostAgentTool(name, toolArgs, callId));
+        if (denied != null) return denied;
+        if (name === "ExternalAwaitShell") return "No background command is running on this computer right now.";
+        return await executeGrokBotTool(name, toolArgs, {
+          agentId,
+          dispatchRemote: options.dispatchRemote,
+          emitSendMessage,
+        });
+      }
+      if (name === "CopyToBox") {
+        const record = asRecord(toolArgs);
+        const computerPath = typeof record?.computer_path === "string" ? record.computer_path : "";
+        const boxPath = typeof record?.box_path === "string" ? record.box_path : "";
+        const denied = deniedLocalToolReason(await runHostAgentTool(name, toolArgs, callId));
+        if (denied != null) return denied;
+        const filePath = resolveUserComputerPath(computerPath);
+        const bytes = await readFile(filePath);
+        const destination = boxPath.trim().length > 0 ? boxPath : `/workspace/uploads/${basename(filePath)}`;
+        const written = await runHostAgentTool("WriteBoxFile", {
+          path: destination,
+          bytesBase64: bytes.toString("base64"),
+        }, callId);
+        return stringifyToolResult(written);
+      }
+      if (name === "CopyFromBox") {
+        const record = asRecord(toolArgs);
+        const computerPath = typeof record?.computer_path === "string" ? record.computer_path : "";
+        const copied = asRecord(await runHostAgentTool(name, toolArgs, callId));
+        const denied = deniedLocalToolReason(copied);
+        if (denied != null) return denied;
+        const bytesBase64 = typeof copied?.bytesBase64 === "string" ? copied.bytesBase64 : "";
+        const boxPath = typeof copied?.boxPath === "string" ? copied.boxPath : "";
+        const dest = resolveUserComputerPath(computerPath.length > 0 ? computerPath : basename(boxPath || "file"));
+        await mkdir(dirname(dest), { recursive: true });
+        await writeFile(dest, Buffer.from(bytesBase64, "base64"));
+        return `Copied ${boxPath} from your box to ${dest}.`;
+      }
+      if (isGrokBotHostToolName(name)) {
+        const remote = await runHostAgentTool(name, toolArgs, callId);
+        const denied = deniedLocalToolReason(remote);
+        if (denied != null) return denied;
+        return stringifyToolResult(remote);
+      }
       const result = await executeGrokBotTool(name, toolArgs, {
         agentId,
         dispatchRemote: options.dispatchRemote,
@@ -293,7 +370,7 @@ export function createCoordinatorInferenceRouter(options: {
       tools,
       executeTool: async (definition, toolArgs, toolCallId) => {
         if (typeof definition.name === "string" && isGrokBotToolName(definition.name)) {
-          return await runGrokBotTool(definition.name, toolArgs);
+          return await runGrokBotTool(definition.name, toolArgs, toolCallId);
         }
         return await options.dispatchRemote("executeRoutedMcpTool", {
           providerIdentifier: definition.providerIdentifier,
@@ -304,9 +381,9 @@ export function createCoordinatorInferenceRouter(options: {
           agentId,
         });
       },
-    } : { mcpServerUrl: bridge.url, tools: GROK_BOT_TOOLS, executeTool: async (definition, toolArgs) => {
+    } : { mcpServerUrl: bridge.url, tools: GROK_BOT_TOOLS, executeTool: async (definition, toolArgs, toolCallId) => {
       if (typeof definition.name === "string" && isGrokBotToolName(definition.name)) {
-        return await runGrokBotTool(definition.name, toolArgs);
+        return await runGrokBotTool(definition.name, toolArgs, toolCallId);
       }
       return undefined;
     } });
