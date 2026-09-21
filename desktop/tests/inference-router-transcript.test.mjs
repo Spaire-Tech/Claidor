@@ -59,6 +59,31 @@ test("routed transcript preserves structured MCP mention rich text across reload
   }
 });
 
+test("hidden widget answers stay in history and do not paint a user bubble", async () => {
+  const loaded = await loadModule();
+  try {
+    const store = loaded.module.parseInferenceRouterTranscriptStore({
+      schemaVersion: 2,
+      agents: {
+        agent: [
+          { provider: "claidor", role: "assistant", content: "", message: { type: "widget", widget: { prompt: "What first?", options: [{ label: "Research", value: "research" }] } }, id: "t0s1", respondedValue: "research", timestampMs: 1 },
+          { provider: "claidor", role: "user", content: "research", id: "t1u", hidden: true, timestampMs: 2 },
+          { provider: "claidor", role: "user", content: "typed later", id: "t2u", timestampMs: 3 },
+        ],
+      },
+    });
+    assert.equal(store.agents.agent[0].respondedValue, "research");
+    assert.equal(store.agents.agent[1].hidden, true);
+    const widget = loaded.module.projectInferenceRouterTranscriptEntry(store.agents.agent[0]);
+    assert.equal(widget.respondedValue, "research");
+    assert.equal(widget.kind, "send-message");
+    const visible = loaded.module.projectInferenceRouterTranscriptEntry(store.agents.agent[2]);
+    assert.equal(visible.content, "typed later");
+  } finally {
+    await loaded.dispose();
+  }
+});
+
 test("routed transcript rejects malformed rich text carriers", async () => {
   const loaded = await loadModule();
   try {

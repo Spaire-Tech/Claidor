@@ -6,6 +6,7 @@ import { createEgressConnectionObserver } from "./box/remote-connector-egress.js
 import { createDesktopGatewayDescriptorFastPath } from "./box/gateway-descriptor-store.js";
 import { createRemoteHostConnector, type SandRemoteHostConnector } from "./box/box-host-connector.js";
 import { createSettingsRoutedHostConnector, startLocalDockerBox } from "./box/local-docker-host-connector.js";
+import { routesClaidorThroughHost } from "../shared/inference-router.js";
 import { createSandClientPauseControl } from "./box/box-client-pause.js";
 import { createSandMigrationWatcher } from "./box/box-migration-watcher.js";
 import type { RecreateResult } from "./box/box-recreate-commands.js";
@@ -802,7 +803,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
       prioritizeBoxRecoveryDisposal();
       await coordinator.start(await account.getStatus());
       const settingsStore = requireValue(settings, "settings").settingsStore;
-      if (settingsStore.getBoxRuntime() === "local-docker") {
+      if (settingsStore.getBoxRuntime() === "local-docker" && routesClaidorThroughHost(env)) {
         void startLocalDockerBox(settingsStore.settingsPath).catch(() => undefined);
       }
       await experiments.ensureService();

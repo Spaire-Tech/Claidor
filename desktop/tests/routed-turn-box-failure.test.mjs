@@ -97,6 +97,86 @@ test("a routed turn completes when every box call fails", async () => {
   }
 });
 
+test("choosing a hello card continues on Mac Claidor without a host runner turn", async () => {
+  const loaded = await loadRouter();
+  try {
+    const events = [];
+    const remoteCalls = [];
+    const dataDir = path.join(loaded.dataDir, "data");
+    await mkdir(dataDir, { recursive: true });
+    await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "claidor" }));
+    await writeFile(path.join(dataDir, "inference-router-transcript.json"), JSON.stringify({
+      schemaVersion: 2,
+      agents: {
+        "agent-1": [{
+          provider: "claidor",
+          role: "assistant",
+          content: "",
+          message: { type: "widget", widget: { prompt: "What first?", options: [{ label: "Research", value: "research" }] } },
+          id: "t0s1",
+          timestampMs: 1,
+        }],
+      },
+    }));
+    const router = loaded.module.createCoordinatorInferenceRouter({
+      dataDir,
+      env: {},
+      postEvent: (family, payload) => events.push({ family, payload }),
+      dispatchRemote: async (method, args) => {
+        remoteCalls.push({ method, args });
+        if (method === "respondToWidget") return { accepted: true };
+        throw new Error(`box unreachable (${method})`);
+      },
+    });
+
+    const result = await router.dispatch("respondToWidget", { agentId: "agent-1", entryId: "t0s1", value: "research" });
+    assert.equal(result.handled, true);
+    assert.deepEqual(result.value, { accepted: true });
+    assert.ok(remoteCalls.some((call) => call.method === "respondToWidget" && call.args.skipTurn === true && call.args.value === "research"));
+    assert.equal(remoteCalls.some((call) => call.method === "sendPrompt"), false);
+
+    await waitFor(() => events.some((event) => event.family === "transcript" && event.payload.entry?.kind === "send-message" && event.payload.entry?.message?.content === "answer"));
+    assert.equal(events.some((event) => event.family === "transcript" && event.payload.type === "appended" && event.payload.entry?.role === "user"), false);
+    const stamped = events.find((event) => event.family === "transcript" && event.payload.type === "updated" && event.payload.entry?.id === "t0s1");
+    assert.equal(stamped.payload.entry.respondedValue, "research");
+
+    const stored = JSON.parse(await readFile(path.join(dataDir, "inference-router-transcript.json"), "utf8"));
+    const hidden = stored.agents["agent-1"].find((entry) => entry.hidden === true);
+    assert.equal(hidden.role, "user");
+    assert.equal(hidden.content, "research");
+
+    const tail = await router.dispatch("getAgentTranscriptTail", { id: "agent-1" });
+    assert.equal(tail.value.entries.some((entry) => entry.role === "user" && entry.content === "research"), false);
+    assert.ok(tail.value.entries.some((entry) => entry.id === "t0s1" && entry.respondedValue === "research"));
+  } finally {
+    await loaded.dispose();
+  }
+});
+
+test("a leftover hung Docker host cannot swallow a card tap", async () => {
+  const loaded = await loadRouter();
+  try {
+    const events = [];
+    const dataDir = path.join(loaded.dataDir, "data");
+    await mkdir(dataDir, { recursive: true });
+    await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "claidor" }));
+    const router = loaded.module.createCoordinatorInferenceRouter({
+      dataDir,
+      env: {},
+      postEvent: (family, payload) => events.push({ family, payload }),
+      dispatchRemote: () => new Promise(() => {}),
+    });
+    const started = Date.now();
+    const result = await router.dispatch("respondToWidget", { agentId: "agent-1", entryId: "t0s1", value: "research" });
+    assert.equal(result.handled, true);
+    assert.deepEqual(result.value, { accepted: true });
+    assert.ok(Date.now() - started < 1_500, "card admission must not wait on leftover Docker");
+    await waitFor(() => events.some((event) => event.family === "transcript" && event.payload.entry?.kind === "send-message"));
+  } finally {
+    await loaded.dispose();
+  }
+});
+
 test("the transcript tail still answers from local history when the box is down", async () => {
   const loaded = await loadRouter();
   const previous = process.env.SAND_INFERENCE_PROVIDER;

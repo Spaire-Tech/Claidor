@@ -44,13 +44,24 @@ test("an OpenAI TPM refusal is a rate limit, not a transient retry", async () =>
 test("first-run kickstart asks Claidor for widgets, not the host inference router", async () => {
   const loaded = await load("source/shared/agents/onboarding.ts", "onboarding");
   try {
-    const { SAND_ONBOARDING_KICKSTART_PROMPT, cheapIntroductionMessages, fallbackIntroductionText } = loaded.module;
+    const { SAND_ONBOARDING_KICKSTART_PROMPT, cheapIntroductionMessages, fallbackIntroductionText, firstHelloText, withLeadingHello } = loaded.module;
     assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /connector card/);
     assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /question widget/);
+    assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /two SendMessages/);
+    assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /Never open with a widget/);
     assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /\[first run\]/);
     const messages = cheapIntroductionMessages({ name: "Bass", description: "helps with the week" });
     assert.equal(messages.some((message) => /SendMessage|question widget|connector card/i.test(message.content)), false);
     assert.equal(fallbackIntroductionText("Bass"), "Hey — I'm Bass. What would you like help with first?");
+    assert.equal(firstHelloText("Ben"), "Hey, I'm Ben. Glad you're here.");
+    assert.deepEqual(
+      withLeadingHello({ type: "widget", widget: { prompt: "What first?", options: [{ label: "Work" }] } }, firstHelloText("Ben")),
+      [
+        { type: "text", content: "Hey, I'm Ben. Glad you're here." },
+        { type: "widget", widget: { prompt: "What first?", options: [{ label: "Work" }] } },
+      ],
+    );
+    assert.deepEqual(withLeadingHello({ type: "text", content: "Hey." }, firstHelloText("Ben")), [{ type: "text", content: "Hey." }]);
   } finally {
     await loaded.dispose();
   }
@@ -61,11 +72,20 @@ test("kickstart introduces over Claidor, not Claude Code", async () => {
   const providers = await readFile(path.join(repoRoot, "source/host/extensions/inference/provider-session.ts"), "utf8");
   const retry = await readFile(path.join(repoRoot, "source/host/runner/transient-stream-error.ts"), "utf8");
   const routing = await readFile(path.join(repoRoot, "source/node-agent-coordinator/inference-router.ts"), "utf8");
+  const shared = await readFile(path.join(repoRoot, "source/shared/inference-router.ts"), "utf8");
   assert.match(lifecycle, /SAND_ONBOARDING_KICKSTART_PROMPT/);
+  assert.match(lifecycle, /buildCaisraProductSystemPrompt/);
+  assert.match(lifecycle, /withLeadingHello/);
+  assert.match(lifecycle, /firstHelloText/);
+  assert.match(lifecycle, /CAISRA_USER_REPLY_REMINDER/);
   assert.match(lifecycle, /deliverCheapIntroduction\(session\)/);
   assert.match(lifecycle, /kickstartWithFullRunner\(session, SAND_DISK_SAVER_KICKSTART_PROMPT\)/);
+  assert.doesNotMatch(lifecycle, /cheapIntroductionMessages/);
   assert.doesNotMatch(lifecycle, /kickstartWithFullRunner\(session, prompt\)/);
-  assert.match(routing, /if \(raw\.length === 0\) return false;/);
+  assert.match(shared, /return envFlagEnabled\(env\[SAND_CLAIDOR_FULL_AGENT_ENV\]\)/);
+  assert.match(routing, /export \{ SAND_CLAIDOR_FULL_AGENT_ENV, routesClaidorThroughHost \}/);
+  assert.match(routing, /buildCaisraProductSystemPrompt/);
+  assert.match(routing, /CAISRA_SENDMESSAGE_RETRY_PROMPT/);
   assert.match(providers, /DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-5\.6-luna"/);
   assert.match(providers, /withCheapRateLimitFallback\(start\(requested\), \(\) => start\(cheap\)\)/);
   assert.match(retry, /isProviderRateLimitError\(error\)\) return false/);

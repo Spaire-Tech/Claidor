@@ -3,9 +3,16 @@ export type SandInferenceProvider = (typeof SAND_INFERENCE_PROVIDERS)[number];
 export const PRODUCT_INFERENCE_PROVIDER: SandInferenceProvider = "claidor";
 export const CAISRA_CLAUDE_CODE_ENV = "CAISRA_CLAUDE_CODE";
 export const SAND_INFERENCE_PROVIDER_ENV = "SAND_INFERENCE_PROVIDER";
+export const SAND_CLAIDOR_FULL_AGENT_ENV = "SAND_CLAIDOR_FULL_AGENT";
 
 export function envFlagEnabled(value: string | undefined): boolean {
   return /^(1|true|yes)$/i.test(value?.trim() ?? "");
+}
+
+// Empty env stays on the Mac. SAND_CLAIDOR_FULL_AGENT=1 is the opt-in that
+// sends product turns through the leftover Docker host loop.
+export function routesClaidorThroughHost(env: NodeJS.ProcessEnv = process.env): boolean {
+  return envFlagEnabled(env[SAND_CLAIDOR_FULL_AGENT_ENV]);
 }
 
 export function resolveProductInferenceProvider(_env: NodeJS.ProcessEnv = process.env): SandInferenceProvider {
