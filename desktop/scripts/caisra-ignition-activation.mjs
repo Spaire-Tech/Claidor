@@ -57,6 +57,7 @@ async function bundleIgnition({ contents, sourcefile, outfile, banner }) {
     external: EXTERNAL,
     format: "cjs",
     legalComments: "none",
+    loader: { ".png": "dataurl" },
     logLevel: "silent",
     alias: { "jsonc-parser": "jsonc-parser/lib/esm/main.js" },
     metafile: true,

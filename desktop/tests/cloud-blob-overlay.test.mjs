@@ -140,9 +140,38 @@ test("the packaged 0.18.0 window paints the 19 designed bodies through the clean
   const preload = await readFile(path.join(repoRoot, "source", "electron-preload", "preload.ts"), "utf8");
   const overlay = await readFile(path.join(repoRoot, "source", "electron-preload", "cloud-blob-overlay.ts"), "utf8");
   const packaging = await readFile(path.join(repoRoot, "scripts", "lib", "clean-build.mjs"), "utf8");
+  const audit = await readFile(path.join(repoRoot, "scripts", "audit-runtime-composition.mjs"), "utf8");
+  const ignition = await readFile(path.join(repoRoot, "scripts", "caisra-ignition-activation.mjs"), "utf8");
+  const workspaceBuild = await readFile(path.join(repoRoot, "scripts", "build-caisra.mjs"), "utf8");
   assert.match(preload, /installCloudBlobOverlay\(\)/);
   assert.match(overlay, /sand-grok-bot-mark/);
   assert.match(overlay, /caisra-cloud-blink/);
   assert.match(overlay, /caisra-cloud-gaze/);
   assert.match(packaging, /"\.png": "dataurl"/);
+  assert.match(audit, /"\.png": "dataurl"/);
+  assert.match(ignition, /"\.png": "dataurl"/);
+  assert.match(workspaceBuild, /"\.png": "dataurl"/);
+});
+
+test("the composition audit can graph the primary preload that inlines the 19 bodies", async () => {
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-cloud-preload-graph-"));
+  try {
+    await build({
+      absWorkingDir: repoRoot,
+      bundle: true,
+      entryPoints: [path.join(repoRoot, "source/electron-preload/runtime/primary.ts")],
+      external: ["electron"],
+      format: "cjs",
+      loader: { ".png": "dataurl" },
+      logLevel: "silent",
+      outfile: path.join(temporary, "preload.cjs"),
+      platform: "node",
+      write: true,
+    });
+    const bundled = await readFile(path.join(temporary, "preload.cjs"), "utf8");
+    assert.match(bundled, /data:image\/png;base64,/);
+    assert.match(bundled, /installCloudBlobOverlay/);
+  } finally {
+    await rm(temporary, { recursive: true, force: true });
+  }
 });
