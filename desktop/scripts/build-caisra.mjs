@@ -84,6 +84,7 @@ async function bundleProcess([entry, outfile]) {
     // Node the machine happens to have and on whatever Node Electron ships.
     target: "node22",
     format: "cjs",
+    loader: { ".png": "dataurl" },
     outfile: path.join(outRoot, outfile),
     external: EXTERNAL,
     // jsonc-parser's default entry is a UMD bundle whose factory takes
