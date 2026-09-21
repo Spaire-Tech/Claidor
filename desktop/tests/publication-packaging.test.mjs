@@ -140,6 +140,8 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(coordinator, /executeRoutedAgentTool/);
   assert.match(coordinator, /mergeHostAndLocalChatHistory/);
   assert.match(gateway, /executeRoutedAgentTool/);
+  assert.match(gateway, /appendSendMessage: messageArgs => method\(manager, "appendSendMessage"\)/);
+  assert.match(gateway, /authorize: \(scope, request\) => method\(localToolPermission, "authorize"\)/);
   assert.match(await readFile(path.join(repoRoot, "source", "host", "gateway-protocol.ts"), "utf8"), /executeRoutedAgentTool/);
   assert.match(await readFile(path.join(repoRoot, "source", "shared", "grok-bot-tools.ts"), "utf8"), /"ExternalShell"/);
   assert.match(await readFile(path.join(repoRoot, "source", "shared", "grok-bot-tools.ts"), "utf8"), /"ExternalRead"/);
