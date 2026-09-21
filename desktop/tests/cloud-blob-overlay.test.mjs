@@ -153,7 +153,7 @@ test("the packaged 0.18.0 window paints the 19 designed bodies through the clean
   assert.match(workspaceBuild, /"\.png": "dataurl"/);
 });
 
-test("the composition audit can graph the primary preload that inlines the 19 bodies", async () => {
+test("the composition audit can graph the primary preload without a PNG loader", async () => {
   const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-cloud-preload-graph-"));
   try {
     await build({
@@ -162,7 +162,6 @@ test("the composition audit can graph the primary preload that inlines the 19 bo
       entryPoints: [path.join(repoRoot, "source/electron-preload/runtime/primary.ts")],
       external: ["electron"],
       format: "cjs",
-      loader: { ".png": "dataurl" },
       logLevel: "silent",
       outfile: path.join(temporary, "preload.cjs"),
       platform: "node",
@@ -171,6 +170,7 @@ test("the composition audit can graph the primary preload that inlines the 19 bo
     const bundled = await readFile(path.join(temporary, "preload.cjs"), "utf8");
     assert.match(bundled, /data:image\/png;base64,/);
     assert.match(bundled, /installCloudBlobOverlay/);
+    assert.doesNotMatch(await readFile(path.join(repoRoot, "source/shared/agent/cloud-blob-bodies.ts"), "utf8"), /from "\.\/cloud-blob-bodies\/.*\.png"/);
   } finally {
     await rm(temporary, { recursive: true, force: true });
   }
