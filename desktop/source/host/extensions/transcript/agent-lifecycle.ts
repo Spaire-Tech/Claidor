@@ -21,22 +21,22 @@ import {
   INTRODUCTION_FAILED_TRAY_TITLE,
   SAND_ONBOARDING_KICKSTART_PROMPT,
   fallbackIntroductionText,
-  firstHelloText,
   introductionFailedTrayKey,
-  withLeadingHello,
 } from "../../../shared/agents/onboarding.js";
 import {
   configuredClaidorCheapModel,
   runRoutedProviderText,
 } from "../inference/provider-session.js";
 import {
-  buildCaisraProductSystemPrompt,
-  CAISRA_SENDMESSAGE_RETRY_PROMPT,
-  CAISRA_USER_REPLY_REMINDER,
   executeGrokBotTool,
   GROK_BOT_TOOLS,
   isGrokBotToolName,
 } from "../../../shared/grok-bot-tools.js";
+import {
+  buildSandProductSystemPrompt,
+  SEND_MESSAGE_PLAIN_TEXT_RETRY,
+  USER_MESSAGE_REPLY_REMINDER,
+} from "../../runner/system-prompt.js";
 import { sandErrorDetail } from "../../ports/telemetry.js";
 import { SandAgentDb } from "../session/agent-db.js";
 import { checkpointSandAgentDb } from "../../storage/store-db.js";
@@ -198,20 +198,11 @@ export class AgentLifecycle {
     let sent = 0;
     let error: unknown;
     const emitSendMessage = async (message: Record<string, unknown>) => {
-      const outgoing = sent === 0 ? withLeadingHello(message, firstHelloText(name)) : [message];
-      let lastId = "";
-      for (const item of outgoing) {
-        sent += 1;
-        lastId = this.appendKickstartMessage(session, item);
-      }
-      return lastId;
+      sent += 1;
+      return this.appendKickstartMessage(session, message);
     };
     const dispatchRemote = async (method: string, args: unknown) => {
       if (method === "appendConnectorCard") {
-        if (sent === 0) {
-          sent += 1;
-          this.appendKickstartMessage(session, { type: "text", content: firstHelloText(name) });
-        }
         sent += 1;
         await this.tm.sendPipeline.appendConnectorCard({
           agentId: session.id,
@@ -230,8 +221,8 @@ export class AgentLifecycle {
       throw new Error(`${method} is not available during introduction`);
     };
     const introMessages = [
-      { role: "system" as const, content: buildCaisraProductSystemPrompt({ agentId: session.id, name, description }) },
-      { role: "user" as const, content: `${SAND_ONBOARDING_KICKSTART_PROMPT}\n\n${CAISRA_USER_REPLY_REMINDER}` },
+      { role: "system" as const, content: buildSandProductSystemPrompt({ name, description }) },
+      { role: "user" as const, content: `${SAND_ONBOARDING_KICKSTART_PROMPT}\n\n${USER_MESSAGE_REPLY_REMINDER}` },
     ];
     const introTools = GROK_BOT_TOOLS.filter(tool => tool.name === "SendMessage");
     const runIntro = async (messages: readonly { role: "system" | "user" | "assistant"; content: string }[]) => runRoutedProviderText(
@@ -259,7 +250,7 @@ export class AgentLifecycle {
         leftover = await runIntro([
           ...introMessages,
           ...(leftover.trim().length > 0 ? [{ role: "assistant" as const, content: leftover }] : []),
-          { role: "user" as const, content: `${CAISRA_SENDMESSAGE_RETRY_PROMPT}\n\n${CAISRA_USER_REPLY_REMINDER}` },
+          { role: "user" as const, content: `${SEND_MESSAGE_PLAIN_TEXT_RETRY}\n\n${USER_MESSAGE_REPLY_REMINDER}` },
         ]);
       }
       if (sent === 0 && leftover.trim().length > 0) {

@@ -47,7 +47,7 @@ export const HOST_ACCOUNT_SLOT = "host";
 const DISABLE_SEND_ACCEPT_RETURN_ENV = "SAND_DISABLE_SEND_ACCEPT_RETURN";
 const SEND_POST_TIMEOUT_ENV = "SAND_SEND_POST_TIMEOUT_MS";
 const ROSTER_READ_TIMEOUT_ENV = "SAND_ROSTER_READ_TIMEOUT_MS";
-const DISABLE_SLIM_AVATARS_ENV = "SAND_DISABLE_SLIM_AVATARS";
+const ENABLE_SLIM_AVATARS_ENV = "SAND_ENABLE_SLIM_AVATARS";
 
 export function extractGatewayErrorMessage(body: string): string | null {
   try {
@@ -123,7 +123,7 @@ export class CoordinatorGatewayClient {
   private pendingForcedReconnect: (ReturnType<typeof Promise.withResolvers<void>> & { generation: number }) | undefined;
   private connectionCount = 0;
   private readonly sendAcceptReturnDisabled: boolean;
-  private readonly slimAvatarsDisabled: boolean;
+  private readonly slimAvatarsEnabled: boolean;
   private cachedTraceWindowRoot: { expiresAtMonotonicMs: number; root?: string } | undefined;
   private inflightTraceWindowRoot: Promise<void> | undefined;
   private spanSinkBroken = false;
@@ -137,12 +137,12 @@ export class CoordinatorGatewayClient {
     this.options = rest;
     this.upstreamResolveConnection = resolveConnection;
     this.sendAcceptReturnDisabled = process.env[DISABLE_SEND_ACCEPT_RETURN_ENV] === "1";
-    this.slimAvatarsDisabled = process.env[DISABLE_SLIM_AVATARS_ENV] === "1";
+    this.slimAvatarsEnabled = process.env[ENABLE_SLIM_AVATARS_ENV] === "1";
   }
 
   requestHeaders(base: Record<string, string>, connection: GatewayConnection): Record<string, string> {
     const headers = withAuth(base, connection);
-    if (!this.slimAvatarsDisabled) headers[GATEWAY_SLIM_AVATARS_HEADER] = "1";
+    if (this.slimAvatarsEnabled) headers[GATEWAY_SLIM_AVATARS_HEADER] = "1";
     return headers;
   }
 

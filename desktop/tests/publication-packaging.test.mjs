@@ -137,6 +137,11 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(coordinator, /export \{ SAND_CLAIDOR_FULL_AGENT_ENV, routesClaidorThroughHost \}/);
   assert.match(coordinator, /GROK_BOT_TOOLS/);
   assert.match(coordinator, /isGrokBotToolName/);
+  assert.match(await readFile(path.join(repoRoot, "source", "shared", "grok-bot-tools.ts"), "utf8"), /"ExternalShell"/);
+  assert.match(await readFile(path.join(repoRoot, "source", "shared", "grok-bot-tools.ts"), "utf8"), /"ExternalRead"/);
+  assert.match(await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "gateway", "gateway-client.ts"), "utf8"), /SAND_ENABLE_SLIM_AVATARS/);
+  assert.match(await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "gateway", "gateway-client.ts"), "utf8"), /if \(this\.slimAvatarsEnabled\) headers\[GATEWAY_SLIM_AVATARS_HEADER\] = "1"/);
+  assert.doesNotMatch(await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "gateway", "gateway-client.ts"), "utf8"), /SAND_DISABLE_SLIM_AVATARS/);
   assert.match(providers, /CLAIDOR_FETCH_TIMEOUT_MS = 45_000/);
   assert.match(providers, /Timed out waiting for a Claidor sign-in/);
   assert.match(await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "gateway", "gateway-client.ts"), "utf8"), /connectDeadline\.run\(\(signal\) => this\.resolveConnection\(signal\)\)/);
@@ -154,7 +159,7 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(coordinator, /method === "reactToMessage"/);
   assert.match(coordinator, /reaction\.by === "me"/);
   assert.match(coordinator, /currentActivity: \{ kind: "thinking" \}/);
-  assert.match(coordinator, /buildCaisraProductSystemPrompt/);
+  assert.match(coordinator, /buildSandProductSystemPrompt/);
   assert.match(coordinator, /postEvent\("agents"/);
   assert.match(widgetResponses, /options\?\.skipTurn === true/);
   assert.match(gateway, /args\.skipTurn === true \? \{ skipTurn: true \}/);
