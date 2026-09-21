@@ -34,6 +34,7 @@ test("Grok Bot tools are the product tools, not the Settings Router", async () =
     assert.match(CAISRA_PRODUCT_SYSTEM_PROMPT, /em dash/);
     assert.match(CAISRA_PRODUCT_SYSTEM_PROMPT, /not a corporate help desk/);
     assert.match(CAISRA_PRODUCT_SYSTEM_PROMPT, /Never open with a widget/);
+    assert.match(CAISRA_PRODUCT_SYSTEM_PROMPT, /chosen value comes back as their next reply/);
     assert.match(CAISRA_PRODUCT_SYSTEM_PROMPT, /Never call CreateAgent until they have said what it is for/);
     const identified = buildCaisraProductSystemPrompt({ agentId: "agent-9", name: "Caisra", description: "helps with the week" });
     assert.match(identified, /Your agent_id is agent-9/);

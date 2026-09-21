@@ -84,10 +84,15 @@ test("claidor turns answer on this Mac by default, not through the host inferenc
 
     const passthrough = await make({ SAND_CLAIDOR_FULL_AGENT: "1" }).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
     assert.deepEqual(passthrough, { handled: false });
+    const leftoverWidget = await make({ SAND_CLAIDOR_FULL_AGENT: "1" }).dispatch("respondToWidget", { agentId: "a", entryId: "t0s1", value: "research" });
+    assert.deepEqual(leftoverWidget, { handled: false });
 
     const local = await make({}).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
     assert.equal(local.handled, true);
     assert.equal(local.value.provider, "claidor");
+    const widget = await make({}).dispatch("respondToWidget", { agentId: "a", entryId: "t0s1", value: "research" });
+    assert.equal(widget.handled, true);
+    assert.equal(widget.value.accepted, true);
     const deadline = Date.now() + 8_000;
     while (!events.some((event) => event.family === "transcript" && event.payload.entry?.kind === "send-message") && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 50));
