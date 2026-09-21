@@ -12,13 +12,16 @@ import {
 } from "../shared/inference-router.js";
 import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
 import {
-  buildCaisraProductSystemPrompt,
-  CAISRA_SENDMESSAGE_RETRY_PROMPT,
-  CAISRA_USER_REPLY_REMINDER,
   executeGrokBotTool,
   GROK_BOT_TOOLS,
   isGrokBotToolName,
+  type GrokBotToolName,
 } from "../shared/grok-bot-tools.js";
+import {
+  buildSandProductSystemPrompt,
+  SEND_MESSAGE_PLAIN_TEXT_RETRY,
+  USER_MESSAGE_REPLY_REMINDER,
+} from "../host/runner/system-prompt.js";
 import { createRoutedMcpBridge } from "./routed-mcp-bridge.js";
 
 type StoredEntry = {
@@ -105,11 +108,20 @@ export function createCoordinatorInferenceRouter(options: {
     return next;
   };
   const emitTranscript = (agentId: string, type: "appended" | "updated", entry: Record<string, unknown>) => options.postEvent("transcript", { type, entry, agentId });
-  const beginActivity = async (agentId: string): Promise<() => void> => {
+  const beginActivity = async (agentId: string): Promise<{
+    readonly refreshRoster: () => Promise<void>;
+    readonly end: () => Promise<void>;
+  }> => {
+    const idle = { refreshRoster: async () => {}, end: async () => {} };
     try {
-      const remote = await remoteOrUndefined("listAgents", {});
-      if (!Array.isArray(remote)) return () => {};
-      const project = (isRunning: boolean) => remote.map(raw => {
+      let rosterRows: unknown[] = [];
+      const loadRoster = async () => {
+        const remote = await remoteOrUndefined("listAgents", {});
+        if (Array.isArray(remote)) rosterRows = remote;
+      };
+      await loadRoster();
+      if (rosterRows.length === 0) return idle;
+      const project = (isRunning: boolean) => rosterRows.map(raw => {
         const row = asRecord(raw);
         if (row?.id !== agentId) return raw;
         return { ...row, isRunning, isRunningTurn: isRunning, isComposingMessage: isRunning, isRetrying: false, ...(isRunning ? { currentActivity: { kind: "thinking" } } : { currentActivity: undefined }) };
@@ -121,11 +133,18 @@ export function createCoordinatorInferenceRouter(options: {
       // refreshes cannot permanently erase the polished renderer's activity surface.
       const pulse = setInterval(publishRunning, 250);
       pulse.unref();
-      return () => {
-        clearInterval(pulse);
-        options.postEvent("agents", { activeAgentId: agentId, agents: project(false) });
+      return {
+        refreshRoster: async () => {
+          await loadRoster();
+          publishRunning();
+        },
+        end: async () => {
+          clearInterval(pulse);
+          await loadRoster();
+          options.postEvent("agents", { activeAgentId: agentId, agents: project(false) });
+        },
       };
-    } catch { return () => {}; }
+    } catch { return idle; }
   };
   const toggleLocalReaction = async (agentId: string, entryId: string, emoji: string): Promise<Record<string, unknown> | null> => {
     const trimmed = emoji.trim();
@@ -213,7 +232,7 @@ export function createCoordinatorInferenceRouter(options: {
       ...(appendUserMessage ? {} : { hidden: true as const }),
     }]);
     if (appendUserMessage) emitTranscript(agentId, "appended", userEntry);
-    const endActivity = await beginActivity(agentId);
+    const activity = await beginActivity(agentId);
     // The shipped transcript intentionally suppresses its activity row as soon as
     // the first streamed assistant entry arrives. Direct providers can produce that
     // first delta in the same renderer reconciliation window as the roster update,
@@ -226,14 +245,13 @@ export function createCoordinatorInferenceRouter(options: {
     const self = Array.isArray(roster)
       ? roster.map(asRecord).find(row => row?.id === agentId)
       : null;
-    const systemPrompt = buildCaisraProductSystemPrompt({
-      agentId,
+    const systemPrompt = buildSandProductSystemPrompt({
       ...(typeof self?.name === "string" ? { name: self.name } : {}),
       ...(typeof self?.description === "string" ? { description: self.description } : {}),
     });
     const history = (withUser.agents[agentId] ?? []).map((entry, index, rows) => (
       entry.role === "user" && index === rows.length - 1
-        ? { role: entry.role, content: `${entry.content}\n\n${CAISRA_USER_REPLY_REMINDER}` }
+        ? { role: entry.role, content: `${entry.content}\n\n${USER_MESSAGE_REPLY_REMINDER}` }
         : { role: entry.role, content: entry.content }
     ));
     const messages = [{ role: "system" as const, content: systemPrompt }, ...history];
@@ -262,15 +280,20 @@ export function createCoordinatorInferenceRouter(options: {
     }) : null;
     const directTools = bridge == null ? await remoteOrUndefined("listRoutedMcpTools", {}) : undefined;
     const tools = [...GROK_BOT_TOOLS, ...(Array.isArray(directTools) ? directTools as Record<string, any>[] : [])];
+    const runGrokBotTool = async (name: GrokBotToolName, toolArgs: unknown) => {
+      const result = await executeGrokBotTool(name, toolArgs, {
+        agentId,
+        dispatchRemote: options.dispatchRemote,
+        emitSendMessage,
+      });
+      if (name === "UpdateAgent" || name === "CreateAgent") await activity.refreshRoster();
+      return result;
+    };
     const runTurn = async (turnMessages: typeof messages) => runRoutedProviderText(provider, turnMessages, bridge == null ? {
       tools,
       executeTool: async (definition, toolArgs, toolCallId) => {
         if (typeof definition.name === "string" && isGrokBotToolName(definition.name)) {
-          return await executeGrokBotTool(definition.name, toolArgs, {
-            agentId,
-            dispatchRemote: options.dispatchRemote,
-            emitSendMessage,
-          });
+          return await runGrokBotTool(definition.name, toolArgs);
         }
         return await options.dispatchRemote("executeRoutedMcpTool", {
           providerIdentifier: definition.providerIdentifier,
@@ -283,11 +306,7 @@ export function createCoordinatorInferenceRouter(options: {
       },
     } : { mcpServerUrl: bridge.url, tools: GROK_BOT_TOOLS, executeTool: async (definition, toolArgs) => {
       if (typeof definition.name === "string" && isGrokBotToolName(definition.name)) {
-        return await executeGrokBotTool(definition.name, toolArgs, {
-          agentId,
-          dispatchRemote: options.dispatchRemote,
-          emitSendMessage,
-        });
+        return await runGrokBotTool(definition.name, toolArgs);
       }
       return undefined;
     } });
@@ -298,10 +317,10 @@ export function createCoordinatorInferenceRouter(options: {
         content = await runTurn([
           ...messages,
           ...(content.trim().length > 0 ? [{ role: "assistant" as const, content }] : []),
-          { role: "user" as const, content: `${CAISRA_SENDMESSAGE_RETRY_PROMPT}\n\n${CAISRA_USER_REPLY_REMINDER}` },
+          { role: "user" as const, content: `${SEND_MESSAGE_PLAIN_TEXT_RETRY}\n\n${USER_MESSAGE_REPLY_REMINDER}` },
         ]);
       }
-    } finally { endActivity(); await bridge?.close(); }
+    } finally { await activity.end(); await bridge?.close(); }
     if (sendIndex === 0) {
       const fallback = content.trim();
       if (fallback.length > 0) await emitSendMessage({ type: "text", content: fallback });
