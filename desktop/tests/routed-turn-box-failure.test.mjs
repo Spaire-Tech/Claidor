@@ -12,9 +12,9 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 // The model call is stubbed so the test measures the router around it: what the
 // router does when every remote (box) call fails.
 const PROVIDER_STUB = `
-export const routedCalls = [];
+globalThis.__routedCalls = [];
 export async function runRoutedProviderText(provider, messages, options) {
-  routedCalls.push({ provider, messages, tools: options?.tools });
+  globalThis.__routedCalls.push({ provider, messages, tools: options?.tools, executeTool: options?.executeTool });
   options?.onTextDelta?.("answer", "answer");
   return "answer";
 }
@@ -40,6 +40,7 @@ async function loadRouter() {
     }],
   });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
+  globalThis.__routedCalls = [];
   return { module, dataDir: temporary, dispose: () => rm(temporary, { recursive: true, force: true }) };
 }
 
@@ -87,6 +88,13 @@ test("a routed turn completes when every box call fails", async () => {
 
     assert.ok(remoteCalls.includes("getAgentTranscriptTail"));
     assert.ok(remoteCalls.includes("listRoutedMcpTools"));
+    const toolNames = (globalThis.__routedCalls ?? []).flatMap((call) => (call.tools ?? []).map((tool) => tool.name));
+    assert.ok(toolNames.includes("Shell"));
+    assert.ok(toolNames.includes("Computer"));
+    assert.ok(toolNames.includes("ExternalShell"));
+    assert.ok(toolNames.includes("Screenshot"));
+    assert.ok(toolNames.includes("browser_navigate"));
+
     // The remote transcript was unreachable, so its turn numbering was not available;
     // the turn was numbered from the local store alone.
     assert.ok(events.some((event) => event.family === "transcript" && event.payload.entry?.id === "t0u"));
@@ -203,6 +211,73 @@ test("the transcript tail still answers from local history when the box is down"
   } finally {
     if (previous === undefined) delete process.env.SAND_INFERENCE_PROVIDER;
     else process.env.SAND_INFERENCE_PROVIDER = previous;
+    await loaded.dispose();
+  }
+});
+
+test("Mac follow-ups keep the host intro in the model history", async () => {
+  const loaded = await loadRouter();
+  try {
+    const events = [];
+    const dataDir = path.join(loaded.dataDir, "data");
+    await mkdir(dataDir, { recursive: true });
+    const router = loaded.module.createCoordinatorInferenceRouter({
+      dataDir,
+      env: {},
+      postEvent: (family, payload) => events.push({ family, payload }),
+      dispatchRemote: async (method) => {
+        if (method === "getAgentTranscriptTail") {
+          return {
+            entries: [{
+              id: "t0s0",
+              kind: "send-message",
+              message: { type: "widget", widget: { prompt: "What first?", options: [{ label: "Research" }] } },
+            }],
+          };
+        }
+        if (method === "listAgents") return [{ id: "agent-1", name: "Bass" }];
+        if (method === "listRoutedMcpTools") return [];
+        throw new Error(`box unreachable (${method})`);
+      },
+    });
+    await router.dispatch("sendPrompt", { agentId: "agent-1", prompt: "how can you help", clientNonce: "nonce-2" });
+    await waitFor(() => events.some((event) => event.family === "transcript" && event.payload.entry?.kind === "send-message"));
+    const history = (globalThis.__routedCalls ?? []).map((call) => call.messages).find((messages) => Array.isArray(messages) && messages.some((message) => message.role === "user"));
+    assert.ok(history.some((message) => message.role === "assistant" && /What first\?/.test(message.content)));
+    assert.ok(history.some((message) => message.role === "user" && message.content.startsWith("how can you help")));
+  } finally {
+    await loaded.dispose();
+  }
+});
+
+test("ExternalShell asks on the host before spawning on the Mac", async () => {
+  const loaded = await loadRouter();
+  try {
+    const events = [];
+    const remoteCalls = [];
+    const dataDir = path.join(loaded.dataDir, "data");
+    await mkdir(dataDir, { recursive: true });
+    const router = loaded.module.createCoordinatorInferenceRouter({
+      dataDir,
+      env: {},
+      postEvent: (family, payload) => events.push({ family, payload }),
+      dispatchRemote: async (method, args) => {
+        remoteCalls.push({ method, args });
+        if (method === "listAgents") return [{ id: "agent-1", name: "Bass" }];
+        if (method === "listRoutedMcpTools") return [];
+        if (method === "getAgentTranscriptTail") return { entries: [] };
+        if (method === "executeRoutedAgentTool") return { result: { allowed: true } };
+        throw new Error(`box unreachable (${method})`);
+      },
+    });
+    await router.dispatch("sendPrompt", { agentId: "agent-1", prompt: "scan storage", clientNonce: "nonce-3" });
+    await waitFor(() => (globalThis.__routedCalls ?? []).some((call) => typeof call.executeTool === "function"));
+    const call = (globalThis.__routedCalls ?? []).find((entry) => typeof entry.executeTool === "function");
+    const result = await call.executeTool({ name: "ExternalShell" }, { command: "echo allowed" }, "call-shell");
+    assert.ok(remoteCalls.some((entry) => entry.method === "executeRoutedAgentTool" && entry.args.name === "ExternalShell"));
+    assert.match(result, /exit_code: 0/);
+    assert.match(result, /allowed/);
+  } finally {
     await loaded.dispose();
   }
 });

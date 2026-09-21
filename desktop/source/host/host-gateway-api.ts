@@ -8,6 +8,7 @@ import {
   installPluginForGateway,
   searchPluginsForGateway,
 } from "./host-plugin-gateway.js";
+import { executeRoutedAgentTool as runRoutedAgentTool } from "./extensions/transcript/routed-agent-tools.js";
 
 export const HOST_CAPABILITIES = [
   "orderedReplicasV1",
@@ -658,6 +659,21 @@ export function createHostGatewayApi(
     },
     listRoutedMcpTools,
     executeRoutedMcpTool,
+    executeRoutedAgentTool: async (args: any) => {
+      let foreverBox: { captureScreenshot?(agentId: string): Promise<Uint8Array | null>; ensure?(input: { id: string }): Promise<unknown> } | undefined;
+      try { foreverBox = deps.extensions.api("forever-box"); } catch { foreverBox = undefined; }
+      const result = await runRoutedAgentTool({
+        transcript: manager,
+        localToolPermission,
+        ...(foreverBox == null ? {} : { foreverBox }),
+      }, {
+        agentId: typeof args?.agentId === "string" ? args.agentId : "",
+        name: typeof args?.name === "string" ? args.name : "",
+        args: args?.args,
+        ...(typeof args?.toolCallId === "string" ? { toolCallId: args.toolCallId } : {}),
+      });
+      return { result };
+    },
     listBoxMcpServers: async ({ serverIdentifiers }: any) => {
       const servers = await method(
         deps.extensions.api("mcp"),

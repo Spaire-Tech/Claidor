@@ -8,6 +8,7 @@ import {
   createHostGatewayApi,
   type HostGatewayDependencies
 } from "./host-gateway-api.js";
+import { isRoutedLocalToolAskOpen } from "./extensions/transcript/routed-agent-tools.js";
 import {
   startHostPluginRegistry
 } from "./extensions/registry.js";
@@ -486,14 +487,16 @@ export class SandHost {
     const composition = this.requireRunnerComposition();
     const localToolPermission = extensions.api("local-tool-permission");
     optionalMethod(localToolPermission, "bindAskSurfaces")?.(
-      (agentId: string) => composition.canAskLocalToolPermission(agentId)
+      (agentId: string) =>
+        composition.canAskLocalToolPermission(agentId) || isRoutedLocalToolAskOpen(agentId)
     );
     optionalMethod(localToolPermission, "bindLiveComputerCheck")?.(
       (agentId: string) =>
-        optionalMethod(
+        isRoutedLocalToolAskOpen(agentId)
+        || (optionalMethod(
           extensions.api("local-exec"),
           "checkLiveComputerForAsk"
-        )?.(agentId) ?? false
+        )?.(agentId) ?? false)
     );
 
     optionalMethod(extensions.api("turn-execution"), "bindExecutor")?.({
