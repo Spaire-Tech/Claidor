@@ -137,6 +137,12 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(coordinator, /export \{ SAND_CLAIDOR_FULL_AGENT_ENV, routesClaidorThroughHost \}/);
   assert.match(coordinator, /GROK_BOT_TOOLS/);
   assert.match(coordinator, /isGrokBotToolName/);
+  assert.match(coordinator, /executeRoutedAgentTool/);
+  assert.match(coordinator, /mergeHostAndLocalChatHistory/);
+  assert.match(gateway, /executeRoutedAgentTool/);
+  assert.match(gateway, /appendSendMessage: messageArgs => method\(manager, "appendSendMessage"\)/);
+  assert.match(gateway, /authorize: \(scope, request\) => method\(localToolPermission, "authorize"\)/);
+  assert.match(await readFile(path.join(repoRoot, "source", "host", "gateway-protocol.ts"), "utf8"), /executeRoutedAgentTool/);
   assert.match(await readFile(path.join(repoRoot, "source", "shared", "grok-bot-tools.ts"), "utf8"), /"ExternalShell"/);
   assert.match(await readFile(path.join(repoRoot, "source", "shared", "grok-bot-tools.ts"), "utf8"), /"ExternalRead"/);
   assert.match(await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "gateway", "gateway-client.ts"), "utf8"), /SAND_ENABLE_SLIM_AVATARS/);

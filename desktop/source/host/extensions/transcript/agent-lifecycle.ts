@@ -24,7 +24,6 @@ import {
   introductionFailedTrayKey,
 } from "../../../shared/agents/onboarding.js";
 import {
-  configuredClaidorCheapModel,
   runRoutedProviderText,
 } from "../inference/provider-session.js";
 import {
@@ -229,7 +228,6 @@ export class AgentLifecycle {
       "claidor",
       messages,
       {
-        model: configuredClaidorCheapModel(),
         tools: introTools,
         executeTool: async (definition, toolArgs) => {
           if (typeof definition.name === "string" && isGrokBotToolName(definition.name)) {

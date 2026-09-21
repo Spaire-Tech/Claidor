@@ -1,6 +1,7 @@
 import { dirname } from "node:path";
 import { CLAIDOR_WORKING_CONTEXT_TOKENS } from "../shared/inference/claidor-context-window.js";
 import { TranscriptMirrorOffloadPool } from "./agent-isolation/transcript-mirror-offload.js";
+import { isRoutedLocalToolAskOpen } from "./extensions/transcript/routed-agent-tools.js";
 import type {
   CreateProductionRunnerRunStep,
   ProductionTurnHostDependencies,
@@ -2620,7 +2621,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         groupMemberTurn: true
       }),
     canAskLocalToolPermission: agentId =>
-      localToolPermissionSurfaces.has(agentId),
+      localToolPermissionSurfaces.has(agentId) || isRoutedLocalToolAskOpen(agentId),
     forgetLocalToolPermission: agentId => {
       localToolPermissionSurfaces.get(agentId)?.();
       localToolPermissionSurfaces.delete(agentId);

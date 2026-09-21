@@ -75,6 +75,7 @@ test("kickstart introduces over Claidor, not Claude Code", async () => {
   assert.doesNotMatch(lifecycle, /firstHelloText/);
   assert.doesNotMatch(lifecycle, /CAISRA_USER_REPLY_REMINDER/);
   assert.match(lifecycle, /deliverCheapIntroduction\(session\)/);
+  assert.doesNotMatch(lifecycle, /model: configuredClaidorCheapModel\(\)/);
   assert.match(lifecycle, /kickstartWithFullRunner\(session, SAND_DISK_SAVER_KICKSTART_PROMPT\)/);
   assert.doesNotMatch(lifecycle, /cheapIntroductionMessages/);
   assert.doesNotMatch(lifecycle, /kickstartWithFullRunner\(session, prompt\)/);
