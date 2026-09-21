@@ -24,6 +24,64 @@ export const CLOUD_BLOB_COLORS = [
 
 export type CloudBlobColorId = (typeof CLOUD_BLOB_COLORS)[number]["id"];
 
+export const GROK_MARK_COLOR_TO_CLOUD = {
+  black: "fog",
+  brown: "cream",
+  red: "blush",
+  orange: "tangerine",
+  yellow: "apricot",
+  green: "sage",
+  cyan: "sea",
+  blue: "sky",
+  violet: "violet",
+  magenta: "mauve",
+  gray: "slate",
+} as const;
+
+const GROK_MARK_HEX_TO_CLOUD = new Map<string, CloudBlobColorId>([
+  ["#000000", "fog"],
+  ["#ffffff", "fog"],
+  ["#a27952", "cream"],
+  ["#855c36", "cream"],
+  ["#ff3e51", "blush"],
+  ["#e02135", "blush"],
+  ["#ff263c", "blush"],
+  ["#ff781c", "tangerine"],
+  ["#ff6700", "tangerine"],
+  ["#ffaf38", "apricot"],
+  ["#ff9800", "apricot"],
+  ["#00c972", "sage"],
+  ["#009957", "sage"],
+  ["#1cc3b0", "sea"],
+  ["#00a592", "sea"],
+  ["#00bca6", "sea"],
+  ["#2a92fe", "sky"],
+  ["#0e74e0", "sky"],
+  ["#1084fe", "sky"],
+  ["#a97efe", "violet"],
+  ["#804ee0", "violet"],
+  ["#9159fe", "violet"],
+  ["#ff5eb1", "mauve"],
+  ["#e02a88", "mauve"],
+  ["#ff309b", "mauve"],
+  ["#959595", "slate"],
+  ["#777777", "slate"],
+]);
+
+export function cloudBlobColorFromGrokMark(value: string | null | undefined): CloudBlobColorId | null {
+  if (value == null) return null;
+  const trimmed = value.trim().toLowerCase();
+  if (trimmed in GROK_MARK_COLOR_TO_CLOUD) {
+    return GROK_MARK_COLOR_TO_CLOUD[trimmed as keyof typeof GROK_MARK_COLOR_TO_CLOUD];
+  }
+  if (isCloudBlobColor(trimmed)) return trimmed;
+  for (const hex of trimmed.match(/#[0-9a-f]{6}/g) ?? []) {
+    const mapped = GROK_MARK_HEX_TO_CLOUD.get(hex);
+    if (mapped != null) return mapped;
+  }
+  return null;
+}
+
 const COLOR_BY_ID = new Map<string, (typeof CLOUD_BLOB_COLORS)[number]>(
   CLOUD_BLOB_COLORS.map((color) => [color.id, color]),
 );
@@ -52,7 +110,8 @@ function shippedHash(value: string): number {
 
 export function resolveCloudBlobColor(agentId: string, color?: string | null): CloudBlobColorId {
   if (isCloudBlobColor(color)) return color;
-  return CLOUD_BLOB_COLORS[shippedHash(agentId) % CLOUD_BLOB_COLORS.length]!.id;
+  return cloudBlobColorFromGrokMark(color)
+    ?? CLOUD_BLOB_COLORS[shippedHash(agentId) % CLOUD_BLOB_COLORS.length]!.id;
 }
 
 export function assignedCloudBlobFields(requestedColor?: string | null): {

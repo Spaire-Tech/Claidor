@@ -75,6 +75,32 @@ test("preload overlay paints a stored cloud body with a separate animated eye la
   }
 });
 
+test("a 0.18.0 mark with only --fg still gets a designed cloud body", async () => {
+  const loaded = await loadOverlay();
+  const window = new Window();
+  try {
+    const { syncCloudBlobMarks } = loaded.module;
+    const mark = window.document.createElement("span");
+    mark.className = "sand-grok-bot-mark";
+    mark.setAttribute("data-grok-state", "idle");
+    mark.style.setProperty("--fg", "light-dark(#2A92FE, #0E74E0)");
+    mark.style.width = "28px";
+    mark.style.height = "28px";
+    const face = window.document.createElement("canvas");
+    mark.append(face);
+    window.document.body.append(mark);
+    assert.equal(syncCloudBlobMarks(window.document), 1);
+    const overlay = mark.querySelector("[data-caisra-cloud-blob]");
+    assert.ok(overlay);
+    assert.equal(overlay.getAttribute("data-avatar-color"), "sky");
+    assert.ok(overlay.querySelector("image.caisra-cloud-blob__body"));
+    assert.ok(overlay.querySelector(".caisra-cloud-blob__pupil"));
+  } finally {
+    window.close();
+    await loaded.dispose();
+  }
+});
+
 test("preload overlay maps an unknown Grok color onto one of the 19 cloud bodies", async () => {
   const loaded = await loadOverlay();
   const window = new Window();

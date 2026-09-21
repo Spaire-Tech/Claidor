@@ -1,4 +1,5 @@
 /// <reference lib="dom" />
+import { cloudBlobColorFromGrokMark } from "../shared/agent/cloud-blobs.js";
 import {
   CAISRA_CLOUD_BLOB_ATTR,
   CLOUD_BLOB_VIEWBOX,
@@ -32,6 +33,7 @@ svg[viewBox="${LEGACY_CLOUD_BLOB_VIEWBOX}"]:not([${CAISRA_CLOUD_BLOB_ATTR}]) { v
 .sand-grok-bot-mark > [${CAISRA_CLOUD_BLOB_ATTR}] {
   position: absolute;
   inset: 0;
+  z-index: 1;
 }
 @keyframes caisra-cloud-bob {
   0%, 100% { transform: translateY(0) scale(1, 1); }
@@ -89,19 +91,25 @@ export function findPersonaAvatarHosts(root: ParentNode): Element[] {
   return [...root.querySelectorAll(PERSONA_MARK_SELECTOR)].filter((node) => !skipHost(node));
 }
 
+function hostForeground(host: Element): string {
+  const style = (host as { style?: { getPropertyValue?(name: string): string } }).style;
+  return style?.getPropertyValue?.("--fg") ?? "";
+}
+
+function hostColor(host: Element): string | null {
+  return cloudBlobColorFromGrokMark(host.getAttribute("data-avatar-color"))
+    ?? cloudBlobColorFromGrokMark(host.closest("[data-avatar-color]")?.getAttribute("data-avatar-color"))
+    ?? cloudBlobColorFromGrokMark(hostForeground(host))
+    ?? null;
+}
+
 function hostIdentity(host: Element): string {
   return host.getAttribute("data-source-id")
     ?? host.closest("[data-source-id]")?.getAttribute("data-source-id")
     ?? host.getAttribute("data-agent-id")
     ?? host.closest("[data-agent-id]")?.getAttribute("data-agent-id")
-    ?? host.getAttribute("data-avatar-color")
+    ?? hostColor(host)
     ?? "persona";
-}
-
-function hostColor(host: Element): string | null {
-  return host.getAttribute("data-avatar-color")
-    ?? host.closest("[data-avatar-color]")?.getAttribute("data-avatar-color")
-    ?? null;
 }
 
 function hostSleeping(host: Element): boolean {
@@ -180,10 +188,23 @@ export function injectCloudBlobOverlayStyle(doc: Document): void {
   (doc.head ?? doc.documentElement).append(style);
 }
 
+function pageDocument(): Document | undefined {
+  if (typeof document !== "undefined") return document;
+  const candidate = (globalThis as { document?: Document }).document;
+  return candidate;
+}
+
 export function installCloudBlobOverlay(
-  doc: Document | undefined = typeof document === "undefined" ? undefined : document,
+  doc: Document | undefined = pageDocument(),
 ): { disconnect(): void } | null {
-  if (doc == null) return null;
+  if (doc == null) {
+    if (typeof window !== "undefined") {
+      window.addEventListener("DOMContentLoaded", () => {
+        installCloudBlobOverlay(pageDocument());
+      }, { once: true });
+    }
+    return null;
+  }
   injectCloudBlobOverlayStyle(doc);
   const observer = new MutationObserver(() => {
     syncCloudBlobMarks(doc);
@@ -193,7 +214,7 @@ export function installCloudBlobOverlay(
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ["data-avatar-color", "data-avatar-shape", "data-grok-state", "class", "viewBox"],
+      attributeFilter: ["data-avatar-color", "data-avatar-shape", "data-grok-state", "class", "style", "viewBox"],
     });
     syncCloudBlobMarks(doc);
   };
