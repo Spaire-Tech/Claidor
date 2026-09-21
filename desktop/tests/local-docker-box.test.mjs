@@ -78,10 +78,9 @@ test("a late inference credential does not tear down a running box", async () =>
       path.join(repoRoot, "source/electron-main/main-production-services.ts"),
       "utf8",
     );
-    assert.match(production, /routesClaidorThroughHost\(env\)/);
     assert.match(production, /startLocalDockerBox\(settingsStore\.settingsPath\)/);
-    assert.match(source, /usesLeftoverDockerHost/);
-    assert.match(source, /routesClaidorThroughHost\(\)/);
+    assert.doesNotMatch(production, /routesClaidorThroughHost\(env\)/);
+    assert.doesNotMatch(source, /usesLeftoverDockerHost/);
     const computerUse = await (await import("node:fs/promises")).readFile(
       path.join(repoRoot, "source/host/runner/computer-use.ts"),
       "utf8",
