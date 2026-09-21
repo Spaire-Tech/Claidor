@@ -82,8 +82,7 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(localDocker, /"127\.0\.0\.1:1340:1340"/);
   assert.match(localDocker, /SAND_BOX_AUTO_UPDATE=0/);
   assert.match(localDocker, /dst=\/home\/box\/sand-host\/host-main\.cjs,readonly/);
-  assert.match(localDocker, /usesLeftoverDockerHost\(\) \? await localConnect\(\) : await remote\.connect\(\)/);
-  assert.match(localDocker, /routesClaidorThroughHost\(\)/);
+  assert.match(localDocker, /\.getBoxRuntime\(\) === "local-docker" \? await localConnect\(\) : await remote\.connect\(\)/);
   assert.match(localDocker, /OPTIONAL_CREDENTIAL_WAIT_MS = 250/);
   assert.match(localDocker, /localDockerContainerNeedsReplace\(inspected, hostBundle\.sha256\)/);
   assert.doesNotMatch(localDocker, /inferenceCredential != null && !inspected\.hasInferenceCredential/);

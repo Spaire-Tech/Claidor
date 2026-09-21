@@ -4,7 +4,7 @@ import { chmod, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { CAISRA_CLAUDE_CODE_ENV, PRODUCT_INFERENCE_PROVIDER, routesClaidorThroughHost, SAND_INFERENCE_PROVIDER_ENV } from "../../shared/inference-router.js";
+import { CAISRA_CLAUDE_CODE_ENV, PRODUCT_INFERENCE_PROVIDER, SAND_INFERENCE_PROVIDER_ENV } from "../../shared/inference-router.js";
 import { getConfiguredBackendUrl } from "../../shared/node/cursor-token.js";
 import type { SandSettingsStore } from "../../shared/node/settings/sand-settings-store.js";
 import type { RecreateResult } from "./box-recreate-commands.js";
@@ -276,14 +276,12 @@ export function createSettingsRoutedHostConnector(
       return connection;
     })();
   };
-  const usesLeftoverDockerHost = (): boolean =>
-    settings.getBoxRuntime() === "local-docker" && routesClaidorThroughHost();
   return {
-    connect: async () => usesLeftoverDockerHost() ? await localConnect() : await remote.connect(),
+    connect: async () => settings.getBoxRuntime() === "local-docker" ? await localConnect() : await remote.connect(),
     ...(remote.issueLocalExecDaemonCredential == null ? {} : { issueLocalExecDaemonCredential: remote.issueLocalExecDaemonCredential.bind(remote) }),
     ...(remote.issueInferenceCredential == null ? {} : { issueInferenceCredential: remote.issueInferenceCredential.bind(remote) }),
     recreate: async (args): Promise<RecreateResult> => {
-      if (!usesLeftoverDockerHost()) {
+      if (settings.getBoxRuntime() !== "local-docker") {
         if (remote.recreate == null) throw new Error("Remote computer recreation is unavailable.");
         return await remote.recreate(args);
       }
@@ -293,7 +291,7 @@ export function createSettingsRoutedHostConnector(
       return { status: "started-untrackable" };
     },
     forceRecreate: async (): Promise<RecreateResult> => {
-      if (!usesLeftoverDockerHost()) {
+      if (settings.getBoxRuntime() !== "local-docker") {
         if (remote.forceRecreate == null) return { status: "rejected", reason: "Remote computer reset is unavailable." };
         return await remote.forceRecreate();
       }
