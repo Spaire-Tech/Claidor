@@ -1,3 +1,4 @@
+import { installFaceOverlaySafely } from "./clay-face-overlay.js";
 import { CLIENT_PERSISTENCE_CHANNELS } from "../shared/persistence.js";
 import {
   createCoordinatorPortBroker,
@@ -314,6 +315,7 @@ export function installPrimaryPreload(options: {
     const port = event.ports[0];
     if (port != null) broker.deliver(wrapTransferredCoordinatorPort(port));
   });
+  installFaceOverlaySafely();
   return { desktop, coordinatorPort: broker.bridge };
 }
 
