@@ -74,7 +74,7 @@ test("the notice text reads the same with and without a reason or a path", async
   }
 });
 
-test("the window preload installs the notice beside the faces", async () => {
+test("the window preload installs the notice and the VNC preload the status reporter", async () => {
   const { readFile } = await import("node:fs/promises");
   const preload = await readFile(path.join(repoRoot, "source/electron-preload/preload.ts"), "utf8");
   assert.match(preload, /installComputerStreamNoticeSafely\(options\.ipc\)/);

@@ -1,9 +1,0 @@
-{
-  "name": "caisra-harness",
-  "private": true,
-  "type": "module",
-  "description": "Screenshots of the reconstructed renderer, offline, with fixture data.",
-  "devDependencies": {
-    "playwright-core": "^1.56.1"
-  }
-}

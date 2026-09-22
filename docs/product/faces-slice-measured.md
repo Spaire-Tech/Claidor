@@ -1,3 +1,5 @@
+**Reverted, 22 September 2026, on the founder's word: "just revert it to the way it original way. the original grok bot avatars."** The overlay, the generators, the motion table, the DiceBear packages and the harness are gone from the tree; the pinned 0.18.0 renderer draws Grok Bot's own faces. This file is kept as the record of what was tried and why it went wrong.
+
 # The agents' faces: DiceBear slice on the marks, keyed on what the shipped face draws (22 September 2026)
 
 ## Correction, same day: the first slice build was wrong, and the founder's screenshot proved it
