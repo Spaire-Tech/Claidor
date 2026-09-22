@@ -263,14 +263,14 @@ function interfaceMembers(sourceText, fileName, interfaceName) {
   });
 }
 
-async function sourceGraph(entrypoint, { platform = "node", format = "cjs", loader = {} } = {}) {
+async function sourceGraph(entrypoint, { platform = "node", format = "cjs", loader = undefined } = {}) {
   const result = await esbuild({
     absWorkingDir: repoRoot,
     bundle: true,
     entryPoints: [path.join(repoRoot, entrypoint)],
     external: ["electron"],
     format,
-    loader: { ".png": "dataurl", ...loader },
+    ...(loader == null ? {} : { loader }),
     logLevel: "silent",
     metafile: true,
     platform,

@@ -462,11 +462,11 @@ export function createCallMcpTool(options: CreateCallMcpToolOptions): Record<str
     const serverName = descriptor?.serverName ?? serverIdentifier;
     const mcpArguments = isRecord(args.arguments) ? args.arguments : {};
     if (!options.allowInteractiveMcpAuth && toolName === "mcp_auth") {
-      const message = "Interactive MCP authentication is only available in Caisra.";
+      const message = "Interactive MCP authentication is only available in Simeon.";
       throw new CustomToolCallError(ToolErrorClassification.UNEXPECTED_ENVIRONMENT, {
         error: message,
         clientVisibleErrorMessage: message,
-        modelVisibleErrorMessage: "Interactive MCP authentication is not available in this agent environment. Ask the user to authenticate the MCP server in Caisra, then retry.",
+        modelVisibleErrorMessage: "Interactive MCP authentication is not available in this agent environment. Ask the user to authenticate the MCP server in Simeon, then retry.",
       });
     }
     if (options.isMcpToolBlocked?.({ serverIdentifier, toolName }) === true) {

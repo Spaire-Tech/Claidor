@@ -143,7 +143,7 @@ test("vendor installs persist under the sand root", async () => {
   }
 });
 
-test("vendor OAuth discovers the issuer, registers Caisra, and opens the vendor page", async () => {
+test("vendor OAuth discovers the issuer, registers Simeon, and opens the vendor page", async () => {
   const loaded = await load("source/shared/node/vendor-mcp/oauth.ts", "vendor-oauth");
   try {
     const { protectedResourceUrls, startVendorMcpOAuth, connectThroughVendorMcp } = loaded.module;
@@ -181,7 +181,7 @@ test("vendor OAuth discovers the issuer, registers Caisra, and opens the vendor 
     assert.match(started.authorizationUrl, /code_challenge=/);
     assert.equal(started.pending.pluginId, "notion");
     assert.equal(started.pending.clientId, "caisra-client");
-    assert.equal(JSON.parse(calls.find((call) => call.method === "POST").body).client_name, "Caisra");
+    assert.equal(JSON.parse(calls.find((call) => call.method === "POST").body).client_name, "Simeon");
 
     const noDcr = async (url) => {
       if (String(url).includes("oauth-protected-resource")) {

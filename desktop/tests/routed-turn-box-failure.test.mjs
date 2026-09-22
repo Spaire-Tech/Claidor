@@ -128,7 +128,7 @@ test("choosing a hello card continues on Mac Claidor without a host runner turn"
     }));
     const router = loaded.module.createCoordinatorInferenceRouter({
       dataDir,
-      env: {},
+      env: { SAND_CLAIDOR_FULL_AGENT: "off" },
       postEvent: (family, payload) => events.push({ family, payload }),
       dispatchRemote: async (method, args) => {
         remoteCalls.push({ method, args });
@@ -170,7 +170,7 @@ test("a leftover hung Docker host cannot swallow a card tap", async () => {
     await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "claidor" }));
     const router = loaded.module.createCoordinatorInferenceRouter({
       dataDir,
-      env: {},
+      env: { SAND_CLAIDOR_FULL_AGENT: "off" },
       postEvent: (family, payload) => events.push({ family, payload }),
       dispatchRemote: () => new Promise(() => {}),
     });
@@ -223,7 +223,7 @@ test("Mac follow-ups keep the host intro in the model history", async () => {
     await mkdir(dataDir, { recursive: true });
     const router = loaded.module.createCoordinatorInferenceRouter({
       dataDir,
-      env: {},
+      env: { SAND_CLAIDOR_FULL_AGENT: "off" },
       postEvent: (family, payload) => events.push({ family, payload }),
       dispatchRemote: async (method) => {
         if (method === "getAgentTranscriptTail") {
@@ -259,7 +259,7 @@ test("ExternalShell asks on the host before spawning on the Mac", async () => {
     await mkdir(dataDir, { recursive: true });
     const router = loaded.module.createCoordinatorInferenceRouter({
       dataDir,
-      env: {},
+      env: { SAND_CLAIDOR_FULL_AGENT: "off" },
       postEvent: (family, payload) => events.push({ family, payload }),
       dispatchRemote: async (method, args) => {
         remoteCalls.push({ method, args });

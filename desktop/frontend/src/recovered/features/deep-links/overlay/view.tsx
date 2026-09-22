@@ -16,7 +16,7 @@ export function DeepLinkInfoDialog({ link, onClose }: DeepLinkInfoDialogProps) {
     <header>
       <div>
         <h2>Deep Links</h2>
-        <p>Caisra deep links are working</p>
+        <p>Simeon deep links are working</p>
       </div>
       <SandIconButton aria-label="Close" icon="close" label="Close" onClick={onClose} size="sm" type="button" />
     </header>

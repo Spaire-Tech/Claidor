@@ -170,7 +170,7 @@ export const UI_TEXT = {
   copied: "Copied",
   copyVersionInfo: "Copy version info",
   copyright: "Copyright © 2026 Spaire",
-  feedbackIntroduction: "Tell the Caisra team what happened or what you want changed. Reports go straight to the team.",
+  feedbackIntroduction: "Tell the Simeon team what happened or what you want changed. Reports go straight to the team.",
   feedbackPlaceholder: "What happened? What did you expect?",
   helpCenter: "Help Center",
   hiddenBots: "Hidden Bots",
@@ -184,7 +184,7 @@ export const UI_TEXT = {
   signIn: "Sign in",
   signInTagline: "Your team of always-on agents that you can give real work to.",
   signOut: "Sign out",
-  signOutDescription: "You’ll need to sign in again to use your Claidor account with Caisra.",
+  signOutDescription: "You’ll need to sign in again to use your Claidor account with Simeon.",
   signOutTitle: "Sign out?",
-  title: "Caisra"
+  title: "Simeon"
 } as const;

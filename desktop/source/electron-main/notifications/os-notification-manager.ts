@@ -14,6 +14,8 @@ export interface DesktopNotificationPort {
 }
 
 export interface NotificationWindowPort {
+  /** Electron throws "Object has been destroyed" on any call once the window is closed. */
+  isDestroyed?(): boolean;
   isFocused(): boolean;
   isMinimized(): boolean;
   restore(): void;
@@ -35,8 +37,16 @@ export class SandOsNotificationManager {
     readonly now?: () => number;
   }) {}
 
-  handleAgentsEvent(event: { readonly agents: readonly NotificationAgent[] }): void {
+  /** The main window, or null once it has been closed: on a Mac the app lives on without it. */
+  private liveWindow(): NotificationWindowPort | null {
     const window = this.deps.getWindow();
+    if (window == null) return null;
+    try { if (window.isDestroyed?.() === true) return null; } catch { return null; }
+    return window;
+  }
+
+  handleAgentsEvent(event: { readonly agents: readonly NotificationAgent[] }): void {
+    const window = this.liveWindow();
     if (window == null || !this.deps.isSupported()) return;
     const transitions = this.decider.decide({ agents: event.agents.map(toNotificationSnapshot), isWindowFocused: window.isFocused(), nowMs: (this.deps.now ?? Date.now)() });
     this.flushPreSeedDeltas();
@@ -65,7 +75,7 @@ export class SandOsNotificationManager {
 
   private processDelta(event: { readonly agent: NotificationAgent }): void {
     const snapshot = toNotificationSnapshot(event.agent);
-    const window = this.deps.getWindow();
+    const window = this.liveWindow();
     if (window == null || !this.deps.isSupported()) { this.decider.observeAgent(snapshot); return; }
     for (const transition of this.decider.decideAgent(snapshot, { isWindowFocused: window.isFocused(), nowMs: (this.deps.now ?? Date.now)() })) this.show(transition);
   }
@@ -88,7 +98,7 @@ export class SandOsNotificationManager {
   }
 
   private focusAgent(agentId: string): void {
-    const window = this.deps.getWindow();
+    const window = this.liveWindow();
     if (window != null) {
       if (window.isMinimized()) window.restore();
       window.show();

@@ -24,7 +24,7 @@ async function load(entry, name) {
   return { module, dispose: () => rm(temporary, { recursive: true, force: true }) };
 }
 
-test("Mac product tools and prompt are Grok Bot's, not a Caisra overlay", async () => {
+test("Mac product tools and prompt are Grok Bot's, not a Simeon overlay", async () => {
   const loadedTools = await load("source/shared/grok-bot-tools.ts", "grok-bot-tools");
   const loadedPrompt = await load("source/host/runner/system-prompt.ts", "system-prompt");
   try {
@@ -71,6 +71,16 @@ test("Mac product tools and prompt are Grok Bot's, not a Caisra overlay", async 
     assert.ok(read.inputSchema.properties.limit);
     assert.deepEqual(sendMessageFromToolArgs({ type: "text", content: "Hey" }), { type: "text", content: "Hey" });
     assert.equal(sendMessageFromToolArgs({ type: "widget" }).error, "widget is required when type is widget");
+    // The stock schema: one to six options, each with a label. A bad shape is
+    // an error the model reads, never a stored card the renderer drops.
+    assert.match(sendMessageFromToolArgs({ type: "widget", widget: { prompt: "Which?", options: ["Research", "Inbox"] } }).error, /widget is malformed at widget\.options\.0/);
+    assert.match(sendMessageFromToolArgs({ type: "widget", widget: { prompt: "Which?", options: [] } }).error, /1 to 6 options/);
+    assert.match(sendMessageFromToolArgs({ type: "widget", widget: { prompt: "Which?", options: Array.from({ length: 7 }, (_, index) => ({ label: `Option ${index}` })) } }).error, /widget is malformed at widget\.options/);
+    assert.match(sendMessageFromToolArgs({ type: "widget", widget: { prompt: "Which?", options: [{ label: "A", style: "loud" }] } }).error, /widget\.options\.0\.style/);
+    assert.deepEqual(
+      sendMessageFromToolArgs({ type: "widget", widget: { prompt: "Which?", options: [{ label: "Research", value: "research" }, { label: "Inbox" }], allowCustom: true } }),
+      { type: "widget", widget: { prompt: "Which?", options: [{ label: "Research", value: "research" }, { label: "Inbox" }], allowCustom: true } },
+    );
     const calls = [];
     const created = await executeGrokBotTool("CreateAgent", { name: "Research", description: "reads the week" }, {
       agentId: "main",

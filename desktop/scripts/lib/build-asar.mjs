@@ -7,7 +7,8 @@ import {
   builtAsarUnpacked,
   repoRoot,
   sourceAppDir,
-  stagedAppDir
+  stagedAppDir,
+  reconstructedName,
 } from "./config.mjs";
 import { packStagedAppWithIntegrity } from "./asar-integrity.mjs";
 import { resolveRuntimeApp } from "./runtime.mjs";
@@ -145,11 +146,19 @@ export async function buildAsar({
   await mkdir(buildRoot, { recursive: true });
   await cp(sourceAppDir, stageRoot, { recursive: true, dereference: false, preserveTimestamps: true });
 
-  if (process.env.GROK_BOT_BUILD_DEV_APP === "1") {
+  // Electron reads app.name from the staged package.json's productName: the
+  // application menu, "About …", the window title and the user-data folder
+  // (~/Library/Application Support/<name>) all follow it. Until 22 September
+  // 2026 it stayed "Grok Bot", so the app shared that folder with Grok Bot.
+  {
     const stagedPackagePath = path.join(stageRoot, "package.json");
     const stagedPackage = JSON.parse(await readFile(stagedPackagePath, "utf8"));
-    stagedPackage.sandLab = true;
-    stagedPackage.productName = "Grok Bot 0.18 Dev";
+    if (process.env.GROK_BOT_BUILD_DEV_APP === "1") {
+      stagedPackage.sandLab = true;
+      stagedPackage.productName = "Grok Bot 0.18 Dev";
+    } else {
+      stagedPackage.productName = reconstructedName;
+    }
     await writeFile(stagedPackagePath, `${JSON.stringify(stagedPackage, null, 2)}\n`);
   }
 

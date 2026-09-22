@@ -1,4 +1,4 @@
-import { cp, mkdir, rm } from "node:fs/promises";
+import { cp, mkdir, readdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import {
   outputApp,
@@ -12,6 +12,7 @@ import { signAppBundleAdHoc } from "./lib/codesign.mjs";
 import { verifyOfficialMacReference, verifyReconstructedMacPackage } from "./lib/macos-package-verification.mjs";
 import { run } from "./lib/process.mjs";
 import { SYSTEM_TOOLS } from "./lib/system-tools.mjs";
+import { APP_ICON_ICNS } from "./make-app-icon.mjs";
 
 if (process.platform !== "darwin") {
   throw new Error("The reconstructed macOS application can only be packaged on macOS.");
@@ -34,6 +35,17 @@ await run(SYSTEM_TOOLS.ditto, [runtimeApp, outputApp]);
 await run(SYSTEM_TOOLS.xattr, ["-cr", outputApp]);
 
 const resources = path.join(outputApp, "Contents", "Resources");
+// The Dock and Finder icon: Simeon's mark over every icon file the 0.18.0
+// shell carried (brand/Simeon.icns, from scripts/make-app-icon.mjs).
+const dockIcon = await stat(APP_ICON_ICNS).then(() => APP_ICON_ICNS, () => null);
+if (dockIcon == null) throw new Error(`Dock icon missing: ${APP_ICON_ICNS}. Run node scripts/make-app-icon.mjs.`);
+for (const name of await readdir(resources)) {
+  if (name.endsWith(".icns")) await cp(dockIcon, path.join(resources, name));
+}
+// macOS caches icons by bundle; a touched bundle and a re-registration make
+// Finder and the Dock read the new one instead of the cached Grok Bot icon.
+await run("/usr/bin/touch", [outputApp]).catch(() => {});
+await run("/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister", ["-f", outputApp]).catch(() => {});
 const packagedAsar = path.join(resources, "app.asar");
 const packagedUnpacked = `${packagedAsar}.unpacked`;
 await rm(packagedAsar, { force: true });
@@ -53,7 +65,7 @@ await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleDisplayName", "-string", re
 // reconstructed bundle's claim explicit and remove inherited aliases such as
 // `grokbot`; the original bundle remains untouched and remains reference-only.
 await run(SYSTEM_TOOLS.plutil, ["-remove", "CFBundleURLTypes", infoPlist]);
-await run(SYSTEM_TOOLS.plutil, ["-insert", "CFBundleURLTypes", "-xml", "<array><dict><key>CFBundleTypeRole</key><string>Viewer</string><key>CFBundleURLName</key><string>Grok Bot reconstructed auth callback</string><key>CFBundleURLSchemes</key><array><string>sand</string></array></dict></array>", infoPlist]);
+await run(SYSTEM_TOOLS.plutil, ["-insert", "CFBundleURLTypes", "-xml", "<array><dict><key>CFBundleTypeRole</key><string>Viewer</string><key>CFBundleURLName</key><string>Simeon auth callback</string><key>CFBundleURLSchemes</key><array><string>sand</string></array></dict></array>", infoPlist]);
 // The packaged bundle carries its own backend. A bundle launched from Finder
 // inherits no shell environment, so a build without this signs in to
 // cursor.com however the terminal that built it was configured.

@@ -159,13 +159,13 @@ export async function* streamCodexDirectResponses(options: CodexDirectOptions): 
       yield { type: "done", text, responseId, usage };
       return;
     }
-    if (options.executeTool == null) throw new Error("Codex requested a tool but Caisra did not provide an executor.");
+    if (options.executeTool == null) throw new Error("Codex requested a tool but Simeon did not provide an executor.");
 
     const results: Loose[] = [];
     for (const call of calls) {
       const selected = toolsByName.get(call.name);
       if (selected == null) {
-        results.push({ type: "function_call_output", call_id: call.call_id, output: safeJson({ isError: true, error: `Unknown Caisra tool: ${call.name}` }) });
+        results.push({ type: "function_call_output", call_id: call.call_id, output: safeJson({ isError: true, error: `Unknown Simeon tool: ${call.name}` }) });
         continue;
       }
       let args: unknown = {};
@@ -179,5 +179,5 @@ export async function* streamCodexDirectResponses(options: CodexDirectOptions): 
     }
     input = [...input, ...output.map(item => record(item) ?? {}), ...results];
   }
-  throw new Error(`Codex exceeded Caisra's ${maxSteps}-step tool limit.`);
+  throw new Error(`Codex exceeded Simeon's ${maxSteps}-step tool limit.`);
 }

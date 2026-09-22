@@ -2,15 +2,10 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { isSandAgentLimitError } from "../../../shared/agents/agents.js";
 import { errorLogTag } from "../../../shared/errors.js";
-import { isProviderRateLimitError } from "../../../shared/provider-rate-limit.js";
 import {
   cloneAgentDir,
   cloneAgentDisplayName,
 } from "../../agents/agent-clone.js";
-import {
-  getSandProfilePath,
-  readSandProfileFile,
-} from "../../agents/agent-profile.js";
 import { CANONICAL_AVATAR_FILENAME } from "../../agents/agent-avatar.js";
 import { getAgentAutomationsDir } from "../../automations/automation-store.js";
 import {
@@ -20,29 +15,14 @@ import {
 import {
   INTRODUCTION_FAILED_TRAY_TITLE,
   SAND_ONBOARDING_KICKSTART_PROMPT,
-  fallbackIntroductionText,
   introductionFailedTrayKey,
 } from "../../../shared/agents/onboarding.js";
-import {
-  runRoutedProviderText,
-} from "../inference/provider-session.js";
-import {
-  executeGrokBotTool,
-  GROK_BOT_TOOLS,
-  isGrokBotToolName,
-} from "../../../shared/grok-bot-tools.js";
-import {
-  buildSandProductSystemPrompt,
-  SEND_MESSAGE_PLAIN_TEXT_RETRY,
-  USER_MESSAGE_REPLY_REMINDER,
-} from "../../runner/system-prompt.js";
 import { sandErrorDetail } from "../../ports/telemetry.js";
 import { SandAgentDb } from "../session/agent-db.js";
 import { checkpointSandAgentDb } from "../../storage/store-db.js";
 import { publishTranscriptMutation } from "../../transcript-mutation-events.js";
 import { describeAgentRunError } from "./agent-run-error.js";
-import { nextEntryId } from "./transcript-entry-ids.js";
-import { createSendMessageEntry, isUserMessageEntry, type SendMessage } from "./send-message-shaping.js";
+import { isUserMessageEntry } from "./send-message-shaping.js";
 import { getTranscript } from "./transcript-store.js";
 import { classifyAgentError } from "./turn-runtime.js";
 import type { TranscriptManagerLike } from "./transcript-hub.js";
@@ -153,133 +133,7 @@ export class AgentLifecycle {
       session.db.setIntroductionPending(false);
       return false;
     }
-    if (!isRunReady) return false;
-    if (session.db.getAgentPurpose() === "disk-saver") {
-      if (!this.tm.execution.canExecute) return false;
-      return this.kickstartWithFullRunner(session, SAND_DISK_SAVER_KICKSTART_PROMPT);
-    }
-    if (this.tm.runLifecycle.inFlightRunCounts.has(session)) return true;
-    this.tm.runLifecycle.beginSessionRun(session);
-    void this.tm.runLifecycle.enqueueExclusiveRun(
-      session.id,
-      async () => {
-        try {
-          await this.deliverCheapIntroduction(session);
-        } finally {
-          this.tm.runLifecycle.endSessionRun(session);
-        }
-      },
-      { lane: "user", source: "kickstart" },
-    );
-    return true;
-  }
-
-  private appendKickstartMessage(session: any, message: Record<string, unknown>): string {
-    const entries =
-      this.tm.sessions.activeSession?.id === session.id
-        ? getTranscript()
-        : session.db.getTranscriptEntries();
-    const id = nextEntryId(entries, "send-message");
-    const typed: SendMessage = { type: typeof message.type === "string" ? message.type : "text", ...message };
-    this.tm.sendPipeline.appendSendMessageEntry(
-      createSendMessageEntry(id, typed, Date.now()),
-    );
-    return id;
-  }
-
-  private async deliverCheapIntroduction(session: any): Promise<void> {
-    const profile = readSandProfileFile(
-      getSandProfilePath(this.tm.sessionStore.getAgentDir(session.id)),
-    );
-    const name =
-      profile?.name?.trim() || String(session.db.get("name") ?? "").trim();
-    const description = profile?.description ?? "";
-    let sent = 0;
-    let error: unknown;
-    const emitSendMessage = async (message: Record<string, unknown>) => {
-      sent += 1;
-      return this.appendKickstartMessage(session, message);
-    };
-    const dispatchRemote = async (method: string, args: unknown) => {
-      if (method === "appendConnectorCard") {
-        sent += 1;
-        await this.tm.sendPipeline.appendConnectorCard({
-          agentId: session.id,
-          ...(typeof args === "object" && args != null ? args as Record<string, unknown> : {}),
-        } as { agentId?: string; connector: string; variant: string; reason?: string });
-        return undefined;
-      }
-      if (method === "appendSendMessage") {
-        const record = typeof args === "object" && args != null ? args as Record<string, unknown> : {};
-        const message = typeof record.message === "object" && record.message != null
-          ? record.message as Record<string, unknown>
-          : { type: "text", content: "" };
-        const id = await emitSendMessage(message);
-        return { id };
-      }
-      throw new Error(`${method} is not available during introduction`);
-    };
-    const introMessages = [
-      { role: "system" as const, content: buildSandProductSystemPrompt({ name, description }) },
-      { role: "user" as const, content: `${SAND_ONBOARDING_KICKSTART_PROMPT}\n\n${USER_MESSAGE_REPLY_REMINDER}` },
-    ];
-    const introTools = GROK_BOT_TOOLS.filter(tool => tool.name === "SendMessage");
-    const runIntro = async (messages: readonly { role: "system" | "user" | "assistant"; content: string }[]) => runRoutedProviderText(
-      "claidor",
-      messages,
-      {
-        tools: introTools,
-        executeTool: async (definition, toolArgs) => {
-          if (typeof definition.name === "string" && isGrokBotToolName(definition.name)) {
-            return await executeGrokBotTool(definition.name, toolArgs, {
-              agentId: session.id,
-              dispatchRemote,
-              emitSendMessage,
-            });
-          }
-          return undefined;
-        },
-      },
-    );
-    let delivered = false;
-    try {
-      let leftover = await runIntro(introMessages);
-      if (sent === 0) {
-        leftover = await runIntro([
-          ...introMessages,
-          ...(leftover.trim().length > 0 ? [{ role: "assistant" as const, content: leftover }] : []),
-          { role: "user" as const, content: `${SEND_MESSAGE_PLAIN_TEXT_RETRY}\n\n${USER_MESSAGE_REPLY_REMINDER}` },
-        ]);
-      }
-      if (sent === 0 && leftover.trim().length > 0) {
-        this.appendKickstartMessage(session, { type: "text", content: leftover.trim() });
-        delivered = true;
-      }
-    } catch (caught) {
-      error = caught;
-    }
-    if (sent === 0 && !delivered) {
-      this.appendKickstartMessage(session, { type: "text", content: fallbackIntroductionText(name) });
-    }
-    session.db.setIntroductionPending(false);
-    await this.tm.roster.emitAgentUpdate(session.id);
-    if (error == null || isProviderRateLimitError(error)) return;
-    this.tm.telemetry.reportAgentError({
-      source: "onboarding_kickstart",
-      conversationId: session.id,
-      requestId: this.tm.runLifecycle.lastRequestIdBySession.get(session.id),
-      error: classifyAgentError(error),
-      detail: sandErrorDetail(error),
-    });
-    this.tm.trayErrors.pushError({
-      agentId: session.id,
-      title: INTRODUCTION_FAILED_TRAY_TITLE,
-      ...describeAgentRunError(error),
-      dedupeKey: introductionFailedTrayKey(session.id),
-    });
-  }
-
-  private kickstartWithFullRunner(session: any, prompt: string): boolean {
+    if (!isRunReady || !this.tm.execution.canExecute) return false;
     if (this.tm.runLifecycle.inFlightRunCounts.has(session)) return true;
     const runner = this.tm.runnerRegistry.getRunner(session);
     this.tm.runLifecycle.beginSessionRun(session);
@@ -288,6 +142,10 @@ export class AgentLifecycle {
       async () => {
         this.tm.turnRuntime.activeRequestSources.set(session.id, "turn");
         try {
+          const prompt =
+            session.db.getAgentPurpose() === "disk-saver"
+              ? SAND_DISK_SAVER_KICKSTART_PROMPT
+              : SAND_ONBOARDING_KICKSTART_PROMPT;
           const result = await runner.run(prompt, { hidden: true });
           let delivered = result.sentMessageCount > 0;
           if (!result.aborted && result.sentMessageCount === 0)
@@ -300,7 +158,6 @@ export class AgentLifecycle {
             session.db.setIntroductionPending(false);
           await this.tm.roster.emitAgentUpdate(session.id);
         } catch (error) {
-          session.db.setIntroductionPending(false);
           this.tm.telemetry.reportAgentError({
             source: "onboarding_kickstart",
             conversationId: session.id,

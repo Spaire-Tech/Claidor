@@ -115,6 +115,8 @@ export interface CoordinatorControlExecutorDependencies {
   readonly getRpcTraceWindowTraceparent?: () => string | undefined;
   readonly listRoutedMcpTools?: () => Promise<unknown>;
   readonly executeRoutedMcpTool?: (request: unknown) => Promise<unknown>;
+  /** The signed-in account's transcript slot (authId, else email), or null when signed out. */
+  readonly getTranscriptAccountSlot?: () => Promise<string | null>;
   readonly readLocalExecDaemonDiscovery?: () => Promise<LocalExecDiscovery | null>;
   readonly clearLocalExecDaemonDiscoveryIfMatches?: (expected: LocalExecDiscovery) => Promise<boolean>;
   readonly native?: {
@@ -260,7 +262,7 @@ function renderPrompt(origin: string, rpId: string): string {
 		document.getElementById(id).textContent = origin;
 	}
 	document.getElementById("detail").textContent =
-		"A browser in your Caisra box is asking to sign in to " + rpId +
+		"A browser in your Simeon box is asking to sign in to " + rpId +
 		" with the security key plugged into this computer. Approve only if you started this.";
 
 	const panels = ["prompt", "working", "pin-prompt"];
@@ -476,6 +478,9 @@ export function createCoordinatorControlExecutors(
     },
     async mintInferenceCredential() {
       return (await connector.issueInferenceCredential?.()) ?? null;
+    },
+    async getTranscriptAccountSlot() {
+      return { slot: (await dependencies.getTranscriptAccountSlot?.()) ?? null };
     },
     requestWebAuthnConsent: (args: WebAuthnConsentRequest) =>
       webauthnPrompt.requestConsent(args),

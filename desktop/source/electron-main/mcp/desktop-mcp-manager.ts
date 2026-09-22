@@ -126,7 +126,7 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
       executeTool: async (args: { readonly name: string }) => new McpResult({
         result: {
           case: "error",
-          value: new McpError({ error: `MCP tools run on Caisra's computer, not the desktop app (tool "${args.name}").` }),
+          value: new McpError({ error: `MCP tools run on Simeon's computer, not the desktop app (tool "${args.name}").` }),
         },
       }),
     },

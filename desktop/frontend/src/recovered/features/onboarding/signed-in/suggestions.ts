@@ -15,7 +15,7 @@ export interface SuggestionIdentity { color: string; shape: string }
 export const ONBOARDING_SUGGESTION_CATALOG: readonly SuggestionTemplate[] = [
   { id: "night-shift", name: "Night Shift", description: "Works overnight and preps your morning digest", eligibility: { kind: "universal" } },
   { id: "inbox-triage", name: "Inbox Triage", description: "Sorts your email and drafts replies in your voice", eligibility: { kind: "universal" } },
-  { id: "chief-of-staff", name: "Chief of Staff", description: "Manages your other Bots and pulls you in for decisions", eligibility: { kind: "universal" } },
+  { id: "chief-of-staff", name: "Chief of Staff", description: "Manages your other Agents and pulls you in for decisions", eligibility: { kind: "universal" } },
   { id: "negotiator", name: "Negotiator", description: "Researches fair pricing and haggles in your voice", eligibility: { kind: "universal" } },
   { id: "prototyper", name: "Prototyper", description: "Turns your ideas into working prototypes", eligibility: { kind: "universal" } },
   { id: "researcher", name: "Researcher", description: "Digs into any question across your tools and the web", eligibility: { kind: "universal" } },

@@ -125,11 +125,11 @@ export function AvatarEditorView({ controller, onClose, triggerRef, agentIsGroup
   return <div aria-label="Avatar editor" className="sand-avatar-editor" onKeyDownCapture={onKeyDownCapture} onPasteCapture={onPasteCapture} ref={editorRef} role="dialog" tabIndex={-1}>
     <div className="sand-78zum5 sand-6s0dn4 sand-ehausa sand-2lah0s sand-9f619 sand-13ly8rp sand-1yxiud8 sand-1xlntvz sand-yab65l sand-1co6499 sand-1q0q8m5 sand-17fyfba">
       <div aria-label="Avatar source" className="sand-78zum5 sand-6s0dn4 sand-137clkk sand-1iyjqo2 sand-euugli" role="tablist">
-        {agentIsGroup ? null : <button aria-selected={snapshot.mode === "bot"} onClick={() => controller.setMode("bot")} role="tab" type="button">Bot</button>}
+        {agentIsGroup ? null : <button aria-selected={snapshot.mode === "bot"} onClick={() => controller.setMode("bot")} role="tab" type="button">Agent</button>}
         <button aria-selected={snapshot.mode === "generate"} onClick={() => controller.setMode("generate")} role="tab" type="button">Generate</button>
         <button aria-selected={snapshot.mode === "upload"} onClick={() => controller.setMode("upload")} role="tab" type="button">Upload</button>
       </div>
-      {hasExistingAvatar ? <button aria-label="Reset to the Bot" disabled={isBusy} onClick={() => void reset()} type="button">Reset</button> : snapshot.mode === "bot" && hasCustomCharacter ? <button aria-label="Reset character to default" disabled={isBusy} onClick={() => void controller.resetCharacter()} type="button">Reset</button> : null}
+      {hasExistingAvatar ? <button aria-label="Reset to the Agent" disabled={isBusy} onClick={() => void reset()} type="button">Reset</button> : snapshot.mode === "bot" && hasCustomCharacter ? <button aria-label="Reset character to default" disabled={isBusy} onClick={() => void controller.resetCharacter()} type="button">Reset</button> : null}
     </div>
     {source != null && crop != null ? <div className="sand-78zum5 sand-dt5ytf sand-6s0dn4 sand-ehausa">
       <div aria-label="Drag to reposition" className="sand-avatar-editor__stage" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} role="img">

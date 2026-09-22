@@ -1,5 +1,5 @@
 /**
- * Caisra clean build (`npm run build:clean-source` / `start:clean-source`).
+ * Simeon clean build (`npm run build:clean-source` / `start:clean-source`).
  *
  * This emits `frontend/src` plus ignited electron-main/host into `dist/` and
  * launches with `electron .`. That reconstructed window is a recovered
@@ -84,7 +84,6 @@ async function bundleProcess([entry, outfile]) {
     // Node the machine happens to have and on whatever Node Electron ships.
     target: "node22",
     format: "cjs",
-    loader: { ".png": "dataurl" },
     outfile: path.join(outRoot, outfile),
     external: EXTERNAL,
     // jsonc-parser's default entry is a UMD bundle whose factory takes
@@ -198,7 +197,7 @@ async function main() {
     path.join(outRoot, "caisra-build.json"),
     `${JSON.stringify(
       {
-        product: "Caisra",
+        product: "Simeon",
         mode: "clean-source",
         upstreamBinaryUsed: false,
         builtAt: new Date().toISOString(),
@@ -213,7 +212,7 @@ async function main() {
     const size = r.bytes == null ? "" : `${(r.bytes / 1_048_576).toFixed(1)} MB`.padStart(9);
     console.log(`  ${r.outfile.padEnd(58)} ${size}  ${String(r.ms).padStart(5)}ms`);
   }
-  console.log(`\nCaisra clean build -> dist/ (no upstream binary)`);
+  console.log(`\nSimeon clean build -> dist/ (no upstream binary)`);
 }
 
 await main();

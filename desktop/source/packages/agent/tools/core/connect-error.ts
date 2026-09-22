@@ -9,7 +9,7 @@ import {
 import { ToolErrorClassification } from "../core.js";
 
 const AGENT_STREAM_START_TIMEOUT_TITLE = "Workspace Disconnected";
-const AGENT_STREAM_START_TIMEOUT_DETAIL = "Caisra lost connection to the workspace while starting tool execution. Reload the window and try again.";
+const AGENT_STREAM_START_TIMEOUT_DETAIL = "Simeon lost connection to the workspace while starting tool execution. Reload the window and try again.";
 const AGENT_STREAM_START_TIMEOUT_ERROR_NAME = "AgentExecStreamStartTimeoutError";
 
 export function maybeNormalizeExecBoundaryError(error: unknown): unknown {

@@ -77,7 +77,7 @@ const CLAIDOR_OPENAI_QUOTA_DETAIL =
   "Claidor could not reach the model because OpenAI has no credits left on Claidor's account. This is not your OpenAI billing page.";
 const CLAUDE_CODE_INSTALL = /Claude Code is not installed/i;
 const CLAIDOR_NOT_CLAUDE_DETAIL =
-  "Caisra talks to Claidor, not Claude Code. Sign in to Claidor and try again.";
+  "Simeon talks to Claidor, not Claude Code. Sign in to Claidor and try again.";
 
 export function claidorFacingProviderError(message: string): string {
   if (OPENAI_ACCOUNT_QUOTA.test(message)) return CLAIDOR_OPENAI_QUOTA_DETAIL;

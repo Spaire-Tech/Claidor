@@ -236,7 +236,7 @@ export function PluginsBrowser({
       </div>
       {tab === "yours" && (!privateFilterActive || privateSkillsAgentId == null || visiblePrivateSkills.length > 0) ? <section aria-label="Private">
         <h3>Private</h3>
-        {privateSkillsError != null ? <p role="alert">{privateSkillsError}</p> : privateSkillsAgentId == null ? <p>Open an agent to see its private skills</p> : privateSkillsLoading ? <p role="status" /> : visiblePrivateSkills.length === 0 ? <p>{query.trim().length > 0 ? `No private skills match "${query.trim()}"` : "No private skills yet. Ask your Bot to create one for you."}</p> : <div>
+        {privateSkillsError != null ? <p role="alert">{privateSkillsError}</p> : privateSkillsAgentId == null ? <p>Open an agent to see its private skills</p> : privateSkillsLoading ? <p role="status" /> : visiblePrivateSkills.length === 0 ? <p>{query.trim().length > 0 ? `No private skills match "${query.trim()}"` : "No private skills yet. Ask your Agent to create one for you."}</p> : <div>
           {visiblePrivateSkills.map((skill) => <div className="sand-plugins-row" key={`private:${skill.id}`}>
             <span aria-hidden="true">▤</span>
             <button className="sand-plugins-row__open" onClick={() => setSelectedPrivateSkillId(skill.id)} type="button">
