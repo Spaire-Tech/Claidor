@@ -21,17 +21,24 @@ Yodo, the 23 strongs, Chief of Staff, whisper, `useDictation.ts`,
 `macTasks.ts`, `main.ts:304` or "2,551 files" describes the tree before that
 commit and is history, not a map. The paragraphs about the pinned renderer,
 `npm run bootstrap`, `router-renderer-patch.mjs`, `SAND_BACKEND_URL` and
-app sign-in describe the current tree. `docs/product/start-here.md` and
-`docs/product/building-the-app.md` are the current map.
+app sign-in describe the current tree. `docs/product/building-the-app.md`
+and `docs/product/grok-bot-layers-measured.md` are the current map.
+**`docs/product/start-here.md` is not**: it still describes the LobsterAI
+tree (`desktop/src`, "2,552 files", the 23 strongs) and was never rewritten
+after the re-founding (checked 22 September).
 
 Two facts about the current tree that are established by build output, not
 reasoning (`docs/product/host-wall-measured.md`): **every one of the 14
 runtimes, the host included, compiles from `source/`** —
 `buildFidelityDistribution()` reports `blockedFallbacks: []` with no host
 binding manifest supplied, so the "missing manifest" the ours-brief calls the
-wall is not a wall; and the agent loop still speaks
-`aiserver.v1.InferenceService/Stream`, which Claidor does not serve, so the
-real gap is the executor, not the compile. Also since 19 September: the box
+wall is not a wall; and the agent loop **spoke**
+`aiserver.v1.InferenceService/Stream` on 19 September, which Claidor does
+not serve, so the real gap was the executor, not the compile. Since
+`c0128b33` the loop runs on the `claidor` executor (OpenAI Responses through
+Claidor's proxy) and `turn-run-shell.ts:182` hard-codes that provider; the
+Cursor path is still in the tree as dead code (`cursor-session.ts`,
+`cursor-inference.ts:191`). Also since 19 September: the box
 runtime defaults to `local-docker`, the container is always told
 `SAND_BACKEND_URL`, and the host-bundle update channel has no default origin
 (`desktop/tests/local-docker-box.test.mjs`, `host-bundle-source.test.mjs`).
