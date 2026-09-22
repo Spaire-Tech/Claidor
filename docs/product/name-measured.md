@@ -103,3 +103,21 @@ written then.
 and the PR said the stream log was at `~/Library/Application Support/Caisra/`.
 It never was: with `productName` still `Grok Bot`, it was under `Grok Bot`.
 From this build it is `~/Library/Application Support/Simeon/computer-stream.log`.
+
+**The icon, corrected the same evening.** The founder: "i gave you a new
+icon app for simeon, you did not use it. i gave you a logo for it too (both
+dark and light) you didnt use it. i still see grok bot's." The drawn icon
+was an approximation of the founder's file; the icon is now the file itself,
+pixel for pixel (`brand/simeon-app-icon-source.png`, rasterised to every
+size for `Simeon.icns` and the in-app icon; the drawing remains only as the
+fallback when the file is absent). The two marks are kept as
+`brand/simeon-mark-black.png` and `brand/simeon-mark-white.png` for wherever
+a logo is next needed; the pinned renderer has no logo slot besides the app
+icon. `package-macos.mjs` now touches the bundle and re-registers it with
+LaunchServices after writing the icon, because macOS caches an app's icon
+by bundle and keeps showing the old one otherwise. If the Dock still shows
+Grok Bot's after a rebuild:
+
+```
+rm -rf ~/Library/Caches/com.apple.iconservices.store; killall Dock Finder
+```

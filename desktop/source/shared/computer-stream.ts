@@ -29,7 +29,17 @@ export function isComputerStreamMessage(value: unknown): value is ComputerStream
  * it says the screen connected, so a notice can clear.
  */
 export function computerStreamReason(line: string): string | null {
-  if (/\bstate=connected\b/.test(line) || /\bguest connected\b/.test(line)) return "";
+  if (/\bstate=connected\b/.test(line) || /\bguest connected\b/.test(line) || /local docker: gateway ready/.test(line)) return "";
+  const reach = /box reachability outcome=(\S+) method=(\S+) cause=(\S+)/.exec(line);
+  if (reach != null) {
+    const [, outcome, method, cause] = reach;
+    if (outcome === "timeout") return `The computer's gateway did not answer "${method}" within the deadline.`;
+    if (outcome === "network") return `The computer's gateway could not be reached for "${method}" (${cause}).`;
+    if (outcome === "box_blocked") return "The computer is blocked or paused.";
+    return `The computer's gateway failed "${method}": ${outcome} (${cause}).`;
+  }
+  const docker = /local docker FAILED: (.+)$/.exec(line);
+  if (docker != null) return docker[1] ?? "The local Docker computer failed to start.";
   const failedLoad = /guest load FAILED code=(-?\d+) \(([^)]*)\)/.exec(line);
   if (failedLoad != null) return `The screen page did not load (${failedLoad[2]}, ${failedLoad[1]}).`;
   if (/guest preload FAILED/.test(line)) return "The screen page's helper script failed to load.";

@@ -28,6 +28,30 @@ export interface ComputerStreamLogDeps {
   now?(): Date;
 }
 
+/**
+ * The one log the app keeps for the computer. Lines written before the log
+ * exists (the box connector runs before the VNC trust registry) are held
+ * and flushed when it is created.
+ */
+let shared: ComputerStreamLog | null = null;
+const early: string[] = [];
+export const EARLY_LINE_LIMIT = 200;
+
+export function computerStreamLine(text: string): void {
+  if (shared != null) { shared.line(text); return; }
+  if (early.length >= EARLY_LINE_LIMIT) early.shift();
+  early.push(text);
+}
+
+export function adoptComputerStreamLog(log: ComputerStreamLog): ComputerStreamLog {
+  shared = log;
+  for (const text of early.splice(0)) log.line(text);
+  return log;
+}
+
+/** Tests only. */
+export function resetComputerStreamLog(): void { shared = null; early.length = 0; }
+
 export function createComputerStreamLog(deps: ComputerStreamLogDeps): ComputerStreamLog {
   const now = deps.now ?? (() => new Date());
   try { deps.reset?.(deps.filePath); } catch {}

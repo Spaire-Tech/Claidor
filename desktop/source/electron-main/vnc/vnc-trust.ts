@@ -2,7 +2,7 @@ import { appendFileSync, existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createRequire } from "node:module";
 import { COMPUTER_STREAM_CHANNEL } from "../../shared/computer-stream.js";
-import { COMPUTER_STREAM_LOG_FILE_NAME, createComputerStreamLog, describeWebviewAttach, observeBoxWebviewGuest, type ComputerStreamLog } from "./computer-stream-log.js";
+import { COMPUTER_STREAM_LOG_FILE_NAME, adoptComputerStreamLog, createComputerStreamLog, describeWebviewAttach, observeBoxWebviewGuest, type ComputerStreamLog } from "./computer-stream-log.js";
 import { declareRpcContract, serveEdge } from "../generated/main-rpc.js";
 import { BOX_VNC_METHOD_TABLE, BOX_VNC_RPC_CONTRACT_NAME } from "../../shared/rpc/vnc.js";
 import { createBoxVncHandlers, createBoxVncTrust } from "./vnc-edge.js";
@@ -92,7 +92,7 @@ export function registerElectronProductionVncTrust(
     readonly BrowserWindow?: { getAllWindows(): Array<{ isDestroyed(): boolean; webContents: { send(channel: string, payload: unknown): void } }> };
   };
   if (electron?.app == null || typeof electron.app.on !== "function" || electron.clipboard == null || typeof electron.clipboard.readText !== "function" || typeof electron.clipboard.writeText !== "function" || electron.ipcMain == null || typeof electron.ipcMain.handle !== "function" || typeof electron.ipcMain.removeHandler !== "function" || electron.session == null || typeof electron.session.fromPartition !== "function") throw new TypeError("Incomplete Electron box-VNC trust ABI.");
-  const streamLog = deps.streamLog ?? createProductionComputerStreamLog(electron);
+  const streamLog = adoptComputerStreamLog(deps.streamLog ?? createProductionComputerStreamLog(electron));
   const registry = createBoxVncTrustRegistry({ ...deps, streamLog, preloadExists: deps.preloadExists ?? ((path) => existsSync(path)) });
   const isBoxWebviewSession = (contentsSession: unknown): boolean => contentsSession === electron.session.fromPartition(BOX_VNC_PARTITION);
   electron.app.on("web-contents-created", (_event, contents) => { if (contents.getType() === "webview" && isBoxWebviewSession(contents.session)) { installGuestInputGuard(contents, deps.routeHostInput); observeBoxWebviewGuest(contents, streamLog); } });

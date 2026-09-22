@@ -21,7 +21,8 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadChromium, simeonAppIconSvg } from "./lib/simeon-logo.mjs";
+import { loadChromium } from "./lib/simeon-logo.mjs";
+import { appIconPageMarkup } from "./make-app-icon.mjs";
 
 const outDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../frontend/runtime-assets");
 const manifestPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../frontend/manifests/renderer-runtime-assets.json");
@@ -61,8 +62,8 @@ function toolTile(letter) {
 </svg>`;
 }
 
-/** The app icon: Simeon's mark on a paper tile (scripts/lib/simeon-logo.mjs). */
-const APP_ICON = simeonAppIconSvg({ size: 512 });
+/** The app icon: the founder's file when present, else the drawing (scripts/make-app-icon.mjs). */
+const APP_ICON = (await appIconPageMarkup(512)).markup;
 
 /** The wallpaper behind the agent's demo computer: calm, and never the subject. */
 const WALLPAPER = `<svg xmlns="http://www.w3.org/2000/svg" width="2560" height="1600" viewBox="0 0 2560 1600">

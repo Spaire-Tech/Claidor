@@ -12,6 +12,9 @@ import { COMPUTER_STREAM_CHANNEL, computerStreamReason, isComputerStreamMessage 
 export const COMPUTER_STREAM_NOTICE_ATTR = "data-caisra-screen-notice";
 export const COMPUTER_STREAM_NOTICE_DELAY_MS = 20_000;
 export const CONNECTING_SELECTOR = ".sand-box-vnc-pool__connecting";
+/** The Computer panel's failed-read placeholder ("Can't reach …'s screen", with Retry). */
+export const UNREACHABLE_SELECTOR = ".sand-computer-stage__placeholder";
+export const UNREACHABLE_TEXT = /^Can't reach /;
 export const NOTICE_LOG_TAG = "[SimeonScreenNotice]";
 
 export interface ComputerStreamNoticeOptions {
@@ -24,8 +27,8 @@ export interface ComputerStreamNoticeOptions {
   readonly log?: (line: string) => void;
 }
 
-export function noticeText(reason: string | null, filePath: string | null): string {
-  const parts = ["The computer's screen isn't connecting."];
+export function noticeText(reason: string | null, filePath: string | null, lead = "The computer's screen isn't connecting."): string {
+  const parts = [lead];
   parts.push(reason != null && reason.length > 0 ? reason : "No reason was reported yet.");
   if (filePath != null) parts.push(`Details: ${filePath}`);
   return parts.join(" ");
@@ -91,9 +94,25 @@ export function installComputerStreamNotice(options: ComputerStreamNoticeOptions
       seen.set(spinner, now());
       schedule(sync, delayMs + 50);
     }
-    // Stray notices whose spinner is gone.
+    // The failed-read placeholder: no delay, the read already failed.
+    const unreachable = [...doc.querySelectorAll(UNREACHABLE_SELECTOR)].filter((node) => UNREACHABLE_TEXT.test(node.textContent ?? ""));
+    for (const placeholder of unreachable) {
+      let notice = placeholder.querySelector(`:scope > [${COMPUTER_STREAM_NOTICE_ATTR}]`) as HTMLElement | null;
+      if (notice == null) {
+        notice = doc.createElement("div");
+        notice.setAttribute(COMPUTER_STREAM_NOTICE_ATTR, "1");
+        setStyle(notice, { font: "12px/1.35 -apple-system, system-ui, sans-serif", color: "#8a1c1c", "text-align": "center", "max-width": "36em", margin: "6px auto 0", "word-break": "break-word" });
+        placeholder.append(notice);
+      }
+      const text = noticeText(reason, filePath, "The computer's status could not be read.");
+      if (notice.textContent !== text) { notice.textContent = text; log(`${NOTICE_LOG_TAG} ${text}`); }
+    }
+    // Stray notices whose spinner or placeholder is gone.
     for (const notice of doc.querySelectorAll(`[${COMPUTER_STREAM_NOTICE_ATTR}]`)) {
-      if (notice.parentElement?.querySelector(`:scope > ${CONNECTING_SELECTOR}`) == null) notice.remove();
+      const parent = notice.parentElement;
+      const underSpinner = parent?.querySelector(`:scope > ${CONNECTING_SELECTOR}`) != null;
+      const underPlaceholder = parent != null && parent.matches(UNREACHABLE_SELECTOR) && UNREACHABLE_TEXT.test(parent.textContent?.replace(notice.textContent ?? "", "") ?? "");
+      if (!underSpinner && !underPlaceholder) notice.remove();
     }
   };
 
@@ -109,7 +128,7 @@ export function installComputerStreamNotice(options: ComputerStreamNoticeOptions
   const observer = new Observer(sync);
   const start = (): void => {
     if (disconnected) return;
-    observer.observe(doc.documentElement ?? doc, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+    observer.observe(doc.documentElement ?? doc, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class"] });
     sync();
   };
   if (doc.readyState === "loading") doc.addEventListener("DOMContentLoaded", start, { once: true });

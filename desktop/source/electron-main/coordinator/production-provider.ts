@@ -1,3 +1,4 @@
+import { computerStreamLine } from "../vnc/computer-stream-log.js";
 import { statSync } from "node:fs";
 
 import type {
@@ -417,7 +418,10 @@ export function createProductionCoordinatorAdapter<
         webauthnPrompt: prompt,
         recordSendStage: ports.telemetry.recordSendStage,
         recordGatewayCommandSpan: ports.telemetry.recordGatewayCommandSpan,
-        onReachability: telemetry.reportBoxReachability,
+        onReachability: (report: any, baseUrl?: string) => {
+          if (report?.outcome !== "ok") computerStreamLine(`box reachability outcome=${String(report?.outcome)} method=${String(report?.method ?? "?")} cause=${String(report?.causeSummary ?? report?.httpStatus ?? "?")} baseUrl=${baseUrl ?? "?"}`);
+          telemetry.reportBoxReachability(report);
+        },
         onDnsDiagnostic: telemetry.reportBoxDnsDiagnostic,
         onProcessCrash: ports.telemetry.reportProcessCrash,
         getRpcTraceWindowTraceparent: ports.telemetry.getRpcTraceWindowTraceparent,

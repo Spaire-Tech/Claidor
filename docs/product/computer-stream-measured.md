@@ -98,3 +98,66 @@ whether `preload-vnc.cjs` was found. What follows is the answer:
 | `tsc` on `source/` and `frontend/` | clean |
 | the three bundles the build ships (`preload-vnc.cjs`, `preload.cjs`, `main.cjs`) | carry the new code |
 | on a Mac | not yet run; the log above is the next reading |
+
+## "Can't reach …'s screen", audited (22 September 2026, evening)
+
+The founder, after the rename build: "it says cant reach computer. no matter
+how many times i retry." That is a different state from the endless
+spinner, and it comes from earlier in the chain.
+
+**What the words mean, read off the reconstruction** (`computer/shell/model.ts`,
+`status-store.ts`, `controller.ts`): the panel shows "Can't reach X's screen"
+with Retry when `readState === "error"`, and that is set only when the read
+of the box's status **failed or exceeded 15 seconds**
+(`VNC_STATUS_TIMEOUT_MS`), with no status ever cached. Retry calls the
+status read again, then ensure. So a "Can't reach" that survives every
+retry means `getForeverBoxStatus` itself fails every time. That call goes
+renderer → coordinator → gateway (`http://127.0.0.1:1340`, 15 s deadline) →
+host `forever-box.getStatus` → `HostBox.getStatus` → `runState`, which for
+the loopback box is always "running", then the cached desktop URL or
+`state: "absent"`. On the host it is trivial and cannot take 15 s. So the
+failure is the **gateway command**: the coordinator has no connection to the
+box, the gateway is not answering, or the host throws. If chat works on the
+same box, the last is the only one left; if chat also fails, it is the
+first two.
+
+**What could have changed between "connecting" and "can't reach".** The
+rename touched `source/host`, so the host bundle hash changed, and the local
+Docker connector replaces the container when that happens
+(`localDockerContainerNeedsReplace`). A replaced container is a cold box:
+the gateway has three minutes to come up before the connector gives up
+(`READY_TIMEOUT_MS`), and until then every command fails. The exec daemon
+is also not among the ten checks `box-doctor` runs (machine-id, chrome,
+chrome-fds, egress, clock, dbus, xvfb, x11vnc, novnc, novnc-forks,
+compositor), so a doctor that passes says nothing about it.
+
+**What the app does now, so this never needs a terminal again.**
+
+- The local Docker connector narrates every step into `computer-stream.log`:
+  Docker's version, the container (exists, running, owned, schema, whether
+  the host bundle matches), a replacement, a start or a creation, the wait
+  for the gateway (a line after 20 s of silence), the gateway ready with the
+  time it took, and any failure with its message.
+- The coordinator's box-reachability reports that are not "ok" go into the
+  same log: outcome (`timeout`, `network`, `http_5xx`, `box_blocked`…), the
+  command, the cause, the base URL. Lines written before the log exists are
+  held and flushed.
+- The "Can't reach" placeholder gets one sentence under it at once, with the
+  last reason and the log's path, the way the spinner does after 20 s.
+
+**How to read it.** Open the Computer panel, then:
+
+```
+cat ~/Library/Application\ Support/Simeon/computer-stream.log
+```
+
+| Lines | Meaning |
+|---|---|
+| `local docker FAILED: … Docker is unavailable` | Docker Desktop is not running |
+| `local docker: replacing the container` then `gateway not answering yet after 20s` | a cold box after a host change; wait, or it reports the failure at three minutes |
+| `local docker FAILED: Local Docker VM did not expose its gateway within three minutes` | the new container's gateway never came up: `docker logs grok-bot-local-vm --tail 50` is the next reading |
+| `box reachability outcome=network … cause=ECONNREFUSED` | the coordinator cannot open the gateway port at all |
+| `box reachability outcome=timeout method=getForeverBoxStatus` | the gateway answers but the host does not, within 15 s |
+| `local docker: gateway ready` and no reachability line, yet "Can't reach" | the host throws inside `getStatus`; that is a host bug and the next thing to read is the host's own log inside the box |
+
+Not run on a Mac.

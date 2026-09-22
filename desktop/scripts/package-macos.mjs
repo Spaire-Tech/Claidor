@@ -42,6 +42,10 @@ if (dockIcon == null) throw new Error(`Dock icon missing: ${APP_ICON_ICNS}. Run 
 for (const name of await readdir(resources)) {
   if (name.endsWith(".icns")) await cp(dockIcon, path.join(resources, name));
 }
+// macOS caches icons by bundle; a touched bundle and a re-registration make
+// Finder and the Dock read the new one instead of the cached Grok Bot icon.
+await run("/usr/bin/touch", [outputApp]).catch(() => {});
+await run("/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister", ["-f", outputApp]).catch(() => {});
 const packagedAsar = path.join(resources, "app.asar");
 const packagedUnpacked = `${packagedAsar}.unpacked`;
 await rm(packagedAsar, { force: true });

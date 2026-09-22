@@ -10,6 +10,7 @@ import type { SandSettingsStore } from "../../shared/node/settings/sand-settings
 import type { RecreateResult } from "./box-recreate-commands.js";
 import type { SandRemoteHostConnector } from "./box-host-connector.js";
 import type { GatewayConnection } from "./gateway-descriptor-cache.js";
+import { computerStreamLine } from "../vnc/computer-stream-log.js";
 
 export const LOCAL_DOCKER_BOX_IMAGE = "public.ecr.aws/k0i0n2g5/cursorenvironments/universal:sand-box-latest";
 export const LOCAL_DOCKER_BOX_CONTAINER = "grok-bot-local-vm";
@@ -184,25 +185,40 @@ export function localDockerInferenceEnvironmentArguments(inferenceCredential?: P
 }
 
 async function ensureLocalDockerBox(settingsPath: string, inferenceCredential?: InferenceCredential): Promise<GatewayConnection> {
+  try {
+    return await ensureLocalDockerBoxNarrated(settingsPath, inferenceCredential);
+  } catch (error) {
+    computerStreamLine(`local docker FAILED: ${error instanceof Error ? error.message : String(error)}`);
+    throw error;
+  }
+}
+
+async function ensureLocalDockerBoxNarrated(settingsPath: string, inferenceCredential?: InferenceCredential): Promise<GatewayConnection> {
+  computerStreamLine("local docker: ensuring the box");
   const token = await readOrCreateToken(settingsPath);
   const hostBundle = await stageCurrentHostBundle(settingsPath);
   const inferenceDir = await ensureInferenceCredentialDirectory(settingsPath);
   if (inferenceCredential != null) await persistInferenceCredential(settingsPath, inferenceCredential);
   const daemon = await runDocker(["info", "--format", "{{.ServerVersion}}"]).catch(() => ({ ok: false, output: "Docker is not installed." }));
   if (!daemon.ok) throw new Error(`Local Docker VM is selected, but Docker is unavailable: ${daemon.output || "start Docker and try again"}`);
+  computerStreamLine(`local docker: daemon ${daemon.output.trim()}`);
   const inspected = await inspectContainer();
+  computerStreamLine(`local docker: container exists=${inspected.exists} running=${inspected.running} owned=${inspected.owned} schema=${inspected.schemaVersion || "?"} hostBundleMatches=${inspected.hostSha256 === hostBundle.sha256}`);
   if (inspected.exists && !inspected.owned) throw new Error(`Local Docker VM cannot use ${LOCAL_DOCKER_BOX_CONTAINER}: an unowned container already has that name.`);
   if (inspected.exists && inspected.image !== LOCAL_DOCKER_BOX_IMAGE) throw new Error(`Local Docker VM container uses unexpected image ${inspected.image}. Remove it explicitly before changing images.`);
   const shouldReplace = inspected.exists && localDockerContainerNeedsReplace(inspected, hostBundle.sha256);
   if (shouldReplace) {
+    computerStreamLine("local docker: replacing the container (schema or host bundle changed)");
     const removed = await runDocker(["rm", "--force", LOCAL_DOCKER_BOX_CONTAINER]);
     if (!removed.ok) throw new Error(`Could not replace the local VM with the current app runtime: ${removed.output}`);
   }
   const current = shouldReplace ? await inspectContainer() : inspected;
   if (current.exists && !current.running) {
+    computerStreamLine("local docker: starting the stopped container");
     const started = await runDocker(["start", LOCAL_DOCKER_BOX_CONTAINER]);
     if (!started.ok) throw new Error(`Could not start the local Docker VM: ${started.output}`);
   } else if (!current.exists) {
+    computerStreamLine("local docker: creating the container");
     const authMounts = await localAuthMountArguments();
     const created = await runDocker([
       "run", "--detach", "--name", LOCAL_DOCKER_BOX_CONTAINER,
@@ -225,8 +241,14 @@ async function ensureLocalDockerBox(settingsPath: string, inferenceCredential?: 
     if (!created.ok) throw new Error(`Could not create the local Docker VM: ${created.output}`);
   }
   const deadline = Date.now() + READY_TIMEOUT_MS;
+  const waitStarted = Date.now();
+  let reported = false;
   while (Date.now() < deadline) {
-    if (await gatewayReady(token)) return { baseUrl: LOCAL_DOCKER_GATEWAY_URL, token };
+    if (await gatewayReady(token)) {
+      computerStreamLine(`local docker: gateway ready at ${LOCAL_DOCKER_GATEWAY_URL} after ${Math.round((Date.now() - waitStarted) / 1000)}s`);
+      return { baseUrl: LOCAL_DOCKER_GATEWAY_URL, token };
+    }
+    if (!reported && Date.now() - waitStarted > 20_000) { reported = true; computerStreamLine("local docker: gateway not answering yet after 20s; still waiting (up to 3 minutes)"); }
     const state = await inspectContainer();
     if (!state.running) {
       const logs = await runDocker(["logs", "--tail", "80", LOCAL_DOCKER_BOX_CONTAINER]);

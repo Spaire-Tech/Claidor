@@ -150,7 +150,41 @@ test("a log line is turned into one sentence a person can act on", async () => {
     assert.equal(computerStreamReason('guest console[info] [SimeonScreen] page error: x is not defined at vnc.html:3'), "Error inside the screen page: x is not defined at vnc.html:3");
     assert.equal(computerStreamReason('guest console[info] [SimeonScreen] state=connected status="Connected (unencrypted) to: box" dialog=none'), "");
     assert.equal(computerStreamReason("guest dom-ready url=http://127.0.0.1:6080/vnc.html"), null);
+    // The box connection, narrated by the main process.
+    assert.equal(computerStreamReason("box reachability outcome=timeout method=getForeverBoxStatus cause=? baseUrl=http://127.0.0.1:1340"), 'The computer\'s gateway did not answer "getForeverBoxStatus" within the deadline.');
+    assert.equal(computerStreamReason("box reachability outcome=network method=ensureForeverBox cause=ECONNREFUSED baseUrl=http://127.0.0.1:1340"), 'The computer\'s gateway could not be reached for "ensureForeverBox" (ECONNREFUSED).');
+    assert.equal(computerStreamReason("box reachability outcome=http_5xx method=getForeverBoxStatus cause=502 baseUrl=?"), 'The computer\'s gateway failed "getForeverBoxStatus": http_5xx (502).');
+    assert.equal(computerStreamReason("local docker FAILED: Local Docker VM is selected, but Docker is unavailable: start Docker and try again"), "Local Docker VM is selected, but Docker is unavailable: start Docker and try again");
+    assert.equal(computerStreamReason("local docker: gateway ready at http://127.0.0.1:1340 after 4s"), "");
+    assert.equal(computerStreamReason("local docker: container exists=true running=true owned=true schema=9 hostBundleMatches=true"), null);
   } finally {
     await dispose();
   }
+});
+
+test("lines written before the log exists are held and flushed into it", async () => {
+  const { module, dispose } = await load("source/electron-main/vnc/computer-stream-log.ts");
+  try {
+    module.resetComputerStreamLog();
+    module.computerStreamLine("local docker: ensuring the box");
+    module.computerStreamLine("local docker: daemon 28.0.1");
+    const written = [];
+    const log = module.createComputerStreamLog({ filePath: "/x", append: (_file, text) => written.push(text.trim().replace(/^\S+ /, "")) });
+    module.adoptComputerStreamLog(log);
+    module.computerStreamLine("box reachability outcome=timeout method=getForeverBoxStatus cause=? baseUrl=?");
+    assert.deepEqual(written, ["computer stream log at /x", "local docker: ensuring the box", "local docker: daemon 28.0.1", "box reachability outcome=timeout method=getForeverBoxStatus cause=? baseUrl=?"]);
+    module.resetComputerStreamLog();
+  } finally {
+    await dispose();
+  }
+});
+
+test("the box connector and the coordinator's reachability reports write into the same log", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const connector = await readFile(path.join(repoRoot, "source/electron-main/box/local-docker-host-connector.ts"), "utf8");
+  assert.match(connector, /computerStreamLine\(`local docker FAILED: /);
+  assert.match(connector, /computerStreamLine\(`local docker: gateway ready at /);
+  assert.match(connector, /computerStreamLine\(`local docker: container exists=/);
+  const provider = await readFile(path.join(repoRoot, "source/electron-main/coordinator/production-provider.ts"), "utf8");
+  assert.match(provider, /computerStreamLine\(`box reachability outcome=/);
 });

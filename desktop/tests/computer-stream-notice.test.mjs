@@ -64,6 +64,33 @@ test("a spinner that outlives the delay gets the last reason and the log path pa
   }
 });
 
+test("the failed-read placeholder gets the reason at once, with no delay, and loses it when the placeholder goes", async () => {
+  const { module, dispose } = await loadNotice();
+  const window = new Window();
+  let handle = null;
+  try {
+    const document = window.document;
+    document.body.innerHTML = '<div class="sand-computer-stage__placeholder"><span>Can\'t reach Perrin\'s screen</span><button>Retry</button></div>';
+    let deliver = null;
+    handle = module.installComputerStreamNotice({ doc: document, subscribe: (listener) => { deliver = listener; return () => {}; }, delayMs: 20_000, now: () => 0, schedule: () => {}, log: () => {} });
+    const notice = () => document.querySelector("[data-caisra-screen-notice]");
+    assert.ok(notice(), "painted at once: the read already failed");
+    assert.equal(notice().textContent, "The computer's status could not be read. No reason was reported yet.");
+    deliver({ line: "2026-09-22T10:00:00.000Z computer stream log at /log", filePath: "/log" });
+    deliver({ line: "2026-09-22T10:00:01.000Z box reachability outcome=network method=getForeverBoxStatus cause=ECONNREFUSED baseUrl=http://127.0.0.1:1340" });
+    assert.equal(notice().textContent, "The computer's status could not be read. The computer's gateway could not be reached for \"getForeverBoxStatus\" (ECONNREFUSED). Details: /log");
+    deliver({ line: "2026-09-22T10:00:02.000Z local docker FAILED: Local Docker VM is selected, but Docker is unavailable: start Docker and try again" });
+    assert.equal(notice().textContent, "The computer's status could not be read. Local Docker VM is selected, but Docker is unavailable: start Docker and try again Details: /log");
+    document.querySelector(".sand-computer-stage__placeholder span").textContent = "Booting up the computer";
+    deliver({ line: "2026-09-22T10:00:03.000Z local docker: gateway ready at http://127.0.0.1:1340 after 3s" });
+    assert.equal(notice(), null, "the placeholder no longer says Can't reach");
+  } finally {
+    handle?.disconnect();
+    window.close();
+    await dispose();
+  }
+});
+
 test("the notice text reads the same with and without a reason or a path", async () => {
   const { module, dispose } = await loadNotice();
   try {
