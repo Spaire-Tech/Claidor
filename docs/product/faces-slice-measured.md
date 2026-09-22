@@ -1,4 +1,40 @@
-# The agents' faces: DiceBear slice on the marks, keyed on Grok's avatar (22 September 2026)
+# The agents' faces: DiceBear slice on the marks, keyed on what the shipped face draws (22 September 2026)
+
+## Correction, same day: the first slice build was wrong, and the founder's screenshot proved it
+
+The first slice build keyed the face on `data-avatar-shape` and
+`data-avatar-color`, on the assumption that every mark carried both. The
+founder's screenshot of the real app showed otherwise: every sidebar face
+was the same lump in a different colour, and the bot picker under "+"
+was nine identical brown faces. Read against the reconstruction
+(`character.tsx`, `agent-avatar.tsx`, `avatar-editor/view.tsx`, all
+byte-evidenced), the shipped page exposes:
+
+- on the sidebar's wrapper span: `data-avatar-color`, and
+  `data-avatar-shape` **only when a shape was persisted**, which for a new
+  agent it never is;
+- in the avatar editor and the bot picker: the **bare face svg**, with no
+  attributes at all but `data-source-id` (`<agentId>` or, for a shape cell,
+  `<agentId>-<shape>`), and nothing on the picker's rows.
+
+So the first build had the shape for nobody (lump for all), the colour only
+in the sidebar, and one shared face for anything else. That is exactly
+"the avatars lie and are incoherent". The keying is now read off the
+drawing itself, which every mark has: the shape from the face's `<path d>`
+(one of eight shipped paths, baked into `grok-shape-paths.json` from the
+reconstruction), the colour from the two stops of its ink gradient (Grok's
+eleven colours), the id and a cell's shape from the source id, and Grok's
+own hash defaults (`grok-persona.ts`, the shipped functions) when an id is
+all there is. The old attributes still win when present.
+
+Measured on a preview page that draws the marks exactly as the pinned
+renderer does (wrapper with colour only; bare cells; bare picker rows):
+18 sidebar agents → 18 different faces in their own shapes; 8 editor cells
+→ 8 bodies with one cut pattern; 9 picker rows with nothing but the
+drawing → 9 different faces. `harness/shots/face-preview.png`. The rest
+of this document describes the first build and is kept as the record.
+
+
 
 The founder's second choice, the same day as the clay faces: "i've changed my
 mind on the avatars. i want this: https://www.dicebear.com/styles/slice/". And

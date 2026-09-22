@@ -165,9 +165,17 @@ and moves the body with Grok Bot's own motion table, verbatim
 (`desktop/source/shared/agent/face-motion.ts`): it bobs, leans, turns once
 on sending and bounces on receiving; the slice has no eyes. Measured in the
 harness (`node harness/face-preview.mjs`, `node harness/shoot.mjs faces`) and
-in `docs/product/faces-slice-measured.md`. **Still unmeasured:** whether the
-pinned 0.18.0 mark carries `data-avatar-shape` as the reconstruction does;
-the `[CaisraFaceOverlay]` console line on a Mac prints the real mark.
+in `docs/product/faces-slice-measured.md`. **Corrected the same day, from
+the founder's screenshot of the real app:** the shipped marks do not carry
+`data-avatar-shape` unless a shape was persisted, and the avatar editor and
+bot picker draw the bare face svg with no attributes at all, so the first
+slice build was one lump per colour and one brown face for the picker. The
+face is now keyed on what the shipped face draws: its `<path d>` against the
+eight baked shape paths, its ink gradient against Grok's eleven colours, the
+source id for the agent and a cell's shape, and Grok's own hash defaults
+(`desktop/source/shared/agent/grok-persona.ts`). Anything named in a
+screenshot of the real app outranks anything inferred from the
+reconstruction's attributes.
 
 **The computer's screen, measured 22 September 2026.** With the Computer
 panel spinning "connecting", the founder measured: port 6080 published, the

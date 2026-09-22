@@ -44,6 +44,20 @@ function grokMark(document, { color = "blue", shape = "blob", sourceId = "sand-a
   return mark;
 }
 
+// The shipped face as the pinned renderer draws it (character.tsx): a bare
+// svg with a source id, an ink gradient in Grok's stops and the shape's path.
+const STOPS = { blue: ["#2A92FE", "#0E74E0"], green: ["#00C972", "#009957"], red: ["#FF3E51", "#E02135"], magenta: ["#FF5EB1", "#E02A88"] };
+const PATHS = { blob: "M228.541 114.228C228.541 130.133 225.184 145.994 218.738 160.534C212.674 174.217", hex: "M217.73 153.04Q217.73 174 199.58 184.48L132.42 223.25Q114.27", teardrop: "M125.97 7.2Q114.27 -7.28 102.57 7.2L43.49 80.31C13.46 117.46", tablet: "M74.27 40.27L154.27 40.27C195.14 40.27 228.27 73.4 228.27 11" };
+function shippedFace(document, { sourceId, color = "blue", shape = "blob", state = "idle" } = {}) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "-15 -15 259 259");
+  svg.setAttribute("data-grok-state", state);
+  if (sourceId != null) svg.setAttribute("data-source-id", sourceId);
+  const [light, dark] = STOPS[color];
+  svg.innerHTML = `<defs><linearGradient id="r1-ink" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="${light}"></stop><stop offset="1" stop-color="${dark}"></stop></linearGradient></defs><g transform="translate(0 0)"><path d="${PATHS[shape]}Z" fill="url(#r1-ink)"></path></g>`;
+  return svg;
+}
+
 const finish = async (loaded, window) => { loaded.module.resetFaceMotion?.(); window.close(); await loaded.dispose(); };
 
 test("the preload overlay paints a slice face keyed on the mark's shape and colour, and moves it", async () => {
@@ -86,25 +100,83 @@ test("the preload overlay paints a slice face keyed on the mark's shape and colo
   }
 });
 
-test("the picker's cells are real alternatives: one agent, its cuts, every shape and colour", async () => {
+test("the avatar editor's cells are bare faces: shape from the cell's source id, colour from the ink, id from the source", async () => {
   const loaded = await loadOverlay();
   const window = new Window();
   try {
     const { syncFaceMarks, hostIdentity } = loaded.module;
     const shapes = ["blob", "pebble", "squircle", "tablet", "wedge", "hex", "cloud", "teardrop"];
-    // The reconstruction's picker (avatar-editor/view.tsx): the current face
-    // with source `<agentId>`, then one cell per shape with source
-    // `<agentId>-<shape>`, all in the agent's colour.
-    const current = grokMark(window.document, { sourceId: "agent-juno", shape: "blob", color: "green" });
-    const cells = shapes.map((shape) => grokMark(window.document, { sourceId: `agent-juno-${shape}`, shape, color: "green" }));
-    assert.deepEqual(hostIdentity(cells[5]), { agentId: "agent-juno", shape: "hex", color: "green" });
-    assert.equal(syncFaceMarks(window.document), 9);
-    const keys = [current, ...cells].map((mark) => mark.querySelector("[data-caisra-face]").getAttribute("data-face-key"));
-    assert.equal(new Set(keys).size, 8, `eight different faces (the current one repeats its own shape): ${keys.join(" ")}`);
-    const cuts = (mark) => /href="#[^"]*-cuts-([A-Za-z]+)-/.exec(mark.querySelector("[data-caisra-face]").innerHTML)[1];
-    assert.ok(cells.every((cell) => cuts(cell) === cuts(current)), "every cell keeps the agent's own cuts, so the choice is the shape");
-    const bodies = new Set(cells.map((cell) => /id="[^"]*-shape-([a-z]+)-/.exec(cell.querySelector("[data-caisra-face]").innerHTML)[1]));
-    assert.equal(bodies.size, 8, "eight cells, eight bodies");
+    const document = window.document;
+    // avatar-editor/view.tsx: the current face with source `<agentId>`, then
+    // one bare svg per shape with source `<agentId>-<shape>`, all in green.
+    const current = shippedFace(document, { sourceId: "agent-juno", color: "green", shape: "hex" });
+    const cells = shapes.map((shape) => { const cell = document.createElement("button"); cell.append(shippedFace(document, { sourceId: `agent-juno-${shape}`, color: "green", shape: "blob" })); return cell; });
+    document.body.append(current, ...cells);
+    assert.deepEqual(hostIdentity(current), { agentId: "agent-juno", shape: "hex", color: "green" }, "the current face: shape read off its path, colour off its gradient");
+    assert.deepEqual(hostIdentity(cells[5].firstElementChild), { agentId: "agent-juno", shape: "hex", color: "green" }, "a cell: shape from the source id suffix");
+    assert.equal(syncFaceMarks(document), 9);
+    const keys = [current, ...cells].map((node) => (node.matches("svg") ? node.nextElementSibling : node.querySelector("[data-caisra-face]")).getAttribute("data-face-key"));
+    assert.deepEqual(keys, ["agent-juno|hexagon|00C972", ...shapes.map((shape) => `agent-juno|${{ blob: "lump", pebble: "egg", squircle: "squircle", tablet: "pill", wedge: "diamond", hex: "hexagon", cloud: "arch", teardrop: "lens" }[shape]}|00C972`)]);
+    assert.equal(new Set(keys).size, 8, "eight different faces, the current one repeating its own shape");
+    const cuts = (node) => /href="#[^"]*-cuts-([A-Za-z]+)-/.exec(node.innerHTML)[1];
+    const faces = [...document.querySelectorAll("[data-caisra-face]")];
+    assert.ok(faces.every((face) => cuts(face) === cuts(faces[0])), "every cell keeps the agent's own cuts, so the choice is the shape");
+  } finally {
+    await finish(loaded, window);
+  }
+});
+
+test("a bot picker row that exposes only the drawing still gets that agent's own face", async () => {
+  const loaded = await loadOverlay();
+  const window = new Window();
+  try {
+    const { syncFaceMarks, hostIdentity } = loaded.module;
+    const document = window.document;
+    // No wrapper, no attributes but the source: shape and colour come off the drawing.
+    const a = shippedFace(document, { sourceId: "sand-agent-mark-source-agent-a", color: "red", shape: "teardrop" });
+    const b = shippedFace(document, { sourceId: "sand-agent-mark-source-agent-b", color: "magenta", shape: "tablet" });
+    // No source at all: still the drawing.
+    const c = shippedFace(document, { color: "blue", shape: "hex" });
+    document.body.append(a, b, c);
+    assert.deepEqual(hostIdentity(a), { agentId: "agent-a", shape: "teardrop", color: "red" });
+    assert.deepEqual(hostIdentity(b), { agentId: "agent-b", shape: "tablet", color: "magenta" });
+    assert.deepEqual(hostIdentity(c), { agentId: null, shape: "hex", color: "blue" });
+    assert.equal(syncFaceMarks(document), 3);
+    const keys = [a, b, c].map((node) => node.nextElementSibling.getAttribute("data-face-key"));
+    assert.deepEqual(keys, ["agent-a|lens|FF263C", "agent-b|pill|FF309B", "persona|hexagon|1084FE"]);
+  } finally {
+    await finish(loaded, window);
+  }
+});
+
+test("a sidebar mark whose wrapper carries the colour but no shape gets Grok's shape for that agent, not one lump for all", async () => {
+  const loaded = await loadOverlay();
+  const window = new Window();
+  try {
+    const { syncFaceMarks, hostIdentity } = loaded.module;
+    const document = window.document;
+    const marks = ["agent-perrin", "agent-juno", "agent-mira", "agent-sable"].map((id) => {
+      const mark = document.createElement("span");
+      mark.className = "sand-agent-avatar sand-grok-bot-mark";
+      mark.setAttribute("data-avatar-color", "blue");
+      // The wrapper writes data-avatar-shape only when a shape was persisted; the face draws the hash default.
+      mark.append(shippedFace(document, { sourceId: `sand-agent-mark-source-${id}`, color: "blue", shape: id === "agent-perrin" ? "teardrop" : id === "agent-juno" ? "hex" : id === "agent-mira" ? "tablet" : "blob" }));
+      document.body.append(mark);
+      return mark;
+    });
+    assert.deepEqual(hostIdentity(marks[0]), { agentId: "agent-perrin", shape: "teardrop", color: "blue" });
+    assert.equal(syncFaceMarks(document), 4);
+    const shapes = marks.map((mark) => mark.querySelector("[data-caisra-face]").getAttribute("data-face-key").split("|")[1]);
+    assert.deepEqual(shapes, ["lens", "hexagon", "pill", "lump"]);
+    // A face whose path is not one of the eight, and no attribute: Grok's hash default for that id.
+    const odd = document.createElement("span");
+    odd.className = "sand-grok-bot-mark";
+    odd.setAttribute("data-avatar-color", "green");
+    const face = shippedFace(document, { sourceId: "sand-agent-mark-source-agent-perrin", color: "green" });
+    face.querySelector("path").setAttribute("d", "M0 0L1 1Z");
+    odd.append(face);
+    document.body.append(odd);
+    assert.equal(hostIdentity(odd).shape, "teardrop", "resolvePersonaShape('agent-perrin') is teardrop, as the shipped hash says");
   } finally {
     await finish(loaded, window);
   }
@@ -146,7 +218,7 @@ test("a mark without a face source is keyed on its shape and colour alone; a bar
     bare.append(window.document.createElement("canvas"));
     window.document.body.append(coloured, bare);
     assert.deepEqual(hostIdentity(coloured), { agentId: null, shape: "cloud", color: "orange" });
-    assert.deepEqual(hostIdentity(bare), { agentId: null, shape: null, color: null });
+    assert.deepEqual(hostIdentity(bare), { agentId: null, shape: null, color: null }, "a mark that exposes nothing at all");
     assert.equal(syncFaceMarks(window.document), 2);
     assert.equal(coloured.querySelector("[data-caisra-face]").getAttribute("data-face-key"), "persona|arch|FF6700");
     assert.equal(bare.querySelector("[data-caisra-face]").getAttribute("data-face-key"), "persona|lump|seed");
@@ -243,7 +315,7 @@ test("a mark that is itself an <svg> gets the overlay beside it and is hidden as
     const overlay = mark.nextElementSibling;
     assert.ok(overlay);
     assert.equal(overlay.getAttribute("data-caisra-face"), "1");
-    assert.equal(overlay.getAttribute("data-face-key"), "agent-sable|lump|seed");
+    assert.equal(overlay.getAttribute("data-face-key"), "agent-sable|pill|936439", "nothing drawn and no attribute: Grok's own hash defaults for that id (tablet, brown), never one shared face");
     assert.equal(overlay.style.getPropertyValue("position"), "absolute");
     assert.equal(cell.style.position, "relative");
     assert.equal(syncFaceMarks(window.document), 1);

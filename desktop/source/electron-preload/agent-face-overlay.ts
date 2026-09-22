@@ -1,5 +1,6 @@
 /// <reference lib="dom" />
 import { CAISRA_FACE_ATTR, agentFace, faceKey, type FaceIdentity } from "../shared/agent/agent-face.js";
+import { colorFromStops, parseSourceId, resolvePersonaColor, resolvePersonaShape, shapeFromPath } from "../shared/agent/grok-persona.js";
 import {
   faceActionForTransition,
   faceGazeFor,
@@ -83,24 +84,11 @@ export function findPersonaAvatarHosts(root: ParentNode): Element[] {
   return [...root.querySelectorAll(PERSONA_MARK_SELECTOR)].filter((node) => !skipHost(node));
 }
 
-/**
- * The agent's id, as the mark carries it. The shipped mark names its face
- * source `sand-agent-mark-source-<agentId>` (agent-avatar.tsx); the picker's
- * cells name theirs `<agentId>` and `<agentId>-<shape>`. A mark without one
- * has no agent id, and its face is keyed on shape and colour alone.
- */
-export function hostAgentId(host: Element): string | null {
-  const raw = host.getAttribute("data-source-id")
-    ?? host.closest("[data-source-id]")?.getAttribute("data-source-id")
-    ?? host.querySelector("[data-source-id]")?.getAttribute("data-source-id")
-    ?? host.shadowRoot?.querySelector("[data-source-id]")?.getAttribute("data-source-id")
-    ?? host.getAttribute("data-agent-id")
-    ?? host.closest("[data-agent-id]")?.getAttribute("data-agent-id")
-    ?? null;
-  if (raw == null) return null;
-  // A picker cell for shape X is the agent's face in shape X: same cuts.
-  const id = raw.replace(/^sand-agent-mark-source-/, "").replace(/-(blob|pebble|squircle|tablet|wedge|hex|cloud|teardrop)$/, "");
-  return id.length > 0 ? id : null;
+/** The shipped face svg behind a host: the host itself, a descendant, or one inside an open shadow root. */
+export function hostFaceSvg(host: Element): Element | null {
+  if (isSvgElement(host)) return host;
+  const selector = "svg[data-source-id], svg[data-grok-state], " + GROK_FACE_VIEWBOXES.map((viewBox) => `svg[viewBox="${viewBox}"]`).join(", ");
+  return host.querySelector(selector) ?? host.shadowRoot?.querySelector(selector) ?? null;
 }
 
 function hostAttribute(host: Element, name: string): string | null {
@@ -112,16 +100,37 @@ function hostAttribute(host: Element, name: string): string | null {
 }
 
 /**
- * What the face is keyed on: Grok's persisted shape and colour, as the mark
- * writes them (`data-avatar-shape`, `data-avatar-color`, on the mark or the
- * nearest thing carrying them), and the agent id for the cut pattern.
+ * What the face is keyed on, read the way the shipped page actually
+ * exposes it. The sidebar's wrapper carries `data-avatar-color` and, only
+ * when one was persisted, `data-avatar-shape`; the avatar editor's cells
+ * and the bot picker draw the bare face svg with nothing but the drawing.
+ * So: the agent id from the face source (`sand-agent-mark-source-<id>`,
+ * `<id>`, or `<id>-<shape>` for a cell); the shape from the attribute, else
+ * the cell's suffix, else the path the face draws, else Grok's hash
+ * default for the id; the colour from the attribute, else the gradient the
+ * face paints, else Grok's hash default. A mark that exposes nothing at all
+ * falls to the shared default, and is reported as such.
  */
 export function hostIdentity(host: Element): FaceIdentity {
-  return {
-    agentId: hostAgentId(host),
-    shape: hostAttribute(host, "data-avatar-shape"),
-    color: hostAttribute(host, "data-avatar-color"),
-  };
+  const face = hostFaceSvg(host);
+  const source = parseSourceId(
+    hostAttribute(host, "data-source-id") ?? face?.getAttribute("data-source-id")
+      ?? hostAttribute(host, "data-agent-id"),
+  );
+  const shapeAttribute = hostAttribute(host, "data-avatar-shape");
+  const colorAttribute = hostAttribute(host, "data-avatar-color");
+  const drawnShape = shapeFromPath(face?.querySelector("path[d]")?.getAttribute("d"));
+  const stops = face == null ? [] : [...face.querySelectorAll("linearGradient stop")].map((stop) => stop.getAttribute("stop-color"));
+  const drawnColor = colorFromStops(...stops);
+  const agentId = source.agentId;
+  const shape: string | null = shapeAttribute ?? source.shape ?? drawnShape ?? (agentId == null ? null : resolvePersonaShape(agentId));
+  const color: string | null = colorAttribute ?? drawnColor ?? (agentId == null ? null : resolvePersonaColor(agentId));
+  return { agentId, shape, color };
+}
+
+/** Kept for callers that only want the id. */
+export function hostAgentId(host: Element): string | null {
+  return hostIdentity(host).agentId ?? null;
 }
 
 /** The agent's state as the shipped mark writes it: `data-grok-state`, on the mark or on the face inside it. */
