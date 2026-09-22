@@ -91,7 +91,6 @@ function nodeBuildOptions(outfile) {
     external: ["electron"],
     format: "cjs",
     legalComments: "none",
-    loader: { ".png": "dataurl" },
     logLevel: "silent",
     minify: false,
     outfile,
@@ -119,7 +118,6 @@ async function bundlePreloadSource(entry, outfile) {
   await esbuild({
     ...nodeBuildOptions(outfile),
     define: {},
-    loader: { ".png": "dataurl" },
     entryPoints: [path.join(repoRoot, entry)],
     banner: { js: `// Deterministic clean-source preload bundle: ${entry}` },
   });
