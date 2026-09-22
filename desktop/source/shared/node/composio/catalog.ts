@@ -1,5 +1,5 @@
 /**
- * The forty-three connectors Composio actually carries for Caisra.
+ * The forty-three connectors Composio actually carries for Simeon.
  *
  * Cut on 16 September 2026: every card is a Connect button. Slugs were
  * checked against composio.dev/toolkits/<slug> (200). Fathom and Mercury

@@ -50,7 +50,7 @@ Three pieces, none of which change the connection itself:
 
 1. **`electron-main/vnc/computer-stream-log.ts`.** The main process writes
    `computer-stream.log` in the app's data folder
-   (`~/Library/Application Support/Caisra/computer-stream.log` on a Mac),
+   (`~/Library/Application Support/Simeon/computer-stream.log` on a Mac; before 22 September's rename the folder was `Grok Bot`, never `Caisra`),
    started over each run and echoed to stderr. It records the webview
    attach (src, partition, which preload, whether that file exists), every
    load event with Chromium's error code and name, every console line the
@@ -73,7 +73,7 @@ Three pieces, none of which change the connection itself:
 Open the Computer panel, wait 20 seconds, then:
 
 ```
-cat ~/Library/Application\ Support/Caisra/computer-stream.log
+cat ~/Library/Application\ Support/Simeon/computer-stream.log
 ```
 
 The first `attach webview` line says what the renderer asked for and

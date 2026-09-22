@@ -78,7 +78,7 @@ test("the first-run intro runs on the full runner, and product turns on the host
   assert.doesNotMatch(lifecycle, /runRoutedProviderText/);
   assert.doesNotMatch(lifecycle, /SEND_MESSAGE_PLAIN_TEXT_RETRY/);
   assert.doesNotMatch(lifecycle, /cheapIntroductionMessages/);
-  assert.doesNotMatch(lifecycle, /buildCaisraProductSystemPrompt|withLeadingHello|firstHelloText|CAISRA_USER_REPLY_REMINDER/);
+  assert.doesNotMatch(lifecycle, /buildSimeonProductSystemPrompt|withLeadingHello|firstHelloText|CAISRA_USER_REPLY_REMINDER/);
   // That runner speaks Claidor.
   assert.match(turnShell, /const inferenceProvider = "claidor" as const/);
   // Product turns go to the host by default; off is the Mac hatch.

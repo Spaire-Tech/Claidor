@@ -12,7 +12,7 @@ import { COMPUTER_STREAM_CHANNEL, computerStreamReason, isComputerStreamMessage 
 export const COMPUTER_STREAM_NOTICE_ATTR = "data-caisra-screen-notice";
 export const COMPUTER_STREAM_NOTICE_DELAY_MS = 20_000;
 export const CONNECTING_SELECTOR = ".sand-box-vnc-pool__connecting";
-export const NOTICE_LOG_TAG = "[CaisraScreenNotice]";
+export const NOTICE_LOG_TAG = "[SimeonScreenNotice]";
 
 export interface ComputerStreamNoticeOptions {
   readonly doc?: Document;

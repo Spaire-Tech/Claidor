@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Caisra \u2014 a team of always-on agents, on your Mac, with a computer of their own",
+  "description": "Simeon \u2014 a team of always-on agents, on your Mac, with a computer of their own",
   "engines": {
     "node": ">=26.5.0 <27"
   },

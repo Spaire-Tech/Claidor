@@ -92,7 +92,7 @@ export async function startVendorMcpOAuth(args: {
     method: "POST",
     headers: { "content-type": "application/json", accept: "application/json" },
     body: JSON.stringify({
-      client_name: "Caisra",
+      client_name: "Simeon",
       redirect_uris: [redirectUri],
       grant_types: ["authorization_code"],
       response_types: ["code"],
@@ -102,7 +102,7 @@ export async function startVendorMcpOAuth(args: {
   const client = await readJson(registered);
   const clientId = isRecord(client) && typeof client.client_id === "string" ? client.client_id : "";
   if (!registered.ok || clientId.length === 0) {
-    throw new Error(`Could not register Caisra with the vendor for ${args.pluginId}.`);
+    throw new Error(`Could not register Simeon with the vendor for ${args.pluginId}.`);
   }
   const { verifier, challenge } = pkce();
   const state = base64Url(randomBytes(16));

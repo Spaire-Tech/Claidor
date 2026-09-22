@@ -21,7 +21,7 @@ export function fallbackIntroductionText(name: string): string {
 }
 
 export function cheapIntroductionMessages(profile: { readonly name: string; readonly description: string }): readonly { readonly role: "system" | "user"; readonly content: string }[] {
-  const name = profile.name.trim() || "Caisra";
+  const name = profile.name.trim() || "Simeon";
   const description = profile.description.trim();
   return [
     { role: "system", content: `You are ${name}.${description.length > 0 ? ` ${description}` : ""} ${SAND_ONBOARDING_GREETING_PROMPT}` },

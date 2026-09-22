@@ -87,7 +87,7 @@ export function GroupMembersPane({ provider, alert: _alert, agent, accountGenera
           </div>
         </li> : null}
       </ul>
-      {snapshot.group.memberIds.length >= GROUP_MAX_MEMBERS ? <div className="sand-group-members-footer">{`Groups can have up to ${GROUP_MAX_MEMBERS} members.`}</div> : snapshot.candidates.length === 0 ? <div className="sand-group-members-footer">Create more Bots to add them here.</div> : null}
+      {snapshot.group.memberIds.length >= GROUP_MAX_MEMBERS ? <div className="sand-group-members-footer">{`Groups can have up to ${GROUP_MAX_MEMBERS} members.`}</div> : snapshot.candidates.length === 0 ? <div className="sand-group-members-footer">Create more Agents to add them here.</div> : null}
     </section>
   );
 }

@@ -10,10 +10,10 @@ const patchModule = pathToFileURL(path.join(repoRoot, "scripts/lib/router-render
 
 test("the brand pass renames every Grok Bot and New Bot in a chunk and counts them", async () => {
   const { patchOriginalBrandStrings } = await import(patchModule);
-  const chunk = 'const xSe = "Grok Bot";a.jsx(h1,{children:"Meet Grok Bot"});t("Grok Bot\'s Computer");label:"New Bot";placeholder:"New Bot";cls:"sand-grok-bot-mark";';
+  const chunk = 'const xSe = "Grok Bot";a.jsx(h1,{children:"Meet Grok Bot"});t("Grok Bot\'s Computer");label:"New Bot";placeholder:"New Bot";cls:"sand-grok-bot-mark";x:"Create new Bot",y:"Search or create Bots",z:"Give each Bot a job",w:"Hidden Bots",v:"Bot",u:"Reset to the Bot";const Bot=new Bot(Bot.x,Bot);return Bot;const Bots=[];p:"Caisra\'s plugins"';
   const { source, counts } = patchOriginalBrandStrings(chunk);
-  assert.equal(source, 'const xSe = "Simeon";a.jsx(h1,{children:"Meet Simeon"});t("Simeon\'s Computer");label:"New Agent";placeholder:"New Agent";cls:"sand-grok-bot-mark";');
-  assert.deepEqual(counts, { "Grok Bot": 3, "New Bot": 2 });
+  assert.equal(source, 'const xSe = "Simeon";a.jsx(h1,{children:"Meet Simeon"});t("Simeon\'s Computer");label:"New Agent";placeholder:"New Agent";cls:"sand-grok-bot-mark";x:"Create new Agent",y:"Search or create Agents",z:"Give each Agent a job",w:"Hidden Agents",v:"Agent",u:"Reset to the Agent";const Bot=new Bot(Bot.x,Bot);return Bot;const Bots=[];p:"Simeon\'s plugins"');
+  assert.deepEqual(counts, { "Grok Bot": 3, "New Bot": 2, "Caisra": 1, "Bots": 2, "Bot": 4 });
   assert.match(source, /sand-grok-bot-mark/, "internal identifiers are untouched");
   const untouched = patchOriginalBrandStrings("nothing here");
   assert.equal(untouched.source, "nothing here");
@@ -35,7 +35,7 @@ test("the full patch renames the staged renderer and records what it changed, an
     await writeFile(path.join(assets, "style.css"), '.x{content:"Grok Bot"}');
     await writeFile(path.join(stage, "dist", "renderer", "index.html"), "<title>Grok Bot</title>");
     const record = await applyOriginalRendererRouterPatch({ stageRoot: stage });
-    assert.deepEqual(record.brand.totals, { "Grok Bot": 5, "New Bot": 1 });
+    assert.deepEqual(record.brand.totals, { "Grok Bot": 5, "New Bot": 1, "Caisra": 0, "Bots": 0, "Bot": 0 });
     assert.equal(record.brand.files.length, 4);
     assert.match(await readFile(path.join(assets, "index-abc.js"), "utf8"), /const xSe = "Simeon";const title="Meet Simeon";const n="New Agent";/);
     assert.match(await readFile(path.join(assets, "other-def.js"), "utf8"), /Simeon settings/);

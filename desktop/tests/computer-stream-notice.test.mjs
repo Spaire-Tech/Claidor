@@ -39,21 +39,21 @@ test("a spinner that outlives the delay gets the last reason and the log path pa
     assert.equal(notice(), null, "nothing before the delay");
     assert.equal(scheduled.length, 1);
     assert.equal(scheduled[0].delayMs, 20_050);
-    deliver({ line: "2026-09-22T10:00:00.000Z computer stream log at /Users/me/Library/Application Support/Caisra/computer-stream.log", filePath: "/Users/me/Library/Application Support/Caisra/computer-stream.log" });
+    deliver({ line: "2026-09-22T10:00:00.000Z computer stream log at /Users/me/Library/Application Support/Simeon/computer-stream.log", filePath: "/Users/me/Library/Application Support/Simeon/computer-stream.log" });
     deliver({ line: "2026-09-22T10:00:01.000Z guest dom-ready url=http://127.0.0.1:6080/vnc.html" });
     assert.equal(notice(), null, "still nothing before the delay");
     now = 20_000;
     scheduled[0].callback();
     assert.ok(notice());
-    assert.equal(notice().textContent, "The computer's screen isn't connecting. No reason was reported yet. Details: /Users/me/Library/Application Support/Caisra/computer-stream.log");
+    assert.equal(notice().textContent, "The computer's screen isn't connecting. No reason was reported yet. Details: /Users/me/Library/Application Support/Simeon/computer-stream.log");
     assert.equal(notice().parentElement.className, "sand-box-vnc-pool");
     assert.equal(notice().style.getPropertyValue("position"), "absolute");
-    deliver({ line: '2026-09-22T10:00:21.000Z guest console[info] [CaisraScreen] state=disconnected status="Failed to connect to server" dialog=none' });
-    assert.equal(notice().textContent, "The computer's screen isn't connecting. noVNC cannot reach the desktop's socket. Details: /Users/me/Library/Application Support/Caisra/computer-stream.log");
+    deliver({ line: '2026-09-22T10:00:21.000Z guest console[info] [SimeonScreen] state=disconnected status="Failed to connect to server" dialog=none' });
+    assert.equal(notice().textContent, "The computer's screen isn't connecting. noVNC cannot reach the desktop's socket. Details: /Users/me/Library/Application Support/Simeon/computer-stream.log");
     assert.equal(document.querySelectorAll("[data-caisra-screen-notice]").length, 1);
     // A connect clears the reason; the spinner leaving removes the notice.
-    deliver({ line: '2026-09-22T10:00:30.000Z guest console[info] [CaisraScreen] state=connected status="Connected" dialog=none' });
-    assert.equal(notice().textContent, "The computer's screen isn't connecting. No reason was reported yet. Details: /Users/me/Library/Application Support/Caisra/computer-stream.log");
+    deliver({ line: '2026-09-22T10:00:30.000Z guest console[info] [SimeonScreen] state=connected status="Connected" dialog=none' });
+    assert.equal(notice().textContent, "The computer's screen isn't connecting. No reason was reported yet. Details: /Users/me/Library/Application Support/Simeon/computer-stream.log");
     document.querySelector(".sand-box-vnc-pool__connecting").remove();
     deliver({ line: "2026-09-22T10:00:31.000Z guest loaded url=x" });
     assert.equal(notice(), null);

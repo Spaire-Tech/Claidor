@@ -172,6 +172,21 @@ mark, twelve petals measured off the founder's PNG and drawn from numbers
 names; the bare words "Bot"/"Bots" were not asked for and were left.
 `docs/product/name-measured.md` §Simeon is the record.
 
+**The product is Simeon, decided 22 September 2026, later the same day.**
+"any caisra word become Simeon … rename everything Caisra - Simeon", and the
+bare words Bot/Bots become Agent/Agents. Every user-facing string of ours now
+says Simeon (96 files; generated protos and this file's history are not
+rewritten); the brand patch renames the pinned renderer's words at package
+time; and the app is Simeon in Electron's eyes too (`build-asar.mjs` writes
+`productName`), which is where the application menu, "About …", the window
+title and the user-data folder come from. **Until then the staged
+`productName` was still `Grok Bot`, so the app shared
+`~/Library/Application Support/Grok Bot` with the real Grok Bot**; the first
+launch as Simeon copies that folder once (`desktop-user-data-bootstrap.ts`).
+The icon is the founder's black tile (`brand/`). Kept: `CFBundleName`
+`Grok Bot`, lower-case identifiers (`caisra`, `CAISRA_*`, `~/.caisra`).
+`docs/product/name-measured.md` §Simeon is the record.
+
 **The computer's screen, measured 22 September 2026.** With the Computer
 panel spinning "connecting", the founder measured: port 6080 published, the
 page answers 200, websockify and x11vnc up inside the box, and **no client

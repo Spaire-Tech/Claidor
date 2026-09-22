@@ -77,7 +77,7 @@ export function resolveComputerOrThrow(
     : "none connected";
   if (computerId == null) {
     throw new BoxTransferError(
-      `No computer is connected right now (the Caisra desktop app must be open and online to transfer files). Connected computers: ${list}.`,
+      `No computer is connected right now (the Simeon desktop app must be open and online to transfer files). Connected computers: ${list}.`,
     );
   }
   throw new BoxTransferError(

@@ -62,7 +62,7 @@ function toolTile(letter) {
 }
 
 /** The app icon: Simeon's mark on a paper tile (scripts/lib/simeon-logo.mjs). */
-const APP_ICON = simeonAppIconSvg({ size: 512, ink: INK, paper: PAPER });
+const APP_ICON = simeonAppIconSvg({ size: 512 });
 
 /** The wallpaper behind the agent's demo computer: calm, and never the subject. */
 const WALLPAPER = `<svg xmlns="http://www.w3.org/2000/svg" width="2560" height="1600" viewBox="0 0 2560 1600">

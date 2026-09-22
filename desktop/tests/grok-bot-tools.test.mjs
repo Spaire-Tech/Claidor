@@ -24,7 +24,7 @@ async function load(entry, name) {
   return { module, dispose: () => rm(temporary, { recursive: true, force: true }) };
 }
 
-test("Mac product tools and prompt are Grok Bot's, not a Caisra overlay", async () => {
+test("Mac product tools and prompt are Grok Bot's, not a Simeon overlay", async () => {
   const loadedTools = await load("source/shared/grok-bot-tools.ts", "grok-bot-tools");
   const loadedPrompt = await load("source/host/runner/system-prompt.ts", "system-prompt");
   try {

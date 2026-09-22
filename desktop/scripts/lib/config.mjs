@@ -28,7 +28,7 @@ export const outputApp = path.join(
   // `CFBundleExecutable` inside it stay "Grok Bot", because Electron derives
   // its nested helper names from them and this build reuses the ABI-matched
   // 0.18 shell exactly; only the bundle and its display name are ours.
-  configuredOutputName ? path.basename(configuredOutputName) : "Caisra.app"
+  configuredOutputName ? path.basename(configuredOutputName) : "Simeon.app"
 );
 export const fidelityOutputApp = path.join(outputDir, "Grok Bot 0.18 Fidelity.app");
 export const fidelityOutputAppForAsarHash = asarHash => {
@@ -44,7 +44,7 @@ export const devProfileDir = path.join(cacheDir, "dev-profile");
 
 export const upstreamVersion = "0.18.0";
 export const reconstructedBundleId = "com.anysphere.sand.reconstructed";
-export const reconstructedName = process.env.CAISRA_DISPLAY_NAME?.trim() || "Caisra";
+export const reconstructedName = process.env.CAISRA_DISPLAY_NAME?.trim() || "Simeon";
 
 /**
  * Where the packaged app signs in.

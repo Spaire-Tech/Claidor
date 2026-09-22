@@ -57,7 +57,7 @@ export function disabledUpdateMessage(status: UpdateStatus): string {
     case "not-packaged":
       return "Updates are disabled in dev builds";
     case "lab-build":
-      return "Caisra Lab is a one-off test build and never auto-updates";
+      return "Simeon Lab is a one-off test build and never auto-updates";
     case "unsupported-platform":
       return "Updates aren't available on this platform";
     case "disabled-by-env":
@@ -73,17 +73,17 @@ export function updateStatusMessage(status: UpdateStatus): UpdateStatusMessage {
     case "checking":
       return { text: "Checking for updates…", tone: "default" };
     case "available":
-      return { text: `Caisra ${state.version} is available`, tone: "default" };
+      return { text: `Simeon ${state.version} is available`, tone: "default" };
     case "downloading": {
       const progress = state.progress != null ? ` (${Math.round(state.progress * 100)}%)` : "";
-      return { text: `Downloading Caisra ${state.version}…${progress}`, tone: "default" };
+      return { text: `Downloading Simeon ${state.version}…${progress}`, tone: "default" };
     }
     case "staging":
-      return { text: `Preparing Caisra ${state.version}…`, tone: "default" };
+      return { text: `Preparing Simeon ${state.version}…`, tone: "default" };
     case "ready":
       return state.lastCheck?.result === "error"
-        ? { text: `Update check failed: ${state.lastCheck.errorMessage ?? "unknown error"}. Caisra ${state.version} is still ready. Restart to apply.`, tone: "error" }
-        : { text: `Caisra ${state.version} is ready. Restart to apply.`, tone: "ready" };
+        ? { text: `Update check failed: ${state.lastCheck.errorMessage ?? "unknown error"}. Simeon ${state.version} is still ready. Restart to apply.`, tone: "error" }
+        : { text: `Simeon ${state.version} is ready. Restart to apply.`, tone: "ready" };
     case "idle":
       return state.lastCheck == null
         ? { text: "", tone: "default" }
@@ -103,10 +103,10 @@ export function egressTunnelStatusDescription(status: EgressTunnelStatus): strin
     case "connected":
       return status.activeStreams > 0
         ? `Connected — routing ${status.activeStreams} connection${status.activeStreams === 1 ? "" : "s"} (${status.relayedStreams} total this session).`
-        : `Connected — this desktop is ready to route web traffic from Caisra's computer (${status.relayedStreams} routed this session).`;
+        : `Connected — this desktop is ready to route web traffic from Simeon's computer (${status.relayedStreams} routed this session).`;
     case "connecting":
-      return "Connecting to Caisra's computer…";
+      return "Connecting to Simeon's computer…";
     case "off":
-      return "Enabled, but not routing yet — waiting for Caisra's computer to connect with egress enabled.";
+      return "Enabled, but not routing yet — waiting for Simeon's computer to connect with egress enabled.";
   }
 }

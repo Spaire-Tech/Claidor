@@ -14,7 +14,7 @@ async function read(relative) {
   return readFile(path.join(repoRoot, relative), "utf8");
 }
 
-test("Settings copy names Claidor and Caisra, not Cursor or Grok Bot", async () => {
+test("Settings copy names Claidor and Simeon, not Cursor or Grok Bot", async () => {
   const patch = await read("scripts/lib/router-renderer-patch.mjs");
   const view = await read("frontend/src/recovered/features/settings/overlay/view.tsx");
   const router = await read("frontend/src/recovered/features/settings/overlay/router.ts");
@@ -35,7 +35,7 @@ test("sign-in errors name Claidor, not Cursor", async () => {
   const auth = await read("source/electron-main/account/cursor-auth.ts");
   const wiring = await read("source/electron-main/account/cursor-auth-wiring.ts");
   const mcp = await read("source/shared/node/mcp/mcp-manager.ts");
-  assert.match(auth, /Sign in to Claidor to run Caisra\./);
+  assert.match(auth, /Sign in to Claidor to run Simeon\./);
   assert.match(auth, /Claidor sign-in expired/);
   assert.match(auth, /another Claidor account/);
   assert.doesNotMatch(auth, /Sign in to Cursor/);
@@ -49,12 +49,12 @@ test("sign-in errors name Claidor, not Cursor", async () => {
   assert.match(auth, /export interface CursorProfile/);
 });
 
-test("the agent's brief names Claidor and Caisra, not Cursor or Grok Bot", async () => {
+test("the agent's brief names Claidor and Simeon, not Cursor or Grok Bot", async () => {
   const prompt = await read("source/host/runner/system-prompt.ts");
   const appUi = await read("source/host/runner/box-reference-docs.ts");
   const listeners = await read("source/host/runner/tools/listener-connect-cards.ts");
   const plugins = await read("source/host/runner/tools/sand-mcp-management-tools.ts");
-  assert.match(prompt, /user's Claidor account \(saved to Caisra settings/);
+  assert.match(prompt, /user's Claidor account \(saved to Simeon settings/);
   assert.doesNotMatch(prompt, /user's Cursor account/);
   assert.doesNotMatch(prompt, /using Cursor directly/);
   assert.doesNotMatch(prompt, /Cursor cloud agent/);

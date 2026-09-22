@@ -76,3 +76,30 @@ the founder did not name; and "Caisra" where our own Settings copy says it.
 
 Not run on a Mac: the brand pass and the icon swap run inside `npm run
 package`, which only runs there.
+
+## Simeon, the whole way (22 September 2026, later the same day)
+
+The founder: "change all this by agent. And any caisra word become Simeon.
+also find attached the Simeon app logo. Also rename everything Caisra -
+Simeon." So:
+
+| Surface | Was | Now | How |
+|---|---|---|---|
+| Every user-facing string of ours (Settings, sign-in, permissions, the Computer chrome, onboarding, updates, the agent's brief, MCP registration, the web-fetch user agent) | Caisra | Simeon | 96 files, `Caisra` → `Simeon`, in `source/` (not generated protos), `frontend/src`, `tests`, `scripts`, `package.json` |
+| The bare words in the pinned renderer ("Create new Bot", "Message Bot", "Search or create Bots", "Give each Bot a job", "Hidden Bots", "Reset to the Bot") | Bot, Bots | Agent, Agents | a word pass in the brand patch that only takes the word between quotes, spaces or tag brackets, so a minified identifier spelled `Bot` is never touched; the same words in the reconstruction's copy |
+| What Electron calls the app: the application menu, "About …", the window title, and the user-data folder | Grok Bot (the staged package.json's `productName` was never changed, so the app **shared `~/Library/Application Support/Grok Bot` with the real Grok Bot**) | Simeon | `build-asar.mjs` writes `productName = reconstructedName` on every build |
+| The user-data folder | `~/Library/Application Support/Grok Bot` | `~/Library/Application Support/Simeon` | the first launch copies the old folder once, caches left behind, the other app's folder untouched (`desktop-user-data-bootstrap.ts` `migrateUserDataFromPreviousName`), so nobody signs in again |
+| Finder / Dock name and bundle | Caisra.app | Simeon.app | `config.mjs` |
+| The icon | the mark on a paper tile | the founder's icon: the mark in white on a black rounded tile with a sheen | `simeon-logo.mjs` `simeonAppIconSvg`, measured off the supplied 1024 file (tile 56..967, corners ~171, mark 234..790); drawn back and compared: tile IoU 0.988, mark IoU 0.891 |
+
+Kept, on purpose: `CFBundleName` / `CFBundleExecutable` `Grok Bot` (Electron's
+helper names); identifiers and paths spelled in lower case (`caisra` in the
+npm name, `CAISRA_*` environment variables, `caisra-ignition-activation.mjs`,
+`~/.caisra`, `data-caisra-screen-notice`); comments in generated protos; and
+this repository's history documents, which say Caisra because they were
+written then.
+
+**A correction to an earlier instruction.** `docs/product/computer-stream-measured.md`
+and the PR said the stream log was at `~/Library/Application Support/Caisra/`.
+It never was: with `productName` still `Grok Bot`, it was under `Grok Bot`.
+From this build it is `~/Library/Application Support/Simeon/computer-stream.log`.

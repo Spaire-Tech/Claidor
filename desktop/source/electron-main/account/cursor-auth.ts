@@ -23,8 +23,8 @@ export const DEFAULT_LOCAL_CURSOR_WEBSITE_URL = "https://localhost:4443";
 export const MAX_LOGIN_POLL_ATTEMPTS = 150;
 export { SignInPolicyViolationError, SIGN_IN_POLICY_VIOLATION_ERROR, SIGN_IN_POLICY_VIOLATION_MESSAGE } from "../../packages/cursor-config/auth/mdm-sign-in-policy.js";
 export class SandAuthOperationSupersededError extends Error { constructor() { super("Authentication operation was superseded."); } }
-export class SandAuthSignInRequiredError extends Error { constructor() { super("Sign in to Claidor to run Caisra."); } }
-export class SandAuthSignInExpiredError extends Error { constructor() { super("Claidor sign-in expired. Sign in again to run Caisra."); } }
+export class SandAuthSignInRequiredError extends Error { constructor() { super("Sign in to Claidor to run Simeon."); } }
+export class SandAuthSignInExpiredError extends Error { constructor() { super("Claidor sign-in expired. Sign in again to run Simeon."); } }
 export class SandAuthLoginTimedOutError extends Error { constructor() { super("Sign-in did not finish. Try again."); } }
 export class SandDevLoginError extends Error {}
 
@@ -50,14 +50,14 @@ export type SessionSettlement =
   | { readonly kind: "signed_out"; readonly cause: SessionSignoutCause; readonly durable: boolean; readonly accessToken: string }
   | { readonly kind: "keychain_unavailable"; readonly accessToken: string };
 
-const RETAINED_AFTER_FAILED_LOGOUT_STATUS = { kind: "logged-out", errorMessage: "Caisra couldn't remove the saved sign-in. The account may return after Caisra restarts. Sign in to try again." } as const;
+const RETAINED_AFTER_FAILED_LOGOUT_STATUS = { kind: "logged-out", errorMessage: "Simeon couldn't remove the saved sign-in. The account may return after Simeon restarts. Sign in to try again." } as const;
 const LOGGED_OUT_STATUS = { kind: "logged-out" } as const;
-const SIGN_IN_CONFIRMATION_FAILED_STATUS = { kind: "logged-out", errorMessage: "Caisra couldn't confirm your sign-in. Restart Caisra or sign in again." } as const;
-const SIGN_IN_EXPIRED_STATUS = { kind: "logged-out", errorMessage: "Claidor sign-in expired. Sign in again to run Caisra." } as const;
+const SIGN_IN_CONFIRMATION_FAILED_STATUS = { kind: "logged-out", errorMessage: "Simeon couldn't confirm your sign-in. Restart Simeon or sign in again." } as const;
+const SIGN_IN_EXPIRED_STATUS = { kind: "logged-out", errorMessage: "Claidor sign-in expired. Sign in again to run Simeon." } as const;
 const SIGN_IN_POLICY_VIOLATION_STATUS = { kind: "logged-out", errorMessage: SIGN_IN_POLICY_VIOLATION_MESSAGE } as const;
 const LOGIN_DID_NOT_FINISH_STATUS = { kind: "logged-out", errorMessage: "Sign-in did not finish. Try again." } as const;
 const ACCOUNT_REFUSED_STATUS = { kind: "logged-out", errorMessage: "This computer is linked to another Claidor account. Sign in with that account to continue." } as const;
-const ACCOUNT_REFUSED_CREDENTIALS_RETAINED_STATUS = { kind: "logged-out", errorMessage: "This computer is linked to another Claidor account. Caisra couldn't remove the saved sign-in, so the account may return after restart. Sign in with the linked account to continue." } as const;
+const ACCOUNT_REFUSED_CREDENTIALS_RETAINED_STATUS = { kind: "logged-out", errorMessage: "This computer is linked to another Claidor account. Simeon couldn't remove the saved sign-in, so the account may return after restart. Sign in with the linked account to continue." } as const;
 
 function base64UrlEncode(bytes: Uint8Array): string { return Buffer.from(bytes).toString("base64url"); }
 export function createLoginMetadata(): { challenge: string; metadata: LoginMetadata } {

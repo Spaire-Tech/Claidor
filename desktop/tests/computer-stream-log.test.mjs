@@ -69,7 +69,7 @@ test("every guest event becomes one line, in both console-message shapes", async
     guest.emit("did-fail-load", {}, -102, "ERR_CONNECTION_REFUSED", "http://127.0.0.1:6080/vnc.html", true);
     guest.emit("preload-error", {}, "/app/preload-vnc.cjs", new Error("Cannot find module 'x'"));
     guest.emit("console-message", { level: "error", message: "WebSocket connection to 'ws://127.0.0.1:6080/websockify' failed" });
-    guest.emit("console-message", {}, 1, "[CaisraScreen] state=connecting status=\"\" dialog=none", 12, "vnc.html");
+    guest.emit("console-message", {}, 1, "[SimeonScreen] state=connecting status=\"\" dialog=none", 12, "vnc.html");
     guest.emit("render-process-gone", {}, { reason: "crashed" });
     guest.emit("destroyed");
     assert.deepEqual(lines, [
@@ -82,7 +82,7 @@ test("every guest event becomes one line, in both console-message shapes", async
       "guest load FAILED code=-102 (ERR_CONNECTION_REFUSED) url=http://127.0.0.1:6080/vnc.html mainFrame=true",
       "guest preload FAILED path=/app/preload-vnc.cjs error=Cannot find module 'x'",
       "guest console[error] WebSocket connection to 'ws://127.0.0.1:6080/websockify' failed",
-      "guest console[info] [CaisraScreen] state=connecting status=\"\" dialog=none",
+      "guest console[info] [SimeonScreen] state=connecting status=\"\" dialog=none",
       "guest renderer gone reason=crashed",
       "guest destroyed",
     ]);
@@ -142,13 +142,13 @@ test("a log line is turned into one sentence a person can act on", async () => {
     assert.equal(computerStreamReason("guest load FAILED code=-102 (ERR_CONNECTION_REFUSED) url=http://127.0.0.1:6080/vnc.html mainFrame=true"), "The screen page did not load (ERR_CONNECTION_REFUSED, -102).");
     assert.equal(computerStreamReason("guest preload FAILED path=/x error=boom"), "The screen page's helper script failed to load.");
     assert.equal(computerStreamReason("guest renderer gone reason=crashed"), "The screen page crashed.");
-    assert.equal(computerStreamReason('guest console[info] [CaisraScreen] noVNC did not start after 5000ms; root class="" scripts=1'), "noVNC never started inside the screen page.");
-    assert.equal(computerStreamReason('guest console[info] [CaisraScreen] state=disconnected status="Failed to connect to server" dialog=none'), "noVNC cannot reach the desktop's socket.");
-    assert.equal(computerStreamReason('guest console[info] [CaisraScreen] state=disconnected status="" dialog=noVNC_credentials_dlg'), "The desktop is asking for a password.");
-    assert.equal(computerStreamReason('guest console[info] [CaisraScreen] state=disconnected status="" dialog=noVNC_connect_dlg'), "noVNC is waiting for a Connect click: autoconnect did not fire.");
+    assert.equal(computerStreamReason('guest console[info] [SimeonScreen] noVNC did not start after 5000ms; root class="" scripts=1'), "noVNC never started inside the screen page.");
+    assert.equal(computerStreamReason('guest console[info] [SimeonScreen] state=disconnected status="Failed to connect to server" dialog=none'), "noVNC cannot reach the desktop's socket.");
+    assert.equal(computerStreamReason('guest console[info] [SimeonScreen] state=disconnected status="" dialog=noVNC_credentials_dlg'), "The desktop is asking for a password.");
+    assert.equal(computerStreamReason('guest console[info] [SimeonScreen] state=disconnected status="" dialog=noVNC_connect_dlg'), "noVNC is waiting for a Connect click: autoconnect did not fire.");
     assert.equal(computerStreamReason("guest console[error] WebSocket connection failed"), "Error inside the screen page: WebSocket connection failed");
-    assert.equal(computerStreamReason('guest console[info] [CaisraScreen] page error: x is not defined at vnc.html:3'), "Error inside the screen page: x is not defined at vnc.html:3");
-    assert.equal(computerStreamReason('guest console[info] [CaisraScreen] state=connected status="Connected (unencrypted) to: box" dialog=none'), "");
+    assert.equal(computerStreamReason('guest console[info] [SimeonScreen] page error: x is not defined at vnc.html:3'), "Error inside the screen page: x is not defined at vnc.html:3");
+    assert.equal(computerStreamReason('guest console[info] [SimeonScreen] state=connected status="Connected (unencrypted) to: box" dialog=none'), "");
     assert.equal(computerStreamReason("guest dom-ready url=http://127.0.0.1:6080/vnc.html"), null);
   } finally {
     await dispose();

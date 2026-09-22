@@ -10,7 +10,7 @@
 export const COMPUTER_STREAM_CHANNEL = "sand:computer-stream";
 export const COMPUTER_STREAM_LOG_FILE_NAME = "computer-stream.log";
 /** Lines the VNC preload prints inside the box's page start with this. */
-export const SCREEN_LINE_TAG = "[CaisraScreen]";
+export const SCREEN_LINE_TAG = "[SimeonScreen]";
 
 export interface ComputerStreamMessage {
   readonly line: string;

@@ -45,32 +45,32 @@ test("the status reporter narrates what noVNC does inside the page", async () =>
       graceMs: 5000,
     });
     const fire = () => observers.forEach((observer) => observer.fire());
-    assert.equal(lines[0], "[CaisraScreen] page href=http://127.0.0.1:6080/vnc.html?autoconnect=true&reconnect=true");
-    assert.equal(lines[1], '[CaisraScreen] state=disconnected status="" dialog=none');
+    assert.equal(lines[0], "[SimeonScreen] page href=http://127.0.0.1:6080/vnc.html?autoconnect=true&reconnect=true");
+    assert.equal(lines[1], '[SimeonScreen] state=disconnected status="" dialog=none');
     document.documentElement.classList.add("noVNC_connecting");
     fire();
-    assert.equal(lines[2], '[CaisraScreen] state=connecting status="" dialog=none');
+    assert.equal(lines[2], '[SimeonScreen] state=connecting status="" dialog=none');
     fire();
     assert.equal(lines.length, 3, "an unchanged picture is not repeated");
     document.documentElement.classList.remove("noVNC_connecting");
     document.getElementById("noVNC_status").textContent = "Failed to connect to server";
     fire();
-    assert.equal(lines[3], '[CaisraScreen] state=disconnected status="Failed to connect to server" dialog=none');
+    assert.equal(lines[3], '[SimeonScreen] state=disconnected status="Failed to connect to server" dialog=none');
     document.getElementById("noVNC_credentials_dlg").classList.add("noVNC_open");
     fire();
-    assert.equal(lines[4], '[CaisraScreen] state=disconnected status="Failed to connect to server" dialog=noVNC_credentials_dlg');
+    assert.equal(lines[4], '[SimeonScreen] state=disconnected status="Failed to connect to server" dialog=noVNC_credentials_dlg');
     document.getElementById("noVNC_credentials_dlg").classList.remove("noVNC_open");
     document.documentElement.classList.add("noVNC_connected");
     document.getElementById("noVNC_status").textContent = "Connected (unencrypted) to: box";
     fire();
-    assert.equal(lines[5], '[CaisraScreen] state=connected status="Connected (unencrypted) to: box" dialog=none');
+    assert.equal(lines[5], '[SimeonScreen] state=connected status="Connected (unencrypted) to: box" dialog=none');
     // noVNC was seen, so the grace timer stays quiet.
     assert.equal(scheduled.length, 1);
     assert.equal(scheduled[0].delayMs, 5000);
     scheduled[0].callback();
     assert.equal(lines.length, 6);
     window.dispatchEvent(new window.ErrorEvent("error", { message: "x is not defined", filename: "http://127.0.0.1:6080/app/ui.js", lineno: 3 }));
-    assert.equal(lines[6], "[CaisraScreen] page error: x is not defined at http://127.0.0.1:6080/app/ui.js:3");
+    assert.equal(lines[6], "[SimeonScreen] page error: x is not defined at http://127.0.0.1:6080/app/ui.js:3");
   } finally {
     window.close();
     await dispose();
@@ -93,7 +93,7 @@ test("a page where noVNC never adds a class is called not started after the grac
     });
     scheduled[0].callback();
     assert.equal(scheduled[0].delayMs, module.NOVNC_START_GRACE_MS);
-    assert.equal(lines.at(-1), '[CaisraScreen] noVNC did not start after 5000ms; root class="" scripts=1');
+    assert.equal(lines.at(-1), '[SimeonScreen] noVNC did not start after 5000ms; root class="" scripts=1');
   } finally {
     window.close();
     await dispose();

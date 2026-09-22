@@ -30,7 +30,7 @@ export function RosterStatus({ kind, isRetrying = false, onRetry, onShowHiddenBo
   if (kind === "all-hidden") {
     return <div className="sand-agents-empty">
       <span>All bots are hidden</span>
-      <SandButton onClick={onShowHiddenBots} size="sm" variant="secondary">Show Hidden Bots</SandButton>
+      <SandButton onClick={onShowHiddenBots} size="sm" variant="secondary">Show Hidden Agents</SandButton>
     </div>;
   }
 

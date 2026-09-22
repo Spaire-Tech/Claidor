@@ -26,9 +26,9 @@ type UsageRecord = { inputTokens?: number; outputTokens?: number; cacheReadToken
 type RoutedToolExecutor = (tool: Loose, args: unknown, toolCallId: string) => Promise<unknown>;
 
 const GROK_ROUTER_SYSTEM_PROMPT = [
-  "You are Caisra, a warm, concise desktop assistant.",
-  "You are running inside Caisra, not inside Codex CLI or Claude Code.",
-  "The tools supplied with this request are Caisra's already-connected plugins and accounts. Use them whenever they are relevant instead of claiming that a plugin is unavailable or asking the user to reconnect it.",
+  "You are Simeon, a warm, concise desktop assistant.",
+  "You are running inside Simeon, not inside Codex CLI or Claude Code.",
+  "The tools supplied with this request are Simeon's already-connected plugins and accounts. Use them whenever they are relevant instead of claiming that a plugin is unavailable or asking the user to reconnect it.",
   "Never ask for an API key for an already-connected plugin. Respond directly to the user in natural language after completing any necessary tool calls.",
 ].join("\n");
 
@@ -153,7 +153,7 @@ function providerPrompt(messages: readonly ProviderMessage[]): string {
     const content = typeof message.content === "string" ? message.content : JSON.stringify(message.content);
     return `${message.role.toUpperCase()}: ${content}`;
   }).join("\n\n");
-  return `${GROK_ROUTER_SYSTEM_PROMPT}\n\nContinue this Caisra conversation.\n\n${rendered}`;
+  return `${GROK_ROUTER_SYSTEM_PROMPT}\n\nContinue this Simeon conversation.\n\n${rendered}`;
 }
 
 function deferred<T>() { return Promise.withResolvers<T>(); }
@@ -174,7 +174,7 @@ function codexCredentials(): CodexCredentials {
   const idToken = parsed?.tokens?.id_token;
   const accountId = parsed?.tokens?.account_id;
   if (parsed?.auth_mode !== "chatgpt" || typeof accessToken !== "string" || accessToken.length === 0 || typeof refreshToken !== "string" || refreshToken.length === 0 || typeof idToken !== "string" || idToken.length === 0 || typeof accountId !== "string" || accountId.length === 0) {
-    throw new Error("Codex is not signed in with ChatGPT. Run `codex login`, then reopen Caisra.");
+    throw new Error("Codex is not signed in with ChatGPT. Run `codex login`, then reopen Simeon.");
   }
   return { accessToken, refreshToken, idToken, accountId, path, document: parsed };
 }
@@ -311,7 +311,7 @@ function codexExecutor(messages: readonly ProviderMessage[], invocationId: strin
 
 function claudeExecutor(messages: readonly ProviderMessage[], invocationId: string, onUsage?: (usage: UsageRecord) => void, mcpServerUrl?: string) {
   const executable = resolveClaudeCodeCliPath();
-  if (executable == null) throw new Error("Claude Code is not installed. Install and sign in to Claude Code, then reopen Caisra.");
+  if (executable == null) throw new Error("Claude Code is not installed. Install and sign in to Claude Code, then reopen Simeon.");
   const usage = deferred<{ promptTokens: number; completionTokens: number; totalTokens: number }>();
   const extendedUsage = deferred<{ inputTokens: number; outputTokens: number; cacheReadTokens: number; cacheWriteTokens: number; maxTokens: number }>();
   const resultResponse = deferred<ReturnType<typeof response>>();
@@ -446,7 +446,7 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
 
 function openRouterExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void) {
   const id = process.env.SAND_OPENROUTER_MODEL?.trim() || "openai/gpt-5.2";
-  const model: LanguageModelV1 = createOpenAI({ apiKey: openRouterCredential(), baseURL: "https://openrouter.ai/api/v1", compatibility: "compatible", name: "openrouter", headers: { "HTTP-Referer": "https://github.com/grok-bot-reconstructed", "X-Title": "Caisra Reconstructed" } }).chat(id as any);
+  const model: LanguageModelV1 = createOpenAI({ apiKey: openRouterCredential(), baseURL: "https://openrouter.ai/api/v1", compatibility: "compatible", name: "openrouter", headers: { "HTTP-Referer": "https://github.com/grok-bot-reconstructed", "X-Title": "Simeon Reconstructed" } }).chat(id as any);
   return aiSdkExecutor(model, messages, invocationId, definitions, executeTool, onUsage);
 }
 

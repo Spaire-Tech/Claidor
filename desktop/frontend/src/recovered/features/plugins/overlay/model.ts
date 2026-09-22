@@ -112,7 +112,7 @@ export function pluginPrivateSkillSubtitle(skill: Pick<PluginPrivateSkill, "sour
 
 // @evidence src/app/dist/renderer/assets/view-B5Ug8wEm.js#L1377
 export function pluginPrivateSkillSourceLabel(skill: Pick<PluginPrivateSkill, "source">): string {
-  if (skill.source === "managed") return "Managed by Caisra";
+  if (skill.source === "managed") return "Managed by Simeon";
   if (skill.source === "plugin") return "Shared with your team";
   return "Private skill";
 }

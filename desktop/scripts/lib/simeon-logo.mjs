@@ -37,15 +37,26 @@ export function simeonLogoSvg({ size = SIMEON_LOGO_BOX, ink = "#141414" } = {}) 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${SIMEON_LOGO_BOX} ${SIMEON_LOGO_BOX}">${simeonPetalsMarkup(ink)}</svg>`;
 }
 
-/** The app icon: the mark on a rounded paper tile, the shape macOS expects. */
-export function simeonAppIconSvg({ size = 512, ink = "#141414", paper = "#fcfcfc" } = {}) {
-  const radius = Math.round(size * 114 / 512);
-  const scale = 1.25 * size / 512;
-  const offset = (size - SIMEON_LOGO_BOX * scale) / 2;
+/**
+ * The app icon, as the founder supplied it on 22 September 2026: the mark
+ * in white on a black rounded tile with a faint sheen, inside the margin
+ * macOS leaves round an icon. Measured off that 1024 file: the tile spans
+ * 56..967, its corners round at ~171, it shades from #1b1b1b at the top to
+ * #060606 at the bottom, and the mark spans 234..790.
+ */
+export function simeonAppIconSvg({ size = 1024, ink = "#ffffff" } = {}) {
+  const unit = size / 1024;
+  const tile = 912 * unit, inset = 56 * unit, radius = 171 * unit;
+  const scale = (556 / 230) * unit;
+  const offset = size / 2 - (SIMEON_LOGO_BOX / 2) * scale;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  <rect width="${size}" height="${size}" rx="${radius}" fill="${paper}"/>
+  <defs>
+    <linearGradient id="simeon-tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b1b1b"/><stop offset="0.5" stop-color="#0f0f0f"/><stop offset="1" stop-color="#060606"/></linearGradient>
+    <linearGradient id="simeon-sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.07"/><stop offset="0.45" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+  </defs>
+  <rect x="${inset.toFixed(2)}" y="${inset.toFixed(2)}" width="${tile.toFixed(2)}" height="${tile.toFixed(2)}" rx="${radius.toFixed(2)}" fill="url(#simeon-tile)"/>
+  <rect x="${inset.toFixed(2)}" y="${inset.toFixed(2)}" width="${tile.toFixed(2)}" height="${tile.toFixed(2)}" rx="${radius.toFixed(2)}" fill="url(#simeon-sheen)"/>
   <g transform="translate(${offset.toFixed(2)} ${offset.toFixed(2)}) scale(${scale.toFixed(4)})">${simeonPetalsMarkup(ink)}</g>
-  <rect x="0.5" y="0.5" width="${size - 1}" height="${size - 1}" rx="${radius - 0.5}" fill="none" stroke="${ink}" stroke-opacity="0.14"/>
 </svg>`;
 }
 

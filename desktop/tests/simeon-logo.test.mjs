@@ -23,8 +23,9 @@ test("Simeon's mark is twelve petals in a whirl, thin at the top left and full a
   const svg = simeonLogoSvg();
   assert.equal((svg.match(/<ellipse /g) ?? []).length, 12);
   assert.match(svg, /viewBox="0 0 400 400"/);
-  const icon = simeonAppIconSvg({ size: 512 });
-  assert.match(icon, /<rect width="512" height="512" rx="114" fill="#fcfcfc"\/>/);
+  const icon = simeonAppIconSvg({ size: 1024 });
+  assert.match(icon, /<rect x="56.00" y="56.00" width="912.00" height="912.00" rx="171.00" fill="url\(#simeon-tile\)"\/>/);
+  assert.match(icon, /fill="#ffffff"/, "the mark is white on the tile");
   assert.equal((icon.match(/<ellipse /g) ?? []).length, 12);
   assert.doesNotMatch(icon, /data:image|<image/, "drawn, never a picture file");
 });
@@ -68,4 +69,26 @@ test("an icns packs one PNG per size macOS asks for, and reads back", async () =
   assert.equal(Object.keys(ICNS_TYPES).length, 7);
   assert.throws(() => packIcns({ 48: png(1) }), /No icns entry type/);
   assert.throws(() => packIcns({ 16: Buffer.from("nope") }), /not a PNG/);
+});
+
+test("the icon drawn from the numbers covers the founder's icon file, tile and mark", { skip: process.env.CAISRA_PLAYWRIGHT == null && "set CAISRA_PLAYWRIGHT to rasterise" }, async (t) => {
+  const { loadChromium, simeonAppIconSvg } = await import(logoModule);
+  const { PNG } = await import("pngjs");
+  const reference = PNG.sync.read(await readFile(path.join(repoRoot, "brand/simeon-app-icon-source.png")));
+  const chromium = await loadChromium();
+  const browser = await chromium.launch({ executablePath: process.env.CAISRA_CHROMIUM ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--no-sandbox"] });
+  try {
+    const page = await browser.newPage({ viewport: { width: 1024, height: 1024 }, deviceScaleFactor: 1 });
+    await page.setContent(`<!doctype html><style>html,body{margin:0;background:transparent}</style>${simeonAppIconSvg({ size: 1024 })}`);
+    const drawn = PNG.sync.read(await page.screenshot({ type: "png", omitBackground: true }));
+    const iou = (isA, isB) => { let both = 0, either = 0; for (let index = 0; index < 1024 * 1024; index += 1) { const a = isA(reference.data, index * 4), b = isB(drawn.data, index * 4); if (a && b) both += 1; if (a || b) either += 1; } return both / either; };
+    const opaque = (data, at) => data[at + 3] > 200;
+    const white = (data, at) => data[at + 3] > 200 && data[at] > 200 && data[at + 1] > 200 && data[at + 2] > 200;
+    const tile = iou(opaque, opaque), mark = iou(white, white);
+    t.diagnostic(`tile IoU ${tile.toFixed(3)}, mark IoU ${mark.toFixed(3)}`);
+    assert.ok(tile > 0.97, `tile ${tile}`);
+    assert.ok(mark > 0.85, `mark ${mark}`);
+  } finally {
+    await browser.close();
+  }
 });

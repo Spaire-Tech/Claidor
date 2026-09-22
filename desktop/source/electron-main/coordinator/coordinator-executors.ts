@@ -262,7 +262,7 @@ function renderPrompt(origin: string, rpId: string): string {
 		document.getElementById(id).textContent = origin;
 	}
 	document.getElementById("detail").textContent =
-		"A browser in your Caisra box is asking to sign in to " + rpId +
+		"A browser in your Simeon box is asking to sign in to " + rpId +
 		" with the security key plugged into this computer. Approve only if you started this.";
 
 	const panels = ["prompt", "working", "pin-prompt"];

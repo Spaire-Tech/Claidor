@@ -88,7 +88,7 @@ export function HiddenChatsDialog({
 
   return (
     <div
-      aria-label="Hidden Bots"
+      aria-label="Hidden Agents"
       aria-modal="true"
       aria-describedby={descriptionId}
       aria-labelledby={titleId}
@@ -100,8 +100,8 @@ export function HiddenChatsDialog({
     >
       <header className="sand-z9dl7a sand-cicffo sand-sag5q8 sand-19145p9">
         <div>
-          <h2 id={titleId}>Hidden Bots</h2>
-          <p className="sand-1o0liin" id={descriptionId}>Hidden Bots stay active and keep their history, they just don&apos;t show in the sidebar.</p>
+          <h2 id={titleId}>Hidden Agents</h2>
+          <p className="sand-1o0liin" id={descriptionId}>Hidden Agents stay active and keep their history, they just don&apos;t show in the sidebar.</p>
         </div>
         <SandIconButton aria-label="Close" icon="close" onClick={onClose} size="sm" />
       </header>
