@@ -1,4 +1,5 @@
 import { installFaceOverlaySafely } from "./agent-face-overlay.js";
+import { installComputerStreamNoticeSafely } from "./computer-stream-notice.js";
 import { CLIENT_PERSISTENCE_CHANNELS } from "../shared/persistence.js";
 import {
   createCoordinatorPortBroker,
@@ -316,6 +317,7 @@ export function installPrimaryPreload(options: {
     if (port != null) broker.deliver(wrapTransferredCoordinatorPort(port));
   });
   installFaceOverlaySafely();
+  installComputerStreamNoticeSafely(options.ipc);
   return { desktop, coordinatorPort: broker.bridge };
 }
 

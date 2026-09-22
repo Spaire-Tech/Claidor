@@ -10,6 +10,7 @@ import {
 import { createViewerVisibilityGate } from "./box-vnc-visibility-gate.js";
 import { VNC_LIVENESS_CHANNEL } from "../shared/vnc-liveness.js";
 import { VNC_VIEWER_VISIBLE_CHANNEL } from "../shared/vnc-viewer-visibility.js";
+import { SCREEN_LINE_TAG } from "../shared/computer-stream.js";
 import {
   installSandBrowserPreload,
   type BrowserCredentialsPort,
@@ -310,6 +311,89 @@ export function installVncRfbSessionReporter(options: {
   else start();
 }
 
+/** How long noVNC gets to add its first `noVNC_*` class before the page is called not started. */
+export const NOVNC_START_GRACE_MS = 5_000;
+const NOVNC_DIALOGS = ["noVNC_connect_dlg", "noVNC_credentials_dlg", "noVNC_password_dlg"] as const;
+
+export interface VncStatusDocumentPort extends VncDocumentPort {
+  readonly body?: unknown;
+}
+
+/**
+ * Narrates what noVNC does inside the page, as console lines the main
+ * process copies into the computer-stream log: the page's address, every
+ * change of connection state, noVNC's own status sentence (which the
+ * chrome hider keeps off screen), any dialog it opens, page errors, and a
+ * page where noVNC never started at all. Nothing here changes behaviour.
+ */
+export function installNoVncStatusReporter(options: {
+  readonly document: VncStatusDocumentPort | null;
+  readonly window: VncEventTargetPort | null;
+  readonly location: (VncLocationPort & { readonly href?: string }) | null;
+  readonly createMutationObserver: (listener: () => void) => { observe(target: unknown, options: unknown): void; disconnect(): void };
+  readonly log?: (line: string) => void;
+  readonly schedule?: (callback: () => void, delayMs: number) => void;
+  readonly graceMs?: number;
+  readonly warn?: VncWarn;
+}): void {
+  if (options.document == null || options.window == null || options.location == null) return;
+  if (!options.location.pathname.endsWith("/vnc.html")) return;
+  const log = options.log ?? ((line: string) => console.info(line));
+  const schedule = options.schedule ?? ((callback, delayMs) => setTimeout(callback, delayMs));
+  const document = options.document;
+  log(`${SCREEN_LINE_TAG} page href=${options.location.href ?? `${options.location.pathname}${options.location.search}`}`);
+  options.window.addEventListener("error", (event: { readonly message?: unknown; readonly filename?: unknown; readonly lineno?: unknown }) => {
+    log(`${SCREEN_LINE_TAG} page error: ${String(event?.message ?? "?")} at ${String(event?.filename ?? "?")}:${String(event?.lineno ?? "?")}`);
+  });
+  options.window.addEventListener("unhandledrejection", (event: { readonly reason?: unknown }) => {
+    const reason = event?.reason;
+    log(`${SCREEN_LINE_TAG} page error: ${reason instanceof Error ? reason.message : String(reason)}`);
+  });
+  let sawNoVnc = false;
+  let last = "";
+  const describe = (): string => {
+    const root = document.documentElement;
+    const classes = root == null ? "" : rootClassText(root.classList);
+    const state = root == null ? "disconnected" : currentVncRfbState(root.classList);
+    if (/\bnoVNC_/.test(classes)) sawNoVnc = true;
+    const status = document.getElementById("noVNC_status") as { textContent?: string | null } | null;
+    const dialog = NOVNC_DIALOGS.find((id) => {
+      const element = document.getElementById(id) as { classList?: VncClassListPort } | null;
+      return element?.classList?.contains("noVNC_open") === true;
+    }) ?? "none";
+    return `${SCREEN_LINE_TAG} state=${state} status="${(status?.textContent ?? "").replace(/\s+/g, " ").trim()}" dialog=${dialog}`;
+  };
+  const evaluate = (): void => {
+    const line = describe();
+    if (line === last) return;
+    last = line;
+    log(line);
+  };
+  const start = (): void => {
+    const root = document.documentElement;
+    if (root == null) return;
+    const observer = options.createMutationObserver(evaluate);
+    observer.observe(root, { attributes: true, attributeFilter: ["class"], childList: true, subtree: true, characterData: true });
+    evaluate();
+    schedule(() => {
+      if (sawNoVnc) return;
+      const scripts = typeof (document as { querySelectorAll?: unknown }).querySelectorAll === "function"
+        ? (document as unknown as { querySelectorAll(selector: string): { length: number } }).querySelectorAll("script").length
+        : -1;
+      log(`${SCREEN_LINE_TAG} noVNC did not start after ${options.graceMs ?? NOVNC_START_GRACE_MS}ms; root class="${rootClassText(root.classList)}" scripts=${scripts}`);
+    }, options.graceMs ?? NOVNC_START_GRACE_MS);
+    options.window?.addEventListener("pagehide", () => observer.disconnect(), { once: true });
+  };
+  if (document.documentElement == null) document.addEventListener("DOMContentLoaded", start, { once: true });
+  else start();
+}
+
+function rootClassText(classList: VncClassListPort): string {
+  const value = (classList as { value?: unknown }).value;
+  if (typeof value === "string") return value;
+  return String(classList);
+}
+
 export function installVncLivenessTripwire(options: {
   readonly renderer: VncRendererPort | null;
   readonly frame: VncFramePort | null;
@@ -413,6 +497,7 @@ export function installVncPreload(options: {
   readonly presence: Parameters<typeof installVncUserPresenceReporter>[0];
   readonly hostKeys: Parameters<typeof installVncHostKeyForwarder>[0];
   readonly session: Parameters<typeof installVncRfbSessionReporter>[0];
+  readonly status?: Parameters<typeof installNoVncStatusReporter>[0];
   readonly macKeys: Parameters<typeof installVncMacKeyMapping>[0];
   readonly liveness: Parameters<typeof installVncLivenessTripwire>[0];
   readonly warn?: VncWarn;
@@ -427,6 +512,7 @@ export function installVncPreload(options: {
   install("vnc user presence reporter", () => installVncUserPresenceReporter(options.presence));
   install("vnc host key forwarder", () => installVncHostKeyForwarder(options.hostKeys));
   install("vnc rfb session reporter", () => installVncRfbSessionReporter(options.session));
+  if (options.status != null) install("vnc status reporter", () => installNoVncStatusReporter(options.status!));
   install("vnc mac key mapping", () => installVncMacKeyMapping(options.macKeys));
   install("vnc liveness tripwire", () => installVncLivenessTripwire(options.liveness));
 }
@@ -484,6 +570,13 @@ export function installVncPreloadEntrypoint(electron: VncPreloadElectronBindings
       window: windowPort,
       document: documentPort,
       location: locationPort,
+      createMutationObserver: (listener) => new MutationObserver(listener),
+      warn,
+    },
+    status: {
+      document: documentPort as VncStatusDocumentPort,
+      window: windowPort,
+      location: locationPort as VncLocationPort & { readonly href?: string },
       createMutationObserver: (listener) => new MutationObserver(listener),
       warn,
     },

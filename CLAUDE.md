@@ -169,6 +169,23 @@ in `docs/product/faces-slice-measured.md`. **Still unmeasured:** whether the
 pinned 0.18.0 mark carries `data-avatar-shape` as the reconstruction does;
 the `[CaisraFaceOverlay]` console line on a Mac prints the real mark.
 
+**The computer's screen, measured 22 September 2026.** With the Computer
+panel spinning "connecting", the founder measured: port 6080 published, the
+page answers 200, websockify and x11vnc up inside the box, and **no client
+line in websockify's log**, so the app's webview never opened the socket.
+The stock renderer cannot say why: it shows the spinner until noVNC's page
+reports `noVNC_connected`, never times out, and the preload hides noVNC's
+own failure text; noVNC retries every 5 s forever. There is no unused fix
+in Grok Bot's code; production stock reaches a cloud box through the pod's
+egress proxy, and our local Docker box uses stock's loopback dev path. The
+app now narrates the stream to `computer-stream.log` in its data folder
+(attach, load events, page console, preload failures) and paints the last
+reason under a spinner after 20 s
+(`electron-main/vnc/computer-stream-log.ts`, `preload-vnc.ts`
+`installNoVncStatusReporter`, `electron-preload/computer-stream-notice.ts`,
+`docs/product/computer-stream-measured.md`). Read that file before
+reasoning about the screen again.
+
 **The cost of running on the Mac.** The engine runs locally, so nothing runs
 with the laptop shut. The maty queue and `claidor-maty-runner` are the cloud path
 for exactly this, and **their completeness is now established**, 18 September:
