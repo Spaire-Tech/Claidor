@@ -22,11 +22,13 @@ Screens: `thread`, `account-menu`, `settings`, `plugins`, `agent-settings`,
 
 ## The faces
 
-The packaged app paints a clay face per agent over Grok's marks from the
-preload (`source/electron-preload/clay-face-overlay.ts`): DiceBear's clay
-style (CC0), generated on the machine from the agent's id
-(`source/shared/agent/clay-face.ts`), moved with Grok's own motion table
-(`source/shared/agent/face-motion.ts`). `face-overlay-bundle.mjs` bundles that
+The packaged app paints a slice face per agent over Grok's marks from the
+preload (`source/electron-preload/agent-face-overlay.ts`): DiceBear's slice
+style (CC0), generated on the machine from Grok's persisted shape and colour
+(`data-avatar-shape`, `data-avatar-color` on the mark) with the cut pattern
+from the agent's id (`source/shared/agent/agent-face.ts`), moved with Grok's
+own motion table (`source/shared/agent/face-motion.ts`). The slice has no
+eyes, so only the body moves. `face-overlay-bundle.mjs` bundles that
 same code as one browser script and `shoot.mjs` injects it into every page, so
 the pictures show what the preload does; `SHOT_FACES=0` leaves it out. The
 `faces` screen puts each mark on the thread into a different state. Marks
@@ -34,8 +36,9 @@ inside a group or shared-room avatar keep Grok's own face, by design, and are
 counted apart.
 
 `face-preview.mjs` is the moving version: it writes `.build/face-preview.html`
-(self-contained; open it in any browser and eighteen agents' faces cycle
-through the states, spin, bounce and look at the pointer), and records
+(self-contained; open it in any browser and eighteen agents' faces, in
+eighteen shape-and-colour pairs, cycle through the states, spin and bounce),
+and records
 `shots/face-preview.png`, `shots/face-preview-gaze.png` and six seconds of
 `shots/face-preview.webm`.
 

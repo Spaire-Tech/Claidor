@@ -1,4 +1,4 @@
-import { installFaceOverlaySafely } from "./clay-face-overlay.js";
+import { installFaceOverlaySafely } from "./agent-face-overlay.js";
 import { CLIENT_PERSISTENCE_CHANNELS } from "../shared/persistence.js";
 import {
   createCoordinatorPortBroker,

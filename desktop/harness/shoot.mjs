@@ -41,7 +41,7 @@ if (process.env.SHOT_NO_BUILD !== "1") {
   execFileSync("npx", ["vite", "build", "--config", "frontend/vite.config.ts", "--logLevel", "error"], { cwd: desktopRoot, stdio: "inherit" });
 }
 await mkdir(shotsDir, { recursive: true });
-// The packaged app paints a clay face per agent over Grok's marks from the
+// The packaged app paints a slice face per agent over Grok's marks from the
 // preload; the harness injects the same script so the pictures show them.
 const faceOverlay = process.env.SHOT_FACES === "0" ? null : await buildFaceOverlayScript();
 

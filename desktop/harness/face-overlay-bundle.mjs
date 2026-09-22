@@ -1,5 +1,5 @@
 // Bundles the preload's face overlay as one browser script, so a harness
-// page can run exactly what the packaged preload runs — the clay face per
+// page can run exactly what the packaged preload runs — the slice face per
 // agent and Grok's motion loop — without Electron.
 //
 //   const script = await buildFaceOverlayScript();   // .build/face-overlay.js
@@ -16,7 +16,7 @@ export async function buildFaceOverlayScript() {
   await mkdir(path.dirname(outfile), { recursive: true });
   await build({
     stdin: {
-      contents: 'import { installFaceOverlaySafely } from "./source/electron-preload/clay-face-overlay";\ninstallFaceOverlaySafely();\n',
+      contents: 'import { installFaceOverlaySafely } from "./source/electron-preload/agent-face-overlay";\ninstallFaceOverlaySafely();\n',
       resolveDir: desktopRoot,
       loader: "ts",
       sourcefile: "face-overlay-entry.ts",

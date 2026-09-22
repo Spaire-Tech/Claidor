@@ -9,7 +9,7 @@
  * are. Three one-off moves sit on top — spin (a full turn), bounce and
  * burst — and the eyes follow the pointer. The table below is that one,
  * verbatim; the geometry is rescaled from Grok's 228.5-unit blob to whatever
- * body is drawn (`FaceGeometry`), the clay face's 100-unit canvas today.
+ * body is drawn (`FaceGeometry`), a 100-unit canvas for the clay and slice faces.
  *
  * Pure: no DOM, no clock of its own, so every frame can be checked in a test.
  */
@@ -49,6 +49,11 @@ export interface FaceGeometry {
 /** The clay face: a 100-unit canvas, the body turning about its middle. */
 export function clayFaceGeometry(eyeY: number): FaceGeometry {
   return { scale: 100 / GROK_BLOB_WIDTH, centerX: 50, centerY: 62, eyeY };
+}
+
+/** The slice face: a 100-unit canvas, the shape centred, no eyes to open. */
+export function sliceFaceGeometry(): FaceGeometry {
+  return { scale: 100 / GROK_BLOB_WIDTH, centerX: 50, centerY: 50, eyeY: 50 };
 }
 
 export type FaceMotionActionKind = "spin" | "bounce";

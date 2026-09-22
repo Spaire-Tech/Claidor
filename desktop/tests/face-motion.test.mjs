@@ -163,7 +163,7 @@ function grokMark(document, state) {
 }
 
 test("the overlay loop reads the mark's state each frame and writes Grok's transforms", async () => {
-  const loaded = await loadModule("source/electron-preload/clay-face-overlay.ts");
+  const loaded = await loadModule("source/electron-preload/agent-face-overlay.ts");
   const window = new Window();
   try {
     const { syncFaceMarks, tickFaceMotion, resetFaceMotion, trackedFaceCount, hostGrokState } = loaded.module;
@@ -174,17 +174,15 @@ test("the overlay loop reads the mark's state each frame and writes Grok's trans
     assert.equal(syncFaceMarks(window.document), 1);
     assert.equal(trackedFaceCount(), 1);
     const face = mark.querySelector(".caisra-face__face");
-    const eyes = mark.querySelector(".caisra-face__eyes");
+    assert.equal(mark.querySelector(".caisra-face__eyes"), null, "the slice has no eyes; the body carries the motion");
     now = 0;
     assert.equal(tickFaceMotion(now), 1);
-    assert.equal(face.getAttribute("transform"), "translate(0 0) rotate(0 50 62)");
-    assert.match(eyes.getAttribute("transform"), /scale\(1 1\)/);
+    assert.equal(face.getAttribute("transform"), "translate(0 0) rotate(0 50 50)");
 
     mark.setAttribute("data-grok-state", "thinking");
     now = 500;
     tickFaceMotion(now);
-    assert.match(face.getAttribute("transform"), /rotate\(3 50 62\)/);
-    assert.match(eyes.getAttribute("transform"), /scale\(1 0\.75\)/);
+    assert.match(face.getAttribute("transform"), /rotate\(3 50 50\)/);
 
     // Sending earns a spin that runs for a second on the same clock.
     mark.setAttribute("data-grok-state", "sending");
@@ -192,18 +190,18 @@ test("the overlay loop reads the mark's state each frame and writes Grok's trans
     tickFaceMotion(now);
     now = 1500;
     tickFaceMotion(now);
-    assert.match(face.getAttribute("transform"), /rotate\(180 50 62\)/);
+    assert.match(face.getAttribute("transform"), /rotate\(180 50 50\)/);
     now = 2100;
     tickFaceMotion(now);
-    assert.match(face.getAttribute("transform"), /rotate\(0 50 62\)/);
+    assert.match(face.getAttribute("transform"), /rotate\(0 50 50\)/);
 
     // The state can live on a descendant, as the pinned renderer may put it.
     mark.removeAttribute("data-grok-state");
-    mark.querySelector("svg").setAttribute("data-grok-state", "sleeping");
-    assert.equal(hostGrokState(mark), "sleeping");
+    mark.querySelector("svg").setAttribute("data-grok-state", "bored");
+    assert.equal(hostGrokState(mark), "bored");
     now = 2200;
     tickFaceMotion(now);
-    assert.match(eyes.getAttribute("transform"), /scale\(1 0\.12\)/);
+    assert.match(face.getAttribute("transform"), /rotate\(-8 50 50\)/);
 
     // A mark that leaves the page leaves the loop.
     mark.remove();
@@ -217,7 +215,7 @@ test("the overlay loop reads the mark's state each frame and writes Grok's trans
 });
 
 test("a paused mark holds its pose", async () => {
-  const loaded = await loadModule("source/electron-preload/clay-face-overlay.ts");
+  const loaded = await loadModule("source/electron-preload/agent-face-overlay.ts");
   const window = new Window();
   try {
     const { syncFaceMarks, tickFaceMotion, resetFaceMotion } = loaded.module;
@@ -226,7 +224,7 @@ test("a paused mark holds its pose", async () => {
     mark.setAttribute("data-paused", "true");
     syncFaceMarks(window.document);
     tickFaceMotion(275);
-    assert.equal(mark.querySelector(".caisra-face__face").getAttribute("transform"), "translate(0 0) rotate(0 50 62)");
+    assert.equal(mark.querySelector(".caisra-face__face").getAttribute("transform"), "translate(0 0) rotate(0 50 50)");
   } finally {
     loaded.module.resetFaceMotion();
     window.close();

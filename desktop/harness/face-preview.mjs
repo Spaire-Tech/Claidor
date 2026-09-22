@@ -1,4 +1,4 @@
-// A moving preview of the clay faces under Grok's motion, offline.
+// A moving preview of the slice faces under Grok's motion, offline.
 //
 //   node harness/face-preview.mjs
 //
@@ -18,6 +18,9 @@ const shotsDir = path.join(here, "shots");
 const CHROMIUM = process.env.SHOT_CHROMIUM ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
 // Agent ids as the app mints them are opaque; these stand in for eighteen agents.
 const AGENTS = ["perrin", "juno", "mira", "sable", "board-pack", "bass", "terra", "luna", "caisra", "ines", "ola", "remy", "nova", "kip", "zed", "tao", "bo", "ada"];
+// Grok's persisted avatar: a shape and a colour per agent (avatar-editor/model.ts).
+const SHAPES = ["blob", "pebble", "squircle", "tablet", "wedge", "hex", "cloud", "teardrop"];
+const COLORS = ["blue", "green", "red", "orange", "yellow", "cyan", "violet", "magenta", "brown", "gray", "black"];
 // The states the app actually puts a mark in (agent-avatar.tsx,
 // personaStateFromAgent) first, then the rest of Grok's table.
 const STATES = ["idle", "thinking", "working", "searching", "listening", "sending", "receiving", "excited", "celebrate", "curious", "confused", "sad", "sleeping", "waking", "writing", "happy", "surprised", "bored"];
@@ -25,10 +28,10 @@ const STATES = ["idle", "thinking", "working", "searching", "listening", "sendin
 const overlayScript = await readFile(await buildFaceOverlayScript(), "utf8");
 const marks = AGENTS.map((agent, index) => `
   <figure>
-    <span aria-hidden="true" class="sand-agent-avatar sand-grok-bot-mark" data-avatar-color="blue" data-avatar-shape="blob" style="--fg: #2A92FE; width: 96px; height: 96px; display: block;">
+    <span aria-hidden="true" class="sand-agent-avatar sand-grok-bot-mark" data-avatar-color="${COLORS[index % COLORS.length]}" data-avatar-shape="${SHAPES[index % SHAPES.length]}" style="--fg: #2A92FE; width: 96px; height: 96px; display: block;">
       <svg data-grok-state="${STATES[index % STATES.length]}" data-source-id="sand-agent-mark-source-agent-${agent}" viewBox="-15 -15 259 259" width="96" height="96" xmlns="http://www.w3.org/2000/svg"><path d="M228.541 114.228C228.541 130.133 225.184 145.994 218.738 160.534Z" fill="currentColor"/></svg>
     </span>
-    <figcaption><b>${agent}</b><br><span class="state">${STATES[index % STATES.length]}</span></figcaption>
+    <figcaption><b>${agent}</b> · ${SHAPES[index % SHAPES.length]} ${COLORS[index % COLORS.length]}<br><span class="state">${STATES[index % STATES.length]}</span></figcaption>
   </figure>`).join("");
 
 const html = `<!doctype html>
@@ -51,7 +54,7 @@ const html = `<!doctype html>
 </head>
 <body>
 <h1>Caisra faces, moving</h1>
-<p>Eighteen agents' clay faces under Grok Bot's motion table: each cycles through the states, spins on <i>sending</i> and <i>celebrate</i>, bounces on <i>excited</i> and <i>receiving</i>, and the pupils follow the pointer.</p>
+<p>Eighteen agents' slice faces, each keyed on Grok's shape and colour with the cuts from the agent's id, under Grok Bot's motion table: each cycles through the states, spins on <i>sending</i> and <i>celebrate</i>, and bounces on <i>excited</i> and <i>receiving</i>.</p>
 <main>${marks}</main>
 <script>${overlayScript}</script>
 <script>
@@ -113,11 +116,11 @@ try {
     painted: document.querySelectorAll("[data-caisra-face]").length,
     moving: document.querySelectorAll("[data-caisra-face] .caisra-face__face[transform]").length,
     sampleFace: document.querySelector("[data-caisra-face] .caisra-face__face")?.getAttribute("transform"),
-    sampleEyes: document.querySelector("[data-caisra-face] .caisra-face__eyes")?.getAttribute("transform"),
-    samplePupil: document.querySelector("[data-caisra-face] .caisra-face__pupil")?.getAttribute("transform"),
+    keys: [...document.querySelectorAll("[data-caisra-face]")].map((face) => face.getAttribute("data-face-key")),
   }));
   console.log("measured", JSON.stringify(measured));
   if (measured.moving !== AGENTS.length) problems.push(`expected ${AGENTS.length} moving faces, found ${measured.moving}`);
+  if (new Set(measured.keys).size !== AGENTS.length) problems.push(`expected ${AGENTS.length} different faces, found ${new Set(measured.keys).size}`);
   await context.close();
   const [recorded] = (await readdir(videoDir)).filter((name) => name.endsWith(".webm"));
   if (recorded == null) problems.push("no video was recorded");

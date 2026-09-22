@@ -1,10 +1,10 @@
 /// <reference lib="dom" />
-import { CAISRA_FACE_ATTR, clayFace } from "../shared/agent/clay-face.js";
+import { CAISRA_FACE_ATTR, agentFace, faceKey, type FaceIdentity } from "../shared/agent/agent-face.js";
 import {
-  clayFaceGeometry,
   faceActionForTransition,
   faceGazeFor,
   faceMotionFrame,
+  sliceFaceGeometry,
   type FaceMotionAction,
 } from "../shared/agent/face-motion.js";
 
@@ -52,7 +52,7 @@ ${OURS} * { visibility: visible !important; }
 }
 /* The bob, the lean, the spin, the openness and the gaze are Grok's motion
  * table, applied by the loop in this file as SVG transforms
- * (face-motion.ts). The clay style's own idle animation is generated off. */
+ * (face-motion.ts). The slice has no eyes, so the body carries all of it. */
 `;
 // Inside an open shadow root the light-DOM rules above cannot reach, so the
 // same hide rule is rooted at the shadow tree itself.
@@ -84,21 +84,44 @@ export function findPersonaAvatarHosts(root: ParentNode): Element[] {
 }
 
 /**
- * The seed: the agent's id, as the mark carries it. The shipped mark names
- * its face source `sand-agent-mark-source-<agentId>` (agent-avatar.tsx); a
- * mark without one falls back to its colour, and then to one shared face.
+ * The agent's id, as the mark carries it. The shipped mark names its face
+ * source `sand-agent-mark-source-<agentId>` (agent-avatar.tsx); the picker's
+ * cells name theirs `<agentId>` and `<agentId>-<shape>`. A mark without one
+ * has no agent id, and its face is keyed on shape and colour alone.
  */
-export function hostIdentity(host: Element): string {
+export function hostAgentId(host: Element): string | null {
   const raw = host.getAttribute("data-source-id")
     ?? host.closest("[data-source-id]")?.getAttribute("data-source-id")
     ?? host.querySelector("[data-source-id]")?.getAttribute("data-source-id")
     ?? host.shadowRoot?.querySelector("[data-source-id]")?.getAttribute("data-source-id")
     ?? host.getAttribute("data-agent-id")
     ?? host.closest("[data-agent-id]")?.getAttribute("data-agent-id")
-    ?? host.getAttribute("data-avatar-color")
-    ?? host.closest("[data-avatar-color]")?.getAttribute("data-avatar-color")
-    ?? "persona";
-  return raw.replace(/^sand-agent-mark-source-/, "");
+    ?? null;
+  if (raw == null) return null;
+  // A picker cell for shape X is the agent's face in shape X: same cuts.
+  const id = raw.replace(/^sand-agent-mark-source-/, "").replace(/-(blob|pebble|squircle|tablet|wedge|hex|cloud|teardrop)$/, "");
+  return id.length > 0 ? id : null;
+}
+
+function hostAttribute(host: Element, name: string): string | null {
+  return host.getAttribute(name)
+    ?? host.closest(`[${name}]`)?.getAttribute(name)
+    ?? host.querySelector(`[${name}]`)?.getAttribute(name)
+    ?? host.shadowRoot?.querySelector(`[${name}]`)?.getAttribute(name)
+    ?? null;
+}
+
+/**
+ * What the face is keyed on: Grok's persisted shape and colour, as the mark
+ * writes them (`data-avatar-shape`, `data-avatar-color`, on the mark or the
+ * nearest thing carrying them), and the agent id for the cut pattern.
+ */
+export function hostIdentity(host: Element): FaceIdentity {
+  return {
+    agentId: hostAgentId(host),
+    shape: hostAttribute(host, "data-avatar-shape"),
+    color: hostAttribute(host, "data-avatar-color"),
+  };
 }
 
 /** The agent's state as the shipped mark writes it: `data-grok-state`, on the mark or on the face inside it. */
@@ -168,13 +191,13 @@ export function paintFaceHost(host: Element): Element | null {
     const parent = mount.container as HTMLElement;
     if (parent.style != null && parent.style.position === "") parent.style.position = "relative";
   }
-  const agentId = hostIdentity(host);
+  const identity = hostIdentity(host);
   const current = existingOverlay(mount, host);
-  if (current != null && current.getAttribute("data-agent-id") === agentId) return current;
+  if (current != null && current.getAttribute("data-face-key") === faceKey(identity)) return current;
   const wrapper = host.ownerDocument.createElement("div");
-  wrapper.innerHTML = clayFace(agentId).svg;
+  wrapper.innerHTML = agentFace(identity).svg;
   const next = wrapper.firstElementChild;
-  if (next == null) throw new Error("clay face markup did not produce an element");
+  if (next == null) throw new Error("agent face markup did not produce an element");
   setStyle(next, { display: "block", height: "100%", width: "100%", overflow: "visible", "pointer-events": "none" });
   if (mount.sibling) {
     setStyle(next, { position: "absolute", inset: "0", "z-index": "1" });
@@ -189,7 +212,8 @@ export function paintFaceHost(host: Element): Element | null {
 // ---------------------------------------------------------------- motion
 // One loop for every painted face. Each frame reads the mark's state, turns
 // a change of state into a one-off move when the table says so, and writes
-// Grok's transforms onto the face, the eyes and the pupils.
+// Grok's transforms onto the face (and onto eyes and pupils, when a style
+// draws them; the slice draws none).
 
 interface TrackedFace {
   readonly host: Element;
@@ -234,7 +258,6 @@ export function tickFaceMotion(now: number = clockNow()): number {
       const box = entry.overlay.getBoundingClientRect();
       gaze = faceGazeFor(pointer, box);
     }
-    const eyeY = Number.parseFloat(entry.overlay.getAttribute("data-eye-y") ?? "");
     const frame = faceMotionFrame({
       state,
       elapsedMs: now - entry.paintedAt,
@@ -242,7 +265,7 @@ export function tickFaceMotion(now: number = clockNow()): number {
       action: entry.action,
       gaze,
       still: reducedMotion || hostPaused(host),
-    }, clayFaceGeometry(Number.isFinite(eyeY) ? eyeY : 50));
+    }, sliceFaceGeometry());
     if (frame.actionDone) entry.action = null;
     entry.overlay.querySelector(".caisra-face__face")?.setAttribute("transform", frame.face);
     entry.overlay.querySelector(".caisra-face__eyes")?.setAttribute("transform", frame.eyes);
