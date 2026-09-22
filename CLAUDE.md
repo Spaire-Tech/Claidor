@@ -151,6 +151,18 @@ never showed; the coordinator stamps it now
 (`node-agent-coordinator/permission-scope-stamp.ts`). **Not yet measured on a
 Mac:** a full turn on the loop with a warm box, a cold box, and Docker off.
 
+**Model roles copy Grok Bot's table, decided 22 September 2026.** No reflex
+model, no per-step router. The loop runs on Terra at `effort: high`, the way
+Grok Bot runs its loop; summarization, memory and the computer and browser
+subagents run on Luna at `effort: low`, the way Grok Bot runs computer use.
+Until this the executor sent no effort and every call ran at OpenAI's
+default. Done-or-continue is Grok Bot's nudge mechanism, unchanged. Risky-or-
+safe is Cursor's server-side classifier, which Claidor does not serve, so
+auto-review is effectively off; do not invent an app-side model for it.
+Escalation to Astra comes after, on the rule `pricing.py` already states.
+`docs/product/model-roles-measured.md` is the record, with the two lines to
+read on the Mac (effort on the wire, cached tokens on step two).
+
 **The agents' faces are Grok Bot's own, reverted 22 September 2026.** Over
 one day the marks carried, in turn, cloud bodies, DiceBear clay and DiceBear
 slice, each painted over `.sand-grok-bot-mark` by a preload overlay. The slice

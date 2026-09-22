@@ -125,7 +125,7 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(providers, /export function claidorModelForSession/);
   assert.match(inference, /cheap: true, isSummarizationSession: true/);
   assert.match(turnShell, /cheap: true, isSummarizationSession: true/);
-  assert.match(providers, /providerOptions: \{ openai: \{ strictSchemas: false \} \}/);
+  assert.match(providers, /providerOptions: \{ openai: \{ strictSchemas: false, \.\.\.openaiOptions \} \}/);
   assert.match(providers, /from "\.\.\/\.\.\/\.\.\/shared\/node\/cursor-backend\/claidor-api\.js"/);
   assert.match(providers, /export \{ claidorProxyBaseUrl \}/);
   assert.match(await readFile(path.join(repoRoot, "source", "shared", "node", "cursor-backend", "claidor-api.ts"), "utf8"), /CLAIDOR_PROXY_PREFIX = "desktop\/api\/proxy\/v1"/);

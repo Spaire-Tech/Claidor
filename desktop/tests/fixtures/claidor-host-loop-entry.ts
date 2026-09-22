@@ -6,3 +6,4 @@ export { SimplePromptToolExecutor } from "../../source/packages/agent/tool-strea
 export { createZodAgentTool } from "../../source/packages/agent/tools/common.js";
 export { createContext } from "../../source/packages/context/core.js";
 export { z } from "zod";
+export { claidorReasoningEffortForSession, configuredClaidorReasoningEffort, configuredClaidorCheapReasoningEffort, DEFAULT_CLAIDOR_REASONING_EFFORT, DEFAULT_CLAIDOR_CHEAP_REASONING_EFFORT, runRoutedProviderText } from "../../source/host/extensions/inference/provider-session.js";

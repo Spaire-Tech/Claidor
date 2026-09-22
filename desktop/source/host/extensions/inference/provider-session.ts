@@ -63,6 +63,33 @@ export const CLAIDOR_FETCH_TIMEOUT_MS = 45_000;
 export const CLAIDOR_CREDENTIAL_WAIT_MS = 5_000;
 export { CLAIDOR_WORKING_CONTEXT_TOKENS };
 
+// Reasoning effort follows the role, the way Grok Bot sets it: the agent
+// loop runs at `effort: high` (`shared/agents/agent-model.ts`,
+// SAND_DEFAULT_MODEL_SELECTION) and the computer-use subagent at
+// `effort: low` with thinking off (`sand-agent-model.ts`,
+// SAND_COMPUTER_USE_MODEL_SELECTION). Until 22 September the executor sent
+// no effort at all, so every Terra call ran at OpenAI's default. The proxy
+// forwards the Responses body untouched, so the value reaches OpenAI as is.
+export const CLAIDOR_REASONING_EFFORTS = ["minimal", "low", "medium", "high"] as const;
+export type ClaidorReasoningEffort = (typeof CLAIDOR_REASONING_EFFORTS)[number];
+export const DEFAULT_CLAIDOR_REASONING_EFFORT: ClaidorReasoningEffort = "high";
+export const DEFAULT_CLAIDOR_CHEAP_REASONING_EFFORT: ClaidorReasoningEffort = "low";
+export const SAND_CLAIDOR_REASONING_EFFORT_ENV = "SAND_CLAIDOR_REASONING_EFFORT";
+export const SAND_CLAIDOR_CHEAP_REASONING_EFFORT_ENV = "SAND_CLAIDOR_CHEAP_REASONING_EFFORT";
+
+function parseReasoningEffort(value: string | undefined, fallback: ClaidorReasoningEffort): ClaidorReasoningEffort {
+  const trimmed = value?.trim().toLowerCase();
+  return (CLAIDOR_REASONING_EFFORTS as readonly string[]).includes(trimmed ?? "") ? trimmed as ClaidorReasoningEffort : fallback;
+}
+
+export function configuredClaidorReasoningEffort(env: NodeJS.ProcessEnv = process.env): ClaidorReasoningEffort {
+  return parseReasoningEffort(env[SAND_CLAIDOR_REASONING_EFFORT_ENV], DEFAULT_CLAIDOR_REASONING_EFFORT);
+}
+
+export function configuredClaidorCheapReasoningEffort(env: NodeJS.ProcessEnv = process.env): ClaidorReasoningEffort {
+  return parseReasoningEffort(env[SAND_CLAIDOR_CHEAP_REASONING_EFFORT_ENV], DEFAULT_CLAIDOR_CHEAP_REASONING_EFFORT);
+}
+
 // The Claidor provider is the signed-in account. Which process holds that
 // credential differs: the host reads it from its auth service, the coordinator
 // asks electron-main over the control port. Each registers its source once.
@@ -98,20 +125,29 @@ export type ClaidorSessionModelOptions = {
   readonly isBrowserUseSubagent?: boolean;
 };
 
+// The cheap roles, as Grok Bot separates them: summarization and memory
+// (their gemini-2.5-flash), the computer-use and browser-use subagents
+// (their opus at effort low), and anything a caller marks cheap.
+export function isCheapClaidorSession(options?: ClaidorSessionModelOptions): boolean {
+  return options?.cheap === true
+    || options?.isSummarizationSession === true
+    || options?.isComputerUseSubagent === true
+    || options?.isBrowserUseSubagent === true;
+}
+
 export function claidorModelForSession(options?: ClaidorSessionModelOptions): string {
   const named = options?.model?.trim();
   if (named && isConfiguredClaidorModelId(named)) return named;
   const sessionModel = options?.modelId?.trim();
   if (sessionModel && isConfiguredClaidorModelId(sessionModel)) return sessionModel;
-  if (
-    options?.cheap === true
-    || options?.isSummarizationSession === true
-    || options?.isComputerUseSubagent === true
-    || options?.isBrowserUseSubagent === true
-  ) {
-    return configuredClaidorCheapModel();
-  }
+  if (isCheapClaidorSession(options)) return configuredClaidorCheapModel();
   return configuredClaidorModel();
+}
+
+// Effort follows the role, not the model: a loop turn that falls back to
+// Luna on a rate limit keeps the loop's effort.
+export function claidorReasoningEffortForSession(options?: ClaidorSessionModelOptions, env: NodeJS.ProcessEnv = process.env): ClaidorReasoningEffort {
+  return isCheapClaidorSession(options) ? configuredClaidorCheapReasoningEffort(env) : configuredClaidorReasoningEffort(env);
 }
 
 // One definition of where the proxy lives, shared with the other three
@@ -424,7 +460,7 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
   return { fullStream, response: race(result.response), usage: race(result.usage), extendedUsage, providerMetadata: race(result.providerMetadata), invocationId: Promise.resolve(invocationId) };
 }
 
-function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, maxTokens = 0) {
+function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, openaiOptions: Record<string, unknown> = {}) {
   const tools = toToolSet(definitions, executeTool);
   const coreMessages = toCoreMessages(messages);
   // The host loop's state carries its own system prompt; the router prompt is
@@ -439,7 +475,7 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
     ...(tools === undefined ? {} : { tools }),
     toolCallStreaming: true,
     maxSteps: tools === undefined || executeTool == null ? 1 : 8,
-    providerOptions: { openai: { strictSchemas: false } },
+    providerOptions: { openai: { strictSchemas: false, ...openaiOptions } },
   });
   return settleAiSdkStream(result, invocationId, onUsage, maxTokens);
 }
@@ -456,20 +492,20 @@ function claidorLanguageModel(source: ClaidorCredentialSource, id: string): Lang
   return createOpenAI({ apiKey: "claidor-desktop-access-token", baseURL: claidorProxyBaseUrl(source.backendUrl), name: "claidor", fetch: claidorAuthenticatedFetch(source) }).responses(id);
 }
 
-function claidorExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, modelId?: string) {
+function claidorExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, modelId?: string, reasoningEffort: ClaidorReasoningEffort = configuredClaidorReasoningEffort()) {
   const source = claidorCredentialSource;
   if (source == null) throw new Error("Claidor is the selected provider, but this process has no signed-in credential source. Sign in to Claidor and try again.");
   const requested = modelId?.trim() || configuredClaidorModel();
   const cheap = configuredClaidorCheapModel();
-  const start = (id: string) => aiSdkExecutor(claidorLanguageModel(source, id), messages, invocationId, definitions, executeTool, onUsage, CLAIDOR_WORKING_CONTEXT_TOKENS);
+  const start = (id: string) => aiSdkExecutor(claidorLanguageModel(source, id), messages, invocationId, definitions, executeTool, onUsage, CLAIDOR_WORKING_CONTEXT_TOKENS, { reasoningEffort });
   if (requested === cheap) return start(requested);
   return withCheapRateLimitFallback(start(requested), () => start(cheap));
 }
 
 class ProviderPromptExecutor extends BasePromptExecutor<ProviderMessage> {
-  constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void, readonly modelId?: string) { super(new BasePromptBuilder(initialMessages)); }
+  constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void, readonly modelId?: string, readonly reasoningEffort?: ClaidorReasoningEffort) { super(new BasePromptBuilder(initialMessages)); }
   stream(_ctx: unknown, invocationId = crypto.randomUUID(), definitions?: readonly Loose[]) {
-    if (this.provider === "claidor") return claidorExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage, this.modelId);
+    if (this.provider === "claidor") return claidorExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage, this.modelId, this.reasoningEffort);
     if (this.provider === "codex") return codexExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage);
     if (this.provider === "claude-code") return claudeExecutor(this.getMessages(), invocationId, this.onUsage);
     return openRouterExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage);
@@ -479,7 +515,8 @@ class ProviderPromptExecutor extends BasePromptExecutor<ProviderMessage> {
 export function createProviderPromptSession(_provider: RoutedProvider, options?: ClaidorSessionModelOptions): { getModelId(): string; getExecutor(state?: unknown): PromptExecutor } {
   const provider: RoutedProvider = "claidor";
   const modelId = claidorModelForSession(options);
-  return { getModelId: () => modelId, getExecutor: state => new ProviderPromptExecutor(provider, Array.isArray(state) ? state as ProviderMessage[] : undefined, usage => recordRoutedUsage(provider, usage), modelId) };
+  const reasoningEffort = claidorReasoningEffortForSession(options);
+  return { getModelId: () => modelId, getExecutor: state => new ProviderPromptExecutor(provider, Array.isArray(state) ? state as ProviderMessage[] : undefined, usage => recordRoutedUsage(provider, usage), modelId, reasoningEffort) };
 }
 
 export async function runRoutedProviderText(provider: RoutedProvider, messages: readonly ProviderMessage[], options?: {
@@ -493,7 +530,7 @@ export async function runRoutedProviderText(provider: RoutedProvider, messages: 
   const invocationId = crypto.randomUUID();
   const onUsage = (usage: UsageRecord) => recordRoutedUsage(provider, usage);
   const result = provider === "claidor"
-    ? claidorExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage, claidorModelForSession(options))
+    ? claidorExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage, claidorModelForSession(options), claidorReasoningEffortForSession(options))
     : provider === "codex"
       ? codexExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage)
       : provider === "claude-code"
