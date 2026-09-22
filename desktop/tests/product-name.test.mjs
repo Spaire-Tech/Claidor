@@ -21,7 +21,10 @@ test("Settings copy names Claidor and Caisra, not Cursor or Grok Bot", async () 
   const panels = await read("frontend/src/recovered/features/settings/overlay/panels.tsx");
   assert.doesNotMatch(patch, /id:"router",label:"Router"/);
   assert.doesNotMatch(view, /id: "router"/);
-  assert.doesNotMatch(patch, /Grok Bot/);
+  const copyStart = patch.indexOf("COMPONENT_SOURCE = String.raw");
+  const settingsCopy = patch.slice(copyStart, patch.indexOf("`;", copyStart));
+  assert.ok(settingsCopy.length > 1000);
+  assert.doesNotMatch(settingsCopy, /Grok Bot/);
   assert.match(router, /DEFAULT_ROUTER_PROVIDER: RouterProviderId = "claidor"/);
   assert.doesNotMatch(router, /signed-in Cursor account/);
   assert.match(panels, /Sign In with Claidor/);
@@ -60,4 +63,15 @@ test("the agent's brief names Claidor and Caisra, not Cursor or Grok Bot", async
   assert.match(listeners, /user's Claidor account/);
   assert.match(plugins, /user's Claidor account/);
   assert.match(prompt, /cursor-agent/);
+});
+
+test("the shipped renderer is renamed Simeon and its default agent New Agent, by the brand pass", async () => {
+  const patch = await read("scripts/lib/router-renderer-patch.mjs");
+  assert.match(patch, /\["Grok Bot", "Simeon"\]/);
+  assert.match(patch, /\["New Bot", "New Agent"\]/);
+  const agents = await read("source/shared/agents/agents.ts");
+  assert.match(agents, /SAND_DEFAULT_AGENT_NAME = "New Agent"/);
+  assert.match(agents, /LEGACY_SAND_DEFAULT_AGENT_NAME = "New Bot"/);
+  const shortcuts = await read("frontend/src/recovered/features/window-chrome/global-keyboard-shortcuts.ts");
+  assert.doesNotMatch(shortcuts, /New Bot/);
 });

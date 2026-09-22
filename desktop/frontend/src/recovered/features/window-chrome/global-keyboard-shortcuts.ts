@@ -44,7 +44,7 @@ export interface GlobalShortcutHandlers {
 /** The action order is the shipped global registry order for these root actions. */
 export function createRootShellShortcutActions(handlers: GlobalShortcutHandlers): readonly GlobalShortcutAction[] {
   const actions: GlobalShortcutAction[] = [
-    { id: "sand.newAgent", label: "New Bot", hotkey: "mod+n", isEnabledInContentEditable: true, run: handlers.newAgent },
+    { id: "sand.newAgent", label: "New Agent", hotkey: "mod+n", isEnabledInContentEditable: true, run: handlers.newAgent },
     { id: "sand.commandPalette", label: "Jump to", hotkey: "mod+k", isEnabledInContentEditable: true, run: handlers.toggleCommandPalette },
     { id: "sand.openSettings", label: "Open settings", hotkey: "mod+comma", isEnabledInContentEditable: true, run: handlers.openSettings },
     { id: "sand.openTools", label: "Customize", hotkey: "mod+shift+m", isEnabledInContentEditable: true, run: handlers.openTools },

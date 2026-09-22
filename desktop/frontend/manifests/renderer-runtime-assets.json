@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "artifactRoot": "src/app/dist/renderer/assets",
   "assets": [
-    { "file": "app-icon-C7NKj2u7.png", "sha256": "79e6a73e634ce7ad8d1982739e9064bcc9c9ec5106bdd7281d7514ee68169ad2" },
+    { "file": "app-icon-C7NKj2u7.png", "bytes": 21949, "sha256": "edd595db6b6898c5f7c97a850d1ce7dde1a55278db578a6b5bc7ccf156684273" },
     { "file": "apollo-B0sEgAUH.png", "sha256": "f6f384e4105595e7a65c9fb99d3bb1acf6b1f3a0579114e0499e96217801481a" },
     { "file": "ashby-BidvOSTU.png", "sha256": "54cbf3075bfc899e8be9517069ef81cf841cd3fbaf7a46d444a7c0cceca0988b" },
     { "file": "box-DrJB_xON.png", "sha256": "7a6a446cacfeeefddbfde7225a50545b3d18d323155c75957ed2137ad634c9c7" },

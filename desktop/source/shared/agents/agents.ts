@@ -39,8 +39,9 @@ export function areAgentActivitiesEqual(
   );
 }
 
-export const SAND_DEFAULT_AGENT_NAME = "New Bot";
-export const LEGACY_SAND_DEFAULT_AGENT_NAME = "New Agent";
+/** "New Agent", the founder's word (22 September 2026); "New Bot" was 0.18.0's and is still recognised as a default. */
+export const SAND_DEFAULT_AGENT_NAME = "New Agent";
+export const LEGACY_SAND_DEFAULT_AGENT_NAME = "New Bot";
 
 export function isSandDefaultAgentName(name: string): boolean {
   const trimmed = name.trim();

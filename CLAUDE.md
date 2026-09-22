@@ -157,6 +157,21 @@ renderer draws its own faces and nothing paints over them.
 `docs/product/faces-slice-measured.md` is the record. Do not put anything
 over the marks again without the founder asking for it by name.
 
+**The app says Simeon, decided 22 September 2026.** "replace all 'Grok Bot'
+by 'Simeon' everywhere in the app. Replace all new names 'New Bot' by 'New
+Agent'. replace grok bot logos by this." The pinned renderer's strings are
+renamed by a brand pass in `scripts/lib/router-renderer-patch.mjs` at package
+time (every chunk, the stylesheet, the page; counts recorded; the build
+refuses a renderer that never said Grok Bot), the host names a new agent
+"New Agent" (`source/shared/agents/agents.ts`), and the logo is Simeon's
+mark, twelve petals measured off the founder's PNG and drawn from numbers
+(`scripts/lib/simeon-logo.mjs`): the in-app icon through
+`make-runtime-assets.mjs app-icon`, the Dock icon through
+`make-app-icon.mjs` → `brand/Simeon.icns`, written over the shell's icons by
+`package-macos.mjs`. `CFBundleName` stays `Grok Bot` for Electron's helper
+names; the bare words "Bot"/"Bots" were not asked for and were left.
+`docs/product/name-measured.md` §Simeon is the record.
+
 **The computer's screen, measured 22 September 2026.** With the Computer
 panel spinning "connecting", the founder measured: port 6080 published, the
 page answers 200, websockify and x11vnc up inside the box, and **no client

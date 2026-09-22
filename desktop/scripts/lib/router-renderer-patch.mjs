@@ -33,6 +33,30 @@ function RRouterUsageSummary({provider:s,usage:e,current:t,divided:n}){const r=[
 function RRouterUsage(){const[s]=RRouterState(),e=RRouterProviders.find(t=>t.value===s.provider)??RRouterProviders[0],t=RRouterProviders.filter(n=>n.value===s.provider||(s.usage?.providers?.[n.value]?.requests??0)>0);return a.jsxs("div",{className:k("sand-usage-section","sand-9f619 sand-78zum5 sand-dt5ytf sand-ou54vl"),children:[a.jsx(re,{title:"Current provider",children:a.jsx(ie,{description:e.description,label:e.label,variant:"card",children:a.jsx(se,{as:"span",color:"secondary",size:"sm",children:"Selected"})})}),a.jsx(re,{title:"Tracked activity",children:a.jsx("div",{children:t.map((n,r)=>a.jsx(RRouterUsageSummary,{provider:n,usage:s.usage?.providers?.[n.value]??RRouterEmptyUsage,current:n.value===s.provider,divided:r>0},n.value))})}),s.provider==="cursor"?a.jsx(Na,{}):null]})}
 `;
 
+/**
+ * The product's name in the shipped 0.18.0 renderer, decided by the founder
+ * on 22 September 2026: "replace all 'Grok Bot' by 'Simeon' everywhere in
+ * the app. Replace all new names 'New Bot' by 'New Agent'". These are the
+ * strings the checksum-pinned bytes carry (onboarding, About, the Computer
+ * chrome, Settings titles, the default agent name); the pass runs over every
+ * renderer chunk and the page, after the Settings patch.
+ */
+export const BRAND_REPLACEMENTS = Object.freeze([
+  ["Grok Bot", "Simeon"],
+  ["New Bot", "New Agent"],
+]);
+
+export function patchOriginalBrandStrings(source) {
+  let out = source;
+  const counts = {};
+  for (const [before, after] of BRAND_REPLACEMENTS) {
+    const count = out.split(before).length - 1;
+    counts[before] = count;
+    if (count > 0) out = out.split(before).join(after);
+  }
+  return { source: out, counts };
+}
+
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
@@ -79,12 +103,28 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
       patched: { bytes: Buffer.byteLength(patched), sha256: sha256(patched) },
     });
   }
+  // The name, over every chunk and the page, after the Settings patch landed.
+  const brandFiles = [];
+  const brandTotals = Object.fromEntries(BRAND_REPLACEMENTS.map(([before]) => [before, 0]));
+  const brandTargets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".js") || name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
+  brandTargets.push(path.join(stageRoot, "dist", "renderer", "index.html"));
+  for (const target of brandTargets) {
+    let source;
+    try { source = await readFile(target, "utf8"); } catch { continue; }
+    const { source: patched, counts } = patchOriginalBrandStrings(source);
+    if (patched === source) continue;
+    await writeFile(target, patched);
+    for (const [before, count] of Object.entries(counts)) brandTotals[before] += count;
+    brandFiles.push({ path: path.relative(stageRoot, target), counts, original: { bytes: Buffer.byteLength(source), sha256: sha256(source) }, patched: { bytes: Buffer.byteLength(patched), sha256: sha256(patched) } });
+  }
+  if (brandTotals["Grok Bot"] === 0) throw new Error("Expected the original renderer to name Grok Bot at least once; the brand pass found none.");
   const record = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     mode: "original-renderer-settings-extension",
     chunks: changes,
-    features: ["settings-router-provider", "settings-local-docker-vm", "usage-current-provider"],
-    transformations: ["settings-registry", "router-panel", "usage-panel"],
+    brand: { replacements: BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), totals: brandTotals, files: brandFiles },
+    features: ["settings-router-provider", "settings-local-docker-vm", "usage-current-provider", "brand-simeon"],
+    transformations: ["settings-registry", "router-panel", "usage-panel", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
   await writeFile(provenancePath, `${JSON.stringify(record, null, 2)}\n`);
