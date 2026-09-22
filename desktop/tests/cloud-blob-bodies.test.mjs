@@ -120,3 +120,22 @@ test("each of the 19 designed bodies is the cut PNG with animated eyes composite
     await face.dispose();
   }
 });
+
+test("Grok ink is read from light-dark(), rgb() and nearby theme shades", async () => {
+  const loaded = await load("source/shared/agent/cloud-blobs.ts", "cloud-blobs-ink");
+  try {
+    const { cloudBlobColorFromGrokMark, grokMarkHexes } = loaded.module;
+    assert.equal(cloudBlobColorFromGrokMark("light-dark(#2A92FE, #0E74E0)"), "sky");
+    assert.equal(cloudBlobColorFromGrokMark("rgb(42, 146, 254)"), "sky");
+    assert.equal(cloudBlobColorFromGrokMark("rgba(255, 62, 81, 1)"), "blush");
+    assert.equal(cloudBlobColorFromGrokMark("#fff"), "fog");
+    assert.equal(cloudBlobColorFromGrokMark("#2f96f0"), "sky", "a theme shade maps to the nearest Grok ink");
+    assert.equal(cloudBlobColorFromGrokMark("rgb(0, 200, 110)"), "sage");
+    assert.equal(cloudBlobColorFromGrokMark("#123456"), null, "a colour far from every Grok ink stays unmapped so the id hash decides");
+    assert.equal(cloudBlobColorFromGrokMark(""), null);
+    assert.equal(cloudBlobColorFromGrokMark("currentColor"), null);
+    assert.deepEqual(grokMarkHexes("light-dark(#2a92fe, #0e74e0) rgb(1, 2, 3) #abc"), ["#2a92fe", "#0e74e0", "#aabbcc", "#010203"]);
+  } finally {
+    await loaded.dispose();
+  }
+});

@@ -68,16 +68,64 @@ const GROK_MARK_HEX_TO_CLOUD = new Map<string, CloudBlobColorId>([
   ["#777777", "slate"],
 ]);
 
+const GROK_MARK_RGB = [...GROK_MARK_HEX_TO_CLOUD.keys()].map((hex) => ({ hex, rgb: hexToRgb(hex)! }));
+// Euclidean RGB distance. The 11 Grok inks are far apart (the closest pair,
+// #ff3e51 and #ff263c, is under 30), so anything within this radius is a
+// theme shade of one of them and not a colour of its own.
+const NEAREST_GROK_INK_RADIUS = 96;
+
+function hexToRgb(hex: string): [number, number, number] | null {
+  const match = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/.exec(hex);
+  if (match == null) return null;
+  return [Number.parseInt(match[1]!, 16), Number.parseInt(match[2]!, 16), Number.parseInt(match[3]!, 16)];
+}
+
+function rgbToHex(rgb: readonly [number, number, number]): string {
+  return `#${rgb.map((channel) => Math.max(0, Math.min(255, Math.round(channel))).toString(16).padStart(2, "0")).join("")}`;
+}
+
+/** Every colour a mark can carry, as six-digit hex: `#rrggbb`, `#rgb`, and the `rgb()` / `rgba()` strings `getComputedStyle` returns. */
+export function grokMarkHexes(value: string): string[] {
+  const hexes: string[] = [];
+  for (const hex of value.match(/#[0-9a-f]{6}\b/g) ?? []) hexes.push(hex);
+  for (const short of value.match(/#[0-9a-f]{3}\b/g) ?? []) {
+    if (short.length === 4) hexes.push(`#${short[1]}${short[1]}${short[2]}${short[2]}${short[3]}${short[3]}`);
+  }
+  const rgbPattern = /rgba?\(\s*(\d{1,3})\s*[, ]\s*(\d{1,3})\s*[, ]\s*(\d{1,3})/g;
+  for (const match of value.matchAll(rgbPattern)) {
+    hexes.push(rgbToHex([Number(match[1]), Number(match[2]), Number(match[3])]));
+  }
+  return hexes;
+}
+
+function nearestGrokInk(hex: string): CloudBlobColorId | null {
+  const rgb = hexToRgb(hex);
+  if (rgb == null) return null;
+  let best: { hex: string; distance: number } | null = null;
+  for (const ink of GROK_MARK_RGB) {
+    const distance = Math.hypot(rgb[0] - ink.rgb[0], rgb[1] - ink.rgb[1], rgb[2] - ink.rgb[2]);
+    if (best == null || distance < best.distance) best = { hex: ink.hex, distance };
+  }
+  if (best == null || best.distance > NEAREST_GROK_INK_RADIUS) return null;
+  return GROK_MARK_HEX_TO_CLOUD.get(best.hex) ?? null;
+}
+
 export function cloudBlobColorFromGrokMark(value: string | null | undefined): CloudBlobColorId | null {
   if (value == null) return null;
   const trimmed = value.trim().toLowerCase();
+  if (trimmed.length === 0) return null;
   if (trimmed in GROK_MARK_COLOR_TO_CLOUD) {
     return GROK_MARK_COLOR_TO_CLOUD[trimmed as keyof typeof GROK_MARK_COLOR_TO_CLOUD];
   }
   if (isCloudBlobColor(trimmed)) return trimmed;
-  for (const hex of trimmed.match(/#[0-9a-f]{6}/g) ?? []) {
+  const hexes = grokMarkHexes(trimmed);
+  for (const hex of hexes) {
     const mapped = GROK_MARK_HEX_TO_CLOUD.get(hex);
     if (mapped != null) return mapped;
+  }
+  for (const hex of hexes) {
+    const nearest = nearestGrokInk(hex);
+    if (nearest != null) return nearest;
   }
   return null;
 }
