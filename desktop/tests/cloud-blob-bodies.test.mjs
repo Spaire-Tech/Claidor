@@ -59,6 +59,8 @@ test("the 19 cloud blobs are a stored random pick, not a hash of the bot id", as
     assert.equal(isCloudBlobColor(hashed), true);
     assert.equal(resolveCloudBlobColor("agent-a", "peach"), "peach");
     assert.equal(resolveCloudBlobColor("agent-a"), hashed);
+    assert.equal(resolveCloudBlobColor("agent-a", "blue"), "sky");
+    assert.equal(resolveCloudBlobColor("agent-a", "light-dark(#2A92FE, #0E74E0)"), "sky");
   } finally {
     await loaded.dispose();
   }
