@@ -5,6 +5,7 @@ import { isAbsolute, resolve } from "node:path";
 
 import { SAND_SEND_MESSAGE_TOOL_DESCRIPTION } from "../host/runner/tools/send-message-tool.js";
 import { GROK_BOT_BOX_TOOLS, GROK_BOT_HOST_TOOL_NAMES } from "./grok-bot-box-tools.js";
+import { sandWidgetSchema } from "./sand-widgets.js";
 
 const CREATE_AGENT_DESCRIPTION = "Create a new agent (a new teammate assistant) for your user, with a name and an optional persona/description. Returns the new agent's id so you can immediately message it with SendToAgent. Use this to spin up a focused teammate for a job. You have no tool to delete an agent, so only create one when it is genuinely useful; the user can delete an agent themselves from the sidebar (right-click the agent → \"Delete\").";
 
@@ -243,7 +244,17 @@ export function sendMessageFromToolArgs(args: unknown): Record<string, unknown> 
     if (widget == null || typeof widget.prompt !== "string" || widget.prompt.trim().length === 0) {
       return { error: "widget is required when type is widget" };
     }
-    return { type: "widget", widget };
+    // The stock SendMessage tool parses the widget with this schema before its
+    // body runs (send-message-schema.ts), and the renderer refuses any other
+    // shape (one to six options, each with a label). A bad card is an error
+    // the model can fix, never a stored entry that paints as nothing.
+    const parsed = sandWidgetSchema.safeParse(widget);
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      const where = issue?.path.length ? ` at widget.${issue.path.join(".")}` : "";
+      return { error: `widget is malformed${where}: ${issue?.message ?? "invalid"}. A widget needs a prompt and 1 to 6 options, each with a label.` };
+    }
+    return { type: "widget", widget: parsed.data };
   }
   if (type === "connector") {
     const connector = typeof record.connector === "string" ? record.connector.trim() : "";

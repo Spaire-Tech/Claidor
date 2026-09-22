@@ -117,6 +117,34 @@ anyway: grep the built artifact before saying a thing is absent.** I asserted
 "the atom rules were never recovered" without once looking at
 `dist/renderer/assets/*.css`.
 
+**Product turns run Grok Bot's own loop, decided 22 September 2026.** The
+founder, after an audit of the tools (`docs/product/tools-audit-2026-09-22.md`):
+"Use the original Grok Bot loop. i want literally everything." So a chat turn
+goes through the host's full agent loop in the box (`turn-run-shell.ts`, on
+Claidor), which keeps one transcript per agent in one SQLite table, carries
+tool calls and results into the next turn, nudges for a reply as a
+continuation instead of re-running the turn, creates teammates in the
+background, gives the model the teammate directory, and draws every card
+through the one append. `routesClaidorThroughHost` is **on with an empty
+environment**; `SAND_CLAIDOR_FULL_AGENT=off` is the Mac-local, text-only
+escape hatch, and everything under the router's dispatch in
+`node-agent-coordinator/inference-router.ts` is that hatch. The first-run intro
+runs on the real runner again (`agent-lifecycle.ts`, the pristine
+reconstruction). The earlier rules "product turns stay on the Mac" and "do not
+default routesClaidorThroughHost true" are superseded by this decision. The
+gateway's deadlines (connect, send, roster reads, all 15 s) are what make a
+cold box fail visibly instead of hanging; they are unchanged. **Why the audit
+mattered:** the Mac path was the reconstruction's text-only router for its
+alternative providers with Grok Bot's tools bolted on, and it glued a host
+transcript to a local one, forgot its own tool calls between turns, re-ran
+whole turns when no SendMessage landed (so CreateAgent ran twice), and wrote
+cards to the host while text stayed local, which put every card at the top
+of the chat. One thing was missing on **both** paths: no host writer stamped
+the account scope the renderer's permission dock demands, so the Allow card
+never showed; the coordinator stamps it now
+(`node-agent-coordinator/permission-scope-stamp.ts`). **Not yet measured on a
+Mac:** a full turn on the loop with a warm box, a cold box, and Docker off.
+
 **The cost of running on the Mac.** The engine runs locally, so nothing runs
 with the laptop shut. The maty queue and `claidor-maty-runner` are the cloud path
 for exactly this, and **their completeness is now established**, 18 September:

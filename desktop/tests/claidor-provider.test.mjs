@@ -66,7 +66,7 @@ test("claidor is a provider everywhere a provider is listed", async () => {
   }
 });
 
-test("claidor turns answer on this Mac by default, not through the host inference router", async () => {
+test("claidor turns run Grok Bot's loop on the host by default; off is the Mac hatch", async () => {
   const router = await loadModule("source/node-agent-coordinator/inference-router.ts", "coordinator-inference-router-switch");
   try {
     const { mkdir, writeFile } = await import("node:fs/promises");
@@ -78,19 +78,30 @@ test("claidor turns answer on this Mac by default, not through the host inferenc
       dataDir, env, postEvent: (family, payload) => events.push({ family, payload }), dispatchRemote: async () => { throw new Error("box unreachable"); },
     });
 
-    assert.equal(router.module.routesClaidorThroughHost({}), false);
+    // The founder's decision of 22 September: the original loop, everything.
+    assert.equal(router.module.routesClaidorThroughHost({}), true);
+    assert.equal(router.module.routesClaidorThroughHost({ SAND_CLAIDOR_FULL_AGENT: "" }), true);
     assert.equal(router.module.routesClaidorThroughHost({ SAND_CLAIDOR_FULL_AGENT: "1" }), true);
-    assert.equal(router.module.routesClaidorThroughHost({ SAND_CLAIDOR_FULL_AGENT: "off" }), false);
+    for (const off of ["off", "0", "false", "no", "OFF"]) {
+      assert.equal(router.module.routesClaidorThroughHost({ SAND_CLAIDOR_FULL_AGENT: off }), false, off);
+    }
 
-    const passthrough = await make({ SAND_CLAIDOR_FULL_AGENT: "1" }).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
-    assert.deepEqual(passthrough, { handled: false });
-    const leftoverWidget = await make({ SAND_CLAIDOR_FULL_AGENT: "1" }).dispatch("respondToWidget", { agentId: "a", entryId: "t0s1", value: "research" });
-    assert.deepEqual(leftoverWidget, { handled: false });
+    // On the loop, the coordinator passes every turn and every card tap to the host.
+    for (const env of [{}, { SAND_CLAIDOR_FULL_AGENT: "1" }]) {
+      const passthrough = await make(env).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
+      assert.deepEqual(passthrough, { handled: false });
+      const widget = await make(env).dispatch("respondToWidget", { agentId: "a", entryId: "t0s1", value: "research" });
+      assert.deepEqual(widget, { handled: false });
+      const tail = await make(env).dispatch("getAgentTranscriptTail", { id: "a" });
+      assert.deepEqual(tail, { handled: false });
+    }
 
-    const local = await make({}).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
+    // The hatch still answers on this Mac.
+    const hatch = { SAND_CLAIDOR_FULL_AGENT: "off" };
+    const local = await make(hatch).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
     assert.equal(local.handled, true);
     assert.equal(local.value.provider, "claidor");
-    const widget = await make({}).dispatch("respondToWidget", { agentId: "a", entryId: "t0s1", value: "research" });
+    const widget = await make(hatch).dispatch("respondToWidget", { agentId: "a", entryId: "t0s1", value: "research" });
     assert.equal(widget.handled, true);
     assert.equal(widget.value.accepted, true);
     const deadline = Date.now() + 8_000;
@@ -104,7 +115,7 @@ test("claidor turns answer on this Mac by default, not through the host inferenc
   }
 });
 
-test("a Claidor turn does not wait on a hung box", async () => {
+test("a Mac-hatch Claidor turn does not wait on a hung box", async () => {
   const router = await loadModule("source/node-agent-coordinator/inference-router.ts", "coordinator-inference-router-hung-box");
   try {
     const { mkdir, writeFile } = await import("node:fs/promises");
@@ -114,7 +125,7 @@ test("a Claidor turn does not wait on a hung box", async () => {
     const events = [];
     const hung = router.module.createCoordinatorInferenceRouter({
       dataDir,
-      env: {},
+      env: { SAND_CLAIDOR_FULL_AGENT: "off" },
       postEvent: (family, payload) => events.push({ family, payload }),
       dispatchRemote: () => new Promise(() => {}),
     });
@@ -143,7 +154,7 @@ test("a Claidor host-loop send is admitted without waiting on the box", async ()
     await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "claidor" }));
     const hung = router.module.createCoordinatorInferenceRouter({
       dataDir,
-      env: { SAND_CLAIDOR_FULL_AGENT: "1" },
+      env: {},
       postEvent: () => {},
       dispatchRemote: () => new Promise(() => {}),
     });

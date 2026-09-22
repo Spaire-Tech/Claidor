@@ -133,7 +133,8 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(inference, /setClaidorCredentialSource\(\{ getAccessToken: \(\) => auth\.getAccessToken\(\) \}\)/);
   assert.match(coordinator, /export const BOX_OPTIONAL_WAIT_MS = 800/);
   assert.match(sharedRouter, /export const SAND_CLAIDOR_FULL_AGENT_ENV = "SAND_CLAIDOR_FULL_AGENT"/);
-  assert.match(sharedRouter, /return envFlagEnabled\(env\[SAND_CLAIDOR_FULL_AGENT_ENV\]\)/);
+  assert.match(sharedRouter, /if \(raw\.length === 0\) return true/);
+  assert.match(sharedRouter, /return !envFlagDisabled\(raw\)/);
   assert.match(coordinator, /export \{ SAND_CLAIDOR_FULL_AGENT_ENV, routesClaidorThroughHost \}/);
   assert.match(coordinator, /GROK_BOT_TOOLS/);
   assert.match(coordinator, /isGrokBotToolName/);

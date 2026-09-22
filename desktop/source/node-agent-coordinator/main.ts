@@ -19,6 +19,7 @@ import { createTransportStageRecorder } from "./telemetry/transport-stage-record
 import { createWebAuthnProvider } from "./webauthn/provider.js";
 import { createSpawnedWebAuthnSigner, resolveWebAuthnSignerPath } from "./webauthn/signer.js";
 import { ClientSideToolV2Relay } from "./client-side-tool-v2-relay.js";
+import { carriesPermissionCard, stampTranscriptEvent, stampTranscriptReply, type TranscriptPermissionScope } from "./permission-scope-stamp.js";
 import { createCoordinatorInferenceRouter } from "./inference-router.js";
 import { setClaidorCredentialSource } from "../host/extensions/inference/provider-session.js";
 
@@ -100,6 +101,23 @@ export async function composeCoordinator(dependencies: ComposeCoordinatorDepende
   let localExecSupervisor: ReturnType<typeof createLocalExecDaemonSupervisor>;
   const toolRelay = new ClientSideToolV2Relay((family, payload) => server.postEvent(family, payload));
 
+  // The Allow card's account scope (permission-scope-stamp.ts). The slot is the
+  // signed-in account's, read from the desktop once and kept; the revision is
+  // this process's start, one number per sign-in.
+  const permissionScopeRevision = Date.now();
+  let permissionScopeSlot: string | null = null;
+  let permissionScopeFetch: Promise<void> | null = null;
+  const permissionScope = (): TranscriptPermissionScope | null =>
+    permissionScopeSlot == null ? null : { slot: permissionScopeSlot, revision: permissionScopeRevision };
+  const fetchPermissionScopeSlot = (): Promise<void> => {
+    if (permissionScopeSlot != null) return Promise.resolve();
+    permissionScopeFetch ??= command<{ slot?: unknown } | null>(commands, "getTranscriptAccountSlot", {})
+      .then((reply) => { if (typeof reply?.slot === "string" && reply.slot.length > 0) permissionScopeSlot = reply.slot; })
+      .catch(() => undefined)
+      .finally(() => { permissionScopeFetch = null; });
+    return permissionScopeFetch;
+  };
+
   function handleGatewaySseEvent(event: { channel: string; payload: unknown }): void {
     if (event.channel === "mcp-oauth-pending") {
       const pending = asMcpOAuthPending(event.payload);
@@ -114,7 +132,14 @@ export async function composeCoordinator(dependencies: ComposeCoordinatorDepende
     if (event.channel === "agents") controlClient.postEvent("agents-event", { kind: "agents", event: event.payload });
     if (event.channel === "agent-upserted") controlClient.postEvent("agents-event", { kind: "agent-upserted", event: event.payload });
     const family = coordinatorEventFamilyForSseChannel(event.channel);
-    if (family != null) server.postEvent(family, event.payload);
+    if (family == null) return;
+    if (family === "transcript" && carriesPermissionCard(event.payload)) {
+      const scope = permissionScope();
+      if (scope == null) void fetchPermissionScopeSlot();
+      server.postEvent(family, stampTranscriptEvent(event.payload, scope));
+      return;
+    }
+    server.postEvent(family, event.payload);
   }
 
   async function seedAgentsRosterToMain(): Promise<void> {
@@ -234,7 +259,11 @@ export async function composeCoordinator(dependencies: ComposeCoordinatorDepende
       recorder.beginSend({ accountSlot: HOST_ACCOUNT_SLOT, clientNonce: typeof clientNonce === "string" ? clientNonce : null, traceparent: typeof traceparent === "string" ? traceparent : null });
     }
     const routed = await inferenceRouter.dispatch(method, args);
-    return routed.handled ? { status: "ok" as const, value: routed.value } : await gatewayDispatch(method, args, signal);
+    if (routed.handled) return { status: "ok" as const, value: routed.value };
+    const outcome = await gatewayDispatch(method, args, signal);
+    if (outcome.status !== "ok" || !carriesPermissionCard(outcome.value)) return outcome;
+    await fetchPermissionScopeSlot();
+    return { status: "ok" as const, value: stampTranscriptReply(method, outcome.value, permissionScope()) };
   };
   server = createRendererPortServer(
     { post: (frame) => carrier.data.post(frame), close: () => carrier.data.close() },
@@ -296,6 +325,7 @@ export async function composeCoordinator(dependencies: ComposeCoordinatorDepende
   });
   void localExecSupervisor.start();
   gatewayClient.start();
+  void fetchPermissionScopeSlot();
 }
 
 const invokedPath = process.argv[1];

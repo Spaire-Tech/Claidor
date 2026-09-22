@@ -140,6 +140,8 @@ coordinator intercepts `sendPrompt` for every non-Cursor provider
 connector-only turn on the Mac, so the host's dispatch to
 `createProviderPromptSession` has never been reached by a real turn.
 
+**Status, 22 September 2026:** the switch below is now the default (empty environment routes through the host); `SAND_CLAIDOR_FULL_AGENT=off` is the Mac hatch. See `tools-audit-2026-09-22.md`.
+
 **The run that decides Phase 3.** Phase 2 added the `claidor` provider and a
 switch, `SAND_CLAIDOR_FULL_AGENT=1`, that makes the coordinator pass claidor
 turns through to the host instead of running them itself

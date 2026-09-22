@@ -423,6 +423,15 @@ export function createProductionCoordinatorAdapter<
         getRpcTraceWindowTraceparent: ports.telemetry.getRpcTraceWindowTraceparent,
         listRoutedMcpTools: () => context.requireMcp().listRoutedTools(),
         executeRoutedMcpTool: (request) => context.requireMcp().executeRoutedTool(request),
+        // The renderer scopes its permission dock to `authId ?? email ?? "account"`
+        // of the signed-in account; the coordinator stamps the same slot on
+        // every Allow card (node-agent-coordinator/permission-scope-stamp.ts).
+        getTranscriptAccountSlot: async () => {
+          const status = await accountService.getStatus();
+          if (status.kind !== "logged-in") return null;
+          const slot = status.authId ?? status.email ?? "account";
+          return slot.length > 0 ? slot : "account";
+        },
         native: ports.localExecNative,
       });
       const createRuntime = () =>
