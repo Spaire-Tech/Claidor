@@ -201,6 +201,27 @@ are dropped before validation whatever they hold (`stripFieldsOfOtherTypes`).
 run on a Mac with the fix. Read that file before reasoning about a silent
 agent again.
 
+**The agents' marks are the founder's liquid orbs, built 23 September
+2026.** After the animation audit (`docs/product/avatar-animation-audit.md`,
+done on the shipped bytes), the founder chose spheres over faces: "i prefer
+sphere/orbs. yes, no eyes but its okay. there is animation inside the
+sphere. i still want it to appear in onboarding and follow the animations
+and everything else in chat", then sent the shapes and palettes and said
+"go head". It is a package-time patch over the pinned renderer
+(`scripts/lib/orb-mark-patch.mjs`, fifteen exact-once anchors in the
+animator chunk, one in `index.html`; `scripts/lib/orb-mark-element.js` is
+the `<cloud-orb>`), applied by `clean-build.mjs` after the brand pass. The
+orb sits in a `<foreignObject>` inside the face group, clipped by the
+mark's own clipPath, so every spring and morph still moves it; the eyes
+are hidden; mirrors are off (`wct` returns null) because a `<use>` cannot
+carry a custom element; the picker is six shapes and six colours. This
+supersedes the "do not put anything over the marks" rule below, which the
+founder ended by asking for the orbs by name. **Not yet run on a Mac**:
+`docs/product/orb-marks-measured.md` lists what was measured (the SVG
+structure headless, the anchors on the real chunk) and what was not (the
+app, the frame cost, dark mode). One known loss: the click pokes
+(`tryPokeMark`) still reach the hidden engine marks, not the visible ones.
+
 **The agents' faces are Grok Bot's own, reverted 22 September 2026.** Over
 one day the marks carried, in turn, cloud bodies, DiceBear clay and DiceBear
 slice, each painted over `.sand-grok-bot-mark` by a preload overlay. The slice

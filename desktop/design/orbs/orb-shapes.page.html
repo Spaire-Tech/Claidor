@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="554482cc-f4b0-4951-b6dd-514c3115672d"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://api.fontshare.com">
+<style>/* Switzer */
+@font-face {
+  font-family: 'Switzer';
+  src: url("179555d5-7e16-4946-bafd-dcfbcc0de6dc") format('woff2'),
+       url("792b6e35-dcee-4f14-a26f-040f7b43d012") format('woff'),
+       url("32bf00f6-7586-4b7b-b325-abcc1ffe37fc") format('truetype');
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Switzer';
+  src: url("ecbad713-d0eb-4dd5-9801-a37313069752") format('woff2'),
+       url("f701cc74-9c17-4026-99c3-cd1e43a0ac04") format('woff'),
+       url("39fc0a71-56d4-4945-aa92-69fddc1a49f1") format('truetype');
+  font-weight: 500;
+  font-display: swap;
+  font-style: normal;
+}
+
+
+</style>
+<script src="fa358ae4-fef8-4155-aea5-80d2a9820627"></script>
+<style>
+  html, body { margin:0; padding:0; background:linear-gradient(180deg,#eef1f5 0%,#e4e8ee 100%); }
+  a { color:#2b6cf5; text-decoration:none; }
+  a:hover { color:#1c4fc4; text-decoration:underline; text-underline-offset:2px; }
+  @keyframes orbFloat { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-4px); } }
+</style>
+</helmet>
+
+<section style="display:flex; flex-direction:column; gap:26px; padding:44px; font-family:'Switzer',-apple-system,BlinkMacSystemFont,sans-serif; color:#1e3358">
+
+  <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap">
+    <div id="1a" style="font-size:20px; font-weight:500; letter-spacing:-.02em">Agent marks — 6 shapes</div>
+    <div style="font-size:13.5px; color:#6e6e73">Same liquid shader, cut to a different outline. Set with <span style="font-family:'SF Mono',ui-monospace,monospace; font-size:12.5px">shape="pill"</span> on the element.</div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px">
+    <sc-for list="{{ shapes }}" as="s" hint-placeholder-count="6">
+      <div style="display:flex; flex-direction:column; gap:16px; padding:22px 18px 18px; border-radius:22px; background:#fbfbfc; border:1px solid rgba(16,22,35,.06); box-shadow:0 1px 2px rgba(16,22,35,.04), 0 12px 32px rgba(16,22,35,.06)">
+        <div style="display:flex; align-items:center; justify-content:center; height:150px">
+          <span style="{{ s.frame }}">
+            <x-import component-from-global-scope="cloud-orb" from="fa358ae4-fef8-4155-aea5-80d2a9820627#/cloud-orb.js" shape="{{ s.key }}" grain="{{ s.grain }}" colors="{{ s.colors }}" seed="{{ s.seed }}" hint-size="100%,100%" style="width:100%; height:100%"></x-import>
+          </span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px">
+          <div style="font-size:14.5px; font-weight:500; letter-spacing:-.01em">{{ s.name }}</div>
+          <div style="font-size:12.5px; color:#6e6e73; line-height:1.4">{{ s.note }}</div>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding-top:4px; border-top:1px solid rgba(16,22,35,.06)">
+          <sc-for list="{{ s.small }}" as="m" hint-placeholder-count="5">
+            <span style="{{ m.frame }}">
+              <x-import component-from-global-scope="cloud-orb" from="fa358ae4-fef8-4155-aea5-80d2a9820627#/cloud-orb.js" shape="{{ s.key }}" grain="{{ s.grain }}" colors="{{ m.colors }}" seed="{{ m.seed }}" hint-size="100%,100%" style="width:100%; height:100%"></x-import>
+            </span>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;grain&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:0.2,&quot;step&quot;:0.01,&quot;tsType&quot;:&quot;number&quot;}}">
+const PAL = [
+  ["#dbe9f5,#6f9fe0,#2f5aa8,#f2a97e", 3],
+  ["#eaf3c6,#8cc26f,#3f8a5e,#f0c94a", 11],
+  ["#ffe3c2,#f39a68,#c94f35,#f6d08a", 19],
+  ["#ecdff8,#ad8fe3,#6b4bb5,#f28fc0", 27],
+  ["#d8f2ec,#6fc9c0,#2b8a92,#a7e0b8", 43],
+  ["#e0e6ee,#8ea1ba,#3e5673,#b3c2d3", 99]
+];
+
+const SHAPES = [
+  ["disc",     "Disc",           "The current orb.",                                   [132, 132]],
+  ["pill",     "Pill",           "Capsule, 2:1. Sits well beside a name.",             [200, 100]],
+  ["squircle", "Squircle",       "Superellipse, the app-icon curve.",                  [132, 132]],
+  ["square",   "Rounded square", "Tighter corners than the squircle.",                 [132, 132]],
+  ["blob",     "Blob",           "A circle that breathes at the edge.",                [140, 140]],
+  ["hex",      "Hexagon",        "Flat top and bottom, soft corners.",                 [136, 136]]
+];
+
+class Component extends DCLogic {
+  renderVals() {
+    const g = String(this.props.grain ?? 0);
+    const sm = (w, h) => Math.round(w * 0.3) + "px";
+    return {
+      shapes: SHAPES.map(([key, name, note, [w, h]], i) => ({
+        key, name, note, grain: g,
+        colors: PAL[i][0], seed: PAL[i][1],
+        frame: "display:block; width:" + w + "px; height:" + h + "px; filter:drop-shadow(0 2px 4px rgba(16,22,35,.1)) drop-shadow(0 12px 26px rgba(16,22,35,.12)); animation:orbFloat 7.5s ease-in-out infinite",
+        small: PAL.map(([c, s]) => ({
+          colors: c, seed: s,
+          frame: "display:block; width:" + (key === "pill" ? 60 : 30) + "px; height:30px; filter:drop-shadow(0 1px 2px rgba(16,22,35,.12))"
+        }))
+      }))
+    };
+  }
+}
+</script>
+
+
+</body></html>
