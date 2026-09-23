@@ -10,6 +10,7 @@ import { BasePromptBuilder, BasePromptExecutor } from "../../../packages/chat-in
 import { asError } from "../../../shared/errors.js";
 import { withCheapRateLimitFallback } from "../../../shared/inference/cheap-rate-limit-fallback.js";
 import { CLAIDOR_WORKING_CONTEXT_TOKENS } from "../../../shared/inference/claidor-context-window.js";
+import { resolveSandAgentStepCap, stepBudgetExceededMessage } from "../../../shared/inference/turn-step-budget.js";
 import type { SandInferenceProvider } from "../../../shared/inference-router.js";
 import { claidorProxyBaseUrl } from "../../../shared/node/cursor-backend/claidor-api.js";
 import { resolveClaudeCodeCliPath } from "../../../shared/node/inference-router-local.js";
@@ -123,6 +124,9 @@ export type ClaidorSessionModelOptions = {
   readonly isSummarizationSession?: boolean;
   readonly isComputerUseSubagent?: boolean;
   readonly isBrowserUseSubagent?: boolean;
+  // True for a turn nobody asked for (the first-run intro, a reply nudge,
+  // an automation). It gets the small model-call budget.
+  readonly hidden?: boolean;
 };
 
 // The cheap roles, as Grok Bot separates them: summarization and memory
@@ -438,7 +442,31 @@ export function toCoreMessages(messages: readonly ProviderMessage[]): CoreMessag
 // stream yields one `error` part and closes, and the host loop then waits on
 // `response` forever. Fail everything the loop awaits, with the provider's
 // own sentence, and throw from the stream the way the loop expects.
-function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0) {
+export interface ModelCallLogLine {
+  readonly model: string;
+  readonly effort: string;
+  readonly inputTokens: number;
+  readonly cachedTokens: number;
+  readonly outputTokens: number;
+  readonly reasoningTokens: number;
+  readonly elapsedMs: number;
+}
+
+// One line per model call in the host log, so `docker exec … tail
+// /tmp/sand-host.log` shows spend as it happens. Until 22 September 2026
+// the executor wrote nothing and a fifty-minute loop left no trace but
+// the bill.
+export function formatModelCallLogLine(line: ModelCallLogLine): string {
+  return `[claidor] model=${line.model} effort=${line.effort} input=${line.inputTokens} cached=${line.cachedTokens} output=${line.outputTokens} reasoning=${line.reasoningTokens} ms=${line.elapsedMs}`;
+}
+
+let modelCallLog: (line: string) => void = (line) => console.info(line);
+export function setModelCallLog(log: ((line: string) => void) | null): void {
+  modelCallLog = log ?? ((line) => console.info(line));
+}
+
+function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, callInfo?: { readonly model: string; readonly effort: string }) {
+  const startedAtMs = Date.now();
   const failure = deferred<never>();
   failure.promise.catch(() => undefined);
   const fail = (error: unknown) => failure.reject(asError(error));
@@ -455,12 +483,20 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
     }
   })();
   const race = <T>(promise: Promise<T>): Promise<T> => Promise.race([promise, failure.promise]);
-  const extendedUsage = race(result.usage).then(value => ({ inputTokens: value.promptTokens, outputTokens: value.completionTokens, cacheReadTokens: 0, cacheWriteTokens: 0, maxTokens }));
+  const metadata = race(result.providerMetadata).then(value => (value?.openai ?? {}) as Record<string, unknown>, () => ({} as Record<string, unknown>));
+  const extendedUsage = Promise.all([race(result.usage), metadata]).then(([value, openai]) => {
+    const cached = typeof openai.cachedPromptTokens === "number" ? openai.cachedPromptTokens : 0;
+    const reasoning = typeof openai.reasoningTokens === "number" ? openai.reasoningTokens : 0;
+    if (callInfo != null) {
+      modelCallLog(formatModelCallLogLine({ model: callInfo.model, effort: callInfo.effort, inputTokens: value.promptTokens, cachedTokens: cached, outputTokens: value.completionTokens, reasoningTokens: reasoning, elapsedMs: Date.now() - startedAtMs }));
+    }
+    return { inputTokens: Math.max(0, value.promptTokens - cached), outputTokens: value.completionTokens, cacheReadTokens: cached, cacheWriteTokens: 0, maxTokens };
+  });
   if (onUsage != null) void extendedUsage.then(onUsage, () => undefined);
   return { fullStream, response: race(result.response), usage: race(result.usage), extendedUsage, providerMetadata: race(result.providerMetadata), invocationId: Promise.resolve(invocationId) };
 }
 
-function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, openaiOptions: Record<string, unknown> = {}) {
+function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, openaiOptions: Record<string, unknown> = {}, callInfo?: { readonly model: string; readonly effort: string }) {
   const tools = toToolSet(definitions, executeTool);
   const coreMessages = toCoreMessages(messages);
   // The host loop's state carries its own system prompt; the router prompt is
@@ -477,7 +513,7 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
     maxSteps: tools === undefined || executeTool == null ? 1 : 8,
     providerOptions: { openai: { strictSchemas: false, ...openaiOptions } },
   });
-  return settleAiSdkStream(result, invocationId, onUsage, maxTokens);
+  return settleAiSdkStream(result, invocationId, onUsage, maxTokens, callInfo);
 }
 
 function openRouterExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void) {
@@ -497,14 +533,31 @@ function claidorExecutor(messages: readonly ProviderMessage[], invocationId: str
   if (source == null) throw new Error("Claidor is the selected provider, but this process has no signed-in credential source. Sign in to Claidor and try again.");
   const requested = modelId?.trim() || configuredClaidorModel();
   const cheap = configuredClaidorCheapModel();
-  const start = (id: string) => aiSdkExecutor(claidorLanguageModel(source, id), messages, invocationId, definitions, executeTool, onUsage, CLAIDOR_WORKING_CONTEXT_TOKENS, { reasoningEffort });
+  const start = (id: string) => aiSdkExecutor(claidorLanguageModel(source, id), messages, invocationId, definitions, executeTool, onUsage, CLAIDOR_WORKING_CONTEXT_TOKENS, { reasoningEffort }, { model: id, effort: reasoningEffort });
   if (requested === cheap) return start(requested);
   return withCheapRateLimitFallback(start(requested), () => start(cheap));
 }
 
+// How many model calls a session may make. Counted across every executor
+// the session hands out, because the turn shell asks for a fresh executor
+// per step. The cap is Grok Bot's 5,000 for a turn the person asked for
+// and SAND_HIDDEN_TURN_MAX_STEPS for one nobody asked for.
+export interface ModelCallBudget { readonly limit: number; readonly hidden: boolean; used: number }
+
+export function createModelCallBudget(options?: ClaidorSessionModelOptions, env: NodeJS.ProcessEnv = process.env): ModelCallBudget {
+  const hidden = options?.hidden === true;
+  return { limit: resolveSandAgentStepCap({ hidden }, env), hidden, used: 0 };
+}
+
+export function spendModelCall(budget: ModelCallBudget): void {
+  if (budget.used >= budget.limit) throw new Error(stepBudgetExceededMessage(budget.limit, budget.hidden));
+  budget.used += 1;
+}
+
 class ProviderPromptExecutor extends BasePromptExecutor<ProviderMessage> {
-  constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void, readonly modelId?: string, readonly reasoningEffort?: ClaidorReasoningEffort) { super(new BasePromptBuilder(initialMessages)); }
+  constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void, readonly modelId?: string, readonly reasoningEffort?: ClaidorReasoningEffort, readonly budget?: ModelCallBudget) { super(new BasePromptBuilder(initialMessages)); }
   stream(_ctx: unknown, invocationId = crypto.randomUUID(), definitions?: readonly Loose[]) {
+    if (this.budget != null) spendModelCall(this.budget);
     if (this.provider === "claidor") return claidorExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage, this.modelId, this.reasoningEffort);
     if (this.provider === "codex") return codexExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage);
     if (this.provider === "claude-code") return claudeExecutor(this.getMessages(), invocationId, this.onUsage);
@@ -516,7 +569,8 @@ export function createProviderPromptSession(_provider: RoutedProvider, options?:
   const provider: RoutedProvider = "claidor";
   const modelId = claidorModelForSession(options);
   const reasoningEffort = claidorReasoningEffortForSession(options);
-  return { getModelId: () => modelId, getExecutor: state => new ProviderPromptExecutor(provider, Array.isArray(state) ? state as ProviderMessage[] : undefined, usage => recordRoutedUsage(provider, usage), modelId, reasoningEffort) };
+  const budget = createModelCallBudget(options);
+  return { getModelId: () => modelId, getExecutor: state => new ProviderPromptExecutor(provider, Array.isArray(state) ? state as ProviderMessage[] : undefined, usage => recordRoutedUsage(provider, usage), modelId, reasoningEffort, budget) };
 }
 
 export async function runRoutedProviderText(provider: RoutedProvider, messages: readonly ProviderMessage[], options?: {

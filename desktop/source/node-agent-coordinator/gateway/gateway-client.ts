@@ -278,7 +278,7 @@ export class CoordinatorGatewayClient {
       this.reportCommandSpan(method, commandTrace, { startEpochMs: fetchStartEpochMs, durationMs: this.options.timing.clock.monotonicNow() - fetchStartMonotonicMs, isError: true });
       if (error instanceof SandGatewayCommandError || error instanceof GatewayEndpointChangedError) throw error;
       const classified = classifyGatewayError(error);
-      this.reportReachability({ outcome: classified.outcome, method, latencyMs: this.options.timing.clock.monotonicNow() - startMonotonicMs, baseUrlKind: classifyBaseUrlKind(connection?.baseUrl), ...(classified.httpStatus === undefined ? {} : { httpStatus: classified.httpStatus }), ...(classified.causeSummary === undefined ? {} : { causeSummary: classified.causeSummary }) }, connection?.baseUrl);
+      this.reportReachability({ outcome: classified.outcome, method, latencyMs: this.options.timing.clock.monotonicNow() - startMonotonicMs, baseUrlKind: classifyBaseUrlKind(connection?.baseUrl), ...(classified.httpStatus === undefined ? {} : { httpStatus: classified.httpStatus }), ...(classified.causeSummary === undefined ? {} : { causeSummary: classified.causeSummary }), causeDetail: error instanceof Error ? error.message : String(error) }, connection?.baseUrl);
       if (error instanceof SandGatewayUnreachableError) throw error;
       const blocked = findSandBoxBlockedMessage(error);
       throw new SandGatewayUnreachableError(classified.outcome, blocked == null ? `gateway ${method} unreachable (${classified.outcome})` : `gateway ${method} unreachable (${classified.outcome}): ${blocked}`, { cause: error, ...(classified.causeSummary === undefined ? {} : { causeSummary: classified.causeSummary }), ...(connection === undefined ? {} : { attemptedBaseUrl: connection.baseUrl }), isPreDispatch: connection === undefined });
@@ -460,7 +460,7 @@ export class CoordinatorGatewayClient {
     } catch (error) {
       if (!didConnect && !this.isClosed && attemptGeneration === this.reconnectGeneration) {
         const classified = classifyGatewayError(error);
-        this.reportReachability({ outcome: classified.outcome, method: "events", latencyMs: this.options.timing.clock.monotonicNow() - connectStartMonotonicMs, baseUrlKind: classifyBaseUrlKind(connection?.baseUrl), ...(classified.httpStatus === undefined ? {} : { httpStatus: classified.httpStatus }), ...(classified.causeSummary === undefined ? {} : { causeSummary: classified.causeSummary }) }, connection?.baseUrl);
+        this.reportReachability({ outcome: classified.outcome, method: "events", latencyMs: this.options.timing.clock.monotonicNow() - connectStartMonotonicMs, baseUrlKind: classifyBaseUrlKind(connection?.baseUrl), ...(classified.httpStatus === undefined ? {} : { httpStatus: classified.httpStatus }), ...(classified.causeSummary === undefined ? {} : { causeSummary: classified.causeSummary }), causeDetail: error instanceof Error ? error.message : String(error) }, connection?.baseUrl);
       }
       throw error;
     } finally { if (this.activeEventLoopController === controller) this.activeEventLoopController = undefined; }

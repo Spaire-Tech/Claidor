@@ -70,7 +70,7 @@ test("a late inference credential does not tear down a running box", async () =>
     assert.doesNotMatch(source, /OPTIONAL_CREDENTIAL_TIMEOUT_MS = 3_000/);
     assert.match(source, /SAND_DEV_INFERENCE_TOKEN_FILE=\$\{LOCAL_DOCKER_INFERENCE_TOKEN_FILE\}/);
     assert.match(source, /dst=\/run\/grok-bot,readonly/);
-    assert.match(source, /if \(late != null\) await persistInferenceCredential/);
+    assert.match(source, /if \(late != null && late !== issued\) await persistInferenceCredential/);
     assert.doesNotMatch(source, /\.claude/);
     assert.doesNotMatch(source, /\.codex/);
     assert.equal(LOCAL_DOCKER_SCHEMA_VERSION, "9");

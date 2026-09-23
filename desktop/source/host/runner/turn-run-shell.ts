@@ -180,8 +180,9 @@ export async function createTurnAgentRunContext<ContextValue>(
     ...(input.lineage === undefined ? {} : { lineage: input.lineage }),
   };
   const inferenceProvider = "claidor" as const;
-  const agent = createProviderPromptSession(inferenceProvider, sessionOptions) as unknown as TurnAgentPromptSession;
-  const summarizationSession = createProviderPromptSession(inferenceProvider, { cheap: true, isSummarizationSession: true }) as unknown as SummarizationPromptSession;
+  const hidden = input.hidden === true;
+  const agent = createProviderPromptSession(inferenceProvider, { ...sessionOptions, hidden }) as unknown as TurnAgentPromptSession;
+  const summarizationSession = createProviderPromptSession(inferenceProvider, { cheap: true, isSummarizationSession: true, hidden }) as unknown as SummarizationPromptSession;
   const summarization = summarizationSession ?? input.inference.createSession(
     input.onRequestId,
     {

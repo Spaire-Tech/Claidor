@@ -16,7 +16,7 @@ import base64
 import hashlib
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -67,6 +67,8 @@ from .repository import (
 #: The app treats these numeric codes, inside a message or a payload,
 #: as « credits exhausted » (desktop/src/common/coworkErrorClassify.ts).
 QUOTA_EXHAUSTED_CODE = 40200
+#: The hourly brake, distinct so the app's log says which limit it was.
+HOURLY_BUDGET_CODE = 40201
 #: A bad auth code, a bad refresh token, a missing bearer.
 AUTH_CODE_INVALID = 40101
 REFRESH_INVALID = 40102
@@ -555,6 +557,23 @@ class DesktopService:
         return await DesktopUsageRepository.from_session(session).credits_between(
             user_id, start, end
         )
+
+    async def credits_used_last_hour(
+        self, session: AsyncSession, user_id: UUID, *, now: datetime | None = None
+    ) -> int:
+        end = now or utc_now()
+        return await DesktopUsageRepository.from_session(session).credits_between(
+            user_id, end - timedelta(hours=1), end
+        )
+
+    async def hourly_exhausted(
+        self, session: AsyncSession, user: User, *, now: datetime | None = None
+    ) -> bool:
+        """True when the last sliding hour already holds the hourly
+        budget. A runaway loop is stopped within the hour it starts,
+        whatever the month still allows."""
+        used = await self.credits_used_last_hour(session, user.id, now=now)
+        return used >= settings.DESKTOP_HOURLY_CREDITS
 
     async def quota(
         self, session: AsyncSession, user: User, *, now: datetime | None = None

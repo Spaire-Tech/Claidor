@@ -163,6 +163,20 @@ Escalation to Astra comes after, on the rule `pricing.py` already states.
 `docs/product/model-roles-measured.md` is the record, with the two lines to
 read on the Mac (effort on the wire, cached tokens on step two).
 
+**Spend guards, built 23 September 2026.** One unattended first-run turn
+made 481 model calls in fifty minutes with nothing on screen, $5.82 by the
+proxy's meter (`docs/product/spend-guards.md`). Now: the proxy refuses at
+`DESKTOP_HOURLY_CREDITS` (200,000 an hour, code 40201) before the month's
+allowance is near; a hidden turn (intro, nudge, automation) may make 40
+model calls and an asked turn Grok Bot's 5,000 (`SAND_HIDDEN_TURN_MAX_STEPS`,
+`SAND_AGENT_MAX_STEPS`); the intro greets and stops and runs once; quitting
+Simeon stops the local Docker box unless `SAND_KEEP_BOX_RUNNING_ON_QUIT=1`;
+every model call writes a `[claidor]` line with its tokens to the box's
+`/tmp/sand-host.log`; the box token file is written by one writer at a
+time (a startup burst used to race on it and blind the app); and the
+computer narration prints the failure's sentence. The brake by hand is
+still `docker stop grok-bot-local-vm`. Not yet run on a Mac.
+
 **The agents' faces are Grok Bot's own, reverted 22 September 2026.** Over
 one day the marks carried, in turn, cloud bodies, DiceBear clay and DiceBear
 slice, each painted over `.sand-grok-bot-mark` by a preload overlay. The slice
