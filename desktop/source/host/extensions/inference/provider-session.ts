@@ -450,6 +450,10 @@ export interface ModelCallLogLine {
   readonly outputTokens: number;
   readonly reasoningTokens: number;
   readonly elapsedMs: number;
+  // What the step asked for: tool names with the first characters of
+  // their arguments, or "-" for a step that only wrote text. This is
+  // the line that says what a loop is doing.
+  readonly tools: string;
 }
 
 // One line per model call in the host log, so `docker exec … tail
@@ -457,7 +461,17 @@ export interface ModelCallLogLine {
 // the executor wrote nothing and a fifty-minute loop left no trace but
 // the bill.
 export function formatModelCallLogLine(line: ModelCallLogLine): string {
-  return `[claidor] model=${line.model} effort=${line.effort} input=${line.inputTokens} cached=${line.cachedTokens} output=${line.outputTokens} reasoning=${line.reasoningTokens} ms=${line.elapsedMs}`;
+  return `[claidor] model=${line.model} effort=${line.effort} input=${line.inputTokens} cached=${line.cachedTokens} output=${line.outputTokens} reasoning=${line.reasoningTokens} ms=${line.elapsedMs} tools=${line.tools}`;
+}
+
+export function summarizeToolCalls(calls: readonly { readonly toolName?: string; readonly args?: unknown }[] | undefined): string {
+  if (calls == null || calls.length === 0) return "-";
+  return calls.map((call) => {
+    let args = "";
+    try { args = JSON.stringify(call.args ?? {}); } catch { args = String(call.args); }
+    const short = args.length > 80 ? `${args.slice(0, 80)}…` : args;
+    return `${call.toolName ?? "?"}(${short.replace(/\s+/g, " ")})`;
+  }).join(" ");
 }
 
 let modelCallLog: (line: string) => void = (line) => console.info(line);
@@ -484,11 +498,12 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
   })();
   const race = <T>(promise: Promise<T>): Promise<T> => Promise.race([promise, failure.promise]);
   const metadata = race(result.providerMetadata).then(value => (value?.openai ?? {}) as Record<string, unknown>, () => ({} as Record<string, unknown>));
-  const extendedUsage = Promise.all([race(result.usage), metadata]).then(([value, openai]) => {
+  const toolCalls = race(result.toolCalls).then((calls) => calls as readonly { readonly toolName?: string; readonly args?: unknown }[], () => []);
+  const extendedUsage = Promise.all([race(result.usage), metadata, toolCalls]).then(([value, openai, calls]) => {
     const cached = typeof openai.cachedPromptTokens === "number" ? openai.cachedPromptTokens : 0;
     const reasoning = typeof openai.reasoningTokens === "number" ? openai.reasoningTokens : 0;
     if (callInfo != null) {
-      modelCallLog(formatModelCallLogLine({ model: callInfo.model, effort: callInfo.effort, inputTokens: value.promptTokens, cachedTokens: cached, outputTokens: value.completionTokens, reasoningTokens: reasoning, elapsedMs: Date.now() - startedAtMs }));
+      modelCallLog(formatModelCallLogLine({ model: callInfo.model, effort: callInfo.effort, inputTokens: value.promptTokens, cachedTokens: cached, outputTokens: value.completionTokens, reasoningTokens: reasoning, elapsedMs: Date.now() - startedAtMs, tools: summarizeToolCalls(calls) }));
     }
     return { inputTokens: Math.max(0, value.promptTokens - cached), outputTokens: value.completionTokens, cacheReadTokens: cached, cacheWriteTokens: 0, maxTokens };
   });
