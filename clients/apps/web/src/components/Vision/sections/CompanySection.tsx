@@ -74,17 +74,17 @@ export const CompanySection = ({ active }: { active: boolean }) => {
       <p>
         We believe the next unicorns will be created by individual developers.
         As lines blur between indie hackers, startups, and enterprises,
-        we&apos;re building Claidor to empower solo builders and early-stage
+        we&apos;re building Simeon to empower solo builders and early-stage
         startups – the future enterprises, without the headcount.
       </p>
       <p>
-        Claidor is a small team with big ambitions, empowered by a culture of
+        Simeon Labs is a small team with big ambitions, empowered by a culture of
         ownership and autonomy. We&apos;re proud to be open source & built for
         transparency to shape the future with our community.
       </p>
       <div className="flex flex-col gap-y-2">
         <Link href="https://github.com/claidor-tech" target="_blank" prefetch>
-          Claidor on GitHub →
+          Simeon on GitHub →
         </Link>
         <Link href="https://x.com/claidor_hq" target="_blank" prefetch>
           Join the conversation →

@@ -59,7 +59,7 @@ const PolarMenu = ({
         <>
           <GetStartedButton
             size="sm"
-            text="Sell with Claidor"
+            text="Sell with Simeon"
             storefrontOrg={organization}
           />
           <Link

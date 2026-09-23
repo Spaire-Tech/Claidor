@@ -151,7 +151,7 @@ export default function AgentPlatformDetailPage({
               <FadeUp className="flex flex-col gap-y-6">
                 <div className="flex flex-row items-center justify-between">
                   <h2 className="text-base font-medium">
-                    {stepIndex++}. Add Claidor context to your project
+                    {stepIndex++}. Add Simeon context to your project
                   </h2>
                   <CopyButton
                     copied={setupCopied}

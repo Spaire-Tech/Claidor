@@ -8,7 +8,7 @@ import type { schemas } from '../types'
 export function UserWelcome({ email }: schemas['UserWelcomeProps']) {
   return (
     <WrapperPolar>
-      <Preview>Welcome to Claidor — a quick note from Bass</Preview>
+      <Preview>Welcome to Simeon — a quick note from Bass</Preview>
       <IntroWithHi hiMsg="Hey,">
         Thank you for starting your trial — really glad you&apos;re here.
       </IntroWithHi>
@@ -21,7 +21,7 @@ export function UserWelcome({ email }: schemas['UserWelcomeProps']) {
           to be completed, but a master to be sat beside.
         </BodyText>
         <BodyText>
-          Claidor is meant to make that kind of thing as easy to build as it is
+          Simeon is meant to make that kind of thing as easy to build as it is
           lovely to land on, and the next 14 days are yours to test the claim.
           Put up a lesson or two and a sample people can watch before they
           decide anything. The aim is for someone to land on what you&apos;ve
@@ -37,7 +37,7 @@ export function UserWelcome({ email }: schemas['UserWelcomeProps']) {
         <BodyText>
           Bass
           <br />
-          Co-Founder &amp; CEO @ Claidor
+          Co-Founder &amp; CEO @ Simeon Labs
         </BodyText>
       </Section>
       <Footer email={email} />

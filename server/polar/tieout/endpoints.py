@@ -585,7 +585,7 @@ async def panel_token(
     _, token = await tokens.create(
         session,
         auth_subject,
-        comment="Claidor panel (Office add-in)",
+        comment="Simeon panel (Office add-in)",
         scopes=scopes,
         # Long enough that a banker is not signing in every morning, short
         # enough that a token left on a shared machine stops working. The

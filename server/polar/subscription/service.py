@@ -2532,7 +2532,7 @@ class SubscriptionService:
                 return
             recipient = resolved
 
-        plan_name = subscription.product.name if subscription.product else "Claidor"
+        plan_name = subscription.product.name if subscription.product else "Simeon"
         settings_path = (
             f"/dashboard/{creator_org.slug}/settings"
             if creator_org is not None

@@ -29,7 +29,7 @@ from .edit import CannotWrite, Edit
 #: it: the correction was proposed by this product and a person let it
 #: through, and a tracked change signed with their name would read as
 #: something they typed.
-AUTHOR = "Claidor"
+AUTHOR = "Simeon"
 
 
 def write_memo(

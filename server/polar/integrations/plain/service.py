@@ -1198,26 +1198,26 @@ class PlainService:
                 "Looping In with guidelines",
                 (
                     "I'm looping in the {organization_name} team to the conversation so that they can help you. "
-                    "Please allow them up to 48 hours to get back to you ([guidelines for merchants on Claidor](https://docs.claidorhq.com/merchant-of-record/account-reviews#operational-guidelines))."
+                    "Please allow them up to 48 hours to get back to you ([guidelines for merchants on Simeon](https://docs.simeonlabs.com/merchant-of-record/account-reviews#operational-guidelines))."
                 ),
             ),
             (
                 "Cancellation Portal",
                 (
-                    "You can perform the cancellation on the following URL: https://app.claidorhq.com/{organization_slug}/portal\n"
+                    "You can perform the cancellation on the following URL: https://app.simeonlabs.com/{organization_slug}/portal\n"
                 ),
             ),
             (
                 "Invoice Generation",
                 (
-                    "You can generate the invoice on the following URL: https://app.claidorhq.com/{organization_slug}/portal\n"
+                    "You can generate the invoice on the following URL: https://app.simeonlabs.com/{organization_slug}/portal\n"
                 ),
             ),
             (
                 "Follow-up 48 hours",
                 (
                     "I'm looping in the {organization_name} team again to the conversation. "
-                    "Please allow them another 48 hours to get back to you before we [proceed with the documented resolution](https://docs.claidorhq.com/merchant-of-record/account-reviews#expected-responsiveness)."
+                    "Please allow them another 48 hours to get back to you before we [proceed with the documented resolution](https://docs.simeonlabs.com/merchant-of-record/account-reviews#expected-responsiveness)."
                 ),
             ),
             (

@@ -1,7 +1,7 @@
 {
   "name": "@claidor/currency",
-  "description": "Claidor Currency Utilities",
-  "author": "Claidor",
+  "description": "Simeon Currency Utilities",
+  "author": "Simeon Labs",
   "license": "Apache-2.0",
   "type": "module",
   "private": true,

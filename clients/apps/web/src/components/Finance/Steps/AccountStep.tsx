@@ -100,7 +100,7 @@ export default function AccountStep({
           Connect your payout account
         </h3>
         <p className=" mx-auto mt-1 max-w-sm text-sm text-gray-500">
-          Connect your bank account so Claidor can send you your earnings.
+          Connect your bank account so Simeon can send you your earnings.
           You&apos;ll be redirected to Stripe to complete this step.
         </p>
       </div>

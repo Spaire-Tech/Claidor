@@ -13,19 +13,19 @@ export function OrganizationInvite({
 }: schemas['OrganizationInviteProps']) {
   return (
     <WrapperPolar>
-      <Preview>You've been added to {organization_name} on Claidor</Preview>
+      <Preview>You've been added to {organization_name} on Simeon</Preview>
       <IntroWithHi>
         {inviter_email} has added you to{' '}
-        <span className="font-bold">{organization_name}</span> on Claidor.
+        <span className="font-bold">{organization_name}</span> on Simeon.
       </IntroWithHi>
       <Section>
         <Text>
           As a member of {organization_name} you're now able to manage{' '}
-          {organization_name}'s products, customers, and subscriptions on Claidor.
+          {organization_name}'s products, customers, and subscriptions on Simeon.
         </Text>
       </Section>
       <Section className="text-center">
-        <Button href={invite_url}>Go to the Claidor dashboard</Button>
+        <Button href={invite_url}>Go to the Simeon dashboard</Button>
       </Section>
       <Footer email={email} />
     </WrapperPolar>
@@ -36,7 +36,7 @@ OrganizationInvite.PreviewProps = {
   email: 'john@example.com',
   organization_name: 'Acme Inc.',
   inviter_email: 'admin@acme.com',
-  invite_url: 'https://app.claidorhq.com/dashboard/acme-inc',
+  invite_url: 'https://app.simeonlabs.com/dashboard/acme-inc',
 }
 
 export default OrganizationInvite

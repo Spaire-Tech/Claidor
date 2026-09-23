@@ -286,12 +286,12 @@ class MatyService:
             raise MatyNotAvailable()
         if deliver:
             raise MatyJobRefused(
-                "Claidor decides where an answer goes, not the app. "
+                "Simeon decides where an answer goes, not the app. "
                 "A job started from the app answers in the app."
             )
         if allow:
             raise MatyJobRefused(
-                "Claidor decides what a job may do on your behalf, not the app. "
+                "Simeon decides what a job may do on your behalf, not the app. "
                 "Work started this way prepares things and waits."
             )
 

@@ -9,10 +9,10 @@
   <!-- DEV manifest. Sideload this one. Points at the local Vite dev server. -->
   <Id>8ac4ab39-c53e-4656-b994-85af6ccc33ec</Id>
   <Version>1.0.0.0</Version>
-  <ProviderName>Claidor</ProviderName>
+  <ProviderName>Simeon Labs</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Claidor for Word (Dev)" />
-  <Description DefaultValue="Local development build of the Claidor Word add-in." />
+  <DisplayName DefaultValue="Simeon for Word (Dev)" />
+  <Description DefaultValue="Local development build of the Simeon Word add-in." />
   <IconUrl DefaultValue="https://localhost:3000/assets/icon-32.png" />
   <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icon-80.png" />
   <SupportUrl DefaultValue="https://YOUR-DOMAIN.example.com/support" />
@@ -83,11 +83,11 @@
         <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/index.html" />
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="Claidor.Group.Label" DefaultValue="Claidor" />
-        <bt:String id="Claidor.OpenPane.Label" DefaultValue="Open Claidor" />
+        <bt:String id="Claidor.Group.Label" DefaultValue="Simeon" />
+        <bt:String id="Claidor.OpenPane.Label" DefaultValue="Open Simeon" />
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="Claidor.OpenPane.Tip" DefaultValue="Open the Claidor pane to review the open contract." />
+        <bt:String id="Claidor.OpenPane.Tip" DefaultValue="Open the Simeon pane to review the open contract." />
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

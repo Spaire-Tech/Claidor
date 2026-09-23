@@ -44,7 +44,7 @@ async def authenticate_runner(request: Request) -> None:
     expected = settings.MATY_RUNNER_TOKEN
     if not expected:
         raise MatyRunnerUnauthenticated(
-            "Claidor is not configured to accept a cloud runner."
+            "Simeon is not configured to accept a cloud runner."
         )
     token = _bearer(request)
     if token is None:

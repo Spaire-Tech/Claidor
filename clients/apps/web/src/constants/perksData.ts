@@ -31,7 +31,7 @@ export const PERKS: Perk[] = [
     logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/deel+logo.png',
     incentive: '$1,000 in Combined Credits',
     description:
-      'Through our partnership with Deel, startups receive $1,000 in onboarding value: $500 in Deel credits for global hiring and payroll, and $500 in Claidor credits to offset revenue fees as you scale internationally.',
+      'Through our partnership with Deel, startups receive $1,000 in onboarding value: $500 in Deel credits for global hiring and payroll, and $500 in Simeon credits to offset revenue fees as you scale internationally.',
     url: 'https://get.deel.com/i4rqw957p9cm',
     featured: true,
     details: {
@@ -78,7 +78,7 @@ export const PERKS: Perk[] = [
               label: 'Once completed, you receive:',
               items: [
                 '$500 in Deel billing credits (applied to eligible Deel fees)',
-                '$500 in Claidor revenue credits (applied toward your Claidor platform fees)',
+                '$500 in Simeon revenue credits (applied toward your Simeon platform fees)',
               ],
             },
           ],
@@ -104,7 +104,7 @@ export const PERKS: Perk[] = [
     logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/notionhq_logo.jpeg',
     incentive: '6 Months Free + Notion AI',
     description:
-      'Claidor has partnered with Notion to give early-stage startups 6 months of Notion Business — with Notion AI included. One workspace for your docs, specs, roadmaps, and team knowledge, with AI built in from day one.',
+      'Simeon Labs has partnered with Notion to give early-stage startups 6 months of Notion Business — with Notion AI included. One workspace for your docs, specs, roadmaps, and team knowledge, with AI built in from day one.',
     url: 'https://ntn.so/claidor',
     featured: true,
     details: {
@@ -168,9 +168,9 @@ export const PERKS: Perk[] = [
   {
     name: 'Mercury',
     logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/mercurybank_logo.jpeg',
-    incentive: '$250 Mercury Credit + $250 Claidor Credit',
+    incentive: '$250 Mercury Credit + $250 Simeon Credit',
     description:
-      'Open a Mercury startup bank account through Claidor and receive $250 in Mercury credits plus $250 in Claidor platform credits. Mercury provides modern banking built for startups, with powerful financial tools and integrations.',
+      'Open a Mercury startup bank account through Simeon and receive $250 in Mercury credits plus $250 in Simeon platform credits. Mercury provides modern banking built for startups, with powerful financial tools and integrations.',
     url: 'https://mercury.com/r/claidor',
     featured: true,
     details: {
@@ -200,7 +200,7 @@ export const PERKS: Perk[] = [
               type: 'ordered-list',
               label: 'To qualify, you must:',
               items: [
-                'Open a new Mercury business account using the Claidor partner link',
+                'Open a new Mercury business account using the Simeon partner link',
                 'Deposit $10,000 into your Mercury account within your first 90 days',
               ],
             },
@@ -209,7 +209,7 @@ export const PERKS: Perk[] = [
               label: 'Once completed, you receive:',
               items: [
                 '$250 in cash from Mercury',
-                '$250 in Claidor platform credits',
+                '$250 in Simeon platform credits',
               ],
             },
           ],
@@ -222,7 +222,7 @@ export const PERKS: Perk[] = [
               items: [
                 'The $10,000 deposit must be completed within 90 days of opening your Mercury account.',
                 'The $250 reward is issued directly by Mercury once the requirement is met.',
-                'Claidor credits are applied to Claidor platform fees and are not paid out as cash.',
+                'Simeon credits are applied to Simeon platform fees and are not paid out as cash.',
                 'Mercury determines final eligibility and account approval.',
               ],
             },
@@ -288,7 +288,7 @@ export const PERKS: Perk[] = [
           ],
         },
         {
-          heading: 'What You Get Through the Claidor Startup Stack',
+          heading: 'What You Get Through the Simeon Startup Stack',
           blocks: [
             {
               type: 'unordered-list',
@@ -373,7 +373,7 @@ export const PERKS: Perk[] = [
           ],
         },
         {
-          heading: 'What You Get Through the Claidor Startup Stack',
+          heading: 'What You Get Through the Simeon Startup Stack',
           blocks: [
             {
               type: 'unordered-list',
@@ -454,7 +454,7 @@ export const PERKS: Perk[] = [
     logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/Apolo+logo.jpg',
     incentive: '50% Off Annual Plan',
     description:
-      'Claidor startups receive 50% off Apollo\'s sales intelligence platform for one year. Access a database of over 270M contacts and powerful outreach tools to find customers, start conversations, and grow your first revenue.',
+      'Simeon startups receive 50% off Apollo\'s sales intelligence platform for one year. Access a database of over 270M contacts and powerful outreach tools to find customers, start conversations, and grow your first revenue.',
     url: 'https://www.apollo.io/partners/partnership-startup-promo?utm_medium=partner&utm_source=communities_startup&utm_campaign=communities_claidor',
     featured: true,
     details: {
@@ -478,7 +478,7 @@ export const PERKS: Perk[] = [
           ],
         },
         {
-          heading: 'What You Get Through the Claidor Startup Stack',
+          heading: 'What You Get Through the Simeon Startup Stack',
           blocks: [
             {
               type: 'unordered-list',
@@ -532,7 +532,7 @@ export const PERKS: Perk[] = [
     logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/doc+send+logo.png',
     incentive: '90% Off for the First Year',
     description:
-      'Share investor decks, fundraising materials, and key documents securely with DocSend. Claidor startups receive 90% off for the first year, with analytics that show who opened your documents and how they engaged with them.',
+      'Share investor decks, fundraising materials, and key documents securely with DocSend. Simeon startups receive 90% off for the first year, with analytics that show who opened your documents and how they engaged with them.',
     url: 'https://experience.docsend.com/dfyk3wcsklzs',
     featured: true,
     details: {
@@ -556,7 +556,7 @@ export const PERKS: Perk[] = [
           ],
         },
         {
-          heading: 'What You Get Through the Claidor Startup Stack',
+          heading: 'What You Get Through the Simeon Startup Stack',
           blocks: [
             {
               type: 'unordered-list',
@@ -604,7 +604,7 @@ export const PERKS: Perk[] = [
     logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/Microsoft+Logo.png',
     incentive: 'Up to $5,000 in Cloud Credits',
     description:
-      "Claidor startups can access up to $5,000 in Microsoft Azure credits to build and scale their products in the cloud. Use Azure's infrastructure to host applications, run databases, and power your startup's backend services.",
+      "Simeon startups can access up to $5,000 in Microsoft Azure credits to build and scale their products in the cloud. Use Azure's infrastructure to host applications, run databases, and power your startup's backend services.",
     url: 'https://www.microsoft.com/en-us/startups?utm_source=mercury',
     featured: true,
     details: {
@@ -628,7 +628,7 @@ export const PERKS: Perk[] = [
           ],
         },
         {
-          heading: 'What You Get Through the Claidor Startup Stack',
+          heading: 'What You Get Through the Simeon Startup Stack',
           blocks: [
             {
               type: 'unordered-list',
@@ -700,7 +700,7 @@ export const PERKS: Perk[] = [
           ],
         },
         {
-          heading: 'What You Get Through the Claidor Startup Stack',
+          heading: 'What You Get Through the Simeon Startup Stack',
           blocks: [
             {
               type: 'unordered-list',
@@ -781,7 +781,7 @@ export const PERKS: Perk[] = [
           ],
         },
         {
-          heading: 'What You Get Through the Claidor Startup Stack',
+          heading: 'What You Get Through the Simeon Startup Stack',
           blocks: [
             {
               type: 'unordered-list',
@@ -869,7 +869,7 @@ export const PERKS: Perk[] = [
           ],
         },
         {
-          heading: 'What You Get Through the Claidor Startup Stack',
+          heading: 'What You Get Through the Simeon Startup Stack',
           blocks: [
             {
               type: 'unordered-list',
@@ -954,7 +954,7 @@ export const PERKS: Perk[] = [
           ],
         },
         {
-          heading: 'What You Get Through the Claidor Startup Stack',
+          heading: 'What You Get Through the Simeon Startup Stack',
           blocks: [
             {
               type: 'unordered-list',

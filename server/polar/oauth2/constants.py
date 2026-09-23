@@ -16,8 +16,8 @@ REFRESH_TOKEN_PREFIX: dict[SubType, str] = {
 }
 WEBHOOK_SECRET_PREFIX = "claidor_whs_"
 
-ISSUER = "https://api.claidorhq.com"
-SERVICE_DOCUMENTATION = "https://docs.claidorhq.com"
+ISSUER = "https://api.simeonlabs.com"
+SERVICE_DOCUMENTATION = "https://docs.simeonlabs.com"
 SUBJECT_TYPES_SUPPORTED = ["public"]
 ID_TOKEN_SIGNING_ALG_VALUES_SUPPORTED = ["RS256"]
 CLAIMS_SUPPORTED = ["sub", "name", "email", "email_verified"]

@@ -35,7 +35,7 @@ def send_push_message(
                 to=token,
                 body=message,
                 data=extra,
-                title="Claidor",
+                title="Simeon",
                 sound="default",
                 ttl=60 * 60 * 24,
                 expiration=None,

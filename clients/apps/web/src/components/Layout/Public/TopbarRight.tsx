@@ -49,7 +49,7 @@ const TopbarRight = ({
           <GetStartedButton
             className="hidden md:flex"
             size="default"
-            text="Sell with Claidor"
+            text="Sell with Simeon"
             storefrontOrg={storefrontOrg}
           />
 

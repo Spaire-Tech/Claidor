@@ -148,15 +148,15 @@ class Settings(BaseSettings):
     # generate URLs to the backend accessible from the outside.
     BASE_URL: str = "http://127.0.0.1:8000"
     BACKOFFICE_HOST: str | None = None
-    CHECKOUT_LINK_HOST: str | None = None  # e.g., "buy.claidorhq.com" in production
+    CHECKOUT_LINK_HOST: str | None = None  # e.g., "buy.simeonlabs.com" in production
 
-    # URL to the storefront app (space.claidorhq.com in production).
+    # URL to the storefront app (space.simeonlabs.com in production).
     # Added to CORS allowed origins with credentials.
     STOREFRONT_BASE_URL: str = ""
 
     # Creator custom storefront domains (learn.creator.com).
     # CNAME target creators must point their subdomain at.
-    CUSTOM_DOMAIN_CNAME_TARGET: str = "domains.claidorhq.com"
+    CUSTOM_DOMAIN_CNAME_TARGET: str = "domains.simeonlabs.com"
     # DNS-over-HTTPS resolver used for domain verification (RFC 8484 JSON API).
     CUSTOM_DOMAIN_DOH_URL: str = "https://cloudflare-dns.com/dns-query"
     # Consecutive failed re-checks before an active domain is demoted to failed.
@@ -317,11 +317,11 @@ class Settings(BaseSettings):
     RESEND_API_KEY: str = ""
     RESEND_API_BASE_URL: str = "https://api.resend.com"
     RESEND_WEBHOOK_SECRET: str = ""
-    EMAIL_FROM_NAME: str = "Claidor"
-    EMAIL_FROM_DOMAIN: str = "notifications.claidorhq.com"
+    EMAIL_FROM_NAME: str = "Simeon"
+    EMAIL_FROM_DOMAIN: str = "notifications.simeonlabs.com"
     EMAIL_FROM_LOCAL: str = "mail"
-    EMAIL_DEFAULT_REPLY_TO_NAME: str = "Claidor Support"
-    EMAIL_DEFAULT_REPLY_TO_EMAIL_ADDRESS: str = "support@claidorhq.com"
+    EMAIL_DEFAULT_REPLY_TO_NAME: str = "Simeon Support"
+    EMAIL_DEFAULT_REPLY_TO_EMAIL_ADDRESS: str = "support@simeonlabs.com"
 
     # Github App
     GITHUB_CLIENT_ID: str = ""
@@ -420,7 +420,7 @@ class Settings(BaseSettings):
     STRIPE_WEBHOOK_SECRET: str = ""
     STRIPE_CONNECT_WEBHOOK_SECRET: str = ""
     STRIPE_V2_WEBHOOK_SECRET: str = ""
-    STRIPE_STATEMENT_DESCRIPTOR: str = "CLAIDOR"
+    STRIPE_STATEMENT_DESCRIPTOR: str = "SIMEON LABS"
 
     # Mux video
     # Signing key used to mint short-lived JWTs for signed playback URLs
@@ -508,7 +508,7 @@ class Settings(BaseSettings):
     # Invoices
     S3_CUSTOMER_INVOICES_BUCKET_NAME: str = "claidor-customer-invoices"
     S3_PAYOUT_INVOICES_BUCKET_NAME: str = "claidor-payout-invoices"
-    INVOICES_NAME: str = "Claidor, Inc."
+    INVOICES_NAME: str = "Simeon Labs, Inc."
     INVOICES_ADDRESS: Address = Address(
         line1="1111B S Governors Ave",
         line2="# 47283",
@@ -518,7 +518,7 @@ class Settings(BaseSettings):
         country=CountryAlpha2("US"),
     )
     INVOICES_ADDITIONAL_INFO: str | None = (
-        "[support@claidorhq.com](mailto:support@claidorhq.com)"
+        "[support@simeonlabs.com](mailto:support@simeonlabs.com)"
     )
     PAYOUT_INVOICES_PREFIX: str = "CLAIDOR-"
 

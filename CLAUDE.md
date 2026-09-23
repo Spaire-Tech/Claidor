@@ -2,6 +2,27 @@
 
 Legal research platform for OHADA law (see README.md). Monorepo with Python/FastAPI backend and Next.js frontend. NOTE: the backend Python package keeps the internal name `polar` (inherited from upstream).
 
+## Simeon Labs rebrand — safe-rename rule (23 September 2026)
+
+The company is now **Simeon Labs** (`simeonlabs.com`). The product users see is **Simeon** (spelling Simeon, never Simon). The old brand is Claidor.
+
+**Do NOT blanket find-replace `claidor` → `simeonlabs` across the repo.** The `CLAIDOR_*` environment variable prefix is load-bearing: Render, Vercel, and the running API read those names. Renaming them requires a planned migration with a dual-read alias layer and coordinated Render/Vercel env updates — that is a separate, later PR after Bass confirms Google login on `app.simeonlabs.com`.
+
+What is safe to change now (and was changed in the initial rebrand PR):
+- User-visible UI copy, page titles, email text, invoice legal text → **Simeon** or **Simeon Labs**
+- Hardcoded public hostnames for the Simeon deploy path (`app.claidor.com` → `app.simeonlabs.com`, etc.)
+- Package metadata (description, author) → **Simeon Labs**
+
+What must NOT be changed yet:
+- `CLAIDOR_*` env var keys (Render + running API still read this contract)
+- Auth/cookie/JWKS wiring that keys off those env names
+- Internal identifiers: Python module names, CSS class names, component names, file paths
+- HTTP header names (`X-Claidor-Signature`, `X-Claidor-Event`) — breaking change for webhook consumers
+- `render.yaml` env var values — managed separately per deploy target
+- Token prefixes (`claidor_ci_`, `claidor_da_`), cookie keys (`claidor_session`)
+
+See `docs/cutover/simeonlabs-rebrand-brief.md` for the full brief.
+
 ## Swens — archived (September 2026)
 
 This repository carried the Swens build (a model review platform for finance). It is archived, switched off and kept as a record: the engine under `server/polar/tieout` (routes no longer mounted; tests not collected), the screens under `clients/apps/web/src/components/Workspace` (no longer rendered), the scripts under `server/scripts`, and the documents of record under `docs/pierce` (`swens.md`, `swens-plan.md`, `notes.md`). There is **no `swens-final` tag** — the repository has no tags at all (`git ls-remote --tags origin` returns nothing, checked 18 September). Earlier copies of this file, and a user-facing page in the dashboard, named that tag; anyone sent to it found nothing. The last Swens state is reachable only by commit or by the `swens/*` branches on the remote. Do not extend it; answer questions about it from those documents, never from memory.

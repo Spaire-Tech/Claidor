@@ -44,7 +44,7 @@ export async function GET() {
 
 
 
-              Claidor is made by all of our wonderful contributors.
+              Simeon is made by all of our wonderful contributors.
 
                     https://github.com/claidor-tech/claidor
 

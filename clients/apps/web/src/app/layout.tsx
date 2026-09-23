@@ -77,22 +77,22 @@ const poppins = Poppins({
 export async function generateMetadata(): Promise<Metadata> {
   const baseMetadata: Metadata = {
     title: {
-      template: '%s | Claidor',
-      default: 'Claidor | Build and sell cinematic masterclasses',
+      template: '%s | Simeon',
+      default: 'Simeon | Build and sell cinematic masterclasses',
     },
     description: 'The Masterclass Builder for Creators.',
     openGraph: {
       images: 'https://app.claidorhq.com/assets/brand/claidor_og.jpg',
       type: 'website',
-      siteName: 'Claidor',
-      title: 'Claidor | Build and sell cinematic masterclasses',
+      siteName: 'Simeon',
+      title: 'Simeon | Build and sell cinematic masterclasses',
       description: 'The Masterclass Builder for Creators.',
       locale: 'en_US',
     },
     twitter: {
       images: 'https://app.claidorhq.com/assets/brand/claidor_og.jpg',
       card: 'summary_large_image',
-      title: 'Claidor | Build and sell cinematic masterclasses',
+      title: 'Simeon | Build and sell cinematic masterclasses',
       description: 'The Masterclass Builder for Creators.',
     },
     metadataBase: new URL('https://app.claidorhq.com/'),
