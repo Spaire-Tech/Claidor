@@ -747,7 +747,7 @@ export const ProductDetailPage = ({
       <footer>
         <div className="wrap foot-inner">
           <div className="l">
-            © {new Date().getFullYear()} {organization.name} · Powered by Claidor
+            © {new Date().getFullYear()} {organization.name} · Powered by Simeon
           </div>
         </div>
       </footer>

@@ -133,7 +133,7 @@ const ClaidorPlanCards = ({ organization }: ClaidorPlanCardsProps) => {
         await switchPlan.mutateAsync({ tier, billing_interval: interval })
         toast({
           title: 'Plan updated',
-          description: `You're now on Claidor ${tierDisplayName(tier)}${interval === 'year' ? ' (annual)' : ''}.`,
+          description: `You're now on Simeon ${tierDisplayName(tier)}${interval === 'year' ? ' (annual)' : ''}.`,
         })
         queryClient.invalidateQueries({
           queryKey: ['claidor', 'subscription', organization.id],
@@ -180,7 +180,7 @@ const ClaidorPlanCards = ({ organization }: ClaidorPlanCardsProps) => {
           ? trialEndDate
             ? `Your trial continues until ${trialEndDate}. You won't be charged and your plan won't start — pick a plan any time to keep going.`
             : "Your trial continues until it ends. You won't be charged and your plan won't start — pick a plan any time to keep going."
-          : 'Your Claidor subscription will end at the close of the current billing period, after which your org will have no active plan until you pick one.',
+          : 'Your Simeon subscription will end at the close of the current billing period, after which your org will have no active plan until you pick one.',
       })
       queryClient.invalidateQueries({
         queryKey: ['claidor', 'subscription', organization.id],
@@ -252,7 +252,7 @@ const ClaidorPlanCards = ({ organization }: ClaidorPlanCardsProps) => {
       <ConfirmModal
         isShown={confirmCancel.isShown}
         hide={confirmCancel.hide}
-        title={isTrial ? 'Cancel your trial?' : 'Cancel your Claidor plan?'}
+        title={isTrial ? 'Cancel your trial?' : 'Cancel your Simeon plan?'}
         description={
           isTrial
             ? trialEndDate
@@ -277,12 +277,12 @@ const ClaidorPlanCards = ({ organization }: ClaidorPlanCardsProps) => {
         }}
         title={
           switchTarget
-            ? `Switch to Claidor ${tierDisplayName(switchTarget)}?`
+            ? `Switch to Simeon ${tierDisplayName(switchTarget)}?`
             : 'Switch plan?'
         }
         description={
           switchTarget
-            ? `You'll move to Claidor ${tierDisplayName(switchTarget)}${
+            ? `You'll move to Simeon ${tierDisplayName(switchTarget)}${
                 interval === 'year' ? ' (annual)' : ''
               } now. Your card on file is used and a prorated amount for the rest of this billing period is invoiced immediately. Your transaction fee updates to the new plan's rate right away.`
             : ''
@@ -731,7 +731,7 @@ const formatCount = (n: number): string => {
 // in the card carries the inheritance, so re-listing identical rows
 // would just inflate the cards.
 const starterLines = (plan: TierPlan): string[] => [
-  'Merchant of Record — Claidor handles tax & VAT',
+  'Merchant of Record — Simeon handles tax & VAT',
   `${formatTransactionFee(plan.transaction_fee)} per transaction`,
   `${plan.limits.published_courses} published courses`,
   `${formatCount(plan.limits.email_subscribers ?? 0)} email subscribers`,

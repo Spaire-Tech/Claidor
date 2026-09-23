@@ -110,7 +110,7 @@ async def _webhook_event_send(
     signature = wh.sign(str(event.id), ts, event.payload)
 
     headers: Mapping[str, str] = {
-        "user-agent": "claidorhq.com webhooks",
+        "user-agent": "simeonlabs.com webhooks",
         "content-type": "application/json",
         "webhook-id": str(event.id),
         "webhook-timestamp": str(int(ts.timestamp())),

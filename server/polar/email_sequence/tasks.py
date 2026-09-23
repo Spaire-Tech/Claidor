@@ -80,7 +80,7 @@ async def send_test_step(step_id: UUID, to_email: str) -> None:
                 html_content=wrapped_html,
                 from_name=step.sender_name,
                 from_email_addr=step.sender_email
-                or "noreply@notifications.claidorhq.com",
+                or "noreply@notifications.simeonlabs.com",
                 email_headers={
                     "List-Unsubscribe": f"<{unsubscribe_url}>",
                     "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
@@ -382,7 +382,7 @@ async def _send_email_node(
             organization=organization,
             subject=email_value.get("subject") or "(no subject)",
             sender_name=email_value.get("fromName")
-            or (organization.name if organization else "Claidor"),
+            or (organization.name if organization else "Simeon"),
             sender_email=email_value.get("fromEmail"),
             content_html=email_value.get("content_html") or _fallback_html(email_value),
         )
@@ -554,7 +554,7 @@ async def _send_inline(
             subject=subject,
             html_content=wrapped_html,
             from_name=sender_name,
-            from_email_addr=sender_email or "noreply@notifications.claidorhq.com",
+            from_email_addr=sender_email or "noreply@notifications.simeonlabs.com",
             email_headers={
                 "List-Unsubscribe": f"<{unsubscribe_url}>",
                 "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",

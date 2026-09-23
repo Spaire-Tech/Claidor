@@ -61,7 +61,7 @@ const PastDueBanner = ({ organizationId }: PastDueBannerProps) => {
   return (
     <div className="flex flex-col items-start gap-2 border-b border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 sm:flex-row sm:items-center sm:justify-between sm:px-8">
       <span>
-        <span className="font-medium">Your Claidor payment failed.</span>{' '}
+        <span className="font-medium">Your Simeon payment failed.</span>{' '}
         {payBy
           ? `Update your card and pay your balance by ${payBy} to keep your plan — after that your subscription is canceled and your org loses access.`
           : 'Update your card to settle your balance and keep your plan.'}

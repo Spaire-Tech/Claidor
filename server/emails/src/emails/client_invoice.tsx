@@ -197,7 +197,7 @@ ClientInvoice.PreviewProps = {
   discount_label: null,
   tax_amount: 14000,
   total_amount: 214000,
-  checkout_link: 'https://app.claidorhq.com/checkout/abc123',
+  checkout_link: 'https://app.simeonlabs.com/checkout/abc123',
   memo: 'Thank you for your business.',
 }
 

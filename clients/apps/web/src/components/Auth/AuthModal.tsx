@@ -19,7 +19,7 @@ export const AuthModal = ({
   const copy = isSignup ? (
     <p className=" text-xl text-gray-500">
       Join thousands of developers &amp; startups monetizing their products with
-      Claidor.
+      Simeon.
     </p>
   ) : null
 

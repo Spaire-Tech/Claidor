@@ -23,7 +23,7 @@ export async function generateMetadata(props: {
   )
   return {
     title: {
-      template: `%s | ${organization.name} | Claidor`,
+      template: `%s | ${organization.name} | Simeon`,
       default: organization.name,
     },
   }

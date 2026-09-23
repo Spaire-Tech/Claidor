@@ -24,9 +24,9 @@ export async function generateMetadata(props: {
   return {
     title: `Student Portal | ${organization.name}`, // " | Polar is added by the template"
     openGraph: {
-      title: `Student Portal | ${organization.name} on Claidor`,
-      description: `Student Portal | ${organization.name} on Claidor`,
-      siteName: 'Claidor',
+      title: `Student Portal | ${organization.name} on Simeon`,
+      description: `Student Portal | ${organization.name} on Simeon`,
+      siteName: 'Simeon',
       type: 'website',
       images: [
         {
@@ -42,12 +42,12 @@ export async function generateMetadata(props: {
           url: `https://claidorhq.com/og?org=${organization.slug}`,
           width: 1200,
           height: 630,
-          alt: `${organization.name}'s masterclasses on Claidor`,
+          alt: `${organization.name}'s masterclasses on Simeon`,
         },
       ],
       card: 'summary_large_image',
-      title: `Student Portal | ${organization.name} on Claidor`,
-      description: `Student Portal | ${organization.name} on Claidor`,
+      title: `Student Portal | ${organization.name} on Simeon`,
+      description: `Student Portal | ${organization.name} on Simeon`,
     },
   }
 }

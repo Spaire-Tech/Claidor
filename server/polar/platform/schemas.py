@@ -22,7 +22,7 @@ class TierPlan(Schema):
     """A subscribable tier plan, as exposed to creators in the upgrade UI."""
 
     tier: TierKey = Field(description="Tier identifier.")
-    name: str = Field(description="Display name, e.g. 'Claidor Starter'.")
+    name: str = Field(description="Display name, e.g. 'Simeon Starter'.")
     description: str | None = Field(description="Marketing description.")
     product_id: UUID | None = Field(
         description=(

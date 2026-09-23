@@ -352,7 +352,7 @@ export default function StreamlinedAccountReview({
       {currentStep === 'account' && (
         <StepCard
           title="Payout Account"
-          subtitle="Connect your bank account to receive payouts from Claidor."
+          subtitle="Connect your bank account to receive payouts from Simeon."
         >
           <AccountStep
             organizationAccount={organizationAccount}

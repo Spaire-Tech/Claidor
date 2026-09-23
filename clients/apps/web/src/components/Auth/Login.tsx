@@ -89,7 +89,7 @@ const Login = ({
         <LoginCodeForm {...loginProps} />
       </div>
       <div className=" mt-6 text-center text-xs text-gray-400">
-        By using Claidor you agree to our{' '}
+        By using Simeon you agree to our{' '}
         <a
           className=" text-gray-600"
           href="https://www.claidorhq.com/legal/terms-of-service"

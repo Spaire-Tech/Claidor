@@ -216,7 +216,7 @@ export const CheckoutConfirmation = ({
               )}
             <p className=" text-center text-xs text-gray-500">
               This order was processed by our online reseller & Merchant of
-              Record, Claidor, who also handles order-related inquiries and
+              Record, Simeon Labs, who also handles order-related inquiries and
               returns.
             </p>
           </>

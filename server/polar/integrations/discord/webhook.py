@@ -67,7 +67,7 @@ def get_branded_discord_embed(embed: DiscordEmbed) -> DiscordEmbed:
     return {
         "color": 25343,
         "author": {
-            "name": "Claidor",
+            "name": "Simeon",
             "icon_url": settings.FAVICON_URL,
         },
         "thumbnail": {

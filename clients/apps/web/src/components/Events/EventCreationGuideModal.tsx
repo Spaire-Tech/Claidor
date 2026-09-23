@@ -16,7 +16,7 @@ export const EventCreationGuideModal = ({
     <SyntaxHighlighterProvider>
       <div className="flex flex-col gap-4 p-8">
         <h1 className="text-2xl">Event Ingestion</h1>
-        <p>Events can only be created through the Claidor Ingestion API.</p>
+        <p>Events can only be created through the Simeon Ingestion API.</p>
         <Well className=" rounded-lg bg-gray-100 p-4 text-sm">
           <SyntaxHighlighterClient
             lang="typescript"

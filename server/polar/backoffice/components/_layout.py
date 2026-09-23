@@ -19,7 +19,7 @@ def content(
                 [
                     *breadcrumbs,
                     (
-                        "Claidor Backoffice",
+                        "Simeon Backoffice",
                         str(request.url_for("index")),
                     ),
                 ]

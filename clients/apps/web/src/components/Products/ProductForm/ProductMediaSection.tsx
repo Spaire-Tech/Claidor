@@ -22,7 +22,7 @@ export const ProductMediaSection = ({
   return (
     <Section
       title="Product Media"
-      description="This image appears in Checkouts, your Claidor Space, in emails, social sharing and more."
+      description="This image appears in Checkouts, your Simeon Space, in emails, social sharing and more."
     >
       <FormField
         control={control}
