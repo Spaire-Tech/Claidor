@@ -222,7 +222,7 @@ export function patchOriginalBubbleStylesheet(css) {
  * remove the line up there … it feels more apple ish"). CSS only, appended
  * to the pinned stylesheet: the toolbar's divider line is hidden, the
  * identity row (avatar + name) is a centred column, the avatar is drawn at
- * 88 px (the mark's inline 20 px is overridden on the span AND on the SVG
+ * 52 px (88 was "way too big" on the Mac) (the mark's inline 20 px is overridden on the span AND on the SVG
  * inside it, which carries its own inline width/height from the animator's
  * size prop; the first build missed the SVG and drew a 20 px mark at the
  * top of an 88 px box, "genuinely terrible"), so it is the same animated
@@ -235,15 +235,15 @@ export function patchOriginalBubbleStylesheet(css) {
 export const HEADER_CARD_CSS = `
 /* Simeon: the chat header is the agent's card, centred, without the divider (23 September 2026). */
 .sand-toolbar-divider{display:none!important}
-.sand-toolbar:has(.sand-chat-header__identity-row){padding-top:6px!important;padding-bottom:8px!important;border-bottom-width:0!important}
+.sand-toolbar:has(.sand-chat-header__identity-row){padding-top:4px!important;padding-bottom:4px!important;border-bottom-width:0!important}
 .sand-chat-header:has(>.sand-chat-header__identity-row){justify-content:center!important;position:relative!important}
 .sand-chat-header__identity-row{flex-direction:column!important;align-items:center!important;gap:6px!important}
-.sand-chat-header__identity{flex-direction:column!important;align-items:center!important;gap:6px!important;padding:2px 8px 4px!important;border-radius:16px!important}
-.sand-chat-header__avatar .sand-agent-avatar,.sand-chat-header__avatar .sand-grok-bot-mark{width:88px!important;height:88px!important}
-.sand-chat-header__avatar .sand-grok-bot-mark>svg{width:88px!important;height:88px!important}
+.sand-chat-header__identity{flex-direction:column!important;align-items:center!important;gap:4px!important;padding:0 8px 2px!important;border-radius:16px!important}
+.sand-chat-header__avatar .sand-agent-avatar,.sand-chat-header__avatar .sand-grok-bot-mark{width:52px!important;height:52px!important}
+.sand-chat-header__avatar .sand-grok-bot-mark>svg{width:52px!important;height:52px!important}
 .sand-chat-header__avatar img.sand-agent-avatar{border-radius:50%!important;object-fit:cover!important}
 .sand-chat-header__title{align-items:center!important}
-.sand-chat-header__name{font-size:15px!important;line-height:20px!important;padding:5px 14px!important;border-radius:999px!important;background-color:var(--sand-fill-bubble-agent)!important;font-weight:500!important}
+.sand-chat-header__name{font-size:13px!important;line-height:18px!important;padding:3px 12px!important;border-radius:999px!important;background-color:var(--sand-fill-bubble-agent)!important;font-weight:500!important}
 .sand-chat-header__controls{position:absolute!important;right:0!important;top:50%!important;transform:translateY(-50%)!important}
 `;
 export const HEADER_CARD_MARKER = "/* Simeon: the chat header is the agent's card";
