@@ -120,3 +120,14 @@ cd desktop && nvm use 26.5.0 && npm ci && npm run bootstrap && npm run check && 
 `npm run check` is the gate: both typechecks and `node --test tests/*.test.mjs`
 (126 tests, 4 skipped without Playwright). The server tests need Postgres:
 `cd server && uv run task test`.
+
+## Corrected later the same day — read `ai-does-not-answer-measured.md`
+
+Three of the "established" facts above are not evidence: the box silences
+the loop's logger (so no `nal.tool_call` line could ever appear), the
+"Failed to send" sentence is a tool result the model reads and is never
+logged, and the worker thread is the SQLite store, not the loop. The real
+Agent loop now runs offline in
+`desktop/tests/send-message-through-agent-loop.test.mjs` and delivers. Three
+new `[claidor]` lines (tool result, send-message written / not written)
+make the next run's log decide what the old one could not.
