@@ -247,9 +247,13 @@ mark, twelve petals measured off the founder's PNG and drawn from numbers
 `make-runtime-assets.mjs app-icon`, the Dock icon through
 `make-app-icon.mjs` → `brand/Simeon.icns`, written over the shell's icons by
 `package-macos.mjs`. `CFBundleExecutable` stays `Grok Bot` (the shell's
-executable and helper bundles); `CFBundleName`, which the menu bar shows
-top left, is `Simeon` since 23 September ("rename it to Simeon too"); the
-bare words "Bot"/"Bots" were not asked for and were left.
+executable and helper bundles), **and so does `CFBundleName`, which the
+menu bar shows top left**: set to Simeon on 23 September ("rename it to
+Simeon too"), the packaged app died at launch with SIGTRAP in
+`ElectronMain`, because Electron finds its helper bundles by that name
+and they are still `Grok Bot Helper*.app`. The line is reverted; the menu
+bar says Grok Bot until the helpers are renamed the electron-packager
+way. The bare words "Bot"/"Bots" were not asked for and were left.
 `docs/product/name-measured.md` §Simeon is the record.
 
 **The product is Simeon, decided 22 September 2026, later the same day.**
