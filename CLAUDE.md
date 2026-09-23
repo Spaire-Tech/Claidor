@@ -248,7 +248,21 @@ About) **was still Grok Bot's icon until then**, since nothing wrote the
 founder's file over it. All four are in `router-renderer-patch.mjs`
 (`patchOriginalMarks`, the app-icon copy), recorded under `marks` in
 `dist/renderer-router-extension.json`. Verified headless at 56 px in light
-and dark; not yet seen on a Mac.
+and dark; measured on the founder's Mac the same evening ("ok it works").
+**The agents' colours are twelve palettes, 23 September, later still**
+("replace all existing colors with this"): Dusk, Sage, Lagoon, Ember,
+Moss, Sand, Berry, Ocean, Rose, Slate, Peach, Mint, soft vertical
+three-stop gradients under film grain, the same in light and dark. The
+eleven colour ids keep their names (a saved agent still resolves; `black`
+is Slate, so the landing mark and hero are slate) and `mint` is the
+twelfth; the picker offers all twelve. The mark's body is always filled
+with a gradient on `--ink-from/--ink-mid/--ink-to` through an SVG grain
+filter, both defined in the animator's `<defs>`; `--fg` (the middle
+colour) still feeds rings, particles and glyphs. `patchOriginalPalette`
+in `router-renderer-patch.mjs`, ten anchors; previewed headless with the
+face on, not yet seen on a Mac. **Frame cost of the grain filter on forty
+sidebar marks is not measured**; if the sidebar stutters, the filter is
+the first thing to remove (one anchor, `palette-body-fill`).
 `docs/product/name-measured.md` §Simeon is the record.
 
 **The product is Simeon, decided 22 September 2026, later the same day.**

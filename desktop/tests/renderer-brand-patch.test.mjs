@@ -20,8 +20,8 @@ test("the brand pass renames every Grok Bot and New Bot in a chunk and counts th
 });
 
 test("the full patch renames the staged renderer and records what it changed, and refuses a renderer that never said Grok Bot", async () => {
-  const { applyOriginalRendererRouterPatch, MARK_REPLACEMENTS } = await import(patchModule);
-  const markAnchors = MARK_REPLACEMENTS.map(([, before]) => before).join(";");
+  const { applyOriginalRendererRouterPatch, MARK_REPLACEMENTS, PALETTE_REPLACEMENTS } = await import(patchModule);
+  const markAnchors = [...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS].map(([, before]) => before).join(";");
   const source = await readFile(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs"), "utf8");
   const anchor = (name) => /const (\w+) = ('.*?');/.exec(source.split(`const ${name} = `)[1] == null ? "" : `const ${name} = ${source.split(`const ${name} = `)[1]}`)?.[2];
   const registry = JSON.parse(`"${anchor("REGISTRY_BEFORE").slice(1, -1).replace(/"/g, '\\"')}"`);

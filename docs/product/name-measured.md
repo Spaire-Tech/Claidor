@@ -228,3 +228,37 @@ Measured here: the patched chunk parses; the petal SVG at 56 px on white
 and on `#111` (headless Chromium, 2×) is the founder's mark at the same
 size the old logo had. Not yet seen on a Mac.
 
+## The agents' colours (23 September 2026, later still)
+
+"i wanna change the color palettes choices of the bots. completely" —
+three reference spheres (a grainy sunset, sage, blue-lavender) — then,
+on a sheet of twelve drawn on the cloud and the blob in light and dark,
+"im okay with all. replace all existing colors with this."
+
+| id (kept) | palette | top | middle (`--fg`, swatch) | bottom |
+|---|---|---|---|---|
+| yellow | Dusk | #8b8bea | #f7a1b3 | #ffb98a |
+| cyan | Sage | #2f6f72 | #6e9c95 | #b8d1c5 |
+| violet | Lagoon | #7cc0e0 | #d7a9dc | #2b4c92 |
+| red | Ember | #ff9a76 | #ffd0a0 | #6b3e8f |
+| green | Moss | #6f8f4f | #a8c58a | #dfeacb |
+| brown | Sand | #f6e2c4 | #f2b48b | #c6754e |
+| magenta | Berry | #e07aa8 | #f4b7d0 | #3e2a7a |
+| blue | Ocean | #1f3b73 | #3c7fb7 | #7fd4d0 |
+| gray | Rose | #f6c1c7 | #f0a4b8 | #8f5c86 |
+| black | Slate | #8c9db8 | #5e6d86 | #d9dfe8 |
+| orange | Peach | #ffd1a6 | #ffb0a3 | #e56f8f |
+| mint (new) | Mint | #bff0e2 | #8fd3c3 | #3c8a86 |
+
+Mechanism, on the pinned chunk (`patchOriginalPalette`, ten anchors each
+once): the three colour tables (`G_t` gradients, `snt` flat, `PQ` picker)
+are replaced; the picker filter no longer hides black; `K_t`/`Y_t` gain a
+middle stop; the `sd` and mirror spans set `--ink-from/mid/to`; the
+animator's `<defs>` always hold a three-stop gradient on those variables
+and a `feTurbulence` grain filter, and the body path is filled with the
+gradient through the filter. The animator's `inkGradient` prop, which
+`sd` never passed, is gone with the old two-stop block. Faces, springs,
+morphs and mirrors are untouched. Previewed headless with the eyes on,
+light and dark; not yet seen on a Mac; the grain filter's frame cost on a
+full sidebar is not measured.
+
