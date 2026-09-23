@@ -24,10 +24,10 @@ export const outputDir = path.join(repoRoot, "dist");
 const configuredOutputName = process.env.GROK_BOT_OUTPUT_APP_NAME?.trim();
 export const outputApp = path.join(
   outputDir,
-  // The bundle on disk carries the product's name. `CFBundleName` and
-  // `CFBundleExecutable` inside it stay "Grok Bot", because Electron derives
-  // its nested helper names from them and this build reuses the ABI-matched
-  // 0.18 shell exactly; only the bundle and its display name are ours.
+  // The bundle on disk, its display name and (since 23 September 2026) its
+  // CFBundleName, which the menu bar shows, carry the product's name. Only
+  // `CFBundleExecutable` stays "Grok Bot": the executable and the nested
+  // helper bundles are the ABI-matched 0.18 shell, reused unrenamed.
   configuredOutputName ? path.basename(configuredOutputName) : "Simeon.app"
 );
 export const fidelityOutputApp = path.join(outputDir, "Grok Bot 0.18 Fidelity.app");
