@@ -306,9 +306,7 @@ sidebar marks is not measured**; if the sidebar stutters, the filter is
 the first thing to remove (one anchor, `palette-body-fill`).
 **The person's chat bubble is iMessage blue, 23 September, later still**
 ("copy imessage style and make it blue"): `#007aff` light, `#0a84ff`
-dark; **since 24 September the Slate palette's middle colour `#5e6d86`
-in both** ("instead of the blue of apple, the slate blue from the
-avatar"). The renderer's theme variables come from a token list in the chunk
+dark. The renderer's theme variables come from a token list in the chunk
 (`Ct("fill/bubble-user", …)`, emitted at runtime by `bzn` as
 `--sand-fill-bubble-user`); the stylesheet holds only the light default.
 Both are patched (`patchOriginalBubble`, `patchOriginalBubbleStylesheet`).
