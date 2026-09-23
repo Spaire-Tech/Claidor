@@ -46,7 +46,19 @@ move.
   and Electron aborts ("Unable to find helper app"). The line is out
   again. To make the menu bar say Simeon, rename the four helper bundles,
   their executables and plists the way electron-packager does, then
-  re-sign; nobody has done that yet.
+  re-sign. **Done 23 September 2026, later the same day, not yet run on a
+  Mac:** `scripts/lib/macos-bundle-rename.mjs` reads the shell's
+  `CFBundleExecutable`, renames every `Grok Bot *.app` under
+  `Contents/Frameworks` with its inner executable and its
+  `CFBundleExecutable`/`CFBundleName`/`CFBundleDisplayName`, then the main
+  executable, `CFBundleExecutable` and `CFBundleName`, and refuses to touch
+  the main executable if it found no helpers (that is the crash above).
+  Bundle identifiers are not this step's. `tests/macos-bundle-rename.test.mjs`
+  runs it on a fake shell offline and checks the launch invariant: each
+  plist's `CFBundleExecutable` is a file in its own `MacOS` directory, and
+  every helper is `<CFBundleName> Helper*.app`. The package verification
+  reads the reconstructed executable by its new name; the official
+  reference keeps its own.
 
 ## What this test covers, and what it does not
 

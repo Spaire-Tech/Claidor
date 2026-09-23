@@ -5,12 +5,14 @@ import {
   outputDir,
   packagedEnvironment,
   reconstructedBundleId,
+  reconstructedExecutableName,
   reconstructedName
 } from "./lib/config.mjs";
 import { buildFidelityReconstructedAsar } from "./clean-build.mjs";
 import { signAppBundleAdHoc } from "./lib/codesign.mjs";
+import { renameMacBundleIdentity } from "./lib/macos-bundle-rename.mjs";
 import { verifyOfficialMacReference, verifyReconstructedMacPackage } from "./lib/macos-package-verification.mjs";
-import { run } from "./lib/process.mjs";
+import { capture, run } from "./lib/process.mjs";
 import { SYSTEM_TOOLS } from "./lib/system-tools.mjs";
 import { APP_ICON_ICNS } from "./make-app-icon.mjs";
 
@@ -42,10 +44,6 @@ if (dockIcon == null) throw new Error(`Dock icon missing: ${APP_ICON_ICNS}. Run 
 for (const name of await readdir(resources)) {
   if (name.endsWith(".icns")) await cp(dockIcon, path.join(resources, name));
 }
-// macOS caches icons by bundle; a touched bundle and a re-registration make
-// Finder and the Dock read the new one instead of the cached Grok Bot icon.
-await run("/usr/bin/touch", [outputApp]).catch(() => {});
-await run("/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister", ["-f", outputApp]).catch(() => {});
 const packagedAsar = path.join(resources, "app.asar");
 const packagedUnpacked = `${packagedAsar}.unpacked`;
 await rm(packagedAsar, { force: true });
@@ -80,17 +78,25 @@ await run(SYSTEM_TOOLS.plutil, [
   infoPlist,
 ]);
 
-// CFBundleName stays "Grok Bot", and it is not a choice. On 23 September 2026
-// the line below set it to Simeon for the menu bar ("rename it to Simeon
-// too"); the packaged app then died 0.2 s after launch, SIGTRAP inside
-// ElectronMain, before any JavaScript ran. Electron locates its helper
-// bundles as "<name> Helper*.app" under Contents/Frameworks, trying the
-// compiled-in product name first and this bundle's CFBundleName second; the
-// helpers here are the unrenamed 0.18 shell's ("Grok Bot Helper*.app"), so
-// "Simeon" finds none and Electron aborts with "Unable to find helper app".
-// The menu bar therefore still says Grok Bot. Making it say Simeon means
-// renaming the four helper bundles, their executables and their plists the
-// way electron-packager does, and re-signing them. docs/product/name-measured.md.
+// The executable, CFBundleName (the menu bar, top left), the helper bundles
+// under Contents/Frameworks and their inner executables are renamed together,
+// the way electron-packager does it. Electron finds its helpers as
+// "<CFBundleName> Helper*.app/Contents/MacOS/<CFBundleName> Helper*", so on
+// 23 September 2026 setting CFBundleName alone to Simeon killed the app at
+// launch (SIGTRAP in ElectronMain, "Unable to find helper app"); the rename
+// refuses to touch the main executable unless it found helpers to rename with
+// it. The old name is read from the bundle, not assumed. Signed below, as the
+// signature covers every renamed path. docs/product/name-measured.md.
+const renamed = await renameMacBundleIdentity({
+  appPath: outputApp,
+  fromName: await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleExecutable", "raw", infoPlist]),
+  toName: reconstructedExecutableName,
+  plist: {
+    read: (file, key) => capture(SYSTEM_TOOLS.plutil, ["-extract", key, "raw", file]).catch(() => null),
+    write: (file, key, value) => run(SYSTEM_TOOLS.plutil, ["-replace", key, "-string", value, file]),
+  },
+  log: (line) => console.log(`[package] ${line}`),
+});
 
 await rm(path.join(outputApp, "Contents", "_CodeSignature"), { recursive: true, force: true });
 try {
@@ -103,11 +109,17 @@ try {
   await signAppBundleAdHoc(outputApp);
 }
 await run(SYSTEM_TOOLS.codesign, ["--verify", "--deep", "--strict", outputApp]);
+// macOS caches an app's icon and name by bundle; a touched bundle and a
+// re-registration make Finder and the Dock read the finished one instead of
+// the cached Grok Bot icon. Done last, once the bundle is in its final shape.
+await run("/usr/bin/touch", [outputApp]).catch(() => {});
+await run("/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister", ["-f", outputApp]).catch(() => {});
 const verification = await verifyReconstructedMacPackage({
   officialApp: runtimeApp,
   reconstructedApp: outputApp,
   sourceUnpackedRoot: builtAsarUnpacked,
   packagedUnpackedRoot: packagedUnpacked,
+  reconstructedExecutableName: renamed.executable.to,
 });
 
-console.log(`Packaged application: ${outputApp} (${verification.runtime.nodeFileCount} native manifest entries, ${verification.runtime.runtimeFileCount} unpacked runtime files)`);
+console.log(`Packaged application: ${outputApp} (executable ${renamed.executable.to}, ${renamed.helpers.length} helpers renamed, ${verification.runtime.nodeFileCount} native manifest entries, ${verification.runtime.runtimeFileCount} unpacked runtime files)`);

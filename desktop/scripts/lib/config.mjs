@@ -24,11 +24,8 @@ export const outputDir = path.join(repoRoot, "dist");
 const configuredOutputName = process.env.GROK_BOT_OUTPUT_APP_NAME?.trim();
 export const outputApp = path.join(
   outputDir,
-  // The bundle on disk and its display name carry the product's name.
-  // `CFBundleExecutable` and `CFBundleName` stay "Grok Bot": the executable
-  // and the nested helper bundles are the ABI-matched 0.18 shell, reused
-  // unrenamed, and Electron finds the helpers by CFBundleName
-  // (scripts/package-macos.mjs says what happened when it was changed).
+  // The bundle on disk, its display name, its executable and its helper
+  // bundles all carry the product's name (scripts/lib/macos-bundle-rename.mjs).
   configuredOutputName ? path.basename(configuredOutputName) : "Simeon.app"
 );
 export const fidelityOutputApp = path.join(outputDir, "Grok Bot 0.18 Fidelity.app");
@@ -46,6 +43,15 @@ export const devProfileDir = path.join(cacheDir, "dev-profile");
 export const upstreamVersion = "0.18.0";
 export const reconstructedBundleId = "com.anysphere.sand.reconstructed";
 export const reconstructedName = process.env.CAISRA_DISPLAY_NAME?.trim() || "Simeon";
+/**
+ * The name of the executable, and so of the helper bundles and of
+ * CFBundleName: what the menu bar, Activity Monitor and crash reports
+ * show. Since 23 September 2026 the packager renames the 0.18 shell's
+ * "Grok Bot" executable and its helpers to this, together
+ * (scripts/lib/macos-bundle-rename.mjs); before that it stayed "Grok Bot",
+ * and setting CFBundleName alone crashed the app at launch.
+ */
+export const reconstructedExecutableName = reconstructedName;
 
 /**
  * Where the packaged app signs in.
