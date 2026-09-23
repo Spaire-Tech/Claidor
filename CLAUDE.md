@@ -225,14 +225,15 @@ mark, twelve petals measured off the founder's PNG and drawn from numbers
 (`scripts/lib/simeon-logo.mjs`): the in-app icon through
 `make-runtime-assets.mjs app-icon`, the Dock icon through
 `make-app-icon.mjs` → `brand/Simeon.icns`, written over the shell's icons by
-`package-macos.mjs`. `CFBundleExecutable` stays `Grok Bot` (the shell's
-executable and helper bundles), **and so does `CFBundleName`, which the
-menu bar shows top left**: set to Simeon on 23 September ("rename it to
-Simeon too"), the packaged app died at launch with SIGTRAP in
-`ElectronMain`, because Electron finds its helper bundles by that name
-and they are still `Grok Bot Helper*.app`. The line is reverted; the menu
-bar says Grok Bot until the helpers are renamed the electron-packager
-way. The bare words "Bot"/"Bots" were not asked for and were left.
+`package-macos.mjs`. **`CFBundleExecutable` and `CFBundleName` are Simeon
+since 23 September, not yet run on a Mac**: the packager renames the shell's
+executable, the helper bundles, their executables and plists together
+(`scripts/lib/macos-bundle-rename.mjs`). Earlier that day `CFBundleName`
+alone was set to Simeon and the app died at launch with SIGTRAP in
+`ElectronMain`, because Electron finds its helper bundles by that name and
+they were still `Grok Bot Helper*.app`; the rename refuses to move the
+executable without helpers to move with it. The bare words "Bot"/"Bots"
+were not asked for and were left.
 `docs/product/name-measured.md` §Simeon is the record.
 
 **The product is Simeon, decided 22 September 2026, later the same day.**
@@ -246,8 +247,9 @@ title and the user-data folder come from. **Until then the staged
 `productName` was still `Grok Bot`, so the app shared
 `~/Library/Application Support/Grok Bot` with the real Grok Bot**; the first
 launch as Simeon copies that folder once (`desktop-user-data-bootstrap.ts`).
-The icon is the founder's black tile (`brand/`). Kept: `CFBundleExecutable`
-`Grok Bot`, lower-case identifiers (`caisra`, `CAISRA_*`, `~/.caisra`).
+The icon is the founder's black tile (`brand/`). Kept: lower-case
+identifiers (`caisra`, `CAISRA_*`, `~/.caisra`); the executable name is
+Simeon since 23 September (above).
 `docs/product/name-measured.md` §Simeon is the record.
 
 **The computer's screen, measured 22 September 2026.** With the Computer

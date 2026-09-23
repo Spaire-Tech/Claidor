@@ -65,9 +65,12 @@ Only macOS on Apple Silicon can bootstrap or package — `hdiutil`, `codesign`,
 - **Host and electron-main** from recovered source when the 0.18.0 artifact
   self-check cannot activate them (`scripts/caisra-ignition-activation.mjs`).
 
-`CFBundleName` and `CFBundleExecutable` stay `Grok Bot`, because Electron
-derives its nested helper names from them and this build reuses the ABI-matched
-0.18 shell exactly.
+- **`CFBundleExecutable` and `CFBundleName` = `Simeon`**, since 23 September
+  2026: the packager renames the 0.18 shell's executable, its helper bundles
+  under `Contents/Frameworks`, their inner executables and their plists
+  together (`scripts/lib/macos-bundle-rename.mjs`), then signs. Before that
+  both stayed `Grok Bot`, and `CFBundleName` alone set to Simeon crashed the
+  app at launch. The shell's bytes are unchanged; only names move.
 
 ## Changing the shipped UI
 
