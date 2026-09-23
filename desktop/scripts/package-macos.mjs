@@ -6,7 +6,8 @@ import {
   packagedEnvironment,
   reconstructedBundleId,
   reconstructedExecutableName,
-  reconstructedName
+  reconstructedName,
+  reconstructedUrlScheme
 } from "./lib/config.mjs";
 import { buildFidelityReconstructedAsar } from "./clean-build.mjs";
 import { signAppBundleAdHoc } from "./lib/codesign.mjs";
@@ -44,6 +45,13 @@ if (dockIcon == null) throw new Error(`Dock icon missing: ${APP_ICON_ICNS}. Run 
 for (const name of await readdir(resources)) {
   if (name.endsWith(".icns")) await cp(dockIcon, path.join(resources, name));
 }
+// Measured on the founder's Mac, 23 September 2026: Contents/Resources holds
+// icon.icns AND Assets.car, and Info.plist says CFBundleIconName = icon. With
+// that key present macOS draws the Dock and Finder icon from the compiled
+// asset catalogue (Assets.car) and never reads icon.icns, so every build
+// since 22 September wrote Simeon's tile into a file nothing looked at. The
+// key goes; CFBundleIconFile (icon.icns, now Simeon's) is what remains.
+await run(SYSTEM_TOOLS.plutil, ["-remove", "CFBundleIconName", path.join(outputApp, "Contents", "Info.plist")]).catch(() => {});
 const packagedAsar = path.join(resources, "app.asar");
 const packagedUnpacked = `${packagedAsar}.unpacked`;
 await rm(packagedAsar, { force: true });
@@ -59,11 +67,11 @@ const infoPlist = path.join(outputApp, "Contents", "Info.plist");
 await run(SYSTEM_TOOLS.plutil, ["-remove", "ElectronAsarIntegrity", infoPlist]);
 await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleIdentifier", "-string", reconstructedBundleId, infoPlist]);
 await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleDisplayName", "-string", reconstructedName, infoPlist]);
-// The backend currently emits only the `sand` auth/deep-link target. Make the
-// reconstructed bundle's claim explicit and remove inherited aliases such as
-// `grokbot`; the original bundle remains untouched and remains reference-only.
+// The bundle claims our own scheme and nothing inherited (`sand`, `grokbot`):
+// Claidor's sign-in returns to whatever scheme the app names, and `sand` is
+// Grok Bot's, which macOS may hand the callback to instead.
 await run(SYSTEM_TOOLS.plutil, ["-remove", "CFBundleURLTypes", infoPlist]);
-await run(SYSTEM_TOOLS.plutil, ["-insert", "CFBundleURLTypes", "-xml", "<array><dict><key>CFBundleTypeRole</key><string>Viewer</string><key>CFBundleURLName</key><string>Simeon auth callback</string><key>CFBundleURLSchemes</key><array><string>sand</string></array></dict></array>", infoPlist]);
+await run(SYSTEM_TOOLS.plutil, ["-insert", "CFBundleURLTypes", "-xml", `<array><dict><key>CFBundleTypeRole</key><string>Viewer</string><key>CFBundleURLName</key><string>Simeon auth callback</string><key>CFBundleURLSchemes</key><array><string>${reconstructedUrlScheme}</string></array></dict></array>`, infoPlist]);
 // The packaged bundle carries its own backend. A bundle launched from Finder
 // inherits no shell environment, so a build without this signs in to
 // cursor.com however the terminal that built it was configured.
