@@ -1,4 +1,3 @@
-import { AVATAR_KEYS } from "./avatars.generated";
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L20492
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L130486
 
@@ -102,10 +101,7 @@ export const CHARACTER_COLORS = [
   { id: "magenta", label: "Magenta", value: "#FF309B" },
   { id: "gray", label: "Gray", value: "#777777" },
 ] as const;
-// Since 23 September 2026 a "shape" is one of the founder's twenty-one avatars
-// (docs/product/faces-adventurer-measured.md). The scene's "blob" and the eight
-// Grok Bot names map onto the first eight in character.tsx.
-export const CHARACTER_SHAPES = AVATAR_KEYS;
+export const CHARACTER_SHAPES = ["blob", "pebble", "squircle", "tablet", "wedge", "hex", "cloud", "teardrop"] as const;
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5435957
 // The shipped hand-off dwell is a cancellable delay, not an unowned window timer.
@@ -188,7 +184,7 @@ export function normalizeOnboardingDraft(draft: OnboardingDraft): OnboardingDraf
   return {
     ...draft,
     color: CHARACTER_COLORS.some(({ id }) => id === draft.color) ? draft.color : "blue",
-    shape: CHARACTER_SHAPES.some((shape) => shape === draft.shape) ? draft.shape : CHARACTER_SHAPES[0],
+    shape: CHARACTER_SHAPES.some((shape) => shape === draft.shape) ? draft.shape : "blob",
   };
 }
 

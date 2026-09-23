@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ClipboardEvent, KeyboardEvent, PointerEvent, RefObject } from "react";
 import { OnboardingCharacter, resolvePersonaColor, resolvePersonaShape } from "../../onboarding/signed-in/character";
 import type { AvatarCharacter } from "./model";
-import { AVATAR_SHAPES } from "./model";
+import { AVATAR_COLORS, AVATAR_SHAPES } from "./model";
 import type { AvatarEditorController, AvatarEditorSnapshot } from "./controller";
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=2750022 (c3n AvatarEditor view; SHA256 ef4e9831b65d39633f09c9ad0c083b98b7ebf52e3bb558182aee5bde31f876fa)
@@ -28,18 +28,23 @@ function useController(controller: AvatarEditorController): AvatarEditorSnapshot
 
 function CharacterChooser({ snapshot, controller }: { readonly snapshot: AvatarEditorSnapshot; readonly controller: AvatarEditorController }) {
   const character: AvatarCharacter = snapshot.stagedCharacter ?? snapshot.persistedCharacter;
+  const color = character.avatarColor;
+  const shape = character.avatarShape;
   const resolvedColor = resolvePersonaColor(snapshot.agentId, character.avatarColor);
   const resolvedShape = resolvePersonaShape(snapshot.agentId, character.avatarShape);
   const disabled = snapshot.isSaving || snapshot.isCommitting;
-  // One row: the twenty-one avatars. Picking one changes the whole face; there
-  // is no colour row any more (the stored colour is kept and draws nothing).
   return <div className="sand-agent-character sand-78zum5 sand-dt5ytf sand-1oot3zn">
     <div aria-hidden="true">
       <OnboardingCharacter color={resolvedColor} shape={resolvedShape} sizePx={64} state="idle" paused sourceId={snapshot.agentId} />
     </div>
-    <div aria-label="Avatar" className="sand-78zum5 sand-6s0dn4 sand-ehausa" style={{ flexWrap: "wrap" }}>
-      {AVATAR_SHAPES.map((candidate) => <button aria-label={`Avatar ${candidate.replace("adventurer-", "")}`} aria-pressed={resolvedShape === candidate} className="sand-agent-character__shape" disabled={disabled} key={candidate} onClick={() => void controller.stageCharacter({ avatarShape: candidate })} title={candidate} type="button">
+    <div aria-label="Character shape" className="sand-78zum5 sand-6s0dn4 sand-ehausa">
+      {AVATAR_SHAPES.map((candidate) => <button aria-label={`${candidate} character shape`} aria-pressed={shape === candidate} className="sand-agent-character__shape" disabled={disabled} key={candidate} onClick={() => void controller.stageCharacter({ avatarShape: candidate })} title={candidate} type="button">
         <OnboardingCharacter color={resolvedColor} shape={candidate} sizePx={36} state="idle" paused sourceId={`${snapshot.agentId}-${candidate}`} />
+      </button>)}
+    </div>
+    <div aria-label="Character color" className="sand-78zum5 sand-6s0dn4 sand-ehausa">
+      {AVATAR_COLORS.map((candidate) => <button aria-label={`${candidate.label} character color`} aria-pressed={color === candidate.id} disabled={disabled} key={candidate.id} onClick={() => void controller.stageCharacter({ avatarColor: candidate.id })} title={candidate.label} type="button">
+        <span aria-hidden="true" style={{ backgroundColor: candidate.value, display: "block", height: 24, width: 24 }} />
       </button>)}
     </div>
   </div>;
