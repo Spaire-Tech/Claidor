@@ -23,7 +23,7 @@ export function PlatformReceipt({
 }: schemas['PlatformReceiptProps']) {
   return (
     <WrapperPolar>
-      <Preview>Your Claidor {plan_name} receipt</Preview>
+      <Preview>Your Simeon {plan_name} receipt</Preview>
       <Section>
         <Heading as="h1" className="text-xl font-bold text-gray-900">
           Thanks for your payment
@@ -62,7 +62,7 @@ PlatformReceipt.PreviewProps = {
   email: 'creator@example.com',
   plan_name: 'Studio',
   order,
-  url: 'https://app.claidorhq.com/claidor/portal',
+  url: 'https://app.simeonlabs.com/simeon/portal',
 }
 
 export default PlatformReceipt

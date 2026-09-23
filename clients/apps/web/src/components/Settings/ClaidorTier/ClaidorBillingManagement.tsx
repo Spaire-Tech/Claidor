@@ -420,7 +420,7 @@ export default function ClaidorBillingManagement({
         <div className="flex flex-row items-start justify-between gap-x-4">
           <SectionDescription
             title="Payment methods"
-            description="Cards used to pay for your Claidor subscription."
+            description="Cards used to pay for your Simeon subscription."
           />
           <Button
             variant="secondary"
@@ -454,7 +454,7 @@ export default function ClaidorBillingManagement({
         <div className="flex flex-row items-start justify-between gap-x-4">
           <SectionDescription
             title="Billing address"
-            description="Used on invoices for your Claidor subscription."
+            description="Used on invoices for your Simeon subscription."
           />
           <Button variant="secondary" onClick={editAddressModal.show}>
             {hasAddress ? 'Edit' : 'Add address'}
@@ -525,7 +525,7 @@ export default function ClaidorBillingManagement({
       <Section id="orders">
         <SectionDescription
           title="Order history"
-          description="Past invoices for your Claidor subscription."
+          description="Past invoices for your Simeon subscription."
         />
         {orderItems.length === 0 ? (
           <EmptyState>No orders yet.</EmptyState>

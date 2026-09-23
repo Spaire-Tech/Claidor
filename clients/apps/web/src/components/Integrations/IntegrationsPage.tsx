@@ -133,7 +133,7 @@ export default function IntegrationsPage() {
     <DashboardBody title="Integrations">
       <div className="flex flex-col gap-y-2">
         <p className=" text-sm text-gray-500">
-          Connect Claidor to your favorite tools. Copy a prompt, paste it into
+          Connect Simeon to your favorite tools. Copy a prompt, paste it into
           your AI builder, or integrate with our SDK — and start accepting
           payments in minutes.
         </p>

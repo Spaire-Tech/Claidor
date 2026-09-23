@@ -62,7 +62,7 @@ async def transform_webhook_events(
 
                     # Add signed headers to the event
                     event["headers"] = {
-                        "user-agent": "claidorhq.com webhooks",
+                        "user-agent": "simeonlabs.com webhooks",
                         "content-type": "application/json",
                         "webhook-id": webhook_event_id,
                         "webhook-timestamp": str(int(ts.timestamp())),

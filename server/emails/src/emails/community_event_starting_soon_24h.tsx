@@ -47,10 +47,10 @@ CommunityEventStartingSoon24h.PreviewProps = {
     name: 'Acme Inc.',
     slug: 'acme-inc',
     avatar_url: 'https://placehold.co/64x64',
-    website: 'https://acme-inc.claidor.app',
+    website: 'https://acme-inc.simeonlabs.app',
   },
   course_name: 'The Joy of Painting',
-  event_url: 'https://app.claidorhq.com/acme-inc/events/abc-123',
+  event_url: 'https://app.simeonlabs.com/acme-inc/events/abc-123',
   event: {
     title: 'Workshop: Painting happy little trees',
     type: 'workshop',

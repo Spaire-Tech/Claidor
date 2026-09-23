@@ -306,7 +306,7 @@ export const GitHubRepositoryBenefitForm = ({
         >
           Click here
         </Button>{' '}
-        to install it on Claidor.
+        to install it on Simeon.
       </FormDescription>
 
       {/* For error messages */}

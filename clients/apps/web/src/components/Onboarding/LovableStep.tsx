@@ -14,10 +14,10 @@ import LogoIcon from '../Brand/LogoIcon'
 import LovableIcon from '../Icons/frameworks/lovable'
 import { OnboardingStepper } from './OnboardingStepper'
 
-const LOVABLE_PROMPT = `Add Claidor payment checkout to my app. Claidor is my billing provider — it handles payments through a hosted checkout overlay. No API keys or environment variables needed in the frontend.
+const LOVABLE_PROMPT = `Add Simeon payment checkout to my app. Simeon is my billing provider — it handles payments through a hosted checkout overlay. No API keys or environment variables needed in the frontend.
 
 Here's how it works:
-- Claidor uses checkout links (simple URLs) that open a secure payment overlay on top of your app
+- Simeon uses checkout links (simple URLs) that open a secure payment overlay on top of your app
 - No backend code, no API keys, no .env variables — just a script tag and links
 
 Please do the following:
@@ -32,9 +32,9 @@ Please do the following:
   Get Started
 </a>
 
-Use "CHECKOUT_LINK_URL" as a placeholder — I'll replace it with my actual checkout link from the Claidor dashboard after I create my products there.
+Use "CHECKOUT_LINK_URL" as a placeholder — I'll replace it with my actual checkout link from the Simeon dashboard after I create my products there.
 
-3. When a user clicks the button, Claidor's checkout overlay will open automatically (handled by the script). No onClick handler needed.
+3. When a user clicks the button, Simeon's checkout overlay will open automatically (handled by the script). No onClick handler needed.
 
 4. Create a /checkout/success page that displays a confirmation message after a successful purchase.
 
@@ -110,10 +110,10 @@ export const LovableStep = () => {
               </div>
               <LovableIcon size={40} />
               <h1 className="mt-1 text-2xl font-medium tracking-tight md:text-3xl">
-                Build with Lovable. Monetize with Claidor.
+                Build with Lovable. Monetize with Simeon.
               </h1>
               <p className=" max-w-lg text-base leading-relaxed text-gray-500">
-                Claidor partners with Lovable to bring billing directly into your
+                Simeon partners with Lovable to bring billing directly into your
                 app. Just copy the prompt below, paste it into Lovable, and
                 you&apos;ll have a fully working checkout page.
               </p>
@@ -138,7 +138,7 @@ export const LovableStep = () => {
                 <HowItWorksCard
                   number={3}
                   title="Add checkout links"
-                  description="Drop in your Claidor URLs after creating products"
+                  description="Drop in your Simeon URLs after creating products"
                 />
               </div>
             </FadeUp>
@@ -186,7 +186,7 @@ export const LovableStep = () => {
               </div>
               <p className=" text-xs leading-relaxed text-gray-400">
                 After creating your product in the next step, you&apos;ll get a
-                checkout link URL from the Claidor dashboard to replace the{' '}
+                checkout link URL from the Simeon dashboard to replace the{' '}
                 <code className=" rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium">
                   CHECKOUT_LINK_URL
                 </code>{' '}

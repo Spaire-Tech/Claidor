@@ -63,7 +63,7 @@ def fix_for(finding: Finding) -> str | None:
 
 
 def apply_fixes(
-    package: Package, findings: list[Finding], *, author: str = "Claidor"
+    package: Package, findings: list[Finding], *, author: str = "Simeon"
 ) -> FixReport:
     """Edit the package in place, returning what happened.
 

@@ -49,7 +49,7 @@ const TIERS: DesignTier[] = [
     recommended: false,
     includes: 'Includes',
     features: [
-      { label: <>Merchant of Record — Claidor handles tax &amp; VAT</>, shield: true },
+      { label: <>Merchant of Record — Simeon handles tax &amp; VAT</>, shield: true },
       { label: <>7% + $0.30 per transaction</> },
       { label: <>5 published courses</> },
       { label: <>10K email subscribers</> },

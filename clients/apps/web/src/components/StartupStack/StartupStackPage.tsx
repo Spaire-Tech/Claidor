@@ -78,7 +78,7 @@ export default function StartupStackPage() {
         </p>
         {!perksUnlocked && (
           <p className="text-sm text-blue-500">
-            Perks unlock after your first successful sale through Claidor. This
+            Perks unlock after your first successful sale through Simeon. This
             helps ensure the program supports founders who are actively building
             and launching their products.
           </p>

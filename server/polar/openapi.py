@@ -44,7 +44,7 @@ class APITag(StrEnum):
             {
                 "name": cls.public,
                 "description": (
-                    "Endpoints shown and documented in the Claidor API documentation "
+                    "Endpoints shown and documented in the Simeon API documentation "
                     "and available in our SDKs."
                 ),
             },
@@ -74,10 +74,10 @@ class OpenAPIParameters(TypedDict):
 
 
 OPENAPI_PARAMETERS: OpenAPIParameters = {
-    "title": "Claidor API",
-    "summary": "Claidor HTTP and Webhooks API",
+    "title": "Simeon API",
+    "summary": "Simeon HTTP and Webhooks API",
     "version": "0.1.0",
-    "description": "Read the docs at https://docs.claidorhq.com/api-reference",
+    "description": "Read the docs at https://docs.simeonlabs.com/api-reference",
     "docs_url": None
     if settings.is_environment({Environment.sandbox, Environment.production})
     else "/docs",
@@ -87,7 +87,7 @@ OPENAPI_PARAMETERS: OpenAPIParameters = {
     "openapi_tags": APITag.metadata(),  # type: ignore
     "servers": [
         {
-            "url": "https://api.claidorhq.com",
+            "url": "https://api.simeonlabs.com",
             "description": "Production environment",
             "x-speakeasy-server-id": "production",
         },

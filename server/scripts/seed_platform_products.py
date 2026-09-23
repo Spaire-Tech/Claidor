@@ -1,5 +1,5 @@
 """Seed the Starter/Studio/Scale subscription products and overage meters in
-the Claidor platform organization.
+the Simeon platform organization.
 
 Idempotent: re-running updates existing rows in place rather than creating
 duplicates. Products and meters are identified by metadata tier key and
@@ -81,7 +81,7 @@ def typer_async(f):  # type: ignore
 
 
 # ---------------------------------------------------------------------------
-# Specs — the source of truth for what Claidor Starter/Studio/Scale look like.
+# Specs — the source of truth for what Simeon Starter/Studio/Scale look like.
 # ---------------------------------------------------------------------------
 
 
@@ -162,7 +162,7 @@ class PriceSpec:
     price_currency: str = "usd"
     price_amount_cents: int | None = None  # required if amount_type == fixed
     # tax_behavior=inclusive on Starter/Studio/Scale means the headline
-    # price ($49 / $129 / $299) is what the creator pays — Claidor absorbs
+    # price ($49 / $129 / $299) is what the creator pays — Simeon Labs absorbs
     # the sales tax internally rather than tacking it on top. Legacy stays
     # None (no tax to compute on a $0 product).
     tax_behavior: TaxBehaviorOption | None = None
@@ -219,7 +219,7 @@ PRODUCT_SPECS: list[ProductSpec] = [
     ProductSpec(
         tier="starter",
         billing_interval="month",
-        name="Claidor Starter",
+        name="Simeon Starter",
         description=_STARTER_DESCRIPTION,
         recurring_interval=SubscriptionRecurringInterval.month,
         price=PriceSpec(
@@ -232,7 +232,7 @@ PRODUCT_SPECS: list[ProductSpec] = [
     ProductSpec(
         tier="starter",
         billing_interval="year",
-        name="Claidor Starter (Annual)",
+        name="Simeon Starter (Annual)",
         description=_STARTER_DESCRIPTION + " Save 20% with annual billing.",
         recurring_interval=SubscriptionRecurringInterval.year,
         price=PriceSpec(
@@ -246,7 +246,7 @@ PRODUCT_SPECS: list[ProductSpec] = [
     ProductSpec(
         tier="studio",
         billing_interval="month",
-        name="Claidor Studio",
+        name="Simeon Studio",
         description=_STUDIO_DESCRIPTION,
         recurring_interval=SubscriptionRecurringInterval.month,
         price=PriceSpec(
@@ -259,7 +259,7 @@ PRODUCT_SPECS: list[ProductSpec] = [
     ProductSpec(
         tier="studio",
         billing_interval="year",
-        name="Claidor Studio (Annual)",
+        name="Simeon Studio (Annual)",
         description=_STUDIO_DESCRIPTION + " Save 20% with annual billing.",
         recurring_interval=SubscriptionRecurringInterval.year,
         price=PriceSpec(
@@ -273,7 +273,7 @@ PRODUCT_SPECS: list[ProductSpec] = [
     ProductSpec(
         tier="scale",
         billing_interval="month",
-        name="Claidor Scale",
+        name="Simeon Scale",
         description=_SCALE_DESCRIPTION,
         recurring_interval=SubscriptionRecurringInterval.month,
         price=PriceSpec(
@@ -286,7 +286,7 @@ PRODUCT_SPECS: list[ProductSpec] = [
     ProductSpec(
         tier="scale",
         billing_interval="year",
-        name="Claidor Scale (Annual)",
+        name="Simeon Scale (Annual)",
         description=_SCALE_DESCRIPTION + " Save 20% with annual billing.",
         recurring_interval=SubscriptionRecurringInterval.year,
         price=PriceSpec(

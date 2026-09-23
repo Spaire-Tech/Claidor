@@ -1,6 +1,6 @@
 # `@claidor/checkout`
 
-JavaScript utilities for integrating Claidor Checkout into your website or application.
+JavaScript utilities for integrating Simeon Checkout into your website or application.
 
 ## Installation
 

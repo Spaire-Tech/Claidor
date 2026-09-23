@@ -1,7 +1,7 @@
 {
   "name": "@claidor/checkout",
-  "description": "Claidor Checkout SDK",
-  "author": "Claidor",
+  "description": "Simeon Checkout SDK",
+  "author": "Simeon Labs",
   "license": "Apache-2.0",
   "type": "module",
   "version": "0.2.4",

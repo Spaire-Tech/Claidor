@@ -52,12 +52,12 @@ export function PlatformSubscriptionNotice({
 
 PlatformSubscriptionNotice.PreviewProps = {
   email: 'creator@example.com',
-  title: 'Your Claidor payment failed',
+  title: 'Your Simeon payment failed',
   body_lines: [
-    "We couldn't charge your card for the Claidor Studio plan.",
+    "We couldn't charge your card for the Simeon Studio plan.",
     'We will retry automatically over the next few days. To keep your plan, update your payment method in Settings → Plan.',
   ],
-  url: 'https://app.claidorhq.com/dashboard/claidor/settings',
+  url: 'https://app.simeonlabs.com/dashboard/simeon/settings',
   cta_label: 'Update payment method',
 }
 

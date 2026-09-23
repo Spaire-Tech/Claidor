@@ -18,7 +18,7 @@ export default function Page() {
       <Section id="connect-word">
         <SectionDescription
           title="Connect Word"
-          description="Give the Word add-in a token so it can reach the Claidor engine"
+          description="Give the Word add-in a token so it can reach the Simeon engine"
         />
 
         <ConnectWordSettings />

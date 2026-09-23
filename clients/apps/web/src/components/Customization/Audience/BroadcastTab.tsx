@@ -480,7 +480,7 @@ function BroadcastDetail({
                 Update preferences
               </a>
             </p>
-            <p className="small">Sent with Claidor</p>
+            <p className="small">Sent with Simeon</p>
           </div>
         </div>
       </div>

@@ -2406,8 +2406,8 @@ export interface paths {
       cookie?: never
     }
     /**
-     * List Claidor Plans
-     * @description Return the three subscribable Claidor plans (Pro, Studio, Scale)
+     * List Simeon Plans
+     * @description Return the three subscribable Simeon plans (Pro, Studio, Scale)
      *     with their list pricing, trial config, and entitlements.
      *
      *     Used by the dashboard to render the upgrade modal.
@@ -2431,8 +2431,8 @@ export interface paths {
       cookie?: never
     }
     /**
-     * Get Current Claidor Subscription
-     * @description Return the creator org's current Claidor subscription state.
+     * Get Current Simeon Subscription
+     * @description Return the creator org's current Simeon subscription state.
      *
      *     **Scopes**: `organizations:read` `organizations:write`
      */
@@ -2484,7 +2484,7 @@ export interface paths {
     /**
      * Create Upgrade Checkout
      * @description Create a Polar checkout for the target Pro/Scale tier on the
-     *     Claidor platform org. Returns a URL the creator visits to enter their
+     *     Simeon platform org. Returns a URL the creator visits to enter their
      *     card and complete the upgrade.
      *
      *     **Scopes**: `organizations:write`
@@ -2506,8 +2506,8 @@ export interface paths {
     get?: never
     put?: never
     /**
-     * Switch Claidor Plan
-     * @description Switch a creator's current Claidor subscription from one paid tier
+     * Switch Simeon Plan
+     * @description Switch a creator's current Simeon subscription from one paid tier
      *     to another (Starter <-> Studio <-> Scale). The card on file is reused;
      *     proration is invoiced immediately. Use the upgrade-checkout endpoint
      *     to convert a trialing subscription or start a new one, and the cancel
@@ -2532,8 +2532,8 @@ export interface paths {
     get?: never
     put?: never
     /**
-     * Cancel Claidor Subscription
-     * @description Schedule the creator's current Claidor subscription to cancel at
+     * Cancel Simeon Subscription
+     * @description Schedule the creator's current Simeon subscription to cancel at
      *     the end of the current billing period (or, for a trialing
      *     subscription, at the end of the trial — the remaining trial days are
      *     kept and nothing is charged).
@@ -2567,11 +2567,11 @@ export interface paths {
      * @description Mint a short-lived customer-portal session for the platform-org
      *     customer that represents this creator. Returns a URL the creator
      *     can visit to view invoices, update payment methods, and cancel
-     *     their Claidor subscription.
+     *     their Simeon subscription.
      *
      *     The session token authenticates as the platform-org customer, which
      *     is necessarily a different identity from the dashboard user — so the
-     *     portal shows the Claidor subscription (creator-as-buyer view), not the
+     *     portal shows the Simeon subscription (creator-as-buyer view), not the
      *     creator's own customers.
      *
      *     **Scopes**: `organizations:write`
@@ -2641,8 +2641,8 @@ export interface paths {
       cookie?: never
     }
     /**
-     * List Claidor Payment Methods
-     * @description Cards on file the creator uses to pay for their Claidor subscription.
+     * List Simeon Payment Methods
+     * @description Cards on file the creator uses to pay for their Simeon subscription.
      *
      *     **Scopes**: `organizations:read` `organizations:write`
      */
@@ -2666,7 +2666,7 @@ export interface paths {
     put?: never
     post?: never
     /**
-     * Delete Claidor Payment Method
+     * Delete Simeon Payment Method
      * @description Remove a card. The card backing the active subscription is reassigned
      *     automatically; you can't remove your only card.
      *
@@ -2688,8 +2688,8 @@ export interface paths {
     get?: never
     put?: never
     /**
-     * Set Default Claidor Payment Method
-     * @description Make a card the one Claidor charges each billing period.
+     * Set Default Simeon Payment Method
+     * @description Make a card the one Simeon charges each billing period.
      *
      *     **Scopes**: `organizations:write`
      */
@@ -2708,8 +2708,8 @@ export interface paths {
       cookie?: never
     }
     /**
-     * List Claidor Orders
-     * @description Past invoices for the creator's Claidor subscription, newest first.
+     * List Simeon Orders
+     * @description Past invoices for the creator's Simeon subscription, newest first.
      *
      *     **Scopes**: `organizations:read` `organizations:write`
      */
@@ -2730,8 +2730,8 @@ export interface paths {
       cookie?: never
     }
     /**
-     * Get Claidor Order Invoice
-     * @description A signed URL to download a Claidor invoice PDF, generating it first
+     * Get Simeon Order Invoice
+     * @description A signed URL to download a Simeon invoice PDF, generating it first
      *     if it has not been built yet.
      *
      *     **Scopes**: `organizations:read` `organizations:write`
@@ -2753,8 +2753,8 @@ export interface paths {
       cookie?: never
     }
     /**
-     * Get Claidor Billing Details
-     * @description The name/address/tax-id shown on the creator's Claidor invoices.
+     * Get Simeon Billing Details
+     * @description The name/address/tax-id shown on the creator's Simeon invoices.
      *
      *     **Scopes**: `organizations:read` `organizations:write`
      */
@@ -2765,8 +2765,8 @@ export interface paths {
     options?: never
     head?: never
     /**
-     * Update Claidor Billing Details
-     * @description Update the billing identity used on the creator's Claidor invoices.
+     * Update Simeon Billing Details
+     * @description Update the billing identity used on the creator's Simeon invoices.
      *
      *     **Scopes**: `organizations:write`
      */
@@ -3499,7 +3499,7 @@ export interface paths {
      * @description Assign a colleague to the matter — the only way to grant access.
      *
      *     By id, or by the email the colleague signs in with. Email resolution
-     *     requires an existing Claidor account: access is granted to a person the
+     *     requires an existing Simeon account: access is granted to a person the
      *     system knows, never to an address on faith. (Inviting people who have
      *     no account yet is an email feature, deliberately deferred until
      *     sending is set up.)
@@ -8159,7 +8159,7 @@ export interface components {
       | 'redline:write'
     /**
      * BalanceCreditOrderEvent
-     * @description An event created by Claidor when an order is paid via customer balance.
+     * @description An event created by Simeon when an order is paid via customer balance.
      */
     BalanceCreditOrderEvent: {
       /**
@@ -8183,7 +8183,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -8221,7 +8221,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -8255,7 +8255,7 @@ export interface components {
     }
     /**
      * BalanceDisputeEvent
-     * @description An event created by Claidor when an order is disputed.
+     * @description An event created by Simeon when an order is disputed.
      */
     BalanceDisputeEvent: {
       /**
@@ -8279,7 +8279,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -8317,7 +8317,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -8361,7 +8361,7 @@ export interface components {
     }
     /**
      * BalanceDisputeReversalEvent
-     * @description An event created by Claidor when a dispute is won and funds are reinstated.
+     * @description An event created by Simeon when a dispute is won and funds are reinstated.
      */
     BalanceDisputeReversalEvent: {
       /**
@@ -8385,7 +8385,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -8423,7 +8423,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -8436,7 +8436,7 @@ export interface components {
     }
     /**
      * BalanceOrderEvent
-     * @description An event created by Claidor when an order is paid.
+     * @description An event created by Simeon when an order is paid.
      */
     BalanceOrderEvent: {
       /**
@@ -8460,7 +8460,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -8498,7 +8498,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -8540,7 +8540,7 @@ export interface components {
     }
     /**
      * BalanceRefundEvent
-     * @description An event created by Claidor when an order is refunded.
+     * @description An event created by Simeon when an order is refunded.
      */
     BalanceRefundEvent: {
       /**
@@ -8564,7 +8564,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -8602,7 +8602,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -8648,7 +8648,7 @@ export interface components {
     }
     /**
      * BalanceRefundReversalEvent
-     * @description An event created by Claidor when a refund is reverted.
+     * @description An event created by Simeon when a refund is reverted.
      */
     BalanceRefundReversalEvent: {
       /**
@@ -8672,7 +8672,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -8710,7 +8710,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -8933,7 +8933,7 @@ export interface components {
     }
     /**
      * BenefitCycledEvent
-     * @description An event created by Claidor when a benefit is cycled.
+     * @description An event created by Simeon when a benefit is cycled.
      */
     BenefitCycledEvent: {
       /**
@@ -8957,7 +8957,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -8995,7 +8995,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -10285,7 +10285,7 @@ export interface components {
       | components['schemas']['BenefitGrantMeterCreditWebhook']
     /**
      * BenefitGrantedEvent
-     * @description An event created by Claidor when a benefit is granted to a customer.
+     * @description An event created by Simeon when a benefit is granted to a customer.
      */
     BenefitGrantedEvent: {
       /**
@@ -10309,7 +10309,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -10347,7 +10347,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -10851,7 +10851,7 @@ export interface components {
     }
     /**
      * BenefitRevokedEvent
-     * @description An event created by Claidor when a benefit is revoked from a customer.
+     * @description An event created by Simeon when a benefit is revoked from a customer.
      */
     BenefitRevokedEvent: {
       /**
@@ -10875,7 +10875,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -10913,7 +10913,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -11012,7 +11012,7 @@ export interface components {
       | 'meter_credit'
     /**
      * BenefitUpdatedEvent
-     * @description An event created by Claidor when a benefit is updated.
+     * @description An event created by Simeon when a benefit is updated.
      */
     BenefitUpdatedEvent: {
       /**
@@ -11036,7 +11036,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -11074,7 +11074,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -11168,7 +11168,7 @@ export interface components {
     }
     /**
      * CancelClaidorSubscription
-     * @description Schedule the current Claidor subscription for cancellation at the
+     * @description Schedule the current Simeon subscription for cancellation at the
      *     end of the current billing period. When the cancellation revokes, the
      *     org has no active plan and resolves to `inactive` (no free fallback).
      */
@@ -11526,7 +11526,7 @@ export interface components {
       metadata: components['schemas']['MetadataOutputType']
       /**
        * External Customer Id
-       * @description ID of the customer in your system. If a matching customer exists on Claidor, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.
+       * @description ID of the customer in your system. If a matching customer exists on Simeon, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.
        */
       external_customer_id: string | null
       /**
@@ -11680,7 +11680,7 @@ export interface components {
     }
     /**
      * CheckoutCreatedEvent
-     * @description An event created by Claidor when a checkout is created.
+     * @description An event created by Simeon when a checkout is created.
      */
     CheckoutCreatedEvent: {
       /**
@@ -11704,7 +11704,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -11742,7 +11742,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -12476,7 +12476,7 @@ export interface components {
       is_business_customer: boolean
       /**
        * External Customer Id
-       * @description ID of the customer in your system. If a matching customer exists on Claidor, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.
+       * @description ID of the customer in your system. If a matching customer exists on Simeon, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.
        */
       external_customer_id?: string | null
       /** Customer Name */
@@ -12524,7 +12524,7 @@ export interface components {
       return_url?: string | null
       /**
        * Embed Origin
-       * @description If you plan to embed the checkout session, set this to the Origin of the embedding page. It'll allow the Claidor iframe to communicate with the parent page.
+       * @description If you plan to embed the checkout session, set this to the Origin of the embedding page. It'll allow the Simeon iframe to communicate with the parent page.
        */
       embed_origin?: string | null
       /**
@@ -12710,7 +12710,7 @@ export interface components {
       is_business_customer: boolean
       /**
        * External Customer Id
-       * @description ID of the customer in your system. If a matching customer exists on Claidor, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.
+       * @description ID of the customer in your system. If a matching customer exists on Simeon, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.
        */
       external_customer_id?: string | null
       /** Customer Name */
@@ -12758,7 +12758,7 @@ export interface components {
       return_url?: string | null
       /**
        * Embed Origin
-       * @description If you plan to embed the checkout session, set this to the Origin of the embedding page. It'll allow the Claidor iframe to communicate with the parent page.
+       * @description If you plan to embed the checkout session, set this to the Origin of the embedding page. It'll allow the Simeon iframe to communicate with the parent page.
        */
       embed_origin?: string | null
       currency?: components['schemas']['PresentmentCurrency'] | null
@@ -12851,7 +12851,7 @@ export interface components {
       is_business_customer: boolean
       /**
        * External Customer Id
-       * @description ID of the customer in your system. If a matching customer exists on Claidor, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.
+       * @description ID of the customer in your system. If a matching customer exists on Simeon, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.
        */
       external_customer_id?: string | null
       /** Customer Name */
@@ -12899,7 +12899,7 @@ export interface components {
       return_url?: string | null
       /**
        * Embed Origin
-       * @description If you plan to embed the checkout session, set this to the Origin of the embedding page. It'll allow the Claidor iframe to communicate with the parent page.
+       * @description If you plan to embed the checkout session, set this to the Origin of the embedding page. It'll allow the Simeon iframe to communicate with the parent page.
        */
       embed_origin?: string | null
       currency?: components['schemas']['PresentmentCurrency'] | null
@@ -13583,7 +13583,7 @@ export interface components {
       return_url?: string | null
       /**
        * Embed Origin
-       * @description If you plan to embed the checkout session, set this to the Origin of the embedding page. It'll allow the Claidor iframe to communicate with the parent page.
+       * @description If you plan to embed the checkout session, set this to the Origin of the embedding page. It'll allow the Simeon iframe to communicate with the parent page.
        */
       embed_origin?: string | null
     }
@@ -13693,7 +13693,7 @@ export interface components {
       /**
        * Customer Id
        * Format: uuid4
-       * @description ID of the Claidor customer to invoice.
+       * @description ID of the Simeon customer to invoice.
        */
       customer_id: string
       /**
@@ -14399,7 +14399,7 @@ export interface components {
     }
     /**
      * CorpusSearchInterpretation
-     * @description How Claidor read the query — shown back, so it is never a mystery.
+     * @description How Simeon read the query — shown back, so it is never a mystery.
      *
      *     A lawyer who types « article 170 AUPSRVE » and gets a topic list should
      *     see at once that the query was read as a topic, not as a citation.
@@ -14989,7 +14989,7 @@ export interface components {
       | 'ZW'
     /**
      * CurrentClaidorSubscription
-     * @description The caller's current Claidor subscription state (billing-side info,
+     * @description The caller's current Simeon subscription state (billing-side info,
      *     complementary to the entitlements snapshot).
      */
     CurrentClaidorSubscription: {
@@ -15031,7 +15031,7 @@ export interface components {
       cancel_at_period_end: boolean
       /**
        * Past Due At
-       * @description When the subscription first entered `past_due` (a Claidor charge failed). None unless the subscription is past_due.
+       * @description When the subscription first entered `past_due` (a Simeon charge failed). None unless the subscription is past_due.
        */
       past_due_at?: string | null
       /**
@@ -16365,7 +16365,7 @@ export interface components {
     }
     /**
      * CustomerCreatedEvent
-     * @description An event created by Claidor when a customer is created.
+     * @description An event created by Simeon when a customer is created.
      */
     CustomerCreatedEvent: {
       /**
@@ -16389,7 +16389,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -16427,7 +16427,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -16558,7 +16558,7 @@ export interface components {
     }
     /**
      * CustomerDeletedEvent
-     * @description An event created by Claidor when a customer is deleted.
+     * @description An event created by Simeon when a customer is deleted.
      */
     CustomerDeletedEvent: {
       /**
@@ -16582,7 +16582,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -16620,7 +16620,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -17520,7 +17520,7 @@ export interface components {
       expires_at: string
       /**
        * Customer Portal Url
-       * @description URL the creator visits to manage their Claidor subscription (view invoices, change payment method, cancel).
+       * @description URL the creator visits to manage their Simeon subscription (view invoices, change payment method, cancel).
        */
       customer_portal_url: string
     }
@@ -18703,7 +18703,7 @@ export interface components {
     }
     /**
      * CustomerUpdatedEvent
-     * @description An event created by Claidor when a customer is updated.
+     * @description An event created by Simeon when a customer is updated.
      */
     CustomerUpdatedEvent: {
       /**
@@ -18727,7 +18727,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -18765,7 +18765,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -20537,7 +20537,7 @@ export interface components {
     }
     /** Entitlements */
     Entitlements: {
-      /** @description Current Claidor subscription tier. */
+      /** @description Current Simeon subscription tier. */
       tier: components['schemas']['TierKey']
       /** @description List-price transaction fee for this tier. The actually-charged fee is on the merchant's Account record and may be lower for Scale customers with negotiated rates. */
       transaction_fee: components['schemas']['TransactionFee']
@@ -20550,7 +20550,7 @@ export interface components {
       rate_limit_group: string
       /**
        * Monthly Price Cents
-       * @description Monthly Claidor subscription price, in cents (0 = Legacy).
+       * @description Monthly Simeon subscription price, in cents (0 = Legacy).
        */
       monthly_price_cents: number
     }
@@ -20582,11 +20582,11 @@ export interface components {
       external_id?: string | null
       /**
        * Parent Id
-       * @description The ID of the parent event. Can be either a Claidor event ID (UUID) or an external event ID.
+       * @description The ID of the parent event. Can be either a Simeon event ID (UUID) or an external event ID.
        */
       parent_id?: string | null
       /**
-       * @description Key-value object allowing you to store additional information about the event. Some keys like `_llm` are structured data that are handled specially by Claidor.
+       * @description Key-value object allowing you to store additional information about the event. Some keys like `_llm` are structured data that are handled specially by Simeon.
        *
        *     The key must be a string with a maximum length of **40 characters**.
        *     The value must be either:
@@ -20602,7 +20602,7 @@ export interface components {
       /**
        * Customer Id
        * Format: uuid4
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string
       /**
@@ -20636,11 +20636,11 @@ export interface components {
       external_id?: string | null
       /**
        * Parent Id
-       * @description The ID of the parent event. Can be either a Claidor event ID (UUID) or an external event ID.
+       * @description The ID of the parent event. Can be either a Simeon event ID (UUID) or an external event ID.
        */
       parent_id?: string | null
       /**
-       * @description Key-value object allowing you to store additional information about the event. Some keys like `_llm` are structured data that are handled specially by Claidor.
+       * @description Key-value object allowing you to store additional information about the event. Some keys like `_llm` are structured data that are handled specially by Simeon.
        *
        *     The key must be a string with a maximum length of **40 characters**.
        *     The value must be either:
@@ -20685,7 +20685,7 @@ export interface components {
        * @description The name of the event.
        */
       name: string
-      /** @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API. */
+      /** @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API. */
       source: components['schemas']['EventSource']
       /**
        * Occurrences
@@ -23092,7 +23092,7 @@ export interface components {
     }
     /**
      * MeterCreditEvent
-     * @description An event created by Claidor when credits are added to a customer meter.
+     * @description An event created by Simeon when credits are added to a customer meter.
      */
     MeterCreditEvent: {
       /**
@@ -23116,7 +23116,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -23154,7 +23154,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -23202,7 +23202,7 @@ export interface components {
     }
     /**
      * MeterResetEvent
-     * @description An event created by Claidor when a customer meter is reset.
+     * @description An event created by Simeon when a customer meter is reset.
      */
     MeterResetEvent: {
       /**
@@ -23226,7 +23226,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -23264,7 +23264,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -24332,7 +24332,7 @@ export interface components {
     }
     /**
      * OrderPaidEvent
-     * @description An event created by Claidor when an order is paid.
+     * @description An event created by Simeon when an order is paid.
      */
     OrderPaidEvent: {
       /**
@@ -24356,7 +24356,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -24394,7 +24394,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -24511,7 +24511,7 @@ export interface components {
     }
     /**
      * OrderRefundedEvent
-     * @description An event created by Claidor when an order is refunded.
+     * @description An event created by Simeon when an order is refunded.
      */
     OrderRefundedEvent: {
       /**
@@ -24535,7 +24535,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -24573,7 +24573,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -25086,7 +25086,7 @@ export interface components {
        * @description Link to social profiles.
        */
       socials?: components['schemas']['OrganizationSocialLink'][] | null
-      /** @description Additional, private, business details Claidor needs about active organizations for compliance (KYC). */
+      /** @description Additional, private, business details Simeon needs about active organizations for compliance (KYC). */
       details?: components['schemas']['OrganizationDetails'] | null
       /**
        * @description Default tax behavior applied on products.
@@ -25193,7 +25193,7 @@ export interface components {
       product_description: string
       /**
        * Intended Use
-       * @description How the organization will integrate and use Claidor.
+       * @description How the organization will integrate and use Simeon.
        * @default
        */
       intended_use: string
@@ -25244,7 +25244,7 @@ export interface components {
       seat_based_pricing_enabled: boolean
       /**
        * Course Player White Label
-       * @description When true, the course lesson player hides Claidor branding. Requires the white_label_course_player tier feature (Scale).
+       * @description When true, the course lesson player hides Simeon branding. Requires the white_label_course_player tier feature (Scale).
        * @default false
        */
       course_player_white_label: boolean
@@ -25730,7 +25730,7 @@ export interface components {
        * @description Links to social profiles.
        */
       socials?: components['schemas']['OrganizationSocialLink'][] | null
-      /** @description Additional, private, business details Claidor needs about active organizations for compliance (KYC). */
+      /** @description Additional, private, business details Simeon needs about active organizations for compliance (KYC). */
       details?: components['schemas']['OrganizationDetails'] | null
       /** @description Default presentment currency for products and checkout. */
       default_presentment_currency?:
@@ -26125,7 +26125,7 @@ export interface components {
     }
     /**
      * PlatformBillingDetails
-     * @description The billing identity used on the org's Claidor invoices — read off
+     * @description The billing identity used on the org's Simeon invoices — read off
      *     the org's platform Customer row. Powers the dashboard "Billing address"
      *     section so the creator never has to leave for the customer portal.
      */
@@ -26144,7 +26144,7 @@ export interface components {
       tax_id: [string, components['schemas']['TaxIDFormat']] | null
       /**
        * Default Payment Method Id
-       * @description Id of the card Claidor charges by default, if any.
+       * @description Id of the card Simeon charges by default, if any.
        */
       default_payment_method_id: string | null
     }
@@ -26174,7 +26174,7 @@ export interface components {
       | 'platform'
     /**
      * PlatformOrder
-     * @description One past Claidor charge, trimmed to what the dashboard order-history
+     * @description One past Simeon charge, trimmed to what the dashboard order-history
      *     table renders (invoice number, date, description, amount, status,
      *     whether an invoice PDF is downloadable).
      */
@@ -28998,7 +28998,7 @@ export interface components {
     }
     /**
      * SubscriptionBillingPeriodUpdatedEvent
-     * @description An event created by Claidor when a subscription billing period is updated.
+     * @description An event created by Simeon when a subscription billing period is updated.
      */
     SubscriptionBillingPeriodUpdatedEvent: {
       /**
@@ -29022,7 +29022,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -29060,7 +29060,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -29127,7 +29127,7 @@ export interface components {
     }
     /**
      * SubscriptionCanceledEvent
-     * @description An event created by Claidor when a subscription is canceled.
+     * @description An event created by Simeon when a subscription is canceled.
      */
     SubscriptionCanceledEvent: {
       /**
@@ -29151,7 +29151,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -29189,7 +29189,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -29334,13 +29334,13 @@ export interface components {
       product_id: string
       /**
        * External Customer Id
-       * @description The ID of the customer in your system to create the subscription for. It must already exist in Claidor.
+       * @description The ID of the customer in your system to create the subscription for. It must already exist in Simeon.
        */
       external_customer_id: string
     }
     /**
      * SubscriptionCreatedEvent
-     * @description An event created by Claidor when a subscription is created.
+     * @description An event created by Simeon when a subscription is created.
      */
     SubscriptionCreatedEvent: {
       /**
@@ -29364,7 +29364,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -29402,7 +29402,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -29503,7 +29503,7 @@ export interface components {
     }
     /**
      * SubscriptionCycledEvent
-     * @description An event created by Claidor when a subscription is cycled.
+     * @description An event created by Simeon when a subscription is cycled.
      */
     SubscriptionCycledEvent: {
       /**
@@ -29527,7 +29527,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -29565,7 +29565,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -29654,7 +29654,7 @@ export interface components {
     }
     /**
      * SubscriptionProductUpdatedEvent
-     * @description An event created by Claidor when a subscription changes the product.
+     * @description An event created by Simeon when a subscription changes the product.
      */
     SubscriptionProductUpdatedEvent: {
       /**
@@ -29678,7 +29678,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -29716,7 +29716,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -29792,7 +29792,7 @@ export interface components {
     }
     /**
      * SubscriptionRevokedEvent
-     * @description An event created by Claidor when a subscription is revoked from a customer.
+     * @description An event created by Simeon when a subscription is revoked from a customer.
      */
     SubscriptionRevokedEvent: {
       /**
@@ -29816,7 +29816,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -29854,7 +29854,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -29882,7 +29882,7 @@ export interface components {
     }
     /**
      * SubscriptionSeatsUpdatedEvent
-     * @description An event created by Claidor when a the seats on a subscription is changed.
+     * @description An event created by Simeon when a the seats on a subscription is changed.
      */
     SubscriptionSeatsUpdatedEvent: {
       /**
@@ -29906,7 +29906,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -29944,7 +29944,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -30003,7 +30003,7 @@ export interface components {
       | 'unpaid'
     /**
      * SubscriptionUncanceledEvent
-     * @description An event created by Claidor when a subscription cancellation is reversed.
+     * @description An event created by Simeon when a subscription cancellation is reversed.
      */
     SubscriptionUncanceledEvent: {
       /**
@@ -30027,7 +30027,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -30065,7 +30065,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -30372,7 +30372,7 @@ export interface components {
       tier: components['schemas']['TierKey']
       /**
        * Name
-       * @description Display name, e.g. 'Claidor Starter'.
+       * @description Display name, e.g. 'Simeon Starter'.
        */
       name: string
       /**
@@ -30851,7 +30851,7 @@ export interface components {
       success_url?: string | null
       /**
        * Billing Email
-       * @description Email address for Claidor's own billing of this subscription. If omitted, the calling user's email is used. Stored on the platform-org customer record so invoices and receipts reach the creator.
+       * @description Email address for Simeon's own billing of this subscription. If omitted, the calling user's email is used. Stored on the platform-org customer record so invoices and receipts reach the creator.
        */
       billing_email?: string | null
     }
@@ -30920,7 +30920,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Claidor organization associated with the event.
+       * @description ID of the customer in your Simeon organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -30962,7 +30962,7 @@ export interface components {
        */
       name: string
       /**
-       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API. (enum property replaced by openapi-typescript)
+       * @description The source of the event. `system` events are created by Simeon. `user` events are the one you create through our ingestion API. (enum property replaced by openapi-typescript)
        * @enum {string}
        */
       source: 'user'
@@ -47117,7 +47117,7 @@ export interface operations {
           'application/json': components['schemas']['InsufficientBalance']
         }
       }
-      /** @description Payouts are held: a creator org on the account has a past_due Claidor subscription. */
+      /** @description Payouts are held: a creator org on the account has a past_due Simeon subscription. */
       402: {
         headers: {
           [name: string]: unknown

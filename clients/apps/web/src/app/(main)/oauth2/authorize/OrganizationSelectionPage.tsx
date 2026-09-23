@@ -225,7 +225,7 @@ const OrganizationSelectionPage = ({
                           className="cursor-pointer leading-relaxed font-medium"
                         >
                           I understand the restrictions above and agree to
-                          Claidor&rsquo;s terms
+                          Simeon&rsquo;s terms
                         </label>
                         <ul className="flex flex-col gap-y-1 text-sm text-gray-500">
                           <li>

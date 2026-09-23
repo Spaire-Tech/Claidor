@@ -163,7 +163,7 @@ const PerkDetailModalContent = ({
               <span>Claim Now</span>
             </Button>
             <p className="text-center text-xs text-gray-500">
-              Complete your first sale through Claidor to unlock this perk.
+              Complete your first sale through Simeon to unlock this perk.
             </p>
           </div>
         )}

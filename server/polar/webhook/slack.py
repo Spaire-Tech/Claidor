@@ -26,9 +26,9 @@ def get_branded_slack_payload(payload: SlackPayload) -> SlackPayload:
                     {
                         "type": "image",
                         "image_url": settings.FAVICON_URL,
-                        "alt_text": "Claidor",
+                        "alt_text": "Simeon",
                     },
-                    {"type": "mrkdwn", "text": "Powered by Claidor"},
+                    {"type": "mrkdwn", "text": "Powered by Simeon"},
                 ],
             },
         ],
