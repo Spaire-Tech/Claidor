@@ -196,10 +196,12 @@ export function patchOriginalPalette(source) {
  * light default for first paint. Both are patched. The text on the bubble
  * is `text/on-color`, white in every theme, and stays.
  */
-export const USER_BUBBLE_LIGHT = "#007aff";
-export const USER_BUBBLE_DARK = "#0a84ff";
+// 24 September: "instead of the blue of apple, the slate blue from the avatar":
+// the Slate palette's middle colour, the same value the slate mark carries.
+export const USER_BUBBLE_LIGHT = "#5e6d86";
+export const USER_BUBBLE_DARK = "#5e6d86";
 const BUBBLE_TOKEN_BEFORE = 'Ct("fill/bubble-user",El(va("gray","dark",1),va("gray","dark",8),va("gray","dark",1),va("gray","dark",11)))';
-const BUBBLE_TOKEN_AFTER = `Ct("fill/bubble-user",El({value:"${USER_BUBBLE_LIGHT}",alias:"imessage/blue"},{value:"${USER_BUBBLE_DARK}",alias:"imessage/blue-dark"}))`;
+const BUBBLE_TOKEN_AFTER = `Ct("fill/bubble-user",El({value:"${USER_BUBBLE_LIGHT}",alias:"simeon/slate"},{value:"${USER_BUBBLE_DARK}",alias:"simeon/slate-dark"}))`;
 export const BUBBLE_REPLACEMENTS = Object.freeze([["user-bubble-blue", BUBBLE_TOKEN_BEFORE, BUBBLE_TOKEN_AFTER]]);
 const BUBBLE_CSS_BEFORE = "--sand-fill-bubble-user:#070707;";
 const BUBBLE_CSS_AFTER = `--sand-fill-bubble-user:${USER_BUBBLE_LIGHT};`;
