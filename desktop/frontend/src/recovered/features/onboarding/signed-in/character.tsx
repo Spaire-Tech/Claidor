@@ -3,23 +3,41 @@ import type { OnboardingCharacterVisualProps } from "./view";
 import type { OnboardingCharacterState } from "./scene";
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L523
-// Shipped engine geometry is the inline 259px mark, not an image asset.
+// The shipped engine geometry is the inline 259px mark, not an image asset. The
+// box, its centre, the eye line and the state table are kept; the drawing inside
+// the box is the clay redesign of 23 September 2026
+// (docs/product/faces-clay-measured.md): a round head with a hair shape on it,
+// lit from the top left, matte, no outlines. Everything here is drawn from
+// numbers; no image, no WebGL, and nothing outside this file paints the mark.
 const VIEWBOX = "-15 -15 259 259";
 const CENTER = 114.2705;
-const BLOB_PATH = "M228.541 114.228C228.541 130.133 225.184 145.994 218.738 160.534C212.674 174.217 203.904 186.669 193.065 196.988C155.933 232.34 99.497 238.596 55.5255 212.24C45.097 205.99 35.6851 198.072 27.7451 188.866C19.1926 178.953 12.3686 167.569 7.65781 155.351C2.60712 142.264 0 128.257 0 114.228C0 98.3219 3.35751 82.4611 9.80315 67.9215C15.8672 54.2382 24.6377 41.7862 35.4767 31.4668C72.6081 -3.88483 129.044 -10.1413 173.016 16.2153C183.444 22.4653 192.856 30.3829 200.796 39.5896C209.349 49.5018 216.173 60.8859 220.883 73.1037C225.934 86.1906 228.541 100.198 228.541 114.228Z";
+
+// Eleven hair colours, one pair each: the left value is the light theme, the
+// right the dark theme. The keys are Grok Bot's and stay, so an agent whose
+// persisted colour is "cyan" keeps being the cyan one.
 const COLORS: Record<string, { light: string; dark: string }> = {
-  black: { light: "#000000", dark: "#FFFFFF" },
-  brown: { light: "#A27952", dark: "#855C36" },
-  red: { light: "#FF3E51", dark: "#E02135" },
-  orange: { light: "#FF781C", dark: "#FF6700" },
-  yellow: { light: "#FFAF38", dark: "#FF9800" },
-  green: { light: "#00C972", dark: "#009957" },
-  cyan: { light: "#1CC3B0", dark: "#00A592" },
-  blue: { light: "#2A92FE", dark: "#0E74E0" },
-  violet: { light: "#A97EFE", dark: "#804EE0" },
-  magenta: { light: "#FF5EB1", dark: "#E02A88" },
-  gray: { light: "#959595", dark: "#777777" },
+  black: { light: "#2E2C31", dark: "#46444D" },
+  brown: { light: "#8B5A3C", dark: "#9E6D4D" },
+  red: { light: "#D2493F", dark: "#E05E53" },
+  orange: { light: "#E27A33", dark: "#EE8D48" },
+  yellow: { light: "#E5B13B", dark: "#EFC252" },
+  green: { light: "#3E9C61", dark: "#50B074" },
+  cyan: { light: "#2FA49C", dark: "#41B9B0" },
+  blue: { light: "#3C7ED4", dark: "#5092E5" },
+  violet: { light: "#8868D2", dark: "#9B7DE3" },
+  magenta: { light: "#D2558E", dark: "#E1689E" },
+  gray: { light: "#8A8A91", dark: "#A3A3AB" },
 };
+
+// Five matte skin tones. There is no persisted tone field, and the editor's
+// shape cells carry a composite source id, so the tone is a function of the
+// hair colour rather than of the agent id: the same agent gets the same tone
+// on every surface, and the picker's cells all share it.
+export const SKIN_TONES = ["#F4DCC6", "#E9BD95", "#CD9466", "#9F6A47", "#63402B"] as const;
+const TONE_BY_COLOR: Record<string, number> = { black: 2, brown: 3, red: 0, orange: 1, yellow: 0, green: 2, cyan: 4, blue: 1, violet: 3, magenta: 2, gray: 4 };
+export function resolvePersonaTone(color: string): string {
+  return SKIN_TONES[TONE_BY_COLOR[color] ?? 1] ?? SKIN_TONES[1];
+}
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=1412620
 // Eee/Cee's deterministic fallback selectors, kept artifact-exact.
@@ -59,31 +77,36 @@ export function resolvePersonaShape(agentId: string, shape?: string | null): str
 
 type Point = [number, number];
 
-// @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=884671
-// These are the shipped shape constructors (Yse/Ztt/Xtt/FBe/YJt/zBe/ZJt/r_t),
-// kept local so the renderer remains dependency-closed without inventing geometry.
+// The head every hair style sits on. Its centre is 8 below the box centre so a
+// hair shape has room above it inside the box; the eye line stays where the
+// shipped mark put it (CENTER - 8), which is what the gaze and squint numbers
+// in MOTION were tuned for.
+const HEAD = { cx: CENTER, cy: CENTER + 8, r: 92 } as const;
+const EYE_Y = CENTER - 8;
+const EYE_X = 29;
+const SCLERA_R = 13;
+const PUPIL_R = 6.4;
+const MOUTH_Y = CENTER + 36;
+const BROW_Y = EYE_Y - 25;
+
 const TAU = Math.PI * 2;
 const round2 = (value: number) => Math.round(value * 100) / 100;
-const clamp = (value: number, minimum: number, maximum: number) => value < minimum ? minimum : value > maximum ? maximum : value;
+const rad = (degrees: number) => degrees * Math.PI / 180;
+const onHead = (degrees: number, radius: number): Point => [HEAD.cx + Math.cos(rad(degrees)) * radius, HEAD.cy + Math.sin(rad(degrees)) * radius];
 
-function smoothPath(points: readonly Point[]): string {
-  const path = [`M${round2(points[0][0])} ${round2(points[0][1])}`];
-  for (let index = 0; index < points.length; index += 1) {
-    const previous = points[(index - 1 + points.length) % points.length];
-    const current = points[index];
-    const next = points[(index + 1) % points.length];
-    const afterNext = points[(index + 2) % points.length];
-    path.push(`C${round2(current[0] + (next[0] - previous[0]) / 6)} ${round2(current[1] + (next[1] - previous[1]) / 6)} ${round2(next[0] - (afterNext[0] - current[0]) / 6)} ${round2(next[1] - (afterNext[1] - current[1]) / 6)} ${round2(next[0])} ${round2(next[1])}`);
-  }
-  return `${path.join("")}Z`;
-}
-
+// @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=884671
+// The shipped path builder (arc from cubic segments, rounded corners), kept so
+// the hair shapes are constructed from numbers the way the bodies were.
 class ArtifactPath {
   d = "";
   x = 0;
   y = 0;
   move(x: number, y: number) { this.d += `M${round2(x)} ${round2(y)}`; this.x = x; this.y = y; return this; }
   line(x: number, y: number) { this.d += `L${round2(x)} ${round2(y)}`; this.x = x; this.y = y; return this; }
+  quad(x1: number, y1: number, x: number, y: number) {
+    this.d += `Q${round2(x1)} ${round2(y1)} ${round2(x)} ${round2(y)}`;
+    this.x = x; this.y = y; return this;
+  }
   curve(x1: number, y1: number, x2: number, y2: number, x: number, y: number) {
     this.d += `C${round2(x1)} ${round2(y1)} ${round2(x2)} ${round2(y2)} ${round2(x)} ${round2(y)}`;
     this.x = x; this.y = y; return this;
@@ -117,115 +140,96 @@ class ArtifactPath {
   close() { return `${this.d}Z`; }
 }
 
-function sampledPath(generator: (angle: number) => Point, count = 128): string {
-  const points: Point[] = [];
-  for (let index = 0; index < count; index += 1) points.push(generator(index / count * TAU));
-  return smoothPath(points);
+function ellipseSubpath(cx: number, cy: number, rx: number, ry: number): string {
+  return new ArtifactPath().move(cx + rx, cy).arc(cx, cy, rx, ry, 0, TAU).close();
 }
 
-function roundedPolygon(radius: number, sides: number, cornerRadius: number, start = 0): string {
-  const points = Array.from({ length: sides }, (_, index): Point => {
-    const angle = start + index / sides * TAU;
-    return [CENTER + Math.cos(angle) * radius, CENTER + Math.sin(angle) * radius];
-  });
+// A cap: an outer arc over the head from the left temple angle to the right
+// temple angle, closed by a fringe curve whose middle dips to `fringeY`.
+function capPath(outerRadius: number, leftDegrees: number, rightDegrees: number, fringeY: number): string {
+  const [leftX, leftY] = onHead(leftDegrees, outerRadius);
+  const [rightX, rightY] = onHead(rightDegrees, outerRadius);
+  const controlY = 2 * fringeY - (leftY + rightY) / 2;
+  return new ArtifactPath().move(leftX, leftY).arc(HEAD.cx, HEAD.cy, outerRadius, outerRadius, rad(leftDegrees), rad(rightDegrees)).quad(HEAD.cx, controlY, leftX, leftY).close();
+}
+
+function bobPath(): string {
+  const outer = HEAD.r + 10;
+  const [leftX, leftY] = onHead(150, outer);
+  const [rightX, rightY] = onHead(390, outer);
+  const fringe = 80;
+  return new ArtifactPath().move(leftX, leftY).arc(HEAD.cx, HEAD.cy, outer, outer, rad(150), rad(390))
+    .curve(rightX - 14, rightY - 20, HEAD.cx + 66, fringe + 40, HEAD.cx + 62, fringe)
+    .quad(HEAD.cx, fringe + 16, HEAD.cx - 62, fringe)
+    .curve(HEAD.cx - 66, fringe + 40, leftX + 14, leftY - 20, leftX, leftY).close();
+}
+
+function flatTopPath(): string {
+  const left = HEAD.cx - 82, right = HEAD.cx + 82, top = 14, bottom = 78;
+  const corners: Point[] = [[left, top], [right, top], [right, bottom], [left, bottom]];
+  const radii = [26, 26, 12, 12];
   const path = new ArtifactPath();
-  for (let index = 0; index < sides; index += 1) path.corner(points[(index - 1 + sides) % sides], points[index], points[(index + 1) % sides], cornerRadius);
+  for (let index = 0; index < 4; index += 1) path.corner(corners[(index + 3) % 4], corners[index], corners[(index + 1) % 4], radii[index]);
   return path.close();
 }
 
-function cloudPath(points: readonly [number, number, number][], count = 160): string {
-  return sampledPath((angle) => {
-    const cos = Math.cos(angle), sin = Math.sin(angle);
-    let radius = 0;
-    for (const [x, y, circleRadius] of points) {
-      const dx = x - CENTER, dy = y - CENTER, projection = cos * dx + sin * dy;
-      const discriminant = projection * projection - (dx * dx + dy * dy) + circleRadius * circleRadius;
-      if (discriminant <= 0) continue;
-      radius = Math.max(radius, projection + Math.sqrt(discriminant));
-    }
-    return [CENTER + cos * radius, CENTER + sin * radius];
-  }, count);
+function quiffPath(): string {
+  const [leftX, leftY] = onHead(206, HEAD.r + 5);
+  const [rightX, rightY] = onHead(338, HEAD.r + 9);
+  return new ArtifactPath().move(leftX, leftY)
+    .curve(HEAD.cx - 100, 40, HEAD.cx - 60, -4, HEAD.cx + 46, -2)
+    .curve(HEAD.cx + 100, 0, HEAD.cx + 110, 40, rightX, rightY)
+    .curve(HEAD.cx + 44, 100, HEAD.cx - 44, 60, leftX, leftY).close();
 }
 
-function squirclePath(width: number, height: number, exponent: number): string {
-  return sampledPath((angle) => {
-    const cos = Math.cos(angle), sin = Math.sin(angle);
-    return [CENTER + Math.sign(cos) * Math.pow(Math.abs(cos), 2 / exponent) * width, CENTER + Math.sign(sin) * Math.pow(Math.abs(sin), 2 / exponent) * height];
-  });
+function curlsPath(): string {
+  let d = "";
+  for (const degrees of [198, 220, 242, 264, 286, 308, 330]) { const [x, y] = onHead(degrees, HEAD.r + 2); d += ellipseSubpath(x, y, 25, 25); }
+  for (const degrees of [211, 233, 255, 277, 299, 321]) { const [x, y] = onHead(degrees, HEAD.r - 16); d += ellipseSubpath(x, y, 22, 22); }
+  return d;
 }
 
-function tabletPath(width: number, height: number): string {
-  return new ArtifactPath().move(CENTER - width + height, CENTER - height).line(CENTER + width - height, CENTER - height)
-    .arc(CENTER + width - height, CENTER, height, height, -Math.PI / 2, Math.PI / 2).line(CENTER - width + height, CENTER + height)
-    .arc(CENTER - width + height, CENTER, height, height, Math.PI / 2, Math.PI * 3 / 2).close();
-}
-
-function teardropPath(width: number, top: number, bottom: number, cornerRadius: number): string {
-  const ratio = clamp(width / (bottom - top), -1, 1), height = Math.sqrt(1 - ratio * ratio);
-  const right: Point = [CENTER + width * height, bottom - width * ratio];
-  const left: Point = [CENTER - width * height, bottom - width * ratio];
-  const angle = Math.atan2(right[1] - bottom, right[0] - CENTER);
-  return new ArtifactPath().corner(right, [CENTER, top], left, cornerRadius).line(left[0], left[1]).arc(CENTER, bottom, width, width, Math.PI - angle, angle).close();
-}
-
-function pathSamples(path: string): Point[] {
-  const tokens = path.match(/[MLCQZmlcqz]|-?\d*\.?\d+(?:e[-+]?\d+)?/gi) ?? [];
-  const samples: Point[] = [];
-  let index = 0, command = "", startX = 0, startY = 0, x = 0, y = 0;
-  const number = () => Number(tokens[index++]);
-  const addLine = (toX: number, toY: number) => {
-    const length = Math.hypot(toX - x, toY - y), count = Math.max(2, Math.ceil(length / 4));
-    for (let step = 1; step <= count; step += 1) samples.push([x + (toX - x) * step / count, y + (toY - y) * step / count]);
-    x = toX; y = toY;
-  };
-  while (index < tokens.length) {
-    if (/^[a-z]$/i.test(tokens[index])) command = tokens[index++].toUpperCase();
-    if (command === "Z") { addLine(startX, startY); continue; }
-    if (command === "M") { x = number(); y = number(); startX = x; startY = y; samples.push([x, y]); command = "L"; continue; }
-    if (command === "L") { addLine(number(), number()); continue; }
-    if (command === "Q") {
-      const x1 = number(), y1 = number(), endX = number(), endY = number(), fromX = x, fromY = y;
-      const count = Math.max(2, Math.ceil((Math.hypot(x1 - x, y1 - y) + Math.hypot(endX - x1, endY - y1)) / 4));
-      for (let step = 1; step <= count; step += 1) { const t = step / count, inverse = 1 - t; samples.push([inverse * inverse * fromX + 2 * inverse * t * x1 + t * t * endX, inverse * inverse * fromY + 2 * inverse * t * y1 + t * t * endY]); }
-      x = endX; y = endY; continue;
-    }
-    if (command === "C") {
-      const x1 = number(), y1 = number(), x2 = number(), y2 = number(), endX = number(), endY = number(), fromX = x, fromY = y;
-      const count = Math.max(2, Math.ceil((Math.hypot(x1 - x, y1 - y) + Math.hypot(x2 - x1, y2 - y1) + Math.hypot(endX - x2, endY - y2)) / 4));
-      for (let step = 1; step <= count; step += 1) { const t = step / count, inverse = 1 - t; samples.push([inverse ** 3 * fromX + 3 * inverse ** 2 * t * x1 + 3 * inverse * t ** 2 * x2 + t ** 3 * endX, inverse ** 3 * fromY + 3 * inverse ** 2 * t * y1 + 3 * inverse * t ** 2 * y2 + t ** 3 * endY]); }
-      x = endX; y = endY; continue;
-    }
-    index += 1;
-  }
-  return samples;
-}
-
-function normalizeArtifactPath(path: string): string {
-  const samples = pathSamples(path);
-  const xs = samples.map(([x]) => x), ys = samples.map(([, y]) => y);
-  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
-  const offsetX = CENTER - (minX + maxX) / 2, offsetY = CENTER - (minY + maxY) / 2;
-  const scale = clamp(228.44 / Math.max(maxX - minX, maxY - minY), .9, 1.35);
-  if (Math.abs(scale - 1) < .005 && Math.abs(offsetX) < .5 && Math.abs(offsetY) < .5) return path;
-  let numberIndex = 0;
-  return path.replace(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi, (value) => {
-    const coordinate = Number(value) + (numberIndex++ % 2 === 0 ? offsetX : offsetY);
-    return String(round2(CENTER + (coordinate - CENTER) * scale));
-  });
-}
-
-const ARTIFACT_SHAPE_PATHS: Record<string, string> = {
-  blob: normalizeArtifactPath(BLOB_PATH),
-  pebble: normalizeArtifactPath(sampledPath((angle) => { const radius = 108 * (1 + .075 * (Math.sin(angle * 2 + 1.1) * .6 + Math.sin(angle * 3 - 1.1) * .4)); return [CENTER + Math.cos(angle) * radius, CENTER + Math.sin(angle) * radius * .98]; })),
-  squircle: normalizeArtifactPath(squirclePath(107, 107, 4.2)),
-  tablet: normalizeArtifactPath(tabletPath(114, 74)),
-  wedge: normalizeArtifactPath(roundedPolygon(130, 3, 60, -Math.PI / 2)),
-  hex: normalizeArtifactPath(roundedPolygon(114, 6, 20, Math.PI / 6)),
-  cloud: normalizeArtifactPath(cloudPath([[CENTER - 62, CENTER + 26, 56], [CENTER + 62, CENTER + 26, 54], [CENTER, CENTER + 34, 62], [CENTER - 24, CENTER - 30, 62], [CENTER + 38, CENTER - 26, 54]])),
-  teardrop: normalizeArtifactPath(teardropPath(88, CENTER - 114, CENTER + 26, 18)),
+// Eight hair styles under Grok Bot's eight shape keys, so an agent whose
+// persisted shape is "cloud" keeps being the one with that silhouette. A style
+// is a front path drawn over the head and, for the puff, a back path drawn
+// behind it. All of them lie inside the 259 box (a test measures it).
+export interface HairStyle { readonly front: string; readonly back?: string; readonly name: string; readonly rim?: boolean }
+const HAIR_STYLES: Record<string, HairStyle> = {
+  blob: { name: "crop", front: capPath(HEAD.r + 7, 198, 342, 66) },
+  pebble: { name: "bob", front: bobPath() },
+  squircle: { name: "fringe", front: capPath(HEAD.r + 8, 194, 346, 93) },
+  tablet: { name: "flat top", front: flatTopPath() },
+  wedge: { name: "quiff", front: quiffPath() },
+  hex: { name: "puff", front: capPath(HEAD.r + 4, 205, 335, 68), back: ellipseSubpath(HEAD.cx, 66, 108, 80) },
+  cloud: { name: "curls", front: curlsPath(), rim: false },
+  teardrop: { name: "bun", front: capPath(HEAD.r + 6, 200, 340, 66) + ellipseSubpath(HEAD.cx + 4, 15, 24, 24) },
 };
-export const PERSONA_SHAPE_PATHS = ARTIFACT_SHAPE_PATHS;
-export const personaShapePath = (shape: string) => ARTIFACT_SHAPE_PATHS[shape] ?? ARTIFACT_SHAPE_PATHS.blob;
+export const PERSONA_HAIR_STYLES = HAIR_STYLES;
+export const personaHairStyle = (shape: string): HairStyle => HAIR_STYLES[shape] ?? HAIR_STYLES.blob;
+/** The front hair path per shape key; kept under the old name for anything that read the body path. */
+export const PERSONA_SHAPE_PATHS: Record<string, string> = Object.fromEntries(Object.entries(HAIR_STYLES).map(([shape, style]) => [shape, style.front]));
+export const personaShapePath = (shape: string) => personaHairStyle(shape).front;
+
+// The theme is decided by CSS, not by JavaScript, so a face follows the
+// `data-theme` of the shell it sits in (and the OS scheme where there is none)
+// without a re-render. The sheet is installed once per document, from here.
+const FACE_STYLE_ID = "sand-face-style";
+const LIGHT_THEME = "--sand-face-hair:var(--sand-face-hair-light);--sand-face-sclera:#FCF9F4;--sand-face-ink:#2B2724;--sand-face-rim:rgba(255,255,255,.62);--sand-face-shadow:rgba(52,34,20,.34);--sand-face-ground:rgba(52,34,20,.24);--sand-face-blush:rgba(226,124,116,.26)";
+const DARK_THEME = "--sand-face-hair:var(--sand-face-hair-dark);--sand-face-sclera:#EEEAE4;--sand-face-ink:#221F1D;--sand-face-rim:rgba(255,255,255,.36);--sand-face-shadow:rgba(0,0,0,.44);--sand-face-ground:rgba(0,0,0,.42);--sand-face-blush:rgba(226,124,116,.2)";
+export const FACE_STYLE = `.sand-face{${LIGHT_THEME}}
+[data-theme="cursor-dark"] .sand-face,[data-theme="dark"] .sand-face{${DARK_THEME}}
+@media (prefers-color-scheme:dark){.sand-face:where(:not([data-theme="cursor-light"] *,[data-theme="light"] *)){${DARK_THEME}}}
+.sand-face[data-surface-theme="light"]{${LIGHT_THEME}}`;
+function installFaceStyle(): void {
+  if (typeof document === "undefined" || document.getElementById(FACE_STYLE_ID) != null) return;
+  const style = document.createElement("style");
+  style.id = FACE_STYLE_ID;
+  style.textContent = FACE_STYLE;
+  document.head.appendChild(style);
+}
+installFaceStyle();
+
+const mix = (variable: string, other: string, amount: number) => `color-mix(in oklab, var(${variable}), ${other} ${amount}%)`;
 
 function reducedMotion(): boolean {
   return typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
@@ -238,6 +242,22 @@ const MOTION: Record<OnboardingCharacterState, { amplitude: number; period: numb
   happy: { amplitude: 3, period: 2500, tilt: 0, eye: 1.08 }, curious: { amplitude: 2, period: 1800, tilt: 6, eye: 1 }, confused: { amplitude: 1, period: 2200, tilt: -5, eye: .8 }, bored: { amplitude: .4, period: 3500, tilt: -8, eye: .45 }, proud: { amplitude: 2, period: 3500, tilt: 4, eye: 1 }, shy: { amplitude: 1, period: 3000, tilt: -8, eye: .55 }, sad: { amplitude: 1, period: 4000, tilt: -4, eye: .6 }, laughing: { amplitude: 4, period: 1200, tilt: 0, eye: .8 }, scared: { amplitude: 3, period: 900, tilt: 0, eye: 1.1 }, playful: { amplitude: 4, period: 1500, tilt: 8, eye: 1.05 }, celebrate: { amplitude: 7, period: 1400, tilt: 0, eye: 1.12 },
   orbit: { amplitude: 2, period: 4000, tilt: 12, eye: 1 }, radar: { amplitude: 2, period: 4000, tilt: -12, eye: 1 }, progress: { amplitude: 2, period: 4000, tilt: 0, eye: 1 }, spawning: { amplitude: 5, period: 1200, tilt: 0, eye: 1 }, humming: { amplitude: 1.5, period: 5000, tilt: 0, eye: .9 }, dictating: { amplitude: 2, period: 4000, tilt: 0, eye: 1 }, writing: { amplitude: 2, period: 4000, tilt: -4, eye: 1 }, sending: { amplitude: 2, period: 4000, tilt: 0, eye: 1 }, receiving: { amplitude: 2, period: 4000, tilt: 0, eye: 1 }, uploading: { amplitude: 2, period: 4000, tilt: 0, eye: 1 }, notifying: { amplitude: 3, period: 1500, tilt: 0, eye: 1.1 }, alerting: { amplitude: 2, period: 2000, tilt: 0, eye: 1.1 }, dragging: { amplitude: 3, period: 1600, tilt: 5, eye: 1 }, bouncing: { amplitude: 7, period: 3000, tilt: 0, eye: 1 }, "powering-down": { amplitude: 0, period: 6000, tilt: 0, eye: .12 },
 };
+export const PERSONA_MOTION = MOTION;
+
+// The per-state geometry. The shipped mark had one such part, the smile on
+// excited, happy and celebrate; those three keep a smile. The rest is the
+// clay face's own expression table and is read at render, not per frame.
+type Mouth = "smile" | "grin" | "neutral" | "frown" | "o" | "flat";
+const MOUTHS: Partial<Record<OnboardingCharacterState, Mouth>> = {
+  excited: "smile", happy: "smile", celebrate: "smile", proud: "smile", playful: "smile", laughing: "grin",
+  sad: "frown", bored: "frown", drowsy: "frown", surprised: "o", scared: "o", confused: "o",
+  angry: "flat", suspicious: "flat", sleeping: "flat", "powering-down": "flat", shy: "flat",
+};
+const BROWS: Partial<Record<OnboardingCharacterState, { lift: number; angle: number }>> = {
+  angry: { lift: 3, angle: 16 }, suspicious: { lift: 1, angle: 10 }, sad: { lift: -1, angle: -12 }, confused: { lift: -3, angle: -6 }, shy: { lift: -1, angle: -8 },
+  surprised: { lift: -8, angle: 0 }, scared: { lift: -8, angle: 0 }, excited: { lift: -5, angle: 0 }, celebrate: { lift: -5, angle: 0 }, curious: { lift: -4, angle: -4 }, thinking: { lift: -2, angle: 4 },
+};
+const CLOSED_EYES = .3;
 
 export interface OnboardingCharacterHandle { spin(): void; bounce(): void; burst(): void; }
 
@@ -245,10 +265,13 @@ export const OnboardingCharacter = forwardRef<OnboardingCharacterHandle, Onboard
   const id = useId().replace(/:/g, "");
   const faceRef = useRef<SVGGElement>(null);
   const eyesRef = useRef<SVGGElement>(null);
+  const pupilsRef = useRef<SVGGElement>(null);
   const gazeRef = useRef({ x: 0, y: 0 });
   const actionRef = useRef<"spin" | "bounce" | "burst" | null>(null);
   const resolvedColor = resolvePersonaColor(sourceId ?? "persona", color);
   const colors = COLORS[resolvedColor] ?? COLORS.black;
+  const skin = resolvePersonaTone(resolvedColor);
+  const hair = personaHairStyle(shape);
   const motion = MOTION[state] ?? MOTION.idle;
   useImperativeHandle(ref, () => ({
     spin: () => { actionRef.current = "spin"; },
@@ -301,6 +324,7 @@ export const OnboardingCharacter = forwardRef<OnboardingCharacterHandle, Onboard
       const gaze = gazeRef.current;
       face.setAttribute("transform", `translate(0 ${-bob - bounce}) rotate(${motion.tilt + spin} ${CENTER} ${CENTER})`);
       eyes.setAttribute("transform", `translate(${gaze.x * 4} ${gaze.y * 3}) scale(1 ${motion.eye})`);
+      pupilsRef.current?.setAttribute("transform", `translate(${gaze.x * 7} ${gaze.y * 5})`);
       if (action === "bounce" && bounce === 0) actionRef.current = null;
       frame = requestAnimationFrame(tick);
     };
@@ -308,18 +332,81 @@ export const OnboardingCharacter = forwardRef<OnboardingCharacterHandle, Onboard
     return () => cancelAnimationFrame(frame);
   }, [motion, paused, spinSignal, state]);
 
-  const background = surfaceTheme === "light" ? "#fff" : "var(--cursor-bg-editor, #fff)";
-  const rootStyle: CSSProperties = { display: "block", height: sizePx, overflow: "visible", userSelect: "none", WebkitUserSelect: "none", width: sizePx };
-  const eyeHeight = state === "sleeping" ? 2 : 7;
-  return <svg aria-hidden="true" className={className} data-emphasis={emphasis || undefined} data-grok-state={state} data-paused={paused || undefined} data-pointer-shown={pointerShown || undefined} data-reduced-motion={reducedMotion() ? "true" : "false"} data-source-id={sourceId || undefined} height={sizePx} style={rootStyle} viewBox={VIEWBOX} width={sizePx} xmlns="http://www.w3.org/2000/svg">
-    <defs><linearGradient id={`${id}-ink`} x1="0" x2="1" y1="0" y2="1"><stop offset="0" stopColor={colors.light} /><stop offset="1" stopColor={colors.dark} /></linearGradient></defs>
+  const detailed = sizePx >= 36;
+  const closed = motion.eye <= CLOSED_EYES;
+  const mouth: Mouth = MOUTHS[state] ?? "neutral";
+  const brow = BROWS[state] ?? { lift: 0, angle: 0 };
+  const rootStyle = { display: "block", height: sizePx, overflow: "visible", userSelect: "none", WebkitUserSelect: "none", width: sizePx, "--sand-face-hair-light": colors.light, "--sand-face-hair-dark": colors.dark, "--sand-face-skin": skin } as CSSProperties;
+  const skinFill = `url(#${id}-skin)`, hairFill = `url(#${id}-hair)`;
+  const shade = mix("--sand-face-skin", "black", 18);
+  const mouthInk = mix("--sand-face-skin", "black", 46);
+  const browInk = mix("--sand-face-hair", "black", 22);
+  const mouthPath = mouth === "smile" ? `M${CENTER - 20} ${MOUTH_Y - 3} Q${CENTER} ${MOUTH_Y + 16} ${CENTER + 20} ${MOUTH_Y - 3}`
+    : mouth === "grin" ? `M${CENTER - 20} ${MOUTH_Y - 4} Q${CENTER} ${MOUTH_Y + 24} ${CENTER + 20} ${MOUTH_Y - 4}`
+    : mouth === "frown" ? `M${CENTER - 10} ${MOUTH_Y + 6} Q${CENTER} ${MOUTH_Y - 2} ${CENTER + 10} ${MOUTH_Y + 6}`
+    : mouth === "flat" ? `M${CENTER - 9} ${MOUTH_Y + 2} L${CENTER + 9} ${MOUTH_Y + 2}`
+    : `M${CENTER - 9} ${MOUTH_Y} Q${CENTER} ${MOUTH_Y + 6} ${CENTER + 9} ${MOUTH_Y}`;
+  return <svg aria-hidden="true" className={className == null ? "sand-face" : `sand-face ${className}`} data-avatar-hair={hair.name} data-emphasis={emphasis || undefined} data-grok-state={state} data-paused={paused || undefined} data-pointer-shown={pointerShown || undefined} data-reduced-motion={reducedMotion() ? "true" : "false"} data-source-id={sourceId || undefined} data-surface-theme={surfaceTheme} height={sizePx} style={rootStyle} viewBox={VIEWBOX} width={sizePx} xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient cx={CENTER - 34} cy={CENTER - 30} gradientUnits="userSpaceOnUse" id={`${id}-skin`} r="128">
+        <stop offset="0" style={{ stopColor: mix("--sand-face-skin", "white", 28) }} />
+        <stop offset=".5" style={{ stopColor: "var(--sand-face-skin)" }} />
+        <stop offset="1" style={{ stopColor: mix("--sand-face-skin", "black", 22) }} />
+      </radialGradient>
+      <radialGradient cx={CENTER - 30} cy="40" gradientUnits="userSpaceOnUse" id={`${id}-hair`} r="150">
+        <stop offset="0" style={{ stopColor: mix("--sand-face-hair", "white", 22) }} />
+        <stop offset=".45" style={{ stopColor: "var(--sand-face-hair)" }} />
+        <stop offset="1" style={{ stopColor: mix("--sand-face-hair", "black", 26) }} />
+      </radialGradient>
+      <radialGradient id={`${id}-specular`}><stop offset="0" stopColor="#fff" stopOpacity=".42" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></radialGradient>
+      <radialGradient id={`${id}-ground`}><stop offset="0" style={{ stopColor: "var(--sand-face-ground)" }} /><stop offset="1" style={{ stopColor: "var(--sand-face-ground)" }} stopOpacity="0" /></radialGradient>
+      <linearGradient gradientUnits="userSpaceOnUse" id={`${id}-rim`} x1={CENTER - 70} x2={CENTER + 70} y1={CENTER - 70} y2={CENTER + 90}>
+        <stop offset=".55" stopColor="#fff" stopOpacity="0" /><stop offset="1" style={{ stopColor: "var(--sand-face-rim)" }} />
+      </linearGradient>
+      <filter height="150%" id={`${id}-soft`} width="140%" x="-20%" y="-25%"><feGaussianBlur stdDeviation="5" /></filter>
+      <clipPath id={`${id}-head`}><circle cx={HEAD.cx} cy={HEAD.cy} r={HEAD.r} /></clipPath>
+      <clipPath id={`${id}-sclera`}><circle cx={-EYE_X} cy="0" r={SCLERA_R} /><circle cx={EYE_X} cy="0" r={SCLERA_R} /></clipPath>
+    </defs>
+    <ellipse cx={HEAD.cx} cy={HEAD.cy + HEAD.r - 4} fill={`url(#${id}-ground)`} rx="66" ry="11" />
     <g ref={faceRef} transform="translate(0 0)">
-      <path d={personaShapePath(shape)} fill={`url(#${id}-ink)`} />
-      <g ref={eyesRef} fill={background} transform="translate(0 0)">
-        <ellipse cx={CENTER - 29} cy={CENTER - 8} rx="10" ry={eyeHeight} />
-        <ellipse cx={CENTER + 29} cy={CENTER - 8} rx="10" ry={eyeHeight} />
+      {hair.back == null ? null : <path d={hair.back} fill={hairFill} />}
+      {detailed ? <g fill={skinFill}>
+        <circle cx={HEAD.cx - 90} cy={HEAD.cy + 2} r="17" /><circle cx={HEAD.cx + 90} cy={HEAD.cy + 2} r="17" />
+        <circle cx={HEAD.cx - 90} cy={HEAD.cy + 3} fill={shade} opacity=".7" r="8" /><circle cx={HEAD.cx + 90} cy={HEAD.cy + 3} fill={shade} opacity=".7" r="8" />
+      </g> : null}
+      <circle cx={HEAD.cx} cy={HEAD.cy} fill={skinFill} r={HEAD.r} />
+      <g clipPath={`url(#${id}-head)`}><path d={hair.front} fill="var(--sand-face-shadow)" filter={`url(#${id}-soft)`} transform="translate(0 9)" /></g>
+      <ellipse cx={HEAD.cx - 36} cy={HEAD.cy - 46} fill={`url(#${id}-specular)`} rx="28" ry="17" transform={`rotate(-28 ${HEAD.cx - 36} ${HEAD.cy - 46})`} />
+      <circle cx={HEAD.cx} cy={HEAD.cy} fill="none" r={HEAD.r} stroke={`url(#${id}-rim)`} strokeWidth="3" />
+      {detailed ? <>
+        <ellipse cx={HEAD.cx - 54} cy={HEAD.cy + 16} fill="var(--sand-face-blush)" rx="15" ry="8" /><ellipse cx={HEAD.cx + 54} cy={HEAD.cy + 16} fill="var(--sand-face-blush)" rx="15" ry="8" />
+        <ellipse cx={HEAD.cx} cy={HEAD.cy + 8} fill={shade} opacity=".55" rx="6" ry="7.5" />
+        <g fill="none" stroke={browInk} strokeLinecap="round" strokeWidth="5">
+          <path d={`M${CENTER - EYE_X - 11} ${BROW_Y + brow.lift} L${CENTER - EYE_X + 11} ${BROW_Y + brow.lift}`} transform={`rotate(${brow.angle} ${CENTER - EYE_X} ${BROW_Y + brow.lift})`} />
+          <path d={`M${CENTER + EYE_X - 11} ${BROW_Y + brow.lift} L${CENTER + EYE_X + 11} ${BROW_Y + brow.lift}`} transform={`rotate(${-brow.angle} ${CENTER + EYE_X} ${BROW_Y + brow.lift})`} />
+        </g>
+      </> : null}
+      <g transform={`translate(${CENTER} ${EYE_Y})`}>
+        <g ref={eyesRef} transform="translate(0 0)">
+          {closed ? <g fill="none" stroke="var(--sand-face-ink)" strokeLinecap="round" strokeWidth="4.5">
+            <path d={`M${-EYE_X - 11} 0 Q${-EYE_X} 8 ${-EYE_X + 11} 0`} /><path d={`M${EYE_X - 11} 0 Q${EYE_X} 8 ${EYE_X + 11} 0`} />
+          </g> : <>
+            <circle cx={-EYE_X} cy="0" fill="var(--sand-face-sclera)" r={SCLERA_R} /><circle cx={EYE_X} cy="0" fill="var(--sand-face-sclera)" r={SCLERA_R} />
+            <g clipPath={`url(#${id}-sclera)`}>
+              <g ref={pupilsRef} transform="translate(0 0)">
+                <circle cx={-EYE_X + 1} cy="1" fill="var(--sand-face-ink)" r={PUPIL_R} /><circle cx={EYE_X + 1} cy="1" fill="var(--sand-face-ink)" r={PUPIL_R} />
+                <circle cx={-EYE_X - 1.5} cy="-1.5" fill="#fff" opacity=".85" r="2" /><circle cx={EYE_X - 1.5} cy="-1.5" fill="#fff" opacity=".85" r="2" />
+              </g>
+            </g>
+          </>}
+        </g>
       </g>
-      {state === "excited" || state === "happy" || state === "celebrate" ? <path d={`M${CENTER - 20} ${CENTER + 24} Q${CENTER} ${CENTER + 38} ${CENTER + 20} ${CENTER + 24}`} fill="none" stroke={background} strokeLinecap="round" strokeWidth="5" /> : null}
+      {mouth === "o" ? <circle cx={CENTER} cy={MOUTH_Y + 3} fill="var(--sand-face-ink)" r="6" /> : <>
+        {mouth === "grin" ? <path d={`${mouthPath}Z`} fill="var(--sand-face-ink)" /> : null}
+        <path d={mouthPath} fill="none" stroke={mouth === "grin" ? "var(--sand-face-ink)" : mouthInk} strokeLinecap="round" strokeWidth={mouth === "smile" || mouth === "grin" ? 5.5 : 4} />
+      </>}
+      <path d={hair.front} fill={hairFill} />
+      {hair.rim === false ? null : <path d={hair.front} fill="none" stroke={`url(#${id}-rim)`} strokeWidth="2.5" />}
     </g>
   </svg>;
 });

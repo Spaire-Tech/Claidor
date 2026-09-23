@@ -214,6 +214,18 @@ renderer draws its own faces and nothing paints over them.
 `docs/product/faces-slice-measured.md` is the record. Do not put anything
 over the marks again without the founder asking for it by name.
 
+**The reconstruction's faces are clay characters, 23 September 2026.** Asked
+for by name: `OnboardingCharacter` in `frontend/src/recovered/.../character.tsx`
+now draws a matte round head with a hair shape on it, in SVG, from numbers,
+inside the component; nothing paints over the marks. The eleven colour keys,
+the eight shape keys and the hash defaults are unchanged (colour → hair
+colour, shape → hair style, skin tone derived from the colour because no
+tone field is persisted), and the two animation groups and the forty-state
+`MOTION` table are kept. **The packaged app does not draw it**: `npm run
+package` ships the pinned 0.18.0 renderer, whose faces are still Grok Bot's
+own. `docs/product/faces-clay-measured.md` is the record, with what was not
+run on a Mac.
+
 **The app says Simeon, decided 22 September 2026.** "replace all 'Grok Bot'
 by 'Simeon' everywhere in the app. Replace all new names 'New Bot' by 'New
 Agent'. replace grok bot logos by this." The pinned renderer's strings are
