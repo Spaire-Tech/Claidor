@@ -214,6 +214,26 @@ renderer draws its own faces and nothing paints over them.
 `docs/product/faces-slice-measured.md` is the record. Do not put anything
 over the marks again without the founder asking for it by name.
 
+**The agents' faces are the founder's twenty-one avatars, decided 23
+September 2026.** After a clay redesign the founder did not like ("i really
+dont like it"), they made twenty-one avatars with DiceBear's Adventurer
+style and sent them: "i want 20 avatars, straight up. you dont change the
+form of his head, or skin color. when you change something, you change the
+avatar straight up." So there is no shape axis and no colour axis any more.
+The sources are `desktop/brand/avatars/adventurer-01..21.svg` (CC BY 4.0,
+Lisa Wischofsky; the About dialog carries the credit),
+`scripts/import-avatars.mjs` inlines them into `avatars.generated.ts`, and
+`OnboardingCharacter` draws one by key inside the same 259 box with the same
+two animation groups and the same forty-state table; the eyes squint about
+their measured centre. The stored `avatarShape` holds the key; Grok Bot's
+eight shape names map onto the first eight; an agent with nothing stored
+hashes onto the twenty-one; `avatarColor` is kept and draws nothing. The
+editor and the onboarding create step offer one row of twenty-one. **The
+packaged app does not draw it**: `npm run package` ships the pinned 0.18.0
+renderer, whose faces are still Grok Bot's own.
+`docs/product/faces-adventurer-measured.md` is the record, with what was not
+run on a Mac. The clay attempt is `faces-clay-measured.md`, superseded.
+
 **The app says Simeon, decided 22 September 2026.** "replace all 'Grok Bot'
 by 'Simeon' everywhere in the app. Replace all new names 'New Bot' by 'New
 Agent'. replace grok bot logos by this." The pinned renderer's strings are
