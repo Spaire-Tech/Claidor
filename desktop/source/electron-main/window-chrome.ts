@@ -80,6 +80,15 @@ export type WindowChromeOptions =
       readonly frame: true;
       readonly titleBarStyle: "hiddenInset";
       readonly trafficLightPosition: typeof MAC_TRAFFIC_LIGHT_POSITION;
+      /**
+       * The window is glass (23 September 2026, "transparent like apple vision,
+       * and blur everything that is in the background"): macOS draws the
+       * desktop behind the window through its own blur, and stays that way
+       * when the window is not in front. The page paints its surfaces
+       * translucent for this to show (router-renderer-patch.mjs, Liquid Glass).
+       */
+      readonly vibrancy: "under-window";
+      readonly visualEffectState: "active";
     }
   | {
       readonly frame: false;
@@ -94,7 +103,7 @@ export function windowChromeOptions(input: {
   readonly backgroundColor: string;
 }): WindowChromeOptions {
   if (input.isMac) {
-    return { frame: true, titleBarStyle: "hiddenInset", trafficLightPosition: MAC_TRAFFIC_LIGHT_POSITION };
+    return { frame: true, titleBarStyle: "hiddenInset", trafficLightPosition: MAC_TRAFFIC_LIGHT_POSITION, vibrancy: "under-window", visualEffectState: "active" };
   }
   if (input.isWindows) {
     return {

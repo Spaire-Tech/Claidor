@@ -298,7 +298,16 @@ bar: translucent fill, 24 px blur with saturation, a 1 px specular
 highlight along the top, a soft ambient shadow, large radii. Messages
 and text are content and are not touched. Not yet seen on a Mac; the
 composer shell's base styling was not resolvable from the chunk, so it
-is the surface most likely to need a second look.
+is the surface most likely to need a second look. Then: "the answer,
+emoji etc icons next to every message, remove the changes there, too
+noisy" (the message hover actions and reaction pills are out of the
+glass), and "what i meant is for the app to be transparent like apple
+vision, and to blur everything that is in the background": on macOS the
+window now has `vibrancy: "under-window"`, `visualEffectState: "active"`
+and a clear `backgroundColor` (`window-chrome.ts`, `main.ts`,
+`tests/window-glass.test.mjs`), and the page root plus the three atoms
+that paint the editor, base and chrome backgrounds go to 58 % so the
+desktop shows through macOS's own blur. Not yet seen on a Mac.
 `docs/product/name-measured.md` §Simeon is the record.
 
 **The product is Simeon, decided 22 September 2026, later the same day.**

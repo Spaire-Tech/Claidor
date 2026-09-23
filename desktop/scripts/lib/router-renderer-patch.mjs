@@ -265,20 +265,28 @@ export function patchOriginalHeaderStylesheet(css) {
  * large continuous radii on floating controls. Content (messages, text)
  * stays as it is; the material goes on the chrome: the sidebar, the info
  * pane, the composer shell, popover menus, dialogs, floating pills, the
- * message hover actions and the computer's top bar. CSS only, appended to
+ * computer's top bar; not the message hover actions or reaction pills ("too
+ * noisy"). The window itself is glass on macOS (window-chrome.ts, vibrancy
+ * under-window): the page root is transparent and the three atoms that paint
+ * the editor, base and chrome backgrounds go to 58 %, so the desktop shows
+ * through, blurred by macOS ("transparent like apple vision"). CSS only, appended to
  * the pinned stylesheet after the header card; every rule is !important so
  * it wins over the atom classes and inline styles the renderer sets.
  */
 export const LIQUID_GLASS_CSS = `
 /* Simeon: Liquid Glass on the chrome (23 September 2026). */
 :root{--simeon-glass-fill:color-mix(in srgb,var(--cursor-bg-editor) 62%,transparent);--simeon-glass-fill-strong:color-mix(in srgb,var(--cursor-bg-editor) 78%,transparent);--simeon-glass-stroke:color-mix(in srgb,var(--cursor-text-primary) 9%,transparent);--simeon-glass-highlight:light-dark(rgba(255,255,255,.75),rgba(255,255,255,.14));--simeon-glass-shadow:0 10px 30px -6px light-dark(rgba(0,0,0,.16),rgba(0,0,0,.55)),0 2px 8px -2px light-dark(rgba(0,0,0,.08),rgba(0,0,0,.4));--simeon-glass-blur:blur(24px) saturate(1.6)}
-.sand-agents-sidebar{background-color:color-mix(in srgb,var(--cursor-bg-chrome) 70%,transparent)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border-right-color:var(--simeon-glass-stroke)!important}
+html,body,#root{background:transparent!important}
+.sand-1ua6jya{background-color:color-mix(in srgb,var(--cursor-bg-editor) 58%,transparent)!important}
+.sand-vvtkfd{background-color:color-mix(in srgb,var(--sand-bg-base) 58%,transparent)!important}
+.sand-1ys0zz1{background-color:color-mix(in srgb,var(--cursor-bg-chrome) 58%,transparent)!important}
+.sand-agents-sidebar{background-color:color-mix(in srgb,var(--cursor-bg-chrome) 50%,transparent)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border-right-color:var(--simeon-glass-stroke)!important}
 .sand-info-pane{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important}
 .sand-prompt-shell{background-color:var(--simeon-glass-fill)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;border-radius:22px!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important}
 .sand-new-chat-menu,.sand-emoji-menu,.sand-mention-menu,.sand-reference-menu,.sand-agent-hover-card,.sand-link-hover-card,[role=dialog].sand-10e981r,[role=menu].sand-10e981r,[data-floating-ui-portal] .sand-10e981r{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important}
 .sand-new-chat-menu,.sand-emoji-menu,.sand-mention-menu,.sand-reference-menu,[role=dialog].sand-10e981r{border-radius:18px!important}
-.sand-new-messages-pill,.sand-update-pill,.sand-message-hover-actions,.sand-reaction-pill,.sand-computer-top-bar{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important;opacity:1!important}
-.sand-new-messages-pill,.sand-update-pill,.sand-message-hover-actions,.sand-reaction-pill{border-radius:999px!important}
+.sand-new-messages-pill,.sand-update-pill,.sand-computer-top-bar{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important;opacity:1!important}
+.sand-new-messages-pill,.sand-update-pill{border-radius:999px!important}
 .sand-chat-header__name{-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;background-color:var(--simeon-glass-fill-strong)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight)!important}
 `;
 export const LIQUID_GLASS_MARKER = "/* Simeon: Liquid Glass on the chrome";
