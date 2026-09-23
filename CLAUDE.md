@@ -226,7 +226,9 @@ mark, twelve petals measured off the founder's PNG and drawn from numbers
 `make-runtime-assets.mjs app-icon`, the Dock icon through
 `make-app-icon.mjs` → `brand/Simeon.icns`, written over the shell's icons by
 `package-macos.mjs`. **`CFBundleExecutable` and `CFBundleName` are Simeon
-since 23 September, not yet run on a Mac**: the packager renames the shell's
+since 23 September, measured on the founder's Mac (menu bar says Simeon);
+the bundle id is `com.claidor.simeon` and the scheme `simeon://`, measured
+the same day (sign-in returned to the app)**: the packager renames the shell's
 executable, the helper bundles, their executables and plists together
 (`scripts/lib/macos-bundle-rename.mjs`). Earlier that day `CFBundleName`
 alone was set to Simeon and the app died at launch with SIGTRAP in

@@ -165,7 +165,14 @@ Menu bar top left says Simeon, on the founder's Mac, from a build of
 was still at the previous commit, `dist/` held no bundle, and the running
 process was the morning's install; nothing had been built.
 
-## The identity, 23 September 2026 (not yet run on a Mac)
+## The identity, 23 September 2026
+
+**Measured on the founder's Mac, the same day, from a build of `c5be3bb8`:
+"it launched, sign in worked, simeon came to the front."** So the bundle
+identifier, the `simeon://` claim, the sign-in round trip through
+Claidor and the return link all work. Whether macOS asked for the privacy
+grants again, and what identifiers the helper bundles carry, were not
+reported.
 
 "go step 3, com.claidor.simeon is fine." The bundle identifier is
 `com.claidor.simeon` (was `com.anysphere.sand.reconstructed`) and the URL
