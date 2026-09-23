@@ -80,12 +80,17 @@ await run(SYSTEM_TOOLS.plutil, [
   infoPlist,
 ]);
 
-// The menu bar's application name (top left, next to the Apple menu) is
-// CFBundleName, not CFBundleDisplayName; until 23 September 2026 it still said
-// Grok Bot ("rename it to Simeon too"). Only CFBundleExecutable stays "Grok
-// Bot": the executable and the nested helper bundles keep their names, because
-// this build reuses the exact ABI-matched 0.18 runtime unrenamed.
-await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleName", "-string", reconstructedName, infoPlist]);
+// CFBundleName stays "Grok Bot", and it is not a choice. On 23 September 2026
+// the line below set it to Simeon for the menu bar ("rename it to Simeon
+// too"); the packaged app then died 0.2 s after launch, SIGTRAP inside
+// ElectronMain, before any JavaScript ran. Electron locates its helper
+// bundles as "<name> Helper*.app" under Contents/Frameworks, trying the
+// compiled-in product name first and this bundle's CFBundleName second; the
+// helpers here are the unrenamed 0.18 shell's ("Grok Bot Helper*.app"), so
+// "Simeon" finds none and Electron aborts with "Unable to find helper app".
+// The menu bar therefore still says Grok Bot. Making it say Simeon means
+// renaming the four helper bundles, their executables and their plists the
+// way electron-packager does, and re-signing them. docs/product/name-measured.md.
 
 await rm(path.join(outputApp, "Contents", "_CodeSignature"), { recursive: true, force: true });
 try {
