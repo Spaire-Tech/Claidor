@@ -26,13 +26,13 @@ async function loadSchema() {
   return { module, dispose: () => rm(temporary, { recursive: true, force: true }) };
 }
 
-const BLANK_WIDGET = { prompt: "", helpText: "", options: [{ label: "", value: "", description: "" }], allowCustom: false };
+const BLANK_WIDGET = { prompt: "", helpText: "", options: [{ label: "", value: "", description: "", style: "default" }], allowCustom: false, dismissOnMoveOn: false };
 
 test("a text message with a blank widget, secret or images riding on it is a text message", async () => {
   const loaded = await loadSchema();
   try {
     const { sendMessageParameters, isBlankField } = loaded.module;
-    assert.equal(isBlankField(BLANK_WIDGET), true);
+    assert.equal(isBlankField({ prompt: "", options: [{ label: "" }] }), true);
     assert.equal(isBlankField({ prompt: "Which one?", options: [{ label: "A" }] }), false);
     const parsed = sendMessageParameters.parse({
       type: "text",
@@ -45,6 +45,7 @@ test("a text message with a blank widget, secret or images riding on it is a tex
       widget: BLANK_WIDGET,
       bcId: "",
       secret: { label: "", description: "", connector: "", field: "" },
+      // the same fill, as the model actually sends it
     });
     assert.equal(parsed.type, "text");
     assert.equal(parsed.content, "Hey, I’m Chief of Staff.");
