@@ -35,9 +35,30 @@ move.
   a renderer swap cannot pretend it happened.
 - **Packaging identity.** `CFBundleExecutable` stays `Grok Bot` (the
   executable and the helper bundles are the 0.18 shell, unrenamed).
-  `CFBundleName`, which the menu bar shows top left, is `Simeon` since
-  23 September 2026 ("rename it to Simeon too"); until then the menu bar
-  still said Grok Bot.
+  `CFBundleName`, which the menu bar shows top left, **also stays
+  `Grok Bot`**, and this was measured the hard way on 23 September 2026:
+  set to `Simeon` ("rename it to Simeon too"), the packaged app died
+  0.2 s after launch, `EXC_BREAKPOINT (SIGTRAP)` in `ElectronMain`, before
+  any JavaScript ran (crash report `94A9FD31`, `Grok Bot [54613]`).
+  Electron locates its helper bundles as `<name> Helper*.app`, trying the
+  compiled-in product name and then the bundle's `CFBundleName`; the
+  helpers are the shell's `Grok Bot Helper*.app`, so `Simeon` finds none
+  and Electron aborts ("Unable to find helper app"). The line is out
+  again. To make the menu bar say Simeon, rename the four helper bundles,
+  their executables and plists the way electron-packager does, then
+  re-sign. **Done 23 September 2026, later the same day, not yet run on a
+  Mac:** `scripts/lib/macos-bundle-rename.mjs` reads the shell's
+  `CFBundleExecutable`, renames every `Grok Bot *.app` under
+  `Contents/Frameworks` with its inner executable and its
+  `CFBundleExecutable`/`CFBundleName`/`CFBundleDisplayName`, then the main
+  executable, `CFBundleExecutable` and `CFBundleName`, and refuses to touch
+  the main executable if it found no helpers (that is the crash above).
+  Bundle identifiers are not this step's. `tests/macos-bundle-rename.test.mjs`
+  runs it on a fake shell offline and checks the launch invariant: each
+  plist's `CFBundleExecutable` is a file in its own `MacOS` directory, and
+  every helper is `<CFBundleName> Helper*.app`. The package verification
+  reads the reconstructed executable by its new name; the official
+  reference keeps its own.
 
 ## What this test covers, and what it does not
 
@@ -70,8 +91,8 @@ off the founder's PNG as moment ellipses and are drawn from those numbers.
 the PNG: intersection over union 0.947.
 
 Left as it was, on purpose: `CFBundleExecutable` stays `Grok Bot` (the
-executable and helper bundles of the 0.18 shell; `CFBundleName` became
-`Simeon` on 23 September, see above); the class `sand-grok-bot-mark` and other
+executable and helper bundles of the 0.18 shell; `CFBundleName` too, since
+changing it crashes the app, see above); the class `sand-grok-bot-mark` and other
 internal identifiers; the words "Bot" and "Bots" on their own ("Create new
 Bot", "Message Bot", "Search or create Bots", "Give each Bot a job"), which
 the founder did not name; and "Caisra" where our own Settings copy says it.
@@ -95,7 +116,7 @@ Simeon." So:
 | The icon | the mark on a paper tile | the founder's icon: the mark in white on a black rounded tile with a sheen | `simeon-logo.mjs` `simeonAppIconSvg`, measured off the supplied 1024 file (tile 56..967, corners ~171, mark 234..790); drawn back and compared: tile IoU 0.988, mark IoU 0.891 |
 
 Kept, on purpose: `CFBundleExecutable` `Grok Bot` (the shell's executable and
-helper names; `CFBundleName` is `Simeon` since 23 September); identifiers and paths spelled in lower case (`caisra` in the
+helper names, and `CFBundleName` with them, see above); identifiers and paths spelled in lower case (`caisra` in the
 npm name, `CAISRA_*` environment variables, `caisra-ignition-activation.mjs`,
 `~/.caisra`, `data-caisra-screen-notice`); comments in generated protos; and
 this repository's history documents, which say Caisra because they were

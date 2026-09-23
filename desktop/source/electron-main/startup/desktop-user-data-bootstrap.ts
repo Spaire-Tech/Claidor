@@ -46,6 +46,15 @@ export interface DesktopUserDataBootstrapOptions {
 export const PREVIOUS_USER_DATA_NAME = "Grok Bot";
 /** Chromium's caches: rebuilt on demand, never worth copying. */
 const USER_DATA_CACHE_ENTRIES = new Set(["Cache", "Code Cache", "GPUCache", "DawnCache", "DawnGraphiteCache", "DawnWebGPUCache", "blob_storage", "Crashpad", "logs"]);
+/**
+ * Chromium's single-instance lock: three symlinks that name the running
+ * process and its socket. They belong to whichever process made them and
+ * mean nothing in another folder; a copied one would point a fresh Simeon
+ * at Grok Bot's process. Measured 23 September 2026 on the founder's Mac:
+ * the three in Simeon's folder were Simeon's own (its pid, made at its
+ * launch), so the copy had not left any behind there; this keeps it so.
+ */
+export const USER_DATA_SINGLETON_ENTRIES = new Set(["SingletonLock", "SingletonSocket", "SingletonCookie"]);
 
 export interface UserDataRenameMigration {
   readonly from: string;
@@ -76,7 +85,7 @@ export function migrateUserDataFromPreviousName(options: {
   const copy = options.copy ?? ((source: string, target: string) => cpSync(source, target, {
     recursive: true,
     errorOnExist: false,
-    filter: (path) => !USER_DATA_CACHE_ENTRIES.has(basename(path)) || path === source,
+    filter: (path) => path === source || !(USER_DATA_CACHE_ENTRIES.has(basename(path)) || USER_DATA_SINGLETON_ENTRIES.has(basename(path))),
   }));
   try {
     copy(from, to);

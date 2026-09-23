@@ -58,7 +58,7 @@ stops the box, an intro that greets and stops, a hidden turn hitting 40.
 
 ## How to read spend now
 
-- The box: `docker exec grok-bot-local-vm sh -c 'grep "\[claidor\]" /tmp/sand-host.log | tail'`.
+- The box: `docker exec simeon-box sh -c 'grep "\[claidor\]" /tmp/sand-host.log | tail'`.
 - The server: `python -m scripts.desktop_usage_report <email> --hours 24`
   from the Render shell.
-- The brake by hand, still: `docker stop grok-bot-local-vm`.
+- The brake by hand, still: `docker stop simeon-box` (named `grok-bot-local-vm` until 23 September 2026).

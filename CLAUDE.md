@@ -175,7 +175,7 @@ every model call writes a `[claidor]` line with its tokens to the box's
 `/tmp/sand-host.log`; the box token file is written by one writer at a
 time (a startup burst used to race on it and blind the app); and the
 computer narration prints the failure's sentence. The brake by hand is
-still `docker stop grok-bot-local-vm`. Not yet run on a Mac.
+still `docker stop simeon-box` (the container was `grok-bot-local-vm` until 23 September). Not yet run on a Mac.
 
 **The box silences the loop's logger, established 23 September 2026.**
 `ports.runnerContext` is bound at build time
@@ -214,6 +214,26 @@ renderer draws its own faces and nothing paints over them.
 `docs/product/faces-slice-measured.md` is the record. Do not put anything
 over the marks again without the founder asking for it by name.
 
+**The agents' faces are the founder's twenty-one avatars, decided 23
+September 2026.** After a clay redesign the founder did not like ("i really
+dont like it"), they made twenty-one avatars with DiceBear's Adventurer
+style and sent them: "i want 20 avatars, straight up. you dont change the
+form of his head, or skin color. when you change something, you change the
+avatar straight up." So there is no shape axis and no colour axis any more.
+The sources are `desktop/brand/avatars/adventurer-01..21.svg` (CC BY 4.0,
+Lisa Wischofsky; the About dialog carries the credit),
+`scripts/import-avatars.mjs` inlines them into `avatars.generated.ts`, and
+`OnboardingCharacter` draws one by key inside the same 259 box with the same
+two animation groups and the same forty-state table; the eyes squint about
+their measured centre. The stored `avatarShape` holds the key; Grok Bot's
+eight shape names map onto the first eight; an agent with nothing stored
+hashes onto the twenty-one; `avatarColor` is kept and draws nothing. The
+editor and the onboarding create step offer one row of twenty-one. **The
+packaged app does not draw it**: `npm run package` ships the pinned 0.18.0
+renderer, whose faces are still Grok Bot's own.
+`docs/product/faces-adventurer-measured.md` is the record, with what was not
+run on a Mac. The clay attempt is `faces-clay-measured.md`, superseded.
+
 **The app says Simeon, decided 22 September 2026.** "replace all 'Grok Bot'
 by 'Simeon' everywhere in the app. Replace all new names 'New Bot' by 'New
 Agent'. replace grok bot logos by this." The pinned renderer's strings are
@@ -225,10 +245,15 @@ mark, twelve petals measured off the founder's PNG and drawn from numbers
 (`scripts/lib/simeon-logo.mjs`): the in-app icon through
 `make-runtime-assets.mjs app-icon`, the Dock icon through
 `make-app-icon.mjs` → `brand/Simeon.icns`, written over the shell's icons by
-`package-macos.mjs`. `CFBundleExecutable` stays `Grok Bot` (the shell's
-executable and helper bundles); `CFBundleName`, which the menu bar shows
-top left, is `Simeon` since 23 September ("rename it to Simeon too"); the
-bare words "Bot"/"Bots" were not asked for and were left.
+`package-macos.mjs`. **`CFBundleExecutable` and `CFBundleName` are Simeon
+since 23 September, not yet run on a Mac**: the packager renames the shell's
+executable, the helper bundles, their executables and plists together
+(`scripts/lib/macos-bundle-rename.mjs`). Earlier that day `CFBundleName`
+alone was set to Simeon and the app died at launch with SIGTRAP in
+`ElectronMain`, because Electron finds its helper bundles by that name and
+they were still `Grok Bot Helper*.app`; the rename refuses to move the
+executable without helpers to move with it. The bare words "Bot"/"Bots"
+were not asked for and were left.
 `docs/product/name-measured.md` §Simeon is the record.
 
 **The product is Simeon, decided 22 September 2026, later the same day.**
@@ -242,8 +267,9 @@ title and the user-data folder come from. **Until then the staged
 `productName` was still `Grok Bot`, so the app shared
 `~/Library/Application Support/Grok Bot` with the real Grok Bot**; the first
 launch as Simeon copies that folder once (`desktop-user-data-bootstrap.ts`).
-The icon is the founder's black tile (`brand/`). Kept: `CFBundleExecutable`
-`Grok Bot`, lower-case identifiers (`caisra`, `CAISRA_*`, `~/.caisra`).
+The icon is the founder's black tile (`brand/`). Kept: lower-case
+identifiers (`caisra`, `CAISRA_*`, `~/.caisra`); the executable name is
+Simeon since 23 September (above).
 `docs/product/name-measured.md` §Simeon is the record.
 
 **The computer's screen, measured 22 September 2026.** With the Computer

@@ -5,6 +5,8 @@
 // @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=3495766 (qUe file decoding; SHA256 80464803b50f478598080bdc1b91da3996c6b74168e2351ea26f620f2ec62ba5)
 // @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=3496141 (jUe 256px PNG export; SHA256 80464803b50f478598080bdc1b91da3996c6b74168e2351ea26f620f2ec62ba5)
 
+import { AVATAR_KEYS } from "../../onboarding/signed-in/avatars.generated";
+
 export const AVATAR_SOURCE_MAX_BYTES = 25 * 1024 * 1024;
 export const AVATAR_SOURCE_MAX_DIMENSION = 1_024;
 export const AVATAR_OUTPUT_SIZE = 256;
@@ -30,7 +32,10 @@ export const AVATAR_COLORS = [
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=22691 (Ij character shapes; SHA256 ef4e9831b65d39633f09c9ad0c083b98b7ebf52e3bb558182aee5bde31f876fa)
 // @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=22691 (Ij character shapes; SHA256 80464803b50f478598080bdc1b91da3996c6b74168e2351ea26f620f2ec62ba5)
-export const AVATAR_SHAPES = ["blob", "pebble", "squircle", "tablet", "wedge", "hex", "cloud", "teardrop"] as const;
+// Since 23 September 2026 a "shape" is one of the founder's twenty-one avatars
+// (docs/product/faces-adventurer-measured.md); the eight Grok Bot names above
+// this line in history map onto the first eight.
+export const AVATAR_SHAPES = AVATAR_KEYS;
 
 export interface AvatarCharacter {
   readonly avatarShape: string | null;
