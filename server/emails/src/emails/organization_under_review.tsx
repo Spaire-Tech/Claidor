@@ -42,11 +42,11 @@ export function OrganizationUnderReview({
         </BodyText>
         <BodyText>
           During this review period, you can continue setting up your products
-          and integrate Claidor. We&apos;ll notify you as soon as the review is
+          and integrate Simeon. We&apos;ll notify you as soon as the review is
           complete.
         </BodyText>
         <BodyText>
-          <Button href="https://docs.claidorhq.com/merchant-of-record/account-reviews">
+          <Button href="https://docs.simeonlabs.com/merchant-of-record/account-reviews">
             Read more about our review process
           </Button>
         </BodyText>

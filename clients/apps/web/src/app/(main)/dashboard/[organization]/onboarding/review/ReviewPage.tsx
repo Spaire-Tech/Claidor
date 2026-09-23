@@ -90,7 +90,7 @@ export default function ReviewPage() {
       toast({
         title: 'Finish picking your plan',
         description:
-          "Looks like the Claidor checkout didn't finish — pick a plan to keep going.",
+          "Looks like the Simeon checkout didn't finish — pick a plan to keep going.",
       })
       router.replace(planPath)
     }

@@ -1,7 +1,7 @@
 {
   "name": "@claidor/client",
-  "description": "Claidor Internal API Client",
-  "author": "Claidor",
+  "description": "Simeon Internal API Client",
+  "author": "Simeon Labs",
   "license": "Apache-2.0",
   "type": "module",
   "private": true,

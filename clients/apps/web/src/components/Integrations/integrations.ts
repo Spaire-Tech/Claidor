@@ -32,7 +32,7 @@ export const NEXTJS_INTEGRATION: SdkIntegration = {
   type: 'sdk',
   slug: 'nextjs',
   name: 'Next.js',
-  tagline: 'Build with Next.js. Monetize with Claidor.',
+  tagline: 'Build with Next.js. Monetize with Simeon.',
   description:
     'The official @claidor/nextjs adapter gives you checkout, customer portal, and webhooks out of the box \u2014 the full billing loop in a single package.',
   category: 'framework',
@@ -69,9 +69,9 @@ export const LOVABLE_INTEGRATION: PromptIntegration = {
   type: 'prompt',
   slug: 'lovable',
   name: 'Lovable',
-  tagline: 'Build with Lovable. Monetize with Claidor.',
+  tagline: 'Build with Lovable. Monetize with Simeon.',
   description:
-    'Claidor partners with Lovable to bring billing directly into your app. Just copy the prompt below, paste it into Lovable, and you\u2019ll have a fully working checkout page.',
+    'Simeon partners with Lovable to bring billing directly into your app. Just copy the prompt below, paste it into Lovable, and you\u2019ll have a fully working checkout page.',
   category: 'ai-builder',
   categoryLabel: 'AI App Builder',
   howItWorks: [
@@ -82,13 +82,13 @@ export const LOVABLE_INTEGRATION: PromptIntegration = {
     },
     {
       title: 'Add checkout links',
-      description: 'Drop in your Claidor URLs after creating products',
+      description: 'Drop in your Simeon URLs after creating products',
     },
   ],
-  prompt: `Add Claidor payment checkout to my app. Claidor is my billing provider — it handles payments through a hosted checkout overlay. No API keys or environment variables needed in the frontend.
+  prompt: `Add Simeon payment checkout to my app. Simeon is my billing provider — it handles payments through a hosted checkout overlay. No API keys or environment variables needed in the frontend.
 
 Here's how it works:
-- Claidor uses checkout links (simple URLs) that open a secure payment overlay on top of your app
+- Simeon uses checkout links (simple URLs) that open a secure payment overlay on top of your app
 - No backend code, no API keys, no .env variables — just a script tag and links
 
 Please do the following:
@@ -103,25 +103,25 @@ Please do the following:
   Get Started
 </a>
 
-Use "CHECKOUT_LINK_URL" as a placeholder — I'll replace it with my actual checkout link from the Claidor dashboard after I create my products there.
+Use "CHECKOUT_LINK_URL" as a placeholder — I'll replace it with my actual checkout link from the Simeon dashboard after I create my products there.
 
-3. When a user clicks the button, Claidor's checkout overlay will open automatically (handled by the script). No onClick handler needed.
+3. When a user clicks the button, Simeon's checkout overlay will open automatically (handled by the script). No onClick handler needed.
 
 4. Create a /checkout/success page that displays a confirmation message after a successful purchase.
 
 5. Style the pricing page and success page to match the rest of the app's design.`,
   promptFileName: 'lovable-prompt.txt',
   footerNote:
-    'After creating your product in the Claidor dashboard, you\u2019ll get a checkout link URL to replace the CHECKOUT_LINK_URL placeholder above.',
+    'After creating your product in the Simeon dashboard, you\u2019ll get a checkout link URL to replace the CHECKOUT_LINK_URL placeholder above.',
 }
 
 export const SUPABASE_INTEGRATION: SdkIntegration = {
   type: 'sdk',
   slug: 'supabase',
   name: 'Supabase',
-  tagline: 'Build with Supabase. Monetize with Claidor.',
+  tagline: 'Build with Supabase. Monetize with Simeon.',
   description:
-    'Use the Claidor SDK inside Supabase Edge Functions to create checkouts, handle webhooks, and manage subscriptions \u2014 all serverless.',
+    'Use the Simeon SDK inside Supabase Edge Functions to create checkouts, handle webhooks, and manage subscriptions \u2014 all serverless.',
   category: 'backend',
   categoryLabel: 'Backend Platform',
   howItWorks: [
@@ -168,9 +168,9 @@ export const V0_INTEGRATION: PromptIntegration = {
   type: 'prompt',
   slug: 'v0',
   name: 'v0',
-  tagline: 'Build with v0. Monetize with Claidor.',
+  tagline: 'Build with v0. Monetize with Simeon.',
   description:
-    'Claidor works natively with v0-generated Next.js apps. Copy this prompt into v0 to generate a complete pricing page with Claidor\u2019s checkout overlay \u2014 no backend setup required.',
+    'Simeon works natively with v0-generated Next.js apps. Copy this prompt into v0 to generate a complete pricing page with Simeon\u2019s checkout overlay \u2014 no backend setup required.',
   category: 'ai-builder',
   categoryLabel: 'AI App Builder',
   howItWorks: [
@@ -181,19 +181,19 @@ export const V0_INTEGRATION: PromptIntegration = {
     },
     {
       title: 'Add checkout links',
-      description: 'Drop in your Claidor URLs after creating products',
+      description: 'Drop in your Simeon URLs after creating products',
     },
   ],
-  prompt: `Add Claidor payment checkout to my Next.js app. Claidor is my billing provider \u2014 it handles payments through a hosted checkout overlay. No API keys or environment variables needed in the frontend.
+  prompt: `Add Simeon payment checkout to my Next.js app. Simeon is my billing provider \u2014 it handles payments through a hosted checkout overlay. No API keys or environment variables needed in the frontend.
 
 Here's how it works:
-- Claidor uses checkout links (simple URLs) that open a secure payment overlay on top of your app
+- Simeon uses checkout links (simple URLs) that open a secure payment overlay on top of your app
 - No backend code, no API keys, no .env variables \u2014 just a Script tag and links
 - Works natively with Next.js
 
 Please do the following:
 
-1. Add the Claidor checkout embed script in the root layout (app/layout.tsx), right before the closing </body> tag:
+1. Add the Simeon checkout embed script in the root layout (app/layout.tsx), right before the closing </body> tag:
 
 import Script from "next/script";
 
@@ -215,9 +215,9 @@ import Script from "next/script";
   Get Started
 </a>
 
-Use "CHECKOUT_LINK_URL" as a placeholder \u2014 I'll replace it with my actual checkout link from the Claidor dashboard after I create my products there.
+Use "CHECKOUT_LINK_URL" as a placeholder \u2014 I'll replace it with my actual checkout link from the Simeon dashboard after I create my products there.
 
-3. When a user clicks the button, Claidor's checkout overlay opens automatically (handled by the script). No onClick handler needed.
+3. When a user clicks the button, Simeon's checkout overlay opens automatically (handled by the script). No onClick handler needed.
 
 4. Create a /checkout/success page that displays a clean confirmation message after a successful purchase, with a button to return to the dashboard.
 
@@ -229,16 +229,16 @@ Use "CHECKOUT_LINK_URL" as a placeholder \u2014 I'll replace it with my actual c
    - Light/dark mode support using Tailwind's variants`,
   promptFileName: 'v0-claidor-prompt.txt',
   footerNote:
-    'After creating your product in the Claidor dashboard, you\u2019ll get a checkout link URL to replace the CHECKOUT_LINK_URL placeholder above.',
+    'After creating your product in the Simeon dashboard, you\u2019ll get a checkout link URL to replace the CHECKOUT_LINK_URL placeholder above.',
 }
 
 export const REPLIT_INTEGRATION: PromptIntegration = {
   type: 'prompt',
   slug: 'replit',
   name: 'Replit',
-  tagline: 'Build with Replit. Monetize with Claidor.',
+  tagline: 'Build with Replit. Monetize with Simeon.',
   description:
-    'Add billing to any Replit app in seconds. Copy this prompt, paste it into Replit Agent, and it builds a complete checkout flow with Claidor\u2019s payment overlay.',
+    'Add billing to any Replit app in seconds. Copy this prompt, paste it into Replit Agent, and it builds a complete checkout flow with Simeon\u2019s payment overlay.',
   category: 'ai-builder',
   categoryLabel: 'AI App Builder',
   howItWorks: [
@@ -249,13 +249,13 @@ export const REPLIT_INTEGRATION: PromptIntegration = {
     },
     {
       title: 'Add checkout links',
-      description: 'Drop in your Claidor URLs after creating products',
+      description: 'Drop in your Simeon URLs after creating products',
     },
   ],
-  prompt: `Add Claidor payment checkout to my app. Claidor is my billing provider \u2014 it handles payments through a hosted checkout overlay. No API keys or environment variables needed in the frontend.
+  prompt: `Add Simeon payment checkout to my app. Simeon is my billing provider \u2014 it handles payments through a hosted checkout overlay. No API keys or environment variables needed in the frontend.
 
 Here's how it works:
-- Claidor uses checkout links (simple URLs) that open a secure payment overlay on top of your app
+- Simeon uses checkout links (simple URLs) that open a secure payment overlay on top of your app
 - No backend code, no API keys, no .env variables \u2014 just a script tag and links
 
 Please do the following:
@@ -270,25 +270,25 @@ Please do the following:
   Get Started
 </a>
 
-Use "CHECKOUT_LINK_URL" as a placeholder \u2014 I'll replace it with my actual checkout link from the Claidor dashboard after I create my products there.
+Use "CHECKOUT_LINK_URL" as a placeholder \u2014 I'll replace it with my actual checkout link from the Simeon dashboard after I create my products there.
 
-3. When a user clicks the button, Claidor's checkout overlay will open automatically (handled by the script). No onClick handler needed.
+3. When a user clicks the button, Simeon's checkout overlay will open automatically (handled by the script). No onClick handler needed.
 
 4. Create a /checkout/success page that displays a confirmation message after a successful purchase.
 
 5. Style the pricing page and success page to match the rest of the app's design. Use clean, modern styling.`,
   promptFileName: 'replit-prompt.txt',
   footerNote:
-    'After creating your product in the Claidor dashboard, you\u2019ll get a checkout link URL to replace the CHECKOUT_LINK_URL placeholder above.',
+    'After creating your product in the Simeon dashboard, you\u2019ll get a checkout link URL to replace the CHECKOUT_LINK_URL placeholder above.',
 }
 
 export const BOLT_INTEGRATION: PromptIntegration = {
   type: 'prompt',
   slug: 'bolt',
   name: 'Bolt',
-  tagline: 'Build with Bolt. Monetize with Claidor.',
+  tagline: 'Build with Bolt. Monetize with Simeon.',
   description:
-    'Claidor works seamlessly with Bolt-generated apps. Copy this prompt into Bolt to scaffold a complete pricing page with Claidor\u2019s checkout overlay \u2014 zero config required.',
+    'Simeon works seamlessly with Bolt-generated apps. Copy this prompt into Bolt to scaffold a complete pricing page with Simeon\u2019s checkout overlay \u2014 zero config required.',
   category: 'ai-builder',
   categoryLabel: 'AI App Builder',
   howItWorks: [
@@ -299,13 +299,13 @@ export const BOLT_INTEGRATION: PromptIntegration = {
     },
     {
       title: 'Add checkout links',
-      description: 'Drop in your Claidor URLs after creating products',
+      description: 'Drop in your Simeon URLs after creating products',
     },
   ],
-  prompt: `Add Claidor payment checkout to my app. Claidor is my billing provider \u2014 it handles payments through a hosted checkout overlay. No API keys or environment variables needed in the frontend.
+  prompt: `Add Simeon payment checkout to my app. Simeon is my billing provider \u2014 it handles payments through a hosted checkout overlay. No API keys or environment variables needed in the frontend.
 
 Here's how it works:
-- Claidor uses checkout links (simple URLs) that open a secure payment overlay on top of your app
+- Simeon uses checkout links (simple URLs) that open a secure payment overlay on top of your app
 - No backend code, no API keys, no .env variables \u2014 just a script tag and links
 
 Please do the following:
@@ -320,25 +320,25 @@ Please do the following:
   Get Started
 </a>
 
-Use "CHECKOUT_LINK_URL" as a placeholder \u2014 I'll replace it with my actual checkout link from the Claidor dashboard after I create my products there.
+Use "CHECKOUT_LINK_URL" as a placeholder \u2014 I'll replace it with my actual checkout link from the Simeon dashboard after I create my products there.
 
-3. When a user clicks the button, Claidor's checkout overlay will open automatically (handled by the script). No onClick handler needed.
+3. When a user clicks the button, Simeon's checkout overlay will open automatically (handled by the script). No onClick handler needed.
 
 4. Create a /checkout/success page that displays a confirmation message after a successful purchase.
 
 5. Style the pricing page and success page to match the rest of the app's design.`,
   promptFileName: 'bolt-prompt.txt',
   footerNote:
-    'After creating your product in the Claidor dashboard, you\u2019ll get a checkout link URL to replace the CHECKOUT_LINK_URL placeholder above.',
+    'After creating your product in the Simeon dashboard, you\u2019ll get a checkout link URL to replace the CHECKOUT_LINK_URL placeholder above.',
 }
 
 export const BETTERAUTH_INTEGRATION: SdkIntegration = {
   type: 'sdk',
   slug: 'better-auth',
   name: 'BetterAuth',
-  tagline: 'Authenticate with BetterAuth. Monetize with Claidor.',
+  tagline: 'Authenticate with BetterAuth. Monetize with Simeon.',
   description:
-    'The official Claidor plugin for BetterAuth gives you checkout, customer portal, usage-based billing, and webhooks \u2014 all wired into your auth layer.',
+    'The official Simeon plugin for BetterAuth gives you checkout, customer portal, usage-based billing, and webhooks \u2014 all wired into your auth layer.',
   category: 'auth',
   categoryLabel: 'Auth Framework',
   howItWorks: [
@@ -348,7 +348,7 @@ export const BETTERAUTH_INTEGRATION: SdkIntegration = {
     },
     {
       title: 'Configure auth',
-      description: 'Add the Claidor plugin to your BetterAuth config',
+      description: 'Add the Simeon plugin to your BetterAuth config',
     },
     {
       title: 'Go live',
@@ -392,9 +392,9 @@ export const EXPRESS_INTEGRATION: SdkIntegration = {
   type: 'sdk',
   slug: 'express',
   name: 'Express',
-  tagline: 'Build with Express. Monetize with Claidor.',
+  tagline: 'Build with Express. Monetize with Simeon.',
   description:
-    'Use the Claidor SDK in any Express or Node.js backend. Create checkouts, handle webhooks, and manage the full billing lifecycle with a few lines of code.',
+    'Use the Simeon SDK in any Express or Node.js backend. Create checkouts, handle webhooks, and manage the full billing lifecycle with a few lines of code.',
   category: 'framework',
   categoryLabel: 'Framework',
   howItWorks: [
@@ -455,9 +455,9 @@ export const PYTHON_SDK_INTEGRATION: SdkIntegration = {
   type: 'sdk',
   slug: 'python-sdk',
   name: 'Python SDK',
-  tagline: 'Build with Python. Monetize with Claidor.',
+  tagline: 'Build with Python. Monetize with Simeon.',
   description:
-    'The official Claidor Python SDK gives you a clean, type-safe interface to create checkouts, manage subscriptions, and handle webhooks \u2014 built for any Python web framework.',
+    'The official Simeon Python SDK gives you a clean, type-safe interface to create checkouts, manage subscriptions, and handle webhooks \u2014 built for any Python web framework.',
   category: 'backend',
   categoryLabel: 'Backend SDK',
   howItWorks: [
@@ -502,9 +502,9 @@ export const PHP_SDK_INTEGRATION: SdkIntegration = {
   type: 'sdk',
   slug: 'php-sdk',
   name: 'PHP SDK',
-  tagline: 'Build with PHP. Monetize with Claidor.',
+  tagline: 'Build with PHP. Monetize with Simeon.',
   description:
-    'The official Claidor PHP SDK gives you a clean, type-safe interface to create checkouts, manage subscriptions, and handle webhooks \u2014 built for any PHP application.',
+    'The official Simeon PHP SDK gives you a clean, type-safe interface to create checkouts, manage subscriptions, and handle webhooks \u2014 built for any PHP application.',
   category: 'backend',
   categoryLabel: 'Backend SDK',
   howItWorks: [
@@ -552,9 +552,9 @@ export const TYPESCRIPT_SDK_INTEGRATION: SdkIntegration = {
   type: 'sdk',
   slug: 'typescript-sdk',
   name: 'TypeScript SDK',
-  tagline: 'Build with TypeScript. Monetize with Claidor.',
+  tagline: 'Build with TypeScript. Monetize with Simeon.',
   description:
-    'The official Claidor TypeScript SDK gives you a clean, type-safe interface to create checkouts, manage subscriptions, and handle webhooks — built for any TypeScript or JavaScript runtime.',
+    'The official Simeon TypeScript SDK gives you a clean, type-safe interface to create checkouts, manage subscriptions, and handle webhooks — built for any TypeScript or JavaScript runtime.',
   category: 'backend',
   categoryLabel: 'Backend SDK',
   howItWorks: [
@@ -595,9 +595,9 @@ export const RUBY_SDK_INTEGRATION: SdkIntegration = {
   type: 'sdk',
   slug: 'ruby-sdk',
   name: 'Ruby SDK',
-  tagline: 'Build with Ruby. Monetize with Claidor.',
+  tagline: 'Build with Ruby. Monetize with Simeon.',
   description:
-    'The official Claidor Ruby SDK gives you a clean interface to create checkouts, manage subscriptions, and handle webhooks — built for any Ruby application or framework.',
+    'The official Simeon Ruby SDK gives you a clean interface to create checkouts, manage subscriptions, and handle webhooks — built for any Ruby application or framework.',
   category: 'backend',
   categoryLabel: 'Backend SDK',
   howItWorks: [
@@ -638,7 +638,7 @@ export const ASTRO_INTEGRATION: SdkIntegration = {
   type: 'sdk',
   slug: 'astro',
   name: 'Astro',
-  tagline: 'Build with Astro. Monetize with Claidor.',
+  tagline: 'Build with Astro. Monetize with Simeon.',
   description:
     'The official @claidor/astro adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
   category: 'framework',
@@ -676,7 +676,7 @@ export const ELYSIA_INTEGRATION: SdkIntegration = {
   type: 'sdk',
   slug: 'elysia',
   name: 'Elysia',
-  tagline: 'Build with Elysia. Monetize with Claidor.',
+  tagline: 'Build with Elysia. Monetize with Simeon.',
   description:
     'The official @claidor/elysia adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
   category: 'framework',
@@ -718,7 +718,7 @@ export const FASTIFY_INTEGRATION: SdkIntegration = {
   type: 'sdk',
   slug: 'fastify',
   name: 'Fastify',
-  tagline: 'Build with Fastify. Monetize with Claidor.',
+  tagline: 'Build with Fastify. Monetize with Simeon.',
   description:
     'The official @claidor/fastify adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
   category: 'framework',
@@ -760,7 +760,7 @@ export const HONO_INTEGRATION: SdkIntegration = {
   type: 'sdk',
   slug: 'hono',
   name: 'Hono',
-  tagline: 'Build with Hono. Monetize with Claidor.',
+  tagline: 'Build with Hono. Monetize with Simeon.',
   description:
     'The official @claidor/hono adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
   category: 'framework',
@@ -802,9 +802,9 @@ export const LARAVEL_INTEGRATION: SdkIntegration = {
   type: 'sdk',
   slug: 'laravel',
   name: 'Laravel',
-  tagline: 'Build with Laravel. Monetize with Claidor.',
+  tagline: 'Build with Laravel. Monetize with Simeon.',
   description:
-    'The official Laravel adapter for Claidor gives you checkout, subscriptions, customer portal, and webhooks — all integrated with Eloquent and your existing auth.',
+    'The official Laravel adapter for Simeon gives you checkout, subscriptions, customer portal, and webhooks — all integrated with Eloquent and your existing auth.',
   category: 'framework',
   categoryLabel: 'Framework',
   howItWorks: [
@@ -847,7 +847,7 @@ export const NUXT_INTEGRATION: SdkIntegration = {
   type: 'sdk',
   slug: 'nuxt',
   name: 'Nuxt',
-  tagline: 'Build with Nuxt. Monetize with Claidor.',
+  tagline: 'Build with Nuxt. Monetize with Simeon.',
   description:
     'The official @claidor/nuxt module gives you checkout, customer portal, and webhooks out of the box — the full billing loop as a Nuxt module.',
   category: 'framework',
@@ -891,7 +891,7 @@ export const REMIX_INTEGRATION: SdkIntegration = {
   type: 'sdk',
   slug: 'remix',
   name: 'Remix',
-  tagline: 'Build with Remix. Monetize with Claidor.',
+  tagline: 'Build with Remix. Monetize with Simeon.',
   description:
     'The official @claidor/remix adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
   category: 'framework',
@@ -928,7 +928,7 @@ export const SVELTEKIT_INTEGRATION: SdkIntegration = {
   type: 'sdk',
   slug: 'sveltekit',
   name: 'SvelteKit',
-  tagline: 'Build with SvelteKit. Monetize with Claidor.',
+  tagline: 'Build with SvelteKit. Monetize with Simeon.',
   description:
     'The official @claidor/sveltekit adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
   category: 'framework',
@@ -965,7 +965,7 @@ export const TANSTACK_START_INTEGRATION: SdkIntegration = {
   type: 'sdk',
   slug: 'tanstack-start',
   name: 'TanStack Start',
-  tagline: 'Build with TanStack Start. Monetize with Claidor.',
+  tagline: 'Build with TanStack Start. Monetize with Simeon.',
   description:
     'The official @claidor/tanstack-start adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
   category: 'framework',

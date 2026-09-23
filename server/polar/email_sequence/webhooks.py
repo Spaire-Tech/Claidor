@@ -93,7 +93,7 @@ async def dispatch_action_webhook(
     signature = _sign(body)
     headers = {
         "Content-Type": "application/json",
-        "User-Agent": "Claidor-Webhooks/1.0",
+        "User-Agent": "Simeon-Webhooks/1.0",
         "X-Claidor-Signature": f"sha256={signature}",
         "X-Claidor-Event": "email_sequence.action",
     }

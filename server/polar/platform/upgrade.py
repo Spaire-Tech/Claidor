@@ -56,7 +56,7 @@ class TierNotUpgradeable(PlatformUpgradeError):
 class PlatformOrgNotConfigured(PlatformUpgradeError):
     def __init__(self) -> None:
         super().__init__(
-            "Claidor platform billing is not configured on this server.",
+            "Simeon platform billing is not configured on this server.",
             503,
         )
 
@@ -64,7 +64,7 @@ class PlatformOrgNotConfigured(PlatformUpgradeError):
 class TierProductNotFound(PlatformUpgradeError):
     def __init__(self, tier: TierKey) -> None:
         super().__init__(
-            f"Claidor {tier.value.capitalize()} product is not available. "
+            f"Simeon {tier.value.capitalize()} product is not available. "
             "Contact support.",
             503,
         )

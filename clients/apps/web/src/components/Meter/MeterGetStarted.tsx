@@ -43,7 +43,7 @@ export const MeterGetStarted = ({ meter }: MeterGetStartedProps) => {
         <h2 className="text-xl">Get started with metering</h2>
         <p className=" text-gray-500">
           Meter usage by sending events which match the Meter Filter, to the
-          Claidor Ingestion API.
+          Simeon Ingestion API.
         </p>
       </div>
       <pre className=" rounded-lg bg-white p-4 font-mono text-sm">

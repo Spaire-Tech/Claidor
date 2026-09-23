@@ -111,9 +111,9 @@ router = APIRouter(prefix="/platform", tags=["platform", APITag.private])
 
 _PLAN_TIERS = (TierKey.starter, TierKey.studio, TierKey.scale)
 _TIER_NAMES = {
-    TierKey.starter: "Claidor Starter",
-    TierKey.studio: "Claidor Studio",
-    TierKey.scale: "Claidor Scale",
+    TierKey.starter: "Simeon Starter",
+    TierKey.studio: "Simeon Studio",
+    TierKey.scale: "Simeon Scale",
 }
 
 
@@ -540,7 +540,7 @@ async def create_customer_portal_session(
 
     if not platform_service.is_configured():
         raise ResourceNotFound(
-            "Claidor platform billing is not configured on this server."
+            "Simeon platform billing is not configured on this server."
         )
 
     platform_org_id = platform_service.get_id()
@@ -690,7 +690,7 @@ async def _billing_customer(
         raise ResourceNotFound("Organization not found.")
     if not platform_service.is_configured():
         raise ResourceNotFound(
-            "Claidor platform billing is not configured on this server."
+            "Simeon platform billing is not configured on this server."
         )
     customer = await platform_customer_repository(session).get_for_creator_org(
         platform_service.get_id(), organization.id
@@ -796,7 +796,7 @@ def _order_description(order: Order) -> str:
         return order.product.name
     if order.items:
         return order.items[0].label
-    return order.invoice_number or "Claidor subscription"
+    return order.invoice_number or "Simeon subscription"
 
 
 @router.get(

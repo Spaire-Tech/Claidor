@@ -51,7 +51,7 @@ def normalise_opinion_type(raw: str | None) -> str:
 
 #: Sent on every request. A crawler that will not say who it is has no
 #: business asking a non-profit for its data.
-USER_AGENT = "Claidor registry harvester (+https://claidor.com; legal research)"
+USER_AGENT = "Simeon registry harvester (+https://simeonlabs.com; legal research)"
 
 
 @dataclass(frozen=True)

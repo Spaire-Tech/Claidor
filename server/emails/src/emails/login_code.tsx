@@ -16,7 +16,7 @@ export function LoginCode({
         {code_lifetime_minutes.toFixed()} minutes.
       </Preview>
       <IntroWithHi>
-        Use the verification code below to sign in to your Claidor account.{' '}
+        Use the verification code below to sign in to your Simeon account.{' '}
         <span className="font-bold">
           This code is only valid for the next {code_lifetime_minutes} minutes.
         </span>

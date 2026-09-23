@@ -53,7 +53,7 @@ const ConnectAppSettings = () => {
   return (
     <div className="flex flex-col gap-y-4">
       <p className="text-sm text-gray-500">
-        Your app&apos;s server sends every message through Claidor, billed to
+        Your app&apos;s server sends every message through Simeon, billed to
         this account&apos;s allowance. Create a token here, then set it on the
         server as <code>CLAIDOR_ACCESS_TOKEN</code>. Nobody signing in to the
         app is ever asked for one.
@@ -63,7 +63,7 @@ const ConnectAppSettings = () => {
         <div className="flex flex-col gap-y-2">
           <CopyToClipboardInput value={token} />
           <p className="text-sm text-gray-500">
-            Copy it now. This is the only time it can be shown — Claidor stores
+            Copy it now. This is the only time it can be shown — Simeon stores
             a one-way hash of it and cannot recover the token itself. If you
             lose it, revoke it below and create another.
           </p>

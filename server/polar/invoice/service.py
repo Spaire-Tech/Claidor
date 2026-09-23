@@ -105,13 +105,13 @@ class InvoiceService:
             currency=payout.currency,
             items=[
                 InvoiceItem(
-                    description=f"Digital services and products resold by Claidor\nFrom {earliest.strftime('%Y-%m-%d')} to {latest.strftime('%Y-%m-%d')}",
+                    description=f"Digital services and products resold by Simeon Labs\nFrom {earliest.strftime('%Y-%m-%d')} to {latest.strftime('%Y-%m-%d')}",
                     quantity=1,
                     unit_amount=gross_amount,
                     amount=gross_amount,
                 ),
                 InvoiceItem(
-                    description="Claidor revenue share",
+                    description="Simeon Labs revenue share",
                     quantity=1,
                     unit_amount=payment_fees_amount,
                     amount=payment_fees_amount,
@@ -125,8 +125,8 @@ class InvoiceService:
             ],
             notes=(f"{account.billing_notes}\n\n" if account.billing_notes else "")
             + (
-                "Claidor is the merchant of record reselling digital services.\n"
-                "Claidor captures and remits international sales tax from such sales – as needed.\n"
+                "Simeon Labs is the merchant of record reselling digital services.\n"
+                "Simeon Labs captures and remits international sales tax from such sales – as needed.\n"
                 "Payouts (reverse invoices) are therefore without taxes."
             ),
             extra_heading_items=[

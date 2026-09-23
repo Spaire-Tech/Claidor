@@ -16,9 +16,9 @@ export async function generateMetadata(props: {
   return {
     title: `Team | ${organization.name}`,
     openGraph: {
-      title: `Team | ${organization.name} on Claidor`,
-      description: `Manage team members | ${organization.name} on Claidor`,
-      siteName: 'Claidor',
+      title: `Team | ${organization.name} on Simeon`,
+      description: `Manage team members | ${organization.name} on Simeon`,
+      siteName: 'Simeon',
       type: 'website',
       images: [
         {
@@ -34,12 +34,12 @@ export async function generateMetadata(props: {
           url: `https://claidorhq.com/og?org=${organization.slug}`,
           width: 1200,
           height: 630,
-          alt: `${organization.name}'s masterclasses on Claidor`,
+          alt: `${organization.name}'s masterclasses on Simeon`,
         },
       ],
       card: 'summary_large_image',
-      title: `Team | ${organization.name} on Claidor`,
-      description: `Manage team members | ${organization.name} on Claidor`,
+      title: `Team | ${organization.name} on Simeon`,
+      description: `Manage team members | ${organization.name} on Simeon`,
     },
   }
 }

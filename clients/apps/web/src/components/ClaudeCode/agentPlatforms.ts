@@ -38,7 +38,7 @@ const CDN_BASE = 'https://cdn.claidorhq.com'
 export const CLAUDE_CODE_PLATFORM: AgentPlatform = {
   slug: 'claude-code',
   name: 'Claude Code',
-  tagline: 'Run Claidor commands directly inside Claude Code.',
+  tagline: 'Run Simeon commands directly inside Claude Code.',
   description:
     'Add two slash commands to your project, open Claude Code, and type the command. Claude Code reads your project files, asks a few clarifying questions, and writes the billing code directly into your codebase.',
   categoryLabel: 'Terminal AI Agent',
@@ -53,7 +53,7 @@ export const CLAUDE_CODE_PLATFORM: AgentPlatform = {
     {
       title: 'Download the command files',
       description:
-        'Add the Claidor slash commands to your project with one curl command.',
+        'Add the Simeon slash commands to your project with one curl command.',
     },
     {
       title: 'Run the command',
@@ -69,7 +69,7 @@ export const CLAUDE_CODE_PLATFORM: AgentPlatform = {
       slug: 'setup-checkout',
       name: 'Setup Checkout',
       description:
-        'Reads your project, asks about your setup, and wires up Claidor checkout — overlay, programmatic, or server-side.',
+        'Reads your project, asks about your setup, and wires up Simeon checkout — overlay, programmatic, or server-side.',
       snippet: `cd your-project\nclaude\n\n# Then type:\n/setup-checkout`,
       snippetLang: 'bash',
       snippetLabel: 'Run in terminal',
@@ -92,9 +92,9 @@ export const CLAUDE_CODE_PLATFORM: AgentPlatform = {
 export const CURSOR_PLATFORM: AgentPlatform = {
   slug: 'cursor',
   name: 'Cursor',
-  tagline: 'Add a rules file, then ask Cursor to integrate Claidor.',
+  tagline: 'Add a rules file, then ask Cursor to integrate Simeon.',
   description:
-    'Drop `.cursor/rules/claidor.mdc` into your project. When you open Cursor Agent mode and describe what you want, Cursor has full Claidor API and SDK context — so you don\'t have to explain it yourself.',
+    'Drop `.cursor/rules/claidor.mdc` into your project. When you open Cursor Agent mode and describe what you want, Cursor has full Simeon API and SDK context — so you don\'t have to explain it yourself.',
   categoryLabel: 'AI Code Editor',
   categoryColor: 'text-sky-600',
   categoryBg: 'bg-sky-50',
@@ -102,7 +102,7 @@ export const CURSOR_PLATFORM: AgentPlatform = {
     {
       title: 'Download the rules file',
       description:
-        'Run one command to add `.cursor/rules/claidor.mdc`. Commit it so every developer gets Claidor context in their Cursor.',
+        'Run one command to add `.cursor/rules/claidor.mdc`. Commit it so every developer gets Simeon context in their Cursor.',
     },
     {
       title: 'Open Cursor Chat (Agent mode)',
@@ -112,19 +112,19 @@ export const CURSOR_PLATFORM: AgentPlatform = {
     {
       title: 'Describe what you need',
       description:
-        'Type your request. Cursor uses the rules file for Claidor API context and reads your code to write the integration.',
+        'Type your request. Cursor uses the rules file for Simeon API context and reads your code to write the integration.',
     },
   ],
   setupSnippet: `mkdir -p .cursor/rules\ncurl -sL -o .cursor/rules/claidor.mdc \\\n  ${CDN_BASE}/cursor/rules/claidor.mdc`,
   setupNote:
-    'Cursor reads `.cursor/rules/*.mdc` files automatically in every chat session. Commit this file so your whole team gets Claidor context.',
+    'Cursor reads `.cursor/rules/*.mdc` files automatically in every chat session. Commit this file so your whole team gets Simeon context.',
   commands: [
     {
       slug: 'setup-checkout',
       name: 'Add Checkout',
       description:
-        'Cursor reads the rules file for Claidor API context, then writes checkout into your project.',
-      snippet: `Add Claidor checkout to this project`,
+        'Cursor reads the rules file for Simeon API context, then writes checkout into your project.',
+      snippet: `Add Simeon checkout to this project`,
       snippetLang: 'text',
       snippetLabel: 'Paste in Cursor Chat (Agent mode)',
     },
@@ -132,8 +132,8 @@ export const CURSOR_PLATFORM: AgentPlatform = {
       slug: 'setup-usage-billing',
       name: 'Set Up Usage Billing',
       description:
-        'Cursor reads the rules file for Claidor API context, then writes usage billing ingestion code.',
-      snippet: `Set up Claidor usage billing in this project`,
+        'Cursor reads the rules file for Simeon API context, then writes usage billing ingestion code.',
+      snippet: `Set up Simeon usage billing in this project`,
       snippetLang: 'text',
       snippetLabel: 'Paste in Cursor Chat (Agent mode)',
     },
@@ -144,9 +144,9 @@ export const CURSOR_PLATFORM: AgentPlatform = {
 export const CODEX_PLATFORM: AgentPlatform = {
   slug: 'codex',
   name: 'Codex',
-  tagline: 'Run one command to integrate Claidor from your terminal.',
+  tagline: 'Run one command to integrate Simeon from your terminal.',
   description:
-    'Install the Codex CLI, add a context file to your project, then give it a task. Codex reads AGENTS.md at startup, so it has Claidor API context before it touches your code.',
+    'Install the Codex CLI, add a context file to your project, then give it a task. Codex reads AGENTS.md at startup, so it has Simeon API context before it touches your code.',
   categoryLabel: 'CLI AI Agent',
   categoryColor: 'text-neutral-500',
   categoryBg: 'bg-neutral-100',
@@ -175,8 +175,8 @@ export const CODEX_PLATFORM: AgentPlatform = {
       slug: 'setup-checkout',
       name: 'Add Checkout',
       description:
-        'Codex reads AGENTS.md for Claidor context, then writes checkout into your project.',
-      snippet: `codex "Add Claidor checkout to this project"`,
+        'Codex reads AGENTS.md for Simeon context, then writes checkout into your project.',
+      snippet: `codex "Add Simeon checkout to this project"`,
       snippetLang: 'bash',
       snippetLabel: 'Run in your project directory',
     },
@@ -184,8 +184,8 @@ export const CODEX_PLATFORM: AgentPlatform = {
       slug: 'setup-usage-billing',
       name: 'Set Up Usage Billing',
       description:
-        'Codex reads AGENTS.md for Claidor context, then writes usage billing ingestion code.',
-      snippet: `codex "Set up Claidor usage billing in this project"`,
+        'Codex reads AGENTS.md for Simeon context, then writes usage billing ingestion code.',
+      snippet: `codex "Set up Simeon usage billing in this project"`,
       snippetLang: 'bash',
       snippetLabel: 'Run in your project directory',
     },
@@ -196,9 +196,9 @@ export const CODEX_PLATFORM: AgentPlatform = {
 export const GITHUB_COPILOT_PLATFORM: AgentPlatform = {
   slug: 'github-copilot',
   name: 'GitHub Copilot',
-  tagline: 'Give Copilot Claidor context. Then ask it to add billing.',
+  tagline: 'Give Copilot Simeon context. Then ask it to add billing.',
   description:
-    'Commit `.github/copilot-instructions.md` to your repo. GitHub Copilot loads it automatically in every chat session — so when you describe what you want, it already has Claidor API context.',
+    'Commit `.github/copilot-instructions.md` to your repo. GitHub Copilot loads it automatically in every chat session — so when you describe what you want, it already has Simeon API context.',
   categoryLabel: 'AI Pair Programmer',
   categoryColor: 'text-violet-600',
   categoryBg: 'bg-violet-50',
@@ -206,7 +206,7 @@ export const GITHUB_COPILOT_PLATFORM: AgentPlatform = {
     {
       title: 'Add the context file',
       description:
-        'Run one command to add `.github/copilot-instructions.md`. Commit it so your whole team gets Claidor context in Copilot.',
+        'Run one command to add `.github/copilot-instructions.md`. Commit it so your whole team gets Simeon context in Copilot.',
     },
     {
       title: 'Open Copilot Chat (Agent mode)',
@@ -216,19 +216,19 @@ export const GITHUB_COPILOT_PLATFORM: AgentPlatform = {
     {
       title: 'Describe what you need',
       description:
-        'Type your request. Copilot uses the instructions file for Claidor context and reads your code to write the integration.',
+        'Type your request. Copilot uses the instructions file for Simeon context and reads your code to write the integration.',
     },
   ],
   setupSnippet: `mkdir -p .github\ncurl -sL -o .github/copilot-instructions.md \\\n  ${CDN_BASE}/copilot/copilot-instructions.md`,
   setupNote:
-    'GitHub Copilot reads `.github/copilot-instructions.md` automatically in every chat session in this repo. Commit this file so your whole team gets Claidor context.',
+    'GitHub Copilot reads `.github/copilot-instructions.md` automatically in every chat session in this repo. Commit this file so your whole team gets Simeon context.',
   commands: [
     {
       slug: 'setup-checkout',
       name: 'Add Checkout',
       description:
-        'Copilot reads the instructions file for Claidor context, then writes checkout into your project.',
-      snippet: `Add Claidor checkout to this project`,
+        'Copilot reads the instructions file for Simeon context, then writes checkout into your project.',
+      snippet: `Add Simeon checkout to this project`,
       snippetLang: 'text',
       snippetLabel: 'Paste in Copilot Chat (Agent mode)',
     },
@@ -236,8 +236,8 @@ export const GITHUB_COPILOT_PLATFORM: AgentPlatform = {
       slug: 'setup-usage-billing',
       name: 'Set Up Usage Billing',
       description:
-        'Copilot reads the instructions file for Claidor context, then writes usage billing ingestion code.',
-      snippet: `Set up Claidor usage billing in this project`,
+        'Copilot reads the instructions file for Simeon context, then writes usage billing ingestion code.',
+      snippet: `Set up Simeon usage billing in this project`,
       snippetLang: 'text',
       snippetLabel: 'Paste in Copilot Chat (Agent mode)',
     },

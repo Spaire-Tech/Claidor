@@ -49,7 +49,7 @@ const Topbar = ({
           <Link href="/dashboard/create">
             <Button type="button" className="space-x-2 p-2 px-4 text-sm">
               <div className="flex flex-row items-center gap-x-2">
-                <span className="whitespace-nowrap">Sell with Claidor</span>
+                <span className="whitespace-nowrap">Sell with Simeon</span>
                 <ArrowForwardOutlined fontSize="inherit" />
               </div>
             </Button>

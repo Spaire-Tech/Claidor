@@ -53,7 +53,7 @@ export default function ClaudeCodePage() {
     <DashboardBody title="Choose your AI coding agent">
       <div className="flex flex-col gap-y-2">
         <p className=" text-sm text-gray-500">
-      Each agent can integrate Claidor checkout or usage-based billing directly into your codebase.
+      Each agent can integrate Simeon checkout or usage-based billing directly into your codebase.
         </p>
       </div>
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">

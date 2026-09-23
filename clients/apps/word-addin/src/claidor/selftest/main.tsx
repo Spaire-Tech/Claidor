@@ -70,7 +70,7 @@ function App() {
 
   return (
     <main className="st">
-      <h1 className="st__title">Claidor self-test</h1>
+      <h1 className="st__title">Simeon self-test</h1>
       <p className="st__lede">
         Open a contract, then press the button. Everything this writes goes
         into one scratch paragraph at the end of the document, and that
@@ -119,7 +119,7 @@ const root = document.getElementById('root')!
 // is wrong instead.
 const notWord = setTimeout(() => {
   root.textContent =
-    'This page only works inside Microsoft Word. Open it from the Claidor button on the ribbon.'
+    'This page only works inside Microsoft Word. Open it from the Simeon button on the ribbon.'
 }, 4000)
 
 Office.onReady(() => {

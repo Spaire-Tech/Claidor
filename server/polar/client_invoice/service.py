@@ -247,9 +247,9 @@ class ClientInvoiceService:
             )
 
         footer = (
-            f"This invoice is issued by Claidor, Inc. on behalf of {on_behalf_of_label}. "
-            f"Claidor, Inc. acts as the Merchant of Record for this transaction. "
-            f"© {date.today().year} Claidor, Inc. All rights reserved."
+            f"This invoice is issued by Simeon Labs, Inc. on behalf of {on_behalf_of_label}. "
+            f"Simeon Labs, Inc. acts as the Merchant of Record for this transaction. "
+            f"© {date.today().year} Simeon Labs, Inc. All rights reserved."
         )
 
         new_id = uuid.uuid4()

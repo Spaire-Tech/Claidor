@@ -24,7 +24,7 @@ export async function generateMetadata(props: {
   const description =
     settings?.meta_description ??
     settings?.description ??
-    `${organization.name}'s courses on Claidor`
+    `${organization.name}'s courses on Simeon`
   const ogImage =
     settings?.header_image_url ??
     organization.avatar_url ??
@@ -44,7 +44,7 @@ export async function generateMetadata(props: {
     openGraph: {
       title,
       description,
-      siteName: 'Claidor',
+      siteName: 'Simeon',
       type: 'website',
       url: canonicalUrl,
       images: [

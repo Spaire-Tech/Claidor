@@ -51,7 +51,7 @@ const ConnectWordSettings = () => {
   return (
     <div className="flex flex-col gap-y-4">
       <p className="text-sm text-gray-500">
-        The Word add-in checks documents against the Claidor engine, and
+        The Word add-in checks documents against the Simeon engine, and
         needs a token to reach it. Create one here, then paste it into the
         Check panel in Word.
       </p>
@@ -60,7 +60,7 @@ const ConnectWordSettings = () => {
         <div className="flex flex-col gap-y-2">
           <CopyToClipboardInput value={token} />
           <p className="text-sm text-gray-500">
-            Copy it now. This is the only time it can be shown — Claidor
+            Copy it now. This is the only time it can be shown — Simeon
             stores a one-way hash of it and cannot recover the token itself.
             If you lose it, revoke it below and create another.
           </p>

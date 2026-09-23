@@ -15,7 +15,7 @@ export const CHECKOUT_COMMAND: AgentCommand = {
   name: 'Checkouts',
   tagline: 'Add checkout to your app automatically.',
   description:
-    'The agent reads your codebase, finds where to add buy buttons, and wires up Claidor checkout — overlay, programmatic, or server-side — directly in your project.',
+    'The agent reads your codebase, finds where to add buy buttons, and wires up Simeon checkout — overlay, programmatic, or server-side — directly in your project.',
   label: 'Checkouts',
   command: '/setup-checkout',
   howItWorks: [
@@ -38,11 +38,11 @@ export const CHECKOUT_COMMAND: AgentCommand = {
   whatTheAgentDoes: [
     'Checks for uncommitted changes and warns you to commit first',
     'Detects your framework (Next.js App Router, Pages Router, Express, FastAPI, Rails, serverless, etc.)',
-    'Asks if you have products created in Claidor yet — walks you through it if not',
+    'Asks if you have products created in Simeon yet — walks you through it if not',
     'Asks which checkout approach: overlay (simplest), programmatic (EmbedCheckout.create), or server-side (SDK)',
     'Scans your codebase for pricing pages, product pages, or CTA sections',
     'Shows a full change summary (files to create/modify) and asks for confirmation before writing anything',
-    'Adds the Claidor embed script tag to your layout',
+    'Adds the Simeon embed script tag to your layout',
     'Writes checkout buttons or links directly into your components',
     'Creates a /checkout/success confirmation page',
     'Optionally wires up customer portal link and idempotent webhook handler with signature verification',
@@ -56,7 +56,7 @@ export const USAGE_BILLING_COMMAND: AgentCommand = {
   name: 'Usage Billing',
   tagline: 'Set up metered billing automatically.',
   description:
-    'The agent detects your stack, installs the Claidor SDK, creates meters, writes ingestion code, and wires up metered pricing — all interactively, right in your codebase.',
+    'The agent detects your stack, installs the Simeon SDK, creates meters, writes ingestion code, and wires up metered pricing — all interactively, right in your codebase.',
   label: 'Usage Billing',
   command: '/setup-usage-billing',
   howItWorks: [

@@ -256,7 +256,7 @@ class Package:
 
 #: Word requires every revision to carry an id, an author and a date.
 #: The id only has to be unique within the document.
-REVISION_AUTHOR = "Claidor"
+REVISION_AUTHOR = "Simeon"
 
 
 def _revision_attrs(revision: int, author: str, when: str) -> bytes:

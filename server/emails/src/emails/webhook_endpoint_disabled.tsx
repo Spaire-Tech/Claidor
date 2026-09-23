@@ -63,7 +63,7 @@ WebhookEndpointDisabled.PreviewProps = {
     avatar_url: 'https://avatars.githubusercontent.com/u/105373340?s=200&v=4',
   },
   webhook_endpoint_url: 'https://api.example.com/webhooks/polar',
-  dashboard_url: 'https://app.claidorhq.com/dashboard/acme-inc/settings/webhooks',
+  dashboard_url: 'https://app.simeonlabs.com/dashboard/acme-inc/settings/webhooks',
 }
 
 export default WebhookEndpointDisabled

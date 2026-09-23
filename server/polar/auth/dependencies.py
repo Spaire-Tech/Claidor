@@ -35,7 +35,7 @@ oat_scheme = HTTPBearer(
 pat_scheme = HTTPBearer(
     scheme_name="pat",
     auto_error=False,
-    description="You can generate a **Personal Access Token** from your [settings](https://app.claidorhq.com/settings).",
+    description="You can generate a **Personal Access Token** from your [settings](https://app.simeonlabs.com/settings).",
 )
 customer_session_scheme = HTTPBearer(
     scheme_name="customer_session",

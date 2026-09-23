@@ -21,11 +21,11 @@ const Footer = () => {
                 href="/signup"
                 className="flex w-fit flex-row items-center gap-x-2 border-b border-black pb-0.5"
               >
-                <span>Join Claidor today</span>
+                <span>Join Simeon today</span>
                 <ArrowOutwardOutlined fontSize="inherit" />
               </Link>
               <span className=" w-full text-gray-500">
-                &copy; Claidor {new Date().getFullYear()}
+                &copy; Simeon Labs {new Date().getFullYear()}
               </span>
             </div>
           </div>
@@ -44,7 +44,7 @@ const Footer = () => {
           <div className="flex flex-col gap-y-4 text-sm">
             <h3 className=" text-gray-500">Resources</h3>
             <div className="flex flex-col gap-y-3">
-              <FooterLink href="/resources/why">Why Claidor</FooterLink>
+              <FooterLink href="/resources/why">Why Simeon</FooterLink>
               <FooterLink href="/resources/merchant-of-record">
                 Merchant of Record
               </FooterLink>
@@ -55,7 +55,7 @@ const Footer = () => {
           <div className="flex flex-col gap-y-4 text-sm">
             <h3 className=" text-gray-500">Company</h3>
             <div className="flex flex-col gap-y-3">
-              <FooterLink href="/company">About Claidor</FooterLink>
+              <FooterLink href="/company">About Simeon</FooterLink>
               <FooterLink href="https://github.com/claidor-tech">
                 GitHub
               </FooterLink>

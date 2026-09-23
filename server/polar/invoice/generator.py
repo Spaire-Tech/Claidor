@@ -83,11 +83,11 @@ class Invoice(BaseModel):
     checkout_link: str | None = None
     due_date: date | None = None
     on_behalf_of_label: str | None = None
-    # True when Claidor itself is the seller (platform self-billing: Claidor
-    # billing a creator for their plan). The Merchant-of-Record footer is
-    # about reselling on behalf of a creator; for a first-party invoice
-    # "issued by Claidor, Inc. on behalf of Claidor, Inc. … Merchant of
-    # Record" is legally wrong framing.
+    # True when Simeon Labs itself is the seller (platform self-billing:
+    # Simeon Labs billing a creator for their plan). The Merchant-of-Record
+    # footer is about reselling on behalf of a creator; for a first-party
+    # invoice "issued by Simeon Labs, Inc. on behalf of Simeon Labs, Inc. …
+    # Merchant of Record" is legally wrong framing.
     first_party: bool = False
 
     @property
@@ -317,15 +317,15 @@ class InvoiceGenerator(FPDF):
         self.line(self.l_margin, self.get_y(), self.w - self.r_margin, self.get_y())
         self.ln(4)
 
-        # Legal text (centered). First-party invoices (Claidor billing a
+        # Legal text (centered). First-party invoices (Simeon Labs billing a
         # creator for their own plan) carry no Merchant-of-Record framing.
         if self.data.first_party:
-            legal_text = "This invoice is issued by Claidor, Inc."
+            legal_text = "This invoice is issued by Simeon Labs, Inc."
         else:
             on_behalf = self.data.on_behalf_of_label or self.data.seller_name
             legal_text = (
-                f"This invoice is issued by Claidor, Inc. on behalf of {on_behalf}. "
-                f"Claidor, Inc. acts as the Merchant of Record for this transaction."
+                f"This invoice is issued by Simeon Labs, Inc. on behalf of {on_behalf}. "
+                f"Simeon Labs, Inc. acts as the Merchant of Record for this transaction."
             )
         self.multi_cell(
             w=0,
@@ -336,7 +336,7 @@ class InvoiceGenerator(FPDF):
             new_y=YPos.NEXT,
         )
         self.ln(1)
-        copyright_text = f"© {date.today().year} Claidor, Inc. All rights reserved."
+        copyright_text = f"© {date.today().year} Simeon Labs, Inc. All rights reserved."
         self.cell(
             w=0,
             h=self.cell_height(self.footer_font_size),
@@ -622,7 +622,7 @@ class InvoiceGenerator(FPDF):
 
     def set_metadata(self) -> None:
         self.set_title(f"Invoice {self.data.number}")
-        self.set_creator("Claidor")
+        self.set_creator("Simeon")
         self.set_author(settings.INVOICES_NAME)
         self.set_creation_date(utc_now())
 
