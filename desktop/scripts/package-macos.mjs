@@ -44,6 +44,13 @@ if (dockIcon == null) throw new Error(`Dock icon missing: ${APP_ICON_ICNS}. Run 
 for (const name of await readdir(resources)) {
   if (name.endsWith(".icns")) await cp(dockIcon, path.join(resources, name));
 }
+// Measured on the founder's Mac, 23 September 2026: Contents/Resources holds
+// icon.icns AND Assets.car, and Info.plist says CFBundleIconName = icon. With
+// that key present macOS draws the Dock and Finder icon from the compiled
+// asset catalogue (Assets.car) and never reads icon.icns, so every build
+// since 22 September wrote Simeon's tile into a file nothing looked at. The
+// key goes; CFBundleIconFile (icon.icns, now Simeon's) is what remains.
+await run(SYSTEM_TOOLS.plutil, ["-remove", "CFBundleIconName", path.join(outputApp, "Contents", "Info.plist")]).catch(() => {});
 const packagedAsar = path.join(resources, "app.asar");
 const packagedUnpacked = `${packagedAsar}.unpacked`;
 await rm(packagedAsar, { force: true });

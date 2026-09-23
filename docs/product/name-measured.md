@@ -144,3 +144,23 @@ Grok Bot's after a rebuild:
 ```
 rm -rf ~/Library/Caches/com.apple.iconservices.store; killall Dock Finder
 ```
+
+**Why it never changed, measured 23 September 2026.** After the executable
+rename the founder reported "menu bar says Simeon now, icon did not
+change", and pasted `Contents/Resources`: `Assets.car` and `icon.icns`,
+with `CFBundleIconName = icon` in `Info.plist`. That key points macOS at
+the compiled asset catalogue, and while it is present the Dock and Finder
+draw from `Assets.car` and never read `icon.icns`. So every build since
+22 September wrote the tile into a file nothing looked at, and the cache
+commands above cleared nothing that mattered. `package-macos.mjs` now
+removes `CFBundleIconName` after writing the icon; `verify.mjs` refuses a
+bundle that still carries it; `Assets.car` itself is left in place. Not
+yet seen on a Mac.
+
+## The executable, measured 23 September 2026
+
+Menu bar top left says Simeon, on the founder's Mac, from a build of
+`084f5971` installed over `/Applications/Simeon.app`. The first report of
+"literally nothing changed" was measured before believing it: the checkout
+was still at the previous commit, `dist/` held no bundle, and the running
+process was the morning's install; nothing had been built.
