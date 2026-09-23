@@ -222,8 +222,11 @@ export function patchOriginalBubbleStylesheet(css) {
  * remove the line up there … it feels more apple ish"). CSS only, appended
  * to the pinned stylesheet: the toolbar's divider line is hidden, the
  * identity row (avatar + name) is a centred column, the avatar is drawn at
- * 88 px (the mark's inline 20 px is overridden, so it is the same animated
- * mark, larger), the name is a pill, and the controls (computer, info)
+ * 88 px (the mark's inline 20 px is overridden on the span AND on the SVG
+ * inside it, which carries its own inline width/height from the animator's
+ * size prop; the first build missed the SVG and drew a 20 px mark at the
+ * top of an 88 px box, "genuinely terrible"), so it is the same animated
+ * mark, larger, the name is a pill, and the controls (computer, info)
  * stay at the right edge. Scoped with :has() to the identity variant of
  * the header, so the thread breadcrumb and the agent-exchange variants keep
  * their layout. The transcript already offsets by the toolbar's measured
@@ -237,6 +240,7 @@ export const HEADER_CARD_CSS = `
 .sand-chat-header__identity-row{flex-direction:column!important;align-items:center!important;gap:6px!important}
 .sand-chat-header__identity{flex-direction:column!important;align-items:center!important;gap:6px!important;padding:2px 8px 4px!important;border-radius:16px!important}
 .sand-chat-header__avatar .sand-agent-avatar,.sand-chat-header__avatar .sand-grok-bot-mark{width:88px!important;height:88px!important}
+.sand-chat-header__avatar .sand-grok-bot-mark>svg{width:88px!important;height:88px!important}
 .sand-chat-header__avatar img.sand-agent-avatar{border-radius:50%!important;object-fit:cover!important}
 .sand-chat-header__title{align-items:center!important}
 .sand-chat-header__name{font-size:15px!important;line-height:20px!important;padding:5px 14px!important;border-radius:999px!important;background-color:var(--sand-fill-bubble-agent)!important;font-weight:500!important}
