@@ -387,6 +387,33 @@ class TestEnsureIsEnsureAndNotCreate:
         assert response.status_code == 402
         assert fake_e2b.created == []
 
+    async def test_the_hourly_budget_will_not_start_a_box_either(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        save_fixture: Any,
+        fake_e2b: type[FakeSandbox],
+    ) -> None:
+        # The month is fine; the last hour is not. Added 23 September after
+        # main grew a sliding hourly guard (`proxy_common.budget_refusal`)
+        # and this route still checked only the month — which would have let
+        # the one thing that bills for *existing* past the guard written
+        # because an agent spent $5.82 in 50 minutes (spend-guards.md).
+        access, _ = await _signed_in(client, session, user)
+        await save_fixture(
+            DesktopUsage(
+                user_id=user.id,
+                model="gpt-5.6-terra",
+                credits=settings.DESKTOP_HOURLY_CREDITS,
+                upstream_status=200,
+            )
+        )
+        response = await _ensure(client, access)
+        assert response.status_code == 402
+        assert "Hourly spending budget" in response.json()["error"]
+        assert fake_e2b.created == []
+
 
 @pytest.mark.asyncio
 class TestOneAccountsBoxIsInvisibleToAnother:

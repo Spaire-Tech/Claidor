@@ -84,6 +84,7 @@ from .proxy_common import log_upstream_refusal as _log_upstream_refusal
 from .proxy_common import upstream_timeout as _timeout
 from .service import (
     AUTH_CODE_INVALID,
+    HOURLY_BUDGET_CODE,
     MEMORY_FILE_LIMIT,
     MEMORY_REFUSED,
     REFRESH_INVALID,
@@ -1240,6 +1241,17 @@ async def box_ensure(
     a box has to keep working when the month has run out — refusing to
     kill an exhausted account's box would leave it running and billing,
     which is precisely backwards.
+
+    **Both spending guards, in the same order the proxy checks them**
+    (`proxy_common.budget_refusal`): the month first, so an exhausted
+    month still says so, then the sliding hour. The hourly guard exists
+    because an agent spent $5.82 in 50 minutes with nothing on the screen
+    (`docs/product/spend-guards.md`), and a box is the one thing here that
+    goes on spending while nobody is looking — so it is the last door that
+    should be allowed to skip it. This route cannot simply call
+    `budget_refusal`: that answers in the app's `{error: {type, code,
+    message}}` envelope, and the box routes answer the plugin's flat
+    `{error: "…"}`. The *condition* is shared; only the shape differs.
     """
     user = desktop_session.user
     if await desktop.exhausted(session, user):
@@ -1247,6 +1259,14 @@ async def box_ensure(
             BOX_QUOTA_EXHAUSTED,
             "Monthly credits exhausted. The computer stays asleep until the "
             "allowance resets at the start of next month.",
+        )
+    if await desktop.hourly_exhausted(session, user):
+        used = await desktop.credits_used_last_hour(session, user.id)
+        return _box_error(
+            BOX_QUOTA_EXHAUSTED,
+            f"Hourly spending budget reached (code {HOURLY_BUDGET_CODE}): "
+            f"{used} of {settings.DESKTOP_HOURLY_CREDITS} credits in the last "
+            "hour. The computer stays asleep until that hour rolls off.",
         )
     return await _box_json(
         lambda: _box_state_payload(
