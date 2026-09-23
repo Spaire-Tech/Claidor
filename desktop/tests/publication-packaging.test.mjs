@@ -48,6 +48,16 @@ test("default packaging keeps the polished renderer and ignites the host", async
   assert.match(activation, /igniteProductionElectronMain/);
 });
 
+test("the Dock icon is icon.icns, so the shell's asset catalogue must not be named", async () => {
+  const packager = await readFile(path.join(repoRoot, "scripts", "package-macos.mjs"), "utf8");
+  const icnsAt = packager.indexOf('if (name.endsWith(".icns")) await cp(dockIcon');
+  const removeAt = packager.indexOf('"-remove", "CFBundleIconName"');
+  const signAt = packager.indexOf("await signAppBundleAdHoc(outputApp)");
+  assert.ok(icnsAt > 0 && removeAt > icnsAt && signAt > removeAt, "the key is removed after the icon is written and before signing");
+  const verify = await readFile(path.join(repoRoot, "scripts", "verify.mjs"), "utf8");
+  assert.match(verify, /plistText\.includes\("CFBundleIconName"\)\) throw/);
+});
+
 test("Router settings use the trusted backend and display recorded inference usage", async () => {
   const rendererPatch = await readFile(path.join(repoRoot, "scripts", "lib", "router-renderer-patch.mjs"), "utf8");
   const preload = await readFile(path.join(repoRoot, "source", "electron-preload", "preload.ts"), "utf8");
