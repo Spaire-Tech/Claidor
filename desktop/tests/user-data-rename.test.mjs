@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -25,9 +25,16 @@ test("the first launch as Simeon copies the Grok Bot user-data folder once, cach
     await writeFile(path.join(from, "secrets.json"), "{}");
     await writeFile(path.join(from, "sand-client-persistence", "state.json"), "1");
     await writeFile(path.join(from, "Cache", "big"), "x");
+    // Chromium's single-instance lock, as the running app leaves it: three
+    // symlinks naming its process and socket. Copied, they would point the
+    // new app at the old app's process.
+    await symlink("host.local-4242", path.join(from, "SingletonLock"));
+    await symlink("/tmp/somewhere/SingletonSocket", path.join(from, "SingletonSocket"));
+    await symlink("16324943520279540406", path.join(from, "SingletonCookie"));
     const first = module.migrateUserDataFromPreviousName({ userDataDir: to });
     assert.equal(first.outcome, "copied");
     assert.deepEqual((await readdir(to)).sort(), ["sand-client-persistence", "secrets.json"]);
+    assert.deepEqual([...module.USER_DATA_SINGLETON_ENTRIES].sort(), ["SingletonCookie", "SingletonLock", "SingletonSocket"]);
     assert.equal(await readFile(path.join(to, "sand-client-persistence", "state.json"), "utf8"), "1");
     assert.ok((await readdir(from)).includes("secrets.json"), "the other app's folder is left as it was");
     assert.equal(module.migrateUserDataFromPreviousName({ userDataDir: to }).outcome, "already-there");

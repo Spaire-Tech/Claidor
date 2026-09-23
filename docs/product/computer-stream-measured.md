@@ -5,7 +5,7 @@
 With the Computer panel spinning "connecting" indefinitely:
 
 ```
-docker port grok-bot-local-vm 6080        → 127.0.0.1:6080
+docker port grok-bot-local-vm 6080        → 127.0.0.1:6080   (the container is simeon-box since 23 September)
 curl -sI http://127.0.0.1:6080/vnc.html    → HTTP/1.1 200 OK
 /tmp/novnc:1.log (inside the box)          → websockify up, 0.0.0.0:6080 → localhost:5900, no client lines
 /tmp/x11vnc:1.log                          → x11vnc up on 5900 for display :1
@@ -155,7 +155,7 @@ cat ~/Library/Application\ Support/Simeon/computer-stream.log
 |---|---|
 | `local docker FAILED: … Docker is unavailable` | Docker Desktop is not running |
 | `local docker: replacing the container` then `gateway not answering yet after 20s` | a cold box after a host change; wait, or it reports the failure at three minutes |
-| `local docker FAILED: Local Docker VM did not expose its gateway within three minutes` | the new container's gateway never came up: `docker logs grok-bot-local-vm --tail 50` is the next reading |
+| `local docker FAILED: Local Docker VM did not expose its gateway within three minutes` | the new container's gateway never came up: `docker logs simeon-box --tail 50` is the next reading |
 | `box reachability outcome=network … cause=ECONNREFUSED` | the coordinator cannot open the gateway port at all |
 | `box reachability outcome=timeout method=getForeverBoxStatus` | the gateway answers but the host does not, within 15 s |
 | `local docker: gateway ready` and no reachability line, yet "Can't reach" | the host throws inside `getStatus`; that is a host bug and the next thing to read is the host's own log inside the box |

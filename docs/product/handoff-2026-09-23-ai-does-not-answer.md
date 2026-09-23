@@ -9,7 +9,7 @@ Read `CLAUDE.md` first, then `docs/product/spend-guards.md`,
 
 `desktop/` is Simeon: an Electron app on the founder's Mac, built from a
 source reconstruction of Grok Bot 0.18.0 (`desktop/PROVENANCE.md`). The
-agent ("host") runs inside a local Docker container, `grok-bot-local-vm`.
+agent ("host") runs inside a local Docker container, `simeon-box` (`grok-bot-local-vm` until 23 September).
 The app talks to the host over a gateway on 127.0.0.1:1340. The host calls
 the model through Claidor's proxy at `https://api.claidor.com/desktop/api/proxy/v1/responses`
 (OpenAI Responses wire; models `gpt-5.6-terra` for the loop, `gpt-5.6-luna`
@@ -22,7 +22,7 @@ The person types "hi" to a fresh agent in a fresh box. Nothing ever appears
 in the chat. Meanwhile the host makes one model call every 3 to 4 seconds
 until the proxy's hourly budget refuses (code 40201). The host log in the
 box (`/tmp/sand-host.log`; copy out with
-`docker cp grok-bot-local-vm:/tmp/sand-host.log ~/Desktop/sand-host.log`)
+`docker cp simeon-box:/tmp/sand-host.log ~/Desktop/sand-host.log`)
 shows, for every one of those calls:
 
 ```
@@ -108,7 +108,7 @@ Not yet run by anyone. The founder has the file on their desktop.
 - Do not touch the pinned renderer bytes except through
   `scripts/lib/router-renderer-patch.mjs`. Keep the gateway's 15 s
   deadlines. Do not put anything over the agent marks.
-- The brake by hand is `docker stop grok-bot-local-vm`. Quitting the app
+- The brake by hand is `docker stop simeon-box`. Quitting the app
   now stops the box too.
 
 ## Build loop, macOS only

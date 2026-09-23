@@ -13,7 +13,16 @@ import type { GatewayConnection } from "./gateway-descriptor-cache.js";
 import { computerStreamLine } from "../vnc/computer-stream-log.js";
 
 export const LOCAL_DOCKER_BOX_IMAGE = "public.ecr.aws/k0i0n2g5/cursorenvironments/universal:sand-box-latest";
-export const LOCAL_DOCKER_BOX_CONTAINER = "grok-bot-local-vm";
+// The container carries our own name. Until 23 September 2026 it was
+// "grok-bot-local-vm", the name this tree's origin (Grok Bot 0.18) gave its
+// own local mode, so an installed Grok Bot and Simeon would have contended
+// for one container, and the replace below would have removed the other's.
+// The two volumes keep their names on purpose: the workspace and the host's
+// data carry over to the renamed container unchanged. A leftover
+// "grok-bot-local-vm" is not removed by this app, because the same name may
+// be the real Grok Bot's; `docker rm -f grok-bot-local-vm` by hand, once,
+// after checking that it mounts our host bundle.
+export const LOCAL_DOCKER_BOX_CONTAINER = "simeon-box";
 export const LOCAL_DOCKER_GATEWAY_URL = "http://127.0.0.1:1340";
 export const LOCAL_DOCKER_OWNER_LABEL = "com.grok-bot.local-vm=1";
 export const LOCAL_DOCKER_SCHEMA_VERSION = "9";

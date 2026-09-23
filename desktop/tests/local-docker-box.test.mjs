@@ -92,6 +92,24 @@ test("a late inference credential does not tear down a running box", async () =>
   }
 });
 
+test("the local box is Simeon's own container, on the volumes it always had", async () => {
+  const loaded = await loadModule("source/electron-main/box/local-docker-host-connector.ts", "local-docker-name");
+  try {
+    assert.equal(loaded.module.LOCAL_DOCKER_BOX_CONTAINER, "simeon-box");
+    const source = await (await import("node:fs/promises")).readFile(
+      path.join(repoRoot, "source/electron-main/box/local-docker-host-connector.ts"),
+      "utf8",
+    );
+    // The rename must not lose the person's workspace or the host's data:
+    // the renamed container mounts the same two volumes.
+    assert.match(source, /"--volume", "grok-bot-local-vm-workspace:\/workspace", "--volume", "grok-bot-local-vm-data:\/home\/box\/sand-data"/);
+    // Every docker call names the container through the constant, never by a literal.
+    assert.doesNotMatch(source, /"(?:inspect|start|stop|restart|rm|logs|run)"[^\n]*"grok-bot-local-vm"/);
+  } finally {
+    await loaded.dispose();
+  }
+});
+
 test("the local Docker box is always told our backend, credential or not", async () => {
   const loaded = await loadModule("source/electron-main/box/local-docker-host-connector.ts", "local-docker-host-connector");
   try {
