@@ -39,7 +39,7 @@ function pin(module, dataDir) {
   const previous = {};
   for (const key of ENV_KEYS) { previous[key] = process.env[key]; delete process.env[key]; }
   process.env.SAND_DATA_ROOT = dataDir;
-  process.env.SAND_BACKEND_URL = "https://api.claidor.com";
+  process.env.SAND_BACKEND_URL = "https://api.simeonlabs.com";
   module.setClaidorCredentialSource({ getAccessToken: async () => "claidor_da_guard" });
   return () => { for (const [key, value] of Object.entries(previous)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; } };
 }
@@ -148,7 +148,7 @@ test("the token file survives a burst of concurrent connects", async () => {
     const settingsPath = path.join(dataDir, "settings.json");
     const writes = [];
     for (let index = 0; index < 25; index += 1) {
-      writes.push(loaded.module.persistInferenceCredential(settingsPath, { accessToken: `token-${index}`, backendUrl: "https://api.claidor.com", expiresAtMs: 1_800_000_000_000 + index }));
+      writes.push(loaded.module.persistInferenceCredential(settingsPath, { accessToken: `token-${index}`, backendUrl: "https://api.simeonlabs.com", expiresAtMs: 1_800_000_000_000 + index }));
     }
     const targets = await Promise.all(writes);
     assert.equal(new Set(targets).size, 1);

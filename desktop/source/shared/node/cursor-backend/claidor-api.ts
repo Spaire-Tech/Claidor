@@ -5,7 +5,7 @@ import { getConfiguredBackendUrl } from "../cursor-token.js";
 // speech, and — since 19 September 2026 — web search, pictures and dictation
 // (`server/polar/desktop/capabilities.py`). Measured, not recalled: the
 // router in `server/polar/desktop/endpoints.py` carries `prefix="/desktop"`,
-// and `POST https://api.claidor.com/api/proxy/v1/models` answers 404 while
+// and `POST https://api.simeonlabs.com/api/proxy/v1/models` answers 404 while
 // `/desktop/api/proxy/v1/...` answers. Every caller builds its address here
 // so there is one place for that fact to live.
 export const CLAIDOR_PROXY_PREFIX = "desktop/api/proxy/v1";

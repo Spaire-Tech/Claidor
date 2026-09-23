@@ -81,7 +81,7 @@ const env = { previous: {} };
 function pin(module, dataDir) {
   for (const key of ["SAND_DATA_ROOT", "SAND_BACKEND_URL"]) env.previous[key] = process.env[key];
   process.env.SAND_DATA_ROOT = dataDir;
-  process.env.SAND_BACKEND_URL = "https://api.claidor.com";
+  process.env.SAND_BACKEND_URL = "https://api.simeonlabs.com";
   module.setClaidorCredentialSource({ getAccessToken: async () => "claidor_da_send" });
 }
 function unpin() {

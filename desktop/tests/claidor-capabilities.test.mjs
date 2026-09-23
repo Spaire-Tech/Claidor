@@ -31,11 +31,11 @@ test("every Claidor door lives under /desktop/api/proxy/v1", async () => {
   try {
     const { claidorProxyBaseUrl, claidorProxyUrl, CLAIDOR_PROXY_PREFIX } = loaded.module;
     assert.equal(CLAIDOR_PROXY_PREFIX, "desktop/api/proxy/v1");
-    assert.equal(claidorProxyBaseUrl("https://api.claidor.com"), "https://api.claidor.com/desktop/api/proxy/v1");
-    assert.equal(claidorProxyBaseUrl("https://api.claidor.com/"), "https://api.claidor.com/desktop/api/proxy/v1");
-    assert.equal(claidorProxyUrl("web/search", "https://api.claidor.com"), "https://api.claidor.com/desktop/api/proxy/v1/web/search");
-    assert.equal(claidorProxyUrl("/images/generations", "https://api.claidor.com/"), "https://api.claidor.com/desktop/api/proxy/v1/images/generations");
-    assert.equal(claidorProxyUrl("audio/transcriptions", "https://api.claidor.com"), "https://api.claidor.com/desktop/api/proxy/v1/audio/transcriptions");
+    assert.equal(claidorProxyBaseUrl("https://api.simeonlabs.com"), "https://api.simeonlabs.com/desktop/api/proxy/v1");
+    assert.equal(claidorProxyBaseUrl("https://api.simeonlabs.com/"), "https://api.simeonlabs.com/desktop/api/proxy/v1");
+    assert.equal(claidorProxyUrl("web/search", "https://api.simeonlabs.com"), "https://api.simeonlabs.com/desktop/api/proxy/v1/web/search");
+    assert.equal(claidorProxyUrl("/images/generations", "https://api.simeonlabs.com/"), "https://api.simeonlabs.com/desktop/api/proxy/v1/images/generations");
+    assert.equal(claidorProxyUrl("audio/transcriptions", "https://api.simeonlabs.com"), "https://api.simeonlabs.com/desktop/api/proxy/v1/audio/transcriptions");
   } finally {
     await loaded.dispose();
   }
@@ -47,7 +47,7 @@ test("web search speaks Claidor's door and keeps the tool's answer shape", async
   try {
     const search = loaded.module.createClaidorWebSearchService({
       getAccessToken: async () => "claidor_da_search",
-      backendUrl: "https://api.claidor.com",
+      backendUrl: "https://api.simeonlabs.com",
       fetch: async (input, init) => {
         requests.push({ url: typeof input === "string" ? input : input.url, headers: new Headers(init?.headers), body: JSON.parse(init?.body ?? "{}") });
         return jsonResponse({
@@ -64,7 +64,7 @@ test("web search speaks Claidor's door and keeps the tool's answer shape", async
     assert.equal(result.answer, "Paris is the capital of France.");
     assert.deepEqual(result.documents, [{ url: "https://en.wikipedia.org/wiki/Paris", title: "Paris", text: "capital and largest city" }, { url: "https://example.com/drop-me", title: "", text: "" }]);
     assert.equal(requests.length, 1);
-    assert.equal(requests[0].url, "https://api.claidor.com/desktop/api/proxy/v1/web/search");
+    assert.equal(requests[0].url, "https://api.simeonlabs.com/desktop/api/proxy/v1/web/search");
     assert.equal(requests[0].headers.get("authorization"), "Bearer claidor_da_search");
     assert.deepEqual(requests[0].body, { query: "capital of France", explanation: "need a city" });
   } finally {
@@ -118,7 +118,7 @@ test("image generation posts to Claidor and maps a 402 to the tool's restricted 
 
     const generate = createClaidorGenerateImageService({
       getAccessToken: async () => "claidor_da_img",
-      backendUrl: "https://api.claidor.com",
+      backendUrl: "https://api.simeonlabs.com",
       fetch: async (input, init) => {
         requests.push({ url: typeof input === "string" ? input : input.url, headers: new Headers(init?.headers), body: JSON.parse(init?.body ?? "{}") });
         return jsonResponse({ data: [{ b64_json: Buffer.from("png").toString("base64"), mime_type: "image/png" }] });
@@ -127,7 +127,7 @@ test("image generation posts to Claidor and maps a 402 to the tool's restricted 
     const picture = await generate({}, "a red boat", [{ data: "abc", mimeType: "image/png" }], "16:9");
     assert.equal(picture.imageData, Buffer.from("png").toString("base64"));
     assert.equal(picture.mimeType, "image/png");
-    assert.equal(requests[0].url, "https://api.claidor.com/desktop/api/proxy/v1/images/generations");
+    assert.equal(requests[0].url, "https://api.simeonlabs.com/desktop/api/proxy/v1/images/generations");
     assert.equal(requests[0].headers.get("authorization"), "Bearer claidor_da_img");
     assert.deepEqual(requests[0].body, {
       prompt: "a red boat",
@@ -138,7 +138,7 @@ test("image generation posts to Claidor and maps a 402 to the tool's restricted 
 
     const restricted = createClaidorGenerateImageService({
       getAccessToken: async () => "claidor_da_img",
-      backendUrl: "https://api.claidor.com",
+      backendUrl: "https://api.simeonlabs.com",
       fetch: async () => jsonResponse({ error: { type: "insufficient_quota", message: "Allowance exhausted." } }, 402),
     });
     await assert.rejects(() => restricted({}, "anything"), (error) => {
@@ -159,7 +159,7 @@ test("transcription posts the clip as multipart and never talks protobuf", async
     const { SandTranscriptionManager, SandTranscribeEmptyAudioError } = loaded.module;
     const manager = new SandTranscriptionManager({
       getAccessToken: async () => "claidor_da_voice",
-      backendUrl: "https://api.claidor.com",
+      backendUrl: "https://api.simeonlabs.com",
       fetch: async (input, init) => {
         const body = init?.body;
         assert.ok(body instanceof FormData);
@@ -181,7 +181,7 @@ test("transcription posts the clip as multipart and never talks protobuf", async
     const result = await manager.transcribe({ audio: new Uint8Array([1, 2, 3, 4]), mimeType: "audio/webm;codecs=opus", language: "fr-FR" });
     assert.deepEqual(result, { text: "hello there", transcriptionTimeMs: 1500 });
     assert.equal(requests.length, 1);
-    assert.equal(requests[0].url, "https://api.claidor.com/desktop/api/proxy/v1/audio/transcriptions");
+    assert.equal(requests[0].url, "https://api.simeonlabs.com/desktop/api/proxy/v1/audio/transcriptions");
     assert.equal(requests[0].headers.get("authorization"), "Bearer claidor_da_voice");
     assert.equal(requests[0].language, "fr-FR");
     assert.equal(requests[0].filename, "audio.webm");

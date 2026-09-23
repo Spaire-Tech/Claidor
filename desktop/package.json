@@ -12,7 +12,7 @@
     "bootstrap": "node scripts/bootstrap-runtime.mjs",
     "build": "node scripts/build.mjs",
     "start": "electron .",
-    "start:clean-source": "CURSOR_API_BASE_URL=https://api.claidor.com CURSOR_WEBSITE_URL=https://api.claidor.com SAND_BACKEND_URL=https://api.claidor.com electron .",
+    "start:clean-source": "CURSOR_API_BASE_URL=https://api.simeonlabs.com CURSOR_WEBSITE_URL=https://api.simeonlabs.com SAND_BACKEND_URL=https://api.simeonlabs.com electron .",
     "check": "npm run typecheck && npm run source:typecheck && npm test",
     "build:clean-source": "node scripts/build-caisra.mjs",
     "frontend:build": "vite build --config frontend/vite.config.ts",

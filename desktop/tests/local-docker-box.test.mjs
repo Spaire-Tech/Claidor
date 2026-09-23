@@ -114,20 +114,20 @@ test("the local Docker box is always told our backend, credential or not", async
   const loaded = await loadModule("source/electron-main/box/local-docker-host-connector.ts", "local-docker-host-connector");
   try {
     const { localDockerInferenceEnvironmentArguments } = loaded.module;
-    const env = { SAND_BACKEND_URL: "https://api.claidor.com" };
+    const env = { SAND_BACKEND_URL: "https://api.simeonlabs.com" };
 
     const withoutCredential = envOf(localDockerInferenceEnvironmentArguments(undefined, env));
-    assert.equal(withoutCredential.SAND_BACKEND_URL, "https://api.claidor.com/");
+    assert.equal(withoutCredential.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
     assert.equal(withoutCredential.SAND_DEV_INFERENCE_TOKEN_FILE, "/run/grok-bot/inference.json");
     assert.equal(withoutCredential.SAND_INFERENCE_PROVIDER, "claidor");
     assert.equal(withoutCredential.CAISRA_CLAUDE_CODE, "0");
 
-    const withCredential = envOf(localDockerInferenceEnvironmentArguments({ backendUrl: "https://api.claidor.com/" }, env));
-    assert.equal(withCredential.SAND_BACKEND_URL, "https://api.claidor.com/");
+    const withCredential = envOf(localDockerInferenceEnvironmentArguments({ backendUrl: "https://api.simeonlabs.com/" }, env));
+    assert.equal(withCredential.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
     assert.equal(withCredential.SAND_DEV_INFERENCE_TOKEN_FILE, "/run/grok-bot/inference.json");
 
-    const fromCursorVariable = envOf(localDockerInferenceEnvironmentArguments(undefined, { CURSOR_API_BASE_URL: "https://api.claidor.com" }));
-    assert.equal(fromCursorVariable.SAND_BACKEND_URL, "https://api.claidor.com/");
+    const fromCursorVariable = envOf(localDockerInferenceEnvironmentArguments(undefined, { CURSOR_API_BASE_URL: "https://api.simeonlabs.com" }));
+    assert.equal(fromCursorVariable.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
   } finally {
     await loaded.dispose();
   }

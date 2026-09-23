@@ -40,7 +40,7 @@ function pin(module, dataDir) {
   const previous = {};
   for (const key of ENV_KEYS) { previous[key] = process.env[key]; delete process.env[key]; }
   process.env.SAND_DATA_ROOT = dataDir;
-  process.env.SAND_BACKEND_URL = "https://api.claidor.com";
+  process.env.SAND_BACKEND_URL = "https://api.simeonlabs.com";
   module.setClaidorCredentialSource({ getAccessToken: async () => "claidor_da_effort" });
   return () => { for (const [key, value] of Object.entries(previous)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; } };
 }

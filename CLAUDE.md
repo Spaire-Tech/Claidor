@@ -430,6 +430,35 @@ inference and not a log**. Nobody has read the Actions billing page. Until
 someone does, the cause is unproven and CI confirms nothing for our own
 workflows.
 
+## The product's hostnames are simeonlabs.com (24 September 2026)
+
+"i want to replace all claidor.com instances by simeonlabs.com … now i
+want the app to respond to simeonlabs not claidor." The founder set up
+Render, AWS and Google auth for the new hosts first; the Render env vars
+keep their `CLAIDOR_` prefix (the setting names in `polar/config.py` are
+unchanged, only their values move). In the repository every `claidor.com`
+hostname in code, configuration and tests is now `simeonlabs.com`:
+`render.yaml` (`CLAIDOR_BASE_URL`, `CLAIDOR_FRONTEND_BASE_URL`,
+`CLAIDOR_ALLOWED_HOSTS`, `CLAIDOR_CORS_ORIGINS`,
+`CLAIDOR_USER_SESSION_COOKIE_DOMAIN` = `.simeonlabs.com`,
+`CLAIDOR_EMAIL_FROM_DOMAIN`, the maty runner's `CLAIDOR_API_BASE_URL`),
+the desktop app's packaged environment (`desktop/scripts/lib/config.mjs`:
+`CURSOR_API_BASE_URL`, `CURSOR_WEBSITE_URL`, `SAND_BACKEND_URL` all
+`https://api.simeonlabs.com`, which is where sign-in goes), the web app's
+fallback hosts (`clients/apps/web/src/utils/domain.ts`), the runner's
+docs and the desktop tests' fixtures. The web app's real hosts are the
+`NEXT_PUBLIC_API_URL` / `NEXT_PUBLIC_FRONTEND_BASE_URL` values on Vercel,
+not in the repository. Left as they were, on purpose: `docs/` (records of
+what was measured on claidor.com), the `billing.claidorhq.internal`
+placeholder e-mail domain (never resolves; tests pin it), the 2026-04-06
+migration's `server_default`, `CLAIDOR_EMAIL_FROM_NAME: Claidor` in
+`render.yaml` (a name, not a host; the founder decides), and the paragraph
+above about `app.claidor.com` on Vercel, which is history. Not yet
+measured: a sign-in round trip from the packaged app against
+`api.simeonlabs.com`, and whether the cookie domain change signs everyone
+out of the web app once (it does, by design: a `.claidor.com` cookie is
+not sent to `.simeonlabs.com`).
+
 ## What the Rakazo attempt left behind (17–18 September 2026)
 
 Rakazo (Apache 2.0, `elie222/rakazo`) was vendored as a subtree on 17 September

@@ -96,7 +96,7 @@ const env = { previous: {} };
 function pin(module, dataDir) {
   for (const key of ["SAND_DATA_ROOT", "SAND_BACKEND_URL"]) env.previous[key] = process.env[key];
   process.env.SAND_DATA_ROOT = dataDir;
-  process.env.SAND_BACKEND_URL = "https://api.claidor.com";
+  process.env.SAND_BACKEND_URL = "https://api.simeonlabs.com";
   module.setClaidorCredentialSource({ getAccessToken: async () => "claidor_da_loop" });
 }
 function unpin() {
@@ -143,7 +143,7 @@ test("the host's tool loop completes a two-step turn on the claidor provider", a
 
     assert.equal(requests.length, 2);
     for (const request of requests) {
-      assert.equal(request.url, "https://api.claidor.com/desktop/api/proxy/v1/responses");
+      assert.equal(request.url, "https://api.simeonlabs.com/desktop/api/proxy/v1/responses");
       assert.equal(request.headers.get("authorization"), "Bearer claidor_da_loop");
       assert.equal(request.body.model, "gpt-5.6-terra");
       // The loop runs at Grok Bot's effort (high), on every step.

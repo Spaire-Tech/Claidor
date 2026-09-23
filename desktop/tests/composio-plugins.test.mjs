@@ -112,8 +112,8 @@ test("the Claidor Composio client talks session, link, toolkits, and disconnect"
   const urls = await load("source/shared/node/cursor-backend/claidor-api.ts", "claidor-api");
   try {
     assert.equal(
-      urls.module.claidorComposioUrl("api/v3.1/tool_router/session", "https://api.claidor.com/"),
-      "https://api.claidor.com/desktop/api/proxy/composio/api/v3.1/tool_router/session",
+      urls.module.claidorComposioUrl("api/v3.1/tool_router/session", "https://api.simeonlabs.com/"),
+      "https://api.simeonlabs.com/desktop/api/proxy/composio/api/v3.1/tool_router/session",
     );
     assert.equal(loaded.module.composioFailureMessage(401), "You are signed out. Sign in again to connect apps.");
     assert.equal(loaded.module.composioFailureMessage(503), "Apps are not switched on for this server yet.");
@@ -123,7 +123,7 @@ test("the Claidor Composio client talks session, link, toolkits, and disconnect"
     const calls = [];
     const api = loaded.module.createComposioApi({
       getAccessToken: async () => "claidor_da_test",
-      backendUrl: "https://api.claidor.com/",
+      backendUrl: "https://api.simeonlabs.com/",
       fetch: async (url, init) => {
         calls.push({ url: String(url), method: init.method, body: init.body });
         if (String(url).endsWith("/tool_router/session") && init.method === "POST") {
@@ -161,7 +161,7 @@ test("the Claidor Composio client talks session, link, toolkits, and disconnect"
 
     const signedOut = loaded.module.createComposioApi({
       getAccessToken: async () => null,
-      backendUrl: "https://api.claidor.com/",
+      backendUrl: "https://api.simeonlabs.com/",
       fetch: async () => {
         throw new Error("fetch should not run while signed out");
       },
@@ -170,7 +170,7 @@ test("the Claidor Composio client talks session, link, toolkits, and disconnect"
 
     const unavailable = loaded.module.createComposioApi({
       getAccessToken: async () => "token",
-      backendUrl: "https://api.claidor.com/",
+      backendUrl: "https://api.simeonlabs.com/",
       fetch: async () => json({ error: { message: "missing key" } }, 503),
     });
     await assert.rejects(() => unavailable.listToolkitState(), /not switched on/i);
