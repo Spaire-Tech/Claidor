@@ -283,22 +283,7 @@ pill, and pins the computer/info controls to the right; scoped with
 exchange keep their layout. The transcript offsets by the toolbar's
 measured height (`qSn` writes `--sand-toolbar-height`), so it moves
 down by itself. Rendered headless with the real markup and stylesheet
-(toolbar 147 px); on the Mac the mark was first drawn at 20 px inside an
-88 px box (the animator's SVG carries its own inline size; overridden
-too), then 88 was "way too big" (now 52), then the bar's hard lower edge
-read as a line (now a translucent, blurred strip whose bottom 30 px
-fade out with a mask, so messages scroll under it).
-**Liquid Glass on the chrome, 23 September, later still** ("bring apple
-liquidglass design in the whole app"; the Figma link could not be opened
-from the container, so this follows Apple's description of the
-material): `LIQUID_GLASS_CSS`, appended after the header block, frosts
-the sidebar, the info pane, the composer shell, popover menus, dialogs,
-the floating pills, the message hover actions and the computer's top
-bar: translucent fill, 24 px blur with saturation, a 1 px specular
-highlight along the top, a soft ambient shadow, large radii. Messages
-and text are content and are not touched. Not yet seen on a Mac; the
-composer shell's base styling was not resolvable from the chunk, so it
-is the surface most likely to need a second look.
+(toolbar 147 px); not yet seen on a Mac.
 `docs/product/name-measured.md` §Simeon is the record.
 
 **The product is Simeon, decided 22 September 2026, later the same day.**

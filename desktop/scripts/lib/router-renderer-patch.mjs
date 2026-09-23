@@ -256,38 +256,6 @@ export function patchOriginalHeaderStylesheet(css) {
   return `${css}\n${HEADER_CARD_CSS}`;
 }
 
-/**
- * Liquid Glass over the app's chrome (23 September 2026: "i want to bring
- * apple liquidglass design in the whole app"). The Figma the founder linked
- * could not be opened from the build container, so this follows Apple's own
- * description of the material: a translucent, blurred and saturated surface,
- * a thin specular highlight along the top edge, a soft ambient shadow, and
- * large continuous radii on floating controls. Content (messages, text)
- * stays as it is; the material goes on the chrome: the sidebar, the info
- * pane, the composer shell, popover menus, dialogs, floating pills, the
- * message hover actions and the computer's top bar. CSS only, appended to
- * the pinned stylesheet after the header card; every rule is !important so
- * it wins over the atom classes and inline styles the renderer sets.
- */
-export const LIQUID_GLASS_CSS = `
-/* Simeon: Liquid Glass on the chrome (23 September 2026). */
-:root{--simeon-glass-fill:color-mix(in srgb,var(--cursor-bg-editor) 62%,transparent);--simeon-glass-fill-strong:color-mix(in srgb,var(--cursor-bg-editor) 78%,transparent);--simeon-glass-stroke:color-mix(in srgb,var(--cursor-text-primary) 9%,transparent);--simeon-glass-highlight:light-dark(rgba(255,255,255,.75),rgba(255,255,255,.14));--simeon-glass-shadow:0 10px 30px -6px light-dark(rgba(0,0,0,.16),rgba(0,0,0,.55)),0 2px 8px -2px light-dark(rgba(0,0,0,.08),rgba(0,0,0,.4));--simeon-glass-blur:blur(24px) saturate(1.6)}
-.sand-agents-sidebar{background-color:color-mix(in srgb,var(--cursor-bg-chrome) 70%,transparent)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border-right-color:var(--simeon-glass-stroke)!important}
-.sand-info-pane{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important}
-.sand-prompt-shell{background-color:var(--simeon-glass-fill)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;border-radius:22px!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important}
-.sand-new-chat-menu,.sand-emoji-menu,.sand-mention-menu,.sand-reference-menu,.sand-agent-hover-card,.sand-link-hover-card,[role=dialog].sand-10e981r,[role=menu].sand-10e981r,[data-floating-ui-portal] .sand-10e981r{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important}
-.sand-new-chat-menu,.sand-emoji-menu,.sand-mention-menu,.sand-reference-menu,[role=dialog].sand-10e981r{border-radius:18px!important}
-.sand-new-messages-pill,.sand-update-pill,.sand-message-hover-actions,.sand-reaction-pill,.sand-computer-top-bar{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important;opacity:1!important}
-.sand-new-messages-pill,.sand-update-pill,.sand-message-hover-actions,.sand-reaction-pill{border-radius:999px!important}
-.sand-chat-header__name{-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;background-color:var(--simeon-glass-fill-strong)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight)!important}
-`;
-export const LIQUID_GLASS_MARKER = "/* Simeon: Liquid Glass on the chrome";
-
-export function patchOriginalGlassStylesheet(css) {
-  if (css.includes(LIQUID_GLASS_MARKER)) throw new Error("Original renderer Liquid Glass block is already present.");
-  return `${css}\n${LIQUID_GLASS_CSS}`;
-}
-
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
@@ -353,7 +321,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  await writeFile(bubbleSheets[0].target, patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css))));
+  await writeFile(bubbleSheets[0].target, patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)));
   await writeFile(markChunks[0].target, markPatched);
   const appIconTarget = path.join(assetsRoot, APP_ICON_ASSET);
   const appIconBefore = await readFile(appIconTarget).catch(() => null);
@@ -361,7 +329,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const appIconAfter = await readFile(appIconTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
-    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome"],
+    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card"],
     userBubble: { light: USER_BUBBLE_LIGHT, dark: USER_BUBBLE_DARK, stylesheet: path.relative(stageRoot, bubbleSheets[0].target) },
     original: { bytes: Buffer.byteLength(markChunks[0].source), sha256: sha256(markChunks[0].source) },
     patched: { bytes: Buffer.byteLength(markPatched), sha256: sha256(markPatched) },
@@ -388,7 +356,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     chunks: changes,
     marks,
     brand: { replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after }))], totals: brandTotals, files: brandFiles },
-    features: ["settings-router-provider", "settings-local-docker-vm", "usage-current-provider", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "chat-header-card", "liquid-glass-chrome"],
+    features: ["settings-router-provider", "settings-local-docker-vm", "usage-current-provider", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "chat-header-card"],
     transformations: ["settings-registry", "router-panel", "usage-panel", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
