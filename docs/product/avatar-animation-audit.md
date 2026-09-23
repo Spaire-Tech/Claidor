@@ -217,7 +217,22 @@ Nothing in the onboarding scene, the activity mapping, the editor or the
 sidebar needs to change for a new look: they all pass `color`, `shape`,
 `state`, `sizePx` and let the component draw.
 
-## 6. What was not measured
+## 6. Correction, same day: where the work lands
+
+Section 5 says a redesign "belongs inside `OnboardingCharacter`, and then no
+other file changes." That is true of the reconstruction and false of the
+app: `npm run package` ships the checksum-pinned 0.18.0 renderer bytes
+(`grok-bot-layers-measured.md`, `build-caisra.mjs`), and `frontend/` is a
+partial redraw that is not in the `.app`. Editing `character.tsx` changes
+nothing on a Mac. A new face enters the shipped window the way the Simeon
+name did: a package-time patch of the original renderer chunk
+(`scripts/lib/router-renderer-patch.mjs`, which already carries an
+"original-renderer-settings-extension" mode), replacing the drawing at its
+source, never a preload overlay over the marks. The mechanism in sections
+1–4 is still the contract, because it is the same code, minified, in that
+chunk; the reconstruction's byte anchors say where.
+
+## 7. What was not measured
 
 The pinned renderer's bytes are not in this container (`src/app/dist` is
 fetched by `npm run bootstrap`); this audit reads the reconstruction,
