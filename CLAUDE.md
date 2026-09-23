@@ -272,6 +272,18 @@ Both are patched (`patchOriginalBubble`, `patchOriginalBubbleStylesheet`).
 The bubble's text is `text/on-color`, white everywhere, untouched. The
 same token feeds `--cursor-foreground`, which the checked state of a
 checkbox uses, so that turns blue too. Not yet seen on a Mac.
+**The chat header is the agent's card, 23 September, later still**
+("the name of the agent are up top, left. i want to middle it … like
+muse … remove the line"): a CSS block appended to the pinned stylesheet
+(`HEADER_CARD_CSS`, `patchOriginalHeaderStylesheet`) hides the toolbar
+divider, stacks the identity as a centred column, draws the same
+animated mark at 88 px by overriding its inline 20 px, makes the name a
+pill, and pins the computer/info controls to the right; scoped with
+`:has()` to the identity variant so the thread breadcrumb and the agent
+exchange keep their layout. The transcript offsets by the toolbar's
+measured height (`qSn` writes `--sand-toolbar-height`), so it moves
+down by itself. Rendered headless with the real markup and stylesheet
+(toolbar 147 px); not yet seen on a Mac.
 `docs/product/name-measured.md` §Simeon is the record.
 
 **The product is Simeon, decided 22 September 2026, later the same day.**

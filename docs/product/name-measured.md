@@ -280,3 +280,26 @@ also mapped to `fill/bubble-user` and colours a checked checkbox, which
 therefore turns blue as well. `fill/bubble-user-disabled` (a pending
 message, black at 3 % alpha) is left as it was. Not yet seen on a Mac.
 
+## The chat header (23 September 2026, later still)
+
+"you see the name of the agent are up top, left. i want to middle it. and
+have it this way, like muse. you might wanna remove the line up there, as
+muse doesnt have a line. it feels more apple ish."
+
+Located: the header is `aSn` (`sand-chat-header`), rendered inside the
+absolutely positioned `<header class="sand-toolbar">` of `qLn`, which
+also holds the 0.5 px `sand-toolbar-divider`. The identity is a button
+(`sand-chat-header__identity`) with the mark (`ml` → `Iee` → `sd`,
+`fillPx` 20, inline width/height) and the name (`sand-chat-header__name`);
+the controls (`sand-chat-header__controls`) sit at the right. The
+transcript's top padding is `var(--sand-toolbar-height)`, written from the
+toolbar's `offsetHeight` by `qSn`.
+
+Done as CSS appended to the pinned stylesheet, no chunk change: divider
+hidden and the toolbar's own bottom border zeroed, identity as a centred
+column, mark at 88 px (`!important` beats the inline size; it is the same
+animated mark), name as a pill on `--sand-fill-bubble-agent`, controls
+absolutely positioned at the right. Scoped with `:has()` to the identity
+variant. Headless render with the real markup and the patched stylesheet,
+light and dark: toolbar 147 px, transcript under it. Not yet seen on a Mac.
+

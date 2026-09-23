@@ -216,6 +216,39 @@ export function patchOriginalBubbleStylesheet(css) {
   return replaceExactlyOnce(css, before, after, label);
 }
 
+/**
+ * The chat header is the agent's card (23 September 2026: "the name of the
+ * agent are up top, left. i want to middle it … like muse. you might wanna
+ * remove the line up there … it feels more apple ish"). CSS only, appended
+ * to the pinned stylesheet: the toolbar's divider line is hidden, the
+ * identity row (avatar + name) is a centred column, the avatar is drawn at
+ * 88 px (the mark's inline 20 px is overridden, so it is the same animated
+ * mark, larger), the name is a pill, and the controls (computer, info)
+ * stay at the right edge. Scoped with :has() to the identity variant of
+ * the header, so the thread breadcrumb and the agent-exchange variants keep
+ * their layout. The transcript already offsets by the toolbar's measured
+ * height (`--sand-toolbar-height`), so a taller header pushes it down.
+ */
+export const HEADER_CARD_CSS = `
+/* Simeon: the chat header is the agent's card, centred, without the divider (23 September 2026). */
+.sand-toolbar-divider{display:none!important}
+.sand-toolbar:has(.sand-chat-header__identity-row){padding-top:6px!important;padding-bottom:8px!important;border-bottom-width:0!important}
+.sand-chat-header:has(>.sand-chat-header__identity-row){justify-content:center!important;position:relative!important}
+.sand-chat-header__identity-row{flex-direction:column!important;align-items:center!important;gap:6px!important}
+.sand-chat-header__identity{flex-direction:column!important;align-items:center!important;gap:6px!important;padding:2px 8px 4px!important;border-radius:16px!important}
+.sand-chat-header__avatar .sand-agent-avatar,.sand-chat-header__avatar .sand-grok-bot-mark{width:88px!important;height:88px!important}
+.sand-chat-header__avatar img.sand-agent-avatar{border-radius:50%!important;object-fit:cover!important}
+.sand-chat-header__title{align-items:center!important}
+.sand-chat-header__name{font-size:15px!important;line-height:20px!important;padding:5px 14px!important;border-radius:999px!important;background-color:var(--sand-fill-bubble-agent)!important;font-weight:500!important}
+.sand-chat-header__controls{position:absolute!important;right:0!important;top:50%!important;transform:translateY(-50%)!important}
+`;
+export const HEADER_CARD_MARKER = "/* Simeon: the chat header is the agent's card";
+
+export function patchOriginalHeaderStylesheet(css) {
+  if (css.includes(HEADER_CARD_MARKER)) throw new Error("Original renderer header card block is already present.");
+  return `${css}\n${HEADER_CARD_CSS}`;
+}
+
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
@@ -281,7 +314,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  await writeFile(bubbleSheets[0].target, patchOriginalBubbleStylesheet(bubbleSheets[0].css));
+  await writeFile(bubbleSheets[0].target, patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)));
   await writeFile(markChunks[0].target, markPatched);
   const appIconTarget = path.join(assetsRoot, APP_ICON_ASSET);
   const appIconBefore = await readFile(appIconTarget).catch(() => null);
@@ -289,7 +322,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const appIconAfter = await readFile(appIconTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
-    replacements: [...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label),
+    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card"],
     userBubble: { light: USER_BUBBLE_LIGHT, dark: USER_BUBBLE_DARK, stylesheet: path.relative(stageRoot, bubbleSheets[0].target) },
     original: { bytes: Buffer.byteLength(markChunks[0].source), sha256: sha256(markChunks[0].source) },
     patched: { bytes: Buffer.byteLength(markPatched), sha256: sha256(markPatched) },
@@ -316,7 +349,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     chunks: changes,
     marks,
     brand: { replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after }))], totals: brandTotals, files: brandFiles },
-    features: ["settings-router-provider", "settings-local-docker-vm", "usage-current-provider", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue"],
+    features: ["settings-router-provider", "settings-local-docker-vm", "usage-current-provider", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "chat-header-card"],
     transformations: ["settings-registry", "router-panel", "usage-panel", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
