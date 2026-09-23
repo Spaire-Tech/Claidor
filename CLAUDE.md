@@ -189,10 +189,16 @@ the `[claidor] model=` line, and since 23 September a `[claidor] tool=`
 line per completed tool call (`host/runner/tool-call-log.ts`) and a
 `[claidor] send-message written|not written` line per delivery
 (`host/ports/transport.ts`). The real Agent loop delivers a SendMessage
-offline (`tests/send-message-through-agent-loop.test.mjs`); the "hi" that
-made 481 calls is not yet explained, and
-`docs/product/ai-does-not-answer-measured.md` says which log line decides
-it. Read that before reasoning about a silent agent again.
+offline (`tests/send-message-through-agent-loop.test.mjs`). **The "hi" that
+made 481 calls is explained, by the next run's log, the same evening:**
+GPT-5.6 greets with a `type:text` SendMessage carrying a `widget` object of
+empty strings, the schema refused the whole call ("Nothing was sent.
+Re-send…"), and the model re-sent it identically, one call every 3–5
+seconds. `send-message-schema.ts` now drops blank fields before
+validation (`isBlankField`); a filled foreign field is still refused.
+`docs/product/ai-does-not-answer-measured.md` has the log lines. Not yet
+run on a Mac with the fix. Read that file before reasoning about a silent
+agent again.
 
 **The agents' faces are Grok Bot's own, reverted 22 September 2026.** Over
 one day the marks carried, in turn, cloud bodies, DiceBear clay and DiceBear
