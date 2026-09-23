@@ -9,6 +9,7 @@ import { jsonSchema, streamText, tool, type CoreMessage, type LanguageModelV1, t
 import { BasePromptBuilder, BasePromptExecutor } from "../../../packages/chat-inference/base.js";
 import { asError } from "../../../shared/errors.js";
 import { withCheapRateLimitFallback } from "../../../shared/inference/cheap-rate-limit-fallback.js";
+import { logHostLine, setHostLogSink } from "../../../shared/host-log.js";
 import { CLAIDOR_WORKING_CONTEXT_TOKENS } from "../../../shared/inference/claidor-context-window.js";
 import { resolveSandAgentStepCap, stepBudgetExceededMessage } from "../../../shared/inference/turn-step-budget.js";
 import type { SandInferenceProvider } from "../../../shared/inference-router.js";
@@ -474,9 +475,12 @@ export function summarizeToolCalls(calls: readonly { readonly toolName?: string;
   }).join(" ");
 }
 
-let modelCallLog: (line: string) => void = (line) => console.info(line);
+// The line travels the host-log channel (`shared/host-log.ts`), the same
+// one the tool-result and send-message lines use. `setModelCallLog` is the
+// older name for the sink setter and still points at that one channel.
+const modelCallLog = (line: string): void => logHostLine(line);
 export function setModelCallLog(log: ((line: string) => void) | null): void {
-  modelCallLog = log ?? ((line) => console.info(line));
+  setHostLogSink(log);
 }
 
 function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, callInfo?: { readonly model: string; readonly effort: string }) {

@@ -177,6 +177,23 @@ time (a startup burst used to race on it and blind the app); and the
 computer narration prints the failure's sentence. The brake by hand is
 still `docker stop grok-bot-local-vm`. Not yet run on a Mac.
 
+**The box silences the loop's logger, established 23 September 2026.**
+`ports.runnerContext` is bound at build time
+(`scripts/host-production-activation.mjs`) to
+`createProductionRunnerContext()`, whose logger is `log: () => {}`. No
+`nal.tool_call.*`, `Running step` or `nal.empty_response.*` line can appear
+in `/tmp/sand-host.log`, so their absence proves nothing; and "Failed to
+send the message to the user" is a tool result the model reads, never a log
+line. What does reach the log is the stdout channel of `shared/host-log.ts`:
+the `[claidor] model=` line, and since 23 September a `[claidor] tool=`
+line per completed tool call (`host/runner/tool-call-log.ts`) and a
+`[claidor] send-message written|not written` line per delivery
+(`host/ports/transport.ts`). The real Agent loop delivers a SendMessage
+offline (`tests/send-message-through-agent-loop.test.mjs`); the "hi" that
+made 481 calls is not yet explained, and
+`docs/product/ai-does-not-answer-measured.md` says which log line decides
+it. Read that before reasoning about a silent agent again.
+
 **The agents' faces are Grok Bot's own, reverted 22 September 2026.** Over
 one day the marks carried, in turn, cloud bodies, DiceBear clay and DiceBear
 slice, each painted over `.sand-grok-bot-mark` by a preload overlay. The slice
