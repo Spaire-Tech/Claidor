@@ -1,6 +1,9 @@
 import { createHash } from "node:crypto";
-import { readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { copyFile, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { SIMEON_PETALS } from "./simeon-logo.mjs";
 
 const REGISTRY_BEFORE = 'const wDn=[{id:"general",label:"General",icon:"settings-gear"},{id:"usage",label:"Usage & Billing",icon:"chart-bars"},{id:"beta",label:"Updates",icon:"cloud-download"}]';
 const REGISTRY_AFTER = REGISTRY_BEFORE;
@@ -76,6 +79,54 @@ export function patchOriginalBrandStrings(source) {
   return { source: out, counts };
 }
 
+
+/**
+ * The marks in the shipped screens, decided by the founder on 23 September
+ * 2026 ("can we make it a cloud rather", "make it a cloud", and the petal
+ * mark "with a slow turn so it still feels alive").
+ *
+ * Three anchors in the pinned chunk, each exactly once:
+ *   1. The landing page's black mark next to the product name is an `sd`
+ *      with no shape, so it draws the default blob. It becomes a cloud, one
+ *      of the renderer's own shapes (`Jo.cloud`); the mood cycle is untouched.
+ *   2. The onboarding hero, the mark that travels across the screens
+ *      (`QBn`), is declared `shape:"blob"`. It becomes a cloud. The three
+ *      teammates keep their shapes.
+ *   3. The boot screen's logo (`tOt`, "Setting up …'s computer") is Grok
+ *      Bot's own, an SVG path morphing through 158 frames. It becomes
+ *      Simeon's twelve petals, drawn from the numbers in simeon-logo.mjs,
+ *      same size, same colour variable (`MNe`, light-dark), same
+ *      reduced-motion rule, turning once every 14 seconds instead of
+ *      morphing.
+ * Plus one file: the hand-off screen ("Waking your computer…") and About
+ * draw `assets/app-icon-C7NKj2u7.png`, and the pinned renderer carries Grok
+ * Bot's icon under that name. Nothing replaced it before 23 September; the
+ * founder's icon from frontend/runtime-assets is written over it now.
+ */
+const LANDING_MARK_BEFORE = 'p.jsx(sd,{"aria-hidden":!0,color:"black",paused:N,sizePx:ujn,state:E})';
+const LANDING_MARK_AFTER = 'p.jsx(sd,{"aria-hidden":!0,color:"black",paused:N,shape:"cloud",sizePx:ujn,state:E})';
+const HERO_MARK_BEFORE = '{id:"hero",color:"black",shape:"blob",isGazing:!1,bob:null}';
+const HERO_MARK_AFTER = '{id:"hero",color:"black",shape:"cloud",isGazing:!1,bob:null}';
+const LOADING_LOGO_BEFORE = 'function tOt({size:n,color:e="black",className:t}){const s=window.matchMedia("(prefers-reduced-motion: reduce)").matches;return p.jsx("svg",{"aria-hidden":"true",className:t,height:n,viewBox:V_t,width:n,xmlns:"http://www.w3.org/2000/svg",children:p.jsx("path",{d:Q_t,fillRule:"evenodd",style:{fill:MNe(e)},children:s?null:p.jsx("animate",{attributeName:"d",calcMode:"discrete",dur:`${X_t}s`,repeatCount:"indefinite",values:eOt})})})}';
+/** The petals fill the 80..320 window of the 400 box, so at 56 px the mark is as large as the logo it replaces. */
+export const LOADING_LOGO_VIEWBOX = "80 80 240 240";
+export const LOADING_LOGO_TURN_SECONDS = 14;
+const LOADING_LOGO_PETALS = SIMEON_PETALS.map((petal, index) => `p.jsx("ellipse",{cx:${petal.cx},cy:${petal.cy},rx:${petal.rx},ry:${petal.ry},transform:"rotate(${petal.angle} ${petal.cx} ${petal.cy})",style:r},${index})`).join(",");
+const LOADING_LOGO_AFTER = `function tOt({size:n,color:e="black",className:t}){const s=window.matchMedia("(prefers-reduced-motion: reduce)").matches,r={fill:MNe(e)};return p.jsx("svg",{"aria-hidden":"true",className:t,height:n,viewBox:"${LOADING_LOGO_VIEWBOX}",width:n,xmlns:"http://www.w3.org/2000/svg",children:p.jsxs("g",{children:[${LOADING_LOGO_PETALS},s?null:p.jsx("animateTransform",{attributeName:"transform",type:"rotate",from:"0 200 200",to:"360 200 200",dur:"${LOADING_LOGO_TURN_SECONDS}s",repeatCount:"indefinite"},"turn")]})})}`;
+export const MARK_REPLACEMENTS = Object.freeze([
+  ["landing-mark-cloud", LANDING_MARK_BEFORE, LANDING_MARK_AFTER],
+  ["hero-mark-cloud", HERO_MARK_BEFORE, HERO_MARK_AFTER],
+  ["loading-logo-petals", LOADING_LOGO_BEFORE, LOADING_LOGO_AFTER],
+]);
+export const APP_ICON_ASSET = "app-icon-C7NKj2u7.png";
+export const APP_ICON_SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../frontend/runtime-assets", APP_ICON_ASSET);
+
+export function patchOriginalMarks(source) {
+  let out = source;
+  for (const [label, before, after] of MARK_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
@@ -122,6 +173,27 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
       patched: { bytes: Buffer.byteLength(patched), sha256: sha256(patched) },
     });
   }
+  // The marks: the landing and hero clouds and the loading logo live in one chunk.
+  const markCandidates = (await readdir(assetsRoot)).filter((name) => name.endsWith(".js")).map((name) => path.join(assetsRoot, name));
+  const markChunks = [];
+  for (const target of markCandidates) {
+    const source = await readFile(target, "utf8");
+    if (MARK_REPLACEMENTS.every(([, before]) => source.includes(before))) markChunks.push({ target, source });
+  }
+  if (markChunks.length !== 1) throw new Error(`Expected one original chunk carrying the landing mark, the onboarding hero and the loading logo, found ${markChunks.length}.`);
+  const markPatched = patchOriginalMarks(markChunks[0].source);
+  await writeFile(markChunks[0].target, markPatched);
+  const appIconTarget = path.join(assetsRoot, APP_ICON_ASSET);
+  const appIconBefore = await readFile(appIconTarget).catch(() => null);
+  await copyFile(APP_ICON_SOURCE, appIconTarget);
+  const appIconAfter = await readFile(appIconTarget);
+  const marks = {
+    chunk: path.relative(stageRoot, markChunks[0].target),
+    replacements: MARK_REPLACEMENTS.map(([label]) => label),
+    original: { bytes: Buffer.byteLength(markChunks[0].source), sha256: sha256(markChunks[0].source) },
+    patched: { bytes: Buffer.byteLength(markPatched), sha256: sha256(markPatched) },
+    appIcon: { path: `dist/renderer/assets/${APP_ICON_ASSET}`, original: appIconBefore == null ? null : { bytes: appIconBefore.length, sha256: sha256(appIconBefore) }, patched: { bytes: appIconAfter.length, sha256: sha256(appIconAfter) } },
+  };
   // The name, over every chunk and the page, after the Settings patch landed.
   const brandFiles = [];
   const brandTotals = Object.fromEntries([...BRAND_REPLACEMENTS.map(([before]) => before), ...BRAND_WORD_REPLACEMENTS.map(([, , label]) => label)].map((key) => [key, 0]));
@@ -141,9 +213,10 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     schemaVersion: 2,
     mode: "original-renderer-settings-extension",
     chunks: changes,
+    marks,
     brand: { replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after }))], totals: brandTotals, files: brandFiles },
-    features: ["settings-router-provider", "settings-local-docker-vm", "usage-current-provider", "brand-simeon"],
-    transformations: ["settings-registry", "router-panel", "usage-panel", "brand-strings"],
+    features: ["settings-router-provider", "settings-local-docker-vm", "usage-current-provider", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon"],
+    transformations: ["settings-registry", "router-panel", "usage-panel", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
   await writeFile(provenancePath, `${JSON.stringify(record, null, 2)}\n`);

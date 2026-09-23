@@ -165,7 +165,14 @@ Menu bar top left says Simeon, on the founder's Mac, from a build of
 was still at the previous commit, `dist/` held no bundle, and the running
 process was the morning's install; nothing had been built.
 
-## The identity, 23 September 2026 (not yet run on a Mac)
+## The identity, 23 September 2026
+
+**Measured on the founder's Mac, the same day, from a build of `c5be3bb8`:
+"it launched, sign in worked, simeon came to the front."** So the bundle
+identifier, the `simeon://` claim, the sign-in round trip through
+Claidor and the return link all work. Whether macOS asked for the privacy
+grants again, and what identifiers the helper bundles carry, were not
+reported.
 
 "go step 3, com.claidor.simeon is fine." The bundle identifier is
 `com.claidor.simeon` (was `com.anysphere.sand.reconstructed`) and the URL
@@ -196,3 +203,28 @@ untouched.
 **Not measured:** whether the pinned 0.18.0 renderer prints `sand://` links
 anywhere a person could click (a grep over `src/app/dist/renderer/assets`
 on a bootstrapped Mac decides it; such a link would now open Grok Bot).
+
+## The marks in the shipped screens (23 September 2026, evening)
+
+The founder, on the screens: "can we make it a cloud rather" (the landing
+mark next to the name), "make it a cloud" (the onboarding hero), and for
+the boot screen's Grok Bot logo the petal mark, "with a slow turn so it
+still feels alive", in black and in white.
+
+Located on the pinned chunk `index-UbX-y3il.js`, all package-time in
+`scripts/lib/router-renderer-patch.mjs` (`MARK_REPLACEMENTS`,
+`patchOriginalMarks`), each anchor exactly once
+(`tests/renderer-marks-patch.test.mjs` checks the real chunk when
+`GROK_BOT_PINNED_RENDERER` names it):
+
+| Screen | What it was | What it is |
+|---|---|---|
+| Landing, next to "Simeon" | `sd` 64 px, black, default blob, mood every 1.2 s (`pjn`) | same, `shape:"cloud"` |
+| Onboarding hero across the screens (`QBn`) | `shape:"blob"` | `shape:"cloud"`; teammates unchanged |
+| Boot screen "Setting up Simeon's computer" (`C0t`, 56 px) | `tOt`: Grok Bot's logo, SMIL morph through 158 paths | twelve petals from `SIMEON_PETALS`, viewBox `80 80 240 240`, fill `MNe(color)` (light-dark), `animateTransform` rotate 14 s, none under reduced motion |
+| Hand-off "Waking your computer…" and About | `assets/app-icon-C7NKj2u7.png`, **Grok Bot's icon** (sha `79e6a73e…`); nothing overwrote it | the founder's icon from `frontend/runtime-assets` (sha `70ddf961…`), copied at package time |
+
+Measured here: the patched chunk parses; the petal SVG at 56 px on white
+and on `#111` (headless Chromium, 2×) is the founder's mark at the same
+size the old logo had. Not yet seen on a Mac.
+

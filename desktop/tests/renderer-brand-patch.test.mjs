@@ -20,7 +20,8 @@ test("the brand pass renames every Grok Bot and New Bot in a chunk and counts th
 });
 
 test("the full patch renames the staged renderer and records what it changed, and refuses a renderer that never said Grok Bot", async () => {
-  const { applyOriginalRendererRouterPatch } = await import(patchModule);
+  const { applyOriginalRendererRouterPatch, MARK_REPLACEMENTS } = await import(patchModule);
+  const markAnchors = MARK_REPLACEMENTS.map(([, before]) => before).join(";");
   const source = await readFile(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs"), "utf8");
   const anchor = (name) => /const (\w+) = ('.*?');/.exec(source.split(`const ${name} = `)[1] == null ? "" : `const ${name} = ${source.split(`const ${name} = `)[1]}`)?.[2];
   const registry = JSON.parse(`"${anchor("REGISTRY_BEFORE").slice(1, -1).replace(/"/g, '\\"')}"`);
@@ -30,7 +31,7 @@ test("the full patch renames the staged renderer and records what it changed, an
   try {
     const assets = path.join(stage, "dist", "renderer", "assets");
     await mkdir(assets, { recursive: true });
-    await writeFile(path.join(assets, "index-abc.js"), `${registry};function Sa(s){};${general};${usage};const xSe = "Grok Bot";const title="Meet Grok Bot";const n="New Bot";`);
+    await writeFile(path.join(assets, "index-abc.js"), `${registry};function Sa(s){};${general};${usage};${markAnchors};const xSe = "Grok Bot";const title="Meet Grok Bot";const n="New Bot";`);
     await writeFile(path.join(assets, "other-def.js"), 'const c="Grok Bot settings";');
     await writeFile(path.join(assets, "style.css"), '.x{content:"Grok Bot"}');
     await writeFile(path.join(stage, "dist", "renderer", "index.html"), "<title>Grok Bot</title>");
@@ -44,7 +45,7 @@ test("the full patch renames the staged renderer and records what it changed, an
     const provenance = JSON.parse(await readFile(path.join(stage, "dist", "renderer-router-extension.json"), "utf8"));
     assert.ok(provenance.features.includes("brand-simeon"));
     // A renderer with no Grok Bot at all is not the pinned one.
-    await writeFile(path.join(assets, "index-abc.js"), `${registry};function Sa(s){};${general};${usage};`);
+    await writeFile(path.join(assets, "index-abc.js"), `${registry};function Sa(s){};${general};${usage};${markAnchors};`);
     await writeFile(path.join(assets, "other-def.js"), "");
     await writeFile(path.join(assets, "style.css"), "");
     await writeFile(path.join(stage, "dist", "renderer", "index.html"), "");
