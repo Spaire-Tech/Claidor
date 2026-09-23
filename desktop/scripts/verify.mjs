@@ -8,6 +8,7 @@ import {
   outputApp,
   reconstructedBundleId,
   reconstructedName,
+  reconstructedUrlScheme,
   repoRoot,
   sourceAppDir,
   upstreamAsarSha256,
@@ -262,7 +263,8 @@ if (plistText.includes("ElectronAsarIntegrity")) throw new Error("Stale Electron
 // (measured 23 September 2026; scripts/package-macos.mjs removes it).
 if (plistText.includes("CFBundleIconName")) throw new Error("CFBundleIconName remains in the reconstructed application; the Dock would show the shell's Assets.car icon, not Simeon's");
 const urlTypes = await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleURLTypes", "xml1", "-o", "-", infoPlist]);
-if (!/<key>CFBundleURLSchemes<\/key>[\s\S]*<string>sand<\/string>/.test(urlTypes)) throw new Error("Reconstructed application has no sand URL registration");
+if (!urlTypes.includes(`<string>${reconstructedUrlScheme}</string>`)) throw new Error(`Reconstructed application has no ${reconstructedUrlScheme} URL registration`);
+if (urlTypes.includes("<string>sand</string>")) throw new Error("Reconstructed application still claims Grok Bot's sand URL scheme");
 
 await run(SYSTEM_TOOLS.codesign, ["--verify", "--deep", "--strict", verifiedApp]);
 const cleanCount = runtimeComposition.filter(({ mode }) => mode === "clean-source").length;

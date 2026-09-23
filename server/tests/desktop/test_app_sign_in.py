@@ -138,6 +138,23 @@ class TestLoginDeepControl:
         assert "sand://app/v1/open" in response.text
 
     @pytest.mark.auth
+    async def test_the_app_names_its_own_scheme_and_the_link_follows_it(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        # Since 23 September 2026 the app sends `simeon` (its own scheme,
+        # `SAND_DEEP_LINK_SCHEME` in desktop/source/shared/desktop.ts) and
+        # claims only `simeon://` in its bundle; `sand://` is Grok Bot's.
+        # The server builds the link from what the app sends, so no
+        # server change is needed for the app's scheme to change.
+        _, challenge, uuid = _login_metadata()
+        response = await _confirm(
+            client, uuid=uuid, challenge=challenge, redirect_target="simeon"
+        )
+        assert response.status_code == 200
+        assert "simeon://app/v1/open" in response.text
+        assert "sand://" not in response.text
+
+    @pytest.mark.auth
     async def test_a_redirect_target_that_is_not_a_scheme_builds_no_link(
         self, client: httpx.AsyncClient
     ) -> None:

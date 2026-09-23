@@ -164,3 +164,35 @@ Menu bar top left says Simeon, on the founder's Mac, from a build of
 "literally nothing changed" was measured before believing it: the checkout
 was still at the previous commit, `dist/` held no bundle, and the running
 process was the morning's install; nothing had been built.
+
+## The identity, 23 September 2026 (not yet run on a Mac)
+
+"go step 3, com.claidor.simeon is fine." The bundle identifier is
+`com.claidor.simeon` (was `com.anysphere.sand.reconstructed`) and the URL
+scheme the bundle claims, the app registers with LaunchServices, the parser
+accepts and the app sends the server as `redirectTarget` is `simeon` (was
+`sand`, which Grok Bot claims too; macOS gives a scheme to one app). One
+constant, `SAND_DEEP_LINK_SCHEME` in `source/shared/desktop.ts`, and one in
+`scripts/lib/config.mjs`; `tests/app-identity.test.mjs` fails if they part.
+The helper bundles keep the identifiers the 0.18 shell gave them; they were
+not read and are not this step's.
+
+**The server needed no change, contrary to the handoff.** `app_sign_in.py`
+builds `<redirectTarget>://app/v1/open` from whatever token the app sends
+and never spelled `sand`; a server test now pins `simeon`. So the build
+order is free: the app can ship before or after any deploy.
+
+**The cost.** `safeStorage` secrets (the sign-in tokens in
+`sand-secrets.json`, the Settings secrets) are read through the Keychain;
+a value that no longer decrypts reads as `null` (`secret-store.ts`), which
+is "signed out", never a crash. So after the first build with the new
+identifier: one sign-in, and Settings secrets re-entered, at most; and the
+privacy grants macOS keys on the bundle identifier (screen recording,
+accessibility, automation) asked again. Whether the Keychain actually
+refuses is not measured; the ad-hoc signature already changes every build.
+Agents, chats, files and the box are not encrypted that way and are
+untouched.
+
+**Not measured:** whether the pinned 0.18.0 renderer prints `sand://` links
+anywhere a person could click (a grep over `src/app/dist/renderer/assets`
+on a bootstrapped Mac decides it; such a link would now open Grok Bot).

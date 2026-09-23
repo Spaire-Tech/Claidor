@@ -106,9 +106,12 @@ GET only **asks**: it names the account and waits for a POST. The
 session cookie is `SameSite=lax`, which a cross-site form post does not
 carry, and the POST additionally refuses a foreign `Origin`.
 
-After the POST the page tries `sand://app/v1/open` — the one route
-`parseSandDeepLink` (`desktop/source/shared/deep-link.ts`) accepts,
-which brings the window forward. There is no auth deep link in that
+After the POST the page tries `<redirectTarget>://app/v1/open`, built
+from the name the app sent — `simeon` since 23 September 2026
+(`SAND_DEEP_LINK_SCHEME` in `desktop/source/shared/desktop.ts`; it was
+`sand`, which Grok Bot also claims) — the one route `parseSandDeepLink`
+(`desktop/source/shared/deep-link.ts`) accepts, which brings the window
+forward. The server did not change for that: it never spelled `sand`. There is no auth deep link in that
 parser and none is needed: the app learns it is signed in by polling.
 A `redirectTarget` that is not a bare protocol token builds no link.
 

@@ -11,9 +11,9 @@ export interface DeepLinkInfo {
 }
 
 export function deepLinkRoute(link: DeepLinkInfo): string {
-  return `sand://app/v1/info?topic=${link.topic}`;
+  return `simeon://app/v1/info?topic=${link.topic}`;
 }
 
 export function deepLinkSourceLabel(source: DeepLinkSource): string {
-  return source === "protocol" ? "Custom protocol (sand://)" : "HTTPS link";
+  return source === "protocol" ? "Custom protocol (simeon://)" : "HTTPS link";
 }
