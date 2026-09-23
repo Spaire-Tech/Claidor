@@ -70,6 +70,7 @@ from .pricing import (
     SPEECH_VOICE,
     openai_models_list,
 )
+from .proxy_common import budget_refusal
 from .proxy_common import error_response as _error
 from .proxy_common import log_upstream_refusal as _log_upstream_refusal
 from .proxy_common import upstream_timeout as _timeout
@@ -77,7 +78,6 @@ from .service import (
     AUTH_CODE_INVALID,
     MEMORY_FILE_LIMIT,
     MEMORY_REFUSED,
-    QUOTA_EXHAUSTED_CODE,
     REFRESH_INVALID,
     DesktopMemoryRefused,
     DesktopModel,
@@ -870,20 +870,9 @@ async def _proxy(
     if not provider_configured(model.provider):
         return _error("api_error", "The model service is not configured.", 503)
     user = caller.user
-    if await desktop.exhausted(session, user):
-        return JSONResponse(
-            {
-                "error": {
-                    "type": "quota_exhausted",
-                    "code": QUOTA_EXHAUSTED_CODE,
-                    "message": (
-                        f"Monthly credits exhausted (code {QUOTA_EXHAUSTED_CODE}). "
-                        "The allowance resets at the start of next month."
-                    ),
-                }
-            },
-            status_code=402,
-        )
+    refused = await budget_refusal(session, user)
+    if refused is not None:
+        return refused
 
     wire = _WIRES[spoken]
     stream = payload.get("stream") is True
@@ -1051,20 +1040,9 @@ async def proxy_speech(
         return _error("api_error", "The speech service is not configured.", 503)
 
     user = caller.user
-    if await desktop.exhausted(session, user):
-        return JSONResponse(
-            {
-                "error": {
-                    "type": "quota_exhausted",
-                    "code": QUOTA_EXHAUSTED_CODE,
-                    "message": (
-                        f"Monthly credits exhausted (code {QUOTA_EXHAUSTED_CODE}). "
-                        "The allowance resets at the start of next month."
-                    ),
-                }
-            },
-            status_code=402,
-        )
+    refused = await budget_refusal(session, user)
+    if refused is not None:
+        return refused
 
     # The voice is ours, not the caller's. All seven of the app's voices
     # name a manner and ride on one OpenAI voice (`direction.md` §4), and

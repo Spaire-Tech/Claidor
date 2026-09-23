@@ -189,6 +189,11 @@ class Settings(BaseSettings):
     DESKTOP_REFRESH_TOKEN_TTL: timedelta = timedelta(days=30)
     # Credits per calendar month per person; see polar.desktop.service.
     DESKTOP_MONTHLY_CREDITS: int = 3_000_000
+    # Credits per sliding hour per person: the brake on a runaway turn.
+    # 200,000 credits is about sixty cents at the price table. Measured
+    # 22 September 2026: one unattended first-run loop spent 1.9M credits
+    # in fifty minutes with nothing on screen (docs/product/spend-guards.md).
+    DESKTOP_HOURLY_CREDITS: int = 200_000
     # One address per provider the catalogue names. The key that goes
     # with each is ANTHROPIC_API_KEY / OPENAI_API_KEY below; a provider
     # with no key is simply not offered in the app's model list, never an

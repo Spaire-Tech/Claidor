@@ -139,7 +139,8 @@ import type {
 } from "./sand-auto-review.js";
 import type { SmartModeClassifierConversationMessage } from "../../packages/proto/generated/agent/v1/smart_mode_classifier_exec_pb.js";
 
-export const SAND_AGENT_MAX_STEPS = 5_000;
+import { resolveSandAgentStepCap } from "../../shared/inference/turn-step-budget.js";
+export { SAND_AGENT_MAX_STEPS, SAND_HIDDEN_TURN_MAX_STEPS, resolveSandAgentStepCap } from "../../shared/inference/turn-step-budget.js";
 
 export interface TurnProfileIdentity {
   readonly name: string;
@@ -269,7 +270,7 @@ export function createSandAgentStaticConfig(
         onProfileUpdateAppended,
       );
   return {
-    maxSteps: SAND_AGENT_MAX_STEPS,
+    maxSteps: resolveSandAgentStepCap(),
     modelId: input.modelId,
     agentTokenLimit: input.agentTokenLimit,
     backgroundSummarizationProps: {

@@ -48,9 +48,9 @@ from .pricing import (
     transcription_seconds,
 )
 from .proxy_common import (
+    budget_refusal,
     error_response,
     log_upstream_refusal,
-    quota_exhausted_response,
     record_usage_row,
     upstream_timeout,
 )
@@ -59,7 +59,6 @@ from .service import (
     DesktopProvider,
     SpokenApi,
     Usage,
-    desktop,
     model_by_id,
     provider_api_key,
     provider_base_url,
@@ -110,9 +109,7 @@ async def _gate(
         return error_response(
             "api_error", f"The {what} service is not configured.", 503
         )
-    if await desktop.exhausted(session, caller.user):
-        return quota_exhausted_response()
-    return None
+    return await budget_refusal(session, caller.user)
 
 
 async def _record(

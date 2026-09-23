@@ -111,7 +111,7 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(cursorBackend, /createProviderPromptSession\(routedProvider, \{ modelId: options\.requestedModel\.modelId \}\)/);
   assert.doesNotMatch(rendererPatch, /ANTHROPIC_API_KEY|OPENAI_API_KEY/);
   assert.match(turnShell, /const inferenceProvider = "claidor"/);
-  assert.match(turnShell, /createProviderPromptSession\(inferenceProvider, sessionOptions\)/);
+  assert.match(turnShell, /createProviderPromptSession\(inferenceProvider, \{ \.\.\.sessionOptions, hidden \}\)/);
   assert.match(coordinator, /method !== "sendPrompt" \|\| !handledLocally\(provider\)/);
   assert.match(coordinator, /method === "respondToWidget" && handledLocally\(provider\)/);
   assert.match(coordinator, /skipTurn: true/);

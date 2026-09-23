@@ -73,7 +73,7 @@ test("the first-run intro runs on the full runner, and product turns on the host
   assert.match(lifecycle, /SAND_ONBOARDING_KICKSTART_PROMPT/);
   assert.match(lifecycle, /runner\.run\(prompt, \{ hidden: true \}\)/);
   assert.match(lifecycle, /ensureHiddenTurnReply\(runner\)/);
-  assert.match(lifecycle, /else if \(!result\.aborted && delivered\)\n\s*session\.db\.setIntroductionPending\(false\)/);
+  assert.match(lifecycle, /\} else if \(!result\.aborted\) \{\n[\s\S]*?session\.db\.setIntroductionPending\(false\);\n\s*if \(!delivered\)/);
   assert.doesNotMatch(lifecycle, /deliverCheapIntroduction/);
   assert.doesNotMatch(lifecycle, /runRoutedProviderText/);
   assert.doesNotMatch(lifecycle, /SEND_MESSAGE_PLAIN_TEXT_RETRY/);

@@ -7,3 +7,6 @@ export { createZodAgentTool } from "../../source/packages/agent/tools/common.js"
 export { createContext } from "../../source/packages/context/core.js";
 export { z } from "zod";
 export { claidorReasoningEffortForSession, configuredClaidorReasoningEffort, configuredClaidorCheapReasoningEffort, DEFAULT_CLAIDOR_REASONING_EFFORT, DEFAULT_CLAIDOR_CHEAP_REASONING_EFFORT, runRoutedProviderText } from "../../source/host/extensions/inference/provider-session.js";
+export { createModelCallBudget, spendModelCall, setModelCallLog, formatModelCallLogLine } from "../../source/host/extensions/inference/provider-session.js";
+export { resolveSandAgentStepCap, SAND_AGENT_MAX_STEPS, SAND_HIDDEN_TURN_MAX_STEPS, stepBudgetExceededMessage } from "../../source/shared/inference/turn-step-budget.js";
+export { SAND_ONBOARDING_KICKSTART_PROMPT, INTRODUCTION_UNDELIVERED_DETAIL } from "../../source/shared/agents/onboarding.js";

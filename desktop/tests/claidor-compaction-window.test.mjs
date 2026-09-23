@@ -57,7 +57,7 @@ test("Claidor reports the working window, not Terra's 1.05M physical one", async
   const host = await readFile(path.join(repoRoot, "source/host/host-runner-composition.ts"), "utf8");
   try {
     assert.equal(window.module.CLAIDOR_WORKING_CONTEXT_TOKENS, 200_000);
-    assert.match(providers, /aiSdkExecutor\([^\n]+CLAIDOR_WORKING_CONTEXT_TOKENS, \{ reasoningEffort \}\)/);
+    assert.match(providers, /aiSdkExecutor\([^\n]+CLAIDOR_WORKING_CONTEXT_TOKENS, \{ reasoningEffort \}, \{ model: id, effort: reasoningEffort \}\)/);
     assert.match(host, /agentTokenLimit: CLAIDOR_WORKING_CONTEXT_TOKENS/);
     assert.doesNotMatch(providers, /maxTokens: 0 \}\)\);\n  if \(onUsage/);
   } finally {

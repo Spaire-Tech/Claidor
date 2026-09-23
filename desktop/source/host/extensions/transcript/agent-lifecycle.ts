@@ -14,6 +14,7 @@ import {
 } from "../../../shared/agents/disk-saver.js";
 import {
   INTRODUCTION_FAILED_TRAY_TITLE,
+  INTRODUCTION_UNDELIVERED_DETAIL,
   SAND_ONBOARDING_KICKSTART_PROMPT,
   introductionFailedTrayKey,
 } from "../../../shared/agents/onboarding.js";
@@ -154,8 +155,21 @@ export class AgentLifecycle {
           if (result.quiescedForUpgrade) {
             this.tm.upgradeResume.markAgentResumePending(session, "turn");
             session.db.setIntroductionPending(false);
-          } else if (!result.aborted && delivered)
+          } else if (!result.aborted) {
+            // One attempt, delivered or not. Grok Bot kept the introduction
+            // owed until a message landed, so every open of the agent ran
+            // the whole first turn again; measured 22 September 2026, that
+            // was 481 model calls with nothing on screen. Now the intro
+            // runs once, and an undelivered one is said out loud.
             session.db.setIntroductionPending(false);
+            if (!delivered)
+              this.tm.trayErrors.pushError({
+                agentId: session.id,
+                title: INTRODUCTION_FAILED_TRAY_TITLE,
+                detail: INTRODUCTION_UNDELIVERED_DETAIL,
+                dedupeKey: introductionFailedTrayKey(session.id),
+              });
+          }
           await this.tm.roster.emitAgentUpdate(session.id);
         } catch (error) {
           this.tm.telemetry.reportAgentError({
