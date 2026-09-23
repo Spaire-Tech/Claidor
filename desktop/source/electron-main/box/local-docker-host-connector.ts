@@ -54,14 +54,28 @@ function inferenceCredentialPath(settingsPath: string): string {
   return join(dirname(settingsPath), "local-docker-credential", "inference.json");
 }
 
-async function persistInferenceCredential(settingsPath: string, credential: InferenceCredential): Promise<string> {
-  const target = inferenceCredentialPath(settingsPath);
-  const temporary = `${target}.${process.pid}.tmp`;
-  await mkdir(dirname(target), { recursive: true });
-  await writeFile(temporary, `${JSON.stringify({ accessToken: credential.accessToken, expiresAtMs: credential.expiresAtMs })}\n`, { encoding: "utf8", mode: 0o600 });
-  await rename(temporary, target);
-  await chmod(target, 0o600);
-  return target;
+// The app fires its box calls in a burst at startup, and each one runs
+// this connect. Until 22 September 2026 every caller wrote the token file
+// through the same temporary name, so the first rename won and the rest
+// failed with "no such file", which failed the whole connect: the box was
+// up, the app could not reach it, and the agent worked with nothing on
+// screen. One writer at a time now, each with its own temporary name.
+let persistQueue: Promise<unknown> = Promise.resolve();
+let persistSerial = 0;
+export function persistInferenceCredential(settingsPath: string, credential: InferenceCredential): Promise<string> {
+  const write = async (): Promise<string> => {
+    const target = inferenceCredentialPath(settingsPath);
+    persistSerial += 1;
+    const temporary = `${target}.${process.pid}.${persistSerial}.tmp`;
+    await mkdir(dirname(target), { recursive: true });
+    await writeFile(temporary, `${JSON.stringify({ accessToken: credential.accessToken, expiresAtMs: credential.expiresAtMs })}\n`, { encoding: "utf8", mode: 0o600 });
+    await rename(temporary, target);
+    await chmod(target, 0o600);
+    return target;
+  };
+  const next = persistQueue.then(write, write);
+  persistQueue = next.catch(() => undefined);
+  return next;
 }
 
 async function ensureInferenceCredentialDirectory(settingsPath: string): Promise<string> {
@@ -271,6 +285,33 @@ export async function startLocalDockerBox(settingsPath: string): Promise<Gateway
   return await queuedEnsure(settingsPath);
 }
 
+// Quitting Simeon stops the box. The agent runs inside the container, so
+// until 22 September 2026 a turn kept calling the model after the window
+// was closed; the only brake was `docker stop` by hand. Grok Bot's cloud
+// box is meant to work unattended; a box on the person's own card is not,
+// until they ask for that by setting SAND_KEEP_BOX_RUNNING_ON_QUIT=1.
+export const SAND_KEEP_BOX_RUNNING_ON_QUIT_ENV = "SAND_KEEP_BOX_RUNNING_ON_QUIT";
+export function shouldStopLocalDockerBoxOnQuit(boxRuntime: string, env: NodeJS.ProcessEnv = process.env): boolean {
+  if (boxRuntime !== "local-docker") return false;
+  return !/^(1|true|yes)$/i.test(env[SAND_KEEP_BOX_RUNNING_ON_QUIT_ENV]?.trim() ?? "");
+}
+export async function stopLocalDockerBoxOnQuit(options: { readonly boxRuntime: string; readonly env?: NodeJS.ProcessEnv; readonly stop?: () => Promise<void>; readonly log?: (line: string) => void; readonly timeoutMs?: number }): Promise<"stopped" | "kept" | "failed" | "timed-out"> {
+  const log = options.log ?? computerStreamLine;
+  if (!shouldStopLocalDockerBoxOnQuit(options.boxRuntime, options.env)) { log("local docker: kept running on quit"); return "kept"; }
+  const stop = options.stop ?? stopLocalDockerBox;
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    const outcome = await Promise.race([
+      stop().then(() => "stopped" as const, (error: unknown) => { log(`local docker: stop on quit FAILED: ${error instanceof Error ? error.message : String(error)}`); return "failed" as const; }),
+      new Promise<"timed-out">((resolve) => { timer = setTimeout(() => resolve("timed-out"), options.timeoutMs ?? 15_000); }),
+    ]);
+    log(outcome === "stopped" ? "local docker: stopped on quit" : outcome === "timed-out" ? "local docker: stop on quit did not finish in time; the container may still be running" : "local docker: stop on quit failed");
+    return outcome;
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
 export async function stopLocalDockerBox(): Promise<void> {
   const inspected = await inspectContainer();
   if (!inspected.exists || !inspected.running) return;
@@ -294,7 +335,7 @@ export function createSettingsRoutedHostConnector(
       ]);
       const connection = await queuedEnsure(settings.settingsPath, issued);
       const late = await pending;
-      if (late != null) await persistInferenceCredential(settings.settingsPath, late);
+      if (late != null && late !== issued) await persistInferenceCredential(settings.settingsPath, late);
       return connection;
     })();
   };

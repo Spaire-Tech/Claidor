@@ -491,6 +491,70 @@ class TestProxy:
         assert response.status_code == 402
         assert "40200" in json.dumps(response.json())
 
+    async def test_the_hourly_budget_stops_a_runaway_hour_with_its_own_code(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        save_fixture: SaveFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        """Measured 22 September 2026: one unattended loop spent 1.9M
+        credits in fifty minutes. The month still allowed it; the hour
+        must not."""
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-test")
+        access, _ = await _signed_in(client, session, user)
+        await save_fixture(
+            DesktopUsage(
+                user_id=user.id,
+                model="claude-sonnet-5",
+                credits=settings.DESKTOP_HOURLY_CREDITS,
+                upstream_status=200,
+            )
+        )
+        assert settings.DESKTOP_HOURLY_CREDITS < settings.DESKTOP_MONTHLY_CREDITS
+        with respx.mock(assert_all_called=False) as mock:
+            route = mock.post(f"{settings.DESKTOP_ANTHROPIC_BASE_URL}/v1/messages")
+            response = await client.post(
+                "/desktop/api/proxy/v1/messages",
+                headers={"Authorization": f"Bearer {access}"},
+                json={"model": "claude-sonnet-5", "messages": []},
+            )
+            assert not route.called
+        assert response.status_code == 402
+        body = json.dumps(response.json())
+        assert "40201" in body
+        assert "Hourly spending budget" in body
+
+    async def test_an_hour_old_spend_no_longer_counts_against_the_hour(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        save_fixture: SaveFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-test")
+        access, _ = await _signed_in(client, session, user)
+        old = DesktopUsage(
+            user_id=user.id,
+            model="claude-sonnet-5",
+            credits=settings.DESKTOP_HOURLY_CREDITS,
+            upstream_status=200,
+        )
+        old.created_at = utc_now() - timedelta(hours=2)
+        await save_fixture(old)
+        with respx.mock(assert_all_called=False) as mock:
+            route = mock.post(f"{settings.DESKTOP_ANTHROPIC_BASE_URL}/v1/messages")
+            route.respond(200, json={"error": {"type": "test", "message": "x"}})
+            response = await client.post(
+                "/desktop/api/proxy/v1/messages",
+                headers={"Authorization": f"Bearer {access}"},
+                json={"model": "claude-sonnet-5", "messages": []},
+            )
+            assert route.called
+        assert response.status_code != 402
+
     async def test_an_unknown_model_or_path_is_refused_before_anthropic(
         self,
         client: httpx.AsyncClient,

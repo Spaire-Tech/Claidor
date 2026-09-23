@@ -163,6 +163,44 @@ Escalation to Astra comes after, on the rule `pricing.py` already states.
 `docs/product/model-roles-measured.md` is the record, with the two lines to
 read on the Mac (effort on the wire, cached tokens on step two).
 
+**Spend guards, built 23 September 2026.** One unattended first-run turn
+made 481 model calls in fifty minutes with nothing on screen, $5.82 by the
+proxy's meter (`docs/product/spend-guards.md`). Now: the proxy refuses at
+`DESKTOP_HOURLY_CREDITS` (200,000 an hour, code 40201) before the month's
+allowance is near; a hidden turn (intro, nudge, automation) may make 40
+model calls and an asked turn Grok Bot's 5,000 (`SAND_HIDDEN_TURN_MAX_STEPS`,
+`SAND_AGENT_MAX_STEPS`); the intro greets and stops and runs once; quitting
+Simeon stops the local Docker box unless `SAND_KEEP_BOX_RUNNING_ON_QUIT=1`;
+every model call writes a `[claidor]` line with its tokens to the box's
+`/tmp/sand-host.log`; the box token file is written by one writer at a
+time (a startup burst used to race on it and blind the app); and the
+computer narration prints the failure's sentence. The brake by hand is
+still `docker stop grok-bot-local-vm`. Not yet run on a Mac.
+
+**The box silences the loop's logger, established 23 September 2026.**
+`ports.runnerContext` is bound at build time
+(`scripts/host-production-activation.mjs`) to
+`createProductionRunnerContext()`, whose logger is `log: () => {}`. No
+`nal.tool_call.*`, `Running step` or `nal.empty_response.*` line can appear
+in `/tmp/sand-host.log`, so their absence proves nothing; and "Failed to
+send the message to the user" is a tool result the model reads, never a log
+line. What does reach the log is the stdout channel of `shared/host-log.ts`:
+the `[claidor] model=` line, and since 23 September a `[claidor] tool=`
+line per completed tool call (`host/runner/tool-call-log.ts`) and a
+`[claidor] send-message written|not written` line per delivery
+(`host/ports/transport.ts`). The real Agent loop delivers a SendMessage
+offline (`tests/send-message-through-agent-loop.test.mjs`). **The "hi" that
+made 481 calls is explained, by the next run's log, the same evening:**
+GPT-5.6 greets with a `type:text` SendMessage carrying a `widget` object of
+empty strings, the schema refused the whole call ("Nothing was sent.
+Re-send…"), and the model re-sent it identically, one call every 3–5
+seconds. On the second run it padded every slot with `x` instead.
+`send-message-schema.ts` now lets `type` decide: fields of the other types
+are dropped before validation whatever they hold (`stripFieldsOfOtherTypes`).
+`docs/product/ai-does-not-answer-measured.md` has the log lines. Not yet
+run on a Mac with the fix. Read that file before reasoning about a silent
+agent again.
+
 **The agents' faces are Grok Bot's own, reverted 22 September 2026.** Over
 one day the marks carried, in turn, cloud bodies, DiceBear clay and DiceBear
 slice, each painted over `.sand-grok-bot-mark` by a preload overlay. The slice
@@ -187,8 +225,10 @@ mark, twelve petals measured off the founder's PNG and drawn from numbers
 (`scripts/lib/simeon-logo.mjs`): the in-app icon through
 `make-runtime-assets.mjs app-icon`, the Dock icon through
 `make-app-icon.mjs` → `brand/Simeon.icns`, written over the shell's icons by
-`package-macos.mjs`. `CFBundleName` stays `Grok Bot` for Electron's helper
-names; the bare words "Bot"/"Bots" were not asked for and were left.
+`package-macos.mjs`. `CFBundleExecutable` stays `Grok Bot` (the shell's
+executable and helper bundles); `CFBundleName`, which the menu bar shows
+top left, is `Simeon` since 23 September ("rename it to Simeon too"); the
+bare words "Bot"/"Bots" were not asked for and were left.
 `docs/product/name-measured.md` §Simeon is the record.
 
 **The product is Simeon, decided 22 September 2026, later the same day.**
@@ -202,7 +242,7 @@ title and the user-data folder come from. **Until then the staged
 `productName` was still `Grok Bot`, so the app shared
 `~/Library/Application Support/Grok Bot` with the real Grok Bot**; the first
 launch as Simeon copies that folder once (`desktop-user-data-bootstrap.ts`).
-The icon is the founder's black tile (`brand/`). Kept: `CFBundleName`
+The icon is the founder's black tile (`brand/`). Kept: `CFBundleExecutable`
 `Grok Bot`, lower-case identifiers (`caisra`, `CAISRA_*`, `~/.caisra`).
 `docs/product/name-measured.md` §Simeon is the record.
 

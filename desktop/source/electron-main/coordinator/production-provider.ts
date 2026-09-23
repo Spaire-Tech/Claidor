@@ -419,7 +419,7 @@ export function createProductionCoordinatorAdapter<
         recordSendStage: ports.telemetry.recordSendStage,
         recordGatewayCommandSpan: ports.telemetry.recordGatewayCommandSpan,
         onReachability: (report: any, baseUrl?: string) => {
-          if (report?.outcome !== "ok") computerStreamLine(`box reachability outcome=${String(report?.outcome)} method=${String(report?.method ?? "?")} cause=${String(report?.causeSummary ?? report?.httpStatus ?? "?")} baseUrl=${baseUrl ?? "?"}`);
+          if (report?.outcome !== "ok") computerStreamLine(`box reachability outcome=${String(report?.outcome)} method=${String(report?.method ?? "?")} cause=${String(report?.causeSummary ?? report?.httpStatus ?? "?")} baseUrl=${baseUrl ?? "?"}${typeof report?.causeDetail === "string" && report.causeDetail.length > 0 ? ` detail=${report.causeDetail}` : ""}`);
           telemetry.reportBoxReachability(report);
         },
         onDnsDiagnostic: telemetry.reportBoxDnsDiagnostic,

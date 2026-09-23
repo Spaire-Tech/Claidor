@@ -13,11 +13,19 @@ import structlog
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
+from polar.config import settings
 from polar.kit.db.postgres import AsyncSessionMaker
+from polar.models import User
 from polar.postgres import AsyncSession
 
 from .auth import ProxyCaller
-from .service import QUOTA_EXHAUSTED_CODE, DesktopModel, Usage, desktop
+from .service import (
+    HOURLY_BUDGET_CODE,
+    QUOTA_EXHAUSTED_CODE,
+    DesktopModel,
+    Usage,
+    desktop,
+)
 
 log = structlog.get_logger()
 
@@ -54,6 +62,37 @@ def quota_exhausted_response() -> JSONResponse:
         },
         status_code=402,
     )
+
+
+def hourly_budget_response(used: int, limit: int) -> JSONResponse:
+    """The hourly brake. Same shape and status as the monthly refusal,
+    its own code, and a sentence a person can act on."""
+    return JSONResponse(
+        {
+            "error": {
+                "type": "quota_exhausted",
+                "code": HOURLY_BUDGET_CODE,
+                "message": (
+                    f"Hourly spending budget reached (code {HOURLY_BUDGET_CODE}): "
+                    f"{used:,} of {limit:,} credits in the last hour. "
+                    "The agent stops here; it can continue as the hour passes."
+                ),
+            }
+        },
+        status_code=402,
+    )
+
+
+async def budget_refusal(session: AsyncSession, user: User) -> JSONResponse | None:
+    """The two spending refusals every metered door makes before calling
+    a provider: the month's allowance, then the sliding hour. Checked in
+    that order so an exhausted month still says so."""
+    if await desktop.exhausted(session, user):
+        return quota_exhausted_response()
+    if await desktop.hourly_exhausted(session, user):
+        used = await desktop.credits_used_last_hour(session, user.id)
+        return hourly_budget_response(used, settings.DESKTOP_HOURLY_CREDITS)
+    return None
 
 
 def log_upstream_refusal(model: DesktopModel, status: int, body: bytes | None) -> None:
