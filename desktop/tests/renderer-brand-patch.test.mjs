@@ -20,8 +20,8 @@ test("the brand pass renames every Grok Bot and New Bot in a chunk and counts th
 });
 
 test("the full patch renames the staged renderer and records what it changed, and refuses a renderer that never said Grok Bot", async () => {
-  const { applyOriginalRendererRouterPatch, MARK_REPLACEMENTS, PALETTE_REPLACEMENTS } = await import(patchModule);
-  const markAnchors = [...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS].map(([, before]) => before).join(";");
+  const { applyOriginalRendererRouterPatch, MARK_REPLACEMENTS, PALETTE_REPLACEMENTS, BUBBLE_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT } = await import(patchModule);
+  const markAnchors = [...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS].map(([, before]) => before).join(";");
   const source = await readFile(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs"), "utf8");
   const anchor = (name) => /const (\w+) = ('.*?');/.exec(source.split(`const ${name} = `)[1] == null ? "" : `const ${name} = ${source.split(`const ${name} = `)[1]}`)?.[2];
   const registry = JSON.parse(`"${anchor("REGISTRY_BEFORE").slice(1, -1).replace(/"/g, '\\"')}"`);
@@ -33,7 +33,7 @@ test("the full patch renames the staged renderer and records what it changed, an
     await mkdir(assets, { recursive: true });
     await writeFile(path.join(assets, "index-abc.js"), `${registry};function Sa(s){};${general};${usage};${markAnchors};const xSe = "Grok Bot";const title="Meet Grok Bot";const n="New Bot";`);
     await writeFile(path.join(assets, "other-def.js"), 'const c="Grok Bot settings";');
-    await writeFile(path.join(assets, "style.css"), '.x{content:"Grok Bot"}');
+    await writeFile(path.join(assets, "style.css"), `.x{content:"Grok Bot"}:root{${BUBBLE_CSS_REPLACEMENT[1]}}`);
     await writeFile(path.join(stage, "dist", "renderer", "index.html"), "<title>Grok Bot</title>");
     const record = await applyOriginalRendererRouterPatch({ stageRoot: stage });
     assert.deepEqual(record.brand.totals, { "Grok Bot": 5, "New Bot": 1, "Caisra": 0, "Bots": 0, "Bot": 0 });
@@ -47,7 +47,7 @@ test("the full patch renames the staged renderer and records what it changed, an
     // A renderer with no Grok Bot at all is not the pinned one.
     await writeFile(path.join(assets, "index-abc.js"), `${registry};function Sa(s){};${general};${usage};${markAnchors};`);
     await writeFile(path.join(assets, "other-def.js"), "");
-    await writeFile(path.join(assets, "style.css"), "");
+    await writeFile(path.join(assets, "style.css"), `:root{${BUBBLE_CSS_REPLACEMENT[1]}}`);
     await writeFile(path.join(stage, "dist", "renderer", "index.html"), "");
     await assert.rejects(() => applyOriginalRendererRouterPatch({ stageRoot: stage }), /name Grok Bot at least once/);
   } finally {

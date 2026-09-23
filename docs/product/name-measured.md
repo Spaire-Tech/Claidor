@@ -262,3 +262,21 @@ morphs and mirrors are untouched. Previewed headless with the eyes on,
 light and dark; not yet seen on a Mac; the grain filter's frame cost on a
 full sidebar is not measured.
 
+## The person's chat bubble (23 September 2026, later still)
+
+"the default chat color is black. grey in dark mode. i want to copy
+imessage style and make it blue." Apple's system blue: `#007aff` in light,
+`#0a84ff` in dark (their dark-mode system blue), same in high contrast.
+
+Where it lived: not in the stylesheet alone. The chunk holds a token list
+(`r0t`, entries like `Ct("fill/bubble-user", El(gray/dark/1, gray/dark/8,
+gray/dark/1, gray/dark/11))`) from which `bzn(theme)` writes every
+`--sand-*` variable at runtime; `index-lCyB53CO.css` carries only the light
+default (`#070707`) for first paint. The user bubble is class `sand-mvmkjj`
+(`background-color: var(--sand-fill-bubble-user)`), its text
+`var(--cursor-text-invert)` = `text/on-color` = `#fcfcfc`, white in every
+theme, so nothing else changes for legibility. `--cursor-foreground` is
+also mapped to `fill/bubble-user` and colours a checked checkbox, which
+therefore turns blue as well. `fill/bubble-user-disabled` (a pending
+message, black at 3 % alpha) is left as it was. Not yet seen on a Mac.
+

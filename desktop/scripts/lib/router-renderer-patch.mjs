@@ -186,6 +186,36 @@ export function patchOriginalPalette(source) {
   return out;
 }
 
+/**
+ * The person's own chat bubble is iMessage blue (23 September 2026: "the
+ * default chat color is black. grey in dark mode. i want to copy imessage
+ * style and make it blue", with Apple's numbers). The renderer's theme
+ * variables are generated at runtime from a token list in the chunk
+ * (`Ct("fill/bubble-user", El(light, dark, hcLight, hcDark))`, emitted by
+ * `bzn` as `--sand-fill-bubble-user`); the stylesheet carries only the
+ * light default for first paint. Both are patched. The text on the bubble
+ * is `text/on-color`, white in every theme, and stays.
+ */
+export const USER_BUBBLE_LIGHT = "#007aff";
+export const USER_BUBBLE_DARK = "#0a84ff";
+const BUBBLE_TOKEN_BEFORE = 'Ct("fill/bubble-user",El(va("gray","dark",1),va("gray","dark",8),va("gray","dark",1),va("gray","dark",11)))';
+const BUBBLE_TOKEN_AFTER = `Ct("fill/bubble-user",El({value:"${USER_BUBBLE_LIGHT}",alias:"imessage/blue"},{value:"${USER_BUBBLE_DARK}",alias:"imessage/blue-dark"}))`;
+export const BUBBLE_REPLACEMENTS = Object.freeze([["user-bubble-blue", BUBBLE_TOKEN_BEFORE, BUBBLE_TOKEN_AFTER]]);
+const BUBBLE_CSS_BEFORE = "--sand-fill-bubble-user:#070707;";
+const BUBBLE_CSS_AFTER = `--sand-fill-bubble-user:${USER_BUBBLE_LIGHT};`;
+export const BUBBLE_CSS_REPLACEMENT = Object.freeze(["user-bubble-blue-stylesheet", BUBBLE_CSS_BEFORE, BUBBLE_CSS_AFTER]);
+
+export function patchOriginalBubble(source) {
+  let out = source;
+  for (const [label, before, after] of BUBBLE_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export function patchOriginalBubbleStylesheet(css) {
+  const [label, before, after] = BUBBLE_CSS_REPLACEMENT;
+  return replaceExactlyOnce(css, before, after, label);
+}
+
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
@@ -241,7 +271,17 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   }
   if (markChunks.length !== 1) throw new Error(`Expected one original chunk carrying the landing mark, the onboarding hero and the loading logo, found ${markChunks.length}.`);
   if (!PALETTE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer palette anchors are not all in the mark chunk.");
-  const markPatched = patchOriginalPalette(patchOriginalMarks(markChunks[0].source));
+  if (!BUBBLE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer user-bubble token is not in the mark chunk.");
+  const markPatched = patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source)));
+  // The stylesheet's light default of the same variable, for first paint.
+  const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
+  const bubbleSheets = [];
+  for (const target of stylesheets) {
+    const css = await readFile(target, "utf8");
+    if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
+  }
+  if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
+  await writeFile(bubbleSheets[0].target, patchOriginalBubbleStylesheet(bubbleSheets[0].css));
   await writeFile(markChunks[0].target, markPatched);
   const appIconTarget = path.join(assetsRoot, APP_ICON_ASSET);
   const appIconBefore = await readFile(appIconTarget).catch(() => null);
@@ -249,7 +289,8 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const appIconAfter = await readFile(appIconTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
-    replacements: [...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS].map(([label]) => label),
+    replacements: [...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label),
+    userBubble: { light: USER_BUBBLE_LIGHT, dark: USER_BUBBLE_DARK, stylesheet: path.relative(stageRoot, bubbleSheets[0].target) },
     original: { bytes: Buffer.byteLength(markChunks[0].source), sha256: sha256(markChunks[0].source) },
     patched: { bytes: Buffer.byteLength(markPatched), sha256: sha256(markPatched) },
     appIcon: { path: `dist/renderer/assets/${APP_ICON_ASSET}`, original: appIconBefore == null ? null : { bytes: appIconBefore.length, sha256: sha256(appIconBefore) }, patched: { bytes: appIconAfter.length, sha256: sha256(appIconAfter) } },
@@ -275,7 +316,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     chunks: changes,
     marks,
     brand: { replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after }))], totals: brandTotals, files: brandFiles },
-    features: ["settings-router-provider", "settings-local-docker-vm", "usage-current-provider", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve"],
+    features: ["settings-router-provider", "settings-local-docker-vm", "usage-current-provider", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue"],
     transformations: ["settings-registry", "router-panel", "usage-panel", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

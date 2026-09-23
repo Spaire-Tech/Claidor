@@ -263,6 +263,15 @@ in `router-renderer-patch.mjs`, ten anchors; previewed headless with the
 face on, not yet seen on a Mac. **Frame cost of the grain filter on forty
 sidebar marks is not measured**; if the sidebar stutters, the filter is
 the first thing to remove (one anchor, `palette-body-fill`).
+**The person's chat bubble is iMessage blue, 23 September, later still**
+("copy imessage style and make it blue"): `#007aff` light, `#0a84ff`
+dark. The renderer's theme variables come from a token list in the chunk
+(`Ct("fill/bubble-user", …)`, emitted at runtime by `bzn` as
+`--sand-fill-bubble-user`); the stylesheet holds only the light default.
+Both are patched (`patchOriginalBubble`, `patchOriginalBubbleStylesheet`).
+The bubble's text is `text/on-color`, white everywhere, untouched. The
+same token feeds `--cursor-foreground`, which the checked state of a
+checkbox uses, so that turns blue too. Not yet seen on a Mac.
 `docs/product/name-measured.md` §Simeon is the record.
 
 **The product is Simeon, decided 22 September 2026, later the same day.**
