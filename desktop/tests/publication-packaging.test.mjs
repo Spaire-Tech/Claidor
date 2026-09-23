@@ -98,7 +98,7 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(codexDirect, /response\.output_text\.delta/);
   assert.match(codexDirect, /type: "function_call_output"/);
   assert.match(providers, /parameters: jsonSchema\(parameters\)/);
-  assert.match(providers, /You are Caisra, a warm, concise desktop assistant/);
+  assert.match(providers, /You are Simeon, a warm, concise desktop assistant/);
   assert.match(providers, /mcpServers: \{ grok_bot_plugins:/);
   assert.match(providers, /recordRoutedUsage\(provider, usage\)/);
   assert.match(providers, /queryClaude/);
@@ -125,7 +125,7 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(providers, /export function claidorModelForSession/);
   assert.match(inference, /cheap: true, isSummarizationSession: true/);
   assert.match(turnShell, /cheap: true, isSummarizationSession: true/);
-  assert.match(providers, /providerOptions: \{ openai: \{ strictSchemas: false \} \}/);
+  assert.match(providers, /providerOptions: \{ openai: \{ strictSchemas: false, \.\.\.openaiOptions \} \}/);
   assert.match(providers, /from "\.\.\/\.\.\/\.\.\/shared\/node\/cursor-backend\/claidor-api\.js"/);
   assert.match(providers, /export \{ claidorProxyBaseUrl \}/);
   assert.match(await readFile(path.join(repoRoot, "source", "shared", "node", "cursor-backend", "claidor-api.ts"), "utf8"), /CLAIDOR_PROXY_PREFIX = "desktop\/api\/proxy\/v1"/);
@@ -133,7 +133,8 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(inference, /setClaidorCredentialSource\(\{ getAccessToken: \(\) => auth\.getAccessToken\(\) \}\)/);
   assert.match(coordinator, /export const BOX_OPTIONAL_WAIT_MS = 800/);
   assert.match(sharedRouter, /export const SAND_CLAIDOR_FULL_AGENT_ENV = "SAND_CLAIDOR_FULL_AGENT"/);
-  assert.match(sharedRouter, /return envFlagEnabled\(env\[SAND_CLAIDOR_FULL_AGENT_ENV\]\)/);
+  assert.match(sharedRouter, /if \(raw\.length === 0\) return true/);
+  assert.match(sharedRouter, /return !envFlagDisabled\(raw\)/);
   assert.match(coordinator, /export \{ SAND_CLAIDOR_FULL_AGENT_ENV, routesClaidorThroughHost \}/);
   assert.match(coordinator, /GROK_BOT_TOOLS/);
   assert.match(coordinator, /isGrokBotToolName/);

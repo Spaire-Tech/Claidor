@@ -1,3 +1,4 @@
+import { computerStreamLine } from "../vnc/computer-stream-log.js";
 import { statSync } from "node:fs";
 
 import type {
@@ -417,12 +418,24 @@ export function createProductionCoordinatorAdapter<
         webauthnPrompt: prompt,
         recordSendStage: ports.telemetry.recordSendStage,
         recordGatewayCommandSpan: ports.telemetry.recordGatewayCommandSpan,
-        onReachability: telemetry.reportBoxReachability,
+        onReachability: (report: any, baseUrl?: string) => {
+          if (report?.outcome !== "ok") computerStreamLine(`box reachability outcome=${String(report?.outcome)} method=${String(report?.method ?? "?")} cause=${String(report?.causeSummary ?? report?.httpStatus ?? "?")} baseUrl=${baseUrl ?? "?"}`);
+          telemetry.reportBoxReachability(report);
+        },
         onDnsDiagnostic: telemetry.reportBoxDnsDiagnostic,
         onProcessCrash: ports.telemetry.reportProcessCrash,
         getRpcTraceWindowTraceparent: ports.telemetry.getRpcTraceWindowTraceparent,
         listRoutedMcpTools: () => context.requireMcp().listRoutedTools(),
         executeRoutedMcpTool: (request) => context.requireMcp().executeRoutedTool(request),
+        // The renderer scopes its permission dock to `authId ?? email ?? "account"`
+        // of the signed-in account; the coordinator stamps the same slot on
+        // every Allow card (node-agent-coordinator/permission-scope-stamp.ts).
+        getTranscriptAccountSlot: async () => {
+          const status = await accountService.getStatus();
+          if (status.kind !== "logged-in") return null;
+          const slot = status.authId ?? status.email ?? "account";
+          return slot.length > 0 ? slot : "account";
+        },
         native: ports.localExecNative,
       });
       const createRuntime = () =>

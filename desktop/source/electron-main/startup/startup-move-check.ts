@@ -69,9 +69,9 @@ export async function runStartupMoveCheck(
     confirmMove: async () => {
       const result = await deps.dialog.showMessageBox({
         type: "question",
-        title: "Move Caisra to Applications",
-        message: "Move Caisra to the Applications folder?",
-        detail: "Caisra cannot install updates from its current location. It will reopen after moving.",
+        title: "Move Simeon to Applications",
+        message: "Move Simeon to the Applications folder?",
+        detail: "Simeon cannot install updates from its current location. It will reopen after moving.",
         buttons: ["Move to Applications", "Not Now"],
         defaultId: 0,
         cancelId: 1,
@@ -82,9 +82,9 @@ export async function runStartupMoveCheck(
       deps.reportFailure?.("startup", "move-to-applications", error);
       await deps.dialog.showMessageBox({
         type: "error",
-        title: "Couldn't Move Caisra",
-        message: "Caisra couldn't move to Applications",
-        detail: "Move Caisra to the Applications folder manually, then reopen Caisra",
+        title: "Couldn't Move Simeon",
+        message: "Simeon couldn't move to Applications",
+        detail: "Move Simeon to the Applications folder manually, then reopen Simeon",
         buttons: ["OK"],
         defaultId: 0,
       });

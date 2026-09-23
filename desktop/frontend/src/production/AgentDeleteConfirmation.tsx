@@ -17,7 +17,7 @@ export interface AgentDeleteConfirmationProps {
 }
 
 function deleteDescription(agent: AgentDeleteTarget): string {
-  if (agent.isGroup === true) return "This permanently deletes the group and its chat history. The Bots in it are not deleted and remain available individually. This can't be undone.";
+  if (agent.isGroup === true) return "This permanently deletes the group and its chat history. The Agents in it are not deleted and remain available individually. This can't be undone.";
   return "This permanently deletes the agent and its chat history. This can't be undone.";
 }
 

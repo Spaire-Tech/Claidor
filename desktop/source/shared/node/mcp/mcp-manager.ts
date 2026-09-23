@@ -318,7 +318,7 @@ export class SandMcpManager {
     const validated = validateServerName(name);
     if (BUILTIN_MCP_SERVER_NAMES.has(validated))
       throw new SandMcpConfigError(
-        `MCP server name "${validated}" is reserved for a built-in Caisra server.`,
+        `MCP server name "${validated}" is reserved for a built-in Simeon server.`,
       );
     return validated;
   }

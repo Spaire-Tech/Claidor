@@ -92,7 +92,7 @@ test("web fetch reads the page on this machine and never calls Claidor", async (
     assert.deepEqual(page, { content: "Docs\n\nReadable." });
     assert.equal(seen[0].url, "https://example.com/docs");
     assert.equal(seen[0].headers.get("user-agent"), WEB_FETCH_USER_AGENT);
-    assert.match(seen[0].headers.get("user-agent"), /Caisra/);
+    assert.match(seen[0].headers.get("user-agent"), /Simeon/);
     assert.equal(seen[0].headers.get("authorization"), null);
 
     assert.deepEqual(await fetchWebPage("file:///etc/passwd"), { error: "Only http and https addresses can be fetched (got file:)." });

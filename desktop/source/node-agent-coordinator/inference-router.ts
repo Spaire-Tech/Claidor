@@ -88,6 +88,12 @@ export function projectInferenceRouterTranscriptEntry(entry: StoredEntry): Recor
 }
 
 export { SAND_CLAIDOR_FULL_AGENT_ENV, routesClaidorThroughHost };
+// Product turns run Grok Bot's own loop on the host by default
+// (routesClaidorThroughHost): sendPrompt, respondToWidget and every transcript
+// read pass straight through to the gateway, whose connect, send and roster
+// deadlines make a cold box fail instead of hang. Everything below the
+// dispatch is the SAND_CLAIDOR_FULL_AGENT=off escape hatch: a text-first turn
+// answered on this Mac with a local transcript beside the host's.
 // Optional box reads (transcript tail, roster) must not stall a Mac-local turn
 // while Docker is pulling or the host is waiting for a credential.
 export const BOX_OPTIONAL_WAIT_MS = 800;

@@ -21,17 +21,24 @@ Yodo, the 23 strongs, Chief of Staff, whisper, `useDictation.ts`,
 `macTasks.ts`, `main.ts:304` or "2,551 files" describes the tree before that
 commit and is history, not a map. The paragraphs about the pinned renderer,
 `npm run bootstrap`, `router-renderer-patch.mjs`, `SAND_BACKEND_URL` and
-app sign-in describe the current tree. `docs/product/start-here.md` and
-`docs/product/building-the-app.md` are the current map.
+app sign-in describe the current tree. `docs/product/building-the-app.md`
+and `docs/product/grok-bot-layers-measured.md` are the current map.
+**`docs/product/start-here.md` is not**: it still describes the LobsterAI
+tree (`desktop/src`, "2,552 files", the 23 strongs) and was never rewritten
+after the re-founding (checked 22 September).
 
 Two facts about the current tree that are established by build output, not
 reasoning (`docs/product/host-wall-measured.md`): **every one of the 14
 runtimes, the host included, compiles from `source/`** —
 `buildFidelityDistribution()` reports `blockedFallbacks: []` with no host
 binding manifest supplied, so the "missing manifest" the ours-brief calls the
-wall is not a wall; and the agent loop still speaks
-`aiserver.v1.InferenceService/Stream`, which Claidor does not serve, so the
-real gap is the executor, not the compile. Also since 19 September: the box
+wall is not a wall; and the agent loop **spoke**
+`aiserver.v1.InferenceService/Stream` on 19 September, which Claidor does
+not serve, so the real gap was the executor, not the compile. Since
+`c0128b33` the loop runs on the `claidor` executor (OpenAI Responses through
+Claidor's proxy) and `turn-run-shell.ts:182` hard-codes that provider; the
+Cursor path is still in the tree as dead code (`cursor-session.ts`,
+`cursor-inference.ts:191`). Also since 19 September: the box
 runtime defaults to `local-docker`, the container is always told
 `SAND_BACKEND_URL`, and the host-bundle update channel has no default origin
 (`desktop/tests/local-docker-box.test.mjs`, `host-bundle-source.test.mjs`).
@@ -93,8 +100,7 @@ them. They degrade rather than fail — that is measured too, not assumed.
 **`npm run package` ships the 0.18.0 window chrome inside the 0.18.0 Electron
 shell, with the recovered host ignited so Terra→Luna actually runs.** Shipping
 `frontend/` as that window on 20 September emptied the sidebar and composer:
-the atom stylesheet was never recovered. The 19 cloud faces stay in
-`frontend/src` until they can be patched into the pinned renderer.
+the atom stylesheet was never recovered.
 `npm run package:diagnostic` is the fidelity bundle. **The build loop is
 `npm ci && npm run bootstrap && npm run check && npm run package && npm run
 verify`, macOS arm64 only.** `docs/product/building-the-app.md` is the record.
@@ -116,6 +122,106 @@ lesson is the one already written at the top of this file and it was ignored
 anyway: grep the built artifact before saying a thing is absent.** I asserted
 "the atom rules were never recovered" without once looking at
 `dist/renderer/assets/*.css`.
+
+**Product turns run Grok Bot's own loop, decided 22 September 2026.** The
+founder, after an audit of the tools (`docs/product/tools-audit-2026-09-22.md`):
+"Use the original Grok Bot loop. i want literally everything." So a chat turn
+goes through the host's full agent loop in the box (`turn-run-shell.ts`, on
+Claidor), which keeps one transcript per agent in one SQLite table, carries
+tool calls and results into the next turn, nudges for a reply as a
+continuation instead of re-running the turn, creates teammates in the
+background, gives the model the teammate directory, and draws every card
+through the one append. `routesClaidorThroughHost` is **on with an empty
+environment**; `SAND_CLAIDOR_FULL_AGENT=off` is the Mac-local, text-only
+escape hatch, and everything under the router's dispatch in
+`node-agent-coordinator/inference-router.ts` is that hatch. The first-run intro
+runs on the real runner again (`agent-lifecycle.ts`, the pristine
+reconstruction). The earlier rules "product turns stay on the Mac" and "do not
+default routesClaidorThroughHost true" are superseded by this decision. The
+gateway's deadlines (connect, send, roster reads, all 15 s) are what make a
+cold box fail visibly instead of hanging; they are unchanged. **Why the audit
+mattered:** the Mac path was the reconstruction's text-only router for its
+alternative providers with Grok Bot's tools bolted on, and it glued a host
+transcript to a local one, forgot its own tool calls between turns, re-ran
+whole turns when no SendMessage landed (so CreateAgent ran twice), and wrote
+cards to the host while text stayed local, which put every card at the top
+of the chat. One thing was missing on **both** paths: no host writer stamped
+the account scope the renderer's permission dock demands, so the Allow card
+never showed; the coordinator stamps it now
+(`node-agent-coordinator/permission-scope-stamp.ts`). **Not yet measured on a
+Mac:** a full turn on the loop with a warm box, a cold box, and Docker off.
+
+**Model roles copy Grok Bot's table, decided 22 September 2026.** No reflex
+model, no per-step router. The loop runs on Terra at `effort: high`, the way
+Grok Bot runs its loop; summarization, memory and the computer and browser
+subagents run on Luna at `effort: low`, the way Grok Bot runs computer use.
+Until this the executor sent no effort and every call ran at OpenAI's
+default. Done-or-continue is Grok Bot's nudge mechanism, unchanged. Risky-or-
+safe is Cursor's server-side classifier, which Claidor does not serve, so
+auto-review is effectively off; do not invent an app-side model for it.
+Escalation to Astra comes after, on the rule `pricing.py` already states.
+`docs/product/model-roles-measured.md` is the record, with the two lines to
+read on the Mac (effort on the wire, cached tokens on step two).
+
+**The agents' faces are Grok Bot's own, reverted 22 September 2026.** Over
+one day the marks carried, in turn, cloud bodies, DiceBear clay and DiceBear
+slice, each painted over `.sand-grok-bot-mark` by a preload overlay. The slice
+build was keyed on attributes the shipped page mostly does not carry (the
+founder's screenshot: one lump per colour in the sidebar, nine identical brown
+faces in the bot picker), then re-keyed on the drawing itself. The founder
+then ended it: "just revert it to the way it original way. the original grok
+bot avatars." The overlay, the generators, the motion table, the DiceBear
+packages and the screenshot harness are out of the tree; the pinned 0.18.0
+renderer draws its own faces and nothing paints over them.
+`docs/product/faces-slice-measured.md` is the record. Do not put anything
+over the marks again without the founder asking for it by name.
+
+**The app says Simeon, decided 22 September 2026.** "replace all 'Grok Bot'
+by 'Simeon' everywhere in the app. Replace all new names 'New Bot' by 'New
+Agent'. replace grok bot logos by this." The pinned renderer's strings are
+renamed by a brand pass in `scripts/lib/router-renderer-patch.mjs` at package
+time (every chunk, the stylesheet, the page; counts recorded; the build
+refuses a renderer that never said Grok Bot), the host names a new agent
+"New Agent" (`source/shared/agents/agents.ts`), and the logo is Simeon's
+mark, twelve petals measured off the founder's PNG and drawn from numbers
+(`scripts/lib/simeon-logo.mjs`): the in-app icon through
+`make-runtime-assets.mjs app-icon`, the Dock icon through
+`make-app-icon.mjs` → `brand/Simeon.icns`, written over the shell's icons by
+`package-macos.mjs`. `CFBundleName` stays `Grok Bot` for Electron's helper
+names; the bare words "Bot"/"Bots" were not asked for and were left.
+`docs/product/name-measured.md` §Simeon is the record.
+
+**The product is Simeon, decided 22 September 2026, later the same day.**
+"any caisra word become Simeon … rename everything Caisra - Simeon", and the
+bare words Bot/Bots become Agent/Agents. Every user-facing string of ours now
+says Simeon (96 files; generated protos and this file's history are not
+rewritten); the brand patch renames the pinned renderer's words at package
+time; and the app is Simeon in Electron's eyes too (`build-asar.mjs` writes
+`productName`), which is where the application menu, "About …", the window
+title and the user-data folder come from. **Until then the staged
+`productName` was still `Grok Bot`, so the app shared
+`~/Library/Application Support/Grok Bot` with the real Grok Bot**; the first
+launch as Simeon copies that folder once (`desktop-user-data-bootstrap.ts`).
+The icon is the founder's black tile (`brand/`). Kept: `CFBundleName`
+`Grok Bot`, lower-case identifiers (`caisra`, `CAISRA_*`, `~/.caisra`).
+`docs/product/name-measured.md` §Simeon is the record.
+
+**The computer's screen, measured 22 September 2026.** With the Computer
+panel spinning "connecting", the founder measured: port 6080 published, the
+page answers 200, websockify and x11vnc up inside the box, and **no client
+line in websockify's log**, so the app's webview never opened the socket.
+The stock renderer cannot say why: it shows the spinner until noVNC's page
+reports `noVNC_connected`, never times out, and the preload hides noVNC's
+own failure text; noVNC retries every 5 s forever. There is no unused fix
+in Grok Bot's code; production stock reaches a cloud box through the pod's
+egress proxy, and our local Docker box uses stock's loopback dev path. The
+app now narrates the stream to `computer-stream.log` in its data folder
+(attach, load events, page console, preload failures) and paints the last
+reason under a spinner after 20 s
+(`electron-main/vnc/computer-stream-log.ts`, `preload-vnc.ts`
+`installNoVncStatusReporter`, `electron-preload/computer-stream-notice.ts`,
+`docs/product/computer-stream-measured.md`). Read that file before
+reasoning about the screen again.
 
 **The cost of running on the Mac.** The engine runs locally, so nothing runs
 with the laptop shut. The maty queue and `claidor-maty-runner` are the cloud path

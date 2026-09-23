@@ -12,7 +12,7 @@
 export const WEB_FETCH_TIMEOUT_MS = 30_000;
 export const WEB_FETCH_MAX_BYTES = 5 * 1024 * 1024;
 export const WEB_FETCH_MAX_CHARS = 100_000;
-export const WEB_FETCH_USER_AGENT = "Caisra/1.0 (+https://claidor.com)";
+export const WEB_FETCH_USER_AGENT = "Simeon/1.0 (+https://claidor.com)";
 
 export type WebFetchResult = { readonly content: string } | { readonly error: string; readonly isTimeout?: boolean };
 

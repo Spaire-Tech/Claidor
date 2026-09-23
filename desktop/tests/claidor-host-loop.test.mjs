@@ -146,6 +146,8 @@ test("the host's tool loop completes a two-step turn on the claidor provider", a
       assert.equal(request.url, "https://api.claidor.com/desktop/api/proxy/v1/responses");
       assert.equal(request.headers.get("authorization"), "Bearer claidor_da_loop");
       assert.equal(request.body.model, "gpt-5.6-terra");
+      // The loop runs at Grok Bot's effort (high), on every step.
+      assert.deepEqual(request.body.reasoning, { effort: "high" });
       // The host wraps tool schemas with the AI SDK's jsonSchema(); the wire
       // must see the bare schema, not the wrapper.
       assert.deepEqual(request.body.tools[0].parameters, { type: "object", properties: { command: { type: "string", description: "the command" } }, required: ["command"] });

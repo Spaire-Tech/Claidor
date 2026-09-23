@@ -82,7 +82,7 @@ export function SettingsModalShell({
       className="sand-settings-dialog"
       closeOnBackdrop={closeOnBackdrop}
       closeOnEscape={closeOnEscape}
-      label="Caisra settings"
+      label="Simeon settings"
       onClose={onClose}
       open={isOpen}
       trapFocus={trapFocus}

@@ -17,12 +17,18 @@
  * them, so the type is real type. Run: node scripts/make-runtime-assets.mjs
  */
 
-import { mkdir, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright";
+import { loadChromium } from "./lib/simeon-logo.mjs";
+import { appIconPageMarkup } from "./make-app-icon.mjs";
 
 const outDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../frontend/runtime-assets");
+const manifestPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../frontend/manifests/renderer-runtime-assets.json");
+/** `node scripts/make-runtime-assets.mjs app-icon` redraws only the files whose name contains the argument. */
+const only = process.argv.slice(2);
+const wanted = (file) => only.length === 0 || only.some((part) => file.includes(part));
 
 /** Straight out of RUNTIME_PALETTE / SAND_DATA. */
 const INK = "#141414";
@@ -56,23 +62,8 @@ function toolTile(letter) {
 </svg>`;
 }
 
-/** The app icon: a rounded tile in the sand tones the product is named for. */
-const APP_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="0.35" y2="1">
-      <stop offset="0" stop-color="${SAND[0]}"/><stop offset="0.55" stop-color="${SAND[1]}"/>
-      <stop offset="1" stop-color="${SAND[2]}"/>
-    </linearGradient>
-    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.22"/><stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="114" fill="url(#g)"/>
-  <rect width="512" height="512" rx="114" fill="url(#sheen)"/>
-  <text x="256" y="268" font-family="${FONT}" font-size="288" font-weight="600" letter-spacing="-12"
-        fill="${PAPER}" text-anchor="middle" dominant-baseline="central">C</text>
-  <rect x="1.5" y="1.5" width="509" height="509" rx="112.5" fill="none" stroke="${INK}" stroke-opacity="0.14" stroke-width="3"/>
-</svg>`;
+/** The app icon: the founder's file when present, else the drawing (scripts/make-app-icon.mjs). */
+const APP_ICON = (await appIconPageMarkup(512)).markup;
 
 /** The wallpaper behind the agent's demo computer: calm, and never the subject. */
 const WALLPAPER = `<svg xmlns="http://www.w3.org/2000/svg" width="2560" height="1600" viewBox="0 0 2560 1600">
@@ -92,6 +83,7 @@ const WALLPAPER = `<svg xmlns="http://www.w3.org/2000/svg" width="2560" height="
 
 async function main() {
   await mkdir(outDir, { recursive: true });
+  const chromium = await loadChromium();
   const browser = await chromium.launch({
     executablePath: process.env.CAISRA_CHROMIUM ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
     args: ["--no-sandbox"],
@@ -99,6 +91,7 @@ async function main() {
   const written = [];
 
   const raster = async (svg, file, width, height, type) => {
+    if (!wanted(file)) return;
     const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
     await page.setContent(
       `<!doctype html><meta charset="utf-8"><style>html,body{margin:0;padding:0;background:transparent}</style>${svg}`,
@@ -116,6 +109,7 @@ async function main() {
 
   // An .svg stays an .svg — it is already the right format and scales.
   for (const [file, letter] of TOOLS) {
+    if (!wanted(file)) continue;
     if (file.endsWith(".svg")) {
       const svg = toolTile(letter);
       await writeFile(path.join(outDir, file), svg);
@@ -125,6 +119,15 @@ async function main() {
     }
   }
   await raster(APP_ICON, "app-icon-C7NKj2u7.png", 512, 512, "png");
+  // verify.mjs holds the packaged icon to the manifest's hash, so the manifest follows the drawing.
+  if (wanted("app-icon-C7NKj2u7.png")) {
+    const icon = await readFile(path.join(outDir, "app-icon-C7NKj2u7.png"));
+    const manifest = await readFile(manifestPath, "utf8");
+    const line = /^\s*\{ "file": "app-icon-C7NKj2u7\.png".*\},?$/m;
+    if (!line.test(manifest)) throw new Error("renderer-runtime-assets.json has no app-icon line to update");
+    const sha256 = createHash("sha256").update(icon).digest("hex");
+    await writeFile(manifestPath, manifest.replace(line, (found) => `    { "file": "app-icon-C7NKj2u7.png", "bytes": ${icon.length}, "sha256": "${sha256}" }${found.trimEnd().endsWith(",") ? "," : ""}`));
+  }
   await raster(WALLPAPER, "demo-computer-wallpaper-BO7Ye4dV.jpg", 2560, 1600, "jpeg");
 
   await browser.close();

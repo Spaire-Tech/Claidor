@@ -57,7 +57,6 @@ async function bundleIgnition({ contents, sourcefile, outfile, banner }) {
     external: EXTERNAL,
     format: "cjs",
     legalComments: "none",
-    loader: { ".png": "dataurl" },
     logLevel: "silent",
     alias: { "jsonc-parser": "jsonc-parser/lib/esm/main.js" },
     metafile: true,
@@ -77,12 +76,12 @@ async function bundleIgnition({ contents, sourcefile, outfile, banner }) {
     || input.startsWith("dist/deps/")
   ));
   if (forbiddenInputs.length > 0) {
-    throw new Error(`Caisra ignition graph reaches forbidden first-party artifact inputs: ${forbiddenInputs.join(", ")}`);
+    throw new Error(`Simeon ignition graph reaches forbidden first-party artifact inputs: ${forbiddenInputs.join(", ")}`);
   }
   const outputBytes = await readFile(outfile);
   const forbiddenOutput = outputBytes.toString("utf8").match(/(?:src\/app\/|recovered\/source-capsules\/)/g) ?? [];
   if (forbiddenOutput.length > 0) {
-    throw new Error(`Caisra ignition embeds forbidden artifact references: ${[...new Set(forbiddenOutput)].join(", ")}`);
+    throw new Error(`Simeon ignition embeds forbidden artifact references: ${[...new Set(forbiddenOutput)].join(", ")}`);
   }
   return { inputs, forbiddenInputs, forbiddenOutputReferences: [] };
 }
