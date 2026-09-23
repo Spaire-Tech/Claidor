@@ -265,7 +265,8 @@ export function patchOriginalHeaderStylesheet(css) {
  * large continuous radii on floating controls. Content (messages, text)
  * stays as it is; the material goes on the chrome: the sidebar, the info
  * pane, the composer shell, popover menus, dialogs, floating pills, the
- * message hover actions and the computer's top bar. CSS only, appended to
+ * computer's top bar; not the message hover actions or reaction pills ("too
+ * noisy"), and no window transparency (tried, "terrible", reverted). CSS only, appended to
  * the pinned stylesheet after the header card; every rule is !important so
  * it wins over the atom classes and inline styles the renderer sets.
  */
@@ -277,8 +278,8 @@ export const LIQUID_GLASS_CSS = `
 .sand-prompt-shell{background-color:var(--simeon-glass-fill)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;border-radius:22px!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important}
 .sand-new-chat-menu,.sand-emoji-menu,.sand-mention-menu,.sand-reference-menu,.sand-agent-hover-card,.sand-link-hover-card,[role=dialog].sand-10e981r,[role=menu].sand-10e981r,[data-floating-ui-portal] .sand-10e981r{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important}
 .sand-new-chat-menu,.sand-emoji-menu,.sand-mention-menu,.sand-reference-menu,[role=dialog].sand-10e981r{border-radius:18px!important}
-.sand-new-messages-pill,.sand-update-pill,.sand-message-hover-actions,.sand-reaction-pill,.sand-computer-top-bar{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important;opacity:1!important}
-.sand-new-messages-pill,.sand-update-pill,.sand-message-hover-actions,.sand-reaction-pill{border-radius:999px!important}
+.sand-new-messages-pill,.sand-update-pill,.sand-computer-top-bar{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important;opacity:1!important}
+.sand-new-messages-pill,.sand-update-pill{border-radius:999px!important}
 .sand-chat-header__name{-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;background-color:var(--simeon-glass-fill-strong)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight)!important}
 `;
 export const LIQUID_GLASS_MARKER = "/* Simeon: Liquid Glass on the chrome";
