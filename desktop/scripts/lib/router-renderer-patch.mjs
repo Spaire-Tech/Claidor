@@ -221,7 +221,9 @@ export function patchOriginalBubbleStylesheet(css) {
  * agent are up top, left. i want to middle it … like muse. you might wanna
  * remove the line up there … it feels more apple ish"). CSS only, appended
  * to the pinned stylesheet: the toolbar's divider line is hidden, the
- * identity row (avatar + name) is a centred column, the avatar is drawn at
+ * toolbar itself is translucent with a backdrop blur so messages scroll under
+ * it the way Muse's do ("muse let it go all the way up. and lighten/darken/blur
+ * the top while we scroll"), the identity row (avatar + name) is a centred column, the avatar is drawn at
  * 52 px (88 was "way too big" on the Mac) (the mark's inline 20 px is overridden on the span AND on the SVG
  * inside it, which carries its own inline width/height from the animator's
  * size prop; the first build missed the SVG and drew a 20 px mark at the
@@ -235,7 +237,7 @@ export function patchOriginalBubbleStylesheet(css) {
 export const HEADER_CARD_CSS = `
 /* Simeon: the chat header is the agent's card, centred, without the divider (23 September 2026). */
 .sand-toolbar-divider{display:none!important}
-.sand-toolbar:has(.sand-chat-header__identity-row){padding-top:4px!important;padding-bottom:4px!important;border-bottom-width:0!important}
+.sand-toolbar:has(.sand-chat-header__identity-row){padding-top:4px!important;padding-bottom:4px!important;border-bottom-width:0!important;background-color:color-mix(in srgb,var(--cursor-bg-editor) 72%,transparent)!important;-webkit-backdrop-filter:blur(22px) saturate(1.5)!important;backdrop-filter:blur(22px) saturate(1.5)!important}
 .sand-chat-header:has(>.sand-chat-header__identity-row){justify-content:center!important;position:relative!important}
 .sand-chat-header__identity-row{flex-direction:column!important;align-items:center!important;gap:6px!important}
 .sand-chat-header__identity{flex-direction:column!important;align-items:center!important;gap:4px!important;padding:0 8px 2px!important;border-radius:16px!important}
