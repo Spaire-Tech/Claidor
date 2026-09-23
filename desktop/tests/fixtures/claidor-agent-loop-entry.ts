@@ -30,3 +30,4 @@ export { DEFAULT_SAND_SYSTEM_PROMPT } from "../../source/host/runner/system-prom
 export { createProductionRunnerContext } from "../../source/host/runner-context-production-provider.js";
 export { setHostLogSink } from "../../source/shared/host-log.js";
 export { createSandTransport } from "../../source/host/ports/transport.js";
+export { sendMessageParameters, isBlankField } from "../../source/host/runner/tools/send-message-schema.js";

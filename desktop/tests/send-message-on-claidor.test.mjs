@@ -130,6 +130,11 @@ test("a SendMessage the model calls lands, and the model is told it landed", asy
     assert.equal(wireTool.parameters.type, "object");
     assert.ok(Array.isArray(wireTool.parameters.properties.type.enum));
     assert.equal(JSON.stringify(wireTool.parameters).includes("$ref"), false, "no $ref in the wire schema");
+    // The blank-field preprocessing must not hide the widget's shape from the model.
+    assert.equal(wireTool.parameters.properties.widget.properties.prompt.type, "string");
+    assert.deepEqual(wireTool.parameters.properties.widget.required, ["prompt", "options"]);
+    assert.equal(wireTool.parameters.properties.secret.properties.connector.type, "string");
+    assert.equal(wireTool.parameters.properties.images.items.properties.url.type, "string");
 
     const second = await runStep(executor, ctx, tool);
     assert.equal(second.response.error, undefined);

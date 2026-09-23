@@ -111,3 +111,42 @@ Node 26 is pinned by `package.json`; this container has Node 22 and
 installed with `--force`, which changes nothing the tests exercise. Not
 run: the app, the box, a Mac. The next single run of "hi" on a Mac decides
 between the four readings above.
+
+## Decided by the next run, 23 September 2026 (evening)
+
+The founder ran "hi" on the Mac with the new lines in. Thirty pairs, one
+model call every 3–5 seconds:
+
+```
+[claidor] model=gpt-5.6-terra effort=high input=35130 cached=34818 output=171 reasoning=38 ms=4863 tools=SendMessage({"type":"text","content":"Hey, I’m Chief of Staff. I can help keep work moving a…)
+[claidor] tool=sendMessageToolCall id=call_lfv36D56pbb9mkROov76kH8z result=error detail=Invalid arguments: widget: widget is only valid with type:widget and cannot ride a type:text message — it would be silently dropped. Nothing was sent. Re-send a…
+```
+
+and once, the widget's own validation:
+
+```
+[claidor] tool=sendMessageToolCall id=call_W5L502ZxrXq7MMvp6WLlH6bL result=error detail=Invalid arguments: widget.prompt: String must contain at least 1 character(s) widget.helpText: String must contain at least 1 character(s) widget.options.0.labe…
+```
+
+So the loop dispatched the tool every time and the tool refused every time.
+The model writes its greeting as a `type:text` SendMessage and, in the
+same call, a `widget` object of empty strings — every property in the
+schema, the foreign one blank. The wire schema is not strict and requires
+only `type` (measured through the executor: `required: ["type"]`,
+`strict` unset); the brief's "offer any choice as a question widget" is
+the likely nudge. `refineSendMessage` treated a blank object as a provided
+field, refused the whole call with "Nothing was sent. Re-send…", and the
+model answered the refusal with the same call. That is the whole runaway:
+no message ever reached the transcript, so every reply nudge, ack redrive
+and step continued it.
+
+**The fix** (`send-message-schema.ts`): a blank field — empty string,
+empty array, object whose every leaf is blank — is dropped before
+validation (`isBlankField`, `z.preprocess` on `widget`, `secret`,
+`images`). A filled foreign field is still refused with the re-send
+instruction, because that refusal the model does act on.
+`tests/send-message-blank-fields.test.mjs` pins both; the agent-loop test
+now sends the exact greeting from the log and it lands as text.
+
+Not changed: the brief, the reminder middlewares, the nudges. Not yet run
+on a Mac: this fix.

@@ -89,7 +89,7 @@ const GREETING = "Hey, I'm New Agent. What would you like to tackle first?";
 // One product turn: the real Agent on the real tool session, with the real
 // SendMessage tool, its delivery going through the real transport. `ingest`
 // stands for the transcript manager's handleAgentUpdate.
-async function runTurn(loaded, { ingest }) {
+async function runTurn(loaded, { ingest, firstCallArgs = { type: "text", content: GREETING } }) {
   const { module: m, dataDir } = loaded;
   const requests = [];
   const hostLog = [];
@@ -100,7 +100,7 @@ async function runTurn(loaded, { ingest }) {
     // Step one: the model greets through SendMessage. Then it writes text
     // and the loop ends, if it was told the message landed or not.
     return requests.length === 1
-      ? functionCallStream(1, "SendMessage", { type: "text", content: GREETING })
+      ? functionCallStream(1, "SendMessage", firstCallArgs)
       : textStream(requests.length, "done");
   };
   const updates = [];
@@ -228,6 +228,31 @@ test("when delivery throws, the model is told 'Failed to send the message to the
     // The host log, which does reach /tmp/sand-host.log, carries the sentence twice: at the hop and at the tool.
     assert.ok(turn.hostLog.some((line) => line.startsWith("[claidor] send-message not written type=text error=Error: the transcript hop broke")), turn.hostLog.join("\n"));
     assert.ok(turn.hostLog.some((line) => line.startsWith("[claidor] tool=sendMessageToolCall id=call_1 result=error detail=the transcript hop broke")), turn.hostLog.join("\n"));
+  } finally {
+    console_.restore();
+    globalThis.fetch = previousFetch;
+    unpin();
+    await loaded.dispose();
+  }
+});
+
+// The call the box log showed on 23 September, thirty times in a row: the
+// greeting with a blank widget riding on it.
+test("the greeting GPT-5.6 actually sends — a text with a blank widget on it — lands as text", async () => {
+  const loaded = await loadHarness();
+  const previousFetch = globalThis.fetch;
+  const console_ = captureConsole();
+  try {
+    pin(loaded.dataDir);
+    const written = [];
+    const turn = await runTurn(loaded, {
+      ingest: (update) => { if (update.type === "send-message") { written.push(update.message); return `t1s${written.length}`; } return undefined; },
+      firstCallArgs: { type: "text", content: GREETING, widget: { prompt: "", helpText: "", options: [{ label: "", value: "", description: "" }] } },
+    });
+    assert.equal(turn.requests.length, 2);
+    assert.deepEqual(written, [{ type: "text", content: GREETING }]);
+    assert.deepEqual(toolOutputs(turn.requests[1]), ["Message sent to user. (id: t1s1)"]);
+    assert.ok(turn.hostLog.some((line) => /^\[claidor\] tool=sendMessageToolCall id=call_1 result=success /.test(line)), turn.hostLog.join("\n"));
   } finally {
     console_.restore();
     globalThis.fetch = previousFetch;
