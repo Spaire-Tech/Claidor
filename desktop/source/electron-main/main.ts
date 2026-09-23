@@ -173,9 +173,6 @@ export interface ElectronMainDependencies {
   readonly beginBeforeQuit?: () => "continue" | "prevent";
 }
 
-/** Fully transparent, so macOS vibrancy paints the window's background. */
-export const MAC_GLASS_BACKGROUND = "#00000000";
-
 export interface MainBrowserWindowOptions {
   readonly x?: number;
   readonly y?: number;
@@ -189,8 +186,6 @@ export interface MainBrowserWindowOptions {
   readonly frame: boolean;
   readonly titleBarStyle: "hiddenInset" | "hidden" | "default";
   readonly trafficLightPosition?: { readonly x: number; readonly y: number };
-  readonly vibrancy?: "under-window";
-  readonly visualEffectState?: "active";
   readonly titleBarOverlay?: WindowsTitleBarOverlay;
   readonly webPreferences: {
     readonly contextIsolation: true;
@@ -304,9 +299,7 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
       ...placement.windowOptions,
       title: deps.appName,
       ...(icon == null ? {} : { icon }),
-      // On macOS the window is glass: a clear background lets the vibrancy
-      // material show through the page's translucent surfaces.
-      backgroundColor: platform === "darwin" ? MAC_GLASS_BACKGROUND : backgroundColor,
+      backgroundColor,
       ...chrome,
       webPreferences: {
         contextIsolation: true,
