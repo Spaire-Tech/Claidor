@@ -236,6 +236,19 @@ alone was set to Simeon and the app died at launch with SIGTRAP in
 they were still `Grok Bot Helper*.app`; the rename refuses to move the
 executable without helpers to move with it. The bare words "Bot"/"Bots"
 were not asked for and were left.
+**The marks in the shipped screens, 23 September, later:** the landing
+page's black mark and the onboarding hero are clouds ("make it a cloud",
+`Jo.cloud`, the renderer's own shape; mood cycle, gaze and springs
+untouched); the boot screen's logo (`tOt`, "Setting up Simeon's
+computer") was Grok Bot's 158-frame morph and is now Simeon's twelve
+petals from `simeon-logo.mjs`, same size and colour variable, turning
+once in 14 s, still under reduced motion; and the pinned renderer's
+`app-icon-C7NKj2u7.png` (the hand-off screen "Waking your computer…",
+About) **was still Grok Bot's icon until then**, since nothing wrote the
+founder's file over it. All four are in `router-renderer-patch.mjs`
+(`patchOriginalMarks`, the app-icon copy), recorded under `marks` in
+`dist/renderer-router-extension.json`. Verified headless at 56 px in light
+and dark; not yet seen on a Mac.
 `docs/product/name-measured.md` §Simeon is the record.
 
 **The product is Simeon, decided 22 September 2026, later the same day.**
