@@ -238,7 +238,7 @@ test("when delivery throws, the model is told 'Failed to send the message to the
 
 // The call the box log showed on 23 September, thirty times in a row: the
 // greeting with a blank widget riding on it.
-test("the greeting GPT-5.6 actually sends — a text with a blank widget on it — lands as text", async () => {
+test("the greeting GPT-5.6 actually sends — a text with every other field padded — lands as text", async () => {
   const loaded = await loadHarness();
   const previousFetch = globalThis.fetch;
   const console_ = captureConsole();
@@ -247,7 +247,7 @@ test("the greeting GPT-5.6 actually sends — a text with a blank widget on it �
     const written = [];
     const turn = await runTurn(loaded, {
       ingest: (update) => { if (update.type === "send-message") { written.push(update.message); return `t1s${written.length}`; } return undefined; },
-      firstCallArgs: { type: "text", content: GREETING, widget: { prompt: "", helpText: "", options: [{ label: "", value: "", description: "" }] } },
+      firstCallArgs: { type: "text", content: GREETING, url: "", images: [], alt: "", reply_to: "", channel: "", widget: { prompt: "x", helpText: "x", options: [{ label: "x", value: "x", description: "x", style: "default" }], allowCustom: false, dismissOnMoveOn: false }, bcId: "", secret: { label: "x", description: "x", connector: "x", field: "x" } },
     });
     assert.equal(turn.requests.length, 2);
     assert.deepEqual(written, [{ type: "text", content: GREETING }]);

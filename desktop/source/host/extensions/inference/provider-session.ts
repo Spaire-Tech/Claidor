@@ -470,7 +470,7 @@ export function summarizeToolCalls(calls: readonly { readonly toolName?: string;
   return calls.map((call) => {
     let args = "";
     try { args = JSON.stringify(call.args ?? {}); } catch { args = String(call.args); }
-    const short = args.length > 80 ? `${args.slice(0, 80)}…` : args;
+    const short = args.length > 400 ? `${args.slice(0, 400)}…` : args;
     return `${call.toolName ?? "?"}(${short.replace(/\s+/g, " ")})`;
   }).join(" ");
 }

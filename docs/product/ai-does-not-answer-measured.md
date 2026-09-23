@@ -150,3 +150,26 @@ now sends the exact greeting from the log and it lands as text.
 
 Not changed: the brief, the reminder middlewares, the nudges. Not yet run
 on a Mac: this fix.
+
+## The second run, with the widened log line
+
+With `isBlankField` in the box, the model changed the padding, not the
+habit. The whole call, now that the `model=` line carries 400 characters:
+
+```
+SendMessage({"type":"text","content":"Hey! How’s it going?","url":"","images":[],"alt":"","reply_to":"","channel":"","widget":{"prompt":"x","helpText":"x","options":[{"label":"x","value":"x","description":"x","style":"default"}],"allowCustom":false,"dismissOnMoveOn":false},"bcId":"","secret":{"label":"x","description":"x","connector":"x","field":"x"}})
+```
+
+Every property of the schema, every time; the ones it does not mean
+padded with `x`. The proxy does not rewrite the tool schema (`server/polar/
+desktop/`: no `strict`, no `required`), the host sends `required: ["type"]`,
+so the padding is the model's own. Refusing the call for the foreign fields
+is therefore never answered with a corrected call, only with the same one.
+
+**The rule now** (`stripFieldsOfOtherTypes`, a `z.preprocess` on the whole
+object): `type` decides. Fields that belong to another type are deleted
+before validation, whatever they hold, and the typed message is sent. A
+bad field of the *right* type (a `type:widget` with an unlabelled option, a
+`type:text` with no content) is still refused, because that refusal names
+a real mistake. The greeting above lands as text; the agent-loop test
+sends it verbatim.

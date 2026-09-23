@@ -80,9 +80,12 @@ await run(SYSTEM_TOOLS.plutil, [
   infoPlist,
 ]);
 
-// Keep CFBundleName/CFBundleExecutable as "Grok Bot": Electron derives the
-// expected nested helper names from it, and this build intentionally reuses the
-// exact ABI-matched 0.18 runtime. CFBundleDisplayName provides the fork's name.
+// The menu bar's application name (top left, next to the Apple menu) is
+// CFBundleName, not CFBundleDisplayName; until 23 September 2026 it still said
+// Grok Bot ("rename it to Simeon too"). Only CFBundleExecutable stays "Grok
+// Bot": the executable and the nested helper bundles keep their names, because
+// this build reuses the exact ABI-matched 0.18 runtime unrenamed.
+await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleName", "-string", reconstructedName, infoPlist]);
 
 await rm(path.join(outputApp, "Contents", "_CodeSignature"), { recursive: true, force: true });
 try {

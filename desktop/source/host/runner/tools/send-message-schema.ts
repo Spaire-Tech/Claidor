@@ -29,14 +29,47 @@ export function isBlankField(value: unknown): boolean {
 }
 export function isFieldProvided(value: unknown): boolean { return !isBlankField(value); }
 function blankToUndefined(value: unknown): unknown { return isBlankField(value) ? undefined : value; }
+// The model also fills enum and boolean defaults ("style":"default",
+// "allowCustom":false) into a widget it does not mean. A widget with no
+// prompt and no labelled option is no widget; a secret with no label, no
+// connector and no field is no secret.
+function widgetOrUndefined(value: unknown): unknown {
+  if (value == null || typeof value !== "object" || Array.isArray(value)) return blankToUndefined(value);
+  const widget = value as { prompt?: unknown; options?: unknown };
+  const options = Array.isArray(widget.options) ? widget.options as { label?: unknown }[] : [];
+  const hasPrompt = !isBlankField(widget.prompt);
+  const hasOption = options.some((option) => option != null && typeof option === "object" && !isBlankField(option.label));
+  return hasPrompt || hasOption ? value : undefined;
+}
+function secretOrUndefined(value: unknown): unknown {
+  if (value == null || typeof value !== "object" || Array.isArray(value)) return blankToUndefined(value);
+  const secret = value as { label?: unknown; connector?: unknown; field?: unknown };
+  return [secret.label, secret.connector, secret.field].some((part) => !isBlankField(part)) ? value : undefined;
+}
 function dropBlankItems(value: unknown): unknown { return Array.isArray(value) ? blankToUndefined(value.filter((item) => !isBlankField(item))) : value; }
 const TYPE_FIELDS: readonly { field: keyof SendMessageInput; types: readonly SendMessageType[] }[] = [
   { field: "content", types: ["text"] }, { field: "url", types: ["attachment"] }, { field: "alt", types: ["attachment"] },
   { field: "widget", types: ["widget"] }, { field: "bcId", types: ["cursor-agent"] }, { field: "secret", types: ["secret-request"] },
 ];
+// `type` decides which fields count. GPT-5.6, 23 September 2026, fills every
+// property of the schema on every call — first with empty strings, then,
+// once told the widget was blank, with "x" in every slot of the widget and
+// the secret — while writing a plain greeting under type:text. Refusing the
+// call for the foreign fields ("Nothing was sent. Re-send…") was answered
+// with the same call, one model call every three seconds, until the hourly
+// budget refused. So a field that belongs to another type is dropped before
+// validation, whatever it holds, and the message the model typed is sent.
+export function stripFieldsOfOtherTypes(value: unknown): unknown {
+  if (value == null || typeof value !== "object" || Array.isArray(value)) return value;
+  const record = value as Record<string, unknown>;
+  const type = record.type;
+  if (typeof type !== "string" || !(SEND_MESSAGE_TYPES as readonly string[]).includes(type)) return value;
+  const stripped: Record<string, unknown> = { ...record };
+  for (const { field, types } of TYPE_FIELDS) if (!types.includes(type as SendMessageType)) delete stripped[field];
+  return stripped;
+}
 export function refineSendMessage(value: SendMessageInput): SendMessageIssue[] {
   const issues: SendMessageIssue[] = [];
-  for (const { field, types } of TYPE_FIELDS) if (!types.includes(value.type) && isFieldProvided(value[field])) { const allowed = types.map((type) => `type:${type}`).join(" or "); issues.push({ path: [String(field)], message: `${String(field)} is only valid with ${allowed} and cannot ride a type:${value.type} message \u2014 it would be silently dropped. Nothing was sent. Re-send as separate SendMessage calls, one per type: this field on its own properly-typed message (${allowed}), and any text as its own type:text message.` }); }
   if (value.channel && value.type !== "text" && value.type !== "attachment") issues.push({ path: ["channel"], message: "channel can only be set for type:text or type:attachment, not widgets or cursor-agent cards" });
   if ((value.images?.length ?? 0) > 0 && value.type !== "text") issues.push({ path: ["images"], message: "images can only be set for type:text (they attach to a text message); for a standalone attachment use type:attachment with url" });
   if (value.type === "text") {
@@ -59,13 +92,13 @@ const objectSchema = z.object({
   alt: z.string().trim().optional().describe("Optional. A short description (alt text) of the image for type:attachment \u2014 what the image shows. Shown to the user on hover and in the fullscreen viewer."),
   reply_to: z.string().trim().optional().describe("Optional. Short address of the prior message this reply threads to (e.g. t3u for the user message in turn 3, t3s1 for your second SendMessage in turn 3). Omit when not threading."),
   channel: z.string().trim().optional().describe("Optional. A connected messaging channel address to deliver this to instead of the in-app Simeon chat, shaped platform:chat, the address shown to you in an [inbound] wake. Omit to send to the in-app chat (the default). Only valid with type:text or type:attachment."),
-  widget: z.preprocess(blankToUndefined, sandWidgetSchema.optional()).describe("Required when type is widget. A question with selectable options: { prompt, helpText?, options: [{ label, value?, description?, style? }], allowCustom?, dismissOnMoveOn? }. The user picks one option; its value comes back as their reply, and the chat shows the resolved card with their selection checked under your prompt \u2014 so phrase the prompt as a natural question, not a menu instruction. The user can also dismiss the question without answering; you'll be told on your next turn, so treat that as a decline and don't re-ask. Set allowCustom: true to also let the user type their own free-text answer instead of picking an option. Set dismissOnMoveOn: true only for low-stakes questions that become moot if the user moves on (it auto-dismisses once they send a newer message without answering); leave it off for real decisions you still need answered."),
+  widget: z.preprocess(widgetOrUndefined, sandWidgetSchema.optional()).describe("Required when type is widget. A question with selectable options: { prompt, helpText?, options: [{ label, value?, description?, style? }], allowCustom?, dismissOnMoveOn? }. The user picks one option; its value comes back as their reply, and the chat shows the resolved card with their selection checked under your prompt \u2014 so phrase the prompt as a natural question, not a menu instruction. The user can also dismiss the question without answering; you'll be told on your next turn, so treat that as a decline and don't re-ask. Set allowCustom: true to also let the user type their own free-text answer instead of picking an option. Set dismissOnMoveOn: true only for low-stakes questions that become moot if the user moves on (it auto-dismisses once they send a newer message without answering); leave it off for real decisions you still need answered."),
   bcId: z.string().trim().optional().describe("Required when type is cursor-agent. The bcId of the cloud agent to reference (e.g. bc-xxxxxxxx-...)."),
-  secret: z.preprocess(blankToUndefined, z.object({
+  secret: z.preprocess(secretOrUndefined, z.object({
     label: z.string().trim().min(1).describe('What credential to ask for, shown as the card title and echoed in the field placeholder ("Paste your \u2026"), e.g. "Slack bot token".'),
     description: z.string().trim().optional().describe("Optional short help shown under the label."),
     connector: z.string().trim().min(1).describe("The connector/platform the secret is for. The value is written to that connector's per-agent credential file."),
     field: z.string().trim().min(1).describe('The credential field name to store the value under, e.g. "token".'),
   }).optional()).describe("Required when type is secret-request. Asks the user for a credential through a masked secure input; the value goes straight to the connector's credential file and never reaches you or the chat. You only learn that it was provided."),
 });
-export const sendMessageParameters = objectSchema.superRefine((value, ctx) => { for (const issue of refineSendMessage(value)) ctx.addIssue({ code: "custom", path: [...issue.path], message: issue.message }); });
+export const sendMessageParameters = z.preprocess(stripFieldsOfOtherTypes, objectSchema).superRefine((value, ctx) => { for (const issue of refineSendMessage(value)) ctx.addIssue({ code: "custom", path: [...issue.path], message: issue.message }); });
