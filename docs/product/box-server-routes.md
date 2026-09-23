@@ -302,3 +302,61 @@ consistent with an Actions spending limit, and `CLAUDE.md` already says the same
 It remains **inference and not a log**: nobody has read the repository's Actions
 billing page, and I cannot from this container. Until somebody does, §6's list of
 what I ran locally is the only evidence this work has.
+
+---
+
+## 10. §9 landed on main, and it sharpened the question rather than answering it
+
+23 September 2026. `main` `24edb785` brought `docs/product/agent-computer-plan.md`
+into the tree — 599 lines, including the §9 this note's §1 was written against.
+
+**The good news, checked rather than assumed.** §9 is headed *"For the Server
+agent. I do not touch `server/`"* and its table specifies exactly the ten REST
+routes under `/api/proxy/box/…` that PR #125 serves. I compared the table to
+`endpoints.py` method by method: all ten match, paths and verbs. I also checked
+the two obligations I was least confident I had met:
+
+- **§9 requirement 3 — kill the command in the box when the client
+  disconnects**, because "an abandoned command runs on, billing". Implemented:
+  `boxes.py:632` carries that exact rationale, and the `finally` at 713 calls
+  `handle.kill()` at 719.
+- **"Keep the box alive while it is in use."** `set_timeout` at `boxes.py:207`
+  and 734.
+
+**The bad news, and it is the important half.** It would be easy to read §9
+landing as the decision this note's §9 has been waiting for. It is not, because
+**the plugin §9 was written for is not in this tree.**
+
+What I searched, so nobody takes it on trust:
+
+- `ls desktop/openclaw-extensions/box/` → no such directory.
+- `find desktop -name 'brokerClient*' -not -path '*/node_modules/*'` → nothing.
+- `grep -rn 'api/proxy/box' desktop --include=*.ts --include=*.mjs`, excluding
+  `node_modules` → nothing.
+
+What the tree *does* have is a different wire for the same capability:
+`desktop/source/electron-main/box/box-host-connector.ts` declares
+`BrokerClient.ensureSandBox` / `recreateSandBox` / `forceRecreateSandBox`
+against `GrokBotService` over Connect RPC, reached through
+`createSandCursorBackendClient`. And `desktop/source/shared/box-runtime.ts` sets
+`DEFAULT_SAND_BOX_RUNTIME = "local-docker"` — the default box is not remote at
+all.
+
+One of the commits in this merge is titled *"Keep the box measurement, which
+only exists on a branch that cannot merge"*, which is consistent with the
+measurements and the plan landing while the plugin did not. I have not read that
+branch and am not asserting what is on it.
+
+**So `main` now carries two contradictory contracts for one capability**: a plan
+document that specifies REST and is addressed to me, and app code that speaks
+Connect RPC. Both are on `main` today. That is a sharper statement of the open
+question, not an answer to it, and it is not mine to settle.
+
+**What would settle it,** in one line each: does the box plugin that speaks REST
+come back into `desktop/`, or does the Connect RPC broker in
+`box-host-connector.ts` become the box's real path? The first makes PR #125
+mergeable as written. The second makes `BoxService`, `desktop_boxes`, the
+migration and the awake-seconds metering the salvage, and the ten handlers the
+rewrite — exactly the split §9 of this note already costed.
+
+I am still not merging, closing, or starting the re-fit without that answer.
