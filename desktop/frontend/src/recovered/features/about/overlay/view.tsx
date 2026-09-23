@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ADVENTURER_CREDIT } from "../../onboarding/signed-in/avatars.generated";
 import type { DesktopBridge, DesktopUpdateStatus } from "../../../contracts/desktop-bridge";
 import { rendererRuntimeAssetUrl } from "../../../../production/runtime-assets";
 import { SandButton, SandIconButton } from "../../../ui/sand-kit-primitives";
@@ -79,6 +80,7 @@ export function AboutDialog({ bridge, labels, onClose, initialStatus = null }: A
           {status == null ? null : <p>{`Version ${status.currentVersion} (built by Bennett)`}</p>}
         </div>
         <small>{labels.copyright}</small>
+        <small>{ADVENTURER_CREDIT}</small>
       </div>
       <footer><SandButton disabled={status == null} onClick={() => void copyVersion()} size="sm">{copied ? labels.copied : labels.copyVersionInfo}</SandButton></footer>
     </section>

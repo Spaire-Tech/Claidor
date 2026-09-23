@@ -1,3 +1,5 @@
+**Superseded the same day, 23 September 2026.** The founder did not like these faces ("i really dont like it") and replaced them with twenty-one avatars of their own, made with DiceBear's Adventurer style; `faces-adventurer-measured.md` is the current record and `character.tsx` no longer contains any of this drawing. The screenshots this note lists were removed with the code; the note is kept as the record of what was tried.
+
 # The agents' faces as clay characters, measured (23 September 2026)
 
 The faces are redesigned as matte 3D clay characters: a round head, a hair

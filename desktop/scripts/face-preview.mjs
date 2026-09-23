@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// Builds the clay-face preview page (frontend/src/dev/face-preview.tsx) into
+// Builds the avatar preview page (frontend/src/dev/face-preview.tsx) into
 // .build/face-preview/ and, when playwright-core and a Chromium are on hand,
-// screenshots it into docs/product/faces-clay/. Neither is part of the app.
+// screenshots it into docs/product/faces-adventurer/. Neither is part of the app.
 //
 //   node scripts/face-preview.mjs            build + screenshots
 //   node scripts/face-preview.mjs --no-shots build only
@@ -13,7 +13,7 @@ import { build } from "esbuild";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outDir = path.join(root, ".build/face-preview");
-const shotsDir = path.resolve(root, "../docs/product/faces-clay");
+const shotsDir = path.resolve(root, "../docs/product/faces-adventurer");
 const args = new Set(process.argv.slice(2));
 
 const CSS = `
@@ -27,10 +27,11 @@ html, body { margin: 0; }
 .group button { font: inherit; padding: 3px 9px; border-radius: 6px; border: 1px solid rgba(128,128,128,.4); background: transparent; color: inherit; cursor: pointer; }
 .group button[aria-pressed="true"] { background: rgba(128,128,128,.22); }
 .tone { display: inline-block; width: 18px; height: 18px; border-radius: 50%; }
-.tones small { margin-left: 8px; opacity: .7; }
+.credit { opacity: .6; }
 .grid-section { margin: 22px 0; }
 .grid-section h2 { font-size: 13px; font-weight: 600; margin: 0 0 8px; opacity: .8; }
 .grid { display: inline-grid; align-items: center; }
+.grid-section { width: fit-content; }
 .label { font-size: 11px; opacity: .65; text-align: center; }
 .row-label { text-align: right; padding-right: 8px; white-space: nowrap; }
 .row-label small { display: block; opacity: .7; }
@@ -53,7 +54,7 @@ async function bundle() {
   });
   await writeFile(path.join(outDir, "face-preview.css"), CSS);
   await writeFile(path.join(outDir, "index.html"), `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Clay faces</title><link rel="stylesheet" href="./face-preview.css"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Simeon avatars</title><link rel="stylesheet" href="./face-preview.css"></head>
 <body><div id="root"></div><script src="./face-preview.js"></script></body></html>
 `);
   return path.join(outDir, "index.html");
@@ -72,7 +73,7 @@ async function screenshots(page) {
   await mkdir(shotsDir, { recursive: true });
   const measured = {};
   for (const theme of ["light", "dark"]) {
-    const context = await browser.newContext({ viewport: { width: 1180, height: 900 }, deviceScaleFactor: 2, colorScheme: theme });
+    const context = await browser.newContext({ viewport: { width: 2000, height: 900 }, deviceScaleFactor: 2, colorScheme: theme });
     const tab = await context.newPage();
     const errors = [];
     tab.on("pageerror", (error) => errors.push(String(error)));
@@ -86,28 +87,25 @@ async function screenshots(page) {
       const sample = (selector) => { const node = first.querySelector(selector); return node == null ? null : getComputedStyle(node).getPropertyValue(selector.includes("stop") ? "stop-color" : "fill"); };
       return {
         faces: faces.length,
-        stopColor: sample("radialGradient stop"),
-        hairVar: getComputedStyle(first).getPropertyValue("--sand-face-hair").trim(),
-        sclera: getComputedStyle(first.querySelector("circle[fill='var(--sand-face-sclera)']")).fill,
-        transforms: { face: first.querySelector("g[transform]").getAttribute("transform"), eyes: first.querySelectorAll("g[transform]")[1]?.getAttribute("transform") },
-        styleSheets: document.querySelectorAll("#sand-face-style").length,
+        avatars: new Set(faces.map((face) => face.dataset.avatar)).size,
+        paths: first.querySelectorAll("path").length,
+        transforms: { face: first.querySelector("g[clip-path] > g").getAttribute("transform"), eyes: first.querySelector("g[clip-path] > g > g:nth-child(2) > g").getAttribute("transform") },
+        duplicateIds: (() => { const ids = Array.from(document.querySelectorAll("svg [id]")).map((node) => node.id); return ids.length - new Set(ids).size; })(),
       };
     });
     // Mid-animation frames, so the record shows the loop running, not a resting pose.
     await tab.waitForTimeout(700);
     const sections = await tab.$$("section.grid-section");
-    await sections[5].screenshot({ path: path.join(shotsDir, `faces-clay-states-${theme}.png`) });
-    await sections[1].screenshot({ path: path.join(shotsDir, `faces-clay-28px-${theme}.png`) });
-    if (theme === "light") {
-      await sections[4].screenshot({ path: path.join(shotsDir, "faces-clay-80px-light.png") });
-      await sections[0].screenshot({ path: path.join(shotsDir, "faces-clay-16px-light.png") });
-    }
+    await sections[5].screenshot({ path: path.join(shotsDir, `faces-adventurer-states-${theme}.png`) });
+    await sections[1].screenshot({ path: path.join(shotsDir, `faces-adventurer-28px-${theme}.png`) });
+    await sections[4].screenshot({ path: path.join(shotsDir, `faces-adventurer-80px-${theme}.png`) });
+    if (theme === "light") await sections[0].screenshot({ path: path.join(shotsDir, "faces-adventurer-16px-light.png") });
     // The whole page, all five sizes, at 1x so the record stays small.
-    const whole = await browser.newPage({ viewport: { width: 1180, height: 900 }, deviceScaleFactor: 1, colorScheme: theme });
+    const whole = await browser.newPage({ viewport: { width: 2000, height: 900 }, deviceScaleFactor: 1, colorScheme: theme });
     await whole.goto(`${pathToFileURL(page).href}?theme=${theme}&state=idle`);
     await whole.waitForSelector("svg.sand-face");
     await whole.waitForTimeout(400);
-    await whole.screenshot({ path: path.join(shotsDir, `faces-clay-${theme}.png`), fullPage: true });
+    await whole.screenshot({ path: path.join(shotsDir, `faces-adventurer-${theme}.png`), fullPage: true });
     await whole.close();
     measured[theme].errors = errors;
     await context.close();
