@@ -270,6 +270,9 @@ stylesheet is the atomic classes named in §2; there is no
 
 ## 7. What a redesign has to keep, and where it lands
 
+**Built 23 September 2026 as option 2 below**: `orb-marks-measured.md` is the
+record of what shipped and what is measured.
+
 The animation is the `$_t` loop on the face group `A` plus the overlays,
 particles and pokes; the identity is `color` + `shape` with the hash
 defaults; the plumbing is `sd` → `$_t` and the mirror registry. A new look

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Orb marks — preview of the patched mark SVG</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; padding: 24px; font: 13px/1.4 -apple-system, system-ui, sans-serif; background: #f5f5f7; color: #222; }
+  @media (prefers-color-scheme: dark) { body { background: #1c1c1e; color: #eee; } }
+  h2 { font-size: 13px; font-weight: 600; margin: 24px 0 8px; opacity: .7; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .sand-grok-bot-mark { display: inline-block; position: relative; }
+  .sand-grok-bot-mark svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .label { font-size: 10px; text-align: center; opacity: .6; }
+  #stats { font: 11px/1.4 ui-monospace, monospace; white-space: pre; margin-top: 24px; opacity: .8; }
+</style>
+<script src="./shape-paths.js"></script>
+<script src="../../scripts/lib/orb-mark-element.js"></script>
+</head>
+<body>
+<h2>Sidebar size, 36 px — 8 shipped picker shapes × 6 colours (states cycle)</h2>
+<div class="row" id="small"></div>
+<h2>The founder's six, 80 px (onboarding size), bouncing like the face group</h2>
+<div class="row" id="six"></div>
+<h2>160 px, one per state group</h2>
+<div class="row" id="big"></div>
+<div id="stats"></div>
+<script>
+const RE = 114.2705, VIEW = "-15 -15 259 259";
+// Path generators copied in spirit from the renderer's (zBe superellipse, ZJt capsule).
+function superellipse(rx, ry, n, steps = 160) {
+  const pts = [];
+  for (let i = 0; i < steps; i++) { const a = i / steps * Math.PI * 2, c = Math.cos(a), s = Math.sin(a);
+    pts.push([RE + Math.sign(c) * Math.pow(Math.abs(c), 2 / n) * rx, RE + Math.sign(s) * Math.pow(Math.abs(s), 2 / n) * ry]); }
+  return "M" + pts.map(p => p[0].toFixed(2) + " " + p[1].toFixed(2)).join("L") + "Z";
+}
+function capsule(hw, r) { const l = RE - hw + r, rr = RE + hw - r;
+  return `M${l} ${RE - r}L${rr} ${RE - r}A${r} ${r} 0 0 1 ${rr} ${RE + r}L${l} ${RE + r}A${r} ${r} 0 0 1 ${l} ${RE - r}Z`; }
+const paths = Object.assign({ disc: superellipse(113, 113, 2), pill: capsule(113, 62), square: superellipse(107, 107, 6) }, window.SHAPE_PATHS || {});
+const FG = { blue: "light-dark(#2A92FE, #0E74E0)", green: "light-dark(#00C972, #009957)", orange: "light-dark(#FF781C, #FF6700)", violet: "light-dark(#A97EFE, #804EE0)", cyan: "light-dark(#1CC3B0, #00A592)", gray: "light-dark(#959595, #777777)", red: "light-dark(#FF3E51, #E02135)" };
+const STATES = ["idle", "thinking", "working", "sleeping", "excited", "listening"];
+let n = 0;
+function mark(shape, color, sizePx, state, seed) {
+  const id = "m" + (n++);
+  const span = document.createElement("span");
+  span.className = "sand-grok-bot-mark";
+  span.setAttribute("data-grok-state", state);
+  span.style.cssText = `width:${sizePx}px;height:${sizePx}px;--fg:${FG[color]};--bg:#fff;--orb-seed:${seed}`;
+  // The structure the patch leaves in the animator: defs/clipPath#N, group A, then inside A a
+  // clipped group with the (now unfilled) body path and the foreignObject holding the orb.
+  span.innerHTML = `<svg viewBox="${VIEW}" xmlns="http://www.w3.org/2000/svg" data-state="${state}">
+    <defs><clipPath id="${id}"><path d="${paths[shape]}"/></clipPath></defs>
+    <g class="face">
+      <g clip-path="url(#${id})">
+        <path d="${paths[shape]}" style="fill:none"/>
+        <foreignObject x="-15" y="-15" width="259" height="259" style="overflow:visible"><cloud-orb shape="none" style="width:100%;height:100%"></cloud-orb></foreignObject>
+      </g>
+      <circle cx="${RE}" cy="${RE}" r="0" style="display:none;stroke:var(--fg)"/>
+    </g></svg>`;
+  const wrap = document.createElement("div");
+  wrap.appendChild(span);
+  const l = document.createElement("div"); l.className = "label"; l.textContent = `${shape}/${color}`; wrap.appendChild(l);
+  return wrap;
+}
+const small = document.getElementById("small");
+const shipped = ["blob", "pebble", "squircle", "tablet", "wedge", "hex", "cloud", "teardrop"];
+const colours = ["blue", "green", "orange", "violet", "cyan", "gray"];
+let k = 0;
+for (const shape of shipped) for (const color of colours) small.appendChild(mark(shape, color, 36, STATES[k++ % STATES.length], k));
+const six = document.getElementById("six");
+[["disc", "blue"], ["pill", "green"], ["squircle", "orange"], ["square", "violet"], ["blob", "cyan"], ["hex", "gray"]].forEach(([s, c], i) => six.appendChild(mark(s, c, 80, "idle", 100 + i)));
+const big = document.getElementById("big");
+[["disc", "blue", "thinking"], ["blob", "red", "working"], ["hex", "gray", "sleeping"]].forEach(([s, c, st], i) => big.appendChild(mark(s, c, 160, st, 200 + i)));
+
+// The face group moves the way the animator moves it: translate + rotate + scale per frame.
+const faces = [...document.querySelectorAll("g.face")];
+let frames = 0, t0 = performance.now(), worst = 0, last = t0;
+function tick(now) {
+  const dt = now - last; last = now; worst = Math.max(worst, dt); frames++;
+  const t = now / 1000;
+  faces.forEach((g, i) => {
+    const b = Math.abs(Math.sin(t * 2 + i)) * 12, rot = Math.sin(t * 1.3 + i) * 6, sc = 1 + Math.sin(t * 3 + i) * 0.03;
+    g.setAttribute("transform", `translate(${RE} ${RE - b}) rotate(${rot}) scale(${sc} ${1 / sc}) translate(${-RE} ${-RE})`);
+  });
+  if (now - t0 > 1000) {
+    document.getElementById("stats").textContent = `marks: ${faces.length}   fps: ${(frames * 1000 / (now - t0)).toFixed(1)}   worst frame: ${worst.toFixed(1)} ms   dpr: ${devicePixelRatio}`;
+    frames = 0; t0 = now; worst = 0;
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+// States cycle so the speed table is visible.
+setInterval(() => { document.querySelectorAll("#small .sand-grok-bot-mark").forEach((s, i) => s.setAttribute("data-grok-state", STATES[(i + Math.floor(performance.now() / 4000)) % STATES.length])); }, 4000);
+</script>
+</body>
+</html>
