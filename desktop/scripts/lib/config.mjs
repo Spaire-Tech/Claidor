@@ -41,7 +41,17 @@ export const devOutputApp = path.join(outputDir, "Grok Bot 0.18 Dev.app");
 export const devProfileDir = path.join(cacheDir, "dev-profile");
 
 export const upstreamVersion = "0.18.0";
-export const reconstructedBundleId = "com.anysphere.sand.reconstructed";
+/**
+ * The app's own identity, since 23 September 2026 ("com.claidor.simeon is
+ * fine"). Until then it was com.anysphere.sand.reconstructed, Grok Bot's
+ * maker's name with a suffix. macOS keys the Keychain access to safeStorage
+ * secrets and the privacy grants (screen recording, accessibility,
+ * automation) on this, so the person may sign in once more and grant them
+ * again after the first build carrying it.
+ */
+export const reconstructedBundleId = "com.claidor.simeon";
+/** The URL scheme the bundle claims; must equal SAND_DEEP_LINK_SCHEME in source/shared/desktop.ts. */
+export const reconstructedUrlScheme = "simeon";
 export const reconstructedName = process.env.CAISRA_DISPLAY_NAME?.trim() || "Simeon";
 /**
  * The name of the executable, and so of the helper bundles and of

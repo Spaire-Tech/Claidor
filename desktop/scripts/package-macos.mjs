@@ -6,7 +6,8 @@ import {
   packagedEnvironment,
   reconstructedBundleId,
   reconstructedExecutableName,
-  reconstructedName
+  reconstructedName,
+  reconstructedUrlScheme
 } from "./lib/config.mjs";
 import { buildFidelityReconstructedAsar } from "./clean-build.mjs";
 import { signAppBundleAdHoc } from "./lib/codesign.mjs";
@@ -66,11 +67,11 @@ const infoPlist = path.join(outputApp, "Contents", "Info.plist");
 await run(SYSTEM_TOOLS.plutil, ["-remove", "ElectronAsarIntegrity", infoPlist]);
 await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleIdentifier", "-string", reconstructedBundleId, infoPlist]);
 await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleDisplayName", "-string", reconstructedName, infoPlist]);
-// The backend currently emits only the `sand` auth/deep-link target. Make the
-// reconstructed bundle's claim explicit and remove inherited aliases such as
-// `grokbot`; the original bundle remains untouched and remains reference-only.
+// The bundle claims our own scheme and nothing inherited (`sand`, `grokbot`):
+// Claidor's sign-in returns to whatever scheme the app names, and `sand` is
+// Grok Bot's, which macOS may hand the callback to instead.
 await run(SYSTEM_TOOLS.plutil, ["-remove", "CFBundleURLTypes", infoPlist]);
-await run(SYSTEM_TOOLS.plutil, ["-insert", "CFBundleURLTypes", "-xml", "<array><dict><key>CFBundleTypeRole</key><string>Viewer</string><key>CFBundleURLName</key><string>Simeon auth callback</string><key>CFBundleURLSchemes</key><array><string>sand</string></array></dict></array>", infoPlist]);
+await run(SYSTEM_TOOLS.plutil, ["-insert", "CFBundleURLTypes", "-xml", `<array><dict><key>CFBundleTypeRole</key><string>Viewer</string><key>CFBundleURLName</key><string>Simeon auth callback</string><key>CFBundleURLSchemes</key><array><string>${reconstructedUrlScheme}</string></array></dict></array>`, infoPlist]);
 // The packaged bundle carries its own backend. A bundle launched from Finder
 // inherits no shell environment, so a build without this signs in to
 // cursor.com however the terminal that built it was configured.

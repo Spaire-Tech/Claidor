@@ -59,7 +59,11 @@ Only macOS on Apple Silicon can bootstrap or package — `hdiutil`, `codesign`,
 
 - **`dist/Caisra.app`** — the bundle name (`GROK_BOT_OUTPUT_APP_NAME` overrides).
 - **`CFBundleDisplayName` = `Caisra`** (`CAISRA_DISPLAY_NAME` overrides).
-- **`CFBundleIdentifier` = `com.anysphere.sand.reconstructed`**, pinned.
+- **`CFBundleIdentifier` = `com.claidor.simeon`** and **`CFBundleURLSchemes` =
+  `simeon`**, since 23 September 2026 (`scripts/lib/config.mjs`,
+  `reconstructedBundleId`, `reconstructedUrlScheme`; the app's own
+  `SAND_DEEP_LINK_SCHEME` must match, and `tests/app-identity.test.mjs`
+  checks it). Until then `com.anysphere.sand.reconstructed` and `sand`.
 - **`LSEnvironment`** carries `CURSOR_API_BASE_URL`, `CURSOR_WEBSITE_URL`
   and `SAND_BACKEND_URL`, all `https://api.claidor.com`.
 - **Host and electron-main** from recovered source when the 0.18.0 artifact

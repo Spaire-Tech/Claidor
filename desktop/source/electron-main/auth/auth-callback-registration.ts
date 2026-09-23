@@ -24,9 +24,10 @@ function configuredToken(value: string | undefined, fallback: string, label: str
 }
 
 /**
- * `sand` is the only redirect target currently emitted by cursor.com. A
- * future backend-specific target may be selected explicitly, but must remain
- * a protocol-safe token and must be paired with the same server contract.
+ * The redirect target is the app's own scheme (`simeon` since 23 September
+ * 2026); Claidor's sign-in builds `<target>://app/v1/open` from whatever the
+ * app sends, so app and server agree by construction. An override must stay
+ * a protocol-safe token and must match the scheme the bundle claims.
  */
 export function resolveAuthRedirectTarget(env: NodeJS.ProcessEnv = process.env): string {
   return configuredToken(env.SAND_AUTH_REDIRECT_TARGET, SAND_AUTH_REDIRECT_TARGET, "SAND_AUTH_REDIRECT_TARGET");
