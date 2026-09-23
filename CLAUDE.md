@@ -175,7 +175,7 @@ every model call writes a `[claidor]` line with its tokens to the box's
 `/tmp/sand-host.log`; the box token file is written by one writer at a
 time (a startup burst used to race on it and blind the app); and the
 computer narration prints the failure's sentence. The brake by hand is
-still `docker stop grok-bot-local-vm`. Not yet run on a Mac.
+still `docker stop simeon-box` (the container was `grok-bot-local-vm` until 23 September). Not yet run on a Mac.
 
 **The box silences the loop's logger, established 23 September 2026.**
 `ports.runnerContext` is bound at build time
