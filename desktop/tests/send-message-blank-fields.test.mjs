@@ -57,20 +57,22 @@ test("a text message with a blank widget, secret or images riding on it is a tex
   }
 });
 
-test("a filled widget riding on a text message is still refused, with the re-send instruction", async () => {
+// The second run, with the log widened: the model pads every slot with "x".
+const PADDED_CALL = { type: "text", content: "Hey! How’s it going?", url: "", images: [], alt: "", reply_to: "", channel: "", widget: { prompt: "x", helpText: "x", options: [{ label: "x", value: "x", description: "x", style: "default" }], allowCustom: false, dismissOnMoveOn: false }, bcId: "", secret: { label: "x", description: "x", connector: "x", field: "x" } };
+
+test("type decides: fields of the other types are dropped whatever they hold, and the typed message is sent", async () => {
   const loaded = await loadSchema();
   try {
-    const result = loaded.module.sendMessageParameters.safeParse({
-      type: "text",
-      content: "Which account?",
-      widget: { prompt: "Which account?", options: [{ label: "Work" }, { label: "Personal" }] },
-    });
-    assert.equal(result.success, false);
-    assert.match(result.error.errors.map((issue) => issue.message).join("\n"), /widget is only valid with type:widget/);
-    const widget = loaded.module.sendMessageParameters.safeParse({ type: "widget", widget: { prompt: "Which account?", options: [{ label: "Work" }] } });
-    assert.equal(widget.success, true);
-    const half = loaded.module.sendMessageParameters.safeParse({ type: "widget", widget: { prompt: "Which account?", options: [{ label: "" }] } });
-    assert.equal(half.success, false, "a half-filled widget is a bad widget, not a blank one");
+    const { sendMessageParameters } = loaded.module;
+    const text = sendMessageParameters.parse(PADDED_CALL);
+    assert.deepEqual(text, { type: "text", content: "Hey! How’s it going?", reply_to: "", channel: "", images: undefined });
+    const widget = sendMessageParameters.parse({ ...PADDED_CALL, content: "", widget: { prompt: "Which account?", options: [{ label: "Work" }] }, type: "widget" });
+    assert.equal(widget.widget.prompt, "Which account?");
+    assert.equal(widget.content, undefined);
+    const half = sendMessageParameters.safeParse({ type: "widget", widget: { prompt: "Which account?", options: [{ label: "" }] } });
+    assert.equal(half.success, false, "a half-filled widget of the right type is a bad widget");
+    const empty = sendMessageParameters.safeParse({ type: "text", content: "", widget: { prompt: "Which account?", options: [{ label: "Work" }] } });
+    assert.equal(empty.success, false, "a text with no content is still not a message");
   } finally {
     await loaded.dispose();
   }

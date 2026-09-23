@@ -194,8 +194,9 @@ made 481 calls is explained, by the next run's log, the same evening:**
 GPT-5.6 greets with a `type:text` SendMessage carrying a `widget` object of
 empty strings, the schema refused the whole call ("Nothing was sent.
 Re-send…"), and the model re-sent it identically, one call every 3–5
-seconds. `send-message-schema.ts` now drops blank fields before
-validation (`isBlankField`); a filled foreign field is still refused.
+seconds. On the second run it padded every slot with `x` instead.
+`send-message-schema.ts` now lets `type` decide: fields of the other types
+are dropped before validation whatever they hold (`stripFieldsOfOtherTypes`).
 `docs/product/ai-does-not-answer-measured.md` has the log lines. Not yet
 run on a Mac with the fix. Read that file before reasoning about a silent
 agent again.
