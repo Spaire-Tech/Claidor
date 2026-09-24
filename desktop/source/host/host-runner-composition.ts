@@ -1282,7 +1282,13 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             if (settings.hiddenFromSidebar !== undefined) void method(transcript, "setAgentHiddenFromSidebar")?.(session.id, settings.hiddenFromSidebar);
           },
           readBoxFile: (boxPath: string) =>
-            method(remoteBox, "downloadFile")?.(ctx, session.id, boxPath)
+            method(remoteBox, "downloadFile")?.(ctx, session.id, boxPath),
+          // The agent's own avatar set/clear (UpdateState target avatar)
+          // writes the file and calls this; without it the roster never
+          // redrew (docs/product/avatar-audit-2026-09-24.md).
+          onAvatarChanged: () => {
+            void method(transcript, "emitAgentUpdate")?.(session.id);
+          },
         })
       : undefined;
 

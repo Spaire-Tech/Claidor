@@ -137,3 +137,30 @@ check.
   contract says the row.
 - Generate: the exact sentence the editor shows today, and the server's
   `upstream_refused` line for that minute.
+
+## Applied, later the same night ("fix please")
+
+All in `desktop/source/`, which `npm run package` compiles into the app
+and into the host bundle the box runs, so the production build carries
+it.
+
+1. `buildSummary` reads the avatar by default
+   (`readAgentAvatarForSummary` in `session-summaries.ts`, the same read
+   `getAgentAvatar` makes, cached by mtime). Every roster row, every
+   `agent-upserted` event and the reply to `setAgentAvatarBytes` now
+   carry `avatarDataUrl`/`avatarVersion` when `avatar.<ext>` exists. A
+   caller may still pass its own `readAvatar`.
+2. The transcript API delegates `emitAgentUpdate` to the roster, and the
+   composition supplies `onAvatarChanged` to the agent's state deps, so
+   the agent's own `UpdateState` avatar set/clear redraws.
+3. The gateway's avatar write refuses an empty, oversized (5 MB) or
+   non-image payload with a sentence, the way the agent's own path does.
+
+`tests/avatar-roster.test.mjs` measures the three offline (a real
+`avatar.png` in a temp agent directory; the mutation with a stub db).
+Point 3 of the audit (a server-side refusal of Generate) is unchanged:
+the editor's sentence after one click names it.
+
+Not yet run on a Mac. Expected after a rebuild: Upload shows the picture
+on the agent's card at once; Generate either shows it or shows a
+sentence starting `edge/handler-failed:` naming the server's reason.

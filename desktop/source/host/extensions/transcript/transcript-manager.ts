@@ -516,6 +516,8 @@ const delegations: ReadonlyArray<[string, keyof TranscriptManager]> = [
   ["searchAgents", "roster"],
   ["searchMedia", "roster"],
   ["listAgentsSync", "roster"],
+  // For the agent's own avatar change (agent-state.ts onAvatarChanged), 24 September 2026.
+  ["emitAgentUpdate", "roster"],
   ["subscribeAgents", "roster"],
   ["subscribeAgentUpserted", "roster"],
   ["subscribeProfileChanged", "roster"],

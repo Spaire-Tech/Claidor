@@ -678,6 +678,24 @@ defaults; `sand_usage_page` is the one we set). None of this has run on
 a Mac. `docs/product/reconstruction-gaps-2026-09-24.md` §"Fixed the same
 day" has the per-item file list.
 
+**Changing an agent's avatar, audited and fixed 24 September 2026, night.**
+"upload and image generation none of them work." Both flows were wired
+(Upload: Mac file dialog → crop → `setAgentAvatarBytes` → `avatar.png`
+in the box; Generate: `/desktop/api/proxy/v1/images/generations` →
+`gpt-image-1` → the same upload path) and both lost the picture at one
+place: `buildSummary` filled `avatarDataUrl` only through an optional
+`readAvatar` callback that no caller passed, so every roster row said
+null while the file sat in the box, and the earlier gaps record's claim
+that the read-back worked was wrong. Now the summary reads the avatar
+by default, the transcript API delegates `emitAgentUpdate` so the
+agent's own avatar change redraws (`onAvatarChanged` supplied in the
+composition), and the gateway write validates the bytes.
+`docs/product/avatar-audit-2026-09-24.md` is the record;
+`tests/avatar-roster.test.mjs` measures it offline. A Generate that
+still fails shows `edge/handler-failed: <the server's sentence>`; the
+first thing to check is `CLAIDOR_OPENAI_API_KEY` on Render. The Mac
+keeps no log for this path. Not yet run on a Mac.
+
 ## The product's hostnames are simeonlabs.com (24 September 2026)
 
 "i want to replace all claidor.com instances by simeonlabs.com … now i
