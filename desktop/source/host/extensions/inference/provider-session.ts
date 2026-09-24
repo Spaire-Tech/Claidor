@@ -9,7 +9,7 @@ import { jsonSchema, streamText, tool, type CoreMessage, type LanguageModelV1, t
 import { BasePromptBuilder, BasePromptExecutor } from "../../../packages/chat-inference/base.js";
 import { asError } from "../../../shared/errors.js";
 import { withCheapRateLimitFallback } from "../../../shared/inference/cheap-rate-limit-fallback.js";
-import { logHostLine, setHostLogSink } from "../../../shared/host-log.js";
+import { clipForHostLog, HOST_LOG_PREFIX, logHostLine, setHostLogSink } from "../../../shared/host-log.js";
 import { CLAIDOR_WORKING_CONTEXT_TOKENS } from "../../../shared/inference/claidor-context-window.js";
 import { resolveSandAgentStepCap, stepBudgetExceededMessage } from "../../../shared/inference/turn-step-budget.js";
 import type { SandInferenceProvider } from "../../../shared/inference-router.js";
@@ -483,7 +483,30 @@ export function setModelCallLog(log: ((line: string) => void) | null): void {
   setHostLogSink(log);
 }
 
-function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, callInfo?: { readonly model: string; readonly effort: string }) {
+// What a failed model call looked like, for /tmp/sand-host.log. Until 24
+// September 2026 an in-stream `error` event from the provider surfaced as
+// one sentence ("An error occurred while processing the request.") with
+// nothing else: not the event, not which tools were on the request. The
+// proxy relays the stream as a 200, so the server logs nothing either.
+function toolSchemaSummary(tools: ToolSet | undefined): string {
+  if (tools == null) return "{}";
+  const summary: Record<string, unknown> = {};
+  for (const [name, definition] of Object.entries(tools)) {
+    const parameters = (definition as { parameters?: { jsonSchema?: unknown } }).parameters;
+    summary[name] = parameters?.jsonSchema ?? parameters ?? null;
+  }
+  try { return JSON.stringify(summary); } catch { return "[unserialisable]"; }
+}
+
+function logModelCallError(error: unknown, callInfo: { readonly model: string; readonly effort: string } | undefined, tools: ToolSet | undefined): void {
+  let event = "";
+  try { event = JSON.stringify(error) ?? String(error); } catch { event = String(error); }
+  if (event === "{}" && error instanceof Error) event = error.message;
+  modelCallLog(`${HOST_LOG_PREFIX} model-error model=${callInfo?.model ?? "?"} effort=${callInfo?.effort ?? "?"} tools=${Object.keys(tools ?? {}).join(",")} event=${clipForHostLog(event, 800)}`);
+  modelCallLog(`${HOST_LOG_PREFIX} model-error-schemas ${clipForHostLog(toolSchemaSummary(tools), 6000)}`);
+}
+
+function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, callInfo?: { readonly model: string; readonly effort: string }, tools?: ToolSet) {
   const startedAtMs = Date.now();
   const failure = deferred<never>();
   failure.promise.catch(() => undefined);
@@ -492,7 +515,7 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
     let ended = false;
     try {
       for await (const part of result.fullStream) {
-        if (part.type === "error") { const next = asError(part.error); fail(next); throw next; }
+        if (part.type === "error") { logModelCallError(part.error, callInfo, tools); const next = asError(part.error); fail(next); throw next; }
         yield part;
       }
       ended = true;
@@ -532,7 +555,7 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
     maxSteps: tools === undefined || executeTool == null ? 1 : 8,
     providerOptions: { openai: { strictSchemas: false, ...openaiOptions } },
   });
-  return settleAiSdkStream(result, invocationId, onUsage, maxTokens, callInfo);
+  return settleAiSdkStream(result, invocationId, onUsage, maxTokens, callInfo, tools);
 }
 
 function openRouterExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void) {
