@@ -250,8 +250,21 @@ Task tool existed and refused every dispatch, and the composition's
 `buildSubagentConfigsForRun` was never called by the production path.
 The types are now built per run the same way it does: computerUse (and
 browserUse when its gate is on) when the box answers, the executor when
-multitask is on. Neither run on a Mac yet; a computer-use subagent has
-not been seen to drive the box's desktop here. The transcript's third
+multitask is on. **Then the dispatch failed one step later, "production
+subagent result is not bound"**: the child runner was built with
+`productionTurnRunShell: undefined`, no engine is bound to
+`createRunStep` in production, so its run returned nothing. The shell
+is now built by `buildProductionTurnRunShell(identity)` for the agent
+(`session.id`, not a subagent) and for each child (`agentId`,
+`isSubagentRunner`, its `subagentType`); the identity picks the
+toolset (computer or browser tools, no Task tool), the cheap model at
+low effort (`isComputerUseSubagent` on the session options), and the
+child's own interrupt; a child runs with `transport: undefined`, so
+nothing it streams reaches the chat and its text returns as the Task's
+result. The subagent reads the parent's system prompt; a subagent
+prompt of its own was not found in the tree. None of this has run on a
+Mac; a computer-use subagent has not been seen to drive the box's
+desktop here. The transcript's third
 finding, one reply sent twice ("Nice. We're set…"), is not explained by
 the code alone: the send count is collected synchronously before the
 run settles, and the early-result reminder cannot fire in a turn with no

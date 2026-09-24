@@ -72,7 +72,7 @@ test("the production composition supplies readProfile, writeProfile and writeSet
   assert.match(composition, /configs\.push\(createSandComputerUseSubagentConfig\(\{ browserUseOffered \}\)\)/);
   assert.match(composition, /if \(browserUseOffered\) configs\.push\(createSandBrowserUseSubagentConfig\(\)\)/);
   assert.match(composition, /isMultitaskEnabled"\)\?\.\(\) === true\) configs\.push\(createSandExecutorSubagentConfig\(\)\)/);
-  assert.match(composition, /\.\.\.baseTurn,\n\s*subagentConfigs: resolveSubagentConfigs\(\),/);
+  assert.match(composition, /\.\.\.baseTurn,\n\s*\.\.\.\(identity\.isSubagentRunner \? \{\} : \{ subagentConfigs: resolveSubagentConfigs\(\) \}\),/);
 });
 
 test("the computer-use type resolves by name and is the default when nothing else is offered", async () => {
@@ -85,4 +85,19 @@ test("the computer-use type resolves by name and is the default when nothing els
   } finally {
     await dispose();
   }
+});
+
+test("a dispatched subagent runs on its own production shell, headless, with the computer or browser tools its type names", async () => {
+  const composition = await readFile(path.join(repoRoot, "source/host/host-runner-composition.ts"), "utf8");
+  assert.match(composition, /const buildProductionTurnRunShell = \(identity: \{/);
+  assert.match(composition, /const isComputerUseTurn = identity\.isSubagentRunner && isComputerUseSubagentType\(identity\.subagentType\);/);
+  assert.match(composition, /isComputerUseSubagent: isComputerUseTurn,\n\s*isBrowserUseSubagent: isBrowserUseTurn,\n\s*isSystemPromptOverridden/);
+  assert.match(composition, /runnerOptions\.productionTurnRunShell = buildProductionTurnRunShell\(\{ conversationId: session\.id, isSubagentRunner: false \}\);/);
+  assert.match(composition, /productionTurnRunShell: buildProductionTurnRunShell\(\{\n\s*conversationId: agentId,\n\s*isSubagentRunner: true,\n\s*subagentType: args\.subagentType,/);
+  assert.match(composition, /transport: undefined,\n\s*\}\);\n\s*childRunner = child;/);
+  assert.doesNotMatch(composition, /productionTurnRunShell: undefined/, "the child is never built without an engine");
+  assert.match(composition, /\.\.\.\(identity\.isSubagentRunner \? \{\} : \{ subagentConfigs: resolveSubagentConfigs\(\) \}\)/);
+  const owner = await readFile(path.join(repoRoot, "source/host/runner/production-turn-agent-owner.ts"), "utf8");
+  assert.match(owner, /isComputerUseSubagent: input\.isComputerUseSubagent/);
+  assert.match(owner, /isBrowserUseSubagent: input\.isBrowserUseSubagent/);
 });

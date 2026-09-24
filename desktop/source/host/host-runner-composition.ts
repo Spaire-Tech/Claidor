@@ -94,8 +94,8 @@ import {
 } from "./runner/remote-box-resources.js";
 import { createStreamAttempt } from "./runner/stream-attempt.js";
 import { getSandProfilePath, readSandProfileFile } from "./agents/agent-profile.js";
-import { createSandComputerUseSubagentConfig } from "./runner/tools/sand-computer-use-subagent.js";
-import { createSandBrowserUseSubagentConfig } from "./runner/tools/sand-browser-use-subagent.js";
+import { createSandComputerUseSubagentConfig, isComputerUseSubagentType } from "./runner/tools/sand-computer-use-subagent.js";
+import { createSandBrowserUseSubagentConfig, isBrowserUseSubagentType } from "./runner/tools/sand-browser-use-subagent.js";
 import { createSandExecutorSubagentConfig } from "./sand-multitask.js";
 import type { TaskSubagentModelConfig } from "../packages/agent/tools/task-cluster-internal.js";
 import {
@@ -2337,6 +2337,20 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       // Same rule as there: computerUse (and browserUse when its gate is on)
       // when the box has a desktop and answers, plus the executor when
       // multitask is on.
+      // One production shell, built for an identity: the agent's own turn,
+      // or a headless subagent's (a Task the agent dispatched). Until 24
+      // September only the agent had a shell; a subagent runner was built
+      // with no shell at all and, with no engine bound in
+      // production either, its run returned nothing and every Task ended in
+      // "production subagent result is not bound".
+      const buildProductionTurnRunShell = (identity: {
+        readonly conversationId: string;
+        readonly isSubagentRunner: boolean;
+        readonly subagentType?: string;
+        readonly interrupt?: (reason: string) => void;
+      }) => {
+      const isComputerUseTurn = identity.isSubagentRunner && isComputerUseSubagentType(identity.subagentType);
+      const isBrowserUseTurn = identity.isSubagentRunner && isBrowserUseSubagentType(identity.subagentType);
       const resolveSubagentConfigs = (): readonly TaskSubagentModelConfig[] => {
         const configs: unknown[] = [];
         if (method(remoteBox, "isAvailable")?.() !== false) {
@@ -2351,20 +2365,21 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       };
       const baseTurn: TurnToolsetTurnInput = {
         autoReviewModes,
-        subagentConfigs: resolveSubagentConfigs(),
+        // A subagent gets no Task tool of its own (buildTurnTools reads `undefined` as "none").
+        ...(identity.isSubagentRunner ? {} : { subagentConfigs: resolveSubagentConfigs() }),
       };
       const staticModelId = process.env.SAND_AGENT_MODEL ?? DEFAULT_SAND_MODEL;
       const lazyToolHost = () => createProductionTurnToolsetHost({
         turn: baseTurn,
         factoryProvider: createTurnToolsetFactoryProvider(hostDependencies()),
-        isSubagentRunner: false,
+        isSubagentRunner: identity.isSubagentRunner,
         isSharedRoomRunner: isSharedRoomTurn,
         isBoxScopedSubagent: false,
-        isComputerUseSubagent: false,
-        isBrowserUseSubagent: false,
+        isComputerUseSubagent: isComputerUseTurn,
+        isBrowserUseSubagent: isBrowserUseTurn,
         isSystemPromptOverridden: typeof overrides.systemPrompt === "string",
         remoteBoxHasDesktop: true,
-        getConversationId: () => session.id,
+        getConversationId: () => identity.conversationId,
         getRemoteBoxAvailable: () => method(remoteBox, "isAvailable")?.() !== false,
         cloudAgentsDisabledByTeam: () => method(experiments, "isCloudAgentsDisabledByTeam")?.() ?? false,
         spotlightEnabled: () => method(experiments, "isSpotlightEnabled")?.() ?? false,
@@ -2388,7 +2403,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         }
         throw new TypeError("production Agent conversation state is not bound");
       };
-      runnerOptions.productionTurnRunShell = createProductionTurnRunShellHostInput({
+      return createProductionTurnRunShellHostInput({
         createAgentOwnerInput: ({ requestId, runOptions, context, cancelThisRun, emitUpdate }) => {
           if (session.agentStore == null || typeof session.agentStore.getBlobStore !== "function") {
             throw new TypeError("production Agent blob store is not bound");
@@ -2442,7 +2457,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           );
           const turn: TurnToolsetTurnInput = {
             ...baseTurn,
-            subagentConfigs: resolveSubagentConfigs(),
+            ...(identity.isSubagentRunner ? {} : { subagentConfigs: resolveSubagentConfigs() }),
             emitUpdate,
             cancelThisRun,
             ...(runOptions.ackToken === undefined
@@ -2463,7 +2478,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           };
           return {
             context,
-            conversationId: session.id,
+            conversationId: identity.conversationId,
             requestId,
             inference: createTypedInferenceOwner(extensions.api("inference").port),
             onRequestId: requestIdForwarder(hooks, "agent"),
@@ -2473,13 +2488,18 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             // said; the executor still ignores an id the proxy does not
             // serve (`isConfiguredClaidorModelId`).
             modelId: staticModelId,
-            isSubagentRunner: false,
+            isSubagentRunner: identity.isSubagentRunner,
+            // The computer/browser subagent flags pick its tools and put its
+            // turns on the cheap model at low effort (`claidorModelForSession`).
+            isComputerUseSubagent: isComputerUseTurn,
+            isBrowserUseSubagent: isBrowserUseTurn,
             isSilenceAllowed: runOptions.isSilenceAllowed === true,
             ...(runOptions.ackToken === undefined
               ? {}
               : { ackToken: runOptions.ackToken }),
             canUseSelfSummary: () => true,
             cancelThisRun: reason => {
+              if (identity.interrupt != null) { identity.interrupt(reason.reason); return; }
               const runner = builtRunner as { interrupt?: (value: string) => boolean } | undefined;
               runner?.interrupt?.(reason.reason);
             },
@@ -2498,6 +2518,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 agentId: string,
                 args: SubagentAdapterArgs,
               ): SubagentSession => {
+                let childRunner: Runner | undefined;
                 const child = deps.buildRunner({
                   ...runnerOptions,
                   conversationId: agentId,
@@ -2509,8 +2530,18 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                     summaryArchives: [],
                     turnTimings: [],
                   },
-                  productionTurnRunShell: undefined,
+                  // The subagent's own production shell (see buildProductionTurnRunShell).
+                  productionTurnRunShell: buildProductionTurnRunShell({
+                    conversationId: agentId,
+                    isSubagentRunner: true,
+                    subagentType: args.subagentType,
+                    interrupt: reason => childRunner?.interrupt(reason),
+                  }),
+                  // A subagent is headless: nothing it streams reaches the user's
+                  // chat; its text comes back to the agent as the Task's result.
+                  transport: undefined,
                 });
+                childRunner = child;
                 bindSessionOwnedRunner(child);
                 ownedRunners.add(child);
                 return {
@@ -2571,9 +2602,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             staticConfig: {
               modelId: staticModelId,
               agentTokenLimit: CLAIDOR_WORKING_CONTEXT_TOKENS,
-              conversationId: session.id,
+              conversationId: identity.conversationId,
               isBoxScopedSubagent: false,
-              isSubagentRunner: false,
+              isSubagentRunner: identity.isSubagentRunner,
               isSharedRoomRunner: isSharedRoomTurn,
               sandSendMessageDeliveryOwed: method(experiments, "isSendMessageDeliveryOwedEnabled")?.() ?? false,
               systemPromptGenerator: () => productionSystemPromptAssembly?.getSystemPrompt() ?? DEFAULT_SAND_SYSTEM_PROMPT,
@@ -2611,9 +2642,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         context: () => productionContext,
         createSettleHost: createProductionTurnSettleHost,
         profilePromptSnapshots: () => session.db,
-        isSubagentRunner: false,
+        isSubagentRunner: identity.isSubagentRunner,
         subagents: { sessions: new Map() },
-        getConversationId: () => session.id,
+        getConversationId: () => identity.conversationId,
         runGeneration: () => (builtRunner as { currentRunGeneration?: number } | undefined)?.currentRunGeneration ?? 0,
         setActiveTurnRequestSource: () => {},
         beginAutoReviewUserMessageEpoch: () => {},
@@ -2627,6 +2658,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           : { lastReactionApplied: () => hooks.transport.lastReactionApplied?.() === true }),
         cancelThisRun: () => {},
       });
+      };
+      runnerOptions.productionTurnRunShell = buildProductionTurnRunShell({ conversationId: session.id, isSubagentRunner: false });
     }
 
     if (deps.createRunStep != null && runnerOptions.productionTurnRunShell === undefined) {
