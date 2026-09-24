@@ -241,9 +241,13 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
   });
   deps.startup.bootstrapBeforeSingleInstance();
 
-  deps.app.disableHardwareAcceleration();
-  deps.app.commandLine.appendSwitch("no-sandbox");
-  deps.app.commandLine.appendSwitch("disable-gpu");
+  // Hardware acceleration is disabled by default for stability.
+  // Set SAND_ENABLE_HWA=1 to opt in (e.g. for GPU-accelerated testing).
+  if (env["SAND_ENABLE_HWA"] !== "1") {
+    deps.app.disableHardwareAcceleration();
+    deps.app.commandLine.appendSwitch("disable-gpu");
+  }
+  deps.app.commandLine.appendSwitch("no-sandbox"); // unconditional: unrelated to HWA
 
   const isPrimaryInstance = !deps.app.isPackaged || deps.app.requestSingleInstanceLock();
   if (!isPrimaryInstance) deps.app.quit();
