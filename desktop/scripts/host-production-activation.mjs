@@ -38,14 +38,124 @@ const toolLocalSemanticMismatches = Object.freeze([
   { module: "source/host/runner/tools/tool-input-error.ts", reason: "tool-local invalid-input error identity is not yet exact" },
 ]);
 
-const unavailableAgentCapabilities = Object.freeze([
-  {
+/**
+ * Grok Bot's carriers held a Piscina producer for a `pdf-worker` file that
+ * neither carrier shipped, so PDF reads failed closed. The replacement is an
+ * in-process pdf.js extractor bound into both Read tools. This is detected,
+ * not assumed: the extractor module, both bindings in the composition, the
+ * package in the manifest and lock, and pdfjs-dist absent from the host
+ * bundle externals (the box receives host-main.cjs alone) all have to be
+ * present, or the capability is recorded as fail-closed again with the
+ * reasons that were missing.
+ */
+export const pdfTextExtractionBindingSpec = Object.freeze({
+  module: "source/host/runner/pdf-text-extractor.ts",
+  exportNeedle: "export const productionPdfTextExtractor: PdfTextExtractor =",
+  composition: "source/host/host-runner-composition.ts",
+  bindingNeedle: "pdfTextExtractor: productionPdfTextExtractor,",
+  reads: Object.freeze([
+    { tool: "externalRead", factoryNeedle: "createExternalReadToolInputs: (_turn, props): TurnReadToolFactoryInput => ({" },
+    { tool: "boxRead", factoryNeedle: "createBoxReadToolInputs: (turn, _props): TurnReadToolFactoryInput => {" },
+  ]),
+  package: "pdfjs-dist",
+  bundleScripts: Object.freeze(["scripts/build-caisra.mjs", "scripts/caisra-ignition-activation.mjs"]),
+});
+
+function lineOf(text, offset) {
+  return text.slice(0, offset).split("\n").length;
+}
+
+/**
+ * Reads the tree and says whether the Read tools' PDF extractor is bound.
+ * `root` is the repository to read; tests hand it a copy with one piece
+ * removed to check that the missing piece is named.
+ */
+export async function assemblePdfTextExtractionBinding({ root = repoRoot } = {}) {
+  const readRepoText = async relative => await readFile(path.join(root, relative), "utf8");
+  const spec = pdfTextExtractionBindingSpec;
+  const blockers = [];
+  let extractor = null;
+  try {
+    const moduleText = await readRepoText(spec.module);
+    const offset = moduleText.indexOf(spec.exportNeedle);
+    if (offset < 0) blockers.push(`${spec.module} does not export productionPdfTextExtractor`);
+    else extractor = { source: spec.module, line: lineOf(moduleText, offset), needle: spec.exportNeedle };
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+    blockers.push(`${spec.module} is absent`);
+  }
+
+  const compositionText = await readRepoText(spec.composition);
+  const reads = {};
+  for (const read of spec.reads) {
+    const factoryOffset = compositionText.indexOf(read.factoryNeedle);
+    if (factoryOffset < 0) {
+      blockers.push(`${spec.composition} no longer declares the ${read.tool} factory`);
+      reads[read.tool] = null;
+      continue;
+    }
+    // The binding has to sit inside this factory: before the next factory
+    // declaration, so the two Read inputs cannot vouch for each other.
+    const nextFactory = /create\w+ToolInputs/g;
+    nextFactory.lastIndex = factoryOffset + read.factoryNeedle.length;
+    const factoryEnd = nextFactory.exec(compositionText)?.index ?? compositionText.length;
+    const bindingOffset = compositionText.indexOf(spec.bindingNeedle, factoryOffset);
+    if (bindingOffset < 0 || bindingOffset > factoryEnd) {
+      blockers.push(`${spec.composition} ${read.tool} inputs do not name pdfTextExtractor`);
+      reads[read.tool] = null;
+      continue;
+    }
+    reads[read.tool] = {
+      source: spec.composition,
+      factoryLine: lineOf(compositionText, factoryOffset),
+      line: lineOf(compositionText, bindingOffset),
+      needle: spec.bindingNeedle,
+    };
+  }
+
+  const manifest = JSON.parse(await readRepoText("package.json"));
+  const lock = JSON.parse(await readRepoText("package-lock.json"));
+  const declared = manifest.dependencies?.[spec.package];
+  const locked = lock.packages?.[`node_modules/${spec.package}`];
+  if (declared === undefined) blockers.push(`${spec.package} is not a dependency in package.json`);
+  if (locked === undefined) blockers.push(`${spec.package} is not in package-lock.json`);
+
+  const bundleScripts = [];
+  for (const script of spec.bundleScripts) {
+    const text = await readRepoText(script);
+    const match = /const EXTERNAL = \[([\s\S]*?)\];/.exec(text);
+    if (match === null) {
+      blockers.push(`${script} has no EXTERNAL list to check`);
+      bundleScripts.push({ script, externalsPdfjs: null });
+      continue;
+    }
+    const externalsPdfjs = match[1].includes(`"${spec.package}"`);
+    if (externalsPdfjs) blockers.push(`${script} leaves ${spec.package} external, and the box has no node_modules to resolve it`);
+    bundleScripts.push({ script, line: lineOf(text, match.index), externalsPdfjs });
+  }
+
+  return {
     key: "pdfTextExtraction",
-    tool: "externalRead",
-    status: "fail-closed",
-    reason: "the immutable Piscina producer is present, but pdf-worker.{js,ts} is absent from both shipped host carriers",
-  },
-]);
+    status: blockers.length === 0 ? "bound-in-process" : "fail-closed",
+    extractor,
+    reads,
+    package: declared === undefined || locked === undefined ? null : { name: spec.package, declared, version: locked.version, lockIntegrity: locked.integrity },
+    bundleScripts,
+    blockers,
+  };
+}
+
+function unavailableAgentCapabilities(pdfTextExtraction) {
+  if (pdfTextExtraction.status === "bound-in-process") return [];
+  return [
+    {
+      key: "pdfTextExtraction",
+      tool: "externalRead",
+      status: "fail-closed",
+      reason: `the immutable Piscina producer is present, pdf-worker.{js,ts} is absent from both shipped host carriers, and the in-process extractor is not bound: ${pdfTextExtraction.blockers.join("; ")}`,
+    },
+  ];
+}
 
 export const mandatoryLocalExecRuntimeBlockers = Object.freeze([
   {
@@ -343,6 +453,7 @@ async function assembleExternalReadProductionEvidence() {
   if (presentWorkers.length > 0) {
     throw new Error(`Unexpected backend PDF worker carrier requires contract review: ${presentWorkers.join(", ")}`);
   }
+  const binding = await assemblePdfTextExtractionBinding();
 
   return {
     externalRead: {
@@ -357,7 +468,8 @@ async function assembleExternalReadProductionEvidence() {
       ),
     },
     pdfTextExtraction: {
-      status: "blocked-missing-shipped-worker",
+      status: binding.status === "bound-in-process" ? "bound-in-process" : "blocked-missing-extractor-binding",
+      binding,
       failure: await sourceNeedleAnchor(
         "source/packages/agent/tools/core/read/read.ts",
         'if (extractor === undefined) throw new TypeError("Read PDF worker is not bound");',
@@ -472,7 +584,7 @@ async function assembleRunnerActivationEvidence(inventory) {
         providers: providerAnchors,
       },
       productionRunStep,
-      unavailableCapabilities: unavailableAgentCapabilities,
+      unavailableCapabilities: unavailableAgentCapabilities(externalReadProduction.pdfTextExtraction.binding),
       externalReadProduction,
       mandatoryBindings: runnerBindingPaths,
       blockingBindings,

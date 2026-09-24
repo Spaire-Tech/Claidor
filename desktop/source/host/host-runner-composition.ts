@@ -28,6 +28,7 @@ import {
 } from "../packages/agent-summarization/summarization-handler.js";
 import { getAgentBlobStore } from "./runner/sand-agent-runner.js";
 import type { AgentProfileForRunner } from "./runner/sand-agent-runner.js";
+import { productionPdfTextExtractor } from "./runner/pdf-text-extractor.js";
 import type {
   AutomationRecord,
   AutomationReview,
@@ -2182,10 +2183,11 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           toolName: SAND_EXTERNAL_READ_TOOL_NAME,
           toolIdentifier: "EXTERNAL_READ",
           toolDescription: SAND_EXTERNAL_READ_TOOL_DESCRIPTION,
-          // The immutable Mac and Windows carriers contain the lazy Piscina
-          // producer but omit pdf-worker.{js,ts}. Leaving the extractor absent
-          // preserves ordinary Read while making the unrecoverable PDF branch
-          // fail closed in createReadTool.
+          // Grok Bot's carriers held a Piscina producer for a pdf-worker file
+          // that was never shipped, so PDF reads threw "Read PDF worker is
+          // not bound". The extractor is in-process pdf.js now
+          // (runner/pdf-text-extractor.ts).
+          pdfTextExtractor: productionPdfTextExtractor,
         },
       }),
       createBoxReadToolInputs: (turn, _props): TurnReadToolFactoryInput => {
@@ -2200,6 +2202,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             toolName: SAND_BOX_READ_TOOL_NAME,
             toolIdentifier: "READ",
             toolDescription: SAND_BOX_READ_TOOL_DESCRIPTION,
+            pdfTextExtractor: productionPdfTextExtractor,
           },
         };
       },
