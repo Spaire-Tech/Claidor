@@ -237,6 +237,34 @@ never spends a refresh token. #185's resume now has a sign-in to resume
 from. `docs/product/connectors-signin-measured.md` is the record, with
 the three commands to read on a Mac. Not yet run on a Mac.
 
+**Figma cannot connect, and the vendor store travels both ways, found
+24 September 2026, evening.** "can you connect me to figma … it tells
+me to retry." The Mac's store is `~/.caisra/vendor-mcp-installs.json`
+(not under Application Support; the record above said otherwise). It
+held Figma, so the store was not the blocker; it travels both ways now
+anyway (`installedAtMs`, tombstones, the Mac pulls the box's copy
+before the connect card looks for its row, `vendor-mcp/box-pull.ts`),
+because the agent's InstallPlugin lands in the box's copy and the
+Mac's used to replace it. **Figma refuses by policy**: its registration
+endpoint answers 403 to every client not on its MCP Catalog, and its
+docs say clients "apply to register … reach out to your account team".
+It is coming soon on the card with that sentence until Figma lists
+Simeon; no code changes that. The same evening every live vendor's
+OAuth metadata was read: fifteen take the flow as built; Airtable,
+monday.com and Stripe publish metadata at the RFC 8414 path form (now
+tried first); Miro, Vercel, Supabase and monday.com take no public
+client (registration now asks `client_secret_post` when `none` is not
+offered, the secret rides with the credential); Asana has no
+registration endpoint (coming soon). The Mac writes every sign-in
+outcome to `~/.caisra/vendor-mcp-signin.log`, the line to read when a
+card says retry. `docs/product/connectors-signin-measured.md` §Corrected
+is the record. **Also that evening: the agent's Screenshot tool broke
+every turn** (OpenAI `server_error` at sequence 0 on any request that
+carried it; `AGENT_SCREENSHOT_TOOL = false` in `host-runner-composition.ts`
+withholds it; a `[claidor] model-error` line now carries the provider's
+event, the tools and the system prompt of a failed call). Why OpenAI
+refuses that one function is not established.
+
 **Custom MCP servers and account plugins live on the Mac, built 24
 September 2026.** Grok Bot kept the account's MCP configuration on
 Cursor's server and `shared/node/cursor-backend/account-mcp.ts` still

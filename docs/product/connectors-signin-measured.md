@@ -119,3 +119,54 @@ The first two should agree and carry a credential; the third should show
 `credential stored` on the Mac side only (the box logs list failures).
 Then ask the agent to use a Figma tool and read the `[claidor] tool=`
 line.
+
+## Corrected 24 September 2026, evening: Figma, and what the vendors actually take
+
+The founder: "can you connect me to figma … it tells me to retry."
+Three things were wrong, found in this order.
+
+**The path above is wrong.** The Mac's store is `~/.caisra/vendor-mcp-installs.json`
+(`host-paths.ts`, `SAND_PRODUCTION_DATA_DIRNAME`), not under Application
+Support. The founder's file existed and matched the box's: Figma installed,
+no credential. So the store was not the blocker.
+
+**The store now travels both ways** (commit `d74295ff`) all the same: the
+agent's InstallPlugin runs in the box, the Mac's copy was replacing the
+box's on every refresh, and a box-side install could be wiped. Installs
+carry `installedAtMs`, removals leave tombstones, the newest event wins,
+the Mac wins a shared install; the Mac pulls the box's copy before the
+connect card looks for the row (`vendor-mcp/box-pull.ts`).
+`tests/vendor-mcp-two-way.test.mjs`.
+
+**Figma refuses.** Its registration endpoint answers `403 Forbidden` to every
+client shape (measured from this container, six variants, `x-figma-rest-api-request-id`
+on each), and its documentation says why: "Only clients listed in the Figma
+MCP Catalog can connect to the Figma MCP Server … you can apply to register
+your client for remote access, please reach out to your account team."
+No code makes Connect work; Simeon has to be listed by Figma. The catalogue
+says so on the card (`comingSoon`, `catalog.ts`).
+
+**What every live vendor advertises**, read from their metadata the same
+evening (`tests/vendor-mcp-oauth-shapes.test.mjs` pins the shapes):
+
+| Takes the flow as built (public client, self-registered) | Notion, Dropbox, ClickUp, Canva, Webflow, Wix, PayPal, Square, Ramp, Apollo, Linear, Jira, Sentry, Cloudflare, Greenhouse, Airtable, Stripe |
+|---|---|
+| Metadata at the RFC 8414 path form only (now tried first) | Airtable (`/.well-known/oauth-authorization-server/oauth2/v1`), monday.com (`…/mcp`), Stripe (`…/mcp`) |
+| No public client, `client_secret_post` only (now registered that way; the secret rides with the credential) | Miro, Vercel, Supabase, monday.com |
+| No registration endpoint (coming soon) | Asana |
+| Allowlisted by the vendor (coming soon) | Figma |
+
+The Mac writes every sign-in start, refusal, token-exchange failure and
+stored credential to `~/.caisra/vendor-mcp-signin.log`; the connect card
+itself only ever says "retry".
+
+To read on a Mac, corrected:
+
+```
+cat ~/.caisra/vendor-mcp-installs.json
+tail -n 20 ~/.caisra/vendor-mcp-signin.log
+docker exec simeon-box cat /home/box/sand-data/vendor-mcp-installs.json
+```
+
+Not run on a Mac: a Notion sign-in end to end with the two-way store, and
+any of the four `client_secret_post` vendors.
