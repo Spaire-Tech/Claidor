@@ -262,9 +262,24 @@ low effort (`isComputerUseSubagent` on the session options), and the
 child's own interrupt; a child runs with `transport: undefined`, so
 nothing it streams reaches the chat and its text returns as the Task's
 result. The subagent reads the parent's system prompt; a subagent
-prompt of its own was not found in the tree. None of this has run on a
-Mac; a computer-use subagent has not been seen to drive the box's
-desktop here. The transcript's third
+prompt of its own was not found in the tree. **Then the subagent ran
+and never touched the desktop** (the founder's log, later that day:
+`model=gpt-5.6-luna effort=low`, `tools=Shell(...printf...)` on every
+step, "Awaiting asynchronous completion…"): it had a Shell tool and
+nothing else. The computer, screenshot and browser deps exist
+(`createTurnToolProjections` in `host-runner-composition.ts`, the
+reconstruction's own `createHostComputerToolDependencies`), but the
+only thing that ever applied them was the retired `createRunStep`
+path; the production shell's provider
+(`createTurnToolsetFactoryProvider`) never offered them, so
+`buildTurnTools` read `factories.computer?.()` as undefined on every
+shell turn, for the agent (no Screenshot tool either) and for every
+child. The provider now offers all three, built on the box's accessor
+(`turn.remoteBoxResourceAccessor`, the way BoxRead is), so the agent
+gets Screenshot and RequestBoxHelp and a computerUse child gets the
+computer tool. Not yet run on a Mac; the line to read in
+`/tmp/sand-host.log` is a `[claidor] tool=` line naming the computer
+tool on a Luna turn. The transcript's third
 finding, one reply sent twice ("Nice. We're set…"), is not explained by
 the code alone: the send count is collected synchronously before the
 run settles, and the early-result reminder cannot fire in a turn with no

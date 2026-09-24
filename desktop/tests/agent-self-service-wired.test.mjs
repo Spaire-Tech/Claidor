@@ -101,3 +101,23 @@ test("a dispatched subagent runs on its own production shell, headless, with the
   assert.match(owner, /isComputerUseSubagent: input\.isComputerUseSubagent/);
   assert.match(owner, /isBrowserUseSubagent: input\.isBrowserUseSubagent/);
 });
+
+test("the production shell's tool provider offers the box's computer, screenshot and browser tools, read off the box's accessor", async () => {
+  // The founder's log of 24 September: the computerUse subagent ran on Luna
+  // with `tools=Shell(...printf...)` on every step and never touched the
+  // desktop. The deps existed (createTurnToolProjections) but only the retired
+  // createRunStep path applied them; buildTurnTools reads
+  // `factories.computer?.()` and got undefined on every shell turn.
+  const composition = await readFile(path.join(repoRoot, "source/host/host-runner-composition.ts"), "utf8");
+  const provider = composition.slice(
+    composition.indexOf("const createTurnToolsetFactoryProvider = ("),
+    composition.indexOf("const createTurnToolInputs = ("),
+  );
+  assert.ok(provider.length > 0, "the provider precedes createTurnToolInputs");
+  assert.match(provider, /createComputerToolInputs: \(turn, props\): TurnComputerToolFactoryInput => \{/);
+  assert.match(provider, /createScreenshotToolInputs: \(turn, props\): TurnComputerToolFactoryInput => \{/);
+  assert.match(provider, /createBrowserToolInputs: \(turn, props\): TurnBrowserToolFactoryInput => \{/);
+  assert.match(provider, /createTurnToolProjections\(\{\n\s*\.\.\.props,\n\s*resourceAccessor: turn\.remoteBoxResourceAccessor,\n\s*\}\)/, "the tools drive the box, not the local accessor");
+  const toolset = await readFile(path.join(repoRoot, "source/host/runner/tools/turn-toolset.ts"), "utf8");
+  assert.match(toolset, /host\.isComputerUseSubagent\n\s*&& host\.remoteBoxHasDesktop\n\s*&& host\.getRemoteBoxAvailable\(\)\n\s*\) \{\n\s*const computer = factories\.computer\?\.\(\);/);
+});

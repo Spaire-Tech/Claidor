@@ -46,9 +46,12 @@ import {
 } from "./runner/tools/turn-toolset.js";
 import type {
   TurnAwaitToolFactoryInput,
+  TurnBrowserToolFactoryInput,
   TurnCloudAgentToolFactoryInput,
+  TurnComputerToolFactoryInput,
   TurnMcpManagementToolFactoryInput,
   TurnReadToolFactoryInput,
+  TurnToolsetBuildProps,
   TurnWebFetchToolFactoryInput,
   TurnWebSearchToolFactoryInput,
 } from "./runner/tools/turn-toolset.js";
@@ -2132,6 +2135,47 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           },
         };
       },
+      // The box's computer, screenshot and browser tools. Their deps are the
+      // reconstruction's own (createTurnToolProjections, above), but until
+      // 24 September the only thing that applied them was the retired
+      // createRunStep path; the production shell's provider never offered
+      // them, so no turn on the shell had a computer tool: the agent had no
+      // Screenshot, and a dispatched computerUse subagent ran with Shell
+      // alone and narrated instead of driving the desktop. They drive the
+      // box, so they read the box's accessor, the way BoxRead does above.
+      ...(createTurnToolProjections === undefined
+        ? {}
+        : (() => {
+            const boxToolProjections = (
+              turn: TurnToolsetTurnInput,
+              props: TurnToolsetBuildProps,
+            ): ProductionTurnHostToolProjections => {
+              if (turn.remoteBoxResourceAccessor === undefined) {
+                throw new TypeError("remote box resource accessor is not bound");
+              }
+              return createTurnToolProjections({
+                ...props,
+                resourceAccessor: turn.remoteBoxResourceAccessor,
+              });
+            };
+            return {
+              createComputerToolInputs: (turn, props): TurnComputerToolFactoryInput => {
+                const create = boxToolProjections(turn, props).createComputerToolDependencies;
+                if (create === undefined) throw new TypeError("computer tool dependencies are not bound");
+                return { dependencies: create(props) };
+              },
+              createScreenshotToolInputs: (turn, props): TurnComputerToolFactoryInput => {
+                const create = boxToolProjections(turn, props).createScreenshotToolDependencies;
+                if (create === undefined) throw new TypeError("screenshot tool dependencies are not bound");
+                return { dependencies: create(props) };
+              },
+              createBrowserToolInputs: (turn, props): TurnBrowserToolFactoryInput => {
+                const create = boxToolProjections(turn, props).createBrowserDriverDependencies;
+                if (create === undefined) throw new TypeError("browser tool dependencies are not bound");
+                return { dependencies: create(props) };
+              },
+            } satisfies Partial<TurnToolsetHostFactoryProvider>;
+          })()),
       ...(turnInputs?.webSearch === undefined
         && method(extensions.api("inference"), "createWebSearch") === undefined
         ? {}
