@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 /**
@@ -14,6 +14,8 @@ export interface VendorMcpCredential {
   readonly expiresAtMs?: number;
   readonly tokenEndpoint: string;
   readonly clientId: string;
+  /** Only for a vendor that registered Simeon as a confidential client; sent with each token request. */
+  readonly clientSecret?: string;
 }
 
 export interface VendorMcpInstall {
@@ -60,7 +62,28 @@ function parseCredential(value: unknown): VendorMcpCredential | undefined {
     ...(typeof row.expiresAtMs === "number" && Number.isFinite(row.expiresAtMs) ? { expiresAtMs: row.expiresAtMs } : {}),
     tokenEndpoint: row.tokenEndpoint,
     clientId: row.clientId,
+    ...(typeof row.clientSecret === "string" && row.clientSecret.length > 0 ? { clientSecret: row.clientSecret } : {}),
   };
+}
+
+/**
+ * The Mac's record of every sign-in start and finish, `vendor-mcp-signin.log`
+ * beside the store. The connect card shows "retry" whatever the reason;
+ * until 24 September 2026 (evening) the reason went to the Electron
+ * process's stdout, which nobody sees when the app is opened from the
+ * Dock. One line per event, newest last.
+ */
+export function vendorMcpSigninLogPath(rootDir: string): string {
+  return join(rootDir, "vendor-mcp-signin.log");
+}
+
+export function appendVendorMcpSigninLog(rootDir: string, line: string, now: () => number = Date.now): void {
+  try {
+    mkdirSync(rootDir, { recursive: true });
+    appendFileSync(vendorMcpSigninLogPath(rootDir), `${new Date(now()).toISOString()} ${line.replace(/\s+/g, " ").trim()}\n`, "utf8");
+  } catch {
+    // The log is a courtesy; a full disk must not stop a sign-in.
+  }
 }
 
 /** The file's rows: installs (id and url) and tombstones (id and removedAtMs, no url). Anything else is dropped. */

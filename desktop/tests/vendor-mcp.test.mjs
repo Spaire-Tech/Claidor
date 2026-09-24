@@ -41,8 +41,9 @@ test("the store is vendor MCPs that can Connect, then Coming soon for the rest",
     assert.equal(new Set(ids).size, 39);
     const live = VENDOR_MCP_CONNECTORS.filter((item) => item.comingSoon !== true);
     const soon = VENDOR_MCP_CONNECTORS.filter((item) => item.comingSoon === true);
-    assert.equal(live.length, 23);
-    assert.equal(soon.length, 16);
+    // 24 September (evening): Figma (MCP Catalog allowlist) and Asana (no registration endpoint) moved to coming soon.
+    assert.equal(live.length, 21);
+    assert.equal(soon.length, 18);
     assert.ok(live.every((item) => typeof item.url === "string" && item.url.startsWith("https://")));
     assert.ok(soon.every((item) => item.url == null));
     assert.equal(vendorMcpConnectorById("notion")?.url, "https://mcp.notion.com/mcp");

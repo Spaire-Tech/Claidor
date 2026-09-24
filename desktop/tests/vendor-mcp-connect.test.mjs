@@ -30,7 +30,7 @@ const json = (body, status = 200, headers = {}) =>
 const sse = (messages, headers = {}) =>
   new Response(messages.map((message) => `event: message\ndata: ${JSON.stringify(message)}\n\n`).join(""), { status: 200, headers: { "content-type": "text/event-stream", ...headers } });
 
-const FIGMA = "https://mcp.figma.com/mcp";
+const FIGMA = "https://mcp.notion.com/mcp";
 
 /** A vendor that discovers, registers, exchanges a code, refreshes, and serves two tools over SSE. */
 function vendorFixture({ token = "tok-1", expiresIn = 3600, refreshed = "tok-2", requireToken = true } = {}) {
@@ -39,8 +39,8 @@ function vendorFixture({ token = "tok-1", expiresIn = 3600, refreshed = "tok-2",
     const text = String(url);
     const method = init?.method ?? "GET";
     calls.push({ url: text, method, body: init?.body, headers: init?.headers ?? {} });
-    if (text.includes("oauth-protected-resource")) return json({ authorization_servers: ["https://auth.figma.com"] });
-    if (text.includes("oauth-authorization-server")) return json({ authorization_endpoint: "https://auth.figma.com/authorize", token_endpoint: "https://auth.figma.com/token", registration_endpoint: "https://auth.figma.com/register" });
+    if (text.includes("oauth-protected-resource")) return json({ authorization_servers: ["https://auth.notion.com"] });
+    if (text.includes("oauth-authorization-server")) return json({ authorization_endpoint: "https://auth.notion.com/authorize", token_endpoint: "https://auth.notion.com/token", registration_endpoint: "https://auth.notion.com/register" });
     if (text.endsWith("/register")) return json({ client_id: "simeon-client" });
     if (text.endsWith("/token")) {
       const form = new URLSearchParams(String(init?.body));
@@ -52,7 +52,7 @@ function vendorFixture({ token = "tok-1", expiresIn = 3600, refreshed = "tok-2",
       const auth = init?.headers?.authorization ?? "";
       if (requireToken && !auth.startsWith("Bearer tok")) return new Response("", { status: 401 });
       const request = JSON.parse(String(init?.body));
-      if (request.method === "initialize") return json({ jsonrpc: "2.0", id: request.id, result: { protocolVersion: "2025-06-18", capabilities: {}, serverInfo: { name: "figma" } } }, 200, { "mcp-session-id": "sess-1" });
+      if (request.method === "initialize") return json({ jsonrpc: "2.0", id: request.id, result: { protocolVersion: "2025-06-18", capabilities: {}, serverInfo: { name: "notion" } } }, 200, { "mcp-session-id": "sess-1" });
       if (request.method === "notifications/initialized") return new Response("", { status: 202 });
       if (request.method === "tools/list") return sse([{ jsonrpc: "2.0", id: request.id, result: { tools: [{ name: "get_file", description: "Read a file", inputSchema: { type: "object" } }, { name: "get_node" }] } }]);
       if (request.method === "tools/call") return json({ jsonrpc: "2.0", id: request.id, result: { content: [{ type: "text", text: `called ${request.params.name} with ${JSON.stringify(request.params.arguments)}` }], isError: false } });
@@ -67,11 +67,11 @@ test("a vendor connector has a stable numeric server id and reads back as a plug
   const { module, dispose } = await load("source/shared/node/vendor-mcp/catalog.ts", "vendor-ids");
   try {
     const { vendorMcpServerId, vendorMcpPluginIdForServerId, VENDOR_MCP_SERVER_ID_BASE, VENDOR_MCP_CONNECTORS } = module;
-    const id = vendorMcpServerId("figma");
+    const id = vendorMcpServerId("notion");
     assert.match(id, /^\d+$/);
     assert.ok(Number(id) > VENDOR_MCP_SERVER_ID_BASE);
-    assert.equal(vendorMcpPluginIdForServerId(id), "figma");
-    assert.equal(vendorMcpPluginIdForServerId(Number(id)), "figma");
+    assert.equal(vendorMcpPluginIdForServerId(id), "notion");
+    assert.equal(vendorMcpPluginIdForServerId(Number(id)), "notion");
     assert.equal(vendorMcpServerId("nope"), undefined);
     assert.equal(vendorMcpPluginIdForServerId("12"), undefined);
     assert.equal(vendorMcpPluginIdForServerId(String(VENDOR_MCP_SERVER_ID_BASE + VENDOR_MCP_CONNECTORS.length + 1)), undefined);
@@ -87,18 +87,18 @@ test("the install store carries a credential, survives a re-install, and is repl
   const root = await mkdtemp(path.join(os.tmpdir(), "caisra-vendor-store-"));
   try {
     const { upsertVendorMcpInstall, setVendorMcpCredential, clearVendorMcpCredential, loadVendorMcpInstalls, replaceVendorMcpInstalls, vendorMcpInstallsPath } = module;
-    upsertVendorMcpInstall(root, { id: "figma", url: FIGMA, connected: false });
+    upsertVendorMcpInstall(root, { id: "notion", url: FIGMA, connected: false });
     assert.equal(setVendorMcpCredential(root, "nope", { accessToken: "x", tokenEndpoint: "t", clientId: "c" }), undefined);
-    const stored = setVendorMcpCredential(root, "figma", { accessToken: "tok", refreshToken: "r", expiresAtMs: 5, tokenEndpoint: "https://auth.figma.com/token", clientId: "simeon" });
+    const stored = setVendorMcpCredential(root, "notion", { accessToken: "tok", refreshToken: "r", expiresAtMs: 5, tokenEndpoint: "https://auth.notion.com/token", clientId: "simeon" });
     assert.equal(stored.connected, true);
     assert.equal(loadVendorMcpInstalls(root)[0].credential.accessToken, "tok");
-    upsertVendorMcpInstall(root, { id: "figma", url: FIGMA, connected: false });
+    upsertVendorMcpInstall(root, { id: "notion", url: FIGMA, connected: false });
     assert.equal(loadVendorMcpInstalls(root)[0].credential.refreshToken, "r", "re-install keeps the credential");
     assert.equal(loadVendorMcpInstalls(root)[0].connected, true);
     const written = JSON.parse(await readFile(vendorMcpInstallsPath(root), "utf8"));
     assert.equal(written[0].credential.clientId, "simeon");
-    assert.equal(clearVendorMcpCredential(root, "figma"), true);
-    assert.equal(clearVendorMcpCredential(root, "figma"), false);
+    assert.equal(clearVendorMcpCredential(root, "notion"), true);
+    assert.equal(clearVendorMcpCredential(root, "notion"), false);
     assert.equal(loadVendorMcpInstalls(root)[0].credential, undefined);
     assert.equal(loadVendorMcpInstalls(root)[0].connected, false);
     const replaced = replaceVendorMcpInstalls(root, [{ id: "notion", url: "https://mcp.notion.com/mcp", credential: { accessToken: "n", tokenEndpoint: "t", clientId: "c" } }, { bogus: true }]);
@@ -116,22 +116,22 @@ test("installed live connectors are account rows with one slot; the merge keeps 
   try {
     const { vendorAccountServersFromInstalls, withVendorAccountServers, VENDOR_MCP_CACHE_SCOPE } = module;
     const rows = vendorAccountServersFromInstalls([
-      { id: "figma", url: FIGMA, connected: false },
+      { id: "notion", url: FIGMA, connected: false },
       { id: "notion", url: "https://mcp.notion.com/mcp", connected: true, credential: { accessToken: "t", tokenEndpoint: "e", clientId: "c" } },
       { id: "gmail", url: "https://nowhere", connected: false },
       { id: "unknown", url: "https://nowhere", connected: false },
     ]);
-    assert.deepEqual(rows.map((row) => row.serverIdentifier), ["figma", "notion"]);
-    assert.equal(rows[0].name, "Figma");
+    assert.deepEqual(rows.map((row) => row.serverIdentifier), ["notion", "notion"]);
+    assert.equal(rows[0].name, "Notion");
     assert.match(rows[0].id, /^\d+$/);
     assert.deepEqual(rows[0].config, { url: FIGMA, type: "http" });
     assert.equal(rows[0].accounts[0].hasToken, false);
     assert.equal(rows[1].accounts[0].hasToken, true);
-    assert.equal(rows[0].pluginId, "figma");
+    assert.equal(rows[0].pluginId, "notion");
 
     assert.equal(await withVendorAccountServers(Promise.resolve(null), () => root), null);
     const { writeFileSync } = await import("node:fs");
-    writeFileSync(path.join(root, "vendor-mcp-installs.json"), JSON.stringify([{ id: "figma", url: FIGMA, connected: false }]));
+    writeFileSync(path.join(root, "vendor-mcp-installs.json"), JSON.stringify([{ id: "notion", url: FIGMA, connected: false }]));
     const merged = await withVendorAccountServers(Promise.resolve({ servers: [{ id: "1" }], cacheScope: "acct", unavailable: true }), () => root);
     assert.equal(merged.cacheScope, "acct");
     assert.equal(merged.unavailable, undefined);
@@ -143,7 +143,7 @@ test("installed live connectors are account rows with one slot; the merge keeps 
     assert.equal(failed.cacheScope, "acct", "a failed read keeps the last scope so pending sign-ins are not cancelled");
     assert.equal(failed.servers.length, 1);
     const fresh = await mkdtemp(path.join(os.tmpdir(), "caisra-vendor-display-2-"));
-    writeFileSync(path.join(fresh, "vendor-mcp-installs.json"), JSON.stringify([{ id: "figma", url: FIGMA, connected: false }]));
+    writeFileSync(path.join(fresh, "vendor-mcp-installs.json"), JSON.stringify([{ id: "notion", url: FIGMA, connected: false }]));
     assert.equal((await withVendorAccountServers(null, () => fresh)).cacheScope, VENDOR_MCP_CACHE_SCOPE);
     await rm(fresh, { recursive: true, force: true });
   } finally {
@@ -180,7 +180,7 @@ test("on the Mac the backend starts a sign-in, finishes it from the loopback, li
   try {
     const { createVendorMcpBackendExec } = module;
     const { writeFileSync, readFileSync } = await import("node:fs");
-    writeFileSync(path.join(root, "vendor-mcp-installs.json"), JSON.stringify([{ id: "figma", url: FIGMA, connected: false }]));
+    writeFileSync(path.join(root, "vendor-mcp-installs.json"), JSON.stringify([{ id: "notion", url: FIGMA, connected: false }]));
     const changed = [];
     let clock = 1_000_000;
     const { calls, fetchImpl } = vendorFixture({ expiresIn: 100 });
@@ -193,12 +193,12 @@ test("on the Mac the backend starts a sign-in, finishes it from the loopback, li
       onCredentialChanged: (id) => changed.push(id),
       fallback: { listTools: async (ids) => { fallbackCalls.push(ids); return [{ serverIdentifier: "other", status: "connected", tools: [] }]; }, checkAuthStatus: async (args) => ({ id: String(args.serverId), fallback: true }) },
     });
-    const serverId = exec.serverIdForPlugin("figma");
+    const serverId = exec.serverIdForPlugin("notion");
 
     // Not signed in: the row lists as needsAuth and a tool call says so.
-    const [listed] = await exec.listTools(["figma"]);
+    const [listed] = await exec.listTools(["notion"]);
     assert.equal(listed.status, "needsAuth");
-    const refused = await exec.executeTool({ serverIdentifier: "figma", toolName: "get_file", args: {}, toolCallId: "c1" });
+    const refused = await exec.executeTool({ serverIdentifier: "notion", toolName: "get_file", args: {}, toolCallId: "c1" });
     assert.equal(refused.result.case, "error");
     assert.match(refused.result.value.error, /AuthenticateMcpServer/);
 
@@ -207,15 +207,15 @@ test("on the Mac the backend starts a sign-in, finishes it from the loopback, li
     assert.equal(status.requiresAuth, true);
     assert.equal(status.hasValidToken, false);
     const authorize = new URL(status.authUrl);
-    assert.equal(authorize.origin, "https://auth.figma.com");
+    assert.equal(authorize.origin, "https://auth.notion.com");
     assert.equal(authorize.searchParams.get("client_id"), "simeon-client");
     assert.equal(authorize.searchParams.get("redirect_uri"), "http://localhost:8787/callback");
     const state = authorize.searchParams.get("state");
-    assert.match(state, /^vendor-figma-/);
+    assert.match(state, /^vendor-notion-/);
 
     // The loopback finishes it: code for token, credential stored, listeners told.
     await exec.completeOAuth({ stateId: state, code: "code-1" });
-    assert.deepEqual(changed, ["figma"]);
+    assert.deepEqual(changed, ["notion"]);
     const stored = JSON.parse(readFileSync(path.join(root, "vendor-mcp-installs.json"), "utf8"))[0];
     assert.equal(stored.credential.accessToken, "tok-1");
     assert.equal(stored.credential.refreshToken, "refresh-1");
@@ -231,22 +231,22 @@ test("on the Mac the backend starts a sign-in, finishes it from the loopback, li
     // Now the auth watch sees a valid token, tools list, a tool runs, and the result is an McpResult.
     const after = await exec.checkAuthStatus({ serverId, accountKey: "default", oauthRedirectUri: "http://localhost:8787/callback" });
     assert.equal(after.hasValidToken, true);
-    const [connected, other] = await exec.listTools(["figma", "other"]);
+    const [connected, other] = await exec.listTools(["notion", "other"]);
     assert.equal(connected.status, "connected");
-    assert.deepEqual(connected.tools.map((tool) => [tool.name, tool.providerIdentifier, tool.toolName]), [["get_file", "figma", "get_file"], ["get_node", "figma", "get_node"]]);
+    assert.deepEqual(connected.tools.map((tool) => [tool.name, tool.providerIdentifier, tool.toolName]), [["get_file", "notion", "get_file"], ["get_node", "notion", "get_node"]]);
     assert.equal(other.serverIdentifier, "other");
     assert.deepEqual(fallbackCalls, [["other"]]);
-    const ran = await exec.executeTool({ serverIdentifier: "figma", toolName: "get_file", args: { key: "k" }, toolCallId: "c2" });
+    const ran = await exec.executeTool({ serverIdentifier: "notion", toolName: "get_file", args: { key: "k" }, toolCallId: "c2" });
     assert.equal(ran.result.case, "success");
     assert.equal(ran.result.value.content[0].content.value.text, 'called get_file with {"key":"k"}');
     assert.deepEqual(await exec.validateTokens([{ serverUrl: FIGMA, accountKey: "default" }]), [{ serverUrl: FIGMA, accountKey: "default", hasValidToken: true }]);
 
     // Past expiry the Mac refreshes with the refresh token and tells listeners.
     clock += 200_000;
-    const [again] = await exec.listTools(["figma"]);
+    const [again] = await exec.listTools(["notion"]);
     assert.equal(again.status, "connected");
     assert.equal(JSON.parse(readFileSync(path.join(root, "vendor-mcp-installs.json"), "utf8"))[0].credential.accessToken, "tok-2");
-    assert.deepEqual(changed, ["figma", "figma"]);
+    assert.deepEqual(changed, ["notion", "notion"]);
 
     // Logout clears the credential; a non-vendor id goes to the fallback.
     await exec.logoutAccount({ serverUrl: FIGMA, accountKey: "default" });
@@ -266,22 +266,22 @@ test("in the box the backend never opens a sign-in: no credential is needsAuth w
     const { writeFileSync } = await import("node:fs");
     const { calls, fetchImpl } = vendorFixture();
     const exec = createVendorMcpBackendExec({ rootDir: () => root, fetch: fetchImpl, now: () => 5_000_000, canStartAuth: false });
-    const serverId = exec.serverIdForPlugin("figma");
-    writeFileSync(path.join(root, "vendor-mcp-installs.json"), JSON.stringify([{ id: "figma", url: FIGMA, connected: false }]));
+    const serverId = exec.serverIdForPlugin("notion");
+    writeFileSync(path.join(root, "vendor-mcp-installs.json"), JSON.stringify([{ id: "notion", url: FIGMA, connected: false }]));
     const status = await exec.checkAuthStatus({ serverId, accountKey: "default", oauthRedirectUri: "http://localhost:8787/callback" });
     assert.deepEqual(status, { id: serverId, isAvailable: true, requiresAuth: true, hasValidToken: false, authUrl: FIGMA, error: "" });
     assert.equal(calls.length, 0, "the box made no request");
 
-    writeFileSync(path.join(root, "vendor-mcp-installs.json"), JSON.stringify([{ id: "figma", url: FIGMA, credential: { accessToken: "tok-old", refreshToken: "r", expiresAtMs: 1, tokenEndpoint: "https://auth.figma.com/token", clientId: "c" } }]));
-    const [expired] = await exec.listTools(["figma"]);
+    writeFileSync(path.join(root, "vendor-mcp-installs.json"), JSON.stringify([{ id: "notion", url: FIGMA, credential: { accessToken: "tok-old", refreshToken: "r", expiresAtMs: 1, tokenEndpoint: "https://auth.notion.com/token", clientId: "c" } }]));
+    const [expired] = await exec.listTools(["notion"]);
     assert.equal(expired.status, "needsAuth", "the box does not spend the refresh token");
     assert.equal(calls.length, 0);
 
-    writeFileSync(path.join(root, "vendor-mcp-installs.json"), JSON.stringify([{ id: "figma", url: FIGMA, credential: { accessToken: "tok-1", tokenEndpoint: "https://auth.figma.com/token", clientId: "c" } }]));
-    const [live] = await exec.listTools(["figma"]);
+    writeFileSync(path.join(root, "vendor-mcp-installs.json"), JSON.stringify([{ id: "notion", url: FIGMA, credential: { accessToken: "tok-1", tokenEndpoint: "https://auth.notion.com/token", clientId: "c" } }]));
+    const [live] = await exec.listTools(["notion"]);
     assert.equal(live.status, "connected");
     assert.equal(live.tools.length, 2);
-    const uninstalled = await exec.checkAuthStatus({ serverId: exec.serverIdForPlugin("notion"), accountKey: "default", oauthRedirectUri: "x" });
+    const uninstalled = await exec.checkAuthStatus({ serverId: exec.serverIdForPlugin("linear"), accountKey: "default", oauthRedirectUri: "x" });
     assert.equal(uninstalled.isAvailable, false);
   } finally {
     await rm(root, { recursive: true, force: true });

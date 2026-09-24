@@ -23,7 +23,7 @@ async function load(entry, name) {
   return { module, dispose: () => rm(dir, { recursive: true, force: true }) };
 }
 
-const credential = { accessToken: "figma-token", refreshToken: "r", expiresAtMs: 4e12, tokenEndpoint: "https://mcp.figma.com/token", clientId: "c" };
+const credential = { accessToken: "notion-token", refreshToken: "r", expiresAtMs: 4e12, tokenEndpoint: "https://mcp.notion.com/token", clientId: "c" };
 
 test("an install the agent ran in the box reaches the Mac, and the Mac's credential reaches the box", async () => {
   const { module, dispose } = await load("source/shared/node/vendor-mcp/installs.ts", "vendor-installs");
@@ -33,39 +33,39 @@ test("an install the agent ran in the box reaches the Mac, and the Mac's credent
     let clock = 1_000;
     const now = () => clock;
     // The box installs Figma (the agent's InstallPlugin); the Mac has no file.
-    module.upsertVendorMcpInstall(box, { id: "figma", url: "https://mcp.figma.com/mcp", connected: false }, now);
+    module.upsertVendorMcpInstall(box, { id: "notion", url: "https://mcp.notion.com/mcp", connected: false }, now);
     // The Mac's refresh sends its (empty) store: the box keeps its install.
     const boxAfterEmpty = module.adoptVendorMcpStore(box, module.serializeVendorMcpStore(module.loadVendorMcpStore(mac)), "incoming");
     assert.equal(boxAfterEmpty.changed, false);
-    assert.deepEqual(module.loadVendorMcpInstalls(box).map((row) => row.id), ["figma"]);
+    assert.deepEqual(module.loadVendorMcpInstalls(box).map((row) => row.id), ["notion"]);
     // The Mac pulls the box's copy: the row lands on the Mac, which is where the connect card looks.
     const macPull = module.adoptVendorMcpStore(mac, module.serializeVendorMcpStore(module.loadVendorMcpStore(box)), "local");
     assert.equal(macPull.changed, true);
-    assert.equal(module.vendorMcpInstallById(mac, "figma")?.url, "https://mcp.figma.com/mcp");
+    assert.equal(module.vendorMcpInstallById(mac, "notion")?.url, "https://mcp.notion.com/mcp");
     // Sign-in finishes on the Mac; the next refresh carries the credential to the box, the Mac's row winning.
-    module.setVendorMcpCredential(mac, "figma", credential);
+    module.setVendorMcpCredential(mac, "notion", credential);
     module.adoptVendorMcpStore(box, module.serializeVendorMcpStore(module.loadVendorMcpStore(mac)), "incoming");
-    assert.equal(module.vendorMcpInstallById(box, "figma")?.credential?.accessToken, "figma-token");
+    assert.equal(module.vendorMcpInstallById(box, "notion")?.credential?.accessToken, "notion-token");
     // A box pull never overwrites the Mac's credential.
     module.adoptVendorMcpStore(mac, module.serializeVendorMcpStore(module.loadVendorMcpStore(box)), "local");
-    assert.equal(module.vendorMcpInstallById(mac, "figma")?.credential?.accessToken, "figma-token");
+    assert.equal(module.vendorMcpInstallById(mac, "notion")?.credential?.accessToken, "notion-token");
     // Logout on the Mac clears the box's credential on the next refresh (the Mac is the authority).
-    module.clearVendorMcpCredential(mac, "figma");
+    module.clearVendorMcpCredential(mac, "notion");
     module.adoptVendorMcpStore(box, module.serializeVendorMcpStore(module.loadVendorMcpStore(mac)), "incoming");
-    assert.equal(module.vendorMcpInstallById(box, "figma")?.credential, undefined);
-    assert.equal(module.vendorMcpInstallById(box, "figma")?.url, "https://mcp.figma.com/mcp", "the install itself stays");
+    assert.equal(module.vendorMcpInstallById(box, "notion")?.credential, undefined);
+    assert.equal(module.vendorMcpInstallById(box, "notion")?.url, "https://mcp.notion.com/mcp", "the install itself stays");
     // An uninstall on either side leaves a tombstone the other side honours.
     clock = 2_000;
-    module.removeVendorMcpInstall(box, "figma", now);
+    module.removeVendorMcpInstall(box, "notion", now);
     module.adoptVendorMcpStore(mac, module.serializeVendorMcpStore(module.loadVendorMcpStore(box)), "local");
-    assert.equal(module.vendorMcpInstallById(mac, "figma"), undefined, "the box's uninstall removes the Mac's row");
+    assert.equal(module.vendorMcpInstallById(mac, "notion"), undefined, "the box's uninstall removes the Mac's row");
     module.adoptVendorMcpStore(box, module.serializeVendorMcpStore(module.loadVendorMcpStore(mac)), "incoming");
-    assert.equal(module.vendorMcpInstallById(box, "figma"), undefined, "and the Mac's copy does not bring it back");
+    assert.equal(module.vendorMcpInstallById(box, "notion"), undefined, "and the Mac's copy does not bring it back");
     // A later re-install wins over the tombstone.
     clock = 3_000;
-    module.upsertVendorMcpInstall(mac, { id: "figma", url: "https://mcp.figma.com/mcp", connected: false }, now);
+    module.upsertVendorMcpInstall(mac, { id: "notion", url: "https://mcp.notion.com/mcp", connected: false }, now);
     module.adoptVendorMcpStore(box, module.serializeVendorMcpStore(module.loadVendorMcpStore(mac)), "incoming");
-    assert.equal(module.vendorMcpInstallById(box, "figma")?.url, "https://mcp.figma.com/mcp");
+    assert.equal(module.vendorMcpInstallById(box, "notion")?.url, "https://mcp.notion.com/mcp");
     assert.equal(module.loadVendorMcpStore(box).removed.length, 0, "the tombstone is gone once re-installed");
     // The file still reads as before for a row from before this change (no installedAtMs).
     const legacy = module.parseVendorMcpStore([{ id: "notion", url: "https://mcp.notion.com/mcp", connected: false }, { id: "gone", removedAtMs: 5 }, { bogus: true }]);
@@ -87,11 +87,11 @@ test("the Mac's pull is throttled, bounded, and merges the box's answer", async 
     let clock = 0;
     const pull = module.createBoxVendorMcpStorePull({
       rootDir: () => mac,
-      readBoxVendorMcpStore: async () => { reads += 1; return { vendorMcpStore: [{ id: "figma", url: "https://mcp.figma.com/mcp", connected: false, installedAtMs: 10 }] }; },
+      readBoxVendorMcpStore: async () => { reads += 1; return { vendorMcpStore: [{ id: "notion", url: "https://mcp.notion.com/mcp", connected: false, installedAtMs: 10 }] }; },
       now: () => clock,
     });
     await pull();
-    assert.equal(installs.module.vendorMcpInstallById(mac, "figma")?.url, "https://mcp.figma.com/mcp");
+    assert.equal(installs.module.vendorMcpInstallById(mac, "notion")?.url, "https://mcp.notion.com/mcp");
     await pull();
     assert.equal(reads, 1, "a second pull within the fresh window does not ask the box again");
     clock = 5_000;
@@ -111,6 +111,6 @@ test("the Mac's pull is throttled, bounded, and merges the box's answer", async 
 test("the vendor backend on the Mac pulls the box's store before it looks for the install", async () => {
   const source = await readFile(path.join(repoRoot, "source/shared/node/vendor-mcp/backend-exec.ts"), "utf8");
   assert.match(source, /readonly syncStore\?: \(\) => Promise<void>;/);
-  assert.match(source, /await synced\(\);\n\s*const install = installFor\(vendorPluginId\);/);
+  assert.match(source, /await synced\(\);\n\s*const connector = vendorMcpConnectorById\(vendorPluginId\);/);
   assert.match(source, /async listTools\(serverIdentifiers: readonly string\[\]\): Promise<readonly unknown\[\]> \{\n\s*await synced\(\);/);
 });

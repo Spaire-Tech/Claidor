@@ -23,6 +23,7 @@ import {
 } from "../../../packages/proto/generated/agent/v1/mcp_exec_pb.js";
 import { vendorMcpConnectorById, vendorMcpPluginIdForServerId, vendorMcpServerId } from "./catalog.js";
 import {
+  appendVendorMcpSigninLog,
   clearVendorMcpCredential,
   loadVendorMcpInstalls,
   setVendorMcpCredential,
@@ -220,8 +221,15 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
         return fallback.checkAuthStatus(args);
       }
       await synced();
+      const connector = vendorMcpConnectorById(vendorPluginId);
+      if (connector?.comingSoon === true) {
+        // The catalogue says why (no self-registered client, an allowlist);
+        // the card and the agent get that sentence instead of "not installed".
+        if (options.canStartAuth) appendVendorMcpSigninLog(options.rootDir(), `${vendorPluginId} sign-in refused: ${connector.description}`, now);
+        return { id, isAvailable: false, requiresAuth: false, hasValidToken: false, authUrl: "", error: connector.description };
+      }
       const install = installFor(vendorPluginId);
-      if (install == null) return { id, isAvailable: false, requiresAuth: false, hasValidToken: false, authUrl: "", error: `${vendorMcpConnectorById(vendorPluginId)?.name ?? vendorPluginId} is not installed.` };
+      if (install == null) return { id, isAvailable: false, requiresAuth: false, hasValidToken: false, authUrl: "", error: `${connector?.name ?? vendorPluginId} is not installed.` };
       const credential = args.forceReauth === true ? undefined : await usableCredential(install);
       if (credential != null) return { id, isAvailable: true, requiresAuth: false, hasValidToken: true, authUrl: "", error: "" };
       if (!options.canStartAuth) {
@@ -233,8 +241,10 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
       }
       try {
         const started = await startVendorMcpOAuth({ pluginId: install.id, mcpUrl: install.url, redirectUri: args.oauthRedirectUri, fetch: fetchImpl });
+        appendVendorMcpSigninLog(options.rootDir(), `${install.id} sign-in started: client=${started.pending.clientId} secret=${started.pending.clientSecret == null ? "no" : "yes"} authorize=${started.authorizationUrl.split("?")[0]}`, now);
         return { id, isAvailable: true, requiresAuth: true, hasValidToken: false, authUrl: started.authorizationUrl, error: "" };
       } catch (error) {
+        appendVendorMcpSigninLog(options.rootDir(), `${install.id} sign-in failed to start: ${errorLabel(error)}`, now);
         return { id, isAvailable: false, requiresAuth: false, hasValidToken: false, authUrl: "", error: errorLabel(error) };
       }
     },
@@ -245,9 +255,16 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
         if (fallback.completeOAuth == null) throw new Error("No pending vendor sign-in matches this callback.");
         return fallback.completeOAuth(args);
       }
-      const grant = await exchangeVendorMcpCode({ pending, code: args.code, fetch: fetchImpl, now: now() });
+      let grant;
+      try {
+        grant = await exchangeVendorMcpCode({ pending, code: args.code, fetch: fetchImpl, now: now() });
+      } catch (error) {
+        appendVendorMcpSigninLog(options.rootDir(), `${pending.pluginId} sign-in failed at the token exchange: ${errorLabel(error)}`, now);
+        throw error;
+      }
       const stored = setVendorMcpCredential(options.rootDir(), pending.pluginId, grant);
       if (stored == null) throw new Error(`${pending.pluginId} is no longer installed; the sign-in was discarded.`);
+      appendVendorMcpSigninLog(options.rootDir(), `${pending.pluginId} credential stored (refresh=${grant.refreshToken == null ? "no" : "yes"})`, now);
       log(`vendor-mcp credential stored for ${pending.pluginId}`);
       options.onCredentialChanged?.(pending.pluginId);
     },
