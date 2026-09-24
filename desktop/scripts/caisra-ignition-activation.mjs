@@ -27,6 +27,9 @@ import {
   hostProductionBindingInventorySpecs,
 } from "./host-production-activation.mjs";
 
+// Same list as scripts/build-caisra.mjs. pdfjs-dist is bundled, not
+// external: the box gets host-main.cjs alone, and the Read tool's PDF
+// extractor (source/host/runner/pdf-text-extractor.ts) needs pdf.js inside it.
 const EXTERNAL = [
   "electron",
   "tree-sitter",
@@ -35,7 +38,6 @@ const EXTERNAL = [
   "node-gyp-build",
   "node-addon-api",
   "piscina",
-  "pdfjs-dist",
 ];
 
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");

@@ -34,7 +34,11 @@ const outRoot = path.join(repoRoot, "dist");
 
 /**
  * Left unbundled. Native addons and their loaders cannot be inlined, and
- * electron is supplied by the runtime.
+ * electron is supplied by the runtime. pdfjs-dist is not here on purpose:
+ * the box receives host-main.cjs as one bind-mounted file and no
+ * node_modules (source/electron-main/box/local-docker-host-connector.ts), so
+ * the Read tool's PDF extractor (source/host/runner/pdf-text-extractor.ts)
+ * only works if pdf.js travels inside the bundle.
  */
 const EXTERNAL = [
   "electron",
@@ -44,7 +48,6 @@ const EXTERNAL = [
   "node-gyp-build",
   "node-addon-api",
   "piscina",
-  "pdfjs-dist",
 ];
 
 /** Entry -> output path, matching what the app expects to find. */
