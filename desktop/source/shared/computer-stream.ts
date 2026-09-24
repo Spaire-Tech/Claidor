@@ -29,7 +29,11 @@ export function isComputerStreamMessage(value: unknown): value is ComputerStream
  * it says the screen connected, so a notice can clear.
  */
 export function computerStreamReason(line: string): string | null {
-  if (/\bstate=connected\b/.test(line) || /\bguest connected\b/.test(line) || /local docker: gateway ready/.test(line)) return "";
+  if (/\bstate=connected\b/.test(line) || /\bguest connected\b/.test(line)) return "";
+  // Gateway ready alone is not a live stream; clearing the notice on it hid the
+  // real fault when the box was healthy but the webview never attached.
+  if (/local docker: gateway ready/.test(line)) return null;
+  if (/attach rewrite partition/.test(line)) return "The screen webview used the wrong session partition; it was corrected.";
   const reach = /box reachability outcome=(\S+) method=(\S+) cause=(\S+)/.exec(line);
   if (reach != null) {
     const [, outcome, method, cause] = reach;
