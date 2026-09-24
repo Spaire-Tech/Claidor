@@ -259,6 +259,24 @@ other tool call, so it is either the model calling SendMessage twice in
 one turn or a reply nudge; the `[claidor] model=` lines for that turn
 in the box log decide it, and nobody has read them.
 
+**"Agent failed to respond: Unauthorized", read 24 September 2026.**
+The word is the API's own `Unauthorized` exception, answered to the
+box's model call (`AI_APICallError … statusCode: 401` in
+`/tmp/sand-host.log`): the proxy's `get_proxy_caller` found no live
+session behind the bearer, which for an envelope token means the
+session's one-hour `access_expires_at` had passed. How the box gets that
+token: the Mac writes it to `local-docker-credential/inference.json`
+(mounted at `/run/grok-bot`) at box connect, and the host's renewer
+re-reads the file as it nears expiry; **nothing ever rewrote it after
+connect**, so a box older than an hour called the model with an expired
+token until the app reconnected. The Mac now re-issues the credential
+every five minutes and rewrites the file when it changed
+(`startInferenceCredentialKeepFresh`); an expired file is re-read by the
+host every 30 s, so a fresh token lands within the minute. A box only
+minutes old that still gets 401 means the Mac had no valid token to
+write (signed out, or its refresh failed): the file's `expiresAtMs`
+says which. Not yet run on a Mac.
+
 **Teach a task is there and gated off.** The composer's plus-menu entry
 and the computer bar's button are in the pinned renderer, the recording
 extension is in `host/extensions/teach-recording/`, and both key off

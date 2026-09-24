@@ -142,3 +142,34 @@ test("an empty inference token file is a wait, not a hard failure", async () => 
   assert.match(source, /DEV_TOKEN_FILE_POLL_MS = 1_000/);
   assert.match(source, /error instanceof SandCredentialNotReadyError/);
 });
+
+test("the Mac rewrites the box's token file when its access token changes, so a box older than an hour is not left with an expired one", async () => {
+  const loaded = await loadModule("source/electron-main/box/local-docker-host-connector.ts", "local-docker-keep-fresh");
+  try {
+    const { refreshInferenceCredentialFile, startInferenceCredentialKeepFresh, stopInferenceCredentialKeepFresh, INFERENCE_CREDENTIAL_KEEP_FRESH_INTERVAL_MS } = loaded.module;
+    assert.equal(INFERENCE_CREDENTIAL_KEEP_FRESH_INTERVAL_MS <= 10 * 60_000, true, "well inside a one-hour token life");
+    const persisted = [];
+    const persist = async (_settingsPath, credential) => { persisted.push(credential.accessToken); };
+    let token = "tok-1";
+    const issue = async () => ({ accessToken: token, backendUrl: "https://api.simeonlabs.com/", expiresAtMs: Date.now() + 3_600_000 });
+    assert.equal(await refreshInferenceCredentialFile(issue, "/tmp/settings.json", persist), "rewritten");
+    assert.equal(await refreshInferenceCredentialFile(issue, "/tmp/settings.json", persist), "unchanged");
+    token = "tok-2";
+    assert.equal(await refreshInferenceCredentialFile(issue, "/tmp/settings.json", persist), "rewritten");
+    assert.deepEqual(persisted, ["tok-1", "tok-2"]);
+    assert.equal(await refreshInferenceCredentialFile(async () => { throw new Error("signed out"); }, "/tmp/settings.json", persist), "unavailable");
+    assert.equal(await refreshInferenceCredentialFile(async () => undefined, "/tmp/settings.json", persist), "unavailable");
+    assert.deepEqual(persisted, ["tok-1", "tok-2"], "a missing token never overwrites the file");
+
+    let ticks = 0;
+    const setIntervalImpl = (fn, ms) => { ticks += 1; assert.equal(ms, INFERENCE_CREDENTIAL_KEEP_FRESH_INTERVAL_MS); return { unref() {} }; };
+    startInferenceCredentialKeepFresh(issue, "/tmp/settings.json", { setIntervalImpl, log: () => {} });
+    startInferenceCredentialKeepFresh(issue, "/tmp/settings.json", { setIntervalImpl, log: () => {} });
+    assert.equal(ticks, 1, "one loop per process");
+    stopInferenceCredentialKeepFresh();
+    const source = await (await import("node:fs/promises")).readFile(path.join(repoRoot, "source/electron-main/box/local-docker-host-connector.ts"), "utf8");
+    assert.match(source, /startInferenceCredentialKeepFresh\(\n\s*remote\.issueInferenceCredential == null \? undefined : \(\) => remote\.issueInferenceCredential!\(\),/);
+  } finally {
+    await loaded.dispose();
+  }
+});

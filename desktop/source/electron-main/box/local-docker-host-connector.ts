@@ -329,6 +329,55 @@ export async function stopLocalDockerBox(): Promise<void> {
   if (!stopped.ok) throw new Error(`Could not stop the local Docker VM: ${stopped.output}`);
 }
 
+// The box reads its bearer token from the file the Mac writes at connect
+// (`/run/grok-bot/inference.json`, re-read by the host's renewer as it
+// nears expiry). Until 24 September 2026 nothing rewrote that file after
+// connect, and a desktop access token lives one hour: every box older than
+// that called the model with an expired token and the agent failed with
+// "Unauthorized" until the app reconnected. The Mac now re-issues the
+// credential every few minutes and rewrites the file when it changed; the
+// host's renewer re-reads an expired file every 30 s, so it picks the new
+// token up within the minute.
+export const INFERENCE_CREDENTIAL_KEEP_FRESH_INTERVAL_MS = 5 * 60_000;
+let keepFreshTimer: ReturnType<typeof setInterval> | undefined;
+let lastPersistedAccessToken: string | undefined;
+
+export async function refreshInferenceCredentialFile(
+  issue: () => Promise<InferenceCredential | undefined>,
+  settingsPath: string,
+  persist: (settingsPath: string, credential: InferenceCredential) => Promise<unknown> = persistInferenceCredential,
+): Promise<"rewritten" | "unchanged" | "unavailable"> {
+  let issued: InferenceCredential | undefined;
+  try { issued = await issue(); } catch { issued = undefined; }
+  if (issued == null || issued.accessToken.length === 0) return "unavailable";
+  if (issued.accessToken === lastPersistedAccessToken) return "unchanged";
+  await persist(settingsPath, issued);
+  lastPersistedAccessToken = issued.accessToken;
+  return "rewritten";
+}
+
+export function startInferenceCredentialKeepFresh(
+  issue: (() => Promise<InferenceCredential | undefined>) | undefined,
+  settingsPath: string,
+  options: { readonly intervalMs?: number; readonly setIntervalImpl?: typeof setInterval; readonly log?: (line: string) => void } = {},
+): void {
+  if (keepFreshTimer != null || issue == null) return;
+  const log = options.log ?? computerStreamLine;
+  const timer = (options.setIntervalImpl ?? setInterval)(() => {
+    void refreshInferenceCredentialFile(issue, settingsPath).then((outcome) => {
+      if (outcome === "rewritten") log("local docker: inference credential rewritten");
+      else if (outcome === "unavailable") log("local docker: inference credential unavailable (not signed in?); the box keeps its last token");
+    }, (error: unknown) => log(`local docker: inference credential rewrite FAILED: ${error instanceof Error ? error.message : String(error)}`));
+  }, options.intervalMs ?? INFERENCE_CREDENTIAL_KEEP_FRESH_INTERVAL_MS);
+  (timer as { unref?: () => void }).unref?.();
+  keepFreshTimer = timer;
+}
+
+export function stopInferenceCredentialKeepFresh(): void {
+  if (keepFreshTimer != null) clearInterval(keepFreshTimer);
+  keepFreshTimer = undefined;
+}
+
 export function createSettingsRoutedHostConnector(
   remote: SandRemoteHostConnector,
   settings: SandSettingsStore,
@@ -345,6 +394,11 @@ export function createSettingsRoutedHostConnector(
       const connection = await queuedEnsure(settings.settingsPath, issued);
       const late = await pending;
       if (late != null && late !== issued) await persistInferenceCredential(settings.settingsPath, late);
+      lastPersistedAccessToken = (late ?? issued)?.accessToken ?? lastPersistedAccessToken;
+      startInferenceCredentialKeepFresh(
+        remote.issueInferenceCredential == null ? undefined : () => remote.issueInferenceCredential!(),
+        settings.settingsPath,
+      );
       return connection;
     })();
   };
