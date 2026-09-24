@@ -1,7 +1,9 @@
 import { getSchema, type JSONContent } from "@tiptap/core";
 import { normalizeLinkUrl } from "../cards/transcript-card/url-card";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { isVirtualTranscriptEnabled } from "./virtual-transcript-flag";
+import { buildOffsets, computeMountedRange, estimateEntryHeightPx, LEADING_INSET_PX, OVERSCAN_ROWS, totalSizePx } from "./virtual-transcript-geometry";
 import "./transcript-utility-parity.css";
 import { AssistantMath } from "./math";
 import { TranscriptAttachmentGallery } from "./media-viewer";
@@ -695,104 +697,174 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
       ? undefined
       : (entry) => resolveTranscriptCardInteractions.getThreadSummary(entry.id) != null,
   });
+
+  // --- Shared entry renderer (used by both flag-on and flag-off paths) ---
+  const renderEntry = (entry: ConversationTranscriptEntry, index: number): ReactNode => {
+    if (entry.kind === "time-separator") return <div className="sand-transcript-time-separator" key={entry.id} role="separator">{entry.label}</div>;
+    if (entry.kind === "unread-divider") return <div className="sand-unread-divider" key={entry.id} role="separator"><span className="sand-unread-divider__label">{entry.newMessageCount} new {entry.newMessageCount === 1 ? "message" : "messages"}</span></div>;
+    if (entry.kind === "timeline-event") return <TimelineEventRootEntry event={entry.event} id={entry.id} key={entry.id} onOpenAutomation={onOpenAutomation} timestampMs={entry.timestampMs} />;
+    if (entry.kind === "notice") return <TranscriptNoticeCard entry={entry} key={entry.id} />;
+    if (entry.kind === "computer-handoff") return renderComputerHandoff?.(entry) ?? null;
+    if (entry.kind === "thinking") return <TranscriptThinkingRow entry={entry} expanded={expandedThinking.has(entry.id)} key={entry.id} onToggle={toggleThinking} />;
+    if (entry.kind === "tool-call") return <TranscriptToolCallRow entry={entry} expanded={expandedToolCalls.has(entry.id)} key={entry.id} onToggle={toggleToolCall} />;
+    if (entry.kind === "local-tool-permission") return null;
+    if (entry.kind === "permission-request") return <PermissionRequestLeaf isGroupStart={entry.isGroupStart} key={entry.id} timestampMs={entry.timestampMs} title={entry.title} />;
+    if (entry.kind === "send-message") {
+      if (transcriptCards == null) return null;
+      const isKeyboardTarget = transcriptKeyboardWidgetEntryId(entries) === entry.id;
+      const card = <TranscriptCardRootEntry
+        adjacency={transcriptAdjacency[index]}
+        contract={transcriptCards}
+        entry={entry}
+        isReadOnly={isReadOnly}
+        isKeyboardTarget={isKeyboardTarget}
+        key={entry.id}
+        renderReactionActions={renderMessageReactionActions}
+        renderReactionPills={renderMessageReactionPills}
+        threadRootId={threadRootId}
+      />;
+      return resolveTranscriptCardInteractions == null
+        ? card
+        : <TranscriptCardInteractionProvider key={entry.id} value={resolveTranscriptCardInteractions}>{card}</TranscriptCardInteractionProvider>;
+    }
+
+    const ids = transcriptIds(entry.id, true);
+    const pending = entry.delivery === "pending" || entry.delivery === "queued";
+    const failed = entry.delivery === "failed";
+    const replyPreview = entry.replyToId == null || resolveReplyPreview == null ? null : (resolveReplyPreview(entry.replyToId) ?? { kind: "missing" as const });
+    const referencedEntry = entry.replyToId == null ? undefined : entries.find((candidate) => candidate.id === entry.replyToId);
+    const referencedAuthorName = referencedEntry?.kind === "message"
+      ? referencedEntry.author
+      : replyPreview?.kind === "user-text" ? "You" : "Agent";
+    const messageUrlCards = urlCards ?? transcriptCards?.leafProviders.urlCards ?? null;
+    const messageProjection = projectTranscriptMessageCard(entry);
+    const messageAdjacency = entry.adjacency == null
+      ? transcriptAdjacency[index]
+      : { ...transcriptAdjacency[index], ...entry.adjacency };
+    const messageLink = messageUrlCards != null && (entry.attachments?.length ?? 0) === 0
+      ? entry.sendMessageText?.presentation.kind === "url-card"
+        && entry.sendMessageText.presentation.whenUnavailable === "url-card"
+        ? entry.sendMessageText.presentation.url
+        : messageProjection.kind === "message" ? messageProjection.url : null
+      : null;
+    const isDeliveryActionable = isOrdinaryMessageActionable(entry, isReadOnly);
+    const reactionPillProps: TranscriptMessageReactionPillsProps = {
+      entry,
+      isReadOnly,
+      threadRootId,
+      isDeliveryActionable,
+    };
+    const reactionActions = !isDeliveryActionable || renderMessageReactionActions == null
+      ? undefined
+      : (onOpenChange: (open: boolean) => void) => renderMessageReactionActions({ ...reactionPillProps, onOpenChange });
+    const threadSummary = resolveTranscriptCardInteractions?.getThreadSummary(entry.id) ?? null;
+    return (
+      <div
+        aria-busy={pending || entry.isStreaming || undefined}
+        aria-labelledby={`${ids.author} ${ids.timestamp}`}
+        className="sand-virtual-transcript__row sand-transcript-row"
+        data-entry-id={entry.id}
+        data-failed={failed || undefined}
+        data-index={index}
+        data-pending={pending || undefined}
+        data-role={entry.role}
+        key={entry.id}
+        role="article"
+      >
+        <span hidden id={ids.author}>{entry.author}</span>
+        <time dateTime={new Date(entry.timestampMs).toISOString()} hidden id={ids.timestamp}>{new Date(entry.timestampMs).toLocaleString()}</time>
+        <MessageActionAnchor entry={entry} isReadOnly={isReadOnly} onCopy={onCopyMessage} onOpenThread={resolveTranscriptCardInteractions?.openThread} onReply={onReply} onStartThread={onStartThread} renderReactionActions={reactionActions} threadRootId={threadRootId} threadSummary={threadSummary}>
+          <div aria-label={entry.role === "assistant" ? "Agent message" : undefined} className="sand-message" data-group-start={messageAdjacency.isGroupStart || undefined} data-role={entry.role} role="group">
+            {replyPreview != null && onOpenReply != null ? <ReferencedMessagePreviewTrigger
+              authorName={referencedAuthorName}
+              isInScope={isReplyTargetInScope?.(entry.replyToId ?? "") === true}
+              onOpen={onOpenReply}
+              ownerId={entry.id}
+              preview={replyPreview}
+              targetId={entry.replyToId ?? ""}
+              timestampMs={referencedEntry != null && "timestampMs" in referencedEntry ? referencedEntry.timestampMs : undefined}
+            /> : null}
+            {messageLink != null && messageUrlCards != null ? <LinkCardView isGroupStart={messageAdjacency.isGroupStart} provider={messageUrlCards} url={messageLink} /> : entry.isStreaming && entry.role === "assistant" && !entry.text ? <StreamingMessage /> : entry.role === "assistant" ? <AssistantMessageContent channel={entry.channel} images={entry.images} isSourceTrusted={entry.isSourceTrusted} isStreaming={entry.isStreaming} text={entry.text} /> : <UserMessageContent richText={entry.richText} text={entry.text} />}
+            {renderMessageReactionPills?.(reactionPillProps)}
+            {entry.attachments?.length ? <TranscriptAttachmentGallery adjacency={messageAdjacency} attachments={entry.attachments} downloadAttachment={downloadAttachment} readAttachmentBytes={readAttachmentBytes} resolveMedia={resolveAttachmentMedia} role={entry.role} /> : null}
+            {entry.delivery === "queued" && entry.composedAtMs == null ? <QueuedSendNotice entry={entry} isTransportDown={isTransportDown} onCancel={onCancelQueuedSend} /> : null}
+            {entry.role === "user" && !failed && entry.composedAtMs != null ? <SentWhileOfflineNotice composedAtMs={entry.composedAtMs} /> : null}
+            {failed ? <FailedSendActions entry={entry} onDelete={onDeleteFailedSend} onResend={onResendFailedSend} /> : null}
+          </div>
+        </MessageActionAnchor>
+      </div>
+    );
+  };
+
+  // --- Virtual transcript plane (slices 2–3, flag-gated) ---
+  const virtualEnabled = isVirtualTranscriptEnabled();
+  const [scrollState, setScrollState] = useState({ scrollTopPx: 0, viewportPx: 0 });
+
+  // Track scroll position and viewport size when virtual mode is on
+  useEffect(() => {
+    if (!virtualEnabled) return;
+    const el = transcriptRef.current;
+    if (el == null) return;
+    const update = () => setScrollState({ scrollTopPx: el.scrollTop, viewportPx: el.clientHeight });
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", update);
+      ro.disconnect();
+    };
+  }, [virtualEnabled]);
+
+  // Compute estimated heights and offsets
+  const heights = useMemo(
+    () => entries.map((entry) => estimateEntryHeightPx(entry.kind, entry.kind === "message" && (entry as TranscriptMessage).attachments != null && ((entry as TranscriptMessage).attachments?.length ?? 0) > 0)),
+    [entries]
+  );
+  const offsets = useMemo(() => buildOffsets(heights), [heights]);
+  const planeTotalPx = totalSizePx(offsets);
+
+  const mountedRange = useMemo(
+    () => virtualEnabled
+      ? computeMountedRange({ offsets, scrollTopPx: scrollState.scrollTopPx, viewportPx: scrollState.viewportPx, overscanRows: OVERSCAN_ROWS, leadingInsetPx: LEADING_INSET_PX })
+      : { firstIndex: 0, lastIndex: entries.length },
+    [virtualEnabled, offsets, scrollState.scrollTopPx, scrollState.viewportPx, entries.length]
+  );
+
+  if (!virtualEnabled) {
+    // Flag OFF: exact current path — full map, same container, same data-entry-id, no inner plane
+    return (
+      <div aria-label="Conversation transcript" aria-live="off" className="sand-virtual-transcript" ref={transcriptRef} role="log" tabIndex={0}>
+        {entries.map((entry, index) => renderEntry(entry, index))}
+        {isAgentRunning ? <div aria-hidden="true" className="sand-typing-indicator"><span /><span /><span /></div> : null}
+      </div>
+    );
+  }
+
+  // Flag ON: plane shell + mount windowing
+  const mountedEntries: ReactNode[] = [];
+  for (let i = mountedRange.firstIndex; i < mountedRange.lastIndex && i < entries.length; i++) {
+    const entry = entries[i]!;
+    const topPx = offsets[i]!;
+    const rendered = renderEntry(entry, i);
+    if (rendered == null) continue;
+    mountedEntries.push(
+      <div
+        data-entry-id={entry.id}
+        data-row-key={entry.id}
+        key={entry.id}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, transform: `translateY(${topPx}px)` }}
+      >
+        {rendered}
+      </div>
+    );
+  }
+
   return (
     <div aria-label="Conversation transcript" aria-live="off" className="sand-virtual-transcript" ref={transcriptRef} role="log" tabIndex={0}>
-      {entries.map((entry, index) => {
-        if (entry.kind === "time-separator") return <div className="sand-transcript-time-separator" key={entry.id} role="separator">{entry.label}</div>;
-        if (entry.kind === "unread-divider") return <div className="sand-unread-divider" key={entry.id} role="separator"><span className="sand-unread-divider__label">{entry.newMessageCount} new {entry.newMessageCount === 1 ? "message" : "messages"}</span></div>;
-        if (entry.kind === "timeline-event") return <TimelineEventRootEntry event={entry.event} id={entry.id} key={entry.id} onOpenAutomation={onOpenAutomation} timestampMs={entry.timestampMs} />;
-        if (entry.kind === "notice") return <TranscriptNoticeCard entry={entry} key={entry.id} />;
-        if (entry.kind === "computer-handoff") return renderComputerHandoff?.(entry) ?? null;
-        if (entry.kind === "thinking") return <TranscriptThinkingRow entry={entry} expanded={expandedThinking.has(entry.id)} key={entry.id} onToggle={toggleThinking} />;
-        if (entry.kind === "tool-call") return <TranscriptToolCallRow entry={entry} expanded={expandedToolCalls.has(entry.id)} key={entry.id} onToggle={toggleToolCall} />;
-        if (entry.kind === "local-tool-permission") return null;
-        if (entry.kind === "permission-request") return <PermissionRequestLeaf isGroupStart={entry.isGroupStart} key={entry.id} timestampMs={entry.timestampMs} title={entry.title} />;
-        if (entry.kind === "send-message") {
-          if (transcriptCards == null) return null;
-          const isKeyboardTarget = transcriptKeyboardWidgetEntryId(entries) === entry.id;
-          const card = <TranscriptCardRootEntry
-            adjacency={transcriptAdjacency[index]}
-            contract={transcriptCards}
-            entry={entry}
-            isReadOnly={isReadOnly}
-            isKeyboardTarget={isKeyboardTarget}
-            key={entry.id}
-            renderReactionActions={renderMessageReactionActions}
-            renderReactionPills={renderMessageReactionPills}
-            threadRootId={threadRootId}
-          />;
-          return resolveTranscriptCardInteractions == null
-            ? card
-            : <TranscriptCardInteractionProvider key={entry.id} value={resolveTranscriptCardInteractions}>{card}</TranscriptCardInteractionProvider>;
-        }
-
-        const ids = transcriptIds(entry.id, true);
-        const pending = entry.delivery === "pending" || entry.delivery === "queued";
-        const failed = entry.delivery === "failed";
-        const replyPreview = entry.replyToId == null || resolveReplyPreview == null ? null : (resolveReplyPreview(entry.replyToId) ?? { kind: "missing" as const });
-        const referencedEntry = entry.replyToId == null ? undefined : entries.find((candidate) => candidate.id === entry.replyToId);
-        const referencedAuthorName = referencedEntry?.kind === "message"
-          ? referencedEntry.author
-          : replyPreview?.kind === "user-text" ? "You" : "Agent";
-        const messageUrlCards = urlCards ?? transcriptCards?.leafProviders.urlCards ?? null;
-        const messageProjection = projectTranscriptMessageCard(entry);
-        const messageAdjacency = entry.adjacency == null
-          ? transcriptAdjacency[index]
-          : { ...transcriptAdjacency[index], ...entry.adjacency };
-        const messageLink = messageUrlCards != null && (entry.attachments?.length ?? 0) === 0
-          ? entry.sendMessageText?.presentation.kind === "url-card"
-            && entry.sendMessageText.presentation.whenUnavailable === "url-card"
-            ? entry.sendMessageText.presentation.url
-            : messageProjection.kind === "message" ? messageProjection.url : null
-          : null;
-        const isDeliveryActionable = isOrdinaryMessageActionable(entry, isReadOnly);
-        const reactionPillProps: TranscriptMessageReactionPillsProps = {
-          entry,
-          isReadOnly,
-          threadRootId,
-          isDeliveryActionable,
-        };
-        const reactionActions = !isDeliveryActionable || renderMessageReactionActions == null
-          ? undefined
-          : (onOpenChange: (open: boolean) => void) => renderMessageReactionActions({ ...reactionPillProps, onOpenChange });
-        const threadSummary = resolveTranscriptCardInteractions?.getThreadSummary(entry.id) ?? null;
-        return (
-          <div
-            aria-busy={pending || entry.isStreaming || undefined}
-            aria-labelledby={`${ids.author} ${ids.timestamp}`}
-            className="sand-virtual-transcript__row sand-transcript-row"
-            data-entry-id={entry.id}
-            data-failed={failed || undefined}
-            data-index={index}
-            data-pending={pending || undefined}
-            data-role={entry.role}
-            key={entry.id}
-            role="article"
-          >
-            <span hidden id={ids.author}>{entry.author}</span>
-            <time dateTime={new Date(entry.timestampMs).toISOString()} hidden id={ids.timestamp}>{new Date(entry.timestampMs).toLocaleString()}</time>
-            <MessageActionAnchor entry={entry} isReadOnly={isReadOnly} onCopy={onCopyMessage} onOpenThread={resolveTranscriptCardInteractions?.openThread} onReply={onReply} onStartThread={onStartThread} renderReactionActions={reactionActions} threadRootId={threadRootId} threadSummary={threadSummary}>
-              <div aria-label={entry.role === "assistant" ? "Agent message" : undefined} className="sand-message" data-group-start={messageAdjacency.isGroupStart || undefined} data-role={entry.role} role="group">
-                {replyPreview != null && onOpenReply != null ? <ReferencedMessagePreviewTrigger
-                  authorName={referencedAuthorName}
-                  isInScope={isReplyTargetInScope?.(entry.replyToId ?? "") === true}
-                  onOpen={onOpenReply}
-                  ownerId={entry.id}
-                  preview={replyPreview}
-                  targetId={entry.replyToId ?? ""}
-                  timestampMs={referencedEntry != null && "timestampMs" in referencedEntry ? referencedEntry.timestampMs : undefined}
-                /> : null}
-                {messageLink != null && messageUrlCards != null ? <LinkCardView isGroupStart={messageAdjacency.isGroupStart} provider={messageUrlCards} url={messageLink} /> : entry.isStreaming && entry.role === "assistant" && !entry.text ? <StreamingMessage /> : entry.role === "assistant" ? <AssistantMessageContent channel={entry.channel} images={entry.images} isSourceTrusted={entry.isSourceTrusted} isStreaming={entry.isStreaming} text={entry.text} /> : <UserMessageContent richText={entry.richText} text={entry.text} />}
-                {renderMessageReactionPills?.(reactionPillProps)}
-                {entry.attachments?.length ? <TranscriptAttachmentGallery adjacency={messageAdjacency} attachments={entry.attachments} downloadAttachment={downloadAttachment} readAttachmentBytes={readAttachmentBytes} resolveMedia={resolveAttachmentMedia} role={entry.role} /> : null}
-                {entry.delivery === "queued" && entry.composedAtMs == null ? <QueuedSendNotice entry={entry} isTransportDown={isTransportDown} onCancel={onCancelQueuedSend} /> : null}
-                {entry.role === "user" && !failed && entry.composedAtMs != null ? <SentWhileOfflineNotice composedAtMs={entry.composedAtMs} /> : null}
-                {failed ? <FailedSendActions entry={entry} onDelete={onDeleteFailedSend} onResend={onResendFailedSend} /> : null}
-              </div>
-            </MessageActionAnchor>
-          </div>
-        );
-      })}
+      <div className="sand-virtual-transcript__inner" style={{ position: "relative", height: planeTotalPx }}>
+        {mountedEntries}
+      </div>
       {isAgentRunning ? <div aria-hidden="true" className="sand-typing-indicator"><span /><span /><span /></div> : null}
     </div>
   );
