@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-import { basename, extname, join } from "node:path";
+import { basename, extname, isAbsolute, join } from "node:path";
 import { ToolCall } from "../../../proto/generated/agent/v1/agent_pb.js";
 import {
   GenerateImageArgs,
@@ -401,6 +401,13 @@ function crossPlatformBasename(filePath: string): string {
   return basename(filePath.replaceAll("\\", "/"));
 }
 
+// Claidor's sand generate service already persists into the agent media
+// store and returns an absolute path. Treat that as the final file so we
+// do not require a workspace projectFolder or a second write.
+function isAlreadyPersistedImagePath(filePath: string): boolean {
+  return typeof filePath === "string" && filePath.length > 0 && isAbsolute(filePath);
+}
+
 function getImageOutputPath(options: { projectFolder: string; filename: string; artifactsFolder?: string }): string {
   const { projectFolder, filename, artifactsFolder } = options;
   return join(artifactsFolder || projectFolder, "assets", filename);
@@ -579,22 +586,18 @@ export function createGenerateImageTool(
       const result = await interactionHandler.executeToolCall(span.ctx, createGenerateImageToolCall(baseToolCall), meta.toolCallId, async context => {
         const env = requestContext?.env;
         const projectFolder = env?.projectFolder || env?.artifactsFolder || env?.workspacePaths?.[0];
-        if (projectFolder === undefined || projectFolder.trim().length === 0) {
-          errorStage = "project_folder";
-          recordGenerateImageExecuteError(context, "project_folder");
-          logger.error(context, "[generate-image] no project folder available to save the generated image", { generate_image: { projectFolder: env?.projectFolder, artifactsFolder: env?.artifactsFolder, workspacePaths: env?.workspacePaths } });
-          throw new ToolCallUnexpectedEnvironmentError(NO_PROJECT_FOLDER_ERROR);
-        }
-        const readExecutor = resourceAccessor.get(readExecutorResource);
-        const writeExecutor = resourceAccessor.get(writeExecutorResource);
         const privacyMode = meta.stateHandler?.getPrivacyMode?.() ?? PrivacyMode.UNSPECIFIED;
-        let references: readonly ReadReferenceImage[];
-        try {
-          references = await readReferenceImages(context, readExecutor, rawArgs.reference_image_paths ?? [], meta.toolCallId, privacyMode);
-        } catch (error) {
-          errorStage = "read_reference_images";
-          recordGenerateImageExecuteError(context, "read_reference_images");
-          throw error;
+        const referencePaths = rawArgs.reference_image_paths ?? [];
+        let references: readonly ReadReferenceImage[] = [];
+        if (referencePaths.length > 0) {
+          const readExecutor = resourceAccessor.get(readExecutorResource);
+          try {
+            references = await readReferenceImages(context, readExecutor, referencePaths, meta.toolCallId, privacyMode);
+          } catch (error) {
+            errorStage = "read_reference_images";
+            recordGenerateImageExecuteError(context, "read_reference_images");
+            throw error;
+          }
         }
         await imageGenerationConcurrencyLimiter?.acquire();
         try {
@@ -607,6 +610,17 @@ export function createGenerateImageTool(
             recordGenerateImageExecuteError(context, "provider_inference");
             throw error;
           }
+          if (isAlreadyPersistedImagePath(generated.filePath)) {
+            logger.info(context, "[generate-image] using already-persisted path", { outputPath: redactPathForLog(generated.filePath, privacyMode, "output_path") });
+            return new GenerateImageResult({ result: { case: "success", value: new GenerateImageSuccess({ filePath: generated.filePath, imageData: "" }) } });
+          }
+          if (projectFolder === undefined || projectFolder.trim().length === 0) {
+            errorStage = "project_folder";
+            recordGenerateImageExecuteError(context, "project_folder");
+            logger.error(context, "[generate-image] no project folder available to save the generated image", { generate_image: { projectFolder: env?.projectFolder, artifactsFolder: env?.artifactsFolder, workspacePaths: env?.workspacePaths } });
+            throw new ToolCallUnexpectedEnvironmentError(NO_PROJECT_FOLDER_ERROR);
+          }
+          const writeExecutor = resourceAccessor.get(writeExecutorResource);
           try {
             return await writeGeneratedImage(context, writeExecutor, { projectFolder, filePath: generated.filePath, imageData: generated.imageData, ...(env?.artifactsFolder === undefined ? {} : { artifactsFolder: env.artifactsFolder }), privacyMode });
           } catch (error) {

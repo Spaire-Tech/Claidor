@@ -63,6 +63,7 @@ import {
   createGenerateImageTool,
   type GenerateImageToolDependencies,
 } from "../../../packages/agent/tools/core/generate-image.js";
+import { getRegisteredSandGenerateImageService } from "../../extensions/attachments/generate-image-service.js";
 import {
   createWebSearchTool,
   type WebSearchToolDependencies,
@@ -1185,7 +1186,22 @@ export function createTurnToolsetFactoriesForTurn(
       ? {}
       : { requestBoxHelp: provider.createRequestBoxHelpToolInputs(turn, props) }),
     ...(provider.createGenerateImageToolInputs === undefined
-      ? {}
+      ? (() => {
+        // Composition builds createSandGenerateImageService into runnerOptions
+        // but never implements createGenerateImageToolInputs. Pick up the
+        // registered service so GenerateImage is actually on the turn toolset.
+        const service = getRegisteredSandGenerateImageService();
+        if (service === undefined) return {};
+        return {
+          generateImage: {
+            dependencies: {
+              resourceAccessor: props.resourceAccessor as GenerateImageToolDependencies["resourceAccessor"],
+              generateImageService: service as GenerateImageToolDependencies["generateImageService"],
+              isModelRestricted: false,
+            },
+          },
+        };
+      })()
       : { generateImage: provider.createGenerateImageToolInputs(turn, props) }),
     ...(provider.createWebSearchToolInputs === undefined
       ? {}
