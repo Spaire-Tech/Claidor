@@ -45,13 +45,18 @@ interface Session {
 
 const sessions = new Map<string, Session>();
 
-function sessionKey(url: string, accessToken: string): string {
-  return `${url}\u0000${accessToken}`;
+function headersKey(headers: Readonly<Record<string, string>> | undefined): string {
+  if (headers == null) return "";
+  return JSON.stringify(Object.entries(headers).sort(([a], [b]) => a.localeCompare(b)));
+}
+
+function sessionKey(url: string, accessToken: string | undefined, headers?: Readonly<Record<string, string>>): string {
+  return `${url}\u0000${accessToken ?? ""}\u0000${headersKey(headers)}`;
 }
 
 /** Forget a session (a vendor answered 404 to a known session id, or the token changed). */
-export function forgetVendorMcpSession(url: string, accessToken: string): void {
-  sessions.delete(sessionKey(url, accessToken));
+export function forgetVendorMcpSession(url: string, accessToken: string | undefined, headers?: Readonly<Record<string, string>>): void {
+  sessions.delete(sessionKey(url, accessToken, headers));
 }
 
 function parseSseMessages(body: string): unknown[] {
@@ -90,9 +95,25 @@ async function readReply(response: Response, id: number): Promise<Record<string,
 
 export interface VendorMcpClientArgs {
   readonly url: string;
-  readonly accessToken: string;
+  /** The OAuth bearer; absent for a custom server that is public or carries its own token in `headers`. */
+  readonly accessToken?: string;
+  /** A custom server's configured headers (`account-mcp/store.ts`); a bearer, when held, wins over an Authorization header here. */
+  readonly headers?: Readonly<Record<string, string>>;
   readonly fetch?: typeof fetch;
   readonly timeoutMs?: number;
+}
+
+function requestHeaders(args: VendorMcpClientArgs, session: Session): Record<string, string> {
+  const configured: Record<string, string> = {};
+  for (const [name, value] of Object.entries(args.headers ?? {})) configured[name.toLowerCase()] = value;
+  return {
+    ...configured,
+    "content-type": "application/json",
+    accept: "application/json, text/event-stream",
+    ...(args.accessToken == null || args.accessToken.length === 0 ? {} : { authorization: `Bearer ${args.accessToken}` }),
+    "mcp-protocol-version": VENDOR_MCP_PROTOCOL_VERSION,
+    ...(session.sessionId == null ? {} : { "mcp-session-id": session.sessionId }),
+  };
 }
 
 async function post(args: VendorMcpClientArgs, session: Session, body: unknown): Promise<Response> {
@@ -102,13 +123,7 @@ async function post(args: VendorMcpClientArgs, session: Session, body: unknown):
   try {
     const response = await fetchImpl(args.url, {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        accept: "application/json, text/event-stream",
-        authorization: `Bearer ${args.accessToken}`,
-        "mcp-protocol-version": VENDOR_MCP_PROTOCOL_VERSION,
-        ...(session.sessionId == null ? {} : { "mcp-session-id": session.sessionId }),
-      },
+      headers: requestHeaders(args, session),
       body: JSON.stringify(body),
       signal: controller.signal,
     });
@@ -137,7 +152,7 @@ async function rpc(args: VendorMcpClientArgs, session: Session, method: string, 
 }
 
 async function ensureInitialized(args: VendorMcpClientArgs): Promise<Session> {
-  const key = sessionKey(args.url, args.accessToken);
+  const key = sessionKey(args.url, args.accessToken, args.headers);
   let session = sessions.get(key);
   if (session?.initialized) return session;
   session = { initialized: false, nextId: 1 };
@@ -160,7 +175,7 @@ async function withSession<T>(args: VendorMcpClientArgs, work: (session: Session
   } catch (error) {
     // A vendor that lost the session answers 404; start one more once.
     if (error instanceof VendorMcpHttpError && error.status === 404 && session.sessionId != null) {
-      forgetVendorMcpSession(args.url, args.accessToken);
+      forgetVendorMcpSession(args.url, args.accessToken, args.headers);
       return await work(await ensureInitialized(args));
     }
     throw error;

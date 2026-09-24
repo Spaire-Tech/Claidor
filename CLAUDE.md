@@ -237,6 +237,29 @@ never spends a refresh token. #185's resume now has a sign-in to resume
 from. `docs/product/connectors-signin-measured.md` is the record, with
 the three commands to read on a Mac. Not yet run on a Mac.
 
+**Custom MCP servers and account plugins live on the Mac, built 24
+September 2026.** Grok Bot kept the account's MCP configuration on
+Cursor's server and `shared/node/cursor-backend/account-mcp.ts` still
+called those six RPCs, so reads came back `unavailable` and every write
+threw; and the manager's `addServer` had no `parseServerConfig`, so
+`AddMcpServer` threw before any RPC. Now the configuration is
+`account-mcp-config.json` beside the vendor store
+(`shared/node/account-mcp/store.ts`), the six calls are answered from it
+as the generated proto messages (`local-client.ts`), a custom URL
+server's tools run through the vendors' HTTP client with the server's
+headers and the vendors' OAuth flow when it answers 401
+(`account-mcp/backend-exec.ts`; sign-in on the Mac only), and a
+command-configured server goes where it always went, the box's own MCP
+executor. **The store travels both ways**, newer entry per name with
+tombstones: the agent's `AddMcpServer` runs in the box, so the Mac sends
+its copy with every refresh, the box merges and answers with its own,
+and the Mac pulls the box's copy before each read
+(`account-mcp/box-pull.ts`), because a whole-file replacement like the
+vendor store's would wipe what the agent added and the connect card
+runs on the Mac. `docs/product/account-mcp-local-measured.md` is the
+record; `tests/account-mcp-local.test.mjs` measures it offline against
+an in-process streamable-HTTP MCP server. Not yet run on a Mac.
+
 **Two things the first evening with Simeon found, fixed 24 September 2026.**
 "Name yourself Simeon" failed with `deps.readProfile is not a function`:
 `host-runner-composition.ts` built the memory extension's agent state

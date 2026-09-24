@@ -89,11 +89,11 @@ export interface VendorMcpBackendExecOptions {
 
 const errorLabel = (error: unknown): string => error instanceof Error ? error.message || error.name : String(error);
 
-function errorResult(message: string): McpResult {
+export function errorResult(message: string): McpResult {
   return new McpResult({ result: { case: "error", value: new McpError({ error: message }) } });
 }
 
-function contentItem(item: Record<string, unknown>): McpToolResultContentItem {
+export function contentItem(item: Record<string, unknown>): McpToolResultContentItem {
   const text = item.type === "text" && typeof item.text === "string" ? item.text : JSON.stringify(item);
   return new McpToolResultContentItem({ content: { case: "text", value: new McpTextContent({ text }) } });
 }

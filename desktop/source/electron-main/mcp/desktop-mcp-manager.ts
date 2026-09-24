@@ -6,9 +6,13 @@ import {
   createAccountMcpWriter,
   backfillUserPluginInstalls,
   fetchAccountMcpServers,
-  type AccountMcpClient,
+  fetchEffectiveUserPlugins,
   type AccountMcpDependencies,
 } from "../../shared/node/cursor-backend/account-mcp.js";
+import { createAccountMcpBackendExec } from "../../shared/node/account-mcp/backend-exec.js";
+import { parseAccountMcpServerConfigValue } from "../../shared/node/account-mcp/store.js";
+import { createBoxAccountMcpStorePull } from "../../shared/node/account-mcp/box-pull.js";
+import { SandMcpConfigError } from "../../shared/node/mcp/mcp-config-error.js";
 import {
   createDashboardSandBackendMcpExec,
   type DashboardMcpExecClient,
@@ -65,13 +69,10 @@ export interface DesktopMcpManagerOptions {
   readonly openExternal?: (url: string) => Promise<unknown>;
   /** After this Mac wrote a vendor credential (sign-in finished, token refreshed, account removed). */
   readonly onVendorCredentialChanged?: (pluginId: string) => void;
-}
-
-function generatedAccountClient(credentials: Pick<AccountMcpDependencies, "getAccessToken" | "getMachineId">): AccountMcpClient {
-  return createSandCursorBackendClient(DashboardService, {
-    getAccessToken: async (options) => await credentials.getAccessToken({ backendUrl: options?.backendUrl }),
-    getMachineId: credentials.getMachineId,
-  }) as unknown as AccountMcpClient;
+  /** After this Mac wrote the account MCP store (a server or plugin added or removed, a custom server's credential changed): push it to the box. */
+  readonly onAccountStoreChanged?: () => void;
+  /** The box's copy of the account MCP store (`refreshMcp` with `routedAction: "account-mcp-store"`), merged into this Mac's before every read. */
+  readonly readBoxAccountMcpStore?: () => Promise<unknown>;
 }
 
 function generatedBackendClient(credentials: Pick<AccountMcpDependencies, "getAccessToken" | "getMachineId">): DashboardMcpExecClient {
@@ -84,35 +85,64 @@ function generatedBackendClient(credentials: Pick<AccountMcpDependencies, "getAc
 /** Artifact anchor: electron-main/main.cjs:497780, `async function createSandDesktopMcpManager(options)`. */
 export async function createSandDesktopMcpManager(options: DesktopMcpManagerOptions): Promise<DesktopMcpManagerFacade> {
   pinMcpDiagnosticsReporter(options.onMcpDiagnostic ?? null);
+  const vendorRoot = () => getSandRootDir();
+  const log = (message: string) => console.info(`[sand:mcp] ${message}`);
+  const pullBoxStore = createBoxAccountMcpStorePull({
+    rootDir: vendorRoot,
+    ...(options.readBoxAccountMcpStore == null ? {} : { readBoxAccountMcpStore: options.readBoxAccountMcpStore }),
+    log,
+  });
+  // The account's MCP configuration (custom servers, plugins) is the store
+  // on this Mac, `account-mcp/store.ts`, merged with the box's copy before
+  // each read; the six calls that were Cursor's read and write it.
   const accountMcpDeps: AccountMcpDependencies = {
     getAccessToken: async (request) => await options.getAccessToken({ backendUrl: request?.backendUrl ?? getSandInferenceBackendUrl() }),
     getMachineId: async () => await options.getMachineId(),
     getBackendUrl: getSandInferenceBackendUrl,
-    createClient: generatedAccountClient,
+    rootDir: vendorRoot,
+    syncStore: pullBoxStore,
+    ...(options.onAccountStoreChanged == null ? {} : { onStoreChanged: options.onAccountStoreChanged }),
+    reportFailure: (leg, error) => reportDesktopEdgeFailure("mcp-manager", leg, error),
   };
   const cursorBackendMcpExec = createDashboardSandBackendMcpExec({
     getAccessToken: accountMcpDeps.getAccessToken,
     getMachineId: accountMcpDeps.getMachineId,
     createClient: generatedBackendClient,
   });
-  const vendorRoot = () => getSandRootDir();
+  // A custom URL server's sign-in starts here too, and its credential lives
+  // in the account store; `account-mcp/backend-exec.ts` is the record.
+  const accountBackendMcpExec = createAccountMcpBackendExec({
+    rootDir: vendorRoot,
+    fallback: cursorBackendMcpExec,
+    canStartAuth: true,
+    ...(options.onAccountStoreChanged == null ? {} : { onCredentialChanged: () => options.onAccountStoreChanged?.() }),
+    log,
+  });
   // The Mac is where a vendor sign-in starts (browser, loopback) and where
   // the credential lives; `vendor-mcp/backend-exec.ts` is the record.
   const backendMcpExec = createVendorMcpBackendExec({
     rootDir: vendorRoot,
-    fallback: cursorBackendMcpExec,
+    fallback: accountBackendMcpExec,
     canStartAuth: true,
     ...(options.onVendorCredentialChanged == null ? {} : { onCredentialChanged: options.onVendorCredentialChanged }),
-    log: (message) => console.info(`[sand:mcp] ${message}`),
+    log,
   });
   const manager = new SandMcpManager({
     settingsStore: options.settingsStore,
     onAccountScopeApplied: options.onAccountScopeApplied,
     accountServersProvider: () => withVendorAccountServers(fetchAccountMcpServers(accountMcpDeps), vendorRoot),
     accountMcpWriter: createAccountMcpWriter(accountMcpDeps),
-    effectivePluginsProvider: () => fetchVendorEffectivePlugins(new Set(loadVendorMcpInstalls(vendorRoot()).map((item) => item.id))),
+    effectivePluginsProvider: async () => [
+      ...await fetchVendorEffectivePlugins(new Set(loadVendorMcpInstalls(vendorRoot()).map((item) => item.id))),
+      ...await fetchEffectiveUserPlugins(accountMcpDeps),
+    ],
     getMachineId: accountMcpDeps.getMachineId,
     backendMcpExec,
+    parseServerConfig: (value: unknown) => {
+      const parsed = parseAccountMcpServerConfigValue(value);
+      if (parsed == null) throw new SandMcpConfigError('An MCP server configuration needs a "url" (http or sse, optional "headers") or a "command" with optional "args" and "env".');
+      return parsed;
+    },
     onConnectorAuth: options.onConnectorAuth,
     fetchMarketplace: fetchVendorMarketplacePlugins,
     // Install records the connector; the row then reads needsAuth and the

@@ -3,6 +3,7 @@ import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/
 import { createDashboardSandBackendMcpExec, type DashboardMcpExecClient } from "../../shared/node/cursor-backend/backend-mcp-exec.js";
 import { createSandMcpOAuthLoopback } from "../../shared/node/mcp/mcp-oauth-loopback.js";
 import { createVendorMcpBackendExec } from "../../shared/node/vendor-mcp/backend-exec.js";
+import { createAccountMcpBackendExec } from "../../shared/node/account-mcp/backend-exec.js";
 import { getSandRootDir } from "../../host/host-paths.js";
 
 export interface ProductionMcpOAuthLoopback {
@@ -16,6 +17,8 @@ export interface ProductionMcpOAuthLoopbackPorts {
   readonly log: (message: string) => void;
   readonly onConnectorAuth?: (event: Record<string, unknown>) => void;
   readonly onVendorCredentialChanged?: (pluginId: string) => void;
+  /** After a custom server's sign-in finished here: push the account store to the box. */
+  readonly onAccountStoreChanged?: () => void;
 }
 
 function createGeneratedBackendClient(ports: Pick<ProductionMcpOAuthLoopbackPorts, "getAccessToken" | "getMachineId">): DashboardMcpExecClient {
@@ -33,11 +36,20 @@ export function createProductionMcpOAuthLoopbackFactory(ports: ProductionMcpOAut
       getMachineId: ports.getMachineId,
       createClient: (credentials) => createGeneratedBackendClient(credentials),
     });
+    // A custom URL server's sign-in is finished here on the Mac too (the code
+    // becomes a bearer token in the account store, `account-mcp/backend-exec.ts`).
+    const accountExec = createAccountMcpBackendExec({
+      rootDir: getSandRootDir,
+      fallback: backendMcpExec,
+      canStartAuth: true,
+      ...(ports.onAccountStoreChanged == null ? {} : { onCredentialChanged: () => ports.onAccountStoreChanged?.() }),
+      log: ports.log,
+    });
     // A vendor sign-in is finished here on the Mac (the code becomes a bearer
     // token in the vendor store); anything else still goes to the old backend.
     const vendorExec = createVendorMcpBackendExec({
       rootDir: getSandRootDir,
-      fallback: backendMcpExec,
+      fallback: accountExec,
       canStartAuth: true,
       ...(ports.onVendorCredentialChanged == null ? {} : { onCredentialChanged: ports.onVendorCredentialChanged }),
       log: ports.log,
