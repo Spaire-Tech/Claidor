@@ -280,6 +280,54 @@ async def profile_summary(
     return _ok(await desktop.profile_summary(session, desktop_session.user))
 
 
+# --- feedback ---------------------------------------------------------------
+
+
+FEEDBACK_MESSAGE_MAX_CHARS = 10_000
+
+
+class FeedbackBody(BaseModel):
+    """What the app's Send Feedback sheet posts
+    (`desktop/source/electron-main/feedback/feedback-report.ts`). The app
+    also sends `submissionId`, `osVersion`, `conversationId` and
+    `sentryEventIds`; they are accepted and not read."""
+
+    model_config = ConfigDict(extra="ignore")
+    category: str | None = Field(default=None, max_length=64)
+    message: str = Field(min_length=1, max_length=FEEDBACK_MESSAGE_MAX_CHARS)
+    appVersion: str | None = Field(default=None, max_length=64)
+    platform: str | None = Field(default=None, max_length=64)
+
+
+@router.post("/api/feedback", name="desktop:feedback")
+async def feedback(
+    body: FeedbackBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+) -> JSONResponse:
+    """Send Feedback, recorded as one log line against the person.
+
+    Added 24 September 2026. Until then the app posted its feedback to
+    `{api}/sand/feedback`, Grok Bot's address at Cursor, which this
+    server answered 404, so every message a person wrote in the sheet
+    was lost and the sheet said « unavailable ». There is no table: a
+    log line with the user id is what the founder asked for, and it is
+    searchable where the rest of the server's lines are.
+    """
+    message = body.message.strip()
+    if not message:
+        return _fail(40001, "Feedback needs a message.", status=400)
+    log.info(
+        "desktop.feedback.received",
+        user_id=str(desktop_session.user.id),
+        session_id=str(desktop_session.id),
+        category=body.category,
+        app_version=body.appVersion,
+        platform=body.platform,
+        message=message,
+    )
+    return _ok({"received": True})
+
+
 # --- the shared memory ------------------------------------------------------
 
 
