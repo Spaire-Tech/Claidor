@@ -545,6 +545,38 @@ inference and not a log**. Nobody has read the Actions billing page. Until
 someone does, the cause is unproven and CI confirms nothing for our own
 workflows.
 
+## What does not work, audited (24 September 2026)
+
+"check the reconstruction to find all fails right now in the repo that we
+didn't identify." `docs/product/reconstruction-gaps-2026-09-24.md` is the
+record: five audits over the host, the Mac side, the three features the
+founder named, the production bindings and the documents. **Read it before
+saying a feature is broken or fine.** The shape: Claidor serves fourteen
+HTTP routes under `/desktop/api/` and no Connect RPC; the app still calls
+about sixty `aiserver.v1.*` methods, each preceded by a privacy-mode
+lookup, and every one 404s. Three things were found and fixed that day:
+**pressing the mic or "Generate" avatar could sign the person out**
+(`getValidAccessToken()` with no backend named refreshed against
+`api2.cursor.sh`; now the configured backend, `cursor-auth.ts`); **every
+dictation came back in English** (`claidor-transcribe.ts` forced `en-US`;
+no language is sent now); and **the agent's system prompt had no memory,
+no automations, no workflows, no channels and an empty roster** (every
+store handed to `createSystemPromptAssembly` was `() => null`; it reads
+the session's stores now, and the memory section's compaction epoch
+follows the summary count instead of a constant 0). The three named
+features: avatar generation and upload are wired end to end to things
+Claidor serves or to the box, and fail only on a runtime condition the
+error line names; "voice note" is dictation, there is no voice-note
+attachment and no text-to-speech in the app, and whether the packaged
+`Info.plist` carries `NSMicrophoneUsageDescription` is not read. Still
+broken with a known cause: the model picker (Cursor's `AvailableModels`),
+the Usage tab (gated off, and the Settings patch is a no-op), the account
+avatar and name (`GetMe`), reading a PDF (no worker bound), auto-review
+(classifier not served, rejects), custom MCP servers and account plugins
+(writes throw), Send Feedback, Help Center and "open cloud agent" links,
+and everything on the cloud box, cloud agents, listeners and sharing. Not
+yet run on a Mac.
+
 ## The product's hostnames are simeonlabs.com (24 September 2026)
 
 "i want to replace all claidor.com instances by simeonlabs.com … now i

@@ -187,6 +187,12 @@ test("transcription posts the clip as multipart and never talks protobuf", async
     assert.equal(requests[0].filename, "audio.webm");
     assert.equal(requests[0].mime, "audio/webm");
     assert.deepEqual(requests[0].bytes, new Uint8Array([1, 2, 3, 4]));
+    // No language named (the composer's mic names none): no field is sent, so
+    // OpenAI detects the language. Until 24 September this was forced to
+    // `en-US`, and every dictation came back as English.
+    await manager.transcribe({ audio: new Uint8Array([1, 2, 3, 4]), mimeType: "audio/webm" });
+    assert.equal(requests.length, 2);
+    assert.equal(requests[1].language, null);
     assert.match(loaded.module.SandTranscriptionManager.toString() + Object.keys(loaded.module).join(","), /SandTranscriptionManager/);
     const source = await import("node:fs/promises").then((fs) => fs.readFile(path.join(repoRoot, "source/electron-main/account/claidor-transcribe.ts"), "utf8"));
     assert.equal(source.includes("from \"../../packages/proto/generated/aiserver"), false);

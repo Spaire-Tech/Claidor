@@ -1,6 +1,5 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import {
-  DEFAULT_CURSOR_BACKEND_URL,
   getAuthClientId,
   getConfiguredBackendUrl,
   isDevAuthBackend,
@@ -276,7 +275,12 @@ export class SandCursorAuthService {
   }
   async getValidAccessToken(options?: { readonly backendUrl?: string }): Promise<string> {
     const operationEpoch = this.authOperationEpoch; if (this.credentialUseRevoked) throw new SandAuthSignInRequiredError();
-    const backendUrl = options?.backendUrl ?? DEFAULT_CURSOR_BACKEND_URL;
+    // The refresh goes to the configured backend (Claidor), never to Cursor's
+    // default host. Until 24 September a caller that named no backend
+    // (dictation, avatar generation) refreshed against api2.cursor.sh when the
+    // token was within five minutes of expiry; the non-2xx there revoked the
+    // credentials and signed the person out (`runRefreshAccessToken`).
+    const backendUrl = options?.backendUrl ?? this.options.getBackendUrl?.() ?? getConfiguredBackendUrl();
     const [accessToken, refreshToken] = await Promise.all([this.secrets.readSecret(ACCESS_TOKEN_SECRET_KEY), this.secrets.readSecret(REFRESH_TOKEN_SECRET_KEY)]);
     if (!this.isCurrentAuthOperation(operationEpoch) || this.credentialUseRevoked || accessToken == null || refreshToken == null) throw new SandAuthSignInRequiredError();
     return shouldRefreshAccessToken(backendUrl, accessToken) ? await this.refreshAccessToken({ backendUrl, operationEpoch, refreshToken }) : accessToken;

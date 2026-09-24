@@ -129,6 +129,7 @@ import { DEFAULT_SAND_SYSTEM_PROMPT } from "./runner/system-prompt.js";
 import {
   createSystemPromptAssembly,
   type PromptSnapshotStore,
+  type SystemPromptAssemblyDependencies,
 } from "./runner/system-prompt-assembly.js";
 import { PrivacyMode, type PrivacyMode as PrivacyModeValue } from "../packages/redaction/privacy-mode.js";
 import { tryExtractSandAutoReviewClassifierConversationContext } from "../packages/agent/smart-mode-classifier-context.js";
@@ -1366,6 +1367,64 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           },
         });
       })();
+    // The roster the agent is told about: every other agent, and the groups
+    // it belongs to. Read live from the transcript on every prompt build.
+    const listAgentDirectory = (): ReturnType<NonNullable<SystemPromptAssemblyDependencies["agentDirectory"]>> => {
+      const roster = method(transcript, "listAgentsSync")?.() ?? [];
+      return roster
+        .filter((agent: any) =>
+          agent.id !== session.id &&
+          !agent.isGroup &&
+          agent.remoteRoom == null
+        )
+        .map((agent: any) => ({
+          id: agent.id,
+          name: agent.name,
+          description: agent.description
+        }));
+    };
+    const listAgentGroups = (): ReturnType<NonNullable<SystemPromptAssemblyDependencies["agentGroups"]>> => {
+      const roster = method(transcript, "listAgentsSync")?.() ?? [];
+      const byId = new Map(roster.map((agent: any) => [agent.id, agent]));
+      return roster
+        .filter((agent: any) =>
+          agent.isGroup && agent.memberIds.includes(session.id)
+        )
+        .map((group: any) => ({
+          id: group.id,
+          name: group.name,
+          members: group.memberIds
+            .filter((memberId: string) => memberId !== session.id)
+            .map((memberId: string) => byId.get(memberId))
+            .filter((member: any) => member != null)
+            .map((member: any) => ({
+              id: member.id,
+              name: member.name,
+              description: member.description
+            }))
+        }));
+    };
+    // The memory section of the prompt is frozen until the conversation is
+    // compacted (`resolveFrozenMemoryPrompt`); the epoch is the number of
+    // summaries so far, which is what a compaction adds. A constant epoch
+    // would freeze the first rendering for ever.
+    const readCompactionEpoch = (): number => {
+      try {
+        const state = (builtRunner as { getAgentConversationStateStructure?: () => unknown } | undefined)
+          ?.getAgentConversationStateStructure?.()
+          ?? method(session.agentStore ?? {}, "getConversationStateStructure")?.();
+        const archives = (state as { summaryArchives?: readonly unknown[] } | undefined)?.summaryArchives;
+        return Array.isArray(archives) ? archives.length : 0;
+      } catch {
+        return 0;
+      }
+    };
+    // The prompt's stores are the session's own, the ones bindSessionOwnedRunner
+    // hands the runner. Until 24 September 2026 every one of these was
+    // `() => null` (and the roster `() => []`), so the production prompt had
+    // no memory, no user or project memory, no automations, no workflows,
+    // no channels and an empty agent directory, whatever the agent had
+    // saved; the sections rendered as absent, not empty.
     const productionSystemPromptAssembly = productionContext === undefined
       || productionRequestContext === undefined
       ? undefined
@@ -1383,11 +1442,11 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               ? { getMetadata: (key: string) => String(store.getMetadata(key)) }
               : null;
           },
-          compactionEpoch: () => 0,
-          memoryStore: () => null,
-          memorySnapshots: () => null,
-          userMemory: () => null,
-          projectMemory: () => null,
+          compactionEpoch: readCompactionEpoch,
+          memoryStore: () => (session.memory ?? null) as ReturnType<SystemPromptAssemblyDependencies["memoryStore"]>,
+          memorySnapshots: () => (session.db ?? null) as ReturnType<SystemPromptAssemblyDependencies["memorySnapshots"]>,
+          userMemory: () => (runnerOptions.userMemory ?? null) as ReturnType<SystemPromptAssemblyDependencies["userMemory"]>,
+          projectMemory: () => (runnerOptions.projectMemory ?? null) as ReturnType<SystemPromptAssemblyDependencies["projectMemory"]>,
           isBoxScopedSubagent: () => false,
           requestContext: {
             resolve: () => {
@@ -1400,14 +1459,14 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               };
             },
           },
-          automationStore: () => null,
-          workflowStore: () => null,
-          channelStore: () => null,
+          automationStore: () => (session.automations ?? null) as ReturnType<SystemPromptAssemblyDependencies["automationStore"]>,
+          workflowStore: () => (session.workflows ?? null) as ReturnType<SystemPromptAssemblyDependencies["workflowStore"]>,
+          channelStore: () => (session.channels ?? null) as ReturnType<SystemPromptAssemblyDependencies["channelStore"]>,
           connectorManifests: CONNECTOR_MANIFESTS,
           sendToAgentImpl: sendToAgent,
           agentManagement,
-          agentDirectory: () => [],
-          agentGroups: () => [],
+          agentDirectory: listAgentDirectory,
+          agentGroups: listAgentGroups,
           agentsRootDir: () => dirname(dirname(session.dbPath)),
           isSpotlightEnabled: () => method(experiments, "isSpotlightEnabled")?.() ?? false,
           isMultitaskEnabled: () => method(experiments, "isMultitaskEnabled")?.() ?? false,
@@ -1504,41 +1563,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         )?.(platform) ?? false,
       resolveCloudAgentTitle,
       sendToAgent,
-      agentDirectory: () => {
-        const roster = method(transcript, "listAgentsSync")?.() ?? [];
-        return roster
-          .filter((agent: any) =>
-            agent.id !== session.id &&
-            !agent.isGroup &&
-            agent.remoteRoom == null
-          )
-          .map((agent: any) => ({
-            id: agent.id,
-            name: agent.name,
-            description: agent.description
-          }));
-      },
-      agentGroups: () => {
-        const roster = method(transcript, "listAgentsSync")?.() ?? [];
-        const byId = new Map(roster.map((agent: any) => [agent.id, agent]));
-        return roster
-          .filter((agent: any) =>
-            agent.isGroup && agent.memberIds.includes(session.id)
-          )
-          .map((group: any) => ({
-            id: group.id,
-            name: group.name,
-            members: group.memberIds
-              .filter((memberId: string) => memberId !== session.id)
-              .map((memberId: string) => byId.get(memberId))
-              .filter((member: any) => member != null)
-              .map((member: any) => ({
-                id: member.id,
-                name: member.name,
-                description: member.description
-              }))
-          }));
-      },
+      agentDirectory: listAgentDirectory,
+      agentGroups: listAgentGroups,
       agentManagement,
       agentsRootDir: () => dirname(dirname(session.dbPath))
     };
@@ -2669,7 +2695,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         },
         promptOptions: (_prompt, options) => toGeneratedTurnPromptOptions(options),
         assembleGeneratedTurnAction: productionPromptGlue.assembleGeneratedTurnAction,
-        compactionEpoch: () => 0,
+        compactionEpoch: readCompactionEpoch,
         getConversationState: getProductionConversationState,
         ...(mcp.mcp != null && typeof mcp.mcp.getTools === "function"
           ? {
