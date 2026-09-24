@@ -93,6 +93,11 @@ import {
   type RemoteBoxResourceHost,
 } from "./runner/remote-box-resources.js";
 import { createStreamAttempt } from "./runner/stream-attempt.js";
+import { getSandProfilePath, readSandProfileFile } from "./agents/agent-profile.js";
+import { createSandComputerUseSubagentConfig } from "./runner/tools/sand-computer-use-subagent.js";
+import { createSandBrowserUseSubagentConfig } from "./runner/tools/sand-browser-use-subagent.js";
+import { createSandExecutorSubagentConfig } from "./sand-multitask.js";
+import type { TaskSubagentModelConfig } from "../packages/agent/tools/task-cluster-internal.js";
 import {
   createTurnAgentRunStreamInput,
   createTurnAgentStreamStart,
@@ -1237,14 +1242,37 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             };
       }
     };
+    // The agent-state deps the memory extension requires (`AgentStateDeps`).
+    // Until 24 September readProfile, writeProfile and writeSettings were not
+    // supplied, so an agent renaming itself ("Name yourself Simeon") failed
+    // with "deps.readProfile is not a function". Profile and settings writes
+    // go through the transcript so the roster and the sidebar follow.
+    const agentDir = dirname(session.dbPath);
     const agentStateOwner = !isSharedRoomTurn
       ? method(memory, "createAgentState")?.({
           memory: session.memory,
           automations: session.automations,
           workflows: session.workflows,
           channels: session.channels,
-          agentDir: dirname(session.dbPath),
+          agentDir,
           agentId: session.id,
+          readProfile: () => {
+            const profile = readSandProfileFile(getSandProfilePath(agentDir));
+            return profile == null ? null : { ...profile };
+          },
+          writeProfile: (profile: Record<string, string>) => {
+            void method(transcript, "updateAgent")?.(session.id, {
+              name: profile.name ?? "",
+              description: profile.description ?? "",
+              ...(profile.title === undefined ? {} : { title: profile.title }),
+              ...(profile.avatarShape === undefined ? {} : { avatarShape: profile.avatarShape }),
+              ...(profile.avatarColor === undefined ? {} : { avatarColor: profile.avatarColor }),
+            });
+          },
+          writeSettings: (settings: Record<string, boolean>) => {
+            if (settings.notifyOnAgentUpdates !== undefined) void method(transcript, "setAgentNotifyOnUpdates")?.(session.id, settings.notifyOnAgentUpdates);
+            if (settings.hiddenFromSidebar !== undefined) void method(transcript, "setAgentHiddenFromSidebar")?.(session.id, settings.hiddenFromSidebar);
+          },
           readBoxFile: (boxPath: string) =>
             method(remoteBox, "downloadFile")?.(ctx, session.id, boxPath)
         })
@@ -2302,9 +2330,28 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         cloudAgent: "off",
         subagentLaunch: "off",
       };
+      // The subagent types the Task tool may dispatch. Until 24 September
+      // this was `[]`, so the tool existed and refused every dispatch with
+      // "No subagent types are available"; the composition's
+      // buildSubagentConfigsForRun was never called by the production path.
+      // Same rule as there: computerUse (and browserUse when its gate is on)
+      // when the box has a desktop and answers, plus the executor when
+      // multitask is on.
+      const resolveSubagentConfigs = (): readonly TaskSubagentModelConfig[] => {
+        const configs: unknown[] = [];
+        if (method(remoteBox, "isAvailable")?.() !== false) {
+          const browserUseOffered = method(experiments, "isBrowserUseSubagentEnabled")?.() === true;
+          configs.push(createSandComputerUseSubagentConfig({ browserUseOffered }));
+          if (browserUseOffered) configs.push(createSandBrowserUseSubagentConfig());
+        }
+        if (typeof overrides.systemPrompt !== "string" && method(experiments, "isMultitaskEnabled")?.() === true) configs.push(createSandExecutorSubagentConfig());
+        // The same plain-object configs turn-agent-composition builds; the
+        // Task tool reads `subagent_type.type.case` and `.value.name` off them.
+        return configs as unknown as readonly TaskSubagentModelConfig[];
+      };
       const baseTurn: TurnToolsetTurnInput = {
         autoReviewModes,
-        subagentConfigs: [],
+        subagentConfigs: resolveSubagentConfigs(),
       };
       const staticModelId = process.env.SAND_AGENT_MODEL ?? DEFAULT_SAND_MODEL;
       const lazyToolHost = () => createProductionTurnToolsetHost({
@@ -2395,6 +2442,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           );
           const turn: TurnToolsetTurnInput = {
             ...baseTurn,
+            subagentConfigs: resolveSubagentConfigs(),
             emitUpdate,
             cancelThisRun,
             ...(runOptions.ackToken === undefined

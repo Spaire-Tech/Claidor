@@ -237,6 +237,28 @@ never spends a refresh token. #185's resume now has a sign-in to resume
 from. `docs/product/connectors-signin-measured.md` is the record, with
 the three commands to read on a Mac. Not yet run on a Mac.
 
+**Two things the first evening with Simeon found, fixed 24 September 2026.**
+"Name yourself Simeon" failed with `deps.readProfile is not a function`:
+`host-runner-composition.ts` built the memory extension's agent state
+without the `readProfile`, `writeProfile` and `writeSettings` deps that
+`AgentStateDeps` requires (the call is untyped through `method(...)`),
+so the agent's own rename, settings and avatar paths threw. They are
+supplied now and write through the transcript so the roster follows.
+And "open Render in your browser" failed with `No subagent types are
+available`: the production turn passed `subagentConfigs: []`, so the
+Task tool existed and refused every dispatch, and the composition's
+`buildSubagentConfigsForRun` was never called by the production path.
+The types are now built per run the same way it does: computerUse (and
+browserUse when its gate is on) when the box answers, the executor when
+multitask is on. Neither run on a Mac yet; a computer-use subagent has
+not been seen to drive the box's desktop here. The transcript's third
+finding, one reply sent twice ("Nice. We're set…"), is not explained by
+the code alone: the send count is collected synchronously before the
+run settles, and the early-result reminder cannot fire in a turn with no
+other tool call, so it is either the model calling SendMessage twice in
+one turn or a reply nudge; the `[claidor] model=` lines for that turn
+in the box log decide it, and nobody has read them.
+
 **Teach a task is there and gated off.** The composer's plus-menu entry
 and the computer bar's button are in the pinned renderer, the recording
 extension is in `host/extensions/teach-recording/`, and both key off
