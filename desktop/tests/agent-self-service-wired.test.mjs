@@ -123,7 +123,10 @@ test("the production shell's tool provider offers the box's computer, screenshot
   );
   assert.ok(provider.length > 0, "the provider precedes createTurnToolInputs");
   assert.match(provider, /createComputerToolInputs: \(turn, props\): TurnComputerToolFactoryInput => \{/);
-  assert.match(provider, /createScreenshotToolInputs: \(turn, props\): TurnComputerToolFactoryInput => \{/);
+  // The agent's Screenshot tool is behind a bisect switch (24 September, evening):
+  // the first build that offered it failed every turn with OpenAI's server_error.
+  assert.match(provider, /createScreenshotToolInputs: \(turn: TurnToolsetTurnInput, props: TurnToolsetBuildProps\): TurnComputerToolFactoryInput => \{/);
+  assert.match(composition, /const AGENT_SCREENSHOT_TOOL = false;/);
   assert.match(provider, /createBrowserToolInputs: \(turn, props\): TurnBrowserToolFactoryInput => \{/);
   assert.match(provider, /createTurnToolProjections\(\{\n\s*\.\.\.props,\n\s*resourceAccessor: turn\.remoteBoxResourceAccessor,\n\s*\}\)/, "the tools drive the box, not the local accessor");
   const toolset = await readFile(path.join(repoRoot, "source/host/runner/tools/turn-toolset.ts"), "utf8");

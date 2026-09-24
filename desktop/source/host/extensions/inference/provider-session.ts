@@ -498,15 +498,34 @@ function toolSchemaSummary(tools: ToolSet | undefined): string {
   try { return JSON.stringify(summary); } catch { return "[unserialisable]"; }
 }
 
-function logModelCallError(error: unknown, callInfo: { readonly model: string; readonly effort: string } | undefined, tools: ToolSet | undefined): void {
+function messageShapeSummary(messages: readonly CoreMessage[] | undefined): string {
+  if (messages == null) return "";
+  const parts: string[] = [];
+  for (const message of messages) {
+    const content = message.content;
+    const size = typeof content === "string" ? content.length : Array.isArray(content) ? content.map(part => JSON.stringify(part).length).reduce((a, b) => a + b, 0) : 0;
+    const kinds = Array.isArray(content) ? content.map(part => (part as { type?: string }).type ?? "?").join("+") : "text";
+    parts.push(`${message.role}:${kinds}:${size}`);
+  }
+  return parts.join(" ");
+}
+
+function systemPromptText(messages: readonly CoreMessage[] | undefined): string {
+  const system = messages?.find(message => message.role === "system");
+  return system == null ? "" : typeof system.content === "string" ? system.content : JSON.stringify(system.content);
+}
+
+function logModelCallError(error: unknown, callInfo: { readonly model: string; readonly effort: string } | undefined, tools: ToolSet | undefined, messages?: readonly CoreMessage[]): void {
   let event = "";
   try { event = JSON.stringify(error) ?? String(error); } catch { event = String(error); }
   if (event === "{}" && error instanceof Error) event = error.message;
   modelCallLog(`${HOST_LOG_PREFIX} model-error model=${callInfo?.model ?? "?"} effort=${callInfo?.effort ?? "?"} tools=${Object.keys(tools ?? {}).join(",")} event=${clipForHostLog(event, 800)}`);
+  modelCallLog(`${HOST_LOG_PREFIX} model-error-messages ${messageShapeSummary(messages)}`);
+  modelCallLog(`${HOST_LOG_PREFIX} model-error-system ${clipForHostLog(systemPromptText(messages), 12000)}`);
   modelCallLog(`${HOST_LOG_PREFIX} model-error-schemas ${clipForHostLog(toolSchemaSummary(tools), 6000)}`);
 }
 
-function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, callInfo?: { readonly model: string; readonly effort: string }, tools?: ToolSet) {
+function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, callInfo?: { readonly model: string; readonly effort: string }, tools?: ToolSet, messages?: readonly CoreMessage[]) {
   const startedAtMs = Date.now();
   const failure = deferred<never>();
   failure.promise.catch(() => undefined);
@@ -515,7 +534,7 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
     let ended = false;
     try {
       for await (const part of result.fullStream) {
-        if (part.type === "error") { logModelCallError(part.error, callInfo, tools); const next = asError(part.error); fail(next); throw next; }
+        if (part.type === "error") { logModelCallError(part.error, callInfo, tools, messages); const next = asError(part.error); fail(next); throw next; }
         yield part;
       }
       ended = true;
@@ -555,7 +574,7 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
     maxSteps: tools === undefined || executeTool == null ? 1 : 8,
     providerOptions: { openai: { strictSchemas: false, ...openaiOptions } },
   });
-  return settleAiSdkStream(result, invocationId, onUsage, maxTokens, callInfo, tools);
+  return settleAiSdkStream(result, invocationId, onUsage, maxTokens, callInfo, tools, coreMessages);
 }
 
 function openRouterExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void) {

@@ -179,6 +179,8 @@ import type {
 import type { CursorRule } from "../packages/proto/generated/agent/v1/cursor_rules_pb.js";
 
 export const DEFAULT_SAND_MODEL = "gpt-5.5-high-fast";
+/** Bisect switch, 24 September 2026: the agent's own Screenshot tool (see createTurnToolsetFactoryProvider). */
+const AGENT_SCREENSHOT_TOOL = false;
 export const SAND_SUMMARIZATION_MAX_PROMPT_CHARS = 2_800_000;
 
 type DynamicApi = Record<string, any>;
@@ -2235,11 +2237,22 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 if (create === undefined) throw new TypeError("computer tool dependencies are not bound");
                 return { dependencies: create(props) };
               },
-              createScreenshotToolInputs: (turn, props): TurnComputerToolFactoryInput => {
-                const create = boxToolProjections(turn, props).createScreenshotToolDependencies;
-                if (create === undefined) throw new TypeError("screenshot tool dependencies are not bound");
-                return { dependencies: create(props) };
-              },
+              // Bisect, 24 September 2026 (evening): the first build that
+              // offered the agent a Screenshot tool failed every turn with
+              // OpenAI's `server_error` at sequence 0. Screenshot is the one
+              // tool this build added to the agent's request; it is withheld
+              // until a turn is seen to work without it, then restored with
+              // whatever OpenAI needs (its schema is `{}`, like
+              // RestartMcpServers, which works; it carries no description).
+              ...(AGENT_SCREENSHOT_TOOL
+                ? {
+                    createScreenshotToolInputs: (turn: TurnToolsetTurnInput, props: TurnToolsetBuildProps): TurnComputerToolFactoryInput => {
+                      const create = boxToolProjections(turn, props).createScreenshotToolDependencies;
+                      if (create === undefined) throw new TypeError("screenshot tool dependencies are not bound");
+                      return { dependencies: create(props) };
+                    },
+                  }
+                : {}),
               createBrowserToolInputs: (turn, props): TurnBrowserToolFactoryInput => {
                 const create = boxToolProjections(turn, props).createBrowserDriverDependencies;
                 if (create === undefined) throw new TypeError("browser tool dependencies are not bound");
