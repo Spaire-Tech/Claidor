@@ -170,3 +170,56 @@ docker exec simeon-box cat /home/box/sand-data/vendor-mcp-installs.json
 
 Not run on a Mac: a Notion sign-in end to end with the two-way store, and
 any of the four `client_secret_post` vendors.
+
+## Measured 24 September 2026, night: Dropbox connects, and calls us "Self host app (Unknown agent)"
+
+The founder connected Dropbox from the packaged app: the first vendor
+sign-in to finish end to end on a Mac. Dropbox's consent page said **"Self
+host app (Unknown agent) would like to…"**.
+
+Why, measured from the container against `https://www.dropbox.com/oauth2/register`
+(the endpoint its metadata advertises): Dropbox answers **every**
+self-registered client with the **same** `client_id`, `ydww2fwnzkxganl`,
+and a fixed list of loopback redirect URIs, whatever the request carried.
+Three registrations (no User-Agent, a `Simeon/1.0` User-Agent, and one
+with `logo_uri`, `software_id` and `software_version`) all came back with
+that id and echoed `client_name: "Simeon"`. The name is stored and never
+shown: the consent page names the shared app "Self host app". Dropbox's
+help page says the same in its own words: dynamic registration is "for a
+trusted set of MCP Clients" (Claude Code, Claude Web, ChatGPT, Codex,
+Cursor); everyone else "need[s] a Dropbox app to obtain API credentials"
+from the App Console. Where "(Unknown agent)" comes from is not
+established (the consent page is behind login); it is not the User-Agent
+of the registration call, since that changed nothing.
+
+So the name on that page is not something the code sends. It is an app
+Simeon Labs creates once in Dropbox's console. The flow now takes such an
+app: `VendorMcpConnector.clientId` (catalog.ts) holds its key, and
+`startVendorMcpOAuth({ clientId })` skips `/register` and signs in as a
+public client with PKCE under that id (`tests/vendor-mcp-oauth-shapes.test.mjs`,
+"an app we registered by hand"). No secret ships in the app; Dropbox's
+token endpoint takes `none`. The sign-in log line says which path ran:
+`registered=by us` or `registered=dynamically`.
+
+What the founder does, from Dropbox's own page
+(https://help.dropbox.com/integrations/connect-dropbox-mcp-server):
+
+1. https://www.dropbox.com/developers/apps → Create app: API **Scoped
+   access**, Access type **Full Dropbox**, name **Simeon**.
+2. Permissions: `account_info.read`, `files.metadata.read`,
+   `files.metadata.write`, `files.content.read`, `files.content.write`,
+   `sharing.read`, `sharing.write`, `file_requests.read`,
+   `file_requests.write` (the scopes `mcp.dropbox.com` asks for). Submit.
+3. Settings → OAuth 2 Redirect URIs: add `http://localhost:8787/callback`
+   (the app's loopback, `MCP_OAUTH_LOOPBACK_CALLBACK_URL`).
+4. Branding: the name and Simeon's icon (`desktop/brand/`) — that is what
+   the consent page shows.
+5. Copy the **App key** (not the secret) into the `dropbox` row of
+   `desktop/source/shared/node/vendor-mcp/catalog.ts` as `clientId`.
+   Rebuild. A production app on Dropbox starts in development mode,
+   which allows up to 50 users; "Apply for production" lifts that.
+
+The same shape will serve the vendors that need "an app we register
+first" (Google, Microsoft, Asana), each with its own console.
+
+Not run on a Mac: a Dropbox sign-in through an own app.

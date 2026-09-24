@@ -258,7 +258,15 @@ offered, the secret rides with the credential); Asana has no
 registration endpoint (coming soon). The Mac writes every sign-in
 outcome to `~/.caisra/vendor-mcp-signin.log`, the line to read when a
 card says retry. `docs/product/connectors-signin-measured.md` §Corrected
-is the record. **Also that evening: the agent's Screenshot tool broke
+is the record. **Dropbox connected that night, the first vendor sign-in
+to finish on a Mac, and its consent page said "Self host app (Unknown
+agent)"**: Dropbox gives every self-registered client one shared id
+(`ydww2fwnzkxganl`) and ignores `client_name`; only an app made in its
+App Console carries our name. `VendorMcpConnector.clientId` now holds
+such an app's key and the sign-in skips `/register` with it (public
+client, PKCE, no secret in the app); the founder creates the app and
+pastes the key into the `dropbox` row of `vendor-mcp/catalog.ts`. The
+steps are in the same record, §"Dropbox connects". **Also that evening: the agent's Screenshot tool broke
 every turn** (OpenAI `server_error` at sequence 0 on any request that
 carried it; `AGENT_SCREENSHOT_TOOL = false` in `host-runner-composition.ts`
 withholds it; a `[claidor] model-error` line now carries the provider's

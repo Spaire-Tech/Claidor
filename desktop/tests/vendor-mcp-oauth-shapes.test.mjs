@@ -90,6 +90,53 @@ test("metadata is found at the RFC 8414 path form, a confidential client is regi
   }
 });
 
+test("an app we registered by hand skips dynamic registration and signs in as a public client under our name", async () => {
+  // Dropbox, 24 September 2026: its registration endpoint answers every
+  // client with the one shared id `ydww2fwnzkxganl` and echoes `client_name`
+  // back, yet the consent page says "Self host app (Unknown agent)". Only an
+  // app from its App Console carries the name Simeon, so the catalog can
+  // hold that app's key and the flow must never call /register with it.
+  const { module, dispose } = await load("source/shared/node/vendor-mcp/oauth.ts", "vendor-oauth-own-app");
+  try {
+    const calls = [];
+    const dropbox = async (input) => {
+      const url = typeof input === "string" ? input : input.url;
+      calls.push(url);
+      if (url === "https://mcp.dropbox.example/.well-known/oauth-protected-resource/mcp") return json({ resource: "https://mcp.dropbox.example/mcp", authorization_servers: ["https://www.dropbox.example"], scopes_supported: ["files.metadata.read", "files.content.read"] });
+      if (url === "https://www.dropbox.example/.well-known/oauth-authorization-server") return json({ issuer: "https://www.dropbox.example", authorization_endpoint: "https://www.dropbox.example/oauth2/authorize", token_endpoint: "https://api.dropbox.example/oauth2/token", registration_endpoint: "https://www.dropbox.example/oauth2/register", token_endpoint_auth_methods_supported: ["client_secret_post", "client_secret_basic", "none"] });
+      if (url === "https://api.dropbox.example/oauth2/token") return json({ access_token: "tok", refresh_token: "ref", expires_in: 14400 });
+      return new Response("not found", { status: 404 });
+    };
+    const started = await module.startVendorMcpOAuth({ pluginId: "dropbox", mcpUrl: "https://mcp.dropbox.example/mcp", clientId: "simeonappkey", fetch: dropbox, remember: false });
+    assert.ok(!calls.some((url) => url.endsWith("/oauth2/register")), "no dynamic registration with our own app");
+    assert.equal(started.pending.clientId, "simeonappkey");
+    assert.equal(started.pending.clientSecret, undefined, "a public client: no secret ships in the app");
+    const authorize = new URL(started.authorizationUrl);
+    assert.equal(authorize.searchParams.get("client_id"), "simeonappkey");
+    assert.equal(authorize.searchParams.get("scope"), "files.metadata.read files.content.read");
+    assert.equal(authorize.searchParams.get("code_challenge_method"), "S256");
+    const grant = await module.exchangeVendorMcpCode({ pending: started.pending, code: "c", fetch: dropbox, now: 0 });
+    assert.equal(grant.clientId, "simeonappkey");
+    assert.equal(grant.accessToken, "tok");
+  } finally {
+    await dispose();
+  }
+});
+
+test("the catalog's own-app keys are pinned to the connectors that carry them", async () => {
+  const { module, dispose } = await load("source/shared/node/vendor-mcp/catalog.ts", "vendor-catalog-own-app");
+  try {
+    const withKey = module.VENDOR_MCP_CONNECTORS.filter((connector) => typeof connector.clientId === "string");
+    for (const connector of withKey) {
+      assert.equal(connector.comingSoon, undefined, `${connector.id}: an own app is a live connector`);
+      assert.equal(typeof connector.url, "string", `${connector.id}: an own app needs the vendor's MCP url`);
+      assert.ok(connector.clientId.length > 0, `${connector.id}: an empty key would be sent as a client id`);
+    }
+  } finally {
+    await dispose();
+  }
+});
+
 test("a registration the vendor refuses names the status in the error, and a vendor with neither method is 'an app we register first'", async () => {
   const { module, dispose } = await load("source/shared/node/vendor-mcp/oauth.ts", "vendor-oauth-refusal");
   try {

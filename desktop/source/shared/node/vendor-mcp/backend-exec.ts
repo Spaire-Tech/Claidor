@@ -240,8 +240,8 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
         return { id, isAvailable: true, requiresAuth: true, hasValidToken: false, authUrl: install.url, error: "" };
       }
       try {
-        const started = await startVendorMcpOAuth({ pluginId: install.id, mcpUrl: install.url, redirectUri: args.oauthRedirectUri, fetch: fetchImpl });
-        appendVendorMcpSigninLog(options.rootDir(), `${install.id} sign-in started: client=${started.pending.clientId} secret=${started.pending.clientSecret == null ? "no" : "yes"} authorize=${started.authorizationUrl.split("?")[0]}`, now);
+        const started = await startVendorMcpOAuth({ pluginId: install.id, mcpUrl: install.url, redirectUri: args.oauthRedirectUri, fetch: fetchImpl, ...(connector?.clientId == null ? {} : { clientId: connector.clientId }) });
+        appendVendorMcpSigninLog(options.rootDir(), `${install.id} sign-in started: client=${started.pending.clientId} registered=${connector?.clientId == null ? "dynamically" : "by us"} secret=${started.pending.clientSecret == null ? "no" : "yes"} authorize=${started.authorizationUrl.split("?")[0]}`, now);
         return { id, isAvailable: true, requiresAuth: true, hasValidToken: false, authUrl: started.authorizationUrl, error: "" };
       } catch (error) {
         appendVendorMcpSigninLog(options.rootDir(), `${install.id} sign-in failed to start: ${errorLabel(error)}`, now);

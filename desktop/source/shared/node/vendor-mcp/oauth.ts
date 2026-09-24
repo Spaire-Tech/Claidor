@@ -157,6 +157,8 @@ export async function startVendorMcpOAuth(args: {
   readonly fetch?: typeof fetch;
   /** False keeps the pending sign-in out of the process table (tests). */
   readonly remember?: boolean;
+  /** An app registered by hand in the vendor's console (a public client): no dynamic registration. */
+  readonly clientId?: string;
 }): Promise<VendorMcpOAuthStart> {
   const fetchImpl = args.fetch ?? fetch;
   const redirectUri = args.redirectUri ?? MCP_OAUTH_LOOPBACK_CALLBACK_URL;
@@ -167,6 +169,9 @@ export async function startVendorMcpOAuth(args: {
   const registrationEndpoint = metadata?.registration_endpoint;
   if (metadata == null || typeof authorizationEndpoint !== "string" || typeof tokenEndpoint !== "string") {
     throw new Error(`The vendor did not advertise OAuth for ${args.mcpUrl}.`);
+  }
+  if (args.clientId != null && args.clientId.length > 0) {
+    return finishStart({ ...args, redirectUri, authorizationEndpoint, tokenEndpoint, clientId: args.clientId, scopes: resource.scopes });
   }
   if (typeof registrationEndpoint !== "string") {
     throw new Error(`${args.pluginId} needs an app we register first. It is coming soon.`);
@@ -198,24 +203,38 @@ export async function startVendorMcpOAuth(args: {
   if (authMethod === "client_secret_post" && clientSecret == null) {
     throw new Error(`${args.pluginId} registered Simeon without the client secret its token endpoint requires.`);
   }
+  return finishStart({ ...args, redirectUri, authorizationEndpoint, tokenEndpoint, clientId, ...(clientSecret == null ? {} : { clientSecret }), scopes: resource.scopes });
+}
+
+function finishStart(args: {
+  readonly pluginId: string;
+  readonly mcpUrl: string;
+  readonly redirectUri: string;
+  readonly authorizationEndpoint: string;
+  readonly tokenEndpoint: string;
+  readonly clientId: string;
+  readonly clientSecret?: string;
+  readonly scopes: readonly string[];
+  readonly remember?: boolean;
+}): VendorMcpOAuthStart {
   const { verifier, challenge } = pkce();
   const state = `vendor-${args.pluginId}-${base64Url(randomBytes(16))}`;
-  const authorize = new URL(authorizationEndpoint);
-  authorize.searchParams.set("client_id", clientId);
-  authorize.searchParams.set("redirect_uri", redirectUri);
+  const authorize = new URL(args.authorizationEndpoint);
+  authorize.searchParams.set("client_id", args.clientId);
+  authorize.searchParams.set("redirect_uri", args.redirectUri);
   authorize.searchParams.set("response_type", "code");
   authorize.searchParams.set("code_challenge", challenge);
   authorize.searchParams.set("code_challenge_method", "S256");
   authorize.searchParams.set("state", state);
-  if (resource.scopes.length > 0) authorize.searchParams.set("scope", resource.scopes.join(" "));
+  if (args.scopes.length > 0) authorize.searchParams.set("scope", args.scopes.join(" "));
   const pending: VendorMcpOAuthPending = {
     pluginId: args.pluginId,
     mcpUrl: args.mcpUrl,
-    tokenEndpoint,
-    clientId,
-    ...(clientSecret == null ? {} : { clientSecret }),
+    tokenEndpoint: args.tokenEndpoint,
+    clientId: args.clientId,
+    ...(args.clientSecret == null ? {} : { clientSecret: args.clientSecret }),
     verifier,
-    redirectUri,
+    redirectUri: args.redirectUri,
     state,
   };
   if (args.remember !== false) rememberVendorMcpPendingAuth(pending);

@@ -21,6 +21,15 @@ export interface VendorMcpConnector {
   readonly description: string;
   readonly url?: string;
   readonly comingSoon?: true;
+  /**
+   * The key of an app Simeon Labs registered in the vendor's own console, a
+   * public client signing in with PKCE. When set, the sign-in skips dynamic
+   * registration. Measured 24 September 2026: Dropbox answers every
+   * self-registered client with one shared id (`ydww2fwnzkxganl`) and names
+   * it "Self host app (Unknown agent)" on its consent page whatever
+   * `client_name` said; only an app made in its App Console carries our name.
+   */
+  readonly clientId?: string;
 }
 
 const G = VENDOR_MCP_GROUP;
