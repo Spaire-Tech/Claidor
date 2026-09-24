@@ -452,17 +452,6 @@ licence is non-commercial) is not built and needs an accept/redo signal
 first. `docs/product/model-routes.md` is the record, with the two log
 lines to read on a Mac. Not yet run on a Mac.
 
-**v1 is the Grok Bot idea, decided 24 September 2026, the same day.** The
-founder wrote a product overview (Simeon as chief of staff over a
-cross-lab roster: Claude, GPT, Gemini, Grok in visible seats, Projects,
-council, performance memory) and then chose: "i'll keep the grok bot idea
-for now. v1." So v1 is one team of agents on one loop on the computer,
-as Grok Bot ships it, under Simeon's name. Do not build toward the
-roster overview (a third lab on the proxy, per-seat lab choice, Projects,
-visible debate) unless the founder asks for it by name. The routes above
-stay because they cost nothing with no route set and `quick` is the
-spend lever for errands; they are not a roster.
-
 ## The product's hostnames are simeonlabs.com (24 September 2026)
 
 "i want to replace all claidor.com instances by simeonlabs.com … now i
