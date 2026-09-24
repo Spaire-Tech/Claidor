@@ -206,6 +206,25 @@ time (a startup burst used to race on it and blind the app); and the
 computer narration prints the failure's sentence. The brake by hand is
 still `docker stop simeon-box` (the container was `grok-bot-local-vm` until 23 September). Not yet run on a Mac.
 
+**The GPU is on by default, measured 24 September 2026.** Grok Bot's
+shell disabled hardware acceleration and passed `disable-gpu`, so the
+whole window was drawn on the CPU; #190 made it opt-in with
+`SAND_ENABLE_HWA=1`. The founder ran the packaged app with that variable
+and the scroll lag went away ("yeah the app is faster after this"), so
+`main.ts` now disables the GPU only under `SAND_DISABLE_HWA=1`. The
+merged transcript work (#187–#189) is in `desktop/frontend/`, which
+`npm run package` does not ship, and behind a flag that is off; it
+changes nothing on screen. If a scroll still stutters with the GPU on,
+the Liquid Glass blurs and the marks' grain filter are next.
+
+**Teach a task is there and gated off.** The composer's plus-menu entry
+and the computer bar's button are in the pinned renderer, the recording
+extension is in `host/extensions/teach-recording/`, and both key off
+one feature gate, `sand_teach_by_demonstration`, default off, which
+Grok Bot turns on from Cursor's experiments server and Claidor does not
+serve. The host honours `SAND_FEATURE_GATE_OVERRIDES=sand_teach_by_demonstration=1`;
+whether the renderer's snapshot follows it is not measured.
+
 **The box silences the loop's logger, established 23 September 2026.**
 `ports.runnerContext` is bound at build time
 (`scripts/host-production-activation.mjs`) to
