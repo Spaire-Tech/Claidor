@@ -430,6 +430,28 @@ inference and not a log**. Nobody has read the Actions billing page. Until
 someone does, the cause is unproven and CI confirms nothing for our own
 workflows.
 
+## Seats run on routes (24 September 2026)
+
+The product overview's Auto and Override, first layer, rules only: a
+teammate carries a route (`shared/agents/model-routes.ts`: `frontier`
+Terra high, `everyday` Terra medium, `quick` Luna low), stored as
+`modelRoute` in its `profile.json`, chosen by the coach through
+CreateAgent's `route` (the descriptions are in the tool's own text) or
+changed with UpdateAgent, and every turn on that seat runs on the route's
+model and effort (`claidorSessionForRoute` in `provider-session.ts`, set
+on the owner input in `host-runner-composition.ts`). **Until this, a
+turn's model id never reached the executor**: the owner input carried
+none, so `claidorModelForSession` fell through to Terra every time. A
+seat with no route still does. Two facts bound what a route can be: the
+app speaks OpenAI's Responses wire to the proxy and `pricing.py` says an
+Anthropic model is not reachable on it, so every route is Terra or Luna
+until the proxy has a second wire; and `isConfiguredClaidorModelId`
+refuses any other id on purpose. The learned layer (which model wins on
+the person's own work; LLMRouter, MIT, was the pick, Arch-Router's
+licence is non-commercial) is not built and needs an accept/redo signal
+first. `docs/product/model-routes.md` is the record, with the two log
+lines to read on a Mac. Not yet run on a Mac.
+
 ## The product's hostnames are simeonlabs.com (24 September 2026)
 
 "i want to replace all claidor.com instances by simeonlabs.com … now i

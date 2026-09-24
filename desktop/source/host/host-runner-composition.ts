@@ -98,6 +98,7 @@ import {
   createTurnAgentStreamStart,
   type TurnLocalResourceProjectionInput,
 } from "./runner/turn-agent-composition.js";
+import { claidorSessionForRoute } from "./extensions/inference/provider-session.js";
 import {
   createProductionTurnAgentOwner,
   createProductionTurnAgentRunInput,
@@ -1202,13 +1203,14 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       priority,
     );
     const agentManagement = {
-      create: async (input: { name: string; description: string }) => {
+      create: async (input: { name: string; description: string; route?: string }) => {
         const result = await method(
           transcript,
           "createBackgroundAgent"
         )?.({
           name: input.name,
-          description: input.description
+          description: input.description,
+          ...(input.route === undefined ? {} : { modelRoute: input.route })
         }, "user");
         const agent = result.agent;
         return {
@@ -1219,14 +1221,15 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       },
       update: async (
         id: string,
-        patch: { name?: string; description?: string }
+        patch: { name?: string; description?: string; route?: string }
       ) => {
         const current = (await method(transcript, "listAgents")?.())
           ?.find((agent: any) => agent.id === id);
         if (current == null || current.isGroup) return null;
         const summary = await method(transcript, "updateAgent")?.(id, {
           name: patch.name ?? current.name,
-          description: patch.description ?? current.description
+          description: patch.description ?? current.description,
+          ...(patch.route === undefined ? {} : { modelRoute: patch.route })
         });
         return summary == null
           ? null
@@ -2413,12 +2416,17 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                   },
                 }),
           };
+          // The seat's route decides the model and effort of this turn
+          // (`shared/agents/model-routes.ts`); no route, and the executor's
+          // defaults apply, as before 24 September.
+          const routed = claidorSessionForRoute(hooks.agentProfileProvider?.()?.modelRoute);
           return {
             context,
             conversationId: session.id,
             requestId,
             inference: createTypedInferenceOwner(extensions.api("inference").port),
             onRequestId: requestIdForwarder(hooks, "agent"),
+            ...(routed === undefined ? {} : { modelId: routed.modelId, reasoningEffort: routed.reasoningEffort }),
             isSubagentRunner: false,
             isSilenceAllowed: runOptions.isSilenceAllowed === true,
             ...(runOptions.ackToken === undefined

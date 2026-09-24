@@ -91,6 +91,8 @@ export interface TurnAgentRunContextInput<ContextValue> {
   readonly inference: TurnAgentInferenceOwner;
   readonly onRequestId: (requestId: string) => void;
   readonly modelId?: string;
+  /** The seat's reasoning effort, from its route; the executor's default when absent. */
+  readonly reasoningEffort?: "minimal" | "low" | "medium" | "high";
   readonly requestSource?: string;
   readonly isSubagentRunner: boolean;
   readonly isSilenceAllowed: boolean;
@@ -167,6 +169,7 @@ export async function createTurnAgentRunContext<ContextValue>(
     });
   const sessionOptions = {
     ...(input.modelId === undefined ? {} : { modelId: input.modelId }),
+    ...(input.reasoningEffort === undefined ? {} : { reasoningEffort: input.reasoningEffort }),
     ...(input.isComputerUseSubagent === undefined
       ? {}
       : { isComputerUseSubagent: input.isComputerUseSubagent }),

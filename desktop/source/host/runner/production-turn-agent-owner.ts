@@ -84,6 +84,7 @@ export interface ProductionTurnAgentOwnerInput {
   readonly endThisRunAwaitingUser?: (reason: string) => void;
   readonly requestSource?: string;
   readonly modelId?: string;
+  readonly reasoningEffort?: "minimal" | "low" | "medium" | "high";
   readonly hidden?: boolean;
   readonly lineage?: unknown;
   readonly profilePromptSnapshot?: AgentProfilePromptSnapshot;
@@ -161,6 +162,7 @@ export async function createProductionTurnAgentOwner(
     inference: input.inference,
     onRequestId: input.onRequestId,
     ...(input.modelId === undefined ? {} : { modelId: input.modelId }),
+    ...(input.reasoningEffort === undefined ? {} : { reasoningEffort: input.reasoningEffort }),
     ...(input.requestSource === undefined
       ? {}
       : { requestSource: input.requestSource }),

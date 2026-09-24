@@ -87,6 +87,8 @@ export interface AgentProfileForRunner {
   readonly description: string;
   readonly filePath: string;
   readonly settingsFilePath: string;
+  /** The seat's route id (`shared/agents/model-routes.ts`), "" or absent for the default. */
+  readonly modelRoute?: string;
 }
 
 export interface AgentConversationActionReceiver {
