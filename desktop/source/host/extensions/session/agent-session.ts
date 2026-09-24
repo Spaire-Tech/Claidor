@@ -95,14 +95,14 @@ export class SandAgentSessionStore {
   agentDirExists(agentId: string): boolean { return existsSync(this.getAgentDir(agentId)); }
   writeAgentProfileFile(agentId: string, profile: Partial<SandAgentProfile> & { name: string; description: string }): void {
     const path = getSandProfilePath(this.getAgentDir(agentId)), current = readSandProfileFile(path), name = resolveProfileName(profile.name.trim(), current);
-    writeSandProfileFile(path, { name, description: profile.description.trim(), title: profile.title?.trim() ?? current?.title ?? "", avatarShape: profile.avatarShape?.trim() ?? current?.avatarShape ?? "", avatarColor: profile.avatarColor?.trim() ?? current?.avatarColor ?? "", modelRoute: profile.modelRoute?.trim().toLowerCase() ?? current?.modelRoute ?? "" });
+    writeSandProfileFile(path, { name, description: profile.description.trim(), title: profile.title?.trim() ?? current?.title ?? "", avatarShape: profile.avatarShape?.trim() ?? current?.avatarShape ?? "", avatarColor: profile.avatarColor?.trim() ?? current?.avatarColor ?? "" });
   }
   async withAgentDb<T>(agentId: string, fn: (db: SandAgentDb, dbPath: string) => T | Promise<T>): Promise<T> { const dbPath = getAgentDbPath(this.rootDir, agentId), db = new SandAgentDb(dbPath); try { return await fn(db, dbPath); } finally { db.close(); } }
 
   private async createLocalSession(profile: Partial<SandAgentProfile>, origin: "user" | "dev", purpose?: string): Promise<OpenAgentSession> {
     let id = randomUUID(); while (this.agentDirExists(id)) id = randomUUID();
     mkdirSync(this.getAgentDir(id), { recursive: true });
-    this.writeAgentProfileFile(id, { name: profile.name ?? "Grok", description: profile.description ?? "", ...(profile.title == null ? {} : { title: profile.title }), ...(profile.avatarShape == null ? {} : { avatarShape: profile.avatarShape }), ...(profile.avatarColor == null ? {} : { avatarColor: profile.avatarColor }), ...(profile.modelRoute == null ? {} : { modelRoute: profile.modelRoute }) });
+    this.writeAgentProfileFile(id, { name: profile.name ?? "Grok", description: profile.description ?? "", ...(profile.title == null ? {} : { title: profile.title }), ...(profile.avatarShape == null ? {} : { avatarShape: profile.avatarShape }), ...(profile.avatarColor == null ? {} : { avatarColor: profile.avatarColor }) });
     const dbPath = getAgentDbPath(this.rootDir, id), db = new SandAgentDb(dbPath); db.set("agentId", id); db.setAgentOrigin(origin); if (purpose != null) db.setAgentPurpose(purpose); db.setIntroductionPending(true);
     return { id, dbPath, db, agentStore: { dispose: async () => {} } };
   }

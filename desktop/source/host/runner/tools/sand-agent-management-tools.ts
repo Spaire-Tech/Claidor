@@ -1,4 +1,3 @@
-import { SAND_MODEL_ROUTE_IDS, describeSandModelRoutes } from "../../../shared/agents/model-routes.js";
 import { z } from "zod";
 import {
   SAND_CREATE_AGENT_TOOL_NAME,
@@ -26,13 +25,13 @@ export interface SendToAgentDependencies<_Context = Context> {
 }
 
 export interface AgentManagementDependencies {
-  create(profile: { readonly name: string; readonly description: string; readonly route?: string }): Promise<{
+  create(profile: { readonly name: string; readonly description: string }): Promise<{
     readonly id: string;
     readonly name: string;
   }>;
   update(
     agentId: string,
-    patch: { readonly name?: string; readonly description?: string; readonly route?: string },
+    patch: { readonly name?: string; readonly description?: string },
   ): Promise<{ readonly id: string; readonly name: string } | null>;
 }
 
@@ -73,18 +72,12 @@ export const createAgentParameters = z.object({
   description: z.string().trim().default("").describe(
     "The new agent's persona / instructions: what it is for and how it should behave. This becomes its profile and shapes its replies. Optional but strongly recommended.",
   ),
-  route: z.enum(SAND_MODEL_ROUTE_IDS).optional().describe(
-    `The seat's job, which decides the model it runs on and how hard it thinks. Pick the cheapest route the work allows; the user can change it later. ${describeSandModelRoutes()} Omit for the default (the strongest model, thinking hard).`,
-  ),
 });
 
 export const updateAgentParameters = z.object({
   agent_id: z.string().trim().min(1).describe("The id of the agent to update."),
   name: z.string().trim().optional().describe("A new name for the agent. Omit to leave the name unchanged."),
   description: z.string().trim().optional().describe("A new persona/description for the agent. Omit to leave it unchanged."),
-  route: z.enum(SAND_MODEL_ROUTE_IDS).optional().describe(
-    `A new route for the agent: the model it runs on and how hard it thinks. ${describeSandModelRoutes()} Omit to leave it unchanged.`,
-  ),
 });
 
 export async function resolveSendToAgentImages(
@@ -144,10 +137,8 @@ export function createCreateAgentTool(management: AgentManagementDependencies) {
       const created = await resolved.create({
         name: args.name,
         description: args.description,
-        ...(args.route === undefined ? {} : { route: args.route }),
       });
-      const onRoute = args.route === undefined ? "" : ` on the "${args.route}" route`;
-      return `Created agent "${created.name}" (id: ${created.id})${onRoute}. Message it with SendToAgent using that id.`;
+      return `Created agent "${created.name}" (id: ${created.id}). Message it with SendToAgent using that id.`;
     },
   });
 }
@@ -156,20 +147,19 @@ export function createUpdateAgentTool(management: AgentManagementDependencies) {
   return defineCommunicateTool(management, {
     id: "PLATFORM_ACTION",
     name: SAND_UPDATE_AGENT_TOOL_NAME,
-    description: "Edit an existing agent's profile: its name, description and/or route (the model it runs on). Only the fields you provide are changed; the rest are left exactly as they were, and there is no way to clear or delete an agent through this tool. Use it to refine a teammate you (or the user) created.",
+    description: "Edit an existing agent's profile: its name and/or description. Only the fields you provide are changed; the rest are left exactly as they were, and there is no way to clear or delete an agent through this tool. Use it to refine a teammate you (or the user) created.",
     parameters: updateAgentParameters,
     describeActivity: (args: z.infer<typeof updateAgentParameters>) => ({
       target: args.agent_id,
     }),
     async execute(_context, args: z.infer<typeof updateAgentParameters>, resolved) {
-      const patch: { name?: string; description?: string; route?: string } = {};
+      const patch: { name?: string; description?: string } = {};
       if (args.name != null && args.name.length > 0) patch.name = args.name;
       if (args.description != null && args.description.length > 0) {
         patch.description = args.description;
       }
-      if (args.route != null) patch.route = args.route;
-      if (patch.name == null && patch.description == null && patch.route == null) {
-        return "Nothing to update: provide a new name, description and/or route.";
+      if (patch.name == null && patch.description == null) {
+        return "Nothing to update: provide a new name and/or description.";
       }
       const updated = await resolved.update(args.agent_id, patch);
       return updated == null

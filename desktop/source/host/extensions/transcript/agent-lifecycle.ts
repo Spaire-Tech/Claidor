@@ -518,9 +518,6 @@ export class AgentLifecycle {
       ...(profile.avatarColor === undefined
         ? {}
         : { avatarColor: profile.avatarColor.trim() }),
-      ...(profile.modelRoute === undefined
-        ? {}
-        : { modelRoute: String(profile.modelRoute).trim().toLowerCase() }),
       name: profile.name.trim(),
       description: profile.description.trim(),
       ...(profile.title === undefined ? {} : { title: profile.title.trim() }),

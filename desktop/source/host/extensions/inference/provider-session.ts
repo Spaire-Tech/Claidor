@@ -14,7 +14,6 @@ import { CLAIDOR_WORKING_CONTEXT_TOKENS } from "../../../shared/inference/claido
 import { resolveSandAgentStepCap, stepBudgetExceededMessage } from "../../../shared/inference/turn-step-budget.js";
 import type { SandInferenceProvider } from "../../../shared/inference-router.js";
 import { claidorProxyBaseUrl } from "../../../shared/node/cursor-backend/claidor-api.js";
-import { findSandModelRoute } from "../../../shared/agents/model-routes.js";
 import { resolveClaudeCodeCliPath } from "../../../shared/node/inference-router-local.js";
 import { getSandRootDir } from "../../host-paths.js";
 import { SandSettingsStore } from "../../../shared/node/settings/sand-settings-store.js";
@@ -129,10 +128,6 @@ export type ClaidorSessionModelOptions = {
   // True for a turn nobody asked for (the first-run intro, a reply nudge,
   // an automation). It gets the small model-call budget.
   readonly hidden?: boolean;
-  // Set by the seat's route (`shared/agents/model-routes.ts`). When present
-  // it wins over the role's default effort; the environment still wins over
-  // nothing, as before.
-  readonly reasoningEffort?: ClaidorReasoningEffort;
 };
 
 // The cheap roles, as Grok Bot separates them: summarization and memory
@@ -157,21 +152,7 @@ export function claidorModelForSession(options?: ClaidorSessionModelOptions): st
 // Effort follows the role, not the model: a loop turn that falls back to
 // Luna on a rate limit keeps the loop's effort.
 export function claidorReasoningEffortForSession(options?: ClaidorSessionModelOptions, env: NodeJS.ProcessEnv = process.env): ClaidorReasoningEffort {
-  if (options?.reasoningEffort != null && (CLAIDOR_REASONING_EFFORTS as readonly string[]).includes(options.reasoningEffort)) return options.reasoningEffort;
   return isCheapClaidorSession(options) ? configuredClaidorCheapReasoningEffort(env) : configuredClaidorReasoningEffort(env);
-}
-
-// A seat's route resolved against what the proxy serves now: the tier picks
-// Terra or Luna (or their environment overrides), the effort travels as is.
-// An unknown or empty route id is `undefined`, and the turn runs as it did
-// before routes existed.
-export function claidorSessionForRoute(routeId: string | null | undefined): { readonly modelId: string; readonly reasoningEffort: ClaidorReasoningEffort } | undefined {
-  const route = findSandModelRoute(routeId);
-  if (route == null) return undefined;
-  return {
-    modelId: route.tier === "cheap" ? configuredClaidorCheapModel() : configuredClaidorModel(),
-    reasoningEffort: route.effort,
-  };
 }
 
 // One definition of where the proxy lives, shared with the other three

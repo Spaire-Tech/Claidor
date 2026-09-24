@@ -135,7 +135,6 @@ export class ProfileWatch {
     description: string;
     filePath: string;
     settingsFilePath: string;
-    modelRoute: string;
   } {
     const dir = dirname(session.dbPath);
     const filePath = getSandProfilePath(dir);
@@ -145,7 +144,6 @@ export class ProfileWatch {
       description: profile?.description ?? "",
       filePath,
       settingsFilePath: getSandSettingsPath(dir),
-      modelRoute: profile?.modelRoute ?? "",
     };
   }
 }
