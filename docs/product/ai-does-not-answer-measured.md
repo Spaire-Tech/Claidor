@@ -174,3 +174,41 @@ bad field of the *right* type (a `type:widget` with an unlabelled option, a
 `type:text` with no content) is still refused, because that refusal names
 a real mistake. The greeting above lands as text; the agent-loop test
 sends it verbatim.
+
+## The computerUse child ran on Shell alone, read 24 September 2026 (night)
+
+The founder's Render test, from the box log (`subagent=` lines added the
+same evening): the parent dispatched a computerUse child
+(`subagent=dispatched … type=computerUse`), the child made seven Luna
+calls at `effort=low`, every one of them `tools=Shell({"command":"printf
+…"})` printing sentences to itself ("Waiting for the delegated browser
+result", "Browser task remains asynchronous"), then `subagent=settled
+status=done` and `subagent=result … "(the task finished without producing
+any text output)"`. No `tool=` line names a computer tool. No `429`, no
+`rate limit`, no `40201`: the "browser-helper rate limit" the agent
+reported three times has nothing behind it. The "task text leaking as a
+user message" is the completion hand-off prompt
+(`[A background task just completed]`, a hidden user turn) as the model
+sees it, not anything on the person's screen; every "You" line in their
+transcript is theirs.
+
+The child's sentences read like a parent waiting on a delegate, which
+means either it was not offered the Computer tool, or it was offered it
+under the agent's own brief. The code wires both correctly on paper
+(`isComputerUseSubagent` → `factories.computer?.()` in `turn-toolset.ts`
+under `remoteBoxHasDesktop && getRemoteBoxAvailable()`; the prompt glue
+and assembly are built per identity with a silent fallback to the
+agent's). Two lines now decide it on the next run:
+
+| line | means |
+| --- | --- |
+| `[claidor] model=… tools=… offered=<names>` | every tool name in that request; a computerUse child's must list `Computer` |
+| `[claidor] prompt conversation=<id> identity=computerUse glue=own\|agent-fallback assembly=own\|agent-fallback` | which prompt the child's shell serves; a fallback means it read the agent's brief |
+
+```
+docker exec simeon-box grep -n "\[claidor\] prompt \|\[claidor\] subagent=" /tmp/sand-host.log | tail -20
+docker exec simeon-box grep -n "model=gpt-5.6-luna" /tmp/sand-host.log | grep -v "input=5[0-9][0-9] " | tail -10 | cut -c1-300
+```
+
+(The `input=5xx` Luna calls are the auto-review classifier, one per Shell
+command, not the child.)

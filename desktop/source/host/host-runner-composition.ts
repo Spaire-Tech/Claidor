@@ -177,6 +177,7 @@ import type {
   SubagentAdapterArgs,
 } from "./runner/agent-adapters.js";
 import type { CursorRule } from "../packages/proto/generated/agent/v1/cursor_rules_pb.js";
+import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 
 export const DEFAULT_SAND_MODEL = "gpt-5.5-high-fast";
 /** Bisect switch, 24 September 2026: the agent's own Screenshot tool (see createTurnToolsetFactoryProvider). */
@@ -2492,6 +2493,10 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       const promptAssembly = identity.isSubagentRunner
         ? createPromptAssemblyFor(promptIdentity, promptGlue) ?? productionSystemPromptAssembly
         : productionSystemPromptAssembly;
+      // Which prompt this shell serves, on the host log's channel: a child
+      // that fell back to the agent's own glue or assembly would read the
+      // agent's brief and behave as the parent (24 September 2026).
+      logHostLine(`${HOST_LOG_PREFIX} prompt conversation=${identity.conversationId} identity=${isComputerUseTurn ? "computerUse" : isBrowserUseTurn ? "browserUse" : identity.isSubagentRunner ? `subagent:${identity.subagentType ?? "?"}` : "agent"} glue=${identity.isSubagentRunner ? (promptGlue === productionPromptGlue ? "agent-fallback" : "own") : "agent"} assembly=${identity.isSubagentRunner ? (promptAssembly === productionSystemPromptAssembly ? "agent-fallback" : "own") : "agent"}`);
       const resolveSubagentConfigs = (): readonly TaskSubagentModelConfig[] => {
         const configs: unknown[] = [];
         if (method(remoteBox, "isAvailable")?.() !== false) {

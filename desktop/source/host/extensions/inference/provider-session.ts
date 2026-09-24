@@ -455,6 +455,10 @@ export interface ModelCallLogLine {
   // their arguments, or "-" for a step that only wrote text. This is
   // the line that says what a loop is doing.
   readonly tools: string;
+  // What the step was offered: every tool name in the request, or "-" for
+  // none. Added 24 September 2026, when a computerUse child ran seven steps
+  // on Shell alone and nothing said whether Computer was in its request.
+  readonly offered?: string;
 }
 
 // One line per model call in the host log, so `docker exec … tail
@@ -462,7 +466,7 @@ export interface ModelCallLogLine {
 // the executor wrote nothing and a fifty-minute loop left no trace but
 // the bill.
 export function formatModelCallLogLine(line: ModelCallLogLine): string {
-  return `[claidor] model=${line.model} effort=${line.effort} input=${line.inputTokens} cached=${line.cachedTokens} output=${line.outputTokens} reasoning=${line.reasoningTokens} ms=${line.elapsedMs} tools=${line.tools}`;
+  return `[claidor] model=${line.model} effort=${line.effort} input=${line.inputTokens} cached=${line.cachedTokens} output=${line.outputTokens} reasoning=${line.reasoningTokens} ms=${line.elapsedMs} tools=${line.tools}${line.offered === undefined ? "" : ` offered=${line.offered}`}`;
 }
 
 export function summarizeToolCalls(calls: readonly { readonly toolName?: string; readonly args?: unknown }[] | undefined): string {
@@ -549,7 +553,7 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
     const cached = typeof openai.cachedPromptTokens === "number" ? openai.cachedPromptTokens : 0;
     const reasoning = typeof openai.reasoningTokens === "number" ? openai.reasoningTokens : 0;
     if (callInfo != null) {
-      modelCallLog(formatModelCallLogLine({ model: callInfo.model, effort: callInfo.effort, inputTokens: value.promptTokens, cachedTokens: cached, outputTokens: value.completionTokens, reasoningTokens: reasoning, elapsedMs: Date.now() - startedAtMs, tools: summarizeToolCalls(calls) }));
+      modelCallLog(formatModelCallLogLine({ model: callInfo.model, effort: callInfo.effort, inputTokens: value.promptTokens, cachedTokens: cached, outputTokens: value.completionTokens, reasoningTokens: reasoning, elapsedMs: Date.now() - startedAtMs, tools: summarizeToolCalls(calls), offered: Object.keys(tools ?? {}).join(",") || "-" }));
     }
     return { inputTokens: Math.max(0, value.promptTokens - cached), outputTokens: value.completionTokens, cacheReadTokens: cached, cacheWriteTokens: 0, maxTokens };
   });

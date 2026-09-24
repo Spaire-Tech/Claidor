@@ -109,7 +109,7 @@ test("every model call writes one line with its tokens, and cached tokens are co
     assert.equal(usage.inputTokens, 1_000, "input is what was not cached");
     assert.equal(usage.outputTokens, 130);
     assert.equal(lines.length, 1);
-    assert.match(lines[0], /^\[claidor\] model=gpt-5\.6-terra effort=high input=60000 cached=59000 output=130 reasoning=90 ms=\d+ tools=-$/);
+    assert.match(lines[0], /^\[claidor\] model=gpt-5\.6-terra effort=high input=60000 cached=59000 output=130 reasoning=90 ms=\d+ tools=- offered=-$/);
     assert.equal(loaded.module.summarizeToolCalls([{ toolName: "SendMessage", args: { text: "hello there" } }, { toolName: "run_shell", args: { command: "ls" } }]), 'SendMessage({"text":"hello there"}) run_shell({"command":"ls"})');
   } finally {
     loaded.module.setModelCallLog(null);
