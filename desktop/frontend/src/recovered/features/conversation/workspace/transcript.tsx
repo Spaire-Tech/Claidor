@@ -1,9 +1,10 @@
 import { getSchema, type JSONContent } from "@tiptap/core";
 import { normalizeLinkUrl } from "../cards/transcript-card/url-card";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { isVirtualTranscriptEnabled } from "./virtual-transcript-flag";
 import { buildOffsets, computeMountedRange, estimateEntryHeightPx, LEADING_INSET_PX, OVERSCAN_ROWS, totalSizePx } from "./virtual-transcript-geometry";
+import { MeasureCache } from "./virtual-transcript-measure-cache";
 import "./transcript-utility-parity.css";
 import { AssistantMath } from "./math";
 import { TranscriptAttachmentGallery } from "./media-viewer";
@@ -816,10 +817,37 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
     };
   }, [virtualEnabled]);
 
-  // Compute estimated heights and offsets
+  // Measure cache: committed row heights replace estimates (slice 4, flag ON only)
+  const measureCacheRef = useRef<MeasureCache | null>(null);
+  if (virtualEnabled && measureCacheRef.current == null) {
+    measureCacheRef.current = new MeasureCache();
+  }
+  const [measureEpoch, setMeasureEpoch] = useState(0);
+
+  // Prune stale keys when entries change
+  useEffect(() => {
+    if (!virtualEnabled || measureCacheRef.current == null) return;
+    const activeKeys = new Set(entries.map((e) => e.id));
+    measureCacheRef.current.prune(activeKeys);
+  }, [virtualEnabled, entries]);
+
+  // Compute heights: use committed (measured) when available, else estimate
   const heights = useMemo(
-    () => entries.map((entry) => estimateEntryHeightPx(entry.kind, entry.kind === "message" && (entry as TranscriptMessage).attachments != null && ((entry as TranscriptMessage).attachments?.length ?? 0) > 0)),
-    [entries]
+    () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- measureEpoch forces recompute
+      void measureEpoch;
+      if (virtualEnabled && measureCacheRef.current != null) {
+        return measureCacheRef.current.resolveHeights(
+          entries.map((entry) => ({
+            id: entry.id,
+            kind: entry.kind,
+            hasAttachments: entry.kind === "message" && (entry as TranscriptMessage).attachments != null && ((entry as TranscriptMessage).attachments?.length ?? 0) > 0,
+          }))
+        );
+      }
+      return entries.map((entry) => estimateEntryHeightPx(entry.kind, entry.kind === "message" && (entry as TranscriptMessage).attachments != null && ((entry as TranscriptMessage).attachments?.length ?? 0) > 0));
+    },
+    [entries, virtualEnabled, measureEpoch]
   );
   const offsets = useMemo(() => buildOffsets(heights), [heights]);
   const planeTotalPx = totalSizePx(offsets);
@@ -841,6 +869,53 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
     );
   }
 
+  // Row ResizeObserver for measure/invalidate (slice 4)
+  const rowObserverRef = useRef<ResizeObserver | null>(null);
+  const rowElementsRef = useRef<Map<string, Element>>(new Map());
+
+  useEffect(() => {
+    if (!virtualEnabled) return;
+    const mc = measureCacheRef.current;
+    if (mc == null) return;
+    const ro = new ResizeObserver((observedEntries) => {
+      let changed = false;
+      for (const roe of observedEntries) {
+        const el = roe.target as HTMLElement;
+        const key = el.dataset.rowKey;
+        if (key == null) continue;
+        const h = roe.borderBoxSize?.[0]?.blockSize ?? el.offsetHeight;
+        if (mc.commit(key, h)) changed = true;
+      }
+      if (changed) setMeasureEpoch((e) => e + 1);
+    });
+    rowObserverRef.current = ro;
+    // Observe any already-tracked elements
+    for (const el of rowElementsRef.current.values()) ro.observe(el);
+    return () => {
+      ro.disconnect();
+      rowObserverRef.current = null;
+    };
+  }, [virtualEnabled]);
+
+  const measureRef = useCallback((el: HTMLDivElement | null, key: string) => {
+    const prev = rowElementsRef.current.get(key);
+    if (prev === el) return;
+    if (prev != null) {
+      rowObserverRef.current?.unobserve(prev);
+      rowElementsRef.current.delete(key);
+    }
+    if (el != null) {
+      rowElementsRef.current.set(key, el);
+      rowObserverRef.current?.observe(el);
+      // Immediate measure on mount
+      const mc = measureCacheRef.current;
+      if (mc != null) {
+        const h = el.offsetHeight;
+        if (mc.commit(key, h)) setMeasureEpoch((e) => e + 1);
+      }
+    }
+  }, []);
+
   // Flag ON: plane shell + mount windowing
   const mountedEntries: ReactNode[] = [];
   for (let i = mountedRange.firstIndex; i < mountedRange.lastIndex && i < entries.length; i++) {
@@ -848,11 +923,13 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
     const topPx = offsets[i]!;
     const rendered = renderEntry(entry, i);
     if (rendered == null) continue;
+    const entryId = entry.id;
     mountedEntries.push(
       <div
-        data-entry-id={entry.id}
-        data-row-key={entry.id}
-        key={entry.id}
+        data-entry-id={entryId}
+        data-row-key={entryId}
+        key={entryId}
+        ref={(el) => measureRef(el, entryId)}
         style={{ position: "absolute", top: 0, left: 0, right: 0, transform: `translateY(${topPx}px)` }}
       >
         {rendered}
