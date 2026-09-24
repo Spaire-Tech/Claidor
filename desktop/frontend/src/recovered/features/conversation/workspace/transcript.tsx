@@ -859,16 +859,6 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
     [virtualEnabled, offsets, scrollState.scrollTopPx, scrollState.viewportPx, entries.length]
   );
 
-  if (!virtualEnabled) {
-    // Flag OFF: exact current path — full map, same container, same data-entry-id, no inner plane
-    return (
-      <div aria-label="Conversation transcript" aria-live="off" className="sand-virtual-transcript" ref={transcriptRef} role="log" tabIndex={0}>
-        {entries.map((entry, index) => renderEntry(entry, index))}
-        {isAgentRunning ? <div aria-hidden="true" className="sand-typing-indicator"><span /><span /><span /></div> : null}
-      </div>
-    );
-  }
-
   // Row ResizeObserver for measure/invalidate (slice 4)
   const rowObserverRef = useRef<ResizeObserver | null>(null);
   const rowElementsRef = useRef<Map<string, Element>>(new Map());
@@ -915,6 +905,16 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
       }
     }
   }, []);
+
+  if (!virtualEnabled) {
+    // Flag OFF: exact current path — full map, same container, same data-entry-id, no inner plane
+    return (
+      <div aria-label="Conversation transcript" aria-live="off" className="sand-virtual-transcript" ref={transcriptRef} role="log" tabIndex={0}>
+        {entries.map((entry, index) => renderEntry(entry, index))}
+        {isAgentRunning ? <div aria-hidden="true" className="sand-typing-indicator"><span /><span /><span /></div> : null}
+      </div>
+    );
+  }
 
   // Flag ON: plane shell + mount windowing
   const mountedEntries: ReactNode[] = [];
