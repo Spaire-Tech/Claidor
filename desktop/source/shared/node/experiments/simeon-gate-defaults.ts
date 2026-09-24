@@ -1,0 +1,70 @@
+import { envGateOverride } from "./cursor-experiments.js";
+
+// Feature gates Simeon turns on that Grok Bot's bundled table
+// (`experiment-config.gen.ts`, a generated file that is not edited) leaves
+// off. Grok Bot flips these from Cursor's experiments server, which Simeon
+// Labs' server does not serve, so without this the bundled default is the
+// only value the app ever sees.
+//
+// `sand_usage_page` — Settings → Usage & Billing and the account menu's
+// usage card. Off by default since the reconstruction; on since
+// 24 September 2026, now that the summary is built from Simeon Labs'
+// server's quota (`account/cursor-profile.ts`).
+//
+// Precedence, lowest to highest: this table, then
+// `SAND_FEATURE_GATE_OVERRIDES=name=0` in the environment (a kill switch,
+// read whatever the build), then a local override set from the flags
+// panel. A gate not named here is untouched.
+export const SIMEON_FEATURE_GATE_DEFAULTS: Readonly<Record<string, boolean>> = Object.freeze({
+  sand_usage_page: true,
+});
+
+export function simeonGateDefault(name: string, env: NodeJS.ProcessEnv = process.env): boolean | undefined {
+  if (!Object.hasOwn(SIMEON_FEATURE_GATE_DEFAULTS, name)) return undefined;
+  return envGateOverride(name, env) ?? SIMEON_FEATURE_GATE_DEFAULTS[name];
+}
+
+export function withSimeonGateDefaults<Snapshot>(snapshot: Snapshot, env: NodeJS.ProcessEnv = process.env, localOverrides: Readonly<Record<string, unknown>> = {}): Snapshot {
+  if (typeof snapshot !== "object" || snapshot == null) return snapshot;
+  const gates = (snapshot as { featureGates?: unknown }).featureGates;
+  if (typeof gates !== "object" || gates == null) return snapshot;
+  const featureGates: Record<string, boolean> = { ...(gates as Record<string, boolean>) };
+  for (const name of Object.keys(SIMEON_FEATURE_GATE_DEFAULTS)) {
+    if (typeof localOverrides[name] === "boolean") continue;
+    const value = simeonGateDefault(name, env);
+    if (value !== undefined) featureGates[name] = value;
+  }
+  return { ...snapshot, featureGates };
+}
+
+export interface GateDefaultableService<Snapshot> {
+  checkFeatureGate(name: any): boolean;
+  getSnapshot(): Snapshot;
+  subscribe(listener: (snapshot: Snapshot) => void): () => void;
+  getFeatureFlagOverridesRecord(): Record<string, unknown>;
+}
+
+/**
+ * The experiment service with Simeon's defaults laid over its answers:
+ * `checkFeatureGate`, `getSnapshot` and every snapshot handed to a
+ * subscriber. Everything else reaches the wrapped service untouched.
+ */
+export function applySimeonGateDefaults<Snapshot, Service extends GateDefaultableService<Snapshot>>(service: Service, env: NodeJS.ProcessEnv = process.env): Service {
+  const overrides = () => service.getFeatureFlagOverridesRecord();
+  const project = (snapshot: Snapshot) => withSimeonGateDefaults(snapshot, env, overrides());
+  return new Proxy(service, {
+    get(target, property, receiver) {
+      if (property === "checkFeatureGate") {
+        return (name: string) => {
+          const local = overrides()[name];
+          if (typeof local === "boolean") return local;
+          return simeonGateDefault(name, env) ?? target.checkFeatureGate(name);
+        };
+      }
+      if (property === "getSnapshot") return () => project(target.getSnapshot());
+      if (property === "subscribe") return (listener: (snapshot: Snapshot) => void) => target.subscribe((snapshot) => listener(project(snapshot)));
+      const value = Reflect.get(target, property, receiver);
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+  });
+}

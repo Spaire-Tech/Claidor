@@ -1,6 +1,7 @@
 import { PrivacyMode } from "../../shared/observability/sentry-privacy-mode.js";
 import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
 import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
+import { claidorApiData } from "../../shared/node/cursor-backend/claidor-api.js";
 import { getOrCreateMachineId } from "./cursor-machine-id.js";
 import { persistAccountDisplayName, readLocalAccountDisplayName } from "./account-display-name.js";
 export { ACCOUNT_DISPLAY_NAME_FILE, isUnimplementedProfileError, persistAccountDisplayName, readLocalAccountDisplayName, writeLocalAccountDisplayName } from "./account-display-name.js";
@@ -56,6 +57,104 @@ export interface CursorProfileDeps {
   readonly connectRawMessage?: (error: unknown) => string | undefined;
   readonly localToolPermissionCeilings?: { readonly never: number; readonly ask: number; readonly always: number };
   readonly now?: () => number;
+  /** For the account doors on Simeon Labs' server (profile, quota): a fetch to drive and a host to aim at, both for tests. */
+  readonly fetch?: typeof fetch;
+  readonly backendUrl?: string;
+}
+
+// --- the account doors on Simeon Labs' server ------------------------------
+//
+// Until 24 September 2026 the profile came from `DashboardService/GetMe` +
+// `GetTeams` and the usage from `GetSandUsageStatus` + `GetCurrentPeriodUsage`,
+// four Cursor Connect RPCs that Simeon Labs' server never served. `fetchCursorProfile`
+// swallowed the failure and answered null (or the locally stored name with
+// no e-mail and no picture), so the account menu showed "Claidor user" with
+// no avatar; `fetchSandWeeklyUsage` answered null so the header never showed
+// usage. The renderer still calls the same edge methods and reads the same
+// shapes (`CursorProfile`, `WeeklyUsage`, the usage summary of
+// `buildSandUsageSummary`); only where the numbers come from changed:
+// `GET /desktop/api/user/profile` (`service.py`, `user_payload`) and
+// `GET /desktop/api/user/quota` (`quota`). `profile-summary` repeats the
+// quota's remaining credits under `creditItems` and adds nothing the
+// renderer reads, so it is not called.
+
+export const CLAIDOR_PROFILE_PATH = "user/profile";
+export const CLAIDOR_QUOTA_PATH = "user/quota";
+
+/** `user_payload()` in `server/polar/desktop/service.py`. */
+export interface ClaidorProfileRow {
+  readonly id?: string;
+  readonly email?: string;
+  readonly name?: string;
+  readonly nickname?: string;
+  readonly avatarUrl?: string | null;
+  readonly phone?: string | null;
+  readonly accountMode?: string;
+}
+
+/** `quota()` in `server/polar/desktop/service.py`. */
+export interface ClaidorQuotaRow {
+  readonly planName?: string;
+  readonly subscriptionStatus?: string;
+  readonly creditsLimit?: number;
+  readonly creditsUsed?: number;
+  readonly creditsRemaining?: number;
+  readonly hasPaidCredits?: boolean;
+  readonly periodStart?: string;
+  readonly periodEnd?: string;
+}
+
+function claidorAuth(getAccessToken: AccessTokenReader, deps: CursorProfileDeps) {
+  return { getAccessToken: () => getAccessToken(), ...(deps.backendUrl === undefined ? {} : { backendUrl: deps.backendUrl }) };
+}
+async function readClaidorProfile(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<ClaidorProfileRow> {
+  return await claidorApiData<ClaidorProfileRow>(claidorAuth(getAccessToken, deps), CLAIDOR_PROFILE_PATH, { method: "GET", ...(deps.fetch === undefined ? {} : { fetch: deps.fetch }) });
+}
+export async function readClaidorQuota(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<ClaidorQuotaRow> {
+  return await claidorApiData<ClaidorQuotaRow>(claidorAuth(getAccessToken, deps), CLAIDOR_QUOTA_PATH, { method: "GET", ...(deps.fetch === undefined ? {} : { fetch: deps.fetch }) });
+}
+
+function finiteOrNull(value: unknown): number | null { return typeof value === "number" && Number.isFinite(value) ? value : null; }
+function isoToMs(value: unknown): number | null { if (typeof value !== "string" || value.length === 0) return null; const ms = Date.parse(value); return Number.isFinite(ms) && ms > 0 ? ms : null; }
+
+export function cursorProfileFromClaidor(row: ClaidorProfileRow, localName: string | undefined): CursorProfile {
+  const avatar = typeof row.avatarUrl === "string" ? nonEmpty(row.avatarUrl) : undefined;
+  return {
+    displayName: localName ?? nonEmpty(row.name) ?? nonEmpty(row.nickname),
+    email: nonEmpty(row.email),
+    profilePictureUrl: avatar,
+    isAnysphereUser: false,
+  };
+}
+
+/**
+ * The quota as the renderer's meter reads it. The allowance is monthly
+ * (`month_bounds` in `service.py`), so the percent is of the month and the
+ * reset is the period's end; the pinned renderer titles that meter "Weekly
+ * usage", which is its own string and not ours to change here.
+ */
+export function weeklyUsageFromClaidorQuota(quota: ClaidorQuotaRow): WeeklyUsage | null {
+  const limit = finiteOrNull(quota.creditsLimit); const used = finiteOrNull(quota.creditsUsed);
+  if (limit == null || used == null) return null;
+  const included = limit > 0;
+  return { percentUsed: included ? Math.max(0, Math.min(100, (used / limit) * 100)) : 0, nextResetMs: isoToMs(quota.periodEnd), hasNonZeroIncludedLimit: included, onDemand: null };
+}
+
+export function usageSummaryFromClaidorQuota(quota: ClaidorQuotaRow): unknown {
+  const weekly = weeklyUsageFromClaidorQuota(quota);
+  const remaining = finiteOrNull(quota.creditsRemaining);
+  return {
+    isEnterprise: false,
+    sandUsagePercent: weekly == null ? null : weekly.percentUsed,
+    sandUsageResetTimestampMs: weekly?.nextResetMs ?? null,
+    hasAvailableUsage: remaining == null ? weekly != null && weekly.percentUsed < 100 : remaining > 0,
+    isSandTrial: false,
+    hasEndedSandTrial: false,
+    hasNonZeroIncludedLimit: weekly?.hasNonZeroIncludedLimit ?? false,
+    canCancelSandTrial: false,
+    onDemand: null,
+    upgradeCta: null,
+  };
 }
 
 function profileClient(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): DashboardClient {
@@ -109,21 +208,41 @@ export function buildSandUsageSummary(args: { readonly sandStatus: SandUsageStat
   return { isEnterprise: args.teams.teams.some((team) => team.isEnterprise === true), sandUsagePercent: sandStatus.usagePercent !== undefined && Number.isFinite(sandStatus.usagePercent) && sandStatus.usagePercent >= 0 ? sandStatus.usagePercent : null, sandUsageResetTimestampMs: reset !== undefined && Number.isFinite(reset) && reset > 0 ? reset : null, hasAvailableUsage: sandStatus.hasAvailableUsage === true, isSandTrial: trial, hasEndedSandTrial: args.trialClaimGranted && !trial, hasNonZeroIncludedLimit: included, canCancelSandTrial: trial && sandStatus.sandTrialCancelable === true, onDemand: included ? onDemandOf(args.currentPeriodUsage) : null, upgradeCta: upgradeCtaOf(sandStatus.upgradeRecommendation) };
 }
 
+// The person, from `GET /desktop/api/user/profile`: their name, e-mail and
+// the picture their sign-in provider gave (Google's, for the founder), which
+// `cursor-avatar.ts` fetches as `preferredUrl` and hands to the account menu
+// as a data URL. A locally renamed account keeps its local name on top.
+// Until 24 September 2026 this was `GetMe` + `GetTeams` (see above).
 export async function fetchCursorProfile(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<CursorProfile | null> {
   const localName = readLocalAccountDisplayName();
   try {
-    const client = profileClient(getAccessToken, deps);
-    const [me, isAnysphereUser] = await Promise.all([client.getMe({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS }), client.getTeams({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS }).then((r) => r.teams.some((team) => team.id === ANYSPHERE_TEAM_ID && team.hasBilling && team.seats > 0)).catch((error: unknown) => { deps.reportFailure?.("cursor-profile", "teams-membership", error); return false; })]);
-    return { displayName: localName ?? nonEmpty(displayNameFromProfile(me.firstName, me.lastName)), email: nonEmpty(me.email), profilePictureUrl: nonEmpty(me.profilePictureUrl), isAnysphereUser };
-  } catch { return localName == null ? null : { displayName: localName, email: undefined, profilePictureUrl: undefined, isAnysphereUser: false }; }
+    return cursorProfileFromClaidor(await readClaidorProfile(getAccessToken, deps), localName);
+  } catch (error) {
+    deps.reportFailure?.("cursor-profile", "claidor-profile", error);
+    return localName == null ? null : { displayName: localName, email: undefined, profilePictureUrl: undefined, isAnysphereUser: false };
+  }
 }
+// The rename stays local, as before: the name is written to
+// `~/.caisra/account-display-name` first and `DashboardService/UpdateUserName`
+// is still attempted, where its "unimplemented" answer from Simeon Labs'
+// server is swallowed by `persistAccountDisplayName`. It already worked
+// that way; nothing here changed on 24 September 2026.
 export async function updateCursorProfileName(getAccessToken: AccessTokenReader, name: string, deps: CursorProfileDeps): Promise<void> {
   await persistAccountDisplayName(name, () => profileClient(getAccessToken, deps).updateUserName(splitAccountName(name), { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS }).then(() => undefined));
 }
 export async function fetchUserPrivacyMode(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<PrivacyMode | undefined> { try { return (await profileClient(getAccessToken, deps).getUserPrivacyMode({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })).privacyMode; } catch { return undefined; } }
 export async function fetchUserPrivacyModeEnabled(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<boolean> { return privacyModeEnabledForMode(await fetchUserPrivacyMode(getAccessToken, deps)); }
-export async function fetchSandWeeklyUsage(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<WeeklyUsage | null> { try { const client = profileClient(getAccessToken, deps); const [status, usage] = await Promise.allSettled([client.getSandUsageStatus({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS }), client.getCurrentPeriodUsage({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })]); return status.status === "fulfilled" ? toWeeklyUsage(status.value, usage.status === "fulfilled" ? usage.value : null, (deps.now ?? Date.now)()) : null; } catch { return null; } }
+// The header's usage, from `GET /desktop/api/user/quota`. Until
+// 24 September 2026 this was `GetSandUsageStatus` + `GetCurrentPeriodUsage`
+// (see above) and always answered null here.
+export async function fetchSandWeeklyUsage(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<WeeklyUsage | null> { try { return weeklyUsageFromClaidorQuota(await readClaidorQuota(getAccessToken, deps)); } catch (error) { deps.reportFailure?.("cursor-usage", "claidor-quota", error); return null; } }
 export async function fetchLocalToolPermissionCeiling(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<"never" | "ask" | "always" | undefined> { try { const value = (await profileClient(getAccessToken, deps).getTeamAdminSettingsOrEmptyIfNotInTeam({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })).localToolControls?.permissionCeiling; const c = deps.localToolPermissionCeilings ?? { never: 1, ask: 2, always: 3 }; return value === c.never ? "never" : value === c.ask ? "ask" : value === c.always ? "always" : undefined; } catch { return undefined; } }
-export async function fetchSandUsageSummary(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<unknown> { const client = profileClient(getAccessToken, deps); const [sandStatus, currentPeriodUsage, teams, trial] = await Promise.all([client.getSandUsageStatus({}, { timeoutMs: USAGE_REQUEST_TIMEOUT_MS }), client.getCurrentPeriodUsage({}, { timeoutMs: USAGE_REQUEST_TIMEOUT_MS }).catch((error: unknown) => { if (deps.isInvalidArgumentError?.(error) === true) return undefined; throw error; }), client.getTeams({}, { timeoutMs: USAGE_REQUEST_TIMEOUT_MS }), client.getSandTrialClaimStatus({}, { timeoutMs: USAGE_REQUEST_TIMEOUT_MS })]); return buildSandUsageSummary({ sandStatus, ...(currentPeriodUsage === undefined ? {} : { currentPeriodUsage }), teams, nowMs: (deps.now ?? Date.now)(), trialClaimGranted: trial.status === SAND_TRIAL_CLAIM_GRANTED }); }
+// Settings → Usage & Billing and the account menu's usage card, from
+// `GET /desktop/api/user/quota`. Until 24 September 2026 this was four
+// Dashboard RPCs (see above) behind the `sand_usage_page` gate, which was
+// off, so the page never showed. A failure is thrown, as before: the
+// renderer's `loadUsageState` turns it into its "failed" state with the
+// server's sentence.
+export async function fetchSandUsageSummary(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<unknown> { return usageSummaryFromClaidorQuota(await readClaidorQuota(getAccessToken, deps)); }
 export async function cancelSandTrial(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<{ ok: boolean; message: string | null }> { try { await profileClient(getAccessToken, deps).cancelSandTrial({}, { timeoutMs: USAGE_REQUEST_TIMEOUT_MS }); return { ok: true, message: null }; } catch (error) { return { ok: false, message: nonEmpty(deps.connectRawMessage?.(error)) ?? null }; } }
 export async function invokeSandDashboardAction(getAccessToken: AccessTokenReader, request: { readonly action: string; readonly args: Readonly<Record<string, string>> }, deps: CursorProfileDeps): Promise<{ ok: boolean; message: string | null }> { const response = await profileClient(getAccessToken, deps).clientAction(request, { timeoutMs: USAGE_REQUEST_TIMEOUT_MS }); return { ok: response.success, message: nonEmpty(response.success ? response.infoMessage : response.errorMessage) ?? null }; }

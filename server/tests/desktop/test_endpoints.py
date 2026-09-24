@@ -13,6 +13,7 @@ import httpx
 import pytest
 import respx
 from pytest_mock import MockerFixture
+from structlog.testing import capture_logs
 
 from polar.config import settings
 from polar.desktop import proxy_common as proxy_common_module
@@ -145,6 +146,63 @@ class TestExchange:
             "/desktop/api/auth/exchange", json={"authCode": "claidor_dc_nonsense"}
         )
         assert bad.json()["code"] == 40101
+
+
+@pytest.mark.asyncio
+class TestFeedback:
+    """`POST /desktop/api/feedback`: the app's Send Feedback sheet, which
+    posted to Cursor's `/sand/feedback` until 24 September 2026."""
+
+    async def test_feedback_is_logged_against_the_person(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        headers = {"Authorization": f"Bearer {access}"}
+
+        with capture_logs() as logs:
+            response = await client.post(
+                "/desktop/api/feedback",
+                headers=headers,
+                json={
+                    "category": "app",
+                    "message": "  The picker is empty.  ",
+                    "appVersion": "0.18.0",
+                    "platform": "darwin-arm64",
+                    # what the app also sends and the server ignores
+                    "submissionId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                    "osVersion": "15.6",
+                    "sentryEventIds": [],
+                },
+            )
+        assert response.status_code == 200
+        assert response.json() == {"code": 0, "data": {"received": True}}
+
+        received = [one for one in logs if one["event"] == "desktop.feedback.received"]
+        assert len(received) == 1
+        assert received[0]["user_id"] == str(user.id)
+        assert received[0]["message"] == "The picker is empty."
+        assert received[0]["category"] == "app"
+        assert received[0]["app_version"] == "0.18.0"
+        assert received[0]["platform"] == "darwin-arm64"
+
+    async def test_feedback_needs_a_message_and_a_session(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        anonymous = await client.post(
+            "/desktop/api/feedback", json={"message": "nobody"}
+        )
+        assert anonymous.status_code == 401
+
+        access, _ = await _signed_in(client, session, user)
+        headers = {"Authorization": f"Bearer {access}"}
+        blank = await client.post(
+            "/desktop/api/feedback", headers=headers, json={"message": "   "}
+        )
+        assert blank.status_code == 400
+        assert blank.json()["code"] == 40001
+
+        missing = await client.post("/desktop/api/feedback", headers=headers, json={})
+        assert missing.status_code == 422
 
 
 @pytest.mark.asyncio

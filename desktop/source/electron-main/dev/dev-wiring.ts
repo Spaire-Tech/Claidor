@@ -56,6 +56,22 @@ export interface DevWiringDependencies {
   onControlServerBindError?(port: number, error: Error): void;
 }
 
+/** What a packaged build answers on the two attach-prod-box channels: nothing is attached and nothing can be. */
+export const PACKAGED_ATTACH_PROD_BOX_STATUS = Object.freeze({ enabled: false, available: false });
+export const PACKAGED_ATTACH_PROD_BOX_SET_RESULT = Object.freeze({ ok: false });
+
+// The preload exposes `desktop.attachProdBox.getStatus()` and `.setEnabled()`
+// in every build (`electron-preload/preload.ts`), but until 24 September
+// 2026 the handlers behind `sand:attach-prod-box-status` and
+// `sand:attach-prod-box-set-enabled` were only registered in a development
+// build, so in the packaged app an `invoke` rejected with Electron's "No
+// handler registered" and whatever awaited it failed. A packaged build now
+// answers both: nothing is attached, nothing can be, and nothing restarts.
+export function registerPackagedAttachProdBoxHandlers(ipcMain: IpcMainPort): void {
+  ipcMain.handle("sand:attach-prod-box-status", () => PACKAGED_ATTACH_PROD_BOX_STATUS);
+  ipcMain.handle("sand:attach-prod-box-set-enabled", () => PACKAGED_ATTACH_PROD_BOX_SET_RESULT);
+}
+
 export function registerDevWiring(deps: DevWiringDependencies): void {
   const env = deps.env ?? process.env;
   const { ipcMain, skipOnboarding, exitForDevRestart } = deps;
@@ -76,6 +92,8 @@ export function registerDevWiring(deps: DevWiringDependencies): void {
       if (request.isRestartMainApp !== false && exitCode != null) exitForDevRestart(exitCode);
       return status;
     });
+  } else {
+    registerPackagedAttachProdBoxHandlers(ipcMain);
   }
   const restartExitCode = parseRestartExitCode(env.SAND_RESTART_EXIT_CODE);
   if (restartExitCode != null) ipcMain.handle("sand:dev-restart", () => { exitForDevRestart(restartExitCode); });

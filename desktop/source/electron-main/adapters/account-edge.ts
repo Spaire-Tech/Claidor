@@ -14,6 +14,7 @@ import type { ElectronProductionAdapterBindings } from "../production-adapters.j
 import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
 import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
 import { SAND_PRODUCT_DISPLAY_NAME } from "../../shared/product-name.js";
+import { simeonGateDefault } from "../../shared/node/experiments/simeon-gate-defaults.js";
 import type { SandAccessBackend } from "../account/access.js";
 
 function accountRuntimeOf(context: Pick<ProductionServiceContext, "requireCoordinator">): AccountRuntime | null | undefined {
@@ -49,8 +50,18 @@ export function createElectronProductionCursorAccountBinding(): ElectronProducti
         resetMcpManager: () => context.requireMcp().resetMcpManager(),
         refreshHostMcp: () => context.requireMcp().refreshHostMcp(),
         resolveAvatar: (authId, preferredUrl) => resolveCursorAvatarDataUrl(authId, { ...(preferredUrl == null ? {} : { preferredUrl }) }),
+        // Usage from Simeon Labs' server's quota (`cursor-profile.ts`). Until
+        // 24 September 2026 the gate below read the bundled default, false,
+        // so `getUsageSummary` answered null before touching anything, and
+        // `getWeeklyUsage` called two Dashboard RPCs the server does not
+        // serve. The gate is now Simeon's default (on) unless the
+        // environment or a local override says otherwise.
         fetchWeeklyUsage: (getAccessToken) => fetchSandWeeklyUsage(getAccessToken, { getMachineId }),
-        isUsagePageEnabled: () => context.requireExperiments().checkFeatureGate("sand_usage_page"),
+        isUsagePageEnabled: () => {
+          const local = context.requireExperiments().getFeatureFlagOverridesRecord()["sand_usage_page"];
+          if (typeof local === "boolean") return local;
+          return simeonGateDefault("sand_usage_page", context.env) ?? context.requireExperiments().checkFeatureGate("sand_usage_page");
+        },
         fetchUsageSummary: (getAccessToken) => fetchSandUsageSummary(getAccessToken, { getMachineId }),
         fetchPrReviewPreferences: (getAccessToken) => fetchSandPrReviewPreferences(getAccessToken),
         fetchPrivacyModeEnabled: (getAccessToken) => fetchUserPrivacyModeEnabled(getAccessToken, { getMachineId }),

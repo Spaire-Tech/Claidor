@@ -2,6 +2,7 @@ import { createSandAccessReader, readSandAccessOnce, type SandAccess } from "./a
 import { SandCursorAuthService, type AccessTokenReader, type SandAuthStatus, type SandCursorAuthServiceOptions } from "./cursor-auth.js";
 import { fetchCursorProfile, fetchLocalToolPermissionCeiling, fetchUserPrivacyMode, updateCursorProfileName } from "./cursor-profile.js";
 import { SandTranscriptionManager, type SandTranscriptionOptions } from "./claidor-transcribe.js";
+import { revokeClaidorSession } from "./claidor-sign-out.js";
 import { syncSandSentryAccount } from "../telemetry/sentry.js";
 import type { PrivacyMode } from "../../shared/observability/sentry-privacy-mode.js";
 
@@ -31,6 +32,7 @@ export function createCursorAuthWiring(deps: {
   readonly createAuthService?: (options: SandCursorAuthServiceOptions) => AuthServicePort;
   readonly fetchProfile?: (getAccessToken: AccessTokenReader) => Promise<{ readonly email?: string; readonly displayName?: string; readonly profilePictureUrl?: string; readonly isAnysphereUser: boolean } | null>;
   readonly updateProfileName?: (getAccessToken: AccessTokenReader, name: string) => Promise<void>;
+  readonly revokeSession?: SandCursorAuthServiceOptions["revokeSession"];
   readonly reportSessionSettlement?: SandCursorAuthServiceOptions["reportSessionSettlement"];
   readonly getAccountRuntime: () => AccountRuntime | null | undefined;
   readonly emitAuthStatus: (status: SandAuthStatus & { readonly freshness: number }) => void;
@@ -88,6 +90,9 @@ export function createCursorAuthWiring(deps: {
         };
       }),
       updateProfileName: deps.updateProfileName ?? ((getAccessToken, name) => updateCursorProfileName(getAccessToken, name, {})),
+      // Sign-out reaches Simeon Labs' server since 24 September 2026
+      // (`claidor-sign-out.ts`); before, only the keychain was emptied.
+      revokeSession: deps.revokeSession ?? ((accessToken) => revokeClaidorSession(accessToken, { reportFailure: (error) => deps.reportFailure?.("cursor-auth", "session-revoke", error) })),
       ...(deps.reportSessionSettlement == null ? {} : { reportSessionSettlement: deps.reportSessionSettlement }),
     });
     unsubscribeAuthStatus = service.subscribe((status) => {

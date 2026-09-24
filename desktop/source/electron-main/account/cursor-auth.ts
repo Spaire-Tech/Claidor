@@ -179,6 +179,8 @@ export interface SandCursorAuthServiceOptions {
   readonly reportFailure?: (operation: string, error: unknown) => void;
   readonly now?: () => number;
   readonly getBackendUrl?: () => string;
+  /** Tells the server the session is over, before the keychain is emptied. Best effort; its outcome never changes the local sign-out. */
+  readonly revokeSession?: (accessToken: string) => Promise<unknown>;
 }
 
 const defaultSecrets: CursorSecretStore = {
@@ -304,7 +306,14 @@ export class SandCursorAuthService {
   private async revokeCredentials(options: { emitStatus: boolean; cause: SessionSignoutCause; loggedOutStatus?: SandAuthStatus }): Promise<SandAuthStatus> {
     const logoutOperationEpoch = this.advanceAuthOperationEpoch(); this.abortActiveLogin(); const startedRetained = this.credentialState === "retained-after-failed-logout"; const status = options.loggedOutStatus ?? LOGGED_OUT_STATUS;
     if (!startedRetained) { this.credentialState = "revoked"; this.reportedLoggedOutStatus = status; } this.profileCache.clear();
-    const { failures, settlement } = await this.mutateCredentials(async () => { const token = await this.readDepartingSessionToken(); const failures = await this.removeStoredCredentials(); if (token == null || this.signoutSettled) return { failures }; this.signoutSettled = true; return { failures, settlement: { kind: "signed_out" as const, cause: options.cause, durable: failures.length === 0, accessToken: token } }; });
+    // The server session is revoked with the departing token before the
+    // keychain entries go (`revokeSession`, wired to `POST /desktop/api/auth/logout`
+    // on Simeon Labs' server by `cursor-auth-wiring.ts`). Until 24 September
+    // 2026 nothing here told the server anything: sign-out was the two
+    // `deleteSecret` calls and the session stayed live until its refresh
+    // token expired. The call is awaited so the token is still in hand,
+    // and its failure is swallowed so it can never keep a person signed in.
+    const { failures, settlement } = await this.mutateCredentials(async () => { const token = await this.readDepartingSessionToken(); if (token != null && this.options.revokeSession != null) { try { await this.options.revokeSession(token); } catch (error) { this.reportFailure("session-revoke", error); } } const failures = await this.removeStoredCredentials(); if (token == null || this.signoutSettled) return { failures }; this.signoutSettled = true; return { failures, settlement: { kind: "signed_out" as const, cause: options.cause, durable: failures.length === 0, accessToken: token } }; });
     const current = this.isCurrentAuthOperation(logoutOperationEpoch); const retained = current && (options.emitStatus ? startedRetained || failures.length > 0 : startedRetained && failures.length > 0); if (current) this.credentialState = retained ? "retained-after-failed-logout" : "revoked";
     if (settlement != null) { this.options.reportSessionSettlement?.(settlement); reportSigninSignout(settlement.durable ? signinSignoutCause(settlement.cause) : "retained_after_failed_logout"); }
     const reported = retained ? RETAINED_AFTER_FAILED_LOGOUT_STATUS : status; if (current && options.emitStatus) this.emitStatus(reported);
