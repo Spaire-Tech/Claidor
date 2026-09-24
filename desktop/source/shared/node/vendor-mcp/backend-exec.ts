@@ -84,6 +84,8 @@ export interface VendorMcpBackendExecOptions {
   readonly canStartAuth: boolean;
   /** Called after this side wrote a credential (a finished sign-in, a refresh, a logout). */
   readonly onCredentialChanged?: (pluginId: string) => void;
+  /** On the Mac: merges the box's copy of the store in before a read, so a connector the agent installed in the box has a row here (`box-pull.ts`). */
+  readonly syncStore?: () => Promise<void>;
   readonly log?: (message: string) => void;
 }
 
@@ -104,6 +106,9 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
   const log = options.log ?? (() => undefined);
   const fallback = options.fallback ?? {};
 
+  const synced = async (): Promise<void> => {
+    try { await options.syncStore?.(); } catch (error) { log(`vendor-mcp store sync skipped: ${errorLabel(error)}`); }
+  };
   const installFor = (serverIdentifier: string): VendorMcpInstall | undefined => {
     const connector = vendorMcpConnectorById(serverIdentifier);
     if (connector == null || connector.comingSoon === true) return undefined;
@@ -163,6 +168,7 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
 
   return {
     async listTools(serverIdentifiers: readonly string[]): Promise<readonly unknown[]> {
+      await synced();
       const vendor: VendorMcpInstall[] = [];
       const others: string[] = [];
       for (const identifier of serverIdentifiers) {
@@ -178,6 +184,7 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
     },
 
     async executeTool(args: { serverIdentifier: string; toolName: string; args: unknown; toolCallId: string; agentId?: string }): Promise<McpResult | unknown> {
+      await synced();
       const install = installFor(args.serverIdentifier);
       if (install == null) {
         if (vendorMcpConnectorById(args.serverIdentifier) != null) return errorResult(`${vendorMcpConnectorById(args.serverIdentifier)?.name ?? args.serverIdentifier} is not installed; install it with InstallPlugin first.`);
@@ -212,6 +219,7 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
         if (fallback.checkAuthStatus == null) throw new Error(`MCP server ${id} is not a vendor connector and no backend serves it.`);
         return fallback.checkAuthStatus(args);
       }
+      await synced();
       const install = installFor(vendorPluginId);
       if (install == null) return { id, isAvailable: false, requiresAuth: false, hasValidToken: false, authUrl: "", error: `${vendorMcpConnectorById(vendorPluginId)?.name ?? vendorPluginId} is not installed.` };
       const credential = args.forceReauth === true ? undefined : await usableCredential(install);

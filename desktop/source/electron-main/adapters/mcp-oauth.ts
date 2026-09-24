@@ -7,7 +7,7 @@ import { createProductionMcpOAuthLoopbackFactory } from "../mcp/mcp-oauth-loopba
 import type { ElectronProductionAdapterBindings } from "../production-adapters.js";
 import type { ProductionDisposable, ProductionMcpService, ProductionServiceContext } from "../main-production-services.js";
 import { getSandRootDir } from "../../host/host-paths.js";
-import { loadVendorMcpInstalls } from "../../shared/node/vendor-mcp/installs.js";
+import { adoptVendorMcpStore, loadVendorMcpStore, serializeVendorMcpStore } from "../../shared/node/vendor-mcp/installs.js";
 import { adoptAccountMcpStore, loadAccountMcpStore } from "../../shared/node/account-mcp/store.js";
 import { delay } from "../../shared/node/async.js";
 import { cleanupLegacyMcpAuthCredentials } from "../../shared/node/mcp/mcp-auth-cleanup.js";
@@ -183,6 +183,11 @@ export function createProductionMcpOAuthPorts(): ProductionMcpOAuthPorts {
           if (typeof refreshMcp !== "function") throw new Error("Coordinator MCP refresh port is unavailable.");
           return await refreshMcp({ routedAction: "account-mcp-store" });
         },
+        readBoxVendorMcpStore: async () => {
+          const refreshMcp = context.coordinatorLegs.legs.refreshMcp;
+          if (typeof refreshMcp !== "function") throw new Error("Coordinator MCP refresh port is unavailable.");
+          return await refreshMcp({ routedAction: "vendor-mcp-store" });
+        },
       }),
       settingsStore: context.settings.settingsStore,
       pushBoxSecrets: () => context.secretsStores.pushBoxSecrets.push("account_scope"),
@@ -200,9 +205,10 @@ export function createProductionMcpOAuthPorts(): ProductionMcpOAuthPorts {
     resolveDesktopDeps: (context) => ({
       shell: { openExternal: async (url) => await context.native.shell.openExternal(url) },
       parseAllowedExternalUrl,
-      readVendorMcpStore: () => loadVendorMcpInstalls(getSandRootDir()),
+      readVendorMcpStore: () => serializeVendorMcpStore(loadVendorMcpStore(getSandRootDir())),
       readAccountMcpStore: () => loadAccountMcpStore(getSandRootDir()),
       adoptAccountMcpStore: (store) => { adoptAccountMcpStore(getSandRootDir(), store); },
+      adoptVendorMcpStore: (store) => { adoptVendorMcpStore(getSandRootDir(), store, "local"); },
       peekAccessToken: async () => {
         const auth = await context.requireAccount().getAuthService();
         return await auth.peekAccessToken?.() ?? null;

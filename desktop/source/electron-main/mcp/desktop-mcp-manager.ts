@@ -12,6 +12,7 @@ import {
 import { createAccountMcpBackendExec } from "../../shared/node/account-mcp/backend-exec.js";
 import { parseAccountMcpServerConfigValue } from "../../shared/node/account-mcp/store.js";
 import { createBoxAccountMcpStorePull } from "../../shared/node/account-mcp/box-pull.js";
+import { createBoxVendorMcpStorePull } from "../../shared/node/vendor-mcp/box-pull.js";
 import { SandMcpConfigError } from "../../shared/node/mcp/mcp-config-error.js";
 import {
   createDashboardSandBackendMcpExec,
@@ -73,6 +74,8 @@ export interface DesktopMcpManagerOptions {
   readonly onAccountStoreChanged?: () => void;
   /** The box's copy of the account MCP store (`refreshMcp` with `routedAction: "account-mcp-store"`), merged into this Mac's before every read. */
   readonly readBoxAccountMcpStore?: () => Promise<unknown>;
+  /** The box's copy of the vendor connector store (`routedAction: "vendor-mcp-store"`), merged the same way; the agent's InstallPlugin lands there first. */
+  readonly readBoxVendorMcpStore?: () => Promise<unknown>;
 }
 
 function generatedBackendClient(credentials: Pick<AccountMcpDependencies, "getAccessToken" | "getMachineId">): DashboardMcpExecClient {
@@ -90,6 +93,14 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
   const pullBoxStore = createBoxAccountMcpStorePull({
     rootDir: vendorRoot,
     ...(options.readBoxAccountMcpStore == null ? {} : { readBoxAccountMcpStore: options.readBoxAccountMcpStore }),
+    log,
+  });
+  // The vendor connector store travels both ways too (24 September, evening):
+  // the agent's InstallPlugin runs in the box, so the connect card, answered
+  // here, pulls the box's copy before it looks for the row.
+  const pullBoxVendorStore = createBoxVendorMcpStorePull({
+    rootDir: vendorRoot,
+    ...(options.readBoxVendorMcpStore == null ? {} : { readBoxVendorMcpStore: options.readBoxVendorMcpStore }),
     log,
   });
   // The account's MCP configuration (custom servers, plugins) is the store
@@ -124,18 +135,22 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
     rootDir: vendorRoot,
     fallback: accountBackendMcpExec,
     canStartAuth: true,
+    syncStore: pullBoxVendorStore,
     ...(options.onVendorCredentialChanged == null ? {} : { onCredentialChanged: options.onVendorCredentialChanged }),
     log,
   });
   const manager = new SandMcpManager({
     settingsStore: options.settingsStore,
     onAccountScopeApplied: options.onAccountScopeApplied,
-    accountServersProvider: () => withVendorAccountServers(fetchAccountMcpServers(accountMcpDeps), vendorRoot),
+    accountServersProvider: async () => { await pullBoxVendorStore(); return await withVendorAccountServers(fetchAccountMcpServers(accountMcpDeps), vendorRoot); },
     accountMcpWriter: createAccountMcpWriter(accountMcpDeps),
-    effectivePluginsProvider: async () => [
-      ...await fetchVendorEffectivePlugins(new Set(loadVendorMcpInstalls(vendorRoot()).map((item) => item.id))),
-      ...await fetchEffectiveUserPlugins(accountMcpDeps),
-    ],
+    effectivePluginsProvider: async () => {
+      await pullBoxVendorStore();
+      return [
+        ...await fetchVendorEffectivePlugins(new Set(loadVendorMcpInstalls(vendorRoot()).map((item) => item.id))),
+        ...await fetchEffectiveUserPlugins(accountMcpDeps),
+      ];
+    },
     getMachineId: accountMcpDeps.getMachineId,
     backendMcpExec,
     parseServerConfig: (value: unknown) => {

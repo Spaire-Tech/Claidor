@@ -669,13 +669,21 @@ export function createHostGatewayApi(
       // server the agent added here shows in Settings and its connect card
       // finds its row on the Mac.
       if (routedAction === "account-mcp-store") return { accountMcpStore: method(deps.extensions.api("mcp"), "readAccountMcpStore")() };
-      // The Mac's vendor credential store comes with every refresh; the box
-      // only ever reads it (`vendor-mcp/backend-exec.ts`).
+      // The Mac pulls the box's vendor connector store the same way, so a
+      // connector the agent installed here has a row on the Mac for its
+      // connect card (`vendor-mcp/box-pull.ts`).
+      if (routedAction === "vendor-mcp-store") return { vendorMcpStore: method(deps.extensions.api("mcp"), "readVendorMcpStore")() };
+      // The Mac's vendor connector store comes with every refresh and is
+      // merged, the Mac's row winning a shared install (it holds the
+      // credential); the box never opens a sign-in (`vendor-mcp/backend-exec.ts`).
       if (vendorMcpStore !== undefined) method(deps.extensions.api("mcp"), "replaceVendorMcpStore")(vendorMcpStore);
       // The Mac's account MCP store too, merged newer-entry-wins; the merged
-      // copy goes back in the answer so the Mac learns what the agent wrote.
+      // copies go back in the answer so the Mac learns what the agent wrote.
       if (accountMcpStore !== undefined) method(deps.extensions.api("mcp"), "replaceAccountMcpStore")(accountMcpStore);
-      const answer = () => ({ accountMcpStore: method(deps.extensions.api("mcp"), "readAccountMcpStore")() });
+      const answer = () => ({
+        accountMcpStore: method(deps.extensions.api("mcp"), "readAccountMcpStore")(),
+        vendorMcpStore: method(deps.extensions.api("mcp"), "readVendorMcpStore")(),
+      });
       if (completion != null) {
         await deps.handleDesktopMcpAuthCompletion(completion);
         return answer();

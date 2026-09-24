@@ -295,13 +295,15 @@ test("both managers, the loopback, the gateway and the resync are wired to the v
   // Since the account store (custom servers) is served locally too, the vendor backend falls through to it, and it to the old one.
   assert.match(host, /createVendorMcpBackendExec\(\{ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: false/);
   assert.match(host, /accountServersProvider: \(\) => withVendorAccountServers\(fetchAccountMcpServers\(accountMcpDeps\), getSandRootDir\)/);
-  assert.match(host, /replaceVendorMcpStore: \(installs: unknown\) => replaceVendorMcpInstalls\(getSandRootDir\(\), installs\)/);
+  // Since 24 September (evening) the box merges the Mac's copy instead of writing it over its own, and answers with its own.
+  assert.match(host, /replaceVendorMcpStore: \(installs: unknown\) => adoptVendorMcpStore\(getSandRootDir\(\), installs, "incoming"\)\.changed/);
+  assert.match(host, /readVendorMcpStore: \(\) => serializeVendorMcpStore\(loadVendorMcpStore\(getSandRootDir\(\)\)\)/);
   const gateway = await read("source/host/host-gateway-api.ts");
   assert.match(gateway, /refreshMcp: async \(\{ completion, routedAction, routedArgs, vendorMcpStore, accountMcpStore \}: any\)/);
   assert.match(gateway, /const \{ vendorMcpStore, accountMcpStore, \.\.\.settingsArgs \} = args \?\? \{\};/);
   const mac = await read("source/electron-main/mcp/desktop-mcp-manager.ts");
   assert.match(mac, /canStartAuth: true/);
-  assert.match(mac, /withVendorAccountServers\(fetchAccountMcpServers\(accountMcpDeps\), vendorRoot\)/);
+  assert.match(mac, /await pullBoxVendorStore\(\); return await withVendorAccountServers\(fetchAccountMcpServers\(accountMcpDeps\), vendorRoot\)/);
   assert.doesNotMatch(mac, /connectThroughVendorMcp/, "install no longer opens the browser on its own");
   const loopback = await read("source/electron-main/mcp/mcp-oauth-loopback-provider.ts");
   assert.match(loopback, /completeOAuth: \(args\) => vendorExec\.completeOAuth\(args\)/);
@@ -311,6 +313,10 @@ test("both managers, the loopback, the gateway and the resync are wired to the v
   const resync = await read("source/electron-main/coordinator/coordinator-resync.ts");
   assert.match(resync, /step\("vendor_mcp"/);
   const adapter = await read("source/electron-main/adapters/mcp-oauth.ts");
-  assert.match(adapter, /readVendorMcpStore: \(\) => loadVendorMcpInstalls\(getSandRootDir\(\)\)/);
+  assert.match(adapter, /readVendorMcpStore: \(\) => serializeVendorMcpStore\(loadVendorMcpStore\(getSandRootDir\(\)\)\)/);
+  assert.match(adapter, /readBoxVendorMcpStore: async \(\) => \{/);
+  assert.match(mac, /syncStore: pullBoxVendorStore,/);
+  assert.match(gateway, /if \(routedAction === "vendor-mcp-store"\) return \{ vendorMcpStore: /);
+  assert.match(ipc, /deps\.adoptVendorMcpStore\?\.\(answer\.vendorMcpStore\)/);
   assert.equal((adapter.match(/onVendorCredentialChanged: \(\) => \{ void context\.mcpHost\.refreshMcp\(undefined\); \}/g) ?? []).length, 2);
 });
