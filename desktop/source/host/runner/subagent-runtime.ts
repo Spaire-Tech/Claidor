@@ -1,3 +1,4 @@
+import { clipForHostLog, HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
 import { deriveBackgroundSubagentTitle, formatSteerPrompt } from "./background-work.js";
 
 export interface SubagentLineage {
@@ -9,6 +10,12 @@ export interface SubagentLineage {
 export interface SubagentDispatchMeta {
   readonly toolCallId: string;
   readonly lineage?: SubagentLineage;
+}
+
+/** What the parent will read as the Task's result, on the host log's channel. */
+function logSubagentResult(subagentAgentId: string, result: string): string {
+  logHostLine(`${HOST_LOG_PREFIX} subagent=result id=${subagentAgentId} chars=${result.length} text=${JSON.stringify(clipForHostLog(result, 200))}`);
+  return result;
 }
 
 export function computeSubagentRequestId(toolCallId: string): string {
@@ -190,6 +197,12 @@ export function createSubagentRuntime(host: SubagentRuntimeHost) {
     const record = subagentRegistry.get(subagentAgentId);
     const label = record == null ? "" : ` [${record.subagentType}] "${record.title}"`;
     host.log?.(`[sand][subagent] ${phase} ${subagentAgentId}${label}${status == null ? "" : ` status=${status}`}`);
+    // The line above goes through the loop's logger, which the box silences
+    // (`docs/product/ai-does-not-answer-measured.md`); this one reaches
+    // /tmp/sand-host.log. Until 24 September 2026 a Task that ran and came
+    // back empty ("finished without producing any text output") left no
+    // trace of having been dispatched at all.
+    logHostLine(`${HOST_LOG_PREFIX} subagent=${phase} id=${subagentAgentId} type=${record?.subagentType ?? "?"}${status == null ? "" : ` status=${status}`} title=${JSON.stringify(clipForHostLog(record?.title ?? "", 80))}`);
   }
 
   function dispatchBackgroundSubagent(params: DispatchParams): void {
@@ -380,13 +393,13 @@ export function createSubagentRuntime(host: SubagentRuntimeHost) {
       toolCallId: meta.toolCallId,
       title: meta.title,
       status: outcome.status === "completed" ? "completed" : "error",
-      result: outcome.status === "completed"
+      result: logSubagentResult(subagentAgentId, outcome.status === "completed"
         ? outcome.text.trim().length > 0
           ? outcome.text.trim()
           : "(the task finished without producing any text output)"
         : outcome.status === "aborted"
           ? "The background task was interrupted before it finished."
-          : outcome.error,
+          : outcome.error),
       ...(meta.quietOrigin == null ? {} : { quietOrigin: meta.quietOrigin }),
     });
   }

@@ -79,6 +79,7 @@ Three lines now travel the same stdout channel as the model-call line
 | `[claidor] tool=<case> id=<callId> result=success …` / `result=error detail=<sentence>` | `host/runner/agent-adapters.ts` on every `toolCallCompleted`, via `host/runner/tool-call-log.ts` | what the tool answered, i.e. what the model reads next |
 | `[claidor] send-message written id=<id> type=<text\|widget\|…>` | `host/ports/transport.ts` | the transcript took the message |
 | `[claidor] send-message not written type=… error=<name: message>` | `host/ports/transport.ts` | the hop into the transcript threw; the sentence is what the model is told |
+| `[claidor] subagent=dispatched\|settled\|result id=<agentId> …` | `host/runner/subagent-runtime.ts` (24 September 2026) | a Task ran: its type and title at dispatch, `status=done\|error\|aborted` at settle, and `result … chars=<n> text="…"` is what the parent reads back, `(the task finished without producing any text output)` included |
 
 Reading the next log:
 
