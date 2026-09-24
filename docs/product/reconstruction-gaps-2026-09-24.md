@@ -258,3 +258,40 @@ Three renderer patch tests skip without `GROK_BOT_PINNED_RENDERER`; two
 - Avatar generate: the editor's error sentence, or the server's
   `desktop.proxy.upstream_refused` line.
 - Mic permission: the `plutil` line above.
+
+## Fixed the same day, directly from the reconstruction
+
+The founder, on reading the list above: "i need you to fix all of this.
+directly from the reconstruction." Each fix keeps the function the renderer
+or the agent already calls, and the shape it already reads, and points it at
+a route Simeon Labs' server serves or at a store on the Mac; no Cursor RPC is
+called on any path touched. Every item has a node test; typecheck is clean
+and the suite is at 290 passing. None of it has run on a Mac.
+
+| Item above | What was done | Where |
+|---|---|---|
+| 1 Model picker | `getAvailableModels` reads `/desktop/api/models/available` and returns a generated `AvailableModelsResponse`; the Cursor call is no longer bound | `electron-main/models/claidor-model-catalog.ts`, `main-production-services.ts`; `tests/claidor-model-picker.test.mjs` |
+| 2 Usage & Billing | weekly usage and the summary come from `/desktop/api/user/quota`; the gate `sand_usage_page` is on for our build, applied where the gate is read (the generated table is untouched) | `account/cursor-profile.ts`, `shared/node/experiments/simeon-gate-defaults.ts`, `adapters/experiments.ts`, `adapters/account-edge.ts`; `tests/claidor-account.test.mjs` |
+| 3 Account avatar and name | the profile reads `/desktop/api/user/profile`; the picture is the Google `avatarUrl`; rename stays local | `account/cursor-profile.ts` |
+| 4 PDF | an in-process extractor on pdf.js, bundled into the host bundle (the box mounts one file and has no node_modules); 50 MB and 500 pages caps; both Read tools bound; the activation script detects the binding instead of recording fail-closed | `host/runner/pdf-text-extractor.ts`, `pdf-dom-polyfill.ts`, `scripts/build-caisra.mjs`, `caisra-ignition-activation.mjs`, `host-production-activation.mjs`; `tests/pdf-read.test.mjs` |
+| 5 Auto-review | the classifier asks the cheap model through Simeon Labs' proxy (the summarization session, so Luna at low effort) for a JSON verdict with a reason and returns the generated result the callers read; one `[claidor] auto-review action=… verdict=…` line per call | `host/extensions/auto-review/simeon-smart-mode-classifier-exec.ts`, `extension.ts`; `tests/auto-review-classifier.test.mjs` |
+| 6 Custom MCP servers and plugins | the account MCP configuration is a store on the Mac (`account-mcp-config.json`), two-way with the box (last writer wins per entry, tombstones), URL servers listed and called over streamable HTTP with the vendor OAuth flow, stdio servers left to the box's existing executor and not measured | `shared/node/account-mcp/*`, `cursor-backend/account-mcp.ts`, the MCP wiring on both sides; `tests/account-mcp-local.test.mjs`; `docs/product/account-mcp-local-measured.md` |
+| 7 Feedback, Help, cloud-agent link | Send Feedback posts to the new `POST /desktop/api/feedback` (logged server-side); Help Center opens simeonlabs.com; the cloud-agent link is left, cloud agents being unserved | `feedback/feedback-report.ts`, `server/polar/desktop/endpoints.py`, `application-menu.ts`; `tests/claidor-feedback-help.test.mjs`, `server/tests/desktop/test_endpoints.py` |
+| 9 Sign-out | POSTs `/desktop/api/auth/logout` with the token still in hand, then deletes the keychain entries; a failure never blocks the local sign-out | `account/claidor-sign-out.ts`, `cursor-auth.ts` |
+| 10 Migration watcher | not built on a local Docker box | `box/box-recovery.ts`; `tests/box-migration-watch-runtime.test.mjs` |
+| 11 attachProdBox | packaged builds register handlers that answer disabled | `dev/dev-wiring.ts`; `tests/attach-prod-box-packaged.test.mjs` |
+| 13 Prompt gaps | the prompt glue and assembly are built per identity, so a computerUse or browserUse child gets its own computer or browser sections and no SendMessage or MCP sections; the per-turn MCP snapshot (connected connectors, custom instructions, discovery failed) is refreshed at every turn start | `host/host-runner-composition.ts`; `tests/agent-self-service-wired.test.mjs`, `tests/prompt-stores-wired.test.mjs` |
+| 14 Host diagnostics | a clipped `[claidor] diagnostic kind=…` line reaches `/tmp/sand-host.log` | `host/sand-host.ts` |
+| (bindings) connector-card cancel | the owner input's real cancel wins over the shell tail's no-op | `host/runner/production-turn-run-shell-adapter.ts` |
+
+Not done, because the service behind each does not exist and would be a
+build of its own: cloud boxes and cloud agents (8), Slack and GitHub
+listeners and sharing (8), Cursor's feature-gate server (12; gates keep
+their bundled defaults, `sand_usage_page` is the one we set), and the
+notification config forced off (15; local macOS notifications work).
+
+What to read on the Mac after the rebuild, in addition to the list above:
+the model picker's list; Settings → Usage with numbers; the account menu
+with the Google picture; a PDF read by the agent; a risky shell command with
+auto-review enabled in Settings, and its `[claidor] auto-review` line; a
+custom MCP server added by the agent showing in Settings.

@@ -600,6 +600,35 @@ avatar and name (`GetMe`), reading a PDF (no worker bound), auto-review
 and everything on the cloud box, cloud agents, listeners and sharing. Not
 yet run on a Mac.
 
+**Fixed later the same day, "directly from the reconstruction"** (the
+founder: "i need you to fix all of this"): each fix keeps the function
+the renderer or the agent already calls and points it at a route Simeon
+Labs' server serves, or at a local store, the way dictation was done.
+The model picker reads `/desktop/api/models/available` into the
+generated `AvailableModelsResponse` (`electron-main/models/claidor-model-catalog.ts`);
+the account profile and Google picture come from `/desktop/api/user/profile`;
+Usage & Billing is fed from `/desktop/api/user/quota` and its gate
+`sand_usage_page` is on for our build (`shared/node/experiments/simeon-gate-defaults.ts`,
+applied where the gate is read, the generated table untouched);
+sign-out POSTs `/desktop/api/auth/logout` before deleting the keychain
+entries; Send Feedback posts to the new `POST /desktop/api/feedback`;
+Help Center opens simeonlabs.com; the migration watcher is not started
+on a local Docker box; `attachProdBox` answers "disabled" in a packaged
+build; reading a PDF works, with pdf.js bundled into the host so it
+reaches the box (`host/runner/pdf-text-extractor.ts`); auto-review's
+risky-or-safe classifier runs on Luna through Simeon Labs' proxy
+(`host/extensions/auto-review/simeon-smart-mode-classifier-exec.ts`,
+one `[claidor] auto-review` line per verdict); a subagent's prompt is
+built for its own identity; the per-turn MCP snapshot is real; the
+connector card's cancel works; host diagnostics reach the log; and
+custom MCP servers and account plugins live in a store on the Mac
+(paragraph above). Still not done, because the services behind them do
+not exist: cloud boxes, cloud agents, Slack and GitHub listeners,
+sharing, and Cursor's feature-gate server (gates keep their bundled
+defaults; `sand_usage_page` is the one we set). None of this has run on
+a Mac. `docs/product/reconstruction-gaps-2026-09-24.md` §"Fixed the same
+day" has the per-item file list.
+
 ## The product's hostnames are simeonlabs.com (24 September 2026)
 
 "i want to replace all claidor.com instances by simeonlabs.com … now i
