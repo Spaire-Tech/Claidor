@@ -636,7 +636,14 @@ export function createHostGatewayApi(
     readAttachmentChunk: (args: any) => method(attachments, "readChunk")(args),
     getHostSettings: () => method(settings, "getHostSettings")(),
     setHostSettings: (args: any) => {
-      const result = method(settings, "setHostSettings")(args);
+      const { vendorMcpStore, ...settingsArgs } = args ?? {};
+      if (vendorMcpStore !== undefined) {
+        method(deps.extensions.api("mcp"), "replaceVendorMcpStore")(vendorMcpStore);
+        void Promise.resolve()
+          .then(() => method(deps.extensions.api("mcp").management, "restart")())
+          .catch(() => undefined);
+      }
+      const result = method(settings, "setHostSettings")(settingsArgs);
       if (args.localToolPermission !== undefined) {
         method(localToolPermission, "notePermissionChanged")();
       }
@@ -648,9 +655,12 @@ export function createHostGatewayApi(
       return result;
     },
 
-    refreshMcp: async ({ completion, routedAction, routedArgs }: any) => {
+    refreshMcp: async ({ completion, routedAction, routedArgs, vendorMcpStore }: any) => {
       if (routedAction === "list-tools") return await listRoutedMcpTools();
       if (routedAction === "execute-tool") return await executeRoutedMcpTool(routedArgs);
+      // The Mac's vendor credential store comes with every refresh; the box
+      // only ever reads it (`vendor-mcp/backend-exec.ts`).
+      if (vendorMcpStore !== undefined) method(deps.extensions.api("mcp"), "replaceVendorMcpStore")(vendorMcpStore);
       if (completion != null) {
         await deps.handleDesktopMcpAuthCompletion(completion);
         return;

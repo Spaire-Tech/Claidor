@@ -20,7 +20,9 @@ import { getSandRootDir } from "../../host/host-paths.js";
 import { isVendorMcpPluginId } from "../../shared/node/vendor-mcp/catalog.js";
 import { loadVendorMcpInstalls, removeVendorMcpInstall, upsertVendorMcpInstall } from "../../shared/node/vendor-mcp/installs.js";
 import { fetchVendorEffectivePlugins, fetchVendorMarketplacePlugins } from "../../shared/node/vendor-mcp/marketplace.js";
-import { connectThroughVendorMcp } from "../../shared/node/vendor-mcp/oauth.js";
+import { createVendorMcpBackendExec } from "../../shared/node/vendor-mcp/backend-exec.js";
+import { withVendorAccountServers } from "../../shared/node/vendor-mcp/display.js";
+import { vendorMcpServerId } from "../../shared/node/vendor-mcp/catalog.js";
 
 export interface DesktopMcpManagerFacade {
   listServers(): Promise<unknown>;
@@ -47,6 +49,8 @@ export interface DesktopMcpManagerFacade {
   }): Promise<unknown>;
   toggleMcpToolDisabled(request: unknown): Promise<unknown>;
   setAuthCompletionObserver(observer: (completion: unknown) => void): void;
+  /** The numeric server id of a vendor connector, or undefined for anything else. */
+  vendorServerIdForPlugin?(pluginId: string): string | undefined;
   dispose(): Promise<void> | void;
 }
 
@@ -59,6 +63,8 @@ export interface DesktopMcpManagerOptions {
   readonly onConnectorAuth: (report: unknown) => void;
   readonly onMcpDiagnostic?: (failure: { readonly leg: string; readonly errorClass: string }) => void;
   readonly openExternal?: (url: string) => Promise<unknown>;
+  /** After this Mac wrote a vendor credential (sign-in finished, token refreshed, account removed). */
+  readonly onVendorCredentialChanged?: (pluginId: string) => void;
 }
 
 function generatedAccountClient(credentials: Pick<AccountMcpDependencies, "getAccessToken" | "getMachineId">): AccountMcpClient {
@@ -84,30 +90,39 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
     getBackendUrl: getSandInferenceBackendUrl,
     createClient: generatedAccountClient,
   };
-  const backendMcpExec = createDashboardSandBackendMcpExec({
+  const cursorBackendMcpExec = createDashboardSandBackendMcpExec({
     getAccessToken: accountMcpDeps.getAccessToken,
     getMachineId: accountMcpDeps.getMachineId,
     createClient: generatedBackendClient,
   });
   const vendorRoot = () => getSandRootDir();
+  // The Mac is where a vendor sign-in starts (browser, loopback) and where
+  // the credential lives; `vendor-mcp/backend-exec.ts` is the record.
+  const backendMcpExec = createVendorMcpBackendExec({
+    rootDir: vendorRoot,
+    fallback: cursorBackendMcpExec,
+    canStartAuth: true,
+    ...(options.onVendorCredentialChanged == null ? {} : { onCredentialChanged: options.onVendorCredentialChanged }),
+    log: (message) => console.info(`[sand:mcp] ${message}`),
+  });
   const manager = new SandMcpManager({
     settingsStore: options.settingsStore,
     onAccountScopeApplied: options.onAccountScopeApplied,
-    accountServersProvider: () => fetchAccountMcpServers(accountMcpDeps),
+    accountServersProvider: () => withVendorAccountServers(fetchAccountMcpServers(accountMcpDeps), vendorRoot),
     accountMcpWriter: createAccountMcpWriter(accountMcpDeps),
     effectivePluginsProvider: () => fetchVendorEffectivePlugins(new Set(loadVendorMcpInstalls(vendorRoot()).map((item) => item.id))),
     getMachineId: accountMcpDeps.getMachineId,
     backendMcpExec,
     onConnectorAuth: options.onConnectorAuth,
     fetchMarketplace: fetchVendorMarketplacePlugins,
+    // Install records the connector; the row then reads needsAuth and the
+    // sign-in goes through authenticateServer like any other connector
+    // (the Plugins overlay starts it right away, `mcp-desktop.ts`; the agent's
+    // InstallPlugin draws the connect card). Until 24 September this opened
+    // the browser here and nothing ever finished the sign-in.
     connectVendorMcp: async (plugin: { pluginId: string; displayName: string; vendorMcpUrl: string }) => {
       upsertVendorMcpInstall(vendorRoot(), { id: plugin.pluginId, url: plugin.vendorMcpUrl, connected: false });
-      const outcome = await connectThroughVendorMcp({
-        pluginId: plugin.pluginId,
-        mcpUrl: plugin.vendorMcpUrl,
-        ...(options.openExternal == null ? {} : { openExternal: options.openExternal }),
-      });
-      if (outcome === "started") options.onConnectorAuth({ pluginId: plugin.pluginId, status: "started" });
+      options.onConnectorAuth({ pluginId: plugin.pluginId, status: "installed" });
     },
     uninstallComposioPlugin: async (pluginId: string) => {
       if (!isVendorMcpPluginId(pluginId)) return false;
@@ -176,6 +191,7 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
     ),
     toggleMcpToolDisabled: (request) => manager.toggleMcpToolDisabled(request),
     setAuthCompletionObserver: (observer) => manager.setAuthCompletionObserver(observer),
+    vendorServerIdForPlugin: (pluginId) => vendorMcpServerId(pluginId),
     dispose: () => manager.dispose(),
   };
 }

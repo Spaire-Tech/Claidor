@@ -217,6 +217,26 @@ merged transcript work (#187–#189) is in `desktop/frontend/`, which
 changes nothing on screen. If a scroll still stutters with the GPU on,
 the Liquid Glass blurs and the marks' grain filter are next.
 
+**Connectors sign in and serve tools, built 24 September 2026.** "i
+thought i fixed the connectors, but its still not fixed." They were
+not: both MCP managers (Mac and box) ran Grok Bot's manager around
+Cursor's backend for HTTP servers, which Claidor does not serve, so a
+vendor connector could be installed and nothing else; the box path,
+which InstallPlugin takes since 22 September, drew no card because no
+server row existed, and the Mac path opened a sign-in nothing ever
+finished. Now `shared/node/vendor-mcp/backend-exec.ts` is that backend
+for the vendor connectors (sign-in start on the Mac, code exchange from
+the loopback, tools listed and called over streamable HTTP by
+`http-mcp-client.ts`, the old backend for anything else), an installed
+connector is an account row (`display.ts`, numeric id above 900,000
+because server ids must be decimal), the credential lives in the Mac's
+`vendor-mcp-installs.json` and is copied to the box on every
+`refreshMcp`, on transport connect and on change (`vendorMcpStore` on
+`refreshMcp` and `setHostSettings`); the box never opens a sign-in and
+never spends a refresh token. #185's resume now has a sign-in to resume
+from. `docs/product/connectors-signin-measured.md` is the record, with
+the three commands to read on a Mac. Not yet run on a Mac.
+
 **Teach a task is there and gated off.** The composer's plus-menu entry
 and the computer bar's button are in the pinned renderer, the recording
 extension is in `host/extensions/teach-recording/`, and both key off

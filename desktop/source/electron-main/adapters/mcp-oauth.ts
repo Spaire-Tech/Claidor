@@ -7,6 +7,7 @@ import { createProductionMcpOAuthLoopbackFactory } from "../mcp/mcp-oauth-loopba
 import type { ElectronProductionAdapterBindings } from "../production-adapters.js";
 import type { ProductionDisposable, ProductionMcpService, ProductionServiceContext } from "../main-production-services.js";
 import { getSandRootDir } from "../../host/host-paths.js";
+import { loadVendorMcpInstalls } from "../../shared/node/vendor-mcp/installs.js";
 import { delay } from "../../shared/node/async.js";
 import { cleanupLegacyMcpAuthCredentials } from "../../shared/node/mcp/mcp-auth-cleanup.js";
 import { parseAllowedExternalUrl } from "../../shared/external-url-policy.js";
@@ -109,6 +110,7 @@ export function createProductionMcpOAuthRootPortProvider(
     getMachineId: async () => context.machineId,
     log: (message) => console.info(message),
     onConnectorAuth: (report) => reportConnectorAuth(context, report),
+    onVendorCredentialChanged: () => { void context.mcpHost.refreshMcp(undefined); },
   });
   return {
     runtime: {
@@ -172,6 +174,7 @@ export function createProductionMcpOAuthPorts(): ProductionMcpOAuthPorts {
           return token;
         },
         openExternal: async (url) => await context.native.shell.openExternal(url),
+        onVendorCredentialChanged: () => { void context.mcpHost.refreshMcp(undefined); },
       }),
       settingsStore: context.settings.settingsStore,
       pushBoxSecrets: () => context.secretsStores.pushBoxSecrets.push("account_scope"),
@@ -189,6 +192,7 @@ export function createProductionMcpOAuthPorts(): ProductionMcpOAuthPorts {
     resolveDesktopDeps: (context) => ({
       shell: { openExternal: async (url) => await context.native.shell.openExternal(url) },
       parseAllowedExternalUrl,
+      readVendorMcpStore: () => loadVendorMcpInstalls(getSandRootDir()),
       peekAccessToken: async () => {
         const auth = await context.requireAccount().getAuthService();
         return await auth.peekAccessToken?.() ?? null;

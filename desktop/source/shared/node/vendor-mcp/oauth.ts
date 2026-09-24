@@ -12,6 +12,31 @@ export interface VendorMcpOAuthPending {
   readonly clientId: string;
   readonly verifier: string;
   readonly redirectUri: string;
+  /** The `state` in the authorization URL; the loopback callback carries it back. */
+  readonly state: string;
+}
+
+// Pending sign-ins by state, for this process. The manager that starts a
+// sign-in and the loopback that finishes it are different objects in the
+// same Electron main process, so the hand-off is a module-level table with
+// the same 15-minute life the loopback gives a pending auth.
+export const VENDOR_MCP_PENDING_AUTH_TTL_MS = 15 * 60 * 1_000;
+const pendingVendorMcpAuths = new Map<string, { readonly pending: VendorMcpOAuthPending; readonly startedAtMs: number }>();
+
+export function rememberVendorMcpPendingAuth(pending: VendorMcpOAuthPending, now = Date.now()): void {
+  for (const [state, entry] of pendingVendorMcpAuths) if (now - entry.startedAtMs > VENDOR_MCP_PENDING_AUTH_TTL_MS) pendingVendorMcpAuths.delete(state);
+  pendingVendorMcpAuths.set(pending.state, { pending, startedAtMs: now });
+}
+
+export function takeVendorMcpPendingAuth(state: string, now = Date.now()): VendorMcpOAuthPending | undefined {
+  const entry = pendingVendorMcpAuths.get(state);
+  if (entry == null) return undefined;
+  pendingVendorMcpAuths.delete(state);
+  return now - entry.startedAtMs > VENDOR_MCP_PENDING_AUTH_TTL_MS ? undefined : entry.pending;
+}
+
+export function peekVendorMcpPendingAuth(state: string): VendorMcpOAuthPending | undefined {
+  return pendingVendorMcpAuths.get(state)?.pending;
 }
 
 export interface VendorMcpOAuthStart {
@@ -71,6 +96,8 @@ export async function startVendorMcpOAuth(args: {
   readonly mcpUrl: string;
   readonly redirectUri?: string;
   readonly fetch?: typeof fetch;
+  /** False keeps the pending sign-in out of the process table (tests). */
+  readonly remember?: boolean;
 }): Promise<VendorMcpOAuthStart> {
   const fetchImpl = args.fetch ?? fetch;
   const redirectUri = args.redirectUri ?? MCP_OAUTH_LOOPBACK_CALLBACK_URL;
@@ -105,7 +132,7 @@ export async function startVendorMcpOAuth(args: {
     throw new Error(`Could not register Simeon with the vendor for ${args.pluginId}.`);
   }
   const { verifier, challenge } = pkce();
-  const state = base64Url(randomBytes(16));
+  const state = `vendor-${args.pluginId}-${base64Url(randomBytes(16))}`;
   const authorize = new URL(authorizationEndpoint);
   authorize.searchParams.set("client_id", clientId);
   authorize.searchParams.set("redirect_uri", redirectUri);
@@ -113,17 +140,88 @@ export async function startVendorMcpOAuth(args: {
   authorize.searchParams.set("code_challenge", challenge);
   authorize.searchParams.set("code_challenge_method", "S256");
   authorize.searchParams.set("state", state);
-  return {
-    authorizationUrl: authorize.toString(),
-    pending: {
-      pluginId: args.pluginId,
-      mcpUrl: args.mcpUrl,
-      tokenEndpoint,
-      clientId,
-      verifier,
-      redirectUri,
-    },
+  const pending: VendorMcpOAuthPending = {
+    pluginId: args.pluginId,
+    mcpUrl: args.mcpUrl,
+    tokenEndpoint,
+    clientId,
+    verifier,
+    redirectUri,
+    state,
   };
+  if (args.remember !== false) rememberVendorMcpPendingAuth(pending);
+  return { authorizationUrl: authorize.toString(), pending };
+}
+
+export interface VendorMcpTokenGrant {
+  readonly accessToken: string;
+  readonly refreshToken?: string;
+  readonly expiresAtMs?: number;
+  readonly tokenEndpoint: string;
+  readonly clientId: string;
+}
+
+async function postTokenForm(tokenEndpoint: string, form: Record<string, string>, fetchImpl: typeof fetch): Promise<Record<string, unknown>> {
+  const response = await fetchImpl(tokenEndpoint, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json" },
+    body: new URLSearchParams(form).toString(),
+  });
+  const payload = await readJson(response);
+  if (!response.ok || !isRecord(payload) || typeof payload.access_token !== "string" || payload.access_token.length === 0) {
+    const detail = isRecord(payload) ? String(payload.error_description ?? payload.error ?? response.status) : String(response.status);
+    throw new Error(`The vendor refused the token request: ${detail}`);
+  }
+  return payload;
+}
+
+function grantFromPayload(payload: Record<string, unknown>, tokenEndpoint: string, clientId: string, previousRefresh: string | undefined, now: number): VendorMcpTokenGrant {
+  const expiresIn = typeof payload.expires_in === "number" ? payload.expires_in : typeof payload.expires_in === "string" ? Number(payload.expires_in) : undefined;
+  const refreshToken = typeof payload.refresh_token === "string" && payload.refresh_token.length > 0 ? payload.refresh_token : previousRefresh;
+  return {
+    accessToken: payload.access_token as string,
+    ...(refreshToken == null ? {} : { refreshToken }),
+    ...(expiresIn != null && Number.isFinite(expiresIn) && expiresIn > 0 ? { expiresAtMs: now + expiresIn * 1_000 } : {}),
+    tokenEndpoint,
+    clientId,
+  };
+}
+
+/** The second half of the sign-in: the loopback's code for a bearer token, PKCE verifier attached. */
+export async function exchangeVendorMcpCode(args: {
+  readonly pending: VendorMcpOAuthPending;
+  readonly code: string;
+  readonly fetch?: typeof fetch;
+  readonly now?: number;
+}): Promise<VendorMcpTokenGrant> {
+  const payload = await postTokenForm(args.pending.tokenEndpoint, {
+    grant_type: "authorization_code",
+    code: args.code,
+    redirect_uri: args.pending.redirectUri,
+    client_id: args.pending.clientId,
+    code_verifier: args.pending.verifier,
+  }, args.fetch ?? fetch);
+  return grantFromPayload(payload, args.pending.tokenEndpoint, args.pending.clientId, undefined, args.now ?? Date.now());
+}
+
+export async function refreshVendorMcpGrant(args: {
+  readonly grant: VendorMcpTokenGrant;
+  readonly fetch?: typeof fetch;
+  readonly now?: number;
+}): Promise<VendorMcpTokenGrant> {
+  if (args.grant.refreshToken == null) throw new Error("The vendor gave no refresh token; sign in again.");
+  const payload = await postTokenForm(args.grant.tokenEndpoint, {
+    grant_type: "refresh_token",
+    refresh_token: args.grant.refreshToken,
+    client_id: args.grant.clientId,
+  }, args.fetch ?? fetch);
+  return grantFromPayload(payload, args.grant.tokenEndpoint, args.grant.clientId, args.grant.refreshToken, args.now ?? Date.now());
+}
+
+export const VENDOR_MCP_TOKEN_SKEW_MS = 60_000;
+
+export function isVendorMcpGrantFresh(grant: { readonly expiresAtMs?: number }, now = Date.now()): boolean {
+  return grant.expiresAtMs == null || grant.expiresAtMs - VENDOR_MCP_TOKEN_SKEW_MS > now;
 }
 
 export async function connectThroughVendorMcp(args: {

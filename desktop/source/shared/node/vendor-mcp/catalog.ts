@@ -86,3 +86,24 @@ export function isVendorMcpPluginId(id: string): boolean {
 export function isVendorMcpComingSoon(id: string): boolean {
   return vendorMcpConnectorById(id)?.comingSoon === true;
 }
+
+/**
+ * The MCP manager validates every server id as a positive decimal string
+ * (`mcp-server-id.ts`), because Cursor's backend numbered its servers. A
+ * vendor connector gets a stable number from its place in the store, far
+ * above anything a real account ever held; the plugin id stays the
+ * server *identifier* ("figma"), which is what tools and the box use.
+ */
+export const VENDOR_MCP_SERVER_ID_BASE = 900_000;
+
+export function vendorMcpServerId(pluginId: string): string | undefined {
+  const index = VENDOR_MCP_CONNECTORS.findIndex((item) => item.id === pluginId.trim());
+  return index < 0 ? undefined : String(VENDOR_MCP_SERVER_ID_BASE + index + 1);
+}
+
+export function vendorMcpPluginIdForServerId(serverId: string | number): string | undefined {
+  const numeric = typeof serverId === "number" ? serverId : Number(String(serverId).trim());
+  if (!Number.isSafeInteger(numeric)) return undefined;
+  const index = numeric - VENDOR_MCP_SERVER_ID_BASE - 1;
+  return index >= 0 && index < VENDOR_MCP_CONNECTORS.length ? VENDOR_MCP_CONNECTORS[index]?.id : undefined;
+}

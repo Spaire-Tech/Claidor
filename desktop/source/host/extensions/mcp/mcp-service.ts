@@ -3,6 +3,9 @@ import { getSandRootDir } from "../../host-paths.js";
 import { isVendorMcpPluginId } from "../../../shared/node/vendor-mcp/catalog.js";
 import { loadVendorMcpInstalls, removeVendorMcpInstall, upsertVendorMcpInstall } from "../../../shared/node/vendor-mcp/installs.js";
 import { fetchVendorEffectivePlugins, fetchVendorMarketplacePlugins } from "../../../shared/node/vendor-mcp/marketplace.js";
+import { createVendorMcpBackendExec } from "../../../shared/node/vendor-mcp/backend-exec.js";
+import { withVendorAccountServers } from "../../../shared/node/vendor-mcp/display.js";
+import { replaceVendorMcpInstalls } from "../../../shared/node/vendor-mcp/installs.js";
 import {
   createAccountMcpWriter,
   fetchAccountMcpServers,
@@ -202,7 +205,7 @@ export class McpHostService {
         getMachineId: credentials.getMachineId,
       }) as unknown as AccountMcpClient,
     };
-    const backendMcpExec = createDashboardSandBackendMcpExec({
+    const cursorBackendMcpExec = createDashboardSandBackendMcpExec({
       getAccessToken: accountMcpDeps.getAccessToken,
       getMachineId: accountMcpDeps.getMachineId,
       createClient: (credentials) => createSandCursorBackendClient(DashboardService, {
@@ -210,6 +213,10 @@ export class McpHostService {
         getMachineId: credentials.getMachineId,
       }) as unknown as DashboardMcpExecClient,
     });
+    // Vendor connectors are served here, in the box, from the credential
+    // store the Mac sends (`vendor-mcp/backend-exec.ts`); the box never opens
+    // a sign-in, so a missing credential reads as needsAuth and draws the card.
+    const backendMcpExec = createVendorMcpBackendExec({ rootDir: getSandRootDir, fallback: cursorBackendMcpExec, canStartAuth: false, log: deps.log });
     this.hostMcp = createHostMcp({
       log: deps.log,
       onServerAuthenticated: (completion) => this.emitAuthCompletion(completion),
@@ -217,7 +224,7 @@ export class McpHostService {
       ...(deps.pluginSkills == null ? {} : { pluginSkills: deps.pluginSkills }),
       getAccessToken: async () => { try { const token = await deps.auth.getAccessToken({ backendUrl: getSandInferenceBackendUrl() }); return token.length > 0 ? token : null; } catch { return null; } },
       getMachineId: deps.auth.getMachineId,
-      accountServersProvider: () => fetchAccountMcpServers(accountMcpDeps),
+      accountServersProvider: () => withVendorAccountServers(fetchAccountMcpServers(accountMcpDeps), getSandRootDir),
       accountMcpWriter: createAccountMcpWriter(accountMcpDeps),
       effectivePluginsProvider: () => fetchVendorEffectivePlugins(new Set(loadVendorMcpInstalls(getSandRootDir()).map((item) => item.id))),
       fetchMarketplace: fetchVendorMarketplacePlugins,
@@ -234,7 +241,7 @@ export class McpHostService {
       ...(deps.onDiscoveryFailed === undefined ? {} : { onDiscoveryFailed: deps.onDiscoveryFailed }),
       ...(deps.onConnectorAuth === undefined ? {} : { onConnectorAuth: deps.onConnectorAuth }),
     });
-    this.api = { mcp: this.hostMcp.mcp, management: this.hostMcp.management, listBoxServers: (ids: readonly string[]) => this.listBoxServers(ids), subscribeToAuthCompletion: (listener: (event: unknown) => void) => { this.authCompletionListeners.add(listener); return () => this.authCompletionListeners.delete(listener); }, noteAuthCompletedElsewhere: (serverId: string, accountKey: string) => this.hostMcp.noteAuthCompletedElsewhere(serverId, accountKey), subscribeToServersUpdated: (listener: (event: { servers: unknown[] }) => void) => { this.serversUpdatedListeners.add(listener); return () => this.serversUpdatedListeners.delete(listener); }, syncPluginSkills: async () => await deps.pluginSkills?.sync("desktop") ?? [], pluginSyncStatus: () => deps.pluginSkills?.status() ?? { authBlocked: [] } };
+    this.api = { mcp: this.hostMcp.mcp, management: this.hostMcp.management, replaceVendorMcpStore: (installs: unknown) => replaceVendorMcpInstalls(getSandRootDir(), installs), listBoxServers: (ids: readonly string[]) => this.listBoxServers(ids), subscribeToAuthCompletion: (listener: (event: unknown) => void) => { this.authCompletionListeners.add(listener); return () => this.authCompletionListeners.delete(listener); }, noteAuthCompletedElsewhere: (serverId: string, accountKey: string) => this.hostMcp.noteAuthCompletedElsewhere(serverId, accountKey), subscribeToServersUpdated: (listener: (event: { servers: unknown[] }) => void) => { this.serversUpdatedListeners.add(listener); return () => this.serversUpdatedListeners.delete(listener); }, syncPluginSkills: async () => await deps.pluginSkills?.sync("desktop") ?? [], pluginSyncStatus: () => deps.pluginSkills?.status() ?? { authBlocked: [] } };
   }
   setSettingsStore(settings: unknown): void { this.hostMcp.setSettingsStore?.(settings); }
   setBoxMcpExec(exec: unknown): void { this.hostMcp.setBoxMcpExec?.(exec); }
