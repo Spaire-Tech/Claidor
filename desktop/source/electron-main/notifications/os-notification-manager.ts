@@ -46,9 +46,10 @@ export class SandOsNotificationManager {
   }
 
   handleAgentsEvent(event: { readonly agents: readonly NotificationAgent[] }): void {
+    if (!this.deps.isSupported()) return;
     const window = this.liveWindow();
-    if (window == null || !this.deps.isSupported()) return;
-    const transitions = this.decider.decide({ agents: event.agents.map(toNotificationSnapshot), isWindowFocused: window.isFocused(), nowMs: (this.deps.now ?? Date.now)() });
+    const isWindowFocused = window != null && window.isFocused();
+    const transitions = this.decider.decide({ agents: event.agents.map(toNotificationSnapshot), isWindowFocused, nowMs: (this.deps.now ?? Date.now)() });
     this.flushPreSeedDeltas();
     for (const transition of transitions) this.show(transition);
   }
@@ -75,9 +76,10 @@ export class SandOsNotificationManager {
 
   private processDelta(event: { readonly agent: NotificationAgent }): void {
     const snapshot = toNotificationSnapshot(event.agent);
+    if (!this.deps.isSupported()) { this.decider.observeAgent(snapshot); return; }
     const window = this.liveWindow();
-    if (window == null || !this.deps.isSupported()) { this.decider.observeAgent(snapshot); return; }
-    for (const transition of this.decider.decideAgent(snapshot, { isWindowFocused: window.isFocused(), nowMs: (this.deps.now ?? Date.now)() })) this.show(transition);
+    const isWindowFocused = window != null && window.isFocused();
+    for (const transition of this.decider.decideAgent(snapshot, { isWindowFocused, nowMs: (this.deps.now ?? Date.now)() })) this.show(transition);
   }
 
   private flushPreSeedDeltas(): void {
