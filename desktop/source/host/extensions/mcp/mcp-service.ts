@@ -89,7 +89,7 @@ interface McpManagerRuntime {
   removeAccount(serverId: string, accountKey: string): Promise<ServerState>;
   getMcpCustomInstructions(): Promise<string>;
   refreshAccountConfigInBackground(): void;
-  noteAuthCompletedElsewhere(serverId: string, accountKey: string): void;
+  noteAuthCompletedElsewhere(serverId: string, accountKey: string): string | null;
   setAuthCompletionObserver(observer: (completion: unknown) => void): void;
   setSettingsStore(settings: unknown): void;
   setBoxRuntime(runtime: unknown): void;
@@ -172,7 +172,7 @@ export function createHostMcp(deps: CreateHostMcpOptions): McpHostPort {
   };
 }
 
-export interface McpHostPort { dispose(): void | Promise<void>; listBoxServers(ids: readonly string[], options?: { kickOnly?: boolean }): Promise<Array<{ serverIdentifier: string; status: string; statusDetail?: string; toolCount: number }>>; noteAuthCompletedElsewhere(serverId: string, accountKey: string): void; setSettingsStore?(settings: unknown): void; setBoxMcpExec?(exec: unknown): void; mcp: unknown; management: unknown }
+export interface McpHostPort { dispose(): void | Promise<void>; listBoxServers(ids: readonly string[], options?: { kickOnly?: boolean }): Promise<Array<{ serverIdentifier: string; status: string; statusDetail?: string; toolCount: number }>>; noteAuthCompletedElsewhere(serverId: string, accountKey: string): string | null; setSettingsStore?(settings: unknown): void; setBoxMcpExec?(exec: unknown): void; mcp: unknown; management: unknown }
 export interface McpHostServiceDeps {
   auth: {
     getAccessToken(args: { backendUrl: string }): Promise<string>;
