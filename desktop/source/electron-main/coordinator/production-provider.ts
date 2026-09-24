@@ -170,6 +170,7 @@ export interface ProductionCoordinatorPorts<Status extends ProductionCoordinator
     getWebauthnProxyEnabled(): unknown;
     getFeatureFlagOverrides(): unknown;
     getVendorMcpStore?(): unknown;
+    getAccountMcpStore?(): unknown;
     pushBoxSecrets(): Promise<unknown>;
     onHostSettingsTransportConnected(): void;
     onHostSettingsTransportDown(): void;

@@ -292,12 +292,13 @@ test("in the box the backend never opens a sign-in: no credential is needsAuth w
 test("both managers, the loopback, the gateway and the resync are wired to the vendor backend and the store", async () => {
   const read = (file) => readFile(path.join(repoRoot, file), "utf8");
   const host = await read("source/host/extensions/mcp/mcp-service.ts");
-  assert.match(host, /createVendorMcpBackendExec\(\{ rootDir: getSandRootDir, fallback: cursorBackendMcpExec, canStartAuth: false/);
+  // Since the account store (custom servers) is served locally too, the vendor backend falls through to it, and it to the old one.
+  assert.match(host, /createVendorMcpBackendExec\(\{ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: false/);
   assert.match(host, /accountServersProvider: \(\) => withVendorAccountServers\(fetchAccountMcpServers\(accountMcpDeps\), getSandRootDir\)/);
   assert.match(host, /replaceVendorMcpStore: \(installs: unknown\) => replaceVendorMcpInstalls\(getSandRootDir\(\), installs\)/);
   const gateway = await read("source/host/host-gateway-api.ts");
-  assert.match(gateway, /refreshMcp: async \(\{ completion, routedAction, routedArgs, vendorMcpStore \}: any\)/);
-  assert.match(gateway, /const \{ vendorMcpStore, \.\.\.settingsArgs \} = args \?\? \{\};/);
+  assert.match(gateway, /refreshMcp: async \(\{ completion, routedAction, routedArgs, vendorMcpStore, accountMcpStore \}: any\)/);
+  assert.match(gateway, /const \{ vendorMcpStore, accountMcpStore, \.\.\.settingsArgs \} = args \?\? \{\};/);
   const mac = await read("source/electron-main/mcp/desktop-mcp-manager.ts");
   assert.match(mac, /canStartAuth: true/);
   assert.match(mac, /withVendorAccountServers\(fetchAccountMcpServers\(accountMcpDeps\), vendorRoot\)/);

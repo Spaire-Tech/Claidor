@@ -636,9 +636,16 @@ export function createHostGatewayApi(
     readAttachmentChunk: (args: any) => method(attachments, "readChunk")(args),
     getHostSettings: () => method(settings, "getHostSettings")(),
     setHostSettings: (args: any) => {
-      const { vendorMcpStore, ...settingsArgs } = args ?? {};
+      const { vendorMcpStore, accountMcpStore, ...settingsArgs } = args ?? {};
       if (vendorMcpStore !== undefined) {
         method(deps.extensions.api("mcp"), "replaceVendorMcpStore")(vendorMcpStore);
+        void Promise.resolve()
+          .then(() => method(deps.extensions.api("mcp").management, "restart")())
+          .catch(() => undefined);
+      }
+      // The Mac's account MCP store merges into the box's copy, newer entry
+      // per name (`account-mcp/store.ts`); only a change restarts the manager.
+      if (accountMcpStore !== undefined && method(deps.extensions.api("mcp"), "replaceAccountMcpStore")(accountMcpStore) === true) {
         void Promise.resolve()
           .then(() => method(deps.extensions.api("mcp").management, "restart")())
           .catch(() => undefined);
@@ -655,17 +662,26 @@ export function createHostGatewayApi(
       return result;
     },
 
-    refreshMcp: async ({ completion, routedAction, routedArgs, vendorMcpStore }: any) => {
+    refreshMcp: async ({ completion, routedAction, routedArgs, vendorMcpStore, accountMcpStore }: any) => {
       if (routedAction === "list-tools") return await listRoutedMcpTools();
       if (routedAction === "execute-tool") return await executeRoutedMcpTool(routedArgs);
+      // The Mac pulls the box's account MCP store with this action, so a
+      // server the agent added here shows in Settings and its connect card
+      // finds its row on the Mac.
+      if (routedAction === "account-mcp-store") return { accountMcpStore: method(deps.extensions.api("mcp"), "readAccountMcpStore")() };
       // The Mac's vendor credential store comes with every refresh; the box
       // only ever reads it (`vendor-mcp/backend-exec.ts`).
       if (vendorMcpStore !== undefined) method(deps.extensions.api("mcp"), "replaceVendorMcpStore")(vendorMcpStore);
+      // The Mac's account MCP store too, merged newer-entry-wins; the merged
+      // copy goes back in the answer so the Mac learns what the agent wrote.
+      if (accountMcpStore !== undefined) method(deps.extensions.api("mcp"), "replaceAccountMcpStore")(accountMcpStore);
+      const answer = () => ({ accountMcpStore: method(deps.extensions.api("mcp"), "readAccountMcpStore")() });
       if (completion != null) {
         await deps.handleDesktopMcpAuthCompletion(completion);
-        return;
+        return answer();
       }
       await method(deps.extensions.api("mcp").management, "restart")();
+      return answer();
     },
     listRoutedMcpTools,
     executeRoutedMcpTool,

@@ -1,5 +1,6 @@
 import { getSandRootDir } from "../../host/host-paths.js";
 import { loadVendorMcpInstalls } from "../../shared/node/vendor-mcp/installs.js";
+import { loadAccountMcpStore } from "../../shared/node/account-mcp/store.js";
 import {
   isSandAgentModelSelection,
   resolveComputerUseModelSelection,
@@ -40,6 +41,7 @@ export interface ProductionCoordinatorAuxiliaryPorts {
     | "getLocalToolPermission"
     | "getWebauthnProxyEnabled"
     | "getVendorMcpStore"
+    | "getAccountMcpStore"
     | "getFeatureFlagOverrides"
     | "pushBoxSecrets"
     | "onHostSettingsTransportConnected"
@@ -129,6 +131,7 @@ export function createProductionCoordinatorAuxiliaryPorts(
       getWebauthnProxyEnabled: () => settings.getWebauthnProxyEnabled(),
       getFeatureFlagOverrides: () => context.requireExperiments().getFeatureFlagOverridesRecord(),
       getVendorMcpStore: () => loadVendorMcpInstalls(getSandRootDir()),
+      getAccountMcpStore: () => loadAccountMcpStore(getSandRootDir()),
       pushBoxSecrets: () => context.secretsStores.pushBoxSecrets.push("resync"),
       onHostSettingsTransportConnected: () => context.hostSettingsFields.onTransportConnected(),
       onHostSettingsTransportDown: () => context.hostSettingsFields.setBoxStreamLive(false),
