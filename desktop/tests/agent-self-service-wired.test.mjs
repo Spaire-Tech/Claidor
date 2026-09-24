@@ -100,6 +100,14 @@ test("a dispatched subagent runs on its own production shell, headless, with the
   const owner = await readFile(path.join(repoRoot, "source/host/runner/production-turn-agent-owner.ts"), "utf8");
   assert.match(owner, /isComputerUseSubagent: input\.isComputerUseSubagent/);
   assert.match(owner, /isBrowserUseSubagent: input\.isBrowserUseSubagent/);
+  // A child's prompt is built for its own identity: the glue's computer and
+  // browser sections, and no SendMessage/MCP sections. The agent keeps the
+  // shared assembly.
+  assert.match(composition, /const promptGlue = identity\.isSubagentRunner\n\s*\? createPromptGlueFor\(promptIdentity\) \?\? productionPromptGlue/);
+  assert.match(composition, /const promptAssembly = identity\.isSubagentRunner\n\s*\? createPromptAssemblyFor\(promptIdentity, promptGlue\) \?\? productionSystemPromptAssembly/);
+  assert.match(composition, /systemPromptGenerator: \(\) => promptAssembly\?\.getSystemPrompt\(\)/);
+  assert.match(composition, /assembleGeneratedTurnAction: promptGlue\.assembleGeneratedTurnAction,/);
+  assert.match(composition, /isSubagentRunner: promptIdentity\.isSubagentRunner,\n\s*isComputerUseSubagent: promptIdentity\.isComputerUseSubagent,/);
 });
 
 test("the production shell's tool provider offers the box's computer, screenshot and browser tools, read off the box's accessor", async () => {

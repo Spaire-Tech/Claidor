@@ -158,19 +158,26 @@ export function createProductionTurnRunShellHostInput(
       context,
       cancelThisRun,
       emitUpdate,
-    }) => createProductionTurnAgentOwner({
-      ...createAgentOwnerInput({
+    }) => {
+      const ownerInput = createAgentOwnerInput({
         requestId,
         runOptions,
         context,
         cancelThisRun,
         emitUpdate,
-      }),
-      context,
-      requestId,
-      cancelThisRun,
-      emitUpdate,
-    }),
+      });
+      // The owner input's cancel is the real one (it interrupts the runner);
+      // the shell-level `cancelThisRun` is the production composition's
+      // `() => {}`. Until 24 September 2026 the shell's won, so the cancel
+      // an MCP connector card carries did nothing.
+      return createProductionTurnAgentOwner({
+        ...ownerInput,
+        context,
+        requestId,
+        cancelThisRun: ownerInput.cancelThisRun ?? cancelThisRun,
+        emitUpdate,
+      });
+    },
     createRunInput: async ({ owner, runContext, prompt, options }) =>
       createProductionTurnAgentRunInput({
         runCtx: runContext,

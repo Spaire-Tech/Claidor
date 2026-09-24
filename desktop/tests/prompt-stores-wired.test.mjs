@@ -28,7 +28,7 @@ async function load(entry, name) {
 
 test("the production composition hands the prompt the session's stores and the live roster", async () => {
   const composition = await readFile(path.join(repoRoot, "source/host/host-runner-composition.ts"), "utf8");
-  const start = composition.indexOf("const productionSystemPromptAssembly = ");
+  const start = composition.indexOf("const createPromptAssemblyFor = (");
   const assembly = composition.slice(start, composition.indexOf("const runnerOptions: Record<string, unknown> = {", start));
   assert.ok(assembly.length > 0);
   for (const dep of ["memoryStore", "memorySnapshots", "userMemory", "projectMemory", "automationStore", "workflowStore", "channelStore"]) {

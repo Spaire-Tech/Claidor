@@ -1288,10 +1288,45 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       : undefined;
     const readVideoAttachmentBytes = method(attachments, "readVideoBytes");
     const mcpCustomInstructions = method(mcp.mcp, "getCustomInstructions");
+    // The per-turn MCP snapshot the prompt glue reads synchronously: which
+    // connectors are connected, their custom instructions, and whether
+    // discovery failed this turn. Refreshed at every turn start.
+    const mcpTurnSnapshot: {
+      connectedServerNames: readonly string[];
+      customInstructions: ReadonlyMap<string, string>;
+      discoveryUnavailable: boolean;
+    } = { connectedServerNames: [], customInstructions: new Map(), discoveryUnavailable: false };
+    const refreshMcpTurnSnapshot = async (discoveryFailed: boolean): Promise<void> => {
+      mcpTurnSnapshot.discoveryUnavailable = discoveryFailed;
+      try {
+        const installed = await method(mcp.management, "listInstalled")?.();
+        if (Array.isArray(installed)) {
+          mcpTurnSnapshot.connectedServerNames = installed
+            .filter((server: any) => server != null && server.status === "connected" && typeof server.name === "string")
+            .map((server: any) => server.name as string);
+        }
+        const instructions = await mcpCustomInstructions?.();
+        if (instructions instanceof Map) mcpTurnSnapshot.customInstructions = instructions;
+      } catch {
+        // The snapshot keeps its last value; the prompt is never blocked on it.
+      }
+    };
     let shellWatchWatermark:
       | { readonly turnCount: number; readonly boundaryRef: Uint8Array; readonly lastUserMessageId?: string; readonly hasUserTurn: boolean }
       | undefined;
-    const productionPromptGlue = productionContext === undefined
+    // The prompt is built for an identity: the agent's own turn, or a headless
+    // subagent's. The glue's remote-box and computer sections differ for a
+    // computerUse or browserUse child (`prompt-collector-glue.ts`); until 24
+    // September 2026 the one glue and assembly, built with every flag false,
+    // served the children too, so a computer-use child read the agent's own
+    // prompt and none of its driving instructions.
+    interface PromptIdentity {
+      readonly isSubagentRunner: boolean;
+      readonly isComputerUseSubagent: boolean;
+      readonly isBrowserUseSubagent: boolean;
+    }
+    const AGENT_PROMPT_IDENTITY: PromptIdentity = { isSubagentRunner: false, isComputerUseSubagent: false, isBrowserUseSubagent: false };
+    const createPromptGlueFor = (promptIdentity: PromptIdentity) => productionContext === undefined
       || productionRequestContext === undefined
       ? undefined
       : (() => {
@@ -1311,9 +1346,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           remoteBox: remoteBoxForPrompt,
           userComputers,
           remoteBoxHasDesktop: true,
-          isSubagentRunner: false,
-          isComputerUseSubagent: false,
-          isBrowserUseSubagent: false,
+          isSubagentRunner: promptIdentity.isSubagentRunner,
+          isComputerUseSubagent: promptIdentity.isComputerUseSubagent,
+          isBrowserUseSubagent: promptIdentity.isBrowserUseSubagent,
           requestContext: productionRequestContext,
           ...(typeof hooks.agentProfileProvider === "function"
             ? { agentProfileProvider: () => hooks.agentProfileProvider?.() ?? { name: "", description: "" } }
@@ -1330,9 +1365,14 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           ...(mcpCustomInstructions === undefined
             ? {}
             : { mcp: { getCustomInstructions: async (_context: Context) => await mcpCustomInstructions() } }),
-          mcpConnectedServerNamesForTurn: () => [],
-          mcpCustomInstructionsForTurn: () => new Map(),
-          isMcpDiscoveryUnavailableForTurn: () => false,
+          // The per-turn MCP snapshot: refreshed by refreshMcpTurnSnapshot at
+          // every turn start (the shell's mcp.getTools below). Until 24
+          // September 2026 these were `[]`, an empty map and `false`, so the
+          // prompt never carried a connector's custom instructions and never
+          // said discovery had failed.
+          mcpConnectedServerNamesForTurn: () => mcpTurnSnapshot.connectedServerNames,
+          mcpCustomInstructionsForTurn: () => mcpTurnSnapshot.customInstructions,
+          isMcpDiscoveryUnavailableForTurn: () => mcpTurnSnapshot.discoveryUnavailable,
           shellWatchHost: () => {
             const store = session.agentStore;
             if (
@@ -1367,6 +1407,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           },
         });
       })();
+    const productionPromptGlue = createPromptGlueFor(AGENT_PROMPT_IDENTITY);
     // The roster the agent is told about: every other agent, and the groups
     // it belongs to. Read live from the transcript on every prompt build.
     const listAgentDirectory = (): ReturnType<NonNullable<SystemPromptAssemblyDependencies["agentDirectory"]>> => {
@@ -1425,14 +1466,14 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
     // no memory, no user or project memory, no automations, no workflows,
     // no channels and an empty agent directory, whatever the agent had
     // saved; the sections rendered as absent, not empty.
-    const productionSystemPromptAssembly = productionContext === undefined
+    const createPromptAssemblyFor = (promptIdentity: PromptIdentity, glue: typeof productionPromptGlue) => productionContext === undefined
       || productionRequestContext === undefined
       ? undefined
       : createSystemPromptAssembly({
           basePrompt: typeof overrides.systemPrompt === "string"
             ? overrides.systemPrompt
             : DEFAULT_SAND_SYSTEM_PROMPT,
-          isSubagentRunner: false,
+          isSubagentRunner: promptIdentity.isSubagentRunner,
           isSharedRoomRunner: isSharedRoomTurn,
           isSystemPromptOverridden: typeof overrides.systemPrompt === "string",
           agentProfileProvider: () => hooks.agentProfileProvider?.() ?? null,
@@ -1473,11 +1514,12 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           mcpManagement: () => mcp.management,
           isMcpMultiAccountEnabled: () => method(experiments, "isMcpMultiAccountEnabled")?.() ?? false,
           isCloudAgentsDisabledByTeam: () => method(experiments, "isCloudAgentsDisabledByTeam")?.() ?? false,
-          mcpCustomInstructionsSection: () => productionPromptGlue?.getMcpCustomInstructionsSection() ?? null,
-          mcpDiscoveryStatusSection: () => productionPromptGlue?.getMcpDiscoveryStatusSection() ?? null,
-          remoteBoxSection: () => productionPromptGlue?.getRemoteBoxSection() ?? "",
-          computerSection: () => productionPromptGlue?.getComputerSection() ?? null,
+          mcpCustomInstructionsSection: () => glue?.getMcpCustomInstructionsSection() ?? null,
+          mcpDiscoveryStatusSection: () => glue?.getMcpDiscoveryStatusSection() ?? null,
+          remoteBoxSection: () => glue?.getRemoteBoxSection() ?? "",
+          computerSection: () => glue?.getComputerSection() ?? null,
         });
+    const productionSystemPromptAssembly = createPromptAssemblyFor(AGENT_PROMPT_IDENTITY, productionPromptGlue);
 
     const runnerOptions: Record<string, unknown> = {
       inference: extensions.api("inference").port,
@@ -2421,6 +2463,19 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       }) => {
       const isComputerUseTurn = identity.isSubagentRunner && isComputerUseSubagentType(identity.subagentType);
       const isBrowserUseTurn = identity.isSubagentRunner && isBrowserUseSubagentType(identity.subagentType);
+      // A child's prompt is built for its own identity (computer or browser
+      // sections, no SendMessage/MCP sections); the agent keeps the shared one.
+      const promptIdentity: PromptIdentity = {
+        isSubagentRunner: identity.isSubagentRunner,
+        isComputerUseSubagent: isComputerUseTurn,
+        isBrowserUseSubagent: isBrowserUseTurn,
+      };
+      const promptGlue = identity.isSubagentRunner
+        ? createPromptGlueFor(promptIdentity) ?? productionPromptGlue
+        : productionPromptGlue;
+      const promptAssembly = identity.isSubagentRunner
+        ? createPromptAssemblyFor(promptIdentity, promptGlue) ?? productionSystemPromptAssembly
+        : productionSystemPromptAssembly;
       const resolveSubagentConfigs = (): readonly TaskSubagentModelConfig[] => {
         const configs: unknown[] = [];
         if (method(remoteBox, "isAvailable")?.() !== false) {
@@ -2677,12 +2732,12 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               isSubagentRunner: identity.isSubagentRunner,
               isSharedRoomRunner: isSharedRoomTurn,
               sandSendMessageDeliveryOwed: method(experiments, "isSendMessageDeliveryOwedEnabled")?.() ?? false,
-              systemPromptGenerator: () => productionSystemPromptAssembly?.getSystemPrompt() ?? DEFAULT_SAND_SYSTEM_PROMPT,
+              systemPromptGenerator: () => promptAssembly?.getSystemPrompt() ?? DEFAULT_SAND_SYSTEM_PROMPT,
             },
             emitUpdate,
             interactionObservers: {},
             diskPressureReminder: foreverBox.diskPressureReminder,
-            ...(productionSystemPromptAssembly === undefined
+            ...(promptAssembly === undefined
               ? {}
               : (() => {
                   const profilePromptSnapshotStore = asPromptSnapshotStore(session.db);
@@ -2694,13 +2749,22 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           } satisfies ProductionTurnAgentOwnerInput;
         },
         promptOptions: (_prompt, options) => toGeneratedTurnPromptOptions(options),
-        assembleGeneratedTurnAction: productionPromptGlue.assembleGeneratedTurnAction,
+        assembleGeneratedTurnAction: promptGlue.assembleGeneratedTurnAction,
         compactionEpoch: readCompactionEpoch,
         getConversationState: getProductionConversationState,
         ...(mcp.mcp != null && typeof mcp.mcp.getTools === "function"
           ? {
               mcp: {
-                getTools: (runContext: Context) => mcp.mcp.getTools(runContext),
+                getTools: async (runContext: Context) => {
+                  try {
+                    const tools = await mcp.mcp.getTools(runContext);
+                    await refreshMcpTurnSnapshot(false);
+                    return tools;
+                  } catch (error) {
+                    await refreshMcpTurnSnapshot(true);
+                    throw error;
+                  }
+                },
                 refreshAccountConfig: () => mcp.mcp.refreshAccountConfig(),
               },
             }

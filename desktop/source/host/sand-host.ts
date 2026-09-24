@@ -9,6 +9,7 @@ import {
   type HostGatewayDependencies
 } from "./host-gateway-api.js";
 import { isRoutedLocalToolAskOpen } from "./extensions/transcript/routed-agent-tools.js";
+import { clipForHostLog, HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 import {
   startHostPluginRegistry
 } from "./extensions/registry.js";
@@ -285,6 +286,18 @@ export class SandHost {
   }
 
   reportHostDiagnostic(diagnostic: unknown): void {
+    // The telemetry copy ships through AnalyticsService/SubmitLogs, which
+    // Simeon Labs' server does not serve, so until 24 September 2026 no host
+    // diagnostic (labeling_failed, mirror offload, …) was readable anywhere.
+    // A clipped line on stdout reaches the box's /tmp/sand-host.log.
+    try {
+      const kind = typeof diagnostic === "object" && diagnostic != null && "kind" in diagnostic
+        ? String((diagnostic as { kind: unknown }).kind)
+        : "unknown";
+      logHostLine(`${HOST_LOG_PREFIX} diagnostic kind=${kind} ${clipForHostLog(JSON.stringify(diagnostic) ?? "", 400)}`);
+    } catch {
+      // A diagnostic that cannot be serialised must not throw where it is raised.
+    }
     optionalMethod(
       this.telemetryLogsOrUndefined() ?? {},
       "reportHostDiagnostic"
