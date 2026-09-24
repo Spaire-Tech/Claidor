@@ -2419,6 +2419,12 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             requestId,
             inference: createTypedInferenceOwner(extensions.api("inference").port),
             onRequestId: requestIdForwarder(hooks, "agent"),
+            // The turn's model id, so it reaches the executor. Until 24
+            // September the owner input carried none and every turn fell
+            // through to the executor's default whatever SAND_AGENT_MODEL
+            // said; the executor still ignores an id the proxy does not
+            // serve (`isConfiguredClaidorModelId`).
+            modelId: staticModelId,
             isSubagentRunner: false,
             isSilenceAllowed: runOptions.isSilenceAllowed === true,
             ...(runOptions.ackToken === undefined

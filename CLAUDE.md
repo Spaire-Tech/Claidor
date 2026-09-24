@@ -181,6 +181,14 @@ default. Done-or-continue is Grok Bot's nudge mechanism, unchanged. Risky-or-
 safe is Cursor's server-side classifier, which Claidor does not serve, so
 auto-review is effectively off; do not invent an app-side model for it.
 Escalation to Astra comes after, on the rule `pricing.py` already states.
+**Found 24 September: until then a turn's model id never reached the
+executor.** The owner input built in `host-runner-composition.ts`
+(`createAgentOwnerInput`) carried no `modelId`, so every turn fell
+through to the executor's default whatever `SAND_AGENT_MODEL` said; it
+now passes `staticModelId`, and the executor still ignores an id the
+proxy does not serve. A cross-lab roster with per-seat routes was built
+on top of this the same day and reverted at the founder's word ("i'll
+keep the grok bot idea for now. v1."); only this fix stayed.
 `docs/product/model-roles-measured.md` is the record, with the two lines to
 read on the Mac (effort on the wire, cached tokens on step two).
 
