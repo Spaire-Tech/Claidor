@@ -282,7 +282,20 @@ function projectConversationOutlineSubagents(value: unknown): ConversationOutlin
   });
 }
 
-function scrollToFindMatch(match: FindInChatMatch): void {
+/**
+ * Scroll to a find match. Tries the transcript handle first (works for
+ * unmounted rows under virtual windowing), falls back to DOM query.
+ */
+function scrollToFindMatchWithHandle(
+  match: FindInChatMatch,
+  transcriptHandleRef: { current: FindInChatTranscriptHandle | null } | null,
+): void {
+  const handle = transcriptHandleRef?.current;
+  if (handle != null) {
+    const result = handle.scrollToEntryWithoutHighlight(match.entryId);
+    if (result) return;
+  }
+  // Fallback: DOM query (flag OFF or handle not yet wired).
   if (typeof document === "undefined") return;
   const row = [...document.querySelectorAll<HTMLElement>("[data-entry-id]")]
     .find((candidate) => candidate.dataset.entryId === match.entryId);
@@ -789,7 +802,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       else focusComposer();
     }
   }));
-  const [findInChatController] = useState(() => createFindInChatController({ onNavigate: scrollToFindMatch }));
+  const transcriptHandleRef = useRef<FindInChatTranscriptHandle | null>(null);
+  const [findInChatController] = useState(() => createFindInChatController({ onNavigate: (match) => scrollToFindMatchWithHandle(match, transcriptHandleRef) }));
   const findInChatLifecycleGenerationRef = useRef(0);
   useEffect(() => {
     const generation = ++findInChatLifecycleGenerationRef.current;
@@ -864,7 +878,6 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [findInChatOpen, setFindInChatOpen] = useState(false);
   const [findInChatFocusNonce, setFindInChatFocusNonce] = useState(0);
   const [findTranscriptContainer, setFindTranscriptContainer] = useState<HTMLElement | null>(null);
-  const transcriptHandleRef = useRef<FindInChatTranscriptHandle | null>(null);
   const [spreadsheetViewerMount, setSpreadsheetViewerMount] = useState<SpreadsheetViewerMount | null>(null);
   const [routinesInfoPaneOpen, setRoutinesInfoPaneOpen] = useState(false);
   const [routinesAutomationId, setRoutinesAutomationId] = useState<string | null>(null);
@@ -1866,6 +1879,13 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       return entry != null && isTranscriptCardActionEntry(entry) ? entry : null;
     },
     scrollToEntry: (targetId) => {
+      // Prefer transcript handle (works with virtual windowing / unmounted rows).
+      const handle = transcriptHandleRef.current;
+      if (handle != null) {
+        const result = handle.scrollToEntryWithoutHighlight(targetId);
+        if (result) return;
+      }
+      // Fallback: DOM query (flag OFF or handle not yet wired).
       if (typeof document === "undefined") return;
       const row = [...document.querySelectorAll<HTMLElement>("[data-entry-id]")]
         .find((candidate) => candidate.dataset.entryId === targetId);

@@ -1,7 +1,13 @@
 import { getSchema, type JSONContent } from "@tiptap/core";
 import { normalizeLinkUrl } from "../cards/transcript-card/url-card";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { isVirtualTranscriptEnabled } from "./virtual-transcript-flag";
+import { buildOffsets, computeMountedRange, estimateEntryHeightPx, LEADING_INSET_PX, OVERSCAN_ROWS, totalSizePx } from "./virtual-transcript-geometry";
+import { MeasureCache } from "./virtual-transcript-measure-cache";
+import { initialStickyState, onScroll as stickyOnScroll, onUserGesture as stickyOnUserGesture, onScrollToBottom as stickyOnScrollToBottom, scrollTopForBottom, type StickyState } from "./virtual-transcript-sticky";
+import { computeScrollTopForEntry, findEntryIndex } from "./virtual-transcript-scroll-to";
+import { computeAnchoredScrollTop } from "./virtual-transcript-pagination";
 import "./transcript-utility-parity.css";
 import { AssistantMath } from "./math";
 import { TranscriptAttachmentGallery } from "./media-viewer";
@@ -617,10 +623,21 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const olderLoadInFlightRef = useRef(false);
   const viewCommitListenersRef = useRef(new Set<() => void>());
+  // --- Scroll-to-entry for virtual path (slice 6) ---
+  // Refs for plane-aware scroll-to; populated below after offsets are computed.
+  const virtualScrollToEntryRef = useRef<((entryId: string) => boolean) | null>(null);
+
   const handleRef = useRef<FindInChatTranscriptHandle | null>(null);
   if (handleRef.current == null) {
     handleRef.current = {
       scrollToEntryWithoutHighlight(entryId) {
+        // Virtual path: use plane offset math to scroll to unmounted rows.
+        const virtualFn = virtualScrollToEntryRef.current;
+        if (virtualFn != null) {
+          const result = virtualFn(entryId);
+          if (result) return true;
+        }
+        // Flag-OFF / fallback: DOM query.
         const transcript = transcriptRef.current;
         if (transcript == null) return false;
         const row = [...transcript.querySelectorAll<HTMLElement>("[data-entry-id], [data-row-key]")]
@@ -655,6 +672,8 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
     const maybeLoadOlder = () => {
       if (!active || isLoadingOlder || olderLoadInFlightRef.current || transcript.scrollTop > 600) return;
       olderLoadInFlightRef.current = true;
+      // Slice 7: snapshot plane total before loadOlder so we can anchor after prepend.
+      if (virtualEnabled) anchorTotalRef.current = prevPlaneTotalRef.current;
       let result: void | Promise<void>;
       try {
         result = loadOlder();
@@ -695,104 +714,332 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
       ? undefined
       : (entry) => resolveTranscriptCardInteractions.getThreadSummary(entry.id) != null,
   });
+
+  // --- Shared entry renderer (used by both flag-on and flag-off paths) ---
+  const renderEntry = (entry: ConversationTranscriptEntry, index: number): ReactNode => {
+    if (entry.kind === "time-separator") return <div className="sand-transcript-time-separator" key={entry.id} role="separator">{entry.label}</div>;
+    if (entry.kind === "unread-divider") return <div className="sand-unread-divider" key={entry.id} role="separator"><span className="sand-unread-divider__label">{entry.newMessageCount} new {entry.newMessageCount === 1 ? "message" : "messages"}</span></div>;
+    if (entry.kind === "timeline-event") return <TimelineEventRootEntry event={entry.event} id={entry.id} key={entry.id} onOpenAutomation={onOpenAutomation} timestampMs={entry.timestampMs} />;
+    if (entry.kind === "notice") return <TranscriptNoticeCard entry={entry} key={entry.id} />;
+    if (entry.kind === "computer-handoff") return renderComputerHandoff?.(entry) ?? null;
+    if (entry.kind === "thinking") return <TranscriptThinkingRow entry={entry} expanded={expandedThinking.has(entry.id)} key={entry.id} onToggle={toggleThinking} />;
+    if (entry.kind === "tool-call") return <TranscriptToolCallRow entry={entry} expanded={expandedToolCalls.has(entry.id)} key={entry.id} onToggle={toggleToolCall} />;
+    if (entry.kind === "local-tool-permission") return null;
+    if (entry.kind === "permission-request") return <PermissionRequestLeaf isGroupStart={entry.isGroupStart} key={entry.id} timestampMs={entry.timestampMs} title={entry.title} />;
+    if (entry.kind === "send-message") {
+      if (transcriptCards == null) return null;
+      const isKeyboardTarget = keyboardWidgetEntryId === entry.id;
+      const card = <TranscriptCardRootEntry
+        adjacency={transcriptAdjacency[index]}
+        contract={transcriptCards}
+        entry={entry}
+        isReadOnly={isReadOnly}
+        isKeyboardTarget={isKeyboardTarget}
+        key={entry.id}
+        renderReactionActions={renderMessageReactionActions}
+        renderReactionPills={renderMessageReactionPills}
+        threadRootId={threadRootId}
+      />;
+      return resolveTranscriptCardInteractions == null
+        ? card
+        : <TranscriptCardInteractionProvider key={entry.id} value={resolveTranscriptCardInteractions}>{card}</TranscriptCardInteractionProvider>;
+    }
+
+    const ids = transcriptIds(entry.id, true);
+    const pending = entry.delivery === "pending" || entry.delivery === "queued";
+    const failed = entry.delivery === "failed";
+    const replyPreview = entry.replyToId == null || resolveReplyPreview == null ? null : (resolveReplyPreview(entry.replyToId) ?? { kind: "missing" as const });
+    const referencedEntry = entry.replyToId == null ? undefined : entries.find((candidate) => candidate.id === entry.replyToId);
+    const referencedAuthorName = referencedEntry?.kind === "message"
+      ? referencedEntry.author
+      : replyPreview?.kind === "user-text" ? "You" : "Agent";
+    const messageUrlCards = urlCards ?? transcriptCards?.leafProviders.urlCards ?? null;
+    const messageProjection = projectTranscriptMessageCard(entry);
+    const messageAdjacency = entry.adjacency == null
+      ? transcriptAdjacency[index]
+      : { ...transcriptAdjacency[index], ...entry.adjacency };
+    const messageLink = messageUrlCards != null && (entry.attachments?.length ?? 0) === 0
+      ? entry.sendMessageText?.presentation.kind === "url-card"
+        && entry.sendMessageText.presentation.whenUnavailable === "url-card"
+        ? entry.sendMessageText.presentation.url
+        : messageProjection.kind === "message" ? messageProjection.url : null
+      : null;
+    const isDeliveryActionable = isOrdinaryMessageActionable(entry, isReadOnly);
+    const reactionPillProps: TranscriptMessageReactionPillsProps = {
+      entry,
+      isReadOnly,
+      threadRootId,
+      isDeliveryActionable,
+    };
+    const reactionActions = !isDeliveryActionable || renderMessageReactionActions == null
+      ? undefined
+      : (onOpenChange: (open: boolean) => void) => renderMessageReactionActions({ ...reactionPillProps, onOpenChange });
+    const threadSummary = resolveTranscriptCardInteractions?.getThreadSummary(entry.id) ?? null;
+    return (
+      <div
+        aria-busy={pending || entry.isStreaming || undefined}
+        aria-labelledby={`${ids.author} ${ids.timestamp}`}
+        className="sand-virtual-transcript__row sand-transcript-row"
+        data-entry-id={entry.id}
+        data-failed={failed || undefined}
+        data-index={index}
+        data-pending={pending || undefined}
+        data-role={entry.role}
+        key={entry.id}
+        role="article"
+      >
+        <span hidden id={ids.author}>{entry.author}</span>
+        <time dateTime={new Date(entry.timestampMs).toISOString()} hidden id={ids.timestamp}>{new Date(entry.timestampMs).toLocaleString()}</time>
+        <MessageActionAnchor entry={entry} isReadOnly={isReadOnly} onCopy={onCopyMessage} onOpenThread={resolveTranscriptCardInteractions?.openThread} onReply={onReply} onStartThread={onStartThread} renderReactionActions={reactionActions} threadRootId={threadRootId} threadSummary={threadSummary}>
+          <div aria-label={entry.role === "assistant" ? "Agent message" : undefined} className="sand-message" data-group-start={messageAdjacency.isGroupStart || undefined} data-role={entry.role} role="group">
+            {replyPreview != null && onOpenReply != null ? <ReferencedMessagePreviewTrigger
+              authorName={referencedAuthorName}
+              isInScope={isReplyTargetInScope?.(entry.replyToId ?? "") === true}
+              onOpen={onOpenReply}
+              ownerId={entry.id}
+              preview={replyPreview}
+              targetId={entry.replyToId ?? ""}
+              timestampMs={referencedEntry != null && "timestampMs" in referencedEntry ? referencedEntry.timestampMs : undefined}
+            /> : null}
+            {messageLink != null && messageUrlCards != null ? <LinkCardView isGroupStart={messageAdjacency.isGroupStart} provider={messageUrlCards} url={messageLink} /> : entry.isStreaming && entry.role === "assistant" && !entry.text ? <StreamingMessage /> : entry.role === "assistant" ? <AssistantMessageContent channel={entry.channel} images={entry.images} isSourceTrusted={entry.isSourceTrusted} isStreaming={entry.isStreaming} text={entry.text} /> : <UserMessageContent richText={entry.richText} text={entry.text} />}
+            {renderMessageReactionPills?.(reactionPillProps)}
+            {entry.attachments?.length ? <TranscriptAttachmentGallery adjacency={messageAdjacency} attachments={entry.attachments} downloadAttachment={downloadAttachment} readAttachmentBytes={readAttachmentBytes} resolveMedia={resolveAttachmentMedia} role={entry.role} /> : null}
+            {entry.delivery === "queued" && entry.composedAtMs == null ? <QueuedSendNotice entry={entry} isTransportDown={isTransportDown} onCancel={onCancelQueuedSend} /> : null}
+            {entry.role === "user" && !failed && entry.composedAtMs != null ? <SentWhileOfflineNotice composedAtMs={entry.composedAtMs} /> : null}
+            {failed ? <FailedSendActions entry={entry} onDelete={onDeleteFailedSend} onResend={onResendFailedSend} /> : null}
+          </div>
+        </MessageActionAnchor>
+      </div>
+    );
+  };
+
+  // --- Virtual transcript plane (slices 2–3, flag-gated) ---
+  const virtualEnabled = isVirtualTranscriptEnabled();
+  const [scrollState, setScrollState] = useState({ scrollTopPx: 0, viewportPx: 0 });
+
+  // Track scroll position and viewport size when virtual mode is on
+  useEffect(() => {
+    if (!virtualEnabled) return;
+    const el = transcriptRef.current;
+    if (el == null) return;
+    const update = () => setScrollState({ scrollTopPx: el.scrollTop, viewportPx: el.clientHeight });
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", update);
+      ro.disconnect();
+    };
+  }, [virtualEnabled]);
+
+  // Measure cache: committed row heights replace estimates (slice 4, flag ON only)
+  const measureCacheRef = useRef<MeasureCache | null>(null);
+  if (virtualEnabled && measureCacheRef.current == null) {
+    measureCacheRef.current = new MeasureCache();
+  }
+  const [measureEpoch, setMeasureEpoch] = useState(0);
+
+  // Prune stale keys when entries change
+  useEffect(() => {
+    if (!virtualEnabled || measureCacheRef.current == null) return;
+    const activeKeys = new Set(entries.map((e) => e.id));
+    measureCacheRef.current.prune(activeKeys);
+  }, [virtualEnabled, entries]);
+
+  // Compute heights: use committed (measured) when available, else estimate
+  const heights = useMemo(
+    () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- measureEpoch forces recompute
+      void measureEpoch;
+      if (virtualEnabled && measureCacheRef.current != null) {
+        return measureCacheRef.current.resolveHeights(
+          entries.map((entry) => ({
+            id: entry.id,
+            kind: entry.kind,
+            hasAttachments: entry.kind === "message" && (entry as TranscriptMessage).attachments != null && ((entry as TranscriptMessage).attachments?.length ?? 0) > 0,
+          }))
+        );
+      }
+      return entries.map((entry) => estimateEntryHeightPx(entry.kind, entry.kind === "message" && (entry as TranscriptMessage).attachments != null && ((entry as TranscriptMessage).attachments?.length ?? 0) > 0));
+    },
+    [entries, virtualEnabled, measureEpoch]
+  );
+  const offsets = useMemo(() => buildOffsets(heights), [heights]);
+  const planeTotalPx = totalSizePx(offsets);
+
+  const mountedRange = useMemo(
+    () => virtualEnabled
+      ? computeMountedRange({ offsets, scrollTopPx: scrollState.scrollTopPx, viewportPx: scrollState.viewportPx, overscanRows: OVERSCAN_ROWS, leadingInsetPx: LEADING_INSET_PX })
+      : { firstIndex: 0, lastIndex: entries.length },
+    [virtualEnabled, offsets, scrollState.scrollTopPx, scrollState.viewportPx, entries.length]
+  );
+
+  // Row ResizeObserver for measure/invalidate (slice 4)
+  const rowObserverRef = useRef<ResizeObserver | null>(null);
+  const rowElementsRef = useRef<Map<string, Element>>(new Map());
+
+  useEffect(() => {
+    if (!virtualEnabled) return;
+    const mc = measureCacheRef.current;
+    if (mc == null) return;
+    const ro = new ResizeObserver((observedEntries) => {
+      let changed = false;
+      for (const roe of observedEntries) {
+        const el = roe.target as HTMLElement;
+        const key = el.dataset.rowKey;
+        if (key == null) continue;
+        const h = roe.borderBoxSize?.[0]?.blockSize ?? el.offsetHeight;
+        if (mc.commit(key, h)) changed = true;
+      }
+      if (changed) setMeasureEpoch((e) => e + 1);
+    });
+    rowObserverRef.current = ro;
+    // Observe any already-tracked elements
+    for (const el of rowElementsRef.current.values()) ro.observe(el);
+    return () => {
+      ro.disconnect();
+      rowObserverRef.current = null;
+    };
+  }, [virtualEnabled]);
+
+  const measureRef = useCallback((el: HTMLDivElement | null, key: string) => {
+    const prev = rowElementsRef.current.get(key);
+    if (prev === el) return;
+    if (prev != null) {
+      rowObserverRef.current?.unobserve(prev);
+      rowElementsRef.current.delete(key);
+    }
+    if (el != null) {
+      rowElementsRef.current.set(key, el);
+      rowObserverRef.current?.observe(el);
+      // Immediate measure on mount
+      const mc = measureCacheRef.current;
+      if (mc != null) {
+        const h = el.offsetHeight;
+        if (mc.commit(key, h)) setMeasureEpoch((e) => e + 1);
+      }
+    }
+  }, []);
+
+  // --- Slice 8: hoist keyboard widget id — compute once per render, not O(n²) ---
+  const keyboardWidgetEntryId = useMemo(() => transcriptKeyboardWidgetEntryId(entries), [entries]);
+
+  // --- Slice 5: sticky-bottom / auto-scroll (virtual path only) ---
+  const stickyRef = useRef<StickyState>(initialStickyState());
+
+  // Record user gestures (wheel/touch) so onScroll can distinguish them from programmatic scrolls.
+  useEffect(() => {
+    if (!virtualEnabled) return;
+    const el = transcriptRef.current;
+    if (el == null) return;
+    const handler = () => {
+      stickyRef.current = stickyOnUserGesture(stickyRef.current, Date.now());
+    };
+    el.addEventListener("wheel", handler, { passive: true });
+    el.addEventListener("touchmove", handler, { passive: true });
+    return () => {
+      el.removeEventListener("wheel", handler);
+      el.removeEventListener("touchmove", handler);
+    };
+  }, [virtualEnabled]);
+
+  // Update sticky state on scroll.
+  useEffect(() => {
+    if (!virtualEnabled) return;
+    const el = transcriptRef.current;
+    if (el == null) return;
+    const handler = () => {
+      const m = { scrollTop: el.scrollTop, scrollHeight: el.scrollHeight, clientHeight: el.clientHeight };
+      stickyRef.current = stickyOnScroll(stickyRef.current, m, Date.now());
+    };
+    el.addEventListener("scroll", handler, { passive: true });
+    return () => el.removeEventListener("scroll", handler);
+  }, [virtualEnabled]);
+
+  // Auto-scroll to bottom when pinned and content grows (new entries / streaming).
+  const prevPlaneTotalRef = useRef(planeTotalPx);
+  useLayoutEffect(() => {
+    if (!virtualEnabled) return;
+    const el = transcriptRef.current;
+    if (el == null) return;
+    const grew = planeTotalPx > prevPlaneTotalRef.current;
+    prevPlaneTotalRef.current = planeTotalPx;
+    if (grew && stickyRef.current.isPinned) {
+      el.scrollTop = scrollTopForBottom({ scrollHeight: el.scrollHeight, clientHeight: el.clientHeight });
+    }
+  }, [virtualEnabled, planeTotalPx]);
+
+  // --- Slice 7: pagination anchor for virtual plane ---
+  const anchorTotalRef = useRef<number | null>(null);
+
+  // After loadOlder prepends entries, anchor the scroll position.
+  useLayoutEffect(() => {
+    if (!virtualEnabled) return;
+    const el = transcriptRef.current;
+    if (el == null || anchorTotalRef.current == null) return;
+    const oldTotal = anchorTotalRef.current;
+    anchorTotalRef.current = null;
+    if (planeTotalPx > oldTotal) {
+      el.scrollTop = computeAnchoredScrollTop(el.scrollTop, oldTotal, planeTotalPx);
+    }
+  }, [virtualEnabled, planeTotalPx]);
+
+  // --- Slice 6: wire virtualScrollToEntry ref ---
+  useEffect(() => {
+    if (!virtualEnabled) {
+      virtualScrollToEntryRef.current = null;
+      return;
+    }
+    virtualScrollToEntryRef.current = (entryId: string): boolean => {
+      const el = transcriptRef.current;
+      if (el == null) return false;
+      const idx = findEntryIndex(entries, entryId);
+      if (idx < 0) return false;
+      const targetScrollTop = computeScrollTopForEntry(offsets, idx, el.clientHeight, LEADING_INSET_PX);
+      el.scrollTop = targetScrollTop;
+      // Unpin since we're scrolling to a specific entry (likely not bottom).
+      stickyRef.current = { isPinned: false, lastUserGestureMs: 0 };
+      return true;
+    };
+  }, [virtualEnabled, entries, offsets]);
+
+  if (!virtualEnabled) {
+    // Flag OFF: exact current path — full map, same container, same data-entry-id, no inner plane
+    return (
+      <div aria-label="Conversation transcript" aria-live="off" className="sand-virtual-transcript" ref={transcriptRef} role="log" tabIndex={0}>
+        {entries.map((entry, index) => renderEntry(entry, index))}
+        {isAgentRunning ? <div aria-hidden="true" className="sand-typing-indicator"><span /><span /><span /></div> : null}
+      </div>
+    );
+  }
+
+  // Flag ON: plane shell + mount windowing
+  const mountedEntries: ReactNode[] = [];
+  for (let i = mountedRange.firstIndex; i < mountedRange.lastIndex && i < entries.length; i++) {
+    const entry = entries[i]!;
+    const topPx = offsets[i]!;
+    const rendered = renderEntry(entry, i);
+    if (rendered == null) continue;
+    const entryId = entry.id;
+    mountedEntries.push(
+      <div
+        data-entry-id={entryId}
+        data-row-key={entryId}
+        key={entryId}
+        ref={(el) => measureRef(el, entryId)}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, transform: `translateY(${topPx}px)` }}
+      >
+        {rendered}
+      </div>
+    );
+  }
+
   return (
     <div aria-label="Conversation transcript" aria-live="off" className="sand-virtual-transcript" ref={transcriptRef} role="log" tabIndex={0}>
-      {entries.map((entry, index) => {
-        if (entry.kind === "time-separator") return <div className="sand-transcript-time-separator" key={entry.id} role="separator">{entry.label}</div>;
-        if (entry.kind === "unread-divider") return <div className="sand-unread-divider" key={entry.id} role="separator"><span className="sand-unread-divider__label">{entry.newMessageCount} new {entry.newMessageCount === 1 ? "message" : "messages"}</span></div>;
-        if (entry.kind === "timeline-event") return <TimelineEventRootEntry event={entry.event} id={entry.id} key={entry.id} onOpenAutomation={onOpenAutomation} timestampMs={entry.timestampMs} />;
-        if (entry.kind === "notice") return <TranscriptNoticeCard entry={entry} key={entry.id} />;
-        if (entry.kind === "computer-handoff") return renderComputerHandoff?.(entry) ?? null;
-        if (entry.kind === "thinking") return <TranscriptThinkingRow entry={entry} expanded={expandedThinking.has(entry.id)} key={entry.id} onToggle={toggleThinking} />;
-        if (entry.kind === "tool-call") return <TranscriptToolCallRow entry={entry} expanded={expandedToolCalls.has(entry.id)} key={entry.id} onToggle={toggleToolCall} />;
-        if (entry.kind === "local-tool-permission") return null;
-        if (entry.kind === "permission-request") return <PermissionRequestLeaf isGroupStart={entry.isGroupStart} key={entry.id} timestampMs={entry.timestampMs} title={entry.title} />;
-        if (entry.kind === "send-message") {
-          if (transcriptCards == null) return null;
-          const isKeyboardTarget = transcriptKeyboardWidgetEntryId(entries) === entry.id;
-          const card = <TranscriptCardRootEntry
-            adjacency={transcriptAdjacency[index]}
-            contract={transcriptCards}
-            entry={entry}
-            isReadOnly={isReadOnly}
-            isKeyboardTarget={isKeyboardTarget}
-            key={entry.id}
-            renderReactionActions={renderMessageReactionActions}
-            renderReactionPills={renderMessageReactionPills}
-            threadRootId={threadRootId}
-          />;
-          return resolveTranscriptCardInteractions == null
-            ? card
-            : <TranscriptCardInteractionProvider key={entry.id} value={resolveTranscriptCardInteractions}>{card}</TranscriptCardInteractionProvider>;
-        }
-
-        const ids = transcriptIds(entry.id, true);
-        const pending = entry.delivery === "pending" || entry.delivery === "queued";
-        const failed = entry.delivery === "failed";
-        const replyPreview = entry.replyToId == null || resolveReplyPreview == null ? null : (resolveReplyPreview(entry.replyToId) ?? { kind: "missing" as const });
-        const referencedEntry = entry.replyToId == null ? undefined : entries.find((candidate) => candidate.id === entry.replyToId);
-        const referencedAuthorName = referencedEntry?.kind === "message"
-          ? referencedEntry.author
-          : replyPreview?.kind === "user-text" ? "You" : "Agent";
-        const messageUrlCards = urlCards ?? transcriptCards?.leafProviders.urlCards ?? null;
-        const messageProjection = projectTranscriptMessageCard(entry);
-        const messageAdjacency = entry.adjacency == null
-          ? transcriptAdjacency[index]
-          : { ...transcriptAdjacency[index], ...entry.adjacency };
-        const messageLink = messageUrlCards != null && (entry.attachments?.length ?? 0) === 0
-          ? entry.sendMessageText?.presentation.kind === "url-card"
-            && entry.sendMessageText.presentation.whenUnavailable === "url-card"
-            ? entry.sendMessageText.presentation.url
-            : messageProjection.kind === "message" ? messageProjection.url : null
-          : null;
-        const isDeliveryActionable = isOrdinaryMessageActionable(entry, isReadOnly);
-        const reactionPillProps: TranscriptMessageReactionPillsProps = {
-          entry,
-          isReadOnly,
-          threadRootId,
-          isDeliveryActionable,
-        };
-        const reactionActions = !isDeliveryActionable || renderMessageReactionActions == null
-          ? undefined
-          : (onOpenChange: (open: boolean) => void) => renderMessageReactionActions({ ...reactionPillProps, onOpenChange });
-        const threadSummary = resolveTranscriptCardInteractions?.getThreadSummary(entry.id) ?? null;
-        return (
-          <div
-            aria-busy={pending || entry.isStreaming || undefined}
-            aria-labelledby={`${ids.author} ${ids.timestamp}`}
-            className="sand-virtual-transcript__row sand-transcript-row"
-            data-entry-id={entry.id}
-            data-failed={failed || undefined}
-            data-index={index}
-            data-pending={pending || undefined}
-            data-role={entry.role}
-            key={entry.id}
-            role="article"
-          >
-            <span hidden id={ids.author}>{entry.author}</span>
-            <time dateTime={new Date(entry.timestampMs).toISOString()} hidden id={ids.timestamp}>{new Date(entry.timestampMs).toLocaleString()}</time>
-            <MessageActionAnchor entry={entry} isReadOnly={isReadOnly} onCopy={onCopyMessage} onOpenThread={resolveTranscriptCardInteractions?.openThread} onReply={onReply} onStartThread={onStartThread} renderReactionActions={reactionActions} threadRootId={threadRootId} threadSummary={threadSummary}>
-              <div aria-label={entry.role === "assistant" ? "Agent message" : undefined} className="sand-message" data-group-start={messageAdjacency.isGroupStart || undefined} data-role={entry.role} role="group">
-                {replyPreview != null && onOpenReply != null ? <ReferencedMessagePreviewTrigger
-                  authorName={referencedAuthorName}
-                  isInScope={isReplyTargetInScope?.(entry.replyToId ?? "") === true}
-                  onOpen={onOpenReply}
-                  ownerId={entry.id}
-                  preview={replyPreview}
-                  targetId={entry.replyToId ?? ""}
-                  timestampMs={referencedEntry != null && "timestampMs" in referencedEntry ? referencedEntry.timestampMs : undefined}
-                /> : null}
-                {messageLink != null && messageUrlCards != null ? <LinkCardView isGroupStart={messageAdjacency.isGroupStart} provider={messageUrlCards} url={messageLink} /> : entry.isStreaming && entry.role === "assistant" && !entry.text ? <StreamingMessage /> : entry.role === "assistant" ? <AssistantMessageContent channel={entry.channel} images={entry.images} isSourceTrusted={entry.isSourceTrusted} isStreaming={entry.isStreaming} text={entry.text} /> : <UserMessageContent richText={entry.richText} text={entry.text} />}
-                {renderMessageReactionPills?.(reactionPillProps)}
-                {entry.attachments?.length ? <TranscriptAttachmentGallery adjacency={messageAdjacency} attachments={entry.attachments} downloadAttachment={downloadAttachment} readAttachmentBytes={readAttachmentBytes} resolveMedia={resolveAttachmentMedia} role={entry.role} /> : null}
-                {entry.delivery === "queued" && entry.composedAtMs == null ? <QueuedSendNotice entry={entry} isTransportDown={isTransportDown} onCancel={onCancelQueuedSend} /> : null}
-                {entry.role === "user" && !failed && entry.composedAtMs != null ? <SentWhileOfflineNotice composedAtMs={entry.composedAtMs} /> : null}
-                {failed ? <FailedSendActions entry={entry} onDelete={onDeleteFailedSend} onResend={onResendFailedSend} /> : null}
-              </div>
-            </MessageActionAnchor>
-          </div>
-        );
-      })}
+      <div className="sand-virtual-transcript__inner" style={{ position: "relative", height: planeTotalPx }}>
+        {mountedEntries}
+      </div>
       {isAgentRunning ? <div aria-hidden="true" className="sand-typing-indicator"><span /><span /><span /></div> : null}
     </div>
   );
