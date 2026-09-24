@@ -109,7 +109,7 @@ export async function getPluginForGateway(management: PluginManagement, pluginId
 export async function installPluginForGateway(
   management: PluginManagement,
   args: { plugin_id?: unknown; values?: unknown },
-  emitConnectorCard: (card: { connector: string; variant: string; agentId?: string }) => Promise<void>,
+  emitConnectorCard: (card: { connector: string; serverId?: string; variant: string; agentId?: string }) => Promise<void>,
   agentId?: string,
 ): Promise<string> {
   const pluginId = typeof args.plugin_id === "string" ? args.plugin_id.trim() : "";
@@ -130,6 +130,7 @@ export async function installPluginForGateway(
   for (const row of cards) {
     await emitConnectorCard({
       connector: row.name,
+      serverId: row.id,
       variant: "connect",
       ...(agentId == null ? {} : { agentId }),
     });
