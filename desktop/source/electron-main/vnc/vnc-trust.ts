@@ -9,6 +9,15 @@ import { createBoxVncHandlers, createBoxVncTrust } from "./vnc-edge.js";
 export const BOX_VNC_PARTITION = "persist:sand-forever-box";
 export const isVncEntryPage = (url: URL): boolean => url.pathname.endsWith("/vnc.html");
 export function isLoopbackBoxDesktopUrl(rawUrl: string): boolean { const parsed = URL.parse(rawUrl); return parsed != null && (parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost") && isVncEntryPage(parsed); }
+export function ensureBoxDesktopAutoconnect(rawUrl: string): string {
+  const parsed = URL.parse(rawUrl);
+  if (parsed == null || !isVncEntryPage(parsed)) return rawUrl;
+  let changed = false;
+  if (parsed.searchParams.get("autoconnect") !== "true") { parsed.searchParams.set("autoconnect", "true"); changed = true; }
+  if (!parsed.searchParams.has("resize")) { parsed.searchParams.set("resize", "scale"); changed = true; }
+  if (parsed.searchParams.get("reconnect") !== "true") { parsed.searchParams.set("reconnect", "true"); changed = true; }
+  return changed ? parsed.toString() : rawUrl;
+}
 export interface VncTrustDeps { preloadDistDir: string; onAssetFailure(report: { host: string; statusCode: number; tokenInfo: { seeded: boolean; source: string }; resource: "page" | "asset" }): void; routeHostInput(input: unknown): boolean; /** Where the box desktop's stream is narrated; see computer-stream-log.ts. */ streamLog?: ComputerStreamLog; preloadExists?(path: string): boolean }
 export function createBoxVncTrustRegistry(deps: VncTrustDeps) {
   const previewWebviewPreloadPath = join(deps.preloadDistDir, "preload-webview.cjs"); const previewVncPreloadPath = join(deps.preloadDistDir, "preload-vnc.cjs");
@@ -18,7 +27,42 @@ export function createBoxVncTrustRegistry(deps: VncTrustDeps) {
   const getTokenInfo = (host: string) => ({ seeded: tokens.has(host), source: tokenSources.get(host) ?? (tokens.has(host) ? "cached" : "none") });
   const observeResponse = (rawUrl: string, statusCode: number): void => { const url = URL.parse(rawUrl); if (url == null) return; if (statusCode < 400) { failingHosts.delete(url.host); return; } if (statusCode >= 500 || failingHosts.has(url.host)) return; failingHosts.add(url.host); deps.onAssetFailure({ host: url.host, statusCode, tokenInfo: getTokenInfo(url.host), resource: isVncEntryPage(url) ? "page" : "asset" }); };
   const isTrustedBoxDesktopFrameUrl = (rawUrl: string): boolean => { if (isLoopbackBoxDesktopUrl(rawUrl)) return true; const parsed = URL.parse(rawUrl); return parsed != null && isVncEntryPage(parsed) && trustedOrigins.has(parsed.origin); };
-  const hardenAttach = (webPreferences: Record<string, unknown>, params: Record<string, unknown>): void => { webPreferences.nodeIntegration = false; webPreferences.contextIsolation = true; const isBox = params.partition === BOX_VNC_PARTITION; webPreferences.sandbox = !isBox; webPreferences.preload = isBox ? previewVncPreloadPath : previewWebviewPreloadPath; if (isBox && typeof params.src === "string") { const origin = URL.parse(params.src)?.origin; if (origin != null) trustedOrigins.add(origin); rememberNetworkToken(params.src); recordTokenSource(params.src); } if (typeof params.src === "string") { const parsed = URL.parse(params.src); if (parsed == null || !["http:", "https:", "about:"].includes(parsed.protocol)) delete params.src; } if (isBox && deps.streamLog != null) { let preloadExists: boolean | undefined; try { preloadExists = deps.preloadExists?.(previewVncPreloadPath); } catch { preloadExists = undefined; } deps.streamLog.line(describeWebviewAttach({ params, webPreferences, isBox, preloadExists })); } };
+  const hardenAttach = (webPreferences: Record<string, unknown>, params: Record<string, unknown>): void => {
+    webPreferences.nodeIntegration = false;
+    webPreferences.contextIsolation = true;
+    const src = typeof params.src === "string" ? params.src : "";
+    const loopbackDesktop = src.length > 0 && isLoopbackBoxDesktopUrl(src);
+    // Pinned renderer must use persist:sand-forever-box. If it hands a loopback
+    // vnc.html on any other partition, the wrong preload is wired, the guest is
+    // never observed, and the stream stays as a spinner with no attach line.
+    const partitionWas = typeof params.partition === "string" ? params.partition : "(none)";
+    if (loopbackDesktop && params.partition !== BOX_VNC_PARTITION) {
+      params.partition = BOX_VNC_PARTITION;
+      deps.streamLog?.line(`attach rewrite partition from=${partitionWas} to=${BOX_VNC_PARTITION} src=${src}`);
+    }
+    const isBox = params.partition === BOX_VNC_PARTITION || loopbackDesktop;
+    if (isBox) params.partition = BOX_VNC_PARTITION;
+    webPreferences.sandbox = !isBox;
+    webPreferences.preload = isBox ? previewVncPreloadPath : previewWebviewPreloadPath;
+    if (isBox && src.length > 0) {
+      const withAutoconnect = ensureBoxDesktopAutoconnect(src);
+      if (withAutoconnect !== src) params.src = withAutoconnect;
+      const effectiveSrc = typeof params.src === "string" ? params.src : src;
+      const origin = URL.parse(effectiveSrc)?.origin;
+      if (origin != null) trustedOrigins.add(origin);
+      rememberNetworkToken(effectiveSrc);
+      recordTokenSource(effectiveSrc);
+    }
+    if (typeof params.src === "string") {
+      const parsed = URL.parse(params.src);
+      if (parsed == null || !["http:", "https:", "about:"].includes(parsed.protocol)) delete params.src;
+    }
+    if (isBox && deps.streamLog != null) {
+      let preloadExists: boolean | undefined;
+      try { preloadExists = deps.preloadExists?.(previewVncPreloadPath); } catch { preloadExists = undefined; }
+      deps.streamLog.line(describeWebviewAttach({ params, webPreferences, isBox, preloadExists }));
+    }
+  };
   const beforeSendHeaders = (details: { url: string; requestHeaders: Record<string, string> }): Record<string, string> => { rememberNetworkToken(details.url); recordTokenSource(details.url); const host = URL.parse(details.url)?.host; const token = host == null ? undefined : tokens.get(host); if (token != null) details.requestHeaders["x-anyrun-network-token"] = token; return details.requestHeaders; };
   return { getTokenInfo, observeResponse, isTrustedBoxDesktopFrameUrl, hardenAttach, beforeSendHeaders, routeHostInput: deps.routeHostInput };
 }

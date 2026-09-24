@@ -113,7 +113,7 @@ test("the trust registry narrates the attach and observes every box guest", asyn
     const params = { src: "http://127.0.0.1:6080/vnc.html?autoconnect=true", partition: "persist:sand-forever-box" };
     embedder.emit("will-attach-webview", {}, webPreferences, params);
     assert.equal(lines.length, 1);
-    assert.equal(lines[0], "attach webview box=true src=http://127.0.0.1:6080/vnc.html?autoconnect=true partition=persist:sand-forever-box sandbox=false preload=/app/dist/electron-preload/preload-vnc.cjs preloadExists=true");
+    assert.equal(lines[0], "attach webview box=true src=http://127.0.0.1:6080/vnc.html?autoconnect=true&resize=scale&reconnect=true partition=persist:sand-forever-box sandbox=false preload=/app/dist/electron-preload/preload-vnc.cjs preloadExists=true");
     // A browser preview webview is not narrated.
     embedder.emit("will-attach-webview", {}, {}, { src: "https://example.com", partition: "persist:preview" });
     assert.equal(lines.length, 1);
@@ -155,7 +155,8 @@ test("a log line is turned into one sentence a person can act on", async () => {
     assert.equal(computerStreamReason("box reachability outcome=network method=ensureForeverBox cause=ECONNREFUSED baseUrl=http://127.0.0.1:1340"), 'The computer\'s gateway could not be reached for "ensureForeverBox" (ECONNREFUSED).');
     assert.equal(computerStreamReason("box reachability outcome=http_5xx method=getForeverBoxStatus cause=502 baseUrl=?"), 'The computer\'s gateway failed "getForeverBoxStatus": http_5xx (502).');
     assert.equal(computerStreamReason("local docker FAILED: Local Docker VM is selected, but Docker is unavailable: start Docker and try again"), "Local Docker VM is selected, but Docker is unavailable: start Docker and try again");
-    assert.equal(computerStreamReason("local docker: gateway ready at http://127.0.0.1:1340 after 4s"), "");
+    assert.equal(computerStreamReason("local docker: gateway ready at http://127.0.0.1:1340 after 4s"), null);
+    assert.equal(computerStreamReason("attach rewrite partition from=persist:preview to=persist:sand-forever-box src=http://127.0.0.1:6080/vnc.html"), "The screen webview used the wrong session partition; it was corrected.");
     assert.equal(computerStreamReason("local docker: container exists=true running=true owned=true schema=9 hostBundleMatches=true"), null);
   } finally {
     await dispose();
@@ -187,4 +188,40 @@ test("the box connector and the coordinator's reachability reports write into th
   assert.match(connector, /computerStreamLine\(`local docker: container exists=/);
   const provider = await readFile(path.join(repoRoot, "source/electron-main/coordinator/production-provider.ts"), "utf8");
   assert.match(provider, /computerStreamLine\(`box reachability outcome=/);
+});
+
+test("a loopback vnc.html on the wrong partition is forced onto the box session with autoconnect", async () => {
+  const { module, dispose } = await load("source/electron-main/vnc/vnc-trust.ts");
+  try {
+    const { lines, log } = fakeLog();
+    const app = new EventEmitter();
+    const boxSession = { webRequest: { onBeforeSendHeaders() {}, onCompleted() {} } };
+    const trust = module.registerBoxVncTrust({
+      preloadDistDir: "/app/dist/electron-preload",
+      onAssetFailure() {},
+      routeHostInput: () => false,
+      streamLog: log,
+      preloadExists: (file) => file.endsWith("preload-vnc.cjs"),
+      app,
+      boxSession,
+      isBoxWebviewSession: (contents) => contents.box === true,
+    });
+    const embedder = new EventEmitter();
+    trust.hardenWebviewAttach(embedder);
+    const webPreferences = {};
+    const params = { src: "http://127.0.0.1:6081/vnc.html?path=websockify%3Ftoken%3D2", partition: "persist:preview" };
+    embedder.emit("will-attach-webview", {}, webPreferences, params);
+    assert.equal(params.partition, "persist:sand-forever-box");
+    assert.match(String(params.src), /autoconnect=true/);
+    assert.match(String(params.src), /reconnect=true/);
+    assert.equal(webPreferences.sandbox, false);
+    assert.match(String(webPreferences.preload), /preload-vnc\.cjs$/);
+    assert.equal(lines[0], "attach rewrite partition from=persist:preview to=persist:sand-forever-box src=http://127.0.0.1:6081/vnc.html?path=websockify%3Ftoken%3D2");
+    assert.match(lines[1], /^attach webview box=true /);
+    assert.match(lines[1], /partition=persist:sand-forever-box/);
+    assert.match(lines[1], /preload=\/app\/dist\/electron-preload\/preload-vnc\.cjs/);
+    assert.equal(module.ensureBoxDesktopAutoconnect("http://127.0.0.1:6080/vnc.html?autoconnect=true&resize=scale&reconnect=true"), "http://127.0.0.1:6080/vnc.html?autoconnect=true&resize=scale&reconnect=true");
+  } finally {
+    await dispose();
+  }
 });
