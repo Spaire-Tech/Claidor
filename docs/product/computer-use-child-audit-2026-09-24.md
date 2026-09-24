@@ -138,3 +138,56 @@ Seven child calls at ~68k input (about 65k cached) plus the parent's
 calls at ~78k (cached). The child's calls are the avoidable part: a
 box-scoped child with a child-sized prompt would carry a few thousand
 tokens, not 68,000.
+
+## Applied, later the same night ("apply the fix")
+
+Checked first, offline, whether the code alone says Computer was in the
+child's request: `tests/computer-use-child.test.mjs` builds the production
+toolset host the way the composition builds it for a computerUse child
+and runs the real `buildTurnTools` on it. **Computer is in the set.** That
+proves the builder, not the founder's run (the composition's binding of
+the provider is what the `offered=` line measures on a Mac), and with
+point 3 below it no longer matters which: the child's behaviour is
+explained by its prompt.
+
+What changed, all in `host-runner-composition.ts`, the reconstruction's
+own pieces wired rather than new ones:
+
+1. **`isBoxScopedSubagent` is computed**: `isSubagentRunner &&
+   (isComputerUseSubagent || isBrowserUseSubagent)`, in the toolset host,
+   the static config and the prompt assembly. A computerUse child now has
+   no ExternalShell/ExternalRead/ExternalAwait, no WebSearch/WebFetch, no
+   CloudAgent, no CopyToBox/CopyFromBox, no MCP pair, no user-info block,
+   no time zone, and keeps its last screenshot in context
+   (`preserveLatestImage`).
+2. **A child's base prompt is `buildSandSubagentSystemPrompt({subagentType})`**
+   ("You are Simeon running as the computerUse subagent. Complete the
+   delegated task autonomously, then end your turn with a concise final
+   answer in plain text…" plus the safety section), never the agent's
+   58,166-character brief. The function existed in
+   `runner/system-prompt.ts:88` with no caller: **this is the thing we
+   missed.** The child had been reading a brief that says "reply first
+   with SendMessage" (a tool it does not have) and "delegate computer
+   work to a subagent" (a tool it does not have), and behaved as that
+   brief's owner waiting on a delegate.
+3. The `[claidor] prompt` line now ends with `boxScoped=true|false`.
+
+Measured offline (`tests/computer-use-child.test.mjs`): the child's
+assembled prompt is under 8,000 characters against the agent's 50,000+,
+starts with the subagent sentence, carries the Computer section, and
+has no turn rhythm, no Task instructions, no time zone and no roster.
+The memory, automations, workflows and channels sections are left as
+the reconstruction's assembly has them for a subagent (ungated); they
+are the parent's stores and were not measured as the cost.
+
+Not yet run on a Mac. The lines to read after one Render test:
+
+```
+docker exec simeon-box grep -n "\[claidor\] prompt \|\[claidor\] subagent=" /tmp/sand-host.log | tail -12
+docker exec simeon-box grep -n "model=gpt-5.6-luna" /tmp/sand-host.log | grep -v "input=5[0-9][0-9] " | tail -8 | cut -c1-300
+```
+
+Expected: `identity=computerUse glue=own assembly=own boxScoped=true`, the
+child's `model=` lines at a few thousand input tokens with `offered=`
+naming `Computer`, a `tool=Computer` line, and `subagent=result` with a
+sentence in it.

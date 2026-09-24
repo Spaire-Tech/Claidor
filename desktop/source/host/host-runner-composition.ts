@@ -126,7 +126,7 @@ import {
   createShellWatchReadAccessor,
   type ShellTerminalWatchHost,
 } from "./runner/shell-terminal-watch.js";
-import { DEFAULT_SAND_SYSTEM_PROMPT } from "./runner/system-prompt.js";
+import { buildSandSubagentSystemPrompt, DEFAULT_SAND_SYSTEM_PROMPT } from "./runner/system-prompt.js";
 import {
   createSystemPromptAssembly,
   type PromptSnapshotStore,
@@ -1328,7 +1328,17 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       readonly isSubagentRunner: boolean;
       readonly isComputerUseSubagent: boolean;
       readonly isBrowserUseSubagent: boolean;
+      readonly subagentType?: string;
     }
+    // Grok Bot's computerUse and browserUse children are box-scoped: no
+    // tools for the user's computer, no cloud agents, no transfers, no MCP,
+    // no user-info block, no time zone, and the last screenshot kept in
+    // context (turn-toolset.ts, turn-agent-composition.ts:305/775,
+    // system-prompt-assembly.ts:197). Until 24 September 2026 the flag was
+    // hard-coded false for every identity, so a child ran with the agent's
+    // toolset around Computer (docs/product/computer-use-child-audit-2026-09-24.md).
+    const isBoxScopedIdentity = (promptIdentity: PromptIdentity): boolean =>
+      promptIdentity.isSubagentRunner && (promptIdentity.isComputerUseSubagent || promptIdentity.isBrowserUseSubagent);
     const AGENT_PROMPT_IDENTITY: PromptIdentity = { isSubagentRunner: false, isComputerUseSubagent: false, isBrowserUseSubagent: false };
     const createPromptGlueFor = (promptIdentity: PromptIdentity) => productionContext === undefined
       || productionRequestContext === undefined
@@ -1474,12 +1484,21 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       || productionRequestContext === undefined
       ? undefined
       : createSystemPromptAssembly({
-          basePrompt: typeof overrides.systemPrompt === "string"
-            ? overrides.systemPrompt
-            : DEFAULT_SAND_SYSTEM_PROMPT,
+          // A child reads the reconstruction's own subagent prompt ("You are
+          // Simeon running as the computerUse subagent … end your turn with a
+          // concise final answer in plain text"), never the agent's brief.
+          // Until 24 September 2026 buildSandSubagentSystemPrompt had no
+          // caller, and a child read the 58,000-character agent brief that
+          // tells it to reply first with SendMessage and to delegate computer
+          // work to a subagent: it then waited for its own result.
+          basePrompt: promptIdentity.isSubagentRunner
+            ? buildSandSubagentSystemPrompt({ ...(promptIdentity.subagentType == null ? {} : { subagentType: promptIdentity.subagentType }) })
+            : typeof overrides.systemPrompt === "string"
+              ? overrides.systemPrompt
+              : DEFAULT_SAND_SYSTEM_PROMPT,
           isSubagentRunner: promptIdentity.isSubagentRunner,
           isSharedRoomRunner: isSharedRoomTurn,
-          isSystemPromptOverridden: typeof overrides.systemPrompt === "string",
+          isSystemPromptOverridden: !promptIdentity.isSubagentRunner && typeof overrides.systemPrompt === "string",
           agentProfileProvider: () => hooks.agentProfileProvider?.() ?? null,
           agentStore: () => {
             const store = session.agentStore;
@@ -1492,7 +1511,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           memorySnapshots: () => (session.db ?? null) as ReturnType<SystemPromptAssemblyDependencies["memorySnapshots"]>,
           userMemory: () => (runnerOptions.userMemory ?? null) as ReturnType<SystemPromptAssemblyDependencies["userMemory"]>,
           projectMemory: () => (runnerOptions.projectMemory ?? null) as ReturnType<SystemPromptAssemblyDependencies["projectMemory"]>,
-          isBoxScopedSubagent: () => false,
+          isBoxScopedSubagent: () => isBoxScopedIdentity(promptIdentity),
           requestContext: {
             resolve: () => {
               const resolved = productionRequestContext.resolve();
@@ -2486,7 +2505,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         isSubagentRunner: identity.isSubagentRunner,
         isComputerUseSubagent: isComputerUseTurn,
         isBrowserUseSubagent: isBrowserUseTurn,
+        ...(identity.subagentType == null ? {} : { subagentType: identity.subagentType }),
       };
+      const isBoxScopedTurn = isBoxScopedIdentity(promptIdentity);
       const promptGlue = identity.isSubagentRunner
         ? createPromptGlueFor(promptIdentity) ?? productionPromptGlue
         : productionPromptGlue;
@@ -2496,7 +2517,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       // Which prompt this shell serves, on the host log's channel: a child
       // that fell back to the agent's own glue or assembly would read the
       // agent's brief and behave as the parent (24 September 2026).
-      logHostLine(`${HOST_LOG_PREFIX} prompt conversation=${identity.conversationId} identity=${isComputerUseTurn ? "computerUse" : isBrowserUseTurn ? "browserUse" : identity.isSubagentRunner ? `subagent:${identity.subagentType ?? "?"}` : "agent"} glue=${identity.isSubagentRunner ? (promptGlue === productionPromptGlue ? "agent-fallback" : "own") : "agent"} assembly=${identity.isSubagentRunner ? (promptAssembly === productionSystemPromptAssembly ? "agent-fallback" : "own") : "agent"}`);
+      logHostLine(`${HOST_LOG_PREFIX} prompt conversation=${identity.conversationId} identity=${isComputerUseTurn ? "computerUse" : isBrowserUseTurn ? "browserUse" : identity.isSubagentRunner ? `subagent:${identity.subagentType ?? "?"}` : "agent"} glue=${identity.isSubagentRunner ? (promptGlue === productionPromptGlue ? "agent-fallback" : "own") : "agent"} assembly=${identity.isSubagentRunner ? (promptAssembly === productionSystemPromptAssembly ? "agent-fallback" : "own") : "agent"} boxScoped=${isBoxScopedTurn}`);
       const resolveSubagentConfigs = (): readonly TaskSubagentModelConfig[] => {
         const configs: unknown[] = [];
         if (method(remoteBox, "isAvailable")?.() !== false) {
@@ -2520,7 +2541,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         factoryProvider: createTurnToolsetFactoryProvider(hostDependencies()),
         isSubagentRunner: identity.isSubagentRunner,
         isSharedRoomRunner: isSharedRoomTurn,
-        isBoxScopedSubagent: false,
+        isBoxScopedSubagent: isBoxScopedTurn,
         isComputerUseSubagent: isComputerUseTurn,
         isBrowserUseSubagent: isBrowserUseTurn,
         isSystemPromptOverridden: typeof overrides.systemPrompt === "string",
@@ -2749,7 +2770,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               modelId: staticModelId,
               agentTokenLimit: CLAIDOR_WORKING_CONTEXT_TOKENS,
               conversationId: identity.conversationId,
-              isBoxScopedSubagent: false,
+              isBoxScopedSubagent: isBoxScopedTurn,
               isSubagentRunner: identity.isSubagentRunner,
               isSharedRoomRunner: isSharedRoomTurn,
               sandSendMessageDeliveryOwed: method(experiments, "isSendMessageDeliveryOwedEnabled")?.() ?? false,

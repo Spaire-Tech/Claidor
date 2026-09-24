@@ -338,7 +338,20 @@ child. The provider now offers all three, built on the box's accessor
 gets Screenshot and RequestBoxHelp and a computerUse child gets the
 computer tool. Not yet run on a Mac; the line to read in
 `/tmp/sand-host.log` is a `[claidor] tool=` line naming the computer
-tool on a Luna turn. The transcript's third
+tool on a Luna turn. **Read on the Mac that night: the child ran seven
+Luna calls at 68,000 input tokens, every one Shell printing a sentence
+to itself, no Computer call, no text.** Audited against the
+reconstruction (`docs/product/computer-use-child-audit-2026-09-24.md`):
+`isBoxScopedSubagent`, which Grok Bot threads through the toolset, the
+user-info block, the time zone and `preserveLatestImage`, was hard-coded
+false for every identity; and `buildSandSubagentSystemPrompt` ("You are
+Simeon running as the computerUse subagent…") had no caller, so a child
+read the agent's 58,000-character brief and behaved as the parent
+waiting on a delegate. Both are wired now (the flag computed, the child
+on the subagent prompt; `tests/computer-use-child.test.mjs` measures the
+toolset and the prompt offline). The `[claidor] model=` line carries
+`offered=` (every tool in the request) and each shell logs a
+`[claidor] prompt … boxScoped=` line. Not yet run on a Mac. The transcript's third
 finding, one reply sent twice ("Nice. We're set…"), is not explained by
 the code alone: the send count is collected synchronously before the
 run settles, and the early-result reminder cannot fire in a turn with no
