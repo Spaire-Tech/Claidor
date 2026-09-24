@@ -63,11 +63,35 @@ export function stampTranscriptEvent(payload: unknown, scope: TranscriptPermissi
   return payload;
 }
 
-/** A transcript read reply (`entries: [...]`) with its cards stamped. */
+// The inference router concatenates host entries before local entries without
+// interleaving by timestamp, so cards emitted by the host (widgets, connector,
+// Allow, rename) end up before local text and the renderer draws them at the
+// top of the chat. A stable sort by timestampMs here — downstream of the
+// concat and upstream of the renderer — puts every entry in chronological
+// order regardless of which transcript source produced it.
+function sortEntriesByTimestamp(entries: unknown): unknown {
+  if (!Array.isArray(entries)) return entries;
+  const hasTimestamp = entries.some(
+    (entry) => isRecord(entry) && typeof entry.timestampMs === "number",
+  );
+  if (!hasTimestamp) return entries;
+  const sorted = [...entries].sort((a, b) => {
+    const aMs = isRecord(a) && typeof a.timestampMs === "number" ? a.timestampMs : 0;
+    const bMs = isRecord(b) && typeof b.timestampMs === "number" ? b.timestampMs : 0;
+    return aMs - bMs;
+  });
+  // Return original reference when nothing moved (common case: already ordered).
+  const unchanged = sorted.every((entry, i) => entry === entries[i]);
+  return unchanged ? entries : sorted;
+}
+
+/** A transcript read reply (`entries: [...]`) with its cards stamped and sorted. */
 export function stampTranscriptReply(method: string, value: unknown, scope: TranscriptPermissionScope | null): unknown {
-  if (scope == null || !TRANSCRIPT_REPLY_METHODS.includes(method) || !isRecord(value)) return value;
-  const entries = stampEntries(value.entries, scope);
-  return entries === value.entries ? value : { ...value, entries };
+  if (!TRANSCRIPT_REPLY_METHODS.includes(method) || !isRecord(value)) return value;
+  const sorted = sortEntriesByTimestamp(value.entries);
+  const stamped = scope == null ? sorted : stampEntries(sorted, scope);
+  if (stamped === value.entries && sorted === value.entries) return value;
+  return { ...value, entries: stamped };
 }
 
 /** True when a payload or reply carries at least one permission card, so the slot is only fetched when needed. */

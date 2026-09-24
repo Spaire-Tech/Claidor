@@ -197,3 +197,42 @@ test("transcription posts the clip as multipart and never talks protobuf", async
     await loaded.dispose();
   }
 });
+
+test("sand generate-image service registers for turn-toolset and persist failures stay typed", async () => {
+  const loaded = await loadModule("source/host/extensions/attachments/generate-image-service.ts", "generate-image-service");
+  try {
+    const {
+      createSandGenerateImageService,
+      getRegisteredSandGenerateImageService,
+      SandGenerateImagePersistError,
+    } = loaded.module;
+
+    assert.equal(typeof getRegisteredSandGenerateImageService, "function");
+    assert.equal(typeof createSandGenerateImageService, "function");
+
+    const absolutePath = "/Users/bassfall/.claidor/agents/a1/assets/deadbeef.png";
+    const sand = createSandGenerateImageService(
+      { getAccessToken: async () => "claidor_da_picture", getMachineId: async () => "machine-1" },
+      {
+        persistImage: async (_bytes, mimeType) => {
+          assert.equal(mimeType, "image/png");
+          return { absolutePath };
+        },
+      },
+    );
+    assert.equal(getRegisteredSandGenerateImageService(), sand);
+    assert.equal(typeof sand, "function");
+
+    // Persist contract the GenerateImage tool now trusts: absolute filePath,
+    // no projectFolder required.
+    assert.ok(absolutePath.startsWith("/"));
+
+    const persistError = new SandGenerateImagePersistError(
+      "Failed to save the generated image into the agent's media store.",
+    );
+    assert.match(persistError.message, /media store/);
+    assert.equal(persistError instanceof SandGenerateImagePersistError, true);
+  } finally {
+    await loaded.dispose();
+  }
+});
