@@ -5,6 +5,9 @@ import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, use
 import { isVirtualTranscriptEnabled } from "./virtual-transcript-flag";
 import { buildOffsets, computeMountedRange, estimateEntryHeightPx, LEADING_INSET_PX, OVERSCAN_ROWS, totalSizePx } from "./virtual-transcript-geometry";
 import { MeasureCache } from "./virtual-transcript-measure-cache";
+import { initialStickyState, onScroll as stickyOnScroll, onUserGesture as stickyOnUserGesture, onScrollToBottom as stickyOnScrollToBottom, scrollTopForBottom, type StickyState } from "./virtual-transcript-sticky";
+import { computeScrollTopForEntry, findEntryIndex } from "./virtual-transcript-scroll-to";
+import { computeAnchoredScrollTop } from "./virtual-transcript-pagination";
 import "./transcript-utility-parity.css";
 import { AssistantMath } from "./math";
 import { TranscriptAttachmentGallery } from "./media-viewer";
@@ -620,10 +623,21 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const olderLoadInFlightRef = useRef(false);
   const viewCommitListenersRef = useRef(new Set<() => void>());
+  // --- Scroll-to-entry for virtual path (slice 6) ---
+  // Refs for plane-aware scroll-to; populated below after offsets are computed.
+  const virtualScrollToEntryRef = useRef<((entryId: string) => boolean) | null>(null);
+
   const handleRef = useRef<FindInChatTranscriptHandle | null>(null);
   if (handleRef.current == null) {
     handleRef.current = {
       scrollToEntryWithoutHighlight(entryId) {
+        // Virtual path: use plane offset math to scroll to unmounted rows.
+        const virtualFn = virtualScrollToEntryRef.current;
+        if (virtualFn != null) {
+          const result = virtualFn(entryId);
+          if (result) return true;
+        }
+        // Flag-OFF / fallback: DOM query.
         const transcript = transcriptRef.current;
         if (transcript == null) return false;
         const row = [...transcript.querySelectorAll<HTMLElement>("[data-entry-id], [data-row-key]")]
@@ -658,6 +672,8 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
     const maybeLoadOlder = () => {
       if (!active || isLoadingOlder || olderLoadInFlightRef.current || transcript.scrollTop > 600) return;
       olderLoadInFlightRef.current = true;
+      // Slice 7: snapshot plane total before loadOlder so we can anchor after prepend.
+      if (virtualEnabled) anchorTotalRef.current = prevPlaneTotalRef.current;
       let result: void | Promise<void>;
       try {
         result = loadOlder();
@@ -712,7 +728,7 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
     if (entry.kind === "permission-request") return <PermissionRequestLeaf isGroupStart={entry.isGroupStart} key={entry.id} timestampMs={entry.timestampMs} title={entry.title} />;
     if (entry.kind === "send-message") {
       if (transcriptCards == null) return null;
-      const isKeyboardTarget = transcriptKeyboardWidgetEntryId(entries) === entry.id;
+      const isKeyboardTarget = keyboardWidgetEntryId === entry.id;
       const card = <TranscriptCardRootEntry
         adjacency={transcriptAdjacency[index]}
         contract={transcriptCards}
@@ -905,6 +921,88 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
       }
     }
   }, []);
+
+  // --- Slice 8: hoist keyboard widget id — compute once per render, not O(n²) ---
+  const keyboardWidgetEntryId = useMemo(() => transcriptKeyboardWidgetEntryId(entries), [entries]);
+
+  // --- Slice 5: sticky-bottom / auto-scroll (virtual path only) ---
+  const stickyRef = useRef<StickyState>(initialStickyState());
+
+  // Record user gestures (wheel/touch) so onScroll can distinguish them from programmatic scrolls.
+  useEffect(() => {
+    if (!virtualEnabled) return;
+    const el = transcriptRef.current;
+    if (el == null) return;
+    const handler = () => {
+      stickyRef.current = stickyOnUserGesture(stickyRef.current, Date.now());
+    };
+    el.addEventListener("wheel", handler, { passive: true });
+    el.addEventListener("touchmove", handler, { passive: true });
+    return () => {
+      el.removeEventListener("wheel", handler);
+      el.removeEventListener("touchmove", handler);
+    };
+  }, [virtualEnabled]);
+
+  // Update sticky state on scroll.
+  useEffect(() => {
+    if (!virtualEnabled) return;
+    const el = transcriptRef.current;
+    if (el == null) return;
+    const handler = () => {
+      const m = { scrollTop: el.scrollTop, scrollHeight: el.scrollHeight, clientHeight: el.clientHeight };
+      stickyRef.current = stickyOnScroll(stickyRef.current, m, Date.now());
+    };
+    el.addEventListener("scroll", handler, { passive: true });
+    return () => el.removeEventListener("scroll", handler);
+  }, [virtualEnabled]);
+
+  // Auto-scroll to bottom when pinned and content grows (new entries / streaming).
+  const prevPlaneTotalRef = useRef(planeTotalPx);
+  useLayoutEffect(() => {
+    if (!virtualEnabled) return;
+    const el = transcriptRef.current;
+    if (el == null) return;
+    const grew = planeTotalPx > prevPlaneTotalRef.current;
+    prevPlaneTotalRef.current = planeTotalPx;
+    if (grew && stickyRef.current.isPinned) {
+      el.scrollTop = scrollTopForBottom({ scrollHeight: el.scrollHeight, clientHeight: el.clientHeight });
+    }
+  }, [virtualEnabled, planeTotalPx]);
+
+  // --- Slice 7: pagination anchor for virtual plane ---
+  const anchorTotalRef = useRef<number | null>(null);
+
+  // After loadOlder prepends entries, anchor the scroll position.
+  useLayoutEffect(() => {
+    if (!virtualEnabled) return;
+    const el = transcriptRef.current;
+    if (el == null || anchorTotalRef.current == null) return;
+    const oldTotal = anchorTotalRef.current;
+    anchorTotalRef.current = null;
+    if (planeTotalPx > oldTotal) {
+      el.scrollTop = computeAnchoredScrollTop(el.scrollTop, oldTotal, planeTotalPx);
+    }
+  }, [virtualEnabled, planeTotalPx]);
+
+  // --- Slice 6: wire virtualScrollToEntry ref ---
+  useEffect(() => {
+    if (!virtualEnabled) {
+      virtualScrollToEntryRef.current = null;
+      return;
+    }
+    virtualScrollToEntryRef.current = (entryId: string): boolean => {
+      const el = transcriptRef.current;
+      if (el == null) return false;
+      const idx = findEntryIndex(entries, entryId);
+      if (idx < 0) return false;
+      const targetScrollTop = computeScrollTopForEntry(offsets, idx, el.clientHeight, LEADING_INSET_PX);
+      el.scrollTop = targetScrollTop;
+      // Unpin since we're scrolling to a specific entry (likely not bottom).
+      stickyRef.current = { isPinned: false, lastUserGestureMs: 0 };
+      return true;
+    };
+  }, [virtualEnabled, entries, offsets]);
 
   if (!virtualEnabled) {
     // Flag OFF: exact current path — full map, same container, same data-entry-id, no inner plane
