@@ -394,7 +394,16 @@ the user's computer and sent it to ExternalRead and CopyToBox for a file
 the Mac does not hold, the staged copy was named by its hash, and a file
 over 25 MB became a dead card. The box hand-off card's tool
 (`request_box_help`) is offered by the production toolset since the same
-day; it was built, ordered by the brief and never wired. The transcript's third
+day; it was built, ordered by the brief and never wired. **The draft composer is wired the same
+night** ("wire it."): `DraftExternalMessage` emits the `email-draft` /
+`slack-draft` card the pinned renderer already draws, `sendDraft` /
+`discardDraft` on the gateway mark the card and wake the agent to deliver
+by whatever route the person has, and `MarkDraftDelivered` settles it.
+The card's Send and Discard buttons are empty bytes in Grok Bot 0.18's
+chunk and need a package-time patch written on a Mac
+(`docs/product/draft-composer-measured.md` has the offsets and the
+commands). Three cards are not built and were searched by concept: the
+in-chat form, the cookie-origin approval, the virtual card. The transcript's third
 finding, one reply sent twice ("Nice. We're set…"), is not explained by
 the code alone: the send count is collected synchronously before the
 run settles, and the early-result reminder cannot fire in a turn with no

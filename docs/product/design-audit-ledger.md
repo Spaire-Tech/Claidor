@@ -1089,8 +1089,11 @@ under `desktop/source` outside the generated protos, and the tools live on
 Cursor's side in the source records). **The draft composer is different**,
 corrected the same evening on the founder's challenge: the `email-draft`
 and `slack-draft` cards are drawn by the pinned renderer and carried by
-the host's transport; only the emitting tool (`DraftExternalMessage`) and
-a Send through a connected Gmail or Slack connector are missing; `permission-request` is a legacy
+the host's transport; the emitting tool (`DraftExternalMessage`), Send and Discard on the
+gateway, the delivery wake and `MarkDraftDelivered` were wired the same
+night at the founder's word ("wire it."; `docs/product/draft-composer-measured.md`,
+`tests/draft-composer.test.mjs`); the card's buttons in the pinned chunk
+still need the package-time patch, written on a Mac; `permission-request` is a legacy
 decoder, not an offered kind (F-094); the machine name on the card waits
 on the registry (F-285, with F-149).
 

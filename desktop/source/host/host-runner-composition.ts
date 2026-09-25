@@ -2211,6 +2211,29 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       createSendToAgentToolInputs: () => ({
         dependencies: dependencies.sendToAgent,
       }),
+      // DraftExternalMessage and MarkDraftDelivered: the draft composer card
+      // (email-draft / slack-draft). The pinned renderer draws it and the
+      // transport carries it; the emitting tool did not exist until 25
+      // September 2026 (cards-plan row 6). Not for a child or a shared room.
+      ...(isSharedRoomTurn
+        ? {}
+        : {
+            createDraftToolInputs: turn => {
+              const post = (message: Record<string, unknown>, timestampMs: number): string | undefined => {
+                const update = { type: "send-message" as const, message, timestampMs, ...(turn.ackToken === undefined ? {} : { ackToken: turn.ackToken }) };
+                if (turn.emitUpdate === undefined) hooks.transport.onUpdate(update);
+                else turn.emitUpdate(update);
+                return hooks.transport.lastSentMessageId?.();
+              };
+              return {
+                dependencies: {
+                  emitDraftCard: (message, timestampMs) => post(message as unknown as Record<string, unknown>, timestampMs),
+                  markDraftDelivered: (entryId, outcome) => method(extensions.api("transcript"), "markDraftDelivered")?.({ entryId, outcome }) != null,
+                  sayInChat: (content, timestampMs) => { post({ type: "text", content }, timestampMs); },
+                },
+              };
+            },
+          }),
       // request_box_help: the box hand-off card. The tool, the session's
       // hand-off service and the resume were all in the tree, the brief
       // ordered the tool, and a dead `boxHandoff` runner option stood in
