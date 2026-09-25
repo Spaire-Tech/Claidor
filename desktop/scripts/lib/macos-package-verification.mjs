@@ -21,6 +21,65 @@ const CSNAPS_RELATIVE = "dist/host/extensions/codebase-telemetry/csnaps";
 
 const sha256 = bytes => createHash("sha256").update(bytes).digest("hex");
 
+/**
+ * The renderer patch record (`router-renderer-patch.mjs`, `dist/renderer-router-extension.json`),
+ * read against the shipped renderer's file inventory. Schema 1 carried the two
+ * Settings chunks; schema 2 (since the Simeon brand pass, 22 September 2026)
+ * also carries `marks`, `brand` and `files`, the last being every touched
+ * file with its original and patched hashes, which is what the per-file
+ * drift check has to read (F-197, F-198: until 25 September this validator
+ * refused schema 2 outright and compared the marks and brand files against
+ * the shipped bytes, so `npm run package:diagnostic` could not pass on a
+ * patched renderer).
+ */
+export function readRendererExtensionRecord(parsed, expectedFiles) {
+  const schemaVersion = parsed?.schemaVersion;
+  if (![1, 2].includes(schemaVersion) || parsed?.mode !== "original-renderer-settings-extension" || !Array.isArray(parsed.chunks)) {
+    throw new Error("Renderer extension provenance contract is invalid");
+  }
+  const allowedKeys = schemaVersion === 1
+    ? ["schemaVersion", "mode", "chunks", "features", "transformations"]
+    : ["schemaVersion", "mode", "chunks", "marks", "files", "brand", "features", "transformations"];
+  if (Object.keys(parsed).sort().join("\0") !== allowedKeys.sort().join("\0")) throw new Error("Renderer extension provenance has unknown fields");
+  const isHash = value => /^[0-9a-f]{64}$/.test(value);
+  const relativeOf = row => (typeof row?.path === "string" && row.path.startsWith("dist/renderer/") ? row.path.slice("dist/renderer/".length) : null);
+  const chunks = new Map();
+  for (const row of parsed.chunks) {
+    const relative = relativeOf(row);
+    if (relative == null || !expectedFiles.has(relative) || chunks.has(relative) || !["registry", "panel"].includes(row.role)
+      || !Number.isInteger(row.original?.bytes) || !isHash(row.original?.sha256)
+      || !Number.isInteger(row.patched?.bytes) || !isHash(row.patched?.sha256)) {
+      throw new Error("Renderer extension chunk provenance is invalid");
+    }
+    const expected = expectedFiles.get(relative);
+    if (row.original.bytes !== expected.bytes || row.original.sha256 !== expected.sha256) throw new Error(`Renderer extension source identity drift at ${relative}`);
+    chunks.set(relative, row);
+  }
+  if (chunks.size < 1 || chunks.size > 2) throw new Error("Renderer extension chunk cardinality is invalid");
+  const patched = new Map();
+  if (schemaVersion === 1) {
+    for (const [relative, row] of chunks) patched.set(relative, row.patched);
+  } else {
+    if (!Array.isArray(parsed.files) || parsed.files.length === 0) throw new Error("Renderer extension provenance has no patched file inventory");
+    for (const row of parsed.files) {
+      const relative = relativeOf(row);
+      if (relative == null || !expectedFiles.has(relative) || patched.has(relative)
+        || !Number.isInteger(row.original?.bytes) || !isHash(row.original?.sha256)
+        || !Number.isInteger(row.patched?.bytes) || !isHash(row.patched?.sha256)) {
+        throw new Error("Renderer extension file provenance is invalid");
+      }
+      const expected = expectedFiles.get(relative);
+      if (row.original.bytes !== expected.bytes || row.original.sha256 !== expected.sha256) throw new Error(`Renderer extension source identity drift at ${relative}`);
+      patched.set(relative, row.patched);
+    }
+    for (const [relative, row] of chunks) {
+      const file = patched.get(relative);
+      if (file === undefined || file.bytes !== row.patched.bytes || file.sha256 !== row.patched.sha256) throw new Error(`Renderer extension chunk and file inventories disagree at ${relative}`);
+    }
+  }
+  return { parsed, chunks, patched };
+}
+
 export async function verifyChecksumPinnedRendererPackage({
   archivePath,
   sourceRendererRoot,
@@ -94,26 +153,7 @@ export async function verifyChecksumPinnedRendererPackage({
   let rendererExtension = null;
   try {
     const bytes = extractFile(archivePath, rendererExtensionPath);
-    const parsed = JSON.parse(bytes.toString("utf8"));
-    if (parsed?.schemaVersion !== 1 || parsed?.mode !== "original-renderer-settings-extension" || !Array.isArray(parsed.chunks)) {
-      throw new Error("Renderer extension provenance contract is invalid");
-    }
-    const allowedKeys = ["schemaVersion", "mode", "chunks", "features", "transformations"];
-    if (Object.keys(parsed).sort().join("\0") !== allowedKeys.sort().join("\0")) throw new Error("Renderer extension provenance has unknown fields");
-    const chunks = new Map();
-    for (const row of parsed.chunks) {
-      const relative = typeof row?.path === "string" && row.path.startsWith("dist/renderer/") ? row.path.slice("dist/renderer/".length) : null;
-      if (relative == null || !expectedFiles.has(relative) || chunks.has(relative) || !["registry", "panel"].includes(row.role)
-        || !Number.isInteger(row.original?.bytes) || !/^[0-9a-f]{64}$/.test(row.original?.sha256)
-        || !Number.isInteger(row.patched?.bytes) || !/^[0-9a-f]{64}$/.test(row.patched?.sha256)) {
-        throw new Error("Renderer extension chunk provenance is invalid");
-      }
-      const expected = expectedFiles.get(relative);
-      if (row.original.bytes !== expected.bytes || row.original.sha256 !== expected.sha256) throw new Error(`Renderer extension source identity drift at ${relative}`);
-      chunks.set(relative, row);
-    }
-    if (chunks.size < 1 || chunks.size > 2) throw new Error("Renderer extension chunk cardinality is invalid");
-    rendererExtension = { bytes, parsed, chunks };
+    rendererExtension = { bytes, ...readRendererExtensionRecord(JSON.parse(bytes.toString("utf8")), expectedFiles) };
   } catch (error) {
     if (!(error instanceof Error) || !/not found in archive|Cannot find/.test(error.message)) throw error;
   }
@@ -134,8 +174,7 @@ export async function verifyChecksumPinnedRendererPackage({
   }
   for (const [relative, expected] of expectedFiles) {
     const packaged = extractFile(archivePath, `dist/renderer/${relative}`);
-    const extension = rendererExtension?.chunks.get(relative);
-    const wanted = extension?.patched ?? expected;
+    const wanted = rendererExtension?.patched.get(relative) ?? expected;
     if (packaged.byteLength !== wanted.bytes || sha256(packaged) !== wanted.sha256) {
       throw new Error(`Packaged renderer drift at ${relative}`);
     }

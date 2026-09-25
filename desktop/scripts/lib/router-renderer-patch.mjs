@@ -289,6 +289,31 @@ export function patchOriginalGlassStylesheet(css) {
   return `${css}\n${LIQUID_GLASS_CSS}`;
 }
 
+/**
+ * The two appended blocks name classes the pinned markup is supposed to
+ * carry; a selector that misses no-ops silently (F-206, 25 September 2026).
+ * So every class name in them is counted in the shipped stylesheet and in
+ * every renderer chunk before the patch, and the counts go into the record
+ * under `marks.styles`, with the names that appear nowhere listed as
+ * `missing`. A miss does not stop the build (the material is cosmetic); it
+ * is the line to read when a surface on the Mac looks unpatched.
+ */
+export function styleAnchorClasses(css) {
+  const names = new Set();
+  for (const match of css.matchAll(/\.((?:sand|simeon)-[A-Za-z0-9_-]+)/g)) names.add(match[1]);
+  return [...names].sort();
+}
+
+export function countStyleAnchors(classes, sources) {
+  const counts = {};
+  for (const name of classes) {
+    let count = 0;
+    for (const source of sources) count += source.split(name).length - 1;
+    counts[name] = count;
+  }
+  return { counts, missing: Object.entries(counts).filter(([, count]) => count === 0).map(([name]) => name) };
+}
+
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
@@ -327,6 +352,9 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     ["panel", panelCandidates[0], patchOriginalSettingsPanel],
   ]) {
     const patched = transform(candidate.source);
+    // A transform that returns its input (the Settings panel since the Router
+    // left the product) is not a change and is not recorded as one (F-199).
+    if (patched === candidate.source) continue;
     await writeFile(candidate.target, patched);
     changes.push({
       role,
@@ -355,6 +383,15 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
   const stylesheetPatched = patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)));
+  const chunkSources = [];
+  for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
+  const styleAnchors = {
+    header: countStyleAnchors(styleAnchorClasses(HEADER_CARD_CSS), [bubbleSheets[0].css, ...chunkSources]),
+    glass: countStyleAnchors(styleAnchorClasses(LIQUID_GLASS_CSS), [bubbleSheets[0].css, ...chunkSources]),
+  };
+  for (const [block, result] of Object.entries(styleAnchors)) {
+    if (result.missing.length > 0) console.warn(`renderer patch: ${result.missing.length} ${block} style anchor(s) appear nowhere in the pinned renderer: ${result.missing.join(", ")}`);
+  }
   await writeFile(bubbleSheets[0].target, stylesheetPatched);
   await writeFile(markChunks[0].target, markPatched);
   const appIconTarget = path.join(assetsRoot, APP_ICON_ASSET);
@@ -372,6 +409,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     original: { bytes: Buffer.byteLength(markChunks[0].source), sha256: sha256(markChunks[0].source) },
     patched: { bytes: Buffer.byteLength(markPatched), sha256: sha256(markPatched) },
     appIcon: { path: `dist/renderer/assets/${APP_ICON_ASSET}`, original: appIconBefore == null ? null : { bytes: appIconBefore.length, sha256: sha256(appIconBefore) }, patched: { bytes: appIconAfter.length, sha256: sha256(appIconAfter) } },
+    styles: styleAnchors,
   };
   // The name, over every chunk and the page, after the Settings patch landed.
   const brandFiles = [];
@@ -410,8 +448,11 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     marks,
     files,
     brand: { replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after }))], totals: brandTotals, files: brandFiles },
-    features: ["settings-router-provider", "settings-local-docker-vm", "usage-current-provider", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "chat-header-card", "liquid-glass-chrome"],
-    transformations: ["settings-registry", "router-panel", "usage-panel", "marks", "app-icon", "brand-strings"],
+    // The router-provider and usage-panel features were listed here while
+    // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
+    // not a feature, and a chunk it did not change is not a chunk above.
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "chat-header-card", "liquid-glass-chrome"],
+    transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
   await writeFile(provenancePath, `${JSON.stringify(record, null, 2)}\n`);

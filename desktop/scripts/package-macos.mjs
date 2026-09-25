@@ -67,6 +67,10 @@ const infoPlist = path.join(outputApp, "Contents", "Info.plist");
 await run(SYSTEM_TOOLS.plutil, ["-remove", "ElectronAsarIntegrity", infoPlist]);
 await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleIdentifier", "-string", reconstructedBundleId, infoPlist]);
 await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleDisplayName", "-string", reconstructedName, infoPlist]);
+// macOS kills an app that touches the microphone without this key; dictation
+// is the one capture Simeon does (F-230, 25 September 2026). `-replace`
+// writes it whether or not the 0.18.0 shell carried one.
+await run(SYSTEM_TOOLS.plutil, ["-replace", "NSMicrophoneUsageDescription", "-string", "Simeon uses the microphone to take your dictation.", infoPlist]);
 // The bundle claims our own scheme and nothing inherited (`sand`, `grokbot`):
 // Claidor's sign-in returns to whatever scheme the app names, and `sand` is
 // Grok Bot's, which macOS may hand the callback to instead.

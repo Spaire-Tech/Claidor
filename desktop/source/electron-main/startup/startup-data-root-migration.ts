@@ -32,7 +32,7 @@ export const SAND_ROOT_SIGNATURE_ENTRIES = new Set([
 ]);
 
 export type DataRootSettlement =
-  | { readonly route: "unchanged"; readonly reason: "unpackaged" | "lab" | "data-root-override" | "isolated-user-data" }
+  | { readonly route: "unchanged"; readonly reason: "unpackaged" | "lab" | "data-root-override" | "isolated-user-data" | "canonical-conflict" }
   | {
       readonly route: "legacy";
       readonly reason:
@@ -152,7 +152,9 @@ function settleWithoutLegacy(legacyRoot: string, canonicalRoot: string): DataRoo
     if (!hasDataRootMarker(canonicalRoot)) {
       const occupancy = readCanonicalOccupancy(canonicalRoot);
       if (occupancy === "foreign" || occupancy === "unreadable") {
-        return { route: "legacy", reason: "canonical-conflict", root: legacyRoot };
+        // Not ours and not Grok Bot's either: leave the root unset rather
+        // than point Simeon at `~/.cursor/sand` (F-217).
+        return { route: "unchanged", reason: "canonical-conflict" };
       }
       markDataRoot(canonicalRoot);
     }
@@ -164,7 +166,7 @@ function settleWithoutLegacy(legacyRoot: string, canonicalRoot: string): DataRoo
   return { route: "canonical", reason: "canonical-existing", root: canonicalRoot };
 }
 
-function migrateLegacyRoot(options: { legacyRoot: string; canonicalRoot: string; rename: (oldPath: string, newPath: string) => void }): DataRootSettlement {
+export function migrateLegacyRoot(options: { legacyRoot: string; canonicalRoot: string; rename: (oldPath: string, newPath: string) => void }): DataRootSettlement {
   if (!markDataRoot(options.legacyRoot)) return { route: "legacy", reason: "migration-failed", root: options.legacyRoot };
   const moved = attemptSync(() => options.rename(options.legacyRoot, options.canonicalRoot));
   if (moved.ok) return { route: "canonical", reason: "migrated", root: options.canonicalRoot };
@@ -195,38 +197,19 @@ export function settleStartupDataRoot(options: SettleStartupDataRootOptions): Da
 
   const legacyRoot = getLegacySandProductionRootDir(options.homeDir);
   const canonicalRoot = getSandProductionRootDir(options.homeDir);
-  const legacyState = inspectDataRootDirectory(legacyRoot);
-  if (legacyState === "absent") return settleWithoutLegacy(legacyRoot, canonicalRoot);
-  if (legacyState === "unsafe" || inspectDataRootDirectory(dirname(legacyRoot)) !== "directory") {
-    return { route: "legacy", reason: "legacy-unsafe", root: legacyRoot };
-  }
-  const alive = options.isProcessAlive ?? defaultIsProcessAlive;
-  const hostState = probeLegacyHost(legacyRoot, alive, options.isSandHostProcess ?? isSandHostProcess);
-  if (hostState === "live") return { route: "legacy", reason: "live-legacy-host", root: legacyRoot };
-  if (hostState === "unknown") return { route: "legacy", reason: "unknown-legacy-writer", root: legacyRoot };
-  const writer = probeLegacyWriter(legacyRoot, alive);
-  if (writer.kind === "live" && writer.inflightCount === 0) {
-    return { route: "legacy", reason: "idle-legacy-writer", root: legacyRoot, pid: writer.pid };
-  }
-  if (writer.kind === "live") return { route: "legacy", reason: "busy-legacy-writer", root: legacyRoot };
-  if (writer.kind === "unknown") return { route: "legacy", reason: "unknown-legacy-writer", root: legacyRoot };
-
-  const canonicalState = inspectDataRootDirectory(canonicalRoot);
-  if (canonicalState === "directory" && hasDataRootMarker(canonicalRoot)) {
-    return { route: "canonical", reason: "canonical-marked", root: canonicalRoot };
-  }
-  if (canonicalState === "directory" && !removeIfEmpty(canonicalRoot)) {
-    return { route: "legacy", reason: "canonical-conflict", root: legacyRoot };
-  }
-  if (canonicalState === "unsafe") return { route: "legacy", reason: "canonical-conflict", root: legacyRoot };
-  return migrateLegacyRoot({ legacyRoot, canonicalRoot, rename: options.rename ?? renameSync });
+  // 25 September 2026 (F-217): `~/.cursor/sand` is a real Grok Bot's data
+  // root, never Simeon's. Until today a packaged Simeon that found it with
+  // no live host or daemon renamed it into `~/.caisra` (and the startup
+  // move check retired its idle local-exec daemon), which took an installed
+  // Grok Bot's data away from it. Simeon's root is `~/.caisra`, whatever
+  // sits beside it; the probes and `migrateLegacyRoot` stay exported for the record and are not run.
+  return settleWithoutLegacy(legacyRoot, canonicalRoot);
 }
 
 export function resolveExistingSandProductionRootDir(homeDir = homedir()): string {
-  const canonicalRoot = getSandProductionRootDir(homeDir);
-  if (inspectDataRootDirectory(canonicalRoot) === "directory") return canonicalRoot;
-  const legacyRoot = getLegacySandProductionRootDir(homeDir);
-  return inspectDataRootDirectory(legacyRoot) === "directory" ? legacyRoot : canonicalRoot;
+  // Always `~/.caisra` (F-217): until 25 September 2026 a missing canonical
+  // root fell back to Grok Bot's own `~/.cursor/sand`, shared live.
+  return getSandProductionRootDir(homeDir);
 }
 
 export function applyStartupDataRootMigration(options: Omit<SettleStartupDataRootOptions, "hasDataRootOverride" | "homeDir"> & {

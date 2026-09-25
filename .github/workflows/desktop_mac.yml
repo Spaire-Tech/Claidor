@@ -1,9 +1,9 @@
 name: Desktop app (macOS)
 
-# Builds the Caisra desktop app for Apple Silicon Macs and keeps the
-# installer as a downloadable artifact of the run. The build is unsigned
-# until an Apple developer certificate is added, so the first launch needs
-# a right-click, Open (see desktop/README.md).
+# Builds Simeon for Apple Silicon Macs and keeps the app as a downloadable
+# artifact of the run. The app is ad-hoc signed until an Apple developer
+# certificate is added, so the first launch needs a right-click, Open
+# (see desktop/README.md).
 
 # By hand only, on purpose. GitHub bills macOS runners at ten times the
 # minute rate, so the 2,000 free minutes a month are really about 200
@@ -11,8 +11,14 @@ name: Desktop app (macOS)
 # commit touching desktop/ spent some of that, which is how the bill got
 # where it did.
 #
-# The same build runs on a Mac for nothing: `npm run mac:build` in
-# desktop/, or see desktop/README.md.
+# The same build runs on a Mac for nothing: the loop in
+# docs/product/building-the-app.md. Until 25 September 2026 this workflow
+# still ran the LobsterAI-era steps (build-whisper.sh, npm run
+# dist:mac:arm64), none of which exist in the tree; it now runs the real
+# loop. Not measured: `npm run bootstrap` needs a genuine Grok Bot 0.18.0
+# app, which the runner has to download from Cursor's host (403 from a
+# build container on 19 September); if that step fails here, the build is
+# a Mac-only build until the archive is provided another way.
 on:
   workflow_dispatch:
 
@@ -27,42 +33,37 @@ jobs:
     defaults:
       run:
         working-directory: desktop
-    env:
-      # No certificate yet: produce an unsigned app instead of failing.
-      CSC_IDENTITY_AUTO_DISCOVERY: "false"
-      ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: "true"
-      # The renderer bundle needs more heap than Node gives by default.
-      NODE_OPTIONS: "--max-old-space-size=6144"
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "24"
-
-      - name: Install pnpm (builds the OpenClaw engine)
-        run: npm install -g pnpm@10
+          node-version: "26"
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
 
       - name: Install dependencies
-        # The upstream project ignores its lockfile (desktop/.gitignore), so
-        # a plain install is the only option until one is committed.
-        run: npm install --no-audit --no-fund
+        run: npm ci
 
-      - name: Build the speech recogniser (whisper.cpp, Metal)
-        run: bash scripts/build-whisper.sh
+      - name: Hydrate the pinned 0.18.0 renderer
+        run: npm run bootstrap
 
-      - name: Build the installer (renderer, main, skills, engine, dmg)
-        run: npm run dist:mac:arm64
+      - name: Typecheck and test
+        run: npm run check
 
-      - name: List what was built
-        run: ls -la release | grep -v "\.blockmap"
+      - name: Package Simeon.app
+        run: npm run package
 
-      - name: Keep the installer
+      - name: Verify the bundle
+        run: npm run verify
+
+      - name: Zip the app
+        run: ditto -c -k --sequesterRsrc --keepParent dist/Simeon.app Simeon-macOS-arm64.zip
+
+      - name: Keep the app
         uses: actions/upload-artifact@v4
         with:
-          name: Caisra-macOS-arm64
-          path: |
-            desktop/release/*.dmg
-            desktop/release/*.zip
+          name: Simeon-macOS-arm64
+          path: desktop/Simeon-macOS-arm64.zip
           if-no-files-found: error
           retention-days: 14

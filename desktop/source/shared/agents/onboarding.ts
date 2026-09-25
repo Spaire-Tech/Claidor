@@ -1,3 +1,4 @@
+import { isSandDefaultAgentName } from "./agents.js";
 export const SAND_ONBOARDING_KICKSTART_PROMPT = [
   "[first run] This is your very first turn. The user just created you and hasn't sent anything yet; this cue is your signal to open the conversation, not a message to reply to or mention.",
   "Greet them and get them going, the way a sharp new assistant would on day one. Open with a short, warm hello in your own voice (your name and description are already in your profile above, so don't recite them), then ask one real question about what they want first.",
@@ -15,7 +16,7 @@ export const SAND_ONBOARDING_GREETING_PROMPT = [
 
 export function fallbackIntroductionText(name: string): string {
   const trimmed = name.trim();
-  return trimmed.length > 0 && trimmed !== "Grok"
+  return trimmed.length > 0 && !isSandDefaultAgentName(trimmed) && trimmed !== "Grok"
     ? `Hey — I'm ${trimmed}. What would you like help with first?`
     : "Hey — good to meet you. What would you like help with first?";
 }

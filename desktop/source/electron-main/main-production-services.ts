@@ -1,3 +1,4 @@
+import { computerStreamLine } from "./vnc/computer-stream-log.js";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ApplicationMenuElectronPort, ApplicationMenuItem } from "./application-menu.js";
@@ -819,7 +820,12 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
       await coordinator.start(await account.getStatus());
       const settingsStore = requireValue(settings, "settings").settingsStore;
       if (settingsStore.getBoxRuntime() === "local-docker") {
-        void startLocalDockerBox(settingsStore.settingsPath).catch(() => undefined);
+        // A start that fails here (no docker command, daemon down) used to be
+        // swallowed (F-231, F-301); the sentence now goes to computer-stream.log,
+        // which the Computer panel paints after 20 s (computer-stream-notice.ts).
+        void startLocalDockerBox(settingsStore.settingsPath).catch((error: unknown) => {
+          computerStreamLine(`local docker: start at launch failed: ${error instanceof Error ? error.message : String(error)}`);
+        });
       }
       await experiments.ensureService();
       requireValue(clientPauseControl, "client-pause").reapplyAfterCoordinatorLaunch();

@@ -38,6 +38,15 @@ import { envGateOverride } from "./cursor-experiments.js";
 // bundled table; on since 25 September 2026, now that Simeon Labs' server
 // serves the stream (polar/sand/notify.py) and the listener relay behind
 // it (polar/sand/listeners*.py). The safety polls stay on.
+// Two gates this table does not name, and why (F-209, 25 September 2026):
+// `sand_browser_use_subagent` stays at its bundled default, off. The
+// browserUse child and its fifteen tools are wired
+// (`host-runner-composition.ts`) and were never run on a Mac, while the
+// computerUse child, which is on, drives the box's Chromium through the
+// screen; the founder decides when to try the dedicated child
+// (`SAND_FEATURE_GATE_OVERRIDES=sand_browser_use_subagent=1` tries it
+// without a rebuild). `sand_multitask` stays at its bundled default, on:
+// it is Grok Bot's own loop ("i want literally everything", 22 September).
 export const SIMEON_FEATURE_GATE_DEFAULTS: Readonly<Record<string, boolean>> = Object.freeze({
   sand_usage_page: true,
   sand_auto_review: true,

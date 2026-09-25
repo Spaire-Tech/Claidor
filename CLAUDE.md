@@ -170,8 +170,8 @@ through the one append. `routesClaidorThroughHost` is **on with an empty
 environment**; `SAND_CLAIDOR_FULL_AGENT=off` is the Mac-local, text-only
 escape hatch, and everything under the router's dispatch in
 `node-agent-coordinator/inference-router.ts` is that hatch. The first-run intro
-runs on the real runner again (`agent-lifecycle.ts`, the pristine
-reconstruction). The earlier rules "product turns stay on the Mac" and "do not
+runs on the real runner again (`agent-lifecycle.ts`; "pristine" was true on 22 September and is not
+since the spend guards and the once-only intro of 23 September, F-310). The earlier rules "product turns stay on the Mac" and "do not
 default routesClaidorThroughHost true" are superseded by this decision. The
 gateway's deadlines (connect, send, roster reads, all 15 s) are what make a
 cold box fail visibly instead of hanging; they are unchanged. **Why the audit
@@ -577,7 +577,9 @@ alone was set to Simeon and the app died at launch with SIGTRAP in
 `ElectronMain`, because Electron finds its helper bundles by that name and
 they were still `Grok Bot Helper*.app`; the rename refuses to move the
 executable without helpers to move with it. The bare words "Bot"/"Bots"
-were not asked for and were left.
+were not asked for and were left that day; since the Simeon pass later
+the same day the brand patch renames them to Agent/Agents (the word
+between quotes, spaces or tag brackets only; corrected 25 September, F-204).
 **The marks in the shipped screens, 23 September, later:** the landing
 page's black mark and the onboarding hero are clouds ("make it a cloud",
 `Jo.cloud`, the renderer's own shape; mood cycle, gaze and springs
@@ -635,8 +637,9 @@ liquidglass design in the whole app"; the Figma link could not be opened
 from the container, so this follows Apple's description of the
 material): `LIQUID_GLASS_CSS`, appended after the header block, frosts
 the sidebar, the info pane, the composer shell, popover menus, dialogs,
-the floating pills, the message hover actions and the computer's top
-bar: translucent fill, 24 px blur with saturation, a 1 px specular
+the floating pills and the computer's top bar (not the message hover
+actions or reaction pills, which the code and its test exclude;
+corrected 25 September, F-205): translucent fill, 24 px blur with saturation, a 1 px specular
 highlight along the top, a soft ambient shadow, large radii. Messages
 and text are content and are not touched. Not yet seen on a Mac; the
 composer shell's base styling was not resolvable from the chunk, so it
@@ -774,11 +777,16 @@ answers, and it is reached from the **upstream cowork** voice input
 at `main.ts:282`. So voice input is not dead — it is two paths, one live and
 one orphaned.
 
-The macOS installer builds on GitHub Actions
-(`.github/workflows/desktop_mac.yml`), unsigned until an Apple certificate
+The macOS app builds on GitHub Actions
+(`.github/workflows/desktop_mac.yml`), ad-hoc signed until an Apple certificate
 exists. The workflow is `workflow_dispatch` only — by hand, on purpose,
-because GitHub bills macOS runners at ten times the minute rate. The same build
-runs free on a Mac with `npm run mac:build`.
+because GitHub bills macOS runners at ten times the minute rate. Until 25
+September it still ran the LobsterAI-era steps (`build-whisper.sh`,
+`npm run dist:mac:arm64`), none of which exist; it now runs the same loop as
+a Mac: `npm ci && npm run bootstrap && npm run check && npm run package &&
+npm run verify` (`docs/product/building-the-app.md`). Bootstrap needs a
+genuine 0.18.0 app, which the runner has to download; whether Cursor's
+download host answers a GitHub runner is not measured (F-224).
 
 **On CI, corrected 18 September.** This file used to say Actions "dispatches no
 jobs at all in this repository". That is false, and it was stated without
@@ -923,6 +931,28 @@ missing service, and then marked Coming Soon everywhere a person can
 see or reach it. The ledger's dispositions are `fixed`, `coming-soon`
 (with the missing dependency named), `known-limit` and `needs-mac`.
 Work proceeds by cluster (root cause), not by finding.
+
+## Batch 4 of the ledger was worked (25 September 2026, evening)
+
+"go ahead with this batch … be incredibly careful": the onboarding /
+Electron main / renderer-patch / branding rows (F-197..F-233,
+F-297..F-315), five clusters, five commits, each with its ledger note
+(`batch4-reads-and-docs`, `batch4-cursor-leftovers`, `batch4-first-run`,
+`batch4-electron-shell`, `batch4-renderer-patch-hygiene`). What changed
+in the product: a packaged Simeon never touches Grok Bot's
+`~/.cursor/sand`; an unpackaged run defaults to `api.simeonlabs.com`, not
+Cursor; the server answers the three managed-setup methods the host asks
+at start; the main window reloads when its renderer dies; a box that
+fails to start at launch writes its sentence to `computer-stream.log`;
+the packager writes the microphone usage key; `SAND_DEVTOOLS=1` opens
+DevTools; `npm run package:diagnostic` takes the schema-2 patch record;
+the renderer patch counts its CSS anchors and stops recording the no-op
+Settings panel; "Grok" is no longer a fallback agent name; and the
+documents that contradicted the code (this file included) were corrected
+in place. Not run on a Mac: any of it. The three edits to the pinned
+renderer's own copy (Cursor, cursor.com, the Updates tab, the "remote
+computer" wording) wait on the chunk's actual strings (F-200, F-208,
+F-305).
 
 ## The eight features were served overnight (25–26 September 2026)
 
