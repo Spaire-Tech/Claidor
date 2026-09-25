@@ -58,6 +58,22 @@ class DesktopSessionRepository(RepositoryBase[DesktopSession]):
         )
         return await self.get_all(statement)
 
+    async def list_in_grace_of_user(
+        self, user_id: UUID, now: datetime
+    ) -> Sequence[DesktopSession]:
+        """A person's sessions a refresh has replaced whose old access
+        token is still inside its grace: refresh token dead, access token
+        live, not a job token and not a box credential."""
+        statement = self.get_base_statement().where(
+            DesktopSession.user_id == user_id,
+            DesktopSession.revoked_at.is_(None),
+            DesktopSession.refresh_expires_at <= now,
+            DesktopSession.access_expires_at > now,
+            DesktopSession.job_id.is_(None),
+            DesktopSession.box_of_session_id.is_(None),
+        )
+        return await self.get_all(statement)
+
 
 class DesktopUsageRepository(RepositoryBase[DesktopUsage]):
     model = DesktopUsage

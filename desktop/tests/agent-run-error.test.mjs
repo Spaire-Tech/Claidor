@@ -13,9 +13,9 @@ test("OpenAI account-quota refusals do not send the person to platform.openai.co
   );
   assert.match(source, /export function claidorFacingProviderError/);
   assert.match(source, /no credits remaining\|insufficient_quota\|platform\\.openai\\.com/);
-  assert.match(source, /OpenAI has no credits left on Claidor's account/);
+  assert.match(source, /OpenAI has no credits left on Simeon Labs' account/);
   assert.match(source, /Claude Code is not installed/);
-  assert.match(source, /Simeon talks to Claidor, not Claude Code/);
+  assert.match(source, /Simeon talks to Simeon Labs' server, not Claude Code/);
   assert.match(source, /claidorFacingProviderError\(shown\)/);
   assert.doesNotMatch(source, /Add credits to continue using the API/);
 });

@@ -28,15 +28,43 @@ export const CLOUD_AGENTS_COMING_SOON_SENTENCE =
 export const CHANNELS_COMING_SOON_SENTENCE =
   "Messaging channels (Slack, Discord) are coming soon on Simeon: there is no channel to deliver to and no channel credential store to write to yet. Never ask the user to paste a key, token or password into the chat; if the service is a connector, use its connect card instead.";
 
+// On by default since 25 September 2026: `polar/sand/cloud_agents.py`
+// serves BackgroundComposerService over the maty queue. "0" turns the
+// paths off again.
 export function isCloudAgentsServed(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env[CLOUD_AGENTS_SERVED_ENV]?.trim() === "1";
+  const raw = env[CLOUD_AGENTS_SERVED_ENV]?.trim();
+  if (raw === "0") return false;
+  if (raw === "1") return true;
+  return isConnectServed(env, "aiserver.v1.BackgroundComposerService");
 }
 
-// Cursor's Connect RPC surface (aiserver.v1.*) is not served by Simeon Labs'
-// server; a pre-flight that only ever 404s is skipped unless this is set.
+// Which Connect services Simeon Labs' server answers (25 September 2026,
+// docs/product/cursor-dependencies-map.md). Until then one switch,
+// SAND_CONNECT_SERVED=1, turned every client on at once, and every call
+// 404ed on a server that served no Connect RPC at all. Now `polar/sand`
+// serves these at the root of the API host and answers `unimplemented`
+// for anything else, so a client is served by service name:
+//   - unset: the services below;
+//   - "1": every service (Grok Bot's own behaviour, for a Cursor backend);
+//   - "0": none (the 24 September behaviour);
+//   - "a.b.C,d.e.F": exactly those.
+// A name that is not a Connect service (Cursor's Statsig bootstrap is a
+// REST fetch) is never in the default set.
 export const CONNECT_SERVED_ENV = "SAND_CONNECT_SERVED";
-export function isConnectServed(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env[CONNECT_SERVED_ENV]?.trim() === "1";
+export const CONNECT_SERVED_SERVICES: ReadonlySet<string> = new Set([
+  "aiserver.v1.GrokBotService",
+  "aiserver.v1.BackgroundComposerService",
+  "aiserver.v1.DashboardService",
+  "aiserver.v1.AutomationsService",
+  "aiserver.v1.AiService",
+  "agent.v1.AgentService",
+]);
+export function isConnectServed(env: NodeJS.ProcessEnv = process.env, serviceTypeName?: string): boolean {
+  const raw = env[CONNECT_SERVED_ENV]?.trim() ?? "";
+  if (raw === "1") return true;
+  if (raw === "0") return false;
+  if (raw.length > 0) return serviceTypeName == null ? true : raw.split(",").map((name) => name.trim()).includes(serviceTypeName);
+  return serviceTypeName == null ? true : CONNECT_SERVED_SERVICES.has(serviceTypeName);
 }
 
 export function isAnyChannelAvailable(manifests: readonly { readonly availability: string }[] = CONNECTOR_MANIFESTS): boolean {

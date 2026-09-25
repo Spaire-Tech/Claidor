@@ -58,7 +58,7 @@ export async function claidorErrorFromResponse(response: Response): Promise<Clai
   } catch {
     // not JSON; fall through to the status line
   }
-  return new ClaidorApiError(text.trim().length > 0 ? text.trim().slice(0, 500) : `Claidor answered ${response.status}.`, response.status);
+  return new ClaidorApiError(text.trim().length > 0 ? text.trim().slice(0, 500) : `Simeon Labs' server answered ${response.status}.`, response.status);
 }
 
 export interface ClaidorProxyRequest {
@@ -130,9 +130,9 @@ export async function claidorApiData<T = unknown>(auth: ClaidorApiAuth, path: st
   });
   if (!response.ok) throw await claidorErrorFromResponse(response);
   const parsed = (await response.json().catch(() => null)) as { code?: unknown; data?: unknown; message?: unknown } | null;
-  if (parsed == null || typeof parsed !== "object") throw new ClaidorApiError(`Claidor answered ${path} with something that is not JSON.`, response.status);
+  if (parsed == null || typeof parsed !== "object") throw new ClaidorApiError(`Simeon Labs' server answered ${path} with something that is not JSON.`, response.status);
   if (parsed.code !== undefined && parsed.code !== 0) {
-    const message = typeof parsed.message === "string" && parsed.message.length > 0 ? parsed.message : `Claidor refused ${path} (code ${String(parsed.code)}).`;
+    const message = typeof parsed.message === "string" && parsed.message.length > 0 ? parsed.message : `Simeon Labs' server refused ${path} (code ${String(parsed.code)}).`;
     throw new ClaidorApiError(message, response.status, `code-${String(parsed.code)}`);
   }
   return (parsed.code === undefined ? parsed : parsed.data) as T;

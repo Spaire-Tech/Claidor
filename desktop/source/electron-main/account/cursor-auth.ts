@@ -22,10 +22,16 @@ export const DEFAULT_LOCAL_CURSOR_WEBSITE_URL = "https://localhost:4443";
 export const MAX_LOGIN_POLL_ATTEMPTS = 150;
 export { SignInPolicyViolationError, SIGN_IN_POLICY_VIOLATION_ERROR, SIGN_IN_POLICY_VIOLATION_MESSAGE } from "../../packages/cursor-config/auth/mdm-sign-in-policy.js";
 export class SandAuthOperationSupersededError extends Error { constructor() { super("Authentication operation was superseded."); } }
-export class SandAuthSignInRequiredError extends Error { constructor() { super("Sign in to Claidor to run Simeon."); } }
-export class SandAuthSignInExpiredError extends Error { constructor() { super("Claidor sign-in expired. Sign in again to run Simeon."); } }
+export class SandAuthSignInRequiredError extends Error { constructor() { super("Sign in to Simeon to run it."); } }
+export class SandAuthSignInExpiredError extends Error { constructor() { super("Your Simeon sign-in expired. Sign in again."); } }
 export class SandAuthLoginTimedOutError extends Error { constructor() { super("Sign-in did not finish. Try again."); } }
 export class SandDevLoginError extends Error {}
+// A 5xx from a deploy in progress, a 429, a 408 or 425 from something in
+// front of the server is the server being away, not the session ending.
+// Until 25 September 2026 every non-2xx signed the person out ("couldn't
+// confirm your sign-in") and deleted the keychain entries.
+export function isTransientRefreshStatus(status: number): boolean { return status >= 500 || status === 429 || status === 408 || status === 425; }
+export class SandAuthRefreshTransientError extends Error { constructor(readonly status: number) { super(`Simeon Labs' server answered ${status} to the sign-in refresh; the session is kept and the refresh is retried on the next call.`); this.name = "SandAuthRefreshTransientError"; } }
 
 export type SandAuthStatus =
   | { readonly kind: "logging-in" }
@@ -52,7 +58,7 @@ export type SessionSettlement =
 const RETAINED_AFTER_FAILED_LOGOUT_STATUS = { kind: "logged-out", errorMessage: "Simeon couldn't remove the saved sign-in. The account may return after Simeon restarts. Sign in to try again." } as const;
 const LOGGED_OUT_STATUS = { kind: "logged-out" } as const;
 const SIGN_IN_CONFIRMATION_FAILED_STATUS = { kind: "logged-out", errorMessage: "Simeon couldn't confirm your sign-in. Restart Simeon or sign in again." } as const;
-const SIGN_IN_EXPIRED_STATUS = { kind: "logged-out", errorMessage: "Claidor sign-in expired. Sign in again to run Simeon." } as const;
+const SIGN_IN_EXPIRED_STATUS = { kind: "logged-out", errorMessage: "Your Simeon sign-in expired. Sign in again." } as const;
 const SIGN_IN_POLICY_VIOLATION_STATUS = { kind: "logged-out", errorMessage: SIGN_IN_POLICY_VIOLATION_MESSAGE } as const;
 const LOGIN_DID_NOT_FINISH_STATUS = { kind: "logged-out", errorMessage: "Sign-in did not finish. Try again." } as const;
 const ACCOUNT_REFUSED_STATUS = { kind: "logged-out", errorMessage: "This computer is linked to another Simeon account. Sign in with that account to continue." } as const;
@@ -350,7 +356,7 @@ export class SandCursorAuthService {
   private async runRefreshAccessToken(args: { backendUrl: string; operationEpoch: number; refreshToken: string }): Promise<string> {
     const policyHeaders = await (this.options.policyHeaders?.() ?? Promise.resolve({})); this.assertCurrentAuthOperation(args.operationEpoch); let response: Response;
     try { response = await (this.options.fetchOAuthToken ?? fetch)(new URL("/oauth/token", args.backendUrl), { method: "POST", body: JSON.stringify({ client_id: getAuthClientId(args.backendUrl), grant_type: "refresh_token", refresh_token: args.refreshToken }), headers: { "content-type": "application/json", ...policyHeaders } }); } catch (error) { this.noteRefreshFailure(args.operationEpoch, { kind: "network", errno: findSystemErrno(error) ?? "E_OTHER" }); throw error; }
-    this.assertCurrentAuthOperation(args.operationEpoch); if (!response.ok) { this.noteRefreshFailure(args.operationEpoch, { kind: "http_status", httpStatus: response.status }); this.advanceAuthOperationEpoch(); this.credentialState = "revoked"; this.reportedLoggedOutStatus = SIGN_IN_CONFIRMATION_FAILED_STATUS; this.profileCache.clear(); this.emitStatus(SIGN_IN_CONFIRMATION_FAILED_STATUS); throw new SandAuthSignInExpiredError(); }
+    this.assertCurrentAuthOperation(args.operationEpoch); if (!response.ok) { this.noteRefreshFailure(args.operationEpoch, { kind: "http_status", httpStatus: response.status }); if (isTransientRefreshStatus(response.status)) throw new SandAuthRefreshTransientError(response.status); this.advanceAuthOperationEpoch(); this.credentialState = "revoked"; this.reportedLoggedOutStatus = SIGN_IN_CONFIRMATION_FAILED_STATUS; this.profileCache.clear(); this.emitStatus(SIGN_IN_CONFIRMATION_FAILED_STATUS); throw new SandAuthSignInExpiredError(); }
     let raw: unknown; try { raw = await response.json(); } catch (error) { this.noteRefreshFailure(args.operationEpoch, { kind: "bad_payload" }); throw error; }
     const parsed = parseOAuthTokenBody(raw); this.assertCurrentAuthOperation(args.operationEpoch);
     if (parsed?.shouldLogout === true && parsed.error === SIGN_IN_POLICY_VIOLATION_ERROR) { await this.revokeCredentials({ emitStatus: true, cause: "policy", loggedOutStatus: SIGN_IN_POLICY_VIOLATION_STATUS }); throw new SignInPolicyViolationError(); }

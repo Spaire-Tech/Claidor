@@ -13,6 +13,7 @@ import { createSendMessageToolCall, encodeSendMessage } from "./send-message-enc
 import { sendMessageParameters, type SendMessageInput } from "./send-message-schema.js";
 import { clampSecretDescription, clampSecretLabel } from "./sand-secret-request.js";
 import { SandToolInputError } from "./tool-input-error.js";
+import { AttachmentTooLargeError } from "../../../shared/media/attachment-limits.js";
 import { CHANNELS_COMING_SOON_SENTENCE, CLOUD_AGENTS_COMING_SOON_SENTENCE, isAnyChannelAvailable, isCloudAgentsServed } from "../../../shared/cloud-agents-availability.js";
 export const SAND_SEND_MESSAGE_TOOL_NAME = "SendMessage";
 export function describeSendMessageTool(env: NodeJS.ProcessEnv = process.env): string {
@@ -38,7 +39,10 @@ export async function resolveAttachmentSource<Context>(ctx: Context, sourceUrl: 
   const result = (url: string) => ({ url, ...(fileName == null || fileName.length === 0 ? {} : { fileName }) });
   if (sourcePath == null) return result(sourceUrl);
   const ingest = deps.getIngestAttachment();
-  if (ingest != null) try { return result(pathToFileURL(await ingest(sourcePath)).href); } catch {}
+  if (ingest != null) try { return result(pathToFileURL(await ingest(sourcePath)).href); } catch (error) {
+    // A file over the limit used to be stored as a raw box URL the Mac cannot read: a dead card while the agent read "sent" (F-274).
+    if (error instanceof AttachmentTooLargeError) throw new SandToolInputError(`${sourcePath} is larger than the ${Math.round(error.limitBytes / (1024 * 1024))} MB an attachment may be; nothing was sent. Hand it to the user with CopyFromBox instead.`);
+  }
   return result(await deps.resolveBoxAttachment?.(ctx, sourcePath) ?? sourceUrl);
 }
 async function dimensions<Context>(url: string, deps: SendMessageDependencies<Context>): Promise<{ width: number; height: number } | undefined> { const file = filePathFromFileUrl(url); return file == null ? undefined : await deps.readMediaDimensions?.(file) ?? undefined; }

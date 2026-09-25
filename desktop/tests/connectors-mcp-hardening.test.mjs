@@ -27,14 +27,17 @@ async function load(entry, name) {
   return { module, dispose: () => rm(dir, { recursive: true, force: true }) };
 }
 
-test("a Cursor Connect client answers Unimplemented at once and sends nothing unless Connect is served", async () => {
-  delete process.env.SAND_CONNECT_SERVED;
+test("a Cursor Connect client answers Unimplemented at once and sends nothing for a service that is not served", async () => {
+  // Since 25 September 2026 the DashboardService is served by default
+  // (polar/sand); "0" is the 24 September behaviour, measured here.
+  process.env.SAND_CONNECT_SERVED = "0";
   const { module, dispose } = await load("source/shared/node/cursor-backend/cursor-inference.ts", "cursor-backend-client");
   const proto = await load("source/packages/proto/generated/aiserver/v1/dashboard_connect.ts", "dashboard-connect");
   try {
     const client = module.createSandCursorBackendClient(proto.module.DashboardService, { getAccessToken: async () => { throw new Error("the wire was touched"); }, getMachineId: async () => "m" });
     await assert.rejects(() => client.getTeams({}), (error) => error.code === 12 && /not served by Simeon Labs' server/.test(error.message));
   } finally {
+    delete process.env.SAND_CONNECT_SERVED;
     await proto.dispose();
     await dispose();
   }

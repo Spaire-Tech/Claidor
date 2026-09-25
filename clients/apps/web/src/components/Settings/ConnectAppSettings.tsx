@@ -53,10 +53,10 @@ const ConnectAppSettings = () => {
   return (
     <div className="flex flex-col gap-y-4">
       <p className="text-sm text-gray-500">
-        Your app&apos;s server sends every message through Simeon, billed to
-        this account&apos;s allowance. Create a token here, then set it on the
-        server as <code>CLAIDOR_ACCESS_TOKEN</code>. Nobody signing in to the
-        app is ever asked for one.
+        A token for a program of your own that calls the model proxy, billed
+        to this account&apos;s allowance. Simeon on your Mac never needs one:
+        it signs in with your account. Keep the token where the program reads
+        it, and nowhere else.
       </p>
 
       {token ? (

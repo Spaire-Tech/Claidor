@@ -45,14 +45,14 @@ test("the first-run kickstart prompt asks for a greeting with a question widget 
   const loaded = await load("source/shared/agents/onboarding.ts", "onboarding");
   try {
     const { SAND_ONBOARDING_KICKSTART_PROMPT, cheapIntroductionMessages, fallbackIntroductionText } = loaded.module;
-    assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /connector card/);
+    assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /propose it with ProposeConnector/);
     assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /question widget/);
     assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /Greet them and get them going/);
     assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /\[first run\]/);
     assert.doesNotMatch(SAND_ONBOARDING_KICKSTART_PROMPT, /two SendMessages/);
     assert.doesNotMatch(SAND_ONBOARDING_KICKSTART_PROMPT, /Never open with a widget/);
     const messages = cheapIntroductionMessages({ name: "Bass", description: "helps with the week" });
-    assert.equal(messages.some((message) => /SendMessage|question widget|connector card/i.test(message.content)), false);
+    assert.equal(messages.some((message) => /SendMessage|question widget|ProposeConnector/i.test(message.content)), false);
     assert.equal(fallbackIntroductionText("Bass"), "Hey — I'm Bass. What would you like help with first?");
     assert.equal(typeof loaded.module.firstHelloText, "undefined");
     assert.equal(typeof loaded.module.withLeadingHello, "undefined");
@@ -87,6 +87,6 @@ test("the first-run intro runs on the full runner, and product turns on the host
   assert.match(routing, /export \{ SAND_CLAIDOR_FULL_AGENT_ENV, routesClaidorThroughHost \}/);
   assert.match(routing, /SAND_CLAIDOR_FULL_AGENT=off escape hatch/);
   assert.match(providers, /DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-5\.6-luna"/);
-  assert.match(providers, /withCheapRateLimitFallback\(start\(requested\), \(\) => start\(cheap\)\)/);
+  assert.match(providers, /withCheapRateLimitFallback\(start\(requested\), \(\) => start\(cheap\), \(error\) => modelCallLog/);
   assert.match(retry, /isProviderRateLimitError\(error\)\) return false/);
 });

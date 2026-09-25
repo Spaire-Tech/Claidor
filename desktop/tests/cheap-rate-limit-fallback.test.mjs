@@ -118,5 +118,5 @@ test("Claidor's Terra executor falls through to Luna on TPM", async () => {
   assert.match(providers, /withCheapRateLimitFallback/);
   assert.match(providers, /configuredClaidorCheapModel\(\)/);
   assert.match(providers, /if \(requested === cheap\) return start\(requested\)/);
-  assert.match(providers, /withCheapRateLimitFallback\(start\(requested\), \(\) => start\(cheap\)\)/);
+  assert.match(providers, /withCheapRateLimitFallback\(start\(requested\), \(\) => start\(cheap\), \(error\) => modelCallLog/);
 });

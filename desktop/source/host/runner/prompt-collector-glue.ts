@@ -41,6 +41,7 @@ export interface TurnPromptOptions {
   readonly selectedVideos?: readonly SelectedVideo[];
   readonly attachedFilePaths?: readonly string[];
   readonly attachedFileSizes?: ReadonlyMap<string, number>;
+  readonly attachedFileNames?: ReadonlyMap<string, string>;
   readonly richText?: string;
   readonly replyContext?: unknown;
   readonly messageId?: string;
@@ -71,9 +72,10 @@ export interface PromptCollectorHost<Context = unknown> {
   isMcpDiscoveryUnavailableForTurn?(): boolean;
   isBrowserUseSubagentEnabled?: (() => boolean) | undefined;
   resolveBoxBrowser?: (() => { readonly display: string; readonly cdpUrl: string } | null) | undefined;
+  screenshotToolOffered?: (() => boolean) | undefined;
   getConversationId?: (() => string) | undefined;
   getAutomationStatusReminder?: ((firingAutomationId?: string) => string | null) | undefined;
-  uploadAttachmentsIntoBox?: ((paths: readonly string[]) => Promise<ReadonlyMap<string, string>>) | undefined;
+  uploadAttachmentsIntoBox?: ((paths: readonly string[], names?: ReadonlyMap<string, string>) => Promise<ReadonlyMap<string, string>>) | undefined;
   getRemoteBoxAvailable?: (() => boolean) | undefined;
   readVideoAttachmentBytes?: ((path: string) => Promise<Uint8Array | null>) | undefined;
   readBoxFile?: ((path: string) => Promise<Uint8Array | null>) | undefined;
@@ -108,6 +110,7 @@ export interface GeneratedTurnPromptOptions {
   readonly selectedVideos?: readonly GeneratedSelectedVideo[];
   readonly attachedFilePaths?: readonly string[];
   readonly attachedFileSizes?: ReadonlyMap<string, number>;
+  readonly attachedFileNames?: ReadonlyMap<string, string>;
   readonly richText?: string;
   readonly replyContext?: unknown;
   readonly messageId?: string;
@@ -192,11 +195,11 @@ export function createPromptCollectorGlue<Context = unknown>(host: PromptCollect
       "Alongside the user's computer you have the box, with structured file reads (Read), a shell (Shell), and your own desktop with a browser. The box is ONE persistent Linux machine shared by all of this user's agents — same filesystem and machine state, so a file, installed tool, or browser login set up by any agent is there for every agent — while the desktop is per-agent: each agent gets its own screen and browser window on that shared machine, and none sees or drives another's. Keep the two apart when explaining how this works: agents share the computer; they do not share desktops (never claim each agent has its own machine). It is a full computer: install tools, run code, and generate files (spreadsheets, CSVs, documents, images, archives) with Shell. Nothing on it touches the user's filesystem, sessions, or accounts, and anything set up there persists across turns, including files, installed tools, and especially browser logins. The user can open your desktop to watch or help.",
       "- Use ExternalRead and ExternalShell for the user's own computer (their files and local environment).",
       "- Use Read for line-numbered, paged text on the box, and for box images you need to see inline. Use Shell for commands, scratch work, risky operations, generating files, or anything that shouldn't run on the user's machine. Shell starts in /workspace, your scratch space on the box.",
-      "- Use poppler-utils to read PDFs.",
+      "- Read converts a PDF to text on its own; use it before shelling out to any PDF tool.",
       "- Read, Shell, and the box's browser share one filesystem, so a file you create with Shell can be opened, uploaded, or imported in the browser, and browser downloads can be inspected with Read or processed with Shell. Move data between code and web apps through files on the box.",
       "- Your box and the user's computer are separate machines with separate filesystems, so a path on one is not visible to the other: don't hand an ExternalRead/ExternalShell path from the user's computer to Read/Shell, or a box path to ExternalRead/ExternalShell. Move files across with CopyToBox / CopyFromBox.",
       "- CopyToBox (their computer -> your box): copies a file from the user's computer into your box, verbatim (any type or size, binaries included). Give the file's absolute ExternalRead/ExternalShell path; it lands in /workspace/uploads by default, or at a box_path you pick, then open it with Read or process it with Shell. Use this whenever you need to work on a user's file with your box's tools — you don't need them to drag it into chat first. (Files they do attach in chat are still copied into /workspace/uploads for you automatically, and the attached-files note lists both paths.)",
-      "- CopyFromBox (your box -> their computer): copies a file from your box onto the user's actual computer, verbatim, where ExternalRead, ExternalShell, their editor, and apps can reach it. Give the box_path; it lands under its own name in the ExternalShell working directory, or at a computer_path you pick. Expand any glob in Shell first and pass concrete paths. This is for putting a file ON their disk; to instead show a file inline in chat (an image or video, or hand over a downloadable file) attach it by its box path with SendMessage.",
+      "- CopyFromBox (your box -> their computer): copies a file from your box onto the user's actual computer, verbatim, where ExternalRead, ExternalShell, their editor, and apps can reach it. Give the box_path; it lands under its own name in their Downloads folder, or at a computer_path you pick. Expand any glob in Shell first and pass concrete paths. This is for putting a file ON their disk; to instead show a file inline in chat (an image or video, or hand over a downloadable file) attach it by its box path with SendMessage.",
       "- Both transfers default to your single connected computer; pass `computer` only if you're told about more than one.",
     ].join("\n");
   }
@@ -261,20 +264,27 @@ export function createPromptCollectorGlue<Context = unknown>(host: PromptCollect
     ].join("\n");
     if (host.isSubagentRunner === true) return null;
     const browserUseOffered = host.isBrowserUseSubagentEnabled?.() === true;
+    // The agent's own Screenshot tool is withheld in this build
+    // (host-runner-composition.ts, AGENT_SCREENSHOT_TOOL); the brief used to
+    // promise it anyway, the blindness failure CLAUDE.md names (F-016).
+    const screenshotOffered = host.screenshotToolOffered?.() === true;
+    const screenshotSentence = screenshotOffered
+      ? "You hold the read-only Screenshot tool to see its current screen, confirm where a flow landed, or check on a running subagent."
+      : "You have no Screenshot tool of your own in this build: to see the screen, dispatch a computerUse subagent (its report and its screenshots are how you see the desktop) or ask a running one to take a shot.";
     return [
       "## The box desktop",
       ...(browserUseOffered ? [
-        "You have your own desktop on the box (your screen alone — see Your box), with a browser, and you hold the read-only Screenshot tool to see its current screen, confirm where a flow landed, or check on a running subagent. You cannot click, move, type, press keys, scroll, or wait on the desktop yourself. Delegate every browser and desktop interaction to a subagent; like any Task it runs in the background, so you keep working and are revived with its result. Do not bypass this boundary with Shell-driven GUI automation such as xdotool, or by driving the box browser from Shell — no CDP attach, no Playwright, Puppeteer, or `websocket-client`, no `/json/new`, no cookie-DB scraping, and no page JS eval over DevTools. Browser work goes to `browserUse` first; the desktop itself goes to `computerUse`.",
+        "You have your own desktop on the box (your screen alone — see Your box), with a browser. " + screenshotSentence + " You cannot click, move, type, press keys, scroll, or wait on the desktop yourself. Delegate every browser and desktop interaction to a subagent; like any Task it runs in the background, so you keep working and are revived with its result. Do not bypass this boundary with Shell-driven GUI automation such as xdotool, or by driving the box browser from Shell — no CDP attach, no Playwright, Puppeteer, or `websocket-client`, no `/json/new`, no cookie-DB scraping, and no page JS eval over DevTools. Browser work goes to `browserUse` first; the desktop itself goes to `computerUse`.",
         "- Reach for the `browserUse` subagent first for anything that happens in the browser: reading pages, filling forms, pulling data from sites, clicking through web apps. It drives the box's signed-in Chrome at the page level with element references instead of pixel clicks, so it is faster and more reliable than desktop automation, and it never touches the desktop's mouse, so it can run alongside other work. Logins and files persist in the box across turns, so a sign-in is a one-time step.",
         "- Use the `computerUse` subagent only when the task needs the desktop itself — GUI apps, file dialogs, drag interactions — or when a site defeats page-level automation. If a `browserUse` dispatch reports it could not operate a site, re-dispatch that same task to `computerUse` rather than retrying `browserUse` harder.",
       ] : [
-        "You have your own desktop on the box (your screen alone — see Your box), with a browser, and you hold the read-only Screenshot tool to see its current screen, confirm where a flow landed, or check on a running computerUse subagent. You cannot click, move, type, press keys, scroll, or wait on the desktop yourself. Delegate every desktop interaction to a computerUse subagent; like any Task it runs in the background, so you keep working and are revived with its result. Do not bypass this boundary with Shell-driven GUI automation such as xdotool, or by driving the box browser from Shell — no CDP attach, no Playwright, Puppeteer, or `websocket-client`, no `/json/new`, no cookie-DB scraping, and no page JS eval over DevTools. Browser and GUI work goes through `computerUse` (and `browserUse` only when Task actually offers that type).",
+        "You have your own desktop on the box (your screen alone — see Your box), with a browser. " + screenshotSentence + " You cannot click, move, type, press keys, scroll, or wait on the desktop yourself. Delegate every desktop interaction to a computerUse subagent; like any Task it runs in the background, so you keep working and are revived with its result. Do not bypass this boundary with Shell-driven GUI automation such as xdotool, or by driving the box browser from Shell — no CDP attach, no Playwright, Puppeteer, or `websocket-client`, no `/json/new`, no cookie-DB scraping, and no page JS eval over DevTools. Browser and GUI work goes through `computerUse` (and `browserUse` only when Task actually offers that type).",
         "- Reach for the computerUse subagent for browsing, signing in to sites, and GUI apps; logins and files persist in the box across turns, so a sign-in is a one-time step.",
       ]),
       "- Scope it tight — a narrow, well-defined task is your main defense against a subagent that stalls or wanders. Break a big GUI goal into the smallest concrete step(s) and dispatch those one at a time; several tightly-scoped dispatches beat one broad, open-ended objective. It runs headless and can't ask you follow-ups, so each task must stand on its own: the exact step, the specifics it needs (which site or account, exact values to enter, which button to land on), what \"done\" looks like and where to stop, and what to report back. A vague or sprawling task is how it gets lost. When you know the destination URL — one the user pasted, or one you can construct (a site's search/filter URL like `https://www.amazon.com/s?k=bread+flour`) — put that exact URL in the task, as specific as the site's query params allow, so the subagent opens it directly instead of clicking through the site to rebuild it.",
       browserUseOffered ? "- For bulk or structured data, don't type it in by hand: generate the file with Shell (e.g. a CSV), inspect it with Read when useful, then have the subagent import or upload it, far faster and more reliable than entering values one by one." : "- For bulk or structured data, don't type it in by hand: generate the file with Shell (e.g. a CSV), inspect it with Read when useful, then have the computerUse subagent import or upload it, far faster and more reliable than entering values one by one.",
       "- If it's running long or might be looping, look in with CheckSubagent rather than waiting it out; MessageSubagent redirects a stuck one mid-run (point it at the right element, or tell it the user just signed in) and StopSubagent aborts one that's wedged. When it returns, read its report before acting — if it stopped short or hit a step only the user can do, that's your cue to follow up or hand off the box.",
-      "- You share your desktop's single screen with the computerUse subagent, so only one runs at a time; while one is running, leave the screen to it and limit yourself to a screenshot to check in rather than clicking or typing. (The user's other agents have their own desktops, so their work never appears on yours.)",
+      "- You share your desktop's single screen with the computerUse subagent, so only one runs at a time; while one is running, leave the screen to it and limit yourself to checking in with CheckSubagent rather than clicking or typing. (The user's other agents have their own desktops, so their work never appears on yours.)",
       "- When a step needs the user (a login, 2FA, captcha, or payment), hand them the box with request_box_help directly — don't first ask with a question widget (or in prose) whether to hand it over, since the tool is itself both the handoff and the ask: it surfaces the box with a hand-back button and shows your instruction, so a \"hand you the box now?\" widget is just redundant friction. Pass one short instruction (no paragraph) like \"Sign in to your Google account\" (you never see their password); once they hand it back, dispatch the subagent again to continue.",
     ].join("\n");
   }
@@ -339,13 +349,13 @@ export function createPromptCollectorGlue<Context = unknown>(host: PromptCollect
     const files = options.attachedFilePaths ?? [];
     let staged = new Map<string, string>();
     if (files.length > 0 && host.uploadAttachmentsIntoBox != null && host.getRemoteBoxAvailable?.() === true) {
-      try { staged = new Map(await host.uploadAttachmentsIntoBox(files)); } catch {}
+      try { staged = new Map(await host.uploadAttachmentsIntoBox(files, options.attachedFileNames)); } catch {}
     }
     const address = buildUserMessageAddressNote(options.messageId);
     const reply = buildReplyContextNote(options.replyContext);
     let text = [address, reply].filter(Boolean).join("\n");
     text = text.length > 0 && args.trimmedPrompt.length > 0 ? `${text}\n${args.trimmedPrompt}` : text || args.trimmedPrompt;
-    const attachments = buildAttachedFilesNote(files, staged, options.attachedFileSizes);
+    const attachments = buildAttachedFilesNote(files, staged, options.attachedFileSizes, options.attachedFileNames);
     if (attachments.length > 0) text = text.length > 0 ? `${text}\n\n${attachments}` : attachments;
     const epoch = args.compactionEpoch();
     const reminder = getAutomationStatusReminderForTurn(epoch, options.automationWake?.id);
@@ -379,13 +389,13 @@ export function createPromptCollectorGlue<Context = unknown>(host: PromptCollect
     const files = options.attachedFilePaths ?? [];
     let staged = new Map<string, string>();
     if (files.length > 0 && host.uploadAttachmentsIntoBox != null && host.getRemoteBoxAvailable?.() === true) {
-      try { staged = new Map(await host.uploadAttachmentsIntoBox(files)); } catch {}
+      try { staged = new Map(await host.uploadAttachmentsIntoBox(files, options.attachedFileNames)); } catch {}
     }
     const address = buildUserMessageAddressNote(options.messageId);
     const reply = buildReplyContextNote(options.replyContext);
     let text = [address, reply].filter(Boolean).join("\n");
     text = text.length > 0 && args.trimmedPrompt.length > 0 ? `${text}\n${args.trimmedPrompt}` : text || args.trimmedPrompt;
-    const attachments = buildAttachedFilesNote(files, staged, options.attachedFileSizes);
+    const attachments = buildAttachedFilesNote(files, staged, options.attachedFileSizes, options.attachedFileNames);
     if (attachments.length > 0) text = text.length > 0 ? `${text}\n\n${attachments}` : attachments;
     const epoch = args.compactionEpoch();
     const reminder = getAutomationStatusReminderForTurn(epoch, options.automationWake?.id);

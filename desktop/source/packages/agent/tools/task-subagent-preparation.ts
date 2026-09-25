@@ -492,7 +492,15 @@ export async function resolveTaskSubagentConfig(args: {
   const { ctx, rawArgs, meta, subagentConfigs, parentState, parentModelInfo, options } = args;
   const defaultConfig = findSubagentConfigByName(subagentConfigs, GENERAL_PURPOSE_SUBAGENT_TYPE) ?? subagentConfigs[0];
   if (defaultConfig === undefined) throw new ToolCallArgParseError("No subagent types are available.");
-  const requestedSubagentConfig = findSubagentConfigByName(subagentConfigs, rawArgs.subagent_type) ?? defaultConfig;
+  // An unknown type is refused (25 September 2026). It used to fall to the
+  // default config, so a stale name in the brief ("watchVideo") silently ran
+  // a computer-use child with the video as an attachment (ledger F-329).
+  const requestedSubagentConfig = rawArgs.subagent_type == null || rawArgs.subagent_type.length === 0
+    ? defaultConfig
+    : findSubagentConfigByName(subagentConfigs, rawArgs.subagent_type);
+  if (requestedSubagentConfig === undefined) {
+    throw new ToolCallArgParseError(`No subagent type named "${rawArgs.subagent_type}". Available: ${subagentConfigs.map((config) => getSubagentTypeName(config.subagent_type)).join(", ")}.`);
+  }
   const effectiveResumeMode = requestedSubagentConfig.resumeModeOverride ?? "DEFAULT";
   const requestedTypeName = getSubagentTypeName(requestedSubagentConfig.subagent_type);
   const subagentRequestId = computeSubagentRequestId(meta.toolCallId);

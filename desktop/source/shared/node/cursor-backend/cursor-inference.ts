@@ -137,7 +137,7 @@ export function createSandInferenceInterceptor(options: SandInferenceOptions): I
     const privacyLookup = request.service.typeName === "aiserver.v1.DashboardService" && request.method.name === "GetUserPrivacyMode";
     const resolveGhostMode = options.resolveGhostModeHeader ?? ((lookup: PrivacyLookupOptions) => resolveSandGhostModeHeader(lookup, options.fetchPrivacyMode ?? fetchSandPrivacyMode));
     // Without Cursor's Connect surface the lookup only ever 404s (ledger F-382).
-    const ghostMode = auth.mode === "anonymous" || privacyLookup || !isConnectServed(options.env) ? "true" : await resolveGhostMode({ backendUrl: options.backendUrl, accessToken: auth.accessToken, machineId });
+    const ghostMode = auth.mode === "anonymous" || privacyLookup || !isConnectServed(options.env, "aiserver.v1.DashboardService") ? "true" : await resolveGhostMode({ backendUrl: options.backendUrl, accessToken: auth.accessToken, machineId });
     const pinned = request.header.get("x-request-id");
     const requestId = pinned != null && pinned !== "" ? pinned : options.randomUUID?.() ?? globalThis.crypto.randomUUID();
     if (auth.mode === "anonymous") request.header.delete("authorization"); else request.header.set("authorization", `Bearer ${auth.accessToken}`);
@@ -164,7 +164,7 @@ export function createSandBackendTransport(options: Omit<SandInferenceOptions, "
 // built here answers every call with Unimplemented at once and sends
 // nothing; every caller already catches and falls back (ledger F-156,
 // F-157, F-158).
-export function createSandCursorBackendClient<Service extends ServiceType>(service: Service, options: Omit<SandInferenceOptions, "backendUrl">): Client<Service> { if (!isConnectServed(options.env)) return createUnservedClient(service); return createClient(service, createSandBackendTransport(options)); }
+export function createSandCursorBackendClient<Service extends ServiceType>(service: Service, options: Omit<SandInferenceOptions, "backendUrl">): Client<Service> { if (!isConnectServed(options.env, service.typeName)) return createUnservedClient(service); return createClient(service, createSandBackendTransport(options)); }
 
 export function createSandAttachedMediaUrlProvider(options: Omit<SandInferenceOptions, "backendUrl">) {
   const client = createSandCursorBackendClient(AgentService, options) as unknown as {

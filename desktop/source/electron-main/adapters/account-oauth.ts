@@ -1,4 +1,5 @@
 import { createCursorAuthWiring, type AuthServicePort } from "../account/cursor-auth-wiring.js";
+import { forgetInferenceCredential, stopLocalDockerBox } from "../box/local-docker-host-connector.js";
 import type { ElectronProductionAdapterBindings } from "../production-adapters.js";
 import type { ProductionAccountService, ProductionServiceContext } from "../main-production-services.js";
 import { requireFunction, requireObject } from "./provider-guards.js";
@@ -30,6 +31,19 @@ function defaultWiringDeps(context: ProductionServiceContext): CursorAuthWiringD
   requireFunction(context.coordinatorLegs?.legs?.setHostSettings, "account coordinator.setHostSettings");
   return {
     openExternal: async (url) => { await context.native.shell.openExternal(url); },
+    // Sign-out reaches the box: the token file the Mac lent it is removed,
+    // its keep-fresh stops, and a local Docker box is stopped, because it
+    // holds the departing person's token and vendor sign-ins in memory.
+    reportSessionSettlement: (settlement) => {
+      if (settlement.kind !== "signed_out") return;
+      const store = context.settings.settingsStore as { settingsPath?: unknown; getBoxRuntime?: unknown };
+      const settingsPath = typeof store.settingsPath === "string" ? store.settingsPath : undefined;
+      const runtime = typeof store.getBoxRuntime === "function" ? (store.getBoxRuntime as () => string)() : undefined;
+      void (async () => {
+        if (settingsPath != null) await forgetInferenceCredential(settingsPath);
+        if (runtime === "local-docker") await stopLocalDockerBox();
+      })().catch((error: unknown) => context.reportFailure?.("account", "sign-out-box", error));
+    },
     getAccountRuntime: () => accountRuntimeOf(context),
     emitAuthStatus: (status) => context.requireMainEdge().emit("cursor-auth-changed", status),
     sentryEnabled: context.env.SAND_DISABLE_SENTRY !== "1",

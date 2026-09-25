@@ -17,7 +17,7 @@ export class SandCredentialsWaitingError extends Error {
 }
 
 export const EXPIRY_LEEWAY_MS = 30_000;
-export const SAND_SHORTLIVED_CREDS_WAITING_MESSAGE = "Waiting for an inference credential. Simeon's computer renews this automatically (no desktop required); this resolves on its own shortly.";
+export const SAND_SHORTLIVED_CREDS_WAITING_MESSAGE = "Waiting for a model credential. The box renews it with its own credential when it has one, and Simeon on the Mac writes a fresh one every few minutes while it is open; this resolves on its own shortly.";
 
 export class InferenceCredentialStore {
   private credential: InferenceCredential | undefined;
@@ -90,7 +90,7 @@ export function createHostAuthService(options: {
     ? `DEV inference-credential renewer started, reading short-lived tokens from ${devTokenFile} (dev:box-docker local loop)`
     : hasRenewalCredential
       ? "inference-credential renewer started (backend self-renewal is the sole inference-credential source)"
-      : "inference-credential renewer started, but no renewal credential was delivered into the box; inference is unavailable until the box is re-provisioned with one");
+      : "inference-credential renewer started, but no renewal credential was delivered into the box; the model is unavailable until Simeon on the Mac writes one");
   return {
     async getAccessToken(_options?: { readonly backendUrl?: string }): Promise<string> {
       let token = store.getValidAccessToken();

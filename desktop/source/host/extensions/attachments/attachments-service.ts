@@ -6,6 +6,7 @@ import { ATTACHMENTS_DIRNAME, ASSETS_DIRNAME, getAgentAssetsDir, getAgentAttachm
 import { resolveChannelAttachment } from "../../connectors/channel-attachment.js";
 import { uploadBoxFiles } from "../../box/box-transfer.js";
 import { getSandRootDir, reanchorSandPath } from "../../host-paths.js";
+import { HOST_LOG_PREFIX, logHostLine } from "../../../shared/host-log.js";
 import { resolveSandAgentDir } from "../../storage/agent-paths.js";
 import { isSafeFolderId } from "../../storage/folder-id.js";
 import { AttachmentTooLargeError, VIDEO_BYTE_LIMIT, attachmentByteLimitForName } from "../../../shared/media/attachment-limits.js";
@@ -176,7 +177,8 @@ export async function fetchLinkMetadata(agentDir: string, rawUrl: string): Promi
     (async () => {
       const direct = scraped.faviconUrl == null ? null : await fetchImageAsDataUrl(scraped.faviconUrl);
       if (direct != null) return direct;
-      return await fetchImageAsDataUrl(googleFaviconUrl(hostname));
+      // The same host, never Google's favicon service: a pasted link's hostname stays between the person and that site (F-281).
+      return await fetchImageAsDataUrl(`${fetched.finalUrl.origin}/favicon.ico`);
     })(),
   ]);
   const metadata: LinkMetadata = { url: url.toString(), canonicalUrl: scraped.canonicalUrl, title: scraped.title, description: scraped.description, siteName: scraped.siteName, hostname, imageDataUrl, faviconDataUrl, fetchedAt: Date.now() };
@@ -184,9 +186,23 @@ export async function fetchLinkMetadata(agentDir: string, rawUrl: string): Promi
   return metadata;
 }
 
+// What an attachment may never be made of (F-277): the box's credential
+// mount, the kernel's views, the host's own secret store and another
+// agent's data. SendMessage is not auto-reviewed, so this is the check.
+export const ATTACHMENT_REFUSED_ROOTS: readonly string[] = ["/run/grok-bot", "/proc", "/sys", "/dev", "/etc/shadow"];
+export function attachmentSourceRefusal(sourcePath: string, sandRoot: string = getSandRootDir()): string | null {
+  const resolved = reanchorSandPath(sourcePath);
+  for (const root of ATTACHMENT_REFUSED_ROOTS) if (resolved === root || resolved.startsWith(`${root}/`)) return `Attachment refused: ${root} holds credentials or the system, not files to send.`;
+  const secrets = join(sandRoot, "secrets");
+  if (resolved === secrets || resolved.startsWith(`${secrets}/`)) return "Attachment refused: the secret store is never sent.";
+  if (/(^|\/)(vendor-mcp-installs|account-mcp-config|inference|local-docker-vm|sand-secrets)\.json$/.test(resolved)) return `Attachment refused: ${resolved} holds sign-ins.`;
+  return null;
+}
 export async function ingestAttachment(agentDir: string, sourcePath: string): Promise<IngestedAttachment> {
   if (typeof sourcePath !== "string" || sourcePath.trim().length === 0) throw new SandAttachmentError("Attachment file path is empty.");
   if (!isAbsolute(sourcePath)) throw new SandAttachmentError(`Attachment path must be absolute: ${sourcePath}`);
+  const refused = attachmentSourceRefusal(sourcePath);
+  if (refused != null) throw new SandAttachmentError(refused);
   const attachmentsDir = getAgentAttachmentsDir(agentDir);
   if (isPathWithin(attachmentsDir, sourcePath, { isInclusive: true })) { const info = await fs.stat(sourcePath); return { absolutePath: sourcePath, hash: "preserved", bytes: info.size }; }
   const info = await fs.stat(sourcePath); if (!info.isFile()) throw new SandAttachmentError(`Attachment source is not a file: ${sourcePath}`);
@@ -227,5 +243,5 @@ export function createAttachmentsService<Context>(deps: AttachmentsServiceDepend
   let fallbackAgentId: string | null = null;
   const resolveDir = (agentId?: string | null) => { const id = agentId ?? fallbackAgentId; if (!id) throw new SandAttachmentError("No active agent to attach to."); return resolveSandAgentDir(id); };
   const readDir = (path: string, agentId?: string | null) => resolveAttachmentOwnerDir(path) ?? (() => { try { return resolveDir(agentId); } catch { return null; } })();
-  return { setFallbackAgentId(agentId: string | null) { fallbackAgentId = agentId; }, async upload(args: { filename: string; bytesBase64?: string; agentId?: string | null }) { const result = await ingestAttachmentBytes(resolveDir(args.agentId), args.filename, Buffer.from(typeof args.bytesBase64 === "string" ? args.bytesBase64 : "", "base64")); return { path: result.absolutePath }; }, readImage: (args: { path: string }) => readHostAttachmentImage(args.path), async readText(args: { path: string; agentId?: string | null }) { const dir = readDir(args.path, args.agentId); if (dir == null) { deps.report?.({ extension: "attachments", kind: "read_text_miss", hasActive: args.agentId != null }); return null; } return await readAttachmentText(dir, args.path); }, async readChunk(args: { path: string; agentId?: string | null; offset: number; length: number; videoPlayback?: boolean }) { const dir = readDir(args.path, args.agentId); if (dir == null) { deps.report?.({ extension: "attachments", kind: "read_chunk_miss", hasActive: args.agentId != null }); return null; } return await readHostAttachmentChunk(dir, args.path, args.offset, args.length, args.videoPlayback); }, ingest: ingestAttachment, ingestBytes: ingestAttachmentBytes, persistImageBytes, readImageDimensions, readMediaDimensions, readVideoBytes: readHostAttachmentVideoBytes, resolveChannelAttachment, resolveOwnerDir: resolveAttachmentOwnerDir, createGenerateImageResourceAccessor: createSandGenerateImageResourceAccessor, stageIntoBox: (agentId: string, paths: readonly string[]) => stageAttachmentsIntoBox({ ctx: deps.ctx, box: deps.box, resolveOwnerDir: resolveAttachmentOwnerDir, upload: async (ctx, box, id, files) => { await uploadBoxFiles(ctx, box, id, files); } }, agentId, paths), createGenerateImageService: <C>(options: Parameters<typeof createSandGenerateImageService<C>>[1]) => createSandGenerateImageService(deps.auth, options) };
+  return { setFallbackAgentId(agentId: string | null) { fallbackAgentId = agentId; }, async upload(args: { filename: string; bytesBase64?: string; agentId?: string | null }) { const result = await ingestAttachmentBytes(resolveDir(args.agentId), args.filename, Buffer.from(typeof args.bytesBase64 === "string" ? args.bytesBase64 : "", "base64")); return { path: result.absolutePath }; }, readImage: (args: { path: string }) => readHostAttachmentImage(args.path), async readText(args: { path: string; agentId?: string | null }) { const dir = readDir(args.path, args.agentId); if (dir == null) { deps.report?.({ extension: "attachments", kind: "read_text_miss", hasActive: args.agentId != null }); return null; } return await readAttachmentText(dir, args.path); }, async readChunk(args: { path: string; agentId?: string | null; offset: number; length: number; videoPlayback?: boolean }) { const dir = readDir(args.path, args.agentId); if (dir == null) { deps.report?.({ extension: "attachments", kind: "read_chunk_miss", hasActive: args.agentId != null }); return null; } return await readHostAttachmentChunk(dir, args.path, args.offset, args.length, args.videoPlayback); }, ingest: ingestAttachment, ingestBytes: ingestAttachmentBytes, persistImageBytes, readImageDimensions, readMediaDimensions, readVideoBytes: readHostAttachmentVideoBytes, resolveChannelAttachment, resolveOwnerDir: resolveAttachmentOwnerDir, createGenerateImageResourceAccessor: createSandGenerateImageResourceAccessor, stageIntoBox: (agentId: string, paths: readonly string[], names?: ReadonlyMap<string, string>) => stageAttachmentsIntoBox({ ctx: deps.ctx, box: deps.box, resolveOwnerDir: resolveAttachmentOwnerDir, report: (line) => logHostLine(`${HOST_LOG_PREFIX} attachments ${line}`), upload: async (ctx, box, id, files) => { await uploadBoxFiles(ctx, box, id, files); } }, agentId, paths), createGenerateImageService: <C>(options: Parameters<typeof createSandGenerateImageService<C>>[1]) => createSandGenerateImageService(deps.auth, options) };
 }
