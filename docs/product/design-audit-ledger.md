@@ -27,7 +27,7 @@ until its row says so. Columns:
 | F-001 | chat-turn | blocking | unwired | confirmed | hidden-turn-cap | fixed | Hidden-turn model-call cap (40) is never wired on the production path: every nudge, intro and automation runs with the 5,000 budget | `desktop/source/host/host-runner-composition.ts` |
 | F-002 | chat-turn | major | risk | unverified | - | - | Every model call is hard-aborted at 45 s including the streamed body, so a long Terra effort-high step cannot complete and is retried | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-003 | chat-turn | minor | design-violation | unverified | - | - | Silent per-step model swap: on any 'rate limit'-shaped error the loop falls back from Terra to Luna without a system line in the thread | `desktop/source/host/extensions/inference/provider-session.ts` |
-| F-004 | chat-turn | minor | dead-service | unverified | - | - | Every turn and every nudge first calls Cursor's GetUserPrivacyMode Connect RPC against api.simeonlabs.com, which is not served | `desktop/source/host/runner/turn-run-shell.ts` |
+| F-004 | chat-turn | minor | dead-service | confirmed | dead-cursor-services | fixed | Every turn and every nudge first calls Cursor's GetUserPrivacyMode Connect RPC against api.simeonlabs.com, which is not served | `desktop/source/host/runner/turn-run-shell.ts` |
 | F-005 | chat-turn | minor | unwired | unverified | - | - | The claidor executor never reports a request id, so the transcript, tray errors and telemetry carry none | `desktop/source/host/host-runner-composition.ts` |
 | F-006 | chat-turn | note | hardcoded | unverified | - | - | The Agent is configured with model id 'gpt-5.5-high-fast' while the wire runs gpt-5.6-terra | `desktop/source/host/host-runner-composition.ts` |
 | F-007 | chat-turn | minor | design-violation | confirmed | cloud-agents-channels | coming-soon | The agent's prompt still offers cloud agents (`cursor-agent` cards, 'launching a cloud agent') and channel delivery, both unserved, with no explanation | `desktop/source/host/runner/tools/send-message-schema.ts` |
@@ -40,11 +40,11 @@ until its row says so. Columns:
 | F-014 | agents-and-subagents | blocking | design-violation | unverified | - | - | A Task child runs on the parent's conversation state and writes its checkpoints into the parent's agent store and transcript | `desktop/source/host/host-runner-composition.ts` |
 | F-015 | agents-and-subagents | major | spend | confirmed | hidden-turn-cap | fixed | The 40-call hidden-turn budget is dead on the production path: `hidden` never reaches the owner input | `desktop/source/host/host-runner-composition.ts` |
 | F-016 | agents-and-subagents | major | design-violation | unverified | - | - | The agent's prompt says it holds the Screenshot tool while AGENT_SCREENSHOT_TOOL = false withholds it (the blindness failure, undeclared) | `desktop/source/host/host-runner-composition.ts` |
-| F-017 | agents-and-subagents | major | unwired | unverified | - | - | The executor subagent is on by default (sand_multitask default true) and an executor child's ExternalShell/ExternalRead can never be allowed: no permission surface exists for the child's id | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
+| F-017 | agents-and-subagents | major | unwired | confirmed | asks-once-memory | known-limit | The executor subagent is on by default (sand_multitask default true) and an executor child's ExternalShell/ExternalRead can never be allowed: no permission surface exists for the child's id | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
 | F-018 | agents-and-subagents | major | design-violation | unverified | - | - | getRemoteBoxAvailable compares a Promise to false and is always true, so box tools and computerUse are offered with Docker off | `desktop/source/host/host-runner-composition.ts` |
 | F-019 | agents-and-subagents | major | unwired | confirmed | memory | fixed | Grok Bot's per-turn memory extraction and episode summaries never run: the shell adapter host has no memoryStore | `desktop/source/host/runner/production-turn-run-shell-adapter.ts` |
 | F-020 | agents-and-subagents | minor | unwired | confirmed | hidden-turn-cap | fixed | The closing-send nudge can never fire: onLatestPromptMessages is not passed, so latestPromptMessages() is always [] | `desktop/source/host/host-runner-composition.ts` |
-| F-021 | agents-and-subagents | minor | unwired | unverified | - | - | Subagent launch auto-review and MessageSubagent steer review are not wired on the production path | `desktop/source/host/runner/turn-agent-composition.ts` |
+| F-021 | agents-and-subagents | minor | unwired | confirmed | auto-review-enforce | fixed | Subagent launch auto-review and MessageSubagent steer review are not wired on the production path | `desktop/source/host/runner/turn-agent-composition.ts` |
 | F-022 | agents-and-subagents | minor | dead-service | unverified | - | - | The agent is offered the CloudAgent tool and the cloud-agents-enabled brief although cloud agents are known-unserved | `desktop/source/host/runner/system-prompt.ts` |
 | F-023 | agents-and-subagents | minor | unwired | unverified | - | - | Chrome prewarm (prepareRemoteBox) has no caller; the child's prompt says it happens | `desktop/source/host/runner/computer-use.ts` |
 | F-024 | agents-and-subagents | minor | unwired | unverified | - | - | resolveBoxBrowser and getBoxWindowIndex are not supplied, so the child is told to `echo $DISPLAY` although the local box's window index is known | `desktop/source/host/runner/runner-prompt-glue.ts` |
@@ -139,14 +139,14 @@ until its row says so. Columns:
 | F-113 | keys-and-auth | note | risk | unverified | - | - | The gateway bearer token is passed to the container as a docker --env | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-114 | keys-and-auth | note | dead-service | unverified | - | - | 1Password provisioning code is present with Anysphere's launcher signing identity; unreachable outside dev controls | `desktop/source/electron-main/onepassword/onepassword-cli-runtime.ts` |
 | F-115 | keys-and-auth | note | docs-wrong | unverified | - | - | docs/product/app-sign-in.md still says the round trip was never run and names api.claidor.com | `docs/product/app-sign-in.md` |
-| F-116 | keys-and-auth | note | dead-service | unverified | - | - | Every Connect RPC to our host carries x-cursor-checksum, x-ghost-mode and the bearer, after a privacy lookup that 404s | `desktop/source/shared/node/cursor-backend/cursor-inference.ts` |
+| F-116 | keys-and-auth | note | dead-service | confirmed | dead-cursor-services | fixed | Every Connect RPC to our host carries x-cursor-checksum, x-ghost-mode and the bearer, after a privacy lookup that 404s | `desktop/source/shared/node/cursor-backend/cursor-inference.ts` |
 | F-117 | models-and-spend | blocking | unwired | confirmed | hidden-turn-cap | fixed | Hidden-turn budget of 40 never reaches the executor: the production owner input drops `hidden` | `desktop/source/host/host-runner-composition.ts` |
 | F-118 | models-and-spend | major | spend | unverified | - | - | Auto-review classifier runs in shadow by default: one Luna call per Shell/MCP/computer action, verdict discarded | `desktop/source/host/runner/sand-auto-review.ts` |
 | F-119 | models-and-spend | major | unwired | unverified | - | - | The model picker's choice never reaches the executor; the loop's model is decided only by box env | `desktop/source/host/host-runner-composition.ts` |
 | F-120 | models-and-spend | minor | design-violation | unverified | - | - | Luna is offered in the picker as the agent's model, against pricing.py's own rule | `desktop/source/electron-main/models/claidor-model-catalog.ts` |
 | F-121 | models-and-spend | minor | docs-wrong | unverified | - | - | Claude Sonnet fallback is unreachable; the only fallback is Luna on a rate-limit regex, unannounced | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-122 | models-and-spend | minor | spend | unverified | - | - | The proxy serves withheld models (Astra 10x, Opus 5x) to any bearer that names them | `server/polar/desktop/endpoints.py` |
-| F-123 | models-and-spend | minor | dead-service | unverified | - | - | A Cursor Connect RPC (GetUserPrivacyMode) is attempted on api.simeonlabs.com at the start of every turn | `desktop/source/host/runner/turn-run-shell.ts` |
+| F-123 | models-and-spend | minor | dead-service | confirmed | dead-cursor-services | fixed | A Cursor Connect RPC (GetUserPrivacyMode) is attempted on api.simeonlabs.com at the start of every turn | `desktop/source/host/runner/turn-run-shell.ts` |
 | F-124 | models-and-spend | major | risk | unverified | - | - | `CLAIDOR_FETCH_TIMEOUT_MS = 45_000` aborts the whole streamed model call, not just the connect | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-125 | models-and-spend | note | spend | confirmed | hidden-turn-cap | known-limit | Every reply nudge and closing nudge is a fresh full turn on Terra at effort high with the whole brief | `desktop/source/host/extensions/transcript/turn-runtime.ts` |
 | F-126 | models-and-spend | note | unmeasured | unverified | - | - | Hourly credit brake makes the 5,000-step asked cap unreachable; how the 402 reads in the chat is unmeasured | `server/polar/config.py` |
@@ -363,21 +363,21 @@ until its row says so. Columns:
 | F-337 | prompt-and-brief | note | design-violation | unverified | - | - | The reconstruction's message kinds differ from the nine decided kinds | `desktop/source/host/runner/tools/send-message-schema.ts` |
 | F-338 | prompt-and-brief | minor | docs-wrong | unverified | - | - | 'Use poppler-utils to read PDFs' contradicts the pdf.js Read path | `desktop/source/host/runner/prompt-collector-glue.ts` |
 | F-339 | prompt-and-brief | note | design-violation | unverified | - | - | Dead Settings 'Routing' panel with Claude Code, Codex and an OpenRouter API-key field remains in the packager | `desktop/scripts/lib/router-renderer-patch.mjs` |
-| F-340 | permissions-and-review | blocking | design-violation | unverified | - | - | Auto-review can never block or draw a card: every surface is permanently in shadow mode on the box | `desktop/source/host/runner/sand-auto-review.ts` |
-| F-341 | permissions-and-review | major | spend | unverified | - | - | Every reviewable action pays a full classifier run whose verdict is thrown away (shadow spend) | `desktop/source/packages/agent/tools/core/shell/create-shell-tool.ts` |
-| F-342 | permissions-and-review | major | docs-wrong | unverified | - | - | CLAUDE.md and the 24-September gaps record present auto-review as fixed and gating; the code only logs | `CLAUDE.md` |
-| F-343 | permissions-and-review | major | unwired | unverified | - | - | Production shell no-ops beginAutoReviewUserMessageEpoch and setActiveTurnRequestSource: approval cards never expire on the next message and park forever | `desktop/source/host/host-runner-composition.ts` |
-| F-344 | permissions-and-review | major | unwired | unverified | - | - | SandLocalToolPermissionController.beginTurn has no caller: a denied or unanswered Mac ask is 'abandoned' for that agent forever | `desktop/source/host/extensions/local-tool-permission/local-tool-permission-controller.ts` |
-| F-345 | permissions-and-review | minor | dead-service | unverified | - | - | Action audit forwards to Cursor's RecordSandAuditEvents; off by default it only writes a per-agent audit.jsonl in the box that nothing reads or shows | `desktop/source/host/extensions/action-audit/extension.ts` |
-| F-346 | permissions-and-review | note | risk | unverified | - | - | audit.jsonl stores every shell command verbatim, unredacted, including anything typed as an inline secret | `desktop/source/host/extensions/action-audit/action-audit-service.ts` |
-| F-347 | permissions-and-review | minor | risk | unverified | - | - | Classifier deadline mismatch: 10 s wrapper around a 30 s executor; in enforce a slow verdict rejects the action with no card and no retry path | `desktop/source/packages/agent/utils/smart-mode-classifier-measurement.ts` |
-| F-348 | permissions-and-review | minor | design-violation | unverified | - | - | The Allow card is Grok Bot's four-way prompt, not the founder's three-way card, and the brief tells the agent every Mac action raises a card | `desktop/frontend/src/recovered/features/permissions/local-tool/view.tsx` |
-| F-349 | permissions-and-review | note | docs-wrong | unverified | - | - | Model-facing messages point to 'Settings → Agent → Execution on Local Computer'; the design source says Settings → General → Local execution | `desktop/source/shared/local-tool-permission-machinery.ts` |
-| F-350 | permissions-and-review | note | dead-service | unverified | - | - | Team ceiling for local execution is fetched from Cursor's GetTeamAdminSettings on every auth-status change (404, swallowed) | `desktop/source/electron-main/account/cursor-auth-wiring.ts` |
-| F-351 | permissions-and-review | note | dead-service | unverified | - | - | Sand access is asked of Cursor's GetSandAccessStatus and runs on 'unknown' | `desktop/source/electron-main/account/access.ts` |
-| F-352 | permissions-and-review | note | dead-service | unverified | - | - | The box host polls Cursor's Statsig bootstrap (aiserver.v1.AnalyticsService/BootstrapStatsig) on api.simeonlabs.com every ~5 minutes; auto-review's only enforce lever hangs off it | `desktop/source/shared/node/experiments/statsig-bootstrap.ts` |
+| F-340 | permissions-and-review | blocking | design-violation | confirmed | auto-review-enforce | fixed | Auto-review can never block or draw a card: every surface is permanently in shadow mode on the box | `desktop/source/host/runner/sand-auto-review.ts` |
+| F-341 | permissions-and-review | major | spend | confirmed | auto-review-enforce | fixed | Every reviewable action pays a full classifier run whose verdict is thrown away (shadow spend) | `desktop/source/packages/agent/tools/core/shell/create-shell-tool.ts` |
+| F-342 | permissions-and-review | major | docs-wrong | confirmed | auto-review-enforce | fixed | CLAUDE.md and the 24-September gaps record present auto-review as fixed and gating; the code only logs | `CLAUDE.md` |
+| F-343 | permissions-and-review | major | unwired | confirmed | auto-review-enforce | fixed | Production shell no-ops beginAutoReviewUserMessageEpoch and setActiveTurnRequestSource: approval cards never expire on the next message and park forever | `desktop/source/host/host-runner-composition.ts` |
+| F-344 | permissions-and-review | major | unwired | confirmed | asks-once-memory | fixed | SandLocalToolPermissionController.beginTurn has no caller: a denied or unanswered Mac ask is 'abandoned' for that agent forever | `desktop/source/host/extensions/local-tool-permission/local-tool-permission-controller.ts` |
+| F-345 | permissions-and-review | minor | dead-service | confirmed | box-telemetry | known-limit | Action audit forwards to Cursor's RecordSandAuditEvents; off by default it only writes a per-agent audit.jsonl in the box that nothing reads or shows | `desktop/source/host/extensions/action-audit/extension.ts` |
+| F-346 | permissions-and-review | note | risk | confirmed | box-telemetry | fixed | audit.jsonl stores every shell command verbatim, unredacted, including anything typed as an inline secret | `desktop/source/host/extensions/action-audit/action-audit-service.ts` |
+| F-347 | permissions-and-review | minor | risk | confirmed | auto-review-enforce | fixed | Classifier deadline mismatch: 10 s wrapper around a 30 s executor; in enforce a slow verdict rejects the action with no card and no retry path | `desktop/source/packages/agent/utils/smart-mode-classifier-measurement.ts` |
+| F-348 | permissions-and-review | minor | design-violation | confirmed | asks-once-memory | needs-mac | The Allow card is Grok Bot's four-way prompt, not the founder's three-way card, and the brief tells the agent every Mac action raises a card | `desktop/frontend/src/recovered/features/permissions/local-tool/view.tsx` |
+| F-349 | permissions-and-review | note | docs-wrong | confirmed | asks-once-memory | needs-mac | Model-facing messages point to 'Settings → Agent → Execution on Local Computer'; the design source says Settings → General → Local execution | `desktop/source/shared/local-tool-permission-machinery.ts` |
+| F-350 | permissions-and-review | note | dead-service | confirmed | dead-cursor-services | fixed | Team ceiling for local execution is fetched from Cursor's GetTeamAdminSettings on every auth-status change (404, swallowed) | `desktop/source/electron-main/account/cursor-auth-wiring.ts` |
+| F-351 | permissions-and-review | note | dead-service | confirmed | dead-cursor-services | known-limit | Sand access is asked of Cursor's GetSandAccessStatus and runs on 'unknown' | `desktop/source/electron-main/account/access.ts` |
+| F-352 | permissions-and-review | note | dead-service | confirmed | auto-review-enforce | fixed | The box host polls Cursor's Statsig bootstrap (aiserver.v1.AnalyticsService/BootstrapStatsig) on api.simeonlabs.com every ~5 minutes; auto-review's only enforce lever hangs off it | `desktop/source/shared/node/experiments/statsig-bootstrap.ts` |
 | F-353 | permissions-and-review | note | design-violation | confirmed | routine-write-review | fixed | Routine create/change is never reviewed in any mode (automationWrite is hard 'off') | `desktop/source/host/runner/sand-auto-review.ts` |
-| F-354 | permissions-and-review | note | risk | unverified | - | - | The auto-review card's 'Always allow' appends the classifier's proposed rule to the person's allow-instructions, with no confirmation of the rule text | `desktop/frontend/src/recovered/features/conversation/cards/transcript-card/auto-review-actions.ts` |
+| F-354 | permissions-and-review | note | risk | confirmed | auto-review-enforce | needs-mac | The auto-review card's 'Always allow' appends the classifier's proposed rule to the person's allow-instructions, with no confirmation of the rule text | `desktop/frontend/src/recovered/features/conversation/cards/transcript-card/auto-review-actions.ts` |
 | F-355 | data-and-persistence | major | docs-wrong | unverified | - | - | Copied Grok Bot user-data folder cannot be decrypted after the rename; 'nobody signs in again' is unproven and likely false | `desktop/source/electron-main/startup/desktop-user-data-bootstrap.ts` |
 | F-356 | data-and-persistence | major | risk | unverified | - | - | Startup data-root migration renames the real Grok Bot's ~/.cursor/sand into ~/.caisra | `desktop/source/electron-main/startup/startup-data-root-migration.ts` |
 | F-357 | data-and-persistence | major | risk | unverified | - | - | Every app build force-removes the box container; only two volumes survive, so box browser logins and installs are wiped on each update | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
@@ -399,34 +399,34 @@ until its row says so. Columns:
 | F-373 | data-and-persistence | note | design-violation | unverified | - | - | Notifications are hard-forced off and the store rewrites settings.json on every read | `desktop/source/shared/node/settings/sand-settings-store.ts` |
 | F-374 | data-and-persistence | note | dead-service | confirmed | listeners-coming-soon | fixed | Automations cloud sync client targets Cursor's AutomationsService; routines live only in the box volume | `desktop/source/host/extensions/automations/extension.ts` |
 | F-375 | data-and-persistence | minor | dead-service | unverified | - | - | The local-exec daemon's credential and stale-connection refresh call routes Claidor does not serve | `desktop/source/electron-main/box/box-host-connector.ts` |
-| F-376 | logging-telemetry-privacy | major | dead-service | unverified | - | - | Box host structured-log telemetry ships every console line (incl. [claidor] model= tool args and the 12,000-char system prompt on model-error) to AnalyticsService/SubmitLogs, which Simeon Labs' server does not serve; whether the box env disables it is not in the repo | `desktop/source/host/extensions/telemetry/host-telemetry-service.ts` |
-| F-377 | logging-telemetry-privacy | major | dead-service | unverified | - | - | BoxLogShipper reads every /tmp/*.log in the box (including /tmp/sand-host.log unless SAND_HOST_LOG_FILE names it) and ships the lines to the unserved SubmitLogs RPC | `desktop/source/host/extensions/telemetry/host-telemetry-service.ts` |
-| F-378 | logging-telemetry-privacy | major | dead-service | unverified | - | - | Product analytics gate sand_product_analytics defaults ON in the bundled table (comment says 'Default OFF'), so the box host ships TrackEvents to the unserved AnalyticsService | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
-| F-379 | logging-telemetry-privacy | minor | dead-service | unverified | - | - | Host OTLP trace exporter targets `${SAND_BACKEND_URL}/v1/traces` with the bearer and a hard-coded `x-ghost-mode: false`; the route does not exist on the server | `desktop/source/host/extensions/telemetry/host-telemetry-service.ts` |
-| F-380 | logging-telemetry-privacy | minor | risk | unverified | - | - | Sentry DSN still points at Cursor's ingest (metrics.cursor.sh) in three processes; only the absence of an installed adapter / env keeps crash reports from leaving | `desktop/source/shared/observability/sentry.ts` |
-| F-381 | logging-telemetry-privacy | minor | docs-wrong | unverified | - | - | Record claim 'Telemetry, Sentry, metrics … off by env in the packaged build' is true for the Mac only; the box host runs the same telemetry stack and the record does not say so | `docs/product/reconstruction-gaps-2026-09-24.md` |
-| F-382 | logging-telemetry-privacy | minor | dead-service | unverified | - | - | Privacy-mode lookup (DashboardService/GetUserPrivacyMode) precedes every Connect RPC on both sides, always 404s, and re-fires every 10 s with a console line | `desktop/source/shared/node/cursor-backend/cursor-inference.ts` |
-| F-383 | logging-telemetry-privacy | minor | dead-service | unverified | - | - | Settings 'Privacy mode' reads a Cursor RPC that 404s and reports 'on' by fallback — a promise the product does not implement | `desktop/source/electron-main/account/cursor-profile.ts` |
-| F-384 | logging-telemetry-privacy | note | risk | unverified | - | - | Codebase Telemetry extension is in the production graph and would snapshot /workspace and /home/box to the backend; only the missing csnaps binary stops it | `desktop/source/host/host-production-extensions.ts` |
-| F-385 | logging-telemetry-privacy | note | dead-service | unverified | - | - | Action audit, post-turn labeling and mobile push still target unserved Cursor RPCs with a privacy lookup each; labeling only surfaces as a [claidor] diagnostic line | `desktop/source/host/extensions/action-audit/action-audit-backend.ts` |
-| F-386 | logging-telemetry-privacy | minor | risk | unverified | - | - | /tmp/sand-host.log holds user content in clear: tool args (SendMessage text, Shell commands), child results, and the full system prompt with memory on any model error, with no rotation in our tree | `desktop/source/host/extensions/inference/provider-session.ts` |
-| F-387 | logging-telemetry-privacy | note | risk | unverified | - | - | vendor-mcp-signin.log records the OAuth client id and whether a secret exists — no secrets — but lives beside the store that holds access/refresh tokens and client secrets in plain JSON | `desktop/source/shared/node/vendor-mcp/backend-exec.ts` |
-| F-388 | logging-telemetry-privacy | note | dead-service | unverified | - | - | Statsig client is constructed with Cursor's client key and log-event proxy api3.cursor.sh; only the URL allowlist (/rgstr) and the 404 bootstrap keep it silent | `desktop/source/shared/node/experiments/statsig-bootstrap.ts` |
-| F-389 | logging-telemetry-privacy | note | risk | unverified | - | - | Server-side: Send Feedback message text and the provider's refusal body are written to Render's structlog; nothing else of user content is logged by the proxy | `server/polar/desktop/endpoints.py` |
-| F-390 | logging-telemetry-privacy | minor | unwired | unverified | - | - | No production surface lets the person see any log: the box tail lives only in the dev controls window, and the Mac's computer-stream.log / vendor-mcp-signin.log are found only by path | `desktop/source/electron-main/dev/dev-controls-window.ts` |
-| F-391 | logging-telemetry-privacy | note | dead-service | unverified | - | - | Desktop structured-log spill and host crash-marker persist telemetry to disk that can never be delivered | `desktop/source/electron-main/telemetry/desktop-structured-log-spill.ts` |
-| F-392 | sharing-cloud-dead-services | major | unwired | unverified | - | - | CloudAgent tool is offered on every turn and the brief orders all repository work through it, but no cloud-agent service exists | `desktop/source/host/host-runner-composition.ts` |
-| F-393 | sharing-cloud-dead-services | major | spend | unverified | - | - | About 6.7k characters of cloud-agent instructions and a `cursor-agent` message type are sent to the model on every turn for a dead feature | `desktop/source/host/runner/system-prompt.ts` |
-| F-394 | sharing-cloud-dead-services | minor | naming | unverified | - | - | The agent's brief still says 'Claidor account' and 'Sign In with Claidor' | `desktop/source/host/runner/system-prompt.ts` |
-| F-395 | sharing-cloud-dead-services | minor | naming | unverified | - | - | Cloud-agent text the model reads names cursor.com and 'the Cursor agent'; the name record calls these real addresses | `desktop/source/host/extensions/cloud-agents/cloud-agents-service.ts` |
-| F-396 | sharing-cloud-dead-services | minor | dead-service | unverified | - | - | Cloud-agents extension calls DashboardService on every host start | `desktop/source/host/extensions/cloud-agents/extension.ts` |
-| F-397 | sharing-cloud-dead-services | minor | spend | unverified | - | - | CloudAgent 'watch' arms a five-hour poll of a 404 RPC every 10 s and ends in a hidden revival turn | `desktop/source/host/cloud-agents/cloud-agent-tool.ts` |
-| F-398 | sharing-cloud-dead-services | minor | spend | unverified | - | - | With auto-review on, a doomed CloudAgent launch still pays a Luna classifier call | `desktop/source/host/host-runner-composition.ts` |
-| F-399 | sharing-cloud-dead-services | note | docs-wrong | unverified | - | - | Record understates the CloudAgent failure mode: a 404 launch throws, it does not become tool text | `docs/product/reconstruction-gaps-2026-09-24.md` |
-| F-400 | sharing-cloud-dead-services | minor | docs-wrong | unverified | - | - | Local group chats answer with a text-only Luna call that has no memory, roster, tools or brief; the decision is unrecorded | `desktop/source/host/extensions/transcript/group-chat-glue.ts` |
-| F-401 | sharing-cloud-dead-services | note | design-violation | unverified | - | - | The egress tunnel the design struck is still wired end to end, dormant behind an env flag | `docs/product/direction.md` |
-| F-402 | sharing-cloud-dead-services | note | dead-service | unverified | - | - | Host self-upgrade is on by default with no origin; 'Update computer' can only answer no-bundle-source | `desktop/source/host/extensions/host-upgrade/extension.ts` |
-| F-403 | sharing-cloud-dead-services | note | dead-service | unverified | - | - | Sharing is gated off and every entry answers a canned sentence, but a packaged build would poll api.simeonlabs.com if the gate flipped | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
+| F-376 | logging-telemetry-privacy | major | dead-service | confirmed | box-telemetry | fixed | Box host structured-log telemetry ships every console line (incl. [claidor] model= tool args and the 12,000-char system prompt on model-error) to AnalyticsService/SubmitLogs, which Simeon Labs' server does not serve; whether the box env disables it is not in the repo | `desktop/source/host/extensions/telemetry/host-telemetry-service.ts` |
+| F-377 | logging-telemetry-privacy | major | dead-service | refuted | box-telemetry | fixed | BoxLogShipper reads every /tmp/*.log in the box (including /tmp/sand-host.log unless SAND_HOST_LOG_FILE names it) and ships the lines to the unserved SubmitLogs RPC | `desktop/source/host/extensions/telemetry/host-telemetry-service.ts` |
+| F-378 | logging-telemetry-privacy | major | dead-service | confirmed | box-telemetry | fixed | Product analytics gate sand_product_analytics defaults ON in the bundled table (comment says 'Default OFF'), so the box host ships TrackEvents to the unserved AnalyticsService | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
+| F-379 | logging-telemetry-privacy | minor | dead-service | refuted | box-telemetry | known-limit | Host OTLP trace exporter targets `${SAND_BACKEND_URL}/v1/traces` with the bearer and a hard-coded `x-ghost-mode: false`; the route does not exist on the server | `desktop/source/host/extensions/telemetry/host-telemetry-service.ts` |
+| F-380 | logging-telemetry-privacy | minor | risk | confirmed | box-telemetry | fixed | Sentry DSN still points at Cursor's ingest (metrics.cursor.sh) in three processes; only the absence of an installed adapter / env keeps crash reports from leaving | `desktop/source/shared/observability/sentry.ts` |
+| F-381 | logging-telemetry-privacy | minor | docs-wrong | confirmed | box-telemetry | fixed | Record claim 'Telemetry, Sentry, metrics … off by env in the packaged build' is true for the Mac only; the box host runs the same telemetry stack and the record does not say so | `docs/product/reconstruction-gaps-2026-09-24.md` |
+| F-382 | logging-telemetry-privacy | minor | dead-service | confirmed | dead-cursor-services | fixed | Privacy-mode lookup (DashboardService/GetUserPrivacyMode) precedes every Connect RPC on both sides, always 404s, and re-fires every 10 s with a console line | `desktop/source/shared/node/cursor-backend/cursor-inference.ts` |
+| F-383 | logging-telemetry-privacy | minor | dead-service | confirmed | dead-cursor-services | fixed | Settings 'Privacy mode' reads a Cursor RPC that 404s and reports 'on' by fallback — a promise the product does not implement | `desktop/source/electron-main/account/cursor-profile.ts` |
+| F-384 | logging-telemetry-privacy | note | risk | refuted | box-telemetry | known-limit | Codebase Telemetry extension is in the production graph and would snapshot /workspace and /home/box to the backend; only the missing csnaps binary stops it | `desktop/source/host/host-production-extensions.ts` |
+| F-385 | logging-telemetry-privacy | note | dead-service | confirmed | dead-cursor-services | fixed | Action audit, post-turn labeling and mobile push still target unserved Cursor RPCs with a privacy lookup each; labeling only surfaces as a [claidor] diagnostic line | `desktop/source/host/extensions/action-audit/action-audit-backend.ts` |
+| F-386 | logging-telemetry-privacy | minor | risk | confirmed | box-telemetry | known-limit | /tmp/sand-host.log holds user content in clear: tool args (SendMessage text, Shell commands), child results, and the full system prompt with memory on any model error, with no rotation in our tree | `desktop/source/host/extensions/inference/provider-session.ts` |
+| F-387 | logging-telemetry-privacy | note | risk | confirmed | box-telemetry | known-limit | vendor-mcp-signin.log records the OAuth client id and whether a secret exists — no secrets — but lives beside the store that holds access/refresh tokens and client secrets in plain JSON | `desktop/source/shared/node/vendor-mcp/backend-exec.ts` |
+| F-388 | logging-telemetry-privacy | note | dead-service | confirmed | box-telemetry | fixed | Statsig client is constructed with Cursor's client key and log-event proxy api3.cursor.sh; only the URL allowlist (/rgstr) and the 404 bootstrap keep it silent | `desktop/source/shared/node/experiments/statsig-bootstrap.ts` |
+| F-389 | logging-telemetry-privacy | note | risk | confirmed | box-telemetry | known-limit | Server-side: Send Feedback message text and the provider's refusal body are written to Render's structlog; nothing else of user content is logged by the proxy | `server/polar/desktop/endpoints.py` |
+| F-390 | logging-telemetry-privacy | minor | unwired | confirmed | electron-main-app | - | No production surface lets the person see any log: the box tail lives only in the dev controls window, and the Mac's computer-stream.log / vendor-mcp-signin.log are found only by path | `desktop/source/electron-main/dev/dev-controls-window.ts` |
+| F-391 | logging-telemetry-privacy | note | dead-service | confirmed | box-telemetry | fixed | Desktop structured-log spill and host crash-marker persist telemetry to disk that can never be delivered | `desktop/source/electron-main/telemetry/desktop-structured-log-spill.ts` |
+| F-392 | sharing-cloud-dead-services | major | unwired | confirmed | dead-cursor-services | fixed | CloudAgent tool is offered on every turn and the brief orders all repository work through it, but no cloud-agent service exists | `desktop/source/host/host-runner-composition.ts` |
+| F-393 | sharing-cloud-dead-services | major | spend | refuted | dead-cursor-services | known-limit | About 6.7k characters of cloud-agent instructions and a `cursor-agent` message type are sent to the model on every turn for a dead feature | `desktop/source/host/runner/system-prompt.ts` |
+| F-394 | sharing-cloud-dead-services | minor | naming | confirmed | dead-cursor-services | fixed | The agent's brief still says 'Claidor account' and 'Sign In with Claidor' | `desktop/source/host/runner/system-prompt.ts` |
+| F-395 | sharing-cloud-dead-services | minor | naming | refuted | dead-cursor-services | known-limit | Cloud-agent text the model reads names cursor.com and 'the Cursor agent'; the name record calls these real addresses | `desktop/source/host/extensions/cloud-agents/cloud-agents-service.ts` |
+| F-396 | sharing-cloud-dead-services | minor | dead-service | confirmed | dead-cursor-services | fixed | Cloud-agents extension calls DashboardService on every host start | `desktop/source/host/extensions/cloud-agents/extension.ts` |
+| F-397 | sharing-cloud-dead-services | minor | spend | confirmed | dead-cursor-services | fixed | CloudAgent 'watch' arms a five-hour poll of a 404 RPC every 10 s and ends in a hidden revival turn | `desktop/source/host/cloud-agents/cloud-agent-tool.ts` |
+| F-398 | sharing-cloud-dead-services | minor | spend | refuted | dead-cursor-services | known-limit | With auto-review on, a doomed CloudAgent launch still pays a Luna classifier call | `desktop/source/host/host-runner-composition.ts` |
+| F-399 | sharing-cloud-dead-services | note | docs-wrong | confirmed | dead-cursor-services | fixed | Record understates the CloudAgent failure mode: a 404 launch throws, it does not become tool text | `docs/product/reconstruction-gaps-2026-09-24.md` |
+| F-400 | sharing-cloud-dead-services | minor | docs-wrong | confirmed | dead-cursor-services | - | Local group chats answer with a text-only Luna call that has no memory, roster, tools or brief; the decision is unrecorded | `desktop/source/host/extensions/transcript/group-chat-glue.ts` |
+| F-401 | sharing-cloud-dead-services | note | design-violation | confirmed | dead-cursor-services | fixed | The egress tunnel the design struck is still wired end to end, dormant behind an env flag | `docs/product/direction.md` |
+| F-402 | sharing-cloud-dead-services | note | dead-service | refuted | dead-cursor-services | known-limit | Host self-upgrade is on by default with no origin; 'Update computer' can only answer no-bundle-source | `desktop/source/host/extensions/host-upgrade/extension.ts` |
+| F-403 | sharing-cloud-dead-services | note | dead-service | confirmed | dead-cursor-services | coming-soon | Sharing is gated off and every entry answers a canned sentence, but a packaged build would poll api.simeonlabs.com if the gate flipped | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
 | F-404 | coordinator-and-gateway | major | dead-service | unverified | - | - | Box host telemetry is on inside the container and ships /tmp/*.log (the [claidor] prompt/model-error lines) to a Connect RPC our server does not serve, every 2–3 s | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-405 | coordinator-and-gateway | minor | naming | unverified | - | - | Sign-in and account errors still say Claidor, not Simeon | `desktop/source/electron-main/account/cursor-auth.ts` |
 | F-406 | coordinator-and-gateway | minor | dead-service | unverified | - | - | openCloudAgent opens https://api.simeonlabs.com/agents/<id> (or cursor.com when unset) — a dead link on our own API host | `desktop/source/electron-main/main-edge.ts` |
@@ -699,3 +699,84 @@ deliberately excluded until a future cloud-agent system exists", so
 Grok Bot's disabled branch stays as written: the agent does not take on
 repository work itself and says cloud agents are coming soon. Needs a Mac: the Channels tab drawing Coming Soon
 rows.
+
+### auto-review-enforce (25 September 2026)
+
+Root: the box host built its experiment service bare; only the Mac
+wrapped its own in `applySimeonGateDefaults`, so no row of Simeon's gate
+table ever reached the loop, `sand_auto_review` read its bundled false,
+and every surface resolved to shadow: one Luna call per shell command,
+computer action and routine write, verdict discarded, no card. Refuters:
+F-340 (blocking), F-341, F-343, F-347, F-352, F-354 stand; F-021 stands
+(the subagent launch reviewer was never handed to the production input);
+F-342 stands on two of three records. Fixed: the host wraps its service;
+`sand_auto_review: true` and `sand_product_analytics: false` in
+`simeon-gate-defaults.ts`; the production shell bumps the auto-review
+user-message epoch on a new message, so a parked approval retires
+(F-343); `subagentReview` is on the projection input (F-021); the
+classifier has two attempts of 30 s (F-347); CLAUDE.md, model-roles and
+the gaps record say enforce (F-342). Still not classified: MCP calls (the
+approval-provider projection is absent, a build). Needs a Mac: a blocked
+command's card, whether the pinned renderer draws the surface and shows
+the proposed rule before "Always allow" (F-354).
+
+### asks-once-memory (25 September 2026)
+
+Root: "asks once, then not again" had no memory. The card's Always allow
+wrote the box's settings and the Mac pushed its own `ask` back on every
+transport connect; nothing called `beginTurn`, so a refused command stayed
+refused for the agent's life, even after Always allow (F-344, the
+controller checks refusals before the standing permission). Fixed: the
+resync adopts the box's `always`/`never` into the Mac's settings when the
+Mac still says `ask` (a choice made in Settings still wins); `beginTurn`
+runs with the epoch. F-017 (an executor child cannot be asked in `ask`
+mode; it works after Always allow) is a known limit; F-348's card copy
+and F-349's Settings tab name need the pinned renderer read on a Mac.
+
+### box-telemetry (25 September 2026)
+
+Root: the packaged Mac carries `SAND_DISABLE_TELEMETRY` in its main; the
+container never got it, so the host buffered console lines (2,048 chars
+each), crash markers and product events and posted them to Simeon Labs'
+server every 3 s for a 404. Refuters corrected the findings' premise: no
+Connect client in the tree posts to a Cursor host (all go to
+`SAND_BACKEND_URL`); the two real Cursor egress candidates were Sentry
+(dead by wiring) and Statsig's `/rgstr` (F-388, which read the allowlist
+backwards: `/rgstr` is the allowed route, reachable on a Mac that migrated
+Grok Bot's cache). Fixed: `SAND_DISABLE_TELEMETRY=1`,
+`SAND_DISABLE_ANALYTICS=1`, `SAND_BOX_LOG_SHIP_DISABLED=1` on the
+container (schema 10 replaces old ones); Statsig logs nothing unless
+Connect is served and the migrated folder never brings
+`sand-statsig-bootstrap.json`; the Sentry DSN is empty; the local audit
+line is redacted (F-346); the gaps record's four rows. Known limits:
+the `[claidor]` stdout channel is the log by decision (F-386), the
+vendor credential sits in plain JSON on both sides (F-387), the server's
+refusal line keeps 1,000 chars of the provider body (F-389), traces never
+sample (F-379), codebase telemetry is gated off (F-384). F-390 (a Help
+menu item that shows a person their logs) moves to the electron-main-app
+cluster: a small build. Needs a Mac: `docker exec simeon-box env | grep
+SAND_DISABLE`.
+
+### dead-cursor-services (25 September 2026)
+
+Root: one Connect transport with one dead pre-flight
+(`GetUserPrivacyMode`, cached 10 s, before every RPC and at every turn),
+and cloud surfaces that 9d0e61c7 had already put behind
+`isCloudAgentsServed()` when the findings were written. Fixed: the
+pre-flight and the ghost-mode lookup are skipped unless
+`SAND_CONNECT_SERVED=1` (F-004, F-116, F-123, F-382); the Mac answers
+privacy mode and the permission ceiling locally (F-383, F-350); the
+mobile-push sender (a transcript fragment per transition to a 404) is
+not built (F-385); the team-admin prefetch and the cloud-agent watcher
+are off (F-396, F-397); the brief says cloud agents are coming soon, not
+"your team's admin disabled them" (F-392; the founder keeps repository
+work excluded until a cloud-agent system exists); "Claidor account" is
+Simeon account everywhere the agent or a person reads it (F-394); the
+struck egress tunnel's port is not published (F-401); sharing says
+Coming Soon and needs a served switch (F-403, dependency: Cursor's
+`/sand/xuser` relay). Refuted as stale or dormant: F-393, F-395, F-397,
+F-398, F-402. **A founder decision is owed, F-400:** local group chats
+answer each member with a text-only Luna call (f278ec79, 19 September,
+co-authored by the founder), not the Grok Bot loop; the 22 September
+"I want literally everything" decision came after, and no record names
+the carve-out. Keep it (spend) or run rooms on the loop.

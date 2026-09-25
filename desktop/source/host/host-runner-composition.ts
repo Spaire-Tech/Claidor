@@ -1560,7 +1560,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       diskPressureReminder: foreverBox.diskPressureReminder,
       box: localExec.box,
       ctx,
-      ...(awaitCloudAgent === undefined
+      ...(awaitCloudAgent === undefined || !isCloudAgentsServed()
         ? {}
         : {
             cloudAgentWatcher: {
@@ -2789,6 +2789,19 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 autoReviewGate: {
                   assertNoPendingApproval: () => turnAutoReviewGate.assertNoPendingApproval(),
                 },
+                // The launch of a subagent is reviewed on its own surface; until
+                // 25 September 2026 the production input carried no reviewer
+                // and the subagentLaunch column was inert (ledger F-021).
+                subagentReview: {
+                  isSubagentRunner: isSharedRoomTurn,
+                  mode: autoReviewModes.subagentLaunch,
+                  agentId: session.id,
+                  autoReviewGate: {
+                    assertNoPendingApproval: () => turnAutoReviewGate.assertNoPendingApproval(),
+                  },
+                  ...(autoReviewController == null ? {} : { autoReviewController }),
+                  getApprovalExpiryPolicy: () => sandAutoReviewApprovalExpiryPolicy("turn"),
+                },
                 actionAuditor: projectedActionAuditor,
                 agentId: session.id,
               };
@@ -2878,7 +2891,16 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         getConversationId: () => identity.conversationId,
         runGeneration: () => (builtRunner as { currentRunGeneration?: number } | undefined)?.currentRunGeneration ?? 0,
         setActiveTurnRequestSource: () => {},
-        beginAutoReviewUserMessageEpoch: () => {},
+        // A new message from the person retires the approvals and the
+        // refusals of the previous direction, the way Grok Bot's runner does
+        // (sand-agent-runner.ts); until 25 September 2026 both were no-ops on
+        // the production shell (ledger F-343, F-344).
+        beginAutoReviewUserMessageEpoch: () => {
+          if (!identity.isSubagentRunner) {
+            autoReviewController?.beginUserMessageEpoch();
+            method(localToolPermission, "beginTurn")?.(session.id);
+          }
+        },
         setActiveRunInterrupted: () => {},
         setAwaitingUserSelection: () => {},
         isAwaitingUserSelection: () => false,

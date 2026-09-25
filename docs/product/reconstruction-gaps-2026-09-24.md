@@ -192,10 +192,10 @@ list and the profile are the two that would change something on screen.
 
 | Feature | Calls | On failure |
 |---|---|---|
-| Privacy mode, per turn and before every RPC | `DashboardService/GetUserPrivacyMode` (`cursor-inference.ts:92-107`) | falls back to no-training; `[sand:privacy] privacy-mode lookup failed` |
+| Privacy mode, per turn and before every RPC | `DashboardService/GetUserPrivacyMode` (`cursor-inference.ts:92-107`) | ~~falls back to no-training; `[sand:privacy] privacy-mode lookup failed`~~ Corrected 25 September: the lookup was cached 10 s, not per RPC; since then it is not made at all unless `SAND_CONNECT_SERVED=1` (the turn shell answers the no-training fallback, the interceptor sends `x-ghost-mode: true`) |
 | User's full name in the prompt | `DashboardService/GetMe` (`auth/user-full-name-service.ts:29`) | name stays undefined |
-| Post-turn labelling | `InferenceService/RecordAgentPostTurnLabeling` (`sand-labeling.ts:36`) | fire-and-forget |
-| Cloud agents (the `CloudAgent` tool) | `BackgroundComposerService/*`, `AiService/AvailableModels` (`cloud-agents-service.ts:37-52`) | launch errors become tool text; list throws |
+| Post-turn labelling | `InferenceService/RecordAgentPostTurnLabeling` (`sand-labeling.ts:36`) | ~~fire-and-forget~~ Corrected 25 September: unreachable on the production shell (both sessions are `claidor`; the settle host has no `recordPostTurnLabeling`), so no call and no line |
+| Cloud agents (the `CloudAgent` tool) | `BackgroundComposerService/*`, `AiService/AvailableModels` (`cloud-agents-service.ts:37-52`) | launch throws (a ConnectError carries no detail); since 25 September the tool is not built at all (`shared/cloud-agents-availability.ts`, Coming Soon) |
 | Auto-review classifier | `DashboardService/ClassifySandAutoReview` (`sand-backend-smart-mode-classifier-exec.ts:39`) | rejects |
 | Mobile push | `GrokBotService/NotifySandAgentTurnFinished` (`notifications/mobile-push-notifier.ts:4`) | silent |
 | Box image update/reset (cloud box only) | `GrokBotService/GetSandBoxRunState`, `RecreateSandBox` (`box-lifecycle-service.ts:2`) | "Couldn't reach the service that updates this computer" |
@@ -204,7 +204,7 @@ list and the profile are the two that would change something on screen.
 | Cloud automations and listeners | `AutomationsService/*` (`sand-automation-cloud-sync.ts:413-509`); `/sand/listener-*`, `/sand/automation-*` (`backend-relay-source.ts:12`, `sand-automation-fire-consumer.ts:84`); `GetSlackUserSettings`, `GetScmConnectionStatus` (`listener-integrations.ts:28-36`) | local scheduling; listeners "error" with 30 s backoff |
 | Cloud automations and listeners, corrected 25 September | Slack/GitHub listeners showed `error` with a 30 s backoff once one existed; Teams/Linear/Sentry/PagerDuty triggers were accepted and showed nothing. Since 25 September the tool refuses a listener trigger as Coming Soon, the prompt offers cron only, the relay sources and the fire consumer are not started and cloud absence is seeded (`shared/listener-availability.ts`). Definitions live in the box volume at `/home/box/sand-data/<agent>/automations/<id>/automation.json`, not backed up. Background routine failures surface only in run history and the agent's status reminder, never a tray (Grok Bot's own rule). | Coming Soon |
 | Sharing | `/sand/xuser/*`, `/sand/share-rooms/*` (`xuser-relay.ts:15-28`) | gated off; "Couldn't reach the sharing service" |
-| Audit, logs, analytics, traces | `RecordSandAuditEvents`, `SubmitLogs`, `TrackEvents`, `POST /v1/traces` | buffered, dropped, silent |
+| Audit, logs, analytics, traces | `RecordSandAuditEvents`, `SubmitLogs`, `TrackEvents`, `POST /v1/traces` | ~~buffered, dropped, silent~~ Corrected 25 September: the host bundle carried no telemetry guard, so `SubmitLogs` (console lines, 2,048 chars each) and `TrackEvents` were posted to api.simeonlabs.com every 3 s and 404ed; the box now runs with `SAND_DISABLE_TELEMETRY=1`, `SAND_DISABLE_ANALYTICS=1`, `SAND_BOX_LOG_SHIP_DISABLED=1` (schema 10). Audit is gated off and writes a local, redacted `audit.jsonl`; traces never sampled (AlwaysOff) |
 | Box store sync, copy-in, local-exec connection | `BackgroundComposerService` store RPCs, `/sand-box/inference-credential`, `/sand-box/local-exec-connection` | off unless `SAND_BOX_STORE_SYNC`; local Docker reads a token file instead |
 
 ## Mac-side Connect calls, by feature
@@ -220,7 +220,7 @@ list and the profile are the two that would change something on screen.
 | Account MCP | as above (`mcp/desktop-mcp-manager.ts:71,78`); team popularity (`mcp-team-popularity.ts:4-6`) | reads empty; writes reject |
 | Experiments | `AnalyticsService/BootstrapStatsig` (`statsig-bootstrap.ts:39`), every 5 min | `{}` |
 | Feedback | `POST {api}/sand/feedback` | "unavailable" |
-| Telemetry, Sentry, metrics | `AnalyticsService/*`, `metrics.cursor.sh` | off by env in the packaged build |
+| Telemetry, Sentry, metrics | `AnalyticsService/*`, `metrics.cursor.sh` | off by env in the packaged Mac build; the Sentry DSN is empty since 25 September; the box's env carries the guards since schema 10 |
 
 ## Production bindings that supply less than the code uses
 

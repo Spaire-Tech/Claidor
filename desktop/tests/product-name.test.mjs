@@ -37,13 +37,13 @@ test("sign-in errors name Claidor, not Cursor", async () => {
   const mcp = await read("source/shared/node/mcp/mcp-manager.ts");
   assert.match(auth, /Sign in to Claidor to run Simeon\./);
   assert.match(auth, /Claidor sign-in expired/);
-  assert.match(auth, /another Claidor account/);
+  assert.match(auth, /another Simeon account/);
   assert.doesNotMatch(auth, /Sign in to Cursor/);
   assert.doesNotMatch(auth, /Cursor sign-in/);
   assert.doesNotMatch(auth, /another Cursor account/);
   assert.match(wiring, /Sign in to Claidor to continue/);
   assert.doesNotMatch(wiring, /Sign in to Cursor to continue/);
-  assert.match(mcp, /signed-in Claidor account/);
+  assert.match(mcp, /signed-in Simeon account/);
   assert.doesNotMatch(mcp, /signed-in Cursor account/);
   assert.match(auth, /isAnysphereUser/);
   assert.match(auth, /export interface CursorProfile/);
@@ -54,7 +54,7 @@ test("the agent's brief names Claidor and Simeon, not Cursor or Grok Bot", async
   const appUi = await read("source/host/runner/box-reference-docs.ts");
   const listeners = await read("source/host/runner/tools/listener-connect-cards.ts");
   const plugins = await read("source/host/runner/tools/sand-mcp-management-tools.ts");
-  assert.match(prompt, /user's Claidor account \(saved to Simeon settings/);
+  assert.match(prompt, /user's Simeon account \(saved to Simeon settings/);
   assert.doesNotMatch(prompt, /user's Cursor account/);
   assert.doesNotMatch(prompt, /using Cursor directly/);
   assert.doesNotMatch(prompt, /Cursor cloud agent/);
@@ -63,7 +63,8 @@ test("the agent's brief names Claidor and Simeon, not Cursor or Grok Bot", async
   // The product is Simeon since 22 September; the listener strings say so (25 September, ledger F-054).
   assert.match(listeners, /user's Simeon account/);
   assert.doesNotMatch(listeners, /Claidor account/);
-  assert.match(plugins, /user's Claidor account/);
+  assert.match(plugins, /user's Simeon account/);
+  assert.doesNotMatch(plugins, /Claidor account/);
   assert.match(prompt, /cursor-agent/);
 });
 

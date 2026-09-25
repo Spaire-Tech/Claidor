@@ -167,6 +167,7 @@ export interface ProductionCoordinatorPorts<Status extends ProductionCoordinator
     getComputerUseModel(): unknown;
     getAutoReviewInstructions(): unknown;
     getLocalToolPermission(): unknown;
+    setLocalToolPermission?(value: "always" | "never"): void;
     getWebauthnProxyEnabled(): unknown;
     getFeatureFlagOverrides(): unknown;
     getVendorMcpStore?(): unknown;

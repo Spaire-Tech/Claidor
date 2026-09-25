@@ -73,7 +73,7 @@ test("a late inference credential does not tear down a running box", async () =>
     assert.match(source, /if \(late != null && late !== issued\) await persistInferenceCredential/);
     assert.doesNotMatch(source, /\.claude/);
     assert.doesNotMatch(source, /\.codex/);
-    assert.equal(LOCAL_DOCKER_SCHEMA_VERSION, "9");
+    assert.equal(LOCAL_DOCKER_SCHEMA_VERSION, "10");
     const production = await (await import("node:fs/promises")).readFile(
       path.join(repoRoot, "source/electron-main/main-production-services.ts"),
       "utf8",
@@ -121,6 +121,9 @@ test("the local Docker box is always told our backend, credential or not", async
     assert.equal(withoutCredential.SAND_DEV_INFERENCE_TOKEN_FILE, "/run/grok-bot/inference.json");
     assert.equal(withoutCredential.SAND_INFERENCE_PROVIDER, "claidor");
     assert.equal(withoutCredential.CAISRA_CLAUDE_CODE, "0");
+    assert.equal(withoutCredential.SAND_DISABLE_TELEMETRY, "1", "no Cursor telemetry from the box");
+    assert.equal(withoutCredential.SAND_DISABLE_ANALYTICS, "1");
+    assert.equal(withoutCredential.SAND_BOX_LOG_SHIP_DISABLED, "1");
 
     const withCredential = envOf(localDockerInferenceEnvironmentArguments({ backendUrl: "https://api.simeonlabs.com/" }, env));
     assert.equal(withCredential.SAND_BACKEND_URL, "https://api.simeonlabs.com/");

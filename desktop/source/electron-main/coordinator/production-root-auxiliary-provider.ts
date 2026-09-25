@@ -39,6 +39,7 @@ export interface ProductionCoordinatorAuxiliaryPorts {
     | "getComputerUseModel"
     | "getAutoReviewInstructions"
     | "getLocalToolPermission"
+    | "setLocalToolPermission"
     | "getWebauthnProxyEnabled"
     | "getVendorMcpStore"
     | "getAccountMcpStore"
@@ -128,6 +129,7 @@ export function createProductionCoordinatorAuxiliaryPorts(
       getComputerUseModel: () => computerUseModel(context),
       getAutoReviewInstructions: () => settings.getAutoReviewInstructions(),
       getLocalToolPermission: () => settings.getLocalToolPermission(),
+      setLocalToolPermission: (value) => settings.setLocalToolPermission(value),
       getWebauthnProxyEnabled: () => settings.getWebauthnProxyEnabled(),
       getFeatureFlagOverrides: () => context.requireExperiments().getFeatureFlagOverridesRecord(),
       getVendorMcpStore: () => serializeVendorMcpStore(loadVendorMcpStore(getSandRootDir())),

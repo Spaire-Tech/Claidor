@@ -178,8 +178,21 @@ Grok Bot runs its loop; summarization, memory and the computer and browser
 subagents run on Luna at `effort: low`, the way Grok Bot runs computer use.
 Until this the executor sent no effort and every call ran at OpenAI's
 default. Done-or-continue is Grok Bot's nudge mechanism, unchanged. Risky-or-
-safe is Cursor's server-side classifier, which Claidor does not serve, so
-auto-review is effectively off; do not invent an app-side model for it.
+safe was Cursor's server-side classifier; since 24 September it runs on
+Luna through Simeon Labs' proxy, and **since 25 September it enforces**:
+the box host reads Simeon's gate table (`applySimeonGateDefaults` in
+`host/extensions/experiments/extension.ts`, which only the Mac applied
+before, so every surface resolved to shadow: one Luna call per action,
+verdict discarded, no card) and `sand_auto_review` is on in
+`simeon-gate-defaults.ts`. A blocked shell command, computer action,
+routine write or subagent launch now draws the `auto-review-approval` card
+with the classifier's reason; MCP calls are still not classified (the
+approval provider projection is absent, `host-production-activation.mjs`).
+A new message from the person retires the previous direction's approvals
+and refusals (`beginAutoReviewUserMessageEpoch`, `beginTurn`), which the
+production shell never did. `tests/auto-review-enforce.test.mjs`. Not yet
+run on a Mac: a blocked command's card, and whether the pinned renderer
+draws the surface.
 Escalation to Astra comes after, on the rule `pricing.py` already states.
 **Found 24 September: until then a turn's model id never reached the
 executor.** The owner input built in `host-runner-composition.ts`

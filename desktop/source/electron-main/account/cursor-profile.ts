@@ -1,3 +1,4 @@
+import { isConnectServed } from "../../shared/cloud-agents-availability.js";
 import { PrivacyMode } from "../../shared/observability/sentry-privacy-mode.js";
 import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
 import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
@@ -230,13 +231,15 @@ export async function fetchCursorProfile(getAccessToken: AccessTokenReader, deps
 export async function updateCursorProfileName(getAccessToken: AccessTokenReader, name: string, deps: CursorProfileDeps): Promise<void> {
   await persistAccountDisplayName(name, () => profileClient(getAccessToken, deps).updateUserName(splitAccountName(name), { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS }).then(() => undefined));
 }
-export async function fetchUserPrivacyMode(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<PrivacyMode | undefined> { try { return (await profileClient(getAccessToken, deps).getUserPrivacyMode({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })).privacyMode; } catch { return undefined; } }
+// Simeon Labs' proxy trains nothing on anyone; the answer is stated, not
+// fetched from a dashboard RPC that 404s (ledger F-383).
+export async function fetchUserPrivacyMode(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<PrivacyMode | undefined> { if (!isConnectServed()) return PrivacyMode.NO_TRAINING; try { return (await profileClient(getAccessToken, deps).getUserPrivacyMode({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })).privacyMode; } catch { return undefined; } }
 export async function fetchUserPrivacyModeEnabled(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<boolean> { return privacyModeEnabledForMode(await fetchUserPrivacyMode(getAccessToken, deps)); }
 // The header's usage, from `GET /desktop/api/user/quota`. Until
 // 24 September 2026 this was `GetSandUsageStatus` + `GetCurrentPeriodUsage`
 // (see above) and always answered null here.
 export async function fetchSandWeeklyUsage(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<WeeklyUsage | null> { try { return weeklyUsageFromClaidorQuota(await readClaidorQuota(getAccessToken, deps)); } catch (error) { deps.reportFailure?.("cursor-usage", "claidor-quota", error); return null; } }
-export async function fetchLocalToolPermissionCeiling(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<"never" | "ask" | "always" | undefined> { try { const value = (await profileClient(getAccessToken, deps).getTeamAdminSettingsOrEmptyIfNotInTeam({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })).localToolControls?.permissionCeiling; const c = deps.localToolPermissionCeilings ?? { never: 1, ask: 2, always: 3 }; return value === c.never ? "never" : value === c.ask ? "ask" : value === c.always ? "always" : undefined; } catch { return undefined; } }
+export async function fetchLocalToolPermissionCeiling(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<"never" | "ask" | "always" | undefined> { if (!isConnectServed()) return undefined; try { const value = (await profileClient(getAccessToken, deps).getTeamAdminSettingsOrEmptyIfNotInTeam({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })).localToolControls?.permissionCeiling; const c = deps.localToolPermissionCeilings ?? { never: 1, ask: 2, always: 3 }; return value === c.never ? "never" : value === c.ask ? "ask" : value === c.always ? "always" : undefined; } catch { return undefined; } }
 // Settings → Usage & Billing and the account menu's usage card, from
 // `GET /desktop/api/user/quota`. Until 24 September 2026 this was four
 // Dashboard RPCs (see above) behind the `sand_usage_page` gate, which was

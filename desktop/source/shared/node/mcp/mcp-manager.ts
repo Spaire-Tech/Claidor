@@ -325,7 +325,7 @@ export class SandMcpManager {
   private requireAccountWriter() {
     if (this.accountWriter == null)
       throw new SandMcpConfigError(
-        "Managing MCP servers requires a signed-in Claidor account.",
+        "Managing MCP servers requires a signed-in Simeon account.",
       );
     return this.accountWriter;
   }

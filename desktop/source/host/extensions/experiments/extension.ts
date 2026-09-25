@@ -1,3 +1,4 @@
+import { applySimeonGateDefaults } from "../../../shared/node/experiments/simeon-gate-defaults.js";
 import { defineHostExtension } from "../../../internal/host-extensions.js";
 import { getSandRootDir } from "../../host-paths.js";
 import { resolveMultitaskEnabled } from "../../sand-multitask.js";
@@ -11,7 +12,10 @@ export const experimentsExtension = defineHostExtension({
   id: HostExtensions.Experiments, dependencies: [HostExtensions.Auth, HostExtensions.Settings],
   start: (context) => {
     const auth = context.deps[HostExtensions.Auth] as AuthApi; const settings = context.deps[HostExtensions.Settings] as SettingsApi;
-    const service = new SandExperimentService({ getAccessToken: auth.getAccessToken, getMachineId: auth.getMachineId, getCacheDir: () => getSandRootDir(), isDevBuild: process.env.SAND_PACKAGED !== "1" || process.env.SAND_HOST_DEV_ERROR_DETAIL === "1" });
+    // The Mac wrapped its service in Simeon's gate defaults since 24 September;
+    // the box host never did, so no default in that table reached the loop
+    // (design-audit-ledger.md F-340, F-352).
+    const service = applySimeonGateDefaults(new SandExperimentService({ getAccessToken: auth.getAccessToken, getMachineId: auth.getMachineId, getCacheDir: () => getSandRootDir(), isDevBuild: process.env.SAND_PACKAGED !== "1" || process.env.SAND_HOST_DEV_ERROR_DETAIL === "1" }));
     service.start(); context.onStop(() => service.dispose()); context.onStop(auth.subscribeToRenewal((event) => { if (event.outcome === "renewed" && (event.isFirstCredential || !service.hasAuthenticatedStatsigBootstrap())) service.handleAuthChange(); }));
     if (auth.peekAccessToken() !== null) service.handleAuthChange(); context.onStop(settings.subscribeToFeatureFlagOverrides((overrides) => service.replaceFeatureFlagOverrides(overrides)));
     return {

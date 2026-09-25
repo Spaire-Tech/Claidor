@@ -32,6 +32,13 @@ export function isCloudAgentsServed(env: NodeJS.ProcessEnv = process.env): boole
   return env[CLOUD_AGENTS_SERVED_ENV]?.trim() === "1";
 }
 
+// Cursor's Connect RPC surface (aiserver.v1.*) is not served by Simeon Labs'
+// server; a pre-flight that only ever 404s is skipped unless this is set.
+export const CONNECT_SERVED_ENV = "SAND_CONNECT_SERVED";
+export function isConnectServed(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env[CONNECT_SERVED_ENV]?.trim() === "1";
+}
+
 export function isAnyChannelAvailable(manifests: readonly { readonly availability: string }[] = CONNECTOR_MANIFESTS): boolean {
   return manifests.some((manifest) => manifest.availability === "available");
 }

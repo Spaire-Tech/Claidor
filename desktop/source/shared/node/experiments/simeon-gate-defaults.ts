@@ -15,8 +15,20 @@ import { envGateOverride } from "./cursor-experiments.js";
 // `SAND_FEATURE_GATE_OVERRIDES=name=0` in the environment (a kill switch,
 // read whatever the build), then a local override set from the flags
 // panel. A gate not named here is untouched.
+//
+// `sand_auto_review` — the risky-or-safe review of the agent's own actions
+// (a shell command, a computer action, a routine write) with the confirm
+// card. Off in the bundled table, so every surface resolved to shadow: one
+// Luna call per action, verdict discarded, no card. On since 25 September
+// 2026 (design-audit-ledger.md F-340), now that the classifier runs on Luna
+// through Simeon Labs' proxy and the box host reads this table.
+//
+// `sand_product_analytics` — Grok Bot's event stream to Cursor's
+// AnalyticsService, which nothing serves here; off (F-378).
 export const SIMEON_FEATURE_GATE_DEFAULTS: Readonly<Record<string, boolean>> = Object.freeze({
   sand_usage_page: true,
+  sand_auto_review: true,
+  sand_product_analytics: false,
 });
 
 export function simeonGateDefault(name: string, env: NodeJS.ProcessEnv = process.env): boolean | undefined {

@@ -55,8 +55,8 @@ const SIGN_IN_CONFIRMATION_FAILED_STATUS = { kind: "logged-out", errorMessage: "
 const SIGN_IN_EXPIRED_STATUS = { kind: "logged-out", errorMessage: "Claidor sign-in expired. Sign in again to run Simeon." } as const;
 const SIGN_IN_POLICY_VIOLATION_STATUS = { kind: "logged-out", errorMessage: SIGN_IN_POLICY_VIOLATION_MESSAGE } as const;
 const LOGIN_DID_NOT_FINISH_STATUS = { kind: "logged-out", errorMessage: "Sign-in did not finish. Try again." } as const;
-const ACCOUNT_REFUSED_STATUS = { kind: "logged-out", errorMessage: "This computer is linked to another Claidor account. Sign in with that account to continue." } as const;
-const ACCOUNT_REFUSED_CREDENTIALS_RETAINED_STATUS = { kind: "logged-out", errorMessage: "This computer is linked to another Claidor account. Simeon couldn't remove the saved sign-in, so the account may return after restart. Sign in with the linked account to continue." } as const;
+const ACCOUNT_REFUSED_STATUS = { kind: "logged-out", errorMessage: "This computer is linked to another Simeon account. Sign in with that account to continue." } as const;
+const ACCOUNT_REFUSED_CREDENTIALS_RETAINED_STATUS = { kind: "logged-out", errorMessage: "This computer is linked to another Simeon account. Simeon couldn't remove the saved sign-in, so the account may return after restart. Sign in with the linked account to continue." } as const;
 
 function base64UrlEncode(bytes: Uint8Array): string { return Buffer.from(bytes).toString("base64url"); }
 export function createLoginMetadata(): { challenge: string; metadata: LoginMetadata } {

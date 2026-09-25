@@ -25,7 +25,7 @@ export const LOCAL_DOCKER_BOX_IMAGE = "public.ecr.aws/k0i0n2g5/cursorenvironment
 export const LOCAL_DOCKER_BOX_CONTAINER = "simeon-box";
 export const LOCAL_DOCKER_GATEWAY_URL = "http://127.0.0.1:1340";
 export const LOCAL_DOCKER_OWNER_LABEL = "com.grok-bot.local-vm=1";
-export const LOCAL_DOCKER_SCHEMA_VERSION = "9";
+export const LOCAL_DOCKER_SCHEMA_VERSION = "10";
 export const LOCAL_DOCKER_INFERENCE_TOKEN_FILE = "/run/grok-bot/inference.json";
 const READY_TIMEOUT_MS = 180_000;
 export const OPTIONAL_CREDENTIAL_WAIT_MS = 250;
@@ -206,6 +206,14 @@ export function localDockerInferenceEnvironmentArguments(inferenceCredential?: P
     "--env", `SAND_DEV_INFERENCE_TOKEN_FILE=${LOCAL_DOCKER_INFERENCE_TOKEN_FILE}`,
     "--env", `${SAND_INFERENCE_PROVIDER_ENV}=${PRODUCT_INFERENCE_PROVIDER}`,
     "--env", `${CAISRA_CLAUDE_CODE_ENV}=0`,
+    // The packaged Mac carries these guards in its main; the box never got
+    // them, so the host buffered console lines, crash markers and product
+    // events for Cursor's AnalyticsService and posted them to Simeon Labs'
+    // server every 3 s to get a 404 (design-audit-ledger.md F-376, F-378,
+    // F-391). Schema 10 replaces a container created without them.
+    "--env", "SAND_DISABLE_TELEMETRY=1",
+    "--env", "SAND_DISABLE_ANALYTICS=1",
+    "--env", "SAND_BOX_LOG_SHIP_DISABLED=1",
   ];
 }
 
@@ -255,7 +263,7 @@ async function ensureLocalDockerBoxNarrated(settingsPath: string, inferenceCrede
       "--env", "SAND_SUPERVISOR_ENABLED=1", "--env", "SAND_BOX_AUTO_UPDATE=0", "--env", "SAND_USE_EXISTING_BOX_EXEC_DAEMON=1", "--env", "SAND_TREE_SITTER_NODE_DEPS=/home/box/deps", "--env", "NODE_PATH=/home/box/deps", "--env", "SAND_GATEWAY_BIND_HOST=0.0.0.0", "--env", "SAND_HOST_PORT=1340", "--env", `SAND_GATEWAY_TOKEN=${token}`,
       ...localDockerInferenceEnvironmentArguments(inferenceCredential),
       "--publish", "127.0.0.1:1337:1337", "--publish", "127.0.0.1:1339:1339", "--publish", "127.0.0.1:1340:1340",
-      "--publish", "127.0.0.1:6080:6080", "--publish", "127.0.0.1:6081:6081", "--publish", "127.0.0.1:8790:8790",
+      "--publish", "127.0.0.1:6080:6080", "--publish", "127.0.0.1:6081:6081", 
       "--volume", "grok-bot-local-vm-workspace:/workspace", "--volume", "grok-bot-local-vm-data:/home/box/sand-data",
       "--mount", `type=bind,src=${hostBundle.path},dst=/home/box/sand-host/host-main.cjs,readonly`,
       "--mount", `type=bind,src=${dirname(hostBundle.boxExecDaemonPath)},dst=/home/box/box-exec-daemon,readonly`,

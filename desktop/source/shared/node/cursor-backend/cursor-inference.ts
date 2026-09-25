@@ -1,3 +1,4 @@
+import { isConnectServed } from "../../cloud-agents-availability.js";
 import type { MethodInfoUnary, ServiceType } from "@bufbuild/protobuf";
 import { join } from "node:path";
 import { createClient, type Client, type Interceptor, type Transport } from "@connectrpc/connect";
@@ -135,7 +136,8 @@ export function createSandInferenceInterceptor(options: SandInferenceOptions): I
     const [auth, machineId] = await Promise.all(["authMode" in options ? Promise.resolve({ mode: options.authMode } as const) : options.getAccessToken({ backendUrl: options.backendUrl }).then((accessToken) => ({ mode: "required" as const, accessToken })), options.getMachineId()]);
     const privacyLookup = request.service.typeName === "aiserver.v1.DashboardService" && request.method.name === "GetUserPrivacyMode";
     const resolveGhostMode = options.resolveGhostModeHeader ?? ((lookup: PrivacyLookupOptions) => resolveSandGhostModeHeader(lookup, options.fetchPrivacyMode ?? fetchSandPrivacyMode));
-    const ghostMode = auth.mode === "anonymous" || privacyLookup ? "true" : await resolveGhostMode({ backendUrl: options.backendUrl, accessToken: auth.accessToken, machineId });
+    // Without Cursor's Connect surface the lookup only ever 404s (ledger F-382).
+    const ghostMode = auth.mode === "anonymous" || privacyLookup || !isConnectServed(options.env) ? "true" : await resolveGhostMode({ backendUrl: options.backendUrl, accessToken: auth.accessToken, machineId });
     const pinned = request.header.get("x-request-id");
     const requestId = pinned != null && pinned !== "" ? pinned : options.randomUUID?.() ?? globalThis.crypto.randomUUID();
     if (auth.mode === "anonymous") request.header.delete("authorization"); else request.header.set("authorization", `Bearer ${auth.accessToken}`);

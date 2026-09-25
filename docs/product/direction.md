@@ -457,7 +457,7 @@ So the runner lives, and the line is not "no cloud" but this:
 | their files living on it | no files on it; memory in, memory out, directory deleted |
 | apps and packages installed on it | nothing installed, nothing to install |
 | an update and a reset surface for it | never mentioned in the app at all |
-| an egress tunnel to reach it | — |
+| an egress tunnel to reach it | — (the controller stays in the tree behind `SAND_EGRESS_TUNNEL_ENABLED`, never set; the box no longer publishes its port 8790, 25 September 2026) |
 
 The differentiator survives because it was never about where a process
 runs. It is about **where the file is when it is worked on**. A routine
