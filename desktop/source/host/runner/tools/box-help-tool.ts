@@ -61,14 +61,20 @@ export function normalizeBoxHelpDomain(raw: string): string | undefined {
 
 export function connectorCardEmissionToMessage(emission: {
   readonly connector: string;
-  readonly serverId: string;
+  readonly serverId?: string;
   readonly variant: string;
+  readonly reason?: string;
 }) {
+  // A proposal names no server row (none exists yet); the renderer's connector
+  // card then looks the service up in the catalogue and offers Add
+  // (25 September 2026, the founder: "Agent proposes a connector → user sees
+  // a connector proposal card").
   return {
     type: "connector" as const,
     connector: emission.connector,
-    serverId: emission.serverId,
+    ...(emission.serverId == null ? {} : { serverId: emission.serverId }),
     variant: emission.variant,
+    ...(emission.reason == null || emission.reason.length === 0 ? {} : { reason: emission.reason }),
   };
 }
 

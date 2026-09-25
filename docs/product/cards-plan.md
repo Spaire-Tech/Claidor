@@ -164,7 +164,7 @@ once the computer is designed. All fourteen are in scope.
 | 9 | Cloud agent card | **To re-decide** | Cursor-specific as written |
 | 10 | Permission / auto-review | **Exists** | `ThreadItemKind.Auth`, `flagged` + reason |
 | 11 | Cookie-origin approval | **Missing** | — |
-| 12 | Connector auth | **Exists** | `ThreadItemKind.Connector`, `propose_connector` |
+| 12 | Connector auth | **Exists** | `ThreadItemKind.Connector`, `propose_connector` (corrected 25 September 2026: the agent proposes with the `ProposeConnector` tool, which emits a `connector` card with `variant: "propose"` and a `reason`; the pinned renderer's card offers Add for a catalogued service with no server row) |
 | 13 | Spend / virtual card | **Missing** | — |
 | 14 | Routine confirm | **Exists in the host** (corrected 25 September 2026) | `reviewSandAutomationWrite` → the `auto-review-approval` card on surface `automation_write`; was gated off by `automationWrite: "off"` in every mode table, now follows the other surfaces; a card is drawn only when `sand_auto_review` enforces |
 

@@ -80,9 +80,18 @@ export interface McpManagementDependencies {
 
 export interface ConnectorCard {
   readonly connector: string;
-  readonly serverId: string;
-  readonly variant: "connect" | "connected";
+  /** Absent for a proposal: no server row exists yet; the card offers Add. */
+  readonly serverId?: string;
+  readonly variant: "connect" | "connected" | "propose";
+  /** One line the card shows under the name: why the agent proposes it. */
+  readonly reason?: string;
 }
+
+export const proposeConnectorParameters = z.object({
+  plugin_id: z.string().trim().min(1).describe("The STABLE plugin id from SearchPlugins of the connector you propose."),
+  reason: z.string().trim().min(1).max(200).describe("One short line, in the user's language, saying what connecting it lets you do for them right now (e.g. \"to read the brief you mentioned in Notion\"). Shown on the card under the service's name."),
+});
+export const PROPOSAL_SHOWN_NOTE = "Its proposal card is now in the chat: the user sees the service, your reason and an Add button, and taps it to install and sign in. Do not install it yourself and do not ask again in text; say one line if you must, then carry on with what you can do without it, or end your turn if the task waits on it — you're resumed when they connect.";
 
 export const searchPluginsParameters = z.object({
   query: z.string().trim().optional().describe(
@@ -314,6 +323,20 @@ export function createMcpManagementTools(
   };
 
   const tools = [
+    defineCommunicateTool(management, {
+      id: "PROPOSE_CONNECTOR", name: "ProposeConnector", description: "Propose a connector to the user as a card (the service's name, your one-line reason, an Add button) when a task needs a service that isn't connected yet. This is how you ask: never propose a connector in plain text or with a question widget, and never install one the user has not tapped or asked for. Find the STABLE plugin id with SearchPlugins first. If the user then asks you to install it yourself, InstallPlugin is the tool. Read-only: nothing is installed by proposing.", parameters: proposeConnectorParameters,
+      execute: async (_ctx, args: z.infer<typeof proposeConnectorParameters>, deps) => {
+        const plugin = await deps.getPlugin(args.plugin_id);
+        if (plugin == null) return `No plugin with id "${args.plugin_id}". Search with SearchPlugins first.`;
+        if (plugin.comingSoon === true) return `${plugin.displayName} is coming soon and cannot be connected yet${plugin.description ? `: ${plugin.description}` : "."} Tell the user so in one line; do not propose it.`;
+        if (plugin.isInstalled) {
+          const note = emitNeedsAuthCards([], plugin.servers);
+          return note ?? `${plugin.displayName} is already installed and connected; use its tools.`;
+        }
+        emitConnectorCard?.({ connector: plugin.displayName, variant: "propose", reason: args.reason });
+        return `Proposed ${plugin.displayName} (plugin ${plugin.pluginId}). ${PROPOSAL_SHOWN_NOTE}`;
+      },
+    }),
     defineCommunicateTool(management, {
       id: "SEARCH_PLUGINS", name: "SearchPlugins", description: "Search the plugins the user could install (or already has): marketplace plugins bundling connectors and skills. Say what you're looking for in natural language and results come back ranked by relevance, each with its STABLE plugin id, install state, and what it includes. Use this to discover a capability (Linear, Notion, writing Word documents, …) or to check whether a plugin is installed. Inspect one result with GetPlugin; connector runtime statuses (connected/needsAuth) live in GetMcpServerStatus. This is read-only and never needs the user's permission.", parameters: searchPluginsParameters,
       execute: async (_ctx, args: z.infer<typeof searchPluginsParameters>, deps) => {

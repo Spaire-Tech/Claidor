@@ -201,7 +201,7 @@ until its row says so. Columns:
 | F-175 | connectors-mcp | minor | risk | confirmed | connectors-mcp | known-limit | Removing a connector never revokes the vendor token | `desktop/source/shared/node/vendor-mcp/backend-exec.ts` |
 | F-176 | connectors-mcp | note | risk | confirmed | connectors-mcp | known-limit | Loopback callback is a fixed port shared with any local process | `desktop/source/shared/node/mcp/mcp-oauth-loopback.ts` |
 | F-177 | connectors-mcp | note | dead-service | confirmed | connectors-mcp | fixed | Cursor's Dashboard backend still built as the last MCP fallback on both sides | `desktop/source/electron-main/mcp/desktop-mcp-manager.ts` |
-| F-178 | connectors-mcp | note | design-violation | confirmed | connectors-mcp | - | Prompt and direction.md disagree on how a connector is proposed | `desktop/source/host/runner/system-prompt.ts` |
+| F-178 | connectors-mcp | note | design-violation | confirmed | connectors-mcp | fixed | Prompt and direction.md disagree on how a connector is proposed | `desktop/source/host/runner/system-prompt.ts` |
 | F-179 | connectors-mcp | note | risk | confirmed | connectors-mcp | fixed | Meta-tool factory in turn-toolset drops object input schemas | `desktop/source/host/runner/tools/turn-toolset.ts` |
 | F-180 | connectors-mcp | note | docs-wrong | confirmed | connectors-mcp | fixed | Catalogue is 39 entries in 11 groups, 22 of them coming soon; direction.md still counts fifteen | `docs/product/direction.md` |
 | F-181 | connectors-mcp | note | naming | confirmed | connectors-mcp | fixed | routed MCP bridge names itself grok-bot-plugins on the Claude Code hatch | `desktop/source/node-agent-coordinator/routed-mcp-bridge.ts` |
@@ -814,6 +814,10 @@ for 18 logos (F-168), no revocation on removal (F-175, a build), the
 fixed loopback port bounded to denial by PKCE (F-176). **Three founder
 items:** F-160 Composio (proxied by the server, unwired, needs
 `COMPOSIO_API_KEY`: wire it or delete it), F-166 the Dropbox App key for
-`catalog.ts`, F-178 the connector proposal card of direction.md §5 is
-unbuilt and the prompt proposes in text with a question widget: build
-the card or amend the record. `tests/connectors-mcp-hardening.test.mjs`.
+`catalog.ts`, F-178 the connector proposal card of direction.md §5: built the same
+day at the founder's word ("Agent proposes a connector → user sees a
+connector proposal card"): `ProposeConnector` emits a `connector` card
+with `variant: "propose"` and the agent's reason, the pinned renderer's
+card offers Add, and the brief proposes with it and never in text
+(`tests/connector-proposal.test.mjs`; needs a Mac: the card drawn, Add
+installing and signing in, the agent resumed). `tests/connectors-mcp-hardening.test.mjs`.

@@ -165,7 +165,7 @@ OpenUI — `docs/product/artifacts-decision.md`.)
 | Kind | What it is | When |
 |---|---|---|
 | `roster` | "Your starter team" — a multi-select of agents to stand up, each swappable in place | 16 September |
-| `connector` | an agent proposing a service: logo, name, one line, Not now and Install | 17 September |
+| `connector` | an agent proposing a service: logo, name, one line, Not now and Install | 17 September (built 25 September 2026: `ProposeConnector` → the connector card with the agent's reason and Add; "Not now" is leaving the card, the pinned renderer has no dismiss button) |
 
 No step cards. No tool logs. No thinking blocks. No raw blobs.
 

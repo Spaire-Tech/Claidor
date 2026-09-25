@@ -38,7 +38,7 @@ test("Mac product tools and prompt are Grok Bot's, not a Simeon overlay", async 
     assert.match(DEFAULT_SAND_SYSTEM_PROMPT, /Your default is to act, not to ask/);
     assert.match(DEFAULT_SAND_SYSTEM_PROMPT, /Don't ask a go-ahead for something they already asked for/);
     assert.match(DEFAULT_SAND_SYSTEM_PROMPT, /A connect card is the user's own tap, so it needs no extra confirm/);
-    assert.match(DEFAULT_SAND_SYSTEM_PROMPT, /once the user agrees, install it/);
+    assert.match(DEFAULT_SAND_SYSTEM_PROMPT, /propose it with ProposeConnector/);
     assert.match(DEFAULT_SAND_SYSTEM_PROMPT, /not a corporate help desk/);
     assert.doesNotMatch(DEFAULT_SAND_SYSTEM_PROMPT, /There is no Settings Router, no Claude Code/);
     assert.doesNotMatch(DEFAULT_SAND_SYSTEM_PROMPT, /Never open with a widget/);
