@@ -8,6 +8,11 @@ import { createSandRecreateCommands, type RecreateResult } from "./box-recreate-
 import type { SandBoxRuntime } from "../../shared/box-runtime.js";
 
 export interface BoxRecoveryConnector {
+  /** The remote (cloud) connect, probed by `setBoxRuntime("remote")` before
+   * the local box is stopped, so a broker that answers `unavailable`
+   * (no host configured) leaves the person on the Docker box with one
+   * sentence instead of a stranded state (25 September 2026). */
+  connect?(): Promise<unknown>;
   recreate?(args: { readonly preserveData: boolean; readonly force?: boolean }): Promise<RecreateResult>;
   forceRecreate?(): Promise<RecreateResult>;
 }
@@ -16,6 +21,7 @@ export interface BoxRecovery {
   readBoxMigrationStatus(): MigrationEvent | null;
   restartCoordinator(): void;
   recreateComputer(args: { readonly preserveData: boolean; readonly force?: boolean }): Promise<RecreateResult>;
+  probeRemoteBox(): Promise<void>;
   forceRecreateComputer(): Promise<RecreateResult>;
   updateForeverBox(args: { readonly id: string; readonly force: boolean }): Promise<unknown>;
   dispose(): void;
@@ -70,6 +76,7 @@ export function createProductionBoxRecovery(options: ProductionBoxRecoveryOption
     restartCoordinator: options.restartCoordinator,
     recreateComputer: commands.recreateComputer,
     forceRecreateComputer: commands.forceRecreateComputer,
+    probeRemoteBox: async () => { if (options.connector.connect == null) throw new Error("Simeon's cloud computer has no connector in this build."); await options.connector.connect(); },
     updateForeverBox: options.updateForeverBox,
     dispose(): void {
       if (disposed) return;

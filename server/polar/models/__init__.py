@@ -54,6 +54,7 @@ from .desktop_share import (
     DesktopShareRoom,
     DesktopShareRoomMember,
 )
+from .sand_box import SandBox
 from .discount import Discount
 from .discount_product import DiscountProduct
 from .discount_redemption import DiscountRedemption
@@ -261,6 +262,7 @@ __all__ = [
     "DesktopShareRoom",
     "DesktopShareRoomMember",
     "DesktopUsage",
+    "SandBox",
     "Discount",
     "DiscountProduct",
     "DiscountRedemption",

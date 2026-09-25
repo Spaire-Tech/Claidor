@@ -160,7 +160,7 @@ until its row says so. Columns:
 | F-134 | box-and-computer | major | risk | refuted | local-security | fixed | Box exec daemon on 127.0.0.1:1337 with static bearer "local"; any local process can run commands in the box and read the account token | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-135 | box-and-computer | major | risk | refuted | local-security | known-limit | noVNC/websockify on 127.0.0.1:6080/6081 with no credential: any web page on the Mac can drive the agent's logged-in desktop | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-136 | box-and-computer | major | unwired | confirmed | box-substrate | needs-mac | The reconstructed box-exec-daemon supports no computer-use, no write, no MCP load, and rejects paths outside /workspace — and the container is told to use the mounted daemon | `desktop/source/box-exec-daemon/server.ts` |
-| F-137 | box-and-computer | major | dead-service | confirmed | unserved-transports | coming-soon | Settings offers "Simeon's remote computer": the toggle routes to Cursor's GrokBotService/EnsureSandBox and strands the person | `desktop/scripts/lib/router-renderer-patch.mjs` |
+| F-137 | box-and-computer | major | dead-service | confirmed | cloud-computer | needs-mac | Settings offers "Simeon's remote computer": the toggle routes to Cursor's GrokBotService/EnsureSandBox and strands the person | `desktop/scripts/lib/router-renderer-patch.mjs` |
 | F-138 | box-and-computer | major | docs-wrong | refuted | brief-text | fixed | Agent-readable app-ui.md says "Sign In with Claidor", five Settings tabs, Plugins/Marketplace, Update Track and Team Setup | `desktop/source/host/runner/box-reference-docs.ts` |
 | F-139 | box-and-computer | major | docs-wrong | confirmed | brief-text | fixed | Agent-readable debugging-the-box.md points at a nonexistent "computer needs Docker" prompt, names anyrun as the default and the wrong container | `desktop/source/host/runner/box-reference-docs.ts` |
 | F-140 | box-and-computer | minor | dead-service | confirmed | unserved-transports | fixed | Host-side box lifecycle (update/reset/image check) still calls Cursor's GrokBotService and retries at every host start | `desktop/source/host/extensions/box-lifecycle/extension.ts` |
@@ -1229,3 +1229,32 @@ chat attachment over that size is accepted by the composer and can only
 be trimmed on the box before a child watches it. Not yet run on a Mac.
 `tests/watch-video.test.mjs`, `server/tests/desktop/test_video_proxy.py`,
 `docs/product/video-served.md`.
+
+### cloud-computer (25 September 2026)
+
+The `"remote"` box runtime, `docs/product/cloud-computer-served.md`.
+The app side was complete (`BrokeredHostConnector`, the descriptor
+cache, the VNC rewrite, the egress tunnel, the migration watcher); what
+was missing was Cursor's broker, a network path and hosting
+(`cursor-dependencies-map.md` §5). Simeon Labs' server now serves
+`aiserver.v1.GrokBotService` (`polar/sand/box_broker.py`), the two
+`/sand-box/local-exec-*` routes and a reverse proxy to the box's four
+ports (`box_proxy.py`), with a `docker` host provider against a Docker
+Engine API on a VM the founder provisions (`box_hosts.py`). F-137 moves
+from `coming-soon` to `needs-mac`: the switch is enabled both ways, a
+refusal (no host configured) is one sentence under it and the setting
+falls back to the local box (`setBoxRuntime` probes before stopping).
+What remains is the founder's: a VM with Docker reachable from Render
+and the host bundle published (the record names the variables); the
+per-port hostnames path (`*.boxes.simeonlabs.com` + Caddy) is optional
+and its map writer is not built. E2B is a documented stub (`e2b` not in
+the lockfile; its hostnames do not fit the tunnel rule).
+
+| id | area | severity | kind | state | cluster | disposition | title | first evidence |
+|---|---|---|---|---|---|---|---|---|
+| F-484 | box-and-computer | major | dead-service | confirmed | cloud-computer | needs-mac | `GrokBotService/EnsureSandBox`, `RecreateSandBox`, `ForceRecreateSandBox`, `WatchSandBoxMigration`, `GetSandBoxRunState`, `NotifySandAgentTurnFinished` were unserved; served now, measured offline | `server/polar/sand/box_broker.py` |
+| F-485 | box-and-computer | major | dead-service | confirmed | cloud-computer | needs-mac | `POST /sand-box/local-exec-daemon-credential` and `/sand-box/local-exec-connection` were unserved; served now as `claidor_db_` child rows with the `simeon-local-exec/` user agent | `server/polar/sand/box_service.py` |
+| F-486 | box-and-computer | major | unwired | confirmed | cloud-computer | needs-mac | No network or VNC path to a cloud box's ports 1340/6080/6081/8790; the API proxies them at `/sand-box/{id}/p/{port}/` behind the network token, and the tunnel derives from that path shape | `server/polar/sand/box_proxy.py`, `desktop/source/shared/node/egress-tunnel/box-connection.ts` |
+| F-487 | box-and-computer | minor | risk | confirmed | cloud-computer | fixed | `issue_box_credential` revoked every child row of the desktop, so a box creation would have killed the local-exec daemon's credential; it skips `simeon-local-exec/` rows now | `server/polar/desktop/service.py` |
+| F-488 | box-and-computer | minor | risk | confirmed | cloud-computer | fixed | `setBoxRuntime("remote")` stopped the local box before knowing the broker would answer; it probes first and falls back with one sentence | `desktop/source/electron-main/main-edge.ts` |
+| F-489 | box-and-computer | major | unbuilt | confirmed | cloud-computer | coming-soon | A box host: no VM, daemon, bundle URL or DNS exists; the broker answers "Simeon's cloud computer needs a host; set CLAIDOR_BOX_HOST_PROVIDER" until the founder provisions one (dependency: infrastructure the founder creates, named in `cloud-computer-served.md`) | `server/polar/config.py` |

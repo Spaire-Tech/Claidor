@@ -34,7 +34,7 @@ cannot turn on one Connect service without the others.
 | Messaging channels (Discord, Slack, Teams, …) | complete, minus one module | none on the server; a connector module in the box | **wiring** (a missing client module) |
 | Cloud agents | complete | **served 25 September** (`polar/sand/cloud_agents.py` over the maty queue); a coding executor remains | client: backend replacement, done; server: projection built, executor **new** |
 | Memory sync | app side never existed | routes exist but were built for a different layout | ~~new product work~~ **served, 25 September 2026**: the routes and their merge were reused, their names widened to the app's tree, and the client built (`memory-sync-served.md`) |
-| Cloud computer | complete | a broker, a network path, a VNC path, hosting | **backend replacement**, hosting is the new product decision |
+| Cloud computer | complete | a broker, a network path, a VNC path, hosting | **backend replacement**, hosting is the new product decision — **served 25 September 2026** (`cloud-computer-served.md`): broker, proxy and a Docker host provider; the VM is the founder's |
 | Watching videos | mostly complete | a Gemini provider on the proxy; three desktop wires | **backend replacement** |
 | Publishing a skill to a team | complete | a team plugin registry | **new**, but small if scoped to "my account" |
 | Sharing (cross-user rooms) | complete | a multi-user relay — **served since 25 September 2026** (`polar/sand/sharing.py`, `sharing-served.md`) | **new product functionality**, built |
@@ -444,6 +444,20 @@ parameter and as the header, and tolerate `resume_lower_s` /
    normal: image-update checks, in-box recreate, mobile push, store sync.
 
 ### 5. Wiring/backend replacement or new product functionality
+
+**Corrected 25 September 2026, later the same day.** Items 1–3 of §4 are
+served: `polar/sand/box_broker.py` answers the RPCs above (and
+`GetSandBoxRunState`, which the box's lifecycle extension calls now that
+the service is in the served set: RUNNING for a local box), the plain
+routes are served from the same module, and `polar/sand/box_proxy.py` is
+the network and VNC path at `/sand-box/{id}/p/{port}/` behind the network
+token, with the app's tunnel derivation extended to that path shape
+(`box-connection.ts`; Cursor's label rule first, unchanged). Hosting is a
+`BoxHost` contract (`box_hosts.py`): a Docker Engine provider, measured
+against a fake daemon, and an E2B stub — `e2b` is not in the lockfile,
+and E2B's hostnames are `<port>-<id>`, which the label rule does not read,
+so "whether E2B's per-port hostnames fit" is answered: they do not. What
+remains is the founder's VM and bundle (`cloud-computer-served.md`).
 
 **Backend replacement**, end to end on the app side. The one new product
 piece is the hosting itself: running, isolating, persisting and paying for

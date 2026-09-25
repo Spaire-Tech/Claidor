@@ -237,6 +237,39 @@ class Settings(BaseSettings):
     DESKTOP_GEMINI_BASE_URL: str = "https://generativelanguage.googleapis.com"
     GEMINI_API_KEY: str = ""
 
+    # The person's computer in the cloud (polar/sand/box_broker.py, 25
+    # September 2026). Empty provider: the broker answers `unavailable`
+    # with one sentence and the app stays on the Docker box on the Mac.
+    # `docker`: a Docker Engine API at BOX_DOCKER_HOST (http(s)://host:2376
+    # or unix:///var/run/docker.sock) on a VM the founder provisions;
+    # `e2b`: not built (the `e2b` package is not in the lockfile).
+    BOX_HOST_PROVIDER: str = ""
+    BOX_DOCKER_HOST: str = ""
+    # Client certificate for a TLS-protected daemon (`docker --tlsverify`).
+    BOX_DOCKER_TLS_CA: str = ""
+    BOX_DOCKER_TLS_CERT: str = ""
+    BOX_DOCKER_TLS_KEY: str = ""
+    # Where the API reaches the ports the daemon publishes; defaults to the
+    # hostname of BOX_DOCKER_HOST.
+    BOX_HOST_ADDRESS: str = ""
+    # The box image; the local Docker path's image unless a Simeon image
+    # with the host bundle baked in is built. BOX_IMAGE_DIGEST pins it.
+    BOX_IMAGE: str = "public.ecr.aws/k0i0n2g5/cursorenvironments/universal:sand-box-latest"
+    BOX_IMAGE_DIGEST: str = ""
+    # A .tar or .tar.gz with `host/host-main.cjs` and
+    # `box-exec-daemon/main.cjs` (what `npm run package` builds into
+    # desktop/dist), uploaded into the container before it starts. Empty:
+    # the image is assumed to carry them.
+    BOX_HOST_BUNDLE_URL: str = ""
+    # Per-port public hostnames, e.g. "https://{box}-{port}.boxes.simeonlabs.com",
+    # served by a TLS proxy on the box VM (docs/product/cloud-computer-served.md).
+    # Empty: the API proxies the ports itself at /sand-box/{id}/p/{port}/.
+    BOX_PUBLIC_URL_TEMPLATE: str = ""
+    # How long EnsureSandBox waits for a new box's gateway before answering.
+    BOX_READY_TIMEOUT: timedelta = timedelta(seconds=90)
+    # The local-exec daemon's credential (POST /sand-box/local-exec-daemon-credential).
+    BOX_LOCAL_EXEC_CREDENTIAL_TTL: timedelta = timedelta(hours=12)
+
     # Apps through Composio (polar/desktop/composio.py). One key for the
     # whole of Claidor, held here and nowhere else: the desktop app never
     # sees it and never asks a person for one. Each account is a Composio

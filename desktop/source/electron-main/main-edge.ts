@@ -32,6 +32,13 @@ export class EdgeCallFailure extends Error {
 }
 export class SandHostSettingsUnreachableError extends Error {}
 
+// A Connect error's `message` carries its code in brackets ("[unavailable]
+// Simeon's cloud computer needs a host…"); the sentence is `rawMessage`.
+export function remoteBoxFailureSentence(error: unknown): string {
+  if (error instanceof Error) { const raw = Reflect.get(error, "rawMessage"); return typeof raw === "string" && raw.length > 0 ? raw : error.message; }
+  return String(error);
+}
+
 export interface MainEdgeDeps {
   readonly readLiveUpdateService: () => UnknownRecord | null;
   readonly readThemeController: () => UnknownRecord | null;
@@ -116,7 +123,13 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
     getInferenceRouter: async () => { const settings = await deps.readHostSettingsFromBox().catch(() => ({} as UnknownRecord)); const provider = resolveProductInferenceProvider(); return { provider, usage: settings.inferenceRouterUsage ?? invoke(deps.settingsStore, "getInferenceRouterUsage") ?? null, local: getLocalInferenceCliStatus() }; },
     setInferenceRouter: async () => { const provider = resolveProductInferenceProvider(); invoke(deps.settingsStore, "setInferenceProvider", provider); const settings = await deps.syncHostSettingsToBox({ inferenceProvider: provider }).catch(() => null); return { provider, usage: settings?.inferenceRouterUsage ?? invoke(deps.settingsStore, "getInferenceRouterUsage") ?? null, local: getLocalInferenceCliStatus() }; },
     getBoxRuntime: async () => { const mode = invoke(deps.settingsStore, "getBoxRuntime"); invariant(isSandBoxRuntime(mode), "Unknown box runtime."); return { mode, status: await getLocalDockerStatus(String(Reflect.get(deps.settingsStore, "settingsPath"))) }; },
-    setBoxRuntime: async (raw) => { const mode = req(raw).mode; invariant(isSandBoxRuntime(mode), "Unknown box runtime."); if (mode === "remote" && !isConnectServed(process.env, "aiserver.v1.GrokBotService")) throw new Error("Simeon's cloud computer is coming soon; the box runs in Docker on this Mac for now."); const settingsPath = String(Reflect.get(deps.settingsStore, "settingsPath")); invoke(deps.settingsStore, "setBoxRuntime", mode); try { if (mode === "local-docker") await startLocalDockerBox(settingsPath); else await stopLocalDockerBox(); } catch (error) { invoke(deps.settingsStore, "setBoxRuntime", mode === "local-docker" ? "remote" : "local-docker"); throw error; } invoke(deps.boxRecovery, "restartCoordinator"); return { mode, status: await getLocalDockerStatus(settingsPath) }; },
+    // Switching to the cloud computer (25 September 2026): the broker is
+    // served (`polar/sand/box_broker.py`), so "remote" is allowed; it is
+    // probed before the local box is stopped, and a refusal (no host on the
+    // server: "Simeon's cloud computer needs a host; set
+    // CLAIDOR_BOX_HOST_PROVIDER") puts the setting back and shows that one
+    // sentence. `SAND_CONNECT_SERVED=0` keeps the old refusal.
+    setBoxRuntime: async (raw) => { const mode = req(raw).mode; invariant(isSandBoxRuntime(mode), "Unknown box runtime."); if (mode === "remote" && !isConnectServed(process.env, "aiserver.v1.GrokBotService")) throw new Error("Simeon's cloud computer is switched off in this build (SAND_CONNECT_SERVED); the box runs in Docker on this Mac."); const settingsPath = String(Reflect.get(deps.settingsStore, "settingsPath")); invoke(deps.settingsStore, "setBoxRuntime", mode); try { if (mode === "local-docker") await startLocalDockerBox(settingsPath); else { await Promise.resolve(invoke(deps.boxRecovery, "probeRemoteBox")); await stopLocalDockerBox(); } } catch (error) { invoke(deps.settingsStore, "setBoxRuntime", mode === "local-docker" ? "remote" : "local-docker"); throw new Error(remoteBoxFailureSentence(error)); } invoke(deps.boxRecovery, "restartCoordinator"); return { mode, status: await getLocalDockerStatus(settingsPath) }; },
 
     getEgressTunnelEnabled: () => invoke(deps.boxToggleStore, "getEgressTunnelEnabled"),
     setEgressTunnelEnabled: (raw) => { const enabled = req(raw).enabled === true; invoke(deps.boxToggleStore, "setEgressTunnelEnabled", enabled); invoke(egressController(deps), "setEnabled", enabled); deps.emitEgressTunnelChanged(enabled); return enabled; },
