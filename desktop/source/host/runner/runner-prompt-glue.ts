@@ -36,6 +36,7 @@ export interface RunnerPromptGlueOwner {
   getConversationId(): string;
   resolveBoxId(): string;
   resolveBoxBrowser?(): { readonly display: string; readonly cdpUrl: string } | null;
+  readonly screenshotToolOffered?: () => boolean;
   readonly mcpConnectedServerNamesForTurn: () => readonly string[];
   readonly mcpCustomInstructionsForTurn: () => ReadonlyMap<string, string>;
   readonly isMcpDiscoveryUnavailableForTurn: () => boolean;
@@ -69,6 +70,7 @@ export function createRunnerPromptGlue(owner: RunnerPromptGlueOwner) {
     get shellWatchHost() { return owner.shellWatchHost; },
     getConversationId: () => owner.getConversationId(),
     resolveBoxBrowser: () => owner.resolveBoxBrowser?.() ?? null,
+    get screenshotToolOffered() { return owner.screenshotToolOffered; },
     mcpConnectedServerNamesForTurn: () => owner.mcpConnectedServerNamesForTurn(),
     mcpCustomInstructionsForTurn: () => owner.mcpCustomInstructionsForTurn(),
     isMcpDiscoveryUnavailableForTurn: () => owner.isMcpDiscoveryUnavailableForTurn(),

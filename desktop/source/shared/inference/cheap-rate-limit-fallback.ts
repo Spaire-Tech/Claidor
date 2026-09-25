@@ -26,6 +26,7 @@ function ignoreSettled<TPart, TResponse, TUsage, TExtended, TMetadata>(
 export function withCheapRateLimitFallback<TPart, TResponse, TUsage, TExtended, TMetadata>(
   primary: CheapRateLimitStream<TPart, TResponse, TUsage, TExtended, TMetadata>,
   fallback: () => CheapRateLimitStream<TPart, TResponse, TUsage, TExtended, TMetadata>,
+  onFallback?: (error: unknown) => void,
 ): CheapRateLimitStream<TPart, TResponse, TUsage, TExtended, TMetadata> {
   ignoreSettled(primary);
   const resultResponse = deferred<TResponse>();
@@ -61,6 +62,7 @@ export function withCheapRateLimitFallback<TPart, TResponse, TUsage, TExtended, 
         throw error;
       }
       try {
+        onFallback?.(error);
         const cheap = fallback();
         ignoreSettled(cheap);
         yield* take(cheap);

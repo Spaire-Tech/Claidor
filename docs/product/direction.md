@@ -144,9 +144,21 @@ The list is closed, and it is the discipline that makes the app feel unlike an
 AI app. The count has moved three times and this file tracked it twice: five,
 then seven (15 September), then `roster` (16 September), then `card` and
 `connector` (17 September, and recorded below in the decided list without
-anyone updating the number here). The list in code is
-`desktop/src/renderer/design/thread/types.ts`, and it is the one to trust.
-The first seven:
+anyone updating the number here).
+
+**Corrected 25 September 2026 (ledger F-009, F-337).** The file this
+paragraph pointed at, `desktop/src/renderer/design/thread/types.ts`, went
+with the LobsterAI tree and does not exist. Two lists exist in the shipped
+code and they serve different things: what the model may send is
+`SEND_MESSAGE_TYPES` in `host/runner/tools/send-message-schema.ts` (text,
+attachment, widget; `cursor-agent` and `secret-request` are refused as
+Coming Soon), and what the transport carries is the case list of
+`host/runner/tools/send-message-encoding.ts`, several of which are cards the
+host draws on its own (the approval card, the auto-review card, the
+connector card). Of the nine below, `roster` has no emitter in the shipped
+build and `secret` went with channels (Coming Soon); `system` and `status`
+are drawn by the pinned renderer, not sent as messages. The table is the
+design; the two lists are the bytes. The first seven:
 
 | Kind | What it is |
 |---|---|
@@ -224,6 +236,13 @@ Two different behaviours, and the design already separates them:
   *"i dont want the second to IMMEDIATELY come. i want a bit of realism.
   so 1 second might be good between it."* `BUBBLE_GAP_MS` in
   `design/thread/stagger.ts`.)
+  **Corrected 25 September 2026 (ledger F-008).** Neither `BUBBLE_GAP_MS`
+  nor `stagger.ts` exists in the shipped tree. On the Grok Bot loop the
+  pacing is the model's: the brief says "two to four separate SendMessage
+  calls, like quick texts" (`system-prompt.ts`, Reply length and shape) and
+  the transport delivers each at once, with no host-side gap. The one-second
+  gap is not built; if it is still wanted it is a small change in the
+  transport's delivery, not in the renderer.
 - **Voice mode** — the same parts are streamed word by word.
 
 So streaming is a property of speech, not of text. A typed answer should

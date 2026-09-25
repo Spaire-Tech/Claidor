@@ -1,5 +1,13 @@
 # Agent System Contract
 
+> **Superseded, 18 September 2026.** This describes the LobsterAI brief
+> (`MANAGED_CONVERSATION_PROMPT`, `openclawConfigSync.ts`), which is not in
+> the tree since the Grok Bot reconstruction. The live brief is
+> `desktop/source/host/runner/system-prompt.ts`, assembled by
+> `host/runner/system-prompt-assembly.ts`; the audit of it is
+> `docs/product/design-audit-ledger.md` (clusters `prompt-and-brief`).
+> Kept as a record. (Marked 25 September 2026, ledger F-336.)
+
 15 September 2026. Written in the shape of Grok Bot's contract
 (`sources/grok-bot-agent-system-contract.md`), at the founder's word:
 *"let's follow theirs exactly apart maybe the linux … look at our agent,

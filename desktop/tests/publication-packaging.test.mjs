@@ -99,7 +99,7 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(inference, /recordInferenceUsage\(provider/);
   assert.match(inference, /routerSettings\.getInferenceProvider\(\)/);
   assert.match(inference, /typeof extendedUsage\.then === "function"/);
-  assert.match(inference, /createProviderPromptSession\(provider, sessionOptions\)/);
+  assert.match(inference, /createProviderPromptSession\(provider, sessionOptions, onRequestId\)/);
   assert.match(providers, /https:\/\/chatgpt\.com\/backend-api\/codex/);
   assert.match(providers, /headers\.set\("ChatGPT-Account-Id", credentials\.accountId\)/);
   assert.match(providers, /streamCodexDirectResponses/);

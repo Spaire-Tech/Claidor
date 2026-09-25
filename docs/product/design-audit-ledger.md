@@ -25,35 +25,35 @@ until its row says so. Columns:
 | id | area | severity | kind | state | cluster | disposition | title | first evidence |
 |---|---|---|---|---|---|---|---|---|
 | F-001 | chat-turn | blocking | unwired | confirmed | hidden-turn-cap | fixed | Hidden-turn model-call cap (40) is never wired on the production path: every nudge, intro and automation runs with the 5,000 budget | `desktop/source/host/host-runner-composition.ts` |
-| F-002 | chat-turn | major | risk | unverified | - | - | Every model call is hard-aborted at 45 s including the streamed body, so a long Terra effort-high step cannot complete and is retried | `desktop/source/host/extensions/inference/provider-session.ts` |
-| F-003 | chat-turn | minor | design-violation | unverified | - | - | Silent per-step model swap: on any 'rate limit'-shaped error the loop falls back from Terra to Luna without a system line in the thread | `desktop/source/host/extensions/inference/provider-session.ts` |
+| F-002 | chat-turn | major | risk | confirmed | executor-contract | fixed | Every model call is hard-aborted at 45 s including the streamed body, so a long Terra effort-high step cannot complete and is retried | `desktop/source/host/extensions/inference/provider-session.ts` |
+| F-003 | chat-turn | minor | design-violation | confirmed | executor-contract | fixed | Silent per-step model swap: on any 'rate limit'-shaped error the loop falls back from Terra to Luna without a system line in the thread | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-004 | chat-turn | minor | dead-service | confirmed | dead-cursor-services | fixed | Every turn and every nudge first calls Cursor's GetUserPrivacyMode Connect RPC against api.simeonlabs.com, which is not served | `desktop/source/host/runner/turn-run-shell.ts` |
-| F-005 | chat-turn | minor | unwired | unverified | - | - | The claidor executor never reports a request id, so the transcript, tray errors and telemetry carry none | `desktop/source/host/host-runner-composition.ts` |
-| F-006 | chat-turn | note | hardcoded | unverified | - | - | The Agent is configured with model id 'gpt-5.5-high-fast' while the wire runs gpt-5.6-terra | `desktop/source/host/host-runner-composition.ts` |
+| F-005 | chat-turn | minor | unwired | confirmed | executor-contract | fixed | The claidor executor never reports a request id, so the transcript, tray errors and telemetry carry none | `desktop/source/host/host-runner-composition.ts` |
+| F-006 | chat-turn | note | hardcoded | confirmed | executor-contract | fixed | The Agent is configured with model id 'gpt-5.5-high-fast' while the wire runs gpt-5.6-terra | `desktop/source/host/host-runner-composition.ts` |
 | F-007 | chat-turn | minor | design-violation | confirmed | cloud-agents-channels | coming-soon | The agent's prompt still offers cloud agents (`cursor-agent` cards, 'launching a cloud agent') and channel delivery, both unserved, with no explanation | `desktop/source/host/runner/tools/send-message-schema.ts` |
-| F-008 | chat-turn | minor | docs-wrong | unverified | - | - | Text does not arrive 'as texts': no split into up to three bubbles one second apart (BUBBLE_GAP_MS) | `docs/product/direction.md` |
-| F-009 | chat-turn | note | docs-wrong | unverified | - | - | direction.md's 'nine kinds, list closed' is contradicted by the host's fourteen SendMessage/transport kinds | `desktop/source/host/runner/tools/send-message-encoding.ts` |
-| F-010 | chat-turn | minor | design-violation | unverified | - | - | SAND_CLAIDOR_FULL_AGENT=off hatch is live, env-only, and still ships the audited flaws plus a 'Router error:' bubble and a Codex/Claude Code-flavoured prompt | `desktop/source/shared/inference-router.ts` |
-| F-011 | chat-turn | note | dead-service | unverified | - | - | Dead executors for Codex (chatgpt.com), Claude Code and OpenRouter remain compiled into the host with a 'Settings → Router' key field and 'Simeon Reconstructed' headers | `desktop/source/host/extensions/inference/provider-session.ts` |
-| F-012 | chat-turn | minor | risk | unverified | - | - | On a model error the box log receives the full system prompt (12,000 chars: memory, user info, roster) and every tool schema | `desktop/source/host/extensions/inference/provider-session.ts` |
+| F-008 | chat-turn | minor | docs-wrong | confirmed | brief-text | fixed | Text does not arrive 'as texts': no split into up to three bubbles one second apart (BUBBLE_GAP_MS) | `docs/product/direction.md` |
+| F-009 | chat-turn | note | docs-wrong | confirmed | brief-text | fixed | direction.md's 'nine kinds, list closed' is contradicted by the host's fourteen SendMessage/transport kinds | `desktop/source/host/runner/tools/send-message-encoding.ts` |
+| F-010 | chat-turn | minor | design-violation | confirmed | sign-in-copy | known-limit | SAND_CLAIDOR_FULL_AGENT=off hatch is live, env-only, and still ships the audited flaws plus a 'Router error:' bubble and a Codex/Claude Code-flavoured prompt | `desktop/source/shared/inference-router.ts` |
+| F-011 | chat-turn | note | dead-service | confirmed | sign-in-copy | known-limit | Dead executors for Codex (chatgpt.com), Claude Code and OpenRouter remain compiled into the host with a 'Settings → Router' key field and 'Simeon Reconstructed' headers | `desktop/source/host/extensions/inference/provider-session.ts` |
+| F-012 | chat-turn | minor | risk | confirmed | executor-contract | fixed | On a model error the box log receives the full system prompt (12,000 chars: memory, user info, roster) and every tool schema | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-013 | chat-turn | note | spend | confirmed | hidden-turn-cap | known-limit | Reply-nudge budget: up to 4 hidden runs per user turn (3 REPLY_NUDGE + 1 CLOSING_SEND_NUDGE) plus ensureHiddenTurnReply on the intro, each unbounded by the hidden cap today | `desktop/source/host/extensions/transcript/turn-runtime.ts` |
-| F-014 | agents-and-subagents | blocking | design-violation | unverified | - | - | A Task child runs on the parent's conversation state and writes its checkpoints into the parent's agent store and transcript | `desktop/source/host/host-runner-composition.ts` |
+| F-014 | agents-and-subagents | blocking | design-violation | confirmed | child-state | fixed | A Task child runs on the parent's conversation state and writes its checkpoints into the parent's agent store and transcript | `desktop/source/host/host-runner-composition.ts` |
 | F-015 | agents-and-subagents | major | spend | confirmed | hidden-turn-cap | fixed | The 40-call hidden-turn budget is dead on the production path: `hidden` never reaches the owner input | `desktop/source/host/host-runner-composition.ts` |
-| F-016 | agents-and-subagents | major | design-violation | unverified | - | - | The agent's prompt says it holds the Screenshot tool while AGENT_SCREENSHOT_TOOL = false withholds it (the blindness failure, undeclared) | `desktop/source/host/host-runner-composition.ts` |
+| F-016 | agents-and-subagents | major | design-violation | confirmed | brief-text | fixed | The agent's prompt says it holds the Screenshot tool while AGENT_SCREENSHOT_TOOL = false withholds it (the blindness failure, undeclared) | `desktop/source/host/host-runner-composition.ts` |
 | F-017 | agents-and-subagents | major | unwired | confirmed | asks-once-memory | known-limit | The executor subagent is on by default (sand_multitask default true) and an executor child's ExternalShell/ExternalRead can never be allowed: no permission surface exists for the child's id | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
-| F-018 | agents-and-subagents | major | design-violation | unverified | - | - | getRemoteBoxAvailable compares a Promise to false and is always true, so box tools and computerUse are offered with Docker off | `desktop/source/host/host-runner-composition.ts` |
+| F-018 | agents-and-subagents | major | design-violation | confirmed | child-state | fixed | getRemoteBoxAvailable compares a Promise to false and is always true, so box tools and computerUse are offered with Docker off | `desktop/source/host/host-runner-composition.ts` |
 | F-019 | agents-and-subagents | major | unwired | confirmed | memory | fixed | Grok Bot's per-turn memory extraction and episode summaries never run: the shell adapter host has no memoryStore | `desktop/source/host/runner/production-turn-run-shell-adapter.ts` |
 | F-020 | agents-and-subagents | minor | unwired | confirmed | hidden-turn-cap | fixed | The closing-send nudge can never fire: onLatestPromptMessages is not passed, so latestPromptMessages() is always [] | `desktop/source/host/host-runner-composition.ts` |
 | F-021 | agents-and-subagents | minor | unwired | confirmed | auto-review-enforce | fixed | Subagent launch auto-review and MessageSubagent steer review are not wired on the production path | `desktop/source/host/runner/turn-agent-composition.ts` |
-| F-022 | agents-and-subagents | minor | dead-service | unverified | - | - | The agent is offered the CloudAgent tool and the cloud-agents-enabled brief although cloud agents are known-unserved | `desktop/source/host/runner/system-prompt.ts` |
-| F-023 | agents-and-subagents | minor | unwired | unverified | - | - | Chrome prewarm (prepareRemoteBox) has no caller; the child's prompt says it happens | `desktop/source/host/runner/computer-use.ts` |
-| F-024 | agents-and-subagents | minor | unwired | unverified | - | - | resolveBoxBrowser and getBoxWindowIndex are not supplied, so the child is told to `echo $DISPLAY` although the local box's window index is known | `desktop/source/host/runner/runner-prompt-glue.ts` |
-| F-025 | agents-and-subagents | minor | unwired | unverified | - | - | CheckSubagent promises a transcript path and tool-call counts the production child cannot provide | `desktop/source/host/runner/sand-agent-runner.ts` |
-| F-026 | agents-and-subagents | minor | naming | unverified | - | - | The child runner's getConversationId() is the parent's id (inherited getAgentId), so the child carries a mixed identity | `desktop/source/host/host-runner-composition.ts` |
-| F-027 | agents-and-subagents | minor | design-violation | unverified | - | - | Task resume and readonly do not reach the child; MessageSubagent's text promises a resume that recreates a blank runner | `desktop/source/host/runner/subagent-runtime.ts` |
-| F-028 | agents-and-subagents | minor | unwired | unverified | - | - | The prompt glue never learns whether browserUse is offered, so prompt and Task configs disagree when the gate is on | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
+| F-022 | agents-and-subagents | minor | dead-service | refuted | cloud-agents-channels | coming-soon | The agent is offered the CloudAgent tool and the cloud-agents-enabled brief although cloud agents are known-unserved | `desktop/source/host/runner/system-prompt.ts` |
+| F-023 | agents-and-subagents | minor | unwired | confirmed | child-state | fixed | Chrome prewarm (prepareRemoteBox) has no caller; the child's prompt says it happens | `desktop/source/host/runner/computer-use.ts` |
+| F-024 | agents-and-subagents | minor | unwired | confirmed | child-state | fixed | resolveBoxBrowser and getBoxWindowIndex are not supplied, so the child is told to `echo $DISPLAY` although the local box's window index is known | `desktop/source/host/runner/runner-prompt-glue.ts` |
+| F-025 | agents-and-subagents | minor | unwired | confirmed | child-state | fixed | CheckSubagent promises a transcript path and tool-call counts the production child cannot provide | `desktop/source/host/runner/sand-agent-runner.ts` |
+| F-026 | agents-and-subagents | minor | naming | confirmed | child-state | fixed | The child runner's getConversationId() is the parent's id (inherited getAgentId), so the child carries a mixed identity | `desktop/source/host/host-runner-composition.ts` |
+| F-027 | agents-and-subagents | minor | design-violation | confirmed | child-state | fixed | Task resume and readonly do not reach the child; MessageSubagent's text promises a resume that recreates a blank runner | `desktop/source/host/runner/subagent-runtime.ts` |
+| F-028 | agents-and-subagents | minor | unwired | confirmed | child-state | fixed | The prompt glue never learns whether browserUse is offered, so prompt and Task configs disagree when the gate is on | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
 | F-029 | agents-and-subagents | note | risk | refuted | hidden-turn-cap | known-limit | Agent-created teammates are minted as origin 'user' with an introduction pending | `desktop/source/host/host-runner-composition.ts` |
-| F-030 | agents-and-subagents | note | docs-wrong | unverified | - | - | The child-audit record's cost accounting is incomplete: the prompt shrank, the child's context did not | `docs/product/computer-use-child-audit-2026-09-24.md` |
+| F-030 | agents-and-subagents | note | docs-wrong | confirmed | child-state | fixed | The child-audit record's cost accounting is incomplete: the prompt shrank, the child's context did not | `docs/product/computer-use-child-audit-2026-09-24.md` |
 | F-031 | routines-automations | blocking | design-violation | confirmed | routines-away | fixed | Routines only fire while the app and the local Docker box are running; nothing fires with the Mac shut, and the agent's brief tells the person the opposite | `desktop/source/host/extensions/automations/sand-trigger-hub.ts` |
 | F-032 | routines-automations | blocking | dead-service | confirmed | listeners-coming-soon | coming-soon | The agent is offered six event-listener trigger types (Slack, GitHub, Teams, Linear, Sentry, PagerDuty) that can never fire on Simeon, and saving one reports success | `desktop/source/host/runner/tools/sand-state-tool.ts` |
 | F-033 | routines-automations | major | naming | confirmed | listeners-coming-soon | fixed | Listener 'connect' opens cursor.com, and the routines copy says Claidor and @Cursor to the person and the agent | `desktop/source/host/extensions/automations/listener-integrations.ts` |
@@ -339,30 +339,30 @@ until its row says so. Columns:
 | F-313 | onboarding-first-run | note | naming | unverified | - | - | The agent's brief carries an unconditional 'Origin' section with cursor.com links | `desktop/source/host/runner/system-prompt.ts` |
 | F-314 | onboarding-first-run | note | dead-service | unverified | - | - | Dev/unpackaged sign-in falls back to cursor.com when the CAISRA env is absent | `desktop/source/electron-main/account/cursor-auth.ts` |
 | F-315 | onboarding-first-run | note | design-violation | unverified | - | - | The first-run flow the person meets is the pinned Grok Bot six-step onboarding | `desktop/source/shared/observability/telemetry.ts` |
-| F-316 | prompt-and-brief | major | dead-service | unverified | - | - | Cloud-agent section and CloudAgent tool are live because isCloudAgentsDisabledByTeam is never defined | `desktop/source/host/extensions/experiments/extension.ts` |
+| F-316 | prompt-and-brief | major | dead-service | refuted | cloud-agents-channels | coming-soon | Cloud-agent section and CloudAgent tool are live because isCloudAgentsDisabledByTeam is never defined | `desktop/source/host/extensions/experiments/extension.ts` |
 | F-317 | prompt-and-brief | major | dead-service | confirmed | listeners-coming-soon | fixed | Routines section advertises Slack/GitHub/Teams/Linear/Sentry/PagerDuty listeners and names Cursor | `desktop/source/host/automations/automation.ts` |
 | F-318 | prompt-and-brief | major | design-violation | confirmed | routines-away | fixed | Prompt promises routines run while the user is away; the loop runs in a Docker box on the Mac | `desktop/source/host/automations/automation.ts` |
-| F-319 | prompt-and-brief | major | dead-service | unverified | - | - | 'Your user is <name>' section depends on Cursor's GetMe RPC and can never render | `desktop/source/host/extensions/auth/user-full-name-service.ts` |
-| F-320 | prompt-and-brief | major | design-violation | unverified | - | - | Prompt tells the agent it holds a read-only Screenshot tool it does not have | `desktop/source/host/host-runner-composition.ts` |
-| F-321 | prompt-and-brief | major | design-violation | unverified | - | - | ExternalShell wording says every action on the user's computer raises an approval card | `desktop/source/host/runner/system-prompt.ts` |
-| F-322 | prompt-and-brief | major | design-violation | unverified | - | - | The founder's voice brief is not in the prompt verbatim; Grok Bot's Tone section stands in for it | `desktop/source/host/runner/system-prompt.ts` |
-| F-323 | prompt-and-brief | major | naming | unverified | - | - | Agent-readable strings say Claidor, pinned by a test | `desktop/source/host/runner/system-prompt.ts` |
-| F-324 | prompt-and-brief | major | naming | unverified | - | - | Cursor-specific sections survive in the brief: Origin, cursor.com links, cursor-agent card type | `desktop/source/host/runner/system-prompt.ts` |
-| F-325 | prompt-and-brief | major | docs-wrong | unverified | - | - | app-ui.md reference doc describes a Settings the shipped renderer does not have | `desktop/source/host/runner/box-reference-docs.ts` |
-| F-326 | prompt-and-brief | major | docs-wrong | unverified | - | - | debugging-the-box.md tells the agent the shipped default is an anyrun pod and names the wrong container | `desktop/source/host/runner/box-reference-docs.ts` |
-| F-327 | prompt-and-brief | major | spend | unverified | - | - | Prompt cost: ~90 KB system prompt per call, a third of it for features that do not exist | `desktop/source/host/runner/system-prompt.ts` |
-| F-328 | prompt-and-brief | major | spend | unverified | - | - | Multitask mode is on by bundled default: every non-trivial ask is dispatched to an executor subagent on the full model | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
-| F-329 | prompt-and-brief | minor | unwired | unverified | - | - | watchVideo / videoReview subagents are instructed but never offered | `desktop/source/host/runner/system-prompt.ts` |
-| F-330 | prompt-and-brief | major | design-violation | unverified | - | - | Plugin/MCP tool descriptions tell the agent to ask the user for API keys in chat | `desktop/source/host/runner/tools/sand-mcp-management-tools.ts` |
-| F-331 | prompt-and-brief | major | design-violation | unverified | - | - | No brief section decides documents-as-files; docx/xlsx/pptx are never named | `desktop/source/host/runner/system-prompt.ts` |
+| F-319 | prompt-and-brief | major | dead-service | refuted | box-token-scope | fixed | 'Your user is <name>' section depends on Cursor's GetMe RPC and can never render | `desktop/source/host/extensions/auth/user-full-name-service.ts` |
+| F-320 | prompt-and-brief | major | design-violation | confirmed | brief-text | fixed | Prompt tells the agent it holds a read-only Screenshot tool it does not have | `desktop/source/host/host-runner-composition.ts` |
+| F-321 | prompt-and-brief | major | design-violation | confirmed | brief-text | fixed | ExternalShell wording says every action on the user's computer raises an approval card | `desktop/source/host/runner/system-prompt.ts` |
+| F-322 | prompt-and-brief | major | design-violation | confirmed | brief-text | fixed | The founder's voice brief is not in the prompt verbatim; Grok Bot's Tone section stands in for it | `desktop/source/host/runner/system-prompt.ts` |
+| F-323 | prompt-and-brief | major | naming | refuted | sign-in-copy | fixed | Agent-readable strings say Claidor, pinned by a test | `desktop/source/host/runner/system-prompt.ts` |
+| F-324 | prompt-and-brief | major | naming | refuted | cloud-agents-channels | fixed | Cursor-specific sections survive in the brief: Origin, cursor.com links, cursor-agent card type | `desktop/source/host/runner/system-prompt.ts` |
+| F-325 | prompt-and-brief | major | docs-wrong | confirmed | brief-text | fixed | app-ui.md reference doc describes a Settings the shipped renderer does not have | `desktop/source/host/runner/box-reference-docs.ts` |
+| F-326 | prompt-and-brief | major | docs-wrong | confirmed | brief-text | fixed | debugging-the-box.md tells the agent the shipped default is an anyrun pod and names the wrong container | `desktop/source/host/runner/box-reference-docs.ts` |
+| F-327 | prompt-and-brief | major | spend | refuted | brief-text | - | Prompt cost: ~90 KB system prompt per call, a third of it for features that do not exist | `desktop/source/host/runner/system-prompt.ts` |
+| F-328 | prompt-and-brief | major | spend | confirmed | brief-text | known-limit | Multitask mode is on by bundled default: every non-trivial ask is dispatched to an executor subagent on the full model | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
+| F-329 | prompt-and-brief | minor | unwired | confirmed | brief-text | coming-soon | watchVideo / videoReview subagents are instructed but never offered | `desktop/source/host/runner/system-prompt.ts` |
+| F-330 | prompt-and-brief | major | design-violation | refuted | connectors-mcp | fixed | Plugin/MCP tool descriptions tell the agent to ask the user for API keys in chat | `desktop/source/host/runner/tools/sand-mcp-management-tools.ts` |
+| F-331 | prompt-and-brief | major | design-violation | confirmed | brief-text | fixed | No brief section decides documents-as-files; docx/xlsx/pptx are never named | `desktop/source/host/runner/system-prompt.ts` |
 | F-332 | prompt-and-brief | minor | design-violation | refuted | memory | known-limit | Subagent prompts still carry the agent's profile, memory and routines sections and name update_state they cannot call | `desktop/source/host/runner/system-prompt-assembly.ts` |
-| F-333 | prompt-and-brief | minor | design-violation | unverified | - | - | The brief tells the agent to name Auto-review and the block reason to the user | `desktop/source/host/runner/system-prompt.ts` |
-| F-334 | prompt-and-brief | minor | docs-wrong | unverified | - | - | Prompt says only remote http/sse MCP servers are supported, executed on the backend | `desktop/source/host/runner/tools/sand-mcp-management-tools.ts` |
-| F-335 | prompt-and-brief | minor | unwired | unverified | - | - | First-run intro asks the agent to send a 'connector card' or 'connectors prompt' it has no message type for | `desktop/source/shared/agents/onboarding.ts` |
-| F-336 | prompt-and-brief | minor | docs-wrong | unverified | - | - | agent-contract.md and brief-audit.md describe the LobsterAI brief and are not marked superseded | `docs/product/agent-contract.md` |
-| F-337 | prompt-and-brief | note | design-violation | unverified | - | - | The reconstruction's message kinds differ from the nine decided kinds | `desktop/source/host/runner/tools/send-message-schema.ts` |
-| F-338 | prompt-and-brief | minor | docs-wrong | unverified | - | - | 'Use poppler-utils to read PDFs' contradicts the pdf.js Read path | `desktop/source/host/runner/prompt-collector-glue.ts` |
-| F-339 | prompt-and-brief | note | design-violation | unverified | - | - | Dead Settings 'Routing' panel with Claude Code, Codex and an OpenRouter API-key field remains in the packager | `desktop/scripts/lib/router-renderer-patch.mjs` |
+| F-333 | prompt-and-brief | minor | design-violation | confirmed | brief-text | fixed | The brief tells the agent to name Auto-review and the block reason to the user | `desktop/source/host/runner/system-prompt.ts` |
+| F-334 | prompt-and-brief | minor | docs-wrong | refuted | connectors-mcp | fixed | Prompt says only remote http/sse MCP servers are supported, executed on the backend | `desktop/source/host/runner/tools/sand-mcp-management-tools.ts` |
+| F-335 | prompt-and-brief | minor | unwired | confirmed | brief-text | fixed | First-run intro asks the agent to send a 'connector card' or 'connectors prompt' it has no message type for | `desktop/source/shared/agents/onboarding.ts` |
+| F-336 | prompt-and-brief | minor | docs-wrong | confirmed | brief-text | fixed | agent-contract.md and brief-audit.md describe the LobsterAI brief and are not marked superseded | `docs/product/agent-contract.md` |
+| F-337 | prompt-and-brief | note | design-violation | confirmed | brief-text | fixed | The reconstruction's message kinds differ from the nine decided kinds | `desktop/source/host/runner/tools/send-message-schema.ts` |
+| F-338 | prompt-and-brief | minor | docs-wrong | confirmed | brief-text | fixed | 'Use poppler-utils to read PDFs' contradicts the pdf.js Read path | `desktop/source/host/runner/prompt-collector-glue.ts` |
+| F-339 | prompt-and-brief | note | design-violation | confirmed | sign-in-copy | known-limit | Dead Settings 'Routing' panel with Claude Code, Codex and an OpenRouter API-key field remains in the packager | `desktop/scripts/lib/router-renderer-patch.mjs` |
 | F-340 | permissions-and-review | blocking | design-violation | confirmed | auto-review-enforce | fixed | Auto-review can never block or draw a card: every surface is permanently in shadow mode on the box | `desktop/source/host/runner/sand-auto-review.ts` |
 | F-341 | permissions-and-review | major | spend | confirmed | auto-review-enforce | fixed | Every reviewable action pays a full classifier run whose verdict is thrown away (shadow spend) | `desktop/source/packages/agent/tools/core/shell/create-shell-tool.ts` |
 | F-342 | permissions-and-review | major | docs-wrong | confirmed | auto-review-enforce | fixed | CLAUDE.md and the 24-September gaps record present auto-review as fixed and gating; the code only logs | `CLAUDE.md` |
@@ -910,3 +910,86 @@ confirm dialog would hang the run). Needs a Mac: F-470, the Chromium
 sandbox flag (`main.ts`), which the packaged app has not been run
 without. F-479 (Composio) stays with F-160 and F-267, the founder's
 wire-or-delete decision. `desktop/tests/keys-auth-security.test.mjs`.
+
+### executor-contract (25 September 2026)
+
+Refuters: 9 of 9 chat-turn findings stand or narrow; two (F-010, F-011)
+are the dead alternative-provider family already taken as a known limit
+with F-110. The `claidor` executor was bolted onto a loop built for
+Cursor's server and never given the loop's contract back. **The 45 s
+deadline aborted the streamed body** (F-002): `claidorAuthenticatedFetch`
+put `AbortSignal.timeout` on the whole request, so a Terra step at
+effort high that ran past 45 s end to end died as "the operation was
+aborted" and was retried from scratch, against the loop's own 150 s
+first-token budget; the deadline now covers the connect and the headers
+only. **The swap to Luna on a relayed 429 was silent** (F-003): it stays
+(the founder's "no per-step router" rule is about choosing a model, and
+without the swap every 429 is a failed turn) and now writes
+`[claidor] model-fallback from=… to=… reason=…`, so the log names it.
+**No request id ever reached the loop** (F-005): `settleAiSdkStream`
+reports the provider's `response.id` through the `onRequestId` the loop
+already passes, so the transcript and the tray error carry one.
+**The model the composition projected was Cursor's `gpt-5.5-high-fast`**
+(F-006): `DEFAULT_SAND_MODEL` is `configuredClaidorModel()`. The
+model-error system-prompt line is redacted like the rest (F-012).
+`tests/prompt-and-turn.test.mjs`. Needs a Mac: a step longer than 45 s
+completing (no `aborted` retry in `/tmp/sand-host.log`), and a
+`model-fallback` line on a real 429.
+
+### child-state (25 September 2026)
+
+Refuters: 10 of 11 stand; F-022 was closed by the cloud-agents-channels
+cluster. **A Task child ran on the parent's conversation and wrote its
+checkpoint into the parent** (F-014, blocking): `buildProductionTurnRunShell`
+was per identity for the prompt and toolset since 24 September, but its
+state closures read `builtRunner` (the agent) and settled through the
+agent's store and transcript id. A child identity now carries its own
+runner (`runner: () => childRunner`), reads its own conversation state,
+and settles through `createChildTurnSettleHost` (its own transcript id,
+`agentStore: () => null` so the checkpoint lands in the child's local
+state, no mirror into the agent's transcript). That is also what the
+child-audit's cost claim depended on (F-030, record corrected): a child's
+context was the parent's whatever its prompt said. Around it: the child's
+`getAgentId` is its own (F-026); `readonly` reaches the child's prompt
+(F-027; a finished child's resume still recreates a runner, Grok Bot's
+own shape); Chrome prewarms for a computerUse child (`prepareRemoteBox`
+had no caller, F-023); the prompt glue knows the child's display and CDP
+port (`resolveBoxBrowser`, F-024) and the browserUse gate (F-028);
+CheckSubagent promises only what the child reports (F-025; its transcript
+path and tool counts are still not fed by the shell); and box
+availability is a probed boolean instead of a Promise compared to false
+(F-018, inert in production since the host runs inside the box). Needs a
+Mac: a computerUse child's `[claidor] model=` line at a few thousand
+input tokens, and its checkpoint absent from the parent's transcript.
+
+### brief-text (25 September 2026)
+
+Refuters: of 21 prompt-and-brief findings, 6 were already closed by
+earlier clusters today (F-316, F-319, F-323, F-324, F-330, F-334) and
+F-327's "a third of the prompt is dead" no longer holds (measured: 51,777
+chars for the production base with cloud agents off; the listener text is
+behind its flag). The brief is Grok Bot's text with per-feature switches,
+and what stood is exactly what never got a switch. **The Screenshot
+promise** (F-016, F-320): one value, `AGENT_SCREENSHOT_TOOL_OFFERED` in
+`system-prompt.ts`, now drives both the request (the composition's
+bisect switch) and every sentence that named the tool (the brief, the
+glue's desktop section, the box-help resume, the debugging doc); while
+it is withheld the agent is told to see the desktop through a
+computerUse child. **The founder's voice brief** (F-322) is in the prompt
+verbatim as `## Voice`, after Grok Bot's Tone. **Documents are files**
+(F-331): a `## Documents you make` section says a report, plan, deck or
+spreadsheet is a .docx/.pptx/.xlsx sent as an attachment; the docx/pptx/
+xlsx skills for the box are still a build (with F-083, F-188, F-271).
+**ExternalShell** no longer says every action raises a card (F-321);
+**watchVideo** is gone from the brief and an unknown `subagent_type` is
+refused instead of silently becoming a Luna computer-use child (F-329;
+the media-review service is Cursor's, Coming Soon); the block sentence
+says "needs their OK and why", not "Auto-review" (F-333); the intro names
+ProposeConnector (F-335); poppler is Read (F-338); the two reference docs
+describe simeon-box and the three-tab Settings (F-325, F-326; the
+Updates-tab rows still need a Mac); direction.md §2 and §3 say which
+lists exist and that no bubble stagger is built (F-008, F-009, F-337);
+agent-contract.md and brief-audit.md carry a superseded banner (F-336).
+Known limits: multitask stays on (F-328, with F-017/F-209, the founder's
+"literally everything"); the dead Routing panel and provider code stay
+with F-110/F-128 (F-339). `tests/prompt-and-turn.test.mjs`.

@@ -46,7 +46,9 @@ app sign-in describe the current tree. `docs/product/building-the-app.md`
 and `docs/product/grok-bot-layers-measured.md` are the current map.
 **`docs/product/start-here.md` is not**: it still describes the LobsterAI
 tree (`desktop/src`, "2,552 files", the 23 strongs) and was never rewritten
-after the re-founding (checked 22 September).
+after the re-founding (checked 22 September). Neither are `docs/product/agent-contract.md` and
+`docs/product/brief-audit.md`, which describe the LobsterAI brief and carry a
+superseded banner since 25 September.
 
 Two facts about the current tree that are established by build output, not
 reasoning (`docs/product/host-wall-measured.md`): **every one of the 14
@@ -366,7 +368,17 @@ waiting on a delegate. Both are wired now (the flag computed, the child
 on the subagent prompt; `tests/computer-use-child.test.mjs` measures the
 toolset and the prompt offline). The `[claidor] model=` line carries
 `offered=` (every tool in the request) and each shell logs a
-`[claidor] prompt … boxScoped=` line. Not yet run on a Mac. The transcript's third
+`[claidor] prompt … boxScoped=` line. Not yet run on a Mac. **Found 25 September (ledger F-014): every Task
+child ran on the parent's conversation state and wrote its checkpoint
+into the parent's store**, because the per-identity shell's state
+closures still read `builtRunner`; a child now owns its state
+(`createChildTurnSettleHost`), which is also why the 68,000-token child
+calls were not explained by the prompt alone. The same day the
+executor's 45 s deadline moved off the streamed body (it killed any step
+longer than 45 s and retried it), the Luna fallback on a 429 writes a
+`[claidor] model-fallback` line, and the brief follows the Screenshot
+switch (`AGENT_SCREENSHOT_TOOL_OFFERED`, `system-prompt.ts`) instead of
+promising a tool the request withholds. The transcript's third
 finding, one reply sent twice ("Nice. We're set…"), is not explained by
 the code alone: the send count is collected synchronously before the
 run settles, and the early-result reminder cannot fire in a turn with no

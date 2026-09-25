@@ -117,13 +117,13 @@ export class BoxHandoffResume {
     trigger = "button",
   ): Promise<void> {
     let prompt =
-      "[The user handed the box back to you. Please continue your task — start with the read-only Screenshot tool to see the current state of the box desktop.]";
+      "[The user handed the box back to you. Please continue your task — start by looking at the current state of the box desktop (a computerUse subagent's screenshot, or your Screenshot tool when you hold one).]";
     if (trigger === "dismissed") {
       prompt =
         "[The user dismissed your box help request without doing the step you asked for. Treat it as declined: do not assume the step happened, and do not immediately request the box again for the same step. Continue the task without it if you can — skip the step or find another way. If the task cannot proceed without it, send the user a brief message saying what is blocked, then stop and wait for their reply.]";
     } else if (trigger === "viewer-closed") {
       prompt =
-        "[The user closed the box desktop viewer without explicitly handing control back, so they may or may not have finished the step you asked for. Start with the read-only Screenshot tool to check the current state of the box desktop. If the step is clearly done, continue the task. If you can't tell, send the user a brief message asking whether they finished so you can keep going.]";
+        "[The user closed the box desktop viewer without explicitly handing control back, so they may or may not have finished the step you asked for. Start by checking the current state of the box desktop (a computerUse subagent's screenshot, or your Screenshot tool when you hold one). If the step is clearly done, continue the task. If you can't tell, send the user a brief message asking whether they finished so you can keep going.]";
     }
     await this.resumeWithHiddenPrompt(
       agentId,
