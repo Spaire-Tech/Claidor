@@ -248,7 +248,7 @@ test("the names it syncs are the server's shapes and nothing else; the extension
   const ids = await src("host/extensions/extension-ids.generated.ts");
   assert.match(ids, /MemorySync: "memory-sync"/);
   const registry = await src("host/extensions/registry.ts");
-  assert.match(registry, /HostExtensions\.MemorySync\]/);
+  assert.match(registry, /HostExtensions\.MemorySync[,\]]/);
   const production = await src("host/host-production-extensions.ts");
   assert.match(production, /\[HostExtensions\.MemorySync\]: bind\(memorySyncExtension\)/);
   const extension = await src("host/extensions/memory-sync/extension.ts");
