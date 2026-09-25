@@ -112,6 +112,7 @@ export function buildExtractionSystemPrompt(): string {
     '- "note": minor, low-stakes details that might help someday but are not worth keeping in mind every turn (small one-off preferences, incidental context). Notes fade from the always-visible list fastest but stay on disk.',
     "",
     "Do NOT record one-off request mechanics, what the assistant did this turn, general knowledge, or anything already present in the existing memory list.",
+    "Never record a secret: no password, API key, token, credential, card number or one-time code, even if the user pasted one. You may note that a service is connected, never the value that connects it.",
     "",
     'If the new exchange updates or contradicts a fact in the existing memory list (e.g. the user moved, changed jobs, or renamed something), drop anything clearly superseded: output a line "remove: <the exact existing fact text>" and then add the corrected fact. Only remove facts that appear verbatim in the existing list \u2014 never invent removals.',
     "",

@@ -30,6 +30,15 @@ the token limit, or 10,000 tokens from it
 | --- | --- | --- |
 | the agent loop | Terra | **high** (was: not set, so OpenAI's default) |
 | summarization, memory, group chat | Luna | **low** (was: not set) |
+
+**Memory, corrected 25 September 2026.** Until that day no memory role
+ran at all: the production shell handed the settle no memory store, so
+extraction never fired, and had it fired it would have used the agent's
+own Terra/high session. Since `tests/memory-wired.test.mjs` the
+extraction runs on a hidden summarization session on Luna at low, and
+writes a `[claidor] memory extraction` line. Dreaming (synthesis) stays
+gated off (`sand_memory_dreaming`), because turning it on switches the
+legacy extraction off.
 | computer-use and browser-use subagents | Luna | **low** (was: not set) |
 | done or continue | Grok Bot's mechanism, unchanged since the 22 September decision | — |
 | risky or safe | left alone; Cursor's classifier cannot answer on Claidor, so auto-review is effectively off | — |

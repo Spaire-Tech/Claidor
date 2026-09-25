@@ -42,7 +42,7 @@ until its row says so. Columns:
 | F-016 | agents-and-subagents | major | design-violation | unverified | - | - | The agent's prompt says it holds the Screenshot tool while AGENT_SCREENSHOT_TOOL = false withholds it (the blindness failure, undeclared) | `desktop/source/host/host-runner-composition.ts` |
 | F-017 | agents-and-subagents | major | unwired | unverified | - | - | The executor subagent is on by default (sand_multitask default true) and an executor child's ExternalShell/ExternalRead can never be allowed: no permission surface exists for the child's id | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
 | F-018 | agents-and-subagents | major | design-violation | unverified | - | - | getRemoteBoxAvailable compares a Promise to false and is always true, so box tools and computerUse are offered with Docker off | `desktop/source/host/host-runner-composition.ts` |
-| F-019 | agents-and-subagents | major | unwired | unverified | - | - | Grok Bot's per-turn memory extraction and episode summaries never run: the shell adapter host has no memoryStore | `desktop/source/host/runner/production-turn-run-shell-adapter.ts` |
+| F-019 | agents-and-subagents | major | unwired | confirmed | memory | fixed | Grok Bot's per-turn memory extraction and episode summaries never run: the shell adapter host has no memoryStore | `desktop/source/host/runner/production-turn-run-shell-adapter.ts` |
 | F-020 | agents-and-subagents | minor | unwired | confirmed | hidden-turn-cap | fixed | The closing-send nudge can never fire: onLatestPromptMessages is not passed, so latestPromptMessages() is always [] | `desktop/source/host/host-runner-composition.ts` |
 | F-021 | agents-and-subagents | minor | unwired | unverified | - | - | Subagent launch auto-review and MessageSubagent steer review are not wired on the production path | `desktop/source/host/runner/turn-agent-composition.ts` |
 | F-022 | agents-and-subagents | minor | dead-service | unverified | - | - | The agent is offered the CloudAgent tool and the cloud-agents-enabled brief although cloud agents are known-unserved | `desktop/source/host/runner/system-prompt.ts` |
@@ -82,23 +82,23 @@ until its row says so. Columns:
 | F-056 | workflows-channels-listeners | note | design-violation | unverified | - | - | Two different CONNECTOR_MANIFESTS lists (discord/slack vs slack/github) feed the prompt and the Mac channels view | `desktop/source/shared/channels.ts` |
 | F-057 | workflows-channels-listeners | note | design-violation | unverified | - | - | The Mac gateway accepts a channel token typed by the person (connectChannel) | `desktop/source/host/extensions/transcript/transcript-manager.ts` |
 | F-058 | workflows-channels-listeners | note | spend | unverified | - | - | With any listener routine saved, the box POSTs to two unserved endpoints every 30 s for ever | `desktop/source/host/extensions/automations/backend-relay-source.ts` |
-| F-059 | memory | blocking | unwired | unverified | - | - | Post-turn memory extraction never runs: the production turn shell hands the settle no memoryStore | `desktop/source/host/runner/production-turn-run-shell-adapter.ts` |
-| F-060 | memory | blocking | unwired | unverified | - | - | Even with a store, the legacy extraction arm can never fire: isMemorableExchange is defined and never passed | `desktop/source/host/runner/turn-settle.ts` |
-| F-061 | memory | major | unwired | unverified | - | - | Memory synthesis ('dreaming') is gated off and its gate pin can never fire under Simeon | `desktop/source/host/extensions/memory/extension.ts` |
-| F-062 | memory | blocking | unwired | unverified | - | - | User memory and project memory are never built: the memory extension has no createUserMemory/createProjectMemory | `desktop/source/host/host-runner-composition.ts` |
-| F-063 | memory | major | unwired | unverified | - | - | Deleting one memory from the pane never deletes: argument key mismatch (memoryId vs id) | `desktop/source/host/extensions/transcript/transcript-manager.ts` |
-| F-064 | memory | major | unwired | unverified | - | - | Memory list/delete/clear have no route from the Mac, and the host's 'memory' SSE channel is dropped by the coordinator | `desktop/source/host/gateway-protocol.ts` |
-| F-065 | memory | major | docs-wrong | unverified | - | - | Memory sync to Simeon Labs' server is served, never called, and could not accept the app's memory files if it were | `server/polar/desktop/endpoints.py` |
-| F-066 | memory | major | design-violation | unverified | - | - | If memory extraction ran, it would run on the loop model at high effort with the reply-reminder middlewares, not Luna at low | `desktop/source/host/host-runner-composition.ts` |
-| F-067 | memory | major | design-violation | unverified | - | - | An agent's own update_state memory write does not reach its prompt until a compaction, which needs ~180k tokens | `desktop/source/host/runner/sand-memory.ts` |
-| F-068 | memory | minor | naming | unverified | - | - | Two note prefixes: update_state's 'note' tier is never recognised as a note | `desktop/source/host/extensions/memory/agent-state.ts` |
-| F-069 | memory | minor | unwired | unverified | - | - | MemoryService.setActiveAgent is called with an object where a string is expected, so it emits on every watch | `desktop/source/host/extensions/transcript/run-lifecycle.ts` |
-| F-070 | memory | minor | risk | unverified | - | - | Deleting an agent leaves its user-memory and project-memory shards behind | `desktop/source/host/extensions/session/agent-session.ts` |
-| F-071 | memory | minor | risk | unverified | - | - | The legacy extraction prompt has no rule against recording secrets or credentials | `desktop/source/host/runner/sand-memory.ts` |
-| F-072 | memory | note | unmeasured | unverified | - | - | Nothing in the memory path writes a [claidor] log line; synthesis telemetry goes to an unserved Cursor sink | `desktop/source/host/extensions/memory/production.ts` |
-| F-073 | memory | note | spend | unverified | - | - | If dreaming is ever switched on: two model calls per synthesis plus a daily temporal review per agent, retried up to 3 times | `desktop/source/host/extensions/memory/memory-synthesis-service.ts` |
-| F-074 | memory | note | unwired | unverified | - | - | MEMORY_UI_LIMIT and the user/project prompt limits are defined and never used; the pane list is capped at 100 | `desktop/source/host/runner/sand-memory.ts` |
-| F-075 | memory | minor | docs-wrong | unverified | - | - | model-roles-measured.md's memory row is wrong today: no memory role runs, and the one that could would be Terra/high | `docs/product/model-roles-measured.md` |
+| F-059 | memory | blocking | unwired | confirmed | memory | fixed | Post-turn memory extraction never runs: the production turn shell hands the settle no memoryStore | `desktop/source/host/runner/production-turn-run-shell-adapter.ts` |
+| F-060 | memory | blocking | unwired | confirmed | memory | fixed | Even with a store, the legacy extraction arm can never fire: isMemorableExchange is defined and never passed | `desktop/source/host/runner/turn-settle.ts` |
+| F-061 | memory | major | unwired | confirmed | memory | known-limit | Memory synthesis ('dreaming') is gated off and its gate pin can never fire under Simeon | `desktop/source/host/extensions/memory/extension.ts` |
+| F-062 | memory | blocking | unwired | confirmed | memory | fixed | User memory and project memory are never built: the memory extension has no createUserMemory/createProjectMemory | `desktop/source/host/host-runner-composition.ts` |
+| F-063 | memory | major | unwired | confirmed | memory | fixed | Deleting one memory from the pane never deletes: argument key mismatch (memoryId vs id) | `desktop/source/host/extensions/transcript/transcript-manager.ts` |
+| F-064 | memory | major | unwired | confirmed | memory | needs-mac | Memory list/delete/clear have no route from the Mac, and the host's 'memory' SSE channel is dropped by the coordinator | `desktop/source/host/gateway-protocol.ts` |
+| F-065 | memory | major | docs-wrong | confirmed | memory-sync | - | Memory sync to Simeon Labs' server is served, never called, and could not accept the app's memory files if it were | `server/polar/desktop/endpoints.py` |
+| F-066 | memory | major | design-violation | confirmed | memory | fixed | If memory extraction ran, it would run on the loop model at high effort with the reply-reminder middlewares, not Luna at low | `desktop/source/host/host-runner-composition.ts` |
+| F-067 | memory | major | design-violation | confirmed | memory | fixed | An agent's own update_state memory write does not reach its prompt until a compaction, which needs ~180k tokens | `desktop/source/host/runner/sand-memory.ts` |
+| F-068 | memory | minor | naming | confirmed | memory | fixed | Two note prefixes: update_state's 'note' tier is never recognised as a note | `desktop/source/host/extensions/memory/agent-state.ts` |
+| F-069 | memory | minor | unwired | confirmed | memory | fixed | MemoryService.setActiveAgent is called with an object where a string is expected, so it emits on every watch | `desktop/source/host/extensions/transcript/run-lifecycle.ts` |
+| F-070 | memory | minor | risk | confirmed | memory | known-limit | Deleting an agent leaves its user-memory and project-memory shards behind | `desktop/source/host/extensions/session/agent-session.ts` |
+| F-071 | memory | minor | risk | confirmed | memory | fixed | The legacy extraction prompt has no rule against recording secrets or credentials | `desktop/source/host/runner/sand-memory.ts` |
+| F-072 | memory | note | unmeasured | confirmed | memory | fixed | Nothing in the memory path writes a [claidor] log line; synthesis telemetry goes to an unserved Cursor sink | `desktop/source/host/extensions/memory/production.ts` |
+| F-073 | memory | note | spend | confirmed | memory | known-limit | If dreaming is ever switched on: two model calls per synthesis plus a daily temporal review per agent, retried up to 3 times | `desktop/source/host/extensions/memory/memory-synthesis-service.ts` |
+| F-074 | memory | note | unwired | confirmed | memory | fixed | MEMORY_UI_LIMIT and the user/project prompt limits are defined and never used; the pane list is capped at 100 | `desktop/source/host/runner/sand-memory.ts` |
+| F-075 | memory | minor | docs-wrong | confirmed | memory | fixed | model-roles-measured.md's memory row is wrong today: no memory role runs, and the one that could would be Terra/high | `docs/product/model-roles-measured.md` |
 | F-076 | cards-and-widgets | blocking | unwired | unverified | - | - | request_box_help (box hand-off card) is never on the production toolset | `desktop/source/host/runner/tools/turn-toolset.ts` |
 | F-077 | cards-and-widgets | major | spend | unverified | - | - | Auto-review runs in shadow: a Luna call per Shell/Computer action, never an approval card | `desktop/source/host/extensions/auto-review/auto-review-service.ts` |
 | F-078 | cards-and-widgets | major | naming | unverified | - | - | The agent's brief and box reference docs say Claidor and Cursor | `desktop/source/host/runner/system-prompt.ts` |
@@ -154,7 +154,7 @@ until its row says so. Columns:
 | F-128 | models-and-spend | note | dead-service | unverified | - | - | Dead providers (codex, claude-code, openrouter) and the Router panel: unreachable, but still shipped as code, SDK and strings | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-129 | models-and-spend | minor | docs-wrong | unverified | - | - | Four capability prices are live and metering although pricing.py says nobody should be charged against them yet | `server/polar/desktop/pricing.py` |
 | F-130 | models-and-spend | minor | design-violation | unverified | - | - | Usage tab: monthly allowance under a 'Weekly usage' label; picker shows a 1.05M context while the loop compacts at 200k | `desktop/source/electron-main/account/cursor-profile.ts` |
-| F-131 | models-and-spend | note | hardcoded | unverified | - | - | Machinery sessions still request Cursor model ids that are silently remapped | `desktop/source/host/extensions/memory/production.ts` |
+| F-131 | models-and-spend | note | hardcoded | refuted | memory | known-limit | Machinery sessions still request Cursor model ids that are silently remapped | `desktop/source/host/extensions/memory/production.ts` |
 | F-132 | models-and-spend | note | naming | unverified | - | - | A Cursor pricing link survives in error actions | `desktop/source/host/extensions/transcript/agent-run-error.ts` |
 | F-133 | models-and-spend | note | spend | unverified | - | - | The escape-hatch coordinator turn and group-chat turns run with no model-call budget | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-134 | box-and-computer | major | risk | unverified | - | - | Box exec daemon on 127.0.0.1:1337 with static bearer "local"; any local process can run commands in the box and read the account token | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
@@ -269,13 +269,13 @@ until its row says so. Columns:
 | F-243 | speech-and-media | minor | naming | unverified | - | - | A profile without a name is called 'Grok' by the host | `desktop/source/host/extensions/session/session-summaries.ts` |
 | F-244 | speech-and-media | minor | risk | unverified | - | - | sand-media:// serves any local audio or video file on disk | `desktop/source/electron-main/media/media-protocol.ts` |
 | F-245 | speech-and-media | note | docs-wrong | unverified | - | - | Dead Cursor-era strings and branches remain inside the GenerateImage tool | `desktop/source/packages/agent/tools/core/generate-image.ts` |
-| F-246 | speech-and-media | note | naming | unverified | - | - | Summarization model constant is named gemini-2.5-flash | `desktop/source/shared/agents/sand-agent-model.ts` |
+| F-246 | speech-and-media | note | naming | refuted | memory | known-limit | Summarization model constant is named gemini-2.5-flash | `desktop/source/shared/agents/sand-agent-model.ts` |
 | F-247 | speech-and-media | note | risk | unverified | - | - | Token refresh falls back to api2.cursor.sh when neither backend variable is set | `desktop/source/electron-main/account/cursor-auth.ts` |
 | F-248 | server-desktop-api | major | naming | unverified | - | - | Sign-in confirmation page still says Caisra | `server/polar/desktop/app_sign_in.py` |
 | F-249 | server-desktop-api | minor | naming | unverified | - | - | App-side user-facing strings and tool descriptions still say Claidor | `desktop/source/electron-main/account/cursor-auth.ts` |
 | F-250 | server-desktop-api | minor | naming | unverified | - | - | The agent's brief still names cursor.com | `desktop/source/host/runner/system-prompt.ts` |
 | F-251 | server-desktop-api | major | unwired | unverified | - | - | Host asks Cursor's GetMe for the person's name; the served profile route is never used for it | `desktop/source/host/extensions/auth/user-full-name-service.ts` |
-| F-252 | server-desktop-api | major | unwired | unverified | - | - | Memory sync is served and nothing feeds it; memory lives only in the box's Docker volume | `server/polar/desktop/endpoints.py` |
+| F-252 | server-desktop-api | major | unwired | confirmed | memory-sync | - | Memory sync is served and nothing feeds it; memory lives only in the box's Docker volume | `server/polar/desktop/endpoints.py` |
 | F-253 | server-desktop-api | minor | dead-service | unverified | - | - | About twenty LobsterAI-era routes, a vendored skills tree and their tests serve a client that no longer exists | `server/polar/desktop/endpoints.py` |
 | F-254 | server-desktop-api | minor | dead-service | unverified | - | - | Pipedream connector routes and four Render secrets remain for a superseded integration | `server/polar/desktop/endpoints.py` |
 | F-255 | server-desktop-api | minor | dead-service | unverified | - | - | Every Connect RPC the app still makes goes to api.simeonlabs.com and 404s, on both Mac and box, with telemetry on in the box | `desktop/source/shared/node/cursor-backend/cursor-inference.ts` |
@@ -355,7 +355,7 @@ until its row says so. Columns:
 | F-329 | prompt-and-brief | minor | unwired | unverified | - | - | watchVideo / videoReview subagents are instructed but never offered | `desktop/source/host/runner/system-prompt.ts` |
 | F-330 | prompt-and-brief | major | design-violation | unverified | - | - | Plugin/MCP tool descriptions tell the agent to ask the user for API keys in chat | `desktop/source/host/runner/tools/sand-mcp-management-tools.ts` |
 | F-331 | prompt-and-brief | major | design-violation | unverified | - | - | No brief section decides documents-as-files; docx/xlsx/pptx are never named | `desktop/source/host/runner/system-prompt.ts` |
-| F-332 | prompt-and-brief | minor | design-violation | unverified | - | - | Subagent prompts still carry the agent's profile, memory and routines sections and name update_state they cannot call | `desktop/source/host/runner/system-prompt-assembly.ts` |
+| F-332 | prompt-and-brief | minor | design-violation | refuted | memory | known-limit | Subagent prompts still carry the agent's profile, memory and routines sections and name update_state they cannot call | `desktop/source/host/runner/system-prompt-assembly.ts` |
 | F-333 | prompt-and-brief | minor | design-violation | unverified | - | - | The brief tells the agent to name Auto-review and the block reason to the user | `desktop/source/host/runner/system-prompt.ts` |
 | F-334 | prompt-and-brief | minor | docs-wrong | unverified | - | - | Prompt says only remote http/sse MCP servers are supported, executed on the backend | `desktop/source/host/runner/tools/sand-mcp-management-tools.ts` |
 | F-335 | prompt-and-brief | minor | unwired | unverified | - | - | First-run intro asks the agent to send a 'connector card' or 'connectors prompt' it has no message type for | `desktop/source/shared/agents/onboarding.ts` |
@@ -381,7 +381,7 @@ until its row says so. Columns:
 | F-355 | data-and-persistence | major | docs-wrong | unverified | - | - | Copied Grok Bot user-data folder cannot be decrypted after the rename; 'nobody signs in again' is unproven and likely false | `desktop/source/electron-main/startup/desktop-user-data-bootstrap.ts` |
 | F-356 | data-and-persistence | major | risk | unverified | - | - | Startup data-root migration renames the real Grok Bot's ~/.cursor/sand into ~/.caisra | `desktop/source/electron-main/startup/startup-data-root-migration.ts` |
 | F-357 | data-and-persistence | major | risk | unverified | - | - | Every app build force-removes the box container; only two volumes survive, so box browser logins and installs are wiped on each update | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-358 | data-and-persistence | major | unwired | unverified | - | - | Memory is never synced to Simeon Labs' server; it lives only in the box's Docker volume | `server/polar/desktop/endpoints.py` |
+| F-358 | data-and-persistence | major | unwired | confirmed | memory-sync | - | Memory is never synced to Simeon Labs' server; it lives only in the box's Docker volume | `server/polar/desktop/endpoints.py` |
 | F-359 | data-and-persistence | major | risk | unverified | - | - | Plaintext OAuth and channel credentials sit in the box data root, which is aliased into the model-visible /home/box/agent-data | `desktop/source/host/host-paths.ts` |
 | F-360 | data-and-persistence | major | risk | unverified | - | - | settings.json is read-modify-written by several processes with no lock and a fixed per-pid temp name | `desktop/source/shared/node/settings/sand-settings-store.ts` |
 | F-361 | data-and-persistence | minor | risk | unverified | - | - | A corrupt or version-mismatched settings.json is silently replaced by defaults | `desktop/source/shared/node/settings/sand-settings-store.ts` |
@@ -529,3 +529,41 @@ spend-guards.md). Fixed: `hidden` forwarded to the owner input;
 shell; the `[claidor] model=` line ends with `budget=<limit>` and
 `hidden=true` on a hidden turn. Needs a Mac: a nudge or intro line
 reading `budget=40 hidden=true`.
+
+### memory (25 September 2026)
+
+Root: the production shell's host carried no `memoryStore`,
+`episodeProgress` or `isMemorableExchange`, so `shouldRemember` was false
+on every turn and nothing was ever remembered from conversation; and the
+memory extension had no `createUserMemory`/`createProjectMemory`, so the
+user's and the projects' shared shards were written by `UpdateState` and
+never read. Refuters, one pass of three lenses per finding: F-019, F-059,
+F-060, F-062, F-063, F-064, F-066, F-067, F-068, F-069, F-071, F-072,
+F-073, F-074, F-075 stand; F-061 stands (dreaming's gate pin needs
+Cursor's Statsig bootstrap; reachable by `SAND_FEATURE_GATE_OVERRIDES`,
+but synthesis and legacy extraction are mutually exclusive in
+`turn-settle`, so turning it on switches extraction off: a founder
+decision, v1 keeps Grok Bot's legacy extraction, known limit); F-070
+stands on evidence, design refutes the framing (a user fact recorded by
+a since-deleted agent is still a user fact; the real defect is its
+provenance name, a decision, not an `rm`); F-131 and F-246 refuted
+(dead constants; the provider drops the id and runs Luna); F-332 refuted
+(Grok Bot's own assembly; a child now reads the subagent prompt).
+F-065, F-252 and F-358 are one item, memory sync to Simeon Labs' server:
+a server contract change plus a box extension, no producer, moved to
+their own cluster `memory-sync` for the founder to decide. Fixed: the
+adapter forwards the three memory deps and the composition passes them
+for the agent's own shell (a child never writes into the agent's
+memory); the settle's executor is a hidden summarization session on
+Luna, not the agent's Terra/high session; `shared-memory.ts` reads the
+user and project shards with provenance and the extension serves both
+factories; `deleteAgentMemory` looks the memory up by `id`; the
+coordinator's method table carries the three memory rows and the
+`memory` SSE family; a memory change clears the frozen prompt snapshot;
+one note prefix; `setActiveAgent(session.id)`; a secrets rule in the
+extraction prompt; the assembly reads its limits from the constants; a
+`[claidor] memory extraction added=N removed=M` (or `failed <reason>`)
+line per memorable turn. `tests/memory-wired.test.mjs` measures it
+offline. Needs a Mac: that line in `/tmp/sand-host.log` after a turn
+that says something worth remembering, and whether the pinned renderer's
+memory pane lists, deletes and clears through the new rows (F-064).

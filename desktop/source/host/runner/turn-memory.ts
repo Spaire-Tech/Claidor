@@ -1,3 +1,4 @@
+import { clipForHostLog, HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
 import {
   applyExtractedMemories,
   extractMemories,
@@ -107,8 +108,12 @@ export async function runMemoryExtraction(
       agentMessage: exchange.agent,
       existingMemories,
     });
-    applyExtractedMemories(memoryStore, extraction, Date.now(), existingMemories);
-  } catch {
+    const applied = applyExtractedMemories(memoryStore, extraction, Date.now(), existingMemories);
+    // The one line that says memory ran, on the channel that reaches
+    // /tmp/sand-host.log (design-audit-ledger.md F-072).
+    logHostLine(`${HOST_LOG_PREFIX} memory extraction added=${applied.added.length} removed=${applied.removed.length}`);
+  } catch (error) {
+    logHostLine(`${HOST_LOG_PREFIX} memory extraction failed ${clipForHostLog(error instanceof Error ? error.message : String(error))}`);
     // Extraction is opportunistic and does not participate in turn settlement.
   }
 }

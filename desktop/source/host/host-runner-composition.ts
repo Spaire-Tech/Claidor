@@ -115,6 +115,8 @@ import {
 import {
   createProductionTurnRunShellHostInput,
 } from "./runner/production-turn-run-shell-adapter.js";
+import type { TurnRunShellHost } from "./runner/turn-run-shell.js";
+import { SAND_SUMMARIZATION_MODEL_ID } from "../shared/agents/sand-agent-model.js";
 import {
   createPromptCollectorGlue,
   type PromptCollectorHost,
@@ -159,7 +161,7 @@ import type {
   TurnToolsetTurnInput,
 } from "./runner/tools/turn-toolset.js";
 import type { TurnCheckpoint, TurnSettleHost } from "./runner/turn-settle.js";
-import type { TextExecutor } from "./runner/sand-memory.js";
+import { isMemorableExchange, type TextExecutor } from "./runner/sand-memory.js";
 import type { RunnerPromptGlueOwner } from "./runner/runner-prompt-glue.js";
 import type { TransferBox } from "./box/box-transfer.js";
 import type { CapableBox } from "./box/box-capabilities.js";
@@ -2840,11 +2842,34 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           : {}),
         createSession: owner => ({
           getModelId: () => owner.runContext.sessions.agent.getModelId(),
-          getExecutor: () => createTextExecutor(owner.runContext.toolSession.getExecutor()),
+          // The settle's only use of this executor is memory extraction and
+          // the episode narrative, which the model-roles table puts on the
+          // cheap model at low effort, built the way the memory extension
+          // builds its own synthesis session (memory/production.ts). Until 25
+          // September 2026 this was the agent's own tool session, Terra at
+          // high with the reply-reminder middlewares (F-066).
+          getExecutor: () => createTextExecutor(
+            extensions.api("inference").port.createSession(() => {}, {
+              modelId: SAND_SUMMARIZATION_MODEL_ID,
+              isSummarizationSession: true,
+              skipLabeling: true,
+              // Nobody asked for the extraction: the hidden budget applies.
+              hidden: true,
+            }).getExecutor(),
+          ),
         }),
         context: () => productionContext,
         createSettleHost: createProductionTurnSettleHost,
         profilePromptSnapshots: () => session.db,
+        // Memory from conversation, for the agent's own shell only: a child
+        // runs headless and must not write into the agent's memory.
+        ...(identity.isSubagentRunner
+          ? {}
+          : {
+              memoryStore: () => (session.memory ?? undefined) as ReturnType<NonNullable<TurnRunShellHost["memoryStore"]>>,
+              episodeProgress: () => session.db as ReturnType<NonNullable<TurnRunShellHost["episodeProgress"]>>,
+              isMemorableExchange,
+            }),
         isSubagentRunner: identity.isSubagentRunner,
         subagents: { sessions: new Map() },
         getConversationId: () => identity.conversationId,
@@ -2878,6 +2903,13 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
     function bindSessionOwnedRunner(runner: Runner): void {
       runner.setAgentStore(session.agentStore, hooks.agentProfileProvider);
       runner.setMemoryStore(session.memory);
+      // A memory change thaws the frozen memory section of the prompt, the
+      // way the pane's delete already does; until 25 September 2026 a fact
+      // the agent saved stayed out of its own memory section until the next
+      // compaction (design-audit-ledger.md F-067).
+      (session.memory as { setOnChange?: (listener: (() => void) | null) => void } | null)?.setOnChange?.(() => {
+        (session.db as { clearMemoryPromptSnapshot?: () => void } | null)?.clearMemoryPromptSnapshot?.();
+      });
       runner.setUserMemory(runnerOptions.userMemory);
       runner.setProjectMemory(runnerOptions.projectMemory);
       runner.setMemorySnapshotStore(session.db);
