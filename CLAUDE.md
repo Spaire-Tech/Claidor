@@ -639,7 +639,9 @@ nothing). It is a finished pipe with nothing plugged into the input.
 **Corrected 25 September 2026:** routines *can* be created (`update_state`,
 target `routine`, writes `automation.json`) and cron ones fire from the box
 while Simeon is open; none fires with the Mac asleep or off because nothing produces a maty
-job. **Since 25 September 2026 the box outlives the app**: the founder's word
+job. **Corrected again the same evening:** something does now — a cloud
+agent's launch (`polar/sand/cloud_agents.py`) creates one `MatyJob` per
+turn, so the queue has an input; routines still do not go through it. **Since 25 September 2026 the box outlives the app**: the founder's word
 ("the Mac can be awake while the app itself is closed. The routine should
 still execute. The spend concern should be handled by the routine/box
 lifecycle"), so quitting Simeon keeps the local Docker box running when an
@@ -739,7 +741,8 @@ avatar and name (`GetMe`), reading a PDF (no worker bound), auto-review
 (classifier not served, rejects), custom MCP servers and account plugins
 (writes throw), Send Feedback, Help Center and "open cloud agent" links,
 and everything on the cloud box, cloud agents, listeners and sharing. Not
-yet run on a Mac.
+yet run on a Mac. (Cloud agents and the "open cloud agent" link: served
+since 25 September, evening; see the paragraph below.)
 
 **Fixed later the same day, "directly from the reconstruction"** (the
 founder: "i need you to fix all of this"): each fix keeps the function
@@ -764,11 +767,35 @@ built for its own identity; the per-turn MCP snapshot is real; the
 connector card's cancel works; host diagnostics reach the log; and
 custom MCP servers and account plugins live in a store on the Mac
 (paragraph above). Still not done, because the services behind them do
-not exist: cloud boxes, cloud agents, Slack and GitHub listeners,
+not exist: cloud boxes, Slack and GitHub listeners,
 sharing, and Cursor's feature-gate server (gates keep their bundled
 defaults; `sand_usage_page` is the one we set). None of this has run on
 a Mac. `docs/product/reconstruction-gaps-2026-09-24.md` §"Fixed the same
 day" has the per-item file list.
+
+**Cloud agents are served, 25 September 2026, evening.** The app's
+whole client was already there (the CloudAgent tool's thirteen actions,
+`SandCloudAgentManager`, the poll loop, the `cursor-agent` card); what
+it lacked was Cursor's `BackgroundComposerService`. Simeon Labs' server
+now serves its sixteen methods and `AiService/AvailableModels` at the
+root of the API host (`server/polar/sand/cloud_agents.py`) as a
+projection over the maty queue: a cloud agent is a `sand_cloud_agents`
+row over one `MatyJob` per turn, run by the Render runner (memory in,
+one model call over the conversation, the reply written back as the
+turn's message); a follow-up is a continuation job, a pause sets
+`cancel_requested` on the heartbeat's answer and the runner stops, and
+branch, PR and diff stay empty until a coding executor plugs into
+`runner/src/executor.ts`'s `Executor` seam. The brief says so ("never
+promise a PR") and `openCloudAgent` opens
+`app.simeonlabs.com/agents/<bcId>`, a page that is not built (needs-web).
+Two things found by running the client: the Connect transport sent
+binary protobuf (connect-node's default) which `polar/sand/connect.py`
+cannot read — `createSandBackendTransport` now passes
+`useBinaryFormat: false`, which every Connect service of ours depends on
+— and the reconstruction's enum fields carried strings the JSON codec
+refuses. `docs/product/cloud-agents-served.md` is the record, with the
+three lines to read on a Mac; nothing has run on one, and whether
+`claidor-maty-runner` is deployed on Render is not known from here.
 
 **Changing an agent's avatar, audited and fixed 24 September 2026, night.**
 "upload and image generation none of them work." Both flows were wired

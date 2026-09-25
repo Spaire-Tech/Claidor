@@ -30,7 +30,7 @@ until its row says so. Columns:
 | F-004 | chat-turn | minor | dead-service | confirmed | dead-cursor-services | fixed | Every turn and every nudge first calls Cursor's GetUserPrivacyMode Connect RPC against api.simeonlabs.com, which is not served | `desktop/source/host/runner/turn-run-shell.ts` |
 | F-005 | chat-turn | minor | unwired | confirmed | executor-contract | fixed | The claidor executor never reports a request id, so the transcript, tray errors and telemetry carry none | `desktop/source/host/host-runner-composition.ts` |
 | F-006 | chat-turn | note | hardcoded | confirmed | executor-contract | fixed | The Agent is configured with model id 'gpt-5.5-high-fast' while the wire runs gpt-5.6-terra | `desktop/source/host/host-runner-composition.ts` |
-| F-007 | chat-turn | minor | design-violation | confirmed | cloud-agents-channels | coming-soon | The agent's prompt still offers cloud agents (`cursor-agent` cards, 'launching a cloud agent') and channel delivery, both unserved, with no explanation | `desktop/source/host/runner/tools/send-message-schema.ts` |
+| F-007 | chat-turn | minor | design-violation | confirmed | cloud-agents-channels | needs-mac | The agent's prompt still offers cloud agents (`cursor-agent` cards, 'launching a cloud agent') and channel delivery, both unserved, with no explanation — cloud agents served 25 September (`cloud-agents-served.md`); channel delivery stays coming-soon | `desktop/source/host/runner/tools/send-message-schema.ts` |
 | F-008 | chat-turn | minor | docs-wrong | confirmed | brief-text | fixed | Text does not arrive 'as texts': no split into up to three bubbles one second apart (BUBBLE_GAP_MS) | `docs/product/direction.md` |
 | F-009 | chat-turn | note | docs-wrong | confirmed | brief-text | fixed | direction.md's 'nine kinds, list closed' is contradicted by the host's fourteen SendMessage/transport kinds | `desktop/source/host/runner/tools/send-message-encoding.ts` |
 | F-010 | chat-turn | minor | design-violation | confirmed | sign-in-copy | known-limit | SAND_CLAIDOR_FULL_AGENT=off hatch is live, env-only, and still ships the audited flaws plus a 'Router error:' bubble and a Codex/Claude Code-flavoured prompt | `desktop/source/shared/inference-router.ts` |
@@ -45,7 +45,7 @@ until its row says so. Columns:
 | F-019 | agents-and-subagents | major | unwired | confirmed | memory | fixed | Grok Bot's per-turn memory extraction and episode summaries never run: the shell adapter host has no memoryStore | `desktop/source/host/runner/production-turn-run-shell-adapter.ts` |
 | F-020 | agents-and-subagents | minor | unwired | confirmed | hidden-turn-cap | fixed | The closing-send nudge can never fire: onLatestPromptMessages is not passed, so latestPromptMessages() is always [] | `desktop/source/host/host-runner-composition.ts` |
 | F-021 | agents-and-subagents | minor | unwired | confirmed | auto-review-enforce | fixed | Subagent launch auto-review and MessageSubagent steer review are not wired on the production path | `desktop/source/host/runner/turn-agent-composition.ts` |
-| F-022 | agents-and-subagents | minor | dead-service | refuted | cloud-agents-channels | coming-soon | The agent is offered the CloudAgent tool and the cloud-agents-enabled brief although cloud agents are known-unserved | `desktop/source/host/runner/system-prompt.ts` |
+| F-022 | agents-and-subagents | minor | dead-service | refuted | cloud-agents-channels | needs-mac | The agent is offered the CloudAgent tool and the cloud-agents-enabled brief although cloud agents are known-unserved — served 25 September, brief says Simeon (`cloud-agents-served.md`) | `desktop/source/host/runner/system-prompt.ts` |
 | F-023 | agents-and-subagents | minor | unwired | confirmed | child-state | fixed | Chrome prewarm (prepareRemoteBox) has no caller; the child's prompt says it happens | `desktop/source/host/runner/computer-use.ts` |
 | F-024 | agents-and-subagents | minor | unwired | confirmed | child-state | fixed | resolveBoxBrowser and getBoxWindowIndex are not supplied, so the child is told to `echo $DISPLAY` although the local box's window index is known | `desktop/source/host/runner/runner-prompt-glue.ts` |
 | F-025 | agents-and-subagents | minor | unwired | confirmed | child-state | fixed | CheckSubagent promises a transcript path and tool-call counts the production child cannot provide | `desktop/source/host/runner/sand-agent-runner.ts` |
@@ -102,7 +102,7 @@ until its row says so. Columns:
 | F-076 | cards-and-widgets | blocking | unwired | confirmed | box-handoff | fixed | request_box_help (box hand-off card) is never on the production toolset | `desktop/source/host/runner/tools/turn-toolset.ts` |
 | F-077 | cards-and-widgets | major | spend | refuted | auto-review-enforce | fixed | Auto-review runs in shadow: a Luna call per Shell/Computer action, never an approval card | `desktop/source/host/extensions/auto-review/auto-review-service.ts` |
 | F-078 | cards-and-widgets | major | naming | confirmed | sign-in-copy | fixed | The agent's brief and box reference docs say Claidor and Cursor | `desktop/source/host/runner/system-prompt.ts` |
-| F-079 | cards-and-widgets | major | dead-service | refuted | cloud-agents-channels | coming-soon | The brief orders repository work to CloudAgent and offers the cursor-agent card, though cloud agents are unserved | `desktop/source/host/runner/system-prompt.ts` |
+| F-079 | cards-and-widgets | major | dead-service | refuted | cloud-agents-channels | needs-mac | The brief orders repository work to CloudAgent and offers the cursor-agent card, though cloud agents are unserved — served 25 September; the brief no longer promises a PR (`cloud-agents-served.md`) | `desktop/source/host/runner/system-prompt.ts` |
 | F-080 | cards-and-widgets | major | design-violation | confirmed | asks-once-memory | needs-mac | 'Computer asks once' is not what the local-execution gate does by default | `desktop/source/shared/local-tool-permission.ts` |
 | F-081 | cards-and-widgets | major | design-violation | confirmed | cloud-agents-channels | coming-soon | secret-request stores the value in a plain-JSON channel file that only channel connectors read | `desktop/source/host/runner/tools/send-message-tool.ts` |
 | F-082 | cards-and-widgets | major | unwired | confirmed | cards-to-build | known-limit | The form, draft-composer, virtual-card and cookie-origin cards the permissions design relies on have no tool in the tree | `docs/product/sources/caisra-permissions.md` |
@@ -243,7 +243,7 @@ until its row says so. Columns:
 | F-217 | electron-main-app | major | risk | unverified | - | - | Startup data-root migration renames ~/.cursor/sand (a real Grok Bot's data root) into ~/.caisra, or shares it live, and may kill its local-exec daemon | `desktop/source/electron-main/startup/startup-data-root-migration.ts` |
 | F-218 | electron-main-app | minor | risk | unverified | - | - | Chromium sandbox off for every window: unconditional --no-sandbox plus sandbox:false with webviewTag:true | `desktop/source/electron-main/main.ts` |
 | F-219 | electron-main-app | minor | naming | unverified | - | - | HTTPS deep links are still Cursor's: https://cursor.com/sand/link/… is accepted from argv and open-url | `desktop/source/shared/deep-link.ts` |
-| F-220 | electron-main-app | minor | dead-service | unverified | - | - | 'Open cloud agent' sends the person to https://cursor.com/agents/<id> in the system browser | `desktop/source/electron-preload/preload.ts` |
+| F-220 | electron-main-app | minor | dead-service | unverified | cloud-agents-channels | needs-mac | 'Open cloud agent' sends the person to https://cursor.com/agents/<id> in the system browser — opens app.simeonlabs.com/agents/<id> since 25 September; the page is needs-web (`cloud-agents-served.md`) | `desktop/source/electron-preload/preload.ts` |
 | F-221 | electron-main-app | note | hardcoded | unverified | - | - | DevTools is permanently denied in every packaged build because membership requires isAnysphereUser, which Simeon's profile hard-codes false | `desktop/source/electron-main/devtools-gate.ts` |
 | F-222 | electron-main-app | minor | unwired | unverified | - | - | Main-process crash reporter is defined but never wired; uncaught exceptions are swallowed to stderr and the app keeps running | `desktop/source/electron-main/telemetry/desktop-process-crash-telemetry.ts` |
 | F-223 | electron-main-app | note | risk | unverified | - | - | Renderer crash has no recovery: render-process-gone only reports (disabled) telemetry, nothing reloads the window | `desktop/source/electron-main/telemetry/renderer-lifecycle-telemetry.ts` |
@@ -339,7 +339,7 @@ until its row says so. Columns:
 | F-313 | onboarding-first-run | note | naming | unverified | - | - | The agent's brief carries an unconditional 'Origin' section with cursor.com links | `desktop/source/host/runner/system-prompt.ts` |
 | F-314 | onboarding-first-run | note | dead-service | unverified | - | - | Dev/unpackaged sign-in falls back to cursor.com when the CAISRA env is absent | `desktop/source/electron-main/account/cursor-auth.ts` |
 | F-315 | onboarding-first-run | note | design-violation | unverified | - | - | The first-run flow the person meets is the pinned Grok Bot six-step onboarding | `desktop/source/shared/observability/telemetry.ts` |
-| F-316 | prompt-and-brief | major | dead-service | refuted | cloud-agents-channels | coming-soon | Cloud-agent section and CloudAgent tool are live because isCloudAgentsDisabledByTeam is never defined | `desktop/source/host/extensions/experiments/extension.ts` |
+| F-316 | prompt-and-brief | major | dead-service | refuted | cloud-agents-channels | needs-mac | Cloud-agent section and CloudAgent tool are live because isCloudAgentsDisabledByTeam is never defined — live on purpose since 25 September, served (`cloud-agents-served.md`) | `desktop/source/host/extensions/experiments/extension.ts` |
 | F-317 | prompt-and-brief | major | dead-service | confirmed | listeners-coming-soon | fixed | Routines section advertises Slack/GitHub/Teams/Linear/Sentry/PagerDuty listeners and names Cursor | `desktop/source/host/automations/automation.ts` |
 | F-318 | prompt-and-brief | major | design-violation | confirmed | routines-away | fixed | Prompt promises routines run while the user is away; the loop runs in a Docker box on the Mac | `desktop/source/host/automations/automation.ts` |
 | F-319 | prompt-and-brief | major | dead-service | refuted | box-token-scope | fixed | 'Your user is <name>' section depends on Cursor's GetMe RPC and can never render | `desktop/source/host/extensions/auth/user-full-name-service.ts` |
@@ -699,6 +699,26 @@ deliberately excluded until a future cloud-agent system exists", so
 Grok Bot's disabled branch stays as written: the agent does not take on
 repository work itself and says cloud agents are coming soon. Needs a Mac: the Channels tab drawing Coming Soon
 rows.
+
+**Cloud agents served, the same evening** (`docs/product/cloud-agents-served.md`).
+The cloud-agent half of this cluster is no longer coming-soon:
+`server/polar/sand/cloud_agents.py` serves `BackgroundComposerService`
+(sixteen methods) and `AiService/AvailableModels` as a projection over
+the maty queue, one job per turn on the Render runner, with follow-ups
+(continuation jobs), mid-run cancel (the heartbeat's `cancel_requested`),
+rename/archive/delete, the transcript and the artifacts list;
+`isCloudAgentsServed()` is on by default, so the `cursor-agent` card, the
+CloudAgent tool and the brief's sections are on, and the brief says what
+the runner does (no checkout, branch or PR yet: "never promise a PR").
+`openCloudAgent` opens `app.simeonlabs.com/agents/<bcId>` (needs-web:
+the page is not built). Rows F-007 (cloud-agent half), F-022, F-079,
+F-220, F-316 are `needs-mac`; F-150, F-406, F-480 stay `fixed` on the
+new URL. Found on the way, foundation-wide: the Connect transport sent
+binary protobuf (connect-node's default) which `polar/sand/connect.py`
+cannot read, now `useBinaryFormat: false`; and the reconstruction's enum
+fields carried strings the JSON codec refuses. Channels: unchanged,
+coming-soon. `tests/cloud-agents-served.test.mjs`,
+`server/tests/sand/test_cloud_agents.py`.
 
 ### auto-review-enforce (25 September 2026)
 

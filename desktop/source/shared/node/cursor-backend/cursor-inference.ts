@@ -156,7 +156,14 @@ export function createSandInferenceInterceptor(options: SandInferenceOptions): I
 
 export function createSandBackendTransport(options: Omit<SandInferenceOptions, "backendUrl">): Transport {
   const backendUrl = getSandInferenceBackendUrl();
-  return createConnectTransport({ baseUrl: backendUrl, httpVersion: "1.1", interceptors: [createSandRpcTracingInterceptor(), createSandInferenceInterceptor({ ...options, backendUrl })] });
+  // JSON on the wire, measured 25 September 2026 (tests/cloud-agents-served.test.mjs):
+  // @connectrpc/connect-node's transport defaults to `useBinaryFormat: true`,
+  // so every request left as `application/proto` and the client refused the
+  // JSON answer ("unsupported content type application/json"). Simeon Labs'
+  // server (`server/polar/sand/connect.py`) speaks protobuf JSON only, which
+  // `createConnectTransport` sends with the binary format off. Cursor's server
+  // took both, so nothing changes for `SAND_CONNECT_SERVED=1` against it.
+  return createConnectTransport({ baseUrl: backendUrl, httpVersion: "1.1", useBinaryFormat: false, interceptors: [createSandRpcTracingInterceptor(), createSandInferenceInterceptor({ ...options, backendUrl })] });
 }
 // Simeon Labs' server serves no Connect RPC. Until 25 September 2026 every
 // client here still posted to it and read a 404 (plugin skills daily, skill

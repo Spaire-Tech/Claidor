@@ -69,12 +69,38 @@ class RunnerBody(BaseModel):
     runner: str = Field(min_length=1, max_length=128)
 
 
+class TurnMessage(BaseModel):
+    """One message the run produced, for a job that carries a
+    conversation (a cloud agent's turn). `role` is `assistant` unless the
+    runner says otherwise."""
+
+    model_config = ConfigDict(extra="ignore")
+    role: str = "assistant"
+    text: str = Field(default="", max_length=RESULT_MAX_LENGTH)
+
+
+class TurnArtifact(BaseModel):
+    """A file the executor left behind, by its path in the run's
+    workspace. Today's runner reports none (`runner/README.md`)."""
+
+    model_config = ConfigDict(extra="ignore")
+    path: str = Field(min_length=1, max_length=4_096)
+    sizeBytes: int = Field(default=0, ge=0)
+    updatedAtMs: int = Field(default=0, ge=0)
+
+
 class CompleteBody(RunnerBody):
     result: str = Field(default="", max_length=RESULT_MAX_LENGTH)
     #: What the run spent, as the runner saw it. The money already moved
     #: through the metered proxy on the person's own account; this is the
     #: record, not the ledger.
     usage: dict[str, Any] | None = None
+    #: The turn's replies, appended to the job's conversation
+    #: (25 September 2026, cloud agents). Omitted by a runner that
+    #: predates them: `result` alone is still a complete answer.
+    messages: list[TurnMessage] | None = None
+    #: Files the executor reported. Omitted today.
+    artifacts: list[TurnArtifact] | None = None
 
 
 class FailBody(RunnerBody):
@@ -96,6 +122,15 @@ class ClaimedJobBody(BaseModel):
     prompt: str
     deliver: dict[str, Any]
     allow: dict[str, Any]
+    #: Which executor runs it. `maty-runner` is the only one that exists:
+    #: the Render container that reads a file and calls a model
+    #: (`runner/src/executor.ts`). The box executor of
+    #: `docs/product/box-substrate-read.md` gets its own name here when it
+    #: lands; nothing about the queue changes for it.
+    executor: str = "maty-runner"
+    #: The conversation this job continues (a cloud agent's turn), the
+    #: person's messages first; None for a routine or a mail.
+    conversation: list[dict[str, Any]] | None = None
 
 
 class ClaimResponse(BaseModel):
@@ -118,6 +153,11 @@ class JobStateResponse(BaseModel):
     attempts: int
     scheduled_at: datetime
     lease_expires_at: datetime | None = None
+    #: True once the person asked this job to stop (25 September 2026).
+    #: The runner reads it off every heartbeat and fails the job as
+    #: cancelled; a runner that predates the field ignores it and the job
+    #: lands or times out as before.
+    cancel_requested: bool = False
 
 
 def _state(job: MatyJob) -> JobStateResponse:
@@ -127,7 +167,20 @@ def _state(job: MatyJob) -> JobStateResponse:
         attempts=job.attempts,
         scheduled_at=job.scheduled_at,
         lease_expires_at=job.lease_expires_at,
+        cancel_requested=job.cancel_requested,
     )
+
+
+async def _settled(session: AsyncSession, job: MatyJob) -> None:
+    """A job that reached a final status: the cloud-agent projection may
+    owe a continuation (a follow-up that arrived while it ran). Imported
+    here and not at the top so `polar.maty` keeps no dependency on
+    `polar.sand` at import time."""
+    if not job.is_final:
+        return
+    from polar.sand.cloud_agents_service import cloud_agents
+
+    await cloud_agents.on_job_settled(session, job)
 
 
 # --- the four verbs --------------------------------------------------------
@@ -158,6 +211,10 @@ async def claim(
             prompt=job.prompt,
             deliver=job.deliver,
             allow=job.allow,
+            executor="maty-runner",
+            # Only a cloud agent's turn carries one; a routine's claim
+            # keeps the shape cloud.md wrote.
+            **({} if job.conversation is None else {"conversation": job.conversation}),
         ),
         access_token=claimed.access_token,
         expires_at=claimed.expires_at,
@@ -186,11 +243,25 @@ async def complete(
     id: UUID, body: CompleteBody, session: AsyncSession = Depends(get_db_session)
 ) -> JobStateResponse:
     """The answer, kept; the job is final and its token is dead."""
-    return _state(
-        await maty.complete(
-            session, id, runner=body.runner, result=body.result, usage=body.usage
-        )
+    job = await maty.complete(
+        session,
+        id,
+        runner=body.runner,
+        result=body.result,
+        usage=body.usage,
+        messages=(
+            None
+            if body.messages is None
+            else [message.model_dump() for message in body.messages]
+        ),
+        artifacts=(
+            None
+            if body.artifacts is None
+            else [artifact.model_dump() for artifact in body.artifacts]
+        ),
     )
+    await _settled(session, job)
+    return _state(job)
 
 
 @router.post(
@@ -202,12 +273,12 @@ async def fail(
     """A try that did not work. Retryable and with tries left, the job
     goes back to the queue after a backoff; otherwise it stops for good
     with the reason kept."""
-    return _state(
-        await maty.fail(
-            session,
-            id,
-            runner=body.runner,
-            reason=body.reason,
-            retryable=body.retryable,
-        )
+    job = await maty.fail(
+        session,
+        id,
+        runner=body.runner,
+        reason=body.reason,
+        retryable=body.retryable,
     )
+    await _settled(session, job)
+    return _state(job)

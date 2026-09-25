@@ -27,12 +27,14 @@ from uuid import UUID
 
 from sqlalchemy import (
     TIMESTAMP,
+    Boolean,
     ForeignKey,
     Index,
     Integer,
     String,
     Text,
     Uuid,
+    false,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
@@ -138,6 +140,40 @@ class MatyJob(RecordModel):
     #: the runner thinks, which is the whole safety of the arrangement.
     lease_expires_at: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True, default=None, index=True
+    )
+
+    #: The conversation this job continues, when it is a turn of a cloud
+    #: agent (`polar.sand.cloud_agents`, 25 September 2026): a list of
+    #: `{"role": "user" | "assistant", "text", "createdAtMs", "jobId"}`,
+    #: the person's messages first. The runner is handed the whole list
+    #: at the claim and appends the assistant's reply at `complete`
+    #: (`messages` on `/maty/runner/jobs/{id}/complete`). None for a
+    #: routine or a mail, which run from `prompt` alone.
+    conversation: Mapped[list[dict[str, Any]] | None] = mapped_column(
+        JSONB, nullable=True, default=None
+    )
+    #: The job this one continues: a follow-up sent to a cloud agent whose
+    #: previous turn had already finished becomes a new job carrying the
+    #: prior conversation, with this pointing back.
+    parent_job_id: Mapped[UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("maty_jobs.id", ondelete="set null"),
+        nullable=True,
+        default=None,
+    )
+    #: Set when the person asks a running job to stop (a cloud agent's
+    #: PauseBackgroundComposer). The runner reads it off the heartbeat's
+    #: answer and fails the job as cancelled; the queue itself never races
+    #: a running row (see `MatyJobNotCancellable`).
+    cancel_requested: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
+    #: Files the executor reported at `complete`, as
+    #: `{"path", "sizeBytes", "updatedAtMs"}` rows. Today's runner (a
+    #: Render container, memory in and memory out) reports none; the seam
+    #: exists for the box executor.
+    artifacts: Mapped[list[dict[str, Any]] | None] = mapped_column(
+        JSONB, nullable=True, default=None
     )
 
     #: When the job becomes due. Now for a job that is wanted now, later
