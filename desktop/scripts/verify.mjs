@@ -15,6 +15,7 @@ import {
 } from "./lib/config.mjs";
 import { prepareReconstructedElectronMainArtifactFallback } from "./lib/build-asar.mjs";
 import { resolvePackagedAppArtifacts } from "./lib/packaged-app.mjs";
+import { expectedRendererInventory } from "./lib/renderer-expected-inventory.mjs";
 import { capture, run } from "./lib/process.mjs";
 import { SYSTEM_TOOLS } from "./lib/system-tools.mjs";
 
@@ -178,12 +179,20 @@ if (rendererComposition?.mode === "clean-source") {
   if (rendererProvenance.schemaVersion !== 1 || rendererProvenance.mode !== rendererComposition.mode || rendererProvenance.upstreamAppAsarSha256 !== upstreamAsarSha256) throw new Error("Packaged artifact renderer provenance has the wrong identity.");
   if (acceptance?.verdict !== "verified" || acceptance.provenance !== rendererProvenancePath || acceptance.fileCount !== rendererProvenance.fileCount || acceptance.inventorySha256 !== rendererProvenance.inventorySha256) throw new Error("Packaged artifact renderer acceptance does not match its provenance.");
   if (!Array.isArray(rendererProvenance.files) || rendererProvenance.files.length !== rendererProvenance.fileCount) throw new Error("Packaged artifact renderer provenance has an invalid file inventory.");
+  // The pinned inventory is Grok Bot's bytes; the packager patches the
+  // Settings chunks, the marks, the stylesheet, the app icon and every
+  // brand string on top and records each in dist/renderer-router-extension.json.
+  // The expected hash of a file is the last patch's, else the pinned one.
+  const rendererExtensionPath = "dist/renderer-router-extension.json";
+  const rendererExtension = listing.has(`/${rendererExtensionPath}`) ? JSON.parse(extractFile(builtAsar, rendererExtensionPath).toString("utf8")) : null;
+  const expectedRenderer = expectedRendererInventory(rendererProvenance.files, rendererExtension);
   const declaredPaths = new Set();
   for (const file of rendererProvenance.files) {
     if (typeof file.path !== "string" || declaredPaths.has(file.path)) throw new Error("Packaged artifact renderer provenance contains a missing or duplicate path.");
     declaredPaths.add(file.path);
     const bytes = extractFile(builtAsar, `dist/renderer/${file.path}`);
-    if (bytes.byteLength !== file.bytes || sha256(bytes) !== file.sha256) throw new Error(`Packaged artifact renderer differs from its checksum inventory: ${file.path}`);
+    const wanted = expectedRenderer.get(file.path);
+    if (bytes.byteLength !== wanted.bytes || sha256(bytes) !== wanted.sha256) throw new Error(`Packaged artifact renderer differs from its checksum inventory: ${file.path} (expected the ${wanted.source} bytes)`);
   }
   const packagedPaths = rendererListing.filter(entry => entry.startsWith("dist/renderer/")).map(entry => entry.slice("dist/renderer/".length)).filter(Boolean);
   const undeclaredFiles = packagedPaths.filter(candidate => !declaredPaths.has(candidate) && ![...declaredPaths].some(file => file.startsWith(`${candidate}/`)));

@@ -174,6 +174,21 @@ async def list_environments(call: ConnectCall) -> dict[str, Any]:
     return {"environments": [cloud_agents.environment()]}
 
 
+@service.unary("GetBackgroundComposerUserSettings", auth="desktop-or-box")
+async def get_background_composer_user_settings(call: ConnectCall) -> dict[str, Any]:
+    """Every field is optional; the Mac reads `prReviewOpenDestination`
+    (`electron-main/account/cursor-pr-review.ts`) and falls back to its own
+    default on 0. Cursor stored these per account; Simeon has no settings
+    page for them yet, so the answer is the empty message (25 September
+    2026, found on the founder's Mac as a "not found" at launch)."""
+    return {}
+
+
+@service.unary("UpdateBackgroundComposerUserSettings", auth="desktop-or-box")
+async def update_background_composer_user_settings(call: ConnectCall) -> dict[str, Any]:
+    return {}
+
+
 # --- aiserver.v1.AiService/AvailableModels ----------------------------------
 
 
