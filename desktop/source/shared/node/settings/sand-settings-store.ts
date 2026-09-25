@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import { dirname } from "node:path";
 
 import { DEFAULT_SAND_THEME_PREFERENCE, isSandThemePreference, type SandThemePreference } from "../../desktop.js";
@@ -94,8 +95,22 @@ export class SandSettingsStore {
   constructor(readonly settingsPath: string) {}
   load(): SandStoredSettings {
     if (!existsSync(this.settingsPath)) return emptySettings();
-    try { const parsed = parseSettings(JSON.parse(readFileSync(this.settingsPath, "utf8")) as unknown); return parsed == null ? emptySettings() : this.applyPendingMigrations(parsed); }
-    catch { return emptySettings(); }
+    let parsed: SandStoredSettings | null;
+    try { parsed = parseSettings(JSON.parse(readFileSync(this.settingsPath, "utf8")) as unknown); }
+    catch { parsed = null; }
+    if (parsed == null) {
+      // A file that does not parse, or carries another version, used to be
+      // replaced by defaults on the next write with nothing kept (F-361);
+      // it is copied aside first and the copy's name is printed.
+      this.backupUnreadable();
+      return emptySettings();
+    }
+    return this.applyPendingMigrations(parsed);
+  }
+  private backupUnreadable(): void {
+    const backupPath = `${this.settingsPath}.unreadable-${new Date().toISOString().replace(/[:.]/g, "-")}`;
+    try { copyFileSync(this.settingsPath, backupPath); console.warn(`settings: ${this.settingsPath} could not be read; a copy is at ${backupPath} and defaults apply`); }
+    catch { /* nothing to copy, or nowhere to put it */ }
   }
   private applyPendingMigrations(settings: SandStoredSettings): SandStoredSettings {
     if (settings.settingsMigrations.includes(SAND_DOWNGRADE_MAX_FAST_MIGRATION_ID)) return settings;
@@ -103,7 +118,9 @@ export class SandSettingsStore {
     try { this.persist(migrated); } catch {}
     return migrated;
   }
-  persist(settings: SandStoredSettings): void { mkdirSync(dirname(this.settingsPath), { recursive: true }); const temp = `${this.settingsPath}.${process.pid}.tmp`; writeFileSync(temp, JSON.stringify(settings, null, 2), "utf8"); renameSync(temp, this.settingsPath); }
+  // The temp name carries a random suffix beside the pid (F-360): two writers
+  // in one process, or a pid reused after a crash, no longer share it.
+  persist(settings: SandStoredSettings): void { mkdirSync(dirname(this.settingsPath), { recursive: true }); const temp = `${this.settingsPath}.${process.pid}.${randomBytes(4).toString("hex")}.tmp`; writeFileSync(temp, JSON.stringify(settings, null, 2), "utf8"); renameSync(temp, this.settingsPath); }
   private update(mutator: (settings: SandStoredSettings) => SandStoredSettings): void { this.persist(mutator(this.load())); }
   getHasSeenOnboarding(): boolean | undefined { return this.load().hasSeenOnboarding; }
   setHasSeenOnboarding(value: boolean): void { this.update((current) => { const { hasSeenOnboardingAccountScope: _old, ...rest } = current; return { ...rest, hasSeenOnboarding: value, ...(rest.mcpCustomInstructionsAccountScope === undefined ? {} : { hasSeenOnboardingAccountScope: rest.mcpCustomInstructionsAccountScope }) }; }); }

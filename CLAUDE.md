@@ -954,6 +954,21 @@ renderer's own copy (Cursor, cursor.com, the Updates tab, the "remote
 computer" wording) wait on the chunk's actual strings (F-200, F-208,
 F-305).
 
+## Batch 5 of the ledger was worked (25 September 2026, night)
+
+The server's desktop API and the app's data on disk (F-248..F-267,
+F-355..F-375), one ledger note (`batch5-server-and-persistence`). What
+changed: the PKCE verifier goes in a POST body, never a query string
+(the server keeps the GET for older builds); the sign-in, token and
+feedback routes are rate-limited; an unreadable `settings.json` is copied
+aside before defaults apply; the box is told its data root; deleting an
+agent removes its connector secrets; a secret that no longer decrypts is
+reported instead of listed or fatal; and four documents were corrected.
+Kept with reasons: the LobsterAI-era and Pipedream routes (called by
+nothing; removal is a decision), the Sonnet-versus-Luna fallback, the
+plain credential files in the box (Grok Bot's design), the settings
+store's lack of a lock, the forced-off notifications. Not run on a Mac.
+
 ## The eight features were served overnight (25–26 September 2026)
 
 "work independently and do all … always assume that we already have it."

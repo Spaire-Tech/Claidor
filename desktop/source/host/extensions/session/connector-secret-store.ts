@@ -28,4 +28,6 @@ export class SandConnectorSecretStore {
     const value = this.read(agentId, platform)[field]; return typeof value === "string" && value.length > 0 ? value : null;
   }
   removeAgentPlatform(agentId: string, platform: string): void { if (isSafeFolderId(agentId) && isSafeFolderId(platform)) rmSync(this.filePath(agentId, platform), { force: true }); }
+  /** Every platform's file for an agent, when the agent is deleted (F-370). */
+  removeAgent(agentId: string): void { if (isSafeFolderId(agentId)) rmSync(join(this.secretsRoot, agentId), { recursive: true, force: true }); }
 }
