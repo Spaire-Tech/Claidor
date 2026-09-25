@@ -696,6 +696,28 @@ still fails shows `edge/handler-failed: <the server's sentence>`; the
 first thing to check is `CLAIDOR_OPENAI_API_KEY` on Render. The Mac
 keeps no log for this path. Not yet run on a Mac.
 
+## The whole-product design audit, and the switch-or-coming-soon rule (25 September 2026)
+
+"find everything not respecting that design … even the things you
+already checked - recheck." `docs/product/design-audit-2026-09-24.md`
+is the record: 27 area audits against 179 design rules, 483 findings,
+**partial** (the run was stopped before the refuters finished; only
+the first 20 findings are verified, 19 stand). `docs/product/design-audit-ledger.md`
+is the ledger, one row per finding, and nothing is closed until its row
+says so. The founder's rule for handling them, verbatim: "if something
+can actually be enabled in the current system by changing a true/false
+flag, feature gate, config, or on/off setting, don't mark it Coming
+Soon. Turn it on and make it work … Only call something Coming Soon when
+it genuinely cannot work with what we currently have because it depends
+on an unavailable Cursor/cloud service or something we haven't built."
+So: disabled but present → enable; blocked by a flag or gate → enable;
+the server serves the route and the app does not call it → wire it;
+works locally and kept off → turn it on; Coming Soon only for a real
+missing service, and then marked Coming Soon everywhere a person can
+see or reach it. The ledger's dispositions are `fixed`, `coming-soon`
+(with the missing dependency named), `known-limit` and `needs-mac`.
+Work proceeds by cluster (root cause), not by finding.
+
 ## The product's hostnames are simeonlabs.com (24 September 2026)
 
 "i want to replace all claidor.com instances by simeonlabs.com … now i
