@@ -1,7 +1,7 @@
 /**
- * Cloud agents and messaging channels were Coming Soon on Simeon on 25
- * September 2026 (design-audit-ledger.md cluster `cloud-agents-channels`),
- * and both are served since later that day.
+ * Cloud agents are served, and messaging channels are served (both since
+ * 25 September 2026, later the same day; they were Coming Soon that
+ * morning, design-audit-ledger.md cluster `cloud-agents-channels`).
  *
  * A cloud agent is Cursor's BackgroundComposerService (launch, reply,
  * artifacts, the cloud-agent card's link); `polar/sand/cloud_agents.py`
