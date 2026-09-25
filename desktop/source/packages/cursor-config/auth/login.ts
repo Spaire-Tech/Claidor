@@ -40,9 +40,12 @@ export async function pollAuthenticationStatus(args: { readonly uuid: string; re
   for (let attempt = 0; attempt < 150; attempt += 1) {
     if (isAborted(args.signal)) return null;
     try {
-      const request: RequestInit = { headers: createLocalCliModeHeaders({ "Content-Type": "application/json", ...policyHeaders }) };
+      // The verifier goes in the body, never the query string, so it is not
+      // written to the server's access log (F-258, 25 September 2026;
+      // Simeon Labs' server takes both, `app_sign_in.py`).
+      const request: RequestInit = { method: "POST", headers: createLocalCliModeHeaders({ "Content-Type": "application/json", ...policyHeaders }), body: JSON.stringify({ uuid: args.uuid, verifier: args.verifier }) };
       if (args.signal !== undefined) request.signal = args.signal;
-      const response = await proxyFetch(`${endpoint}?uuid=${args.uuid}&verifier=${args.verifier}`, request);
+      const response = await proxyFetch(endpoint, request);
       if (response.status === 403) {
         const body = await response.json().catch(() => undefined) as { error?: unknown } | undefined;
         if (body?.error === SIGN_IN_POLICY_VIOLATION_ERROR) throw new SignInPolicyViolationError();

@@ -1231,8 +1231,10 @@ async def proxy_speech(
     Unlike the model proxy there is nothing to read back: the answer is
     audio bytes and carries no usage object. The characters we were asked
     to say are the only honest measure, so they are counted here, before
-    the call, and recorded whether or not the call succeeds — a refusal
-    after OpenAI has done the work still costs money.
+    the call, and recorded whether or not the call succeeds: the row keeps
+    the upstream status, and `record_usage` writes it at 0 credits unless
+    that status is 200 (F-265: an earlier sentence here said a refusal
+    "still costs" the person; it does not).
     """
     raw = await request.body()
     try:

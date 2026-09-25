@@ -271,26 +271,26 @@ until its row says so. Columns:
 | F-245 | speech-and-media | note | docs-wrong | unverified | - | - | Dead Cursor-era strings and branches remain inside the GenerateImage tool | `desktop/source/packages/agent/tools/core/generate-image.ts` |
 | F-246 | speech-and-media | note | naming | refuted | memory | known-limit | Summarization model constant is named gemini-2.5-flash | `desktop/source/shared/agents/sand-agent-model.ts` |
 | F-247 | speech-and-media | note | risk | unverified | - | - | Token refresh falls back to api2.cursor.sh when neither backend variable is set | `desktop/source/electron-main/account/cursor-auth.ts` |
-| F-248 | server-desktop-api | major | naming | unverified | - | - | Sign-in confirmation page still says Caisra | `server/polar/desktop/app_sign_in.py` |
-| F-249 | server-desktop-api | minor | naming | unverified | - | - | App-side user-facing strings and tool descriptions still say Claidor | `desktop/source/electron-main/account/cursor-auth.ts` |
-| F-250 | server-desktop-api | minor | naming | unverified | - | - | The agent's brief still names cursor.com | `desktop/source/host/runner/system-prompt.ts` |
-| F-251 | server-desktop-api | major | unwired | unverified | - | - | Host asks Cursor's GetMe for the person's name; the served profile route is never used for it | `desktop/source/host/extensions/auth/user-full-name-service.ts` |
+| F-248 | server-desktop-api | major | naming | unverified | batch5-server-and-persistence | fixed | Sign-in confirmation page still says Caisra | `server/polar/desktop/app_sign_in.py` |
+| F-249 | server-desktop-api | minor | naming | unverified | batch5-server-and-persistence | fixed | App-side user-facing strings and tool descriptions still say Claidor | `desktop/source/electron-main/account/cursor-auth.ts` |
+| F-250 | server-desktop-api | minor | naming | unverified | batch5-server-and-persistence | fixed | The agent's brief still names cursor.com | `desktop/source/host/runner/system-prompt.ts` |
+| F-251 | server-desktop-api | major | unwired | unverified | batch5-server-and-persistence | fixed | Host asks Cursor's GetMe for the person's name; the served profile route is never used for it | `desktop/source/host/extensions/auth/user-full-name-service.ts` |
 | F-252 | server-desktop-api | major | unwired | confirmed | memory-sync | fixed | Memory sync is served and nothing feeds it; memory lives only in the box's Docker volume | `server/polar/desktop/endpoints.py` |
-| F-253 | server-desktop-api | minor | dead-service | unverified | - | - | About twenty LobsterAI-era routes, a vendored skills tree and their tests serve a client that no longer exists | `server/polar/desktop/endpoints.py` |
-| F-254 | server-desktop-api | minor | dead-service | unverified | - | - | Pipedream connector routes and four Render secrets remain for a superseded integration | `server/polar/desktop/endpoints.py` |
-| F-255 | server-desktop-api | minor | dead-service | unverified | - | - | Every Connect RPC the app still makes goes to api.simeonlabs.com and 404s, on both Mac and box, with telemetry on in the box | `desktop/source/shared/node/cursor-backend/cursor-inference.ts` |
-| F-256 | server-desktop-api | minor | risk | unverified | - | - | A copied Grok Bot data folder can turn the Statsig client on against Cursor's event proxy | `desktop/source/shared/node/experiments/cursor-experiments.ts` |
-| F-257 | server-desktop-api | minor | risk | unverified | - | - | No rate limit on the sign-in poll, the refresh, the feedback sheet or the proxy | `server/polar/rate_limit.py` |
-| F-258 | server-desktop-api | minor | risk | unverified | - | - | The PKCE verifier travels in a GET query string and lands in uvicorn access logs | `server/polar/desktop/app_sign_in.py` |
-| F-259 | server-desktop-api | minor | docs-wrong | unverified | - | - | Records say 'fourteen HTTP routes under /desktop/api/' and list routes as never-called that are now called | `docs/product/reconstruction-gaps-2026-09-24.md` |
-| F-260 | server-desktop-api | minor | docs-wrong | unverified | - | - | Transcription docstring and test pin the en-US the app no longer sends | `server/polar/desktop/capabilities.py` |
-| F-261 | server-desktop-api | minor | unwired | unverified | - | - | Client version header the server reads is one the app never sends | `server/polar/desktop/endpoints.py` |
-| F-262 | server-desktop-api | minor | design-violation | unverified | - | - | The configured fallback is Claude Sonnet on the server and Luna in the executor | `server/polar/desktop/pricing.py` |
-| F-263 | server-desktop-api | minor | design-violation | unverified | - | - | A monthly allowance drawn into a meter the pinned renderer titles 'Weekly usage' | `desktop/source/electron-main/account/cursor-profile.ts` |
-| F-264 | server-desktop-api | minor | naming | unverified | - | - | Known-unserved features still open Cursor URLs from the user's view | `desktop/source/electron-main/main-edge.ts` |
-| F-265 | server-desktop-api | note | docs-wrong | unverified | - | - | Docstrings say a refused provider call 'still costs' the person; the row is written at 0 credits | `server/polar/desktop/endpoints.py` |
-| F-266 | server-desktop-api | minor | naming | unverified | - | - | Dead sign-in flow keeps the caisra:// deep link and its test | `server/polar/desktop/endpoints.py` |
-| F-267 | server-desktop-api | note | risk | unverified | - | - | Composio proxy admits session ids are not bound to accounts, and the key is still required on Render | `server/polar/desktop/composio.py` |
+| F-253 | server-desktop-api | minor | dead-service | unverified | batch5-server-and-persistence | known-limit | About twenty LobsterAI-era routes, a vendored skills tree and their tests serve a client that no longer exists | `server/polar/desktop/endpoints.py` |
+| F-254 | server-desktop-api | minor | dead-service | unverified | batch5-server-and-persistence | known-limit | Pipedream connector routes and four Render secrets remain for a superseded integration | `server/polar/desktop/endpoints.py` |
+| F-255 | server-desktop-api | minor | dead-service | unverified | batch5-server-and-persistence | fixed | Every Connect RPC the app still makes goes to api.simeonlabs.com and 404s, on both Mac and box, with telemetry on in the box | `desktop/source/shared/node/cursor-backend/cursor-inference.ts` |
+| F-256 | server-desktop-api | minor | risk | unverified | batch5-server-and-persistence | fixed | A copied Grok Bot data folder can turn the Statsig client on against Cursor's event proxy | `desktop/source/shared/node/experiments/cursor-experiments.ts` |
+| F-257 | server-desktop-api | minor | risk | unverified | batch5-server-and-persistence | fixed | No rate limit on the sign-in poll, the refresh, the feedback sheet or the proxy | `server/polar/rate_limit.py` |
+| F-258 | server-desktop-api | minor | risk | unverified | batch5-server-and-persistence | fixed | The PKCE verifier travels in a GET query string and lands in uvicorn access logs | `server/polar/desktop/app_sign_in.py` |
+| F-259 | server-desktop-api | minor | docs-wrong | unverified | batch5-server-and-persistence | fixed | Records say 'fourteen HTTP routes under /desktop/api/' and list routes as never-called that are now called | `docs/product/reconstruction-gaps-2026-09-24.md` |
+| F-260 | server-desktop-api | minor | docs-wrong | unverified | batch5-server-and-persistence | fixed | Transcription docstring and test pin the en-US the app no longer sends | `server/polar/desktop/capabilities.py` |
+| F-261 | server-desktop-api | minor | unwired | unverified | batch5-server-and-persistence | fixed | Client version header the server reads is one the app never sends | `server/polar/desktop/endpoints.py` |
+| F-262 | server-desktop-api | minor | design-violation | unverified | batch5-server-and-persistence | known-limit | The configured fallback is Claude Sonnet on the server and Luna in the executor | `server/polar/desktop/pricing.py` |
+| F-263 | server-desktop-api | minor | design-violation | unverified | batch5-server-and-persistence | needs-mac | A monthly allowance drawn into a meter the pinned renderer titles 'Weekly usage' | `desktop/source/electron-main/account/cursor-profile.ts` |
+| F-264 | server-desktop-api | minor | naming | unverified | batch5-server-and-persistence | fixed | Known-unserved features still open Cursor URLs from the user's view | `desktop/source/electron-main/main-edge.ts` |
+| F-265 | server-desktop-api | note | docs-wrong | unverified | batch5-server-and-persistence | fixed | Docstrings say a refused provider call 'still costs' the person; the row is written at 0 credits | `server/polar/desktop/endpoints.py` |
+| F-266 | server-desktop-api | minor | naming | unverified | batch5-server-and-persistence | known-limit | Dead sign-in flow keeps the caisra:// deep link and its test | `server/polar/desktop/endpoints.py` |
+| F-267 | server-desktop-api | note | risk | unverified | batch5-server-and-persistence | known-limit | Composio proxy admits session ids are not bound to accounts, and the key is still required on Render | `server/polar/desktop/composio.py` |
 | F-268 | files-attachments-artifacts | major | design-violation | confirmed | attachment-topology | fixed | Attached-files note tells the agent a box path is on the user's computer | `desktop/source/host/runner/system-prompt.ts` |
 | F-269 | files-attachments-artifacts | major | unwired | confirmed | attachment-topology | fixed | Staging into /workspace/uploads fails silently and the fallback instruction is wrong | `desktop/source/host/extensions/attachments/box-staging.ts` |
 | F-270 | files-attachments-artifacts | minor | design-violation | confirmed | attachment-topology | fixed | The box copy of an attachment is named by its hash, and the note never gives the original filename | `desktop/source/host/extensions/attachments/box-staging.ts` |
@@ -378,27 +378,27 @@ until its row says so. Columns:
 | F-352 | permissions-and-review | note | dead-service | confirmed | auto-review-enforce | fixed | The box host polls Cursor's Statsig bootstrap (aiserver.v1.AnalyticsService/BootstrapStatsig) on api.simeonlabs.com every ~5 minutes; auto-review's only enforce lever hangs off it | `desktop/source/shared/node/experiments/statsig-bootstrap.ts` |
 | F-353 | permissions-and-review | note | design-violation | confirmed | routine-write-review | fixed | Routine create/change is never reviewed in any mode (automationWrite is hard 'off') | `desktop/source/host/runner/sand-auto-review.ts` |
 | F-354 | permissions-and-review | note | risk | confirmed | auto-review-enforce | needs-mac | The auto-review card's 'Always allow' appends the classifier's proposed rule to the person's allow-instructions, with no confirmation of the rule text | `desktop/frontend/src/recovered/features/conversation/cards/transcript-card/auto-review-actions.ts` |
-| F-355 | data-and-persistence | major | docs-wrong | unverified | - | - | Copied Grok Bot user-data folder cannot be decrypted after the rename; 'nobody signs in again' is unproven and likely false | `desktop/source/electron-main/startup/desktop-user-data-bootstrap.ts` |
-| F-356 | data-and-persistence | major | risk | unverified | - | - | Startup data-root migration renames the real Grok Bot's ~/.cursor/sand into ~/.caisra | `desktop/source/electron-main/startup/startup-data-root-migration.ts` |
-| F-357 | data-and-persistence | major | risk | unverified | - | - | Every app build force-removes the box container; only two volumes survive, so box browser logins and installs are wiped on each update | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-355 | data-and-persistence | major | docs-wrong | unverified | batch5-server-and-persistence | known-limit | Copied Grok Bot user-data folder cannot be decrypted after the rename; 'nobody signs in again' is unproven and likely false | `desktop/source/electron-main/startup/desktop-user-data-bootstrap.ts` |
+| F-356 | data-and-persistence | major | risk | unverified | batch5-server-and-persistence | fixed | Startup data-root migration renames the real Grok Bot's ~/.cursor/sand into ~/.caisra | `desktop/source/electron-main/startup/startup-data-root-migration.ts` |
+| F-357 | data-and-persistence | major | risk | unverified | batch5-server-and-persistence | needs-mac | Every app build force-removes the box container; only two volumes survive, so box browser logins and installs are wiped on each update | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-358 | data-and-persistence | major | unwired | confirmed | memory-sync | fixed | Memory is never synced to Simeon Labs' server; it lives only in the box's Docker volume | `server/polar/desktop/endpoints.py` |
-| F-359 | data-and-persistence | major | risk | unverified | - | - | Plaintext OAuth and channel credentials sit in the box data root, which is aliased into the model-visible /home/box/agent-data | `desktop/source/host/host-paths.ts` |
-| F-360 | data-and-persistence | major | risk | unverified | - | - | settings.json is read-modify-written by several processes with no lock and a fixed per-pid temp name | `desktop/source/shared/node/settings/sand-settings-store.ts` |
-| F-361 | data-and-persistence | minor | risk | unverified | - | - | A corrupt or version-mismatched settings.json is silently replaced by defaults | `desktop/source/shared/node/settings/sand-settings-store.ts` |
-| F-362 | data-and-persistence | major | unmeasured | unverified | - | - | Box data root in the container depends on an environment the image sets, not this code | `desktop/source/host/host-paths.ts` |
+| F-359 | data-and-persistence | major | risk | unverified | batch5-server-and-persistence | known-limit | Plaintext OAuth and channel credentials sit in the box data root, which is aliased into the model-visible /home/box/agent-data | `desktop/source/host/host-paths.ts` |
+| F-360 | data-and-persistence | major | risk | unverified | batch5-server-and-persistence | known-limit | settings.json is read-modify-written by several processes with no lock and a fixed per-pid temp name | `desktop/source/shared/node/settings/sand-settings-store.ts` |
+| F-361 | data-and-persistence | minor | risk | unverified | batch5-server-and-persistence | fixed | A corrupt or version-mismatched settings.json is silently replaced by defaults | `desktop/source/shared/node/settings/sand-settings-store.ts` |
+| F-362 | data-and-persistence | major | unmeasured | unverified | batch5-server-and-persistence | fixed | Box data root in the container depends on an environment the image sets, not this code | `desktop/source/host/host-paths.ts` |
 | F-363 | data-and-persistence | major | risk | confirmed | box-substrate | needs-mac | The box image is Cursor's mutable public ECR tag sand-box-latest | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-364 | data-and-persistence | minor | docs-wrong | unverified | - | - | Record says the account-MCP store is under Application Support; the code keeps it in ~/.caisra | `docs/product/account-mcp-local-measured.md` |
-| F-365 | data-and-persistence | minor | docs-wrong | unverified | - | - | Chat-UI source record claims per-machine local-tool permission; the store holds one global value | `docs/product/sources/caisra-chat-ui-logic.md` |
-| F-366 | data-and-persistence | note | hardcoded | unverified | - | - | Dev and lab builds keep data under ~/.cursor/sand-dev and ~/.cursor/sand-lab (Grok Bot's directory) | `desktop/source/host/host-paths.ts` |
-| F-367 | data-and-persistence | note | dead-service | unverified | - | - | Sentry is wired to Cursor's DSN but never initialised, so secure-storage warnings go nowhere | `desktop/source/shared/observability/sentry.ts` |
-| F-368 | data-and-persistence | minor | dead-service | unverified | - | - | Product analytics posts every event to Cursor's AnalyticsService Connect RPC, which Claidor 404s | `desktop/source/shared/node/analytics/product-analytics.ts` |
-| F-369 | data-and-persistence | minor | dead-service | unverified | - | - | Box-store sync and state backstop stay bound to Cursor's agent store; Reset/Update copy in the agent's brief describes snapshots that do not exist | `desktop/source/host/host-production-extensions.ts` |
-| F-370 | data-and-persistence | minor | risk | unverified | - | - | Deleting an agent leaves its connector-secrets files behind | `desktop/source/host/extensions/session/session-paths.ts` |
-| F-371 | data-and-persistence | minor | risk | unverified | - | - | Credential-bearing JSON files are written with the default mode while the token files use 0600 | `desktop/source/shared/node/vendor-mcp/installs.ts` |
-| F-372 | data-and-persistence | minor | risk | unverified | - | - | Box-secrets keys remain listed when their ciphertext cannot be decrypted, and the push then fails silently | `desktop/source/electron-main/secrets/user-secrets-store.ts` |
-| F-373 | data-and-persistence | note | design-violation | unverified | - | - | Notifications are hard-forced off and the store rewrites settings.json on every read | `desktop/source/shared/node/settings/sand-settings-store.ts` |
+| F-364 | data-and-persistence | minor | docs-wrong | unverified | batch5-server-and-persistence | fixed | Record says the account-MCP store is under Application Support; the code keeps it in ~/.caisra | `docs/product/account-mcp-local-measured.md` |
+| F-365 | data-and-persistence | minor | docs-wrong | unverified | batch5-server-and-persistence | fixed | Chat-UI source record claims per-machine local-tool permission; the store holds one global value | `docs/product/sources/caisra-chat-ui-logic.md` |
+| F-366 | data-and-persistence | note | hardcoded | unverified | batch5-server-and-persistence | known-limit | Dev and lab builds keep data under ~/.cursor/sand-dev and ~/.cursor/sand-lab (Grok Bot's directory) | `desktop/source/host/host-paths.ts` |
+| F-367 | data-and-persistence | note | dead-service | unverified | batch5-server-and-persistence | fixed | Sentry is wired to Cursor's DSN but never initialised, so secure-storage warnings go nowhere | `desktop/source/shared/observability/sentry.ts` |
+| F-368 | data-and-persistence | minor | dead-service | unverified | batch5-server-and-persistence | fixed | Product analytics posts every event to Cursor's AnalyticsService Connect RPC, which Claidor 404s | `desktop/source/shared/node/analytics/product-analytics.ts` |
+| F-369 | data-and-persistence | minor | dead-service | unverified | batch5-server-and-persistence | coming-soon | Box-store sync and state backstop stay bound to Cursor's agent store; Reset/Update copy in the agent's brief describes snapshots that do not exist | `desktop/source/host/host-production-extensions.ts` |
+| F-370 | data-and-persistence | minor | risk | unverified | batch5-server-and-persistence | fixed | Deleting an agent leaves its connector-secrets files behind | `desktop/source/host/extensions/session/session-paths.ts` |
+| F-371 | data-and-persistence | minor | risk | unverified | batch5-server-and-persistence | fixed | Credential-bearing JSON files are written with the default mode while the token files use 0600 | `desktop/source/shared/node/vendor-mcp/installs.ts` |
+| F-372 | data-and-persistence | minor | risk | unverified | batch5-server-and-persistence | fixed | Box-secrets keys remain listed when their ciphertext cannot be decrypted, and the push then fails silently | `desktop/source/electron-main/secrets/user-secrets-store.ts` |
+| F-373 | data-and-persistence | note | design-violation | unverified | batch5-server-and-persistence | known-limit | Notifications are hard-forced off and the store rewrites settings.json on every read | `desktop/source/shared/node/settings/sand-settings-store.ts` |
 | F-374 | data-and-persistence | note | dead-service | confirmed | listeners-coming-soon | fixed | Automations cloud sync client targets Cursor's AutomationsService; routines live only in the box volume | `desktop/source/host/extensions/automations/extension.ts` |
-| F-375 | data-and-persistence | minor | dead-service | unverified | - | - | The local-exec daemon's credential and stale-connection refresh call routes Claidor does not serve | `desktop/source/electron-main/box/box-host-connector.ts` |
+| F-375 | data-and-persistence | minor | dead-service | unverified | batch5-server-and-persistence | needs-mac | The local-exec daemon's credential and stale-connection refresh call routes Claidor does not serve | `desktop/source/electron-main/box/box-host-connector.ts` |
 | F-376 | logging-telemetry-privacy | major | dead-service | confirmed | box-telemetry | fixed | Box host structured-log telemetry ships every console line (incl. [claidor] model= tool args and the 12,000-char system prompt on model-error) to AnalyticsService/SubmitLogs, which Simeon Labs' server does not serve; whether the box env disables it is not in the repo | `desktop/source/host/extensions/telemetry/host-telemetry-service.ts` |
 | F-377 | logging-telemetry-privacy | major | dead-service | refuted | box-telemetry | fixed | BoxLogShipper reads every /tmp/*.log in the box (including /tmp/sand-host.log unless SAND_HOST_LOG_FILE names it) and ships the lines to the unserved SubmitLogs RPC | `desktop/source/host/extensions/telemetry/host-telemetry-service.ts` |
 | F-378 | logging-telemetry-privacy | major | dead-service | confirmed | box-telemetry | fixed | Product analytics gate sand_product_analytics defaults ON in the bundled table (comment says 'Default OFF'), so the box host ships TrackEvents to the unserved AnalyticsService | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
@@ -1455,3 +1455,80 @@ code the founder has not asked to delete, and its tests pin it as it is.
 Batch 4 as a whole (53 rows): 30 fixed, 14 known limits with their
 reasons, 8 need a Mac, 1 was already needs-mac (F-220); nothing is
 coming soon.
+
+### batch5-server-and-persistence (25 September 2026, night)
+
+Batch 5: the server's desktop API and the app's data on disk (37 rows,
+F-248..F-267 and F-355..F-375). One PR, one cluster note.
+
+**Already true, closed by reading:** F-248 the sign-in page says Simeon
+(`PRODUCT`; the docstring's "Claidor" names the server); F-249 the
+sign-in copy was done in `sign-in-copy` (the file's only "Claidor"s are
+identifiers); F-250 the brief's Origin section was rewritten 24 September;
+F-251 the host reads the full name from `/desktop/api/user/profile`;
+F-255 the Connect clients are gated by the served set
+(`dead-connect-preflights`) and the box runs with `SAND_DISABLE_TELEMETRY=1`;
+F-256 = F-216; F-261 the app stamps `x-cursor-client-version`
+(`sand-client-metadata.ts`, `cursor-inference.ts`) and the server reads
+that name first; F-264 the only cursor.com in `main-edge.ts` is a
+comment; F-356 = F-217; F-364 the record was corrected on 24 September;
+F-367 the Sentry DSN is empty; F-368 = F-303; F-371 the vendor and
+account stores write 0600 under 0700.
+
+**Fixed:** F-257 rate limits on the app's sign-in and tokens
+(`rate_limit.py`: `/loginDeepControl`, `/auth/poll`, `/oauth/token`,
+`/desktop/api/auth/refresh`, `/desktop/api/feedback`, keyed by IP for
+anonymous calls, generous enough for a poll that backs off from 1 s to
+10 s; the model proxy keeps its hourly brake; `tests/test_rate_limit_rules.py`).
+F-258 the PKCE verifier no longer travels in a query string: the app
+posts `{uuid, verifier}` to `/auth/poll` (`packages/cursor-config/auth/login.ts`)
+and the server answers the POST beside the GET it keeps for older
+builds (`app_sign_in.py`; `tests/desktop/test_app_sign_in.py`
+`TestPollByPost`, `desktop/tests/persistence-batch5.test.mjs` against a
+local HTTP server). F-361 an unreadable or other-version `settings.json`
+is copied to `settings.json.unreadable-<time>` and the copy's name
+printed before defaults apply (`sand-settings-store.ts`). F-362 the
+container is told `SAND_DATA_ROOT=/home/box/sand-data`, the volume it
+mounts, instead of relying on the image's environment. F-370 deleting an
+agent removes its `connector-secrets/<agentId>/` folder
+(`SandConnectorSecretStore.removeAgent`). F-372 a stored secret that no
+longer decrypts is reported through `reportDesktopEdgeFailure` and left
+out of `listKeys` and the box push instead of being listed as present or
+failing the push. Documents corrected in place: F-259
+(`reconstruction-gaps-2026-09-24.md`: the route count is of 24 September),
+F-260 (the transcription docstring and test comment: no language is
+sent), F-265 (the speech docstring: a refusal is written at 0 credits),
+F-365 (`caisra-chat-ui-logic.md`: one global local-tool permission).
+
+**Known limits, each with its reason:** F-253 the LobsterAI-era routes
+(client banners, updates, the skill and kit stores, analytics, enterprise
+context, client activities) are called by nothing in the app; the kit
+and skill stores are the direction's ("whose store endpoint we already
+serve empty") and removing the rest is a decision, not a switch. F-254
+the Pipedream routes are called by nothing; the four Render keys are the
+founder's to remove. F-262 the server's fallback row is Claude Sonnet
+and the executor's is Luna because the executor speaks one wire
+(OpenAI Responses); a cross-lab fallback is a decision. F-266
+`/desktop/login` and the `caisra` scheme stay so a build from before 23
+September can finish a sign-in; nothing else calls them. F-267 Composio
+session ids are not bound to accounts server-side, as its module says;
+the key is optional on Render. F-355 = F-311. F-359 the box's data root
+holds credentials in plain files, which is Grok Bot's design (the box is
+the agent's own machine and needs them); what stands between them and
+the model is the shell classifier and the box being the person's own
+container; a keyed store is product work. F-360 the settings temp name
+now carries pid and a random suffix; there is still no lock between the
+Electron main and the coordinator, whose writes are rare and whole-file.
+F-366 dev and lab builds keep `~/.cursor/sand-dev` / `sand-lab`, never
+packaged. F-373 notifications are forced off because Grok Bot's
+notification path is Cursor's push service; the store rewrites the file
+once, not on every read.
+
+**Coming soon:** F-369 box-store sync and the state backstop depend on
+Cursor's agent store (dependency named in F-284). **Needs a Mac:** F-263
+the pinned meter's "Weekly usage" title over a monthly allowance is a
+renderer-bytes edit (the same row as F-130, batch 6); F-357 which box
+folders beyond the two volumes hold browser logins and installs
+(`docker exec simeon-box ls -la /home/box`) before a third volume is
+added; F-375 the local-exec daemon's credential routes are served since
+25 September (F-485) and not yet run.

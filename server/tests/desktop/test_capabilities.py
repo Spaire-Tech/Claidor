@@ -469,7 +469,8 @@ class TestTranscriptions:
         assert sent.headers["content-type"].startswith("multipart/form-data")
         assert b"webm bytes" in sent.content
         assert TRANSCRIPTION_MODEL.model_id.encode() in sent.content
-        # `en-US` as the app says it; the two letters as OpenAI takes them.
+        # A language, when one is sent (the app sends none since 24 September
+        # 2026), reaches OpenAI as the two letters it takes.
         assert b'name="language"\r\n\r\nen\r\n' in sent.content
         rows = await _rows(session)
         assert len(rows) == 1

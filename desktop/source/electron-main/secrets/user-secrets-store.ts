@@ -76,9 +76,17 @@ export class SandUserSecretsStore {
 
   isPersistent(): boolean { return isEncryptedStorageAvailable(); }
 
+  /** The keys the box will actually receive: a stored blob that no longer decrypts (another safeStorage key after a rename or a reinstall, F-372) is reported and left out, not listed as if it were there. */
   async listKeys(): Promise<string[]> {
     const { disk, session } = await this.resolveCurrentSlot();
-    return [...new Set([...Object.keys(disk), ...session.keys()])].sort();
+    const readable = new Set<string>(session.keys());
+    if (isEncryptedStorageAvailable()) {
+      for (const [key, blob] of Object.entries(disk)) {
+        try { loadElectronUserSecretsRuntime("electron").safeStorage.decryptString(Buffer.from(blob, "base64")); readable.add(key); }
+        catch (error) { reportDesktopEdgeFailure("user-secrets", "decrypt", error); }
+      }
+    }
+    return [...readable].sort();
   }
 
   async reveal(key: string): Promise<string | null> {
@@ -97,7 +105,11 @@ export class SandUserSecretsStore {
     const secrets: Record<string, string> = {};
     const diskKeys = Object.keys(disk);
     if (diskKeys.length > 0 && !isEncryptedStorageAvailable()) throw new SandSecureStorageUnavailableError();
-    for (const key of diskKeys) secrets[key] = loadElectronUserSecretsRuntime("electron").safeStorage.decryptString(Buffer.from(disk[key]!, "base64"));
+    for (const key of diskKeys) {
+      // One undecryptable blob used to fail the whole push to the box, silently (F-372).
+      try { secrets[key] = loadElectronUserSecretsRuntime("electron").safeStorage.decryptString(Buffer.from(disk[key]!, "base64")); }
+      catch (error) { reportDesktopEdgeFailure("user-secrets", "decrypt", error); }
+    }
     for (const [key, value] of session) secrets[key] = value;
     return { accountScope, secrets };
   }

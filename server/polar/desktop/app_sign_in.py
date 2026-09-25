@@ -239,7 +239,39 @@ async def auth_poll(
 ) -> JSONResponse:
     """404 until the person has confirmed in the browser, then once with
     the pair. The app reads 404 as « keep waiting » and resets its error
-    count on it, so it must not be an error shape."""
+    count on it, so it must not be an error shape.
+
+    Grok Bot's protocol carries the PKCE verifier in the query string,
+    which lands in every access log (F-258). Since 25 September 2026 the
+    app posts it instead (`/auth/poll` with a JSON body, below); this GET
+    stays for a build from before that day."""
+    return await _auth_poll(request, session, uuid=uuid, verifier=verifier)
+
+
+@router.post("/auth/poll", name="desktop:deep_control_poll_post")
+async def auth_poll_post(
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """The same poll with `{uuid, verifier}` in the body, so the verifier
+    is never written to an access log."""
+    try:
+        body = await request.json()
+    except ValueError:
+        body = {}
+    if not isinstance(body, dict):
+        body = {}
+    return await _auth_poll(
+        request,
+        session,
+        uuid=str(body.get("uuid") or ""),
+        verifier=str(body.get("verifier") or ""),
+    )
+
+
+async def _auth_poll(
+    request: Request, session: AsyncSession, *, uuid: str, verifier: str
+) -> JSONResponse:
     issued = await desktop.complete_deep_control(
         session,
         uuid=uuid,

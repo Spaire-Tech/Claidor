@@ -489,8 +489,10 @@ async def audio_transcriptions(
     session: AsyncSession = Depends(get_db_session),
 ) -> Response:
     """What was said, as text. OpenAI's own multipart shape in — `file`,
-    and `language` as the app sends it (`en-US`; OpenAI takes the two
-    letters) — and `{text, seconds}` out.
+    and `language` when the app sends one (it sends none since 24 September
+    2026, `claidor-transcribe.ts`, so OpenAI detects the language; a
+    `en-US` still becomes the two letters OpenAI takes) — and
+    `{text, seconds}` out.
 
     Metered by the seconds OpenAI reports having heard, which is what it
     charges for; one second when it reports nothing, because audio was

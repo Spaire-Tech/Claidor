@@ -545,3 +545,31 @@ class TestTheRefreshGoesThroughTheOneService:
         )
         assert response.status_code == 200
         assert response.json()["shouldLogout"] is True
+
+
+@pytest.mark.asyncio
+class TestPollByPost:
+    """The verifier in a body, not a query string, so it never lands in an
+    access log (F-258, 25 September 2026); the GET stays for older builds."""
+
+    @pytest.mark.auth
+    async def test_the_posted_pair_answers_once_and_the_get_still_works(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        verifier, challenge, uuid = _login_metadata()
+        pending = await client.post("/auth/poll", json={"uuid": uuid, "verifier": verifier})
+        assert pending.status_code == 404
+        assert pending.json() == {"error": "not_found"}
+        await _confirm(client, uuid=uuid, challenge=challenge)
+        issued = await client.post("/auth/poll", json={"uuid": uuid, "verifier": verifier})
+        assert issued.status_code == 200, issued.text
+        body = issued.json()
+        assert body["accessToken"] and body["refreshToken"]
+        again = await client.post("/auth/poll", json={"uuid": uuid, "verifier": verifier})
+        assert again.status_code == 404
+
+    async def test_a_body_that_is_not_json_is_a_wait(self, client: httpx.AsyncClient) -> None:
+        response = await client.post("/auth/poll", content=b"not json", headers={"content-type": "application/json"})
+        assert response.status_code == 404
+        response = await client.post("/auth/poll", json=["a", "list"])
+        assert response.status_code == 404
