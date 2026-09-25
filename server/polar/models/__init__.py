@@ -111,6 +111,7 @@ from .sand_automation import (
     SandListenerEvent,
     SandListenerSubscription,
 )
+from .cloud_agent import SandCloudAgent
 from .member import Member, MemberRole
 from .member_session import MemberSession
 from .meter import Meter
@@ -329,6 +330,7 @@ __all__ = [
     "SandListenerConnection",
     "SandListenerEvent",
     "SandListenerSubscription",
+    "SandCloudAgent",
     "Member",
     "MemberRole",
     "MemberSession",

@@ -91,8 +91,11 @@ test("the brief: cloud agents coming soon, no admin, no Origin, no CloudAgent to
     assert.doesNotMatch(disabled, /CloudAgent tool/);
     assert.match(module.SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION, /^## Cloud agents coming soon\n/);
     assert.doesNotMatch(module.SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION, /admin/);
-    assert.match(module.buildSandBaseSystemPrompt({ cloudAgentsEnabled: true }), /## Origin/, "Grok Bot's served text is kept behind the flag");
-    assert.match(module.DEFAULT_SAND_SYSTEM_PROMPT, /## Origin/, "the bare fallback follows the switch too (F-280): served by default since 25 September");
+    // Served since 25 September 2026 (polar/sand/cloud_agents.py): the enabled
+    // sections are on, and say Simeon where Grok Bot said Cursor
+    // (tests/cloud-agents-served.test.mjs measures the sentences).
+    assert.match(module.buildSandBaseSystemPrompt({ cloudAgentsEnabled: true }), /## Repositories/, "Grok Bot's served structure is kept behind the flag, as Simeon's");
+    assert.match(module.DEFAULT_SAND_SYSTEM_PROMPT, /## Repositories/, "the bare fallback follows the switch too (F-280): served by default since 25 September");
   } finally {
     await dispose();
   }

@@ -18,7 +18,7 @@ const settings: RunnerSettings = {
 };
 
 const aJob = (id: string): ClaimedJob => ({
-  job: { id, kind: 'routine', prompt: 'summarise the morning', allow: [] },
+  job: { id, kind: 'routine', prompt: 'summarise the morning', allow: [], executor: 'maty-runner' },
   accessToken: 'person-token',
   expiresAt: null,
 });
@@ -115,6 +115,45 @@ describe('one turn', () => {
   });
 });
 
+describe('a cloud agent\'s turn', () => {
+  test('the turn\'s replies ride along with the answer', async () => {
+    const d = deps({
+      queue: { claim: async () => aJob('j5') } as LoopDeps['queue'],
+      run: async () => ({ answer: 'hello', usage: {}, messages: [{ role: 'assistant', text: 'hello' }] }),
+    });
+    await turn(settings, d);
+    expect(d.calls.complete).toEqual([['j5', 'hello', {}, { messages: [{ role: 'assistant', text: 'hello' }] }]]);
+  });
+
+  test('the cancel flag on a heartbeat aborts the run and reports it as cancelled, final', async () => {
+    vi.useFakeTimers();
+    try {
+      let beats = 0;
+      const d = deps({
+        queue: {
+          claim: async () => aJob('j6'),
+          heartbeat: async () => {
+            beats += 1;
+            return { cancelRequested: beats >= 2 };
+          },
+        } as LoopDeps['queue'],
+        run: async (_claimed, _settings, signal) => {
+          await new Promise<void>((resolve, reject) => {
+            signal.addEventListener('abort', () => reject(new Error('aborted')));
+            void vi.advanceTimersByTimeAsync(settings.heartbeatIntervalMs * 4).then(resolve);
+          });
+          return { answer: 'should not land', usage: {} };
+        },
+      });
+      await turn(settings, d);
+      expect(d.calls.complete).toEqual([]);
+      expect(d.calls.fail).toEqual([['j6', 'Cancelled by the person while it ran.', false]]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
 describe('one job at a time', () => {
   test('the next claim only happens after the last job finished', async () => {
     const order: string[] = [];
@@ -182,5 +221,11 @@ describe('what is worth trying again', () => {
     const noModel = new Error('none');
     noModel.name = 'NoModelAvailable';
     expect(isRetryable(noModel)).toBe(false);
+    const unknownExecutor = new Error('no such executor');
+    unknownExecutor.name = 'UnknownExecutor';
+    expect(isRetryable(unknownExecutor)).toBe(false);
+    const cancelled = new Error('stopped');
+    cancelled.name = 'JobCancelled';
+    expect(isRetryable(cancelled)).toBe(false);
   });
 });

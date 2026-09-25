@@ -19,6 +19,23 @@ import { connectorManifests } from "./channels.js";
 
 export const CLOUD_AGENTS_SERVED_ENV = "SAND_CLOUD_AGENTS_SERVED";
 
+/**
+ * Where a cloud agent's page lives, for the card's "open" and the plain
+ * link a channel gets. Grok Bot opened `https://cursor.com/agents/<bcId>`;
+ * ours is Simeon's dashboard on Vercel. The page itself does not exist
+ * yet (needs-web, `docs/product/cloud-agents-served.md`): until it does,
+ * the card's conversation in the app is the record of the run.
+ */
+export const CLOUD_AGENTS_WEB_BASE_ENV = "SAND_CLOUD_AGENTS_WEB_BASE";
+export const DEFAULT_CLOUD_AGENTS_WEB_BASE = "https://app.simeonlabs.com";
+export function cloudAgentsWebBase(env: NodeJS.ProcessEnv = process.env): string {
+  const raw = env[CLOUD_AGENTS_WEB_BASE_ENV]?.trim();
+  return raw && raw.length > 0 ? raw : DEFAULT_CLOUD_AGENTS_WEB_BASE;
+}
+export function cloudAgentWebUrl(bcId: string, env: NodeJS.ProcessEnv = process.env): string {
+  return new URL(`/agents/${encodeURIComponent(bcId)}`, cloudAgentsWebBase(env)).toString();
+}
+
 export const CLOUD_AGENTS_COMING_SOON_SENTENCE =
   "Cloud agents are coming soon in Simeon, so the CloudAgent tool and cloud-agent cards are not available here yet. Never claim you can launch or manage one.";
 

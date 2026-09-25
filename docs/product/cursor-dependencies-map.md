@@ -32,7 +32,7 @@ cannot turn on one Connect service without the others.
 |---|---|---|---|
 | Event routines (listeners) | complete | five JSON routes + one SSE stream + workflow store + cron + Slack/GitHub apps | **backend replacement** (plus app registrations at Slack/GitHub) |
 | Messaging channels (Discord, Slack, Teams, …) | complete, minus one module | none on the server; a connector module in the box | **wiring** (a missing client module) |
-| Cloud agents | complete | a Connect server for 17 RPCs and a coding executor | client: backend replacement; server: **mostly new** (maty covers 4 of 16) |
+| Cloud agents | complete | **served 25 September** (`polar/sand/cloud_agents.py` over the maty queue); a coding executor remains | client: backend replacement, done; server: projection built, executor **new** |
 | Memory sync | app side never existed | routes exist but were built for a different layout | ~~new product work~~ **served, 25 September 2026**: the routes and their merge were reused, their names widened to the app's tree, and the client built (`memory-sync-served.md`) |
 | Cloud computer | complete | a broker, a network path, a VNC path, hosting | **backend replacement**, hosting is the new product decision |
 | Watching videos | mostly complete | a Gemini provider on the proxy; three desktop wires | **backend replacement** |
@@ -224,23 +224,45 @@ builders.
 
 ### 4. What is genuinely missing
 
-A Connect server for those RPCs; a coding executor (clone a repo, run a
-shell, commit, open a PR); a GitHub credential per person; a persistent
-per-run conversation that takes follow-ups; mid-run cancel; per-run
-metadata (name, archive); and our own page in place of `cursor.com/agents`.
-The maty queue (`server/polar/maty/`, `runner/`) covers about four of the
-sixteen: start, info, list, and pause before start. It is single-shot,
-cannot be cancelled while running, and its executor on Render has no
-Docker, which is why shell, web and browser are switched off in
-`runner/src/engineConfig.ts`.
+**Served since 25 September 2026, evening** (`server/polar/sand/cloud_agents.py`,
+`docs/product/cloud-agents-served.md`): the Connect server for all
+sixteen RPCs and `AvailableModels`, as a projection over the maty queue;
+a per-run conversation that takes follow-ups (a continuation job per
+follow-up on a finished turn, `MatyJob.conversation` and
+`parent_job_id`); mid-run cancel (`cancel_requested` on the heartbeat's
+answer, read by the runner); per-run metadata (`sand_cloud_agents`); and
+the app opens `app.simeonlabs.com/agents/<bcId>` (the page itself is
+needs-web). What was written below stands for what is still missing: a
+coding executor (clone a repo, run a shell, commit, open a PR) and a
+GitHub credential per person. Today a cloud agent runs on the Render
+runner — memory in, one model call over the conversation, the reply
+written back — behind the `Executor` seam in `runner/src/executor.ts`.
+
+Before that evening: a Connect server for those RPCs; a coding executor;
+a GitHub credential per person; a persistent per-run conversation that
+takes follow-ups; mid-run cancel; per-run metadata (name, archive); and
+our own page in place of `cursor.com/agents`. The maty queue covered
+about four of the sixteen: start, info, list, and pause before start. It
+was single-shot, could not be cancelled while running, and its executor
+on Render has no Docker, which is why shell, web and browser are switched
+off in `runner/src/engineConfig.ts`.
 
 ### 5. Wiring/backend replacement or new product functionality
 
-**Client: backend replacement. Server: mostly new.** Keep the queue as the
-lower layer (claim, lease, heartbeat, scoped tokens are the hard, tested
-half) and put a box executor on it (`docs/product/box-substrate-read.md`);
-the Connect surface is then a projection over jobs. A follow-up
-conversation and a PR flow are product work that no existing code does.
+**Client: backend replacement, done. Server: the projection is built;
+the coding executor remains new.** The queue stays the lower layer
+(claim, lease, heartbeat, scoped tokens) and the Connect surface is a
+projection over jobs; the box executor
+(`docs/product/box-substrate-read.md`) plugs into `runner/src/executor.ts`
+when it exists. A PR flow is still product work no existing code does.
+
+Two client defects the served build found, both foundation-wide: the
+Connect transport sent binary protobuf (connect-node's default), which
+`polar/sand/connect.py` cannot read — `createSandBackendTransport` now
+passes `useBinaryFormat: false` — and the reconstruction's enum fields
+carried strings (`source: "grok-bot"`), which the JSON codec refuses.
+The preamble above ("the default JSON codec") was true of connect-web,
+not of the transport the app builds.
 
 ---
 
@@ -633,8 +655,9 @@ with what is not yet run on a Mac.
    triggers before registering our own Slack and GitHub apps.
 4. **Cloud computer**: the broker and the proxy, on the E2B decision
    already taken; the app is ready for it.
-5. **Cloud agents**: after the cloud computer, since the executor is the
-   same box.
+5. **Cloud agents**: served the same evening on the Render runner
+   (`cloud-agents-served.md`); the coding executor comes with the cloud
+   computer, since it is the same box.
 6. **Skill publish** scoped to "my account"; **sharing** last, because it
    is product work rather than replacement. (**Memory sync** was listed
    here too and is served since later the same day, §4.5.)
