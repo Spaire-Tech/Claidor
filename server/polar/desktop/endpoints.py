@@ -75,6 +75,7 @@ from .pricing import (
     SPEECH_MODEL,
     SPEECH_VOICE,
     openai_models_list,
+    video_models,
 )
 from .proxy_common import budget_refusal
 from .proxy_common import error_response as _error
@@ -104,6 +105,7 @@ from .service import (
 from .skill_store import archive as skill_archive_bytes
 from .skill_store import archive_path, marketplace_item
 from .skill_store import catalog as skill_store_catalog
+from .video import VIDEO_CALL_LOG, count_video_parts, parse_gemini_call
 
 log = structlog.get_logger()
 
@@ -498,11 +500,16 @@ async def models_available(
 
 @router.get("/api/models/pricing-catalog", name="desktop:pricing")
 async def pricing_catalog() -> JSONResponse:
+    # `videoModels` names the models that take a video as input, among
+    # those offered (so a Gemini key on the server is what turns the
+    # app's watchVideo subagent on; without one the list is empty and the
+    # app says video is not served here).
+    offered = offered_models()
     return _ok(
         {
-            "textModels": [one.pricing() for one in offered_models()],
+            "textModels": [one.pricing() for one in offered],
             "imageModels": [],
-            "videoModels": [],
+            "videoModels": [one.pricing() for one in video_models(offered)],
         }
     )
 
@@ -700,11 +707,13 @@ async def activity_action(activity_code: str, action_id: str) -> JSONResponse:
 
 # --- the model proxy --------------------------------------------------------
 #
-# Three languages, and nothing here translates between any of them. The
+# Four languages, and nothing here translates between any of them. The
 # engine speaks Anthropic's `/v1/messages` to an Anthropic model, and one
 # of OpenAI's two to an OpenAI one: `/v1/responses`, which is what we use,
 # or the older `/v1/chat/completions`, kept because it costs nothing to
-# keep and a client that has not moved still works.
+# keep and a client that has not moved still works. Since 25 September
+# 2026 it speaks Gemini's `:streamGenerateContent` to a Gemini model, the
+# one wire that takes a video (`proxy_gemini_generate`).
 #
 # The path says which language is being spoken; the model says who serves
 # it; the two must agree. From the model come the address, the key and
@@ -738,6 +747,24 @@ def _openai_headers(request: Request) -> dict[str, str]:
         "content-type": "application/json",
         "accept": request.headers.get("accept", "application/json"),
     }
+
+
+def _gemini_headers(request: Request) -> dict[str, str]:
+    """Google takes the key in its own header, never a bearer."""
+    return {
+        "x-goog-api-key": provider_api_key(DesktopProvider.gemini),
+        "content-type": "application/json",
+        "accept": request.headers.get("accept", "application/json"),
+    }
+
+
+def _gemini_body(payload: dict[str, Any], raw: bytes, model: DesktopModel) -> bytes:
+    """Untouched: the app builds Gemini's own request (`contents`,
+    `systemInstruction`, `tools`, the video as `inlineData` with its
+    `videoMetadata.fps`), and a stream reports `usageMetadata` on every
+    chunk without being asked. The model is on the path, not in the
+    body."""
+    return raw
 
 
 def _openai_responses_body(
@@ -833,6 +860,14 @@ _WIRES: dict[SpokenApi, _Wire] = {
         headers=_openai_headers,
         body=_openai_body,
     ),
+    # The path carries the model and the method
+    # (`/v1beta/models/{model}:streamGenerateContent`), so `_proxy` is
+    # handed it per call; this entry's path is the shape, never sent.
+    SpokenApi.gemini_generate_content: _Wire(
+        upstream_path="/v1beta/models/{model}:generateContent",
+        headers=_gemini_headers,
+        body=_gemini_body,
+    ),
 }
 
 
@@ -897,6 +932,51 @@ async def proxy_responses(
     return await _proxy(request, caller, session, SpokenApi.openai_responses)
 
 
+@router.post(
+    "/api/proxy/v1beta/models/{model_call}",
+    name="desktop:gemini_generate",
+    response_model=None,
+    include_in_schema=False,
+)
+async def proxy_gemini_generate(
+    model_call: str,
+    request: Request,
+    caller: ProxyCaller = Depends(get_proxy_caller),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse | StreamingResponse:
+    """Gemini's own API, behind Claidor's key and the person's allowance:
+    the wire that takes a video as input, spoken by the app's watchVideo
+    and videoReview subagents (25 September 2026).
+
+    The path segment is Google's `{model}:{method}`, so the model is read
+    from it and not from the body, and `streamGenerateContent` streams
+    whatever the body says; the app adds `?alt=sse`, which is forwarded,
+    because without it Google answers a stream as one JSON array. The
+    body goes through untouched (`_gemini_body`), the `usageMetadata` on
+    the answer — or on the last chunk — comes back as credits, and one
+    `desktop.video.generate` line says what was sent: how many videos,
+    inline or by URI, at what frame rate.
+    """
+    call = parse_gemini_call(model_call)
+    if call is None:
+        return _error(
+            "not_found_error",
+            f"/v1beta/models/{model_call} is not proxied: the path must be "
+            "<model>:generateContent or <model>:streamGenerateContent.",
+            404,
+        )
+    query = request.url.query
+    return await _proxy(
+        request,
+        caller,
+        session,
+        SpokenApi.gemini_generate_content,
+        model_id=call.model_id,
+        upstream_path=f"{call.upstream_path}{f'?{query}' if query else ''}",
+        stream=call.stream,
+    )
+
+
 @router.get(
     "/api/proxy/v1/models",
     name="desktop:proxy_models",
@@ -941,7 +1021,19 @@ async def _proxy(
     caller: ProxyCaller,
     session: AsyncSession,
     spoken: SpokenApi,
+    *,
+    model_id: str | None = None,
+    upstream_path: str | None = None,
+    stream: bool | None = None,
 ) -> JSONResponse | StreamingResponse:
+    """One metered relay for every model wire.
+
+    The three keyword overrides exist for Gemini, whose wire puts on the
+    path what the others put in the body: the model (`model_id`), the
+    method and its query (`upstream_path`), and whether the answer
+    streams (`stream`). Left None, each is read where the OpenAI and
+    Anthropic wires carry it.
+    """
     raw = await request.body()
     try:
         payload = json.loads(raw or b"{}")
@@ -949,7 +1041,9 @@ async def _proxy(
         return _error("invalid_request_error", "The body is not JSON.", 400)
     if not isinstance(payload, dict):
         return _error("invalid_request_error", "The body must be an object.", 400)
-    model = model_by_id(str(payload.get("model", "")))
+    model = model_by_id(
+        model_id if model_id is not None else str(payload.get("model", ""))
+    )
     if model is None:
         return _error(
             "invalid_request_error",
@@ -974,11 +1068,24 @@ async def _proxy(
         return refused
 
     wire = _WIRES[spoken]
-    stream = payload.get("stream") is True
-    url = f"{provider_base_url(model.provider)}{wire.upstream_path}"
+    if stream is None:
+        stream = payload.get("stream") is True
+    url = f"{provider_base_url(model.provider)}{upstream_path or wire.upstream_path}"
     headers = wire.headers(request)
     body = wire.body(payload, raw, model)
     user_id, session_id = user.id, caller.session_id
+    if spoken is SpokenApi.gemini_generate_content:
+        parts = count_video_parts(payload)
+        log.info(
+            VIDEO_CALL_LOG,
+            model=model.model_id,
+            stream=stream,
+            inline_videos=parts.inline,
+            uri_videos=parts.file_uri,
+            inline_bytes=parts.inline_bytes,
+            fps=list(parts.fps),
+            user_id=str(user_id),
+        )
 
     # The request's own session is committed when the handler returns,
     # before a stream has ended, so the usage row is written through a

@@ -96,6 +96,7 @@ export interface TurnAgentRunContextInput<ContextValue> {
   readonly isSilenceAllowed: boolean;
   readonly isComputerUseSubagent?: boolean;
   readonly isBrowserUseSubagent?: boolean;
+  readonly isVideoSubagent?: boolean;
   readonly hidden?: boolean;
   readonly lineage?: unknown;
   readonly canUseSelfSummary: () => boolean;
@@ -173,6 +174,9 @@ export async function createTurnAgentRunContext<ContextValue>(
     ...(input.isBrowserUseSubagent === undefined
       ? {}
       : { isBrowserUseSubagent: input.isBrowserUseSubagent }),
+    ...(input.isVideoSubagent === undefined
+      ? {}
+      : { isVideoSubagent: input.isVideoSubagent }),
     ...(input.requestSource === undefined
       ? {}
       : { requestSource: input.requestSource }),

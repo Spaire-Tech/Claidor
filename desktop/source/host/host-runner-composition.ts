@@ -101,6 +101,8 @@ import { createStreamAttempt } from "./runner/stream-attempt.js";
 import { getSandProfilePath, readSandProfileFile } from "./agents/agent-profile.js";
 import { createSandComputerUseSubagentConfig, isComputerUseSubagentType } from "./runner/tools/sand-computer-use-subagent.js";
 import { createSandBrowserUseSubagentConfig, isBrowserUseSubagentType } from "./runner/tools/sand-browser-use-subagent.js";
+import { createSandVideoSubagentConfigs, isVideoSubagentType } from "./runner/tools/sand-video-subagent.js";
+import { configuredClaidorVideoModel, isVideoSubagentServed } from "../shared/video-availability.js";
 import { createSandExecutorSubagentConfig } from "./sand-multitask.js";
 import type { TaskSubagentModelConfig } from "../packages/agent/tools/task-cluster-internal.js";
 import {
@@ -2621,6 +2623,12 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       }) => {
       const isComputerUseTurn = identity.isSubagentRunner && isComputerUseSubagentType(identity.subagentType);
       const isBrowserUseTurn = identity.isSubagentRunner && isBrowserUseSubagentType(identity.subagentType);
+      // A watchVideo / videoReview child runs on the video model (Gemini
+      // through Simeon Labs' proxy, `docs/product/video-served.md`): the
+      // model id below is what its state carries, so context processing
+      // accepts the video (`isGeminiModelId`) and the executor speaks
+      // Gemini's wire (`isGeminiVideoModelId` in provider-session.ts).
+      const isVideoTurn = identity.isSubagentRunner && isVideoSubagentType(identity.subagentType);
       // A child's prompt is built for its own identity (computer or browser
       // sections, no SendMessage/MCP sections); the agent keeps the shared one.
       const promptIdentity: PromptIdentity = {
@@ -2640,7 +2648,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       // Which prompt this shell serves, on the host log's channel: a child
       // that fell back to the agent's own glue or assembly would read the
       // agent's brief and behave as the parent (24 September 2026).
-      logHostLine(`${HOST_LOG_PREFIX} prompt conversation=${identity.conversationId} identity=${isComputerUseTurn ? "computerUse" : isBrowserUseTurn ? "browserUse" : identity.isSubagentRunner ? `subagent:${identity.subagentType ?? "?"}` : "agent"} glue=${identity.isSubagentRunner ? (promptGlue === productionPromptGlue ? "agent-fallback" : "own") : "agent"} assembly=${identity.isSubagentRunner ? (promptAssembly === productionSystemPromptAssembly ? "agent-fallback" : "own") : "agent"} boxScoped=${isBoxScopedTurn}`);
+      logHostLine(`${HOST_LOG_PREFIX} prompt conversation=${identity.conversationId} identity=${isComputerUseTurn ? "computerUse" : isBrowserUseTurn ? "browserUse" : isVideoTurn ? `video:${identity.subagentType ?? "?"}` : identity.isSubagentRunner ? `subagent:${identity.subagentType ?? "?"}` : "agent"} glue=${identity.isSubagentRunner ? (promptGlue === productionPromptGlue ? "agent-fallback" : "own") : "agent"} assembly=${identity.isSubagentRunner ? (promptAssembly === productionSystemPromptAssembly ? "agent-fallback" : "own") : "agent"} boxScoped=${isBoxScopedTurn}`);
       const resolveSubagentConfigs = (): readonly TaskSubagentModelConfig[] => {
         const configs: unknown[] = [];
         if (remoteBoxAvailable) {
@@ -2649,6 +2657,11 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           if (browserUseOffered) configs.push(createSandBrowserUseSubagentConfig());
         }
         if (typeof overrides.systemPrompt !== "string" && method(experiments, "isMultitaskEnabled")?.() === true) configs.push(createSandExecutorSubagentConfig());
+        // watchVideo and videoReview, on the video model, while the switch
+        // is on (`SAND_VIDEO_SUBAGENT_SERVED`, forwarded by the Mac). Until
+        // 25 September 2026 nothing registered them and the Task tool
+        // refused the name (ledger F-236, F-273, F-329).
+        if (isVideoSubagentServed()) configs.push(...createSandVideoSubagentConfigs());
         // The same plain-object configs turn-agent-composition builds; the
         // Task tool reads `subagent_type.type.case` and `.value.name` off them.
         return configs as unknown as readonly TaskSubagentModelConfig[];
@@ -2659,6 +2672,10 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         ...(identity.isSubagentRunner ? {} : { subagentConfigs: resolveSubagentConfigs() }),
       };
       const staticModelId = process.env.SAND_AGENT_MODEL ?? DEFAULT_SAND_MODEL;
+      // A video child's state names the video model, so context processing
+      // accepts the video (`isGeminiModelId`); its executor is put on the
+      // same model by the `isVideoSubagent` flag on the owner input.
+      const turnModelId = isVideoTurn ? configuredClaidorVideoModel() : staticModelId;
       const lazyToolHost = () => createProductionTurnToolsetHost({
         turn: baseTurn,
         factoryProvider: createTurnToolsetFactoryProvider(hostDependencies()),
@@ -2780,13 +2797,15 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             // September the owner input carried none and every turn fell
             // through to the executor's default whatever SAND_AGENT_MODEL
             // said; the executor still ignores an id the proxy does not
-            // serve (`isConfiguredClaidorModelId`).
+            // serve (`isConfiguredClaidorModelId`). A video child's model
+            // is chosen by its `isVideoSubagent` flag below, not by name.
             modelId: staticModelId,
             isSubagentRunner: identity.isSubagentRunner,
             // The computer/browser subagent flags pick its tools and put its
             // turns on the cheap model at low effort (`claidorModelForSession`).
             isComputerUseSubagent: isComputerUseTurn,
             isBrowserUseSubagent: isBrowserUseTurn,
+            ...(isVideoTurn ? { isVideoSubagent: true } : {}),
             isSilenceAllowed: runOptions.isSilenceAllowed === true,
             ...(runOptions.ackToken === undefined
               ? {}
@@ -2938,7 +2957,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             toolHost: lazyToolHost(),
             turn,
             staticConfig: {
-              modelId: staticModelId,
+              modelId: turnModelId,
               agentTokenLimit: CLAIDOR_WORKING_CONTEXT_TOKENS,
               conversationId: identity.conversationId,
               isBoxScopedSubagent: isBoxScopedTurn,

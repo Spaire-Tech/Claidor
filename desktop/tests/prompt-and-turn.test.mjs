@@ -100,8 +100,12 @@ test("the brief follows the tools it has and carries the founder's voice, and a 
     assert.match(prompt, /## Documents you make\nA report, plan, guide, memo, deck or spreadsheet the user asked for is a file, not a long chat reply: write a \.docx, \.pptx or \.xlsx/);
     assert.doesNotMatch(prompt, /read-only Screenshot tool|Screenshot views of the box/, "no Screenshot promise while the tool is withheld");
     assert.match(prompt, /a computerUse subagent's screenshots/);
-    assert.doesNotMatch(prompt, /delegate it to the watchVideo subagent|subagent_type "watchVideo"/);
-    assert.match(prompt, /You can't watch videos yet, and there is no subagent that can/);
+    // Since 25 September 2026 watchVideo is served (docs/product/video-served.md,
+    // tests/watch-video.test.mjs): the brief delegates a video to it, and the
+    // coming-soon sentence sits behind `SAND_VIDEO_SUBAGENT_SERVED=0`.
+    assert.match(prompt, /dispatch Task with subagent_type watchVideo/);
+    assert.doesNotMatch(prompt, /You can't watch videos yet, and there is no subagent that can/);
+    assert.match(module.buildSandBaseSystemPrompt({ cloudAgentsEnabled: false, videoSubagentOffered: false }), /You can't watch videos yet, and there is no subagent that can/);
     assert.match(prompt, /The first action there asks the user once, with a card; once they choose Always allow it runs without a card, except a risky command or a sensitive path/);
     assert.doesNotMatch(prompt, /every action needs the user's permission and raises an approval card/);
     assert.match(prompt, /that it needs their OK and why/);

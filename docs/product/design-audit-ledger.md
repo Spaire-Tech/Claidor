@@ -259,8 +259,8 @@ until its row says so. Columns:
 | F-233 | electron-main-app | note | hardcoded | unverified | - | - | Windows installer trust is pinned to Anysphere's signing certificate | `desktop/source/electron-main/update/win32-installer.ts` |
 | F-234 | speech-and-media | blocking | unwired | unverified | - | - | GenerateImage succeeds, is metered, and then tells the model it failed | `desktop/source/packages/agent/tools/core/generate-image.ts` |
 | F-235 | speech-and-media | major | design-violation | unverified | - | - | The GenerateImage tool contradicts the brief on how a picture is shown | `desktop/source/packages/agent/tools/core/generate-image.ts` |
-| F-236 | speech-and-media | major | dead-service | unverified | - | - | 'watchVideo' is advertised to the agent, not offered, and silently dispatches computerUse instead | `desktop/source/host/runner/system-prompt.ts` |
-| F-237 | speech-and-media | minor | unwired | unverified | - | - | Chat accepts a 200 MB video attachment that no path can consume | `desktop/source/shared/media/attachment-limits.ts` |
+| F-236 | speech-and-media | major | dead-service | confirmed | video-served | fixed | 'watchVideo' is advertised to the agent, not offered, and silently dispatches computerUse instead | `desktop/source/host/runner/system-prompt.ts` |
+| F-237 | speech-and-media | minor | unwired | confirmed | video-served | known-limit | Chat accepts a 200 MB video attachment that no path can consume | `desktop/source/shared/media/attachment-limits.ts` |
 | F-238 | speech-and-media | major | risk | unverified | - | - | Microphone usage description is neither set nor read; if inherited it names Grok Bot | `desktop/scripts/package-macos.mjs` |
 | F-239 | speech-and-media | minor | docs-wrong | unverified | - | - | Server docstrings still describe the en-US language force and an OpenClaw speech caller | `server/polar/desktop/capabilities.py` |
 | F-240 | speech-and-media | minor | spend | unverified | - | - | Avatar Generate draws at auto quality for a thumbnail | `desktop/source/shared/node/cursor-backend/claidor-generate-image.ts` |
@@ -296,7 +296,7 @@ until its row says so. Columns:
 | F-270 | files-attachments-artifacts | minor | design-violation | confirmed | attachment-topology | fixed | The box copy of an attachment is named by its hash, and the note never gives the original filename | `desktop/source/host/extensions/attachments/box-staging.ts` |
 | F-271 | files-attachments-artifacts | blocking | unwired | confirmed | artifacts-files | needs-mac | No docx/pptx/xlsx/pdf skill exists in the tree and the brief has no 'Documents You Make' section | `docs/product/artifacts-decision.md` |
 | F-272 | files-attachments-artifacts | major | unwired | confirmed | attachment-topology | known-limit | Large tool-output spill to files is not wired in production | `desktop/source/host/runner/runner-prompt-glue.ts` |
-| F-273 | files-attachments-artifacts | major | unwired | refuted | brief-text | coming-soon | The brief delegates videos to watchVideo/videoReview subagents that are never offered | `desktop/source/host/runner/system-prompt.ts` |
+| F-273 | files-attachments-artifacts | major | unwired | refuted | video-served | fixed | The brief delegates videos to watchVideo/videoReview subagents that are never offered | `desktop/source/host/runner/system-prompt.ts` |
 | F-274 | files-attachments-artifacts | major | unwired | confirmed | attachment-limits | fixed | A box file over 25 MB attached with SendMessage becomes a dead card while the agent reads 'Message sent' | `desktop/source/shared/media/attachment-limits.ts` |
 | F-275 | files-attachments-artifacts | minor | design-violation | confirmed | attachment-limits | fixed | CopyFromBox drops files into the Mac home folder root, not Downloads or a file card | `desktop/source/host/local-exec/local-exec-machine.ts` |
 | F-276 | files-attachments-artifacts | minor | risk | refuted | local-security | fixed | Copy tools and the once-Allow have no sensitive-file reviewer | `desktop/source/host/extensions/local-exec/gateway-local-exec-sand-box.ts` |
@@ -352,7 +352,7 @@ until its row says so. Columns:
 | F-326 | prompt-and-brief | major | docs-wrong | confirmed | brief-text | fixed | debugging-the-box.md tells the agent the shipped default is an anyrun pod and names the wrong container | `desktop/source/host/runner/box-reference-docs.ts` |
 | F-327 | prompt-and-brief | major | spend | refuted | brief-text | - | Prompt cost: ~90 KB system prompt per call, a third of it for features that do not exist | `desktop/source/host/runner/system-prompt.ts` |
 | F-328 | prompt-and-brief | major | spend | confirmed | brief-text | known-limit | Multitask mode is on by bundled default: every non-trivial ask is dispatched to an executor subagent on the full model | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
-| F-329 | prompt-and-brief | minor | unwired | confirmed | brief-text | coming-soon | watchVideo / videoReview subagents are instructed but never offered | `desktop/source/host/runner/system-prompt.ts` |
+| F-329 | prompt-and-brief | minor | unwired | confirmed | video-served | fixed | watchVideo / videoReview subagents are instructed but never offered | `desktop/source/host/runner/system-prompt.ts` |
 | F-330 | prompt-and-brief | major | design-violation | refuted | connectors-mcp | fixed | Plugin/MCP tool descriptions tell the agent to ask the user for API keys in chat | `desktop/source/host/runner/tools/sand-mcp-management-tools.ts` |
 | F-331 | prompt-and-brief | major | design-violation | confirmed | brief-text | fixed | No brief section decides documents-as-files; docx/xlsx/pptx are never named | `desktop/source/host/runner/system-prompt.ts` |
 | F-332 | prompt-and-brief | minor | design-violation | refuted | memory | known-limit | Subagent prompts still carry the agent's profile, memory and routines sections and name update_state they cannot call | `desktop/source/host/runner/system-prompt-assembly.ts` |
@@ -1144,3 +1144,23 @@ box image is not measured (F-083, F-271): run
 Mac; if it fails, provisioning installs them once (a build, not a
 Cursor service, so not Coming Soon). A skills directory for documents
 is still to build.
+
+### video-served (25 September 2026)
+
+The three video findings had one root: Grok Bot's watchVideo /
+videoReview subagents ran a Gemini model on Cursor's inference service
+and nothing of ours could take a video (`cursor-dependencies-map.md`
+§6). Simeon Labs' server now serves Gemini's own wire behind
+`CLAIDOR_GEMINI_API_KEY` (`POST /desktop/api/proxy/v1beta/models/{model}:streamGenerateContent`,
+metered like every other call), the box executor speaks it by hand with
+the video inline and its fps on the request (`gemini-direct-generate.ts`),
+the two subagents are registered on `gemini-2.5-flash`
+(`sand-video-subagent.ts`, `resolveSubagentConfigs`), and the brief
+delegates a video to them instead of saying it cannot (F-236, F-273,
+F-329, fixed; `SAND_VIDEO_SUBAGENT_SERVED=0` restores the coming-soon
+sentence). Known limit: the inline path only, 15 MB per video (F-237);
+the signed-URL store and Gemini's Files API upload are not served, so a
+chat attachment over that size is accepted by the composer and can only
+be trimmed on the box before a child watches it. Not yet run on a Mac.
+`tests/watch-video.test.mjs`, `server/tests/desktop/test_video_proxy.py`,
+`docs/product/video-served.md`.

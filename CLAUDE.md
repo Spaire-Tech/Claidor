@@ -828,6 +828,33 @@ carry real new product work. Found on the way and fixed:
 fast path both production call sites use, so the box's own renewal
 credential (the paragraph on routines above) was never minted.
 
+**Watching a video is served, built 25 September 2026** (the "video"
+of the map above; `docs/product/video-served.md`). Grok Bot's
+`watchVideo` / `videoReview` subagents were in the tree and refused at
+three places: nothing registered them, the executor spoke only OpenAI's
+Responses wire (no video part) and dropped `providerOptions.cursor.videoFps`,
+and the brief said "You can't watch videos yet". Now Simeon Labs' server
+serves Gemini's own wire at
+`POST /desktop/api/proxy/v1beta/models/{model}:streamGenerateContent`
+(`proxy_gemini_generate`, behind `CLAIDOR_GEMINI_API_KEY`; `DesktopProvider.gemini`,
+`ModelRole.video` = `gemini-2.5-flash`, metered off `usageMetadata` into
+the same `desktop_usage` rows, the hourly brake included; one
+`desktop.video.generate` log line per call), the box's executor speaks it
+by hand (`gemini-direct-generate.ts`; `@ai-sdk/google` is not installed)
+with the video inline as `inlineData` + `videoMetadata.fps`, the two
+subagents are registered on that model (`sand-video-subagent.ts`,
+`resolveSubagentConfigs`; a video child's state carries the Gemini id so
+the attachment is accepted, and its `isVideoSubagent` flag puts its
+executor on Gemini), and the brief delegates a video to them.
+`SAND_VIDEO_SUBAGENT_SERVED=0` puts the coming-soon sentence back;
+`SAND_CLAIDOR_VIDEO_MODEL` names the model; the Mac forwards both into
+the box. Limits: inline only, 15 MB per video (the signed-URL store for
+larger files is not served; the brief says to trim with ffmpeg first);
+the Gemini prices in `pricing.py` are **to confirm**. Not yet run on a
+Mac; the lines to read are `[claidor] video model=…` in the box log and
+`desktop.video.generate` on the server. **Needs the founder:
+`CLAIDOR_GEMINI_API_KEY` on Render.**
+
 ## The product's hostnames are simeonlabs.com (24 September 2026)
 
 "i want to replace all claidor.com instances by simeonlabs.com … now i
