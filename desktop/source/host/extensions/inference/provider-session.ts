@@ -459,6 +459,11 @@ export interface ModelCallLogLine {
   // none. Added 24 September 2026, when a computerUse child ran seven steps
   // on Shell alone and nothing said whether Computer was in its request.
   readonly offered?: string;
+  // The session's model-call budget and whether the turn is hidden, from
+  // ModelCallBudget. Added 25 September 2026: the 40-call hidden cap was
+  // found unwired on the production path and nothing in the log said which
+  // cap a call ran under (design-audit-ledger.md F-001).
+  readonly budget?: string;
 }
 
 // One line per model call in the host log, so `docker exec … tail
@@ -466,7 +471,7 @@ export interface ModelCallLogLine {
 // the executor wrote nothing and a fifty-minute loop left no trace but
 // the bill.
 export function formatModelCallLogLine(line: ModelCallLogLine): string {
-  return `[claidor] model=${line.model} effort=${line.effort} input=${line.inputTokens} cached=${line.cachedTokens} output=${line.outputTokens} reasoning=${line.reasoningTokens} ms=${line.elapsedMs} tools=${line.tools}${line.offered === undefined ? "" : ` offered=${line.offered}`}`;
+  return `[claidor] model=${line.model} effort=${line.effort} input=${line.inputTokens} cached=${line.cachedTokens} output=${line.outputTokens} reasoning=${line.reasoningTokens} ms=${line.elapsedMs} tools=${line.tools}${line.offered === undefined ? "" : ` offered=${line.offered}`}${line.budget === undefined ? "" : ` budget=${line.budget}`}`;
 }
 
 export function summarizeToolCalls(calls: readonly { readonly toolName?: string; readonly args?: unknown }[] | undefined): string {
@@ -529,7 +534,7 @@ function logModelCallError(error: unknown, callInfo: { readonly model: string; r
   modelCallLog(`${HOST_LOG_PREFIX} model-error-schemas ${clipForHostLog(toolSchemaSummary(tools), 6000)}`);
 }
 
-function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, callInfo?: { readonly model: string; readonly effort: string }, tools?: ToolSet, messages?: readonly CoreMessage[]) {
+function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string }, tools?: ToolSet, messages?: readonly CoreMessage[]) {
   const startedAtMs = Date.now();
   const failure = deferred<never>();
   failure.promise.catch(() => undefined);
@@ -553,7 +558,7 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
     const cached = typeof openai.cachedPromptTokens === "number" ? openai.cachedPromptTokens : 0;
     const reasoning = typeof openai.reasoningTokens === "number" ? openai.reasoningTokens : 0;
     if (callInfo != null) {
-      modelCallLog(formatModelCallLogLine({ model: callInfo.model, effort: callInfo.effort, inputTokens: value.promptTokens, cachedTokens: cached, outputTokens: value.completionTokens, reasoningTokens: reasoning, elapsedMs: Date.now() - startedAtMs, tools: summarizeToolCalls(calls), offered: Object.keys(tools ?? {}).join(",") || "-" }));
+      modelCallLog(formatModelCallLogLine({ model: callInfo.model, effort: callInfo.effort, inputTokens: value.promptTokens, cachedTokens: cached, outputTokens: value.completionTokens, reasoningTokens: reasoning, elapsedMs: Date.now() - startedAtMs, tools: summarizeToolCalls(calls), offered: Object.keys(tools ?? {}).join(",") || "-", ...(callInfo.budget === undefined ? {} : { budget: callInfo.budget }) }));
     }
     return { inputTokens: Math.max(0, value.promptTokens - cached), outputTokens: value.completionTokens, cacheReadTokens: cached, cacheWriteTokens: 0, maxTokens };
   });
@@ -561,7 +566,7 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
   return { fullStream, response: race(result.response), usage: race(result.usage), extendedUsage, providerMetadata: race(result.providerMetadata), invocationId: Promise.resolve(invocationId) };
 }
 
-function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, openaiOptions: Record<string, unknown> = {}, callInfo?: { readonly model: string; readonly effort: string }) {
+function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, openaiOptions: Record<string, unknown> = {}, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string }) {
   const tools = toToolSet(definitions, executeTool);
   const coreMessages = toCoreMessages(messages);
   // The host loop's state carries its own system prompt; the router prompt is
@@ -593,12 +598,12 @@ function claidorLanguageModel(source: ClaidorCredentialSource, id: string): Lang
   return createOpenAI({ apiKey: "claidor-desktop-access-token", baseURL: claidorProxyBaseUrl(source.backendUrl), name: "claidor", fetch: claidorAuthenticatedFetch(source) }).responses(id);
 }
 
-function claidorExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, modelId?: string, reasoningEffort: ClaidorReasoningEffort = configuredClaidorReasoningEffort()) {
+function claidorExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, modelId?: string, reasoningEffort: ClaidorReasoningEffort = configuredClaidorReasoningEffort(), budget?: ModelCallBudget) {
   const source = claidorCredentialSource;
   if (source == null) throw new Error("Claidor is the selected provider, but this process has no signed-in credential source. Sign in to Claidor and try again.");
   const requested = modelId?.trim() || configuredClaidorModel();
   const cheap = configuredClaidorCheapModel();
-  const start = (id: string) => aiSdkExecutor(claidorLanguageModel(source, id), messages, invocationId, definitions, executeTool, onUsage, CLAIDOR_WORKING_CONTEXT_TOKENS, { reasoningEffort }, { model: id, effort: reasoningEffort });
+  const start = (id: string) => aiSdkExecutor(claidorLanguageModel(source, id), messages, invocationId, definitions, executeTool, onUsage, CLAIDOR_WORKING_CONTEXT_TOKENS, { reasoningEffort }, { model: id, effort: reasoningEffort, ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }) });
   if (requested === cheap) return start(requested);
   return withCheapRateLimitFallback(start(requested), () => start(cheap));
 }
@@ -623,7 +628,7 @@ class ProviderPromptExecutor extends BasePromptExecutor<ProviderMessage> {
   constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void, readonly modelId?: string, readonly reasoningEffort?: ClaidorReasoningEffort, readonly budget?: ModelCallBudget) { super(new BasePromptBuilder(initialMessages)); }
   stream(_ctx: unknown, invocationId = crypto.randomUUID(), definitions?: readonly Loose[]) {
     if (this.budget != null) spendModelCall(this.budget);
-    if (this.provider === "claidor") return claidorExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage, this.modelId, this.reasoningEffort);
+    if (this.provider === "claidor") return claidorExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage, this.modelId, this.reasoningEffort, this.budget);
     if (this.provider === "codex") return codexExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage);
     if (this.provider === "claude-code") return claudeExecutor(this.getMessages(), invocationId, this.onUsage);
     return openRouterExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage);

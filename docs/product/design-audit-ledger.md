@@ -24,7 +24,7 @@ until its row says so. Columns:
 
 | id | area | severity | kind | state | cluster | disposition | title | first evidence |
 |---|---|---|---|---|---|---|---|---|
-| F-001 | chat-turn | blocking | unwired | unverified | - | - | Hidden-turn model-call cap (40) is never wired on the production path: every nudge, intro and automation runs with the 5,000 budget | `desktop/source/host/host-runner-composition.ts` |
+| F-001 | chat-turn | blocking | unwired | confirmed | hidden-turn-cap | fixed | Hidden-turn model-call cap (40) is never wired on the production path: every nudge, intro and automation runs with the 5,000 budget | `desktop/source/host/host-runner-composition.ts` |
 | F-002 | chat-turn | major | risk | unverified | - | - | Every model call is hard-aborted at 45 s including the streamed body, so a long Terra effort-high step cannot complete and is retried | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-003 | chat-turn | minor | design-violation | unverified | - | - | Silent per-step model swap: on any 'rate limit'-shaped error the loop falls back from Terra to Luna without a system line in the thread | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-004 | chat-turn | minor | dead-service | unverified | - | - | Every turn and every nudge first calls Cursor's GetUserPrivacyMode Connect RPC against api.simeonlabs.com, which is not served | `desktop/source/host/runner/turn-run-shell.ts` |
@@ -36,14 +36,14 @@ until its row says so. Columns:
 | F-010 | chat-turn | minor | design-violation | unverified | - | - | SAND_CLAIDOR_FULL_AGENT=off hatch is live, env-only, and still ships the audited flaws plus a 'Router error:' bubble and a Codex/Claude Code-flavoured prompt | `desktop/source/shared/inference-router.ts` |
 | F-011 | chat-turn | note | dead-service | unverified | - | - | Dead executors for Codex (chatgpt.com), Claude Code and OpenRouter remain compiled into the host with a 'Settings → Router' key field and 'Simeon Reconstructed' headers | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-012 | chat-turn | minor | risk | unverified | - | - | On a model error the box log receives the full system prompt (12,000 chars: memory, user info, roster) and every tool schema | `desktop/source/host/extensions/inference/provider-session.ts` |
-| F-013 | chat-turn | note | spend | unverified | - | - | Reply-nudge budget: up to 4 hidden runs per user turn (3 REPLY_NUDGE + 1 CLOSING_SEND_NUDGE) plus ensureHiddenTurnReply on the intro, each unbounded by the hidden cap today | `desktop/source/host/extensions/transcript/turn-runtime.ts` |
+| F-013 | chat-turn | note | spend | confirmed | hidden-turn-cap | known-limit | Reply-nudge budget: up to 4 hidden runs per user turn (3 REPLY_NUDGE + 1 CLOSING_SEND_NUDGE) plus ensureHiddenTurnReply on the intro, each unbounded by the hidden cap today | `desktop/source/host/extensions/transcript/turn-runtime.ts` |
 | F-014 | agents-and-subagents | blocking | design-violation | unverified | - | - | A Task child runs on the parent's conversation state and writes its checkpoints into the parent's agent store and transcript | `desktop/source/host/host-runner-composition.ts` |
-| F-015 | agents-and-subagents | major | spend | unverified | - | - | The 40-call hidden-turn budget is dead on the production path: `hidden` never reaches the owner input | `desktop/source/host/host-runner-composition.ts` |
+| F-015 | agents-and-subagents | major | spend | confirmed | hidden-turn-cap | fixed | The 40-call hidden-turn budget is dead on the production path: `hidden` never reaches the owner input | `desktop/source/host/host-runner-composition.ts` |
 | F-016 | agents-and-subagents | major | design-violation | unverified | - | - | The agent's prompt says it holds the Screenshot tool while AGENT_SCREENSHOT_TOOL = false withholds it (the blindness failure, undeclared) | `desktop/source/host/host-runner-composition.ts` |
 | F-017 | agents-and-subagents | major | unwired | unverified | - | - | The executor subagent is on by default (sand_multitask default true) and an executor child's ExternalShell/ExternalRead can never be allowed: no permission surface exists for the child's id | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
 | F-018 | agents-and-subagents | major | design-violation | unverified | - | - | getRemoteBoxAvailable compares a Promise to false and is always true, so box tools and computerUse are offered with Docker off | `desktop/source/host/host-runner-composition.ts` |
 | F-019 | agents-and-subagents | major | unwired | unverified | - | - | Grok Bot's per-turn memory extraction and episode summaries never run: the shell adapter host has no memoryStore | `desktop/source/host/runner/production-turn-run-shell-adapter.ts` |
-| F-020 | agents-and-subagents | minor | unwired | unverified | - | - | The closing-send nudge can never fire: onLatestPromptMessages is not passed, so latestPromptMessages() is always [] | `desktop/source/host/host-runner-composition.ts` |
+| F-020 | agents-and-subagents | minor | unwired | confirmed | hidden-turn-cap | fixed | The closing-send nudge can never fire: onLatestPromptMessages is not passed, so latestPromptMessages() is always [] | `desktop/source/host/host-runner-composition.ts` |
 | F-021 | agents-and-subagents | minor | unwired | unverified | - | - | Subagent launch auto-review and MessageSubagent steer review are not wired on the production path | `desktop/source/host/runner/turn-agent-composition.ts` |
 | F-022 | agents-and-subagents | minor | dead-service | unverified | - | - | The agent is offered the CloudAgent tool and the cloud-agents-enabled brief although cloud agents are known-unserved | `desktop/source/host/runner/system-prompt.ts` |
 | F-023 | agents-and-subagents | minor | unwired | unverified | - | - | Chrome prewarm (prepareRemoteBox) has no caller; the child's prompt says it happens | `desktop/source/host/runner/computer-use.ts` |
@@ -52,7 +52,7 @@ until its row says so. Columns:
 | F-026 | agents-and-subagents | minor | naming | unverified | - | - | The child runner's getConversationId() is the parent's id (inherited getAgentId), so the child carries a mixed identity | `desktop/source/host/host-runner-composition.ts` |
 | F-027 | agents-and-subagents | minor | design-violation | unverified | - | - | Task resume and readonly do not reach the child; MessageSubagent's text promises a resume that recreates a blank runner | `desktop/source/host/runner/subagent-runtime.ts` |
 | F-028 | agents-and-subagents | minor | unwired | unverified | - | - | The prompt glue never learns whether browserUse is offered, so prompt and Task configs disagree when the gate is on | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
-| F-029 | agents-and-subagents | note | risk | unverified | - | - | Agent-created teammates are minted as origin 'user' with an introduction pending | `desktop/source/host/host-runner-composition.ts` |
+| F-029 | agents-and-subagents | note | risk | refuted | hidden-turn-cap | known-limit | Agent-created teammates are minted as origin 'user' with an introduction pending | `desktop/source/host/host-runner-composition.ts` |
 | F-030 | agents-and-subagents | note | docs-wrong | unverified | - | - | The child-audit record's cost accounting is incomplete: the prompt shrank, the child's context did not | `docs/product/computer-use-child-audit-2026-09-24.md` |
 | F-031 | routines-automations | blocking | design-violation | unverified | - | - | Routines only fire while the app and the local Docker box are running; nothing fires with the Mac shut, and the agent's brief tells the person the opposite | `desktop/source/host/extensions/automations/sand-trigger-hub.ts` |
 | F-032 | routines-automations | blocking | dead-service | unverified | - | - | The agent is offered six event-listener trigger types (Slack, GitHub, Teams, Linear, Sentry, PagerDuty) that can never fire on Simeon, and saving one reports success | `desktop/source/host/runner/tools/sand-state-tool.ts` |
@@ -140,7 +140,7 @@ until its row says so. Columns:
 | F-114 | keys-and-auth | note | dead-service | unverified | - | - | 1Password provisioning code is present with Anysphere's launcher signing identity; unreachable outside dev controls | `desktop/source/electron-main/onepassword/onepassword-cli-runtime.ts` |
 | F-115 | keys-and-auth | note | docs-wrong | unverified | - | - | docs/product/app-sign-in.md still says the round trip was never run and names api.claidor.com | `docs/product/app-sign-in.md` |
 | F-116 | keys-and-auth | note | dead-service | unverified | - | - | Every Connect RPC to our host carries x-cursor-checksum, x-ghost-mode and the bearer, after a privacy lookup that 404s | `desktop/source/shared/node/cursor-backend/cursor-inference.ts` |
-| F-117 | models-and-spend | blocking | unwired | unverified | - | - | Hidden-turn budget of 40 never reaches the executor: the production owner input drops `hidden` | `desktop/source/host/host-runner-composition.ts` |
+| F-117 | models-and-spend | blocking | unwired | confirmed | hidden-turn-cap | fixed | Hidden-turn budget of 40 never reaches the executor: the production owner input drops `hidden` | `desktop/source/host/host-runner-composition.ts` |
 | F-118 | models-and-spend | major | spend | unverified | - | - | Auto-review classifier runs in shadow by default: one Luna call per Shell/MCP/computer action, verdict discarded | `desktop/source/host/runner/sand-auto-review.ts` |
 | F-119 | models-and-spend | major | unwired | unverified | - | - | The model picker's choice never reaches the executor; the loop's model is decided only by box env | `desktop/source/host/host-runner-composition.ts` |
 | F-120 | models-and-spend | minor | design-violation | unverified | - | - | Luna is offered in the picker as the agent's model, against pricing.py's own rule | `desktop/source/electron-main/models/claidor-model-catalog.ts` |
@@ -148,7 +148,7 @@ until its row says so. Columns:
 | F-122 | models-and-spend | minor | spend | unverified | - | - | The proxy serves withheld models (Astra 10x, Opus 5x) to any bearer that names them | `server/polar/desktop/endpoints.py` |
 | F-123 | models-and-spend | minor | dead-service | unverified | - | - | A Cursor Connect RPC (GetUserPrivacyMode) is attempted on api.simeonlabs.com at the start of every turn | `desktop/source/host/runner/turn-run-shell.ts` |
 | F-124 | models-and-spend | major | risk | unverified | - | - | `CLAIDOR_FETCH_TIMEOUT_MS = 45_000` aborts the whole streamed model call, not just the connect | `desktop/source/host/extensions/inference/provider-session.ts` |
-| F-125 | models-and-spend | note | spend | unverified | - | - | Every reply nudge and closing nudge is a fresh full turn on Terra at effort high with the whole brief | `desktop/source/host/extensions/transcript/turn-runtime.ts` |
+| F-125 | models-and-spend | note | spend | confirmed | hidden-turn-cap | known-limit | Every reply nudge and closing nudge is a fresh full turn on Terra at effort high with the whole brief | `desktop/source/host/extensions/transcript/turn-runtime.ts` |
 | F-126 | models-and-spend | note | unmeasured | unverified | - | - | Hourly credit brake makes the 5,000-step asked cap unreachable; how the 402 reads in the chat is unmeasured | `server/polar/config.py` |
 | F-127 | models-and-spend | minor | naming | unverified | - | - | User-facing error strings say Claidor and expose env-variable names | `desktop/source/host/extensions/transcript/agent-run-error.ts` |
 | F-128 | models-and-spend | note | dead-service | unverified | - | - | Dead providers (codex, claude-code, openrouter) and the Router panel: unreachable, but still shipped as code, SDK and strings | `desktop/source/host/extensions/inference/provider-session.ts` |
@@ -321,7 +321,7 @@ until its row says so. Columns:
 | F-295 | web-and-search | minor | risk | unverified | - | - | A hung search can hold the turn for ten minutes: no client-side deadline on the search call, 600 s on the server | `desktop/source/host/extensions/inference/capability-tools.ts` |
 | F-296 | web-and-search | note | hardcoded | unverified | - | - | `DEFAULT_SAND_MODEL` ("gpt-5.5-high-fast") is not in the server catalogue | `desktop/source/host/host-runner-composition.ts` |
 | F-297 | onboarding-first-run | major | unwired | unverified | - | - | Intro stays owed when its run throws, so it re-runs on every open | `desktop/source/host/extensions/transcript/agent-lifecycle.ts` |
-| F-298 | onboarding-first-run | major | spend | unverified | - | - | The intro is two hidden turns, so its cap is 80 model calls, not 40 | `desktop/source/host/extensions/transcript/agent-lifecycle.ts` |
+| F-298 | onboarding-first-run | major | spend | confirmed | hidden-turn-cap | known-limit | The intro is two hidden turns, so its cap is 80 model calls, not 40 | `desktop/source/host/extensions/transcript/agent-lifecycle.ts` |
 | F-299 | onboarding-first-run | major | hardcoded | unverified | - | - | The default agent name is 'Grok' in six places; a fallback agent on a fresh box is named Grok | `desktop/source/shared/agents/agents.ts` |
 | F-300 | onboarding-first-run | major | design-violation | unverified | - | - | The first message becomes the agent's name (Grok Bot's seeding kept) | `desktop/source/host/extensions/transcript/send-acceptance.ts` |
 | F-301 | onboarding-first-run | major | unwired | unverified | - | - | Docker missing at first launch: nothing tells the person, and the brief promises a prompt that does not exist | `desktop/source/electron-main/main-production-services.ts` |
@@ -461,7 +461,7 @@ until its row says so. Columns:
 | F-435 | docs-vs-code | minor | docs-wrong | unverified | - | - | account-mcp-local-measured.md and connectors-signin-measured.md tell the Mac reader to cat a path under Application Support; the stores are in ~/.caisra | `docs/product/account-mcp-local-measured.md` |
 | F-436 | docs-vs-code | minor | docs-wrong | unverified | - | - | computer-stream-measured.md's line table names `[CaisraScreen]`; the tag in the code is `[SimeonScreen]` | `docs/product/computer-stream-measured.md` |
 | F-437 | docs-vs-code | major | docs-wrong | unverified | - | - | The macOS CI workflow and CLAUDE.md's `npm run mac:build` describe the LobsterAI build; neither script exists in the current tree | `CLAUDE.md` |
-| F-438 | docs-vs-code | major | docs-wrong | unverified | - | - | spend-guards.md says the intro runs with 'no tools'; hidden only sets the call budget and the kickstart prompt still nudges 'offer any choice as a question widget' | `docs/product/spend-guards.md` |
+| F-438 | docs-vs-code | major | docs-wrong | confirmed | hidden-turn-cap | fixed | spend-guards.md says the intro runs with 'no tools'; hidden only sets the call budget and the kickstart prompt still nudges 'offer any choice as a question widget' | `docs/product/spend-guards.md` |
 | F-439 | docs-vs-code | minor | docs-wrong | unverified | - | - | reconstruction-gaps.md and CLAUDE.md say Claidor serves 'fourteen HTTP routes under /desktop/api/'; endpoints.py declares about thirty-three | `docs/product/reconstruction-gaps-2026-09-24.md` |
 | F-440 | docs-vs-code | minor | docs-wrong | unverified | - | - | app-sign-in.md still says several call paths refresh against api2.cursor.sh and sign the person out; that was fixed 24 September and the record was not amended | `docs/product/app-sign-in.md` |
 | F-441 | docs-vs-code | minor | dead-service | unverified | - | - | Known-unserved Cursor surfaces still leak live links into the user's view: cloud-agent link, listener 'integrations' URL, https://cursor.com deep links, api2.cursor.sh DNS probe | `desktop/source/electron-main/main-edge.ts` |
@@ -507,3 +507,25 @@ until its row says so. Columns:
 | F-481 | security | note | risk | unverified | - | - | Every page in the agent's browser and the noVNC page has confirm() forced to true | `desktop/source/electron-preload/preload-browser-base.ts` |
 | F-482 | security | note | docs-wrong | unverified | - | - | Record claims the vendor store lives under Application Support, then corrects itself; CLAUDE.md now agrees | `docs/product/connectors-signin-measured.md` |
 | F-483 | security | minor | risk | unverified | - | - | Fork desktop router (1339) and egress tunnel port (8790) are published without a stated need | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+
+## Cluster notes
+
+### hidden-turn-cap (25 September 2026)
+
+Root: `createAgentOwnerInput` dropped `runOptions.hidden`, so every hidden
+turn ran with the asked cap of 5,000; and nothing set the runner's
+latest-prompt-messages getter, so the closing-send nudge and post-turn
+labelling read an empty list. Refuters: F-001, F-117 (3/3 stand), F-020
+(3/3 stand; also kills post-turn labelling), F-298 (evidence and wiring
+stand, design refutes: the cap was decided per turn, so an intro that
+nudges is 40 + 40 by design; severity note), F-013 and F-125 (evidence
+and wiring stand, design refutes: Grok Bot's own nudge mechanism,
+chosen on 22 September; known limits, the "unbounded" half is F-001),
+F-029 (wiring and design refute: the teammate's intro runs once when the
+person opens it, by design), F-438 (evidence and wiring stand, design
+refutes the widget half; the "no tools" row corrected in
+spend-guards.md). Fixed: `hidden` forwarded to the owner input;
+`setLatestPromptMessagesGetter` on the runner, bound by the agent's
+shell; the `[claidor] model=` line ends with `budget=<limit>` and
+`hidden=true` on a hidden turn. Needs a Mac: a nudge or intro line
+reading `budget=40 hidden=true`.

@@ -16,7 +16,7 @@ a fixed table:
 | summarization, memory | `gemini-2.5-flash` | — | `shared/agents/sand-agent-model.ts`, `runner/turn-run-shell.ts:188`, `extensions/memory/production.ts:69` |
 | computer-use subagent | `claude-opus-4-8` | `effort: low`, `thinking: false` | `sand-agent-model.ts` (`SAND_COMPUTER_USE_MODEL_SELECTION`) |
 | browser-use subagent | stored selection, else the loop's | — | `extensions/inference/cursor-session.ts:31` |
-| done or continue | the same loop model, re-run with a hidden nudge | — | `extensions/transcript/turn-runtime.ts:45,555-599` (`MAX_REPLY_NUDGES = 3`, plus one closing nudge) |
+| done or continue | the same loop model, re-run with a hidden nudge | — | `extensions/transcript/turn-runtime.ts:45,555-599` (`MAX_REPLY_NUDGES = 3`, plus one closing nudge; the closing nudge could never fire until 25 September 2026 because nothing set the runner's latest-prompt-messages getter, design-audit-ledger F-020) |
 | risky or safe | a classifier on Cursor's server, not in the app | — | `extensions/auto-review/sand-backend-smart-mode-classifier-exec.ts` (`classifySandAutoReview`); gate `sand_auto_review` defaults false → shadow |
 | post-turn labelling | fire-and-forget to Cursor's server | — | `extensions/inference/sand-labeling.ts` |
 

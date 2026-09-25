@@ -2670,6 +2670,27 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             ...(runOptions.ackToken === undefined
               ? {}
               : { ackToken: runOptions.ackToken }),
+            // A turn nobody asked for (the intro, a reply nudge, a routine,
+            // a revival) is marked `hidden` by its caller and gets the
+            // 40-call budget in createProviderPromptSession. Until 25
+            // September 2026 this input dropped the flag, so every hidden
+            // turn ran with the asked-turn cap of 5,000
+            // (docs/product/design-audit-ledger.md F-001, F-015, F-117).
+            ...(runOptions.hidden === undefined
+              ? {}
+              : { hidden: runOptions.hidden === true }),
+            // The turn's prompt messages, for turn-settle's silent-tool-call
+            // check (the closing-send nudge) and post-turn labelling. A
+            // child runs headless and has no nudge; the agent's runner takes
+            // the getter (F-020).
+            ...(identity.isSubagentRunner
+              ? {}
+              : {
+                  onLatestPromptMessages: (getter: () => readonly unknown[]) => {
+                    const runner = builtRunner as { setLatestPromptMessagesGetter?: (value: () => readonly unknown[]) => void } | undefined;
+                    runner?.setLatestPromptMessagesGetter?.(getter);
+                  },
+                }),
             canUseSelfSummary: () => true,
             cancelThisRun: reason => {
               if (identity.interrupt != null) { identity.interrupt(reason.reason); return; }
