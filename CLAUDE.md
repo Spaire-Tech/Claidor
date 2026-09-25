@@ -378,7 +378,16 @@ executor's 45 s deadline moved off the streamed body (it killed any step
 longer than 45 s and retried it), the Luna fallback on a 429 writes a
 `[claidor] model-fallback` line, and the brief follows the Screenshot
 switch (`AGENT_SCREENSHOT_TOOL_OFFERED`, `system-prompt.ts`) instead of
-promising a tool the request withholds. The transcript's third
+promising a tool the request withholds. **Later the same day (ledger
+`box-substrate`): which exec daemon serves 1337 in the box is not
+established.** The container gets `SAND_USE_EXISTING_BOX_EXEC_DAEMON=1`
+and our reconstruction daemon bind-mounted over
+`/home/box/box-exec-daemon`; ours answers only the shell and read cases
+(no Computer, no write, an empty MCP load). If the supervisor runs it,
+every Computer call and CopyToBox fails, which the 24 September child
+log (no Computer call ever issued) is consistent with. Read
+`docker exec simeon-box ps aux | grep box-exec-daemon` before reasoning
+about a blind computerUse child again. The transcript's third
 finding, one reply sent twice ("Nice. We're set…"), is not explained by
 the code alone: the send count is collected synchronously before the
 run settles, and the early-result reminder cannot fire in a turn with no

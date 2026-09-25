@@ -215,7 +215,7 @@ list and the profile are the two that would change something on screen.
 | Access state | `GetSandAccessStatus` (`account/access.ts:68`) | `unknown`; the recovered renderer treats it as an error for the access cover |
 | Usage, trial | four `DashboardService` methods (`cursor-profile.ts:125-127`) | gated off, `null` |
 | Models | `AiService/AvailableModels` (`models/cursor-model-catalog.ts:12`) | error to the renderer |
-| Remote box | `GrokBotService/{EnsureSandBox,RecreateSandBox,…}` (`box/box-host-connector.ts:78-108`); `POST /sand-box/local-exec-daemon-credential` (`:121`) | `ConnectError`; local Docker is the only runtime that works |
+| Remote box | `GrokBotService/{EnsureSandBox,RecreateSandBox,…}` (`box/box-host-connector.ts:78-108`); `POST /sand-box/local-exec-daemon-credential` (`:121`, a plain fetch that 404s, not a ConnectError; since 25 September 2026 the local Docker runtime never asks, ledger F-413) | `ConnectError`; local Docker is the only runtime that works |
 | Migration watch | `GrokBotService/WatchSandBoxMigration` (`box-migration-watcher.ts:33`) | retries every 3 s for ever |
 | Account MCP | as above (`mcp/desktop-mcp-manager.ts:71,78`); team popularity (`mcp-team-popularity.ts:4-6`) | reads empty; writes reject |
 | Experiments | `AnalyticsService/BootstrapStatsig` (`statsig-bootstrap.ts:39`), every 5 min | `{}` |

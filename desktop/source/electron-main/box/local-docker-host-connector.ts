@@ -13,6 +13,15 @@ import type { GatewayConnection } from "./gateway-descriptor-cache.js";
 import { computerStreamLine } from "../vnc/computer-stream-log.js";
 
 export const LOCAL_DOCKER_BOX_IMAGE = "public.ecr.aws/k0i0n2g5/cursorenvironments/universal:sand-box-latest";
+// The tag is Cursor's and mutable. A digest pins the box (F-412, F-363):
+// `SAND_BOX_IMAGE_DIGEST=<64 hex>` makes every create run `image@sha256:<digest>`
+// and refuse a container on any other reference. The digest is read on a
+// Mac (`docker image inspect --format '{{index .RepoDigests 0}}' <image>`)
+// and recorded in docs/product/box-substrate-read.md; none is pinned yet.
+export function localDockerBoxImageReference(env: NodeJS.ProcessEnv = process.env): string {
+  const digest = env.SAND_BOX_IMAGE_DIGEST?.trim().toLowerCase().replace(/^sha256:/, "") ?? "";
+  return /^[0-9a-f]{64}$/.test(digest) ? `${LOCAL_DOCKER_BOX_IMAGE}@sha256:${digest}` : LOCAL_DOCKER_BOX_IMAGE;
+}
 // The container carries our own name. Until 23 September 2026 it was
 // "grok-bot-local-vm", the name this tree's origin (Grok Bot 0.18) gave its
 // own local mode, so an installed Grok Bot and Simeon would have contended
@@ -238,7 +247,7 @@ async function ensureLocalDockerBoxNarrated(settingsPath: string, inferenceCrede
   const inspected = await inspectContainer();
   computerStreamLine(`local docker: container exists=${inspected.exists} running=${inspected.running} owned=${inspected.owned} schema=${inspected.schemaVersion || "?"} hostBundleMatches=${inspected.hostSha256 === hostBundle.sha256}`);
   if (inspected.exists && !inspected.owned) throw new Error(`Local Docker VM cannot use ${LOCAL_DOCKER_BOX_CONTAINER}: an unowned container already has that name.`);
-  if (inspected.exists && inspected.image !== LOCAL_DOCKER_BOX_IMAGE) throw new Error(`Local Docker VM container uses unexpected image ${inspected.image}. Remove it explicitly before changing images.`);
+  if (inspected.exists && inspected.image !== localDockerBoxImageReference()) throw new Error(`Local Docker VM container uses unexpected image ${inspected.image}. Remove it explicitly before changing images.`);
   const shouldReplace = inspected.exists && localDockerContainerNeedsReplace(inspected, hostBundle.sha256);
   if (shouldReplace) {
     computerStreamLine("local docker: replacing the container (schema or host bundle changed)");
@@ -272,7 +281,7 @@ async function ensureLocalDockerBoxNarrated(settingsPath: string, inferenceCrede
       "--mount", `type=bind,src=${dirname(hostBundle.boxExecDaemonPath)},dst=/home/box/box-exec-daemon,readonly`,
       "--mount", `type=bind,src=${inferenceDir},dst=/run/grok-bot,readonly`,
       ...authMounts,
-      LOCAL_DOCKER_BOX_IMAGE,
+      localDockerBoxImageReference(),
     ]);
     if (!created.ok) throw new Error(`Could not create the local Docker VM: ${created.output}`);
   }
@@ -476,7 +485,11 @@ export function createSettingsRoutedHostConnector(
   };
   return {
     connect: async () => settings.getBoxRuntime() === "local-docker" ? await localConnect() : await remote.connect(),
-    ...(remote.issueLocalExecDaemonCredential == null ? {} : { issueLocalExecDaemonCredential: remote.issueLocalExecDaemonCredential.bind(remote) }),
+    // The local-exec daemon credential re-resolves a *cloud* box's gateway
+    // through the backend; the local Docker runtime writes the connection
+    // file itself, and the route is not served, so until 25 September 2026
+    // this was one 404 with the bearer every 30 s for the app's life (F-413).
+    ...(remote.issueLocalExecDaemonCredential == null ? {} : { issueLocalExecDaemonCredential: async () => settings.getBoxRuntime() === "local-docker" ? undefined : await remote.issueLocalExecDaemonCredential!() }),
     ...(remote.issueInferenceCredential == null ? {} : { issueInferenceCredential: remote.issueInferenceCredential.bind(remote) }),
     recreate: async (args): Promise<RecreateResult> => {
       if (settings.getBoxRuntime() !== "local-docker") {

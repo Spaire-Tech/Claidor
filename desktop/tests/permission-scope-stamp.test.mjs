@@ -82,8 +82,8 @@ test("the coordinator stamps on the way through, and the desktop answers with th
   const renderer = await readFile(path.join(repoRoot, "frontend/src/production/ProductionRenderer.tsx"), "utf8");
   assert.match(main, /const permissionScopeRevision = Date\.now\(\)/);
   assert.match(main, /command<\{ slot\?: unknown \} \| null>\(commands, "getTranscriptAccountSlot", \{\}\)/);
-  assert.match(main, /server\.postEvent\(family, stampTranscriptEvent\(event\.payload, scope\)\)/);
-  assert.match(main, /stampTranscriptReply\(method, outcome\.value, permissionScope\(\)\)/);
+  assert.match(main, /server\.postEvent\(family, stampTranscriptEvent\(event\.payload, permissionScope\(\)\)\)/);
+  assert.match(main, /stampTranscriptReply\(method, outcome\.value, permissionScope\(\), \{ sortByTimestamp: !routesClaidorThroughHost\(\) \}\)/);
   assert.match(executors, /async getTranscriptAccountSlot\(\)/);
   // The same slot rule the renderer applies to its dock.
   assert.match(renderer, /account\.authId \?\? account\.email \?\? "account"/);

@@ -157,24 +157,24 @@ until its row says so. Columns:
 | F-131 | models-and-spend | note | hardcoded | refuted | memory | known-limit | Machinery sessions still request Cursor model ids that are silently remapped | `desktop/source/host/extensions/memory/production.ts` |
 | F-132 | models-and-spend | note | naming | unverified | - | - | A Cursor pricing link survives in error actions | `desktop/source/host/extensions/transcript/agent-run-error.ts` |
 | F-133 | models-and-spend | note | spend | unverified | - | - | The escape-hatch coordinator turn and group-chat turns run with no model-call budget | `desktop/source/host/extensions/inference/provider-session.ts` |
-| F-134 | box-and-computer | major | risk | unverified | - | - | Box exec daemon on 127.0.0.1:1337 with static bearer "local"; any local process can run commands in the box and read the account token | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-135 | box-and-computer | major | risk | unverified | - | - | noVNC/websockify on 127.0.0.1:6080/6081 with no credential: any web page on the Mac can drive the agent's logged-in desktop | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-136 | box-and-computer | major | unwired | unverified | - | - | The reconstructed box-exec-daemon supports no computer-use, no write, no MCP load, and rejects paths outside /workspace — and the container is told to use the mounted daemon | `desktop/source/box-exec-daemon/server.ts` |
-| F-137 | box-and-computer | major | dead-service | unverified | - | - | Settings offers "Simeon's remote computer": the toggle routes to Cursor's GrokBotService/EnsureSandBox and strands the person | `desktop/scripts/lib/router-renderer-patch.mjs` |
-| F-138 | box-and-computer | major | docs-wrong | unverified | - | - | Agent-readable app-ui.md says "Sign In with Claidor", five Settings tabs, Plugins/Marketplace, Update Track and Team Setup | `desktop/source/host/runner/box-reference-docs.ts` |
-| F-139 | box-and-computer | major | docs-wrong | unverified | - | - | Agent-readable debugging-the-box.md points at a nonexistent "computer needs Docker" prompt, names anyrun as the default and the wrong container | `desktop/source/host/runner/box-reference-docs.ts` |
-| F-140 | box-and-computer | minor | dead-service | unverified | - | - | Host-side box lifecycle (update/reset/image check) still calls Cursor's GrokBotService and retries at every host start | `desktop/source/host/extensions/box-lifecycle/extension.ts` |
-| F-141 | box-and-computer | minor | docs-wrong | unverified | - | - | Reset/Update semantics told to the agent (snapshot restore, fresh instance) do not match the local box (docker restart / rm keeping both volumes) | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-142 | box-and-computer | major | spend | unverified | - | - | `--restart unless-stopped`: after a crash (no clean quit) the box comes back on its own and keeps spending until its token expires | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-143 | box-and-computer | major | risk | unverified | - | - | The box image is Cursor's mutable ECR tag, unpinned and not owned | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-144 | box-and-computer | minor | unwired | unverified | - | - | ForeverBox captureScreenshot is never supplied; the escape-hatch Screenshot/Computer tools answer "still starting up" | `desktop/source/host/extensions/forever-box/forever-box-service.ts` |
-| F-145 | box-and-computer | minor | design-violation | unverified | - | - | Escape-hatch tool descriptions and the brief name tools that do not exist here (watchVideo/videoReview) and misdescribe WebFetch | `desktop/source/host/runner/system-prompt.ts` |
-| F-146 | box-and-computer | minor | docs-wrong | unverified | - | - | computer-stream-measured.md still documents `[CaisraScreen]` lines; the preload prints `[SimeonScreen]` | `docs/product/computer-stream-measured.md` |
-| F-147 | box-and-computer | note | docs-wrong | unverified | - | - | CLAUDE.md's "host re-reads an expired file every 30 s" is not what the renewer does | `desktop/source/host/extensions/auth/credential-renewer.ts` |
-| F-148 | box-and-computer | minor | risk | unverified | - | - | Gateway token and desktop access token sit in plaintext on the Mac and in `docker inspect` | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-149 | box-and-computer | note | design-violation | unverified | - | - | The local-tool approval ask carries no machine identity | `desktop/source/host/extensions/transcript/routed-agent-tools.ts` |
-| F-150 | box-and-computer | minor | dead-service | unverified | - | - | openCloudAgent still opens https://cursor.com/agents/… | `desktop/source/electron-main/main-edge.ts` |
-| F-151 | box-and-computer | note | unmeasured | unverified | - | - | Every agent gets its own fork desktop (start-window) in one container on an amd64-emulated image | `desktop/source/host/box/box-windows.ts` |
+| F-134 | box-and-computer | major | risk | refuted | local-security | fixed | Box exec daemon on 127.0.0.1:1337 with static bearer "local"; any local process can run commands in the box and read the account token | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-135 | box-and-computer | major | risk | refuted | local-security | known-limit | noVNC/websockify on 127.0.0.1:6080/6081 with no credential: any web page on the Mac can drive the agent's logged-in desktop | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-136 | box-and-computer | major | unwired | confirmed | box-substrate | needs-mac | The reconstructed box-exec-daemon supports no computer-use, no write, no MCP load, and rejects paths outside /workspace — and the container is told to use the mounted daemon | `desktop/source/box-exec-daemon/server.ts` |
+| F-137 | box-and-computer | major | dead-service | confirmed | unserved-transports | coming-soon | Settings offers "Simeon's remote computer": the toggle routes to Cursor's GrokBotService/EnsureSandBox and strands the person | `desktop/scripts/lib/router-renderer-patch.mjs` |
+| F-138 | box-and-computer | major | docs-wrong | refuted | brief-text | fixed | Agent-readable app-ui.md says "Sign In with Claidor", five Settings tabs, Plugins/Marketplace, Update Track and Team Setup | `desktop/source/host/runner/box-reference-docs.ts` |
+| F-139 | box-and-computer | major | docs-wrong | confirmed | brief-text | fixed | Agent-readable debugging-the-box.md points at a nonexistent "computer needs Docker" prompt, names anyrun as the default and the wrong container | `desktop/source/host/runner/box-reference-docs.ts` |
+| F-140 | box-and-computer | minor | dead-service | confirmed | unserved-transports | fixed | Host-side box lifecycle (update/reset/image check) still calls Cursor's GrokBotService and retries at every host start | `desktop/source/host/extensions/box-lifecycle/extension.ts` |
+| F-141 | box-and-computer | minor | docs-wrong | confirmed | brief-text | fixed | Reset/Update semantics told to the agent (snapshot restore, fresh instance) do not match the local box (docker restart / rm keeping both volumes) | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-142 | box-and-computer | major | spend | confirmed | box-substrate | known-limit | `--restart unless-stopped`: after a crash (no clean quit) the box comes back on its own and keeps spending until its token expires | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-143 | box-and-computer | major | risk | confirmed | box-substrate | needs-mac | The box image is Cursor's mutable ECR tag, unpinned and not owned | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-144 | box-and-computer | minor | unwired | confirmed | box-substrate | known-limit | ForeverBox captureScreenshot is never supplied; the escape-hatch Screenshot/Computer tools answer "still starting up" | `desktop/source/host/extensions/forever-box/forever-box-service.ts` |
+| F-145 | box-and-computer | minor | design-violation | confirmed | hatch-residue | fixed | Escape-hatch tool descriptions and the brief name tools that do not exist here (watchVideo/videoReview) and misdescribe WebFetch | `desktop/source/host/runner/system-prompt.ts` |
+| F-146 | box-and-computer | minor | docs-wrong | confirmed | box-substrate | fixed | computer-stream-measured.md still documents `[CaisraScreen]` lines; the preload prints `[SimeonScreen]` | `docs/product/computer-stream-measured.md` |
+| F-147 | box-and-computer | note | docs-wrong | refuted | box-substrate | - | CLAUDE.md's "host re-reads an expired file every 30 s" is not what the renewer does | `desktop/source/host/extensions/auth/credential-renewer.ts` |
+| F-148 | box-and-computer | minor | risk | refuted | local-security | known-limit | Gateway token and desktop access token sit in plaintext on the Mac and in `docker inspect` | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-149 | box-and-computer | note | design-violation | confirmed | box-substrate | - | The local-tool approval ask carries no machine identity | `desktop/source/host/extensions/transcript/routed-agent-tools.ts` |
+| F-150 | box-and-computer | minor | dead-service | refuted | cloud-agents-channels | fixed | openCloudAgent still opens https://cursor.com/agents/… | `desktop/source/electron-main/main-edge.ts` |
+| F-151 | box-and-computer | note | unmeasured | confirmed | box-substrate | needs-mac | Every agent gets its own fork desktop (start-window) in one container on an amd64-emulated image | `desktop/source/host/box/box-windows.ts` |
 | F-152 | connectors-mcp | major | design-violation | confirmed | connectors-mcp | fixed | Agent is told to ask for API keys and tokens in chat (tool descriptions) | `desktop/source/host/runner/tools/sand-mcp-management-tools.ts` |
 | F-153 | connectors-mcp | major | risk | confirmed | connectors-mcp | fixed | Vendor and custom-server credentials stored plaintext and copied whole to the box | `desktop/source/shared/node/vendor-mcp/installs.ts` |
 | F-154 | connectors-mcp | major | docs-wrong | confirmed | connectors-mcp | fixed | Kit/skill/MCP store routes have no reader in the reconstruction; record says the pipe is live | `server/polar/desktop/endpoints.py` |
@@ -386,7 +386,7 @@ until its row says so. Columns:
 | F-360 | data-and-persistence | major | risk | unverified | - | - | settings.json is read-modify-written by several processes with no lock and a fixed per-pid temp name | `desktop/source/shared/node/settings/sand-settings-store.ts` |
 | F-361 | data-and-persistence | minor | risk | unverified | - | - | A corrupt or version-mismatched settings.json is silently replaced by defaults | `desktop/source/shared/node/settings/sand-settings-store.ts` |
 | F-362 | data-and-persistence | major | unmeasured | unverified | - | - | Box data root in the container depends on an environment the image sets, not this code | `desktop/source/host/host-paths.ts` |
-| F-363 | data-and-persistence | major | risk | unverified | - | - | The box image is Cursor's mutable public ECR tag sand-box-latest | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-363 | data-and-persistence | major | risk | confirmed | box-substrate | needs-mac | The box image is Cursor's mutable public ECR tag sand-box-latest | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-364 | data-and-persistence | minor | docs-wrong | unverified | - | - | Record says the account-MCP store is under Application Support; the code keeps it in ~/.caisra | `docs/product/account-mcp-local-measured.md` |
 | F-365 | data-and-persistence | minor | docs-wrong | unverified | - | - | Chat-UI source record claims per-machine local-tool permission; the store holds one global value | `docs/product/sources/caisra-chat-ui-logic.md` |
 | F-366 | data-and-persistence | note | hardcoded | unverified | - | - | Dev and lab builds keep data under ~/.cursor/sand-dev and ~/.cursor/sand-lab (Grok Bot's directory) | `desktop/source/host/host-paths.ts` |
@@ -427,28 +427,28 @@ until its row says so. Columns:
 | F-401 | sharing-cloud-dead-services | note | design-violation | confirmed | dead-cursor-services | fixed | The egress tunnel the design struck is still wired end to end, dormant behind an env flag | `docs/product/direction.md` |
 | F-402 | sharing-cloud-dead-services | note | dead-service | refuted | dead-cursor-services | known-limit | Host self-upgrade is on by default with no origin; 'Update computer' can only answer no-bundle-source | `desktop/source/host/extensions/host-upgrade/extension.ts` |
 | F-403 | sharing-cloud-dead-services | note | dead-service | confirmed | dead-cursor-services | coming-soon | Sharing is gated off and every entry answers a canned sentence, but a packaged build would poll api.simeonlabs.com if the gate flipped | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
-| F-404 | coordinator-and-gateway | major | dead-service | unverified | - | - | Box host telemetry is on inside the container and ships /tmp/*.log (the [claidor] prompt/model-error lines) to a Connect RPC our server does not serve, every 2–3 s | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-405 | coordinator-and-gateway | minor | naming | unverified | - | - | Sign-in and account errors still say Claidor, not Simeon | `desktop/source/electron-main/account/cursor-auth.ts` |
-| F-406 | coordinator-and-gateway | minor | dead-service | unverified | - | - | openCloudAgent opens https://api.simeonlabs.com/agents/<id> (or cursor.com when unset) — a dead link on our own API host | `desktop/source/electron-main/main-edge.ts` |
+| F-404 | coordinator-and-gateway | major | dead-service | refuted | box-telemetry | fixed | Box host telemetry is on inside the container and ships /tmp/*.log (the [claidor] prompt/model-error lines) to a Connect RPC our server does not serve, every 2–3 s | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-405 | coordinator-and-gateway | minor | naming | refuted | sign-in-copy | fixed | Sign-in and account errors still say Claidor, not Simeon | `desktop/source/electron-main/account/cursor-auth.ts` |
+| F-406 | coordinator-and-gateway | minor | dead-service | refuted | cloud-agents-channels | fixed | openCloudAgent opens https://api.simeonlabs.com/agents/<id> (or cursor.com when unset) — a dead link on our own API host | `desktop/source/electron-main/main-edge.ts` |
 | F-407 | coordinator-and-gateway | minor | dead-service | confirmed | listeners-coming-soon | fixed | Listener 'connect' still goes to Cursor's DashboardService and Cursor's dashboard URL | `desktop/source/host/extensions/automations/listener-integrations.ts` |
-| F-408 | coordinator-and-gateway | note | unwired | unverified | - | - | Coordinator's MCP OAuth forwarder completes into a host no-op | `desktop/source/node-agent-coordinator/main.ts` |
-| F-409 | coordinator-and-gateway | minor | docs-wrong | unverified | - | - | Record says getForeverBoxStatus has a 15 s gateway deadline; the coordinator applies deadlines only to sendPrompt and roster reads | `docs/product/computer-stream-measured.md` |
-| F-410 | coordinator-and-gateway | note | risk | unverified | - | - | Gateway /health answers before the bearer check | `desktop/source/host/gateway-server.ts` |
-| F-411 | coordinator-and-gateway | minor | risk | unverified | - | - | Gateway token also travels as a docker --env, readable via docker inspect | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-412 | coordinator-and-gateway | major | risk | unverified | - | - | The box image is Cursor's floating tag, matched by name only | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-413 | coordinator-and-gateway | minor | dead-service | unverified | - | - | Coordinator POSTs the desktop bearer to a non-existent /sand-box/local-exec-daemon-credential route every 30 s; the record calls it a ConnectError | `desktop/source/electron-main/box/box-host-connector.ts` |
-| F-414 | coordinator-and-gateway | note | dead-service | unverified | - | - | Mac and box both poll BootstrapStatsig on api.simeonlabs.com every ~5 min; Statsig log-event proxy still points at api3.cursor.sh | `desktop/source/shared/node/experiments/cursor-experiments.ts` |
-| F-415 | coordinator-and-gateway | note | risk | unverified | - | - | Update feed defaults to api2.cursor.sh/updates and is off only by an env default the build injects | `desktop/source/electron-main/update/update-feed.ts` |
-| F-416 | coordinator-and-gateway | note | risk | unverified | - | - | A live Anysphere Sentry DSN remains in the tree (dormant) | `desktop/source/shared/observability/sentry.ts` |
-| F-417 | coordinator-and-gateway | minor | design-violation | unverified | - | - | Unreachable provider branches and a Codex/Claude credential probe stay on the main edge and preload | `desktop/source/shared/inference-router.ts` |
-| F-418 | coordinator-and-gateway | note | spend | unverified | - | - | The text-only hatch is still enterable from the shell environment and doubles model calls when no SendMessage lands | `desktop/source/node-agent-coordinator/inference-router.ts` |
-| F-419 | coordinator-and-gateway | minor | risk | unverified | - | - | reactToMessage is answered locally whenever a stale hatch transcript holds the entry id, even on the host path | `desktop/source/node-agent-coordinator/inference-router.ts` |
-| F-420 | coordinator-and-gateway | minor | risk | unverified | - | - | First Allow card can be posted unstamped if the account slot fetch has not settled | `desktop/source/node-agent-coordinator/main.ts` |
-| F-421 | coordinator-and-gateway | note | risk | unverified | - | - | Card-carrying transcript replies are re-sorted by timestamp on the host path too | `desktop/source/node-agent-coordinator/permission-scope-stamp.ts` |
-| F-422 | coordinator-and-gateway | minor | unmeasured | unverified | - | - | Roster payloads carry every agent's avatar PNG on every agents event (slim avatars off) | `desktop/source/node-agent-coordinator/gateway/gateway-client.ts` |
-| F-423 | coordinator-and-gateway | note | design-violation | unverified | - | - | Egress tunnel toggles are still served although only the retired cloud model needs them | `desktop/source/electron-main/main-edge.ts` |
-| F-424 | coordinator-and-gateway | note | naming | unverified | - | - | Internal error strings still name 'Sand' and Anysphere | `desktop/source/electron-main/coordinator/coordinator-port-ipc-guard.ts` |
-| F-425 | coordinator-and-gateway | note | hardcoded | unverified | - | - | https deep links are still claimed for cursor.com | `desktop/source/shared/deep-link.ts` |
+| F-408 | coordinator-and-gateway | note | unwired | confirmed | unserved-transports | known-limit | Coordinator's MCP OAuth forwarder completes into a host no-op | `desktop/source/node-agent-coordinator/main.ts` |
+| F-409 | coordinator-and-gateway | minor | docs-wrong | confirmed | unserved-transports | fixed | Record says getForeverBoxStatus has a 15 s gateway deadline; the coordinator applies deadlines only to sendPrompt and roster reads | `docs/product/computer-stream-measured.md` |
+| F-410 | coordinator-and-gateway | note | risk | refuted | local-security | fixed | Gateway /health answers before the bearer check | `desktop/source/host/gateway-server.ts` |
+| F-411 | coordinator-and-gateway | minor | risk | confirmed | local-security | known-limit | Gateway token also travels as a docker --env, readable via docker inspect | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-412 | coordinator-and-gateway | major | risk | confirmed | box-substrate | needs-mac | The box image is Cursor's floating tag, matched by name only | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-413 | coordinator-and-gateway | minor | dead-service | confirmed | unserved-transports | fixed | Coordinator POSTs the desktop bearer to a non-existent /sand-box/local-exec-daemon-credential route every 30 s; the record calls it a ConnectError | `desktop/source/electron-main/box/box-host-connector.ts` |
+| F-414 | coordinator-and-gateway | note | dead-service | confirmed | unserved-transports | fixed | Mac and box both poll BootstrapStatsig on api.simeonlabs.com every ~5 min; Statsig log-event proxy still points at api3.cursor.sh | `desktop/source/shared/node/experiments/cursor-experiments.ts` |
+| F-415 | coordinator-and-gateway | note | risk | confirmed | unserved-transports | fixed | Update feed defaults to api2.cursor.sh/updates and is off only by an env default the build injects | `desktop/source/electron-main/update/update-feed.ts` |
+| F-416 | coordinator-and-gateway | note | risk | refuted | box-telemetry | fixed | A live Anysphere Sentry DSN remains in the tree (dormant) | `desktop/source/shared/observability/sentry.ts` |
+| F-417 | coordinator-and-gateway | minor | design-violation | confirmed | sign-in-copy | known-limit | Unreachable provider branches and a Codex/Claude credential probe stay on the main edge and preload | `desktop/source/shared/inference-router.ts` |
+| F-418 | coordinator-and-gateway | note | spend | confirmed | sign-in-copy | known-limit | The text-only hatch is still enterable from the shell environment and doubles model calls when no SendMessage lands | `desktop/source/node-agent-coordinator/inference-router.ts` |
+| F-419 | coordinator-and-gateway | minor | risk | confirmed | hatch-residue | fixed | reactToMessage is answered locally whenever a stale hatch transcript holds the entry id, even on the host path | `desktop/source/node-agent-coordinator/inference-router.ts` |
+| F-420 | coordinator-and-gateway | minor | risk | confirmed | hatch-residue | fixed | First Allow card can be posted unstamped if the account slot fetch has not settled | `desktop/source/node-agent-coordinator/main.ts` |
+| F-421 | coordinator-and-gateway | note | risk | confirmed | hatch-residue | fixed | Card-carrying transcript replies are re-sorted by timestamp on the host path too | `desktop/source/node-agent-coordinator/permission-scope-stamp.ts` |
+| F-422 | coordinator-and-gateway | minor | unmeasured | confirmed | box-substrate | needs-mac | Roster payloads carry every agent's avatar PNG on every agents event (slim avatars off) | `desktop/source/node-agent-coordinator/gateway/gateway-client.ts` |
+| F-423 | coordinator-and-gateway | note | design-violation | refuted | dead-cursor-services | known-limit | Egress tunnel toggles are still served although only the retired cloud model needs them | `desktop/source/electron-main/main-edge.ts` |
+| F-424 | coordinator-and-gateway | note | naming | confirmed | sign-in-copy | fixed | Internal error strings still name 'Sand' and Anysphere | `desktop/source/electron-main/coordinator/coordinator-port-ipc-guard.ts` |
+| F-425 | coordinator-and-gateway | note | hardcoded | confirmed | sign-in-copy | fixed | https deep links are still claimed for cursor.com | `desktop/source/shared/deep-link.ts` |
 | F-426 | docs-vs-code | major | docs-wrong | unverified | - | - | start-here.md describes the LobsterAI tree that was replaced on 18 September; nearly every concrete claim in it is false today | `docs/product/start-here.md` |
 | F-427 | docs-vs-code | major | docs-wrong | unverified | - | - | what-exists.md's inventory names desktop/src files that do not exist; its "read this before saying anything is missing" table would send a reader to nothing | `docs/product/what-exists.md` |
 | F-428 | docs-vs-code | minor | docs-wrong | unverified | - | - | building-the-app.md still says the bundle is Caisra.app, CFBundleDisplayName Caisra, LSEnvironment api.claidor.com | `docs/product/building-the-app.md` |
@@ -993,3 +993,72 @@ agent-contract.md and brief-audit.md carry a superseded banner (F-336).
 Known limits: multitask stays on (F-328, with F-017/F-209, the founder's
 "literally everything"); the dead Routing panel and provider code stay
 with F-110/F-128 (F-339). `tests/prompt-and-turn.test.mjs`.
+
+### unserved-transports (25 September 2026)
+
+Refuters: of 21 coordinator-and-gateway findings, 8 were already closed
+by today's clusters (F-404, F-405, F-406, F-410, F-416, F-423 and the
+dispositions of F-411, F-417, F-418). What stood has one shape: Grok
+Bot's Mac-and-box plumbing was built for Cursor's cloud and the
+reconstruction pointed it at Simeon Labs' server without the "is this
+served?" switch each path needs. Now: the Statsig bootstrap is not asked
+unless Connect is served (it was two 404s with the bearer every five
+minutes, Mac and box; F-414, and the F-352 row's "fixed" covered only the
+exposure half); the local Docker runtime never asks for a local-exec
+daemon credential and a null answer stops the supervisor's tick (one 404
+every 30 s for the app's life; F-413); there is no update feed unless
+`SAND_UPDATE_FEED_BASE_URL` names one (the default was Cursor's, F-415);
+the box's lifecycle client answers locally when the broker is not served
+and the agent is told to update the box from the Mac, not that "the
+backend may need to be updated" (F-140); the cloud-computer switch says
+Coming Soon, is disabled while the local box is selected, and the edge
+refuses `remote` (F-137, dependency: Cursor's GrokBotService broker);
+the API client's sentences say Simeon Labs' server (F-405 residue). The
+cloud OAuth relay in the coordinator has no producer and stays as dead
+code (F-408). Records: `getForeverBoxStatus` has no deadline
+(computer-stream-measured.md, F-409); the gaps record's "ConnectError"
+for the credential route was a plain fetch (F-413).
+
+### hatch-residue (25 September 2026)
+
+The text-only hatch's coordinator plumbing still ran on the host path:
+a stale hatch transcript could answer `reactToMessage` for the host
+(F-419, now behind `handledLocally`); every card-carrying transcript
+reply was re-sorted by timestamp, a fix for the hatch's concat of two
+transcripts (F-421, now only when the hatch is active); and the first
+Allow card on a cold box could be posted before the account slot was
+known and so never show (F-420: transcript events go through one
+ordered chain and a card waits for its scope). The hatch's own tool
+descriptions no longer name watchVideo or an "isolated server"
+(F-145). The hatch itself stays a developer switch (F-010, F-418,
+known-limit).
+
+### box-substrate (25 September 2026)
+
+What is left is the box being Cursor's image running Cursor's contract,
+and it needs a Mac. **Which exec daemon serves 1337 is not established**
+(F-136): the container is told `SAND_USE_EXISTING_BOX_EXEC_DAEMON=1` and
+our reconstruction daemon is bind-mounted over `/home/box/box-exec-daemon`;
+ours answers only the shell and read cases (no `computerUseArgs`, no
+`writeArgs`, an empty `loadMcpServers`), so if the supervisor runs it,
+every Computer call, CopyToBox, browser-driver install and box MCP load
+fails, and the one measured computerUse child (24 September) never
+issued a Computer call. The measurement: `docker exec simeon-box ps aux
+| grep box-exec-daemon`, then one Computer call and one CopyToBox. The
+two fixes are one line each (drop the mount, or add the cases). It
+also underlies F-144 (the hatch's Screenshot), F-141's dead MCP message
+and F-151's window persistence. **The image is a floating tag** (F-143,
+F-412, F-363): `SAND_BOX_IMAGE_DIGEST` now pins the create and the
+check to `image@sha256:<digest>`; the digest is read on a Mac
+(`docker image inspect --format '{{index .RepoDigests 0}}'`) and recorded
+in box-substrate-read.md; none is pinned yet. **`--restart unless-stopped`**
+(F-142) stays: with a routine enabled a box that outlives a crash or a
+reboot is the founder's decision; without one nothing in the box makes
+a model call, and spend is bounded by the box's own credential, the
+hidden-turn budget and the hourly cap; a `powerMonitor` shutdown hook is
+the remaining gap. Roster avatars ride every `agents` event and the
+slim path has no Mac-side consumer (F-422; measure before building a
+cache). The approval card naming a machine waits on cards-plan (F-149).
+F-147 is refuted: an expired token file is re-read every 30 s, as
+CLAUDE.md says. The record's `[SimeonScreen]` tag is corrected (F-146).
+`tests/coordinator-gateway-box.test.mjs`.
