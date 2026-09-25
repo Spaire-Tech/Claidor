@@ -5,7 +5,9 @@ export const SAND_UPDATE_PLATFORM = "darwin-arm64";
 export const SAND_UPDATE_PLATFORM_DARWIN_X64 = "darwin-x64";
 export const SAND_UPDATE_PLATFORM_WIN32 = "win32-x64-user";
 export const SAND_UPDATE_PLATFORM_WIN32_ARM64 = "win32-arm64-user";
-export const DEFAULT_UPDATE_BASE_URL = "https://api2.cursor.sh/updates";
+// Cursor's feed until 25 September 2026; Simeon has no update feed yet, so
+// a check runs only against SAND_UPDATE_FEED_BASE_URL (F-415).
+export const DEFAULT_UPDATE_BASE_URL: string | undefined = undefined;
 export type UpdateTrack = "stable" | "nightly" | "dogfood";
 
 export function resolveUpdatePlatform(platform: NodeJS.Platform, arch: string): string { if (platform === "win32") return arch === "arm64" ? SAND_UPDATE_PLATFORM_WIN32_ARM64 : SAND_UPDATE_PLATFORM_WIN32; if (platform === "darwin" && arch === "x64") return SAND_UPDATE_PLATFORM_DARWIN_X64; return SAND_UPDATE_PLATFORM; }

@@ -53,5 +53,6 @@ export async function resolveImageAttachment(
   readRemote: (path: string) => Promise<DesktopImageAttachment | null>,
   deps: AttachmentManagerDeps,
 ): Promise<DesktopImageAttachment | null> {
-  return await readDesktopImageAttachment(filePath, deps) ?? await readRemote(filePath);
+  // A transcript entry can name any file:// path; the Mac reads only its own staging locally, the rest comes from the host (F-278).
+  return (isWithinDesktopAttachmentStaging(filePath) ? await readDesktopImageAttachment(filePath, deps) : null) ?? await readRemote(filePath);
 }

@@ -125,7 +125,8 @@ export async function copyFileFromBox(
   assertBoxReady(controller);
   const computer = resolveComputerOrThrow(controller, args.computer);
   const boxPath = resolveBoxWorkspacePath(args.box_path);
-  const computerPath = args.computer_path ?? posix.basename(boxPath);
+  // Downloads, not the home folder root (F-275); the daemon resolves a relative path against the person's home.
+  const computerPath = args.computer_path ?? posix.join("Downloads", posix.basename(boxPath));
   const bytes = await transferFileBetweenBoxes(context, {
     source: {
       box: controller.agentBox,

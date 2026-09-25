@@ -2,7 +2,6 @@ import { z } from "zod";
 import { sandWidgetSchema } from "../../../shared/sand-widgets.js";
 import { CHANNELS_COMING_SOON_SENTENCE, CLOUD_AGENTS_COMING_SOON_SENTENCE, isAnyChannelAvailable, isCloudAgentsServed } from "../../../shared/cloud-agents-availability.js";
 export const SEND_MESSAGE_TYPES = ["text", "attachment", "widget", "cursor-agent", "secret-request"] as const;
-export const SEND_MESSAGE_TYPE_DESCRIPTION = "text for chat messages, attachment for actual files or standalone media, widget for an interactive question with selectable options, cursor-agent to reference a cloud agent by its bcId (renders as a card that opens the agent on click), secret-request to ask the user for a credential through a secure masked input (never a chat paste).";
 // Coming Soon at the reach point (shared/cloud-agents-availability.ts): the
 // types the model is offered when cloud agents and channels are not served.
 export function describeSendMessageTypes(env: NodeJS.ProcessEnv = process.env): string {

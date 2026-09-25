@@ -102,6 +102,8 @@ export const COORDINATOR_METHOD_TABLE = {
   dismissWidget: { args: "object", reply: "record" },
   submitSecret: { args: "object", reply: "void" },
   reactToMessage: { args: "object", reply: "void" },
+  sendDraft: { args: "object", reply: "record-or-null" },
+  discardDraft: { args: "object", reply: "record-or-null" },
   appendConnectorCard: { args: "object", reply: "void" },
   appendSendMessage: { args: "object", reply: "record" },
   searchPlugins: { args: "object", reply: "string" },

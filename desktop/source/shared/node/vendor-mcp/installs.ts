@@ -152,9 +152,10 @@ export function serializeVendorMcpStoreForBox(store: VendorMcpStore): unknown[] 
 
 export function saveVendorMcpStore(rootDir: string, store: VendorMcpStore): void {
   const path = vendorMcpInstallsPath(rootDir);
-  mkdirSync(dirname(path), { recursive: true });
+  mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
   const temporary = `${path}.${process.pid}.tmp`;
-  writeFileSync(temporary, `${JSON.stringify(serializeVendorMcpStore(store), null, 2)}\n`, "utf8");
+  // The file holds refresh tokens and client secrets: owner-only.
+  writeFileSync(temporary, `${JSON.stringify(serializeVendorMcpStore(store), null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
   renameSync(temporary, path);
 }
 

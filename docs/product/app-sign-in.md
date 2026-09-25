@@ -151,7 +151,13 @@ failed profile fetch is reported and swallowed. The account identity the
 app shows comes from the token, so it is right. What is missing is
 everything downstream of it.
 
-**Not run:** nobody has signed in to a deployed `api.claidor.com` with
+**Corrected 25 September 2026:** the round trip has run. Sign-in returned
+to the packaged app on the founder's Mac on 23 September (CLAUDE.md, the
+`simeon://` scheme), against `api.claidor.com`; the host has since moved to
+`api.simeonlabs.com` and that round trip is not yet measured. The line
+below is what was true when this record was written.
+
+**Not run (as of 19 September):** nobody had signed in to a deployed `api.claidor.com` with
 these routes. What was run is the Python suite
-(`tests/desktop/test_app_sign_in.py`, 28 tests, green) and the app's own
+(`tests/desktop/test_app_sign_in.py`, 28 tests then, green) and the app's own
 URL and token resolution under node, both above.

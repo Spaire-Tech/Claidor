@@ -54,7 +54,7 @@ from polar.openapi import APITag
 from polar.postgres import AsyncSession, get_db_session
 from polar.routing import APIRouter
 
-from .endpoints import CLIENT_VERSION_HEADER
+from .endpoints import client_version_of
 from .service import (
     DesktopUnauthenticated,
     desktop,
@@ -84,7 +84,7 @@ NO_STORE = {"Cache-Control": "no-store"}
 #: What the app calls itself to the person. The internal identifiers
 #: stay as they are (`docs/product/direction.md` §0); this is the name
 #: on a page somebody reads.
-PRODUCT = "Caisra"
+PRODUCT = "Simeon"
 
 
 def _deep_link(redirect_target: str | None) -> str | None:
@@ -245,7 +245,7 @@ async def auth_poll(
         uuid=uuid,
         verifier=verifier,
         user_agent=request.headers.get("User-Agent", ""),
-        client_version=request.headers.get(CLIENT_VERSION_HEADER),
+        client_version=client_version_of(request),
     )
     if issued is None:
         return JSONResponse({"error": "not_found"}, status_code=404, headers=NO_STORE)

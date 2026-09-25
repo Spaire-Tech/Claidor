@@ -51,11 +51,11 @@ const COMPUTER_DESCRIPTION = `Drive the graphical desktop on your own computer (
 
 const SCREENSHOT_DESCRIPTION = `Take a screenshot of your own computer's desktop (the box). If you have this tool, you CAN see the screen. Prefer it when you need to look at the desktop; browser_take_screenshot is for the box browser page.`;
 
-const TASK_DESCRIPTION = `Launch a specialized subagent for a focused job (explore, computerUse, watchVideo, videoReview, and others listed in this tool). The subagent runs on your computer and returns its findings. Use computerUse when the work is driving the graphical desktop or a login-gated site in the box browser.`;
+const TASK_DESCRIPTION = `Launch a specialized subagent for a focused job (computerUse, browserUse when offered, executor). The subagent runs on your computer and returns its findings. Use computerUse when the work is driving the graphical desktop or a login-gated site in the box browser. There is no video-watching subagent.`;
 
 const WEB_SEARCH_DESCRIPTION = `Search the web and return relevant results. Use this for current information, documentation, and anything you do not already know. Prefer it over guessing.`;
 
-const WEB_FETCH_DESCRIPTION = `Fetch content from a specified URL and return its contents in a readable markdown format. Use this tool when you need to retrieve and analyze webpage content. The URL must be a fully-formed http(s) URL. This fetch runs from an isolated server, so localhost and private IPs will not work.`;
+const WEB_FETCH_DESCRIPTION = `Fetch content from a specified URL and return its contents in a readable markdown format. Use this tool when you need to retrieve and analyze webpage content. The URL must be a fully-formed http(s) URL. Localhost and private addresses are refused; public pages only.`;
 
 const COPY_TO_BOX_DESCRIPTION = `Copy a file from the user's computer into your box, verbatim. Use this to bring a user's file onto your box so you can work on it with Shell or Read. Give the file's absolute path on the user's computer (the path your ExternalShell tool would use); it lands in /workspace/uploads by default, or at a box_path you choose.`;
 

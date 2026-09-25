@@ -255,6 +255,15 @@ export function createHostGatewayApi(
         args.value,
         args.agentId
       ),
+    // The draft card's Send and Discard (draft-cards.ts).
+    sendDraft: (args: any) => {
+      markActive("user_action");
+      return method(manager, "sendDraft")({ agentId: args.agentId, entryId: args.entryId, ...(args.draft == null ? {} : { draft: args.draft }) });
+    },
+    discardDraft: (args: any) => {
+      markActive("user_action");
+      return method(manager, "discardDraft")({ agentId: args.agentId, entryId: args.entryId });
+    },
     reactToMessage: (args: any) => {
       markActive("user_action");
       method(telemetry.analytics, "trackEvent")("sand.reaction.added", {

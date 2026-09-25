@@ -46,7 +46,9 @@ app sign-in describe the current tree. `docs/product/building-the-app.md`
 and `docs/product/grok-bot-layers-measured.md` are the current map.
 **`docs/product/start-here.md` is not**: it still describes the LobsterAI
 tree (`desktop/src`, "2,552 files", the 23 strongs) and was never rewritten
-after the re-founding (checked 22 September).
+after the re-founding (checked 22 September). Neither are `docs/product/agent-contract.md` and
+`docs/product/brief-audit.md`, which describe the LobsterAI brief and carry a
+superseded banner since 25 September.
 
 Two facts about the current tree that are established by build output, not
 reasoning (`docs/product/host-wall-measured.md`): **every one of the 14
@@ -366,7 +368,42 @@ waiting on a delegate. Both are wired now (the flag computed, the child
 on the subagent prompt; `tests/computer-use-child.test.mjs` measures the
 toolset and the prompt offline). The `[claidor] model=` line carries
 `offered=` (every tool in the request) and each shell logs a
-`[claidor] prompt … boxScoped=` line. Not yet run on a Mac. The transcript's third
+`[claidor] prompt … boxScoped=` line. Not yet run on a Mac. **Found 25 September (ledger F-014): every Task
+child ran on the parent's conversation state and wrote its checkpoint
+into the parent's store**, because the per-identity shell's state
+closures still read `builtRunner`; a child now owns its state
+(`createChildTurnSettleHost`), which is also why the 68,000-token child
+calls were not explained by the prompt alone. The same day the
+executor's 45 s deadline moved off the streamed body (it killed any step
+longer than 45 s and retried it), the Luna fallback on a 429 writes a
+`[claidor] model-fallback` line, and the brief follows the Screenshot
+switch (`AGENT_SCREENSHOT_TOOL_OFFERED`, `system-prompt.ts`) instead of
+promising a tool the request withholds. **Later the same day (ledger
+`box-substrate`): which exec daemon serves 1337 in the box is not
+established.** The container gets `SAND_USE_EXISTING_BOX_EXEC_DAEMON=1`
+and our reconstruction daemon bind-mounted over
+`/home/box/box-exec-daemon`; ours answers only the shell and read cases
+(no Computer, no write, an empty MCP load). If the supervisor runs it,
+every Computer call and CopyToBox fails, which the 24 September child
+log (no Computer call ever issued) is consistent with. Read
+`docker exec simeon-box ps aux | grep box-exec-daemon` before reasoning
+about a blind computerUse child again. **Also 25 September (ledger
+`attachment-topology`): an attached file's path is a box path**, because the
+host runs in the box; until then the note told the agent the file lived on
+the user's computer and sent it to ExternalRead and CopyToBox for a file
+the Mac does not hold, the staged copy was named by its hash, and a file
+over 25 MB became a dead card. The box hand-off card's tool
+(`request_box_help`) is offered by the production toolset since the same
+day; it was built, ordered by the brief and never wired. **The draft composer is wired the same
+night** ("wire it."): `DraftExternalMessage` emits the `email-draft` /
+`slack-draft` card the pinned renderer already draws, `sendDraft` /
+`discardDraft` on the gateway mark the card and wake the agent to deliver
+by whatever route the person has, and `MarkDraftDelivered` settles it.
+The card's Send and Discard buttons are empty bytes in Grok Bot 0.18's
+chunk and need a package-time patch written on a Mac
+(`docs/product/draft-composer-measured.md` has the offsets and the
+commands). Three cards are not built and were searched by concept: the
+in-chat form, the cookie-origin approval, the virtual card. The transcript's third
 finding, one reply sent twice ("Nice. We're set…"), is not explained by
 the code alone: the send count is collected synchronously before the
 run settles, and the early-result reminder cannot fire in a turn with no
@@ -391,6 +428,20 @@ host every 30 s, so a fresh token lands within the minute. A box only
 minutes old that still gets 401 means the Mac had no valid token to
 write (signed out, or its refresh failed): the file's `expiresAtMs`
 says which. Not yet run on a Mac.
+**A second cause, found 25 September 2026:** the Mac's own hourly refresh
+revoked the old session outright, so the box's copy of that token got
+401 for up to five minutes after every refresh. Simeon Labs' server now
+keeps the replaced access token good for `DESKTOP_REFRESH_GRACE` (5 min)
+while the old refresh token dies at once; sign-out sweeps it. The same
+day: the box's credential reaches the model proxy and the profile route
+and nothing else on `/desktop` (`get_desktop_session` refuses
+`is_box_credential`); sign-out removes the token file, stops the
+keep-fresh and stops a local Docker box (`forgetInferenceCredential`);
+a 5xx/429 on the refresh no longer signs the person out; and the
+local-exec daemon on the Mac refuses `~/.ssh`, `~/.aws`, `~/.caisra`,
+the keychains and browser profiles whatever the permission setting says
+(`shared/sensitive-local-paths.ts`). Ledger clusters `box-token-scope`,
+`sign-in-copy`, `local-security`; `tests/keys-auth-security.test.mjs`.
 
 **Teach a task is there and gated off.** The composer's plus-menu entry
 and the computer bar's button are in the pinned renderer, the recording
@@ -758,6 +809,24 @@ missing service, and then marked Coming Soon everywhere a person can
 see or reach it. The ledger's dispositions are `fixed`, `coming-soon`
 (with the missing dependency named), `known-limit` and `needs-mac`.
 Work proceeds by cluster (root cause), not by finding.
+
+## Cursor's server is the missing half, not the feature (25 September 2026)
+
+"I don't want us to treat these as features we need to rebuild from
+scratch when we already have the reconstructed app-side implementation."
+`docs/product/cursor-dependencies-map.md` maps, for listeners, channels,
+cloud agents, memory sync, the cloud computer, video, skill publish and
+sharing: the Cursor service we cannot use, the code we already have, the
+exact routes and fields that code expects, what is genuinely missing, and
+whether that is wiring, backend replacement or new product. Read it
+before calling any of the eight "coming soon" or "a rebuild". Its shape:
+channels need a client module in the box and no server; listeners, the
+cloud computer and video are backend replacements against a contract the
+code already states; cloud agents, skill publish, sharing and memory sync
+carry real new product work. Found on the way and fixed:
+`createRemoteHostConnector` dropped `issueBoxRenewalCredential` on the
+fast path both production call sites use, so the box's own renewal
+credential (the paragraph on routines above) was never minted.
 
 ## The product's hostnames are simeonlabs.com (24 September 2026)
 

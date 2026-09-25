@@ -45,7 +45,7 @@ test("entries from two sources are sorted by timestampMs so cards are not hoiste
     // Before the fix, the renderer would draw: Hello, Deploy?, hi, Done.
     // After the fix: Hello, hi, Deploy?, Done.
     const reply = { entries: concat, threadCounts: {} };
-    const stamped = module.stampTranscriptReply("getAgentTranscriptTail", reply, scope);
+    const stamped = module.stampTranscriptReply("getAgentTranscriptTail", reply, scope, { sortByTimestamp: true });
     const ids = stamped.entries.map((e) => e.id);
     assert.deepEqual(ids, ["t1s0", "t1u", "t1s1", "t1s2"], "entries sorted chronologically by timestampMs");
     // The non-entry fields survive.
@@ -63,7 +63,7 @@ test("already-sorted entries are returned by reference (no-op fast path)", async
       { kind: "send-message", id: "t0s0", message: { type: "text", content: "Hey" }, timestampMs: 20 },
     ];
     const reply = { entries };
-    const stamped = module.stampTranscriptReply("openAgentTail", reply, scope);
+    const stamped = module.stampTranscriptReply("openAgentTail", reply, scope, { sortByTimestamp: true });
     // No permission cards, no reordering — original reference should be kept.
     assert.equal(stamped, reply, "no-op returns original reference");
   } finally {
@@ -80,7 +80,7 @@ test("sorting works even without a permission scope (scope is null)", async () =
       { kind: "send-message", id: "s0", message: { type: "text", content: "Sure" }, timestampMs: 200 },
     ];
     const reply = { entries };
-    const result = module.stampTranscriptReply("getAgentTranscriptWindow", reply, null);
+    const result = module.stampTranscriptReply("getAgentTranscriptWindow", reply, null, { sortByTimestamp: true });
     assert.deepEqual(result.entries.map((e) => e.id), ["u0", "s0", "s1"]);
   } finally {
     await dispose();
@@ -101,7 +101,7 @@ test("permission cards are stamped AND sorted in one pass", async () => {
       { kind: "send-message", id: "t0s0", message: { type: "text", content: "OK" }, timestampMs: 200 },
     ];
     const reply = { entries };
-    const result = module.stampTranscriptReply("getAgentTranscriptTail", reply, scope);
+    const result = module.stampTranscriptReply("getAgentTranscriptTail", reply, scope, { sortByTimestamp: true });
     // Sorted chronologically.
     assert.deepEqual(result.entries.map((e) => e.id), ["t0u", "t0s0", "tbs0"]);
     // Permission card is stamped.
@@ -122,7 +122,7 @@ test("entries without timestampMs sort to the beginning and keep their relative 
       { kind: "send-message", id: "s0", message: { type: "text", content: "C" }, timestampMs: 100 },
     ];
     const reply = { entries };
-    const result = module.stampTranscriptReply("getAgentTranscriptTail", reply, null);
+    const result = module.stampTranscriptReply("getAgentTranscriptTail", reply, null, { sortByTimestamp: true });
     // u0 has no timestamp (→ 0), s0 is 100, s1 is 200.
     assert.deepEqual(result.entries.map((e) => e.id), ["u0", "s0", "s1"]);
   } finally {
