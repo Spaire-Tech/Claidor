@@ -86,7 +86,8 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(mainEdge, /invoke\(deps\.settingsStore, "setInferenceProvider", provider\)/);
   assert.match(mainEdge, /return \{ provider, usage:/);
   assert.match(mainEdge, /invoke\(deps\.boxRecovery, "restartCoordinator"\)/);
-  assert.match(mainEdge, /mode === "local-docker"\) await startLocalDockerBox\(settingsPath\); else await stopLocalDockerBox\(\)/);
+  // "remote" is probed through the box recovery before the local box is stopped (25 September 2026).
+  assert.match(mainEdge, /mode === "local-docker"\) await startLocalDockerBox\(settingsPath\); else \{ await Promise\.resolve\(invoke\(deps\.boxRecovery, "probeRemoteBox"\)\); await stopLocalDockerBox\(\); \}/);
   assert.match(mainEdge, /setBoxRuntime", mode === "local-docker" \? "remote" : "local-docker"/);
   assert.match(localDocker, /public\.ecr\.aws\/k0i0n2g5\/cursorenvironments\/universal:sand-box-latest/);
   assert.match(localDocker, /"127\.0\.0\.1:1340:1340"/);

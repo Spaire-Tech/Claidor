@@ -513,7 +513,12 @@ class DesktopService:
         now = utc_now()
         repository = DesktopSessionRepository.from_session(session)
         for previous in await repository.list_box_credentials_of(parent.id):
-            if previous.is_revoked:
+            # The local-exec daemon's credential is a child row too
+            # (`polar.sand.box_service`, user agent "simeon-local-exec/…")
+            # and is not replaced by a box's.
+            if previous.is_revoked or previous.user_agent.startswith(
+                "simeon-local-exec/"
+            ):
                 continue
             previous.revoked_at = now
             session.add(previous)

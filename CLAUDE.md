@@ -739,7 +739,8 @@ avatar and name (`GetMe`), reading a PDF (no worker bound), auto-review
 (classifier not served, rejects), custom MCP servers and account plugins
 (writes throw), Send Feedback, Help Center and "open cloud agent" links,
 and everything on the cloud box, cloud agents, listeners and sharing. Not
-yet run on a Mac.
+yet run on a Mac. (The cloud box is served since 25 September 2026, later
+that day: `docs/product/cloud-computer-served.md`.)
 
 **Fixed later the same day, "directly from the reconstruction"** (the
 founder: "i need you to fix all of this"): each fix keeps the function
@@ -764,8 +765,12 @@ built for its own identity; the per-turn MCP snapshot is real; the
 connector card's cancel works; host diagnostics reach the log; and
 custom MCP servers and account plugins live in a store on the Mac
 (paragraph above). Still not done, because the services behind them do
-not exist: cloud boxes, cloud agents, Slack and GitHub listeners,
-sharing, and Cursor's feature-gate server (gates keep their bundled
+not exist: cloud agents, Slack and GitHub listeners,
+sharing, and Cursor's feature-gate server (cloud boxes are served
+since 25 September 2026, later that day — the broker, the proxy and a
+Docker host provider in `polar/sand/box_*.py`; the switch in Settings
+works and answers one sentence until the founder provisions a VM and
+sets `CLAIDOR_BOX_HOST_PROVIDER`; `docs/product/cloud-computer-served.md`) (gates keep their bundled
 defaults; `sand_usage_page` is the one we set). None of this has run on
 a Mac. `docs/product/reconstruction-gaps-2026-09-24.md` §"Fixed the same
 day" has the per-item file list.

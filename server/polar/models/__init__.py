@@ -48,6 +48,7 @@ from .desktop import (
     DesktopSession,
     DesktopUsage,
 )
+from .sand_box import SandBox
 from .discount import Discount
 from .discount_product import DiscountProduct
 from .discount_redemption import DiscountRedemption
@@ -243,6 +244,7 @@ __all__ = [
     "DesktopMemoryFile",
     "DesktopSession",
     "DesktopUsage",
+    "SandBox",
     "Discount",
     "DiscountProduct",
     "DiscountRedemption",
