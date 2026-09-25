@@ -104,6 +104,13 @@ from .license_key import LicenseKey
 from .license_key_activation import LicenseKeyActivation
 from .login_code import LoginCode
 from .maty import MatyJob, MatyJobKind, MatyJobStatus
+from .sand_automation import (
+    SandAutomation,
+    SandAutomationFire,
+    SandListenerConnection,
+    SandListenerEvent,
+    SandListenerSubscription,
+)
 from .member import Member, MemberRole
 from .member_session import MemberSession
 from .meter import Meter
@@ -317,6 +324,11 @@ __all__ = [
     "MatyJob",
     "MatyJobKind",
     "MatyJobStatus",
+    "SandAutomation",
+    "SandAutomationFire",
+    "SandListenerConnection",
+    "SandListenerEvent",
+    "SandListenerSubscription",
     "Member",
     "MemberRole",
     "MemberSession",

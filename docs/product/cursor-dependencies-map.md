@@ -95,6 +95,30 @@ issue/PR/comment, Teams, Linear, Sentry, PagerDuty) are read by
 
 ### 4. What is genuinely missing
 
+**Corrected 25 September 2026, later the same day — built:**
+`server/polar/sand/listeners*.py` serves the five routes, the
+`AutomationsService` RPCs and the dashboard's Slack/SCM reads; the
+notify publisher was already `polar/sand/notify.py`; a worker actor
+fires cron; Slack, GitHub, Linear, Sentry and PagerDuty have ingress
+routes. `docs/product/listeners-served.md` is the record. What was
+measured on the way and the list below had wrong: **the box does not
+"already run cron locally" once the RPCs answer** — `shouldScheduleLocally`
+in `sand-automation-cloud-sync.ts` hands every cron-only routine to the
+server the moment `ListSandAutomations` succeeds, so serving the RPCs
+without a server-side cron would have silenced every routine. The
+desktop wiring was already done by `8e29abf3` (`SERVED_SWITCH_ENVS`,
+per-service `isConnectServed`). Still missing, and the reason nothing
+fires yet: the founder's registrations — Simeon's Slack app (client id,
+secret, signing secret) and GitHub App (slug, webhook secret) — and a
+Teams bot, which nobody has built (Teams stays Coming Soon). The
+Pipedream shortcut below was not taken: `polar/connectors/` and
+`polar/connector/` carry no trigger or event-source code (searched
+`rg -il "trigger|webhook|source"`; the hits are a cron actor and
+SharePoint "sources"), so it would have been the same build behind a
+middleman.
+
+The list as it stood that morning:
+
 - On the server: the five routes and the stream, a workflow store, a fire
   queue with acks, a cron scheduler for the cloud copy (the box already runs
   cron locally), a notify publisher. `server/polar/desktop/` serves no
@@ -113,7 +137,7 @@ code and the app is finished. The server side is sizeable but has no
 product decisions in it. One shortcut to weigh: Pipedream Connect, which
 `polar/connectors/` already speaks, offers Slack and GitHub triggers, so the
 relay could be a thin adapter over Pipedream events rather than our own
-Slack and GitHub apps.
+Slack and GitHub apps. (Not taken; see §4.)
 
 ---
 

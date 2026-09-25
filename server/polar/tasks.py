@@ -32,6 +32,7 @@ from polar.personal_access_token import tasks as personal_access_token
 from polar.platform import tasks as platform_tasks
 from polar.processor_transaction import tasks as processor_transaction
 from polar.quotas import tasks as quotas_tasks
+from polar.sand import listeners_tasks as sand_listeners
 from polar.subscription import tasks as subscription
 from polar.transaction import tasks as transaction
 from polar.user import tasks as user
@@ -70,6 +71,7 @@ __all__ = [
     "platform_tasks",
     "processor_transaction",
     "quotas_tasks",
+    "sand_listeners",
     "resend",
     "stripe",
     "subscription",

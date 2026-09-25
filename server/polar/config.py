@@ -211,6 +211,23 @@ class Settings(BaseSettings):
     DESKTOP_SHARE_INVITE_TTL: timedelta = timedelta(days=7)
     DESKTOP_SHARE_JOINS_PER_MINUTE: int = 10
 
+    # Event routines (polar/sand/listeners*.py, docs/product/listeners-served.md).
+    # Simeon's Slack app: the person installs it in their workspace from
+    # the app's connect card (OAuth v2, one bot token per workspace, held
+    # on the server); Slack's Events API posts to
+    # POST /sand/ingress/slack/events, verified with the signing secret.
+    # Left empty, the install URL answers with a sentence naming the
+    # missing key and the subscriptions route says `not-linked`.
+    SLACK_APP_ID: str = ""
+    SLACK_CLIENT_ID: str = ""
+    SLACK_CLIENT_SECRET: str = ""
+    SLACK_SIGNING_SECRET: str = ""
+    # Simeon's GitHub App (distinct from the sign-in OAuth app above and
+    # the repository-benefits App): its slug names the install URL, its
+    # webhook secret verifies POST /sand/ingress/github/events.
+    SAND_GITHUB_APP_SLUG: str = ""
+    SAND_GITHUB_WEBHOOK_SECRET: str = ""
+
     # Apps through Composio (polar/desktop/composio.py). One key for the
     # whole of Claidor, held here and nowhere else: the desktop app never
     # sees it and never asks a person for one. Each account is a Composio
