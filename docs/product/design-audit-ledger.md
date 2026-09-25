@@ -1260,6 +1260,9 @@ the lockfile; its hostnames do not fit the tunnel rule).
 | F-487 | box-and-computer | minor | risk | confirmed | cloud-computer | fixed | `issue_box_credential` revoked every child row of the desktop, so a box creation would have killed the local-exec daemon's credential; it skips `simeon-local-exec/` rows now | `server/polar/desktop/service.py` |
 | F-488 | box-and-computer | minor | risk | confirmed | cloud-computer | fixed | `setBoxRuntime("remote")` stopped the local box before knowing the broker would answer; it probes first and falls back with one sentence | `desktop/source/electron-main/main-edge.ts` |
 | F-489 | box-and-computer | major | unbuilt | confirmed | cloud-computer | coming-soon | A box host: no VM, daemon, bundle URL or DNS exists; the broker answers "Simeon's cloud computer needs a host; set CLAIDOR_BOX_HOST_PROVIDER" until the founder provisions one (dependency: infrastructure the founder creates, named in `cloud-computer-served.md`) | `server/polar/config.py` |
+| F-490 | box-and-computer | blocker | unwired | confirmed | box-tools-loop-shape | fixed | Computer and Screenshot (`sand-computer-tool.ts`) are built as `execute(args, meta)` over a Zod schema and pushed into the toolset as built; the loop calls `execute(ctx, interactionHandler, argsStream, meta)` and `serializeError` on a throw, so the computerUse child's first Computer call died on `tool3.serializeError is not a function` (the founder's app, 25 September) and the Zod object went on the wire as the schema | `desktop/source/host/runner/tools/turn-toolset.ts` |
+| F-491 | box-and-computer | major | unwired | confirmed | box-tools-loop-shape | fixed | The fifteen browser tools (`sand-browser-tools.ts`) have the same shape and no JSON schema at all, so the browserUse child could not act once its gate was on | `desktop/source/host/runner/tools/turn-toolset.ts` |
+| F-492 | agents-and-subagents | major | unwired | confirmed | box-tools-loop-shape | fixed | CloudAgent (`cloud-agent-tool.ts`) carries no `parameters`, so `toolParameterSchema` left it out of every request and the agent could never launch a cloud agent whatever the brief said | `desktop/source/host/cloud-agents/cloud-agent-tool.ts` |
 
 ### skill-publish-served (25 September 2026)
 
@@ -1280,3 +1283,23 @@ the binary codec, so every call the app made went out as
 and `createDashboardClient` now pass `useBinaryFormat: false`
 (`tests/skill-publish-served.test.mjs` measured it before the fix).
 Not yet run on a Mac.
+
+### box-tools-loop-shape (25 September 2026)
+
+F-490, F-491 and F-492 are `fixed`:
+`desktop/source/host/runner/tools/sand-loop-tool.ts` puts Grok Bot's
+Sand-shaped box tools on the loop's calling convention through
+`createZodAgentTool`, the way every tool that works already is (the Zod
+schema as the JSON schema on the wire, arguments parsed once, the tool
+run with `context`/`toolCallId`/signal/state handler, the screenshot as
+an image part after the text, a failure as an error result, the
+communicate-update card in the transcript); `turn-toolset.ts` uses it in
+the four factories, and `cloud-agent-tool-parameters.ts` is
+`CloudAgentToolArgs` as Zod. `tests/sand-loop-tool.test.mjs` drives a
+Computer call through the host's real tool loop against a fake Responses
+server. `docs/product/box-tools-loop-shape-2026-09-25.md` is the record.
+The 24 September Screenshot bisect (`AGENT_SCREENSHOT_TOOL`) is explained
+by the same shape but not measured; `SAND_AGENT_SCREENSHOT_TOOL=1` offers
+the tool again and it stays off until a turn with it is read on a Mac.
+Not yet run on a Mac: the line to read is `[claidor] tool=Computer` in
+the box's `/tmp/sand-host.log`.

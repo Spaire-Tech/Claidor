@@ -399,7 +399,22 @@ and our reconstruction daemon bind-mounted over
 every Computer call and CopyToBox fails, which the 24 September child
 log (no Computer call ever issued) is consistent with. Read
 `docker exec simeon-box ps aux | grep box-exec-daemon` before reasoning
-about a blind computerUse child again. **Also 25 September (ledger
+about a blind computerUse child again. **Found the same evening, from the
+founder's app ("The browser handoff hit a desktop error",
+`tool3.serializeError is not a function`): the Computer, Screenshot and
+browser tools were never in the loop's shape.** They are built as
+`execute(args, meta)` over a Zod schema (Grok Bot's Sand shape) and
+`turn-toolset.ts` pushed them into the toolset as built, while the loop
+calls `execute(ctx, interactionHandler, argsStream, meta)` and
+`serializeError` on a throw, so a child's first Computer call received
+the context as its arguments and the loop died; the Zod object itself
+went on the wire as the schema (the one thing that distinguished
+Screenshot in the 24 September bisect), and CloudAgent, which has no
+schema, was left out of every request. `host/runner/tools/sand-loop-tool.ts`
+is the bridge for all four (`docs/product/box-tools-loop-shape-2026-09-25.md`;
+`tests/sand-loop-tool.test.mjs` drives a Computer call through the real
+loop). `SAND_AGENT_SCREENSHOT_TOOL=1` offers the agent's Screenshot
+again; off until read on a Mac. **Also 25 September (ledger
 `attachment-topology`): an attached file's path is a box path**, because the
 host runs in the box; until then the note told the agent the file lived on
 the user's computer and sent it to ExternalRead and CopyToBox for a file

@@ -38,6 +38,12 @@ import {
 } from "./mcp-meta-tools.js";
 import { fencedToolSet } from "./sand-spotlight-tools.js";
 import {
+  adaptBrowserTool,
+  adaptComputerTool,
+  adaptContextFirstTool,
+} from "./sand-loop-tool.js";
+import { cloudAgentToolParameters } from "../../cloud-agents/cloud-agent-tool-parameters.js";
+import {
   McpDescriptor,
   McpMetaToolOptions,
   McpToolDescriptor,
@@ -913,22 +919,28 @@ export function createTurnMcpMetaToolFactory(
   };
 }
 
+// Computer, Screenshot, the browser tools and CloudAgent are built in the
+// Sand shape (`execute(args, meta)`, Zod or no schema); the loop runs
+// `execute(ctx, interactionHandler, argsStream, meta)` and calls
+// `serializeError` on a throw. `sand-loop-tool.ts` is the bridge; without it
+// a child's first Computer call died on `tool.serializeError is not a
+// function` (25 September 2026).
 export function createTurnComputerToolFactory(
   input: TurnComputerToolFactoryInput,
 ): () => TurnTool {
-  return () => asTurnTool(createComputerTool(input.dependencies));
+  return () => asTurnTool(adaptComputerTool(createComputerTool(input.dependencies)));
 }
 
 export function createTurnScreenshotToolFactory(
   input: TurnComputerToolFactoryInput,
 ): () => TurnTool {
-  return () => asTurnTool(createScreenshotTool(input.dependencies));
+  return () => asTurnTool(adaptComputerTool(createScreenshotTool(input.dependencies)));
 }
 
 export function createTurnBrowserToolFactory(
   input: TurnBrowserToolFactoryInput,
 ): () => readonly TurnTool[] {
-  return () => createSandBrowserTools(input.dependencies).map(asTurnTool);
+  return () => createSandBrowserTools(input.dependencies).map((tool) => asTurnTool(adaptBrowserTool(tool)));
 }
 
 export function createTurnFileTransferToolFactory(
@@ -1058,7 +1070,7 @@ export function createTurnMcpManagementToolFactory(
 export function createTurnCloudAgentToolFactory(
   input: TurnCloudAgentToolFactoryInput,
 ): () => TurnTool {
-  return () => asTurnTool(createCloudAgentTool(input.dependencies));
+  return () => asTurnTool(adaptContextFirstTool(createCloudAgentTool(input.dependencies), cloudAgentToolParameters));
 }
 
 /**
