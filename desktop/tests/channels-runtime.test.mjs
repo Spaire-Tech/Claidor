@@ -402,7 +402,7 @@ test("the extension is in the host's table, the brief and the SendMessage tool o
   const extension = await src("host/extensions/channels/extension.ts");
   assert.match(extension, /dependencies: \[HostExtensions\.Transcript\]/);
   const connector = await src("electron-main/box/local-docker-host-connector.ts");
-  assert.match(connector, /"SAND_CHANNELS_SERVED"\] as const/, "the Mac forwards the switch into the box");
+  assert.match(connector, /"SAND_CHANNELS_SERVED"[,\]]/, "the Mac forwards the switch into the box");
   const schema = await load("source/host/runner/tools/send-message-schema.ts", "send-message-schema-channels");
   try {
     assert.match(schema.module.describeSendMessageTypes({}), /secret-request to ask the user for a credential/);
