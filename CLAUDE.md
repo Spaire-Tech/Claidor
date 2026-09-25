@@ -810,6 +810,24 @@ see or reach it. The ledger's dispositions are `fixed`, `coming-soon`
 (with the missing dependency named), `known-limit` and `needs-mac`.
 Work proceeds by cluster (root cause), not by finding.
 
+## Cursor's server is the missing half, not the feature (25 September 2026)
+
+"I don't want us to treat these as features we need to rebuild from
+scratch when we already have the reconstructed app-side implementation."
+`docs/product/cursor-dependencies-map.md` maps, for listeners, channels,
+cloud agents, memory sync, the cloud computer, video, skill publish and
+sharing: the Cursor service we cannot use, the code we already have, the
+exact routes and fields that code expects, what is genuinely missing, and
+whether that is wiring, backend replacement or new product. Read it
+before calling any of the eight "coming soon" or "a rebuild". Its shape:
+channels need a client module in the box and no server; listeners, the
+cloud computer and video are backend replacements against a contract the
+code already states; cloud agents, skill publish, sharing and memory sync
+carry real new product work. Found on the way and fixed:
+`createRemoteHostConnector` dropped `issueBoxRenewalCredential` on the
+fast path both production call sites use, so the box's own renewal
+credential (the paragraph on routines above) was never minted.
+
 ## The product's hostnames are simeonlabs.com (24 September 2026)
 
 "i want to replace all claidor.com instances by simeonlabs.com … now i
