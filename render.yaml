@@ -151,15 +151,17 @@ services:
   # the lease.
   - type: worker
     name: claidor-maty-runner
-    runtime: image
-    image:
-      # The moving tag the workflow pushes on every green build of main. Each
-      # build also carries its commit sha, so a bad deploy rolls back by
-      # pointing a manual deploy at `...@sha256:` or the sha tag instead.
-      url: ghcr.io/spaire-tech/claidor-maty-runner:main
-      # The name of the registry credential in the Render dashboard, not the
-      # credential itself. Nothing secret is in this file.
-      creds: ghcr-claidor
+    # Built by Render from the repository, like the API and the worker
+    # (25 September 2026). Until then the image came from GHCR, built by
+    # GitHub Actions, because it carried the OpenClaw engine and Render's
+    # build machine could not finish that build; the engine is gone from
+    # the runner (`runner/src/engine.ts`) and the image is a plain Node
+    # build again. The Dockerfile's context is the repository root.
+    runtime: docker
+    repo: https://github.com/Spaire-Tech/Claidor
+    branch: main
+    dockerfilePath: ./runner/Dockerfile
+    dockerContext: .
     plan: starter
     # Deliberately NOT in the `claidor-shared` group, unlike the two
     # services above. That group carries the provider key, the signing

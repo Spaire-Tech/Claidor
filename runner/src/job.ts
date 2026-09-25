@@ -5,7 +5,7 @@ import type { ClaimedJob, TurnMessage } from './claidor.js';
 import { PersonClient } from './claidor.js';
 import { Engine } from './engine.js';
 import type { EngineMessage } from './engine.js';
-import { buildEngineConfig, buildWorkspaceInstructions } from './engineConfig.js';
+import { buildWorkspaceInstructions } from './engineConfig.js';
 import { collectMemoryChanges, isMemoryName, layOutMemory } from './memory.js';
 import { log } from './log.js';
 import type { RunnerSettings } from './settings.js';
@@ -13,8 +13,8 @@ import type { RunnerSettings } from './settings.js';
 /**
  * One job, start to finish.
  *
- * A fresh empty directory, the person's memory laid out in it, the engine
- * started against it, one instruction, the answer, the memory written back,
+ * A fresh empty directory, the person's memory laid out in it, one model
+ * turn over it through Claidor's proxy, the answer, the memory written back,
  * and the directory deleted — on the way out of a failure just as surely as
  * on the way out of a success. Nothing is carried from one job to the next.
  */
@@ -72,19 +72,14 @@ export const runJob = async (claimed: ClaimedJob, settings: RunnerSettings, sign
     if (!model) throw new NoModelAvailable();
 
     engine = await Engine.start({
-      engineRoot: settings.engineRoot,
-      jobDir,
-      config: buildEngineConfig({
-        workspacePath: workspace,
-        modelProxyBaseUrl: modelProxyUrl(settings.apiBaseUrl),
-        model,
-      }),
+      modelProxyBaseUrl: modelProxyUrl(settings.apiBaseUrl),
+      model: { id: model.id, transportApi: model.transportApi, maxTokens: model.maxTokens },
       jobToken: claimed.accessToken,
-      startTimeoutMs: settings.engineStartTimeoutMs,
+      workspace,
     });
 
     const answer = await engine.ask(engineInput(claimed.job), settings.jobTimeoutMs, signal);
-    log.info(`job ${claimed.job.id}: the engine answered`);
+    log.info(`job ${claimed.job.id}: the model answered`);
 
     await engine.stop();
     engine = null;

@@ -9,12 +9,10 @@ const settings: RunnerSettings = {
   apiBaseUrl: 'https://api.example.test',
   runnerToken: 'runner-token',
   runnerName: 'runner-1',
-  engineRoot: '/engine',
   workRoot: '/jobs',
   pollIntervalMs: 1,
   heartbeatIntervalMs: 5,
   jobTimeoutMs: 1000,
-  engineStartTimeoutMs: 1000,
 };
 
 const aJob = (id: string): ClaimedJob => ({

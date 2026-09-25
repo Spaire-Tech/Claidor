@@ -2,15 +2,11 @@
   "name": "claidor-maty-runner",
   "version": "0.1.0",
   "private": true,
-  "description": "Claidor's cloud runner: takes one Maty job at a time and does it with the OpenClaw engine.",
+  "description": "Simeon Labs' cloud runner: takes one Maty job at a time and runs it as one model turn through Claidor's metered proxy.",
   "license": "Apache-2.0",
   "type": "module",
   "engines": {
     "node": ">=24.15.0 <25"
-  },
-  "openclaw": {
-    "version": "v2026.6.1",
-    "repo": "https://github.com/openclaw/openclaw.git"
   },
   "scripts": {
     "build": "tsc --build",

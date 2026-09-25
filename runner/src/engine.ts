@@ -1,33 +1,47 @@
-import { type ChildProcess, spawn } from 'node:child_process';
-import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
-import net from 'node:net';
 import path from 'node:path';
 
-import { buildExecApprovals, GATEWAY_TOKEN_ENV, JOB_TOKEN_ENV } from './engineConfig.js';
 import { log, reasonOf } from './log.js';
+import { isMemoryName } from './memory.js';
 
 /**
- * Starting the engine and asking it one thing.
+ * The runner's model call, spoken straight to Claidor's metered proxy
+ * (25 September 2026).
  *
- * This is the small version of the desktop's
- * `openclawEngineManager.ts`: write a config, start the gateway, send one
- * instruction, collect the answer, stop. There is no supervision, no
- * restart ladder and no reconnection, because a cloud job that loses its
- * engine is a failed job that goes back to the queue.
+ * Until then this file started the OpenClaw gateway that the LobsterAI-era
+ * desktop app shipped, and the image built that engine from source with
+ * the desktop's patches (`desktop/scripts/patches`). Those patches, the
+ * script that applied them and the desktop's pin left the repository with
+ * the 18 September re-founding, so the image could not be built from the
+ * tree at all, and the product's own agent loop no longer runs on that
+ * engine anyway. What a cloud job actually does today is one model turn
+ * over the person's memory and the conversation, with no tools; that is a
+ * request to the proxy on the person's job token, the same door the
+ * desktop's executor uses, so this is now that request and nothing else.
+ *
+ * The memory the queue lays out in the workspace is read into the system
+ * prompt (the workspace instructions first, then every memory file). The
+ * model has no way to write files, so `collectMemoryChanges` in job.ts
+ * finds nothing; memory written by a cloud turn is a follow-up
+ * (`docs/product/cloud-agents-served.md`).
  */
 
+export interface EngineModel {
+  id: string;
+  /** Which wire the proxy takes for this model: `openai-responses`, `openai-completions` or `anthropic-messages`. */
+  transportApi: string;
+  maxTokens: number;
+}
+
 export interface EngineStartOptions {
-  /** The directory holding openclaw.mjs. */
-  engineRoot: string;
-  /** The job's own directory: the config, the engine's home, the workspace. */
-  jobDir: string;
-  /** The config object to write. */
-  config: Record<string, unknown>;
-  /** The person's token, handed to the engine through its environment. */
+  /** The proxy's base, `${apiBaseUrl}/desktop/api/proxy`. */
+  modelProxyBaseUrl: string;
+  model: EngineModel;
+  /** The person's job token, the bearer on every call. */
   jobToken: string;
-  /** How long to wait for the gateway to answer its health check. */
-  startTimeoutMs: number;
+  /** The job's workspace: the instructions and the memory files laid out there. */
+  workspace: string;
+  fetchImpl?: typeof fetch;
 }
 
 export interface EngineAnswer {
@@ -35,7 +49,7 @@ export interface EngineAnswer {
   usage: Record<string, unknown>;
 }
 
-/** One message on the engine's OpenAI-shaped wire. */
+/** One message of the conversation. */
 export interface EngineMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -60,161 +74,57 @@ export class JobCancelled extends Error {
   }
 }
 
-/** A port nobody is using, asked of the operating system. */
-export const freePort = async (): Promise<number> =>
-  await new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.once('error', reject);
-    server.listen(0, '127.0.0.1', () => {
-      const address = server.address();
-      if (address === null || typeof address === 'string') {
-        server.close(() => reject(new EngineError('The operating system gave no port.')));
-        return;
-      }
-      const { port } = address;
-      server.close(() => resolve(port));
-    });
-  });
+/** The instructions file the queue writes into the workspace. */
+export const INSTRUCTIONS_FILE = 'AGENTS.md';
 
-const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+/**
+ * The system prompt: the workspace instructions, then every memory file
+ * under its name, so the model reads what the person's computer would have
+ * read from disk.
+ */
+export const buildSystemPrompt = async (workspace: string): Promise<string> => {
+  const parts: string[] = [];
+  const instructions = await fs.readFile(path.join(workspace, INSTRUCTIONS_FILE), 'utf8').catch(() => '');
+  if (instructions.trim()) parts.push(instructions.trim());
+  const names: string[] = [];
+  const walk = async (dir: string, prefix: string): Promise<void> => {
+    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
+    for (const entry of entries) {
+      const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) await walk(path.join(dir, entry.name), relative);
+      else if (isMemoryName(relative)) names.push(relative);
+    }
+  };
+  await walk(workspace, '');
+  names.sort();
+  for (const name of names) {
+    const content = (await fs.readFile(path.join(workspace, name), 'utf8')).trim();
+    if (content) parts.push(`## ${name}\n\n${content}`);
+  }
+  return parts.join('\n\n');
+};
 
 export class Engine {
-  private readonly port: number;
-  private readonly gatewayToken: string;
-  private readonly child: ChildProcess;
-  private readonly output: string[] = [];
-  private exited = false;
+  private readonly options: EngineStartOptions;
+  private readonly system: string;
 
-  private constructor(port: number, gatewayToken: string, child: ChildProcess) {
-    this.port = port;
-    this.gatewayToken = gatewayToken;
-    this.child = child;
-    child.once('exit', () => {
-      this.exited = true;
-    });
-    // A process that never started at all — a missing engine, an
-    // unreadable directory — emits this and no exit, so without it the
-    // start would wait out its whole timeout before saying so.
-    child.once('error', (error) => {
-      this.exited = true;
-      this.output.push(`the engine process could not start: ${reasonOf(error)}`);
-    });
-    const keep = (chunk: Buffer): void => {
-      for (const line of chunk.toString('utf8').split('\n')) {
-        if (!line.trim()) continue;
-        this.output.push(line);
-        if (this.output.length > 200) this.output.shift();
-      }
-    };
-    child.stdout?.on('data', keep);
-    child.stderr?.on('data', keep);
+  private constructor(options: EngineStartOptions, system: string) {
+    this.options = options;
+    this.system = system;
   }
 
+  /** Reads the workspace once; nothing is started, there is no process. */
   static async start(options: EngineStartOptions): Promise<Engine> {
-    const configPath = path.join(options.jobDir, 'openclaw.json');
-    const home = path.join(options.jobDir, 'engine');
-    const state = path.join(home, 'state');
-    await fs.mkdir(state, { recursive: true });
-    await fs.mkdir(path.join(home, '.openclaw'), { recursive: true });
-    await fs.writeFile(configPath, `${JSON.stringify(options.config, null, 2)}\n`, 'utf8');
-    // The host-local half of the exec policy, written deny-first. See
-    // engineConfig.ts for why it is the reverse of the desktop's.
-    await fs.writeFile(
-      path.join(home, '.openclaw', 'exec-approvals.json'),
-      `${JSON.stringify(buildExecApprovals(), null, 2)}\n`,
-      'utf8',
-    );
-
-    const port = await freePort();
-    const gatewayToken = crypto.randomBytes(32).toString('base64url');
-    const entry = path.join(options.engineRoot, 'openclaw.mjs');
-
-    // The engine's environment is built from nothing, not inherited. The
-    // runner's own token, Claidor's queue address and everything else this
-    // process holds stay out of the child: it gets the person's token, its
-    // own gateway token, and the paths it needs.
-    const env: NodeJS.ProcessEnv = {
-      PATH: '/usr/local/bin:/usr/bin:/bin',
-      HOME: home,
-      TMPDIR: path.join(options.jobDir, 'tmp'),
-      TZ: process.env.TZ ?? 'UTC',
-      NODE_ENV: 'production',
-      OPENCLAW_HOME: home,
-      OPENCLAW_STATE_DIR: state,
-      OPENCLAW_CONFIG_PATH: configPath,
-      OPENCLAW_NO_RESPAWN: '1',
-      // A loopback gateway in a container has nothing to advertise, and the
-      // watchdog is noisy.
-      OPENCLAW_DISABLE_BONJOUR: '1',
-      [GATEWAY_TOKEN_ENV]: gatewayToken,
-      [JOB_TOKEN_ENV]: options.jobToken,
-    };
-    await fs.mkdir(env.TMPDIR as string, { recursive: true });
-
-    const child = spawn(process.execPath, [entry, 'gateway', '--bind', 'loopback', '--port', String(port), '--token', gatewayToken], {
-      cwd: options.engineRoot,
-      env,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-
-    const engine = new Engine(port, gatewayToken, child);
-    try {
-      await engine.waitUntilReady(options.startTimeoutMs);
-    } catch (error) {
-      await engine.stop();
-      throw error;
-    }
-    return engine;
-  }
-
-  get url(): string {
-    return `http://127.0.0.1:${this.port}`;
-  }
-
-  /** The last lines the engine printed, for a failure report. */
-  recentOutput(lines = 20): string {
-    return this.output.slice(-lines).join('\n');
-  }
-
-  private async waitUntilReady(timeoutMs: number): Promise<void> {
-    const deadline = Date.now() + timeoutMs;
-    while (Date.now() < deadline) {
-      if (this.exited) {
-        throw new EngineError(`The engine stopped before it was ready.\n${this.recentOutput()}`);
-      }
-      if (await this.healthy()) {
-        log.info(`the engine is ready on loopback:${this.port}`);
-        return;
-      }
-      await sleep(500);
-    }
-    throw new EngineError(`The engine was not ready within ${Math.round(timeoutMs / 1000)}s.\n${this.recentOutput()}`);
-  }
-
-  private async healthy(): Promise<boolean> {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 2_000);
-      try {
-        const response = await fetch(`${this.url}/health`, { signal: controller.signal });
-        return response.ok;
-      } finally {
-        clearTimeout(timeout);
-      }
-    } catch {
-      return false;
-    }
+    const system = await buildSystemPrompt(options.workspace);
+    log.info(`model ${options.model.id} on ${options.model.transportApi}; system prompt ${system.length} chars`);
+    return new Engine(options, system);
   }
 
   /**
-   * One instruction in, one answer out. The gateway runs it as a normal
-   * agent turn, with the tool policy and the workspace this job's config
-   * set, so the answer is the whole result of the work.
-   *
-   * A conversation (a cloud agent's turn continuing earlier ones) is
-   * passed as the messages it is; a string is one user message. `signal`
-   * is the person asking the job to stop: the call is abandoned and the
-   * error names the cancellation, not the engine.
+   * One instruction in, one answer out. A conversation (a cloud agent's
+   * turn continuing earlier ones) is passed as the messages it is; a string
+   * is one user message. `signal` is the person asking the job to stop:
+   * the call is abandoned and the error names the cancellation.
    */
   async ask(instruction: string | readonly EngineMessage[], timeoutMs: number, signal?: AbortSignal): Promise<EngineAnswer> {
     const controller = new AbortController();
@@ -223,84 +133,103 @@ export class Engine {
     if (signal?.aborted) throw new JobCancelled();
     signal?.addEventListener('abort', onCancel, { once: true });
     const messages: EngineMessage[] = typeof instruction === 'string' ? [{ role: 'user', content: instruction }] : [...instruction];
+    const { path: route, body } = buildRequest(this.options.model, this.system, messages);
+    const fetchImpl = this.options.fetchImpl ?? fetch;
     try {
-      const response = await fetch(`${this.url}/v1/chat/completions`, {
+      const response = await fetchImpl(`${this.options.modelProxyBaseUrl}${route}`, {
         method: 'POST',
         headers: {
-          authorization: `Bearer ${this.gatewayToken}`,
+          authorization: `Bearer ${this.options.jobToken}`,
           'content-type': 'application/json',
         },
-        // "openclaw" is the engine's own name for "the configured agent",
-        // not a model name: which model runs is decided by the config.
-        body: JSON.stringify({ model: 'openclaw', messages }),
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
       const raw = await response.text();
       if (!response.ok) {
-        throw new EngineError(`The engine refused the instruction (${response.status}): ${raw.slice(0, 500)}`);
+        throw new EngineError(`The model proxy refused the turn (${response.status}): ${raw.slice(0, 500)}`);
       }
-      return readAnswer(raw);
+      return readAnswer(raw, this.options.model.transportApi);
     } catch (error) {
       if (signal?.aborted) throw new JobCancelled();
       if (error instanceof EngineError) throw error;
-      throw new EngineError(`The engine did not answer: ${reasonOf(error)}`);
+      throw new EngineError(`The model proxy did not answer: ${reasonOf(error)}`);
     } finally {
       clearTimeout(timeout);
       signal?.removeEventListener('abort', onCancel);
     }
   }
 
-  /**
-   * Ask it to stop, then insist, and give up waiting rather than hold the
-   * runner: the job is over either way, and a process that will not die is
-   * a worse thing to wait for than to report.
-   */
-  async stop(graceMs = 10_000): Promise<void> {
-    if (this.exited) return;
-    const ended = new Promise<void>((resolve) => {
-      this.child.once('exit', () => resolve());
-      this.child.once('error', () => resolve());
-    });
-    try {
-      this.child.kill('SIGTERM');
-    } catch {
-      return;
-    }
-    const insist = setTimeout(() => {
-      try {
-        this.child.kill('SIGKILL');
-      } catch {
-        // Already gone.
-      }
-    }, graceMs);
-    const gaveUp = new Promise<void>((resolve) => setTimeout(resolve, graceMs * 2).unref());
-    try {
-      await Promise.race([ended, gaveUp]);
-    } finally {
-      clearTimeout(insist);
-    }
-    if (!this.exited) {
-      log.warn(`the engine (pid ${this.child.pid ?? 'unknown'}) did not stop when asked`);
-    }
-  }
+  /** Nothing to stop: kept so job.ts reads the same on both sides of the change. */
+  async stop(): Promise<void> {}
 }
 
-/** The answer, out of the engine's OpenAI-shaped reply. */
-export const readAnswer = (raw: string): EngineAnswer => {
+/** The request for the model's wire: the same three shapes the proxy serves. */
+export const buildRequest = (model: EngineModel, system: string, messages: readonly EngineMessage[]): { path: string; body: Record<string, unknown> } => {
+  switch (model.transportApi) {
+    case 'anthropic-messages':
+      return {
+        path: '/v1/messages',
+        body: {
+          model: model.id,
+          max_tokens: Math.min(model.maxTokens, 8_192),
+          ...(system ? { system } : {}),
+          messages: messages.map((message) => ({ role: message.role, content: message.content })),
+        },
+      };
+    case 'openai-completions':
+      return {
+        path: '/v1/chat/completions',
+        body: {
+          model: model.id,
+          messages: [...(system ? [{ role: 'system', content: system }] : []), ...messages.map((message) => ({ role: message.role, content: message.content }))],
+        },
+      };
+    default:
+      return {
+        path: '/v1/responses',
+        body: {
+          model: model.id,
+          ...(system ? { instructions: system } : {}),
+          input: messages.map((message) => ({ role: message.role, content: message.content })),
+        },
+      };
+  }
+};
+
+/** The answer, out of whichever wire was spoken. */
+export const readAnswer = (raw: string, transportApi: string): EngineAnswer => {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
   } catch {
-    throw new EngineError('The engine answered something that is not JSON.');
+    throw new EngineError('The model proxy answered something that is not JSON.');
   }
-  const body = parsed as { choices?: { message?: { content?: unknown } }[]; usage?: unknown };
-  const content = body.choices?.[0]?.message?.content;
-  if (typeof content !== 'string' || !content.trim()) {
-    throw new EngineError('The engine answered with no text.');
+  const body = parsed as Record<string, unknown>;
+  const usage = typeof body.usage === 'object' && body.usage !== null ? (body.usage as Record<string, unknown>) : {};
+  let text: string | undefined;
+  if (transportApi === 'anthropic-messages') {
+    const content = Array.isArray(body.content) ? body.content : [];
+    text = content
+      .map((part) => (typeof part === 'object' && part !== null && (part as { type?: unknown }).type === 'text' ? String((part as { text?: unknown }).text ?? '') : ''))
+      .join('');
+  } else if (transportApi === 'openai-completions') {
+    const choices = Array.isArray(body.choices) ? body.choices : [];
+    const first = choices[0] as { message?: { content?: unknown } } | undefined;
+    text = typeof first?.message?.content === 'string' ? first.message.content : undefined;
+  } else {
+    if (typeof body.output_text === 'string') text = body.output_text;
+    else {
+      const output = Array.isArray(body.output) ? body.output : [];
+      text = output
+        .filter((item) => typeof item === 'object' && item !== null && (item as { type?: unknown }).type === 'message')
+        .flatMap((item) => (Array.isArray((item as { content?: unknown }).content) ? ((item as { content: unknown[] }).content) : []))
+        .map((part) => (typeof part === 'object' && part !== null && (part as { type?: unknown }).type === 'output_text' ? String((part as { text?: unknown }).text ?? '') : ''))
+        .join('');
+    }
   }
-  const usage = body.usage;
-  return {
-    text: content,
-    usage: usage !== null && typeof usage === 'object' ? (usage as Record<string, unknown>) : {},
-  };
+  if (typeof text !== 'string' || !text.trim()) {
+    throw new EngineError('The model answered with no text.');
+  }
+  return { text, usage };
 };

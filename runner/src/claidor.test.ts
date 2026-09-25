@@ -205,7 +205,7 @@ describe('the person\'s side', () => {
       },
     });
     const models = await new PersonClient(baseUrl, 'person-token').models();
-    expect(models[0]).toEqual({ id: 'first-one', contextWindow: 200000, maxTokens: 16384 });
+    expect(models[0]).toEqual({ id: 'first-one', contextWindow: 200000, maxTokens: 16384, transportApi: 'openai-responses' });
   });
 
   test('skips a model this person may not use', async () => {
@@ -225,13 +225,14 @@ describe('reading the engine\'s answer', () => {
         choices: [{ message: { role: 'assistant', content: 'banana' } }],
         usage: { prompt_tokens: 10, completion_tokens: 2, total_tokens: 12 },
       }),
+      'openai-completions',
     );
     expect(answer.text).toBe('banana');
     expect(answer.usage).toEqual({ prompt_tokens: 10, completion_tokens: 2, total_tokens: 12 });
   });
 
   test('refuses an empty answer rather than reporting one', () => {
-    expect(() => readAnswer(JSON.stringify({ choices: [{ message: { content: '  ' } }] }))).toThrow(/no text/);
-    expect(() => readAnswer('not json')).toThrow(/not JSON/);
+    expect(() => readAnswer(JSON.stringify({ choices: [{ message: { content: '  ' } }] }), 'openai-completions')).toThrow(/no text/);
+    expect(() => readAnswer('not json', 'openai-completions')).toThrow(/not JSON/);
   });
 });
