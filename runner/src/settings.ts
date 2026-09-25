@@ -15,8 +15,6 @@ export interface RunnerSettings {
   runnerToken: string;
   /** How this runner names itself when it claims a job. */
   runnerName: string;
-  /** The built OpenClaw runtime: the directory holding openclaw.mjs. */
-  engineRoot: string;
   /** Where a job's own directory is made, and deleted again. */
   workRoot: string;
   /** How long to wait before asking for work again when there is none. */
@@ -25,8 +23,6 @@ export interface RunnerSettings {
   heartbeatIntervalMs: number;
   /** The longest a single job may take before it is given up on. */
   jobTimeoutMs: number;
-  /** The longest to wait for the engine to report itself ready. */
-  engineStartTimeoutMs: number;
 }
 
 export class MissingSetting extends Error {
@@ -67,10 +63,8 @@ export const readSettings = (env: NodeJS.ProcessEnv = process.env): RunnerSettin
   apiBaseUrl: apiBaseUrl(env),
   runnerToken: required(env, 'CLAIDOR_MATY_RUNNER_TOKEN'),
   runnerName: (env.CLAIDOR_MATY_RUNNER_NAME ?? '').trim() || os.hostname(),
-  engineRoot: (env.CLAIDOR_MATY_ENGINE_ROOT ?? '').trim() || '/engine',
   workRoot: (env.CLAIDOR_MATY_WORK_ROOT ?? '').trim() || path.join(os.tmpdir(), 'maty-jobs'),
   pollIntervalMs: number(env, 'CLAIDOR_MATY_POLL_INTERVAL_MS', 5_000),
   heartbeatIntervalMs: number(env, 'CLAIDOR_MATY_HEARTBEAT_INTERVAL_MS', 15_000),
   jobTimeoutMs: number(env, 'CLAIDOR_MATY_JOB_TIMEOUT_MS', 15 * 60_000),
-  engineStartTimeoutMs: number(env, 'CLAIDOR_MATY_ENGINE_START_TIMEOUT_MS', 180_000),
 });

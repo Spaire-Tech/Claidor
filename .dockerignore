@@ -1,21 +1,14 @@
 # The only image built from the repository root is the cloud runner
 # (`runner/Dockerfile`); the API and the worker are built from `server/` and
-# read `server/.dockerignore` instead. The runner's context is the root only
-# because the engine patches live under `desktop/`, so everything else is
-# excluded by hand: without this, the context would carry the git history, the
-# web client, the corpus and the desktop's built OpenClaw runtime, none of
-# which the image copies and all of which would be uploaded on every build.
+# read `server/.dockerignore` instead. The runner copies only its own
+# sources, so everything else is excluded: without this the context would
+# carry the git history, the web client, the corpus and the desktop tree.
 #
 # Exclude everything, then name what the Dockerfile actually copies.
 *
 !runner
-!desktop/package.json
-!desktop/scripts/apply-openclaw-patches.cjs
-!desktop/scripts/patches
 
-# ...minus what is generated inside those paths. A developer's local build
-# would otherwise ship their `node_modules` into the build context and
-# invalidate the runner layer on every `npm install`.
+# ...minus what is generated inside it. A developer's local build would
+# otherwise ship their `node_modules` into the build context.
 runner/node_modules
 runner/dist
-runner/tsconfig.tsbuildinfo

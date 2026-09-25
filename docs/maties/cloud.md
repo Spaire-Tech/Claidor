@@ -1,3 +1,11 @@
+> **Corrected 25 September 2026.** The runner no longer runs the OpenClaw
+> engine: `runner/src/engine.ts` is one model turn through Claidor's proxy,
+> and the image is a plain Node build Render makes itself (`render.yaml`).
+> Section 4 below, "the engine the cloud runs, exactly", describes the
+> engine as it was until then and is kept as the record of why; the
+> patches it names left the repository on 18 September. `runner/README.md`
+> is current.
+
 # The cloud engine — step 3 of the plan
 
 September 11, 2026. Written before the code. The plan

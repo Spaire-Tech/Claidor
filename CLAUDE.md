@@ -716,6 +716,22 @@ founder registers Simeon's Slack app and GitHub App and sets
 and a `sand.listeners.*_refused` log line name the missing key);
 Microsoft Teams stays Coming Soon (no bot). Not yet run on a Mac.
 
+**The runner no longer needs the OpenClaw engine, 25 September 2026,
+evening.** "The runner image wasn't rebuilt because GitHub Actions is
+billing-locked" was only half of it: `runner/Dockerfile` built the OpenClaw
+engine from `desktop/scripts/patches` and `apply-openclaw-patches.cjs`,
+which left the tree with the 18 September re-founding, so the image could
+not be built from any machine, and Render still ran the 22 September image
+without the cloud-agent contract. What a cloud job does is one model turn
+over the person's memory and the conversation, with no tools, so
+`runner/src/engine.ts` is now that request to Claidor's proxy on the job
+token (the wire from the model row's `transportApi`), the engine stage is
+gone from the Dockerfile, and `render.yaml` has Render build the runner
+from the repository like the API (`runtime: docker`). Known limit: the
+model cannot write memory files, so nothing is written back from a cloud
+turn. `runner/src/engine.test.ts` runs the turn against an in-process
+fake proxy. Not yet run on Render.
+
 **The decision, 18 September: keep the queue, change the executor.** The claim /
 lease / heartbeat / scoped-token / memory-in-memory-out half is the hard part and
 is tested. The other half is a Render container with no Docker, which is why

@@ -270,6 +270,8 @@ export interface AvailableModel {
   id: string;
   contextWindow: number;
   maxTokens: number;
+  /** The wire the proxy takes for this model (`transportApi` on the row): `openai-responses`, `openai-completions` or `anthropic-messages`. */
+  transportApi: string;
 }
 
 /** Everything about one person, spoken with that person's job token. */
@@ -327,10 +329,11 @@ export class PersonClient {
           id: text(model.modelId),
           contextWindow: whole(model.contextWindow, 200_000),
           maxTokens: whole(model.maxTokens, 8_192),
+          transportApi: text(model.transportApi) || (text(model.provider) === 'anthropic' ? 'anthropic-messages' : 'openai-responses'),
           accessible: model.accessible !== false,
         };
       })
       .filter((model) => model.id && model.accessible)
-      .map(({ id, contextWindow, maxTokens }) => ({ id, contextWindow, maxTokens }));
+      .map(({ id, contextWindow, maxTokens, transportApi }) => ({ id, contextWindow, maxTokens, transportApi }));
   }
 }
