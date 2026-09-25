@@ -1082,8 +1082,15 @@ the cards-plan table is rewritten against the shipped code (F-089),
 `multiSelect` is out of the permissions source (F-093), direction.md §2
 carries the asks-once decision (F-095), an IdP example no longer says
 Anysphere (F-078). Not built, listed as such in cards-plan and
-`cards-to-build`: the in-chat form, the draft composer, the cookie-origin
-and virtual-card cards (F-082); `permission-request` is a legacy
+`cards-to-build`: the in-chat form, the cookie-origin and virtual-card
+cards (F-082; searched by concept, not only by Grok Bot's tool names:
+`user.?form`, `cookie.?origin`, `virtual.?card`, `purchases` return nothing
+under `desktop/source` outside the generated protos, and the tools live on
+Cursor's side in the source records). **The draft composer is different**,
+corrected the same evening on the founder's challenge: the `email-draft`
+and `slack-draft` cards are drawn by the pinned renderer and carried by
+the host's transport; only the emitting tool (`DraftExternalMessage`) and
+a Send through a connected Gmail or Slack connector are missing; `permission-request` is a legacy
 decoder, not an offered kind (F-094); the machine name on the card waits
 on the registry (F-285, with F-149).
 

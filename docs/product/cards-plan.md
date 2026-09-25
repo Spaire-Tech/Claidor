@@ -158,7 +158,7 @@ once the computer is designed. All fourteen are in scope.
 | 3 | 1Password fill | **Not built** | the LobsterAI vault code went with that tree; Grok Bot's 1Password path is dev-only (ledger F-114) |
 | 4 | In-chat form | **Not built** | no `request_user_form` tool in `desktop/source` |
 | 5 | Box handoff | **Exists** (wired 25 September 2026, ledger F-076) | `request_box_help` (`host/runner/tools/box-help-tool.ts`), the session's hand-off service, `box-handoff-resume.ts` |
-| 6 | Draft composer | **Decoders only** | `email-draft` / `slack-draft` decode in `send-message-encoding.ts`; the model cannot emit one (`SEND_MESSAGE_TYPES`) |
+| 6 | Draft composer | **Card built, tool missing** (corrected 25 September 2026, on the founder's challenge) | the pinned renderer draws the `email-draft` and `slack-draft` cards (recovered as `frontend/.../views/email-draft.tsx`, `slack-draft.tsx`, with the shipped Send and Discard callbacks empty), and the host carries both kinds in `send-message-encoding.ts` and `send-message-shaping.ts`; what is missing is Grok Bot's `DraftExternalMessage` tool that emits one and a Send that delivers through a connected Gmail or Slack connector. A wiring job plus one delivery path, not a build from nothing. |
 | 7 | 1Password connect | **To re-decide** | a vault connect card, if we adopt one |
 | 8 | SCM connect | **To re-decide** | only if cloud agents exist here |
 | 9 | Cloud agent card | **Coming soon** | `cursor-agent` refused until `SAND_CLOUD_AGENTS_SERVED` (Cursor's BackgroundComposerService) |
