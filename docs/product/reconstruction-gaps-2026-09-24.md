@@ -170,7 +170,7 @@ Ranked by what a person clicking around hits first.
 ## Working against Claidor
 
 Sign-in, poll and refresh; every model turn (`/api/proxy/v1/responses`);
-web search; image generation; dictation; Composio; attachments, paste and
+web search; image generation; dictation; Composio (proxied by the server, unwired in the app, needs `COMPOSIO_API_KEY` on Render: a founder decision); attachments, paste and
 drag-drop (local and gateway only); local macOS notifications; `simeon://`
 links (`info`, `plugin-add`, `open`); every coordinator method in
 `shared/rpc/coordinator.ts:92-192` except the gated ones above; the local

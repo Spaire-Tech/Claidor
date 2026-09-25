@@ -138,6 +138,18 @@ export function serializeVendorMcpStore(store: VendorMcpStore): unknown[] {
   return [...store.installs, ...store.removed];
 }
 
+/**
+ * The store as the box receives it (25 September 2026, ledger F-153): the
+ * box lists and calls tools with the access token and never signs in or
+ * refreshes, so the refresh token and the client secret stay on the Mac.
+ */
+export function serializeVendorMcpStoreForBox(store: VendorMcpStore): unknown[] {
+  return [
+    ...store.installs.map((row) => { if (row.credential == null) return row; const { refreshToken: _refresh, clientSecret: _secret, ...credential } = row.credential; return { ...row, credential }; }),
+    ...store.removed,
+  ];
+}
+
 export function saveVendorMcpStore(rootDir: string, store: VendorMcpStore): void {
   const path = vendorMcpInstallsPath(rootDir);
   mkdirSync(dirname(path), { recursive: true });
@@ -203,7 +215,12 @@ export function mergeVendorMcpStores(local: VendorMcpStore, incoming: VendorMcpS
     if (winner.kind === "removed") { removed.push(winner.row); continue; }
     const loser = winner === preferred ? other : preferred;
     if (loser != null && loser.kind === "install") {
-      installs.push({ ...winner.row, installedAtMs: Math.max(winner.at, loser.at) });
+      // A row that won on age alone and carries no credential (the agent's
+      // install in the box, or the box's stripped copy) never drops the
+      // credential the authority holds; the authority's own empty row is a
+      // sign-out and stands.
+      const credential = winner.row.credential ?? (winner === preferred ? undefined : loser.row.credential);
+      installs.push({ ...winner.row, ...(credential == null ? {} : { credential }), installedAtMs: Math.max(winner.at, loser.at) });
     } else {
       installs.push(winner.row);
     }

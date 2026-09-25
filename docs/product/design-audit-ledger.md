@@ -175,37 +175,37 @@ until its row says so. Columns:
 | F-149 | box-and-computer | note | design-violation | unverified | - | - | The local-tool approval ask carries no machine identity | `desktop/source/host/extensions/transcript/routed-agent-tools.ts` |
 | F-150 | box-and-computer | minor | dead-service | unverified | - | - | openCloudAgent still opens https://cursor.com/agents/… | `desktop/source/electron-main/main-edge.ts` |
 | F-151 | box-and-computer | note | unmeasured | unverified | - | - | Every agent gets its own fork desktop (start-window) in one container on an amd64-emulated image | `desktop/source/host/box/box-windows.ts` |
-| F-152 | connectors-mcp | major | design-violation | unverified | - | - | Agent is told to ask for API keys and tokens in chat (tool descriptions) | `desktop/source/host/runner/tools/sand-mcp-management-tools.ts` |
-| F-153 | connectors-mcp | major | risk | unverified | - | - | Vendor and custom-server credentials stored plaintext and copied whole to the box | `desktop/source/shared/node/vendor-mcp/installs.ts` |
-| F-154 | connectors-mcp | major | docs-wrong | unverified | - | - | Kit/skill/MCP store routes have no reader in the reconstruction; record says the pipe is live | `server/polar/desktop/endpoints.py` |
-| F-155 | connectors-mcp | major | risk | unverified | - | - | HTTP MCP client body read has no timeout; an open SSE stream hangs discovery or a tool call | `desktop/source/shared/node/vendor-mcp/http-mcp-client.ts` |
-| F-156 | connectors-mcp | minor | dead-service | unverified | - | - | Plugin-skills service still polls Cursor's Dashboard RPCs in the box | `desktop/source/host/extensions/mcp/plugin-skills.ts` |
-| F-157 | connectors-mcp | minor | dead-service | unverified | - | - | Skill publish still talks to Cursor and shows a Claidor-branded failure | `desktop/source/host/extensions/mcp/skill-publish.ts` |
-| F-158 | connectors-mcp | minor | dead-service | unverified | - | - | Team plugin popularity IPC calls Cursor GetMe and GetTeamPluginPopularity | `desktop/source/electron-main/adapters/mcp-oauth.ts` |
-| F-159 | connectors-mcp | note | dead-service | unverified | - | - | fetchPluginServers still calls Cursor getPluginMcpConfig and has no caller | `desktop/source/shared/node/mcp/mcp-marketplace.ts` |
-| F-160 | connectors-mcp | minor | dead-service | unverified | - | - | Composio path is unwired on the desktop and unconfigured on the server, yet recorded as working | `desktop/source/electron-main/mcp/desktop-mcp-manager.ts` |
-| F-161 | connectors-mcp | minor | docs-wrong | unverified | - | - | Pipedream connectors router is mounted with no app caller; direction.md §8 not marked superseded | `server/polar/desktop/endpoints.py` |
-| F-162 | connectors-mcp | minor | naming | unverified | - | - | Agent-readable and user-visible strings still say 'Claidor account' | `desktop/source/host/runner/system-prompt.ts` |
-| F-163 | connectors-mcp | minor | risk | unverified | - | - | Custom MCP config is served unredacted to the settings editor | `desktop/source/shared/node/account-mcp/local-client.ts` |
-| F-164 | connectors-mcp | minor | risk | unverified | - | - | No RFC 8707 resource parameter in authorize and token requests | `desktop/source/shared/node/vendor-mcp/oauth.ts` |
-| F-165 | connectors-mcp | minor | risk | unverified | - | - | OAuth discovery, registration and token fetches have no timeout | `desktop/source/shared/node/vendor-mcp/oauth.ts` |
-| F-166 | connectors-mcp | note | unwired | unverified | - | - | Dropbox own-app key not yet in the catalogue | `desktop/source/shared/node/vendor-mcp/catalog.ts` |
-| F-167 | connectors-mcp | minor | naming | unverified | - | - | Figma card asserts 'Simeon Labs has applied' without a record of it | `desktop/source/shared/node/vendor-mcp/catalog.ts` |
-| F-168 | connectors-mcp | minor | risk | unverified | - | - | Eighteen connector logos are fetched from Google's favicon service | `desktop/source/shared/node/vendor-mcp/logos.ts` |
-| F-169 | connectors-mcp | minor | docs-wrong | unverified | - | - | Record gives the wrong Mac path for account-mcp-config.json | `docs/product/account-mcp-local-measured.md` |
-| F-170 | connectors-mcp | minor | docs-wrong | unverified | - | - | AddMcpServer tells the agent stdio servers are unsupported and HTTP runs 'on the backend' | `desktop/source/host/runner/tools/sand-mcp-management-tools.ts` |
-| F-171 | connectors-mcp | note | unwired | unverified | - | - | Custom server `auth` block (CLIENT_ID/CLIENT_SECRET) is parsed, stored and never used | `desktop/source/shared/node/account-mcp/store.ts` |
-| F-172 | connectors-mcp | minor | spend | unverified | - | - | Every Mac-side MCP listing first pulls two stores from the box | `desktop/source/electron-main/mcp/desktop-mcp-manager.ts` |
-| F-173 | connectors-mcp | minor | risk | unverified | - | - | Custom servers vanish from the box listing when the inference token is expired | `desktop/source/shared/node/cursor-backend/account-mcp.ts` |
-| F-174 | connectors-mcp | minor | spend | unverified | - | - | Auth watch can fire a refresh POST every 5 s for 15 minutes | `desktop/source/shared/node/mcp/mcp-auth-watch.ts` |
-| F-175 | connectors-mcp | minor | risk | unverified | - | - | Removing a connector never revokes the vendor token | `desktop/source/shared/node/vendor-mcp/backend-exec.ts` |
-| F-176 | connectors-mcp | note | risk | unverified | - | - | Loopback callback is a fixed port shared with any local process | `desktop/source/shared/node/mcp/mcp-oauth-loopback.ts` |
-| F-177 | connectors-mcp | note | dead-service | unverified | - | - | Cursor's Dashboard backend still built as the last MCP fallback on both sides | `desktop/source/electron-main/mcp/desktop-mcp-manager.ts` |
-| F-178 | connectors-mcp | note | design-violation | unverified | - | - | Prompt and direction.md disagree on how a connector is proposed | `desktop/source/host/runner/system-prompt.ts` |
-| F-179 | connectors-mcp | note | risk | unverified | - | - | Meta-tool factory in turn-toolset drops object input schemas | `desktop/source/host/runner/tools/turn-toolset.ts` |
-| F-180 | connectors-mcp | note | docs-wrong | unverified | - | - | Catalogue is 39 entries in 11 groups, 22 of them coming soon; direction.md still counts fifteen | `docs/product/direction.md` |
-| F-181 | connectors-mcp | note | naming | unverified | - | - | routed MCP bridge names itself grok-bot-plugins on the Claude Code hatch | `desktop/source/node-agent-coordinator/routed-mcp-bridge.ts` |
-| F-182 | connectors-mcp | note | unwired | unverified | - | - | connectThroughVendorMcp and replaceVendorMcpInstalls are unused leftovers | `desktop/source/shared/node/vendor-mcp/oauth.ts` |
+| F-152 | connectors-mcp | major | design-violation | confirmed | connectors-mcp | fixed | Agent is told to ask for API keys and tokens in chat (tool descriptions) | `desktop/source/host/runner/tools/sand-mcp-management-tools.ts` |
+| F-153 | connectors-mcp | major | risk | confirmed | connectors-mcp | fixed | Vendor and custom-server credentials stored plaintext and copied whole to the box | `desktop/source/shared/node/vendor-mcp/installs.ts` |
+| F-154 | connectors-mcp | major | docs-wrong | confirmed | connectors-mcp | fixed | Kit/skill/MCP store routes have no reader in the reconstruction; record says the pipe is live | `server/polar/desktop/endpoints.py` |
+| F-155 | connectors-mcp | major | risk | confirmed | connectors-mcp | fixed | HTTP MCP client body read has no timeout; an open SSE stream hangs discovery or a tool call | `desktop/source/shared/node/vendor-mcp/http-mcp-client.ts` |
+| F-156 | connectors-mcp | minor | dead-service | confirmed | connectors-mcp | fixed | Plugin-skills service still polls Cursor's Dashboard RPCs in the box | `desktop/source/host/extensions/mcp/plugin-skills.ts` |
+| F-157 | connectors-mcp | minor | dead-service | confirmed | connectors-mcp | coming-soon | Skill publish still talks to Cursor and shows a Claidor-branded failure | `desktop/source/host/extensions/mcp/skill-publish.ts` |
+| F-158 | connectors-mcp | minor | dead-service | confirmed | connectors-mcp | fixed | Team plugin popularity IPC calls Cursor GetMe and GetTeamPluginPopularity | `desktop/source/electron-main/adapters/mcp-oauth.ts` |
+| F-159 | connectors-mcp | note | dead-service | confirmed | connectors-mcp | fixed | fetchPluginServers still calls Cursor getPluginMcpConfig and has no caller | `desktop/source/shared/node/mcp/mcp-marketplace.ts` |
+| F-160 | connectors-mcp | minor | dead-service | confirmed | connectors-mcp | - | Composio path is unwired on the desktop and unconfigured on the server, yet recorded as working | `desktop/source/electron-main/mcp/desktop-mcp-manager.ts` |
+| F-161 | connectors-mcp | minor | docs-wrong | confirmed | connectors-mcp | fixed | Pipedream connectors router is mounted with no app caller; direction.md §8 not marked superseded | `server/polar/desktop/endpoints.py` |
+| F-162 | connectors-mcp | minor | naming | refuted | connectors-mcp | fixed | Agent-readable and user-visible strings still say 'Claidor account' | `desktop/source/host/runner/system-prompt.ts` |
+| F-163 | connectors-mcp | minor | risk | confirmed | connectors-mcp | known-limit | Custom MCP config is served unredacted to the settings editor | `desktop/source/shared/node/account-mcp/local-client.ts` |
+| F-164 | connectors-mcp | minor | risk | confirmed | connectors-mcp | fixed | No RFC 8707 resource parameter in authorize and token requests | `desktop/source/shared/node/vendor-mcp/oauth.ts` |
+| F-165 | connectors-mcp | minor | risk | confirmed | connectors-mcp | fixed | OAuth discovery, registration and token fetches have no timeout | `desktop/source/shared/node/vendor-mcp/oauth.ts` |
+| F-166 | connectors-mcp | note | unwired | confirmed | connectors-mcp | - | Dropbox own-app key not yet in the catalogue | `desktop/source/shared/node/vendor-mcp/catalog.ts` |
+| F-167 | connectors-mcp | minor | naming | confirmed | connectors-mcp | fixed | Figma card asserts 'Simeon Labs has applied' without a record of it | `desktop/source/shared/node/vendor-mcp/catalog.ts` |
+| F-168 | connectors-mcp | minor | risk | confirmed | connectors-mcp | known-limit | Eighteen connector logos are fetched from Google's favicon service | `desktop/source/shared/node/vendor-mcp/logos.ts` |
+| F-169 | connectors-mcp | minor | docs-wrong | confirmed | connectors-mcp | fixed | Record gives the wrong Mac path for account-mcp-config.json | `docs/product/account-mcp-local-measured.md` |
+| F-170 | connectors-mcp | minor | docs-wrong | confirmed | connectors-mcp | fixed | AddMcpServer tells the agent stdio servers are unsupported and HTTP runs 'on the backend' | `desktop/source/host/runner/tools/sand-mcp-management-tools.ts` |
+| F-171 | connectors-mcp | note | unwired | confirmed | connectors-mcp | fixed | Custom server `auth` block (CLIENT_ID/CLIENT_SECRET) is parsed, stored and never used | `desktop/source/shared/node/account-mcp/store.ts` |
+| F-172 | connectors-mcp | minor | spend | confirmed | connectors-mcp | fixed | Every Mac-side MCP listing first pulls two stores from the box | `desktop/source/electron-main/mcp/desktop-mcp-manager.ts` |
+| F-173 | connectors-mcp | minor | risk | confirmed | connectors-mcp | fixed | Custom servers vanish from the box listing when the inference token is expired | `desktop/source/shared/node/cursor-backend/account-mcp.ts` |
+| F-174 | connectors-mcp | minor | spend | confirmed | connectors-mcp | fixed | Auth watch can fire a refresh POST every 5 s for 15 minutes | `desktop/source/shared/node/mcp/mcp-auth-watch.ts` |
+| F-175 | connectors-mcp | minor | risk | confirmed | connectors-mcp | known-limit | Removing a connector never revokes the vendor token | `desktop/source/shared/node/vendor-mcp/backend-exec.ts` |
+| F-176 | connectors-mcp | note | risk | confirmed | connectors-mcp | known-limit | Loopback callback is a fixed port shared with any local process | `desktop/source/shared/node/mcp/mcp-oauth-loopback.ts` |
+| F-177 | connectors-mcp | note | dead-service | confirmed | connectors-mcp | fixed | Cursor's Dashboard backend still built as the last MCP fallback on both sides | `desktop/source/electron-main/mcp/desktop-mcp-manager.ts` |
+| F-178 | connectors-mcp | note | design-violation | confirmed | connectors-mcp | - | Prompt and direction.md disagree on how a connector is proposed | `desktop/source/host/runner/system-prompt.ts` |
+| F-179 | connectors-mcp | note | risk | confirmed | connectors-mcp | fixed | Meta-tool factory in turn-toolset drops object input schemas | `desktop/source/host/runner/tools/turn-toolset.ts` |
+| F-180 | connectors-mcp | note | docs-wrong | confirmed | connectors-mcp | fixed | Catalogue is 39 entries in 11 groups, 22 of them coming soon; direction.md still counts fifteen | `docs/product/direction.md` |
+| F-181 | connectors-mcp | note | naming | confirmed | connectors-mcp | fixed | routed MCP bridge names itself grok-bot-plugins on the Claude Code hatch | `desktop/source/node-agent-coordinator/routed-mcp-bridge.ts` |
+| F-182 | connectors-mcp | note | unwired | refuted | connectors-mcp | known-limit | connectThroughVendorMcp and replaceVendorMcpInstalls are unused leftovers | `desktop/source/shared/node/vendor-mcp/oauth.ts` |
 | F-183 | skills-kits-role-agents | blocking | unwired | unverified | - | - | Agent skill catalogue never reaches the prompt: resolveAgentSkills unwired and rules resolver dead | `desktop/source/host/runner/turn-agent-composition.ts` |
 | F-184 | skills-kits-role-agents | major | dead-service | unverified | - | - | Managed-setup extension runs Cursor DashboardService RPCs on every turn and every credential renewal | `desktop/source/host/host-production-extensions.ts` |
 | F-185 | skills-kits-role-agents | major | dead-service | unverified | - | - | Renderer Skills surface: catalogue, plugin-skill sync and publish all go to Cursor and fail silently or blame Claidor | `desktop/source/host/host-gateway-api.ts` |
@@ -780,3 +780,40 @@ answer each member with a text-only Luna call (f278ec79, 19 September,
 co-authored by the founder), not the Grok Bot loop; the 22 September
 "I want literally everything" decision came after, and no record names
 the carve-out. Keep it (spend) or run rooms on the loop.
+
+### connectors-mcp (25 September 2026)
+
+Refuters: 29 of 31 stand (F-162 already fixed by 5aca8256; F-182 has
+test callers). Four roots. **Cursor's Dashboard client was still a live
+caller** (plugin skills daily, skill publish, team popularity, the
+marketplace's dead fetcher, the last MCP fallback on both sides):
+`createSandCursorBackendClient` now answers every call with
+Unimplemented at once and sends nothing unless `SAND_CONNECT_SERVED=1`
+(F-156, F-158, F-177; every caller already catches); skill publish says
+"coming soon in Simeon" (F-157, dependency: Cursor's team marketplace);
+the dead fetcher is gone (F-159). **The hand-rolled OAuth and MCP client
+was open at the edges**: every sign-in fetch has a 10 s deadline
+(F-165), the RFC 8707 `resource` rides on authorize, exchange and
+refresh (F-164), the reply body read is bounded and a stream that
+outlives it is cancelled (F-155), a refresh the vendor refuses for good
+drops the refresh token instead of re-posting it every 5 s (F-174), a
+custom server's own CLIENT_ID skips registration (F-171), a failed box
+pull holds off 30 s (F-172), the local store is read without a model
+token (F-173), an object schema is carried (F-179). **"Never a key in the
+chat" had no runtime for MCP**: the six tool sentences and the catalog
+flow now say the user enters a secret in Settings → MCP, never in the
+chat (F-152). **The store crossed to the box whole**: the box view drops
+the refresh token and the client secret, and a row that won on age alone
+without a credential never drops the authority's (F-153). Records:
+direction.md §6 and §8, what-exists, the gaps record, the endpoint
+docstrings, the account-mcp path, the catalogue counts (21 live, 18
+coming soon, 11 groups) (F-154, F-161, F-169, F-180); the Figma card
+claims nothing unrecorded (F-167); wording (F-170, F-181). Known limits:
+plaintext local config in the editor (F-163), Google's favicon service
+for 18 logos (F-168), no revocation on removal (F-175, a build), the
+fixed loopback port bounded to denial by PKCE (F-176). **Three founder
+items:** F-160 Composio (proxied by the server, unwired, needs
+`COMPOSIO_API_KEY`: wire it or delete it), F-166 the Dropbox App key for
+`catalog.ts`, F-178 the connector proposal card of direction.md §5 is
+unbuilt and the prompt proposes in text with a question widget: build
+the card or amend the record. `tests/connectors-mcp-hardening.test.mjs`.

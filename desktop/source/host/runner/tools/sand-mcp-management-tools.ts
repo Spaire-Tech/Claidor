@@ -95,14 +95,14 @@ export const getPluginParameters = z.object({
 export const installPluginParameters = z.object({
   plugin_id: z.string().trim().min(1).describe("The stable plugin id from SearchPlugins."),
   values: z.record(z.string(), z.string()).optional().describe(
-    `Optional setup values keyed by the plugin's field key from GetPlugin (e.g. { "CONTEXT7_API_KEY": "..." }). Provide every required field. Ask the user for any secret you don't already have.`,
+    `Optional setup values keyed by the plugin's field key from GetPlugin (e.g. { "CONTEXT7_API_KEY": "..." }). Provide every required field. Never ask the user to paste a key, token or password into the chat: a value you do not already have is entered by the user in Settings → MCP, so name the field and stop.`,
   ),
 });
 export const addMcpServerParameters = z.object({
   name: z.string().trim().min(1).describe('A short, unique name for the server, e.g. "superpowers".'),
   url: z.string().trim().min(1).describe("The remote server's MCP endpoint URL (https)."),
   headers: z.record(z.string(), z.string()).optional().describe(
-    'Optional HTTP headers for the server, e.g. { "Authorization": "Bearer <token>" }. Ask the user for any secret rather than guessing.',
+    'Optional HTTP headers for the server, e.g. { "Authorization": "Bearer <token>" }. Never ask the user for a secret in the chat and never guess one: a server that signs in uses its connect card, and a server that needs a key gets it from the user in Settings → MCP (the config editor).',
   ),
 });
 
@@ -148,7 +148,7 @@ export function validateRemoteMcpUrl(rawUrl: string): string | null {
     return `The server URL must be http(s); "${parsed.protocol}" is not supported. Simeon only connects remote http/sse MCP servers over HTTP(S), so ask the user for an https endpoint.`;
   }
   if (parsed.username.length > 0 || parsed.password.length > 0) {
-    return `Don't put credentials in the server URL \u2014 pass them as headers instead (e.g. { "Authorization": "Bearer <token>" }), so they aren't stored in plaintext in the URL. Ask the user for the token and try again with a clean URL.`;
+    return `Don't put credentials in the server URL \u2014 pass them as headers instead (e.g. { "Authorization": "Bearer <token>" }), so they aren't stored in plaintext in the URL. Add the server with a clean URL; the user enters the token in Settings → MCP, never in the chat.`;
   }
   return null;
 }
@@ -229,7 +229,7 @@ export function describePluginDetail(detail: McpPluginDetail): string {
   }
   if (detail.fields.length > 0) {
     sections.push(["Setup fields (pass in InstallPlugin values):", ...detail.fields.map((field) => {
-      const flags = [field.isRequired ? "required" : "optional", ...(field.isSecret ? ["secret \u2014 ask the user, never guess"] : [])];
+      const flags = [field.isRequired ? "required" : "optional", ...(field.isSecret ? ["secret \u2014 the user enters it in Settings → MCP, never in the chat; never guess"] : [])];
       return `  - ${field.key} (${field.label}; ${flags.join(", ")})`;
     })].join("\n"));
   }
@@ -331,7 +331,7 @@ export function createMcpManagementTools(
       },
     }),
     defineCommunicateTool(management, {
-      id: "INSTALL_PLUGIN", name: "InstallPlugin", description: "Install a plugin by its STABLE plugin id (from SearchPlugins) into the user's Simeon account. Only call this after the user has agreed — confirm with a question widget first, since installing changes the user's configuration. Idempotent: re-installing an installed plugin is safe. Pass any setup values GetPlugin lists (ask the user for secrets like API keys — never guess). If an installed connector needs authentication, its connect card is shown to the user automatically — finish unrelated work, then end your turn; you're resumed when they authorize. New tools and skills become available on your next message.", parameters: installPluginParameters,
+      id: "INSTALL_PLUGIN", name: "InstallPlugin", description: "Install a plugin by its STABLE plugin id (from SearchPlugins) into the user's Simeon account. Only call this after the user has agreed — confirm with a question widget first, since installing changes the user's configuration. Idempotent: re-installing an installed plugin is safe. Pass any setup values GetPlugin lists; a secret such as an API key is never asked for in the chat and never guessed (the user enters it in Settings → MCP). If an installed connector needs authentication, its connect card is shown to the user automatically — finish unrelated work, then end your turn; you're resumed when they authorize. New tools and skills become available on your next message.", parameters: installPluginParameters,
       execute: guardMutation(async (_ctx, args: z.infer<typeof installPluginParameters>, deps) => {
         const before = await deps.getPlugin(args.plugin_id);
         if (before == null) return `No plugin with id "${args.plugin_id}".`;
@@ -344,7 +344,7 @@ export function createMcpManagementTools(
       }),
     }),
     defineCommunicateTool(management, {
-      id: "ADD_MCP_SERVER", name: "AddMcpServer", description: "Add a remote MCP server that isn't in the catalog to the user's Simeon account — use this when the user gives you a link for a server that SearchPlugins doesn't know. Only call this after the user agrees to add it — confirm with a question widget first, since it changes the user's account configuration and the server can reach external services on their behalf. Provide the remote server's `url` (with `headers` for any auth token). Simeon only supports remote http/sse MCP servers (executed on the backend); local/stdio servers are not supported. Ask the user for the exact endpoint and any secrets rather than guessing; if you only have a link, open it first (WebFetch) to find the connection details. Newly added tools become available to you on your next message.", parameters: addMcpServerParameters,
+      id: "ADD_MCP_SERVER", name: "AddMcpServer", description: "Add a remote MCP server that isn't in the catalog to the user's Simeon account — use this when the user gives you a link for a server that SearchPlugins doesn't know. Only call this after the user agrees to add it — confirm with a question widget first, since it changes the user's account configuration and the server can reach external services on their behalf. Provide the remote server's `url` (with `headers` for any auth token). This tool adds remote http/sse MCP servers (their tools run over HTTP from Simeon's computer); a local stdio server is added by the user in Settings → MCP and runs on Simeon's computer. Ask the user for the exact endpoint, never for a secret in the chat (a token is entered in Settings → MCP), and never guess either; if you only have a link, open it first (WebFetch) to find the connection details. Newly added tools become available to you on your next message.", parameters: addMcpServerParameters,
       execute: guardMutation(async (_ctx, args: z.infer<typeof addMcpServerParameters>, deps) => {
         const error = validateRemoteMcpUrl(args.url);
         if (error != null) return error;

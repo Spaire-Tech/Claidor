@@ -589,6 +589,8 @@ async def kit_store() -> JSONResponse:
     curation.
 
     The app reads ``data.value.kits`` and appends its own built-in kits.
+    (Checked 25 September 2026: no caller in ``desktop/`` since the
+    re-founding; the paths below name the LobsterAI tree.)
 
     Three facts settle what can honestly go here, all of them in the desktop
     app rather than in this file:
@@ -623,8 +625,10 @@ def _mcp_marketplace() -> dict[str, Any]:
 
 @router.get("/api/mcp-marketplace", name="desktop:mcp_marketplace")
 async def mcp_marketplace() -> JSONResponse:
-    """The MCP marketplace. The app reads ``data.value.categories`` and
-    ``data.value.servers``; the catalogue lives next to this module."""
+    """The MCP marketplace. The app read ``data.value.categories`` and
+    ``data.value.servers``; the catalogue lives next to this module. No
+    caller in ``desktop/`` since the re-founding (checked 25 September 2026):
+    the app's catalogue is ``shared/node/vendor-mcp/catalog.ts``."""
     return _ok({"value": _mcp_marketplace()})
 
 

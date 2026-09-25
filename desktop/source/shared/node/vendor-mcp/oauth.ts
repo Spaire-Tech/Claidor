@@ -66,9 +66,22 @@ async function readJson(response: Response): Promise<unknown> {
   }
 }
 
+// Every fetch of the sign-in is bounded (ledger F-165): a vendor that stalls
+// used to hold the Mac for undici's five minutes per fetch, up to seven
+// fetches deep, before the card said retry.
+export const VENDOR_MCP_OAUTH_FETCH_TIMEOUT_MS = 10_000;
+const deadline = () => AbortSignal.timeout(VENDOR_MCP_OAUTH_FETCH_TIMEOUT_MS);
+
+/** RFC 8707: the MCP server the token is for, canonical (no fragment, no query). */
+export function vendorMcpResource(mcpUrl: string): string {
+  const url = new URL(mcpUrl);
+  url.hash = ""; url.search = "";
+  return url.toString();
+}
+
 async function getJson(url: string, fetchImpl: typeof fetch): Promise<Record<string, unknown> | null> {
   try {
-    const response = await fetchImpl(url, { headers: { accept: "application/json" } });
+    const response = await fetchImpl(url, { headers: { accept: "application/json" }, signal: deadline() });
     const payload = await readJson(response);
     return isRecord(payload) ? payload : null;
   } catch {
@@ -182,6 +195,7 @@ export async function startVendorMcpOAuth(args: {
   }
   const registered = await fetchImpl(registrationEndpoint, {
     method: "POST",
+    signal: deadline(),
     headers: { "content-type": "application/json", accept: "application/json" },
     body: JSON.stringify({
       client_name: "Simeon",
@@ -226,6 +240,7 @@ function finishStart(args: {
   authorize.searchParams.set("code_challenge", challenge);
   authorize.searchParams.set("code_challenge_method", "S256");
   authorize.searchParams.set("state", state);
+  authorize.searchParams.set("resource", vendorMcpResource(args.mcpUrl));
   if (args.scopes.length > 0) authorize.searchParams.set("scope", args.scopes.join(" "));
   const pending: VendorMcpOAuthPending = {
     pluginId: args.pluginId,
@@ -248,11 +263,14 @@ export interface VendorMcpTokenGrant {
   readonly tokenEndpoint: string;
   readonly clientId: string;
   readonly clientSecret?: string;
+  /** RFC 8707 resource the grant was issued for; sent again on refresh. */
+  readonly resource?: string;
 }
 
 async function postTokenForm(tokenEndpoint: string, form: Record<string, string>, fetchImpl: typeof fetch): Promise<Record<string, unknown>> {
   const response = await fetchImpl(tokenEndpoint, {
     method: "POST",
+    signal: deadline(),
     headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json" },
     body: new URLSearchParams(form).toString(),
   });
@@ -264,7 +282,7 @@ async function postTokenForm(tokenEndpoint: string, form: Record<string, string>
   return payload;
 }
 
-function grantFromPayload(payload: Record<string, unknown>, tokenEndpoint: string, clientId: string, clientSecret: string | undefined, previousRefresh: string | undefined, now: number): VendorMcpTokenGrant {
+function grantFromPayload(payload: Record<string, unknown>, tokenEndpoint: string, clientId: string, clientSecret: string | undefined, previousRefresh: string | undefined, now: number, resource?: string): VendorMcpTokenGrant {
   const expiresIn = typeof payload.expires_in === "number" ? payload.expires_in : typeof payload.expires_in === "string" ? Number(payload.expires_in) : undefined;
   const refreshToken = typeof payload.refresh_token === "string" && payload.refresh_token.length > 0 ? payload.refresh_token : previousRefresh;
   return {
@@ -274,6 +292,7 @@ function grantFromPayload(payload: Record<string, unknown>, tokenEndpoint: strin
     tokenEndpoint,
     clientId,
     ...(clientSecret == null ? {} : { clientSecret }),
+    ...(resource == null ? {} : { resource }),
   };
 }
 
@@ -291,8 +310,9 @@ export async function exchangeVendorMcpCode(args: {
     client_id: args.pending.clientId,
     ...(args.pending.clientSecret == null ? {} : { client_secret: args.pending.clientSecret }),
     code_verifier: args.pending.verifier,
+    resource: vendorMcpResource(args.pending.mcpUrl),
   }, args.fetch ?? fetch);
-  return grantFromPayload(payload, args.pending.tokenEndpoint, args.pending.clientId, args.pending.clientSecret, undefined, args.now ?? Date.now());
+  return grantFromPayload(payload, args.pending.tokenEndpoint, args.pending.clientId, args.pending.clientSecret, undefined, args.now ?? Date.now(), vendorMcpResource(args.pending.mcpUrl));
 }
 
 export async function refreshVendorMcpGrant(args: {
@@ -306,8 +326,9 @@ export async function refreshVendorMcpGrant(args: {
     refresh_token: args.grant.refreshToken,
     client_id: args.grant.clientId,
     ...(args.grant.clientSecret == null ? {} : { client_secret: args.grant.clientSecret }),
+    ...(args.grant.resource == null ? {} : { resource: args.grant.resource }),
   }, args.fetch ?? fetch);
-  return grantFromPayload(payload, args.grant.tokenEndpoint, args.grant.clientId, args.grant.clientSecret, args.grant.refreshToken, args.now ?? Date.now());
+  return grantFromPayload(payload, args.grant.tokenEndpoint, args.grant.clientId, args.grant.clientSecret, args.grant.refreshToken, args.now ?? Date.now(), args.grant.resource);
 }
 
 export const VENDOR_MCP_TOKEN_SKEW_MS = 60_000;

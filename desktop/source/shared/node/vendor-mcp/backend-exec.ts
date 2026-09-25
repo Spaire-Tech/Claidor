@@ -138,6 +138,9 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
       return refreshed;
     } catch (error) {
       log(`vendor-mcp refresh failed for ${install.id}: ${errorLabel(error)}`);
+      // invalid_grant is final (revoked or spent refresh token): the token is
+      // dropped so the auth watch stops re-posting it every 5 s (ledger F-174).
+      if (/invalid_grant/i.test(errorLabel(error))) { const { refreshToken: _spent, ...kept } = credential; setVendorMcpCredential(options.rootDir(), install.id, kept); options.onCredentialChanged?.(install.id); }
       return undefined;
     }
   };

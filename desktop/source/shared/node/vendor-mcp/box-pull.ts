@@ -12,6 +12,9 @@ import { adoptVendorMcpStore } from "./installs.js";
 export const BOX_VENDOR_MCP_STORE_PULL_FRESH_MS = 2_000;
 export const BOX_VENDOR_MCP_STORE_PULL_TIMEOUT_MS = 3_000;
 
+/** After a failed pull, how long the box is left alone before the next read tries again. */
+export const BOX_STORE_PULL_FAILURE_HOLD_MS = 30_000;
+
 export interface BoxVendorMcpStorePullOptions {
   readonly rootDir: () => string;
   /** `refreshMcp({ routedAction: "vendor-mcp-store" })` on the coordinator leg; absent means nothing to pull from. */
@@ -28,12 +31,15 @@ export function createBoxVendorMcpStorePull(options: BoxVendorMcpStorePullOption
   const freshMs = options.freshMs ?? BOX_VENDOR_MCP_STORE_PULL_FRESH_MS;
   const timeoutMs = options.timeoutMs ?? BOX_VENDOR_MCP_STORE_PULL_TIMEOUT_MS;
   let lastAtMs = -Infinity;
+  // A box that did not answer is not asked again for a while (ledger F-172):
+  // with Docker off every listing used to wait the full timeout.
+  let holdUntilMs = -Infinity;
   let inFlight: Promise<void> | null = null;
   return async () => {
     const read = options.readBoxVendorMcpStore;
     if (read == null) return;
     if (inFlight != null) return inFlight;
-    if (now() - lastAtMs < freshMs) return;
+    if (now() - lastAtMs < freshMs || now() < holdUntilMs) return;
     inFlight = (async () => {
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
@@ -46,6 +52,7 @@ export function createBoxVendorMcpStorePull(options: BoxVendorMcpStorePullOption
         if (adoptVendorMcpStore(options.rootDir(), store, "local").changed) options.onMerged?.();
       } catch (error) {
         options.log?.(`vendor-mcp pull from the box skipped: ${error instanceof Error ? error.message : String(error)}`);
+        holdUntilMs = now() + BOX_STORE_PULL_FAILURE_HOLD_MS;
       } finally {
         if (timer != null) clearTimeout(timer);
         lastAtMs = now();

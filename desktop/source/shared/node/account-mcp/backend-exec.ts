@@ -264,7 +264,10 @@ export function createAccountMcpBackendExec(options: AccountMcpBackendExecOption
         return { id, isAvailable: true, requiresAuth: true, hasValidToken: false, authUrl: server.config.url, error: "" };
       }
       try {
-        const started = await startVendorMcpOAuth({ pluginId: `account-${server.id}`, mcpUrl: server.config.url, redirectUri: args.oauthRedirectUri, fetch: fetchImpl, remember: false });
+        // A CLIENT_ID in the server's `auth` block is an app the person registered
+        // by hand; the sign-in uses it and skips dynamic registration (ledger F-171).
+        const clientId = server.config.auth?.CLIENT_ID;
+        const started = await startVendorMcpOAuth({ pluginId: `account-${server.id}`, mcpUrl: server.config.url, redirectUri: args.oauthRedirectUri, fetch: fetchImpl, remember: false, ...(clientId == null || clientId.length === 0 ? {} : { clientId }) });
         rememberAccountMcpPendingAuth(started.pending, now());
         return { id, isAvailable: true, requiresAuth: true, hasValidToken: false, authUrl: started.authorizationUrl, error: "" };
       } catch (error) {

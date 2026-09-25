@@ -316,7 +316,10 @@ A kit carries no identity — no name for the agent, no prompt, no orb
 palette. A role agent is therefore *a kit plus an agent record*. The
 `agents` table already holds `skillIds`, so the join already exists.
 
-**And the pipe is already built and live.** `server/polar/desktop/
+**And the pipe is already built and live.** *(Corrected 25 September
+2026: the routes are served and nothing in `desktop/` calls them since
+the re-founding; the pinned renderer has no kit-store screen and skills
+come from marketplace plugins.)* `server/polar/desktop/
 endpoints.py:513` serves `/api/kit-store` and returns an empty list — measured
 from this container on 18 September:
 `GET https://api.claidor.com/desktop/api/kit-store` → `200`,
@@ -367,14 +370,18 @@ header. Keep the icon; keep all of it behind the icon.
 ## 8. Connectors
 
 The design's catalogue is about fifty services across nine categories.
-Our MCP registry has fifteen. The founder is handling the gap and asked
+Our MCP registry has fifteen. *(Corrected 25 September 2026: the store
+is `shared/node/vendor-mcp/catalog.ts`, 39 rows in 11 groups, 21 live
+and 18 coming soon.)* The founder is handling the gap and asked
 me not to cost it.
 
 What is decided: **each connector carries context**, drawn from
 `github.com/cursor/plugins`. Some need sign-in.
 
 What is open: **how sign-in happens — Pipedream, or the browser.** The
-founder has not chosen.
+founder has not chosen. *(Decided 24 September 2026: the browser, against
+the vendors' own MCP servers, `docs/product/connectors-signin-measured.md`.
+The Pipedream router below is mounted and has no caller in the app.)*
 
 One thing to put in front of that choice: `server/polar/connectors/` is
 already a working Pipedream Connect integration —

@@ -313,7 +313,7 @@ test("both managers, the loopback, the gateway and the resync are wired to the v
   const resync = await read("source/electron-main/coordinator/coordinator-resync.ts");
   assert.match(resync, /step\("vendor_mcp"/);
   const adapter = await read("source/electron-main/adapters/mcp-oauth.ts");
-  assert.match(adapter, /readVendorMcpStore: \(\) => serializeVendorMcpStore\(loadVendorMcpStore\(getSandRootDir\(\)\)\)/);
+  assert.match(adapter, /readVendorMcpStore: \(\) => serializeVendorMcpStoreForBox\(loadVendorMcpStore\(getSandRootDir\(\)\)\)/);
   assert.match(adapter, /readBoxVendorMcpStore: async \(\) => \{/);
   assert.match(mac, /syncStore: pullBoxVendorStore,/);
   assert.match(gateway, /if \(routedAction === "vendor-mcp-store"\) return \{ vendorMcpStore: /);

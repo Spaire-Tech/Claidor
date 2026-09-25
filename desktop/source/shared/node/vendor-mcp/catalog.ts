@@ -55,7 +55,7 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   { id: "zoom", name: "Zoom", category: G.Meetings, comingSoon: true, description: "Coming soon. Zoom needs an app we register first." },
   { id: "google-meet", name: "Google Meet", category: G.Meetings, comingSoon: true, description: "Coming soon. Google needs an app we register first." },
   // Figma only lets clients on its MCP Catalog connect ("apply to register your client for remote access … reach out to your account team"); its registration endpoint answers 403 to any other client (measured 24 September 2026). Live again once Figma lists Simeon.
-  { id: "figma", name: "Figma", category: G.Creativity, comingSoon: true, description: "Coming soon. Figma admits MCP clients by application through its MCP Catalog; Simeon Labs has applied and Connect works once Figma lists Simeon." },
+  { id: "figma", name: "Figma", category: G.Creativity, comingSoon: true, description: "Coming soon. Figma only admits MCP clients listed in its MCP Catalog; Connect works once Figma lists Simeon." },
   { id: "canva", name: "Canva", category: G.Creativity, url: "https://mcp.canva.com/mcp", description: "Create and edit designs." },
   { id: "miro", name: "Miro", category: G.Creativity, url: "https://mcp.miro.com/mcp", description: "Read and build boards." },
   { id: "webflow", name: "Webflow", category: G.Creativity, url: "https://mcp.webflow.com/mcp", description: "Sites, CMS, and collections." },

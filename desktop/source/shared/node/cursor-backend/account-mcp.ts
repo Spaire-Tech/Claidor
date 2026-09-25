@@ -81,7 +81,11 @@ function attribution(server: AvailableMcpServer) { return { ...(server.pluginId 
 export async function fetchAccountMcpServers(deps: AccountMcpDependencies): Promise<{ servers: AccountMcpServer[]; cacheScope: string; unresolvedServerIds?: string[]; unavailable?: true } | null> {
   let cacheScope: string | undefined;
   try {
-    const accessToken = await deps.getAccessToken({ backendUrl: deps.getBackendUrl() }); cacheScope = accountCacheScope(accessToken);
+    // The store is a local file; a missing model token must not hide the
+    // person's custom servers (ledger F-173). The scope then is a constant.
+    let accessToken = "";
+    try { accessToken = await deps.getAccessToken({ backendUrl: deps.getBackendUrl() }); } catch { accessToken = ""; }
+    cacheScope = accessToken.length === 0 ? "local" : accountCacheScope(accessToken);
     await syncStore(deps);
     const client = accountMcpClient(deps, { getAccessToken: async () => accessToken, getMachineId: deps.getMachineId });
     const response = await client.getAvailableMcpServers({}, { timeoutMs: ACCOUNT_MCP_RPC_TIMEOUT_MS });

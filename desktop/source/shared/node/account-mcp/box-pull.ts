@@ -14,6 +14,9 @@ export const BOX_ACCOUNT_MCP_STORE_PULL_FRESH_MS = 2_000;
 /** How long a pull may take before the read goes on with the Mac's own file. */
 export const BOX_ACCOUNT_MCP_STORE_PULL_TIMEOUT_MS = 3_000;
 
+/** After a failed pull, how long the box is left alone before the next read tries again. */
+export const BOX_STORE_PULL_FAILURE_HOLD_MS = 30_000;
+
 export interface BoxAccountMcpStorePullOptions {
   readonly rootDir: () => string;
   /** `refreshMcp({ routedAction: "account-mcp-store" })` on the coordinator leg; absent means nothing to pull from. */
@@ -30,12 +33,15 @@ export function createBoxAccountMcpStorePull(options: BoxAccountMcpStorePullOpti
   const freshMs = options.freshMs ?? BOX_ACCOUNT_MCP_STORE_PULL_FRESH_MS;
   const timeoutMs = options.timeoutMs ?? BOX_ACCOUNT_MCP_STORE_PULL_TIMEOUT_MS;
   let lastAtMs = -Infinity;
+  // A box that did not answer is not asked again for a while (ledger F-172):
+  // with Docker off every listing used to wait the full timeout.
+  let holdUntilMs = -Infinity;
   let inFlight: Promise<void> | null = null;
   return async () => {
     const read = options.readBoxAccountMcpStore;
     if (read == null) return;
     if (inFlight != null) return inFlight;
-    if (now() - lastAtMs < freshMs) return;
+    if (now() - lastAtMs < freshMs || now() < holdUntilMs) return;
     inFlight = (async () => {
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
@@ -48,6 +54,7 @@ export function createBoxAccountMcpStorePull(options: BoxAccountMcpStorePullOpti
         if (adoptAccountMcpStore(options.rootDir(), store).changed) options.onMerged?.();
       } catch (error) {
         options.log?.(`account-mcp pull from the box skipped: ${error instanceof Error ? error.message : String(error)}`);
+        holdUntilMs = now() + BOX_STORE_PULL_FAILURE_HOLD_MS;
       } finally {
         if (timer != null) clearTimeout(timer);
         lastAtMs = now();

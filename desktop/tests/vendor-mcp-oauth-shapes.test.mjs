@@ -175,9 +175,9 @@ test("Figma and Asana are coming soon with the reason, and the Mac writes every 
     const exec = backend.module.createVendorMcpBackendExec({ rootDir: () => root, fetch: async () => new Response("", { status: 404 }), canStartAuth: true, now: () => 1_700_000_000_000 });
     const status = await exec.checkAuthStatus({ serverId: exec.serverIdForPlugin("figma"), accountKey: "default", oauthRedirectUri: "http://localhost:8787/callback" });
     assert.equal(status.isAvailable, false);
-    assert.match(status.error, /Figma admits MCP clients by application/);
+    assert.match(status.error, /Figma only admits MCP clients listed in its MCP Catalog/);
     const log = await readFile(path.join(root, "vendor-mcp-signin.log"), "utf8");
-    assert.match(log, /^2023-11-14T22:13:20\.000Z figma sign-in refused: Coming soon\. Figma admits MCP clients/m);
+    assert.match(log, /^2023-11-14T22:13:20\.000Z figma sign-in refused: Coming soon\. Figma only admits MCP clients/m);
   } finally {
     await rm(root, { recursive: true, force: true });
     await catalog.dispose();

@@ -80,9 +80,35 @@ function parseSseMessages(body: string): unknown[] {
   return messages;
 }
 
-async function readReply(response: Response, id: number): Promise<Record<string, unknown> | undefined> {
+// The request's deadline used to end at the headers; a vendor that kept its
+// SSE stream open held a tool call for ever (ledger F-155). The body read
+// is bounded too, and a stream that outlives it is cancelled.
+async function readBodyWithin(response: Response, timeoutMs: number): Promise<string> {
+  const reader = response.body?.getReader();
+  if (reader == null) return await response.text();
+  const decoder = new TextDecoder();
+  let text = "";
+  let timedOut = false;
+  // `response.text()` holds the body lock, so a cancel from outside never
+  // reaches the stream; reading through our own reader lets the deadline
+  // cancel it for real.
+  const timer = setTimeout(() => { timedOut = true; void reader.cancel().catch(() => undefined); }, timeoutMs);
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      text += decoder.decode(value, { stream: true });
+    }
+  } finally {
+    clearTimeout(timer);
+  }
+  if (timedOut) throw new VendorMcpHttpError(`The vendor kept the reply stream open past ${timeoutMs} ms.`, response.status);
+  return text + decoder.decode();
+}
+
+async function readReply(response: Response, id: number, timeoutMs: number): Promise<Record<string, unknown> | undefined> {
   const contentType = response.headers.get("content-type") ?? "";
-  const text = await response.text();
+  const text = await readBodyWithin(response, timeoutMs);
   if (text.trim().length === 0) return undefined;
   const candidates: unknown[] = contentType.includes("text/event-stream")
     ? parseSseMessages(text)
@@ -142,7 +168,7 @@ async function rpc(args: VendorMcpClientArgs, session: Session, method: string, 
   if (!response.ok) {
     throw new VendorMcpHttpError(`The vendor answered ${response.status} to ${method}.`, response.status);
   }
-  const reply = await readReply(response, id);
+  const reply = await readReply(response, id, args.timeoutMs ?? VENDOR_MCP_REQUEST_TIMEOUT_MS);
   if (reply == null) throw new VendorMcpHttpError(`The vendor sent no reply to ${method}.`, response.status);
   if (isRecord(reply.error)) {
     const error = reply.error;

@@ -141,7 +141,7 @@ renderer, if any, lists custom servers with a `command`.
 Ask an agent to add a remote MCP server by URL. Then:
 
 ```
-cat ~/Library/Application\ Support/Simeon/sand-data/account-mcp-config.json
+cat ~/.caisra/account-mcp-config.json
 docker exec simeon-box cat /home/box/sand-data/account-mcp-config.json
 docker exec simeon-box grep -i 'account-mcp' /tmp/sand-host.log | tail
 ```
