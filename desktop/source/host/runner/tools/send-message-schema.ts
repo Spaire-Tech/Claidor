@@ -1,7 +1,21 @@
 import { z } from "zod";
 import { sandWidgetSchema } from "../../../shared/sand-widgets.js";
+import { CHANNELS_COMING_SOON_SENTENCE, CLOUD_AGENTS_COMING_SOON_SENTENCE, isAnyChannelAvailable, isCloudAgentsServed } from "../../../shared/cloud-agents-availability.js";
 export const SEND_MESSAGE_TYPES = ["text", "attachment", "widget", "cursor-agent", "secret-request"] as const;
 export const SEND_MESSAGE_TYPE_DESCRIPTION = "text for chat messages, attachment for actual files or standalone media, widget for an interactive question with selectable options, cursor-agent to reference a cloud agent by its bcId (renders as a card that opens the agent on click), secret-request to ask the user for a credential through a secure masked input (never a chat paste).";
+// Coming Soon at the reach point (shared/cloud-agents-availability.ts): the
+// types the model is offered when cloud agents and channels are not served.
+export function describeSendMessageTypes(env: NodeJS.ProcessEnv = process.env): string {
+  const cloud = isCloudAgentsServed(env), channels = isAnyChannelAvailable();
+  return [
+    "text for chat messages, attachment for actual files or standalone media, widget for an interactive question with selectable options",
+    cloud ? ", cursor-agent to reference a cloud agent by its bcId (renders as a card that opens the agent on click)" : "",
+    channels ? ", secret-request to ask the user for a credential through a secure masked input (never a chat paste)" : "",
+    ".",
+    cloud ? "" : " cursor-agent is not available: cloud agents are coming soon in Simeon.",
+    channels ? "" : " secret-request is not available: messaging channels are coming soon in Simeon, never ask for a key in the chat.",
+  ].join("");
+}
 export type SendMessageType = typeof SEND_MESSAGE_TYPES[number];
 export interface SendMessageInput {
   readonly type: SendMessageType; readonly content?: string | undefined; readonly url?: string | undefined;
@@ -65,12 +79,18 @@ export function stripFieldsOfOtherTypes(value: unknown): unknown {
   const type = record.type;
   if (typeof type !== "string" || !(SEND_MESSAGE_TYPES as readonly string[]).includes(type)) return value;
   const stripped: Record<string, unknown> = { ...record };
+  // No channel can be delivered to while every connector is coming soon; a
+  // `channel` the model set is dropped, not refused, so the message lands in
+  // the in-app chat instead of a tray error and a re-sent call.
+  if (!isAnyChannelAvailable()) delete stripped.channel;
   for (const { field, types } of TYPE_FIELDS) if (!types.includes(type as SendMessageType)) delete stripped[field];
   return stripped;
 }
-export function refineSendMessage(value: SendMessageInput): SendMessageIssue[] {
+export function refineSendMessage(value: SendMessageInput, env: NodeJS.ProcessEnv = process.env): SendMessageIssue[] {
   const issues: SendMessageIssue[] = [];
-  if (value.channel && value.type !== "text" && value.type !== "attachment") issues.push({ path: ["channel"], message: "channel can only be set for type:text or type:attachment, not widgets or cursor-agent cards" });
+  if (value.type === "cursor-agent" && !isCloudAgentsServed(env)) issues.push({ path: ["type"], message: CLOUD_AGENTS_COMING_SOON_SENTENCE });
+  if (value.type === "secret-request" && !isAnyChannelAvailable()) issues.push({ path: ["type"], message: CHANNELS_COMING_SOON_SENTENCE });
+  if (value.channel && value.type !== "text" && value.type !== "attachment") issues.push({ path: ["channel"], message: "channel can only be set for type:text or type:attachment, not widgets or cloud-agent cards" });
   if ((value.images?.length ?? 0) > 0 && value.type !== "text") issues.push({ path: ["images"], message: "images can only be set for type:text (they attach to a text message); for a standalone attachment use type:attachment with url" });
   if (value.type === "text") {
     if (!value.content) issues.push({ path: ["content"], message: "content is required when type is text" });
@@ -82,7 +102,7 @@ export function refineSendMessage(value: SendMessageInput): SendMessageIssue[] {
   return issues;
 }
 const objectSchema = z.object({
-  type: z.enum(SEND_MESSAGE_TYPES).describe(SEND_MESSAGE_TYPE_DESCRIPTION),
+  type: z.enum(SEND_MESSAGE_TYPES).describe(describeSendMessageTypes()),
   content: z.string().trim().optional().describe("Required when type is text. The message to show to the user."),
   url: z.string().trim().optional().describe("Required when type is attachment. Use file:// for local files or https:// for remote files and standalone media."),
   images: z.preprocess(dropBlankItems, z.array(z.object({
@@ -91,7 +111,7 @@ const objectSchema = z.object({
   })).optional()).describe("Optional, only for type:text. Image(s) that belong with this message; they render inside the same chat bubble, below your text \u2014 one image full width, several as a compact gallery. Use whenever you're showing something you're talking about; use type:attachment only for an image that IS the whole message."),
   alt: z.string().trim().optional().describe("Optional. A short description (alt text) of the image for type:attachment \u2014 what the image shows. Shown to the user on hover and in the fullscreen viewer."),
   reply_to: z.string().trim().optional().describe("Optional. Short address of the prior message this reply threads to (e.g. t3u for the user message in turn 3, t3s1 for your second SendMessage in turn 3). Omit when not threading."),
-  channel: z.string().trim().optional().describe("Optional. A connected messaging channel address to deliver this to instead of the in-app Simeon chat, shaped platform:chat, the address shown to you in an [inbound] wake. Omit to send to the in-app chat (the default). Only valid with type:text or type:attachment."),
+  channel: z.string().trim().optional().describe(isAnyChannelAvailable() ? "Optional. A connected messaging channel address to deliver this to instead of the in-app Simeon chat, shaped platform:chat, the address shown to you in an [inbound] wake. Omit to send to the in-app chat (the default). Only valid with type:text or type:attachment." : "Not available yet: messaging channels are coming soon in Simeon. Omit it; every message goes to the in-app chat."),
   widget: z.preprocess(widgetOrUndefined, sandWidgetSchema.optional()).describe("Required when type is widget. A question with selectable options: { prompt, helpText?, options: [{ label, value?, description?, style? }], allowCustom?, dismissOnMoveOn? }. The user picks one option; its value comes back as their reply, and the chat shows the resolved card with their selection checked under your prompt \u2014 so phrase the prompt as a natural question, not a menu instruction. The user can also dismiss the question without answering; you'll be told on your next turn, so treat that as a decline and don't re-ask. Set allowCustom: true to also let the user type their own free-text answer instead of picking an option. Set dismissOnMoveOn: true only for low-stakes questions that become moot if the user moves on (it auto-dismisses once they send a newer message without answering); leave it off for real decisions you still need answered."),
   bcId: z.string().trim().optional().describe("Required when type is cursor-agent. The bcId of the cloud agent to reference (e.g. bc-xxxxxxxx-...)."),
   secret: z.preprocess(secretOrUndefined, z.object({

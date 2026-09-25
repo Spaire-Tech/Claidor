@@ -11,7 +11,7 @@ dashboard.
 Usage:
     # Grant by email + slug (most common):
     python -m scripts.grant_user_org_access run \\
-        --email robin@claidor.com --org claidor
+        --email robin@simeonlabs.com --org claidor
 
     # Or by IDs if you have them:
     python -m scripts.grant_user_org_access run \\
@@ -19,7 +19,7 @@ Usage:
 
     # Dry-run prints intended change without writing.
     python -m scripts.grant_user_org_access run \\
-        --email robin@claidor.com --org claidor --dry-run
+        --email robin@simeonlabs.com --org claidor --dry-run
 """
 
 import asyncio

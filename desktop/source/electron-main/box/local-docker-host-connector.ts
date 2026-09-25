@@ -25,7 +25,7 @@ export const LOCAL_DOCKER_BOX_IMAGE = "public.ecr.aws/k0i0n2g5/cursorenvironment
 export const LOCAL_DOCKER_BOX_CONTAINER = "simeon-box";
 export const LOCAL_DOCKER_GATEWAY_URL = "http://127.0.0.1:1340";
 export const LOCAL_DOCKER_OWNER_LABEL = "com.grok-bot.local-vm=1";
-export const LOCAL_DOCKER_SCHEMA_VERSION = "9";
+export const LOCAL_DOCKER_SCHEMA_VERSION = "10";
 export const LOCAL_DOCKER_INFERENCE_TOKEN_FILE = "/run/grok-bot/inference.json";
 const READY_TIMEOUT_MS = 180_000;
 export const OPTIONAL_CREDENTIAL_WAIT_MS = 250;
@@ -40,7 +40,7 @@ export interface LocalDockerStatus {
 }
 
 interface CommandResult { readonly ok: boolean; readonly output: string }
-interface InferenceCredential { readonly accessToken: string; readonly backendUrl: string; readonly expiresAtMs: number }
+interface InferenceCredential { readonly accessToken: string; readonly backendUrl: string; readonly expiresAtMs: number; readonly renewalCredential?: string }
 interface LocalHostBundle { readonly path: string; readonly sha256: string; readonly boxExecDaemonPath: string; readonly boxExecDaemonSha256: string }
 
 function runDocker(args: readonly string[]): Promise<CommandResult> {
@@ -77,7 +77,9 @@ export function persistInferenceCredential(settingsPath: string, credential: Inf
     persistSerial += 1;
     const temporary = `${target}.${process.pid}.${persistSerial}.tmp`;
     await mkdir(dirname(target), { recursive: true });
-    await writeFile(temporary, `${JSON.stringify({ accessToken: credential.accessToken, expiresAtMs: credential.expiresAtMs })}\n`, { encoding: "utf8", mode: 0o600 });
+    // `renewalCredential` is what lets the box outlive the app (the host's
+    // auth service trades it for a token when this file goes stale).
+    await writeFile(temporary, `${JSON.stringify({ accessToken: credential.accessToken, expiresAtMs: credential.expiresAtMs, ...(credential.renewalCredential == null ? {} : { renewalCredential: credential.renewalCredential }) })}\n`, { encoding: "utf8", mode: 0o600 });
     await rename(temporary, target);
     await chmod(target, 0o600);
     return target;
@@ -204,6 +206,14 @@ export function localDockerInferenceEnvironmentArguments(inferenceCredential?: P
     "--env", `SAND_DEV_INFERENCE_TOKEN_FILE=${LOCAL_DOCKER_INFERENCE_TOKEN_FILE}`,
     "--env", `${SAND_INFERENCE_PROVIDER_ENV}=${PRODUCT_INFERENCE_PROVIDER}`,
     "--env", `${CAISRA_CLAUDE_CODE_ENV}=0`,
+    // The packaged Mac carries these guards in its main; the box never got
+    // them, so the host buffered console lines, crash markers and product
+    // events for Cursor's AnalyticsService and posted them to Simeon Labs'
+    // server every 3 s to get a 404 (design-audit-ledger.md F-376, F-378,
+    // F-391). Schema 10 replaces a container created without them.
+    "--env", "SAND_DISABLE_TELEMETRY=1",
+    "--env", "SAND_DISABLE_ANALYTICS=1",
+    "--env", "SAND_BOX_LOG_SHIP_DISABLED=1",
   ];
 }
 
@@ -253,7 +263,7 @@ async function ensureLocalDockerBoxNarrated(settingsPath: string, inferenceCrede
       "--env", "SAND_SUPERVISOR_ENABLED=1", "--env", "SAND_BOX_AUTO_UPDATE=0", "--env", "SAND_USE_EXISTING_BOX_EXEC_DAEMON=1", "--env", "SAND_TREE_SITTER_NODE_DEPS=/home/box/deps", "--env", "NODE_PATH=/home/box/deps", "--env", "SAND_GATEWAY_BIND_HOST=0.0.0.0", "--env", "SAND_HOST_PORT=1340", "--env", `SAND_GATEWAY_TOKEN=${token}`,
       ...localDockerInferenceEnvironmentArguments(inferenceCredential),
       "--publish", "127.0.0.1:1337:1337", "--publish", "127.0.0.1:1339:1339", "--publish", "127.0.0.1:1340:1340",
-      "--publish", "127.0.0.1:6080:6080", "--publish", "127.0.0.1:6081:6081", "--publish", "127.0.0.1:8790:8790",
+      "--publish", "127.0.0.1:6080:6080", "--publish", "127.0.0.1:6081:6081", 
       "--volume", "grok-bot-local-vm-workspace:/workspace", "--volume", "grok-bot-local-vm-data:/home/box/sand-data",
       "--mount", `type=bind,src=${hostBundle.path},dst=/home/box/sand-host/host-main.cjs,readonly`,
       "--mount", `type=bind,src=${dirname(hostBundle.boxExecDaemonPath)},dst=/home/box/box-exec-daemon,readonly`,
@@ -294,19 +304,44 @@ export async function startLocalDockerBox(settingsPath: string): Promise<Gateway
   return await queuedEnsure(settingsPath);
 }
 
-// Quitting Simeon stops the box. The agent runs inside the container, so
-// until 22 September 2026 a turn kept calling the model after the window
-// was closed; the only brake was `docker stop` by hand. Grok Bot's cloud
-// box is meant to work unattended; a box on the person's own card is not,
-// until they ask for that by setting SAND_KEEP_BOX_RUNNING_ON_QUIT=1.
+// Quitting Simeon stops the box unless a routine needs it. The agent runs
+// inside the container, so until 22 September 2026 a turn kept calling the
+// model after the window was closed; from then the box always stopped on
+// quit, which made routines fire only while the app was open. The founder,
+// 25 September 2026: the Mac can be awake while the app is closed, and a
+// routine should still execute; spend is the routine's and the box's
+// business (the hidden-turn budget, the proxy's hourly cap, the user-away
+// guard that pauses routines), not a reason to make the feature useless.
+// So: with at least one enabled routine the box is kept; with none it is
+// stopped, the brake of before. SAND_KEEP_BOX_RUNNING_ON_QUIT=1 keeps it
+// always, SAND_STOP_BOX_ON_QUIT=1 stops it always. Sleep and shutdown stop
+// it regardless: a local computer cannot run with the Mac off.
 export const SAND_KEEP_BOX_RUNNING_ON_QUIT_ENV = "SAND_KEEP_BOX_RUNNING_ON_QUIT";
-export function shouldStopLocalDockerBoxOnQuit(boxRuntime: string, env: NodeJS.ProcessEnv = process.env): boolean {
+export const SAND_STOP_BOX_ON_QUIT_ENV = "SAND_STOP_BOX_ON_QUIT";
+const flag = (value: string | undefined): boolean => /^(1|true|yes)$/i.test(value?.trim() ?? "");
+export function shouldStopLocalDockerBoxOnQuit(boxRuntime: string, env: NodeJS.ProcessEnv = process.env, hasEnabledRoutine = false): boolean {
   if (boxRuntime !== "local-docker") return false;
-  return !/^(1|true|yes)$/i.test(env[SAND_KEEP_BOX_RUNNING_ON_QUIT_ENV]?.trim() ?? "");
+  if (flag(env[SAND_STOP_BOX_ON_QUIT_ENV])) return true;
+  if (flag(env[SAND_KEEP_BOX_RUNNING_ON_QUIT_ENV])) return false;
+  return !hasEnabledRoutine;
 }
-export async function stopLocalDockerBoxOnQuit(options: { readonly boxRuntime: string; readonly env?: NodeJS.ProcessEnv; readonly stop?: () => Promise<void>; readonly log?: (line: string) => void; readonly timeoutMs?: number }): Promise<"stopped" | "kept" | "failed" | "timed-out"> {
+// Asked of the box itself at quit, on the gateway's own wire, because the
+// coordinator is already gone by then: any routine, any agent, enabled.
+export async function localBoxHasEnabledRoutine(settingsPath: string, fetchImpl: typeof fetch = fetch): Promise<boolean> {
+  const token = await readOrCreateToken(settingsPath);
+  const response = await fetchImpl(`${LOCAL_DOCKER_GATEWAY_URL}/api/listAllAutomations`, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: "{}", signal: AbortSignal.timeout(3_000) });
+  if (!response.ok) throw new Error(`listAllAutomations answered ${response.status}`);
+  const routines = await response.json() as unknown;
+  return Array.isArray(routines) && routines.some((routine) => typeof routine === "object" && routine != null && (routine as { isEnabled?: unknown }).isEnabled === true);
+}
+export async function stopLocalDockerBoxOnQuit(options: { readonly boxRuntime: string; readonly env?: NodeJS.ProcessEnv; readonly stop?: () => Promise<void>; readonly log?: (line: string) => void; readonly timeoutMs?: number; readonly hasEnabledRoutine?: () => Promise<boolean> }): Promise<"stopped" | "kept" | "failed" | "timed-out"> {
   const log = options.log ?? computerStreamLine;
-  if (!shouldStopLocalDockerBoxOnQuit(options.boxRuntime, options.env)) { log("local docker: kept running on quit"); return "kept"; }
+  let hasEnabledRoutine = false;
+  if (options.boxRuntime === "local-docker" && options.hasEnabledRoutine != null) {
+    try { hasEnabledRoutine = await options.hasEnabledRoutine(); }
+    catch (error) { log(`local docker: could not ask the box for its routines (${error instanceof Error ? error.message : String(error)}); stopping it`); }
+  }
+  if (!shouldStopLocalDockerBoxOnQuit(options.boxRuntime, options.env, hasEnabledRoutine)) { log(hasEnabledRoutine ? "local docker: kept running on quit for an enabled routine" : "local docker: kept running on quit"); return "kept"; }
   const stop = options.stop ?? stopLocalDockerBox;
   let timer: NodeJS.Timeout | undefined;
   try {
@@ -329,15 +364,78 @@ export async function stopLocalDockerBox(): Promise<void> {
   if (!stopped.ok) throw new Error(`Could not stop the local Docker VM: ${stopped.output}`);
 }
 
+// The box reads its bearer token from the file the Mac writes at connect
+// (`/run/grok-bot/inference.json`, re-read by the host's renewer as it
+// nears expiry). Until 24 September 2026 nothing rewrote that file after
+// connect, and a desktop access token lives one hour: every box older than
+// that called the model with an expired token and the agent failed with
+// "Unauthorized" until the app reconnected. The Mac now re-issues the
+// credential every few minutes and rewrites the file when it changed; the
+// host's renewer re-reads an expired file every 30 s, so it picks the new
+// token up within the minute.
+export const INFERENCE_CREDENTIAL_KEEP_FRESH_INTERVAL_MS = 5 * 60_000;
+let keepFreshTimer: ReturnType<typeof setInterval> | undefined;
+let lastPersistedAccessToken: string | undefined;
+
+let boxRenewalCredential: string | undefined;
+export function rememberBoxRenewalCredential(credential: string | undefined): void { boxRenewalCredential = credential; }
+function withBoxRenewalCredential(credential: InferenceCredential): InferenceCredential {
+  return boxRenewalCredential == null ? credential : { ...credential, renewalCredential: boxRenewalCredential };
+}
+
+export async function refreshInferenceCredentialFile(
+  issue: () => Promise<InferenceCredential | undefined>,
+  settingsPath: string,
+  persist: (settingsPath: string, credential: InferenceCredential) => Promise<unknown> = persistInferenceCredential,
+): Promise<"rewritten" | "unchanged" | "unavailable"> {
+  let issued: InferenceCredential | undefined;
+  try { issued = await issue(); } catch { issued = undefined; }
+  if (issued == null || issued.accessToken.length === 0) return "unavailable";
+  if (issued.accessToken === lastPersistedAccessToken) return "unchanged";
+  await persist(settingsPath, withBoxRenewalCredential(issued));
+  lastPersistedAccessToken = issued.accessToken;
+  return "rewritten";
+}
+
+export function startInferenceCredentialKeepFresh(
+  issue: (() => Promise<InferenceCredential | undefined>) | undefined,
+  settingsPath: string,
+  options: { readonly intervalMs?: number; readonly setIntervalImpl?: typeof setInterval; readonly log?: (line: string) => void } = {},
+): void {
+  if (keepFreshTimer != null || issue == null) return;
+  const log = options.log ?? computerStreamLine;
+  const timer = (options.setIntervalImpl ?? setInterval)(() => {
+    void refreshInferenceCredentialFile(issue, settingsPath).then((outcome) => {
+      if (outcome === "rewritten") log("local docker: inference credential rewritten");
+      else if (outcome === "unavailable") log("local docker: inference credential unavailable (not signed in?); the box keeps its last token");
+    }, (error: unknown) => log(`local docker: inference credential rewrite FAILED: ${error instanceof Error ? error.message : String(error)}`));
+  }, options.intervalMs ?? INFERENCE_CREDENTIAL_KEEP_FRESH_INTERVAL_MS);
+  (timer as { unref?: () => void }).unref?.();
+  keepFreshTimer = timer;
+}
+
+export function stopInferenceCredentialKeepFresh(): void {
+  if (keepFreshTimer != null) clearInterval(keepFreshTimer);
+  keepFreshTimer = undefined;
+}
+
 export function createSettingsRoutedHostConnector(
   remote: SandRemoteHostConnector,
   settings: SandSettingsStore,
 ): SandRemoteHostConnector {
   const localConnect = (): Promise<GatewayConnection> => {
     return (async () => {
+      // The box's own renewal credential rides in the token file, so a box
+      // that outlives the app (routines fire while the Mac is awake) can
+      // renew its access token without the Mac. Minted once per app run.
+      if (boxRenewalCredential == null && remote.issueBoxRenewalCredential != null) {
+        const minted = await remote.issueBoxRenewalCredential().catch(() => undefined);
+        if (minted != null) { boxRenewalCredential = minted.credential; computerStreamLine("local docker: box renewal credential minted"); }
+        else computerStreamLine("local docker: no box renewal credential (not signed in?); the box will not outlive the app's token");
+      }
       const pending = remote.issueInferenceCredential == null
         ? Promise.resolve(undefined)
-        : remote.issueInferenceCredential().catch(() => undefined);
+        : remote.issueInferenceCredential().then((value) => value == null ? undefined : withBoxRenewalCredential(value)).catch(() => undefined);
       const issued = await Promise.race([
         pending,
         new Promise<undefined>((resolve) => setTimeout(resolve, OPTIONAL_CREDENTIAL_WAIT_MS)),
@@ -345,6 +443,11 @@ export function createSettingsRoutedHostConnector(
       const connection = await queuedEnsure(settings.settingsPath, issued);
       const late = await pending;
       if (late != null && late !== issued) await persistInferenceCredential(settings.settingsPath, late);
+      lastPersistedAccessToken = (late ?? issued)?.accessToken ?? lastPersistedAccessToken;
+      startInferenceCredentialKeepFresh(
+        remote.issueInferenceCredential == null ? undefined : () => remote.issueInferenceCredential!(),
+        settings.settingsPath,
+      );
       return connection;
     })();
   };

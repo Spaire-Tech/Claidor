@@ -15,7 +15,8 @@ export const SSE_CHANNEL_BY_FAMILY = {
   "computer-action": "computer-action",
   outline: "outline",
   sharing: "sharing",
-  "host-settings": "host-settings"
+  "host-settings": "host-settings",
+  memory: "memory"
 } as const;
 
 export type CoordinatorEventFamily = keyof typeof SSE_CHANNEL_BY_FAMILY;

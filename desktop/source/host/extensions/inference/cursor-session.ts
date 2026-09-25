@@ -1,3 +1,4 @@
+import { isConnectServed } from "../../../shared/cloud-agents-availability.js";
 import { join } from "node:path";
 
 import { SAND_COMPUTER_USE_MODEL_SELECTION, SAND_COMPUTER_USE_SUBAGENT_MODEL_ID, isSandAgentModelSelection, type SandAgentModelSelection } from "../../../shared/agents/sand-agent-model.js";
@@ -6,7 +7,7 @@ import { createMockPromptExecutor } from "../../../packages/chat-inference/mock-
 import {
   createCursorInferencePromptSession,
   createSandAttachedMediaUrlProvider,
-  resolveSandRunPrivacyMode,
+  resolveSandRunPrivacyMode, SAND_RUN_PRIVACY_MODE_FALLBACK,
   type RequestLineage,
 } from "../../../shared/node/cursor-backend/cursor-inference.js";
 import { createSandLabelingClient, recordSandPostTurnLabeling, wrapPromptSessionWithSandFollowupLabeling, type LabelMessage, type LabelingClient, type PromptExecutor } from "./sand-labeling.js";
@@ -102,7 +103,11 @@ export function createCursorSandInference(options: CursorSandInferenceOptions): 
   const attachedMedia = createSandAttachedMediaUrlProvider(auth);
   const getLabelingClient = (): LabelingClient => labelingClient ??= createSandLabelingClient(auth);
   return {
-    resolvePrivacyMode: () => resolveSandRunPrivacyMode(auth),
+    // Every turn used to open with Cursor's GetUserPrivacyMode Connect RPC,
+    // which Simeon Labs' server does not serve: one 404 per turn and per
+    // nudge, then the fallback (design-audit-ledger.md F-004, F-123). The
+    // fallback is answered directly unless SAND_CONNECT_SERVED=1.
+    resolvePrivacyMode: () => isConnectServed() ? resolveSandRunPrivacyMode(auth) : Promise.resolve(SAND_RUN_PRIVACY_MODE_FALLBACK),
     getGeminiVideoAttachedMediaUrlProvider: () => options.isGeminiVideoDeveloperApiEnabled?.() === true ? attachedMedia : undefined,
     createSession(onRequestId, sessionOptions) {
       const mockResponse = process.env.SAND_AGENT_MOCK_RESPONSE;

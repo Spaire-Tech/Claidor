@@ -24,6 +24,7 @@ from polar.config import settings
 from polar.desktop.tokens import (
     ACCESS_TOKEN_PREFIX,
     AUTH_CODE_PREFIX,
+    BOX_CREDENTIAL_PREFIX,
     REFRESH_TOKEN_PREFIX,
 )
 from polar.exceptions import PolarError
@@ -425,6 +426,7 @@ class DesktopService:
         if (
             found is None
             or found.is_job_token
+            or found.is_box_credential
             or found.is_revoked
             or found.refresh_expires_at < utc_now()
             or not found.user.can_authenticate
@@ -432,18 +434,134 @@ class DesktopService:
             raise DesktopUnauthenticated("The refresh token is invalid or has expired.")
         found.revoked_at = utc_now()
         session.add(found)
-        return await self._issue_session(
+        issued = await self._issue_session(
             session,
             found.user,
             user_agent=found.user_agent,
             client_version=found.client_version,
         )
+        # The box credential follows the desktop it belongs to: the app
+        # refreshes every hour, and a box that died with each refresh would
+        # be no box at all.
+        repository = DesktopSessionRepository.from_session(session)
+        for child in await repository.list_box_credentials_of(found.id):
+            if child.is_revoked:
+                continue
+            child.box_of_session_id = issued[0].id
+            session.add(child)
+        return issued
 
     async def revoke(
         self, session: AsyncSession, desktop_session: DesktopSession
     ) -> None:
-        desktop_session.revoked_at = utc_now()
+        now = utc_now()
+        desktop_session.revoked_at = now
         session.add(desktop_session)
+        # Sign-out takes the box's credential with it: a box the person
+        # walked away from must not keep calling the model as them.
+        for child in await DesktopSessionRepository.from_session(
+            session
+        ).list_box_credentials_of(desktop_session.id):
+            if child.is_revoked:
+                continue
+            child.revoked_at = now
+            session.add(child)
+
+    # --- the box's own credential --------------------------------------------
+
+    async def issue_box_credential(
+        self, session: AsyncSession, parent: DesktopSession
+    ) -> tuple[DesktopSession, str]:
+        """A credential the person's box renews its access token with,
+        for as long as the desktop that asked stays signed in.
+
+        Why (25 September 2026): the box keeps running after Simeon quits
+        so routines fire while the Mac is awake, and with the app gone
+        nothing rewrites the one-hour access token the Mac used to place
+        in the box every five minutes. So the Mac hands the box this
+        credential once, and the box trades it for a fresh access token
+        at `POST /sand-box/inference-credential` whenever it needs one.
+        It is a `DesktopSession` row like a job token, narrowed the same
+        way: its refresh column holds the credential and `refresh`
+        refuses it, so it can never become a lasting session; it is
+        revoked with its parent on sign-out; and the parent's own refresh
+        re-parents it instead of orphaning it. One live credential per
+        desktop: asking again revokes the last one.
+        """
+        if parent.is_job_token or parent.is_box_credential:
+            raise DesktopUnauthenticated(
+                "Only a signed-in desktop can ask for a box credential."
+            )
+        now = utc_now()
+        repository = DesktopSessionRepository.from_session(session)
+        for previous in await repository.list_box_credentials_of(parent.id):
+            if previous.is_revoked:
+                continue
+            previous.revoked_at = now
+            session.add(previous)
+        access, access_hash = generate_token_hash_pair(
+            secret=settings.SECRET, prefix=ACCESS_TOKEN_PREFIX
+        )
+        credential, credential_hash = generate_token_hash_pair(
+            secret=settings.SECRET, prefix=BOX_CREDENTIAL_PREFIX
+        )
+        row = DesktopSession(
+            access_token_hash=access_hash,
+            access_expires_at=now + settings.DESKTOP_ACCESS_TOKEN_TTL,
+            refresh_token_hash=credential_hash,
+            refresh_expires_at=now + settings.DESKTOP_REFRESH_TOKEN_TTL,
+            user_agent=f"simeon-box/{parent.id}"[:2000],
+            client_version=parent.client_version,
+            user_id=parent.user_id,
+            box_of_session_id=parent.id,
+        )
+        row.user = parent.user
+        session.add(row)
+        await session.flush()
+        return row, credential
+
+    async def renew_box_access(
+        self, session: AsyncSession, credential: str
+    ) -> tuple[DesktopSession, str]:
+        """A fresh access token for a live box credential. The credential
+        itself is not rotated: the box holds it for its whole life and
+        nothing else does, and a renewal that could fail half-way is the
+        one thing an unattended box cannot recover from."""
+        token = credential.strip()
+        if (
+            not token
+            or not token.isascii()
+            or not token.startswith(BOX_CREDENTIAL_PREFIX)
+        ):
+            raise DesktopUnauthenticated("The box credential is invalid.")
+        repository = DesktopSessionRepository.from_session(session)
+        found = await repository.get_by_refresh_token_hash(
+            get_token_hash(token, secret=settings.SECRET)
+        )
+        now = utc_now()
+        if (
+            found is None
+            or not found.is_box_credential
+            or found.is_revoked
+            or found.refresh_expires_at < now
+            or not found.user.can_authenticate
+        ):
+            raise DesktopUnauthenticated(
+                "The box credential is invalid or has expired."
+            )
+        parent = await repository.get_parent_of(found)
+        if parent is None or parent.is_revoked:
+            raise DesktopUnauthenticated(
+                "The desktop this box belongs to has signed out."
+            )
+        access, access_hash = generate_token_hash_pair(
+            secret=settings.SECRET, prefix=ACCESS_TOKEN_PREFIX
+        )
+        found.access_token_hash = access_hash
+        found.access_expires_at = now + settings.DESKTOP_ACCESS_TOKEN_TTL
+        session.add(found)
+        await session.flush()
+        return found, access
         await session.flush()
 
     # the app's own sign-in

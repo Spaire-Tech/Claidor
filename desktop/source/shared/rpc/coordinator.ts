@@ -166,6 +166,12 @@ export const COORDINATOR_METHOD_TABLE = {
   refreshChannel: { args: "object", reply: "channels-view" },
   getBoxSecretsStatus: { args: "none", reply: "box-secrets" },
   getAgentAutomations: { args: "object", reply: "array" },
+  // The host's memory commands, reachable from the Mac since 25 September
+  // 2026 (design-audit-ledger.md F-064); the pinned renderer's use of them
+  // is not measured.
+  getAgentMemories: { args: "object", reply: "array" },
+  deleteAgentMemory: { args: "object", reply: "boolean" },
+  clearAgentMemories: { args: "object", reply: "void" },
   listAllAutomations: { args: "none", reply: "array" },
   isAgentNetworkEnabled: { args: "none", reply: "boolean" },
   isGlobalSearchEnabled: { args: "none", reply: "boolean" },

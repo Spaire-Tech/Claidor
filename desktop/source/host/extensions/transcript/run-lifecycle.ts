@@ -417,10 +417,7 @@ export class RunLifecycle {
     if (!this.inFlightRunCounts.has(session)) session.db.close();
   }
   watchActiveSession(session: any): void {
-    this.tm.memory.setActiveAgent({
-      agentId: session.id,
-      store: session.memory,
-    });
+    this.tm.memory.setActiveAgent(session.id);
     this.tm.automationRuntime.watchSessionAutomations(session);
     this.tm.workflowCommands.watchSessionWorkflows(session);
     this.tm.roster.watchSessionProfile(session);

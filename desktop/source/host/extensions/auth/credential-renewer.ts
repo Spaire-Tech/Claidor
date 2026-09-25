@@ -25,6 +25,15 @@ export const DEFAULT_TTL_MS = 10 * 60 * 1_000;
 export const RENEWAL_PATH = "/sand-box/inference-credential";
 
 export interface InferenceCredential { readonly accessToken: string; readonly expiresAtMs: number; }
+/**
+ * The token file the Mac writes into a local Docker box
+ * (`/run/grok-bot/inference.json`), which since 25 September 2026 may also
+ * carry the box's own renewal credential: the box keeps running after Simeon
+ * quits so routines fire while the Mac is awake, and with the app gone
+ * nothing rewrites the file, so a stale file is renewed at RENEWAL_PATH
+ * with that credential instead of being waited on.
+ */
+export interface DevInferenceCredentialFile extends InferenceCredential { readonly renewalCredential?: string; }
 export interface RenewalResult {
   readonly outcome: "renewed" | "failed";
   readonly consecutiveFailures: number;
@@ -59,10 +68,13 @@ export async function renewSandBoxInferenceCredential(args: {
 export async function readDevInferenceCredentialFile(args: {
   readonly path: string;
   readonly readFileImpl?: (path: string) => Promise<string>;
-}): Promise<InferenceCredential> {
+}): Promise<DevInferenceCredentialFile> {
   try {
     const raw = await (args.readFileImpl ?? ((path) => readFile(path, "utf8")))(args.path);
-    return credentialFromPayload(JSON.parse(raw) as unknown, `Dev inference token file ${args.path} has no accessToken yet.`);
+    const parsed = JSON.parse(raw) as unknown;
+    const credential = credentialFromPayload(parsed, `Dev inference token file ${args.path} has no accessToken yet.`);
+    const renewalCredential = typeof parsed === "object" && parsed != null ? (parsed as { renewalCredential?: unknown }).renewalCredential : undefined;
+    return typeof renewalCredential === "string" && renewalCredential.length > 0 ? { ...credential, renewalCredential } : credential;
   } catch (error) {
     if (error instanceof SandCredentialNotReadyError) throw error;
     if (error instanceof SandCredentialRenewalError) throw new SandCredentialNotReadyError(error.message);

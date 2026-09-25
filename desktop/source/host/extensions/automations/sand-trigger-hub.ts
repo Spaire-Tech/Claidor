@@ -34,7 +34,7 @@ export class SandTriggerHub {
       if (schedules.length === 0) continue;
       const key = `${agentId}:${automation.id}`;
       seenKeys.add(key);
-      const anchor = automationAnchor({ createdAt: automation.createdAt ?? now, lastRunAt: automation.lastRunAt });
+      const anchor = automationAnchor({ createdAt: automation.createdAt ?? now, lastRunAt: automation.lastRunAt ?? null });
       const localFire = this.lastLocalCronFireMs.get(key);
       const effectiveAnchor = localFire != null && localFire > anchor ? localFire : anchor;
       let earliest: number | null = null;

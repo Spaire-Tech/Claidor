@@ -12,7 +12,10 @@ import {
 } from "../../packages/proto/generated/agent/v1/smart_mode_classifier_exec_pb.js";
 
 export const SAND_AUTO_REVIEW_BLOCK_REASON = "Blocked by Auto-review";
-export const SAND_AUTO_REVIEW_CLASSIFIER_MAX_ATTEMPTS = 1;
+// Two attempts (25 September 2026, ledger F-347): a timeout in enforce is a
+// rejected action with no card, and Luna through the proxy is not measured
+// under the classifier's deadline.
+export const SAND_AUTO_REVIEW_CLASSIFIER_MAX_ATTEMPTS = 2;
 
 export type AutoReviewClassifierDecision =
   | { readonly kind: "allow" }

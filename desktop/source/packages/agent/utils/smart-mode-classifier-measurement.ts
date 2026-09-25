@@ -8,7 +8,10 @@ import { getAgentEventTracker } from "./event-tracking.js";
 import { parseSmartModeClassifierFailureMetadata } from "./smart-mode-classifier-error-metadata.js";
 
 const logger = createLogger("@anysphere/agent:smart-mode-classifier");
-const SMART_MODE_CLASSIFIER_TIMEOUT_MS = 10_000;
+// 30 s since 25 September 2026 (was 10 s): the executor behind it allows 30 s
+// (simeon-smart-mode-classifier-exec.ts), and a deadline shorter than the
+// call it waits on is a reject, not a measurement (ledger F-347).
+const SMART_MODE_CLASSIFIER_TIMEOUT_MS = 30_000;
 const SMART_MODE_CLASSIFIER_LOCAL_DEV_TIMEOUT_MULTIPLIER = 3;
 const SMART_MODE_CLASSIFIER_MAX_TOTAL_ATTEMPTS = 2;
 const SMART_MODE_CLASSIFIER_MAX_FAILURE_RETRIES = SMART_MODE_CLASSIFIER_MAX_TOTAL_ATTEMPTS - 1;

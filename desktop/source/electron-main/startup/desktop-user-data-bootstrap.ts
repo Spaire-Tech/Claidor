@@ -45,7 +45,11 @@ export interface DesktopUserDataBootstrapOptions {
 /** The productName the app carried until 22 September 2026, and so the folder it kept its data in. */
 export const PREVIOUS_USER_DATA_NAME = "Grok Bot";
 /** Chromium's caches: rebuilt on demand, never worth copying. */
-const USER_DATA_CACHE_ENTRIES = new Set(["Cache", "Code Cache", "GPUCache", "DawnCache", "DawnGraphiteCache", "DawnWebGPUCache", "blob_storage", "Crashpad", "logs"]);
+const USER_DATA_CACHE_ENTRIES = new Set(["Cache", "Code Cache", "GPUCache", "DawnCache", "DawnGraphiteCache", "DawnWebGPUCache", "blob_storage", "Crashpad", "logs",
+  // Grok Bot's Statsig bootstrap: a config with the person's Cursor user id
+  // that would hydrate a client logging gate exposures to api3.cursor.sh
+  // (design-audit-ledger.md F-388). Never copied.
+  "sand-statsig-bootstrap.json"]);
 /**
  * Chromium's single-instance lock: three symlinks that name the running
  * process and its socket. They belong to whichever process made them and

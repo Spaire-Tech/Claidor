@@ -2,7 +2,10 @@ import { createDeadlinePolicy, realClock, type DeadlinePolicy } from "../../inte
 import { claidorProxyRequest, type ClaidorApiAuth } from "../../shared/node/cursor-backend/claidor-api.js";
 
 const TRANSCRIBE_TIMEOUT_MS = 60_000;
-const DEFAULT_TRANSCRIBE_LANGUAGE = "en-US";
+// No default language. Until 24 September 2026 a request with none was sent
+// as `en-US`, and the composer's mic sends none, so every dictation was
+// transcribed as English whatever was spoken. Without the field the server
+// omits it and OpenAI detects the language itself.
 const transcribeDeadline = createDeadlinePolicy(realClock, { name: "claidor-transcribe-audio", timeoutMs: TRANSCRIBE_TIMEOUT_MS });
 
 // Dictation, on Claidor's `/audio/transcriptions` door
@@ -31,14 +34,14 @@ export class SandTranscriptionManager {
 
   async transcribe(args: { readonly audio: Uint8Array; readonly mimeType: string; readonly language?: string }): Promise<{ text: string; transcriptionTimeMs: number }> {
     if (args.audio.length === 0) throw new SandTranscribeEmptyAudioError();
-    const language = args.language != null && args.language.length > 0 ? args.language : DEFAULT_TRANSCRIBE_LANGUAGE;
+    const language = args.language != null && args.language.trim().length > 0 ? args.language.trim() : undefined;
     const mimeType = (args.mimeType.split(";")[0] ?? args.mimeType).trim() || "audio/webm";
     return await (this.options.deadline ?? transcribeDeadline).run(async (signal) => {
       const form = new FormData();
       const bytes = new Uint8Array(args.audio.byteLength);
       bytes.set(args.audio);
       form.append("file", new Blob([bytes], { type: mimeType }), audioFilename(mimeType));
-      form.append("language", language);
+      if (language !== undefined) form.append("language", language);
       const response = await claidorProxyRequest(this.options, "audio/transcriptions", {
         form,
         signal,

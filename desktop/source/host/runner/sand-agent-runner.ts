@@ -585,6 +585,17 @@ export class SandAgentRunner<T = unknown> {
     return this.#latestPromptMessagesGetter?.() ?? [];
   }
 
+  /**
+   * Bound by the turn shell's `onLatestPromptMessages` at each run. Until
+   * 25 September 2026 nothing set this field on the production path, so
+   * getLatestPromptMessages() was always [] and the closing-send nudge and
+   * post-turn labelling could never see the turn's messages
+   * (docs/product/design-audit-ledger.md F-020).
+   */
+  setLatestPromptMessagesGetter(getter: (() => readonly unknown[]) | undefined): void {
+    this.#latestPromptMessagesGetter = getter;
+  }
+
   get isComputerUseSubagent(): boolean {
     return this.isSubagentRunner
       && this.subagentType != null

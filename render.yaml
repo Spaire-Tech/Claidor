@@ -173,7 +173,7 @@ services:
       # Where to claim jobs, fetch the person's memory, and call the model
       # proxy. The same address the desktop app uses.
       - key: CLAIDOR_API_BASE_URL
-        value: https://api.claidor.com
+        value: https://api.simeonlabs.com
 
       # The service's own token, which belongs to no person. Generated once
       # and pasted into the dashboard, like every other secret here. The
@@ -207,17 +207,17 @@ envVarGroups:
 
       # --- URLs and cookies ---
       - key: CLAIDOR_BASE_URL
-        value: https://api.claidor.com
+        value: https://api.simeonlabs.com
       - key: CLAIDOR_FRONTEND_BASE_URL
-        value: https://app.claidor.com
+        value: https://app.simeonlabs.com
       # JSON arrays — a comma-separated value makes the app refuse to start.
       - key: CLAIDOR_ALLOWED_HOSTS
-        value: '["api.claidor.com","app.claidor.com"]'
+        value: '["api.simeonlabs.com","app.simeonlabs.com"]'
       - key: CLAIDOR_CORS_ORIGINS
-        value: '["https://app.claidor.com"]'
+        value: '["https://app.simeonlabs.com"]'
       # The leading dot is what makes the session valid across app. and api.
       - key: CLAIDOR_USER_SESSION_COOKIE_DOMAIN
-        value: .claidor.com
+        value: .simeonlabs.com
 
       # --- secrets (generated once, pasted here) ---
       - key: CLAIDOR_SECRET
@@ -306,4 +306,4 @@ envVarGroups:
       - key: CLAIDOR_EMAIL_FROM_NAME
         value: Claidor
       - key: CLAIDOR_EMAIL_FROM_DOMAIN
-        value: claidor.com
+        value: simeonlabs.com

@@ -5,7 +5,7 @@ import { createCoordinatorMainLegs } from "./coordinator/coordinator-main-legs.j
 import { createEgressConnectionObserver } from "./box/remote-connector-egress.js";
 import { createDesktopGatewayDescriptorFastPath } from "./box/gateway-descriptor-store.js";
 import { createRemoteHostConnector, type SandRemoteHostConnector } from "./box/box-host-connector.js";
-import { createSettingsRoutedHostConnector, startLocalDockerBox, stopLocalDockerBoxOnQuit } from "./box/local-docker-host-connector.js";
+import { createSettingsRoutedHostConnector, localBoxHasEnabledRoutine, startLocalDockerBox, stopLocalDockerBoxOnQuit } from "./box/local-docker-host-connector.js";
 import { createSandClientPauseControl } from "./box/box-client-pause.js";
 import { createSandMigrationWatcher } from "./box/box-migration-watcher.js";
 import type { RecreateResult } from "./box/box-recreate-commands.js";
@@ -48,7 +48,8 @@ import { registerProductionTelemetryIpc } from "./telemetry/production-telemetry
 import type { SandAuthStatus } from "./account/cursor-auth.js";
 import type { SecureStorageCodec } from "./secrets/secret-store.js";
 import { recordLocalToolApproval as persistLocalToolApproval, clearLocalToolApprovals as clearPersistedLocalToolApprovals } from "../host/local-exec/local-tool-approvals.js";
-import { fetchSandAvailableModels } from "./models/cursor-model-catalog.js";
+import { fetchClaidorAvailableModels } from "./models/claidor-model-catalog.js";
+import { migrationWatchForBoxRuntime } from "./box/box-recovery.js";
 import type { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
 import type {
   ElectronMainDependencies,
@@ -660,9 +661,19 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         },
       );
       const remoteConnector = connectorEgress.wrap(pauseControl.guard(baseRemoteConnector));
+      // The migration watcher streams `GrokBotService/WatchSandBoxMigration`,
+      // a Cursor RPC that only means something for a cloud box. Until
+      // 24 September 2026 it was started whatever the box runtime, so on
+      // the default `local-docker` runtime it asked Simeon Labs' server for
+      // a stream it does not serve, got a 404, and retried every 3 s for as
+      // long as the app ran. Now the stream is only attached when the box
+      // is remote; on a local box `watch` is left undefined, the relay
+      // never starts, and `ingestMigration` (the dev recreate plane's own
+      // events) still feeds `readBoxMigrationStatus`.
+      const migrationWatch = migrationWatchForBoxRuntime(requireValue(settings, "settings").settingsStore.getBoxRuntime(), () => createSandMigrationWatcher(backendClientOptions));
       boxRecovery = createProductionBoxRecovery({
         connector: remoteConnector,
-        watch: createSandMigrationWatcher(backendClientOptions),
+        ...(migrationWatch === undefined ? {} : { watch: migrationWatch }),
         broadcast: (event) => requireValue(mainEdge, "main-edge").emit("box-migration", event),
         onWatchTelemetry: (event) => {
           const pipes = requireValue(coordinator, "coordinator").getTelemetryReportPipes?.();
@@ -718,10 +729,15 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         broadcast, getTrustedContents,
         settings: requireValue(settings, "settings"), secretsStores: requireValue(secretsStores, "secrets-stores"), accountLifecycle, boxRecovery: requireValue(boxRecovery, "box-recovery"),
         shell, windowChrome, getMainWindow: () => runtime?.getMainWindow(), requireMainEdge: () => requireValue(mainEdge, "main-edge"),
+        // The picker's list, from `GET /desktop/api/models/available` on
+        // Simeon Labs' server. Until 24 September 2026 this called
+        // `AiService/AvailableModels`, a Cursor Connect RPC the server does
+        // not serve, and the 404 reached the renderer as the picker's
+        // error. Same edge method, same `toJson()` shape; only the wire
+        // changed (`models/claidor-model-catalog.ts`).
         fetchAvailableModels: async () => {
-          const response = await fetchSandAvailableModels({
-            getAccessToken: async ({ backendUrl }: { readonly backendUrl?: string }) => await (await requireValue(account, "account").getAuthService()).getValidAccessToken(backendUrl == null ? {} : { backendUrl }),
-            getMachineId: async () => machineId,
+          const response = await fetchClaidorAvailableModels({
+            getAccessToken: async () => await (await requireValue(account, "account").getAuthService()).getValidAccessToken(),
           });
           return response.toJson();
         },
@@ -898,11 +914,13 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         };
         await disposeQuitPhase(coordinator, "coordinator");
         try { coordinatorLegs.dispose(); } catch (error) { bindings.reportFailure("coordinator", "legs-dispose", error); }
-        // The agent runs in the box, not in this process: stop the box so
-        // quitting the app stops the spending (local-docker-host-connector.ts).
+        // The agent runs in the box, not in this process: stop the box on
+        // quit unless an enabled routine needs it to keep running while the
+        // Mac is awake (local-docker-host-connector.ts, 25 September 2026).
         try {
           const boxRuntime = settings == null ? "remote" : settings.settingsStore.getBoxRuntime();
-          await stopLocalDockerBoxOnQuit({ boxRuntime, env });
+          const settingsPath = settings?.settingsStore.settingsPath;
+          await stopLocalDockerBoxOnQuit({ boxRuntime, env, ...(settingsPath == null ? {} : { hasEnabledRoutine: () => localBoxHasEnabledRoutine(settingsPath) }) });
         } catch (error) { bindings.reportFailure("box-recovery", "stop-on-quit", error); }
         await disposeQuitPhase(boxRecovery, "box-recovery");
         await secretsStores?.pushBoxSecrets.quiesce();

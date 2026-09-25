@@ -1,5 +1,7 @@
 import type { WindowShortcut } from "./window-shortcuts.js";
 
+export const HELP_CENTER_URL = "https://simeonlabs.com";
+
 export type ApplicationMenuRole =
   | "close"
   | "editMenu"
@@ -97,8 +99,11 @@ export function buildApplicationMenuTemplate(
     submenu: [
       {
         label: "Help Center",
+        // Simeon Labs' site. Until 24 September 2026 this opened
+        // `https://cursor.com/help`, Grok Bot's own help, which has nothing
+        // to say about Simeon.
         click: () => {
-          void electron.openExternal("https://cursor.com/help");
+          void electron.openExternal(HELP_CENTER_URL);
         },
       },
       { type: "separator" },

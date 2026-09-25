@@ -241,9 +241,12 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
   });
   deps.startup.bootstrapBeforeSingleInstance();
 
-  // Hardware acceleration is disabled by default for stability.
-  // Set SAND_ENABLE_HWA=1 to opt in (e.g. for GPU-accelerated testing).
-  if (env["SAND_ENABLE_HWA"] !== "1") {
+  // Hardware acceleration is on by default since 24 September 2026: with the
+  // GPU off the whole window is drawn on the CPU, and the founder measured the
+  // chat scrolling with a lag that went away under SAND_ENABLE_HWA=1 ("yeah the
+  // app is faster after this"). Set SAND_DISABLE_HWA=1 to opt out; the old
+  // SAND_ENABLE_HWA=1 is still accepted and means the default.
+  if (env["SAND_DISABLE_HWA"] === "1") {
     deps.app.disableHardwareAcceleration();
     deps.app.commandLine.appendSwitch("disable-gpu");
   }

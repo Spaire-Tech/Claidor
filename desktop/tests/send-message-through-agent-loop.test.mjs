@@ -178,7 +178,7 @@ const env = { previous: {} };
 function pin(dataDir) {
   for (const key of ["SAND_DATA_ROOT", "SAND_BACKEND_URL"]) env.previous[key] = process.env[key];
   process.env.SAND_DATA_ROOT = dataDir;
-  process.env.SAND_BACKEND_URL = "https://api.claidor.com";
+  process.env.SAND_BACKEND_URL = "https://api.simeonlabs.com";
 }
 function unpin() {
   for (const [key, value] of Object.entries(env.previous)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }

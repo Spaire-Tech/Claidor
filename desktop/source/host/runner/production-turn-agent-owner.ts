@@ -84,6 +84,9 @@ export interface ProductionTurnAgentOwnerInput {
   readonly endThisRunAwaitingUser?: (reason: string) => void;
   readonly requestSource?: string;
   readonly modelId?: string;
+  /** A headless subagent's kind: picks its tools and puts its turns on the cheap model. */
+  readonly isComputerUseSubagent?: boolean;
+  readonly isBrowserUseSubagent?: boolean;
   readonly hidden?: boolean;
   readonly lineage?: unknown;
   readonly profilePromptSnapshot?: AgentProfilePromptSnapshot;
@@ -161,6 +164,8 @@ export async function createProductionTurnAgentOwner(
     inference: input.inference,
     onRequestId: input.onRequestId,
     ...(input.modelId === undefined ? {} : { modelId: input.modelId }),
+    ...(input.isComputerUseSubagent === undefined ? {} : { isComputerUseSubagent: input.isComputerUseSubagent }),
+    ...(input.isBrowserUseSubagent === undefined ? {} : { isBrowserUseSubagent: input.isBrowserUseSubagent }),
     ...(input.requestSource === undefined
       ? {}
       : { requestSource: input.requestSource }),

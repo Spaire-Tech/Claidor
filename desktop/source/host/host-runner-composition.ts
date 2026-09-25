@@ -1,3 +1,4 @@
+import { isCloudAgentsServed } from "../shared/cloud-agents-availability.js";
 import { dirname } from "node:path";
 import { CLAIDOR_WORKING_CONTEXT_TOKENS } from "../shared/inference/claidor-context-window.js";
 import { TranscriptMirrorOffloadPool } from "./agent-isolation/transcript-mirror-offload.js";
@@ -28,6 +29,7 @@ import {
 } from "../packages/agent-summarization/summarization-handler.js";
 import { getAgentBlobStore } from "./runner/sand-agent-runner.js";
 import type { AgentProfileForRunner } from "./runner/sand-agent-runner.js";
+import { productionPdfTextExtractor } from "./runner/pdf-text-extractor.js";
 import type {
   AutomationRecord,
   AutomationReview,
@@ -46,9 +48,12 @@ import {
 } from "./runner/tools/turn-toolset.js";
 import type {
   TurnAwaitToolFactoryInput,
+  TurnBrowserToolFactoryInput,
   TurnCloudAgentToolFactoryInput,
+  TurnComputerToolFactoryInput,
   TurnMcpManagementToolFactoryInput,
   TurnReadToolFactoryInput,
+  TurnToolsetBuildProps,
   TurnWebFetchToolFactoryInput,
   TurnWebSearchToolFactoryInput,
 } from "./runner/tools/turn-toolset.js";
@@ -93,6 +98,11 @@ import {
   type RemoteBoxResourceHost,
 } from "./runner/remote-box-resources.js";
 import { createStreamAttempt } from "./runner/stream-attempt.js";
+import { getSandProfilePath, readSandProfileFile } from "./agents/agent-profile.js";
+import { createSandComputerUseSubagentConfig, isComputerUseSubagentType } from "./runner/tools/sand-computer-use-subagent.js";
+import { createSandBrowserUseSubagentConfig, isBrowserUseSubagentType } from "./runner/tools/sand-browser-use-subagent.js";
+import { createSandExecutorSubagentConfig } from "./sand-multitask.js";
+import type { TaskSubagentModelConfig } from "../packages/agent/tools/task-cluster-internal.js";
 import {
   createTurnAgentRunStreamInput,
   createTurnAgentStreamStart,
@@ -106,6 +116,8 @@ import {
 import {
   createProductionTurnRunShellHostInput,
 } from "./runner/production-turn-run-shell-adapter.js";
+import type { TurnRunShellHost } from "./runner/turn-run-shell.js";
+import { SAND_SUMMARIZATION_MODEL_ID } from "../shared/agents/sand-agent-model.js";
 import {
   createPromptCollectorGlue,
   type PromptCollectorHost,
@@ -117,10 +129,11 @@ import {
   createShellWatchReadAccessor,
   type ShellTerminalWatchHost,
 } from "./runner/shell-terminal-watch.js";
-import { DEFAULT_SAND_SYSTEM_PROMPT } from "./runner/system-prompt.js";
+import { buildSandSubagentSystemPrompt, DEFAULT_SAND_SYSTEM_PROMPT } from "./runner/system-prompt.js";
 import {
   createSystemPromptAssembly,
   type PromptSnapshotStore,
+  type SystemPromptAssemblyDependencies,
 } from "./runner/system-prompt-assembly.js";
 import { PrivacyMode, type PrivacyMode as PrivacyModeValue } from "../packages/redaction/privacy-mode.js";
 import { tryExtractSandAutoReviewClassifierConversationContext } from "../packages/agent/smart-mode-classifier-context.js";
@@ -149,7 +162,7 @@ import type {
   TurnToolsetTurnInput,
 } from "./runner/tools/turn-toolset.js";
 import type { TurnCheckpoint, TurnSettleHost } from "./runner/turn-settle.js";
-import type { TextExecutor } from "./runner/sand-memory.js";
+import { isMemorableExchange, type TextExecutor } from "./runner/sand-memory.js";
 import type { RunnerPromptGlueOwner } from "./runner/runner-prompt-glue.js";
 import type { TransferBox } from "./box/box-transfer.js";
 import type { CapableBox } from "./box/box-capabilities.js";
@@ -167,8 +180,11 @@ import type {
   SubagentAdapterArgs,
 } from "./runner/agent-adapters.js";
 import type { CursorRule } from "../packages/proto/generated/agent/v1/cursor_rules_pb.js";
+import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 
 export const DEFAULT_SAND_MODEL = "gpt-5.5-high-fast";
+/** Bisect switch, 24 September 2026: the agent's own Screenshot tool (see createTurnToolsetFactoryProvider). */
+const AGENT_SCREENSHOT_TOOL = false;
 export const SAND_SUMMARIZATION_MAX_PROMPT_CHARS = 2_800_000;
 
 type DynamicApi = Record<string, any>;
@@ -1237,16 +1253,45 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             };
       }
     };
+    // The agent-state deps the memory extension requires (`AgentStateDeps`).
+    // Until 24 September readProfile, writeProfile and writeSettings were not
+    // supplied, so an agent renaming itself ("Name yourself Simeon") failed
+    // with "deps.readProfile is not a function". Profile and settings writes
+    // go through the transcript so the roster and the sidebar follow.
+    const agentDir = dirname(session.dbPath);
     const agentStateOwner = !isSharedRoomTurn
       ? method(memory, "createAgentState")?.({
           memory: session.memory,
           automations: session.automations,
           workflows: session.workflows,
           channels: session.channels,
-          agentDir: dirname(session.dbPath),
+          agentDir,
           agentId: session.id,
+          readProfile: () => {
+            const profile = readSandProfileFile(getSandProfilePath(agentDir));
+            return profile == null ? null : { ...profile };
+          },
+          writeProfile: (profile: Record<string, string>) => {
+            void method(transcript, "updateAgent")?.(session.id, {
+              name: profile.name ?? "",
+              description: profile.description ?? "",
+              ...(profile.title === undefined ? {} : { title: profile.title }),
+              ...(profile.avatarShape === undefined ? {} : { avatarShape: profile.avatarShape }),
+              ...(profile.avatarColor === undefined ? {} : { avatarColor: profile.avatarColor }),
+            });
+          },
+          writeSettings: (settings: Record<string, boolean>) => {
+            if (settings.notifyOnAgentUpdates !== undefined) void method(transcript, "setAgentNotifyOnUpdates")?.(session.id, settings.notifyOnAgentUpdates);
+            if (settings.hiddenFromSidebar !== undefined) void method(transcript, "setAgentHiddenFromSidebar")?.(session.id, settings.hiddenFromSidebar);
+          },
           readBoxFile: (boxPath: string) =>
-            method(remoteBox, "downloadFile")?.(ctx, session.id, boxPath)
+            method(remoteBox, "downloadFile")?.(ctx, session.id, boxPath),
+          // The agent's own avatar set/clear (UpdateState target avatar)
+          // writes the file and calls this; without it the roster never
+          // redrew (docs/product/avatar-audit-2026-09-24.md).
+          onAvatarChanged: () => {
+            void method(transcript, "emitAgentUpdate")?.(session.id);
+          },
         })
       : undefined;
 
@@ -1256,10 +1301,55 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       : undefined;
     const readVideoAttachmentBytes = method(attachments, "readVideoBytes");
     const mcpCustomInstructions = method(mcp.mcp, "getCustomInstructions");
+    // The per-turn MCP snapshot the prompt glue reads synchronously: which
+    // connectors are connected, their custom instructions, and whether
+    // discovery failed this turn. Refreshed at every turn start.
+    const mcpTurnSnapshot: {
+      connectedServerNames: readonly string[];
+      customInstructions: ReadonlyMap<string, string>;
+      discoveryUnavailable: boolean;
+    } = { connectedServerNames: [], customInstructions: new Map(), discoveryUnavailable: false };
+    const refreshMcpTurnSnapshot = async (discoveryFailed: boolean): Promise<void> => {
+      mcpTurnSnapshot.discoveryUnavailable = discoveryFailed;
+      try {
+        const installed = await method(mcp.management, "listInstalled")?.();
+        if (Array.isArray(installed)) {
+          mcpTurnSnapshot.connectedServerNames = installed
+            .filter((server: any) => server != null && server.status === "connected" && typeof server.name === "string")
+            .map((server: any) => server.name as string);
+        }
+        const instructions = await mcpCustomInstructions?.();
+        if (instructions instanceof Map) mcpTurnSnapshot.customInstructions = instructions;
+      } catch {
+        // The snapshot keeps its last value; the prompt is never blocked on it.
+      }
+    };
     let shellWatchWatermark:
       | { readonly turnCount: number; readonly boundaryRef: Uint8Array; readonly lastUserMessageId?: string; readonly hasUserTurn: boolean }
       | undefined;
-    const productionPromptGlue = productionContext === undefined
+    // The prompt is built for an identity: the agent's own turn, or a headless
+    // subagent's. The glue's remote-box and computer sections differ for a
+    // computerUse or browserUse child (`prompt-collector-glue.ts`); until 24
+    // September 2026 the one glue and assembly, built with every flag false,
+    // served the children too, so a computer-use child read the agent's own
+    // prompt and none of its driving instructions.
+    interface PromptIdentity {
+      readonly isSubagentRunner: boolean;
+      readonly isComputerUseSubagent: boolean;
+      readonly isBrowserUseSubagent: boolean;
+      readonly subagentType?: string;
+    }
+    // Grok Bot's computerUse and browserUse children are box-scoped: no
+    // tools for the user's computer, no cloud agents, no transfers, no MCP,
+    // no user-info block, no time zone, and the last screenshot kept in
+    // context (turn-toolset.ts, turn-agent-composition.ts:305/775,
+    // system-prompt-assembly.ts:197). Until 24 September 2026 the flag was
+    // hard-coded false for every identity, so a child ran with the agent's
+    // toolset around Computer (docs/product/computer-use-child-audit-2026-09-24.md).
+    const isBoxScopedIdentity = (promptIdentity: PromptIdentity): boolean =>
+      promptIdentity.isSubagentRunner && (promptIdentity.isComputerUseSubagent || promptIdentity.isBrowserUseSubagent);
+    const AGENT_PROMPT_IDENTITY: PromptIdentity = { isSubagentRunner: false, isComputerUseSubagent: false, isBrowserUseSubagent: false };
+    const createPromptGlueFor = (promptIdentity: PromptIdentity) => productionContext === undefined
       || productionRequestContext === undefined
       ? undefined
       : (() => {
@@ -1279,9 +1369,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           remoteBox: remoteBoxForPrompt,
           userComputers,
           remoteBoxHasDesktop: true,
-          isSubagentRunner: false,
-          isComputerUseSubagent: false,
-          isBrowserUseSubagent: false,
+          isSubagentRunner: promptIdentity.isSubagentRunner,
+          isComputerUseSubagent: promptIdentity.isComputerUseSubagent,
+          isBrowserUseSubagent: promptIdentity.isBrowserUseSubagent,
           requestContext: productionRequestContext,
           ...(typeof hooks.agentProfileProvider === "function"
             ? { agentProfileProvider: () => hooks.agentProfileProvider?.() ?? { name: "", description: "" } }
@@ -1298,9 +1388,14 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           ...(mcpCustomInstructions === undefined
             ? {}
             : { mcp: { getCustomInstructions: async (_context: Context) => await mcpCustomInstructions() } }),
-          mcpConnectedServerNamesForTurn: () => [],
-          mcpCustomInstructionsForTurn: () => new Map(),
-          isMcpDiscoveryUnavailableForTurn: () => false,
+          // The per-turn MCP snapshot: refreshed by refreshMcpTurnSnapshot at
+          // every turn start (the shell's mcp.getTools below). Until 24
+          // September 2026 these were `[]`, an empty map and `false`, so the
+          // prompt never carried a connector's custom instructions and never
+          // said discovery had failed.
+          mcpConnectedServerNamesForTurn: () => mcpTurnSnapshot.connectedServerNames,
+          mcpCustomInstructionsForTurn: () => mcpTurnSnapshot.customInstructions,
+          isMcpDiscoveryUnavailableForTurn: () => mcpTurnSnapshot.discoveryUnavailable,
           shellWatchHost: () => {
             const store = session.agentStore;
             if (
@@ -1335,16 +1430,84 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           },
         });
       })();
-    const productionSystemPromptAssembly = productionContext === undefined
+    const productionPromptGlue = createPromptGlueFor(AGENT_PROMPT_IDENTITY);
+    // The roster the agent is told about: every other agent, and the groups
+    // it belongs to. Read live from the transcript on every prompt build.
+    const listAgentDirectory = (): ReturnType<NonNullable<SystemPromptAssemblyDependencies["agentDirectory"]>> => {
+      const roster = method(transcript, "listAgentsSync")?.() ?? [];
+      return roster
+        .filter((agent: any) =>
+          agent.id !== session.id &&
+          !agent.isGroup &&
+          agent.remoteRoom == null
+        )
+        .map((agent: any) => ({
+          id: agent.id,
+          name: agent.name,
+          description: agent.description
+        }));
+    };
+    const listAgentGroups = (): ReturnType<NonNullable<SystemPromptAssemblyDependencies["agentGroups"]>> => {
+      const roster = method(transcript, "listAgentsSync")?.() ?? [];
+      const byId = new Map(roster.map((agent: any) => [agent.id, agent]));
+      return roster
+        .filter((agent: any) =>
+          agent.isGroup && agent.memberIds.includes(session.id)
+        )
+        .map((group: any) => ({
+          id: group.id,
+          name: group.name,
+          members: group.memberIds
+            .filter((memberId: string) => memberId !== session.id)
+            .map((memberId: string) => byId.get(memberId))
+            .filter((member: any) => member != null)
+            .map((member: any) => ({
+              id: member.id,
+              name: member.name,
+              description: member.description
+            }))
+        }));
+    };
+    // The memory section of the prompt is frozen until the conversation is
+    // compacted (`resolveFrozenMemoryPrompt`); the epoch is the number of
+    // summaries so far, which is what a compaction adds. A constant epoch
+    // would freeze the first rendering for ever.
+    const readCompactionEpoch = (): number => {
+      try {
+        const state = (builtRunner as { getAgentConversationStateStructure?: () => unknown } | undefined)
+          ?.getAgentConversationStateStructure?.()
+          ?? method(session.agentStore ?? {}, "getConversationStateStructure")?.();
+        const archives = (state as { summaryArchives?: readonly unknown[] } | undefined)?.summaryArchives;
+        return Array.isArray(archives) ? archives.length : 0;
+      } catch {
+        return 0;
+      }
+    };
+    // The prompt's stores are the session's own, the ones bindSessionOwnedRunner
+    // hands the runner. Until 24 September 2026 every one of these was
+    // `() => null` (and the roster `() => []`), so the production prompt had
+    // no memory, no user or project memory, no automations, no workflows,
+    // no channels and an empty agent directory, whatever the agent had
+    // saved; the sections rendered as absent, not empty.
+    const createPromptAssemblyFor = (promptIdentity: PromptIdentity, glue: typeof productionPromptGlue) => productionContext === undefined
       || productionRequestContext === undefined
       ? undefined
       : createSystemPromptAssembly({
-          basePrompt: typeof overrides.systemPrompt === "string"
-            ? overrides.systemPrompt
-            : DEFAULT_SAND_SYSTEM_PROMPT,
-          isSubagentRunner: false,
+          // A child reads the reconstruction's own subagent prompt ("You are
+          // Simeon running as the computerUse subagent … end your turn with a
+          // concise final answer in plain text"), never the agent's brief.
+          // Until 24 September 2026 buildSandSubagentSystemPrompt had no
+          // caller, and a child read the 58,000-character agent brief that
+          // tells it to reply first with SendMessage and to delegate computer
+          // work to a subagent: it then waited for its own result.
+          basePrompt: promptIdentity.isSubagentRunner
+            ? buildSandSubagentSystemPrompt({ ...(promptIdentity.subagentType == null ? {} : { subagentType: promptIdentity.subagentType }) })
+            : typeof overrides.systemPrompt === "string"
+              ? overrides.systemPrompt
+              : DEFAULT_SAND_SYSTEM_PROMPT,
+          isSubagentRunner: promptIdentity.isSubagentRunner,
           isSharedRoomRunner: isSharedRoomTurn,
-          isSystemPromptOverridden: typeof overrides.systemPrompt === "string",
+          isSystemPromptOverridden: !promptIdentity.isSubagentRunner && typeof overrides.systemPrompt === "string",
           agentProfileProvider: () => hooks.agentProfileProvider?.() ?? null,
           agentStore: () => {
             const store = session.agentStore;
@@ -1352,12 +1515,12 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               ? { getMetadata: (key: string) => String(store.getMetadata(key)) }
               : null;
           },
-          compactionEpoch: () => 0,
-          memoryStore: () => null,
-          memorySnapshots: () => null,
-          userMemory: () => null,
-          projectMemory: () => null,
-          isBoxScopedSubagent: () => false,
+          compactionEpoch: readCompactionEpoch,
+          memoryStore: () => (session.memory ?? null) as ReturnType<SystemPromptAssemblyDependencies["memoryStore"]>,
+          memorySnapshots: () => (session.db ?? null) as ReturnType<SystemPromptAssemblyDependencies["memorySnapshots"]>,
+          userMemory: () => (runnerOptions.userMemory ?? null) as ReturnType<SystemPromptAssemblyDependencies["userMemory"]>,
+          projectMemory: () => (runnerOptions.projectMemory ?? null) as ReturnType<SystemPromptAssemblyDependencies["projectMemory"]>,
+          isBoxScopedSubagent: () => isBoxScopedIdentity(promptIdentity),
           requestContext: {
             resolve: () => {
               const resolved = productionRequestContext.resolve();
@@ -1369,32 +1532,35 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               };
             },
           },
-          automationStore: () => null,
-          workflowStore: () => null,
-          channelStore: () => null,
+          automationStore: () => (session.automations ?? null) as ReturnType<SystemPromptAssemblyDependencies["automationStore"]>,
+          workflowStore: () => (session.workflows ?? null) as ReturnType<SystemPromptAssemblyDependencies["workflowStore"]>,
+          channelStore: () => (session.channels ?? null) as ReturnType<SystemPromptAssemblyDependencies["channelStore"]>,
           connectorManifests: CONNECTOR_MANIFESTS,
           sendToAgentImpl: sendToAgent,
           agentManagement,
-          agentDirectory: () => [],
-          agentGroups: () => [],
+          agentDirectory: listAgentDirectory,
+          agentGroups: listAgentGroups,
           agentsRootDir: () => dirname(dirname(session.dbPath)),
           isSpotlightEnabled: () => method(experiments, "isSpotlightEnabled")?.() ?? false,
           isMultitaskEnabled: () => method(experiments, "isMultitaskEnabled")?.() ?? false,
           mcpManagement: () => mcp.management,
           isMcpMultiAccountEnabled: () => method(experiments, "isMcpMultiAccountEnabled")?.() ?? false,
-          isCloudAgentsDisabledByTeam: () => method(experiments, "isCloudAgentsDisabledByTeam")?.() ?? false,
-          mcpCustomInstructionsSection: () => productionPromptGlue?.getMcpCustomInstructionsSection() ?? null,
-          mcpDiscoveryStatusSection: () => productionPromptGlue?.getMcpDiscoveryStatusSection() ?? null,
-          remoteBoxSection: () => productionPromptGlue?.getRemoteBoxSection() ?? "",
-          computerSection: () => productionPromptGlue?.getComputerSection() ?? null,
+          // Coming Soon (shared/cloud-agents-availability.ts): the brief's
+          // cloud-agent sections are off unless the service is served.
+          isCloudAgentsDisabledByTeam: () => !isCloudAgentsServed() || (method(experiments, "isCloudAgentsDisabledByTeam")?.() ?? false),
+          mcpCustomInstructionsSection: () => glue?.getMcpCustomInstructionsSection() ?? null,
+          mcpDiscoveryStatusSection: () => glue?.getMcpDiscoveryStatusSection() ?? null,
+          remoteBoxSection: () => glue?.getRemoteBoxSection() ?? "",
+          computerSection: () => glue?.getComputerSection() ?? null,
         });
+    const productionSystemPromptAssembly = createPromptAssemblyFor(AGENT_PROMPT_IDENTITY, productionPromptGlue);
 
     const runnerOptions: Record<string, unknown> = {
       inference: extensions.api("inference").port,
       diskPressureReminder: foreverBox.diskPressureReminder,
       box: localExec.box,
       ctx,
-      ...(awaitCloudAgent === undefined
+      ...(awaitCloudAgent === undefined || !isCloudAgentsServed()
         ? {}
         : {
             cloudAgentWatcher: {
@@ -1473,41 +1639,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         )?.(platform) ?? false,
       resolveCloudAgentTitle,
       sendToAgent,
-      agentDirectory: () => {
-        const roster = method(transcript, "listAgentsSync")?.() ?? [];
-        return roster
-          .filter((agent: any) =>
-            agent.id !== session.id &&
-            !agent.isGroup &&
-            agent.remoteRoom == null
-          )
-          .map((agent: any) => ({
-            id: agent.id,
-            name: agent.name,
-            description: agent.description
-          }));
-      },
-      agentGroups: () => {
-        const roster = method(transcript, "listAgentsSync")?.() ?? [];
-        const byId = new Map(roster.map((agent: any) => [agent.id, agent]));
-        return roster
-          .filter((agent: any) =>
-            agent.isGroup && agent.memberIds.includes(session.id)
-          )
-          .map((group: any) => ({
-            id: group.id,
-            name: group.name,
-            members: group.memberIds
-              .filter((memberId: string) => memberId !== session.id)
-              .map((memberId: string) => byId.get(memberId))
-              .filter((member: any) => member != null)
-              .map((member: any) => ({
-                id: member.id,
-                name: member.name,
-                description: member.description
-              }))
-          }));
-      },
+      agentDirectory: listAgentDirectory,
+      agentGroups: listAgentGroups,
       agentManagement,
       agentsRootDir: () => dirname(dirname(session.dbPath))
     };
@@ -2083,10 +2216,11 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           toolName: SAND_EXTERNAL_READ_TOOL_NAME,
           toolIdentifier: "EXTERNAL_READ",
           toolDescription: SAND_EXTERNAL_READ_TOOL_DESCRIPTION,
-          // The immutable Mac and Windows carriers contain the lazy Piscina
-          // producer but omit pdf-worker.{js,ts}. Leaving the extractor absent
-          // preserves ordinary Read while making the unrecoverable PDF branch
-          // fail closed in createReadTool.
+          // Grok Bot's carriers held a Piscina producer for a pdf-worker file
+          // that was never shipped, so PDF reads threw "Read PDF worker is
+          // not bound". The extractor is in-process pdf.js now
+          // (runner/pdf-text-extractor.ts).
+          pdfTextExtractor: productionPdfTextExtractor,
         },
       }),
       createBoxReadToolInputs: (turn, _props): TurnReadToolFactoryInput => {
@@ -2101,9 +2235,62 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             toolName: SAND_BOX_READ_TOOL_NAME,
             toolIdentifier: "READ",
             toolDescription: SAND_BOX_READ_TOOL_DESCRIPTION,
+            pdfTextExtractor: productionPdfTextExtractor,
           },
         };
       },
+      // The box's computer, screenshot and browser tools. Their deps are the
+      // reconstruction's own (createTurnToolProjections, above), but until
+      // 24 September the only thing that applied them was the retired
+      // createRunStep path; the production shell's provider never offered
+      // them, so no turn on the shell had a computer tool: the agent had no
+      // Screenshot, and a dispatched computerUse subagent ran with Shell
+      // alone and narrated instead of driving the desktop. They drive the
+      // box, so they read the box's accessor, the way BoxRead does above.
+      ...(createTurnToolProjections === undefined
+        ? {}
+        : (() => {
+            const boxToolProjections = (
+              turn: TurnToolsetTurnInput,
+              props: TurnToolsetBuildProps,
+            ): ProductionTurnHostToolProjections => {
+              if (turn.remoteBoxResourceAccessor === undefined) {
+                throw new TypeError("remote box resource accessor is not bound");
+              }
+              return createTurnToolProjections({
+                ...props,
+                resourceAccessor: turn.remoteBoxResourceAccessor,
+              });
+            };
+            return {
+              createComputerToolInputs: (turn, props): TurnComputerToolFactoryInput => {
+                const create = boxToolProjections(turn, props).createComputerToolDependencies;
+                if (create === undefined) throw new TypeError("computer tool dependencies are not bound");
+                return { dependencies: create(props) };
+              },
+              // Bisect, 24 September 2026 (evening): the first build that
+              // offered the agent a Screenshot tool failed every turn with
+              // OpenAI's `server_error` at sequence 0. Screenshot is the one
+              // tool this build added to the agent's request; it is withheld
+              // until a turn is seen to work without it, then restored with
+              // whatever OpenAI needs (its schema is `{}`, like
+              // RestartMcpServers, which works; it carries no description).
+              ...(AGENT_SCREENSHOT_TOOL
+                ? {
+                    createScreenshotToolInputs: (turn: TurnToolsetTurnInput, props: TurnToolsetBuildProps): TurnComputerToolFactoryInput => {
+                      const create = boxToolProjections(turn, props).createScreenshotToolDependencies;
+                      if (create === undefined) throw new TypeError("screenshot tool dependencies are not bound");
+                      return { dependencies: create(props) };
+                    },
+                  }
+                : {}),
+              createBrowserToolInputs: (turn, props): TurnBrowserToolFactoryInput => {
+                const create = boxToolProjections(turn, props).createBrowserDriverDependencies;
+                if (create === undefined) throw new TypeError("browser tool dependencies are not bound");
+                return { dependencies: create(props) };
+              },
+            } satisfies Partial<TurnToolsetHostFactoryProvider>;
+          })()),
       ...(turnInputs?.webSearch === undefined
         && method(extensions.api("inference"), "createWebSearch") === undefined
         ? {}
@@ -2167,7 +2354,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           },
               }),
             }),
-        ...(!isSharedRoomTurn && cloudAgent !== undefined
+        ...(!isSharedRoomTurn && cloudAgent !== undefined && isCloudAgentsServed()
           ? {
               createCloudAgentToolInputs: (): TurnCloudAgentToolFactoryInput => ({
                 dependencies: {
@@ -2302,24 +2489,77 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         cloudAgent: "off",
         subagentLaunch: "off",
       };
+      // The subagent types the Task tool may dispatch. Until 24 September
+      // this was `[]`, so the tool existed and refused every dispatch with
+      // "No subagent types are available"; the composition's
+      // buildSubagentConfigsForRun was never called by the production path.
+      // Same rule as there: computerUse (and browserUse when its gate is on)
+      // when the box has a desktop and answers, plus the executor when
+      // multitask is on.
+      // One production shell, built for an identity: the agent's own turn,
+      // or a headless subagent's (a Task the agent dispatched). Until 24
+      // September only the agent had a shell; a subagent runner was built
+      // with no shell at all and, with no engine bound in
+      // production either, its run returned nothing and every Task ended in
+      // "production subagent result is not bound".
+      const buildProductionTurnRunShell = (identity: {
+        readonly conversationId: string;
+        readonly isSubagentRunner: boolean;
+        readonly subagentType?: string;
+        readonly interrupt?: (reason: string) => void;
+      }) => {
+      const isComputerUseTurn = identity.isSubagentRunner && isComputerUseSubagentType(identity.subagentType);
+      const isBrowserUseTurn = identity.isSubagentRunner && isBrowserUseSubagentType(identity.subagentType);
+      // A child's prompt is built for its own identity (computer or browser
+      // sections, no SendMessage/MCP sections); the agent keeps the shared one.
+      const promptIdentity: PromptIdentity = {
+        isSubagentRunner: identity.isSubagentRunner,
+        isComputerUseSubagent: isComputerUseTurn,
+        isBrowserUseSubagent: isBrowserUseTurn,
+        ...(identity.subagentType == null ? {} : { subagentType: identity.subagentType }),
+      };
+      const isBoxScopedTurn = isBoxScopedIdentity(promptIdentity);
+      const promptGlue = identity.isSubagentRunner
+        ? createPromptGlueFor(promptIdentity) ?? productionPromptGlue
+        : productionPromptGlue;
+      const promptAssembly = identity.isSubagentRunner
+        ? createPromptAssemblyFor(promptIdentity, promptGlue) ?? productionSystemPromptAssembly
+        : productionSystemPromptAssembly;
+      // Which prompt this shell serves, on the host log's channel: a child
+      // that fell back to the agent's own glue or assembly would read the
+      // agent's brief and behave as the parent (24 September 2026).
+      logHostLine(`${HOST_LOG_PREFIX} prompt conversation=${identity.conversationId} identity=${isComputerUseTurn ? "computerUse" : isBrowserUseTurn ? "browserUse" : identity.isSubagentRunner ? `subagent:${identity.subagentType ?? "?"}` : "agent"} glue=${identity.isSubagentRunner ? (promptGlue === productionPromptGlue ? "agent-fallback" : "own") : "agent"} assembly=${identity.isSubagentRunner ? (promptAssembly === productionSystemPromptAssembly ? "agent-fallback" : "own") : "agent"} boxScoped=${isBoxScopedTurn}`);
+      const resolveSubagentConfigs = (): readonly TaskSubagentModelConfig[] => {
+        const configs: unknown[] = [];
+        if (method(remoteBox, "isAvailable")?.() !== false) {
+          const browserUseOffered = method(experiments, "isBrowserUseSubagentEnabled")?.() === true;
+          configs.push(createSandComputerUseSubagentConfig({ browserUseOffered }));
+          if (browserUseOffered) configs.push(createSandBrowserUseSubagentConfig());
+        }
+        if (typeof overrides.systemPrompt !== "string" && method(experiments, "isMultitaskEnabled")?.() === true) configs.push(createSandExecutorSubagentConfig());
+        // The same plain-object configs turn-agent-composition builds; the
+        // Task tool reads `subagent_type.type.case` and `.value.name` off them.
+        return configs as unknown as readonly TaskSubagentModelConfig[];
+      };
       const baseTurn: TurnToolsetTurnInput = {
         autoReviewModes,
-        subagentConfigs: [],
+        // A subagent gets no Task tool of its own (buildTurnTools reads `undefined` as "none").
+        ...(identity.isSubagentRunner ? {} : { subagentConfigs: resolveSubagentConfigs() }),
       };
       const staticModelId = process.env.SAND_AGENT_MODEL ?? DEFAULT_SAND_MODEL;
       const lazyToolHost = () => createProductionTurnToolsetHost({
         turn: baseTurn,
         factoryProvider: createTurnToolsetFactoryProvider(hostDependencies()),
-        isSubagentRunner: false,
+        isSubagentRunner: identity.isSubagentRunner,
         isSharedRoomRunner: isSharedRoomTurn,
-        isBoxScopedSubagent: false,
-        isComputerUseSubagent: false,
-        isBrowserUseSubagent: false,
+        isBoxScopedSubagent: isBoxScopedTurn,
+        isComputerUseSubagent: isComputerUseTurn,
+        isBrowserUseSubagent: isBrowserUseTurn,
         isSystemPromptOverridden: typeof overrides.systemPrompt === "string",
         remoteBoxHasDesktop: true,
-        getConversationId: () => session.id,
+        getConversationId: () => identity.conversationId,
         getRemoteBoxAvailable: () => method(remoteBox, "isAvailable")?.() !== false,
-        cloudAgentsDisabledByTeam: () => method(experiments, "isCloudAgentsDisabledByTeam")?.() ?? false,
+        cloudAgentsDisabledByTeam: () => !isCloudAgentsServed() || (method(experiments, "isCloudAgentsDisabledByTeam")?.() ?? false),
         spotlightEnabled: () => method(experiments, "isSpotlightEnabled")?.() ?? false,
         isDynamicToolsEnabled: () => method(experiments, "isDynamicToolsEnabled")?.() ?? false,
         isMultitaskEnabled: () => method(experiments, "isMultitaskEnabled")?.() ?? false,
@@ -2341,7 +2581,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         }
         throw new TypeError("production Agent conversation state is not bound");
       };
-      runnerOptions.productionTurnRunShell = createProductionTurnRunShellHostInput({
+      return createProductionTurnRunShellHostInput({
         createAgentOwnerInput: ({ requestId, runOptions, context, cancelThisRun, emitUpdate }) => {
           if (session.agentStore == null || typeof session.agentStore.getBlobStore !== "function") {
             throw new TypeError("production Agent blob store is not bound");
@@ -2395,6 +2635,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           );
           const turn: TurnToolsetTurnInput = {
             ...baseTurn,
+            ...(identity.isSubagentRunner ? {} : { subagentConfigs: resolveSubagentConfigs() }),
             emitUpdate,
             cancelThisRun,
             ...(runOptions.ackToken === undefined
@@ -2415,17 +2656,49 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           };
           return {
             context,
-            conversationId: session.id,
+            conversationId: identity.conversationId,
             requestId,
             inference: createTypedInferenceOwner(extensions.api("inference").port),
             onRequestId: requestIdForwarder(hooks, "agent"),
-            isSubagentRunner: false,
+            // The turn's model id, so it reaches the executor. Until 24
+            // September the owner input carried none and every turn fell
+            // through to the executor's default whatever SAND_AGENT_MODEL
+            // said; the executor still ignores an id the proxy does not
+            // serve (`isConfiguredClaidorModelId`).
+            modelId: staticModelId,
+            isSubagentRunner: identity.isSubagentRunner,
+            // The computer/browser subagent flags pick its tools and put its
+            // turns on the cheap model at low effort (`claidorModelForSession`).
+            isComputerUseSubagent: isComputerUseTurn,
+            isBrowserUseSubagent: isBrowserUseTurn,
             isSilenceAllowed: runOptions.isSilenceAllowed === true,
             ...(runOptions.ackToken === undefined
               ? {}
               : { ackToken: runOptions.ackToken }),
+            // A turn nobody asked for (the intro, a reply nudge, a routine,
+            // a revival) is marked `hidden` by its caller and gets the
+            // 40-call budget in createProviderPromptSession. Until 25
+            // September 2026 this input dropped the flag, so every hidden
+            // turn ran with the asked-turn cap of 5,000
+            // (docs/product/design-audit-ledger.md F-001, F-015, F-117).
+            ...(runOptions.hidden === undefined
+              ? {}
+              : { hidden: runOptions.hidden === true }),
+            // The turn's prompt messages, for turn-settle's silent-tool-call
+            // check (the closing-send nudge) and post-turn labelling. A
+            // child runs headless and has no nudge; the agent's runner takes
+            // the getter (F-020).
+            ...(identity.isSubagentRunner
+              ? {}
+              : {
+                  onLatestPromptMessages: (getter: () => readonly unknown[]) => {
+                    const runner = builtRunner as { setLatestPromptMessagesGetter?: (value: () => readonly unknown[]) => void } | undefined;
+                    runner?.setLatestPromptMessagesGetter?.(getter);
+                  },
+                }),
             canUseSelfSummary: () => true,
             cancelThisRun: reason => {
+              if (identity.interrupt != null) { identity.interrupt(reason.reason); return; }
               const runner = builtRunner as { interrupt?: (value: string) => boolean } | undefined;
               runner?.interrupt?.(reason.reason);
             },
@@ -2444,6 +2717,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 agentId: string,
                 args: SubagentAdapterArgs,
               ): SubagentSession => {
+                let childRunner: Runner | undefined;
                 const child = deps.buildRunner({
                   ...runnerOptions,
                   conversationId: agentId,
@@ -2455,8 +2729,18 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                     summaryArchives: [],
                     turnTimings: [],
                   },
-                  productionTurnRunShell: undefined,
+                  // The subagent's own production shell (see buildProductionTurnRunShell).
+                  productionTurnRunShell: buildProductionTurnRunShell({
+                    conversationId: agentId,
+                    isSubagentRunner: true,
+                    subagentType: args.subagentType,
+                    interrupt: reason => childRunner?.interrupt(reason),
+                  }),
+                  // A subagent is headless: nothing it streams reaches the user's
+                  // chat; its text comes back to the agent as the Task's result.
+                  transport: undefined,
                 });
+                childRunner = child;
                 bindSessionOwnedRunner(child);
                 ownedRunners.add(child);
                 return {
@@ -2505,6 +2789,19 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 autoReviewGate: {
                   assertNoPendingApproval: () => turnAutoReviewGate.assertNoPendingApproval(),
                 },
+                // The launch of a subagent is reviewed on its own surface; until
+                // 25 September 2026 the production input carried no reviewer
+                // and the subagentLaunch column was inert (ledger F-021).
+                subagentReview: {
+                  isSubagentRunner: isSharedRoomTurn,
+                  mode: autoReviewModes.subagentLaunch,
+                  agentId: session.id,
+                  autoReviewGate: {
+                    assertNoPendingApproval: () => turnAutoReviewGate.assertNoPendingApproval(),
+                  },
+                  ...(autoReviewController == null ? {} : { autoReviewController }),
+                  getApprovalExpiryPolicy: () => sandAutoReviewApprovalExpiryPolicy("turn"),
+                },
                 actionAuditor: projectedActionAuditor,
                 agentId: session.id,
               };
@@ -2517,17 +2814,17 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             staticConfig: {
               modelId: staticModelId,
               agentTokenLimit: CLAIDOR_WORKING_CONTEXT_TOKENS,
-              conversationId: session.id,
-              isBoxScopedSubagent: false,
-              isSubagentRunner: false,
+              conversationId: identity.conversationId,
+              isBoxScopedSubagent: isBoxScopedTurn,
+              isSubagentRunner: identity.isSubagentRunner,
               isSharedRoomRunner: isSharedRoomTurn,
               sandSendMessageDeliveryOwed: method(experiments, "isSendMessageDeliveryOwedEnabled")?.() ?? false,
-              systemPromptGenerator: () => productionSystemPromptAssembly?.getSystemPrompt() ?? DEFAULT_SAND_SYSTEM_PROMPT,
+              systemPromptGenerator: () => promptAssembly?.getSystemPrompt() ?? DEFAULT_SAND_SYSTEM_PROMPT,
             },
             emitUpdate,
             interactionObservers: {},
             diskPressureReminder: foreverBox.diskPressureReminder,
-            ...(productionSystemPromptAssembly === undefined
+            ...(promptAssembly === undefined
               ? {}
               : (() => {
                   const profilePromptSnapshotStore = asPromptSnapshotStore(session.db);
@@ -2539,30 +2836,71 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           } satisfies ProductionTurnAgentOwnerInput;
         },
         promptOptions: (_prompt, options) => toGeneratedTurnPromptOptions(options),
-        assembleGeneratedTurnAction: productionPromptGlue.assembleGeneratedTurnAction,
-        compactionEpoch: () => 0,
+        assembleGeneratedTurnAction: promptGlue.assembleGeneratedTurnAction,
+        compactionEpoch: readCompactionEpoch,
         getConversationState: getProductionConversationState,
         ...(mcp.mcp != null && typeof mcp.mcp.getTools === "function"
           ? {
               mcp: {
-                getTools: (runContext: Context) => mcp.mcp.getTools(runContext),
+                getTools: async (runContext: Context) => {
+                  try {
+                    const tools = await mcp.mcp.getTools(runContext);
+                    await refreshMcpTurnSnapshot(false);
+                    return tools;
+                  } catch (error) {
+                    await refreshMcpTurnSnapshot(true);
+                    throw error;
+                  }
+                },
                 refreshAccountConfig: () => mcp.mcp.refreshAccountConfig(),
               },
             }
           : {}),
         createSession: owner => ({
           getModelId: () => owner.runContext.sessions.agent.getModelId(),
-          getExecutor: () => createTextExecutor(owner.runContext.toolSession.getExecutor()),
+          // The settle's only use of this executor is memory extraction and
+          // the episode narrative, which the model-roles table puts on the
+          // cheap model at low effort, built the way the memory extension
+          // builds its own synthesis session (memory/production.ts). Until 25
+          // September 2026 this was the agent's own tool session, Terra at
+          // high with the reply-reminder middlewares (F-066).
+          getExecutor: () => createTextExecutor(
+            extensions.api("inference").port.createSession(() => {}, {
+              modelId: SAND_SUMMARIZATION_MODEL_ID,
+              isSummarizationSession: true,
+              skipLabeling: true,
+              // Nobody asked for the extraction: the hidden budget applies.
+              hidden: true,
+            }).getExecutor(),
+          ),
         }),
         context: () => productionContext,
         createSettleHost: createProductionTurnSettleHost,
         profilePromptSnapshots: () => session.db,
-        isSubagentRunner: false,
+        // Memory from conversation, for the agent's own shell only: a child
+        // runs headless and must not write into the agent's memory.
+        ...(identity.isSubagentRunner
+          ? {}
+          : {
+              memoryStore: () => (session.memory ?? undefined) as ReturnType<NonNullable<TurnRunShellHost["memoryStore"]>>,
+              episodeProgress: () => session.db as ReturnType<NonNullable<TurnRunShellHost["episodeProgress"]>>,
+              isMemorableExchange,
+            }),
+        isSubagentRunner: identity.isSubagentRunner,
         subagents: { sessions: new Map() },
-        getConversationId: () => session.id,
+        getConversationId: () => identity.conversationId,
         runGeneration: () => (builtRunner as { currentRunGeneration?: number } | undefined)?.currentRunGeneration ?? 0,
         setActiveTurnRequestSource: () => {},
-        beginAutoReviewUserMessageEpoch: () => {},
+        // A new message from the person retires the approvals and the
+        // refusals of the previous direction, the way Grok Bot's runner does
+        // (sand-agent-runner.ts); until 25 September 2026 both were no-ops on
+        // the production shell (ledger F-343, F-344).
+        beginAutoReviewUserMessageEpoch: () => {
+          if (!identity.isSubagentRunner) {
+            autoReviewController?.beginUserMessageEpoch();
+            method(localToolPermission, "beginTurn")?.(session.id);
+          }
+        },
         setActiveRunInterrupted: () => {},
         setAwaitingUserSelection: () => {},
         isAwaitingUserSelection: () => false,
@@ -2573,6 +2911,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           : { lastReactionApplied: () => hooks.transport.lastReactionApplied?.() === true }),
         cancelThisRun: () => {},
       });
+      };
+      runnerOptions.productionTurnRunShell = buildProductionTurnRunShell({ conversationId: session.id, isSubagentRunner: false });
     }
 
     if (deps.createRunStep != null && runnerOptions.productionTurnRunShell === undefined) {
@@ -2588,6 +2928,13 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
     function bindSessionOwnedRunner(runner: Runner): void {
       runner.setAgentStore(session.agentStore, hooks.agentProfileProvider);
       runner.setMemoryStore(session.memory);
+      // A memory change thaws the frozen memory section of the prompt, the
+      // way the pane's delete already does; until 25 September 2026 a fact
+      // the agent saved stayed out of its own memory section until the next
+      // compaction (design-audit-ledger.md F-067).
+      (session.memory as { setOnChange?: (listener: (() => void) | null) => void } | null)?.setOnChange?.(() => {
+        (session.db as { clearMemoryPromptSnapshot?: () => void } | null)?.clearMemoryPromptSnapshot?.();
+      });
       runner.setUserMemory(runnerOptions.userMemory);
       runner.setProjectMemory(runnerOptions.projectMemory);
       runner.setMemorySnapshotStore(session.db);

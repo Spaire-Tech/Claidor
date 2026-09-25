@@ -836,7 +836,7 @@ function asGeneratedMcpMetaToolOptions(
       ...(tool.description === undefined ? {} : { description: tool.description }),
       ...(typeof tool.inputSchema === "string"
         ? { inputSchemaJson: tool.inputSchema }
-        : {}),
+        : tool.inputSchema == null ? {} : { inputSchemaJson: JSON.stringify(tool.inputSchema) }),
     }));
   }
   for (const descriptor of descriptors.values()) {

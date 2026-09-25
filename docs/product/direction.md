@@ -133,7 +133,9 @@ edge, with the list of agents live beside them; Settings covers the
 whole window (17 September: "open settings as a full page"); a menu
 floats beside what opened it. The founder's rule, in capitals: *"NOTHING
 SHOULD OPEN INSIDE ANOTHER BOX."* Routines is in the dock and does
-nothing yet, at the founder's word.
+nothing yet, at the founder's word (that is the `frontend/` canvas, which
+`npm run package` does not ship; the shipped Routine panel is the pinned
+renderer's, and cron routines do fire from it while Simeon is open).
 
 ## 2. The message vocabulary
 
@@ -163,7 +165,7 @@ OpenUI — `docs/product/artifacts-decision.md`.)
 | Kind | What it is | When |
 |---|---|---|
 | `roster` | "Your starter team" — a multi-select of agents to stand up, each swappable in place | 16 September |
-| `connector` | an agent proposing a service: logo, name, one line, Not now and Install | 17 September |
+| `connector` | an agent proposing a service: logo, name, one line, Not now and Install | 17 September (built 25 September 2026: `ProposeConnector` → the connector card with the agent's reason and Add; "Not now" is leaving the card, the pinned renderer has no dismiss button) |
 
 No step cards. No tool logs. No thinking blocks. No raw blobs.
 
@@ -314,7 +316,10 @@ A kit carries no identity — no name for the agent, no prompt, no orb
 palette. A role agent is therefore *a kit plus an agent record*. The
 `agents` table already holds `skillIds`, so the join already exists.
 
-**And the pipe is already built and live.** `server/polar/desktop/
+**And the pipe is already built and live.** *(Corrected 25 September
+2026: the routes are served and nothing in `desktop/` calls them since
+the re-founding; the pinned renderer has no kit-store screen and skills
+come from marketplace plugins.)* `server/polar/desktop/
 endpoints.py:513` serves `/api/kit-store` and returns an empty list — measured
 from this container on 18 September:
 `GET https://api.claidor.com/desktop/api/kit-store` → `200`,
@@ -365,14 +370,18 @@ header. Keep the icon; keep all of it behind the icon.
 ## 8. Connectors
 
 The design's catalogue is about fifty services across nine categories.
-Our MCP registry has fifteen. The founder is handling the gap and asked
+Our MCP registry has fifteen. *(Corrected 25 September 2026: the store
+is `shared/node/vendor-mcp/catalog.ts`, 39 rows in 11 groups, 21 live
+and 18 coming soon.)* The founder is handling the gap and asked
 me not to cost it.
 
 What is decided: **each connector carries context**, drawn from
 `github.com/cursor/plugins`. Some need sign-in.
 
 What is open: **how sign-in happens — Pipedream, or the browser.** The
-founder has not chosen.
+founder has not chosen. *(Decided 24 September 2026: the browser, against
+the vendors' own MCP servers, `docs/product/connectors-signin-measured.md`.
+The Pipedream router below is mounted and has no caller in the app.)*
 
 One thing to put in front of that choice: `server/polar/connectors/` is
 already a working Pipedream Connect integration —
@@ -455,7 +464,7 @@ So the runner lives, and the line is not "no cloud" but this:
 | their files living on it | no files on it; memory in, memory out, directory deleted |
 | apps and packages installed on it | nothing installed, nothing to install |
 | an update and a reset surface for it | never mentioned in the app at all |
-| an egress tunnel to reach it | — |
+| an egress tunnel to reach it | — (the controller stays in the tree behind `SAND_EGRESS_TUNNEL_ENABLED`, never set; the box no longer publishes its port 8790, 25 September 2026) |
 
 The differentiator survives because it was never about where a process
 runs. It is about **where the file is when it is worked on**. A routine
@@ -465,7 +474,12 @@ a machine it owns, we lose the sentence — and that is the thing to
 guard, not the runner.
 
 What this means in the app: Routines is one of the five agent tabs, and
-a routine set there keeps running when the Mac sleeps. The person is
+a routine set there keeps running when the Mac sleeps. **Measured against the code, 25
+September 2026:** it fires while the Mac is awake, with Simeon open or
+closed (the box outlives the app for an enabled routine and renews its own
+model credential); it cannot fire with the Mac asleep or off, and running
+elsewhere needs a headless executor that runs the Grok Bot loop (the maty
+queue has none). The person is
 never asked which computer, never shown the runner, and never told their
 work happens elsewhere, because as far as their files are concerned it
 does not.

@@ -84,9 +84,9 @@ export const reconstructedExecutableName = reconstructedName;
  * unconditionally, which is a token rotation before every model call.
  */
 export const packagedEnvironment = Object.freeze({
-  CURSOR_API_BASE_URL: process.env.CAISRA_BACKEND_URL?.trim() || "https://api.claidor.com",
-  CURSOR_WEBSITE_URL: process.env.CAISRA_BACKEND_URL?.trim() || "https://api.claidor.com",
-  SAND_BACKEND_URL: process.env.CAISRA_BACKEND_URL?.trim() || "https://api.claidor.com",
+  CURSOR_API_BASE_URL: process.env.CAISRA_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
+  CURSOR_WEBSITE_URL: process.env.CAISRA_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
+  SAND_BACKEND_URL: process.env.CAISRA_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
 });
 export const fidelityBundleId = "com.anysphere.sand.reconstructed.fidelity";
 export const fidelityName = "Grok Bot 0.18 Fidelity";

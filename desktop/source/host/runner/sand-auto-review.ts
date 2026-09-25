@@ -15,7 +15,11 @@ export interface SandAutoReviewModes {
   readonly boxShell: SandAutoReviewMode;
   readonly mcp: SandAutoReviewMode;
   readonly computer: SandAutoReviewMode;
-  readonly automationWrite: "off";
+  // Grok Bot 0.18 shipped this surface pinned "off" in every table (a
+  // not-yet-rolled-out marker). Since 25 September 2026 it follows the
+  // others: the classifier runs on Luna through Simeon Labs' proxy and
+  // the confirm card path is complete (design-audit-ledger.md F-034).
+  readonly automationWrite: SandAutoReviewMode;
   readonly cloudAgent: SandAutoReviewMode;
   readonly subagentLaunch: SandAutoReviewMode;
 }
@@ -59,12 +63,12 @@ export function sandAutoReviewApprovalExpiryPolicy(source: string): SandAutoRevi
 }
 
 export const SAND_AUTO_REVIEW_MODES_OFF: SandAutoReviewModes = Object.freeze({ hostShell: "off", boxShell: "off", mcp: "off", computer: "off", automationWrite: "off", cloudAgent: "off", subagentLaunch: "off" });
-export const SAND_AUTO_REVIEW_MODES_SHADOW: SandAutoReviewModes = Object.freeze({ hostShell: "shadow", boxShell: "shadow", mcp: "shadow", computer: "shadow", automationWrite: "off", cloudAgent: "shadow", subagentLaunch: "shadow" });
-export const SAND_AUTO_REVIEW_MODES_ENFORCE: SandAutoReviewModes = Object.freeze({ hostShell: "enforce", boxShell: "enforce", mcp: "enforce", computer: "enforce", automationWrite: "off", cloudAgent: "enforce", subagentLaunch: "enforce" });
+export const SAND_AUTO_REVIEW_MODES_SHADOW: SandAutoReviewModes = Object.freeze({ hostShell: "shadow", boxShell: "shadow", mcp: "shadow", computer: "shadow", automationWrite: "shadow", cloudAgent: "shadow", subagentLaunch: "shadow" });
+export const SAND_AUTO_REVIEW_MODES_ENFORCE: SandAutoReviewModes = Object.freeze({ hostShell: "enforce", boxShell: "enforce", mcp: "enforce", computer: "enforce", automationWrite: "enforce", cloudAgent: "enforce", subagentLaunch: "enforce" });
 
 export function resolveSandAutoReviewModes(args: { readonly settingsEnabled: boolean; readonly enforceEnabled: boolean; readonly localOverride?: SandAutoReviewMode }): SandAutoReviewModes {
   if (!args.settingsEnabled) return SAND_AUTO_REVIEW_MODES_OFF;
-  if (args.localOverride !== undefined) return { hostShell: args.localOverride, boxShell: args.localOverride, mcp: args.localOverride, computer: args.localOverride, automationWrite: "off", cloudAgent: args.localOverride, subagentLaunch: args.localOverride };
+  if (args.localOverride !== undefined) return { hostShell: args.localOverride, boxShell: args.localOverride, mcp: args.localOverride, computer: args.localOverride, automationWrite: args.localOverride, cloudAgent: args.localOverride, subagentLaunch: args.localOverride };
   return args.enforceEnabled ? SAND_AUTO_REVIEW_MODES_ENFORCE : SAND_AUTO_REVIEW_MODES_SHADOW;
 }
 

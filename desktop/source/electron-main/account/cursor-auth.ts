@@ -1,6 +1,5 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import {
-  DEFAULT_CURSOR_BACKEND_URL,
   getAuthClientId,
   getConfiguredBackendUrl,
   isDevAuthBackend,
@@ -56,8 +55,8 @@ const SIGN_IN_CONFIRMATION_FAILED_STATUS = { kind: "logged-out", errorMessage: "
 const SIGN_IN_EXPIRED_STATUS = { kind: "logged-out", errorMessage: "Claidor sign-in expired. Sign in again to run Simeon." } as const;
 const SIGN_IN_POLICY_VIOLATION_STATUS = { kind: "logged-out", errorMessage: SIGN_IN_POLICY_VIOLATION_MESSAGE } as const;
 const LOGIN_DID_NOT_FINISH_STATUS = { kind: "logged-out", errorMessage: "Sign-in did not finish. Try again." } as const;
-const ACCOUNT_REFUSED_STATUS = { kind: "logged-out", errorMessage: "This computer is linked to another Claidor account. Sign in with that account to continue." } as const;
-const ACCOUNT_REFUSED_CREDENTIALS_RETAINED_STATUS = { kind: "logged-out", errorMessage: "This computer is linked to another Claidor account. Simeon couldn't remove the saved sign-in, so the account may return after restart. Sign in with the linked account to continue." } as const;
+const ACCOUNT_REFUSED_STATUS = { kind: "logged-out", errorMessage: "This computer is linked to another Simeon account. Sign in with that account to continue." } as const;
+const ACCOUNT_REFUSED_CREDENTIALS_RETAINED_STATUS = { kind: "logged-out", errorMessage: "This computer is linked to another Simeon account. Simeon couldn't remove the saved sign-in, so the account may return after restart. Sign in with the linked account to continue." } as const;
 
 function base64UrlEncode(bytes: Uint8Array): string { return Buffer.from(bytes).toString("base64url"); }
 export function createLoginMetadata(): { challenge: string; metadata: LoginMetadata } {
@@ -180,6 +179,8 @@ export interface SandCursorAuthServiceOptions {
   readonly reportFailure?: (operation: string, error: unknown) => void;
   readonly now?: () => number;
   readonly getBackendUrl?: () => string;
+  /** Tells the server the session is over, before the keychain is emptied. Best effort; its outcome never changes the local sign-out. */
+  readonly revokeSession?: (accessToken: string) => Promise<unknown>;
 }
 
 const defaultSecrets: CursorSecretStore = {
@@ -276,7 +277,12 @@ export class SandCursorAuthService {
   }
   async getValidAccessToken(options?: { readonly backendUrl?: string }): Promise<string> {
     const operationEpoch = this.authOperationEpoch; if (this.credentialUseRevoked) throw new SandAuthSignInRequiredError();
-    const backendUrl = options?.backendUrl ?? DEFAULT_CURSOR_BACKEND_URL;
+    // The refresh goes to the configured backend (Claidor), never to Cursor's
+    // default host. Until 24 September a caller that named no backend
+    // (dictation, avatar generation) refreshed against api2.cursor.sh when the
+    // token was within five minutes of expiry; the non-2xx there revoked the
+    // credentials and signed the person out (`runRefreshAccessToken`).
+    const backendUrl = options?.backendUrl ?? this.options.getBackendUrl?.() ?? getConfiguredBackendUrl();
     const [accessToken, refreshToken] = await Promise.all([this.secrets.readSecret(ACCESS_TOKEN_SECRET_KEY), this.secrets.readSecret(REFRESH_TOKEN_SECRET_KEY)]);
     if (!this.isCurrentAuthOperation(operationEpoch) || this.credentialUseRevoked || accessToken == null || refreshToken == null) throw new SandAuthSignInRequiredError();
     return shouldRefreshAccessToken(backendUrl, accessToken) ? await this.refreshAccessToken({ backendUrl, operationEpoch, refreshToken }) : accessToken;
@@ -300,7 +306,14 @@ export class SandCursorAuthService {
   private async revokeCredentials(options: { emitStatus: boolean; cause: SessionSignoutCause; loggedOutStatus?: SandAuthStatus }): Promise<SandAuthStatus> {
     const logoutOperationEpoch = this.advanceAuthOperationEpoch(); this.abortActiveLogin(); const startedRetained = this.credentialState === "retained-after-failed-logout"; const status = options.loggedOutStatus ?? LOGGED_OUT_STATUS;
     if (!startedRetained) { this.credentialState = "revoked"; this.reportedLoggedOutStatus = status; } this.profileCache.clear();
-    const { failures, settlement } = await this.mutateCredentials(async () => { const token = await this.readDepartingSessionToken(); const failures = await this.removeStoredCredentials(); if (token == null || this.signoutSettled) return { failures }; this.signoutSettled = true; return { failures, settlement: { kind: "signed_out" as const, cause: options.cause, durable: failures.length === 0, accessToken: token } }; });
+    // The server session is revoked with the departing token before the
+    // keychain entries go (`revokeSession`, wired to `POST /desktop/api/auth/logout`
+    // on Simeon Labs' server by `cursor-auth-wiring.ts`). Until 24 September
+    // 2026 nothing here told the server anything: sign-out was the two
+    // `deleteSecret` calls and the session stayed live until its refresh
+    // token expired. The call is awaited so the token is still in hand,
+    // and its failure is swallowed so it can never keep a person signed in.
+    const { failures, settlement } = await this.mutateCredentials(async () => { const token = await this.readDepartingSessionToken(); if (token != null && this.options.revokeSession != null) { try { await this.options.revokeSession(token); } catch (error) { this.reportFailure("session-revoke", error); } } const failures = await this.removeStoredCredentials(); if (token == null || this.signoutSettled) return { failures }; this.signoutSettled = true; return { failures, settlement: { kind: "signed_out" as const, cause: options.cause, durable: failures.length === 0, accessToken: token } }; });
     const current = this.isCurrentAuthOperation(logoutOperationEpoch); const retained = current && (options.emitStatus ? startedRetained || failures.length > 0 : startedRetained && failures.length > 0); if (current) this.credentialState = retained ? "retained-after-failed-logout" : "revoked";
     if (settlement != null) { this.options.reportSessionSettlement?.(settlement); reportSigninSignout(settlement.durable ? signinSignoutCause(settlement.cause) : "retained_after_failed_logout"); }
     const reported = retained ? RETAINED_AFTER_FAILED_LOGOUT_STATUS : status; if (current && options.emitStatus) this.emitStatus(reported);

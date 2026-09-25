@@ -178,9 +178,30 @@ Grok Bot runs its loop; summarization, memory and the computer and browser
 subagents run on Luna at `effort: low`, the way Grok Bot runs computer use.
 Until this the executor sent no effort and every call ran at OpenAI's
 default. Done-or-continue is Grok Bot's nudge mechanism, unchanged. Risky-or-
-safe is Cursor's server-side classifier, which Claidor does not serve, so
-auto-review is effectively off; do not invent an app-side model for it.
+safe was Cursor's server-side classifier; since 24 September it runs on
+Luna through Simeon Labs' proxy, and **since 25 September it enforces**:
+the box host reads Simeon's gate table (`applySimeonGateDefaults` in
+`host/extensions/experiments/extension.ts`, which only the Mac applied
+before, so every surface resolved to shadow: one Luna call per action,
+verdict discarded, no card) and `sand_auto_review` is on in
+`simeon-gate-defaults.ts`. A blocked shell command, computer action,
+routine write or subagent launch now draws the `auto-review-approval` card
+with the classifier's reason; MCP calls are still not classified (the
+approval provider projection is absent, `host-production-activation.mjs`).
+A new message from the person retires the previous direction's approvals
+and refusals (`beginAutoReviewUserMessageEpoch`, `beginTurn`), which the
+production shell never did. `tests/auto-review-enforce.test.mjs`. Not yet
+run on a Mac: a blocked command's card, and whether the pinned renderer
+draws the surface.
 Escalation to Astra comes after, on the rule `pricing.py` already states.
+**Found 24 September: until then a turn's model id never reached the
+executor.** The owner input built in `host-runner-composition.ts`
+(`createAgentOwnerInput`) carried no `modelId`, so every turn fell
+through to the executor's default whatever `SAND_AGENT_MODEL` said; it
+now passes `staticModelId`, and the executor still ignores an id the
+proxy does not serve. A cross-lab roster with per-seat routes was built
+on top of this the same day and reverted at the founder's word ("i'll
+keep the grok bot idea for now. v1."); only this fix stayed.
 `docs/product/model-roles-measured.md` is the record, with the two lines to
 read on the Mac (effort on the wire, cached tokens on step two).
 
@@ -191,12 +212,193 @@ proxy's meter (`docs/product/spend-guards.md`). Now: the proxy refuses at
 allowance is near; a hidden turn (intro, nudge, automation) may make 40
 model calls and an asked turn Grok Bot's 5,000 (`SAND_HIDDEN_TURN_MAX_STEPS`,
 `SAND_AGENT_MAX_STEPS`); the intro greets and stops and runs once; quitting
-Simeon stops the local Docker box unless `SAND_KEEP_BOX_RUNNING_ON_QUIT=1`;
+Simeon stops the local Docker box **unless an enabled routine exists**
+(since 25 September; `SAND_STOP_BOX_ON_QUIT=1` and
+`SAND_KEEP_BOX_RUNNING_ON_QUIT=1` force either way);
 every model call writes a `[claidor]` line with its tokens to the box's
 `/tmp/sand-host.log`; the box token file is written by one writer at a
 time (a startup burst used to race on it and blind the app); and the
 computer narration prints the failure's sentence. The brake by hand is
 still `docker stop simeon-box` (the container was `grok-bot-local-vm` until 23 September). Not yet run on a Mac.
+
+**The GPU is on by default, measured 24 September 2026.** Grok Bot's
+shell disabled hardware acceleration and passed `disable-gpu`, so the
+whole window was drawn on the CPU; #190 made it opt-in with
+`SAND_ENABLE_HWA=1`. The founder ran the packaged app with that variable
+and the scroll lag went away ("yeah the app is faster after this"), so
+`main.ts` now disables the GPU only under `SAND_DISABLE_HWA=1`. The
+merged transcript work (#187–#189) is in `desktop/frontend/`, which
+`npm run package` does not ship, and behind a flag that is off; it
+changes nothing on screen. If a scroll still stutters with the GPU on,
+the Liquid Glass blurs and the marks' grain filter are next.
+
+**Connectors sign in and serve tools, built 24 September 2026.** "i
+thought i fixed the connectors, but its still not fixed." They were
+not: both MCP managers (Mac and box) ran Grok Bot's manager around
+Cursor's backend for HTTP servers, which Claidor does not serve, so a
+vendor connector could be installed and nothing else; the box path,
+which InstallPlugin takes since 22 September, drew no card because no
+server row existed, and the Mac path opened a sign-in nothing ever
+finished. Now `shared/node/vendor-mcp/backend-exec.ts` is that backend
+for the vendor connectors (sign-in start on the Mac, code exchange from
+the loopback, tools listed and called over streamable HTTP by
+`http-mcp-client.ts`, the old backend for anything else), an installed
+connector is an account row (`display.ts`, numeric id above 900,000
+because server ids must be decimal), the credential lives in the Mac's
+`vendor-mcp-installs.json` and is copied to the box on every
+`refreshMcp`, on transport connect and on change (`vendorMcpStore` on
+`refreshMcp` and `setHostSettings`); the box never opens a sign-in and
+never spends a refresh token. #185's resume now has a sign-in to resume
+from. `docs/product/connectors-signin-measured.md` is the record, with
+the three commands to read on a Mac. Not yet run on a Mac.
+
+**Figma cannot connect, and the vendor store travels both ways, found
+24 September 2026, evening.** "can you connect me to figma … it tells
+me to retry." The Mac's store is `~/.caisra/vendor-mcp-installs.json`
+(not under Application Support; the record above said otherwise). It
+held Figma, so the store was not the blocker; it travels both ways now
+anyway (`installedAtMs`, tombstones, the Mac pulls the box's copy
+before the connect card looks for its row, `vendor-mcp/box-pull.ts`),
+because the agent's InstallPlugin lands in the box's copy and the
+Mac's used to replace it. **Figma refuses by policy**: its registration
+endpoint answers 403 to every client not on its MCP Catalog, and its
+docs say clients "apply to register … reach out to your account team".
+It is coming soon on the card with that sentence until Figma lists
+Simeon; no code changes that. The same evening every live vendor's
+OAuth metadata was read: fifteen take the flow as built; Airtable,
+monday.com and Stripe publish metadata at the RFC 8414 path form (now
+tried first); Miro, Vercel, Supabase and monday.com take no public
+client (registration now asks `client_secret_post` when `none` is not
+offered, the secret rides with the credential); Asana has no
+registration endpoint (coming soon). The Mac writes every sign-in
+outcome to `~/.caisra/vendor-mcp-signin.log`, the line to read when a
+card says retry. `docs/product/connectors-signin-measured.md` §Corrected
+is the record. **Dropbox connected that night, the first vendor sign-in
+to finish on a Mac, and its consent page said "Self host app (Unknown
+agent)"**: Dropbox gives every self-registered client one shared id
+(`ydww2fwnzkxganl`) and ignores `client_name`; only an app made in its
+App Console carries our name. `VendorMcpConnector.clientId` now holds
+such an app's key and the sign-in skips `/register` with it (public
+client, PKCE, no secret in the app); the founder creates the app and
+pastes the key into the `dropbox` row of `vendor-mcp/catalog.ts`. The
+steps are in the same record, §"Dropbox connects". **Also that evening: the agent's Screenshot tool broke
+every turn** (OpenAI `server_error` at sequence 0 on any request that
+carried it; `AGENT_SCREENSHOT_TOOL = false` in `host-runner-composition.ts`
+withholds it; a `[claidor] model-error` line now carries the provider's
+event, the tools and the system prompt of a failed call). Why OpenAI
+refuses that one function is not established.
+
+**Custom MCP servers and account plugins live on the Mac, built 24
+September 2026.** Grok Bot kept the account's MCP configuration on
+Cursor's server and `shared/node/cursor-backend/account-mcp.ts` still
+called those six RPCs, so reads came back `unavailable` and every write
+threw; and the manager's `addServer` had no `parseServerConfig`, so
+`AddMcpServer` threw before any RPC. Now the configuration is
+`account-mcp-config.json` beside the vendor store
+(`shared/node/account-mcp/store.ts`), the six calls are answered from it
+as the generated proto messages (`local-client.ts`), a custom URL
+server's tools run through the vendors' HTTP client with the server's
+headers and the vendors' OAuth flow when it answers 401
+(`account-mcp/backend-exec.ts`; sign-in on the Mac only), and a
+command-configured server goes where it always went, the box's own MCP
+executor. **The store travels both ways**, newer entry per name with
+tombstones: the agent's `AddMcpServer` runs in the box, so the Mac sends
+its copy with every refresh, the box merges and answers with its own,
+and the Mac pulls the box's copy before each read
+(`account-mcp/box-pull.ts`), because a whole-file replacement like the
+vendor store's would wipe what the agent added and the connect card
+runs on the Mac. `docs/product/account-mcp-local-measured.md` is the
+record; `tests/account-mcp-local.test.mjs` measures it offline against
+an in-process streamable-HTTP MCP server. Not yet run on a Mac.
+
+**Two things the first evening with Simeon found, fixed 24 September 2026.**
+"Name yourself Simeon" failed with `deps.readProfile is not a function`:
+`host-runner-composition.ts` built the memory extension's agent state
+without the `readProfile`, `writeProfile` and `writeSettings` deps that
+`AgentStateDeps` requires (the call is untyped through `method(...)`),
+so the agent's own rename, settings and avatar paths threw. They are
+supplied now and write through the transcript so the roster follows.
+And "open Render in your browser" failed with `No subagent types are
+available`: the production turn passed `subagentConfigs: []`, so the
+Task tool existed and refused every dispatch, and the composition's
+`buildSubagentConfigsForRun` was never called by the production path.
+The types are now built per run the same way it does: computerUse (and
+browserUse when its gate is on) when the box answers, the executor when
+multitask is on. **Then the dispatch failed one step later, "production
+subagent result is not bound"**: the child runner was built with
+`productionTurnRunShell: undefined`, no engine is bound to
+`createRunStep` in production, so its run returned nothing. The shell
+is now built by `buildProductionTurnRunShell(identity)` for the agent
+(`session.id`, not a subagent) and for each child (`agentId`,
+`isSubagentRunner`, its `subagentType`); the identity picks the
+toolset (computer or browser tools, no Task tool), the cheap model at
+low effort (`isComputerUseSubagent` on the session options), and the
+child's own interrupt; a child runs with `transport: undefined`, so
+nothing it streams reaches the chat and its text returns as the Task's
+result. The subagent reads the parent's system prompt; a subagent
+prompt of its own was not found in the tree. **Then the subagent ran
+and never touched the desktop** (the founder's log, later that day:
+`model=gpt-5.6-luna effort=low`, `tools=Shell(...printf...)` on every
+step, "Awaiting asynchronous completion…"): it had a Shell tool and
+nothing else. The computer, screenshot and browser deps exist
+(`createTurnToolProjections` in `host-runner-composition.ts`, the
+reconstruction's own `createHostComputerToolDependencies`), but the
+only thing that ever applied them was the retired `createRunStep`
+path; the production shell's provider
+(`createTurnToolsetFactoryProvider`) never offered them, so
+`buildTurnTools` read `factories.computer?.()` as undefined on every
+shell turn, for the agent (no Screenshot tool either) and for every
+child. The provider now offers all three, built on the box's accessor
+(`turn.remoteBoxResourceAccessor`, the way BoxRead is), so the agent
+gets Screenshot and RequestBoxHelp and a computerUse child gets the
+computer tool. Not yet run on a Mac; the line to read in
+`/tmp/sand-host.log` is a `[claidor] tool=` line naming the computer
+tool on a Luna turn. **Read on the Mac that night: the child ran seven
+Luna calls at 68,000 input tokens, every one Shell printing a sentence
+to itself, no Computer call, no text.** Audited against the
+reconstruction (`docs/product/computer-use-child-audit-2026-09-24.md`):
+`isBoxScopedSubagent`, which Grok Bot threads through the toolset, the
+user-info block, the time zone and `preserveLatestImage`, was hard-coded
+false for every identity; and `buildSandSubagentSystemPrompt` ("You are
+Simeon running as the computerUse subagent…") had no caller, so a child
+read the agent's 58,000-character brief and behaved as the parent
+waiting on a delegate. Both are wired now (the flag computed, the child
+on the subagent prompt; `tests/computer-use-child.test.mjs` measures the
+toolset and the prompt offline). The `[claidor] model=` line carries
+`offered=` (every tool in the request) and each shell logs a
+`[claidor] prompt … boxScoped=` line. Not yet run on a Mac. The transcript's third
+finding, one reply sent twice ("Nice. We're set…"), is not explained by
+the code alone: the send count is collected synchronously before the
+run settles, and the early-result reminder cannot fire in a turn with no
+other tool call, so it is either the model calling SendMessage twice in
+one turn or a reply nudge; the `[claidor] model=` lines for that turn
+in the box log decide it, and nobody has read them.
+
+**"Agent failed to respond: Unauthorized", read 24 September 2026.**
+The word is the API's own `Unauthorized` exception, answered to the
+box's model call (`AI_APICallError … statusCode: 401` in
+`/tmp/sand-host.log`): the proxy's `get_proxy_caller` found no live
+session behind the bearer, which for an envelope token means the
+session's one-hour `access_expires_at` had passed. How the box gets that
+token: the Mac writes it to `local-docker-credential/inference.json`
+(mounted at `/run/grok-bot`) at box connect, and the host's renewer
+re-reads the file as it nears expiry; **nothing ever rewrote it after
+connect**, so a box older than an hour called the model with an expired
+token until the app reconnected. The Mac now re-issues the credential
+every five minutes and rewrites the file when it changed
+(`startInferenceCredentialKeepFresh`); an expired file is re-read by the
+host every 30 s, so a fresh token lands within the minute. A box only
+minutes old that still gets 401 means the Mac had no valid token to
+write (signed out, or its refresh failed): the file's `expiresAtMs`
+says which. Not yet run on a Mac.
+
+**Teach a task is there and gated off.** The composer's plus-menu entry
+and the computer bar's button are in the pinned renderer, the recording
+extension is in `host/extensions/teach-recording/`, and both key off
+one feature gate, `sand_teach_by_demonstration`, default off, which
+Grok Bot turns on from Cursor's experiments server and Claidor does not
+serve. The host honours `SAND_FEATURE_GATE_OVERRIDES=sand_teach_by_demonstration=1`;
+whether the renderer's snapshot follows it is not measured.
 
 **The box silences the loop's logger, established 23 September 2026.**
 `ports.runnerContext` is bound at build time
@@ -289,7 +491,57 @@ About) **was still Grok Bot's icon until then**, since nothing wrote the
 founder's file over it. All four are in `router-renderer-patch.mjs`
 (`patchOriginalMarks`, the app-icon copy), recorded under `marks` in
 `dist/renderer-router-extension.json`. Verified headless at 56 px in light
-and dark; not yet seen on a Mac.
+and dark; measured on the founder's Mac the same evening ("ok it works").
+**The agents' colours are twelve palettes, 23 September, later still**
+("replace all existing colors with this"): Dusk, Sage, Lagoon, Ember,
+Moss, Sand, Berry, Ocean, Rose, Slate, Peach, Mint, soft vertical
+three-stop gradients under film grain, the same in light and dark. The
+eleven colour ids keep their names (a saved agent still resolves; `black`
+is Slate, so the landing mark and hero are slate) and `mint` is the
+twelfth; the picker offers all twelve. The mark's body is always filled
+with a gradient on `--ink-from/--ink-mid/--ink-to` through an SVG grain
+filter, both defined in the animator's `<defs>`; `--fg` (the middle
+colour) still feeds rings, particles and glyphs. `patchOriginalPalette`
+in `router-renderer-patch.mjs`, ten anchors; previewed headless with the
+face on, not yet seen on a Mac. **Frame cost of the grain filter on forty
+sidebar marks is not measured**; if the sidebar stutters, the filter is
+the first thing to remove (one anchor, `palette-body-fill`).
+**The person's chat bubble is iMessage blue, 23 September, later still**
+("copy imessage style and make it blue"): `#007aff` light, `#0a84ff`
+dark. The renderer's theme variables come from a token list in the chunk
+(`Ct("fill/bubble-user", …)`, emitted at runtime by `bzn` as
+`--sand-fill-bubble-user`); the stylesheet holds only the light default.
+Both are patched (`patchOriginalBubble`, `patchOriginalBubbleStylesheet`).
+The bubble's text is `text/on-color`, white everywhere, untouched. The
+same token feeds `--cursor-foreground`, which the checked state of a
+checkbox uses, so that turns blue too. Not yet seen on a Mac.
+**The chat header is the agent's card, 23 September, later still**
+("the name of the agent are up top, left. i want to middle it … like
+muse … remove the line"): a CSS block appended to the pinned stylesheet
+(`HEADER_CARD_CSS`, `patchOriginalHeaderStylesheet`) hides the toolbar
+divider, stacks the identity as a centred column, draws the same
+animated mark at 88 px by overriding its inline 20 px, makes the name a
+pill, and pins the computer/info controls to the right; scoped with
+`:has()` to the identity variant so the thread breadcrumb and the agent
+exchange keep their layout. The transcript offsets by the toolbar's
+measured height (`qSn` writes `--sand-toolbar-height`), so it moves
+down by itself. Rendered headless with the real markup and stylesheet
+(toolbar 147 px); on the Mac the mark was first drawn at 20 px inside an
+88 px box (the animator's SVG carries its own inline size; overridden
+too), then 88 was "way too big" (now 52), then the bar's hard lower edge
+read as a line (now a translucent, blurred strip whose bottom 30 px
+fade out with a mask, so messages scroll under it).
+**Liquid Glass on the chrome, 23 September, later still** ("bring apple
+liquidglass design in the whole app"; the Figma link could not be opened
+from the container, so this follows Apple's description of the
+material): `LIQUID_GLASS_CSS`, appended after the header block, frosts
+the sidebar, the info pane, the composer shell, popover menus, dialogs,
+the floating pills, the message hover actions and the computer's top
+bar: translucent fill, 24 px blur with saturation, a 1 px specular
+highlight along the top, a soft ambient shadow, large radii. Messages
+and text are content and are not touched. Not yet seen on a Mac; the
+composer shell's base styling was not resolvable from the chunk, so it
+is the surface most likely to need a second look.
 `docs/product/name-measured.md` §Simeon is the record.
 
 **The product is Simeon, decided 22 September 2026, later the same day.**
@@ -330,9 +582,35 @@ with the laptop shut. The maty queue and `claidor-maty-runner` are the cloud pat
 for exactly this, and **their completeness is now established**, 18 September:
 the queue is live (`POST /maty/runner/claim` → 401), both routers are mounted,
 the runner matches its README line for line — and **nothing produces a job**.
-`grep -ril maty desktop/src` returns nothing. It is a finished pipe with nothing
-plugged into the input, so no routine has ever fired overnight, because none can
-be created.
+`rg -i maty desktop/source` returns nothing (the sentence used to say
+`desktop/src`, which is the pinned renderer's staging folder and proves
+nothing). It is a finished pipe with nothing plugged into the input.
+**Corrected 25 September 2026:** routines *can* be created (`update_state`,
+target `routine`, writes `automation.json`) and cron ones fire from the box
+while Simeon is open; none fires with the Mac asleep or off because nothing produces a maty
+job. **Since 25 September 2026 the box outlives the app**: the founder's word
+("the Mac can be awake while the app itself is closed. The routine should
+still execute. The spend concern should be handled by the routine/box
+lifecycle"), so quitting Simeon keeps the local Docker box running when an
+enabled routine exists and stops it when none does
+(`stopLocalDockerBoxOnQuit`, which asks the box's gateway `listAllAutomations`
+on its own wire); and because the Mac no longer rewrites the box's one-hour
+model token every five minutes once it is gone, the Mac mints the **box's own
+renewal credential** (`POST /desktop/api/box/renewal-credential`, a child
+`desktop_sessions` row, `claidor_db_` prefix, re-parented on the app's
+refresh, revoked on sign-out, never a session) and writes it into the token
+file; the box's auth service trades it for a fresh token at
+`POST /sand-box/inference-credential` (Grok Bot's own renewal path, served
+at the root like sign-in) when the file goes stale. Spend with the app closed
+is bounded by the hidden-turn budget (40 calls a run), the proxy's hourly cap
+and the user-away guard that pauses routines after three days unread.
+`tests/routine-box-lifecycle.test.mjs`, `server/tests/desktop/test_box_credential.py`.
+Not yet run on a Mac: quit with a routine enabled, wait past the hour, read
+`inference credential renewed with the box's own credential` in
+`/tmp/sand-host.log`. Event listeners are **Coming Soon** (Slack, GitHub, Teams, Linear, Sentry, PagerDuty): their
+relay (`/sand/listener-*`, `/sand/automation-events/poll`,
+`AutomationsService`) is Cursor's and Simeon Labs' server serves none of it;
+`SAND_LISTENER_RELAY_SERVED=1` restores Grok Bot's paths when it exists.
 
 **The decision, 18 September: keep the queue, change the executor.** The claim /
 lease / heartbeat / scoped-token / memory-in-memory-out half is the hard part and
@@ -379,6 +657,136 @@ consistent with a spending limit rather than a broken repository, but **that is
 inference and not a log**. Nobody has read the Actions billing page. Until
 someone does, the cause is unproven and CI confirms nothing for our own
 workflows.
+
+## What does not work, audited (24 September 2026)
+
+"check the reconstruction to find all fails right now in the repo that we
+didn't identify." `docs/product/reconstruction-gaps-2026-09-24.md` is the
+record: five audits over the host, the Mac side, the three features the
+founder named, the production bindings and the documents. **Read it before
+saying a feature is broken or fine.** The shape: Claidor serves fourteen
+HTTP routes under `/desktop/api/` and no Connect RPC; the app still calls
+about sixty `aiserver.v1.*` methods, each preceded by a privacy-mode
+lookup, and every one 404s. Three things were found and fixed that day:
+**pressing the mic or "Generate" avatar could sign the person out**
+(`getValidAccessToken()` with no backend named refreshed against
+`api2.cursor.sh`; now the configured backend, `cursor-auth.ts`); **every
+dictation came back in English** (`claidor-transcribe.ts` forced `en-US`;
+no language is sent now); and **the agent's system prompt had no memory,
+no automations, no workflows, no channels and an empty roster** (every
+store handed to `createSystemPromptAssembly` was `() => null`; it reads
+the session's stores now, and the memory section's compaction epoch
+follows the summary count instead of a constant 0). The three named
+features: avatar generation and upload are wired end to end to things
+Claidor serves or to the box, and fail only on a runtime condition the
+error line names; "voice note" is dictation, there is no voice-note
+attachment and no text-to-speech in the app, and whether the packaged
+`Info.plist` carries `NSMicrophoneUsageDescription` is not read. Still
+broken with a known cause: the model picker (Cursor's `AvailableModels`),
+the Usage tab (gated off, and the Settings patch is a no-op), the account
+avatar and name (`GetMe`), reading a PDF (no worker bound), auto-review
+(classifier not served, rejects), custom MCP servers and account plugins
+(writes throw), Send Feedback, Help Center and "open cloud agent" links,
+and everything on the cloud box, cloud agents, listeners and sharing. Not
+yet run on a Mac.
+
+**Fixed later the same day, "directly from the reconstruction"** (the
+founder: "i need you to fix all of this"): each fix keeps the function
+the renderer or the agent already calls and points it at a route Simeon
+Labs' server serves, or at a local store, the way dictation was done.
+The model picker reads `/desktop/api/models/available` into the
+generated `AvailableModelsResponse` (`electron-main/models/claidor-model-catalog.ts`);
+the account profile and Google picture come from `/desktop/api/user/profile`;
+Usage & Billing is fed from `/desktop/api/user/quota` and its gate
+`sand_usage_page` is on for our build (`shared/node/experiments/simeon-gate-defaults.ts`,
+applied where the gate is read, the generated table untouched);
+sign-out POSTs `/desktop/api/auth/logout` before deleting the keychain
+entries; Send Feedback posts to the new `POST /desktop/api/feedback`;
+Help Center opens simeonlabs.com; the migration watcher is not started
+on a local Docker box; `attachProdBox` answers "disabled" in a packaged
+build; reading a PDF works, with pdf.js bundled into the host so it
+reaches the box (`host/runner/pdf-text-extractor.ts`); auto-review's
+risky-or-safe classifier runs on Luna through Simeon Labs' proxy
+(`host/extensions/auto-review/simeon-smart-mode-classifier-exec.ts`,
+one `[claidor] auto-review` line per verdict); a subagent's prompt is
+built for its own identity; the per-turn MCP snapshot is real; the
+connector card's cancel works; host diagnostics reach the log; and
+custom MCP servers and account plugins live in a store on the Mac
+(paragraph above). Still not done, because the services behind them do
+not exist: cloud boxes, cloud agents, Slack and GitHub listeners,
+sharing, and Cursor's feature-gate server (gates keep their bundled
+defaults; `sand_usage_page` is the one we set). None of this has run on
+a Mac. `docs/product/reconstruction-gaps-2026-09-24.md` §"Fixed the same
+day" has the per-item file list.
+
+**Changing an agent's avatar, audited and fixed 24 September 2026, night.**
+"upload and image generation none of them work." Both flows were wired
+(Upload: Mac file dialog → crop → `setAgentAvatarBytes` → `avatar.png`
+in the box; Generate: `/desktop/api/proxy/v1/images/generations` →
+`gpt-image-1` → the same upload path) and both lost the picture at one
+place: `buildSummary` filled `avatarDataUrl` only through an optional
+`readAvatar` callback that no caller passed, so every roster row said
+null while the file sat in the box, and the earlier gaps record's claim
+that the read-back worked was wrong. Now the summary reads the avatar
+by default, the transcript API delegates `emitAgentUpdate` so the
+agent's own avatar change redraws (`onAvatarChanged` supplied in the
+composition), and the gateway write validates the bytes.
+`docs/product/avatar-audit-2026-09-24.md` is the record;
+`tests/avatar-roster.test.mjs` measures it offline. A Generate that
+still fails shows `edge/handler-failed: <the server's sentence>`; the
+first thing to check is `CLAIDOR_OPENAI_API_KEY` on Render. The Mac
+keeps no log for this path. Not yet run on a Mac.
+
+## The whole-product design audit, and the switch-or-coming-soon rule (25 September 2026)
+
+"find everything not respecting that design … even the things you
+already checked - recheck." `docs/product/design-audit-2026-09-24.md`
+is the record: 27 area audits against 179 design rules, 483 findings,
+**partial** (the run was stopped before the refuters finished; only
+the first 20 findings are verified, 19 stand). `docs/product/design-audit-ledger.md`
+is the ledger, one row per finding, and nothing is closed until its row
+says so. The founder's rule for handling them, verbatim: "if something
+can actually be enabled in the current system by changing a true/false
+flag, feature gate, config, or on/off setting, don't mark it Coming
+Soon. Turn it on and make it work … Only call something Coming Soon when
+it genuinely cannot work with what we currently have because it depends
+on an unavailable Cursor/cloud service or something we haven't built."
+So: disabled but present → enable; blocked by a flag or gate → enable;
+the server serves the route and the app does not call it → wire it;
+works locally and kept off → turn it on; Coming Soon only for a real
+missing service, and then marked Coming Soon everywhere a person can
+see or reach it. The ledger's dispositions are `fixed`, `coming-soon`
+(with the missing dependency named), `known-limit` and `needs-mac`.
+Work proceeds by cluster (root cause), not by finding.
+
+## The product's hostnames are simeonlabs.com (24 September 2026)
+
+"i want to replace all claidor.com instances by simeonlabs.com … now i
+want the app to respond to simeonlabs not claidor." The founder set up
+Render, AWS and Google auth for the new hosts first; the Render env vars
+keep their `CLAIDOR_` prefix (the setting names in `polar/config.py` are
+unchanged, only their values move). In the repository every `claidor.com`
+hostname in code, configuration and tests is now `simeonlabs.com`:
+`render.yaml` (`CLAIDOR_BASE_URL`, `CLAIDOR_FRONTEND_BASE_URL`,
+`CLAIDOR_ALLOWED_HOSTS`, `CLAIDOR_CORS_ORIGINS`,
+`CLAIDOR_USER_SESSION_COOKIE_DOMAIN` = `.simeonlabs.com`,
+`CLAIDOR_EMAIL_FROM_DOMAIN`, the maty runner's `CLAIDOR_API_BASE_URL`),
+the desktop app's packaged environment (`desktop/scripts/lib/config.mjs`:
+`CURSOR_API_BASE_URL`, `CURSOR_WEBSITE_URL`, `SAND_BACKEND_URL` all
+`https://api.simeonlabs.com`, which is where sign-in goes), the web app's
+fallback hosts (`clients/apps/web/src/utils/domain.ts`), the runner's
+docs and the desktop tests' fixtures. The web app's real hosts are the
+`NEXT_PUBLIC_API_URL` / `NEXT_PUBLIC_FRONTEND_BASE_URL` values on Vercel,
+not in the repository. Left as they were, on purpose: `docs/` (records of
+what was measured on claidor.com), the `billing.claidorhq.internal`
+placeholder e-mail domain (never resolves; tests pin it), the 2026-04-06
+migration's `server_default`, `CLAIDOR_EMAIL_FROM_NAME: Claidor` in
+`render.yaml` (a name, not a host; the founder decides), and the paragraph
+above about `app.claidor.com` on Vercel, which is history. Not yet
+measured: a sign-in round trip from the packaged app against
+`api.simeonlabs.com`, and whether the cookie domain change signs everyone
+out of the web app once (it does, by design: a `.claidor.com` cookie is
+not sent to `.simeonlabs.com`).
 
 ## What the Rakazo attempt left behind (17–18 September 2026)
 

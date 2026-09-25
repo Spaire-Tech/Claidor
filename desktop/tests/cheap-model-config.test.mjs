@@ -114,6 +114,14 @@ test("machinery sessions stay on Luna; unknown Cursor model ids cannot steal Ter
   }
 });
 
+test("the turn's model id reaches the executor through the owner input (24 September 2026)", async () => {
+  // Until then the owner input carried no modelId, so every turn fell through
+  // to the executor's default whatever SAND_AGENT_MODEL said.
+  const composition = await readFile(path.join(repoRoot, "source/host/host-runner-composition.ts"), "utf8");
+  assert.match(composition, /const staticModelId = process\.env\.SAND_AGENT_MODEL \?\? DEFAULT_SAND_MODEL;/);
+  assert.match(composition, /onRequestId: requestIdForwarder\(hooks, "agent"\),\n(?:\s*\/\/.*\n)*\s*modelId: staticModelId,/);
+});
+
 test("local group turns are a cheap talk-only Luna call, not the host runner", async () => {
   const glue = await readFile(path.join(repoRoot, "source/host/extensions/transcript/group-chat-glue.ts"), "utf8");
   const orchestrator = await readFile(path.join(repoRoot, "source/host/extensions/transcript/group-chat-orchestrator.ts"), "utf8");

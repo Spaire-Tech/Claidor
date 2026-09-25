@@ -4,6 +4,7 @@ import { getOrCreateHostMachineId } from "../../host-secret-store.js";
 import {
   readDevInferenceCredentialFile,
   renewSandBoxInferenceCredential,
+  type DevInferenceCredentialFile,
   SandInferenceCredentialRenewer,
   SAND_DEV_INFERENCE_TOKEN_FILE_ENV,
   SAND_INFERENCE_RENEWAL_CREDENTIAL_ENV,
@@ -38,7 +39,8 @@ export function createHostAuthService(options: {
   readonly env?: NodeJS.ProcessEnv;
   readonly backendUrl?: string;
   readonly renewCredential?: (backendUrl: string, credential: string) => Promise<InferenceCredential>;
-  readonly readDevCredential?: (path: string) => Promise<InferenceCredential>;
+  readonly readDevCredential?: (path: string) => Promise<DevInferenceCredentialFile>;
+  readonly now?: () => number;
   readonly getMachineId?: () => Promise<string>;
 }) {
   const env = options.env ?? process.env;
@@ -59,7 +61,19 @@ export function createHostAuthService(options: {
   const renewer = new SandInferenceCredentialRenewer({
     getCredential: isDevTokenFile ? () => devTokenFile : () => env[SAND_INFERENCE_RENEWAL_CREDENTIAL_ENV]?.trim() ?? null,
     renew: isDevTokenFile
-      ? () => (options.readDevCredential ?? ((path) => readDevInferenceCredentialFile({ path })))(devTokenFile)
+      ? async () => {
+          const file = await (options.readDevCredential ?? ((path) => readDevInferenceCredentialFile({ path })))(devTokenFile);
+          // The Mac rewrites the file every five minutes while Simeon runs.
+          // With the app closed it goes stale; a file that carries the box's
+          // renewal credential is then traded for a fresh token at the
+          // backend, the way a cloud box renews (25 September 2026).
+          const now = (options.now ?? Date.now)();
+          if (file.renewalCredential == null || now < file.expiresAtMs - EXPIRY_LEEWAY_MS) return file;
+          const backendUrl = options.backendUrl ?? getConfiguredBackendUrl(env);
+          const renewed = await (options.renewCredential ?? ((url, value) => renewSandBoxInferenceCredential({ backendUrl: url, credential: value })))(backendUrl, file.renewalCredential);
+          options.log("inference credential renewed with the box's own credential (the token file was stale)");
+          return renewed;
+        }
       : (credential) => (options.renewCredential ?? ((backendUrl, value) => renewSandBoxInferenceCredential({ backendUrl, credential: value })))(options.backendUrl ?? getConfiguredBackendUrl(env), credential),
     setCredential: (credential) => { wroteFirstCredential = store.getValidAccessToken() == null; store.setCredential(credential); },
     onResult: (result) => {

@@ -5,11 +5,17 @@ import { getConfiguredBackendUrl } from "../cursor-token.js";
 // speech, and — since 19 September 2026 — web search, pictures and dictation
 // (`server/polar/desktop/capabilities.py`). Measured, not recalled: the
 // router in `server/polar/desktop/endpoints.py` carries `prefix="/desktop"`,
-// and `POST https://api.claidor.com/api/proxy/v1/models` answers 404 while
+// and `POST https://api.simeonlabs.com/api/proxy/v1/models` answers 404 while
 // `/desktop/api/proxy/v1/...` answers. Every caller builds its address here
 // so there is one place for that fact to live.
 export const CLAIDOR_PROXY_PREFIX = "desktop/api/proxy/v1";
 export const CLAIDOR_COMPOSIO_PREFIX = "desktop/api/proxy/composio";
+// The account doors — profile, quota, the model menu, sign-out, feedback —
+// sit one level up, under `/desktop/api`, and answer the app's own envelope
+// `{ code, data }` (`_ok` in `server/polar/desktop/endpoints.py`) rather
+// than a provider's shape. Added 24 September 2026 when the account screens
+// were moved off Cursor's Connect RPCs.
+export const CLAIDOR_API_PREFIX = "desktop/api";
 
 export interface ClaidorApiAuth {
   readonly getAccessToken: () => Promise<string>;
@@ -84,4 +90,50 @@ export async function claidorProxyRequest(auth: ClaidorApiAuth, path: string, re
   });
   if (!response.ok) throw await claidorErrorFromResponse(response);
   return response;
+}
+
+export function claidorApiBaseUrl(backendUrl: string = getConfiguredBackendUrl()): string {
+  return new URL(CLAIDOR_API_PREFIX, backendUrl.endsWith("/") ? backendUrl : `${backendUrl}/`).toString();
+}
+
+export function claidorApiUrl(path: string, backendUrl?: string): string {
+  return `${claidorApiBaseUrl(backendUrl)}/${path.replace(/^\/+/, "")}`;
+}
+
+export interface ClaidorApiRequest {
+  readonly method?: "GET" | "POST";
+  readonly json?: unknown;
+  readonly signal?: AbortSignal;
+  readonly fetch?: typeof fetch;
+}
+
+// One authenticated call to an account door, with the envelope opened: the
+// `data` of a `{ code: 0, data }` answer, or a `ClaidorApiError` carrying
+// the server's own `message` when `code` is not 0 or the status is not 2xx.
+// A `_fail` answer travels at HTTP 200 unless the app keys on the status,
+// so the code is read before the status is trusted.
+export async function claidorApiData<T = unknown>(auth: ClaidorApiAuth, path: string, request: ClaidorApiRequest = {}): Promise<T> {
+  const token = await auth.getAccessToken();
+  const headers = new Headers({ authorization: `Bearer ${token}`, accept: "application/json" });
+  const method = request.method ?? (request.json === undefined ? "GET" : "POST");
+  let body: BodyInit | undefined;
+  if (request.json !== undefined) {
+    headers.set("content-type", "application/json");
+    body = JSON.stringify(request.json);
+  }
+  const doFetch = request.fetch ?? fetch;
+  const response = await doFetch(claidorApiUrl(path, auth.backendUrl), {
+    method,
+    headers,
+    ...(body === undefined ? {} : { body }),
+    ...(request.signal === undefined ? {} : { signal: request.signal }),
+  });
+  if (!response.ok) throw await claidorErrorFromResponse(response);
+  const parsed = (await response.json().catch(() => null)) as { code?: unknown; data?: unknown; message?: unknown } | null;
+  if (parsed == null || typeof parsed !== "object") throw new ClaidorApiError(`Claidor answered ${path} with something that is not JSON.`, response.status);
+  if (parsed.code !== undefined && parsed.code !== 0) {
+    const message = typeof parsed.message === "string" && parsed.message.length > 0 ? parsed.message : `Claidor refused ${path} (code ${String(parsed.code)}).`;
+    throw new ClaidorApiError(message, response.status, `code-${String(parsed.code)}`);
+  }
+  return (parsed.code === undefined ? parsed : parsed.data) as T;
 }

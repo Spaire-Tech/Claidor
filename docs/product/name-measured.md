@@ -22,11 +22,17 @@ move.
 
 ## What was left on purpose
 
-- **`@Cursor` in Slack invite advice.** That is the Slack app's handle
-  until we have our own. Changing it would send the person to the wrong
-  bot.
-- **`cursor.com` and `/opt/cursor/artifacts` paths.** Those are real
-  addresses the cloud-agent VM still writes.
+- **`@Cursor` in Slack invite advice.** ~~That is the Slack app's handle
+  until we have our own.~~ **Corrected 25 September 2026:** the Slack
+  listener relay is Cursor's and Simeon Labs' server does not serve it,
+  so the advice sent the person to invite a bot to a channel Simeon will
+  never hear. Listeners are Coming Soon and the strings say `@Simeon`
+  (`shared/listener-availability.ts`, ledger F-053).
+- **`cursor.com` and `/opt/cursor/artifacts` paths.** ~~Those are real
+  addresses the cloud-agent VM still writes.~~ **Corrected 25 September
+  2026:** cloud agents are Cursor's BackgroundComposerService, unserved
+  here; they are Coming Soon and their prompt sections are off
+  (`shared/cloud-agents-availability.ts`, ledger F-007, F-210).
 - **The pinned 0.18.0 renderer.** Onboarding, About, and the Computer
   chrome still say Grok Bot. Those strings live in checksum-pinned
   minified bytes. The only shipped-UI write path is
@@ -227,4 +233,79 @@ Located on the pinned chunk `index-UbX-y3il.js`, all package-time in
 Measured here: the patched chunk parses; the petal SVG at 56 px on white
 and on `#111` (headless Chromium, 2×) is the founder's mark at the same
 size the old logo had. Not yet seen on a Mac.
+
+## The agents' colours (23 September 2026, later still)
+
+"i wanna change the color palettes choices of the bots. completely" —
+three reference spheres (a grainy sunset, sage, blue-lavender) — then,
+on a sheet of twelve drawn on the cloud and the blob in light and dark,
+"im okay with all. replace all existing colors with this."
+
+| id (kept) | palette | top | middle (`--fg`, swatch) | bottom |
+|---|---|---|---|---|
+| yellow | Dusk | #8b8bea | #f7a1b3 | #ffb98a |
+| cyan | Sage | #2f6f72 | #6e9c95 | #b8d1c5 |
+| violet | Lagoon | #7cc0e0 | #d7a9dc | #2b4c92 |
+| red | Ember | #ff9a76 | #ffd0a0 | #6b3e8f |
+| green | Moss | #6f8f4f | #a8c58a | #dfeacb |
+| brown | Sand | #f6e2c4 | #f2b48b | #c6754e |
+| magenta | Berry | #e07aa8 | #f4b7d0 | #3e2a7a |
+| blue | Ocean | #1f3b73 | #3c7fb7 | #7fd4d0 |
+| gray | Rose | #f6c1c7 | #f0a4b8 | #8f5c86 |
+| black | Slate | #8c9db8 | #5e6d86 | #d9dfe8 |
+| orange | Peach | #ffd1a6 | #ffb0a3 | #e56f8f |
+| mint (new) | Mint | #bff0e2 | #8fd3c3 | #3c8a86 |
+
+Mechanism, on the pinned chunk (`patchOriginalPalette`, ten anchors each
+once): the three colour tables (`G_t` gradients, `snt` flat, `PQ` picker)
+are replaced; the picker filter no longer hides black; `K_t`/`Y_t` gain a
+middle stop; the `sd` and mirror spans set `--ink-from/mid/to`; the
+animator's `<defs>` always hold a three-stop gradient on those variables
+and a `feTurbulence` grain filter, and the body path is filled with the
+gradient through the filter. The animator's `inkGradient` prop, which
+`sd` never passed, is gone with the old two-stop block. Faces, springs,
+morphs and mirrors are untouched. Previewed headless with the eyes on,
+light and dark; not yet seen on a Mac; the grain filter's frame cost on a
+full sidebar is not measured.
+
+## The person's chat bubble (23 September 2026, later still)
+
+"the default chat color is black. grey in dark mode. i want to copy
+imessage style and make it blue." Apple's system blue: `#007aff` in light,
+`#0a84ff` in dark (their dark-mode system blue), same in high contrast.
+
+Where it lived: not in the stylesheet alone. The chunk holds a token list
+(`r0t`, entries like `Ct("fill/bubble-user", El(gray/dark/1, gray/dark/8,
+gray/dark/1, gray/dark/11))`) from which `bzn(theme)` writes every
+`--sand-*` variable at runtime; `index-lCyB53CO.css` carries only the light
+default (`#070707`) for first paint. The user bubble is class `sand-mvmkjj`
+(`background-color: var(--sand-fill-bubble-user)`), its text
+`var(--cursor-text-invert)` = `text/on-color` = `#fcfcfc`, white in every
+theme, so nothing else changes for legibility. `--cursor-foreground` is
+also mapped to `fill/bubble-user` and colours a checked checkbox, which
+therefore turns blue as well. `fill/bubble-user-disabled` (a pending
+message, black at 3 % alpha) is left as it was. Not yet seen on a Mac.
+
+## The chat header (23 September 2026, later still)
+
+"you see the name of the agent are up top, left. i want to middle it. and
+have it this way, like muse. you might wanna remove the line up there, as
+muse doesnt have a line. it feels more apple ish."
+
+Located: the header is `aSn` (`sand-chat-header`), rendered inside the
+absolutely positioned `<header class="sand-toolbar">` of `qLn`, which
+also holds the 0.5 px `sand-toolbar-divider`. The identity is a button
+(`sand-chat-header__identity`) with the mark (`ml` → `Iee` → `sd`,
+`fillPx` 20, inline width/height) and the name (`sand-chat-header__name`);
+the controls (`sand-chat-header__controls`) sit at the right. The
+transcript's top padding is `var(--sand-toolbar-height)`, written from the
+toolbar's `offsetHeight` by `qSn`.
+
+Done as CSS appended to the pinned stylesheet, no chunk change: divider
+hidden and the toolbar's own bottom border zeroed, identity as a centred
+column, mark at 88 px (`!important` beats the inline size; it is the same
+animated mark), name as a pill on `--sand-fill-bubble-agent`, controls
+absolutely positioned at the right. Scoped with `:has()` to the identity
+variant. Headless render with the real markup and the patched stylesheet,
+light and dark: toolbar 147 px, transcript under it. Not yet seen on a Mac.
 

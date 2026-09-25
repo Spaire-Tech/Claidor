@@ -13,6 +13,10 @@ import { createGatewayConnectFastPath, type GatewayConnection, type GatewayDescr
 import type { RecreateResult } from "./box-recreate-commands.js";
 
 export const LOCAL_EXEC_DAEMON_CREDENTIAL_PATH = "/sand-box/local-exec-daemon-credential";
+// The box's own renewal credential (25 September 2026): Simeon Labs' server
+// mints it for a signed-in desktop; the box trades it for an access token at
+// /sand-box/inference-credential after the app has quit.
+export const BOX_RENEWAL_CREDENTIAL_PATH = "/desktop/api/box/renewal-credential";
 export const GATEWAY_URL_ENV = "SAND_HOST_GATEWAY_URL";
 export const GATEWAY_TOKEN_ENV = "SAND_HOST_GATEWAY_TOKEN";
 export const GATEWAY_NETWORK_TOKEN_ENV = "SAND_HOST_GATEWAY_NETWORK_TOKEN";
@@ -41,6 +45,7 @@ export interface SandRemoteHostConnector {
   forceRecreate?(): Promise<RecreateResult>;
   issueLocalExecDaemonCredential?(): Promise<{ readonly credential: string; readonly backendUrl: string; readonly expiresAtMs?: number } | undefined>;
   issueInferenceCredential?(): Promise<{ readonly accessToken: string; readonly backendUrl: string; readonly expiresAtMs: number } | undefined>;
+  issueBoxRenewalCredential?(): Promise<{ readonly credential: string; readonly expiresAtMs: number } | undefined>;
 }
 
 export function parseRetryAfterMs(value: string | null | undefined): number | undefined {
@@ -126,6 +131,20 @@ export class BrokeredHostConnector {
     if (typeof credential !== "string" || credential.length === 0) return undefined;
     const expiresAtMs = Reflect.get(parsed, "expiresAtMs");
     return { credential, backendUrl, ...(typeof expiresAtMs === "number" ? { expiresAtMs } : {}) };
+  }
+  async issueBoxRenewalCredential(): Promise<{ credential: string; expiresAtMs: number } | undefined> {
+    const backendUrl = getSandInferenceBackendUrl();
+    let accessToken: string;
+    try { accessToken = await this.deps.getAccessToken({ backendUrl }); } catch { return undefined; }
+    let response: Response;
+    try { response = await fetch(new URL(BOX_RENEWAL_CREDENTIAL_PATH, backendUrl).toString(), { method: "POST", headers: { authorization: `Bearer ${accessToken}`, "content-type": "application/json", ...getSandBackendClientHeaders() }, body: "{}" }); } catch { return undefined; }
+    if (!response.ok) return undefined;
+    let parsed: unknown; try { parsed = await response.json(); } catch { return undefined; }
+    const data = typeof parsed === "object" && parsed != null ? Reflect.get(parsed, "data") : undefined;
+    if (typeof data !== "object" || data == null) return undefined;
+    const credential = Reflect.get(data, "credential"), expiresAtMs = Reflect.get(data, "expiresAtMs");
+    if (typeof credential !== "string" || credential.length === 0 || typeof expiresAtMs !== "number") return undefined;
+    return { credential, expiresAtMs };
   }
   async issueInferenceCredential(): Promise<{ accessToken: string; backendUrl: string; expiresAtMs: number } | undefined> {
     const backendUrl = getSandInferenceBackendUrl();

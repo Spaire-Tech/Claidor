@@ -363,9 +363,19 @@ export class SandAutomationCloudSync {
     readonly onRecovery: (agentId: string) => void;
     readonly onSchedulingAuthorityChanged: (agentId: string) => void;
     readonly reportDiagnostic?: (diagnostic: Record<string, unknown>) => void;
+    /**
+     * Seed "the cloud automation service is absent" instead of discovering
+     * it from a failed Connect RPC: with it, a cron routine is scheduled
+     * locally on the first hub pass and the AutomationsService client is
+     * never called (design-audit-ledger.md F-036, F-040, F-374).
+     */
+    readonly cloudServiceAbsent?: boolean;
   }) {
     this.settings = { getUserTimeZone: deps.getTimeZone ?? (() => undefined) };
+    this.cloudServiceAbsent = deps.cloudServiceAbsent === true;
   }
+
+  isCloudServiceAbsent(): boolean { return this.cloudServiceAbsent; }
 
   setSettings(settings: { getUserTimeZone: () => string | undefined }): void { this.settings = settings; }
 

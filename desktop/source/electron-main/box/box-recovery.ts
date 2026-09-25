@@ -5,6 +5,7 @@ import {
   type MigrationWatchTelemetry,
 } from "./box-migration-watcher.js";
 import { createSandRecreateCommands, type RecreateResult } from "./box-recreate-commands.js";
+import type { SandBoxRuntime } from "../../shared/box-runtime.js";
 
 export interface BoxRecoveryConnector {
   recreate?(args: { readonly preserveData: boolean; readonly force?: boolean }): Promise<RecreateResult>;
@@ -32,6 +33,18 @@ export interface ProductionBoxRecoveryOptions {
   onWatchTelemetry?: (event: MigrationWatchTelemetry) => void;
   restartCoordinator(): void;
   updateForeverBox(args: { readonly id: string; readonly force: boolean }): Promise<unknown>;
+}
+
+/**
+ * Whether the box-migration stream is worth attaching. It is Cursor's
+ * `WatchSandBoxMigration` RPC, which only a remote (cloud) box can answer;
+ * a local Docker box has no migration to watch and Simeon Labs' server does
+ * not serve the stream, so on `local-docker` the answer is "no watcher" and
+ * the relay in `createSandBoxMigrationRelay` never starts. `create` is only
+ * called when a watcher is wanted, so nothing is built for nothing.
+ */
+export function migrationWatchForBoxRuntime<Watch>(runtime: SandBoxRuntime, create: () => Watch): Watch | undefined {
+  return runtime === "local-docker" ? undefined : create();
 }
 
 export function createProductionBoxRecovery(options: ProductionBoxRecoveryOptions): ProductionBoxRecovery {

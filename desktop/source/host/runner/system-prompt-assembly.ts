@@ -9,6 +9,11 @@ import {
 import { SAND_EXTERNAL_SHELL_TOOL_NAME } from "../sand-activity.js";
 import { toModelVisiblePath } from "../host-paths.js";
 import {
+  MEMORY_PROJECT_INJECTED_CAP,
+  MEMORY_PROJECT_PROFILE_PROMPT_LIMIT,
+  MEMORY_PROJECT_RECENT_PROMPT_LIMIT,
+  MEMORY_USER_PROFILE_PROMPT_LIMIT,
+  MEMORY_USER_RECENT_PROMPT_LIMIT,
   isMemoryFreezeEnabled,
   projectMemoryHasFacts,
   renderMemorySystemPrompt,
@@ -161,14 +166,14 @@ export function createSystemPromptAssembly(deps: SystemPromptAssemblyDependencie
       let hasFacts = recall.profile.length > 0 || recall.recent.length > 0;
       const userMemory = deps.userMemory();
       if (userMemory != null) {
-        const userRecall = userMemory.recall({ profileLimit: 50, recentLimit: 15 });
+        const userRecall = userMemory.recall({ profileLimit: MEMORY_USER_PROFILE_PROMPT_LIMIT, recentLimit: MEMORY_USER_RECENT_PROMPT_LIMIT });
         const rendered = renderUserMemorySystemPrompt(userRecall, { ...(modelVisibleLocation(userMemory.getLocation()) == null ? {} : { userMemoryDir: modelVisibleLocation(userMemory.getLocation())! }), ...(modelVisibleLocation(userMemory.getOwnShardLocation()) == null ? {} : { ownShardDir: modelVisibleLocation(userMemory.getOwnShardLocation())! }) });
         if (rendered.length > 0) parts.push(rendered);
         hasFacts ||= userRecall.profile.length > 0 || userRecall.recent.length > 0;
       }
       const projectMemory = deps.projectMemory();
       if (projectMemory != null) {
-        const projectRecall = projectMemory.recall({ profileLimit: 25, recentLimit: 10 }, 3);
+        const projectRecall = projectMemory.recall({ profileLimit: MEMORY_PROJECT_PROFILE_PROMPT_LIMIT, recentLimit: MEMORY_PROJECT_RECENT_PROMPT_LIMIT }, MEMORY_PROJECT_INJECTED_CAP);
         const root = modelVisibleLocation(projectMemory.getLocation());
         const rendered = renderProjectMemorySystemPrompt(
           {

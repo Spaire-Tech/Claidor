@@ -2,6 +2,7 @@ import { createExperimentsRuntime, type DesktopAuthService, type DesktopExperime
 import type { ElectronProductionAdapterBindings } from "../production-adapters.js";
 import type { ProductionServiceContext } from "../main-production-services.js";
 import { SandExperimentService } from "../../shared/node/experiments/cursor-experiments.js";
+import { applySimeonGateDefaults } from "../../shared/node/experiments/simeon-gate-defaults.js";
 import { startSandRpcTraceWindow } from "../../shared/node/cursor-backend/rpc-tracing.js";
 import { requireFunction } from "./provider-guards.js";
 
@@ -25,7 +26,13 @@ export function createProductionExperimentsAdapter(
         getMachineId: async () => context.machineId,
         getCacheDir: () => context.native.app.getPath("userData"),
         isDevBuild: context.env.SAND_PACKAGED !== "1",
-        createExperimentService: (options) => new SandExperimentService(options),
+        // Simeon's own gate defaults over Grok Bot's bundled table. Until
+        // 24 September 2026 the service answered the bundled default for
+        // every gate (Cursor's experiments server, which fills them for
+        // Grok Bot, is not served here), so `sand_usage_page` read false
+        // in `checkFeatureGate` and in the snapshot the renderer gates
+        // Settings → Usage & Billing on, and the page never showed.
+        createExperimentService: (options) => applySimeonGateDefaults(new SandExperimentService(options), context.env),
         emitSnapshotChanged: (snapshot) => context.requireMainEdge().emit("experiments-changed", snapshot),
         pushFeatureFlagOverrides: (overrides) => ports.pushFeatureFlagOverrides(context, overrides),
         reportEdgeFailure: ports.reportEdgeFailure,

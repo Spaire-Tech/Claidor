@@ -9,7 +9,7 @@ import path from 'node:path';
  * we talk to must be set, or the process refuses to start.
  */
 export interface RunnerSettings {
-  /** Claidor's API, e.g. https://api.claidor.com — no trailing slash. */
+  /** Claidor's API, e.g. https://api.simeonlabs.com — no trailing slash. */
   apiBaseUrl: string;
   /** The service's own token. It belongs to the runner, not to a person. */
   runnerToken: string;

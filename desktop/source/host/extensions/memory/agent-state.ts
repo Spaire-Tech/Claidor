@@ -1,7 +1,7 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { basename, isAbsolute, join, resolve } from "node:path";
 import { isSafeFolderId } from "../../storage/folder-id.js";
-import { normalizeMemoryContent } from "../../runner/sand-memory.js";
+import { MEMORY_NOTE_PREFIX, normalizeMemoryContent } from "../../runner/sand-memory.js";
 import { serializeWorkflowFile } from "../../../shared/workflow-model.js";
 import { describeTrigger } from "../../../shared/automation-schedule.js";
 import type { AutomationTrigger } from "../../../shared/automations.js";
@@ -12,7 +12,6 @@ import { FileMemoryStore, getProjectDir, getProjectMemoryShardDir, getUserMemory
 export type StateWriteResult = { ok: true; message: string } | { ok: false; message: string };
 const ok = (message: string): StateWriteResult => ({ ok: true, message }), fail = (message: string): StateWriteResult => ({ ok: false, message });
 const blank = (value?: string | null): boolean => value == null || value.trim().length === 0;
-export const MEMORY_NOTE_PREFIX = "Note: ";
 export const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 const immediateDebounce = { name: "sand-agent-state-memory-shard", wrap: <T extends (...args: never[]) => unknown>(fn: T) => Object.assign(fn, { dispose() {} }) };
 
