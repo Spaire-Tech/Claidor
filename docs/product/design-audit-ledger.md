@@ -237,7 +237,7 @@ until its row says so. Columns:
 | F-211 | renderer-patches-branding | minor | design-violation | unverified | - | - | Unshipped frontend/ still carries a Router with Claude Code/Codex/OpenRouter providers and an API-key field, and tests pin it | `desktop/tests/router-settings.test.mjs` |
 | F-212 | renderer-patches-branding | note | docs-wrong | unverified | batch4-reads-and-docs | fixed | NOTICE.md and desktop/README.md describe the tree as a Grok Bot reconstruction with a Git-LFS DMG that building-the-app.md says was never there | `desktop/NOTICE.md` |
 | F-213 | renderer-patches-branding | note | risk | unverified | - | - | Two build-time env vars rename the product silently and verify accepts whatever they say | `desktop/scripts/lib/config.mjs` |
-| F-214 | renderer-patches-branding | note | risk | unverified | - | - | Onboarding's sixteen third-party tool logos ship as letter tiles | `desktop/scripts/make-runtime-assets.mjs` |
+| F-214 | renderer-patches-branding | note | risk | unverified | batch4-first-run | known-limit | Onboarding's sixteen third-party tool logos ship as letter tiles | `desktop/scripts/make-runtime-assets.mjs` |
 | F-215 | renderer-patches-branding | note | risk | unverified | batch4-cursor-leftovers | fixed | https deep links from cursor.com are still accepted from argv | `desktop/source/shared/deep-link.ts` |
 | F-216 | electron-main-app | major | risk | unverified | batch4-cursor-leftovers | fixed | Statsig exposure events go to Cursor's api3.cursor.sh whenever a bootstrap cache exists (copied from Grok Bot's folder on first launch) | `desktop/source/shared/node/experiments/statsig-bootstrap.ts` |
 | F-217 | electron-main-app | major | risk | unverified | - | - | Startup data-root migration renames ~/.cursor/sand (a real Grok Bot's data root) into ~/.caisra, or shares it live, and may kill its local-exec daemon | `desktop/source/electron-main/startup/startup-data-root-migration.ts` |
@@ -254,7 +254,7 @@ until its row says so. Columns:
 | F-228 | electron-main-app | minor | design-violation | unverified | - | - | 'Move to Applications' dialog promises updates the app cannot install | `desktop/source/electron-main/startup/startup-move-check.ts` |
 | F-229 | electron-main-app | note | risk | unverified | - | - | Ad-hoc signature changes every build, so macOS re-keys Keychain (safeStorage) and TCC grants each package | `desktop/scripts/lib/codesign.mjs` |
 | F-230 | electron-main-app | note | unmeasured | unverified | - | - | Packager adds no NS*UsageDescription keys; mic/camera/screen prompts depend on whatever the 0.18.0 shell's Info.plist carries | `desktop/scripts/package-macos.mjs` |
-| F-231 | electron-main-app | note | risk | unverified | - | - | Local Docker box start at launch swallows every error | `desktop/source/electron-main/main-production-services.ts` |
+| F-231 | electron-main-app | note | risk | unverified | batch4-first-run | fixed | Local Docker box start at launch swallows every error | `desktop/source/electron-main/main-production-services.ts` |
 | F-232 | electron-main-app | note | dead-service | unverified | batch4-cursor-leftovers | fixed | Desktop telemetry, product analytics and process metrics are dead-but-armed: if SAND_DISABLE_TELEMETRY is anything but '1' they post Connect RPCs our server does not serve every 3 s | `desktop/scripts/lib/build-asar.mjs` |
 | F-233 | electron-main-app | note | hardcoded | unverified | batch4-cursor-leftovers | known-limit | Windows installer trust is pinned to Anysphere's signing certificate | `desktop/source/electron-main/update/win32-installer.ts` |
 | F-234 | speech-and-media | blocking | unwired | unverified | - | - | GenerateImage succeeds, is metered, and then tells the model it failed | `desktop/source/packages/agent/tools/core/generate-image.ts` |
@@ -320,25 +320,25 @@ until its row says so. Columns:
 | F-294 | web-and-search | note | docs-wrong | unverified | - | - | agent-contract.md cites `MANAGED_WEB_SEARCH_POLICY_PROMPT` as live; the reconstruction has no such prompt and no 'never claim you searched' line | `docs/product/agent-contract.md` |
 | F-295 | web-and-search | minor | risk | unverified | - | - | A hung search can hold the turn for ten minutes: no client-side deadline on the search call, 600 s on the server | `desktop/source/host/extensions/inference/capability-tools.ts` |
 | F-296 | web-and-search | note | hardcoded | unverified | - | - | `DEFAULT_SAND_MODEL` ("gpt-5.5-high-fast") is not in the server catalogue | `desktop/source/host/host-runner-composition.ts` |
-| F-297 | onboarding-first-run | major | unwired | unverified | - | - | Intro stays owed when its run throws, so it re-runs on every open | `desktop/source/host/extensions/transcript/agent-lifecycle.ts` |
+| F-297 | onboarding-first-run | major | unwired | unverified | batch4-first-run | fixed | Intro stays owed when its run throws, so it re-runs on every open | `desktop/source/host/extensions/transcript/agent-lifecycle.ts` |
 | F-298 | onboarding-first-run | major | spend | confirmed | hidden-turn-cap | known-limit | The intro is two hidden turns, so its cap is 80 model calls, not 40 | `desktop/source/host/extensions/transcript/agent-lifecycle.ts` |
 | F-299 | onboarding-first-run | major | hardcoded | unverified | batch4-reads-and-docs | fixed | The default agent name is 'Grok' in six places; a fallback agent on a fresh box is named Grok | `desktop/source/shared/agents/agents.ts` |
-| F-300 | onboarding-first-run | major | design-violation | unverified | - | - | The first message becomes the agent's name (Grok Bot's seeding kept) | `desktop/source/host/extensions/transcript/send-acceptance.ts` |
-| F-301 | onboarding-first-run | major | unwired | unverified | - | - | Docker missing at first launch: nothing tells the person, and the brief promises a prompt that does not exist | `desktop/source/electron-main/main-production-services.ts` |
+| F-300 | onboarding-first-run | major | design-violation | unverified | batch4-first-run | known-limit | The first message becomes the agent's name (Grok Bot's seeding kept) | `desktop/source/host/extensions/transcript/send-acceptance.ts` |
+| F-301 | onboarding-first-run | major | unwired | unverified | batch4-first-run | needs-mac | Docker missing at first launch: nothing tells the person, and the brief promises a prompt that does not exist | `desktop/source/electron-main/main-production-services.ts` |
 | F-302 | onboarding-first-run | major | dead-service | unverified | batch4-cursor-leftovers | fixed | Managed setup (managed skills, skill catalogue, team rules) calls Cursor's DashboardService at Simeon Labs' host | `desktop/source/host/extensions/managed-setup/production.ts` |
 | F-303 | onboarding-first-run | minor | dead-service | unverified | batch4-cursor-leftovers | fixed | Product analytics posts onboarding and agent-created events to Cursor's AnalyticsService at our host, gate on by default | `desktop/source/shared/node/analytics/product-analytics.ts` |
 | F-304 | onboarding-first-run | minor | naming | unverified | batch4-reads-and-docs | fixed | Sign-in error strings still say Claidor | `desktop/source/electron-main/account/cursor-auth.ts` |
 | F-305 | onboarding-first-run | minor | design-violation | unverified | batch4-cursor-leftovers | needs-mac | Settings offers a 'remote computer' that does not exist and speaks in Docker/VM plumbing | `desktop/scripts/lib/router-renderer-patch.mjs` |
-| F-306 | onboarding-first-run | note | unwired | unverified | - | - | cheapIntroductionMessages, fallbackIntroductionText and the greeting prompt have no callers but are tested | `desktop/source/shared/agents/onboarding.ts` |
-| F-307 | onboarding-first-run | minor | design-violation | unverified | - | - | The kickstart prompt fights the brief's hidden-wake rule and asks for more than one question and more than one connector ask | `desktop/source/host/runner/system-prompt.ts` |
-| F-308 | onboarding-first-run | minor | unwired | unverified | - | - | Intro is skipped, not deferred, when inference is not ready at creation | `desktop/source/host/extensions/transcript/agent-lifecycle.ts` |
-| F-309 | onboarding-first-run | minor | design-violation | unverified | - | - | The voice brief in the system prompt is a paraphrase, not the founder's wording | `desktop/source/host/runner/system-prompt.ts` |
+| F-306 | onboarding-first-run | note | unwired | unverified | batch4-first-run | known-limit | cheapIntroductionMessages, fallbackIntroductionText and the greeting prompt have no callers but are tested | `desktop/source/shared/agents/onboarding.ts` |
+| F-307 | onboarding-first-run | minor | design-violation | unverified | batch4-first-run | known-limit | The kickstart prompt fights the brief's hidden-wake rule and asks for more than one question and more than one connector ask | `desktop/source/host/runner/system-prompt.ts` |
+| F-308 | onboarding-first-run | minor | unwired | unverified | batch4-first-run | needs-mac | Intro is skipped, not deferred, when inference is not ready at creation | `desktop/source/host/extensions/transcript/agent-lifecycle.ts` |
+| F-309 | onboarding-first-run | minor | design-violation | unverified | batch4-first-run | fixed | The voice brief in the system prompt is a paraphrase, not the founder's wording | `desktop/source/host/runner/system-prompt.ts` |
 | F-310 | onboarding-first-run | minor | docs-wrong | unverified | batch4-reads-and-docs | fixed | CLAUDE.md calls agent-lifecycle.ts 'the pristine reconstruction'; it is modified | `desktop/source/host/extensions/transcript/agent-lifecycle.ts` |
 | F-311 | onboarding-first-run | note | risk | unverified | - | - | Copied Grok Bot user data likely cannot decrypt under Simeon's safeStorage key; 'nobody signs in again' is unmeasured | `desktop/source/electron-main/startup/desktop-user-data-bootstrap.ts` |
 | F-312 | onboarding-first-run | note | risk | unverified | - | - | The box container restarts on its own after a crash or reboot and runs a Cursor-owned moving image tag | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-313 | onboarding-first-run | note | naming | unverified | batch4-cursor-leftovers | fixed | The agent's brief carries an unconditional 'Origin' section with cursor.com links | `desktop/source/host/runner/system-prompt.ts` |
 | F-314 | onboarding-first-run | note | dead-service | unverified | batch4-cursor-leftovers | fixed | Dev/unpackaged sign-in falls back to cursor.com when the CAISRA env is absent | `desktop/source/electron-main/account/cursor-auth.ts` |
-| F-315 | onboarding-first-run | note | design-violation | unverified | - | - | The first-run flow the person meets is the pinned Grok Bot six-step onboarding | `desktop/source/shared/observability/telemetry.ts` |
+| F-315 | onboarding-first-run | note | design-violation | unverified | batch4-first-run | known-limit | The first-run flow the person meets is the pinned Grok Bot six-step onboarding | `desktop/source/shared/observability/telemetry.ts` |
 | F-316 | prompt-and-brief | major | dead-service | refuted | cloud-agents-channels | needs-mac | Cloud-agent section and CloudAgent tool are live because isCloudAgentsDisabledByTeam is never defined — live on purpose since 25 September, served (`cloud-agents-served.md`) | `desktop/source/host/extensions/experiments/extension.ts` |
 | F-317 | prompt-and-brief | major | dead-service | confirmed | listeners-coming-soon | fixed | Routines section advertises Slack/GitHub/Teams/Linear/Sentry/PagerDuty listeners and names Cursor | `desktop/source/host/automations/automation.ts` |
 | F-318 | prompt-and-brief | major | design-violation | confirmed | routines-away | fixed | Prompt promises routines run while the user is away; the loop runs in a Docker box on the Mac | `desktop/source/host/automations/automation.ts` |
@@ -1366,3 +1366,30 @@ against the chunk's actual strings and its counts read in
 `dist/renderer-router-extension.json`, or it risks renaming a protocol
 value (F-207). The sentence to write first: `grep -o "cursor\.com[^\"]*"
 src/app/dist/renderer/assets/*.js | sort | uniq -c` on a bootstrapped Mac.
+
+### batch4-first-run (25 September 2026)
+
+Batch 4, third cluster: the first minutes with a new agent. Already true,
+closed by reading: F-297 (the intro is one attempt, delivered or not,
+since the spend guards of 23 September; `agent-lifecycle.ts` says so at
+the line) and F-309 (the Voice section of the brief is `direction.md` §4
+word for word; the row's "paraphrase" was wrong). Fixed: F-231, a local
+box that fails to start at launch (no docker command, daemon down) now
+writes its sentence to `computer-stream.log` instead of being swallowed,
+which is the line the Computer panel paints after 20 s
+(`main-production-services.ts`; `tests/local-docker-box.test.mjs`), so
+F-301 is `needs-mac`: whether that notice is what a person with no Docker
+sees at first launch. F-308 is `needs-mac`: an intro that finds no run
+ready stays pending (`setIntroductionPending` is not cleared) and runs on
+the next `kickstartAgent` call from the Mac, which the pinned renderer
+makes on creation; whether it makes one on a later open is not readable
+here. Known limits: F-300, the first message becomes the agent's name
+when it still has the default one, which is Grok Bot's own seeding
+(`send-acceptance.ts`) and the founder's to keep or drop ("i want
+literally everything"); F-307, the kickstart cue is Grok Bot's, asks one
+thing at a time like the brief and allows two or three connector cards,
+which is its choice and not a contradiction of the hidden-wake rule;
+F-306, the cheap-intro helpers have no caller and keep their test as the
+fallback they were written to be; F-315, the six-step onboarding is the
+pinned renderer's bytes; F-214, the sixteen tool logos are letter tiles
+because the real logos are trademarks not in this repository.
