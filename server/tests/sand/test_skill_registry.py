@@ -382,3 +382,23 @@ def test_the_user_id_the_publisher_carries_is_get_mes(user: User) -> None:
         caller = Caller()
 
     assert user_id_of(Call()) == stable_int32(user.id)  # type: ignore[arg-type]
+
+
+@pytest.mark.asyncio
+class TestManagedSetupAnswersEmpty:
+    """The three DashboardService methods the managed-setup extension asks at
+    host start (F-302): nothing managed, nothing to apply, nothing listed."""
+
+    async def test_managed_skills_team_rules_and_marketplace_are_empty(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        headers = {"Authorization": f"Bearer {access}"}
+        for method, body in (
+            ("GetManagedSkills", {}),
+            ("GetTeamRules", {"teamId": 1}),
+            ("ListMarketplacePlugins", {"limit": 20}),
+        ):
+            response = await client.post(f"/aiserver.v1.DashboardService/{method}", json=body, headers=headers)
+            assert response.status_code == 200, (method, response.text)
+            assert response.json() == {}

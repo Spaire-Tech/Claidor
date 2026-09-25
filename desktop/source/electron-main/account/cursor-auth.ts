@@ -17,7 +17,8 @@ import { resolveAuthRedirectTarget } from "../auth/auth-callback-registration.js
 
 export const ACCESS_TOKEN_SECRET_KEY = "cursor-access-token";
 export const REFRESH_TOKEN_SECRET_KEY = "cursor-refresh-token";
-export const DEFAULT_CURSOR_WEBSITE_URL = "https://cursor.com";
+/** Sign-in with no `CURSOR_WEBSITE_URL` set goes to Simeon Labs' API host, where `app_sign_in.py` serves the login routes at the root; until 25 September 2026 an unpackaged run fell back to cursor.com (F-314). */
+export const DEFAULT_CURSOR_WEBSITE_URL = "https://api.simeonlabs.com";
 export const DEFAULT_LOCAL_CURSOR_WEBSITE_URL = "https://localhost:4443";
 export const MAX_LOGIN_POLL_ATTEMPTS = 150;
 export { SignInPolicyViolationError, SIGN_IN_POLICY_VIOLATION_ERROR, SIGN_IN_POLICY_VIOLATION_MESSAGE } from "../../packages/cursor-config/auth/mdm-sign-in-policy.js";
