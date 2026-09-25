@@ -222,19 +222,19 @@ until its row says so. Columns:
 | F-196 | skills-kits-role-agents | note | risk | unverified | - | - | The box image is Cursor's public ECR tag; any skills in the box come from it | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-197 | renderer-patches-branding | blocking | docs-wrong | unverified | batch4-reads-and-docs | fixed | npm run verify cannot pass on a packaged app since the renderer patch: provenance is pre-patch and never regenerated | `desktop/scripts/verify.mjs` |
 | F-198 | renderer-patches-branding | major | docs-wrong | unverified | batch4-reads-and-docs | fixed | npm run package:diagnostic throws: the renderer-extension provenance it validates is schemaVersion 2 with keys it forbids | `desktop/scripts/lib/macos-package-verification.mjs` |
-| F-199 | renderer-patches-branding | major | docs-wrong | unverified | - | - | Settings 'router provider' patch is a no-op but the provenance record, name-measured.md and product-name.test.mjs present it as shipped | `desktop/scripts/lib/router-renderer-patch.mjs` |
+| F-199 | renderer-patches-branding | major | docs-wrong | unverified | batch4-renderer-patch-hygiene | fixed | Settings 'router provider' patch is a no-op but the provenance record, name-measured.md and product-name.test.mjs present it as shipped | `desktop/scripts/lib/router-renderer-patch.mjs` |
 | F-200 | renderer-patches-branding | major | design-violation | unverified | batch4-cursor-leftovers | needs-mac | The brand pass never renames 'Cursor' or cursor.com; the pinned renderer keeps Cursor-branded copy and dead cursor.com links | `desktop/scripts/lib/router-renderer-patch.mjs` |
-| F-201 | renderer-patches-branding | major | design-violation | unverified | - | - | The founder's twenty-one avatars are not in the app the founder runs; the packaged app still draws Grok Bot's faces with no note in-app | `desktop/scripts/import-avatars.mjs` |
+| F-201 | renderer-patches-branding | major | design-violation | unverified | batch4-renderer-patch-hygiene | known-limit | The founder's twenty-one avatars are not in the app the founder runs; the packaged app still draws Grok Bot's faces with no note in-app | `desktop/scripts/import-avatars.mjs` |
 | F-202 | renderer-patches-branding | minor | docs-wrong | unverified | batch4-reads-and-docs | fixed | name-measured.md contradicts itself and the code on CFBundleExecutable/CFBundleName, the header mark size and 'Caisra' copy | `docs/product/name-measured.md` |
 | F-203 | renderer-patches-branding | minor | docs-wrong | unverified | batch4-reads-and-docs | fixed | building-the-app.md, named as the current map, still says Caisra.app and CFBundleDisplayName = Caisra | `docs/product/building-the-app.md` |
 | F-204 | renderer-patches-branding | minor | docs-wrong | unverified | batch4-reads-and-docs | fixed | CLAUDE.md says the bare words Bot/Bots were left; the patch replaces them | `CLAUDE.md` |
 | F-205 | renderer-patches-branding | minor | docs-wrong | unverified | batch4-reads-and-docs | fixed | CLAUDE.md says Liquid Glass covers the message hover actions; the code and its test exclude them | `CLAUDE.md` |
-| F-206 | renderer-patches-branding | minor | unmeasured | unverified | - | - | Header-card and Liquid Glass CSS are appended blind: a selector that misses the pinned markup no-ops silently | `desktop/scripts/lib/router-renderer-patch.mjs` |
-| F-207 | renderer-patches-branding | minor | risk | unverified | - | - | The brand pass is an unanchored split/join over every chunk: it can rename non-copy uses of 'Grok Bot' and quoted 'Bot' protocol values | `desktop/scripts/lib/router-renderer-patch.mjs` |
+| F-206 | renderer-patches-branding | minor | unmeasured | unverified | batch4-renderer-patch-hygiene | fixed | Header-card and Liquid Glass CSS are appended blind: a selector that misses the pinned markup no-ops silently | `desktop/scripts/lib/router-renderer-patch.mjs` |
+| F-207 | renderer-patches-branding | minor | risk | unverified | batch4-renderer-patch-hygiene | needs-mac | The brand pass is an unanchored split/join over every chunk: it can rename non-copy uses of 'Grok Bot' and quoted 'Bot' protocol values | `desktop/scripts/lib/router-renderer-patch.mjs` |
 | F-208 | renderer-patches-branding | minor | dead-service | unverified | batch4-cursor-leftovers | needs-mac | Shipped Settings keeps Grok Bot's three tabs, and the Updates tab checks Cursor's feed unless the env guard holds | `desktop/scripts/lib/router-renderer-patch.mjs` |
-| F-209 | renderer-patches-branding | note | design-violation | unverified | - | - | Gate defaults: browserUse off and multitask on, with no Simeon decision recorded for either | `desktop/source/shared/node/experiments/simeon-gate-defaults.ts` |
+| F-209 | renderer-patches-branding | note | design-violation | unverified | batch4-renderer-patch-hygiene | fixed | Gate defaults: browserUse off and multitask on, with no Simeon decision recorded for either | `desktop/source/shared/node/experiments/simeon-gate-defaults.ts` |
 | F-210 | renderer-patches-branding | minor | design-violation | confirmed | cloud-agents-channels | fixed | Agent-readable text still says Cursor and points at cursor.com services that do not exist here | `desktop/source/host/automations/automation.ts` |
-| F-211 | renderer-patches-branding | minor | design-violation | unverified | - | - | Unshipped frontend/ still carries a Router with Claude Code/Codex/OpenRouter providers and an API-key field, and tests pin it | `desktop/tests/router-settings.test.mjs` |
+| F-211 | renderer-patches-branding | minor | design-violation | unverified | batch4-renderer-patch-hygiene | known-limit | Unshipped frontend/ still carries a Router with Claude Code/Codex/OpenRouter providers and an API-key field, and tests pin it | `desktop/tests/router-settings.test.mjs` |
 | F-212 | renderer-patches-branding | note | docs-wrong | unverified | batch4-reads-and-docs | fixed | NOTICE.md and desktop/README.md describe the tree as a Grok Bot reconstruction with a Git-LFS DMG that building-the-app.md says was never there | `desktop/NOTICE.md` |
 | F-213 | renderer-patches-branding | note | risk | unverified | batch4-electron-shell | known-limit | Two build-time env vars rename the product silently and verify accepts whatever they say | `desktop/scripts/lib/config.mjs` |
 | F-214 | renderer-patches-branding | note | risk | unverified | batch4-first-run | known-limit | Onboarding's sixteen third-party tool logos ship as letter tiles | `desktop/scripts/make-runtime-assets.mjs` |
@@ -1424,3 +1424,34 @@ Grok Bot's own shell configuration, which the noVNC webview depends on,
 and a change has to be run on a Mac first; F-222 the process crash
 reporter has nothing to report to while telemetry is off, and Electron's
 own uncaught-exception dialog is what a person sees.
+
+### batch4-renderer-patch-hygiene (25 September 2026)
+
+Batch 4, fifth and last cluster: the renderer patch measures what it
+appends. Fixed: F-206, every class name the header-card and Liquid Glass
+blocks rely on is counted in the shipped stylesheet and chunks before the
+patch and recorded under `marks.styles` in `dist/renderer-router-extension.json`,
+the names that appear nowhere listed as `missing` and printed by the
+build (a miss does not stop it: the material is cosmetic; it is the line
+to read when a surface on the Mac looks unpatched). F-199, a Settings
+transform that returns its input is no longer recorded as a changed
+chunk, and the record's feature list no longer names the router-provider
+and usage-panel no-ops. F-209, `simeon-gate-defaults.ts` says why
+`sand_browser_use_subagent` stays off (wired, never run on a Mac, the
+computerUse child browses through the screen; the founder decides; the
+override variable tries it without a rebuild) and `sand_multitask` on
+(Grok Bot's own loop). `tests/renderer-patch-hygiene.test.mjs`. Needs a
+Mac: F-207, whether the brand pass renamed anything that is not copy; the
+record already carries every count per file (`brand.files`), and the
+contexts are one command on a bootstrapped Mac: `grep -o ".\{40\}Grok
+Bot.\{40\}" src/app/dist/renderer/assets/*.js`. Known limits: F-201, the
+packaged app draws Grok Bot's faces because the pinned renderer draws its
+own and the twenty-one avatars live in `frontend/`, which is not shipped
+(the founder's decision of 23 September, recorded in CLAUDE.md; no
+in-app note is possible without a renderer patch); F-211, the unshipped
+`frontend/` Router with its providers and API-key field is Grok Bot-era
+code the founder has not asked to delete, and its tests pin it as it is.
+
+Batch 4 as a whole (53 rows): 30 fixed, 14 known limits with their
+reasons, 8 need a Mac, 1 was already needs-mac (F-220); nothing is
+coming soon.

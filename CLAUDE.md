@@ -932,6 +932,28 @@ see or reach it. The ledger's dispositions are `fixed`, `coming-soon`
 (with the missing dependency named), `known-limit` and `needs-mac`.
 Work proceeds by cluster (root cause), not by finding.
 
+## Batch 4 of the ledger was worked (25 September 2026, evening)
+
+"go ahead with this batch … be incredibly careful": the onboarding /
+Electron main / renderer-patch / branding rows (F-197..F-233,
+F-297..F-315), five clusters, five commits, each with its ledger note
+(`batch4-reads-and-docs`, `batch4-cursor-leftovers`, `batch4-first-run`,
+`batch4-electron-shell`, `batch4-renderer-patch-hygiene`). What changed
+in the product: a packaged Simeon never touches Grok Bot's
+`~/.cursor/sand`; an unpackaged run defaults to `api.simeonlabs.com`, not
+Cursor; the server answers the three managed-setup methods the host asks
+at start; the main window reloads when its renderer dies; a box that
+fails to start at launch writes its sentence to `computer-stream.log`;
+the packager writes the microphone usage key; `SAND_DEVTOOLS=1` opens
+DevTools; `npm run package:diagnostic` takes the schema-2 patch record;
+the renderer patch counts its CSS anchors and stops recording the no-op
+Settings panel; "Grok" is no longer a fallback agent name; and the
+documents that contradicted the code (this file included) were corrected
+in place. Not run on a Mac: any of it. The three edits to the pinned
+renderer's own copy (Cursor, cursor.com, the Updates tab, the "remote
+computer" wording) wait on the chunk's actual strings (F-200, F-208,
+F-305).
+
 ## The eight features were served overnight (25–26 September 2026)
 
 "work independently and do all … always assume that we already have it."
