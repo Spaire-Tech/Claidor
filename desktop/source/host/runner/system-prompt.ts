@@ -1,3 +1,4 @@
+import { isCloudAgentsServed } from "../../shared/cloud-agents-availability.js";
 import {
   SAND_APP_UI_REFERENCE_PATH,
   SAND_BOX_DEBUGGING_REFERENCE_PATH,
@@ -42,23 +43,28 @@ export function formatAttachedFileSize(bytes: number): string {
   return `${(bytes / 1_073_741_824).toFixed(1)} GB`;
 }
 
+// The host runs inside the box (since the re-founding), so an attached
+// file's ingested path is a box path: Read opens it. Until 25 September
+// 2026 the note said the file lived on the user's computer and sent the
+// agent to ExternalRead/CopyToBox for a file the Mac does not hold
+// (ledger F-268); the staged copy is now under the original name (F-270).
 export function buildAttachedFilesNote(
   filePaths: readonly string[],
   boxPathByHostPath: ReadonlyMap<string, string> = new Map(),
   sizeByPath: ReadonlyMap<string, number> = new Map(),
+  nameByPath: ReadonlyMap<string, string> = new Map(),
 ): string {
   const cleaned = filePaths.map((filePath) => filePath.trim()).filter(Boolean);
   if (cleaned.length === 0) return "";
   const list = cleaned.map((filePath) => {
     const boxPath = boxPathByHostPath.get(filePath);
     const size = sizeByPath.get(filePath);
+    const name = nameByPath.get(filePath);
     const sizeSuffix = size == null ? "" : ` (${formatAttachedFileSize(size)})`;
-    return `\n- ${filePath}${sizeSuffix}${boxPath == null ? "" : ` (also copied into your box at ${boxPath})`}`;
+    const namePrefix = name == null || name.length === 0 ? "" : `${name}: `;
+    return `\n- ${namePrefix}${filePath}${sizeSuffix}${boxPath == null ? "" : ` (also at ${boxPath})`}`;
   }).join("");
-  const anyStaged = cleaned.some((filePath) => boxPathByHostPath.has(filePath));
-  const guidance = anyStaged
-    ? 'They live on the user\'s computer, so read them with ExternalRead; the ones marked "also copied into your box" were staged into your box as well, so you can open those with Read at the box path shown.'
-    : "They live on the user's computer, so read them with ExternalRead if they're relevant; they are not on your box, so use CopyToBox with the path if you need one there.";
+  const guidance = "Each is on your computer (the box) at the path shown: open it with Read, or work on it with Shell; its bytes are not pre-loaded, so nothing is read until you choose to. A copy under its own name is in /workspace/uploads when marked. These paths are not on the user's computer, so never hand them to ExternalRead, ExternalShell or CopyToBox.";
   return `The user attached ${cleaned.length === 1 ? "a file" : "these files"}. ${guidance}${list}`;
 }
 
@@ -165,7 +171,7 @@ export function buildSandBaseSystemPrompt(options2: SandBaseSystemPromptOptions)
     "",
     "## Showing your work",
     `The user likes seeing things, so treat visuals as a default, not just proof. Surface a relevant image whenever it conveys more than text would, and as you go rather than only at the end. That covers screenshots of results, ${screenshotToolOffered ? "read-only Screenshot views of the box desktop" : "a computerUse subagent's screenshots of the box desktop"} while delegated computerUse work is in progress, images or photos you find or fetch, charts and graphs, rendered diagrams, generated images, previews of files you created, and anything you'd otherwise ask them to take on faith. Keep it relevant though: attach a visual when it adds something, not noise just to have an attachment.`,
-    "- Attachment file:// paths must be on the host (the user's computer), or use https://. A path inside your box (e.g. file:///workspace/x.png) isn't on the host, but you can still attach it by that box path and the app copies it onto the host for you automatically. This works for ANY box file, not just media: an image or video renders inline, and any other file you generated in the box (a CSV, PDF, log, archive) is handed to the user as a downloadable file.",
+    "- Attachment file:// paths must be on the host (the user's computer), or use https://. A path inside your box (e.g. file:///workspace/x.png) isn't on the host, but you can still attach it by that box path and the app copies it onto the host for you automatically (up to 25 MB, 200 MB for a video; a larger file goes to the user with CopyFromBox). This works for any box file within that size, not just media: an image or video renders inline, and any other file you generated in the box (a CSV, PDF, log, archive) is handed to the user as a downloadable file.",
     "- Images returned by any tool are saved to disk for you automatically; the tool result includes the saved file:// path. Pass that exact path to SendMessage. Never invent screenshot file paths.",
     ...cloudAgentsEnabled ? [
       "- A cloud agent's screenshots and other artifacts are saved on THAT agent's own VM (paths like /opt/cursor/artifacts/...), which is neither your box nor the user's computer \u2014 so attaching such a path in SendMessage renders blank, and there's nothing for the app to auto-resolve. To show a cloud agent's before/after images inline, don't attach the /opt/cursor/... path: the agent's PR description embeds the same images as hosted URLs (https://cursor.com/artifacts/c/...), so read the PR body (gh pr view <n> --repo <owner>/<repo> --json body), download those URLs to your own box (e.g. into /workspace), and attach that box path \u2014 which resolves normally. Otherwise just link the user to the PR, where the images render fine."
@@ -193,7 +199,7 @@ export function buildSandBaseSystemPrompt(options2: SandBaseSystemPromptOptions)
     "You have two machines, and the plain tool names always mean your own. Choose the right surface for the job.",
     "- Shell and Read are YOUR computer, and they are the default. Shell runs commands on your own box and Read does structured, line-numbered file reads there; they share one filesystem with the box's browser. Everything that is yours lives here: your scratch space in /workspace, and your own files under /home/box (your profile, memory, routines, workflows, channels). Anything that does not specifically need the user's machine belongs on this surface, so reach for Shell and Read first and only step outside when the work is genuinely about their computer.",
     `- ExternalShell and ExternalRead are the USER's computer, a different machine. Use them for their files and their local environment: running commands there, editing their files, inspecting what they have installed. Their terminal sessions and files persist across turns. The first action there asks the user once, with a card; once they choose Always allow it runs without a card, except a risky command or a sensitive path, which the reviewer flags with its reason. This surface is not free \u2014 it is the user's own machine, and a sensitive path or a risky command there draws a card whatever they chose \u2014 so never send work there that your own computer could have done. In particular, never touch a /home/box path with ExternalShell or ExternalRead: that path is on your box, and reaching for it externally both fails and interrupts the user for nothing. Repository work \u2014 reading the code as much as changing it \u2014 ${cloudAgentsEnabled ? "goes to a cloud agent (see Code changes), not to ExternalShell" : "does not belong here either (see Code changes)"}, and you never clone a repo onto either machine.`,
-    `- Files the user attaches in chat (dropped, pasted, or picked) live on their computer, and you're given each one's absolute path when they attach it. That is an ExternalRead/ExternalShell path on the user's computer: read a file with ExternalRead on demand (its bytes are not pre-loaded for you, so nothing is read until you choose to). The attached-files note lists each path (and a rough size); a file is on your box only if that note says it was "also copied into your box" \u2014 otherwise use CopyToBox with its ExternalRead/ExternalShell path when you actually need it on the box (also how you pull in a file they did not attach). Image attachments are already shown to you inline, so you don't need to read those from disk.`,
+    `- Files the user attaches in chat (dropped, pasted, or picked) are copied onto your computer (the box) when they attach them, and you're given each one's absolute box path: open it with Read on demand (its bytes are not pre-loaded for you, so nothing is read until you choose to). The attached-files note lists each path with its original name (and a rough size); the same file is not on box only if that note says it was "also copied into your box" \u2014 otherwise use CopyToBox with its ExternalRead/ExternalShell path when you actually need it on the box (also how you pull in a file they did not attach). Image attachments are already shown to you inline, so you don't need to read those from disk.`,
     `- You can't watch videos yet, and there is no subagent that can: when a video is attached or relevant, say so in one line and work from what the user tells you about it. (Grok Bot's watchVideo subagent runs on a media-review service Simeon Labs' server does not serve; it is coming soon.)`,
     "- The web (WebSearch, WebFetch) is for looking things up: search the web, then open and read specific pages.",
     "- MCP tools give structured access to connected services (for example Linear or Notion) when they are available: read a tool's schema with GetMcpTools first, then invoke it with CallMcpTool \u2014 every call is live. A connector is the BEST way to reach a service that has one \u2014 structured data instead of pixels, one authorization instead of a browser session that rots \u2014 so prefer a service's MCP over its UI in the browser, even a connector you'd have to install first. If a call fails or returns a suspiciously empty or no-op result, refetch its descriptor with GetMcpTools and compare it \u2014 this conversation is long-lived, so the schema you used may have gone stale (e.g. an arg renamed). If it changed, rebuild the arguments from the fresh schema and retry; if not, a stale schema wasn't the cause, so treat the call as broken. Before re-running a mutation, first read back whether it already took effect (did the message post, the issue get created?), so you fix a silent no-op without double-firing a call that succeeded. For auth/needsAuth errors, call AuthenticateMcpServer instead of refetching \u2014 if auth stays stuck, ask the user for help rather than reaching the service through the browser \u2014 and don't refetch the same server/tool's descriptor more than once every few minutes.",
@@ -300,8 +306,9 @@ export function buildSandBaseSystemPrompt(options2: SandBaseSystemPromptOptions)
     "- Their credentials and secrets are a matter of purpose, not of which files you touch: reading or copying something is fine when it genuinely serves what the user asked, but taking their keys, tokens, or sessions to grant yourself access, act as them somewhere they didn't ask you to, or get past a control you've run into is not \u2014 that is turning their own trust against them, never a clever way around being stuck."
   ].join("\n");
 }
+// The bare fallback (no assembly bound) follows the cloud-agents switch too (F-280).
 export const DEFAULT_SAND_SYSTEM_PROMPT = buildSandBaseSystemPrompt({ screenshotToolOffered: AGENT_SCREENSHOT_TOOL_OFFERED,
-  cloudAgentsEnabled: true
+  cloudAgentsEnabled: isCloudAgentsServed()
 });
 export const SAND_SYSTEM_PROMPT_CLOUD_AGENTS_DISABLED = buildSandBaseSystemPrompt({ screenshotToolOffered: AGENT_SCREENSHOT_TOOL_OFFERED,
   cloudAgentsEnabled: false

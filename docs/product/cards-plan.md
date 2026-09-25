@@ -151,26 +151,31 @@ also waits on the browser being run at all.
 Five exist, one is half-built, five are to build, and three are to re-decide
 once the computer is designed. All fourteen are in scope.
 
-| # | Grok Bot family | Caisra today | Where |
+| # | Grok Bot family | Simeon today (corrected 25 September 2026) | Where |
 |---|---|---|---|
-| 1 | Choice card | **Exists** | `ThreadItemKind.Choice`, `AskUserQuestion` |
-| 2 | Secret request | **Exists**, merged into #4 | `ThreadItemKind.Secret`, `askInputMcpServer.ts` |
-| 3 | 1Password fill | **Equivalent, different vault** | `shared/browserCredentials/`, `lobsterBrowserMcpServer.ts` |
-| 4 | In-chat form | **Partial** | `shared/askInput/constants.ts` |
-| 5 | Box handoff | **Missing** | — |
-| 6 | Draft composer | **Missing** | — |
+| 1 | Choice card | **Exists** | SendMessage `type:widget` (`host/runner/tools/sand-widgets.ts`), drawn by the pinned renderer |
+| 2 | Secret request | **Coming soon** | `secret-request` is refused: its only store is a channel credential and channels are Coming Soon (ledger `cloud-agents-channels`) |
+| 3 | 1Password fill | **Not built** | the LobsterAI vault code went with that tree; Grok Bot's 1Password path is dev-only (ledger F-114) |
+| 4 | In-chat form | **Not built** | no `request_user_form` tool in `desktop/source` |
+| 5 | Box handoff | **Exists** (wired 25 September 2026, ledger F-076) | `request_box_help` (`host/runner/tools/box-help-tool.ts`), the session's hand-off service, `box-handoff-resume.ts` |
+| 6 | Draft composer | **Decoders only** | `email-draft` / `slack-draft` decode in `send-message-encoding.ts`; the model cannot emit one (`SEND_MESSAGE_TYPES`) |
 | 7 | 1Password connect | **To re-decide** | a vault connect card, if we adopt one |
 | 8 | SCM connect | **To re-decide** | only if cloud agents exist here |
-| 9 | Cloud agent card | **To re-decide** | Cursor-specific as written |
-| 10 | Permission / auto-review | **Exists** | `ThreadItemKind.Auth`, `flagged` + reason |
-| 11 | Cookie-origin approval | **Missing** | — |
-| 12 | Connector auth | **Exists** | `ThreadItemKind.Connector`, `propose_connector` (corrected 25 September 2026: the agent proposes with the `ProposeConnector` tool, which emits a `connector` card with `variant: "propose"` and a `reason`; the pinned renderer's card offers Add for a catalogued service with no server row) |
-| 13 | Spend / virtual card | **Missing** | — |
-| 14 | Routine confirm | **Exists in the host** (corrected 25 September 2026) | `reviewSandAutomationWrite` → the `auto-review-approval` card on surface `automation_write`; was gated off by `automationWrite: "off"` in every mode table, now follows the other surfaces; a card is drawn only when `sand_auto_review` enforces |
+| 9 | Cloud agent card | **Coming soon** | `cursor-agent` refused until `SAND_CLOUD_AGENTS_SERVED` (Cursor's BackgroundComposerService) |
+| 10 | Permission / auto-review | **Exists** | `local-tool-permission` and `auto-review-approval` cards, drawn by the host; the reviewer enforces since 25 September |
+| 11 | Cookie-origin approval | **Not built** | no `request_cookie_origin` tool in `desktop/source` |
+| 12 | Connector auth | **Exists** | the `connector` card (connect / connected / propose); the agent proposes with `ProposeConnector` |
+| 13 | Spend / virtual card | **Not built** | no `request_virtual_card` tool in `desktop/source` |
+| 14 | Routine confirm | **Exists in the host** | `reviewSandAutomationWrite` → the `auto-review-approval` card on surface `automation_write` |
 
-The thread currently has **nine** message kinds
-(`renderer/design/thread/types.ts`), and that list is closed: adding one is a
-decision the founder makes, each time.
+The thread's vocabulary is two lists in the shipped code, not a file
+(the "nine kinds" and `renderer/design/thread/types.ts` were the LobsterAI
+tree): what the model may send is `SEND_MESSAGE_TYPES` in
+`host/runner/tools/send-message-schema.ts` (text, attachment, widget; two
+refused as Coming Soon), and what the transport carries is the case list
+of `host/runner/tools/send-message-encoding.ts`, which includes the cards
+the host draws on its own. Adding a kind is a decision the founder makes,
+each time.
 
 ## The four differences that change the rules
 

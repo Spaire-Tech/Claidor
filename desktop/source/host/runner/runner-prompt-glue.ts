@@ -31,7 +31,7 @@ export interface RunnerPromptGlueOwner {
   readonly readVideoAttachmentBytes?: (path: string) => Promise<Uint8Array | null>;
   readonly isBrowserUseSubagentEnabled?: () => boolean;
   readonly isSpotlightEnabled?: () => boolean;
-  readonly uploadAttachmentsIntoBox?: (paths: readonly string[]) => Promise<ReadonlyMap<string, string>>;
+  readonly uploadAttachmentsIntoBox?: (paths: readonly string[], names?: ReadonlyMap<string, string>) => Promise<ReadonlyMap<string, string>>;
   readonly getRemoteBoxAvailable?: () => boolean;
   getConversationId(): string;
   resolveBoxId(): string;

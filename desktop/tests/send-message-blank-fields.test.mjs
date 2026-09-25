@@ -13,8 +13,9 @@ import { build } from "esbuild";
 // ("Invalid arguments: widget: widget is only valid with type:widget …
 // Nothing was sent. Re-send …", or the widget's own minLength errors), and
 // the model re-sent the same call thirty times in a row. Blank fields are
-// now dropped before validation. A filled foreign field is still refused,
-// because that one the model does fix when told.
+// now dropped before validation, and so is a filled foreign field: since
+// 25 September `type` decides, and fields of the other types are dropped
+// whatever they hold (the third test below).
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 

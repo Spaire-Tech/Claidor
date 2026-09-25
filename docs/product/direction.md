@@ -223,6 +223,15 @@ The founder, on this: *"as you can see it always ask if he's allowed to
 do something in the computer i want the same."* Every action that
 touches the computer asks. That is not a setting to be optimised away.
 
+**Superseded 17 September 2026 (decision 4 in the list at the end of this
+file; `sources/caisra-permissions.md`).** The computer asks once: the first
+action draws the card, Allow is this computer from then on, Not now is that
+one action, and only a risky command or a sensitive path asks again with
+the reviewer's reason. The four-way card above (Always allow / Allow once /
+Never) is Grok Bot's and is what the pinned renderer still draws; the host
+remembers Always allow (ledger `asks-once-memory`). Noted 25 September
+2026, ledger F-095.
+
 ## 3. How text arrives
 
 *"the text come like texts. not ai. however when the ai speaks, it comes

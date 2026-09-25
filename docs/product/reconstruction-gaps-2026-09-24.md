@@ -119,7 +119,9 @@ Ranked by what a person clicking around hits first.
 5. **Auto-review rejects every action it is asked about.**
    `DashboardService/ClassifySandAutoReview` is not served and the classifier
    fails closed (`host/runner/sand-auto-review-classifier-run.ts:66-68`);
-   with `sand_auto_review` off by default it is rarely asked.
+   with `sand_auto_review` off by default it is rarely asked. (Corrected 25
+   September 2026: the classifier runs on Luna through Simeon Labs' proxy and
+   `sand_auto_review` is on in `simeon-gate-defaults.ts`; it enforces.)
 6. **Custom MCP servers and account plugins cannot be added.** Reads return
    `{unavailable: true}`; writes (`InstallUserPlugin`, `SetMcpConfig`,
    `UninstallUserPlugin`) throw (`shared/node/cursor-backend/account-mcp.ts:118-128`).

@@ -99,26 +99,26 @@ until its row says so. Columns:
 | F-073 | memory | note | spend | confirmed | memory | known-limit | If dreaming is ever switched on: two model calls per synthesis plus a daily temporal review per agent, retried up to 3 times | `desktop/source/host/extensions/memory/memory-synthesis-service.ts` |
 | F-074 | memory | note | unwired | confirmed | memory | fixed | MEMORY_UI_LIMIT and the user/project prompt limits are defined and never used; the pane list is capped at 100 | `desktop/source/host/runner/sand-memory.ts` |
 | F-075 | memory | minor | docs-wrong | confirmed | memory | fixed | model-roles-measured.md's memory row is wrong today: no memory role runs, and the one that could would be Terra/high | `docs/product/model-roles-measured.md` |
-| F-076 | cards-and-widgets | blocking | unwired | unverified | - | - | request_box_help (box hand-off card) is never on the production toolset | `desktop/source/host/runner/tools/turn-toolset.ts` |
-| F-077 | cards-and-widgets | major | spend | unverified | - | - | Auto-review runs in shadow: a Luna call per Shell/Computer action, never an approval card | `desktop/source/host/extensions/auto-review/auto-review-service.ts` |
-| F-078 | cards-and-widgets | major | naming | unverified | - | - | The agent's brief and box reference docs say Claidor and Cursor | `desktop/source/host/runner/system-prompt.ts` |
-| F-079 | cards-and-widgets | major | dead-service | unverified | - | - | The brief orders repository work to CloudAgent and offers the cursor-agent card, though cloud agents are unserved | `desktop/source/host/runner/system-prompt.ts` |
-| F-080 | cards-and-widgets | major | design-violation | unverified | - | - | 'Computer asks once' is not what the local-execution gate does by default | `desktop/source/shared/local-tool-permission.ts` |
+| F-076 | cards-and-widgets | blocking | unwired | confirmed | box-handoff | fixed | request_box_help (box hand-off card) is never on the production toolset | `desktop/source/host/runner/tools/turn-toolset.ts` |
+| F-077 | cards-and-widgets | major | spend | refuted | auto-review-enforce | fixed | Auto-review runs in shadow: a Luna call per Shell/Computer action, never an approval card | `desktop/source/host/extensions/auto-review/auto-review-service.ts` |
+| F-078 | cards-and-widgets | major | naming | confirmed | sign-in-copy | fixed | The agent's brief and box reference docs say Claidor and Cursor | `desktop/source/host/runner/system-prompt.ts` |
+| F-079 | cards-and-widgets | major | dead-service | refuted | cloud-agents-channels | coming-soon | The brief orders repository work to CloudAgent and offers the cursor-agent card, though cloud agents are unserved | `desktop/source/host/runner/system-prompt.ts` |
+| F-080 | cards-and-widgets | major | design-violation | confirmed | asks-once-memory | needs-mac | 'Computer asks once' is not what the local-execution gate does by default | `desktop/source/shared/local-tool-permission.ts` |
 | F-081 | cards-and-widgets | major | design-violation | confirmed | cloud-agents-channels | coming-soon | secret-request stores the value in a plain-JSON channel file that only channel connectors read | `desktop/source/host/runner/tools/send-message-tool.ts` |
-| F-082 | cards-and-widgets | major | unwired | unverified | - | - | The form, draft-composer, virtual-card and cookie-origin cards the permissions design relies on have no tool in the tree | `docs/product/sources/caisra-permissions.md` |
-| F-083 | cards-and-widgets | major | unwired | unverified | - | - | Artifacts-as-files: no docx/pptx/xlsx skill in the tree and no 'Documents You Make' section in the brief | `desktop/source/host/extensions/managed-setup/cursor-skills-marketplace.ts` |
-| F-084 | cards-and-widgets | minor | docs-wrong | unverified | - | - | Records say auto-review is fixed; neither says it runs in shadow | `CLAUDE.md` |
-| F-085 | cards-and-widgets | major | docs-wrong | unverified | - | - | The Settings paths the agent is told to name do not agree with each other or with the product | `desktop/source/shared/local-tool-permission-machinery.ts` |
-| F-086 | cards-and-widgets | major | risk | unverified | - | - | The first Allow card after launch can be posted without the account-scope stamp | `desktop/source/node-agent-coordinator/main.ts` |
-| F-087 | cards-and-widgets | note | risk | unverified | - | - | Chronological card sort only runs when the reply carries an Allow card | `desktop/source/node-agent-coordinator/main.ts` |
-| F-088 | cards-and-widgets | minor | dead-service | unverified | - | - | Local-tool permission ceiling is fetched from a Cursor Dashboard RPC on every auth change | `desktop/source/electron-main/account/cursor-profile.ts` |
-| F-089 | cards-and-widgets | minor | docs-wrong | unverified | - | - | cards-plan.md and direction.md describe kinds, files and tools that are not in the tree | `docs/product/cards-plan.md` |
+| F-082 | cards-and-widgets | major | unwired | confirmed | cards-to-build | known-limit | The form, draft-composer, virtual-card and cookie-origin cards the permissions design relies on have no tool in the tree | `docs/product/sources/caisra-permissions.md` |
+| F-083 | cards-and-widgets | major | unwired | confirmed | artifacts-files | needs-mac | Artifacts-as-files: no docx/pptx/xlsx skill in the tree and no 'Documents You Make' section in the brief | `desktop/source/host/extensions/managed-setup/cursor-skills-marketplace.ts` |
+| F-084 | cards-and-widgets | minor | docs-wrong | confirmed | auto-review-enforce | fixed | Records say auto-review is fixed; neither says it runs in shadow | `CLAUDE.md` |
+| F-085 | cards-and-widgets | major | docs-wrong | confirmed | brief-text | fixed | The Settings paths the agent is told to name do not agree with each other or with the product | `desktop/source/shared/local-tool-permission-machinery.ts` |
+| F-086 | cards-and-widgets | major | risk | refuted | hatch-residue | fixed | The first Allow card after launch can be posted without the account-scope stamp | `desktop/source/node-agent-coordinator/main.ts` |
+| F-087 | cards-and-widgets | note | risk | refuted | hatch-residue | fixed | Chronological card sort only runs when the reply carries an Allow card | `desktop/source/node-agent-coordinator/main.ts` |
+| F-088 | cards-and-widgets | minor | dead-service | refuted | dead-cursor-services | fixed | Local-tool permission ceiling is fetched from a Cursor Dashboard RPC on every auth change | `desktop/source/electron-main/account/cursor-profile.ts` |
+| F-089 | cards-and-widgets | minor | docs-wrong | confirmed | brief-text | fixed | cards-plan.md and direction.md describe kinds, files and tools that are not in the tree | `docs/product/cards-plan.md` |
 | F-090 | cards-and-widgets | minor | unwired | confirmed | routine-write-review | fixed | Routine writes are never reviewed: automationWrite is 'off' in every mode table | `desktop/source/host/runner/sand-auto-review.ts` |
-| F-091 | cards-and-widgets | minor | design-violation | unverified | - | - | The brief tells the agent to use a Screenshot tool that is withheld, with no explanation | `desktop/source/host/host-runner-composition.ts` |
-| F-092 | cards-and-widgets | note | design-violation | unverified | - | - | Dead settings 'Router' panel source offers Claude Code, Codex and an OpenRouter API key | `desktop/scripts/lib/router-renderer-patch.mjs` |
-| F-093 | cards-and-widgets | note | docs-wrong | unverified | - | - | Permissions design names widget options the schema does not have (multiSelect) and a stale test comment | `docs/product/sources/caisra-permissions.md` |
-| F-094 | cards-and-widgets | note | dead-service | unverified | - | - | Legacy 'permission-request' kind still encodable and described as no longer actionable | `desktop/source/host/runner/tools/sand-permission-request.ts` |
-| F-095 | cards-and-widgets | note | docs-wrong | unverified | - | - | direction.md contradicts itself on whether the computer asks once | `docs/product/direction.md` |
+| F-091 | cards-and-widgets | minor | design-violation | refuted | brief-text | fixed | The brief tells the agent to use a Screenshot tool that is withheld, with no explanation | `desktop/source/host/host-runner-composition.ts` |
+| F-092 | cards-and-widgets | note | design-violation | confirmed | sign-in-copy | known-limit | Dead settings 'Router' panel source offers Claude Code, Codex and an OpenRouter API key | `desktop/scripts/lib/router-renderer-patch.mjs` |
+| F-093 | cards-and-widgets | note | docs-wrong | confirmed | brief-text | fixed | Permissions design names widget options the schema does not have (multiSelect) and a stale test comment | `docs/product/sources/caisra-permissions.md` |
+| F-094 | cards-and-widgets | note | dead-service | refuted | cards-to-build | - | Legacy 'permission-request' kind still encodable and described as no longer actionable | `desktop/source/host/runner/tools/sand-permission-request.ts` |
+| F-095 | cards-and-widgets | note | docs-wrong | confirmed | brief-text | fixed | direction.md contradicts itself on whether the computer asks once | `docs/product/direction.md` |
 | F-096 | keys-and-auth | major | docs-wrong | confirmed | box-token-scope | fixed | Box keeps a server-revoked token for minutes after each Mac refresh; nothing re-reads inference.json on a 401 | `server/polar/desktop/service.py` |
 | F-097 | keys-and-auth | major | risk | confirmed | sign-in-copy | fixed | Any non-2xx from /oauth/token signs the person out and deletes the keychain entries | `desktop/source/electron-main/account/cursor-auth.ts` |
 | F-098 | keys-and-auth | major | naming | confirmed | sign-in-copy | fixed | The browser sign-in page says 'Caisra' on every sign-in | `server/polar/desktop/app_sign_in.py` |
@@ -291,24 +291,24 @@ until its row says so. Columns:
 | F-265 | server-desktop-api | note | docs-wrong | unverified | - | - | Docstrings say a refused provider call 'still costs' the person; the row is written at 0 credits | `server/polar/desktop/endpoints.py` |
 | F-266 | server-desktop-api | minor | naming | unverified | - | - | Dead sign-in flow keeps the caisra:// deep link and its test | `server/polar/desktop/endpoints.py` |
 | F-267 | server-desktop-api | note | risk | unverified | - | - | Composio proxy admits session ids are not bound to accounts, and the key is still required on Render | `server/polar/desktop/composio.py` |
-| F-268 | files-attachments-artifacts | major | design-violation | unverified | - | - | Attached-files note tells the agent a box path is on the user's computer | `desktop/source/host/runner/system-prompt.ts` |
-| F-269 | files-attachments-artifacts | major | unwired | unverified | - | - | Staging into /workspace/uploads fails silently and the fallback instruction is wrong | `desktop/source/host/extensions/attachments/box-staging.ts` |
-| F-270 | files-attachments-artifacts | minor | design-violation | unverified | - | - | The box copy of an attachment is named by its hash, and the note never gives the original filename | `desktop/source/host/extensions/attachments/box-staging.ts` |
-| F-271 | files-attachments-artifacts | blocking | unwired | unverified | - | - | No docx/pptx/xlsx/pdf skill exists in the tree and the brief has no 'Documents You Make' section | `docs/product/artifacts-decision.md` |
-| F-272 | files-attachments-artifacts | major | unwired | unverified | - | - | Large tool-output spill to files is not wired in production | `desktop/source/host/runner/runner-prompt-glue.ts` |
-| F-273 | files-attachments-artifacts | major | unwired | unverified | - | - | The brief delegates videos to watchVideo/videoReview subagents that are never offered | `desktop/source/host/runner/system-prompt.ts` |
-| F-274 | files-attachments-artifacts | major | unwired | unverified | - | - | A box file over 25 MB attached with SendMessage becomes a dead card while the agent reads 'Message sent' | `desktop/source/shared/media/attachment-limits.ts` |
-| F-275 | files-attachments-artifacts | minor | design-violation | unverified | - | - | CopyFromBox drops files into the Mac home folder root, not Downloads or a file card | `desktop/source/host/local-exec/local-exec-machine.ts` |
-| F-276 | files-attachments-artifacts | minor | risk | unverified | - | - | Copy tools and the once-Allow have no sensitive-file reviewer | `desktop/source/host/extensions/local-exec/gateway-local-exec-sand-box.ts` |
-| F-277 | files-attachments-artifacts | minor | risk | unverified | - | - | SendMessage attachment ingests any absolute path the host can read, including the mounted inference token | `desktop/source/host/extensions/attachments/attachments-service.ts` |
-| F-278 | files-attachments-artifacts | minor | risk | unverified | - | - | Image reads have loose containment on both sides | `desktop/source/host/extensions/attachments/attachments-service.ts` |
-| F-279 | files-attachments-artifacts | minor | risk | unverified | - | - | The Read tool's PDF text cache never invalidates and grows without bound | `desktop/source/packages/agent/tools/core/read/read.ts` |
-| F-280 | files-attachments-artifacts | minor | design-violation | unverified | - | - | The attachments section of the brief still names Cursor cloud agents and cursor.com in this build | `desktop/source/host/runner/system-prompt.ts` |
-| F-281 | files-attachments-artifacts | minor | risk | unverified | - | - | Link previews leak every pasted hostname to Google's favicon service | `desktop/source/host/extensions/attachments/attachments-service.ts` |
-| F-282 | files-attachments-artifacts | note | docs-wrong | unverified | - | - | artifacts-audit.md describes the removed LobsterAI attachment model as 'ours' | `docs/product/artifacts-audit.md` |
-| F-283 | files-attachments-artifacts | note | unmeasured | unverified | - | - | No offline tests cover staging, the attachment edge, file transfer, download naming or the spill | `desktop/tests/pdf-read.test.mjs` |
-| F-284 | files-attachments-artifacts | note | dead-service | unverified | - | - | durable-file-policy only serves box-store-sync, whose client cannot be constructed | `desktop/source/host/durable-file-policy.ts` |
-| F-285 | files-attachments-artifacts | note | design-violation | unverified | - | - | File-transfer tools speak of 'the single computer connected today' with no registry | `desktop/source/host/runner/tools/sand-file-transfer-tools.ts` |
+| F-268 | files-attachments-artifacts | major | design-violation | confirmed | attachment-topology | fixed | Attached-files note tells the agent a box path is on the user's computer | `desktop/source/host/runner/system-prompt.ts` |
+| F-269 | files-attachments-artifacts | major | unwired | confirmed | attachment-topology | fixed | Staging into /workspace/uploads fails silently and the fallback instruction is wrong | `desktop/source/host/extensions/attachments/box-staging.ts` |
+| F-270 | files-attachments-artifacts | minor | design-violation | confirmed | attachment-topology | fixed | The box copy of an attachment is named by its hash, and the note never gives the original filename | `desktop/source/host/extensions/attachments/box-staging.ts` |
+| F-271 | files-attachments-artifacts | blocking | unwired | confirmed | artifacts-files | needs-mac | No docx/pptx/xlsx/pdf skill exists in the tree and the brief has no 'Documents You Make' section | `docs/product/artifacts-decision.md` |
+| F-272 | files-attachments-artifacts | major | unwired | confirmed | attachment-topology | known-limit | Large tool-output spill to files is not wired in production | `desktop/source/host/runner/runner-prompt-glue.ts` |
+| F-273 | files-attachments-artifacts | major | unwired | refuted | brief-text | coming-soon | The brief delegates videos to watchVideo/videoReview subagents that are never offered | `desktop/source/host/runner/system-prompt.ts` |
+| F-274 | files-attachments-artifacts | major | unwired | confirmed | attachment-limits | fixed | A box file over 25 MB attached with SendMessage becomes a dead card while the agent reads 'Message sent' | `desktop/source/shared/media/attachment-limits.ts` |
+| F-275 | files-attachments-artifacts | minor | design-violation | confirmed | attachment-limits | fixed | CopyFromBox drops files into the Mac home folder root, not Downloads or a file card | `desktop/source/host/local-exec/local-exec-machine.ts` |
+| F-276 | files-attachments-artifacts | minor | risk | refuted | local-security | fixed | Copy tools and the once-Allow have no sensitive-file reviewer | `desktop/source/host/extensions/local-exec/gateway-local-exec-sand-box.ts` |
+| F-277 | files-attachments-artifacts | minor | risk | confirmed | attachment-limits | fixed | SendMessage attachment ingests any absolute path the host can read, including the mounted inference token | `desktop/source/host/extensions/attachments/attachments-service.ts` |
+| F-278 | files-attachments-artifacts | minor | risk | confirmed | attachment-limits | fixed | Image reads have loose containment on both sides | `desktop/source/host/extensions/attachments/attachments-service.ts` |
+| F-279 | files-attachments-artifacts | minor | risk | confirmed | attachment-limits | fixed | The Read tool's PDF text cache never invalidates and grows without bound | `desktop/source/packages/agent/tools/core/read/read.ts` |
+| F-280 | files-attachments-artifacts | minor | design-violation | refuted | cloud-agents-channels | fixed | The attachments section of the brief still names Cursor cloud agents and cursor.com in this build | `desktop/source/host/runner/system-prompt.ts` |
+| F-281 | files-attachments-artifacts | minor | risk | confirmed | attachment-limits | fixed | Link previews leak every pasted hostname to Google's favicon service | `desktop/source/host/extensions/attachments/attachments-service.ts` |
+| F-282 | files-attachments-artifacts | note | docs-wrong | confirmed | attachment-topology | fixed | artifacts-audit.md describes the removed LobsterAI attachment model as 'ours' | `docs/product/artifacts-audit.md` |
+| F-283 | files-attachments-artifacts | note | unmeasured | confirmed | attachment-topology | fixed | No offline tests cover staging, the attachment edge, file transfer, download naming or the spill | `desktop/tests/pdf-read.test.mjs` |
+| F-284 | files-attachments-artifacts | note | dead-service | confirmed | cloud-agents-channels | coming-soon | durable-file-policy only serves box-store-sync, whose client cannot be constructed | `desktop/source/host/durable-file-policy.ts` |
+| F-285 | files-attachments-artifacts | note | design-violation | confirmed | cards-to-build | - | File-transfer tools speak of 'the single computer connected today' with no registry | `desktop/source/host/runner/tools/sand-file-transfer-tools.ts` |
 | F-286 | web-and-search | major | unwired | unverified | - | - | WebSearch throws away every cited page: the agent gets Luna's summary and no URLs | `desktop/source/packages/agent/tools/core/web-search.ts` |
 | F-287 | web-and-search | major | design-violation | unverified | - | - | Site-visit tracking records every host the agent's browser opens and ships it to the backend over Cursor's AnalyticsService — against the stated privacy rationale, and to a route that 404s | `desktop/source/host/extensions/inference/capability-tools.ts` |
 | F-288 | web-and-search | minor | dead-service | unverified | - | - | Bot-wall detection is wired only to telemetry; neither the agent nor the person is told a page was a challenge screen | `desktop/source/host/runner/bot-block-detection.ts` |
@@ -1062,3 +1062,75 @@ cache). The approval card naming a machine waits on cards-plan (F-149).
 F-147 is refuted: an expired token file is re-read every 30 s, as
 CLAUDE.md says. The record's `[SimeonScreen]` tag is corrected (F-146).
 `tests/coordinator-gateway-box.test.mjs`.
+
+### box-handoff (25 September 2026)
+
+Refuters: of 18 cards-and-widgets findings, ten were closed by earlier
+clusters today (F-077, F-079, F-086, F-087, F-088, F-091, and most of
+F-078, F-080, F-083, F-084, F-085). The one live wiring hole was the
+same shape as the Screenshot and computer-tool holes of 24 September: a
+Grok Bot tool that exists in `host/runner/tools` and is ordered by the
+brief but was never offered by `createTurnToolsetFactoryProvider`, with
+a dead `boxHandoff` runner option standing in for the factory.
+`request_box_help` is now offered, bound to the session's hand-off
+service and to the turn's end-awaiting-user (F-076); cards-plan row 5
+says so. Records caught up: the four-way card (F-080, needs a Mac to
+read the pinned chunk's strings before patching it to Allow / Not now),
+`reconstruction-gaps` on auto-review (F-084), the two local-tool
+sentences no longer name a Settings tab the app does not have (F-085),
+the cards-plan table is rewritten against the shipped code (F-089),
+`multiSelect` is out of the permissions source (F-093), direction.md §2
+carries the asks-once decision (F-095), an IdP example no longer says
+Anysphere (F-078). Not built, listed as such in cards-plan and
+`cards-to-build`: the in-chat form, the draft composer, the cookie-origin
+and virtual-card cards (F-082); `permission-request` is a legacy
+decoder, not an offered kind (F-094); the machine name on the card waits
+on the registry (F-285, with F-149).
+
+### attachment-topology (25 September 2026)
+
+The host runs inside the box since the re-founding, and the attachment
+code and its brief sentences were written as if the host's data dir sat
+beside the person's files. So every attached file's ingested path is a
+box path, and the note told the agent it "lived on the user's computer"
+and sent it to ExternalRead and CopyToBox for a file the Mac does not
+hold (F-268); staging into `/workspace/uploads` failed silently with an
+empty map and named the copy by its hash (F-269, F-270). Now the note
+says the file is on the box, under its original name (the name travels
+from `send-pipeline` through the dispatch to the glue), the staged copy
+keeps that name (collisions suffixed), a failed upload writes a
+`[claidor] attachments staging … failed` line, and the brief's sentence
+matches. Whether the upload itself works depends on which exec daemon
+serves 1337 (`box-substrate`; ours has no `writeArgs`). The large
+tool-output spill is not wired on the production shell (F-272; it writes
+through the same unmeasured path, known-limit until the daemon question
+is answered). `artifacts-audit.md` carries a superseded banner (F-282).
+`tests/attachments-files.test.mjs` (F-283).
+
+### attachment-limits (25 September 2026)
+
+Failures became wrong instructions rather than sentences the model
+reads: a file over 25 MB attached with SendMessage was stored as a raw
+box URL the Mac cannot read, a dead card while the agent read "sent"
+(F-274: a tool error naming the limit and CopyFromBox, and the brief
+names the limit); an attachment could be made of the box's credential
+mount, `/proc`, the secret store or a sign-in file (F-277: refused by
+`attachmentSourceRefusal`); the Mac rendered any `file://` path a
+transcript entry named (F-278: only its own staging is read locally);
+the PDF text cache was keyed by path and never evicted (F-279: keyed by
+the bytes' hash, 32 entries); link previews sent every pasted hostname
+to Google's favicon service (F-281: the same host's `/favicon.ico`);
+CopyFromBox dropped files in the home folder root (F-275: `Downloads`).
+The sensitive-path check already covers CopyToBox and the once-Allow
+(F-276, local-security).
+
+### artifacts-files (25 September 2026)
+
+The brief says a report, plan, deck or spreadsheet is a .docx/.pptx/.xlsx
+made with python-docx, python-pptx and openpyxl and sent as an
+attachment (brief-text, F-331). Whether those libraries are in Cursor's
+box image is not measured (F-083, F-271): run
+`docker exec simeon-box python3 -c "import docx, pptx, openpyxl"` on a
+Mac; if it fails, provisioning installs them once (a build, not a
+Cursor service, so not Coming Soon). A skills directory for documents
+is still to build.

@@ -80,7 +80,8 @@ test("the brief: cloud agents coming soon, no admin, no Origin, no CloudAgent to
     assert.doesNotMatch(disabled, /CloudAgent tool/);
     assert.match(module.SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION, /^## Cloud agents coming soon\n/);
     assert.doesNotMatch(module.SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION, /admin/);
-    assert.match(module.DEFAULT_SAND_SYSTEM_PROMPT, /## Origin/, "Grok Bot's served text is kept behind the flag");
+    assert.match(module.buildSandBaseSystemPrompt({ cloudAgentsEnabled: true }), /## Origin/, "Grok Bot's served text is kept behind the flag");
+    assert.doesNotMatch(module.DEFAULT_SAND_SYSTEM_PROMPT, /## Origin/, "the bare fallback follows the switch too (F-280)");
   } finally {
     await dispose();
   }

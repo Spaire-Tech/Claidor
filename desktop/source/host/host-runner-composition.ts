@@ -1410,8 +1410,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             const index = boxAgentWindowIndex(remoteBoxForPrompt as any, session.id);
             return index === undefined ? null : { display: `:${index}`, cdpUrl: `http://127.0.0.1:${9222 + index}` };
           },
-          uploadAttachmentsIntoBox: async paths =>
-            new Map(await method(attachments, "stageIntoBox")?.(session.id, paths) ?? []),
+          uploadAttachmentsIntoBox: async (paths, names) =>
+            new Map(await method(attachments, "stageIntoBox")?.(session.id, paths, names) ?? []),
           getRemoteBoxAvailable: () => remoteBoxAvailable,
           getConversationId: () => session.id,
           resolveBoxId: () => session.id,
@@ -2210,6 +2210,27 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       }),
       createSendToAgentToolInputs: () => ({
         dependencies: dependencies.sendToAgent,
+      }),
+      // request_box_help: the box hand-off card. The tool, the session's
+      // hand-off service and the resume were all in the tree, the brief
+      // ordered the tool, and a dead `boxHandoff` runner option stood in
+      // for this factory, so the production toolset never offered it
+      // (ledger F-076, 25 September 2026).
+      createRequestBoxHelpToolInputs: turn => ({
+        dependencies: {
+          getAgentId: () => session.id,
+          endTurn: () => { turn.endThisRunAwaitingUser?.("request_box_help"); },
+          requestHelp: async (request) => {
+            const start = method(extensions.api("session"), "startHandoff");
+            if (start == null) throw new Error("The box hand-off service is not bound.");
+            return await start(request) as { kind: "started"; requestId: string } | { kind: "already-pending"; requestId: string; instruction: string };
+          },
+          onSendMessage: (message, timestampMs) => {
+            const update = { type: "send-message" as const, message: { ...message, type: "text" }, timestampMs, ...(turn.ackToken === undefined ? {} : { ackToken: turn.ackToken }) };
+            if (turn.emitUpdate === undefined) hooks.transport.onUpdate(update);
+            else turn.emitUpdate(update);
+          },
+        },
       }),
       createReactionToolInputs: turn => ({
         dependencies: turn.emitUpdate === undefined

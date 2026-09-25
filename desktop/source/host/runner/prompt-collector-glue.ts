@@ -41,6 +41,7 @@ export interface TurnPromptOptions {
   readonly selectedVideos?: readonly SelectedVideo[];
   readonly attachedFilePaths?: readonly string[];
   readonly attachedFileSizes?: ReadonlyMap<string, number>;
+  readonly attachedFileNames?: ReadonlyMap<string, string>;
   readonly richText?: string;
   readonly replyContext?: unknown;
   readonly messageId?: string;
@@ -74,7 +75,7 @@ export interface PromptCollectorHost<Context = unknown> {
   screenshotToolOffered?: (() => boolean) | undefined;
   getConversationId?: (() => string) | undefined;
   getAutomationStatusReminder?: ((firingAutomationId?: string) => string | null) | undefined;
-  uploadAttachmentsIntoBox?: ((paths: readonly string[]) => Promise<ReadonlyMap<string, string>>) | undefined;
+  uploadAttachmentsIntoBox?: ((paths: readonly string[], names?: ReadonlyMap<string, string>) => Promise<ReadonlyMap<string, string>>) | undefined;
   getRemoteBoxAvailable?: (() => boolean) | undefined;
   readVideoAttachmentBytes?: ((path: string) => Promise<Uint8Array | null>) | undefined;
   readBoxFile?: ((path: string) => Promise<Uint8Array | null>) | undefined;
@@ -109,6 +110,7 @@ export interface GeneratedTurnPromptOptions {
   readonly selectedVideos?: readonly GeneratedSelectedVideo[];
   readonly attachedFilePaths?: readonly string[];
   readonly attachedFileSizes?: ReadonlyMap<string, number>;
+  readonly attachedFileNames?: ReadonlyMap<string, string>;
   readonly richText?: string;
   readonly replyContext?: unknown;
   readonly messageId?: string;
@@ -197,7 +199,7 @@ export function createPromptCollectorGlue<Context = unknown>(host: PromptCollect
       "- Read, Shell, and the box's browser share one filesystem, so a file you create with Shell can be opened, uploaded, or imported in the browser, and browser downloads can be inspected with Read or processed with Shell. Move data between code and web apps through files on the box.",
       "- Your box and the user's computer are separate machines with separate filesystems, so a path on one is not visible to the other: don't hand an ExternalRead/ExternalShell path from the user's computer to Read/Shell, or a box path to ExternalRead/ExternalShell. Move files across with CopyToBox / CopyFromBox.",
       "- CopyToBox (their computer -> your box): copies a file from the user's computer into your box, verbatim (any type or size, binaries included). Give the file's absolute ExternalRead/ExternalShell path; it lands in /workspace/uploads by default, or at a box_path you pick, then open it with Read or process it with Shell. Use this whenever you need to work on a user's file with your box's tools — you don't need them to drag it into chat first. (Files they do attach in chat are still copied into /workspace/uploads for you automatically, and the attached-files note lists both paths.)",
-      "- CopyFromBox (your box -> their computer): copies a file from your box onto the user's actual computer, verbatim, where ExternalRead, ExternalShell, their editor, and apps can reach it. Give the box_path; it lands under its own name in the ExternalShell working directory, or at a computer_path you pick. Expand any glob in Shell first and pass concrete paths. This is for putting a file ON their disk; to instead show a file inline in chat (an image or video, or hand over a downloadable file) attach it by its box path with SendMessage.",
+      "- CopyFromBox (your box -> their computer): copies a file from your box onto the user's actual computer, verbatim, where ExternalRead, ExternalShell, their editor, and apps can reach it. Give the box_path; it lands under its own name in their Downloads folder, or at a computer_path you pick. Expand any glob in Shell first and pass concrete paths. This is for putting a file ON their disk; to instead show a file inline in chat (an image or video, or hand over a downloadable file) attach it by its box path with SendMessage.",
       "- Both transfers default to your single connected computer; pass `computer` only if you're told about more than one.",
     ].join("\n");
   }
@@ -347,13 +349,13 @@ export function createPromptCollectorGlue<Context = unknown>(host: PromptCollect
     const files = options.attachedFilePaths ?? [];
     let staged = new Map<string, string>();
     if (files.length > 0 && host.uploadAttachmentsIntoBox != null && host.getRemoteBoxAvailable?.() === true) {
-      try { staged = new Map(await host.uploadAttachmentsIntoBox(files)); } catch {}
+      try { staged = new Map(await host.uploadAttachmentsIntoBox(files, options.attachedFileNames)); } catch {}
     }
     const address = buildUserMessageAddressNote(options.messageId);
     const reply = buildReplyContextNote(options.replyContext);
     let text = [address, reply].filter(Boolean).join("\n");
     text = text.length > 0 && args.trimmedPrompt.length > 0 ? `${text}\n${args.trimmedPrompt}` : text || args.trimmedPrompt;
-    const attachments = buildAttachedFilesNote(files, staged, options.attachedFileSizes);
+    const attachments = buildAttachedFilesNote(files, staged, options.attachedFileSizes, options.attachedFileNames);
     if (attachments.length > 0) text = text.length > 0 ? `${text}\n\n${attachments}` : attachments;
     const epoch = args.compactionEpoch();
     const reminder = getAutomationStatusReminderForTurn(epoch, options.automationWake?.id);
@@ -387,13 +389,13 @@ export function createPromptCollectorGlue<Context = unknown>(host: PromptCollect
     const files = options.attachedFilePaths ?? [];
     let staged = new Map<string, string>();
     if (files.length > 0 && host.uploadAttachmentsIntoBox != null && host.getRemoteBoxAvailable?.() === true) {
-      try { staged = new Map(await host.uploadAttachmentsIntoBox(files)); } catch {}
+      try { staged = new Map(await host.uploadAttachmentsIntoBox(files, options.attachedFileNames)); } catch {}
     }
     const address = buildUserMessageAddressNote(options.messageId);
     const reply = buildReplyContextNote(options.replyContext);
     let text = [address, reply].filter(Boolean).join("\n");
     text = text.length > 0 && args.trimmedPrompt.length > 0 ? `${text}\n${args.trimmedPrompt}` : text || args.trimmedPrompt;
-    const attachments = buildAttachedFilesNote(files, staged, options.attachedFileSizes);
+    const attachments = buildAttachedFilesNote(files, staged, options.attachedFileSizes, options.attachedFileNames);
     if (attachments.length > 0) text = text.length > 0 ? `${text}\n\n${attachments}` : attachments;
     const epoch = args.compactionEpoch();
     const reminder = getAutomationStatusReminderForTurn(epoch, options.automationWake?.id);

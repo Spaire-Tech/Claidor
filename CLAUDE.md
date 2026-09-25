@@ -387,7 +387,14 @@ and our reconstruction daemon bind-mounted over
 every Computer call and CopyToBox fails, which the 24 September child
 log (no Computer call ever issued) is consistent with. Read
 `docker exec simeon-box ps aux | grep box-exec-daemon` before reasoning
-about a blind computerUse child again. The transcript's third
+about a blind computerUse child again. **Also 25 September (ledger
+`attachment-topology`): an attached file's path is a box path**, because the
+host runs in the box; until then the note told the agent the file lived on
+the user's computer and sent it to ExternalRead and CopyToBox for a file
+the Mac does not hold, the staged copy was named by its hash, and a file
+over 25 MB became a dead card. The box hand-off card's tool
+(`request_box_help`) is offered by the production toolset since the same
+day; it was built, ordered by the brief and never wired. The transcript's third
 finding, one reply sent twice ("Nice. We're set…"), is not explained by
 the code alone: the send count is collected synchronously before the
 run settles, and the early-result reminder cannot fire in a turn with no
