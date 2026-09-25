@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -175,4 +175,27 @@ test("the Mac rewrites the box's token file when its access token changes, so a 
   } finally {
     await loaded.dispose();
   }
+});
+
+test("the docker CLI is found where Docker Desktop and Homebrew put it, not only on a Finder-launched app's PATH", async () => {
+  // Measured 25 September 2026: `spawn docker ENOENT` from the packaged app while Terminal had it.
+  const loaded = await loadModule("source/electron-main/box/local-docker-host-connector.ts", "local-docker-binary");
+  try {
+    const { DOCKER_BINARY_CANDIDATES, resolveDockerBinary, dockerSpawnEnv } = loaded.module;
+    const finderPath = { PATH: "/usr/bin:/bin:/usr/sbin:/sbin" };
+    assert.ok(DOCKER_BINARY_CANDIDATES(finderPath, "/Users/me").includes("/usr/local/bin/docker"));
+    assert.ok(DOCKER_BINARY_CANDIDATES(finderPath, "/Users/me").includes("/Users/me/.docker/bin/docker"));
+    assert.equal(resolveDockerBinary({ ...finderPath, SAND_DOCKER_BINARY: "/x/docker" }, () => false), "/x/docker", "an explicit binary wins");
+    assert.equal(resolveDockerBinary({ PATH: "/nowhere" }, (path) => path === "/opt/homebrew/bin/docker"), "/opt/homebrew/bin/docker");
+    assert.match(dockerSpawnEnv(finderPath).PATH, /\/usr\/local\/bin/);
+    assert.match(dockerSpawnEnv(finderPath).PATH, /\/opt\/homebrew\/bin/);
+  } finally {
+    await loaded.dispose();
+  }
+});
+
+test("ExternalAwaitShell waits in the user's computer's terminals folder, not the box's", async () => {
+  const composition = await readFile(path.join(repoRoot, "source/host/host-runner-composition.ts"), "utf8");
+  assert.match(composition, /const getLocalTerminalsFolder = method\(localExec\.box as DynamicApi, "terminalsFolder"\);/);
+  assert.match(composition, /const getTerminalsFolder = getLocalTerminalsFolder \?\? method\(remoteBox, "getTerminalsFolder"\);/);
 });

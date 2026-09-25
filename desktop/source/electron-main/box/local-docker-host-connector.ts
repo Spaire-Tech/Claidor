@@ -1,5 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { spawn } from "node:child_process";
+import { accessSync, constants as fsConstants } from "node:fs";
+import { homedir } from "node:os";
 import { chmod, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -52,9 +54,41 @@ interface CommandResult { readonly ok: boolean; readonly output: string }
 interface InferenceCredential { readonly accessToken: string; readonly backendUrl: string; readonly expiresAtMs: number; readonly renewalCredential?: string }
 interface LocalHostBundle { readonly path: string; readonly sha256: string; readonly boxExecDaemonPath: string; readonly boxExecDaemonSha256: string }
 
+// Measured on the founder's Mac, 25 September 2026: every box call failed
+// with `spawn docker ENOENT` while `docker version` worked in Terminal. A
+// packaged app launched from Finder gets PATH=/usr/bin:/bin:/usr/sbin:/sbin,
+// and Docker Desktop's CLI is a symlink in /usr/local/bin (or Homebrew's
+// /opt/homebrew/bin, or the per-user ~/.docker/bin), so a bare "docker"
+// resolves to nothing. The binary is looked up here instead; SAND_DOCKER_BINARY
+// names one outright.
+export const DOCKER_BINARY_CANDIDATES = (env: NodeJS.ProcessEnv = process.env, home: string = homedir()): readonly string[] => [
+  ...(env.PATH ?? "").split(":").filter((dir) => dir.length > 0).map((dir) => join(dir, "docker")),
+  "/usr/local/bin/docker",
+  "/opt/homebrew/bin/docker",
+  join(home, ".docker", "bin", "docker"),
+  "/Applications/Docker.app/Contents/Resources/bin/docker",
+  join(home, ".rd", "bin", "docker"),
+  "/opt/podman/bin/docker",
+];
+let resolvedDockerBinary: string | undefined;
+export function resolveDockerBinary(env: NodeJS.ProcessEnv = process.env, isExecutable: (path: string) => boolean = (path) => { try { accessSync(path, fsConstants.X_OK); return true; } catch { return false; } }): string {
+  const named = env.SAND_DOCKER_BINARY?.trim();
+  if (named != null && named.length > 0) return named;
+  if (resolvedDockerBinary != null) return resolvedDockerBinary;
+  const found = DOCKER_BINARY_CANDIDATES(env).find(isExecutable);
+  if (found != null) { resolvedDockerBinary = found; computerStreamLine(`local docker: cli at ${found}`); }
+  return found ?? "docker";
+}
+export function dockerSpawnEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const extra = ["/usr/local/bin", "/opt/homebrew/bin", join(homedir(), ".docker", "bin")];
+  const path = (env.PATH ?? "").split(":").filter((dir) => dir.length > 0);
+  return { ...env, PATH: [...path, ...extra.filter((dir) => !path.includes(dir))].join(":") };
+}
+
 function runDocker(args: readonly string[]): Promise<CommandResult> {
   return new Promise((resolve) => {
-    const child = spawn("docker", [...args], { stdio: ["ignore", "pipe", "pipe"] });
+    // The CLI also spawns credential helpers by name, so its PATH is widened too.
+    const child = spawn(resolveDockerBinary(), [...args], { stdio: ["ignore", "pipe", "pipe"], env: dockerSpawnEnv() });
     let output = "";
     const append = (chunk: Buffer): void => { output += chunk.toString(); if (output.length > 200_000) output = output.slice(-200_000); };
     child.stdout?.on("data", append);
@@ -247,7 +281,7 @@ async function ensureLocalDockerBoxNarrated(settingsPath: string, inferenceCrede
   const inferenceDir = await ensureInferenceCredentialDirectory(settingsPath);
   if (inferenceCredential != null) await persistInferenceCredential(settingsPath, inferenceCredential);
   const daemon = await runDocker(["info", "--format", "{{.ServerVersion}}"]).catch(() => ({ ok: false, output: "Docker is not installed." }));
-  if (!daemon.ok) throw new Error(`Local Docker VM is selected, but Docker is unavailable: ${daemon.output || "start Docker and try again"}`);
+  if (!daemon.ok) throw new Error(`Local Docker VM is selected, but Docker is unavailable: ${/ENOENT/.test(daemon.output) ? `no docker command was found (looked in PATH, /usr/local/bin, /opt/homebrew/bin, ~/.docker/bin and Docker.app); install Docker Desktop or set SAND_DOCKER_BINARY` : daemon.output || "start Docker and try again"}`);
   computerStreamLine(`local docker: daemon ${daemon.output.trim()}`);
   const inspected = await inspectContainer();
   computerStreamLine(`local docker: container exists=${inspected.exists} running=${inspected.running} owned=${inspected.owned} schema=${inspected.schemaVersion || "?"} hostBundleMatches=${inspected.hostSha256 === hostBundle.sha256}`);
