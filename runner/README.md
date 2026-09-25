@@ -86,7 +86,7 @@ secret, and the process refuses to start without the two that matter.
 
 | Variable | What it is |
 |---|---|
-| `CLAIDOR_API_BASE_URL` | Claidor's API, e.g. `https://api.claidor.com`. `CLAIDOR_BASE_URL` is accepted as the same thing. Required. |
+| `CLAIDOR_API_BASE_URL` | Claidor's API, e.g. `https://api.simeonlabs.com`. `CLAIDOR_BASE_URL` is accepted as the same thing. Required. |
 | `CLAIDOR_MATY_RUNNER_TOKEN` | The service's own token. It belongs to no person. Required. |
 | `CLAIDOR_MATY_RUNNER_NAME` | What this runner calls itself when it claims a job. Defaults to the host name. |
 | `CLAIDOR_MATY_ENGINE_ROOT` | The built engine: the directory holding `openclaw.mjs`. Defaults to `/engine`, where the image puts it. |

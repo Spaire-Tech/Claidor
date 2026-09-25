@@ -16,8 +16,8 @@ a fixed table:
 | summarization, memory | `gemini-2.5-flash` | — | `shared/agents/sand-agent-model.ts`, `runner/turn-run-shell.ts:188`, `extensions/memory/production.ts:69` |
 | computer-use subagent | `claude-opus-4-8` | `effort: low`, `thinking: false` | `sand-agent-model.ts` (`SAND_COMPUTER_USE_MODEL_SELECTION`) |
 | browser-use subagent | stored selection, else the loop's | — | `extensions/inference/cursor-session.ts:31` |
-| done or continue | the same loop model, re-run with a hidden nudge | — | `extensions/transcript/turn-runtime.ts:45,555-599` (`MAX_REPLY_NUDGES = 3`, plus one closing nudge) |
-| risky or safe | a classifier on Cursor's server, not in the app | — | `extensions/auto-review/sand-backend-smart-mode-classifier-exec.ts` (`classifySandAutoReview`); gate `sand_auto_review` defaults false → shadow |
+| done or continue | the same loop model, re-run with a hidden nudge | — | `extensions/transcript/turn-runtime.ts:45,555-599` (`MAX_REPLY_NUDGES = 3`, plus one closing nudge; the closing nudge could never fire until 25 September 2026 because nothing set the runner's latest-prompt-messages getter, design-audit-ledger F-020) |
+| risky or safe | a classifier on Cursor's server, not in the app; since 24 September Luna through Simeon Labs' proxy, and since 25 September enforcing (gate `sand_auto_review` on in `simeon-gate-defaults.ts`, read by the box host) | — | `extensions/auto-review/sand-backend-smart-mode-classifier-exec.ts` (`classifySandAutoReview`); gate `sand_auto_review` defaults false → shadow |
 | post-turn labelling | fire-and-forget to Cursor's server | — | `extensions/inference/sand-labeling.ts` |
 
 Background summarization starts when the conversation reaches 90 percent of
@@ -30,6 +30,15 @@ the token limit, or 10,000 tokens from it
 | --- | --- | --- |
 | the agent loop | Terra | **high** (was: not set, so OpenAI's default) |
 | summarization, memory, group chat | Luna | **low** (was: not set) |
+
+**Memory, corrected 25 September 2026.** Until that day no memory role
+ran at all: the production shell handed the settle no memory store, so
+extraction never fired, and had it fired it would have used the agent's
+own Terra/high session. Since `tests/memory-wired.test.mjs` the
+extraction runs on a hidden summarization session on Luna at low, and
+writes a `[claidor] memory extraction` line. Dreaming (synthesis) stays
+gated off (`sand_memory_dreaming`), because turning it on switches the
+legacy extraction off.
 | computer-use and browser-use subagents | Luna | **low** (was: not set) |
 | done or continue | Grok Bot's mechanism, unchanged since the 22 September decision | — |
 | risky or safe | left alone; Cursor's classifier cannot answer on Claidor, so auto-review is effectively off | — |

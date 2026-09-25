@@ -95,6 +95,24 @@ class DesktopSessionRepository(RepositoryBase[DesktopSession]):
         )
         return await self.get_one_or_none(statement)
 
+    async def get_parent_of(self, child: DesktopSession) -> DesktopSession | None:
+        """The signed-in desktop a box credential belongs to."""
+        if child.box_of_session_id is None:
+            return None
+        statement = self.get_base_statement().where(
+            DesktopSession.id == child.box_of_session_id
+        )
+        return await self.get_one_or_none(statement)
+
+    async def list_box_credentials_of(
+        self, parent_id: UUID
+    ) -> Sequence[DesktopSession]:
+        """The box credentials a signed-in desktop is the parent of."""
+        statement = self.get_base_statement().where(
+            DesktopSession.box_of_session_id == parent_id
+        )
+        return await self.get_all(statement)
+
 
 class DesktopUsageRepository(RepositoryBase[DesktopUsage]):
     model = DesktopUsage

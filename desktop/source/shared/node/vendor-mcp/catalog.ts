@@ -21,6 +21,15 @@ export interface VendorMcpConnector {
   readonly description: string;
   readonly url?: string;
   readonly comingSoon?: true;
+  /**
+   * The key of an app Simeon Labs registered in the vendor's own console, a
+   * public client signing in with PKCE. When set, the sign-in skips dynamic
+   * registration. Measured 24 September 2026: Dropbox answers every
+   * self-registered client with one shared id (`ydww2fwnzkxganl`) and names
+   * it "Self host app (Unknown agent)" on its consent page whatever
+   * `client_name` said; only an app made in its App Console carries our name.
+   */
+  readonly clientId?: string;
 }
 
 const G = VENDOR_MCP_GROUP;
@@ -39,13 +48,14 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   { id: "google-drive", name: "Google Drive", category: G.FilesDocs, comingSoon: true, description: "Coming soon. Google needs an app we register first." },
   { id: "dropbox", name: "Dropbox", category: G.FilesDocs, url: "https://mcp.dropbox.com/mcp", description: "Search, read, and organise files." },
   { id: "airtable", name: "Airtable", category: G.Productivity, url: "https://mcp.airtable.com/mcp", description: "Query and update bases, tables, and records." },
-  { id: "asana", name: "Asana", category: G.Productivity, url: "https://mcp.asana.com/v2/mcp", description: "Search and update tasks and projects." },
+  { id: "asana", name: "Asana", category: G.Productivity, comingSoon: true, description: "Coming soon. Asana's sign-in takes no self-registered client (measured 24 September 2026: no registration endpoint); it needs an app we register first." },
   { id: "clickup", name: "ClickUp", category: G.Productivity, url: "https://mcp.clickup.com/mcp", description: "Tasks, docs, and spaces." },
   { id: "monday", name: "monday.com", category: G.Productivity, url: "https://mcp.monday.com/mcp", description: "Boards, items, and the week." },
   { id: "todoist", name: "Todoist", category: G.Productivity, comingSoon: true, description: "Coming soon. Confirm the hosted MCP URL before Connect." },
   { id: "zoom", name: "Zoom", category: G.Meetings, comingSoon: true, description: "Coming soon. Zoom needs an app we register first." },
   { id: "google-meet", name: "Google Meet", category: G.Meetings, comingSoon: true, description: "Coming soon. Google needs an app we register first." },
-  { id: "figma", name: "Figma", category: G.Creativity, url: "https://mcp.figma.com/mcp", description: "Read files, frames, and design context." },
+  // Figma only lets clients on its MCP Catalog connect ("apply to register your client for remote access … reach out to your account team"); its registration endpoint answers 403 to any other client (measured 24 September 2026). Live again once Figma lists Simeon.
+  { id: "figma", name: "Figma", category: G.Creativity, comingSoon: true, description: "Coming soon. Figma only admits MCP clients listed in its MCP Catalog; Connect works once Figma lists Simeon." },
   { id: "canva", name: "Canva", category: G.Creativity, url: "https://mcp.canva.com/mcp", description: "Create and edit designs." },
   { id: "miro", name: "Miro", category: G.Creativity, url: "https://mcp.miro.com/mcp", description: "Read and build boards." },
   { id: "webflow", name: "Webflow", category: G.Creativity, url: "https://mcp.webflow.com/mcp", description: "Sites, CMS, and collections." },
@@ -85,4 +95,25 @@ export function isVendorMcpPluginId(id: string): boolean {
 
 export function isVendorMcpComingSoon(id: string): boolean {
   return vendorMcpConnectorById(id)?.comingSoon === true;
+}
+
+/**
+ * The MCP manager validates every server id as a positive decimal string
+ * (`mcp-server-id.ts`), because Cursor's backend numbered its servers. A
+ * vendor connector gets a stable number from its place in the store, far
+ * above anything a real account ever held; the plugin id stays the
+ * server *identifier* ("figma"), which is what tools and the box use.
+ */
+export const VENDOR_MCP_SERVER_ID_BASE = 900_000;
+
+export function vendorMcpServerId(pluginId: string): string | undefined {
+  const index = VENDOR_MCP_CONNECTORS.findIndex((item) => item.id === pluginId.trim());
+  return index < 0 ? undefined : String(VENDOR_MCP_SERVER_ID_BASE + index + 1);
+}
+
+export function vendorMcpPluginIdForServerId(serverId: string | number): string | undefined {
+  const numeric = typeof serverId === "number" ? serverId : Number(String(serverId).trim());
+  if (!Number.isSafeInteger(numeric)) return undefined;
+  const index = numeric - VENDOR_MCP_SERVER_ID_BASE - 1;
+  return index >= 0 && index < VENDOR_MCP_CONNECTORS.length ? VENDOR_MCP_CONNECTORS[index]?.id : undefined;
 }

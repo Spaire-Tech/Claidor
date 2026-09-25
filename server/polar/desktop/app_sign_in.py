@@ -311,4 +311,46 @@ async def oauth_token(
     )
 
 
+@router.post("/sand-box/inference-credential", name="desktop:box_inference_credential")
+async def box_inference_credential(
+    request: Request, session: AsyncSession = Depends(get_db_session)
+) -> JSONResponse:
+    """The box's own renewal (25 September 2026). Grok Bot's host renews
+    its inference credential at this path on its backend
+    (`desktop/source/host/extensions/auth/credential-renewer.ts`,
+    `RENEWAL_PATH`, `{credential}` in, `{accessToken, expiresAtMs}`
+    out), and it builds the path with a leading slash, so it lives at
+    the root like the sign-in routes. The credential is the one the Mac
+    asked for at `/desktop/api/box/renewal-credential` and wrote into
+    the box's token file; a box that outlives the app (routines fire
+    while the Mac is awake) renews here every hour without the Mac. A
+    refused credential is a 401, which the renewer reports and retries
+    with backoff; nothing here signs the desktop out.
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        body = None
+    credential = body.get("credential") if isinstance(body, dict) else None
+    if not isinstance(credential, str) or not credential:
+        return JSONResponse(
+            {"error": "invalid_request"}, status_code=400, headers=NO_STORE
+        )
+    try:
+        row, access = await desktop.renew_box_access(session, credential)
+    except DesktopUnauthenticated as error:
+        return JSONResponse(
+            {"error": "invalid_grant", "message": error.message},
+            status_code=401,
+            headers=NO_STORE,
+        )
+    return JSONResponse(
+        {
+            "accessToken": envelope_access_token(row, access),
+            "expiresAtMs": int(row.access_expires_at.timestamp() * 1000),
+        },
+        headers=NO_STORE,
+    )
+
+
 __all__ = ["router"]

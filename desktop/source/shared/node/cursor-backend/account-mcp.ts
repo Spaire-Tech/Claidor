@@ -1,43 +1,23 @@
+// The account's MCP servers and plugins (24 September 2026). Until now the
+// six calls here went to Cursor's dashboard (GetAvailableMcpServers,
+// GetMcpConfig, SetMcpConfig, InstallUserPlugin, UninstallUserPlugin,
+// UpdateUserPluginInstall), which Simeon Labs' server does not serve: reads
+// came back `unavailable`, writes threw, and no custom server or plugin could
+// be added. They now read and write the store on this machine
+// (`account-mcp/store.ts`, `account-mcp-config.json` beside
+// `vendor-mcp-installs.json`) through `account-mcp/local-client.ts`, whose
+// answers are the generated proto messages, so everything below this line
+// reads them exactly as it read the wire.
+
+import { createLocalAccountMcpClient } from "../account-mcp/local-client.js";
+import { parseAccountMcpServerConfigValue, type McpConfig, type McpRemoteConfig, type McpServerConfig } from "../account-mcp/store.js";
 import { accountCacheScope } from "../cursor-token.js";
 
-export const ACCOUNT_MCP_RPC_TIMEOUT_MS = 30_000;
-export type McpStdioConfig = { readonly type?: "stdio"; readonly command: string; readonly args?: readonly string[]; readonly env?: Readonly<Record<string, string>>; readonly cwd?: string };
-export type McpRemoteConfig = { readonly type?: "http" | "sse"; readonly url: string; readonly headers?: Readonly<Record<string, string>>; readonly auth?: { readonly CLIENT_ID: string; readonly CLIENT_SECRET?: string; readonly scopes?: readonly string[] }; readonly tls?: { readonly caBundle: string } };
-export type McpServerConfig = McpStdioConfig | McpRemoteConfig;
-export interface McpConfig { readonly mcpServers: Readonly<Record<string, McpServerConfig>> }
+export type { McpConfig, McpRemoteConfig, McpServerConfig, McpStdioConfig } from "../account-mcp/store.js";
 
-function stringRecord(value: unknown): Record<string, string> | undefined {
-  if (typeof value !== "object" || value == null || Array.isArray(value)) return undefined;
-  const entries = Object.entries(value); if (!entries.every(([, item]) => typeof item === "string")) return undefined;
-  return Object.fromEntries(entries) as Record<string, string>;
-}
-function parseServerConfig(value: unknown): McpServerConfig | null {
-  if (typeof value !== "object" || value == null || Array.isArray(value)) return null;
-  const item = value as Record<string, unknown>;
-  if (typeof item.command === "string") {
-    if (item.type !== undefined && item.type !== "stdio") return null;
-    if (item.args !== undefined && (!Array.isArray(item.args) || !item.args.every((arg) => typeof arg === "string"))) return null;
-    const env = item.env === undefined ? undefined : stringRecord(item.env); if (item.env !== undefined && env === undefined) return null;
-    if (item.cwd !== undefined && typeof item.cwd !== "string") return null;
-    return { ...(item.type === undefined ? {} : { type: "stdio" as const }), command: item.command, ...(item.args === undefined ? {} : { args: [...item.args] as string[] }), ...(env === undefined ? {} : { env }), ...(item.cwd === undefined ? {} : { cwd: item.cwd as string }) };
-  }
-  if (typeof item.url !== "string" || item.type !== undefined && item.type !== "http" && item.type !== "sse") return null;
-  const headers = item.headers === undefined ? undefined : stringRecord(item.headers); if (item.headers !== undefined && headers === undefined) return null;
-  let auth: McpRemoteConfig["auth"];
-  if (item.auth !== undefined) {
-    if (typeof item.auth !== "object" || item.auth == null || Array.isArray(item.auth)) return null;
-    const source = item.auth as Record<string, unknown>; if (typeof source.CLIENT_ID !== "string" || source.CLIENT_SECRET !== undefined && typeof source.CLIENT_SECRET !== "string" || source.scopes !== undefined && (!Array.isArray(source.scopes) || !source.scopes.every((scope) => typeof scope === "string"))) return null;
-    auth = { CLIENT_ID: source.CLIENT_ID, ...(source.CLIENT_SECRET === undefined ? {} : { CLIENT_SECRET: source.CLIENT_SECRET as string }), ...(source.scopes === undefined ? {} : { scopes: [...source.scopes] as string[] }) };
-  }
-  let tls: McpRemoteConfig["tls"];
-  if (item.tls !== undefined) {
-    if (typeof item.tls !== "object" || item.tls == null || Array.isArray(item.tls)) return null;
-    const keys = Object.keys(item.tls); const caBundle = (item.tls as Record<string, unknown>).caBundle;
-    if (keys.length !== 1 || typeof caBundle !== "string" || caBundle.trim().length === 0 || caBundle.length > 128 * 1024) return null;
-    tls = { caBundle: caBundle.trim() };
-  }
-  return { ...(item.type === undefined ? {} : { type: item.type as "http" | "sse" }), url: item.url, ...(headers === undefined ? {} : { headers }), ...(auth === undefined ? {} : { auth }), ...(tls === undefined ? {} : { tls }) };
-}
+export const ACCOUNT_MCP_RPC_TIMEOUT_MS = 30_000;
+
+function parseServerConfig(value: unknown): McpServerConfig | null { return parseAccountMcpServerConfigValue(value); }
 export function parseAccountMcpConfigJson(json: string): McpConfig | null {
   if (json.trim().length === 0) return null;
   try {
@@ -53,7 +33,7 @@ export function serverIdsByNameFromMetadata(metadata: Readonly<Record<string, { 
 
 export interface AvailableMcpAccount { readonly accountKey: string; readonly serverIdentifier: string; readonly userHasAccessToken: boolean }
 export interface AvailableMcpServer {
-  readonly id: bigint; readonly name: string; readonly serverIdentifier: string; readonly type: string; readonly url?: string; readonly command?: string; readonly args: readonly string[]; readonly enabled: boolean; readonly isTeamServer: boolean; readonly owningTeamId?: bigint; readonly disabledByTeamAdminPolicy: boolean; readonly pluginId?: bigint; readonly isRequired: boolean; readonly managedByTeamPluginPolicy: boolean; readonly accounts?: readonly AvailableMcpAccount[];
+  readonly id: bigint | number; readonly name: string; readonly serverIdentifier?: string; readonly type: string; readonly url?: string; readonly command?: string; readonly args: readonly string[]; readonly enabled: boolean; readonly isTeamServer: boolean; readonly owningTeamId?: bigint | number; readonly disabledByTeamAdminPolicy: boolean; readonly pluginId?: bigint; readonly isRequired: boolean; readonly managedByTeamPluginPolicy: boolean; readonly accounts?: readonly AvailableMcpAccount[];
 }
 export interface AccountMcpServer { readonly id: string; readonly name: string; readonly serverIdentifier: string; readonly config: McpServerConfig; readonly isTeamServer: boolean; readonly disabledByTeamAdminPolicy: boolean; readonly pluginId?: string; readonly isRequired?: true; readonly managedByTeamPluginPolicy?: true; readonly accounts?: readonly { accountKey: string; serverIdentifier?: string; hasToken: boolean }[] }
 export interface EffectivePluginWire { readonly plugin?: { readonly id: bigint; readonly name: string; readonly displayName: string }; readonly installMode: number; readonly isTeamRequired: boolean; readonly isEnabled: boolean; readonly hasTeamConfiguredVariables?: boolean }
@@ -66,7 +46,30 @@ export interface AccountMcpClient {
   uninstallUserPlugin(request: { pluginId: bigint }): Promise<unknown>;
   updateUserPluginInstall(request: { pluginId: bigint; variables: Readonly<Record<string, string>> }): Promise<unknown>;
 }
-export interface AccountMcpDependencies { readonly getAccessToken: (options?: { backendUrl?: string }) => Promise<string>; readonly getMachineId: () => Promise<string>; readonly getBackendUrl: () => string; readonly createClient: (credentials: { getAccessToken: (options?: { backendUrl?: string }) => Promise<string>; getMachineId: () => Promise<string> }) => AccountMcpClient; readonly reportFailure?: (leg: string, error: unknown) => void }
+export interface AccountMcpDependencies {
+  readonly getAccessToken: (options?: { backendUrl?: string }) => Promise<string>;
+  readonly getMachineId: () => Promise<string>;
+  readonly getBackendUrl: () => string;
+  /** Where `account-mcp-config.json` lives: the sand root on the Mac, the box's copy in the box. */
+  readonly rootDir: () => string;
+  /** Tests only; production reads and writes the store on this machine. */
+  readonly createClient?: (credentials: { getAccessToken: (options?: { backendUrl?: string }) => Promise<string>; getMachineId: () => Promise<string> }) => AccountMcpClient;
+  /** Runs before a read of the store: the Mac pulls the box's copy here, so an agent's AddMcpServer shows up in Settings and the connect card can find its row. */
+  readonly syncStore?: () => Promise<void>;
+  /** After this side wrote the store (a server added or removed, a plugin installed or removed). */
+  readonly onStoreChanged?: () => void;
+  readonly reportFailure?: (leg: string, error: unknown) => void;
+}
+
+export function accountMcpClient(deps: AccountMcpDependencies, credentials: { getAccessToken: (options?: { backendUrl?: string }) => Promise<string>; getMachineId: () => Promise<string> }): AccountMcpClient {
+  if (deps.createClient != null) return deps.createClient(credentials);
+  return createLocalAccountMcpClient({ rootDir: deps.rootDir, ...(deps.onStoreChanged == null ? {} : { onStoreChanged: deps.onStoreChanged }) }) as unknown as AccountMcpClient;
+}
+
+async function syncStore(deps: AccountMcpDependencies): Promise<void> {
+  if (deps.syncStore == null) return;
+  try { await deps.syncStore(); } catch (error) { deps.reportFailure?.("account-store-sync", error); }
+}
 
 function httpConfig(server: AvailableMcpServer): McpRemoteConfig | undefined { return server.type.toLowerCase() === "stdio" || server.url == null || server.url.length === 0 ? undefined : { url: server.url, type: teamServerTransport(server.type) }; }
 function accountSlots(server: AvailableMcpServer): AccountMcpServer["accounts"] {
@@ -78,11 +81,16 @@ function attribution(server: AvailableMcpServer) { return { ...(server.pluginId 
 export async function fetchAccountMcpServers(deps: AccountMcpDependencies): Promise<{ servers: AccountMcpServer[]; cacheScope: string; unresolvedServerIds?: string[]; unavailable?: true } | null> {
   let cacheScope: string | undefined;
   try {
-    const accessToken = await deps.getAccessToken({ backendUrl: deps.getBackendUrl() }); cacheScope = accountCacheScope(accessToken);
-    const client = deps.createClient({ getAccessToken: async () => accessToken, getMachineId: deps.getMachineId });
+    // The store is a local file; a missing model token must not hide the
+    // person's custom servers (ledger F-173). The scope then is a constant.
+    let accessToken = "";
+    try { accessToken = await deps.getAccessToken({ backendUrl: deps.getBackendUrl() }); } catch { accessToken = ""; }
+    cacheScope = accessToken.length === 0 ? "local" : accountCacheScope(accessToken);
+    await syncStore(deps);
+    const client = accountMcpClient(deps, { getAccessToken: async () => accessToken, getMachineId: deps.getMachineId });
     const response = await client.getAvailableMcpServers({}, { timeoutMs: ACCOUNT_MCP_RPC_TIMEOUT_MS });
     const hasUserStdio = response.servers.some((server) => server.enabled && !server.isTeamServer && server.type.toLowerCase() === "stdio");
-    const teamIds = [...new Set(response.servers.flatMap((server) => server.isTeamServer && server.enabled && server.type.toLowerCase() === "stdio" && server.owningTeamId != null ? [server.owningTeamId] : []))];
+    const teamIds = [...new Set(response.servers.flatMap((server) => server.isTeamServer && server.enabled && server.type.toLowerCase() === "stdio" && server.owningTeamId != null ? [BigInt(server.owningTeamId)] : []))];
     const fetchConfig = (request: { teamScope: boolean; teamId?: bigint; redactSecrets: boolean }) => client.getMcpConfig(request, { timeoutMs: ACCOUNT_MCP_RPC_TIMEOUT_MS }).catch((error) => { deps.reportFailure?.("account-config-fetch", error); return null; });
     const configResponses = await Promise.all([...(hasUserStdio ? [fetchConfig({ teamScope: false, redactSecrets: false })] : []), ...teamIds.map((teamId) => fetchConfig({ teamScope: true, teamId, redactSecrets: false }))]);
     const stdioConfigById = new Map<string, McpServerConfig>();
@@ -92,13 +100,13 @@ export async function fetchAccountMcpServers(deps: AccountMcpDependencies): Prom
       const id = String(server.id); const isStdio = server.type.toLowerCase() === "stdio";
       if (!server.enabled && server.disabledByTeamAdminPolicy && !server.isTeamServer) {
         const config = isStdio ? server.command != null && server.command.length > 0 ? { command: server.command, ...(server.args.length === 0 ? {} : { args: [...server.args] }) } : undefined : httpConfig(server);
-        if (config != null) { const accounts = accountSlots(server); servers.push({ id, name: server.name, serverIdentifier: server.serverIdentifier, config, isTeamServer: false, disabledByTeamAdminPolicy: true, ...attribution(server), ...(accounts === undefined ? {} : { accounts }) }); }
+        if (config != null) { const accounts = accountSlots(server); servers.push({ id, name: server.name, serverIdentifier: server.serverIdentifier ?? server.name, config, isTeamServer: false, disabledByTeamAdminPolicy: true, ...attribution(server), ...(accounts === undefined ? {} : { accounts }) }); }
         continue;
       }
       if (!server.enabled) continue;
       const config = isStdio ? stdioConfigById.get(id) : httpConfig(server);
       if (config == null || isStdio && !("command" in config) || !isStdio && !("url" in config)) { if (isStdio) unresolvedServerIds.push(id); continue; }
-      const accounts = accountSlots(server); servers.push({ id, name: server.name, serverIdentifier: server.serverIdentifier, config, isTeamServer: server.isTeamServer, disabledByTeamAdminPolicy: server.disabledByTeamAdminPolicy, ...attribution(server), ...(accounts === undefined ? {} : { accounts }) });
+      const accounts = accountSlots(server); servers.push({ id, name: server.name, serverIdentifier: server.serverIdentifier ?? server.name, config, isTeamServer: server.isTeamServer, disabledByTeamAdminPolicy: server.disabledByTeamAdminPolicy, ...attribution(server), ...(accounts === undefined ? {} : { accounts }) });
     }
     return { servers, cacheScope, ...(unresolvedServerIds.length === 0 ? {} : { unresolvedServerIds }) };
   } catch { return cacheScope === undefined ? null : { servers: [], cacheScope, unavailable: true }; }
@@ -107,21 +115,22 @@ export async function fetchAccountMcpServers(deps: AccountMcpDependencies): Prom
 export type EffectivePluginInstallMode = "user" | "team-default" | "team-required" | "unknown";
 export function toEffectivePluginInstallMode(mode: number): EffectivePluginInstallMode { switch (mode) { case 1: return "user"; case 2: return "team-default"; case 3: return "team-required"; default: return "unknown"; } }
 export async function fetchEffectiveUserPlugins(deps: AccountMcpDependencies) {
-  const client = deps.createClient({ getAccessToken: async () => await deps.getAccessToken({ backendUrl: deps.getBackendUrl() }), getMachineId: deps.getMachineId });
+  const client = accountMcpClient(deps, { getAccessToken: async () => await deps.getAccessToken({ backendUrl: deps.getBackendUrl() }), getMachineId: deps.getMachineId });
   const response = await client.getEffectiveUserPlugins({ excludeConfiguredVariables: true });
   return response.plugins.flatMap((effective) => { const plugin = effective.plugin; if (plugin == null || plugin.id === 0n) return []; const mode = toEffectivePluginInstallMode(effective.installMode); return [{ pluginId: plugin.id.toString(), name: plugin.name, displayName: plugin.displayName.length > 0 ? plugin.displayName : plugin.name, installMode: mode === "unknown" && effective.isTeamRequired ? "team-required" as const : mode, isEnabled: effective.isEnabled, ...(effective.hasTeamConfiguredVariables === true ? { hasTeamConfiguredVariables: true as const } : {}) }]; });
 }
 export async function backfillUserPluginInstalls(deps: AccountMcpDependencies): Promise<string[]> {
-  const client = deps.createClient({ getAccessToken: async () => await deps.getAccessToken({ backendUrl: deps.getBackendUrl() }), getMachineId: deps.getMachineId });
+  const client = accountMcpClient(deps, { getAccessToken: async () => await deps.getAccessToken({ backendUrl: deps.getBackendUrl() }), getMachineId: deps.getMachineId });
   const [available, effective] = await Promise.all([client.getAvailableMcpServers({}), fetchEffectiveUserPlugins(deps)]); const known = new Set(effective.map((plugin) => plugin.pluginId)); const missing = new Set<string>();
   for (const server of available.servers) if (!server.isTeamServer && !server.managedByTeamPluginPolicy && server.pluginId != null && server.pluginId !== 0n && !known.has(server.pluginId.toString())) missing.add(server.pluginId.toString());
   const backfilled: string[] = []; for (const pluginId of missing) try { await client.installUserPlugin({ pluginId: BigInt(pluginId) }); backfilled.push(pluginId); } catch (error) { deps.reportFailure?.("account-install-backfill", error); }
   return backfilled;
 }
-export function createAccountMcpWriter(deps: Pick<AccountMcpDependencies, "getAccessToken" | "getMachineId" | "createClient">) {
-  const client = () => deps.createClient({ getAccessToken: deps.getAccessToken, getMachineId: deps.getMachineId });
+export function createAccountMcpWriter(deps: Pick<AccountMcpDependencies, "getAccessToken" | "getMachineId" | "createClient" | "rootDir" | "syncStore" | "onStoreChanged" | "reportFailure">) {
+  const full: AccountMcpDependencies = { ...deps, getBackendUrl: (deps as Partial<AccountMcpDependencies>).getBackendUrl ?? (() => "") };
+  const client = () => accountMcpClient(full, { getAccessToken: deps.getAccessToken, getMachineId: deps.getMachineId });
   return {
-    async getConfigForEdit() { const response = await client().getMcpConfig({ teamScope: false, redactSecrets: true }); return { config: parseAccountMcpConfigJson(response.configJson) ?? { mcpServers: {} }, serverIdsByName: serverIdsByNameFromMetadata(response.serverMetadataByName) }; },
+    async getConfigForEdit() { await syncStore(full); const response = await client().getMcpConfig({ teamScope: false, redactSecrets: true }); return { config: parseAccountMcpConfigJson(response.configJson) ?? { mcpServers: {} }, serverIdsByName: serverIdsByNameFromMetadata(response.serverMetadataByName) }; },
     async setConfig(config: McpConfig, serverIdsByName: Readonly<Record<string, bigint>>) { await client().setMcpConfig({ teamScope: false, configJson: JSON.stringify(config), serverIdsByName: { ...serverIdsByName } }); },
     async installPlugin(args: { pluginId: bigint; variables?: Readonly<Record<string, string>> }) { await client().installUserPlugin({ pluginId: args.pluginId, ...(args.variables == null || Object.keys(args.variables).length === 0 ? {} : { variables: { ...args.variables } }) }); },
     async uninstallPlugin(args: { pluginId: bigint }) { await client().uninstallUserPlugin({ pluginId: args.pluginId }); },

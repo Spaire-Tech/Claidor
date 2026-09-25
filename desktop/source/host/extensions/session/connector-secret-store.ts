@@ -21,7 +21,7 @@ export class SandConnectorSecretStore {
     const path = this.filePath(agentId, platform), merged = { ...this.read(agentId, platform), [field]: value };
     mkdirSync(dirname(path), { recursive: true });
     const tempPath = `${path}.${process.pid}.tmp`;
-    writeFileSync(tempPath, `${JSON.stringify(merged, null, 2)}\n`, "utf8"); renameSync(tempPath, path); return true;
+    writeFileSync(tempPath, `${JSON.stringify(merged, null, 2)}\n`, { encoding: "utf8", mode: 0o600 }); renameSync(tempPath, path); return true;
   }
   getSecret(agentId: string, platform: string, field: string): string | null {
     if (!isSafeFolderId(agentId) || !isSafeFolderId(platform)) return null;

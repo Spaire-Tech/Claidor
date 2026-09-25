@@ -80,8 +80,8 @@ export class HostMcpAuthCompletion {
       .noteAuthCompletedElsewhere(completion.serverId, completion.accountKey);
     if (completion.outcome === "cancelled") return;
     const agentId = resolveMcpAuthResumeAgentId({
-      requestingAgentId: completion.requestingAgentId,
-      watchAgentId,
+      requestingAgentId: completion.requestingAgentId ?? null,
+      watchAgentId: watchAgentId ?? null,
       waitingAgentId,
     });
     if (agentId != null) {

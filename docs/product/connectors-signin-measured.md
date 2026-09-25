@@ -1,0 +1,225 @@
+# Connectors sign in and serve tools (24 September 2026)
+
+The founder: "i thought i fixed the connectors, but its still not fixed.
+double check please." The agent had said: "Figma is installed, but the
+connector hasn't appeared for authorization yet."
+
+## What was there
+
+Two connector managers, one on the Mac (`electron-main/mcp/desktop-mcp-manager.ts`)
+and one in the box (`host/extensions/mcp/mcp-service.ts`), both Grok Bot's
+`SandMcpManager` around a "backend exec" that was Cursor's dashboard:
+tool listing, tool calls, the OAuth start (`checkAuthStatus`), the OAuth
+finish (`completeOAuth`), token checks. Claidor serves none of it. The
+vendor store (`shared/node/vendor-mcp/`, 15 September) added our own
+catalogue of vendor-hosted MCP servers and, on install:
+
+- in the box (`connectVendorMcp`), wrote an install file and stopped;
+- on the Mac, wrote the file and opened the vendor's sign-in page.
+
+Nothing anywhere exchanged the code the browser came back with, stored a
+token, or turned the vendor's URL into a server with tools. Searched for
+`connected: true`, `completeOAuth`, `VendorMcpOAuthPending` and
+`loadVendorMcpInstalls` across `desktop/source` on 24 September: the
+install file was read in two places, both only to mark a plugin
+"installed". And since product turns run in the box (22 September),
+InstallPlugin took the box path: the agent then asked for the plugin's
+servers, which come from Cursor's account list, empty here, so no row was
+"needsAuth", no card was drawn, and the agent wrote the sentence above.
+
+#185 ("resume agent after MCP OAuth") fixed a step downstream of a
+sign-in that never started.
+
+## What changed
+
+Everything after install now runs on the manager's own code paths, with
+one object of ours behind them.
+
+- **`vendor-mcp/backend-exec.ts`**: an implementation of the backend the
+  manager talks to for HTTP servers, for the vendor connectors, wrapping
+  the old Cursor one for anything else. `listTools` and `executeTool`
+  speak MCP to the vendor over streamable HTTP with the bearer token;
+  `checkAuthStatus` reports a valid token or starts a sign-in (Mac only:
+  discovery, dynamic registration, PKCE, an authorize URL);
+  `completeOAuth` exchanges the loopback's code for a token; logout and
+  account removal clear it. `canStartAuth: false` in the box: it only
+  reads the store and reports needsAuth with the vendor's URL as the
+  never-opened link, which is what draws the connect card.
+- **`vendor-mcp/http-mcp-client.ts`**: the MCP client. Initialize once,
+  `notifications/initialized`, `tools/list` with pagination, `tools/call`;
+  JSON or SSE replies; `Mcp-Session-Id`; a 401 or 403 is
+  `VendorMcpAuthRequiredError`; a 404 on a known session re-initializes
+  once.
+- **`vendor-mcp/display.ts`**: an installed live connector is an account
+  row for the manager (numeric id from `vendorMcpServerId`, identifier the
+  plugin id, HTTP config the vendor's URL, one `default` slot whose
+  `hasToken` is whether a credential is held). The merge keeps the base
+  scope, and the last seen scope across a failed read, because a scope
+  change cancels every pending sign-in watch.
+- **`vendor-mcp/installs.ts`**: the store carries a `credential` (access
+  token, refresh token, expiry, token endpoint, client id). The Mac is the
+  only writer. `replaceVendorMcpInstalls` is what the box does with the
+  copy it receives.
+- **`vendor-mcp/catalog.ts`**: `vendorMcpServerId(pluginId)`, a stable
+  decimal above 900,000, because `mcp-server-id.ts` refuses any server id
+  that is not a positive decimal string.
+- **`vendor-mcp/oauth.ts`**: the pending sign-in carries its `state`, a
+  process table holds pending sign-ins for fifteen minutes (the manager
+  starts one, the loopback finishes it, different objects in the same
+  process), `exchangeVendorMcpCode`, `refreshVendorMcpGrant`.
+- **Mac**: the manager's backend is the vendor one with `canStartAuth:
+  true`; the loopback's `completeOAuth` goes to it first; the Plugins
+  overlay's install starts the sign-in at once (`mcp-desktop.ts`,
+  `sand:mcp-install`); every `refreshMcp` to the host carries the store
+  (`readVendorMcpStore`), the resync pushes it on every transport connect
+  (`vendor_mcp` step), and a credential change on the Mac pushes it again
+  (`onVendorCredentialChanged`).
+- **Box**: `refreshMcp` and `setHostSettings` accept `vendorMcpStore` and
+  write it to the box's sand root, then restart the manager.
+
+The sequence for the agent's InstallPlugin: install writes the file in
+the box → reload → the row lists as needsAuth → `newNeedsAuthRows` →
+connect card with the numeric id → Connect runs on the Mac
+(`sand:mcp-auth` → `authenticateServer` → vendor `checkAuthStatus` →
+authorize URL → loopback registered → browser) → callback →
+`completeOAuth` → credential stored → the Mac's auth watch sees
+`hasValidToken` → completion → `refreshHostMcp` with the store → the box
+writes it, restarts, resumes the agent (#185) → tools on the next
+message.
+
+## Measured
+
+Offline, `desktop/tests/vendor-mcp-connect.test.mjs`: the ids, the store,
+the rows and the merge, the HTTP client against a scripted vendor
+(initialize, SSE list, call, 401), the Mac backend end to end (start, code
+exchange with PKCE, single-use state, list, call, refresh past expiry,
+logout, fallback), the box backend (no request ever made, expired reads
+as needsAuth), and the wiring anchors. Full suite green.
+
+**Not run on a Mac.** In particular, not measured: that Figma's, Notion's
+and Linear's servers accept dynamic registration with a loopback
+redirect today (they did on 15 and 19 September per the catalogue's
+note); the SSE shape of each vendor's reply; the box reaching the vendor
+over the container's egress; and the renderer's handling of a `started`
+result from the install path.
+
+## To read on a Mac
+
+Ask an agent to install Figma. The chat should show the connect card at
+once. Press Connect; the browser should open Figma's authorization page.
+After approving:
+
+```
+cat ~/Library/Application\ Support/Simeon/sand-data/vendor-mcp-installs.json
+docker exec simeon-box cat /home/box/sand-data/vendor-mcp-installs.json
+docker exec simeon-box grep -i 'vendor-mcp' /tmp/sand-host.log | tail
+```
+
+The first two should agree and carry a credential; the third should show
+`credential stored` on the Mac side only (the box logs list failures).
+Then ask the agent to use a Figma tool and read the `[claidor] tool=`
+line.
+
+## Corrected 24 September 2026, evening: Figma, and what the vendors actually take
+
+The founder: "can you connect me to figma … it tells me to retry."
+Three things were wrong, found in this order.
+
+**The path above is wrong.** The Mac's store is `~/.caisra/vendor-mcp-installs.json`
+(`host-paths.ts`, `SAND_PRODUCTION_DATA_DIRNAME`), not under Application
+Support. The founder's file existed and matched the box's: Figma installed,
+no credential. So the store was not the blocker.
+
+**The store now travels both ways** (commit `d74295ff`) all the same: the
+agent's InstallPlugin runs in the box, the Mac's copy was replacing the
+box's on every refresh, and a box-side install could be wiped. Installs
+carry `installedAtMs`, removals leave tombstones, the newest event wins,
+the Mac wins a shared install; the Mac pulls the box's copy before the
+connect card looks for the row (`vendor-mcp/box-pull.ts`).
+`tests/vendor-mcp-two-way.test.mjs`.
+
+**Figma refuses.** Its registration endpoint answers `403 Forbidden` to every
+client shape (measured from this container, six variants, `x-figma-rest-api-request-id`
+on each), and its documentation says why: "Only clients listed in the Figma
+MCP Catalog can connect to the Figma MCP Server … you can apply to register
+your client for remote access, please reach out to your account team."
+No code makes Connect work; Simeon has to be listed by Figma. The catalogue
+says so on the card (`comingSoon`, `catalog.ts`).
+
+**What every live vendor advertises**, read from their metadata the same
+evening (`tests/vendor-mcp-oauth-shapes.test.mjs` pins the shapes):
+
+| Takes the flow as built (public client, self-registered) | Notion, Dropbox, ClickUp, Canva, Webflow, Wix, PayPal, Square, Ramp, Apollo, Linear, Jira, Sentry, Cloudflare, Greenhouse, Airtable, Stripe |
+|---|---|
+| Metadata at the RFC 8414 path form only (now tried first) | Airtable (`/.well-known/oauth-authorization-server/oauth2/v1`), monday.com (`…/mcp`), Stripe (`…/mcp`) |
+| No public client, `client_secret_post` only (now registered that way; the secret rides with the credential) | Miro, Vercel, Supabase, monday.com |
+| No registration endpoint (coming soon) | Asana |
+| Allowlisted by the vendor (coming soon) | Figma |
+
+The Mac writes every sign-in start, refusal, token-exchange failure and
+stored credential to `~/.caisra/vendor-mcp-signin.log`; the connect card
+itself only ever says "retry".
+
+To read on a Mac, corrected:
+
+```
+cat ~/.caisra/vendor-mcp-installs.json
+tail -n 20 ~/.caisra/vendor-mcp-signin.log
+docker exec simeon-box cat /home/box/sand-data/vendor-mcp-installs.json
+```
+
+Not run on a Mac: a Notion sign-in end to end with the two-way store, and
+any of the four `client_secret_post` vendors.
+
+## Measured 24 September 2026, night: Dropbox connects, and calls us "Self host app (Unknown agent)"
+
+The founder connected Dropbox from the packaged app: the first vendor
+sign-in to finish end to end on a Mac. Dropbox's consent page said **"Self
+host app (Unknown agent) would like to…"**.
+
+Why, measured from the container against `https://www.dropbox.com/oauth2/register`
+(the endpoint its metadata advertises): Dropbox answers **every**
+self-registered client with the **same** `client_id`, `ydww2fwnzkxganl`,
+and a fixed list of loopback redirect URIs, whatever the request carried.
+Three registrations (no User-Agent, a `Simeon/1.0` User-Agent, and one
+with `logo_uri`, `software_id` and `software_version`) all came back with
+that id and echoed `client_name: "Simeon"`. The name is stored and never
+shown: the consent page names the shared app "Self host app". Dropbox's
+help page says the same in its own words: dynamic registration is "for a
+trusted set of MCP Clients" (Claude Code, Claude Web, ChatGPT, Codex,
+Cursor); everyone else "need[s] a Dropbox app to obtain API credentials"
+from the App Console. Where "(Unknown agent)" comes from is not
+established (the consent page is behind login); it is not the User-Agent
+of the registration call, since that changed nothing.
+
+So the name on that page is not something the code sends. It is an app
+Simeon Labs creates once in Dropbox's console. The flow now takes such an
+app: `VendorMcpConnector.clientId` (catalog.ts) holds its key, and
+`startVendorMcpOAuth({ clientId })` skips `/register` and signs in as a
+public client with PKCE under that id (`tests/vendor-mcp-oauth-shapes.test.mjs`,
+"an app we registered by hand"). No secret ships in the app; Dropbox's
+token endpoint takes `none`. The sign-in log line says which path ran:
+`registered=by us` or `registered=dynamically`.
+
+What the founder does, from Dropbox's own page
+(https://help.dropbox.com/integrations/connect-dropbox-mcp-server):
+
+1. https://www.dropbox.com/developers/apps → Create app: API **Scoped
+   access**, Access type **Full Dropbox**, name **Simeon**.
+2. Permissions: `account_info.read`, `files.metadata.read`,
+   `files.metadata.write`, `files.content.read`, `files.content.write`,
+   `sharing.read`, `sharing.write`, `file_requests.read`,
+   `file_requests.write` (the scopes `mcp.dropbox.com` asks for). Submit.
+3. Settings → OAuth 2 Redirect URIs: add `http://localhost:8787/callback`
+   (the app's loopback, `MCP_OAUTH_LOOPBACK_CALLBACK_URL`).
+4. Branding: the name and Simeon's icon (`desktop/brand/`) — that is what
+   the consent page shows.
+5. Copy the **App key** (not the secret) into the `dropbox` row of
+   `desktop/source/shared/node/vendor-mcp/catalog.ts` as `clientId`.
+   Rebuild. A production app on Dropbox starts in development mode,
+   which allows up to 50 users; "Apply for production" lifts that.
+
+The same shape will serve the vendors that need "an app we register
+first" (Google, Microsoft, Asana), each with its own console.
+
+Not run on a Mac: a Dropbox sign-in through an own app.

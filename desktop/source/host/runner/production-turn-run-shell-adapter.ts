@@ -77,6 +77,15 @@ export interface ProductionTurnRunShellAdapterInput {
     options: TurnRunOptions,
   ) => GeneratedTurnPromptOptions;
   readonly createSession: (owner: ProductionTurnAgentOwner) => TurnSession;
+  // The turn's memory: the store extraction writes to, the episode progress
+  // the narrative reads, and the predicate that says an exchange is worth
+  // remembering. Until 25 September 2026 the adapter's host carried none of
+  // them, so turn-settle's shouldRemember was false on every production
+  // turn and nothing was ever remembered from conversation
+  // (docs/product/design-audit-ledger.md F-019, F-059, F-060).
+  readonly memoryStore?: TurnRunShellHost["memoryStore"];
+  readonly episodeProgress?: TurnRunShellHost["episodeProgress"];
+  readonly isMemorableExchange?: TurnRunShellHost["isMemorableExchange"];
   readonly context: () => Context;
   readonly createSettleHost: () => TurnSettleHost;
   readonly profilePromptSnapshots: () => unknown;
@@ -158,19 +167,26 @@ export function createProductionTurnRunShellHostInput(
       context,
       cancelThisRun,
       emitUpdate,
-    }) => createProductionTurnAgentOwner({
-      ...createAgentOwnerInput({
+    }) => {
+      const ownerInput = createAgentOwnerInput({
         requestId,
         runOptions,
         context,
         cancelThisRun,
         emitUpdate,
-      }),
-      context,
-      requestId,
-      cancelThisRun,
-      emitUpdate,
-    }),
+      });
+      // The owner input's cancel is the real one (it interrupts the runner);
+      // the shell-level `cancelThisRun` is the production composition's
+      // `() => {}`. Until 24 September 2026 the shell's won, so the cancel
+      // an MCP connector card carries did nothing.
+      return createProductionTurnAgentOwner({
+        ...ownerInput,
+        context,
+        requestId,
+        cancelThisRun: ownerInput.cancelThisRun ?? cancelThisRun,
+        emitUpdate,
+      });
+    },
     createRunInput: async ({ owner, runContext, prompt, options }) =>
       createProductionTurnAgentRunInput({
         runCtx: runContext,
@@ -332,6 +348,9 @@ export function createProductionTurnRunShellAdapter(
     },
     createSettleHost: input.createSettleHost,
     profilePromptSnapshots: input.profilePromptSnapshots,
+    ...(input.memoryStore === undefined ? {} : { memoryStore: input.memoryStore }),
+    ...(input.episodeProgress === undefined ? {} : { episodeProgress: input.episodeProgress }),
+    ...(input.isMemorableExchange === undefined ? {} : { isMemorableExchange: input.isMemorableExchange }),
     onRunUnwind: () => {
       const owner = activeOwner;
       activeOwner = undefined;

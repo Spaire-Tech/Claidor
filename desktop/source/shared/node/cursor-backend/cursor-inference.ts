@@ -1,6 +1,7 @@
+import { isConnectServed } from "../../cloud-agents-availability.js";
 import type { MethodInfoUnary, ServiceType } from "@bufbuild/protobuf";
 import { join } from "node:path";
-import { createClient, type Client, type Interceptor, type Transport } from "@connectrpc/connect";
+import { Code, ConnectError, createClient, type Client, type Interceptor, type Transport } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-node";
 import { DashboardService } from "../../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
 import { GetUserPrivacyModeRequest, type GetUserPrivacyModeResponse } from "../../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
@@ -135,7 +136,8 @@ export function createSandInferenceInterceptor(options: SandInferenceOptions): I
     const [auth, machineId] = await Promise.all(["authMode" in options ? Promise.resolve({ mode: options.authMode } as const) : options.getAccessToken({ backendUrl: options.backendUrl }).then((accessToken) => ({ mode: "required" as const, accessToken })), options.getMachineId()]);
     const privacyLookup = request.service.typeName === "aiserver.v1.DashboardService" && request.method.name === "GetUserPrivacyMode";
     const resolveGhostMode = options.resolveGhostModeHeader ?? ((lookup: PrivacyLookupOptions) => resolveSandGhostModeHeader(lookup, options.fetchPrivacyMode ?? fetchSandPrivacyMode));
-    const ghostMode = auth.mode === "anonymous" || privacyLookup ? "true" : await resolveGhostMode({ backendUrl: options.backendUrl, accessToken: auth.accessToken, machineId });
+    // Without Cursor's Connect surface the lookup only ever 404s (ledger F-382).
+    const ghostMode = auth.mode === "anonymous" || privacyLookup || !isConnectServed(options.env) ? "true" : await resolveGhostMode({ backendUrl: options.backendUrl, accessToken: auth.accessToken, machineId });
     const pinned = request.header.get("x-request-id");
     const requestId = pinned != null && pinned !== "" ? pinned : options.randomUUID?.() ?? globalThis.crypto.randomUUID();
     if (auth.mode === "anonymous") request.header.delete("authorization"); else request.header.set("authorization", `Bearer ${auth.accessToken}`);
@@ -156,7 +158,13 @@ export function createSandBackendTransport(options: Omit<SandInferenceOptions, "
   const backendUrl = getSandInferenceBackendUrl();
   return createConnectTransport({ baseUrl: backendUrl, httpVersion: "1.1", interceptors: [createSandRpcTracingInterceptor(), createSandInferenceInterceptor({ ...options, backendUrl })] });
 }
-export function createSandCursorBackendClient<Service extends ServiceType>(service: Service, options: Omit<SandInferenceOptions, "backendUrl">): Client<Service> { return createClient(service, createSandBackendTransport(options)); }
+// Simeon Labs' server serves no Connect RPC. Until 25 September 2026 every
+// client here still posted to it and read a 404 (plugin skills daily, skill
+// publish, team popularity, …). Unless SAND_CONNECT_SERVED=1, a client
+// built here answers every call with Unimplemented at once and sends
+// nothing; every caller already catches and falls back (ledger F-156,
+// F-157, F-158).
+export function createSandCursorBackendClient<Service extends ServiceType>(service: Service, options: Omit<SandInferenceOptions, "backendUrl">): Client<Service> { if (!isConnectServed(options.env)) return createUnservedClient(service); return createClient(service, createSandBackendTransport(options)); }
 
 export function createSandAttachedMediaUrlProvider(options: Omit<SandInferenceOptions, "backendUrl">) {
   const client = createSandCursorBackendClient(AgentService, options) as unknown as {
@@ -190,4 +198,9 @@ export function createCursorInferencePromptSession(options: Omit<SandInferenceOp
   if (routedProvider !== "cursor") return createProviderPromptSession(routedProvider, { modelId: options.requestedModel.modelId });
   const client = createSandCursorBackendClient(InferenceService, options);
   return createProtoSessionProvider(client, options.requestedModel, undefined, options.inferenceReason).getSession(imageResizingMiddleware);
+}
+
+function createUnservedClient<Service extends ServiceType>(service: Service): Client<Service> {
+  const reject = (method: string) => Promise.reject(new ConnectError(`${service.typeName}/${method} is not served by Simeon Labs' server.`, Code.Unimplemented));
+  return new Proxy({} as Client<Service>, { get: (_target, property) => typeof property === "string" ? () => reject(property) : undefined });
 }

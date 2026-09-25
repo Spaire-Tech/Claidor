@@ -132,6 +132,22 @@ class DesktopSession(RecordModel):
         index=True,
     )
 
+    #: The signed-in desktop this row is the box credential of, when it
+    #: is one (25 September 2026). The person's box (the local Docker
+    #: container the agent runs in) keeps running after Simeon quits so
+    #: routines fire while the Mac is awake, and with the app gone nothing
+    #: rewrites its one-hour access token; this row lets the box renew its
+    #: own at `POST /sand-box/inference-credential`. It follows its parent:
+    #: re-parented on the parent's refresh, revoked with it on logout,
+    #: never traded up (`DesktopService.refresh` refuses it).
+    box_of_session_id: Mapped[UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("desktop_sessions.id", ondelete="cascade"),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
     @declared_attr
     def user(cls) -> Mapped["User"]:
         return relationship("User", lazy="joined")
@@ -144,6 +160,11 @@ class DesktopSession(RecordModel):
     def is_job_token(self) -> bool:
         """A credential minted for one cloud job, not a signed-in device."""
         return self.job_id is not None
+
+    @property
+    def is_box_credential(self) -> bool:
+        """The credential a person's box renews its access token with."""
+        return self.box_of_session_id is not None
 
 
 class DesktopUsage(RecordModel):

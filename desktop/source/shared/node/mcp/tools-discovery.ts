@@ -424,7 +424,7 @@ export function createMcpToolsDiscovery(
       return boxMcpExec.executeTool(args);
     }
     return resultFactory.error(
-      `MCP server "${args.providerIdentifier}" is not available here. HTTP/SSE servers execute on the backend and stdio servers run on Simeon's computer; this server is neither reachable nor supported in this context.`,
+      `MCP server "${args.providerIdentifier}" is not available here. HTTP/SSE servers are called over HTTP and stdio servers run on Simeon's computer; this server is neither reachable nor supported in this context.`,
     );
   }
 

@@ -263,6 +263,27 @@ async def logout(
     return _ok({})
 
 
+@router.post("/api/box/renewal-credential", name="desktop:box_renewal_credential")
+async def box_renewal_credential(
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """The credential the person's box renews its own access token with
+    (`DesktopService.issue_box_credential`). The Mac asks once per box
+    and writes it into the box's token file; the box trades it at
+    `POST /sand-box/inference-credential`. It dies with this session."""
+    try:
+        row, credential = await desktop.issue_box_credential(session, desktop_session)
+    except DesktopUnauthenticated as error:
+        return _fail(REFRESH_INVALID, error.message, status=401)
+    return _ok(
+        {
+            "credential": credential,
+            "expiresAtMs": int(row.refresh_expires_at.timestamp() * 1000),
+        }
+    )
+
+
 # --- the person ------------------------------------------------------------
 
 
@@ -287,6 +308,54 @@ async def profile_summary(
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse:
     return _ok(await desktop.profile_summary(session, desktop_session.user))
+
+
+# --- feedback ---------------------------------------------------------------
+
+
+FEEDBACK_MESSAGE_MAX_CHARS = 10_000
+
+
+class FeedbackBody(BaseModel):
+    """What the app's Send Feedback sheet posts
+    (`desktop/source/electron-main/feedback/feedback-report.ts`). The app
+    also sends `submissionId`, `osVersion`, `conversationId` and
+    `sentryEventIds`; they are accepted and not read."""
+
+    model_config = ConfigDict(extra="ignore")
+    category: str | None = Field(default=None, max_length=64)
+    message: str = Field(min_length=1, max_length=FEEDBACK_MESSAGE_MAX_CHARS)
+    appVersion: str | None = Field(default=None, max_length=64)
+    platform: str | None = Field(default=None, max_length=64)
+
+
+@router.post("/api/feedback", name="desktop:feedback")
+async def feedback(
+    body: FeedbackBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+) -> JSONResponse:
+    """Send Feedback, recorded as one log line against the person.
+
+    Added 24 September 2026. Until then the app posted its feedback to
+    `{api}/sand/feedback`, Grok Bot's address at Cursor, which this
+    server answered 404, so every message a person wrote in the sheet
+    was lost and the sheet said « unavailable ». There is no table: a
+    log line with the user id is what the founder asked for, and it is
+    searchable where the rest of the server's lines are.
+    """
+    message = body.message.strip()
+    if not message:
+        return _fail(40001, "Feedback needs a message.", status=400)
+    log.info(
+        "desktop.feedback.received",
+        user_id=str(desktop_session.user.id),
+        session_id=str(desktop_session.id),
+        category=body.category,
+        app_version=body.appVersion,
+        platform=body.platform,
+        message=message,
+    )
+    return _ok({"received": True})
 
 
 # --- the shared memory ------------------------------------------------------
@@ -529,6 +598,8 @@ async def kit_store() -> JSONResponse:
     curation.
 
     The app reads ``data.value.kits`` and appends its own built-in kits.
+    (Checked 25 September 2026: no caller in ``desktop/`` since the
+    re-founding; the paths below name the LobsterAI tree.)
 
     Three facts settle what can honestly go here, all of them in the desktop
     app rather than in this file:
@@ -563,8 +634,10 @@ def _mcp_marketplace() -> dict[str, Any]:
 
 @router.get("/api/mcp-marketplace", name="desktop:mcp_marketplace")
 async def mcp_marketplace() -> JSONResponse:
-    """The MCP marketplace. The app reads ``data.value.categories`` and
-    ``data.value.servers``; the catalogue lives next to this module."""
+    """The MCP marketplace. The app read ``data.value.categories`` and
+    ``data.value.servers``; the catalogue lives next to this module. No
+    caller in ``desktop/`` since the re-founding (checked 25 September 2026):
+    the app's catalogue is ``shared/node/vendor-mcp/catalog.ts``."""
     return _ok({"value": _mcp_marketplace()})
 
 

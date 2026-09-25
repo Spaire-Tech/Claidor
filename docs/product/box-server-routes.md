@@ -360,3 +360,63 @@ migration and the awake-seconds metering the salvage, and the ten handlers the
 rewrite — exactly the split §9 of this note already costed.
 
 I am still not merging, closing, or starting the re-fit without that answer.
+
+## 11. 25 September: the app now calls our server for the box, and the question narrowed
+
+`main` moved a long way overnight (`029f9cd5..7e390349`, 195 files). Three of
+those commits are about the box, so I read them rather than the titles.
+
+**The app speaks REST to Claidor about the box now, and I did not write it.**
+`6bb4570a` ("The box outlives the app for routines, and renews its own model
+credential") is the first change to
+`desktop/source/electron-main/box/box-host-connector.ts` since `ce9fc2d8`, the
+re-founding. It adds `issueBoxRenewalCredential()`, a plain `fetch` to
+`POST /desktop/api/box/renewal-credential`, and the same commit adds that route
+to `server/polar/desktop/endpoints.py` along with `app_sign_in.py`'s
+`POST /sand-box/inference-credential`, a migration, `service.py`,
+`repository.py`, `tokens.py` and `models/desktop.py`.
+
+So the premise behind §10's "two contradictory contracts" needs narrowing. It
+is not that the app refuses REST to our server — it does REST to our server, by
+`fetch`, for box credentials, today. What the app does over Connect RPC is the
+box's **gateway** wire. Those are different things and I had them blurred.
+
+**What has still not happened, checked not assumed:**
+
+- `grep -rn "api/proxy/box\|/box/sandboxes" --include=*.ts --include=*.tsx
+  --include=*.mjs --include=*.js desktop clients` returns **nothing**. No caller
+  of the ten routes in this PR.
+- `DEFAULT_SAND_BOX_RUNTIME` in `desktop/source/shared/box-runtime.ts` is still
+  `"local-docker"`.
+- The `"remote"` runtime has nothing behind it. `main-edge.ts:118` is the whole
+  of it: choosing a mode that is not `local-docker` calls `stopLocalDockerBox()`
+  and restarts the recovery coordinator. `grep -rn '"remote"'` under
+  `electron-main/box` and `host/box` returns **no hits**. Nothing brokers a
+  sandbox.
+
+**So the direction of travel is the opposite of this PR's**, and that is the
+thing worth saying plainly: `6bb4570a` and the `local-docker-host-connector.ts`
+change next to it invest in making the **local Docker container on the Mac**
+outlive the app, so a routine fires while the Mac is awake. This PR brokers a
+cloud sandbox on E2B so a routine can fire while the Mac is **shut**. Both are
+real answers to "the laptop is closed"; they are not the same answer, and only
+one of them has a caller.
+
+That is a sharper version of the same open question, and still not mine to
+settle. It now reads: **is the box a container on the person's Mac that we keep
+alive, or a sandbox we broker in the cloud?** If the first, this PR is dead
+code and should be closed rather than merged, and I would rather be told to
+close it than have it sit. If the second, it is the missing half of the
+`"remote"` runtime and wants a caller.
+
+**One coordination note, not a complaint.** `polar/desktop/` is listed as mine
+exclusively, and another agent wrote 555 lines across seven files in it on
+`main`. The work is sound and its tests pass here. It did fork the migration
+chain — `desktop_box_credential_0925` and my `desktop_boxes_0918` both declared
+`down_revision = "maty_job_times_0912"`, so `alembic heads` reported two heads
+and `alembic upgrade head` refuses to run with two. Mine is the one that is not
+on `main`, so I re-pointed mine onto theirs and proved the whole chain applies
+and reverses against a scratch database. Worth knowing that nothing in CI would
+have caught this: the suite builds its schema from `Model.metadata.create_all`,
+not from migrations, and the `Server: Migration Check 📚` job has never been
+given a runner.

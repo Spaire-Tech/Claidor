@@ -127,6 +127,168 @@ export function patchOriginalMarks(source) {
   return out;
 }
 
+/**
+ * The agents' colours, replaced whole on 23 September 2026 ("i wanna change
+ * the color palettes choices of the bots. completely … replace all existing
+ * colors with this"): twelve soft vertical gradients in the founder's
+ * reference style (a grainy sunset, a sage sphere, a blue-lavender one),
+ * previewed on the cloud and the blob in light and dark before this was
+ * written. The renderer's eleven colour ids keep their names so every saved
+ * agent still resolves; each now names one of the twelve palettes, and a
+ * twelfth id, `mint`, is added. Slate replaces black, so the landing mark and
+ * the onboarding hero (both `color:"black"`) are slate.
+ *
+ * How the mark is painted after this patch: the `sd` and mirror spans set
+ * --ink-from / --ink-mid / --ink-to next to --fg (the palette's middle
+ * colour, which rings, particles and glyphs still use); the animator's SVG
+ * always defines a three-stop gradient on those variables and a film-grain
+ * filter, and the body path is filled with the gradient through the grain.
+ * The `inkGradient` prop path the animator had (two stops, never passed by
+ * `sd`) is replaced by this. Colour is the same in light and dark.
+ */
+export const AGENT_PALETTES = Object.freeze([{"id": "yellow", "label": "Dusk", "top": "#8b8bea", "mid": "#f7a1b3", "bottom": "#ffb98a"}, {"id": "cyan", "label": "Sage", "top": "#2f6f72", "mid": "#6e9c95", "bottom": "#b8d1c5"}, {"id": "violet", "label": "Lagoon", "top": "#7cc0e0", "mid": "#d7a9dc", "bottom": "#2b4c92"}, {"id": "red", "label": "Ember", "top": "#ff9a76", "mid": "#ffd0a0", "bottom": "#6b3e8f"}, {"id": "green", "label": "Moss", "top": "#6f8f4f", "mid": "#a8c58a", "bottom": "#dfeacb"}, {"id": "brown", "label": "Sand", "top": "#f6e2c4", "mid": "#f2b48b", "bottom": "#c6754e"}, {"id": "magenta", "label": "Berry", "top": "#e07aa8", "mid": "#f4b7d0", "bottom": "#3e2a7a"}, {"id": "blue", "label": "Ocean", "top": "#1f3b73", "mid": "#3c7fb7", "bottom": "#7fd4d0"}, {"id": "gray", "label": "Rose", "top": "#f6c1c7", "mid": "#f0a4b8", "bottom": "#8f5c86"}, {"id": "black", "label": "Slate", "top": "#8c9db8", "mid": "#5e6d86", "bottom": "#d9dfe8"}, {"id": "orange", "label": "Peach", "top": "#ffd1a6", "mid": "#ffb0a3", "bottom": "#e56f8f"}, {"id": "mint", "label": "Mint", "top": "#bff0e2", "mid": "#8fd3c3", "bottom": "#3c8a86"}]);
+const PALETTE_G_T_BEFORE = "G_t={black:{lightFrom:\"#585858\",lightTo:\"#000000\",darkFrom:\"#FFFFFF\",darkTo:\"#C2C2C2\"},brown:{lightFrom:\"#AE8968\",lightTo:\"#855C36\",darkFrom:\"#A27952\",darkTo:\"#604227\"},red:{lightFrom:\"#FF5667\",lightTo:\"#E02135\",darkFrom:\"#FF3E51\",darkTo:\"#A21826\"},orange:{lightFrom:\"#FF8838\",lightTo:\"#E05B00\",darkFrom:\"#FF781C\",darkTo:\"#C24E00\"},yellow:{lightFrom:\"#FFAF38\",lightTo:\"#E08600\",darkFrom:\"#FFA31C\",darkTo:\"#C27400\"},green:{lightFrom:\"#1CCF82\",lightTo:\"#009957\",darkFrom:\"#00C972\",darkTo:\"#008048\"},cyan:{lightFrom:\"#58D3C5\",lightTo:\"#00A592\",darkFrom:\"#1CC3B0\",darkTo:\"#007769\"},blue:{lightFrom:\"#459FFE\",lightTo:\"#0E74E0\",darkFrom:\"#2A92FE\",darkTo:\"#0C64C1\"},violet:{lightFrom:\"#B792FE\",lightTo:\"#804EE0\",darkFrom:\"#9159FE\",darkTo:\"#5C39A1\"},magenta:{lightFrom:\"#FF77BE\",lightTo:\"#E02A88\",darkFrom:\"#FF47A6\",darkTo:\"#A21E62\"},gray:{lightFrom:\"#A6A6A6\",lightTo:\"#696969\",darkFrom:\"#B7B7B7\",darkTo:\"#777777\"}}";
+const PALETTE_G_T_AFTER = "G_t={" + AGENT_PALETTES.map((p) => `${p.id}:{lightFrom:"${p.top}",lightMid:"${p.mid}",lightTo:"${p.bottom}",darkFrom:"${p.top}",darkMid:"${p.mid}",darkTo:"${p.bottom}"}`).join(",") + "}";
+const PALETTE_SNT_BEFORE = "const snt={black:{light:\"#000000\",dark:\"#FFFFFF\"},brown:{light:\"#A27952\",dark:\"#855C36\"},red:{light:\"#FF3E51\",dark:\"#E02135\"},orange:{light:\"#FF781C\",dark:\"#FF6700\"},yellow:{light:\"#FFAF38\",dark:\"#FF9800\"},green:{light:\"#00C972\",dark:\"#009957\"},cyan:{light:\"#1CC3B0\",dark:\"#00A592\"},blue:{light:\"#2A92FE\",dark:\"#0E74E0\"},violet:{light:\"#A97EFE\",dark:\"#804EE0\"},magenta:{light:\"#FF5EB1\",dark:\"#E02A88\"},gray:{light:\"#959595\",dark:\"#777777\"}};";
+const PALETTE_SNT_AFTER = "const snt={" + AGENT_PALETTES.map((p) => `${p.id}:{light:"${p.mid}",dark:"${p.mid}"}`).join(",") + "};";
+const PALETTE_PQ_BEFORE = "PQ=[{id:\"black\",label:\"Black\",value:\"#000\"},{id:\"brown\",label:\"Brown\",value:\"#936439\"},{id:\"red\",label:\"Red\",value:\"#FF263C\"},{id:\"orange\",label:\"Orange\",value:\"#FF6700\"},{id:\"yellow\",label:\"Yellow\",value:\"#FF9800\"},{id:\"green\",label:\"Green\",value:\"#00C972\"},{id:\"cyan\",label:\"Cyan\",value:\"#00BCA6\"},{id:\"blue\",label:\"Blue\",value:\"#1084FE\"},{id:\"violet\",label:\"Violet\",value:\"#9159FE\"},{id:\"magenta\",label:\"Magenta\",value:\"#FF309B\"},{id:\"gray\",label:\"Gray\",value:\"#777777\"}]";
+const PALETTE_PQ_AFTER = "PQ=[" + AGENT_PALETTES.map((p) => `{id:"${p.id}",label:"${p.label}",value:"${p.mid}"}`).join(",") + "]";
+const PALETTE_PICKER_BEFORE = 'const nnt=PQ.filter(n=>n.id!=="black")';
+const PALETTE_PICKER_AFTER = "const nnt=PQ.slice()";
+const PALETTE_K_T_BEFORE = "function K_t(n){const e=G_t[n];return{from:`light-dark(${e.lightFrom}, ${e.darkFrom})`,to:`light-dark(${e.lightTo}, ${e.darkTo})`,angle:W_t}}";
+const PALETTE_K_T_AFTER = 'function OrbInk(n){const e=G_t[n]??G_t.black;return{from:`light-dark(${e.lightFrom}, ${e.darkFrom})`,mid:`light-dark(${e.lightMid}, ${e.darkMid})`,to:`light-dark(${e.lightTo}, ${e.darkTo})`}}function K_t(n){return{...OrbInk(n),angle:W_t}}';
+const PALETTE_Y_T_BEFORE = "function Y_t(n){const{from:e,to:t,angle:s}=K_t(n);return`linear-gradient(${s+90}deg, ${e}, ${t})`}";
+const PALETTE_Y_T_AFTER = "function Y_t(n){const{from:e,mid:r,to:t,angle:s}=K_t(n);return`linear-gradient(${s+90}deg, ${e}, ${r} 55%, ${t})`}";
+const PALETTE_DEFS_BEFORE = "b&&(()=>{const Q=(b.angle??90)%360*Math.PI/180,ae=Math.cos(Q)/2,ce=Math.sin(Q)/2;return p.jsxs(\"linearGradient\",{id:`${N}-ink`,x1:.5-ae,y1:.5-ce,x2:.5+ae,y2:.5+ce,children:[p.jsx(\"stop\",{offset:b.fromPos??0,style:{stopColor:b.from}}),p.jsx(\"stop\",{offset:Math.max(b.toPos??1,b.fromPos??0),style:{stopColor:b.to}})]})})()]})";
+const PALETTE_DEFS_AFTER = 'p.jsxs("linearGradient",{id:`${N}-ink`,x1:0,y1:0,x2:.15,y2:1,children:[p.jsx("stop",{offset:0,style:{stopColor:"var(--ink-from)"}}),p.jsx("stop",{offset:.55,style:{stopColor:"var(--ink-mid)"}}),p.jsx("stop",{offset:1,style:{stopColor:"var(--ink-to)"}})]}),p.jsxs("filter",{id:`${N}-grain`,x:0,y:0,width:1,height:1,children:[p.jsx("feTurbulence",{type:"fractalNoise",baseFrequency:.9,numOctaves:2,seed:7,result:"n"}),p.jsx("feColorMatrix",{in:"n",type:"matrix",values:"0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .35 0",result:"g"}),p.jsx("feBlend",{in:"SourceGraphic",in2:"g",mode:"overlay",result:"b"}),p.jsx("feComposite",{in:"b",in2:"SourceGraphic",operator:"in"})]})]})';
+const PALETTE_BODY_BEFORE = 'p.jsx("path",{ref:G,style:b?{fill:`url(#${N}-ink)`}:Rke,d:le.path})';
+const PALETTE_BODY_AFTER = 'p.jsx("path",{ref:G,style:{fill:`url(#${N}-ink)`,filter:`url(#${N}-grain)`},d:le.path})';
+const PALETTE_SD_STYLE_BEFORE = 'D={...Z.style,width:J,height:J,"--fg":r?.flat??MNe(t),"--bg":f??String(nd["--sand-bg-base"])}';
+const PALETTE_SD_STYLE_AFTER = 'D={...Z.style,width:J,height:J,"--fg":r?.flat??MNe(t),"--ink-from":r?.gradientFrom??OrbInk(t).from,"--ink-mid":r?.gradientFrom??OrbInk(t).mid,"--ink-to":r?.gradientTo??OrbInk(t).to,"--bg":f??String(nd["--sand-bg-base"])}';
+const PALETTE_MIRROR_STYLE_BEFORE = 'f={...x.style,width:m,height:m,"--fg":i?.flat??MNe(s),"--bg":o??String(nd["--sand-bg-base"])}';
+const PALETTE_MIRROR_STYLE_AFTER = 'f={...x.style,width:m,height:m,"--fg":i?.flat??MNe(s),"--ink-from":i?.gradientFrom??OrbInk(s).from,"--ink-mid":i?.gradientFrom??OrbInk(s).mid,"--ink-to":i?.gradientTo??OrbInk(s).to,"--bg":o??String(nd["--sand-bg-base"])}';
+export const PALETTE_REPLACEMENTS = Object.freeze([
+  ["palette-gradients", PALETTE_G_T_BEFORE, PALETTE_G_T_AFTER],
+  ["palette-flat", PALETTE_SNT_BEFORE, PALETTE_SNT_AFTER],
+  ["palette-picker-entries", PALETTE_PQ_BEFORE, PALETTE_PQ_AFTER],
+  ["palette-picker-all", PALETTE_PICKER_BEFORE, PALETTE_PICKER_AFTER],
+  ["palette-ink-helper", PALETTE_K_T_BEFORE, PALETTE_K_T_AFTER],
+  ["palette-css-gradient", PALETTE_Y_T_BEFORE, PALETTE_Y_T_AFTER],
+  ["palette-svg-defs", PALETTE_DEFS_BEFORE, PALETTE_DEFS_AFTER],
+  ["palette-body-fill", PALETTE_BODY_BEFORE, PALETTE_BODY_AFTER],
+  ["palette-mark-vars", PALETTE_SD_STYLE_BEFORE, PALETTE_SD_STYLE_AFTER],
+  ["palette-mirror-vars", PALETTE_MIRROR_STYLE_BEFORE, PALETTE_MIRROR_STYLE_AFTER],
+]);
+
+export function patchOriginalPalette(source) {
+  let out = source;
+  for (const [label, before, after] of PALETTE_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+/**
+ * The person's own chat bubble is iMessage blue (23 September 2026: "the
+ * default chat color is black. grey in dark mode. i want to copy imessage
+ * style and make it blue", with Apple's numbers). The renderer's theme
+ * variables are generated at runtime from a token list in the chunk
+ * (`Ct("fill/bubble-user", El(light, dark, hcLight, hcDark))`, emitted by
+ * `bzn` as `--sand-fill-bubble-user`); the stylesheet carries only the
+ * light default for first paint. Both are patched. The text on the bubble
+ * is `text/on-color`, white in every theme, and stays.
+ */
+export const USER_BUBBLE_LIGHT = "#007aff";
+export const USER_BUBBLE_DARK = "#0a84ff";
+const BUBBLE_TOKEN_BEFORE = 'Ct("fill/bubble-user",El(va("gray","dark",1),va("gray","dark",8),va("gray","dark",1),va("gray","dark",11)))';
+const BUBBLE_TOKEN_AFTER = `Ct("fill/bubble-user",El({value:"${USER_BUBBLE_LIGHT}",alias:"imessage/blue"},{value:"${USER_BUBBLE_DARK}",alias:"imessage/blue-dark"}))`;
+export const BUBBLE_REPLACEMENTS = Object.freeze([["user-bubble-blue", BUBBLE_TOKEN_BEFORE, BUBBLE_TOKEN_AFTER]]);
+const BUBBLE_CSS_BEFORE = "--sand-fill-bubble-user:#070707;";
+const BUBBLE_CSS_AFTER = `--sand-fill-bubble-user:${USER_BUBBLE_LIGHT};`;
+export const BUBBLE_CSS_REPLACEMENT = Object.freeze(["user-bubble-blue-stylesheet", BUBBLE_CSS_BEFORE, BUBBLE_CSS_AFTER]);
+
+export function patchOriginalBubble(source) {
+  let out = source;
+  for (const [label, before, after] of BUBBLE_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export function patchOriginalBubbleStylesheet(css) {
+  const [label, before, after] = BUBBLE_CSS_REPLACEMENT;
+  return replaceExactlyOnce(css, before, after, label);
+}
+
+/**
+ * The chat header is the agent's card (23 September 2026: "the name of the
+ * agent are up top, left. i want to middle it … like muse. you might wanna
+ * remove the line up there … it feels more apple ish"). CSS only, appended
+ * to the pinned stylesheet: the toolbar's divider line is hidden, the
+ * toolbar itself is translucent with a backdrop blur so messages scroll under
+ * it the way Muse's do ("muse let it go all the way up. and lighten/darken/blur
+ * the top while we scroll"); its bottom edge is a 30 px mask fade, not a line,
+ * so the glass dissolves into the page ("there is still a visible line"), the identity row (avatar + name) is a centred column, the avatar is drawn at
+ * 52 px (88 was "way too big" on the Mac) (the mark's inline 20 px is overridden on the span AND on the SVG
+ * inside it, which carries its own inline width/height from the animator's
+ * size prop; the first build missed the SVG and drew a 20 px mark at the
+ * top of an 88 px box, "genuinely terrible"), so it is the same animated
+ * mark, larger, the name is a pill, and the controls (computer, info)
+ * stay at the right edge. Scoped with :has() to the identity variant of
+ * the header, so the thread breadcrumb and the agent-exchange variants keep
+ * their layout. The transcript already offsets by the toolbar's measured
+ * height (`--sand-toolbar-height`), so a taller header pushes it down.
+ */
+export const HEADER_CARD_CSS = `
+/* Simeon: the chat header is the agent's card, centred, without the divider (23 September 2026). */
+.sand-toolbar-divider{display:none!important}
+.sand-toolbar:has(.sand-chat-header__identity-row){padding-top:4px!important;padding-bottom:28px!important;border-bottom-width:0!important;background-color:color-mix(in srgb,var(--cursor-bg-editor) 78%,transparent)!important;-webkit-backdrop-filter:blur(22px) saturate(1.5)!important;backdrop-filter:blur(22px) saturate(1.5)!important;-webkit-mask-image:linear-gradient(to bottom,#000 0,#000 calc(100% - 30px),transparent 100%)!important;mask-image:linear-gradient(to bottom,#000 0,#000 calc(100% - 30px),transparent 100%)!important}
+.sand-chat-header:has(>.sand-chat-header__identity-row){justify-content:center!important;position:relative!important}
+.sand-chat-header__identity-row{flex-direction:column!important;align-items:center!important;gap:6px!important}
+.sand-chat-header__identity{flex-direction:column!important;align-items:center!important;gap:4px!important;padding:0 8px 2px!important;border-radius:16px!important}
+.sand-chat-header__avatar .sand-agent-avatar,.sand-chat-header__avatar .sand-grok-bot-mark{width:52px!important;height:52px!important}
+.sand-chat-header__avatar .sand-grok-bot-mark>svg{width:52px!important;height:52px!important}
+.sand-chat-header__avatar img.sand-agent-avatar{border-radius:50%!important;object-fit:cover!important}
+.sand-chat-header__title{align-items:center!important}
+.sand-chat-header__name{font-size:13px!important;line-height:18px!important;padding:3px 12px!important;border-radius:999px!important;background-color:var(--sand-fill-bubble-agent)!important;font-weight:500!important}
+.sand-chat-header__controls{position:absolute!important;right:0!important;top:50%!important;transform:translateY(-50%)!important}
+`;
+export const HEADER_CARD_MARKER = "/* Simeon: the chat header is the agent's card";
+
+export function patchOriginalHeaderStylesheet(css) {
+  if (css.includes(HEADER_CARD_MARKER)) throw new Error("Original renderer header card block is already present.");
+  return `${css}\n${HEADER_CARD_CSS}`;
+}
+
+/**
+ * Liquid Glass over the app's chrome (23 September 2026: "i want to bring
+ * apple liquidglass design in the whole app"). The Figma the founder linked
+ * could not be opened from the build container, so this follows Apple's own
+ * description of the material: a translucent, blurred and saturated surface,
+ * a thin specular highlight along the top edge, a soft ambient shadow, and
+ * large continuous radii on floating controls. Content (messages, text)
+ * stays as it is; the material goes on the chrome: the sidebar, the info
+ * pane, the composer shell, popover menus, dialogs, floating pills, the
+ * computer's top bar; not the message hover actions or reaction pills ("too
+ * noisy"), and no window transparency (tried, "terrible", reverted). CSS only, appended to
+ * the pinned stylesheet after the header card; every rule is !important so
+ * it wins over the atom classes and inline styles the renderer sets.
+ */
+export const LIQUID_GLASS_CSS = `
+/* Simeon: Liquid Glass on the chrome (23 September 2026). */
+:root{--simeon-glass-fill:color-mix(in srgb,var(--cursor-bg-editor) 62%,transparent);--simeon-glass-fill-strong:color-mix(in srgb,var(--cursor-bg-editor) 78%,transparent);--simeon-glass-stroke:color-mix(in srgb,var(--cursor-text-primary) 9%,transparent);--simeon-glass-highlight:light-dark(rgba(255,255,255,.75),rgba(255,255,255,.14));--simeon-glass-shadow:0 10px 30px -6px light-dark(rgba(0,0,0,.16),rgba(0,0,0,.55)),0 2px 8px -2px light-dark(rgba(0,0,0,.08),rgba(0,0,0,.4));--simeon-glass-blur:blur(24px) saturate(1.6)}
+.sand-agents-sidebar{background-color:color-mix(in srgb,var(--cursor-bg-chrome) 70%,transparent)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border-right-color:var(--simeon-glass-stroke)!important}
+.sand-info-pane{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important}
+.sand-prompt-shell{background-color:var(--simeon-glass-fill)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;border-radius:22px!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important}
+.sand-new-chat-menu,.sand-emoji-menu,.sand-mention-menu,.sand-reference-menu,.sand-agent-hover-card,.sand-link-hover-card,[role=dialog].sand-10e981r,[role=menu].sand-10e981r,[data-floating-ui-portal] .sand-10e981r{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important}
+.sand-new-chat-menu,.sand-emoji-menu,.sand-mention-menu,.sand-reference-menu,[role=dialog].sand-10e981r{border-radius:18px!important}
+.sand-new-messages-pill,.sand-update-pill,.sand-computer-top-bar{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important;opacity:1!important}
+.sand-new-messages-pill,.sand-update-pill{border-radius:999px!important}
+.sand-chat-header__name{-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;background-color:var(--simeon-glass-fill-strong)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight)!important}
+`;
+export const LIQUID_GLASS_MARKER = "/* Simeon: Liquid Glass on the chrome";
+
+export function patchOriginalGlassStylesheet(css) {
+  if (css.includes(LIQUID_GLASS_MARKER)) throw new Error("Original renderer Liquid Glass block is already present.");
+  return `${css}\n${LIQUID_GLASS_CSS}`;
+}
+
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
@@ -181,7 +343,18 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (MARK_REPLACEMENTS.every(([, before]) => source.includes(before))) markChunks.push({ target, source });
   }
   if (markChunks.length !== 1) throw new Error(`Expected one original chunk carrying the landing mark, the onboarding hero and the loading logo, found ${markChunks.length}.`);
-  const markPatched = patchOriginalMarks(markChunks[0].source);
+  if (!PALETTE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer palette anchors are not all in the mark chunk.");
+  if (!BUBBLE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer user-bubble token is not in the mark chunk.");
+  const markPatched = patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source)));
+  // The stylesheet's light default of the same variable, for first paint.
+  const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
+  const bubbleSheets = [];
+  for (const target of stylesheets) {
+    const css = await readFile(target, "utf8");
+    if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
+  }
+  if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
+  await writeFile(bubbleSheets[0].target, patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css))));
   await writeFile(markChunks[0].target, markPatched);
   const appIconTarget = path.join(assetsRoot, APP_ICON_ASSET);
   const appIconBefore = await readFile(appIconTarget).catch(() => null);
@@ -189,7 +362,8 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const appIconAfter = await readFile(appIconTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
-    replacements: MARK_REPLACEMENTS.map(([label]) => label),
+    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome"],
+    userBubble: { light: USER_BUBBLE_LIGHT, dark: USER_BUBBLE_DARK, stylesheet: path.relative(stageRoot, bubbleSheets[0].target) },
     original: { bytes: Buffer.byteLength(markChunks[0].source), sha256: sha256(markChunks[0].source) },
     patched: { bytes: Buffer.byteLength(markPatched), sha256: sha256(markPatched) },
     appIcon: { path: `dist/renderer/assets/${APP_ICON_ASSET}`, original: appIconBefore == null ? null : { bytes: appIconBefore.length, sha256: sha256(appIconBefore) }, patched: { bytes: appIconAfter.length, sha256: sha256(appIconAfter) } },
@@ -215,7 +389,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     chunks: changes,
     marks,
     brand: { replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after }))], totals: brandTotals, files: brandFiles },
-    features: ["settings-router-provider", "settings-local-docker-vm", "usage-current-provider", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon"],
+    features: ["settings-router-provider", "settings-local-docker-vm", "usage-current-provider", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "chat-header-card", "liquid-glass-chrome"],
     transformations: ["settings-registry", "router-panel", "usage-panel", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

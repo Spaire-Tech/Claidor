@@ -50,7 +50,7 @@ const oauth2CSP = `
 
 // The Office task pane. Office hosts render it inside their own frames —
 // word.cloud.microsoft, *.officeapps.live.com, Outlook on the web — so the
-// base frame-ancestors 'self' showed « app.claidor.com refused to connect »
+// base frame-ancestors 'self' showed « app.simeonlabs.com refused to connect »
 // inside real Word on the very first sideload. Only frame-ancestors is
 // declared, deliberately: the pane loads office.js from Microsoft's CDN and
 // its own assets besides, and a fuller policy here would be a second way

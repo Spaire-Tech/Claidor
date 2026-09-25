@@ -175,7 +175,7 @@ test("the claidor provider speaks the Responses wire to our proxy with the signe
   const requests = [];
   try {
     process.env.SAND_DATA_ROOT = loaded.dataDir;
-    process.env.SAND_BACKEND_URL = "https://api.claidor.com";
+    process.env.SAND_BACKEND_URL = "https://api.simeonlabs.com";
     globalThis.fetch = async (input, init) => {
       const url = typeof input === "string" ? input : input.url;
       requests.push({ url, headers: new Headers(init?.headers), body: JSON.parse(init?.body ?? "{}") });
@@ -183,8 +183,8 @@ test("the claidor provider speaks the Responses wire to our proxy with the signe
     };
     const { claidorProxyBaseUrl, configuredClaidorModel, setClaidorCredentialSource, runRoutedProviderText, DEFAULT_CLAIDOR_MODEL } = loaded.module;
 
-    assert.equal(claidorProxyBaseUrl("https://api.claidor.com"), "https://api.claidor.com/desktop/api/proxy/v1");
-    assert.equal(claidorProxyBaseUrl("https://api.claidor.com/"), "https://api.claidor.com/desktop/api/proxy/v1");
+    assert.equal(claidorProxyBaseUrl("https://api.simeonlabs.com"), "https://api.simeonlabs.com/desktop/api/proxy/v1");
+    assert.equal(claidorProxyBaseUrl("https://api.simeonlabs.com/"), "https://api.simeonlabs.com/desktop/api/proxy/v1");
     assert.equal(configuredClaidorModel(), DEFAULT_CLAIDOR_MODEL);
     assert.equal(DEFAULT_CLAIDOR_MODEL, "gpt-5.6-terra");
 
@@ -200,7 +200,7 @@ test("the claidor provider speaks the Responses wire to our proxy with the signe
     assert.equal(text, "bonjour");
     assert.equal(deltas.join(""), "bonjour");
     assert.equal(requests.length, 1);
-    assert.equal(requests[0].url, "https://api.claidor.com/desktop/api/proxy/v1/responses");
+    assert.equal(requests[0].url, "https://api.simeonlabs.com/desktop/api/proxy/v1/responses");
     assert.equal(requests[0].headers.get("authorization"), "Bearer claidor_da_token_1");
     assert.equal(requests[0].body.model, "gpt-5.6-terra");
     assert.equal(requests[0].body.stream, true);
@@ -241,7 +241,7 @@ test("every connector wrapper between electron-main and the coordinator forwards
   const egress = await loadModule("source/electron-main/box/remote-connector-egress.ts", "remote-connector-egress");
   const pause = await loadModule("source/electron-main/box/box-client-pause.ts", "box-client-pause");
   try {
-    const credential = { accessToken: "claidor_da_x", backendUrl: "https://api.claidor.com/", expiresAtMs: 1 };
+    const credential = { accessToken: "claidor_da_x", backendUrl: "https://api.simeonlabs.com/", expiresAtMs: 1 };
     const base = { connect: async () => ({}), issueLocalExecDaemonCredential: async () => undefined, issueInferenceCredential: async () => credential };
 
     const observed = egress.module.createEgressConnectionObserver().wrap(base);

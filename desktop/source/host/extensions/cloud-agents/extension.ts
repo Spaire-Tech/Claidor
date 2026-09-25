@@ -1,3 +1,4 @@
+import { isCloudAgentsServed } from "../../../shared/cloud-agents-availability.js";
 import { createRealPollingPolicy, realClock } from "../../../internal/scheduling.js";
 import { defineHostExtension } from "../../../internal/host-extensions.js";
 import { HostExtensions } from "../extension-ids.generated.js";
@@ -16,7 +17,7 @@ export const cloudAgentsExtension = defineHostExtension({
     const host = context.host as CloudAgentExtensionHost;
     const service = new SandCloudAgentManager({ getCursorAccessToken: auth.getAccessToken, getMachineId: auth.getMachineId, convertConversationMessagesToTrace: (conversation) => host.convertCloudAgentConversationToTrace(conversation), completionPolling: createRealPollingPolicy({ name: "cloud-agent-completion", intervalMs: CLOUD_AGENT_POLL_INTERVAL_MS }), clock: realClock });
     context.onStop(() => service.dispose());
-    service.prefetchTeamAdminPolicy();
+    if (isCloudAgentsServed()) service.prefetchTeamAdminPolicy();
     return service;
   }
 });

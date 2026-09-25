@@ -107,7 +107,7 @@ export class SandMcpCatalogFlow {
     );
     if (missing.length > 0)
       throw new SandMcpConfigError(
-        `"${plugin.displayName}" needs a value for ${missing.map((field) => field.label).join(", ")} before it can be installed. Ask the user for it and pass it in "values" (key${missing.length > 1 ? "s" : ""}: ${missing.map((field) => field.key).join(", ")}), then try again.`,
+        `"${plugin.displayName}" needs a value for ${missing.map((field) => field.label).join(", ")} before it can be installed. Do not ask for it in the chat; the user enters it in Settings → MCP, or, when it is not a secret, pass it in "values" (key${missing.length > 1 ? "s" : ""}: ${missing.map((field) => field.key).join(", ")}), then try again.`,
       );
   }
   async installEntry(

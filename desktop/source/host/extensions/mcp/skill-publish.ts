@@ -84,7 +84,7 @@ export class SandSkillPublishService {
     } catch (error) {
       this.options.log?.(`[sand:skill-publish] failed to resolve publishable teams: ${errorMessage(error)}`);
       this.options.reportEdgeFailed?.({ stage: "list_targets", errorClass: errorLogTag(error) });
-      return { teams: [], unavailableReason: "Could not reach Claidor to check your teams." };
+      return { teams: [], unavailableReason: "Publishing a skill to a team is coming soon in Simeon." };
     }
     const teams = publishableTeams(response);
     return { teams, unavailableReason: teams.length > 0 ? null : "Publishing a skill needs a team. Join or create one, then try again." };

@@ -39,7 +39,7 @@ function pin(module, dataDir) {
   const previous = {};
   for (const key of ENV_KEYS) { previous[key] = process.env[key]; delete process.env[key]; }
   process.env.SAND_DATA_ROOT = dataDir;
-  process.env.SAND_BACKEND_URL = "https://api.claidor.com";
+  process.env.SAND_BACKEND_URL = "https://api.simeonlabs.com";
   module.setClaidorCredentialSource({ getAccessToken: async () => "claidor_da_guard" });
   return () => { for (const [key, value] of Object.entries(previous)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; } };
 }
@@ -109,7 +109,7 @@ test("every model call writes one line with its tokens, and cached tokens are co
     assert.equal(usage.inputTokens, 1_000, "input is what was not cached");
     assert.equal(usage.outputTokens, 130);
     assert.equal(lines.length, 1);
-    assert.match(lines[0], /^\[claidor\] model=gpt-5\.6-terra effort=high input=60000 cached=59000 output=130 reasoning=90 ms=\d+ tools=-$/);
+    assert.match(lines[0], /^\[claidor\] model=gpt-5\.6-terra effort=high input=60000 cached=59000 output=130 reasoning=90 ms=\d+ tools=- offered=- budget=5000$/);
     assert.equal(loaded.module.summarizeToolCalls([{ toolName: "SendMessage", args: { text: "hello there" } }, { toolName: "run_shell", args: { command: "ls" } }]), 'SendMessage({"text":"hello there"}) run_shell({"command":"ls"})');
   } finally {
     loaded.module.setModelCallLog(null);
@@ -148,7 +148,7 @@ test("the token file survives a burst of concurrent connects", async () => {
     const settingsPath = path.join(dataDir, "settings.json");
     const writes = [];
     for (let index = 0; index < 25; index += 1) {
-      writes.push(loaded.module.persistInferenceCredential(settingsPath, { accessToken: `token-${index}`, backendUrl: "https://api.claidor.com", expiresAtMs: 1_800_000_000_000 + index }));
+      writes.push(loaded.module.persistInferenceCredential(settingsPath, { accessToken: `token-${index}`, backendUrl: "https://api.simeonlabs.com", expiresAtMs: 1_800_000_000_000 + index }));
     }
     const targets = await Promise.all(writes);
     assert.equal(new Set(targets).size, 1);

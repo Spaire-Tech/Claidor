@@ -65,7 +65,8 @@ test("type decides: fields of the other types are dropped whatever they hold, an
   try {
     const { sendMessageParameters } = loaded.module;
     const text = sendMessageParameters.parse(PADDED_CALL);
-    assert.deepEqual(text, { type: "text", content: "Hey! How’s it going?", reply_to: "", channel: "", images: undefined });
+    // `channel` is dropped while every connector is coming soon (25 September, ledger F-055).
+    assert.deepEqual(text, { type: "text", content: "Hey! How’s it going?", reply_to: "", images: undefined });
     const widget = sendMessageParameters.parse({ ...PADDED_CALL, content: "", widget: { prompt: "Which account?", options: [{ label: "Work" }] }, type: "widget" });
     assert.equal(widget.widget.prompt, "Which account?");
     assert.equal(widget.content, undefined);

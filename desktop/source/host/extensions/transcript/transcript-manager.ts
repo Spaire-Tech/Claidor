@@ -1,3 +1,4 @@
+import { findConnectorManifest } from "../../../shared/channels.js";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -354,7 +355,7 @@ export class TranscriptManager {
     return this.memory.list({ agentId });
   }
   async deleteAgentMemory(agentId: string, memoryId: string) {
-    const result = await this.memory.remove({ agentId, memoryId });
+    const result = await this.memory.remove({ agentId, id: memoryId });
     await this.clearMemoryPromptSnapshot(agentId);
     return result;
   }
@@ -385,6 +386,9 @@ export class TranscriptManager {
   }
   connectChannel(agentId: string, platform: string, token: string): boolean {
     const value = token.trim();
+    // A platform whose manifest is coming soon has no delivery behind it; a
+    // credential for it is not taken (design-audit-ledger.md F-057).
+    if (findConnectorManifest(platform)?.availability !== "available") return false;
     return (
       value.length > 0 &&
       this.sessionStore.storeConnectorCredential(
@@ -516,6 +520,8 @@ const delegations: ReadonlyArray<[string, keyof TranscriptManager]> = [
   ["searchAgents", "roster"],
   ["searchMedia", "roster"],
   ["listAgentsSync", "roster"],
+  // For the agent's own avatar change (agent-state.ts onAvatarChanged), 24 September 2026.
+  ["emitAgentUpdate", "roster"],
   ["subscribeAgents", "roster"],
   ["subscribeAgentUpserted", "roster"],
   ["subscribeProfileChanged", "roster"],

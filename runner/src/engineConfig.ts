@@ -87,7 +87,7 @@ export interface EngineModel {
 export interface EngineConfigInput {
   /** The job's own directory; the engine may not see outside it. */
   workspacePath: string;
-  /** Claidor's metered proxy, e.g. https://api.claidor.com/desktop/api/proxy */
+  /** Claidor's metered proxy, e.g. https://api.simeonlabs.com/desktop/api/proxy */
   modelProxyBaseUrl: string;
   model: EngineModel;
 }

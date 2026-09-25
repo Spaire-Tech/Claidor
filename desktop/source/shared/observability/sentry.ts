@@ -1,7 +1,10 @@
 import { projectSandSentryEnvelope } from "./sentry-scrub.gen.js";
 import type { SandSentryPrivacyTier } from "./sentry-privacy-mode.js";
 
-export const SAND_SENTRY_DSN = "https://9fb7a1b8cb70c207a28a00476311bd40@metrics.cursor.sh/4511747394240513";
+// Grok Bot's Sentry project on metrics.cursor.sh. Nothing in the tree
+// initialises it, and Simeon reports nowhere; the DSN is empty so that a
+// future caller cannot revive it by accident (ledger F-380).
+export const SAND_SENTRY_DSN = "";
 export const SAND_SENTRY_CONVERSATION_TAG = "sand.conversation_id";
 export const SENTRY_EVENT_ID_PATTERN = /^[0-9a-f]{32}$/;
 export const MAX_SPOOL_PURGE_SHIFTS = 64;

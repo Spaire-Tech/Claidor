@@ -1,3 +1,4 @@
+import { LISTENERS_COMING_SOON_SENTENCE, isListenerRelayServed, triggerHasListener } from "../../../shared/listener-availability.js";
 import { z } from "zod";
 import { GITHUB_EVENT_KINDS, LINEAR_EVENT_CASES, PAGERDUTY_EVENT_CASES, SENTRY_EVENT_CASES } from "../../../shared/automations.js";
 import { slugifyWorkflowName } from "../../../shared/workflow-model.js";
@@ -208,6 +209,10 @@ export function resolveTrigger(args: SandStateUpdate, deps: SandStateDependencie
   if (args.schedule != null && args.trigger != null) throw new SandToolInputError("pass either 'schedule' (a cron routine) or 'trigger' (an event-driven one), never both.");
   if (args.schedule != null) return cronTrigger(args.schedule);
   if (args.trigger != null) {
+    // Coming Soon at the reach point: the relay a listener needs is not served
+    // (shared/listener-availability.ts). A cron member in the trigger shape
+    // is still accepted.
+    if (!isListenerRelayServed() && triggerHasListener(args.trigger)) throw new SandToolInputError(LISTENERS_COMING_SOON_SENTENCE);
     const fallbackTrigger: StoredTrigger = Array.isArray(args.trigger)
       ? { type: "group", listeners: args.trigger }
       : args.trigger as StoredTrigger;
