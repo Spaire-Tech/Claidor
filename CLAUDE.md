@@ -872,6 +872,17 @@ see or reach it. The ledger's dispositions are `fixed`, `coming-soon`
 (with the missing dependency named), `known-limit` and `needs-mac`.
 Work proceeds by cluster (root cause), not by finding.
 
+## The eight features were served overnight (25–26 September 2026)
+
+"work independently and do all … always assume that we already have it."
+`docs/product/served-overnight-2026-09-25.md` is the morning read: one
+table of what was reused and what was built per feature, the two
+foundation bugs found on the way (every Connect call left as binary
+protobuf; the box's renewal credential was never minted), the migration
+chain, and the eight things only the founder can do (deploy, keys, the
+Slack and GitHub apps, a VM for the cloud computer, the runner, two web
+pages, three decisions). Nothing has run on a Mac or on Render.
+
 ## Cursor's server is the missing half, not the feature (25 September 2026)
 
 "I don't want us to treat these as features we need to rebuild from
