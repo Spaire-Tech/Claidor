@@ -187,6 +187,11 @@ class Settings(BaseSettings):
     DESKTOP_AUTH_CODE_TTL: timedelta = timedelta(minutes=5)
     DESKTOP_ACCESS_TOKEN_TTL: timedelta = timedelta(hours=1)
     DESKTOP_REFRESH_TOKEN_TTL: timedelta = timedelta(days=30)
+    # How long the access token a refresh replaces stays good. The box
+    # holds a copy of the Mac's token and the Mac rewrites it every five
+    # minutes (`startInferenceCredentialKeepFresh`); killing the old token
+    # at the exchange made every box call 401 until that rewrite.
+    DESKTOP_REFRESH_GRACE: timedelta = timedelta(minutes=5)
     # Credits per calendar month per person; see polar.desktop.service.
     DESKTOP_MONTHLY_CREDITS: int = 3_000_000
     # Credits per sliding hour per person: the brake on a runaway turn.

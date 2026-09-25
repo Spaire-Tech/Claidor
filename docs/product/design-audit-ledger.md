@@ -119,26 +119,26 @@ until its row says so. Columns:
 | F-093 | cards-and-widgets | note | docs-wrong | unverified | - | - | Permissions design names widget options the schema does not have (multiSelect) and a stale test comment | `docs/product/sources/caisra-permissions.md` |
 | F-094 | cards-and-widgets | note | dead-service | unverified | - | - | Legacy 'permission-request' kind still encodable and described as no longer actionable | `desktop/source/host/runner/tools/sand-permission-request.ts` |
 | F-095 | cards-and-widgets | note | docs-wrong | unverified | - | - | direction.md contradicts itself on whether the computer asks once | `docs/product/direction.md` |
-| F-096 | keys-and-auth | major | docs-wrong | unverified | - | - | Box keeps a server-revoked token for minutes after each Mac refresh; nothing re-reads inference.json on a 401 | `server/polar/desktop/service.py` |
-| F-097 | keys-and-auth | major | risk | unverified | - | - | Any non-2xx from /oauth/token signs the person out and deletes the keychain entries | `desktop/source/electron-main/account/cursor-auth.ts` |
-| F-098 | keys-and-auth | major | naming | unverified | - | - | The browser sign-in page says 'Caisra' on every sign-in | `server/polar/desktop/app_sign_in.py` |
-| F-099 | keys-and-auth | minor | naming | unverified | - | - | Sign-in and auth error strings, and the agent's brief, still say 'Claidor' | `desktop/source/electron-main/account/cursor-auth.ts` |
-| F-100 | keys-and-auth | major | dead-service | unverified | - | - | The host asks Cursor's DashboardService/GetMe for the person's name; the agent never learns it and every renewal logs a failure | `desktop/source/host/extensions/auth/user-full-name-service.ts` |
-| F-101 | keys-and-auth | minor | dead-service | unverified | - | - | Every auth-status delivery fires dead Cursor RPCs (team ceiling, privacy mode, access status, PR prefs, structured logs) | `desktop/source/electron-main/account/cursor-auth-wiring.ts` |
-| F-102 | keys-and-auth | major | risk | unverified | - | - | Vendor OAuth refresh tokens and client secrets sit in plaintext JSON with default file mode, and are copied into the box | `desktop/source/shared/node/vendor-mcp/installs.ts` |
-| F-103 | keys-and-auth | minor | risk | unverified | - | - | sand-secrets.json (keychain-encrypted sign-in tokens) is written without 0o600 | `desktop/source/electron-main/secrets/secret-store.ts` |
-| F-104 | keys-and-auth | note | dead-service | unverified | - | - | Cursor's Sentry DSN (metrics.cursor.sh) is still in the tree; the adapter is never installed, so it is dead — but 'sentryEnabled' defaults on outside the packaged build | `desktop/source/shared/observability/sentry.ts` |
-| F-105 | keys-and-auth | note | dead-service | unverified | - | - | Refresh and poll requests carry Cursor's Auth0 client_id and read Cursor's MDM policy from the Mac | `desktop/source/electron-main/account/cursor-auth.ts` |
-| F-106 | keys-and-auth | minor | docs-wrong | unverified | - | - | The box's 'waiting for credential' message says 'no desktop required', which is false on local Docker | `desktop/source/host/extensions/auth/auth-service.ts` |
-| F-107 | keys-and-auth | note | design-violation | unverified | - | - | Dashboard 'Create a token for the app' tells the person to set CLAIDOR_ACCESS_TOKEN on a server that no longer exists | `clients/apps/web/src/components/Settings/ConnectAppSettings.tsx` |
-| F-108 | keys-and-auth | note | dead-service | unverified | - | - | Legacy /desktop/login still redirects to caisra://auth/callback | `server/polar/desktop/endpoints.py` |
-| F-109 | keys-and-auth | note | unwired | unverified | - | - | /auth/poll reads x-maties-client-version, a header the app never sends | `server/polar/desktop/endpoints.py` |
-| F-110 | keys-and-auth | minor | design-violation | unverified | - | - | Alternative-provider credential paths (Codex ChatGPT login, Claude Code, OpenRouter key from box secrets) remain in the host executor | `desktop/source/host/extensions/inference/provider-session.ts` |
-| F-111 | keys-and-auth | minor | risk | unverified | - | - | Sign-out leaves inference.json on disk and the keep-fresh timer running | `desktop/source/electron-main/account/cursor-auth.ts` |
-| F-112 | keys-and-auth | note | risk | unverified | - | - | Box secrets and connector credentials are persisted in plaintext inside the box's data volume | `desktop/source/host/extensions/secrets/secrets-service.ts` |
-| F-113 | keys-and-auth | note | risk | unverified | - | - | The gateway bearer token is passed to the container as a docker --env | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-114 | keys-and-auth | note | dead-service | unverified | - | - | 1Password provisioning code is present with Anysphere's launcher signing identity; unreachable outside dev controls | `desktop/source/electron-main/onepassword/onepassword-cli-runtime.ts` |
-| F-115 | keys-and-auth | note | docs-wrong | unverified | - | - | docs/product/app-sign-in.md still says the round trip was never run and names api.claidor.com | `docs/product/app-sign-in.md` |
+| F-096 | keys-and-auth | major | docs-wrong | confirmed | box-token-scope | fixed | Box keeps a server-revoked token for minutes after each Mac refresh; nothing re-reads inference.json on a 401 | `server/polar/desktop/service.py` |
+| F-097 | keys-and-auth | major | risk | confirmed | sign-in-copy | fixed | Any non-2xx from /oauth/token signs the person out and deletes the keychain entries | `desktop/source/electron-main/account/cursor-auth.ts` |
+| F-098 | keys-and-auth | major | naming | confirmed | sign-in-copy | fixed | The browser sign-in page says 'Caisra' on every sign-in | `server/polar/desktop/app_sign_in.py` |
+| F-099 | keys-and-auth | minor | naming | confirmed | sign-in-copy | fixed | Sign-in and auth error strings, and the agent's brief, still say 'Claidor' | `desktop/source/electron-main/account/cursor-auth.ts` |
+| F-100 | keys-and-auth | major | dead-service | confirmed | box-token-scope | fixed | The host asks Cursor's DashboardService/GetMe for the person's name; the agent never learns it and every renewal logs a failure | `desktop/source/host/extensions/auth/user-full-name-service.ts` |
+| F-101 | keys-and-auth | minor | dead-service | refuted | dead-cursor-services | fixed | Every auth-status delivery fires dead Cursor RPCs (team ceiling, privacy mode, access status, PR prefs, structured logs) | `desktop/source/electron-main/account/cursor-auth-wiring.ts` |
+| F-102 | keys-and-auth | major | risk | confirmed | local-security | fixed | Vendor OAuth refresh tokens and client secrets sit in plaintext JSON with default file mode, and are copied into the box | `desktop/source/shared/node/vendor-mcp/installs.ts` |
+| F-103 | keys-and-auth | minor | risk | confirmed | local-security | fixed | sand-secrets.json (keychain-encrypted sign-in tokens) is written without 0o600 | `desktop/source/electron-main/secrets/secret-store.ts` |
+| F-104 | keys-and-auth | note | dead-service | refuted | box-telemetry | fixed | Cursor's Sentry DSN (metrics.cursor.sh) is still in the tree; the adapter is never installed, so it is dead — but 'sentryEnabled' defaults on outside the packaged build | `desktop/source/shared/observability/sentry.ts` |
+| F-105 | keys-and-auth | note | dead-service | confirmed | sign-in-copy | known-limit | Refresh and poll requests carry Cursor's Auth0 client_id and read Cursor's MDM policy from the Mac | `desktop/source/electron-main/account/cursor-auth.ts` |
+| F-106 | keys-and-auth | minor | docs-wrong | confirmed | sign-in-copy | fixed | The box's 'waiting for credential' message says 'no desktop required', which is false on local Docker | `desktop/source/host/extensions/auth/auth-service.ts` |
+| F-107 | keys-and-auth | note | design-violation | confirmed | sign-in-copy | fixed | Dashboard 'Create a token for the app' tells the person to set CLAIDOR_ACCESS_TOKEN on a server that no longer exists | `clients/apps/web/src/components/Settings/ConnectAppSettings.tsx` |
+| F-108 | keys-and-auth | note | dead-service | confirmed | sign-in-copy | fixed | Legacy /desktop/login still redirects to caisra://auth/callback | `server/polar/desktop/endpoints.py` |
+| F-109 | keys-and-auth | note | unwired | confirmed | sign-in-copy | fixed | /auth/poll reads x-maties-client-version, a header the app never sends | `server/polar/desktop/endpoints.py` |
+| F-110 | keys-and-auth | minor | design-violation | confirmed | sign-in-copy | known-limit | Alternative-provider credential paths (Codex ChatGPT login, Claude Code, OpenRouter key from box secrets) remain in the host executor | `desktop/source/host/extensions/inference/provider-session.ts` |
+| F-111 | keys-and-auth | minor | risk | confirmed | box-token-scope | fixed | Sign-out leaves inference.json on disk and the keep-fresh timer running | `desktop/source/electron-main/account/cursor-auth.ts` |
+| F-112 | keys-and-auth | note | risk | confirmed | local-security | known-limit | Box secrets and connector credentials are persisted in plaintext inside the box's data volume | `desktop/source/host/extensions/secrets/secrets-service.ts` |
+| F-113 | keys-and-auth | note | risk | confirmed | local-security | known-limit | The gateway bearer token is passed to the container as a docker --env | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-114 | keys-and-auth | note | dead-service | confirmed | dead-cursor-services | known-limit | 1Password provisioning code is present with Anysphere's launcher signing identity; unreachable outside dev controls | `desktop/source/electron-main/onepassword/onepassword-cli-runtime.ts` |
+| F-115 | keys-and-auth | note | docs-wrong | confirmed | sign-in-copy | fixed | docs/product/app-sign-in.md still says the round trip was never run and names api.claidor.com | `docs/product/app-sign-in.md` |
 | F-116 | keys-and-auth | note | dead-service | confirmed | dead-cursor-services | fixed | Every Connect RPC to our host carries x-cursor-checksum, x-ghost-mode and the bearer, after a privacy lookup that 404s | `desktop/source/shared/node/cursor-backend/cursor-inference.ts` |
 | F-117 | models-and-spend | blocking | unwired | confirmed | hidden-turn-cap | fixed | Hidden-turn budget of 40 never reaches the executor: the production owner input drops `hidden` | `desktop/source/host/host-runner-composition.ts` |
 | F-118 | models-and-spend | major | spend | unverified | - | - | Auto-review classifier runs in shadow by default: one Luna call per Shell/MCP/computer action, verdict discarded | `desktop/source/host/runner/sand-auto-review.ts` |
@@ -487,26 +487,26 @@ until its row says so. Columns:
 | F-461 | tests-and-build | note | docs-wrong | unverified | - | - | renderer-file-url.test.mjs's crossorigin guard skips in the build loop; CLAUDE.md says it 'fails if it comes back' | `desktop/tests/renderer-file-url.test.mjs` |
 | F-462 | tests-and-build | note | design-violation | unverified | - | - | publication-packaging.test.mjs pins the dead alternative providers (OpenRouter key error, Codex chatgpt.com, queryClaude) and the Mac-hatch prompt as required source, so removing what the design ended fails check | `desktop/tests/publication-packaging.test.mjs` |
 | F-463 | tests-and-build | note | docs-wrong | unverified | - | - | caisra-ignition-activation.mjs records unboundBindings: [] and runnerRealTurn: supported without running any check, so the packaged host-production-bindings.json is a statement, not a measurement | `desktop/scripts/caisra-ignition-activation.mjs` |
-| F-464 | security | major | risk | unverified | - | - | Box exec daemon on the Mac's loopback (1337) takes the fixed bearer "local" | `desktop/source/box-exec-daemon/server.ts` |
-| F-465 | security | major | risk | unverified | - | - | noVNC/websockify on 6080/6081 has no credential in the local path | `desktop/source/host/box/loopback-sand-box.ts` |
-| F-466 | security | major | risk | unverified | - | - | The full desktop session token sits in the box where the agent's Shell can read it | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-467 | security | major | risk | unverified | - | - | Vendor connector tokens are plaintext at default file mode on the Mac and copied whole (refresh token, client secret) into the box | `desktop/source/shared/node/vendor-mcp/installs.ts` |
-| F-468 | security | minor | risk | unverified | - | - | Custom MCP server headers (API keys) stored plaintext at default mode | `desktop/source/shared/node/account-mcp/store.ts` |
-| F-469 | security | major | risk | unverified | - | - | The [claidor] log lines print tool arguments and results unredacted, including text typed into the box browser | `desktop/source/host/extensions/inference/provider-session.ts` |
-| F-470 | security | major | risk | unverified | - | - | Chromium sandbox disabled for the whole app, including the agent browser webviews | `desktop/source/electron-main/main.ts` |
-| F-471 | security | major | design-violation | unverified | - | - | CopyToBox / ExternalRead reach the whole home directory with no per-file card once local execution is "always" | `desktop/source/host/local-exec/local-exec-daemon.ts` |
+| F-464 | security | major | risk | confirmed | local-security | fixed | Box exec daemon on the Mac's loopback (1337) takes the fixed bearer "local" | `desktop/source/box-exec-daemon/server.ts` |
+| F-465 | security | major | risk | confirmed | local-security | known-limit | noVNC/websockify on 6080/6081 has no credential in the local path | `desktop/source/host/box/loopback-sand-box.ts` |
+| F-466 | security | major | risk | confirmed | box-token-scope | fixed | The full desktop session token sits in the box where the agent's Shell can read it | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-467 | security | major | risk | confirmed | local-security | fixed | Vendor connector tokens are plaintext at default file mode on the Mac and copied whole (refresh token, client secret) into the box | `desktop/source/shared/node/vendor-mcp/installs.ts` |
+| F-468 | security | minor | risk | confirmed | local-security | fixed | Custom MCP server headers (API keys) stored plaintext at default mode | `desktop/source/shared/node/account-mcp/store.ts` |
+| F-469 | security | major | risk | confirmed | local-security | fixed | The [claidor] log lines print tool arguments and results unredacted, including text typed into the box browser | `desktop/source/host/extensions/inference/provider-session.ts` |
+| F-470 | security | major | risk | confirmed | local-security | needs-mac | Chromium sandbox disabled for the whole app, including the agent browser webviews | `desktop/source/electron-main/main.ts` |
+| F-471 | security | major | design-violation | confirmed | local-security | fixed | CopyToBox / ExternalRead reach the whole home directory with no per-file card once local execution is "always" | `desktop/source/host/local-exec/local-exec-daemon.ts` |
 | F-472 | security | blocking | dead-service | refuted | cloud-agents-channels | coming-soon | The secret card can store only a channel credential, and channels do not exist here | `desktop/source/host/extensions/transcript/widget-responses.ts` |
-| F-473 | security | major | naming | unverified | - | - | The sign-in confirmation page says Caisra | `server/polar/desktop/app_sign_in.py` |
-| F-474 | security | minor | risk | unverified | - | - | Gateway /health answers before the bearer check | `desktop/source/host/gateway-server.ts` |
-| F-475 | security | note | risk | unverified | - | - | Gateway bearer passed as a docker --env | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-476 | security | minor | risk | unverified | - | - | WebFetch follows redirects into the local network after checking only the first URL | `desktop/source/packages/agent/tools/core/web-fetch.ts` |
-| F-477 | security | minor | risk | unverified | - | - | The Mac-local hatch's WebFetch has no local-network rejection at all | `desktop/source/host/extensions/transcript/routed-agent-tools.ts` |
-| F-478 | security | minor | risk | unverified | - | - | Renderer-driven fetches from the main process: link metadata and plugin logos | `desktop/source/electron-main/attachments/attachments.ts` |
-| F-479 | security | major | risk | unverified | - | - | Composio proxy trusts any session id / connected-account id the client names | `server/polar/desktop/composio.py` |
-| F-480 | security | minor | dead-service | unverified | - | - | openCloudAgent still opens cursor.com from the app | `desktop/source/electron-main/main-edge.ts` |
-| F-481 | security | note | risk | unverified | - | - | Every page in the agent's browser and the noVNC page has confirm() forced to true | `desktop/source/electron-preload/preload-browser-base.ts` |
-| F-482 | security | note | docs-wrong | unverified | - | - | Record claims the vendor store lives under Application Support, then corrects itself; CLAUDE.md now agrees | `docs/product/connectors-signin-measured.md` |
-| F-483 | security | minor | risk | unverified | - | - | Fork desktop router (1339) and egress tunnel port (8790) are published without a stated need | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-473 | security | major | naming | confirmed | sign-in-copy | fixed | The sign-in confirmation page says Caisra | `server/polar/desktop/app_sign_in.py` |
+| F-474 | security | minor | risk | confirmed | local-security | fixed | Gateway /health answers before the bearer check | `desktop/source/host/gateway-server.ts` |
+| F-475 | security | note | risk | confirmed | local-security | known-limit | Gateway bearer passed as a docker --env | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-476 | security | minor | risk | confirmed | local-security | fixed | WebFetch follows redirects into the local network after checking only the first URL | `desktop/source/packages/agent/tools/core/web-fetch.ts` |
+| F-477 | security | minor | risk | confirmed | local-security | fixed | The Mac-local hatch's WebFetch has no local-network rejection at all | `desktop/source/host/extensions/transcript/routed-agent-tools.ts` |
+| F-478 | security | minor | risk | refuted | local-security | - | Renderer-driven fetches from the main process: link metadata and plugin logos | `desktop/source/electron-main/attachments/attachments.ts` |
+| F-479 | security | major | risk | confirmed | composio | - | Composio proxy trusts any session id / connected-account id the client names | `server/polar/desktop/composio.py` |
+| F-480 | security | minor | dead-service | confirmed | cloud-agents-channels | fixed | openCloudAgent still opens cursor.com from the app | `desktop/source/electron-main/main-edge.ts` |
+| F-481 | security | note | risk | confirmed | local-security | known-limit | Every page in the agent's browser and the noVNC page has confirm() forced to true | `desktop/source/electron-preload/preload-browser-base.ts` |
+| F-482 | security | note | docs-wrong | confirmed | sign-in-copy | fixed | Record claims the vendor store lives under Application Support, then corrects itself; CLAUDE.md now agrees | `docs/product/connectors-signin-measured.md` |
+| F-483 | security | minor | risk | confirmed | local-security | fixed | Fork desktop router (1339) and egress tunnel port (8790) are published without a stated need | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 
 ## Cluster notes
 
@@ -821,3 +821,92 @@ with `variant: "propose"` and the agent's reason, the pinned renderer's
 card offers Add, and the brief proposes with it and never in text
 (`tests/connector-proposal.test.mjs`; needs a Mac: the card drawn, Add
 installing and signing in, the agent resumed). `tests/connectors-mcp-hardening.test.mjs`.
+
+### box-token-scope (25 September 2026)
+
+Refuters: F-096, F-100, F-111 and F-466 stand. The box runs on the
+Mac's own session token, written into `inference.json` at connect and
+rewritten every five minutes, and three things followed from that.
+**The Mac's hourly refresh killed the box's copy at once** (F-096):
+`DesktopService.refresh` set `revoked_at` on the old row, so every model
+call from the box answered 401 until the next rewrite. The old access
+token now stays good for `DESKTOP_REFRESH_GRACE` (5 minutes, the
+keep-fresh interval) while the old refresh token dies with the exchange,
+and sign-out sweeps the graced row (`list_in_grace_of_user`);
+`test_the_replaced_access_token_dies_at_the_grace_and_at_sign_out`.
+**The token in the box reached every desktop route** (F-466):
+`get_desktop_session` now refuses the box's credential (`is_box_credential`);
+it reaches the model proxy and, through the new
+`get_desktop_or_box_session`, the profile route only. A cloud job's token
+keeps the memory routes the runner needs (`tests/maty`). **Sign-out forgot
+nothing on the box** (F-111): `forgetInferenceCredential` stops the
+keep-fresh, drops the box renewal credential, removes the token file, and
+the auth wiring stops a local Docker box on the `signed_out` settlement
+(`account-oauth.ts`). **The person's name was asked of Cursor's GetMe**
+(F-100): `user-full-name-service.ts` reads `/desktop/api/user/profile`
+with the box's token. `desktop/tests/keys-auth-security.test.mjs`,
+`server/tests/desktop/test_box_credential.py`. Not yet run on a Mac: a
+refresh while the box is mid-turn (the box should not see a 401), and a
+sign-out with the box up (`local docker: inference credential forgotten`
+in `computer-stream.log`, then the container gone).
+
+### sign-in-copy (25 September 2026)
+
+Refuters: 12 of 13 stand (F-101 was already fixed by 5aca8256, the
+dead-Cursor-services cluster). The sign-in page said Caisra (F-098,
+F-473: `PRODUCT = "Simeon"`); the deep link and the legacy login route
+said `caisra://` (F-108: `simeon://`, with `caisra://` still accepted for
+a build from before 23 September); the server read a client-version
+header the app never sends (F-109: `x-cursor-client-version` first, the
+old name second; whether the poll call itself carries it is not
+confirmed); every 5xx, 429 or 408 on the refresh signed the person out
+and deleted the keychain entries (F-097: `isTransientRefreshStatus`
+throws `SandAuthRefreshTransientError` and the session is kept); the
+error strings said Claidor (F-099, eight files); the box's waiting
+message said "no desktop required" (F-106); the dashboard's token page
+told the person to set `CLAIDOR_ACCESS_TOKEN` on a server that no longer
+exists (F-107, copy rewritten; the env name is not a contract of ours);
+and two records were stale (F-115, F-482). Known limits: the refresh
+body still carries Cursor's Auth0 `client_id` and the MDM policy headers
+the server ignores (F-105; harmless, removing them touches the login
+manager for nothing); the alternative-provider paths in
+`provider-session.ts` are dead in production and stay (F-110; the
+founder keeps the Grok Bot model idea for v1).
+
+### local-security (25 September 2026)
+
+Refuters: 16 of 17 stand; F-478 is refuted (link previews already go
+through `safe-link-preview-fetch.ts`, which refuses non-public hosts,
+custom ports and credentials and caps redirects; the plugin-logo path
+takes catalogue URLs only). **The daemon on the Mac** (F-471, narrowed:
+there was never a per-file card, and the founder's "asks once" rule
+stands; what was missing was any notion of a place too sensitive to
+touch): `shared/sensitive-local-paths.ts` names the folders that hold
+keys and sign-ins (`~/.ssh`, `~/.gnupg`, `~/.aws`, `~/.config/gcloud`,
+`~/.kube`, `~/.caisra`, the keychains, browser profiles, `/etc/shadow`,
+…) and the local-exec daemon refuses a read, write, listing or command
+that names one before the permission setting is consulted, with a
+sentence the agent reads. **Credential files** (F-102, F-103, F-467,
+F-468): the vendor store, the account-MCP store and `sand-secrets.json`
+are written 0600 in 0700 folders (the box copy of the vendor store
+already carried the access token only, connectors-mcp cluster). **The
+host log** (F-469): tool arguments, tool outcomes and the model-error
+event pass through `redactSandAutoReviewInlineSecrets`. **The box's
+fetch** (F-476, F-477): `fetchWebPage` follows redirects one hop at a
+time, checks every hop against localhost and private ranges, caps at 5,
+and the Mac-local hatch is covered by the same function. **The Mac's
+loopback** (F-464, F-483): only the gateway (1340) and the screen
+(6080/6081) are published; the exec daemon (1337) and the fork router
+(1339), both on the fixed bearer "local", are not, and nothing on the Mac
+dialled them. **The gateway** (F-474): `/health` is read with the bearer
+like every other path when one is configured; the Mac's probes send it.
+Known limits, named: the screen on 6080 has no credential of its own on
+the local path (F-465; the box image serves it, a token needs the image
+rebuilt); the gateway bearer rides in `docker --env` (F-475, F-113;
+`docker inspect` is the person's own machine); the box's own secrets
+volume is plaintext inside the container (F-112); the browser preload's
+`confirm()` stub (F-481; the agent's browser is Grok Bot's, and a site's
+confirm dialog would hang the run). Needs a Mac: F-470, the Chromium
+sandbox flag (`main.ts`), which the packaged app has not been run
+without. F-479 (Composio) stays with F-160 and F-267, the founder's
+wire-or-delete decision. `desktop/tests/keys-auth-security.test.mjs`.

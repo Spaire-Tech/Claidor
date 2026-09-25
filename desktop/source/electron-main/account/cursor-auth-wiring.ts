@@ -174,11 +174,11 @@ export function createCursorAccountEdgePort(deps: {
     getUsageSummary: async () => !await deps.isUsagePageEnabled() ? null : await withService(async (service) => (await service.getStatus()).kind === "logged-in" ? await deps.fetchUsageSummary(tokenReader(service)) : null),
     getPrReviewPreferences: async () => withService(async (service) => (await service.getStatus()).kind === "logged-in" ? await deps.fetchPrReviewPreferences(tokenReader(service)) : NO_SAND_PR_REVIEW_PREFERENCES),
     getPrivacyModeEnabled: async () => withService(async (service) => (await service.getStatus()).kind === "logged-in" ? await deps.fetchPrivacyModeEnabled(tokenReader(service)) : true),
-    cancelTrial: async () => !await deps.isUsagePageEnabled() ? { ok: false, message: "This isn’t available right now" } : await withService(async (service) => (await service.getStatus()).kind === "logged-in" ? await deps.cancelTrial(tokenReader(service)) : { ok: false, message: "Sign in to Claidor to continue" }),
+    cancelTrial: async () => !await deps.isUsagePageEnabled() ? { ok: false, message: "This isn’t available right now" } : await withService(async (service) => (await service.getStatus()).kind === "logged-in" ? await deps.cancelTrial(tokenReader(service)) : { ok: false, message: "Sign in to Simeon to continue" }),
     invokeDashboardAction: async (raw: unknown) => {
       const request = parseDashboardActionRequest(raw);
       if (request == null) return { ok: false, message: `This action isn’t supported by this version of ${deps.productDisplayName ?? "Simeon"}` };
-      return await withService(async (service) => (await service.getStatus()).kind === "logged-in" ? await deps.invokeDashboardAction(tokenReader(service), request) : { ok: false, message: "Sign in to Claidor to continue" });
+      return await withService(async (service) => (await service.getStatus()).kind === "logged-in" ? await deps.invokeDashboardAction(tokenReader(service), request) : { ok: false, message: "Sign in to Simeon to continue" });
     },
   };
 }

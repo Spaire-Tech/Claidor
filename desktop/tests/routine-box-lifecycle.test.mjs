@@ -128,7 +128,7 @@ test("the box renews with the file's credential when the file is stale, and uses
 
     const plain = await service({ accessToken: "mac-token", expiresAtMs: Date.now() - 1 });
     try {
-      await assert.rejects(() => plain.getAccessToken(), /Waiting for an inference credential/, "a stale file with no credential waits, as before");
+      await assert.rejects(() => plain.getAccessToken(), /Waiting for a model credential/, "a stale file with no credential waits, as before");
       assert.equal(renewals.length, 1, "and renews nothing");
     } finally { plain.dispose(); }
   } finally {

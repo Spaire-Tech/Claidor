@@ -74,10 +74,10 @@ export function formatAgentRunError(error: Error): string {
 
 const OPENAI_ACCOUNT_QUOTA = /no credits remaining|insufficient_quota|platform\.openai\.com\/settings\/organization\/billing/i;
 const CLAIDOR_OPENAI_QUOTA_DETAIL =
-  "Claidor could not reach the model because OpenAI has no credits left on Claidor's account. This is not your OpenAI billing page.";
+  "Simeon could not reach the model because OpenAI has no credits left on Simeon Labs' account. This is not your OpenAI billing page.";
 const CLAUDE_CODE_INSTALL = /Claude Code is not installed/i;
 const CLAIDOR_NOT_CLAUDE_DETAIL =
-  "Simeon talks to Claidor, not Claude Code. Sign in to Claidor and try again.";
+  "Simeon talks to Simeon Labs' server, not Claude Code. Sign in to Simeon and try again.";
 
 export function claidorFacingProviderError(message: string): string {
   if (OPENAI_ACCOUNT_QUOTA.test(message)) return CLAIDOR_OPENAI_QUOTA_DETAIL;

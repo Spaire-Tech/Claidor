@@ -10,6 +10,7 @@ import { BasePromptBuilder, BasePromptExecutor } from "../../../packages/chat-in
 import { asError } from "../../../shared/errors.js";
 import { withCheapRateLimitFallback } from "../../../shared/inference/cheap-rate-limit-fallback.js";
 import { clipForHostLog, HOST_LOG_PREFIX, logHostLine, setHostLogSink } from "../../../shared/host-log.js";
+import { redactSandAutoReviewInlineSecrets } from "../../../shared/sand-auto-review-redact.js";
 import { CLAIDOR_WORKING_CONTEXT_TOKENS } from "../../../shared/inference/claidor-context-window.js";
 import { resolveSandAgentStepCap, stepBudgetExceededMessage } from "../../../shared/inference/turn-step-budget.js";
 import type { SandInferenceProvider } from "../../../shared/inference-router.js";
@@ -179,7 +180,7 @@ function claidorAuthenticatedFetch(source: ClaidorCredentialSource): typeof fetc
     const accessToken = await withTimeout(
       source.getAccessToken(),
       CLAIDOR_CREDENTIAL_WAIT_MS,
-      "Timed out waiting for a Claidor sign-in.",
+      "Timed out waiting for a Simeon sign-in.",
     );
     const headers = new Headers(init?.headers);
     headers.set("authorization", `Bearer ${accessToken}`);
@@ -480,7 +481,7 @@ export function summarizeToolCalls(calls: readonly { readonly toolName?: string;
     let args = "";
     try { args = JSON.stringify(call.args ?? {}); } catch { args = String(call.args); }
     const short = args.length > 400 ? `${args.slice(0, 400)}…` : args;
-    return `${call.toolName ?? "?"}(${short.replace(/\s+/g, " ")})`;
+    return `${call.toolName ?? "?"}(${redactSandAutoReviewInlineSecrets(short.replace(/\s+/g, " "))})`;
   }).join(" ");
 }
 
@@ -528,7 +529,7 @@ function logModelCallError(error: unknown, callInfo: { readonly model: string; r
   let event = "";
   try { event = JSON.stringify(error) ?? String(error); } catch { event = String(error); }
   if (event === "{}" && error instanceof Error) event = error.message;
-  modelCallLog(`${HOST_LOG_PREFIX} model-error model=${callInfo?.model ?? "?"} effort=${callInfo?.effort ?? "?"} tools=${Object.keys(tools ?? {}).join(",")} event=${clipForHostLog(event, 800)}`);
+  modelCallLog(`${HOST_LOG_PREFIX} model-error model=${callInfo?.model ?? "?"} effort=${callInfo?.effort ?? "?"} tools=${Object.keys(tools ?? {}).join(",")} event=${clipForHostLog(redactSandAutoReviewInlineSecrets(event), 800)}`);
   modelCallLog(`${HOST_LOG_PREFIX} model-error-messages ${messageShapeSummary(messages)}`);
   modelCallLog(`${HOST_LOG_PREFIX} model-error-system ${clipForHostLog(systemPromptText(messages), 12000)}`);
   modelCallLog(`${HOST_LOG_PREFIX} model-error-schemas ${clipForHostLog(toolSchemaSummary(tools), 6000)}`);
@@ -600,7 +601,7 @@ function claidorLanguageModel(source: ClaidorCredentialSource, id: string): Lang
 
 function claidorExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, modelId?: string, reasoningEffort: ClaidorReasoningEffort = configuredClaidorReasoningEffort(), budget?: ModelCallBudget) {
   const source = claidorCredentialSource;
-  if (source == null) throw new Error("Claidor is the selected provider, but this process has no signed-in credential source. Sign in to Claidor and try again.");
+  if (source == null) throw new Error("Simeon runs on the signed-in account, but this process has no credential source. Sign in to Simeon and try again.");
   const requested = modelId?.trim() || configuredClaidorModel();
   const cheap = configuredClaidorCheapModel();
   const start = (id: string) => aiSdkExecutor(claidorLanguageModel(source, id), messages, invocationId, definitions, executeTool, onUsage, CLAIDOR_WORKING_CONTEXT_TOKENS, { reasoningEffort }, { model: id, effort: reasoningEffort, ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }) });

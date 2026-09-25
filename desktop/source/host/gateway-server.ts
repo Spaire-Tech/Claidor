@@ -45,6 +45,10 @@ function handleBridgeResponses(bridge: GatewayServerDeps["localExec"] | GatewayS
 
 export async function handleRequest(deps: GatewayServerDeps, req: IncomingMessage, res: ServerResponse): Promise<void> {
   const url = new URL(req.url ?? "/", "http://127.0.0.1"); if (rejectUntrustedBrowserRequest(deps, req, res)) return;
+  // Health carries the active agent and whether a turn is running; with a
+  // token configured it is read with the token like everything else (the
+  // Mac's probes send it: local-docker-host-connector.ts, host-supervisor.ts).
+  if (req.method === "GET" && url.pathname === GATEWAY_HEALTH_PATH && deps.authToken != null && !isAuthorized(req, deps.authToken)) return respondError(res, 401, "unauthorized");
   if (req.method === "GET" && url.pathname === GATEWAY_HEALTH_PATH) { const health = deps.getHealth(); return respondJson(res, { ok: true, pid: process.pid, isBusy: health.isBusy, ...(health.busyOnlyAwaitingApproval === undefined ? {} : { busyOnlyAwaitingApproval: health.busyOnlyAwaitingApproval }), activeAgentId: health.activeAgentId, startedAt: deps.startedAt, lastBusyAtMs: health.lastBusyAtMs }); }
   const events = req.method === "GET" && url.pathname === GATEWAY_EVENTS_PATH; const prepare = req.method === "POST" && url.pathname === GATEWAY_PREPARE_UPGRADE_PATH; const avatar = req.method === "GET" && url.pathname.startsWith(`${GATEWAY_AVATARS_PATH}/`); const localRequests = req.method === "GET" && url.pathname === GATEWAY_LOCAL_EXEC_REQUESTS_PATH; const localResponses = req.method === "POST" && url.pathname === GATEWAY_LOCAL_EXEC_RESPONSES_PATH; const webRequests = req.method === "GET" && url.pathname === GATEWAY_WEBAUTHN_REQUESTS_PATH; const webResponses = req.method === "POST" && url.pathname === GATEWAY_WEBAUTHN_RESPONSES_PATH; const command = req.method === "POST" && url.pathname.startsWith(`${GATEWAY_API_PREFIX}/`);
   if (!(events || prepare || avatar || localRequests || localResponses || webRequests || webResponses || command)) return respondError(res, 404, `not found: ${req.method} ${url.pathname}`);

@@ -432,7 +432,18 @@ class DesktopService:
             or not found.user.can_authenticate
         ):
             raise DesktopUnauthenticated("The refresh token is invalid or has expired.")
-        found.revoked_at = utc_now()
+        # The old refresh token dies with the exchange. The old access token
+        # does not, not at once: the person's box holds a copy of it
+        # (`local-docker-host-connector.ts` writes the Mac's token into the
+        # box and rewrites it every five minutes), and until 25 September
+        # 2026 the exchange revoked the row outright, so every model call
+        # from the box answered 401 until that rewrite. It now stays good
+        # for `DESKTOP_REFRESH_GRACE` at most; sign-out sweeps it (`revoke`).
+        now = utc_now()
+        found.refresh_expires_at = now - timedelta(seconds=1)
+        found.access_expires_at = min(
+            found.access_expires_at, now + settings.DESKTOP_REFRESH_GRACE
+        )
         session.add(found)
         issued = await self._issue_session(
             session,
@@ -457,15 +468,22 @@ class DesktopService:
         now = utc_now()
         desktop_session.revoked_at = now
         session.add(desktop_session)
+        repository = DesktopSessionRepository.from_session(session)
         # Sign-out takes the box's credential with it: a box the person
         # walked away from must not keep calling the model as them.
-        for child in await DesktopSessionRepository.from_session(
-            session
-        ).list_box_credentials_of(desktop_session.id):
+        for child in await repository.list_box_credentials_of(desktop_session.id):
             if child.is_revoked:
                 continue
             child.revoked_at = now
             session.add(child)
+        # And the access token a recent refresh replaced, still inside its
+        # grace (`refresh`): a sign-out is the end of every token the person
+        # holds, not only the newest.
+        for graced in await repository.list_in_grace_of_user(
+            desktop_session.user_id, now
+        ):
+            graced.revoked_at = now
+            session.add(graced)
 
     # --- the box's own credential --------------------------------------------
 
@@ -562,7 +580,6 @@ class DesktopService:
         session.add(found)
         await session.flush()
         return found, access
-        await session.flush()
 
     # the app's own sign-in
 

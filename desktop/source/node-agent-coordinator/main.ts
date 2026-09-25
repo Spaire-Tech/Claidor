@@ -240,7 +240,7 @@ export async function composeCoordinator(dependencies: ComposeCoordinatorDepende
   setClaidorCredentialSource({
     getAccessToken: async () => {
       const issued = await command<{ accessToken?: unknown; backendUrl?: unknown } | null>(commands, "mintInferenceCredential", {});
-      if (typeof issued?.accessToken !== "string" || issued.accessToken.length === 0) throw new Error("Claidor is the selected provider, but the desktop has no signed-in credential to lend. Sign in to Claidor and try again.");
+      if (typeof issued?.accessToken !== "string" || issued.accessToken.length === 0) throw new Error("Simeon runs on the signed-in account, but the desktop has no credential to lend. Sign in to Simeon and try again.");
       return issued.accessToken;
     },
   });

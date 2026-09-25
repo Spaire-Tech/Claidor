@@ -391,6 +391,20 @@ host every 30 s, so a fresh token lands within the minute. A box only
 minutes old that still gets 401 means the Mac had no valid token to
 write (signed out, or its refresh failed): the file's `expiresAtMs`
 says which. Not yet run on a Mac.
+**A second cause, found 25 September 2026:** the Mac's own hourly refresh
+revoked the old session outright, so the box's copy of that token got
+401 for up to five minutes after every refresh. Simeon Labs' server now
+keeps the replaced access token good for `DESKTOP_REFRESH_GRACE` (5 min)
+while the old refresh token dies at once; sign-out sweeps it. The same
+day: the box's credential reaches the model proxy and the profile route
+and nothing else on `/desktop` (`get_desktop_session` refuses
+`is_box_credential`); sign-out removes the token file, stops the
+keep-fresh and stops a local Docker box (`forgetInferenceCredential`);
+a 5xx/429 on the refresh no longer signs the person out; and the
+local-exec daemon on the Mac refuses `~/.ssh`, `~/.aws`, `~/.caisra`,
+the keychains and browser profiles whatever the permission setting says
+(`shared/sensitive-local-paths.ts`). Ledger clusters `box-token-scope`,
+`sign-in-copy`, `local-security`; `tests/keys-auth-security.test.mjs`.
 
 **Teach a task is there and gated off.** The composer's plus-menu entry
 and the computer bar's button are in the pinned renderer, the recording

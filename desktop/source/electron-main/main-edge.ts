@@ -1,3 +1,4 @@
+import { isCloudAgentsServed } from "../shared/cloud-agents-availability.js";
 import { isSandAgentModelSelection, resolveComputerUseModelSelection } from "../shared/agents/sand-agent-model.js";
 import { normalizeSandAutoReviewInstructions } from "../shared/sand-auto-review-instructions.js";
 import { isSandLocalToolAction, normalizeSandLocalToolPermission } from "../shared/local-tool-permission.js";
@@ -126,7 +127,7 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
     setOnboardingSeen: (raw) => { const seen = req(raw).seen; if (typeof seen === "boolean") void Promise.resolve(invoke(deps.onboardingSeen, "apply", seen)); },
 
     openExternal: (raw) => invoke(deps.shell, "openExternalUrl", req(raw).url),
-    openCloudAgent: async (raw) => { const bcId = typeof req(raw).bcId === "string" ? (req(raw).bcId as string).trim() : ""; if (bcId.length === 0) return; const base = process.env.SAND_CURSOR_WEBSITE_URL?.trim() || process.env.CURSOR_WEBSITE_URL?.trim() || "https://cursor.com"; await Promise.resolve(invoke(deps.shell, "openInSystemBrowser", new URL(`/agents/${encodeURIComponent(bcId)}`, base).toString())); },
+    openCloudAgent: async (raw) => { if (!isCloudAgentsServed()) return; const bcId = typeof req(raw).bcId === "string" ? (req(raw).bcId as string).trim() : ""; if (bcId.length === 0) return; const base = process.env.SAND_CURSOR_WEBSITE_URL?.trim() || process.env.CURSOR_WEBSITE_URL?.trim() || "https://cursor.com"; await Promise.resolve(invoke(deps.shell, "openInSystemBrowser", new URL(`/agents/${encodeURIComponent(bcId)}`, base).toString())); },
     submitFeedback: (raw) => invoke(deps.shell, "submitFeedback", raw),
     markDeepLinksReady: () => { invoke(deps.shell, "markDeepLinksReady"); },
     getBoxMigrationStatus: () => invoke(deps.boxRecovery, "readBoxMigrationStatus"),

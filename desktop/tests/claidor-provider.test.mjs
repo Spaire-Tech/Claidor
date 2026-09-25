@@ -109,7 +109,7 @@ test("claidor turns run Grok Bot's loop on the host by default; off is the Mac h
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
     const settled = events.find((event) => event.family === "transcript" && event.payload.entry?.kind === "send-message");
-    assert.match(settled.payload.entry.message.content, /no signed-in credential source/);
+    assert.match(settled.payload.entry.message.content, /has no credential source/);
   } finally {
     await router.dispose();
   }
@@ -138,7 +138,7 @@ test("a Mac-hatch Claidor turn does not wait on a hung box", async () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
     const settled = events.find((event) => event.family === "transcript" && event.payload.entry?.kind === "send-message");
-    assert.match(settled.payload.entry.message.content, /no signed-in credential source/);
+    assert.match(settled.payload.entry.message.content, /has no credential source/);
     assert.ok(Date.now() - started < 6_000, "a hung box must not stall the turn");
   } finally {
     await router.dispose();
@@ -189,7 +189,7 @@ test("the claidor provider speaks the Responses wire to our proxy with the signe
     assert.equal(DEFAULT_CLAIDOR_MODEL, "gpt-5.6-terra");
 
     setClaidorCredentialSource(null);
-    await assert.rejects(() => runRoutedProviderText("claidor", [{ role: "user", content: "hi" }]), /no signed-in credential source/);
+    await assert.rejects(() => runRoutedProviderText("claidor", [{ role: "user", content: "hi" }]), /has no credential source/);
     assert.deepEqual(requests, []);
 
     let minted = 0;

@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { spawn } from "node:child_process";
-import { chmod, mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -262,7 +262,10 @@ async function ensureLocalDockerBoxNarrated(settingsPath: string, inferenceCrede
       "--platform", "linux/amd64", "--restart", "unless-stopped",
       "--env", "SAND_SUPERVISOR_ENABLED=1", "--env", "SAND_BOX_AUTO_UPDATE=0", "--env", "SAND_USE_EXISTING_BOX_EXEC_DAEMON=1", "--env", "SAND_TREE_SITTER_NODE_DEPS=/home/box/deps", "--env", "NODE_PATH=/home/box/deps", "--env", "SAND_GATEWAY_BIND_HOST=0.0.0.0", "--env", "SAND_HOST_PORT=1340", "--env", `SAND_GATEWAY_TOKEN=${token}`,
       ...localDockerInferenceEnvironmentArguments(inferenceCredential),
-      "--publish", "127.0.0.1:1337:1337", "--publish", "127.0.0.1:1339:1339", "--publish", "127.0.0.1:1340:1340",
+      // The gateway (1340) and the screen (6080/6081) only. The exec daemon
+      // (1337) and the fork router (1339) take the fixed bearer "local" and
+      // nothing on the Mac dials them (grep 25 September 2026).
+      "--publish", "127.0.0.1:1340:1340",
       "--publish", "127.0.0.1:6080:6080", "--publish", "127.0.0.1:6081:6081", 
       "--volume", "grok-bot-local-vm-workspace:/workspace", "--volume", "grok-bot-local-vm-data:/home/box/sand-data",
       "--mount", `type=bind,src=${hostBundle.path},dst=/home/box/sand-host/host-main.cjs,readonly`,
@@ -417,6 +420,26 @@ export function startInferenceCredentialKeepFresh(
 export function stopInferenceCredentialKeepFresh(): void {
   if (keepFreshTimer != null) clearInterval(keepFreshTimer);
   keepFreshTimer = undefined;
+}
+
+// Sign-out forgets everything the box was lent (25 September 2026): the
+// keep-fresh timer stops, the box's renewal credential is dropped so the
+// next connect mints a new one for the next person, and the token file
+// goes. Until then a sign-out deleted the keychain entries and nothing
+// else, and if the server could not be told (offline) the plaintext token
+// on disk stayed good for up to an hour and the box kept using it.
+export async function forgetInferenceCredential(settingsPath: string, options: { readonly log?: (line: string) => void; readonly remove?: (path: string) => Promise<void> } = {}): Promise<void> {
+  stopInferenceCredentialKeepFresh();
+  boxRenewalCredential = undefined;
+  lastPersistedAccessToken = undefined;
+  const log = options.log ?? computerStreamLine;
+  const path = inferenceCredentialPath(settingsPath);
+  try {
+    await (options.remove ?? ((target: string) => rm(target, { force: true })))(path);
+    log("local docker: inference credential forgotten (signed out)");
+  } catch (error) {
+    log(`local docker: inference credential NOT forgotten: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 export function createSettingsRoutedHostConnector(

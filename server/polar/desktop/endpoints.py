@@ -7,7 +7,7 @@ server mode does. Sign-in works like this:
 1. The app opens the browser at `/desktop/login?redirect_uri=…&state=…`
    (the redirect is a loopback callback the app is listening on; when
    it could not open one it comes with no redirect and expects a
-   `caisra://` deep link instead).
+   `simeon://` deep link instead).
 2. With no Claidor session in the browser, that page sends the person
    to the web login and asks to be returned to.
 3. With one, it mints a five-minute, single-use code and redirects to
@@ -56,7 +56,13 @@ from polar.openapi import APITag
 from polar.postgres import AsyncSession, get_db_session
 from polar.routing import APIRouter
 
-from .auth import ProxyCaller, bearer_token, get_desktop_session, get_proxy_caller
+from .auth import (
+    ProxyCaller,
+    bearer_token,
+    get_desktop_or_box_session,
+    get_desktop_session,
+    get_proxy_caller,
+)
 from .capabilities import router as capabilities_router
 from .composio import forward as composio_forward
 
@@ -104,8 +110,23 @@ log = structlog.get_logger()
 router = APIRouter(prefix="/desktop", tags=["desktop", APITag.private])
 
 ANTHROPIC_VERSION = "2023-06-01"
-DEEP_LINK_CALLBACK = "caisra://auth/callback"
-CLIENT_VERSION_HEADER = "x-maties-client-version"
+# The app's URL scheme is `simeon://` since 23 September 2026 (the
+# packager's bundle rename, `docs/product/name-measured.md`); `caisra://`
+# is still taken so a build from before that day can finish a sign-in.
+DEEP_LINK_CALLBACK = "simeon://auth/callback"
+DEEP_LINK_SCHEMES = ("simeon", "caisra")
+# The app stamps `x-cursor-client-version` on every call it makes
+# (`shared/node/sand-client-metadata.ts`); the older name is read second.
+CLIENT_VERSION_HEADERS = ("x-cursor-client-version", "x-maties-client-version")
+CLIENT_VERSION_HEADER = CLIENT_VERSION_HEADERS[0]
+
+
+def client_version_of(request: Request) -> str | None:
+    for name in CLIENT_VERSION_HEADERS:
+        value = request.headers.get(name)
+        if value is not None and value.strip():
+            return value.strip()
+    return None
 
 
 # --- helpers ---------------------------------------------------------------
@@ -135,7 +156,7 @@ def _callback_target(redirect_uri: str | None) -> str | None:
     ):
         return redirect_uri.strip()
     if (
-        parsed.scheme == "caisra"
+        parsed.scheme in DEEP_LINK_SCHEMES
         and parsed.netloc == "auth"
         and parsed.path == "/callback"
     ):
@@ -214,7 +235,7 @@ async def exchange(
             session,
             body.authCode,
             user_agent=request.headers.get("User-Agent", ""),
-            client_version=request.headers.get(CLIENT_VERSION_HEADER),
+            client_version=client_version_of(request),
         )
     except DesktopUnauthenticated as error:
         return _fail(AUTH_CODE_INVALID, error.message)
@@ -249,7 +270,9 @@ async def logout(
     token = bearer_token(request)
     if token is not None:
         found = await desktop.authenticate(session, token)
-        if found is not None:
+        # A box's or a job's credential signs nobody out: the desktop
+        # it belongs to is the one that decides (`get_desktop_session`).
+        if found is not None and not (found.is_box_credential or found.is_job_token):
             await desktop.revoke(session, found)
     return _ok({})
 
@@ -280,8 +303,11 @@ async def box_renewal_credential(
 
 @router.get("/api/user/profile", name="desktop:profile")
 async def profile(
-    desktop_session: DesktopSession = Depends(get_desktop_session),
+    desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
 ) -> JSONResponse:
+    """The person's name, e-mail and picture. The box's host reads it
+    too, with its own credential, for the agent's user-info block
+    (`host/extensions/auth/user-full-name-service.ts`)."""
     return _ok(desktop.user_payload(desktop_session.user))
 
 
@@ -500,7 +526,7 @@ async def client_banner_snapshot(request: Request) -> JSONResponse:
         {
             "serverTime": utc_now().isoformat(),
             "nextRefreshAt": None,
-            "clientVersion": request.headers.get(CLIENT_VERSION_HEADER, ""),
+            "clientVersion": client_version_of(request) or "",
             "banners": [],
         }
     )

@@ -160,7 +160,7 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "gateway", "gateway-client.ts"), "utf8"), /if \(this\.slimAvatarsEnabled\) headers\[GATEWAY_SLIM_AVATARS_HEADER\] = "1"/);
   assert.doesNotMatch(await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "gateway", "gateway-client.ts"), "utf8"), /SAND_DISABLE_SLIM_AVATARS/);
   assert.match(providers, /CLAIDOR_FETCH_TIMEOUT_MS = 45_000/);
-  assert.match(providers, /Timed out waiting for a Claidor sign-in/);
+  assert.match(providers, /Timed out waiting for a Simeon sign-in/);
   assert.match(await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "gateway", "gateway-client.ts"), "utf8"), /connectDeadline\.run\(\(signal\) => this\.resolveConnection\(signal\)\)/);
   assert.match(coordinator, /executeTool: async \(definition, toolArgs, toolCallId\)/);
   assert.match(coordinatorMain, /command\(commands, "listRoutedMcpTools", args\)/);
