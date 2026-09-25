@@ -37,7 +37,7 @@ cannot turn on one Connect service without the others.
 | Cloud computer | complete | a broker, a network path, a VNC path, hosting | **backend replacement**, hosting is the new product decision |
 | Watching videos | mostly complete | a Gemini provider on the proxy; three desktop wires | **backend replacement** |
 | Publishing a skill to a team | complete | a team plugin registry | **new**, but small if scoped to "my account" |
-| Sharing (cross-user rooms) | complete | a multi-user relay | **new product functionality** |
+| Sharing (cross-user rooms) | complete | a multi-user relay — **served since 25 September 2026** (`polar/sand/sharing.py`, `sharing-served.md`) | **new product functionality**, built |
 
 One bug came out of the box mapping and is fixed in this commit:
 `createRemoteHostConnector` dropped `issueBoxRenewalCredential` when a
@@ -564,6 +564,19 @@ in `xuser-sharing-environment.ts`.
 **New product functionality.** The client is done and needs one switch,
 but the server is a multi-user relay with permission logic that exists in
 no form today, and it cannot be got by extending the proxy.
+
+**Built, 25 September 2026, later the same day.** `server/polar/sand/sharing.py`
+serves every route in §3 with those field names (`sharing_service.py`,
+four tables, invite links as signed tokens, the per-person queue acked by
+id, fan-out on the `xuser-events` notify topic); the client's switch is on
+by default and `sand_multiplayer` is on in Simeon's gate table. Two
+corrections to §3 from building against it: `XuserRoom` also carries
+`hostName` (read by `xuser-remote-turns.ts` and `shared-rooms.ts`), and a
+human member must carry a non-empty `displayName` or the renderer refuses
+the whole state. The production-origin refusal in
+`xuser-sharing-environment.ts` now allows `api.simeonlabs.com` and keeps
+refusing Cursor's origin. `docs/product/sharing-served.md` is the record,
+with what is not yet run on a Mac.
 
 ---
 

@@ -48,6 +48,12 @@ from .desktop import (
     DesktopSession,
     DesktopUsage,
 )
+from .desktop_share import (
+    DesktopShareEvent,
+    DesktopShareJoinRequest,
+    DesktopShareRoom,
+    DesktopShareRoomMember,
+)
 from .discount import Discount
 from .discount_product import DiscountProduct
 from .discount_redemption import DiscountRedemption
@@ -242,6 +248,10 @@ __all__ = [
     "DesktopAuthCode",
     "DesktopMemoryFile",
     "DesktopSession",
+    "DesktopShareEvent",
+    "DesktopShareJoinRequest",
+    "DesktopShareRoom",
+    "DesktopShareRoomMember",
     "DesktopUsage",
     "Discount",
     "DiscountProduct",

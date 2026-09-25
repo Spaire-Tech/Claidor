@@ -31,6 +31,9 @@ TYPE = Literal[
     # carries it, plus the `sub`, `email` and `exp` the app reads off it
     # (`desktop/source/shared/node/cursor-token.ts`, `parseJwtPayload`).
     "desktop_access",
+    # A sharing invite link (`polar/sand/sharing.py`, 25 September 2026):
+    # the room id and the host, signed, with the link's expiry as `exp`.
+    "desktop_share_invite",
 ]
 
 

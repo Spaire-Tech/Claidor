@@ -68,7 +68,8 @@ test("the Coming Soon brief no longer blames a team admin, and no string the age
   }
 });
 
-test("sharing is Coming Soon behind a served switch, and the struck tunnel's port is not published", async () => {
+test("sharing is served by default with the Coming Soon answer kept behind SAND_SHARING_SERVED=0, and the struck tunnel's port is not published", async () => {
+  // Served since 25 September 2026 (server/polar/sand/sharing.py); tests/sharing-served.test.mjs measures the switch and the relay.
   const sharing = await src("host/extensions/cross-user-sharing/extension.ts");
   assert.match(sharing, /SHARING_DISABLED_MESSAGE = "Sharing is coming soon in Simeon\."/);
   assert.match(sharing, /if \(on && !isSharingServed\(\)\) \{[^}]*applyGate\(false\); return; \}/);

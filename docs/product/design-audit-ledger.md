@@ -426,7 +426,7 @@ until its row says so. Columns:
 | F-400 | sharing-cloud-dead-services | minor | docs-wrong | confirmed | dead-cursor-services | - | Local group chats answer with a text-only Luna call that has no memory, roster, tools or brief; the decision is unrecorded | `desktop/source/host/extensions/transcript/group-chat-glue.ts` |
 | F-401 | sharing-cloud-dead-services | note | design-violation | confirmed | dead-cursor-services | fixed | The egress tunnel the design struck is still wired end to end, dormant behind an env flag | `docs/product/direction.md` |
 | F-402 | sharing-cloud-dead-services | note | dead-service | refuted | dead-cursor-services | known-limit | Host self-upgrade is on by default with no origin; 'Update computer' can only answer no-bundle-source | `desktop/source/host/extensions/host-upgrade/extension.ts` |
-| F-403 | sharing-cloud-dead-services | note | dead-service | confirmed | dead-cursor-services | coming-soon | Sharing is gated off and every entry answers a canned sentence, but a packaged build would poll api.simeonlabs.com if the gate flipped | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
+| F-403 | sharing-cloud-dead-services | note | dead-service | confirmed | dead-cursor-services | fixed | Sharing is gated off and every entry answers a canned sentence, but a packaged build would poll api.simeonlabs.com if the gate flipped. Fixed 25 September 2026: the relay is served (`server/polar/sand/sharing.py`), the switch is on by default, `sand_multiplayer` is on in Simeon's gate table and reaches the extension's gate property (`sharing-served.md`); needs-mac for the pinned sheet | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
 | F-404 | coordinator-and-gateway | major | dead-service | refuted | box-telemetry | fixed | Box host telemetry is on inside the container and ships /tmp/*.log (the [claidor] prompt/model-error lines) to a Connect RPC our server does not serve, every 2–3 s | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-405 | coordinator-and-gateway | minor | naming | refuted | sign-in-copy | fixed | Sign-in and account errors still say Claidor, not Simeon | `desktop/source/electron-main/account/cursor-auth.ts` |
 | F-406 | coordinator-and-gateway | minor | dead-service | refuted | cloud-agents-channels | fixed | openCloudAgent opens https://api.simeonlabs.com/agents/<id> (or cursor.com when unset) — a dead link on our own API host | `desktop/source/electron-main/main-edge.ts` |
@@ -772,9 +772,11 @@ are off (F-396, F-397); the brief says cloud agents are coming soon, not
 "your team's admin disabled them" (F-392; the founder keeps repository
 work excluded until a cloud-agent system exists); "Claidor account" is
 Simeon account everywhere the agent or a person reads it (F-394); the
-struck egress tunnel's port is not published (F-401); sharing says
-Coming Soon and needs a served switch (F-403, dependency: Cursor's
-`/sand/xuser` relay). Refuted as stale or dormant: F-393, F-395, F-397,
+struck egress tunnel's port is not published (F-401); sharing said
+Coming Soon behind a served switch (F-403, dependency: Cursor's
+`/sand/xuser` relay) until later the same day, when Simeon Labs' server
+took the relay over and the switch went on (`sharing-served.md`).
+Refuted as stale or dormant: F-393, F-395, F-397,
 F-398, F-402. **A founder decision is owed, F-400:** local group chats
 answer each member with a text-only Luna call (f278ec79, 19 September,
 co-authored by the founder), not the Grok Bot loop; the 22 September
