@@ -567,9 +567,18 @@ with the laptop shut. The maty queue and `claidor-maty-runner` are the cloud pat
 for exactly this, and **their completeness is now established**, 18 September:
 the queue is live (`POST /maty/runner/claim` → 401), both routers are mounted,
 the runner matches its README line for line — and **nothing produces a job**.
-`grep -ril maty desktop/src` returns nothing. It is a finished pipe with nothing
-plugged into the input, so no routine has ever fired overnight, because none can
-be created.
+`rg -i maty desktop/source` returns nothing (the sentence used to say
+`desktop/src`, which is the pinned renderer's staging folder and proves
+nothing). It is a finished pipe with nothing plugged into the input.
+**Corrected 25 September 2026:** routines *can* be created (`update_state`,
+target `routine`, writes `automation.json`) and cron ones fire from the box
+while Simeon is open; none fires overnight because nothing produces a maty
+job and the box stops on quit. Running while the person is away is **Coming
+Soon** in the agent's brief (`shared/listener-availability.ts`), and so are
+event listeners (Slack, GitHub, Teams, Linear, Sentry, PagerDuty): their
+relay (`/sand/listener-*`, `/sand/automation-events/poll`,
+`AutomationsService`) is Cursor's and Simeon Labs' server serves none of it;
+`SAND_LISTENER_RELAY_SERVED=1` restores Grok Bot's paths when it exists.
 
 **The decision, 18 September: keep the queue, change the executor.** The claim /
 lease / heartbeat / scoped-token / memory-in-memory-out half is the hard part and

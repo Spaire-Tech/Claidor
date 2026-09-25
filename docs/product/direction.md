@@ -133,7 +133,9 @@ edge, with the list of agents live beside them; Settings covers the
 whole window (17 September: "open settings as a full page"); a menu
 floats beside what opened it. The founder's rule, in capitals: *"NOTHING
 SHOULD OPEN INSIDE ANOTHER BOX."* Routines is in the dock and does
-nothing yet, at the founder's word.
+nothing yet, at the founder's word (that is the `frontend/` canvas, which
+`npm run package` does not ship; the shipped Routine panel is the pinned
+renderer's, and cron routines do fire from it while Simeon is open).
 
 ## 2. The message vocabulary
 
@@ -465,7 +467,10 @@ a machine it owns, we lose the sentence — and that is the thing to
 guard, not the runner.
 
 What this means in the app: Routines is one of the five agent tabs, and
-a routine set there keeps running when the Mac sleeps. The person is
+a routine set there keeps running when the Mac sleeps. **Not yet (25
+September 2026):** it fires while Simeon is open and the Mac is awake;
+running while away is Coming Soon and needs a headless executor that runs
+the Grok Bot loop (the maty queue has none). The person is
 never asked which computer, never shown the runner, and never told their
 work happens elsewhere, because as far as their files are concerned it
 does not.

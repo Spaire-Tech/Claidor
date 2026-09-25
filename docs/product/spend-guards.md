@@ -42,6 +42,7 @@ Nothing reached the screen. Four things stacked:
 | the box stops on quit | `local-docker-host-connector.ts` `stopLocalDockerBoxOnQuit`, called from the quit flush in `main-production-services.ts` | on for local Docker; `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` keeps it |
 | one log line per model call | `provider-session.ts` `formatModelCallLogLine` → `/tmp/sand-host.log` in the box | `[claidor] model= effort= input= cached= output= reasoning= ms= tools= offered= budget=` |
 | the token file survives a burst | `persistInferenceCredential`: one writer at a time, unique temporary name; no duplicate write of the late token | — |
+| the user-away guard on routine fires | `sand-automation-spend-guard.ts`, `automation-spend-guard-runtime.ts` | nudge card at 15 unread or 20 fires after 3 days unopened; every routine paused 3 days after an unanswered nudge; 30-day snooze; a tray and a widget card (recorded 25 September, ledger F-041) |
 | the narration prints the failure's sentence | `production-provider.ts`, `causeDetail` on the reachability report | `detail=…` on the line |
 
 Cached tokens are now counted on the host side too (`extendedUsage`),

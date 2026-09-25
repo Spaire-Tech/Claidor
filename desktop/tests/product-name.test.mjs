@@ -60,7 +60,9 @@ test("the agent's brief names Claidor and Simeon, not Cursor or Grok Bot", async
   assert.doesNotMatch(prompt, /Cursor cloud agent/);
   assert.match(appUi, /Sign In with Claidor/);
   assert.doesNotMatch(appUi, /Sign In with Cursor/);
-  assert.match(listeners, /user's Claidor account/);
+  // The product is Simeon since 22 September; the listener strings say so (25 September, ledger F-054).
+  assert.match(listeners, /user's Simeon account/);
+  assert.doesNotMatch(listeners, /Claidor account/);
   assert.match(plugins, /user's Claidor account/);
   assert.match(prompt, /cursor-agent/);
 });

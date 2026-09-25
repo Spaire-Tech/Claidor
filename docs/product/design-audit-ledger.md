@@ -54,34 +54,34 @@ until its row says so. Columns:
 | F-028 | agents-and-subagents | minor | unwired | unverified | - | - | The prompt glue never learns whether browserUse is offered, so prompt and Task configs disagree when the gate is on | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
 | F-029 | agents-and-subagents | note | risk | refuted | hidden-turn-cap | known-limit | Agent-created teammates are minted as origin 'user' with an introduction pending | `desktop/source/host/host-runner-composition.ts` |
 | F-030 | agents-and-subagents | note | docs-wrong | unverified | - | - | The child-audit record's cost accounting is incomplete: the prompt shrank, the child's context did not | `docs/product/computer-use-child-audit-2026-09-24.md` |
-| F-031 | routines-automations | blocking | design-violation | unverified | - | - | Routines only fire while the app and the local Docker box are running; nothing fires with the Mac shut, and the agent's brief tells the person the opposite | `desktop/source/host/extensions/automations/sand-trigger-hub.ts` |
-| F-032 | routines-automations | blocking | dead-service | unverified | - | - | The agent is offered six event-listener trigger types (Slack, GitHub, Teams, Linear, Sentry, PagerDuty) that can never fire on Simeon, and saving one reports success | `desktop/source/host/runner/tools/sand-state-tool.ts` |
-| F-033 | routines-automations | major | naming | unverified | - | - | Listener 'connect' opens cursor.com, and the routines copy says Claidor and @Cursor to the person and the agent | `desktop/source/host/extensions/automations/listener-integrations.ts` |
+| F-031 | routines-automations | blocking | design-violation | confirmed | routines-away | coming-soon | Routines only fire while the app and the local Docker box are running; nothing fires with the Mac shut, and the agent's brief tells the person the opposite | `desktop/source/host/extensions/automations/sand-trigger-hub.ts` |
+| F-032 | routines-automations | blocking | dead-service | confirmed | listeners-coming-soon | coming-soon | The agent is offered six event-listener trigger types (Slack, GitHub, Teams, Linear, Sentry, PagerDuty) that can never fire on Simeon, and saving one reports success | `desktop/source/host/runner/tools/sand-state-tool.ts` |
+| F-033 | routines-automations | major | naming | confirmed | listeners-coming-soon | fixed | Listener 'connect' opens cursor.com, and the routines copy says Claidor and @Cursor to the person and the agent | `desktop/source/host/extensions/automations/listener-integrations.ts` |
 | F-034 | routines-automations | minor | hardcoded | confirmed | routine-write-review | fixed | Auto-review of routine writes is pinned 'off' in every mode table, so the confirm card promised in the brief and tool description never appears | `desktop/source/host/runner/sand-auto-review.ts` |
-| F-035 | routines-automations | minor | dead-service | unverified | - | - | The box POSTs /sand/automation-events/poll to api.simeonlabs.com every ~30 s forever, even with zero routines, because the 404 never sets drainedWhileUnschedulable | `desktop/source/host/extensions/automations/sand-automation-fire-consumer.ts` |
-| F-036 | routines-automations | minor | risk | unverified | - | - | Cron-only routines are scheduled locally only after a cloud RPC has failed; with no credential in the box they never fire | `desktop/source/host/extensions/automations/sand-automation-cloud-sync.ts` |
-| F-037 | routines-automations | minor | risk | unverified | - | - | A scheduled or event-fired routine that fails never tells the person; only manual 'Run now' failures raise a tray | `desktop/source/host/extensions/transcript/automation-run-path.ts` |
-| F-038 | routines-automations | note | docs-wrong | unverified | - | - | Record says grep desktop/src for maty; that path no longer exists, and the sentence should point at desktop/source | `CLAUDE.md` |
-| F-039 | routines-automations | note | docs-wrong | unverified | - | - | reconstruction-gaps says listeners show 'error' with 30 s backoff; Teams/Linear/Sentry/PagerDuty listeners show nothing at all | `docs/product/reconstruction-gaps-2026-09-24.md` |
-| F-040 | routines-automations | note | unwired | unverified | - | - | onFailure for cloud sync is an empty body; the tray map it guards is never written | `desktop/source/host/extensions/automations/extension.ts` |
-| F-041 | routines-automations | note | docs-wrong | unverified | - | - | Spend guard pauses every enabled routine after three days unread and draws a widget card; the record does not mention this second, independent guard | `desktop/source/host/extensions/transcript/sand-automation-spend-guard.ts` |
-| F-042 | routines-automations | note | unwired | unverified | - | - | SAND_BOX_BOOT_STARTED_AT_MS is never set by the local Docker launcher, so boxUptimeMs telemetry is always absent | `desktop/source/host/extensions/automations/extension.ts` |
-| F-043 | workflows-channels-listeners | blocking | dead-service | unverified | - | - | Slack/GitHub listener routines are advertised to the agent but can never fire: the relay posts to /sand/* routes Simeon Labs' server does not serve | `desktop/source/host/automations/automation.ts` |
-| F-044 | workflows-channels-listeners | blocking | unwired | unverified | - | - | The listener connect card is never drawn and the agent is never told the platform is disconnected: the connection read throws and surfaceListenerConnectCards swallows it | `desktop/source/host/runner/tools/listener-connect-cards.ts` |
-| F-045 | workflows-channels-listeners | major | risk | unverified | - | - | Routine panel shows the raw relay error 'relay /sand/listener-subscriptions returned 404' as the listener status | `desktop/source/host/extensions/automations/backend-relay-source.ts` |
-| F-046 | workflows-channels-listeners | major | dead-service | unverified | - | - | 'Connect' for GitHub/Slack listeners opens cursor.com/dashboard | `desktop/source/host/extensions/automations/listener-integrations.ts` |
-| F-047 | workflows-channels-listeners | major | dead-service | unverified | - | - | Microsoft Teams, Linear, Sentry and PagerDuty triggers are in the prompt but have no local source at all | `desktop/source/host/automations/automation.ts` |
-| F-048 | workflows-channels-listeners | major | design-violation | unverified | - | - | A routine dies when the app quits, while the prompt and the design both promise it runs when the person is away | `desktop/source/host/extensions/automations/sand-automation-cloud-sync.ts` |
-| F-049 | workflows-channels-listeners | minor | docs-wrong | unverified | - | - | Records say Routines 'does nothing yet' and 'none can be created'; the code creates and fires cron routines while the app is open | `docs/product/direction.md` |
+| F-035 | routines-automations | minor | dead-service | confirmed | listeners-coming-soon | fixed | The box POSTs /sand/automation-events/poll to api.simeonlabs.com every ~30 s forever, even with zero routines, because the 404 never sets drainedWhileUnschedulable | `desktop/source/host/extensions/automations/sand-automation-fire-consumer.ts` |
+| F-036 | routines-automations | minor | risk | confirmed | listeners-coming-soon | fixed | Cron-only routines are scheduled locally only after a cloud RPC has failed; with no credential in the box they never fire | `desktop/source/host/extensions/automations/sand-automation-cloud-sync.ts` |
+| F-037 | routines-automations | minor | risk | confirmed | routines-away | known-limit | A scheduled or event-fired routine that fails never tells the person; only manual 'Run now' failures raise a tray | `desktop/source/host/extensions/transcript/automation-run-path.ts` |
+| F-038 | routines-automations | note | docs-wrong | confirmed | routines-away | fixed | Record says grep desktop/src for maty; that path no longer exists, and the sentence should point at desktop/source | `CLAUDE.md` |
+| F-039 | routines-automations | note | docs-wrong | confirmed | listeners-coming-soon | fixed | reconstruction-gaps says listeners show 'error' with 30 s backoff; Teams/Linear/Sentry/PagerDuty listeners show nothing at all | `docs/product/reconstruction-gaps-2026-09-24.md` |
+| F-040 | routines-automations | note | unwired | confirmed | listeners-coming-soon | fixed | onFailure for cloud sync is an empty body; the tray map it guards is never written | `desktop/source/host/extensions/automations/extension.ts` |
+| F-041 | routines-automations | note | docs-wrong | confirmed | routines-away | fixed | Spend guard pauses every enabled routine after three days unread and draws a widget card; the record does not mention this second, independent guard | `desktop/source/host/extensions/transcript/sand-automation-spend-guard.ts` |
+| F-042 | routines-automations | note | unwired | confirmed | routines-away | known-limit | SAND_BOX_BOOT_STARTED_AT_MS is never set by the local Docker launcher, so boxUptimeMs telemetry is always absent | `desktop/source/host/extensions/automations/extension.ts` |
+| F-043 | workflows-channels-listeners | blocking | dead-service | confirmed | listeners-coming-soon | coming-soon | Slack/GitHub listener routines are advertised to the agent but can never fire: the relay posts to /sand/* routes Simeon Labs' server does not serve | `desktop/source/host/automations/automation.ts` |
+| F-044 | workflows-channels-listeners | blocking | unwired | confirmed | listeners-coming-soon | coming-soon | The listener connect card is never drawn and the agent is never told the platform is disconnected: the connection read throws and surfaceListenerConnectCards swallows it | `desktop/source/host/runner/tools/listener-connect-cards.ts` |
+| F-045 | workflows-channels-listeners | major | risk | refuted | listeners-coming-soon | fixed | Routine panel shows the raw relay error 'relay /sand/listener-subscriptions returned 404' as the listener status | `desktop/source/host/extensions/automations/backend-relay-source.ts` |
+| F-046 | workflows-channels-listeners | major | dead-service | confirmed | listeners-coming-soon | fixed | 'Connect' for GitHub/Slack listeners opens cursor.com/dashboard | `desktop/source/host/extensions/automations/listener-integrations.ts` |
+| F-047 | workflows-channels-listeners | major | dead-service | confirmed | listeners-coming-soon | coming-soon | Microsoft Teams, Linear, Sentry and PagerDuty triggers are in the prompt but have no local source at all | `desktop/source/host/automations/automation.ts` |
+| F-048 | workflows-channels-listeners | major | design-violation | confirmed | routines-away | coming-soon | A routine dies when the app quits, while the prompt and the design both promise it runs when the person is away | `desktop/source/host/extensions/automations/sand-automation-cloud-sync.ts` |
+| F-049 | workflows-channels-listeners | minor | docs-wrong | confirmed | routines-away | fixed | Records say Routines 'does nothing yet' and 'none can be created'; the code creates and fires cron routines while the app is open | `docs/product/direction.md` |
 | F-050 | workflows-channels-listeners | major | unwired | unverified | - | - | Workflow SKILL.md files never reach the model as skills: resolveAgentSkills is optional and the production composition never supplies it; agentSkillsFromWorkflows has no caller | `desktop/source/host/runner/agent-adapters.ts` |
 | F-051 | workflows-channels-listeners | minor | design-violation | unverified | - | - | 'Import local skills' scans the box's home, not the person's Mac, and looks for Cursor/Claude files | `desktop/source/host/extensions/transcript/workflow-commands.ts` |
 | F-052 | workflows-channels-listeners | note | dead-service | unverified | - | - | Managed skills (including Teach's learn-from-demonstration) come from Cursor's GetManagedSkills and are never populated | `desktop/source/host/extensions/managed-setup/production.ts` |
-| F-053 | workflows-channels-listeners | minor | naming | unverified | - | - | Agent-readable strings name Cursor: '@Cursor' Slack bot, 'Cursor Slack app', 'cursor-agent cards', cursor.com/agents links | `desktop/source/host/automations/automation.ts` |
-| F-054 | workflows-channels-listeners | minor | naming | unverified | - | - | 'Claidor account' in prompt and status strings the agent and the person read | `desktop/source/host/automations/automation.ts` |
+| F-053 | workflows-channels-listeners | minor | naming | confirmed | listeners-coming-soon | fixed | Agent-readable strings name Cursor: '@Cursor' Slack bot, 'Cursor Slack app', 'cursor-agent cards', cursor.com/agents links | `desktop/source/host/automations/automation.ts` |
+| F-054 | workflows-channels-listeners | minor | naming | confirmed | listeners-coming-soon | fixed | 'Claidor account' in prompt and status strings the agent and the person read | `desktop/source/host/automations/automation.ts` |
 | F-055 | workflows-channels-listeners | minor | unwired | unverified | - | - | SendMessage still offers a `channel` target and secret-request 'channel-credential', but no channel delivery is ever registered and both channel platforms are coming-soon | `desktop/source/host/extensions/transcript/transcript-manager.ts` |
 | F-056 | workflows-channels-listeners | note | design-violation | unverified | - | - | Two different CONNECTOR_MANIFESTS lists (discord/slack vs slack/github) feed the prompt and the Mac channels view | `desktop/source/shared/channels.ts` |
 | F-057 | workflows-channels-listeners | note | design-violation | unverified | - | - | The Mac gateway accepts a channel token typed by the person (connectChannel) | `desktop/source/host/extensions/transcript/transcript-manager.ts` |
-| F-058 | workflows-channels-listeners | note | spend | unverified | - | - | With any listener routine saved, the box POSTs to two unserved endpoints every 30 s for ever | `desktop/source/host/extensions/automations/backend-relay-source.ts` |
+| F-058 | workflows-channels-listeners | note | spend | confirmed | listeners-coming-soon | fixed | With any listener routine saved, the box POSTs to two unserved endpoints every 30 s for ever | `desktop/source/host/extensions/automations/backend-relay-source.ts` |
 | F-059 | memory | blocking | unwired | confirmed | memory | fixed | Post-turn memory extraction never runs: the production turn shell hands the settle no memoryStore | `desktop/source/host/runner/production-turn-run-shell-adapter.ts` |
 | F-060 | memory | blocking | unwired | confirmed | memory | fixed | Even with a store, the legacy extraction arm can never fire: isMemorableExchange is defined and never passed | `desktop/source/host/runner/turn-settle.ts` |
 | F-061 | memory | major | unwired | confirmed | memory | known-limit | Memory synthesis ('dreaming') is gated off and its gate pin can never fire under Simeon | `desktop/source/host/extensions/memory/extension.ts` |
@@ -340,8 +340,8 @@ until its row says so. Columns:
 | F-314 | onboarding-first-run | note | dead-service | unverified | - | - | Dev/unpackaged sign-in falls back to cursor.com when the CAISRA env is absent | `desktop/source/electron-main/account/cursor-auth.ts` |
 | F-315 | onboarding-first-run | note | design-violation | unverified | - | - | The first-run flow the person meets is the pinned Grok Bot six-step onboarding | `desktop/source/shared/observability/telemetry.ts` |
 | F-316 | prompt-and-brief | major | dead-service | unverified | - | - | Cloud-agent section and CloudAgent tool are live because isCloudAgentsDisabledByTeam is never defined | `desktop/source/host/extensions/experiments/extension.ts` |
-| F-317 | prompt-and-brief | major | dead-service | unverified | - | - | Routines section advertises Slack/GitHub/Teams/Linear/Sentry/PagerDuty listeners and names Cursor | `desktop/source/host/automations/automation.ts` |
-| F-318 | prompt-and-brief | major | design-violation | unverified | - | - | Prompt promises routines run while the user is away; the loop runs in a Docker box on the Mac | `desktop/source/host/automations/automation.ts` |
+| F-317 | prompt-and-brief | major | dead-service | confirmed | listeners-coming-soon | fixed | Routines section advertises Slack/GitHub/Teams/Linear/Sentry/PagerDuty listeners and names Cursor | `desktop/source/host/automations/automation.ts` |
+| F-318 | prompt-and-brief | major | design-violation | confirmed | routines-away | coming-soon | Prompt promises routines run while the user is away; the loop runs in a Docker box on the Mac | `desktop/source/host/automations/automation.ts` |
 | F-319 | prompt-and-brief | major | dead-service | unverified | - | - | 'Your user is <name>' section depends on Cursor's GetMe RPC and can never render | `desktop/source/host/extensions/auth/user-full-name-service.ts` |
 | F-320 | prompt-and-brief | major | design-violation | unverified | - | - | Prompt tells the agent it holds a read-only Screenshot tool it does not have | `desktop/source/host/host-runner-composition.ts` |
 | F-321 | prompt-and-brief | major | design-violation | unverified | - | - | ExternalShell wording says every action on the user's computer raises an approval card | `desktop/source/host/runner/system-prompt.ts` |
@@ -397,7 +397,7 @@ until its row says so. Columns:
 | F-371 | data-and-persistence | minor | risk | unverified | - | - | Credential-bearing JSON files are written with the default mode while the token files use 0600 | `desktop/source/shared/node/vendor-mcp/installs.ts` |
 | F-372 | data-and-persistence | minor | risk | unverified | - | - | Box-secrets keys remain listed when their ciphertext cannot be decrypted, and the push then fails silently | `desktop/source/electron-main/secrets/user-secrets-store.ts` |
 | F-373 | data-and-persistence | note | design-violation | unverified | - | - | Notifications are hard-forced off and the store rewrites settings.json on every read | `desktop/source/shared/node/settings/sand-settings-store.ts` |
-| F-374 | data-and-persistence | note | dead-service | unverified | - | - | Automations cloud sync client targets Cursor's AutomationsService; routines live only in the box volume | `desktop/source/host/extensions/automations/extension.ts` |
+| F-374 | data-and-persistence | note | dead-service | confirmed | listeners-coming-soon | fixed | Automations cloud sync client targets Cursor's AutomationsService; routines live only in the box volume | `desktop/source/host/extensions/automations/extension.ts` |
 | F-375 | data-and-persistence | minor | dead-service | unverified | - | - | The local-exec daemon's credential and stale-connection refresh call routes Claidor does not serve | `desktop/source/electron-main/box/box-host-connector.ts` |
 | F-376 | logging-telemetry-privacy | major | dead-service | unverified | - | - | Box host structured-log telemetry ships every console line (incl. [claidor] model= tool args and the 12,000-char system prompt on model-error) to AnalyticsService/SubmitLogs, which Simeon Labs' server does not serve; whether the box env disables it is not in the repo | `desktop/source/host/extensions/telemetry/host-telemetry-service.ts` |
 | F-377 | logging-telemetry-privacy | major | dead-service | unverified | - | - | BoxLogShipper reads every /tmp/*.log in the box (including /tmp/sand-host.log unless SAND_HOST_LOG_FILE names it) and ships the lines to the unserved SubmitLogs RPC | `desktop/source/host/extensions/telemetry/host-telemetry-service.ts` |
@@ -430,7 +430,7 @@ until its row says so. Columns:
 | F-404 | coordinator-and-gateway | major | dead-service | unverified | - | - | Box host telemetry is on inside the container and ships /tmp/*.log (the [claidor] prompt/model-error lines) to a Connect RPC our server does not serve, every 2–3 s | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-405 | coordinator-and-gateway | minor | naming | unverified | - | - | Sign-in and account errors still say Claidor, not Simeon | `desktop/source/electron-main/account/cursor-auth.ts` |
 | F-406 | coordinator-and-gateway | minor | dead-service | unverified | - | - | openCloudAgent opens https://api.simeonlabs.com/agents/<id> (or cursor.com when unset) — a dead link on our own API host | `desktop/source/electron-main/main-edge.ts` |
-| F-407 | coordinator-and-gateway | minor | dead-service | unverified | - | - | Listener 'connect' still goes to Cursor's DashboardService and Cursor's dashboard URL | `desktop/source/host/extensions/automations/listener-integrations.ts` |
+| F-407 | coordinator-and-gateway | minor | dead-service | confirmed | listeners-coming-soon | fixed | Listener 'connect' still goes to Cursor's DashboardService and Cursor's dashboard URL | `desktop/source/host/extensions/automations/listener-integrations.ts` |
 | F-408 | coordinator-and-gateway | note | unwired | unverified | - | - | Coordinator's MCP OAuth forwarder completes into a host no-op | `desktop/source/node-agent-coordinator/main.ts` |
 | F-409 | coordinator-and-gateway | minor | docs-wrong | unverified | - | - | Record says getForeverBoxStatus has a 15 s gateway deadline; the coordinator applies deadlines only to sendPrompt and roster reads | `docs/product/computer-stream-measured.md` |
 | F-410 | coordinator-and-gateway | note | risk | unverified | - | - | Gateway /health answers before the bearer check | `desktop/source/host/gateway-server.ts` |
@@ -464,7 +464,7 @@ until its row says so. Columns:
 | F-438 | docs-vs-code | major | docs-wrong | confirmed | hidden-turn-cap | fixed | spend-guards.md says the intro runs with 'no tools'; hidden only sets the call budget and the kickstart prompt still nudges 'offer any choice as a question widget' | `docs/product/spend-guards.md` |
 | F-439 | docs-vs-code | minor | docs-wrong | unverified | - | - | reconstruction-gaps.md and CLAUDE.md say Claidor serves 'fourteen HTTP routes under /desktop/api/'; endpoints.py declares about thirty-three | `docs/product/reconstruction-gaps-2026-09-24.md` |
 | F-440 | docs-vs-code | minor | docs-wrong | unverified | - | - | app-sign-in.md still says several call paths refresh against api2.cursor.sh and sign the person out; that was fixed 24 September and the record was not amended | `docs/product/app-sign-in.md` |
-| F-441 | docs-vs-code | minor | dead-service | unverified | - | - | Known-unserved Cursor surfaces still leak live links into the user's view: cloud-agent link, listener 'integrations' URL, https://cursor.com deep links, api2.cursor.sh DNS probe | `desktop/source/electron-main/main-edge.ts` |
+| F-441 | docs-vs-code | minor | dead-service | refuted | listeners-coming-soon | known-limit | Known-unserved Cursor surfaces still leak live links into the user's view: cloud-agent link, listener 'integrations' URL, https://cursor.com deep links, api2.cursor.sh DNS probe | `desktop/source/electron-main/main-edge.ts` |
 | F-442 | docs-vs-code | minor | design-violation | unverified | - | - | The agent's brief still carries Cursor addresses (cursor.com/codebase, /opt/cursor/artifacts) for a cloud-agent feature that is unserved | `desktop/source/host/runner/system-prompt.ts` |
 | F-443 | docs-vs-code | note | docs-wrong | unverified | - | - | Dated counts in the records have drifted: tracked files, test totals | `CLAUDE.md` |
 | F-444 | docs-vs-code | note | docs-wrong | unverified | - | - | Two file paths in CLAUDE.md are not where the file is | `CLAUDE.md` |
@@ -597,3 +597,53 @@ Luna call, one `[claidor] auto-review action=sand_automation_write` line)
 until `sand_auto_review` enforces, which is the auto-review cluster's
 decision for every surface at once. Needs a Mac: whether the pinned
 renderer draws the card for this surface.
+
+### listeners-coming-soon (25 September 2026)
+
+Root: a listener routine (Slack, GitHub, Teams, Linear, Sentry,
+PagerDuty) fires through Cursor's relay (`/sand/listener-subscriptions`,
+`/sand/listener-events/poll`, `/sand/automation-events/poll`,
+`AutomationsService`, the dashboard's Slack/GitHub connections); Simeon
+Labs' server serves none of it and no flag turns it on. **Coming Soon**,
+dependency: that relay and the Slack/GitHub account connections. Refuters:
+F-032, F-043, F-044, F-047, F-033, F-317, F-053, F-054, F-039, F-035,
+F-036, F-040, F-374, F-058 stand (with corrections: the fire consumer
+polled with zero routines, F-035; the relay only started once a listener
+existed, F-043); F-046/F-407 stand on evidence, unreachable today (the
+connect card is never drawn); F-045 refuted (no screen shows the relay
+error string; folded); F-441 split: the cloud-agent link goes to the
+cloud-agents cluster, the https deep link and the DNS probe are dead code
+on a local Docker box (known limit). Fixed, at every reach point
+(`shared/listener-availability.ts`): the update_state tool refuses a
+listener trigger with the Coming Soon sentence and keeps taking cron;
+the agent's brief offers cron only and names what is coming soon (Grok
+Bot's listener text is kept behind `SAND_LISTENER_RELAY_SERVED=1`, about
+10 KB less prompt); the connect URL is null, not cursor.com, with the
+sentence logged; cloud absence is seeded so a cron routine is scheduled
+locally from the first pass and the Connect client is never called; the
+relay sources are not started and the fire consumer does not poll, so
+the box no longer POSTs two unserved endpoints every 30 s; `@Cursor`,
+"Cursor Slack app" and "Claidor account" are gone from the strings the
+agent reads. `tests/listeners-coming-soon.test.mjs`. Not measurable
+here: the pinned renderer's Routine panel copy (its bytes are not in the
+tree); if it names listeners, that is the brand pass's next needle.
+
+### routines-away (25 September 2026)
+
+Root: the only scheduler is the hub's 15 s poll inside the box, and the
+box stops on quit (the spend brake of 23 September), so nothing fires
+with Simeon closed or the Mac asleep, while the brief promised "run even
+when the user is away". F-031, F-048, F-318 are one row: **Coming Soon**,
+dependency: a headless executor that runs the Grok Bot loop (the maty
+queue on Render has no Docker and no producer; `SAND_KEEP_BOX_RUNNING_ON_QUIT=1`
+covers "app closed, Mac awake" only and contradicts the spend brake, a
+founder question, not flipped). Fixed: the brief says a routine fires
+while Simeon is open and the computer is awake and that away is coming
+soon, and that a routine wake runs on the small model-call budget;
+CLAUDE.md's maty paragraph (F-038, F-049: routines can be created and
+cron ones fire; `desktop/src` is the renderer's staging folder),
+direction.md's routine sentences, spend-guards.md (F-041, the user-away
+guard row), reconstruction-gaps (F-039, F-374). Known limits: F-037
+(background failures reach run history and the agent's status reminder,
+not a tray; Grok Bot's own rule), F-042 (a telemetry field nobody
+receives).
