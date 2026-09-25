@@ -143,6 +143,7 @@ from .product_price import (
 from .product_review import ProductReview
 from .quota_notification import QuotaNotification
 from .refund import Refund
+from .sand_plugin import SandPlugin, SandPluginUserSetting
 from .registry import (
     OpinionSource,
     RegistryCandidate,
@@ -356,6 +357,8 @@ __all__ = [
     "RegistryCandidate",
     "RegistryOpinion",
     "ResendWebhookEvent",
+    "SandPlugin",
+    "SandPluginUserSetting",
     "SavedPrompt",
     "ScreeningVerdict",
     "SeatStatus",

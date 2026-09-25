@@ -99,5 +99,10 @@ test("a refresh the vendor refuses for good drops the refresh token, and the too
   assert.match(await src("shared/node/vendor-mcp/box-pull.ts"), /holdUntilMs = now\(\) \+ BOX_STORE_PULL_FAILURE_HOLD_MS/);
   assert.match(await src("shared/node/cursor-backend/account-mcp.ts"), /cacheScope = accessToken\.length === 0 \? "local" : accountCacheScope\(accessToken\)/);
   assert.doesNotMatch(await src("shared/node/mcp/mcp-marketplace.ts"), /fetchPluginServers/);
-  assert.match(await src("host/extensions/mcp/skill-publish.ts"), /Publishing a skill to a team is coming soon in Simeon\./);
+  // F-157 is served since 25 September 2026 (`polar/sand/skill_registry.py`,
+  // `tests/skill-publish-served.test.mjs`): a failure shows the server's own
+  // sentence, and nothing here says coming soon.
+  const skillPublish = await src("host/extensions/mcp/skill-publish.ts");
+  assert.doesNotMatch(skillPublish, /"Publishing a skill to a team is coming soon/);
+  assert.match(skillPublish, /unavailableReason: `Publishing is not available right now: \$\{sentence\}`/);
 });

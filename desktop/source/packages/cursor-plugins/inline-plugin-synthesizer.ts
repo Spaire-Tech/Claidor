@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { platform } from "node:os";
-import { join } from "node:path";
+import { dirname, isAbsolute, join } from "node:path";
 import { sanitizeFilename } from "../utils/path-matchers.js";
 
 interface InlineHook {
@@ -12,11 +12,52 @@ interface InlineHook {
   promptModel?: string;
   scriptContent?: string;
 }
+/**
+ * A file of the plugin as it was packed (25 September 2026): Simeon Labs'
+ * server keeps a published skill's tarball as `files` in the plugin's
+ * `inline_content_json` (`server/polar/sand/skill_registry_service.py`,
+ * `inline_content_of`), so nothing is ever cloned. `content` is text;
+ * `contentBase64` anything else.
+ */
+export interface InlineFile { path: string; content?: string; contentBase64?: string }
 interface InlineContent {
   rules?: Array<{ name: string; content?: string; isActive?: boolean; globs?: string[]; isRequired?: boolean }>;
   commands?: Array<{ name: string; content?: string; isActive?: boolean; description?: string }>;
   hooks?: InlineHook[];
   mcpServers?: Array<{ name: string; config?: unknown }>;
+  files?: InlineFile[];
+}
+
+export function isSafeInlineFilePath(path: string): boolean {
+  if (typeof path !== "string" || path.length === 0 || path.includes("\0") || isAbsolute(path) || path.startsWith("/") || path.startsWith("\\")) return false;
+  const segments = path.split(/[/\\]/);
+  return segments.every((segment) => segment.length > 0 && segment !== "." && segment !== "..");
+}
+
+/** The skill folders a file list carries, as `plugin.json` names them: `skills/<name>`. */
+export function skillPathsOfInlineFiles(files: readonly InlineFile[]): string[] {
+  const skills: string[] = [];
+  for (const file of files) {
+    const normalized = file.path.replace(/\\/g, "/");
+    if (normalized.startsWith("skills/") && normalized.endsWith("/SKILL.md")) skills.push(normalized.slice(0, -"/SKILL.md".length));
+  }
+  return skills;
+}
+
+async function writeInlineFiles(targetDir: string, files: readonly InlineFile[]): Promise<{ skills: string[]; manifest: Record<string, unknown> | null }> {
+  let manifest: Record<string, unknown> | null = null;
+  for (const file of files) {
+    if (!isSafeInlineFilePath(file.path)) throw new Error(`Inline plugin file has an unsafe path: ${JSON.stringify(file.path)}`);
+    const normalized = file.path.replace(/\\/g, "/");
+    const data = typeof file.contentBase64 === "string" ? Buffer.from(file.contentBase64, "base64") : Buffer.from(file.content ?? "", "utf-8");
+    const destination = join(targetDir, ...normalized.split("/"));
+    await mkdir(dirname(destination), { recursive: true });
+    await writeFile(destination, data);
+    if (normalized === "plugin.json" && typeof file.content === "string") {
+      try { const parsed = JSON.parse(file.content) as unknown; if (parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)) manifest = parsed as Record<string, unknown>; } catch {}
+    }
+  }
+  return { skills: skillPathsOfInlineFiles(files), manifest };
 }
 
 function currentOperatingSystemName(): "Windows" | "Macintosh" | "Linux" {
@@ -29,7 +70,13 @@ export async function synthesizeInlinePluginDir(options: { targetDir: string; in
   const { targetDir, inlineContentJson, pluginName } = options;
   const content = JSON.parse(inlineContentJson) as InlineContent;
   await mkdir(targetDir, { recursive: true });
-  const manifestPaths: { rules?: string[]; commands?: string[] } = {};
+  const manifestPaths: { rules?: string[]; commands?: string[]; skills?: string[]; displayName?: string; description?: string } = {};
+  if (content.files && content.files.length > 0) {
+    const written = await writeInlineFiles(targetDir, content.files);
+    if (written.skills.length > 0) manifestPaths.skills = written.skills;
+    if (typeof written.manifest?.displayName === "string") manifestPaths.displayName = written.manifest.displayName;
+    if (typeof written.manifest?.description === "string") manifestPaths.description = written.manifest.description;
+  }
   if (content.rules && content.rules.length > 0) {
     const rulesDir = join(targetDir, "rules"); await mkdir(rulesDir, { recursive: true }); const rulePaths: string[] = [];
     for (const rule of content.rules) {

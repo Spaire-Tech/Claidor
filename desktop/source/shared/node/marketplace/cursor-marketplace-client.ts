@@ -36,6 +36,9 @@ export function createDashboardClient(
   const transport = createConnectTransport({
     baseUrl: getSandInferenceBackendUrl(),
     httpVersion: "1.1",
+    // JSON on the wire, like `createSandBackendTransport`: Simeon Labs'
+    // server speaks protobuf JSON only (25 September 2026).
+    useBinaryFormat: false,
     interceptors: [createMarketplaceInterceptor(getAccessToken, getMachineId) as Interceptor]
   });
   return createClient(DashboardService, transport);

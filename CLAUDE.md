@@ -828,6 +828,23 @@ carry real new product work. Found on the way and fixed:
 fast path both production call sites use, so the box's own renewal
 credential (the paragraph on routines above) was never minted.
 
+**Skill publish is served, 25 September 2026, later the same day.**
+`server/polar/sand/skill_registry.py` answers `GetTeams`, `PublishPlugin`,
+`UnpublishPlugin` and `GetEffectiveUserPlugins` behind the app's own
+`SandSkillPublishService` and daily plugin sync, unchanged in shape: teams
+are Polar's organizations with "Just me" first (so a person in no
+organization publishes to their own account), the tarball's files come
+back as `inlineContentJson` (no git anywhere), and `commitSha` is the
+loader's own hash so the publish confirms on the first sync. The card's
+failure sentence is the server's, not "coming soon". **Found on the way:
+every Connect call the app made was binary protobuf** (`connect-node`'s
+default), which `polar/sand/connect.py` cannot read; `useBinaryFormat:
+false` on the transport is what makes any served Connect service answer
+a real app. `docs/product/skill-publish-served.md`;
+`tests/skill-publish-served.test.mjs`, `server/tests/sand/test_skill_registry.py`.
+Not yet run on a Mac: the line to read is `[claidor] skill-publish
+published:` in `/tmp/sand-host.log`.
+
 ## The product's hostnames are simeonlabs.com (24 September 2026)
 
 "i want to replace all claidor.com instances by simeonlabs.com … now i
