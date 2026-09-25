@@ -738,7 +738,8 @@ the Usage tab (gated off, and the Settings patch is a no-op), the account
 avatar and name (`GetMe`), reading a PDF (no worker bound), auto-review
 (classifier not served, rejects), custom MCP servers and account plugins
 (writes throw), Send Feedback, Help Center and "open cloud agent" links,
-and everything on the cloud box, cloud agents, listeners and sharing. Not
+and everything on the cloud box, cloud agents, listeners and sharing
+(sharing: served since 25 September, the paragraph below). Not
 yet run on a Mac.
 
 **Fixed later the same day, "directly from the reconstruction"** (the
@@ -765,9 +766,9 @@ connector card's cancel works; host diagnostics reach the log; and
 custom MCP servers and account plugins live in a store on the Mac
 (paragraph above). Still not done, because the services behind them do
 not exist: cloud boxes, cloud agents, Slack and GitHub listeners,
-sharing, and Cursor's feature-gate server (gates keep their bundled
-defaults; `sand_usage_page` is the one we set). None of this has run on
-a Mac. `docs/product/reconstruction-gaps-2026-09-24.md` §"Fixed the same
+sharing (served since 25 September, below), and Cursor's feature-gate
+server (gates keep their bundled defaults; `sand_usage_page` is the one
+we set). None of this has run on a Mac. `docs/product/reconstruction-gaps-2026-09-24.md` §"Fixed the same
 day" has the per-item file list.
 
 **Changing an agent's avatar, audited and fixed 24 September 2026, night.**
@@ -827,6 +828,32 @@ carry real new product work. Found on the way and fixed:
 `createRemoteHostConnector` dropped `issueBoxRenewalCredential` on the
 fast path both production call sites use, so the box's own renewal
 credential (the paragraph on routines above) was never minted.
+
+**Sharing is served, 25 September 2026, later the same day.** The
+client under `host/extensions/cross-user-sharing/` was complete and
+waited on Cursor's `/sand/xuser` relay; `server/polar/sand/sharing.py`
+(with `sharing_service.py`, `sharing_repository.py`, four
+`desktop_share_*` tables) now serves every route it speaks with the
+field names it reads: rooms, signed invite links, join requests the
+host approves, a per-person event queue polled at `/sand/xuser/poll`
+and acked by id, fan-out of `room-entry`, typing and the
+`turn-request`/`turn-result` pair that runs a turn on another person's
+agent in its owner's box, every write waking the box on the
+`xuser-events` notify topic. `SAND_SHARING_SERVED` is on by default
+("0" restores "Sharing is coming soon in Simeon."), `sand_multiplayer`
+is on in `simeon-gate-defaults.ts`, and — found on the way — the
+extension reads that gate through `getFeatureGateProperty`, which the
+`applySimeonGateDefaults` Proxy never covered, so the table alone would
+not have started it; it does now. A dev host pointed at
+`api.simeonlabs.com` is allowed by `xuser-sharing-environment.ts`;
+Cursor's origin is still refused. `docs/product/sharing-served.md` is
+the record; `server/tests/sand/test_sharing.py` and
+`desktop/tests/sharing-served.test.mjs` measure it offline. Not yet run
+on a Mac: the line to read is `[sand:sharing] on: relay at …` in
+`/tmp/sand-host.log`, then whether the pinned sheet's Share draws. The
+invite link points at `app.simeonlabs.com/share/<token>`, which serves
+no page yet (the person pastes the link into Simeon's join box): a
+landing page is the founder's call.
 
 ## The product's hostnames are simeonlabs.com (24 September 2026)
 

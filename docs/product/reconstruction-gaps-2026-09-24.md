@@ -205,7 +205,7 @@ list and the profile are the two that would change something on screen.
 | Plugin skills, skill publish, managed skills, team rules | `GetEffectiveUserPlugins`, `PublishPlugin`, `GetManagedSkills`, `GetTeamRules` (`mcp/plugin-skills.ts:55-66`, `skill-publish.ts:94-134`, `managed-setup/*`) | caught; `[sand:plugin-skills]`, `[sand:skill-publish]` |
 | Cloud automations and listeners | `AutomationsService/*` (`sand-automation-cloud-sync.ts:413-509`); `/sand/listener-*`, `/sand/automation-*` (`backend-relay-source.ts:12`, `sand-automation-fire-consumer.ts:84`); `GetSlackUserSettings`, `GetScmConnectionStatus` (`listener-integrations.ts:28-36`) | local scheduling; listeners "error" with 30 s backoff |
 | Cloud automations and listeners, corrected 25 September | Slack/GitHub listeners showed `error` with a 30 s backoff once one existed; Teams/Linear/Sentry/PagerDuty triggers were accepted and showed nothing. Since 25 September the tool refuses a listener trigger as Coming Soon, the prompt offers cron only, the relay sources and the fire consumer are not started and cloud absence is seeded (`shared/listener-availability.ts`). Definitions live in the box volume at `/home/box/sand-data/<agent>/automations/<id>/automation.json`, not backed up. Background routine failures surface only in run history and the agent's status reminder, never a tray (Grok Bot's own rule). | Coming Soon |
-| Sharing | `/sand/xuser/*`, `/sand/share-rooms/*` (`xuser-relay.ts:15-28`) | gated off; "Couldn't reach the sharing service" |
+| Sharing | `/sand/xuser/*`, `/sand/share-rooms/*` (`xuser-relay.ts:15-28`) | ~~gated off; "Couldn't reach the sharing service"~~ Corrected 25 September: served by `polar/sand/sharing.py`, switch and gate on (`sharing-served.md`) |
 | Audit, logs, analytics, traces | `RecordSandAuditEvents`, `SubmitLogs`, `TrackEvents`, `POST /v1/traces` | ~~buffered, dropped, silent~~ Corrected 25 September: the host bundle carried no telemetry guard, so `SubmitLogs` (console lines, 2,048 chars each) and `TrackEvents` were posted to api.simeonlabs.com every 3 s and 404ed; the box now runs with `SAND_DISABLE_TELEMETRY=1`, `SAND_DISABLE_ANALYTICS=1`, `SAND_BOX_LOG_SHIP_DISABLED=1` (schema 10). Audit is gated off and writes a local, redacted `audit.jsonl`; traces never sampled (AlwaysOff) |
 | Box store sync, copy-in, local-exec connection | `BackgroundComposerService` store RPCs, `/sand-box/inference-credential`, `/sand-box/local-exec-connection` | off unless `SAND_BOX_STORE_SYNC`; local Docker reads a token file instead |
 
@@ -289,7 +289,8 @@ and the suite is at 290 passing. None of it has run on a Mac.
 
 Not done, because the service behind each does not exist and would be a
 build of its own: cloud boxes and cloud agents (8), Slack and GitHub
-listeners and sharing (8), Cursor's feature-gate server (12; gates keep
+listeners and sharing (8; sharing's relay was built on 25 September,
+`sharing-served.md`), Cursor's feature-gate server (12; gates keep
 their bundled defaults, `sand_usage_page` is the one we set), and the
 notification config forced off (15; local macOS notifications work).
 

@@ -205,6 +205,11 @@ class Settings(BaseSettings):
     # error at the moment somebody sends a message.
     DESKTOP_ANTHROPIC_BASE_URL: str = "https://api.anthropic.com"
     DESKTOP_OPENAI_BASE_URL: str = "https://api.openai.com"
+    # Sharing (polar/sand/sharing.py, 25 September 2026): how long an
+    # invite link opens the room, and how many joins one person may try
+    # a minute before `/sand/share-rooms/join` answers `rate-limited`.
+    DESKTOP_SHARE_INVITE_TTL: timedelta = timedelta(days=7)
+    DESKTOP_SHARE_JOINS_PER_MINUTE: int = 10
 
     # Apps through Composio (polar/desktop/composio.py). One key for the
     # whole of Claidor, held here and nowhere else: the desktop app never

@@ -146,7 +146,8 @@ test("sand_usage_page is on by Simeon's default, over the bundled table, under t
     const service = applySimeonGateDefaults(bundled, {});
     assert.equal(service.checkFeatureGate("sand_usage_page"), true);
     assert.equal(service.checkFeatureGate("sand_box_egress_tunnel"), true, "a gate not in the table reaches the service");
-    assert.deepEqual(service.getSnapshot().featureGates, { sand_usage_page: true, sand_box_egress_tunnel: true, sand_auto_review: true, sand_product_analytics: false });
+    // sand_multiplayer joined the table on 25 September 2026 (sharing served; tests/sharing-served.test.mjs).
+    assert.deepEqual(service.getSnapshot().featureGates, { sand_usage_page: true, sand_box_egress_tunnel: true, sand_auto_review: true, sand_product_analytics: false, sand_multiplayer: true });
     const seen = [];
     service.subscribe((snapshot) => seen.push(snapshot.featureGates.sand_usage_page));
     for (const listener of listeners) listener(bundled.getSnapshot());
