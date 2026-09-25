@@ -51,10 +51,12 @@ function nonEmpty(value: unknown): string | undefined {
 /**
  * The rows a person may pick from: a row marked not available is left off,
  * and so is a `fallback` role, which `pricing.py` says is "never shown,
- * never in a menu". A `primary` row is the one on by default.
+ * never in a menu", and a `video` role, the model that watches a video for
+ * the watchVideo subagent and never talks to the person (25 September
+ * 2026). A `primary` row is the one on by default.
  */
 export function availableModelFromClaidorRow(row: ClaidorAvailableModelRow): AvailableModelsResponse_AvailableModel | null {
-  if (row.accessible === false || row.available === false || row.role === "fallback") return null;
+  if (row.accessible === false || row.available === false || row.role === "fallback" || row.role === "video") return null;
   const displayName = nonEmpty(row.modelName);
   const description = nonEmpty(row.description);
   const vendor = nonEmpty(row.provider);

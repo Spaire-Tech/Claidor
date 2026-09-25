@@ -1,24 +1,27 @@
 /**
- * Event listeners are Coming Soon on Simeon (25 September 2026,
- * design-audit-ledger.md cluster `listeners-coming-soon`).
+ * Event listeners are served by Simeon Labs' server since 25 September
+ * 2026 (`server/polar/sand/listeners*.py`, `docs/product/listeners-served.md`).
  *
- * A listener routine (Slack, GitHub, Microsoft Teams, Linear, Sentry,
- * PagerDuty) fires through a relay Grok Bot reaches on Cursor's server:
+ * A listener routine (Slack, GitHub, Linear, Sentry, PagerDuty) fires
+ * through the relay Grok Bot reached on Cursor's server:
  * `/sand/listener-subscriptions`, `/sand/listener-events/poll`,
- * `/sand/automation-events/poll`, plus `AutomationsService` and the
- * dashboard's Slack/GitHub account connections. Simeon Labs' server serves
- * none of them (`server/polar/desktop/*.py`: fourteen HTTP routes, no
- * Connect RPC, no `/sand/*`). No flag or gate turns that on, so by the
- * founder's rule the feature is Coming Soon, and it says so at every reach
- * point: the update_state tool refuses a listener trigger with the
- * sentence below, the agent's brief offers cron schedules only, the
- * connect URL is not cursor.com, and the box does not poll the relay.
+ * `/sand/automation-events/poll`, `/sand/automation-runs/complete`, plus
+ * `AutomationsService` and the dashboard's Slack/GitHub account
+ * connections. All of it is now at the root of the API host, so the
+ * listener paths are on by default and the app is unchanged. What still
+ * waits on the founder: registering Simeon's Slack app and GitHub App and
+ * setting their keys on Render (the install page and the log name the
+ * missing key); Microsoft Teams has no bot and stays Coming Soon.
  *
- * When the relay exists, `SAND_LISTENER_RELAY_SERVED=1` in the box's
- * environment restores Grok Bot's listener paths unchanged.
+ * `SAND_LISTENER_RELAY_SERVED=0` in the box's environment restores the
+ * earlier Coming Soon paths: the update_state tool refuses a listener
+ * trigger with the sentence below, the agent's brief offers cron
+ * schedules only, the connect URL is null, and the box does not poll.
  */
 export const LISTENER_RELAY_SERVED_ENV = "SAND_LISTENER_RELAY_SERVED";
 
+// The sentence of the `=0` path, kept verbatim: tests and the earlier
+// records pin it.
 export const LISTENERS_COMING_SOON_SENTENCE =
   "Event listeners (Slack, GitHub, Microsoft Teams, Linear, Sentry, PagerDuty) are coming soon on Simeon. For now a routine fires on a cron schedule; use one, bounded to the hours that matter.";
 
@@ -29,8 +32,11 @@ export const LISTENERS_COMING_SOON_SENTENCE =
 export const ROUTINES_AWAY_COMING_SOON_SENTENCE =
   "A routine fires while this computer is awake, whether Simeon is open or closed; it cannot fire while the computer is asleep or off, and it does not run anywhere else.";
 
+// On by default since 25 September 2026: `polar/sand/listeners.py` serves
+// the relay routes at the root of the API host. "0" turns the paths off.
 export function isListenerRelayServed(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env[LISTENER_RELAY_SERVED_ENV]?.trim() === "1";
+  const raw = env[LISTENER_RELAY_SERVED_ENV]?.trim();
+  return raw === "0" ? false : true;
 }
 
 /** True when a trigger, in any of the tool's three shapes, carries a member that is not a cron schedule. */

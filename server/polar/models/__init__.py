@@ -50,6 +50,13 @@ from .desktop import (
     DesktopSession,
     DesktopUsage,
 )
+from .desktop_share import (
+    DesktopShareEvent,
+    DesktopShareJoinRequest,
+    DesktopShareRoom,
+    DesktopShareRoomMember,
+)
+from .sand_box import SandBox
 from .discount import Discount
 from .discount_product import DiscountProduct
 from .discount_redemption import DiscountRedemption
@@ -100,6 +107,14 @@ from .license_key import LicenseKey
 from .license_key_activation import LicenseKeyActivation
 from .login_code import LoginCode
 from .maty import MatyJob, MatyJobKind, MatyJobStatus
+from .sand_automation import (
+    SandAutomation,
+    SandAutomationFire,
+    SandListenerConnection,
+    SandListenerEvent,
+    SandListenerSubscription,
+)
+from .cloud_agent import SandCloudAgent
 from .member import Member, MemberRole
 from .member_session import MemberSession
 from .meter import Meter
@@ -145,6 +160,7 @@ from .product_price import (
 from .product_review import ProductReview
 from .quota_notification import QuotaNotification
 from .refund import Refund
+from .sand_plugin import SandPlugin, SandPluginUserSetting
 from .registry import (
     OpinionSource,
     RegistryCandidate,
@@ -246,7 +262,12 @@ __all__ = [
     "DesktopBoxState",
     "DesktopMemoryFile",
     "DesktopSession",
+    "DesktopShareEvent",
+    "DesktopShareJoinRequest",
+    "DesktopShareRoom",
+    "DesktopShareRoomMember",
     "DesktopUsage",
+    "SandBox",
     "Discount",
     "DiscountProduct",
     "DiscountRedemption",
@@ -311,6 +332,12 @@ __all__ = [
     "MatyJob",
     "MatyJobKind",
     "MatyJobStatus",
+    "SandAutomation",
+    "SandAutomationFire",
+    "SandListenerConnection",
+    "SandListenerEvent",
+    "SandListenerSubscription",
+    "SandCloudAgent",
     "Member",
     "MemberRole",
     "MemberSession",
@@ -360,6 +387,8 @@ __all__ = [
     "RegistryCandidate",
     "RegistryOpinion",
     "ResendWebhookEvent",
+    "SandPlugin",
+    "SandPluginUserSetting",
     "SavedPrompt",
     "ScreeningVerdict",
     "SeatStatus",

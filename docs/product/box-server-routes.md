@@ -420,3 +420,70 @@ and reverses against a scratch database. Worth knowing that nothing in CI would
 have caught this: the suite builds its schema from `Model.metadata.create_all`,
 not from migrations, and the `Server: Migration Check 📚` job has never been
 given a runner.
+
+## 12. 25 September, evening: the decision was answered by code, and this PR is superseded
+
+`main` `a66f628e` carries `server/polar/sand/` — 24 new modules, ~14,000 lines
+under `server/`, with 128 tests that pass. Among them: `box_service.py`,
+`box_broker.py`, `box_hosts.py`, `box_proxy.py`, `box_repository.py`,
+`models/sand_box.py` and a `sand_boxes` migration.
+
+**That is the cloud box broker.** Not a REST API — `aiserver.v1.GrokBotService`
+over Connect RPC, answering `EnsureSandBox`, `RecreateSandBox`,
+`ForceRecreateSandBox`, `WatchSandBoxMigration` and `GetSandBoxRunState` in the
+shapes the app's generated `sand_box_pb.ts` already reads, plus a reverse proxy
+for the box's four ports at `/sand-box/{box_id}/p/{port}/…`.
+
+So §11's question — *is the box a container on the person's Mac that we keep
+alive, or a sandbox we broker in the cloud?* — **has been answered, and the
+answer is both**: the local Docker box keeps running after the app quits, and
+`setBoxRuntime("remote")` now has a broker behind it. It was not answered by
+anyone replying to me. It was answered by code landing on `main`, which is a
+perfectly good way to answer it and is the reason I check the diff rather than
+the inbox.
+
+**What that makes of this PR, stated plainly rather than defended.** The ten
+REST routes under `/api/proxy/box/` have no caller and never will: the app
+speaks Connect RPC for this and always did. `desktop_boxes`, `BoxService` in
+`polar/desktop/boxes.py`, and the ten handlers are the branch that lost. This
+is the "rewrite" half of the split I costed in §9 and it should be **closed,
+not merged**. I have said so on the PR and I am not closing it myself, because
+that is not my call to make unasked.
+
+**Two things of mine are not superseded, and one of them is a gap in what
+landed.**
+
+1. **The `e2b` host provider.** `box_hosts.py` chooses a host by
+   `CLAIDOR_BOX_HOST_PROVIDER`; `docker` is implemented against a remote Docker
+   Engine, and **`e2b` is a stub**. Its own docstring says why: "the `e2b`
+   package is not in `uv.lock` (checked 25 September 2026:
+   `grep -n 'name = "e2b"' server/uv.lock` finds nothing)". That is true of
+   `main`. It is not true of this branch — the dependency, the lockfile entry
+   and a working E2B client are here. The note also names a real obstacle I had
+   not hit: E2B publishes per-port hostnames as `<port>-<id>.e2b.app`, which is
+   not the `<label>-<port>` shape the app's tunnel derivation reads. That is an
+   argument about URL shape, not about whether E2B can host a box, and
+   `box_proxy.py` already exists to stand in front of exactly that problem.
+
+2. **Metering.** `grep` over `main`'s `polar/desktop/pricing.py` for
+   `box|BOX|vcpu|awake` returns **nothing**, and nothing in `polar/sand/`
+   charges for box time. So the broker that landed can start a container that
+   bills by the second and has no meter and no spend guard on it. This branch
+   has `credits_for_box`, `E2B_USD_PER_VCPU_HOUR`, `BOX_MODEL_ID` and the
+   hourly-budget refusal wired into `box_ensure`. **I am not asserting this is
+   a bug in their work** — a first cut of a broker can reasonably land without
+   billing — but it is worth someone deciding on deliberately rather than
+   discovering later, and it is the thing I would carry across.
+
+So the salvage is not the ten handlers. It is: the `e2b` dependency and client,
+and the box metering. Both would land in `polar/sand/`, beside the broker, not
+in `polar/desktop/`. I am not starting that without being told to; another agent
+is plainly working in that directory right now and two of us writing there
+unasked is how the migration chain got forked twice in one day.
+
+**The chain forked again, third time today.** `main` added five migrations
+chaining `desktop_box_credential_0925 → sand_listeners_0925 →
+desktop_share_rooms_0925 → sand_cloud_agents_0925 → sand_boxes_0925 →
+sand_plugins_0925`. Mine was still pointing at `desktop_box_credential_0925`,
+so `alembic heads` reported two again. Re-pointed onto `sand_plugins_0925` and
+re-proved the whole chain upgrades to `desktop_boxes_0918`.

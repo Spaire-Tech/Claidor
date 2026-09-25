@@ -223,8 +223,15 @@ class MatyService:
         deliver: dict[str, Any] | None = None,
         allow: dict[str, Any] | None = None,
         scheduled_at: datetime | None = None,
+        conversation: list[dict[str, Any]] | None = None,
+        parent_job_id: UUID | None = None,
     ) -> MatyJob:
-        """One piece of work for one person, due now unless told otherwise."""
+        """One piece of work for one person, due now unless told otherwise.
+
+        `conversation` and `parent_job_id` are a cloud agent's turn
+        (`polar.sand.cloud_agents`, 25 September 2026): the messages the
+        runner continues from, and the turn before it. A routine or a
+        mail passes neither and runs from `prompt` alone."""
         job = MatyJob(
             user_id=user.id,
             kind=kind,
@@ -233,6 +240,8 @@ class MatyService:
             allow=allow or {},
             status=MatyJobStatus.queued,
             scheduled_at=scheduled_at or utc_now(),
+            conversation=conversation,
+            parent_job_id=parent_job_id,
         )
         session.add(job)
         await session.flush()
@@ -356,6 +365,28 @@ class MatyService:
             raise MatyJobNotCancellable(job.id, job.status)
         return await self._give_up(session, job, reason=CANCELLED_REASON, now=moment)
 
+    async def request_cancel(
+        self, session: AsyncSession, user: User, job_id: UUID
+    ) -> MatyJob:
+        """Ask a job to stop, whatever it is doing (25 September 2026).
+
+        A queued job is called off here, the way `cancel_for_person` does
+        it. A running one is not raced — `MatyJobNotCancellable` still
+        says why — but its `cancel_requested` flag is set, and the runner
+        reads that flag off every heartbeat's answer and fails the job as
+        cancelled itself. A final job is left as it is. This is the "ask
+        whether it is still wanted" the docstring above says a cloud
+        engine that stops mid-flight needs; the cloud agents' pause
+        (`polar.sand.cloud_agents`) is its caller."""
+        job = await self.get_for_person(session, user, job_id)
+        if job.status is MatyJobStatus.queued:
+            return await self._give_up(session, job, reason=CANCELLED_REASON)
+        if job.status is MatyJobStatus.running and not job.cancel_requested:
+            job.cancel_requested = True
+            session.add(job)
+            await session.flush()
+        return job
+
     # --- the runner's four verbs ---------------------------------------
 
     async def claim(
@@ -466,14 +497,43 @@ class MatyService:
         runner: str,
         result: str,
         usage: dict[str, Any] | None = None,
+        messages: list[dict[str, Any]] | None = None,
+        artifacts: list[dict[str, Any]] | None = None,
         now: datetime | None = None,
     ) -> MatyJob:
-        """The answer, kept. The job is final from here."""
+        """The answer, kept. The job is final from here.
+
+        `messages` are the turn's replies (`{"role", "text"}`), added to
+        the job's conversation when it carries one so a cloud agent's
+        transcript grows by what the runner actually said. They go after
+        the messages the runner was handed and before any marked
+        `pending` — a follow-up that arrived while the run was under way,
+        which the runner never saw and a continuation will answer.
+        `artifacts` are the files the executor reported. Both are the
+        runner's word, stamped here with the moment and the job."""
         moment = now or utc_now()
         job = await self._held(session, job_id, runner=runner, now=moment)
         job.status = MatyJobStatus.done
         job.result = result
         job.usage = usage
+        if messages:
+            stamped = [
+                {
+                    "role": "assistant" if message.get("role") != "user" else "user",
+                    "text": str(message.get("text") or ""),
+                    "createdAtMs": int(moment.timestamp() * 1000),
+                    "jobId": str(job.id),
+                }
+                for message in messages
+            ]
+            seen = job.conversation or []
+            first_pending = next(
+                (i for i, message in enumerate(seen) if message.get("pending") is True),
+                len(seen),
+            )
+            job.conversation = [*seen[:first_pending], *stamped, *seen[first_pending:]]
+        if artifacts is not None:
+            job.artifacts = artifacts
         job.error = None
         job.runner = None
         job.lease_expires_at = None

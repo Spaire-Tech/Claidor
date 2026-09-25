@@ -12,6 +12,7 @@ import {
   UnpublishPluginRequest,
 } from "../../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
 import { errorLogTag } from "../../../shared/errors.js";
+import { HOST_LOG_PREFIX, clipForHostLog, logHostLine } from "../../../shared/host-log.js";
 import {
   createSandCursorBackendClient,
   getSandInferenceBackendUrl,
@@ -70,6 +71,17 @@ export async function readManifestName(pluginDir: string): Promise<string | null
 export async function requireManifestName(installPath: string): Promise<string> { const name = await readManifestName(installPath); if (name == null) throw new SandSkillPublishError("Could not read that plugin's manifest, so syncing would risk publishing a duplicate. Reinstall the plugin and try again."); return name; }
 export function skillsRootRelativePath(skillRelativePath: string): string { const segments = dirname(skillRelativePath).split(/[/\\]/).filter(Boolean), withoutRoot = segments[0] === "skills" ? segments.slice(1) : segments; if (withoutRoot.length === 0) throw new SandSkillPublishError("That skill sits at a path Sand cannot re-pack."); return withoutRoot.join("/"); }
 export function errorMessage(error: unknown): string { return error instanceof Error ? error.message : String(error); }
+/**
+ * The sentence Simeon Labs' server answered (25 September 2026). A Connect
+ * error's `message` is `[code] sentence`; `rawMessage` is the sentence
+ * itself, which is what a person should read on the card. Anything else
+ * (a socket error, a timeout) reads as it is.
+ */
+export function serverSentence(error: unknown): string {
+  const raw = (error as { rawMessage?: unknown } | null)?.rawMessage;
+  if (typeof raw === "string" && raw.trim().length > 0) return raw.trim();
+  return errorMessage(error);
+}
 
 export class SandSkillPublishService {
   readonly library: SkillPublishLibrary;
@@ -82,12 +94,18 @@ export class SandSkillPublishService {
     try {
       response = await this.options.client.getTeams(new GetTeamsRequest({ activeOnly: true }), { timeoutMs: PUBLISH_TARGETS_RPC_TIMEOUT_MS });
     } catch (error) {
-      this.options.log?.(`[sand:skill-publish] failed to resolve publishable teams: ${errorMessage(error)}`);
+      // Simeon Labs' server serves GetTeams since 25 September 2026
+      // (`polar/sand/skill_registry.py`): "Just me" first, then every
+      // organization the person is in. A failure here is the server's own
+      // sentence, or the transport's, never a Coming Soon.
+      const sentence = serverSentence(error);
+      this.options.log?.(`[sand:skill-publish] failed to resolve publishable teams: ${sentence}`);
+      logHostLine(`${HOST_LOG_PREFIX} skill-publish targets failed: ${clipForHostLog(sentence)}`);
       this.options.reportEdgeFailed?.({ stage: "list_targets", errorClass: errorLogTag(error) });
-      return { teams: [], unavailableReason: "Publishing a skill to a team is coming soon in Simeon." };
+      return { teams: [], unavailableReason: `Publishing is not available right now: ${sentence}` };
     }
     const teams = publishableTeams(response);
-    return { teams, unavailableReason: teams.length > 0 ? null : "Publishing a skill needs a team. Join or create one, then try again." };
+    return { teams, unavailableReason: teams.length > 0 ? null : "Publishing a skill needs a target. Sign in again, then try again." };
   }
 
   async publish(args: { workflowId: string; teamId: number }): Promise<PublishedSkillResult & { promotedWorkflowId: string | null }> {
@@ -111,7 +129,14 @@ export class SandSkillPublishService {
   async unpublish(args: { workflowId: string }): Promise<{ restoredWorkflowId: string | null }> {
     const { record, teamId } = this.requirePublishedPluginSkill(args.workflowId);
     const restoredWorkflowId = await this.restoreToLibrary(record);
-    await this.options.client.unpublishPlugin(new UnpublishPluginRequest({ pluginId: BigInt(record.pluginId), teamId }), { timeoutMs: PUBLISH_SKILL_RPC_TIMEOUT_MS });
+    try {
+      await this.options.client.unpublishPlugin(new UnpublishPluginRequest({ pluginId: BigInt(record.pluginId), teamId }), { timeoutMs: PUBLISH_SKILL_RPC_TIMEOUT_MS });
+    } catch (error) {
+      const sentence = serverSentence(error);
+      logHostLine(`${HOST_LOG_PREFIX} skill-unpublish failed: plugin=${record.pluginId} ${clipForHostLog(sentence)}`);
+      throw new SandSkillPublishError(sentence);
+    }
+    logHostLine(`${HOST_LOG_PREFIX} skill-unpublish done: plugin=${record.pluginId} restored=${restoredWorkflowId ?? "none"}`);
     await this.syncBestEffort();
     return { restoredWorkflowId };
   }
@@ -131,7 +156,16 @@ export class SandSkillPublishService {
       const synthesizeArgs: { skills: { dir: string; relativePath: string }[]; targetDir: string; pluginName: string; displayName?: string } = { skills: [{ dir: staged, relativePath: args.skillRelativePath }], targetDir: join(workDir, "plugin"), pluginName: args.pluginName };
       if (args.displayName != null) synthesizeArgs.displayName = args.displayName;
       const pluginDir = await synthesizeSkillPluginDir(synthesizeArgs), manifestName = await readManifestName(pluginDir) ?? args.pluginName, packed = await packPluginArtifact(pluginDir);
-      const response = await this.options.client.publishPlugin(new PublishPluginRequest({ teamId: args.teamId, name: manifestName, displayName: args.displayName ?? args.name, description: args.description, pluginTarGz: new Uint8Array(packed) }), { timeoutMs: PUBLISH_SKILL_RPC_TIMEOUT_MS });
+      let response: { pluginId: string | number | bigint; commitSha: string };
+      try {
+        response = await this.options.client.publishPlugin(new PublishPluginRequest({ teamId: args.teamId, name: manifestName, displayName: args.displayName ?? args.name, description: args.description, pluginTarGz: new Uint8Array(packed) }), { timeoutMs: PUBLISH_SKILL_RPC_TIMEOUT_MS });
+      } catch (error) {
+        // The server's sentence is the one the card shows.
+        const sentence = serverSentence(error);
+        logHostLine(`${HOST_LOG_PREFIX} skill-publish failed: plugin=${manifestName} team=${args.teamId} ${clipForHostLog(sentence)}`);
+        throw new SandSkillPublishError(sentence);
+      }
+      logHostLine(`${HOST_LOG_PREFIX} skill-publish published: plugin=${manifestName} team=${args.teamId} id=${response.pluginId.toString()} sha=${response.commitSha} bytes=${packed.byteLength}`);
       return { pluginId: response.pluginId.toString(), commitSha: response.commitSha };
     } finally {
       try { await rm(workDir, { recursive: true, force: true }); }

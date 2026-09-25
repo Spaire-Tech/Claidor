@@ -217,6 +217,9 @@ class TestTheQueueOverTheWire:
             "prompt": "Write the morning briefing.",
             "deliver": {"channel": "email", "to": user.email},
             "allow": {"send": True},
+            # Since 25 September 2026: which executor runs it (only one
+            # exists). A cloud agent's turn would carry `conversation` too.
+            "executor": "maty-runner",
         }
         assert body["access_token"].startswith("claidor_da_")
         assert datetime.fromisoformat(body["expires_at"]) > utc_now()

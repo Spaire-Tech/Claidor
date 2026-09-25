@@ -139,6 +139,16 @@ calls at ~78k (cached). The child's calls are the avoidable part: a
 box-scoped child with a child-sized prompt would carry a few thousand
 tokens, not 68,000.
 
+**Corrected 25 September 2026 (ledger F-014, F-030).** The prompt is
+not the whole of the child's context. Until that day the child's shell
+read the *parent's* conversation state (`getProductionConversationState`
+read `builtRunner`) and settled its checkpoint into the parent's store,
+so a child's input tokens sat near the parent's whatever its prompt
+said; the 68k above is consistent with that. The child now owns its
+state (`createChildTurnSettleHost` in `host-runner-composition.ts`), and
+the child's `[claidor] model=` line on a Mac is the measurement of what
+that saves; the offline test measures the prompt string only.
+
 ## Applied, later the same night ("apply the fix")
 
 Checked first, offline, whether the code alone says Computer was in the

@@ -1,3 +1,4 @@
+import { cloudAgentWebUrl, isCloudAgentsServed, isConnectServed } from "../shared/cloud-agents-availability.js";
 import { isSandAgentModelSelection, resolveComputerUseModelSelection } from "../shared/agents/sand-agent-model.js";
 import { normalizeSandAutoReviewInstructions } from "../shared/sand-auto-review-instructions.js";
 import { isSandLocalToolAction, normalizeSandLocalToolPermission } from "../shared/local-tool-permission.js";
@@ -30,6 +31,13 @@ export class EdgeCallFailure extends Error {
   constructor(args: { readonly code: string; readonly detail: string }) { super(`${args.code}: ${args.detail}`); this.name = "EdgeCallFailure"; this.code = args.code; this.detail = args.detail; }
 }
 export class SandHostSettingsUnreachableError extends Error {}
+
+// A Connect error's `message` carries its code in brackets ("[unavailable]
+// Simeon's cloud computer needs a host…"); the sentence is `rawMessage`.
+export function remoteBoxFailureSentence(error: unknown): string {
+  if (error instanceof Error) { const raw = Reflect.get(error, "rawMessage"); return typeof raw === "string" && raw.length > 0 ? raw : error.message; }
+  return String(error);
+}
 
 export interface MainEdgeDeps {
   readonly readLiveUpdateService: () => UnknownRecord | null;
@@ -66,7 +74,7 @@ function req(value: unknown): UnknownRecord { return typeof value === "object" &
 function detectTimeZone(): string | null { const value = Intl.DateTimeFormat().resolvedOptions().timeZone; return value.length > 0 ? value : null; }
 const sleep = (milliseconds: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-export function createMainEdgeTrust() { return { appWindow: { kind: "require" as const, test: (sender: { isAppWindowTopFrame?: boolean }) => sender.isAppWindowTopFrame === true, denial: "The main edge is only accessible from the Sand app window's top frame." } }; }
+export function createMainEdgeTrust() { return { appWindow: { kind: "require" as const, test: (sender: { isAppWindowTopFrame?: boolean }) => sender.isAppWindowTopFrame === true, denial: "The main edge is only accessible from the Simeon app window's top frame." } }; }
 export const unserved = (): never => { throw new EdgeCallFailure({ code: MAIN_EDGE_UNSERVED, detail: "This method still rides its hand-wired preload channel." }); };
 function required(read: () => UnknownRecord | null, code: string, detail: string): UnknownRecord { const value = read(); if (value == null) throw new EdgeCallFailure({ code, detail }); return value; }
 function updateService(deps: MainEdgeDeps) { return required(deps.readLiveUpdateService, MAIN_EDGE_UPDATE_UNAVAILABLE, "The update service is not running."); }
@@ -115,7 +123,13 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
     getInferenceRouter: async () => { const settings = await deps.readHostSettingsFromBox().catch(() => ({} as UnknownRecord)); const provider = resolveProductInferenceProvider(); return { provider, usage: settings.inferenceRouterUsage ?? invoke(deps.settingsStore, "getInferenceRouterUsage") ?? null, local: getLocalInferenceCliStatus() }; },
     setInferenceRouter: async () => { const provider = resolveProductInferenceProvider(); invoke(deps.settingsStore, "setInferenceProvider", provider); const settings = await deps.syncHostSettingsToBox({ inferenceProvider: provider }).catch(() => null); return { provider, usage: settings?.inferenceRouterUsage ?? invoke(deps.settingsStore, "getInferenceRouterUsage") ?? null, local: getLocalInferenceCliStatus() }; },
     getBoxRuntime: async () => { const mode = invoke(deps.settingsStore, "getBoxRuntime"); invariant(isSandBoxRuntime(mode), "Unknown box runtime."); return { mode, status: await getLocalDockerStatus(String(Reflect.get(deps.settingsStore, "settingsPath"))) }; },
-    setBoxRuntime: async (raw) => { const mode = req(raw).mode; invariant(isSandBoxRuntime(mode), "Unknown box runtime."); const settingsPath = String(Reflect.get(deps.settingsStore, "settingsPath")); invoke(deps.settingsStore, "setBoxRuntime", mode); try { if (mode === "local-docker") await startLocalDockerBox(settingsPath); else await stopLocalDockerBox(); } catch (error) { invoke(deps.settingsStore, "setBoxRuntime", mode === "local-docker" ? "remote" : "local-docker"); throw error; } invoke(deps.boxRecovery, "restartCoordinator"); return { mode, status: await getLocalDockerStatus(settingsPath) }; },
+    // Switching to the cloud computer (25 September 2026): the broker is
+    // served (`polar/sand/box_broker.py`), so "remote" is allowed; it is
+    // probed before the local box is stopped, and a refusal (no host on the
+    // server: "Simeon's cloud computer needs a host; set
+    // CLAIDOR_BOX_HOST_PROVIDER") puts the setting back and shows that one
+    // sentence. `SAND_CONNECT_SERVED=0` keeps the old refusal.
+    setBoxRuntime: async (raw) => { const mode = req(raw).mode; invariant(isSandBoxRuntime(mode), "Unknown box runtime."); if (mode === "remote" && !isConnectServed(process.env, "aiserver.v1.GrokBotService")) throw new Error("Simeon's cloud computer is switched off in this build (SAND_CONNECT_SERVED); the box runs in Docker on this Mac."); const settingsPath = String(Reflect.get(deps.settingsStore, "settingsPath")); invoke(deps.settingsStore, "setBoxRuntime", mode); try { if (mode === "local-docker") await startLocalDockerBox(settingsPath); else { await Promise.resolve(invoke(deps.boxRecovery, "probeRemoteBox")); await stopLocalDockerBox(); } } catch (error) { invoke(deps.settingsStore, "setBoxRuntime", mode === "local-docker" ? "remote" : "local-docker"); throw new Error(remoteBoxFailureSentence(error)); } invoke(deps.boxRecovery, "restartCoordinator"); return { mode, status: await getLocalDockerStatus(settingsPath) }; },
 
     getEgressTunnelEnabled: () => invoke(deps.boxToggleStore, "getEgressTunnelEnabled"),
     setEgressTunnelEnabled: (raw) => { const enabled = req(raw).enabled === true; invoke(deps.boxToggleStore, "setEgressTunnelEnabled", enabled); invoke(egressController(deps), "setEnabled", enabled); deps.emitEgressTunnelChanged(enabled); return enabled; },
@@ -126,7 +140,8 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
     setOnboardingSeen: (raw) => { const seen = req(raw).seen; if (typeof seen === "boolean") void Promise.resolve(invoke(deps.onboardingSeen, "apply", seen)); },
 
     openExternal: (raw) => invoke(deps.shell, "openExternalUrl", req(raw).url),
-    openCloudAgent: async (raw) => { const bcId = typeof req(raw).bcId === "string" ? (req(raw).bcId as string).trim() : ""; if (bcId.length === 0) return; const base = process.env.SAND_CURSOR_WEBSITE_URL?.trim() || process.env.CURSOR_WEBSITE_URL?.trim() || "https://cursor.com"; await Promise.resolve(invoke(deps.shell, "openInSystemBrowser", new URL(`/agents/${encodeURIComponent(bcId)}`, base).toString())); },
+    // Simeon's page for the run (app.simeonlabs.com/agents/<bcId>), never cursor.com nor the API host (ledger F-406, F-480).
+    openCloudAgent: async (raw) => { if (!isCloudAgentsServed()) return; const bcId = typeof req(raw).bcId === "string" ? (req(raw).bcId as string).trim() : ""; if (bcId.length === 0) return; await Promise.resolve(invoke(deps.shell, "openInSystemBrowser", cloudAgentWebUrl(bcId))); },
     submitFeedback: (raw) => invoke(deps.shell, "submitFeedback", raw),
     markDeepLinksReady: () => { invoke(deps.shell, "markDeepLinksReady"); },
     getBoxMigrationStatus: () => invoke(deps.boxRecovery, "readBoxMigrationStatus"),

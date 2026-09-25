@@ -35,10 +35,28 @@ export interface EngineAnswer {
   usage: Record<string, unknown>;
 }
 
+/** One message on the engine's OpenAI-shaped wire. */
+export interface EngineMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export class EngineError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'EngineError';
+  }
+}
+
+/**
+ * The person asked the job to stop while it ran (the cancel flag on the
+ * heartbeat's answer). Final, never retried: the queue records it as
+ * cancelled and a cloud agent shows it as such.
+ */
+export class JobCancelled extends Error {
+  constructor() {
+    super('Cancelled by the person while it ran.');
+    this.name = 'JobCancelled';
   }
 }
 
@@ -192,10 +210,19 @@ export class Engine {
    * One instruction in, one answer out. The gateway runs it as a normal
    * agent turn, with the tool policy and the workspace this job's config
    * set, so the answer is the whole result of the work.
+   *
+   * A conversation (a cloud agent's turn continuing earlier ones) is
+   * passed as the messages it is; a string is one user message. `signal`
+   * is the person asking the job to stop: the call is abandoned and the
+   * error names the cancellation, not the engine.
    */
-  async ask(instruction: string, timeoutMs: number): Promise<EngineAnswer> {
+  async ask(instruction: string | readonly EngineMessage[], timeoutMs: number, signal?: AbortSignal): Promise<EngineAnswer> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    const onCancel = (): void => controller.abort();
+    if (signal?.aborted) throw new JobCancelled();
+    signal?.addEventListener('abort', onCancel, { once: true });
+    const messages: EngineMessage[] = typeof instruction === 'string' ? [{ role: 'user', content: instruction }] : [...instruction];
     try {
       const response = await fetch(`${this.url}/v1/chat/completions`, {
         method: 'POST',
@@ -205,7 +232,7 @@ export class Engine {
         },
         // "openclaw" is the engine's own name for "the configured agent",
         // not a model name: which model runs is decided by the config.
-        body: JSON.stringify({ model: 'openclaw', messages: [{ role: 'user', content: instruction }] }),
+        body: JSON.stringify({ model: 'openclaw', messages }),
         signal: controller.signal,
       });
       const raw = await response.text();
@@ -214,10 +241,12 @@ export class Engine {
       }
       return readAnswer(raw);
     } catch (error) {
+      if (signal?.aborted) throw new JobCancelled();
       if (error instanceof EngineError) throw error;
       throw new EngineError(`The engine did not answer: ${reasonOf(error)}`);
     } finally {
       clearTimeout(timeout);
+      signal?.removeEventListener('abort', onCancel);
     }
   }
 

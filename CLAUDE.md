@@ -46,7 +46,9 @@ app sign-in describe the current tree. `docs/product/building-the-app.md`
 and `docs/product/grok-bot-layers-measured.md` are the current map.
 **`docs/product/start-here.md` is not**: it still describes the LobsterAI
 tree (`desktop/src`, "2,552 files", the 23 strongs) and was never rewritten
-after the re-founding (checked 22 September).
+after the re-founding (checked 22 September). Neither are `docs/product/agent-contract.md` and
+`docs/product/brief-audit.md`, which describe the LobsterAI brief and carry a
+superseded banner since 25 September.
 
 Two facts about the current tree that are established by build output, not
 reasoning (`docs/product/host-wall-measured.md`): **every one of the 14
@@ -100,6 +102,18 @@ metered model proxy for Anthropic and OpenAI, memory sync, the skill, kit and
 MCP catalogues, Pipedream Connect links from `polar/connectors/`, the maty job
 queue under `polar/maty/`, and the cloud runner. `render.yaml` and the deployed
 services are unchanged and the API answers now.
+**Memory sync has a client since 25 September 2026.** Until then "memory
+sync" here meant two served routes that nothing in the app called, and
+that refused every name the app writes (ledger F-065, F-252, F-358). Now
+the server accepts the app's own tree (`agents/<id>/memory/profile.md`,
+`log/YYYY-MM.md`, the `user-memory/` and `projects/` shards) beside the
+runner's three names, merges fact files by the app's `memoryIdFor`,
+takes `deleted` and answers tombstones, and takes the box's credential;
+and the host extension `host/extensions/memory-sync/` pulls at box
+start, pushes on change with base versions after a 5 s debounce, and
+writes one `[claidor] memory-sync` line per round to `/tmp/sand-host.log`.
+`SAND_MEMORY_SYNC=0` switches it off. `docs/product/memory-sync-served.md`
+is the record. Not yet run on a Mac.
 
 **The app signs in to Claidor, added 19 September.** `server/polar/desktop/app_sign_in.py`
 answers the three routes the app actually calls — `/loginDeepControl`,
@@ -366,7 +380,42 @@ waiting on a delegate. Both are wired now (the flag computed, the child
 on the subagent prompt; `tests/computer-use-child.test.mjs` measures the
 toolset and the prompt offline). The `[claidor] model=` line carries
 `offered=` (every tool in the request) and each shell logs a
-`[claidor] prompt … boxScoped=` line. Not yet run on a Mac. The transcript's third
+`[claidor] prompt … boxScoped=` line. Not yet run on a Mac. **Found 25 September (ledger F-014): every Task
+child ran on the parent's conversation state and wrote its checkpoint
+into the parent's store**, because the per-identity shell's state
+closures still read `builtRunner`; a child now owns its state
+(`createChildTurnSettleHost`), which is also why the 68,000-token child
+calls were not explained by the prompt alone. The same day the
+executor's 45 s deadline moved off the streamed body (it killed any step
+longer than 45 s and retried it), the Luna fallback on a 429 writes a
+`[claidor] model-fallback` line, and the brief follows the Screenshot
+switch (`AGENT_SCREENSHOT_TOOL_OFFERED`, `system-prompt.ts`) instead of
+promising a tool the request withholds. **Later the same day (ledger
+`box-substrate`): which exec daemon serves 1337 in the box is not
+established.** The container gets `SAND_USE_EXISTING_BOX_EXEC_DAEMON=1`
+and our reconstruction daemon bind-mounted over
+`/home/box/box-exec-daemon`; ours answers only the shell and read cases
+(no Computer, no write, an empty MCP load). If the supervisor runs it,
+every Computer call and CopyToBox fails, which the 24 September child
+log (no Computer call ever issued) is consistent with. Read
+`docker exec simeon-box ps aux | grep box-exec-daemon` before reasoning
+about a blind computerUse child again. **Also 25 September (ledger
+`attachment-topology`): an attached file's path is a box path**, because the
+host runs in the box; until then the note told the agent the file lived on
+the user's computer and sent it to ExternalRead and CopyToBox for a file
+the Mac does not hold, the staged copy was named by its hash, and a file
+over 25 MB became a dead card. The box hand-off card's tool
+(`request_box_help`) is offered by the production toolset since the same
+day; it was built, ordered by the brief and never wired. **The draft composer is wired the same
+night** ("wire it."): `DraftExternalMessage` emits the `email-draft` /
+`slack-draft` card the pinned renderer already draws, `sendDraft` /
+`discardDraft` on the gateway mark the card and wake the agent to deliver
+by whatever route the person has, and `MarkDraftDelivered` settles it.
+The card's Send and Discard buttons are empty bytes in Grok Bot 0.18's
+chunk and need a package-time patch written on a Mac
+(`docs/product/draft-composer-measured.md` has the offsets and the
+commands). Three cards are not built and were searched by concept: the
+in-chat form, the cookie-origin approval, the virtual card. The transcript's third
 finding, one reply sent twice ("Nice. We're set…"), is not explained by
 the code alone: the send count is collected synchronously before the
 run settles, and the early-result reminder cannot fire in a turn with no
@@ -391,6 +440,20 @@ host every 30 s, so a fresh token lands within the minute. A box only
 minutes old that still gets 401 means the Mac had no valid token to
 write (signed out, or its refresh failed): the file's `expiresAtMs`
 says which. Not yet run on a Mac.
+**A second cause, found 25 September 2026:** the Mac's own hourly refresh
+revoked the old session outright, so the box's copy of that token got
+401 for up to five minutes after every refresh. Simeon Labs' server now
+keeps the replaced access token good for `DESKTOP_REFRESH_GRACE` (5 min)
+while the old refresh token dies at once; sign-out sweeps it. The same
+day: the box's credential reaches the model proxy and the profile route
+and nothing else on `/desktop` (`get_desktop_session` refuses
+`is_box_credential`); sign-out removes the token file, stops the
+keep-fresh and stops a local Docker box (`forgetInferenceCredential`);
+a 5xx/429 on the refresh no longer signs the person out; and the
+local-exec daemon on the Mac refuses `~/.ssh`, `~/.aws`, `~/.caisra`,
+the keychains and browser profiles whatever the permission setting says
+(`shared/sensitive-local-paths.ts`). Ledger clusters `box-token-scope`,
+`sign-in-copy`, `local-security`; `tests/keys-auth-security.test.mjs`.
 
 **Teach a task is there and gated off.** The composer's plus-menu entry
 and the computer bar's button are in the pinned renderer, the recording
@@ -588,7 +651,9 @@ nothing). It is a finished pipe with nothing plugged into the input.
 **Corrected 25 September 2026:** routines *can* be created (`update_state`,
 target `routine`, writes `automation.json`) and cron ones fire from the box
 while Simeon is open; none fires with the Mac asleep or off because nothing produces a maty
-job. **Since 25 September 2026 the box outlives the app**: the founder's word
+job. **Corrected again the same evening:** something does now — a cloud
+agent's launch (`polar/sand/cloud_agents.py`) creates one `MatyJob` per
+turn, so the queue has an input; routines still do not go through it. **Since 25 September 2026 the box outlives the app**: the founder's word
 ("the Mac can be awake while the app itself is closed. The routine should
 still execute. The spend concern should be handled by the routine/box
 lifecycle"), so quitting Simeon keeps the local Docker box running when an
@@ -607,10 +672,28 @@ and the user-away guard that pauses routines after three days unread.
 `tests/routine-box-lifecycle.test.mjs`, `server/tests/desktop/test_box_credential.py`.
 Not yet run on a Mac: quit with a routine enabled, wait past the hour, read
 `inference credential renewed with the box's own credential` in
-`/tmp/sand-host.log`. Event listeners are **Coming Soon** (Slack, GitHub, Teams, Linear, Sentry, PagerDuty): their
-relay (`/sand/listener-*`, `/sand/automation-events/poll`,
-`AutomationsService`) is Cursor's and Simeon Labs' server serves none of it;
-`SAND_LISTENER_RELAY_SERVED=1` restores Grok Bot's paths when it exists.
+`/tmp/sand-host.log`. **Event listeners are served since 25 September 2026,
+later the same day** (`docs/product/listeners-served.md`): the relay Grok
+Bot reached on Cursor's server (`/sand/listener-subscriptions`,
+`/sand/listener-events/poll`, `/sand/automation-events/poll`,
+`/sand/automation-runs/complete`, `AutomationsService`, the dashboard's
+Slack/SCM reads) is `server/polar/sand/listeners*.py`, at the root of the
+API host; the app side is Grok Bot's, unchanged, on by default
+(`SAND_LISTENER_RELAY_SERVED=0` restores the Coming Soon paths). Slack
+events arrive at `POST /sand/ingress/slack/events`, GitHub's at
+`POST /sand/ingress/github/events`, Linear/Sentry/PagerDuty at a per-person
+signed URL; each is matched against the shadow workflows and queued as a
+fire the box polls. **Measured on the way: once the `AutomationsService`
+answers, the box stops firing a cron-only routine itself**
+(`shouldScheduleLocally`), so a worker actor
+(`sand.listeners.fire_due_crons`, every minute) fires cron for every
+routine the server lists as enabled, one pending fire per routine, with
+its `definitionRevision` and `scheduledForMs`. Cannot work until the
+founder registers Simeon's Slack app and GitHub App and sets
+`CLAIDOR_SLACK_CLIENT_ID/SECRET/SIGNING_SECRET` and
+`CLAIDOR_SAND_GITHUB_APP_SLUG/WEBHOOK_SECRET` on Render (the install page
+and a `sand.listeners.*_refused` log line name the missing key);
+Microsoft Teams stays Coming Soon (no bot). Not yet run on a Mac.
 
 **The decision, 18 September: keep the queue, change the executor.** The claim /
 lease / heartbeat / scoped-token / memory-in-memory-out half is the hard part and
@@ -687,8 +770,10 @@ the Usage tab (gated off, and the Settings patch is a no-op), the account
 avatar and name (`GetMe`), reading a PDF (no worker bound), auto-review
 (classifier not served, rejects), custom MCP servers and account plugins
 (writes throw), Send Feedback, Help Center and "open cloud agent" links,
-and everything on the cloud box, cloud agents, listeners and sharing. Not
-yet run on a Mac.
+and everything on the cloud box, cloud agents, listeners and sharing
+(sharing, cloud agents, channels, listeners and the cloud box: served
+since 25 September, the paragraphs below and
+`docs/product/cloud-computer-served.md`). Not yet run on a Mac.
 
 **Fixed later the same day, "directly from the reconstruction"** (the
 founder: "i need you to fix all of this"): each fix keeps the function
@@ -713,11 +798,39 @@ built for its own identity; the per-turn MCP snapshot is real; the
 connector card's cancel works; host diagnostics reach the log; and
 custom MCP servers and account plugins live in a store on the Mac
 (paragraph above). Still not done, because the services behind them do
-not exist: cloud boxes, cloud agents, Slack and GitHub listeners,
-sharing, and Cursor's feature-gate server (gates keep their bundled
-defaults; `sand_usage_page` is the one we set). None of this has run on
-a Mac. `docs/product/reconstruction-gaps-2026-09-24.md` §"Fixed the same
+not exist: Cursor's feature-gate server (gates keep their bundled
+defaults; `sand_usage_page` is the one we set). Listeners, cloud agents,
+sharing and cloud boxes are served since 25 September (below; the cloud
+box's broker, proxy and Docker host provider are in `polar/sand/box_*.py`,
+and the switch in Settings answers one sentence until the founder
+provisions a VM and sets `CLAIDOR_BOX_HOST_PROVIDER`;
+`docs/product/cloud-computer-served.md`). None of this has run on a Mac.
+`docs/product/reconstruction-gaps-2026-09-24.md` §"Fixed the same
 day" has the per-item file list.
+
+**Cloud agents are served, 25 September 2026, evening.** The app's
+whole client was already there (the CloudAgent tool's thirteen actions,
+`SandCloudAgentManager`, the poll loop, the `cursor-agent` card); what
+it lacked was Cursor's `BackgroundComposerService`. Simeon Labs' server
+now serves its sixteen methods and `AiService/AvailableModels` at the
+root of the API host (`server/polar/sand/cloud_agents.py`) as a
+projection over the maty queue: a cloud agent is a `sand_cloud_agents`
+row over one `MatyJob` per turn, run by the Render runner (memory in,
+one model call over the conversation, the reply written back as the
+turn's message); a follow-up is a continuation job, a pause sets
+`cancel_requested` on the heartbeat's answer and the runner stops, and
+branch, PR and diff stay empty until a coding executor plugs into
+`runner/src/executor.ts`'s `Executor` seam. The brief says so ("never
+promise a PR") and `openCloudAgent` opens
+`app.simeonlabs.com/agents/<bcId>`, a page that is not built (needs-web).
+Two things found by running the client: the Connect transport sent
+binary protobuf (connect-node's default) which `polar/sand/connect.py`
+cannot read — `createSandBackendTransport` now passes
+`useBinaryFormat: false`, which every Connect service of ours depends on
+— and the reconstruction's enum fields carried strings the JSON codec
+refuses. `docs/product/cloud-agents-served.md` is the record, with the
+three lines to read on a Mac; nothing has run on one, and whether
+`claidor-maty-runner` is deployed on Render is not known from here.
 
 **Changing an agent's avatar, audited and fixed 24 September 2026, night.**
 "upload and image generation none of them work." Both flows were wired
@@ -758,6 +871,129 @@ missing service, and then marked Coming Soon everywhere a person can
 see or reach it. The ledger's dispositions are `fixed`, `coming-soon`
 (with the missing dependency named), `known-limit` and `needs-mac`.
 Work proceeds by cluster (root cause), not by finding.
+
+## The eight features were served overnight (25–26 September 2026)
+
+"work independently and do all … always assume that we already have it."
+`docs/product/served-overnight-2026-09-25.md` is the morning read: one
+table of what was reused and what was built per feature, the two
+foundation bugs found on the way (every Connect call left as binary
+protobuf; the box's renewal credential was never minted), the migration
+chain, and the eight things only the founder can do (deploy, keys, the
+Slack and GitHub apps, a VM for the cloud computer, the runner, two web
+pages, three decisions). Nothing has run on a Mac or on Render.
+
+## Cursor's server is the missing half, not the feature (25 September 2026)
+
+"I don't want us to treat these as features we need to rebuild from
+scratch when we already have the reconstructed app-side implementation."
+`docs/product/cursor-dependencies-map.md` maps, for listeners, channels,
+cloud agents, memory sync, the cloud computer, video, skill publish and
+sharing: the Cursor service we cannot use, the code we already have, the
+exact routes and fields that code expects, what is genuinely missing, and
+whether that is wiring, backend replacement or new product. Read it
+before calling any of the eight "coming soon" or "a rebuild". Its shape:
+channels need a client module in the box and no server; listeners, the
+cloud computer and video are backend replacements against a contract the
+code already states; cloud agents, skill publish and sharing carry real
+new product work (memory sync was listed with them and is served since
+later that day: the map's §4.5 and `memory-sync-served.md`). Found on
+the way and fixed:
+`createRemoteHostConnector` dropped `issueBoxRenewalCredential` on the
+fast path both production call sites use, so the box's own renewal
+credential (the paragraph on routines above) was never minted.
+
+**Sharing is served, 25 September 2026, later the same day.** The
+client under `host/extensions/cross-user-sharing/` was complete and
+waited on Cursor's `/sand/xuser` relay; `server/polar/sand/sharing.py`
+(with `sharing_service.py`, `sharing_repository.py`, four
+`desktop_share_*` tables) now serves every route it speaks with the
+field names it reads: rooms, signed invite links, join requests the
+host approves, a per-person event queue polled at `/sand/xuser/poll`
+and acked by id, fan-out of `room-entry`, typing and the
+`turn-request`/`turn-result` pair that runs a turn on another person's
+agent in its owner's box, every write waking the box on the
+`xuser-events` notify topic. `SAND_SHARING_SERVED` is on by default
+("0" restores "Sharing is coming soon in Simeon."), `sand_multiplayer`
+is on in `simeon-gate-defaults.ts`, and — found on the way — the
+extension reads that gate through `getFeatureGateProperty`, which the
+`applySimeonGateDefaults` Proxy never covered, so the table alone would
+not have started it; it does now. A dev host pointed at
+`api.simeonlabs.com` is allowed by `xuser-sharing-environment.ts`;
+Cursor's origin is still refused. `docs/product/sharing-served.md` is
+the record; `server/tests/sand/test_sharing.py` and
+`desktop/tests/sharing-served.test.mjs` measure it offline. Not yet run
+on a Mac: the line to read is `[sand:sharing] on: relay at …` in
+`/tmp/sand-host.log`, then whether the pinned sheet's Share draws. The
+invite link points at `app.simeonlabs.com/share/<token>`, which serves
+no page yet (the person pastes the link into Simeon's join box): a
+landing page is the founder's call.
+
+**Messaging channels are served: Discord and Slack, from the box, built
+25 September 2026, later the same day.** They were Coming Soon that
+morning (ledger cluster `cloud-agents-channels`); the map found that no
+server was ever in the path and only the connector module was missing.
+`desktop/source/host/extensions/channels/` is that module, the 36th host
+extension: one connector per (agent, platform) built from the secret
+store, Discord over the Gateway and Slack over Socket Mode (both on the
+`ws` client the egress tunnel already bundles), delivery through their
+REST APIs, every inbound message a `wakeForInbound` envelope, and a
+`[claidor] channel=<platform> agent=<id> event=connect|ready|inbound|
+delivery|error …` line per event in `/tmp/sand-host.log`. The Channels
+tab's one field takes Slack's two tokens together (`xapp-… xoxb-…`,
+`shared/channel-credential.ts`), the agent asks for them as two
+secret-requests (fields `token` and `botToken`), the connection file
+carries the live status the tab and the brief read, and
+`SAND_CHANNELS_SERVED=0` restores every coming-soon path. No hosted
+"@Simeon" app: the person makes the bot, the record says how.
+`docs/product/channels-served.md`; `tests/channels-runtime.test.mjs`
+measures it offline against fakes of both platforms. Not yet run on a
+Mac: a real token on either platform, one DM in, one reply out, the
+log lines.
+
+**Watching a video is served, built 25 September 2026** (the "video"
+of the map above; `docs/product/video-served.md`). Grok Bot's
+`watchVideo` / `videoReview` subagents were in the tree and refused at
+three places: nothing registered them, the executor spoke only OpenAI's
+Responses wire (no video part) and dropped `providerOptions.cursor.videoFps`,
+and the brief said "You can't watch videos yet". Now Simeon Labs' server
+serves Gemini's own wire at
+`POST /desktop/api/proxy/v1beta/models/{model}:streamGenerateContent`
+(`proxy_gemini_generate`, behind `CLAIDOR_GEMINI_API_KEY`; `DesktopProvider.gemini`,
+`ModelRole.video` = `gemini-2.5-flash`, metered off `usageMetadata` into
+the same `desktop_usage` rows, the hourly brake included; one
+`desktop.video.generate` log line per call), the box's executor speaks it
+by hand (`gemini-direct-generate.ts`; `@ai-sdk/google` is not installed)
+with the video inline as `inlineData` + `videoMetadata.fps`, the two
+subagents are registered on that model (`sand-video-subagent.ts`,
+`resolveSubagentConfigs`; a video child's state carries the Gemini id so
+the attachment is accepted, and its `isVideoSubagent` flag puts its
+executor on Gemini), and the brief delegates a video to them.
+`SAND_VIDEO_SUBAGENT_SERVED=0` puts the coming-soon sentence back;
+`SAND_CLAIDOR_VIDEO_MODEL` names the model; the Mac forwards both into
+the box. Limits: inline only, 15 MB per video (the signed-URL store for
+larger files is not served; the brief says to trim with ffmpeg first);
+the Gemini prices in `pricing.py` are **to confirm**. Not yet run on a
+Mac; the lines to read are `[claidor] video model=…` in the box log and
+`desktop.video.generate` on the server. **Needs the founder:
+`CLAIDOR_GEMINI_API_KEY` on Render.**
+
+**Skill publish is served, 25 September 2026, later the same day.**
+`server/polar/sand/skill_registry.py` answers `GetTeams`, `PublishPlugin`,
+`UnpublishPlugin` and `GetEffectiveUserPlugins` behind the app's own
+`SandSkillPublishService` and daily plugin sync, unchanged in shape: teams
+are Polar's organizations with "Just me" first (so a person in no
+organization publishes to their own account), the tarball's files come
+back as `inlineContentJson` (no git anywhere), and `commitSha` is the
+loader's own hash so the publish confirms on the first sync. The card's
+failure sentence is the server's, not "coming soon". **Found on the way:
+every Connect call the app made was binary protobuf** (`connect-node`'s
+default), which `polar/sand/connect.py` cannot read; `useBinaryFormat:
+false` on the transport is what makes any served Connect service answer
+a real app. `docs/product/skill-publish-served.md`;
+`tests/skill-publish-served.test.mjs`, `server/tests/sand/test_skill_registry.py`.
+Not yet run on a Mac: the line to read is `[claidor] skill-publish
+published:` in `/tmp/sand-host.log`.
 
 ## The product's hostnames are simeonlabs.com (24 September 2026)
 

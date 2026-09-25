@@ -1,9 +1,10 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import type { ClaimedJob } from './claidor.js';
+import type { ClaimedJob, TurnMessage } from './claidor.js';
 import { PersonClient } from './claidor.js';
 import { Engine } from './engine.js';
+import type { EngineMessage } from './engine.js';
 import { buildEngineConfig, buildWorkspaceInstructions } from './engineConfig.js';
 import { collectMemoryChanges, isMemoryName, layOutMemory } from './memory.js';
 import { log } from './log.js';
@@ -21,7 +22,19 @@ import type { RunnerSettings } from './settings.js';
 export interface JobResult {
   answer: string;
   usage: Record<string, unknown>;
+  /** The turn's replies, for a job that carries a conversation. */
+  messages?: TurnMessage[];
 }
+
+/**
+ * What the engine is asked: the whole conversation when the job carries
+ * one (a cloud agent's turn continues its earlier ones), the one prompt
+ * otherwise.
+ */
+export const engineInput = (job: ClaimedJob['job']): string | EngineMessage[] =>
+  job.conversation === undefined || job.conversation.length === 0
+    ? job.prompt
+    : job.conversation.map((message) => ({ role: message.role, content: message.text }));
 
 export class NoModelAvailable extends Error {
   constructor() {
@@ -32,7 +45,7 @@ export class NoModelAvailable extends Error {
 
 export const modelProxyUrl = (apiBaseUrl: string): string => `${apiBaseUrl}/desktop/api/proxy`;
 
-export const runJob = async (claimed: ClaimedJob, settings: RunnerSettings): Promise<JobResult> => {
+export const runJob = async (claimed: ClaimedJob, settings: RunnerSettings, signal?: AbortSignal): Promise<JobResult> => {
   const jobDir = path.join(settings.workRoot, `job-${claimed.job.id}`);
   const workspace = path.join(jobDir, 'workspace');
 
@@ -70,7 +83,7 @@ export const runJob = async (claimed: ClaimedJob, settings: RunnerSettings): Pro
       startTimeoutMs: settings.engineStartTimeoutMs,
     });
 
-    const answer = await engine.ask(claimed.job.prompt, settings.jobTimeoutMs);
+    const answer = await engine.ask(engineInput(claimed.job), settings.jobTimeoutMs, signal);
     log.info(`job ${claimed.job.id}: the engine answered`);
 
     await engine.stop();
@@ -82,7 +95,13 @@ export const runJob = async (claimed: ClaimedJob, settings: RunnerSettings): Pro
       log.info(`job ${claimed.job.id}: ${changes.length} memory file(s) written back`);
     }
 
-    return { answer: answer.text, usage: answer.usage };
+    return {
+      answer: answer.text,
+      usage: answer.usage,
+      // The reply goes back as the turn's message too, so a cloud agent's
+      // conversation grows by what was actually said.
+      ...(claimed.job.conversation === undefined ? {} : { messages: [{ role: 'assistant' as const, text: answer.text }] }),
+    };
   } finally {
     if (engine) await engine.stop();
     await fs.rm(jobDir, { recursive: true, force: true });

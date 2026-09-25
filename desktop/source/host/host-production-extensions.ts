@@ -11,6 +11,7 @@ import { automationsExtension } from "./extensions/automations/extension.js";
 import { boxLifecycleExtension } from "./extensions/box-lifecycle/extension.js";
 import { boxStoreSyncExtension } from "./extensions/box-store-sync/extension.js";
 import { browserUaExtension } from "./extensions/browser-ua/extension.js";
+import { channelsExtension } from "./extensions/channels/extension.js";
 import { cloudAgentsExtension } from "./extensions/cloud-agents/extension.js";
 import { codebaseTelemetryExtension } from "./extensions/codebase-telemetry/extension.js";
 import { contentSearchExtension } from "./extensions/content-search/extension.js";
@@ -29,6 +30,7 @@ import { mcpExtension, type McpExtensionContext } from "./extensions/mcp/extensi
 import { createMcpProductionExtras } from "./extensions/mcp/production.js";
 import { memoryExtension, type MemoryExtensionContext } from "./extensions/memory/extension.js";
 import { createMemoryProductionExtras } from "./extensions/memory/production.js";
+import { memorySyncExtension } from "./extensions/memory-sync/extension.js";
 import { notificationsExtension } from "./extensions/notifications/extension.js";
 import { notifyBusExtension } from "./extensions/notify-bus/extension.js";
 import { createSecretsExtension } from "./extensions/secrets/extension.js";
@@ -77,7 +79,7 @@ export interface RecoveredProductionExtensionBindings {
 }
 
 /**
- * The artifact's concrete 35-slot extension table. The arguments correspond
+ * The artifact's concrete 35-slot extension table, plus the channels slot of ours (25 September 2026). The arguments correspond
  * only to generated clients or capsule-external codecs/services.
  */
 export function createRecoveredProductionExtensionRegistry<Host extends { log(message: string): void }>(
@@ -123,7 +125,11 @@ export function createRecoveredProductionExtensionRegistry<Host extends { log(me
     [HostExtensions.TeachRecording]: bind(teachRecordingExtension),
     [HostExtensions.WebauthnProxy]: bind(webauthnProxyExtension),
     [HostExtensions.NotifyBus]: bind(notifyBusExtension),
-    [HostExtensions.Wallpaper]: bind(wallpaperExtension)
+    [HostExtensions.Wallpaper]: bind(wallpaperExtension),
+    [HostExtensions.MemorySync]: bind(memorySyncExtension),
+    // The 36th slot, ours (25 September 2026): the Discord and Slack
+    // connectors the transcript manager's channel hooks were waiting for.
+    [HostExtensions.Channels]: bind(channelsExtension)
   };
 }
 

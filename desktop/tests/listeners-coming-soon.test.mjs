@@ -32,8 +32,9 @@ async function load(entry, name) {
   return { module, dispose: () => rm(dir, { recursive: true, force: true }) };
 }
 
-test("the tool refuses a listener trigger with the Coming Soon sentence, and keeps taking cron", async () => {
-  delete process.env.SAND_LISTENER_RELAY_SERVED;
+test("with the relay switched off the tool refuses a listener trigger with the Coming Soon sentence, and keeps taking cron", async () => {
+  // The relay is served by default since 25 September 2026 (polar/sand/listeners.py); "0" is the earlier behaviour.
+  process.env.SAND_LISTENER_RELAY_SERVED = "0";
   const { module, dispose } = await load("source/host/runner/tools/sand-state-tool.ts", "sand-state-tool");
   try {
     const deps = { state: {} };
@@ -49,12 +50,13 @@ test("the tool refuses a listener trigger with the Coming Soon sentence, and kee
       assert.throws(() => module.resolveTrigger({ ...base, trigger }, deps), /Event listeners \(Slack, GitHub, Microsoft Teams, Linear, Sentry, PagerDuty\) are coming soon on Simeon/);
     }
   } finally {
+    delete process.env.SAND_LISTENER_RELAY_SERVED;
     await dispose();
   }
 });
 
-test("the agent's brief offers cron only and names what is coming soon; the flag restores Grok Bot's listener text", async () => {
-  delete process.env.SAND_LISTENER_RELAY_SERVED;
+test("the agent's brief offers Grok Bot's listener text by default; the flag at 0 offers cron only and names what is coming soon", async () => {
+  process.env.SAND_LISTENER_RELAY_SERVED = "0";
   const { module, dispose } = await load("source/host/automations/automation.ts", "automation-prompt");
   try {
     const prompt = module.renderAutomationsSystemPrompt([], "/home/box/agent-data/automations", "Africa/Dakar");
@@ -65,7 +67,7 @@ test("the agent's brief offers cron only and names what is coming soon; the flag
     }
     assert.match(prompt, /small model-call budget/, "a routine wake is a hidden turn on the small budget, and the brief says so");
     assert.match(prompt, /schedule is a 5-field cron expression/);
-    process.env.SAND_LISTENER_RELAY_SERVED = "1";
+    delete process.env.SAND_LISTENER_RELAY_SERVED;
     const served = module.renderAutomationsSystemPrompt([], "/home/box/agent-data/automations");
     assert.match(served, /Trigger shapes/);
     assert.match(served, /"type": "slack"/);
@@ -106,13 +108,14 @@ test("the extension seeds absence, starts no relay source, does not poll the fir
   assert.match(reads, /export const DASHBOARD_INTEGRATIONS_URL: string \| null = null;/);
   const { module, dispose } = await load("source/host/extensions/automations/listener-integrations.ts", "listener-reads");
   try {
-    delete process.env.SAND_LISTENER_RELAY_SERVED;
+    process.env.SAND_LISTENER_RELAY_SERVED = "0";
     const lines = [];
     const reader = module.createListenerIntegrationReads({ dashboard: () => { throw new Error("no dashboard"); }, transcript: { listAllAutomationDefinitions: async () => [], getAgentChannels: async () => [] }, sourceStatuses: () => new Map(), log: (line) => lines.push(line) });
     assert.equal(await reader.getConnectUrl("github"), null);
     assert.equal(await reader.getConnectUrl("slack"), null);
     assert.match(lines.join("\n"), /coming soon on Simeon/);
   } finally {
+    delete process.env.SAND_LISTENER_RELAY_SERVED;
     await dispose();
   }
   for (const [file, gone] of [["host/automations/listener-integrations.ts", "@Cursor"], ["host/extensions/transcript/box-handoff-resume.ts", "@Cursor"], ["host/extensions/transcript/box-handoff-resume.ts", "Claidor account"], ["host/extensions/automations/backend-relay-source.ts", "Claidor account"], ["host/runner/tools/listener-connect-cards.ts", "Claidor account"]]) {

@@ -231,3 +231,6 @@ docs/pierce/*.json.partial
 
 # The OpenClaw source checkout the desktop build clones next to desktop/
 /openclaw/
+
+# Agent worktrees (Claude Code isolation), never committed
+.claude/worktrees/

@@ -6,8 +6,9 @@ standard library. No settings, no database, no pydantic — so the price
 table can be read and tested on its own, which is what you want from
 the one piece of code that decides what a person is charged.
 
-Two providers serve the catalogue today, Anthropic and OpenAI, and a
-token of one is not priced like a token of the other. Three things
+Three providers serve the catalogue today — Anthropic, OpenAI and, since
+25 September 2026, Google's Gemini for the video role — and a token of
+one is not priced like a token of the other. Three things
 therefore travel together and must stay together:
 
 - every `DesktopModel` says **who serves it** (`provider`);
@@ -57,16 +58,23 @@ class ModelRole(StrEnum):
     primary = "primary"
     cheap = "cheap"
     fallback = "fallback"
+    #: Watches a video on the agent's behalf: the watchVideo / videoReview
+    #: subagents run on it and nothing else does. Never in the menu — the
+    #: person never talks to it — but offered, so the app can register the
+    #: subagent when the provider has a key (25 September 2026).
+    video = "video"
 
 
 class DesktopProvider(StrEnum):
     """Who serves a model, and therefore which key, which address and
     which price list the proxy uses. The value is also the wire format:
     an Anthropic provider speaks `/v1/messages`, an OpenAI one speaks
-    `/v1/chat/completions`, and neither is translated into the other."""
+    `/v1/chat/completions`, a Gemini one `:generateContent`, and none is
+    translated into another."""
 
     anthropic = "anthropic"
     openai = "openai"
+    gemini = "gemini"
 
 
 class SpokenApi(StrEnum):
@@ -75,9 +83,12 @@ class SpokenApi(StrEnum):
     Not the same question as who serves the model. Anthropic has one wire
     and OpenAI has two: the older `/v1/chat/completions`, and
     `/v1/responses`, which is the only one that will take reasoning and
-    function tools in the same request. Each is a different request shape,
-    a different stream, and — the part that matters here — a different
-    place to find the usage.
+    function tools in the same request. Gemini has its own,
+    `/v1beta/models/{model}:generateContent` (`:streamGenerateContent`
+    with `alt=sse` for a stream), the only one of the four that takes a
+    video as input. Each is a different request shape, a different
+    stream, and — the part that matters here — a different place to find
+    the usage.
 
     The path the engine calls says which of these is being spoken; the
     model says who serves it. They must agree, and `polar.desktop.
@@ -87,14 +98,15 @@ class SpokenApi(StrEnum):
     anthropic_messages = "anthropic-messages"
     openai_completions = "openai-completions"
     openai_responses = "openai-responses"
+    gemini_generate_content = "gemini-generate-content"
 
     @property
     def provider(self) -> DesktopProvider:
-        return (
-            DesktopProvider.anthropic
-            if self is SpokenApi.anthropic_messages
-            else DesktopProvider.openai
-        )
+        if self is SpokenApi.anthropic_messages:
+            return DesktopProvider.anthropic
+        if self is SpokenApi.gemini_generate_content:
+            return DesktopProvider.gemini
+        return DesktopProvider.openai
 
 
 @dataclass(frozen=True)
@@ -117,12 +129,24 @@ class TokenWeights:
 #: writing to the cache is not charged at all, so `cache_creation` is 0.
 #: Output is 6× input on the two cheaper models and 5× on the two dearer
 #: ones, which is why `DesktopModel.output_weight` exists.
+#:
+#: Google (Gemini): ⚠️ **to confirm against ai.google.dev/pricing** —
+#: written 25 September 2026 from memory, not read off the page. Gemini
+#: 2.5 Flash is remembered as $0.30 in / $2.50 out per million tokens
+#: (output 8.33× input), a cached read at roughly a tenth of an input
+#: token, and cache storage billed by the hour rather than per write, so
+#: `cache_creation` is 0 the way OpenAI's is. Nobody should be charged
+#: against these three numbers until somebody has looked; each is a
+#: single constant with a test behind it.
 PROVIDER_TOKEN_WEIGHTS: dict[DesktopProvider, TokenWeights] = {
     DesktopProvider.anthropic: TokenWeights(
         output=5.0, cache_creation=1.25, cache_read=0.1
     ),
     DesktopProvider.openai: TokenWeights(
         output=6.0, cache_creation=0.0, cache_read=0.1
+    ),
+    DesktopProvider.gemini: TokenWeights(
+        output=2.50 / 0.30, cache_creation=0.0, cache_read=0.1
     ),
 }
 
@@ -166,6 +190,11 @@ class DesktopModel:
     #:
     #: Set True only for a model seen to accept both together.
     tool_reasoning: bool | None = None
+    #: Whether the model takes a video as input. Only the Gemini entries
+    #: do; the app's watchVideo / videoReview subagents are registered on
+    #: the first offered model that says so (`videoModels` in the pricing
+    #: catalogue, `supportsVideo` on the model row).
+    supports_video: bool = False
 
     @property
     def api_format(self) -> str:
@@ -180,13 +209,14 @@ class DesktopModel:
 
         Every OpenAI model of ours is reached on `/v1/responses`, because
         Chat Completions refuses reasoning alongside function tools and an
-        agent always carries tools. Anthropic has one wire and this is it.
+        agent always carries tools. Anthropic has one wire and this is it;
+        so does Gemini.
         """
-        return (
-            SpokenApi.anthropic_messages
-            if self.provider is DesktopProvider.anthropic
-            else SpokenApi.openai_responses
-        )
+        if self.provider is DesktopProvider.anthropic:
+            return SpokenApi.anthropic_messages
+        if self.provider is DesktopProvider.gemini:
+            return SpokenApi.gemini_generate_content
+        return SpokenApi.openai_responses
 
     def reachable_on(self, spoken: SpokenApi) -> bool:
         """Whether this model can be asked for in that language.
@@ -222,7 +252,7 @@ class DesktopModel:
             "costMultiplier": self.cost_multiplier,
             "accessible": True,
             "supportsImage": True,
-            "supportsVideo": False,
+            "supportsVideo": self.supports_video,
             "supportsThinking": False,
             "supportsToolCalling": True,
             "agenticReady": True,
@@ -339,12 +369,50 @@ MODELS: tuple[DesktopModel, ...] = (
         context_window=1_050_000,
         role=ModelRole.cheap,
     ),
+    # The video role, 25 September 2026: the only provider that takes a
+    # video as input, reached on its own wire
+    # (`/desktop/api/proxy/v1beta/models/{model}:streamGenerateContent`).
+    # The watchVideo / videoReview subagents run here and nothing else
+    # does; the person never picks it. ⚠️ Input prices to confirm against
+    # ai.google.dev/pricing (see PROVIDER_TOKEN_WEIGHTS): Flash remembered
+    # as $0.30 per million input tokens, Pro as $1.25 with output 8× input.
+    DesktopModel(
+        "gemini-2.5-flash",
+        "Gemini 2.5 Flash",
+        "Google's quick model; watches a video for the agent.",
+        0.30 / CREDIT_USD_PER_MILLION_INPUT,
+        provider=DesktopProvider.gemini,
+        context_window=1_048_576,
+        max_tokens=65_536,
+        role=ModelRole.video,
+        supports_video=True,
+    ),
+    # Priced, not offered: the better eye when a review needs it, kept off
+    # the video role until someone measures Flash falling short.
+    DesktopModel(
+        "gemini-2.5-pro",
+        "Gemini 2.5 Pro",
+        "Google's most capable model; watches a video for the agent.",
+        1.25 / CREDIT_USD_PER_MILLION_INPUT,
+        provider=DesktopProvider.gemini,
+        context_window=1_048_576,
+        max_tokens=65_536,
+        output_weight=10.00 / 1.25,
+        supports_video=True,
+    ),
 )
 
 
 def model_by_id(model_id: str) -> DesktopModel | None:
     wanted = model_id.strip()
     return next((one for one in MODELS if one.model_id == wanted), None)
+
+
+def video_models(models: Sequence[DesktopModel]) -> tuple[DesktopModel, ...]:
+    """The models among `models` that take a video as input: the
+    `videoModels` list of the pricing catalogue, in the order the app
+    should prefer them."""
+    return tuple(one for one in models if one.supports_video)
 
 
 #: Who the models belong to, in OpenAI's `owned_by` field. Their own
@@ -459,6 +527,32 @@ class Usage:
         return cls(
             input_tokens=max(0, prompt - cached),
             output_tokens=_number(usage, "output_tokens"),
+            cache_read_tokens=cached,
+        )
+
+    @classmethod
+    def from_gemini_payload(cls, usage: Any) -> Usage:
+        """Gemini's `usageMetadata` object, on a `generateContent` answer
+        and on every chunk of a `streamGenerateContent` stream.
+
+        `promptTokenCount` is the whole prompt, the video's tokens
+        included, with the cached part inside it;
+        `cachedContentTokenCount` says how much was cached, and is taken
+        out the way OpenAI's is. `candidatesTokenCount` is the answer and
+        `thoughtsTokenCount` the model's thinking, which Google bills as
+        output, so the two are added. Field names as the REST API spells
+        them (lowerCamelCase); a client speaking snake_case would get the
+        same JSON back, so both are not needed here.
+        """
+        if not isinstance(usage, dict):
+            return cls()
+
+        cached = _number(usage, "cachedContentTokenCount")
+        prompt = _number(usage, "promptTokenCount")
+        return cls(
+            input_tokens=max(0, prompt - cached),
+            output_tokens=_number(usage, "candidatesTokenCount")
+            + _number(usage, "thoughtsTokenCount"),
             cache_read_tokens=cached,
         )
 
@@ -775,12 +869,28 @@ class OpenAIResponsesUsageTally(SSEUsageTally):
             self.usage = reported
 
 
+@dataclass
+class GeminiUsageTally(SSEUsageTally):
+    """Gemini's `streamGenerateContent?alt=sse`: every chunk is a whole
+    `GenerateContentResponse` and carries a cumulative `usageMetadata`,
+    so the last one that says anything is the call's usage. The prompt
+    count (the video's tokens with it) is on the first chunk already;
+    the output count grows chunk by chunk."""
+
+    def _event(self, event: dict[str, Any]) -> None:
+        reported = Usage.from_gemini_payload(event.get("usageMetadata"))
+        if reported != Usage():
+            self.usage = reported
+
+
 def tally_for(spoken: SpokenApi) -> SSEUsageTally:
     """A reader for the stream this language produces."""
     if spoken is SpokenApi.openai_responses:
         return OpenAIResponsesUsageTally()
     if spoken is SpokenApi.openai_completions:
         return OpenAIUsageTally()
+    if spoken is SpokenApi.gemini_generate_content:
+        return GeminiUsageTally()
     return UsageTally()
 
 
@@ -793,6 +903,8 @@ def usage_from_answer(spoken: SpokenApi, answer: Any) -> Usage:
         return Usage.from_openai_responses_payload(answer.get("usage"))
     if spoken is SpokenApi.openai_completions:
         return Usage.from_openai_payload(answer.get("usage"))
+    if spoken is SpokenApi.gemini_generate_content:
+        return Usage.from_gemini_payload(answer.get("usageMetadata"))
     return Usage.from_payload(answer.get("usage"))
 
 
@@ -926,6 +1038,7 @@ __all__ = [
     "PROVIDER_TOKEN_WEIGHTS",
     "DesktopModel",
     "DesktopProvider",
+    "GeminiUsageTally",
     "ModelRole",
     "OpenAIResponsesUsageTally",
     "OpenAIUsageTally",
@@ -941,4 +1054,5 @@ __all__ = [
     "model_by_id",
     "tally_for",
     "usage_from_answer",
+    "video_models",
 ]

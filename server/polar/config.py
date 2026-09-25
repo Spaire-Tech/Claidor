@@ -187,6 +187,11 @@ class Settings(BaseSettings):
     DESKTOP_AUTH_CODE_TTL: timedelta = timedelta(minutes=5)
     DESKTOP_ACCESS_TOKEN_TTL: timedelta = timedelta(hours=1)
     DESKTOP_REFRESH_TOKEN_TTL: timedelta = timedelta(days=30)
+    # How long the access token a refresh replaces stays good. The box
+    # holds a copy of the Mac's token and the Mac rewrites it every five
+    # minutes (`startInferenceCredentialKeepFresh`); killing the old token
+    # at the exchange made every box call 401 until that rewrite.
+    DESKTOP_REFRESH_GRACE: timedelta = timedelta(minutes=5)
     # Credits per calendar month per person; see polar.desktop.service.
     DESKTOP_MONTHLY_CREDITS: int = 3_000_000
     # Credits per sliding hour per person: the brake on a runaway turn.
@@ -200,6 +205,70 @@ class Settings(BaseSettings):
     # error at the moment somebody sends a message.
     DESKTOP_ANTHROPIC_BASE_URL: str = "https://api.anthropic.com"
     DESKTOP_OPENAI_BASE_URL: str = "https://api.openai.com"
+    # Sharing (polar/sand/sharing.py, 25 September 2026): how long an
+    # invite link opens the room, and how many joins one person may try
+    # a minute before `/sand/share-rooms/join` answers `rate-limited`.
+    DESKTOP_SHARE_INVITE_TTL: timedelta = timedelta(days=7)
+    DESKTOP_SHARE_JOINS_PER_MINUTE: int = 10
+
+    # Event routines (polar/sand/listeners*.py, docs/product/listeners-served.md).
+    # Simeon's Slack app: the person installs it in their workspace from
+    # the app's connect card (OAuth v2, one bot token per workspace, held
+    # on the server); Slack's Events API posts to
+    # POST /sand/ingress/slack/events, verified with the signing secret.
+    # Left empty, the install URL answers with a sentence naming the
+    # missing key and the subscriptions route says `not-linked`.
+    SLACK_APP_ID: str = ""
+    SLACK_CLIENT_ID: str = ""
+    SLACK_CLIENT_SECRET: str = ""
+    SLACK_SIGNING_SECRET: str = ""
+    # Simeon's GitHub App (distinct from the sign-in OAuth app above and
+    # the repository-benefits App): its slug names the install URL, its
+    # webhook secret verifies POST /sand/ingress/github/events.
+    SAND_GITHUB_APP_SLUG: str = ""
+    SAND_GITHUB_WEBHOOK_SECRET: str = ""
+
+    # Google's Gemini, the one provider that takes a video as input. It
+    # serves the desktop app's watchVideo / videoReview subagents through
+    # `POST /desktop/api/proxy/v1beta/models/{model}:streamGenerateContent`
+    # (`polar/desktop/endpoints.py`, 25 September 2026). The key is
+    # `CLAIDOR_GEMINI_API_KEY` on Render; empty means no video model is
+    # offered and the app says so, never an error mid-turn.
+    DESKTOP_GEMINI_BASE_URL: str = "https://generativelanguage.googleapis.com"
+    GEMINI_API_KEY: str = ""
+
+    # The person's computer in the cloud (polar/sand/box_broker.py, 25
+    # September 2026). Empty provider: the broker answers `unavailable`
+    # with one sentence and the app stays on the Docker box on the Mac.
+    # `docker`: a Docker Engine API at BOX_DOCKER_HOST (http(s)://host:2376
+    # or unix:///var/run/docker.sock) on a VM the founder provisions;
+    # `e2b`: not built (the `e2b` package is not in the lockfile).
+    BOX_HOST_PROVIDER: str = ""
+    BOX_DOCKER_HOST: str = ""
+    # Client certificate for a TLS-protected daemon (`docker --tlsverify`).
+    BOX_DOCKER_TLS_CA: str = ""
+    BOX_DOCKER_TLS_CERT: str = ""
+    BOX_DOCKER_TLS_KEY: str = ""
+    # Where the API reaches the ports the daemon publishes; defaults to the
+    # hostname of BOX_DOCKER_HOST.
+    BOX_HOST_ADDRESS: str = ""
+    # The box image; the local Docker path's image unless a Simeon image
+    # with the host bundle baked in is built. BOX_IMAGE_DIGEST pins it.
+    BOX_IMAGE: str = "public.ecr.aws/k0i0n2g5/cursorenvironments/universal:sand-box-latest"
+    BOX_IMAGE_DIGEST: str = ""
+    # A .tar or .tar.gz with `host/host-main.cjs` and
+    # `box-exec-daemon/main.cjs` (what `npm run package` builds into
+    # desktop/dist), uploaded into the container before it starts. Empty:
+    # the image is assumed to carry them.
+    BOX_HOST_BUNDLE_URL: str = ""
+    # Per-port public hostnames, e.g. "https://{box}-{port}.boxes.simeonlabs.com",
+    # served by a TLS proxy on the box VM (docs/product/cloud-computer-served.md).
+    # Empty: the API proxies the ports itself at /sand-box/{id}/p/{port}/.
+    BOX_PUBLIC_URL_TEMPLATE: str = ""
+    # How long EnsureSandBox waits for a new box's gateway before answering.
+    BOX_READY_TIMEOUT: timedelta = timedelta(seconds=90)
+    # The local-exec daemon's credential (POST /sand-box/local-exec-daemon-credential).
+    BOX_LOCAL_EXEC_CREDENTIAL_TTL: timedelta = timedelta(hours=12)
 
     # Apps through Composio (polar/desktop/composio.py). One key for the
     # whole of Claidor, held here and nowhere else: the desktop app never

@@ -1,5 +1,11 @@
 # The brief, audited
 
+> **Superseded, 18 September 2026.** The 277-rule AGENTS.md this audits
+> went with the LobsterAI tree. The live brief is
+> `desktop/source/host/runner/system-prompt.ts` (Grok Bot's, with Simeon's
+> switches); its audit is `docs/product/design-audit-ledger.md`. Kept as a
+> record. (Marked 25 September 2026, ledger F-336.)
+
 18 September 2026. The founder: *"thats tooo many rules that are wrong.
 everything is a new rule wrong. this is becoming a nasty pattern. audit
 this seriously."*

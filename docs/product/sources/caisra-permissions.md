@@ -189,7 +189,7 @@ Ask via **choice card** (not plain prose) only when:
 
 - Natural prompt (not “Pick one of the following”)
 - **1–6** real options; values sound like user replies
-- Optional: `multiSelect`, `allowCustom`, `dismissOnMoveOn` (low-stakes), danger/primary styling
+- Optional: `allowCustom`, `dismissOnMoveOn` (low-stakes), danger/primary styling (corrected 25 September 2026: the schema in `sand-widgets.ts` has no `multiSelect`; ledger F-093)
 - Widget **ends the turn** — stop and wait
 - **Dismiss = decline** — don’t re-ask the same choice unasked; choose yourself if still needed under autonomy
 - Skills may forbid install in the same turn as the confirm widget (e.g. `add-connector`: confirm → next turn InstallPlugin)

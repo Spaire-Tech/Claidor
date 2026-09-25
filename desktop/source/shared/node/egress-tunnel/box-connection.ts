@@ -14,6 +14,16 @@ export interface EgressTunnelConfig {
   readonly allowPrivateTargets: boolean;
 }
 
+// A proxied box's gateway URL names its port in one of two places. Cursor's
+// pod proxy: the first hostname label ends in `-<port>` (`<pod>-1340.…`),
+// swapped for `-8790`. Simeon Labs' server (25 September 2026,
+// `polar/sand/box_proxy.py`): the path ends in `/p/<port>`
+// (`https://api.simeonlabs.com/sand-box/<id>/p/1340`), swapped the same way,
+// with the path kept. The label rule is tried first so a Cursor-shaped
+// descriptor, or a founder's per-port hostnames (`CLAIDOR_BOX_PUBLIC_URL_TEMPLATE`),
+// derive exactly as before.
+const PROXY_PATH_PORT = /\/p\/(\d+)\/?$/;
+
 export function deriveEgressTunnelWsUrl(baseUrl: string, podProxied: boolean): string | null {
   let url: URL;
   try {
@@ -23,13 +33,19 @@ export function deriveEgressTunnelWsUrl(baseUrl: string, podProxied: boolean): s
   }
   if (podProxied) {
     const [firstLabel, ...rest] = url.hostname.split(".");
-    if (firstLabel == null || !/-\d+$/.test(firstLabel)) return null;
-    url.hostname = [firstLabel.replace(/-\d+$/, `-${EGRESS_TUNNEL_WS_PORT}`), ...rest].join(".");
+    if (firstLabel != null && /-\d+$/.test(firstLabel)) {
+      url.hostname = [firstLabel.replace(/-\d+$/, `-${EGRESS_TUNNEL_WS_PORT}`), ...rest].join(".");
+      url.pathname = "/";
+    } else if (PROXY_PATH_PORT.test(url.pathname)) {
+      url.pathname = url.pathname.replace(PROXY_PATH_PORT, `/p/${EGRESS_TUNNEL_WS_PORT}/`);
+    } else {
+      return null;
+    }
   } else {
     url.port = String(EGRESS_TUNNEL_WS_PORT);
+    url.pathname = "/";
   }
   url.protocol = url.protocol === "https:" || url.protocol === "wss:" ? "wss:" : "ws:";
-  url.pathname = "/";
   url.search = "";
   return url.toString();
 }

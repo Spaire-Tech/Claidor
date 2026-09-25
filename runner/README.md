@@ -33,6 +33,20 @@ queue for another runner to try.
 On a termination signal it finishes the job in hand and then stops. It
 never starts a second job while one is running.
 
+### A cloud agent's turn (25 September 2026)
+
+The app's cloud agents (`server/polar/sand/cloud_agents.py`,
+`docs/product/cloud-agents-served.md`) are jobs on this same queue, one
+per turn. Such a job carries `conversation` on the claim — the person's
+messages and the earlier turns' replies — and the runner asks the engine
+the whole list instead of `prompt` alone, then reports the reply as the
+turn's message (`messages` on `complete`) so the agent's transcript grows
+by what was said. The heartbeat's answer carries `cancel_requested`: when
+the person pauses the agent, the run is aborted and the job is failed as
+cancelled, final. Every claim also names an `executor`; `maty-runner` is
+this process and the only one, and `src/executor.ts` is the seam a box
+executor (a checkout, a shell, a pull request) plugs into.
+
 ## The safety of it, which is the point
 
 On the person's own computer the engine is deliberately wide open: it can

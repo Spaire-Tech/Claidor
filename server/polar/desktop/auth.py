@@ -37,15 +37,43 @@ def bearer_token(request: Request) -> str | None:
     return api_key or None
 
 
-async def get_desktop_session(
+async def get_desktop_or_box_session(
     request: Request, session: AsyncSession = Depends(get_db_session)
 ) -> DesktopSession:
+    """Any live session row behind the bearer: a signed-in desktop, the
+    person's box (`is_box_credential`) or a cloud job (`is_job_token`).
+    The profile route takes this one, because the box's host reads the
+    person's name from it (`user-full-name-service.ts`), and since 25
+    September 2026 the two memory routes, because the host that keeps
+    the memory files runs in the box (`host/extensions/memory-sync/`)."""
     token = bearer_token(request)
     if token is None:
         raise DesktopUnauthenticated()
     found = await desktop.authenticate(session, token)
     if found is None:
         raise DesktopUnauthenticated("This desktop session has expired.")
+    return found
+
+
+async def get_desktop_session(
+    request: Request, session: AsyncSession = Depends(get_db_session)
+) -> DesktopSession:
+    """The bearer's session, minus the box's credential.
+
+    A box credential's access token is a `DesktopSession` row too, and
+    until 25 September 2026 it reached every route on this router:
+    connectors, memory, the maty queue, sign-out, and the box credential
+    mint itself. It reaches the model proxy (`get_proxy_caller`), the
+    profile and the memory routes (`get_desktop_or_box_session`), which
+    is what it is for, and nothing else. A cloud job's token keeps what it had: the runner lays
+    the person's memory out with it and writes it back
+    (`tests/maty/test_endpoints.py`), and `refresh` already refuses it.
+    """
+    found = await get_desktop_or_box_session(request, session)
+    if found.is_box_credential:
+        raise DesktopUnauthenticated(
+            "The box's credential reaches the model proxy only. Sign in to the app."
+        )
     return found
 
 
@@ -133,6 +161,7 @@ async def get_proxy_caller(
 __all__ = [
     "ProxyCaller",
     "bearer_token",
+    "get_desktop_or_box_session",
     "get_desktop_session",
     "get_proxy_caller",
 ]

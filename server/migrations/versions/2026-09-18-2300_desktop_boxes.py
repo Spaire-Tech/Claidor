@@ -15,12 +15,17 @@ a person's agents — so in practice there is one row per account, which
 is the founder's rule (*there is no "which computer", only this
 computer*). Each accidental extra row would be a second bill.
 
-Re-pointed on 25 September: this was written against
-`maty_job_times_0912`, and `desktop_box_credential_0925` then landed on
-`main` against the same parent, which left alembic with two heads and
-`upgrade head` refusing to run. It now stacks on that one. The file is
-still dated the 18th because that is when it was written; the chain, not
-the filename, is what alembic reads.
+Re-pointed twice on 25 September, both times for the same reason: this
+was written against `maty_job_times_0912`; `desktop_box_credential_0925`
+landed on `main` against that same parent, and then five more
+(`sand_listeners`, `desktop_share_rooms`, `sand_cloud_agents`,
+`sand_boxes`, `sand_plugins`) chained behind it. Each time alembic was
+left with two heads and `upgrade head` refuses to run with two, so this
+now stacks on `sand_plugins_0925`, `main`'s tip. The file is still dated
+the 18th because that is when it was written; the chain, not the
+filename, is what alembic reads. Expect to do this again: nothing in CI
+catches it, because the suite builds its schema from
+`Model.metadata.create_all` and the migration job never gets a runner.
 """
 
 import sqlalchemy as sa
@@ -28,7 +33,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "desktop_boxes_0918"
-down_revision = "desktop_box_credential_0925"
+down_revision = "sand_plugins_0925"
 branch_labels: tuple[str] | None = None
 depends_on: tuple[str] | None = None
 

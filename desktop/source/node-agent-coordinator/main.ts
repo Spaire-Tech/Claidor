@@ -21,6 +21,7 @@ import { createSpawnedWebAuthnSigner, resolveWebAuthnSignerPath } from "./webaut
 import { ClientSideToolV2Relay } from "./client-side-tool-v2-relay.js";
 import { carriesPermissionCard, stampTranscriptEvent, stampTranscriptReply, type TranscriptPermissionScope } from "./permission-scope-stamp.js";
 import { createCoordinatorInferenceRouter } from "./inference-router.js";
+import { routesClaidorThroughHost } from "../shared/inference-router.js";
 import { setClaidorCredentialSource } from "../host/extensions/inference/provider-session.js";
 
 export interface McpOAuthPending {
@@ -106,6 +107,7 @@ export async function composeCoordinator(dependencies: ComposeCoordinatorDepende
   // this process's start, one number per sign-in.
   const permissionScopeRevision = Date.now();
   let permissionScopeSlot: string | null = null;
+  let transcriptPostChain: Promise<void> = Promise.resolve();
   let permissionScopeFetch: Promise<void> | null = null;
   const permissionScope = (): TranscriptPermissionScope | null =>
     permissionScopeSlot == null ? null : { slot: permissionScopeSlot, revision: permissionScopeRevision };
@@ -133,10 +135,16 @@ export async function composeCoordinator(dependencies: ComposeCoordinatorDepende
     if (event.channel === "agent-upserted") controlClient.postEvent("agents-event", { kind: "agent-upserted", event: event.payload });
     const family = coordinatorEventFamilyForSseChannel(event.channel);
     if (family == null) return;
-    if (family === "transcript" && carriesPermissionCard(event.payload)) {
-      const scope = permissionScope();
-      if (scope == null) void fetchPermissionScopeSlot();
-      server.postEvent(family, stampTranscriptEvent(event.payload, scope));
+    if (family === "transcript") {
+      // Transcript events go through one chain so a card that has to wait
+      // for the account slot (the first Allow card on a cold box, F-420)
+      // does not overtake, or get overtaken by, the entries around it.
+      transcriptPostChain = transcriptPostChain.then(async () => {
+        if (carriesPermissionCard(event.payload)) {
+          if (permissionScope() == null) await fetchPermissionScopeSlot();
+          server.postEvent(family, stampTranscriptEvent(event.payload, permissionScope()));
+        } else server.postEvent(family, event.payload);
+      }).catch(() => undefined);
       return;
     }
     server.postEvent(family, event.payload);
@@ -240,7 +248,7 @@ export async function composeCoordinator(dependencies: ComposeCoordinatorDepende
   setClaidorCredentialSource({
     getAccessToken: async () => {
       const issued = await command<{ accessToken?: unknown; backendUrl?: unknown } | null>(commands, "mintInferenceCredential", {});
-      if (typeof issued?.accessToken !== "string" || issued.accessToken.length === 0) throw new Error("Claidor is the selected provider, but the desktop has no signed-in credential to lend. Sign in to Claidor and try again.");
+      if (typeof issued?.accessToken !== "string" || issued.accessToken.length === 0) throw new Error("Simeon runs on the signed-in account, but the desktop has no credential to lend. Sign in to Simeon and try again.");
       return issued.accessToken;
     },
   });
@@ -263,7 +271,7 @@ export async function composeCoordinator(dependencies: ComposeCoordinatorDepende
     const outcome = await gatewayDispatch(method, args, signal);
     if (outcome.status !== "ok" || !carriesPermissionCard(outcome.value)) return outcome;
     await fetchPermissionScopeSlot();
-    return { status: "ok" as const, value: stampTranscriptReply(method, outcome.value, permissionScope()) };
+    return { status: "ok" as const, value: stampTranscriptReply(method, outcome.value, permissionScope(), { sortByTimestamp: !routesClaidorThroughHost() }) };
   };
   server = createRendererPortServer(
     { post: (frame) => carrier.data.post(frame), close: () => carrier.data.close() },
