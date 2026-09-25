@@ -3,6 +3,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 
 import { runRoutedProviderText } from "../host/extensions/inference/provider-session.js";
+import { resolveSandAgentStepCap } from "../shared/inference/turn-step-budget.js";
 import {
   resolveProductInferenceProvider,
   routesClaidorThroughHost,
@@ -372,7 +373,11 @@ export function createCoordinatorInferenceRouter(options: {
       if (name === "UpdateAgent" || name === "CreateAgent") await activity.refreshRoster();
       return result;
     };
+    // The hatch's turn runs under the hidden-turn budget (F-133): one spend
+    // per call, at most two calls a message, eight tool steps inside each.
+    const budget = { limit: resolveSandAgentStepCap({ hidden: true }), hidden: true, used: 0 };
     const runTurn = async (turnMessages: typeof messages) => runRoutedProviderText(provider, turnMessages, bridge == null ? {
+      budget,
       tools,
       executeTool: async (definition, toolArgs, toolCallId) => {
         if (typeof definition.name === "string" && isGrokBotToolName(definition.name)) {
@@ -387,7 +392,7 @@ export function createCoordinatorInferenceRouter(options: {
           agentId,
         });
       },
-    } : { mcpServerUrl: bridge.url, tools: GROK_BOT_TOOLS, executeTool: async (definition, toolArgs, toolCallId) => {
+    } : { budget, mcpServerUrl: bridge.url, tools: GROK_BOT_TOOLS, executeTool: async (definition, toolArgs, toolCallId) => {
       if (typeof definition.name === "string" && isGrokBotToolName(definition.name)) {
         return await runGrokBotTool(definition.name, toolArgs, toolCallId);
       }

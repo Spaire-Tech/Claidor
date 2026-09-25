@@ -809,8 +809,11 @@ def usage_from_answer(spoken: SpokenApi, answer: Any) -> Usage:
 # ⚠️ **None of the four dollar figures below has been checked against a
 # price page.** Like `SPEECH_USD_PER_MILLION_CHARACTERS` they are single
 # constants so that looking, and correcting, is a one-line change with a
-# test behind it. Nobody should be charged against them until somebody
-# has looked.
+# test behind it. They meter today (F-129, F-292, 25 September 2026): a
+# door that did not meter would be the larger risk to the person's
+# allowance, so the figures stand until the founder reads the price pages
+# and corrects them; a wrong figure moves the meter, never the bill OpenAI
+# sends Simeon Labs.
 
 #: What OpenAI charges per call of its hosted `web_search` tool, on top
 #: of the tokens the model that reads the results spends.

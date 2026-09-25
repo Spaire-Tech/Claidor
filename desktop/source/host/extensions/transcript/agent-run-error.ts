@@ -8,6 +8,7 @@ export const RESETS_AT_ABS_OR_ISO = /It resets at \S+\.?/g;
 export const RESETS_IN_CLAUSE = /It resets in [^.]+/g;
 export const MAX_TRAY_ACTIONS = 3;
 export const CURSOR_WEBSITE_ORIGIN = "https://cursor.com";
+export const SIMEON_WEBSITE_ORIGIN = "https://simeonlabs.com";
 export const SUPPORTED_DASHBOARD_ACTION_VERBS = new Set([
   "requestLimitIncrease",
 ]);
@@ -168,7 +169,8 @@ export function mapErrorDetailButtons(
         actions.push({
           kind: "open-url",
           label: button.label || "Upgrade",
-          url: `${CURSOR_WEBSITE_ORIGIN}/pricing`,
+          // Simeon's own site, not Cursor's pricing page (F-132).
+          url: SIMEON_WEBSITE_ORIGIN,
         });
         break;
       case "switchModel":

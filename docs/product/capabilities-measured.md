@@ -59,5 +59,8 @@ Not run against a live model, a live search, or a live picture — no
 signed-in account and no OpenAI key in this container. The server tests
 in `server/tests/desktop/test_capabilities.py` cover the doors
 themselves the same way: stubbed upstream, real routing and metering.
-A Mac with `SAND_CLAIDOR_FULL_AGENT=1` is still the run that proves a
+*Corrected 25 September 2026 (F-293): `SAND_CLAIDOR_FULL_AGENT` is on by
+default since 22 September (`routesClaidorThroughHost`); the proving run is
+a plain packaged app, no variable.* A Mac (the sentence below said "with
+`SAND_CLAIDOR_FULL_AGENT=1`") is still the run that proves a
 turn that searches, fetches, draws and listens, end to end.

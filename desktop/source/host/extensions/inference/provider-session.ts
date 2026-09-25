@@ -750,11 +750,14 @@ export async function runRoutedProviderText(provider: RoutedProvider, messages: 
   readonly onTextDelta?: (delta: string, accumulated: string) => void;
   readonly model?: string;
   readonly cheap?: boolean;
+  /** The caller's model-call budget (F-133): spent once per call here, and the AI SDK's `maxSteps` caps the tool steps inside one. */
+  readonly budget?: ModelCallBudget;
 }): Promise<string> {
   const invocationId = crypto.randomUUID();
   const onUsage = (usage: UsageRecord) => recordRoutedUsage(provider, usage);
+  if (options?.budget != null) spendModelCall(options.budget);
   const result = provider === "claidor"
-    ? claidorExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage, claidorModelForSession(options), claidorReasoningEffortForSession(options))
+    ? claidorExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage, claidorModelForSession(options), claidorReasoningEffortForSession(options), options?.budget)
     : provider === "codex"
       ? codexExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage)
       : provider === "claude-code"

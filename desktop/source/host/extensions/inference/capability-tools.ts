@@ -8,7 +8,10 @@ import { fetchWebPage, type WebFetchOptions, type WebFetchResult } from "../../.
 // (`docs/product/capabilities-measured.md`).
 
 export interface WebSearchDocument { readonly url: string; readonly title: string; readonly text: string }
-export interface WebSearchAnswer { readonly answer: string; readonly documents: readonly WebSearchDocument[] }
+export interface WebSearchAnswer { readonly answer: string; readonly documents: readonly WebSearchDocument[]; /** How many times the hosted search actually ran; 0 means the model answered from memory (F-290). */ readonly searches?: number }
+
+/** A search that hangs used to hold the turn for the server's 600 s (F-295); the client gives up first. */
+export const WEB_SEARCH_CLIENT_TIMEOUT_MS = 90_000;
 
 // Search goes to Claidor's `web/search` door, which runs OpenAI's hosted
 // search and meters it against the person's account
@@ -17,12 +20,14 @@ export function createClaidorWebSearchService(options: ClaidorApiAuth & { readon
   return async (_ctx: unknown, args: { searchTerm: string; explanation?: string }): Promise<WebSearchAnswer> => {
     const response = await claidorProxyRequest(options, "web/search", {
       ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
+      signal: AbortSignal.timeout(WEB_SEARCH_CLIENT_TIMEOUT_MS),
       json: { query: args.searchTerm, ...(args.explanation === undefined ? {} : { explanation: args.explanation }) },
     });
-    const body = (await response.json().catch(() => null)) as { answer?: unknown; documents?: unknown } | null;
+    const body = (await response.json().catch(() => null)) as { answer?: unknown; documents?: unknown; searches?: unknown } | null;
     const documents = Array.isArray(body?.documents) ? body.documents : [];
     return {
       answer: typeof body?.answer === "string" ? body.answer : "",
+      ...(typeof body?.searches === "number" ? { searches: body.searches } : {}),
       documents: documents.flatMap((document): WebSearchDocument[] => {
         if (document == null || typeof document !== "object" || typeof (document as { url?: unknown }).url !== "string") return [];
         const { url, title, text } = document as { url: string; title?: unknown; text?: unknown };

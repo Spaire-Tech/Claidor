@@ -1640,3 +1640,28 @@ class TestTheModelsListOnTheProxy:
         # always been authenticated.
         response = await client.get("/desktop/api/proxy/v1/models")
         assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+class TestWithheldModelsAreNotServed:
+    """A priced row with no role (Astra at 10x, Opus at 5x) stays in the
+    catalogue for old usage rows and is refused on the wire (F-122,
+    25 September 2026): what the proxy serves is what it offers."""
+
+    async def test_naming_a_withheld_model_is_refused_before_any_upstream_call(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        headers = {"Authorization": f"Bearer {access}"}
+        for path, model in (
+            ("/desktop/api/proxy/v1/responses", "gpt-6-astra"),
+            ("/desktop/api/proxy/v1/messages", "claude-opus-5"),
+            ("/desktop/api/proxy/v1/chat/completions", "gpt-6-astra"),
+        ):
+            response = await client.post(
+                path,
+                json={"model": model, "input": "hi", "messages": [], "max_tokens": 1},
+                headers=headers,
+            )
+            assert response.status_code == 400, (path, response.text)
+            assert response.json()["error"]["message"] == "This model is not offered by the desktop app."
