@@ -25,10 +25,18 @@ import { envGateOverride } from "./cursor-experiments.js";
 //
 // `sand_product_analytics` — Grok Bot's event stream to Cursor's
 // AnalyticsService, which nothing serves here; off (F-378).
+//
+// `sand_notify_bus` — the box's one SSE stream to `GET /sand/notify`, which
+// wakes the listener relay poller and the fire consumer the moment an
+// event or a cron fire lands instead of at their next poll. Off in the
+// bundled table; on since 25 September 2026, now that Simeon Labs' server
+// serves the stream (polar/sand/notify.py) and the listener relay behind
+// it (polar/sand/listeners*.py). The safety polls stay on.
 export const SIMEON_FEATURE_GATE_DEFAULTS: Readonly<Record<string, boolean>> = Object.freeze({
   sand_usage_page: true,
   sand_auto_review: true,
   sand_product_analytics: false,
+  sand_notify_bus: true,
 });
 
 export function simeonGateDefault(name: string, env: NodeJS.ProcessEnv = process.env): boolean | undefined {

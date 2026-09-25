@@ -658,10 +658,28 @@ and the user-away guard that pauses routines after three days unread.
 `tests/routine-box-lifecycle.test.mjs`, `server/tests/desktop/test_box_credential.py`.
 Not yet run on a Mac: quit with a routine enabled, wait past the hour, read
 `inference credential renewed with the box's own credential` in
-`/tmp/sand-host.log`. Event listeners are **Coming Soon** (Slack, GitHub, Teams, Linear, Sentry, PagerDuty): their
-relay (`/sand/listener-*`, `/sand/automation-events/poll`,
-`AutomationsService`) is Cursor's and Simeon Labs' server serves none of it;
-`SAND_LISTENER_RELAY_SERVED=1` restores Grok Bot's paths when it exists.
+`/tmp/sand-host.log`. **Event listeners are served since 25 September 2026,
+later the same day** (`docs/product/listeners-served.md`): the relay Grok
+Bot reached on Cursor's server (`/sand/listener-subscriptions`,
+`/sand/listener-events/poll`, `/sand/automation-events/poll`,
+`/sand/automation-runs/complete`, `AutomationsService`, the dashboard's
+Slack/SCM reads) is `server/polar/sand/listeners*.py`, at the root of the
+API host; the app side is Grok Bot's, unchanged, on by default
+(`SAND_LISTENER_RELAY_SERVED=0` restores the Coming Soon paths). Slack
+events arrive at `POST /sand/ingress/slack/events`, GitHub's at
+`POST /sand/ingress/github/events`, Linear/Sentry/PagerDuty at a per-person
+signed URL; each is matched against the shadow workflows and queued as a
+fire the box polls. **Measured on the way: once the `AutomationsService`
+answers, the box stops firing a cron-only routine itself**
+(`shouldScheduleLocally`), so a worker actor
+(`sand.listeners.fire_due_crons`, every minute) fires cron for every
+routine the server lists as enabled, one pending fire per routine, with
+its `definitionRevision` and `scheduledForMs`. Cannot work until the
+founder registers Simeon's Slack app and GitHub App and sets
+`CLAIDOR_SLACK_CLIENT_ID/SECRET/SIGNING_SECRET` and
+`CLAIDOR_SAND_GITHUB_APP_SLUG/WEBHOOK_SECRET` on Render (the install page
+and a `sand.listeners.*_refused` log line name the missing key);
+Microsoft Teams stays Coming Soon (no bot). Not yet run on a Mac.
 
 **The decision, 18 September: keep the queue, change the executor.** The claim /
 lease / heartbeat / scoped-token / memory-in-memory-out half is the hard part and

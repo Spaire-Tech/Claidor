@@ -69,11 +69,15 @@ export const automationsExtension = defineHostExtension({
       onFailure: ({ agentId, error }) => { if (agentId == null || routineSyncFailureTrayIds.has(agentId) || isAbsentCloudAutomationService(error)) return; },
       onRecovery: (agentId) => { const id = routineSyncFailureTrayIds.get(agentId); if (id == null) return; deps.trays.dismiss({ id }); routineSyncFailureTrayIds.delete(agentId); },
       onSchedulingAuthorityChanged: () => notifySchedulingAuthorityChanged(),
-      // Simeon Labs' server serves no AutomationsService and no /sand/* relay
-      // (shared/listener-availability.ts). Seeded absent: cron routines are
+      // Simeon Labs' server serves the AutomationsService and the /sand/*
+      // relay since 25 September 2026 (polar/sand/listeners.py), so the
+      // cloud service is present by default and the server fires cron for
+      // every routine it lists as enabled (`shouldScheduleLocally` stops
+      // firing a cron-only routine locally once the RPCs answer). With
+      // SAND_LISTENER_RELAY_SERVED=0 absence is seeded: cron routines are
       // scheduled locally from the first pass, the Connect client is never
       // called, the relay sources are not started and the fire consumer
-      // does not poll an unserved endpoint every 30 s.
+      // does not poll.
       cloudServiceAbsent: !isListenerRelayServed()
     };
     const listenerRelayServed = isListenerRelayServed();
@@ -84,7 +88,7 @@ export const automationsExtension = defineHostExtension({
     context.onStop(deps["notify-bus"].onNotify("listener-events", () => relay.requestDrain()));
     const hub = new SandTriggerHub({ polling: createRealPollingPolicy({ name: "automations.hub-reconcile", intervalMs: HUB_RECONCILE_INTERVAL_MS }), sources: listenerRelayServed ? [relay.slack, relay.github] : [], listAutomations: () => deps.transcript.listAllAutomationDefinitions(), fire: (agentId, automation, event) => deps.transcript.runAutomationForEvent(agentId, automation as ScheduledCloudAutomation, event), fireCron: (agentId, automation) => deps.transcript.runServerScheduledAutomation({ agentId, automation: automation as ScheduledCloudAutomation, runUuid: crypto.randomUUID() }), isReady: () => deps["turn-execution"].isRunReady(), shouldScheduleLocally: (agentId, automation) => cloudSync.shouldScheduleLocally({ agentId, automation }), getTimeZone: () => deps.settings.getUserTimeZone(), onReconcile: () => { void cloudSync.reconcileNow(); if (listenerRelayServed) void fireConsumer.tick(); } });
     notifySchedulingAuthorityChanged = () => { void hub.reconcileNow(); };
-    const listenerReads = createListenerIntegrationReads({ auth: deps.auth, transcript: deps.transcript, sourceStatuses: () => hub.getSourceStatuses(), log: host.log });
+    const listenerReads = createListenerIntegrationReads({ auth: deps.auth, transcript: deps.transcript, sourceStatuses: () => hub.getSourceStatuses(), log: host.log, getBackendUrl: () => getConfiguredBackendUrl() });
     const watcher = new ListenerConnectWatcher({ polling: createRealPollingPolicy({ name: "automations.connect-watch", intervalMs: CONNECT_WATCH_POLL_INTERVAL_MS }), isPlatformConnected: listenerReads.isPlatformConnected, onConnected: (agentId, platform) => void deps.transcript.resumeAfterListenerConnect(agentId, platform) });
     const offConfigChanged = host.events.on("transcript.automation-config-changed", () => { fireConsumer.resetPollDelay(); void hub.reconcileNow(); });
     const offConnectCard = host.events.on("transcript.listener-connect-card", ({ agentId, platform }: { agentId: string; platform: "slack" | "github" }) => watcher.watch(agentId, platform));
