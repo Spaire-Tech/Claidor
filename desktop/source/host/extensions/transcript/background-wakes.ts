@@ -438,6 +438,27 @@ export class BackgroundWakes {
     return false;
   }
 
+  /** A hidden turn for one agent with a prompt the host wrote (the draft card's Send and Discard, 25 September 2026). */
+  async runHiddenPromptWake(agentId: string, requestSource: string, prompt: string, trayTitle: string): Promise<void> {
+    if (!this.tm.execution.canExecute) return;
+    let session: any;
+    try {
+      session = await this.tm.sessions.resolveBackgroundSession(agentId);
+    } catch {
+      return;
+    }
+    if (this.tm.groupChat.isGroupSession(session)) return;
+    await this.runBackgroundWake(
+      session,
+      requestSource,
+      requestSource,
+      async (runner) => {
+        await runner.run(prompt, { hidden: true, ...this.tm.widgetResponses.collectUnansweredQuestionPrompts(session) });
+      },
+      trayTitle,
+      requestSource,
+    );
+  }
   private async runBackgroundWake(
     session: any,
     requestSource: string,

@@ -27,21 +27,22 @@ test("Settings copy names Claidor and Simeon, not Cursor or Grok Bot", async () 
   assert.doesNotMatch(settingsCopy, /Grok Bot/);
   assert.match(router, /DEFAULT_ROUTER_PROVIDER: RouterProviderId = "claidor"/);
   assert.doesNotMatch(router, /signed-in Cursor account/);
-  assert.match(panels, /Sign In with Claidor/);
+  assert.match(panels, /Sign In with Simeon/);
   assert.doesNotMatch(panels, /Sign In with Cursor/);
 });
 
-test("sign-in errors name Claidor, not Cursor", async () => {
+test("sign-in errors name Simeon, not Cursor or Claidor (the account is Simeon since 25 September)", async () => {
   const auth = await read("source/electron-main/account/cursor-auth.ts");
   const wiring = await read("source/electron-main/account/cursor-auth-wiring.ts");
   const mcp = await read("source/shared/node/mcp/mcp-manager.ts");
-  assert.match(auth, /Sign in to Claidor to run Simeon\./);
-  assert.match(auth, /Claidor sign-in expired/);
+  assert.match(auth, /Sign in to Simeon to run it\./);
+  assert.match(auth, /Your Simeon sign-in expired/);
+  assert.doesNotMatch(auth, /Sign in to Claidor|Claidor sign-in/);
   assert.match(auth, /another Simeon account/);
   assert.doesNotMatch(auth, /Sign in to Cursor/);
   assert.doesNotMatch(auth, /Cursor sign-in/);
   assert.doesNotMatch(auth, /another Cursor account/);
-  assert.match(wiring, /Sign in to Claidor to continue/);
+  assert.match(wiring, /Sign in to Simeon to continue/);
   assert.doesNotMatch(wiring, /Sign in to Cursor to continue/);
   assert.match(mcp, /signed-in Simeon account/);
   assert.doesNotMatch(mcp, /signed-in Cursor account/);
@@ -58,7 +59,7 @@ test("the agent's brief names Claidor and Simeon, not Cursor or Grok Bot", async
   assert.doesNotMatch(prompt, /user's Cursor account/);
   assert.doesNotMatch(prompt, /using Cursor directly/);
   assert.doesNotMatch(prompt, /Cursor cloud agent/);
-  assert.match(appUi, /Sign In with Claidor/);
+  assert.match(appUi, /account card \("Sign In" \/ "Sign Out"\)/);
   assert.doesNotMatch(appUi, /Sign In with Cursor/);
   // The product is Simeon since 22 September; the listener strings say so (25 September, ledger F-054).
   assert.match(listeners, /user's Simeon account/);

@@ -1,4 +1,5 @@
 import { clipForHostLog, HOST_LOG_PREFIX } from "../../shared/host-log.js";
+import { redactSandAutoReviewInlineSecrets } from "../../shared/sand-auto-review-redact.js";
 
 // One line per completed tool call in the host log. The model-call line
 // (`[claidor] model=… tools=SendMessage(…)`) says what the model asked for;
@@ -13,7 +14,7 @@ export interface ToolCallLogLine {
 }
 
 export function formatToolCallLogLine(line: ToolCallLogLine): string {
-  return `${HOST_LOG_PREFIX} tool=${line.name} id=${line.callId} ${line.outcome}`;
+  return `${HOST_LOG_PREFIX} tool=${line.name} id=${line.callId} ${redactSandAutoReviewInlineSecrets(line.outcome)}`;
 }
 
 type Loose = Record<string, any>;

@@ -6,7 +6,7 @@ export interface CoordinatorPortRequesterContext<TContents = unknown, TFrame = u
 }
 
 export const UNTRUSTED_COORDINATOR_PORT_REQUESTER_MESSAGE =
-  "Coordinator access is only available from the Sand app window.";
+  "Coordinator access is only available from the Simeon app window.";
 
 export class UntrustedCoordinatorPortRequesterError extends Error {
   constructor() {

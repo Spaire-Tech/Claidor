@@ -74,7 +74,7 @@ export class AuthNetworkError extends Error {
         safeProxy = proxy.toString();
       } catch { /* keep the redacted fallback */ }
     }
-    super(`Failed to reach the Claidor API. ${rawProxy ? `Check that your proxy (${safeProxy}) is reachable.` : "If you are behind a corporate proxy, set the HTTPS_PROXY environment variable."}`);
+    super(`Failed to reach Simeon Labs' server. ${rawProxy ? `Check that your proxy (${safeProxy}) is reachable.` : "If you are behind a corporate proxy, set the HTTPS_PROXY environment variable."}`);
     this.name = "AuthNetworkError";
     this.cause = cause;
   }

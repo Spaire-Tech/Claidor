@@ -107,7 +107,7 @@ export function createCursorSandInference(options: CursorSandInferenceOptions): 
     // which Simeon Labs' server does not serve: one 404 per turn and per
     // nudge, then the fallback (design-audit-ledger.md F-004, F-123). The
     // fallback is answered directly unless SAND_CONNECT_SERVED=1.
-    resolvePrivacyMode: () => isConnectServed() ? resolveSandRunPrivacyMode(auth) : Promise.resolve(SAND_RUN_PRIVACY_MODE_FALLBACK),
+    resolvePrivacyMode: () => isConnectServed(process.env, "aiserver.v1.DashboardService") ? resolveSandRunPrivacyMode(auth) : Promise.resolve(SAND_RUN_PRIVACY_MODE_FALLBACK),
     getGeminiVideoAttachedMediaUrlProvider: () => options.isGeminiVideoDeveloperApiEnabled?.() === true ? attachedMedia : undefined,
     createSession(onRequestId, sessionOptions) {
       const mockResponse = process.env.SAND_AGENT_MOCK_RESPONSE;
