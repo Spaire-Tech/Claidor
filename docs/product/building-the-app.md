@@ -15,7 +15,7 @@ npm run verify         # audit the bundle — a required gate
 open "dist/Simeon.app"
 ```
 
-Quit any running Simeon first (**Cmd+Q**). Do not open the copy in Applications or the Dock — that is the previous install.
+Quit any running Simeon first (**Cmd+Q**). The bundle is ad-hoc signed (`scripts/lib/codesign.mjs`, identity `-`) until an Apple certificate exists, and an ad-hoc signature is different on every build, so macOS re-keys the Keychain entries (`safeStorage`) and the privacy grants for each new package: expect to sign in again after installing a build (F-229, 25 September 2026). Do not open the copy in Applications or the Dock — that is the previous install.
 
 ## What that `.app` actually contains
 

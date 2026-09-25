@@ -23,6 +23,10 @@ export interface PreventableEvent {
   preventDefault(): void;
 }
 
+/** `render-process-gone` reasons that get the main window reloaded (Electron's names). */
+export const RENDERER_RELOAD_REASONS: ReadonlySet<string> = new Set(["crashed", "oom", "abnormal-exit", "launch-failed", "integrity-failure"]);
+export const MAX_RENDERER_RELOADS = 3;
+
 export interface MainWebContents {
   send(channel: string, payload: unknown): void;
   isDestroyed(): boolean;
@@ -429,6 +433,16 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
 
   deps.app.on("window-all-closed", () => {
     if (platform !== "darwin") deps.app.quit();
+  });
+  // A renderer that died (crash, out of memory) left a blank window that only
+  // a restart cured (F-223, 25 September 2026): reload it, a few times at most.
+  let rendererReloads = 0;
+  deps.app.on("render-process-gone", (_event, contents, details) => {
+    const window = mainWindow;
+    if (window == null || window.webContents !== contents || contents.isDestroyed()) return;
+    if (!RENDERER_RELOAD_REASONS.has(details.reason) || rendererReloads >= MAX_RENDERER_RELOADS) return;
+    rendererReloads += 1;
+    contents.reload();
   });
   deps.app.on("before-quit", (event) => {
     appIsQuitting = true;
