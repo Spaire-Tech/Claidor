@@ -969,6 +969,20 @@ nothing; removal is a decision), the Sonnet-versus-Luna fallback, the
 plain credential files in the box (Grok Bot's design), the settings
 store's lack of a lock, the forced-off notifications. Not run on a Mac.
 
+## Batch 6 of the ledger was worked (25 September 2026, night)
+
+Models and spend, speech and media, web and search (F-117..F-133,
+F-234..F-247, F-286..F-296), one ledger note
+(`batch6-models-spend-media-web`). Spend: the proxy refuses a priced
+model with no role (Astra, Opus, Gemini Pro) instead of serving it at its
+price to any bearer that names it; the Mac escape-hatch turn runs under
+the hidden budget; the avatar Generate asks for low quality; the image
+usage reaches the turn meter. Search: cited pages keep their URLs, an
+answer that ran no search says so, the server's refusals reach the model
+as sentences, and a hung search gives up after 90 s. The five capability
+prices meter today and are the founder's to confirm against the price
+pages. Not run on a Mac.
+
 ## The eight features were served overnight (25–26 September 2026)
 
 "work independently and do all … always assume that we already have it."

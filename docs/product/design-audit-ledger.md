@@ -141,22 +141,22 @@ until its row says so. Columns:
 | F-115 | keys-and-auth | note | docs-wrong | confirmed | sign-in-copy | fixed | docs/product/app-sign-in.md still says the round trip was never run and names api.claidor.com | `docs/product/app-sign-in.md` |
 | F-116 | keys-and-auth | note | dead-service | confirmed | dead-cursor-services | fixed | Every Connect RPC to our host carries x-cursor-checksum, x-ghost-mode and the bearer, after a privacy lookup that 404s | `desktop/source/shared/node/cursor-backend/cursor-inference.ts` |
 | F-117 | models-and-spend | blocking | unwired | confirmed | hidden-turn-cap | fixed | Hidden-turn budget of 40 never reaches the executor: the production owner input drops `hidden` | `desktop/source/host/host-runner-composition.ts` |
-| F-118 | models-and-spend | major | spend | unverified | - | - | Auto-review classifier runs in shadow by default: one Luna call per Shell/MCP/computer action, verdict discarded | `desktop/source/host/runner/sand-auto-review.ts` |
-| F-119 | models-and-spend | major | unwired | unverified | - | - | The model picker's choice never reaches the executor; the loop's model is decided only by box env | `desktop/source/host/host-runner-composition.ts` |
-| F-120 | models-and-spend | minor | design-violation | unverified | - | - | Luna is offered in the picker as the agent's model, against pricing.py's own rule | `desktop/source/electron-main/models/claidor-model-catalog.ts` |
-| F-121 | models-and-spend | minor | docs-wrong | unverified | - | - | Claude Sonnet fallback is unreachable; the only fallback is Luna on a rate-limit regex, unannounced | `desktop/source/host/extensions/inference/provider-session.ts` |
-| F-122 | models-and-spend | minor | spend | unverified | - | - | The proxy serves withheld models (Astra 10x, Opus 5x) to any bearer that names them | `server/polar/desktop/endpoints.py` |
+| F-118 | models-and-spend | major | spend | unverified | batch6-models-spend-media-web | known-limit | Auto-review classifier runs in shadow by default: one Luna call per Shell/MCP/computer action, verdict discarded | `desktop/source/host/runner/sand-auto-review.ts` |
+| F-119 | models-and-spend | major | unwired | unverified | batch6-models-spend-media-web | needs-mac | The model picker's choice never reaches the executor; the loop's model is decided only by box env | `desktop/source/host/host-runner-composition.ts` |
+| F-120 | models-and-spend | minor | design-violation | unverified | batch6-models-spend-media-web | known-limit | Luna is offered in the picker as the agent's model, against pricing.py's own rule | `desktop/source/electron-main/models/claidor-model-catalog.ts` |
+| F-121 | models-and-spend | minor | docs-wrong | unverified | batch6-models-spend-media-web | fixed | Claude Sonnet fallback is unreachable; the only fallback is Luna on a rate-limit regex, unannounced | `desktop/source/host/extensions/inference/provider-session.ts` |
+| F-122 | models-and-spend | minor | spend | unverified | batch6-models-spend-media-web | fixed | The proxy serves withheld models (Astra 10x, Opus 5x) to any bearer that names them | `server/polar/desktop/endpoints.py` |
 | F-123 | models-and-spend | minor | dead-service | confirmed | dead-cursor-services | fixed | A Cursor Connect RPC (GetUserPrivacyMode) is attempted on api.simeonlabs.com at the start of every turn | `desktop/source/host/runner/turn-run-shell.ts` |
-| F-124 | models-and-spend | major | risk | unverified | - | - | `CLAIDOR_FETCH_TIMEOUT_MS = 45_000` aborts the whole streamed model call, not just the connect | `desktop/source/host/extensions/inference/provider-session.ts` |
+| F-124 | models-and-spend | major | risk | unverified | batch6-models-spend-media-web | fixed | `CLAIDOR_FETCH_TIMEOUT_MS = 45_000` aborts the whole streamed model call, not just the connect | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-125 | models-and-spend | note | spend | confirmed | hidden-turn-cap | known-limit | Every reply nudge and closing nudge is a fresh full turn on Terra at effort high with the whole brief | `desktop/source/host/extensions/transcript/turn-runtime.ts` |
-| F-126 | models-and-spend | note | unmeasured | unverified | - | - | Hourly credit brake makes the 5,000-step asked cap unreachable; how the 402 reads in the chat is unmeasured | `server/polar/config.py` |
-| F-127 | models-and-spend | minor | naming | unverified | - | - | User-facing error strings say Claidor and expose env-variable names | `desktop/source/host/extensions/transcript/agent-run-error.ts` |
-| F-128 | models-and-spend | note | dead-service | unverified | - | - | Dead providers (codex, claude-code, openrouter) and the Router panel: unreachable, but still shipped as code, SDK and strings | `desktop/source/host/extensions/inference/provider-session.ts` |
-| F-129 | models-and-spend | minor | docs-wrong | unverified | - | - | Four capability prices are live and metering although pricing.py says nobody should be charged against them yet | `server/polar/desktop/pricing.py` |
-| F-130 | models-and-spend | minor | design-violation | unverified | - | - | Usage tab: monthly allowance under a 'Weekly usage' label; picker shows a 1.05M context while the loop compacts at 200k | `desktop/source/electron-main/account/cursor-profile.ts` |
+| F-126 | models-and-spend | note | unmeasured | unverified | batch6-models-spend-media-web | needs-mac | Hourly credit brake makes the 5,000-step asked cap unreachable; how the 402 reads in the chat is unmeasured | `server/polar/config.py` |
+| F-127 | models-and-spend | minor | naming | unverified | batch6-models-spend-media-web | fixed | User-facing error strings say Claidor and expose env-variable names | `desktop/source/host/extensions/transcript/agent-run-error.ts` |
+| F-128 | models-and-spend | note | dead-service | unverified | batch6-models-spend-media-web | known-limit | Dead providers (codex, claude-code, openrouter) and the Router panel: unreachable, but still shipped as code, SDK and strings | `desktop/source/host/extensions/inference/provider-session.ts` |
+| F-129 | models-and-spend | minor | docs-wrong | unverified | batch6-models-spend-media-web | known-limit | Four capability prices are live and metering although pricing.py says nobody should be charged against them yet | `server/polar/desktop/pricing.py` |
+| F-130 | models-and-spend | minor | design-violation | unverified | batch6-models-spend-media-web | needs-mac | Usage tab: monthly allowance under a 'Weekly usage' label; picker shows a 1.05M context while the loop compacts at 200k | `desktop/source/electron-main/account/cursor-profile.ts` |
 | F-131 | models-and-spend | note | hardcoded | refuted | memory | known-limit | Machinery sessions still request Cursor model ids that are silently remapped | `desktop/source/host/extensions/memory/production.ts` |
-| F-132 | models-and-spend | note | naming | unverified | - | - | A Cursor pricing link survives in error actions | `desktop/source/host/extensions/transcript/agent-run-error.ts` |
-| F-133 | models-and-spend | note | spend | unverified | - | - | The escape-hatch coordinator turn and group-chat turns run with no model-call budget | `desktop/source/host/extensions/inference/provider-session.ts` |
+| F-132 | models-and-spend | note | naming | unverified | batch6-models-spend-media-web | fixed | A Cursor pricing link survives in error actions | `desktop/source/host/extensions/transcript/agent-run-error.ts` |
+| F-133 | models-and-spend | note | spend | unverified | batch6-models-spend-media-web | fixed | The escape-hatch coordinator turn and group-chat turns run with no model-call budget | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-134 | box-and-computer | major | risk | refuted | local-security | fixed | Box exec daemon on 127.0.0.1:1337 with static bearer "local"; any local process can run commands in the box and read the account token | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-135 | box-and-computer | major | risk | refuted | local-security | known-limit | noVNC/websockify on 127.0.0.1:6080/6081 with no credential: any web page on the Mac can drive the agent's logged-in desktop | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-136 | box-and-computer | major | unwired | confirmed | box-substrate | needs-mac | The reconstructed box-exec-daemon supports no computer-use, no write, no MCP load, and rejects paths outside /workspace — and the container is told to use the mounted daemon | `desktop/source/box-exec-daemon/server.ts` |
@@ -257,20 +257,20 @@ until its row says so. Columns:
 | F-231 | electron-main-app | note | risk | unverified | batch4-first-run | fixed | Local Docker box start at launch swallows every error | `desktop/source/electron-main/main-production-services.ts` |
 | F-232 | electron-main-app | note | dead-service | unverified | batch4-cursor-leftovers | fixed | Desktop telemetry, product analytics and process metrics are dead-but-armed: if SAND_DISABLE_TELEMETRY is anything but '1' they post Connect RPCs our server does not serve every 3 s | `desktop/scripts/lib/build-asar.mjs` |
 | F-233 | electron-main-app | note | hardcoded | unverified | batch4-cursor-leftovers | known-limit | Windows installer trust is pinned to Anysphere's signing certificate | `desktop/source/electron-main/update/win32-installer.ts` |
-| F-234 | speech-and-media | blocking | unwired | unverified | - | - | GenerateImage succeeds, is metered, and then tells the model it failed | `desktop/source/packages/agent/tools/core/generate-image.ts` |
-| F-235 | speech-and-media | major | design-violation | unverified | - | - | The GenerateImage tool contradicts the brief on how a picture is shown | `desktop/source/packages/agent/tools/core/generate-image.ts` |
+| F-234 | speech-and-media | blocking | unwired | unverified | batch6-models-spend-media-web | needs-mac | GenerateImage succeeds, is metered, and then tells the model it failed | `desktop/source/packages/agent/tools/core/generate-image.ts` |
+| F-235 | speech-and-media | major | design-violation | unverified | batch6-models-spend-media-web | fixed | The GenerateImage tool contradicts the brief on how a picture is shown | `desktop/source/packages/agent/tools/core/generate-image.ts` |
 | F-236 | speech-and-media | major | dead-service | confirmed | video-served | fixed | 'watchVideo' is advertised to the agent, not offered, and silently dispatches computerUse instead | `desktop/source/host/runner/system-prompt.ts` |
 | F-237 | speech-and-media | minor | unwired | confirmed | video-served | known-limit | Chat accepts a 200 MB video attachment that no path can consume | `desktop/source/shared/media/attachment-limits.ts` |
-| F-238 | speech-and-media | major | risk | unverified | - | - | Microphone usage description is neither set nor read; if inherited it names Grok Bot | `desktop/scripts/package-macos.mjs` |
-| F-239 | speech-and-media | minor | docs-wrong | unverified | - | - | Server docstrings still describe the en-US language force and an OpenClaw speech caller | `server/polar/desktop/capabilities.py` |
-| F-240 | speech-and-media | minor | spend | unverified | - | - | Avatar Generate draws at auto quality for a thumbnail | `desktop/source/shared/node/cursor-backend/claidor-generate-image.ts` |
-| F-241 | speech-and-media | minor | unmeasured | unverified | - | - | Image usage returned by the server is dropped before the turn meter | `desktop/source/host/extensions/attachments/generate-image-service.ts` |
-| F-242 | speech-and-media | minor | naming | unverified | - | - | User-visible sign-in errors say Claidor | `desktop/source/electron-main/account/cursor-auth.ts` |
-| F-243 | speech-and-media | minor | naming | unverified | - | - | A profile without a name is called 'Grok' by the host | `desktop/source/host/extensions/session/session-summaries.ts` |
-| F-244 | speech-and-media | minor | risk | unverified | - | - | sand-media:// serves any local audio or video file on disk | `desktop/source/electron-main/media/media-protocol.ts` |
-| F-245 | speech-and-media | note | docs-wrong | unverified | - | - | Dead Cursor-era strings and branches remain inside the GenerateImage tool | `desktop/source/packages/agent/tools/core/generate-image.ts` |
+| F-238 | speech-and-media | major | risk | unverified | batch6-models-spend-media-web | fixed | Microphone usage description is neither set nor read; if inherited it names Grok Bot | `desktop/scripts/package-macos.mjs` |
+| F-239 | speech-and-media | minor | docs-wrong | unverified | batch6-models-spend-media-web | fixed | Server docstrings still describe the en-US language force and an OpenClaw speech caller | `server/polar/desktop/capabilities.py` |
+| F-240 | speech-and-media | minor | spend | unverified | batch6-models-spend-media-web | fixed | Avatar Generate draws at auto quality for a thumbnail | `desktop/source/shared/node/cursor-backend/claidor-generate-image.ts` |
+| F-241 | speech-and-media | minor | unmeasured | unverified | batch6-models-spend-media-web | fixed | Image usage returned by the server is dropped before the turn meter | `desktop/source/host/extensions/attachments/generate-image-service.ts` |
+| F-242 | speech-and-media | minor | naming | unverified | batch6-models-spend-media-web | fixed | User-visible sign-in errors say Claidor | `desktop/source/electron-main/account/cursor-auth.ts` |
+| F-243 | speech-and-media | minor | naming | unverified | batch6-models-spend-media-web | fixed | A profile without a name is called 'Grok' by the host | `desktop/source/host/extensions/session/session-summaries.ts` |
+| F-244 | speech-and-media | minor | risk | unverified | batch6-models-spend-media-web | known-limit | sand-media:// serves any local audio or video file on disk | `desktop/source/electron-main/media/media-protocol.ts` |
+| F-245 | speech-and-media | note | docs-wrong | unverified | batch6-models-spend-media-web | known-limit | Dead Cursor-era strings and branches remain inside the GenerateImage tool | `desktop/source/packages/agent/tools/core/generate-image.ts` |
 | F-246 | speech-and-media | note | naming | refuted | memory | known-limit | Summarization model constant is named gemini-2.5-flash | `desktop/source/shared/agents/sand-agent-model.ts` |
-| F-247 | speech-and-media | note | risk | unverified | - | - | Token refresh falls back to api2.cursor.sh when neither backend variable is set | `desktop/source/electron-main/account/cursor-auth.ts` |
+| F-247 | speech-and-media | note | risk | unverified | batch6-models-spend-media-web | fixed | Token refresh falls back to api2.cursor.sh when neither backend variable is set | `desktop/source/electron-main/account/cursor-auth.ts` |
 | F-248 | server-desktop-api | major | naming | unverified | batch5-server-and-persistence | fixed | Sign-in confirmation page still says Caisra | `server/polar/desktop/app_sign_in.py` |
 | F-249 | server-desktop-api | minor | naming | unverified | batch5-server-and-persistence | fixed | App-side user-facing strings and tool descriptions still say Claidor | `desktop/source/electron-main/account/cursor-auth.ts` |
 | F-250 | server-desktop-api | minor | naming | unverified | batch5-server-and-persistence | fixed | The agent's brief still names cursor.com | `desktop/source/host/runner/system-prompt.ts` |
@@ -309,17 +309,17 @@ until its row says so. Columns:
 | F-283 | files-attachments-artifacts | note | unmeasured | confirmed | attachment-topology | fixed | No offline tests cover staging, the attachment edge, file transfer, download naming or the spill | `desktop/tests/pdf-read.test.mjs` |
 | F-284 | files-attachments-artifacts | note | dead-service | confirmed | cloud-agents-channels | coming-soon | durable-file-policy only serves box-store-sync, whose client cannot be constructed | `desktop/source/host/durable-file-policy.ts` |
 | F-285 | files-attachments-artifacts | note | design-violation | confirmed | cards-to-build | - | File-transfer tools speak of 'the single computer connected today' with no registry | `desktop/source/host/runner/tools/sand-file-transfer-tools.ts` |
-| F-286 | web-and-search | major | unwired | unverified | - | - | WebSearch throws away every cited page: the agent gets Luna's summary and no URLs | `desktop/source/packages/agent/tools/core/web-search.ts` |
-| F-287 | web-and-search | major | design-violation | unverified | - | - | Site-visit tracking records every host the agent's browser opens and ships it to the backend over Cursor's AnalyticsService — against the stated privacy rationale, and to a route that 404s | `desktop/source/host/extensions/inference/capability-tools.ts` |
-| F-288 | web-and-search | minor | dead-service | unverified | - | - | Bot-wall detection is wired only to telemetry; neither the agent nor the person is told a page was a challenge screen | `desktop/source/host/runner/bot-block-detection.ts` |
-| F-289 | web-and-search | minor | risk | unverified | - | - | Local web fetch has no redirect re-check or DNS pinning, unlike the link-preview fetcher beside it | `desktop/source/shared/node/web-fetch.ts` |
-| F-290 | web-and-search | minor | risk | unverified | - | - | Search may never search: `tool_choice: auto` lets Luna answer from memory and the tool still labels it 'Web search results' | `server/polar/desktop/capabilities.py` |
-| F-291 | web-and-search | minor | unwired | unverified | - | - | Server refusals of a search (too long, monthly 402, hourly 40201) reach the model as 'An error occurred while searching the web' | `desktop/source/packages/agent/tools/core/web-search.ts` |
-| F-292 | web-and-search | note | spend | unverified | - | - | The search door meters on a price nobody has checked, while the file says nobody should be charged until someone has | `server/polar/desktop/pricing.py` |
-| F-293 | web-and-search | minor | docs-wrong | unverified | - | - | capabilities-measured.md names `SAND_CLAIDOR_FULL_AGENT=1` as the proving run; that flag has been on by default since 22 September | `docs/product/capabilities-measured.md` |
-| F-294 | web-and-search | note | docs-wrong | unverified | - | - | agent-contract.md cites `MANAGED_WEB_SEARCH_POLICY_PROMPT` as live; the reconstruction has no such prompt and no 'never claim you searched' line | `docs/product/agent-contract.md` |
-| F-295 | web-and-search | minor | risk | unverified | - | - | A hung search can hold the turn for ten minutes: no client-side deadline on the search call, 600 s on the server | `desktop/source/host/extensions/inference/capability-tools.ts` |
-| F-296 | web-and-search | note | hardcoded | unverified | - | - | `DEFAULT_SAND_MODEL` ("gpt-5.5-high-fast") is not in the server catalogue | `desktop/source/host/host-runner-composition.ts` |
+| F-286 | web-and-search | major | unwired | unverified | batch6-models-spend-media-web | fixed | WebSearch throws away every cited page: the agent gets Luna's summary and no URLs | `desktop/source/packages/agent/tools/core/web-search.ts` |
+| F-287 | web-and-search | major | design-violation | unverified | batch6-models-spend-media-web | fixed | Site-visit tracking records every host the agent's browser opens and ships it to the backend over Cursor's AnalyticsService — against the stated privacy rationale, and to a route that 404s | `desktop/source/host/extensions/inference/capability-tools.ts` |
+| F-288 | web-and-search | minor | dead-service | unverified | batch6-models-spend-media-web | known-limit | Bot-wall detection is wired only to telemetry; neither the agent nor the person is told a page was a challenge screen | `desktop/source/host/runner/bot-block-detection.ts` |
+| F-289 | web-and-search | minor | risk | unverified | batch6-models-spend-media-web | fixed | Local web fetch has no redirect re-check or DNS pinning, unlike the link-preview fetcher beside it | `desktop/source/shared/node/web-fetch.ts` |
+| F-290 | web-and-search | minor | risk | unverified | batch6-models-spend-media-web | fixed | Search may never search: `tool_choice: auto` lets Luna answer from memory and the tool still labels it 'Web search results' | `server/polar/desktop/capabilities.py` |
+| F-291 | web-and-search | minor | unwired | unverified | batch6-models-spend-media-web | fixed | Server refusals of a search (too long, monthly 402, hourly 40201) reach the model as 'An error occurred while searching the web' | `desktop/source/packages/agent/tools/core/web-search.ts` |
+| F-292 | web-and-search | note | spend | unverified | batch6-models-spend-media-web | known-limit | The search door meters on a price nobody has checked, while the file says nobody should be charged until someone has | `server/polar/desktop/pricing.py` |
+| F-293 | web-and-search | minor | docs-wrong | unverified | batch6-models-spend-media-web | fixed | capabilities-measured.md names `SAND_CLAIDOR_FULL_AGENT=1` as the proving run; that flag has been on by default since 22 September | `docs/product/capabilities-measured.md` |
+| F-294 | web-and-search | note | docs-wrong | unverified | batch6-models-spend-media-web | fixed | agent-contract.md cites `MANAGED_WEB_SEARCH_POLICY_PROMPT` as live; the reconstruction has no such prompt and no 'never claim you searched' line | `docs/product/agent-contract.md` |
+| F-295 | web-and-search | minor | risk | unverified | batch6-models-spend-media-web | fixed | A hung search can hold the turn for ten minutes: no client-side deadline on the search call, 600 s on the server | `desktop/source/host/extensions/inference/capability-tools.ts` |
+| F-296 | web-and-search | note | hardcoded | unverified | batch6-models-spend-media-web | fixed | `DEFAULT_SAND_MODEL` ("gpt-5.5-high-fast") is not in the server catalogue | `desktop/source/host/host-runner-composition.ts` |
 | F-297 | onboarding-first-run | major | unwired | unverified | batch4-first-run | fixed | Intro stays owed when its run throws, so it re-runs on every open | `desktop/source/host/extensions/transcript/agent-lifecycle.ts` |
 | F-298 | onboarding-first-run | major | spend | confirmed | hidden-turn-cap | known-limit | The intro is two hidden turns, so its cap is 80 model calls, not 40 | `desktop/source/host/extensions/transcript/agent-lifecycle.ts` |
 | F-299 | onboarding-first-run | major | hardcoded | unverified | batch4-reads-and-docs | fixed | The default agent name is 'Grok' in six places; a fallback agent on a fresh box is named Grok | `desktop/source/shared/agents/agents.ts` |
@@ -1532,3 +1532,74 @@ folders beyond the two volumes hold browser logins and installs
 (`docker exec simeon-box ls -la /home/box`) before a third volume is
 added; F-375 the local-exec daemon's credential routes are served since
 25 September (F-485) and not yet run.
+
+### batch6-models-spend-media-web (25 September 2026, night)
+
+Batch 6: models and spend, speech and media, web and search (37 rows,
+F-117..F-133, F-234..F-247, F-286..F-296). The founder: "we shouldn't be
+spending more than we should."
+
+**Spend, fixed:** F-122, the proxy refuses a priced row that has no role
+(Astra at 10x, Opus at 5x, Gemini Pro): they stay in the catalogue so an
+old usage row still means something, and a bearer that names one gets
+"This model is not offered by the desktop app" before any upstream call
+(`endpoints.py`; `tests/desktop/test_endpoints.py`
+`TestWithheldModelsAreNotServed`). F-133, the Mac escape-hatch turn runs
+under the hidden budget (40): `runRoutedProviderText` takes a budget and
+spends it once per call, the hatch makes at most two calls a message and
+the AI SDK's `maxSteps` (8) caps the tool steps inside each
+(`inference-router.ts`, `provider-session.ts`); the group-chat member
+turn is one cheap call. F-240, the avatar Generate asks gpt-image-1 for
+`low` quality (a thumbnail). F-241, the server's image usage object now
+reaches the tool's `addTurnUsage`. Already true, closed by reading:
+F-117 and F-123 (earlier clusters); F-121, the Luna fallback on a 429
+writes a `[claidor] model-fallback` line since 25 September; F-124, the
+45 s deadline covers the headers only since 25 September; F-296,
+`DEFAULT_CLAIDOR_MODEL` is `gpt-5.6-terra`. Known limits: F-118, the
+risky-or-safe classifier is one Luna call at low effort per reviewed
+action, Grok Bot's design, and since 25 September the verdict is used;
+F-120, the picker offers Luna beside Terra, which can only lower a
+person's spend (the pricing rule is about the default, which stays
+Terra); F-125 and F-131 as before; F-128, the dead providers and the
+Router are the founder's to delete; F-129 and F-292, the five capability
+prices (four doors and the search) meter today and are to confirm by the
+founder against the price pages (`pricing.py` says so now); a door that
+did not meter would be the larger risk. Needs a Mac: F-119, whether the
+picker's choice reaches the executor (choose Luna, read the
+`[claidor] model=` line); F-126, how the hourly brake's refusal reads in
+chat; F-130, the meter's title and context figure are the pinned
+renderer's bytes.
+
+**Media:** F-235 fixed, the GenerateImage result tells the agent to
+attach the file with SendMessage, the way the brief says, instead of
+claiming it is already displayed. F-239 fixed, the speech docstring no
+longer names an OpenClaw caller. Already true: F-238 (F-230), F-242 and
+F-247 (sign-in copy, cluster 2), F-243 (F-299), F-236, F-237, F-246.
+Known limits: F-244, `sand-media://` serves any local audio or video
+path the renderer names, which is ours and names transcript entries;
+scoping it to the data root is a decision because attachments can live
+anywhere; F-245, Cursor-era strings inside a reconstructed file are
+cosmetic. Needs a Mac: F-234, a generated image "succeeds then fails":
+the persist hook returns `absolutePath` as the service expects, so the
+mechanism is not readable here; the line is the tool's result in the
+box log.
+
+**Web and search, fixed:** F-286, a cited page beside the answer is no
+longer dropped, so the agent gets each URL and title to cite or fetch
+(`web-search.ts`). F-290, the server already counts `searches`; the tool
+now labels an answer that ran no search "Answer without a web search"
+instead of "Web search results". F-291, the server's refusals (too long,
+the monthly allowance, the hourly brake) reach the model as the server's
+sentence with the right classification instead of "An error occurred".
+F-295, the search call carries a 90 s client deadline
+(`capability-tools.ts`). F-287, site-visit tracking goes through
+`trackEvent` on product analytics, whose gate is off in Simeon's table
+(F-303), so nothing leaves the box; the hook stays for the day the
+founder wants it. Already true: F-289 (redirect re-check since 25
+September), F-294 (`agent-contract.md` carries the superseded banner).
+Corrected: F-293 (`capabilities-measured.md`). Known limit: F-288, the
+bot-wall detector reports to telemetry only; telling the agent is a
+tool-result change to make on a Mac with a real challenge page.
+`desktop/tests/spend-batch6.test.mjs` measures the search deadline and
+count, the hatch budget, the avatar quality, the usage pass-through, the
+result text and the web-search changes offline.

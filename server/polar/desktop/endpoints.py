@@ -1056,7 +1056,11 @@ async def _proxy(
     model = model_by_id(
         model_id if model_id is not None else str(payload.get("model", ""))
     )
-    if model is None:
+    if model is None or model.role is None:
+        # A priced row with no role (Astra at 10x, Opus at 5x, Gemini Pro) is
+        # in the catalogue so an old usage row still means something, not so
+        # a bearer can name it and be served at that price (F-122,
+        # 25 September 2026). What the proxy serves is what it offers.
         return _error(
             "invalid_request_error",
             "This model is not offered by the desktop app.",
@@ -1221,12 +1225,11 @@ async def proxy_speech(
 ) -> Response:
     """Turn a reply into a voice.
 
-    The engine already knows how to do this: OpenClaw ships a speech
-    provider that posts OpenAI's own `/v1/audio/speech` shape at whatever
-    base URL it is given (`openclaw/src/tts/`), and we keep that extension
-    in the packaged runtime. So the app does not call this; the engine
-    does, with its base URL pointed here, and this is the piece that was
-    missing — a door that meters.
+    OpenAI's own `/v1/audio/speech` shape in, audio bytes out, metered.
+    Nothing in Simeon calls it yet (25 September 2026: the app has
+    dictation and no text-to-speech; an earlier docstring here named an
+    OpenClaw speech provider that left the tree on 18 September, F-239).
+    It stays as the metered door for the day the app speaks.
 
     Unlike the model proxy there is nothing to read back: the answer is
     audio bytes and carries no usage object. The characters we were asked

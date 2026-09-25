@@ -70,6 +70,8 @@ export function createProductionAvatarImagesAdapter(
         generate: async (description) => {
           generator ??= createClaidorGenerateImageService({
             getAccessToken: () => context.requireAccount().getAuthService().then((auth) => auth.getValidAccessToken()),
+            // A thumbnail: the cheapest quality gpt-image-1 offers (F-240, 25 September 2026).
+            quality: "low",
           });
           return await generator(createContext().with(loggerKey, { log() {} }), description);
         },

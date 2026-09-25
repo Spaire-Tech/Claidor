@@ -485,8 +485,11 @@ async function writeGeneratedImage(
 
 function resultToString(result: GenerateImageResult): string {
   switch (result.result.case) {
+    // Simeon draws a generated picture only when the agent attaches it: the
+    // brief says so ("attach the file:// path from its result with
+    // SendMessage"), and the Cursor-era sentence here said the opposite (F-235).
     case "success": return `Successfully generated image at: ${result.result.value.filePath}
-Always use this absolute path when referring to the image. Do not repeat this image as a Markdown reference; it is already displayed to the user.`;
+Always use this absolute path when referring to the image. It is not shown to the user on its own: attach it with SendMessage (a file:// attachment of that path) to show it. Do not paste it as a Markdown image.`;
     case "error": return `Failed to generate image, error: ${result.result.value.error}`;
     case undefined: return "An unknown error occurred.";
   }

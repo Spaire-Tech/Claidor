@@ -15,7 +15,7 @@ export type SandGenerateImageServiceFn = (
   filePath: string,
   referenceImages?: readonly { data: string; mimeType: string }[],
   aspectRatio?: string,
-) => Promise<{ filePath: string; imageData: string }>;
+) => Promise<{ filePath: string; imageData: string; usage?: unknown }>;
 
 let registeredSandGenerateImageService: SandGenerateImageServiceFn | undefined;
 
@@ -32,7 +32,8 @@ export function createSandGenerateImageService<Context>(auth: GenerateImageAuth,
     const generated = await generateImage(ctx, description, referenceImages, aspectRatio);
     const persisted = await options.persistImage(Buffer.from(generated.imageData, "base64"), generated.mimeType);
     if (persisted == null) throw new SandGenerateImagePersistError("Failed to save the generated image into the agent's media store.");
-    return { filePath: persisted.absolutePath, imageData: generated.imageData };
+    // The server's usage object rides along so the tool's `addTurnUsage` sees it (F-241).
+    return { filePath: persisted.absolutePath, imageData: generated.imageData, ...(generated.usage === undefined ? {} : { usage: generated.usage }) };
   };
   registeredSandGenerateImageService = service as SandGenerateImageServiceFn;
   return service;

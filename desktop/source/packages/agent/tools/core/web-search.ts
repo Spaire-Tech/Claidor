@@ -33,6 +33,8 @@ const WEB_SEARCH_MAX_FILE_SIZE = 5 * 1024 * 1024;
 export interface WebSearchServiceResult {
   readonly answer?: string;
   readonly documents: readonly { readonly title: string; readonly url: string; readonly text: string }[];
+  /** How many times the hosted search ran; 0 means the model answered without searching (F-290). */
+  readonly searches?: number;
 }
 
 export interface WebSearchServiceRequest {
@@ -101,6 +103,16 @@ function classifyWebSearchProviderError(error: unknown): CustomToolCallError | u
   const cause = typeof error === "object" && error !== null && "cause" in error ? error.cause : undefined;
   const causeMessage = getErrorMessage(cause);
   if (causeMessage !== undefined) messages.push(causeMessage);
+  // Simeon Labs' server refuses with its own sentence and a status on the
+  // error (`ClaidorApiError`: too long, the monthly allowance, the hourly
+  // brake); the model reads that sentence instead of a generic one (F-291).
+  const served = typeof error === "object" && error !== null && "status" in error && typeof (error as { status: unknown }).status === "number" ? (error as { status: number }) : undefined;
+  if (served !== undefined && directMessage !== undefined) {
+    const status = served.status;
+    const classification = status === 429 || status >= 500 ? ToolErrorClassification.PROVIDER_ERROR : status === 402 ? ToolErrorClassification.USER_REJECTED : ToolErrorClassification.INVALID_ARGS;
+    const sentence = status === 402 ? `The search was refused: ${directMessage} Do not retry it this turn.` : status === 429 || status >= 500 ? `The search service refused (${status}): ${directMessage} This may be temporary.` : `The search was refused: ${directMessage}`;
+    return new CustomToolCallError(classification, { clientVisibleErrorMessage: sentence, modelVisibleErrorMessage: sentence, error: `${directMessage}. provider_status=${status}` });
+  }
   for (const message of messages) {
     const status = parseProviderStatusFromMessage(message);
     if (status === undefined || status !== 429 && status < 500) continue;
@@ -164,7 +176,10 @@ function resultToString(result: WebSearchResult): string {
 async function buildReferencesFromServiceResult(context: Context, serviceResult: WebSearchServiceResult, toolCallId: string, diskWriteContext: DiskWriteContext | undefined): Promise<Array<{ title: string; url: string; chunk: string }>> {
   const references: Array<{ title: string; url: string; chunk: string }> = [];
   const answer = serviceResult.answer !== undefined && serviceResult.answer !== "" ? serviceResult.answer : undefined;
-  if (answer !== undefined) references.push({ title: "Web search results", url: "", chunk: answer });
+  // The reading model may answer without running the search (`tool_choice:
+  // auto`); the title says so instead of calling it results (F-290).
+  const searched = serviceResult.searches === undefined || serviceResult.searches > 0;
+  if (answer !== undefined) references.push({ title: searched ? "Web search results" : "Answer without a web search (the model answered from memory; nothing was fetched)", url: "", chunk: answer });
   for (const document of serviceResult.documents) {
     let chunk: string | undefined;
     if (diskWriteContext !== undefined && Buffer.byteLength(document.text, "utf8") > AGENT_TOOLS_FILE_WRITE_THRESHOLD_BYTES) {
@@ -180,7 +195,8 @@ async function buildReferencesFromServiceResult(context: Context, serviceResult:
       }
     }
     if (chunk === undefined) {
-      if (answer !== undefined) continue;
+      // A page beside an answer used to be dropped whole, URL included, so
+      // the agent got a summary and nothing to cite or fetch (F-286).
       chunk = document.text.slice(0, NO_DISK_INLINE_CAP_CHARS);
     }
     references.push({ title: document.title, url: document.url, chunk });
