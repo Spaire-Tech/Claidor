@@ -33,7 +33,7 @@ cannot turn on one Connect service without the others.
 | Event routines (listeners) | complete | five JSON routes + one SSE stream + workflow store + cron + Slack/GitHub apps | **backend replacement** (plus app registrations at Slack/GitHub) |
 | Messaging channels (Discord, Slack, Teams, …) | complete, minus one module | none on the server; a connector module in the box | **wiring** (a missing client module) |
 | Cloud agents | complete | a Connect server for 17 RPCs and a coding executor | client: backend replacement; server: **mostly new** (maty covers 4 of 16) |
-| Memory sync | app side never existed | routes exist but were built for a different layout | **new product work** (formats and scopes disagree) |
+| Memory sync | app side never existed | routes exist but were built for a different layout | ~~new product work~~ **served, 25 September 2026**: the routes and their merge were reused, their names widened to the app's tree, and the client built (`memory-sync-served.md`) |
 | Cloud computer | complete | a broker, a network path, a VNC path, hosting | **backend replacement**, hosting is the new product decision |
 | Watching videos | mostly complete | a Gemini provider on the proxy; three desktop wires | **backend replacement** |
 | Publishing a skill to a team | complete | a team plugin registry | **new**, but small if scoped to "my account" |
@@ -260,10 +260,24 @@ write-back path, and a decision about which machine wins.
 
 ### 5. Wiring/backend replacement or new product functionality
 
-**New product work.** The routes were built for the old OpenClaw layout and
-nothing in the current app was ever written against them. Minimal
-one-machine backup: 4–6 days. Correct two-machine sync: 8–12. Runner
-adaptation on top: 2–3.
+**Corrected 25 September 2026, later the same day — it was a contract
+widening plus a client, not new product work, and it is served.** The
+verdict above ("new product work … 4–6 days … 8–12") counted both halves
+as rebuilds. What was actually done (`docs/product/memory-sync-served.md`):
+the server's routes, version dance, merge and table were kept as they
+were; `memory_merge.py` accepts the app's tree (`agents/<id>/memory/
+profile.md`, `log/YYYY-MM.md`, the `user-memory/` and `projects/` shards,
+`projects/<slug>/project.md`) beside the runner's three names; a fourth
+rule unions fact lines by the app's own `memoryIdFor`; `deleted: [names]`
+on the request and tombstones fill the `deleted: []` the response always
+carried; the box's credential is accepted on the two routes; and the
+client is `host/extensions/memory-sync/`, on the hooks §2 named
+(`WatchedDirectory`, `MemoryService.subscribe`, a pull at start). The
+runner is untouched (`job.ts:48` already filtered the bundle to the names
+it lays out). Not yet run on a Mac. The one thing §4 named that is still
+true: "which machine wins" for a single fact deleted on one side and
+appended on the other is the union, a known limit of a merge without base
+text.
 
 ---
 
@@ -590,8 +604,9 @@ with what is not yet run on a Mac.
    already taken; the app is ready for it.
 5. **Cloud agents**: after the cloud computer, since the executor is the
    same box.
-6. **Skill publish** scoped to "my account"; **sharing** and **memory sync**
-   last, because both are product work rather than replacement.
+6. **Skill publish** scoped to "my account"; **sharing** last, because it
+   is product work rather than replacement. (**Memory sync** was listed
+   here too and is served since later the same day, §4.5.)
 
 Not measured on a Mac: anything above. The box renewal-credential fix is the
 one thing in this commit that changes runtime behaviour; the line to read

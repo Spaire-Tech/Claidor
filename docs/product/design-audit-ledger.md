@@ -88,7 +88,7 @@ until its row says so. Columns:
 | F-062 | memory | blocking | unwired | confirmed | memory | fixed | User memory and project memory are never built: the memory extension has no createUserMemory/createProjectMemory | `desktop/source/host/host-runner-composition.ts` |
 | F-063 | memory | major | unwired | confirmed | memory | fixed | Deleting one memory from the pane never deletes: argument key mismatch (memoryId vs id) | `desktop/source/host/extensions/transcript/transcript-manager.ts` |
 | F-064 | memory | major | unwired | confirmed | memory | needs-mac | Memory list/delete/clear have no route from the Mac, and the host's 'memory' SSE channel is dropped by the coordinator | `desktop/source/host/gateway-protocol.ts` |
-| F-065 | memory | major | docs-wrong | confirmed | memory-sync | coming-soon | Memory sync to Simeon Labs' server is served, never called, and could not accept the app's memory files if it were | `server/polar/desktop/endpoints.py` |
+| F-065 | memory | major | docs-wrong | confirmed | memory-sync | fixed | Memory sync to Simeon Labs' server is served, never called, and could not accept the app's memory files if it were | `server/polar/desktop/endpoints.py` |
 | F-066 | memory | major | design-violation | confirmed | memory | fixed | If memory extraction ran, it would run on the loop model at high effort with the reply-reminder middlewares, not Luna at low | `desktop/source/host/host-runner-composition.ts` |
 | F-067 | memory | major | design-violation | confirmed | memory | fixed | An agent's own update_state memory write does not reach its prompt until a compaction, which needs ~180k tokens | `desktop/source/host/runner/sand-memory.ts` |
 | F-068 | memory | minor | naming | confirmed | memory | fixed | Two note prefixes: update_state's 'note' tier is never recognised as a note | `desktop/source/host/extensions/memory/agent-state.ts` |
@@ -275,7 +275,7 @@ until its row says so. Columns:
 | F-249 | server-desktop-api | minor | naming | unverified | - | - | App-side user-facing strings and tool descriptions still say Claidor | `desktop/source/electron-main/account/cursor-auth.ts` |
 | F-250 | server-desktop-api | minor | naming | unverified | - | - | The agent's brief still names cursor.com | `desktop/source/host/runner/system-prompt.ts` |
 | F-251 | server-desktop-api | major | unwired | unverified | - | - | Host asks Cursor's GetMe for the person's name; the served profile route is never used for it | `desktop/source/host/extensions/auth/user-full-name-service.ts` |
-| F-252 | server-desktop-api | major | unwired | confirmed | memory-sync | coming-soon | Memory sync is served and nothing feeds it; memory lives only in the box's Docker volume | `server/polar/desktop/endpoints.py` |
+| F-252 | server-desktop-api | major | unwired | confirmed | memory-sync | fixed | Memory sync is served and nothing feeds it; memory lives only in the box's Docker volume | `server/polar/desktop/endpoints.py` |
 | F-253 | server-desktop-api | minor | dead-service | unverified | - | - | About twenty LobsterAI-era routes, a vendored skills tree and their tests serve a client that no longer exists | `server/polar/desktop/endpoints.py` |
 | F-254 | server-desktop-api | minor | dead-service | unverified | - | - | Pipedream connector routes and four Render secrets remain for a superseded integration | `server/polar/desktop/endpoints.py` |
 | F-255 | server-desktop-api | minor | dead-service | unverified | - | - | Every Connect RPC the app still makes goes to api.simeonlabs.com and 404s, on both Mac and box, with telemetry on in the box | `desktop/source/shared/node/cursor-backend/cursor-inference.ts` |
@@ -381,7 +381,7 @@ until its row says so. Columns:
 | F-355 | data-and-persistence | major | docs-wrong | unverified | - | - | Copied Grok Bot user-data folder cannot be decrypted after the rename; 'nobody signs in again' is unproven and likely false | `desktop/source/electron-main/startup/desktop-user-data-bootstrap.ts` |
 | F-356 | data-and-persistence | major | risk | unverified | - | - | Startup data-root migration renames the real Grok Bot's ~/.cursor/sand into ~/.caisra | `desktop/source/electron-main/startup/startup-data-root-migration.ts` |
 | F-357 | data-and-persistence | major | risk | unverified | - | - | Every app build force-removes the box container; only two volumes survive, so box browser logins and installs are wiped on each update | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-358 | data-and-persistence | major | unwired | confirmed | memory-sync | coming-soon | Memory is never synced to Simeon Labs' server; it lives only in the box's Docker volume | `server/polar/desktop/endpoints.py` |
+| F-358 | data-and-persistence | major | unwired | confirmed | memory-sync | fixed | Memory is never synced to Simeon Labs' server; it lives only in the box's Docker volume | `server/polar/desktop/endpoints.py` |
 | F-359 | data-and-persistence | major | risk | unverified | - | - | Plaintext OAuth and channel credentials sit in the box data root, which is aliased into the model-visible /home/box/agent-data | `desktop/source/host/host-paths.ts` |
 | F-360 | data-and-persistence | major | risk | unverified | - | - | settings.json is read-modify-written by several processes with no lock and a fixed per-pid temp name | `desktop/source/shared/node/settings/sand-settings-store.ts` |
 | F-361 | data-and-persistence | minor | risk | unverified | - | - | A corrupt or version-mismatched settings.json is silently replaced by defaults | `desktop/source/shared/node/settings/sand-settings-store.ts` |
@@ -551,7 +551,7 @@ provenance name, a decision, not an `rm`); F-131 and F-246 refuted
 (Grok Bot's own assembly; a child now reads the subagent prompt).
 F-065, F-252 and F-358 are one item, memory sync to Simeon Labs' server:
 a server contract change plus a box extension, no producer, moved to
-their own cluster `memory-sync` for the founder to decide. Fixed: the
+their own cluster `memory-sync` (served later the same day, below). Fixed: the
 adapter forwards the three memory deps and the composition passes them
 for the agent's own shell (a child never writes into the agent's
 memory); the settle's executor is a hidden summarization session on
@@ -570,15 +570,28 @@ memory pane lists, deletes and clears through the new rows (F-064).
 
 ### memory-sync (25 September 2026)
 
-F-065, F-252, F-358: memory sync to Simeon Labs' server. The founder's
-decision: Coming Soon. Depends on what is not built: a producer in the
-host that ships the box's memory files, and a server contract that
-accepts them as the app writes them (the served route takes a different
-shape). No person-visible surface exists for it in the app (grepped
-`desktop/source` for memory sync: only the server route and internal
-summaries), so there is nothing to label; if one is added, it says
-Coming Soon. Memory stays in the box's Docker volume. Dreaming stays off,
-also by the founder's word: v1 keeps the legacy extraction.
+F-065, F-252, F-358: memory sync to Simeon Labs' server. First
+disposition, earlier that day: Coming Soon, "a producer in the host that
+ships the box's memory files, and a server contract that accepts them as
+the app writes them". **Corrected later the same day: fixed**, on the
+founder's rule for the batch ("always assume that we already have it").
+Both halves existed and were kept: the server's routes, merge and table
+(`server/polar/desktop/`), and the app's memory files with the hooks
+around them (`WatchedDirectory`, `MemoryService.subscribe`). Built: the
+server accepts the app's tree beside the runner's names and merges fact
+files by the app's own id, takes `deleted` and answers tombstones, and
+takes the box's credential; the host extension `memory-sync` pulls at
+start, pushes on change with base versions, applies what comes back, and
+writes one `[claidor] memory-sync` line per round.
+`docs/product/memory-sync-served.md` is the record;
+`server/tests/desktop/test_memory.py`, `test_memory_merge.py` and
+`desktop/tests/memory-sync.test.mjs` measure it offline. Needs a Mac:
+`memory-sync pushed=… pulled=…` in `/tmp/sand-host.log` after a box
+start and after a memorable turn. Still no person-visible surface in the
+app (nothing to label). Dreaming stays off, also by the founder's word:
+v1 keeps the legacy extraction. Known limit: a fact deleted on one
+machine and appended-around on another before it syncs comes back
+through the union.
 
 ### routine-write-review (25 September 2026)
 
