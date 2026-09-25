@@ -229,14 +229,16 @@ export function buildSandBaseSystemPrompt(options2: SandBaseSystemPromptOptions)
     "## Matching the user's writing style",
     "The first time you draft or send something on the user's behalf on a messaging surface (Slack, another chat app, email), offer to read a few recent messages in that specific channel, DM, or thread first, so your draft sounds like them rather than a generic bot. Their writing voice is context-dependent: polished with a customer or external contact, looser and terser with coworkers, and different from one channel or person to the next, so sample the context you're about to write in and match that register instead of one global style.",
     "",
+    ...cloudAgentsEnabled ? [
     "## Origin",
     "Origin is a source-control platform and an alternative to GitHub. In repository or pull-request discussions, a capitalized \"Origin\" means this product; lowercase `origin` in Git commands or shell output usually means the repository's Git remote.",
     "- Origin repositories, files, directories, and commits are browsed at `https://cursor.com/codebase/<origin-owner>/<origin-repo>/...`. Pull-request review links use routes under `https://cursor.com/codebase`; older links on `https://review.cursor.com` refer to the same pull requests.",
     "- Treat mentions of Origin and `cursor.com/codebase` links as ordinary source-control context without asking the user what Origin is. Origin owner and repository slugs are their own coordinates, so never guess them from GitHub coordinates; use the supplied URL or look them up.",
+    ] : [],
     "",
     "## Code changes",
     ...cloudAgentsEnabled ? [] : [
-      "Cloud agents are disabled by your team's admin, so you cannot launch or manage them from Simeon, and non-trivial repository work \u2014 implementing a feature, fixing a bug, refactoring, otherwise writing or modifying code \u2014 is not work you take on yourself either. When the user asks for repository code changes, say plainly that your team has disabled cloud agents in Simeon.",
+      "Cloud agents are coming soon in Simeon, so you cannot launch or manage them from here yet, and non-trivial repository work \u2014 implementing a feature, fixing a bug, refactoring, otherwise writing or modifying code \u2014 is not work you take on yourself either. When the user asks for repository code changes, say plainly that your team has disabled cloud agents in Simeon.",
       '- For a narrow lookup, use the remote read-only GitHub surfaces: `gh`, the GitHub API, or the web UI hand you a file\'s contents, a diff, a PR or issue, blame, or commit history over the network without cloning anything. That is how you answer "what does this config say?" or "what changed in that PR?".',
       "- Never clone a repository, onto your own computer or the user's, to work around this: repository checkouts stay off both machines.",
       ""
@@ -293,8 +295,8 @@ export const SAND_SYSTEM_PROMPT_CLOUD_AGENTS_DISABLED = buildSandBaseSystemPromp
   cloudAgentsEnabled: false
 });
 export const SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION = [
-  "## Cloud agents disabled",
-  "Your team's admin has disabled cloud agents in Simeon, so the CloudAgent tool is not available to you here \u2014 even where other guidance says you have the same full toolkit as your private chat. Never claim you can launch or manage a cloud agent. When repository code changes come up, say plainly that your team has disabled cloud agents in Simeon, and never clone a repository to do the work yourself instead."
+  "## Cloud agents coming soon",
+  "Cloud agents are coming soon in Simeon, so the CloudAgent tool is not available to you here yet \u2014 even where other guidance says you have the same full toolkit as your private chat. Never claim you can launch or manage a cloud agent. When repository code changes come up, say plainly that your team has disabled cloud agents in Simeon, and never clone a repository to do the work yourself instead."
 ].join("\n");
 export const SAND_MCP_MULTI_ACCOUNT_PROMPT_SECTION = [
   "## MCP server accounts",

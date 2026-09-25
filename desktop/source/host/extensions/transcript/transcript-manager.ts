@@ -1,3 +1,4 @@
+import { findConnectorManifest } from "../../../shared/channels.js";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -385,6 +386,9 @@ export class TranscriptManager {
   }
   connectChannel(agentId: string, platform: string, token: string): boolean {
     const value = token.trim();
+    // A platform whose manifest is coming soon has no delivery behind it; a
+    // credential for it is not taken (design-audit-ledger.md F-057).
+    if (findConnectorManifest(platform)?.availability !== "available") return false;
     return (
       value.length > 0 &&
       this.sessionStore.storeConnectorCredential(

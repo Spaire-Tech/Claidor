@@ -22,11 +22,17 @@ move.
 
 ## What was left on purpose
 
-- **`@Cursor` in Slack invite advice.** That is the Slack app's handle
-  until we have our own. Changing it would send the person to the wrong
-  bot.
-- **`cursor.com` and `/opt/cursor/artifacts` paths.** Those are real
-  addresses the cloud-agent VM still writes.
+- **`@Cursor` in Slack invite advice.** ~~That is the Slack app's handle
+  until we have our own.~~ **Corrected 25 September 2026:** the Slack
+  listener relay is Cursor's and Simeon Labs' server does not serve it,
+  so the advice sent the person to invite a bot to a channel Simeon will
+  never hear. Listeners are Coming Soon and the strings say `@Simeon`
+  (`shared/listener-availability.ts`, ledger F-053).
+- **`cursor.com` and `/opt/cursor/artifacts` paths.** ~~Those are real
+  addresses the cloud-agent VM still writes.~~ **Corrected 25 September
+  2026:** cloud agents are Cursor's BackgroundComposerService, unserved
+  here; they are Coming Soon and their prompt sections are off
+  (`shared/cloud-agents-availability.ts`, ledger F-007, F-210).
 - **The pinned 0.18.0 renderer.** Onboarding, About, and the Computer
   chrome still say Grok Bot. Those strings live in checksum-pinned
   minified bytes. The only shipped-UI write path is

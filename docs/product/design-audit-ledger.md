@@ -30,7 +30,7 @@ until its row says so. Columns:
 | F-004 | chat-turn | minor | dead-service | unverified | - | - | Every turn and every nudge first calls Cursor's GetUserPrivacyMode Connect RPC against api.simeonlabs.com, which is not served | `desktop/source/host/runner/turn-run-shell.ts` |
 | F-005 | chat-turn | minor | unwired | unverified | - | - | The claidor executor never reports a request id, so the transcript, tray errors and telemetry carry none | `desktop/source/host/host-runner-composition.ts` |
 | F-006 | chat-turn | note | hardcoded | unverified | - | - | The Agent is configured with model id 'gpt-5.5-high-fast' while the wire runs gpt-5.6-terra | `desktop/source/host/host-runner-composition.ts` |
-| F-007 | chat-turn | minor | design-violation | unverified | - | - | The agent's prompt still offers cloud agents (`cursor-agent` cards, 'launching a cloud agent') and channel delivery, both unserved, with no explanation | `desktop/source/host/runner/tools/send-message-schema.ts` |
+| F-007 | chat-turn | minor | design-violation | confirmed | cloud-agents-channels | coming-soon | The agent's prompt still offers cloud agents (`cursor-agent` cards, 'launching a cloud agent') and channel delivery, both unserved, with no explanation | `desktop/source/host/runner/tools/send-message-schema.ts` |
 | F-008 | chat-turn | minor | docs-wrong | unverified | - | - | Text does not arrive 'as texts': no split into up to three bubbles one second apart (BUBBLE_GAP_MS) | `docs/product/direction.md` |
 | F-009 | chat-turn | note | docs-wrong | unverified | - | - | direction.md's 'nine kinds, list closed' is contradicted by the host's fourteen SendMessage/transport kinds | `desktop/source/host/runner/tools/send-message-encoding.ts` |
 | F-010 | chat-turn | minor | design-violation | unverified | - | - | SAND_CLAIDOR_FULL_AGENT=off hatch is live, env-only, and still ships the audited flaws plus a 'Router error:' bubble and a Codex/Claude Code-flavoured prompt | `desktop/source/shared/inference-router.ts` |
@@ -78,9 +78,9 @@ until its row says so. Columns:
 | F-052 | workflows-channels-listeners | note | dead-service | unverified | - | - | Managed skills (including Teach's learn-from-demonstration) come from Cursor's GetManagedSkills and are never populated | `desktop/source/host/extensions/managed-setup/production.ts` |
 | F-053 | workflows-channels-listeners | minor | naming | confirmed | listeners-coming-soon | fixed | Agent-readable strings name Cursor: '@Cursor' Slack bot, 'Cursor Slack app', 'cursor-agent cards', cursor.com/agents links | `desktop/source/host/automations/automation.ts` |
 | F-054 | workflows-channels-listeners | minor | naming | confirmed | listeners-coming-soon | fixed | 'Claidor account' in prompt and status strings the agent and the person read | `desktop/source/host/automations/automation.ts` |
-| F-055 | workflows-channels-listeners | minor | unwired | unverified | - | - | SendMessage still offers a `channel` target and secret-request 'channel-credential', but no channel delivery is ever registered and both channel platforms are coming-soon | `desktop/source/host/extensions/transcript/transcript-manager.ts` |
-| F-056 | workflows-channels-listeners | note | design-violation | unverified | - | - | Two different CONNECTOR_MANIFESTS lists (discord/slack vs slack/github) feed the prompt and the Mac channels view | `desktop/source/shared/channels.ts` |
-| F-057 | workflows-channels-listeners | note | design-violation | unverified | - | - | The Mac gateway accepts a channel token typed by the person (connectChannel) | `desktop/source/host/extensions/transcript/transcript-manager.ts` |
+| F-055 | workflows-channels-listeners | minor | unwired | confirmed | cloud-agents-channels | coming-soon | SendMessage still offers a `channel` target and secret-request 'channel-credential', but no channel delivery is ever registered and both channel platforms are coming-soon | `desktop/source/host/extensions/transcript/transcript-manager.ts` |
+| F-056 | workflows-channels-listeners | note | design-violation | confirmed | cloud-agents-channels | fixed | Two different CONNECTOR_MANIFESTS lists (discord/slack vs slack/github) feed the prompt and the Mac channels view | `desktop/source/shared/channels.ts` |
+| F-057 | workflows-channels-listeners | note | design-violation | confirmed | cloud-agents-channels | fixed | The Mac gateway accepts a channel token typed by the person (connectChannel) | `desktop/source/host/extensions/transcript/transcript-manager.ts` |
 | F-058 | workflows-channels-listeners | note | spend | confirmed | listeners-coming-soon | fixed | With any listener routine saved, the box POSTs to two unserved endpoints every 30 s for ever | `desktop/source/host/extensions/automations/backend-relay-source.ts` |
 | F-059 | memory | blocking | unwired | confirmed | memory | fixed | Post-turn memory extraction never runs: the production turn shell hands the settle no memoryStore | `desktop/source/host/runner/production-turn-run-shell-adapter.ts` |
 | F-060 | memory | blocking | unwired | confirmed | memory | fixed | Even with a store, the legacy extraction arm can never fire: isMemorableExchange is defined and never passed | `desktop/source/host/runner/turn-settle.ts` |
@@ -104,7 +104,7 @@ until its row says so. Columns:
 | F-078 | cards-and-widgets | major | naming | unverified | - | - | The agent's brief and box reference docs say Claidor and Cursor | `desktop/source/host/runner/system-prompt.ts` |
 | F-079 | cards-and-widgets | major | dead-service | unverified | - | - | The brief orders repository work to CloudAgent and offers the cursor-agent card, though cloud agents are unserved | `desktop/source/host/runner/system-prompt.ts` |
 | F-080 | cards-and-widgets | major | design-violation | unverified | - | - | 'Computer asks once' is not what the local-execution gate does by default | `desktop/source/shared/local-tool-permission.ts` |
-| F-081 | cards-and-widgets | major | design-violation | unverified | - | - | secret-request stores the value in a plain-JSON channel file that only channel connectors read | `desktop/source/host/runner/tools/send-message-tool.ts` |
+| F-081 | cards-and-widgets | major | design-violation | confirmed | cloud-agents-channels | coming-soon | secret-request stores the value in a plain-JSON channel file that only channel connectors read | `desktop/source/host/runner/tools/send-message-tool.ts` |
 | F-082 | cards-and-widgets | major | unwired | unverified | - | - | The form, draft-composer, virtual-card and cookie-origin cards the permissions design relies on have no tool in the tree | `docs/product/sources/caisra-permissions.md` |
 | F-083 | cards-and-widgets | major | unwired | unverified | - | - | Artifacts-as-files: no docx/pptx/xlsx skill in the tree and no 'Documents You Make' section in the brief | `desktop/source/host/extensions/managed-setup/cursor-skills-marketplace.ts` |
 | F-084 | cards-and-widgets | minor | docs-wrong | unverified | - | - | Records say auto-review is fixed; neither says it runs in shadow | `CLAUDE.md` |
@@ -233,7 +233,7 @@ until its row says so. Columns:
 | F-207 | renderer-patches-branding | minor | risk | unverified | - | - | The brand pass is an unanchored split/join over every chunk: it can rename non-copy uses of 'Grok Bot' and quoted 'Bot' protocol values | `desktop/scripts/lib/router-renderer-patch.mjs` |
 | F-208 | renderer-patches-branding | minor | dead-service | unverified | - | - | Shipped Settings keeps Grok Bot's three tabs, and the Updates tab checks Cursor's feed unless the env guard holds | `desktop/scripts/lib/router-renderer-patch.mjs` |
 | F-209 | renderer-patches-branding | note | design-violation | unverified | - | - | Gate defaults: browserUse off and multitask on, with no Simeon decision recorded for either | `desktop/source/shared/node/experiments/simeon-gate-defaults.ts` |
-| F-210 | renderer-patches-branding | minor | design-violation | unverified | - | - | Agent-readable text still says Cursor and points at cursor.com services that do not exist here | `desktop/source/host/automations/automation.ts` |
+| F-210 | renderer-patches-branding | minor | design-violation | confirmed | cloud-agents-channels | fixed | Agent-readable text still says Cursor and points at cursor.com services that do not exist here | `desktop/source/host/automations/automation.ts` |
 | F-211 | renderer-patches-branding | minor | design-violation | unverified | - | - | Unshipped frontend/ still carries a Router with Claude Code/Codex/OpenRouter providers and an API-key field, and tests pin it | `desktop/tests/router-settings.test.mjs` |
 | F-212 | renderer-patches-branding | note | docs-wrong | unverified | - | - | NOTICE.md and desktop/README.md describe the tree as a Grok Bot reconstruction with a Git-LFS DMG that building-the-app.md says was never there | `desktop/NOTICE.md` |
 | F-213 | renderer-patches-branding | note | risk | unverified | - | - | Two build-time env vars rename the product silently and verify accepts whatever they say | `desktop/scripts/lib/config.mjs` |
@@ -495,7 +495,7 @@ until its row says so. Columns:
 | F-469 | security | major | risk | unverified | - | - | The [claidor] log lines print tool arguments and results unredacted, including text typed into the box browser | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-470 | security | major | risk | unverified | - | - | Chromium sandbox disabled for the whole app, including the agent browser webviews | `desktop/source/electron-main/main.ts` |
 | F-471 | security | major | design-violation | unverified | - | - | CopyToBox / ExternalRead reach the whole home directory with no per-file card once local execution is "always" | `desktop/source/host/local-exec/local-exec-daemon.ts` |
-| F-472 | security | blocking | dead-service | unverified | - | - | The secret card can store only a channel credential, and channels do not exist here | `desktop/source/host/extensions/transcript/widget-responses.ts` |
+| F-472 | security | blocking | dead-service | refuted | cloud-agents-channels | coming-soon | The secret card can store only a channel credential, and channels do not exist here | `desktop/source/host/extensions/transcript/widget-responses.ts` |
 | F-473 | security | major | naming | unverified | - | - | The sign-in confirmation page says Caisra | `server/polar/desktop/app_sign_in.py` |
 | F-474 | security | minor | risk | unverified | - | - | Gateway /health answers before the bearer check | `desktop/source/host/gateway-server.ts` |
 | F-475 | security | note | risk | unverified | - | - | Gateway bearer passed as a docker --env | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
@@ -647,3 +647,40 @@ guard row), reconstruction-gaps (F-039, F-374). Known limits: F-037
 (background failures reach run history and the agent's status reminder,
 not a tray; Grok Bot's own rule), F-042 (a telemetry field nobody
 receives).
+
+### cloud-agents-channels (25 September 2026)
+
+Root: a cloud agent is Cursor's BackgroundComposerService and a
+messaging channel needs a Slack or Discord connector plus a relay;
+Simeon Labs' server serves neither and no connector manifest is
+`available`. **Coming Soon**, dependencies named. Refuters: F-007 stands,
+severity up to major (the brief steered every repository task to a
+CloudAgent launch that failed every time, because the experiments
+extension has no `isCloudAgentsDisabledByTeam`, so the prompt's
+"disabled" branch never ran); F-055, F-056 (the gateway's manifests
+carried no `availability`, so the recovered Channels view failed closed
+and drew nothing), F-081 stand; F-057 stands on evidence, design refuted
+(the token field is Grok Bot's own settings surface, not a chat paste;
+the defect is host hardening); F-472 refuted on mechanism (the kind is
+hard-coded, the value is always stored; the defect is F-081's:
+stored, unconsumed, agent misinformed) and merged; F-210 partly
+duplicate (two of its seven items are internal identifiers). Fixed, at
+every reach point (`shared/cloud-agents-availability.ts`): the
+SendMessage tool no longer offers `cursor-agent` or `secret-request` and
+refuses either with the Coming Soon sentence; a `channel` the model set
+is dropped, not refused, so the text lands in the chat; the CloudAgent
+tool is not built and the brief's cloud-agent sections are off, its
+disabled section saying coming soon instead of "disabled by your team's
+admin", the `## Origin` block with them; the gateway's channel manifests
+are the shared ones with `availability`, so the Channels tab can draw
+Coming Soon; `connectChannel` takes no credential for a coming-soon
+platform; the secret store writes 0600; the secret ack no longer says a
+connection links. `SAND_CLOUD_AGENTS_SERVED=1` restores Grok Bot's
+cloud-agent paths. name-measured.md's "left on purpose" entries
+corrected. `tests/cloud-agents-channels-coming-soon.test.mjs`. **A
+founder decision is owed:** with cloud agents off, Grok Bot's disabled
+branch also tells the agent not to take on repository work itself
+("never clone a repository"); Simeon has a box with a shell, so whether
+the agent should do code work itself is a design choice, left as Grok
+Bot wrote it for v1. Needs a Mac: the Channels tab drawing Coming Soon
+rows.

@@ -1,3 +1,4 @@
+import { isCloudAgentsServed } from "../shared/cloud-agents-availability.js";
 import { dirname } from "node:path";
 import { CLAIDOR_WORKING_CONTEXT_TOKENS } from "../shared/inference/claidor-context-window.js";
 import { TranscriptMirrorOffloadPool } from "./agent-isolation/transcript-mirror-offload.js";
@@ -1544,7 +1545,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           isMultitaskEnabled: () => method(experiments, "isMultitaskEnabled")?.() ?? false,
           mcpManagement: () => mcp.management,
           isMcpMultiAccountEnabled: () => method(experiments, "isMcpMultiAccountEnabled")?.() ?? false,
-          isCloudAgentsDisabledByTeam: () => method(experiments, "isCloudAgentsDisabledByTeam")?.() ?? false,
+          // Coming Soon (shared/cloud-agents-availability.ts): the brief's
+          // cloud-agent sections are off unless the service is served.
+          isCloudAgentsDisabledByTeam: () => !isCloudAgentsServed() || (method(experiments, "isCloudAgentsDisabledByTeam")?.() ?? false),
           mcpCustomInstructionsSection: () => glue?.getMcpCustomInstructionsSection() ?? null,
           mcpDiscoveryStatusSection: () => glue?.getMcpDiscoveryStatusSection() ?? null,
           remoteBoxSection: () => glue?.getRemoteBoxSection() ?? "",
@@ -2351,7 +2354,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           },
               }),
             }),
-        ...(!isSharedRoomTurn && cloudAgent !== undefined
+        ...(!isSharedRoomTurn && cloudAgent !== undefined && isCloudAgentsServed()
           ? {
               createCloudAgentToolInputs: (): TurnCloudAgentToolFactoryInput => ({
                 dependencies: {
@@ -2556,7 +2559,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         remoteBoxHasDesktop: true,
         getConversationId: () => identity.conversationId,
         getRemoteBoxAvailable: () => method(remoteBox, "isAvailable")?.() !== false,
-        cloudAgentsDisabledByTeam: () => method(experiments, "isCloudAgentsDisabledByTeam")?.() ?? false,
+        cloudAgentsDisabledByTeam: () => !isCloudAgentsServed() || (method(experiments, "isCloudAgentsDisabledByTeam")?.() ?? false),
         spotlightEnabled: () => method(experiments, "isSpotlightEnabled")?.() ?? false,
         isDynamicToolsEnabled: () => method(experiments, "isDynamicToolsEnabled")?.() ?? false,
         isMultitaskEnabled: () => method(experiments, "isMultitaskEnabled")?.() ?? false,
