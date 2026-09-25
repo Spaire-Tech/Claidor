@@ -1,4 +1,5 @@
 import { findConnectorManifest } from "../../../shared/channels.js";
+import { splitChannelCredential } from "../../../shared/channel-credential.js";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -22,6 +23,7 @@ import { AgentLifecycle } from "./agent-lifecycle.js";
 import { AutomationRuntime } from "./automation-runtime.js";
 import { BackgroundWakes } from "./background-wakes.js";
 import { BoxHandoffResume } from "./box-handoff-resume.js";
+import { DraftCards } from "./draft-cards.js";
 import { SandChannelDeliveryUnregisteredError } from "./channel-delivery-unregistered-error.js";
 import { GroupChatGlue } from "./group-chat-glue.js";
 import { PendingWakeRearm } from "./pending-wake-rearm.js";
@@ -154,6 +156,7 @@ export class TranscriptManager {
   readonly groupChat = new GroupChatGlue(this);
   readonly sharedRooms = new SharedRooms(this);
   readonly backgroundWakes = new BackgroundWakes(this);
+  readonly draftCards = new DraftCards(this);
   readonly pendingWakes = new PendingWakeRearm(this);
   readonly ackObligations = new AckObligations(this);
   readonly upgradeResume = new UpgradeRecreateResume(this);
@@ -385,22 +388,26 @@ export class TranscriptManager {
     return this.sessionStore.getAgentProfileText(agentId);
   }
   connectChannel(agentId: string, platform: string, token: string): boolean {
-    const value = token.trim();
     // A platform whose manifest is coming soon has no delivery behind it; a
     // credential for it is not taken (design-audit-ledger.md F-057).
     if (findConnectorManifest(platform)?.availability !== "available") return false;
-    return (
-      value.length > 0 &&
-      this.sessionStore.storeConnectorCredential(
-        agentId,
-        platform,
-        "token",
-        value,
-      )
-    );
+    // The Channels tab has one field. Slack's Socket Mode needs two tokens
+    // (25 September 2026), so the field takes both, in either order,
+    // separated by whitespace or a comma: the xapp- one is `token`, the
+    // xoxb- one `botToken`. One alone is stored under the field its prefix
+    // names and the connection stays pending until the other arrives.
+    const fields = splitChannelCredential(platform, token);
+    if (fields.length === 0) return false;
+    let stored = true;
+    for (const [field, value] of fields)
+      stored = this.sessionStore.storeConnectorCredential(agentId, platform, field, value) && stored;
+    if (stored) this.channelConfigChanged?.();
+    return stored;
   }
   disconnectChannel(agentId: string, platform: string) {
-    return this.sessionStore.disconnectChannel(agentId, platform);
+    const removed = this.sessionStore.disconnectChannel(agentId, platform);
+    this.channelConfigChanged?.();
+    return removed;
   }
 
   promptAcceptanceStatus(...args: any[]) {
@@ -613,6 +620,9 @@ const delegations: ReadonlyArray<[string, keyof TranscriptManager]> = [
   ["dismissWidget", "widgetResponses"],
   ["submitSecret", "widgetResponses"],
   ["reactToMessage", "widgetResponses"],
+  ["sendDraft", "draftCards"],
+  ["discardDraft", "draftCards"],
+  ["markDraftDelivered", "draftCards"],
 ];
 
 for (const [method, domain] of delegations) {

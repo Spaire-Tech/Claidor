@@ -40,6 +40,7 @@ writes a `[claidor] memory extraction` line. Dreaming (synthesis) stays
 gated off (`sand_memory_dreaming`), because turning it on switches the
 legacy extraction off.
 | computer-use and browser-use subagents | Luna | **low** (was: not set) |
+| watchVideo and videoReview subagents (25 September 2026) | `gemini-2.5-flash` on Gemini's own wire through Simeon Labs' proxy (`ModelRole.video` in `pricing.py`; `SAND_CLAIDOR_VIDEO_MODEL` on the box) | logged as low, not sent (Gemini's knob is `thinkingConfig`, unmapped); `docs/product/video-served.md` |
 | done or continue | Grok Bot's mechanism, unchanged since the 22 September decision | — |
 | risky or safe | left alone; Cursor's classifier cannot answer on Claidor, so auto-review is effectively off | — |
 | escalation | not built; `pricing.py` reserves Astra for "the person asks, a step has failed twice, or the agent asks" | — |

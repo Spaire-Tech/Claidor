@@ -113,7 +113,7 @@ class TestLogin:
     ) -> None:
         response = await client.get("/desktop/login", follow_redirects=False)
         assert response.status_code == 303
-        assert response.headers["location"].startswith("caisra://auth/callback?code=")
+        assert response.headers["location"].startswith("simeon://auth/callback?code=")
 
     @pytest.mark.auth
     async def test_a_foreign_callback_gets_nothing(
@@ -333,15 +333,64 @@ class TestSession:
         assert again.status_code == 401
         assert again.json()["code"] == 40102
 
+        # The old access token is inside its grace (the box holds a copy
+        # of it until the Mac's next rewrite); the new one works too.
         old = await client.get(
             "/desktop/api/user/profile", headers={"Authorization": f"Bearer {access}"}
         )
-        assert old.status_code == 401
+        assert old.status_code == 200
         new = await client.get(
             "/desktop/api/user/profile",
             headers={"Authorization": f"Bearer {body['data']['accessToken']}"},
         )
         assert new.status_code == 200
+
+    async def test_the_replaced_access_token_dies_at_the_grace_and_at_sign_out(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        access, refresh = await _signed_in(client, session, user)
+        mocker.patch.object(settings, "DESKTOP_REFRESH_GRACE", timedelta(0))
+        rotated = (
+            await client.post(
+                "/desktop/api/auth/refresh", json={"refreshToken": refresh}
+            )
+        ).json()["data"]
+        old = await client.get(
+            "/desktop/api/user/profile", headers={"Authorization": f"Bearer {access}"}
+        )
+        assert old.status_code == 401, "a grace of zero is the old behaviour"
+
+        access, refresh = rotated["accessToken"], rotated["refreshToken"]
+        mocker.patch.object(settings, "DESKTOP_REFRESH_GRACE", timedelta(minutes=5))
+        rotated = (
+            await client.post(
+                "/desktop/api/auth/refresh", json={"refreshToken": refresh}
+            )
+        ).json()["data"]
+        assert (
+            await client.get(
+                "/desktop/api/user/profile",
+                headers={"Authorization": f"Bearer {access}"},
+            )
+        ).status_code == 200
+        signed_out = await client.post(
+            "/desktop/api/auth/logout",
+            headers={"Authorization": f"Bearer {rotated['accessToken']}"},
+        )
+        assert signed_out.status_code == 200
+        # Sign-out is the end of every token the person holds, the graced
+        # one included.
+        for token in (access, rotated["accessToken"]):
+            assert (
+                await client.get(
+                    "/desktop/api/user/profile",
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+            ).status_code == 401
 
     async def test_an_expired_access_token_is_401(
         self,

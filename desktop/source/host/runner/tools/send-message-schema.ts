@@ -2,11 +2,10 @@ import { z } from "zod";
 import { sandWidgetSchema } from "../../../shared/sand-widgets.js";
 import { CHANNELS_COMING_SOON_SENTENCE, CLOUD_AGENTS_COMING_SOON_SENTENCE, isAnyChannelAvailable, isCloudAgentsServed } from "../../../shared/cloud-agents-availability.js";
 export const SEND_MESSAGE_TYPES = ["text", "attachment", "widget", "cursor-agent", "secret-request"] as const;
-export const SEND_MESSAGE_TYPE_DESCRIPTION = "text for chat messages, attachment for actual files or standalone media, widget for an interactive question with selectable options, cursor-agent to reference a cloud agent by its bcId (renders as a card that opens the agent on click), secret-request to ask the user for a credential through a secure masked input (never a chat paste).";
 // Coming Soon at the reach point (shared/cloud-agents-availability.ts): the
 // types the model is offered when cloud agents and channels are not served.
 export function describeSendMessageTypes(env: NodeJS.ProcessEnv = process.env): string {
-  const cloud = isCloudAgentsServed(env), channels = isAnyChannelAvailable();
+  const cloud = isCloudAgentsServed(env), channels = isAnyChannelAvailable(undefined, env);
   return [
     "text for chat messages, attachment for actual files or standalone media, widget for an interactive question with selectable options",
     cloud ? ", cursor-agent to reference a cloud agent by its bcId (renders as a card that opens the agent on click)" : "",
@@ -89,7 +88,7 @@ export function stripFieldsOfOtherTypes(value: unknown): unknown {
 export function refineSendMessage(value: SendMessageInput, env: NodeJS.ProcessEnv = process.env): SendMessageIssue[] {
   const issues: SendMessageIssue[] = [];
   if (value.type === "cursor-agent" && !isCloudAgentsServed(env)) issues.push({ path: ["type"], message: CLOUD_AGENTS_COMING_SOON_SENTENCE });
-  if (value.type === "secret-request" && !isAnyChannelAvailable()) issues.push({ path: ["type"], message: CHANNELS_COMING_SOON_SENTENCE });
+  if (value.type === "secret-request" && !isAnyChannelAvailable(undefined, env)) issues.push({ path: ["type"], message: CHANNELS_COMING_SOON_SENTENCE });
   if (value.channel && value.type !== "text" && value.type !== "attachment") issues.push({ path: ["channel"], message: "channel can only be set for type:text or type:attachment, not widgets or cloud-agent cards" });
   if ((value.images?.length ?? 0) > 0 && value.type !== "text") issues.push({ path: ["images"], message: "images can only be set for type:text (they attach to a text message); for a standalone attachment use type:attachment with url" });
   if (value.type === "text") {

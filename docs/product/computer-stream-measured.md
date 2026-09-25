@@ -57,7 +57,7 @@ Three pieces, none of which change the connection itself:
    page prints, a preload that failed to load, and a renderer that went
    away. Wired from `vnc-trust.ts`, which already saw every box webview.
 2. **`preload-vnc.ts` `installNoVncStatusReporter`.** Inside the page, the
-   preload prints `[CaisraScreen]` lines: the page's address, each change of
+   preload prints `[SimeonScreen]` lines: the page's address, each change of
    noVNC's state, noVNC's own status sentence, any dialog it opens
    (connect, credentials), page errors, and "noVNC did not start" if no
    `noVNC_*` class ever appears within 5 s. They land in the same log
@@ -84,11 +84,11 @@ whether `preload-vnc.cjs` was found. What follows is the answer:
 | no `attach webview` line at all | the pinned renderer never created the guest |
 | `guest load FAILED code=… (ERR_…)` | the page did not load; the code names why |
 | `guest preload FAILED` | the box preload did not run |
-| `[CaisraScreen] noVNC did not start` | the page loaded but noVNC's script did not run |
-| `[CaisraScreen] … dialog=noVNC_connect_dlg` | autoconnect did not fire |
-| `[CaisraScreen] … status="Failed to connect to server"` | the websocket was attempted and refused |
-| `[CaisraScreen] … dialog=noVNC_credentials_dlg` | x11vnc wants a password |
-| `[CaisraScreen] state=connected` | the stream is live and the fault is the "connected" message path |
+| `[SimeonScreen] noVNC did not start` | the page loaded but noVNC's script did not run |
+| `[SimeonScreen] … dialog=noVNC_connect_dlg` | autoconnect did not fire |
+| `[SimeonScreen] … status="Failed to connect to server"` | the websocket was attempted and refused |
+| `[SimeonScreen] … dialog=noVNC_credentials_dlg` | x11vnc wants a password |
+| `[SimeonScreen] state=connected` | the stream is live and the fault is the "connected" message path |
 
 ## Measured here
 
@@ -112,7 +112,7 @@ of the box's status **failed or exceeded 15 seconds**
 (`VNC_STATUS_TIMEOUT_MS`), with no status ever cached. Retry calls the
 status read again, then ensure. So a "Can't reach" that survives every
 retry means `getForeverBoxStatus` itself fails every time. That call goes
-renderer → coordinator → gateway (`http://127.0.0.1:1340`, 15 s deadline) →
+renderer → coordinator → gateway (`http://127.0.0.1:1340`; **corrected 25 September 2026, ledger F-409: `getForeverBoxStatus` itself has no deadline** — the coordinator bounds only the SSE connect, `sendPrompt` and roster reads; a `timeout` outcome for this method comes from the SSE-connect deadline inside `resolveConnection`, not from the command) →
 host `forever-box.getStatus` → `HostBox.getStatus` → `runState`, which for
 the loopback box is always "running", then the cached desktop URL or
 `state: "absent"`. On the host it is trivial and cannot take 15 s. So the

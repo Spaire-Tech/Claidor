@@ -110,7 +110,7 @@ once. Press Connect; the browser should open Figma's authorization page.
 After approving:
 
 ```
-cat ~/Library/Application\ Support/Simeon/sand-data/vendor-mcp-installs.json
+cat ~/.caisra/vendor-mcp-installs.json   # corrected 25 September; see §Corrected below
 docker exec simeon-box cat /home/box/sand-data/vendor-mcp-installs.json
 docker exec simeon-box grep -i 'vendor-mcp' /tmp/sand-host.log | tail
 ```

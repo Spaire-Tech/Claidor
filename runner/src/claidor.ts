@@ -14,6 +14,33 @@ import type { MemoryFile, OutgoingMemoryFile } from './memory.js';
 /** The three reasons a job exists, as Claidor names them. */
 export const JOB_KINDS = ['routine', 'mail', 'task'] as const;
 
+/**
+ * One message of a conversation the job continues (a cloud agent's turn,
+ * 25 September 2026). The person's messages and the earlier turns'
+ * replies, in order; the runner answers the whole list, not `prompt`
+ * alone, when it is present.
+ */
+export interface ConversationMessage {
+  role: 'user' | 'assistant';
+  text: string;
+}
+
+/** What a run says back, beyond its one answer: the turn's replies. */
+export interface TurnMessage {
+  role?: 'user' | 'assistant';
+  text: string;
+}
+
+/** A file the executor left in the run's workspace. None today. */
+export interface TurnArtifact {
+  path: string;
+  sizeBytes: number;
+  updatedAtMs: number;
+}
+
+/** The runner as Claidor names it: the only executor that exists. */
+export const MATY_RUNNER_EXECUTOR = 'maty-runner';
+
 export interface Job {
   id: string;
   /** One of JOB_KINDS. The runner does the same thing with all three. */
@@ -23,6 +50,13 @@ export interface Job {
   deliver?: unknown;
   /** What this routine's owner allowed it to do. */
   allow?: string[];
+  /**
+   * Which executor runs it. `maty-runner` (this process) unless Claidor
+   * names another; see `executor.ts` for the seam.
+   */
+  executor: string;
+  /** The conversation this job continues, when it is a cloud agent's turn. */
+  conversation?: ConversationMessage[];
 }
 
 export interface ClaimedJob {
@@ -33,6 +67,17 @@ export interface ClaimedJob {
 
 export interface JobUsage {
   [key: string]: unknown;
+}
+
+/** Where the job stands after a heartbeat, as Claidor answers it. */
+export interface JobState {
+  /** True once the person asked the job to stop. */
+  cancelRequested: boolean;
+}
+
+export interface CompletionExtras {
+  messages?: readonly TurnMessage[];
+  artifacts?: readonly TurnArtifact[];
 }
 
 export class ClaidorError extends Error {
@@ -152,6 +197,12 @@ export class RunnerQueue {
     if (!accessToken) {
       throw new ClaidorError(200, `Claidor handed out job ${id} with no access token for the person.`);
     }
+    const conversation = Array.isArray(fields.conversation)
+      ? fields.conversation
+          .map((row) => asRecord(row))
+          .filter((row) => typeof row.text === 'string')
+          .map((row): ConversationMessage => ({ role: row.role === 'user' ? 'user' : 'assistant', text: row.text as string }))
+      : undefined;
     return {
       job: {
         id,
@@ -159,6 +210,8 @@ export class RunnerQueue {
         prompt,
         deliver: fields.deliver,
         allow: Array.isArray(fields.allow) ? fields.allow.filter((one): one is string => typeof one === 'string') : [],
+        executor: text(fields.executor) || MATY_RUNNER_EXECUTOR,
+        ...(conversation === undefined || conversation.length === 0 ? {} : { conversation }),
       },
       accessToken,
       expiresAt: text(answer.expires_at) || null,
@@ -170,23 +223,36 @@ export class RunnerQueue {
    * lapses, and the job goes back to the queue. The same beat extends the
    * person's token, which dies with the lease — so a job whose heartbeat
    * stops arriving loses its own model calls before anything else.
+   *
+   * The answer says whether the person has since asked the job to stop
+   * (`cancel_requested`, 25 September 2026); the loop reads it and fails
+   * the job as cancelled.
    */
-  async heartbeat(jobId: string): Promise<void> {
-    await request(this.baseUrl, {
-      method: 'POST',
-      path: `/maty/runner/jobs/${encodeURIComponent(jobId)}/heartbeat`,
-      token: this.token,
-      body: { runner: this.runner },
-      timeoutMs: 20_000,
-    });
+  async heartbeat(jobId: string): Promise<JobState> {
+    const answer = asRecord(
+      await request(this.baseUrl, {
+        method: 'POST',
+        path: `/maty/runner/jobs/${encodeURIComponent(jobId)}/heartbeat`,
+        token: this.token,
+        body: { runner: this.runner },
+        timeoutMs: 20_000,
+      }),
+    );
+    return { cancelRequested: answer.cancel_requested === true };
   }
 
-  async complete(jobId: string, result: string, usage: JobUsage): Promise<void> {
+  async complete(jobId: string, result: string, usage: JobUsage, extras: CompletionExtras = {}): Promise<void> {
     await request(this.baseUrl, {
       method: 'POST',
       path: `/maty/runner/jobs/${encodeURIComponent(jobId)}/complete`,
       token: this.token,
-      body: { runner: this.runner, result, usage },
+      body: {
+        runner: this.runner,
+        result,
+        usage,
+        ...(extras.messages === undefined ? {} : { messages: extras.messages }),
+        ...(extras.artifacts === undefined ? {} : { artifacts: extras.artifacts }),
+      },
     });
   }
 

@@ -71,8 +71,14 @@ class TestCatalogue:
             assert model.pricing()["provider"] == model.provider.value
 
     def test_both_providers_are_on_the_menu(self) -> None:
+        # Three since 25 September 2026: Gemini serves the video role and
+        # nothing else (tests/desktop/test_video_proxy.py).
         providers = {model.provider for model in MODELS}
-        assert providers == {DesktopProvider.anthropic, DesktopProvider.openai}
+        assert providers == {
+            DesktopProvider.anthropic,
+            DesktopProvider.openai,
+            DesktopProvider.gemini,
+        }
 
     def test_exactly_one_model_holds_each_role(self) -> None:
         # The policy of 13 September 2026: OpenAI serves everything the
@@ -87,6 +93,7 @@ class TestCatalogue:
         assert by_role[ModelRole.primary] == ["gpt-5.6-terra"]
         assert by_role[ModelRole.cheap] == ["gpt-5.6-luna"]
         assert by_role[ModelRole.fallback] == ["claude-sonnet-5"]
+        assert by_role[ModelRole.video] == ["gemini-2.5-flash"]
 
     def test_the_fallback_is_the_only_anthropic_model_with_a_role(self) -> None:
         anthropic_roles = {

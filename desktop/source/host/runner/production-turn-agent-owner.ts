@@ -87,6 +87,8 @@ export interface ProductionTurnAgentOwnerInput {
   /** A headless subagent's kind: picks its tools and puts its turns on the cheap model. */
   readonly isComputerUseSubagent?: boolean;
   readonly isBrowserUseSubagent?: boolean;
+  /** A watchVideo / videoReview child: its turns run on the video model (Gemini). */
+  readonly isVideoSubagent?: boolean;
   readonly hidden?: boolean;
   readonly lineage?: unknown;
   readonly profilePromptSnapshot?: AgentProfilePromptSnapshot;
@@ -166,6 +168,7 @@ export async function createProductionTurnAgentOwner(
     ...(input.modelId === undefined ? {} : { modelId: input.modelId }),
     ...(input.isComputerUseSubagent === undefined ? {} : { isComputerUseSubagent: input.isComputerUseSubagent }),
     ...(input.isBrowserUseSubagent === undefined ? {} : { isBrowserUseSubagent: input.isBrowserUseSubagent }),
+    ...(input.isVideoSubagent === undefined ? {} : { isVideoSubagent: input.isVideoSubagent }),
     ...(input.requestSource === undefined
       ? {}
       : { requestSource: input.requestSource }),

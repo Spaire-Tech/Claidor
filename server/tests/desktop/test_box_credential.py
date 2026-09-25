@@ -52,12 +52,45 @@ class TestBoxCredential:
         assert isinstance(body["expiresAtMs"], int)
         assert unwrap_access_token(body["accessToken"]) is not None
 
-        # The access token it got is a proxy caller like any other.
+        # The access token it got is a proxy caller like any other, and it
+        # reads the profile (the box's host wants the person's name)...
         me = await client.get(
             "/desktop/api/user/profile",
             headers={"Authorization": f"Bearer {body['accessToken']}"},
         )
         assert me.status_code == 200, me.text
+        # ...and the memory files, since 25 September 2026, because the
+        # host that keeps them runs in the box (`tests/desktop/test_memory.py`
+        # measures the sync itself)...
+        assert (
+            await client.get(
+                "/desktop/api/memory",
+                headers={"Authorization": f"Bearer {body['accessToken']}"},
+            )
+        ).status_code == 200
+        # ...and nothing else on the desktop router: not the connectors,
+        # not sign-out for the whole desktop.
+        for path in (
+            "/desktop/api/connectors",
+            "/desktop/api/user/quota",
+        ):
+            narrowed = await client.get(
+                path, headers={"Authorization": f"Bearer {body['accessToken']}"}
+            )
+            assert narrowed.status_code == 401, (path, narrowed.text)
+        # A box's sign-out is answered and signs nobody out.
+        assert (
+            await client.post(
+                "/desktop/api/auth/logout",
+                headers={"Authorization": f"Bearer {body['accessToken']}"},
+            )
+        ).status_code == 200
+        assert (
+            await client.get(
+                "/desktop/api/user/profile",
+                headers={"Authorization": f"Bearer {access}"},
+            )
+        ).status_code == 200
 
         # Renewing again is not a rotation: the same credential keeps working.
         second = await client.post(

@@ -28,14 +28,25 @@ async function load(entry, name) {
   return { module, dispose: () => rm(dir, { recursive: true, force: true }) };
 }
 
-test("the privacy-mode pre-flight, the team-admin prefetch and the cloud-agent watcher are off unless Connect or cloud agents are served", async () => {
+test("the privacy-mode pre-flight, the team-admin prefetch and the cloud-agent watcher follow the served set, per service", async () => {
   delete process.env.SAND_CONNECT_SERVED;
   const session = await src("host/extensions/inference/cursor-session.ts");
-  assert.match(session, /resolvePrivacyMode: \(\) => isConnectServed\(\) \? resolveSandRunPrivacyMode\(auth\) : Promise\.resolve\(SAND_RUN_PRIVACY_MODE_FALLBACK\)/);
+  assert.match(session, /resolvePrivacyMode: \(\) => isConnectServed\(process\.env, "aiserver\.v1\.DashboardService"\) \? resolveSandRunPrivacyMode\(auth\) : Promise\.resolve\(SAND_RUN_PRIVACY_MODE_FALLBACK\)/);
   const { module, dispose } = await load("source/shared/cloud-agents-availability.ts", "availability");
   try {
-    assert.equal(module.isConnectServed({}), false);
-    assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "1" }), true);
+    // The served set (polar/sand, 25 September 2026): our Connect services
+    // by name, everything with "1", nothing with "0", a list otherwise.
+    assert.equal(module.isConnectServed({}, "aiserver.v1.GrokBotService"), true);
+    assert.equal(module.isConnectServed({}, "aiserver.v1.DashboardService"), true);
+    assert.equal(module.isConnectServed({}, "aiserver.v1.InferenceService"), false, "the loop runs on the claidor executor, never on Cursor's inference");
+    assert.equal(module.isConnectServed({}, "cursor.statsig-bootstrap"), false, "Cursor's feature-gate server is not ours");
+    assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "0" }, "aiserver.v1.GrokBotService"), false);
+    assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "1" }, "cursor.statsig-bootstrap"), true);
+    assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "aiserver.v1.AiService" }, "aiserver.v1.AiService"), true);
+    assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "aiserver.v1.AiService" }, "aiserver.v1.GrokBotService"), false);
+    assert.equal(module.isCloudAgentsServed({}), true);
+    assert.equal(module.isCloudAgentsServed({ SAND_CLOUD_AGENTS_SERVED: "0" }), false);
+    assert.equal(module.isCloudAgentsServed({ SAND_CONNECT_SERVED: "0" }), false);
   } finally {
     await dispose();
   }
@@ -57,7 +68,8 @@ test("the Coming Soon brief no longer blames a team admin, and no string the age
   }
 });
 
-test("sharing is Coming Soon behind a served switch, and the struck tunnel's port is not published", async () => {
+test("sharing is served by default with the Coming Soon answer kept behind SAND_SHARING_SERVED=0, and the struck tunnel's port is not published", async () => {
+  // Served since 25 September 2026 (server/polar/sand/sharing.py); tests/sharing-served.test.mjs measures the switch and the relay.
   const sharing = await src("host/extensions/cross-user-sharing/extension.ts");
   assert.match(sharing, /SHARING_DISABLED_MESSAGE = "Sharing is coming soon in Simeon\."/);
   assert.match(sharing, /if \(on && !isSharingServed\(\)\) \{[^}]*applyGate\(false\); return; \}/);

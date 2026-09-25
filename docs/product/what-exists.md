@@ -80,7 +80,9 @@ them.
 ## The server, live right now
 
 `server/polar/` serves the desktop account protocol under `/desktop`: browser
-login, tokens, the metered model proxy, memory sync, the skill/kit/MCP
+login, tokens, the metered model proxy, memory sync (with a client in the
+box since 25 September 2026, `host/extensions/memory-sync/`;
+`memory-sync-served.md`), the skill/kit/MCP
 catalogues, Pipedream Connect links (mounted; no caller in the app since the 24 September vendor sign-in decision). `render.yaml` is deployed and answers.
 See the root `CLAUDE.md` for the detail.
 

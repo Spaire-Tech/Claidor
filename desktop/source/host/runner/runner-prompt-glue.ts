@@ -31,11 +31,12 @@ export interface RunnerPromptGlueOwner {
   readonly readVideoAttachmentBytes?: (path: string) => Promise<Uint8Array | null>;
   readonly isBrowserUseSubagentEnabled?: () => boolean;
   readonly isSpotlightEnabled?: () => boolean;
-  readonly uploadAttachmentsIntoBox?: (paths: readonly string[]) => Promise<ReadonlyMap<string, string>>;
+  readonly uploadAttachmentsIntoBox?: (paths: readonly string[], names?: ReadonlyMap<string, string>) => Promise<ReadonlyMap<string, string>>;
   readonly getRemoteBoxAvailable?: () => boolean;
   getConversationId(): string;
   resolveBoxId(): string;
   resolveBoxBrowser?(): { readonly display: string; readonly cdpUrl: string } | null;
+  readonly screenshotToolOffered?: () => boolean;
   readonly mcpConnectedServerNamesForTurn: () => readonly string[];
   readonly mcpCustomInstructionsForTurn: () => ReadonlyMap<string, string>;
   readonly isMcpDiscoveryUnavailableForTurn: () => boolean;
@@ -69,6 +70,7 @@ export function createRunnerPromptGlue(owner: RunnerPromptGlueOwner) {
     get shellWatchHost() { return owner.shellWatchHost; },
     getConversationId: () => owner.getConversationId(),
     resolveBoxBrowser: () => owner.resolveBoxBrowser?.() ?? null,
+    get screenshotToolOffered() { return owner.screenshotToolOffered; },
     mcpConnectedServerNamesForTurn: () => owner.mcpConnectedServerNamesForTurn(),
     mcpCustomInstructionsForTurn: () => owner.mcpCustomInstructionsForTurn(),
     isMcpDiscoveryUnavailableForTurn: () => owner.isMcpDiscoveryUnavailableForTurn(),

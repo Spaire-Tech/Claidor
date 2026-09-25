@@ -27,14 +27,17 @@ async function load(entry, name) {
   return { module, dispose: () => rm(dir, { recursive: true, force: true }) };
 }
 
-test("a Cursor Connect client answers Unimplemented at once and sends nothing unless Connect is served", async () => {
-  delete process.env.SAND_CONNECT_SERVED;
+test("a Cursor Connect client answers Unimplemented at once and sends nothing for a service that is not served", async () => {
+  // Since 25 September 2026 the DashboardService is served by default
+  // (polar/sand); "0" is the 24 September behaviour, measured here.
+  process.env.SAND_CONNECT_SERVED = "0";
   const { module, dispose } = await load("source/shared/node/cursor-backend/cursor-inference.ts", "cursor-backend-client");
   const proto = await load("source/packages/proto/generated/aiserver/v1/dashboard_connect.ts", "dashboard-connect");
   try {
     const client = module.createSandCursorBackendClient(proto.module.DashboardService, { getAccessToken: async () => { throw new Error("the wire was touched"); }, getMachineId: async () => "m" });
     await assert.rejects(() => client.getTeams({}), (error) => error.code === 12 && /not served by Simeon Labs' server/.test(error.message));
   } finally {
+    delete process.env.SAND_CONNECT_SERVED;
     await proto.dispose();
     await dispose();
   }
@@ -96,5 +99,10 @@ test("a refresh the vendor refuses for good drops the refresh token, and the too
   assert.match(await src("shared/node/vendor-mcp/box-pull.ts"), /holdUntilMs = now\(\) \+ BOX_STORE_PULL_FAILURE_HOLD_MS/);
   assert.match(await src("shared/node/cursor-backend/account-mcp.ts"), /cacheScope = accessToken\.length === 0 \? "local" : accountCacheScope\(accessToken\)/);
   assert.doesNotMatch(await src("shared/node/mcp/mcp-marketplace.ts"), /fetchPluginServers/);
-  assert.match(await src("host/extensions/mcp/skill-publish.ts"), /Publishing a skill to a team is coming soon in Simeon\./);
+  // F-157 is served since 25 September 2026 (`polar/sand/skill_registry.py`,
+  // `tests/skill-publish-served.test.mjs`): a failure shows the server's own
+  // sentence, and nothing here says coming soon.
+  const skillPublish = await src("host/extensions/mcp/skill-publish.ts");
+  assert.doesNotMatch(skillPublish, /"Publishing a skill to a team is coming soon/);
+  assert.match(skillPublish, /unavailableReason: `Publishing is not available right now: \$\{sentence\}`/);
 });

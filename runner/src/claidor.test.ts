@@ -72,6 +72,40 @@ describe('the queue', () => {
     expect(claimed?.expiresAt).toBe('2026-09-11T05:00:00Z');
   });
 
+  test('reads the executor and the conversation of a cloud agent\'s turn', async () => {
+    reply = () => ({
+      status: 200,
+      body: {
+        job: {
+          id: 'j1',
+          kind: 'task',
+          prompt: 'One.',
+          executor: 'maty-runner',
+          conversation: [
+            { role: 'user', text: 'One.', createdAtMs: 1, jobId: 'j0' },
+            { role: 'assistant', text: '1', createdAtMs: 2, jobId: 'j0' },
+            { role: 'user', text: 'Two.', createdAtMs: 3, jobId: 'j1' },
+          ],
+        },
+        access_token: 'person-token',
+      },
+    });
+    const claimed = await new RunnerQueue(baseUrl, 'runner-token', 'runner-1').claim();
+    expect(claimed?.job.executor).toBe('maty-runner');
+    expect(claimed?.job.conversation).toEqual([
+      { role: 'user', text: 'One.' },
+      { role: 'assistant', text: '1' },
+      { role: 'user', text: 'Two.' },
+    ]);
+  });
+
+  test('a job with no executor named runs on this runner, and one without a conversation carries none', async () => {
+    reply = () => ({ status: 200, body: { job: { id: 'j1', kind: 'routine', prompt: 'do it' }, access_token: 'person-token' } });
+    const claimed = await new RunnerQueue(baseUrl, 'runner-token', 'runner-1').claim();
+    expect(claimed?.job.executor).toBe('maty-runner');
+    expect(claimed?.job.conversation).toBeUndefined();
+  });
+
   test('refuses a claim with no token for the person', async () => {
     reply = () => ({ status: 200, body: { job: { id: 'j1', kind: 'briefing', prompt: 'do it' } } });
     await expect(new RunnerQueue(baseUrl, 'runner-token', 'runner-1').claim()).rejects.toThrow(/no access token/);
@@ -105,9 +139,21 @@ describe('the queue', () => {
 
   test('beats', async () => {
     reply = () => ({ status: 200, body: {} });
-    await new RunnerQueue(baseUrl, 'runner-token', 'runner-1').heartbeat('j 1/2');
+    const state = await new RunnerQueue(baseUrl, 'runner-token', 'runner-1').heartbeat('j 1/2');
     expect(seen[0]!.url).toBe('/maty/runner/jobs/j%201%2F2/heartbeat');
     expect(seen[0]!.body).toEqual({ runner: 'runner-1' });
+    expect(state).toEqual({ cancelRequested: false });
+  });
+
+  test('reads the cancel flag off the heartbeat\'s answer', async () => {
+    reply = () => ({ status: 200, body: { id: 'j1', status: 'running', attempts: 1, scheduled_at: 'x', cancel_requested: true } });
+    expect(await new RunnerQueue(baseUrl, 'runner-token', 'runner-1').heartbeat('j1')).toEqual({ cancelRequested: true });
+  });
+
+  test('reports the turn\'s messages with the answer when there are any', async () => {
+    reply = () => ({ status: 200, body: {} });
+    await new RunnerQueue(baseUrl, 'runner-token', 'runner-1').complete('j1', 'hi', {}, { messages: [{ role: 'assistant', text: 'hi' }] });
+    expect(seen[0]!.body).toEqual({ runner: 'runner-1', result: 'hi', usage: {}, messages: [{ role: 'assistant', text: 'hi' }] });
   });
 });
 

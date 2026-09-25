@@ -84,6 +84,10 @@ MEMORY_REFUSED = 40001
 MEMORY_FILE_MAX_BYTES = 1024 * 1024
 MEMORY_REQUEST_MAX_BYTES = 8 * 1024 * 1024
 MEMORY_FILE_LIMIT = 2000
+#: How long a deleted name is remembered, so a machine that was away
+#: hears about the deletion. Past this the tombstone is dropped and a
+#: copy that turns up later is a new file.
+MEMORY_TOMBSTONE_DAYS = 90
 
 #: The JWT type of the envelope an access token travels in on the app's
 #: own sign-in path (`polar.desktop.app_sign_in`). See
@@ -130,12 +134,16 @@ def provider_api_key(provider: DesktopProvider) -> str:
     """Claidor's key for one provider, or "" where none is configured."""
     if provider is DesktopProvider.openai:
         return settings.OPENAI_API_KEY
+    if provider is DesktopProvider.gemini:
+        return settings.GEMINI_API_KEY
     return settings.ANTHROPIC_API_KEY
 
 
 def provider_base_url(provider: DesktopProvider) -> str:
     if provider is DesktopProvider.openai:
         return settings.DESKTOP_OPENAI_BASE_URL
+    if provider is DesktopProvider.gemini:
+        return settings.DESKTOP_GEMINI_BASE_URL
     return settings.DESKTOP_ANTHROPIC_BASE_URL
 
 
@@ -208,7 +216,8 @@ class MemoryFileState:
 @dataclass(frozen=True)
 class MemorySync:
     """The whole truth about a person's memory after a sync: every file
-    Claidor holds, and the names it pruned."""
+    Claidor holds, and the names that are gone — pruned, or removed on
+    another machine and not yet heard of here."""
 
     files: list[MemoryFileState]
     deleted: list[str]
@@ -432,7 +441,18 @@ class DesktopService:
             or not found.user.can_authenticate
         ):
             raise DesktopUnauthenticated("The refresh token is invalid or has expired.")
-        found.revoked_at = utc_now()
+        # The old refresh token dies with the exchange. The old access token
+        # does not, not at once: the person's box holds a copy of it
+        # (`local-docker-host-connector.ts` writes the Mac's token into the
+        # box and rewrites it every five minutes), and until 25 September
+        # 2026 the exchange revoked the row outright, so every model call
+        # from the box answered 401 until that rewrite. It now stays good
+        # for `DESKTOP_REFRESH_GRACE` at most; sign-out sweeps it (`revoke`).
+        now = utc_now()
+        found.refresh_expires_at = now - timedelta(seconds=1)
+        found.access_expires_at = min(
+            found.access_expires_at, now + settings.DESKTOP_REFRESH_GRACE
+        )
         session.add(found)
         issued = await self._issue_session(
             session,
@@ -457,15 +477,22 @@ class DesktopService:
         now = utc_now()
         desktop_session.revoked_at = now
         session.add(desktop_session)
+        repository = DesktopSessionRepository.from_session(session)
         # Sign-out takes the box's credential with it: a box the person
         # walked away from must not keep calling the model as them.
-        for child in await DesktopSessionRepository.from_session(
-            session
-        ).list_box_credentials_of(desktop_session.id):
+        for child in await repository.list_box_credentials_of(desktop_session.id):
             if child.is_revoked:
                 continue
             child.revoked_at = now
             session.add(child)
+        # And the access token a recent refresh replaced, still inside its
+        # grace (`refresh`): a sign-out is the end of every token the person
+        # holds, not only the newest.
+        for graced in await repository.list_in_grace_of_user(
+            desktop_session.user_id, now
+        ):
+            graced.revoked_at = now
+            session.add(graced)
 
     # --- the box's own credential --------------------------------------------
 
@@ -495,7 +522,12 @@ class DesktopService:
         now = utc_now()
         repository = DesktopSessionRepository.from_session(session)
         for previous in await repository.list_box_credentials_of(parent.id):
-            if previous.is_revoked:
+            # The local-exec daemon's credential is a child row too
+            # (`polar.sand.box_service`, user agent "simeon-local-exec/…")
+            # and is not replaced by a box's.
+            if previous.is_revoked or previous.user_agent.startswith(
+                "simeon-local-exec/"
+            ):
                 continue
             previous.revoked_at = now
             session.add(previous)
@@ -562,7 +594,6 @@ class DesktopService:
         session.add(found)
         await session.flush()
         return found, access
-        await session.flush()
 
     # the app's own sign-in
 
@@ -751,7 +782,11 @@ class DesktopService:
         )
 
     async def sync_memory_files(
-        self, session: AsyncSession, user: User, incoming: Iterable[IncomingMemoryFile]
+        self,
+        session: AsyncSession,
+        user: User,
+        incoming: Iterable[IncomingMemoryFile],
+        deleted: Iterable[str] = (),
     ) -> MemorySync:
         """One round of the shared memory, for one person.
 
@@ -767,13 +802,24 @@ class DesktopService:
           + 1. For the profile, which is one document with one owner,
           « merged » means Claidor's copy wins, because it is the one
           that moved on.
+        - a name another machine deleted (a tombstone) is written again
+          only by a client that saw the deletion — its `base_version` is
+          the tombstone's — and then it is a new file at version + 1. A
+          client that is behind keeps nothing: the name comes back under
+          `deleted` and it removes its copy.
+
+        For each name the client says it deleted (`deleted`, 25
+        September 2026): the row becomes a tombstone at version + 1,
+        its text dropped, unless it is one already or was never there.
 
         A write that changes nothing leaves the version alone, so an
         idle app syncing every few minutes does not count upwards for
         ever.
 
-        The answer carries **every** file Claidor holds afterwards, so a
-        fresh computer receives the whole memory by sending nothing.
+        The answer carries **every** live file Claidor holds afterwards,
+        so a fresh computer receives the whole memory by sending nothing,
+        and under `deleted` every name that is gone: pruned now, or a
+        tombstone younger than `MEMORY_TOMBSTONE_DAYS`.
 
         Sizes: a single file over 1 MB or a request over 8 MB is refused
         whole. A person may hold 2000 files; past that the oldest daily
@@ -782,7 +828,8 @@ class DesktopService:
         facts and the profile are never pruned.
         """
         sent = list(incoming)
-        self._check_memory_sizes(sent)
+        removed = list(deleted)
+        self._check_memory_sizes(sent, removed)
 
         repository = DesktopMemoryFileRepository.from_session(session)
         for file in sent:
@@ -791,6 +838,17 @@ class DesktopService:
                 await repository.upsert(
                     user.id, file.name, content=file.content, version=1
                 )
+                continue
+            if stored.deleted_at is not None:
+                # A tombstone. Only a client that has seen it may write
+                # the name again; one that is behind is told to delete.
+                if file.base_version >= stored.version:
+                    await repository.upsert(
+                        user.id,
+                        file.name,
+                        content=file.content,
+                        version=stored.version + 1,
+                    )
                 continue
             if file.base_version == stored.version:
                 content = file.content
@@ -803,7 +861,14 @@ class DesktopService:
                     user.id, file.name, content=content, version=stored.version + 1
                 )
 
-        deleted = await self._prune_memory_files(session, user)
+        for name in removed:
+            stored = await repository.get_by_name(user.id, name)
+            if stored is None or stored.deleted_at is not None:
+                continue
+            await repository.tombstone(stored, version=stored.version + 1)
+
+        pruned = await self._prune_memory_files(session, user)
+        tombstones = await self._sweep_memory_tombstones(session, user)
         by_name = {file.name: file.content for file in sent}
         return MemorySync(
             files=[
@@ -815,12 +880,19 @@ class DesktopService:
                 )
                 for stored in await repository.list_by_user(user.id)
             ],
-            deleted=deleted,
+            deleted=sorted({*pruned, *tombstones}),
         )
 
-    def _check_memory_sizes(self, files: list[IncomingMemoryFile]) -> None:
+    def _check_memory_sizes(
+        self, files: list[IncomingMemoryFile], deleted: Sequence[str] = ()
+    ) -> None:
         """Every name and every size, before a single row is written."""
         total = 0
+        for name in deleted:
+            if not is_accepted_memory_name(name):
+                raise DesktopMemoryRefused(
+                    f"{name!r} is not a memory file Claidor keeps."
+                )
         for file in files:
             if not is_accepted_memory_name(file.name):
                 raise DesktopMemoryRefused(
@@ -856,6 +928,27 @@ class DesktopService:
             await session.delete(note)
         await session.flush()
         return deleted
+
+    async def _sweep_memory_tombstones(
+        self, session: AsyncSession, user: User
+    ) -> list[str]:
+        """The names still to be told about, and the old tombstones
+        dropped for good."""
+        repository = DesktopMemoryFileRepository.from_session(session)
+        keep_after = utc_now() - timedelta(days=MEMORY_TOMBSTONE_DAYS)
+        names: list[str] = []
+        swept = False
+        for row in await repository.list_by_user(user.id, include_deleted=True):
+            if row.deleted_at is None:
+                continue
+            if row.deleted_at < keep_after:
+                await session.delete(row)
+                swept = True
+            else:
+                names.append(row.name)
+        if swept:
+            await session.flush()
+        return names
 
     async def record_usage(
         self,

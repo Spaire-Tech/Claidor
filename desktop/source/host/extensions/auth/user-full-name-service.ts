@@ -1,10 +1,12 @@
 import { parseJwtPayload } from "../../../shared/node/cursor-token.js";
-import { createSandCursorBackendClient, getSandInferenceBackendUrl } from "../../../shared/node/cursor-backend/cursor-inference.js";
-import { DashboardService } from "../../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
-import { GetMeRequest, type GetMeResponse } from "../../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
-import type { MethodInfoUnary } from "@bufbuild/protobuf";
+import { getSandInferenceBackendUrl } from "../../../shared/node/cursor-backend/cursor-inference.js";
 
 export const GET_ME_TIMEOUT_MS = 10_000;
+// Until 25 September 2026 the name was asked of Cursor's DashboardService
+// (GetMe), which Simeon Labs' server does not serve, so the agent never
+// had it. The profile route answers the box's own credential too
+// (`get_desktop_or_box_session`, server/polar/desktop/auth.py).
+export const USER_PROFILE_PATH = "/desktop/api/user/profile";
 
 export function nonEmpty(value: string | null | undefined): string | undefined {
   const trimmed = value?.trim();
@@ -16,18 +18,21 @@ export function displayNameFrom(name: { readonly firstName?: string | undefined;
   return parts.length > 0 ? parts.join(" ") : undefined;
 }
 
-async function fetchFullNameOverBackend(accessToken: string, getMachineId: () => Promise<string>): Promise<string | undefined> {
-  const service = DashboardService as typeof DashboardService & {
-    readonly methods: typeof DashboardService.methods & {
-      readonly getMe: MethodInfoUnary<GetMeRequest, GetMeResponse>;
-    };
-  };
-  const client = createSandCursorBackendClient(service, {
-    getAccessToken: async () => accessToken,
-    getMachineId
+export function fullNameFromProfileBody(body: unknown): string | undefined {
+  if (body == null || typeof body !== "object") return undefined;
+  const record = body as { readonly code?: unknown; readonly data?: unknown };
+  if (record.code !== 0 || record.data == null || typeof record.data !== "object") return undefined;
+  const data = record.data as { readonly nickname?: unknown; readonly name?: unknown };
+  return nonEmpty(typeof data.name === "string" ? data.name : typeof data.nickname === "string" ? data.nickname : undefined);
+}
+
+async function fetchFullNameOverBackend(accessToken: string, fetchImpl: typeof fetch = fetch): Promise<string | undefined> {
+  const response = await fetchImpl(new URL(USER_PROFILE_PATH, getSandInferenceBackendUrl()), {
+    headers: { authorization: `Bearer ${accessToken}`, accept: "application/json" },
+    signal: AbortSignal.timeout(GET_ME_TIMEOUT_MS),
   });
-  const me = await client.getMe(new GetMeRequest({}), { timeoutMs: GET_ME_TIMEOUT_MS });
-  return nonEmpty(displayNameFrom({ firstName: me.firstName, lastName: me.lastName }));
+  if (!response.ok) throw new Error(`profile answered ${response.status}`);
+  return fullNameFromProfileBody(await response.json());
 }
 
 export function createSandUserFullNameResolver(options: {
@@ -35,9 +40,10 @@ export function createSandUserFullNameResolver(options: {
   readonly peekAccessToken: () => string | null;
   readonly getMachineId: () => Promise<string>;
   readonly fetchFullName?: (accessToken: string) => Promise<string | undefined>;
+  readonly fetchImpl?: typeof fetch;
   readonly log: (message: string) => void;
 }) {
-  const fetchFullName = options.fetchFullName ?? ((accessToken: string) => fetchFullNameOverBackend(accessToken, options.getMachineId));
+  const fetchFullName = options.fetchFullName ?? ((accessToken: string) => fetchFullNameOverBackend(accessToken, options.fetchImpl));
   let resolvedPrincipal: string | undefined;
   let resolvedFullName: string | undefined;
   let inFlight: { principal: string; done: Promise<void> } | undefined;

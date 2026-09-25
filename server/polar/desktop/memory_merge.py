@@ -29,12 +29,25 @@ written on either side is recognised as the same fact. (The app hashes
 the normalised text; comparing the normalised text itself answers the
 same question.)
 
+A fourth rule, added 25 September 2026 for the Grok Bot reconstruction's
+own layout (`desktop/source/host/extensions/memory/memory-service.ts`):
+
+- **facts** (`agents/<id>/memory/profile.md`, `…/log/YYYY-MM.md`, the
+  user-memory and project shards): a file of lines
+  `- (YYYY-MM-DD) <fact>`. Two lines are the same fact when their ids
+  match, and the id is the app's own `memoryIdFor`: sha1 of the content
+  with whitespace collapsed, trimmed, cut at 500 characters and
+  lowercased, first 16 hex digits. The date is not part of it, so a fact
+  learned on two machines on two days is stored once. Our lines in
+  order, then theirs that we do not have.
+
 There is no database and no I/O here on purpose: every rule is a pure
 function of two strings.
 """
 
 from __future__ import annotations
 
+import hashlib
 import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -44,10 +57,13 @@ from enum import StrEnum
 __all__ = [
     "DAILY_NOTE_NAME",
     "MEMORY_FILE_RULES",
+    "MEMORY_NAME_MAX_LENGTH",
     "MemoryRule",
+    "fact_id",
     "fingerprint",
     "is_accepted_memory_name",
     "merge_document",
+    "merge_fact_file",
     "merge_line_file",
     "merge_list_file",
     "merge_memory_file",
@@ -347,20 +363,91 @@ def merge_document(ours: str, theirs: str, ours_is_newer: bool) -> str:
     return ours if ours_is_newer else theirs
 
 
+# --- the app's fact files ----------------------------------------------------
+
+#: `FACT_LINE` in `memory-service.ts`: `- (YYYY-MM-DD) <fact>`.
+_FACT_LINE = re.compile(r"^-\s+\((\d{4}-\d{2}-\d{2})\)\s+(.+?)\s*$")
+#: `MEMORY_MAX_CONTENT_LENGTH` in `host/runner/sand-memory.ts`.
+_FACT_MAX_CONTENT_LENGTH = 500
+
+
+def fact_id(content: str) -> str:
+    """The app's `memoryIdFor`: sha1 of `memoryDedupeKey(content)`, the
+    first 16 hex digits. The key is `normalizeMemoryContent` (whitespace
+    collapsed to one space, trimmed, cut at 500 characters) lowercased.
+    Two machines that learn the same fact on different days agree on
+    this id and disagree on the date, which is why the date is left out.
+    """
+    normalised = " ".join(content.split())[:_FACT_MAX_CONTENT_LENGTH].lower()
+    return hashlib.sha1(normalised.encode("utf-8")).hexdigest()[:16]
+
+
+def _fact_line_id(line: str) -> str | None:
+    match = _FACT_LINE.match(line)
+    if match is None:
+        return None
+    content = " ".join(match.group(2).split())
+    return fact_id(content) if content else None
+
+
+def merge_fact_file(ours: str, theirs: str) -> str:
+    """The app's fact files: our lines in order, then every fact line of
+    theirs whose id we do not have, appended after our last line that
+    says something. Their header and blank lines are structure and are
+    not copied; ours are kept as they are."""
+    if not ours.strip():
+        return theirs
+    if not theirs.strip():
+        return ours
+
+    kept = ours.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    while kept and kept[-1].strip() == "":
+        kept.pop()
+    known = {
+        identifier
+        for identifier in (_fact_line_id(line) for line in kept)
+        if identifier is not None
+    }
+
+    for line in theirs.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        identifier = _fact_line_id(line)
+        if identifier is None or identifier in known:
+            continue
+        known.add(identifier)
+        kept.append(line.rstrip())
+
+    return "\n".join(kept) + "\n"
+
+
 # --- which rule a file uses --------------------------------------------------
 
 
 class MemoryRule(StrEnum):
-    """The three ways a memory file merges."""
+    """The four ways a memory file merges."""
 
     LIST = "list"
     LINES = "lines"
     DOCUMENT = "document"
+    FACTS = "facts"
 
 
 #: The name a daily note takes, with its date spelled out. It is a
 #: template, not a file: `rule_for` matches any real date in that shape.
 DAILY_NOTE_NAME = "memory/YYYY-MM-DD.md"
+
+#: The app's own layout under the sand root, as templates
+#: (`memory-service.ts`: `getAgentMemoryDir`, `getUserMemoryShardDir`,
+#: `getProjectMemoryShardDir`; `agent-state.ts` writes `project.md`).
+AGENT_PROFILE_NAME = "agents/<agentId>/memory/profile.md"
+AGENT_LOG_NAME = "agents/<agentId>/memory/log/YYYY-MM.md"
+USER_SHARD_PROFILE_NAME = "user-memory/agents/<agentId>/profile.md"
+USER_SHARD_LOG_NAME = "user-memory/agents/<agentId>/log/YYYY-MM.md"
+PROJECT_SHARD_PROFILE_NAME = "projects/<slug>/memory/agents/<agentId>/profile.md"
+PROJECT_SHARD_LOG_NAME = "projects/<slug>/memory/agents/<agentId>/log/YYYY-MM.md"
+PROJECT_DOCUMENT_NAME = "projects/<slug>/project.md"
+
+#: The longest name the wire takes (`MemorySyncFile.name`).
+MEMORY_NAME_MAX_LENGTH = 200
 
 #: Every accepted name, and the rule it merges by. Nothing else is
 #: accepted, here or on the wire.
@@ -368,32 +455,82 @@ MEMORY_FILE_RULES: Mapping[str, MemoryRule] = {
     "MEMORY.md": MemoryRule.LIST,
     "USER.md": MemoryRule.DOCUMENT,
     DAILY_NOTE_NAME: MemoryRule.LINES,
+    AGENT_PROFILE_NAME: MemoryRule.FACTS,
+    AGENT_LOG_NAME: MemoryRule.FACTS,
+    USER_SHARD_PROFILE_NAME: MemoryRule.FACTS,
+    USER_SHARD_LOG_NAME: MemoryRule.FACTS,
+    PROJECT_SHARD_PROFILE_NAME: MemoryRule.FACTS,
+    PROJECT_SHARD_LOG_NAME: MemoryRule.FACTS,
+    PROJECT_DOCUMENT_NAME: MemoryRule.DOCUMENT,
 }
 
 #: `\Z`, not `$`: `$` also matches just before a trailing newline, which
 #: would let `"memory/2026-09-11.md\n"` through and become a path.
 _DAILY_NOTE = re.compile(r"^memory/(\d{4})-(\d{2})-(\d{2})\.md\Z")
 
+#: One folder name as the app makes them (`isSafeFolderId`, and the
+#: agent ids and project slugs it hands out): no slash, no backslash, no
+#: leading dot — so `.`, `..` and the `.dreaming/` metadata folder match
+#: nothing. Kept to a character class the file system and a URL both
+#: take, and short.
+_FOLDER = r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}"
+_MONTH = r"(\d{4})-(\d{2})"
+_APP_NAMES: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(rf"^agents/{_FOLDER}/memory/profile\.md\Z"), AGENT_PROFILE_NAME),
+    (re.compile(rf"^agents/{_FOLDER}/memory/log/{_MONTH}\.md\Z"), AGENT_LOG_NAME),
+    (
+        re.compile(rf"^user-memory/agents/{_FOLDER}/profile\.md\Z"),
+        USER_SHARD_PROFILE_NAME,
+    ),
+    (
+        re.compile(rf"^user-memory/agents/{_FOLDER}/log/{_MONTH}\.md\Z"),
+        USER_SHARD_LOG_NAME,
+    ),
+    (
+        re.compile(rf"^projects/{_FOLDER}/memory/agents/{_FOLDER}/profile\.md\Z"),
+        PROJECT_SHARD_PROFILE_NAME,
+    ),
+    (
+        re.compile(rf"^projects/{_FOLDER}/memory/agents/{_FOLDER}/log/{_MONTH}\.md\Z"),
+        PROJECT_SHARD_LOG_NAME,
+    ),
+    (re.compile(rf"^projects/{_FOLDER}/project\.md\Z"), PROJECT_DOCUMENT_NAME),
+)
+
 
 def _canonical(name: str) -> str | None:
     """The key of `MEMORY_FILE_RULES` a name stands for, or None.
 
     This is a security boundary: the name becomes a path inside a
-    workspace on our servers, so it is matched whole against a fixed
-    list. A name carrying `..`, a leading slash, a backslash or a
-    further path segment matches nothing and is refused.
+    workspace on our servers and on every machine that syncs, so it is
+    matched whole against a fixed list of shapes. A name carrying `..`,
+    a leading slash, a backslash, a further path segment or a folder
+    starting with a dot matches nothing and is refused.
     """
+    if len(name) > MEMORY_NAME_MAX_LENGTH:
+        return None
     if name in ("MEMORY.md", "USER.md"):
         return name
     match = _DAILY_NOTE.match(name)
-    if match is None:
-        return None
-    year, month, day = (int(part) for part in match.groups())
-    try:
-        date(year, month, day)
-    except ValueError:
-        return None
-    return DAILY_NOTE_NAME
+    if match is not None:
+        year, month, day = (int(part) for part in match.groups())
+        try:
+            date(year, month, day)
+        except ValueError:
+            return None
+        return DAILY_NOTE_NAME
+    for pattern, key in _APP_NAMES:
+        match = pattern.match(name)
+        if match is None:
+            continue
+        if match.groups():
+            year, month = (int(part) for part in match.groups())
+            try:
+                date(year, month, 1)
+            except ValueError:
+                return None
+        return key
+    return None
 
 
 def is_accepted_memory_name(name: str) -> bool:
@@ -411,6 +548,7 @@ _MERGERS: Mapping[MemoryRule, Callable[[str, str, bool], str]] = {
     MemoryRule.LIST: lambda ours, theirs, _: merge_list_file(ours, theirs),
     MemoryRule.LINES: lambda ours, theirs, _: merge_line_file(ours, theirs),
     MemoryRule.DOCUMENT: merge_document,
+    MemoryRule.FACTS: lambda ours, theirs, _: merge_fact_file(ours, theirs),
 }
 
 

@@ -119,7 +119,9 @@ Ranked by what a person clicking around hits first.
 5. **Auto-review rejects every action it is asked about.**
    `DashboardService/ClassifySandAutoReview` is not served and the classifier
    fails closed (`host/runner/sand-auto-review-classifier-run.ts:66-68`);
-   with `sand_auto_review` off by default it is rarely asked.
+   with `sand_auto_review` off by default it is rarely asked. (Corrected 25
+   September 2026: the classifier runs on Luna through Simeon Labs' proxy and
+   `sand_auto_review` is on in `simeon-gate-defaults.ts`; it enforces.)
 6. **Custom MCP servers and account plugins cannot be added.** Reads return
    `{unavailable: true}`; writes (`InstallUserPlugin`, `SetMcpConfig`,
    `UninstallUserPlugin`) throw (`shared/node/cursor-backend/account-mcp.ts:118-128`).
@@ -203,7 +205,7 @@ list and the profile are the two that would change something on screen.
 | Plugin skills, skill publish, managed skills, team rules | `GetEffectiveUserPlugins`, `PublishPlugin`, `GetManagedSkills`, `GetTeamRules` (`mcp/plugin-skills.ts:55-66`, `skill-publish.ts:94-134`, `managed-setup/*`) | caught; `[sand:plugin-skills]`, `[sand:skill-publish]` |
 | Cloud automations and listeners | `AutomationsService/*` (`sand-automation-cloud-sync.ts:413-509`); `/sand/listener-*`, `/sand/automation-*` (`backend-relay-source.ts:12`, `sand-automation-fire-consumer.ts:84`); `GetSlackUserSettings`, `GetScmConnectionStatus` (`listener-integrations.ts:28-36`) | local scheduling; listeners "error" with 30 s backoff |
 | Cloud automations and listeners, corrected 25 September | Slack/GitHub listeners showed `error` with a 30 s backoff once one existed; Teams/Linear/Sentry/PagerDuty triggers were accepted and showed nothing. Since 25 September the tool refuses a listener trigger as Coming Soon, the prompt offers cron only, the relay sources and the fire consumer are not started and cloud absence is seeded (`shared/listener-availability.ts`). Definitions live in the box volume at `/home/box/sand-data/<agent>/automations/<id>/automation.json`, not backed up. Background routine failures surface only in run history and the agent's status reminder, never a tray (Grok Bot's own rule). | Coming Soon |
-| Sharing | `/sand/xuser/*`, `/sand/share-rooms/*` (`xuser-relay.ts:15-28`) | gated off; "Couldn't reach the sharing service" |
+| Sharing | `/sand/xuser/*`, `/sand/share-rooms/*` (`xuser-relay.ts:15-28`) | ~~gated off; "Couldn't reach the sharing service"~~ Corrected 25 September: served by `polar/sand/sharing.py`, switch and gate on (`sharing-served.md`) |
 | Audit, logs, analytics, traces | `RecordSandAuditEvents`, `SubmitLogs`, `TrackEvents`, `POST /v1/traces` | ~~buffered, dropped, silent~~ Corrected 25 September: the host bundle carried no telemetry guard, so `SubmitLogs` (console lines, 2,048 chars each) and `TrackEvents` were posted to api.simeonlabs.com every 3 s and 404ed; the box now runs with `SAND_DISABLE_TELEMETRY=1`, `SAND_DISABLE_ANALYTICS=1`, `SAND_BOX_LOG_SHIP_DISABLED=1` (schema 10). Audit is gated off and writes a local, redacted `audit.jsonl`; traces never sampled (AlwaysOff) |
 | Box store sync, copy-in, local-exec connection | `BackgroundComposerService` store RPCs, `/sand-box/inference-credential`, `/sand-box/local-exec-connection` | off unless `SAND_BOX_STORE_SYNC`; local Docker reads a token file instead |
 
@@ -215,7 +217,7 @@ list and the profile are the two that would change something on screen.
 | Access state | `GetSandAccessStatus` (`account/access.ts:68`) | `unknown`; the recovered renderer treats it as an error for the access cover |
 | Usage, trial | four `DashboardService` methods (`cursor-profile.ts:125-127`) | gated off, `null` |
 | Models | `AiService/AvailableModels` (`models/cursor-model-catalog.ts:12`) | error to the renderer |
-| Remote box | `GrokBotService/{EnsureSandBox,RecreateSandBox,…}` (`box/box-host-connector.ts:78-108`); `POST /sand-box/local-exec-daemon-credential` (`:121`) | `ConnectError`; local Docker is the only runtime that works |
+| Remote box | `GrokBotService/{EnsureSandBox,RecreateSandBox,…}` (`box/box-host-connector.ts:78-108`); `POST /sand-box/local-exec-daemon-credential` (`:121`, a plain fetch that 404s, not a ConnectError; since 25 September 2026 the local Docker runtime never asks, ledger F-413) | `ConnectError`; local Docker is the only runtime that works |
 | Migration watch | `GrokBotService/WatchSandBoxMigration` (`box-migration-watcher.ts:33`) | retries every 3 s for ever |
 | Account MCP | as above (`mcp/desktop-mcp-manager.ts:71,78`); team popularity (`mcp-team-popularity.ts:4-6`) | reads empty; writes reject |
 | Experiments | `AnalyticsService/BootstrapStatsig` (`statsig-bootstrap.ts:39`), every 5 min | `{}` |
@@ -287,7 +289,8 @@ and the suite is at 290 passing. None of it has run on a Mac.
 
 Not done, because the service behind each does not exist and would be a
 build of its own: cloud boxes and cloud agents (8), Slack and GitHub
-listeners and sharing (8), Cursor's feature-gate server (12; gates keep
+listeners and sharing (8; sharing's relay was built on 25 September,
+`sharing-served.md`), Cursor's feature-gate server (12; gates keep
 their bundled defaults, `sand_usage_page` is the one we set), and the
 notification config forced off (15; local macOS notifications work).
 

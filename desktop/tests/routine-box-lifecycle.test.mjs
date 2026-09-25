@@ -91,6 +91,17 @@ test("the Mac writes the box's renewal credential into the token file, on connec
     assert.match(source, /if \(boxRenewalCredential == null && remote\.issueBoxRenewalCredential != null\)/, "minted once per app run at connect");
     const connector = await readFile(path.join(repoRoot, "source/electron-main/box/box-host-connector.ts"), "utf8");
     assert.match(connector, /BOX_RENEWAL_CREDENTIAL_PATH = "\/desktop\/api\/box\/renewal-credential"/);
+    // Both production call sites pass a descriptor fast path; until 25
+    // September the fast-path object dropped this method, so nothing was
+    // ever minted and the local box renewed nothing once the app was gone.
+    const { module: hostConnector, dispose: disposeHost } = await load("source/electron-main/box/box-host-connector.ts", "box-host-connector");
+    try {
+      const fastPath = { store: { read: () => undefined, write: () => {}, clear: () => {} }, getAccountScope: () => "acct" };
+      const built = hostConnector.createRemoteHostConnector({ getAccessToken: async () => "" }, {}, undefined, fastPath);
+      assert.equal(typeof built.issueBoxRenewalCredential, "function", "the fast-path connector still mints the box's renewal credential");
+    } finally {
+      await disposeHost();
+    }
   } finally {
     module.rememberBoxRenewalCredential(undefined);
     await rm(settingsDir, { recursive: true, force: true });
@@ -128,7 +139,7 @@ test("the box renews with the file's credential when the file is stale, and uses
 
     const plain = await service({ accessToken: "mac-token", expiresAtMs: Date.now() - 1 });
     try {
-      await assert.rejects(() => plain.getAccessToken(), /Waiting for an inference credential/, "a stale file with no credential waits, as before");
+      await assert.rejects(() => plain.getAccessToken(), /Waiting for a model credential/, "a stale file with no credential waits, as before");
       assert.equal(renewals.length, 1, "and renews nothing");
     } finally { plain.dispose(); }
   } finally {

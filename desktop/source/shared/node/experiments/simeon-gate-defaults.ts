@@ -25,10 +25,25 @@ import { envGateOverride } from "./cursor-experiments.js";
 //
 // `sand_product_analytics` — Grok Bot's event stream to Cursor's
 // AnalyticsService, which nothing serves here; off (F-378).
+//
+// `sand_multiplayer` — sharing a room with another person's agent. Off in
+// the bundled table; on since 25 September 2026 (F-403), now that Simeon
+// Labs' server serves the `/sand/xuser` and `/sand/share-rooms` relay
+// (`server/polar/sand/sharing.py`). The cross-user-sharing extension reads
+// it through `getFeatureGateProperty`, which this table also covers.
+//
+// `sand_notify_bus` — the box's one SSE stream to `GET /sand/notify`, which
+// wakes the listener relay poller and the fire consumer the moment an
+// event or a cron fire lands instead of at their next poll. Off in the
+// bundled table; on since 25 September 2026, now that Simeon Labs' server
+// serves the stream (polar/sand/notify.py) and the listener relay behind
+// it (polar/sand/listeners*.py). The safety polls stay on.
 export const SIMEON_FEATURE_GATE_DEFAULTS: Readonly<Record<string, boolean>> = Object.freeze({
   sand_usage_page: true,
   sand_auto_review: true,
   sand_product_analytics: false,
+  sand_multiplayer: true,
+  sand_notify_bus: true,
 });
 
 export function simeonGateDefault(name: string, env: NodeJS.ProcessEnv = process.env): boolean | undefined {
@@ -54,23 +69,35 @@ export interface GateDefaultableService<Snapshot> {
   getSnapshot(): Snapshot;
   subscribe(listener: (snapshot: Snapshot) => void): () => void;
   getFeatureFlagOverridesRecord(): Record<string, unknown>;
+  getFeatureGateProperty?(name: any): { get(): boolean; set(value: boolean): void };
 }
 
 /**
  * The experiment service with Simeon's defaults laid over its answers:
- * `checkFeatureGate`, `getSnapshot` and every snapshot handed to a
- * subscriber. Everything else reaches the wrapped service untouched.
+ * `checkFeatureGate`, `getSnapshot`, every snapshot handed to a
+ * subscriber, and the gate property an extension subscribes to
+ * (`getFeatureGateProperty` builds it from the raw table, so the property
+ * is set to Simeon's default when one exists; 25 September 2026, the
+ * sharing gate). Everything else reaches the wrapped service untouched.
  */
 export function applySimeonGateDefaults<Snapshot, Service extends GateDefaultableService<Snapshot>>(service: Service, env: NodeJS.ProcessEnv = process.env): Service {
   const overrides = () => service.getFeatureFlagOverridesRecord();
   const project = (snapshot: Snapshot) => withSimeonGateDefaults(snapshot, env, overrides());
+  const resolve = (name: string): boolean | undefined => {
+    const local = overrides()[name];
+    return typeof local === "boolean" ? local : simeonGateDefault(name, env);
+  };
   return new Proxy(service, {
     get(target, property, receiver) {
       if (property === "checkFeatureGate") {
+        return (name: string) => resolve(name) ?? target.checkFeatureGate(name);
+      }
+      if (property === "getFeatureGateProperty" && typeof target.getFeatureGateProperty === "function") {
         return (name: string) => {
-          const local = overrides()[name];
-          if (typeof local === "boolean") return local;
-          return simeonGateDefault(name, env) ?? target.checkFeatureGate(name);
+          const gate = target.getFeatureGateProperty!(name);
+          const value = resolve(name);
+          if (value !== undefined && gate.get() !== value) gate.set(value);
+          return gate;
         };
       }
       if (property === "getSnapshot") return () => project(target.getSnapshot());

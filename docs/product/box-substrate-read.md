@@ -137,3 +137,24 @@ somewhere real to land.
 **What not to do:** wire the app to the queue first. A producer against today's
 executor would ship routines that can read a file and call a model and nothing
 else, and that is a feature people would rightly call broken.
+
+---
+
+## 3. Corrected 25 September 2026: the box has a broker and a host contract
+
+§1 argued from OpenClaw's sandbox registry; that tree is gone (the
+re-founding of 18 September, `CLAUDE.md`). §2's decision stands — keep
+the maty queue, do not wire the app to it — and the "box on E2B" it
+assumed did not happen: `e2b` is not in `server/uv.lock`, and E2B's
+per-port hostnames (`<port>-<id>.e2b.app`) do not fit the app's tunnel
+derivation. What exists now is `docs/product/cloud-computer-served.md`:
+the app's own `"remote"` runtime, whose broker
+(`aiserver.v1.GrokBotService`) Simeon Labs' server serves from
+`polar/sand/box_broker.py`, a `BoxHost` contract with a real Docker
+Engine provider (`box_hosts.py`) and an E2B stub, and a reverse proxy to
+the box's ports from the API. A routine on a cloud box, the "one
+substrate" §2 wanted, still needs the runner's executor to become a box;
+nothing in this commit touches `runner/` or `polar/maty/`. The container
+is the local path's `docker run` line for line, on a VM the founder
+provisions; until `CLAIDOR_BOX_HOST_PROVIDER` is set the broker answers
+one sentence and the app stays on the Docker box on the Mac.

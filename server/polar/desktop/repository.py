@@ -7,6 +7,7 @@ from uuid import UUID
 from sqlalchemy import func, select
 
 from polar.kit.repository import RepositoryBase
+from polar.kit.utils import utc_now
 from polar.models import (
     DesktopAuthCode,
     DesktopMemoryFile,
@@ -58,6 +59,22 @@ class DesktopSessionRepository(RepositoryBase[DesktopSession]):
         )
         return await self.get_all(statement)
 
+    async def list_in_grace_of_user(
+        self, user_id: UUID, now: datetime
+    ) -> Sequence[DesktopSession]:
+        """A person's sessions a refresh has replaced whose old access
+        token is still inside its grace: refresh token dead, access token
+        live, not a job token and not a box credential."""
+        statement = self.get_base_statement().where(
+            DesktopSession.user_id == user_id,
+            DesktopSession.revoked_at.is_(None),
+            DesktopSession.refresh_expires_at <= now,
+            DesktopSession.access_expires_at > now,
+            DesktopSession.job_id.is_(None),
+            DesktopSession.box_of_session_id.is_(None),
+        )
+        return await self.get_all(statement)
+
 
 class DesktopUsageRepository(RepositoryBase[DesktopUsage]):
     model = DesktopUsage
@@ -79,16 +96,25 @@ class DesktopUsageRepository(RepositoryBase[DesktopUsage]):
 class DesktopMemoryFileRepository(RepositoryBase[DesktopMemoryFile]):
     model = DesktopMemoryFile
 
-    async def list_by_user(self, user_id: UUID) -> Sequence[DesktopMemoryFile]:
-        """Everything Claidor holds for one person, in name order."""
+    async def list_by_user(
+        self, user_id: UUID, *, include_deleted: bool = False
+    ) -> Sequence[DesktopMemoryFile]:
+        """Everything Claidor holds for one person, in name order. A
+        tombstone (`deleted_at` set) is a name one machine removed and
+        the others have still to hear about; it is left out unless
+        asked for."""
         statement = (
             self.get_base_statement()
             .where(DesktopMemoryFile.user_id == user_id)
             .order_by(DesktopMemoryFile.name)
         )
+        if not include_deleted:
+            statement = statement.where(DesktopMemoryFile.deleted_at.is_(None))
         return await self.get_all(statement)
 
     async def get_by_name(self, user_id: UUID, name: str) -> DesktopMemoryFile | None:
+        """The one row for a name, tombstoned or not: a sync that sends
+        a deleted name again has to see the tombstone's version."""
         statement = self.get_base_statement().where(
             DesktopMemoryFile.user_id == user_id, DesktopMemoryFile.name == name
         )
@@ -97,9 +123,9 @@ class DesktopMemoryFileRepository(RepositoryBase[DesktopMemoryFile]):
     async def upsert(
         self, user_id: UUID, name: str, *, content: str, version: int
     ) -> DesktopMemoryFile:
-        """The row for one name, written at the version given. A name
-        the person does not have yet is created; one they have is
-        overwritten."""
+        """The row for one name, written at the version given and alive.
+        A name the person does not have yet is created; one they have,
+        tombstoned or not, is overwritten."""
         found = await self.get_by_name(user_id, name)
         if found is None:
             found = DesktopMemoryFile(
@@ -107,5 +133,18 @@ class DesktopMemoryFileRepository(RepositoryBase[DesktopMemoryFile]):
             )
             return await self.create(found, flush=True)
         return await self.update(
-            found, update_dict={"content": content, "version": version}, flush=True
+            found,
+            update_dict={"content": content, "version": version, "deleted_at": None},
+            flush=True,
+        )
+
+    async def tombstone(
+        self, found: DesktopMemoryFile, *, version: int
+    ) -> DesktopMemoryFile:
+        """Mark one row deleted at the version given. The text goes with
+        it: a tombstone is a name and a version, nothing to read."""
+        return await self.update(
+            found,
+            update_dict={"content": "", "version": version, "deleted_at": utc_now()},
+            flush=True,
         )
