@@ -29,8 +29,11 @@ export const LISTENERS_COMING_SOON_SENTENCE =
 export const ROUTINES_AWAY_COMING_SOON_SENTENCE =
   "A routine fires while this computer is awake, whether Simeon is open or closed; it cannot fire while the computer is asleep or off, and it does not run anywhere else.";
 
+// On by default since 25 September 2026: `polar/sand/listeners.py` serves
+// the relay routes at the root of the API host. "0" turns the paths off.
 export function isListenerRelayServed(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env[LISTENER_RELAY_SERVED_ENV]?.trim() === "1";
+  const raw = env[LISTENER_RELAY_SERVED_ENV]?.trim();
+  return raw === "0" ? false : true;
 }
 
 /** True when a trigger, in any of the tool's three shapes, carries a member that is not a cron schedule. */

@@ -223,8 +223,13 @@ export function localDockerInferenceEnvironmentArguments(inferenceCredential?: P
     "--env", "SAND_DISABLE_TELEMETRY=1",
     "--env", "SAND_DISABLE_ANALYTICS=1",
     "--env", "SAND_BOX_LOG_SHIP_DISABLED=1",
+    // The served switches (docs/product/cursor-dependencies-map.md) default
+    // on in both processes; an override set on the Mac reaches the box
+    // too, since the host in the box is what polls the relay.
+    ...SERVED_SWITCH_ENVS.flatMap((name) => { const value = env[name]?.trim(); return value == null || value.length === 0 ? [] : ["--env", `${name}=${value}`]; }),
   ];
 }
+export const SERVED_SWITCH_ENVS = ["SAND_CONNECT_SERVED", "SAND_LISTENER_RELAY_SERVED", "SAND_CLOUD_AGENTS_SERVED", "SAND_SHARING_SERVED"] as const;
 
 async function ensureLocalDockerBox(settingsPath: string, inferenceCredential?: InferenceCredential): Promise<GatewayConnection> {
   try {

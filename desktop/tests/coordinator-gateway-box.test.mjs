@@ -32,8 +32,8 @@ async function load(entry, name) {
 
 test("nothing asks Cursor's server on a timer: no Statsig bootstrap, no local-exec credential, no update feed", async () => {
   const experiments = await src("shared/node/experiments/cursor-experiments.ts");
-  assert.match(experiments, /this\.refreshSnapshot\(\); if \(!isConnectServed\(this\.options\.env\)\) return; this\.pollHandle = this\.refreshPoll\.start/);
-  assert.match(experiments, /private async runRefresh\(trigger: Trigger\): Promise<void> \{ if \(!isConnectServed\(this\.options\.env\)\) \{ this\.refreshSnapshot\(\); return; \}/);
+  assert.match(experiments, /this\.refreshSnapshot\(\); if \(!isConnectServed\(this\.options\.env, "cursor\.statsig-bootstrap"\)\) return; this\.pollHandle = this\.refreshPoll\.start/);
+  assert.match(experiments, /private async runRefresh\(trigger: Trigger\): Promise<void> \{ if \(!isConnectServed\(this\.options\.env, "cursor\.statsig-bootstrap"\)\) \{ this\.refreshSnapshot\(\); return; \}/);
   const docker = await src("electron-main/box/local-docker-host-connector.ts");
   assert.match(docker, /issueLocalExecDaemonCredential: async \(\) => settings\.getBoxRuntime\(\) === "local-docker" \? undefined : await remote\.issueLocalExecDaemonCredential!\(\)/);
   assert.match(await src("node-agent-coordinator/local-exec/supervisor.ts"), /if \(credential == null\) \{ credentialHandedOff = true; return; \}/);
