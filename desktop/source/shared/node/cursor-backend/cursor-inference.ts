@@ -165,12 +165,13 @@ export function createSandBackendTransport(options: Omit<SandInferenceOptions, "
   // took both, so nothing changes for `SAND_CONNECT_SERVED=1` against it.
   return createConnectTransport({ baseUrl: backendUrl, httpVersion: "1.1", useBinaryFormat: false, interceptors: [createSandRpcTracingInterceptor(), createSandInferenceInterceptor({ ...options, backendUrl })] });
 }
-// Simeon Labs' server serves no Connect RPC. Until 25 September 2026 every
-// client here still posted to it and read a 404 (plugin skills daily, skill
-// publish, team popularity, …). Unless SAND_CONNECT_SERVED=1, a client
-// built here answers every call with Unimplemented at once and sends
-// nothing; every caller already catches and falls back (ledger F-156,
-// F-157, F-158).
+// Simeon Labs' server serves the Connect services in the served set
+// (`shared/cloud-agents-availability.ts`; `polar/sand/`) since 25 September
+// 2026 — DashboardService among them, which is where plugin skills daily
+// and skill publish go (ledger F-156, F-157, served; team popularity F-158
+// removed). For a service not in the set, or with SAND_CONNECT_SERVED=0, a
+// client built here answers every call with Unimplemented at once and
+// sends nothing; every caller already catches and falls back.
 export function createSandCursorBackendClient<Service extends ServiceType>(service: Service, options: Omit<SandInferenceOptions, "backendUrl">): Client<Service> { if (!isConnectServed(options.env, service.typeName)) return createUnservedClient(service); return createClient(service, createSandBackendTransport(options)); }
 
 export function createSandAttachedMediaUrlProvider(options: Omit<SandInferenceOptions, "backendUrl">) {

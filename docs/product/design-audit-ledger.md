@@ -180,7 +180,7 @@ until its row says so. Columns:
 | F-154 | connectors-mcp | major | docs-wrong | confirmed | connectors-mcp | fixed | Kit/skill/MCP store routes have no reader in the reconstruction; record says the pipe is live | `server/polar/desktop/endpoints.py` |
 | F-155 | connectors-mcp | major | risk | confirmed | connectors-mcp | fixed | HTTP MCP client body read has no timeout; an open SSE stream hangs discovery or a tool call | `desktop/source/shared/node/vendor-mcp/http-mcp-client.ts` |
 | F-156 | connectors-mcp | minor | dead-service | confirmed | connectors-mcp | fixed | Plugin-skills service still polls Cursor's Dashboard RPCs in the box | `desktop/source/host/extensions/mcp/plugin-skills.ts` |
-| F-157 | connectors-mcp | minor | dead-service | confirmed | connectors-mcp | coming-soon | Skill publish still talks to Cursor and shows a Claidor-branded failure | `desktop/source/host/extensions/mcp/skill-publish.ts` |
+| F-157 | connectors-mcp | minor | dead-service | confirmed | skill-publish-served | fixed | Skill publish still talks to Cursor and shows a Claidor-branded failure | `desktop/source/host/extensions/mcp/skill-publish.ts` |
 | F-158 | connectors-mcp | minor | dead-service | confirmed | connectors-mcp | fixed | Team plugin popularity IPC calls Cursor GetMe and GetTeamPluginPopularity | `desktop/source/electron-main/adapters/mcp-oauth.ts` |
 | F-159 | connectors-mcp | note | dead-service | confirmed | connectors-mcp | fixed | fetchPluginServers still calls Cursor getPluginMcpConfig and has no caller | `desktop/source/shared/node/mcp/mcp-marketplace.ts` |
 | F-160 | connectors-mcp | minor | dead-service | confirmed | connectors-mcp | - | Composio path is unwired on the desktop and unconfigured on the server, yet recorded as working | `desktop/source/electron-main/mcp/desktop-mcp-manager.ts` |
@@ -854,8 +854,10 @@ caller** (plugin skills daily, skill publish, team popularity, the
 marketplace's dead fetcher, the last MCP fallback on both sides):
 `createSandCursorBackendClient` now answers every call with
 Unimplemented at once and sends nothing unless `SAND_CONNECT_SERVED=1`
-(F-156, F-158, F-177; every caller already catches); skill publish says
-"coming soon in Simeon" (F-157, dependency: Cursor's team marketplace);
+(F-156, F-158, F-177; every caller already catches); skill publish said
+"coming soon in Simeon" (F-157, dependency: Cursor's team marketplace)
+**until later the same day, when Simeon Labs' server began serving the
+registry — see `skill-publish-served` below**;
 the dead fetcher is gone (F-159). **The hand-rolled OAuth and MCP client
 was open at the edges**: every sign-in fetch has a 10 s deadline
 (F-165), the RFC 8707 `resource` rides on authorize, exchange and
@@ -1258,3 +1260,23 @@ the lockfile; its hostnames do not fit the tunnel rule).
 | F-487 | box-and-computer | minor | risk | confirmed | cloud-computer | fixed | `issue_box_credential` revoked every child row of the desktop, so a box creation would have killed the local-exec daemon's credential; it skips `simeon-local-exec/` rows now | `server/polar/desktop/service.py` |
 | F-488 | box-and-computer | minor | risk | confirmed | cloud-computer | fixed | `setBoxRuntime("remote")` stopped the local box before knowing the broker would answer; it probes first and falls back with one sentence | `desktop/source/electron-main/main-edge.ts` |
 | F-489 | box-and-computer | major | unbuilt | confirmed | cloud-computer | coming-soon | A box host: no VM, daemon, bundle URL or DNS exists; the broker answers "Simeon's cloud computer needs a host; set CLAIDOR_BOX_HOST_PROVIDER" until the founder provisions one (dependency: infrastructure the founder creates, named in `cloud-computer-served.md`) | `server/polar/config.py` |
+
+### skill-publish-served (25 September 2026)
+
+F-157 is `fixed`: `aiserver.v1.DashboardService`'s `GetTeams`,
+`PublishPlugin`, `UnpublishPlugin` and `GetEffectiveUserPlugins` are
+served by `server/polar/sand/skill_registry.py` behind the contract the
+app already speaks (`docs/product/skill-publish-served.md`). Teams are
+Polar's organizations plus "Just me", so a person in no organization
+has a target; the tarball's files ride back as `inlineContentJson` and
+the version is the loader's own `sha256("{id}:{updatedAt}")[:40]`, so
+the publish confirms on the first sync pass. The on-failure sentence is
+the server's own; nothing says coming soon. **Found on the way, and it
+touches every Connect service in the served set (F-156, F-158, F-177,
+the dead-preflight cluster):** `@connectrpc/connect-node` defaults to
+the binary codec, so every call the app made went out as
+`application/proto` and refused the JSON reply
+(`unsupported content type application/json`); `createSandBackendTransport`
+and `createDashboardClient` now pass `useBinaryFormat: false`
+(`tests/skill-publish-served.test.mjs` measured it before the fix).
+Not yet run on a Mac.

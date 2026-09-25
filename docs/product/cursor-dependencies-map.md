@@ -36,7 +36,7 @@ cannot turn on one Connect service without the others.
 | Memory sync | app side never existed | routes exist but were built for a different layout | ~~new product work~~ **served, 25 September 2026**: the routes and their merge were reused, their names widened to the app's tree, and the client built (`memory-sync-served.md`) |
 | Cloud computer | complete | a broker, a network path, a VNC path, hosting | **backend replacement**, hosting is the new product decision — **served 25 September 2026** (`cloud-computer-served.md`): broker, proxy and a Docker host provider; the VM is the founder's |
 | Watching videos | mostly complete | a Gemini provider on the proxy; three desktop wires | **backend replacement** |
-| Publishing a skill to a team | complete | a team plugin registry | **new**, but small if scoped to "my account" |
+| Publishing a skill to a team | complete | a team plugin registry — **served since 25 September 2026** (`polar/sand/skill_registry.py`, §7) | **new**, built: personal and organization teams |
 | Sharing (cross-user rooms) | complete | a multi-user relay — **served since 25 September 2026** (`polar/sand/sharing.py`, `sharing-served.md`) | **new product functionality**, built |
 
 One bug came out of the box mapping and is fixed in this commit:
@@ -586,6 +586,26 @@ is no team concept in `polar/desktop`.
 so the client is untouched, or as JSON with a small client swap), or
 "publish to my own account", which drops `GetTeams` and is a few days.
 
+### 6. Served, 25 September 2026 (later the same day)
+
+Both sizes at once, as Connect `DashboardService`, client untouched in
+shape: `server/polar/sand/skill_registry.py` (+ `_service.py`,
+`_repository.py`, `polar/models/sand_plugin.py`, migration
+`sand_plugins_0925`). Teams are Polar's organizations
+(`user_organizations`) with "Just me" listed first, so `GetTeams` is never
+empty and `team_id` 0/absent publishes to the person's own account. The
+tarball's files come back as `inlineContentJson` (`{"files": [{path,
+content | contentBase64}]}`; `synthesizeInlinePluginDir` now writes
+`files`), `gitUrl` is empty so nothing is cloned, and `commitSha` is the
+loader's own `sha256("{id}:{updatedAt}")[:40]`, so the confirm lands on
+the first sync. Two corrections to §3 measured on the way: the table's
+`git_url`/`git_ref`/`git_path` are sent empty (an inline plugin), and
+**the client sent binary protobuf, not JSON**, until
+`createSandBackendTransport` passed `useBinaryFormat: false` — the
+connect-node default is binary, and `polar/sand/connect.py` reads JSON
+only. `docs/product/skill-publish-served.md` is the record; ledger
+cluster `skill-publish-served`. Not yet run on a Mac.
+
 ---
 
 ## 8. Sharing (a room with another person's agent)
@@ -682,9 +702,9 @@ with what is not yet run on a Mac.
 5. **Cloud agents**: served the same evening on the Render runner
    (`cloud-agents-served.md`); the coding executor comes with the cloud
    computer, since it is the same box.
-6. **Skill publish** scoped to "my account"; **sharing** last, because it
-   is product work rather than replacement. (**Memory sync** was listed
-   here too and is served since later the same day, §4.5.)
+6. **Skill publish** — done 25 September 2026, personal and organization
+   teams both (§7.6); **sharing** and **memory sync** were listed here
+   last as product work and are served since later the same day (§8, §4.5).
 
 Not measured on a Mac: anything above. The box renewal-credential fix is the
 one thing in this commit that changes runtime behaviour; the line to read
