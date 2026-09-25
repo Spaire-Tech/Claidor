@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -44,6 +45,12 @@ test("the full patch renames the staged renderer and records what it changed, an
     assert.doesNotMatch(await readFile(path.join(assets, "index-abc.js"), "utf8"), /Grok Bot|New Bot/);
     const provenance = JSON.parse(await readFile(path.join(stage, "dist", "renderer-router-extension.json"), "utf8"));
     assert.ok(provenance.features.includes("brand-simeon"));
+    // verify.mjs checks every rewritten file against the hash after the last pass.
+    assert.deepEqual(provenance.files.map((file) => file.path).sort(), ["dist/renderer/assets/app-icon-C7NKj2u7.png", "dist/renderer/assets/index-abc.js", "dist/renderer/assets/other-def.js", "dist/renderer/assets/style.css", "dist/renderer/index.html"]);
+    for (const file of provenance.files) {
+      const bytes = await readFile(path.join(stage, file.path));
+      assert.deepEqual(file.patched, { bytes: bytes.length, sha256: createHash("sha256").update(bytes).digest("hex") }, `${file.path} records its final bytes`);
+    }
     // A renderer with no Grok Bot at all is not the pinned one.
     await writeFile(path.join(assets, "index-abc.js"), `${registry};function Sa(s){};${general};${usage};${markAnchors};`);
     await writeFile(path.join(assets, "other-def.js"), "");
