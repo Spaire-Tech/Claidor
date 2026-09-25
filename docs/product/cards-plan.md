@@ -166,7 +166,7 @@ once the computer is designed. All fourteen are in scope.
 | 11 | Cookie-origin approval | **Missing** | — |
 | 12 | Connector auth | **Exists** | `ThreadItemKind.Connector`, `propose_connector` |
 | 13 | Spend / virtual card | **Missing** | — |
-| 14 | Routine confirm | **Missing** | Routines is drawn and does nothing |
+| 14 | Routine confirm | **Exists in the host** (corrected 25 September 2026) | `reviewSandAutomationWrite` → the `auto-review-approval` card on surface `automation_write`; was gated off by `automationWrite: "off"` in every mode table, now follows the other surfaces; a card is drawn only when `sand_auto_review` enforces |
 
 The thread currently has **nine** message kinds
 (`renderer/design/thread/types.ts`), and that list is closed: adding one is a

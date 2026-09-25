@@ -57,7 +57,7 @@ until its row says so. Columns:
 | F-031 | routines-automations | blocking | design-violation | unverified | - | - | Routines only fire while the app and the local Docker box are running; nothing fires with the Mac shut, and the agent's brief tells the person the opposite | `desktop/source/host/extensions/automations/sand-trigger-hub.ts` |
 | F-032 | routines-automations | blocking | dead-service | unverified | - | - | The agent is offered six event-listener trigger types (Slack, GitHub, Teams, Linear, Sentry, PagerDuty) that can never fire on Simeon, and saving one reports success | `desktop/source/host/runner/tools/sand-state-tool.ts` |
 | F-033 | routines-automations | major | naming | unverified | - | - | Listener 'connect' opens cursor.com, and the routines copy says Claidor and @Cursor to the person and the agent | `desktop/source/host/extensions/automations/listener-integrations.ts` |
-| F-034 | routines-automations | minor | hardcoded | unverified | - | - | Auto-review of routine writes is pinned 'off' in every mode table, so the confirm card promised in the brief and tool description never appears | `desktop/source/host/runner/sand-auto-review.ts` |
+| F-034 | routines-automations | minor | hardcoded | confirmed | routine-write-review | fixed | Auto-review of routine writes is pinned 'off' in every mode table, so the confirm card promised in the brief and tool description never appears | `desktop/source/host/runner/sand-auto-review.ts` |
 | F-035 | routines-automations | minor | dead-service | unverified | - | - | The box POSTs /sand/automation-events/poll to api.simeonlabs.com every ~30 s forever, even with zero routines, because the 404 never sets drainedWhileUnschedulable | `desktop/source/host/extensions/automations/sand-automation-fire-consumer.ts` |
 | F-036 | routines-automations | minor | risk | unverified | - | - | Cron-only routines are scheduled locally only after a cloud RPC has failed; with no credential in the box they never fire | `desktop/source/host/extensions/automations/sand-automation-cloud-sync.ts` |
 | F-037 | routines-automations | minor | risk | unverified | - | - | A scheduled or event-fired routine that fails never tells the person; only manual 'Run now' failures raise a tray | `desktop/source/host/extensions/transcript/automation-run-path.ts` |
@@ -113,7 +113,7 @@ until its row says so. Columns:
 | F-087 | cards-and-widgets | note | risk | unverified | - | - | Chronological card sort only runs when the reply carries an Allow card | `desktop/source/node-agent-coordinator/main.ts` |
 | F-088 | cards-and-widgets | minor | dead-service | unverified | - | - | Local-tool permission ceiling is fetched from a Cursor Dashboard RPC on every auth change | `desktop/source/electron-main/account/cursor-profile.ts` |
 | F-089 | cards-and-widgets | minor | docs-wrong | unverified | - | - | cards-plan.md and direction.md describe kinds, files and tools that are not in the tree | `docs/product/cards-plan.md` |
-| F-090 | cards-and-widgets | minor | unwired | unverified | - | - | Routine writes are never reviewed: automationWrite is 'off' in every mode table | `desktop/source/host/runner/sand-auto-review.ts` |
+| F-090 | cards-and-widgets | minor | unwired | confirmed | routine-write-review | fixed | Routine writes are never reviewed: automationWrite is 'off' in every mode table | `desktop/source/host/runner/sand-auto-review.ts` |
 | F-091 | cards-and-widgets | minor | design-violation | unverified | - | - | The brief tells the agent to use a Screenshot tool that is withheld, with no explanation | `desktop/source/host/host-runner-composition.ts` |
 | F-092 | cards-and-widgets | note | design-violation | unverified | - | - | Dead settings 'Router' panel source offers Claude Code, Codex and an OpenRouter API key | `desktop/scripts/lib/router-renderer-patch.mjs` |
 | F-093 | cards-and-widgets | note | docs-wrong | unverified | - | - | Permissions design names widget options the schema does not have (multiSelect) and a stale test comment | `docs/product/sources/caisra-permissions.md` |
@@ -376,7 +376,7 @@ until its row says so. Columns:
 | F-350 | permissions-and-review | note | dead-service | unverified | - | - | Team ceiling for local execution is fetched from Cursor's GetTeamAdminSettings on every auth-status change (404, swallowed) | `desktop/source/electron-main/account/cursor-auth-wiring.ts` |
 | F-351 | permissions-and-review | note | dead-service | unverified | - | - | Sand access is asked of Cursor's GetSandAccessStatus and runs on 'unknown' | `desktop/source/electron-main/account/access.ts` |
 | F-352 | permissions-and-review | note | dead-service | unverified | - | - | The box host polls Cursor's Statsig bootstrap (aiserver.v1.AnalyticsService/BootstrapStatsig) on api.simeonlabs.com every ~5 minutes; auto-review's only enforce lever hangs off it | `desktop/source/shared/node/experiments/statsig-bootstrap.ts` |
-| F-353 | permissions-and-review | note | design-violation | unverified | - | - | Routine create/change is never reviewed in any mode (automationWrite is hard 'off') | `desktop/source/host/runner/sand-auto-review.ts` |
+| F-353 | permissions-and-review | note | design-violation | confirmed | routine-write-review | fixed | Routine create/change is never reviewed in any mode (automationWrite is hard 'off') | `desktop/source/host/runner/sand-auto-review.ts` |
 | F-354 | permissions-and-review | note | risk | unverified | - | - | The auto-review card's 'Always allow' appends the classifier's proposed rule to the person's allow-instructions, with no confirmation of the rule text | `desktop/frontend/src/recovered/features/conversation/cards/transcript-card/auto-review-actions.ts` |
 | F-355 | data-and-persistence | major | docs-wrong | unverified | - | - | Copied Grok Bot user-data folder cannot be decrypted after the rename; 'nobody signs in again' is unproven and likely false | `desktop/source/electron-main/startup/desktop-user-data-bootstrap.ts` |
 | F-356 | data-and-persistence | major | risk | unverified | - | - | Startup data-root migration renames the real Grok Bot's ~/.cursor/sand into ~/.caisra | `desktop/source/electron-main/startup/startup-data-root-migration.ts` |
@@ -579,3 +579,21 @@ shape). No person-visible surface exists for it in the app (grepped
 summaries), so there is nothing to label; if one is added, it says
 Coming Soon. Memory stays in the box's Docker volume. Dreaming stays off,
 also by the founder's word: v1 keeps the legacy extraction.
+
+### routine-write-review (25 September 2026)
+
+F-034, F-090, F-353: `automationWrite: "off"` in every auto-review mode
+table, typed as the literal `"off"`. Refuter: evidence and wiring stand
+(the path behind it is complete: state tool → `reviewSandAutomationWrite`
+→ the Luna classifier → the `auto-review-approval` card on surface
+`automation_write` → the runner's resolve route); design refuted in
+part: it is Grok Bot's shipped not-yet-rolled-out state, verbatim from
+`ce9fc2d8`, and the brief says "may ask", so the copy was not false. The
+founder's rule applies anyway: a switch with no missing service behind
+it. Fixed: the surface follows the others (shadow, enforce, local
+override); `tests/routine-write-review.test.mjs`; cards-plan row 14 no
+longer says Missing. In production this is a shadow classification (one
+Luna call, one `[claidor] auto-review action=sand_automation_write` line)
+until `sand_auto_review` enforces, which is the auto-review cluster's
+decision for every surface at once. Needs a Mac: whether the pinned
+renderer draws the card for this surface.
