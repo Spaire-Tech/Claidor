@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Context } from "../../packages/context/core.js";
-import { CONNECTOR_MANIFESTS, type ConnectorManifest } from "../../shared/channels.js";
+import { connectorManifests, type ConnectorManifest } from "../../shared/channels.js";
 import { InMemoryBlobStore } from "../../packages/agent-kv/blob-store.js";
 import type { BlobStore } from "../../packages/agent-kv/blob-store.js";
 import {
@@ -364,7 +364,7 @@ export class SandAgentRunner<T = unknown> {
     this.#onPendingWakeArmed = options.onPendingWakeArmed;
     this.#onPendingWakeDisarmed = options.onPendingWakeDisarmed;
     this.#agentProfileProvider = options.agentProfileProvider;
-    this.connectorManifests = options.connectorManifests ?? CONNECTOR_MANIFESTS;
+    this.connectorManifests = options.connectorManifests ?? connectorManifests();
     this.#attachmentIngestor = options.ingestAttachment;
     this.#persistImage = options.persistImage;
     this.#persistMediaBytes = options.persistMediaBytes;

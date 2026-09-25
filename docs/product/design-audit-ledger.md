@@ -78,7 +78,7 @@ until its row says so. Columns:
 | F-052 | workflows-channels-listeners | note | dead-service | unverified | - | - | Managed skills (including Teach's learn-from-demonstration) come from Cursor's GetManagedSkills and are never populated | `desktop/source/host/extensions/managed-setup/production.ts` |
 | F-053 | workflows-channels-listeners | minor | naming | confirmed | listeners-coming-soon | fixed | Agent-readable strings name Cursor: '@Cursor' Slack bot, 'Cursor Slack app', 'cursor-agent cards', cursor.com/agents links | `desktop/source/host/automations/automation.ts` |
 | F-054 | workflows-channels-listeners | minor | naming | confirmed | listeners-coming-soon | fixed | 'Claidor account' in prompt and status strings the agent and the person read | `desktop/source/host/automations/automation.ts` |
-| F-055 | workflows-channels-listeners | minor | unwired | confirmed | cloud-agents-channels | coming-soon | SendMessage still offers a `channel` target and secret-request 'channel-credential', but no channel delivery is ever registered and both channel platforms are coming-soon | `desktop/source/host/extensions/transcript/transcript-manager.ts` |
+| F-055 | workflows-channels-listeners | minor | unwired | confirmed | cloud-agents-channels | needs-mac | SendMessage still offers a `channel` target and secret-request 'channel-credential', but no channel delivery is ever registered and both channel platforms are coming-soon (25 September 2026, later: `host/extensions/channels/` registers delivery, activity and the config hook and wakes for inbound; Discord and Slack are `available`; `channels-served.md`) | `desktop/source/host/extensions/transcript/transcript-manager.ts` |
 | F-056 | workflows-channels-listeners | note | design-violation | confirmed | cloud-agents-channels | fixed | Two different CONNECTOR_MANIFESTS lists (discord/slack vs slack/github) feed the prompt and the Mac channels view | `desktop/source/shared/channels.ts` |
 | F-057 | workflows-channels-listeners | note | design-violation | confirmed | cloud-agents-channels | fixed | The Mac gateway accepts a channel token typed by the person (connectChannel) | `desktop/source/host/extensions/transcript/transcript-manager.ts` |
 | F-058 | workflows-channels-listeners | note | spend | confirmed | listeners-coming-soon | fixed | With any listener routine saved, the box POSTs to two unserved endpoints every 30 s for ever | `desktop/source/host/extensions/automations/backend-relay-source.ts` |
@@ -104,7 +104,7 @@ until its row says so. Columns:
 | F-078 | cards-and-widgets | major | naming | confirmed | sign-in-copy | fixed | The agent's brief and box reference docs say Claidor and Cursor | `desktop/source/host/runner/system-prompt.ts` |
 | F-079 | cards-and-widgets | major | dead-service | refuted | cloud-agents-channels | coming-soon | The brief orders repository work to CloudAgent and offers the cursor-agent card, though cloud agents are unserved | `desktop/source/host/runner/system-prompt.ts` |
 | F-080 | cards-and-widgets | major | design-violation | confirmed | asks-once-memory | needs-mac | 'Computer asks once' is not what the local-execution gate does by default | `desktop/source/shared/local-tool-permission.ts` |
-| F-081 | cards-and-widgets | major | design-violation | confirmed | cloud-agents-channels | coming-soon | secret-request stores the value in a plain-JSON channel file that only channel connectors read | `desktop/source/host/runner/tools/send-message-tool.ts` |
+| F-081 | cards-and-widgets | major | design-violation | confirmed | cloud-agents-channels | needs-mac | secret-request stores the value in a plain-JSON channel file that only channel connectors read (25 September 2026, later: the channel connectors exist and read it, 0600, within seconds; the ack names the connection's live status; `channels-served.md`) | `desktop/source/host/runner/tools/send-message-tool.ts` |
 | F-082 | cards-and-widgets | major | unwired | confirmed | cards-to-build | known-limit | The form, draft-composer, virtual-card and cookie-origin cards the permissions design relies on have no tool in the tree | `docs/product/sources/caisra-permissions.md` |
 | F-083 | cards-and-widgets | major | unwired | confirmed | artifacts-files | needs-mac | Artifacts-as-files: no docx/pptx/xlsx skill in the tree and no 'Documents You Make' section in the brief | `desktop/source/host/extensions/managed-setup/cursor-skills-marketplace.ts` |
 | F-084 | cards-and-widgets | minor | docs-wrong | confirmed | auto-review-enforce | fixed | Records say auto-review is fixed; neither says it runs in shadow | `CLAUDE.md` |
@@ -495,7 +495,7 @@ until its row says so. Columns:
 | F-469 | security | major | risk | confirmed | local-security | fixed | The [claidor] log lines print tool arguments and results unredacted, including text typed into the box browser | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-470 | security | major | risk | confirmed | local-security | needs-mac | Chromium sandbox disabled for the whole app, including the agent browser webviews | `desktop/source/electron-main/main.ts` |
 | F-471 | security | major | design-violation | confirmed | local-security | fixed | CopyToBox / ExternalRead reach the whole home directory with no per-file card once local execution is "always" | `desktop/source/host/local-exec/local-exec-daemon.ts` |
-| F-472 | security | blocking | dead-service | refuted | cloud-agents-channels | coming-soon | The secret card can store only a channel credential, and channels do not exist here | `desktop/source/host/extensions/transcript/widget-responses.ts` |
+| F-472 | security | blocking | dead-service | refuted | cloud-agents-channels | needs-mac | The secret card can store only a channel credential, and channels do not exist here (25 September 2026, later: they do, `host/extensions/channels/`; `channels-served.md`) | `desktop/source/host/extensions/transcript/widget-responses.ts` |
 | F-473 | security | major | naming | confirmed | sign-in-copy | fixed | The sign-in confirmation page says Caisra | `server/polar/desktop/app_sign_in.py` |
 | F-474 | security | minor | risk | confirmed | local-security | fixed | Gateway /health answers before the bearer check | `desktop/source/host/gateway-server.ts` |
 | F-475 | security | note | risk | confirmed | local-security | known-limit | Gateway bearer passed as a docker --env | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
@@ -723,6 +723,26 @@ deliberately excluded until a future cloud-agent system exists", so
 Grok Bot's disabled branch stays as written: the agent does not take on
 repository work itself and says cloud agents are coming soon. Needs a Mac: the Channels tab drawing Coming Soon
 rows.
+
+**Corrected later the same day, 25 September 2026 — channels are served.**
+`docs/product/cursor-dependencies-map.md` §2 found the root: no server
+was ever in the channel path (bring-your-own bot token), the transcript
+manager had every hook (`setChannelDelivery`, `setChannelActivity`,
+`setChannelConfigChanged`, `wakeForInbound`, the channel store, the
+secret store, the gateway commands, the brief, the cards) and only the
+module that registers against them was missing. It is built:
+`desktop/source/host/extensions/channels/` (the 36th host extension;
+Discord over the Gateway, Slack over Socket Mode, delivery through their
+REST APIs, `[claidor] channel=` lines in `/tmp/sand-host.log`), the two
+manifests are `available`, the Channels tab's one field takes Slack's
+two tokens, the connection file carries the live status the brief and
+the tab read, and `SAND_CHANNELS_SERVED=0` restores every coming-soon
+path. F-055, F-081 and F-472 move to `needs-mac`; F-057 stays fixed (the
+tab's token is a settings field, and a coming-soon platform still takes
+none). `tests/channels-runtime.test.mjs` measures it offline against
+in-process fakes of both platforms. `docs/product/channels-served.md` is
+the record. Needs a Mac: a real bot token on each platform, one DM in,
+one reply out, the log lines.
 
 ### auto-review-enforce (25 September 2026)
 

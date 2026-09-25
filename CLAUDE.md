@@ -887,6 +887,28 @@ invite link points at `app.simeonlabs.com/share/<token>`, which serves
 no page yet (the person pastes the link into Simeon's join box): a
 landing page is the founder's call.
 
+**Messaging channels are served: Discord and Slack, from the box, built
+25 September 2026, later the same day.** They were Coming Soon that
+morning (ledger cluster `cloud-agents-channels`); the map found that no
+server was ever in the path and only the connector module was missing.
+`desktop/source/host/extensions/channels/` is that module, the 36th host
+extension: one connector per (agent, platform) built from the secret
+store, Discord over the Gateway and Slack over Socket Mode (both on the
+`ws` client the egress tunnel already bundles), delivery through their
+REST APIs, every inbound message a `wakeForInbound` envelope, and a
+`[claidor] channel=<platform> agent=<id> event=connect|ready|inbound|
+delivery|error …` line per event in `/tmp/sand-host.log`. The Channels
+tab's one field takes Slack's two tokens together (`xapp-… xoxb-…`,
+`shared/channel-credential.ts`), the agent asks for them as two
+secret-requests (fields `token` and `botToken`), the connection file
+carries the live status the tab and the brief read, and
+`SAND_CHANNELS_SERVED=0` restores every coming-soon path. No hosted
+"@Simeon" app: the person makes the bot, the record says how.
+`docs/product/channels-served.md`; `tests/channels-runtime.test.mjs`
+measures it offline against fakes of both platforms. Not yet run on a
+Mac: a real token on either platform, one DM in, one reply out, the
+log lines.
+
 ## The product's hostnames are simeonlabs.com (24 September 2026)
 
 "i want to replace all claidor.com instances by simeonlabs.com … now i

@@ -77,7 +77,7 @@ import {
 } from "./sand-activity.js";
 import { connectorCardEmissionToMessage } from "./runner/tools/box-help-tool.js";
 import { createAgentPromptSession } from "./extensions/inference/extension.js";
-import { CONNECTOR_MANIFESTS } from "../shared/channels.js";
+import { connectorManifests } from "../shared/channels.js";
 import { parseStoredTrigger } from "./automations/automation-trigger.js";
 import { listenerPlatformsInTrigger } from "./automations/listener-integrations.js";
 import { resolveSharedRoomBoxToolsEnabled } from "./groups/xuser.js";
@@ -1565,7 +1565,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           automationStore: () => (session.automations ?? null) as ReturnType<SystemPromptAssemblyDependencies["automationStore"]>,
           workflowStore: () => (session.workflows ?? null) as ReturnType<SystemPromptAssemblyDependencies["workflowStore"]>,
           channelStore: () => (session.channels ?? null) as ReturnType<SystemPromptAssemblyDependencies["channelStore"]>,
-          connectorManifests: CONNECTOR_MANIFESTS,
+          connectorManifests: connectorManifests(),
           sendToAgentImpl: sendToAgent,
           agentManagement,
           agentDirectory: listAgentDirectory,
@@ -1618,7 +1618,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         ),
       getAgentId: () => session.id,
       agentProfileProvider: hooks.agentProfileProvider,
-      connectorManifests: CONNECTOR_MANIFESTS,
+      connectorManifests: connectorManifests(),
       ingestAttachment: hooks.ingestAttachment,
       persistImage: hooks.persistImage,
       persistMediaBytes: hooks.persistMediaBytes,

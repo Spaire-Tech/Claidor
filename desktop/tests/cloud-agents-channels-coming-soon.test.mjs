@@ -1,16 +1,17 @@
 /**
- * Cloud agents and messaging channels are Coming Soon at every reach point
- * (25 September 2026, design-audit-ledger.md cluster `cloud-agents-channels`:
- * F-007, F-210, F-055, F-056, F-057, F-081, F-472).
- *
- * Cursor's BackgroundComposerService and the channel relay are not served
- * by Simeon Labs' server, and no connector manifest is available. The brief
- * used to tell the agent to hand every repository task to a cloud agent
- * whose launch failed every time; the SendMessage tool offered a
- * cursor-agent card, a channel target that always raised "Message not
- * delivered", and a secret-request whose only store is a channel credential
- * nothing reads; the gateway's channel manifests carried no availability,
- * so the Channels tab drew nothing.
+ * Cloud agents and messaging channels were Coming Soon at every reach point
+ * on 25 September 2026 (design-audit-ledger.md cluster `cloud-agents-channels`:
+ * F-007, F-210, F-055, F-056, F-057, F-081, F-472), and both are served
+ * since later that day: cloud agents by `polar/sand/cloud_agents.py`,
+ * channels by the connector runtime in the box (`host/extensions/channels/`,
+ * tests/channels-runtime.test.mjs). This test keeps the Coming Soon branch
+ * honest behind its switches (`SAND_CLOUD_AGENTS_SERVED=0`,
+ * `SAND_CHANNELS_SERVED=0`): the brief used to tell the agent to hand every
+ * repository task to a cloud agent whose launch failed every time; the
+ * SendMessage tool offered a cursor-agent card, a channel target that always
+ * raised "Message not delivered", and a secret-request whose only store is a
+ * channel credential nothing read; the gateway's channel manifests carried
+ * no availability, so the Channels tab drew nothing.
  */
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
@@ -34,9 +35,10 @@ async function load(entry, name) {
 test("SendMessage: cursor-agent served by default, a dropped channel, a refused secret-request; the flag at 0 restores coming soon", async () => {
   // Cloud agents are served by default since 25 September 2026 (polar/sand/cloud_agents.py).
   process.env.SAND_CLOUD_AGENTS_SERVED = "0";
+  process.env.SAND_CHANNELS_SERVED = "0";
   const { module, dispose } = await load("source/host/runner/tools/send-message-schema.ts", "send-message-schema");
   try {
-    const off = { SAND_CLOUD_AGENTS_SERVED: "0" };
+    const off = { SAND_CLOUD_AGENTS_SERVED: "0", SAND_CHANNELS_SERVED: "0" };
     const types = module.describeSendMessageTypes(off);
     assert.match(types, /cursor-agent is not available: cloud agents are coming soon in Simeon/);
     assert.match(types, /secret-request is not available: messaging channels are coming soon/);
@@ -44,22 +46,25 @@ test("SendMessage: cursor-agent served by default, a dropped channel, a refused 
     assert.deepEqual(module.refineSendMessage({ type: "cursor-agent", bcId: "bc-1" }, off).map((issue) => issue.message), [
       "Cloud agents are coming soon in Simeon, so the CloudAgent tool and cloud-agent cards are not available here yet. Never claim you can launch or manage one.",
     ]);
-    assert.match(module.refineSendMessage({ type: "secret-request", secret: { label: "Slack token", connector: "slack", field: "token" } }, {})[0].message, /Messaging channels \(Slack, Discord\) are coming soon on Simeon/);
+    assert.match(module.refineSendMessage({ type: "secret-request", secret: { label: "Slack token", connector: "slack", field: "token" } }, off)[0].message, /Messaging channels \(Slack, Discord\) are coming soon on Simeon/);
+    assert.deepEqual(module.refineSendMessage({ type: "secret-request", secret: { label: "Slack token", connector: "slack", field: "token" } }, {}), [], "served by default: the secret-request card is back (channels-runtime.test.mjs)");
     assert.deepEqual(module.refineSendMessage({ type: "cursor-agent", bcId: "bc-1" }, {}), [], "served by default: Grok Bot's card is back");
     assert.match(module.describeSendMessageTypes({}), /cursor-agent to reference a cloud agent/);
+    assert.match(module.describeSendMessageTypes({}), /secret-request to ask the user for a credential/);
     const parsed = module.sendMessageParameters.safeParse({ type: "text", content: "Hi", channel: "slack:C1" });
     assert.equal(parsed.success, true);
-    assert.equal(parsed.data.channel, undefined, "a channel the model set is dropped, and the text lands in the in-app chat");
+    assert.equal(parsed.data.channel, undefined, "with the switch off a channel the model set is dropped, and the text lands in the in-app chat");
     assert.equal(parsed.data.content, "Hi");
     assert.equal(module.sendMessageParameters.safeParse({ type: "cursor-agent", bcId: "bc-1" }).success, false);
   } finally {
     delete process.env.SAND_CLOUD_AGENTS_SERVED;
+    delete process.env.SAND_CHANNELS_SERVED;
     await dispose();
   }
   process.env.SAND_CLOUD_AGENTS_SERVED = "0";
   const tool = await load("source/host/runner/tools/send-message-tool.ts", "send-message-tool");
   try {
-    const description = tool.module.describeSendMessageTool({ SAND_CLOUD_AGENTS_SERVED: "0" });
+    const description = tool.module.describeSendMessageTool({ SAND_CLOUD_AGENTS_SERVED: "0", SAND_CHANNELS_SERVED: "0" });
     assert.match(description, /Cloud agents are coming soon in Simeon/);
     assert.match(description, /Messaging channels \(Slack, Discord\) are coming soon on Simeon/);
     assert.doesNotMatch(description, /"type":"cursor-agent"/);
@@ -97,7 +102,11 @@ test("channels: the gateway's manifests carry availability, a coming-soon platfo
   const { module, dispose } = await load("source/host/extensions/automations/listener-integrations.ts", "listener-reads-channels");
   try {
     const reader = module.createListenerIntegrationReads({ dashboard: () => { throw new Error("no dashboard"); }, transcript: { listAllAutomationDefinitions: async () => [], getAgentChannels: async () => [{ platform: "slack", label: "x" }, { platform: "github", label: "y" }] }, sourceStatuses: () => new Map(), log: () => {} });
-    const channels = await reader.getAgentChannels("a1");
+    const served = await reader.getAgentChannels("a1");
+    assert.deepEqual(served.manifests.map((manifest) => [manifest.platform, manifest.availability, manifest.displayName]), [["discord", "available", "Discord"], ["slack", "available", "Slack"]], "served by default since 25 September 2026");
+    process.env.SAND_CHANNELS_SERVED = "0";
+    let channels;
+    try { channels = await reader.getAgentChannels("a1"); } finally { delete process.env.SAND_CHANNELS_SERVED; }
     assert.deepEqual(channels.manifests.map((manifest) => [manifest.platform, manifest.availability, manifest.displayName]), [["discord", "coming-soon", "Discord"], ["slack", "coming-soon", "Slack"]]);
     assert.deepEqual(channels.connections.map((connection) => connection.platform), ["slack"], "a github row is not a channel");
   } finally {
@@ -108,8 +117,8 @@ test("channels: the gateway's manifests carry availability, a coming-soon platfo
   const store = await src("host/extensions/session/connector-secret-store.ts");
   assert.match(store, /mode: 0o600/);
   const ack = await src("host/runner/tools/sand-secret-request.ts");
-  assert.doesNotMatch(ack, /links within a few seconds/);
-  assert.match(ack, /messaging channels are coming soon in Simeon/);
+  assert.match(ack, /served\?"Confirm to the user that it is stored, then continue\. The channel connector reads it and links within a few seconds/, "served: the connector links");
+  assert.match(ack, /messaging channels are coming soon in Simeon/, "switch off: nothing reads the secret");
   const prompt = await src("shared/channel-messaging.ts");
   assert.doesNotMatch(prompt, /cursor-agent/);
 });

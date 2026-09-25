@@ -183,6 +183,13 @@ days each against the hooks above. A hosted Simeon bot (one app we
 register, so people do not paste tokens) would be new product functionality
 and is not what the code was written for.
 
+**Built, 25 September 2026, later the same day:**
+`desktop/source/host/extensions/channels/` registers against the four
+hooks, both manifests are `available`, Slack's second token rides in the
+same tab field or a second secret-request (`botToken`), and
+`SAND_CHANNELS_SERVED=0` restores the coming-soon paths.
+`docs/product/channels-served.md` is the record.
+
 ---
 
 ## 3. Cloud agents
