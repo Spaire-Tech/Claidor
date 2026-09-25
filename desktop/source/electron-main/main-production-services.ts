@@ -5,7 +5,7 @@ import { createCoordinatorMainLegs } from "./coordinator/coordinator-main-legs.j
 import { createEgressConnectionObserver } from "./box/remote-connector-egress.js";
 import { createDesktopGatewayDescriptorFastPath } from "./box/gateway-descriptor-store.js";
 import { createRemoteHostConnector, type SandRemoteHostConnector } from "./box/box-host-connector.js";
-import { createSettingsRoutedHostConnector, startLocalDockerBox, stopLocalDockerBoxOnQuit } from "./box/local-docker-host-connector.js";
+import { createSettingsRoutedHostConnector, localBoxHasEnabledRoutine, startLocalDockerBox, stopLocalDockerBoxOnQuit } from "./box/local-docker-host-connector.js";
 import { createSandClientPauseControl } from "./box/box-client-pause.js";
 import { createSandMigrationWatcher } from "./box/box-migration-watcher.js";
 import type { RecreateResult } from "./box/box-recreate-commands.js";
@@ -914,11 +914,13 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         };
         await disposeQuitPhase(coordinator, "coordinator");
         try { coordinatorLegs.dispose(); } catch (error) { bindings.reportFailure("coordinator", "legs-dispose", error); }
-        // The agent runs in the box, not in this process: stop the box so
-        // quitting the app stops the spending (local-docker-host-connector.ts).
+        // The agent runs in the box, not in this process: stop the box on
+        // quit unless an enabled routine needs it to keep running while the
+        // Mac is awake (local-docker-host-connector.ts, 25 September 2026).
         try {
           const boxRuntime = settings == null ? "remote" : settings.settingsStore.getBoxRuntime();
-          await stopLocalDockerBoxOnQuit({ boxRuntime, env });
+          const settingsPath = settings?.settingsStore.settingsPath;
+          await stopLocalDockerBoxOnQuit({ boxRuntime, env, ...(settingsPath == null ? {} : { hasEnabledRoutine: () => localBoxHasEnabledRoutine(settingsPath) }) });
         } catch (error) { bindings.reportFailure("box-recovery", "stop-on-quit", error); }
         await disposeQuitPhase(boxRecovery, "box-recovery");
         await secretsStores?.pushBoxSecrets.quiesce();

@@ -54,7 +54,7 @@ until its row says so. Columns:
 | F-028 | agents-and-subagents | minor | unwired | unverified | - | - | The prompt glue never learns whether browserUse is offered, so prompt and Task configs disagree when the gate is on | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
 | F-029 | agents-and-subagents | note | risk | refuted | hidden-turn-cap | known-limit | Agent-created teammates are minted as origin 'user' with an introduction pending | `desktop/source/host/host-runner-composition.ts` |
 | F-030 | agents-and-subagents | note | docs-wrong | unverified | - | - | The child-audit record's cost accounting is incomplete: the prompt shrank, the child's context did not | `docs/product/computer-use-child-audit-2026-09-24.md` |
-| F-031 | routines-automations | blocking | design-violation | confirmed | routines-away | coming-soon | Routines only fire while the app and the local Docker box are running; nothing fires with the Mac shut, and the agent's brief tells the person the opposite | `desktop/source/host/extensions/automations/sand-trigger-hub.ts` |
+| F-031 | routines-automations | blocking | design-violation | confirmed | routines-away | fixed | Routines only fire while the app and the local Docker box are running; nothing fires with the Mac shut, and the agent's brief tells the person the opposite | `desktop/source/host/extensions/automations/sand-trigger-hub.ts` |
 | F-032 | routines-automations | blocking | dead-service | confirmed | listeners-coming-soon | coming-soon | The agent is offered six event-listener trigger types (Slack, GitHub, Teams, Linear, Sentry, PagerDuty) that can never fire on Simeon, and saving one reports success | `desktop/source/host/runner/tools/sand-state-tool.ts` |
 | F-033 | routines-automations | major | naming | confirmed | listeners-coming-soon | fixed | Listener 'connect' opens cursor.com, and the routines copy says Claidor and @Cursor to the person and the agent | `desktop/source/host/extensions/automations/listener-integrations.ts` |
 | F-034 | routines-automations | minor | hardcoded | confirmed | routine-write-review | fixed | Auto-review of routine writes is pinned 'off' in every mode table, so the confirm card promised in the brief and tool description never appears | `desktop/source/host/runner/sand-auto-review.ts` |
@@ -71,7 +71,7 @@ until its row says so. Columns:
 | F-045 | workflows-channels-listeners | major | risk | refuted | listeners-coming-soon | fixed | Routine panel shows the raw relay error 'relay /sand/listener-subscriptions returned 404' as the listener status | `desktop/source/host/extensions/automations/backend-relay-source.ts` |
 | F-046 | workflows-channels-listeners | major | dead-service | confirmed | listeners-coming-soon | fixed | 'Connect' for GitHub/Slack listeners opens cursor.com/dashboard | `desktop/source/host/extensions/automations/listener-integrations.ts` |
 | F-047 | workflows-channels-listeners | major | dead-service | confirmed | listeners-coming-soon | coming-soon | Microsoft Teams, Linear, Sentry and PagerDuty triggers are in the prompt but have no local source at all | `desktop/source/host/automations/automation.ts` |
-| F-048 | workflows-channels-listeners | major | design-violation | confirmed | routines-away | coming-soon | A routine dies when the app quits, while the prompt and the design both promise it runs when the person is away | `desktop/source/host/extensions/automations/sand-automation-cloud-sync.ts` |
+| F-048 | workflows-channels-listeners | major | design-violation | confirmed | routines-away | fixed | A routine dies when the app quits, while the prompt and the design both promise it runs when the person is away | `desktop/source/host/extensions/automations/sand-automation-cloud-sync.ts` |
 | F-049 | workflows-channels-listeners | minor | docs-wrong | confirmed | routines-away | fixed | Records say Routines 'does nothing yet' and 'none can be created'; the code creates and fires cron routines while the app is open | `docs/product/direction.md` |
 | F-050 | workflows-channels-listeners | major | unwired | unverified | - | - | Workflow SKILL.md files never reach the model as skills: resolveAgentSkills is optional and the production composition never supplies it; agentSkillsFromWorkflows has no caller | `desktop/source/host/runner/agent-adapters.ts` |
 | F-051 | workflows-channels-listeners | minor | design-violation | unverified | - | - | 'Import local skills' scans the box's home, not the person's Mac, and looks for Cursor/Claude files | `desktop/source/host/extensions/transcript/workflow-commands.ts` |
@@ -341,7 +341,7 @@ until its row says so. Columns:
 | F-315 | onboarding-first-run | note | design-violation | unverified | - | - | The first-run flow the person meets is the pinned Grok Bot six-step onboarding | `desktop/source/shared/observability/telemetry.ts` |
 | F-316 | prompt-and-brief | major | dead-service | unverified | - | - | Cloud-agent section and CloudAgent tool are live because isCloudAgentsDisabledByTeam is never defined | `desktop/source/host/extensions/experiments/extension.ts` |
 | F-317 | prompt-and-brief | major | dead-service | confirmed | listeners-coming-soon | fixed | Routines section advertises Slack/GitHub/Teams/Linear/Sentry/PagerDuty listeners and names Cursor | `desktop/source/host/automations/automation.ts` |
-| F-318 | prompt-and-brief | major | design-violation | confirmed | routines-away | coming-soon | Prompt promises routines run while the user is away; the loop runs in a Docker box on the Mac | `desktop/source/host/automations/automation.ts` |
+| F-318 | prompt-and-brief | major | design-violation | confirmed | routines-away | fixed | Prompt promises routines run while the user is away; the loop runs in a Docker box on the Mac | `desktop/source/host/automations/automation.ts` |
 | F-319 | prompt-and-brief | major | dead-service | unverified | - | - | 'Your user is <name>' section depends on Cursor's GetMe RPC and can never render | `desktop/source/host/extensions/auth/user-full-name-service.ts` |
 | F-320 | prompt-and-brief | major | design-violation | unverified | - | - | Prompt tells the agent it holds a read-only Screenshot tool it does not have | `desktop/source/host/host-runner-composition.ts` |
 | F-321 | prompt-and-brief | major | design-violation | unverified | - | - | ExternalShell wording says every action on the user's computer raises an approval card | `desktop/source/host/runner/system-prompt.ts` |
@@ -633,13 +633,30 @@ tree); if it names listeners, that is the brand pass's next needle.
 Root: the only scheduler is the hub's 15 s poll inside the box, and the
 box stops on quit (the spend brake of 23 September), so nothing fires
 with Simeon closed or the Mac asleep, while the brief promised "run even
-when the user is away". F-031, F-048, F-318 are one row: **Coming Soon**,
-dependency: a headless executor that runs the Grok Bot loop (the maty
-queue on Render has no Docker and no producer; `SAND_KEEP_BOX_RUNNING_ON_QUIT=1`
-covers "app closed, Mac awake" only and contradicts the spend brake, a
-founder question, not flipped). Fixed: the brief says a routine fires
-while Simeon is open and the computer is awake and that away is coming
-soon, and that a routine wake runs on the small model-call budget;
+when the user is away". F-031, F-048, F-318 are one row. First ledgered Coming Soon; the
+founder answered the same day: "`SAND_KEEP_BOX_RUNNING_ON_QUIT=1` should
+be the intended behavior for routines. The Mac can be awake while the app
+itself is closed. The routine should still execute. The spend concern
+should be handled by the routine/box lifecycle … if the Mac itself is
+asleep/off, you can't expect a local computer to execute something."
+**Fixed** on that word: quitting Simeon keeps the local Docker box when
+an enabled routine exists (the box is asked `listAllAutomations` on its
+own wire at quit) and stops it when none does; the Mac mints the box's
+own renewal credential (`POST /desktop/api/box/renewal-credential`, a
+child `desktop_sessions` row that follows the app's refresh and dies on
+sign-out) and writes it into the token file, and the box's auth service
+trades it at `POST /sand-box/inference-credential` (Grok Bot's own
+renewal path) when the file goes stale, so a box older than an hour with
+the app closed still calls the model; the brief says a routine fires
+while this computer is awake, open or closed, and not while it is asleep
+or off, and that a routine wake runs on the small model-call budget.
+Spend with the app closed: the hidden-turn budget, the proxy's hourly
+cap, the user-away guard. `tests/routine-box-lifecycle.test.mjs`,
+`server/tests/desktop/test_box_credential.py`. Needs a Mac: quit with a
+routine enabled, wait past the hour, read the renewal line in the box
+log. Running with the Mac asleep or off stays a known limit (physics);
+running elsewhere needs a headless executor (the maty queue has none).
+Also fixed: 
 CLAUDE.md's maty paragraph (F-038, F-049: routines can be created and
 cron ones fire; `desktop/src` is the renderer's staging folder),
 direction.md's routine sentences, spend-guards.md (F-041, the user-away
@@ -677,10 +694,8 @@ Coming Soon; `connectChannel` takes no credential for a coming-soon
 platform; the secret store writes 0600; the secret ack no longer says a
 connection links. `SAND_CLOUD_AGENTS_SERVED=1` restores Grok Bot's
 cloud-agent paths. name-measured.md's "left on purpose" entries
-corrected. `tests/cloud-agents-channels-coming-soon.test.mjs`. **A
-founder decision is owed:** with cloud agents off, Grok Bot's disabled
-branch also tells the agent not to take on repository work itself
-("never clone a repository"); Simeon has a box with a shell, so whether
-the agent should do code work itself is a design choice, left as Grok
-Bot wrote it for v1. Needs a Mac: the Channels tab drawing Coming Soon
+corrected. `tests/cloud-agents-channels-coming-soon.test.mjs`. **Founder's decision, the same day:** "coding/repository work is
+deliberately excluded until a future cloud-agent system exists", so
+Grok Bot's disabled branch stays as written: the agent does not take on
+repository work itself and says cloud agents are coming soon. Needs a Mac: the Channels tab drawing Coming Soon
 rows.

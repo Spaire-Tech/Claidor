@@ -59,7 +59,7 @@ test("the agent's brief offers cron only and names what is coming soon; the flag
   try {
     const prompt = module.renderAutomationsSystemPrompt([], "/home/box/agent-data/automations", "Africa/Dakar");
     assert.match(prompt, /are coming soon on Simeon\. For now a routine fires on a cron schedule/);
-    assert.match(prompt, /running while the user is away is coming soon/);
+    assert.match(prompt, /fires while this computer is awake, whether Simeon is open or closed; it cannot fire while the computer is asleep or off/);
     for (const gone of ["Trigger shapes", '"type": "slack"', "@Cursor", "Cursor Slack app", "Claidor account", "run even when the user is away", "acts while they're away", "Slack listener", "event trigger", "cloud-agent"]) {
       assert.ok(!prompt.includes(gone), `the brief no longer says ${JSON.stringify(gone)}`);
     }

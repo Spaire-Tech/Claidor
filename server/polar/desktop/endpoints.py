@@ -254,6 +254,27 @@ async def logout(
     return _ok({})
 
 
+@router.post("/api/box/renewal-credential", name="desktop:box_renewal_credential")
+async def box_renewal_credential(
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """The credential the person's box renews its own access token with
+    (`DesktopService.issue_box_credential`). The Mac asks once per box
+    and writes it into the box's token file; the box trades it at
+    `POST /sand-box/inference-credential`. It dies with this session."""
+    try:
+        row, credential = await desktop.issue_box_credential(session, desktop_session)
+    except DesktopUnauthenticated as error:
+        return _fail(REFRESH_INVALID, error.message, status=401)
+    return _ok(
+        {
+            "credential": credential,
+            "expiresAtMs": int(row.refresh_expires_at.timestamp() * 1000),
+        }
+    )
+
+
 # --- the person ------------------------------------------------------------
 
 

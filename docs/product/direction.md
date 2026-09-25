@@ -467,10 +467,12 @@ a machine it owns, we lose the sentence — and that is the thing to
 guard, not the runner.
 
 What this means in the app: Routines is one of the five agent tabs, and
-a routine set there keeps running when the Mac sleeps. **Not yet (25
-September 2026):** it fires while Simeon is open and the Mac is awake;
-running while away is Coming Soon and needs a headless executor that runs
-the Grok Bot loop (the maty queue has none). The person is
+a routine set there keeps running when the Mac sleeps. **Measured against the code, 25
+September 2026:** it fires while the Mac is awake, with Simeon open or
+closed (the box outlives the app for an enabled routine and renews its own
+model credential); it cannot fire with the Mac asleep or off, and running
+elsewhere needs a headless executor that runs the Grok Bot loop (the maty
+queue has none). The person is
 never asked which computer, never shown the runner, and never told their
 work happens elsewhere, because as far as their files are concerned it
 does not.

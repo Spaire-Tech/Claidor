@@ -22,8 +22,12 @@ export const LISTENER_RELAY_SERVED_ENV = "SAND_LISTENER_RELAY_SERVED";
 export const LISTENERS_COMING_SOON_SENTENCE =
   "Event listeners (Slack, GitHub, Microsoft Teams, Linear, Sentry, PagerDuty) are coming soon on Simeon. For now a routine fires on a cron schedule; use one, bounded to the hours that matter.";
 
+// The founder, 25 September 2026: the Mac can be awake while the app is
+// closed, and a routine should still execute. The box stays up on quit when
+// a routine is enabled and renews its own model credential
+// (electron-main/box/local-docker-host-connector.ts, `stopLocalDockerBoxOnQuit`).
 export const ROUTINES_AWAY_COMING_SOON_SENTENCE =
-  "A routine fires while Simeon is open on this computer and the computer is awake; running while the user is away is coming soon.";
+  "A routine fires while this computer is awake, whether Simeon is open or closed; it cannot fire while the computer is asleep or off, and it does not run anywhere else.";
 
 export function isListenerRelayServed(env: NodeJS.ProcessEnv = process.env): boolean {
   return env[LISTENER_RELAY_SERVED_ENV]?.trim() === "1";

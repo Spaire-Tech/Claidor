@@ -199,7 +199,9 @@ proxy's meter (`docs/product/spend-guards.md`). Now: the proxy refuses at
 allowance is near; a hidden turn (intro, nudge, automation) may make 40
 model calls and an asked turn Grok Bot's 5,000 (`SAND_HIDDEN_TURN_MAX_STEPS`,
 `SAND_AGENT_MAX_STEPS`); the intro greets and stops and runs once; quitting
-Simeon stops the local Docker box unless `SAND_KEEP_BOX_RUNNING_ON_QUIT=1`;
+Simeon stops the local Docker box **unless an enabled routine exists**
+(since 25 September; `SAND_STOP_BOX_ON_QUIT=1` and
+`SAND_KEEP_BOX_RUNNING_ON_QUIT=1` force either way);
 every model call writes a `[claidor]` line with its tokens to the box's
 `/tmp/sand-host.log`; the box token file is written by one writer at a
 time (a startup burst used to race on it and blind the app); and the
@@ -572,10 +574,27 @@ the runner matches its README line for line — and **nothing produces a job**.
 nothing). It is a finished pipe with nothing plugged into the input.
 **Corrected 25 September 2026:** routines *can* be created (`update_state`,
 target `routine`, writes `automation.json`) and cron ones fire from the box
-while Simeon is open; none fires overnight because nothing produces a maty
-job and the box stops on quit. Running while the person is away is **Coming
-Soon** in the agent's brief (`shared/listener-availability.ts`), and so are
-event listeners (Slack, GitHub, Teams, Linear, Sentry, PagerDuty): their
+while Simeon is open; none fires with the Mac asleep or off because nothing produces a maty
+job. **Since 25 September 2026 the box outlives the app**: the founder's word
+("the Mac can be awake while the app itself is closed. The routine should
+still execute. The spend concern should be handled by the routine/box
+lifecycle"), so quitting Simeon keeps the local Docker box running when an
+enabled routine exists and stops it when none does
+(`stopLocalDockerBoxOnQuit`, which asks the box's gateway `listAllAutomations`
+on its own wire); and because the Mac no longer rewrites the box's one-hour
+model token every five minutes once it is gone, the Mac mints the **box's own
+renewal credential** (`POST /desktop/api/box/renewal-credential`, a child
+`desktop_sessions` row, `claidor_db_` prefix, re-parented on the app's
+refresh, revoked on sign-out, never a session) and writes it into the token
+file; the box's auth service trades it for a fresh token at
+`POST /sand-box/inference-credential` (Grok Bot's own renewal path, served
+at the root like sign-in) when the file goes stale. Spend with the app closed
+is bounded by the hidden-turn budget (40 calls a run), the proxy's hourly cap
+and the user-away guard that pauses routines after three days unread.
+`tests/routine-box-lifecycle.test.mjs`, `server/tests/desktop/test_box_credential.py`.
+Not yet run on a Mac: quit with a routine enabled, wait past the hour, read
+`inference credential renewed with the box's own credential` in
+`/tmp/sand-host.log`. Event listeners are **Coming Soon** (Slack, GitHub, Teams, Linear, Sentry, PagerDuty): their
 relay (`/sand/listener-*`, `/sand/automation-events/poll`,
 `AutomationsService`) is Cursor's and Simeon Labs' server serves none of it;
 `SAND_LISTENER_RELAY_SERVED=1` restores Grok Bot's paths when it exists.

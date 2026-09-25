@@ -40,7 +40,7 @@ export interface LocalDockerStatus {
 }
 
 interface CommandResult { readonly ok: boolean; readonly output: string }
-interface InferenceCredential { readonly accessToken: string; readonly backendUrl: string; readonly expiresAtMs: number }
+interface InferenceCredential { readonly accessToken: string; readonly backendUrl: string; readonly expiresAtMs: number; readonly renewalCredential?: string }
 interface LocalHostBundle { readonly path: string; readonly sha256: string; readonly boxExecDaemonPath: string; readonly boxExecDaemonSha256: string }
 
 function runDocker(args: readonly string[]): Promise<CommandResult> {
@@ -77,7 +77,9 @@ export function persistInferenceCredential(settingsPath: string, credential: Inf
     persistSerial += 1;
     const temporary = `${target}.${process.pid}.${persistSerial}.tmp`;
     await mkdir(dirname(target), { recursive: true });
-    await writeFile(temporary, `${JSON.stringify({ accessToken: credential.accessToken, expiresAtMs: credential.expiresAtMs })}\n`, { encoding: "utf8", mode: 0o600 });
+    // `renewalCredential` is what lets the box outlive the app (the host's
+    // auth service trades it for a token when this file goes stale).
+    await writeFile(temporary, `${JSON.stringify({ accessToken: credential.accessToken, expiresAtMs: credential.expiresAtMs, ...(credential.renewalCredential == null ? {} : { renewalCredential: credential.renewalCredential }) })}\n`, { encoding: "utf8", mode: 0o600 });
     await rename(temporary, target);
     await chmod(target, 0o600);
     return target;
@@ -294,19 +296,44 @@ export async function startLocalDockerBox(settingsPath: string): Promise<Gateway
   return await queuedEnsure(settingsPath);
 }
 
-// Quitting Simeon stops the box. The agent runs inside the container, so
-// until 22 September 2026 a turn kept calling the model after the window
-// was closed; the only brake was `docker stop` by hand. Grok Bot's cloud
-// box is meant to work unattended; a box on the person's own card is not,
-// until they ask for that by setting SAND_KEEP_BOX_RUNNING_ON_QUIT=1.
+// Quitting Simeon stops the box unless a routine needs it. The agent runs
+// inside the container, so until 22 September 2026 a turn kept calling the
+// model after the window was closed; from then the box always stopped on
+// quit, which made routines fire only while the app was open. The founder,
+// 25 September 2026: the Mac can be awake while the app is closed, and a
+// routine should still execute; spend is the routine's and the box's
+// business (the hidden-turn budget, the proxy's hourly cap, the user-away
+// guard that pauses routines), not a reason to make the feature useless.
+// So: with at least one enabled routine the box is kept; with none it is
+// stopped, the brake of before. SAND_KEEP_BOX_RUNNING_ON_QUIT=1 keeps it
+// always, SAND_STOP_BOX_ON_QUIT=1 stops it always. Sleep and shutdown stop
+// it regardless: a local computer cannot run with the Mac off.
 export const SAND_KEEP_BOX_RUNNING_ON_QUIT_ENV = "SAND_KEEP_BOX_RUNNING_ON_QUIT";
-export function shouldStopLocalDockerBoxOnQuit(boxRuntime: string, env: NodeJS.ProcessEnv = process.env): boolean {
+export const SAND_STOP_BOX_ON_QUIT_ENV = "SAND_STOP_BOX_ON_QUIT";
+const flag = (value: string | undefined): boolean => /^(1|true|yes)$/i.test(value?.trim() ?? "");
+export function shouldStopLocalDockerBoxOnQuit(boxRuntime: string, env: NodeJS.ProcessEnv = process.env, hasEnabledRoutine = false): boolean {
   if (boxRuntime !== "local-docker") return false;
-  return !/^(1|true|yes)$/i.test(env[SAND_KEEP_BOX_RUNNING_ON_QUIT_ENV]?.trim() ?? "");
+  if (flag(env[SAND_STOP_BOX_ON_QUIT_ENV])) return true;
+  if (flag(env[SAND_KEEP_BOX_RUNNING_ON_QUIT_ENV])) return false;
+  return !hasEnabledRoutine;
 }
-export async function stopLocalDockerBoxOnQuit(options: { readonly boxRuntime: string; readonly env?: NodeJS.ProcessEnv; readonly stop?: () => Promise<void>; readonly log?: (line: string) => void; readonly timeoutMs?: number }): Promise<"stopped" | "kept" | "failed" | "timed-out"> {
+// Asked of the box itself at quit, on the gateway's own wire, because the
+// coordinator is already gone by then: any routine, any agent, enabled.
+export async function localBoxHasEnabledRoutine(settingsPath: string, fetchImpl: typeof fetch = fetch): Promise<boolean> {
+  const token = await readOrCreateToken(settingsPath);
+  const response = await fetchImpl(`${LOCAL_DOCKER_GATEWAY_URL}/api/listAllAutomations`, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: "{}", signal: AbortSignal.timeout(3_000) });
+  if (!response.ok) throw new Error(`listAllAutomations answered ${response.status}`);
+  const routines = await response.json() as unknown;
+  return Array.isArray(routines) && routines.some((routine) => typeof routine === "object" && routine != null && (routine as { isEnabled?: unknown }).isEnabled === true);
+}
+export async function stopLocalDockerBoxOnQuit(options: { readonly boxRuntime: string; readonly env?: NodeJS.ProcessEnv; readonly stop?: () => Promise<void>; readonly log?: (line: string) => void; readonly timeoutMs?: number; readonly hasEnabledRoutine?: () => Promise<boolean> }): Promise<"stopped" | "kept" | "failed" | "timed-out"> {
   const log = options.log ?? computerStreamLine;
-  if (!shouldStopLocalDockerBoxOnQuit(options.boxRuntime, options.env)) { log("local docker: kept running on quit"); return "kept"; }
+  let hasEnabledRoutine = false;
+  if (options.boxRuntime === "local-docker" && options.hasEnabledRoutine != null) {
+    try { hasEnabledRoutine = await options.hasEnabledRoutine(); }
+    catch (error) { log(`local docker: could not ask the box for its routines (${error instanceof Error ? error.message : String(error)}); stopping it`); }
+  }
+  if (!shouldStopLocalDockerBoxOnQuit(options.boxRuntime, options.env, hasEnabledRoutine)) { log(hasEnabledRoutine ? "local docker: kept running on quit for an enabled routine" : "local docker: kept running on quit"); return "kept"; }
   const stop = options.stop ?? stopLocalDockerBox;
   let timer: NodeJS.Timeout | undefined;
   try {
@@ -342,6 +369,12 @@ export const INFERENCE_CREDENTIAL_KEEP_FRESH_INTERVAL_MS = 5 * 60_000;
 let keepFreshTimer: ReturnType<typeof setInterval> | undefined;
 let lastPersistedAccessToken: string | undefined;
 
+let boxRenewalCredential: string | undefined;
+export function rememberBoxRenewalCredential(credential: string | undefined): void { boxRenewalCredential = credential; }
+function withBoxRenewalCredential(credential: InferenceCredential): InferenceCredential {
+  return boxRenewalCredential == null ? credential : { ...credential, renewalCredential: boxRenewalCredential };
+}
+
 export async function refreshInferenceCredentialFile(
   issue: () => Promise<InferenceCredential | undefined>,
   settingsPath: string,
@@ -351,7 +384,7 @@ export async function refreshInferenceCredentialFile(
   try { issued = await issue(); } catch { issued = undefined; }
   if (issued == null || issued.accessToken.length === 0) return "unavailable";
   if (issued.accessToken === lastPersistedAccessToken) return "unchanged";
-  await persist(settingsPath, issued);
+  await persist(settingsPath, withBoxRenewalCredential(issued));
   lastPersistedAccessToken = issued.accessToken;
   return "rewritten";
 }
@@ -384,9 +417,17 @@ export function createSettingsRoutedHostConnector(
 ): SandRemoteHostConnector {
   const localConnect = (): Promise<GatewayConnection> => {
     return (async () => {
+      // The box's own renewal credential rides in the token file, so a box
+      // that outlives the app (routines fire while the Mac is awake) can
+      // renew its access token without the Mac. Minted once per app run.
+      if (boxRenewalCredential == null && remote.issueBoxRenewalCredential != null) {
+        const minted = await remote.issueBoxRenewalCredential().catch(() => undefined);
+        if (minted != null) { boxRenewalCredential = minted.credential; computerStreamLine("local docker: box renewal credential minted"); }
+        else computerStreamLine("local docker: no box renewal credential (not signed in?); the box will not outlive the app's token");
+      }
       const pending = remote.issueInferenceCredential == null
         ? Promise.resolve(undefined)
-        : remote.issueInferenceCredential().catch(() => undefined);
+        : remote.issueInferenceCredential().then((value) => value == null ? undefined : withBoxRenewalCredential(value)).catch(() => undefined);
       const issued = await Promise.race([
         pending,
         new Promise<undefined>((resolve) => setTimeout(resolve, OPTIONAL_CREDENTIAL_WAIT_MS)),
