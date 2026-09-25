@@ -154,7 +154,7 @@ once the computer is designed. All fourteen are in scope.
 | # | Grok Bot family | Simeon today (corrected 25 September 2026) | Where |
 |---|---|---|---|
 | 1 | Choice card | **Exists** | SendMessage `type:widget` (`host/runner/tools/sand-widgets.ts`), drawn by the pinned renderer |
-| 2 | Secret request | **Coming soon** | `secret-request` is refused: its only store is a channel credential and channels are Coming Soon (ledger `cloud-agents-channels`) |
+| 2 | Secret request | **Exists** (served 25 September 2026, `docs/product/channels-served.md`) | SendMessage `type:secret-request` writes the masked value to the per-agent connector secret store, and the channel connector runtime in the box reads it within seconds (Discord `token`; Slack `token` and `botToken`); the ack tells the agent the connection links or which token is still missing |
 | 3 | 1Password fill | **Not built** | the LobsterAI vault code went with that tree; Grok Bot's 1Password path is dev-only (ledger F-114) |
 | 4 | In-chat form | **Not built** | no `request_user_form` tool in `desktop/source` |
 | 5 | Box handoff | **Exists** (wired 25 September 2026, ledger F-076) | `request_box_help` (`host/runner/tools/box-help-tool.ts`), the session's hand-off service, `box-handoff-resume.ts` |
