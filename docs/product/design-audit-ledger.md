@@ -220,22 +220,22 @@ until its row says so. Columns:
 | F-194 | skills-kits-role-agents | minor | docs-wrong | unverified | - | - | Server docstrings for the skill/kit store describe the LobsterAI app and 'Maties' | `server/polar/desktop/skill_store.py` |
 | F-195 | skills-kits-role-agents | note | hardcoded | unverified | - | - | Cursor-era skill constants left in the budget code; loop-protect flag never set | `desktop/source/packages/agent/prompts/skill-catalog-budget.ts` |
 | F-196 | skills-kits-role-agents | note | risk | unverified | - | - | The box image is Cursor's public ECR tag; any skills in the box come from it | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-197 | renderer-patches-branding | blocking | docs-wrong | unverified | - | - | npm run verify cannot pass on a packaged app since the renderer patch: provenance is pre-patch and never regenerated | `desktop/scripts/verify.mjs` |
-| F-198 | renderer-patches-branding | major | docs-wrong | unverified | - | - | npm run package:diagnostic throws: the renderer-extension provenance it validates is schemaVersion 2 with keys it forbids | `desktop/scripts/lib/macos-package-verification.mjs` |
+| F-197 | renderer-patches-branding | blocking | docs-wrong | unverified | batch4-reads-and-docs | fixed | npm run verify cannot pass on a packaged app since the renderer patch: provenance is pre-patch and never regenerated | `desktop/scripts/verify.mjs` |
+| F-198 | renderer-patches-branding | major | docs-wrong | unverified | batch4-reads-and-docs | fixed | npm run package:diagnostic throws: the renderer-extension provenance it validates is schemaVersion 2 with keys it forbids | `desktop/scripts/lib/macos-package-verification.mjs` |
 | F-199 | renderer-patches-branding | major | docs-wrong | unverified | - | - | Settings 'router provider' patch is a no-op but the provenance record, name-measured.md and product-name.test.mjs present it as shipped | `desktop/scripts/lib/router-renderer-patch.mjs` |
 | F-200 | renderer-patches-branding | major | design-violation | unverified | - | - | The brand pass never renames 'Cursor' or cursor.com; the pinned renderer keeps Cursor-branded copy and dead cursor.com links | `desktop/scripts/lib/router-renderer-patch.mjs` |
 | F-201 | renderer-patches-branding | major | design-violation | unverified | - | - | The founder's twenty-one avatars are not in the app the founder runs; the packaged app still draws Grok Bot's faces with no note in-app | `desktop/scripts/import-avatars.mjs` |
-| F-202 | renderer-patches-branding | minor | docs-wrong | unverified | - | - | name-measured.md contradicts itself and the code on CFBundleExecutable/CFBundleName, the header mark size and 'Caisra' copy | `docs/product/name-measured.md` |
-| F-203 | renderer-patches-branding | minor | docs-wrong | unverified | - | - | building-the-app.md, named as the current map, still says Caisra.app and CFBundleDisplayName = Caisra | `docs/product/building-the-app.md` |
-| F-204 | renderer-patches-branding | minor | docs-wrong | unverified | - | - | CLAUDE.md says the bare words Bot/Bots were left; the patch replaces them | `CLAUDE.md` |
-| F-205 | renderer-patches-branding | minor | docs-wrong | unverified | - | - | CLAUDE.md says Liquid Glass covers the message hover actions; the code and its test exclude them | `CLAUDE.md` |
+| F-202 | renderer-patches-branding | minor | docs-wrong | unverified | batch4-reads-and-docs | fixed | name-measured.md contradicts itself and the code on CFBundleExecutable/CFBundleName, the header mark size and 'Caisra' copy | `docs/product/name-measured.md` |
+| F-203 | renderer-patches-branding | minor | docs-wrong | unverified | batch4-reads-and-docs | fixed | building-the-app.md, named as the current map, still says Caisra.app and CFBundleDisplayName = Caisra | `docs/product/building-the-app.md` |
+| F-204 | renderer-patches-branding | minor | docs-wrong | unverified | batch4-reads-and-docs | fixed | CLAUDE.md says the bare words Bot/Bots were left; the patch replaces them | `CLAUDE.md` |
+| F-205 | renderer-patches-branding | minor | docs-wrong | unverified | batch4-reads-and-docs | fixed | CLAUDE.md says Liquid Glass covers the message hover actions; the code and its test exclude them | `CLAUDE.md` |
 | F-206 | renderer-patches-branding | minor | unmeasured | unverified | - | - | Header-card and Liquid Glass CSS are appended blind: a selector that misses the pinned markup no-ops silently | `desktop/scripts/lib/router-renderer-patch.mjs` |
 | F-207 | renderer-patches-branding | minor | risk | unverified | - | - | The brand pass is an unanchored split/join over every chunk: it can rename non-copy uses of 'Grok Bot' and quoted 'Bot' protocol values | `desktop/scripts/lib/router-renderer-patch.mjs` |
 | F-208 | renderer-patches-branding | minor | dead-service | unverified | - | - | Shipped Settings keeps Grok Bot's three tabs, and the Updates tab checks Cursor's feed unless the env guard holds | `desktop/scripts/lib/router-renderer-patch.mjs` |
 | F-209 | renderer-patches-branding | note | design-violation | unverified | - | - | Gate defaults: browserUse off and multitask on, with no Simeon decision recorded for either | `desktop/source/shared/node/experiments/simeon-gate-defaults.ts` |
 | F-210 | renderer-patches-branding | minor | design-violation | confirmed | cloud-agents-channels | fixed | Agent-readable text still says Cursor and points at cursor.com services that do not exist here | `desktop/source/host/automations/automation.ts` |
 | F-211 | renderer-patches-branding | minor | design-violation | unverified | - | - | Unshipped frontend/ still carries a Router with Claude Code/Codex/OpenRouter providers and an API-key field, and tests pin it | `desktop/tests/router-settings.test.mjs` |
-| F-212 | renderer-patches-branding | note | docs-wrong | unverified | - | - | NOTICE.md and desktop/README.md describe the tree as a Grok Bot reconstruction with a Git-LFS DMG that building-the-app.md says was never there | `desktop/NOTICE.md` |
+| F-212 | renderer-patches-branding | note | docs-wrong | unverified | batch4-reads-and-docs | fixed | NOTICE.md and desktop/README.md describe the tree as a Grok Bot reconstruction with a Git-LFS DMG that building-the-app.md says was never there | `desktop/NOTICE.md` |
 | F-213 | renderer-patches-branding | note | risk | unverified | - | - | Two build-time env vars rename the product silently and verify accepts whatever they say | `desktop/scripts/lib/config.mjs` |
 | F-214 | renderer-patches-branding | note | risk | unverified | - | - | Onboarding's sixteen third-party tool logos ship as letter tiles | `desktop/scripts/make-runtime-assets.mjs` |
 | F-215 | renderer-patches-branding | note | risk | unverified | - | - | https deep links from cursor.com are still accepted from argv | `desktop/source/shared/deep-link.ts` |
@@ -247,8 +247,8 @@ until its row says so. Columns:
 | F-221 | electron-main-app | note | hardcoded | unverified | - | - | DevTools is permanently denied in every packaged build because membership requires isAnysphereUser, which Simeon's profile hard-codes false | `desktop/source/electron-main/devtools-gate.ts` |
 | F-222 | electron-main-app | minor | unwired | unverified | - | - | Main-process crash reporter is defined but never wired; uncaught exceptions are swallowed to stderr and the app keeps running | `desktop/source/electron-main/telemetry/desktop-process-crash-telemetry.ts` |
 | F-223 | electron-main-app | note | risk | unverified | - | - | Renderer crash has no recovery: render-process-gone only reports (disabled) telemetry, nothing reloads the window | `desktop/source/electron-main/telemetry/renderer-lifecycle-telemetry.ts` |
-| F-224 | electron-main-app | minor | docs-wrong | unverified | - | - | CLAUDE.md and the Actions workflow describe a Mac build (npm run mac:build, dist:mac:arm64, build-whisper.sh) that no longer exists | `CLAUDE.md` |
-| F-225 | electron-main-app | minor | docs-wrong | unverified | - | - | desktop/README.md and building-the-app.md name the wrong app and the wrong product (Grok Bot 0.18 Reconstructed.app, Caisra.app, a Cursor/Claude Code/Codex/OpenRouter router) | `desktop/scripts/lib/config.mjs` |
+| F-224 | electron-main-app | minor | docs-wrong | unverified | batch4-reads-and-docs | fixed | CLAUDE.md and the Actions workflow describe a Mac build (npm run mac:build, dist:mac:arm64, build-whisper.sh) that no longer exists | `CLAUDE.md` |
+| F-225 | electron-main-app | minor | docs-wrong | unverified | batch4-reads-and-docs | fixed | desktop/README.md and building-the-app.md name the wrong app and the wrong product (Grok Bot 0.18 Reconstructed.app, Caisra.app, a Cursor/Claude Code/Codex/OpenRouter router) | `desktop/scripts/lib/config.mjs` |
 | F-226 | electron-main-app | note | dead-service | unverified | - | - | Inference-router leftovers: the edge still probes ~/.claude/.credentials.json, ~/.codex/auth.json and ANTHROPIC_API_KEY, and the provider list still names claude-code/codex/openrouter | `desktop/source/shared/inference-router.ts` |
 | F-227 | electron-main-app | note | hardcoded | unverified | - | - | Dev run (npm start / electron .) defaults every backend to Cursor: api2.cursor.sh and cursor.com | `desktop/source/shared/node/cursor-token.ts` |
 | F-228 | electron-main-app | minor | design-violation | unverified | - | - | 'Move to Applications' dialog promises updates the app cannot install | `desktop/source/electron-main/startup/startup-move-check.ts` |
@@ -322,18 +322,18 @@ until its row says so. Columns:
 | F-296 | web-and-search | note | hardcoded | unverified | - | - | `DEFAULT_SAND_MODEL` ("gpt-5.5-high-fast") is not in the server catalogue | `desktop/source/host/host-runner-composition.ts` |
 | F-297 | onboarding-first-run | major | unwired | unverified | - | - | Intro stays owed when its run throws, so it re-runs on every open | `desktop/source/host/extensions/transcript/agent-lifecycle.ts` |
 | F-298 | onboarding-first-run | major | spend | confirmed | hidden-turn-cap | known-limit | The intro is two hidden turns, so its cap is 80 model calls, not 40 | `desktop/source/host/extensions/transcript/agent-lifecycle.ts` |
-| F-299 | onboarding-first-run | major | hardcoded | unverified | - | - | The default agent name is 'Grok' in six places; a fallback agent on a fresh box is named Grok | `desktop/source/shared/agents/agents.ts` |
+| F-299 | onboarding-first-run | major | hardcoded | unverified | batch4-reads-and-docs | fixed | The default agent name is 'Grok' in six places; a fallback agent on a fresh box is named Grok | `desktop/source/shared/agents/agents.ts` |
 | F-300 | onboarding-first-run | major | design-violation | unverified | - | - | The first message becomes the agent's name (Grok Bot's seeding kept) | `desktop/source/host/extensions/transcript/send-acceptance.ts` |
 | F-301 | onboarding-first-run | major | unwired | unverified | - | - | Docker missing at first launch: nothing tells the person, and the brief promises a prompt that does not exist | `desktop/source/electron-main/main-production-services.ts` |
 | F-302 | onboarding-first-run | major | dead-service | unverified | - | - | Managed setup (managed skills, skill catalogue, team rules) calls Cursor's DashboardService at Simeon Labs' host | `desktop/source/host/extensions/managed-setup/production.ts` |
 | F-303 | onboarding-first-run | minor | dead-service | unverified | - | - | Product analytics posts onboarding and agent-created events to Cursor's AnalyticsService at our host, gate on by default | `desktop/source/shared/node/analytics/product-analytics.ts` |
-| F-304 | onboarding-first-run | minor | naming | unverified | - | - | Sign-in error strings still say Claidor | `desktop/source/electron-main/account/cursor-auth.ts` |
+| F-304 | onboarding-first-run | minor | naming | unverified | batch4-reads-and-docs | fixed | Sign-in error strings still say Claidor | `desktop/source/electron-main/account/cursor-auth.ts` |
 | F-305 | onboarding-first-run | minor | design-violation | unverified | - | - | Settings offers a 'remote computer' that does not exist and speaks in Docker/VM plumbing | `desktop/scripts/lib/router-renderer-patch.mjs` |
 | F-306 | onboarding-first-run | note | unwired | unverified | - | - | cheapIntroductionMessages, fallbackIntroductionText and the greeting prompt have no callers but are tested | `desktop/source/shared/agents/onboarding.ts` |
 | F-307 | onboarding-first-run | minor | design-violation | unverified | - | - | The kickstart prompt fights the brief's hidden-wake rule and asks for more than one question and more than one connector ask | `desktop/source/host/runner/system-prompt.ts` |
 | F-308 | onboarding-first-run | minor | unwired | unverified | - | - | Intro is skipped, not deferred, when inference is not ready at creation | `desktop/source/host/extensions/transcript/agent-lifecycle.ts` |
 | F-309 | onboarding-first-run | minor | design-violation | unverified | - | - | The voice brief in the system prompt is a paraphrase, not the founder's wording | `desktop/source/host/runner/system-prompt.ts` |
-| F-310 | onboarding-first-run | minor | docs-wrong | unverified | - | - | CLAUDE.md calls agent-lifecycle.ts 'the pristine reconstruction'; it is modified | `desktop/source/host/extensions/transcript/agent-lifecycle.ts` |
+| F-310 | onboarding-first-run | minor | docs-wrong | unverified | batch4-reads-and-docs | fixed | CLAUDE.md calls agent-lifecycle.ts 'the pristine reconstruction'; it is modified | `desktop/source/host/extensions/transcript/agent-lifecycle.ts` |
 | F-311 | onboarding-first-run | note | risk | unverified | - | - | Copied Grok Bot user data likely cannot decrypt under Simeon's safeStorage key; 'nobody signs in again' is unmeasured | `desktop/source/electron-main/startup/desktop-user-data-bootstrap.ts` |
 | F-312 | onboarding-first-run | note | risk | unverified | - | - | The box container restarts on its own after a crash or reboot and runs a Cursor-owned moving image tag | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-313 | onboarding-first-run | note | naming | unverified | - | - | The agent's brief carries an unconditional 'Origin' section with cursor.com links | `desktop/source/host/runner/system-prompt.ts` |
@@ -1303,3 +1303,30 @@ by the same shape but not measured; `SAND_AGENT_SCREENSHOT_TOOL=1` offers
 the tool again and it stays off until a turn with it is read on a Mac.
 Not yet run on a Mac: the line to read is `[claidor] tool=Computer` in
 the box's `/tmp/sand-host.log`.
+
+### batch4-reads-and-docs (25 September 2026)
+
+Batch 4 (onboarding, electron main app, renderer patches, branding),
+first cluster: the rows later work had already answered, and the
+documents that contradicted the code. F-197 was fixed by #194 (`verify.mjs`
+reads the patch record's per-file original and patched hashes). F-198 is
+fixed today: `verifyChecksumPinnedRendererPackage` refused the schema-2
+record `router-renderer-patch.mjs` writes and compared the marks, brand
+and stylesheet files against the shipped bytes; `readRendererExtensionRecord`
+(exported, `tests/package-verification-record.test.mjs`) now takes that
+record and reads the patched hashes from its `files`. F-299 is fixed: the
+seven `"Grok"` fallbacks in `host/extensions/session/*` and
+`shared/agents/onboarding.ts` are `SAND_DEFAULT_AGENT_NAME` ("New Agent",
+the founder's word), and the "has the agent a name yet" checks use
+`isSandDefaultAgentName`. F-304 was answered by the sign-in-copy cluster
+(the file's only "Claidor" is a comment). Corrected in place, dated:
+`name-measured.md` (F-202: the bundle executable and name are Simeon since
+23 September; the mark is 52 px), `building-the-app.md` (F-203, F-225:
+Simeon.app, display name Simeon, api.simeonlabs.com), `CLAUDE.md` (F-204
+bare Bot/Bots are renamed, F-205 hover actions are not glassed, F-224 the
+Mac build loop, F-310 agent-lifecycle.ts is not pristine),
+`desktop/README.md` (F-225: rewritten for Simeon; no Router, no LFS
+installers), `desktop/NOTICE.md` (F-212: no installer is preserved), and
+`.github/workflows/desktop_mac.yml` (F-224: the real loop; whether the
+runner can download the 0.18.0 app is not measured). Not yet run on a
+Mac: `npm run package:diagnostic` with the widened validator.

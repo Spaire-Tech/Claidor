@@ -1,6 +1,6 @@
-# Building Caisra
+# Building Simeon
 
-**20 September 2026.** Read this before running anything in `desktop/`.
+**20 September 2026; names corrected 25 September (F-203, F-225).** Read this before running anything in `desktop/`. The app was called Caisra when this was written; the bundle, display name and hosts below are what `scripts/lib/config.mjs` writes today.
 
 ## The build loop
 
@@ -12,10 +12,10 @@ npm run bootstrap      # hydrate src/app/dist from the pinned 0.18.0 ASAR
 npm run check          # typecheck + node --test — a required gate
 npm run package        # 0.18.0 window chrome + ignited Claidor host, ad-hoc sign
 npm run verify         # audit the bundle — a required gate
-open "dist/Caisra.app"
+open "dist/Simeon.app"
 ```
 
-Quit any running Caisra first (**Cmd+Q**). Do not open the copy in Applications or the Dock — that is the previous install.
+Quit any running Simeon first (**Cmd+Q**). Do not open the copy in Applications or the Dock — that is the previous install.
 
 ## What that `.app` actually contains
 
@@ -57,15 +57,15 @@ Only macOS on Apple Silicon can bootstrap or package — `hdiutil`, `codesign`,
 
 ## What is ours in the packaged bundle
 
-- **`dist/Caisra.app`** — the bundle name (`GROK_BOT_OUTPUT_APP_NAME` overrides).
-- **`CFBundleDisplayName` = `Caisra`** (`CAISRA_DISPLAY_NAME` overrides).
+- **`dist/Simeon.app`** — the bundle name (`GROK_BOT_OUTPUT_APP_NAME` overrides).
+- **`CFBundleDisplayName` = `Simeon`** (`CAISRA_DISPLAY_NAME` overrides); `CFBundleExecutable` and `CFBundleName` are `Simeon` too, with the helper bundles renamed (`macos-bundle-rename.mjs`, 23 September).
 - **`CFBundleIdentifier` = `com.claidor.simeon`** and **`CFBundleURLSchemes` =
   `simeon`**, since 23 September 2026 (`scripts/lib/config.mjs`,
   `reconstructedBundleId`, `reconstructedUrlScheme`; the app's own
   `SAND_DEEP_LINK_SCHEME` must match, and `tests/app-identity.test.mjs`
   checks it). Until then `com.anysphere.sand.reconstructed` and `sand`.
 - **`LSEnvironment`** carries `CURSOR_API_BASE_URL`, `CURSOR_WEBSITE_URL`
-  and `SAND_BACKEND_URL`, all `https://api.claidor.com`.
+  and `SAND_BACKEND_URL`, all `https://api.simeonlabs.com` (`CAISRA_BACKEND_URL` overrides; `api.claidor.com` until 24 September).
 - **Host and electron-main** from recovered source when the 0.18.0 artifact
   self-check cannot activate them (`scripts/caisra-ignition-activation.mjs`).
 
