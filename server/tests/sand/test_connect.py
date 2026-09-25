@@ -152,3 +152,21 @@ class TestDashboardPreflight:
         assert body["authId"] == str(user.id)
         assert isinstance(body["userId"], int) and 0 < body["userId"] < 2_147_483_647
         assert body["email"] == user.email
+
+
+@pytest.mark.asyncio
+class TestLaunchPreflights:
+    """The two RPCs the new Mac build asked for at launch and got "not found"
+    (the founder, 25 September 2026, evening)."""
+
+    async def test_sand_access_is_granted_and_composer_settings_are_empty(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        headers = {"Authorization": f"Bearer {access}"}
+        status = await client.post("/aiserver.v1.DashboardService/GetSandAccessStatus", json={}, headers=headers)
+        assert status.status_code == 200, status.text
+        assert status.json() == {"state": 1, "purchaseChannel": 1, "blockReason": 0}
+        settings_ = await client.post("/aiserver.v1.BackgroundComposerService/GetBackgroundComposerUserSettings", json={}, headers=headers)
+        assert settings_.status_code == 200, settings_.text
+        assert settings_.json() == {}

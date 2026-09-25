@@ -1166,7 +1166,15 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             ...(osPlatform === undefined ? {} : { osPlatform }),
             resourceAccessor: input.resourceAccessor,
           };
-      const getTerminalsFolder = method(remoteBox, "getTerminalsFolder");
+      // ExternalAwaitShell waits on a shell that ExternalShell ran on the
+      // user's computer, so its terminal file lives in the local-exec
+      // provider's folder (the Mac's `hello` frame), never the box's. Until
+      // 25 September 2026 this read the box's folder, and the Mac's daemon
+      // refused every wait with "Path is outside the allowed local-exec
+      // root … /root/.cursor/projects/workspace/terminals/<id>.txt"
+      // (the founder's log, that evening).
+      const getLocalTerminalsFolder = method(localExec.box as DynamicApi, "terminalsFolder");
+      const getTerminalsFolder = getLocalTerminalsFolder ?? method(remoteBox, "getTerminalsFolder");
       const externalAwait: ProductionTurnExternalAwaitInputs | undefined =
         getTerminalsFolder === undefined
           ? undefined
@@ -1174,7 +1182,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               resourceAccessor: input.resourceAccessor,
               options: {
                 toolName: SAND_EXTERNAL_AWAIT_SHELL_TOOL_NAME,
-                terminalsFolder: () => getTerminalsFolder() ?? "",
+                terminalsFolder: () => (getTerminalsFolder() as string | undefined) ?? "",
                 enableSubagentAwaiting: false,
                 defaultBlockUntilMs: 30_000,
                 enableJobCompletionNotifications: true,
