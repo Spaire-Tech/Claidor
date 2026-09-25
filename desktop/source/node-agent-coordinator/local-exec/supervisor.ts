@@ -146,7 +146,10 @@ export function createLocalExecDaemonSupervisor(options: LocalExecDaemonSupervis
     if (credentialHandedOff || disposed || paused) return;
     try {
       const credential = await options.control.mintLocalExecDaemonCredential({});
-      if (credential == null || disposed) return;
+      if (disposed) return;
+      // No credential to hand off (a local Docker box): the tick stops, it
+      // is not a failure to retry every 30 s (F-413).
+      if (credential == null) { credentialHandedOff = true; return; }
       await writeLocalExecDaemonCredential(credential, paths.credentialPath);
       credentialHandedOff = true;
     } catch {}

@@ -17,7 +17,7 @@ export const requestBoxHelpParameters = z.object({
     'Destination app/site the user is trying to access (e.g. "salesforce.com", "google.com"). On a normal login page this is the browser-bar host. On an SSO/IdP page (Okta, Google accounts, Azure AD, …) this is the *destination* app that started SSO — NOT the IdP host (put that in idp_domain). Omit when unknown or the step is not on a website.',
   ),
   idp_domain: z.string().trim().optional().catch(undefined).describe(
-    'When the browser is on an SSO/IdP page, the IdP host from the URL bar (e.g. "anysphere.okta.com", "accounts.google.com", "login.microsoftonline.com"). Omit on a direct app login with no separate IdP.',
+    'When the browser is on an SSO/IdP page, the IdP host from the URL bar (e.g. "acme.okta.com", "accounts.google.com", "login.microsoftonline.com"). Omit on a direct app login with no separate IdP.',
   ),
 });
 
@@ -82,7 +82,7 @@ export function createRequestBoxHelpTool(deps: BoxHelpDependencies) {
   return defineCommunicateTool(deps, {
     id: "REQUEST_BOX_HELP",
     name: "request_box_help",
-    description: `Hand your box's desktop to the user for a step only they can do: a login, SSO, passkey, 2FA, captcha, or payment confirmation. Pass one short instruction (no paragraph); the box is surfaced with a "hand back to agent" button and that instruction is shown in chat, then your turn ends. The user does the step on the box and hands it back, and you are resumed automatically, so start by using the read-only Screenshot tool to see what they changed. Use this instead of asking for credentials: the user signs in themselves on the box and you never see their password or 2FA. For classification: domain is the destination app being accessed; when the browser has redirected to an SSO/IdP page (Okta, Google accounts, \u2026), still put the destination app in domain and put the IdP host in idp_domain.`,
+    description: `Hand your box's desktop to the user for a step only they can do: a login, SSO, passkey, 2FA, captcha, or payment confirmation. Pass one short instruction (no paragraph); the box is surfaced with a "hand back to agent" button and that instruction is shown in chat, then your turn ends. The user does the step on the box and hands it back, and you are resumed automatically, so start by looking at what they changed (a computerUse subagent's screenshot, or your Screenshot tool when you hold one). Use this instead of asking for credentials: the user signs in themselves on the box and you never see their password or 2FA. For classification: domain is the destination app being accessed; when the browser has redirected to an SSO/IdP page (Okta, Google accounts, \u2026), still put the destination app in domain and put the IdP host in idp_domain.`,
     parameters: requestBoxHelpParameters,
     async execute(
       _context: Context,

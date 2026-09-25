@@ -415,7 +415,9 @@ export function createCoordinatorInferenceRouter(options: {
     provider(): SandInferenceProvider { return resolveProductInferenceProvider(options.env ?? process.env); },
     async dispatch(method: string, args: unknown): Promise<{ handled: boolean; value?: unknown }> {
       const provider = resolveProductInferenceProvider(options.env ?? process.env);
-      if (method === "reactToMessage") {
+      // The local reaction store belongs to the text-only hatch; on the host
+      // path a stale hatch transcript must not answer for the host (F-419).
+      if (method === "reactToMessage" && handledLocally(provider)) {
         const record = asRecord(args) ?? {};
         const agentId = typeof record.agentId === "string" ? record.agentId : "";
         const entryId = typeof record.entryId === "string" ? record.entryId : "";

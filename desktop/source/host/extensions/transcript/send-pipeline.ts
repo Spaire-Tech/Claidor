@@ -436,6 +436,7 @@ export class SendPipeline {
         selectedVideos,
         fileAttachmentPaths,
         attachedFileSizes: sizes,
+        attachedFileNames: new Map(attachmentPaths.flatMap((path, index) => typeof names[index] === "string" && names[index].length > 0 ? [[path, names[index]] as const] : [])),
         ...(sendTrace?.context == null ? {} : { traceCtx: sendTrace.context }),
         acceptedAtMs,
         wasInFlight,

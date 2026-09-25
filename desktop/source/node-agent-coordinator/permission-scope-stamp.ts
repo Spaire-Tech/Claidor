@@ -86,9 +86,11 @@ function sortEntriesByTimestamp(entries: unknown): unknown {
 }
 
 /** A transcript read reply (`entries: [...]`) with its cards stamped and sorted. */
-export function stampTranscriptReply(method: string, value: unknown, scope: TranscriptPermissionScope | null): unknown {
+export function stampTranscriptReply(method: string, value: unknown, scope: TranscriptPermissionScope | null, options: { readonly sortByTimestamp?: boolean } = {}): unknown {
   if (!TRANSCRIPT_REPLY_METHODS.includes(method) || !isRecord(value)) return value;
-  const sorted = sortEntriesByTimestamp(value.entries);
+  // The re-sort was written for the hatch's concat of a host transcript and
+  // a local one; the host's single transcript is already in order (F-421).
+  const sorted = options.sortByTimestamp === true ? sortEntriesByTimestamp(value.entries) : value.entries;
   const stamped = scope == null ? sorted : stampEntries(sorted, scope);
   if (stamped === value.entries && sorted === value.entries) return value;
   return { ...value, entries: stamped };

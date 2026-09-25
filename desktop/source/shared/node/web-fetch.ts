@@ -1,3 +1,4 @@
+import { isLoopbackIpHost, isPrivateIpHost } from "../../packages/agent/utils/ip.js";
 // Web fetch, on the machine the agent runs on.
 //
 // Until 19 September 2026 the agent's `web_fetch` tool was a Connect RPC call
@@ -13,10 +14,26 @@ export const WEB_FETCH_TIMEOUT_MS = 30_000;
 export const WEB_FETCH_MAX_BYTES = 5 * 1024 * 1024;
 export const WEB_FETCH_MAX_CHARS = 100_000;
 export const WEB_FETCH_USER_AGENT = "Simeon/1.0 (+https://simeonlabs.com)";
+export const WEB_FETCH_MAX_REDIRECTS = 5;
+
+// The tool checks the requested URL for localhost and private addresses
+// before it runs; until 25 September 2026 this fetch then followed
+// redirects on its own, so a public page could bounce the box's fetch to
+// 127.0.0.1:1337 or a metadata address. Every hop is checked here, and the
+// Mac-local hatch (which calls this directly) is covered the same way.
+export function localNetworkRejection(url: URL): string | undefined {
+  const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  const display = url.port.length > 0 ? `${host}:${url.port}` : host;
+  if (host === "localhost" || host.endsWith(".localhost") || isLoopbackIpHost(host)) return `Cannot fetch from localhost (${display}): Simeon's fetch reaches public pages only.`;
+  if (isPrivateIpHost(host)) return `Cannot fetch from a private address (${display}): Simeon's fetch reaches public pages only.`;
+  return undefined;
+}
 
 export type WebFetchResult = { readonly content: string } | { readonly error: string; readonly isTimeout?: boolean };
 
 export interface WebFetchOptions {
+  /** Test seam: lets a fixture on 127.0.0.1 be fetched. Never set in production. */
+  readonly allowLocalNetwork?: boolean;
   readonly fetch?: typeof fetch;
   readonly timeoutMs?: number;
   readonly maxBytes?: number;
@@ -129,12 +146,30 @@ export async function fetchWebPage(url: string, options: WebFetchOptions = {}): 
   const maxChars = options.maxChars ?? WEB_FETCH_MAX_CHARS;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const rejectHop = (url: URL): string | undefined => options.allowLocalNetwork === true ? undefined : localNetworkRejection(url);
   try {
-    const response = await (options.fetch ?? fetch)(parsed.toString(), {
-      redirect: "follow",
-      signal: controller.signal,
-      headers: { "user-agent": WEB_FETCH_USER_AGENT, accept: "text/html,application/xhtml+xml,application/json,text/plain;q=0.9,*/*;q=0.5" },
-    });
+    const firstRejection = rejectHop(parsed);
+    if (firstRejection !== undefined) return { error: firstRejection };
+    let current = parsed;
+    let response: Response;
+    let hops = 0;
+    for (;;) {
+      response = await (options.fetch ?? fetch)(current.toString(), {
+        redirect: "manual",
+        signal: controller.signal,
+        headers: { "user-agent": WEB_FETCH_USER_AGENT, accept: "text/html,application/xhtml+xml,application/json,text/plain;q=0.9,*/*;q=0.5" },
+      });
+      const location = response.headers.get("location");
+      if (response.status < 300 || response.status >= 400 || location == null) break;
+      await response.body?.cancel().catch(() => undefined);
+      if (++hops > WEB_FETCH_MAX_REDIRECTS) return { error: `${parsed.hostname} redirected more than ${WEB_FETCH_MAX_REDIRECTS} times.` };
+      let next: URL;
+      try { next = new URL(location, current); } catch { return { error: `${current.hostname} redirected to an address that is not a URL.` }; }
+      if (next.protocol !== "http:" && next.protocol !== "https:") return { error: `${current.hostname} redirected to ${next.protocol}, which cannot be fetched.` };
+      const rejection = rejectHop(next);
+      if (rejection !== undefined) return { error: `${current.hostname} redirected to ${next.hostname}. ${rejection}` };
+      current = next;
+    }
     if (!response.ok) {
       await response.body?.cancel().catch(() => undefined);
       return { error: `${parsed.hostname} answered ${response.status}${response.statusText ? ` ${response.statusText}` : ""}.` };
@@ -151,7 +186,7 @@ export async function fetchWebPage(url: string, options: WebFetchOptions = {}): 
     if (!isHtml && !mime.startsWith("text/") && !/[/+]json$/.test(mime) && !/[/+]xml$/.test(mime)) {
       return { error: `${parsed.hostname} returned ${mime || "an unknown type"}, which is not text.` };
     }
-    const text = isHtml ? htmlToText(decoded, response.url || parsed.toString()) : decoded.trim();
+    const text = isHtml ? htmlToText(decoded, response.url || current.toString()) : decoded.trim();
     if (text.length === 0) return { error: "The page had no readable text." };
     return { content: text.length > maxChars ? `${text.slice(0, maxChars)}\n\n[truncated at ${maxChars} characters]` : text };
   } catch (error) {

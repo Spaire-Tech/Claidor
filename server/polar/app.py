@@ -15,6 +15,7 @@ from polar.checkout import ip_geolocation
 from polar.checkout_link.app import app as checkout_link_redirect_app
 from polar.config import settings
 from polar.desktop.app_sign_in import router as desktop_app_sign_in_router
+from polar.sand import router as sand_router
 from polar.desktop.endpoints import router as desktop_router
 from polar.exception_handlers import add_exception_handlers
 from polar.health.endpoints import router as health_router
@@ -277,6 +278,11 @@ def create_app() -> FastAPI:
 
     # /maty/runner: the queue the cloud engine takes its work from
     app.include_router(maty_router)
+
+    # /sand/*, /aiserver.v1.*, /agent.v1.*: the half of Cursor's server the
+    # app expects, root-level for the same reason as sign-in
+    # (docs/product/cursor-dependencies-map.md).
+    app.include_router(sand_router)
 
     if settings.BACKOFFICE_HOST is None:
         app.mount("/backoffice", backoffice_app)

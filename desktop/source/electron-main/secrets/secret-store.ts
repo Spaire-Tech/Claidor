@@ -193,9 +193,9 @@ async function getDiskCache(): Promise<Record<string, string>> {
 
 async function writeAtomic(map: Readonly<Record<string, string>>): Promise<void> {
   const storePath = getStorePath();
-  await fs.mkdir(dirname(storePath), { recursive: true });
+  await fs.mkdir(dirname(storePath), { recursive: true, mode: 0o700 });
   const temporaryPath = `${storePath}.${process.pid}.${randomUUID()}.tmp`;
-  await fs.writeFile(temporaryPath, JSON.stringify(map, null, 2), "utf-8");
+  await fs.writeFile(temporaryPath, JSON.stringify(map, null, 2), { encoding: "utf-8", mode: 0o600 });
   await fs.rename(temporaryPath, storePath);
 }
 
@@ -481,9 +481,9 @@ export class DesktopSecretStore {
   }
 
   private async writeAtomic(map: Readonly<Record<string, string>>): Promise<void> {
-    await fs.mkdir(dirname(this.options.filePath), { recursive: true });
+    await fs.mkdir(dirname(this.options.filePath), { recursive: true, mode: 0o700 });
     const temporary = `${this.options.filePath}.${process.pid}.${randomUUID()}.tmp`;
-    await fs.writeFile(temporary, JSON.stringify(map, null, 2), "utf-8");
+    await fs.writeFile(temporary, JSON.stringify(map, null, 2), { encoding: "utf-8", mode: 0o600 });
     await fs.rename(temporary, this.options.filePath);
   }
 

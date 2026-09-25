@@ -108,10 +108,10 @@ test("the box carries the telemetry guards and makes no Cursor pre-flight, and t
   const docker = await src("electron-main/box/local-docker-host-connector.ts");
   assert.match(docker, /LOCAL_DOCKER_SCHEMA_VERSION = "10"/);
   for (const key of ["SAND_DISABLE_TELEMETRY=1", "SAND_DISABLE_ANALYTICS=1", "SAND_BOX_LOG_SHIP_DISABLED=1"]) assert.ok(docker.includes(`"--env", "${key}"`), key);
-  assert.match(await src("shared/node/cursor-backend/cursor-inference.ts"), /privacyLookup \|\| !isConnectServed\(options\.env\) \? "true"/);
-  assert.match(await src("host/extensions/notifications/extension.ts"), /start: \(context\) => \{ if \(!isConnectServed\(\)\) return \{\};/);
-  assert.match(await src("shared/node/experiments/cursor-experiments.ts"), /loggingEnabled: isConnectServed\(\) \? "always" : "disabled"/);
+  assert.match(await src("shared/node/cursor-backend/cursor-inference.ts"), /privacyLookup \|\| !isConnectServed\(options\.env, "aiserver\.v1\.DashboardService"\) \? "true"/);
+  assert.match(await src("host/extensions/notifications/extension.ts"), /start: \(context\) => \{ if \(!isConnectServed\(process\.env, "aiserver\.v1\.GrokBotService"\)\) return \{\};/);
+  assert.match(await src("shared/node/experiments/cursor-experiments.ts"), /loggingEnabled: isConnectServed\(process\.env, "cursor\.statsig-bootstrap"\) \? "always" : "disabled"/);
   assert.match(await src("electron-main/startup/desktop-user-data-bootstrap.ts"), /"sand-statsig-bootstrap\.json"\]\);/);
   assert.match(await src("shared/observability/sentry.ts"), /SAND_SENTRY_DSN = "";/);
-  assert.match(await src("electron-main/account/cursor-profile.ts"), /if \(!isConnectServed\(\)\) return PrivacyMode\.NO_TRAINING;/);
+  assert.match(await src("electron-main/account/cursor-profile.ts"), /if \(!isConnectServed\(process\.env, "aiserver\.v1\.DashboardService"\)\) return PrivacyMode\.NO_TRAINING;/);
 });

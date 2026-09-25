@@ -59,6 +59,7 @@ import {
   createRequestBoxHelpTool,
   type BoxHelpDependencies,
 } from "./box-help-tool.js";
+import { createDraftExternalMessageTool, createMarkDraftDeliveredTool, type DraftToolDependencies } from "./draft-message-tool.js";
 import {
   createGenerateImageTool,
   type GenerateImageToolDependencies,
@@ -541,6 +542,7 @@ export interface TurnToolFactories {
   browser?(): readonly TurnTool[];
   screenshot?(): TurnTool;
   requestBoxHelp?(): TurnTool;
+  drafts?(): readonly TurnTool[];
   mcpMeta?(dynamicToolRegistry?: DynamicToolRegistry): readonly TurnTool[];
   mcpManagement?(): readonly TurnTool[];
   subagentManagement?(): readonly TurnTool[];
@@ -674,6 +676,7 @@ export interface TurnToolsetFactoryInputs {
   readonly screenshot?: TurnComputerToolFactoryInput;
   readonly fileTransfer?: TurnFileTransferToolFactoryInput;
   readonly requestBoxHelp?: TurnBoxHelpToolFactoryInput;
+  readonly drafts?: TurnDraftToolFactoryInput;
   readonly generateImage?: TurnGenerateImageToolFactoryInput;
   readonly webSearch?: TurnWebSearchToolFactoryInput;
   readonly webFetch?: TurnWebFetchToolFactoryInput;
@@ -727,6 +730,10 @@ export interface TurnToolsetHostFactoryProvider {
     turn: TurnToolsetTurnInput,
     props: TurnToolsetBuildProps,
   ) => TurnBoxHelpToolFactoryInput;
+  readonly createDraftToolInputs?: (
+    turn: TurnToolsetTurnInput,
+    props: TurnToolsetBuildProps,
+  ) => TurnDraftToolFactoryInput;
   readonly createGenerateImageToolInputs?: (
     turn: TurnToolsetTurnInput,
     props: TurnToolsetBuildProps,
@@ -930,6 +937,16 @@ export function createTurnFileTransferToolFactory(
   return () => createFileTransferTools(input.controller).map(asTurnTool);
 }
 
+export interface TurnDraftToolFactoryInput {
+  readonly dependencies: DraftToolDependencies;
+}
+
+export function createTurnDraftToolFactory(
+  input: TurnDraftToolFactoryInput,
+): () => readonly TurnTool[] {
+  return () => [asTurnTool(createDraftExternalMessageTool(input.dependencies)), asTurnTool(createMarkDraftDeliveredTool(input.dependencies))];
+}
+
 export function createTurnBoxHelpToolFactory(
   input: TurnBoxHelpToolFactoryInput,
 ): () => TurnTool {
@@ -1057,7 +1074,7 @@ export function createTurnToolsetFactories(
 ): Pick<
   TurnToolFactories,
   "task" | "mcpMeta" | "computer" | "browser" | "screenshot"
-  | "fileTransfer" | "requestBoxHelp" | "generateImage" | "webSearch" | "webFetch" | "externalAwait"
+  | "fileTransfer" | "requestBoxHelp" | "drafts" | "generateImage" | "webSearch" | "webFetch" | "externalAwait"
   | "boxAwait" | "externalShell" | "externalRead" | "boxShell" | "boxRead"
   | "sendMessage" | "sendToAgent" | "reaction" | "createAgent" | "updateAgent" | "updateState"
   | "subagentManagement"
@@ -1088,6 +1105,9 @@ export function createTurnToolsetFactories(
     ...(input.requestBoxHelp === undefined
       ? {}
       : { requestBoxHelp: createTurnBoxHelpToolFactory(input.requestBoxHelp) }),
+    ...(input.drafts === undefined
+      ? {}
+      : { drafts: createTurnDraftToolFactory(input.drafts) }),
     ...(input.generateImage === undefined
       ? {}
       : { generateImage: createTurnGenerateImageToolFactory(input.generateImage) }),
@@ -1185,6 +1205,9 @@ export function createTurnToolsetFactoriesForTurn(
     ...(provider.createRequestBoxHelpToolInputs === undefined
       ? {}
       : { requestBoxHelp: provider.createRequestBoxHelpToolInputs(turn, props) }),
+    ...(provider.createDraftToolInputs === undefined
+      ? {}
+      : { drafts: provider.createDraftToolInputs(turn, props) }),
     ...(provider.createGenerateImageToolInputs === undefined
       ? (() => {
         // Composition builds createSandGenerateImageService into runnerOptions
@@ -1484,6 +1507,8 @@ export function buildTurnTools(
     if (screenshot !== undefined) tools.push(screenshot);
     const requestBoxHelp = factories.requestBoxHelp?.();
     if (requestBoxHelp !== undefined) tools.push(requestBoxHelp);
+    const drafts = factories.drafts?.();
+    if (drafts !== undefined) tools.push(...drafts);
   }
 
   // The immutable builder only offers the MCP discovery/call pair when the

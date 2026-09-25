@@ -199,9 +199,10 @@ export function loadAccountMcpStore(rootDir: string): AccountMcpStore {
 
 export function saveAccountMcpStore(rootDir: string, store: AccountMcpStore): void {
   const path = accountMcpStorePath(rootDir);
-  mkdirSync(dirname(path), { recursive: true });
+  mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
   const temporary = `${path}.${process.pid}.tmp`;
-  writeFileSync(temporary, `${JSON.stringify(store, null, 2)}\n`, "utf8");
+  // A custom server's headers and OAuth credential live here: owner-only.
+  writeFileSync(temporary, `${JSON.stringify(store, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
   renameSync(temporary, path);
 }
 

@@ -1,5 +1,12 @@
 # Artifacts: ours against Grok Bot's
 
+> **Superseded, 18 September 2026.** "Ours" below is the LobsterAI attachment
+> model (`peelAttachments`, markdown-link delivery), which went with that tree.
+> The shipped model is Grok Bot's: the eleven kinds in
+> `desktop/source/shared/media/attachments.ts`, the caps in
+> `shared/media/attachment-limits.ts`, and `docs/product/artifacts-decision.md`
+> for what a document is. Kept as a record. (Marked 25 September 2026, ledger F-282.)
+
 18 September 2026. Source: `sources/grok-bot-artifacts.md`, saved verbatim.
 Everything about our side was traced in the tree, not recalled.
 
