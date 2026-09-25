@@ -423,6 +423,27 @@ other tool call, so it is either the model calling SendMessage twice in
 one turn or a reply nudge; the `[claidor] model=` lines for that turn
 in the box log decide it, and nobody has read them.
 
+**The box could not connect from the packaged app, read 25 September 2026,
+evening.** The founder's report (`docker version` fine in Terminal; the
+app's `computer-stream.log` full of `Local Docker VM is selected, but
+Docker is unavailable: spawn docker ENOENT`): the app spawned `docker`
+by bare name, and a Mac app launched from Finder has
+`PATH=/usr/bin:/bin:/usr/sbin:/sbin`, where Docker Desktop's CLI is not.
+So no box call ever ran, the token file was never rewritten, and the
+container Docker Desktop had restarted on its own ran with an expired
+token (the 401 below, second appearance). `resolveDockerBinary` in
+`local-docker-host-connector.ts` now looks in PATH, `/usr/local/bin`,
+`/opt/homebrew/bin`, `~/.docker/bin` and `Docker.app` (`SAND_DOCKER_BINARY`
+names one), the CLI runs with that PATH, and the failure sentence says
+where it looked. The same log showed `ExternalAwaitShell` refused with
+a box path (`/root/.cursor/projects/workspace/terminals/<id>.txt`): the
+composition built it on the box's terminals folder while it reads
+through the Mac's local-exec daemon; it reads `localExec.box.terminalsFolder()`
+now. And it showed the binary-Connect bug on a Mac (`unsupported
+content type application/json`, `The request body is not JSON`), fixed
+on the transport the same day (above): a packaged app carries the fix
+only once rebuilt from this branch. Not yet re-run on the Mac.
+
 **"Agent failed to respond: Unauthorized", read 24 September 2026.**
 The word is the API's own `Unauthorized` exception, answered to the
 box's model call (`AI_APICallError … statusCode: 401` in
@@ -694,6 +715,22 @@ founder registers Simeon's Slack app and GitHub App and sets
 `CLAIDOR_SAND_GITHUB_APP_SLUG/WEBHOOK_SECRET` on Render (the install page
 and a `sand.listeners.*_refused` log line name the missing key);
 Microsoft Teams stays Coming Soon (no bot). Not yet run on a Mac.
+
+**The runner no longer needs the OpenClaw engine, 25 September 2026,
+evening.** "The runner image wasn't rebuilt because GitHub Actions is
+billing-locked" was only half of it: `runner/Dockerfile` built the OpenClaw
+engine from `desktop/scripts/patches` and `apply-openclaw-patches.cjs`,
+which left the tree with the 18 September re-founding, so the image could
+not be built from any machine, and Render still ran the 22 September image
+without the cloud-agent contract. What a cloud job does is one model turn
+over the person's memory and the conversation, with no tools, so
+`runner/src/engine.ts` is now that request to Claidor's proxy on the job
+token (the wire from the model row's `transportApi`), the engine stage is
+gone from the Dockerfile, and `render.yaml` has Render build the runner
+from the repository like the API (`runtime: docker`). Known limit: the
+model cannot write memory files, so nothing is written back from a cloud
+turn. `runner/src/engine.test.ts` runs the turn against an in-process
+fake proxy. Not yet run on Render.
 
 **The decision, 18 September: keep the queue, change the executor.** The claim /
 lease / heartbeat / scoped-token / memory-in-memory-out half is the hard part and

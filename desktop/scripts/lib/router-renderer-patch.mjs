@@ -354,7 +354,8 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  await writeFile(bubbleSheets[0].target, patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css))));
+  const stylesheetPatched = patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)));
+  await writeFile(bubbleSheets[0].target, stylesheetPatched);
   await writeFile(markChunks[0].target, markPatched);
   const appIconTarget = path.join(assetsRoot, APP_ICON_ASSET);
   const appIconBefore = await readFile(appIconTarget).catch(() => null);
@@ -364,6 +365,10 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     chunk: path.relative(stageRoot, markChunks[0].target),
     replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome"],
     userBubble: { light: USER_BUBBLE_LIGHT, dark: USER_BUBBLE_DARK, stylesheet: path.relative(stageRoot, bubbleSheets[0].target) },
+    // The stylesheet's hashes, so `npm run verify` can check the packaged
+    // file against what this patch wrote (25 September 2026: verify read
+    // only the pinned inventory and failed on the first patched file).
+    stylesheet: { path: path.relative(stageRoot, bubbleSheets[0].target), original: { bytes: Buffer.byteLength(bubbleSheets[0].css), sha256: sha256(bubbleSheets[0].css) }, patched: { bytes: Buffer.byteLength(stylesheetPatched), sha256: sha256(stylesheetPatched) } },
     original: { bytes: Buffer.byteLength(markChunks[0].source), sha256: sha256(markChunks[0].source) },
     patched: { bytes: Buffer.byteLength(markPatched), sha256: sha256(markPatched) },
     appIcon: { path: `dist/renderer/assets/${APP_ICON_ASSET}`, original: appIconBefore == null ? null : { bytes: appIconBefore.length, sha256: sha256(appIconBefore) }, patched: { bytes: appIconAfter.length, sha256: sha256(appIconAfter) } },

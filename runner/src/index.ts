@@ -7,12 +7,6 @@ import { readSettings } from './settings.js';
 const main = async (): Promise<void> => {
   const settings = readSettings();
 
-  // Fail here rather than on the first job: an image without an engine in
-  // it can do nothing at all, and saying so at boot is what a deploy check
-  // can see.
-  await fs.access(`${settings.engineRoot}/openclaw.mjs`).catch(() => {
-    throw new Error(`No engine at ${settings.engineRoot}. Expected openclaw.mjs there.`);
-  });
   await fs.mkdir(settings.workRoot, { recursive: true });
 
   log.info(`${settings.runnerName} starting; Claidor at ${settings.apiBaseUrl}`);
