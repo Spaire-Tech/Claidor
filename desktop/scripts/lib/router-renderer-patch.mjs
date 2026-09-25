@@ -388,11 +388,27 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     brandFiles.push({ path: path.relative(stageRoot, target), counts, original: { bytes: Buffer.byteLength(source), sha256: sha256(source) }, patched: { bytes: Buffer.byteLength(patched), sha256: sha256(patched) } });
   }
   if (brandTotals["Grok Bot"] === 0) throw new Error("Expected the original renderer to name Grok Bot at least once; the brand pass found none.");
+  // Every renderer file this pass rewrote: its bytes before the first pass and
+  // after the last. scripts/verify.mjs checks these files against `patched`.
+  const firstOriginals = new Map();
+  for (const [relative, original] of [
+    ...changes.map((change) => [change.path, change.original]),
+    [marks.chunk, marks.original],
+    [marks.userBubble.stylesheet, { bytes: Buffer.byteLength(bubbleSheets[0].css), sha256: sha256(bubbleSheets[0].css) }],
+    [marks.appIcon.path, marks.appIcon.original],
+    ...brandFiles.map((file) => [file.path, file.original]),
+  ]) if (!firstOriginals.has(relative)) firstOriginals.set(relative, original);
+  const files = [];
+  for (const [relative, original] of firstOriginals) {
+    const bytes = await readFile(path.join(stageRoot, relative));
+    files.push({ path: relative, original, patched: { bytes: bytes.length, sha256: sha256(bytes) } });
+  }
   const record = {
     schemaVersion: 2,
     mode: "original-renderer-settings-extension",
     chunks: changes,
     marks,
+    files,
     brand: { replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after }))], totals: brandTotals, files: brandFiles },
     features: ["settings-router-provider", "settings-local-docker-vm", "usage-current-provider", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "chat-header-card", "liquid-glass-chrome"],
     transformations: ["settings-registry", "router-panel", "usage-panel", "marks", "app-icon", "brand-strings"],

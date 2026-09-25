@@ -15,7 +15,6 @@ import {
 } from "./lib/config.mjs";
 import { prepareReconstructedElectronMainArtifactFallback } from "./lib/build-asar.mjs";
 import { resolvePackagedAppArtifacts } from "./lib/packaged-app.mjs";
-import { expectedRendererInventory } from "./lib/renderer-expected-inventory.mjs";
 import { capture, run } from "./lib/process.mjs";
 import { SYSTEM_TOOLS } from "./lib/system-tools.mjs";
 
@@ -179,21 +178,32 @@ if (rendererComposition?.mode === "clean-source") {
   if (rendererProvenance.schemaVersion !== 1 || rendererProvenance.mode !== rendererComposition.mode || rendererProvenance.upstreamAppAsarSha256 !== upstreamAsarSha256) throw new Error("Packaged artifact renderer provenance has the wrong identity.");
   if (acceptance?.verdict !== "verified" || acceptance.provenance !== rendererProvenancePath || acceptance.fileCount !== rendererProvenance.fileCount || acceptance.inventorySha256 !== rendererProvenance.inventorySha256) throw new Error("Packaged artifact renderer acceptance does not match its provenance.");
   if (!Array.isArray(rendererProvenance.files) || rendererProvenance.files.length !== rendererProvenance.fileCount) throw new Error("Packaged artifact renderer provenance has an invalid file inventory.");
-  // The pinned inventory is Grok Bot's bytes; the packager patches the
-  // Settings chunks, the marks, the stylesheet, the app icon and every
-  // brand string on top and records each in dist/renderer-router-extension.json.
-  // The expected hash of a file is the last patch's, else the pinned one.
+  // Files the renderer patch rewrote on purpose must match the hash it recorded
+  // after its last pass; every other file must match the pinned inventory.
   const rendererExtensionPath = "dist/renderer-router-extension.json";
-  const rendererExtension = listing.has(`/${rendererExtensionPath}`) ? JSON.parse(extractFile(builtAsar, rendererExtensionPath).toString("utf8")) : null;
-  const expectedRenderer = expectedRendererInventory(rendererProvenance.files, rendererExtension);
+  const patchedRendererFiles = new Map();
+  if (listing.has(`/${rendererExtensionPath}`)) {
+    const rendererExtension = JSON.parse(extractFile(builtAsar, rendererExtensionPath).toString("utf8"));
+    if (!Array.isArray(rendererExtension.files)) throw new Error("Renderer patch record has no patched file hashes.");
+    for (const file of rendererExtension.files) {
+      const relative = typeof file.path === "string" && file.path.startsWith("dist/renderer/") ? file.path.slice("dist/renderer/".length) : null;
+      if (relative === null || patchedRendererFiles.has(relative) || typeof file.patched?.sha256 !== "string" || typeof file.patched?.bytes !== "number") throw new Error(`Renderer patch record has an invalid patched file entry: ${file.path}`);
+      patchedRendererFiles.set(relative, file);
+    }
+  }
   const declaredPaths = new Set();
   for (const file of rendererProvenance.files) {
     if (typeof file.path !== "string" || declaredPaths.has(file.path)) throw new Error("Packaged artifact renderer provenance contains a missing or duplicate path.");
     declaredPaths.add(file.path);
     const bytes = extractFile(builtAsar, `dist/renderer/${file.path}`);
-    const wanted = expectedRenderer.get(file.path);
-    if (bytes.byteLength !== wanted.bytes || sha256(bytes) !== wanted.sha256) throw new Error(`Packaged artifact renderer differs from its checksum inventory: ${file.path} (expected the ${wanted.source} bytes)`);
+    const patched = patchedRendererFiles.get(file.path);
+    if (patched !== undefined) {
+      if (patched.original != null && (patched.original.bytes !== file.bytes || patched.original.sha256 !== file.sha256)) throw new Error(`Renderer patch record did not start from the pinned file: ${file.path}`);
+      if (bytes.byteLength !== patched.patched.bytes || sha256(bytes) !== patched.patched.sha256) throw new Error(`Packaged patched renderer file differs from its recorded patched hash: ${file.path}`);
+    } else if (bytes.byteLength !== file.bytes || sha256(bytes) !== file.sha256) throw new Error(`Packaged artifact renderer differs from its checksum inventory: ${file.path}`);
   }
+  const unpinnedPatched = [...patchedRendererFiles.keys()].filter(relative => !declaredPaths.has(relative));
+  if (unpinnedPatched.length > 0) throw new Error(`Renderer patch record lists files outside the pinned inventory: ${unpinnedPatched.join(", ")}`);
   const packagedPaths = rendererListing.filter(entry => entry.startsWith("dist/renderer/")).map(entry => entry.slice("dist/renderer/".length)).filter(Boolean);
   const undeclaredFiles = packagedPaths.filter(candidate => !declaredPaths.has(candidate) && ![...declaredPaths].some(file => file.startsWith(`${candidate}/`)));
   if (undeclaredFiles.length > 0 || [...declaredPaths].some(file => !packagedPaths.includes(file))) throw new Error("Packaged artifact renderer contains undeclared or missing files.");

@@ -517,13 +517,10 @@ export function createStableCoordinatorSource(initial: RawPortCoordinatorSource)
 const TELEMETRY_DOMAIN_BY_METHOD: Record<CoordinatorMethod, string> = {
   getAgentTranscriptWindow: "transcript", getAgentThread: "transcript", getAgentTranscriptTail: "transcript", openAgentTail: "transcript", getConversationOutline: "transcript",
   sendPrompt: "send", promptAcceptanceStatus: "send", reactToMessage: "send",
-  appendConnectorCard: "send", appendSendMessage: "send",
+  appendConnectorCard: "send", appendSendMessage: "send", sendDraft: "send", discardDraft: "send",
   listRoutedMcpTools: "plugins", executeRoutedMcpTool: "plugins", executeRoutedAgentTool: "plugins",
   searchPlugins: "plugins", getPlugin: "plugins", installPlugin: "plugins",
   respondToWidget: "widgets", dismissWidget: "widgets", submitSecret: "widgets",
-  // Added 25 September 2026: the draft composer's two commands and the memory reads.
-  sendDraft: "widgets", discardDraft: "widgets",
-  getAgentMemories: "memory", deleteAgentMemory: "memory", clearAgentMemories: "memory",
   resolveAutoReviewApproval: "approvals", resolveLocalToolPermission: "approvals",
   listAgents: "roster", countAgents: "roster", searchAgents: "roster", createAgent: "roster",
   createGroup: "roster", setGroupMembers: "roster", updateAgent: "roster", deleteAgents: "roster",
@@ -544,6 +541,7 @@ const TELEMETRY_DOMAIN_BY_METHOD: Record<CoordinatorMethod, string> = {
   getTrays: "trays", dismissTray: "trays", clearTrays: "trays",
   getAgentChannels: "channels", connectChannel: "channels", disconnectChannel: "channels", refreshChannel: "channels",
   getBoxSecretsStatus: "secrets",
+  getAgentMemories: "memory", deleteAgentMemory: "memory", clearAgentMemories: "memory",
   getAgentAutomations: "automations", listAllAutomations: "automations",
   setAgentAutomationEnabled: "automations", createAgentAutomation: "automations",
   updateAgentAutomation: "automations", deleteAgentAutomation: "automations", runAgentAutomationNow: "automations",
