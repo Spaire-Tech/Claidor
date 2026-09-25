@@ -84,6 +84,10 @@ MEMORY_REFUSED = 40001
 MEMORY_FILE_MAX_BYTES = 1024 * 1024
 MEMORY_REQUEST_MAX_BYTES = 8 * 1024 * 1024
 MEMORY_FILE_LIMIT = 2000
+#: How long a deleted name is remembered, so a machine that was away
+#: hears about the deletion. Past this the tombstone is dropped and a
+#: copy that turns up later is a new file.
+MEMORY_TOMBSTONE_DAYS = 90
 
 #: The JWT type of the envelope an access token travels in on the app's
 #: own sign-in path (`polar.desktop.app_sign_in`). See
@@ -208,7 +212,8 @@ class MemoryFileState:
 @dataclass(frozen=True)
 class MemorySync:
     """The whole truth about a person's memory after a sync: every file
-    Claidor holds, and the names it pruned."""
+    Claidor holds, and the names that are gone — pruned, or removed on
+    another machine and not yet heard of here."""
 
     files: list[MemoryFileState]
     deleted: list[str]
@@ -768,7 +773,11 @@ class DesktopService:
         )
 
     async def sync_memory_files(
-        self, session: AsyncSession, user: User, incoming: Iterable[IncomingMemoryFile]
+        self,
+        session: AsyncSession,
+        user: User,
+        incoming: Iterable[IncomingMemoryFile],
+        deleted: Iterable[str] = (),
     ) -> MemorySync:
         """One round of the shared memory, for one person.
 
@@ -784,13 +793,24 @@ class DesktopService:
           + 1. For the profile, which is one document with one owner,
           « merged » means Claidor's copy wins, because it is the one
           that moved on.
+        - a name another machine deleted (a tombstone) is written again
+          only by a client that saw the deletion — its `base_version` is
+          the tombstone's — and then it is a new file at version + 1. A
+          client that is behind keeps nothing: the name comes back under
+          `deleted` and it removes its copy.
+
+        For each name the client says it deleted (`deleted`, 25
+        September 2026): the row becomes a tombstone at version + 1,
+        its text dropped, unless it is one already or was never there.
 
         A write that changes nothing leaves the version alone, so an
         idle app syncing every few minutes does not count upwards for
         ever.
 
-        The answer carries **every** file Claidor holds afterwards, so a
-        fresh computer receives the whole memory by sending nothing.
+        The answer carries **every** live file Claidor holds afterwards,
+        so a fresh computer receives the whole memory by sending nothing,
+        and under `deleted` every name that is gone: pruned now, or a
+        tombstone younger than `MEMORY_TOMBSTONE_DAYS`.
 
         Sizes: a single file over 1 MB or a request over 8 MB is refused
         whole. A person may hold 2000 files; past that the oldest daily
@@ -799,7 +819,8 @@ class DesktopService:
         facts and the profile are never pruned.
         """
         sent = list(incoming)
-        self._check_memory_sizes(sent)
+        removed = list(deleted)
+        self._check_memory_sizes(sent, removed)
 
         repository = DesktopMemoryFileRepository.from_session(session)
         for file in sent:
@@ -808,6 +829,17 @@ class DesktopService:
                 await repository.upsert(
                     user.id, file.name, content=file.content, version=1
                 )
+                continue
+            if stored.deleted_at is not None:
+                # A tombstone. Only a client that has seen it may write
+                # the name again; one that is behind is told to delete.
+                if file.base_version >= stored.version:
+                    await repository.upsert(
+                        user.id,
+                        file.name,
+                        content=file.content,
+                        version=stored.version + 1,
+                    )
                 continue
             if file.base_version == stored.version:
                 content = file.content
@@ -820,7 +852,14 @@ class DesktopService:
                     user.id, file.name, content=content, version=stored.version + 1
                 )
 
-        deleted = await self._prune_memory_files(session, user)
+        for name in removed:
+            stored = await repository.get_by_name(user.id, name)
+            if stored is None or stored.deleted_at is not None:
+                continue
+            await repository.tombstone(stored, version=stored.version + 1)
+
+        pruned = await self._prune_memory_files(session, user)
+        tombstones = await self._sweep_memory_tombstones(session, user)
         by_name = {file.name: file.content for file in sent}
         return MemorySync(
             files=[
@@ -832,12 +871,19 @@ class DesktopService:
                 )
                 for stored in await repository.list_by_user(user.id)
             ],
-            deleted=deleted,
+            deleted=sorted({*pruned, *tombstones}),
         )
 
-    def _check_memory_sizes(self, files: list[IncomingMemoryFile]) -> None:
+    def _check_memory_sizes(
+        self, files: list[IncomingMemoryFile], deleted: Sequence[str] = ()
+    ) -> None:
         """Every name and every size, before a single row is written."""
         total = 0
+        for name in deleted:
+            if not is_accepted_memory_name(name):
+                raise DesktopMemoryRefused(
+                    f"{name!r} is not a memory file Claidor keeps."
+                )
         for file in files:
             if not is_accepted_memory_name(file.name):
                 raise DesktopMemoryRefused(
@@ -873,6 +919,27 @@ class DesktopService:
             await session.delete(note)
         await session.flush()
         return deleted
+
+    async def _sweep_memory_tombstones(
+        self, session: AsyncSession, user: User
+    ) -> list[str]:
+        """The names still to be told about, and the old tombstones
+        dropped for good."""
+        repository = DesktopMemoryFileRepository.from_session(session)
+        keep_after = utc_now() - timedelta(days=MEMORY_TOMBSTONE_DAYS)
+        names: list[str] = []
+        swept = False
+        for row in await repository.list_by_user(user.id, include_deleted=True):
+            if row.deleted_at is None:
+                continue
+            if row.deleted_at < keep_after:
+                await session.delete(row)
+                swept = True
+            else:
+                names.append(row.name)
+        if swept:
+            await session.flush()
+        return names
 
     async def record_usage(
         self,

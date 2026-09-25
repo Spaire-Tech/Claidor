@@ -59,10 +59,18 @@ class TestBoxCredential:
             headers={"Authorization": f"Bearer {body['accessToken']}"},
         )
         assert me.status_code == 200, me.text
-        # ...and nothing else on the desktop router: not the memory files,
-        # not the connectors, not sign-out for the whole desktop.
+        # ...and the memory files, since 25 September 2026, because the
+        # host that keeps them runs in the box (`tests/desktop/test_memory.py`
+        # measures the sync itself)...
+        assert (
+            await client.get(
+                "/desktop/api/memory",
+                headers={"Authorization": f"Bearer {body['accessToken']}"},
+            )
+        ).status_code == 200
+        # ...and nothing else on the desktop router: not the connectors,
+        # not sign-out for the whole desktop.
         for path in (
-            "/desktop/api/memory",
             "/desktop/api/connectors",
             "/desktop/api/user/quota",
         ):

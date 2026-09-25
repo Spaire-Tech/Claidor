@@ -392,6 +392,9 @@ class MemorySyncBody(BaseModel):
     files: list[MemorySyncFile] = Field(
         default_factory=list, max_length=MEMORY_FILE_LIMIT
     )
+    #: Names this machine removed since it last synced (25 September
+    #: 2026). Each becomes a tombstone the other machines hear about.
+    deleted: list[str] = Field(default_factory=list, max_length=MEMORY_FILE_LIMIT)
 
 
 class MemorySyncedFile(BaseModel):
@@ -405,6 +408,9 @@ class MemorySyncedFile(BaseModel):
 
 class MemorySyncResponse(BaseModel):
     files: list[MemorySyncedFile]
+    #: Names that are gone: pruned in this round, or deleted on another
+    #: machine and still remembered as a tombstone. The client removes
+    #: its copy of each.
     deleted: list[str]
 
 
@@ -425,7 +431,7 @@ class MemoryListResponse(BaseModel):
 )
 async def memory_sync(
     body: MemorySyncBody,
-    desktop_session: DesktopSession = Depends(get_desktop_session),
+    desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
     session: AsyncSession = Depends(get_db_session),
 ) -> MemorySyncResponse | JSONResponse:
     """The shared memory, one round (`docs/maties/cloud.md`, section 3).
@@ -434,6 +440,11 @@ async def memory_sync(
     saw for each; Claidor merges and answers with every file it holds,
     so a fresh computer receives the whole memory by sending nothing.
     Merging is Claidor's job alone, so two engines cannot disagree.
+
+    The caller is a signed-in desktop, a cloud job, or — since 25
+    September 2026 — the person's box: the host that keeps the memory
+    files runs there (`host/extensions/memory-sync/`), with the box's
+    own credential.
     """
     try:
         synced = await desktop.sync_memory_files(
@@ -447,6 +458,7 @@ async def memory_sync(
                 )
                 for file in body.files
             ],
+            deleted=body.deleted,
         )
     except DesktopMemoryRefused as error:
         return _fail(MEMORY_REFUSED, error.message, status=400)
@@ -466,7 +478,7 @@ async def memory_sync(
 
 @router.get("/api/memory", name="desktop:memory_list")
 async def memory_list(
-    desktop_session: DesktopSession = Depends(get_desktop_session),
+    desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
     session: AsyncSession = Depends(get_db_session),
 ) -> MemoryListResponse:
     """What Claidor holds, without the text of it: a cheap way for a

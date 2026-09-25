@@ -2,14 +2,18 @@
 (`polar/desktop/memory_merge.py`). No database, no I/O: two strings in,
 one string out."""
 
+import hashlib
+
 import pytest
 
 from polar.desktop.memory_merge import (
     MEMORY_FILE_RULES,
     MemoryRule,
+    fact_id,
     fingerprint,
     is_accepted_memory_name,
     merge_document,
+    merge_fact_file,
     merge_line_file,
     merge_list_file,
     merge_memory_file,
@@ -214,7 +218,128 @@ class TestNames:
             "MEMORY.md",
             "USER.md",
             "memory/YYYY-MM-DD.md",
+            "agents/<agentId>/memory/profile.md",
+            "agents/<agentId>/memory/log/YYYY-MM.md",
+            "user-memory/agents/<agentId>/profile.md",
+            "user-memory/agents/<agentId>/log/YYYY-MM.md",
+            "projects/<slug>/memory/agents/<agentId>/profile.md",
+            "projects/<slug>/memory/agents/<agentId>/log/YYYY-MM.md",
+            "projects/<slug>/project.md",
         }
+
+
+class TestTheAppsNames:
+    """The Grok Bot reconstruction's own layout under the sand root
+    (25 September 2026, `memory-service.ts`), widened into the accepted
+    list so the box's host can sync what it actually writes."""
+
+    @pytest.mark.parametrize(
+        ("name", "rule"),
+        [
+            ("agents/a1/memory/profile.md", MemoryRule.FACTS),
+            ("agents/a1/memory/log/2026-09.md", MemoryRule.FACTS),
+            ("agents/8f3c-Ab_z.1/memory/log/2026-12.md", MemoryRule.FACTS),
+            ("user-memory/agents/a1/profile.md", MemoryRule.FACTS),
+            ("user-memory/agents/a1/log/2026-09.md", MemoryRule.FACTS),
+            ("projects/launch/memory/agents/a1/profile.md", MemoryRule.FACTS),
+            ("projects/launch/memory/agents/a1/log/2026-09.md", MemoryRule.FACTS),
+            ("projects/launch/project.md", MemoryRule.DOCUMENT),
+        ],
+    )
+    def test_the_app_s_shapes_and_their_rules(
+        self, name: str, rule: MemoryRule
+    ) -> None:
+        assert is_accepted_memory_name(name)
+        assert rule_for(name) is rule
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "agents/a1/memory/.dreaming/explicit/abc.memory",
+            "agents/a1/memory/.dreaming/tombstones/abc.deleted",
+            "agents/a1/memory/.dreaming/next-refresh-at",
+            "agents/../memory/profile.md",
+            "agents/../../etc/passwd",
+            "agents/./memory/profile.md",
+            "agents/.hidden/memory/profile.md",
+            "agents/a1/memory/log/2026-9.md",
+            "agents/a1/memory/log/2026-13.md",
+            "agents/a1/memory/log/2026-09-11.md",
+            "agents/a1/memory/notes.md",
+            "agents/a1/memory/profile.md\n",
+            "agents/a1/memory/profile.md/x",
+            "agents/a1/transcript.db",
+            "agents/a1/profile.json",
+            "agents/a1\\memory\\profile.md",
+            "user-memory/a1/profile.md",
+            "user-memory/agents/a1/memory/profile.md",
+            "projects/launch/memory/profile.md",
+            "projects/../x/project.md",
+            "projects/launch/automation.json",
+            "agents/" + "a" * 200 + "/memory/profile.md",
+        ],
+    )
+    def test_the_rest_of_the_sand_root_is_refused(self, name: str) -> None:
+        assert not is_accepted_memory_name(name)
+        assert rule_for(name) is None
+
+
+class TestFactFiles:
+    """The app's fact lines, `- (YYYY-MM-DD) <fact>`, unioned by the app's
+    own id (sha1 of the lowercased, whitespace-collapsed content)."""
+
+    def test_the_id_is_the_app_s_memory_id_for(self) -> None:
+        # memoryIdFor("The founder is called Bass.") in memory-service.ts:
+        # sha1("the founder is called bass.")[:16].
+        assert fact_id("The founder is called Bass.") == fact_id(
+            "  the  FOUNDER is called   bass. "
+        )
+        assert (
+            fact_id("The founder is called Bass.")
+            == hashlib.sha1(b"the founder is called bass.").hexdigest()[:16]
+        )
+        # Cut at 500 characters before lowercasing, as the app cuts.
+        assert fact_id("a" * 600) == fact_id("a" * 500)
+        assert fact_id("a" * 600) != fact_id("a" * 499)
+
+    def test_the_same_fact_learned_on_two_days_is_kept_once(self) -> None:
+        ours = "# About the user\n\n- (2026-09-20) The founder is called Bass.\n"
+        theirs = "# About the user\n\n- (2026-09-24) the founder is called Bass.\n"
+        assert merge_fact_file(ours, theirs) == ours
+
+    def test_their_new_facts_follow_ours_and_their_header_is_not_copied(
+        self,
+    ) -> None:
+        ours = (
+            "# Memory log\n\n<!-- Dated facts -->\n\n- (2026-09-20) Ships on Fridays.\n"
+        )
+        theirs = (
+            "# Memory log\n\n<!-- Dated facts -->\n\n- (2026-09-21) Dog named Ada.\n"
+        )
+        assert merge_fact_file(ours, theirs).splitlines() == [
+            "# Memory log",
+            "",
+            "<!-- Dated facts -->",
+            "",
+            "- (2026-09-20) Ships on Fridays.",
+            "- (2026-09-21) Dog named Ada.",
+        ]
+
+    def test_an_empty_side_yields_the_other_whole(self) -> None:
+        assert merge_fact_file("", "- (2026-09-20) x\n") == "- (2026-09-20) x\n"
+        assert merge_fact_file("- (2026-09-20) x\n", "") == "- (2026-09-20) x\n"
+
+    def test_merging_twice_changes_nothing_more(self) -> None:
+        ours = "- (2026-09-20) a\n"
+        theirs = "- (2026-09-21) b\n- (2026-09-22) a\n"
+        once = merge_fact_file(ours, theirs)
+        assert merge_fact_file(once, theirs) == once
+        assert once == "- (2026-09-20) a\n- (2026-09-21) b\n"
+
+    def test_a_line_that_is_not_a_fact_is_not_a_fact(self) -> None:
+        assert merge_fact_file("- (2026-09-20) a\n", "- b\nnote\n") == (
+            "- (2026-09-20) a\n"
+        )
 
 
 class TestMergeMemoryFile:

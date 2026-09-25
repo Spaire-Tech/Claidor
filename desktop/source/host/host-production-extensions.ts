@@ -29,6 +29,7 @@ import { mcpExtension, type McpExtensionContext } from "./extensions/mcp/extensi
 import { createMcpProductionExtras } from "./extensions/mcp/production.js";
 import { memoryExtension, type MemoryExtensionContext } from "./extensions/memory/extension.js";
 import { createMemoryProductionExtras } from "./extensions/memory/production.js";
+import { memorySyncExtension } from "./extensions/memory-sync/extension.js";
 import { notificationsExtension } from "./extensions/notifications/extension.js";
 import { notifyBusExtension } from "./extensions/notify-bus/extension.js";
 import { createSecretsExtension } from "./extensions/secrets/extension.js";
@@ -123,7 +124,8 @@ export function createRecoveredProductionExtensionRegistry<Host extends { log(me
     [HostExtensions.TeachRecording]: bind(teachRecordingExtension),
     [HostExtensions.WebauthnProxy]: bind(webauthnProxyExtension),
     [HostExtensions.NotifyBus]: bind(notifyBusExtension),
-    [HostExtensions.Wallpaper]: bind(wallpaperExtension)
+    [HostExtensions.Wallpaper]: bind(wallpaperExtension),
+    [HostExtensions.MemorySync]: bind(memorySyncExtension)
   };
 }
 

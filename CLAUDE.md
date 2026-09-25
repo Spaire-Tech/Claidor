@@ -102,6 +102,18 @@ metered model proxy for Anthropic and OpenAI, memory sync, the skill, kit and
 MCP catalogues, Pipedream Connect links from `polar/connectors/`, the maty job
 queue under `polar/maty/`, and the cloud runner. `render.yaml` and the deployed
 services are unchanged and the API answers now.
+**Memory sync has a client since 25 September 2026.** Until then "memory
+sync" here meant two served routes that nothing in the app called, and
+that refused every name the app writes (ledger F-065, F-252, F-358). Now
+the server accepts the app's own tree (`agents/<id>/memory/profile.md`,
+`log/YYYY-MM.md`, the `user-memory/` and `projects/` shards) beside the
+runner's three names, merges fact files by the app's `memoryIdFor`,
+takes `deleted` and answers tombstones, and takes the box's credential;
+and the host extension `host/extensions/memory-sync/` pulls at box
+start, pushes on change with base versions after a 5 s debounce, and
+writes one `[claidor] memory-sync` line per round to `/tmp/sand-host.log`.
+`SAND_MEMORY_SYNC=0` switches it off. `docs/product/memory-sync-served.md`
+is the record. Not yet run on a Mac.
 
 **The app signs in to Claidor, added 19 September.** `server/polar/desktop/app_sign_in.py`
 answers the three routes the app actually calls — `/loginDeepControl`,
@@ -822,8 +834,10 @@ whether that is wiring, backend replacement or new product. Read it
 before calling any of the eight "coming soon" or "a rebuild". Its shape:
 channels need a client module in the box and no server; listeners, the
 cloud computer and video are backend replacements against a contract the
-code already states; cloud agents, skill publish, sharing and memory sync
-carry real new product work. Found on the way and fixed:
+code already states; cloud agents, skill publish and sharing carry real
+new product work (memory sync was listed with them and is served since
+later that day: the map's §4.5 and `memory-sync-served.md`). Found on
+the way and fixed:
 `createRemoteHostConnector` dropped `issueBoxRenewalCredential` on the
 fast path both production call sites use, so the box's own renewal
 credential (the paragraph on routines above) was never minted.

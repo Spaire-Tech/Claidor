@@ -5,6 +5,7 @@ export const HostExtensions = {
   ContentSearch: "content-search", CrossUserSharing: "cross-user-sharing", Experiments: "experiments",
   ForeverBox: "forever-box", HostUpgrade: "host-upgrade", Inference: "inference", LocalExec: "local-exec",
   LocalToolPermission: "local-tool-permission", ManagedSetup: "managed-setup", Mcp: "mcp", Memory: "memory",
+  MemorySync: "memory-sync",
   Notifications: "notifications", NotifyBus: "notify-bus", Secrets: "secrets", Session: "session",
   Settings: "settings", SourceMap: "source-map", StateBackstop: "state-backstop",
   TeachRecording: "teach-recording", Telemetry: "telemetry", Transcript: "transcript", Trays: "trays",
