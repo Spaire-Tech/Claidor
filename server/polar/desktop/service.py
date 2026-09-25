@@ -134,12 +134,16 @@ def provider_api_key(provider: DesktopProvider) -> str:
     """Claidor's key for one provider, or "" where none is configured."""
     if provider is DesktopProvider.openai:
         return settings.OPENAI_API_KEY
+    if provider is DesktopProvider.gemini:
+        return settings.GEMINI_API_KEY
     return settings.ANTHROPIC_API_KEY
 
 
 def provider_base_url(provider: DesktopProvider) -> str:
     if provider is DesktopProvider.openai:
         return settings.DESKTOP_OPENAI_BASE_URL
+    if provider is DesktopProvider.gemini:
+        return settings.DESKTOP_GEMINI_BASE_URL
     return settings.DESKTOP_ANTHROPIC_BASE_URL
 
 

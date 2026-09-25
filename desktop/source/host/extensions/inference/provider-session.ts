@@ -20,6 +20,8 @@ import { getSandRootDir } from "../../host-paths.js";
 import { SandSettingsStore } from "../../../shared/node/settings/sand-settings-store.js";
 import { getBoxSecretsStorePath } from "../secrets/secrets-service.js";
 import { streamCodexDirectResponses, type CodexDirectTool } from "./codex-direct-responses.js";
+import { claidorGeminiEndpoint, streamGeminiGenerateContent, toGeminiRequest, type GeminiDirectTool } from "./gemini-direct-generate.js";
+import { configuredClaidorVideoModel, isGeminiVideoModelId } from "../../../shared/video-availability.js";
 import type { LabelMessage, PromptExecutor } from "./sand-labeling.js";
 
 type Loose = Record<string, any>;
@@ -110,6 +112,13 @@ export function configuredClaidorCheapModel(): string {
   return process.env.SAND_CLAIDOR_CHEAP_MODEL?.trim() || DEFAULT_CLAIDOR_CHEAP_MODEL;
 }
 
+// The video model (Gemini, `shared/video-availability.ts`) is reached by
+// the `isVideoSubagent` flag alone, never by name: Grok Bot's
+// summarization session names `gemini-2.5-flash` too
+// (SAND_SUMMARIZATION_MODEL_ID) and must stay on Luna
+// (tests/cheap-model-config.test.mjs).
+export { configuredClaidorVideoModel };
+
 export function isConfiguredClaidorModelId(value: string | undefined): boolean {
   const id = value?.trim();
   if (!id) return false;
@@ -126,22 +135,28 @@ export type ClaidorSessionModelOptions = {
   readonly isSummarizationSession?: boolean;
   readonly isComputerUseSubagent?: boolean;
   readonly isBrowserUseSubagent?: boolean;
+  // A watchVideo / videoReview child: its turns run on the video model
+  // (Gemini through Simeon Labs' proxy) at low effort.
+  readonly isVideoSubagent?: boolean;
   // True for a turn nobody asked for (the first-run intro, a reply nudge,
   // an automation). It gets the small model-call budget.
   readonly hidden?: boolean;
 };
 
 // The cheap roles, as Grok Bot separates them: summarization and memory
-// (their gemini-2.5-flash), the computer-use and browser-use subagents
-// (their opus at effort low), and anything a caller marks cheap.
+// (their gemini-2.5-flash), the computer-use, browser-use and video
+// subagents (their opus at effort low, their gemini for a video), and
+// anything a caller marks cheap.
 export function isCheapClaidorSession(options?: ClaidorSessionModelOptions): boolean {
   return options?.cheap === true
     || options?.isSummarizationSession === true
     || options?.isComputerUseSubagent === true
-    || options?.isBrowserUseSubagent === true;
+    || options?.isBrowserUseSubagent === true
+    || options?.isVideoSubagent === true;
 }
 
 export function claidorModelForSession(options?: ClaidorSessionModelOptions): string {
+  if (options?.isVideoSubagent === true) return configuredClaidorVideoModel();
   const named = options?.model?.trim();
   if (named && isConfiguredClaidorModelId(named)) return named;
   const sessionModel = options?.modelId?.trim();
@@ -615,10 +630,74 @@ function claidorLanguageModel(source: ClaidorCredentialSource, id: string): Lang
   return createOpenAI({ apiKey: "claidor-desktop-access-token", baseURL: claidorProxyBaseUrl(source.backendUrl), name: "claidor", fetch: claidorAuthenticatedFetch(source) }).responses(id);
 }
 
+function geminiTools(definitions: readonly Loose[] | undefined): GeminiDirectTool[] | undefined {
+  if (definitions == null) return undefined;
+  const tools = definitions.flatMap((source): GeminiDirectTool[] => {
+    const parameters = toolParameterSchema(source);
+    return typeof source.name === "string" && source.name.length > 0 ? [{
+      name: source.name,
+      ...(typeof source.description === "string" ? { description: source.description } : {}),
+      parameters,
+      source,
+    }] : [];
+  });
+  return tools.length === 0 ? undefined : tools;
+}
+
+// A Gemini model through Simeon Labs' proxy, on Gemini's own wire: the
+// watchVideo / videoReview children (`docs/product/video-served.md`). The
+// request is written by `gemini-direct-generate.ts`, which is where the
+// video's bytes, mime type and frame rate come off the loop's message and
+// onto the wire; no other executor of ours carries them. The stream is the
+// same shape the Codex executor returns, and the same `[claidor] model=`
+// line is written, plus one `[claidor] video` line naming what was sent.
+function geminiExecutor(source: ClaidorCredentialSource, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, modelId: string = configuredClaidorVideoModel(), reasoningEffort: ClaidorReasoningEffort = configuredClaidorCheapReasoningEffort(), budget?: ModelCallBudget, onRequestId?: (requestId: string) => void) {
+  const usage = deferred<{ promptTokens: number; completionTokens: number; totalTokens: number }>();
+  const extendedUsage = deferred<{ inputTokens: number; outputTokens: number; cacheReadTokens: number; cacheWriteTokens: number; maxTokens: number }>();
+  const resultResponse = deferred<ReturnType<typeof response>>();
+  const metadata = deferred<Record<string, unknown>>();
+  const tools = geminiTools(definitions);
+  const request = toGeminiRequest(messages, tools);
+  const startedAtMs = Date.now();
+  const fullStream = (async function* () {
+    let text = "";
+    const calls: { toolName: string; args: unknown }[] = [];
+    try {
+      modelCallLog(`${HOST_LOG_PREFIX} video model=${modelId} parts=${request.videoParts.length} ${request.videoParts.map((part) => `${part.mimeType}${part.fps === undefined ? "" : `@${part.fps}fps`}${part.bytes === undefined ? "" : ` ${Math.round(part.bytes / 1024)}KB`}${part.uri === undefined ? "" : " uri"}`).join(",") || "-"} offered=${tools?.map((tool) => tool.name).join(",") || "-"}`);
+      for await (const event of streamGeminiGenerateContent({
+        fetch: claidorAuthenticatedFetch(source),
+        endpoint: claidorGeminiEndpoint(modelId, source.backendUrl),
+        request,
+        ...(tools == null ? {} : { tools }),
+        ...(executeTool == null ? {} : { executeTool: async (selected, args, toolCallId) => await executeTool(selected.source, args, toolCallId) }),
+      })) {
+        if (event.type === "text-delta") { text += event.delta; yield { type: "text-delta" as const, textDelta: event.delta }; continue; }
+        if (event.type === "tool-call") { calls.push({ toolName: event.toolName, args: event.args }); yield { type: "tool-call" as const, toolCallId: event.toolCallId, toolName: event.toolName, args: event.args }; continue; }
+        const basic = { promptTokens: event.usage.inputTokens + event.usage.cacheReadTokens, completionTokens: event.usage.outputTokens, totalTokens: event.usage.inputTokens + event.usage.cacheReadTokens + event.usage.outputTokens };
+        const extended = { inputTokens: event.usage.inputTokens, outputTokens: event.usage.outputTokens, cacheReadTokens: event.usage.cacheReadTokens, cacheWriteTokens: 0, maxTokens: CLAIDOR_WORKING_CONTEXT_TOKENS };
+        modelCallLog(formatModelCallLogLine({ model: modelId, effort: reasoningEffort, inputTokens: basic.promptTokens, cachedTokens: event.usage.cacheReadTokens, outputTokens: event.usage.outputTokens, reasoningTokens: event.usage.reasoningTokens, elapsedMs: Date.now() - startedAtMs, tools: summarizeToolCalls(calls), offered: tools?.map((tool) => tool.name).join(",") || "-", ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }) }));
+        if (event.responseId.length > 0) onRequestId?.(event.responseId);
+        onUsage?.(extended);
+        usage.resolve(basic);
+        extendedUsage.resolve(extended);
+        metadata.resolve({ gemini: { responseId: event.responseId } });
+        resultResponse.resolve(response(text, invocationId, modelId));
+      }
+    } catch (error) {
+      modelCallLog(`${HOST_LOG_PREFIX} model-error model=${modelId} effort=${reasoningEffort} tools=${tools?.map((tool) => tool.name).join(",") ?? ""} event=${clipForHostLog(redactSandAutoReviewInlineSecrets(error instanceof Error ? error.message : String(error)), 800)}`);
+      usage.reject(error); extendedUsage.reject(error); metadata.reject(error); resultResponse.reject(error); throw error;
+    }
+  })();
+  return { fullStream, response: resultResponse.promise, usage: usage.promise, extendedUsage: extendedUsage.promise, providerMetadata: metadata.promise, invocationId: Promise.resolve(invocationId) };
+}
+
 function claidorExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, modelId?: string, reasoningEffort: ClaidorReasoningEffort = configuredClaidorReasoningEffort(), budget?: ModelCallBudget, onRequestId?: (requestId: string) => void) {
   const source = claidorCredentialSource;
   if (source == null) throw new Error("Simeon runs on the signed-in account, but this process has no credential source. Sign in to Simeon and try again.");
   const requested = modelId?.trim() || configuredClaidorModel();
+  // A Gemini id goes on Gemini's wire. No rate-limit fallback to Luna: a
+  // model that cannot see the video is not an answer to a video question.
+  if (isGeminiVideoModelId(requested)) return geminiExecutor(source, messages, invocationId, definitions, executeTool, onUsage, requested, reasoningEffort, budget, onRequestId);
   const cheap = configuredClaidorCheapModel();
   const start = (id: string) => aiSdkExecutor(claidorLanguageModel(source, id), messages, invocationId, definitions, executeTool, onUsage, CLAIDOR_WORKING_CONTEXT_TOKENS, { reasoningEffort }, { model: id, effort: reasoningEffort, ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }) }, onRequestId);
 

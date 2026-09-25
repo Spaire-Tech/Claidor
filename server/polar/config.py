@@ -228,6 +228,15 @@ class Settings(BaseSettings):
     SAND_GITHUB_APP_SLUG: str = ""
     SAND_GITHUB_WEBHOOK_SECRET: str = ""
 
+    # Google's Gemini, the one provider that takes a video as input. It
+    # serves the desktop app's watchVideo / videoReview subagents through
+    # `POST /desktop/api/proxy/v1beta/models/{model}:streamGenerateContent`
+    # (`polar/desktop/endpoints.py`, 25 September 2026). The key is
+    # `CLAIDOR_GEMINI_API_KEY` on Render; empty means no video model is
+    # offered and the app says so, never an error mid-turn.
+    DESKTOP_GEMINI_BASE_URL: str = "https://generativelanguage.googleapis.com"
+    GEMINI_API_KEY: str = ""
+
     # Apps through Composio (polar/desktop/composio.py). One key for the
     # whole of Claidor, held here and nowhere else: the desktop app never
     # sees it and never asks a person for one. Each account is a Composio

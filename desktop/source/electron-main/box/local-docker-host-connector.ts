@@ -229,7 +229,7 @@ export function localDockerInferenceEnvironmentArguments(inferenceCredential?: P
     ...SERVED_SWITCH_ENVS.flatMap((name) => { const value = env[name]?.trim(); return value == null || value.length === 0 ? [] : ["--env", `${name}=${value}`]; }),
   ];
 }
-export const SERVED_SWITCH_ENVS = ["SAND_CONNECT_SERVED", "SAND_LISTENER_RELAY_SERVED", "SAND_CLOUD_AGENTS_SERVED", "SAND_SHARING_SERVED", "SAND_CHANNELS_SERVED"] as const;
+export const SERVED_SWITCH_ENVS = ["SAND_CONNECT_SERVED", "SAND_LISTENER_RELAY_SERVED", "SAND_CLOUD_AGENTS_SERVED", "SAND_SHARING_SERVED", "SAND_CHANNELS_SERVED", "SAND_VIDEO_SUBAGENT_SERVED", "SAND_CLAIDOR_VIDEO_MODEL"] as const;
 
 async function ensureLocalDockerBox(settingsPath: string, inferenceCredential?: InferenceCredential): Promise<GatewayConnection> {
   try {

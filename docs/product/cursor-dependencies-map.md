@@ -511,6 +511,16 @@ brief's sentence. The inline data-URI path removes the need for a media
 store for files up to 15 MB; the signed-URL route is only for the large
 files.
 
+**Served, 25 September 2026** (`video-served.md`). The proxy speaks
+Gemini's own wire (`POST /desktop/api/proxy/v1beta/models/{model}:streamGenerateContent`,
+`CLAIDOR_GEMINI_API_KEY`, `ModelRole.video` = `gemini-2.5-flash`); the
+executor writes it by hand (`gemini-direct-generate.ts`, since
+`@ai-sdk/google` is not installed) with `inlineData` + `videoMetadata.fps`;
+`resolveSubagentConfigs` registers both types on that model; the brief
+delegates a video to them. Still not served: `GetSignedUrlForAttachedMedia`
+and a media store, so the inline 15 MB path is the only one. Not yet
+run on a Mac.
+
 ---
 
 ## 7. Publishing a skill to a team
