@@ -15,6 +15,15 @@ renderer is not in the repository, so its side was read from the recovered
 `desktop/manifests/reconstruction/renderer-closure.json`, not from its
 bytes. Nothing here was run on a Mac.
 
+*Corrected 25 September 2026 (F-259): the count below is of 24 September.
+Since then Simeon Labs' server serves about thirty HTTP routes under
+`/desktop/api/` and the Connect services in `polar/sand/` (Dashboard,
+BackgroundComposer, Automations, Ai, GrokBot, agent.v1), the served set in
+`shared/cloud-agents-availability.ts`; the routes this record lists as
+never called (profile, quota, feedback, models) are called now
+(`reconstruction-gaps` §"Fixed the same day", the ledger). The paragraph
+stays as the measurement of that day.*
+
 The shape of it: **Claidor serves fourteen HTTP routes under
 `/desktop/api/` plus three sign-in routes at the root, and no Connect RPC at
 all.** The reconstruction still calls about sixty `aiserver.v1.*` methods

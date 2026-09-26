@@ -199,3 +199,12 @@ test("ExternalAwaitShell waits in the user's computer's terminals folder, not th
   assert.match(composition, /const getLocalTerminalsFolder = method\(localExec\.box as DynamicApi, "terminalsFolder"\);/);
   assert.match(composition, /const getTerminalsFolder = getLocalTerminalsFolder \?\? method\(remoteBox, "getTerminalsFolder"\);/);
 });
+
+test("a local box that fails to start at launch writes its sentence to computer-stream.log instead of vanishing", async () => {
+  // F-231 / F-301, 25 September 2026: `spawn docker ENOENT` at first launch
+  // was swallowed by `.catch(() => undefined)`; the Computer panel paints
+  // the last stream line after 20 s, so the sentence now goes there.
+  const source = await readFile(path.join(repoRoot, "source/electron-main/main-production-services.ts"), "utf8");
+  assert.match(source, /void startLocalDockerBox\(settingsStore\.settingsPath\)\.catch\(\(error: unknown\) => \{\n\s*computerStreamLine\(`local docker: start at launch failed: \$\{error instanceof Error \? error\.message : String\(error\)\}`\);/);
+  assert.doesNotMatch(source, /startLocalDockerBox\([^)]*\)\.catch\(\(\) => undefined\)/);
+});

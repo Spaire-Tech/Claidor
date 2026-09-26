@@ -27,7 +27,7 @@ Reconstructed 2026-09-16 from live box sources.
 | /home/box/reference/app-ui.md | Settings anchors only (not chat chrome) |
 | sand-statsig-bootstrap.json | Feature gates only — no chat UI copy (Evidence: mined; no matching education strings) |
 
-ListMachines / user app source: Host exposes ListMachines. Bass's box settings already list registered machines with per-machine local-tool permission (always / ask). User-machine app UI source was not searched (would need machineId Shell + Allow); report prefers on-box evidence as instructed. Unknown whether desktop client embeds the exact mid-chat "this time" education string.
+ListMachines / user app source: Host exposes ListMachines. Bass's box settings already list registered machines with per-machine local-tool permission (always / ask). *Corrected 25 September 2026 (F-365): the store holds one global local-tool permission value (`shared/local-tool-permission.ts`), not one per machine; the per-machine reading was the audit's, not the code's.* User-machine app UI source was not searched (would need machineId Shell + Allow); report prefers on-box evidence as instructed. Unknown whether desktop client embeds the exact mid-chat "this time" education string.
 
 ## 1. Message delivery (SendToUser → chat)
 

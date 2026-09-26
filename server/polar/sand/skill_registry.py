@@ -45,6 +45,29 @@ def _bytes(value: Any, field: str) -> bytes:
         raise ConnectError("invalid_argument", f"`{field}` is not base64.")
 
 
+# The app's managed-setup extension asks these three at every host start
+# (`host/extensions/managed-setup/production.ts`) and retried on the
+# `unimplemented` they got (F-302). Simeon Labs has no managed skills, no
+# team rules and no marketplace catalogue, so each answers the empty message:
+# nothing managed, nothing to apply, nothing listed. A catalogue is product
+# work, not a switch.
+
+
+@service.unary("GetManagedSkills", auth="desktop-or-box")
+async def get_managed_skills(call: ConnectCall) -> dict[str, Any]:
+    return {}
+
+
+@service.unary("GetTeamRules", auth="desktop-or-box")
+async def get_team_rules(call: ConnectCall) -> dict[str, Any]:
+    return {}
+
+
+@service.unary("ListMarketplacePlugins", auth="desktop-or-box")
+async def list_marketplace_plugins(call: ConnectCall) -> dict[str, Any]:
+    return {}
+
+
 @service.unary("GetTeams", auth="desktop-or-box")
 async def get_teams(call: ConnectCall) -> dict[str, Any]:
     teams = await skill_registry.teams_of(call.db, call.caller.user)

@@ -39,9 +39,12 @@ move.
   `router-renderer-patch.mjs`. Evidence anchors in
   `frontend/src/production/evidence.ts` still name the pinned copy so
   a renderer swap cannot pretend it happened.
-- **Packaging identity.** `CFBundleExecutable` stays `Grok Bot` (the
+- **Packaging identity.** *Corrected 25 September 2026 (F-202): both are
+  `Simeon` since 23 September, measured on the founder's Mac (the menu bar
+  says Simeon); the paragraph below is the history of that day.*
+  `CFBundleExecutable` stayed `Grok Bot` at first (the
   executable and the helper bundles are the 0.18 shell, unrenamed).
-  `CFBundleName`, which the menu bar shows top left, **also stays
+  `CFBundleName`, which the menu bar shows top left, **also stayed
   `Grok Bot`**, and this was measured the hard way on 23 September 2026:
   set to `Simeon` ("rename it to Simeon too"), the packaged app died
   0.2 s after launch, `EXC_BREAKPOINT (SIGTRAP)` in `ElectronMain`, before
@@ -96,12 +99,13 @@ off the founder's PNG as moment ellipses and are drawn from those numbers.
 `tests/simeon-logo.test.mjs` rasterises the drawing and measures it against
 the PNG: intersection over union 0.947.
 
-Left as it was, on purpose: `CFBundleExecutable` stays `Grok Bot` (the
-executable and helper bundles of the 0.18 shell; `CFBundleName` too, since
-changing it crashes the app, see above); the class `sand-grok-bot-mark` and other
-internal identifiers; the words "Bot" and "Bots" on their own ("Create new
-Bot", "Message Bot", "Search or create Bots", "Give each Bot a job"), which
-the founder did not name; and "Caisra" where our own Settings copy says it.
+Left as it was, on purpose, *that morning* (every line of this list was
+superseded later the same day and on 23 September; corrected 25 September,
+F-202): `CFBundleExecutable` stayed `Grok Bot` (now `Simeon`, with the
+helpers, `macos-bundle-rename.mjs`); the class `sand-grok-bot-mark` and other
+internal identifiers (still kept); the words "Bot" and "Bots" on their own
+(now Agent/Agents, the table below); and "Caisra" where our own Settings copy
+said it (now Simeon, the section below).
 
 Not run on a Mac: the brand pass and the icon swap run inside `npm run
 package`, which only runs there.
@@ -121,8 +125,7 @@ Simeon." So:
 | Finder / Dock name and bundle | Caisra.app | Simeon.app | `config.mjs` |
 | The icon | the mark on a paper tile | the founder's icon: the mark in white on a black rounded tile with a sheen | `simeon-logo.mjs` `simeonAppIconSvg`, measured off the supplied 1024 file (tile 56..967, corners ~171, mark 234..790); drawn back and compared: tile IoU 0.988, mark IoU 0.891 |
 
-Kept, on purpose: `CFBundleExecutable` `Grok Bot` (the shell's executable and
-helper names, and `CFBundleName` with them, see above); identifiers and paths spelled in lower case (`caisra` in the
+Kept, on purpose: identifiers and paths spelled in lower case (`caisra` in the
 npm name, `CAISRA_*` environment variables, `caisra-ignition-activation.mjs`,
 `~/.caisra`, `data-caisra-screen-notice`); comments in generated protos; and
 this repository's history documents, which say Caisra because they were
@@ -303,8 +306,9 @@ toolbar's `offsetHeight` by `qSn`.
 
 Done as CSS appended to the pinned stylesheet, no chunk change: divider
 hidden and the toolbar's own bottom border zeroed, identity as a centred
-column, mark at 88 px (`!important` beats the inline size; it is the same
-animated mark), name as a pill on `--sand-fill-bubble-agent`, controls
+column, mark at 88 px, then 52 px after the founder saw 88 on the Mac ("way
+too big"; `HEADER_CARD_CSS` says 52; corrected 25 September, F-202)
+(`!important` beats the inline size; it is the same animated mark), name as a pill on `--sand-fill-bubble-agent`, controls
 absolutely positioned at the right. Scoped with `:has()` to the identity
 variant. Headless render with the real markup and the patched stylesheet,
 light and dark: toolbar 147 px, transcript under it. Not yet seen on a Mac.

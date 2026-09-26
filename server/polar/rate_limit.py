@@ -36,6 +36,21 @@ _BASE_RULES: dict[str, Sequence[Rule]] = {
     "^/v1/customer-seats/claim/.+/stream": [
         Rule(minute=10, block_time=300, zone="seat-claim-stream")
     ],
+    # The desktop app's sign-in and its tokens (F-257, 25 September 2026).
+    # Anonymous, so keyed by IP. The poll backs off from 1 s to 10 s over
+    # 150 attempts (`packages/cursor-config/auth/login.ts`), so one sign-in
+    # is under 60 polls a minute; the model proxy has its own hourly brake.
+    "^/loginDeepControl": [
+        Rule(minute=20, hour=100, block_time=300, zone="desktop-sign-in")
+    ],
+    "^/auth/poll": [Rule(minute=120, block_time=60, zone="desktop-sign-in-poll")],
+    "^/oauth/token": [Rule(minute=30, block_time=60, zone="desktop-refresh")],
+    "^/desktop/api/auth/refresh": [
+        Rule(minute=30, block_time=60, zone="desktop-refresh")
+    ],
+    "^/desktop/api/feedback": [
+        Rule(minute=10, hour=40, block_time=300, zone="desktop-feedback")
+    ],
 }
 
 _SANDBOX_RULES: dict[str, Sequence[Rule]] = {

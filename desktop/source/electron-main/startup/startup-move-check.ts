@@ -71,7 +71,7 @@ export async function runStartupMoveCheck(
         type: "question",
         title: "Move Simeon to Applications",
         message: "Move Simeon to the Applications folder?",
-        detail: "Simeon cannot install updates from its current location. It will reopen after moving.",
+        detail: "Simeon runs from the Applications folder. It will reopen after moving.",
         buttons: ["Move to Applications", "Not Now"],
         defaultId: 0,
         cancelId: 1,

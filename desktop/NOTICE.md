@@ -10,6 +10,12 @@ the reconstructed implementation safe to redistribute. Anyone publishing or
 distributing this repository should independently review copyright, trademark,
 third-party dependency, and service-terms obligations.
 
-The repository preserves pinned Grok Bot 0.18.0 macOS and Windows installers
-through Git LFS for research continuity. Those artifacts remain subject to their
-own terms and are not covered by any license applied to reconstructed code.
+The repository does not contain the Grok Bot 0.18.0 installer or any part
+of the shipped binary (`docs/product/building-the-app.md`: the Git LFS path
+named by earlier versions of this file never held a file). The build reads a
+genuine 0.18.0 app on the building machine and never redistributes it; the
+pinned renderer and shell it takes from that app remain subject to their own
+terms and are not covered by any license applied to reconstructed code.
+
+The product built from this tree is Simeon, by Simeon Labs. It keeps the
+MIT notices of the code it vendors.
