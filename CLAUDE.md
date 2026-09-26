@@ -1061,6 +1061,13 @@ token, and the plain `local-docker-vm.json` and mounted token folder are
 gone. The credential is minted once per box, not per run. My earlier
 claim that encryption "would not narrow who can read it" was wrong and is
 corrected there.
+**Then models and spend** (note `grok-bot-answers-models`): the
+per-action Auto-review classifier and the reply nudges are Grok Bot's own
+design, bounded (Auto-review off in Settings stops the classifier; nudges
+run hidden at 40 calls); and the Codex, Claude Code and OpenRouter router,
+which the reconstruction's author added and Grok Bot never had, is removed
+with its SDK dependency and the Mac probe of other assistants'
+credentials (F-128).
 
 ## The eight features were served overnight (25–26 September 2026)
 

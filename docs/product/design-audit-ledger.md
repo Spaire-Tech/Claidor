@@ -34,7 +34,7 @@ until its row says so. Columns:
 | F-008 | chat-turn | minor | docs-wrong | confirmed | brief-text | fixed | Text does not arrive 'as texts': no split into up to three bubbles one second apart (BUBBLE_GAP_MS) | `docs/product/direction.md` |
 | F-009 | chat-turn | note | docs-wrong | confirmed | brief-text | fixed | direction.md's 'nine kinds, list closed' is contradicted by the host's fourteen SendMessage/transport kinds | `desktop/source/host/runner/tools/send-message-encoding.ts` |
 | F-010 | chat-turn | minor | design-violation | confirmed | sign-in-copy | known-limit | SAND_CLAIDOR_FULL_AGENT=off hatch is live, env-only, and still ships the audited flaws plus a 'Router error:' bubble and a Codex/Claude Code-flavoured prompt | `desktop/source/shared/inference-router.ts` |
-| F-011 | chat-turn | note | dead-service | confirmed | sign-in-copy | known-limit | Dead executors for Codex (chatgpt.com), Claude Code and OpenRouter remain compiled into the host with a 'Settings → Router' key field and 'Simeon Reconstructed' headers | `desktop/source/host/extensions/inference/provider-session.ts` |
+| F-011 | chat-turn | note | dead-service | confirmed | sign-in-copy | fixed | Dead executors for Codex (chatgpt.com), Claude Code and OpenRouter remain compiled into the host with a 'Settings → Router' key field and 'Simeon Reconstructed' headers | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-012 | chat-turn | minor | risk | confirmed | executor-contract | fixed | On a model error the box log receives the full system prompt (12,000 chars: memory, user info, roster) and every tool schema | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-013 | chat-turn | note | spend | confirmed | hidden-turn-cap | known-limit | Reply-nudge budget: up to 4 hidden runs per user turn (3 REPLY_NUDGE + 1 CLOSING_SEND_NUDGE) plus ensureHiddenTurnReply on the intro, each unbounded by the hidden cap today | `desktop/source/host/extensions/transcript/turn-runtime.ts` |
 | F-014 | agents-and-subagents | blocking | design-violation | confirmed | child-state | fixed | A Task child runs on the parent's conversation state and writes its checkpoints into the parent's agent store and transcript | `desktop/source/host/host-runner-composition.ts` |
@@ -133,7 +133,7 @@ until its row says so. Columns:
 | F-107 | keys-and-auth | note | design-violation | confirmed | sign-in-copy | fixed | Dashboard 'Create a token for the app' tells the person to set CLAIDOR_ACCESS_TOKEN on a server that no longer exists | `clients/apps/web/src/components/Settings/ConnectAppSettings.tsx` |
 | F-108 | keys-and-auth | note | dead-service | confirmed | sign-in-copy | fixed | Legacy /desktop/login still redirects to caisra://auth/callback | `server/polar/desktop/endpoints.py` |
 | F-109 | keys-and-auth | note | unwired | confirmed | sign-in-copy | fixed | /auth/poll reads x-maties-client-version, a header the app never sends | `server/polar/desktop/endpoints.py` |
-| F-110 | keys-and-auth | minor | design-violation | confirmed | sign-in-copy | known-limit | Alternative-provider credential paths (Codex ChatGPT login, Claude Code, OpenRouter key from box secrets) remain in the host executor | `desktop/source/host/extensions/inference/provider-session.ts` |
+| F-110 | keys-and-auth | minor | design-violation | confirmed | sign-in-copy | fixed | Alternative-provider credential paths (Codex ChatGPT login, Claude Code, OpenRouter key from box secrets) remain in the host executor | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-111 | keys-and-auth | minor | risk | confirmed | box-token-scope | fixed | Sign-out leaves inference.json on disk and the keep-fresh timer running | `desktop/source/electron-main/account/cursor-auth.ts` |
 | F-112 | keys-and-auth | note | risk | confirmed | local-security | known-limit | Box secrets and connector credentials are persisted in plaintext inside the box's data volume | `desktop/source/host/extensions/secrets/secrets-service.ts` |
 | F-113 | keys-and-auth | note | risk | confirmed | local-security | known-limit | The gateway bearer token is passed to the container as a docker --env | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
@@ -141,17 +141,17 @@ until its row says so. Columns:
 | F-115 | keys-and-auth | note | docs-wrong | confirmed | sign-in-copy | fixed | docs/product/app-sign-in.md still says the round trip was never run and names api.claidor.com | `docs/product/app-sign-in.md` |
 | F-116 | keys-and-auth | note | dead-service | confirmed | dead-cursor-services | fixed | Every Connect RPC to our host carries x-cursor-checksum, x-ghost-mode and the bearer, after a privacy lookup that 404s | `desktop/source/shared/node/cursor-backend/cursor-inference.ts` |
 | F-117 | models-and-spend | blocking | unwired | confirmed | hidden-turn-cap | fixed | Hidden-turn budget of 40 never reaches the executor: the production owner input drops `hidden` | `desktop/source/host/host-runner-composition.ts` |
-| F-118 | models-and-spend | major | spend | unverified | batch6-models-spend-media-web | known-limit | Auto-review classifier runs in shadow by default: one Luna call per Shell/MCP/computer action, verdict discarded | `desktop/source/host/runner/sand-auto-review.ts` |
+| F-118 | models-and-spend | major | spend | unverified | batch6-models-spend-media-web | fixed | Auto-review classifier runs in shadow by default: one Luna call per Shell/MCP/computer action, verdict discarded | `desktop/source/host/runner/sand-auto-review.ts` |
 | F-119 | models-and-spend | major | unwired | unverified | batch6-models-spend-media-web | needs-mac | The model picker's choice never reaches the executor; the loop's model is decided only by box env | `desktop/source/host/host-runner-composition.ts` |
 | F-120 | models-and-spend | minor | design-violation | unverified | batch6-models-spend-media-web | fixed | Luna is offered in the picker as the agent's model, against pricing.py's own rule | `desktop/source/electron-main/models/claidor-model-catalog.ts` |
 | F-121 | models-and-spend | minor | docs-wrong | unverified | batch6-models-spend-media-web | fixed | Claude Sonnet fallback is unreachable; the only fallback is Luna on a rate-limit regex, unannounced | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-122 | models-and-spend | minor | spend | unverified | batch6-models-spend-media-web | fixed | The proxy serves withheld models (Astra 10x, Opus 5x) to any bearer that names them | `server/polar/desktop/endpoints.py` |
 | F-123 | models-and-spend | minor | dead-service | confirmed | dead-cursor-services | fixed | A Cursor Connect RPC (GetUserPrivacyMode) is attempted on api.simeonlabs.com at the start of every turn | `desktop/source/host/runner/turn-run-shell.ts` |
 | F-124 | models-and-spend | major | risk | unverified | batch6-models-spend-media-web | fixed | `CLAIDOR_FETCH_TIMEOUT_MS = 45_000` aborts the whole streamed model call, not just the connect | `desktop/source/host/extensions/inference/provider-session.ts` |
-| F-125 | models-and-spend | note | spend | confirmed | hidden-turn-cap | known-limit | Every reply nudge and closing nudge is a fresh full turn on Terra at effort high with the whole brief | `desktop/source/host/extensions/transcript/turn-runtime.ts` |
+| F-125 | models-and-spend | note | spend | confirmed | hidden-turn-cap | fixed | Every reply nudge and closing nudge is a fresh full turn on Terra at effort high with the whole brief | `desktop/source/host/extensions/transcript/turn-runtime.ts` |
 | F-126 | models-and-spend | note | unmeasured | unverified | batch6-models-spend-media-web | needs-mac | Hourly credit brake makes the 5,000-step asked cap unreachable; how the 402 reads in the chat is unmeasured | `server/polar/config.py` |
 | F-127 | models-and-spend | minor | naming | unverified | batch6-models-spend-media-web | fixed | User-facing error strings say Claidor and expose env-variable names | `desktop/source/host/extensions/transcript/agent-run-error.ts` |
-| F-128 | models-and-spend | note | dead-service | unverified | batch6-models-spend-media-web | known-limit | Dead providers (codex, claude-code, openrouter) and the Router panel: unreachable, but still shipped as code, SDK and strings | `desktop/source/host/extensions/inference/provider-session.ts` |
+| F-128 | models-and-spend | note | dead-service | unverified | batch6-models-spend-media-web | fixed | Dead providers (codex, claude-code, openrouter) and the Router panel: unreachable, but still shipped as code, SDK and strings | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-129 | models-and-spend | minor | docs-wrong | unverified | batch6-models-spend-media-web | known-limit | Four capability prices are live and metering although pricing.py says nobody should be charged against them yet | `server/polar/desktop/pricing.py` |
 | F-130 | models-and-spend | minor | design-violation | unverified | batch6-models-spend-media-web | needs-mac | Usage tab: monthly allowance under a 'Weekly usage' label; picker shows a 1.05M context while the loop compacts at 200k | `desktop/source/electron-main/account/cursor-profile.ts` |
 | F-131 | models-and-spend | note | hardcoded | refuted | memory | known-limit | Machinery sessions still request Cursor model ids that are silently remapped | `desktop/source/host/extensions/memory/production.ts` |
@@ -249,7 +249,7 @@ until its row says so. Columns:
 | F-223 | electron-main-app | note | risk | unverified | batch4-electron-shell | fixed | Renderer crash has no recovery: render-process-gone only reports (disabled) telemetry, nothing reloads the window | `desktop/source/electron-main/telemetry/renderer-lifecycle-telemetry.ts` |
 | F-224 | electron-main-app | minor | docs-wrong | unverified | batch4-reads-and-docs | fixed | CLAUDE.md and the Actions workflow describe a Mac build (npm run mac:build, dist:mac:arm64, build-whisper.sh) that no longer exists | `CLAUDE.md` |
 | F-225 | electron-main-app | minor | docs-wrong | unverified | batch4-reads-and-docs | fixed | desktop/README.md and building-the-app.md name the wrong app and the wrong product (Grok Bot 0.18 Reconstructed.app, Caisra.app, a Cursor/Claude Code/Codex/OpenRouter router) | `desktop/scripts/lib/config.mjs` |
-| F-226 | electron-main-app | note | dead-service | unverified | batch4-cursor-leftovers | known-limit | Inference-router leftovers: the edge still probes ~/.claude/.credentials.json, ~/.codex/auth.json and ANTHROPIC_API_KEY, and the provider list still names claude-code/codex/openrouter | `desktop/source/shared/inference-router.ts` |
+| F-226 | electron-main-app | note | dead-service | unverified | batch4-cursor-leftovers | fixed | Inference-router leftovers: the edge still probes ~/.claude/.credentials.json, ~/.codex/auth.json and ANTHROPIC_API_KEY, and the provider list still names claude-code/codex/openrouter | `desktop/source/shared/inference-router.ts` |
 | F-227 | electron-main-app | note | hardcoded | unverified | batch4-cursor-leftovers | fixed | Dev run (npm start / electron .) defaults every backend to Cursor: api2.cursor.sh and cursor.com | `desktop/source/shared/node/cursor-token.ts` |
 | F-228 | electron-main-app | minor | design-violation | unverified | batch4-electron-shell | fixed | 'Move to Applications' dialog promises updates the app cannot install | `desktop/source/electron-main/startup/startup-move-check.ts` |
 | F-229 | electron-main-app | note | risk | unverified | batch4-electron-shell | known-limit | Ad-hoc signature changes every build, so macOS re-keys Keychain (safeStorage) and TCC grants each package | `desktop/scripts/lib/codesign.mjs` |
@@ -440,7 +440,7 @@ until its row says so. Columns:
 | F-414 | coordinator-and-gateway | note | dead-service | confirmed | unserved-transports | fixed | Mac and box both poll BootstrapStatsig on api.simeonlabs.com every ~5 min; Statsig log-event proxy still points at api3.cursor.sh | `desktop/source/shared/node/experiments/cursor-experiments.ts` |
 | F-415 | coordinator-and-gateway | note | risk | confirmed | unserved-transports | fixed | Update feed defaults to api2.cursor.sh/updates and is off only by an env default the build injects | `desktop/source/electron-main/update/update-feed.ts` |
 | F-416 | coordinator-and-gateway | note | risk | refuted | box-telemetry | fixed | A live Anysphere Sentry DSN remains in the tree (dormant) | `desktop/source/shared/observability/sentry.ts` |
-| F-417 | coordinator-and-gateway | minor | design-violation | confirmed | sign-in-copy | known-limit | Unreachable provider branches and a Codex/Claude credential probe stay on the main edge and preload | `desktop/source/shared/inference-router.ts` |
+| F-417 | coordinator-and-gateway | minor | design-violation | confirmed | sign-in-copy | fixed | Unreachable provider branches and a Codex/Claude credential probe stay on the main edge and preload | `desktop/source/shared/inference-router.ts` |
 | F-418 | coordinator-and-gateway | note | spend | confirmed | sign-in-copy | known-limit | The text-only hatch is still enterable from the shell environment and doubles model calls when no SendMessage lands | `desktop/source/node-agent-coordinator/inference-router.ts` |
 | F-419 | coordinator-and-gateway | minor | risk | confirmed | hatch-residue | fixed | reactToMessage is answered locally whenever a stale hatch transcript holds the entry id, even on the host path | `desktop/source/node-agent-coordinator/inference-router.ts` |
 | F-420 | coordinator-and-gateway | minor | risk | confirmed | hatch-residue | fixed | First Allow card can be posted unstamped if the account slot fetch has not settled | `desktop/source/node-agent-coordinator/main.ts` |
@@ -485,7 +485,7 @@ until its row says so. Columns:
 | F-459 | tests-and-build | note | unmeasured | unverified | batch8-tests-build-docs | known-limit | Fixes with no test at all in desktop/tests: dictation language no longer forced, Help Center/feedback are tested but sign-in round trip, LSEnvironment, the Dock icon copy and the icns are not | `desktop/scripts/package-macos.mjs` |
 | F-460 | tests-and-build | note | unmeasured | unverified | batch8-tests-build-docs | known-limit | simeon-logo IoU tests skip by default and depend on pngjs and a container-only Chromium path, neither declared in package.json | `desktop/tests/simeon-logo.test.mjs` |
 | F-461 | tests-and-build | note | docs-wrong | unverified | batch8-tests-build-docs | fixed | renderer-file-url.test.mjs's crossorigin guard skips in the build loop; CLAUDE.md says it 'fails if it comes back' | `desktop/tests/renderer-file-url.test.mjs` |
-| F-462 | tests-and-build | note | design-violation | unverified | batch8-tests-build-docs | known-limit | publication-packaging.test.mjs pins the dead alternative providers (OpenRouter key error, Codex chatgpt.com, queryClaude) and the Mac-hatch prompt as required source, so removing what the design ended fails check | `desktop/tests/publication-packaging.test.mjs` |
+| F-462 | tests-and-build | note | design-violation | unverified | batch8-tests-build-docs | fixed | publication-packaging.test.mjs pins the dead alternative providers (OpenRouter key error, Codex chatgpt.com, queryClaude) and the Mac-hatch prompt as required source, so removing what the design ended fails check | `desktop/tests/publication-packaging.test.mjs` |
 | F-463 | tests-and-build | note | docs-wrong | unverified | batch8-tests-build-docs | known-limit | caisra-ignition-activation.mjs records unboundBindings: [] and runnerRealTurn: supported without running any check, so the packaged host-production-bindings.json is a statement, not a measurement | `desktop/scripts/caisra-ignition-activation.mjs` |
 | F-464 | security | major | risk | confirmed | local-security | fixed | Box exec daemon on the Mac's loopback (1337) takes the fixed bearer "local" | `desktop/source/box-exec-daemon/server.ts` |
 | F-465 | security | major | risk | confirmed | local-security | fixed | noVNC/websockify on 6080/6081 has no credential in the local path | `desktop/source/host/box/loopback-sand-box.ts` |
@@ -1887,3 +1887,55 @@ encrypted storage` and `box credential minted and stored encrypted` in
 `computer-stream.log`, then `inference-credential renewer started (backend
 self-renewal is the sole inference-credential source)` in
 `/tmp/sand-host.log`.
+
+### grok-bot-answers-models (26 September 2026)
+
+"check in the grok bot code to fix all these. Models and spend (5)."
+
+**F-118, fixed (no change: Grok Bot's design).** Grok Bot classifies every
+Shell, ExternalShell, MCP and Computer action whenever Auto-review is on,
+the box's own shell included (`resolveSandAutoReviewModes`,
+`sand_auto_review` gate comment in `experiment-config.gen.ts`); only a
+background agent skips it (`create-shell-tool.ts`). Nothing in its code
+caches or skips a verdict to save calls: its classifier ran on Cursor's
+servers (`sand-backend-smart-mode-classifier-exec.ts`), ours runs on Luna
+at low effort, the cheapest model the proxy serves. The person's lever is
+Grok Bot's own: the Auto-review toggle in Settings, General, Agent
+(`AutoReviewRulesPanel`, an evidence anchor of the shipped window), whose
+off stops the classifier entirely. The finding's "shadow, verdict
+discarded" has been untrue since 25 September (it enforces).
+
+**F-125, fixed (no change: Grok Bot's design).** `ensureUserReply` is
+byte-identical to the reconstruction's (`ce9fc2d8`): up to three reply
+nudges and one closing nudge, each only while the person is still owed a
+reply, each `hidden`. Since F-001 (25 September) a hidden run gets the
+40-call budget, so a silent turn costs at most four capped hidden runs.
+
+**F-128, fixed: the router that was never Grok Bot's is gone.** The
+reconstruction's README lists "an inference router for Cursor, Claude Code,
+Codex, and OpenRouter" among its author's own experiments. Removed: the
+Codex, Claude Code and OpenRouter executors in `provider-session.ts`, the
+Claude Code SDK import and the `@anthropic-ai/claude-agent-sdk` dependency
+(with the optional image binaries only it pulled), the Codex client
+(`codex-direct-responses.ts` and its test), and the Mac-side probe of
+`~/.claude/.credentials.json`, `~/.codex/auth.json` and
+`ANTHROPIC_API_KEY` (`inference-router-local.ts`, reported by
+`getInferenceRouter`). The provider names stay in
+`SAND_INFERENCE_PROVIDERS` so stored usage records still read. The same
+removal closes F-011, F-110, F-226 and F-417, and F-462 (the packaging test
+now pins their absence). Anysphere's own mentions of Codex model families
+in its prompts and tool code are Grok Bot's and stay. Not removed: the
+unshipped `frontend/` Router panel and the dead Settings source in the
+package-time patch (F-092, F-211, F-339), and the Mac text-only hatch
+itself (F-010, F-418), which is the founder's call.
+
+**F-129, known limit.** Grok Bot meters nothing on the desktop; the prices
+are Simeon Labs' own in `pricing.py`, and confirming them against the
+providers' price pages is the founder's.
+
+**F-131, known limit, with Grok Bot's answer.** `gemini-2.5-flash` for
+summarization and memory and `claude-opus-4-8` for computer use are Grok
+Bot's own model table (`sand-agent-model.ts`), naming Cursor's models; the
+executor chooses by role flag, as Cursor's server chose by role, and the
+video model is selected by its flag only, never by that shared name
+(`provider-session.ts`, `tests/cheap-model-config.test.mjs`).
