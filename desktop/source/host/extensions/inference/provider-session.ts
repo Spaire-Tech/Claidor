@@ -1,9 +1,11 @@
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 
 import { createOpenAI } from "@ai-sdk/openai";
 import { jsonSchema, streamText, tool, type CoreMessage, type LanguageModelV1, type ToolSet } from "ai";
 
 import { BasePromptBuilder, BasePromptExecutor } from "../../../packages/chat-inference/base.js";
+import { conversationIdKey } from "../../../packages/chat-inference-proto/client.js";
 import { asError } from "../../../shared/errors.js";
 import { withCheapRateLimitFallback } from "../../../shared/inference/cheap-rate-limit-fallback.js";
 import { clipForHostLog, HOST_LOG_PREFIX, logHostLine, setHostLogSink } from "../../../shared/host-log.js";
@@ -173,8 +175,40 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: s
   }
 }
 
-function claidorAuthenticatedFetch(source: ClaidorCredentialSource): typeof fetch {
-  return async (input, init) => {
+// Grok Bot's loop names the conversation on every model request: the agent
+// puts its conversation id in the context (`packages/agent/index.ts`,
+// `conversationIdKey`) and the inference client sends it as
+// `InferenceStreamRequest.conversationId` (`chat-inference-proto/client.ts`),
+// which is what Cursor's server keyed its prompt cache on. This executor
+// read the context as `_ctx` and dropped it, so every request reached OpenAI
+// with no cache key: on 26 September 2026, the first call of each turn on
+// the founder's Mac read 0 of ~50,000 tokens from cache even 48 s after the
+// previous turn's call with the same prefix. OpenAI's own form of that key is
+// `prompt_cache_key`, which routes requests that share it (and their prefix)
+// to the same cache. The id is hashed: OpenAI needs a stable key, not ours.
+export function claidorPromptCacheKey(conversationId: unknown): string | undefined {
+  if (typeof conversationId !== "string" || conversationId.trim().length === 0) return undefined;
+  return `simeon-${createHash("sha256").update(conversationId.trim()).digest("hex").slice(0, 32)}`;
+}
+
+// Once OpenAI refuses the key (a 400 naming it), requests stop carrying it
+// for the life of the process rather than failing every turn.
+let promptCacheKeyRefused = false;
+export function resetPromptCacheKeyRefusalForTest(): void { promptCacheKeyRefused = false; }
+
+export function withPromptCacheKey(body: unknown, promptCacheKey: string | undefined): unknown {
+  if (promptCacheKey === undefined || promptCacheKeyRefused || typeof body !== "string") return body;
+  try {
+    const parsed = JSON.parse(body) as Record<string, unknown>;
+    if (parsed == null || typeof parsed !== "object" || Array.isArray(parsed) || "prompt_cache_key" in parsed) return body;
+    return JSON.stringify({ ...parsed, prompt_cache_key: promptCacheKey });
+  } catch {
+    return body;
+  }
+}
+
+function claidorAuthenticatedFetch(source: ClaidorCredentialSource, promptCacheKey?: string): typeof fetch {
+  const authenticated: typeof fetch = async (input, init) => {
     const accessToken = await withTimeout(
       source.getAccessToken(),
       CLAIDOR_CREDENTIAL_WAIT_MS,
@@ -197,6 +231,18 @@ function claidorAuthenticatedFetch(source: ClaidorCredentialSource): typeof fetc
     } finally {
       clearTimeout(timer);
     }
+  };
+  if (promptCacheKey === undefined) return authenticated;
+  return async (input, init) => {
+    const keyed = withPromptCacheKey(init?.body, promptCacheKey);
+    if (keyed === init?.body) return await authenticated(input, init);
+    const answer = await authenticated(input, { ...init, body: keyed as BodyInit });
+    if (answer.status !== 400) return answer;
+    const text = await answer.clone().text().catch(() => "");
+    if (!text.includes("prompt_cache_key")) return answer;
+    promptCacheKeyRefused = true;
+    modelCallLog(`${HOST_LOG_PREFIX} prompt-cache-key refused, requests continue without it: ${clipForHostLog(text, 300)}`);
+    return await authenticated(input, init);
   };
 }
 
@@ -299,6 +345,12 @@ export interface ModelCallLogLine {
   // found unwired on the production path and nothing in the log said which
   // cap a call ran under (design-audit-ledger.md F-001).
   readonly budget?: string;
+  // What the cache can match, per call: a short hash of the system prompt and
+  // of the tool definitions, and of the prompt cache key ("-" for none). Two
+  // consecutive calls of one conversation with the same sys and tools hashes
+  // share their whole prefix; a `cached=0` with unchanged hashes is a cache
+  // routing miss, not a prompt that moved. Added 26 September 2026.
+  readonly prefix?: string;
 }
 
 // One line per model call in the host log, so `docker exec … tail
@@ -306,7 +358,17 @@ export interface ModelCallLogLine {
 // the executor wrote nothing and a fifty-minute loop left no trace but
 // the bill.
 export function formatModelCallLogLine(line: ModelCallLogLine): string {
-  return `[claidor] model=${line.model} effort=${line.effort} input=${line.inputTokens} cached=${line.cachedTokens} output=${line.outputTokens} reasoning=${line.reasoningTokens} ms=${line.elapsedMs} tools=${line.tools}${line.offered === undefined ? "" : ` offered=${line.offered}`}${line.budget === undefined ? "" : ` budget=${line.budget}`}`;
+  return `[claidor] model=${line.model} effort=${line.effort} input=${line.inputTokens} cached=${line.cachedTokens} output=${line.outputTokens} reasoning=${line.reasoningTokens} ms=${line.elapsedMs} tools=${line.tools}${line.offered === undefined ? "" : ` offered=${line.offered}`}${line.budget === undefined ? "" : ` budget=${line.budget}`}${line.prefix === undefined ? "" : ` prefix=${line.prefix}`}`;
+}
+
+function shortHash(value: string): string {
+  return createHash("sha256").update(value).digest("hex").slice(0, 8);
+}
+
+export function promptPrefixFingerprint(messages: readonly CoreMessage[], definitions: readonly Loose[] | undefined, promptCacheKey: string | undefined): string {
+  let tools = "";
+  try { tools = JSON.stringify((definitions ?? []).map((definition) => [definition.name, definition.description, toolParameterSchema(definition)])); } catch { tools = "?"; }
+  return `sys:${shortHash(systemPromptText(messages))},tools:${shortHash(tools)},key:${promptCacheKey === undefined ? "-" : promptCacheKeyRefused ? "refused" : promptCacheKey.slice(7, 15)}`;
 }
 
 export function summarizeToolCalls(calls: readonly { readonly toolName?: string; readonly args?: unknown }[] | undefined): string {
@@ -369,7 +431,7 @@ function logModelCallError(error: unknown, callInfo: { readonly model: string; r
   modelCallLog(`${HOST_LOG_PREFIX} model-error-schemas ${clipForHostLog(toolSchemaSummary(tools), 6000)}`);
 }
 
-function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string }, tools?: ToolSet, messages?: readonly CoreMessage[], onRequestId?: (requestId: string) => void) {
+function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string; readonly prefix?: string }, tools?: ToolSet, messages?: readonly CoreMessage[], onRequestId?: (requestId: string) => void) {
   const startedAtMs = Date.now();
   const failure = deferred<never>();
   failure.promise.catch(() => undefined);
@@ -397,7 +459,7 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
     const cached = typeof openai.cachedPromptTokens === "number" ? openai.cachedPromptTokens : 0;
     const reasoning = typeof openai.reasoningTokens === "number" ? openai.reasoningTokens : 0;
     if (callInfo != null) {
-      modelCallLog(formatModelCallLogLine({ model: callInfo.model, effort: callInfo.effort, inputTokens: value.promptTokens, cachedTokens: cached, outputTokens: value.completionTokens, reasoningTokens: reasoning, elapsedMs: Date.now() - startedAtMs, tools: summarizeToolCalls(calls), offered: Object.keys(tools ?? {}).join(",") || "-", ...(callInfo.budget === undefined ? {} : { budget: callInfo.budget }) }));
+      modelCallLog(formatModelCallLogLine({ model: callInfo.model, effort: callInfo.effort, inputTokens: value.promptTokens, cachedTokens: cached, outputTokens: value.completionTokens, reasoningTokens: reasoning, elapsedMs: Date.now() - startedAtMs, tools: summarizeToolCalls(calls), offered: Object.keys(tools ?? {}).join(",") || "-", ...(callInfo.budget === undefined ? {} : { budget: callInfo.budget }), ...(callInfo.prefix === undefined ? {} : { prefix: callInfo.prefix }) }));
     }
     return { inputTokens: Math.max(0, value.promptTokens - cached), outputTokens: value.completionTokens, cacheReadTokens: cached, cacheWriteTokens: 0, maxTokens };
   });
@@ -405,9 +467,10 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
   return { fullStream, response: race(result.response), usage: race(result.usage), extendedUsage, providerMetadata: race(result.providerMetadata), invocationId: Promise.resolve(invocationId) };
 }
 
-function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, openaiOptions: Record<string, unknown> = {}, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string }, onRequestId?: (requestId: string) => void) {
+function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, openaiOptions: Record<string, unknown> = {}, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string }, onRequestId?: (requestId: string) => void, promptCacheKey?: string) {
   const tools = toToolSet(definitions, executeTool);
   const coreMessages = toCoreMessages(messages);
+  const prefixedCallInfo = callInfo === undefined ? undefined : { ...callInfo, prefix: promptPrefixFingerprint(coreMessages, definitions, promptCacheKey) };
   // The host loop's state carries its own system prompt; the router prompt is
   // for the connector-only path, where nothing else says who the agent is.
   const system = coreMessages.some(message => message.role === "system") ? undefined : GROK_ROUTER_SYSTEM_PROMPT;
@@ -422,13 +485,13 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
     maxSteps: tools === undefined || executeTool == null ? 1 : 8,
     providerOptions: { openai: { strictSchemas: false, ...openaiOptions } },
   });
-  return settleAiSdkStream(result, invocationId, onUsage, maxTokens, callInfo, tools, coreMessages, onRequestId);
+  return settleAiSdkStream(result, invocationId, onUsage, maxTokens, prefixedCallInfo, tools, coreMessages, onRequestId);
 }
 
 // Claidor's metered proxy, on the Responses wire: the one that takes reasoning
 // and function tools in the same request (server/polar/desktop/endpoints.py).
-function claidorLanguageModel(source: ClaidorCredentialSource, id: string): LanguageModelV1 {
-  return createOpenAI({ apiKey: "claidor-desktop-access-token", baseURL: claidorProxyBaseUrl(source.backendUrl), name: "claidor", fetch: claidorAuthenticatedFetch(source) }).responses(id);
+function claidorLanguageModel(source: ClaidorCredentialSource, id: string, promptCacheKey?: string): LanguageModelV1 {
+  return createOpenAI({ apiKey: "claidor-desktop-access-token", baseURL: claidorProxyBaseUrl(source.backendUrl), name: "claidor", fetch: claidorAuthenticatedFetch(source, promptCacheKey) }).responses(id);
 }
 
 function geminiTools(definitions: readonly Loose[] | undefined): GeminiDirectTool[] | undefined {
@@ -492,7 +555,7 @@ function geminiExecutor(source: ClaidorCredentialSource, messages: readonly Prov
   return { fullStream, response: resultResponse.promise, usage: usage.promise, extendedUsage: extendedUsage.promise, providerMetadata: metadata.promise, invocationId: Promise.resolve(invocationId) };
 }
 
-function claidorExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, modelId?: string, reasoningEffort: ClaidorReasoningEffort = configuredClaidorReasoningEffort(), budget?: ModelCallBudget, onRequestId?: (requestId: string) => void) {
+function claidorExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, modelId?: string, reasoningEffort: ClaidorReasoningEffort = configuredClaidorReasoningEffort(), budget?: ModelCallBudget, onRequestId?: (requestId: string) => void, promptCacheKey?: string) {
   const source = claidorCredentialSource;
   if (source == null) throw new Error("Simeon runs on the signed-in account, but this process has no credential source. Sign in to Simeon and try again.");
   const requested = modelId?.trim() || configuredClaidorModel();
@@ -500,7 +563,7 @@ function claidorExecutor(messages: readonly ProviderMessage[], invocationId: str
   // model that cannot see the video is not an answer to a video question.
   if (isGeminiVideoModelId(requested)) return geminiExecutor(source, messages, invocationId, definitions, executeTool, onUsage, requested, reasoningEffort, budget, onRequestId);
   const cheap = configuredClaidorCheapModel();
-  const start = (id: string) => aiSdkExecutor(claidorLanguageModel(source, id), messages, invocationId, definitions, executeTool, onUsage, CLAIDOR_WORKING_CONTEXT_TOKENS, { reasoningEffort }, { model: id, effort: reasoningEffort, ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }) }, onRequestId);
+  const start = (id: string) => aiSdkExecutor(claidorLanguageModel(source, id, promptCacheKey), messages, invocationId, definitions, executeTool, onUsage, CLAIDOR_WORKING_CONTEXT_TOKENS, { reasoningEffort }, { model: id, effort: reasoningEffort, ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }) }, onRequestId, promptCacheKey);
 
   if (requested === cheap) return start(requested);
   // A relayed rate limit re-runs the step on the cheap model. The swap used
@@ -525,11 +588,17 @@ export function spendModelCall(budget: ModelCallBudget): void {
   budget.used += 1;
 }
 
+function conversationIdFromContext(ctx: unknown): unknown {
+  const get = (ctx as { get?: unknown } | null | undefined)?.get;
+  if (typeof get !== "function") return undefined;
+  try { return get.call(ctx, conversationIdKey); } catch { return undefined; }
+}
+
 class ProviderPromptExecutor extends BasePromptExecutor<ProviderMessage> {
   constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void, readonly modelId?: string, readonly reasoningEffort?: ClaidorReasoningEffort, readonly budget?: ModelCallBudget, readonly onRequestId?: (requestId: string) => void) { super(new BasePromptBuilder(initialMessages)); }
-  stream(_ctx: unknown, invocationId = crypto.randomUUID(), definitions?: readonly Loose[]) {
+  stream(ctx: unknown, invocationId = crypto.randomUUID(), definitions?: readonly Loose[]) {
     if (this.budget != null) spendModelCall(this.budget);
-    return claidorExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage, this.modelId, this.reasoningEffort, this.budget, this.onRequestId);
+    return claidorExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage, this.modelId, this.reasoningEffort, this.budget, this.onRequestId, claidorPromptCacheKey(conversationIdFromContext(ctx)));
   }
 }
 
