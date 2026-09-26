@@ -158,19 +158,19 @@ until its row says so. Columns:
 | F-132 | models-and-spend | note | naming | unverified | batch6-models-spend-media-web | fixed | A Cursor pricing link survives in error actions | `desktop/source/host/extensions/transcript/agent-run-error.ts` |
 | F-133 | models-and-spend | note | spend | unverified | batch6-models-spend-media-web | fixed | The escape-hatch coordinator turn and group-chat turns run with no model-call budget | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-134 | box-and-computer | major | risk | refuted | local-security | fixed | Box exec daemon on 127.0.0.1:1337 with static bearer "local"; any local process can run commands in the box and read the account token | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-135 | box-and-computer | major | risk | refuted | local-security | known-limit | noVNC/websockify on 127.0.0.1:6080/6081 with no credential: any web page on the Mac can drive the agent's logged-in desktop | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-135 | box-and-computer | major | risk | refuted | local-security | fixed | noVNC/websockify on 127.0.0.1:6080/6081 with no credential: any web page on the Mac can drive the agent's logged-in desktop | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-136 | box-and-computer | major | unwired | confirmed | box-substrate | needs-mac | The reconstructed box-exec-daemon supports no computer-use, no write, no MCP load, and rejects paths outside /workspace — and the container is told to use the mounted daemon | `desktop/source/box-exec-daemon/server.ts` |
 | F-137 | box-and-computer | major | dead-service | confirmed | cloud-computer | needs-mac | Settings offers "Simeon's remote computer": the toggle routes to Cursor's GrokBotService/EnsureSandBox and strands the person | `desktop/scripts/lib/router-renderer-patch.mjs` |
 | F-138 | box-and-computer | major | docs-wrong | refuted | brief-text | fixed | Agent-readable app-ui.md says "Sign In with Claidor", five Settings tabs, Plugins/Marketplace, Update Track and Team Setup | `desktop/source/host/runner/box-reference-docs.ts` |
 | F-139 | box-and-computer | major | docs-wrong | confirmed | brief-text | fixed | Agent-readable debugging-the-box.md points at a nonexistent "computer needs Docker" prompt, names anyrun as the default and the wrong container | `desktop/source/host/runner/box-reference-docs.ts` |
 | F-140 | box-and-computer | minor | dead-service | confirmed | unserved-transports | fixed | Host-side box lifecycle (update/reset/image check) still calls Cursor's GrokBotService and retries at every host start | `desktop/source/host/extensions/box-lifecycle/extension.ts` |
 | F-141 | box-and-computer | minor | docs-wrong | confirmed | brief-text | fixed | Reset/Update semantics told to the agent (snapshot restore, fresh instance) do not match the local box (docker restart / rm keeping both volumes) | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-142 | box-and-computer | major | spend | confirmed | box-substrate | known-limit | `--restart unless-stopped`: after a crash (no clean quit) the box comes back on its own and keeps spending until its token expires | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-142 | box-and-computer | major | spend | confirmed | box-substrate | fixed | `--restart unless-stopped`: after a crash (no clean quit) the box comes back on its own and keeps spending until its token expires | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-143 | box-and-computer | major | risk | confirmed | box-substrate | needs-mac | The box image is Cursor's mutable ECR tag, unpinned and not owned | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-144 | box-and-computer | minor | unwired | confirmed | box-substrate | known-limit | ForeverBox captureScreenshot is never supplied; the escape-hatch Screenshot/Computer tools answer "still starting up" | `desktop/source/host/extensions/forever-box/forever-box-service.ts` |
+| F-144 | box-and-computer | minor | unwired | confirmed | box-substrate | fixed | ForeverBox captureScreenshot is never supplied; the escape-hatch Screenshot/Computer tools answer "still starting up" | `desktop/source/host/extensions/forever-box/forever-box-service.ts` |
 | F-145 | box-and-computer | minor | design-violation | confirmed | hatch-residue | fixed | Escape-hatch tool descriptions and the brief name tools that do not exist here (watchVideo/videoReview) and misdescribe WebFetch | `desktop/source/host/runner/system-prompt.ts` |
 | F-146 | box-and-computer | minor | docs-wrong | confirmed | box-substrate | fixed | computer-stream-measured.md still documents `[CaisraScreen]` lines; the preload prints `[SimeonScreen]` | `docs/product/computer-stream-measured.md` |
-| F-147 | box-and-computer | note | docs-wrong | refuted | box-substrate | known-limit | CLAUDE.md's "host re-reads an expired file every 30 s" is not what the renewer does | `desktop/source/host/extensions/auth/credential-renewer.ts` |
+| F-147 | box-and-computer | note | docs-wrong | refuted | box-substrate | fixed | CLAUDE.md's "host re-reads an expired file every 30 s" is not what the renewer does | `desktop/source/host/extensions/auth/credential-renewer.ts` |
 | F-148 | box-and-computer | minor | risk | refuted | local-security | known-limit | Gateway token and desktop access token sit in plaintext on the Mac and in `docker inspect` | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-149 | box-and-computer | note | design-violation | confirmed | box-substrate | known-limit | The local-tool approval ask carries no machine identity | `desktop/source/host/extensions/transcript/routed-agent-tools.ts` |
 | F-150 | box-and-computer | minor | dead-service | refuted | cloud-agents-channels | fixed | openCloudAgent still opens https://cursor.com/agents/… | `desktop/source/electron-main/main-edge.ts` |
@@ -488,7 +488,7 @@ until its row says so. Columns:
 | F-462 | tests-and-build | note | design-violation | unverified | batch8-tests-build-docs | known-limit | publication-packaging.test.mjs pins the dead alternative providers (OpenRouter key error, Codex chatgpt.com, queryClaude) and the Mac-hatch prompt as required source, so removing what the design ended fails check | `desktop/tests/publication-packaging.test.mjs` |
 | F-463 | tests-and-build | note | docs-wrong | unverified | batch8-tests-build-docs | known-limit | caisra-ignition-activation.mjs records unboundBindings: [] and runnerRealTurn: supported without running any check, so the packaged host-production-bindings.json is a statement, not a measurement | `desktop/scripts/caisra-ignition-activation.mjs` |
 | F-464 | security | major | risk | confirmed | local-security | fixed | Box exec daemon on the Mac's loopback (1337) takes the fixed bearer "local" | `desktop/source/box-exec-daemon/server.ts` |
-| F-465 | security | major | risk | confirmed | local-security | known-limit | noVNC/websockify on 6080/6081 has no credential in the local path | `desktop/source/host/box/loopback-sand-box.ts` |
+| F-465 | security | major | risk | confirmed | local-security | fixed | noVNC/websockify on 6080/6081 has no credential in the local path | `desktop/source/host/box/loopback-sand-box.ts` |
 | F-466 | security | major | risk | confirmed | box-token-scope | fixed | The full desktop session token sits in the box where the agent's Shell can read it | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-467 | security | major | risk | confirmed | local-security | fixed | Vendor connector tokens are plaintext at default file mode on the Mac and copied whole (refresh token, client secret) into the box | `desktop/source/shared/node/vendor-mcp/installs.ts` |
 | F-468 | security | minor | risk | confirmed | local-security | fixed | Custom MCP server headers (API keys) stored plaintext at default mode | `desktop/source/shared/node/account-mcp/store.ts` |
@@ -1765,3 +1765,78 @@ SendToAgent writes exactly that (`appendAgentInboundEntries`, role
 `user`); it runs `hidden` under the 40-call budget (F-001) and once
 (F-310). So a teammate the agent put to work never introduces itself,
 and one it created and left idle greets the person once, when opened.
+
+### grok-bot-answers-box (26 September 2026)
+
+"do the same for … check grok bots code. Box and computer (6)." The six
+box rows re-read against the reconstruction as first shipped (`ce9fc2d8`).
+
+**F-135 and F-465, fixed: the stream is behind Grok Bot's network token.**
+Grok Bot never served its desktop stream bare in production: its cloud box
+sat behind the pod's egress proxy, which passed a request only with the
+box's network token, as the `network_token` query parameter of the noVNC
+page and its websockify URL (`buildSandBoxNoVncUrl`) or the
+`x-anyrun-network-token` header on every other request, which Electron's
+box session adds (`vnc-trust.ts`). The coordinator rewrites every box
+status's stream URL through the connection's `vncProxy` descriptor
+(`box-vnc-proxy.ts`). The loopback box, which our local Docker box uses, is
+Grok Bot's development path, and its launcher published websockify's 6080
+and 6081 with no credential; any web page on the Mac could open
+`ws://127.0.0.1:6080/websockify`. Now the host in the box runs that proxy
+(`host/box-stream-guard.ts`: one listener per stream port, 16080 and 16081,
+HTTP and WebSocket forwarded to websockify on the box's loopback once the
+token matches, the header stripped before websockify, a refusal logged as
+`[claidor] box-stream refused …`); the Mac publishes the guard as 6080 and
+6081 instead of websockify, writes one token per install 0600 into the
+read-only `/run/grok-bot` mount (`box-stream-token`, never an env var),
+labels the container with its fingerprint and replaces a container made
+with another, and hands the app `vncProxy` from `localDockerVncProxy`, so
+the rest is Grok Bot's own production path. Schema 11; the connection cache
+is version 2 so a cached connection without `vncProxy` is never served.
+`tests/box-stream-guard.test.mjs` runs the real guard against a fake
+websockify: page and socket refused without the token, passed with it,
+frames both ways. The dev controls' "open box desktop" button opens the
+bare URL and is refused now (development only). Not run on a Mac: that
+websockify in Cursor's image answers on the box's loopback, and the screen
+with the guard in front. The line to read is `[claidor] box-stream
+guarded on 16080, 16081` in `/tmp/sand-host.log`; if the screen then says
+"not answering yet", websockify is not on 127.0.0.1 inside the box.
+
+**F-144, fixed.** Grok Bot's forever-box extension exposes
+`captureScreenshot` but never passes the service its dependency, in the
+original too, so it is null forever; its only caller is our Mac escape
+hatch (21 September), which is text-only and could not show the model an
+image anyway. Grok Bot sees its screen through the loop's Screenshot and
+Computer tools, the default path. The hatch now says what is true
+(`ROUTED_TEXT_ONLY_TOOL_MESSAGE`: not available in the text-only mode,
+tell the person, do not retry) for Screenshot, Computer, browser, Task,
+GenerateImage, hand-off and update_state, instead of "the computer is
+still starting up".
+
+**F-147, fixed.** The renewer's intervals are Grok Bot's own
+(`credential-renewer.ts`); CLAUDE.md was corrected in batch 8.
+
+**F-142, fixed (no change: Grok Bot's design, and the founder's).**
+`--restart unless-stopped` is in Grok Bot's own launcher, and since 25
+September the box outlives the app on the founder's word so routines fire
+with Simeon closed. What a revived box can spend is bounded: an idle box
+makes no model call; routines run under the 40-call hidden budget, the
+proxy's hourly cap and the user-away guard; a pending intro runs once, at
+40. The next quit applies the routine rule.
+
+**F-148, known limit, with Grok Bot's answer.** The gateway token as
+`SAND_GATEWAY_TOKEN` is Grok Bot's image contract (the audit of 18
+September lists it with the image's env), and the image's supervisor is not
+in this tree, so moving it to a file risks a box that will not start. A
+file would not narrow who can read it either: the Mac's copy sits in the
+person's own data folder, readable by anything running as the person, the
+same set that can run `docker inspect`. The model token has to be
+plaintext for a Linux container to read it; since 25 September it reaches
+only the proxy and the profile route. With F-135 closed, neither token
+guards an unauthenticated surface on the Mac.
+
+**F-149, known limit, with Grok Bot's answer.** Grok Bot connects exactly
+one user computer, the Mac the app runs on (`userComputers`, "the single
+computer connected today"), and raises the Allow card in the app on that
+Mac, so the ask needs no machine name. It needs one only under the machine
+registry decided on 18 September (`cards-plan.md`), which is not built.

@@ -65,7 +65,7 @@ test("a late inference credential does not tear down a running box", async () =>
       path.join(repoRoot, "source/electron-main/box/local-docker-host-connector.ts"),
       "utf8",
     );
-    assert.match(source, /localDockerContainerNeedsReplace\(inspected, hostBundle\.sha256\)/);
+    assert.match(source, /localDockerContainerNeedsReplace\(inspected, hostBundle\.sha256, streamTokenSha256\)/);
     assert.doesNotMatch(source, /inferenceCredential != null && !inspected\.hasInferenceCredential/);
     assert.doesNotMatch(source, /OPTIONAL_CREDENTIAL_TIMEOUT_MS = 3_000/);
     assert.match(source, /SAND_DEV_INFERENCE_TOKEN_FILE=\$\{LOCAL_DOCKER_INFERENCE_TOKEN_FILE\}/);
@@ -73,7 +73,7 @@ test("a late inference credential does not tear down a running box", async () =>
     assert.match(source, /if \(late != null && late !== issued\) await persistInferenceCredential/);
     assert.doesNotMatch(source, /\.claude/);
     assert.doesNotMatch(source, /\.codex/);
-    assert.equal(LOCAL_DOCKER_SCHEMA_VERSION, "10");
+    assert.equal(LOCAL_DOCKER_SCHEMA_VERSION, "11");
     const production = await (await import("node:fs/promises")).readFile(
       path.join(repoRoot, "source/electron-main/main-production-services.ts"),
       "utf8",

@@ -8,7 +8,18 @@ import {
   stringifyToolResult,
   asRecord,
 } from "../../../shared/grok-bot-tools.js";
-import { SAND_BOX_NOT_READY_MESSAGE } from "../../ports/box.js";
+/**
+ * What the text-only escape hatch (SAND_CLAIDOR_FULL_AGENT=off) answers for
+ * a tool that needs the full agent: the computer, the browser, Task,
+ * GenerateImage, box hand-off and update_state. Until 26 September 2026 these
+ * answered "The computer is still starting up", which was never the reason:
+ * this path is a text call that cannot see an image, and the forever-box
+ * `captureScreenshot` it asked was never given a dependency, in Grok Bot's
+ * own extension either (`ce9fc2d8`), so it was null forever (ledger F-144).
+ * Grok Bot sees its screen through the loop's Screenshot and Computer tools,
+ * which is the default path here.
+ */
+export const ROUTED_TEXT_ONLY_TOOL_MESSAGE = "This tool is not available in Simeon's text-only mode, which this conversation is running in. It cannot see or drive the computer, use the browser, start a subagent or make an image. Tell the person plainly that this needs the full agent, and do not retry it.";
 import {
   SAND_LOCAL_TOOLS_DENIED_MESSAGE,
   type SandLocalToolRequest,
@@ -150,12 +161,6 @@ async function executeWebSearch(args: unknown): Promise<string> {
   return titles.map((title, index) => `${index + 1}. ${title}`).join("\n");
 }
 
-async function executeScreenshot(host: RoutedAgentToolHost, agentId: string): Promise<string> {
-  const bytes = await host.foreverBox?.captureScreenshot?.(agentId);
-  if (bytes == null || bytes.length === 0) return SAND_BOX_NOT_READY_MESSAGE;
-  return `Screenshot captured (${bytes.length} bytes).`;
-}
-
 async function writeBoxFile(path: string, data: Uint8Array): Promise<string> {
   const target = isAbsolute(path) ? path : join("/workspace", path);
   await mkdir(dirname(target), { recursive: true });
@@ -222,14 +227,7 @@ export async function executeRoutedAgentTool(
   if (name === "AwaitShell" || name === "ExternalAwaitShell") {
     return "No background command is running on this computer right now.";
   }
-  if (name === "Screenshot") return await executeScreenshot(host, agentId);
-  if (name === "Computer") {
-    const shot = await executeScreenshot(host, agentId);
-    if (shot === SAND_BOX_NOT_READY_MESSAGE) return shot;
-    const action = stringArg(asRecord(args), "action") || "screenshot";
-    if (action === "screenshot") return shot;
-    return `${shot}\nComputer action "${action}" needs the desktop executor; the screenshot above is the current screen.`;
-  }
+  if (name === "Screenshot" || name === "Computer") return ROUTED_TEXT_ONLY_TOOL_MESSAGE;
   if (name === "WebFetch") return await executeWebFetch(args);
   if (name === "WebSearch") return await executeWebSearch(args);
   if (name === "SendToAgent") {
@@ -249,12 +247,9 @@ export async function executeRoutedAgentTool(
     await host.transcript.reactToMessage(entryId, emoji, agentId);
     return `Reacted ${emoji} on ${entryId}.`;
   }
-  if (name.startsWith("browser_")) {
-    await host.foreverBox?.ensure?.({ id: agentId });
-    return SAND_BOX_NOT_READY_MESSAGE;
-  }
+  if (name.startsWith("browser_")) return ROUTED_TEXT_ONLY_TOOL_MESSAGE;
   if (name === "Task" || name === "GenerateImage" || name === "RequestBoxHelp" || name === "update_state") {
-    return SAND_BOX_NOT_READY_MESSAGE;
+    return ROUTED_TEXT_ONLY_TOOL_MESSAGE;
   }
   return stringifyToolResult({ error: `Unknown tool: ${name}` });
 }
