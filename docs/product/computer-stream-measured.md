@@ -161,3 +161,23 @@ cat ~/Library/Application\ Support/Simeon/computer-stream.log
 | `local docker: gateway ready` and no reachability line, yet "Can't reach" | the host throws inside `getStatus`; that is a host bug and the next thing to read is the host's own log inside the box |
 
 Not run on a Mac.
+
+## The stream is behind a token, 26 September 2026
+
+Since ledger F-135 the Mac's 6080 and 6081 are no longer websockify: they
+are the host's guard (`host/box-stream-guard.ts`, container ports 16080
+and 16081), which forwards to websockify inside the box only when the
+request carries the install's network token, the way Grok Bot's cloud
+proxy did. The app gets the token-carrying URL from the connection's
+`vncProxy` and Electron adds the token header to every request of the
+page. Two new lines to read before anything else:
+
+| Line | Where | Means |
+|---|---|---|
+| `[claidor] box-stream guarded on 16080, 16081 -> 6080, 6081` | `/tmp/sand-host.log` in the box | the guard is up |
+| `[claidor] box-stream refused a request without the network token` | same | something asked without the token: the app's URL lost it, or another page on the Mac tried |
+
+A page answering "The desktop stream is not answering yet." means the
+guard is up and websockify inside the box is not on 127.0.0.1. Not run on
+a Mac.
+

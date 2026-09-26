@@ -10,7 +10,7 @@ import type {
 } from "../coordinator/production-provider.js";
 import type { ProductionServiceContext } from "../main-production-services.js";
 import type { BoxConnectionInfo } from "../../shared/node/egress-tunnel/box-connection.js";
-import { createSettingsRoutedHostConnector } from "../box/local-docker-host-connector.js";
+import { configureLocalDockerSecretStorage, createSettingsRoutedHostConnector } from "../box/local-docker-host-connector.js";
 
 function requireFunction(value: unknown, label: string): asserts value is (...args: never[]) => unknown {
   if (typeof value !== "function") {
@@ -46,6 +46,7 @@ export function createProductionCoordinatorGatewayBinding(): Pick<
         safeStorage: context.native.safeStorage,
         getAccountScope: () => context.accountLifecycle.getAccountScope() ?? undefined,
       });
+      configureLocalDockerSecretStorage(context.native.safeStorage);
       const remote = createSettingsRoutedHostConnector(createRemoteHostConnector(
         deps,
         context.env,

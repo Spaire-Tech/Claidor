@@ -80,3 +80,64 @@ Two things, one turn each, from the proxy's usage record:
 
 Neither has been run. A one-user week of totals would say less than these
 two lines.
+
+## Read on the Mac, 26 September 2026
+
+Both lines above were read on the founder's Mac, from `/tmp/sand-host.log`,
+over two turns 48 s apart:
+
+```
+model=gpt-5.6-terra effort=high input=49861 cached=0     … (turn 1, step 1)
+model=gpt-5.6-terra effort=high input=50015 cached=49858 … (turn 1, step 2)
+model=gpt-5.6-terra effort=high input=50147 cached=0     … (turn 2, step 1)
+model=gpt-5.6-terra effort=high input=50316 cached=50144 … (turn 2, step 2)
+```
+
+1. Effort is `high` on the loop and `low` on the Luna memory call. Measured.
+2. Within a turn the cache works: step two reads all of step one. Across
+   turns it did not: the first call of turn 2 read nothing, although turn 2
+   step 1 is turn 1 step 2 plus ~130 tokens (the reply and the new message).
+   Every message paid for ~50,000 uncached tokens.
+
+**What Grok Bot does that we did not.** Its loop names the conversation on
+every model request: `packages/agent/index.ts` puts `config.conversationId`
+in the context (`conversationIdKey`), and its inference client sends it as
+`InferenceStreamRequest.conversationId` (`chat-inference-proto/client.ts`,
+`buildStreamRequest`), which Cursor's server had to key its cache on. Our
+executor received that context and ignored it (`stream(_ctx, …)` in
+`provider-session.ts`), so every request reached OpenAI with no cache key.
+OpenAI's form of the same thing is `prompt_cache_key`, which routes requests
+sharing the key and their prefix to the same cache. The executor now reads
+the id from the context and sends `prompt_cache_key: simeon-<sha256(id)[:32]>`
+(the id itself never leaves the Mac). The AI SDK in the tree (1.3.24) has no
+option for it, so the authenticated fetch adds it to the body; a 400 naming
+the key is retried once without it and the key stays off for the process,
+with a `[claidor] prompt-cache-key refused` line. `tests/prompt-cache-key.test.mjs`.
+
+**What this does not prove.** Whether the missing key is the whole cause is
+not established: two turns are one observation. The memory section is not
+it on its own: Grok Bot freezes it (`resolveFrozenMemoryPrompt`) and it sits
+after the ~58,000-character brief, so a change there would still have left
+the brief's tokens cached, not zero. So every `[claidor] model=` line now
+ends with `prefix=sys:<8>,tools:<8>,key:<8>`, hashes of the system prompt,
+the tool definitions and the key. On the next run, compare turn N step 2 with
+turn N+1 step 1:
+
+- same `sys` and `tools`, `cached` near the input: fixed.
+- same `sys` and `tools`, `cached=0`: the prompt did not move and the cache
+  still missed; the key did not help and the cause is on OpenAI's side.
+- a different `sys` or `tools`: the prompt moved between turns, and the hash
+  that changed names the half to diff.
+
+**The "x" padding is not answered by Grok Bot's code.** GPT fills every
+SendMessage field (`url:""`, `images:[]`, and `widget`/`secret` with `"x"`
+to satisfy their `minLength: 1`), about 60 output tokens a message, dropped
+before validation (`stripFieldsOfOtherTypes`). The schema is Grok Bot's
+unchanged (only `type` required; the reconstruction at `ce9fc2d8` has the
+same object), the tool description's examples fill only what their type
+needs, and Grok Bot's client sends Cursor the same JSON schema
+(`agentToolToProto`) with no strict-mode or nullable conversion. Whatever
+Cursor's server did with it is not in the reconstruction. The one lever in
+our hands, OpenAI strict mode with nullable optionals for SendMessage, needs
+a live request to know OpenAI accepts that schema; a refusal would fail
+every turn, so it was not shipped blind.

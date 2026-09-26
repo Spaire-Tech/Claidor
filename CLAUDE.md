@@ -464,6 +464,10 @@ on the transport the same day (above): a packaged app carries the fix
 only once rebuilt from this branch. Not yet re-run on the Mac.
 
 **"Agent failed to respond: Unauthorized", read 24 September 2026.**
+*(Superseded 26 September 2026 by `grok-bot-credential-storage`: the box
+now holds its renewal credential in its environment and renews its own
+token; the token file and the five-minute rewrite described below are gone.
+Kept as the record of the cause.)*
 The word is the API's own `Unauthorized` exception, answered to the
 box's model call (`AI_APICallError … statusCode: 401` in
 `/tmp/sand-host.log`): the proxy's `get_proxy_caller` found no live
@@ -1029,6 +1033,41 @@ box; an "upgrade" button opens simeonlabs.com; `runner_image.yml` is a
 by-hand publish nothing consumes; and nine records were corrected in
 place, `start-here.md` and `what-exists.md` with superseded banners. Not
 run on a Mac: the new verify checks against a real package.
+**Later the same day, two known limits were answered from Grok Bot's own
+code** (ledger note `grok-bot-answers`): a Task child's asks for the Mac
+land on the agent's Allow card again, because Grok Bot's child inherited
+the agent's id for everything but its own transcript and our shell had
+given its toolset the child's id (F-017); and an agent-created teammate's
+pending intro is Grok Bot's design, bounded, fired only when the person
+opens it and dropped once the agent has messaged it (F-029).
+**Then the six box rows** (note `grok-bot-answers-box`): **the desktop
+stream is behind Grok Bot's network token** (F-135): the host in the box
+runs the token-checking proxy Grok Bot's cloud pod had
+(`host/box-stream-guard.ts`), the Mac publishes it as 6080/6081 instead of
+bare websockify, and hands the app `vncProxy` so Grok Bot's own production
+path carries the token; until then any web page on the Mac could drive the
+agent's desktop. The escape hatch says it is text-only instead of "the
+computer is still starting up" (F-144). The restart policy and the gateway
+token in the container's environment are Grok Bot's own contract and stay
+(F-142); the approval card names no machine because Grok Bot
+connects one (F-149). Not run on a Mac: the line to read is
+`[claidor] box-stream guarded` in `/tmp/sand-host.log`.
+**Then the box's credentials are stored the way Grok Bot stores them**
+(note `grok-bot-credential-storage`, F-148): the Mac keeps the gateway
+token, the stream token and the box's renewal credential only encrypted
+with `safeStorage` (`local-docker-secrets.json`), the box receives them in
+its environment at creation like Grok Bot's pod and renews its own model
+token, and the plain `local-docker-vm.json` and mounted token folder are
+gone. The credential is minted once per box, not per run. My earlier
+claim that encryption "would not narrow who can read it" was wrong and is
+corrected there.
+**Then models and spend** (note `grok-bot-answers-models`): the
+per-action Auto-review classifier and the reply nudges are Grok Bot's own
+design, bounded (Auto-review off in Settings stops the classifier; nudges
+run hidden at 40 calls); and the Codex, Claude Code and OpenRouter router,
+which the reconstruction's author added and Grok Bot never had, is removed
+with its SDK dependency and the Mac probe of other assistants'
+credentials (F-128).
 
 ## The eight features were served overnight (25–26 September 2026)
 

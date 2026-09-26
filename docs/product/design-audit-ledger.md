@@ -34,13 +34,13 @@ until its row says so. Columns:
 | F-008 | chat-turn | minor | docs-wrong | confirmed | brief-text | fixed | Text does not arrive 'as texts': no split into up to three bubbles one second apart (BUBBLE_GAP_MS) | `docs/product/direction.md` |
 | F-009 | chat-turn | note | docs-wrong | confirmed | brief-text | fixed | direction.md's 'nine kinds, list closed' is contradicted by the host's fourteen SendMessage/transport kinds | `desktop/source/host/runner/tools/send-message-encoding.ts` |
 | F-010 | chat-turn | minor | design-violation | confirmed | sign-in-copy | known-limit | SAND_CLAIDOR_FULL_AGENT=off hatch is live, env-only, and still ships the audited flaws plus a 'Router error:' bubble and a Codex/Claude Code-flavoured prompt | `desktop/source/shared/inference-router.ts` |
-| F-011 | chat-turn | note | dead-service | confirmed | sign-in-copy | known-limit | Dead executors for Codex (chatgpt.com), Claude Code and OpenRouter remain compiled into the host with a 'Settings → Router' key field and 'Simeon Reconstructed' headers | `desktop/source/host/extensions/inference/provider-session.ts` |
+| F-011 | chat-turn | note | dead-service | confirmed | sign-in-copy | fixed | Dead executors for Codex (chatgpt.com), Claude Code and OpenRouter remain compiled into the host with a 'Settings → Router' key field and 'Simeon Reconstructed' headers | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-012 | chat-turn | minor | risk | confirmed | executor-contract | fixed | On a model error the box log receives the full system prompt (12,000 chars: memory, user info, roster) and every tool schema | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-013 | chat-turn | note | spend | confirmed | hidden-turn-cap | known-limit | Reply-nudge budget: up to 4 hidden runs per user turn (3 REPLY_NUDGE + 1 CLOSING_SEND_NUDGE) plus ensureHiddenTurnReply on the intro, each unbounded by the hidden cap today | `desktop/source/host/extensions/transcript/turn-runtime.ts` |
 | F-014 | agents-and-subagents | blocking | design-violation | confirmed | child-state | fixed | A Task child runs on the parent's conversation state and writes its checkpoints into the parent's agent store and transcript | `desktop/source/host/host-runner-composition.ts` |
 | F-015 | agents-and-subagents | major | spend | confirmed | hidden-turn-cap | fixed | The 40-call hidden-turn budget is dead on the production path: `hidden` never reaches the owner input | `desktop/source/host/host-runner-composition.ts` |
 | F-016 | agents-and-subagents | major | design-violation | confirmed | brief-text | fixed | The agent's prompt says it holds the Screenshot tool while AGENT_SCREENSHOT_TOOL = false withholds it (the blindness failure, undeclared) | `desktop/source/host/host-runner-composition.ts` |
-| F-017 | agents-and-subagents | major | unwired | confirmed | asks-once-memory | known-limit | The executor subagent is on by default (sand_multitask default true) and an executor child's ExternalShell/ExternalRead can never be allowed: no permission surface exists for the child's id | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
+| F-017 | agents-and-subagents | major | unwired | confirmed | asks-once-memory | fixed | The executor subagent is on by default (sand_multitask default true) and an executor child's ExternalShell/ExternalRead can never be allowed: no permission surface exists for the child's id | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
 | F-018 | agents-and-subagents | major | design-violation | confirmed | child-state | fixed | getRemoteBoxAvailable compares a Promise to false and is always true, so box tools and computerUse are offered with Docker off | `desktop/source/host/host-runner-composition.ts` |
 | F-019 | agents-and-subagents | major | unwired | confirmed | memory | fixed | Grok Bot's per-turn memory extraction and episode summaries never run: the shell adapter host has no memoryStore | `desktop/source/host/runner/production-turn-run-shell-adapter.ts` |
 | F-020 | agents-and-subagents | minor | unwired | confirmed | hidden-turn-cap | fixed | The closing-send nudge can never fire: onLatestPromptMessages is not passed, so latestPromptMessages() is always [] | `desktop/source/host/host-runner-composition.ts` |
@@ -52,7 +52,7 @@ until its row says so. Columns:
 | F-026 | agents-and-subagents | minor | naming | confirmed | child-state | fixed | The child runner's getConversationId() is the parent's id (inherited getAgentId), so the child carries a mixed identity | `desktop/source/host/host-runner-composition.ts` |
 | F-027 | agents-and-subagents | minor | design-violation | confirmed | child-state | fixed | Task resume and readonly do not reach the child; MessageSubagent's text promises a resume that recreates a blank runner | `desktop/source/host/runner/subagent-runtime.ts` |
 | F-028 | agents-and-subagents | minor | unwired | confirmed | child-state | fixed | The prompt glue never learns whether browserUse is offered, so prompt and Task configs disagree when the gate is on | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
-| F-029 | agents-and-subagents | note | risk | refuted | hidden-turn-cap | known-limit | Agent-created teammates are minted as origin 'user' with an introduction pending | `desktop/source/host/host-runner-composition.ts` |
+| F-029 | agents-and-subagents | note | risk | refuted | hidden-turn-cap | fixed | Agent-created teammates are minted as origin 'user' with an introduction pending | `desktop/source/host/host-runner-composition.ts` |
 | F-030 | agents-and-subagents | note | docs-wrong | confirmed | child-state | fixed | The child-audit record's cost accounting is incomplete: the prompt shrank, the child's context did not | `docs/product/computer-use-child-audit-2026-09-24.md` |
 | F-031 | routines-automations | blocking | design-violation | confirmed | routines-away | fixed | Routines only fire while the app and the local Docker box are running; nothing fires with the Mac shut, and the agent's brief tells the person the opposite | `desktop/source/host/extensions/automations/sand-trigger-hub.ts` |
 | F-032 | routines-automations | blocking | dead-service | confirmed | listeners-coming-soon | needs-mac | The agent is offered six event-listener trigger types (Slack, GitHub, Teams, Linear, Sentry, PagerDuty) that can never fire on Simeon, and saving one reports success — served since 25 September 2026 (`polar/sand/listeners*.py`): Slack, GitHub, Linear, Sentry and PagerDuty fire through Simeon Labs' relay once the founder registers the apps; Teams stays coming-soon (no bot) | `desktop/source/host/runner/tools/sand-state-tool.ts` |
@@ -133,7 +133,7 @@ until its row says so. Columns:
 | F-107 | keys-and-auth | note | design-violation | confirmed | sign-in-copy | fixed | Dashboard 'Create a token for the app' tells the person to set CLAIDOR_ACCESS_TOKEN on a server that no longer exists | `clients/apps/web/src/components/Settings/ConnectAppSettings.tsx` |
 | F-108 | keys-and-auth | note | dead-service | confirmed | sign-in-copy | fixed | Legacy /desktop/login still redirects to caisra://auth/callback | `server/polar/desktop/endpoints.py` |
 | F-109 | keys-and-auth | note | unwired | confirmed | sign-in-copy | fixed | /auth/poll reads x-maties-client-version, a header the app never sends | `server/polar/desktop/endpoints.py` |
-| F-110 | keys-and-auth | minor | design-violation | confirmed | sign-in-copy | known-limit | Alternative-provider credential paths (Codex ChatGPT login, Claude Code, OpenRouter key from box secrets) remain in the host executor | `desktop/source/host/extensions/inference/provider-session.ts` |
+| F-110 | keys-and-auth | minor | design-violation | confirmed | sign-in-copy | fixed | Alternative-provider credential paths (Codex ChatGPT login, Claude Code, OpenRouter key from box secrets) remain in the host executor | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-111 | keys-and-auth | minor | risk | confirmed | box-token-scope | fixed | Sign-out leaves inference.json on disk and the keep-fresh timer running | `desktop/source/electron-main/account/cursor-auth.ts` |
 | F-112 | keys-and-auth | note | risk | confirmed | local-security | known-limit | Box secrets and connector credentials are persisted in plaintext inside the box's data volume | `desktop/source/host/extensions/secrets/secrets-service.ts` |
 | F-113 | keys-and-auth | note | risk | confirmed | local-security | known-limit | The gateway bearer token is passed to the container as a docker --env | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
@@ -141,37 +141,37 @@ until its row says so. Columns:
 | F-115 | keys-and-auth | note | docs-wrong | confirmed | sign-in-copy | fixed | docs/product/app-sign-in.md still says the round trip was never run and names api.claidor.com | `docs/product/app-sign-in.md` |
 | F-116 | keys-and-auth | note | dead-service | confirmed | dead-cursor-services | fixed | Every Connect RPC to our host carries x-cursor-checksum, x-ghost-mode and the bearer, after a privacy lookup that 404s | `desktop/source/shared/node/cursor-backend/cursor-inference.ts` |
 | F-117 | models-and-spend | blocking | unwired | confirmed | hidden-turn-cap | fixed | Hidden-turn budget of 40 never reaches the executor: the production owner input drops `hidden` | `desktop/source/host/host-runner-composition.ts` |
-| F-118 | models-and-spend | major | spend | unverified | batch6-models-spend-media-web | known-limit | Auto-review classifier runs in shadow by default: one Luna call per Shell/MCP/computer action, verdict discarded | `desktop/source/host/runner/sand-auto-review.ts` |
+| F-118 | models-and-spend | major | spend | unverified | batch6-models-spend-media-web | fixed | Auto-review classifier runs in shadow by default: one Luna call per Shell/MCP/computer action, verdict discarded | `desktop/source/host/runner/sand-auto-review.ts` |
 | F-119 | models-and-spend | major | unwired | unverified | batch6-models-spend-media-web | needs-mac | The model picker's choice never reaches the executor; the loop's model is decided only by box env | `desktop/source/host/host-runner-composition.ts` |
 | F-120 | models-and-spend | minor | design-violation | unverified | batch6-models-spend-media-web | fixed | Luna is offered in the picker as the agent's model, against pricing.py's own rule | `desktop/source/electron-main/models/claidor-model-catalog.ts` |
 | F-121 | models-and-spend | minor | docs-wrong | unverified | batch6-models-spend-media-web | fixed | Claude Sonnet fallback is unreachable; the only fallback is Luna on a rate-limit regex, unannounced | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-122 | models-and-spend | minor | spend | unverified | batch6-models-spend-media-web | fixed | The proxy serves withheld models (Astra 10x, Opus 5x) to any bearer that names them | `server/polar/desktop/endpoints.py` |
 | F-123 | models-and-spend | minor | dead-service | confirmed | dead-cursor-services | fixed | A Cursor Connect RPC (GetUserPrivacyMode) is attempted on api.simeonlabs.com at the start of every turn | `desktop/source/host/runner/turn-run-shell.ts` |
 | F-124 | models-and-spend | major | risk | unverified | batch6-models-spend-media-web | fixed | `CLAIDOR_FETCH_TIMEOUT_MS = 45_000` aborts the whole streamed model call, not just the connect | `desktop/source/host/extensions/inference/provider-session.ts` |
-| F-125 | models-and-spend | note | spend | confirmed | hidden-turn-cap | known-limit | Every reply nudge and closing nudge is a fresh full turn on Terra at effort high with the whole brief | `desktop/source/host/extensions/transcript/turn-runtime.ts` |
+| F-125 | models-and-spend | note | spend | confirmed | hidden-turn-cap | fixed | Every reply nudge and closing nudge is a fresh full turn on Terra at effort high with the whole brief | `desktop/source/host/extensions/transcript/turn-runtime.ts` |
 | F-126 | models-and-spend | note | unmeasured | unverified | batch6-models-spend-media-web | needs-mac | Hourly credit brake makes the 5,000-step asked cap unreachable; how the 402 reads in the chat is unmeasured | `server/polar/config.py` |
 | F-127 | models-and-spend | minor | naming | unverified | batch6-models-spend-media-web | fixed | User-facing error strings say Claidor and expose env-variable names | `desktop/source/host/extensions/transcript/agent-run-error.ts` |
-| F-128 | models-and-spend | note | dead-service | unverified | batch6-models-spend-media-web | known-limit | Dead providers (codex, claude-code, openrouter) and the Router panel: unreachable, but still shipped as code, SDK and strings | `desktop/source/host/extensions/inference/provider-session.ts` |
+| F-128 | models-and-spend | note | dead-service | unverified | batch6-models-spend-media-web | fixed | Dead providers (codex, claude-code, openrouter) and the Router panel: unreachable, but still shipped as code, SDK and strings | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-129 | models-and-spend | minor | docs-wrong | unverified | batch6-models-spend-media-web | known-limit | Four capability prices are live and metering although pricing.py says nobody should be charged against them yet | `server/polar/desktop/pricing.py` |
 | F-130 | models-and-spend | minor | design-violation | unverified | batch6-models-spend-media-web | needs-mac | Usage tab: monthly allowance under a 'Weekly usage' label; picker shows a 1.05M context while the loop compacts at 200k | `desktop/source/electron-main/account/cursor-profile.ts` |
 | F-131 | models-and-spend | note | hardcoded | refuted | memory | known-limit | Machinery sessions still request Cursor model ids that are silently remapped | `desktop/source/host/extensions/memory/production.ts` |
 | F-132 | models-and-spend | note | naming | unverified | batch6-models-spend-media-web | fixed | A Cursor pricing link survives in error actions | `desktop/source/host/extensions/transcript/agent-run-error.ts` |
 | F-133 | models-and-spend | note | spend | unverified | batch6-models-spend-media-web | fixed | The escape-hatch coordinator turn and group-chat turns run with no model-call budget | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-134 | box-and-computer | major | risk | refuted | local-security | fixed | Box exec daemon on 127.0.0.1:1337 with static bearer "local"; any local process can run commands in the box and read the account token | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-135 | box-and-computer | major | risk | refuted | local-security | known-limit | noVNC/websockify on 127.0.0.1:6080/6081 with no credential: any web page on the Mac can drive the agent's logged-in desktop | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-135 | box-and-computer | major | risk | refuted | local-security | fixed | noVNC/websockify on 127.0.0.1:6080/6081 with no credential: any web page on the Mac can drive the agent's logged-in desktop | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-136 | box-and-computer | major | unwired | confirmed | box-substrate | needs-mac | The reconstructed box-exec-daemon supports no computer-use, no write, no MCP load, and rejects paths outside /workspace — and the container is told to use the mounted daemon | `desktop/source/box-exec-daemon/server.ts` |
 | F-137 | box-and-computer | major | dead-service | confirmed | cloud-computer | needs-mac | Settings offers "Simeon's remote computer": the toggle routes to Cursor's GrokBotService/EnsureSandBox and strands the person | `desktop/scripts/lib/router-renderer-patch.mjs` |
 | F-138 | box-and-computer | major | docs-wrong | refuted | brief-text | fixed | Agent-readable app-ui.md says "Sign In with Claidor", five Settings tabs, Plugins/Marketplace, Update Track and Team Setup | `desktop/source/host/runner/box-reference-docs.ts` |
 | F-139 | box-and-computer | major | docs-wrong | confirmed | brief-text | fixed | Agent-readable debugging-the-box.md points at a nonexistent "computer needs Docker" prompt, names anyrun as the default and the wrong container | `desktop/source/host/runner/box-reference-docs.ts` |
 | F-140 | box-and-computer | minor | dead-service | confirmed | unserved-transports | fixed | Host-side box lifecycle (update/reset/image check) still calls Cursor's GrokBotService and retries at every host start | `desktop/source/host/extensions/box-lifecycle/extension.ts` |
 | F-141 | box-and-computer | minor | docs-wrong | confirmed | brief-text | fixed | Reset/Update semantics told to the agent (snapshot restore, fresh instance) do not match the local box (docker restart / rm keeping both volumes) | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-142 | box-and-computer | major | spend | confirmed | box-substrate | known-limit | `--restart unless-stopped`: after a crash (no clean quit) the box comes back on its own and keeps spending until its token expires | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-142 | box-and-computer | major | spend | confirmed | box-substrate | fixed | `--restart unless-stopped`: after a crash (no clean quit) the box comes back on its own and keeps spending until its token expires | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-143 | box-and-computer | major | risk | confirmed | box-substrate | needs-mac | The box image is Cursor's mutable ECR tag, unpinned and not owned | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-144 | box-and-computer | minor | unwired | confirmed | box-substrate | known-limit | ForeverBox captureScreenshot is never supplied; the escape-hatch Screenshot/Computer tools answer "still starting up" | `desktop/source/host/extensions/forever-box/forever-box-service.ts` |
+| F-144 | box-and-computer | minor | unwired | confirmed | box-substrate | fixed | ForeverBox captureScreenshot is never supplied; the escape-hatch Screenshot/Computer tools answer "still starting up" | `desktop/source/host/extensions/forever-box/forever-box-service.ts` |
 | F-145 | box-and-computer | minor | design-violation | confirmed | hatch-residue | fixed | Escape-hatch tool descriptions and the brief name tools that do not exist here (watchVideo/videoReview) and misdescribe WebFetch | `desktop/source/host/runner/system-prompt.ts` |
 | F-146 | box-and-computer | minor | docs-wrong | confirmed | box-substrate | fixed | computer-stream-measured.md still documents `[CaisraScreen]` lines; the preload prints `[SimeonScreen]` | `docs/product/computer-stream-measured.md` |
-| F-147 | box-and-computer | note | docs-wrong | refuted | box-substrate | known-limit | CLAUDE.md's "host re-reads an expired file every 30 s" is not what the renewer does | `desktop/source/host/extensions/auth/credential-renewer.ts` |
-| F-148 | box-and-computer | minor | risk | refuted | local-security | known-limit | Gateway token and desktop access token sit in plaintext on the Mac and in `docker inspect` | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-147 | box-and-computer | note | docs-wrong | refuted | box-substrate | fixed | CLAUDE.md's "host re-reads an expired file every 30 s" is not what the renewer does | `desktop/source/host/extensions/auth/credential-renewer.ts` |
+| F-148 | box-and-computer | minor | risk | refuted | local-security | fixed | Gateway token and desktop access token sit in plaintext on the Mac and in `docker inspect` | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-149 | box-and-computer | note | design-violation | confirmed | box-substrate | known-limit | The local-tool approval ask carries no machine identity | `desktop/source/host/extensions/transcript/routed-agent-tools.ts` |
 | F-150 | box-and-computer | minor | dead-service | refuted | cloud-agents-channels | fixed | openCloudAgent still opens https://cursor.com/agents/… | `desktop/source/electron-main/main-edge.ts` |
 | F-151 | box-and-computer | note | unmeasured | confirmed | box-substrate | needs-mac | Every agent gets its own fork desktop (start-window) in one container on an amd64-emulated image | `desktop/source/host/box/box-windows.ts` |
@@ -249,7 +249,7 @@ until its row says so. Columns:
 | F-223 | electron-main-app | note | risk | unverified | batch4-electron-shell | fixed | Renderer crash has no recovery: render-process-gone only reports (disabled) telemetry, nothing reloads the window | `desktop/source/electron-main/telemetry/renderer-lifecycle-telemetry.ts` |
 | F-224 | electron-main-app | minor | docs-wrong | unverified | batch4-reads-and-docs | fixed | CLAUDE.md and the Actions workflow describe a Mac build (npm run mac:build, dist:mac:arm64, build-whisper.sh) that no longer exists | `CLAUDE.md` |
 | F-225 | electron-main-app | minor | docs-wrong | unverified | batch4-reads-and-docs | fixed | desktop/README.md and building-the-app.md name the wrong app and the wrong product (Grok Bot 0.18 Reconstructed.app, Caisra.app, a Cursor/Claude Code/Codex/OpenRouter router) | `desktop/scripts/lib/config.mjs` |
-| F-226 | electron-main-app | note | dead-service | unverified | batch4-cursor-leftovers | known-limit | Inference-router leftovers: the edge still probes ~/.claude/.credentials.json, ~/.codex/auth.json and ANTHROPIC_API_KEY, and the provider list still names claude-code/codex/openrouter | `desktop/source/shared/inference-router.ts` |
+| F-226 | electron-main-app | note | dead-service | unverified | batch4-cursor-leftovers | fixed | Inference-router leftovers: the edge still probes ~/.claude/.credentials.json, ~/.codex/auth.json and ANTHROPIC_API_KEY, and the provider list still names claude-code/codex/openrouter | `desktop/source/shared/inference-router.ts` |
 | F-227 | electron-main-app | note | hardcoded | unverified | batch4-cursor-leftovers | fixed | Dev run (npm start / electron .) defaults every backend to Cursor: api2.cursor.sh and cursor.com | `desktop/source/shared/node/cursor-token.ts` |
 | F-228 | electron-main-app | minor | design-violation | unverified | batch4-electron-shell | fixed | 'Move to Applications' dialog promises updates the app cannot install | `desktop/source/electron-main/startup/startup-move-check.ts` |
 | F-229 | electron-main-app | note | risk | unverified | batch4-electron-shell | known-limit | Ad-hoc signature changes every build, so macOS re-keys Keychain (safeStorage) and TCC grants each package | `desktop/scripts/lib/codesign.mjs` |
@@ -440,7 +440,7 @@ until its row says so. Columns:
 | F-414 | coordinator-and-gateway | note | dead-service | confirmed | unserved-transports | fixed | Mac and box both poll BootstrapStatsig on api.simeonlabs.com every ~5 min; Statsig log-event proxy still points at api3.cursor.sh | `desktop/source/shared/node/experiments/cursor-experiments.ts` |
 | F-415 | coordinator-and-gateway | note | risk | confirmed | unserved-transports | fixed | Update feed defaults to api2.cursor.sh/updates and is off only by an env default the build injects | `desktop/source/electron-main/update/update-feed.ts` |
 | F-416 | coordinator-and-gateway | note | risk | refuted | box-telemetry | fixed | A live Anysphere Sentry DSN remains in the tree (dormant) | `desktop/source/shared/observability/sentry.ts` |
-| F-417 | coordinator-and-gateway | minor | design-violation | confirmed | sign-in-copy | known-limit | Unreachable provider branches and a Codex/Claude credential probe stay on the main edge and preload | `desktop/source/shared/inference-router.ts` |
+| F-417 | coordinator-and-gateway | minor | design-violation | confirmed | sign-in-copy | fixed | Unreachable provider branches and a Codex/Claude credential probe stay on the main edge and preload | `desktop/source/shared/inference-router.ts` |
 | F-418 | coordinator-and-gateway | note | spend | confirmed | sign-in-copy | known-limit | The text-only hatch is still enterable from the shell environment and doubles model calls when no SendMessage lands | `desktop/source/node-agent-coordinator/inference-router.ts` |
 | F-419 | coordinator-and-gateway | minor | risk | confirmed | hatch-residue | fixed | reactToMessage is answered locally whenever a stale hatch transcript holds the entry id, even on the host path | `desktop/source/node-agent-coordinator/inference-router.ts` |
 | F-420 | coordinator-and-gateway | minor | risk | confirmed | hatch-residue | fixed | First Allow card can be posted unstamped if the account slot fetch has not settled | `desktop/source/node-agent-coordinator/main.ts` |
@@ -485,10 +485,10 @@ until its row says so. Columns:
 | F-459 | tests-and-build | note | unmeasured | unverified | batch8-tests-build-docs | known-limit | Fixes with no test at all in desktop/tests: dictation language no longer forced, Help Center/feedback are tested but sign-in round trip, LSEnvironment, the Dock icon copy and the icns are not | `desktop/scripts/package-macos.mjs` |
 | F-460 | tests-and-build | note | unmeasured | unverified | batch8-tests-build-docs | known-limit | simeon-logo IoU tests skip by default and depend on pngjs and a container-only Chromium path, neither declared in package.json | `desktop/tests/simeon-logo.test.mjs` |
 | F-461 | tests-and-build | note | docs-wrong | unverified | batch8-tests-build-docs | fixed | renderer-file-url.test.mjs's crossorigin guard skips in the build loop; CLAUDE.md says it 'fails if it comes back' | `desktop/tests/renderer-file-url.test.mjs` |
-| F-462 | tests-and-build | note | design-violation | unverified | batch8-tests-build-docs | known-limit | publication-packaging.test.mjs pins the dead alternative providers (OpenRouter key error, Codex chatgpt.com, queryClaude) and the Mac-hatch prompt as required source, so removing what the design ended fails check | `desktop/tests/publication-packaging.test.mjs` |
+| F-462 | tests-and-build | note | design-violation | unverified | batch8-tests-build-docs | fixed | publication-packaging.test.mjs pins the dead alternative providers (OpenRouter key error, Codex chatgpt.com, queryClaude) and the Mac-hatch prompt as required source, so removing what the design ended fails check | `desktop/tests/publication-packaging.test.mjs` |
 | F-463 | tests-and-build | note | docs-wrong | unverified | batch8-tests-build-docs | known-limit | caisra-ignition-activation.mjs records unboundBindings: [] and runnerRealTurn: supported without running any check, so the packaged host-production-bindings.json is a statement, not a measurement | `desktop/scripts/caisra-ignition-activation.mjs` |
 | F-464 | security | major | risk | confirmed | local-security | fixed | Box exec daemon on the Mac's loopback (1337) takes the fixed bearer "local" | `desktop/source/box-exec-daemon/server.ts` |
-| F-465 | security | major | risk | confirmed | local-security | known-limit | noVNC/websockify on 6080/6081 has no credential in the local path | `desktop/source/host/box/loopback-sand-box.ts` |
+| F-465 | security | major | risk | confirmed | local-security | fixed | noVNC/websockify on 6080/6081 has no credential in the local path | `desktop/source/host/box/loopback-sand-box.ts` |
 | F-466 | security | major | risk | confirmed | box-token-scope | fixed | The full desktop session token sits in the box where the agent's Shell can read it | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-467 | security | major | risk | confirmed | local-security | fixed | Vendor connector tokens are plaintext at default file mode on the Mac and copied whole (refresh token, client secret) into the box | `desktop/source/shared/node/vendor-mcp/installs.ts` |
 | F-468 | security | minor | risk | confirmed | local-security | fixed | Custom MCP server headers (API keys) stored plaintext at default mode | `desktop/source/shared/node/account-mcp/store.ts` |
@@ -1724,3 +1724,218 @@ refuted by the audit's own refuter. F-479, the Composio proxy binds the
 Composio user id to the account and nothing else; the route has no
 caller and refuses while `CLAIDOR_COMPOSIO_API_KEY` is unset, so it is
 closed with F-160's decision.
+
+### grok-bot-answers (26 September 2026)
+
+"look deep at grok bot original code, and try to find the answer there."
+Two known limits re-read against the reconstruction as it first shipped
+(`ce9fc2d8`) and closed.
+
+**F-017, fixed.** Grok Bot's child runner was built from the agent's
+runner options with `conversationId` and `transcriptId` set to the
+child's id, and it *inherited* `getAgentId: () => session.id`. The
+runner's `getConversationId()` reads `getAgentId` first, so a child's
+conversation id was the agent's; only its transcript was its own
+(`getTranscriptId`). Everything that answers to the agent (the action
+audit, computer-use coordination, the local-tool permission scope)
+therefore carried the agent's id, and a child's ExternalShell or
+ExternalRead ask landed on the agent's Allow surface, the only chat that
+has one (`bindLocalPermissionSurface`, keyed by `session.id`). Our
+per-identity shell (24 September) gave the toolset
+`identity.conversationId`, the child's id, so in "ask" mode every such
+call was refused with "this conversation has nowhere to ask for it".
+The toolset host now reads `session.id` for every identity; that id is
+used for the local-tool scope and nothing else (`turn-toolset.ts`, one
+read). The child keeps its own transcript, state and turn epoch (F-014,
+F-026 stand). `tests/child-local-tool-ask.test.mjs` drives the real
+controller: a child-id scope is refused, an agent-id scope raises the
+card in the agent's chat and Allow lets the command run. Multitask
+staying on is the founder's "literally everything" and is unchanged.
+
+**F-029, fixed (no change: traced to the end).** The CreateAgent call is
+Grok Bot's own, byte for byte (`createBackgroundAgent(profile, "user")`
+at `ce9fc2d8`). "user" is right: the store knows only `dev` and `user`
+(`agent-db.ts`, `getAgentOrigin`), and the Mac hatch's `origin: "agent"`
+is read back as `user`. The pending introduction is Grok Bot's design
+and it is bounded: it fires only when the person opens the teammate
+(`kickstartIfPending` from `switchAgent`/`openAgent` and at startup for
+the active agent), never from creation; it is dropped without a run when
+the teammate's transcript already holds a message, and an agent's
+SendToAgent writes exactly that (`appendAgentInboundEntries`, role
+`user`); it runs `hidden` under the 40-call budget (F-001) and once
+(F-310). So a teammate the agent put to work never introduces itself,
+and one it created and left idle greets the person once, when opened.
+
+### grok-bot-answers-box (26 September 2026)
+
+"do the same for … check grok bots code. Box and computer (6)." The six
+box rows re-read against the reconstruction as first shipped (`ce9fc2d8`).
+
+**F-135 and F-465, fixed: the stream is behind Grok Bot's network token.**
+Grok Bot never served its desktop stream bare in production: its cloud box
+sat behind the pod's egress proxy, which passed a request only with the
+box's network token, as the `network_token` query parameter of the noVNC
+page and its websockify URL (`buildSandBoxNoVncUrl`) or the
+`x-anyrun-network-token` header on every other request, which Electron's
+box session adds (`vnc-trust.ts`). The coordinator rewrites every box
+status's stream URL through the connection's `vncProxy` descriptor
+(`box-vnc-proxy.ts`). The loopback box, which our local Docker box uses, is
+Grok Bot's development path, and its launcher published websockify's 6080
+and 6081 with no credential; any web page on the Mac could open
+`ws://127.0.0.1:6080/websockify`. Now the host in the box runs that proxy
+(`host/box-stream-guard.ts`: one listener per stream port, 16080 and 16081,
+HTTP and WebSocket forwarded to websockify on the box's loopback once the
+token matches, the header stripped before websockify, a refusal logged as
+`[claidor] box-stream refused …`); the Mac publishes the guard as 6080 and
+6081 instead of websockify, writes one token per install 0600 into the
+read-only `/run/grok-bot` mount (`box-stream-token`, never an env var),
+labels the container with its fingerprint and replaces a container made
+with another, and hands the app `vncProxy` from `localDockerVncProxy`, so
+the rest is Grok Bot's own production path. Schema 11; the connection cache
+is version 2 so a cached connection without `vncProxy` is never served.
+`tests/box-stream-guard.test.mjs` runs the real guard against a fake
+websockify: page and socket refused without the token, passed with it,
+frames both ways. The dev controls' "open box desktop" button opens the
+bare URL and is refused now (development only). Not run on a Mac: that
+websockify in Cursor's image answers on the box's loopback, and the screen
+with the guard in front. The line to read is `[claidor] box-stream
+guarded on 16080, 16081` in `/tmp/sand-host.log`; if the screen then says
+"not answering yet", websockify is not on 127.0.0.1 inside the box.
+
+**F-144, fixed.** Grok Bot's forever-box extension exposes
+`captureScreenshot` but never passes the service its dependency, in the
+original too, so it is null forever; its only caller is our Mac escape
+hatch (21 September), which is text-only and could not show the model an
+image anyway. Grok Bot sees its screen through the loop's Screenshot and
+Computer tools, the default path. The hatch now says what is true
+(`ROUTED_TEXT_ONLY_TOOL_MESSAGE`: not available in the text-only mode,
+tell the person, do not retry) for Screenshot, Computer, browser, Task,
+GenerateImage, hand-off and update_state, instead of "the computer is
+still starting up".
+
+**F-147, fixed.** The renewer's intervals are Grok Bot's own
+(`credential-renewer.ts`); CLAUDE.md was corrected in batch 8.
+
+**F-142, fixed (no change: Grok Bot's design, and the founder's).**
+`--restart unless-stopped` is in Grok Bot's own launcher, and since 25
+September the box outlives the app on the founder's word so routines fire
+with Simeon closed. What a revived box can spend is bounded: an idle box
+makes no model call; routines run under the 40-call hidden budget, the
+proxy's hourly cap and the user-away guard; a pending intro runs once, at
+40. The next quit applies the routine rule.
+
+**F-148, known limit, with Grok Bot's answer.** The gateway token as
+`SAND_GATEWAY_TOKEN` is Grok Bot's image contract (the audit of 18
+September lists it with the image's env), and the image's supervisor is not
+in this tree, so moving it to a file risks a box that will not start. A
+file would not narrow who can read it either: the Mac's copy sits in the
+person's own data folder, readable by anything running as the person, the
+same set that can run `docker inspect`. The model token has to be
+plaintext for a Linux container to read it; since 25 September it reaches
+only the proxy and the profile route. With F-135 closed, neither token
+guards an unauthenticated surface on the Mac.
+
+**F-149, known limit, with Grok Bot's answer.** Grok Bot connects exactly
+one user computer, the Mac the app runs on (`userComputers`, "the single
+computer connected today"), and raises the Allow card in the app on that
+Mac, so the ask needs no machine name. It needs one only under the machine
+registry decided on 18 September (`cards-plan.md`), which is not built.
+
+### grok-bot-credential-storage (26 September 2026)
+
+"For F-148, reproduce Grok Bot's original credential-storage behavior
+rather than designing a new approach." **Correction first:** the
+`grok-bot-answers-box` note above said a file "would not narrow who can
+read" the token. That was reasoning, written before Grok Bot's storage was
+read, and it was wrong: Grok Bot encrypts at rest with a Keychain-backed
+key, which another program cannot use without the Keychain's consent.
+
+**What Grok Bot does, read in the code.** On the Mac, the box descriptor,
+gateway token and network token included, is written only encrypted with
+Electron's `safeStorage` (`gateway-descriptor-store.ts`; the cache writes
+nothing when encryption is unavailable), and a secret is held encrypted or
+in memory, never in a plain file (`secret-store.ts`,
+`resolveSecretStorageMode`). The box, a pod on Cursor's servers, receives
+its gateway token and a long-lived renewal credential in its environment
+(`SAND_GATEWAY_TOKEN`, `SAND_INFERENCE_RENEWAL_CREDENTIAL`) and renews its
+short-lived model token itself (`host/extensions/auth/auth-service.ts`).
+Its local Docker mode (`ce9fc2d8`) is the development path: plain
+`local-docker-vm.json` and a plain token file read through
+`SAND_DEV_INFERENCE_TOKEN_FILE`.
+
+**F-148, fixed, reproduced.** The Mac now plays Grok Bot's broker. The
+gateway token, the stream token and the box's renewal credential live in
+one file, `local-docker-secrets.json`, encrypted with `safeStorage`, and in
+memory only when encryption is unavailable
+(`configureLocalDockerSecretStorage`, set at startup before anything
+touches the box; a caller before that is refused rather than handed new
+tokens). The box gets the three in its environment at creation and renews
+its own token on Grok Bot's production path; no token folder is mounted,
+the five-minute rewrite loop is gone, and a container made with other
+credentials is replaced (`credentials-sha256` label, schema 12). The
+renewal credential is minted once per box and kept, not once per run,
+because the server revokes the previous one on every mint; concurrent
+connects mint once. Sign-out drops it and the next sign-in mints a new
+one. The plain files of earlier builds (`local-docker-vm.json`,
+`local-docker-credential/`) are adopted once and removed.
+`tests/local-docker-credentials.test.mjs`. What stays, as in Grok Bot's
+pod: the credentials are plaintext inside the box's environment, which
+`docker inspect` shows to anyone who can run docker on the Mac (F-113,
+F-411 and F-475 stay known limits for that reason). Not run on a Mac: the
+lines to read are `local docker: box credentials moved from plain files to
+encrypted storage` and `box credential minted and stored encrypted` in
+`computer-stream.log`, then `inference-credential renewer started (backend
+self-renewal is the sole inference-credential source)` in
+`/tmp/sand-host.log`.
+
+### grok-bot-answers-models (26 September 2026)
+
+"check in the grok bot code to fix all these. Models and spend (5)."
+
+**F-118, fixed (no change: Grok Bot's design).** Grok Bot classifies every
+Shell, ExternalShell, MCP and Computer action whenever Auto-review is on,
+the box's own shell included (`resolveSandAutoReviewModes`,
+`sand_auto_review` gate comment in `experiment-config.gen.ts`); only a
+background agent skips it (`create-shell-tool.ts`). Nothing in its code
+caches or skips a verdict to save calls: its classifier ran on Cursor's
+servers (`sand-backend-smart-mode-classifier-exec.ts`), ours runs on Luna
+at low effort, the cheapest model the proxy serves. The person's lever is
+Grok Bot's own: the Auto-review toggle in Settings, General, Agent
+(`AutoReviewRulesPanel`, an evidence anchor of the shipped window), whose
+off stops the classifier entirely. The finding's "shadow, verdict
+discarded" has been untrue since 25 September (it enforces).
+
+**F-125, fixed (no change: Grok Bot's design).** `ensureUserReply` is
+byte-identical to the reconstruction's (`ce9fc2d8`): up to three reply
+nudges and one closing nudge, each only while the person is still owed a
+reply, each `hidden`. Since F-001 (25 September) a hidden run gets the
+40-call budget, so a silent turn costs at most four capped hidden runs.
+
+**F-128, fixed: the router that was never Grok Bot's is gone.** The
+reconstruction's README lists "an inference router for Cursor, Claude Code,
+Codex, and OpenRouter" among its author's own experiments. Removed: the
+Codex, Claude Code and OpenRouter executors in `provider-session.ts`, the
+Claude Code SDK import and the `@anthropic-ai/claude-agent-sdk` dependency
+(with the optional image binaries only it pulled), the Codex client
+(`codex-direct-responses.ts` and its test), and the Mac-side probe of
+`~/.claude/.credentials.json`, `~/.codex/auth.json` and
+`ANTHROPIC_API_KEY` (`inference-router-local.ts`, reported by
+`getInferenceRouter`). The provider names stay in
+`SAND_INFERENCE_PROVIDERS` so stored usage records still read. The same
+removal closes F-011, F-110, F-226 and F-417, and F-462 (the packaging test
+now pins their absence). Anysphere's own mentions of Codex model families
+in its prompts and tool code are Grok Bot's and stay. Not removed: the
+unshipped `frontend/` Router panel and the dead Settings source in the
+package-time patch (F-092, F-211, F-339), and the Mac text-only hatch
+itself (F-010, F-418), which is the founder's call.
+
+**F-129, known limit.** Grok Bot meters nothing on the desktop; the prices
+are Simeon Labs' own in `pricing.py`, and confirming them against the
+providers' price pages is the founder's.
+
+**F-131, known limit, with Grok Bot's answer.** `gemini-2.5-flash` for
+summarization and memory and `claude-opus-4-8` for computer use are Grok
+Bot's own model table (`sand-agent-model.ts`), naming Cursor's models; the
+executor chooses by role flag, as Cursor's server chose by role, and the
+video model is selected by its flag only, never by that shared name
+(`provider-session.ts`, `tests/cheap-model-config.test.mjs`).

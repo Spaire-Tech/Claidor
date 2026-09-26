@@ -6,9 +6,9 @@
 // every other model is the AI SDK's OpenAI provider on the Responses wire
 // (`provider-session.ts`), and that wire has no video part; `@ai-sdk/google`
 // is not in `package.json` (measured: `node_modules/@ai-sdk/` holds openai,
-// provider, provider-utils, react, ui-utils), so this file is to Gemini what
-// `codex-direct-responses.ts` is to Codex: a small client that writes the
-// request in the provider's own JSON, reads its `alt=sse` stream, and yields
+// provider, provider-utils, react, ui-utils), so this file is a small client
+// for Gemini that writes the request in the provider's own JSON, reads its
+// `alt=sse` stream, and yields
 // the parts the host loop consumes (`tool-stream-executor.ts`: `text-delta`
 // and `tool-call`).
 //

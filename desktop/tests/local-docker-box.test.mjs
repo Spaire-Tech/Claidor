@@ -51,8 +51,7 @@ test("a fresh settings store reports local Docker as the box runtime", async () 
 test("a late inference credential does not tear down a running box", async () => {
   const loaded = await loadModule("source/electron-main/box/local-docker-host-connector.ts", "local-docker-replace");
   try {
-    const { LOCAL_DOCKER_SCHEMA_VERSION, OPTIONAL_CREDENTIAL_WAIT_MS, localDockerContainerNeedsReplace } = loaded.module;
-    assert.equal(OPTIONAL_CREDENTIAL_WAIT_MS <= 250, true);
+    const { LOCAL_DOCKER_SCHEMA_VERSION, localDockerContainerNeedsReplace } = loaded.module;
     assert.equal(localDockerContainerNeedsReplace({
       schemaVersion: LOCAL_DOCKER_SCHEMA_VERSION,
       hostSha256: "abc",
@@ -65,15 +64,17 @@ test("a late inference credential does not tear down a running box", async () =>
       path.join(repoRoot, "source/electron-main/box/local-docker-host-connector.ts"),
       "utf8",
     );
-    assert.match(source, /localDockerContainerNeedsReplace\(inspected, hostBundle\.sha256\)/);
+    assert.match(source, /localDockerContainerNeedsReplace\(inspected, hostBundle\.sha256, credentialsSha256\)/);
     assert.doesNotMatch(source, /inferenceCredential != null && !inspected\.hasInferenceCredential/);
     assert.doesNotMatch(source, /OPTIONAL_CREDENTIAL_TIMEOUT_MS = 3_000/);
-    assert.match(source, /SAND_DEV_INFERENCE_TOKEN_FILE=\$\{LOCAL_DOCKER_INFERENCE_TOKEN_FILE\}/);
-    assert.match(source, /dst=\/run\/grok-bot,readonly/);
-    assert.match(source, /if \(late != null && late !== issued\) await persistInferenceCredential/);
+    // Since 26 September 2026 the box's credentials reach it in its
+    // environment, Grok Bot's pod contract, and no token file is mounted
+    // (F-148; tests/local-docker-credentials.test.mjs).
+    assert.doesNotMatch(source, /SAND_DEV_INFERENCE_TOKEN_FILE=/);
+    assert.doesNotMatch(source, /dst=\/run\/grok-bot/);
     assert.doesNotMatch(source, /\.claude/);
     assert.doesNotMatch(source, /\.codex/);
-    assert.equal(LOCAL_DOCKER_SCHEMA_VERSION, "10");
+    assert.equal(LOCAL_DOCKER_SCHEMA_VERSION, "12");
     const production = await (await import("node:fs/promises")).readFile(
       path.join(repoRoot, "source/electron-main/main-production-services.ts"),
       "utf8",
@@ -118,16 +119,16 @@ test("the local Docker box is always told our backend, credential or not", async
 
     const withoutCredential = envOf(localDockerInferenceEnvironmentArguments(undefined, env));
     assert.equal(withoutCredential.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
-    assert.equal(withoutCredential.SAND_DEV_INFERENCE_TOKEN_FILE, "/run/grok-bot/inference.json");
+    assert.equal(withoutCredential.SAND_INFERENCE_RENEWAL_CREDENTIAL, undefined);
     assert.equal(withoutCredential.SAND_INFERENCE_PROVIDER, "claidor");
     assert.equal(withoutCredential.CAISRA_CLAUDE_CODE, "0");
     assert.equal(withoutCredential.SAND_DISABLE_TELEMETRY, "1", "no Cursor telemetry from the box");
     assert.equal(withoutCredential.SAND_DISABLE_ANALYTICS, "1");
     assert.equal(withoutCredential.SAND_BOX_LOG_SHIP_DISABLED, "1");
 
-    const withCredential = envOf(localDockerInferenceEnvironmentArguments({ backendUrl: "https://api.simeonlabs.com/" }, env));
+    const withCredential = envOf(localDockerInferenceEnvironmentArguments("claidor_db_box", env));
     assert.equal(withCredential.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
-    assert.equal(withCredential.SAND_DEV_INFERENCE_TOKEN_FILE, "/run/grok-bot/inference.json");
+    assert.equal(withCredential.SAND_INFERENCE_RENEWAL_CREDENTIAL, "claidor_db_box");
 
     const fromCursorVariable = envOf(localDockerInferenceEnvironmentArguments(undefined, { CURSOR_API_BASE_URL: "https://api.simeonlabs.com" }));
     assert.equal(fromCursorVariable.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
@@ -146,35 +147,14 @@ test("an empty inference token file is a wait, not a hard failure", async () => 
   assert.match(source, /error instanceof SandCredentialNotReadyError/);
 });
 
-test("the Mac rewrites the box's token file when its access token changes, so a box older than an hour is not left with an expired one", async () => {
-  const loaded = await loadModule("source/electron-main/box/local-docker-host-connector.ts", "local-docker-keep-fresh");
-  try {
-    const { refreshInferenceCredentialFile, startInferenceCredentialKeepFresh, stopInferenceCredentialKeepFresh, INFERENCE_CREDENTIAL_KEEP_FRESH_INTERVAL_MS } = loaded.module;
-    assert.equal(INFERENCE_CREDENTIAL_KEEP_FRESH_INTERVAL_MS <= 10 * 60_000, true, "well inside a one-hour token life");
-    const persisted = [];
-    const persist = async (_settingsPath, credential) => { persisted.push(credential.accessToken); };
-    let token = "tok-1";
-    const issue = async () => ({ accessToken: token, backendUrl: "https://api.simeonlabs.com/", expiresAtMs: Date.now() + 3_600_000 });
-    assert.equal(await refreshInferenceCredentialFile(issue, "/tmp/settings.json", persist), "rewritten");
-    assert.equal(await refreshInferenceCredentialFile(issue, "/tmp/settings.json", persist), "unchanged");
-    token = "tok-2";
-    assert.equal(await refreshInferenceCredentialFile(issue, "/tmp/settings.json", persist), "rewritten");
-    assert.deepEqual(persisted, ["tok-1", "tok-2"]);
-    assert.equal(await refreshInferenceCredentialFile(async () => { throw new Error("signed out"); }, "/tmp/settings.json", persist), "unavailable");
-    assert.equal(await refreshInferenceCredentialFile(async () => undefined, "/tmp/settings.json", persist), "unavailable");
-    assert.deepEqual(persisted, ["tok-1", "tok-2"], "a missing token never overwrites the file");
-
-    let ticks = 0;
-    const setIntervalImpl = (fn, ms) => { ticks += 1; assert.equal(ms, INFERENCE_CREDENTIAL_KEEP_FRESH_INTERVAL_MS); return { unref() {} }; };
-    startInferenceCredentialKeepFresh(issue, "/tmp/settings.json", { setIntervalImpl, log: () => {} });
-    startInferenceCredentialKeepFresh(issue, "/tmp/settings.json", { setIntervalImpl, log: () => {} });
-    assert.equal(ticks, 1, "one loop per process");
-    stopInferenceCredentialKeepFresh();
-    const source = await (await import("node:fs/promises")).readFile(path.join(repoRoot, "source/electron-main/box/local-docker-host-connector.ts"), "utf8");
-    assert.match(source, /startInferenceCredentialKeepFresh\(\n\s*remote\.issueInferenceCredential == null \? undefined : \(\) => remote\.issueInferenceCredential!\(\),/);
-  } finally {
-    await loaded.dispose();
-  }
+test("the box renews its own token, so the Mac no longer rewrites one every five minutes", async () => {
+  // Until 26 September 2026 the Mac re-issued a one-hour token into a file
+  // the box read (Grok Bot's development path). The box now holds its
+  // renewal credential in its environment and renews on Grok Bot's
+  // production path (F-148; tests/local-docker-credentials.test.mjs).
+  const source = await (await import("node:fs/promises")).readFile(path.join(repoRoot, "source/electron-main/box/local-docker-host-connector.ts"), "utf8");
+  assert.doesNotMatch(source, /function startInferenceCredentialKeepFresh\b/);
+  assert.doesNotMatch(source, /setInterval\(/, "no rewrite loop");
 });
 
 test("the docker CLI is found where Docker Desktop and Homebrew put it, not only on a Finder-launched app's PATH", async () => {

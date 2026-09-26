@@ -8,7 +8,9 @@ import { fileURLToPath } from "node:url";
 
 import { CAISRA_CLAUDE_CODE_ENV, PRODUCT_INFERENCE_PROVIDER, SAND_INFERENCE_PROVIDER_ENV } from "../../shared/inference-router.js";
 import { getConfiguredBackendUrl } from "../../shared/node/cursor-token.js";
+import { buildSandBoxNoVncUrl } from "../../packages/constants/sand-box.js";
 import type { SandSettingsStore } from "../../shared/node/settings/sand-settings-store.js";
+import type { SecureStorageCodec } from "../secrets/secret-store.js";
 import type { RecreateResult } from "./box-recreate-commands.js";
 import type { SandRemoteHostConnector } from "./box-host-connector.js";
 import type { GatewayConnection } from "./gateway-descriptor-cache.js";
@@ -36,10 +38,34 @@ export function localDockerBoxImageReference(env: NodeJS.ProcessEnv = process.en
 export const LOCAL_DOCKER_BOX_CONTAINER = "simeon-box";
 export const LOCAL_DOCKER_GATEWAY_URL = "http://127.0.0.1:1340";
 export const LOCAL_DOCKER_OWNER_LABEL = "com.grok-bot.local-vm=1";
-export const LOCAL_DOCKER_SCHEMA_VERSION = "10";
-export const LOCAL_DOCKER_INFERENCE_TOKEN_FILE = "/run/grok-bot/inference.json";
+// 11 since 26 September 2026: the stream is published through the host's
+// token guard instead of websockify's bare ports (ledger F-135). 12 the same
+// day: the box's credentials reach it in its environment, the way Grok Bot's
+// pod receives them, and no token file is mounted from the Mac (F-148).
+export const LOCAL_DOCKER_SCHEMA_VERSION = "12";
+/**
+ * Where the stream is published on the Mac, and to what in the box: the
+ * guard's listeners (16080, 16081), never websockify's own 6080 and 6081,
+ * which only the guard reaches, on the box's loopback. The Mac keeps the
+ * port numbers Grok Bot's URLs name.
+ */
+export const LOCAL_DOCKER_STREAM_PUBLISH = Object.freeze(["127.0.0.1:6080:16080", "127.0.0.1:6081:16081"]);
+export const LOCAL_DOCKER_STREAM_PRIMARY_BASE = "http://127.0.0.1:6080";
+export const LOCAL_DOCKER_STREAM_FORK_BASE = "http://127.0.0.1:6081";
+/**
+ * Grok Bot's `vncProxy` descriptor for the local box: the coordinator
+ * rewrites every box status's stream URL through it (`box-vnc-proxy.ts`)
+ * and Electron's box session sends the token on every request of the page
+ * (`vnc-trust.ts`), exactly as for Grok Bot's cloud box.
+ */
+export function localDockerVncProxy(networkToken: string): NonNullable<GatewayConnection["vncProxy"]> {
+  return {
+    primaryUrl: buildSandBoxNoVncUrl(LOCAL_DOCKER_STREAM_PRIMARY_BASE, networkToken),
+    forkBaseUrl: LOCAL_DOCKER_STREAM_FORK_BASE,
+    networkToken,
+  };
+}
 const READY_TIMEOUT_MS = 180_000;
-export const OPTIONAL_CREDENTIAL_WAIT_MS = 250;
 
 export interface LocalDockerStatus {
   readonly available: boolean;
@@ -51,7 +77,6 @@ export interface LocalDockerStatus {
 }
 
 interface CommandResult { readonly ok: boolean; readonly output: string }
-interface InferenceCredential { readonly accessToken: string; readonly backendUrl: string; readonly expiresAtMs: number; readonly renewalCredential?: string }
 interface LocalHostBundle { readonly path: string; readonly sha256: string; readonly boxExecDaemonPath: string; readonly boxExecDaemonSha256: string }
 
 // Measured on the founder's Mac, 25 September 2026: every box call failed
@@ -98,57 +123,173 @@ function runDocker(args: readonly string[]): Promise<CommandResult> {
   });
 }
 
-function credentialPath(settingsPath: string): string {
-  return join(dirname(settingsPath), "local-docker-vm.json");
+/**
+ * The box's credentials, kept the way Grok Bot keeps them (ledger F-148,
+ * 26 September 2026).
+ *
+ * Grok Bot never leaves a box credential on the person's Mac in the clear.
+ * Its box descriptor, gateway token and network token included, is written
+ * encrypted with Electron's `safeStorage` (`gateway-descriptor-store.ts`),
+ * and its secret store holds a value encrypted when encryption is available
+ * and in memory when it is not (`secret-store.ts`,
+ * `resolveSecretStorageMode`). The box itself, a pod on Cursor's servers,
+ * receives its gateway token and a long-lived renewal credential in its
+ * environment (`SAND_GATEWAY_TOKEN`, `SAND_INFERENCE_RENEWAL_CREDENTIAL`) and
+ * renews its short-lived model token itself (`host/extensions/auth`).
+ *
+ * The local Docker box used Grok Bot's development path instead: the
+ * gateway token in plain `local-docker-vm.json`, and a one-hour model token,
+ * later with the renewal credential beside it, in plain
+ * `local-docker-credential/inference.json`, mounted into the box and
+ * rewritten every five minutes (`SAND_DEV_INFERENCE_TOKEN_FILE`). Now the Mac
+ * plays Grok Bot's broker: the three secrets live in one file encrypted with
+ * `safeStorage` (in memory only when encryption is unavailable), the box gets
+ * them in its environment at creation, and it renews its own token. Those
+ * plain files are adopted once and then removed.
+ */
+export interface LocalDockerSecrets { readonly gatewayToken?: string; readonly streamToken?: string; readonly boxCredential?: string }
+export type LocalDockerSecretStorage = Pick<SecureStorageCodec, "isEncryptionAvailable" | "encryptString" | "decryptString">;
+const LOCAL_DOCKER_SECRETS_FILE = "local-docker-secrets.json";
+const LOCAL_DOCKER_SECRETS_VERSION = 1;
+let secretStorage: LocalDockerSecretStorage | undefined;
+let secretsCache: { readonly path: string; value: LocalDockerSecrets } | undefined;
+let secretsQueue: Promise<unknown> = Promise.resolve();
+let reportedInMemory = false;
+
+/** Called once by the app's services with Electron's `safeStorage`, before the box is touched. */
+export function configureLocalDockerSecretStorage(storage: LocalDockerSecretStorage): void {
+  secretStorage = storage;
+  secretsCache = undefined;
 }
 
-function inferenceCredentialPath(settingsPath: string): string {
-  return join(dirname(settingsPath), "local-docker-credential", "inference.json");
+// Grok Bot's rule, `resolveSecretStorageMode` in `secret-store.ts`: encrypted
+// when encryption is available, in memory when it is not. Restated here so the
+// connector does not load that module's telemetry.
+function storageMode(storage: LocalDockerSecretStorage): "encrypted" | "in-memory" {
+  return storage.isEncryptionAvailable() ? "encrypted" : "in-memory";
 }
 
-// The app fires its box calls in a burst at startup, and each one runs
-// this connect. Until 22 September 2026 every caller wrote the token file
-// through the same temporary name, so the first rename won and the rest
-// failed with "no such file", which failed the whole connect: the box was
-// up, the app could not reach it, and the agent worked with nothing on
-// screen. One writer at a time now, each with its own temporary name.
-let persistQueue: Promise<unknown> = Promise.resolve();
-let persistSerial = 0;
-export function persistInferenceCredential(settingsPath: string, credential: InferenceCredential): Promise<string> {
-  const write = async (): Promise<string> => {
-    const target = inferenceCredentialPath(settingsPath);
-    persistSerial += 1;
-    const temporary = `${target}.${process.pid}.${persistSerial}.tmp`;
-    await mkdir(dirname(target), { recursive: true });
-    // `renewalCredential` is what lets the box outlive the app (the host's
-    // auth service trades it for a token when this file goes stale).
-    await writeFile(temporary, `${JSON.stringify({ accessToken: credential.accessToken, expiresAtMs: credential.expiresAtMs, ...(credential.renewalCredential == null ? {} : { renewalCredential: credential.renewalCredential }) })}\n`, { encoding: "utf8", mode: 0o600 });
-    await rename(temporary, target);
-    await chmod(target, 0o600);
-    return target;
+function requireSecretStorage(): LocalDockerSecretStorage {
+  // Guessing here would mint new tokens and recreate the box on every
+  // launch, so a caller that runs before the services is an error.
+  if (secretStorage === undefined) throw new Error("The local Docker box's credential storage is not configured.");
+  return secretStorage;
+}
+
+function secretsPath(settingsPath: string): string { return join(dirname(settingsPath), LOCAL_DOCKER_SECRETS_FILE); }
+function legacyGatewayTokenPath(settingsPath: string): string { return join(dirname(settingsPath), "local-docker-vm.json"); }
+function legacyCredentialDirectory(settingsPath: string): string { return join(dirname(settingsPath), "local-docker-credential"); }
+
+function secretString(value: unknown, minLength: number): string | undefined {
+  return typeof value === "string" && value.trim().length >= minLength ? value.trim() : undefined;
+}
+
+function parseSecrets(value: unknown): LocalDockerSecrets {
+  if (typeof value !== "object" || value == null) return {};
+  const record = value as Record<string, unknown>;
+  const gatewayToken = secretString(record.gatewayToken, 32);
+  const streamToken = secretString(record.streamToken, 32);
+  const boxCredential = secretString(record.boxCredential, 16);
+  return { ...(gatewayToken === undefined ? {} : { gatewayToken }), ...(streamToken === undefined ? {} : { streamToken }), ...(boxCredential === undefined ? {} : { boxCredential }) };
+}
+
+async function readJson(path: string): Promise<unknown> {
+  try { return JSON.parse(await readFile(path, "utf8")) as unknown; } catch { return undefined; }
+}
+
+async function readLegacySecrets(settingsPath: string): Promise<LocalDockerSecrets> {
+  const gateway = await readJson(legacyGatewayTokenPath(settingsPath)) as { token?: unknown } | undefined;
+  const inference = await readJson(join(legacyCredentialDirectory(settingsPath), "inference.json")) as { renewalCredential?: unknown } | undefined;
+  let stream: string | undefined;
+  try { stream = (await readFile(join(legacyCredentialDirectory(settingsPath), "box-stream-token"), "utf8")).trim(); } catch {}
+  return parseSecrets({ gatewayToken: gateway?.token, streamToken: stream, boxCredential: inference?.renewalCredential });
+}
+
+async function removeLegacySecrets(settingsPath: string): Promise<void> {
+  await rm(legacyGatewayTokenPath(settingsPath), { force: true });
+  await rm(legacyCredentialDirectory(settingsPath), { recursive: true, force: true });
+}
+
+async function loadSecrets(settingsPath: string): Promise<LocalDockerSecrets> {
+  const path = secretsPath(settingsPath);
+  if (secretsCache?.path === path) return secretsCache.value;
+  const storage = requireSecretStorage();
+  let stored: LocalDockerSecrets = {};
+  if (storageMode(storage) === "encrypted") {
+    const file = await readJson(path) as { version?: unknown; encrypted?: unknown } | undefined;
+    if (file?.version === LOCAL_DOCKER_SECRETS_VERSION && typeof file.encrypted === "string") {
+      try { stored = parseSecrets(JSON.parse(storage.decryptString(Buffer.from(file.encrypted, "base64")))); }
+      catch (error) { computerStreamLine(`local docker: stored box credentials could not be decrypted (${error instanceof Error ? error.message : String(error)}); new ones will be made`); }
+    }
+  }
+  const legacy = await readLegacySecrets(settingsPath);
+  const value = { ...legacy, ...stored };
+  secretsCache = { path, value };
+  if (Object.keys(legacy).length > 0) await persistSecrets(settingsPath, value, { removeLegacy: true });
+  return value;
+}
+
+async function persistSecrets(settingsPath: string, value: LocalDockerSecrets, options: { readonly removeLegacy?: boolean } = {}): Promise<void> {
+  const path = secretsPath(settingsPath);
+  secretsCache = { path, value };
+  const storage = requireSecretStorage();
+  if (storageMode(storage) !== "encrypted") {
+    // Grok Bot's rule: without encryption nothing is written; the values
+    // live for this run only. Plain files already on disk are left alone.
+    if (!reportedInMemory) { reportedInMemory = true; computerStreamLine("local docker: encryption is unavailable, so the box's credentials are kept in memory for this run only"); }
+    return;
+  }
+  const payload = JSON.stringify({ version: LOCAL_DOCKER_SECRETS_VERSION, encrypted: storage.encryptString(JSON.stringify(value)).toString("base64") });
+  await mkdir(dirname(path), { recursive: true });
+  const temporary = `${path}.${process.pid}.${randomBytes(4).toString("hex")}.tmp`;
+  await writeFile(temporary, `${payload}\n`, { encoding: "utf8", mode: 0o600 });
+  await rename(temporary, path);
+  await chmod(path, 0o600);
+  if (options.removeLegacy === true) {
+    await removeLegacySecrets(settingsPath);
+    computerStreamLine("local docker: box credentials moved from plain files to encrypted storage");
+  }
+}
+
+// One change at a time: two concurrent writers must not each mint a token.
+function updateSecrets(settingsPath: string, change: (current: LocalDockerSecrets) => LocalDockerSecrets): Promise<LocalDockerSecrets> {
+  const run = async (): Promise<LocalDockerSecrets> => {
+    const current = await loadSecrets(settingsPath);
+    const next = change(current);
+    if (next !== current) await persistSecrets(settingsPath, next);
+    return next;
   };
-  const next = persistQueue.then(write, write);
-  persistQueue = next.catch(() => undefined);
+  const next = secretsQueue.then(run, run);
+  secretsQueue = next.catch(() => undefined);
   return next;
 }
 
-async function ensureInferenceCredentialDirectory(settingsPath: string): Promise<string> {
-  const target = inferenceCredentialPath(settingsPath);
-  await mkdir(dirname(target), { recursive: true });
-  return dirname(target);
+export async function readOrCreateToken(settingsPath: string): Promise<string> {
+  const secrets = await updateSecrets(settingsPath, (current) => current.gatewayToken != null ? current : { ...current, gatewayToken: randomBytes(32).toString("hex") });
+  return secrets.gatewayToken!;
 }
 
-async function readOrCreateToken(settingsPath: string): Promise<string> {
-  const target = credentialPath(settingsPath);
-  try {
-    const parsed = JSON.parse(await readFile(target, "utf8")) as { token?: unknown };
-    if (typeof parsed.token === "string" && parsed.token.length >= 32) return parsed.token;
-  } catch {}
-  const token = randomBytes(32).toString("hex");
-  await mkdir(dirname(target), { recursive: true });
-  await writeFile(target, `${JSON.stringify({ schemaVersion: 1, token }, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
-  await chmod(target, 0o600);
-  return token;
+/** The desktop stream's network token, one per install (`host/box-stream-guard.ts`). */
+export async function readOrCreateStreamToken(settingsPath: string): Promise<string> {
+  const secrets = await updateSecrets(settingsPath, (current) => current.streamToken != null ? current : { ...current, streamToken: randomBytes(32).toString("hex") });
+  return secrets.streamToken!;
+}
+
+export async function readBoxCredential(settingsPath: string): Promise<string | undefined> {
+  return (await updateSecrets(settingsPath, (current) => current)).boxCredential;
+}
+
+export async function storeBoxCredential(settingsPath: string, credential: string): Promise<void> {
+  await updateSecrets(settingsPath, (current) => ({ ...current, boxCredential: credential }));
+}
+
+/**
+ * What the container was made with. A box whose credentials no longer
+ * match what the Mac holds is replaced, since the box reads them once, at
+ * start, from its environment.
+ */
+export function localDockerCredentialsFingerprint(secrets: { readonly gatewayToken: string; readonly streamToken: string; readonly boxCredential?: string }): string {
+  return createHash("sha256").update(JSON.stringify([secrets.gatewayToken, secrets.streamToken, secrets.boxCredential ?? ""])).digest("hex");
 }
 
 async function gatewayReady(token: string): Promise<boolean> {
@@ -161,9 +302,9 @@ async function gatewayReady(token: string): Promise<boolean> {
   } catch { return false; }
 }
 
-async function inspectContainer(): Promise<{ exists: boolean; running: boolean; owned: boolean; image: string; hostSha256: string; hasInferenceCredential: boolean; schemaVersion: string }> {
+async function inspectContainer(): Promise<{ exists: boolean; running: boolean; owned: boolean; image: string; hostSha256: string; hasInferenceCredential: boolean; schemaVersion: string; credentialsSha256: string }> {
   const result = await runDocker(["inspect", "--format", "{{json .}}", LOCAL_DOCKER_BOX_CONTAINER]);
-  if (!result.ok) return { exists: false, running: false, owned: false, image: "", hostSha256: "", hasInferenceCredential: false, schemaVersion: "" };
+  if (!result.ok) return { exists: false, running: false, owned: false, image: "", hostSha256: "", hasInferenceCredential: false, schemaVersion: "", credentialsSha256: "" };
   try {
     const value = JSON.parse(result.output) as { State?: { Running?: unknown }; Config?: { Image?: unknown; Labels?: Record<string, unknown> } };
     return {
@@ -174,15 +315,21 @@ async function inspectContainer(): Promise<{ exists: boolean; running: boolean; 
       hostSha256: typeof value.Config?.Labels?.["com.grok-bot.local-vm.host-sha256"] === "string" ? value.Config.Labels["com.grok-bot.local-vm.host-sha256"] as string : "",
       hasInferenceCredential: value.Config?.Labels?.["com.grok-bot.local-vm.inference-credential"] === "1",
       schemaVersion: typeof value.Config?.Labels?.["com.grok-bot.local-vm.schema-version"] === "string" ? value.Config.Labels["com.grok-bot.local-vm.schema-version"] as string : "",
+      credentialsSha256: typeof value.Config?.Labels?.["com.grok-bot.local-vm.credentials-sha256"] === "string" ? value.Config.Labels["com.grok-bot.local-vm.credentials-sha256"] as string : "",
     };
   } catch { throw new Error("Docker returned malformed container inspection data."); }
 }
 
 export function localDockerContainerNeedsReplace(
-  inspected: { readonly schemaVersion: string; readonly hostSha256: string },
+  inspected: { readonly schemaVersion: string; readonly hostSha256: string; readonly credentialsSha256?: string },
   hostSha256: string,
+  credentialsSha256?: string,
 ): boolean {
-  return inspected.schemaVersion !== LOCAL_DOCKER_SCHEMA_VERSION || inspected.hostSha256 !== hostSha256;
+  // The box reads its credentials once, at start, from its environment
+  // (F-135, F-148); a container made with others would refuse the app's
+  // gateway calls or stream, or renew with a revoked credential.
+  const credentialsChanged = credentialsSha256 !== undefined && inspected.credentialsSha256 !== credentialsSha256;
+  return inspected.schemaVersion !== LOCAL_DOCKER_SCHEMA_VERSION || inspected.hostSha256 !== hostSha256 || credentialsChanged;
 }
 
 export async function getLocalDockerStatus(settingsPath: string): Promise<LocalDockerStatus> {
@@ -239,14 +386,16 @@ async function localAuthMountArguments(): Promise<string[]> {
 }
 
 // The box image carries its own default backend host. The container must be
-// told ours on every creation, not only when the optional credential race was
-// won: a container created without one would otherwise send whatever token it
-// is later handed to the image's default host.
-export function localDockerInferenceEnvironmentArguments(inferenceCredential?: Pick<InferenceCredential, "backendUrl">, env: NodeJS.ProcessEnv = process.env): string[] {
-  const backendUrl = inferenceCredential?.backendUrl ?? getConfiguredBackendUrl(env);
+// told ours on every creation: a container created without one would send
+// its credential to the image's default host. The renewal credential is
+// Grok Bot's pod contract (`SAND_INFERENCE_RENEWAL_CREDENTIAL`): the host
+// trades it for a short-lived model token at the backend and renews it
+// itself, so nothing on the Mac writes a token for the box any more (F-148).
+export function localDockerInferenceEnvironmentArguments(boxCredential?: string, env: NodeJS.ProcessEnv = process.env): string[] {
+  const backendUrl = getConfiguredBackendUrl(env);
   return [
     "--env", `SAND_BACKEND_URL=${backendUrl}`,
-    "--env", `SAND_DEV_INFERENCE_TOKEN_FILE=${LOCAL_DOCKER_INFERENCE_TOKEN_FILE}`,
+    ...(boxCredential == null || boxCredential.length === 0 ? [] : ["--env", `SAND_INFERENCE_RENEWAL_CREDENTIAL=${boxCredential}`]),
     "--env", `${SAND_INFERENCE_PROVIDER_ENV}=${PRODUCT_INFERENCE_PROVIDER}`,
     "--env", `${CAISRA_CLAUDE_CODE_ENV}=0`,
     // The packaged Mac carries these guards in its main; the box never got
@@ -265,21 +414,22 @@ export function localDockerInferenceEnvironmentArguments(inferenceCredential?: P
 }
 export const SERVED_SWITCH_ENVS = ["SAND_CONNECT_SERVED", "SAND_LISTENER_RELAY_SERVED", "SAND_CLOUD_AGENTS_SERVED", "SAND_SHARING_SERVED", "SAND_CHANNELS_SERVED", "SAND_VIDEO_SUBAGENT_SERVED", "SAND_CLAIDOR_VIDEO_MODEL", "SAND_AGENT_SCREENSHOT_TOOL", "SAND_FEATURE_GATE_OVERRIDES"] as const;
 
-async function ensureLocalDockerBox(settingsPath: string, inferenceCredential?: InferenceCredential): Promise<GatewayConnection> {
+async function ensureLocalDockerBox(settingsPath: string): Promise<GatewayConnection> {
   try {
-    return await ensureLocalDockerBoxNarrated(settingsPath, inferenceCredential);
+    return await ensureLocalDockerBoxNarrated(settingsPath);
   } catch (error) {
     computerStreamLine(`local docker FAILED: ${error instanceof Error ? error.message : String(error)}`);
     throw error;
   }
 }
 
-async function ensureLocalDockerBoxNarrated(settingsPath: string, inferenceCredential?: InferenceCredential): Promise<GatewayConnection> {
+async function ensureLocalDockerBoxNarrated(settingsPath: string): Promise<GatewayConnection> {
   computerStreamLine("local docker: ensuring the box");
   const token = await readOrCreateToken(settingsPath);
   const hostBundle = await stageCurrentHostBundle(settingsPath);
-  const inferenceDir = await ensureInferenceCredentialDirectory(settingsPath);
-  if (inferenceCredential != null) await persistInferenceCredential(settingsPath, inferenceCredential);
+  const streamToken = await readOrCreateStreamToken(settingsPath);
+  const boxCredential = await readBoxCredential(settingsPath);
+  const credentialsSha256 = localDockerCredentialsFingerprint({ gatewayToken: token, streamToken, ...(boxCredential === undefined ? {} : { boxCredential }) });
   const daemon = await runDocker(["info", "--format", "{{.ServerVersion}}"]).catch(() => ({ ok: false, output: "Docker is not installed." }));
   if (!daemon.ok) throw new Error(`Local Docker VM is selected, but Docker is unavailable: ${/ENOENT/.test(daemon.output) ? `no docker command was found (looked in PATH, /usr/local/bin, /opt/homebrew/bin, ~/.docker/bin and Docker.app); install Docker Desktop or set SAND_DOCKER_BINARY` : daemon.output || "start Docker and try again"}`);
   computerStreamLine(`local docker: daemon ${daemon.output.trim()}`);
@@ -287,9 +437,9 @@ async function ensureLocalDockerBoxNarrated(settingsPath: string, inferenceCrede
   computerStreamLine(`local docker: container exists=${inspected.exists} running=${inspected.running} owned=${inspected.owned} schema=${inspected.schemaVersion || "?"} hostBundleMatches=${inspected.hostSha256 === hostBundle.sha256}`);
   if (inspected.exists && !inspected.owned) throw new Error(`Local Docker VM cannot use ${LOCAL_DOCKER_BOX_CONTAINER}: an unowned container already has that name.`);
   if (inspected.exists && inspected.image !== localDockerBoxImageReference()) throw new Error(`Local Docker VM container uses unexpected image ${inspected.image}. Remove it explicitly before changing images.`);
-  const shouldReplace = inspected.exists && localDockerContainerNeedsReplace(inspected, hostBundle.sha256);
+  const shouldReplace = inspected.exists && localDockerContainerNeedsReplace(inspected, hostBundle.sha256, credentialsSha256);
   if (shouldReplace) {
-    computerStreamLine("local docker: replacing the container (schema or host bundle changed)");
+    computerStreamLine("local docker: replacing the container (schema, host bundle or credentials changed)");
     const removed = await runDocker(["rm", "--force", LOCAL_DOCKER_BOX_CONTAINER]);
     if (!removed.ok) throw new Error(`Could not replace the local VM with the current app runtime: ${removed.output}`);
   }
@@ -305,22 +455,26 @@ async function ensureLocalDockerBoxNarrated(settingsPath: string, inferenceCrede
       "run", "--detach", "--name", LOCAL_DOCKER_BOX_CONTAINER,
       "--label", LOCAL_DOCKER_OWNER_LABEL, "--label", `com.grok-bot.local-vm.host-sha256=${hostBundle.sha256}`,
       "--label", `com.grok-bot.local-vm.box-exec-daemon-sha256=${hostBundle.boxExecDaemonSha256}`,
-      "--label", `com.grok-bot.local-vm.inference-credential=${inferenceCredential == null ? "0" : "1"}`,
+      "--label", `com.grok-bot.local-vm.inference-credential=${boxCredential == null ? "0" : "1"}`,
       "--label", `com.grok-bot.local-vm.schema-version=${LOCAL_DOCKER_SCHEMA_VERSION}`,
+      "--label", `com.grok-bot.local-vm.credentials-sha256=${credentialsSha256}`,
       "--platform", "linux/amd64", "--restart", "unless-stopped",
       "--env", "SAND_SUPERVISOR_ENABLED=1", "--env", "SAND_BOX_AUTO_UPDATE=0", "--env", "SAND_USE_EXISTING_BOX_EXEC_DAEMON=1",
       // The host's data root is the volume below, said here rather than left to the image's environment (F-362).
       "--env", "SAND_DATA_ROOT=/home/box/sand-data", "--env", "SAND_TREE_SITTER_NODE_DEPS=/home/box/deps", "--env", "NODE_PATH=/home/box/deps", "--env", "SAND_GATEWAY_BIND_HOST=0.0.0.0", "--env", "SAND_HOST_PORT=1340", "--env", `SAND_GATEWAY_TOKEN=${token}`,
-      ...localDockerInferenceEnvironmentArguments(inferenceCredential),
-      // The gateway (1340) and the screen (6080/6081) only. The exec daemon
-      // (1337) and the fork router (1339) take the fixed bearer "local" and
-      // nothing on the Mac dials them (grep 25 September 2026).
+      ...localDockerInferenceEnvironmentArguments(boxCredential),
+      "--env", `SAND_BOX_STREAM_NETWORK_TOKEN=${streamToken}`,
+      // The gateway (1340) and the screen only. The exec daemon (1337) and
+      // the fork router (1339) take the fixed bearer "local" and nothing on
+      // the Mac dials them (grep 25 September 2026). The screen is the
+      // host's token guard, not websockify (F-135): until 26 September
+      // 2026 6080/6081 were websockify itself, with no credential, so any
+      // web page open on the Mac could drive the agent's desktop.
       "--publish", "127.0.0.1:1340:1340",
-      "--publish", "127.0.0.1:6080:6080", "--publish", "127.0.0.1:6081:6081", 
+      ...LOCAL_DOCKER_STREAM_PUBLISH.flatMap((mapping) => ["--publish", mapping]),
       "--volume", "grok-bot-local-vm-workspace:/workspace", "--volume", "grok-bot-local-vm-data:/home/box/sand-data",
       "--mount", `type=bind,src=${hostBundle.path},dst=/home/box/sand-host/host-main.cjs,readonly`,
       "--mount", `type=bind,src=${dirname(hostBundle.boxExecDaemonPath)},dst=/home/box/box-exec-daemon,readonly`,
-      "--mount", `type=bind,src=${inferenceDir},dst=/run/grok-bot,readonly`,
       ...authMounts,
       localDockerBoxImageReference(),
     ]);
@@ -332,7 +486,7 @@ async function ensureLocalDockerBoxNarrated(settingsPath: string, inferenceCrede
   while (Date.now() < deadline) {
     if (await gatewayReady(token)) {
       computerStreamLine(`local docker: gateway ready at ${LOCAL_DOCKER_GATEWAY_URL} after ${Math.round((Date.now() - waitStarted) / 1000)}s`);
-      return { baseUrl: LOCAL_DOCKER_GATEWAY_URL, token };
+      return { baseUrl: LOCAL_DOCKER_GATEWAY_URL, token, vncProxy: localDockerVncProxy(streamToken) };
     }
     if (!reported && Date.now() - waitStarted > 20_000) { reported = true; computerStreamLine("local docker: gateway not answering yet after 20s; still waiting (up to 3 minutes)"); }
     const state = await inspectContainer();
@@ -345,12 +499,8 @@ async function ensureLocalDockerBoxNarrated(settingsPath: string, inferenceCrede
   throw new Error("Local Docker VM did not expose its gateway within three minutes.");
 }
 
-function queuedEnsure(settingsPath: string, inferenceCredential?: InferenceCredential): Promise<GatewayConnection> {
-  const run = ensureInFlight ?? (ensureInFlight = ensureLocalDockerBox(settingsPath, inferenceCredential).finally(() => { ensureInFlight = undefined; }));
-  return run.then(async (connection) => {
-    if (inferenceCredential != null) await persistInferenceCredential(settingsPath, inferenceCredential);
-    return connection;
-  });
+function queuedEnsure(settingsPath: string): Promise<GatewayConnection> {
+  return ensureInFlight ?? (ensureInFlight = ensureLocalDockerBox(settingsPath).finally(() => { ensureInFlight = undefined; }));
 }
 
 export async function startLocalDockerBox(settingsPath: string): Promise<GatewayConnection> {
@@ -417,78 +567,58 @@ export async function stopLocalDockerBox(): Promise<void> {
   if (!stopped.ok) throw new Error(`Could not stop the local Docker VM: ${stopped.output}`);
 }
 
-// The box reads its bearer token from the file the Mac writes at connect
-// (`/run/grok-bot/inference.json`, re-read by the host's renewer as it
-// nears expiry). Until 24 September 2026 nothing rewrote that file after
-// connect, and a desktop access token lives one hour: every box older than
-// that called the model with an expired token and the agent failed with
-// "Unauthorized" until the app reconnected. The Mac now re-issues the
-// credential every few minutes and rewrites the file when it changed; the
-// host's renewer re-reads an expired file every 30 s, so it picks the new
-// token up within the minute.
-export const INFERENCE_CREDENTIAL_KEEP_FRESH_INTERVAL_MS = 5 * 60_000;
-let keepFreshTimer: ReturnType<typeof setInterval> | undefined;
-let lastPersistedAccessToken: string | undefined;
-
-let boxRenewalCredential: string | undefined;
-export function rememberBoxRenewalCredential(credential: string | undefined): void { boxRenewalCredential = credential; }
-function withBoxRenewalCredential(credential: InferenceCredential): InferenceCredential {
-  return boxRenewalCredential == null ? credential : { ...credential, renewalCredential: boxRenewalCredential };
-}
-
-export async function refreshInferenceCredentialFile(
-  issue: () => Promise<InferenceCredential | undefined>,
+// The box renews its own model token with its renewal credential (Grok
+// Bot's production path, `host/extensions/auth/auth-service.ts`), so the
+// Mac no longer rewrites a token file every five minutes (F-148, 26
+// September 2026; until then `startInferenceCredentialKeepFresh` did, the
+// development path's way of keeping a one-hour token alive).
+//
+// The credential is minted once per box and kept, encrypted, for the box's
+// life: the server revokes the previous credential on every mint, so
+// minting per run, as the Mac did until today, would kill the credential
+// the running box was created with. One mint at a time for the same reason.
+let mintInFlight: Promise<string | undefined> | undefined;
+export async function ensureBoxCredential(
   settingsPath: string,
-  persist: (settingsPath: string, credential: InferenceCredential) => Promise<unknown> = persistInferenceCredential,
-): Promise<"rewritten" | "unchanged" | "unavailable"> {
-  let issued: InferenceCredential | undefined;
-  try { issued = await issue(); } catch { issued = undefined; }
-  if (issued == null || issued.accessToken.length === 0) return "unavailable";
-  if (issued.accessToken === lastPersistedAccessToken) return "unchanged";
-  await persist(settingsPath, withBoxRenewalCredential(issued));
-  lastPersistedAccessToken = issued.accessToken;
-  return "rewritten";
+  issue: (() => Promise<{ readonly credential: string } | undefined>) | undefined,
+  log: (line: string) => void = computerStreamLine,
+): Promise<string | undefined> {
+  const existing = await readBoxCredential(settingsPath);
+  if (existing != null || issue == null) return existing;
+  mintInFlight ??= (async () => {
+    try {
+      const again = await readBoxCredential(settingsPath);
+      if (again != null) return again;
+      const minted = await issue().catch(() => undefined);
+      if (minted == null || minted.credential.length === 0) {
+        log("local docker: no box credential (not signed in?); the box cannot reach the model until Simeon is signed in");
+        return undefined;
+      }
+      await storeBoxCredential(settingsPath, minted.credential);
+      log("local docker: box credential minted and stored encrypted");
+      return minted.credential;
+    } finally {
+      mintInFlight = undefined;
+    }
+  })();
+  return mintInFlight;
 }
 
-export function startInferenceCredentialKeepFresh(
-  issue: (() => Promise<InferenceCredential | undefined>) | undefined,
-  settingsPath: string,
-  options: { readonly intervalMs?: number; readonly setIntervalImpl?: typeof setInterval; readonly log?: (line: string) => void } = {},
-): void {
-  if (keepFreshTimer != null || issue == null) return;
+// Sign-out forgets what the box was lent (25 September 2026). The server
+// revokes the box credential with the session; the Mac drops its copy so
+// the next sign-in mints a new one, and the box is replaced with it.
+export async function forgetInferenceCredential(settingsPath: string, options: { readonly log?: (line: string) => void } = {}): Promise<void> {
   const log = options.log ?? computerStreamLine;
-  const timer = (options.setIntervalImpl ?? setInterval)(() => {
-    void refreshInferenceCredentialFile(issue, settingsPath).then((outcome) => {
-      if (outcome === "rewritten") log("local docker: inference credential rewritten");
-      else if (outcome === "unavailable") log("local docker: inference credential unavailable (not signed in?); the box keeps its last token");
-    }, (error: unknown) => log(`local docker: inference credential rewrite FAILED: ${error instanceof Error ? error.message : String(error)}`));
-  }, options.intervalMs ?? INFERENCE_CREDENTIAL_KEEP_FRESH_INTERVAL_MS);
-  (timer as { unref?: () => void }).unref?.();
-  keepFreshTimer = timer;
-}
-
-export function stopInferenceCredentialKeepFresh(): void {
-  if (keepFreshTimer != null) clearInterval(keepFreshTimer);
-  keepFreshTimer = undefined;
-}
-
-// Sign-out forgets everything the box was lent (25 September 2026): the
-// keep-fresh timer stops, the box's renewal credential is dropped so the
-// next connect mints a new one for the next person, and the token file
-// goes. Until then a sign-out deleted the keychain entries and nothing
-// else, and if the server could not be told (offline) the plaintext token
-// on disk stayed good for up to an hour and the box kept using it.
-export async function forgetInferenceCredential(settingsPath: string, options: { readonly log?: (line: string) => void; readonly remove?: (path: string) => Promise<void> } = {}): Promise<void> {
-  stopInferenceCredentialKeepFresh();
-  boxRenewalCredential = undefined;
-  lastPersistedAccessToken = undefined;
-  const log = options.log ?? computerStreamLine;
-  const path = inferenceCredentialPath(settingsPath);
   try {
-    await (options.remove ?? ((target: string) => rm(target, { force: true })))(path);
-    log("local docker: inference credential forgotten (signed out)");
+    await updateSecrets(settingsPath, (current) => {
+      if (current.boxCredential == null) return current;
+      const { boxCredential: _dropped, ...rest } = current;
+      return rest;
+    });
+    await rm(join(legacyCredentialDirectory(settingsPath), "inference.json"), { force: true });
+    log("local docker: box credential forgotten (signed out)");
   } catch (error) {
-    log(`local docker: inference credential NOT forgotten: ${error instanceof Error ? error.message : String(error)}`);
+    log(`local docker: box credential NOT forgotten: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -498,30 +628,15 @@ export function createSettingsRoutedHostConnector(
 ): SandRemoteHostConnector {
   const localConnect = (): Promise<GatewayConnection> => {
     return (async () => {
-      // The box's own renewal credential rides in the token file, so a box
-      // that outlives the app (routines fire while the Mac is awake) can
-      // renew its access token without the Mac. Minted once per app run.
-      if (boxRenewalCredential == null && remote.issueBoxRenewalCredential != null) {
-        const minted = await remote.issueBoxRenewalCredential().catch(() => undefined);
-        if (minted != null) { boxRenewalCredential = minted.credential; computerStreamLine("local docker: box renewal credential minted"); }
-        else computerStreamLine("local docker: no box renewal credential (not signed in?); the box will not outlive the app's token");
-      }
-      const pending = remote.issueInferenceCredential == null
-        ? Promise.resolve(undefined)
-        : remote.issueInferenceCredential().then((value) => value == null ? undefined : withBoxRenewalCredential(value)).catch(() => undefined);
-      const issued = await Promise.race([
-        pending,
-        new Promise<undefined>((resolve) => setTimeout(resolve, OPTIONAL_CREDENTIAL_WAIT_MS)),
-      ]);
-      const connection = await queuedEnsure(settings.settingsPath, issued);
-      const late = await pending;
-      if (late != null && late !== issued) await persistInferenceCredential(settings.settingsPath, late);
-      lastPersistedAccessToken = (late ?? issued)?.accessToken ?? lastPersistedAccessToken;
-      startInferenceCredentialKeepFresh(
-        remote.issueInferenceCredential == null ? undefined : () => remote.issueInferenceCredential!(),
-        settings.settingsPath,
-      );
-      return connection;
+      // The box's renewal credential, minted once and kept encrypted, is
+      // what the box renews its model token with, app open or closed.
+      const before = await readBoxCredential(settings.settingsPath);
+      const credential = await ensureBoxCredential(settings.settingsPath, remote.issueBoxRenewalCredential == null ? undefined : () => remote.issueBoxRenewalCredential!());
+      const connection = await queuedEnsure(settings.settingsPath);
+      // A start already in flight when the credential was minted (the one
+      // at launch) made the box without it; replace it now, at connect,
+      // rather than on some later call in the middle of a turn.
+      return credential !== before ? await queuedEnsure(settings.settingsPath) : connection;
     })();
   };
   return {

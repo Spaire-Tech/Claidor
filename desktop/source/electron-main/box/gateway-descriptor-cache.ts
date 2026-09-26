@@ -5,7 +5,11 @@ import { Code, ConnectError } from "@connectrpc/connect";
 import { GATEWAY_NO_STORAGE_MESSAGE_MARKER } from "../../shared/gateway-reachability.js";
 
 export const GATEWAY_DESCRIPTOR_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1_000;
-export const PERSISTED_GATEWAY_DESCRIPTOR_VERSION = 1;
+// 2 since 26 September 2026: a local Docker connection now carries the
+// stream's `vncProxy` (ledger F-135), and a cached one from before would hand
+// the app the bare stream URL, which the box's guard refuses. Every older
+// entry is read as absent once, and the live connect writes the new one.
+export const PERSISTED_GATEWAY_DESCRIPTOR_VERSION = 2;
 
 export interface GatewayConnection {
   readonly baseUrl: string;

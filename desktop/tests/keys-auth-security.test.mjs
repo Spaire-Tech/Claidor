@@ -93,14 +93,17 @@ test("sign-out forgets the box's credential and stops the box; a 5xx on refresh 
   try {
     const dir = await mkdtemp(path.join(os.tmpdir(), "caisra-forget-"));
     const settingsPath = path.join(dir, "settings.json");
+    // A plain token file left by a build before 26 September goes too.
     const file = path.join(dir, "local-docker-credential", "inference.json");
     await mkdir(path.dirname(file), { recursive: true });
     await writeFile(file, JSON.stringify({ accessToken: "claidor_da_x", expiresAtMs: 1 }));
+    module.configureLocalDockerSecretStorage({ isEncryptionAvailable: () => true, encryptString: (value) => Buffer.from(value).reverse(), decryptString: (value) => Buffer.from(value).reverse().toString() });
+    await module.storeBoxCredential(settingsPath, "claidor_db_y");
     const lines = [];
-    module.rememberBoxRenewalCredential("claidor_db_y");
     await module.forgetInferenceCredential(settingsPath, { log: (line) => lines.push(line) });
     await assert.rejects(() => stat(file), /ENOENT/);
-    assert.match(lines.join("\n"), /inference credential forgotten \(signed out\)/);
+    assert.equal(await module.readBoxCredential(settingsPath), undefined);
+    assert.match(lines.join("\n"), /box credential forgotten \(signed out\)/);
     await rm(dir, { recursive: true, force: true });
   } finally {
     await dispose();

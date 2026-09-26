@@ -109,7 +109,7 @@ test("every model call writes one line with its tokens, and cached tokens are co
     assert.equal(usage.inputTokens, 1_000, "input is what was not cached");
     assert.equal(usage.outputTokens, 130);
     assert.equal(lines.length, 1);
-    assert.match(lines[0], /^\[claidor\] model=gpt-5\.6-terra effort=high input=60000 cached=59000 output=130 reasoning=90 ms=\d+ tools=- offered=- budget=5000$/);
+    assert.match(lines[0], /^\[claidor\] model=gpt-5\.6-terra effort=high input=60000 cached=59000 output=130 reasoning=90 ms=\d+ tools=- offered=- budget=5000 prefix=sys:[0-9a-f]{8},tools:[0-9a-f]{8},key:-$/);
     assert.equal(loaded.module.summarizeToolCalls([{ toolName: "SendMessage", args: { text: "hello there" } }, { toolName: "run_shell", args: { command: "ls" } }]), 'SendMessage({"text":"hello there"}) run_shell({"command":"ls"})');
   } finally {
     loaded.module.setModelCallLog(null);
@@ -141,19 +141,22 @@ test("the intro runs once: the lifecycle stops owing it after one attempt, deliv
   assert.match(kickstart, /INTRODUCTION_UNDELIVERED_DETAIL/);
 });
 
-test("the token file survives a burst of concurrent connects", async () => {
+test("the box's credentials survive a burst of concurrent connects", async () => {
+  // The app fires its box calls in a burst at startup (22 September 2026:
+  // concurrent writers once broke the token file). The encrypted store
+  // takes one change at a time, so the burst yields one token, one file.
   const loaded = await loadModule("source/electron-main/box/local-docker-host-connector.ts", "token-file");
   const dataDir = await mkdtemp(path.join(os.tmpdir(), "caisra-token-"));
   try {
     const settingsPath = path.join(dataDir, "settings.json");
-    const writes = [];
-    for (let index = 0; index < 25; index += 1) {
-      writes.push(loaded.module.persistInferenceCredential(settingsPath, { accessToken: `token-${index}`, backendUrl: "https://api.simeonlabs.com", expiresAtMs: 1_800_000_000_000 + index }));
-    }
-    const targets = await Promise.all(writes);
-    assert.equal(new Set(targets).size, 1);
-    const written = JSON.parse(await readFile(targets[0], "utf8"));
-    assert.equal(written.accessToken, "token-24", "the last write wins, and none of the others threw");
+    loaded.module.configureLocalDockerSecretStorage({ isEncryptionAvailable: () => true, encryptString: (value) => Buffer.from(value).reverse(), decryptString: (value) => Buffer.from(value).reverse().toString() });
+    const reads = [];
+    for (let index = 0; index < 25; index += 1) reads.push(loaded.module.readOrCreateToken(settingsPath), loaded.module.readOrCreateStreamToken(settingsPath));
+    const values = await Promise.all(reads);
+    assert.equal(new Set(values.filter((_, index) => index % 2 === 0)).size, 1, "one gateway token");
+    assert.equal(new Set(values.filter((_, index) => index % 2 === 1)).size, 1, "one stream token");
+    const written = JSON.parse(await readFile(path.join(dataDir, "local-docker-secrets.json"), "utf8"));
+    assert.equal(written.version, 1, "none of the writes threw or tore the file");
   } finally {
     await rm(dataDir, { recursive: true, force: true });
     await loaded.dispose();
