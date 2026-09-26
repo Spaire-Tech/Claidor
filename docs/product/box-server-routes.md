@@ -540,3 +540,70 @@ meant to work that way is not established, and it is not mine to decide.
 carries a role. But #200's author is landing ledger batches in sequence and may
 already be on it, and a fix inside this PR does nothing for `main`, which is
 where the red is. Say the word and I will do it on a branch of its own.
+
+## 14. 26 September, 22:30: two of main's desktop commits assert server behaviour, and both assertions hold
+
+`833908b9..3c805f93` is five commits (#204–#208). **Not one file under
+`server/` or `runner/` changed** — `git diff --name-only 833908b9..3c805f93 |
+grep -E '^(server|runner)/'` returns nothing, and after merging,
+`git diff ffbacb78 HEAD -- server/ runner/` is empty. So nothing in my
+territory moved and the measured baseline at `ffbacb78` still describes this
+tree.
+
+That is exactly the situation this note has been wrong about before. "No
+conflict" does not mean "still correct": two of those commits change what the
+app puts on the wire to routes I own, and one of them states, in its commit
+message, what my server does. I checked all three crossings against the code
+rather than against the message.
+
+**#208 sends `prompt_cache_key` in the proxy body, and my proxy passes it
+through.** The executor now adds a `prompt_cache_key` field to the JSON it
+POSTs to `/api/proxy/v1/responses`. Searched: `grep -rn prompt_cache_key
+server/polar server/tests` → no match, so the server never names the field.
+What decides it is `_openai_responses_body` (`endpoints.py:791`), which returns
+`raw` — the request body verbatim. Even the wires that do change something
+(`_openai_body`, `_gemini_body`) rebuild with `json.dumps({**payload,
+**changes})`, which preserves every key they do not name. There is no
+allowlist: `grep -n 'allowed_keys\|ALLOWED_\|pop(\|del payload'
+polar/desktop/endpoints.py` returns nothing. So the key reaches OpenAI and
+#208 works through us unchanged.
+
+This one was worth checking rather than assuming, because of how the app
+degrades: `withPromptCacheKey` disables the key for the process only if the
+*response text* names `prompt_cache_key`. A proxy that silently stripped the
+field would have produced no error, no log line and no cache hit — a
+permanent, invisible zero. It does not strip it.
+
+**#206 removes the Mac's five-minute credential rewrite loop, and the three
+things that now depend on my server are all true.**
+
+1. *"The credential is minted once per box (the server revokes the previous one
+   on each mint)."* True: `issue_box_credential` (`service.py:499`) walks
+   `list_box_credentials_of(parent.id)` and sets `revoked_at` on each live one
+   before minting, skipping the local-exec daemon's own child row.
+2. *The box can renew for as long as it lives.* The credential row's
+   `refresh_expires_at` is `now + DESKTOP_REFRESH_TOKEN_TTL` = **30 days**
+   (`config.py:189`), and the trade at `POST /sand-box/inference-credential`
+   (`app_sign_in.py:346`) returns only `{accessToken, expiresAtMs}` — it does
+   **not** rotate the credential. So a once-per-box mint stays good, which is
+   what makes dropping the rewrite loop safe.
+3. *The app's hourly refresh does not kill the box.* `refresh` re-parents each
+   live child by setting `child.box_of_session_id = issued[0].id`
+   (`service.py:470`); the credential row and its hash are untouched. With the
+   rewrite loop gone the Mac has no way to deliver a new credential mid-box, so
+   a re-parent that minted a fresh one would have killed every box after one
+   hour. It does not.
+
+**What I ran:** the greps and file reads above; `PYTHONPATH=. uv run alembic
+heads` → one head (`desktop_boxes_0918`); `grep -c '"/api/proxy/box/'` → 10,
+first at 1450, catch-all `/api/proxy/{path:path}` at 1786; `grep -c
+hourly_exhausted` → 1; `ruff check` over `polar/desktop/`,
+`polar/models/desktop.py` and my migration → clean.
+
+**What I did not run:** the pytest suite. The tested tree is byte-identical to
+`ffbacb78` (empty diff over `server/`), which measured 468 passed / 14 failed
+six hours earlier, so re-running it could only reproduce that. If anyone wants
+the number re-measured rather than inherited, it has not been.
+
+Still never run, unchanged since this branch began: nothing has contacted E2B,
+no sandbox has been started, and no command has run in a box.
