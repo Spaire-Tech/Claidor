@@ -487,3 +487,56 @@ desktop_share_rooms_0925 → sand_cloud_agents_0925 → sand_boxes_0925 →
 sand_plugins_0925`. Mine was still pointing at `desktop_box_credential_0925`,
 so `alembic heads` reported two again. Re-pointed onto `sand_plugins_0925` and
 re-proved the whole chain upgrades to `desktop_boxes_0918`.
+
+## 13. 26 September, 01:30: main's own suite is red, and it is not this branch
+
+Merging `main` `930a0f46` took my run from 8 failures to 14. Six new, all in
+`tests/desktop/test_endpoints.py`, all proxy tests.
+
+**They are main's, established rather than assumed.** I put `origin/main`
+`930a0f46` in a worktree with none of my code present and ran
+`tests/desktop/test_endpoints.py`: **12 failed, 50 passed** — the same twelve.
+Then I bisected the four commits in the range with `TestTwoProviders`:
+
+```
+6fb7a9e7  11 passed
+de40f11d  11 passed
+60644cfc  11 passed
+930a0f46   5 failed, 6 passed
+```
+
+So `930a0f46` ("Ledger batch 6: models and spend, speech and media, web and
+search", #200) turned them red, and `main`'s head is red on its own suite
+right now.
+
+**The product change behind it is coherent; the tests are stale.** #200 added
+to `_proxy`:
+
+```python
+if model is None or model.role is None:
+```
+
+with the comment that a priced row carrying no role is in the catalogue so an
+old usage row still means something, "not so a bearer can name it and be served
+at that price (F-122)". I checked whether that switched off a model people can
+actually reach, because that would be a different and worse thing: it does not.
+`offered_models()` in `service.py:154` already filtered on exactly the same
+condition and its docstring already named the same rows — "Opus, Haiku and
+Astra". Measured: the rows with no role are `claude-opus-5`,
+`claude-haiku-4-5-20251001`, `gpt-6-astra`, `gemini-2.5-pro`. So the gate makes
+the proxy serve what it offers, which is what the comment claims. The failing
+tests are the ones that still post one of those four and expect an upstream
+call; `respx` reports the route was never called, because the proxy now refuses
+before it.
+
+**One thing to check that I have not:** CLAUDE.md says "Escalation to Astra
+comes after, on the rule `pricing.py` already states." If escalation ever means
+the app naming `gpt-6-astra` on the proxy, it now gets
+"This model is not offered by the desktop app." Whether escalation was ever
+meant to work that way is not established, and it is not mine to decide.
+
+**I have not fixed the six tests.** They are in my territory
+(`server/tests/desktop/`), and the fix is small — point them at a model that
+carries a role. But #200's author is landing ledger batches in sequence and may
+already be on it, and a fix inside this PR does nothing for `main`, which is
+where the red is. Say the word and I will do it on a branch of its own.
