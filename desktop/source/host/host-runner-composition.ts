@@ -2695,7 +2695,18 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         isBrowserUseSubagent: isBrowserUseTurn,
         isSystemPromptOverridden: typeof overrides.systemPrompt === "string",
         remoteBoxHasDesktop: true,
-        getConversationId: () => identity.conversationId,
+        // The toolset reads this id for one thing: the owner of the
+        // local-tool permission scope (ExternalShell, ExternalRead,
+        // ExternalAwait, the file transfers; `withLocalToolScope`). It is
+        // the agent's id for every identity, a Task child included. That is
+        // Grok Bot's own rule: its child runner inherited
+        // `getAgentId: () => session.id`, so a child's
+        // `getConversationId()` was the agent's and its asks landed on the
+        // agent's Allow surface, the one chat that has one; the child's own
+        // record is its `transcriptId`. Scoped to the child's id, every ask
+        // in "ask" mode was refused with "this conversation has nowhere to
+        // ask for it" (ledger F-017, 26 September 2026).
+        getConversationId: () => session.id,
         getRemoteBoxAvailable: () => remoteBoxAvailable,
         cloudAgentsDisabledByTeam: () => !isCloudAgentsServed() || (method(experiments, "isCloudAgentsDisabledByTeam")?.() ?? false),
         spotlightEnabled: () => method(experiments, "isSpotlightEnabled")?.() ?? false,
