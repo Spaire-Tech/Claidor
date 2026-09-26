@@ -34,7 +34,8 @@ This repository carried the Swens build (a model review platform for finance). I
 "Re-found Caisra on the Grok Bot 0.18 reconstruction", 7,651 files changed)
 replaced it with a from-source reconstruction of Grok Bot 0.18.0
 (`desktop/PROVENANCE.md`). Measured on 19 September: 2,134 tracked files,
-1,724 under `source/`, and `rg -il "lobsterai|openclaw|yodo|strongs|whisper|
+1,724 under `source/` (on 26 September: 2,349 tracked, 1,790 under
+`source/`, 106 test files under `tests/`; ledger F-443), and `rg -il "lobsterai|openclaw|yodo|strongs|whisper|
 macTasks|CHIEF_OF_STAFF"` over the tree (excluding `node_modules` and the
 pinned `src/app/dist`) returns **zero files**. Every paragraph in this section
 that names LobsterAI, OpenClaw, `openclaw.json`, `openclawConfigSync.ts`,
@@ -150,7 +151,10 @@ emitted script and stylesheet `crossorigin`, and Electron's `loadFile` gives
 the document the opaque origin `null`, so Chromium refused the stylesheet under
 CORS before parsing it. One attribute. `scripts/build-caisra.mjs` and
 `scripts/renderer-production-build.mjs` strip it, and
-`desktop/tests/renderer-file-url.test.mjs` fails if it comes back. Separately,
+`desktop/tests/renderer-file-url.test.mjs` fails if it comes back, when a
+clean-source build is in `dist/` (`npm run build:clean-source`); in the
+package loop, which ships the pinned renderer, that test skips (corrected
+26 September, F-461). Separately,
 the 18 runtime assets named by `rendererRuntimeAssetUrl()` were never in this
 repository at all and are now drawn by `scripts/make-runtime-assets.mjs`. **The
 lesson is the one already written at the top of this file and it was ignored
@@ -472,7 +476,9 @@ connect**, so a box older than an hour called the model with an expired
 token until the app reconnected. The Mac now re-issues the credential
 every five minutes and rewrites the file when it changed
 (`startInferenceCredentialKeepFresh`); an expired file is re-read by the
-host every 30 s, so a fresh token lands within the minute. A box only
+host every 30 s (`MIN_REFRESH_INTERVAL_MS`; a missing or unreadable file
+every second, a good one two minutes before its expiry; F-147, checked 26
+September), so a fresh token lands within the minute. A box only
 minutes old that still gets 401 means the Mac had no valid token to
 write (signed out, or its refresh failed): the file's `expiresAtMs`
 says which. Not yet run on a Mac.
@@ -496,8 +502,12 @@ and the computer bar's button are in the pinned renderer, the recording
 extension is in `host/extensions/teach-recording/`, and both key off
 one feature gate, `sand_teach_by_demonstration`, default off, which
 Grok Bot turns on from Cursor's experiments server and Claidor does not
-serve. The host honours `SAND_FEATURE_GATE_OVERRIDES=sand_teach_by_demonstration=1`;
-whether the renderer's snapshot follows it is not measured.
+serve. The host honours `SAND_FEATURE_GATE_OVERRIDES=sand_teach_by_demonstration=1`
+(`envGateOverride`), and since 26 September the Mac forwards that
+variable into a local Docker box with the other switches
+(`SERVED_SWITCH_ENVS`; until then it never reached the host, F-432); a
+packaged app has no way to set it short of a terminal launch.
+Whether the renderer's snapshot follows it is not measured.
 
 **The box silences the loop's logger, established 23 September 2026.**
 `ports.runnerContext` is bound at build time
@@ -807,10 +817,12 @@ workflows.
 didn't identify." `docs/product/reconstruction-gaps-2026-09-24.md` is the
 record: five audits over the host, the Mac side, the three features the
 founder named, the production bindings and the documents. **Read it before
-saying a feature is broken or fine.** The shape: Claidor serves fourteen
-HTTP routes under `/desktop/api/` and no Connect RPC; the app still calls
-about sixty `aiserver.v1.*` methods, each preceded by a privacy-mode
-lookup, and every one 404s. Three things were found and fixed that day:
+saying a feature is broken or fine.** The shape, on 24 September: Claidor
+served fourteen HTTP routes under `/desktop/api/` and no Connect RPC; the
+app still called about sixty `aiserver.v1.*` methods, each preceded by a
+privacy-mode lookup, and every one 404ed (on 26 September `endpoints.py`
+declares 33 routes and `polar/sand/` answers the Connect services named
+below; F-439). Three things were found and fixed that day:
 **pressing the mic or "Generate" avatar could sign the person out**
 (`getValidAccessToken()` with no backend named refreshed against
 `api2.cursor.sh`; now the configured backend, `cursor-auth.ts`); **every
@@ -1001,6 +1013,22 @@ The server's skill store (Anthropic's developer skills) and the kit store
 stay uncalled: which skills Simeon's agents carry is a product decision.
 Not run on a Mac: the line to read is the "skills" section of a
 `[claidor] prompt` line once a workflow without a trigger exists.
+
+## Batch 8 closed the ledger (26 September 2026)
+
+Tests and build, docs versus code (F-445..F-463, F-426..F-444) and the
+eleven rows earlier clusters left, one note (`batch8-tests-build-docs`).
+Every row of the 483 now has a disposition. What changed: the pinned-
+renderer anchor tests read bootstrap's own path instead of skipping; the
+header-card and Liquid Glass classes are checked against the pinned
+bytes; the brand pass records how many "Cursor"/"Anysphere" survive it
+(`brand.residue`); `npm run verify` checks the renamed executable and
+helpers, the `LSEnvironment` hosts, the Dock icon's bytes and the
+presence of the patch record; `SAND_FEATURE_GATE_OVERRIDES` reaches the
+box; an "upgrade" button opens simeonlabs.com; `runner_image.yml` is a
+by-hand publish nothing consumes; and nine records were corrected in
+place, `start-here.md` and `what-exists.md` with superseded banners. Not
+run on a Mac: the new verify checks against a real package.
 
 ## The eight features were served overnight (25–26 September 2026)
 
@@ -1360,9 +1388,15 @@ times, and `useOnboarding.ts` — which I had read that same session — points
 straight at them with `window.electron?.onboarding`. I reasoned forward from my
 own file instead of searching the repository.
 
+*(The two paths in that paragraph are the LobsterAI tree's and have been
+gone since the 18 September re-founding; the paragraph stands as the
+record of the failure, not as a map. The tree to search is
+`desktop/source`; `desktop/src/app` holds only the pinned renderer's
+staging folder. Corrected 26 September, F-444.)*
+
 The rule: **"X does not exist" is a claim that requires a search.** Before
 writing *missing, absent, not built, nothing behind it, a hole, needs building*
-about this product, grep `desktop/src` and `server/polar`. If nothing is found, say what was searched for. If something is
+about this product, grep `desktop/source` and `server/polar`. If nothing is found, say what was searched for. If something is
 found, it is a port or a wiring job, not a build.
 
 **`desktop/` is the product, not a parts bin.** The code in it is finished and

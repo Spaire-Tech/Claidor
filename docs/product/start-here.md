@@ -1,5 +1,15 @@
 # Start here — Caisra
 
+> **Superseded, 26 September 2026 (ledger F-426).** This brief describes
+> the LobsterAI tree that commit `ce9fc2d8` replaced on 18 September:
+> `desktop/src`, "2,552 files", the 23 strongs, Chief of Staff, whisper,
+> the Mac tasks. None of it is in the tree. The current map is
+> `docs/product/building-the-app.md` (the build loop) and
+> `docs/product/grok-bot-layers-measured.md` (what is in `desktop/source`);
+> the product's shape is in `CLAUDE.md` §"desktop/". This file is kept as
+> the record of what the brief was; do not read it as a description of
+> the repository.
+
 The brief for a new agent joining this work. Read it before touching anything.
 
 ---

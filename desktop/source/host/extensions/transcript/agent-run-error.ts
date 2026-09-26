@@ -7,7 +7,6 @@ export const SAND_INCLUDED_LIMIT_REASON = "sand_included_limit";
 export const RESETS_AT_ABS_OR_ISO = /It resets at \S+\.?/g;
 export const RESETS_IN_CLAUSE = /It resets in [^.]+/g;
 export const MAX_TRAY_ACTIONS = 3;
-export const CURSOR_WEBSITE_ORIGIN = "https://cursor.com";
 export const SIMEON_WEBSITE_ORIGIN = "https://simeonlabs.com";
 export const SUPPORTED_DASHBOARD_ACTION_VERBS = new Set([
   "requestLimitIncrease",
@@ -133,7 +132,11 @@ export function checkoutDeepControlUrl(action: {
   )
     ? action.membershipToUpgradeTo
     : "pro";
-  let url = `${CURSOR_WEBSITE_ORIGIN}/api/auth/checkoutDeepControl?tier=${tier}`;
+  // Simeon Labs' site, not Cursor's checkout (ledger F-431, 26 September
+  // 2026): an "upgrade" button in a served error used to open
+  // cursor.com/api/auth/checkoutDeepControl. No plans page exists on
+  // simeonlabs.com yet; the tier travels as a query for when one does.
+  let url = `${SIMEON_WEBSITE_ORIGIN}/pricing?tier=${tier}`;
   if (action.allowTrial === true) url += "&allowTrial=true";
   else if (action.allowTrial === false) url += "&allowTrial=false";
   return url;

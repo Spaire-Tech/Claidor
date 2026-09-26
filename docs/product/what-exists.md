@@ -1,5 +1,15 @@
 # What already exists, and where
 
+> **Superseded as an inventory, 26 September 2026 (ledger F-427).** The
+> table below names files under `desktop/src` (`macTasks.ts`,
+> `useOnboarding.ts`, the strongs, whisper) that left the tree with the
+> 18 September re-founding; a reader sent to them finds nothing. The rule
+> the file states still holds and is repeated in `CLAUDE.md` ("X does
+> not exist" requires a search, over `desktop/source` and `server/polar`).
+> For what is built now, read `docs/product/grok-bot-layers-measured.md`,
+> `docs/product/cursor-dependencies-map.md`,
+> `docs/product/served-overnight-2026-09-25.md` and the ledger.
+
 **Read this before saying anything does not exist.**
 
 This file is here because of one failure, repeated: I said a thing was not

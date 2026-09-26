@@ -6,13 +6,16 @@ import { extractFile, listPackage } from "@electron/asar";
 
 import {
   outputApp,
+  packagedEnvironment,
   reconstructedBundleId,
+  reconstructedExecutableName,
   reconstructedName,
   reconstructedUrlScheme,
   repoRoot,
   sourceAppDir,
   upstreamAsarSha256,
 } from "./lib/config.mjs";
+import { APP_ICON_ICNS } from "./make-app-icon.mjs";
 import { prepareReconstructedElectronMainArtifactFallback } from "./lib/build-asar.mjs";
 import { resolvePackagedAppArtifacts } from "./lib/packaged-app.mjs";
 import { capture, run } from "./lib/process.mjs";
@@ -202,6 +205,9 @@ if (rendererComposition?.mode === "clean-source") {
       if (bytes.byteLength !== patched.patched.bytes || sha256(bytes) !== patched.patched.sha256) throw new Error(`Packaged patched renderer file differs from its recorded patched hash: ${file.path}`);
     } else if (bytes.byteLength !== file.bytes || sha256(bytes) !== file.sha256) throw new Error(`Packaged artifact renderer differs from its checksum inventory: ${file.path}`);
   }
+  // A Simeon package always carries the patch record: without it the
+  // renderer would still say Grok Bot (ledger F-455, 26 September 2026).
+  if (patchedRendererFiles.size === 0) throw new Error(`Packaged renderer has no patch record at ${rendererExtensionPath}; the brand pass did not run.`);
   const unpinnedPatched = [...patchedRendererFiles.keys()].filter(relative => !declaredPaths.has(relative));
   if (unpinnedPatched.length > 0) throw new Error(`Renderer patch record lists files outside the pinned inventory: ${unpinnedPatched.join(", ")}`);
   const packagedPaths = rendererListing.filter(entry => entry.startsWith("dist/renderer/")).map(entry => entry.slice("dist/renderer/".length)).filter(Boolean);
@@ -284,10 +290,39 @@ if (plistText.includes("CFBundleIconName")) throw new Error("CFBundleIconName re
 const urlTypes = await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleURLTypes", "xml1", "-o", "-", infoPlist]);
 if (!urlTypes.includes(`<string>${reconstructedUrlScheme}</string>`)) throw new Error(`Reconstructed application has no ${reconstructedUrlScheme} URL registration`);
 if (urlTypes.includes("<string>sand</string>")) throw new Error("Reconstructed application still claims Grok Bot's sand URL scheme");
+// What scripts/package-macos.mjs writes beyond the identity above, checked
+// here since 26 September 2026 (ledger F-455): the renamed executable and
+// its helpers (the menu bar's name; a half-renamed bundle dies at launch),
+// the backend the bundle carries in LSEnvironment (a bundle without it
+// signs in to cursor.com), and the Dock icon's bytes.
+const executableName = await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleExecutable", "raw", infoPlist]);
+if (executableName !== reconstructedExecutableName) throw new Error(`Unexpected executable name: ${executableName}`);
+const bundleName = await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleName", "raw", infoPlist]);
+if (bundleName !== reconstructedExecutableName) throw new Error(`Unexpected CFBundleName: ${bundleName}`);
+await requirePath(path.join(verifiedApp, "Contents", "MacOS", reconstructedExecutableName));
+const frameworks = path.join(verifiedApp, "Contents", "Frameworks");
+const helperBundles = (await readdir(frameworks)).filter(name => / Helper.*\.app$/.test(name));
+if (helperBundles.length === 0) throw new Error("Reconstructed application has no helper bundles");
+for (const helper of helperBundles) {
+  if (!helper.startsWith(`${reconstructedExecutableName} Helper`)) throw new Error(`Helper bundle keeps the shell's name: ${helper}`);
+  const helperExecutable = helper.slice(0, -".app".length);
+  await requirePath(path.join(frameworks, helper, "Contents", "MacOS", helperExecutable));
+}
+for (const [key, value] of Object.entries(packagedEnvironment)) {
+  const carried = await capture(SYSTEM_TOOLS.plutil, ["-extract", `LSEnvironment.${key}`, "raw", infoPlist]).catch(() => null);
+  if (carried !== value) throw new Error(`LSEnvironment.${key} is ${JSON.stringify(carried)}, expected ${JSON.stringify(value)}`);
+}
+const dockIcon = await readFile(APP_ICON_ICNS);
+const resources = path.join(verifiedApp, "Contents", "Resources");
+const icnsFiles = (await readdir(resources)).filter(name => name.endsWith(".icns"));
+if (icnsFiles.length === 0) throw new Error("Reconstructed application carries no .icns icon");
+for (const name of icnsFiles) {
+  if (sha256(await readFile(path.join(resources, name))) !== sha256(dockIcon)) throw new Error(`Dock icon ${name} is not Simeon's (brand/Simeon.icns)`);
+}
 
 await run(SYSTEM_TOOLS.codesign, ["--verify", "--deep", "--strict", verifiedApp]);
 const cleanCount = runtimeComposition.filter(({ mode }) => mode === "clean-source").length;
 const fallbackNames = runtimeComposition.filter(({ mode }) => mode !== "clean-source").map(({ runtime }) => runtime).join(", ");
 console.log(`Verified packaged ASAR ${builtAsar}.`);
-console.log(`Verified ${cleanCount} executable clean-source runtimes, deterministic ASAR hashes, native dependencies, bundle identity, and code signature.`);
+console.log(`Verified ${cleanCount} executable clean-source runtimes, deterministic ASAR hashes, native dependencies, bundle identity (${reconstructedExecutableName}, ${helperBundles.length} helpers, LSEnvironment, ${icnsFiles.length} icon files), and code signature.`);
 console.log(`Documented non-clean runtime boundaries: ${fallbackNames}. Evidence markers checked: ${sourceMarkers}. Repository: ${repoRoot}`);

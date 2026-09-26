@@ -1,34 +1,25 @@
 name: Runner image
 
-# Builds the cloud runner's image — the OpenClaw engine at the pinned tag,
-# with the desktop app's patches applied, plus the runner service — and
-# publishes it to GHCR. Render pulls that image instead of building it: the
-# engine build is 152 workspace projects and Render's build machine hangs at
-# `tsdown` rather than finishing it (docs/maties/cloud.md, section 4).
+# Publishes the cloud runner's image to GHCR, by hand only.
 #
-# The whole build is the Dockerfile, run here. Cloning, patching and building
-# the engine on this machine and copying the result in would be a second way
-# of doing it, and the two would drift; `runner/Dockerfile` stays the one
-# description of the image, and a developer's `docker build` produces the same
-# thing this run does.
+# Render no longer pulls this image: since 25 September 2026 `render.yaml`
+# has Render build `claidor-maty-runner` from the repository
+# (`runtime: docker`, `runner/Dockerfile`, context the repository root),
+# because the OpenClaw engine that made the image too heavy for Render's
+# build machine is gone from the runner (`runner/src/engine.ts`). Until 26
+# September this workflow still described that engine build, ran on every
+# push to `main` touching `runner/**`, and watched `desktop/scripts/patches/**`,
+# a folder that left the tree with the 18 September re-founding (ledger
+# F-456). It is kept as a way to publish a tagged image for a deploy target
+# that is not Render; nothing depends on it, and the repository's own
+# workflows get no runner while Actions is billing-locked (CLAUDE.md, "On
+# CI").
 #
-# Render does not redeploy when a new image is pushed to a tag — autoDeploy
-# has no effect on an image-backed service — so after a green run the deploy
-# is one click: Render → claidor-maty-runner → Manual Deploy → Deploy latest
-# reference.
+# The whole build is the Dockerfile, run here, so a developer's
+# `docker build -f runner/Dockerfile .` produces the same image.
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - "runner/**"
-      # A patch added to the desktop is a change to the cloud engine, even
-      # though nothing under runner/ moved. Without this line the next patch
-      # would never reach the cloud and nobody would be told.
-      - "desktop/scripts/patches/**"
-      - ".github/workflows/runner_image.yml"
 
 concurrency:
   group: runner-image-${{ github.ref }}
@@ -37,7 +28,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 30
     permissions:
       contents: read
       # GitHub's own token pushes to GHCR under this repository's owner.
@@ -48,13 +39,13 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
+          # The same major the Dockerfile builds on (node:24).
           node-version: "24"
 
-      # The runner's tests are where the pin is checked: same engine version
-      # as the desktop, same repository, same patch set reaching the image.
-      # They run before the build so a drifted pin costs a minute rather than
-      # an hour, and so no image is published from a tree that fails them.
-      - name: Check the engine pin
+      # The runner's own tests (the queue client, the one-turn engine against
+      # an in-process fake proxy) run before the build so no image is
+      # published from a tree that fails them.
+      - name: Test the runner
         working-directory: runner
         run: |
           npm ci --no-audit --no-fund
@@ -76,8 +67,8 @@ jobs:
         with:
           images: |
             ghcr.io/spaire-tech/claidor-maty-runner
-          # The commit sha names one exact image forever; `main` is what
-          # render.yaml deploys and moves with this branch.
+          # The commit sha names one exact image forever; `main` follows the
+          # default branch.
           tags: |
             type=sha,format=long
             type=raw,value=main,enable={{is_default_branch}}
@@ -85,15 +76,11 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v7
         with:
-          # The repository root, because the engine patches live under
-          # desktop/. `.dockerignore` at the root keeps that honest.
+          # The repository root, the context render.yaml passes too.
           context: .
           file: runner/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # The engine stage copies only the patches and the desktop's pin, so
-          # a change to the runner's own source restores it from cache instead
-          # of rebuilding openclaw for an hour.
           cache-from: type=gha,scope=runner-image
           cache-to: type=gha,mode=max,scope=runner-image
