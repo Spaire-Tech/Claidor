@@ -110,6 +110,7 @@ import {
   createTurnAgentRunStreamInput,
   createTurnAgentStreamStart,
   type TurnLocalResourceProjectionInput,
+  type TurnMcpProjectionInput,
 } from "./runner/turn-agent-composition.js";
 import {
   createProductionTurnAgentOwner,
@@ -2194,6 +2195,62 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       };
     };
 
+    // The per-turn MCP projection: the executor and state executor a
+    // connected server's tools run through, and the GetMcpTools/CallMcpTool
+    // pair that reaches them. The reconstruction built all of it
+    // (createTurnLocalResourceProjection, createTurnMcpMetaToolFactory) and
+    // no caller ever supplied it, in the tree as first shipped (ce9fc2d8) or
+    // since, so the agent could propose, install and connect a connector
+    // and then had no tool that calls one: on 26 September 2026 Notion
+    // connected on a Mac and the agent reported it "didn't have the Notion
+    // write command available". The executor is the MCP service's own
+    // (`mcp-service.ts`: HTTP servers over the vendor backend, stdio servers
+    // in the box); the needs-auth card is the one the management tools draw.
+    const productionTurnMcpProjection = (): TurnMcpProjectionInput | undefined => {
+      const service = (mcp as { mcp?: DynamicApi } | undefined)?.mcp;
+      const createExecutor = method(service ?? {}, "createExecutor");
+      const createStateExecutor = method(service ?? {}, "createStateExecutor");
+      if (createExecutor == null || createStateExecutor == null) return undefined;
+      const resolveNeedsAuthSlot = method(service ?? {}, "resolveNeedsAuthSlot");
+      const spillLargeText = method(productionPromptGlue ?? {}, "createMcpTextSpiller")?.();
+      return {
+        mcpForTurn: {
+          createExecutor: (persistImage, spill, auditIdentity) => createExecutor(persistImage, spill, auditIdentity),
+          createStateExecutor: () => createStateExecutor(),
+          ...(resolveNeedsAuthSlot == null ? {} : { resolveNeedsAuthSlot: (id: string) => resolveNeedsAuthSlot(id) }),
+        },
+        // MCP image content arrives base64; the asset persister takes bytes.
+        persistImage: persistImageForTurn === undefined
+          ? undefined
+          : async (data: string, mimeType: string) => await persistImageForTurn(Buffer.from(data, "base64"), mimeType),
+        textSpiller: spillLargeText,
+        isSubagentRunner: isSharedRoomTurn,
+        beginObservation: () => () => {},
+        boundedConnectorTag: providerIdentifier => providerIdentifier.slice(0, 64),
+        mcpErrorClassOf: error => error instanceof Error ? error.name : typeof error,
+        takeMcpExecErrorClass: () => undefined,
+        emitConnectorCard: emission => {
+          hooks.transport.onUpdate({
+            type: "send-message",
+            message: connectorCardEmissionToMessage({ connector: emission.connector ?? emission.serverId, serverId: emission.serverId, variant: emission.variant }),
+            timestampMs: Date.now(),
+          });
+        },
+        cancelThisRun: reason => {
+          const runner = builtRunner as { interrupt?: (value: string) => boolean } | undefined;
+          runner?.interrupt?.(reason.reason);
+        },
+        reportDiagnostic: event => logHostLine(`${HOST_LOG_PREFIX} mcp ${event.kind} ${event.errorClass}`),
+        errorLogTag: error => error instanceof Error ? error.name : typeof error,
+        mcpMeta: {
+          // The turn's descriptors are the loop's own turn-start snapshot;
+          // the toolset rebinds this getter to them (turn-agent-composition).
+          getMcpTools: () => [],
+          callOptions: {},
+        },
+      };
+    };
+
     const createTurnToolsetFactoryProvider = (
       dependencies: ProductionTurnHostDependencies,
       turnInputs?: ProductionTurnToolInputs,
@@ -2972,6 +3029,10 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 },
                 actionAuditor: projectedActionAuditor,
                 agentId: session.id,
+                ...(() => {
+                  const projection = productionTurnMcpProjection();
+                  return projection === undefined ? {} : { mcp: projection };
+                })(),
               };
             },
             blobStore: getAgentBlobStore(

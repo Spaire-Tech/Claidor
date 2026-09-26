@@ -223,3 +223,48 @@ The same shape will serve the vendors that need "an app we register
 first" (Google, Microsoft, Asana), each with its own console.
 
 Not run on a Mac: a Dropbox sign-in through an own app.
+
+## A connected connector could not be called (26 September 2026)
+
+The founder's thread, with one agent: "can you connect me to notion" drew
+the Notion card (45 tools, Added); "can you test write something" got
+"Notion is connected successfully. I wasn't able to complete the test-page
+write", and asked why, "this conversation didn't have the Notion write
+command available to me".
+
+**It did not.** The brief tells the agent to read a connector's tool with
+GetMcpTools and call it with CallMcpTool (`system-prompt.ts`, the MCP
+line). The box log's `offered=` list on every turn that day held
+InstallPlugin, AuthenticateMcpServer and the other management tools and
+neither of those two. The reconstruction builds both
+(`createTurnMcpMetaToolFactory` in `turn-toolset.ts`) and the executors
+they run through (`createTurnLocalResourceProjection` binds
+`mcpExecutorResource` and `mcpStateExecutorResource` from a per-turn
+`TurnMcpProjectionInput`), and `buildTurnTools` offers the pair only when
+that projection exists. Nothing ever supplied it: not the production
+composition, and not the reconstruction as first shipped (`ce9fc2d8`,
+where `mcpMeta` appears only in `turn-toolset.ts` itself). So the agent
+could propose, install and authenticate a connector and had no tool that
+calls one. The same shape as the computer tools on 24 September.
+
+**Now:** `productionTurnMcpProjection` in `host-runner-composition.ts`
+builds the projection from the MCP service's own executor and state
+executor (`mcp-service.ts`: HTTP servers over the vendor backend,
+stdio servers in the box), its needs-auth lookup, the connector card the
+management tools already draw, the asset persister for MCP images (base64
+to bytes) and the prompt glue's text spiller. The owner passes it to the
+resource projection and to the turn
+(`production-turn-agent-owner.ts`), and the tools handoff
+(`turn-agent-composition.ts`) puts it on the toolset's props with the
+pair's descriptors bound to the loop's own turn-start snapshot
+(`mcpTools`, from the service's `getTools`). GetMcpTools asks the service
+live, so a connector connected earlier in the same turn is found even
+when the turn-start snapshot was still empty.
+`tests/connector-tools.test.mjs` drives the real handoff: the pair is
+offered with the projection and absent without it (the test fails on the
+code before this change).
+
+Not yet run on a Mac. What to read: a `[claidor] model=` line whose
+`offered=` includes `GetMcpTools,CallMcpTool`, then `[claidor]
+tool=getMcpToolsToolCall` and a CallMcpTool line for the connector after
+"write a test page in Notion".

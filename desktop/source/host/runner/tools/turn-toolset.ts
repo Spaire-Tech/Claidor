@@ -254,6 +254,12 @@ export interface TurnToolsetTurnInput {
   readonly endThisRunAwaitingUser?: (reason: string) => void;
   /** Per-turn MCP descriptors used by the generated discovery/call pair. */
   readonly mcpTools?: readonly McpToolForMeta[];
+  /**
+   * The turn's MCP projection, when the host supplied one to the resource
+   * projection. The loop's toolsGenerator props never carry `mcp`, so the
+   * toolset reads it from here (26 September 2026).
+   */
+  readonly mcp?: ProductionTurnToolInputs["mcp"];
   /** Optional live Shell Smart Mode identities, supplied per turn by the host. */
   readonly shellAutoReview?: {
     readonly host?: TurnShellAutoReviewInput;
