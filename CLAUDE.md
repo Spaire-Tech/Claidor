@@ -618,7 +618,18 @@ with a gradient on `--ink-from/--ink-mid/--ink-to` through an SVG grain
 filter, both defined in the animator's `<defs>`; `--fg` (the middle
 colour) still feeds rings, particles and glyphs. `patchOriginalPalette`
 in `router-renderer-patch.mjs`, ten anchors; previewed headless with the
-face on, not yet seen on a Mac. **Frame cost of the grain filter on forty
+face on, not yet seen on a Mac. **Frame cost of the grain filter on forty **The marks are Ocean and the cloud is the only shape, 26 September 2026**
+("the onboarding cloud color is grey ish. i want it this color"; "remove all
+those shapes, and make the cloud the absolute main and only shape. it just
+comes in different colors … even in onboarding"): the landing mark, the hero
+and the no-agent mark are `color:"blue"` (Ocean) instead of Slate; every
+entry of the renderer's shape table `Jo` is the cloud's geometry (a saved
+"pebble" draws a cloud, nobody's data changes), `$de` returns the cloud's
+size factor, the shape list `Ij` is `["cloud"]`, onboarding's default shape
+is the cloud, and both "Character shape" pickers are hidden by one
+stylesheet rule (`SHAPE_REPLACEMENTS`, `SHAPE_PICKER_CSS`). Measured on the
+pinned bytes: 18 names, 18 geometries before, one after. Not yet seen on a
+Mac.
 sidebar marks is not measured**; if the sidebar stutters, the filter is
 the first thing to remove (one anchor, `palette-body-fill`).
 **The person's chat bubble is iMessage blue, 23 September, later still**
