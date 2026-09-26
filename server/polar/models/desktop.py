@@ -23,9 +23,19 @@ One more table carries the shared memory (`docs/maties/cloud.md`):
   the app on a computer, and later the cloud runner — read it before
   they work and write it after, so a person with two machines has one
   assistant instead of two strangers.
+
+And one carries the person's computer
+(`docs/product/agent-computer-plan.md`):
+
+- `DesktopBox`: one row per person, naming the E2B sandbox that is their
+  box and what state Claidor last saw it in. The app never holds the E2B
+  key — a key inside an Electron app is a published key — so the server
+  brokers the box exactly as it brokers the models, and this row is the
+  whole of what it remembers between calls.
 """
 
 from datetime import datetime
+from enum import StrEnum
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -34,11 +44,13 @@ from sqlalchemy import (
     TIMESTAMP,
     Boolean,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
     Uuid,
+    text,
 )
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
@@ -225,3 +237,125 @@ class DesktopMemoryFile(RecordModel):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False, default="")
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+
+class DesktopBoxState(StrEnum):
+    """What Claidor last saw the person's box doing.
+
+    Claidor's belief, not E2B's truth. The two can disagree — E2B can
+    reap a sandbox, a pause can time out, a deploy can land mid-call —
+    and the rule everywhere below is that **E2B wins**: a route that
+    learns the real state writes it here rather than arguing with it.
+    `absent` and `gone` are both "there is no sandbox", kept apart
+    because one has never had one and the other has lost one, and only
+    the second is worth telling a person about.
+    """
+
+    absent = "absent"
+    running = "running"
+    paused = "paused"
+    gone = "gone"
+
+
+class DesktopBox(RecordModel):
+    """One person's computer.
+
+    One row per account, and one box per row — the founder's own reason,
+    from `CLAUDE.md`: *Maties runs on the machine, so there is no "which
+    computer", only this computer.* Two laptops is a v2 problem. The
+    unique constraint on `user_id` is that decision written down where it
+    cannot be forgotten.
+
+    **Awake seconds are money**, which is what makes this table different
+    from every other row in this file. The model proxy costs nothing
+    until somebody sends a message; a box costs while it sits there. So
+    the awake time is settled into `desktop_usage` in slices — see
+    `polar.desktop.boxes.BoxService._settle` — and `billed_through` is
+    how far that has got. A box that is awake for a week and never
+    touched must not arrive as one surprise bill at the end, and a server
+    that restarts must not lose the week.
+    """
+
+    __tablename__ = "desktop_boxes"
+    #: Unique among **live** rows only.
+    #:
+    #: A plain unique constraint is wrong here and the difference is not
+    #: academic: a deleted box is soft-deleted, so its row keeps holding
+    #: (`user_id`, `scope_key`) forever, and the next `ensure` after a
+    #: person deletes their computer would be refused by the database.
+    #: Deleting a box and asking for another is the obvious thing to do
+    #: after a reset that went badly.
+    __table_args__ = (
+        Index(
+            "ix_desktop_boxes_live_scope",
+            "user_id",
+            "scope_key",
+            unique=True,
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
+    )
+
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
+    )
+    #: Which of this person's boxes this is.
+    #:
+    #: The engine asks for a *scope*, not a machine
+    #: (`brokerClient.ensureBox`), and the broker decides what that maps
+    #: to. `shared` — one box for all of a person's agents — is the scope
+    #: the product uses, so in practice there is one row per account and
+    #: the founder's rule still holds (*there is no "which computer",
+    #: only this computer*). The column exists because the engine's
+    #: sandbox scopes are `session`, `agent` and `shared`, so a second
+    #: key can arrive without a migration, and because the uniqueness
+    #: that makes « ensure » mean « ensure » has to be on the pair.
+    scope_key: Mapped[str] = mapped_column(
+        String(128), nullable=False, default="shared"
+    )
+    #: E2B's id for the sandbox, or None when there is no sandbox. It is
+    #: never shown to a person and never sent to the app: the app gets an
+    #: opaque handle and a stream address, because a sandbox id plus the
+    #: key is the whole of the authority over somebody's computer.
+    sandbox_id: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, default=None, index=True
+    )
+    #: The E2B template the sandbox was made from. Stored per row rather
+    #: than read from settings at use time, so a person whose box was
+    #: built from last month's template keeps that template until it is
+    #: deliberately updated.
+    template_id: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+    #: The snapshot Update and Reset restore from. E2B snapshots outlive
+    #: the sandbox that made them, which is the whole reason recovery can
+    #: keep a person's files and logins.
+    snapshot_id: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, default=None
+    )
+    state: Mapped[str] = mapped_column(
+        String(16), nullable=False, default=DesktopBoxState.absent.value
+    )
+    #: When the sandbox last started or resumed. None whenever the box is
+    #: not running, and the anchor the awake bill is measured from.
+    running_since: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+    #: How far the awake time has been settled into `desktop_usage`.
+    #: Everything between this and now is owed.
+    billed_through: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+    #: When Claidor last heard anything true about this box from E2B.
+    last_seen_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+
+    @declared_attr
+    def user(cls) -> Mapped["User"]:
+        return relationship("User", lazy="joined")
+
+    @property
+    def is_running(self) -> bool:
+        return self.state == DesktopBoxState.running.value
+
+    @property
+    def has_sandbox(self) -> bool:
+        return bool(self.sandbox_id)
