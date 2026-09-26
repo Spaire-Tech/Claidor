@@ -268,3 +268,34 @@ Not yet run on a Mac. What to read: a `[claidor] model=` line whose
 `offered=` includes `GetMcpTools,CallMcpTool`, then `[claidor]
 tool=getMcpToolsToolCall` and a CallMcpTool line for the connector after
 "write a test page in Notion".
+
+## A connector call reached the server under a doubled name (26 September 2026)
+
+The first Notion write after #209 failed and the agent narrated it ("the
+connector is adding its own Notion prefix twice … retrying with the
+underlying action name"), then succeeded on a guessed shorter name. Grok
+Bot's CallMcpTool builds its arguments as `name: "<server>-<tool>"` beside
+`toolName: "<tool>"` (`buildMcpArgs`, `packages/agent/tools/mcp/mcp.ts`;
+it is the only producer of `McpArgs` in the tree), and
+`tools-discovery.ts` sent `args.name` to the HTTP backend, a line carried
+from the reconstruction as first shipped. Notion's tools are themselves
+named `notion-…`, so the server was asked for `notion-notion-create-pages`.
+The same file's disabled-tool check already read `args.toolName`. It now
+sends `toolName` (`name` only as a fallback). `tests/connector-call.test.mjs`
+fails on the old line.
+
+The retries were most of the thread's extra messages. The rest is Grok
+Bot's design: InstallPlugin's own description says to confirm with a
+question widget first, even when the person asked for the connector; and
+the connect card is followed by a short "sign in there" message.
+
+**The repeated "Notion is connected and ready" is not explained yet.** Two
+candidates were ruled out in the code: the two sign-in completion paths
+(the box's auth watch and the Mac's refresh) cannot both resume the agent,
+because Grok Bot's watch re-checks that its entry is still pending after
+every await and the resolver consumes the connect-card wait; and the
+resume path (`box-handoff-resume.ts`) runs no reply or closing nudge.
+Nothing on the send path suppresses an identical second SendMessage. What
+decides it is the box log around the repeated text: two `[claidor] model=`
+lines each carrying the SendMessage (two model calls; then which run made
+the second), or one line carrying it twice (the model's parallel calls).
