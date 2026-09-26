@@ -109,7 +109,7 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(providers, /parameters: jsonSchema\(parameters\)/);
   assert.match(providers, /You are Simeon, a warm, concise desktop assistant/);
   assert.match(providers, /recordRoutedUsage\(provider, usage\)/);
-  assert.match(providers, /return claidorExecutor\(this\.getMessages\(\), invocationId, definitions, undefined, this\.onUsage, this\.modelId, this\.reasoningEffort, this\.budget, this\.onRequestId\);/);
+  assert.match(providers, /return claidorExecutor\(this\.getMessages\(\), invocationId, definitions, undefined, this\.onUsage, this\.modelId, this\.reasoningEffort, this\.budget, this\.onRequestId, claidorPromptCacheKey\(conversationIdFromContext\(ctx\)\)\);/);
   assert.match(cursorSession, /routedProvider !== "cursor"/);
   assert.match(cursorSession, /createProviderPromptSession\(routedProvider, sessionOptions\)/);
   assert.match(cursorBackend, /routedProvider !== "cursor"/);
