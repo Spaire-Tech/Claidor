@@ -54,6 +54,8 @@ test("quit keeps the box for an enabled routine and stops it otherwise; the two 
     assert.ok(lines.some((line) => line.includes("could not ask the box for its routines (box gone)")));
 
     const settingsDir = await mkdtemp(path.join(os.tmpdir(), "caisra-quit-settings-"));
+    // The gateway token is read from the encrypted store (F-148).
+    module.configureLocalDockerSecretStorage({ isEncryptionAvailable: () => true, encryptString: (value) => Buffer.from(value).reverse(), decryptString: (value) => Buffer.from(value).reverse().toString() });
     try {
       const calls = [];
       const fetchImpl = async (url, init) => { calls.push({ url, auth: init.headers.authorization }); return { ok: true, status: 200, json: async () => [{ id: "a", isEnabled: false }, { id: "b", isEnabled: true }] }; };
@@ -72,40 +74,25 @@ test("quit keeps the box for an enabled routine and stops it otherwise; the two 
   }
 });
 
-test("the Mac writes the box's renewal credential into the token file, on connect and on every rewrite", async () => {
-  const { module, dispose } = await load("source/electron-main/box/local-docker-host-connector.ts", "local-docker-renewal");
-  const settingsDir = await mkdtemp(path.join(os.tmpdir(), "caisra-renewal-settings-"));
+test("the box gets its own renewal credential at connect, so it renews without the Mac", async () => {
+  // Since 26 September 2026 (F-148) the credential reaches the box in its
+  // environment, Grok Bot's pod contract, instead of in a token file the
+  // Mac rewrote; tests/local-docker-credentials.test.mjs measures the store,
+  // the single mint and the box's own renewal.
+  const source = await readFile(path.join(repoRoot, "source/electron-main/box/local-docker-host-connector.ts"), "utf8");
+  assert.match(source, /await ensureBoxCredential\(settings\.settingsPath, remote\.issueBoxRenewalCredential == null \? undefined : \(\) => remote\.issueBoxRenewalCredential!\(\)\);/, "minted at connect, once per box");
+  const connector = await readFile(path.join(repoRoot, "source/electron-main/box/box-host-connector.ts"), "utf8");
+  assert.match(connector, /BOX_RENEWAL_CREDENTIAL_PATH = "\/desktop\/api\/box\/renewal-credential"/);
+  // Both production call sites pass a descriptor fast path; until 25
+  // September the fast-path object dropped this method, so nothing was
+  // ever minted and the local box renewed nothing once the app was gone.
+  const { module: hostConnector, dispose: disposeHost } = await load("source/electron-main/box/box-host-connector.ts", "box-host-connector");
   try {
-    const settingsPath = path.join(settingsDir, "settings.json");
-    const filePath = path.join(settingsDir, "local-docker-credential", "inference.json");
-    module.rememberBoxRenewalCredential(undefined);
-    await module.persistInferenceCredential(settingsPath, { accessToken: "tok-1", backendUrl: "https://api.simeonlabs.com/", expiresAtMs: 5 });
-    assert.deepEqual(JSON.parse(await readFile(filePath, "utf8")), { accessToken: "tok-1", expiresAtMs: 5 }, "without a credential the file is what it was");
-    module.rememberBoxRenewalCredential("claidor_db_box");
-    const persisted = [];
-    await module.refreshInferenceCredentialFile(async () => ({ accessToken: "tok-2", backendUrl: "https://api.simeonlabs.com/", expiresAtMs: 6 }), settingsPath, async (_path, credential) => { persisted.push(credential); });
-    assert.deepEqual(persisted, [{ accessToken: "tok-2", backendUrl: "https://api.simeonlabs.com/", expiresAtMs: 6, renewalCredential: "claidor_db_box" }], "the keep-fresh rewrite carries it");
-    await module.persistInferenceCredential(settingsPath, persisted[0]);
-    assert.deepEqual(JSON.parse(await readFile(filePath, "utf8")), { accessToken: "tok-2", expiresAtMs: 6, renewalCredential: "claidor_db_box" });
-    const source = await readFile(path.join(repoRoot, "source/electron-main/box/local-docker-host-connector.ts"), "utf8");
-    assert.match(source, /if \(boxRenewalCredential == null && remote\.issueBoxRenewalCredential != null\)/, "minted once per app run at connect");
-    const connector = await readFile(path.join(repoRoot, "source/electron-main/box/box-host-connector.ts"), "utf8");
-    assert.match(connector, /BOX_RENEWAL_CREDENTIAL_PATH = "\/desktop\/api\/box\/renewal-credential"/);
-    // Both production call sites pass a descriptor fast path; until 25
-    // September the fast-path object dropped this method, so nothing was
-    // ever minted and the local box renewed nothing once the app was gone.
-    const { module: hostConnector, dispose: disposeHost } = await load("source/electron-main/box/box-host-connector.ts", "box-host-connector");
-    try {
-      const fastPath = { store: { read: () => undefined, write: () => {}, clear: () => {} }, getAccountScope: () => "acct" };
-      const built = hostConnector.createRemoteHostConnector({ getAccessToken: async () => "" }, {}, undefined, fastPath);
-      assert.equal(typeof built.issueBoxRenewalCredential, "function", "the fast-path connector still mints the box's renewal credential");
-    } finally {
-      await disposeHost();
-    }
+    const fastPath = { store: { read: () => undefined, write: () => {}, clear: () => {} }, getAccountScope: () => "acct" };
+    const built = hostConnector.createRemoteHostConnector({ getAccessToken: async () => "" }, {}, undefined, fastPath);
+    assert.equal(typeof built.issueBoxRenewalCredential, "function", "the fast-path connector still mints the box's renewal credential");
   } finally {
-    module.rememberBoxRenewalCredential(undefined);
-    await rm(settingsDir, { recursive: true, force: true });
-    await dispose();
+    await disposeHost();
   }
 });
 

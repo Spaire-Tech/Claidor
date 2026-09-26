@@ -134,18 +134,17 @@ test("the starter reads the token file, retries a busy port, and never fails the
   const loaded = await load();
   const { startBoxStreamGuardFromEnv, readBoxStreamNetworkToken } = loaded.module;
   try {
-    assert.equal(await startBoxStreamGuardFromEnv({ env: {}, log: () => {} }), undefined, "no token file: no guard, nothing thrown");
-    const file = path.join(loaded.temporary, "box-stream-token");
-    await writeFile(file, "short\n");
-    assert.equal(readBoxStreamNetworkToken({ SAND_BOX_STREAM_TOKEN_FILE: file }), undefined, "a token under 32 characters is refused");
-    await writeFile(file, `${TOKEN}\n`);
-    assert.equal(readBoxStreamNetworkToken({ SAND_BOX_STREAM_TOKEN_FILE: file }), TOKEN);
+    assert.equal(await startBoxStreamGuardFromEnv({ env: {}, log: () => {} }), undefined, "no token: no guard, nothing thrown");
+    // The token reaches the box in its environment, as Grok Bot's pod receives its credentials (F-148).
+    assert.equal(readBoxStreamNetworkToken({ SAND_BOX_STREAM_NETWORK_TOKEN: "short" }), undefined, "a token under 32 characters is refused");
+    assert.equal(readBoxStreamNetworkToken({ SAND_BOX_STREAM_NETWORK_TOKEN: ` ${TOKEN} ` }), TOKEN);
+    const env = { SAND_BOX_STREAM_NETWORK_TOKEN: TOKEN };
     let calls = 0;
-    const started = await startBoxStreamGuardFromEnv({ env: { SAND_BOX_STREAM_TOKEN_FILE: file }, log: () => {}, retryDelayMs: 1, start: async (options) => { calls += 1; assert.equal(options.token, TOKEN); if (calls < 3) throw new Error("EADDRINUSE"); return { ports: [16080], close: async () => {} }; } });
+    const started = await startBoxStreamGuardFromEnv({ env, log: () => {}, retryDelayMs: 1, start: async (options) => { calls += 1; assert.equal(options.token, TOKEN); if (calls < 3) throw new Error("EADDRINUSE"); return { ports: [16080], close: async () => {} }; } });
     assert.equal(calls, 3);
     assert.deepEqual(started.ports, [16080]);
     const lines = [];
-    const gaveUp = await startBoxStreamGuardFromEnv({ env: { SAND_BOX_STREAM_TOKEN_FILE: file }, log: (line) => lines.push(line), retryDelayMs: 1, maxAttempts: 2, start: async () => { throw new Error("EADDRINUSE"); } });
+    const gaveUp = await startBoxStreamGuardFromEnv({ env, log: (line) => lines.push(line), retryDelayMs: 1, maxAttempts: 2, start: async () => { throw new Error("EADDRINUSE"); } });
     assert.equal(gaveUp, undefined);
     assert.match(lines.at(-1), /box-stream guard could not start \(EADDRINUSE\)/);
   } finally {
@@ -155,7 +154,7 @@ test("the starter reads the token file, retries a busy port, and never fails the
 
 test("the local connection carries Grok Bot's vncProxy and the coordinator rewrites the box's bare URLs through it", async () => {
   const loaded = await load();
-  const { localDockerVncProxy, proxifyBoxVncUrl, proxifyForeverBoxStatus, readOrCreateStreamToken, streamTokenFingerprint, localDockerContainerNeedsReplace, LOCAL_DOCKER_SCHEMA_VERSION, LOCAL_DOCKER_STREAM_PUBLISH, PERSISTED_GATEWAY_DESCRIPTOR_VERSION } = loaded.module;
+  const { localDockerVncProxy, proxifyBoxVncUrl, proxifyForeverBoxStatus, readOrCreateStreamToken, configureLocalDockerSecretStorage, LOCAL_DOCKER_STREAM_PUBLISH, PERSISTED_GATEWAY_DESCRIPTOR_VERSION } = loaded.module;
   try {
     const proxy = localDockerVncProxy(TOKEN);
     assert.equal(proxy.forkBaseUrl, "http://127.0.0.1:6081");
@@ -172,23 +171,19 @@ test("the local connection carries Grok Bot's vncProxy and the coordinator rewri
     const status = proxifyForeverBoxStatus({ vncUrl: "http://127.0.0.1:6080/vnc.html", windows: [{ vncUrl: `http://127.0.0.1:6081/vnc.html?path=${encodeURIComponent("websockify?token=2")}` }] }, proxy);
     assert.equal(status.vncUrl, proxy.primaryUrl);
     assert.match(status.windows[0].vncUrl, /network_token/);
-    // The token is one per install, 0600, stable, and a container made with another is replaced.
+    // The token is one per install and stable; it is kept encrypted with the
+    // box's other credentials (tests/local-docker-credentials.test.mjs).
+    configureLocalDockerSecretStorage({ isEncryptionAvailable: () => true, encryptString: (value) => Buffer.from(value).reverse(), decryptString: (value) => Buffer.from(value).reverse().toString() });
     const settingsPath = path.join(loaded.temporary, "data", "settings.json");
     const first = await readOrCreateStreamToken(settingsPath);
     assert.match(first, /^[0-9a-f]{64}$/);
     assert.equal(await readOrCreateStreamToken(settingsPath), first);
-    const mode = (await stat(path.join(loaded.temporary, "data", "local-docker-credential", "box-stream-token"))).mode & 0o777;
-    assert.equal(mode, 0o600);
-    const fingerprint = streamTokenFingerprint(first);
-    assert.equal(localDockerContainerNeedsReplace({ schemaVersion: LOCAL_DOCKER_SCHEMA_VERSION, hostSha256: "h", streamTokenSha256: fingerprint }, "h", fingerprint), false);
-    assert.equal(localDockerContainerNeedsReplace({ schemaVersion: LOCAL_DOCKER_SCHEMA_VERSION, hostSha256: "h", streamTokenSha256: "other" }, "h", fingerprint), true);
     assert.deepEqual([...LOCAL_DOCKER_STREAM_PUBLISH], ["127.0.0.1:6080:16080", "127.0.0.1:6081:16081"]);
     assert.equal(PERSISTED_GATEWAY_DESCRIPTOR_VERSION, 2, "a cached connection from before has no vncProxy and is read as absent once");
     const connector = await readFile(path.join(repoRoot, "source/electron-main/box/local-docker-host-connector.ts"), "utf8");
     assert.doesNotMatch(connector, /"--publish", "127\.0\.0\.1:6080:6080"/, "websockify is never published bare");
     assert.match(connector, /return \{ baseUrl: LOCAL_DOCKER_GATEWAY_URL, token, vncProxy: localDockerVncProxy\(streamToken\) \};/);
-    assert.match(connector, /"--env", `SAND_BOX_STREAM_TOKEN_FILE=\$\{LOCAL_DOCKER_STREAM_TOKEN_FILE\}`/);
-    assert.doesNotMatch(connector, /SAND_BOX_STREAM_NETWORK_TOKEN=/, "the stream token is never an env var");
+    assert.match(connector, /"--env", `SAND_BOX_STREAM_NETWORK_TOKEN=\$\{streamToken\}`/, "in the box's environment, Grok Bot's pod contract");
     const main = await readFile(path.join(repoRoot, "source/host/main.ts"), "utf8");
     assert.match(main, /void startBoxStreamGuardFromEnv\(\{ log: line => log\.log\(line\) \}\);/);
   } finally {
