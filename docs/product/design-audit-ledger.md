@@ -143,7 +143,7 @@ until its row says so. Columns:
 | F-117 | models-and-spend | blocking | unwired | confirmed | hidden-turn-cap | fixed | Hidden-turn budget of 40 never reaches the executor: the production owner input drops `hidden` | `desktop/source/host/host-runner-composition.ts` |
 | F-118 | models-and-spend | major | spend | unverified | batch6-models-spend-media-web | known-limit | Auto-review classifier runs in shadow by default: one Luna call per Shell/MCP/computer action, verdict discarded | `desktop/source/host/runner/sand-auto-review.ts` |
 | F-119 | models-and-spend | major | unwired | unverified | batch6-models-spend-media-web | needs-mac | The model picker's choice never reaches the executor; the loop's model is decided only by box env | `desktop/source/host/host-runner-composition.ts` |
-| F-120 | models-and-spend | minor | design-violation | unverified | batch6-models-spend-media-web | known-limit | Luna is offered in the picker as the agent's model, against pricing.py's own rule | `desktop/source/electron-main/models/claidor-model-catalog.ts` |
+| F-120 | models-and-spend | minor | design-violation | unverified | batch6-models-spend-media-web | fixed | Luna is offered in the picker as the agent's model, against pricing.py's own rule | `desktop/source/electron-main/models/claidor-model-catalog.ts` |
 | F-121 | models-and-spend | minor | docs-wrong | unverified | batch6-models-spend-media-web | fixed | Claude Sonnet fallback is unreachable; the only fallback is Luna on a rate-limit regex, unannounced | `desktop/source/host/extensions/inference/provider-session.ts` |
 | F-122 | models-and-spend | minor | spend | unverified | batch6-models-spend-media-web | fixed | The proxy serves withheld models (Astra 10x, Opus 5x) to any bearer that names them | `server/polar/desktop/endpoints.py` |
 | F-123 | models-and-spend | minor | dead-service | confirmed | dead-cursor-services | fixed | A Cursor Connect RPC (GetUserPrivacyMode) is attempted on api.simeonlabs.com at the start of every turn | `desktop/source/host/runner/turn-run-shell.ts` |
@@ -1558,9 +1558,11 @@ writes a `[claidor] model-fallback` line since 25 September; F-124, the
 `DEFAULT_CLAIDOR_MODEL` is `gpt-5.6-terra`. Known limits: F-118, the
 risky-or-safe classifier is one Luna call at low effort per reviewed
 action, Grok Bot's design, and since 25 September the verdict is used;
-F-120, the picker offers Luna beside Terra, which can only lower a
-person's spend (the pricing rule is about the default, which stays
-Terra); F-125 and F-131 as before; F-128, the dead providers and the
+F-120 was first marked a known limit here and is fixed the next morning:
+the founder, 26 September ("no one in grok bot choose what model they
+want"), so the window's model menu lists the `primary` row and nothing
+else (`claidor-model-catalog.ts`; Luna is machinery, the pricing rule's
+own words), and the model is the server's choice, made with a deploy; F-125 and F-131 as before; F-128, the dead providers and the
 Router are the founder's to delete; F-129 and F-292, the five capability
 prices (four doors and the search) meter today and are to confirm by the
 founder against the price pages (`pricing.py` says so now); a door that

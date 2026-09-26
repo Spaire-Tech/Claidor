@@ -977,7 +977,12 @@ F-234..F-247, F-286..F-296), one ledger note
 model with no role (Astra, Opus, Gemini Pro) instead of serving it at its
 price to any bearer that names it; the Mac escape-hatch turn runs under
 the hidden budget; the avatar Generate asks for low quality; the image
-usage reaches the turn meter. Search: cited pages keep their URLs, an
+usage reaches the turn meter. **The model menu holds one row** (26
+September, the founder: "no one in grok bot choose what model they
+want"): the pinned window's Settings menu is fed from
+`/desktop/api/models/available` and `claidor-model-catalog.ts` now keeps
+only the `primary` role, so there is nothing to choose; the model is the
+server's decision, made with a deploy. Search: cited pages keep their URLs, an
 answer that ran no search says so, the server's refusals reach the model
 as sentences, and a hung search gives up after 90 s. The five capability
 prices meter today and are the founder's to confirm against the price

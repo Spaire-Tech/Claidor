@@ -56,9 +56,12 @@ test("the picker's list comes from /desktop/api/models/available and keeps the p
     // What the edge serialises for the renderer, exactly as before: proto
     // JSON, so a false `defaultOn` is simply absent, as it always was.
     const json = response.toJson();
-    assert.deepEqual(json.models.map((model) => model.name), ["gpt-5.6", "gpt-5.6-mini"]);
-    assert.deepEqual(json.models.map((model) => model.defaultOn ?? false), [true, false]);
-    assert.deepEqual(response.models.map((model) => model.defaultOn), [true, false]);
+    // One row: the primary. Luna is machinery and is not offered (F-120,
+    // 26 September 2026: "no one in grok bot choose what model they want").
+    assert.deepEqual(json.models.map((model) => model.name), ["gpt-5.6"]);
+    assert.deepEqual(json.models.map((model) => model.defaultOn ?? false), [true]);
+    assert.deepEqual(response.models.map((model) => model.defaultOn), [true]);
+    assert.equal(loaded.module.availableModelFromClaidorRow({ modelId: "x", role: "cheap" }), null);
     const terra = json.models[0];
     assert.equal(terra.clientDisplayName, "Terra");
     assert.equal(terra.serverModelName, "gpt-5.6");
@@ -90,10 +93,10 @@ test("a fallback role, an unavailable row and a row without an id are left off; 
     assert.equal(availableModelFromClaidorRow({ modelId: "x", available: false }), null);
 
     const noPrimary = availableModelsResponseFromClaidor([{ modelId: "a", role: "cheap" }, { modelId: "b", role: "cheap" }]);
-    assert.deepEqual(noPrimary.models.map((model) => [model.name, model.defaultOn]), [["a", true], ["b", false]]);
+    assert.deepEqual(noPrimary.models, []);
 
     const twoPrimaries = availableModelsResponseFromClaidor([{ modelId: "a", role: "cheap" }, { modelId: "b", role: "primary" }, { modelId: "c", role: "primary" }]);
-    assert.deepEqual(twoPrimaries.models.map((model) => [model.name, model.defaultOn]), [["a", false], ["b", true], ["c", false]]);
+    assert.deepEqual(twoPrimaries.models.map((model) => [model.name, model.defaultOn]), [["b", true], ["c", false]]);
 
     assert.deepEqual(availableModelsResponseFromClaidor(null).toJson(), {});
     assert.deepEqual(availableModelsResponseFromClaidor({ not: "a list" }).toJson(), {});
