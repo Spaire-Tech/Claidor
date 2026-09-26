@@ -3,7 +3,8 @@
  * landing mark and the onboarding hero become clouds, the boot screen's Grok
  * Bot logo becomes Simeon's petals with a slow turn, and the app icon file
  * the hand-off screen draws is Simeon's. All package-time, over the pinned
- * renderer (scripts/lib/router-renderer-patch.mjs).
+ * renderer (scripts/lib/router-renderer-patch.mjs). On 26 September the
+ * marks became Ocean and the cloud became the only shape.
  */
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
@@ -20,8 +21,10 @@ test("the marks patch turns the landing and hero marks into clouds and the loadi
   const { MARK_REPLACEMENTS, patchOriginalMarks, LOADING_LOGO_TURN_SECONDS } = await import(patchModule);
   const chunk = MARK_REPLACEMENTS.map(([, before]) => before).join(";\n");
   const patched = patchOriginalMarks(chunk);
-  assert.match(patched, /color:"black",paused:N,shape:"cloud",sizePx:ujn,state:E/);
-  assert.match(patched, /\{id:"hero",color:"black",shape:"cloud",isGazing:!1,bob:null\}/);
+  // Ocean (the `blue` id), 26 September 2026, not Slate (`black`).
+  assert.match(patched, /color:"blue",paused:N,shape:"cloud",sizePx:ujn,state:E/);
+  assert.match(patched, /\{id:"hero",color:"blue",shape:"cloud",isGazing:!1,bob:null\}/);
+  assert.match(patched, /V=L==null\?\{color:"blue",shape:"cloud"\}:/);
   // The logo keeps its signature, size, colour variable and reduced-motion rule.
   assert.match(patched, /function tOt\(\{size:n,color:e="black",className:t\}\)/);
   assert.match(patched, /prefers-reduced-motion: reduce/);
@@ -50,4 +53,36 @@ test("the pinned 0.18.0 renderer carries each mark anchor exactly once", async (
   const chunkName = names.find((name) => name === "index-UbX-y3il.js") ?? names.find((name) => /^index-.*\.js$/.test(name));
   const source = await readFile(path.join(assets, chunkName), "utf8");
   for (const [label, before] of MARK_REPLACEMENTS) assert.equal(source.split(before).length - 1, 1, `${label} occurs once in ${chunkName}`);
+});
+
+test("every shape is the cloud: one geometry, the cloud's size, a cloud-only list, no shape picker", async () => {
+  const { SHAPE_REPLACEMENTS, patchOriginalShapes, patchOriginalShapePickerStylesheet, SHAPE_PICKER_CSS } = await import(patchModule);
+  const chunk = SHAPE_REPLACEMENTS.map(([, before]) => before).join(";\n");
+  const patched = patchOriginalShapes(chunk);
+  assert.match(patched, /Jo\.wedge\.face\.leftDX=-6;for\(const k of Object\.keys\(Jo\)\)Jo\[k\]=Jo\.cloud;const Qtt=Object\.keys\(Jo\)/);
+  assert.match(patched, /function \$de\(n\)\{return ont\.cloud\}/);
+  assert.match(patched, /const Ij=\["cloud"\];/);
+  assert.match(patched, /mde=\{color:"blue",shape:"cloud"\}/);
+  assert.throws(() => patchOriginalShapes(patched), /shapes-geometry-cloud anchor is missing or ambiguous/);
+  // The geometry loop, run over a table shaped like the renderer's: every
+  // name, including one saved before this change, resolves to the cloud.
+  const Jo = { blob: { path: "b", face: {} }, wedge: { path: "w", face: {} }, cloud: { path: "c", face: {} }, hex: { path: "h", face: {} } };
+  Jo.wedge.face.leftDX = -6;
+  for (const k of Object.keys(Jo)) Jo[k] = Jo.cloud;
+  assert.deepEqual(new Set(Object.values(Jo).map((entry) => entry.path)), new Set(["c"]));
+  // The two "Character shape" pickers are hidden; the colour rows are not.
+  const css = patchOriginalShapePickerStylesheet(".x{}");
+  assert.ok(css.endsWith(SHAPE_PICKER_CSS));
+  assert.match(SHAPE_PICKER_CSS, /\[aria-label="Character shape"\]\{display:none!important\}/);
+  assert.doesNotMatch(SHAPE_PICKER_CSS, /Character color/);
+  assert.throws(() => patchOriginalShapePickerStylesheet(css), /already present/);
+});
+
+test("the pinned 0.18.0 renderer carries each shape anchor exactly once, and both pickers are labelled Character shape", async (t) => {
+  const pinned = resolvePinnedRenderer();
+  if (!pinned) { t.skip(PINNED_RENDERER_SKIP); return; }
+  const { SHAPE_REPLACEMENTS } = await import(patchModule);
+  const source = await readFile(path.join(pinned, "assets", "index-UbX-y3il.js"), "utf8");
+  for (const [label, before] of SHAPE_REPLACEMENTS) assert.equal(source.split(before).length - 1, 1, `${label} occurs once`);
+  assert.equal(source.split('"aria-label":"Character shape"').length - 1, 2);
 });
