@@ -63,6 +63,26 @@ export const BRAND_WORD_REPLACEMENTS = Object.freeze([
   [/(?<=["'` >])Bot(?=["'` <.,!?])/g, "Agent", "Bot"],
 ]);
 
+/**
+ * Words the brand pass does not rename, counted after it runs so the record
+ * says whether any of Cursor's names are still in the shipped bytes (ledger
+ * F-454, 26 September 2026). "Cursor" and "Anysphere" are left because in
+ * a minified chunk they are as often identifiers as copy, and renaming an
+ * identifier breaks the page; the count under `brand.residue` is the
+ * measurement, and the visible occurrences are the Mac's to read.
+ */
+export const BRAND_RESIDUE_WORDS = Object.freeze(["Cursor", "Anysphere", "cursor.com", "cursor.sh"]);
+
+export function countBrandResidue(sources) {
+  const counts = {};
+  for (const word of BRAND_RESIDUE_WORDS) {
+    let count = 0;
+    for (const source of sources) count += source.split(word).length - 1;
+    counts[word] = count;
+  }
+  return counts;
+}
+
 export function patchOriginalBrandStrings(source) {
   let out = source;
   const counts = {};
@@ -416,16 +436,20 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const brandTotals = Object.fromEntries([...BRAND_REPLACEMENTS.map(([before]) => before), ...BRAND_WORD_REPLACEMENTS.map(([, , label]) => label)].map((key) => [key, 0]));
   const brandTargets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".js") || name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   brandTargets.push(path.join(stageRoot, "dist", "renderer", "index.html"));
+  const brandSources = [];
   for (const target of brandTargets) {
     let source;
     try { source = await readFile(target, "utf8"); } catch { continue; }
     const { source: patched, counts } = patchOriginalBrandStrings(source);
+    brandSources.push(patched);
     if (patched === source) continue;
     await writeFile(target, patched);
     for (const [before, count] of Object.entries(counts)) brandTotals[before] += count;
     brandFiles.push({ path: path.relative(stageRoot, target), counts, original: { bytes: Buffer.byteLength(source), sha256: sha256(source) }, patched: { bytes: Buffer.byteLength(patched), sha256: sha256(patched) } });
   }
   if (brandTotals["Grok Bot"] === 0) throw new Error("Expected the original renderer to name Grok Bot at least once; the brand pass found none.");
+  const brandResidue = countBrandResidue(brandSources);
+  console.log(`renderer patch: brand residue after the pass ${JSON.stringify(brandResidue)}`);
   // Every renderer file this pass rewrote: its bytes before the first pass and
   // after the last. scripts/verify.mjs checks these files against `patched`.
   const firstOriginals = new Map();
@@ -447,7 +471,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     chunks: changes,
     marks,
     files,
-    brand: { replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after }))], totals: brandTotals, files: brandFiles },
+    brand: { replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after }))], totals: brandTotals, files: brandFiles, residue: brandResidue },
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.

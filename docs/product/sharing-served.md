@@ -173,6 +173,21 @@ Nothing here has run on a Mac. In order:
    → B reads the reply. The two boxes' logs carry
    `desktop.sharing.turn_requested` / `turn_answered` on Render in between.
 
+## Local group chats are text-only, recorded 26 September 2026
+
+A group that has only local agents (`host/extensions/transcript/group-chat-glue.ts`,
+`GroupChatOrchestrator`) answers each turn with one text call on the
+cheap model (`configuredClaidorCheapModel`, `runRoutedProviderText`
+with `cheap: true`, one call per member per turn, no step budget because
+there is one step): no memory, no roster, no tools, no brief. That
+is Grok Bot's own shape for a group room (the orchestrator is the
+reconstruction's, unchanged); the full loop runs for a direct
+conversation and, through `turn-request`, for a shared room's remote
+agent. Whether a group turn should run the full loop per member (one
+loop call per agent per turn, on Terra) is a spend decision the founder
+has not made; until then the ledger's F-400 is a known limit, and this
+paragraph is the record the audit said was missing.
+
 ## Decisions for the founder
 
 - **Where the link points.** `shareUrl` is

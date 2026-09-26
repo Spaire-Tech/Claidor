@@ -11,6 +11,8 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { PINNED_RENDERER_SKIP, resolvePinnedRenderer } from "./lib/pinned-renderer.mjs";
+
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const patchModule = pathToFileURL(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs")).href;
 
@@ -40,8 +42,8 @@ test("the app icon written over the pinned renderer's is the founder's, not Grok
 });
 
 test("the pinned 0.18.0 renderer carries each mark anchor exactly once", async (t) => {
-  const pinned = process.env.GROK_BOT_PINNED_RENDERER?.trim();
-  if (!pinned) { t.skip("GROK_BOT_PINNED_RENDERER is not set; the pinned renderer is not in this repository"); return; }
+  const pinned = resolvePinnedRenderer();
+  if (!pinned) { t.skip(PINNED_RENDERER_SKIP); return; }
   const { MARK_REPLACEMENTS } = await import(patchModule);
   const assets = path.join(pinned, "assets");
   const names = await readdir(assets);

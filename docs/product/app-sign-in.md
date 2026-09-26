@@ -57,13 +57,29 @@ to true, and `shouldRefreshAccessToken` returns true unconditionally on
 a dev backend (`source/shared/node/cursor-token.ts:50`) — a token
 rotation before every single model call.
 
+*Corrected 26 September 2026 (ledger F-440): the measurement above was
+taken with the code of 19 September. Since 24 September the fallbacks
+themselves are Simeon Labs': `DEFAULT_SAND_BACKEND_URL` and
+`DEFAULT_CURSOR_WEBSITE_URL` are `https://api.simeonlabs.com`
+(`shared/node/cursor-token.ts`, `electron-main/account/cursor-auth.ts`,
+`packages/cursor-config/auth/login.ts`, batch 4 of the ledger), so an
+unconfigured run goes to us, not to cursor.com; the poll is a POST with
+the verifier in its body (batch 5); and `getValidAccessToken()` refreshes
+against the configured backend, never `api2.cursor.sh` (24 September,
+`reconstruction-gaps-2026-09-24.md`). The packaged app still carries the
+three names in `LSEnvironment`, and `npm run verify` checks them since 26
+September.*
+
 **2. The access token has to be readable.** The app reads `sub`, `email`
 and `exp` straight off its own access token, and `isTokenExpiringSoon`
 treats a token it cannot read an `exp` from as **always** expiring. An
 opaque `claidor_da_…` token would therefore refresh before every call —
 and several call paths pass no backend URL, falling back to
 `DEFAULT_CURSOR_BACKEND_URL` (`api2.cursor.sh`), where a refresh fails
-and the app *revokes the credentials and signs the person out*.
+and the app *revokes the credentials and signs the person out*. (Fixed 24
+September: those paths refresh against the configured backend, and a
+5xx/429 on the refresh no longer signs anyone out; see the correction
+above.)
 
 Measured, with a token minted by this server and read by the app's own
 functions:

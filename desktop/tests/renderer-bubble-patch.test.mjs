@@ -5,6 +5,8 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { PINNED_RENDERER_SKIP, resolvePinnedRenderer } from "./lib/pinned-renderer.mjs";
+
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const patchModule = pathToFileURL(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs")).href;
 
@@ -19,8 +21,8 @@ test("the user bubble token becomes Apple's blue in light and dark, and the styl
 });
 
 test("the pinned 0.18.0 renderer carries the bubble token and the stylesheet default exactly once", async (t) => {
-  const pinned = process.env.GROK_BOT_PINNED_RENDERER?.trim();
-  if (!pinned) { t.skip("GROK_BOT_PINNED_RENDERER is not set; the pinned renderer is not in this repository"); return; }
+  const pinned = resolvePinnedRenderer();
+  if (!pinned) { t.skip(PINNED_RENDERER_SKIP); return; }
   const { BUBBLE_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT } = await import(patchModule);
   const assets = path.join(pinned, "assets");
   const names = await readdir(assets);

@@ -75,6 +75,13 @@ allowance choice, no key field of any kind: the account's models run
 through the metered proxy, Claidor's Composio key is on the server
 (`polar/desktop/composio.py`) and the app has no field for it. Anything
 a client would have to be told to type in is the wrong design.
+*(Composio, 26 September 2026, ledger F-160: the server's proxy route is
+still mounted and `CLAIDOR_COMPOSIO_API_KEY` is unset on Render; the
+desktop client that called it left the tree with the 18 September
+re-founding, and the connectors Simeon lists are the vendors' own MCP
+servers (`connectors-signin-measured.md`). The route has no caller.
+Removing it, or wiring a Composio catalogue into the Plugins overlay, is
+a decision, not a switch.)*
 
 **Claude Code is off, since 17 September 2026.** For three days a
 development build ran its turns through the founder's Claude Code
