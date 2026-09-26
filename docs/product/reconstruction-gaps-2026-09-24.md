@@ -26,7 +26,10 @@ stays as the measurement of that day.*
 
 The shape of it: **Claidor serves fourteen HTTP routes under
 `/desktop/api/` plus three sign-in routes at the root, and no Connect RPC at
-all.** The reconstruction still calls about sixty `aiserver.v1.*` methods
+all.** *(Counted on 24 September for the routes the app called then. On
+26 September `endpoints.py` declares 33 routes, and the Connect services
+under `polar/sand/` answer sharing, cloud agents, listeners, skill publish
+and the box broker; ledger F-439.)* The reconstruction still calls about sixty `aiserver.v1.*` methods
 across seven services. Every one goes to `https://api.simeonlabs.com/aiserver.v1.<Service>/<Method>`
 (`desktop/source/shared/node/cursor-backend/cursor-inference.ts:155-159`),
 gets a 404, which Connect reports as `Unimplemented`, and before each one the

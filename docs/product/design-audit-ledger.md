@@ -117,7 +117,7 @@ until its row says so. Columns:
 | F-091 | cards-and-widgets | minor | design-violation | refuted | brief-text | fixed | The brief tells the agent to use a Screenshot tool that is withheld, with no explanation | `desktop/source/host/host-runner-composition.ts` |
 | F-092 | cards-and-widgets | note | design-violation | confirmed | sign-in-copy | known-limit | Dead settings 'Router' panel source offers Claude Code, Codex and an OpenRouter API key | `desktop/scripts/lib/router-renderer-patch.mjs` |
 | F-093 | cards-and-widgets | note | docs-wrong | confirmed | brief-text | fixed | Permissions design names widget options the schema does not have (multiSelect) and a stale test comment | `docs/product/sources/caisra-permissions.md` |
-| F-094 | cards-and-widgets | note | dead-service | refuted | cards-to-build | - | Legacy 'permission-request' kind still encodable and described as no longer actionable | `desktop/source/host/runner/tools/sand-permission-request.ts` |
+| F-094 | cards-and-widgets | note | dead-service | refuted | cards-to-build | known-limit | Legacy 'permission-request' kind still encodable and described as no longer actionable | `desktop/source/host/runner/tools/sand-permission-request.ts` |
 | F-095 | cards-and-widgets | note | docs-wrong | confirmed | brief-text | fixed | direction.md contradicts itself on whether the computer asks once | `docs/product/direction.md` |
 | F-096 | keys-and-auth | major | docs-wrong | confirmed | box-token-scope | fixed | Box keeps a server-revoked token for minutes after each Mac refresh; nothing re-reads inference.json on a 401 | `server/polar/desktop/service.py` |
 | F-097 | keys-and-auth | major | risk | confirmed | sign-in-copy | fixed | Any non-2xx from /oauth/token signs the person out and deletes the keychain entries | `desktop/source/electron-main/account/cursor-auth.ts` |
@@ -170,9 +170,9 @@ until its row says so. Columns:
 | F-144 | box-and-computer | minor | unwired | confirmed | box-substrate | known-limit | ForeverBox captureScreenshot is never supplied; the escape-hatch Screenshot/Computer tools answer "still starting up" | `desktop/source/host/extensions/forever-box/forever-box-service.ts` |
 | F-145 | box-and-computer | minor | design-violation | confirmed | hatch-residue | fixed | Escape-hatch tool descriptions and the brief name tools that do not exist here (watchVideo/videoReview) and misdescribe WebFetch | `desktop/source/host/runner/system-prompt.ts` |
 | F-146 | box-and-computer | minor | docs-wrong | confirmed | box-substrate | fixed | computer-stream-measured.md still documents `[CaisraScreen]` lines; the preload prints `[SimeonScreen]` | `docs/product/computer-stream-measured.md` |
-| F-147 | box-and-computer | note | docs-wrong | refuted | box-substrate | - | CLAUDE.md's "host re-reads an expired file every 30 s" is not what the renewer does | `desktop/source/host/extensions/auth/credential-renewer.ts` |
+| F-147 | box-and-computer | note | docs-wrong | refuted | box-substrate | known-limit | CLAUDE.md's "host re-reads an expired file every 30 s" is not what the renewer does | `desktop/source/host/extensions/auth/credential-renewer.ts` |
 | F-148 | box-and-computer | minor | risk | refuted | local-security | known-limit | Gateway token and desktop access token sit in plaintext on the Mac and in `docker inspect` | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
-| F-149 | box-and-computer | note | design-violation | confirmed | box-substrate | - | The local-tool approval ask carries no machine identity | `desktop/source/host/extensions/transcript/routed-agent-tools.ts` |
+| F-149 | box-and-computer | note | design-violation | confirmed | box-substrate | known-limit | The local-tool approval ask carries no machine identity | `desktop/source/host/extensions/transcript/routed-agent-tools.ts` |
 | F-150 | box-and-computer | minor | dead-service | refuted | cloud-agents-channels | fixed | openCloudAgent still opens https://cursor.com/agents/… | `desktop/source/electron-main/main-edge.ts` |
 | F-151 | box-and-computer | note | unmeasured | confirmed | box-substrate | needs-mac | Every agent gets its own fork desktop (start-window) in one container on an amd64-emulated image | `desktop/source/host/box/box-windows.ts` |
 | F-152 | connectors-mcp | major | design-violation | confirmed | connectors-mcp | fixed | Agent is told to ask for API keys and tokens in chat (tool descriptions) | `desktop/source/host/runner/tools/sand-mcp-management-tools.ts` |
@@ -183,13 +183,13 @@ until its row says so. Columns:
 | F-157 | connectors-mcp | minor | dead-service | confirmed | skill-publish-served | fixed | Skill publish still talks to Cursor and shows a Claidor-branded failure | `desktop/source/host/extensions/mcp/skill-publish.ts` |
 | F-158 | connectors-mcp | minor | dead-service | confirmed | connectors-mcp | fixed | Team plugin popularity IPC calls Cursor GetMe and GetTeamPluginPopularity | `desktop/source/electron-main/adapters/mcp-oauth.ts` |
 | F-159 | connectors-mcp | note | dead-service | confirmed | connectors-mcp | fixed | fetchPluginServers still calls Cursor getPluginMcpConfig and has no caller | `desktop/source/shared/node/mcp/mcp-marketplace.ts` |
-| F-160 | connectors-mcp | minor | dead-service | confirmed | connectors-mcp | - | Composio path is unwired on the desktop and unconfigured on the server, yet recorded as working | `desktop/source/electron-main/mcp/desktop-mcp-manager.ts` |
+| F-160 | connectors-mcp | minor | dead-service | confirmed | connectors-mcp | fixed | Composio path is unwired on the desktop and unconfigured on the server, yet recorded as working | `desktop/source/electron-main/mcp/desktop-mcp-manager.ts` |
 | F-161 | connectors-mcp | minor | docs-wrong | confirmed | connectors-mcp | fixed | Pipedream connectors router is mounted with no app caller; direction.md §8 not marked superseded | `server/polar/desktop/endpoints.py` |
 | F-162 | connectors-mcp | minor | naming | refuted | connectors-mcp | fixed | Agent-readable and user-visible strings still say 'Claidor account' | `desktop/source/host/runner/system-prompt.ts` |
 | F-163 | connectors-mcp | minor | risk | confirmed | connectors-mcp | known-limit | Custom MCP config is served unredacted to the settings editor | `desktop/source/shared/node/account-mcp/local-client.ts` |
 | F-164 | connectors-mcp | minor | risk | confirmed | connectors-mcp | fixed | No RFC 8707 resource parameter in authorize and token requests | `desktop/source/shared/node/vendor-mcp/oauth.ts` |
 | F-165 | connectors-mcp | minor | risk | confirmed | connectors-mcp | fixed | OAuth discovery, registration and token fetches have no timeout | `desktop/source/shared/node/vendor-mcp/oauth.ts` |
-| F-166 | connectors-mcp | note | unwired | confirmed | connectors-mcp | - | Dropbox own-app key not yet in the catalogue | `desktop/source/shared/node/vendor-mcp/catalog.ts` |
+| F-166 | connectors-mcp | note | unwired | confirmed | connectors-mcp | known-limit | Dropbox own-app key not yet in the catalogue | `desktop/source/shared/node/vendor-mcp/catalog.ts` |
 | F-167 | connectors-mcp | minor | naming | confirmed | connectors-mcp | fixed | Figma card asserts 'Simeon Labs has applied' without a record of it | `desktop/source/shared/node/vendor-mcp/catalog.ts` |
 | F-168 | connectors-mcp | minor | risk | confirmed | connectors-mcp | known-limit | Eighteen connector logos are fetched from Google's favicon service | `desktop/source/shared/node/vendor-mcp/logos.ts` |
 | F-169 | connectors-mcp | minor | docs-wrong | confirmed | connectors-mcp | fixed | Record gives the wrong Mac path for account-mcp-config.json | `docs/product/account-mcp-local-measured.md` |
@@ -308,7 +308,7 @@ until its row says so. Columns:
 | F-282 | files-attachments-artifacts | note | docs-wrong | confirmed | attachment-topology | fixed | artifacts-audit.md describes the removed LobsterAI attachment model as 'ours' | `docs/product/artifacts-audit.md` |
 | F-283 | files-attachments-artifacts | note | unmeasured | confirmed | attachment-topology | fixed | No offline tests cover staging, the attachment edge, file transfer, download naming or the spill | `desktop/tests/pdf-read.test.mjs` |
 | F-284 | files-attachments-artifacts | note | dead-service | confirmed | cloud-agents-channels | coming-soon | durable-file-policy only serves box-store-sync, whose client cannot be constructed | `desktop/source/host/durable-file-policy.ts` |
-| F-285 | files-attachments-artifacts | note | design-violation | confirmed | cards-to-build | - | File-transfer tools speak of 'the single computer connected today' with no registry | `desktop/source/host/runner/tools/sand-file-transfer-tools.ts` |
+| F-285 | files-attachments-artifacts | note | design-violation | confirmed | cards-to-build | known-limit | File-transfer tools speak of 'the single computer connected today' with no registry | `desktop/source/host/runner/tools/sand-file-transfer-tools.ts` |
 | F-286 | web-and-search | major | unwired | unverified | batch6-models-spend-media-web | fixed | WebSearch throws away every cited page: the agent gets Luna's summary and no URLs | `desktop/source/packages/agent/tools/core/web-search.ts` |
 | F-287 | web-and-search | major | design-violation | unverified | batch6-models-spend-media-web | fixed | Site-visit tracking records every host the agent's browser opens and ships it to the backend over Cursor's AnalyticsService — against the stated privacy rationale, and to a route that 404s | `desktop/source/host/extensions/inference/capability-tools.ts` |
 | F-288 | web-and-search | minor | dead-service | unverified | batch6-models-spend-media-web | known-limit | Bot-wall detection is wired only to telemetry; neither the agent nor the person is told a page was a challenge screen | `desktop/source/host/runner/bot-block-detection.ts` |
@@ -350,7 +350,7 @@ until its row says so. Columns:
 | F-324 | prompt-and-brief | major | naming | refuted | cloud-agents-channels | fixed | Cursor-specific sections survive in the brief: Origin, cursor.com links, cursor-agent card type | `desktop/source/host/runner/system-prompt.ts` |
 | F-325 | prompt-and-brief | major | docs-wrong | confirmed | brief-text | fixed | app-ui.md reference doc describes a Settings the shipped renderer does not have | `desktop/source/host/runner/box-reference-docs.ts` |
 | F-326 | prompt-and-brief | major | docs-wrong | confirmed | brief-text | fixed | debugging-the-box.md tells the agent the shipped default is an anyrun pod and names the wrong container | `desktop/source/host/runner/box-reference-docs.ts` |
-| F-327 | prompt-and-brief | major | spend | refuted | brief-text | - | Prompt cost: ~90 KB system prompt per call, a third of it for features that do not exist | `desktop/source/host/runner/system-prompt.ts` |
+| F-327 | prompt-and-brief | major | spend | refuted | brief-text | known-limit | Prompt cost: ~90 KB system prompt per call, a third of it for features that do not exist | `desktop/source/host/runner/system-prompt.ts` |
 | F-328 | prompt-and-brief | major | spend | confirmed | brief-text | known-limit | Multitask mode is on by bundled default: every non-trivial ask is dispatched to an executor subagent on the full model | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
 | F-329 | prompt-and-brief | minor | unwired | confirmed | video-served | fixed | watchVideo / videoReview subagents are instructed but never offered | `desktop/source/host/runner/system-prompt.ts` |
 | F-330 | prompt-and-brief | major | design-violation | refuted | connectors-mcp | fixed | Plugin/MCP tool descriptions tell the agent to ask the user for API keys in chat | `desktop/source/host/runner/tools/sand-mcp-management-tools.ts` |
@@ -413,7 +413,7 @@ until its row says so. Columns:
 | F-387 | logging-telemetry-privacy | note | risk | confirmed | box-telemetry | known-limit | vendor-mcp-signin.log records the OAuth client id and whether a secret exists — no secrets — but lives beside the store that holds access/refresh tokens and client secrets in plain JSON | `desktop/source/shared/node/vendor-mcp/backend-exec.ts` |
 | F-388 | logging-telemetry-privacy | note | dead-service | confirmed | box-telemetry | fixed | Statsig client is constructed with Cursor's client key and log-event proxy api3.cursor.sh; only the URL allowlist (/rgstr) and the 404 bootstrap keep it silent | `desktop/source/shared/node/experiments/statsig-bootstrap.ts` |
 | F-389 | logging-telemetry-privacy | note | risk | confirmed | box-telemetry | known-limit | Server-side: Send Feedback message text and the provider's refusal body are written to Render's structlog; nothing else of user content is logged by the proxy | `server/polar/desktop/endpoints.py` |
-| F-390 | logging-telemetry-privacy | minor | unwired | confirmed | electron-main-app | - | No production surface lets the person see any log: the box tail lives only in the dev controls window, and the Mac's computer-stream.log / vendor-mcp-signin.log are found only by path | `desktop/source/electron-main/dev/dev-controls-window.ts` |
+| F-390 | logging-telemetry-privacy | minor | unwired | confirmed | electron-main-app | known-limit | No production surface lets the person see any log: the box tail lives only in the dev controls window, and the Mac's computer-stream.log / vendor-mcp-signin.log are found only by path | `desktop/source/electron-main/dev/dev-controls-window.ts` |
 | F-391 | logging-telemetry-privacy | note | dead-service | confirmed | box-telemetry | fixed | Desktop structured-log spill and host crash-marker persist telemetry to disk that can never be delivered | `desktop/source/electron-main/telemetry/desktop-structured-log-spill.ts` |
 | F-392 | sharing-cloud-dead-services | major | unwired | confirmed | dead-cursor-services | fixed | CloudAgent tool is offered on every turn and the brief orders all repository work through it, but no cloud-agent service exists | `desktop/source/host/host-runner-composition.ts` |
 | F-393 | sharing-cloud-dead-services | major | spend | refuted | dead-cursor-services | known-limit | About 6.7k characters of cloud-agent instructions and a `cursor-agent` message type are sent to the model on every turn for a dead feature | `desktop/source/host/runner/system-prompt.ts` |
@@ -423,7 +423,7 @@ until its row says so. Columns:
 | F-397 | sharing-cloud-dead-services | minor | spend | confirmed | dead-cursor-services | fixed | CloudAgent 'watch' arms a five-hour poll of a 404 RPC every 10 s and ends in a hidden revival turn | `desktop/source/host/cloud-agents/cloud-agent-tool.ts` |
 | F-398 | sharing-cloud-dead-services | minor | spend | refuted | dead-cursor-services | known-limit | With auto-review on, a doomed CloudAgent launch still pays a Luna classifier call | `desktop/source/host/host-runner-composition.ts` |
 | F-399 | sharing-cloud-dead-services | note | docs-wrong | confirmed | dead-cursor-services | fixed | Record understates the CloudAgent failure mode: a 404 launch throws, it does not become tool text | `docs/product/reconstruction-gaps-2026-09-24.md` |
-| F-400 | sharing-cloud-dead-services | minor | docs-wrong | confirmed | dead-cursor-services | - | Local group chats answer with a text-only Luna call that has no memory, roster, tools or brief; the decision is unrecorded | `desktop/source/host/extensions/transcript/group-chat-glue.ts` |
+| F-400 | sharing-cloud-dead-services | minor | docs-wrong | confirmed | dead-cursor-services | fixed | Local group chats answer with a text-only Luna call that has no memory, roster, tools or brief; the decision is unrecorded | `desktop/source/host/extensions/transcript/group-chat-glue.ts` |
 | F-401 | sharing-cloud-dead-services | note | design-violation | confirmed | dead-cursor-services | fixed | The egress tunnel the design struck is still wired end to end, dormant behind an env flag | `docs/product/direction.md` |
 | F-402 | sharing-cloud-dead-services | note | dead-service | refuted | dead-cursor-services | known-limit | Host self-upgrade is on by default with no origin; 'Update computer' can only answer no-bundle-source | `desktop/source/host/extensions/host-upgrade/extension.ts` |
 | F-403 | sharing-cloud-dead-services | note | dead-service | confirmed | dead-cursor-services | fixed | Sharing is gated off and every entry answers a canned sentence, but a packaged build would poll api.simeonlabs.com if the gate flipped. Fixed 25 September 2026: the relay is served (`server/polar/sand/sharing.py`), the switch is on by default, `sand_multiplayer` is on in Simeon's gate table and reaches the extension's gate property (`sharing-served.md`); needs-mac for the pinned sheet | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
@@ -449,44 +449,44 @@ until its row says so. Columns:
 | F-423 | coordinator-and-gateway | note | design-violation | refuted | dead-cursor-services | known-limit | Egress tunnel toggles are still served although only the retired cloud model needs them | `desktop/source/electron-main/main-edge.ts` |
 | F-424 | coordinator-and-gateway | note | naming | confirmed | sign-in-copy | fixed | Internal error strings still name 'Sand' and Anysphere | `desktop/source/electron-main/coordinator/coordinator-port-ipc-guard.ts` |
 | F-425 | coordinator-and-gateway | note | hardcoded | confirmed | sign-in-copy | fixed | https deep links are still claimed for cursor.com | `desktop/source/shared/deep-link.ts` |
-| F-426 | docs-vs-code | major | docs-wrong | unverified | - | - | start-here.md describes the LobsterAI tree that was replaced on 18 September; nearly every concrete claim in it is false today | `docs/product/start-here.md` |
-| F-427 | docs-vs-code | major | docs-wrong | unverified | - | - | what-exists.md's inventory names desktop/src files that do not exist; its "read this before saying anything is missing" table would send a reader to nothing | `docs/product/what-exists.md` |
-| F-428 | docs-vs-code | minor | docs-wrong | unverified | - | - | building-the-app.md still says the bundle is Caisra.app, CFBundleDisplayName Caisra, LSEnvironment api.claidor.com | `docs/product/building-the-app.md` |
-| F-429 | docs-vs-code | minor | docs-wrong | unverified | - | - | name-measured.md contradicts itself on CFBundleExecutable/CFBundleName and states the header mark at 88 px where the code ships 52 px | `docs/product/name-measured.md` |
-| F-430 | docs-vs-code | major | design-violation | unverified | - | - | User-visible and agent-visible strings still say Claidor, and product-name.test.mjs pins them, against the 23 September rebrand | `desktop/source/electron-main/account/cursor-auth.ts` |
-| F-431 | docs-vs-code | major | dead-service | unverified | - | - | Quota/upgrade error buttons open cursor.com checkout and pricing pages | `desktop/source/host/extensions/transcript/agent-run-error.ts` |
-| F-432 | docs-vs-code | major | docs-wrong | unverified | - | - | CLAUDE.md says the host honours SAND_FEATURE_GATE_OVERRIDES for teach-a-task; nothing carries that variable into the box and the Mac ignores it when packaged | `CLAUDE.md` |
-| F-433 | docs-vs-code | major | spend | unverified | - | - | Auto-review runs in shadow: one Luna call per Shell command whose verdict never blocks or draws a card | `desktop/source/shared/sand-auto-review-instructions.ts` |
-| F-434 | docs-vs-code | minor | docs-wrong | unverified | - | - | model-roles-measured.md still says auto-review is 'left alone; effectively off' | `docs/product/model-roles-measured.md` |
-| F-435 | docs-vs-code | minor | docs-wrong | unverified | - | - | account-mcp-local-measured.md and connectors-signin-measured.md tell the Mac reader to cat a path under Application Support; the stores are in ~/.caisra | `docs/product/account-mcp-local-measured.md` |
-| F-436 | docs-vs-code | minor | docs-wrong | unverified | - | - | computer-stream-measured.md's line table names `[CaisraScreen]`; the tag in the code is `[SimeonScreen]` | `docs/product/computer-stream-measured.md` |
-| F-437 | docs-vs-code | major | docs-wrong | unverified | - | - | The macOS CI workflow and CLAUDE.md's `npm run mac:build` describe the LobsterAI build; neither script exists in the current tree | `CLAUDE.md` |
+| F-426 | docs-vs-code | major | docs-wrong | unverified | batch8-tests-build-docs | fixed | start-here.md describes the LobsterAI tree that was replaced on 18 September; nearly every concrete claim in it is false today | `docs/product/start-here.md` |
+| F-427 | docs-vs-code | major | docs-wrong | unverified | batch8-tests-build-docs | fixed | what-exists.md's inventory names desktop/src files that do not exist; its "read this before saying anything is missing" table would send a reader to nothing | `docs/product/what-exists.md` |
+| F-428 | docs-vs-code | minor | docs-wrong | unverified | batch8-tests-build-docs | fixed | building-the-app.md still says the bundle is Caisra.app, CFBundleDisplayName Caisra, LSEnvironment api.claidor.com | `docs/product/building-the-app.md` |
+| F-429 | docs-vs-code | minor | docs-wrong | unverified | batch8-tests-build-docs | fixed | name-measured.md contradicts itself on CFBundleExecutable/CFBundleName and states the header mark at 88 px where the code ships 52 px | `docs/product/name-measured.md` |
+| F-430 | docs-vs-code | major | design-violation | unverified | batch8-tests-build-docs | fixed | User-visible and agent-visible strings still say Claidor, and product-name.test.mjs pins them, against the 23 September rebrand | `desktop/source/electron-main/account/cursor-auth.ts` |
+| F-431 | docs-vs-code | major | dead-service | unverified | batch8-tests-build-docs | fixed | Quota/upgrade error buttons open cursor.com checkout and pricing pages | `desktop/source/host/extensions/transcript/agent-run-error.ts` |
+| F-432 | docs-vs-code | major | docs-wrong | unverified | batch8-tests-build-docs | fixed | CLAUDE.md says the host honours SAND_FEATURE_GATE_OVERRIDES for teach-a-task; nothing carries that variable into the box and the Mac ignores it when packaged | `CLAUDE.md` |
+| F-433 | docs-vs-code | major | spend | unverified | batch8-tests-build-docs | fixed | Auto-review runs in shadow: one Luna call per Shell command whose verdict never blocks or draws a card | `desktop/source/shared/sand-auto-review-instructions.ts` |
+| F-434 | docs-vs-code | minor | docs-wrong | unverified | batch8-tests-build-docs | fixed | model-roles-measured.md still says auto-review is 'left alone; effectively off' | `docs/product/model-roles-measured.md` |
+| F-435 | docs-vs-code | minor | docs-wrong | unverified | batch8-tests-build-docs | fixed | account-mcp-local-measured.md and connectors-signin-measured.md tell the Mac reader to cat a path under Application Support; the stores are in ~/.caisra | `docs/product/account-mcp-local-measured.md` |
+| F-436 | docs-vs-code | minor | docs-wrong | unverified | batch8-tests-build-docs | fixed | computer-stream-measured.md's line table names `[CaisraScreen]`; the tag in the code is `[SimeonScreen]` | `docs/product/computer-stream-measured.md` |
+| F-437 | docs-vs-code | major | docs-wrong | unverified | batch8-tests-build-docs | fixed | The macOS CI workflow and CLAUDE.md's `npm run mac:build` describe the LobsterAI build; neither script exists in the current tree | `CLAUDE.md` |
 | F-438 | docs-vs-code | major | docs-wrong | confirmed | hidden-turn-cap | fixed | spend-guards.md says the intro runs with 'no tools'; hidden only sets the call budget and the kickstart prompt still nudges 'offer any choice as a question widget' | `docs/product/spend-guards.md` |
-| F-439 | docs-vs-code | minor | docs-wrong | unverified | - | - | reconstruction-gaps.md and CLAUDE.md say Claidor serves 'fourteen HTTP routes under /desktop/api/'; endpoints.py declares about thirty-three | `docs/product/reconstruction-gaps-2026-09-24.md` |
-| F-440 | docs-vs-code | minor | docs-wrong | unverified | - | - | app-sign-in.md still says several call paths refresh against api2.cursor.sh and sign the person out; that was fixed 24 September and the record was not amended | `docs/product/app-sign-in.md` |
+| F-439 | docs-vs-code | minor | docs-wrong | unverified | batch8-tests-build-docs | fixed | reconstruction-gaps.md and CLAUDE.md say Claidor serves 'fourteen HTTP routes under /desktop/api/'; endpoints.py declares about thirty-three | `docs/product/reconstruction-gaps-2026-09-24.md` |
+| F-440 | docs-vs-code | minor | docs-wrong | unverified | batch8-tests-build-docs | fixed | app-sign-in.md still says several call paths refresh against api2.cursor.sh and sign the person out; that was fixed 24 September and the record was not amended | `docs/product/app-sign-in.md` |
 | F-441 | docs-vs-code | minor | dead-service | refuted | listeners-coming-soon | known-limit | Known-unserved Cursor surfaces still leak live links into the user's view: cloud-agent link, listener 'integrations' URL, https://cursor.com deep links, api2.cursor.sh DNS probe | `desktop/source/electron-main/main-edge.ts` |
-| F-442 | docs-vs-code | minor | design-violation | unverified | - | - | The agent's brief still carries Cursor addresses (cursor.com/codebase, /opt/cursor/artifacts) for a cloud-agent feature that is unserved | `desktop/source/host/runner/system-prompt.ts` |
-| F-443 | docs-vs-code | note | docs-wrong | unverified | - | - | Dated counts in the records have drifted: tracked files, test totals | `CLAUDE.md` |
-| F-444 | docs-vs-code | note | docs-wrong | unverified | - | - | Two file paths in CLAUDE.md are not where the file is | `CLAUDE.md` |
-| F-445 | tests-and-build | blocking | design-violation | unverified | - | - | npm run verify cannot pass on any npm run package output: the renderer inventory check compares patched chunks against the pristine provenance | `desktop/scripts/verify.mjs` |
-| F-446 | tests-and-build | major | design-violation | unverified | - | - | npm run package:diagnostic is broken by the renderer patch record it now produces (schemaVersion 2, extra keys, patched non-settings chunks) | `desktop/scripts/lib/macos-package-verification.mjs` |
-| F-447 | tests-and-build | major | docs-wrong | unverified | - | - | .github/workflows/desktop_mac.yml builds a tree that no longer exists (build-whisper.sh, dist:mac:arm64, pnpm/OpenClaw, Node 24) | `.github/workflows/desktop_mac.yml` |
-| F-448 | tests-and-build | minor | docs-wrong | unverified | - | - | CLAUDE.md names `npm run mac:build` as the free Mac build; no such script exists | `CLAUDE.md` |
-| F-449 | tests-and-build | minor | docs-wrong | unverified | - | - | docs/product/building-the-app.md (named as the current map) says Caisra.app, CFBundleDisplayName Caisra and api.claidor.com; the code says Simeon.app, Simeon and api.simeonlabs.com | `docs/product/building-the-app.md` |
-| F-450 | tests-and-build | minor | docs-wrong | unverified | - | - | desktop/README.md describes an inference router with Cursor as default, Claude Code/Codex, an OpenRouter API key field, and 'Remote mode remains the default' | `desktop/README.md` |
-| F-451 | tests-and-build | minor | unmeasured | unverified | - | - | The pinned-renderer anchor-presence tests never run in the build loop: nothing sets GROK_BOT_PINNED_RENDERER, though bootstrap leaves the renderer at a known path | `desktop/tests/renderer-marks-patch.test.mjs` |
-| F-452 | tests-and-build | minor | unmeasured | unverified | - | - | The header-card and Liquid Glass CSS selectors are never checked against the pinned stylesheet or markup; a wrong class name ships silently | `desktop/tests/renderer-header-card.test.mjs` |
-| F-453 | tests-and-build | note | docs-wrong | unverified | - | - | The renderer patch record claims three features that are no-ops (settings-router-provider, settings-local-docker-vm, usage-current-provider) and carries 3,000 characters of dead Settings source with an API-key input | `desktop/scripts/lib/router-renderer-patch.mjs` |
-| F-454 | tests-and-build | minor | unmeasured | unverified | - | - | The brand pass replaces Grok Bot / New Bot / Caisra / Bot(s) only; 'Cursor' and 'Anysphere' in the pinned renderer are never renamed and no test or count records whether any remain | `desktop/scripts/lib/router-renderer-patch.mjs` |
-| F-455 | tests-and-build | minor | unmeasured | unverified | - | - | verify.mjs does not check the renamed executable, LSEnvironment hosts, the Dock .icns, or that the renderer patch record exists | `desktop/scripts/verify.mjs` |
-| F-456 | tests-and-build | note | docs-wrong | unverified | - | - | runner_image.yml triggers on desktop/scripts/patches/** which does not exist; the runner Dockerfile still describes the OpenClaw patch set | `.github/workflows/runner_image.yml` |
-| F-457 | tests-and-build | note | design-violation | unverified | - | - | npm run check typechecks frontend/ (not shipped) as a gate on packaging the pinned renderer | `desktop/package.json` |
-| F-458 | tests-and-build | note | unmeasured | unverified | - | - | Fixes covered only by source-regex anchors, not behaviour: GPU default, updater guard on clean main, intro-runs-once, narration sentence, composition wiring (subagent shell, onAvatarChanged, box-scoped flag, prompt stores), Screenshot bisect | `desktop/tests/hardware-acceleration-default.test.mjs` |
-| F-459 | tests-and-build | note | unmeasured | unverified | - | - | Fixes with no test at all in desktop/tests: dictation language no longer forced, Help Center/feedback are tested but sign-in round trip, LSEnvironment, the Dock icon copy and the icns are not | `desktop/scripts/package-macos.mjs` |
-| F-460 | tests-and-build | note | unmeasured | unverified | - | - | simeon-logo IoU tests skip by default and depend on pngjs and a container-only Chromium path, neither declared in package.json | `desktop/tests/simeon-logo.test.mjs` |
-| F-461 | tests-and-build | note | docs-wrong | unverified | - | - | renderer-file-url.test.mjs's crossorigin guard skips in the build loop; CLAUDE.md says it 'fails if it comes back' | `desktop/tests/renderer-file-url.test.mjs` |
-| F-462 | tests-and-build | note | design-violation | unverified | - | - | publication-packaging.test.mjs pins the dead alternative providers (OpenRouter key error, Codex chatgpt.com, queryClaude) and the Mac-hatch prompt as required source, so removing what the design ended fails check | `desktop/tests/publication-packaging.test.mjs` |
-| F-463 | tests-and-build | note | docs-wrong | unverified | - | - | caisra-ignition-activation.mjs records unboundBindings: [] and runnerRealTurn: supported without running any check, so the packaged host-production-bindings.json is a statement, not a measurement | `desktop/scripts/caisra-ignition-activation.mjs` |
+| F-442 | docs-vs-code | minor | design-violation | unverified | batch8-tests-build-docs | fixed | The agent's brief still carries Cursor addresses (cursor.com/codebase, /opt/cursor/artifacts) for a cloud-agent feature that is unserved | `desktop/source/host/runner/system-prompt.ts` |
+| F-443 | docs-vs-code | note | docs-wrong | unverified | batch8-tests-build-docs | fixed | Dated counts in the records have drifted: tracked files, test totals | `CLAUDE.md` |
+| F-444 | docs-vs-code | note | docs-wrong | unverified | batch8-tests-build-docs | fixed | Two file paths in CLAUDE.md are not where the file is | `CLAUDE.md` |
+| F-445 | tests-and-build | blocking | design-violation | unverified | batch8-tests-build-docs | fixed | npm run verify cannot pass on any npm run package output: the renderer inventory check compares patched chunks against the pristine provenance | `desktop/scripts/verify.mjs` |
+| F-446 | tests-and-build | major | design-violation | unverified | batch8-tests-build-docs | fixed | npm run package:diagnostic is broken by the renderer patch record it now produces (schemaVersion 2, extra keys, patched non-settings chunks) | `desktop/scripts/lib/macos-package-verification.mjs` |
+| F-447 | tests-and-build | major | docs-wrong | unverified | batch8-tests-build-docs | fixed | .github/workflows/desktop_mac.yml builds a tree that no longer exists (build-whisper.sh, dist:mac:arm64, pnpm/OpenClaw, Node 24) | `.github/workflows/desktop_mac.yml` |
+| F-448 | tests-and-build | minor | docs-wrong | unverified | batch8-tests-build-docs | fixed | CLAUDE.md names `npm run mac:build` as the free Mac build; no such script exists | `CLAUDE.md` |
+| F-449 | tests-and-build | minor | docs-wrong | unverified | batch8-tests-build-docs | fixed | docs/product/building-the-app.md (named as the current map) says Caisra.app, CFBundleDisplayName Caisra and api.claidor.com; the code says Simeon.app, Simeon and api.simeonlabs.com | `docs/product/building-the-app.md` |
+| F-450 | tests-and-build | minor | docs-wrong | unverified | batch8-tests-build-docs | fixed | desktop/README.md describes an inference router with Cursor as default, Claude Code/Codex, an OpenRouter API key field, and 'Remote mode remains the default' | `desktop/README.md` |
+| F-451 | tests-and-build | minor | unmeasured | unverified | batch8-tests-build-docs | fixed | The pinned-renderer anchor-presence tests never run in the build loop: nothing sets GROK_BOT_PINNED_RENDERER, though bootstrap leaves the renderer at a known path | `desktop/tests/renderer-marks-patch.test.mjs` |
+| F-452 | tests-and-build | minor | unmeasured | unverified | batch8-tests-build-docs | fixed | The header-card and Liquid Glass CSS selectors are never checked against the pinned stylesheet or markup; a wrong class name ships silently | `desktop/tests/renderer-header-card.test.mjs` |
+| F-453 | tests-and-build | note | docs-wrong | unverified | batch8-tests-build-docs | fixed | The renderer patch record claims three features that are no-ops (settings-router-provider, settings-local-docker-vm, usage-current-provider) and carries 3,000 characters of dead Settings source with an API-key input | `desktop/scripts/lib/router-renderer-patch.mjs` |
+| F-454 | tests-and-build | minor | unmeasured | unverified | batch8-tests-build-docs | fixed | The brand pass replaces Grok Bot / New Bot / Caisra / Bot(s) only; 'Cursor' and 'Anysphere' in the pinned renderer are never renamed and no test or count records whether any remain | `desktop/scripts/lib/router-renderer-patch.mjs` |
+| F-455 | tests-and-build | minor | unmeasured | unverified | batch8-tests-build-docs | fixed | verify.mjs does not check the renamed executable, LSEnvironment hosts, the Dock .icns, or that the renderer patch record exists | `desktop/scripts/verify.mjs` |
+| F-456 | tests-and-build | note | docs-wrong | unverified | batch8-tests-build-docs | fixed | runner_image.yml triggers on desktop/scripts/patches/** which does not exist; the runner Dockerfile still describes the OpenClaw patch set | `.github/workflows/runner_image.yml` |
+| F-457 | tests-and-build | note | design-violation | unverified | batch8-tests-build-docs | known-limit | npm run check typechecks frontend/ (not shipped) as a gate on packaging the pinned renderer | `desktop/package.json` |
+| F-458 | tests-and-build | note | unmeasured | unverified | batch8-tests-build-docs | known-limit | Fixes covered only by source-regex anchors, not behaviour: GPU default, updater guard on clean main, intro-runs-once, narration sentence, composition wiring (subagent shell, onAvatarChanged, box-scoped flag, prompt stores), Screenshot bisect | `desktop/tests/hardware-acceleration-default.test.mjs` |
+| F-459 | tests-and-build | note | unmeasured | unverified | batch8-tests-build-docs | known-limit | Fixes with no test at all in desktop/tests: dictation language no longer forced, Help Center/feedback are tested but sign-in round trip, LSEnvironment, the Dock icon copy and the icns are not | `desktop/scripts/package-macos.mjs` |
+| F-460 | tests-and-build | note | unmeasured | unverified | batch8-tests-build-docs | known-limit | simeon-logo IoU tests skip by default and depend on pngjs and a container-only Chromium path, neither declared in package.json | `desktop/tests/simeon-logo.test.mjs` |
+| F-461 | tests-and-build | note | docs-wrong | unverified | batch8-tests-build-docs | fixed | renderer-file-url.test.mjs's crossorigin guard skips in the build loop; CLAUDE.md says it 'fails if it comes back' | `desktop/tests/renderer-file-url.test.mjs` |
+| F-462 | tests-and-build | note | design-violation | unverified | batch8-tests-build-docs | known-limit | publication-packaging.test.mjs pins the dead alternative providers (OpenRouter key error, Codex chatgpt.com, queryClaude) and the Mac-hatch prompt as required source, so removing what the design ended fails check | `desktop/tests/publication-packaging.test.mjs` |
+| F-463 | tests-and-build | note | docs-wrong | unverified | batch8-tests-build-docs | known-limit | caisra-ignition-activation.mjs records unboundBindings: [] and runnerRealTurn: supported without running any check, so the packaged host-production-bindings.json is a statement, not a measurement | `desktop/scripts/caisra-ignition-activation.mjs` |
 | F-464 | security | major | risk | confirmed | local-security | fixed | Box exec daemon on the Mac's loopback (1337) takes the fixed bearer "local" | `desktop/source/box-exec-daemon/server.ts` |
 | F-465 | security | major | risk | confirmed | local-security | known-limit | noVNC/websockify on 6080/6081 has no credential in the local path | `desktop/source/host/box/loopback-sand-box.ts` |
 | F-466 | security | major | risk | confirmed | box-token-scope | fixed | The full desktop session token sits in the box where the agent's Shell can read it | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
@@ -501,8 +501,8 @@ until its row says so. Columns:
 | F-475 | security | note | risk | confirmed | local-security | known-limit | Gateway bearer passed as a docker --env | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-476 | security | minor | risk | confirmed | local-security | fixed | WebFetch follows redirects into the local network after checking only the first URL | `desktop/source/packages/agent/tools/core/web-fetch.ts` |
 | F-477 | security | minor | risk | confirmed | local-security | fixed | The Mac-local hatch's WebFetch has no local-network rejection at all | `desktop/source/host/extensions/transcript/routed-agent-tools.ts` |
-| F-478 | security | minor | risk | refuted | local-security | - | Renderer-driven fetches from the main process: link metadata and plugin logos | `desktop/source/electron-main/attachments/attachments.ts` |
-| F-479 | security | major | risk | confirmed | composio | - | Composio proxy trusts any session id / connected-account id the client names | `server/polar/desktop/composio.py` |
+| F-478 | security | minor | risk | refuted | local-security | known-limit | Renderer-driven fetches from the main process: link metadata and plugin logos | `desktop/source/electron-main/attachments/attachments.ts` |
+| F-479 | security | major | risk | confirmed | composio | known-limit | Composio proxy trusts any session id / connected-account id the client names | `server/polar/desktop/composio.py` |
 | F-480 | security | minor | dead-service | confirmed | cloud-agents-channels | fixed | openCloudAgent still opens cursor.com from the app | `desktop/source/electron-main/main-edge.ts` |
 | F-481 | security | note | risk | confirmed | local-security | known-limit | Every page in the agent's browser and the noVNC page has confirm() forced to true | `desktop/source/electron-preload/preload-browser-base.ts` |
 | F-482 | security | note | docs-wrong | confirmed | sign-in-copy | fixed | Record claims the vendor store lives under Application Support, then corrects itself; CLAUDE.md now agrees | `docs/product/connectors-signin-measured.md` |
@@ -1642,3 +1642,85 @@ the host runs there; under explicit import the person's Mac skills reach
 the box by a deliberate copy, which the tool does not do. F-195, the
 Cursor-era `loop` skill constant in the catalogue budget is inert. F-196
 = F-312. F-052, managed skills are served empty by design.
+
+### batch8-tests-build-docs (26 September 2026)
+
+"8. Tests and build, docs versus code finish in style." The last two
+areas of the audit and the eleven rows left over from earlier clusters
+(those keep their cluster name; their disposition is set here). Nothing
+in this batch changes a product turn; it changes what the build refuses,
+what the tests measure without a Mac, and what the records say.
+
+**Build and tests.** F-451, the three pinned-renderer anchor tests
+(marks, palette, bubble) skipped in every build loop because nothing set
+`GROK_BOT_PINNED_RENDERER`; they now read bootstrap's own path
+(`src/app/dist/renderer`, `tests/lib/pinned-renderer.mjs`) and the
+variable still wins. F-452, every class the header-card and Liquid Glass
+blocks name is checked against the pinned stylesheet and chunks when a
+renderer is on disk (`tests/renderer-pinned-anchors.test.mjs`; batch 4
+already counted them into the record at package time). F-454, the brand
+pass counts "Cursor", "Anysphere", "cursor.com" and "cursor.sh" after it
+runs and writes them under `brand.residue` in the patch record
+(`countBrandResidue`); they are not renamed, because in a minified chunk
+they are as often identifiers as copy, and the count is the line to read
+before the Mac. F-455, `npm run verify` now checks the renamed
+executable, `CFBundleName`, the helper bundles, every `LSEnvironment`
+host `config.mjs` names, the Dock `.icns` bytes against
+`brand/Simeon.icns`, and refuses a pinned-renderer package with no patch
+record. F-456, `runner_image.yml` is a by-hand publish that nothing
+consumes, says so, and no longer watches a folder that left the tree;
+`render.yaml`'s comment about the GHCR image and the private-registry
+credential is corrected. F-432, `SAND_FEATURE_GATE_OVERRIDES` travels
+into a local Docker box with the other switches. F-431, an "upgrade"
+button in a served error opens simeonlabs.com, not Cursor's checkout.
+Already fixed by earlier batches, closed here: F-445 and F-446 (verify
+reads the schema-2 patch record and checks patched chunks against it,
+batch 4), F-447 (the macOS workflow runs the real loop, batch 4), F-448
+and F-437 (no `mac:build` anywhere), F-449 and F-428 (building-the-app
+says Simeon.app and api.simeonlabs.com), F-450 (README rewritten, batch
+4), F-453 (no-op features out of the record, batch 4), F-433 (auto-review
+enforces since 25 September), F-442 (no Cursor address in the brief).
+
+**Docs versus code.** F-426 and F-427, `start-here.md` and
+`what-exists.md` carry a superseded banner naming the current maps; the
+bodies stay as records. F-434, the model-roles table's auto-review row
+says what runs. F-440, `app-sign-in.md` says the fallbacks are Simeon
+Labs' since 24 September and the poll is a POST. F-439, "fourteen routes"
+is dated in both places (33 declared on 26 September, plus the Connect
+services). F-443, the file counts in CLAUDE.md are re-measured and dated.
+F-444, the two LobsterAI paths in CLAUDE.md's search rule are marked as
+history and the rule names `desktop/source`. F-461, CLAUDE.md says the
+crossorigin test fails only when a clean-source build is in `dist/`.
+F-429, F-435, F-436, F-430: already true in the tree (name-measured says
+88 then 52; no Application Support path; `[SimeonScreen]`; the sign-in
+copy says Simeon and the "Claidor" the test pins is the router provider
+id). F-160, `direction.md` records that the Composio route has no caller.
+F-400, `sharing-served.md` records that a local group chat answers with
+one cheap text call per member and why.
+
+**Known limits.** F-457, `npm run check` typechecks `frontend/`, which
+`npm run package` does not ship; it is the window that will replace the
+pinned renderer and keeping it compiling is the point. F-458 and F-459,
+the fixes measured by source anchors (GPU default, intro-once, the
+composition wiring, LSEnvironment, the icon copy) have behaviour tests
+only on a Mac; verify now covers the plist and icon half. F-460, the
+logo IoU test needs `pngjs` and a Chromium path and skips unless
+`CAISRA_PLAYWRIGHT` is set; it is a rasteriser check, not a build gate.
+F-462, `publication-packaging.test.mjs` pins the Mac escape hatch's
+providers as they are; removing the hatch is the founder's decision.
+F-463, the ignition record's `runnerRealTurn: supported` is a
+declaration the audit script requires; a measurement needs a real turn
+on a Mac. F-147, refuted: the renewer does re-read an expired file every
+30 s (`MIN_REFRESH_INTERVAL_MS`) and a missing one every second; CLAUDE.md
+now says both. F-149 and F-285, the approval ask and the transfer tools
+name one computer because the machine registry (`cards-plan.md`) is
+decided and not built. F-094, the legacy `permission-request` kind is
+kept so old transcripts decode. F-166, the Dropbox app key is the
+founder's to paste. F-327, the brief's size is the founder's decision
+("i want literally everything"); most of the sections the audit counted
+as dead are served since 25 September. F-390, no in-app log surface; the
+paths are in the records and `SAND_DEVTOOLS=1` opens DevTools. F-478,
+refuted by the audit's own refuter. F-479, the Composio proxy binds the
+Composio user id to the account and nothing else; the route has no
+caller and refuses while `CLAIDOR_COMPOSIO_API_KEY` is unset, so it is
+closed with F-160's decision.

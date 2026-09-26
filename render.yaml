@@ -115,35 +115,20 @@ services:
         fromService: { name: claidor-redis, type: keyvalue, property: port }
 
   # The cloud runner for Maties (docs/maties/cloud.md, section 4): it takes
-  # one job at a time off /maty/runner/claim, does it with the agent engine
-  # the desktop app ships — the same tag, carrying the same patches — and
-  # reports the answer back. It is a worker, not a web service — nothing
-  # calls it, it calls us — so it has no port and no health check path.
+  # one job at a time off /maty/runner/claim, runs one model turn over the
+  # person's memory and the conversation through the API's metered proxy
+  # (`runner/src/engine.ts`; the OpenClaw engine left it on 25 September
+  # 2026) and reports the answer back. It is a worker, not a web service —
+  # nothing calls it, it calls us — so it has no port and no health check
+  # path.
   #
-  # Alone among the services here it is not built by Render. The engine is
-  # 152 workspace projects and Render's build machine hangs at `tsdown`
-  # rather than finishing; worse, a build here could not reach the patches
-  # under desktop/, so it would quietly run a different engine from the one
-  # on the person's computer. GitHub Actions builds the image with the
-  # patches applied (.github/workflows/runner_image.yml) and this pulls it.
-  #
-  # A push to the registry does NOT deploy: autoDeploy has no effect on an
-  # image-backed service, so a new image goes out through Manual Deploy →
-  # Deploy latest reference, or the service's deploy hook. That is a real
-  # manual step and it is written here rather than left to be discovered.
-  #
-  # The image stays PRIVATE on GHCR, by the founder's decision of
-  # September 11 — so Render needs read access to it: a registry credential
-  # added once in the dashboard under the name in `creds` below, holding a
-  # GitHub token with `read:packages` and nothing else.
-  #
-  # Private is the safer default of the two and not only the easier one:
-  # a public image would publish the built engine, our patches to it and
-  # the runner's compiled source. It would publish no secret — the image
-  # declares no ENV or ARG holding a credential, and the runner reads its
-  # own token and everything else from the environment at run time
-  # (`runner/src/settings.ts`), which Render supplies and a registry never
-  # sees — but that is a property to keep rather than one to spend.
+  # Built by Render from the repository like every other service here
+  # (the `type: worker` entry below, `runtime: docker`). The paragraphs that
+  # stood here until 26 September 2026 described the GHCR image GitHub
+  # Actions built with the engine and the desktop's patches, the manual
+  # "Deploy latest reference" step and the private-registry credential;
+  # none of that is in the path any more (`.github/workflows/runner_image.yml`
+  # is a by-hand publish that nothing consumes; ledger F-456).
   #
   # It touches neither the database nor Redis: everything it needs it asks
   # the API for, and the only lasting credential it holds is its own
