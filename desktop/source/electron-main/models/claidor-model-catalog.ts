@@ -49,14 +49,17 @@ function nonEmpty(value: unknown): string | undefined {
 }
 
 /**
- * The rows a person may pick from: a row marked not available is left off,
- * and so is a `fallback` role, which `pricing.py` says is "never shown,
- * never in a menu", and a `video` role, the model that watches a video for
- * the watchVideo subagent and never talks to the person (25 September
- * 2026). A `primary` row is the one on by default.
+ * The rows the window's model menu shows: the `primary` role and nothing
+ * else. `pricing.py`: "there is one model they talk to and cheap ones for
+ * machinery they never see"; the founder, 26 September 2026: "no one in
+ * grok bot choose what model they want." So a `cheap` row (Luna) is not
+ * offered either, the way `fallback` ("never shown, never in a menu") and
+ * `video` (the watchVideo subagent's) never were, and a row marked not
+ * available is left off. The menu holds one row, on by default; the
+ * choice is the server's, made with a deploy (F-120).
  */
 export function availableModelFromClaidorRow(row: ClaidorAvailableModelRow): AvailableModelsResponse_AvailableModel | null {
-  if (row.accessible === false || row.available === false || row.role === "fallback" || row.role === "video") return null;
+  if (row.accessible === false || row.available === false || row.role !== "primary") return null;
   const displayName = nonEmpty(row.modelName);
   const description = nonEmpty(row.description);
   const vendor = nonEmpty(row.provider);
