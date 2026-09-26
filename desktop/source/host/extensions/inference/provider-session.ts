@@ -1,8 +1,5 @@
-import { lstatSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 
-import { query as queryClaude, type SDKResultMessage } from "@anthropic-ai/claude-agent-sdk";
 import { createOpenAI } from "@ai-sdk/openai";
 import { jsonSchema, streamText, tool, type CoreMessage, type LanguageModelV1, type ToolSet } from "ai";
 
@@ -15,11 +12,8 @@ import { CLAIDOR_WORKING_CONTEXT_TOKENS } from "../../../shared/inference/claido
 import { resolveSandAgentStepCap, stepBudgetExceededMessage } from "../../../shared/inference/turn-step-budget.js";
 import type { SandInferenceProvider } from "../../../shared/inference-router.js";
 import { claidorProxyBaseUrl } from "../../../shared/node/cursor-backend/claidor-api.js";
-import { resolveClaudeCodeCliPath } from "../../../shared/node/inference-router-local.js";
 import { getSandRootDir } from "../../host-paths.js";
 import { SandSettingsStore } from "../../../shared/node/settings/sand-settings-store.js";
-import { getBoxSecretsStorePath } from "../secrets/secrets-service.js";
-import { streamCodexDirectResponses, type CodexDirectTool } from "./codex-direct-responses.js";
 import { claidorGeminiEndpoint, streamGeminiGenerateContent, toGeminiRequest, type GeminiDirectTool } from "./gemini-direct-generate.js";
 import { configuredClaidorVideoModel, isGeminiVideoModelId } from "../../../shared/video-availability.js";
 import type { LabelMessage, PromptExecutor } from "./sand-labeling.js";
@@ -30,31 +24,20 @@ type RoutedProvider = Exclude<SandInferenceProvider, "cursor">;
 type UsageRecord = { inputTokens?: number; outputTokens?: number; cacheReadTokens?: number; cacheWriteTokens?: number };
 type RoutedToolExecutor = (tool: Loose, args: unknown, toolCallId: string) => Promise<unknown>;
 
+// The Codex, Claude Code and OpenRouter executors that sat beside this one
+// were the reconstruction author's router experiment ("an inference router
+// for Cursor, Claude Code, Codex, and OpenRouter", its README), never Grok
+// Bot's, and nothing could reach them since the executor was pinned to
+// Simeon Labs' proxy; they are gone since 26 September 2026 (ledger F-128).
+// The provider names stay in SAND_INFERENCE_PROVIDERS so stored usage reads.
 const GROK_ROUTER_SYSTEM_PROMPT = [
   "You are Simeon, a warm, concise desktop assistant.",
-  "You are running inside Simeon, not inside Codex CLI or Claude Code.",
   "The tools supplied with this request are Simeon's already-connected plugins and accounts. Use them whenever they are relevant instead of claiming that a plugin is unavailable or asking the user to reconnect it.",
   "Never ask for an API key for an already-connected plugin. Respond directly to the user in natural language after completing any necessary tool calls.",
 ].join("\n");
 
 function recordRoutedUsage(provider: RoutedProvider, usage: UsageRecord): void {
   new SandSettingsStore(join(getSandRootDir(), "settings.json")).recordInferenceUsage(provider, usage);
-}
-
-function persistedSecrets(): Record<string, string> {
-  try {
-    const parsed = JSON.parse(readFileSync(getBoxSecretsStorePath(), "utf8")) as unknown;
-    if (typeof parsed !== "object" || parsed == null || Array.isArray(parsed)) return {};
-    const secrets = (parsed as { secrets?: unknown }).secrets;
-    if (typeof secrets !== "object" || secrets == null || Array.isArray(secrets)) return {};
-    return Object.fromEntries(Object.entries(secrets).filter((entry): entry is [string, string] => typeof entry[1] === "string"));
-  } catch { return {}; }
-}
-
-function openRouterCredential(): string {
-  const value = process.env.OPENROUTER_API_KEY?.trim() || persistedSecrets().OPENROUTER_API_KEY?.trim();
-  if (value == null || value.length === 0) throw new Error("OpenRouter needs OPENROUTER_API_KEY. Add it in Settings → Router.");
-  return value;
 }
 
 export interface ClaidorCredentialSource {
@@ -217,192 +200,16 @@ function claidorAuthenticatedFetch(source: ClaidorCredentialSource): typeof fetc
   };
 }
 
-function providerPrompt(messages: readonly ProviderMessage[]): string {
-  const rendered = messages.map(message => {
-    const content = typeof message.content === "string" ? message.content : JSON.stringify(message.content);
-    return `${message.role.toUpperCase()}: ${content}`;
-  }).join("\n\n");
-  return `${GROK_ROUTER_SYSTEM_PROMPT}\n\nContinue this Simeon conversation.\n\n${rendered}`;
-}
-
 function deferred<T>() { return Promise.withResolvers<T>(); }
 
 function response(text: string, id: string, modelId: string) {
   return { id, modelId, timestamp: new Date(), headers: {}, messages: [{ role: "assistant", content: [{ type: "text", text }] }] };
 }
 
-type CodexCredentials = { accessToken: string; refreshToken: string; idToken: string; accountId: string; path: string; document: Loose };
-
-function codexCredentials(): CodexCredentials {
-  const path = join(process.env.CODEX_HOME?.trim() || join(homedir(), ".codex"), "auth.json");
-  const stat = lstatSync(path);
-  if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0) throw new Error("Codex login credentials must be a private direct regular file.");
-  const parsed = JSON.parse(readFileSync(path, "utf8")) as Loose;
-  const accessToken = parsed?.tokens?.access_token;
-  const refreshToken = parsed?.tokens?.refresh_token;
-  const idToken = parsed?.tokens?.id_token;
-  const accountId = parsed?.tokens?.account_id;
-  if (parsed?.auth_mode !== "chatgpt" || typeof accessToken !== "string" || accessToken.length === 0 || typeof refreshToken !== "string" || refreshToken.length === 0 || typeof idToken !== "string" || idToken.length === 0 || typeof accountId !== "string" || accountId.length === 0) {
-    throw new Error("Codex is not signed in with ChatGPT. Run `codex login`, then reopen Simeon.");
-  }
-  return { accessToken, refreshToken, idToken, accountId, path, document: parsed };
-}
-
-function jwtAudience(token: string): string | null {
-  try {
-    const payload = JSON.parse(Buffer.from(token.split(".")[1] ?? "", "base64url").toString("utf8")) as Loose;
-    const audience = payload.aud;
-    return typeof audience === "string" ? audience : Array.isArray(audience) ? audience.find((value): value is string => typeof value === "string") ?? null : null;
-  } catch { return null; }
-}
-
-async function refreshCodexCredentials(current: CodexCredentials): Promise<CodexCredentials> {
-  const clientId = jwtAudience(current.idToken);
-  if (clientId == null) throw new Error("Codex login expired and its refresh identity is invalid. Run `codex login` again.");
-  const refresh = await fetch("https://auth.openai.com/oauth/token", {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: current.refreshToken, client_id: clientId }),
-  });
-  if (!refresh.ok) throw new Error("Codex login expired and could not be refreshed. Run `codex login` again.");
-  const payload = await refresh.json() as Loose;
-  if (typeof payload.access_token !== "string" || payload.access_token.length === 0) throw new Error("Codex returned an invalid refreshed login. Run `codex login` again.");
-  const document = {
-    ...current.document,
-    tokens: {
-      ...current.document.tokens,
-      access_token: payload.access_token,
-      refresh_token: typeof payload.refresh_token === "string" && payload.refresh_token.length > 0 ? payload.refresh_token : current.refreshToken,
-      id_token: typeof payload.id_token === "string" && payload.id_token.length > 0 ? payload.id_token : current.idToken,
-    },
-    last_refresh: new Date().toISOString(),
-  };
-  const temporary = `${current.path}.${process.pid}.${crypto.randomUUID()}.tmp`;
-  writeFileSync(temporary, `${JSON.stringify(document, null, 2)}\n`, { encoding: "utf8", mode: 0o600, flag: "wx" });
-  renameSync(temporary, current.path);
-  return codexCredentials();
-}
-
-function codexAuthenticatedFetch(initial: CodexCredentials): typeof fetch {
-  let credentials = initial;
-  return async (input, init) => {
-    const perform = () => {
-      const headers = new Headers(init?.headers);
-      headers.set("authorization", `Bearer ${credentials.accessToken}`);
-      headers.set("ChatGPT-Account-Id", credentials.accountId);
-      return fetch(input, { ...init, headers });
-    };
-    let result = await perform();
-    if (result.status !== 401) return result;
-    credentials = await refreshCodexCredentials(credentials);
-    result = await perform();
-    return result;
-  };
-}
-
-function configuredCodexModel(): string {
-  const selected = process.env.SAND_CODEX_MODEL?.trim();
-  if (selected) return selected;
-  try {
-    const config = readFileSync(join(process.env.CODEX_HOME?.trim() || join(homedir(), ".codex"), "config.toml"), "utf8");
-    return /^\s*model\s*=\s*["']([^"']+)["']/m.exec(config)?.[1]?.trim() || "gpt-5.4";
-  } catch { return "gpt-5.4"; }
-}
-
-function configuredCodexReasoningEffort(): "minimal" | "low" | "medium" | "high" | "xhigh" | undefined {
-  const selected = process.env.SAND_CODEX_REASONING_EFFORT?.trim();
-  if (selected === "minimal" || selected === "low" || selected === "medium" || selected === "high" || selected === "xhigh") return selected;
-  try {
-    const config = readFileSync(join(process.env.CODEX_HOME?.trim() || join(homedir(), ".codex"), "config.toml"), "utf8");
-    const value = /^\s*model_reasoning_effort\s*=\s*["']([^"']+)["']/m.exec(config)?.[1]?.trim();
-    return value === "minimal" || value === "low" || value === "medium" || value === "high" || value === "xhigh" ? value : undefined;
-  } catch { return undefined; }
-}
-
-// The host's tools arrive with `parameters` already wrapped by the AI SDK's
-// `jsonSchema()` (packages/agent/tools/common.ts); the coordinator's connector
-// tools arrive as bare JSON Schema under `inputSchema`. Both come out bare here.
 function toolParameterSchema(definition: Loose): Loose | undefined {
   const parameters = definition.inputSchema ?? definition.parameters;
   if (parameters == null || typeof parameters !== "object") return undefined;
   return "jsonSchema" in parameters && typeof parameters.jsonSchema === "object" && parameters.jsonSchema != null ? parameters.jsonSchema : parameters;
-}
-
-function codexTools(definitions: readonly Loose[] | undefined): CodexDirectTool[] | undefined {
-  if (definitions == null) return undefined;
-  const tools = definitions.flatMap((source): CodexDirectTool[] => {
-    const parameters = toolParameterSchema(source);
-    return typeof source.name === "string" && source.name.length > 0 && parameters != null ? [{
-      name: source.name,
-      ...(typeof source.description === "string" ? { description: source.description } : {}),
-      parameters,
-      source,
-    }] : [];
-  });
-  return tools.length === 0 ? undefined : tools;
-}
-
-function codexExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void) {
-  const credentials = codexCredentials();
-  const usage = deferred<{ promptTokens: number; completionTokens: number; totalTokens: number }>();
-  const extendedUsage = deferred<{ inputTokens: number; outputTokens: number; cacheReadTokens: number; cacheWriteTokens: number; maxTokens: number }>();
-  const resultResponse = deferred<ReturnType<typeof response>>();
-  const metadata = deferred<Record<string, unknown>>();
-  const model = configuredCodexModel();
-  const tools = codexTools(definitions);
-  const fullStream = (async function* () {
-    let text = "";
-    try {
-      for await (const event of streamCodexDirectResponses({
-        fetch: codexAuthenticatedFetch(credentials),
-        endpoint: "https://chatgpt.com/backend-api/codex/responses",
-        model,
-        ...(configuredCodexReasoningEffort() == null ? {} : { reasoningEffort: configuredCodexReasoningEffort()! }),
-        instructions: GROK_ROUTER_SYSTEM_PROMPT,
-        input: messages.map(message => ({ role: message.role === "assistant" ? "assistant" : "user", content: typeof message.content === "string" ? message.content : JSON.stringify(message.content) })),
-        ...(tools == null ? {} : { tools }),
-        ...(executeTool == null ? {} : { executeTool: async (selected, args, toolCallId) => await executeTool(selected.source, args, toolCallId) }),
-        maxSteps: tools == null ? 1 : 8,
-      })) {
-        if (event.type === "text-delta") { text += event.delta; yield { type: "text-delta" as const, textDelta: event.delta }; continue; }
-        const basic = { promptTokens: event.usage.inputTokens, completionTokens: event.usage.outputTokens, totalTokens: event.usage.inputTokens + event.usage.outputTokens };
-        const extended = { ...event.usage, maxTokens: 0 };
-        onUsage?.(event.usage);
-        usage.resolve(basic);
-        extendedUsage.resolve(extended);
-        metadata.resolve({ openai: { responseId: event.responseId, direct: true } });
-        resultResponse.resolve(response(text, invocationId, model));
-      }
-    } catch (error) { usage.reject(error); extendedUsage.reject(error); metadata.reject(error); resultResponse.reject(error); throw error; }
-  })();
-  return { fullStream, response: resultResponse.promise, usage: usage.promise, extendedUsage: extendedUsage.promise, providerMetadata: metadata.promise, invocationId: Promise.resolve(invocationId) };
-}
-
-function claudeExecutor(messages: readonly ProviderMessage[], invocationId: string, onUsage?: (usage: UsageRecord) => void, mcpServerUrl?: string) {
-  const executable = resolveClaudeCodeCliPath();
-  if (executable == null) throw new Error("Claude Code is not installed. Install and sign in to Claude Code, then reopen Simeon.");
-  const usage = deferred<{ promptTokens: number; completionTokens: number; totalTokens: number }>();
-  const extendedUsage = deferred<{ inputTokens: number; outputTokens: number; cacheReadTokens: number; cacheWriteTokens: number; maxTokens: number }>();
-  const resultResponse = deferred<ReturnType<typeof response>>();
-  const metadata = deferred<Record<string, unknown>>();
-  const fullStream = (async function* () {
-    try {
-      let final: SDKResultMessage | undefined;
-      const selectedModel = process.env.SAND_CLAUDE_MODEL?.trim();
-      for await (const message of queryClaude({ prompt: providerPrompt(messages), options: { pathToClaudeCodeExecutable: executable, cwd: getSandRootDir(), tools: mcpServerUrl == null ? [] : ["mcp__grok_bot_plugins__*"], ...(mcpServerUrl == null ? {} : { mcpServers: { grok_bot_plugins: { type: "http" as const, url: mcpServerUrl } }, strictMcpConfig: true }), permissionMode: "default", maxTurns: mcpServerUrl == null ? 1 : 8, persistSession: false, ...(selectedModel == null || selectedModel.length === 0 ? {} : { model: selectedModel }) } })) if (message.type === "result") final = message;
-      if (final == null) throw new Error("Claude Code ended without a result.");
-      if (final.subtype !== "success") throw new Error(final.errors.join("\n") || `Claude Code failed (${final.subtype}).`);
-      const text = final.result;
-      if (text.length > 0) yield { type: "text-delta" as const, textDelta: text };
-      const input = final.usage.input_tokens, output = final.usage.output_tokens, cacheRead = final.usage.cache_read_input_tokens ?? 0, cacheWrite = final.usage.cache_creation_input_tokens ?? 0;
-      onUsage?.({ inputTokens: input, outputTokens: output, cacheReadTokens: cacheRead, cacheWriteTokens: cacheWrite });
-      usage.resolve({ promptTokens: input, completionTokens: output, totalTokens: input + output });
-      extendedUsage.resolve({ inputTokens: input, outputTokens: output, cacheReadTokens: cacheRead, cacheWriteTokens: cacheWrite, maxTokens: 0 });
-      metadata.resolve({ anthropic: { sessionId: final.session_id, totalCostUsd: final.total_cost_usd } });
-      resultResponse.resolve(response(text, invocationId, "claude-code"));
-    } catch (error) { usage.reject(error); extendedUsage.reject(error); metadata.reject(error); resultResponse.reject(error); throw error; }
-  })();
-  return { fullStream, response: resultResponse.promise, usage: usage.promise, extendedUsage: extendedUsage.promise, providerMetadata: metadata.promise, invocationId: Promise.resolve(invocationId) };
 }
 
 function toToolSet(definitions: readonly Loose[] | undefined, executeTool?: RoutedToolExecutor): ToolSet | undefined {
@@ -618,12 +425,6 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
   return settleAiSdkStream(result, invocationId, onUsage, maxTokens, callInfo, tools, coreMessages, onRequestId);
 }
 
-function openRouterExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void) {
-  const id = process.env.SAND_OPENROUTER_MODEL?.trim() || "openai/gpt-5.2";
-  const model: LanguageModelV1 = createOpenAI({ apiKey: openRouterCredential(), baseURL: "https://openrouter.ai/api/v1", compatibility: "compatible", name: "openrouter", headers: { "HTTP-Referer": "https://github.com/grok-bot-reconstructed", "X-Title": "Simeon Reconstructed" } }).chat(id as any);
-  return aiSdkExecutor(model, messages, invocationId, definitions, executeTool, onUsage);
-}
-
 // Claidor's metered proxy, on the Responses wire: the one that takes reasoning
 // and function tools in the same request (server/polar/desktop/endpoints.py).
 function claidorLanguageModel(source: ClaidorCredentialSource, id: string): LanguageModelV1 {
@@ -728,10 +529,7 @@ class ProviderPromptExecutor extends BasePromptExecutor<ProviderMessage> {
   constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void, readonly modelId?: string, readonly reasoningEffort?: ClaidorReasoningEffort, readonly budget?: ModelCallBudget, readonly onRequestId?: (requestId: string) => void) { super(new BasePromptBuilder(initialMessages)); }
   stream(_ctx: unknown, invocationId = crypto.randomUUID(), definitions?: readonly Loose[]) {
     if (this.budget != null) spendModelCall(this.budget);
-    if (this.provider === "claidor") return claidorExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage, this.modelId, this.reasoningEffort, this.budget, this.onRequestId);
-    if (this.provider === "codex") return codexExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage);
-    if (this.provider === "claude-code") return claudeExecutor(this.getMessages(), invocationId, this.onUsage);
-    return openRouterExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage);
+    return claidorExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage, this.modelId, this.reasoningEffort, this.budget, this.onRequestId);
   }
 }
 
@@ -756,13 +554,7 @@ export async function runRoutedProviderText(provider: RoutedProvider, messages: 
   const invocationId = crypto.randomUUID();
   const onUsage = (usage: UsageRecord) => recordRoutedUsage(provider, usage);
   if (options?.budget != null) spendModelCall(options.budget);
-  const result = provider === "claidor"
-    ? claidorExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage, claidorModelForSession(options), claidorReasoningEffortForSession(options), options?.budget)
-    : provider === "codex"
-      ? codexExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage)
-      : provider === "claude-code"
-        ? claudeExecutor(messages, invocationId, onUsage, options?.mcpServerUrl)
-        : openRouterExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage);
+  const result = claidorExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage, claidorModelForSession(options), claidorReasoningEffortForSession(options), options?.budget);
   let text = "";
   for await (const event of result.fullStream) {
     if (event.type === "text-delta" && typeof event.textDelta === "string") {

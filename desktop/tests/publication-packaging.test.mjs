@@ -66,7 +66,6 @@ test("Router settings use the trusted backend and display recorded inference usa
   const cursorSession = await readFile(path.join(repoRoot, "source", "host", "extensions", "inference", "cursor-session.ts"), "utf8");
   const cursorBackend = await readFile(path.join(repoRoot, "source", "shared", "node", "cursor-backend", "cursor-inference.ts"), "utf8");
   const providers = await readFile(path.join(repoRoot, "source", "host", "extensions", "inference", "provider-session.ts"), "utf8");
-  const codexDirect = await readFile(path.join(repoRoot, "source", "host", "extensions", "inference", "codex-direct-responses.ts"), "utf8");
   const turnShell = await readFile(path.join(repoRoot, "source", "host", "runner", "turn-run-shell.ts"), "utf8");
   const coordinator = await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "inference-router.ts"), "utf8");
   const widgetResponses = await readFile(path.join(repoRoot, "source", "host", "extensions", "transcript", "widget-responses.ts"), "utf8");
@@ -102,21 +101,15 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(inference, /routerSettings\.getInferenceProvider\(\)/);
   assert.match(inference, /typeof extendedUsage\.then === "function"/);
   assert.match(inference, /createProviderPromptSession\(provider, sessionOptions, onRequestId\)/);
-  assert.match(providers, /https:\/\/chatgpt\.com\/backend-api\/codex/);
-  assert.match(providers, /headers\.set\("ChatGPT-Account-Id", credentials\.accountId\)/);
-  assert.match(providers, /streamCodexDirectResponses/);
-  assert.doesNotMatch(providers, /provider\.responses\(configuredCodexModel\(\)\)/);
-  assert.match(codexDirect, /store: false/);
-  assert.match(codexDirect, /response\.output_text\.delta/);
-  assert.match(codexDirect, /type: "function_call_output"/);
+  // The Codex, Claude Code and OpenRouter executors were the reconstruction
+  // author's router, never Grok Bot's, and unreachable; gone since 26
+  // September 2026 (ledger F-128, F-462). Only Simeon Labs' proxy remains.
+  assert.doesNotMatch(providers, /chatgpt\.com\/backend-api|claude-agent-sdk|queryClaude|openrouter\.ai|OPENROUTER_API_KEY|streamCodexDirectResponses/);
+  assert.doesNotMatch(mainEdge, /getLocalInferenceCliStatus|\.credentials\.json|ANTHROPIC_API_KEY/, "no probe of the Mac for other assistants' credentials");
   assert.match(providers, /parameters: jsonSchema\(parameters\)/);
   assert.match(providers, /You are Simeon, a warm, concise desktop assistant/);
-  assert.match(providers, /mcpServers: \{ grok_bot_plugins:/);
   assert.match(providers, /recordRoutedUsage\(provider, usage\)/);
-  assert.match(providers, /queryClaude/);
-  assert.match(providers, /tools: mcpServerUrl == null \? \[\] : \["mcp__grok_bot_plugins__\*"\]/);
-  assert.match(providers, /https:\/\/openrouter\.ai\/api\/v1/);
-  assert.match(providers, /OpenRouter needs OPENROUTER_API_KEY/);
+  assert.match(providers, /return claidorExecutor\(this\.getMessages\(\), invocationId, definitions, undefined, this\.onUsage, this\.modelId, this\.reasoningEffort, this\.budget, this\.onRequestId\);/);
   assert.match(cursorSession, /routedProvider !== "cursor"/);
   assert.match(cursorSession, /createProviderPromptSession\(routedProvider, sessionOptions\)/);
   assert.match(cursorBackend, /routedProvider !== "cursor"/);
