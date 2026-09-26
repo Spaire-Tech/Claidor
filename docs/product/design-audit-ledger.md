@@ -171,7 +171,7 @@ until its row says so. Columns:
 | F-145 | box-and-computer | minor | design-violation | confirmed | hatch-residue | fixed | Escape-hatch tool descriptions and the brief name tools that do not exist here (watchVideo/videoReview) and misdescribe WebFetch | `desktop/source/host/runner/system-prompt.ts` |
 | F-146 | box-and-computer | minor | docs-wrong | confirmed | box-substrate | fixed | computer-stream-measured.md still documents `[CaisraScreen]` lines; the preload prints `[SimeonScreen]` | `docs/product/computer-stream-measured.md` |
 | F-147 | box-and-computer | note | docs-wrong | refuted | box-substrate | fixed | CLAUDE.md's "host re-reads an expired file every 30 s" is not what the renewer does | `desktop/source/host/extensions/auth/credential-renewer.ts` |
-| F-148 | box-and-computer | minor | risk | refuted | local-security | known-limit | Gateway token and desktop access token sit in plaintext on the Mac and in `docker inspect` | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-148 | box-and-computer | minor | risk | refuted | local-security | fixed | Gateway token and desktop access token sit in plaintext on the Mac and in `docker inspect` | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-149 | box-and-computer | note | design-violation | confirmed | box-substrate | known-limit | The local-tool approval ask carries no machine identity | `desktop/source/host/extensions/transcript/routed-agent-tools.ts` |
 | F-150 | box-and-computer | minor | dead-service | refuted | cloud-agents-channels | fixed | openCloudAgent still opens https://cursor.com/agents/… | `desktop/source/electron-main/main-edge.ts` |
 | F-151 | box-and-computer | note | unmeasured | confirmed | box-substrate | needs-mac | Every agent gets its own fork desktop (start-window) in one container on an amd64-emulated image | `desktop/source/host/box/box-windows.ts` |
@@ -1840,3 +1840,50 @@ one user computer, the Mac the app runs on (`userComputers`, "the single
 computer connected today"), and raises the Allow card in the app on that
 Mac, so the ask needs no machine name. It needs one only under the machine
 registry decided on 18 September (`cards-plan.md`), which is not built.
+
+### grok-bot-credential-storage (26 September 2026)
+
+"For F-148, reproduce Grok Bot's original credential-storage behavior
+rather than designing a new approach." **Correction first:** the
+`grok-bot-answers-box` note above said a file "would not narrow who can
+read" the token. That was reasoning, written before Grok Bot's storage was
+read, and it was wrong: Grok Bot encrypts at rest with a Keychain-backed
+key, which another program cannot use without the Keychain's consent.
+
+**What Grok Bot does, read in the code.** On the Mac, the box descriptor,
+gateway token and network token included, is written only encrypted with
+Electron's `safeStorage` (`gateway-descriptor-store.ts`; the cache writes
+nothing when encryption is unavailable), and a secret is held encrypted or
+in memory, never in a plain file (`secret-store.ts`,
+`resolveSecretStorageMode`). The box, a pod on Cursor's servers, receives
+its gateway token and a long-lived renewal credential in its environment
+(`SAND_GATEWAY_TOKEN`, `SAND_INFERENCE_RENEWAL_CREDENTIAL`) and renews its
+short-lived model token itself (`host/extensions/auth/auth-service.ts`).
+Its local Docker mode (`ce9fc2d8`) is the development path: plain
+`local-docker-vm.json` and a plain token file read through
+`SAND_DEV_INFERENCE_TOKEN_FILE`.
+
+**F-148, fixed, reproduced.** The Mac now plays Grok Bot's broker. The
+gateway token, the stream token and the box's renewal credential live in
+one file, `local-docker-secrets.json`, encrypted with `safeStorage`, and in
+memory only when encryption is unavailable
+(`configureLocalDockerSecretStorage`, set at startup before anything
+touches the box; a caller before that is refused rather than handed new
+tokens). The box gets the three in its environment at creation and renews
+its own token on Grok Bot's production path; no token folder is mounted,
+the five-minute rewrite loop is gone, and a container made with other
+credentials is replaced (`credentials-sha256` label, schema 12). The
+renewal credential is minted once per box and kept, not once per run,
+because the server revokes the previous one on every mint; concurrent
+connects mint once. Sign-out drops it and the next sign-in mints a new
+one. The plain files of earlier builds (`local-docker-vm.json`,
+`local-docker-credential/`) are adopted once and removed.
+`tests/local-docker-credentials.test.mjs`. What stays, as in Grok Bot's
+pod: the credentials are plaintext inside the box's environment, which
+`docker inspect` shows to anyone who can run docker on the Mac (F-113,
+F-411 and F-475 stay known limits for that reason). Not run on a Mac: the
+lines to read are `local docker: box credentials moved from plain files to
+encrypted storage` and `box credential minted and stored encrypted` in
+`computer-stream.log`, then `inference-credential renewer started (backend
+self-renewal is the sole inference-credential source)` in
+`/tmp/sand-host.log`.

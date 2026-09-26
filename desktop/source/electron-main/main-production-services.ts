@@ -6,7 +6,7 @@ import { createCoordinatorMainLegs } from "./coordinator/coordinator-main-legs.j
 import { createEgressConnectionObserver } from "./box/remote-connector-egress.js";
 import { createDesktopGatewayDescriptorFastPath } from "./box/gateway-descriptor-store.js";
 import { createRemoteHostConnector, type SandRemoteHostConnector } from "./box/box-host-connector.js";
-import { createSettingsRoutedHostConnector, localBoxHasEnabledRoutine, startLocalDockerBox, stopLocalDockerBoxOnQuit } from "./box/local-docker-host-connector.js";
+import { configureLocalDockerSecretStorage, createSettingsRoutedHostConnector, localBoxHasEnabledRoutine, startLocalDockerBox, stopLocalDockerBoxOnQuit } from "./box/local-docker-host-connector.js";
 import { createSandClientPauseControl } from "./box/box-client-pause.js";
 import { createSandMigrationWatcher } from "./box/box-migration-watcher.js";
 import type { RecreateResult } from "./box/box-recreate-commands.js";
@@ -460,6 +460,10 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
   requireFactoryBindings(bindings.services);
   const env = bindings.env ?? process.env, platform = bindings.platform ?? process.platform;
   const metadata = bindings.metadata ?? readElectronPackageMetadata(bindings.moduleDir, bindings.readPackageText);
+  // The local Docker box's credentials are kept encrypted with safeStorage,
+  // as Grok Bot keeps its box descriptor (F-148). Set before anything below
+  // can start, quit or ask the box.
+  configureLocalDockerSecretStorage(bindings.native.safeStorage);
   const resources = resolveElectronProductionResources({ moduleDir: bindings.moduleDir, app: bindings.native.app, env, metadata, ...(bindings.attachProdBoxPreferencePath == null ? {} : { attachProdBoxPreferencePath: bindings.attachProdBoxPreferencePath }) });
   const startupTracker = createDesktopStartupTracker({ monotonicNow: bindings.startup.monotonicNow ?? (() => performance.now()), translated: platform === "darwin" ? bindings.native.app.runningUnderARM64Translation === true ? "true" : "false" : "unknown", report: bindings.startup.report, scheduleStuck: bindings.startup.scheduleStuck, captureFailure: bindings.startup.captureFailure });
   bindings.services.registerMediaScheme();

@@ -94,8 +94,9 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(localDocker, /SAND_BOX_AUTO_UPDATE=0/);
   assert.match(localDocker, /dst=\/home\/box\/sand-host\/host-main\.cjs,readonly/);
   assert.match(localDocker, /\.getBoxRuntime\(\) === "local-docker" \? await localConnect\(\) : await remote\.connect\(\)/);
-  assert.match(localDocker, /OPTIONAL_CREDENTIAL_WAIT_MS = 250/);
-  assert.match(localDocker, /localDockerContainerNeedsReplace\(inspected, hostBundle\.sha256, streamTokenSha256\)/);
+  // No race for a token at connect since 26 September 2026: the box renews its own (F-148).
+  assert.doesNotMatch(localDocker, /OPTIONAL_CREDENTIAL_WAIT_MS/);
+  assert.match(localDocker, /localDockerContainerNeedsReplace\(inspected, hostBundle\.sha256, credentialsSha256\)/);
   assert.doesNotMatch(localDocker, /inferenceCredential != null && !inspected\.hasInferenceCredential/);
   assert.match(inference, /recordInferenceUsage\(provider/);
   assert.match(inference, /routerSettings\.getInferenceProvider\(\)/);

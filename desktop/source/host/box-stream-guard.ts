@@ -22,29 +22,25 @@
  * (`server/polar/sand/box_proxy.py`) checks the same token the same way.
  */
 import { timingSafeEqual } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { createServer, request as httpRequest, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { connect, type Socket } from "node:net";
 
 export const BOX_STREAM_NETWORK_TOKEN_HEADER = "x-anyrun-network-token";
 export const BOX_STREAM_NETWORK_TOKEN_QUERY = "network_token";
-/** The file the Mac writes the token into (the `/run/grok-bot` mount). */
-export const SAND_BOX_STREAM_TOKEN_FILE_ENV = "SAND_BOX_STREAM_TOKEN_FILE";
+/**
+ * The token, in the box's environment, set by the Mac when it creates the
+ * box: Grok Bot's pod receives its credentials the same way (F-148).
+ */
+export const SAND_BOX_STREAM_NETWORK_TOKEN_ENV = "SAND_BOX_STREAM_NETWORK_TOKEN";
 /** websockify's ports inside the box, and the guard's, which the Mac publishes as 6080 and 6081. */
 export const BOX_STREAM_ROUTES = Object.freeze([
   { listenPort: 16080, targetPort: 6080 },
   { listenPort: 16081, targetPort: 6081 },
 ]);
 
-export function readBoxStreamNetworkToken(env: NodeJS.ProcessEnv = process.env, read: (path: string) => string = (path) => readFileSync(path, "utf8")): string | undefined {
-  const path = env[SAND_BOX_STREAM_TOKEN_FILE_ENV]?.trim();
-  if (path == null || path.length === 0) return undefined;
-  try {
-    const token = read(path).trim();
-    return token.length >= 32 ? token : undefined;
-  } catch {
-    return undefined;
-  }
+export function readBoxStreamNetworkToken(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  const token = env[SAND_BOX_STREAM_NETWORK_TOKEN_ENV]?.trim();
+  return token != null && token.length >= 32 ? token : undefined;
 }
 
 function sameToken(offered: string | undefined, expected: string): boolean {
@@ -173,7 +169,7 @@ export async function startBoxStreamGuard(options: {
 }
 
 /**
- * Starts the guard when the Mac handed the box a token file, and never
+ * Starts the guard when the Mac handed the box a token, and never
  * fails the host: a port another process still holds (the previous host
  * during a self-upgrade) is retried every 2 s for a minute, and a guard
  * that could not bind leaves one log line.
