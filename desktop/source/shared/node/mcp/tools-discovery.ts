@@ -401,7 +401,14 @@ export function createMcpToolsDiscovery(
     if (await isHttpProvider(args.providerIdentifier)) {
       const result = await core.backendMcpExec.executeTool({
         serverIdentifier: args.providerIdentifier,
-        toolName: args.name,
+        // The server's own tool name. Grok Bot's CallMcpTool builds its
+        // args as `name: "<server>-<tool>"` beside `toolName: "<tool>"`
+        // (`buildMcpArgs`, packages/agent/tools/mcp/mcp.ts), and this line
+        // sent `name`, so every vendor call reached the server with the
+        // prefix doubled ("notion-notion-create-pages") and failed; on 26
+        // September 2026 the agent worked around it by guessing a shorter
+        // name. `name` stays the fallback for a caller that sets only it.
+        toolName: typeof args.toolName === "string" && args.toolName.length > 0 ? args.toolName : args.name,
         args: toJsonArgs(args.args),
         toolCallId: args.toolCallId,
         agentId: auditIdentity?.agentId,
