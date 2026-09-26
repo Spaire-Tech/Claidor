@@ -95,7 +95,7 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(localDocker, /dst=\/home\/box\/sand-host\/host-main\.cjs,readonly/);
   assert.match(localDocker, /\.getBoxRuntime\(\) === "local-docker" \? await localConnect\(\) : await remote\.connect\(\)/);
   assert.match(localDocker, /OPTIONAL_CREDENTIAL_WAIT_MS = 250/);
-  assert.match(localDocker, /localDockerContainerNeedsReplace\(inspected, hostBundle\.sha256\)/);
+  assert.match(localDocker, /localDockerContainerNeedsReplace\(inspected, hostBundle\.sha256, streamTokenSha256\)/);
   assert.doesNotMatch(localDocker, /inferenceCredential != null && !inspected\.hasInferenceCredential/);
   assert.match(inference, /recordInferenceUsage\(provider/);
   assert.match(inference, /routerSettings\.getInferenceProvider\(\)/);

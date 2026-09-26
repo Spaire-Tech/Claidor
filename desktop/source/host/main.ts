@@ -1,6 +1,7 @@
 import { installInvariantReporter } from "../shared/invariant.js";
 import { gatewayScheme, resolveGatewayServerConfig } from "./gateway-config.js";
 import { startGatewayServer } from "./gateway-server.js";
+import { startBoxStreamGuardFromEnv } from "./box-stream-guard.js";
 import { clearGatewayDiscovery, writeGatewayDiscovery } from "./host-discovery.js";
 import { pinHostDiagnosticsReporter } from "./host-diagnostics.js";
 import { acquireHostLock } from "./host-lock.js";
@@ -258,6 +259,10 @@ export async function main(
       `[sand-host] gateway listening on ${scheme}://${gatewayConfig.host}:${gateway.port}` +
       (gatewayConfig.authToken != null ? " (auth required)" : "")
     );
+    // The desktop stream behind Grok Bot's network token, when the Mac
+    // handed the box one (box-stream-guard.ts, ledger F-135). Never awaited:
+    // the host serves its gateway whatever becomes of the stream.
+    void startBoxStreamGuardFromEnv({ log: line => log.log(line) });
 
     installShutdownHandlers(
       host,

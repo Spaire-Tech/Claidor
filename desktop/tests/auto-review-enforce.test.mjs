@@ -106,7 +106,8 @@ test("the Mac adopts the box's Always allow on reconnect instead of pushing its 
 
 test("the box carries the telemetry guards and makes no Cursor pre-flight, and the Mac copies no Statsig cache", async () => {
   const docker = await src("electron-main/box/local-docker-host-connector.ts");
-  assert.match(docker, /LOCAL_DOCKER_SCHEMA_VERSION = "10"/);
+  // Schema 10 carried the guards; 11 (the stream guard, F-135) keeps them.
+  assert.match(docker, /LOCAL_DOCKER_SCHEMA_VERSION = "11"/);
   for (const key of ["SAND_DISABLE_TELEMETRY=1", "SAND_DISABLE_ANALYTICS=1", "SAND_BOX_LOG_SHIP_DISABLED=1"]) assert.ok(docker.includes(`"--env", "${key}"`), key);
   assert.match(await src("shared/node/cursor-backend/cursor-inference.ts"), /privacyLookup \|\| !isConnectServed\(options\.env, "aiserver\.v1\.DashboardService"\) \? "true"/);
   assert.match(await src("host/extensions/notifications/extension.ts"), /start: \(context\) => \{ if \(!isConnectServed\(process\.env, "aiserver\.v1\.GrokBotService"\)\) return \{\};/);

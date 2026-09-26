@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import { CAISRA_CLAUDE_CODE_ENV, PRODUCT_INFERENCE_PROVIDER, SAND_INFERENCE_PROVIDER_ENV } from "../../shared/inference-router.js";
 import { getConfiguredBackendUrl } from "../../shared/node/cursor-token.js";
+import { buildSandBoxNoVncUrl } from "../../packages/constants/sand-box.js";
 import type { SandSettingsStore } from "../../shared/node/settings/sand-settings-store.js";
 import type { RecreateResult } from "./box-recreate-commands.js";
 import type { SandRemoteHostConnector } from "./box-host-connector.js";
@@ -36,8 +37,34 @@ export function localDockerBoxImageReference(env: NodeJS.ProcessEnv = process.en
 export const LOCAL_DOCKER_BOX_CONTAINER = "simeon-box";
 export const LOCAL_DOCKER_GATEWAY_URL = "http://127.0.0.1:1340";
 export const LOCAL_DOCKER_OWNER_LABEL = "com.grok-bot.local-vm=1";
-export const LOCAL_DOCKER_SCHEMA_VERSION = "10";
+// 11 since 26 September 2026: the stream is published through the host's
+// token guard instead of websockify's bare ports (ledger F-135).
+export const LOCAL_DOCKER_SCHEMA_VERSION = "11";
 export const LOCAL_DOCKER_INFERENCE_TOKEN_FILE = "/run/grok-bot/inference.json";
+/** The desktop stream's network token, read by the host's guard (`host/box-stream-guard.ts`). */
+export const LOCAL_DOCKER_STREAM_TOKEN_FILE = "/run/grok-bot/box-stream-token";
+/**
+ * Where the stream is published on the Mac, and to what in the box: the
+ * guard's listeners (16080, 16081), never websockify's own 6080 and 6081,
+ * which only the guard reaches, on the box's loopback. The Mac keeps the
+ * port numbers Grok Bot's URLs name.
+ */
+export const LOCAL_DOCKER_STREAM_PUBLISH = Object.freeze(["127.0.0.1:6080:16080", "127.0.0.1:6081:16081"]);
+export const LOCAL_DOCKER_STREAM_PRIMARY_BASE = "http://127.0.0.1:6080";
+export const LOCAL_DOCKER_STREAM_FORK_BASE = "http://127.0.0.1:6081";
+/**
+ * Grok Bot's `vncProxy` descriptor for the local box: the coordinator
+ * rewrites every box status's stream URL through it (`box-vnc-proxy.ts`)
+ * and Electron's box session sends the token on every request of the page
+ * (`vnc-trust.ts`), exactly as for Grok Bot's cloud box.
+ */
+export function localDockerVncProxy(networkToken: string): NonNullable<GatewayConnection["vncProxy"]> {
+  return {
+    primaryUrl: buildSandBoxNoVncUrl(LOCAL_DOCKER_STREAM_PRIMARY_BASE, networkToken),
+    forkBaseUrl: LOCAL_DOCKER_STREAM_FORK_BASE,
+    networkToken,
+  };
+}
 const READY_TIMEOUT_MS = 180_000;
 export const OPTIONAL_CREDENTIAL_WAIT_MS = 250;
 
@@ -132,6 +159,32 @@ export function persistInferenceCredential(settingsPath: string, credential: Inf
   return next;
 }
 
+function streamTokenPath(settingsPath: string): string {
+  return join(dirname(inferenceCredentialPath(settingsPath)), "box-stream-token");
+}
+
+// One token per install, kept beside the inference token in the folder the
+// box mounts read-only at /run/grok-bot. Sign-out removes the inference
+// token only; this one names no account.
+export async function readOrCreateStreamToken(settingsPath: string): Promise<string> {
+  const target = streamTokenPath(settingsPath);
+  try {
+    const existing = (await readFile(target, "utf8")).trim();
+    if (/^[0-9a-f]{64}$/.test(existing)) return existing;
+  } catch {}
+  const token = randomBytes(32).toString("hex");
+  await mkdir(dirname(target), { recursive: true });
+  const temporary = `${target}.${process.pid}.${randomBytes(4).toString("hex")}.tmp`;
+  await writeFile(temporary, `${token}\n`, { encoding: "utf8", mode: 0o600 });
+  await rename(temporary, target);
+  await chmod(target, 0o600);
+  return token;
+}
+
+export function streamTokenFingerprint(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
 async function ensureInferenceCredentialDirectory(settingsPath: string): Promise<string> {
   const target = inferenceCredentialPath(settingsPath);
   await mkdir(dirname(target), { recursive: true });
@@ -161,9 +214,9 @@ async function gatewayReady(token: string): Promise<boolean> {
   } catch { return false; }
 }
 
-async function inspectContainer(): Promise<{ exists: boolean; running: boolean; owned: boolean; image: string; hostSha256: string; hasInferenceCredential: boolean; schemaVersion: string }> {
+async function inspectContainer(): Promise<{ exists: boolean; running: boolean; owned: boolean; image: string; hostSha256: string; hasInferenceCredential: boolean; schemaVersion: string; streamTokenSha256: string }> {
   const result = await runDocker(["inspect", "--format", "{{json .}}", LOCAL_DOCKER_BOX_CONTAINER]);
-  if (!result.ok) return { exists: false, running: false, owned: false, image: "", hostSha256: "", hasInferenceCredential: false, schemaVersion: "" };
+  if (!result.ok) return { exists: false, running: false, owned: false, image: "", hostSha256: "", hasInferenceCredential: false, schemaVersion: "", streamTokenSha256: "" };
   try {
     const value = JSON.parse(result.output) as { State?: { Running?: unknown }; Config?: { Image?: unknown; Labels?: Record<string, unknown> } };
     return {
@@ -174,15 +227,20 @@ async function inspectContainer(): Promise<{ exists: boolean; running: boolean; 
       hostSha256: typeof value.Config?.Labels?.["com.grok-bot.local-vm.host-sha256"] === "string" ? value.Config.Labels["com.grok-bot.local-vm.host-sha256"] as string : "",
       hasInferenceCredential: value.Config?.Labels?.["com.grok-bot.local-vm.inference-credential"] === "1",
       schemaVersion: typeof value.Config?.Labels?.["com.grok-bot.local-vm.schema-version"] === "string" ? value.Config.Labels["com.grok-bot.local-vm.schema-version"] as string : "",
+      streamTokenSha256: typeof value.Config?.Labels?.["com.grok-bot.local-vm.stream-token-sha256"] === "string" ? value.Config.Labels["com.grok-bot.local-vm.stream-token-sha256"] as string : "",
     };
   } catch { throw new Error("Docker returned malformed container inspection data."); }
 }
 
 export function localDockerContainerNeedsReplace(
-  inspected: { readonly schemaVersion: string; readonly hostSha256: string },
+  inspected: { readonly schemaVersion: string; readonly hostSha256: string; readonly streamTokenSha256?: string },
   hostSha256: string,
+  streamTokenSha256?: string,
 ): boolean {
-  return inspected.schemaVersion !== LOCAL_DOCKER_SCHEMA_VERSION || inspected.hostSha256 !== hostSha256;
+  // The guard reads its token once, at host start; a container made with
+  // another token would refuse the app's own stream (F-135).
+  const streamTokenChanged = streamTokenSha256 !== undefined && inspected.streamTokenSha256 !== streamTokenSha256;
+  return inspected.schemaVersion !== LOCAL_DOCKER_SCHEMA_VERSION || inspected.hostSha256 !== hostSha256 || streamTokenChanged;
 }
 
 export async function getLocalDockerStatus(settingsPath: string): Promise<LocalDockerStatus> {
@@ -279,6 +337,8 @@ async function ensureLocalDockerBoxNarrated(settingsPath: string, inferenceCrede
   const token = await readOrCreateToken(settingsPath);
   const hostBundle = await stageCurrentHostBundle(settingsPath);
   const inferenceDir = await ensureInferenceCredentialDirectory(settingsPath);
+  const streamToken = await readOrCreateStreamToken(settingsPath);
+  const streamTokenSha256 = streamTokenFingerprint(streamToken);
   if (inferenceCredential != null) await persistInferenceCredential(settingsPath, inferenceCredential);
   const daemon = await runDocker(["info", "--format", "{{.ServerVersion}}"]).catch(() => ({ ok: false, output: "Docker is not installed." }));
   if (!daemon.ok) throw new Error(`Local Docker VM is selected, but Docker is unavailable: ${/ENOENT/.test(daemon.output) ? `no docker command was found (looked in PATH, /usr/local/bin, /opt/homebrew/bin, ~/.docker/bin and Docker.app); install Docker Desktop or set SAND_DOCKER_BINARY` : daemon.output || "start Docker and try again"}`);
@@ -287,7 +347,7 @@ async function ensureLocalDockerBoxNarrated(settingsPath: string, inferenceCrede
   computerStreamLine(`local docker: container exists=${inspected.exists} running=${inspected.running} owned=${inspected.owned} schema=${inspected.schemaVersion || "?"} hostBundleMatches=${inspected.hostSha256 === hostBundle.sha256}`);
   if (inspected.exists && !inspected.owned) throw new Error(`Local Docker VM cannot use ${LOCAL_DOCKER_BOX_CONTAINER}: an unowned container already has that name.`);
   if (inspected.exists && inspected.image !== localDockerBoxImageReference()) throw new Error(`Local Docker VM container uses unexpected image ${inspected.image}. Remove it explicitly before changing images.`);
-  const shouldReplace = inspected.exists && localDockerContainerNeedsReplace(inspected, hostBundle.sha256);
+  const shouldReplace = inspected.exists && localDockerContainerNeedsReplace(inspected, hostBundle.sha256, streamTokenSha256);
   if (shouldReplace) {
     computerStreamLine("local docker: replacing the container (schema or host bundle changed)");
     const removed = await runDocker(["rm", "--force", LOCAL_DOCKER_BOX_CONTAINER]);
@@ -307,16 +367,21 @@ async function ensureLocalDockerBoxNarrated(settingsPath: string, inferenceCrede
       "--label", `com.grok-bot.local-vm.box-exec-daemon-sha256=${hostBundle.boxExecDaemonSha256}`,
       "--label", `com.grok-bot.local-vm.inference-credential=${inferenceCredential == null ? "0" : "1"}`,
       "--label", `com.grok-bot.local-vm.schema-version=${LOCAL_DOCKER_SCHEMA_VERSION}`,
+      "--label", `com.grok-bot.local-vm.stream-token-sha256=${streamTokenSha256}`,
       "--platform", "linux/amd64", "--restart", "unless-stopped",
       "--env", "SAND_SUPERVISOR_ENABLED=1", "--env", "SAND_BOX_AUTO_UPDATE=0", "--env", "SAND_USE_EXISTING_BOX_EXEC_DAEMON=1",
       // The host's data root is the volume below, said here rather than left to the image's environment (F-362).
       "--env", "SAND_DATA_ROOT=/home/box/sand-data", "--env", "SAND_TREE_SITTER_NODE_DEPS=/home/box/deps", "--env", "NODE_PATH=/home/box/deps", "--env", "SAND_GATEWAY_BIND_HOST=0.0.0.0", "--env", "SAND_HOST_PORT=1340", "--env", `SAND_GATEWAY_TOKEN=${token}`,
       ...localDockerInferenceEnvironmentArguments(inferenceCredential),
-      // The gateway (1340) and the screen (6080/6081) only. The exec daemon
-      // (1337) and the fork router (1339) take the fixed bearer "local" and
-      // nothing on the Mac dials them (grep 25 September 2026).
+      "--env", `SAND_BOX_STREAM_TOKEN_FILE=${LOCAL_DOCKER_STREAM_TOKEN_FILE}`,
+      // The gateway (1340) and the screen only. The exec daemon (1337) and
+      // the fork router (1339) take the fixed bearer "local" and nothing on
+      // the Mac dials them (grep 25 September 2026). The screen is the
+      // host's token guard, not websockify (F-135): until 26 September
+      // 2026 6080/6081 were websockify itself, with no credential, so any
+      // web page open on the Mac could drive the agent's desktop.
       "--publish", "127.0.0.1:1340:1340",
-      "--publish", "127.0.0.1:6080:6080", "--publish", "127.0.0.1:6081:6081", 
+      ...LOCAL_DOCKER_STREAM_PUBLISH.flatMap((mapping) => ["--publish", mapping]),
       "--volume", "grok-bot-local-vm-workspace:/workspace", "--volume", "grok-bot-local-vm-data:/home/box/sand-data",
       "--mount", `type=bind,src=${hostBundle.path},dst=/home/box/sand-host/host-main.cjs,readonly`,
       "--mount", `type=bind,src=${dirname(hostBundle.boxExecDaemonPath)},dst=/home/box/box-exec-daemon,readonly`,
@@ -332,7 +397,7 @@ async function ensureLocalDockerBoxNarrated(settingsPath: string, inferenceCrede
   while (Date.now() < deadline) {
     if (await gatewayReady(token)) {
       computerStreamLine(`local docker: gateway ready at ${LOCAL_DOCKER_GATEWAY_URL} after ${Math.round((Date.now() - waitStarted) / 1000)}s`);
-      return { baseUrl: LOCAL_DOCKER_GATEWAY_URL, token };
+      return { baseUrl: LOCAL_DOCKER_GATEWAY_URL, token, vncProxy: localDockerVncProxy(streamToken) };
     }
     if (!reported && Date.now() - waitStarted > 20_000) { reported = true; computerStreamLine("local docker: gateway not answering yet after 20s; still waiting (up to 3 minutes)"); }
     const state = await inspectContainer();

@@ -1036,6 +1036,18 @@ the agent's id for everything but its own transcript and our shell had
 given its toolset the child's id (F-017); and an agent-created teammate's
 pending intro is Grok Bot's design, bounded, fired only when the person
 opens it and dropped once the agent has messaged it (F-029).
+**Then the six box rows** (note `grok-bot-answers-box`): **the desktop
+stream is behind Grok Bot's network token** (F-135): the host in the box
+runs the token-checking proxy Grok Bot's cloud pod had
+(`host/box-stream-guard.ts`), the Mac publishes it as 6080/6081 instead of
+bare websockify, and hands the app `vncProxy` so Grok Bot's own production
+path carries the token; until then any web page on the Mac could drive the
+agent's desktop. The escape hatch says it is text-only instead of "the
+computer is still starting up" (F-144). The restart policy and the gateway
+token in the container's environment are Grok Bot's own contract and stay
+(F-142, F-148); the approval card names no machine because Grok Bot
+connects one (F-149). Not run on a Mac: the line to read is
+`[claidor] box-stream guarded` in `/tmp/sand-host.log`.
 
 ## The eight features were served overnight (25–26 September 2026)
 
