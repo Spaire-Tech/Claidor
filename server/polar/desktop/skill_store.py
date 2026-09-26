@@ -5,8 +5,16 @@ https://github.com/anthropics/skills at the commit named in
 `skills/NOTICE`, and `skills/catalog.json` says which ones are offered,
 with what description and tags, and at what version.
 
-The desktop app reads the catalogue as `marketplace` items
-(`desktop/src/renderer/types/skill.ts`, `MarketplaceSkill`) and installs
+*26 September 2026 (ledger F-186, F-194): the app described below is the
+LobsterAI-era one, which left the tree on 18 September; nothing in the
+current app calls this store, whose skills are Anthropic's developer
+skills rather than a consumer assistant's. It stays served; which skills
+Simeon's agents carry, and by what path into the box, is a product
+decision. The agent's skills today are its workflow library
+(`desktop/source/host/runner/workflow-agent-skills.ts`).*
+
+The desktop app read the catalogue as `marketplace` items
+(`desktop/src/renderer/types/skill.ts`, `MarketplaceSkill`) and installed
 one by fetching its `url`, which must end in `.zip`
 (`desktop/src/main/skills/skillManager.ts`, `isRemoteZipUrl`). The
 archive is extracted, and when it holds exactly one top-level directory

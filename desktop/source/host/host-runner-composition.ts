@@ -1,3 +1,4 @@
+import { agentSkillsFromWorkflowStore } from "./runner/workflow-agent-skills.js";
 import { isCloudAgentsServed } from "../shared/cloud-agents-availability.js";
 import { dirname } from "node:path";
 import { CLAIDOR_WORKING_CONTEXT_TOKENS } from "../shared/inference/claidor-context-window.js";
@@ -2932,6 +2933,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                   dispatch: input => runner.subagents.dispatchBackgroundSubagent(input),
                 },
                 requestContext: turnRequestContext,
+                // The workflow library's skills reach the prompt and the Read
+                // tool through the request context (F-050, F-183).
+                resolveAgentSkills: () => agentSkillsFromWorkflowStore(session.workflows),
                 includeTranscripts: !isSharedRoomTurn,
                 autoReviewEnforceEnabled: Object.values(autoReviewModes).includes("enforce"),
                 ...(autoReview.autoReviewClassifierExecutor === undefined

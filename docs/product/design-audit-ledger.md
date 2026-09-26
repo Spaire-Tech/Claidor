@@ -73,9 +73,9 @@ until its row says so. Columns:
 | F-047 | workflows-channels-listeners | major | dead-service | confirmed | listeners-coming-soon | needs-mac | Microsoft Teams, Linear, Sentry and PagerDuty triggers are in the prompt but have no local source at all — Linear, Sentry and PagerDuty deliver to a per-person signed webhook since 25 September 2026 (`POST /sand/ingress/{platform}/{token}`, minted at `POST /sand/listener-webhooks/{platform}`); Microsoft Teams stays coming-soon, dependency: a Teams bot nobody has built | `desktop/source/host/automations/automation.ts` |
 | F-048 | workflows-channels-listeners | major | design-violation | confirmed | routines-away | fixed | A routine dies when the app quits, while the prompt and the design both promise it runs when the person is away | `desktop/source/host/extensions/automations/sand-automation-cloud-sync.ts` |
 | F-049 | workflows-channels-listeners | minor | docs-wrong | confirmed | routines-away | fixed | Records say Routines 'does nothing yet' and 'none can be created'; the code creates and fires cron routines while the app is open | `docs/product/direction.md` |
-| F-050 | workflows-channels-listeners | major | unwired | unverified | - | - | Workflow SKILL.md files never reach the model as skills: resolveAgentSkills is optional and the production composition never supplies it; agentSkillsFromWorkflows has no caller | `desktop/source/host/runner/agent-adapters.ts` |
-| F-051 | workflows-channels-listeners | minor | design-violation | unverified | - | - | 'Import local skills' scans the box's home, not the person's Mac, and looks for Cursor/Claude files | `desktop/source/host/extensions/transcript/workflow-commands.ts` |
-| F-052 | workflows-channels-listeners | note | dead-service | unverified | - | - | Managed skills (including Teach's learn-from-demonstration) come from Cursor's GetManagedSkills and are never populated | `desktop/source/host/extensions/managed-setup/production.ts` |
+| F-050 | workflows-channels-listeners | major | unwired | unverified | batch7-skills-kits-workflows | fixed | Workflow SKILL.md files never reach the model as skills: resolveAgentSkills is optional and the production composition never supplies it; agentSkillsFromWorkflows has no caller | `desktop/source/host/runner/agent-adapters.ts` |
+| F-051 | workflows-channels-listeners | minor | design-violation | unverified | batch7-skills-kits-workflows | known-limit | 'Import local skills' scans the box's home, not the person's Mac, and looks for Cursor/Claude files | `desktop/source/host/extensions/transcript/workflow-commands.ts` |
+| F-052 | workflows-channels-listeners | note | dead-service | unverified | batch7-skills-kits-workflows | known-limit | Managed skills (including Teach's learn-from-demonstration) come from Cursor's GetManagedSkills and are never populated | `desktop/source/host/extensions/managed-setup/production.ts` |
 | F-053 | workflows-channels-listeners | minor | naming | confirmed | listeners-coming-soon | fixed | Agent-readable strings name Cursor: '@Cursor' Slack bot, 'Cursor Slack app', 'cursor-agent cards', cursor.com/agents links | `desktop/source/host/automations/automation.ts` |
 | F-054 | workflows-channels-listeners | minor | naming | confirmed | listeners-coming-soon | fixed | 'Claidor account' in prompt and status strings the agent and the person read | `desktop/source/host/automations/automation.ts` |
 | F-055 | workflows-channels-listeners | minor | unwired | confirmed | cloud-agents-channels | needs-mac | SendMessage still offers a `channel` target and secret-request 'channel-credential', but no channel delivery is ever registered and both channel platforms are coming-soon (25 September 2026, later: `host/extensions/channels/` registers delivery, activity and the config hook and wakes for inbound; Discord and Slack are `available`; `channels-served.md`) | `desktop/source/host/extensions/transcript/transcript-manager.ts` |
@@ -206,20 +206,20 @@ until its row says so. Columns:
 | F-180 | connectors-mcp | note | docs-wrong | confirmed | connectors-mcp | fixed | Catalogue is 39 entries in 11 groups, 22 of them coming soon; direction.md still counts fifteen | `docs/product/direction.md` |
 | F-181 | connectors-mcp | note | naming | confirmed | connectors-mcp | fixed | routed MCP bridge names itself grok-bot-plugins on the Claude Code hatch | `desktop/source/node-agent-coordinator/routed-mcp-bridge.ts` |
 | F-182 | connectors-mcp | note | unwired | refuted | connectors-mcp | known-limit | connectThroughVendorMcp and replaceVendorMcpInstalls are unused leftovers | `desktop/source/shared/node/vendor-mcp/oauth.ts` |
-| F-183 | skills-kits-role-agents | blocking | unwired | unverified | - | - | Agent skill catalogue never reaches the prompt: resolveAgentSkills unwired and rules resolver dead | `desktop/source/host/runner/turn-agent-composition.ts` |
-| F-184 | skills-kits-role-agents | major | dead-service | unverified | - | - | Managed-setup extension runs Cursor DashboardService RPCs on every turn and every credential renewal | `desktop/source/host/host-production-extensions.ts` |
-| F-185 | skills-kits-role-agents | major | dead-service | unverified | - | - | Renderer Skills surface: catalogue, plugin-skill sync and publish all go to Cursor and fail silently or blame Claidor | `desktop/source/host/host-gateway-api.ts` |
-| F-186 | skills-kits-role-agents | blocking | unwired | unverified | - | - | Skill store, kit store and mcp-marketplace routes have no caller in the reconstruction | `server/polar/desktop/endpoints.py` |
-| F-187 | skills-kits-role-agents | major | docs-wrong | unverified | - | - | direction.md §6 and what-exists.md describe kit/role-agent code that is not in the tree | `docs/product/direction.md` |
-| F-188 | skills-kits-role-agents | blocking | design-violation | unverified | - | - | docx/pptx/xlsx/pdf skills and the 'Documents You Make' section do not exist in this tree | `docs/product/artifacts-decision.md` |
-| F-189 | skills-kits-role-agents | minor | design-violation | unverified | - | - | The workflows sentence names only the user library folder; managed and plugin skill folders are never named | `desktop/source/shared/workflow-model.ts` |
-| F-190 | skills-kits-role-agents | major | design-violation | unverified | - | - | Import-local-skills runs inside the box, not on the person's Mac | `desktop/source/host/extensions/session/agent-session.ts` |
-| F-191 | skills-kits-role-agents | major | design-violation | unverified | - | - | Onboarding 'create an agent' offers Grok Bot's 32 templates, name+description only, no kit | `desktop/frontend/src/recovered/features/onboarding/signed-in/suggestions.ts` |
-| F-192 | skills-kits-role-agents | minor | design-violation | unverified | - | - | Marketplace plugins we serve never carry skills, yet the brief tells the agent plugins bundle skills | `desktop/source/shared/node/vendor-mcp/marketplace.ts` |
-| F-193 | skills-kits-role-agents | minor | naming | unverified | - | - | Agent-readable and user-visible strings in the skills/connector path still say Claidor | `desktop/source/host/runner/system-prompt.ts` |
-| F-194 | skills-kits-role-agents | minor | docs-wrong | unverified | - | - | Server docstrings for the skill/kit store describe the LobsterAI app and 'Maties' | `server/polar/desktop/skill_store.py` |
-| F-195 | skills-kits-role-agents | note | hardcoded | unverified | - | - | Cursor-era skill constants left in the budget code; loop-protect flag never set | `desktop/source/packages/agent/prompts/skill-catalog-budget.ts` |
-| F-196 | skills-kits-role-agents | note | risk | unverified | - | - | The box image is Cursor's public ECR tag; any skills in the box come from it | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
+| F-183 | skills-kits-role-agents | blocking | unwired | unverified | batch7-skills-kits-workflows | fixed | Agent skill catalogue never reaches the prompt: resolveAgentSkills unwired and rules resolver dead | `desktop/source/host/runner/turn-agent-composition.ts` |
+| F-184 | skills-kits-role-agents | major | dead-service | unverified | batch7-skills-kits-workflows | fixed | Managed-setup extension runs Cursor DashboardService RPCs on every turn and every credential renewal | `desktop/source/host/host-production-extensions.ts` |
+| F-185 | skills-kits-role-agents | major | dead-service | unverified | batch7-skills-kits-workflows | fixed | Renderer Skills surface: catalogue, plugin-skill sync and publish all go to Cursor and fail silently or blame Claidor | `desktop/source/host/host-gateway-api.ts` |
+| F-186 | skills-kits-role-agents | blocking | unwired | unverified | batch7-skills-kits-workflows | known-limit | Skill store, kit store and mcp-marketplace routes have no caller in the reconstruction | `server/polar/desktop/endpoints.py` |
+| F-187 | skills-kits-role-agents | major | docs-wrong | unverified | batch7-skills-kits-workflows | known-limit | direction.md §6 and what-exists.md describe kit/role-agent code that is not in the tree | `docs/product/direction.md` |
+| F-188 | skills-kits-role-agents | blocking | design-violation | unverified | batch7-skills-kits-workflows | known-limit | docx/pptx/xlsx/pdf skills and the 'Documents You Make' section do not exist in this tree | `docs/product/artifacts-decision.md` |
+| F-189 | skills-kits-role-agents | minor | design-violation | unverified | batch7-skills-kits-workflows | known-limit | The workflows sentence names only the user library folder; managed and plugin skill folders are never named | `desktop/source/shared/workflow-model.ts` |
+| F-190 | skills-kits-role-agents | major | design-violation | unverified | batch7-skills-kits-workflows | known-limit | Import-local-skills runs inside the box, not on the person's Mac | `desktop/source/host/extensions/session/agent-session.ts` |
+| F-191 | skills-kits-role-agents | major | design-violation | unverified | batch7-skills-kits-workflows | known-limit | Onboarding 'create an agent' offers Grok Bot's 32 templates, name+description only, no kit | `desktop/frontend/src/recovered/features/onboarding/signed-in/suggestions.ts` |
+| F-192 | skills-kits-role-agents | minor | design-violation | unverified | batch7-skills-kits-workflows | fixed | Marketplace plugins we serve never carry skills, yet the brief tells the agent plugins bundle skills | `desktop/source/shared/node/vendor-mcp/marketplace.ts` |
+| F-193 | skills-kits-role-agents | minor | naming | unverified | batch7-skills-kits-workflows | fixed | Agent-readable and user-visible strings in the skills/connector path still say Claidor | `desktop/source/host/runner/system-prompt.ts` |
+| F-194 | skills-kits-role-agents | minor | docs-wrong | unverified | batch7-skills-kits-workflows | fixed | Server docstrings for the skill/kit store describe the LobsterAI app and 'Maties' | `server/polar/desktop/skill_store.py` |
+| F-195 | skills-kits-role-agents | note | hardcoded | unverified | batch7-skills-kits-workflows | known-limit | Cursor-era skill constants left in the budget code; loop-protect flag never set | `desktop/source/packages/agent/prompts/skill-catalog-budget.ts` |
+| F-196 | skills-kits-role-agents | note | risk | unverified | batch7-skills-kits-workflows | known-limit | The box image is Cursor's public ECR tag; any skills in the box come from it | `desktop/source/electron-main/box/local-docker-host-connector.ts` |
 | F-197 | renderer-patches-branding | blocking | docs-wrong | unverified | batch4-reads-and-docs | fixed | npm run verify cannot pass on a packaged app since the renderer patch: provenance is pre-patch and never regenerated | `desktop/scripts/verify.mjs` |
 | F-198 | renderer-patches-branding | major | docs-wrong | unverified | batch4-reads-and-docs | fixed | npm run package:diagnostic throws: the renderer-extension provenance it validates is schemaVersion 2 with keys it forbids | `desktop/scripts/lib/macos-package-verification.mjs` |
 | F-199 | renderer-patches-branding | major | docs-wrong | unverified | batch4-renderer-patch-hygiene | fixed | Settings 'router provider' patch is a no-op but the provenance record, name-measured.md and product-name.test.mjs present it as shipped | `desktop/scripts/lib/router-renderer-patch.mjs` |
@@ -1605,3 +1605,40 @@ tool-result change to make on a Mac with a real challenge page.
 `desktop/tests/spend-batch6.test.mjs` measures the search deadline and
 count, the hatch budget, the avatar quality, the usage pass-through, the
 result text and the web-search changes offline.
+
+### batch7-skills-kits-workflows (26 September 2026)
+
+Batch 7, the skills half (F-183..F-196, F-050..F-052). **Fixed, the one
+that mattered:** F-183 and F-050, the agent's skills never reached the
+prompt. A workflow without a trigger is a `SKILL.md` in the shared
+library, `agentSkillsFromWorkflows` turns the enabled ones into skill
+rows, the loop's request context carries them as `agentSkills`, the
+prompt lists them with Read as the way in and Read serves the file as a
+skill: every piece was in the tree, and the production composition never
+supplied `resolveAgentSkills`, so the list was empty on every turn and the
+producer had no caller. `host/runner/workflow-agent-skills.ts` builds the
+rows from the session's workflow store and the composition hands the
+resolver to the turn agent beside the request context
+(`tests/skills-in-prompt.test.mjs`). Also fixed: F-184 (the server answers
+the managed-setup methods since batch 4), F-185 (publish and the daily
+plugin sync are served since 25 September; the catalogue answers empty),
+F-192 (the brief no longer says every plugin bundles skills; the vendor
+connectors carry none), F-193 (no user-visible or agent-visible string on
+this path says Claidor), F-194 (the store's docstring says which app it
+described). **Known limits:** F-186, the server's skill store (fourteen
+of Anthropic's developer skills) and the kit store have no caller in the
+app; the agent's skills are its workflow library, and which store skills
+Simeon's agents should carry, by what path into the box, is a product
+decision, not a switch. F-188, the docx/pptx/xlsx/pdf skills are neither
+in the tree nor in the store; the brief has the agent write those files
+with python-docx, python-pptx and openpyxl directly, which works without
+a skill; adding Anthropic's document skills is a content decision. F-187
+and F-191, the kits and role agents the direction describes and the
+onboarding's create step (Grok Bot's 32 templates in the pinned renderer)
+are product work. F-189, the workflows sentence names the shared library
+only; managed and plugin skills land in the same list. F-190 and F-051,
+"import local skills" runs in the box and reads the box's home, because
+the host runs there; under explicit import the person's Mac skills reach
+the box by a deliberate copy, which the tool does not do. F-195, the
+Cursor-era `loop` skill constant in the catalogue budget is inert. F-196
+= F-312. F-052, managed skills are served empty by design.

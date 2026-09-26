@@ -988,6 +988,20 @@ as sentences, and a hung search gives up after 90 s. The five capability
 prices meter today and are the founder's to confirm against the price
 pages. Not run on a Mac.
 
+## Batch 7 of the ledger, the skills half, was worked (26 September 2026)
+
+F-183..F-196 and F-050..F-052, one ledger note
+(`batch7-skills-kits-workflows`). The finding that mattered: the agent's
+skills never reached the prompt. Every piece was in the tree (a
+triggerless workflow is a `SKILL.md`, `agentSkillsFromWorkflows`, the
+request context's `agentSkills`, the prompt's skills section, Read's
+skill path) and the production composition never supplied
+`resolveAgentSkills`; `host/runner/workflow-agent-skills.ts` does now.
+The server's skill store (Anthropic's developer skills) and the kit store
+stay uncalled: which skills Simeon's agents carry is a product decision.
+Not run on a Mac: the line to read is the "skills" section of a
+`[claidor] prompt` line once a workflow without a trigger exists.
+
 ## The eight features were served overnight (25–26 September 2026)
 
 "work independently and do all … always assume that we already have it."
