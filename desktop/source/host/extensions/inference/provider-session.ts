@@ -5,7 +5,12 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { jsonSchema, streamText, tool, type CoreMessage, type LanguageModelV1, type ToolSet } from "ai";
 
 import { BasePromptBuilder, BasePromptExecutor } from "../../../packages/chat-inference/base.js";
-import { conversationIdKey } from "../../../packages/chat-inference-proto/client.js";
+// The key the loop itself sets (`packages/agent/index.ts` imports it from
+// here). The reconstruction also has a second `conversationIdKey` in
+// `chat-inference-proto/client.ts`, a different symbol the loop never sets;
+// #208 read that one, so every request still went out with no cache key
+// (`key:-` on every model= line, founder's Mac, 26 September 2026).
+import { conversationIdKey } from "../../../packages/agent/utils/request-id.js";
 import { asError } from "../../../shared/errors.js";
 import { withCheapRateLimitFallback } from "../../../shared/inference/cheap-rate-limit-fallback.js";
 import { clipForHostLog, HOST_LOG_PREFIX, logHostLine, setHostLogSink } from "../../../shared/host-log.js";

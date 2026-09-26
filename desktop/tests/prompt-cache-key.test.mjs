@@ -138,9 +138,12 @@ test("a 400 naming prompt_cache_key is retried once without it and the key stays
 
 test("the loop names the conversation in the context the executor reads", async () => {
   const agent = await readFile(path.join(repoRoot, "source/packages/agent/index.ts"), "utf8");
+  // The executor reads the same key module the loop imports.
+  assert.match(agent, /import \{[^}]*\bconversationIdKey\b[^}]*\} from "\.\/utils\/request-id\.js";/);
   assert.match(agent, /if \(this\.config\.conversationId !== undefined\) ctx = ctx\.with\(conversationIdKey, this\.config\.conversationId\);/);
   const composition = await readFile(path.join(repoRoot, "source/host/runner/turn-agent-composition.ts"), "utf8");
   assert.match(composition, /conversationId: input\.conversationId,/);
   const executor = await readFile(path.join(repoRoot, "source/host/extensions/inference/provider-session.ts"), "utf8");
   assert.match(executor, /claidorPromptCacheKey\(conversationIdFromContext\(ctx\)\)/);
+  assert.match(executor, /import \{ conversationIdKey \} from "\.\.\/\.\.\/\.\.\/packages\/agent\/utils\/request-id\.js";/);
 });

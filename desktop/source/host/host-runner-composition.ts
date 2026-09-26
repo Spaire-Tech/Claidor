@@ -77,6 +77,7 @@ import {
   SAND_EXTERNAL_READ_TOOL_NAME,
 } from "./sand-activity.js";
 import { connectorCardEmissionToMessage } from "./runner/tools/box-help-tool.js";
+import { createRepeatSendGuard } from "./runner/repeat-send-guard.js";
 import { createAgentPromptSession } from "./extensions/inference/extension.js";
 import { connectorManifests } from "../shared/channels.js";
 import { parseStoredTrigger } from "./automations/automation-trigger.js";
@@ -2251,6 +2252,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       };
     };
 
+    // One run, one copy of a text message (`runner/repeat-send-guard.ts`).
+    const repeatSendGuard = createRepeatSendGuard();
+
     const createTurnToolsetFactoryProvider = (
       dependencies: ProductionTurnHostDependencies,
       turnInputs?: ProductionTurnToolInputs,
@@ -2264,6 +2268,11 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           : {
               ...dependencies.sendMessage,
               onSendMessage: (message, timestampMs) => {
+                const repeated = repeatSendGuard.repeatOf(turn.ackToken, message, timestampMs);
+                if (repeated !== null) {
+                  logHostLine(`${HOST_LOG_PREFIX} send-message repeat not sent id=${repeated ?? "-"}`);
+                  return repeated;
+                }
                 turn.emitUpdate?.({
                   type: "send-message",
                   message: { ...message, type: String(message.type ?? "text") },
@@ -2272,7 +2281,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                     ? {}
                     : { ackToken: turn.ackToken }),
                 });
-                return hooks.transport.lastSentMessageId?.();
+                const messageId = hooks.transport.lastSentMessageId?.();
+                repeatSendGuard.noteSent(turn.ackToken, message, timestampMs, messageId);
+                return messageId;
               },
             },
       }),
