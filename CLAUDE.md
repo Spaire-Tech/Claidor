@@ -1029,6 +1029,13 @@ box; an "upgrade" button opens simeonlabs.com; `runner_image.yml` is a
 by-hand publish nothing consumes; and nine records were corrected in
 place, `start-here.md` and `what-exists.md` with superseded banners. Not
 run on a Mac: the new verify checks against a real package.
+**Later the same day, two known limits were answered from Grok Bot's own
+code** (ledger note `grok-bot-answers`): a Task child's asks for the Mac
+land on the agent's Allow card again, because Grok Bot's child inherited
+the agent's id for everything but its own transcript and our shell had
+given its toolset the child's id (F-017); and an agent-created teammate's
+pending intro is Grok Bot's design, bounded, fired only when the person
+opens it and dropped once the agent has messaged it (F-029).
 
 ## The eight features were served overnight (25–26 September 2026)
 

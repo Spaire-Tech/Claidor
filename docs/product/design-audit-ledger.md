@@ -40,7 +40,7 @@ until its row says so. Columns:
 | F-014 | agents-and-subagents | blocking | design-violation | confirmed | child-state | fixed | A Task child runs on the parent's conversation state and writes its checkpoints into the parent's agent store and transcript | `desktop/source/host/host-runner-composition.ts` |
 | F-015 | agents-and-subagents | major | spend | confirmed | hidden-turn-cap | fixed | The 40-call hidden-turn budget is dead on the production path: `hidden` never reaches the owner input | `desktop/source/host/host-runner-composition.ts` |
 | F-016 | agents-and-subagents | major | design-violation | confirmed | brief-text | fixed | The agent's prompt says it holds the Screenshot tool while AGENT_SCREENSHOT_TOOL = false withholds it (the blindness failure, undeclared) | `desktop/source/host/host-runner-composition.ts` |
-| F-017 | agents-and-subagents | major | unwired | confirmed | asks-once-memory | known-limit | The executor subagent is on by default (sand_multitask default true) and an executor child's ExternalShell/ExternalRead can never be allowed: no permission surface exists for the child's id | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
+| F-017 | agents-and-subagents | major | unwired | confirmed | asks-once-memory | fixed | The executor subagent is on by default (sand_multitask default true) and an executor child's ExternalShell/ExternalRead can never be allowed: no permission surface exists for the child's id | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
 | F-018 | agents-and-subagents | major | design-violation | confirmed | child-state | fixed | getRemoteBoxAvailable compares a Promise to false and is always true, so box tools and computerUse are offered with Docker off | `desktop/source/host/host-runner-composition.ts` |
 | F-019 | agents-and-subagents | major | unwired | confirmed | memory | fixed | Grok Bot's per-turn memory extraction and episode summaries never run: the shell adapter host has no memoryStore | `desktop/source/host/runner/production-turn-run-shell-adapter.ts` |
 | F-020 | agents-and-subagents | minor | unwired | confirmed | hidden-turn-cap | fixed | The closing-send nudge can never fire: onLatestPromptMessages is not passed, so latestPromptMessages() is always [] | `desktop/source/host/host-runner-composition.ts` |
@@ -52,7 +52,7 @@ until its row says so. Columns:
 | F-026 | agents-and-subagents | minor | naming | confirmed | child-state | fixed | The child runner's getConversationId() is the parent's id (inherited getAgentId), so the child carries a mixed identity | `desktop/source/host/host-runner-composition.ts` |
 | F-027 | agents-and-subagents | minor | design-violation | confirmed | child-state | fixed | Task resume and readonly do not reach the child; MessageSubagent's text promises a resume that recreates a blank runner | `desktop/source/host/runner/subagent-runtime.ts` |
 | F-028 | agents-and-subagents | minor | unwired | confirmed | child-state | fixed | The prompt glue never learns whether browserUse is offered, so prompt and Task configs disagree when the gate is on | `desktop/source/shared/node/experiments/experiment-config.gen.ts` |
-| F-029 | agents-and-subagents | note | risk | refuted | hidden-turn-cap | known-limit | Agent-created teammates are minted as origin 'user' with an introduction pending | `desktop/source/host/host-runner-composition.ts` |
+| F-029 | agents-and-subagents | note | risk | refuted | hidden-turn-cap | fixed | Agent-created teammates are minted as origin 'user' with an introduction pending | `desktop/source/host/host-runner-composition.ts` |
 | F-030 | agents-and-subagents | note | docs-wrong | confirmed | child-state | fixed | The child-audit record's cost accounting is incomplete: the prompt shrank, the child's context did not | `docs/product/computer-use-child-audit-2026-09-24.md` |
 | F-031 | routines-automations | blocking | design-violation | confirmed | routines-away | fixed | Routines only fire while the app and the local Docker box are running; nothing fires with the Mac shut, and the agent's brief tells the person the opposite | `desktop/source/host/extensions/automations/sand-trigger-hub.ts` |
 | F-032 | routines-automations | blocking | dead-service | confirmed | listeners-coming-soon | needs-mac | The agent is offered six event-listener trigger types (Slack, GitHub, Teams, Linear, Sentry, PagerDuty) that can never fire on Simeon, and saving one reports success — served since 25 September 2026 (`polar/sand/listeners*.py`): Slack, GitHub, Linear, Sentry and PagerDuty fire through Simeon Labs' relay once the founder registers the apps; Teams stays coming-soon (no bot) | `desktop/source/host/runner/tools/sand-state-tool.ts` |
@@ -1724,3 +1724,44 @@ refuted by the audit's own refuter. F-479, the Composio proxy binds the
 Composio user id to the account and nothing else; the route has no
 caller and refuses while `CLAIDOR_COMPOSIO_API_KEY` is unset, so it is
 closed with F-160's decision.
+
+### grok-bot-answers (26 September 2026)
+
+"look deep at grok bot original code, and try to find the answer there."
+Two known limits re-read against the reconstruction as it first shipped
+(`ce9fc2d8`) and closed.
+
+**F-017, fixed.** Grok Bot's child runner was built from the agent's
+runner options with `conversationId` and `transcriptId` set to the
+child's id, and it *inherited* `getAgentId: () => session.id`. The
+runner's `getConversationId()` reads `getAgentId` first, so a child's
+conversation id was the agent's; only its transcript was its own
+(`getTranscriptId`). Everything that answers to the agent (the action
+audit, computer-use coordination, the local-tool permission scope)
+therefore carried the agent's id, and a child's ExternalShell or
+ExternalRead ask landed on the agent's Allow surface, the only chat that
+has one (`bindLocalPermissionSurface`, keyed by `session.id`). Our
+per-identity shell (24 September) gave the toolset
+`identity.conversationId`, the child's id, so in "ask" mode every such
+call was refused with "this conversation has nowhere to ask for it".
+The toolset host now reads `session.id` for every identity; that id is
+used for the local-tool scope and nothing else (`turn-toolset.ts`, one
+read). The child keeps its own transcript, state and turn epoch (F-014,
+F-026 stand). `tests/child-local-tool-ask.test.mjs` drives the real
+controller: a child-id scope is refused, an agent-id scope raises the
+card in the agent's chat and Allow lets the command run. Multitask
+staying on is the founder's "literally everything" and is unchanged.
+
+**F-029, fixed (no change: traced to the end).** The CreateAgent call is
+Grok Bot's own, byte for byte (`createBackgroundAgent(profile, "user")`
+at `ce9fc2d8`). "user" is right: the store knows only `dev` and `user`
+(`agent-db.ts`, `getAgentOrigin`), and the Mac hatch's `origin: "agent"`
+is read back as `user`. The pending introduction is Grok Bot's design
+and it is bounded: it fires only when the person opens the teammate
+(`kickstartIfPending` from `switchAgent`/`openAgent` and at startup for
+the active agent), never from creation; it is dropped without a run when
+the teammate's transcript already holds a message, and an agent's
+SendToAgent writes exactly that (`appendAgentInboundEntries`, role
+`user`); it runs `hidden` under the 40-call budget (F-001) and once
+(F-310). So a teammate the agent put to work never introduces itself,
+and one it created and left idle greets the person once, when opened.
