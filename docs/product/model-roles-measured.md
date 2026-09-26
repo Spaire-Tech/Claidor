@@ -141,3 +141,13 @@ Cursor's server did with it is not in the reconstruction. The one lever in
 our hands, OpenAI strict mode with nullable optionals for SendMessage, needs
 a live request to know OpenAI accepts that schema; a refusal would fail
 every turn, so it was not shipped blind.
+
+**Corrected the same evening: the key never went out.** Every `model=` line
+in the next Mac log ended `key:-`. The reconstruction has two
+`conversationIdKey` symbols: the loop sets the one in
+`packages/agent/utils/request-id.ts` (imported by `packages/agent/index.ts`),
+and #208 read the look-alike in `chat-inference-proto/client.ts`, which
+nothing on this path sets. The test set the key it read, so it passed while
+the real path sent nothing. The executor now imports the loop's key, and the
+test pins that import against the loop's own. The cross-turn cache question
+is therefore still open; the next `key:` value that is not `-` starts it.

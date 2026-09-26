@@ -289,7 +289,9 @@ Bot's design: InstallPlugin's own description says to confirm with a
 question widget first, even when the person asked for the connector; and
 the connect card is followed by a short "sign in there" message.
 
-**The repeated "Notion is connected and ready" is not explained yet.** Two
+**Explained the same evening, from the box log (below): one run sent it
+twice.** *What follows was written before the log was read and is kept as the
+record of what was ruled out.* **The repeated "Notion is connected and ready" is not explained yet.** Two
 candidates were ruled out in the code: the two sign-in completion paths
 (the box's auth watch and the Mac's refresh) cannot both resume the agent,
 because Grok Bot's watch re-checks that its entry is still pending after
@@ -299,3 +301,21 @@ Nothing on the send path suppresses an identical second SendMessage. What
 decides it is the box log around the repeated text: two `[claidor] model=`
 lines each carrying the SendMessage (two model calls; then which run made
 the second), or one line carrying it twice (the model's parallel calls).
+
+**The box log, read the same evening.** Lines 58 and 61: one hidden resume
+run (`budget=40 hidden=true`, the same `sys` hash), two model calls, each a
+SendMessage of the identical text, written as `t38s6` and `t38s7`. Between
+them the model received only "Message sent to user. (id: t38s6)"; no
+reminder was injected (the reminder counts tool calls since the last
+SendMessage, which was none). The resume prompt is Grok Bot's word for word
+(`box-handoff-resume.ts`, same at `ce9fc2d8`) and gives two instructions,
+"Your first action is a SendMessage telling the user it's connected" and "If
+there was nothing else to do, just confirm it's ready and ask what they'd
+like"; the model answered both in its first message and then carried out the
+second again. Grok Bot's prompt is kept. What changed is the send path:
+`host/runner/repeat-send-guard.ts` refuses a text identical to the last one
+the same run sent (the run is its ack token; a run without one, two minutes),
+returns the first message's id to the model, and writes `[claidor]
+send-message repeat not sent id=…`. It covers any repeat of the kind, the
+25 September "Nice. We're set…" included if that was one.
+`tests/repeat-send-guard.test.mjs`.
