@@ -39,21 +39,18 @@ test("every logo is a readable image, and the stylesheet paints each file kind a
     assert.ok(contrastRatio(rule[1], MESSAGE_GREY_LIGHT) >= 3 && contrastRatio(rule[2], MESSAGE_GREY_DARK) >= 3, `${key} is readable`);
   }
   // Cards speak in the chat's blue: primary buttons inside a message card, and the pending approval badge.
-  assert.ok(sheet.includes('.sand-message-card button[data-variant="primary"]:not(#\\#):not(#\\#):not(#\\#){background-color:light-dark(#255a93,#1f5087);background-image:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 55%);border-color:transparent;color:#fff;'));
+  assert.ok(sheet.includes('.sand-message-card button[data-variant="primary"]:not(#\\#):not(#\\#):not(#\\#){background-color:light-dark(#255a93,#1f5087);border-color:transparent;color:#fff}'));
   assert.ok(sheet.includes('[data-simeon-approval="pending"]:not(#\\#):not(#\\#):not(#\\#){background-color:'));
   // Every card is white; the agent's bubble outside cards is Messages' grey; lines stay the renderer's own.
   assert.ok(sheet.includes("--sand-fill-bubble-agent:light-dark(#e9e9eb,#3b3b3d)"));
-  // Cards are glass in the same grey: every card surface, the file card included, gets the glass fill.
+  // Cards fade: the bubble's grey at the top to nothing at the bottom, no edge, no glass; the fade does not repeat into the border.
   assert.ok(sheet.includes(".sand-message-card{--sand-fill-bubble-agent:transparent}"));
-  assert.match(sheet, /\.sand-message-card :is\([^)]*\.sand-file-card\)[^{]*\{background:linear-gradient\(180deg,light-dark\(rgba\(255,255,255,\.55\)/);
+  assert.match(sheet, /\.sand-message-card :is\([^)]*\.sand-file-card\)[^{]*\{background:linear-gradient\(180deg,light-dark\(rgba\(233,233,235,1\),rgba\(59,59,61,1\)\) 0%[^}]*background-origin:border-box;background-repeat:no-repeat;border-color:transparent;box-shadow:none\}/);
   assert.ok(!/light-dark\(\s*linear-gradient/.test(sheet), "light-dark() holds colours only, never gradients");
-  // The initials circle and the selected agent row are the same glass; an exchange's header centres the pair.
-  assert.match(sheet, /\.sand-agents-sidebar__account \.sand-kit-base-avatar[^{]*\{background:linear-gradient[^}]*!important/);
-  assert.match(sheet, /\.sand-agent-item\[data-active="true"\][^{]*\{background:linear-gradient/);
-  assert.ok(sheet.includes("{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}"));
-  // Buttons are water glass: the composer's +, the sidebar's +, and a card's secondary buttons.
-  assert.match(sheet, /\.sand-prompt-attach[^{]*,\.sand-agents-sidebar__new[^{]*,\.sand-message-card button\[data-variant="outline"\][^{]*\{background:linear-gradient/);
-  assert.ok(!sheet.includes("--sand-border-default:"), "border tokens are not overridden");
+  assert.ok(!sheet.includes("saturate(170%)") && !sheet.includes("saturate(160%)") && !sheet.includes(".sand-prompt-attach"), "no glass on cards or buttons");
+  assert.ok(!sheet.includes(".sand-agents-sidebar__account .sand-kit-base-avatar"), "the initials circle is the renderer's own again");
+  assert.ok(!sheet.includes('.sand-agent-item[data-active="true"]'), "the selected row is the renderer's own again");
+  assert.ok(sheet.includes("{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}"), "an exchange centres its header");
   // The narrow sidebar's New button matches the 36 px initials circle, and the wide-sidebar account rules leave the narrow one alone.
   assert.ok(sheet.includes(".sand-agents-sidebar__rail-new .sand-agents-sidebar__new:not(#\\#):not(#\\#):not(#\\#):not(#\\#){width:36px;height:36px;"));
   assert.ok(sheet.includes('.sand-agents-sidebar__account:not([data-collapsed="true"])'));

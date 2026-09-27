@@ -333,7 +333,7 @@ ${kinds.map(([kind, url]) => `${box(kind)}{--simeon-file-logo:url("${url}")}`).j
 .sand-agents-sidebar__plugins${HI}:hover{background:transparent;color:light-dark(#1b4a7d,#a9ccf0)}
 .sand-agents-sidebar__account:not([data-collapsed="true"])${HI}{flex:0 0 auto;width:auto}
 .sand-agents-sidebar__account:not([data-collapsed="true"])${HI}>button>span:nth-child(2){display:none}
-.sand-agents-sidebar__rail-new .sand-agents-sidebar__new${HI}:not(#\\#){width:36px;height:36px;border-radius:999px}
+.sand-agents-sidebar__rail-new .sand-agents-sidebar__new${HI}:not(#\\#){width:36px;height:36px;border-radius:999px;background:var(--sand-fill-neutral-subtle);box-shadow:inset 0 0 0 .5px var(--sand-border-default)}
 .sand-agents-sidebar__rail-new .sand-agents-sidebar__new${HI} .ui-icon{--icon-size:18px!important;color:var(--sand-text-secondary)}
 .simeon-connect-apps__label{white-space:nowrap}
 .simeon-connect-apps__logos{order:1;display:inline-flex;align-items:center;margin-left:2px}
@@ -383,57 +383,34 @@ export const AGENT_BUBBLE_LIGHT = "#e9e9eb";
 export const AGENT_BUBBLE_DARK = "#3b3b3d";
 
 /**
- * Apple-style glass, 27 September 2026 ("all cards - permision atficat etc
- * be that color too … make them apple style / liquid glass ish for the
- * difference"; buttons "water glass like this", a white round + with a
- * soft rim and shadow). A card is the agent bubble's Messages grey, a touch
- * translucent, with a light sheen from the top, a bright inner rim, a hairline
- * edge and a soft lift, so it reads as a pane beside the flat bubble. A glass
- * button is near-white with a top-lit gradient, a hairline rim and a small
- * drop; it is used for the composer's +, the sidebar's +, and every
- * secondary button in a card. The card's primary button keeps the chat's
- * blue with the same top light. The account's initials circle (its tint is
- * an inline style, so the glass is `!important`) and the selected agent
- * row in the sidebar are the same white glass. The header of an exchange
- * between two agents ("the convo between two ais up top with the avatars
- * be centered") is a three-column grid: the pair in the middle column, the
- * computer control in the last.
+ * A card fades, 27 September 2026 (the founder, after trying Apple-style
+ * glass panes and white "water glass" buttons: "the cards should not be
+ * waterglass in box, but more like something fading", then "a is fine, but
+ * dont forget to remove the liquid glass, that goes for the buttons too").
+ * A card is the agent bubble's Messages grey at the top, fading to nothing
+ * at the bottom, with no border, rim, shadow or blur; buttons are flat again.
+ * The header of an exchange between two agents ("the convo between two ais
+ * up top with the avatars be centered") is a three-column grid: the pair in
+ * the middle column, the computer control in the last.
  */
-const GLASS_CARD = [
-  "background:linear-gradient(180deg,light-dark(rgba(255,255,255,.55),rgba(255,255,255,.08)),rgba(255,255,255,0) 42%),linear-gradient(light-dark(rgba(233,233,235,.78),rgba(59,59,61,.72)),light-dark(rgba(233,233,235,.78),rgba(59,59,61,.72)))",
-  "-webkit-backdrop-filter:blur(20px) saturate(170%)",
-  "backdrop-filter:blur(20px) saturate(170%)",
-  "border:1px solid light-dark(rgba(255,255,255,.7),rgba(255,255,255,.1))",
-  "box-shadow:inset 0 1px 0 light-dark(rgba(255,255,255,.9),rgba(255,255,255,.12)),0 0 0 .5px light-dark(rgba(20,20,40,.08),rgba(0,0,0,.4)),0 1px 2px rgba(20,20,40,.05),0 8px 24px -10px rgba(20,20,40,.18)",
-].join(";");
-const GLASS_BUTTON_TARGETS = [
-  ".sand-prompt-attach",
-  ".sand-agents-sidebar__new",
-  '.sand-message-card button[data-variant="outline"]',
-].join(",");
-const GLASS_BUTTON = [
-  "background:linear-gradient(180deg,light-dark(#fff,rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.78),rgba(255,255,255,.06)))",
-  "-webkit-backdrop-filter:blur(12px) saturate(160%)",
-  "backdrop-filter:blur(12px) saturate(160%)",
-  "border:1px solid light-dark(rgba(20,20,40,.1),rgba(255,255,255,.14))",
-  "box-shadow:inset 0 1px 0 light-dark(#fff,rgba(255,255,255,.18)),0 1px 2px rgba(20,20,40,.06),0 4px 12px -4px rgba(20,20,40,.14)",
-  "color:light-dark(#141414,#f2f2f2)",
+const FADE_CARD = [
+  "background:linear-gradient(180deg,light-dark(rgba(233,233,235,1),rgba(59,59,61,1)) 0%,light-dark(rgba(233,233,235,.75),rgba(59,59,61,.75)) 45%,light-dark(rgba(233,233,235,0),rgba(59,59,61,0)) 100%)",
+  // The border stays (transparent) so nothing moves; the fade is sized to the outer edge so it does not repeat into it as a line.
+  "background-origin:border-box",
+  "background-repeat:no-repeat",
+  "border-color:transparent",
+  "box-shadow:none",
 ].join(";");
 
 export const cardBlueCss = () => `${CARD_BLUE_MARKER} (27 September 2026). */
 :root:not(#\\#):not(#\\#),[data-theme]:not(#\\#):not(#\\#),.sand-1wuigm2:not(#\\#):not(#\\#),.ui-1lzgia1:not(#\\#):not(#\\#){--sand-fill-bubble-agent:light-dark(${AGENT_BUBBLE_LIGHT},${AGENT_BUBBLE_DARK})}
 .sand-message-card{--sand-fill-bubble-agent:transparent}
-.sand-message-card>:is(article,form,section)${HI},.sand-message-card :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card)${HI}{${GLASS_CARD}}
+.sand-message-card>:is(article,form,section)${HI},.sand-message-card :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card)${HI}{${FADE_CARD}}
 .sand-message-card .sand-tool-icon[style*="background-color: rgb(255, 255, 255)"]${HI}{box-shadow:inset 0 0 0 1px var(--sand-border-default)}
-${GLASS_BUTTON_TARGETS}${HI}{${GLASS_BUTTON}}
-${GLASS_BUTTON_TARGETS.split(",").map((target) => `${target}${HI}:hover:not(:disabled)`).join(",")}{background:linear-gradient(180deg,light-dark(#fff,rgba(255,255,255,.2)),light-dark(rgba(255,255,255,.9),rgba(255,255,255,.1)))}
-${GLASS_BUTTON_TARGETS.split(",").map((target) => `${target}${HI}:active:not(:disabled)`).join(",")}{transform:scale(.97)}
-.sand-agents-sidebar__account .sand-kit-base-avatar${HI}{${GLASS_BUTTON.split(";").map((declaration) => `${declaration}!important`).join(";")}}
-.sand-agent-item[data-active="true"]${HI}:not(#\\#){${GLASS_BUTTON};color:inherit}
 .sand-chat-header:has(>.sand-chat-header__exchange)${HI}{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
 .sand-chat-header>.sand-chat-header__exchange${HI}{grid-column:2;justify-self:center}
 .sand-chat-header:has(>.sand-chat-header__exchange)>.sand-chat-header__controls${HI}{grid-column:3;justify-self:end}
-.sand-message-card button[data-variant="primary"]${HI}{background-color:light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK});background-image:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 55%);border-color:transparent;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -1px 0 rgba(0,0,0,.12),0 1px 2px rgba(10,30,70,.18),0 4px 12px -4px rgba(10,30,70,.28)}
+.sand-message-card button[data-variant="primary"]${HI}{background-color:light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK});border-color:transparent;color:#fff}
 .sand-message-card button[data-variant="primary"]${HI}:hover:not(:disabled){background-color:light-dark(#1e4d80,#2a62a0)}
 .sand-message-card button[data-variant="primary"]${HI}:active:not(:disabled){background-color:light-dark(#1a4372,#1b4677)}
 .sand-message-card button[data-variant="primary"]${HI}:focus-visible{outline:2px solid light-dark(rgba(37,90,147,.45),rgba(140,184,232,.55));outline-offset:2px}
@@ -820,7 +797,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "glass-cards", "glass-buttons", "exchange-header-centred"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-fade", "exchange-header-centred"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
