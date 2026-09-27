@@ -42,10 +42,9 @@ test("every logo is a readable image, and the stylesheet paints each file kind a
   assert.ok(sheet.includes('.sand-message-card button[data-variant="primary"]:not(#\\#):not(#\\#):not(#\\#){background-color:light-dark(#255a93,#1f5087);border-color:transparent;color:#fff}'));
   assert.ok(sheet.includes('[data-simeon-approval="pending"]:not(#\\#):not(#\\#):not(#\\#){background-color:'));
   // Every card is white; the agent's bubble outside cards is Messages' grey; lines stay the renderer's own.
-  assert.ok(sheet.includes("--sand-fill-bubble-agent:light-dark(#e9e9eb,#3b3b3d)"));
   // Cards are the bubble's grey, solid, with no edge and no glass.
   assert.ok(sheet.includes(".sand-message-card{--sand-fill-bubble-agent:transparent}"));
-  assert.match(sheet, /\.sand-message-card :is\([^)]*\.sand-file-card\)[^{]*\{background:light-dark\(#e9e9eb,#3b3b3d\);border-color:transparent;box-shadow:none\}/);
+  assert.match(sheet, /\.sand-message-card :is\([^)]*\.sand-file-card\)[^{]*\{background:var\(--simeon-card-fill\);border-color:transparent;box-shadow:none\}/);
   assert.ok(!/light-dark\(\s*linear-gradient/.test(sheet), "light-dark() holds colours only, never gradients");
   assert.ok(!sheet.includes("saturate(170%)") && !sheet.includes("saturate(160%)") && !sheet.includes(".sand-prompt-attach"), "no glass on cards or buttons");
   assert.ok(!sheet.includes(".sand-agents-sidebar__account .sand-kit-base-avatar"), "the initials circle is the renderer's own again");
@@ -54,8 +53,14 @@ test("every logo is a readable image, and the stylesheet paints each file kind a
   assert.match(sheet, /\.sand-chat-header__name:not\(#\\#\):not\(#\\#\):not\(#\\#\):not\(#\\#\)\{background:linear-gradient\(180deg,light-dark\(rgba\(255,255,255,\.92\)[^}]*backdrop-filter:blur\(20px\) saturate\(1\.8\)/, "the header's name pill is white glass");
   assert.ok(sheet.includes(".sand-prompt-send:not(#\\#):not(#\\#):not(#\\#):not(#\\#){background-color:light-dark(#255a93,#1f5087);color:#fff}"), "the composer's send button is the chat's blue");
   // The choice card's options sit on the grey and each key is a round radio with a blue dot on the chosen answer.
-  assert.ok(sheet.includes(".sand-widget__options:not(#\\#):not(#\\#):not(#\\#){background:light-dark(#e9e9eb,#3b3b3d);border-color:transparent}"));
+  assert.ok(sheet.includes(".sand-widget__options:not(#\\#):not(#\\#):not(#\\#){background:var(--simeon-card-fill);border-color:transparent}"));
   assert.ok(sheet.includes(".sand-widget-option--selected .sand-widget-option__key:not(#\\#):not(#\\#):not(#\\#){opacity:1;border-color:light-dark(#255a93,#5b9be0);background:radial-gradient(circle,light-dark(#255a93,#5b9be0) 0 4px,transparent 4.5px)}"));
+  // Dark theme keeps the renderer's own agent bubble; only the light theme takes the Messages grey, and cards follow the bubble of the theme in use.
+  assert.ok(sheet.includes('[data-theme*="light"]:not(#\\#):not(#\\#),[data-theme*="light"] :is(.sand-1wuigm2,.ui-1lzgia1):not(#\\#):not(#\\#){--sand-fill-bubble-agent:#e9e9eb}'));
+  assert.ok(sheet.includes("{--simeon-card-fill:var(--sand-fill-bubble-agent)}"));
+  assert.ok(!/--sand-fill-bubble-agent:light-dark/.test(sheet), "no dark value is forced on the agent bubble");
+  // A near-black brand is near-white in the dark theme.
+  assert.ok(sheet.includes('.simeon-app[data-app="notion"]{--simeon-app-color:light-dark(#000000,#ececec)}'));
   // The narrow sidebar's New button matches the 36 px initials circle, and the wide-sidebar account rules leave the narrow one alone.
   assert.ok(sheet.includes(".sand-agents-sidebar__rail-new .sand-agents-sidebar__new:not(#\\#):not(#\\#):not(#\\#):not(#\\#){width:36px;height:36px;"));
   assert.ok(sheet.includes('.sand-agents-sidebar__account:not([data-collapsed="true"])'));

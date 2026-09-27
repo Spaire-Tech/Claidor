@@ -695,7 +695,13 @@ only under the sidebar, under a 93% tint so the desktop is "absolutely
 faint", the chat and info pane painted solid; the selected agent row is
 white ("the picker has to be white"); the agent's name pill under its
 avatar in the chat header is white Liquid Glass and the composer's send
-button is the chat's blue; the older
+button is the chat's blue. **Dark theme** ("make sure all the changes
+apply to dark mode … dont change the ai chat"): the agent bubble keeps the
+renderer's own dark colour (the Messages grey is set under
+`[data-theme*="light"]` only) and cards take the bubble of the theme in
+use (`--simeon-card-fill`); every other change carries a dark value, and a
+near-black brand's name turns near-white. Seen headless with the demo's
+`?theme=dark`, not on a Mac; the older
 frosted composer, menus, pills and name pill are gone. `npm run demo`
 paints a neutral grey where the desktop would be (`LOGO_REPLACEMENTS`, `logosCss`,
 `desktop/brand/file-icons`, `desktop/brand/app-logos`). Not yet seen on
@@ -1016,6 +1022,9 @@ opens with its own question; Yodo reports a payment on its own a few seconds
 in; typing to any agent gets a reply; booking, Allow once and answers all
 play out. The email draft's Send button does nothing, as in the app itself
 (the pinned chunk's callbacks are empty; `draft-composer-measured.md`).
+The account menu, Connect apps, both New buttons, the composer's attach
+and the agent's computer are inert in the demo by the founder's word
+(`INERT_IN_DEMO` in `demo/bridge.ts`); `?theme=dark` opens it dark.
 `tests/app-demo.test.mjs`. Seen headless only, not yet on a Mac.
 
 ## The whole-product design audit, and the switch-or-coming-soon rule (25 September 2026)

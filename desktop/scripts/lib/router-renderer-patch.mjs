@@ -244,8 +244,10 @@ export function patchOriginalCopy(source) {
  * logos are `brand/app-logos/apps.json`: the repository's colour logos where
  * it has one (Google, Microsoft, Zoom, Mailchimp) and Simple Icons (CC0,
  * brand hex included) for the rest, drawn as a mask in the text's colour.
- * Each colour is nudged darker in light mode and lighter in dark mode until
- * it holds 3:1 on the message grey; names that are common words (X, Box,
+ * Each colour is nudged darker in light mode until it holds 3:1 on the
+ * message grey, and lighter in dark mode until it holds 4.5:1 on the
+ * renderer's dark bubble, a near-black brand (Notion, Vercel, Miro) turning
+ * near-white in dark mode the way its own dark-mode logo does; names that are common words (X, Box,
  * Render, Apple, a bare "Word") are not in the list.
  */
 const BRAND_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../brand");
@@ -307,16 +309,17 @@ const hexOf = (rgb) => `#${rgb.map((c) => Math.round(Math.min(1, Math.max(0, c))
 const luminance = (rgb) => { const [r, g, b] = rgb.map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
 export const contrastRatio = (a, b) => { const [hi, lo] = [luminance(rgbOf(a)), luminance(rgbOf(b))].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
 /** The brand colour, mixed toward `toward` in 5% steps until it holds 3:1 on `background`. */
-export function readableOn(hex, background, toward) {
+export function readableOn(hex, background, toward, minimum = 3) {
   const from = rgbOf(hex), to = rgbOf(toward);
   for (let step = 0; step <= 20; step += 1) {
     const candidate = hexOf(from.map((c, i) => c + (to[i] - c) * (step / 20)));
-    if (contrastRatio(candidate, background) >= 3) return candidate;
+    if (contrastRatio(candidate, background) >= minimum) return candidate;
   }
   return toward;
 }
 export const MESSAGE_GREY_LIGHT = "#eeeeee";
-export const MESSAGE_GREY_DARK = "#2c2c2e";
+/** The renderer's own dark agent bubble; a dark-theme name must hold 4.5:1 on it, since a black brand lifted only to 3:1 reads as disabled grey. */
+export const MESSAGE_GREY_DARK = "#262626";
 
 export const LOGOS_MARKER = "/* Simeon: files and apps wear their real logos";
 const HI = ":not(#\\#):not(#\\#):not(#\\#)";
@@ -345,7 +348,7 @@ ${Object.entries(apps).map(([app, url]) => `.simeon-connect-apps__logos>i[data-a
 .simeon-app__logo{display:inline-block;width:1.05em;height:1.05em;margin:0 .26em 0 .04em;vertical-align:-.18em;background:center/contain no-repeat}
 .sand-mvmkjj .simeon-app{color:inherit}
 strong .simeon-app,b .simeon-app,h1 .simeon-app,h2 .simeon-app,h3 .simeon-app{font-weight:inherit}
-${mentions.map(({ key, color, logo, mono }) => `.simeon-app[data-app="${key}"]{--simeon-app-color:light-dark(${readableOn(color, MESSAGE_GREY_LIGHT, "#000000")},${readableOn(color, MESSAGE_GREY_DARK, "#ffffff")})}\n.simeon-app[data-app="${key}"]>.simeon-app__logo{${mono ? `background:currentColor;-webkit-mask:url("${logo}") center/contain no-repeat;mask:url("${logo}") center/contain no-repeat` : `background-image:url("${logo}")`}}`).join("\n")}
+${mentions.map(({ key, color, logo, mono }) => `.simeon-app[data-app="${key}"]{--simeon-app-color:light-dark(${readableOn(color, MESSAGE_GREY_LIGHT, "#000000")},${luminance(rgbOf(color)) < 0.03 ? "#ececec" : readableOn(color, MESSAGE_GREY_DARK, "#ffffff", 4.5)})}\n.simeon-app[data-app="${key}"]>.simeon-app__logo{${mono ? `background:currentColor;-webkit-mask:url("${logo}") center/contain no-repeat;mask:url("${logo}") center/contain no-repeat` : `background-image:url("${logo}")`}}`).join("\n")}
 `;
 }
 
@@ -378,9 +381,15 @@ ${mentions.map(({ key, color, logo, mono }) => `.simeon-app[data-app="${key}"]{-
  * reverted ("not a fan").
  */
 export const CARD_BLUE_MARKER = "/* Simeon: cards speak in the chat's blue";
-/** The agent's bubble: the grey Messages gives a received text, a touch blue (#E9E9EB), and its dark counterpart. */
+/**
+ * The agent's bubble in the light theme: the grey Messages gives a received
+ * text, a touch blue (#E9E9EB). The dark theme keeps the renderer's own
+ * bubble colour ("make sure all the changes apply to dark mode … but there
+ * dont change the ai chat"), and a card takes whatever the bubble is in the
+ * current theme through `--simeon-card-fill`, resolved where the theme sets
+ * the bubble, before a card clears the bubble token for itself.
+ */
 export const AGENT_BUBBLE_LIGHT = "#e9e9eb";
-export const AGENT_BUBBLE_DARK = "#3b3b3d";
 
 /**
  * A card fades, 27 September 2026 (the founder, after trying Apple-style
@@ -405,7 +414,7 @@ export const AGENT_BUBBLE_DARK = "#3b3b3d";
  * c have it being round picker. blue for the dot"). The keyboard shortcut
  * letters still work; only their drawing changed.
  */
-const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:light-dark(${AGENT_BUBBLE_LIGHT},${AGENT_BUBBLE_DARK});border-color:transparent}
+const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:var(--simeon-card-fill);border-color:transparent}
 .sand-widget-option__key${HI}{box-sizing:border-box;width:18px;height:18px;min-width:18px;padding:0;border-radius:999px;border:1.5px solid light-dark(rgba(20,20,20,.3),rgba(255,255,255,.4));background:transparent}
 .sand-widget-option__key${HI}>*{display:none}
 .sand-widget-option:is(:hover,:focus-visible) .sand-widget-option__key${HI}{border-color:light-dark(${USER_BUBBLE_LIGHT},#5b9be0)}
@@ -414,13 +423,14 @@ const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:light-dark
 `;
 
 const GREY_CARD = [
-  "background:light-dark(#e9e9eb,#3b3b3d)",
+  "background:var(--simeon-card-fill)",
   "border-color:transparent",
   "box-shadow:none",
 ].join(";");
 
 export const cardBlueCss = () => `${CARD_BLUE_MARKER} (27 September 2026). */
-:root:not(#\\#):not(#\\#),[data-theme]:not(#\\#):not(#\\#),.sand-1wuigm2:not(#\\#):not(#\\#),.ui-1lzgia1:not(#\\#):not(#\\#){--sand-fill-bubble-agent:light-dark(${AGENT_BUBBLE_LIGHT},${AGENT_BUBBLE_DARK})}
+[data-theme*="light"]:not(#\\#):not(#\\#),[data-theme*="light"] :is(.sand-1wuigm2,.ui-1lzgia1):not(#\\#):not(#\\#){--sand-fill-bubble-agent:${AGENT_BUBBLE_LIGHT}}
+:root:not(#\\#):not(#\\#):not(#\\#),[data-theme]:not(#\\#):not(#\\#):not(#\\#),:is(.sand-1wuigm2,.ui-1lzgia1):not(#\\#):not(#\\#):not(#\\#){--simeon-card-fill:var(--sand-fill-bubble-agent)}
 .sand-message-card{--sand-fill-bubble-agent:transparent}
 .sand-message-card>:is(article,form,section)${HI},.sand-message-card :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card)${HI}{${GREY_CARD}}
 .sand-message-card .sand-tool-icon[style*="background-color: rgb(255, 255, 255)"]${HI}{box-shadow:inset 0 0 0 1px var(--sand-border-default)}

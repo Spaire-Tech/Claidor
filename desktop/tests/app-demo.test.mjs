@@ -87,3 +87,14 @@ test("the in-page bridge bundles for the browser", async (t) => {
   assert.ok(inputs.some((input) => input.endsWith("node-agent-coordinator/renderer-port-server.ts")), "the app's own coordinator port server answers it");
   assert.ok(!inputs.some((input) => input.startsWith("node:")), "nothing Node-only reaches the page");
 });
+
+test("the demo leaves the account menu, Connect apps, the New and attach buttons and the computer inert, and opens dark on ?theme=dark", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const bridge = await readFile(path.join(repoRoot, "demo/bridge.ts"), "utf8");
+  for (const selector of [".sand-agents-sidebar__account button", ".sand-agents-sidebar__plugins", ".sand-agents-sidebar__new", ".sand-prompt-attach", ".sand-chat-header__computer"]) {
+    assert.ok(bridge.includes(`"${selector}"`), `${selector} is inert in the demo`);
+  }
+  assert.match(bridge, /for \(const type of \["pointerdown", "mousedown", "click", "keydown"\] as const\)/);
+  const backend = await readFile(path.join(repoRoot, "demo/backend.ts"), "utf8");
+  assert.match(backend, /get\("theme"\) === "dark"/);
+});
