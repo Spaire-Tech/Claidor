@@ -51,6 +51,9 @@ test("every logo is a readable image, and the stylesheet paints each file kind a
   assert.ok(!sheet.includes(".sand-agents-sidebar__account .sand-kit-base-avatar"), "the initials circle is the renderer's own again");
   assert.ok(!sheet.includes('.sand-agent-item[data-active="true"]'), "the selected row is the renderer's own again");
   assert.ok(sheet.includes("{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}"), "an exchange centres its header");
+  // The choice card's options sit on the grey and each key is a round radio with a blue dot on the chosen answer.
+  assert.ok(sheet.includes(".sand-widget__options:not(#\\#):not(#\\#):not(#\\#){background:light-dark(#e9e9eb,#3b3b3d);border-color:transparent}"));
+  assert.ok(sheet.includes(".sand-widget-option--selected .sand-widget-option__key:not(#\\#):not(#\\#):not(#\\#){opacity:1;border-color:light-dark(#255a93,#5b9be0);background:radial-gradient(circle,light-dark(#255a93,#5b9be0) 0 4px,transparent 4.5px)}"));
   // The narrow sidebar's New button matches the 36 px initials circle, and the wide-sidebar account rules leave the narrow one alone.
   assert.ok(sheet.includes(".sand-agents-sidebar__rail-new .sand-agents-sidebar__new:not(#\\#):not(#\\#):not(#\\#):not(#\\#){width:36px;height:36px;"));
   assert.ok(sheet.includes('.sand-agents-sidebar__account:not([data-collapsed="true"])'));

@@ -31,5 +31,11 @@ const indexPath = path.join(outDir, "index.html");
 const index = await readFile(indexPath, "utf8");
 const marker = '<script type="module"';
 if (!index.includes(marker)) throw new Error("renderer index.html has no module script to put the bridge before");
-await writeFile(indexPath, index.replace(marker, `<script src="./demo-bridge.js"></script>\n    ${marker}`));
+// On a Mac the agents sidebar is clear down to the window's sidebar material,
+// which blurs the person's own desktop behind the window. A browser has no
+// desktop behind the page, so the demo paints a neutral light grey there: a
+// coloured stand-in reads as a colour choice, which it is not (a blue
+// wallpaper was tried and read as "what the blue is about in the sidebar").
+const desktop = `<style>body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(160deg,#e4e4e7,#d4d4d8)}</style>\n    `;
+await writeFile(indexPath, index.replace(marker, `${desktop}<script src="./demo-bridge.js"></script>\n    ${marker}`));
 console.log(`demo built in ${path.relative(process.cwd(), outDir) || outDir}`);

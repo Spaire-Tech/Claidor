@@ -393,6 +393,21 @@ export const AGENT_BUBBLE_DARK = "#3b3b3d";
  * up top with the avatars be centered") is a three-column grid: the pair in
  * the middle column, the computer control in the last.
  */
+/**
+ * The choice card's options sit on the card's grey instead of a white box,
+ * and each option's A/B/C key is a round radio: an empty ring, blue on
+ * hover or focus, and a blue dot on the chosen answer ("instead of a or b or
+ * c have it being round picker. blue for the dot"). The keyboard shortcut
+ * letters still work; only their drawing changed.
+ */
+const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:light-dark(${AGENT_BUBBLE_LIGHT},${AGENT_BUBBLE_DARK});border-color:transparent}
+.sand-widget-option__key${HI}{box-sizing:border-box;width:18px;height:18px;min-width:18px;padding:0;border-radius:999px;border:1.5px solid light-dark(rgba(20,20,20,.3),rgba(255,255,255,.4));background:transparent}
+.sand-widget-option__key${HI}>*{display:none}
+.sand-widget-option:is(:hover,:focus-visible) .sand-widget-option__key${HI}{border-color:light-dark(${USER_BUBBLE_LIGHT},#5b9be0)}
+.sand-widget-option--selected .sand-widget-option__key${HI}{opacity:1;border-color:light-dark(${USER_BUBBLE_LIGHT},#5b9be0);background:radial-gradient(circle,light-dark(${USER_BUBBLE_LIGHT},#5b9be0) 0 4px,transparent 4.5px)}
+.sand-widget-option--selected [title="Selected"]${HI}{display:none}
+`;
+
 const FADE_CARD = [
   "background:linear-gradient(180deg,light-dark(rgba(233,233,235,1),rgba(59,59,61,1)) 0%,light-dark(rgba(233,233,235,.75),rgba(59,59,61,.75)) 45%,light-dark(rgba(233,233,235,0),rgba(59,59,61,0)) 100%)",
   // The border stays (transparent) so nothing moves; the fade is sized to the outer edge so it does not repeat into it as a line.
@@ -407,7 +422,7 @@ export const cardBlueCss = () => `${CARD_BLUE_MARKER} (27 September 2026). */
 .sand-message-card{--sand-fill-bubble-agent:transparent}
 .sand-message-card>:is(article,form,section)${HI},.sand-message-card :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card)${HI}{${FADE_CARD}}
 .sand-message-card .sand-tool-icon[style*="background-color: rgb(255, 255, 255)"]${HI}{box-shadow:inset 0 0 0 1px var(--sand-border-default)}
-.sand-chat-header:has(>.sand-chat-header__exchange)${HI}{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+${CHOICE_RADIO_CSS()}.sand-chat-header:has(>.sand-chat-header__exchange)${HI}{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
 .sand-chat-header>.sand-chat-header__exchange${HI}{grid-column:2;justify-self:center}
 .sand-chat-header:has(>.sand-chat-header__exchange)>.sand-chat-header__controls${HI}{grid-column:3;justify-self:end}
 .sand-message-card button[data-variant="primary"]${HI}{background-color:light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK});border-color:transparent;color:#fff}
@@ -609,16 +624,10 @@ export function patchOriginalHeaderStylesheet(css) {
  * it wins over the atom classes and inline styles the renderer sets.
  */
 export const LIQUID_GLASS_CSS = `
-/* Simeon: Liquid Glass on the chrome (23 September 2026). */
-:root{--simeon-glass-fill:color-mix(in srgb,var(--cursor-bg-editor) 62%,transparent);--simeon-glass-fill-strong:color-mix(in srgb,var(--cursor-bg-editor) 78%,transparent);--simeon-glass-stroke:color-mix(in srgb,var(--cursor-text-primary) 9%,transparent);--simeon-glass-highlight:light-dark(rgba(255,255,255,.75),rgba(255,255,255,.14));--simeon-glass-shadow:0 10px 30px -6px light-dark(rgba(0,0,0,.16),rgba(0,0,0,.55)),0 2px 8px -2px light-dark(rgba(0,0,0,.08),rgba(0,0,0,.4));--simeon-glass-blur:blur(24px) saturate(1.6)}
-.sand-agents-sidebar{background-color:color-mix(in srgb,var(--cursor-bg-chrome) 70%,transparent)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border-right-color:var(--simeon-glass-stroke)!important}
-.sand-info-pane{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important}
-.sand-prompt-shell{background-color:var(--simeon-glass-fill)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;border-radius:22px!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important}
-.sand-new-chat-menu,.sand-emoji-menu,.sand-mention-menu,.sand-reference-menu,.sand-agent-hover-card,.sand-link-hover-card,[role=dialog].sand-10e981r,[role=menu].sand-10e981r,[data-floating-ui-portal] .sand-10e981r{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important}
-.sand-new-chat-menu,.sand-emoji-menu,.sand-mention-menu,.sand-reference-menu,[role=dialog].sand-10e981r{border-radius:18px!important}
-.sand-new-messages-pill,.sand-update-pill,.sand-computer-top-bar{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important;opacity:1!important}
-.sand-new-messages-pill,.sand-update-pill{border-radius:999px!important}
-.sand-chat-header__name{-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;background-color:var(--simeon-glass-fill-strong)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight)!important}
+/* Simeon: Liquid Glass on the chrome (23 September 2026), the agents sidebar only since 27 September 2026. */
+html:has(.sand-agents-sidebar),html:has(.sand-agents-sidebar) body,[data-theme]:has(>.sand-agents-sidebar){background-color:transparent!important}
+.sand-agents-sidebar{background-color:color-mix(in srgb,var(--cursor-bg-chrome) 64%,transparent)!important;-webkit-backdrop-filter:blur(30px) saturate(1.8)!important;backdrop-filter:blur(30px) saturate(1.8)!important;border-right:.5px solid color-mix(in srgb,var(--cursor-text-primary) 10%,transparent)!important}
+.sand-agents-sidebar~.sand-chat,.sand-agents-sidebar~.sand-info-pane{background-color:var(--sand-bg-base)!important}
 `;
 export const LIQUID_GLASS_MARKER = "/* Simeon: Liquid Glass on the chrome";
 
@@ -797,7 +806,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-fade", "exchange-header-centred"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-fade", "exchange-header-centred", "choice-radio", "sidebar-glass-only"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

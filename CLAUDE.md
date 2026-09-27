@@ -684,7 +684,14 @@ blue ish"; blue lines and a white bubble were tried first and reverted,
 edge or shadow (`FADE_CARD`; glass panes and "water glass" buttons were
 tried first and removed, "remove the liquid glass, that goes for the
 buttons too"), buttons are flat, and an exchange between two agents
-centres its pair of avatars in the header (`LOGO_REPLACEMENTS`, `logosCss`,
+centres its pair of avatars in the header; a choice card's options sit
+on the grey with a round radio for each key (blue ring on hover, blue dot
+on the chosen answer); and the agents sidebar is the only glass surface:
+on a Mac the window carries Apple's `sidebar` vibrancy
+(`window-chrome.ts`, clear window, `followWindow`) and the page is clear
+only under the sidebar, the chat and info pane painted solid; the older
+frosted composer, menus, pills and name pill are gone. `npm run demo`
+paints a neutral grey where the desktop would be (`LOGO_REPLACEMENTS`, `logosCss`,
 `desktop/brand/file-icons`, `desktop/brand/app-logos`). Not yet seen on
 a Mac.
 **The chat header is the agent's card, 23 September, later still**
