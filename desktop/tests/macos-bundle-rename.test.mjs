@@ -108,11 +108,11 @@ test("packaging renames the shell before signing, and verification reads the ren
   const signAt = packager.indexOf("await signAppBundleAdHoc(outputApp)");
   assert.ok(renameAt > 0 && signAt > renameAt, "the rename must come before the ad-hoc signature that covers it");
   assert.match(packager, /fromName: await capture\(SYSTEM_TOOLS\.plutil, \["-extract", "CFBundleExecutable", "raw", infoPlist\]\)/);
-  assert.match(packager, /toName: reconstructedExecutableName/);
+  assert.match(packager, /toName: simeonExecutableName/);
   assert.doesNotMatch(packager, /"-replace", "CFBundleName"/, "CFBundleName is written by the rename, with the helpers, never alone");
   const verification = await readFile(path.join(repoRoot, "scripts", "lib", "macos-package-verification.mjs"), "utf8");
-  assert.match(verification, /path\.join\(reconstructedApp, "Contents", "MacOS", reconstructedExecutableName\)/);
+  assert.match(verification, /path\.join\(simeonApp, "Contents", "MacOS", simeonExecutableName\)/);
   assert.match(verification, /path\.join\(officialApp, "Contents", "MacOS", "Grok Bot"\)/, "the official reference keeps its own name");
   const config = await readFile(path.join(repoRoot, "scripts", "lib", "config.mjs"), "utf8");
-  assert.match(config, /export const reconstructedExecutableName = reconstructedName;/);
+  assert.match(config, /export const simeonExecutableName = simeonName;/);
 });

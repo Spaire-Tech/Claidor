@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { extractFile, listPackage, statFile } from "@electron/asar";
 
-import { reconstructedExecutableName as configuredExecutableName } from "./config.mjs";
+import { simeonExecutableName as configuredExecutableName } from "./config.mjs";
 import {
   expectedSignatureExcludedMachOHash,
   inspectReconstructedMacShell,
@@ -374,30 +374,30 @@ export async function verifyUnpackedRuntimeManifest({ sourceUnpackedRoot, packag
   return { platform, arch, nodeFileCount: manifest.nodeFiles.length, runtimeFileCount: source.size, manifestSha256: sha256(sourceManifestBytes) };
 }
 
-export async function verifyReconstructedMacPackage({ officialApp, reconstructedApp, sourceUnpackedRoot, packagedUnpackedRoot, reconstructedExecutableName = configuredExecutableName } = {}) {
-  if ([officialApp, reconstructedApp, sourceUnpackedRoot, packagedUnpackedRoot].some(value => typeof value !== "string" || value.length === 0)) {
-    throw new TypeError("Explicit officialApp, reconstructedApp, sourceUnpackedRoot, and packagedUnpackedRoot paths are required");
+export async function verifyReconstructedMacPackage({ officialApp, simeonApp, sourceUnpackedRoot, packagedUnpackedRoot, simeonExecutableName = configuredExecutableName } = {}) {
+  if ([officialApp, simeonApp, sourceUnpackedRoot, packagedUnpackedRoot].some(value => typeof value !== "string" || value.length === 0)) {
+    throw new TypeError("Explicit officialApp, simeonApp, sourceUnpackedRoot, and packagedUnpackedRoot paths are required");
   }
   const officialShellPath = path.join(officialApp, "Contents", "MacOS", "Grok Bot");
   // The reconstructed bundle's executable carries our name since 23 September
   // 2026; the shell invariant below compares its bytes, not its name.
-  const reconstructedShellPath = path.join(reconstructedApp, "Contents", "MacOS", reconstructedExecutableName);
+  const simeonShellPath = path.join(simeonApp, "Contents", "MacOS", simeonExecutableName);
   const officialAsarPath = path.join(officialApp, "Contents", "Resources", "app.asar");
-  const reconstructedAsarPath = path.join(reconstructedApp, "Contents", "Resources", "app.asar");
-  const [officialShell, reconstructedShell, officialAsar, reconstructedAsar] = await Promise.all([
+  const simeonAsarPath = path.join(simeonApp, "Contents", "Resources", "app.asar");
+  const [officialShell, simeonShell, officialAsar, simeonAsar] = await Promise.all([
     readFile(officialShellPath),
-    readFile(reconstructedShellPath),
+    readFile(simeonShellPath),
     readFile(officialAsarPath),
-    readFile(reconstructedAsarPath),
+    readFile(simeonAsarPath),
   ]);
-  const invariant = inspectReconstructedMacShell(officialShell, reconstructedShell);
+  const invariant = inspectReconstructedMacShell(officialShell, simeonShell);
   if (invariant.officialHash !== officialMacReleaseShellHash) throw new Error("Reconstructed verification received a non-canonical official shell reference");
-  if (invariant.officialNormalizedHash !== expectedSignatureExcludedMachOHash || invariant.reconstructedNormalizedHash !== expectedSignatureExcludedMachOHash || !invariant.structuralMatch) {
+  if (invariant.officialNormalizedHash !== expectedSignatureExcludedMachOHash || invariant.simeonNormalizedHash !== expectedSignatureExcludedMachOHash || !invariant.structuralMatch) {
     throw new Error("Reconstructed Mac shell failed the signature-excluded Electron structural invariant");
   }
-  if (invariant.reconstructedHash === officialMacReleaseShellHash) throw new Error("Reconstructed package must not copy the official signed shell");
+  if (invariant.simeonHash === officialMacReleaseShellHash) throw new Error("Reconstructed package must not copy the official signed shell");
   if (sha256(officialAsar) !== officialMacReleaseAsarHash) throw new Error("Reconstructed verification received a non-canonical official app.asar reference");
-  if (sha256(reconstructedAsar) === officialMacReleaseAsarHash) throw new Error("Reconstructed package must not copy the official app.asar");
+  if (sha256(simeonAsar) === officialMacReleaseAsarHash) throw new Error("Reconstructed package must not copy the official app.asar");
   const runtime = await verifyUnpackedRuntimeManifest({ sourceUnpackedRoot, packagedUnpackedRoot });
-  return { invariant, reconstructedAsarHash: sha256(reconstructedAsar), runtime };
+  return { invariant, simeonAsarHash: sha256(simeonAsar), runtime };
 }

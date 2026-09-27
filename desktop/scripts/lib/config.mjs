@@ -49,10 +49,10 @@ export const upstreamVersion = "0.18.0";
  * automation) on this, so the person may sign in once more and grant them
  * again after the first build carrying it.
  */
-export const reconstructedBundleId = "com.claidor.simeon";
+export const simeonBundleId = "com.claidor.simeon";
 /** The URL scheme the bundle claims; must equal SAND_DEEP_LINK_SCHEME in source/shared/desktop.ts. */
-export const reconstructedUrlScheme = "simeon";
-export const reconstructedName = process.env.CAISRA_DISPLAY_NAME?.trim() || "Simeon";
+export const simeonUrlScheme = "simeon";
+export const simeonName = process.env.SIMEON_DISPLAY_NAME?.trim() || "Simeon";
 /**
  * The name of the executable, and so of the helper bundles and of
  * CFBundleName: what the menu bar, Activity Monitor and crash reports
@@ -61,7 +61,7 @@ export const reconstructedName = process.env.CAISRA_DISPLAY_NAME?.trim() || "Sim
  * (scripts/lib/macos-bundle-rename.mjs); before that it stayed "Grok Bot",
  * and setting CFBundleName alone crashed the app at launch.
  */
-export const reconstructedExecutableName = reconstructedName;
+export const simeonExecutableName = simeonName;
 
 /**
  * Where the packaged app signs in.
@@ -84,9 +84,9 @@ export const reconstructedExecutableName = reconstructedName;
  * unconditionally, which is a token rotation before every model call.
  */
 export const packagedEnvironment = Object.freeze({
-  CURSOR_API_BASE_URL: process.env.CAISRA_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
-  CURSOR_WEBSITE_URL: process.env.CAISRA_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
-  SAND_BACKEND_URL: process.env.CAISRA_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
+  CURSOR_API_BASE_URL: process.env.SIMEON_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
+  CURSOR_WEBSITE_URL: process.env.SIMEON_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
+  SAND_BACKEND_URL: process.env.SIMEON_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
 });
 export const fidelityBundleId = "com.anysphere.sand.reconstructed.fidelity";
 export const fidelityName = "Grok Bot 0.18 Fidelity";

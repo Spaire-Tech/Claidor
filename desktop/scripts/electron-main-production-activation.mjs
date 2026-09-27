@@ -389,7 +389,7 @@ export function resolveElectronMainBindingManifestPath({ argv = process.argv, en
   return environmentPath.length > 0 ? environmentPath : null;
 }
 
-export async function buildProductionElectronMainIfSupplied({ outputRoot, manifestPath = resolveElectronMainBindingManifestPath(), reconstructedPackage = false } = {}) {
+export async function buildProductionElectronMainIfSupplied({ outputRoot, manifestPath = resolveElectronMainBindingManifestPath(), simeonPackage = false } = {}) {
   const assembled = await assembleElectronMainProductionBindingManifest(manifestPath);
   if (assembled.unboundBindings.length > 0) return {
     status: "incomplete-evidence-derived-manifest",
@@ -422,7 +422,7 @@ export async function buildProductionElectronMainIfSupplied({ outputRoot, manife
     stdin: { contents: entrySource(validated.bindings), loader: "ts", resolveDir: repoRoot, sourcefile: "scripts/build-entry/production-electron-main.ts" },
     target: electronMainNodeTarget,
   });
-  if (reconstructedPackage) {
+  if (simeonPackage) {
     const bundledSource = await readFile(outfile, "utf8");
     await writeFile(outfile, applyReconstructedUpdaterGuard(bundledSource));
   }

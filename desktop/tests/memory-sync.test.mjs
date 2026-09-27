@@ -28,7 +28,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const src = (file) => readFile(path.join(repoRoot, "source", file), "utf8");
 
 async function load(entry, name) {
-  const dir = await mkdtemp(path.join(os.tmpdir(), `caisra-${name}-`));
+  const dir = await mkdtemp(path.join(os.tmpdir(), `simeon-${name}-`));
   const outfile = path.join(dir, `${name}.mjs`);
   await build({ entryPoints: [path.join(repoRoot, entry)], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent", external: ["electron"], banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" } });
   const module = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);

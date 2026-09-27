@@ -85,7 +85,7 @@ async function main() {
   await mkdir(outDir, { recursive: true });
   const chromium = await loadChromium();
   const browser = await chromium.launch({
-    executablePath: process.env.CAISRA_CHROMIUM ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
+    executablePath: process.env.SIMEON_CHROMIUM ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
     args: ["--no-sandbox"],
   });
   const written = [];

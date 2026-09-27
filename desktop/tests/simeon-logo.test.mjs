@@ -30,12 +30,12 @@ test("Simeon's mark is twelve petals in a whirl, thin at the top left and full a
   assert.doesNotMatch(icon, /data:image|<image/, "drawn, never a picture file");
 });
 
-test("the mark drawn from the numbers covers the founder's PNG", { skip: process.env.CAISRA_PLAYWRIGHT == null && "set CAISRA_PLAYWRIGHT to rasterise" }, async (t) => {
+test("the mark drawn from the numbers covers the founder's PNG", { skip: process.env.SIMEON_PLAYWRIGHT == null && "set SIMEON_PLAYWRIGHT to rasterise" }, async (t) => {
   const { loadChromium, simeonLogoSvg } = await import(logoModule);
   const { PNG } = await import("pngjs");
   const reference = PNG.sync.read(await readFile(path.join(repoRoot, "brand/simeon-source.png")));
   const chromium = await loadChromium();
-  const browser = await chromium.launch({ executablePath: process.env.CAISRA_CHROMIUM ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--no-sandbox"] });
+  const browser = await chromium.launch({ executablePath: process.env.SIMEON_CHROMIUM ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--no-sandbox"] });
   try {
     const page = await browser.newPage({ viewport: { width: 400, height: 400 }, deviceScaleFactor: 1 });
     await page.setContent(`<!doctype html><style>html,body{margin:0;background:#fff}</style>${simeonLogoSvg()}`);
@@ -71,12 +71,12 @@ test("an icns packs one PNG per size macOS asks for, and reads back", async () =
   assert.throws(() => packIcns({ 16: Buffer.from("nope") }), /not a PNG/);
 });
 
-test("the icon drawn from the numbers covers the founder's icon file, tile and mark", { skip: process.env.CAISRA_PLAYWRIGHT == null && "set CAISRA_PLAYWRIGHT to rasterise" }, async (t) => {
+test("the icon drawn from the numbers covers the founder's icon file, tile and mark", { skip: process.env.SIMEON_PLAYWRIGHT == null && "set SIMEON_PLAYWRIGHT to rasterise" }, async (t) => {
   const { loadChromium, simeonAppIconSvg } = await import(logoModule);
   const { PNG } = await import("pngjs");
   const reference = PNG.sync.read(await readFile(path.join(repoRoot, "brand/simeon-app-icon-source.png")));
   const chromium = await loadChromium();
-  const browser = await chromium.launch({ executablePath: process.env.CAISRA_CHROMIUM ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--no-sandbox"] });
+  const browser = await chromium.launch({ executablePath: process.env.SIMEON_CHROMIUM ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--no-sandbox"] });
   try {
     const page = await browser.newPage({ viewport: { width: 1024, height: 1024 }, deviceScaleFactor: 1 });
     await page.setContent(`<!doctype html><style>html,body{margin:0;background:transparent}</style>${simeonAppIconSvg({ size: 1024 })}`);

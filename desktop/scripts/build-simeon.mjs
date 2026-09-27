@@ -27,7 +27,7 @@ import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
 import react from "@vitejs/plugin-react";
 
-import { electronMainEntrySource, hostEntrySource, preloadEntrySource } from "./lib/caisra-entries.mjs";
+import { electronMainEntrySource, hostEntrySource, preloadEntrySource } from "./lib/simeon-entries.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outRoot = path.join(repoRoot, "dist");
@@ -69,7 +69,7 @@ const PROCESSES = [
  * `entry` is either a path under source/, or {contents} for the two generated
  * ignition entries — electron-main and host both export a start function and
  * neither calls it, so the entry that calls it has to be generated. See
- * scripts/lib/caisra-entries.mjs.
+ * scripts/lib/simeon-entries.mjs.
  */
 async function bundleProcess([entry, outfile]) {
   const started = Date.now();
@@ -107,7 +107,7 @@ async function bundleProcess([entry, outfile]) {
     // does this build.
     banner: { js: 'const __import_meta_url = require("node:url").pathToFileURL(__filename).href;' },
     define: {
-      "process.env.CAISRA_BUILD": JSON.stringify("clean-source"),
+      "process.env.SIMEON_BUILD": JSON.stringify("clean-source"),
       "import.meta.url": "__import_meta_url",
     },
   });
@@ -136,7 +136,7 @@ async function bundleProcess([entry, outfile]) {
  */
 function stripCrossorigin() {
   return {
-    name: "caisra-strip-crossorigin",
+    name: "simeon-strip-crossorigin",
     enforce: "post",
     transformIndexHtml(html) {
       return html.replace(/\s+crossorigin(?:=("|')[^"']*\1)?/g, "");
@@ -179,15 +179,15 @@ async function main() {
 
   const ignition = [
     [
-      { contents: await electronMainEntrySource(), sourcefile: "scripts/build-entry/caisra-electron-main.ts" },
+      { contents: await electronMainEntrySource(), sourcefile: "scripts/build-entry/simeon-electron-main.ts" },
       "electron-main/main.cjs",
     ],
     [
-      { contents: await hostEntrySource(), sourcefile: "scripts/build-entry/caisra-host.ts" },
+      { contents: await hostEntrySource(), sourcefile: "scripts/build-entry/simeon-host.ts" },
       "host/host-main.cjs",
     ],
     ...Object.keys({ "preload": 0, "preload-dev-controls": 0, "preload-webview": 0, "preload-vnc": 0 }).map((name) => [
-      { contents: preloadEntrySource(name), sourcefile: `scripts/build-entry/caisra-${name}.ts` },
+      { contents: preloadEntrySource(name), sourcefile: `scripts/build-entry/simeon-${name}.ts` },
       `electron-preload/${name}.cjs`,
     ]),
   ];
@@ -197,7 +197,7 @@ async function main() {
   const renderer = await buildRenderer();
 
   await writeFile(
-    path.join(outRoot, "caisra-build.json"),
+    path.join(outRoot, "simeon-build.json"),
     `${JSON.stringify(
       {
         product: "Simeon",

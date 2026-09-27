@@ -14,7 +14,7 @@
  * page cap bound that cost instead, without rebuilding the pool.
  *
  * pdfjs-dist is bundled into host-main.cjs (it is not an external of
- * scripts/build-caisra.mjs or scripts/caisra-ignition-activation.mjs) because
+ * scripts/build-simeon.mjs or scripts/simeon-ignition-activation.mjs) because
  * the box receives that one file alone, bind-mounted at
  * /home/box/sand-host/host-main.cjs (electron-main/box/
  * local-docker-host-connector.ts); nothing installs node_modules there.

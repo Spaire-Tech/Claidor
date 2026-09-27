@@ -17,7 +17,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function load(entry, name) {
-  const dir = await mkdtemp(path.join(os.tmpdir(), `caisra-${name}-`));
+  const dir = await mkdtemp(path.join(os.tmpdir(), `simeon-${name}-`));
   const outfile = path.join(dir, `${name}.mjs`);
   await build({ entryPoints: [path.join(repoRoot, entry)], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent", packages: "external" });
   const module = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);

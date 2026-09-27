@@ -22,7 +22,7 @@ const deterministicBanner = `"Deterministic clean-source renderer: ${rendererPro
  * opaque origin `null`. Vite marks the emitted script and stylesheet
  * `crossorigin`; Chromium then refuses them under CORS before parsing, and
  * the app renders in Times New Roman. Strip the attribute. Same fix as
- * `scripts/build-caisra.mjs`.
+ * `scripts/build-simeon.mjs`.
  */
 export function stripCrossoriginAttributes(html) {
   return html.replace(/\s+crossorigin(?:=("|')[^"']*\1)?/gi, "");

@@ -58,7 +58,7 @@ export const pdfTextExtractionBindingSpec = Object.freeze({
     { tool: "boxRead", factoryNeedle: "createBoxReadToolInputs: (turn, _props): TurnReadToolFactoryInput => {" },
   ]),
   package: "pdfjs-dist",
-  bundleScripts: Object.freeze(["scripts/build-caisra.mjs", "scripts/caisra-ignition-activation.mjs"]),
+  bundleScripts: Object.freeze(["scripts/build-simeon.mjs", "scripts/simeon-ignition-activation.mjs"]),
 });
 
 function lineOf(text, offset) {

@@ -53,7 +53,7 @@ test("the first launch as Simeon copies the Grok Bot user-data folder once, cach
 
 test("every packaged build names the app after the display name, so Electron's menu, About and data folder follow", async () => {
   const build = await readFile(path.join(repoRoot, "scripts/lib/build-asar.mjs"), "utf8");
-  assert.match(build, /stagedPackage\.productName = reconstructedName;/);
+  assert.match(build, /stagedPackage\.productName = simeonName;/);
   const config = await readFile(path.join(repoRoot, "scripts/lib/config.mjs"), "utf8");
   assert.match(config, /\|\| "Simeon";/);
   assert.match(config, /"Simeon\.app"/);

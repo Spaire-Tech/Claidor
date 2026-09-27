@@ -77,7 +77,7 @@ await signAppBundleAdHoc(stagedApp);
 await run(SYSTEM_TOOLS.codesign, ["--verify", "--deep", "--strict", stagedApp]);
 await verifyReconstructedMacPackage({
   officialApp: built.runtimeApp,
-  reconstructedApp: stagedApp,
+  simeonApp: stagedApp,
   sourceUnpackedRoot: unpackedRoot,
   packagedUnpackedRoot: packagedUnpacked,
 });

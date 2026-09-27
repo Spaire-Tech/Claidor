@@ -30,7 +30,7 @@ test("publication ignore rules retain reconstructed frontend source", async () =
 });
 
 test("packaging ignites host and electron-main when artifact activation cannot", async () => {
-  const source = await readFile(path.join(repoRoot, "scripts", "caisra-ignition-activation.mjs"), "utf8");
+  const source = await readFile(path.join(repoRoot, "scripts", "simeon-ignition-activation.mjs"), "utf8");
   assert.match(source, /export async function igniteProductionHost/);
   assert.match(source, /export async function igniteProductionElectronMain/);
   assert.match(source, /hostEntrySource\(\)/);

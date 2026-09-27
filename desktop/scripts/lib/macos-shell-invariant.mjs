@@ -102,16 +102,16 @@ export function structuralMachOFingerprint(parsed) {
   });
 }
 
-export function inspectReconstructedMacShell(officialBytes, reconstructedBytes) {
+export function inspectReconstructedMacShell(officialBytes, simeonBytes) {
   const official = parseMachO(officialBytes);
-  const reconstructed = parseMachO(reconstructedBytes);
+  const reconstructed = parseMachO(simeonBytes);
   return {
     officialMachO: official,
-    reconstructedMachO: reconstructed,
+    simeonMachO: reconstructed,
     officialNormalizedHash: signatureExcludedMachOHash(officialBytes, official),
-    reconstructedNormalizedHash: signatureExcludedMachOHash(reconstructedBytes, reconstructed),
+    simeonNormalizedHash: signatureExcludedMachOHash(simeonBytes, reconstructed),
     structuralMatch: structuralMachOFingerprint(official) === structuralMachOFingerprint(reconstructed),
     officialHash: sha256(officialBytes),
-    reconstructedHash: sha256(reconstructedBytes),
+    simeonHash: sha256(simeonBytes),
   };
 }

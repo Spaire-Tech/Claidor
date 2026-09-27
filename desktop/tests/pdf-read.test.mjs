@@ -23,12 +23,12 @@ after(async () => {
 });
 
 async function temporary(name) {
-  const root = await mkdtemp(path.join(os.tmpdir(), `caisra-${name}-`));
+  const root = await mkdtemp(path.join(os.tmpdir(), `simeon-${name}-`));
   temporaryRoots.push(root);
   return root;
 }
 
-// The extractor is bundled once the way scripts/build-caisra.mjs bundles the
+// The extractor is bundled once the way scripts/build-simeon.mjs bundles the
 // host (esbuild, everything inlined), so the test exercises the same pdf.js
 // modules the box will run, and pdf.js's one-time "@napi-rs/canvas" warnings
 // print once.
@@ -141,7 +141,7 @@ test("host-production-activation detects the binding instead of recording pdf-wo
   assert.equal(binding.package.version, "5.4.296");
   assert.deepEqual(
     binding.bundleScripts.map(script => [script.script, script.externalsPdfjs]),
-    [["scripts/build-caisra.mjs", false], ["scripts/caisra-ignition-activation.mjs", false]],
+    [["scripts/build-simeon.mjs", false], ["scripts/simeon-ignition-activation.mjs", false]],
     "pdf.js is bundled into host-main.cjs, which is the only file the box receives",
   );
 });
@@ -188,11 +188,11 @@ test("the detector fails closed again, naming the piece, when a Read input drops
 
 test("the detector fails closed when pdfjs-dist is left external to the host bundle", async () => {
   const root = await detectorRootWith("external", async root => {
-    await rewrite(root, "scripts/build-caisra.mjs", text => text.replace('  "piscina",\n];', '  "piscina",\n  "pdfjs-dist",\n];'));
+    await rewrite(root, "scripts/build-simeon.mjs", text => text.replace('  "piscina",\n];', '  "piscina",\n  "pdfjs-dist",\n];'));
   });
   const binding = await assemblePdfTextExtractionBinding({ root });
   assert.equal(binding.status, "fail-closed");
-  assert.deepEqual(binding.blockers, ["scripts/build-caisra.mjs leaves pdfjs-dist external, and the box has no node_modules to resolve it"]);
+  assert.deepEqual(binding.blockers, ["scripts/build-simeon.mjs leaves pdfjs-dist external, and the box has no node_modules to resolve it"]);
 });
 
 test("the detector fails closed when the extractor module is absent", async () => {

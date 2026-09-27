@@ -149,7 +149,7 @@ classes and 123 of 131 theme tokens defined, and a hash-locked 130-entry
 palette that runs. The app rendered in Times New Roman because Vite marks the
 emitted script and stylesheet `crossorigin`, and Electron's `loadFile` gives
 the document the opaque origin `null`, so Chromium refused the stylesheet under
-CORS before parsing it. One attribute. `scripts/build-caisra.mjs` and
+CORS before parsing it. One attribute. `scripts/build-simeon.mjs` and
 `scripts/renderer-production-build.mjs` strip it, and
 `desktop/tests/renderer-file-url.test.mjs` fails if it comes back, when a
 clean-source build is in `dist/` (`npm run build:clean-source`); in the
