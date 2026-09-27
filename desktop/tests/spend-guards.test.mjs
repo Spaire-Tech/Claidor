@@ -119,18 +119,28 @@ test("every model call writes one line with its tokens, and cached tokens are co
   }
 });
 
-test("the intro greets and stops: no assignment, no tools, until the person replies", async () => {
+test("the intro is Grok Bot's own cue again, and the spend guard lives in the run: once, hidden, 40 calls", async () => {
   const loaded = await loadModule("tests/fixtures/claidor-host-loop-entry.ts", "intro-prompt");
   try {
     const prompt = loaded.module.SAND_ONBOARDING_KICKSTART_PROMPT;
-    assert.match(prompt, /Do not start any assignment yet/);
-    assert.match(prompt, /Do not run commands, browse, open files or use the computer on this turn/);
-    assert.match(prompt, /Work begins when they answer/);
-    assert.doesNotMatch(prompt, /begin the assignment immediately/);
+    // Grok Bot's sentences (ce9fc2d8), restored 27 September 2026.
+    assert.match(prompt, /then start learning how to be useful\./);
+    assert.match(prompt, /begin the assignment immediately, and use your first message for a useful result or the next approval you need/);
+    assert.match(prompt, /The moment they hand you something real, drop the questions and just help\./);
+    assert.match(prompt, /offer any choice as a question widget/);
+    // The rewrite that stopped the suggestions is gone.
+    assert.doesNotMatch(prompt, /Do not start any assignment yet|ask one real question about what they want first|Work begins when they answer/);
+    // F-335: no message type SendMessage cannot send.
+    assert.doesNotMatch(prompt, /connectors prompt/);
+    assert.match(prompt, /propose it with ProposeConnector/);
     assert.match(loaded.module.INTRODUCTION_UNDELIVERED_DETAIL, /will not try again on its own/);
   } finally {
     await loaded.dispose();
   }
+  const source = await readFile(path.join(repoRoot, "source/host/extensions/transcript/agent-lifecycle.ts"), "utf8");
+  const kickstart = source.slice(source.indexOf("async kickstartAgent("), source.indexOf("async requestDiskSaverAudit("));
+  // Hidden, so the 40-call hidden budget applies to the whole first run.
+  assert.match(kickstart, /await runner\.run\(prompt, \{ hidden: true \}\)/);
 });
 
 test("the intro runs once: the lifecycle stops owing it after one attempt, delivered or not", async () => {

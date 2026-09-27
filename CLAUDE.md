@@ -229,7 +229,7 @@ proxy's meter (`docs/product/spend-guards.md`). Now: the proxy refuses at
 `DESKTOP_HOURLY_CREDITS` (200,000 an hour, code 40201) before the month's
 allowance is near; a hidden turn (intro, nudge, automation) may make 40
 model calls and an asked turn Grok Bot's 5,000 (`SAND_HIDDEN_TURN_MAX_STEPS`,
-`SAND_AGENT_MAX_STEPS`); the intro greets and stops and runs once; quitting
+`SAND_AGENT_MAX_STEPS`); the intro runs once (its words were rewritten to "greet and stop" that day and restored to Grok Bot's own on 27 September, because the rewrite had stopped the first message's suggestions; the run-once rule and the 40-call hidden budget are what bound it); quitting
 Simeon stops the local Docker box **unless an enabled routine exists**
 (since 25 September; `SAND_STOP_BOX_ON_QUIT=1` and
 `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` force either way);
