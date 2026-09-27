@@ -667,7 +667,10 @@ Markdown as Word ("for MDs use word too"), with a new `slides` kind for
 Miro, Notion, Gmail, …) wears its logo and its brand colour, through
 one rehype step at the end of the message pipeline
 (`brand/app-logos/apps.json`, 72 apps, Simple Icons where the repository
-has no colour logo; a bare "Word" is not marked); and the
+has no colour logo; a bare "Word" is not marked; Slack's tile and its
+name in a message carry the founder's full-colour mark, "you using the
+wrong slack logo", and a file card's title centres on its download
+button); and the
 sidebar's Plugins button is "Connect apps" in blue, no box, with Gmail,
 Calendar and Drive tiles, on the account row beside the initials circle
 (the name beside it is hidden; the circle shows two initials for a
