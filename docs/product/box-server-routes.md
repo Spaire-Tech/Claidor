@@ -607,3 +607,69 @@ the number re-measured rather than inherited, it has not been.
 
 Still never run, unchanged since this branch began: nothing has contacted E2B,
 no sandbox has been started, and no command has run in a box.
+
+## 15. 27 September, 02:30: a correction to §14, and the server is now the only brake on a first-run turn
+
+`3c805f93..684b83da` is eight commits (#209–#216). Two files under `server/`
+changed, both in `polar/sand/`, and both in one commit (#216):
+`CAISRA_CLAUDE_CODE: "0"` is gone from the box's environment
+(`box_hosts.py:126`) and with it the assertion in
+`tests/sand/test_box_hosts.py:199` — a matched pair, consistent with the Claude
+Code / OpenRouter router having been removed (F-128). Searched for orphan
+readers: `grep -rn CAISRA_CLAUDE_CODE` over `server/`, `runner/`,
+`desktop/source`, `desktop/tests` and `render.yaml` → no match, so nothing is
+left reading a variable that is no longer set. #216 is a Caisra→Simeon rename
+pass, so I also checked it against the safe-rename rule: `git diff
+3c805f93..684b83da | grep -E '^[+-].*CLAIDOR_'` returns **nothing**, so no
+`CLAIDOR_*` env key was added, removed or renamed.
+
+**The `e2b` provider was touched and not filled.** The one-line change above is
+the whole of it; `box_hosts.py`'s `e2b` host is still the stub, and nothing in
+`polar/sand/` meters box time. Both salvage items from §12 are still open.
+
+### A correction to §14
+
+§14 ends "the key reaches OpenAI and #208 works through us unchanged." The
+first half is what I measured and it stands. The second half was more than I
+had measured, and #211 says why: **the `prompt_cache_key` from #208 never went
+out at all.** The executor imported `conversationIdKey` from
+`packages/chat-inference-proto/client.ts`, a look-alike symbol the loop never
+sets, while the loop sets the one in `packages/agent/utils/request-id.ts`. I
+checked that against the diff rather than the message: `git show 2fed1842`
+moves the import from the first path to the second, in the executor and in the
+test fixture, and adds two assertions pinning it there.
+
+So at the moment I verified the pass-through, the app was sending no key for my
+proxy to pass through. Nothing about the server changes — an unknown body key
+still reaches OpenAI verbatim, which is exactly what makes #211's fix work
+without a server deploy — but "#208 works" was a claim about a path I had only
+checked one half of. The half I checked is the half I own.
+
+### #215 moves the brake on an unattended first run to our side
+
+#215 puts the first message and routines back on Grok Bot's 5,000-call budget;
+the 40-call hidden budget now covers only reply nudges, post-sign-in wake-ups
+and memory extraction. That is a deliberate product decision and not mine. What
+it means for this server is that the app-side cap which would have stopped the
+23 September incident (481 model calls in fifty minutes, $5.82) no longer
+applies to a first-run turn, so the proxy's hourly brake is the remaining one.
+
+Measured, not assumed, because the number matters: a credit is one input token
+on the middle model at `CREDIT_USD_PER_MILLION_INPUT = 3.00`
+(`pricing.py:38`), and `DESKTOP_HOURLY_CREDITS` is 200,000 (`config.py:201`).
+So the brake is **$0.60 an hour per person**, on a sliding hour
+(`credits_used_last_hour`), checked by `budget_refusal` on every model call in
+`_proxy` — hidden turn or asked turn alike, since nothing in that path knows
+which it is. The 23 September incident spent nearly ten hours' worth of that
+allowance in fifty minutes, so the proxy would have refused it long before the
+end. The backstop is real and it is much tighter than the monthly figure
+suggests.
+
+**What I ran**, at merge commit `490acb8a`: `pytest tests/desktop tests/maty
+tests/sand` → **468 passed, 14 failed**, the same fourteen as the baseline (12
+desktop, 2 maty); `alembic heads` → one head (`desktop_boxes_0918`);
+`grep -c '"/api/proxy/box/'` → 10, first at 1450, catch-all at 1786;
+`grep -c hourly_exhausted` → 1; `ruff check` → clean. The suite was actually
+run this time, not inherited, because `server/` did change.
+
+**What I did not run:** anything against a real E2B account, a real box, or CI.
