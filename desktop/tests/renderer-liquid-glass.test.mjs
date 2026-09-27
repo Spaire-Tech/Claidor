@@ -11,7 +11,7 @@ test("the glass block is the agents sidebar only, see-through to the Mac's sideb
   const { LIQUID_GLASS_CSS, patchOriginalGlassStylesheet } = await import(patchModule);
   const out = patchOriginalGlassStylesheet(":root{--x:1}");
   assert.ok(out.startsWith(":root{--x:1}\n"));
-  assert.match(LIQUID_GLASS_CSS, /\.sand-agents-sidebar\{background-color:color-mix\(in srgb,var\(--cursor-bg-chrome\) 64%,transparent\)!important;-webkit-backdrop-filter:blur\(30px\) saturate\(1\.8\)!important/);
+  assert.match(LIQUID_GLASS_CSS, /\.sand-agents-sidebar\{background-color:color-mix\(in srgb,var\(--cursor-bg-chrome\) 93%,transparent\)!important;-webkit-backdrop-filter:blur\(30px\) saturate\(1\.8\)!important/);
   // The page is clear only where the sidebar is, so the window's material shows there and nowhere else.
   assert.ok(LIQUID_GLASS_CSS.includes("html:has(.sand-agents-sidebar),html:has(.sand-agents-sidebar) body,[data-theme]:has(>.sand-agents-sidebar){background-color:transparent!important}"));
   assert.ok(LIQUID_GLASS_CSS.includes(".sand-agents-sidebar~.sand-chat,.sand-agents-sidebar~.sand-info-pane{background-color:var(--sand-bg-base)!important}"));

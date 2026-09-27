@@ -49,7 +49,7 @@ test("every logo is a readable image, and the stylesheet paints each file kind a
   assert.ok(!/light-dark\(\s*linear-gradient/.test(sheet), "light-dark() holds colours only, never gradients");
   assert.ok(!sheet.includes("saturate(170%)") && !sheet.includes("saturate(160%)") && !sheet.includes(".sand-prompt-attach"), "no glass on cards or buttons");
   assert.ok(!sheet.includes(".sand-agents-sidebar__account .sand-kit-base-avatar"), "the initials circle is the renderer's own again");
-  assert.ok(!sheet.includes('.sand-agent-item[data-active="true"]'), "the selected row is the renderer's own again");
+  assert.ok(sheet.includes('.sand-agent-item[data-active="true"]:not(#\\#):not(#\\#):not(#\\#):not(#\\#){background:light-dark(#fff,rgba(255,255,255,.12))'), "the selected row is white, not glass");
   assert.ok(sheet.includes("{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}"), "an exchange centres its header");
   // The choice card's options sit on the grey and each key is a round radio with a blue dot on the chosen answer.
   assert.ok(sheet.includes(".sand-widget__options:not(#\\#):not(#\\#):not(#\\#){background:light-dark(#e9e9eb,#3b3b3d);border-color:transparent}"));
