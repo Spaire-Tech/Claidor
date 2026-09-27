@@ -90,6 +90,7 @@ export interface ProductionTurnAgentOwnerInput {
   /** A watchVideo / videoReview child: its turns run on the video model (Gemini). */
   readonly isVideoSubagent?: boolean;
   readonly hidden?: boolean;
+  readonly fullStepBudget?: boolean;
   readonly lineage?: unknown;
   readonly profilePromptSnapshot?: AgentProfilePromptSnapshot;
   readonly profilePromptSnapshotStore?: PromptSnapshotStore;
@@ -175,6 +176,7 @@ export async function createProductionTurnAgentOwner(
     isSubagentRunner: input.isSubagentRunner,
     isSilenceAllowed: input.isSilenceAllowed,
     ...(input.hidden === undefined ? {} : { hidden: input.hidden }),
+    ...(input.fullStepBudget === true ? { fullStepBudget: true } : {}),
     ...(input.lineage === undefined ? {} : { lineage: input.lineage }),
     canUseSelfSummary: input.canUseSelfSummary,
     ...(input.diskPressureReminder === undefined
@@ -213,8 +215,9 @@ export async function createProductionTurnAgentOwner(
   try {
     const baseResourceAccessor = await input.createResourceAccessor(input.context);
     const remoteBoxResourceAccessor = await input.createRemoteBoxResourceAccessor(input.context);
+    const projectionInput = input.createTurnLocalResourceProjectionInput(baseResourceAccessor);
     const turnLocalResourceProjection = createTurnLocalResourceProjection({
-      ...input.createTurnLocalResourceProjectionInput(baseResourceAccessor),
+      ...projectionInput,
       baseAccessor: baseResourceAccessor,
     });
     const resourceAccessor = turnLocalResourceProjection.resourceAccessor;
@@ -222,6 +225,8 @@ export async function createProductionTurnAgentOwner(
       ...input.turn,
       remoteBoxResourceAccessor,
       toolSession: runContext.toolSession,
+      // The same MCP projection whose executors the accessor above now holds.
+      ...(projectionInput.mcp === undefined ? {} : { mcp: projectionInput.mcp }),
     };
     const summarizationSession = input.summarizationSession
       ?? runContext.summarizationSession;

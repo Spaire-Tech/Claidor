@@ -58,16 +58,16 @@ Only macOS on Apple Silicon can bootstrap or package — `hdiutil`, `codesign`,
 ## What is ours in the packaged bundle
 
 - **`dist/Simeon.app`** — the bundle name (`GROK_BOT_OUTPUT_APP_NAME` overrides).
-- **`CFBundleDisplayName` = `Simeon`** (`CAISRA_DISPLAY_NAME` overrides); `CFBundleExecutable` and `CFBundleName` are `Simeon` too, with the helper bundles renamed (`macos-bundle-rename.mjs`, 23 September).
+- **`CFBundleDisplayName` = `Simeon`** (`SIMEON_DISPLAY_NAME` overrides); `CFBundleExecutable` and `CFBundleName` are `Simeon` too, with the helper bundles renamed (`macos-bundle-rename.mjs`, 23 September).
 - **`CFBundleIdentifier` = `com.claidor.simeon`** and **`CFBundleURLSchemes` =
   `simeon`**, since 23 September 2026 (`scripts/lib/config.mjs`,
-  `reconstructedBundleId`, `reconstructedUrlScheme`; the app's own
+  `simeonBundleId`, `simeonUrlScheme`; the app's own
   `SAND_DEEP_LINK_SCHEME` must match, and `tests/app-identity.test.mjs`
   checks it). Until then `com.anysphere.sand.reconstructed` and `sand`.
 - **`LSEnvironment`** carries `CURSOR_API_BASE_URL`, `CURSOR_WEBSITE_URL`
-  and `SAND_BACKEND_URL`, all `https://api.simeonlabs.com` (`CAISRA_BACKEND_URL` overrides; `api.claidor.com` until 24 September).
+  and `SAND_BACKEND_URL`, all `https://api.simeonlabs.com` (`SIMEON_BACKEND_URL` overrides; `api.claidor.com` until 24 September).
 - **Host and electron-main** from recovered source when the 0.18.0 artifact
-  self-check cannot activate them (`scripts/caisra-ignition-activation.mjs`).
+  self-check cannot activate them (`scripts/simeon-ignition-activation.mjs`).
 
 - **`CFBundleExecutable` and `CFBundleName` = `Simeon`**, since 23 September
   2026: the packager renames the 0.18 shell's executable, its helper bundles

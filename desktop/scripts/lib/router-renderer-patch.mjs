@@ -118,15 +118,23 @@ export function patchOriginalBrandStrings(source) {
  *      same size, same colour variable (`MNe`, light-dark), same
  *      reduced-motion rule, turning once every 14 seconds instead of
  *      morphing.
+ * Ocean, 26 September 2026 ("the onboarding cloud color is grey ish. i want
+ * it this color", with a screenshot of the Ocean palette): the landing mark,
+ * the hero and the no-agent mark (a fourth anchor) are `color:"blue"`, the
+ * id Ocean is painted on, instead of `black` (Slate).
  * Plus one file: the hand-off screen ("Waking your computer…") and About
  * draw `assets/app-icon-C7NKj2u7.png`, and the pinned renderer carries Grok
  * Bot's icon under that name. Nothing replaced it before 23 September; the
  * founder's icon from frontend/runtime-assets is written over it now.
  */
 const LANDING_MARK_BEFORE = 'p.jsx(sd,{"aria-hidden":!0,color:"black",paused:N,sizePx:ujn,state:E})';
-const LANDING_MARK_AFTER = 'p.jsx(sd,{"aria-hidden":!0,color:"black",paused:N,shape:"cloud",sizePx:ujn,state:E})';
+const LANDING_MARK_AFTER = 'p.jsx(sd,{"aria-hidden":!0,color:"blue",paused:N,shape:"cloud",sizePx:ujn,state:E})';
 const HERO_MARK_BEFORE = '{id:"hero",color:"black",shape:"blob",isGazing:!1,bob:null}';
-const HERO_MARK_AFTER = '{id:"hero",color:"black",shape:"cloud",isGazing:!1,bob:null}';
+const HERO_MARK_AFTER = '{id:"hero",color:"blue",shape:"cloud",isGazing:!1,bob:null}';
+// The mark drawn when no agent is selected (the main screen before one is
+// chosen): the renderer's own default was a black blob.
+const IDLE_MARK_BEFORE = 'V=L==null?{color:"black",shape:"blob"}:';
+const IDLE_MARK_AFTER = 'V=L==null?{color:"blue",shape:"cloud"}:';
 const LOADING_LOGO_BEFORE = 'function tOt({size:n,color:e="black",className:t}){const s=window.matchMedia("(prefers-reduced-motion: reduce)").matches;return p.jsx("svg",{"aria-hidden":"true",className:t,height:n,viewBox:V_t,width:n,xmlns:"http://www.w3.org/2000/svg",children:p.jsx("path",{d:Q_t,fillRule:"evenodd",style:{fill:MNe(e)},children:s?null:p.jsx("animate",{attributeName:"d",calcMode:"discrete",dur:`${X_t}s`,repeatCount:"indefinite",values:eOt})})})}';
 /** The petals fill the 80..320 window of the 400 box, so at 56 px the mark is as large as the logo it replaces. */
 export const LOADING_LOGO_VIEWBOX = "80 80 240 240";
@@ -136,6 +144,7 @@ const LOADING_LOGO_AFTER = `function tOt({size:n,color:e="black",className:t}){c
 export const MARK_REPLACEMENTS = Object.freeze([
   ["landing-mark-cloud", LANDING_MARK_BEFORE, LANDING_MARK_AFTER],
   ["hero-mark-cloud", HERO_MARK_BEFORE, HERO_MARK_AFTER],
+  ["idle-mark-ocean-cloud", IDLE_MARK_BEFORE, IDLE_MARK_AFTER],
   ["loading-logo-petals", LOADING_LOGO_BEFORE, LOADING_LOGO_AFTER],
 ]);
 export const APP_ICON_ASSET = "app-icon-C7NKj2u7.png";
@@ -145,6 +154,71 @@ export function patchOriginalMarks(source) {
   let out = source;
   for (const [label, before, after] of MARK_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
   return out;
+}
+
+/**
+ * One shape: the cloud, in any of the twelve colours (26 September 2026: "i
+ * want to remove all those shapes, and make the cloud the absolute main and
+ * only shape. it just comes in different colors … apply it everywhere, even
+ * in onboarding").
+ *
+ * The renderer draws every mark from one geometry table, `Jo` (18 shapes:
+ * the animator, the static SVG `rOt`, the icon `Y9e`, the face placement
+ * `sOt`), sizes it by one per-shape factor, `$de` over `ont`, and offers,
+ * hashes and cycles shapes from one list, `Ij` (the editor's and
+ * onboarding's shape pickers, `u4e` for an agent with no shape stored,
+ * `gqn` for onboarding's teammates, the failure screen's cycle). So:
+ *   1. every entry of `Jo` is the cloud's geometry, which makes a saved
+ *      "pebble" or "hex" draw a cloud without touching anyone's data, and
+ *      turns shape morphs into no-ops;
+ *   2. `$de` returns the cloud's factor for every name, so a former blob is
+ *      exactly today's cloud size (`lnt`, which divides by it, too);
+ *   3. `Ij` is `["cloud"]`;
+ *   4. onboarding's create-step default shape is the cloud.
+ * The two shape pickers ("Character shape") are hidden by the stylesheet
+ * rule below; the colour rows stay.
+ */
+export const SHAPE_REPLACEMENTS = Object.freeze([
+  ["shapes-geometry-cloud", "Jo.wedge.face.leftDX=-6;const Qtt=Object.keys(Jo)", "Jo.wedge.face.leftDX=-6;for(const k of Object.keys(Jo))Jo[k]=Jo.cloud;const Qtt=Object.keys(Jo)"],
+  ["shapes-scale-cloud", "function $de(n){return ont[n]??1}", "function $de(n){return ont.cloud}"],
+  ["shapes-list-cloud", 'const Ij=["blob","pebble","squircle","tablet","wedge","hex","cloud","teardrop"];', 'const Ij=["cloud"];'],
+  ["shapes-onboarding-default-cloud", 'mde={color:"blue",shape:"blob"}', 'mde={color:"blue",shape:"cloud"}'],
+]);
+
+export function patchOriginalShapes(source) {
+  let out = source;
+  for (const [label, before, after] of SHAPE_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+/**
+ * Onboarding copy, 27 September 2026 (the founder's words): the sign-in
+ * tagline, the sentence typed into the composer on the "meet" screen, and
+ * the three example teammates' names. Their ids (`invoice-chaser`,
+ * `weekly-standup`, `sales-forecast`) are layout keys and stay; only the
+ * names drawn under them change. The access cover's own tagline ("… that
+ * finish the work.") was not named and is left.
+ */
+export const COPY_REPLACEMENTS = Object.freeze([
+  ["copy-signin-tagline", 'tagline:"Your team of always-on agents that you can give real work to."', 'tagline:"Your personal team of agents for whatever needs doing."'],
+  ["copy-meet-typed", 'const H2e="Hand off any task to your team of agents"', 'const H2e="Put any task in the hands of your agents"'],
+  ["copy-teammate-names", 'XBn={"invoice-chaser":"Invoice Chaser","weekly-standup":"Weekly Standup","sales-forecast":"Sales Forecast"}', 'XBn={"invoice-chaser":"Email Chaser","weekly-standup":"Flight Booker","sales-forecast":"Content Planner"}'],
+]);
+
+export function patchOriginalCopy(source) {
+  let out = source;
+  for (const [label, before, after] of COPY_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export const SHAPE_PICKER_MARKER = "/* Simeon: one shape, the cloud";
+export const SHAPE_PICKER_CSS = `${SHAPE_PICKER_MARKER} (26 September 2026): the shape pickers in the agent editor and onboarding are gone; colour stays. */
+[aria-label="Character shape"]{display:none!important}
+`;
+
+export function patchOriginalShapePickerStylesheet(css) {
+  if (css.includes(SHAPE_PICKER_MARKER)) throw new Error("Original renderer shape-picker block is already present.");
+  return `${css}\n${SHAPE_PICKER_CSS}`;
 }
 
 /**
@@ -393,7 +467,9 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (markChunks.length !== 1) throw new Error(`Expected one original chunk carrying the landing mark, the onboarding hero and the loading logo, found ${markChunks.length}.`);
   if (!PALETTE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer palette anchors are not all in the mark chunk.");
   if (!BUBBLE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer user-bubble token is not in the mark chunk.");
-  const markPatched = patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source)));
+  if (!SHAPE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer shape anchors are not all in the mark chunk.");
+  if (!COPY_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer onboarding copy anchors are not all in the mark chunk.");
+  const markPatched = patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source)))));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -402,7 +478,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  const stylesheetPatched = patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)));
+  const stylesheetPatched = patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css))));
   const chunkSources = [];
   for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
   const styleAnchors = {
@@ -420,7 +496,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const appIconAfter = await readFile(appIconTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
-    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome"],
+    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "shape-pickers-hidden"],
     userBubble: { light: USER_BUBBLE_LIGHT, dark: USER_BUBBLE_DARK, stylesheet: path.relative(stageRoot, bubbleSheets[0].target) },
     // The stylesheet's hashes, so `npm run verify` can check the packaged
     // file against what this patch wrote (25 September 2026: verify read
@@ -475,7 +551,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "chat-header-card", "liquid-glass-chrome"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

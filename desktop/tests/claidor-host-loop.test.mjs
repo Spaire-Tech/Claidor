@@ -16,7 +16,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function loadHarness() {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-host-loop-"));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-host-loop-"));
   const output = path.join(temporary, "host-loop.mjs");
   await build({ entryPoints: [path.join(repoRoot, "tests/fixtures/claidor-host-loop-entry.ts")], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);

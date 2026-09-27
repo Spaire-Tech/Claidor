@@ -149,7 +149,7 @@ classes and 123 of 131 theme tokens defined, and a hash-locked 130-entry
 palette that runs. The app rendered in Times New Roman because Vite marks the
 emitted script and stylesheet `crossorigin`, and Electron's `loadFile` gives
 the document the opaque origin `null`, so Chromium refused the stylesheet under
-CORS before parsing it. One attribute. `scripts/build-caisra.mjs` and
+CORS before parsing it. One attribute. `scripts/build-simeon.mjs` and
 `scripts/renderer-production-build.mjs` strip it, and
 `desktop/tests/renderer-file-url.test.mjs` fails if it comes back, when a
 clean-source build is in `dist/` (`npm run build:clean-source`); in the
@@ -227,9 +227,11 @@ read on the Mac (effort on the wire, cached tokens on step two).
 made 481 model calls in fifty minutes with nothing on screen, $5.82 by the
 proxy's meter (`docs/product/spend-guards.md`). Now: the proxy refuses at
 `DESKTOP_HOURLY_CREDITS` (200,000 an hour, code 40201) before the month's
-allowance is near; a hidden turn (intro, nudge, automation) may make 40
+allowance is near; a hidden turn (nudge, a wake-up after a sign-in) may make 40
 model calls and an asked turn Grok Bot's 5,000 (`SAND_HIDDEN_TURN_MAX_STEPS`,
-`SAND_AGENT_MAX_STEPS`); the intro greets and stops and runs once; quitting
+`SAND_AGENT_MAX_STEPS`), and since 27 September the first message and a
+routine get the 5,000 too, as in Grok Bot (`fullStepBudget`; the founder: "Match
+Grok Bot for the first message and routines"); the intro runs once (its words were rewritten to "greet and stop" that day and restored to Grok Bot's own on 27 September, because the rewrite had stopped the first message's suggestions; the run-once rule and the 40-call hidden budget are what bound it); quitting
 Simeon stops the local Docker box **unless an enabled routine exists**
 (since 25 September; `SAND_STOP_BOX_ON_QUIT=1` and
 `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` force either way);
@@ -618,7 +620,18 @@ with a gradient on `--ink-from/--ink-mid/--ink-to` through an SVG grain
 filter, both defined in the animator's `<defs>`; `--fg` (the middle
 colour) still feeds rings, particles and glyphs. `patchOriginalPalette`
 in `router-renderer-patch.mjs`, ten anchors; previewed headless with the
-face on, not yet seen on a Mac. **Frame cost of the grain filter on forty
+face on, not yet seen on a Mac. **Frame cost of the grain filter on forty **The marks are Ocean and the cloud is the only shape, 26 September 2026**
+("the onboarding cloud color is grey ish. i want it this color"; "remove all
+those shapes, and make the cloud the absolute main and only shape. it just
+comes in different colors … even in onboarding"): the landing mark, the hero
+and the no-agent mark are `color:"blue"` (Ocean) instead of Slate; every
+entry of the renderer's shape table `Jo` is the cloud's geometry (a saved
+"pebble" draws a cloud, nobody's data changes), `$de` returns the cloud's
+size factor, the shape list `Ij` is `["cloud"]`, onboarding's default shape
+is the cloud, and both "Character shape" pickers are hidden by one
+stylesheet rule (`SHAPE_REPLACEMENTS`, `SHAPE_PICKER_CSS`). Measured on the
+pinned bytes: 18 names, 18 geometries before, one after. Not yet seen on a
+Mac.
 sidebar marks is not measured**; if the sidebar stutters, the filter is
 the first thing to remove (one anchor, `palette-body-fill`).
 **The person's chat bubble is iMessage blue, 23 September, later still**

@@ -15,7 +15,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function loadModule(entry, name) {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), `caisra-${name}-`));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), `simeon-${name}-`));
   const output = path.join(temporary, `${name}.mjs`);
   await build({ entryPoints: [path.join(repoRoot, entry)], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
@@ -119,18 +119,28 @@ test("every model call writes one line with its tokens, and cached tokens are co
   }
 });
 
-test("the intro greets and stops: no assignment, no tools, until the person replies", async () => {
+test("the intro is Grok Bot's own cue again, runs once, hidden, under the asked turn's budget", async () => {
   const loaded = await loadModule("tests/fixtures/claidor-host-loop-entry.ts", "intro-prompt");
   try {
     const prompt = loaded.module.SAND_ONBOARDING_KICKSTART_PROMPT;
-    assert.match(prompt, /Do not start any assignment yet/);
-    assert.match(prompt, /Do not run commands, browse, open files or use the computer on this turn/);
-    assert.match(prompt, /Work begins when they answer/);
-    assert.doesNotMatch(prompt, /begin the assignment immediately/);
+    // Grok Bot's sentences (ce9fc2d8), restored 27 September 2026.
+    assert.match(prompt, /then start learning how to be useful\./);
+    assert.match(prompt, /begin the assignment immediately, and use your first message for a useful result or the next approval you need/);
+    assert.match(prompt, /The moment they hand you something real, drop the questions and just help\./);
+    assert.match(prompt, /offer any choice as a question widget/);
+    // The rewrite that stopped the suggestions is gone.
+    assert.doesNotMatch(prompt, /Do not start any assignment yet|ask one real question about what they want first|Work begins when they answer/);
+    // F-335: no message type SendMessage cannot send.
+    assert.doesNotMatch(prompt, /connectors prompt/);
+    assert.match(prompt, /propose it with ProposeConnector/);
     assert.match(loaded.module.INTRODUCTION_UNDELIVERED_DETAIL, /will not try again on its own/);
   } finally {
     await loaded.dispose();
   }
+  const source = await readFile(path.join(repoRoot, "source/host/extensions/transcript/agent-lifecycle.ts"), "utf8");
+  const kickstart = source.slice(source.indexOf("async kickstartAgent("), source.indexOf("async requestDiskSaverAudit("));
+  // Hidden (nobody asked yet) but with Grok Bot's 5,000-call budget.
+  assert.match(kickstart, /await runner\.run\(prompt, \{ hidden: true, fullStepBudget: true \}\)/);
 });
 
 test("the intro runs once: the lifecycle stops owing it after one attempt, delivered or not", async () => {
@@ -192,4 +202,32 @@ test("the narration prints the failure's sentence, not only its type", async () 
   assert.match(provider, /detail=\$\{report\.causeDetail\}/);
   const client = await readFile(path.join(repoRoot, "source/node-agent-coordinator/gateway/gateway-client.ts"), "utf8");
   assert.equal((client.match(/causeDetail: error instanceof Error \? error\.message : String\(error\)/g) ?? []).length, 2);
+});
+
+test("the first message and a routine get Grok Bot's 5,000 calls; nudges and wake-ups keep 40", async () => {
+  const loaded = await loadModule("source/host/extensions/inference/provider-session.ts", "full-step-budget");
+  try {
+    const { createModelCallBudget, spendModelCall } = loaded.module;
+    const env = {};
+    assert.equal(createModelCallBudget({}, env).limit, 5000);
+    assert.equal(createModelCallBudget({ hidden: true }, env).limit, 40);
+    const full = createModelCallBudget({ hidden: true, fullStepBudget: true }, env);
+    assert.equal(full.limit, 5000);
+    assert.equal(full.hidden, true, "still a hidden run: it is not the person's turn");
+    // The refusal names the asked-turn budget, not the hidden one.
+    const exhausted = { ...full, limit: 1, used: 1 };
+    assert.throws(() => spendModelCall(exhausted), /reached its budget of 1 model calls \(SAND_AGENT_MAX_STEPS\)/);
+    assert.throws(() => spendModelCall({ ...createModelCallBudget({ hidden: true }, env), limit: 1, used: 1 }), /SAND_HIDDEN_TURN_MAX_STEPS/);
+  } finally {
+    await loaded.dispose();
+  }
+  const routine = await readFile(path.join(repoRoot, "source/host/extensions/transcript/automation-run-path.ts"), "utf8");
+  assert.match(routine, /hidden: true,\n(?:\s*\/\/[^\n]*\n)*\s*fullStepBudget: true,\n\s*isSilenceAllowed: true,/);
+  const composition = await readFile(path.join(repoRoot, "source/host/host-runner-composition.ts"), "utf8");
+  assert.match(composition, /\.\.\.\(runOptions\.fullStepBudget === true \? \{ fullStepBudget: true \} : \{\}\),/);
+  const shell = await readFile(path.join(repoRoot, "source/host/runner/turn-run-shell.ts"), "utf8");
+  assert.match(shell, /createProviderPromptSession\(inferenceProvider, \{ \.\.\.sessionOptions, hidden, \.\.\.\(input\.fullStepBudget === true \? \{ fullStepBudget: true \} : \{\}\) \}\)/);
+  // The reply nudge after an undelivered intro stays on the hidden budget.
+  const lifecycle = await readFile(path.join(repoRoot, "source/host/extensions/transcript/automation-runtime.ts"), "utf8");
+  assert.match(lifecycle, /runner\.run\(REPLY_NUDGE_PROMPT, \{ hidden: true \}\)/);
 });

@@ -9,7 +9,7 @@
  */
 import { COMPUTER_STREAM_CHANNEL, computerStreamReason, isComputerStreamMessage } from "../shared/computer-stream.js";
 
-export const COMPUTER_STREAM_NOTICE_ATTR = "data-caisra-screen-notice";
+export const COMPUTER_STREAM_NOTICE_ATTR = "data-simeon-screen-notice";
 export const COMPUTER_STREAM_NOTICE_DELAY_MS = 20_000;
 export const CONNECTING_SELECTOR = ".sand-box-vnc-pool__connecting";
 /** The Computer panel's failed-read placeholder ("Can't reach …'s screen", with Retry). */

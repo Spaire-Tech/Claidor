@@ -1,7 +1,6 @@
 export const SAND_INFERENCE_PROVIDERS = ["cursor", "claidor", "claude-code", "codex", "openrouter"] as const;
 export type SandInferenceProvider = (typeof SAND_INFERENCE_PROVIDERS)[number];
 export const PRODUCT_INFERENCE_PROVIDER: SandInferenceProvider = "claidor";
-export const CAISRA_CLAUDE_CODE_ENV = "CAISRA_CLAUDE_CODE";
 export const SAND_INFERENCE_PROVIDER_ENV = "SAND_INFERENCE_PROVIDER";
 export const SAND_CLAIDOR_FULL_AGENT_ENV = "SAND_CLAIDOR_FULL_AGENT";
 

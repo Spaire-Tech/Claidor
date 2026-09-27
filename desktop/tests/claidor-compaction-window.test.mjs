@@ -10,7 +10,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function load(entry, name) {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), `caisra-${name}-`));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), `simeon-${name}-`));
   const output = path.join(temporary, `${name}.mjs`);
   await build({
     entryPoints: [path.join(repoRoot, entry)],

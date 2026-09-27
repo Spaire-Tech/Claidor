@@ -1,5 +1,5 @@
 {
-  "name": "caisra",
+  "name": "simeon",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -14,7 +14,7 @@
     "start": "electron .",
     "start:clean-source": "CURSOR_API_BASE_URL=https://api.simeonlabs.com CURSOR_WEBSITE_URL=https://api.simeonlabs.com SAND_BACKEND_URL=https://api.simeonlabs.com electron .",
     "check": "npm run typecheck && npm run source:typecheck && npm test",
-    "build:clean-source": "node scripts/build-caisra.mjs",
+    "build:clean-source": "node scripts/build-simeon.mjs",
     "frontend:build": "vite build --config frontend/vite.config.ts",
     "frontend:recover": "node scripts/recover-frontend.mjs",
     "native:patch": "node scripts/apply-third-party-patches.mjs",

@@ -10,7 +10,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function load(entry, name) {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), `caisra-${name}-`));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), `simeon-${name}-`));
   const output = path.join(temporary, `${name}.mjs`);
   await build({
     entryPoints: [path.join(repoRoot, entry)],
@@ -71,14 +71,14 @@ test("the first-run intro runs on the full runner, and product turns on the host
   // Grok Bot's own kickstart: the real runner, a hidden turn, the reply nudge,
   // and introductionPending cleared only once something was delivered.
   assert.match(lifecycle, /SAND_ONBOARDING_KICKSTART_PROMPT/);
-  assert.match(lifecycle, /runner\.run\(prompt, \{ hidden: true \}\)/);
+  assert.match(lifecycle, /runner\.run\(prompt, \{ hidden: true, fullStepBudget: true \}\)/);
   assert.match(lifecycle, /ensureHiddenTurnReply\(runner\)/);
   assert.match(lifecycle, /\} else if \(!result\.aborted\) \{\n[\s\S]*?session\.db\.setIntroductionPending\(false\);\n\s*if \(!delivered\)/);
   assert.doesNotMatch(lifecycle, /deliverCheapIntroduction/);
   assert.doesNotMatch(lifecycle, /runRoutedProviderText/);
   assert.doesNotMatch(lifecycle, /SEND_MESSAGE_PLAIN_TEXT_RETRY/);
   assert.doesNotMatch(lifecycle, /cheapIntroductionMessages/);
-  assert.doesNotMatch(lifecycle, /buildSimeonProductSystemPrompt|withLeadingHello|firstHelloText|CAISRA_USER_REPLY_REMINDER/);
+  assert.doesNotMatch(lifecycle, /buildSimeonProductSystemPrompt|withLeadingHello|firstHelloText/);
   // That runner speaks Claidor.
   assert.match(turnShell, /const inferenceProvider = "claidor" as const/);
   // Product turns go to the host by default; off is the Mac hatch.

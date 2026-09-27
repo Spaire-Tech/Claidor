@@ -10,7 +10,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function loadModule(entry, name) {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), `caisra-${name}-`));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), `simeon-${name}-`));
   const output = path.join(temporary, `${name}.mjs`);
   await build({ entryPoints: [path.join(repoRoot, entry)], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22" });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
@@ -121,7 +121,6 @@ test("the local Docker box is always told our backend, credential or not", async
     assert.equal(withoutCredential.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
     assert.equal(withoutCredential.SAND_INFERENCE_RENEWAL_CREDENTIAL, undefined);
     assert.equal(withoutCredential.SAND_INFERENCE_PROVIDER, "claidor");
-    assert.equal(withoutCredential.CAISRA_CLAUDE_CODE, "0");
     assert.equal(withoutCredential.SAND_DISABLE_TELEMETRY, "1", "no Cursor telemetry from the box");
     assert.equal(withoutCredential.SAND_DISABLE_ANALYTICS, "1");
     assert.equal(withoutCredential.SAND_BOX_LOG_SHIP_DISABLED, "1");

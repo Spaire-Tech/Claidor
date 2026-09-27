@@ -6,20 +6,20 @@ import test from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
 
-import { reconstructedBundleId, reconstructedUrlScheme } from "../scripts/lib/config.mjs";
+import { simeonBundleId, simeonUrlScheme } from "../scripts/lib/config.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function loadModule(entry, name) {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), `caisra-${name}-`));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), `simeon-${name}-`));
   const output = path.join(temporary, `${name}.mjs`);
   await build({ entryPoints: [path.join(repoRoot, entry)], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   return { module: await import(`${pathToFileURL(output).href}?${Date.now()}`), dispose: () => rm(temporary, { recursive: true, force: true }) };
 }
 
 test("the app is com.claidor.simeon and claims simeon://, and only that", () => {
-  assert.equal(reconstructedBundleId, "com.claidor.simeon");
-  assert.equal(reconstructedUrlScheme, "simeon");
+  assert.equal(simeonBundleId, "com.claidor.simeon");
+  assert.equal(simeonUrlScheme, "simeon");
 });
 
 test("the scheme the app parses, registers and sends as redirectTarget is the one the bundle claims", async () => {
@@ -27,7 +27,7 @@ test("the scheme the app parses, registers and sends as redirectTarget is the on
   const desktop = await loadModule("source/shared/desktop.ts", "desktop-shared");
   const auth = await loadModule("source/electron-main/auth/auth-callback-registration.ts", "auth-callback");
   try {
-    assert.equal(deepLink.module.SAND_DEEP_LINK_SCHEME, reconstructedUrlScheme);
+    assert.equal(deepLink.module.SAND_DEEP_LINK_SCHEME, simeonUrlScheme);
     assert.equal(deepLink.module.SAND_OPEN_DEEP_LINK_URL, "simeon://app/v1/open");
     // What Claidor's sign-in page opens after the POST (app_sign_in.py builds
     // `<redirectTarget>://app/v1/open`): parsed as the open route.
@@ -50,11 +50,11 @@ test("the scheme the app parses, registers and sends as redirectTarget is the on
 
 test("packaging writes the scheme and bundle id from config, and verify refuses the old scheme", async () => {
   const packager = await readFile(path.join(repoRoot, "scripts", "package-macos.mjs"), "utf8");
-  assert.match(packager, /<key>CFBundleURLSchemes<\/key><array><string>\$\{reconstructedUrlScheme\}<\/string>/);
-  assert.match(packager, /"-replace", "CFBundleIdentifier", "-string", reconstructedBundleId/);
+  assert.match(packager, /<key>CFBundleURLSchemes<\/key><array><string>\$\{simeonUrlScheme\}<\/string>/);
+  assert.match(packager, /"-replace", "CFBundleIdentifier", "-string", simeonBundleId/);
   assert.doesNotMatch(packager, /<string>sand<\/string>/);
   const verify = await readFile(path.join(repoRoot, "scripts", "verify.mjs"), "utf8");
-  assert.match(verify, /urlTypes\.includes\(`<string>\$\{reconstructedUrlScheme\}<\/string>`\)/);
+  assert.match(verify, /urlTypes\.includes\(`<string>\$\{simeonUrlScheme\}<\/string>`\)/);
   assert.match(verify, /urlTypes\.includes\("<string>sand<\/string>"\)\) throw/);
   const recovered = await readFile(path.join(repoRoot, "frontend", "src", "recovered", "features", "deep-links", "overlay", "model.ts"), "utf8");
   assert.doesNotMatch(recovered, /sand:\/\//);

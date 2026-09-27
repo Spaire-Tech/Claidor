@@ -223,3 +223,99 @@ The same shape will serve the vendors that need "an app we register
 first" (Google, Microsoft, Asana), each with its own console.
 
 Not run on a Mac: a Dropbox sign-in through an own app.
+
+## A connected connector could not be called (26 September 2026)
+
+The founder's thread, with one agent: "can you connect me to notion" drew
+the Notion card (45 tools, Added); "can you test write something" got
+"Notion is connected successfully. I wasn't able to complete the test-page
+write", and asked why, "this conversation didn't have the Notion write
+command available to me".
+
+**It did not.** The brief tells the agent to read a connector's tool with
+GetMcpTools and call it with CallMcpTool (`system-prompt.ts`, the MCP
+line). The box log's `offered=` list on every turn that day held
+InstallPlugin, AuthenticateMcpServer and the other management tools and
+neither of those two. The reconstruction builds both
+(`createTurnMcpMetaToolFactory` in `turn-toolset.ts`) and the executors
+they run through (`createTurnLocalResourceProjection` binds
+`mcpExecutorResource` and `mcpStateExecutorResource` from a per-turn
+`TurnMcpProjectionInput`), and `buildTurnTools` offers the pair only when
+that projection exists. Nothing ever supplied it: not the production
+composition, and not the reconstruction as first shipped (`ce9fc2d8`,
+where `mcpMeta` appears only in `turn-toolset.ts` itself). So the agent
+could propose, install and authenticate a connector and had no tool that
+calls one. The same shape as the computer tools on 24 September.
+
+**Now:** `productionTurnMcpProjection` in `host-runner-composition.ts`
+builds the projection from the MCP service's own executor and state
+executor (`mcp-service.ts`: HTTP servers over the vendor backend,
+stdio servers in the box), its needs-auth lookup, the connector card the
+management tools already draw, the asset persister for MCP images (base64
+to bytes) and the prompt glue's text spiller. The owner passes it to the
+resource projection and to the turn
+(`production-turn-agent-owner.ts`), and the tools handoff
+(`turn-agent-composition.ts`) puts it on the toolset's props with the
+pair's descriptors bound to the loop's own turn-start snapshot
+(`mcpTools`, from the service's `getTools`). GetMcpTools asks the service
+live, so a connector connected earlier in the same turn is found even
+when the turn-start snapshot was still empty.
+`tests/connector-tools.test.mjs` drives the real handoff: the pair is
+offered with the projection and absent without it (the test fails on the
+code before this change).
+
+Not yet run on a Mac. What to read: a `[claidor] model=` line whose
+`offered=` includes `GetMcpTools,CallMcpTool`, then `[claidor]
+tool=getMcpToolsToolCall` and a CallMcpTool line for the connector after
+"write a test page in Notion".
+
+## A connector call reached the server under a doubled name (26 September 2026)
+
+The first Notion write after #209 failed and the agent narrated it ("the
+connector is adding its own Notion prefix twice … retrying with the
+underlying action name"), then succeeded on a guessed shorter name. Grok
+Bot's CallMcpTool builds its arguments as `name: "<server>-<tool>"` beside
+`toolName: "<tool>"` (`buildMcpArgs`, `packages/agent/tools/mcp/mcp.ts`;
+it is the only producer of `McpArgs` in the tree), and
+`tools-discovery.ts` sent `args.name` to the HTTP backend, a line carried
+from the reconstruction as first shipped. Notion's tools are themselves
+named `notion-…`, so the server was asked for `notion-notion-create-pages`.
+The same file's disabled-tool check already read `args.toolName`. It now
+sends `toolName` (`name` only as a fallback). `tests/connector-call.test.mjs`
+fails on the old line.
+
+The retries were most of the thread's extra messages. The rest is Grok
+Bot's design: InstallPlugin's own description says to confirm with a
+question widget first, even when the person asked for the connector; and
+the connect card is followed by a short "sign in there" message.
+
+**Explained the same evening, from the box log (below): one run sent it
+twice.** *What follows was written before the log was read and is kept as the
+record of what was ruled out.* **The repeated "Notion is connected and ready" is not explained yet.** Two
+candidates were ruled out in the code: the two sign-in completion paths
+(the box's auth watch and the Mac's refresh) cannot both resume the agent,
+because Grok Bot's watch re-checks that its entry is still pending after
+every await and the resolver consumes the connect-card wait; and the
+resume path (`box-handoff-resume.ts`) runs no reply or closing nudge.
+Nothing on the send path suppresses an identical second SendMessage. What
+decides it is the box log around the repeated text: two `[claidor] model=`
+lines each carrying the SendMessage (two model calls; then which run made
+the second), or one line carrying it twice (the model's parallel calls).
+
+**The box log, read the same evening.** Lines 58 and 61: one hidden resume
+run (`budget=40 hidden=true`, the same `sys` hash), two model calls, each a
+SendMessage of the identical text, written as `t38s6` and `t38s7`. Between
+them the model received only "Message sent to user. (id: t38s6)"; no
+reminder was injected (the reminder counts tool calls since the last
+SendMessage, which was none). The resume prompt is Grok Bot's word for word
+(`box-handoff-resume.ts`, same at `ce9fc2d8`) and gives two instructions,
+"Your first action is a SendMessage telling the user it's connected" and "If
+there was nothing else to do, just confirm it's ready and ask what they'd
+like"; the model answered both in its first message and then carried out the
+second again. Grok Bot's prompt is kept. What changed is the send path:
+`host/runner/repeat-send-guard.ts` refuses a text identical to the last one
+the same run sent (the run is its ack token; a run without one, two minutes),
+returns the first message's id to the model, and writes `[claidor]
+send-message repeat not sent id=…`. It covers any repeat of the kind, the
+25 September "Nice. We're set…" included if that was one.
+`tests/repeat-send-guard.test.mjs`.

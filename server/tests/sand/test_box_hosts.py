@@ -199,7 +199,6 @@ async def test_the_docker_provider_runs_the_macs_docker_run_with_the_bundle_uplo
     assert env["SAND_BACKEND_URL"] == "https://api.simeonlabs.com"
     assert env["SAND_INFERENCE_RENEWAL_CREDENTIAL"] == "claidor_db_x"
     assert env["SAND_INFERENCE_PROVIDER"] == "claidor"
-    assert env["CAISRA_CLAUDE_CODE"] == "0"
     assert env["SAND_DISABLE_TELEMETRY"] == "1"
     assert env["SAND_DISABLE_ANALYTICS"] == "1"
     assert env["SAND_BOX_LOG_SHIP_DISABLED"] == "1"

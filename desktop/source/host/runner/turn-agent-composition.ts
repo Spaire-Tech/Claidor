@@ -529,7 +529,7 @@ export function createTurnAgentToolsHandoff(input: {
 
   return {
     toolsGenerator: props => {
-      const enrichedProps: TurnToolsetBuildProps =
+      const withModels: TurnToolsetBuildProps =
         turn.parentModelInfo === undefined && turn.subagentModels === undefined
           ? props
           : {
@@ -540,6 +540,29 @@ export function createTurnAgentToolsHandoff(input: {
               ...(turn.subagentModels === undefined
                 ? {}
                 : { subagentModels: turn.subagentModels }),
+            };
+      // The turn's MCP projection reaches the toolset here, with the
+      // discovery/call pair's descriptors bound to the loop's own turn-start
+      // snapshot (`mcpTools`, from the MCP service's getTools). Without it
+      // buildTurnTools never offered GetMcpTools or CallMcpTool, and a
+      // connected connector had no tool that could call it.
+      const enrichedProps: TurnToolsetBuildProps =
+        withModels.mcp !== undefined || turn.mcp === undefined
+          ? withModels
+          : {
+              ...withModels,
+              mcp: turn.mcp.mcpMeta === undefined
+                ? turn.mcp
+                : {
+                    ...turn.mcp,
+                    mcpMeta: {
+                      ...turn.mcp.mcpMeta,
+                      getMcpTools: () => {
+                        const snapshot = (props as { readonly mcpTools?: unknown }).mcpTools;
+                        return Array.isArray(snapshot) ? snapshot as ReturnType<NonNullable<typeof turn.mcp.mcpMeta>["getMcpTools"]> : turn.mcp?.mcpMeta?.getMcpTools() ?? [];
+                      },
+                    },
+                  },
             };
       activeStateHandler = enrichedProps.stateHandler;
       return buildTurnTools(

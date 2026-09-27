@@ -6,7 +6,7 @@ import { chmod, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises"
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { CAISRA_CLAUDE_CODE_ENV, PRODUCT_INFERENCE_PROVIDER, SAND_INFERENCE_PROVIDER_ENV } from "../../shared/inference-router.js";
+import { PRODUCT_INFERENCE_PROVIDER, SAND_INFERENCE_PROVIDER_ENV } from "../../shared/inference-router.js";
 import { getConfiguredBackendUrl } from "../../shared/node/cursor-token.js";
 import { buildSandBoxNoVncUrl } from "../../packages/constants/sand-box.js";
 import type { SandSettingsStore } from "../../shared/node/settings/sand-settings-store.js";
@@ -397,7 +397,6 @@ export function localDockerInferenceEnvironmentArguments(boxCredential?: string,
     "--env", `SAND_BACKEND_URL=${backendUrl}`,
     ...(boxCredential == null || boxCredential.length === 0 ? [] : ["--env", `SAND_INFERENCE_RENEWAL_CREDENTIAL=${boxCredential}`]),
     "--env", `${SAND_INFERENCE_PROVIDER_ENV}=${PRODUCT_INFERENCE_PROVIDER}`,
-    "--env", `${CAISRA_CLAUDE_CODE_ENV}=0`,
     // The packaged Mac carries these guards in its main; the box never got
     // them, so the host buffered console lines, crash markers and product
     // events for Cursor's AnalyticsService and posted them to Simeon Labs'
