@@ -1200,6 +1200,8 @@ export class SandAgentRunner<T = unknown> {
       readonly selectedVideos?: readonly unknown[];
       readonly replyContext?: unknown;
       readonly requestSource?: string;
+      /** A hidden run that still gets the asked-turn call budget (the first message, a routine). */
+      readonly fullStepBudget?: boolean;
     } = {},
   ): Promise<T | SandAgentRunnerResult | undefined> {
     const trimmed = prompt.trim();

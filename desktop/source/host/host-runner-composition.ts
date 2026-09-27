@@ -2907,6 +2907,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             ...(runOptions.hidden === undefined
               ? {}
               : { hidden: runOptions.hidden === true }),
+            // The first message and a routine are hidden but get the asked
+            // turn's budget, as in Grok Bot (27 September 2026).
+            ...(runOptions.fullStepBudget === true ? { fullStepBudget: true } : {}),
             // The turn's prompt messages, for turn-settle's silent-tool-call
             // check (the closing-send nudge) and post-turn labelling. A
             // child runs headless and has no nudge; the agent's runner takes
