@@ -41,6 +41,12 @@ test("every logo is a readable image, and the stylesheet paints each file kind a
   // Cards speak in the chat's blue: primary buttons inside a message card, and the pending approval badge.
   assert.ok(sheet.includes('.sand-message-card button[data-variant="primary"]:not(#\\#):not(#\\#):not(#\\#){background-color:light-dark(#255a93,#1f5087);border-color:transparent;color:#fff}'));
   assert.ok(sheet.includes('[data-simeon-approval="pending"]:not(#\\#):not(#\\#):not(#\\#){background-color:'));
+  // Every card is white like the file card; the agent's bubbles outside cards keep their grey.
+  assert.ok(sheet.includes(".sand-message-card{--sand-fill-bubble-agent:var(--sand-fill-elevated)}"));
+  // The narrow sidebar's New button matches the 36 px initials circle, and the wide-sidebar account rules leave the narrow one alone.
+  assert.ok(sheet.includes(".sand-agents-sidebar__rail-new .sand-agents-sidebar__new:not(#\\#):not(#\\#):not(#\\#):not(#\\#){width:36px;height:36px;"));
+  assert.ok(sheet.includes('.sand-agents-sidebar__account:not([data-collapsed="true"])'));
+  assert.ok(!sheet.includes(".sand-agents-sidebar__account:not(#"), "no account rule reaches the collapsed rail");
   assert.throws(() => patchOriginalLogosStylesheet(sheet, assets), /logos block is already present/);
 });
 
@@ -56,6 +62,7 @@ test("the button says Connect apps and PowerPoint gets its own kind, on anchors 
   assert.ok(patched.includes("syntheticProseCards:n}],__simeonAppMentions]}"), "the message pipeline ends with the app step");
   assert.equal(patched.split("const __simeonAppMentions=").length - 1, 1);
   assert.ok(patched.includes('children:"Connect apps"'));
+  assert.ok(patched.includes('notion:{kind:"brand",hex:"#FFFFFF",path:'), "Notion draws its light-mode logo");
   assert.ok(patched.includes('"data-simeon-approval":N?"pending":void 0,role:"status"'), "the pending approval badge is marked");
   assert.ok(!patched.includes('name:"plug",size:14'));
   assert.ok(patched.includes('r==="pptx"||r==="ppt"?"slides"'));

@@ -272,6 +272,7 @@ export const LOGO_REPLACEMENTS = Object.freeze([
   ["connect-apps-button", PLUGINS_BUTTON_BEFORE, PLUGINS_BUTTON_AFTER],
   ["file-kind-slides", 'return r!=null&&A6n.has(r)?"archive":null', 'return r==="pptx"||r==="ppt"?"slides":r==="doc"||r==="rtf"?"document":r!=null&&A6n.has(r)?"archive":null'],
   ["file-kind-table-slides", "tin={markdown:", 'tin={slides:{icon24:"file",icon36:"file",tint:"neutral"},markdown:'],
+  ["notion-tile-light", 'notion:{kind:"brand",hex:"#0F0F10",path:', 'notion:{kind:"brand",hex:"#FFFFFF",path:'],
   ["approval-badge-marker", 'p.jsxs("span",{...Fe(lc.badge,N?lc.badgePending:FAn[y.kind]),role:"status",children:[N?p.jsx(bt,{"aria-hidden":!0,color:"yellow"', 'p.jsxs("span",{...Fe(lc.badge,N?lc.badgePending:FAn[y.kind]),"data-simeon-approval":N?"pending":void 0,role:"status",children:[N?p.jsx(bt,{"aria-hidden":!0,color:"yellow"'],
   ["message-app-mentions", MESSAGE_REHYPE_BEFORE, (names) => `${appMentionsPluginSource(names)}${MESSAGE_REHYPE_BEFORE.replace("syntheticProseCards:n}]]}", "syntheticProseCards:n}],__simeonAppMentions]}")}`],
 ]);
@@ -330,8 +331,10 @@ ${kinds.map(([kind, url]) => `${box(kind)}{--simeon-file-logo:url("${url}")}`).j
 .sand-agents-sidebar__plugins-entry${HI}{position:relative;z-index:1;height:40px;margin:0 0 -40px 40px;padding:0}
 .sand-agents-sidebar__plugins${HI}{justify-content:flex-start;gap:6px;width:auto;height:40px;padding:0 6px;border:0;border-radius:8px;background:transparent;color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8);font-size:13px;font-weight:500}
 .sand-agents-sidebar__plugins${HI}:hover{background:transparent;color:light-dark(#1b4a7d,#a9ccf0)}
-.sand-agents-sidebar__account${HI}{flex:0 0 auto;width:auto}
-.sand-agents-sidebar__account${HI}>button>span:nth-child(2){display:none}
+.sand-agents-sidebar__account:not([data-collapsed="true"])${HI}{flex:0 0 auto;width:auto}
+.sand-agents-sidebar__account:not([data-collapsed="true"])${HI}>button>span:nth-child(2){display:none}
+.sand-agents-sidebar__rail-new .sand-agents-sidebar__new${HI}:not(#\\#){width:36px;height:36px;border-radius:999px;background:var(--sand-fill-neutral-subtle);box-shadow:inset 0 0 0 .5px var(--sand-border-default)}
+.sand-agents-sidebar__rail-new .sand-agents-sidebar__new${HI} .ui-icon{--icon-size:18px!important;color:var(--sand-text-secondary)}
 .simeon-connect-apps__label{white-space:nowrap}
 .simeon-connect-apps__logos{order:1;display:inline-flex;align-items:center;margin-left:2px}
 .simeon-connect-apps__logos>i{display:block;width:20px;height:20px;margin-left:-3px;border-radius:5px;background:#fff center/14px no-repeat;box-shadow:0 0 0 1px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.1)}
@@ -356,9 +359,23 @@ ${mentions.map(({ key, color, logo, mono }) => `.simeon-app[data-app="${key}"]{-
  * orange in Grok Bot, is marked `data-simeon-approval="pending"` where it
  * is drawn and tinted blue with a blue spinner. Outline buttons (Always
  * allow, Deny, Discard) are untouched.
+ *
+ * Every card is white like the file card ("all cards literally all, should
+ * be white background … because the artifact/attachment background are
+ * white"): the choice, connector, email, approval and permission cards
+ * paint with `--sand-fill-bubble-agent`, the agent bubble's grey, so inside
+ * `.sand-message-card` that token points at the file card's
+ * `--sand-fill-elevated`, and each card's surface takes the file card's
+ * border; the agent's message bubbles, outside any card, stay grey. A white
+ * service tile (Gmail, and Notion, which draws its light-mode logo: white
+ * tile, dark mark, "i want the light mode logo") gets a hairline so it does
+ * not vanish on the white card.
  */
 export const CARD_BLUE_MARKER = "/* Simeon: cards speak in the chat's blue";
 export const cardBlueCss = () => `${CARD_BLUE_MARKER} (27 September 2026). */
+.sand-message-card{--sand-fill-bubble-agent:var(--sand-fill-elevated)}
+.sand-message-card>:is(article,form,section):not(.sand-file-card)${HI},.sand-message-card :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer)${HI}{border:1px solid var(--sand-border-default)}
+.sand-message-card .sand-tool-icon[style*="background-color: rgb(255, 255, 255)"]${HI}{box-shadow:inset 0 0 0 1px var(--sand-border-default)}
 .sand-message-card button[data-variant="primary"]${HI}{background-color:light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK});border-color:transparent;color:#fff}
 .sand-message-card button[data-variant="primary"]${HI}:hover:not(:disabled){background-color:light-dark(#1e4d80,#2a62a0)}
 .sand-message-card button[data-variant="primary"]${HI}:active:not(:disabled){background-color:light-dark(#1a4372,#1b4677)}
@@ -746,7 +763,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

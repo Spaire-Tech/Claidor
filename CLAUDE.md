@@ -673,7 +673,11 @@ Calendar and Drive tiles, on the account row beside the initials circle
 two-word name), same action; every primary button inside a message
 card (Allow once, Send email, …) is the chat's blue with white text, and
 the Auto-review card's "Approval needed" badge is tinted blue instead of
-orange (`cardBlueCss`, `data-simeon-approval`) (`LOGO_REPLACEMENTS`, `logosCss`,
+orange (`cardBlueCss`, `data-simeon-approval`); every card is white with
+the file card's border, the agent's bubbles staying grey ("all cards
+literally all, should be white background"); Notion's tile is white with
+its dark mark, the light-mode logo; and the narrow sidebar's New button
+is a 36 px circle like the initials beneath it (`LOGO_REPLACEMENTS`, `logosCss`,
 `desktop/brand/file-icons`, `desktop/brand/app-logos`). Not yet seen on
 a Mac.
 **The chat header is the agent's card, 23 September, later still**
