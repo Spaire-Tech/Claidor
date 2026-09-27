@@ -281,19 +281,32 @@ export function patchOriginalPalette(source) {
 }
 
 /**
- * The person's own chat bubble is iMessage blue (23 September 2026: "the
- * default chat color is black. grey in dark mode. i want to copy imessage
- * style and make it blue", with Apple's numbers). The renderer's theme
- * variables are generated at runtime from a token list in the chunk
- * (`Ct("fill/bubble-user", El(light, dark, hcLight, hcDark))`, emitted by
- * `bzn` as `--sand-fill-bubble-user`); the stylesheet carries only the
- * light default for first paint. Both are patched. The text on the bubble
- * is `text/on-color`, white in every theme, and stays.
+ * The person's own chat bubble. It was iMessage blue from 23 September 2026
+ * ("copy imessage style and make it blue"); since 27 September it is the
+ * founder's "Sky wash, deepest": a sky blue gradient under film grain and a
+ * horizontal brush texture ("these are the main color i like. kinda grainy,
+ * artistic, painting"; "sky wash deepest is fine"). It first carried a teal
+ * and a dusty rose stroke at the tail; they came out the same day ("too
+ * noisy. keep the blue color, remove the purple/green accents"). White text
+ * holds 5.9:1 to 7.1:1 on it, which the lighter first drafts did not ("the
+ * white of the text wont be seen").
+ *
+ * The renderer's theme variables are generated at runtime from a token list
+ * in the chunk (`Ct("fill/bubble-user", El(light, dark, hcLight, hcDark))`,
+ * emitted by `bzn` as `--sand-fill-bubble-user`); the stylesheet carries only
+ * the light default for first paint. Both are patched to the painting's base
+ * blue, which is also what `--cursor-foreground` (a checked checkbox) reads.
+ * The painting itself is `USER_BUBBLE_PAINT_CSS`, appended to the stylesheet
+ * on `.sand-mvmkjj`, the one atomic class that applies the bubble colour: it
+ * occurs once in the pinned chunk, in the message's `user` style. It uses
+ * `light-dark()` in the stops, the way the renderer's own palette does, so
+ * dark mode runs one shade deeper. The text on the bubble is
+ * `text/on-color`, white in every theme, and stays.
  */
-export const USER_BUBBLE_LIGHT = "#007aff";
-export const USER_BUBBLE_DARK = "#0a84ff";
+export const USER_BUBBLE_LIGHT = "#255a93";
+export const USER_BUBBLE_DARK = "#1f5087";
 const BUBBLE_TOKEN_BEFORE = 'Ct("fill/bubble-user",El(va("gray","dark",1),va("gray","dark",8),va("gray","dark",1),va("gray","dark",11)))';
-const BUBBLE_TOKEN_AFTER = `Ct("fill/bubble-user",El({value:"${USER_BUBBLE_LIGHT}",alias:"imessage/blue"},{value:"${USER_BUBBLE_DARK}",alias:"imessage/blue-dark"}))`;
+const BUBBLE_TOKEN_AFTER = `Ct("fill/bubble-user",El({value:"${USER_BUBBLE_LIGHT}",alias:"simeon/sky-wash"},{value:"${USER_BUBBLE_DARK}",alias:"simeon/sky-wash-dark"}))`;
 export const BUBBLE_REPLACEMENTS = Object.freeze([["user-bubble-blue", BUBBLE_TOKEN_BEFORE, BUBBLE_TOKEN_AFTER]]);
 const BUBBLE_CSS_BEFORE = "--sand-fill-bubble-user:#070707;";
 const BUBBLE_CSS_AFTER = `--sand-fill-bubble-user:${USER_BUBBLE_LIGHT};`;
@@ -305,9 +318,17 @@ export function patchOriginalBubble(source) {
   return out;
 }
 
+const GRAIN_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>";
+const BRUSH_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='120'><filter id='b'><feTurbulence type='fractalNoise' baseFrequency='.012 .35' numOctaves='2'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .22 -.04'/></filter><rect width='100%' height='100%' filter='url(%23b)'/></svg>";
+export const USER_BUBBLE_PAINT_MARKER = "/* Simeon: the person's bubble is painted, Sky wash";
+export const USER_BUBBLE_PAINT_CSS = `${USER_BUBBLE_PAINT_MARKER} (27 September 2026): grain and brush over the blue, no accent strokes. */
+.sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#){background-image:url("${GRAIN_SVG}"),url("${BRUSH_SVG}"),linear-gradient(165deg,light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK}),light-dark(#2e679f,#285c93));background-size:160px 160px,300px 100%,100% 100%;background-blend-mode:soft-light,overlay,normal}
+`;
+
 export function patchOriginalBubbleStylesheet(css) {
   const [label, before, after] = BUBBLE_CSS_REPLACEMENT;
-  return replaceExactlyOnce(css, before, after, label);
+  if (css.includes(USER_BUBBLE_PAINT_MARKER)) throw new Error("Original renderer bubble paint block is already present.");
+  return `${replaceExactlyOnce(css, before, after, label)}\n${USER_BUBBLE_PAINT_CSS}`;
 }
 
 /**
@@ -551,7 +572,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

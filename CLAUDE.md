@@ -643,6 +643,17 @@ Both are patched (`patchOriginalBubble`, `patchOriginalBubbleStylesheet`).
 The bubble's text is `text/on-color`, white everywhere, untouched. The
 same token feeds `--cursor-foreground`, which the checked state of a
 checkbox uses, so that turns blue too. Not yet seen on a Mac.
+**Since 27 September 2026 the bubble is painted, "Sky wash, deepest"**
+(the founder sent five grainy painted skies: "kinda grainy, artistic,
+painting … instead of apple blue"; then "a tad darker or the white of the
+text wont be seen"; then "sky wash deepest is fine"): base `#255a93` light,
+`#1f5087` dark in the same token, and `USER_BUBBLE_PAINT_CSS` paints
+`.sand-mvmkjj` (the one class that applies the bubble colour, used once in
+the chunk) with film grain and a brush texture over the blue; white text
+holds 5.9:1 or better. The teal and dusty rose accent strokes it first
+carried were removed the same day ("too noisy. keep the blue color, remove
+the purple/green accents"). Rendered headless with the patched pinned
+stylesheet; not yet seen on a Mac.
 **The chat header is the agent's card, 23 September, later still**
 ("the name of the agent are up top, left. i want to middle it … like
 muse … remove the line"): a CSS block appended to the pinned stylesheet
@@ -938,6 +949,28 @@ composition), and the gateway write validates the bytes.
 still fails shows `edge/handler-failed: <the server's sentence>`; the
 first thing to check is `CLAIDOR_OPENAI_API_KEY` on Render. The Mac
 keeps no log for this path. Not yet run on a Mac.
+
+## The app-window demo (27 September 2026)
+
+"all i wanted was the app … the absolute REAL app, with real stuff
+happening, and you can click on stuff … give me real convo, with names like
+Simeon, Scout, Yodo … shows cards, connectors … simeon creating an agent for
+something, then see the agent being created … we'll use the light mode."
+`npm run demo` (after `npm run package`) serves today's patched window, the
+pinned renderer with every Simeon patch, in a browser on 127.0.0.1 only: a
+private preview, never published, since the window is still Grok Bot's code
+(the real site waits on our own window). `demo/bridge.ts` installs the app's
+own preload bridge over a fake Electron and runs the app's own coordinator
+port server; `demo/backend.ts` answers in the host's shapes from
+`demo/scenario.ts`: Simeon, Scout, Yodo and Ledger with their conversations,
+question cards, a PDF card, Gmail and Notion connector cards (shown Added),
+an email draft, an Auto-review approval; clicking "Yes, set someone up" has
+Simeon create Quill, who appears in the sidebar working, is briefed, and
+opens with its own question; Yodo reports a payment on its own a few seconds
+in; typing to any agent gets a reply; booking, Allow once and answers all
+play out. The email draft's Send button does nothing, as in the app itself
+(the pinned chunk's callbacks are empty; `draft-composer-measured.md`).
+`tests/app-demo.test.mjs`. Seen headless only, not yet on a Mac.
 
 ## The whole-product design audit, and the switch-or-coming-soon rule (25 September 2026)
 
