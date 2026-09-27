@@ -673,3 +673,18 @@ desktop, 2 maty); `alembic heads` → one head (`desktop_boxes_0918`);
 run this time, not inherited, because `server/` did change.
 
 **What I did not run:** anything against a real E2B account, a real box, or CI.
+
+**Addendum, 27 September 07:30.** `684b83da..2c503f5b` is three commits
+(#217–#219): two chat-bubble colour changes and `npm run demo`. Nothing under
+`server/` or `runner/`, no `CLAIDOR_` key touched, so the tested tree is
+unchanged from `490acb8a` and the suite is inherited, not re-run.
+
+One thing there was worth measuring, because someone will ask it later: **the
+demo spends nothing on our proxy.** `desktop/demo/backend.ts` answers every
+call from a scripted scenario, and `grep -rnE '\bfetch\(|https?\.request|
+node-fetch|axios|XMLHttpRequest|net\.connect' desktop/demo/` returns nothing —
+no outbound call of any kind. The two `https://` strings in that folder
+(`gmailmcp.googleapis.com`, `mcp.notion.com`) are display data in a fake list
+of connected MCP rows, never dialled, and the only `simeonlabs.com` occurrences
+are a fake e-mail address. So a demo run bills no credits and reaches no route
+of mine.
