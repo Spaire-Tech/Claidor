@@ -10,7 +10,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function loadModule(entry, name) {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), `caisra-${name}-`));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), `simeon-${name}-`));
   const output = path.join(temporary, `${name}.mjs`);
   await build({ entryPoints: [path.join(repoRoot, entry)], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22" });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
@@ -261,21 +261,18 @@ test("every connector wrapper between electron-main and the coordinator forwards
   }
 });
 
-test("the product lock ignores stored providers and leftover Claude Code", async () => {
+test("the product lock ignores stored providers", async () => {
   const shared = await loadModule("source/shared/inference-router.ts", "product-inference-lock");
   const storeLoaded = await loadModule("source/shared/node/settings/sand-settings-store.ts", "settings-store-lock");
   const router = await loadModule("source/node-agent-coordinator/inference-router.ts", "coordinator-lock");
-  const previousClaude = process.env.CAISRA_CLAUDE_CODE;
   const previousOverride = process.env.SAND_INFERENCE_PROVIDER;
   try {
-    delete process.env.CAISRA_CLAUDE_CODE;
     delete process.env.SAND_INFERENCE_PROVIDER;
 
     const { resolveProductInferenceProvider, PRODUCT_INFERENCE_PROVIDER } = shared.module;
     assert.equal(PRODUCT_INFERENCE_PROVIDER, "claidor");
     assert.equal(resolveProductInferenceProvider({}), "claidor");
-    assert.equal(resolveProductInferenceProvider({ CAISRA_CLAUDE_CODE: "1" }), "claidor");
-    assert.equal(resolveProductInferenceProvider({ CAISRA_CLAUDE_CODE: "0", SAND_INFERENCE_PROVIDER: "openrouter" }), "claidor");
+    assert.equal(resolveProductInferenceProvider({ SAND_INFERENCE_PROVIDER: "openrouter" }), "claidor");
     assert.equal(resolveProductInferenceProvider({ SAND_INFERENCE_PROVIDER: "claude-code" }), "claidor");
     assert.equal(resolveProductInferenceProvider({ SAND_INFERENCE_PROVIDER: "cursor" }), "claidor");
     assert.equal(resolveProductInferenceProvider({ SAND_INFERENCE_PROVIDER: "not-a-provider" }), "claidor");
@@ -299,8 +296,6 @@ test("the product lock ignores stored providers and leftover Claude Code", async
     });
     assert.equal(created.provider(), "claidor");
   } finally {
-    if (previousClaude === undefined) delete process.env.CAISRA_CLAUDE_CODE;
-    else process.env.CAISRA_CLAUDE_CODE = previousClaude;
     if (previousOverride === undefined) delete process.env.SAND_INFERENCE_PROVIDER;
     else process.env.SAND_INFERENCE_PROVIDER = previousOverride;
     await shared.dispose();

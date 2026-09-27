@@ -1,5 +1,5 @@
 /**
- * Ignite electron-main and host the way `scripts/build-caisra.mjs` does:
+ * Ignite electron-main and host the way `scripts/build-simeon.mjs` does:
  * generate the entry that actually calls start, without the 0.18.0 artifact
  * self-check that `*-production-activation.mjs` requires.
  *
@@ -14,7 +14,7 @@ import path from "node:path";
 
 import { build as esbuild } from "esbuild";
 
-import { electronMainEntrySource, hostEntrySource, repoRoot } from "./lib/caisra-entries.mjs";
+import { electronMainEntrySource, hostEntrySource, repoRoot } from "./lib/simeon-entries.mjs";
 import { applyReconstructedUpdaterGuard } from "./lib/build-asar.mjs";
 import {
   electronMainBindingProvenancePath,
@@ -27,7 +27,7 @@ import {
   hostProductionBindingInventorySpecs,
 } from "./host-production-activation.mjs";
 
-// Same list as scripts/build-caisra.mjs. pdfjs-dist is bundled, not
+// Same list as scripts/build-simeon.mjs. pdfjs-dist is bundled, not
 // external: the box gets host-main.cjs alone, and the Read tool's PDF
 // extractor (source/host/runner/pdf-text-extractor.ts) needs pdf.js inside it.
 const EXTERNAL = [
@@ -53,7 +53,7 @@ async function bundleIgnition({ contents, sourcefile, outfile, banner }) {
     banner: { js: banner },
     bundle: true,
     define: {
-      "process.env.CAISRA_BUILD": JSON.stringify("clean-source"),
+      "process.env.SIMEON_BUILD": JSON.stringify("clean-source"),
       "import.meta.url": "__import_meta_url",
     },
     external: EXTERNAL,
@@ -95,9 +95,9 @@ export async function igniteProductionHost({ outputRoot, previous = {} } = {}) {
   const outfile = path.join(outputRoot, "dist/host/host-main.cjs");
   const graph = await bundleIgnition({
     contents: await hostEntrySource(),
-    sourcefile: "scripts/build-entry/caisra-host.ts",
+    sourcefile: "scripts/build-entry/simeon-host.ts",
     outfile,
-    banner: 'const __import_meta_url = require("node:url").pathToFileURL(__filename).href;\n// Deterministic clean-source production host; caisra ignition',
+    banner: 'const __import_meta_url = require("node:url").pathToFileURL(__filename).href;\n// Deterministic clean-source production host; simeon ignition',
   });
   const outputBytes = await readFile(outfile);
   const bindings = hostProductionBindingInventorySpecs.map((spec) => ({
@@ -138,18 +138,18 @@ export async function igniteProductionHost({ outputRoot, previous = {} } = {}) {
   };
 }
 
-export async function igniteProductionElectronMain({ outputRoot, reconstructedPackage = false, previous = {} } = {}) {
+export async function igniteProductionElectronMain({ outputRoot, simeonPackage = false, previous = {} } = {}) {
   if (typeof outputRoot !== "string" || outputRoot.length === 0) {
     throw new TypeError("igniteProductionElectronMain requires outputRoot");
   }
   const outfile = path.join(outputRoot, "dist/electron-main/main.cjs");
   const graph = await bundleIgnition({
     contents: await electronMainEntrySource(),
-    sourcefile: "scripts/build-entry/caisra-electron-main.ts",
+    sourcefile: "scripts/build-entry/simeon-electron-main.ts",
     outfile,
-    banner: 'const __import_meta_url = require("node:url").pathToFileURL(__filename).href;\n// Deterministic clean-source production Electron main; caisra ignition',
+    banner: 'const __import_meta_url = require("node:url").pathToFileURL(__filename).href;\n// Deterministic clean-source production Electron main; simeon ignition',
   });
-  if (reconstructedPackage) {
+  if (simeonPackage) {
     await writeFile(outfile, applyReconstructedUpdaterGuard(await readFile(outfile, "utf8")));
   }
   const outputBytes = await readFile(outfile);

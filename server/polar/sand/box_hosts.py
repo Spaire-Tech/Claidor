@@ -126,7 +126,6 @@ class BoxSpec:
             "SAND_BACKEND_URL": self.backend_url,
             "SAND_INFERENCE_RENEWAL_CREDENTIAL": self.renewal_credential,
             "SAND_INFERENCE_PROVIDER": "claidor",
-            "CAISRA_CLAUDE_CODE": "0",
             "SAND_DISABLE_TELEMETRY": "1",
             "SAND_DISABLE_ANALYTICS": "1",
             "SAND_BOX_LOG_SHIP_DISABLED": "1",

@@ -38,7 +38,7 @@ import {
 import {
   igniteProductionElectronMain,
   igniteProductionHost,
-} from "./caisra-ignition-activation.mjs";
+} from "./simeon-ignition-activation.mjs";
 import { applyOriginalRendererRouterPatch } from "./lib/router-renderer-patch.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
@@ -76,14 +76,14 @@ async function outputRecord(outputRoot, relative) {
   return { path: relative, bytes: (await stat(target)).size, sha256: sha256(await readFile(target)) };
 }
 
-async function prepareProductionActivations(clean, hostBindingManifest, electronMainBindingManifest, composition = runtimeComposition, { reconstructedPackage = false } = {}) {
+async function prepareProductionActivations(clean, hostBindingManifest, electronMainBindingManifest, composition = runtimeComposition, { simeonPackage = false } = {}) {
   let [hostActivation, electronMainActivation] = await Promise.all([
     buildProductionHostIfSupplied({ outputRoot: clean.outputRoot, manifestPath: hostBindingManifest }).catch((error) => ({
       status: "activation-error",
       clean: false,
       blocker: String(error?.message ?? error),
     })),
-    buildProductionElectronMainIfSupplied({ outputRoot: clean.outputRoot, manifestPath: electronMainBindingManifest, reconstructedPackage }).catch((error) => ({
+    buildProductionElectronMainIfSupplied({ outputRoot: clean.outputRoot, manifestPath: electronMainBindingManifest, simeonPackage }).catch((error) => ({
       status: "activation-error",
       clean: false,
       blocker: String(error?.message ?? error),
@@ -95,7 +95,7 @@ async function prepareProductionActivations(clean, hostBindingManifest, electron
   if (!electronMainActivation.clean) {
     electronMainActivation = await igniteProductionElectronMain({
       outputRoot: clean.outputRoot,
-      reconstructedPackage,
+      simeonPackage,
       previous: electronMainActivation,
     });
   }
@@ -263,7 +263,7 @@ export async function buildReconstructedAsar({
     || (existsSync(defaultElectronMainBindingManifestPath) ? defaultElectronMainBindingManifestPath : null),
 } = {}) {
   const built = await buildBaseReconstructedAsar({ pack: false });
-  const prepared = await prepareProductionActivations(built, hostBindingManifest, electronMainBindingManifest, runtimeComposition, { reconstructedPackage: true });
+  const prepared = await prepareProductionActivations(built, hostBindingManifest, electronMainBindingManifest, runtimeComposition, { simeonPackage: true });
   const clean = await attachCompositionAudit(prepared);
   await overlayAuditMetadata(clean);
   await packStagedAppWithIntegrity({ stageRoot: stagedAppDir, archivePath: builtAsar, unpackedRoot: builtAsarUnpacked });
@@ -289,7 +289,7 @@ export async function buildFidelityReconstructedAsar({
     unpackedRoot,
   });
   const base = await buildBaseFidelityDistribution({ outputRoot: cleanOutputRoot });
-  const prepared = await prepareProductionActivations(base, hostBindingManifest, electronMainBindingManifest, fidelityRuntimeComposition, { reconstructedPackage: true });
+  const prepared = await prepareProductionActivations(base, hostBindingManifest, electronMainBindingManifest, fidelityRuntimeComposition, { simeonPackage: true });
   const clean = await attachCompositionAudit(prepared);
   await overlayCleanDistribution(clean.outputRoot, { stageRoot, composition: clean.buildManifest.runtimeComposition });
   await applyOriginalRendererRouterPatch({ stageRoot });

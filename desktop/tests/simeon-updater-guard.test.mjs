@@ -6,7 +6,7 @@ import test from "node:test";
 import {
   applyReconstructedUpdaterGuard,
   prepareReconstructedElectronMainArtifactFallback,
-  reconstructedUpdaterGuard,
+  simeonUpdaterGuard,
 } from "../scripts/lib/build-asar.mjs";
 
 const root = path.resolve(import.meta.dirname, "..");
@@ -14,7 +14,7 @@ const root = path.resolve(import.meta.dirname, "..");
 test("reconstructed fallback and clean packaging share one idempotent service guard", async () => {
   const source = "console.log('electron-main');\n";
   const guarded = applyReconstructedUpdaterGuard(source);
-  assert.equal(guarded, `${reconstructedUpdaterGuard}${source}`);
+  assert.equal(guarded, `${simeonUpdaterGuard}${source}`);
   assert.equal(applyReconstructedUpdaterGuard(guarded), guarded);
   assert.match(guarded, /SAND_DISABLE_UPDATES \?\?= "1"/);
   assert.match(guarded, /SAND_DISABLE_SENTRY \?\?= "1"/);
@@ -24,8 +24,8 @@ test("reconstructed fallback and clean packaging share one idempotent service gu
     "var isSandLabBuild2 = appPackageJson.sandLab === true;",
     "var isPrimaryInstance = !import_electron51.app.isPackaged || import_electron51.app.requestSingleInstanceLock();",
   ].join("\n");
-  assert.ok(prepareReconstructedElectronMainArtifactFallback(fallbackFixture).startsWith(reconstructedUpdaterGuard));
+  assert.ok(prepareReconstructedElectronMainArtifactFallback(fallbackFixture).startsWith(simeonUpdaterGuard));
 
   const cleanBuildSource = await readFile(path.join(root, "scripts", "clean-build.mjs"), "utf8");
-  assert.match(cleanBuildSource, /fidelityRuntimeComposition, \{ reconstructedPackage: true \}/);
+  assert.match(cleanBuildSource, /fidelityRuntimeComposition, \{ simeonPackage: true \}/);
 });

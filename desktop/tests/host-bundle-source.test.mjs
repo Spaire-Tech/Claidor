@@ -11,7 +11,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const sourcePath = path.join(repoRoot, "source/host/extensions/host-upgrade/host-bundle-source.ts");
 
 async function loadModule() {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-host-bundle-source-"));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-host-bundle-source-"));
   const output = path.join(temporary, "host-bundle-source.mjs");
   await build({ entryPoints: [sourcePath], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22" });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);

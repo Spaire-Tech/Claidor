@@ -4,10 +4,10 @@ import {
   outputApp,
   outputDir,
   packagedEnvironment,
-  reconstructedBundleId,
-  reconstructedExecutableName,
-  reconstructedName,
-  reconstructedUrlScheme
+  simeonBundleId,
+  simeonExecutableName,
+  simeonName,
+  simeonUrlScheme
 } from "./lib/config.mjs";
 import { buildFidelityReconstructedAsar } from "./clean-build.mjs";
 import { signAppBundleAdHoc } from "./lib/codesign.mjs";
@@ -65,8 +65,8 @@ await cp(builtAsarUnpacked, packagedUnpacked, {
 
 const infoPlist = path.join(outputApp, "Contents", "Info.plist");
 await run(SYSTEM_TOOLS.plutil, ["-remove", "ElectronAsarIntegrity", infoPlist]);
-await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleIdentifier", "-string", reconstructedBundleId, infoPlist]);
-await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleDisplayName", "-string", reconstructedName, infoPlist]);
+await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleIdentifier", "-string", simeonBundleId, infoPlist]);
+await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleDisplayName", "-string", simeonName, infoPlist]);
 // macOS kills an app that touches the microphone without this key; dictation
 // is the one capture Simeon does (F-230, 25 September 2026). `-replace`
 // writes it whether or not the 0.18.0 shell carried one.
@@ -75,7 +75,7 @@ await run(SYSTEM_TOOLS.plutil, ["-replace", "NSMicrophoneUsageDescription", "-st
 // Claidor's sign-in returns to whatever scheme the app names, and `sand` is
 // Grok Bot's, which macOS may hand the callback to instead.
 await run(SYSTEM_TOOLS.plutil, ["-remove", "CFBundleURLTypes", infoPlist]);
-await run(SYSTEM_TOOLS.plutil, ["-insert", "CFBundleURLTypes", "-xml", `<array><dict><key>CFBundleTypeRole</key><string>Viewer</string><key>CFBundleURLName</key><string>Simeon auth callback</string><key>CFBundleURLSchemes</key><array><string>${reconstructedUrlScheme}</string></array></dict></array>`, infoPlist]);
+await run(SYSTEM_TOOLS.plutil, ["-insert", "CFBundleURLTypes", "-xml", `<array><dict><key>CFBundleTypeRole</key><string>Viewer</string><key>CFBundleURLName</key><string>Simeon auth callback</string><key>CFBundleURLSchemes</key><array><string>${simeonUrlScheme}</string></array></dict></array>`, infoPlist]);
 // The packaged bundle carries its own backend. A bundle launched from Finder
 // inherits no shell environment, so a build without this signs in to
 // cursor.com however the terminal that built it was configured.
@@ -102,7 +102,7 @@ await run(SYSTEM_TOOLS.plutil, [
 const renamed = await renameMacBundleIdentity({
   appPath: outputApp,
   fromName: await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleExecutable", "raw", infoPlist]),
-  toName: reconstructedExecutableName,
+  toName: simeonExecutableName,
   plist: {
     read: (file, key) => capture(SYSTEM_TOOLS.plutil, ["-extract", key, "raw", file]).catch(() => null),
     write: (file, key, value) => run(SYSTEM_TOOLS.plutil, ["-replace", key, "-string", value, file]),
@@ -128,10 +128,10 @@ await run("/usr/bin/touch", [outputApp]).catch(() => {});
 await run("/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister", ["-f", outputApp]).catch(() => {});
 const verification = await verifyReconstructedMacPackage({
   officialApp: runtimeApp,
-  reconstructedApp: outputApp,
+  simeonApp: outputApp,
   sourceUnpackedRoot: builtAsarUnpacked,
   packagedUnpackedRoot: packagedUnpacked,
-  reconstructedExecutableName: renamed.executable.to,
+  simeonExecutableName: renamed.executable.to,
 });
 
 console.log(`Packaged application: ${outputApp} (executable ${renamed.executable.to}, ${renamed.helpers.length} helpers renamed, ${verification.runtime.nodeFileCount} native manifest entries, ${verification.runtime.runtimeFileCount} unpacked runtime files)`);

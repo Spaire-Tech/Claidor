@@ -10,7 +10,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function load(entry, name) {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), `caisra-${name}-`));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), `simeon-${name}-`));
   const output = path.join(temporary, `${name}.mjs`);
   await build({
     entryPoints: [path.join(repoRoot, entry)],
@@ -78,7 +78,7 @@ test("the first-run intro runs on the full runner, and product turns on the host
   assert.doesNotMatch(lifecycle, /runRoutedProviderText/);
   assert.doesNotMatch(lifecycle, /SEND_MESSAGE_PLAIN_TEXT_RETRY/);
   assert.doesNotMatch(lifecycle, /cheapIntroductionMessages/);
-  assert.doesNotMatch(lifecycle, /buildSimeonProductSystemPrompt|withLeadingHello|firstHelloText|CAISRA_USER_REPLY_REMINDER/);
+  assert.doesNotMatch(lifecycle, /buildSimeonProductSystemPrompt|withLeadingHello|firstHelloText/);
   // That runner speaks Claidor.
   assert.match(turnShell, /const inferenceProvider = "claidor" as const/);
   // Product turns go to the host by default; off is the Mac hatch.

@@ -8,12 +8,12 @@ import {
   repoRoot,
   sourceAppDir,
   stagedAppDir,
-  reconstructedName,
+  simeonName,
 } from "./config.mjs";
 import { packStagedAppWithIntegrity } from "./asar-integrity.mjs";
 import { resolveRuntimeApp } from "./runtime.mjs";
 
-export const reconstructedUpdaterGuard = [
+export const simeonUpdaterGuard = [
   "// Reconstructed-build guard: do not consume official update or telemetry services.",
   "process.env.SAND_DISABLE_UPDATES ??= \"1\";",
   "process.env.SAND_DISABLE_SENTRY ??= \"1\";",
@@ -23,7 +23,7 @@ export const reconstructedUpdaterGuard = [
 
 export function applyReconstructedUpdaterGuard(source) {
   if (typeof source !== "string") throw new TypeError("Electron-main source must be a string");
-  return source.startsWith(reconstructedUpdaterGuard) ? source : `${reconstructedUpdaterGuard}${source}`;
+  return source.startsWith(simeonUpdaterGuard) ? source : `${simeonUpdaterGuard}${source}`;
 }
 
 // The prebuilt tree-sitter runtime entries evaluate only node-gyp-build. The
@@ -157,7 +157,7 @@ export async function buildAsar({
       stagedPackage.sandLab = true;
       stagedPackage.productName = "Grok Bot 0.18 Dev";
     } else {
-      stagedPackage.productName = reconstructedName;
+      stagedPackage.productName = simeonName;
     }
     await writeFile(stagedPackagePath, `${JSON.stringify(stagedPackage, null, 2)}\n`);
   }

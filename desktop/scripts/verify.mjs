@@ -7,10 +7,10 @@ import { extractFile, listPackage } from "@electron/asar";
 import {
   outputApp,
   packagedEnvironment,
-  reconstructedBundleId,
-  reconstructedExecutableName,
-  reconstructedName,
-  reconstructedUrlScheme,
+  simeonBundleId,
+  simeonExecutableName,
+  simeonName,
+  simeonUrlScheme,
   repoRoot,
   sourceAppDir,
   upstreamAsarSha256,
@@ -279,16 +279,16 @@ for (const fallback of sourceFallbacks) {
 
 const infoPlist = path.join(verifiedApp, "Contents", "Info.plist");
 const bundleId = await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleIdentifier", "raw", infoPlist]);
-if (bundleId !== reconstructedBundleId) throw new Error(`Unexpected reconstructed bundle ID: ${bundleId}`);
+if (bundleId !== simeonBundleId) throw new Error(`Unexpected reconstructed bundle ID: ${bundleId}`);
 const displayName = await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleDisplayName", "raw", infoPlist]);
-if (displayName !== reconstructedName) throw new Error(`Unexpected reconstructed display name: ${displayName}`);
+if (displayName !== simeonName) throw new Error(`Unexpected reconstructed display name: ${displayName}`);
 const plistText = await capture(SYSTEM_TOOLS.plutil, ["-convert", "xml1", "-o", "-", infoPlist]);
 if (plistText.includes("ElectronAsarIntegrity")) throw new Error("Stale ElectronAsarIntegrity metadata remains in the reconstructed application");
 // CFBundleIconName points macOS at the shell's Assets.car and hides icon.icns
 // (measured 23 September 2026; scripts/package-macos.mjs removes it).
 if (plistText.includes("CFBundleIconName")) throw new Error("CFBundleIconName remains in the reconstructed application; the Dock would show the shell's Assets.car icon, not Simeon's");
 const urlTypes = await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleURLTypes", "xml1", "-o", "-", infoPlist]);
-if (!urlTypes.includes(`<string>${reconstructedUrlScheme}</string>`)) throw new Error(`Reconstructed application has no ${reconstructedUrlScheme} URL registration`);
+if (!urlTypes.includes(`<string>${simeonUrlScheme}</string>`)) throw new Error(`Reconstructed application has no ${simeonUrlScheme} URL registration`);
 if (urlTypes.includes("<string>sand</string>")) throw new Error("Reconstructed application still claims Grok Bot's sand URL scheme");
 // What scripts/package-macos.mjs writes beyond the identity above, checked
 // here since 26 September 2026 (ledger F-455): the renamed executable and
@@ -296,15 +296,15 @@ if (urlTypes.includes("<string>sand</string>")) throw new Error("Reconstructed a
 // the backend the bundle carries in LSEnvironment (a bundle without it
 // signs in to cursor.com), and the Dock icon's bytes.
 const executableName = await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleExecutable", "raw", infoPlist]);
-if (executableName !== reconstructedExecutableName) throw new Error(`Unexpected executable name: ${executableName}`);
+if (executableName !== simeonExecutableName) throw new Error(`Unexpected executable name: ${executableName}`);
 const bundleName = await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleName", "raw", infoPlist]);
-if (bundleName !== reconstructedExecutableName) throw new Error(`Unexpected CFBundleName: ${bundleName}`);
-await requirePath(path.join(verifiedApp, "Contents", "MacOS", reconstructedExecutableName));
+if (bundleName !== simeonExecutableName) throw new Error(`Unexpected CFBundleName: ${bundleName}`);
+await requirePath(path.join(verifiedApp, "Contents", "MacOS", simeonExecutableName));
 const frameworks = path.join(verifiedApp, "Contents", "Frameworks");
 const helperBundles = (await readdir(frameworks)).filter(name => / Helper.*\.app$/.test(name));
 if (helperBundles.length === 0) throw new Error("Reconstructed application has no helper bundles");
 for (const helper of helperBundles) {
-  if (!helper.startsWith(`${reconstructedExecutableName} Helper`)) throw new Error(`Helper bundle keeps the shell's name: ${helper}`);
+  if (!helper.startsWith(`${simeonExecutableName} Helper`)) throw new Error(`Helper bundle keeps the shell's name: ${helper}`);
   const helperExecutable = helper.slice(0, -".app".length);
   await requirePath(path.join(frameworks, helper, "Contents", "MacOS", helperExecutable));
 }
@@ -324,5 +324,5 @@ await run(SYSTEM_TOOLS.codesign, ["--verify", "--deep", "--strict", verifiedApp]
 const cleanCount = runtimeComposition.filter(({ mode }) => mode === "clean-source").length;
 const fallbackNames = runtimeComposition.filter(({ mode }) => mode !== "clean-source").map(({ runtime }) => runtime).join(", ");
 console.log(`Verified packaged ASAR ${builtAsar}.`);
-console.log(`Verified ${cleanCount} executable clean-source runtimes, deterministic ASAR hashes, native dependencies, bundle identity (${reconstructedExecutableName}, ${helperBundles.length} helpers, LSEnvironment, ${icnsFiles.length} icon files), and code signature.`);
+console.log(`Verified ${cleanCount} executable clean-source runtimes, deterministic ASAR hashes, native dependencies, bundle identity (${simeonExecutableName}, ${helperBundles.length} helpers, LSEnvironment, ${icnsFiles.length} icon files), and code signature.`);
 console.log(`Documented non-clean runtime boundaries: ${fallbackNames}. Evidence markers checked: ${sourceMarkers}. Repository: ${repoRoot}`);

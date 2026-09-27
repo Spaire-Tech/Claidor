@@ -4,7 +4,7 @@
  * over the icon files inherited from the 0.18.0 shell. Also writes
  * brand/Simeon-1024.png for anyone who needs the picture.
  *
- *   CAISRA_PLAYWRIGHT=/path/to/playwright-core node scripts/make-app-icon.mjs
+ *   SIMEON_PLAYWRIGHT=/path/to/playwright-core node scripts/make-app-icon.mjs
  */
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -26,7 +26,7 @@ export async function appIconPageMarkup(size) {
 
 async function main() {
   const chromium = await loadChromium();
-  const browser = await chromium.launch({ executablePath: process.env.CAISRA_CHROMIUM ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--no-sandbox"] });
+  const browser = await chromium.launch({ executablePath: process.env.SIMEON_CHROMIUM ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--no-sandbox"] });
   const sizes = {};
   try {
     for (const size of Object.keys(ICNS_TYPES).map(Number)) {

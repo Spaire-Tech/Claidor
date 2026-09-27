@@ -9,7 +9,7 @@ export function isSandDeepLinkPluginId(value: unknown): value is string { return
  * (server/polar/desktop/app_sign_in.py). It was `sand` until 23 September
  * 2026, which Grok Bot also claims; macOS gives a scheme to one app, so a
  * sign-in could land in the other. The packaged Info.plist claims the same
- * scheme (scripts/lib/config.mjs, reconstructedUrlScheme).
+ * scheme (scripts/lib/config.mjs, simeonUrlScheme).
  */
 export const SAND_DEEP_LINK_SCHEME = "simeon";
 export const SAND_PLUGIN_DEEP_LINK_PATH = "/v1/plugin/add";

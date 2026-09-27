@@ -35,7 +35,7 @@ test("a spinner that outlives the delay gets the last reason and the log path pa
       schedule: (callback, delayMs) => scheduled.push({ callback, delayMs }),
       log: () => {},
     });
-    const notice = () => document.querySelector("[data-caisra-screen-notice]");
+    const notice = () => document.querySelector("[data-simeon-screen-notice]");
     assert.equal(notice(), null, "nothing before the delay");
     assert.equal(scheduled.length, 1);
     assert.equal(scheduled[0].delayMs, 20_050);
@@ -50,7 +50,7 @@ test("a spinner that outlives the delay gets the last reason and the log path pa
     assert.equal(notice().style.getPropertyValue("position"), "absolute");
     deliver({ line: '2026-09-22T10:00:21.000Z guest console[info] [SimeonScreen] state=disconnected status="Failed to connect to server" dialog=none' });
     assert.equal(notice().textContent, "The computer's screen isn't connecting. noVNC cannot reach the desktop's socket. Details: /Users/me/Library/Application Support/Simeon/computer-stream.log");
-    assert.equal(document.querySelectorAll("[data-caisra-screen-notice]").length, 1);
+    assert.equal(document.querySelectorAll("[data-simeon-screen-notice]").length, 1);
     // A connect clears the reason; the spinner leaving removes the notice.
     deliver({ line: '2026-09-22T10:00:30.000Z guest console[info] [SimeonScreen] state=connected status="Connected" dialog=none' });
     assert.equal(notice().textContent, "The computer's screen isn't connecting. No reason was reported yet. Details: /Users/me/Library/Application Support/Simeon/computer-stream.log");
@@ -73,7 +73,7 @@ test("the failed-read placeholder gets the reason at once, with no delay, and lo
     document.body.innerHTML = '<div class="sand-computer-stage__placeholder"><span>Can\'t reach Perrin\'s screen</span><button>Retry</button></div>';
     let deliver = null;
     handle = module.installComputerStreamNotice({ doc: document, subscribe: (listener) => { deliver = listener; return () => {}; }, delayMs: 20_000, now: () => 0, schedule: () => {}, log: () => {} });
-    const notice = () => document.querySelector("[data-caisra-screen-notice]");
+    const notice = () => document.querySelector("[data-simeon-screen-notice]");
     assert.ok(notice(), "painted at once: the read already failed");
     assert.equal(notice().textContent, "The computer's status could not be read. No reason was reported yet.");
     deliver({ line: "2026-09-22T10:00:00.000Z computer stream log at /log", filePath: "/log" });

@@ -17,12 +17,12 @@ const distRenderer = path.join(repoRoot, "dist", "renderer");
 
 /**
  * These two facts are about the **clean-source** renderer from `frontend/src`.
- * `dist/caisra-build.json` is written only by `npm run build:clean-source`, so
+ * `dist/simeon-build.json` is written only by `npm run build:clean-source`, so
  * it is the marker that says that build is in `dist/renderer`.
  */
 async function cleanSourceRendererOrSkip(t) {
   try {
-    await stat(path.join(repoRoot, "dist", "caisra-build.json"));
+    await stat(path.join(repoRoot, "dist", "simeon-build.json"));
     await stat(path.join(distRenderer, "index.html"));
     return true;
   } catch {

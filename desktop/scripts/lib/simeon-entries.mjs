@@ -112,9 +112,9 @@ const baseStartup = ${expression(bindings, "startup")};
 // packaging disables, so a hang or a failure both look identical from outside:
 // a live process and no window. Tracing each call to stderr makes the last
 // line printed the place it stopped.
-const CAISRA_TRACE = process.env.CAISRA_STARTUP_TRACE !== "0";
+const SIMEON_TRACE = process.env.SIMEON_STARTUP_TRACE !== "0";
 function traceStartup(target) {
-  if (!CAISRA_TRACE) return target;
+  if (!SIMEON_TRACE) return target;
   const traced = {};
   for (const key of Object.keys(target)) {
     const value = target[key];
@@ -126,28 +126,28 @@ function traceStartup(target) {
       // error appears is as an argument. Print any Error we are handed.
       for (const arg of args) {
         if (arg instanceof Error) {
-          process.stderr.write("[caisra-startup] !! error passed to " + key + ":\\n" + (arg.stack ?? \`\${arg.name}: \${arg.message}\`) + "\\n");
+          process.stderr.write("[simeon-startup] !! error passed to " + key + ":\\n" + (arg.stack ?? \`\${arg.name}: \${arg.message}\`) + "\\n");
           if (arg.cause instanceof Error) {
-            process.stderr.write("[caisra-startup] !! caused by:\\n" + (arg.cause.stack ?? String(arg.cause)) + "\\n");
+            process.stderr.write("[simeon-startup] !! caused by:\\n" + (arg.cause.stack ?? String(arg.cause)) + "\\n");
           }
         }
       }
-      process.stderr.write("[caisra-startup] -> " + key + (key === "markPhase" ? "(" + String(args[0]) + ")" : "") + "\\n");
+      process.stderr.write("[simeon-startup] -> " + key + (key === "markPhase" ? "(" + String(args[0]) + ")" : "") + "\\n");
       try {
         const result = value.apply(target, args);
         if (result != null && typeof result.then === "function") {
           return result.then(
-            (settled) => { process.stderr.write("[caisra-startup] <- " + key + " ok" + (settled === undefined ? "" : " = " + String(settled)) + "\\n"); return settled; },
+            (settled) => { process.stderr.write("[simeon-startup] <- " + key + " ok" + (settled === undefined ? "" : " = " + String(settled)) + "\\n"); return settled; },
             (error) => {
-              process.stderr.write("[caisra-startup] <- " + key + " THREW: " + (error?.stack ?? String(error)) + "\\n");
+              process.stderr.write("[simeon-startup] <- " + key + " THREW: " + (error?.stack ?? String(error)) + "\\n");
               throw error;
             },
           );
         }
-        process.stderr.write("[caisra-startup] <- " + key + " ok\\n");
+        process.stderr.write("[simeon-startup] <- " + key + " ok\\n");
         return result;
       } catch (error) {
-        process.stderr.write("[caisra-startup] <- " + key + " THREW: " + (error?.stack ?? String(error)) + "\\n");
+        process.stderr.write("[simeon-startup] <- " + key + " THREW: " + (error?.stack ?? String(error)) + "\\n");
         throw error;
       }
     };
@@ -159,7 +159,7 @@ const startup = {
   ...traceStartup(baseStartup),
   noteFailed(error) {
     const detail = error instanceof Error ? (error.stack ?? \`\${error.name}: \${error.message}\`) : String(error);
-    process.stderr.write("[caisra-startup] startup failed: " + detail + "\\n");
+    process.stderr.write("[simeon-startup] startup failed: " + detail + "\\n");
     return baseStartup.noteFailed(error);
   },
 };
@@ -168,7 +168,7 @@ const baseReportFailure = ${expression(bindings, "reportFailure")};
 const reportFailure = (...args) => {
   const error = args[0];
   const detail = error instanceof Error ? (error.stack ?? \`\${error.name}: \${error.message}\`) : String(error);
-  process.stderr.write("[caisra-edge] " + detail + "\\n");
+  process.stderr.write("[simeon-edge] " + detail + "\\n");
   return baseReportFailure(...args);
 };
 
@@ -183,16 +183,16 @@ try {
   });
 } catch (error) {
   const detail = error instanceof Error ? (error.stack ?? String(error)) : String(error);
-  process.stderr.write("[caisra-electron-main] fatal composition failure: " + detail + "\\n");
+  process.stderr.write("[simeon-electron-main] fatal composition failure: " + detail + "\\n");
   process.exitCode = 1;
 }
 
 process.on("unhandledRejection", (reason) => {
   const detail = reason instanceof Error ? (reason.stack ?? String(reason)) : String(reason);
-  process.stderr.write("[caisra-electron-main] unhandled rejection: " + detail + "\\n");
+  process.stderr.write("[simeon-electron-main] unhandled rejection: " + detail + "\\n");
 });
 process.on("uncaughtException", (error) => {
-  process.stderr.write("[caisra-electron-main] uncaught: " + (error?.stack ?? String(error)) + "\\n");
+  process.stderr.write("[simeon-electron-main] uncaught: " + (error?.stack ?? String(error)) + "\\n");
 });
 `;
 }
@@ -225,7 +225,7 @@ try {
   ${install}(${load}(electron) as never);
 } catch (error) {
   const detail = error instanceof Error ? (error.stack ?? String(error)) : String(error);
-  process.stderr.write("[caisra-${name}] preload failed: " + detail + "\\n");
+  process.stderr.write("[simeon-${name}] preload failed: " + detail + "\\n");
 }
 `;
 }
@@ -262,7 +262,7 @@ const extensionBindings = {
 };
 
 void startProductionHost(bindRecoveredProductionExtensions(ports, extensionBindings)).catch((error) => {
-  process.stderr.write("[caisra-host] fatal: " + String(error) + "\\n");
+  process.stderr.write("[simeon-host] fatal: " + String(error) + "\\n");
   process.exitCode = 1;
 });
 `;

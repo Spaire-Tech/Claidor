@@ -60,9 +60,9 @@ export function simeonAppIconSvg({ size = 1024, ink = "#ffffff" } = {}) {
 </svg>`;
 }
 
-/** Loads Playwright for the scripts that rasterise the mark: the package, or one named in CAISRA_PLAYWRIGHT. */
+/** Loads Playwright for the scripts that rasterise the mark: the package, or one named in SIMEON_PLAYWRIGHT. */
 export async function loadChromium() {
-  const candidates = [process.env.CAISRA_PLAYWRIGHT, "playwright", "playwright-core"].filter((value) => value != null && value.length > 0);
+  const candidates = [process.env.SIMEON_PLAYWRIGHT, "playwright", "playwright-core"].filter((value) => value != null && value.length > 0);
   let lastError;
   for (const candidate of candidates) {
     try {
@@ -71,5 +71,5 @@ export async function loadChromium() {
       if (module.chromium != null) return module.chromium;
     } catch (error) { lastError = error; }
   }
-  throw new Error(`Playwright is not installed; set CAISRA_PLAYWRIGHT to a playwright-core package directory. ${lastError?.message ?? ""}`);
+  throw new Error(`Playwright is not installed; set SIMEON_PLAYWRIGHT to a playwright-core package directory. ${lastError?.message ?? ""}`);
 }
