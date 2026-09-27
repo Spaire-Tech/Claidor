@@ -654,6 +654,58 @@ holds 5.9:1 or better. The teal and dusty rose accent strokes it first
 carried were removed the same day ("too noisy. keep the blue color, remove
 the purple/green accents"). Rendered headless with the patched pinned
 stylesheet; not yet seen on a Mac.
+**Title tags are blue, files wear their real logos, and Plugins is
+"Connect apps", 27 September 2026** (seen in the private preview first,
+`npm run demo` built on the patched window): an agent's title tag
+("Chief of staff") is plain text in the bubble's blue, no pill ("should
+not be in a box. just blue text") (`TITLE_TAG_BLUE_CSS`); a
+file card paints the real logo over its kind box (`data-kind`): PDF from
+the Word add-in's own artwork, Word, Excel and PowerPoint the web app's
+icons the founder sent ("you used the wrong svgs for the microsofts"),
+Markdown as Word ("for MDs use word too"), with a new `slides` kind for
+`.pptx` since the window had none; an app named in a message (Loom,
+Miro, Notion, Gmail, …) wears its logo and its brand colour, through
+one rehype step at the end of the message pipeline
+(`brand/app-logos/apps.json`, 72 apps, Simple Icons where the repository
+has no colour logo; a bare "Word" is not marked); and the
+sidebar's Plugins button is "Connect apps" in blue, no box, with Gmail,
+Calendar and Drive tiles, on the account row beside the initials circle
+(the name beside it is hidden; the circle shows two initials for a
+two-word name), same action; every primary button inside a message
+card (Allow once, Send email, …) is the chat's blue with white text, and
+the Auto-review card's "Approval needed" badge is tinted blue instead of
+orange (`cardBlueCss`, `data-simeon-approval`); every card is white with
+the file card's border, the agent's bubbles staying grey ("all cards
+literally all, should be white background"); Notion's tile is white with
+its dark mark, the light-mode logo; and the narrow sidebar's New button
+is a 36 px circle like the initials beneath it; the agent's bubble is
+the grey Messages gives a received text, #E9E9EB ("like grey but KINDA
+blue ish"; blue lines and a white bubble were tried first and reverted,
+"not a fan"); a card is that grey, solid, with no edge or shadow
+(`GREY_CARD`; glass panes, "water glass" buttons and a downward fade were
+tried first and removed: "remove the liquid glass, that goes for the
+buttons too", then "never mind for the cards being fading etc. just put
+everything grey"), buttons are flat, and an exchange between two agents
+centres its pair of avatars in the header; a choice card's options sit
+on the grey with a round radio for each key (blue ring on hover, blue dot
+on the chosen answer); and the agents sidebar is the only glass surface:
+on a Mac the window carries Apple's `sidebar` vibrancy
+(`window-chrome.ts`, clear window, `followWindow`) and the page is clear
+only under the sidebar, under a 93% tint so the desktop is "absolutely
+faint", the chat and info pane painted solid; the selected agent row is
+white ("the picker has to be white"); the agent's name pill under its
+avatar in the chat header is white Liquid Glass and the composer's send
+button is the chat's blue. **Dark theme** ("make sure all the changes
+apply to dark mode … dont change the ai chat"): the agent bubble keeps the
+renderer's own dark colour (the Messages grey is set under
+`[data-theme*="light"]` only) and cards take the bubble of the theme in
+use (`--simeon-card-fill`); every other change carries a dark value, and a
+near-black brand's name turns near-white. Seen headless with the demo's
+`?theme=dark`, not on a Mac; the older
+frosted composer, menus, pills and name pill are gone. `npm run demo`
+paints a neutral grey where the desktop would be (`LOGO_REPLACEMENTS`, `logosCss`,
+`desktop/brand/file-icons`, `desktop/brand/app-logos`). Not yet seen on
+a Mac.
 **The chat header is the agent's card, 23 September, later still**
 ("the name of the agent are up top, left. i want to middle it … like
 muse … remove the line"): a CSS block appended to the pinned stylesheet
@@ -970,6 +1022,9 @@ opens with its own question; Yodo reports a payment on its own a few seconds
 in; typing to any agent gets a reply; booking, Allow once and answers all
 play out. The email draft's Send button does nothing, as in the app itself
 (the pinned chunk's callbacks are empty; `draft-composer-measured.md`).
+The account menu, Connect apps, both New buttons, the composer's attach
+and the agent's computer are inert in the demo by the founder's word
+(`INERT_IN_DEMO` in `demo/bridge.ts`); `?theme=dark` opens it dark.
 `tests/app-demo.test.mjs`. Seen headless only, not yet on a Mac.
 
 ## The whole-product design audit, and the switch-or-coming-soon rule (25 September 2026)

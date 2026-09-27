@@ -190,6 +190,8 @@ export interface MainBrowserWindowOptions {
   readonly frame: boolean;
   readonly titleBarStyle: "hiddenInset" | "hidden" | "default";
   readonly trafficLightPosition?: { readonly x: number; readonly y: number };
+  readonly vibrancy?: "sidebar";
+  readonly visualEffectState?: "followWindow";
   readonly titleBarOverlay?: WindowsTitleBarOverlay;
   readonly webPreferences: {
     readonly contextIsolation: true;

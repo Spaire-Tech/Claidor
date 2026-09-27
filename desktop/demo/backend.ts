@@ -33,7 +33,9 @@ const connectedServer = (s: (typeof CONNECTED)[number]) => ({
 });
 
 export function createDemoBackend(hooks: DemoBackendHooks) {
-  const theme = { preference: "light", resolved: "light" };
+  // Light, as the founder asked for the demo; `?theme=dark` opens it dark to check the dark theme.
+  const dark = typeof location !== "undefined" && new URLSearchParams(location.search).get("theme") === "dark";
+  const theme = dark ? { preference: "dark", resolved: "dark" } : { preference: "light", resolved: "light" };
   const persisted = new Map<string, unknown>();
   const epoch = "demo-" + Math.random().toString(36).slice(2);
   const sequences = new Map<string, number>();
@@ -228,7 +230,7 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
     getTimeZone: () => ({ timeZone: "Europe/Zurich", override: null }),
     getSidebarCollapsed: () => false,
     markDeepLinksReady: () => undefined,
-    getCursorAuthStatus: () => ({ kind: "logged-in", authId: "demo|bass", email: "bass@simeonlabs.com", displayName: "Bass", freshness: 1 }),
+    getCursorAuthStatus: () => ({ kind: "logged-in", authId: "demo|bass", email: "bass@simeonlabs.com", displayName: "Bass F", freshness: 1 }),
     getSandAccess: () => ({ state: "granted", reason: "none" }),
     getSandAccessFresh: () => ({ state: "granted", reason: "none" }),
     getEgressTunnelStatus: () => null,

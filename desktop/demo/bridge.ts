@@ -78,6 +78,28 @@ const ipcRenderer = {
   },
 };
 
+// Buttons that lead somewhere the demo has nothing behind (the founder:
+// "some button i dont want them to work, like clicking on bf - connect
+// apps. + buttons, the computer etc."): the account menu, Connect apps, both
+// New buttons, the composer's attach, and the agent's computer. Their presses
+// stop here, before the window's own handlers (menus open on pointerdown).
+const INERT_IN_DEMO = [
+  ".sand-agents-sidebar__account button",
+  ".sand-agents-sidebar__plugins",
+  ".sand-agents-sidebar__new",
+  ".sand-prompt-attach",
+  ".sand-chat-header__computer",
+].join(",");
+for (const type of ["pointerdown", "mousedown", "click", "keydown"] as const) {
+  window.addEventListener(type, (event) => {
+    const target = event.target;
+    if (!(target instanceof Element) || target.closest(INERT_IN_DEMO) == null) return;
+    if (event instanceof KeyboardEvent && event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }, true);
+}
+
 installPrimaryPreloadEntrypoint(
   {
     ipcRenderer,

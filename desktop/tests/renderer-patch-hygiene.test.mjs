@@ -33,9 +33,8 @@ test("every class the appended CSS relies on is extracted and counted, and a mis
   assert.ok(header.includes("sand-grok-bot-mark"));
   const glass = styleAnchorClasses(LIQUID_GLASS_CSS);
   assert.ok(glass.includes("sand-agents-sidebar"));
-  assert.ok(glass.includes("sand-prompt-shell"));
-  assert.ok(glass.includes("sand-10e981r"));
-  assert.equal(glass.includes("simeon-glass-fill"), false, "custom properties are not class anchors");
+  assert.ok(glass.includes("sand-chat"));
+  assert.ok(glass.includes("sand-info-pane"));
   const stylesheet = ".sand-toolbar-divider{height:1px}.sand-agents-sidebar{width:240px}";
   const chunk = 'p.jsx("div",{className:"sand-prompt-shell"})';
   const measured = countStyleAnchors(["sand-toolbar-divider", "sand-agents-sidebar", "sand-prompt-shell", "sand-nowhere"], [stylesheet, chunk]);

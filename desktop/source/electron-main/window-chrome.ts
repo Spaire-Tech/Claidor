@@ -75,11 +75,25 @@ export function windowsTitleBarOverlayFor(
   );
 }
 
+/**
+ * On a Mac the window draws Apple's sidebar material behind the page
+ * (27 September 2026, the founder: "the message side bar only to be liquid
+ * glass apple … transparent ish but not a lot. exactly like apple do it").
+ * The window is clear so the material shows where the page is clear: the
+ * renderer patch leaves only the agents sidebar clear and paints the chat
+ * and the info pane solid. `followWindow` greys the material when the
+ * window is not focused, as Finder's sidebar does.
+ */
+export const MAC_VIBRANT_WINDOW_BACKGROUND = "#00000000";
+
 export type WindowChromeOptions =
   | {
       readonly frame: true;
       readonly titleBarStyle: "hiddenInset";
       readonly trafficLightPosition: typeof MAC_TRAFFIC_LIGHT_POSITION;
+      readonly vibrancy: "sidebar";
+      readonly visualEffectState: "followWindow";
+      readonly backgroundColor: typeof MAC_VIBRANT_WINDOW_BACKGROUND;
     }
   | {
       readonly frame: false;
@@ -94,7 +108,14 @@ export function windowChromeOptions(input: {
   readonly backgroundColor: string;
 }): WindowChromeOptions {
   if (input.isMac) {
-    return { frame: true, titleBarStyle: "hiddenInset", trafficLightPosition: MAC_TRAFFIC_LIGHT_POSITION };
+    return {
+      frame: true,
+      titleBarStyle: "hiddenInset",
+      trafficLightPosition: MAC_TRAFFIC_LIGHT_POSITION,
+      vibrancy: "sidebar",
+      visualEffectState: "followWindow",
+      backgroundColor: MAC_VIBRANT_WINDOW_BACKGROUND,
+    };
   }
   if (input.isWindows) {
     return {

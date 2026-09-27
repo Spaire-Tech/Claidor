@@ -211,6 +211,249 @@ export function patchOriginalCopy(source) {
   return out;
 }
 
+/**
+ * Files and apps wear their real logos, 27 September 2026 (the founder: "anything
+ * pdf use the svg we have for it, anything word, exel etc. for MDs use word
+ * too"; "can plugings become this desing": "Connect apps" with Gmail,
+ * Calendar and Drive tiles; then "you used the wrong svgs for the
+ * microsofts … use these attached", and "whenever you mention an app, like
+ * loom or miro, or any app, use their logo next to the name, and their color
+ * logo for the text/name").
+ *
+ * The window draws a file's icon in one component (`OCe`), a tinted box
+ * carrying `data-kind` with a glyph inside, the kind coming from the file's
+ * mime type or name (`yAe` → `NHe`). The stylesheet paints the logo over
+ * that box by kind: `pdf` the PDF artwork (the Word add-in's own), `document`
+ * (Word) and `markdown` Word, `table` (xlsx, xls, csv, tsv) Excel, `slides`
+ * PowerPoint; the three Microsoft logos are the web app's
+ * (`clients/apps/web/public/icons`), the founder's pick, cut to 96 px.
+ * PowerPoint had no kind (a `.pptx` fell through to `file`), so `NHe` names
+ * `slides` for `.pptx`/`.ppt` and `document` for `.doc`/`.rtf`, only on its
+ * unknown-extension branch, and the kind table `tin` gains `slides`; the
+ * preview router (`gAe`) is untouched, so nothing new is offered a preview.
+ * The sidebar's Plugins button keeps its action and becomes "Connect apps".
+ *
+ * An app named in a message wears its logo and its colour: one rehype step
+ * appended to the message pipeline (`yPn`, after the prose cards) wraps each
+ * known name in a text node as `span.simeon-app[data-app]` with an empty
+ * logo span before it; text under `a`, `code`, `pre` and `kbd` is left
+ * alone and the words themselves are unchanged. Every element the message
+ * renderer draws must carry the structure tag the prose-card step (`s1t`)
+ * brands (`data.sandMarkdown`, checked by `ls`), so the new spans share
+ * their parent's, and text whose parent carries none is not touched. The names, their colours and
+ * logos are `brand/app-logos/apps.json`: the repository's colour logos where
+ * it has one (Google, Microsoft, Zoom, Mailchimp) and Simple Icons (CC0,
+ * brand hex included) for the rest, drawn as a mask in the text's colour.
+ * Each colour is nudged darker in light mode until it holds 3:1 on the
+ * message grey, and lighter in dark mode until it holds 4.5:1 on the
+ * renderer's dark bubble, a near-black brand (Notion, Vercel, Miro) turning
+ * near-white in dark mode the way its own dark-mode logo does; names that are common words (X, Box,
+ * Render, Apple, a bare "Word") are not in the list.
+ */
+const BRAND_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../brand");
+export const FILE_ICON_SOURCES = Object.freeze({ pdf: "file-icons/pdf.svg", word: "file-icons/word.webp", excel: "file-icons/excel.webp", powerpoint: "file-icons/powerpoint.webp" });
+export const APP_LOGO_SOURCES = Object.freeze({ gmail: "app-logos/gmail.webp", calendar: "app-logos/google-calendar.webp", drive: "app-logos/google-drive.svg" });
+export const APP_MENTIONS_MANIFEST = "app-logos/apps.json";
+/** Extra spellings that name the same app as a manifest entry. */
+const APP_MENTION_ALIASES = Object.freeze({ "Microsoft Word": "word", "Microsoft Excel": "excel", "Microsoft PowerPoint": "powerpoint", "Google Calendar": "google-calendar", "Microsoft Outlook": "outlook" });
+/** Manifest names that are too often an ordinary word to mark on their own. */
+const APP_MENTION_EXCLUDED_NAMES = new Set(["Word"]);
+const PLUGINS_BUTTON_BEFORE = 'c=p.jsx("span",{"aria-hidden":!0,className:"sand-9f619 sand-3nfvp2 sand-6s0dn4 sand-l56j7k sand-2lah0s sand-gd8bvy sand-1fgtraw sand-1hc762m sand-13fuv20 sand-t8lcch sand-u6mfa5 sand-32b0ac sand-14px5p1 sand-1hkp6id sand-1q0q8m5 sand-19145p9 sand-1yxlikc sand-19ypqd9 sand-1hovq1a sand-149ho13 sand-10e981r",children:p.jsx(bt,{name:"plug",size:14})}),u=p.jsx("span",{className:"sand-1iyjqo2 sand-s83m0k sand-euugli sand-b3r6kr sand-lyipyv sand-uxw1ft",children:"Plugins"})';
+const PLUGINS_BUTTON_AFTER = 'c=p.jsxs("span",{"aria-hidden":!0,className:"simeon-connect-apps__logos",children:[p.jsx("i",{"data-app":"gmail"}),p.jsx("i",{"data-app":"calendar"}),p.jsx("i",{"data-app":"drive"})]}),u=p.jsx("span",{className:"simeon-connect-apps__label",children:"Connect apps"})';
+const MESSAGE_REHYPE_BEFORE = "function yPn(n,e=!0){return[...i1t,[s1t,{classifyProseCard:e?gPn:void 0,syntheticProseCards:n}]]}";
+
+/** The rehype step, as source: `names` maps each spelling to its app key. */
+export function appMentionsPluginSource(names) {
+  if (Object.keys(names).length === 0) return "const __simeonAppMentions=()=>()=>{};";
+  const escaped = Object.keys(names).sort((a, b) => b.length - a.length).map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const pattern = `(?<![\\w@/.-])(?:${escaped.join("|")})(?![\\w-])`;
+  return `const __simeonAppMentions=(()=>{const A=${JSON.stringify(names)},R=new RegExp(${JSON.stringify(pattern)},"g"),S=new Set(["a","code","pre","kbd","script","style"]);const w=n=>{if(!n||!Array.isArray(n.children)||S.has(n.tagName))return;const o=[];let c=!1;const d=n.data&&n.data.sandMarkdown;for(const k of n.children){if(k.type!=="text"||d===void 0){w(k);o.push(k);continue}const v=k.value;let i=0,m;R.lastIndex=0;while((m=R.exec(v))!==null){c=!0;m.index>i&&o.push({type:"text",value:v.slice(i,m.index)});o.push({type:"element",tagName:"span",properties:{className:["simeon-app"],dataApp:A[m[0]]},data:{sandMarkdown:d},children:[{type:"element",tagName:"span",properties:{className:["simeon-app__logo"],ariaHidden:"true"},data:{sandMarkdown:d},children:[]},{type:"text",value:m[0]}]});i=m.index+m[0].length}i===0?o.push(k):i<v.length&&o.push({type:"text",value:v.slice(i)})}c&&(n.children=o)};return()=>t=>{w(t)}})();`;
+}
+
+export const LOGO_REPLACEMENTS = Object.freeze([
+  ["connect-apps-button", PLUGINS_BUTTON_BEFORE, PLUGINS_BUTTON_AFTER],
+  ["file-kind-slides", 'return r!=null&&A6n.has(r)?"archive":null', 'return r==="pptx"||r==="ppt"?"slides":r==="doc"||r==="rtf"?"document":r!=null&&A6n.has(r)?"archive":null'],
+  ["file-kind-table-slides", "tin={markdown:", 'tin={slides:{icon24:"file",icon36:"file",tint:"neutral"},markdown:'],
+  ["notion-tile-light", 'notion:{kind:"brand",hex:"#0F0F10",path:', 'notion:{kind:"brand",hex:"#FFFFFF",path:'],
+  ["approval-badge-marker", 'p.jsxs("span",{...Fe(lc.badge,N?lc.badgePending:FAn[y.kind]),role:"status",children:[N?p.jsx(bt,{"aria-hidden":!0,color:"yellow"', 'p.jsxs("span",{...Fe(lc.badge,N?lc.badgePending:FAn[y.kind]),"data-simeon-approval":N?"pending":void 0,role:"status",children:[N?p.jsx(bt,{"aria-hidden":!0,color:"yellow"'],
+  ["message-app-mentions", MESSAGE_REHYPE_BEFORE, (names) => `${appMentionsPluginSource(names)}${MESSAGE_REHYPE_BEFORE.replace("syntheticProseCards:n}]]}", "syntheticProseCards:n}],__simeonAppMentions]}")}`],
+]);
+
+/** Spelling → app key for every name the messages mark. */
+export function appMentionNames(mentions) {
+  const names = {};
+  for (const { name, key } of mentions) if (!APP_MENTION_EXCLUDED_NAMES.has(name)) names[name] = key;
+  const keys = new Set(mentions.map(({ key }) => key));
+  for (const [alias, key] of Object.entries(APP_MENTION_ALIASES)) if (keys.has(key)) names[alias] = key;
+  return names;
+}
+
+export function patchOriginalLogos(source, names) {
+  let out = source;
+  for (const [label, before, after] of LOGO_REPLACEMENTS) out = replaceExactlyOnce(out, before, typeof after === "function" ? after(names) : after, label);
+  return out;
+}
+
+const MIME = { ".svg": "image/svg+xml", ".webp": "image/webp", ".png": "image/png" };
+const dataUrl = (bytes, file) => `data:${MIME[path.extname(file)]};base64,${Buffer.from(bytes).toString("base64")}`;
+
+export async function readLogoAssets(brandDir = BRAND_DIR) {
+  const read = async (sources) => Object.fromEntries(await Promise.all(Object.entries(sources).map(async ([key, file]) => [key, dataUrl(await readFile(path.join(brandDir, file)), file)])));
+  const manifest = JSON.parse(await readFile(path.join(brandDir, APP_MENTIONS_MANIFEST), "utf8"));
+  const mentions = await Promise.all(manifest.map(async (app) => ({ ...app, logo: dataUrl(await readFile(path.join(brandDir, "app-logos", app.logo)), app.logo) })));
+  return { files: await read(FILE_ICON_SOURCES), apps: await read(APP_LOGO_SOURCES), mentions };
+}
+
+const rgbOf = (hex) => [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16) / 255);
+const hexOf = (rgb) => `#${rgb.map((c) => Math.round(Math.min(1, Math.max(0, c)) * 255).toString(16).padStart(2, "0")).join("")}`;
+const luminance = (rgb) => { const [r, g, b] = rgb.map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+export const contrastRatio = (a, b) => { const [hi, lo] = [luminance(rgbOf(a)), luminance(rgbOf(b))].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
+/** The brand colour, mixed toward `toward` in 5% steps until it holds 3:1 on `background`. */
+export function readableOn(hex, background, toward, minimum = 3) {
+  const from = rgbOf(hex), to = rgbOf(toward);
+  for (let step = 0; step <= 20; step += 1) {
+    const candidate = hexOf(from.map((c, i) => c + (to[i] - c) * (step / 20)));
+    if (contrastRatio(candidate, background) >= minimum) return candidate;
+  }
+  return toward;
+}
+export const MESSAGE_GREY_LIGHT = "#eeeeee";
+/** The renderer's own dark agent bubble; a dark-theme name must hold 4.5:1 on it, since a black brand lifted only to 3:1 reads as disabled grey. */
+export const MESSAGE_GREY_DARK = "#262626";
+
+export const LOGOS_MARKER = "/* Simeon: files and apps wear their real logos";
+const HI = ":not(#\\#):not(#\\#):not(#\\#)";
+
+export function logosCss({ files, apps, mentions = [] }) {
+  const kinds = [["pdf", files.pdf], ["document", files.word], ["markdown", files.word], ["table", files.excel], ["slides", files.powerpoint]];
+  const box = (kind) => `span[data-kind="${kind}"][data-size]${HI}`;
+  return `${LOGOS_MARKER} (27 September 2026). */
+${kinds.map(([kind]) => box(kind)).join(",")}{background:var(--simeon-file-logo) center/82% no-repeat;border-color:transparent;box-shadow:none}
+${kinds.map(([kind]) => `${box(kind)}>*`).join(",")}{visibility:hidden}
+${kinds.map(([kind, url]) => `${box(kind)}{--simeon-file-logo:url("${url}")}`).join("\n")}
+.sand-agents-sidebar__plugins-entry${HI}{position:relative;z-index:1;height:40px;margin:0 0 -40px 40px;padding:0}
+.sand-agents-sidebar__plugins${HI}{justify-content:flex-start;gap:6px;width:auto;height:40px;padding:0 6px;border:0;border-radius:8px;background:transparent;color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8);font-size:13px;font-weight:500}
+.sand-agents-sidebar__plugins${HI}:hover{background:transparent;color:light-dark(#1b4a7d,#a9ccf0)}
+.sand-agents-sidebar__account:not([data-collapsed="true"])${HI}{flex:0 0 auto;width:auto}
+.sand-agents-sidebar__account:not([data-collapsed="true"])${HI}>button>span:nth-child(2){display:none}
+.sand-agents-sidebar__rail-new .sand-agents-sidebar__new${HI}:not(#\\#){width:36px;height:36px;border-radius:999px;background:var(--sand-fill-neutral-subtle);box-shadow:inset 0 0 0 .5px var(--sand-border-default)}
+.sand-agents-sidebar__rail-new .sand-agents-sidebar__new${HI} .ui-icon{--icon-size:18px!important;color:var(--sand-text-secondary)}
+.simeon-connect-apps__label{white-space:nowrap}
+.simeon-connect-apps__logos{order:1;display:inline-flex;align-items:center;margin-left:2px}
+.simeon-connect-apps__logos>i{display:block;width:20px;height:20px;margin-left:-3px;border-radius:5px;background:#fff center/14px no-repeat;box-shadow:0 0 0 1px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.1)}
+.simeon-connect-apps__logos>i:first-child{margin-left:0;transform:rotate(-7deg)}
+.simeon-connect-apps__logos>i:last-child{transform:rotate(7deg)}
+${Object.entries(apps).map(([app, url]) => `.simeon-connect-apps__logos>i[data-app="${app}"]{background-image:url("${url}")}`).join("\n")}
+.simeon-app{color:var(--simeon-app-color,inherit);font-weight:500;white-space:nowrap}
+.simeon-app__logo{display:inline-block;width:1.05em;height:1.05em;margin:0 .26em 0 .04em;vertical-align:-.18em;background:center/contain no-repeat}
+.sand-mvmkjj .simeon-app{color:inherit}
+strong .simeon-app,b .simeon-app,h1 .simeon-app,h2 .simeon-app,h3 .simeon-app{font-weight:inherit}
+${mentions.map(({ key, color, logo, mono }) => `.simeon-app[data-app="${key}"]{--simeon-app-color:light-dark(${readableOn(color, MESSAGE_GREY_LIGHT, "#000000")},${luminance(rgbOf(color)) < 0.03 ? "#ececec" : readableOn(color, MESSAGE_GREY_DARK, "#ffffff", 4.5)})}\n.simeon-app[data-app="${key}"]>.simeon-app__logo{${mono ? `background:currentColor;-webkit-mask:url("${logo}") center/contain no-repeat;mask:url("${logo}") center/contain no-repeat` : `background-image:url("${logo}")`}}`).join("\n")}
+`;
+}
+
+/**
+ * Cards speak in the chat's blue, 27 September 2026 ("design the approval/
+ * permission - approval needed make it our blue, the button allow once and
+ * any other main button in cards to always be the blue of the chat"). Every
+ * primary button inside a message card (`.sand-message-card`, which wraps
+ * the approval, email draft, connector and permission cards) is filled with
+ * the bubble's blue, white text; the Auto-review card's pending badge,
+ * orange in Grok Bot, is marked `data-simeon-approval="pending"` where it
+ * is drawn and tinted blue with a blue spinner. Outline buttons (Always
+ * allow, Deny, Discard) are untouched.
+ *
+ * Every card is white like the file card ("all cards literally all, should
+ * be white background … because the artifact/attachment background are
+ * white"): the choice, connector, email, approval and permission cards
+ * paint with `--sand-fill-bubble-agent`, the agent bubble's grey, so inside
+ * `.sand-message-card` that token points at the file card's
+ * `--sand-fill-elevated`, and each card's surface takes the file card's
+ * border; the agent's message bubbles, outside any card, stay grey. A white
+ * service tile (Gmail, and Notion, which draws its light-mode logo: white
+ * tile, dark mark, "i want the light mode logo") gets a hairline so it does
+ * not vanish on the white card.
+ *
+ * The agent's bubble, outside cards, is the grey Messages gives a
+ * received text (#E9E9EB, "like grey but KINDA blue ish", sampled from the
+ * founder's screenshot; #3B3B3D in dark), set on the bubble token where the
+ * theme sets it. Blue lines and a white bubble were tried the same day and
+ * reverted ("not a fan").
+ */
+export const CARD_BLUE_MARKER = "/* Simeon: cards speak in the chat's blue";
+/**
+ * The agent's bubble in the light theme: the grey Messages gives a received
+ * text, a touch blue (#E9E9EB). The dark theme keeps the renderer's own
+ * bubble colour ("make sure all the changes apply to dark mode … but there
+ * dont change the ai chat"), and a card takes whatever the bubble is in the
+ * current theme through `--simeon-card-fill`, resolved where the theme sets
+ * the bubble, before a card clears the bubble token for itself.
+ */
+export const AGENT_BUBBLE_LIGHT = "#e9e9eb";
+
+/**
+ * A card fades, 27 September 2026 (the founder, after trying Apple-style
+ * glass panes and white "water glass" buttons: "the cards should not be
+ * waterglass in box, but more like something fading", then "a is fine, but
+ * dont forget to remove the liquid glass, that goes for the buttons too").
+ * Buttons are flat again. The fade was then dropped too ("never mind for
+ * the cards being fading etc. just put everything grey"): a card is the
+ * agent bubble's Messages grey, solid, with no border, rim, shadow or blur.
+ * The agent's name pill under its avatar in the chat header is white
+ * Liquid Glass ("the names up center of the avatar, make that box white
+ * liquid glass": a top-lit white fill, blur, a bright rim and a soft drop),
+ * and the composer's send button is the chat's blue.
+ * The header of an exchange between two agents ("the convo between two ais
+ * up top with the avatars be centered") is a three-column grid: the pair in
+ * the middle column, the computer control in the last.
+ */
+/**
+ * The choice card's options sit on the card's grey instead of a white box,
+ * and each option's A/B/C key is a round radio: an empty ring, blue on
+ * hover or focus, and a blue dot on the chosen answer ("instead of a or b or
+ * c have it being round picker. blue for the dot"). The keyboard shortcut
+ * letters still work; only their drawing changed.
+ */
+const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:var(--simeon-card-fill);border-color:transparent}
+.sand-widget-option__key${HI}{box-sizing:border-box;width:18px;height:18px;min-width:18px;padding:0;border-radius:999px;border:1.5px solid light-dark(rgba(20,20,20,.3),rgba(255,255,255,.4));background:transparent}
+.sand-widget-option__key${HI}>*{display:none}
+.sand-widget-option:is(:hover,:focus-visible) .sand-widget-option__key${HI}{border-color:light-dark(${USER_BUBBLE_LIGHT},#5b9be0)}
+.sand-widget-option--selected .sand-widget-option__key${HI}{opacity:1;border-color:light-dark(${USER_BUBBLE_LIGHT},#5b9be0);background:radial-gradient(circle,light-dark(${USER_BUBBLE_LIGHT},#5b9be0) 0 4px,transparent 4.5px)}
+.sand-widget-option--selected [title="Selected"]${HI}{display:none}
+`;
+
+const GREY_CARD = [
+  "background:var(--simeon-card-fill)",
+  "border-color:transparent",
+  "box-shadow:none",
+].join(";");
+
+export const cardBlueCss = () => `${CARD_BLUE_MARKER} (27 September 2026). */
+[data-theme*="light"]:not(#\\#):not(#\\#),[data-theme*="light"] :is(.sand-1wuigm2,.ui-1lzgia1):not(#\\#):not(#\\#){--sand-fill-bubble-agent:${AGENT_BUBBLE_LIGHT}}
+:root:not(#\\#):not(#\\#):not(#\\#),[data-theme]:not(#\\#):not(#\\#):not(#\\#),:is(.sand-1wuigm2,.ui-1lzgia1):not(#\\#):not(#\\#):not(#\\#){--simeon-card-fill:var(--sand-fill-bubble-agent)}
+.sand-message-card{--sand-fill-bubble-agent:transparent}
+.sand-message-card>:is(article,form,section)${HI},.sand-message-card :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card)${HI}{${GREY_CARD}}
+.sand-message-card .sand-tool-icon[style*="background-color: rgb(255, 255, 255)"]${HI}{box-shadow:inset 0 0 0 1px var(--sand-border-default)}
+${CHOICE_RADIO_CSS()}.sand-agent-item[data-active="true"]${HI}:not(#\\#){background:light-dark(#fff,rgba(255,255,255,.12));box-shadow:0 0 0 .5px light-dark(rgba(20,20,20,.08),rgba(255,255,255,.08)),0 1px 2px light-dark(rgba(20,20,20,.06),rgba(0,0,0,.3))}
+.sand-chat-header__name${HI}:not(#\\#){background:linear-gradient(180deg,light-dark(rgba(255,255,255,.92),rgba(255,255,255,.18)),light-dark(rgba(255,255,255,.72),rgba(255,255,255,.08)));-webkit-backdrop-filter:blur(20px) saturate(1.8);backdrop-filter:blur(20px) saturate(1.8);border:.5px solid light-dark(rgba(255,255,255,.9),rgba(255,255,255,.18));box-shadow:inset 0 1px 0 light-dark(#fff,rgba(255,255,255,.22)),0 0 0 .5px light-dark(rgba(20,20,40,.1),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(20,20,40,.14),rgba(0,0,0,.5))}
+.sand-prompt-send${HI}:not(#\\#){background-color:light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK});color:#fff}
+.sand-prompt-send${HI}:not(#\\#):hover:not(:disabled){background-color:light-dark(#1e4d80,#2a62a0)}
+.sand-chat-header:has(>.sand-chat-header__exchange)${HI}{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+.sand-chat-header>.sand-chat-header__exchange${HI}{grid-column:2;justify-self:center}
+.sand-chat-header:has(>.sand-chat-header__exchange)>.sand-chat-header__controls${HI}{grid-column:3;justify-self:end}
+.sand-message-card button[data-variant="primary"]${HI}{background-color:light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK});border-color:transparent;color:#fff}
+.sand-message-card button[data-variant="primary"]${HI}:hover:not(:disabled){background-color:light-dark(#1e4d80,#2a62a0)}
+.sand-message-card button[data-variant="primary"]${HI}:active:not(:disabled){background-color:light-dark(#1a4372,#1b4677)}
+.sand-message-card button[data-variant="primary"]${HI}:focus-visible{outline:2px solid light-dark(rgba(37,90,147,.45),rgba(140,184,232,.55));outline-offset:2px}
+[data-simeon-approval="pending"]${HI}{background-color:light-dark(rgba(37,90,147,.12),rgba(140,184,232,.16));color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8)}
+[data-simeon-approval="pending"]${HI} .ui-icon{color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8)}
+`;
+
+export function patchOriginalLogosStylesheet(css, assets) {
+  if (css.includes(LOGOS_MARKER)) throw new Error("Original renderer logos block is already present.");
+  return `${css}\n${logosCss(assets)}${cardBlueCss()}`;
+}
+
 export const SHAPE_PICKER_MARKER = "/* Simeon: one shape, the cloud";
 export const SHAPE_PICKER_CSS = `${SHAPE_PICKER_MARKER} (26 September 2026): the shape pickers in the agent editor and onboarding are gone; colour stays. */
 [aria-label="Character shape"]{display:none!important}
@@ -325,10 +568,23 @@ export const USER_BUBBLE_PAINT_CSS = `${USER_BUBBLE_PAINT_MARKER} (27 September 
 .sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#){background-image:url("${GRAIN_SVG}"),url("${BRUSH_SVG}"),linear-gradient(165deg,light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK}),light-dark(#2e679f,#285c93));background-size:160px 160px,300px 100%,100% 100%;background-blend-mode:soft-light,overlay,normal}
 `;
 
+/**
+ * An agent's title tag ("Chief of staff") reads in the bubble's blue instead
+ * of grey, in the sidebar and wherever the renderer draws
+ * `.sand-agent-title-tag`, and since the same evening it is only that text:
+ * no pill, no edge, no inset ("should not be in a box. just blue text").
+ * Dark mode takes a lighter blue.
+ */
+export const TITLE_TAG_BLUE_MARKER = "/* Simeon: an agent's title tag is blue";
+export const TITLE_TAG_BLUE_CSS = `${TITLE_TAG_BLUE_MARKER} (27 September 2026). */
+.sand-agent-title-tag:not(#\\#):not(#\\#):not(#\\#),.sand-agent-title-tag *:not(#\\#):not(#\\#):not(#\\#){color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8)}
+.sand-agent-title-tag:not(#\\#):not(#\\#):not(#\\#):not(#\\#){background:none;border-color:transparent;box-shadow:none;padding-inline:0}
+`;
+
 export function patchOriginalBubbleStylesheet(css) {
   const [label, before, after] = BUBBLE_CSS_REPLACEMENT;
   if (css.includes(USER_BUBBLE_PAINT_MARKER)) throw new Error("Original renderer bubble paint block is already present.");
-  return `${replaceExactlyOnce(css, before, after, label)}\n${USER_BUBBLE_PAINT_CSS}`;
+  return `${replaceExactlyOnce(css, before, after, label)}\n${USER_BUBBLE_PAINT_CSS}${TITLE_TAG_BLUE_CSS}`;
 }
 
 /**
@@ -386,16 +642,10 @@ export function patchOriginalHeaderStylesheet(css) {
  * it wins over the atom classes and inline styles the renderer sets.
  */
 export const LIQUID_GLASS_CSS = `
-/* Simeon: Liquid Glass on the chrome (23 September 2026). */
-:root{--simeon-glass-fill:color-mix(in srgb,var(--cursor-bg-editor) 62%,transparent);--simeon-glass-fill-strong:color-mix(in srgb,var(--cursor-bg-editor) 78%,transparent);--simeon-glass-stroke:color-mix(in srgb,var(--cursor-text-primary) 9%,transparent);--simeon-glass-highlight:light-dark(rgba(255,255,255,.75),rgba(255,255,255,.14));--simeon-glass-shadow:0 10px 30px -6px light-dark(rgba(0,0,0,.16),rgba(0,0,0,.55)),0 2px 8px -2px light-dark(rgba(0,0,0,.08),rgba(0,0,0,.4));--simeon-glass-blur:blur(24px) saturate(1.6)}
-.sand-agents-sidebar{background-color:color-mix(in srgb,var(--cursor-bg-chrome) 70%,transparent)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border-right-color:var(--simeon-glass-stroke)!important}
-.sand-info-pane{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important}
-.sand-prompt-shell{background-color:var(--simeon-glass-fill)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;border-radius:22px!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important}
-.sand-new-chat-menu,.sand-emoji-menu,.sand-mention-menu,.sand-reference-menu,.sand-agent-hover-card,.sand-link-hover-card,[role=dialog].sand-10e981r,[role=menu].sand-10e981r,[data-floating-ui-portal] .sand-10e981r{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important}
-.sand-new-chat-menu,.sand-emoji-menu,.sand-mention-menu,.sand-reference-menu,[role=dialog].sand-10e981r{border-radius:18px!important}
-.sand-new-messages-pill,.sand-update-pill,.sand-computer-top-bar{background-color:var(--simeon-glass-fill-strong)!important;-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight),var(--simeon-glass-shadow)!important;opacity:1!important}
-.sand-new-messages-pill,.sand-update-pill{border-radius:999px!important}
-.sand-chat-header__name{-webkit-backdrop-filter:var(--simeon-glass-blur)!important;backdrop-filter:var(--simeon-glass-blur)!important;background-color:var(--simeon-glass-fill-strong)!important;border:.5px solid var(--simeon-glass-stroke)!important;box-shadow:inset 0 1px 0 var(--simeon-glass-highlight)!important}
+/* Simeon: Liquid Glass on the chrome (23 September 2026), the agents sidebar only since 27 September 2026. */
+html:has(.sand-agents-sidebar),html:has(.sand-agents-sidebar) body,[data-theme]:has(>.sand-agents-sidebar){background-color:transparent!important}
+.sand-agents-sidebar{background-color:color-mix(in srgb,var(--cursor-bg-chrome) 93%,transparent)!important;-webkit-backdrop-filter:blur(30px) saturate(1.8)!important;backdrop-filter:blur(30px) saturate(1.8)!important;border-right:.5px solid color-mix(in srgb,var(--cursor-text-primary) 10%,transparent)!important}
+.sand-agents-sidebar~.sand-chat,.sand-agents-sidebar~.sand-info-pane{background-color:var(--sand-bg-base)!important}
 `;
 export const LIQUID_GLASS_MARKER = "/* Simeon: Liquid Glass on the chrome";
 
@@ -490,7 +740,9 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!BUBBLE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer user-bubble token is not in the mark chunk.");
   if (!SHAPE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer shape anchors are not all in the mark chunk.");
   if (!COPY_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer onboarding copy anchors are not all in the mark chunk.");
-  const markPatched = patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source)))));
+  if (!LOGO_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer file-kind and Plugins-button anchors are not all in the mark chunk.");
+  const logoAssets = await readLogoAssets();
+  const markPatched = patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -499,7 +751,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  const stylesheetPatched = patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css))));
+  const stylesheetPatched = patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets);
   const chunkSources = [];
   for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
   const styleAnchors = {
@@ -517,7 +769,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const appIconAfter = await readFile(appIconTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
-    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "shape-pickers-hidden"],
+    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos"],
     userBubble: { light: USER_BUBBLE_LIGHT, dark: USER_BUBBLE_DARK, stylesheet: path.relative(stageRoot, bubbleSheets[0].target) },
     // The stylesheet's hashes, so `npm run verify` can check the packaged
     // file against what this patch wrote (25 September 2026: verify read
@@ -572,7 +824,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
