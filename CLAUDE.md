@@ -681,10 +681,11 @@ its dark mark, the light-mode logo; and the narrow sidebar's New button
 is a 36 px circle like the initials beneath it; the agent's bubble is
 the grey Messages gives a received text, #E9E9EB ("like grey but KINDA
 blue ish"; blue lines and a white bubble were tried first and reverted,
-"not a fan"); a card is that grey fading downward to nothing, with no
-edge or shadow (`FADE_CARD`; glass panes and "water glass" buttons were
-tried first and removed, "remove the liquid glass, that goes for the
-buttons too"), buttons are flat, and an exchange between two agents
+"not a fan"); a card is that grey, solid, with no edge or shadow
+(`GREY_CARD`; glass panes, "water glass" buttons and a downward fade were
+tried first and removed: "remove the liquid glass, that goes for the
+buttons too", then "never mind for the cards being fading etc. just put
+everything grey"), buttons are flat, and an exchange between two agents
 centres its pair of avatars in the header; a choice card's options sit
 on the grey with a round radio for each key (blue ring on hover, blue dot
 on the chosen answer); and the agents sidebar is the only glass surface:

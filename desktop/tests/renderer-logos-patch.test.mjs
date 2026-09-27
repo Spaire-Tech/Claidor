@@ -43,9 +43,9 @@ test("every logo is a readable image, and the stylesheet paints each file kind a
   assert.ok(sheet.includes('[data-simeon-approval="pending"]:not(#\\#):not(#\\#):not(#\\#){background-color:'));
   // Every card is white; the agent's bubble outside cards is Messages' grey; lines stay the renderer's own.
   assert.ok(sheet.includes("--sand-fill-bubble-agent:light-dark(#e9e9eb,#3b3b3d)"));
-  // Cards fade: the bubble's grey at the top to nothing at the bottom, no edge, no glass; the fade does not repeat into the border.
+  // Cards are the bubble's grey, solid, with no edge and no glass.
   assert.ok(sheet.includes(".sand-message-card{--sand-fill-bubble-agent:transparent}"));
-  assert.match(sheet, /\.sand-message-card :is\([^)]*\.sand-file-card\)[^{]*\{background:linear-gradient\(180deg,light-dark\(rgba\(233,233,235,1\),rgba\(59,59,61,1\)\) 0%[^}]*background-origin:border-box;background-repeat:no-repeat;border-color:transparent;box-shadow:none\}/);
+  assert.match(sheet, /\.sand-message-card :is\([^)]*\.sand-file-card\)[^{]*\{background:light-dark\(#e9e9eb,#3b3b3d\);border-color:transparent;box-shadow:none\}/);
   assert.ok(!/light-dark\(\s*linear-gradient/.test(sheet), "light-dark() holds colours only, never gradients");
   assert.ok(!sheet.includes("saturate(170%)") && !sheet.includes("saturate(160%)") && !sheet.includes(".sand-prompt-attach"), "no glass on cards or buttons");
   assert.ok(!sheet.includes(".sand-agents-sidebar__account .sand-kit-base-avatar"), "the initials circle is the renderer's own again");

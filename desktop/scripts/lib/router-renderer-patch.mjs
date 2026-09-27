@@ -387,8 +387,9 @@ export const AGENT_BUBBLE_DARK = "#3b3b3d";
  * glass panes and white "water glass" buttons: "the cards should not be
  * waterglass in box, but more like something fading", then "a is fine, but
  * dont forget to remove the liquid glass, that goes for the buttons too").
- * A card is the agent bubble's Messages grey at the top, fading to nothing
- * at the bottom, with no border, rim, shadow or blur; buttons are flat again.
+ * Buttons are flat again. The fade was then dropped too ("never mind for
+ * the cards being fading etc. just put everything grey"): a card is the
+ * agent bubble's Messages grey, solid, with no border, rim, shadow or blur.
  * The header of an exchange between two agents ("the convo between two ais
  * up top with the avatars be centered") is a three-column grid: the pair in
  * the middle column, the computer control in the last.
@@ -408,11 +409,8 @@ const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:light-dark
 .sand-widget-option--selected [title="Selected"]${HI}{display:none}
 `;
 
-const FADE_CARD = [
-  "background:linear-gradient(180deg,light-dark(rgba(233,233,235,1),rgba(59,59,61,1)) 0%,light-dark(rgba(233,233,235,.75),rgba(59,59,61,.75)) 45%,light-dark(rgba(233,233,235,0),rgba(59,59,61,0)) 100%)",
-  // The border stays (transparent) so nothing moves; the fade is sized to the outer edge so it does not repeat into it as a line.
-  "background-origin:border-box",
-  "background-repeat:no-repeat",
+const GREY_CARD = [
+  "background:light-dark(#e9e9eb,#3b3b3d)",
   "border-color:transparent",
   "box-shadow:none",
 ].join(";");
@@ -420,7 +418,7 @@ const FADE_CARD = [
 export const cardBlueCss = () => `${CARD_BLUE_MARKER} (27 September 2026). */
 :root:not(#\\#):not(#\\#),[data-theme]:not(#\\#):not(#\\#),.sand-1wuigm2:not(#\\#):not(#\\#),.ui-1lzgia1:not(#\\#):not(#\\#){--sand-fill-bubble-agent:light-dark(${AGENT_BUBBLE_LIGHT},${AGENT_BUBBLE_DARK})}
 .sand-message-card{--sand-fill-bubble-agent:transparent}
-.sand-message-card>:is(article,form,section)${HI},.sand-message-card :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card)${HI}{${FADE_CARD}}
+.sand-message-card>:is(article,form,section)${HI},.sand-message-card :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card)${HI}{${GREY_CARD}}
 .sand-message-card .sand-tool-icon[style*="background-color: rgb(255, 255, 255)"]${HI}{box-shadow:inset 0 0 0 1px var(--sand-border-default)}
 ${CHOICE_RADIO_CSS()}.sand-agent-item[data-active="true"]${HI}:not(#\\#){background:light-dark(#fff,rgba(255,255,255,.12));box-shadow:0 0 0 .5px light-dark(rgba(20,20,20,.08),rgba(255,255,255,.08)),0 1px 2px light-dark(rgba(20,20,20,.06),rgba(0,0,0,.3))}
 .sand-chat-header:has(>.sand-chat-header__exchange)${HI}{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
@@ -809,7 +807,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-fade", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
