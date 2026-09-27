@@ -191,6 +191,26 @@ export function patchOriginalShapes(source) {
   return out;
 }
 
+/**
+ * Onboarding copy, 27 September 2026 (the founder's words): the sign-in
+ * tagline, the sentence typed into the composer on the "meet" screen, and
+ * the three example teammates' names. Their ids (`invoice-chaser`,
+ * `weekly-standup`, `sales-forecast`) are layout keys and stay; only the
+ * names drawn under them change. The access cover's own tagline ("… that
+ * finish the work.") was not named and is left.
+ */
+export const COPY_REPLACEMENTS = Object.freeze([
+  ["copy-signin-tagline", 'tagline:"Your team of always-on agents that you can give real work to."', 'tagline:"Your personal team of agents for whatever needs doing."'],
+  ["copy-meet-typed", 'const H2e="Hand off any task to your team of agents"', 'const H2e="Put any task in the hands of your agents"'],
+  ["copy-teammate-names", 'XBn={"invoice-chaser":"Invoice Chaser","weekly-standup":"Weekly Standup","sales-forecast":"Sales Forecast"}', 'XBn={"invoice-chaser":"Email Chaser","weekly-standup":"Flight Booker","sales-forecast":"Content Planner"}'],
+]);
+
+export function patchOriginalCopy(source) {
+  let out = source;
+  for (const [label, before, after] of COPY_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
 export const SHAPE_PICKER_MARKER = "/* Simeon: one shape, the cloud";
 export const SHAPE_PICKER_CSS = `${SHAPE_PICKER_MARKER} (26 September 2026): the shape pickers in the agent editor and onboarding are gone; colour stays. */
 [aria-label="Character shape"]{display:none!important}
@@ -448,7 +468,8 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!PALETTE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer palette anchors are not all in the mark chunk.");
   if (!BUBBLE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer user-bubble token is not in the mark chunk.");
   if (!SHAPE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer shape anchors are not all in the mark chunk.");
-  const markPatched = patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))));
+  if (!COPY_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer onboarding copy anchors are not all in the mark chunk.");
+  const markPatched = patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source)))));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -475,7 +496,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const appIconAfter = await readFile(appIconTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
-    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "shape-pickers-hidden"],
+    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "shape-pickers-hidden"],
     userBubble: { light: USER_BUBBLE_LIGHT, dark: USER_BUBBLE_DARK, stylesheet: path.relative(stageRoot, bubbleSheets[0].target) },
     // The stylesheet's hashes, so `npm run verify` can check the packaged
     // file against what this patch wrote (25 September 2026: verify read
@@ -530,7 +551,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
