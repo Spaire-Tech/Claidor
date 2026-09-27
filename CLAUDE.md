@@ -658,10 +658,15 @@ stylesheet; not yet seen on a Mac.
 "Connect apps", 27 September 2026** (seen in the private preview first,
 `npm run demo` built on the patched window): an agent's title tag
 ("Chief of staff") reads in the bubble's blue (`TITLE_TAG_BLUE_CSS`); a
-file card paints the real logo over its kind box (`data-kind`): PDF and
-Word from the Word add-in's own artwork, Excel and PowerPoint from the
-same vscode-icons set, Markdown as Word ("for MDs use word too"), with a
-new `slides` kind for `.pptx` since the window had none; and the
+file card paints the real logo over its kind box (`data-kind`): PDF from
+the Word add-in's own artwork, Word, Excel and PowerPoint the web app's
+icons the founder sent ("you used the wrong svgs for the microsofts"),
+Markdown as Word ("for MDs use word too"), with a new `slides` kind for
+`.pptx` since the window had none; an app named in a message (Loom,
+Miro, Notion, Gmail, …) wears its logo and its brand colour, through
+one rehype step at the end of the message pipeline
+(`brand/app-logos/apps.json`, 72 apps, Simple Icons where the repository
+has no colour logo; a bare "Word" is not marked); and the
 sidebar's Plugins button is "Connect apps" in blue, no box, with Gmail,
 Calendar and Drive tiles, on the account row beside the initials circle
 (the name beside it is hidden; the circle shows two initials for a

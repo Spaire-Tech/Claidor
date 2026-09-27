@@ -14,7 +14,7 @@ test("every logo is a readable image, and the stylesheet paints each file kind a
   const { FILE_ICON_SOURCES, APP_LOGO_SOURCES, readLogoAssets, patchOriginalLogosStylesheet, LOGOS_MARKER } = await import(patchModule);
   for (const file of [...Object.values(FILE_ICON_SOURCES), ...Object.values(APP_LOGO_SOURCES)]) {
     const bytes = await readFile(path.join(repoRoot, "brand", file));
-    if (file.endsWith(".svg")) assert.match(bytes.toString("utf8", 0, 200), /^<svg /, `${file} is plain SVG, not gzip`);
+    if (file.endsWith(".svg")) assert.match(bytes.toString("utf8", 0, 200), /^<svg[ >]/, `${file} is plain SVG, not gzip`);
     else assert.equal(bytes.toString("latin1", 8, 12), "WEBP", `${file} is WebP`);
   }
   const assets = await readLogoAssets();
@@ -28,22 +28,58 @@ test("every logo is a readable image, and the stylesheet paints each file kind a
   assert.equal(logoOf("table"), assets.files.excel);
   assert.equal(logoOf("slides"), assets.files.powerpoint);
   for (const app of ["gmail", "calendar", "drive"]) assert.ok(sheet.includes(`i[data-app="${app}"]{background-image:url("data:image/`), `${app} tile`);
+  // The Microsoft logos are the founder's (the web app's icons), not vscode-icons.
+  for (const key of ["word", "excel", "powerpoint"]) assert.match(assets.files[key], /^data:image\/webp;base64,/);
+  // Every app a message can name has a colour that holds 3:1 on the message grey in both themes.
+  const { contrastRatio, MESSAGE_GREY_LIGHT, MESSAGE_GREY_DARK } = await import(patchModule);
+  assert.ok(assets.mentions.length >= 60);
+  for (const { key } of assets.mentions) {
+    const rule = sheet.match(new RegExp(`\\.simeon-app\\[data-app="${key}"\\]\\{--simeon-app-color:light-dark\\((#[0-9a-f]{6}),(#[0-9a-f]{6})\\)\\}`));
+    assert.ok(rule, `${key} has a colour`);
+    assert.ok(contrastRatio(rule[1], MESSAGE_GREY_LIGHT) >= 3 && contrastRatio(rule[2], MESSAGE_GREY_DARK) >= 3, `${key} is readable`);
+  }
   assert.throws(() => patchOriginalLogosStylesheet(sheet, assets), /logos block is already present/);
 });
 
 test("the button says Connect apps and PowerPoint gets its own kind, on anchors the pinned 0.18.0 chunk carries once", async (t) => {
   const pinned = resolvePinnedRenderer();
   if (!pinned) { t.skip(PINNED_RENDERER_SKIP); return; }
-  const { LOGO_REPLACEMENTS, patchOriginalLogos } = await import(patchModule);
+  const { LOGO_REPLACEMENTS, patchOriginalLogos, readLogoAssets, appMentionNames } = await import(patchModule);
   const assets = path.join(pinned, "assets");
   const names = await readdir(assets);
   const chunk = await readFile(path.join(assets, names.find((name) => name === "index-UbX-y3il.js") ?? names.find((name) => /^index-.*\.js$/.test(name))), "utf8");
   for (const [label, before] of LOGO_REPLACEMENTS) assert.equal(chunk.split(before).length - 1, 1, `${label} occurs once`);
-  const patched = patchOriginalLogos(chunk);
+  const patched = patchOriginalLogos(chunk, appMentionNames((await readLogoAssets()).mentions));
+  assert.ok(patched.includes("syntheticProseCards:n}],__simeonAppMentions]}"), "the message pipeline ends with the app step");
+  assert.equal(patched.split("const __simeonAppMentions=").length - 1, 1);
   assert.ok(patched.includes('children:"Connect apps"'));
   assert.ok(!patched.includes('name:"plug",size:14'));
   assert.ok(patched.includes('r==="pptx"||r==="ppt"?"slides"'));
   assert.ok(patched.includes('tin={slides:{icon24:"file",icon36:"file",tint:"neutral"},markdown:'));
   // The preview router is untouched: a .pptx is still offered no preview.
   assert.ok(patched.includes('e==="docx"?"docx":k6n(n)?"text":"unknown"'));
+});
+
+test("the message step marks app names with their logo, leaves links and code alone, and shares the parent's structure tag", async () => {
+  const { readLogoAssets, appMentionNames, appMentionsPluginSource } = await import(patchModule);
+  const names = appMentionNames((await readLogoAssets()).mentions);
+  assert.equal(names.Loom, "loom");
+  assert.equal(names["Microsoft Word"], "word");
+  assert.equal(names.Word, undefined, "a bare Word is an ordinary word");
+  const plugin = new Function(`${appMentionsPluginSource(names)}return __simeonAppMentions;`)();
+  const tag = { brand: true };
+  const text = (value) => ({ type: "text", value });
+  const el = (tagName, children) => ({ type: "element", tagName, properties: {}, data: { sandMarkdown: tag }, children });
+  const tree = { type: "root", children: [el("p", [text("Two tools: Loom and Miro, and a notion."), el("a", [text("Loom")]), el("code", [text("Figma")]), text(" see loom.com")])] };
+  plugin()(tree);
+  const p = tree.children[0].children;
+  assert.deepEqual(p.slice(0, 5).map((n) => n.type === "text" ? n.value : `<${n.properties.dataApp}>`), ["Two tools: ", "<loom>", " and ", "<miro>", ", and a notion."]);
+  assert.equal(p[1].data.sandMarkdown, tag);
+  assert.equal(p[1].children[0].data.sandMarkdown, tag);
+  assert.equal(p[1].children[1].value, "Loom", "the words are unchanged");
+  assert.equal(p[5].children[0].value, "Loom", "a link's text is left alone");
+  assert.equal(p[6].children[0].value, "Figma", "code is left alone");
+  const bare = { type: "root", children: [text("Loom")] };
+  plugin()(bare);
+  assert.equal(bare.children[0].type, "text", "text with no structure tag above it is not touched");
 });

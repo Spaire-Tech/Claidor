@@ -214,51 +214,112 @@ export function patchOriginalCopy(source) {
 /**
  * Files and apps wear their real logos, 27 September 2026 (the founder: "anything
  * pdf use the svg we have for it, anything word, exel etc. for MDs use word
- * too"; "can plugings become this desing": a "Connect apps" pill with Gmail,
- * Calendar and Drive tiles).
+ * too"; "can plugings become this desing": "Connect apps" with Gmail,
+ * Calendar and Drive tiles; then "you used the wrong svgs for the
+ * microsofts … use these attached", and "whenever you mention an app, like
+ * loom or miro, or any app, use their logo next to the name, and their color
+ * logo for the text/name").
  *
  * The window draws a file's icon in one component (`OCe`), a tinted box
  * carrying `data-kind` with a glyph inside, the kind coming from the file's
  * mime type or name (`yAe` → `NHe`). The stylesheet paints the logo over
- * that box by kind: `pdf` the PDF artwork, `document` (Word) and `markdown`
- * the Word artwork, `table` (xlsx, xls, csv, tsv) Excel. PowerPoint had no
- * kind (a `.pptx` fell through to `file`), so `NHe` names `slides` for
- * `.pptx`/`.ppt` and `document` for `.doc`/`.rtf`, only on its
+ * that box by kind: `pdf` the PDF artwork (the Word add-in's own), `document`
+ * (Word) and `markdown` Word, `table` (xlsx, xls, csv, tsv) Excel, `slides`
+ * PowerPoint; the three Microsoft logos are the web app's
+ * (`clients/apps/web/public/icons`), the founder's pick, cut to 96 px.
+ * PowerPoint had no kind (a `.pptx` fell through to `file`), so `NHe` names
+ * `slides` for `.pptx`/`.ppt` and `document` for `.doc`/`.rtf`, only on its
  * unknown-extension branch, and the kind table `tin` gains `slides`; the
  * preview router (`gAe`) is untouched, so nothing new is offered a preview.
- * Word and PDF are the repository's own artwork (the Word add-in's
- * `fileIconAssets.ts`); Excel and PowerPoint are the same vscode-icons set
- * (MIT). The sidebar's Plugins button keeps its action and becomes "Connect
- * apps" with the three Google logos from the onboarding design.
+ * The sidebar's Plugins button keeps its action and becomes "Connect apps".
+ *
+ * An app named in a message wears its logo and its colour: one rehype step
+ * appended to the message pipeline (`yPn`, after the prose cards) wraps each
+ * known name in a text node as `span.simeon-app[data-app]` with an empty
+ * logo span before it; text under `a`, `code`, `pre` and `kbd` is left
+ * alone and the words themselves are unchanged. Every element the message
+ * renderer draws must carry the structure tag the prose-card step (`s1t`)
+ * brands (`data.sandMarkdown`, checked by `ls`), so the new spans share
+ * their parent's, and text whose parent carries none is not touched. The names, their colours and
+ * logos are `brand/app-logos/apps.json`: the repository's colour logos where
+ * it has one (Google, Microsoft, Zoom, Mailchimp) and Simple Icons (CC0,
+ * brand hex included) for the rest, drawn as a mask in the text's colour.
+ * Each colour is nudged darker in light mode and lighter in dark mode until
+ * it holds 3:1 on the message grey; names that are common words (X, Box,
+ * Render, Apple, a bare "Word") are not in the list.
  */
 const BRAND_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../brand");
-export const FILE_ICON_SOURCES = Object.freeze({ pdf: "file-icons/pdf.svg", word: "file-icons/word.svg", excel: "file-icons/excel.svg", powerpoint: "file-icons/powerpoint.svg" });
+export const FILE_ICON_SOURCES = Object.freeze({ pdf: "file-icons/pdf.svg", word: "file-icons/word.webp", excel: "file-icons/excel.webp", powerpoint: "file-icons/powerpoint.webp" });
 export const APP_LOGO_SOURCES = Object.freeze({ gmail: "app-logos/gmail.webp", calendar: "app-logos/google-calendar.webp", drive: "app-logos/google-drive.svg" });
+export const APP_MENTIONS_MANIFEST = "app-logos/apps.json";
+/** Extra spellings that name the same app as a manifest entry. */
+const APP_MENTION_ALIASES = Object.freeze({ "Microsoft Word": "word", "Microsoft Excel": "excel", "Microsoft PowerPoint": "powerpoint", "Google Calendar": "google-calendar", "Microsoft Outlook": "outlook" });
+/** Manifest names that are too often an ordinary word to mark on their own. */
+const APP_MENTION_EXCLUDED_NAMES = new Set(["Word"]);
 const PLUGINS_BUTTON_BEFORE = 'c=p.jsx("span",{"aria-hidden":!0,className:"sand-9f619 sand-3nfvp2 sand-6s0dn4 sand-l56j7k sand-2lah0s sand-gd8bvy sand-1fgtraw sand-1hc762m sand-13fuv20 sand-t8lcch sand-u6mfa5 sand-32b0ac sand-14px5p1 sand-1hkp6id sand-1q0q8m5 sand-19145p9 sand-1yxlikc sand-19ypqd9 sand-1hovq1a sand-149ho13 sand-10e981r",children:p.jsx(bt,{name:"plug",size:14})}),u=p.jsx("span",{className:"sand-1iyjqo2 sand-s83m0k sand-euugli sand-b3r6kr sand-lyipyv sand-uxw1ft",children:"Plugins"})';
 const PLUGINS_BUTTON_AFTER = 'c=p.jsxs("span",{"aria-hidden":!0,className:"simeon-connect-apps__logos",children:[p.jsx("i",{"data-app":"gmail"}),p.jsx("i",{"data-app":"calendar"}),p.jsx("i",{"data-app":"drive"})]}),u=p.jsx("span",{className:"simeon-connect-apps__label",children:"Connect apps"})';
+const MESSAGE_REHYPE_BEFORE = "function yPn(n,e=!0){return[...i1t,[s1t,{classifyProseCard:e?gPn:void 0,syntheticProseCards:n}]]}";
+
+/** The rehype step, as source: `names` maps each spelling to its app key. */
+export function appMentionsPluginSource(names) {
+  if (Object.keys(names).length === 0) return "const __simeonAppMentions=()=>()=>{};";
+  const escaped = Object.keys(names).sort((a, b) => b.length - a.length).map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const pattern = `(?<![\\w@/.-])(?:${escaped.join("|")})(?![\\w-])`;
+  return `const __simeonAppMentions=(()=>{const A=${JSON.stringify(names)},R=new RegExp(${JSON.stringify(pattern)},"g"),S=new Set(["a","code","pre","kbd","script","style"]);const w=n=>{if(!n||!Array.isArray(n.children)||S.has(n.tagName))return;const o=[];let c=!1;const d=n.data&&n.data.sandMarkdown;for(const k of n.children){if(k.type!=="text"||d===void 0){w(k);o.push(k);continue}const v=k.value;let i=0,m;R.lastIndex=0;while((m=R.exec(v))!==null){c=!0;m.index>i&&o.push({type:"text",value:v.slice(i,m.index)});o.push({type:"element",tagName:"span",properties:{className:["simeon-app"],dataApp:A[m[0]]},data:{sandMarkdown:d},children:[{type:"element",tagName:"span",properties:{className:["simeon-app__logo"],ariaHidden:"true"},data:{sandMarkdown:d},children:[]},{type:"text",value:m[0]}]});i=m.index+m[0].length}i===0?o.push(k):i<v.length&&o.push({type:"text",value:v.slice(i)})}c&&(n.children=o)};return()=>t=>{w(t)}})();`;
+}
+
 export const LOGO_REPLACEMENTS = Object.freeze([
   ["connect-apps-button", PLUGINS_BUTTON_BEFORE, PLUGINS_BUTTON_AFTER],
   ["file-kind-slides", 'return r!=null&&A6n.has(r)?"archive":null', 'return r==="pptx"||r==="ppt"?"slides":r==="doc"||r==="rtf"?"document":r!=null&&A6n.has(r)?"archive":null'],
   ["file-kind-table-slides", "tin={markdown:", 'tin={slides:{icon24:"file",icon36:"file",tint:"neutral"},markdown:'],
+  ["message-app-mentions", MESSAGE_REHYPE_BEFORE, (names) => `${appMentionsPluginSource(names)}${MESSAGE_REHYPE_BEFORE.replace("syntheticProseCards:n}]]}", "syntheticProseCards:n}],__simeonAppMentions]}")}`],
 ]);
 
-export function patchOriginalLogos(source) {
+/** Spelling → app key for every name the messages mark. */
+export function appMentionNames(mentions) {
+  const names = {};
+  for (const { name, key } of mentions) if (!APP_MENTION_EXCLUDED_NAMES.has(name)) names[name] = key;
+  const keys = new Set(mentions.map(({ key }) => key));
+  for (const [alias, key] of Object.entries(APP_MENTION_ALIASES)) if (keys.has(key)) names[alias] = key;
+  return names;
+}
+
+export function patchOriginalLogos(source, names) {
   let out = source;
-  for (const [label, before, after] of LOGO_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  for (const [label, before, after] of LOGO_REPLACEMENTS) out = replaceExactlyOnce(out, before, typeof after === "function" ? after(names) : after, label);
   return out;
 }
 
-const dataUrl = (bytes, file) => `data:${file.endsWith(".svg") ? "image/svg+xml" : "image/webp"};base64,${Buffer.from(bytes).toString("base64")}`;
+const MIME = { ".svg": "image/svg+xml", ".webp": "image/webp", ".png": "image/png" };
+const dataUrl = (bytes, file) => `data:${MIME[path.extname(file)]};base64,${Buffer.from(bytes).toString("base64")}`;
 
 export async function readLogoAssets(brandDir = BRAND_DIR) {
   const read = async (sources) => Object.fromEntries(await Promise.all(Object.entries(sources).map(async ([key, file]) => [key, dataUrl(await readFile(path.join(brandDir, file)), file)])));
-  return { files: await read(FILE_ICON_SOURCES), apps: await read(APP_LOGO_SOURCES) };
+  const manifest = JSON.parse(await readFile(path.join(brandDir, APP_MENTIONS_MANIFEST), "utf8"));
+  const mentions = await Promise.all(manifest.map(async (app) => ({ ...app, logo: dataUrl(await readFile(path.join(brandDir, "app-logos", app.logo)), app.logo) })));
+  return { files: await read(FILE_ICON_SOURCES), apps: await read(APP_LOGO_SOURCES), mentions };
 }
+
+const rgbOf = (hex) => [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16) / 255);
+const hexOf = (rgb) => `#${rgb.map((c) => Math.round(Math.min(1, Math.max(0, c)) * 255).toString(16).padStart(2, "0")).join("")}`;
+const luminance = (rgb) => { const [r, g, b] = rgb.map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+export const contrastRatio = (a, b) => { const [hi, lo] = [luminance(rgbOf(a)), luminance(rgbOf(b))].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
+/** The brand colour, mixed toward `toward` in 5% steps until it holds 3:1 on `background`. */
+export function readableOn(hex, background, toward) {
+  const from = rgbOf(hex), to = rgbOf(toward);
+  for (let step = 0; step <= 20; step += 1) {
+    const candidate = hexOf(from.map((c, i) => c + (to[i] - c) * (step / 20)));
+    if (contrastRatio(candidate, background) >= 3) return candidate;
+  }
+  return toward;
+}
+export const MESSAGE_GREY_LIGHT = "#eeeeee";
+export const MESSAGE_GREY_DARK = "#2c2c2e";
 
 export const LOGOS_MARKER = "/* Simeon: files and apps wear their real logos";
 const HI = ":not(#\\#):not(#\\#):not(#\\#)";
 
-export function logosCss({ files, apps }) {
+export function logosCss({ files, apps, mentions = [] }) {
   const kinds = [["pdf", files.pdf], ["document", files.word], ["markdown", files.word], ["table", files.excel], ["slides", files.powerpoint]];
   const box = (kind) => `span[data-kind="${kind}"][data-size]${HI}`;
   return `${LOGOS_MARKER} (27 September 2026). */
@@ -276,6 +337,11 @@ ${kinds.map(([kind, url]) => `${box(kind)}{--simeon-file-logo:url("${url}")}`).j
 .simeon-connect-apps__logos>i:first-child{margin-left:0;transform:rotate(-7deg)}
 .simeon-connect-apps__logos>i:last-child{transform:rotate(7deg)}
 ${Object.entries(apps).map(([app, url]) => `.simeon-connect-apps__logos>i[data-app="${app}"]{background-image:url("${url}")}`).join("\n")}
+.simeon-app{color:var(--simeon-app-color,inherit);font-weight:500;white-space:nowrap}
+.simeon-app__logo{display:inline-block;width:1.05em;height:1.05em;margin:0 .26em 0 .04em;vertical-align:-.18em;background:center/contain no-repeat}
+.sand-mvmkjj .simeon-app{color:inherit}
+strong .simeon-app,b .simeon-app,h1 .simeon-app,h2 .simeon-app,h3 .simeon-app{font-weight:inherit}
+${mentions.map(({ key, color, logo, mono }) => `.simeon-app[data-app="${key}"]{--simeon-app-color:light-dark(${readableOn(color, MESSAGE_GREY_LIGHT, "#000000")},${readableOn(color, MESSAGE_GREY_DARK, "#ffffff")})}\n.simeon-app[data-app="${key}"]>.simeon-app__logo{${mono ? `background:currentColor;-webkit-mask:url("${logo}") center/contain no-repeat;mask:url("${logo}") center/contain no-repeat` : `background-image:url("${logo}")`}}`).join("\n")}
 `;
 }
 
@@ -575,7 +641,8 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!SHAPE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer shape anchors are not all in the mark chunk.");
   if (!COPY_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer onboarding copy anchors are not all in the mark chunk.");
   if (!LOGO_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer file-kind and Plugins-button anchors are not all in the mark chunk.");
-  const markPatched = patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))));
+  const logoAssets = await readLogoAssets();
+  const markPatched = patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -584,7 +651,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  const stylesheetPatched = patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), await readLogoAssets());
+  const stylesheetPatched = patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets);
   const chunkSources = [];
   for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
   const styleAnchors = {
@@ -657,7 +724,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
