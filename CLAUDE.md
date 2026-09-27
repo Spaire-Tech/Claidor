@@ -950,6 +950,28 @@ still fails shows `edge/handler-failed: <the server's sentence>`; the
 first thing to check is `CLAIDOR_OPENAI_API_KEY` on Render. The Mac
 keeps no log for this path. Not yet run on a Mac.
 
+## The app-window demo (27 September 2026)
+
+"all i wanted was the app … the absolute REAL app, with real stuff
+happening, and you can click on stuff … give me real convo, with names like
+Simeon, Scout, Yodo … shows cards, connectors … simeon creating an agent for
+something, then see the agent being created … we'll use the light mode."
+`npm run demo` (after `npm run package`) serves today's patched window, the
+pinned renderer with every Simeon patch, in a browser on 127.0.0.1 only: a
+private preview, never published, since the window is still Grok Bot's code
+(the real site waits on our own window). `demo/bridge.ts` installs the app's
+own preload bridge over a fake Electron and runs the app's own coordinator
+port server; `demo/backend.ts` answers in the host's shapes from
+`demo/scenario.ts`: Simeon, Scout, Yodo and Ledger with their conversations,
+question cards, a PDF card, Gmail and Notion connector cards (shown Added),
+an email draft, an Auto-review approval; clicking "Yes, set someone up" has
+Simeon create Quill, who appears in the sidebar working, is briefed, and
+opens with its own question; Yodo reports a payment on its own a few seconds
+in; typing to any agent gets a reply; booking, Allow once and answers all
+play out. The email draft's Send button does nothing, as in the app itself
+(the pinned chunk's callbacks are empty; `draft-composer-measured.md`).
+`tests/app-demo.test.mjs`. Seen headless only, not yet on a Mac.
+
 ## The whole-product design audit, and the switch-or-coming-soon rule (25 September 2026)
 
 "find everything not respecting that design … even the things you
