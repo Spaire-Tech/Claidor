@@ -211,6 +211,76 @@ export function patchOriginalCopy(source) {
   return out;
 }
 
+/**
+ * Files and apps wear their real logos, 27 September 2026 (the founder: "anything
+ * pdf use the svg we have for it, anything word, exel etc. for MDs use word
+ * too"; "can plugings become this desing": a "Connect apps" pill with Gmail,
+ * Calendar and Drive tiles).
+ *
+ * The window draws a file's icon in one component (`OCe`), a tinted box
+ * carrying `data-kind` with a glyph inside, the kind coming from the file's
+ * mime type or name (`yAe` → `NHe`). The stylesheet paints the logo over
+ * that box by kind: `pdf` the PDF artwork, `document` (Word) and `markdown`
+ * the Word artwork, `table` (xlsx, xls, csv, tsv) Excel. PowerPoint had no
+ * kind (a `.pptx` fell through to `file`), so `NHe` names `slides` for
+ * `.pptx`/`.ppt` and `document` for `.doc`/`.rtf`, only on its
+ * unknown-extension branch, and the kind table `tin` gains `slides`; the
+ * preview router (`gAe`) is untouched, so nothing new is offered a preview.
+ * Word and PDF are the repository's own artwork (the Word add-in's
+ * `fileIconAssets.ts`); Excel and PowerPoint are the same vscode-icons set
+ * (MIT). The sidebar's Plugins button keeps its action and becomes "Connect
+ * apps" with the three Google logos from the onboarding design.
+ */
+const BRAND_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../brand");
+export const FILE_ICON_SOURCES = Object.freeze({ pdf: "file-icons/pdf.svg", word: "file-icons/word.svg", excel: "file-icons/excel.svg", powerpoint: "file-icons/powerpoint.svg" });
+export const APP_LOGO_SOURCES = Object.freeze({ gmail: "app-logos/gmail.webp", calendar: "app-logos/google-calendar.webp", drive: "app-logos/google-drive.svg" });
+const PLUGINS_BUTTON_BEFORE = 'c=p.jsx("span",{"aria-hidden":!0,className:"sand-9f619 sand-3nfvp2 sand-6s0dn4 sand-l56j7k sand-2lah0s sand-gd8bvy sand-1fgtraw sand-1hc762m sand-13fuv20 sand-t8lcch sand-u6mfa5 sand-32b0ac sand-14px5p1 sand-1hkp6id sand-1q0q8m5 sand-19145p9 sand-1yxlikc sand-19ypqd9 sand-1hovq1a sand-149ho13 sand-10e981r",children:p.jsx(bt,{name:"plug",size:14})}),u=p.jsx("span",{className:"sand-1iyjqo2 sand-s83m0k sand-euugli sand-b3r6kr sand-lyipyv sand-uxw1ft",children:"Plugins"})';
+const PLUGINS_BUTTON_AFTER = 'c=p.jsxs("span",{"aria-hidden":!0,className:"simeon-connect-apps__logos",children:[p.jsx("i",{"data-app":"gmail"}),p.jsx("i",{"data-app":"calendar"}),p.jsx("i",{"data-app":"drive"})]}),u=p.jsx("span",{className:"simeon-connect-apps__label",children:"Connect apps"})';
+export const LOGO_REPLACEMENTS = Object.freeze([
+  ["connect-apps-button", PLUGINS_BUTTON_BEFORE, PLUGINS_BUTTON_AFTER],
+  ["file-kind-slides", 'return r!=null&&A6n.has(r)?"archive":null', 'return r==="pptx"||r==="ppt"?"slides":r==="doc"||r==="rtf"?"document":r!=null&&A6n.has(r)?"archive":null'],
+  ["file-kind-table-slides", "tin={markdown:", 'tin={slides:{icon24:"file",icon36:"file",tint:"neutral"},markdown:'],
+]);
+
+export function patchOriginalLogos(source) {
+  let out = source;
+  for (const [label, before, after] of LOGO_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+const dataUrl = (bytes, file) => `data:${file.endsWith(".svg") ? "image/svg+xml" : "image/webp"};base64,${Buffer.from(bytes).toString("base64")}`;
+
+export async function readLogoAssets(brandDir = BRAND_DIR) {
+  const read = async (sources) => Object.fromEntries(await Promise.all(Object.entries(sources).map(async ([key, file]) => [key, dataUrl(await readFile(path.join(brandDir, file)), file)])));
+  return { files: await read(FILE_ICON_SOURCES), apps: await read(APP_LOGO_SOURCES) };
+}
+
+export const LOGOS_MARKER = "/* Simeon: files and apps wear their real logos";
+const HI = ":not(#\\#):not(#\\#):not(#\\#)";
+
+export function logosCss({ files, apps }) {
+  const kinds = [["pdf", files.pdf], ["document", files.word], ["markdown", files.word], ["table", files.excel], ["slides", files.powerpoint]];
+  const box = (kind) => `span[data-kind="${kind}"][data-size]${HI}`;
+  return `${LOGOS_MARKER} (27 September 2026). */
+${kinds.map(([kind]) => box(kind)).join(",")}{background:var(--simeon-file-logo) center/82% no-repeat;border-color:transparent;box-shadow:none}
+${kinds.map(([kind]) => `${box(kind)}>*`).join(",")}{visibility:hidden}
+${kinds.map(([kind, url]) => `${box(kind)}{--simeon-file-logo:url("${url}")}`).join("\n")}
+.sand-agents-sidebar__plugins${HI}{justify-content:center;gap:8px;width:100%;height:44px;padding:0 16px;border-radius:999px;background:light-dark(#efefef,#2a2a2c);border:1px solid light-dark(rgba(0,0,0,.07),rgba(255,255,255,.1));color:light-dark(#141414,#f2f2f2);font-size:15px;font-weight:500}
+.sand-agents-sidebar__plugins${HI}:hover{background:light-dark(#e6e6e6,#323234)}
+.simeon-connect-apps__label{white-space:nowrap}
+.simeon-connect-apps__logos{order:1;display:inline-flex;align-items:center;margin-left:4px}
+.simeon-connect-apps__logos>i{display:block;width:26px;height:26px;margin-left:-4px;border-radius:7px;background:#fff center/18px no-repeat;box-shadow:0 0 0 1px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.1)}
+.simeon-connect-apps__logos>i:first-child{margin-left:0;transform:rotate(-7deg)}
+.simeon-connect-apps__logos>i:last-child{transform:rotate(7deg)}
+${Object.entries(apps).map(([app, url]) => `.simeon-connect-apps__logos>i[data-app="${app}"]{background-image:url("${url}")}`).join("\n")}
+`;
+}
+
+export function patchOriginalLogosStylesheet(css, assets) {
+  if (css.includes(LOGOS_MARKER)) throw new Error("Original renderer logos block is already present.");
+  return `${css}\n${logosCss(assets)}`;
+}
+
 export const SHAPE_PICKER_MARKER = "/* Simeon: one shape, the cloud";
 export const SHAPE_PICKER_CSS = `${SHAPE_PICKER_MARKER} (26 September 2026): the shape pickers in the agent editor and onboarding are gone; colour stays. */
 [aria-label="Character shape"]{display:none!important}
@@ -501,7 +571,8 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!BUBBLE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer user-bubble token is not in the mark chunk.");
   if (!SHAPE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer shape anchors are not all in the mark chunk.");
   if (!COPY_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer onboarding copy anchors are not all in the mark chunk.");
-  const markPatched = patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source)))));
+  if (!LOGO_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer file-kind and Plugins-button anchors are not all in the mark chunk.");
+  const markPatched = patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -510,7 +581,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  const stylesheetPatched = patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css))));
+  const stylesheetPatched = patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), await readLogoAssets());
   const chunkSources = [];
   for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
   const styleAnchors = {
@@ -528,7 +599,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const appIconAfter = await readFile(appIconTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
-    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "shape-pickers-hidden"],
+    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos"],
     userBubble: { light: USER_BUBBLE_LIGHT, dark: USER_BUBBLE_DARK, stylesheet: path.relative(stageRoot, bubbleSheets[0].target) },
     // The stylesheet's hashes, so `npm run verify` can check the packaged
     // file against what this patch wrote (25 September 2026: verify read
@@ -583,7 +654,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

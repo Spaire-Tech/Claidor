@@ -654,6 +654,18 @@ holds 5.9:1 or better. The teal and dusty rose accent strokes it first
 carried were removed the same day ("too noisy. keep the blue color, remove
 the purple/green accents"). Rendered headless with the patched pinned
 stylesheet; not yet seen on a Mac.
+**Title tags are blue, files wear their real logos, and Plugins is
+"Connect apps", 27 September 2026** (seen in the private preview first,
+`npm run demo` built on the patched window): an agent's title tag
+("Chief of staff") reads in the bubble's blue (`TITLE_TAG_BLUE_CSS`); a
+file card paints the real logo over its kind box (`data-kind`): PDF and
+Word from the Word add-in's own artwork, Excel and PowerPoint from the
+same vscode-icons set, Markdown as Word ("for MDs use word too"), with a
+new `slides` kind for `.pptx` since the window had none; and the
+sidebar's Plugins button is a "Connect apps" pill with Gmail, Calendar
+and Drive tiles, same action (`LOGO_REPLACEMENTS`, `logosCss`,
+`desktop/brand/file-icons`, `desktop/brand/app-logos`). Not yet seen on
+a Mac.
 **The chat header is the agent's card, 23 September, later still**
 ("the name of the agent are up top, left. i want to middle it … like
 muse … remove the line"): a CSS block appended to the pinned stylesheet
