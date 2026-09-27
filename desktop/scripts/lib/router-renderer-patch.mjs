@@ -370,10 +370,31 @@ ${mentions.map(({ key, color, logo, mono }) => `.simeon-app[data-app="${key}"]{-
  * service tile (Gmail, and Notion, which draws its light-mode logo: white
  * tile, dark mark, "i want the light mode logo") gets a hairline so it does
  * not vanish on the white card.
+ *
+ * Then "have the underline and all dividers everywhere be our blue … try the
+ * ai chat box to be white too. but again, underline blue": the border and
+ * stroke tokens (`--sand-border-*`, `--cursor-stroke-*`, the neutral ones,
+ * not focus, danger or the inverted surface's) are the blue at the alpha
+ * their grey had in the scale, set where the theme sets them (`:root`,
+ * `[data-theme]` and the two theme classes); the agent's bubble takes the
+ * cards' white everywhere and draws a blue edge as an inset shadow, so its
+ * size does not move. The agent bubble's background class, `sand-1g0q52m`,
+ * is also the choice card's; the edge skips anything inside a card, which
+ * has its own border.
  */
 export const CARD_BLUE_MARKER = "/* Simeon: cards speak in the chat's blue";
+/** Lines in the chat's blue: each border and stroke token keeps its place in the light-to-strong scale as an alpha of the blue. */
+export const LINE_TOKEN_ALPHAS = Object.freeze({
+  "--sand-border-strong": 0.75,
+  "--sand-border-default": 0.45, "--cursor-stroke-primary": 0.5, "--cursor-stroke-secondary": 0.45,
+  "--sand-border-weak": 0.3, "--cursor-stroke-tertiary": 0.3,
+  "--sand-border-subtle": 0.18, "--cursor-stroke-quaternary": 0.18,
+});
+const lineTokens = () => Object.entries(LINE_TOKEN_ALPHAS).map(([token, alpha]) => `${token}:light-dark(rgba(37,90,147,${alpha}),rgba(140,184,232,${alpha}))`).join(";");
+
 export const cardBlueCss = () => `${CARD_BLUE_MARKER} (27 September 2026). */
-.sand-message-card{--sand-fill-bubble-agent:var(--sand-fill-elevated)}
+:root:not(#\\#):not(#\\#),[data-theme]:not(#\\#):not(#\\#),.sand-1wuigm2:not(#\\#):not(#\\#),.ui-1lzgia1:not(#\\#):not(#\\#){--sand-fill-bubble-agent:var(--sand-fill-elevated);${lineTokens()}}
+.sand-1g0q52m:not(.sand-message-card *)${HI}{box-shadow:inset 0 0 0 1px var(--sand-border-default)}
 .sand-message-card>:is(article,form,section):not(.sand-file-card)${HI},.sand-message-card :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer)${HI}{border:1px solid var(--sand-border-default)}
 .sand-message-card .sand-tool-icon[style*="background-color: rgb(255, 255, 255)"]${HI}{box-shadow:inset 0 0 0 1px var(--sand-border-default)}
 .sand-message-card button[data-variant="primary"]${HI}{background-color:light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK});border-color:transparent;color:#fff}
@@ -763,7 +784,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "lines-blue", "agent-bubble-white"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
