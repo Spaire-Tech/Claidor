@@ -556,12 +556,14 @@ export const USER_BUBBLE_PAINT_CSS = `${USER_BUBBLE_PAINT_MARKER} (27 September 
 /**
  * An agent's title tag ("Chief of staff") reads in the bubble's blue instead
  * of grey, in the sidebar and wherever the renderer draws
- * `.sand-agent-title-tag`; the tag's pill background is unchanged. Dark mode
- * takes a lighter blue so it holds on the dark pill.
+ * `.sand-agent-title-tag`, and since the same evening it is only that text:
+ * no pill, no edge, no inset ("should not be in a box. just blue text").
+ * Dark mode takes a lighter blue.
  */
 export const TITLE_TAG_BLUE_MARKER = "/* Simeon: an agent's title tag is blue";
 export const TITLE_TAG_BLUE_CSS = `${TITLE_TAG_BLUE_MARKER} (27 September 2026). */
 .sand-agent-title-tag:not(#\\#):not(#\\#):not(#\\#),.sand-agent-title-tag *:not(#\\#):not(#\\#):not(#\\#){color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8)}
+.sand-agent-title-tag:not(#\\#):not(#\\#):not(#\\#):not(#\\#){background:none;border-color:transparent;box-shadow:none;padding-inline:0}
 `;
 
 export function patchOriginalBubbleStylesheet(css) {

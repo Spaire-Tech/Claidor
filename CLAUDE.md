@@ -657,7 +657,8 @@ stylesheet; not yet seen on a Mac.
 **Title tags are blue, files wear their real logos, and Plugins is
 "Connect apps", 27 September 2026** (seen in the private preview first,
 `npm run demo` built on the patched window): an agent's title tag
-("Chief of staff") reads in the bubble's blue (`TITLE_TAG_BLUE_CSS`); a
+("Chief of staff") is plain text in the bubble's blue, no pill ("should
+not be in a box. just blue text") (`TITLE_TAG_BLUE_CSS`); a
 file card paints the real logo over its kind box (`data-kind`): PDF from
 the Word add-in's own artwork, Word, Excel and PowerPoint the web app's
 icons the founder sent ("you used the wrong svgs for the microsofts"),

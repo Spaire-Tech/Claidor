@@ -21,6 +21,7 @@ test("the user bubble token becomes the Sky wash base in light and dark, and the
   assert.ok(sheet.endsWith(`${USER_BUBBLE_PAINT_CSS}${TITLE_TAG_BLUE_CSS}`));
   // An agent's title tag reads in the bubble's blue, on the tag and its text span.
   assert.ok(TITLE_TAG_BLUE_CSS.includes(".sand-agent-title-tag:not(#\\#):not(#\\#):not(#\\#),.sand-agent-title-tag *:not(#\\#):not(#\\#):not(#\\#){color:light-dark(#255a93,#8cb8e8)}"));
+  assert.ok(TITLE_TAG_BLUE_CSS.includes(".sand-agent-title-tag:not(#\\#):not(#\\#):not(#\\#):not(#\\#){background:none;border-color:transparent;box-shadow:none;padding-inline:0}"), "the title is text, not a pill");
   // The same selector, byte for byte, as the pinned rule that sets the bubble colour.
   assert.ok(USER_BUBBLE_PAINT_CSS.includes(".sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#){background-image:"));
   assert.match(USER_BUBBLE_PAINT_CSS, /light-dark\(#255a93,#1f5087\)/);
