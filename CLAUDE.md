@@ -643,6 +643,15 @@ Both are patched (`patchOriginalBubble`, `patchOriginalBubbleStylesheet`).
 The bubble's text is `text/on-color`, white everywhere, untouched. The
 same token feeds `--cursor-foreground`, which the checked state of a
 checkbox uses, so that turns blue too. Not yet seen on a Mac.
+**Since 27 September 2026 the bubble is painted, "Sky wash, deepest"**
+(the founder sent five grainy painted skies: "kinda grainy, artistic,
+painting … instead of apple blue"; then "a tad darker or the white of the
+text wont be seen"; then "sky wash deepest is fine"): base `#255a93` light,
+`#1f5087` dark in the same token, and `USER_BUBBLE_PAINT_CSS` paints
+`.sand-mvmkjj` (the one class that applies the bubble colour, used once in
+the chunk) with film grain, a brush texture, a teal and a dusty rose stroke
+at the tail; every colour holds white text at 4.5:1 or better. Rendered
+headless with the patched pinned stylesheet; not yet seen on a Mac.
 **The chat header is the agent's card, 23 September, later still**
 ("the name of the agent are up top, left. i want to middle it … like
 muse … remove the line"): a CSS block appended to the pinned stylesheet

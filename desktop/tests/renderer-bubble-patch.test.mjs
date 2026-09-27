@@ -1,4 +1,4 @@
-/** The person's chat bubble is iMessage blue (23 September 2026), in the runtime token and the stylesheet default. */
+/** The person's chat bubble is the painted Sky wash (27 September 2026): the base blue in the runtime token and the stylesheet default, the painting on the one bubble class. */
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
@@ -10,13 +10,19 @@ import { PINNED_RENDERER_SKIP, resolvePinnedRenderer } from "./lib/pinned-render
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const patchModule = pathToFileURL(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs")).href;
 
-test("the user bubble token becomes Apple's blue in light and dark, and the stylesheet default follows", async () => {
-  const { BUBBLE_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT, patchOriginalBubble, patchOriginalBubbleStylesheet, USER_BUBBLE_LIGHT, USER_BUBBLE_DARK } = await import(patchModule);
-  assert.equal(USER_BUBBLE_LIGHT, "#007aff");
-  assert.equal(USER_BUBBLE_DARK, "#0a84ff");
+test("the user bubble token becomes the Sky wash base in light and dark, and the stylesheet paints the bubble", async () => {
+  const { BUBBLE_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT, patchOriginalBubble, patchOriginalBubbleStylesheet, USER_BUBBLE_LIGHT, USER_BUBBLE_DARK, USER_BUBBLE_PAINT_CSS } = await import(patchModule);
+  assert.equal(USER_BUBBLE_LIGHT, "#255a93");
+  assert.equal(USER_BUBBLE_DARK, "#1f5087");
   const patched = patchOriginalBubble(BUBBLE_REPLACEMENTS.map(([, before]) => before).join(";"));
-  assert.match(patched, /Ct\("fill\/bubble-user",El\(\{value:"#007aff",alias:"imessage\/blue"\},\{value:"#0a84ff",alias:"imessage\/blue-dark"\}\)\)/);
-  assert.equal(patchOriginalBubbleStylesheet(`:root{${BUBBLE_CSS_REPLACEMENT[1]}}`), ":root{--sand-fill-bubble-user:#007aff;}");
+  assert.match(patched, /Ct\("fill\/bubble-user",El\(\{value:"#255a93",alias:"simeon\/sky-wash"\},\{value:"#1f5087",alias:"simeon\/sky-wash-dark"\}\)\)/);
+  const sheet = patchOriginalBubbleStylesheet(`:root{${BUBBLE_CSS_REPLACEMENT[1]}}`);
+  assert.ok(sheet.startsWith(":root{--sand-fill-bubble-user:#255a93;}"));
+  assert.ok(sheet.endsWith(USER_BUBBLE_PAINT_CSS));
+  // The same selector, byte for byte, as the pinned rule that sets the bubble colour.
+  assert.ok(USER_BUBBLE_PAINT_CSS.includes(".sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#){background-image:"));
+  assert.match(USER_BUBBLE_PAINT_CSS, /light-dark\(#255a93,#1f5087\)/);
+  assert.throws(() => patchOriginalBubbleStylesheet(sheet), /bubble paint block is already present/);
   assert.throws(() => patchOriginalBubble(patched), /user-bubble-blue anchor is missing or ambiguous/);
 });
 
@@ -30,4 +36,6 @@ test("the pinned 0.18.0 renderer carries the bubble token and the stylesheet def
   for (const [label, before] of BUBBLE_REPLACEMENTS) assert.equal(chunk.split(before).length - 1, 1, `${label} occurs once`);
   const css = await readFile(path.join(assets, names.find((name) => name.endsWith(".css"))), "utf8");
   assert.equal(css.split(BUBBLE_CSS_REPLACEMENT[1]).length - 1, 1, "one stylesheet default");
+  assert.equal(css.split(".sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#){background-color:var(--sand-fill-bubble-user)}").length - 1, 1, "one rule paints the bubble");
+  assert.equal(chunk.split("sand-mvmkjj").length - 1, 1, "the bubble class belongs to the user message style alone");
 });
