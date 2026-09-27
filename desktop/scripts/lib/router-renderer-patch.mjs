@@ -325,10 +325,21 @@ export const USER_BUBBLE_PAINT_CSS = `${USER_BUBBLE_PAINT_MARKER} (27 September 
 .sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#){background-image:url("${GRAIN_SVG}"),url("${BRUSH_SVG}"),linear-gradient(165deg,light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK}),light-dark(#2e679f,#285c93));background-size:160px 160px,300px 100%,100% 100%;background-blend-mode:soft-light,overlay,normal}
 `;
 
+/**
+ * An agent's title tag ("Chief of staff") reads in the bubble's blue instead
+ * of grey, in the sidebar and wherever the renderer draws
+ * `.sand-agent-title-tag`; the tag's pill background is unchanged. Dark mode
+ * takes a lighter blue so it holds on the dark pill.
+ */
+export const TITLE_TAG_BLUE_MARKER = "/* Simeon: an agent's title tag is blue";
+export const TITLE_TAG_BLUE_CSS = `${TITLE_TAG_BLUE_MARKER} (27 September 2026). */
+.sand-agent-title-tag:not(#\\#):not(#\\#):not(#\\#),.sand-agent-title-tag *:not(#\\#):not(#\\#):not(#\\#){color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8)}
+`;
+
 export function patchOriginalBubbleStylesheet(css) {
   const [label, before, after] = BUBBLE_CSS_REPLACEMENT;
   if (css.includes(USER_BUBBLE_PAINT_MARKER)) throw new Error("Original renderer bubble paint block is already present.");
-  return `${replaceExactlyOnce(css, before, after, label)}\n${USER_BUBBLE_PAINT_CSS}`;
+  return `${replaceExactlyOnce(css, before, after, label)}\n${USER_BUBBLE_PAINT_CSS}${TITLE_TAG_BLUE_CSS}`;
 }
 
 /**

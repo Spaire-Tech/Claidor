@@ -11,14 +11,16 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const patchModule = pathToFileURL(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs")).href;
 
 test("the user bubble token becomes the Sky wash base in light and dark, and the stylesheet paints the bubble", async () => {
-  const { BUBBLE_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT, patchOriginalBubble, patchOriginalBubbleStylesheet, USER_BUBBLE_LIGHT, USER_BUBBLE_DARK, USER_BUBBLE_PAINT_CSS } = await import(patchModule);
+  const { BUBBLE_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT, patchOriginalBubble, patchOriginalBubbleStylesheet, USER_BUBBLE_LIGHT, USER_BUBBLE_DARK, USER_BUBBLE_PAINT_CSS, TITLE_TAG_BLUE_CSS } = await import(patchModule);
   assert.equal(USER_BUBBLE_LIGHT, "#255a93");
   assert.equal(USER_BUBBLE_DARK, "#1f5087");
   const patched = patchOriginalBubble(BUBBLE_REPLACEMENTS.map(([, before]) => before).join(";"));
   assert.match(patched, /Ct\("fill\/bubble-user",El\(\{value:"#255a93",alias:"simeon\/sky-wash"\},\{value:"#1f5087",alias:"simeon\/sky-wash-dark"\}\)\)/);
   const sheet = patchOriginalBubbleStylesheet(`:root{${BUBBLE_CSS_REPLACEMENT[1]}}`);
   assert.ok(sheet.startsWith(":root{--sand-fill-bubble-user:#255a93;}"));
-  assert.ok(sheet.endsWith(USER_BUBBLE_PAINT_CSS));
+  assert.ok(sheet.endsWith(`${USER_BUBBLE_PAINT_CSS}${TITLE_TAG_BLUE_CSS}`));
+  // An agent's title tag reads in the bubble's blue, on the tag and its text span.
+  assert.ok(TITLE_TAG_BLUE_CSS.includes(".sand-agent-title-tag:not(#\\#):not(#\\#):not(#\\#),.sand-agent-title-tag *:not(#\\#):not(#\\#):not(#\\#){color:light-dark(#255a93,#8cb8e8)}"));
   // The same selector, byte for byte, as the pinned rule that sets the bubble colour.
   assert.ok(USER_BUBBLE_PAINT_CSS.includes(".sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#){background-image:"));
   assert.match(USER_BUBBLE_PAINT_CSS, /light-dark\(#255a93,#1f5087\)/);
