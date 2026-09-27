@@ -39,11 +39,16 @@ test("every logo is a readable image, and the stylesheet paints each file kind a
     assert.ok(contrastRatio(rule[1], MESSAGE_GREY_LIGHT) >= 3 && contrastRatio(rule[2], MESSAGE_GREY_DARK) >= 3, `${key} is readable`);
   }
   // Cards speak in the chat's blue: primary buttons inside a message card, and the pending approval badge.
-  assert.ok(sheet.includes('.sand-message-card button[data-variant="primary"]:not(#\\#):not(#\\#):not(#\\#){background-color:light-dark(#255a93,#1f5087);border-color:transparent;color:#fff}'));
+  assert.ok(sheet.includes('.sand-message-card button[data-variant="primary"]:not(#\\#):not(#\\#):not(#\\#){background-color:light-dark(#255a93,#1f5087);background-image:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 55%);border-color:transparent;color:#fff;'));
   assert.ok(sheet.includes('[data-simeon-approval="pending"]:not(#\\#):not(#\\#):not(#\\#){background-color:'));
   // Every card is white; the agent's bubble outside cards is Messages' grey; lines stay the renderer's own.
   assert.ok(sheet.includes("--sand-fill-bubble-agent:light-dark(#e9e9eb,#3b3b3d)"));
-  assert.ok(sheet.includes(".sand-message-card{--sand-fill-bubble-agent:var(--sand-fill-elevated)}"));
+  // Cards are glass in the same grey: every card surface, the file card included, gets the glass fill.
+  assert.ok(sheet.includes(".sand-message-card{--sand-fill-bubble-agent:transparent}"));
+  assert.match(sheet, /\.sand-message-card :is\([^)]*\.sand-file-card\)[^{]*\{background:linear-gradient\(180deg,light-dark\(rgba\(255,255,255,\.55\)/);
+  assert.ok(!/light-dark\(\s*linear-gradient/.test(sheet), "light-dark() holds colours only, never gradients");
+  // Buttons are water glass: the composer's +, the sidebar's +, and a card's secondary buttons.
+  assert.match(sheet, /\.sand-prompt-attach[^{]*,\.sand-agents-sidebar__new[^{]*,\.sand-message-card button\[data-variant="outline"\][^{]*\{background:linear-gradient/);
   assert.ok(!sheet.includes("--sand-border-default:"), "border tokens are not overridden");
   // The narrow sidebar's New button matches the 36 px initials circle, and the wide-sidebar account rules leave the narrow one alone.
   assert.ok(sheet.includes(".sand-agents-sidebar__rail-new .sand-agents-sidebar__new:not(#\\#):not(#\\#):not(#\\#):not(#\\#){width:36px;height:36px;"));

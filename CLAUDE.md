@@ -680,7 +680,10 @@ its dark mark, the light-mode logo; and the narrow sidebar's New button
 is a 36 px circle like the initials beneath it; the agent's bubble is
 the grey Messages gives a received text, #E9E9EB ("like grey but KINDA
 blue ish"; blue lines and a white bubble were tried first and reverted,
-"not a fan") (`LOGO_REPLACEMENTS`, `logosCss`,
+"not a fan"); cards are Apple-style glass in that grey (sheen, bright
+rim, soft lift) and the composer's +, the sidebar's + and a card's
+secondary buttons are white "water glass", the primary keeping its blue
+with a top light (`GLASS_CARD`, `GLASS_BUTTON`) (`LOGO_REPLACEMENTS`, `logosCss`,
 `desktop/brand/file-icons`, `desktop/brand/app-logos`). Not yet seen on
 a Mac.
 **The chat header is the agent's card, 23 September, later still**
