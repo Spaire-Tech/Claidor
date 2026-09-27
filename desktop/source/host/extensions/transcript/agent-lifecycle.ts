@@ -147,7 +147,10 @@ export class AgentLifecycle {
             session.db.getAgentPurpose() === "disk-saver"
               ? SAND_DISK_SAVER_KICKSTART_PROMPT
               : SAND_ONBOARDING_KICKSTART_PROMPT;
-          const result = await runner.run(prompt, { hidden: true });
+          // Hidden (nobody asked yet) but under the asked turn's budget:
+          // Grok Bot gave its first message the same 5,000-call cap as any
+          // turn, and its cue may begin a described assignment at once.
+          const result = await runner.run(prompt, { hidden: true, fullStepBudget: true });
           let delivered = result.sentMessageCount > 0;
           if (!result.aborted && result.sentMessageCount === 0)
             delivered =

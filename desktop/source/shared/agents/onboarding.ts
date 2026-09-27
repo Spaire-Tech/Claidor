@@ -4,10 +4,12 @@ import { isSandDefaultAgentName } from "./agents.js";
 // with, and when i tested grok bot, it gives me suggestion"). The spend
 // guards of 23 September had rewritten three of its sentences into "ask one
 // real question … do not start any assignment", which is what stopped the
-// suggestions; the guards that stopped the 481-call first run stay where
-// they belong, in the run and not in the words: the intro runs once
-// (`agent-lifecycle.ts`), hidden, under the 40-call budget
-// (`SAND_HIDDEN_TURN_MAX_STEPS`). One sentence stays ours: Grok Bot's names
+// suggestions. What stopped the 481-call first run was not the words: the
+// message schema refusing every greeting (fixed, `stripFieldsOfOtherTypes`)
+// and the intro re-running on every open (it runs once, `agent-lifecycle.ts`).
+// Since 27 September the intro also has Grok Bot's own budget, 5,000 calls
+// like any turn (`fullStepBudget`), behind the server's hourly cap. One
+// sentence stays ours: Grok Bot's names
 // a "connectors prompt" message SendMessage cannot send here (ledger F-335),
 // so it names ProposeConnector, followed by Grok Bot's own last sentence.
 export const SAND_ONBOARDING_KICKSTART_PROMPT = [

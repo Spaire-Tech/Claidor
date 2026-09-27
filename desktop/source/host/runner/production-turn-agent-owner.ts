@@ -90,6 +90,7 @@ export interface ProductionTurnAgentOwnerInput {
   /** A watchVideo / videoReview child: its turns run on the video model (Gemini). */
   readonly isVideoSubagent?: boolean;
   readonly hidden?: boolean;
+  readonly fullStepBudget?: boolean;
   readonly lineage?: unknown;
   readonly profilePromptSnapshot?: AgentProfilePromptSnapshot;
   readonly profilePromptSnapshotStore?: PromptSnapshotStore;
@@ -175,6 +176,7 @@ export async function createProductionTurnAgentOwner(
     isSubagentRunner: input.isSubagentRunner,
     isSilenceAllowed: input.isSilenceAllowed,
     ...(input.hidden === undefined ? {} : { hidden: input.hidden }),
+    ...(input.fullStepBudget === true ? { fullStepBudget: true } : {}),
     ...(input.lineage === undefined ? {} : { lineage: input.lineage }),
     canUseSelfSummary: input.canUseSelfSummary,
     ...(input.diskPressureReminder === undefined

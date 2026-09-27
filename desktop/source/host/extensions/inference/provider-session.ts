@@ -129,8 +129,14 @@ export type ClaidorSessionModelOptions = {
   // (Gemini through Simeon Labs' proxy) at low effort.
   readonly isVideoSubagent?: boolean;
   // True for a turn nobody asked for (the first-run intro, a reply nudge,
-  // an automation). It gets the small model-call budget.
+  // an automation). It gets the small model-call budget unless
+  // `fullStepBudget` says otherwise.
   readonly hidden?: boolean;
+  // A hidden turn that gets the asked-turn budget: the first message and a
+  // routine, which Grok Bot ran under its one 5,000-call cap (27 September
+  // 2026). Reply nudges, wake-ups after a sign-in and memory extraction keep
+  // the 40-call hidden budget.
+  readonly fullStepBudget?: boolean;
 };
 
 // The cheap roles, as Grok Bot separates them: summarization and memory
@@ -581,15 +587,16 @@ function claidorExecutor(messages: readonly ProviderMessage[], invocationId: str
 // the session hands out, because the turn shell asks for a fresh executor
 // per step. The cap is Grok Bot's 5,000 for a turn the person asked for
 // and SAND_HIDDEN_TURN_MAX_STEPS for one nobody asked for.
-export interface ModelCallBudget { readonly limit: number; readonly hidden: boolean; used: number }
+export interface ModelCallBudget { readonly limit: number; readonly hidden: boolean; readonly fullStepBudget?: boolean; used: number }
 
 export function createModelCallBudget(options?: ClaidorSessionModelOptions, env: NodeJS.ProcessEnv = process.env): ModelCallBudget {
   const hidden = options?.hidden === true;
-  return { limit: resolveSandAgentStepCap({ hidden }, env), hidden, used: 0 };
+  const capped = hidden && options?.fullStepBudget !== true;
+  return { limit: resolveSandAgentStepCap({ hidden: capped }, env), hidden, used: 0, ...(hidden && !capped ? { fullStepBudget: true } : {}) };
 }
 
 export function spendModelCall(budget: ModelCallBudget): void {
-  if (budget.used >= budget.limit) throw new Error(stepBudgetExceededMessage(budget.limit, budget.hidden));
+  if (budget.used >= budget.limit) throw new Error(stepBudgetExceededMessage(budget.limit, budget.hidden && budget.fullStepBudget !== true));
   budget.used += 1;
 }
 
