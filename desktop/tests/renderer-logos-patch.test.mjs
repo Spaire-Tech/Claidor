@@ -47,6 +47,10 @@ test("every logo is a readable image, and the stylesheet paints each file kind a
   assert.ok(sheet.includes(".sand-message-card{--sand-fill-bubble-agent:transparent}"));
   assert.match(sheet, /\.sand-message-card :is\([^)]*\.sand-file-card\)[^{]*\{background:linear-gradient\(180deg,light-dark\(rgba\(255,255,255,\.55\)/);
   assert.ok(!/light-dark\(\s*linear-gradient/.test(sheet), "light-dark() holds colours only, never gradients");
+  // The initials circle and the selected agent row are the same glass; an exchange's header centres the pair.
+  assert.match(sheet, /\.sand-agents-sidebar__account \.sand-kit-base-avatar[^{]*\{background:linear-gradient[^}]*!important/);
+  assert.match(sheet, /\.sand-agent-item\[data-active="true"\][^{]*\{background:linear-gradient/);
+  assert.ok(sheet.includes("{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}"));
   // Buttons are water glass: the composer's +, the sidebar's +, and a card's secondary buttons.
   assert.match(sheet, /\.sand-prompt-attach[^{]*,\.sand-agents-sidebar__new[^{]*,\.sand-message-card button\[data-variant="outline"\][^{]*\{background:linear-gradient/);
   assert.ok(!sheet.includes("--sand-border-default:"), "border tokens are not overridden");

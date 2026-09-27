@@ -392,7 +392,12 @@ export const AGENT_BUBBLE_DARK = "#3b3b3d";
  * button is near-white with a top-lit gradient, a hairline rim and a small
  * drop; it is used for the composer's +, the sidebar's +, and every
  * secondary button in a card. The card's primary button keeps the chat's
- * blue with the same top light.
+ * blue with the same top light. The account's initials circle (its tint is
+ * an inline style, so the glass is `!important`) and the selected agent
+ * row in the sidebar are the same white glass. The header of an exchange
+ * between two agents ("the convo between two ais up top with the avatars
+ * be centered") is a three-column grid: the pair in the middle column, the
+ * computer control in the last.
  */
 const GLASS_CARD = [
   "background:linear-gradient(180deg,light-dark(rgba(255,255,255,.55),rgba(255,255,255,.08)),rgba(255,255,255,0) 42%),linear-gradient(light-dark(rgba(233,233,235,.78),rgba(59,59,61,.72)),light-dark(rgba(233,233,235,.78),rgba(59,59,61,.72)))",
@@ -423,6 +428,11 @@ export const cardBlueCss = () => `${CARD_BLUE_MARKER} (27 September 2026). */
 ${GLASS_BUTTON_TARGETS}${HI}{${GLASS_BUTTON}}
 ${GLASS_BUTTON_TARGETS.split(",").map((target) => `${target}${HI}:hover:not(:disabled)`).join(",")}{background:linear-gradient(180deg,light-dark(#fff,rgba(255,255,255,.2)),light-dark(rgba(255,255,255,.9),rgba(255,255,255,.1)))}
 ${GLASS_BUTTON_TARGETS.split(",").map((target) => `${target}${HI}:active:not(:disabled)`).join(",")}{transform:scale(.97)}
+.sand-agents-sidebar__account .sand-kit-base-avatar${HI}{${GLASS_BUTTON.split(";").map((declaration) => `${declaration}!important`).join(";")}}
+.sand-agent-item[data-active="true"]${HI}:not(#\\#){${GLASS_BUTTON};color:inherit}
+.sand-chat-header:has(>.sand-chat-header__exchange)${HI}{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+.sand-chat-header>.sand-chat-header__exchange${HI}{grid-column:2;justify-self:center}
+.sand-chat-header:has(>.sand-chat-header__exchange)>.sand-chat-header__controls${HI}{grid-column:3;justify-self:end}
 .sand-message-card button[data-variant="primary"]${HI}{background-color:light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK});background-image:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 55%);border-color:transparent;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -1px 0 rgba(0,0,0,.12),0 1px 2px rgba(10,30,70,.18),0 4px 12px -4px rgba(10,30,70,.28)}
 .sand-message-card button[data-variant="primary"]${HI}:hover:not(:disabled){background-color:light-dark(#1e4d80,#2a62a0)}
 .sand-message-card button[data-variant="primary"]${HI}:active:not(:disabled){background-color:light-dark(#1a4372,#1b4677)}
@@ -810,7 +820,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "glass-cards", "glass-buttons"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "glass-cards", "glass-buttons", "exchange-header-centred"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
