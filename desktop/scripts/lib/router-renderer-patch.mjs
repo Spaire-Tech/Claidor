@@ -390,6 +390,10 @@ export const AGENT_BUBBLE_DARK = "#3b3b3d";
  * Buttons are flat again. The fade was then dropped too ("never mind for
  * the cards being fading etc. just put everything grey"): a card is the
  * agent bubble's Messages grey, solid, with no border, rim, shadow or blur.
+ * The agent's name pill under its avatar in the chat header is white
+ * Liquid Glass ("the names up center of the avatar, make that box white
+ * liquid glass": a top-lit white fill, blur, a bright rim and a soft drop),
+ * and the composer's send button is the chat's blue.
  * The header of an exchange between two agents ("the convo between two ais
  * up top with the avatars be centered") is a three-column grid: the pair in
  * the middle column, the computer control in the last.
@@ -421,6 +425,9 @@ export const cardBlueCss = () => `${CARD_BLUE_MARKER} (27 September 2026). */
 .sand-message-card>:is(article,form,section)${HI},.sand-message-card :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card)${HI}{${GREY_CARD}}
 .sand-message-card .sand-tool-icon[style*="background-color: rgb(255, 255, 255)"]${HI}{box-shadow:inset 0 0 0 1px var(--sand-border-default)}
 ${CHOICE_RADIO_CSS()}.sand-agent-item[data-active="true"]${HI}:not(#\\#){background:light-dark(#fff,rgba(255,255,255,.12));box-shadow:0 0 0 .5px light-dark(rgba(20,20,20,.08),rgba(255,255,255,.08)),0 1px 2px light-dark(rgba(20,20,20,.06),rgba(0,0,0,.3))}
+.sand-chat-header__name${HI}:not(#\\#){background:linear-gradient(180deg,light-dark(rgba(255,255,255,.92),rgba(255,255,255,.18)),light-dark(rgba(255,255,255,.72),rgba(255,255,255,.08)));-webkit-backdrop-filter:blur(20px) saturate(1.8);backdrop-filter:blur(20px) saturate(1.8);border:.5px solid light-dark(rgba(255,255,255,.9),rgba(255,255,255,.18));box-shadow:inset 0 1px 0 light-dark(#fff,rgba(255,255,255,.22)),0 0 0 .5px light-dark(rgba(20,20,40,.1),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(20,20,40,.14),rgba(0,0,0,.5))}
+.sand-prompt-send${HI}:not(#\\#){background-color:light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK});color:#fff}
+.sand-prompt-send${HI}:not(#\\#):hover:not(:disabled){background-color:light-dark(#1e4d80,#2a62a0)}
 .sand-chat-header:has(>.sand-chat-header__exchange)${HI}{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
 .sand-chat-header>.sand-chat-header__exchange${HI}{grid-column:2;justify-self:center}
 .sand-chat-header:has(>.sand-chat-header__exchange)>.sand-chat-header__controls${HI}{grid-column:3;justify-self:end}
@@ -807,7 +814,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

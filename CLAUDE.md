@@ -693,7 +693,9 @@ on a Mac the window carries Apple's `sidebar` vibrancy
 (`window-chrome.ts`, clear window, `followWindow`) and the page is clear
 only under the sidebar, under a 93% tint so the desktop is "absolutely
 faint", the chat and info pane painted solid; the selected agent row is
-white ("the picker has to be white"); the older
+white ("the picker has to be white"); the agent's name pill under its
+avatar in the chat header is white Liquid Glass and the composer's send
+button is the chat's blue; the older
 frosted composer, menus, pills and name pill are gone. `npm run demo`
 paints a neutral grey where the desktop would be (`LOGO_REPLACEMENTS`, `logosCss`,
 `desktop/brand/file-icons`, `desktop/brand/app-logos`). Not yet seen on

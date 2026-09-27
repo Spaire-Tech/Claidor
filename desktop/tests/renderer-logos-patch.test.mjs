@@ -51,6 +51,8 @@ test("every logo is a readable image, and the stylesheet paints each file kind a
   assert.ok(!sheet.includes(".sand-agents-sidebar__account .sand-kit-base-avatar"), "the initials circle is the renderer's own again");
   assert.ok(sheet.includes('.sand-agent-item[data-active="true"]:not(#\\#):not(#\\#):not(#\\#):not(#\\#){background:light-dark(#fff,rgba(255,255,255,.12))'), "the selected row is white, not glass");
   assert.ok(sheet.includes("{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}"), "an exchange centres its header");
+  assert.match(sheet, /\.sand-chat-header__name:not\(#\\#\):not\(#\\#\):not\(#\\#\):not\(#\\#\)\{background:linear-gradient\(180deg,light-dark\(rgba\(255,255,255,\.92\)[^}]*backdrop-filter:blur\(20px\) saturate\(1\.8\)/, "the header's name pill is white glass");
+  assert.ok(sheet.includes(".sand-prompt-send:not(#\\#):not(#\\#):not(#\\#):not(#\\#){background-color:light-dark(#255a93,#1f5087);color:#fff}"), "the composer's send button is the chat's blue");
   // The choice card's options sit on the grey and each key is a round radio with a blue dot on the chosen answer.
   assert.ok(sheet.includes(".sand-widget__options:not(#\\#):not(#\\#):not(#\\#){background:light-dark(#e9e9eb,#3b3b3d);border-color:transparent}"));
   assert.ok(sheet.includes(".sand-widget-option--selected .sand-widget-option__key:not(#\\#):not(#\\#):not(#\\#){opacity:1;border-color:light-dark(#255a93,#5b9be0);background:radial-gradient(circle,light-dark(#255a93,#5b9be0) 0 4px,transparent 4.5px)}"));
