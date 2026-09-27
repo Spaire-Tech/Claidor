@@ -283,12 +283,13 @@ export function patchOriginalPalette(source) {
 /**
  * The person's own chat bubble. It was iMessage blue from 23 September 2026
  * ("copy imessage style and make it blue"); since 27 September it is the
- * founder's "Sky wash, deepest": a painted sky blue with a teal and a dusty
- * rose stroke at the tail, film grain and a horizontal brush texture ("these
- * are the main color i like. kinda grainy, artistic, painting"; "sky wash
- * deepest is fine"). Every colour in it holds white text at 4.5:1 or better
- * (the base 5.9 to 7.1, the strokes 4.5 and 5.0), which the lighter first
- * drafts did not ("the white of the text wont be seen").
+ * founder's "Sky wash, deepest": a sky blue gradient under film grain and a
+ * horizontal brush texture ("these are the main color i like. kinda grainy,
+ * artistic, painting"; "sky wash deepest is fine"). It first carried a teal
+ * and a dusty rose stroke at the tail; they came out the same day ("too
+ * noisy. keep the blue color, remove the purple/green accents"). White text
+ * holds 5.9:1 to 7.1:1 on it, which the lighter first drafts did not ("the
+ * white of the text wont be seen").
  *
  * The renderer's theme variables are generated at runtime from a token list
  * in the chunk (`Ct("fill/bubble-user", El(light, dark, hcLight, hcDark))`,
@@ -320,8 +321,8 @@ export function patchOriginalBubble(source) {
 const GRAIN_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>";
 const BRUSH_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='120'><filter id='b'><feTurbulence type='fractalNoise' baseFrequency='.012 .35' numOctaves='2'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .22 -.04'/></filter><rect width='100%' height='100%' filter='url(%23b)'/></svg>";
 export const USER_BUBBLE_PAINT_MARKER = "/* Simeon: the person's bubble is painted, Sky wash";
-export const USER_BUBBLE_PAINT_CSS = `${USER_BUBBLE_PAINT_MARKER} (27 September 2026): grain, brush, a teal and a rose stroke over the base blue. */
-.sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#){background-image:url("${GRAIN_SVG}"),url("${BRUSH_SVG}"),linear-gradient(112deg,transparent 56%,light-dark(rgba(46,120,146,.9),rgba(40,106,130,.9)) 72%,transparent 82%),linear-gradient(112deg,transparent 78%,light-dark(rgba(160,100,132,.9),rgba(140,88,116,.9)) 92%,transparent 101%),linear-gradient(165deg,light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK}),light-dark(#2e679f,#285c93));background-size:160px 160px,300px 100%,100% 100%,100% 100%,100% 100%;background-blend-mode:soft-light,overlay,normal,normal,normal}
+export const USER_BUBBLE_PAINT_CSS = `${USER_BUBBLE_PAINT_MARKER} (27 September 2026): grain and brush over the blue, no accent strokes. */
+.sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#){background-image:url("${GRAIN_SVG}"),url("${BRUSH_SVG}"),linear-gradient(165deg,light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK}),light-dark(#2e679f,#285c93));background-size:160px 160px,300px 100%,100% 100%;background-blend-mode:soft-light,overlay,normal}
 `;
 
 export function patchOriginalBubbleStylesheet(css) {

@@ -22,6 +22,8 @@ test("the user bubble token becomes the Sky wash base in light and dark, and the
   // The same selector, byte for byte, as the pinned rule that sets the bubble colour.
   assert.ok(USER_BUBBLE_PAINT_CSS.includes(".sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#){background-image:"));
   assert.match(USER_BUBBLE_PAINT_CSS, /light-dark\(#255a93,#1f5087\)/);
+  // Blue only: the teal and rose accent strokes were removed ("too noisy").
+  assert.doesNotMatch(USER_BUBBLE_PAINT_CSS, /rgba\(/);
   assert.throws(() => patchOriginalBubbleStylesheet(sheet), /bubble paint block is already present/);
   assert.throws(() => patchOriginalBubble(patched), /user-bubble-blue anchor is missing or ambiguous/);
 });
