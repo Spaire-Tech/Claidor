@@ -272,6 +272,7 @@ export const LOGO_REPLACEMENTS = Object.freeze([
   ["connect-apps-button", PLUGINS_BUTTON_BEFORE, PLUGINS_BUTTON_AFTER],
   ["file-kind-slides", 'return r!=null&&A6n.has(r)?"archive":null', 'return r==="pptx"||r==="ppt"?"slides":r==="doc"||r==="rtf"?"document":r!=null&&A6n.has(r)?"archive":null'],
   ["file-kind-table-slides", "tin={markdown:", 'tin={slides:{icon24:"file",icon36:"file",tint:"neutral"},markdown:'],
+  ["approval-badge-marker", 'p.jsxs("span",{...Fe(lc.badge,N?lc.badgePending:FAn[y.kind]),role:"status",children:[N?p.jsx(bt,{"aria-hidden":!0,color:"yellow"', 'p.jsxs("span",{...Fe(lc.badge,N?lc.badgePending:FAn[y.kind]),"data-simeon-approval":N?"pending":void 0,role:"status",children:[N?p.jsx(bt,{"aria-hidden":!0,color:"yellow"'],
   ["message-app-mentions", MESSAGE_REHYPE_BEFORE, (names) => `${appMentionsPluginSource(names)}${MESSAGE_REHYPE_BEFORE.replace("syntheticProseCards:n}]]}", "syntheticProseCards:n}],__simeonAppMentions]}")}`],
 ]);
 
@@ -345,9 +346,30 @@ ${mentions.map(({ key, color, logo, mono }) => `.simeon-app[data-app="${key}"]{-
 `;
 }
 
+/**
+ * Cards speak in the chat's blue, 27 September 2026 ("design the approval/
+ * permission - approval needed make it our blue, the button allow once and
+ * any other main button in cards to always be the blue of the chat"). Every
+ * primary button inside a message card (`.sand-message-card`, which wraps
+ * the approval, email draft, connector and permission cards) is filled with
+ * the bubble's blue, white text; the Auto-review card's pending badge,
+ * orange in Grok Bot, is marked `data-simeon-approval="pending"` where it
+ * is drawn and tinted blue with a blue spinner. Outline buttons (Always
+ * allow, Deny, Discard) are untouched.
+ */
+export const CARD_BLUE_MARKER = "/* Simeon: cards speak in the chat's blue";
+export const cardBlueCss = () => `${CARD_BLUE_MARKER} (27 September 2026). */
+.sand-message-card button[data-variant="primary"]${HI}{background-color:light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK});border-color:transparent;color:#fff}
+.sand-message-card button[data-variant="primary"]${HI}:hover:not(:disabled){background-color:light-dark(#1e4d80,#2a62a0)}
+.sand-message-card button[data-variant="primary"]${HI}:active:not(:disabled){background-color:light-dark(#1a4372,#1b4677)}
+.sand-message-card button[data-variant="primary"]${HI}:focus-visible{outline:2px solid light-dark(rgba(37,90,147,.45),rgba(140,184,232,.55));outline-offset:2px}
+[data-simeon-approval="pending"]${HI}{background-color:light-dark(rgba(37,90,147,.12),rgba(140,184,232,.16));color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8)}
+[data-simeon-approval="pending"]${HI} .ui-icon{color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8)}
+`;
+
 export function patchOriginalLogosStylesheet(css, assets) {
   if (css.includes(LOGOS_MARKER)) throw new Error("Original renderer logos block is already present.");
-  return `${css}\n${logosCss(assets)}`;
+  return `${css}\n${logosCss(assets)}${cardBlueCss()}`;
 }
 
 export const SHAPE_PICKER_MARKER = "/* Simeon: one shape, the cloud";
@@ -724,7 +746,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

@@ -670,7 +670,10 @@ has no colour logo; a bare "Word" is not marked); and the
 sidebar's Plugins button is "Connect apps" in blue, no box, with Gmail,
 Calendar and Drive tiles, on the account row beside the initials circle
 (the name beside it is hidden; the circle shows two initials for a
-two-word name), same action (`LOGO_REPLACEMENTS`, `logosCss`,
+two-word name), same action; every primary button inside a message
+card (Allow once, Send email, …) is the chat's blue with white text, and
+the Auto-review card's "Approval needed" badge is tinted blue instead of
+orange (`cardBlueCss`, `data-simeon-approval`) (`LOGO_REPLACEMENTS`, `logosCss`,
 `desktop/brand/file-icons`, `desktop/brand/app-logos`). Not yet seen on
 a Mac.
 **The chat header is the agent's card, 23 September, later still**
