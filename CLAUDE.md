@@ -677,11 +677,10 @@ orange (`cardBlueCss`, `data-simeon-approval`); every card is white with
 the file card's border, the agent's bubbles staying grey ("all cards
 literally all, should be white background"); Notion's tile is white with
 its dark mark, the light-mode logo; and the narrow sidebar's New button
-is a 36 px circle like the initials beneath it; every border and
-divider token is a tint of the blue at its old place in the scale, and
-the agent's bubble is white with a blue edge ("have the underline and
-all dividers everywhere be our blue … the ai chat box to be white too")
-(`LOGO_REPLACEMENTS`, `logosCss`,
+is a 36 px circle like the initials beneath it; the agent's bubble is
+the grey Messages gives a received text, #E9E9EB ("like grey but KINDA
+blue ish"; blue lines and a white bubble were tried first and reverted,
+"not a fan") (`LOGO_REPLACEMENTS`, `logosCss`,
 `desktop/brand/file-icons`, `desktop/brand/app-logos`). Not yet seen on
 a Mac.
 **The chat header is the agent's card, 23 September, later still**
