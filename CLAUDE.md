@@ -1004,28 +1004,35 @@ keeps no log for this path. Not yet run on a Mac.
 
 ## The app-window demo (27 September 2026)
 
-"all i wanted was the app … the absolute REAL app, with real stuff
-happening, and you can click on stuff … give me real convo, with names like
-Simeon, Scout, Yodo … shows cards, connectors … simeon creating an agent for
-something, then see the agent being created … we'll use the light mode."
 `npm run demo` (after `npm run package`) serves today's patched window, the
 pinned renderer with every Simeon patch, in a browser on 127.0.0.1 only: a
-private preview, never published, since the window is still Grok Bot's code
-(the real site waits on our own window). `demo/bridge.ts` installs the app's
-own preload bridge over a fake Electron and runs the app's own coordinator
-port server; `demo/backend.ts` answers in the host's shapes from
-`demo/scenario.ts`: Simeon, Scout, Yodo and Ledger with their conversations,
-question cards, a PDF card, Gmail and Notion connector cards (shown Added),
-an email draft, an Auto-review approval; clicking "Yes, set someone up" has
-Simeon create Quill, who appears in the sidebar working, is briefed, and
-opens with its own question; Yodo reports a payment on its own a few seconds
-in; typing to any agent gets a reply; booking, Allow once and answers all
-play out. The email draft's Send button does nothing, as in the app itself
-(the pinned chunk's callbacks are empty; `draft-composer-measured.md`).
-The account menu, Connect apps, both New buttons, the composer's attach
-and the agent's computer are inert in the demo by the founder's word
-(`INERT_IN_DEMO` in `demo/bridge.ts`); `?theme=dark` opens it dark.
-`tests/app-demo.test.mjs`. Seen headless only, not yet on a Mac.
+private preview, never published, since the window is still Grok Bot's code.
+`demo/bridge.ts` installs the app's own preload bridge over a fake Electron and
+runs the app's own coordinator port server; `demo/backend.ts` answers in the
+host's shapes from `demo/scenario.ts`.
+
+**Rewritten the same evening** ("completely change everything in the demo and
+be smarter. there's too much noise … i shouldnt be able to type or use
+microphone - the messages/answers are pre-recorded and are chosen … its only
+the first message with simeon that is animated, everything else is already
+written. also we need a group disussion with the 3 agents … think of it for a
+product manager"; x.ai/bot as the reference, which refused this container by
+then, so it was not read again). The story is a product manager two days
+before a launch: Simeon (chief of staff), Scout (research), Yodo (delivery)
+and their group, Launch squad. Simeon's conversation plays by itself on load
+(you ask where the launch stands, Simeon goes through Linear, Slack and your
+calendar, the window's "Connecting to …" label shown, and answers); from
+there you move only by choosing on Simeon's question cards (prepare the
+review doc and send the agenda from Gmail, or the open risks and a Slack nudge
+to Marcus), each choice playing once. Scout's research, Yodo's Linear and
+Slack setup and standup, and the group deciding to ship Thursday are already
+written. A group is an ordinary roster entry with `isGroup` and `memberIds`,
+its agents' messages carrying `author: {id, name}` (group-chat-glue.ts).
+Nobody types: the composer is `inert`, plain keys are stopped at the page
+(the window forwards typing anywhere into the composer), and the account
+menu, Connect apps, the New and attach buttons and the computer do nothing
+(`INERT_IN_DEMO`). `?theme=dark` opens it dark. `tests/app-demo.test.mjs`
+plays the story at 1/100 speed. Seen headless only, not yet on a Mac.
 
 ## The whole-product design audit, and the switch-or-coming-soon rule (25 September 2026)
 

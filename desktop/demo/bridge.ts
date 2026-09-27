@@ -90,15 +90,50 @@ const INERT_IN_DEMO = [
   ".sand-prompt-attach",
   ".sand-chat-header__computer",
 ].join(",");
-for (const type of ["pointerdown", "mousedown", "click", "keydown"] as const) {
+// Nobody types in the demo ("i shouldnt be able to type or use microphone -
+// the messages/answers are pre-recorded and are chosen"): the whole composer,
+// its editor, attach, mic and send, takes no presses, keys, paste or focus.
+// Answers are given by choosing on Simeon's question cards.
+const COMPOSER = ".sand-prompt-shell";
+const isInert = (target: EventTarget | null) => target instanceof Element && target.closest(`${INERT_IN_DEMO},${COMPOSER}`) != null;
+for (const type of ["pointerdown", "mousedown", "click", "dblclick", "keydown", "keypress", "beforeinput", "paste", "drop"] as const) {
   window.addEventListener(type, (event) => {
-    const target = event.target;
-    if (!(target instanceof Element) || target.closest(INERT_IN_DEMO) == null) return;
-    if (event instanceof KeyboardEvent && event.key !== "Enter" && event.key !== " ") return;
+    if (!isInert(event.target)) return;
+    const inComposer = event.target instanceof Element && event.target.closest(COMPOSER) != null;
+    if (event instanceof KeyboardEvent && !inComposer && event.key !== "Enter" && event.key !== " ") return;
     event.preventDefault();
     event.stopImmediatePropagation();
   }, true);
 }
+// The window also forwards keys typed anywhere into the composer ("type to
+// start"), so plain typing is stopped at the page: there is nothing to type
+// into in the demo. Shortcuts with ⌘ or Ctrl are left alone.
+window.addEventListener("keydown", (event) => {
+  if (event.metaKey || event.ctrlKey || event.altKey) return;
+  if (event.key.length === 1 || event.key === "Backspace" || event.key === "Delete" || event.key === "Enter") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
+}, true);
+window.addEventListener("focusin", (event) => {
+  if (event.target instanceof HTMLElement && event.target.closest(COMPOSER) != null) event.target.blur();
+}, true);
+// The editor takes text below the events above, so the composer is also made
+// `inert` (no focus, no input, nothing clickable) whenever the window draws one.
+const quietComposers = () => {
+  for (const shell of document.querySelectorAll(COMPOSER)) {
+    if (!shell.hasAttribute("inert")) shell.setAttribute("inert", "");
+    for (const editor of shell.querySelectorAll("[contenteditable=true]")) editor.setAttribute("contenteditable", "false");
+  }
+};
+new MutationObserver(quietComposers).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["contenteditable"] });
+const demoStyle = document.createElement("style");
+// The window writes what an agent is doing ("Connecting to Linear") beside
+// its typing mark but keeps it transparent; the demo shows it, so the viewer
+// sees Simeon go through the tools before it answers.
+demoStyle.textContent = `${COMPOSER},${COMPOSER} *{cursor:default!important;caret-color:transparent!important}
+.sand-activity-mark>span[aria-hidden],.sand-activity-mark__label{opacity:1!important}`;
+document.head.append(demoStyle);
 
 installPrimaryPreloadEntrypoint(
   {
