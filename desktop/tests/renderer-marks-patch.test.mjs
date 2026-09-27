@@ -86,3 +86,21 @@ test("the pinned 0.18.0 renderer carries each shape anchor exactly once, and bot
   for (const [label, before] of SHAPE_REPLACEMENTS) assert.equal(source.split(before).length - 1, 1, `${label} occurs once`);
   assert.equal(source.split('"aria-label":"Character shape"').length - 1, 2);
 });
+
+test("the onboarding copy says what the founder wrote, and the teammates keep their ids", async () => {
+  const { COPY_REPLACEMENTS, patchOriginalCopy } = await import(patchModule);
+  const patched = patchOriginalCopy(COPY_REPLACEMENTS.map(([, before]) => before).join(";\n"));
+  assert.match(patched, /tagline:"Your personal team of agents for whatever needs doing\."/);
+  assert.match(patched, /const H2e="Put any task in the hands of your agents"/);
+  assert.match(patched, /XBn=\{"invoice-chaser":"Email Chaser","weekly-standup":"Flight Booker","sales-forecast":"Content Planner"\}/);
+  assert.doesNotMatch(patched, /Invoice Chaser|Weekly Standup|Sales Forecast|always-on agents that you can give|Hand off any task/);
+  assert.throws(() => patchOriginalCopy(patched), /copy-signin-tagline anchor is missing or ambiguous/);
+});
+
+test("the pinned 0.18.0 renderer carries each onboarding copy anchor exactly once", async (t) => {
+  const pinned = resolvePinnedRenderer();
+  if (!pinned) { t.skip(PINNED_RENDERER_SKIP); return; }
+  const { COPY_REPLACEMENTS } = await import(patchModule);
+  const source = await readFile(path.join(pinned, "assets", "index-UbX-y3il.js"), "utf8");
+  for (const [label, before] of COPY_REPLACEMENTS) assert.equal(source.split(before).length - 1, 1, `${label} occurs once`);
+});
