@@ -228,7 +228,7 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
     getTimeZone: () => ({ timeZone: "Europe/Zurich", override: null }),
     getSidebarCollapsed: () => false,
     markDeepLinksReady: () => undefined,
-    getCursorAuthStatus: () => ({ kind: "logged-in", authId: "demo|bass", email: "bass@simeonlabs.com", displayName: "Bass", freshness: 1 }),
+    getCursorAuthStatus: () => ({ kind: "logged-in", authId: "demo|bass", email: "bass@simeonlabs.com", displayName: "Bass F", freshness: 1 }),
     getSandAccess: () => ({ state: "granted", reason: "none" }),
     getSandAccessFresh: () => ({ state: "granted", reason: "none" }),
     getEgressTunnelStatus: () => null,

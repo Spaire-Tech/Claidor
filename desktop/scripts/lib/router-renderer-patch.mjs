@@ -265,8 +265,11 @@ export function logosCss({ files, apps }) {
 ${kinds.map(([kind]) => box(kind)).join(",")}{background:var(--simeon-file-logo) center/82% no-repeat;border-color:transparent;box-shadow:none}
 ${kinds.map(([kind]) => `${box(kind)}>*`).join(",")}{visibility:hidden}
 ${kinds.map(([kind, url]) => `${box(kind)}{--simeon-file-logo:url("${url}")}`).join("\n")}
-.sand-agents-sidebar__plugins${HI}{justify-content:center;gap:8px;width:100%;height:40px;padding:0 14px;border-radius:999px;background:light-dark(#efefef,#2a2a2c);border:1px solid light-dark(rgba(0,0,0,.07),rgba(255,255,255,.1));color:light-dark(#141414,#f2f2f2);font-size:13px;font-weight:500;gap:6px}
-.sand-agents-sidebar__plugins${HI}:hover{background:light-dark(#e6e6e6,#323234)}
+.sand-agents-sidebar__plugins-entry${HI}{position:relative;z-index:1;height:40px;margin:0 0 -40px 40px;padding:0}
+.sand-agents-sidebar__plugins${HI}{justify-content:flex-start;gap:6px;width:auto;height:40px;padding:0 6px;border:0;border-radius:8px;background:transparent;color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8);font-size:13px;font-weight:500}
+.sand-agents-sidebar__plugins${HI}:hover{background:transparent;color:light-dark(#1b4a7d,#a9ccf0)}
+.sand-agents-sidebar__account${HI}{flex:0 0 auto;width:auto}
+.sand-agents-sidebar__account${HI}>button>span:nth-child(2){display:none}
 .simeon-connect-apps__label{white-space:nowrap}
 .simeon-connect-apps__logos{order:1;display:inline-flex;align-items:center;margin-left:2px}
 .simeon-connect-apps__logos>i{display:block;width:20px;height:20px;margin-left:-3px;border-radius:5px;background:#fff center/14px no-repeat;box-shadow:0 0 0 1px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.1)}

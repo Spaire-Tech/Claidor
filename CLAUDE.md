@@ -662,8 +662,10 @@ file card paints the real logo over its kind box (`data-kind`): PDF and
 Word from the Word add-in's own artwork, Excel and PowerPoint from the
 same vscode-icons set, Markdown as Word ("for MDs use word too"), with a
 new `slides` kind for `.pptx` since the window had none; and the
-sidebar's Plugins button is a "Connect apps" pill with Gmail, Calendar
-and Drive tiles, same action (`LOGO_REPLACEMENTS`, `logosCss`,
+sidebar's Plugins button is "Connect apps" in blue, no box, with Gmail,
+Calendar and Drive tiles, on the account row beside the initials circle
+(the name beside it is hidden; the circle shows two initials for a
+two-word name), same action (`LOGO_REPLACEMENTS`, `logosCss`,
 `desktop/brand/file-icons`, `desktop/brand/app-logos`). Not yet seen on
 a Mac.
 **The chat header is the agent's card, 23 September, later still**
