@@ -471,10 +471,17 @@ const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:var(--sime
  * sheet (its surface white, the choice card's options on white, one shadow
  * on the outermost surface only), and the person's bubble keeps its painted
  * blue under the sheet's edge, lift, air and type.
+ * Then the sidebar ("can we do the same thing about the message sidebar"):
+ * the selected agent is the white sheet with its lift and larger corners,
+ * and the search field and the initials circle are white with a hairline.
  */
 const AGENT_SHEET_CSS = () => `[data-theme*="light"] .sand-message.sand-1g0q52m:not(.sand-mvmkjj)${HI}{background:#fff;color:#1d1d1f;padding:10px 15px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04),0 12px 30px -16px rgba(20,30,60,.30);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
 [data-theme*="light"] .sand-message-block:has(>.sand-message.sand-1g0q52m:not(.sand-mvmkjj))${HI}{gap:6px}
 [data-theme*="light"] .sand-message.sand-mvmkjj${HI}{padding:10px 15px;box-shadow:inset 0 .5px 0 rgba(255,255,255,.28),0 0 0 .5px rgba(20,45,90,.18),0 1px 2px rgba(20,45,90,.08),0 12px 30px -16px rgba(20,50,110,.50);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
+[data-theme*="light"] .sand-agent-item[data-active="true"]${HI}:not(#\\#):not(#\\#){border-radius:14px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04),0 12px 30px -16px rgba(20,30,60,.30)}
+[data-theme*="light"] .sand-agent-item${HI}{border-radius:14px}
+[data-theme*="light"] .sand-agents-sidebar__search${HI}{background:#fff;border-radius:10px;box-shadow:0 0 0 .5px rgba(20,30,60,.09),0 1px 2px rgba(20,30,60,.05)}
+[data-theme*="light"] .sand-agents-sidebar__account .sand-kit-base-avatar${HI}{background:#fff;box-shadow:0 0 0 .5px rgba(20,30,60,.10),0 1px 2px rgba(20,30,60,.06)}
 [data-theme*="light"] .sand-message-card${HI}{--simeon-card-fill:#fff}
 [data-theme*="light"] .sand-message-card>:is(article,form,section)${HI},[data-theme*="light"] .sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card):not(.sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card) *)${HI}{background:#fff;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04),0 12px 30px -16px rgba(20,30,60,.30)}
 `;
@@ -894,7 +901,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
