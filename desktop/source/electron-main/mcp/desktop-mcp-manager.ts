@@ -135,6 +135,7 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
     rootDir: vendorRoot,
     fallback: accountBackendMcpExec,
     canStartAuth: true,
+    getServerAccessToken: () => accountMcpDeps.getAccessToken(),
     syncStore: pullBoxVendorStore,
     ...(options.onVendorCredentialChanged == null ? {} : { onCredentialChanged: options.onVendorCredentialChanged }),
     log,

@@ -64,6 +64,7 @@ from .auth import (
     get_proxy_caller,
 )
 from .capabilities import router as capabilities_router
+from .apps import router as apps_router
 from .composio import forward as composio_forward
 
 # Straight from the price list rather than through `service`, which
@@ -1354,6 +1355,10 @@ async def proxy_speech(
 # like the model calls. Included before the catch-all for the same
 # reason Composio is declared before it.
 router.include_router(capabilities_router)
+
+# Apps under Simeon's own name (`apps.py`): each app an MCP server of ours,
+# the sign-in link, status and disconnect; the provider behind them never named.
+router.include_router(apps_router)
 
 
 # Apps through Composio: the app's six calls, forwarded with Claidor's

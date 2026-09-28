@@ -1059,6 +1059,22 @@ a real widget (a prompt and two or more distinct labels) is now sent right
 after the text as its own message (`followUpWidgetOf`), blank or padded ones
 still dropped. `tests/founder-test-2026-09-28.test.mjs`. Not yet run on a Mac.
 
+## The rest of the connectors are apps under Simeon's name (28 September 2026)
+
+"for the rest of the connectors, lets use composio. but i want to white label
+it." The eighteen "Coming soon" connectors and thirteen more are served by
+`server/polar/desktop/apps.py`: one MCP server of ours per app at
+`/desktop/api/apps/mcp/{toolkit}`, with the sign-in link, status and disconnect
+beside it, the provider's key on the server and its name scrubbed from every
+description, result and error. In the app each is a vendor connector with
+`appsToolkit` (`vendor-mcp/catalog.ts`), so the connect card, the agent's
+tools and the Mac↔box store are the code that already worked; the 21 vendor
+connectors are untouched and nothing is "Coming soon". The bearer is the
+account's own (the box's credential in the box). Google's consent screen still
+names the provider (its managed Google app, the founder's choice for now).
+**Needs `COMPOSIO_API_KEY` on Render.** `docs/product/apps-served.md` is the
+record. Not yet run against the live provider or on a Mac.
+
 ## The app-window demo (27 September 2026)
 
 `npm run demo` (after `npm run package`) serves today's patched window, the
