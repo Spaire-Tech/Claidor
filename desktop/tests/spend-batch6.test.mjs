@@ -27,7 +27,7 @@ async function loadCapabilityTools() {
   const outfile = path.join(temporary, "entry.mjs");
   await build({ entryPoints: [path.join(repoRoot, "source/host/extensions/inference/capability-tools.ts")], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);
-  return { module, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 test("the search call carries a client deadline and the server's searches count", async () => {

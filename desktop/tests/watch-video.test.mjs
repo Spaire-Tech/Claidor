@@ -28,7 +28,7 @@ async function load() {
   const outfile = path.join(temporary, "video.mjs");
   await build({ entryPoints: [path.join(repoRoot, "tests/fixtures/watch-video-entry.ts")], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent", external: ["electron", "jsonc-parser"], banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" } });
   const module = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);
-  return { module, dataDir: temporary, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, dataDir: temporary, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 const ENV_KEYS = ["SAND_DATA_ROOT", "SAND_BACKEND_URL", "SAND_VIDEO_SUBAGENT_SERVED", "SAND_CLAIDOR_VIDEO_MODEL"];

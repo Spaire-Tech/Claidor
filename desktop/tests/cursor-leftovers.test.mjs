@@ -28,7 +28,7 @@ async function load() {
   const outfile = path.join(temporary, "entry.mjs");
   await build({ entryPoints: [path.join(repoRoot, "tests/fixtures/cursor-leftovers-entry.ts")], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent", banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" } });
   const module = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);
-  return { module, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 test("an unpackaged run with no backend named goes to Simeon Labs, and Cursor's origin is still known to refuse", async () => {

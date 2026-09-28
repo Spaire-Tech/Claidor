@@ -27,7 +27,7 @@ async function loadMigration() {
   const outfile = path.join(temporary, "migration.mjs");
   await build({ entryPoints: [path.join(repoRoot, "source/electron-main/startup/startup-data-root-migration.ts")], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);
-  return { module, temporary, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, temporary, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 test("a packaged Simeon leaves Grok Bot's ~/.cursor/sand alone and takes ~/.caisra", async () => {

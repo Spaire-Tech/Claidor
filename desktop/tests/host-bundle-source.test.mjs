@@ -15,7 +15,7 @@ async function loadModule() {
   const output = path.join(temporary, "host-bundle-source.mjs");
   await build({ entryPoints: [sourcePath], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22" });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
-  return { module, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 test("host bundle source names no origin unless the operator sets one", async () => {
