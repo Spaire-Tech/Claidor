@@ -321,10 +321,12 @@ section[data-framer-name="Hero"] .framer-hy289i{display:none!important}
 /* The laptop hero scene. Outside it the pin and its sticky layer take no box of their own. */
 .sd-pin,.sd-sticky{display:contents}
 .sd-bleed,.sd-word{display:none}
-.sd-scrolly{--card-w:min(1079px,calc(100vw - 80px),calc((100vh - 100px) * 1.3272));--card-h:calc(var(--card-w) * .75347);--pin-top:calc(60px + (100vh - 60px - var(--card-h)) / 2)}
+.sd-scrolly{--card-w:min(1440px,calc(100vw - 64px),calc((100vh - 84px) * 1.68));--card-h:calc(var(--card-w) / 1.68);--pin-top:calc(60px + (100vh - 60px - var(--card-h)) / 2)}
 .sd-scrolly .sd-pin{display:block;width:100%;height:calc(var(--card-h) + 35vh)}
 .sd-scrolly .sd-sticky{display:flex;justify-content:center;position:sticky;top:var(--pin-top)}
-.sd-scrolly .framer-t7h7mm-container{max-width:var(--card-w)}
+/* The laptop card spans the page like Cursor's (the founder, 28 September 2026: "the screen
+   opens too small"), wider than the text column, and short enough to sit under the nav. */
+.sd-scrolly .framer-t7h7mm-container{width:var(--card-w)!important;height:var(--card-h)!important;max-width:none!important;aspect-ratio:auto!important;flex:none!important}
 .sd-scrolly .framer-gx3vnz,.sd-scrolly section[data-framer-name="Hero"] .framer-115oxcp{overflow:visible!important}
 /* Nothing here is repainted while scrolling: the painting stands still and two page-coloured
    curtains slide in over its sides (their inner edges carry the card's round corners), a fade
@@ -389,8 +391,10 @@ section[data-framer-name="Hero"] .framer-hy289i{display:none!important}
     -webkit-mask-image:linear-gradient(#0000 0,#000 9cqw);mask-image:linear-gradient(#0000 0,#000 9cqw)}
   .sd-m-feed{display:flex;flex-direction:column;gap:2.2cqw;padding:3cqw 0 2cqw}
   .sd-m-in,.sd-m-out{position:relative;max-width:88%;padding:2.6cqw 3.6cqw;border-radius:4.8cqw;font-size:3.9cqw;line-height:1.42}
-  .sd-m-in{align-self:flex-start;background:#e9e9eb}
-  .sd-m-out{align-self:flex-end;background:#255a93;color:#fff;margin:1.6cqw 0 2.4cqw}
+  /* The agent speaks on a white sheet, as in the app (AGENT_SHEET_CSS in router-renderer-patch.mjs). */
+  .sd-m-in{align-self:flex-start;background:#fff;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
+  .sd-m-out{align-self:flex-end;background:#255a93;color:#fff;margin:1.6cqw 0 2.4cqw;
+    box-shadow:inset 0 .5px 0 rgba(255,255,255,.28),0 0 0 .5px rgba(20,45,90,.18),0 1px 2px rgba(20,45,90,.08)}
   .sd-m-react{position:absolute;right:-1.4cqw;bottom:-3.6cqw;display:grid;place-items:center;width:7cqw;height:7cqw;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.18);font-size:3.6cqw;line-height:1}
   .sd-m-sys{align-self:center;display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:1.2cqw;margin:1.4cqw 0;font-size:3.3cqw;color:#8e8e93}
   .sd-m-sys b{font-weight:500;color:#1d1d1f}
@@ -398,7 +402,8 @@ section[data-framer-name="Hero"] .framer-hy289i{display:none!important}
   .sd-m-tag{display:inline-flex;align-items:center;gap:.8cqw;font-weight:500;vertical-align:middle;position:relative;top:-.1em}
   .sd-m-tag img{width:4.4cqw;height:4.4cqw;object-fit:contain}
   .sd-m-in .sd-app{font-size:.96em}
-  .sd-m-file{align-self:flex-start;display:flex;align-items:center;gap:2.4cqw;padding:2.4cqw 4cqw 2.4cqw 2.6cqw;border-radius:3.6cqw;background:#e9e9eb;font-size:3.7cqw}
+  .sd-m-file{align-self:flex-start;display:flex;align-items:center;gap:2.4cqw;padding:2.4cqw 4cqw 2.4cqw 2.6cqw;border-radius:3.6cqw;background:#fff;font-size:3.7cqw;
+    box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
   .sd-m-file img{width:7cqw;height:7cqw;object-fit:contain}
   .sd-m-compose{display:flex;align-items:center;gap:2.4cqw;margin:1cqw 3.6cqw 4cqw;padding:1.8cqw 1.8cqw 1.8cqw 2cqw;border-radius:99px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.09),0 2px 8px -4px rgba(0,0,0,.1)}
   .sd-m-plus{width:7cqw;height:7cqw;padding:1.3cqw;border-radius:50%;background:#f1f1f0;color:#6e6e73;box-sizing:border-box}
@@ -549,8 +554,9 @@ FIT = """<script>
     // Inset like Cursor's: the window floats on the painting with the picture showing all round.
     const side = Math.round(w * (phone ? 0.03 : 0.04)), top = Math.round(h * (phone ? 0.03 : 0.05)), bottom = Math.round(h * (phone ? 0.03 : 0.05));
     const fw = w - 2 * side, fh = h - top - bottom;
-    // Zoom: the app is laid out 880 px wide on a computer and 440 on a phone, then scaled to the window.
-    const s = fw / (phone ? 440 : 880);
+    // Zoom: the app is laid out 1150 px wide in the laptop scene (its card is wide and short), 880 on
+    // other computers and tablets, 440 on a phone, then scaled to the window.
+    const s = fw / (phone ? 440 : document.documentElement.classList.contains('sd-scrolly') ? 1150 : 880);
     const barH = Math.round(Math.max(22, 30 * s));
     px(frame, { left: side, top, width: fw, height: fh, borderRadius: Math.round(11 * Math.min(1.2, s)) });
     px(bar, { height: barH, fontSize: Math.max(11, 13 * Math.min(1.1, s)) });
@@ -866,7 +872,7 @@ def strip_dark(css):
     out.append(css[i:])
     return "".join(out)
 
-async def posters():
+async def posters(app_path):
     """Stills of the app's first screen, shown the moment the page opens while the live app loads.
     One per window shape FIT lays out: computer (880 wide), a narrow tablet (880, tall) and a phone (440)."""
     import functools, http.server, threading
@@ -881,11 +887,11 @@ async def posters():
             b = await p.chromium.launch(executable_path=exe, args=["--no-sandbox"])
             # "held" is the laptop scene's still: the app before its story starts, as the page holds it
             # until the window is up (demo-gate.js reads the iframe's data-hold through frameElement).
-            for name, w, h in (("wide", 880, 618), ("tall", 880, 1290), ("held", 880, 618)):
+            for name, w, h in (("wide", 880, 618), ("tall", 880, 1290), ("held", 1150, 638)):
                 pg = await b.new_page(viewport={"width": w, "height": h}, device_scale_factor=2)
                 if name == "held":
                     await pg.add_init_script("Object.defineProperty(window, 'frameElement', { get: () => ({ hasAttribute: () => true, removeAttribute() {} }) })")
-                await pg.goto(f"http://127.0.0.1:{srv.server_port}/app/index.html")
+                await pg.goto(f"http://127.0.0.1:{srv.server_port}/{app_path}/index.html")
                 # The same moment the page reveals the live app: its sidebar drawn and its fonts in.
                 await pg.wait_for_selector(".sand-agents-sidebar", state="attached")
                 await pg.evaluate("document.fonts.ready")
@@ -951,7 +957,21 @@ async def main():
     assert before in idx
     idx = idx.replace(before, before + 'html body .sand-agents-sidebar{background-color:var(--cursor-bg-chrome)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}')
     open(f"{OUT}/app/index.html", "w").write(idx)
-    await posters()
+    # The app lives under a folder named after its content (app/<digest>/), so a changed window is a
+    # new address: its files keep the same names from build to build (the patch rewrites them after
+    # Vite hashed them), and vercel.json keeps them a year, so a fixed path would serve an old app.
+    digest = hashlib.sha256()
+    for root, dirs, files in sorted(os.walk(f"{OUT}/app")):
+        dirs.sort()
+        for name in sorted(files):
+            full = os.path.join(root, name)
+            digest.update(os.path.relpath(full, f"{OUT}/app").encode()); digest.update(open(full, "rb").read())
+    app_path = f"app/{digest.hexdigest()[:12]}"
+    os.rename(f"{OUT}/app", f"{OUT}/app-staged"); os.makedirs(f"{OUT}/app"); os.rename(f"{OUT}/app-staged", f"{OUT}/{app_path}")
+    home = open(f"{OUT}/index.html", encoding="utf-8").read()
+    assert home.count('data-src="app/index.html"') == 1
+    open(f"{OUT}/index.html", "w", encoding="utf-8").write(home.replace('data-src="app/index.html"', f'data-src="{app_path}/index.html"'))
+    await posters(app_path)
     shutil.rmtree(TMP, ignore_errors=True)
     print("site written to", os.path.abspath(OUT))
 

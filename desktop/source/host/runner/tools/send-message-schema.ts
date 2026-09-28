@@ -85,6 +85,25 @@ export function stripFieldsOfOtherTypes(value: unknown): unknown {
   for (const { field, types } of TYPE_FIELDS) if (!types.includes(type as SendMessageType)) delete stripped[field];
   return stripped;
 }
+// A real question the model put on a text message (GPT-5.6 greets with
+// {"type":"text","content":"Hey…","widget":{"prompt":"What first?","options":[…]}}).
+// Grok Bot refused that call ("Re-send as separate SendMessage calls, one per
+// type"), which with GPT-5.6 looped; dropping it silently (above) lost every
+// first message's options (28 September 2026). So a widget that is really one,
+// a prompt and at least two distinct labelled options, is sent after the text
+// as its own message; blank or padded ones ("x" in every slot) are still dropped.
+export function followUpWidgetOf(input: unknown): unknown {
+  if (input == null || typeof input !== "object" || Array.isArray(input)) return undefined;
+  const record = input as { type?: unknown; widget?: unknown };
+  if (record.type !== "text" || widgetOrUndefined(record.widget) === undefined) return undefined;
+  const parsed = sandWidgetSchema.safeParse(record.widget);
+  if (!parsed.success) return undefined;
+  const widget = parsed.data as { prompt?: unknown; options?: readonly { label?: unknown }[] };
+  const prompt = typeof widget.prompt === "string" ? widget.prompt.trim() : "";
+  const labels = (widget.options ?? []).map((option) => (typeof option?.label === "string" ? option.label.trim() : ""));
+  const distinct = new Set(labels.filter((label) => label.length > 1).map((label) => label.toLowerCase()));
+  return prompt.length > 3 && distinct.size >= 2 && distinct.size === labels.length ? parsed.data : undefined;
+}
 export function refineSendMessage(value: SendMessageInput, env: NodeJS.ProcessEnv = process.env): SendMessageIssue[] {
   const issues: SendMessageIssue[] = [];
   if (value.type === "cursor-agent" && !isCloudAgentsServed(env)) issues.push({ path: ["type"], message: CLOUD_AGENTS_COMING_SOON_SENTENCE });

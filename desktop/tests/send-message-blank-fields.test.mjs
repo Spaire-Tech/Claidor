@@ -24,7 +24,7 @@ async function loadSchema() {
   const output = path.join(temporary, "schema.mjs");
   await build({ entryPoints: [path.join(repoRoot, "source/host/runner/tools/send-message-schema.ts")], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
-  return { module, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 const BLANK_WIDGET = { prompt: "", helpText: "", options: [{ label: "", value: "", description: "", style: "default" }], allowCustom: false, dismissOnMoveOn: false };

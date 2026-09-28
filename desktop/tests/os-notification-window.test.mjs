@@ -27,7 +27,7 @@ before(async () => {
 });
 
 after(async () => {
-  if (temporary) await rm(temporary, { recursive: true, force: true });
+  if (temporary) await rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 });
 
 test("an agent event after the main window was closed does not throw 'Object has been destroyed'", () => {

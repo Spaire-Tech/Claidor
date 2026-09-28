@@ -21,7 +21,7 @@ async function loadAbsence() {
     target: "node22",
   });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
-  return { module, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 test("unimplemented and missing automation RPCs are treated as an absent cloud service", async () => {

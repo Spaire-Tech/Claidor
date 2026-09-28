@@ -21,7 +21,7 @@ async function load(entry, name) {
     target: "node22",
   });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
-  return { module, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 const alice = { id: "a", name: "Alice", description: "ops" };
@@ -29,46 +29,25 @@ const bob = { id: "b", name: "Bob", description: "design" };
 const cara = { id: "c", name: "Cara", description: "legal" };
 const members = [alice, bob, cara];
 
-test("a plain group text picks one speaker, not the whole room", async () => {
+test("a group text reaches every member, Grok Bot's rounds (restored 28 September 2026)", async () => {
+  // 19 September (f278ec79) cut rooms to one Luna speaker with no tools and
+  // the member's job description as its only identity; every member then
+  // answered "hi" by reciting that description. Grok Bot's own room is back.
   const loaded = await load("source/host/groups/group-chat.ts", "group-chat");
   try {
-    const {
-      GROUP_MAX_ROUNDS,
-      buildGroupMemberSystemPrompt,
-      buildGroupTurnPrompt,
-      nextUnmentionedSpeaker,
-      resolveResponders,
-    } = loaded.module;
+    const { GROUP_MAX_ROUNDS, buildGroupMemberSystemPrompt, buildGroupTurnPrompt, resolveResponders } = loaded.module;
     const hello = [{ speaker: { kind: "user", name: "Bass" }, content: "hello everyone, what's the plan" }];
-    assert.equal(GROUP_MAX_ROUNDS, 2);
-    assert.deepEqual(resolveResponders(members, hello).map((member) => member.id), ["a"]);
-    assert.equal(nextUnmentionedSpeaker(members, hello)?.id, "a");
-    assert.equal(
-      nextUnmentionedSpeaker(members, [...hello, { speaker: { kind: "member", id: "a", name: "Alice" }, content: "hey" }])?.id,
-      "b",
-    );
+    assert.equal(GROUP_MAX_ROUNDS, 3);
+    assert.deepEqual(resolveResponders(members, hello).map((member) => member.id), ["a", "b", "c"]);
     assert.deepEqual(
       resolveResponders(members, [{ speaker: { kind: "user" }, content: "need @bob on this" }]).map((member) => member.id),
       ["b"],
     );
-    assert.deepEqual(
-      resolveResponders(members, [{ speaker: { kind: "user" }, content: "@everyone check in" }]).map((member) => member.id),
-      ["a", "b", "c"],
-    );
-
     const system = buildGroupMemberSystemPrompt(alice, { name: "Week", description: "the weekly room" }, [bob, cara]);
-    const turn = buildGroupTurnPrompt({
-      member: alice,
-      group: { name: "Week", description: "the weekly room" },
-      peers: [bob, cara],
-      newMessages: hello,
-    });
-    assert.match(system, /This is a conversation, not a work turn/);
-    assert.match(system, /No tools/);
-    assert.doesNotMatch(system, /full toolkit|do the work first|SendMessage/i);
-    assert.match(turn, /one short message/);
-    assert.doesNotMatch(turn, /full toolkit|SendMessage/i);
-    assert.ok(system.length + turn.length < 2_000, `group prompts were ${system.length + turn.length} characters`);
+    const turn = buildGroupTurnPrompt({ member: alice, group: { name: "Week", description: "the weekly room" }, peers: [bob, cara], newMessages: hello });
+    assert.match(system, /SendMessage/);
+    assert.match(system, /full toolkit/);
+    assert.match(turn, /single SendMessage/);
   } finally {
     await loaded.dispose();
   }
@@ -122,17 +101,12 @@ test("the turn's model id reaches the executor through the owner input (24 Septe
   assert.match(composition, /onRequestId: requestIdForwarder\(hooks, "agent"\),\n(?:\s*\/\/.*\n)*\s*modelId: staticModelId,/);
 });
 
-test("local group turns are a cheap talk-only Luna call, not the host runner", async () => {
+test("local group turns run each member's own agent runner, as Grok Bot does", async () => {
   const glue = await readFile(path.join(repoRoot, "source/host/extensions/transcript/group-chat-glue.ts"), "utf8");
   const orchestrator = await readFile(path.join(repoRoot, "source/host/extensions/transcript/group-chat-orchestrator.ts"), "utf8");
-  const providers = await readFile(path.join(repoRoot, "source/host/extensions/inference/provider-session.ts"), "utf8");
-  assert.match(glue, /runRoutedProviderText/);
-  assert.match(glue, /configuredClaidorCheapModel\(\)/);
-  assert.match(glue, /cheap: true/);
-  assert.doesNotMatch(glue, /createGroupMemberRunner/);
-  assert.doesNotMatch(glue, /executeTool|maxSteps/);
+  assert.match(glue, /pinMemberSessionForGroupTurn/);
+  assert.match(glue, /createGroupMemberRunner/);
+  assert.doesNotMatch(glue, /runRoutedProviderText/);
   assert.match(orchestrator, /GROUP_MAX_ROUNDS/);
   assert.match(orchestrator, /resolveResponders/);
-  assert.match(providers, /DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-5\.6-luna"/);
-  assert.match(providers, /CLAIDOR_WORKING_CONTEXT_TOKENS/);
 });

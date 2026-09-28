@@ -12,7 +12,7 @@ async function load() {
   const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-user-data-rename-"));
   const output = path.join(temporary, "bootstrap.mjs");
   await build({ entryPoints: [path.join(repoRoot, "source/electron-main/startup/desktop-user-data-bootstrap.ts")], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
-  return { module: await import(`${pathToFileURL(output).href}?${Date.now()}`), dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module: await import(`${pathToFileURL(output).href}?${Date.now()}`), dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 test("the first launch as Simeon copies the Grok Bot user-data folder once, caches left behind", async () => {

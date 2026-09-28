@@ -21,7 +21,7 @@ async function loadModule(entry, name) {
   const output = path.join(temporary, `${name}.mjs`);
   await build({ entryPoints: [path.join(repoRoot, entry)], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
-  return { module, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 // The message types the pinned renderer's send-message switch draws (PAe / jEn in the 0.18.0 chunk).
@@ -90,7 +90,7 @@ test("nobody types: a send is refused", async (t) => {
 
 test("the in-page bridge bundles for the browser, and leaves the composer and the side doors inert", async (t) => {
   const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-demo-bridge-"));
-  t.after(() => rm(temporary, { recursive: true, force: true }));
+  t.after(() => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
   const result = await build({
     entryPoints: [path.join(repoRoot, "demo/bridge.ts")], bundle: true, format: "iife", platform: "browser", target: "es2022",
     outfile: path.join(temporary, "demo-bridge.js"), define: { "process.platform": '"darwin"', "process.env": "{}" }, logLevel: "silent", metafile: true,

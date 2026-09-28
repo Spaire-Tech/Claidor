@@ -6,7 +6,7 @@ export const SAND_AUTO_REVIEW_HOST_GENERATION = randomUUID();
 
 export type SandAutoReviewMode = "off" | "shadow" | "enforce";
 export type SandAutoReviewSurface = "hostShell" | "boxShell" | "mcp" | "computer" | "automationWrite" | "cloudAgent" | "subagentLaunch" | string;
-export type SandAutoReviewResolution = "approved" | "denied";
+export type SandAutoReviewResolution = "approved" | "always" | "denied";
 export type SandAutoReviewExpiryCause = "ttl" | "cancelled" | "user_redirect" | "settings_change" | "session_end" | "quiesce" | string;
 export type SandAutoReviewExpiryPolicy = "park" | "ttl";
 

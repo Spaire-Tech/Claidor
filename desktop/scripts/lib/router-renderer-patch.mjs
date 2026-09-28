@@ -192,6 +192,28 @@ export function patchOriginalShapes(source) {
 }
 
 /**
+ * An agent's chat always opens as a chat, 28 September 2026 ("it starts like
+ * this … the composer is different. i noticed the app sometimes start like
+ * this too. please fix."). The window counted a chat active only once it had
+ * entries or a run (`z=B||D.isRunning||F||R||q`), so an agent with nothing
+ * said yet drew the empty hero instead: the shell marked data-empty, the
+ * composer in the middle of the pane and expanded to 136 px, jumping to the
+ * docked 44 px bar at the first message. A chat now counts as active whenever
+ * an agent is open (`e`, the open agent's id, as `isChatInteractive` reads
+ * it), so it is the docked chat from the start; the new-chat and new-agent
+ * panes are untouched.
+ */
+export const CHAT_LAYOUT_REPLACEMENTS = Object.freeze([
+  ["chat-active-when-open", ",z=B||D.isRunning||F||R||q,V=e!=null&&!d,", ",z=e!=null||B||D.isRunning||F||R||q,V=e!=null&&!d,"],
+]);
+
+export function patchOriginalChatLayout(source) {
+  let out = source;
+  for (const [label, before, after] of CHAT_LAYOUT_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+/**
  * Onboarding copy, 27 September 2026 (the founder's words): the sign-in
  * tagline, the sentence typed into the composer on the "meet" screen, and
  * the three example teammates' names. Their ids (`invoice-chaser`,
@@ -434,6 +456,57 @@ const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:var(--sime
 .sand-widget-option--selected [title="Selected"]${HI}{display:none}
 `;
 
+/**
+ * Two things for both themes (the founder, 28 September 2026: "also the blue
+ * color for toggles", "in dark mode the connectors logo are white. please make
+ * it dark"): a switch that is on is the chat's blue instead of the renderer's
+ * near-black, and in the dark theme the Gmail, Calendar and Drive tiles beside
+ * "Connect apps" sit on a dark tile with a faint edge instead of white.
+ */
+const SWITCH_AND_TILES_CSS = () => `[role=switch][aria-checked="true"]${HI}:not(#\\#){background-color:light-dark(${USER_BUBBLE_LIGHT},#3a78b8)}
+[data-theme*="dark"] .simeon-connect-apps__logos>i${HI}{background-color:#2c2c2e;box-shadow:0 0 0 1px rgba(255,255,255,.10),0 1px 2px rgba(0,0,0,.45)}
+`;
+
+/**
+ * The agent's messages speak like the permission sheet on the website
+ * (the founder, 28 September 2026: "you really did a great job on Stay in
+ * control … can you try to bring this style everywhere the ai talk. lets try
+ * first in the chat, the ai messages"): a white sheet instead of the Messages
+ * grey, a hairline edge, a soft deep shadow that lifts it off the page, more
+ * air inside, Apple's system face at regular weight in near-black. Only the
+ * agent's text bubbles (`.sand-message` without the user bubble's class);
+ * the dark theme keeps the renderer's own bubble. No blur: a backdrop filter
+ * on every bubble would cost frames on scroll.
+ * The same day, "do the cards. and bring this design to the blue the user
+ * speak. but it stays in blue": every card in the chat is the same white
+ * sheet (its surface white, the choice card's options on white, one shadow
+ * on the outermost surface only), and the person's bubble keeps its painted
+ * blue under the sheet's edge, lift, air and type.
+ * Then the sidebar ("can we do the same thing about the message sidebar"):
+ * the selected agent is the white sheet with its lift and larger corners,
+ * and the search field is white with a hairline. The initials circle stays
+ * the renderer's own, as it has been since the glass came off.
+ */
+const AGENT_SHEET_CSS = () => `[data-theme*="light"] .sand-message.sand-1g0q52m:not(.sand-mvmkjj)${HI}{background:#fff;color:#1d1d1f;padding:10px 15px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
+[data-theme*="light"] .sand-message-block:has(>.sand-message.sand-1g0q52m:not(.sand-mvmkjj))${HI}{gap:6px}
+[data-theme*="light"] .sand-message.sand-mvmkjj${HI}:not(#\\#){padding:10px 15px;box-shadow:inset 0 1px 0 rgba(255,255,255,.30),inset 0 0 0 .5px rgba(255,255,255,.12),0 0 0 .5px rgba(20,45,90,.24),0 1px 2px rgba(20,45,90,.10);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
+[data-theme*="light"] .sand-agent-item[data-active="true"]${HI}:not(#\\#):not(#\\#){border-radius:14px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
+[data-theme*="light"] .sand-agent-item${HI}{border-radius:14px}
+[data-theme*="light"] .sand-agents-sidebar__search${HI}{background:#fff;border-radius:10px;box-shadow:0 0 0 .5px rgba(20,30,60,.09),0 1px 2px rgba(20,30,60,.05)}
+[data-theme*="light"] .sand-message-card${HI}{--simeon-card-fill:#fff}
+[data-theme*="light"] :is(.sand-settings-dialog,.sand-plugins-dialog)${HI}{background:#f5f5f7;box-shadow:0 0 0 .5px rgba(20,30,60,.10),0 30px 80px -24px rgba(20,30,60,.45)}
+[data-theme*="light"] .sand-settings-nav${HI}{background:transparent;box-shadow:inset -.5px 0 0 rgba(20,30,60,.10)}
+[data-theme*="light"] .sand-settings-nav__item:not(.sand-jbqb8w)${HI}{background:#fff;border-radius:10px;box-shadow: 0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
+[data-theme*="light"] .sand-settings-pane section>div.sand-1b8i4yy${HI}{background:#fff;border-radius:14px;box-shadow: 0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
+[data-theme*="light"] .sand-settings-pane :is(textarea,input:not([type=checkbox]):not([type=radio]))${HI}{background:#fff;box-shadow:0 0 0 .5px rgba(20,30,60,.14)}
+[data-theme*="light"] .sand-plugins-dialog [role=tab][aria-selected="true"]${HI}{background:#fff;border-radius:9px;box-shadow:0 0 0 .5px rgba(20,30,60,.09),0 1px 2px rgba(20,30,60,.06)}
+[data-theme*="light"] .sand-plugins__search${HI}{background:#fff;border-radius:10px;box-shadow:0 0 0 .5px rgba(20,30,60,.09),0 1px 2px rgba(20,30,60,.05)}
+[data-theme*="light"] .sand-plugins-row${HI}{background:#fff;border-radius:14px;padding:10px 14px;box-shadow: 0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
+[data-theme*="light"] .sand-plugins__grid${HI}{gap:12px}
+[data-theme*="light"] :is(.sand-plugins-detail,.sand-plugins-dialog) .sand-connector-card${HI}{background:#fff;border-color:transparent;border-radius:14px;box-shadow: 0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
+[data-theme*="light"] .sand-message-card>:is(article,form,section)${HI},[data-theme*="light"] .sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card):not(.sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card) *)${HI}{background:#fff;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
+`;
+
 const GREY_CARD = [
   "background:var(--simeon-card-fill)",
   "border-color:transparent",
@@ -446,7 +519,7 @@ export const cardBlueCss = () => `${CARD_BLUE_MARKER} (27 September 2026). */
 .sand-message-card{--sand-fill-bubble-agent:transparent}
 .sand-message-card>:is(article,form,section)${HI},.sand-message-card :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card)${HI}{${GREY_CARD}}
 .sand-message-card .sand-tool-icon[style*="background-color: rgb(255, 255, 255)"]${HI}{box-shadow:inset 0 0 0 1px var(--sand-border-default)}
-${CHOICE_RADIO_CSS()}.sand-agent-item[data-active="true"]${HI}:not(#\\#){background:light-dark(#fff,rgba(255,255,255,.12));box-shadow:0 0 0 .5px light-dark(rgba(20,20,20,.08),rgba(255,255,255,.08)),0 1px 2px light-dark(rgba(20,20,20,.06),rgba(0,0,0,.3))}
+${CHOICE_RADIO_CSS()}${AGENT_SHEET_CSS()}${SWITCH_AND_TILES_CSS()}.sand-agent-item[data-active="true"]${HI}:not(#\\#){background:light-dark(#fff,rgba(255,255,255,.12));box-shadow:0 0 0 .5px light-dark(rgba(20,20,20,.08),rgba(255,255,255,.08)),0 1px 2px light-dark(rgba(20,20,20,.06),rgba(0,0,0,.3))}
 .sand-chat-header__name${HI}:not(#\\#){background:linear-gradient(180deg,light-dark(rgba(255,255,255,.92),rgba(255,255,255,.18)),light-dark(rgba(255,255,255,.72),rgba(255,255,255,.08)));-webkit-backdrop-filter:blur(20px) saturate(1.8);backdrop-filter:blur(20px) saturate(1.8);border:.5px solid light-dark(rgba(255,255,255,.9),rgba(255,255,255,.18));box-shadow:inset 0 1px 0 light-dark(#fff,rgba(255,255,255,.22)),0 0 0 .5px light-dark(rgba(20,20,40,.1),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(20,20,40,.14),rgba(0,0,0,.5))}
 .sand-prompt-send${HI}:not(#\\#){background-color:light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK});color:#fff}
 .sand-prompt-send${HI}:not(#\\#):hover:not(:disabled){background-color:light-dark(#1e4d80,#2a62a0)}
@@ -767,7 +840,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!COPY_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer onboarding copy anchors are not all in the mark chunk.");
   if (!LOGO_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer file-kind and Plugins-button anchors are not all in the mark chunk.");
   const logoAssets = await readLogoAssets();
-  const markPatched = patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions));
+  const markPatched = patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions)));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -849,7 +922,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

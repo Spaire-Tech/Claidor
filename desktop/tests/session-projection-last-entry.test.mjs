@@ -22,7 +22,7 @@ async function loadProjection() {
   const output = path.join(temporary, "projection.mjs");
   await build({ entryPoints: [path.join(repoRoot, "source/host/extensions/session/session-projection.ts")], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
-  return { module, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 // What the renderer does with the entry (its `Yun`/`Zun`, verbatim in shape).

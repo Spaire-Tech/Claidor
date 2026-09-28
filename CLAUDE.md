@@ -709,6 +709,36 @@ frosted composer, menus, pills and name pill are gone. `npm run demo`
 paints a neutral grey where the desktop would be (`LOGO_REPLACEMENTS`, `logosCss`,
 `desktop/brand/file-icons`, `desktop/brand/app-logos`). Not yet seen on
 a Mac.
+**The chat speaks on sheets, 28 September 2026** (the founder, after the
+website's "Stay in control" permission sheet: "bring this style everywhere
+the ai talk", then "do the cards. and bring this design to the blue the user
+speak. but it stays in blue", then "the message sidebar"): in the light
+theme the agent's text bubbles, every card and the selected sidebar row are
+white sheets (a hairline edge and a soft deep shadow, no blur, so nothing
+costs a frame on scroll), the person's bubble keeps its painted blue under
+the same edge and lift, and the search field is white with a hairline (the
+initials circle stays the renderer's own). The Messages grey above is superseded in light; dark keeps
+the renderer's own. `AGENT_SHEET_CSS` in `router-renderer-patch.mjs`
+(features `agent-message-sheet`, `cards-sheet`, `user-bubble-sheet`,
+`sidebar-sheet`); the same patch gives an agent with no messages the docked
+chat instead of the centred empty hero (`chat-active-when-open`). Seen in
+the website demo, built from the same patched window; not yet on a Mac.
+**Later the same day** ("bring the whole design in settings and connectors
+page. also the blue color for toggles also zoom in the app a little bit"):
+the person's blue bubble takes the sheet's padding (the earlier rule's
+padding never applied) and a deeper edge and lift; in light, Settings and
+the Plugins (Connect apps) dialog are a #f5f5f7 page with every settings
+group, plugin row, the selected nav item and tab, and the search field as
+white sheets; a switch that is on is the chat's blue in both themes; in dark,
+the Gmail/Calendar/Drive tiles beside "Connect apps" are dark
+(`SWITCH_AND_TILES_CSS`). The window opened at zoom 1.1 for one build and is
+back at 1.0 ("revert the zoom in"). Also reverted the same day: the long soft
+shadow under the chat's bubbles and cards ("the chats have a dark shadow below
+them and im not a fan"); they keep the hairline edge and a 1 px lift, in the
+app and on the website's phone still. Then the same for the settings groups, the plugin
+rows, the selected settings item and the selected sidebar row ("remove the
+shadow in settings and connectors too. as well as in the sidebar message"). Seen headless in the demo; not yet on a
+Mac.
 **The chat header is the agent's card, 23 September, later still**
 ("the name of the agent are up top, left. i want to middle it … like
 muse … remove the line"): a CSS block appended to the pinned stylesheet
@@ -1004,6 +1034,30 @@ composition), and the gateway write validates the bytes.
 still fails shows `edge/handler-failed: <the server's sentence>`; the
 first thing to check is `CLAIDOR_OPENAI_API_KEY` on Render. The Mac
 keeps no log for this path. Not yet run on a Mac.
+
+## Three things the founder found testing the app (28 September 2026)
+
+**Group chats are Grok Bot's again.** On 19 September (`f278ec79`) a group
+text became one Luna call with no tools, for one speaker per round, whose only
+identity was the member's profile description ("Your persona: …"); every
+member then answered "hi" by reciting that description, and repeated it,
+because a one-shot call remembers nothing. Restored: each member runs its own
+agent runner in its own session (`pinMemberSessionForGroupTurn`,
+`createGroupMemberRunner`), speaks through SendMessage, every member answers
+a plain message for up to three rounds (`GROUP_MAX_ROUNDS`), @-mentions narrow
+it. Costs more than the Luna call; bounded by `GROUP_MAX_MEMBER_TURNS` (10).
+**A group's avatar** was one mark keyed on the group's id: no roster row ever
+said `isGroup` (the reconstruction's own gap); `buildSummary` now reads the
+group's `group.json` (`session-summaries.ts`).
+**"Always allow" came back "Allowed once"**: the pinned auto-review card turns
+Always into once whenever the block carries no `proposedAllowRule`, and our
+classifier made the rule optional. The prompt now requires it and
+`fallbackAllowRule` fills one from the command when the model omits it.
+**A new agent's first message had no options**: GPT-5.6 puts the question
+widget on the text message and `stripFieldsOfOtherTypes` dropped it silently;
+a real widget (a prompt and two or more distinct labels) is now sent right
+after the text as its own message (`followUpWidgetOf`), blank or padded ones
+still dropped. `tests/founder-test-2026-09-28.test.mjs`. Not yet run on a Mac.
 
 ## The app-window demo (27 September 2026)
 

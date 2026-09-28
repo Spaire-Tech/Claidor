@@ -21,7 +21,7 @@ async function loadModule(entry = "source/shared/node/cursor-backend/backend-mcp
     target: "node22",
   });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
-  return { module, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 test("MCP discovery accepts both routed JSON and native generated values", async () => {

@@ -22,7 +22,7 @@ async function load() {
   const outfile = path.join(temporary, "entry.mjs");
   await build({ entryPoints: [path.join(repoRoot, "source/host/runner/workflow-agent-skills.ts")], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);
-  return { module, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 const workflow = (over) => ({ id: "w", name: "Weekly digest", description: "How to write the digest.", body: "# Digest", trigger: null, source: "workflow", sourceRef: null, isEnabledForAgent: true, createdAt: 1, filePath: "/home/box/sand-data/workflows/weekly-digest/SKILL.md", ...over });
