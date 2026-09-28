@@ -504,7 +504,7 @@ class Settings(BaseSettings):
 
     # Discord
     FAVICON_URL: str = "https://raw.githubusercontent.com/Spaire-Tech/Claidor/main/clients/apps/web/public/apple-touch-icon.png"
-    THUMBNAIL_URL: str = "https://raw.githubusercontent.com/polarsource/polar/4fd899222e200ca70982f437039f549b7a822ecc/clients/apps/web/public/email-logo-dark.png"
+    THUMBNAIL_URL: str = "https://raw.githubusercontent.com/Spaire-Tech/Claidor/main/clients/apps/web/public/apple-touch-icon.png"
 
     # Posthog
     POSTHOG_PROJECT_API_KEY: str = ""

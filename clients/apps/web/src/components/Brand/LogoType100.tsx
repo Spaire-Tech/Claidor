@@ -1,12 +1,7 @@
+import LogoType from './LogoType'
+
 const LogoType100 = () => {
-  return (
-    <img
-      src="/assets/logotype-claidor.png"
-      alt="Simeon"
-      width={282}
-      height={100}
-    />
-  )
+  return <LogoType className="h-[100px]" />
 }
 
 export default LogoType100
