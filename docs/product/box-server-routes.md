@@ -768,3 +768,25 @@ The two `Detect changes` failures on the same head are the known dead-runner
 signature, verified again here rather than assumed: `runner_id: 0`, empty
 `runner_name`, `created_at == started_at` (06:06:57), dead in 2–3 s, `Client`
 and `Server`. Nothing re-run: a re-run cannot clear a daily quota.
+
+**Correction to §16, same morning.** I wrote that the fix was an `ignoreCommand`
+on `clients/apps/web/vercel.json`. On the next push `simeon-website` was
+rate-limited too, **despite already having one**. That does not prove the
+ignore step fails to help — once the account is over quota every deployment is
+refused before the ignore command can run, so the observation cannot separate
+the two cases — but it does mean I have **not** established that an ignored
+build avoids counting against `api-deployments-free-per-day`. Vercel's
+git-settings page does not say; I stopped looking rather than spend more on a
+fix I do not own.
+
+So the accurate claim is narrower than the one I first made: the missing
+`ignoreCommand` certainly means those two projects *build* on every push
+whatever changed, which is wasteful; whether that is what exhausted the daily
+*deployment* count is unverified, and whoever picks it up should confirm
+against Vercel's limits documentation before treating it as the remedy. The
+PR comment (`5864447766`) carries the same correction, edited in place rather
+than posted twice.
+
+*(This paragraph is committed but deliberately not pushed on its own: no merge
+was due, and each push costs three more refused deployment attempts. It rides
+the next real push. The durable copy is the PR comment.)*
