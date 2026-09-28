@@ -1087,6 +1087,16 @@ account's own (the box's credential in the box). Google's consent screen still
 names the provider (its managed Google app, the founder's choice for now).
 **Needs `COMPOSIO_API_KEY` on Render.** `docs/product/apps-served.md` is the
 record. Not yet run against the live provider or on a Mac.
+**Withdrawn from the app the same evening.** The founder: "you've clearly
+messed up the connectors completely … cant sign in in composio, it takes me
+nowhere." Measured: `api.simeonlabs.com` answered 404 to every new route
+(Render had not deployed #234; routes of 25 September answer), so every app
+card asked a server that did not have the route. Why the vendor connectors
+stopped for the founder is **not established**: the diff touches no vendor
+path and their tests pass, and no log has been read. The app side of #234 is
+reverted byte for byte (catalog, backend, the three wiring sites, tests); the
+server module stays, unused until deployed. Re-land only after the routes
+answer on `api.simeonlabs.com` and one app is signed in end to end.
 
 ## The app-window demo (27 September 2026)
 
