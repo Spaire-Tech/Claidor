@@ -1071,6 +1071,20 @@ dropped Google's `name` at sign-in and the profile route sent only an e-mail
 nickname; Google's name is now kept in `user.meta` and served as `name`
 (`integrations/google/service.py`, `desktop/service.py`), from the next Google
 sign-in.
+**Then the turns after it, the same night.** The card came; the next turn
+("Stay organized") was a prose question and no connector ("grok bot will
+always give you more cards, suggest connectors"). The cue stays in the
+conversation state after the hidden first turn (`turn-settle.ts` drops nothing
+for `hidden`), so the model still held "offer any choice as a question widget"
+and "propose it with ProposeConnector"; GPT-5.6 did neither. One more sentence
+spells it out for the getting-started turns: every question a widget with
+options and `allowCustom`, never prose; once an answer shows where the work
+lives, SearchPlugins, then two or three ProposeConnector cards in the same turn.
+**Found on the way:** ProposeConnector refuses a Coming soon plugin, and the
+services a "stay organized" answer points at (Google Calendar, Gmail, Todoist,
+Google Tasks) are apps behind Simeon Labs' server, Coming soon until it is
+deployed with `COMPOSIO_API_KEY`; until then only the vendor connectors
+(Notion, Linear, …) can be proposed.
 
 ## The rest of the connectors are apps under Simeon's name (28 September 2026)
 

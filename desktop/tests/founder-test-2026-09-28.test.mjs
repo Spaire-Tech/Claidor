@@ -93,3 +93,16 @@ test("a new agent's first turn is Grok Bot's opening: a hello, then a question c
     await dispose();
   }
 });
+
+test("getting started keeps asking with cards and proposes connectors on the turns after the first", async () => {
+  const { module, dispose } = await load("source/shared/agents/onboarding.ts", "onboarding-next-turns");
+  try {
+    const prompt = module.SAND_ONBOARDING_KICKSTART_PROMPT;
+    assert.match(prompt, /Getting started carries on the same way on your next turns/);
+    assert.match(prompt, /never a question written in prose/);
+    assert.match(prompt, /check what's connected with SearchPlugins/);
+    assert.match(prompt, /propose the two or three that fit with ProposeConnector/);
+  } finally {
+    await dispose();
+  }
+});
