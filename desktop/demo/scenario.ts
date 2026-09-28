@@ -73,6 +73,7 @@ export const TRANSCRIPTS: Record<string, Entry[]> = {
     says("t0s0", 66, "On it. I'll check reviews, prices and whether they actually sell day passes, not just monthly desks."),
     says("t0s1", 14, "Done. Five places sell day passes; two stand out:\n\n**Jokkolabs Dakar**: 8,000 FCFA a day, fast fibre, quiet floor upstairs.\n**Impact Hub Dakar**: 12,000 FCFA, meeting rooms by the hour.\n\nFull comparison with sources is in the report."),
     card("t0s2", 14, { type: "attachment", url: "file:///home/box/reports/Dakar%20coworking%20day%20passes.pdf" }),
+    card("t0s2b", 14, { type: "attachment", url: "file:///home/box/reports/Dakar%20trip%20notes.md" }),
     card("t0s3", 13, {
       type: "widget",
       widget: {
@@ -101,6 +102,7 @@ export const TRANSCRIPTS: Record<string, Entry[]> = {
         body: "Hi Awa,\n\nA quick reminder that invoice #1042 (1,900 €, due 30 September) is still open. I've attached it again in case it got buried.\n\nThanks a lot,\nBass",
       },
     }),
+    card("t0s5", 88, { type: "attachment", url: "file:///home/box/drafts/Reminder%20template.docx" }),
     you("t1u", 40, "Looks good. Also keep Notion in sync, I track them there."),
     card("t1s0", 39, { type: "connectors", connectors: ["Notion"] }),
     says("t1s1", 34, "Notion's connected. I'll mark each invoice paid in your Finance tracker as the money comes in, and chase again on Friday if anyone hasn't paid."),
@@ -108,6 +110,8 @@ export const TRANSCRIPTS: Record<string, Entry[]> = {
   ledger: [
     you("t0u", 200, "How much did we spend on software in September?"),
     says("t0s0", 186, "**$2,340** across 14 subscriptions, up 9% on August. The jump is Figma (+3 seats) and a second Vercel project.\n\nTwo tools nobody opened this month: **Loom** and **Miro**."),
+    card("t0s0b", 186, { type: "attachment", url: "file:///home/box/finance/September%20software%20spend.xlsx" }),
+    card("t0s0c", 185, { type: "attachment", url: "file:///home/box/finance/Spend%20review%20for%20the%20board.pptx" }),
     card("t0s1", 181, {
       type: "auto-review-approval",
       approval: {

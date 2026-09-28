@@ -1,0 +1,506 @@
+[
+ {
+  "name": "Gmail",
+  "key": "gmail",
+  "logo": "gmail.webp",
+  "color": "#EA4335",
+  "mono": false
+ },
+ {
+  "name": "Google Calendar",
+  "key": "google-calendar",
+  "logo": "google-calendar.webp",
+  "color": "#4285F4",
+  "mono": false
+ },
+ {
+  "name": "Google Drive",
+  "key": "google-drive",
+  "logo": "google-drive.svg",
+  "color": "#1FA463",
+  "mono": false
+ },
+ {
+  "name": "Google Docs",
+  "key": "google-docs",
+  "logo": "google-docs.svg",
+  "color": "#4285F4",
+  "mono": false
+ },
+ {
+  "name": "Google Sheets",
+  "key": "google-sheets",
+  "logo": "google-sheets.webp",
+  "color": "#0F9D58",
+  "mono": false
+ },
+ {
+  "name": "Google Slides",
+  "key": "google-slides",
+  "logo": "google-slides.webp",
+  "color": "#F4B400",
+  "mono": false
+ },
+ {
+  "name": "Google Meet",
+  "key": "google-meet",
+  "logo": "google-meet.webp",
+  "color": "#00897B",
+  "mono": false
+ },
+ {
+  "name": "Outlook",
+  "key": "outlook",
+  "logo": "outlook.webp",
+  "color": "#0078D4",
+  "mono": false
+ },
+ {
+  "name": "Zoom",
+  "key": "zoom",
+  "logo": "zoom.webp",
+  "color": "#0B5CFF",
+  "mono": false
+ },
+ {
+  "name": "Mailchimp",
+  "key": "mailchimp",
+  "logo": "mailchimp.svg",
+  "color": "#241C15",
+  "mono": false
+ },
+ {
+  "name": "Word",
+  "key": "word",
+  "logo": "word.webp",
+  "color": "#185ABD",
+  "mono": false
+ },
+ {
+  "name": "Excel",
+  "key": "excel",
+  "logo": "excel.webp",
+  "color": "#107C41",
+  "mono": false
+ },
+ {
+  "name": "PowerPoint",
+  "key": "powerpoint",
+  "logo": "powerpoint.webp",
+  "color": "#C43E1C",
+  "mono": false
+ },
+ {
+  "name": "Notion",
+  "key": "notion",
+  "logo": "si-notion.svg",
+  "color": "#000000",
+  "mono": true
+ },
+ {
+  "name": "Slack",
+  "key": "slack",
+  "logo": "si-slack.svg",
+  "color": "#4A154B",
+  "mono": true
+ },
+ {
+  "name": "Figma",
+  "key": "figma",
+  "logo": "si-figma.svg",
+  "color": "#F24E1E",
+  "mono": true
+ },
+ {
+  "name": "Loom",
+  "key": "loom",
+  "logo": "si-loom.svg",
+  "color": "#625DF5",
+  "mono": true
+ },
+ {
+  "name": "Miro",
+  "key": "miro",
+  "logo": "si-miro.svg",
+  "color": "#050038",
+  "mono": true
+ },
+ {
+  "name": "Vercel",
+  "key": "vercel",
+  "logo": "si-vercel.svg",
+  "color": "#000000",
+  "mono": true
+ },
+ {
+  "name": "GitHub",
+  "key": "github",
+  "logo": "si-github.svg",
+  "color": "#181717",
+  "mono": true
+ },
+ {
+  "name": "Linear",
+  "key": "linear",
+  "logo": "si-linear.svg",
+  "color": "#5E6AD2",
+  "mono": true
+ },
+ {
+  "name": "Stripe",
+  "key": "stripe",
+  "logo": "si-stripe.svg",
+  "color": "#635BFF",
+  "mono": true
+ },
+ {
+  "name": "Dropbox",
+  "key": "dropbox",
+  "logo": "si-dropbox.svg",
+  "color": "#0061FF",
+  "mono": true
+ },
+ {
+  "name": "Airtable",
+  "key": "airtable",
+  "logo": "si-airtable.svg",
+  "color": "#18BFFF",
+  "mono": true
+ },
+ {
+  "name": "Asana",
+  "key": "asana",
+  "logo": "si-asana.svg",
+  "color": "#F06A6A",
+  "mono": true
+ },
+ {
+  "name": "Supabase",
+  "key": "supabase",
+  "logo": "si-supabase.svg",
+  "color": "#3FCF8E",
+  "mono": true
+ },
+ {
+  "name": "Sentry",
+  "key": "sentry",
+  "logo": "si-sentry.svg",
+  "color": "#362D59",
+  "mono": true
+ },
+ {
+  "name": "Canva",
+  "key": "canva",
+  "logo": "si-canva.svg",
+  "color": "#00C4CC",
+  "mono": true
+ },
+ {
+  "name": "Calendly",
+  "key": "calendly",
+  "logo": "si-calendly.svg",
+  "color": "#006BFF",
+  "mono": true
+ },
+ {
+  "name": "HubSpot",
+  "key": "hubspot",
+  "logo": "si-hubspot.svg",
+  "color": "#FF7A59",
+  "mono": true
+ },
+ {
+  "name": "Jira",
+  "key": "jira",
+  "logo": "si-jira.svg",
+  "color": "#0052CC",
+  "mono": true
+ },
+ {
+  "name": "Trello",
+  "key": "trello",
+  "logo": "si-trello.svg",
+  "color": "#0052CC",
+  "mono": true
+ },
+ {
+  "name": "Discord",
+  "key": "discord",
+  "logo": "si-discord.svg",
+  "color": "#5865F2",
+  "mono": true
+ },
+ {
+  "name": "WhatsApp",
+  "key": "whatsapp",
+  "logo": "si-whatsapp.svg",
+  "color": "#25D366",
+  "mono": true
+ },
+ {
+  "name": "Telegram",
+  "key": "telegram",
+  "logo": "si-telegram.svg",
+  "color": "#26A5E4",
+  "mono": true
+ },
+ {
+  "name": "Shopify",
+  "key": "shopify",
+  "logo": "si-shopify.svg",
+  "color": "#7AB55C",
+  "mono": true
+ },
+ {
+  "name": "Intercom",
+  "key": "intercom",
+  "logo": "si-intercom.svg",
+  "color": "#6AFDEF",
+  "mono": true
+ },
+ {
+  "name": "Zapier",
+  "key": "zapier",
+  "logo": "si-zapier.svg",
+  "color": "#FF4F00",
+  "mono": true
+ },
+ {
+  "name": "QuickBooks",
+  "key": "quickbooks",
+  "logo": "si-quickbooks.svg",
+  "color": "#2CA01C",
+  "mono": true
+ },
+ {
+  "name": "Salesforce",
+  "key": "salesforce",
+  "logo": "si-salesforce.svg",
+  "color": "#00A1E0",
+  "mono": true
+ },
+ {
+  "name": "Webflow",
+  "key": "webflow",
+  "logo": "si-webflow.svg",
+  "color": "#146EF5",
+  "mono": true
+ },
+ {
+  "name": "Framer",
+  "key": "framer",
+  "logo": "si-framer.svg",
+  "color": "#0055FF",
+  "mono": true
+ },
+ {
+  "name": "ClickUp",
+  "key": "clickup",
+  "logo": "si-clickup.svg",
+  "color": "#7B68EE",
+  "mono": true
+ },
+ {
+  "name": "Todoist",
+  "key": "todoist",
+  "logo": "si-todoist.svg",
+  "color": "#E44332",
+  "mono": true
+ },
+ {
+  "name": "Spotify",
+  "key": "spotify",
+  "logo": "si-spotify.svg",
+  "color": "#1ED760",
+  "mono": true
+ },
+ {
+  "name": "YouTube",
+  "key": "youtube",
+  "logo": "si-youtube.svg",
+  "color": "#FF0000",
+  "mono": true
+ },
+ {
+  "name": "LinkedIn",
+  "key": "linkedin",
+  "logo": "si-linkedin.svg",
+  "color": "#0A66C2",
+  "mono": true
+ },
+ {
+  "name": "Instagram",
+  "key": "instagram",
+  "logo": "si-instagram.svg",
+  "color": "#FF0069",
+  "mono": true
+ },
+ {
+  "name": "Facebook",
+  "key": "facebook",
+  "logo": "si-facebook.svg",
+  "color": "#0866FF",
+  "mono": true
+ },
+ {
+  "name": "PayPal",
+  "key": "paypal",
+  "logo": "si-paypal.svg",
+  "color": "#003087",
+  "mono": true
+ },
+ {
+  "name": "Revolut",
+  "key": "revolut",
+  "logo": "si-revolut.svg",
+  "color": "#191C1F",
+  "mono": true
+ },
+ {
+  "name": "Xero",
+  "key": "xero",
+  "logo": "si-xero.svg",
+  "color": "#13B5EA",
+  "mono": true
+ },
+ {
+  "name": "Typeform",
+  "key": "typeform",
+  "logo": "si-typeform.svg",
+  "color": "#262627",
+  "mono": true
+ },
+ {
+  "name": "WordPress",
+  "key": "wordpress",
+  "logo": "si-wordpress.svg",
+  "color": "#21759B",
+  "mono": true
+ },
+ {
+  "name": "Substack",
+  "key": "substack",
+  "logo": "si-substack.svg",
+  "color": "#FF6719",
+  "mono": true
+ },
+ {
+  "name": "Reddit",
+  "key": "reddit",
+  "logo": "si-reddit.svg",
+  "color": "#FF4500",
+  "mono": true
+ },
+ {
+  "name": "TikTok",
+  "key": "tiktok",
+  "logo": "si-tiktok.svg",
+  "color": "#000000",
+  "mono": true
+ },
+ {
+  "name": "Airbnb",
+  "key": "airbnb",
+  "logo": "si-airbnb.svg",
+  "color": "#FF5A5F",
+  "mono": true
+ },
+ {
+  "name": "Cloudflare",
+  "key": "cloudflare",
+  "logo": "si-cloudflare.svg",
+  "color": "#F38020",
+  "mono": true
+ },
+ {
+  "name": "Pinterest",
+  "key": "pinterest",
+  "logo": "si-pinterest.svg",
+  "color": "#BD081C",
+  "mono": true
+ },
+ {
+  "name": "Twilio",
+  "key": "twilio",
+  "logo": "si-twilio.svg",
+  "color": "#F22F46",
+  "mono": true
+ },
+ {
+  "name": "Postman",
+  "key": "postman",
+  "logo": "si-postman.svg",
+  "color": "#FF6C37",
+  "mono": true
+ },
+ {
+  "name": "Obsidian",
+  "key": "obsidian",
+  "logo": "si-obsidian.svg",
+  "color": "#7C3AED",
+  "mono": true
+ },
+ {
+  "name": "Evernote",
+  "key": "evernote",
+  "logo": "si-evernote.svg",
+  "color": "#00A82D",
+  "mono": true
+ },
+ {
+  "name": "Zendesk",
+  "key": "zendesk",
+  "logo": "si-zendesk.svg",
+  "color": "#03363D",
+  "mono": true
+ },
+ {
+  "name": "Paddle",
+  "key": "paddle",
+  "logo": "si-paddle.svg",
+  "color": "#FDDD35",
+  "mono": true
+ },
+ {
+  "name": "Gusto",
+  "key": "gusto",
+  "logo": "si-gusto.svg",
+  "color": "#F45D48",
+  "mono": true
+ },
+ {
+  "name": "Tableau",
+  "key": "tableau",
+  "logo": "si-tableau.svg",
+  "color": "#E97627",
+  "mono": true
+ },
+ {
+  "name": "Snowflake",
+  "key": "snowflake",
+  "logo": "si-snowflake.svg",
+  "color": "#29B5E8",
+  "mono": true
+ },
+ {
+  "name": "Databricks",
+  "key": "databricks",
+  "logo": "si-databricks.svg",
+  "color": "#FF3621",
+  "mono": true
+ },
+ {
+  "name": "Greenhouse",
+  "key": "greenhouse",
+  "logo": "si-greenhouse.svg",
+  "color": "#24A47F",
+  "mono": true
+ },
+ {
+  "name": "Brevo",
+  "key": "brevo",
+  "logo": "si-brevo.svg",
+  "color": "#0B996E",
+  "mono": true
+ }
+]
