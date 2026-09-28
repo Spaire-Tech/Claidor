@@ -33,6 +33,8 @@ test("twelve palettes replace the colour tables, every old id survives, and the 
   assert.match(patched, /style:\{fill:`url\(#\$\{N\}-ink\)`,filter:`url\(#\$\{N\}-grain\)`\},d:le\.path/);
   assert.doesNotMatch(patched, /b\?\{fill:`url/, "the never-passed inkGradient branch is gone");
   assert.match(patched, /linear-gradient\(\$\{s\+90\}deg, \$\{e\}, \$\{r\} 55%, \$\{t\}\)/, "the editor's swatch gradient has three stops");
+  assert.match(patched, /inkGradient:\(e=>e\?\{light:\{from:e\.lightFrom,mid:e\.lightMid,to:e\.lightTo\}/, "still marks take the palette's three stops");
+  assert.match(patched, /\$\{A\.mid\?`<stop offset="\.55" stop-color="\$\{A\.mid\}"\/>`:""\}/, "the still drawing carries the middle stop");
   assert.throws(() => patchOriginalPalette(patched), /palette-gradients anchor is missing or ambiguous/);
 });
 

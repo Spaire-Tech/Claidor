@@ -1,10 +1,12 @@
 /**
- * The app-window demo (`npm run demo`): its scripted backend answers in the
- * host's own shapes, so the pinned window draws its conversations, and the
- * bridge bundles for the browser.
+ * The app-window demo (`npm run demo`): a product manager's week before a
+ * launch. Simeon's conversation plays by itself; the rest is already written;
+ * nobody types.
+ * Its scripted backend answers in the host's own shapes, so the pinned window
+ * draws it, and the bridge bundles for the browser.
  */
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -22,22 +24,21 @@ async function loadModule(entry, name) {
   return { module, dispose: () => rm(temporary, { recursive: true, force: true }) };
 }
 
-// The message types the pinned renderer's send-message switch draws
-// (PAe / jEn in the 0.18.0 chunk).
+// The message types the pinned renderer's send-message switch draws (PAe / jEn in the 0.18.0 chunk).
 const RENDERED_TYPES = new Set(["text", "attachment", "widget", "cursor-agent", "secret-request", "email-draft", "slack-draft", "permission-request", "auto-review-approval", "local-tool-permission", "connector", "connectors", "listener-connect"]);
+const until = async (check, ms = 2000) => { const end = Date.now() + ms; while (!check()) { if (Date.now() > end) throw new Error("timed out"); await new Promise((r) => setTimeout(r, 5)); } };
 
-test("the demo backend serves the cast, and every conversation parses as a transcript window", async (t) => {
+test("three agents and their group, every conversation a well-formed transcript window", async (t) => {
   const backendModule = await loadModule("demo/backend.ts", "demo-backend");
   const rpc = await loadModule("source/shared/rpc/coordinator.ts", "demo-rpc");
   t.after(async () => { await backendModule.dispose(); await rpc.dispose(); });
-  const events = [];
-  const backend = backendModule.module.createDemoBackend({ pushCoordinatorEvent: (family, payload) => events.push({ family, payload }), pushMainEvent: () => {} });
-
-  const roster = await backend.coordinator("listAgents", {});
-  assert.equal(roster.status, "ok");
-  assert.deepEqual(roster.value.map((agent) => agent.name).sort(), ["Ledger", "Scout", "Simeon", "Yodo"]);
-  for (const agent of roster.value) {
-    assert.equal(agent.avatarShape, "cloud");
+  const backend = backendModule.module.createDemoBackend({ pushCoordinatorEvent: () => {}, pushMainEvent: () => {} });
+  const roster = (await backend.coordinator("listAgents", {})).value;
+  assert.deepEqual(roster.map((agent) => agent.name).sort(), ["Launch squad", "Scout", "Simeon", "Yodo"]);
+  const group = roster.find((agent) => agent.isGroup);
+  assert.equal(group.name, "Launch squad");
+  assert.deepEqual(group.memberIds, ["simeon", "scout", "yodo"]);
+  for (const agent of roster) {
     assert.ok(agent.lastEntry == null || agent.lastEntry.kind === "text", `${agent.name}'s sidebar preview is a text preview`);
     const window = await backend.coordinator("getAgentTranscriptWindow", { id: agent.id });
     assert.notEqual(rpc.module.parseCoordinatorTranscriptWindowResponse(window.value), null, `${agent.name}'s window is well formed`);
@@ -45,37 +46,49 @@ test("the demo backend serves the cast, and every conversation parses as a trans
       if (entry.kind === "send-message") assert.ok(RENDERED_TYPES.has(entry.message.type), `${entry.message.type} is drawn by the window`);
     }
   }
+  // In the group, each agent's message names its author the way group-chat-glue does.
+  const groupEntries = (await backend.coordinator("getAgentTranscriptWindow", { id: group.id })).value.entries;
+  const authors = groupEntries.filter((e) => e.kind === "send-message").map((e) => e.author?.name);
+  assert.deepEqual([...new Set(authors)].sort(), ["Scout", "Simeon", "Yodo"]);
+  // Nothing is waiting to be answered before Simeon asks: the written conversations hold no questions.
+  for (const agent of roster) {
+    const entries = (await backend.coordinator("getAgentTranscriptWindow", { id: agent.id })).value.entries;
+    assert.ok(!entries.some((e) => e.message?.type === "widget"), `${agent.name} asks nothing before the story starts`);
+  }
 });
 
-test("a message typed to an agent is echoed, then answered", async (t) => {
+test("Simeon's conversation plays through on its own, the same thread the website's phone still shows", async (t) => {
+  const { module, dispose } = await loadModule("demo/backend.ts", "demo-backend-story");
+  t.after(dispose);
+  const events = [];
+  const backend = module.createDemoBackend({ pushCoordinatorEvent: (family, payload) => events.push({ family, payload }), pushMainEvent: () => {}, timeScale: 0.01 });
+  const appended = () => events.filter((e) => e.family === "transcript" && e.payload.type === "appended" && e.payload.agentId === "simeon").map((e) => e.payload.entry);
+  backend.onServing();
+  backend.onServing();
+  await until(() => appended().some((e) => e.id === "m2a"));
+  const said = appended().map((e) => e.role === "user" ? `you: ${e.content}` : e.message?.type === "text" ? e.message.content : e.message?.type);
+  assert.deepEqual(said, [
+    "you: Morning. Where are we on Thursday's launch?",
+    "Thursday is on track: 12 of 15 launch tickets are done in **Linear**, and the review is Thursday at 2 pm.",
+    "Scout pulled three customer quotes and Yodo closed the last two tickets. The review doc is ready.",
+    "attachment",
+    "you: Looks great. Send the agenda to Dana and Marcus, and check in like this every Monday.",
+    "Done. The agenda went out from **Gmail**.",
+  ], "the whole story, once, in order, with no question to answer");
+  const summaries = events.filter((e) => e.family === "outline" && e.payload.item.status === "completed").map((e) => e.payload.item.summary);
+  for (const line of ["Checked Linear", "Messages from Scout", "Messages from Yodo", "Created routine Monday launch check"]) assert.ok(summaries.includes(line), line);
+  const reacted = events.find((e) => e.family === "transcript" && e.payload.type === "updated" && e.payload.entry.id === "m2u");
+  assert.deepEqual(reacted?.payload.entry.reactions, [{ emoji: "\u{1F44D}", by: "simeon" }], "Simeon gives your reply a thumbs up");
+});
+
+test("nobody types: a send is refused", async (t) => {
   const { module, dispose } = await loadModule("demo/backend.ts", "demo-backend-send");
   t.after(dispose);
-  const events = [];
-  const backend = module.createDemoBackend({ pushCoordinatorEvent: (family, payload) => events.push({ family, payload }), pushMainEvent: () => {} });
-  const sent = await backend.coordinator("sendPrompt", { agentId: "scout", prompt: "Any quieter options?", clientNonce: "n1" });
-  assert.deepEqual(sent.value, { accepted: true });
-  const echo = events.find((e) => e.family === "transcript" && e.payload.type === "appended");
-  assert.equal(echo.payload.agentId, "scout");
-  assert.equal(echo.payload.entry.role, "user");
-  assert.equal(echo.payload.entry.clientNonce, "n1");
-  assert.equal(echo.payload.ordered.replicaKey, "transcript:scout");
-  await new Promise((resolve) => setTimeout(resolve, 2300));
-  const reply = events.filter((e) => e.family === "transcript" && e.payload.type === "appended").at(-1);
-  assert.equal(reply.payload.entry.kind, "send-message");
+  const backend = module.createDemoBackend({ pushCoordinatorEvent: () => {}, pushMainEvent: () => {} });
+  assert.deepEqual((await backend.coordinator("sendPrompt", { agentId: "simeon", prompt: "hello" })).value, { accepted: false });
 });
 
-test("answering Simeon's question records the answer on the card", async (t) => {
-  const { module, dispose } = await loadModule("demo/backend.ts", "demo-backend-widget");
-  t.after(dispose);
-  const events = [];
-  const backend = module.createDemoBackend({ pushCoordinatorEvent: (family, payload) => events.push({ family, payload }), pushMainEvent: () => {} });
-  const answered = await backend.coordinator("respondToWidget", { agentId: "simeon", entryId: "t0s1", value: "no" });
-  assert.deepEqual(answered.value, { accepted: true });
-  const updated = events.find((e) => e.family === "transcript" && e.payload.type === "updated");
-  assert.equal(updated.payload.entry.respondedValue, "no");
-});
-
-test("the in-page bridge bundles for the browser", async (t) => {
+test("the in-page bridge bundles for the browser, and leaves the composer and the side doors inert", async (t) => {
   const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-demo-bridge-"));
   t.after(() => rm(temporary, { recursive: true, force: true }));
   const result = await build({
@@ -86,15 +99,13 @@ test("the in-page bridge bundles for the browser", async (t) => {
   assert.ok(inputs.some((input) => input.endsWith("electron-preload/preload.ts")), "the app's own preload bridge is what the page gets");
   assert.ok(inputs.some((input) => input.endsWith("node-agent-coordinator/renderer-port-server.ts")), "the app's own coordinator port server answers it");
   assert.ok(!inputs.some((input) => input.startsWith("node:")), "nothing Node-only reaches the page");
-});
-
-test("the demo leaves the account menu, Connect apps, the New and attach buttons and the computer inert, and opens dark on ?theme=dark", async () => {
-  const { readFile } = await import("node:fs/promises");
   const bridge = await readFile(path.join(repoRoot, "demo/bridge.ts"), "utf8");
   for (const selector of [".sand-agents-sidebar__account button", ".sand-agents-sidebar__plugins", ".sand-agents-sidebar__new", ".sand-prompt-attach", ".sand-chat-header__computer"]) {
     assert.ok(bridge.includes(`"${selector}"`), `${selector} is inert in the demo`);
   }
-  assert.match(bridge, /for \(const type of \["pointerdown", "mousedown", "click", "keydown"\] as const\)/);
+  assert.match(bridge, /const COMPOSER = "\.sand-prompt-shell";/);
+  assert.match(bridge, /shell\.setAttribute\("inert", ""\)/, "the composer takes no focus or input");
+  assert.match(bridge, /event\.key\.length === 1/, "typing anywhere is stopped, since the window forwards it to the composer");
   const backend = await readFile(path.join(repoRoot, "demo/backend.ts"), "utf8");
   assert.match(backend, /get\("theme"\) === "dark"/);
 });

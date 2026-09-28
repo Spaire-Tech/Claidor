@@ -16,7 +16,7 @@
  */
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile, realpath } from "node:fs/promises";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
@@ -197,21 +197,24 @@ test("a name deleted on another machine is removed here, a local deletion is tol
 test("a write under a watched root triggers a round after the debounce, a refusal is one log line, and the off switch sends nothing", async () => {
   const { module, dispose } = await load("source/host/extensions/memory-sync/extension.ts", "memory-sync-watch");
   const server = await startMemoryServer();
-  const sandRoot = await mkdtemp(path.join(os.tmpdir(), "caisra-memsync-root-"));
+  // The real path: on macOS the temp folder is reached through a symlink (/var -> /private/var),
+  // and the recursive file watcher (FSEvents there) is slow and unreliable on the linked path.
+  const sandRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "caisra-memsync-root-")));
   try {
     const ext = startExtension(module, { sandRoot, url: server.url, debounce: after(100) });
     await ext.api.whenStarted;
     const before = server.requests.length;
     await mkdir(path.join(sandRoot, "user-memory", "agents", "a2"), { recursive: true });
     await writeFile(path.join(sandRoot, "user-memory", "agents", "a2", "profile.md"), "- (2026-09-25) Muse says hi.\n");
-    assert.ok(await until(() => server.rows.get("user-memory/agents/a2/profile.md")?.content === "- (2026-09-25) Muse says hi.\n"), "the watcher's round pushed the new shard");
+    // A generous wait: FSEvents on a busy Mac can take seconds to report the first change.
+    assert.ok(await until(() => server.rows.get("user-memory/agents/a2/profile.md")?.content === "- (2026-09-25) Muse says hi.\n", 12000), "the watcher's round pushed the new shard");
     assert.ok(server.requests.length > before);
 
     // A refusal (a name this server does not keep) is one line with the
     // server's sentence, and the state is left alone.
     await mkdir(path.join(sandRoot, "projects", "launch"), { recursive: true });
     await writeFile(path.join(sandRoot, "projects", "launch", "project.md"), "---\nname: Launch\n---\n");
-    await until(() => ext.lines.some((line) => line.includes("memory-sync refused")));
+    await until(() => ext.lines.some((line) => line.includes("memory-sync refused")), 12000);
     assert.ok(ext.lines.some((line) => /^\[claidor\] memory-sync refused 400 'projects\/launch\/project\.md' is not a memory file Claidor keeps\./.test(line)), ext.lines.join("\n"));
     assert.ok(!("projects/launch/project.md" in JSON.parse(await readFile(path.join(sandRoot, ".memory-sync", "state.json"), "utf8")).files));
     await ext.stop();

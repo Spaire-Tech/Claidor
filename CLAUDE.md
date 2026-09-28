@@ -667,7 +667,10 @@ Markdown as Word ("for MDs use word too"), with a new `slides` kind for
 Miro, Notion, Gmail, …) wears its logo and its brand colour, through
 one rehype step at the end of the message pipeline
 (`brand/app-logos/apps.json`, 72 apps, Simple Icons where the repository
-has no colour logo; a bare "Word" is not marked); and the
+has no colour logo; a bare "Word" is not marked; Slack's tile and its
+name in a message carry the founder's full-colour mark, "you using the
+wrong slack logo", and a file card's title centres on its download
+button); and the
 sidebar's Plugins button is "Connect apps" in blue, no box, with Gmail,
 Calendar and Drive tiles, on the account row beside the initials circle
 (the name beside it is hidden; the circle shows two initials for a
@@ -1004,28 +1007,61 @@ keeps no log for this path. Not yet run on a Mac.
 
 ## The app-window demo (27 September 2026)
 
-"all i wanted was the app … the absolute REAL app, with real stuff
-happening, and you can click on stuff … give me real convo, with names like
-Simeon, Scout, Yodo … shows cards, connectors … simeon creating an agent for
-something, then see the agent being created … we'll use the light mode."
 `npm run demo` (after `npm run package`) serves today's patched window, the
 pinned renderer with every Simeon patch, in a browser on 127.0.0.1 only: a
-private preview, never published, since the window is still Grok Bot's code
-(the real site waits on our own window). `demo/bridge.ts` installs the app's
-own preload bridge over a fake Electron and runs the app's own coordinator
-port server; `demo/backend.ts` answers in the host's shapes from
-`demo/scenario.ts`: Simeon, Scout, Yodo and Ledger with their conversations,
-question cards, a PDF card, Gmail and Notion connector cards (shown Added),
-an email draft, an Auto-review approval; clicking "Yes, set someone up" has
-Simeon create Quill, who appears in the sidebar working, is briefed, and
-opens with its own question; Yodo reports a payment on its own a few seconds
-in; typing to any agent gets a reply; booking, Allow once and answers all
-play out. The email draft's Send button does nothing, as in the app itself
-(the pinned chunk's callbacks are empty; `draft-composer-measured.md`).
-The account menu, Connect apps, both New buttons, the composer's attach
-and the agent's computer are inert in the demo by the founder's word
-(`INERT_IN_DEMO` in `demo/bridge.ts`); `?theme=dark` opens it dark.
-`tests/app-demo.test.mjs`. Seen headless only, not yet on a Mac.
+private preview, never published, since the window is still Grok Bot's code.
+`demo/bridge.ts` installs the app's own preload bridge over a fake Electron and
+runs the app's own coordinator port server; `demo/backend.ts` answers in the
+host's shapes from `demo/scenario.ts`.
+
+**Rewritten the same evening** ("completely change everything in the demo and
+be smarter. there's too much noise … i shouldnt be able to type or use
+microphone - the messages/answers are pre-recorded and are chosen … its only
+the first message with simeon that is animated, everything else is already
+written. also we need a group disussion with the 3 agents … think of it for a
+product manager"; x.ai/bot as the reference, which refused this container by
+then, so it was not read again). The story is a product manager two days
+before a launch: Simeon (chief of staff), Scout (research), Yodo (delivery)
+and their group, Launch squad. Simeon's conversation plays by itself on load
+(you ask where the launch stands, Simeon goes through Linear, Slack and your
+calendar, the window's "Connecting to …" label shown, and answers); from
+there you move only by choosing on Simeon's question cards (prepare the
+review doc and send the agenda from Gmail, or the open risks and a Slack nudge
+to Marcus), each choice playing once. Scout's research, Yodo's Linear and
+Slack setup and standup, and the group deciding to ship Thursday are already
+written. A group is an ordinary roster entry with `isGroup` and `memberIds`,
+its agents' messages carrying `author: {id, name}` (group-chat-glue.ts).
+Nobody types: the composer is `inert`, plain keys are stopped at the page
+(the window forwards typing anywhere into the composer), and the account
+menu, Connect apps, the New and attach buttons and the computer do nothing
+(`INERT_IN_DEMO`). `?theme=dark` opens it dark. `tests/app-demo.test.mjs`
+plays the story at 1/100 speed. Seen headless only, not yet on a Mac.
+Since 28 September it plays at twice the scripted pace (`timeScale: 0.5` in
+`bridge.ts`; "the ai needs to be faster").
+**Corrected 28 September 2026, later:** Simeon's conversation no longer has
+question cards to choose from. It plays through by itself, the same thread
+the website's phone still shows ("have the same text for simeon in the
+laptop"): Simeon checks Linear, Slack and the calendar, answers, hears from
+Scout and Yodo, hands you the review doc, and after your scripted reply
+("…check in like this every Monday") gives it a thumbs up, sends the agenda
+from Gmail and creates the Monday routine. The finished tool steps ("Messages
+from Scout", "Created routine …") show while they run and are then hidden by
+the pinned window, which has no such lines. The group's avatar in the sidebar
+draws each member with its own three-stop palette (`palette-still-ink`,
+`palette-still-stops` in `router-renderer-patch.mjs`); until then every still
+mark was one flat colour.
+
+**Published on the website, decided 28 September 2026.** The "never
+published" above no longer holds: the founder chose to ship the live demo on
+the public site, fully public, when asked whether to use a video instead
+("Live demo, fully public"). `sites/simeonlabs.com/` is the site: the Framer
+design made static by `source/build.py`, the demo in the hero
+(`public/app/`, Grok Bot 0.18.0's renderer with Simeon's patches, the only
+copy of that code in git; `desktop/.gitignore` still keeps
+`/src/app/dist/` out), four feature boxes the page draws itself, Simeon's
+pricing and FAQ, and no link anywhere ("the thing should lead nowhere as
+it's just to try"). Served by Vercel from that folder (`vercel.json`);
+`sites/simeonlabs.com/README.md` says how to rebuild it.
 
 ## The whole-product design audit, and the switch-or-coming-soon rule (25 September 2026)
 

@@ -9,8 +9,8 @@ const ClaidorLogo = ({
 }) => {
   return (
     <img
-      src="/assets/logotype-claidor.png"
-      alt="Claidor"
+      src="/assets/logotype-simeon.png"
+      alt="Simeon"
       className={className}
       width={width}
       height={height}
