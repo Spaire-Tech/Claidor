@@ -33,7 +33,12 @@ app never scrolls the page and the wheel over it scrolls the page. The app's
 code is about 6 MB, so the page first shows a still of its opening screen
 (`app-poster-{wide,tall,phone}.jpg`, captured by `build.py` from the app
 itself) and fades the live app in over it once the app has drawn its sidebar.
-Each animation below the hero starts when it scrolls into view and starts
+On a laptop (at least 1024 × 620, motion allowed) the hero is a scroll
+scene instead: the painting spans the page with Simeon's wordmark, narrows
+into the card as you scroll, the card pins under the nav, the wordmark fades
+and the app window rises onto the painting; the demo's story starts only
+then (`source/demo-gate.js` holds it until the page calls it). Smaller
+screens keep the window in the card from the start. Each animation below the hero starts when it scrolls into view and starts
 over when you come back to it. The four
 feature boxes are drawn by the page itself: connectors behind the Simeon
 glass tile, Iris, Otto and Nova talking, Otto's computer asking you to sign

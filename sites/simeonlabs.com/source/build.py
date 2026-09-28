@@ -172,7 +172,7 @@ SURGERY = r"""([TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML]) => {
   const heroSection = document.querySelector('section[data-framer-name="Hero"]');
   for (const img of document.querySelectorAll('img')) {
     if (heroSection.contains(img)) { img.removeAttribute('loading'); img.setAttribute('fetchpriority', 'high'); }
-    else img.setAttribute('loading', 'lazy');
+    else if (img.closest('section')) img.setAttribute('loading', 'lazy');
   }
   const hero = document.querySelector('section[data-framer-name="Hero"] .framer-115oxcp');
   const stage = document.createElement('div');
@@ -181,8 +181,18 @@ SURGERY = r"""([TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML]) => {
     + '<div class="sd-screen"><div class="sd-window"><picture class="sd-poster">'
     + '<source media="(max-width:599.98px)" srcset="app-poster-phone.jpg"><source media="(max-width:809.98px)" srcset="app-poster-tall.jpg">'
     + '<img src="app-poster-wide.jpg" alt="" fetchpriority="high" decoding="sync"></picture>'
-    + '<iframe src="app/index.html" title="Simeon, playing a launch week" loading="eager"></iframe></div></div></div>';
+    + '<iframe data-hold src="app/index.html" title="Simeon, playing a launch week" loading="eager"></iframe></div></div></div>';
   hero.appendChild(stage);
+  // On a laptop the hero is a scroll scene: the painting spans the page with Simeon's wordmark,
+  // narrows into the card as you scroll, and the app window rises onto it (HERO_JS).
+  const paint = (hero.querySelector('.framer-es6gsc img') || hero.querySelector('img')).getAttribute('src');
+  const logoSrc = document.querySelector('[data-framer-name="Logo"] img').getAttribute('src');
+  stage.insertAdjacentHTML('beforebegin', '<div class="sd-bleed" aria-hidden="true"><img src="' + paint + '" alt="" fetchpriority="high"></div>'
+    + '<div class="sd-word" role="img" aria-label="Simeon" style="-webkit-mask-image:url(' + logoSrc + ');mask-image:url(' + logoSrc + ')"></div>');
+  const card = hero.closest('.framer-t7h7mm-container');
+  const pin = document.createElement('div'); pin.className = 'sd-pin';
+  const sticky = document.createElement('div'); sticky.className = 'sd-sticky';
+  card.before(pin); pin.appendChild(sticky); sticky.appendChild(card);
   // "Connects to your apps": its ticker lists connectors, and its picture is the connector animation.
   const feature = [...document.querySelectorAll('section[data-framer-name="Feature"]')].find((sec) => /Connects to your apps/.test(sec.textContent));
   feature.querySelector('.framer-15163q8').innerHTML = TICKER;
@@ -277,6 +287,22 @@ section[data-framer-name="Hero"] .framer-hy289i{display:none!important}
 .sd-window.sd-live iframe{opacity:1}
 .sd-poster,.sd-poster img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:0 0}
 .sd-window.sd-live.sd-settled .sd-poster{display:none}
+/* The laptop hero scene. Outside it the pin and its sticky layer take no box of their own. */
+.sd-pin,.sd-sticky{display:contents}
+.sd-bleed,.sd-word{display:none}
+.sd-scrolly{--card-w:min(1079px,calc(100vw - 80px),calc((100vh - 100px) * 1.3272));--card-h:calc(var(--card-w) * .75347);--pin-top:calc(60px + (100vh - 60px - var(--card-h)) / 2)}
+.sd-scrolly .sd-pin{display:block;width:100%;height:calc(var(--card-h) + 70vh)}
+.sd-scrolly .sd-sticky{display:flex;justify-content:center;position:sticky;top:var(--pin-top)}
+.sd-scrolly .framer-t7h7mm-container{max-width:var(--card-w)}
+.sd-scrolly .framer-gx3vnz,.sd-scrolly section[data-framer-name="Hero"] .framer-115oxcp{overflow:visible!important}
+.sd-scrolly .sd-bleed{display:block;position:absolute;z-index:2;top:0;bottom:0;left:calc(50% - 50vw);width:100vw;overflow:hidden;will-change:clip-path;
+  -webkit-mask-image:linear-gradient(#0000 0,#000 var(--fade,110px));mask-image:linear-gradient(#0000 0,#000 var(--fade,110px))}
+.sd-scrolly section[data-framer-name="Hero"] .framer-115oxcp>.framer-es6gsc{visibility:hidden}
+.sd-scrolly section[data-framer-name="Hero"] .framer-115oxcp{background:transparent!important}
+.sd-scrolly .sd-bleed img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
+.sd-scrolly .sd-word{display:block;position:absolute;z-index:3;left:50%;top:47%;width:36%;aspect-ratio:1024/460;transform:translate(-50%,-50%);background:#fff;opacity:.92;
+  -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;filter:drop-shadow(0 2px 18px rgba(20,40,80,.18));will-change:opacity,transform}
+.sd-scrolly .sd-stage{opacity:0;pointer-events:none;will-change:opacity,transform}
 /* Nothing below the hero moves until it is on screen. */
 .sd-marquee .sd-track{animation-play-state:paused}
 .sd-marquee.sd-seen .sd-track{animation-play-state:running}
@@ -449,6 +475,63 @@ FIT = """<script>
     setTimeout(poll, 60);
   };
   poll();
+  // Off the laptop scene the demo plays at once; in it, HERO_JS lets it go when the window rises.
+  window.sdReleaseDemo = () => {
+    if (!iframe.hasAttribute('data-hold')) return;
+    iframe.removeAttribute('data-hold');
+    try { iframe.contentWindow.__simeonStart && iframe.contentWindow.__simeonStart(); } catch {}
+  };
+  if (!document.documentElement.classList.contains('sd-scrolly')) sdReleaseDemo();
+})();
+</script>"""
+
+HERO_JS = """<script>
+(() => {
+  const root = document.documentElement;
+  const q = matchMedia('(min-width:1024px) and (min-height:620px) and (prefers-reduced-motion: no-preference)');
+  const pin = document.querySelector('.sd-pin'), sticky = pin.querySelector('.sd-sticky');
+  const box = sticky.querySelector('.framer-115oxcp'), bleed = box.querySelector('.sd-bleed'), word = box.querySelector('.sd-word'), stage = box.querySelector('.sd-stage');
+  const clamp = (v) => Math.max(0, Math.min(1, v));
+  const ease = (t) => t * t * (3 - 2 * t);
+  let queued = false;
+  const draw = () => {
+    queued = false;
+    if (!root.classList.contains('sd-scrolly')) return;
+    const top = parseFloat(getComputedStyle(sticky).top) || 0;
+    const start = pin.getBoundingClientRect().top + scrollY - top;   // where the card pins
+    const hold = pin.offsetHeight - box.offsetHeight;                  // how long it stays pinned
+    const y = scrollY;
+    // 1. The painting narrows from the page's width into the card.
+    const a = ease(start > 0 ? clamp(y / start) : 1);
+    const r = box.getBoundingClientRect(), bw = bleed.offsetWidth, bl = r.left - bleed.getBoundingClientRect().left;
+    const inL = bl * a, inR = (bw - bl - r.width) * a, rad = Math.max(14, parseFloat(getComputedStyle(box).borderTopLeftRadius) || 0) * a;
+    bleed.style.clipPath = 'inset(0 ' + inR + 'px 0 ' + inL + 'px round ' + rad + 'px)';
+    bleed.style.setProperty('--fade', (110 * (1 - a)).toFixed(1) + 'px');
+    // 2. Pinned: the wordmark goes, then the window rises onto the painting.
+    const b = hold > 0 ? clamp((y - start) / hold) : (y >= start ? 1 : 0);
+    const w = ease(clamp((b - 0.04) / 0.34));
+    word.style.opacity = (0.92 * (1 - w)).toFixed(3);
+    word.style.transform = 'translate(-50%,-50%) scale(' + (1 - 0.05 * w).toFixed(4) + ')';
+    const e = ease(clamp((b - 0.28) / 0.42));
+    stage.style.opacity = e.toFixed(3);
+    stage.style.transform = 'translateY(' + (28 * (1 - e)).toFixed(1) + 'px) scale(' + (0.97 + 0.03 * e).toFixed(4) + ')';
+    stage.style.pointerEvents = e > 0.9 ? 'auto' : 'none';
+    if (e > 0.5) sdReleaseDemo();
+  };
+  const ask = () => { if (!queued) { queued = true; requestAnimationFrame(draw); } };
+  const mode = () => {
+    root.classList.toggle('sd-scrolly', q.matches);
+    if (!q.matches) {
+      bleed.style.clipPath = ''; word.style.opacity = word.style.transform = '';
+      stage.style.opacity = stage.style.transform = stage.style.pointerEvents = '';
+      sdReleaseDemo();
+    }
+    ask();
+  };
+  q.addEventListener('change', mode);
+  addEventListener('scroll', ask, { passive: true });
+  addEventListener('resize', ask);
+  mode();
 })();
 </script>"""
 
@@ -655,13 +738,14 @@ async def main():
     app_idx = open(f"{APP}/index.html").read()
     js = re.search(r'src="\./(assets/index-[^"]+\.js)"', app_idx).group(1)
     css = re.search(r'href="\./(assets/index-[^"]+\.css)"', app_idx).group(1)
-    head = ('<link rel="preload" as="image" href="app-poster-wide.jpg" media="(min-width:810px)" fetchpriority="high">\n'
+    head = ("<script>if (matchMedia('(min-width:1024px) and (min-height:620px) and (prefers-reduced-motion: no-preference)').matches) document.documentElement.classList.add('sd-scrolly')</script>\n"
+            '<link rel="preload" as="image" href="app-poster-wide.jpg" media="(min-width:810px)" fetchpriority="high">\n'
             '<link rel="preload" as="image" href="app-poster-tall.jpg" media="(min-width:600px) and (max-width:809.98px)" fetchpriority="high">\n'
             '<link rel="preload" as="image" href="app-poster-phone.jpg" media="(max-width:599.98px)" fetchpriority="high">\n'
             f'<link rel="modulepreload" crossorigin href="app/{js}">\n<link rel="preload" as="style" crossorigin href="app/{css}">\n' + head)
     page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
             '<title>Simeon</title>\n' + head +
-            "<style>" + CSS.replace("%TOKENS%", r["tokens"]) + "</style>\n</head>\n<body>\n" + r["body"] + FIT + VIEW_JS + ORBIT_JS + SCENES_JS + TALK_JS + BILL_JS + FAQ_JS + "\n</body>\n</html>\n")
+            "<style>" + CSS.replace("%TOKENS%", r["tokens"]) + "</style>\n</head>\n<body>\n" + r["body"] + FIT + HERO_JS + VIEW_JS + ORBIT_JS + SCENES_JS + TALK_JS + BILL_JS + FAQ_JS + "\n</body>\n</html>\n")
     for bad in ("framerusercontent.com/assets", "framerusercontent.com/third", "fonts.gstatic", "chrome-extension", "Simeon le site_files"):
         assert bad not in page, bad
     open(f"{OUT}/index.html", "w", encoding="utf-8").write(page)
@@ -669,7 +753,8 @@ async def main():
     guard = open(f"{HERE}/scroll-guard.js").read()
     open(f"{OUT}/app/scroll-guard.js", "w").write(guard)
     idx = open(f"{OUT}/app/index.html").read()
-    idx = idx.replace('<script src="./demo-bridge.js"></script>', '<script src="./scroll-guard.js"></script>\n    <script src="./demo-bridge.js"></script>', 1)
+    idx = idx.replace('<script src="./demo-bridge.js"></script>', '<script src="./scroll-guard.js"></script>\n    <script src="./demo-bridge.js"></script>\n    <script src="./demo-gate.js"></script>', 1)
+    shutil.copy(f"{HERE}/demo-gate.js", f"{OUT}/app/demo-gate.js")
     assert "scroll-guard.js" in idx
     # The sidebar is solid in the page, not glass over a desktop.
     before = 'body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(160deg,#e4e4e7,#d4d4d8)}'
