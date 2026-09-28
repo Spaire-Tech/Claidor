@@ -107,6 +107,21 @@ class BoxSpec:
     workspace_volume: str
     data_volume: str
     extra_env: dict[str, str] = field(default_factory=dict)
+    #: `--memory` (no swap beyond it) and `--cpus`; zero is no limit. The
+    #: Mac's `docker run` sets neither (Docker Desktop's VM is the bound);
+    #: a shared host needs both (`CLAIDOR_BOX_MEMORY_LIMIT_MB`, `_CPU_LIMIT`).
+    memory_mb: int = 0
+    cpus: float = 0.0
+
+    def resource_limits(self) -> dict[str, int]:
+        limits: dict[str, int] = {}
+        if self.memory_mb > 0:
+            memory = self.memory_mb * 1024 * 1024
+            limits["Memory"] = memory
+            limits["MemorySwap"] = memory
+        if self.cpus > 0:
+            limits["NanoCpus"] = int(self.cpus * 1_000_000_000)
+        return limits
 
     def environment(self) -> list[str]:
         # The local Docker path's environment, line for line
@@ -320,6 +335,7 @@ class DockerBoxHost:
                 "PortBindings": {
                     key: [{"HostIp": "0.0.0.0", "HostPort": ""}] for key in exposed
                 },
+                **spec.resource_limits(),
             },
         }
         params = {"name": spec.name, "platform": self.platform}

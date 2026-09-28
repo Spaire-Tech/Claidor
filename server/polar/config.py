@@ -269,6 +269,19 @@ class Settings(BaseSettings):
     BOX_READY_TIMEOUT: timedelta = timedelta(seconds=90)
     # The local-exec daemon's credential (POST /sand-box/local-exec-daemon-credential).
     BOX_LOCAL_EXEC_CREDENTIAL_TTL: timedelta = timedelta(hours=12)
+    # Sleep, size and capacity (polar/sand/box_tasks.py, 28 September 2026).
+    # A box that has not been busy (the host's own `/health`: `isBusy`,
+    # `lastBusyAtMs`) nor reached by the app for this long is stopped with
+    # its volumes kept, which the app draws as "sleeping"; EnsureSandBox or
+    # a routine's fire wakes it. Zero: never.
+    BOX_IDLE_HIBERNATE_AFTER: timedelta = timedelta(minutes=30)
+    # Per-box limits (Docker `--memory`, no swap beyond it, and `--cpus`).
+    # Zero: no limit.
+    BOX_MEMORY_LIMIT_MB: int = 4096
+    BOX_CPU_LIMIT: float = 2.0
+    # Boxes awake at once on the host; one more is refused with Grok Bot's
+    # SAND_BOX_BLOCKED hold and a retry-after. Zero: no limit.
+    BOX_MAX_RUNNING: int = 3
 
     # Apps through Composio (polar/desktop/composio.py). One key for the
     # whole of Claidor, held here and nowhere else: the desktop app never

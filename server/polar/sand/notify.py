@@ -30,6 +30,7 @@ from polar.models import DesktopSession
 from polar.openapi import APITag
 from polar.redis import Redis, get_redis
 from polar.routing import APIRouter
+from polar.worker import enqueue_job
 
 NotifyTopic = Literal["automation-fires", "listener-events", "xuser-events"]
 NOTIFY_TOPICS: tuple[NotifyTopic, ...] = (
@@ -39,6 +40,7 @@ NOTIFY_TOPICS: tuple[NotifyTopic, ...] = (
 )
 
 HEARTBEAT_SECONDS = 20.0
+WAKE_THROTTLE_SECONDS = 30
 
 router = APIRouter(tags=["sand", APITag.private], include_in_schema=False)
 
@@ -52,6 +54,22 @@ async def publish(redis: Redis, user_id: object, topic: NotifyTopic) -> None:
     the box's periodic drains, so this never raises."""
     try:
         await redis.publish(channel_of(user_id), json.dumps({"kind": "notify", "topic": topic}))
+    except Exception:
+        pass
+    # A sleeping cloud box holds no stream: start it, and it drains what
+    # was queued when its notify client connects (`box_tasks.sand_box_wake`).
+    # One wake per person per WAKE_THROTTLE_SECONDS: a busy Slack workspace
+    # publishes many times a minute, and one start is enough.
+    try:
+        first = await redis.set(
+            f"sand:box:wake-asked:{user_id}", "1", ex=WAKE_THROTTLE_SECONDS, nx=True
+        )
+    except Exception:
+        first = True
+    if not first:
+        return
+    try:
+        enqueue_job("sand.box.wake", user_id=str(user_id))
     except Exception:
         return
 

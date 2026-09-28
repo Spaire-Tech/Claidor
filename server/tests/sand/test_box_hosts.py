@@ -265,6 +265,27 @@ async def test_without_a_bundle_the_image_is_trusted_to_carry_the_host() -> None
     await client.aclose()
 
 
+@pytest.mark.asyncio
+async def test_the_memory_and_cpu_caps_reach_the_engine() -> None:
+    daemon = FakeDaemon()
+    client = httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=daemon.app), base_url="http://docker"
+    )
+    host = DockerBoxHost(client, host_address="box.example", bundle=None)
+    capped = await host.create(_spec(memory_mb=4096, cpus=2.0))
+    config = daemon.containers[capped.provider_box_id]["HostConfig"]
+    assert config["Memory"] == 4096 * 1024 * 1024
+    assert config["MemorySwap"] == 4096 * 1024 * 1024
+    assert config["NanoCpus"] == 2_000_000_000
+    # Nothing else of the Mac's line moves.
+    assert config["RestartPolicy"] == {"Name": "unless-stopped"}
+    uncapped = await host.create(_spec(name="simeon-box-def"))
+    config = daemon.containers[uncapped.provider_box_id]["HostConfig"]
+    assert "Memory" not in config
+    assert "NanoCpus" not in config
+    await client.aclose()
+
+
 def test_a_bundle_missing_a_file_is_refused_with_the_build_command() -> None:
     buffer = io.BytesIO()
     with tarfile.open(fileobj=buffer, mode="w") as tar:

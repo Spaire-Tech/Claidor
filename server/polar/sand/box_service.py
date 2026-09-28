@@ -19,6 +19,7 @@ import asyncio
 import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import quote
 from uuid import UUID, uuid4
@@ -34,12 +35,14 @@ from polar.kit.crypto import generate_token_hash_pair, get_token_hash
 from polar.kit.utils import generate_uuid, utc_now
 from polar.models import DesktopSession, SandBox
 from polar.postgres import AsyncSession
+from polar.redis import Redis
 
 from .box_hosts import (
     EGRESS_TUNNEL_PORT,
     FORK_NOVNC_PORT,
     GATEWAY_PORT,
     PRIMARY_NOVNC_PORT,
+    BoxBlocked,
     BoxHost,
     BoxHostError,
     BoxSpec,
@@ -178,6 +181,110 @@ def set_health_check_for_tests(check: HealthCheck | None) -> None:
     _health_check = check or gateway_health
 
 
+# --- sleep: what the box says about itself ------------------------------------------
+#
+# Grok Bot's contract, read from the host and the generated protos
+# (28 September 2026). The host answers `GET /health` with `isBusy`,
+# `busyOnlyAwaitingApproval` and `lastBusyAtMs` (`gateway-server.ts`,
+# `SandHost.getHealth`): busy while a turn, a background shell, a carried
+# wake or a mid-drain revival runs, and `lastBusyAtMs` moves only while
+# busy on something other than an approval card. Cursor's server read the
+# same pair (`AdminSandBoxHostStatusResponse.is_busy`, `last_busy_at_ms`),
+# kept `last_active_at_ms` per pod (`TeamMemberSandBoxPod`), hibernated a
+# pod with `AdminHibernateSandBox(force)`, which answers `started`/`reason`,
+# and reported `SAND_BOX_RUN_STATE_HIBERNATED`, which the window draws as
+# "sleeping" and "Waking your computer…". How long Cursor waited before
+# hibernating is not in the client; `CLAIDOR_BOX_IDLE_HIBERNATE_AFTER` is ours.
+
+
+@dataclass(frozen=True)
+class BoxHealth:
+    reachable: bool
+    is_busy: bool = False
+    busy_only_awaiting_approval: bool = False
+    last_busy_at_ms: int | None = None
+
+    @property
+    def holds_awake(self) -> bool:
+        """Busy on real work. A box that only waits on the person's
+        approval card may sleep: its `lastBusyAtMs` stopped moving."""
+        return self.is_busy and not self.busy_only_awaiting_approval
+
+
+HealthReport = Callable[[str, str], Awaitable[BoxHealth]]
+
+
+async def gateway_health_report(url: str, token: str) -> BoxHealth:
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(
+                f"{url}/health", headers={"authorization": f"Bearer {token}"}
+            )
+        if response.status_code != 200:
+            return BoxHealth(reachable=False)
+        body = response.json()
+    except (httpx.HTTPError, ValueError):
+        return BoxHealth(reachable=False)
+    if not isinstance(body, dict):
+        return BoxHealth(reachable=False)
+    last_busy = body.get("lastBusyAtMs")
+    return BoxHealth(
+        reachable=True,
+        is_busy=body.get("isBusy") is True,
+        busy_only_awaiting_approval=body.get("busyOnlyAwaitingApproval") is True,
+        last_busy_at_ms=int(last_busy)
+        if isinstance(last_busy, int | float) and last_busy > 0
+        else None,
+    )
+
+
+_health_report: HealthReport = gateway_health_report
+
+
+def set_health_report_for_tests(report: HealthReport | None) -> None:
+    global _health_report
+    _health_report = report or gateway_health_report
+
+
+# The app holds the gateway's `/events` stream open and reconnects it for
+# as long as Simeon is open (`gateway-client.ts`, the reconnect loop), and
+# every reconnect is an EnsureSandBox that would wake the box again. So a
+# box the app is attached to through the API's proxy counts as active: the
+# proxy keeps this key alive while a request or stream is open.
+ATTACHED_TTL_SECONDS = 180
+ATTACHED_REFRESH_SECONDS = 60.0
+
+
+def attached_key(box_id: UUID) -> str:
+    return f"sand:box:attached:{box_id}"
+
+
+async def mark_attached(redis: Redis, box_id: UUID) -> None:
+    try:
+        await redis.set(attached_key(box_id), "1", ex=ATTACHED_TTL_SECONDS)
+    except Exception:
+        return
+
+
+async def is_attached(redis: Redis, box_id: UUID) -> bool:
+    try:
+        return bool(await redis.exists(attached_key(box_id)))
+    except Exception:
+        # Unknown is treated as attached: a box is never put to sleep on
+        # a Redis failure.
+        return True
+
+
+#: `SandBoxBlockedInfo` for a full host. The window shows title and
+#: detail (each 1–400 characters) and holds for `retry-after`.
+CAPACITY_BLOCK_REASON = "capacity"
+CAPACITY_BLOCK_TITLE = "Simeon's cloud computers are all in use"
+CAPACITY_BLOCK_DETAIL = (
+    "Every cloud computer is busy right now. Simeon tries again in a minute."
+)
+CAPACITY_RETRY_AFTER_S = 60
+
+
 # --- the service ------------------------------------------------------------------
 
 
@@ -283,6 +390,8 @@ class BoxBrokerService:
             image=box_image_reference(),
             workspace_volume=workspace,
             data_volume=data,
+            memory_mb=max(settings.BOX_MEMORY_LIMIT_MB, 0),
+            cpus=max(settings.BOX_CPU_LIMIT, 0.0),
         )
         provisioned = await host.create(spec)
         box.provider = host.name
@@ -337,11 +446,14 @@ class BoxBrokerService:
                     state=state,
                     credential_live=credential_live,
                 )
+                if state != "running":
+                    await self.check_capacity(repository, host, box)
                 if state is not None:
                     await host.remove(box.provider_box_id, volumes=[])
                 await self._create(db, host, parent, box)
                 created = True
             elif state == "stopped":
+                await self.check_capacity(repository, host, box)
                 await host.start(box.provider_box_id)
                 inspected = await host.inspect(box.provider_box_id)
                 if inspected is not None:
@@ -366,10 +478,13 @@ class BoxBrokerService:
                 gateway_token="",
                 network_token="",
             )
+            await self.check_capacity(repository, host, box)
             await self._create(db, host, parent, box)
             created = True
         self.stamp_urls(box)
         box.last_ensured_at = utc_now()
+        box.last_active_at = box.last_ensured_at
+        box.hibernated_at = None
         await repository.update(box, flush=True)
         ready = await self.wait_ready(box)
         log.info(
@@ -422,6 +537,8 @@ class BoxBrokerService:
         )
         try:
             state = await host.run_state(box.provider_box_id)
+            if state != "running":
+                await self.check_capacity(repository, host, box)
             if state is not None:
                 if not preserve_data:
                     migrations.record(
@@ -438,6 +555,8 @@ class BoxBrokerService:
             await self._create(db, host, parent, box)
             self.stamp_urls(box)
             box.last_ensured_at = utc_now()
+            box.last_active_at = box.last_ensured_at
+            box.hibernated_at = None
             await repository.update(box, flush=True)
         except BoxHostError as error:
             migrations.record(box.id, operation_id, PHASE_FAILED, str(error))
@@ -489,6 +608,160 @@ class BoxBrokerService:
         if state == "stopped":
             return RUN_STATE_HIBERNATED, False
         return RUN_STATE_ABSENT, False
+
+    # --- capacity, sleep and wake ------------------------------------------------
+
+    async def check_capacity(
+        self, repository: SandBoxRepository, host: BoxHost, box: SandBox
+    ) -> None:
+        """Before a box is created or started: refuse with Grok Bot's
+        blocked hold when `CLAIDOR_BOX_MAX_RUNNING` others are awake on
+        this host. The app holds for `retry-after` and asks again
+        (`BrokeredHostConnector.connect`); the sleeper frees room."""
+        limit = settings.BOX_MAX_RUNNING
+        if limit <= 0:
+            return
+        awake = await repository.count_awake(host.name, excluding=box.id)
+        if awake < limit:
+            return
+        log.warning(
+            "sand.box.capacity.refused",
+            box=str(box.id),
+            user=str(box.user_id),
+            awake=awake,
+            limit=limit,
+        )
+        raise BoxBlocked(
+            CAPACITY_BLOCK_REASON,
+            title=CAPACITY_BLOCK_TITLE,
+            detail=CAPACITY_BLOCK_DETAIL,
+            retry_after_s=CAPACITY_RETRY_AFTER_S,
+        )
+
+    async def health_of(self, box: SandBox) -> BoxHealth:
+        url = self.internal_url(box, GATEWAY_PORT)
+        if url is None:
+            return BoxHealth(reachable=False)
+        return await _health_report(url, box.gateway_token)
+
+    async def hibernate(
+        self,
+        db: AsyncSession,
+        host: BoxHost,
+        box: SandBox,
+        *,
+        force: bool,
+        health: BoxHealth | None = None,
+    ) -> RecreateOutcome:
+        """`AdminHibernateSandBox`'s rule: a busy box is left running
+        (`reason` "busy") unless `force`. The container is stopped, never
+        removed: its volumes, its credential and its tokens are kept, so
+        EnsureSandBox or a wake starts the same box again."""
+        if not force:
+            health = health or await self.health_of(box)
+            if health.holds_awake:
+                return RecreateOutcome(started=False, reason="busy")
+        await host.stop(box.provider_box_id)
+        box.state = "hibernated"
+        box.hibernated_at = utc_now()
+        await SandBoxRepository.from_session(db).update(box, flush=True)
+        log.info("sand.box.hibernated", box=str(box.id), user=str(box.user_id))
+        return RecreateOutcome(started=True)
+
+    async def hibernate_idle(self, db: AsyncSession, redis: Redis) -> list[UUID]:
+        """The sleeper, every minute (`box_tasks.py`): each box the broker
+        left running on this host is asked how it is; one that holds work
+        stays awake and has its `last_active_at` moved; one that has been
+        idle for `CLAIDOR_BOX_IDLE_HIBERNATE_AFTER`, and that no app is
+        attached to through the proxy, is put to sleep."""
+        after = settings.BOX_IDLE_HIBERNATE_AFTER
+        if after.total_seconds() <= 0:
+            return []
+        try:
+            host = await resolve_box_host()
+        except BoxHostError:
+            return []
+        repository = SandBoxRepository.from_session(db)
+        now = utc_now()
+        slept: list[UUID] = []
+        for box in await repository.list_awake(host.name):
+            try:
+                state = await host.run_state(box.provider_box_id)
+            except BoxHostError as error:
+                log.warning("sand.box.sleep.unknown", box=str(box.id), error=str(error))
+                continue
+            if state != "running":
+                # Stopped or removed outside the broker: record it.
+                box.state = "hibernated" if state == "stopped" else "absent"
+                await repository.update(box, flush=True)
+                continue
+            health = await self.health_of(box)
+            if health.holds_awake:
+                box.last_active_at = now
+                await repository.update(box, flush=True)
+                continue
+            if health.last_busy_at_ms is not None:
+                last_busy = datetime.fromtimestamp(health.last_busy_at_ms / 1000, UTC)
+                if box.last_active_at is None or last_busy > box.last_active_at:
+                    box.last_active_at = min(last_busy, now)
+                    await repository.update(box, flush=True)
+            if await is_attached(redis, box.id):
+                continue
+            idle_since = box.last_active_at or box.last_ensured_at or box.created_at
+            if now - idle_since < after:
+                continue
+            try:
+                outcome = await self.hibernate(
+                    db, host, box, force=False, health=health
+                )
+            except BoxHostError as error:
+                log.warning("sand.box.sleep.failed", box=str(box.id), error=str(error))
+                continue
+            if outcome.started:
+                slept.append(box.id)
+        return slept
+
+    async def wake(self, db: AsyncSession, user_id: UUID) -> str:
+        """Start a sleeping box so it drains what the server queued for it
+        (a routine's fire, a listener event, a shared room's turn): the
+        notify bus reaches only a box that runs. Answers what it did, for
+        the log: `awake`, `woken`, `deferred` (the host is full; the box
+        drains at its next start), `no-box`."""
+        repository = SandBoxRepository.from_session(db)
+        box = await repository.get_by_user(user_id)
+        if box is None:
+            return "no-box"
+        try:
+            host = await resolve_box_host()
+        except BoxHostError:
+            return "no-box"
+        if box.provider != host.name:
+            return "no-box"
+        state = await host.run_state(box.provider_box_id)
+        if state is None:
+            box.state = "absent"
+            await repository.update(box, flush=True)
+            return "no-box"
+        if state == "running":
+            if box.state != "running":
+                box.state = "running"
+                await repository.update(box, flush=True)
+            return "awake"
+        try:
+            await self.check_capacity(repository, host, box)
+        except BoxBlocked:
+            return "deferred"
+        await host.start(box.provider_box_id)
+        inspected = await host.inspect(box.provider_box_id)
+        if inspected is not None:
+            self._apply(box, inspected)
+            self.stamp_urls(box)
+        box.state = "running"
+        box.last_active_at = utc_now()
+        box.hibernated_at = None
+        await repository.update(box, flush=True)
+        log.info("sand.box.woken", box=str(box.id), user=str(user_id))
+        return "woken"
 
     async def box_of_watcher(
         self, db: AsyncSession, caller: DesktopSession
@@ -612,9 +885,12 @@ __all__ = [
     "EGRESS_TUNNEL_PORT",
     "BoxBrokerRefused",
     "BoxBrokerService",
+    "BoxHealth",
     "MigrationLog",
     "RecreateOutcome",
     "broker",
+    "mark_attached",
     "migrations",
     "set_health_check_for_tests",
+    "set_health_report_for_tests",
 ]

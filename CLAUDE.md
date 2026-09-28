@@ -1105,6 +1105,27 @@ replaced once (`LEGACY_CLAIDOR_MODELS`, a `[claidor] model-legacy` line), so
 the order of deploy and rebuild cannot silence the agent. The "Terra"/"Luna"
 names elsewhere in this file mean these roles. Not yet run against OpenAI.
 
+## The cloud computer sleeps, has a size and a capacity (28 September 2026)
+
+"build it exactly how grok bot built it." The client half was already
+Grok Bot's and is unchanged: the host's `/health` (`isBusy`,
+`busyOnlyAwaitingApproval`, `lastBusyAtMs`), HIBERNATED drawn as
+"sleeping", EnsureSandBox waking it, the `SAND_BOX_BLOCKED` hold. The
+server half is `box_service.hibernate_idle` (worker, every minute) and
+`sand.box.wake` (queued by every `notify.publish`). A box stays awake while
+it is busy, or while the app is attached through the API's proxy (a Redis
+key; the open app's reconnect would wake it anyway). Otherwise it is
+stopped, files kept, after `CLAIDOR_BOX_IDLE_HIBERNATE_AFTER` (30 min).
+Each new box is capped at 4 GB and 2 CPUs. EnsureSandBox, a recreate or a
+wake that would pass `CLAIDOR_BOX_MAX_RUNNING` (3) answers the blocked hold
+with `retry-after: 60`. The idle time, the size and the limit are ours; the
+client does not state Cursor's. **The worker needs the box host's settings
+and certificate files too**: put them in the shared environment group
+(`docs/ops/box-host/render-env.md`). Channels in a sleeping box are
+disconnected. `docs/product/cloud-computer-served.md` §"Sleep, size and
+capacity" is the record; `server/tests/sand/test_box_sleep.py`. Not yet
+run against the VM.
+
 ## The rest of the connectors are apps under Simeon's name (28 September 2026)
 
 "for the rest of the connectors, lets use composio. but i want to white label

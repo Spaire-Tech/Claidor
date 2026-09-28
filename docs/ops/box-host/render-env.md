@@ -14,7 +14,25 @@ mismatch, the DNS record for `box1.simeonlabs.com` is not the VM's IP yet
 the IP, so `https://2.28.35.75:2376/version` works meanwhile and
 `CLAIDOR_BOX_DOCKER_HOST` may name the IP instead).
 
-## On Render, the API service
+## On Render, the shared environment group
+
+**Corrected 28 September 2026:** put everything below in the environment
+group both services read (`claidor-shared` in `render.yaml`, or the Simeon
+project's equivalent), not on the API service alone. Since the cloud box
+sleeps when idle, the **worker** talks to the box host too: it runs the
+sleeper every minute and wakes a box when a routine fires
+(`polar/sand/box_tasks.py`). Settings on the API alone leave the worker
+without a host, so no box ever sleeps and a sleeping box is never woken
+for a routine. Render environment groups hold secret files as well as
+variables.
+
+The worker also dials the box host (port 2376, and each box's `/health`
+on its published port), so its outbound addresses must be in the VM's
+firewall too. Render lists them on each service's Networking tab; they
+are normally the same set for every service in a region. If the worker's
+list differs from the API's, add the missing ones to `RENDER_EGRESS_IPS`
+and run `setup-box-host.sh` again.
+
 
 Secret files (Environment → Secret Files; Render mounts them under
 `/etc/secrets/`): `ca.pem`, `cert.pem`, `key.pem`.
@@ -33,6 +51,20 @@ Environment variables:
 Leave `CLAIDOR_BOX_HOST_ADDRESS` and `CLAIDOR_BOX_PUBLIC_URL_TEMPLATE`
 empty: the API proxies the box's ports itself at `/sand-box/{id}/p/…`
 and reaches them on the daemon's hostname.
+
+Sleep, size and capacity have defaults and need nothing unless the VM
+differs (28 September 2026; `docs/product/cloud-computer-served.md`
+§"Sleep, size and capacity"):
+
+| Name | Default | Meaning |
+|---|---|---|
+| `CLAIDOR_BOX_IDLE_HIBERNATE_AFTER` | `PT30M` (30 minutes) | a box idle this long, with no app attached, is stopped with its files kept; `PT0S` never |
+| `CLAIDOR_BOX_MEMORY_LIMIT_MB` | `4096` | memory per box, no swap beyond it; `0` no limit |
+| `CLAIDOR_BOX_CPU_LIMIT` | `2.0` | CPUs per box; `0` no limit |
+| `CLAIDOR_BOX_MAX_RUNNING` | `3` | boxes awake at once; one more is asked to wait a minute; `0` no limit |
+
+Size `CLAIDOR_BOX_MAX_RUNNING` to the VM: its memory, less about 2 GB for
+the system, divided by `CLAIDOR_BOX_MEMORY_LIMIT_MB`.
 
 ## The host bundle
 
