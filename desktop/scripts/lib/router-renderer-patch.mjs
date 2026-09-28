@@ -457,6 +457,17 @@ const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:var(--sime
 `;
 
 /**
+ * Two things for both themes (the founder, 28 September 2026: "also the blue
+ * color for toggles", "in dark mode the connectors logo are white. please make
+ * it dark"): a switch that is on is the chat's blue instead of the renderer's
+ * near-black, and in the dark theme the Gmail, Calendar and Drive tiles beside
+ * "Connect apps" sit on a dark tile with a faint edge instead of white.
+ */
+const SWITCH_AND_TILES_CSS = () => `[role=switch][aria-checked="true"]${HI}:not(#\\#){background-color:light-dark(${USER_BUBBLE_LIGHT},#3a78b8)}
+[data-theme*="dark"] .simeon-connect-apps__logos>i${HI}{background-color:#2c2c2e;box-shadow:0 0 0 1px rgba(255,255,255,.10),0 1px 2px rgba(0,0,0,.45)}
+`;
+
+/**
  * The agent's messages speak like the permission sheet on the website
  * (the founder, 28 September 2026: "you really did a great job on Stay in
  * control … can you try to bring this style everywhere the ai talk. lets try
@@ -478,11 +489,21 @@ const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:var(--sime
  */
 const AGENT_SHEET_CSS = () => `[data-theme*="light"] .sand-message.sand-1g0q52m:not(.sand-mvmkjj)${HI}{background:#fff;color:#1d1d1f;padding:10px 15px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04),0 12px 30px -16px rgba(20,30,60,.30);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
 [data-theme*="light"] .sand-message-block:has(>.sand-message.sand-1g0q52m:not(.sand-mvmkjj))${HI}{gap:6px}
-[data-theme*="light"] .sand-message.sand-mvmkjj${HI}{padding:10px 15px;box-shadow:inset 0 .5px 0 rgba(255,255,255,.28),0 0 0 .5px rgba(20,45,90,.18),0 1px 2px rgba(20,45,90,.08),0 12px 30px -16px rgba(20,50,110,.50);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
+[data-theme*="light"] .sand-message.sand-mvmkjj${HI}:not(#\\#){padding:10px 15px;box-shadow:inset 0 1px 0 rgba(255,255,255,.30),inset 0 0 0 .5px rgba(255,255,255,.12),0 0 0 .5px rgba(20,45,90,.24),0 2px 4px rgba(20,45,90,.12),0 16px 34px -14px rgba(20,50,110,.62);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
 [data-theme*="light"] .sand-agent-item[data-active="true"]${HI}:not(#\\#):not(#\\#){border-radius:14px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04),0 12px 30px -16px rgba(20,30,60,.30)}
 [data-theme*="light"] .sand-agent-item${HI}{border-radius:14px}
 [data-theme*="light"] .sand-agents-sidebar__search${HI}{background:#fff;border-radius:10px;box-shadow:0 0 0 .5px rgba(20,30,60,.09),0 1px 2px rgba(20,30,60,.05)}
 [data-theme*="light"] .sand-message-card${HI}{--simeon-card-fill:#fff}
+[data-theme*="light"] :is(.sand-settings-dialog,.sand-plugins-dialog)${HI}{background:#f5f5f7;box-shadow:0 0 0 .5px rgba(20,30,60,.10),0 30px 80px -24px rgba(20,30,60,.45)}
+[data-theme*="light"] .sand-settings-nav${HI}{background:transparent;box-shadow:inset -.5px 0 0 rgba(20,30,60,.10)}
+[data-theme*="light"] .sand-settings-nav__item:not(.sand-jbqb8w)${HI}{background:#fff;border-radius:10px;box-shadow: 0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04),0 12px 30px -16px rgba(20,30,60,.30)}
+[data-theme*="light"] .sand-settings-pane section>div.sand-1b8i4yy${HI}{background:#fff;border-radius:14px;box-shadow: 0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04),0 12px 30px -16px rgba(20,30,60,.30)}
+[data-theme*="light"] .sand-settings-pane :is(textarea,input:not([type=checkbox]):not([type=radio]))${HI}{background:#fff;box-shadow:0 0 0 .5px rgba(20,30,60,.14)}
+[data-theme*="light"] .sand-plugins-dialog [role=tab][aria-selected="true"]${HI}{background:#fff;border-radius:9px;box-shadow:0 0 0 .5px rgba(20,30,60,.09),0 1px 2px rgba(20,30,60,.06)}
+[data-theme*="light"] .sand-plugins__search${HI}{background:#fff;border-radius:10px;box-shadow:0 0 0 .5px rgba(20,30,60,.09),0 1px 2px rgba(20,30,60,.05)}
+[data-theme*="light"] .sand-plugins-row${HI}{background:#fff;border-radius:14px;padding:10px 14px;box-shadow: 0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04),0 12px 30px -16px rgba(20,30,60,.30)}
+[data-theme*="light"] .sand-plugins__grid${HI}{gap:12px}
+[data-theme*="light"] :is(.sand-plugins-detail,.sand-plugins-dialog) .sand-connector-card${HI}{background:#fff;border-color:transparent;border-radius:14px;box-shadow: 0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04),0 12px 30px -16px rgba(20,30,60,.30)}
 [data-theme*="light"] .sand-message-card>:is(article,form,section)${HI},[data-theme*="light"] .sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card):not(.sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card) *)${HI}{background:#fff;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04),0 12px 30px -16px rgba(20,30,60,.30)}
 `;
 
@@ -498,7 +519,7 @@ export const cardBlueCss = () => `${CARD_BLUE_MARKER} (27 September 2026). */
 .sand-message-card{--sand-fill-bubble-agent:transparent}
 .sand-message-card>:is(article,form,section)${HI},.sand-message-card :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card)${HI}{${GREY_CARD}}
 .sand-message-card .sand-tool-icon[style*="background-color: rgb(255, 255, 255)"]${HI}{box-shadow:inset 0 0 0 1px var(--sand-border-default)}
-${CHOICE_RADIO_CSS()}${AGENT_SHEET_CSS()}.sand-agent-item[data-active="true"]${HI}:not(#\\#){background:light-dark(#fff,rgba(255,255,255,.12));box-shadow:0 0 0 .5px light-dark(rgba(20,20,20,.08),rgba(255,255,255,.08)),0 1px 2px light-dark(rgba(20,20,20,.06),rgba(0,0,0,.3))}
+${CHOICE_RADIO_CSS()}${AGENT_SHEET_CSS()}${SWITCH_AND_TILES_CSS()}.sand-agent-item[data-active="true"]${HI}:not(#\\#){background:light-dark(#fff,rgba(255,255,255,.12));box-shadow:0 0 0 .5px light-dark(rgba(20,20,20,.08),rgba(255,255,255,.08)),0 1px 2px light-dark(rgba(20,20,20,.06),rgba(0,0,0,.3))}
 .sand-chat-header__name${HI}:not(#\\#){background:linear-gradient(180deg,light-dark(rgba(255,255,255,.92),rgba(255,255,255,.18)),light-dark(rgba(255,255,255,.72),rgba(255,255,255,.08)));-webkit-backdrop-filter:blur(20px) saturate(1.8);backdrop-filter:blur(20px) saturate(1.8);border:.5px solid light-dark(rgba(255,255,255,.9),rgba(255,255,255,.18));box-shadow:inset 0 1px 0 light-dark(#fff,rgba(255,255,255,.22)),0 0 0 .5px light-dark(rgba(20,20,40,.1),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(20,20,40,.14),rgba(0,0,0,.5))}
 .sand-prompt-send${HI}:not(#\\#){background-color:light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK});color:#fff}
 .sand-prompt-send${HI}:not(#\\#):hover:not(:disabled){background-color:light-dark(#1e4d80,#2a62a0)}

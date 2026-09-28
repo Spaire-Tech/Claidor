@@ -723,6 +723,17 @@ the renderer's own. `AGENT_SHEET_CSS` in `router-renderer-patch.mjs`
 `sidebar-sheet`); the same patch gives an agent with no messages the docked
 chat instead of the centred empty hero (`chat-active-when-open`). Seen in
 the website demo, built from the same patched window; not yet on a Mac.
+**Later the same day** ("bring the whole design in settings and connectors
+page. also the blue color for toggles also zoom in the app a little bit"):
+the person's blue bubble takes the sheet's padding (the earlier rule's
+padding never applied) and a deeper edge and lift; in light, Settings and
+the Plugins (Connect apps) dialog are a #f5f5f7 page with every settings
+group, plugin row, the selected nav item and tab, and the search field as
+white sheets; a switch that is on is the chat's blue in both themes; in dark,
+the Gmail/Calendar/Drive tiles beside "Connect apps" are dark
+(`SWITCH_AND_TILES_CSS`); and the window opens at zoom 1.1, Cmd-0 returning
+there (`DEFAULT_ZOOM_FACTOR`, `host-window-chords.ts`, the main window's
+`webPreferences.zoomFactor`). Seen headless in the demo; not yet on a Mac.
 **The chat header is the agent's card, 23 September, later still**
 ("the name of the agent are up top, left. i want to middle it … like
 muse … remove the line"): a CSS block appended to the pinned stylesheet

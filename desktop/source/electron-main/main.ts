@@ -2,6 +2,7 @@ import { installApplicationMenu, type ApplicationMenuElectronPort } from "./appl
 import { reportDesktopEdgeFailure } from "./desktop-edge-failures.js";
 import { createDevToolsGate, createDevToolsMembershipResolver } from "./devtools-gate.js";
 import {
+  DEFAULT_ZOOM_FACTOR,
   createHostWindowChords,
   type HostInputEvent,
   type HostWindowInput,
@@ -199,6 +200,7 @@ export interface MainBrowserWindowOptions {
     readonly preload: string;
     readonly sandbox: false;
     readonly webviewTag: true;
+    readonly zoomFactor: number;
   };
 }
 
@@ -321,6 +323,7 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
         preload: deps.preloadPath,
         sandbox: false,
         webviewTag: true,
+        zoomFactor: DEFAULT_ZOOM_FACTOR,
       },
     });
     services.hardenVncWebviewAttach?.(window.webContents);
