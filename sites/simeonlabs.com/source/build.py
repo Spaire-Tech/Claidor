@@ -169,11 +169,19 @@ SURGERY = r"""([TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML]) => {
   // Links leave the preview in a new tab instead of replacing it.
   // It is a preview to try: no button or link leads anywhere.
   for (const a of document.querySelectorAll('a')) { a.removeAttribute('href'); a.removeAttribute('target'); a.removeAttribute('rel'); }
+  const heroSection = document.querySelector('section[data-framer-name="Hero"]');
+  for (const img of document.querySelectorAll('img')) {
+    if (heroSection.contains(img)) { img.removeAttribute('loading'); img.setAttribute('fetchpriority', 'high'); }
+    else img.setAttribute('loading', 'lazy');
+  }
   const hero = document.querySelector('section[data-framer-name="Hero"] .framer-115oxcp');
   const stage = document.createElement('div');
   stage.className = 'sd-stage';
   stage.innerHTML = '<div class="sd-frame"><div class="sd-bar"><span class="sd-dots"><i></i><i></i><i></i></span><span class="sd-title">Simeon</span></div>'
-    + '<div class="sd-screen"><div class="sd-window"><iframe src="app/index.html" title="Simeon, playing a launch week" loading="eager"></iframe></div></div></div>';
+    + '<div class="sd-screen"><div class="sd-window"><picture class="sd-poster">'
+    + '<source media="(max-width:599.98px)" srcset="app-poster-phone.jpg"><source media="(max-width:809.98px)" srcset="app-poster-tall.jpg">'
+    + '<img src="app-poster-wide.jpg" alt="" fetchpriority="high" decoding="sync"></picture>'
+    + '<iframe src="app/index.html" title="Simeon, playing a launch week" loading="eager"></iframe></div></div></div>';
   hero.appendChild(stage);
   // "Connects to your apps": its ticker lists connectors, and its picture is the connector animation.
   const feature = [...document.querySelectorAll('section[data-framer-name="Feature"]')].find((sec) => /Connects to your apps/.test(sec.textContent));
@@ -265,7 +273,13 @@ section[data-framer-name="Hero"] .framer-hy289i{display:none!important}
 .sd-dots i{display:block;border-radius:50%;background:#dcdcda;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.1)}
 .sd-screen{position:relative;overflow:hidden;background:#f5f5f7}
 .sd-window{position:absolute;left:0;top:0;transform-origin:0 0;overflow:hidden}
-.sd-window iframe{display:block;width:100%;height:100%;border:0}
+.sd-window iframe{position:absolute;inset:0;display:block;width:100%;height:100%;border:0;opacity:0;transition:opacity .35s ease}
+.sd-window.sd-live iframe{opacity:1}
+.sd-poster,.sd-poster img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:0 0}
+.sd-window.sd-live.sd-settled .sd-poster{display:none}
+/* Nothing below the hero moves until it is on screen. */
+.sd-marquee .sd-track{animation-play-state:paused}
+.sd-marquee.sd-seen .sd-track{animation-play-state:running}
 /* Connectors: two rows of logo-and-name chips gliding in opposite directions. */
 .framer-15163q8{gap:12px!important}
 .sd-chips{display:flex;flex-wrap:wrap;gap:8px;width:100%;max-width:448px}
@@ -423,17 +437,46 @@ FIT = """<script>
   };
   new ResizeObserver(fit).observe(stage);
   fit();
+  // The still of the app shows at once; the live app takes over, unseen, once it has drawn its sidebar.
+  const iframe = win.querySelector('iframe');
+  const t0 = performance.now();
+  const reveal = () => { win.classList.add('sd-live'); setTimeout(() => win.classList.add('sd-settled'), 500); };
+  const poll = () => {
+    let doc = null; try { doc = iframe.contentDocument; } catch {}
+    const ready = doc && doc.querySelector('.sand-agents-sidebar');
+    if (ready) { (doc.fonts ? Promise.race([doc.fonts.ready, new Promise((r) => setTimeout(r, 1200))]) : Promise.resolve()).then(() => requestAnimationFrame(() => requestAnimationFrame(reveal))); return; }
+    if (performance.now() - t0 > 20000) return reveal();
+    setTimeout(poll, 60);
+  };
+  poll();
 })();
+</script>"""
+
+VIEW_JS = """<script>
+// A scene starts when it scrolls into view and starts over each time it comes back.
+window.sdWhenSeen = (el, start, stop) => {
+  if (!el) return;
+  let on = false;
+  new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting && !on) { on = true; el.classList.add('sd-seen'); start(); }
+      else if (!e.isIntersecting && on) { on = false; el.classList.remove('sd-seen'); stop(); }
+    }
+  }, { threshold: 0.3 }).observe(el);
+};
 </script>"""
 
 ORBIT_JS = """<script>
 (() => {
+  // The connector rows glide only while on screen.
+  document.querySelectorAll('.sd-marquee').forEach((m) => sdWhenSeen(m, () => {}, () => {}));
   const orbit = document.querySelector('.sd-orbit');
   if (!orbit) return;
   const tile = orbit.querySelector('.sd-tile'), orbs = [...orbit.querySelectorAll('.sd-orb')];
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let t0 = null;
-  const frame = (now) => {
+  let t0 = null, run = 0;
+  const frame = (id) => (now) => {
+    if (id !== run) return;
     const W = orbit.clientWidth, H = orbit.clientHeight;
     if (W && H) {
       const t = Math.min(W * 0.36, H * 0.44), size = t * 0.5, gap = t * 1.05, lane = gap * orbs.length;
@@ -463,9 +506,11 @@ ORBIT_JS = """<script>
         orb.style.opacity = Math.max(0, Math.min(1, 1.9 - d)).toFixed(2);
       });
     }
-    if (!still) requestAnimationFrame(frame);
+    if (!still) requestAnimationFrame(frame(id));
   };
-  requestAnimationFrame(frame);
+  // Laid out once so the tile and logos are in place before the scroll reaches them.
+  frame(0)(performance.now()); t0 = null;
+  sdWhenSeen(orbit.closest('.framer-115oxcp'), () => { t0 = null; requestAnimationFrame(frame(++run)); }, () => { run++; });
 })();
 </script>"""
 
@@ -473,19 +518,24 @@ SCENES_JS = """<script>
 (() => {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-  for (const [sel, first] of [['.sd-ok-scene', 3200], ['.sd-vm-scene', 3800]]) {
+  for (const [sel, first] of [['.sd-ok-scene', 2200], ['.sd-vm-scene', 2600]]) {
     const scene = document.querySelector(sel);
     if (!scene) continue;
     const btn = scene.querySelector('.sd-allow');
-    (async () => {
-      for (;;) {
-        scene.classList.remove('sd-done');
-        await wait(first);
+    let run = 0;
+    const reset = () => { scene.classList.remove('sd-done'); btn.classList.remove('sd-press'); };
+    const play = async (id) => {
+      const live = () => id === run;
+      while (live()) {
+        reset();
+        await wait(first); if (!live()) return;
         btn.classList.add('sd-press'); await wait(200); btn.classList.remove('sd-press');
-        await wait(250); scene.classList.add('sd-done');
+        await wait(250); if (!live()) return;
+        scene.classList.add('sd-done');
         await wait(4000);
       }
-    })();
+    };
+    sdWhenSeen(scene.closest('.framer-115oxcp'), () => play(++run), () => { run++; reset(); });
   }
 })();
 </script>"""
@@ -503,24 +553,31 @@ TALK_JS = """<script>
     t.querySelector('.sd-bub').innerHTML = '<span class="sd-typing"><i></i><i></i><i></i></span>';
     return t;
   };
-  (async () => {
-    for (;;) {
-      await wait(1800);
+  let run = 0;
+  const reset = () => {
+    feed.querySelectorAll('.sd-typer').forEach((t) => t.remove());
+    late.forEach((m) => m.classList.remove('sd-shown', 'sd-in'));
+  };
+  const play = async (id) => {
+    const live = () => id === run;
+    while (live()) {
+      await wait(900); if (!live()) return;
       for (const m of late) {
         // Slowly: the speaker types for a while, then the message settles in.
         const t = typer(m); feed.appendChild(t);
         await wait(60); t.classList.add('sd-in');
         await wait(2400);
-        t.remove();
+        t.remove(); if (!live()) return;
         m.classList.add('sd-shown'); await wait(40); m.classList.add('sd-in');
-        await wait(3200);
+        await wait(3200); if (!live()) return;
       }
-      await wait(3500);
+      await wait(3500); if (!live()) return;
       late.forEach((m) => m.classList.remove('sd-in'));
-      await wait(1000);
+      await wait(1000); if (!live()) return;
       late.forEach((m) => m.classList.remove('sd-shown'));
     }
-  })();
+  };
+  sdWhenSeen(feed.closest('.framer-115oxcp'), () => { reset(); play(++run); }, () => { run++; reset(); });
 })();
 </script>"""
 
@@ -547,6 +604,31 @@ FAQ_JS = """<script>
 })();
 </script>"""
 
+async def posters():
+    """Stills of the app's first screen, shown the moment the page opens while the live app loads.
+    One per window shape FIT lays out: computer (880 wide), a narrow tablet (880, tall) and a phone (440)."""
+    import functools, http.server, threading
+    from playwright.async_api import async_playwright
+    class Quiet(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *a): pass
+    srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=OUT))
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    exe = sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux*/chrome"))[-1]
+    try:
+        async with async_playwright() as p:
+            b = await p.chromium.launch(executable_path=exe, args=["--no-sandbox"])
+            for name, w, h in (("wide", 880, 618), ("tall", 880, 1290), ("phone", 440, 632)):
+                pg = await b.new_page(viewport={"width": w, "height": h}, device_scale_factor=2)
+                await pg.goto(f"http://127.0.0.1:{srv.server_port}/app/index.html")
+                # The same moment the page reveals the live app: its sidebar drawn and its fonts in.
+                await pg.wait_for_selector(".sand-agents-sidebar", state="attached")
+                await pg.evaluate("document.fonts.ready")
+                await pg.screenshot(path=f"{OUT}/app-poster-{name}.jpg", type="jpeg", quality=82)
+                await pg.close()
+            await b.close()
+    finally:
+        srv.shutdown()
+
 async def main():
     from playwright.async_api import async_playwright
     exe = sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux*/chrome"))[-1]
@@ -570,9 +652,16 @@ async def main():
             '<meta name="twitter:card" content="summary">\n<meta name="twitter:title" content="Simeon">\n'
             '<meta name="twitter:description" content="' + desc + '">\n'
             '<link rel="icon" type="image/svg+xml" href="logos/simeon.svg">\n' + head)
+    app_idx = open(f"{APP}/index.html").read()
+    js = re.search(r'src="\./(assets/index-[^"]+\.js)"', app_idx).group(1)
+    css = re.search(r'href="\./(assets/index-[^"]+\.css)"', app_idx).group(1)
+    head = ('<link rel="preload" as="image" href="app-poster-wide.jpg" media="(min-width:810px)" fetchpriority="high">\n'
+            '<link rel="preload" as="image" href="app-poster-tall.jpg" media="(min-width:600px) and (max-width:809.98px)" fetchpriority="high">\n'
+            '<link rel="preload" as="image" href="app-poster-phone.jpg" media="(max-width:599.98px)" fetchpriority="high">\n'
+            f'<link rel="modulepreload" crossorigin href="app/{js}">\n<link rel="preload" as="style" crossorigin href="app/{css}">\n' + head)
     page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
             '<title>Simeon</title>\n' + head +
-            "<style>" + CSS.replace("%TOKENS%", r["tokens"]) + "</style>\n</head>\n<body>\n" + r["body"] + FIT + ORBIT_JS + SCENES_JS + TALK_JS + BILL_JS + FAQ_JS + "\n</body>\n</html>\n")
+            "<style>" + CSS.replace("%TOKENS%", r["tokens"]) + "</style>\n</head>\n<body>\n" + r["body"] + FIT + VIEW_JS + ORBIT_JS + SCENES_JS + TALK_JS + BILL_JS + FAQ_JS + "\n</body>\n</html>\n")
     for bad in ("framerusercontent.com/assets", "framerusercontent.com/third", "fonts.gstatic", "chrome-extension", "Simeon le site_files"):
         assert bad not in page, bad
     open(f"{OUT}/index.html", "w", encoding="utf-8").write(page)
@@ -582,14 +671,12 @@ async def main():
     idx = open(f"{OUT}/app/index.html").read()
     idx = idx.replace('<script src="./demo-bridge.js"></script>', '<script src="./scroll-guard.js"></script>\n    <script src="./demo-bridge.js"></script>', 1)
     assert "scroll-guard.js" in idx
-    # Behind the window: the hero painting, blurred like a Mac desktop under a sidebar,
-    # and the sidebar's tint lowered from the app's 93% so the colour shows through faintly.
-    shutil.copy(f"{OUT}/img/0tXvc1jb6FDg9uTgj0fOQDEvw.png", f"{OUT}/app/desktop.png")
+    # The sidebar is solid in the page, not glass over a desktop.
     before = 'body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(160deg,#e4e4e7,#d4d4d8)}'
     assert before in idx
-    idx = idx.replace(before, 'body::before{content:"";position:fixed;inset:-40px;z-index:-1;background:url(./desktop.png) center/cover;filter:blur(28px) saturate(.7) brightness(1.08)}'
-        'html body .sand-agents-sidebar{background-color:var(--cursor-bg-chrome)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}')
+    idx = idx.replace(before, before + 'html body .sand-agents-sidebar{background-color:var(--cursor-bg-chrome)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}')
     open(f"{OUT}/app/index.html", "w").write(idx)
+    await posters()
     shutil.rmtree(TMP, ignore_errors=True)
     print("site written to", os.path.abspath(OUT))
 

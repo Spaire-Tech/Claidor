@@ -29,7 +29,12 @@ framerusercontent.com (it fetches the fonts and pictures once). It rewrites
 
 The hero runs the real patched app window (`public/app/`) in an iframe inside
 the hero box, scaled from the box's own size, with `scroll-guard.js` so the
-app never scrolls the page and the wheel over it scrolls the page. The four
+app never scrolls the page and the wheel over it scrolls the page. The app's
+code is about 6 MB, so the page first shows a still of its opening screen
+(`app-poster-{wide,tall,phone}.jpg`, captured by `build.py` from the app
+itself) and fades the live app in over it once the app has drawn its sidebar.
+Each animation below the hero starts when it scrolls into view and starts
+over when you come back to it. The four
 feature boxes are drawn by the page itself: connectors behind the Simeon
 glass tile, Iris, Otto and Nova talking, Otto's computer asking you to sign
 in, Iris asking before she sends an email. Pricing is Standard $20, Pro $60
