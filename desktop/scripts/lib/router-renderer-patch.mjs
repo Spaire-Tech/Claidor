@@ -192,6 +192,28 @@ export function patchOriginalShapes(source) {
 }
 
 /**
+ * An agent's chat always opens as a chat, 28 September 2026 ("it starts like
+ * this … the composer is different. i noticed the app sometimes start like
+ * this too. please fix."). The window counted a chat active only once it had
+ * entries or a run (`z=B||D.isRunning||F||R||q`), so an agent with nothing
+ * said yet drew the empty hero instead: the shell marked data-empty, the
+ * composer in the middle of the pane and expanded to 136 px, jumping to the
+ * docked 44 px bar at the first message. A chat now counts as active whenever
+ * an agent is open (`e`, the open agent's id, as `isChatInteractive` reads
+ * it), so it is the docked chat from the start; the new-chat and new-agent
+ * panes are untouched.
+ */
+export const CHAT_LAYOUT_REPLACEMENTS = Object.freeze([
+  ["chat-active-when-open", ",z=B||D.isRunning||F||R||q,V=e!=null&&!d,", ",z=e!=null||B||D.isRunning||F||R||q,V=e!=null&&!d,"],
+]);
+
+export function patchOriginalChatLayout(source) {
+  let out = source;
+  for (const [label, before, after] of CHAT_LAYOUT_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+/**
  * Onboarding copy, 27 September 2026 (the founder's words): the sign-in
  * tagline, the sentence typed into the composer on the "meet" screen, and
  * the three example teammates' names. Their ids (`invoice-chaser`,
@@ -767,7 +789,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!COPY_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer onboarding copy anchors are not all in the mark chunk.");
   if (!LOGO_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer file-kind and Plugins-button anchors are not all in the mark chunk.");
   const logoAssets = await readLogoAssets();
-  const markPatched = patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions));
+  const markPatched = patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions)));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -849,7 +871,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

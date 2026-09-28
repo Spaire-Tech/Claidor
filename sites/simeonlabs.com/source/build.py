@@ -321,10 +321,12 @@ section[data-framer-name="Hero"] .framer-hy289i{display:none!important}
 /* The laptop hero scene. Outside it the pin and its sticky layer take no box of their own. */
 .sd-pin,.sd-sticky{display:contents}
 .sd-bleed,.sd-word{display:none}
-.sd-scrolly{--card-w:min(1079px,calc(100vw - 80px),calc((100vh - 100px) * 1.3272));--card-h:calc(var(--card-w) * .75347);--pin-top:calc(60px + (100vh - 60px - var(--card-h)) / 2)}
+.sd-scrolly{--card-w:min(1440px,calc(100vw - 64px),calc((100vh - 84px) * 1.68));--card-h:calc(var(--card-w) / 1.68);--pin-top:calc(60px + (100vh - 60px - var(--card-h)) / 2)}
 .sd-scrolly .sd-pin{display:block;width:100%;height:calc(var(--card-h) + 35vh)}
 .sd-scrolly .sd-sticky{display:flex;justify-content:center;position:sticky;top:var(--pin-top)}
-.sd-scrolly .framer-t7h7mm-container{max-width:var(--card-w)}
+/* The laptop card spans the page like Cursor's (the founder, 28 September 2026: "the screen
+   opens too small"), wider than the text column, and short enough to sit under the nav. */
+.sd-scrolly .framer-t7h7mm-container{width:var(--card-w)!important;height:var(--card-h)!important;max-width:none!important;aspect-ratio:auto!important;flex:none!important}
 .sd-scrolly .framer-gx3vnz,.sd-scrolly section[data-framer-name="Hero"] .framer-115oxcp{overflow:visible!important}
 /* Nothing here is repainted while scrolling: the painting stands still and two page-coloured
    curtains slide in over its sides (their inner edges carry the card's round corners), a fade
@@ -549,8 +551,9 @@ FIT = """<script>
     // Inset like Cursor's: the window floats on the painting with the picture showing all round.
     const side = Math.round(w * (phone ? 0.03 : 0.04)), top = Math.round(h * (phone ? 0.03 : 0.05)), bottom = Math.round(h * (phone ? 0.03 : 0.05));
     const fw = w - 2 * side, fh = h - top - bottom;
-    // Zoom: the app is laid out 880 px wide on a computer and 440 on a phone, then scaled to the window.
-    const s = fw / (phone ? 440 : 880);
+    // Zoom: the app is laid out 1150 px wide in the laptop scene (its card is wide and short), 880 on
+    // other computers and tablets, 440 on a phone, then scaled to the window.
+    const s = fw / (phone ? 440 : document.documentElement.classList.contains('sd-scrolly') ? 1150 : 880);
     const barH = Math.round(Math.max(22, 30 * s));
     px(frame, { left: side, top, width: fw, height: fh, borderRadius: Math.round(11 * Math.min(1.2, s)) });
     px(bar, { height: barH, fontSize: Math.max(11, 13 * Math.min(1.1, s)) });
@@ -881,7 +884,7 @@ async def posters():
             b = await p.chromium.launch(executable_path=exe, args=["--no-sandbox"])
             # "held" is the laptop scene's still: the app before its story starts, as the page holds it
             # until the window is up (demo-gate.js reads the iframe's data-hold through frameElement).
-            for name, w, h in (("wide", 880, 618), ("tall", 880, 1290), ("held", 880, 618)):
+            for name, w, h in (("wide", 880, 618), ("tall", 880, 1290), ("held", 1150, 638)):
                 pg = await b.new_page(viewport={"width": w, "height": h}, device_scale_factor=2)
                 if name == "held":
                     await pg.add_init_script("Object.defineProperty(window, 'frameElement', { get: () => ({ hasAttribute: () => true, removeAttribute() {} }) })")
