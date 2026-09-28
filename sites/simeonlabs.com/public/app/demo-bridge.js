@@ -1415,7 +1415,8 @@
   new MutationObserver(quietComposers).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["contenteditable"] });
   var demoStyle = document.createElement("style");
   demoStyle.textContent = `${COMPOSER},${COMPOSER} *{cursor:default!important;caret-color:transparent!important}
-.sand-activity-mark>span[aria-hidden],.sand-activity-mark__label{opacity:1!important}`;
+.sand-activity-mark>span[aria-hidden],.sand-activity-mark__label{opacity:1!important}
+.sand-chat-header__computer{display:none!important}`;
   document.head.append(demoStyle);
   installPrimaryPreloadEntrypoint(
     {

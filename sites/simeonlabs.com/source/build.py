@@ -147,7 +147,6 @@ def mface(f, tint=""):
     return f'<img src="faces/{f}.png" alt="" style="{"filter:" + tint if tint else ""}">'
 def tag(f, name, color):
     return f'<span class="sd-m-tag" style="color:{color}"><img src="faces/{f}.png" alt="">{name}</span>'
-MON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>'
 PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
 MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>'
 CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
@@ -157,7 +156,7 @@ group = '<span class="sd-m-av sd-m-group">' + mface("simeon") + mface("scout") +
 MOBILE_HTML = ('<div class="sd-mob" aria-label="Simeon, a chief of staff agent, talking with you about a launch">'
   '<div class="sd-m-rail"><span class="sd-m-lights"><i></i><i></i><i></i></span>' + rail + group
   + '<span class="sd-m-fill"></span><span class="sd-m-new">' + PLUS + '</span><span class="sd-m-me">BF</span></div>'
-  '<div class="sd-m-main"><div class="sd-m-head">' + mface("simeon") + '<b>Simeon</b><span class="sd-m-role">Chief of staff</span><span class="sd-m-mon">' + MON + '</span></div>'
+  '<div class="sd-m-main"><div class="sd-m-head">' + mface("simeon") + '<b>Simeon</b><span class="sd-m-role">Chief of staff</span></div>'
   '<div class="sd-m-thread"><div class="sd-m-feed">'
   f'<div class="sd-m-in">Thursday is on track: 12 of 15 launch tickets are done in {chip("linear")}, and the review is Thursday at 2 pm.</div>'
   '<div class="sd-m-sys">Messages from ' + tag("scout", "Scout", "#3f7f78") + ' and ' + tag("yodo", "Yodo", "#b0603c") + '</div>'
@@ -296,6 +295,7 @@ SURGERY = r"""([TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML, MOBILE_HTM
 
 CSS = """
 :root{%TOKENS%}
+html{color-scheme:light}
 html,body{margin:0;background:#f6f6f3}
 body{overflow-x:clip}
 /* The hero box keeps Framer's proportions at every width instead of its fixed 1079 x 813. */
@@ -355,9 +355,10 @@ section[data-framer-name="Hero"] .framer-hy289i{display:none!important}
 .sd-scrolly .sd-word{display:block;position:absolute;z-index:3;left:50%;top:47%;width:36%;aspect-ratio:1024/460;transform:translate(-50%,-50%);background:#fff;opacity:.92;
   -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;filter:drop-shadow(0 2px 18px rgba(20,40,80,.18));will-change:opacity,transform}
 .sd-scrolly .sd-stage{opacity:0;pointer-events:none;will-change:opacity,transform}
-/* The demo plays by itself and has nothing to click, so neither the window nor the app in it
-   takes the pointer: a wheel or a finger over it scrolls the page on the browser's own scroll
-   thread and never waits on the app (the founder, 28 September 2026: "i want zero lag"). */
+/* The app in the window never takes the pointer (FIT hands clicks to it), so a wheel or a
+   finger over it scrolls the page on the browser's own scroll thread and never waits on the app
+   (the founder, 28 September 2026: "i want zero lag"). The window itself takes clicks once up. */
+.sd-scrolly .sd-stage.sd-up{pointer-events:auto}
 /* The phone hero: a still of the app window filling the hero box. */
 .sd-mob{display:none}
 @media (max-width:599.98px){
@@ -377,14 +378,13 @@ section[data-framer-name="Hero"] .framer-hy289i{display:none!important}
   .sd-m-group img:nth-child(1){top:1.2cqw;left:4.2cqw}.sd-m-group img:nth-child(2){bottom:1.4cqw;left:1.6cqw}.sd-m-group img:nth-child(3){bottom:1.4cqw;right:1.6cqw}
   .sd-m-fill{flex:1}
   .sd-m-new{width:6cqw;height:6cqw;color:#6e6e73}
-  .sd-m-new svg,.sd-m-mon svg,.sd-m-plus svg,.sd-m-mic svg,.sd-m-clock svg{display:block;width:100%;height:100%}
+  .sd-m-new svg,.sd-m-plus svg,.sd-m-mic svg,.sd-m-clock svg{display:block;width:100%;height:100%}
   .sd-m-me{display:grid;place-items:center;width:9cqw;height:9cqw;border-radius:50%;background:#ececea;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);font-size:3.2cqw;color:#555;letter-spacing:.02em}
   .sd-m-main{flex:1;min-width:0;display:flex;flex-direction:column}
   .sd-m-head{display:flex;align-items:center;gap:2cqw;padding:4.2cqw 4cqw 3.4cqw;border-bottom:1px solid rgba(0,0,0,.06);font-size:4.2cqw}
   .sd-m-head img{width:7.4cqw;height:7.4cqw;object-fit:contain}
   .sd-m-head b{font-weight:500}
   .sd-m-role{font-size:3.3cqw;color:#255a93}
-  .sd-m-mon{margin-left:auto;width:5.4cqw;height:5.4cqw;color:#6e6e73}
   .sd-m-thread{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:0 3.6cqw;
     -webkit-mask-image:linear-gradient(#0000 0,#000 9cqw);mask-image:linear-gradient(#0000 0,#000 9cqw)}
   .sd-m-feed{display:flex;flex-direction:column;gap:2.2cqw;padding:3cqw 0 2cqw}
@@ -426,7 +426,6 @@ section[data-framer-name="Hero"] .framer-hy289i{display:none!important}
   background:rgba(255,255,255,.40);-webkit-backdrop-filter:blur(20px) saturate(1.9);backdrop-filter:blur(20px) saturate(1.9);
   border:1px solid rgba(255,255,255,.9)}
 .sd-tile img{width:68%;height:68%}
-@media (prefers-reduced-motion:reduce){.sd-track{animation:none}}
 /* Agents talking, on the painting: bubbles rise in from the bottom, older ones fade out at the top. */
 .sd-talk{position:absolute;inset:0;z-index:3;container-type:inline-size;display:flex;flex-direction:column;justify-content:flex-end;
   padding:6cqw 5cqw;overflow:hidden;-webkit-mask:linear-gradient(#0000 0,#000 22%);mask:linear-gradient(#0000 0,#000 22%)}
@@ -455,7 +454,6 @@ section[data-framer-name="Hero"] .framer-hy289i{display:none!important}
 .sd-typing{display:inline-flex;gap:.9cqw;padding:3cqw 3.4cqw}
 .sd-typing i{width:1.4cqw;height:1.4cqw;border-radius:50%;background:#8e8e93;animation:sd-dot 1s infinite ease-in-out}
 .sd-typing i:nth-child(2){animation-delay:.15s}.sd-typing i:nth-child(3){animation-delay:.3s}
-@media (prefers-reduced-motion:reduce){.sd-typing i{animation:none;opacity:.6}}
 @keyframes sd-dot{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-.5cqw)}}
 /* Scenes on the paintings, drawn quietly: light type, air, glass. */
 .sd-scene{position:absolute;inset:0;z-index:3;container-type:inline-size;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5cqw;padding:8cqw 7cqw;
@@ -590,6 +588,44 @@ FIT = """<script>
   new IntersectionObserver(([e]) => { offscreen = !e.isIntersecting; sdSettleApp(); }).observe(stage);
   addEventListener('scroll', () => { freeze(true); clearTimeout(thaw); thaw = setTimeout(() => { thaw = null; freeze(hidden()); }, 180); }, { passive: true });
   iframe.addEventListener('load', () => sdSettleApp());
+  // The window takes no pointer, so a wheel or a finger over it always scrolls the page on the
+  // browser's own thread. A click on it is handed to the part of the app under the pointer
+  // (pointer and mouse events, then the click), and the cursor shows what is clickable there.
+  const appPoint = (e) => {
+    let doc = null; try { doc = iframe.contentDocument; } catch {}
+    if (!doc || !win.classList.contains('sd-live')) return null;
+    const r = iframe.getBoundingClientRect(), k = r.width / iframe.offsetWidth || 1;
+    const x = (e.clientX - r.left) / k, y = (e.clientY - r.top) / k;
+    if (x < 0 || y < 0 || x > iframe.offsetWidth || y > iframe.offsetHeight) return null;
+    const el = doc.elementFromPoint(x, y);
+    return el ? { doc, el, x, y } : null;
+  };
+  const send = (p, type) => {
+    const view = p.doc.defaultView, Kind = type.startsWith('pointer') ? view.PointerEvent : view.MouseEvent;
+    p.el.dispatchEvent(new Kind(type, { bubbles: true, cancelable: true, composed: true, view, clientX: p.x, clientY: p.y, screenX: p.x, screenY: p.y,
+      button: 0, buttons: type.endsWith('down') ? 1 : 0, detail: 1, pointerId: 1, pointerType: 'mouse', isPrimary: true }));
+  };
+  let pressed = null, hovering = 0;
+  screen.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    const p = appPoint(e); if (!p) return;
+    pressed = p; send(p, 'pointerdown'); send(p, 'mousedown');
+  });
+  screen.addEventListener('pointerup', (e) => {
+    if (e.button !== 0 || !pressed) return;
+    const p = appPoint(e) || pressed;
+    send(p, 'pointerup'); send(p, 'mouseup');
+    if (pressed.el === p.el || pressed.el.contains(p.el)) send(pressed, 'click');
+    pressed = null;
+  });
+  screen.addEventListener('pointermove', (e) => {
+    if (hovering) return;
+    hovering = requestAnimationFrame(() => {
+      hovering = 0;
+      const p = appPoint(e);
+      screen.style.cursor = p && p.doc.defaultView.getComputedStyle(p.el).cursor === 'pointer' ? 'pointer' : '';
+    });
+  });
   // Off the laptop scene the demo plays at once; in it, HERO_JS lets it go when the window rises.
   window.sdReleaseDemo = () => {
     if (!iframe.hasAttribute('data-hold')) return;
@@ -627,7 +663,7 @@ HERO_JS = """<script>
   const clamp = (v) => Math.max(0, Math.min(1, v));
   const inout = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
   const out = (t) => 1 - Math.pow(1 - t, 2);
-  let queued = false, started = false;
+  let queued = false, started = false, up = false;
   const tick = () => {
     queued = false;
     if (!g) return;
@@ -642,8 +678,9 @@ HERO_JS = """<script>
       stage.style.opacity = e.toFixed(3);
       stage.style.transform = 'translateY(' + (28 * (1 - e)).toFixed(2) + 'px) scale(' + (0.97 + 0.03 * e).toFixed(4) + ')';
     }
-    // The story starts only once the window is fully up.
+    // The story starts only once the window is fully up, and the window takes clicks from then.
     if (y >= g.s1 && !started) { started = true; setTimeout(sdReleaseDemo, 250); }
+    if ((y >= g.s0 + (g.s1 - g.s0) * 0.9) !== up) { up = !up; stage.classList.toggle('sd-up', up); }
   };
   // Before the window rises the app is out of sight, so FIT keeps its frame loop paused.
   window.sdWindowHidden = () => g != null && scrollY < g.s0;
@@ -688,7 +725,6 @@ ORBIT_JS = """<script>
   const orbit = document.querySelector('.sd-orbit');
   if (!orbit) return;
   const tile = orbit.querySelector('.sd-tile'), orbs = [...orbit.querySelectorAll('.sd-orb')];
-  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let t0 = null, run = 0;
   const frame = (id) => (now) => {
     if (id !== run) return;
@@ -704,7 +740,7 @@ ORBIT_JS = """<script>
       if (t0 == null) t0 = now;
       // As in the reference: the row slides one place in 0.55 s, then holds for about a second
       // with a logo resting behind the glass, so the tile takes that app's colour.
-      const period = 1600, move = 550, k = still ? 0 : (now - t0) / period, step = Math.floor(k), f = Math.min(1, (k - step) * period / move);
+      const period = 1600, move = 550, k = (now - t0) / period, step = Math.floor(k), f = Math.min(1, (k - step) * period / move);
       const ease = f < 0.5 ? 4 * f * f * f : 1 - Math.pow(-2 * f + 2, 3) / 2;
       const shift = (step + ease) * gap;
       orbs.forEach((orb, i) => {
@@ -722,7 +758,7 @@ ORBIT_JS = """<script>
       });
     }
     // Pass 0 only lays the scene out; runs from 1 up loop while it is on screen.
-    if (!still && id > 0) requestAnimationFrame(frame(id));
+    if (id > 0) requestAnimationFrame(frame(id));
   };
   // Laid out once so the tile and logos are in place before the scroll reaches them.
   frame(0)(performance.now()); t0 = null;
@@ -732,7 +768,6 @@ ORBIT_JS = """<script>
 
 SCENES_JS = """<script>
 (() => {
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   for (const [sel, first] of [['.sd-ok-scene', 2200], ['.sd-vm-scene', 2600]]) {
     const scene = document.querySelector(sel);
@@ -761,7 +796,6 @@ TALK_JS = """<script>
   const feed = document.querySelector('.sd-feed');
   if (!feed) return;
   const late = [...feed.querySelectorAll('.sd-late')];
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { late.forEach((m) => m.classList.add('sd-shown', 'sd-in')); return; }
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const typer = (msg) => {
     const t = msg.cloneNode(true);
@@ -820,6 +854,18 @@ FAQ_JS = """<script>
 })();
 </script>"""
 
+def strip_dark(css):
+    """Removes every @media (prefers-color-scheme: dark) block, braces matched."""
+    out, i = [], 0
+    for m in re.finditer(r"@media\s*\(\s*prefers-color-scheme\s*:\s*dark\s*\)\s*\{", css):
+        if m.start() < i: continue
+        depth, j = 1, m.end()
+        while depth:
+            depth += {"{": 1, "}": -1}.get(css[j], 0); j += 1
+        out.append(css[i:m.start()]); i = j
+    out.append(css[i:])
+    return "".join(out)
+
 async def posters():
     """Stills of the app's first screen, shown the moment the page opens while the live app loads.
     One per window shape FIT lays out: computer (880 wide), a narrow tablet (880, tall) and a phone (440)."""
@@ -865,6 +911,9 @@ async def main():
     # The template's own metadata (Planar's title, description, share image and framer.app address) goes;
     # Simeon's takes its place.
     head = re.sub(r"<meta\b[^>]*>", "", head, flags=re.I)
+    # The site is light only (the founder, 28 September 2026: the dark mode "doesnt match"):
+    # Framer's dark-scheme token block goes, and the page says it is light.
+    head = strip_dark(head)
     desc = "Your personal team of AI agents. They work in your apps on a computer of their own, pass work between each other, and ask before anything important."
     head = ('<meta name="description" content="' + desc + '">\n'
             '<meta property="og:type" content="website">\n<meta property="og:url" content="https://simeonlabs.com/">\n'
@@ -884,6 +933,7 @@ async def main():
     page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
             '<title>Simeon</title>\n' + head +
             "<style>" + CSS.replace("%TOKENS%", r["tokens"]) + "</style>\n</head>\n<body>\n" + r["body"] + FIT + HERO_JS + VIEW_JS + ORBIT_JS + SCENES_JS + TALK_JS + BILL_JS + FAQ_JS + "\n</body>\n</html>\n")
+    assert "prefers-color-scheme:dark" not in page.replace(" ", ""), "dark mode left in the page"
     for bad in ("framerusercontent.com/assets", "framerusercontent.com/third", "fonts.gstatic", "chrome-extension", "Simeon le site_files"):
         assert bad not in page, bad
     open(f"{OUT}/index.html", "w", encoding="utf-8").write(page)

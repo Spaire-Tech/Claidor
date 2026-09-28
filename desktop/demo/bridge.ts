@@ -95,7 +95,6 @@ const INERT_IN_DEMO = [
 // Nobody types in the demo ("i shouldnt be able to type or use microphone -
 // the messages/answers are pre-recorded and are chosen"): the whole composer,
 // its editor, attach, mic and send, takes no presses, keys, paste or focus.
-// Answers are given by choosing on Simeon's question cards.
 const COMPOSER = ".sand-prompt-shell";
 const isInert = (target: EventTarget | null) => target instanceof Element && target.closest(`${INERT_IN_DEMO},${COMPOSER}`) != null;
 for (const type of ["pointerdown", "mousedown", "click", "dblclick", "keydown", "keypress", "beforeinput", "paste", "drop"] as const) {
@@ -132,9 +131,12 @@ new MutationObserver(quietComposers).observe(document.documentElement, { childLi
 const demoStyle = document.createElement("style");
 // The window writes what an agent is doing ("Connecting to Linear") beside
 // its typing mark but keeps it transparent; the demo shows it, so the viewer
-// sees Simeon go through the tools before it answers.
+// sees Simeon go through the tools before it answers. The computer button in
+// the chat header is hidden: the demo has no computer to show (the founder,
+// 28 September 2026: "remove the computer icon in the demo").
 demoStyle.textContent = `${COMPOSER},${COMPOSER} *{cursor:default!important;caret-color:transparent!important}
-.sand-activity-mark>span[aria-hidden],.sand-activity-mark__label{opacity:1!important}`;
+.sand-activity-mark>span[aria-hidden],.sand-activity-mark__label{opacity:1!important}
+.sand-chat-header__computer{display:none!important}`;
 document.head.append(demoStyle);
 
 installPrimaryPreloadEntrypoint(

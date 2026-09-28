@@ -29,21 +29,24 @@ framerusercontent.com (it fetches the fonts and pictures once). It rewrites
 
 The hero runs the real patched app window (`public/app/`) in an iframe inside
 the hero box, scaled from the box's own size, with `scroll-guard.js` so the
-app never scrolls the page. The window takes no pointer at all (the demo
-plays by itself), so the wheel and a finger over it scroll the page on the
-browser's own scroll thread, and the app's frame loop is paused while the
+app never scrolls the page. The app in the window takes no pointer, so the
+wheel and a finger over it scroll the page on the browser's own scroll
+thread; a click on the window is handed to the part of the app under the
+pointer, and the cursor shows what is clickable, and the app's frame loop is paused while the
 page scrolls or the window is out of sight. The app's
 code is about 6 MB, so the page first shows a still of its opening screen
 (`app-poster-{wide,tall,phone}.jpg`, captured by `build.py` from the app
 itself) and fades the live app in over it once the app has drawn its sidebar.
-On a laptop (at least 1024 × 620, motion allowed) the hero is a scroll
+On a laptop (at least 1024 × 620, and Reduce Motion off) the hero is a scroll
 scene instead: the painting spans the page with Simeon's wordmark, narrows
 into the card as you scroll, the card pins under the nav, the wordmark fades
 and the app window rises onto the painting; the demo's story starts only
 then (`source/demo-gate.js` holds it until the page calls it). Smaller
 screens keep the window in the card from the start. Phones (under 600 px) show no live app at all: the hero is a still of
 the window drawn by the page (a Simeon thread with both sides talking), so
-there is nothing to load and the page scrolls natively over it. Each animation below the hero starts when it scrolls into view and starts
+there is nothing to load and the page scrolls natively over it. The site is light only: Framer's dark-scheme colour block is removed at
+build time. Each animation below the hero starts when it scrolls into view (and runs
+whatever the Reduce Motion setting; only the laptop hero's scroll scene honours it) and starts
 over when you come back to it. The four
 feature boxes are drawn by the page itself: connectors behind the Simeon
 glass tile, Iris, Otto and Nova talking, Otto's computer asking you to sign
