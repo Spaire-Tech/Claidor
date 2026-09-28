@@ -787,6 +787,8 @@ against Vercel's limits documentation before treating it as the remedy. The
 PR comment (`5864447766`) carries the same correction, edited in place rather
 than posted twice.
 
-*(This paragraph is committed but deliberately not pushed on its own: no merge
-was due, and each push costs three more refused deployment attempts. It rides
-the next real push. The durable copy is the PR comment.)*
+*(I first held this paragraph back from its own push, to avoid three more
+refused deployment attempts. The repository's stop hook refuses an unpushed
+commit — an ephemeral container makes that the right rule — so it went out on
+its own after all. The batching preference yields to the hook, and the note
+stands corrected rather than clever.)*
