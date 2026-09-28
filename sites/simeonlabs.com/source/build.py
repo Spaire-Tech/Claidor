@@ -871,7 +871,7 @@ async def main():
             '<meta property="og:title" content="Simeon">\n<meta property="og:description" content="' + desc + '">\n'
             '<meta name="twitter:card" content="summary">\n<meta name="twitter:title" content="Simeon">\n'
             '<meta name="twitter:description" content="' + desc + '">\n'
-            '<link rel="icon" type="image/svg+xml" href="logos/simeon.svg">\n' + head)
+            '<link rel="icon" href="favicon.ico" sizes="48x48">\n<link rel="icon" type="image/svg+xml" href="favicon.svg">\n<link rel="apple-touch-icon" href="apple-touch-icon.png">\n' + head)
     app_idx = open(f"{APP}/index.html").read()
     js = re.search(r'src="\./(assets/index-[^"]+\.js)"', app_idx).group(1)
     css = re.search(r'href="\./(assets/index-[^"]+\.css)"', app_idx).group(1)
@@ -887,6 +887,8 @@ async def main():
     for bad in ("framerusercontent.com/assets", "framerusercontent.com/third", "fonts.gstatic", "chrome-extension", "Simeon le site_files"):
         assert bad not in page, bad
     open(f"{OUT}/index.html", "w", encoding="utf-8").write(page)
+    # Simeon's petal mark (desktop/scripts/make-favicons.mjs site source/favicons).
+    for name in ("favicon.svg", "favicon.ico", "apple-touch-icon.png"): shutil.copy(f"{HERE}/favicons/{name}", f"{OUT}/{name}")
     shutil.copytree(APP, f"{OUT}/app")
     guard = open(f"{HERE}/scroll-guard.js").read()
     open(f"{OUT}/app/scroll-guard.js", "w").write(guard)
