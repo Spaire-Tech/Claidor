@@ -24,7 +24,7 @@ function sse(events) {
 
 function responsesStream(text) {
   return sse([
-    { type: "response.created", response: { id: "resp_1", created_at: 1_700_000_000, model: "gpt-5.6-terra" } },
+    { type: "response.created", response: { id: "resp_1", created_at: 1_700_000_000, model: "gpt-6-sol" } },
     { type: "response.output_item.added", output_index: 0, item: { type: "message", id: "msg_1" } },
     ...[...text].map((delta) => ({ type: "response.output_text.delta", delta })),
     { type: "response.output_item.done", output_index: 0, item: { type: "message" } },
@@ -35,7 +35,7 @@ function responsesStream(text) {
 function functionCallStream(name, args) {
   const item = { type: "function_call", id: "fc_1", call_id: "call_1", name, arguments: "" };
   return sse([
-    { type: "response.created", response: { id: "resp_2", created_at: 1_700_000_001, model: "gpt-5.6-terra" } },
+    { type: "response.created", response: { id: "resp_2", created_at: 1_700_000_001, model: "gpt-6-sol" } },
     { type: "response.output_item.added", output_index: 0, item },
     { type: "response.function_call_arguments.delta", item_id: "fc_1", output_index: 0, delta: JSON.stringify(args) },
     { type: "response.output_item.done", output_index: 0, item: { ...item, arguments: JSON.stringify(args), status: "completed" } },
@@ -186,7 +186,7 @@ test("the claidor provider speaks the Responses wire to our proxy with the signe
     assert.equal(claidorProxyBaseUrl("https://api.simeonlabs.com"), "https://api.simeonlabs.com/desktop/api/proxy/v1");
     assert.equal(claidorProxyBaseUrl("https://api.simeonlabs.com/"), "https://api.simeonlabs.com/desktop/api/proxy/v1");
     assert.equal(configuredClaidorModel(), DEFAULT_CLAIDOR_MODEL);
-    assert.equal(DEFAULT_CLAIDOR_MODEL, "gpt-5.6-terra");
+    assert.equal(DEFAULT_CLAIDOR_MODEL, "gpt-6-sol");
 
     setClaidorCredentialSource(null);
     await assert.rejects(() => runRoutedProviderText("claidor", [{ role: "user", content: "hi" }]), /has no credential source/);
@@ -202,7 +202,7 @@ test("the claidor provider speaks the Responses wire to our proxy with the signe
     assert.equal(requests.length, 1);
     assert.equal(requests[0].url, "https://api.simeonlabs.com/desktop/api/proxy/v1/responses");
     assert.equal(requests[0].headers.get("authorization"), "Bearer claidor_da_token_1");
-    assert.equal(requests[0].body.model, "gpt-5.6-terra");
+    assert.equal(requests[0].body.model, "gpt-6-sol");
     assert.equal(requests[0].body.stream, true);
     assert.ok(JSON.stringify(requests[0].body.input).includes("say hello"));
     assert.equal(minted, 1);

@@ -69,9 +69,9 @@ test("the two video subagents are registered on the Gemini model and the Task to
     // The Task tool's own model resolution, with the production options
     // (turn-toolset.ts ~1383): the pinned Gemini id comes back, so the
     // attachment path's `isGeminiModelId` check passes and the video travels.
-    const subagentModels = module.createSubagentModels({ "gpt-5.6-terra": { slug: "gpt-5.6-terra" } });
+    const subagentModels = module.createSubagentModels({ "gpt-6-sol": { slug: "gpt-6-sol" } });
     for (const config of configs) {
-      const resolved = await module.resolveSubagentModel({ subagentConfig: config, parentModelId: "gpt-5.6-terra", subagentModels, ...PRODUCTION_TASK_OPTIONS });
+      const resolved = await module.resolveSubagentModel({ subagentConfig: config, parentModelId: "gpt-6-sol", subagentModels, ...PRODUCTION_TASK_OPTIONS });
       assert.equal(resolved, "gemini-2.5-flash");
       assert.ok(module.isGeminiModelId(resolved));
     }
@@ -118,8 +118,8 @@ test("a video child's session speaks Gemini's wire through the proxy with the vi
     assert.equal(module.claidorReasoningEffortForSession({ isVideoSubagent: true }, {}), "low");
     // By the flag only: the summarization session names gemini-2.5-flash too (Grok Bot's SAND_SUMMARIZATION_MODEL_ID) and stays on Luna.
     assert.equal(module.isConfiguredClaidorModelId("gemini-2.5-flash"), false);
-    assert.equal(module.claidorModelForSession({ modelId: "gemini-2.5-flash" }), "gpt-5.6-terra");
-    assert.equal(module.claidorModelForSession({ isSummarizationSession: true, modelId: "gemini-2.5-flash" }), "gpt-5.6-luna");
+    assert.equal(module.claidorModelForSession({ modelId: "gemini-2.5-flash" }), "gpt-6-sol");
+    assert.equal(module.claidorModelForSession({ isSummarizationSession: true, modelId: "gemini-2.5-flash" }), "gpt-6-luna");
     assert.equal(module.claidorGeminiEndpoint("gemini-2.5-flash", "https://api.simeonlabs.com"), "https://api.simeonlabs.com/desktop/api/proxy/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse");
 
     globalThis.fetch = async (input, init) => {
@@ -237,7 +237,7 @@ test("the Mac keeps the video model off the picker and forwards the switches int
   const { module, dispose } = await load();
   try {
     assert.equal(module.availableModelFromClaidorRow({ modelId: "gemini-2.5-flash", role: "video", supportsVideo: true }), null);
-    assert.ok(module.availableModelFromClaidorRow({ modelId: "gpt-5.6-terra", role: "primary" }) != null);
+    assert.ok(module.availableModelFromClaidorRow({ modelId: "gpt-6-sol", role: "primary" }) != null);
     assert.ok(module.SERVED_SWITCH_ENVS.includes("SAND_VIDEO_SUBAGENT_SERVED"));
     assert.ok(module.SERVED_SWITCH_ENVS.includes("SAND_CLAIDOR_VIDEO_MODEL"));
   } finally {

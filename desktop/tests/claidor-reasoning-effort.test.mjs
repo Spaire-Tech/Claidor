@@ -69,10 +69,10 @@ test("effort follows the role: high on the loop, low on the cheap sessions", asy
     await collect(loaded.module.createProviderPromptSession("claidor", { isBrowserUseSubagent: true }).getExecutor(state));
 
     assert.deepEqual(requests.map((body) => [body.model, body.reasoning?.effort]), [
-      ["gpt-5.6-terra", "high"],
-      ["gpt-5.6-luna", "low"],
-      ["gpt-5.6-luna", "low"],
-      ["gpt-5.6-luna", "low"],
+      ["gpt-6-sol", "high"],
+      ["gpt-6-luna", "low"],
+      ["gpt-6-luna", "low"],
+      ["gpt-6-luna", "low"],
     ]);
   } finally {
     globalThis.fetch = previousFetch;
@@ -102,13 +102,36 @@ test("the text helper carries the effort too, and the environment can override b
     process.env.SAND_CLAIDOR_REASONING_EFFORT = "turbo";
     await loaded.module.runRoutedProviderText("claidor", messages);
 
-    assert.deepEqual(requests.map((body) => body.reasoning?.effort), ["high", "low", "medium", "minimal", "high"]);
+    assert.deepEqual(requests.map((body) => body.reasoning?.effort), ["high", "low", "medium", "low", "high"]);
     assert.equal(loaded.module.DEFAULT_CLAIDOR_REASONING_EFFORT, "high");
     assert.equal(loaded.module.DEFAULT_CLAIDOR_CHEAP_REASONING_EFFORT, "low");
-    assert.equal(loaded.module.claidorReasoningEffortForSession({ modelId: "gpt-5.6-luna" }, {}), "high", "a model name is not a role; effort follows the role flags");
+    assert.equal(loaded.module.claidorReasoningEffortForSession({ modelId: "gpt-6-luna" }, {}), "high", "a model name is not a role; effort follows the role flags");
   } finally {
     globalThis.fetch = previousFetch;
     unpin();
+    await loaded.dispose();
+  }
+});
+
+test("GPT-6 reaches OpenAI as a reasoning model under its real name, and falls back to the model it replaced on a server that does not offer it yet", async () => {
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-gpt6-"));
+  const output = path.join(temporary, "provider.mjs");
+  await build({ entryPoints: [path.join(repoRoot, "source/host/extensions/inference/provider-session.ts")], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent", external: ["electron"], banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" } });
+  const loaded = { module: await import(`${pathToFileURL(output).href}?${Date.now()}`), dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
+  try {
+    const { sdkModelIdFor, withRealModelName, isModelNotOfferedError, LEGACY_CLAIDOR_MODELS, DEFAULT_CLAIDOR_MODEL, DEFAULT_CLAIDOR_CHEAP_MODEL } = loaded.module;
+    assert.equal(DEFAULT_CLAIDOR_MODEL, "gpt-6-sol");
+    assert.equal(DEFAULT_CLAIDOR_CHEAP_MODEL, "gpt-6-luna");
+    assert.equal(sdkModelIdFor("gpt-6-sol"), "gpt-5-as:gpt-6-sol", "the SDK only treats o… and gpt-5… as reasoning models");
+    assert.equal(sdkModelIdFor("gpt-5.6-terra"), "gpt-5.6-terra");
+    assert.equal(sdkModelIdFor("claude-sonnet-5"), "claude-sonnet-5");
+    assert.equal(JSON.parse(withRealModelName(JSON.stringify({ model: "gpt-5-as:gpt-6-sol", reasoning: { effort: "high" } }))).model, "gpt-6-sol");
+    assert.equal(withRealModelName('{"model":"gpt-6-luna"}'), '{"model":"gpt-6-luna"}');
+    assert.deepEqual(LEGACY_CLAIDOR_MODELS, { "gpt-6-sol": "gpt-5.6-terra", "gpt-6-luna": "gpt-5.6-luna" });
+    assert.equal(isModelNotOfferedError(new Error("This model is not offered by the desktop app.")), true);
+    assert.equal(isModelNotOfferedError(Object.assign(new Error("Bad Request"), { responseBody: '{"error":{"message":"This model is not offered by the desktop app."}}' })), true);
+    assert.equal(isModelNotOfferedError(new Error("rate limit exceeded")), false);
+  } finally {
     await loaded.dispose();
   }
 });

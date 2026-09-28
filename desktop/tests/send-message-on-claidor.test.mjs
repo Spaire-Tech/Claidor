@@ -33,7 +33,7 @@ function functionCallStream(name, args) {
   const item = { type: "function_call", id: "fc_1", call_id: "call_1", name, arguments: "" };
   const text = JSON.stringify(args);
   return sse([
-    { type: "response.created", response: { id: "resp_call", created_at: 1_700_000_001, model: "gpt-5.6-terra" } },
+    { type: "response.created", response: { id: "resp_call", created_at: 1_700_000_001, model: "gpt-6-sol" } },
     { type: "response.output_item.added", output_index: 0, item },
     ...[text.slice(0, 12), text.slice(12)].map((delta) => ({ type: "response.function_call_arguments.delta", item_id: "fc_1", output_index: 0, delta })),
     { type: "response.output_item.done", output_index: 0, item: { ...item, arguments: text, status: "completed" } },
@@ -43,7 +43,7 @@ function functionCallStream(name, args) {
 
 function textStream(text) {
   return sse([
-    { type: "response.created", response: { id: "resp_text", created_at: 1_700_000_000, model: "gpt-5.6-terra" } },
+    { type: "response.created", response: { id: "resp_text", created_at: 1_700_000_000, model: "gpt-6-sol" } },
     { type: "response.output_item.added", output_index: 0, item: { type: "message", id: "msg_1" } },
     ...[...text].map((delta) => ({ type: "response.output_text.delta", delta })),
     { type: "response.output_item.done", output_index: 0, item: { type: "message" } },
