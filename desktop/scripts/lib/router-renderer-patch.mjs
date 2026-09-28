@@ -464,11 +464,19 @@ const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:var(--sime
  * grey, a hairline edge, a soft deep shadow that lifts it off the page, more
  * air inside, Apple's system face at regular weight in near-black. Only the
  * agent's text bubbles (`.sand-message` without the user bubble's class);
- * cards keep their grey, and the dark theme keeps the renderer's own bubble.
- * No blur: a backdrop filter on every bubble would cost frames on scroll.
+ * the dark theme keeps the renderer's own bubble. No blur: a backdrop filter
+ * on every bubble would cost frames on scroll.
+ * The same day, "do the cards. and bring this design to the blue the user
+ * speak. but it stays in blue": every card in the chat is the same white
+ * sheet (its surface white, the choice card's options on white, one shadow
+ * on the outermost surface only), and the person's bubble keeps its painted
+ * blue under the sheet's edge, lift, air and type.
  */
 const AGENT_SHEET_CSS = () => `[data-theme*="light"] .sand-message.sand-1g0q52m:not(.sand-mvmkjj)${HI}{background:#fff;color:#1d1d1f;padding:10px 15px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04),0 12px 30px -16px rgba(20,30,60,.30);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
 [data-theme*="light"] .sand-message-block:has(>.sand-message.sand-1g0q52m:not(.sand-mvmkjj))${HI}{gap:6px}
+[data-theme*="light"] .sand-message.sand-mvmkjj${HI}{padding:10px 15px;box-shadow:inset 0 .5px 0 rgba(255,255,255,.28),0 0 0 .5px rgba(20,45,90,.18),0 1px 2px rgba(20,45,90,.08),0 12px 30px -16px rgba(20,50,110,.50);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
+[data-theme*="light"] .sand-message-card${HI}{--simeon-card-fill:#fff}
+[data-theme*="light"] .sand-message-card>:is(article,form,section)${HI},[data-theme*="light"] .sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card):not(.sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card) *)${HI}{background:#fff;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04),0 12px 30px -16px rgba(20,30,60,.30)}
 `;
 
 const GREY_CARD = [
@@ -886,7 +894,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
