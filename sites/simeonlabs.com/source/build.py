@@ -187,7 +187,7 @@ SURGERY = r"""([TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML]) => {
   // narrows into the card as you scroll, and the app window rises onto it (HERO_JS).
   const paint = (hero.querySelector('.framer-es6gsc img') || hero.querySelector('img')).getAttribute('src');
   const logoSrc = document.querySelector('[data-framer-name="Logo"] img').getAttribute('src');
-  stage.insertAdjacentHTML('beforebegin', '<div class="sd-bleed" aria-hidden="true"><img src="' + paint + '" alt="" fetchpriority="high"></div>'
+  stage.insertAdjacentHTML('beforebegin', '<div class="sd-bleed" aria-hidden="true"><img src="' + paint + '" alt="" fetchpriority="high"><i class="sd-fade"></i><i class="sd-cur sd-cur-l"></i><i class="sd-cur sd-cur-r"></i></div>'
     + '<div class="sd-word" role="img" aria-label="Simeon" style="-webkit-mask-image:url(' + logoSrc + ');mask-image:url(' + logoSrc + ')"></div>');
   const card = hero.closest('.framer-t7h7mm-container');
   const pin = document.createElement('div'); pin.className = 'sd-pin';
@@ -295,14 +295,36 @@ section[data-framer-name="Hero"] .framer-hy289i{display:none!important}
 .sd-scrolly .sd-sticky{display:flex;justify-content:center;position:sticky;top:var(--pin-top)}
 .sd-scrolly .framer-t7h7mm-container{max-width:var(--card-w)}
 .sd-scrolly .framer-gx3vnz,.sd-scrolly section[data-framer-name="Hero"] .framer-115oxcp{overflow:visible!important}
-.sd-scrolly .sd-bleed{display:block;position:absolute;z-index:2;top:0;bottom:0;left:calc(50% - 50vw);width:100vw;overflow:hidden;will-change:clip-path;
-  -webkit-mask-image:linear-gradient(#0000 0,#000 var(--fade,110px));mask-image:linear-gradient(#0000 0,#000 var(--fade,110px))}
+/* Nothing here is repainted while scrolling: the painting stands still and two page-coloured
+   curtains slide in over its sides (their inner edges carry the card's round corners), a fade
+   lifts off its top, the wordmark fades and the window rises. Transforms and opacity only,
+   driven by the scroll position on the compositor where the browser can (HERO_JS). */
+.sd-scrolly .sd-bleed{display:block;position:absolute;z-index:2;top:0;bottom:0;left:calc(50% - var(--vw,100vw) / 2);width:var(--vw,100vw);overflow:hidden;contain:paint}
+.sd-bleed i{position:absolute;display:block}
+.sd-fade{left:0;right:0;top:0;height:110px;background:linear-gradient(#f6f6f3,#f6f6f300);will-change:opacity}
+.sd-cur{top:0;bottom:0;width:calc((var(--vw,100vw) - var(--box-w,100%)) / 2 + 1px);background:#f6f6f3;will-change:transform}
+.sd-cur-l{left:0;transform:translateX(calc(-100% - 12px))}
+.sd-cur-r{right:0;transform:translateX(calc(100% + 12px))}
+.sd-cur::after{content:"";position:absolute;top:0;bottom:0;width:12px}
+.sd-cur-l::after{left:100%;background:radial-gradient(circle at 100% 100%,#f6f6f300 11.5px,#f6f6f3 12px) top left/12px 12px no-repeat,radial-gradient(circle at 100% 0,#f6f6f300 11.5px,#f6f6f3 12px) bottom left/12px 12px no-repeat}
+.sd-cur-r::after{right:100%;background:radial-gradient(circle at 0 100%,#f6f6f300 11.5px,#f6f6f3 12px) top right/12px 12px no-repeat,radial-gradient(circle at 0 0,#f6f6f300 11.5px,#f6f6f3 12px) bottom right/12px 12px no-repeat}
+@keyframes sd-cur-l{from{transform:translateX(calc(-100% - 12px))}to{transform:translateX(0)}}
+@keyframes sd-cur-r{from{transform:translateX(calc(100% + 12px))}to{transform:translateX(0)}}
+@keyframes sd-fade-out{from{opacity:1}to{opacity:0}}
+@keyframes sd-word-out{from{opacity:.92;transform:translate(-50%,-50%)}to{opacity:0;transform:translate(-50%,-50%) scale(.95)}}
+@keyframes sd-rise{from{opacity:0;transform:translateY(28px) scale(.97)}to{opacity:1;transform:none}}
+.sd-scrolly.sd-sda .sd-cur-l{animation:sd-cur-l 1ms ease-in-out both;animation-timeline:scroll(root block);animation-range:0px var(--r-a1,300px)}
+.sd-scrolly.sd-sda .sd-cur-r{animation:sd-cur-r 1ms ease-in-out both;animation-timeline:scroll(root block);animation-range:0px var(--r-a1,300px)}
+.sd-scrolly.sd-sda .sd-fade{animation:sd-fade-out 1ms linear both;animation-timeline:scroll(root block);animation-range:0px var(--r-a1,300px)}
+.sd-scrolly.sd-sda .sd-word{animation:sd-word-out 1ms ease-in-out both;animation-timeline:scroll(root block);animation-range:var(--r-w0,400px) var(--r-w1,600px)}
+.sd-scrolly.sd-sda .sd-stage{animation:sd-rise 1ms ease-out both;animation-timeline:scroll(root block);animation-range:var(--r-s0,500px) var(--r-s1,800px)}
 .sd-scrolly section[data-framer-name="Hero"] .framer-115oxcp>.framer-es6gsc{visibility:hidden}
 .sd-scrolly section[data-framer-name="Hero"] .framer-115oxcp{background:transparent!important}
 .sd-scrolly .sd-bleed img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
 .sd-scrolly .sd-word{display:block;position:absolute;z-index:3;left:50%;top:47%;width:36%;aspect-ratio:1024/460;transform:translate(-50%,-50%);background:#fff;opacity:.92;
   -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;filter:drop-shadow(0 2px 18px rgba(20,40,80,.18));will-change:opacity,transform}
 .sd-scrolly .sd-stage{opacity:0;pointer-events:none;will-change:opacity,transform}
+.sd-scrolly .sd-stage.sd-up{pointer-events:auto}
 /* Nothing below the hero moves until it is on screen. */
 .sd-marquee .sd-track{animation-play-state:paused}
 .sd-marquee.sd-seen .sd-track{animation-play-state:running}
@@ -489,48 +511,63 @@ HERO_JS = """<script>
 (() => {
   const root = document.documentElement;
   const q = matchMedia('(min-width:1024px) and (min-height:620px) and (prefers-reduced-motion: no-preference)');
+  // Browsers with scroll-driven animations run the whole scene off the main thread, so the
+  // demo's own work can never make it stutter. Others get the same steps from a light rAF loop.
+  const sda = CSS.supports('animation-timeline: scroll()');
   const pin = document.querySelector('.sd-pin'), sticky = pin.querySelector('.sd-sticky');
-  const box = sticky.querySelector('.framer-115oxcp'), bleed = box.querySelector('.sd-bleed'), word = box.querySelector('.sd-word'), stage = box.querySelector('.sd-stage');
-  const clamp = (v) => Math.max(0, Math.min(1, v));
-  const ease = (t) => t * t * (3 - 2 * t);
-  let queued = false;
-  const draw = () => {
-    queued = false;
-    if (!root.classList.contains('sd-scrolly')) return;
-    const top = parseFloat(getComputedStyle(sticky).top) || 0;
-    const start = pin.getBoundingClientRect().top + scrollY - top;   // where the card pins
-    const hold = pin.offsetHeight - box.offsetHeight;                  // how long it stays pinned
-    const y = scrollY;
-    // 1. The painting narrows from the page's width into the card.
-    const a = ease(start > 0 ? clamp(y / start) : 1);
-    const r = box.getBoundingClientRect(), bw = bleed.offsetWidth, bl = r.left - bleed.getBoundingClientRect().left;
-    const inL = bl * a, inR = (bw - bl - r.width) * a, rad = Math.max(14, parseFloat(getComputedStyle(box).borderTopLeftRadius) || 0) * a;
-    bleed.style.clipPath = 'inset(0 ' + inR + 'px 0 ' + inL + 'px round ' + rad + 'px)';
-    bleed.style.setProperty('--fade', (110 * (1 - a)).toFixed(1) + 'px');
-    // 2. Pinned: the wordmark goes, then the window rises onto the painting.
-    const b = hold > 0 ? clamp((y - start) / hold) : (y >= start ? 1 : 0);
-    const w = ease(clamp((b - 0.04) / 0.34));
-    word.style.opacity = (0.92 * (1 - w)).toFixed(3);
-    word.style.transform = 'translate(-50%,-50%) scale(' + (1 - 0.05 * w).toFixed(4) + ')';
-    const e = ease(clamp((b - 0.28) / 0.42));
-    stage.style.opacity = e.toFixed(3);
-    stage.style.transform = 'translateY(' + (28 * (1 - e)).toFixed(1) + 'px) scale(' + (0.97 + 0.03 * e).toFixed(4) + ')';
-    stage.style.pointerEvents = e > 0.9 ? 'auto' : 'none';
-    if (e > 0.5) sdReleaseDemo();
+  const box = sticky.querySelector('.framer-115oxcp'), word = box.querySelector('.sd-word'), stage = box.querySelector('.sd-stage');
+  const curL = box.querySelector('.sd-cur-l'), curR = box.querySelector('.sd-cur-r'), fade = box.querySelector('.sd-fade');
+  // Scroll offsets of each step, measured once per layout, never while scrolling.
+  let g = null;
+  const measure = () => {
+    if (!root.classList.contains('sd-scrolly')) { g = null; return; }
+    root.style.setProperty('--vw', root.clientWidth + 'px');
+    root.style.setProperty('--box-w', box.offsetWidth + 'px');
+    const a1 = Math.max(1, Math.round(pin.getBoundingClientRect().top + scrollY - (parseFloat(getComputedStyle(sticky).top) || 0)));
+    const hold = Math.max(1, pin.offsetHeight - box.offsetHeight);
+    g = { a1, w0: a1 + hold * 0.04, w1: a1 + hold * 0.38, s0: a1 + hold * 0.28, s1: a1 + hold * 0.7 };
+    for (const k of ['a1', 'w0', 'w1', 's0', 's1']) root.style.setProperty('--r-' + k, Math.round(g[k]) + 'px');
+    tick();
   };
-  const ask = () => { if (!queued) { queued = true; requestAnimationFrame(draw); } };
+  const clamp = (v) => Math.max(0, Math.min(1, v));
+  const inout = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  const out = (t) => 1 - Math.pow(1 - t, 2);
+  let queued = false, up = false;
+  const tick = () => {
+    queued = false;
+    if (!g) return;
+    const y = scrollY;
+    if (!sda) {
+      const a = inout(clamp(y / g.a1)), w = inout(clamp((y - g.w0) / (g.w1 - g.w0))), e = out(clamp((y - g.s0) / (g.s1 - g.s0)));
+      curL.style.transform = 'translateX(calc(' + (-(1 - a) * 100).toFixed(2) + '% - ' + (12 * (1 - a)).toFixed(2) + 'px))';
+      curR.style.transform = 'translateX(calc(' + ((1 - a) * 100).toFixed(2) + '% + ' + (12 * (1 - a)).toFixed(2) + 'px))';
+      fade.style.opacity = (1 - a).toFixed(3);
+      word.style.opacity = (0.92 * (1 - w)).toFixed(3);
+      word.style.transform = 'translate(-50%,-50%) scale(' + (1 - 0.05 * w).toFixed(4) + ')';
+      stage.style.opacity = e.toFixed(3);
+      stage.style.transform = 'translateY(' + (28 * (1 - e)).toFixed(2) + 'px) scale(' + (0.97 + 0.03 * e).toFixed(4) + ')';
+    }
+    // The story starts when the window is half up, and the window takes clicks once it is there.
+    const half = (g.s0 + g.s1) / 2;
+    if (y >= half) sdReleaseDemo();
+    if ((y >= g.s0 + (g.s1 - g.s0) * 0.9) !== up) { up = !up; stage.classList.toggle('sd-up', up); }
+  };
+  const ask = () => { if (!queued) { queued = true; requestAnimationFrame(tick); } };
   const mode = () => {
     root.classList.toggle('sd-scrolly', q.matches);
+    root.classList.toggle('sd-sda', q.matches && sda);
     if (!q.matches) {
-      bleed.style.clipPath = ''; word.style.opacity = word.style.transform = '';
-      stage.style.opacity = stage.style.transform = stage.style.pointerEvents = '';
+      for (const el of [curL, curR, fade, word, stage]) { el.style.transform = ''; el.style.opacity = ''; }
       sdReleaseDemo();
     }
-    ask();
+    measure();
   };
   q.addEventListener('change', mode);
   addEventListener('scroll', ask, { passive: true });
-  addEventListener('resize', ask);
+  addEventListener('resize', measure);
+  new ResizeObserver(measure).observe(pin);
+  if (document.fonts) document.fonts.ready.then(measure);
+  addEventListener('load', measure);
   mode();
 })();
 </script>"""
@@ -738,7 +775,7 @@ async def main():
     app_idx = open(f"{APP}/index.html").read()
     js = re.search(r'src="\./(assets/index-[^"]+\.js)"', app_idx).group(1)
     css = re.search(r'href="\./(assets/index-[^"]+\.css)"', app_idx).group(1)
-    head = ("<script>if (matchMedia('(min-width:1024px) and (min-height:620px) and (prefers-reduced-motion: no-preference)').matches) document.documentElement.classList.add('sd-scrolly')</script>\n"
+    head = ("<script>if (matchMedia('(min-width:1024px) and (min-height:620px) and (prefers-reduced-motion: no-preference)').matches) document.documentElement.classList.add('sd-scrolly', ...(CSS.supports('animation-timeline: scroll()') ? ['sd-sda'] : []))</script>\n"
             '<link rel="preload" as="image" href="app-poster-wide.jpg" media="(min-width:810px)" fetchpriority="high">\n'
             '<link rel="preload" as="image" href="app-poster-tall.jpg" media="(min-width:600px) and (max-width:809.98px)" fetchpriority="high">\n'
             '<link rel="preload" as="image" href="app-poster-phone.jpg" media="(max-width:599.98px)" fetchpriority="high">\n'

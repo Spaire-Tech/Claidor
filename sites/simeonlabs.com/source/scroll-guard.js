@@ -36,10 +36,19 @@
   try { host = window.parent !== window && window.parent.scrollBy ? window.parent : null; } catch { host = null; }
   if (host) {
     const px = (e) => e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * innerHeight : e.deltaY;
+    // Only the first tick of a wheel gesture goes through here. The window then steps out of the
+    // pointer's way, so the rest of the gesture scrolls the page natively, on the browser's own
+    // thread, smooth whatever the app is busy drawing; it takes clicks again once the page rests.
+    let rest = null;
+    const back = () => { rest = null; try { window.frameElement.style.pointerEvents = ""; } catch {} };
+    const later = () => { clearTimeout(rest); rest = setTimeout(back, 220); };
+    host.addEventListener("scroll", () => { if (rest) later(); }, { passive: true });
     window.addEventListener("wheel", (e) => {
       if (e.ctrlKey || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
       e.preventDefault();
       host.scrollBy(0, px(e));
+      try { window.frameElement.style.pointerEvents = "none"; } catch {}
+      later();
     }, { passive: false, capture: true });
     let lastY = null;
     window.addEventListener("touchstart", (e) => { lastY = e.touches.length === 1 ? e.touches[0].clientY : null; }, { passive: true, capture: true });
