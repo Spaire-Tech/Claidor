@@ -38,6 +38,7 @@ class FakeDaemon:
         self.images: set[str] = set()
         self.containers: dict[str, dict[str, Any]] = {}
         self.archives: list[tuple[str, str, bytes]] = []
+        self.existing_dirs = {"/", "/home/box/box-exec-daemon"}
         self.volumes_removed: list[str] = []
         self.pulls: list[dict[str, str]] = []
         self.serial = 0
@@ -87,6 +88,14 @@ class FakeDaemon:
         @app.put("/containers/{container_id}/archive")
         async def archive(container_id: str, request: Request) -> Response:
             path = request.query_params["path"]
+            # Docker refuses a target directory the container does not
+            # have (404 "Could not find the file"); the box image has no
+            # /home/box/sand-host.
+            if path not in self.existing_dirs:
+                return JSONResponse(
+                    {"message": f"Could not find the file {path} in container"},
+                    status_code=404,
+                )
             data = await request.body()
             with tarfile.open(fileobj=io.BytesIO(data), mode="r:") as tar:
                 for member in tar.getmembers():
@@ -94,7 +103,7 @@ class FakeDaemon:
                     self.archives.append(
                         (
                             container_id,
-                            f"{path}/{member.name}",
+                            f"{path.rstrip('/')}/{member.name}",
                             extracted.read() if extracted else b"",
                         )
                     )

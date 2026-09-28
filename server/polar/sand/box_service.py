@@ -479,7 +479,23 @@ class BoxBrokerService:
                 network_token="",
             )
             await self.check_capacity(repository, host, box)
-            await self._create(db, host, parent, box)
+            try:
+                await self._create(db, host, parent, box)
+            except BoxHostError:
+                # A brand-new box that did not come up leaves nothing
+                # behind: the host removed its container, and its two
+                # volumes, made at create, go too. A box that already
+                # existed never reaches this line, so no data is lost.
+                workspace, data = self.volumes(box.id)
+                try:
+                    await host.remove(
+                        f"simeon-box-{box.id.hex}", volumes=[workspace, data]
+                    )
+                except BoxHostError as error:
+                    log.warning(
+                        "sand.box.cleanup_failed", box=str(box.id), error=str(error)
+                    )
+                raise
             created = True
         self.stamp_urls(box)
         box.last_ensured_at = utc_now()

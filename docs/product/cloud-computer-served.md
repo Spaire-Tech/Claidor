@@ -262,6 +262,28 @@ Render's logs: `sand.box.hibernated`, `sand.box.woken`,
 `sand.box.capacity.refused`. In the window: "sleeping", then "Waking your
 computer…".
 
+## The first real run, 28 September 2026
+
+Two failures, in order, each measured and each fixed:
+
+1. **"CA cert does not include key usage extension"**, 129 times as an
+   unhandled 500. The API's Python 3.14 verifies TLS strictly; the CA the
+   first `setup-box-host.sh` made had no key-usage extension (curl accepted
+   it). The script now makes a CA that passes and replaces an old one
+   (`docs/ops/box-host/render-env.md`).
+2. **Every box stayed Created and never started, and one was left per
+   EnsureSandBox** (89 in minutes). The host bundle was uploaded to
+   `/home/box/sand-host`, which the image does not have: Docker's archive
+   PUT answers 404 "Could not find the file" for a missing target (the Mac
+   bind-mounts the file, which makes the directory; a copy does not).
+   Reproduced against a real Docker Engine (29.3) with the published
+   bundle. Now both files go in one tar extracted at `/`, which makes the
+   missing directory and leaves `/home/box`'s owner and mode untouched
+   (checked with a uid-1000, 0750 `/home/box`); a box that fails after
+   its container is made is removed, and a brand-new box's two volumes
+   with it; and a transport error with no message logs its type and the
+   request instead of nothing.
+
 ## What the founder must create
 
 1. **A VM with Docker** (amd64; the image is `linux/amd64`, 4 GB+ RAM per
