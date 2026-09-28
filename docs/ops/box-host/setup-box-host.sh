@@ -4,8 +4,13 @@
 #
 # Run as root on the VM:
 #   BOX_HOST_NAME=box1.simeonlabs.com BOX_HOST_IP=2.28.35.75 \
-#   RENDER_EGRESS_IPS="1.2.3.4,5.6.7.8" ADMIN_SSH_IP="<your Mac's public IP>" \
+#   RENDER_EGRESS_IPS="74.220.51.0/24,74.220.59.0/24" ADMIN_SSH_IP=any \
 #   bash setup-box-host.sh
+#
+# ADMIN_SSH_IP is the address you SSH from, or `any` to leave SSH open to
+# every address with key login only (password login is turned off when
+# root already has a key, never before). Safe to run again: every rule,
+# the Docker ones included, is rewritten from these variables.
 #
 # What it does, in order: installs Docker, issues a CA + server + client
 # certificate (SAN carries the hostname AND the IP, so the broker can dial
@@ -18,7 +23,7 @@ set -euo pipefail
 : "${BOX_HOST_NAME:?set BOX_HOST_NAME, e.g. box1.simeonlabs.com}"
 : "${BOX_HOST_IP:?set BOX_HOST_IP, the VM public IPv4}"
 : "${RENDER_EGRESS_IPS:?set RENDER_EGRESS_IPS, comma-separated, from Render dashboard, the API service, Networking, Outbound}"
-: "${ADMIN_SSH_IP:?set ADMIN_SSH_IP, the address you SSH from, or 0.0.0.0/0 to leave SSH open}"
+: "${ADMIN_SSH_IP:?set ADMIN_SSH_IP, the address you SSH from, or any for key-only SSH from anywhere}"
 
 CERT_DIR=/etc/docker/certs
 CLIENT_DIR=/root/box-host-client
@@ -73,19 +78,57 @@ systemctl restart docker
 sleep 2
 ss -ltnp | grep -q ':2376' && echo "daemon listening on 2376"
 
-echo "== 4. Firewall: SSH from you, 2376 and the published ports from Render only"
+echo "== 4. Firewall: SSH, 2376 and the boxes' ports from Render only"
+IFS=',' read -ra RENDER <<< "$RENDER_EGRESS_IPS"
+EXT_IF=$(ip route show default | awk '{print $5; exit}')
+[ -n "$EXT_IF" ] || { echo "no default route: cannot name the public interface"; exit 1; }
 ufw --force reset >/dev/null
 ufw default deny incoming
 ufw default allow outgoing
-ufw allow from "$ADMIN_SSH_IP" to any port 22 proto tcp
-IFS=',' read -ra RENDER <<< "$RENDER_EGRESS_IPS"
+if [ "$ADMIN_SSH_IP" = "any" ] || [ "$ADMIN_SSH_IP" = "0.0.0.0/0" ]; then
+  ufw allow 22/tcp
+else
+  ufw allow from "$ADMIN_SSH_IP" to any port 22 proto tcp
+fi
 for ip in "${RENDER[@]}"; do
   ip=$(echo "$ip" | tr -d ' ')
   ufw allow from "$ip" to any port 2376 proto tcp
-  ufw allow from "$ip" to any port 32768:60999 proto tcp
 done
+# Docker publishes a container's ports through FORWARD, before ufw's own
+# rules, so `ufw allow` never governed them: without this block every box
+# port answered from anywhere. DOCKER-USER is the chain Docker leaves to
+# us and never flushes. It lives in ufw's after.rules, between markers,
+# and any earlier copy is removed first, so a second run writes it afresh
+# instead of losing or doubling it. Packets from the containers
+# themselves (their replies and their own traffic out) are not touched:
+# only new connections arriving on the public interface are checked.
+sed -i '/^# BEGIN simeon-box-host DOCKER-USER$/,/^# END simeon-box-host DOCKER-USER$/d' /etc/ufw/after.rules
+{
+  echo "# BEGIN simeon-box-host DOCKER-USER"
+  echo "*filter"
+  echo ":DOCKER-USER - [0:0]"
+  echo "-A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN"
+  for ip in "${RENDER[@]}"; do
+    ip=$(echo "$ip" | tr -d ' ')
+    echo "-A DOCKER-USER -i $EXT_IF -s $ip -j RETURN"
+  done
+  echo "-A DOCKER-USER -i $EXT_IF -j DROP"
+  echo "-A DOCKER-USER -j RETURN"
+  echo "COMMIT"
+  echo "# END simeon-box-host DOCKER-USER"
+} >> /etc/ufw/after.rules
 ufw --force enable
 ufw status numbered
+iptables -S DOCKER-USER
+
+if [ -s /root/.ssh/authorized_keys ]; then
+  printf 'PasswordAuthentication no\nKbdInteractiveAuthentication no\n' \
+    > /etc/ssh/sshd_config.d/10-simeon-keys-only.conf
+  systemctl reload ssh || systemctl reload sshd
+  echo "SSH: key login only"
+else
+  echo "SSH: root has no key in /root/.ssh/authorized_keys; password login left on"
+fi
 
 echo "== 5. The box image, pulled once so the first EnsureSandBox does not wait on it"
 docker pull "$BOX_IMAGE"
