@@ -735,7 +735,9 @@ the Gmail/Calendar/Drive tiles beside "Connect apps" are dark
 back at 1.0 ("revert the zoom in"). Also reverted the same day: the long soft
 shadow under the chat's bubbles and cards ("the chats have a dark shadow below
 them and im not a fan"); they keep the hairline edge and a 1 px lift, in the
-app and on the website's phone still. Seen headless in the demo; not yet on a
+app and on the website's phone still. Then the same for the settings groups, the plugin
+rows, the selected settings item and the selected sidebar row ("remove the
+shadow in settings and connectors too. as well as in the sidebar message"). Seen headless in the demo; not yet on a
 Mac.
 **The chat header is the agent's card, 23 September, later still**
 ("the name of the agent are up top, left. i want to middle it … like
