@@ -792,3 +792,93 @@ refused deployment attempts. The repository's stop hook refuses an unpushed
 commit — an ephemeral container makes that the right rule — so it went out on
 its own after all. The batching preference yields to the hook, and the note
 stands corrected rather than clever.)*
+
+---
+
+## §17 — `test_skill_registry` is red about a quarter of the time on `main`, and the cause is a gzip timestamp (28 September 2026, evening)
+
+`main` moved `55d886ca` → `7bd7c208` (ten commits, the apps/connectors work).
+Unlike the last several moves it **does** touch `server/`: `polar/desktop/apps.py`
+(new, 480 lines), `polar/integrations/google/service.py`, and five added lines
+each in `polar/desktop/endpoints.py` and `service.py`. So this round the suite
+was measured, not inherited.
+
+Merged as `b1fefcad`, no conflicts. The standing structural checks after the
+merge: one Alembic head (`desktop_boxes_0918` — run with `alembic heads`, not
+with the hand-rolled parser I tried first, which reported sixteen heads
+including 2024 revisions and was simply wrong); ten `/api/proxy/box/*` routes
+at 1451–1650, `main`'s new `apps_router` include at 1769, the
+`/api/proxy/{path:path}` catch-all last at 1791, so nothing of mine is
+shadowed and the apps routes (`/api/apps/*`, `/apps/*`) do not overlap it;
+`hourly_exhausted` count still 1. Ruff on the ten files this branch touches
+reports three findings and one unformatted file (`polar/config.py`) — **all
+four are identical on a clean `origin/main` worktree**, checked file by file,
+so they are `main`'s own.
+
+### The failure, and the claim I had to withdraw
+
+The merged tree ran `tests/desktop tests/maty tests/sand tests/integrations/google`
+at **15 failed / 479 passed**. Fourteen are the known set (twelve desktop
+proxy tests wanting provider keys, two maty). The fifteenth was new to me:
+
+```
+tests/sand/test_skill_registry.py::TestPublishToMyOwnAccount::
+  test_a_publish_lands_in_the_listing_with_the_confirmable_sha
+```
+
+Clean `main` in the same scope came back **14 failed / 428 passed** — without
+it. On that single pair of observations I wrote that the extra failure was
+"associated with my branch". **That was wrong, and one run each way was never
+enough to say it.**
+
+What the assertion actually compares (`test_skill_registry.py:166`):
+
+```python
+assert stored["Body"].read() == plugin_tar_gz()
+```
+
+— the tarball fetched back from S3 against a **freshly built** one. `plugin_tar_gz()`
+opens `tarfile.open(mode="w:gz")`. Every `TarInfo` it writes has the default
+`mtime` of 0, so the tar stream is deterministic, but the **gzip wrapper** is
+not: Python stamps the current time into the header's four-byte MTIME field.
+Built two tarballs 1.1 s apart and diffed them byte by byte:
+
+```
+same length: True 262
+differing byte offsets: [4]
+gzip MTIME a: 53dbba6a   b: 54dbba6a
+equal ignoring offsets 4-7: True
+```
+
+One byte, and it is the low byte of the timestamp. So the test fails whenever
+the publish call and the assertion land either side of a second boundary —
+which, with a `GetMe` round trip, a repository read and an S3 fetch between
+them, is a real fraction of runs.
+
+Measured rather than estimated: the single test run **25 times in a clean
+`origin/main` worktree, with none of my code present — 7 failures**. About
+28%. It is `main`'s, it is twelve hours old at most, and my branch's only
+relationship to it is that adding 52 tests changed which runs happened to
+straddle a second.
+
+**Not fixed.** The fix is one line — give the gzip a fixed `mtime`, or compare
+the decompressed tar rather than the compressed bytes — but this branch is
+box-only and frozen pending the open decision, and this is not box. Same
+disposition as the two maty failures in
+`docs/product/maty-test-failures-measured.md`: written down, offered, not
+landed. Say the word and it goes on its own branch.
+
+**Worth saying plainly:** nothing would have caught this. The repository's own
+workflows still get no runner, so no CI run has ever executed this test, and a
+test that is red 28% of the time reads to whoever meets it as *their* change
+having broken something. It read that way to me for about twenty minutes.
+
+### What is still not run
+
+Unchanged, and it is the whole of the risk in this branch: **nothing here has
+ever contacted E2B, no sandbox has been started, no command has run in a box,
+and CI has never executed a line of this diff.** The suite above ran against a
+locally started PostgreSQL 16 and Redis with `moto_server` standing in for
+Minio, on Python 3.14.0rc2 through a local uncommitted `sitecustomize.py`
+shim, against the 3.14-final that `server/CLAUDE.md` requires — none of which
+is in the diff, and none of which is how CI would run it.
