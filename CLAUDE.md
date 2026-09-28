@@ -1035,6 +1035,30 @@ still fails shows `edge/handler-failed: <the server's sentence>`; the
 first thing to check is `CLAIDOR_OPENAI_API_KEY` on Render. The Mac
 keeps no log for this path. Not yet run on a Mac.
 
+## Three things the founder found testing the app (28 September 2026)
+
+**Group chats are Grok Bot's again.** On 19 September (`f278ec79`) a group
+text became one Luna call with no tools, for one speaker per round, whose only
+identity was the member's profile description ("Your persona: …"); every
+member then answered "hi" by reciting that description, and repeated it,
+because a one-shot call remembers nothing. Restored: each member runs its own
+agent runner in its own session (`pinMemberSessionForGroupTurn`,
+`createGroupMemberRunner`), speaks through SendMessage, every member answers
+a plain message for up to three rounds (`GROUP_MAX_ROUNDS`), @-mentions narrow
+it. Costs more than the Luna call; bounded by `GROUP_MAX_MEMBER_TURNS` (10).
+**A group's avatar** was one mark keyed on the group's id: no roster row ever
+said `isGroup` (the reconstruction's own gap); `buildSummary` now reads the
+group's `group.json` (`session-summaries.ts`).
+**"Always allow" came back "Allowed once"**: the pinned auto-review card turns
+Always into once whenever the block carries no `proposedAllowRule`, and our
+classifier made the rule optional. The prompt now requires it and
+`fallbackAllowRule` fills one from the command when the model omits it.
+**A new agent's first message had no options**: GPT-5.6 puts the question
+widget on the text message and `stripFieldsOfOtherTypes` dropped it silently;
+a real widget (a prompt and two or more distinct labels) is now sent right
+after the text as its own message (`followUpWidgetOf`), blank or padded ones
+still dropped. `tests/founder-test-2026-09-28.test.mjs`. Not yet run on a Mac.
+
 ## The app-window demo (27 September 2026)
 
 `npm run demo` (after `npm run package`) serves today's patched window, the

@@ -10,7 +10,7 @@ import type { Context } from "../../../packages/context/core.js";
 import { createStringResult } from "../../../packages/chat-inference/prompt-executor.js";
 import { createZodAgentTool, withSafeParsedArgs } from "../../../packages/agent/tools/common.js";
 import { createSendMessageToolCall, encodeSendMessage } from "./send-message-encoding.js";
-import { sendMessageParameters, type SendMessageInput } from "./send-message-schema.js";
+import { followUpWidgetOf, sendMessageParameters, type SendMessageInput } from "./send-message-schema.js";
 import { clampSecretDescription, clampSecretLabel } from "./sand-secret-request.js";
 import { SandToolInputError } from "./tool-input-error.js";
 import { AttachmentTooLargeError } from "../../../shared/media/attachment-limits.js";
@@ -90,6 +90,9 @@ export function createSendMessageTool(deps: SendMessageDependencies<Context>) {
       }
       const timestampMs = Date.now();
       const messageId = deps.onSendMessage(message, timestampMs);
+      // The question the model put on this text goes out right after it, as Grok Bot's two calls would have.
+      const followUp = message.type === "text" && message.channel == null ? followUpWidgetOf(input) : undefined;
+      if (followUp != null) deps.onSendMessage({ type: "widget", widget: followUp } as SandOutgoingMessage, timestampMs + 1);
       return new SendMessageResult({
         result: {
           case: "success",

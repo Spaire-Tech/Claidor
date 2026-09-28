@@ -38,7 +38,7 @@ export const SIMEON_AUTO_REVIEW_SYSTEM_PROMPT = [
   "Allow ordinary, reversible, in-scope work: reading, searching, drafting, opening pages, editing the person's own files in the project at hand, running build and test commands.",
   "Block anything hard to undo or outside what the person asked for: deleting or overwriting data outside the task, sending messages or money, purchases, changing account or security settings, credentials and secrets, force-pushes, destructive shell commands (rm -rf, drop, format), actions on sensitive personal files, and anything the person's block instructions name.",
   "If the person's allow instructions cover the action, allow it. If their block instructions cover it, block it.",
-  "Answer with one JSON object and nothing else: {\"decision\":\"allow\"} or {\"decision\":\"block\",\"reason\":\"<one short sentence the person will read>\",\"proposedAllowRule\":\"<optional one-line rule that would allow this kind of action next time>\"}.",
+  "Answer with one JSON object and nothing else: {\"decision\":\"allow\"} or {\"decision\":\"block\",\"reason\":\"<one short sentence the person will read>\",\"proposedAllowRule\":\"<one-line rule, in the person's words, that would allow this kind of action next time>\"}. A block answer always carries proposedAllowRule: the card offers \"Always allow\", and without a rule that button can only allow once.",
 ].join("\n");
 
 export interface SimeonSmartModeClassifierDeps {
@@ -75,7 +75,29 @@ export function renderSmartModeClassifierUserPrompt(args: SmartModeClassifierArg
   ].join("\n");
 }
 
-export function parseSmartModeClassifierAnswer(text: string): SmartModeClassifierSuccess | null {
+/**
+ * The rule "Always allow" saves when the reviewer gave none. The pinned card
+ * turns "Always allow" into "Allowed once" whenever the block carries no
+ * proposedAllowRule, so every block gets one: the command when there is one,
+ * else the action's kind.
+ */
+export function fallbackAllowRule(args: SmartModeClassifierArgs): string {
+  const action = (args.target?.action ?? "").trim() || "this kind of action";
+  let command = "";
+  try {
+    const json = (args.target?.arguments ?? new Struct()).toJson() as Record<string, unknown> | null;
+    for (const key of ["command", "cmd", "url", "path"]) {
+      const value = json?.[key];
+      if (typeof value === "string" && value.trim().length > 0) { command = value.trim(); break; }
+    }
+  } catch {
+    command = "";
+  }
+  if (command.length > 120) command = `${command.slice(0, 120)}…`;
+  return command.length > 0 ? `Allow ${action}: ${command}` : `Allow ${action} actions like this one`;
+}
+
+export function parseSmartModeClassifierAnswer(text: string, fallbackRule?: string): SmartModeClassifierSuccess | null {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
   if (start < 0 || end <= start) return null;
@@ -94,7 +116,7 @@ export function parseSmartModeClassifierAnswer(text: string): SmartModeClassifie
   return new SmartModeClassifierSuccess({
     decision: SmartModeClassifierDecision.BLOCK,
     ...(typeof reason === "string" && reason.trim().length > 0 ? { blockReason: reason.trim() } : {}),
-    ...(typeof rule === "string" && rule.trim().length > 0 ? { proposedAllowRule: rule.trim() } : {}),
+    ...(typeof rule === "string" && rule.trim().length > 0 ? { proposedAllowRule: rule.trim() } : fallbackRule != null && fallbackRule.length > 0 ? { proposedAllowRule: fallbackRule } : {}),
   });
 }
 
@@ -132,7 +154,7 @@ export function createSimeonSmartModeClassifierExecutor(deps: SimeonSmartModeCla
           ctx.signal,
           deps.timeoutMs ?? SIMEON_AUTO_REVIEW_CLASSIFIER_TIMEOUT_MS,
         );
-        const success = parseSmartModeClassifierAnswer(text);
+        const success = parseSmartModeClassifierAnswer(text, fallbackAllowRule(args));
         if (success == null) {
           log(`${HOST_LOG_PREFIX} auto-review action=${action} mode=${mode} verdict=unparseable answer=${clipForHostLog(text, 200)}`);
           return new SmartModeClassifierResult({ result: { case: "error", value: new SmartModeClassifierError({ error: "The reviewer's answer could not be read." }) } });
