@@ -688,3 +688,42 @@ no outbound call of any kind. The two `https://` strings in that folder
 of connected MCP rows, never dialled, and the only `simeonlabs.com` occurrences
 are a fake e-mail address. So a demo run bills no credits and reaches no route
 of mine.
+
+**Addendum, 28 September 06:00.** `806177a5..f7ecdd7d` is 23 commits, almost all
+the simeonlabs.com website (238 files under `sites/`) plus the dashboard's logo
+and a memory-sync test fix. **One file under `server/` changed**, and it is one
+I own: `polar/config.py` (#223 `796b9d68`, #224 `189c0fa8`) repoints two
+settings under its `# Discord` heading —
+
+```
+FAVICON_URL, THUMBNAIL_URL:
+  raw.githubusercontent.com/polarsource/polar/<pinned sha>/…
+→ raw.githubusercontent.com/Spaire-Tech/Claidor/main/clients/apps/web/public/apple-touch-icon.png
+```
+
+Checked rather than assumed, because a raw URL on a private repository answers
+404 and the embed would silently lose its artwork: **the URL resolves, HTTP 200,
+5750 bytes**, and after merging the file is in the tree at exactly 5750 bytes.
+Who reads these two: `polar/webhook/slack.py:28` (`image_url`) and
+`polar/integrations/discord/webhook.py:71,74` (`icon_url`, thumbnail `url`) —
+Slack and Discord embed artwork. Nothing on the desktop path, no route of mine,
+no auth or spend setting.
+
+**One thing worth knowing rather than changing:** the old values pinned a commit
+SHA; the new ones track `main`. So the icon follows whatever that path holds,
+and a rename or delete of `apple-touch-icon.png` empties the embed icon with no
+error anywhere. That is a deliberate-looking trade (the icon stays current
+without a code change) and not mine to reverse; it is written down here so the
+next person reading a blank Discord embed has somewhere to start.
+
+**What I ran**, at merge `e7381b87`, actually run because `server/` changed:
+`pytest tests/desktop tests/maty tests/sand` → **468 passed, 14 failed**, the
+same fourteen; `alembic heads` → one head; ten `/api/proxy/box/*` paths, first
+at 1450, catch-all at 1786; `hourly_exhausted` → 1; `ruff check` over
+`polar/desktop/`, `polar/models/desktop.py`, `polar/config.py` and my migration
+→ clean. And because `config.py` is the file that holds the numbers §14/§15
+cite, I re-read them: `DESKTOP_ACCESS_TOKEN_TTL` 1 hour (188),
+`DESKTOP_REFRESH_TOKEN_TTL` 30 days (189), `DESKTOP_REFRESH_GRACE` 5 min (194),
+`DESKTOP_MONTHLY_CREDITS` 3,000,000 (196), `DESKTOP_HOURLY_CREDITS` 200,000
+(201) — all unchanged, so the $0.60/hour brake and the box credential's 30-day
+window still hold as written.
