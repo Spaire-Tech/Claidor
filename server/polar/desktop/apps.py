@@ -13,6 +13,8 @@ What is served, all scoped to the person by `composio_user_id` (the same
 id the older forwarder in `composio.py` gives Composio, so a connection
 made through it is kept):
 
+- `GET  /api/apps` — `{"available": …}`, asked before any app card offers
+  Connect.
 - `POST /api/apps/mcp/{toolkit}` — MCP JSON-RPC: `initialize`, the
   notifications, `tools/list`, `tools/call`. The desktop and the box's
   own credential both reach it, because the tools run in the box.
@@ -336,6 +338,17 @@ async def _handle(
             request_id, {"content": [{"type": "text", "text": text}], "isError": not ok}
         )
     return _rpc_error(request_id, -32601, f"{method} is not supported.")
+
+
+@router.get("/api/apps", name="desktop:apps_available")
+async def apps_available(
+    desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
+) -> JSONResponse:
+    """Whether apps can be connected here. The desktop asks before it offers
+    Connect on any app card (`vendor-mcp/apps-availability.ts`): a server
+    without this route, or without the provider's key, keeps them Coming
+    soon instead of sending the person nowhere."""
+    return JSONResponse({"available": configured()})
 
 
 @router.post("/api/apps/mcp/{toolkit}", name="desktop:apps_mcp")

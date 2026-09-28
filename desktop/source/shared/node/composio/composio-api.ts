@@ -42,7 +42,7 @@ function describeFailure(status: number, payload: unknown): string {
 export function composioFailureMessage(status: number, payload?: unknown): string {
   if (status === 401) return "You are signed out. Sign in again to connect apps.";
   if (status === 503) return "Apps are not switched on for this server yet.";
-  return `Composio ${describeFailure(status, payload)}`;
+  return `Apps ${describeFailure(status, payload)}`;
 }
 
 export function createComposioApi(options: ComposioApiOptions): ComposioApi {
@@ -87,7 +87,7 @@ export function createComposioApi(options: ComposioApiOptions): ComposioApi {
     sessionId ??= request<{ session_id?: string }>("POST", "api/v3.1/tool_router/session", { user_id: userId })
       .then((created) => {
         if (typeof created.session_id !== "string" || created.session_id.length === 0) {
-          throw new Error("Composio did not return a session id.");
+          throw new Error("The apps service did not return a session id.");
         }
         return created.session_id;
       })
@@ -125,7 +125,7 @@ export function createComposioApi(options: ComposioApiOptions): ComposioApi {
         { toolkit: toolkit.toLowerCase() },
       );
       if (typeof link.redirect_url !== "string" || link.redirect_url.length === 0) {
-        throw new Error(`Composio gave no sign-in link for ${toolkit}.`);
+        throw new Error(`No sign-in link came back for ${toolkit}.`);
       }
       return link.redirect_url;
     },

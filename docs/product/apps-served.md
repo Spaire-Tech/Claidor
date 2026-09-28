@@ -1,12 +1,11 @@
 # Apps under Simeon's name (28 September 2026)
 
-> **Status, same evening: the app side is withdrawn.** The server routes were
-> not live (404 on `api.simeonlabs.com`; Render had not deployed), so every app
-> card's sign-in went nowhere, and the founder reported the vendor connectors
-> broken too, a cause not established. The desktop files are back to their
-> state before this change; `server/polar/desktop/apps.py` stays. Before
-> re-landing: the routes answer on the live host, `COMPOSIO_API_KEY` is set,
-> and one app is signed in and one tool called end to end.
+> **Status, same night: re-landed behind a check.** It was withdrawn once
+> because the server routes were not live (404 on `api.simeonlabs.com`), so
+> every app card's sign-in went nowhere. Now an app card offers Connect only
+> when `GET /desktop/api/apps` answers `{"available": true}`
+> (`vendor-mcp/apps-availability.ts`); until the server is deployed and holds
+> `COMPOSIO_API_KEY`, the apps stay Coming soon and nothing else changes.
 
 The founder: "for the rest of the connectors, lets use composio. but i want to
 white label it. i dont want anywhere to show composio" — then "use composio's

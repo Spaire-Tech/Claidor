@@ -25,6 +25,19 @@ const DATA_LOGOS: Readonly<Record<string, string>> = {
 };
 
 const FAVICON_DOMAINS: Readonly<Record<string, string>> = {
+  "google-docs": "docs.google.com",
+  "google-sheets": "sheets.google.com",
+  "google-slides": "slides.google.com",
+  "onedrive": "onedrive.live.com",
+  "google-tasks": "tasks.google.com",
+  "trello": "trello.com",
+  "xero": "xero.com",
+  "shopify": "shopify.com",
+  "brex": "brex.com",
+  "pipedrive": "pipedrive.com",
+  "docusign": "docusign.com",
+  "klaviyo": "klaviyo.com",
+  "ashby": "ashbyhq.com",
   "airtable": "airtable.com",
   "asana": "asana.com",
   "todoist": "todoist.com",

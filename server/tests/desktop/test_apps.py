@@ -81,6 +81,24 @@ def _keyed(mocker: MockerFixture) -> None:
 
 
 @pytest.mark.asyncio
+class TestAvailability:
+    async def test_available_follows_the_key(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        response = await client.get("/desktop/api/apps", headers=headers)
+        assert response.json() == {"available": True}
+        mocker.patch.object(settings, "COMPOSIO_API_KEY", "")
+        response = await client.get("/desktop/api/apps", headers=headers)
+        assert response.json() == {"available": False}
+        assert (await client.get("/desktop/api/apps")).status_code == 401
+
+
+@pytest.mark.asyncio
 class TestTheAppsMcpServer:
     async def test_initialize_is_ours_and_a_notification_is_accepted(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User

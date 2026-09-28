@@ -1097,6 +1097,17 @@ path and their tests pass, and no log has been read. The app side of #234 is
 reverted byte for byte (catalog, backend, the three wiring sites, tests); the
 server module stays, unused until deployed. Re-land only after the routes
 answer on `api.simeonlabs.com` and one app is signed in end to end.
+**Re-landed the same night, behind a check** ("bring back composio … make
+sure it works by being careful on how and where you wire it"): the app side is
+back as it was, and every app card offers Connect only when our server answers
+`GET /desktop/api/apps` with `{"available": true}` (`vendor-mcp/apps-availability.ts`,
+asked from the marketplace listing, cached a minute). A server without the
+route, without the provider's key, unreachable, or a signed-out app keeps the
+cards Coming soon, and a sign-in answered 404/503 says "coming soon in
+Simeon". Every Connect, card and InstallPlugin decision reads that one
+listing, so the window and the agent agree. The vendor connectors are not
+touched by any of it (`tests/vendor-mcp.test.mjs` connects Linear while the
+apps are off).
 
 ## The app-window demo (27 September 2026)
 

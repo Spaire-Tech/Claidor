@@ -36,22 +36,25 @@ test("the store is vendor MCPs that can Connect, then Coming soon for the rest",
       isVendorMcpPluginId,
       isVendorMcpComingSoon,
     } = loaded.module;
-    assert.equal(VENDOR_MCP_CONNECTORS.length, 39);
+    // 28 September 2026: the eighteen Coming soon cards are apps Simeon Labs' server serves (`appsToolkit`), and thirteen more were appended.
+    assert.equal(VENDOR_MCP_CONNECTORS.length, 52);
     const ids = VENDOR_MCP_CONNECTORS.map((item) => item.id);
-    assert.equal(new Set(ids).size, 39);
-    const live = VENDOR_MCP_CONNECTORS.filter((item) => item.comingSoon !== true);
-    const soon = VENDOR_MCP_CONNECTORS.filter((item) => item.comingSoon === true);
-    // 24 September (evening): Figma (MCP Catalog allowlist) and Asana (no registration endpoint) moved to coming soon.
-    assert.equal(live.length, 21);
-    assert.equal(soon.length, 18);
-    assert.ok(live.every((item) => typeof item.url === "string" && item.url.startsWith("https://")));
-    assert.ok(soon.every((item) => item.url == null));
+    assert.equal(new Set(ids).size, 52);
+    const vendors = VENDOR_MCP_CONNECTORS.filter((item) => item.appsToolkit == null);
+    const apps = VENDOR_MCP_CONNECTORS.filter((item) => item.appsToolkit != null);
+    assert.equal(vendors.length, 21);
+    assert.equal(apps.length, 31);
+    assert.equal(VENDOR_MCP_CONNECTORS.some((item) => item.comingSoon === true), false);
+    assert.ok(VENDOR_MCP_CONNECTORS.every((item) => typeof item.url === "string" && item.url.startsWith("https://")));
+    assert.ok(apps.every((item) => item.url.endsWith(`/desktop/api/apps/mcp/${item.appsToolkit}`)));
+    assert.ok(vendors.every((item) => !item.url.includes("/desktop/api/apps/")));
+    assert.equal(ids.indexOf("wix"), 17, "a connector's server id is its place in the list; nothing before the end moves");
     assert.equal(vendorMcpConnectorById("notion")?.url, "https://mcp.notion.com/mcp");
     assert.equal(isVendorMcpPluginId("gmail"), true);
-    assert.equal(isVendorMcpComingSoon("gmail"), true);
+    assert.equal(isVendorMcpComingSoon("gmail"), false);
     assert.equal(isVendorMcpComingSoon("notion"), false);
-    assert.equal(isVendorMcpComingSoon("slack"), true);
-    assert.equal(isVendorMcpComingSoon("github"), true);
+    assert.equal(vendorMcpConnectorById("slack")?.appsToolkit, "slack");
+    assert.equal(vendorMcpConnectorById("github")?.appsToolkit, "github");
     assert.equal(isVendorMcpPluginId("999"), false);
     assert.equal(VENDOR_MCP_CONNECTORS.some((item) => /fathom|mercury|composio/i.test(`${item.id} ${item.name}`)), false);
   } finally {
@@ -86,17 +89,30 @@ test("the marketplace listing is our store, including Coming soon cards", async 
     assert.equal(gmail.vendorMcpUrl, undefined);
 
     const signedOut = await marketplace.module.fetchVendorMarketplacePlugins(async () => null);
-    assert.equal(signedOut.plugins.length, 39);
+    assert.equal(signedOut.plugins.length, 52);
     assert.equal(signedOut.includesPrivateMarketplaces, false);
     assert.ok(signedOut.plugins.some((plugin) => plugin.pluginId === "notion" && plugin.vendorMcpUrl === "https://mcp.notion.com/mcp"));
-    assert.ok(signedOut.plugins.some((plugin) => plugin.pluginId === "gmail" && plugin.comingSoon === true));
+    // Signed out, the server cannot be asked: an app stays Coming soon, with no address.
+    const outGmail = signedOut.plugins.find((plugin) => plugin.pluginId === "gmail");
+    assert.equal(outGmail.comingSoon, true);
+    assert.equal(outGmail.vendorMcpUrl, undefined);
 
-    const signedIn = await marketplace.module.fetchVendorMarketplacePlugins(async () => "claidor_da_test");
+    // A server that does not serve apps (not deployed, no key): Coming soon, and the vendors are untouched.
+    const unserved = await marketplace.module.fetchVendorMarketplacePlugins(async () => "claidor_da_test", undefined, { appsAvailable: async () => false });
+    const soonGmail = unserved.plugins.find((plugin) => plugin.pluginId === "gmail");
+    assert.equal(soonGmail.comingSoon, true);
+    assert.equal(soonGmail.vendorMcpUrl, undefined);
+    assert.match(soonGmail.description, /^Coming soon\. /);
+    assert.ok(unserved.plugins.some((plugin) => plugin.pluginId === "notion" && plugin.vendorMcpUrl === "https://mcp.notion.com/mcp" && plugin.comingSoon == null));
+
+    const signedIn = await marketplace.module.fetchVendorMarketplacePlugins(async () => "claidor_da_test", undefined, { appsAvailable: async () => true });
     assert.equal(signedIn.includesPrivateMarketplaces, true);
+    assert.ok(signedIn.plugins.some((plugin) => plugin.pluginId === "gmail" && plugin.comingSoon == null && plugin.vendorMcpUrl.endsWith("/desktop/api/apps/mcp/gmail")));
+    assert.equal(signedIn.plugins.find((plugin) => plugin.pluginId === "gmail").homepage, undefined);
 
     const view = views.module.marketplacePluginToView(signedIn.plugins.find((plugin) => plugin.pluginId === "gmail"));
     assert.equal(view.id, "gmail");
-    assert.equal(view.comingSoon, true);
+    assert.equal(view.comingSoon, undefined);
     assert.equal(view.displayName, "Gmail");
     assert.match(view.iconUrl, /^data:image\//);
     const notionView = views.module.marketplacePluginToView(signedIn.plugins.find((plugin) => plugin.pluginId === "notion"));
@@ -112,7 +128,7 @@ test("connected vendor installs become enabled user plugins; Coming soon never d
   const loaded = await load("source/shared/node/vendor-mcp/marketplace.ts", "vendor-effective");
   try {
     const connected = await loaded.module.fetchVendorEffectivePlugins(new Set(["notion", "gmail", "unknown-app"]));
-    assert.deepEqual(connected.map((plugin) => plugin.pluginId), ["notion"]);
+    assert.deepEqual(connected.map((plugin) => plugin.pluginId), ["gmail", "notion"]);
     assert.equal(connected[0].isEnabled, true);
     assert.equal(connected[0].installMode, "user");
     assert.deepEqual(await loaded.module.fetchVendorEffectivePlugins(new Set()), []);
@@ -222,6 +238,8 @@ test("vendor OAuth discovers the issuer, registers Simeon, and opens the vendor 
 
 test("getCatalog lists our store; live Connect goes to the vendor, Coming soon does not", async () => {
   const loaded = await load("source/shared/node/mcp/mcp-catalog-flow.ts", "vendor-catalog-flow");
+  const marketplace = await load("source/shared/node/vendor-mcp/marketplace.ts", "vendor-catalog-flow-market");
+  const served = (available) => (token, machine) => marketplace.module.fetchVendorMarketplacePlugins(token, machine, { appsAvailable: async () => available });
   try {
     const connected = [];
     const installs = [];
@@ -237,27 +255,36 @@ test("getCatalog lists our store; live Connect goes to the vendor, Coming soon d
       connectVendorMcp: async (plugin) => {
         connected.push(plugin);
       },
+      fetchMarketplace: served(true),
     });
 
     const views = await flow.getCatalog(async () => "claidor_da_test");
-    assert.equal(views.length, 39);
+    assert.equal(views.length, 52);
     assert.ok(views.some((view) => view.id === "notion" && view.vendorMcpUrl === "https://mcp.notion.com/mcp"));
-    assert.ok(views.some((view) => view.id === "gmail" && view.comingSoon === true));
-    assert.ok(views.some((view) => view.id === "linkedin" && view.comingSoon === true));
-    const names = views.map((view) => view.displayName);
-    const firstSoon = names.indexOf("Gmail");
-    const lastLive = names.lastIndexOf("Wix");
-    assert.ok(firstSoon > lastLive, "Coming soon cards belong after the live shelf");
+    assert.ok(views.some((view) => view.id === "gmail" && view.comingSoon == null && view.vendorMcpUrl.endsWith("/desktop/api/apps/mcp/gmail")));
+    assert.equal(views.some((view) => view.comingSoon === true), false);
 
     await flow.installEntry({ entryId: "notion" }, async () => "claidor_da_test");
     assert.deepEqual(connected.map((plugin) => plugin.pluginId), ["notion"]);
     assert.deepEqual(installs, []);
 
-    await assert.rejects(
-      () => flow.installEntry({ entryId: "gmail" }, async () => "claidor_da_test"),
-      /coming soon/i,
-    );
-    assert.deepEqual(connected.map((plugin) => plugin.pluginId), ["notion"]);
+    await flow.installEntry({ entryId: "gmail" }, async () => "claidor_da_test");
+    assert.deepEqual(connected.map((plugin) => plugin.pluginId), ["notion", "gmail"]);
+
+    // A server that does not serve apps: the app card refuses Connect as Coming soon; a vendor still connects.
+    const unserved = new loaded.module.SandMcpCatalogFlow({
+      getMachineId: async () => "machine",
+      requireAccountWriter: () => ({ installPlugin: async () => {} }),
+      reloadServers: async () => ({ servers: [] }),
+      bestEffortToken: async (token) => (typeof token === "function" ? token() : null),
+      connectVendorMcp: async (plugin) => { connected.push(plugin); },
+      fetchMarketplace: served(false),
+    });
+    const soonViews = await unserved.getCatalog(async () => "claidor_da_test");
+    assert.ok(soonViews.some((view) => view.id === "gmail" && view.comingSoon === true));
+    await assert.rejects(() => unserved.installEntry({ entryId: "gmail" }, async () => "claidor_da_test"), /coming soon/i);
+    await unserved.installEntry({ entryId: "linear" }, async () => "claidor_da_test");
+    assert.deepEqual(connected.map((plugin) => plugin.pluginId), ["notion", "gmail", "linear"]);
 
     const missing = new loaded.module.SandMcpCatalogFlow({
       getMachineId: async () => "machine",
@@ -268,11 +295,13 @@ test("getCatalog lists our store; live Connect goes to the vendor, Coming soon d
       }),
       reloadServers: async () => ({ servers: [] }),
       bestEffortToken: async () => "token",
+      fetchMarketplace: served(false),
     });
     await missing.getCatalog(async () => "token");
     await assert.rejects(() => missing.installEntry({ entryId: "notion" }, async () => "token"), /Plugins overlay/);
   } finally {
     await loaded.dispose();
+    await marketplace.dispose();
   }
 });
 
@@ -280,7 +309,7 @@ test("every store card has a logo, and in-repo data marks skip a network fetch",
   const marketplace = await load("source/shared/node/vendor-mcp/marketplace.ts", "vendor-logos");
   try {
     const listing = await marketplace.module.fetchVendorMarketplacePlugins();
-    assert.equal(listing.plugins.length, 39);
+    assert.equal(listing.plugins.length, 52);
     assert.ok(listing.plugins.every((plugin) => typeof plugin.logoUrl === "string" && plugin.logoUrl.length > 0));
     const notion = listing.plugins.find((plugin) => plugin.pluginId === "notion");
     assert.match(notion.logoUrl, /^data:image\//);
@@ -295,5 +324,33 @@ test("every store card has a logo, and in-repo data marks skip a network fetch",
     assert.match(resolver, /parsed\.protocol === "data:" && url\.startsWith\("data:image\/"\)/);
   } finally {
     await marketplace.dispose();
+  }
+});
+
+test("the apps service is asked once a minute, and only a clear yes offers Connect (28 September 2026)", async () => {
+  const { module, dispose } = await load("source/shared/node/vendor-mcp/apps-availability.ts", "apps-availability");
+  try {
+    const answers = { yes: () => Response.json({ available: true }), off: () => Response.json({ available: false }), missing: () => Response.json({ detail: "Not Found" }, { status: 404 }), down: () => { throw new TypeError("fetch failed"); } };
+    for (const [name, expected] of [["yes", true], ["off", false], ["missing", false], ["down", false]]) {
+      module.resetAppsAvailabilityCache();
+      const seen = [];
+      const fetch = async (url, init) => { seen.push([url, init.headers.authorization]); return answers[name](); };
+      assert.equal(await module.isAppsServiceAvailable({ getAccessToken: async () => "tok", backendUrl: "https://api.simeonlabs.com", fetch }), expected, name);
+      assert.deepEqual(seen, [["https://api.simeonlabs.com/desktop/api/apps", "Bearer tok"]]);
+    }
+    module.resetAppsAvailabilityCache();
+    let calls = 0;
+    const fetch = async () => { calls += 1; return Response.json({ available: true }); };
+    let now = 0;
+    const ask = () => module.isAppsServiceAvailable({ getAccessToken: async () => "tok", backendUrl: "https://api.simeonlabs.com", fetch, now: () => now });
+    await ask(); await ask();
+    assert.equal(calls, 1, "cached");
+    now = 61_000;
+    await ask();
+    assert.equal(calls, 2, "asked again after a minute");
+    module.resetAppsAvailabilityCache();
+    assert.equal(await module.isAppsServiceAvailable({ getAccessToken: async () => null, backendUrl: "https://api.simeonlabs.com", fetch }), false, "signed out is never available");
+  } finally {
+    await dispose();
   }
 });
