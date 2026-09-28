@@ -727,3 +727,44 @@ cite, I re-read them: `DESKTOP_ACCESS_TOKEN_TTL` 1 hour (188),
 `DESKTOP_MONTHLY_CREDITS` 3,000,000 (196), `DESKTOP_HOURLY_CREDITS` 200,000
 (201) — all unchanged, so the $0.60/hour brake and the box credential's 30-day
 window still hold as written.
+
+## 16. 28 September, 06:07: Vercel is rate-limited for the account, and the fix is in `clients/`
+
+Two Vercel commit statuses went red on `615481d1` with
+`Resource is limited - try again in 24 hours (more than 100, code:
+"api-deployments-free-per-day")`. Not a fault in any code, not clearable by a
+push, and it blocks preview deployments for everyone on the account for a day.
+Commented once on #125 (`5864447766`); do not re-report it.
+
+Measured, so the next person does not correct the wrong thing:
+
+- This branch's diff against `main` touches **only `docs/` (3) and `server/`
+  (12)** — no `clients/`, no `sites/`. Every Vercel build my pushes trigger is
+  for code this branch never changes.
+- `sites/simeonlabs.com/vercel.json` already guards itself with
+  `"ignoreCommand": "git diff --quiet HEAD^ HEAD -- ."`.
+- `clients/apps/web/vercel.json` has **no** `ignoreCommand` — `grep -c
+  ignoreCommand clients/apps/web/vercel.json` → 0. The `claidor` and `simeon`
+  projects are both rooted there, so every push to any branch costs two builds
+  whatever it touched.
+- Share: in 24 hours `main` took ~20 commits and merges (mostly the
+  simeonlabs.com website) against **2 pushes from this branch** — roughly 6 of
+  the >100 deployments are mine. The website work is the bulk; my pushes are a
+  small real part.
+
+**What must change, and where — not by me.** `clients/` is outside what I
+touch, so this is written down rather than done: add an `ignoreCommand` to
+`clients/apps/web/vercel.json` in the shape the sites project uses. The path
+list needs deciding rather than copying, because the build is
+`cd ../.. && turbo run build --filter=web` and so consumes more than
+`clients/apps/web` (at least `clients/packages/*` and the root lockfile). Too
+narrow an ignore skips a deploy that was needed, which is worse than a wasted
+one — that call belongs to whoever owns `clients/`.
+
+On my side: no separate push for a docs-only note when a merge push is due
+anyway.
+
+The two `Detect changes` failures on the same head are the known dead-runner
+signature, verified again here rather than assumed: `runner_id: 0`, empty
+`runner_name`, `created_at == started_at` (06:06:57), dead in 2–3 s, `Client`
+and `Server`. Nothing re-run: a re-run cannot clear a daily quota.
