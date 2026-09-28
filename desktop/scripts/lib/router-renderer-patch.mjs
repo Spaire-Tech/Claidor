@@ -473,7 +473,8 @@ const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:var(--sime
  * blue under the sheet's edge, lift, air and type.
  * Then the sidebar ("can we do the same thing about the message sidebar"):
  * the selected agent is the white sheet with its lift and larger corners,
- * and the search field and the initials circle are white with a hairline.
+ * and the search field is white with a hairline. The initials circle stays
+ * the renderer's own, as it has been since the glass came off.
  */
 const AGENT_SHEET_CSS = () => `[data-theme*="light"] .sand-message.sand-1g0q52m:not(.sand-mvmkjj)${HI}{background:#fff;color:#1d1d1f;padding:10px 15px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04),0 12px 30px -16px rgba(20,30,60,.30);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
 [data-theme*="light"] .sand-message-block:has(>.sand-message.sand-1g0q52m:not(.sand-mvmkjj))${HI}{gap:6px}
@@ -481,7 +482,6 @@ const AGENT_SHEET_CSS = () => `[data-theme*="light"] .sand-message.sand-1g0q52m:
 [data-theme*="light"] .sand-agent-item[data-active="true"]${HI}:not(#\\#):not(#\\#){border-radius:14px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04),0 12px 30px -16px rgba(20,30,60,.30)}
 [data-theme*="light"] .sand-agent-item${HI}{border-radius:14px}
 [data-theme*="light"] .sand-agents-sidebar__search${HI}{background:#fff;border-radius:10px;box-shadow:0 0 0 .5px rgba(20,30,60,.09),0 1px 2px rgba(20,30,60,.05)}
-[data-theme*="light"] .sand-agents-sidebar__account .sand-kit-base-avatar${HI}{background:#fff;box-shadow:0 0 0 .5px rgba(20,30,60,.10),0 1px 2px rgba(20,30,60,.06)}
 [data-theme*="light"] .sand-message-card${HI}{--simeon-card-fill:#fff}
 [data-theme*="light"] .sand-message-card>:is(article,form,section)${HI},[data-theme*="light"] .sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card):not(.sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card) *)${HI}{background:#fff;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04),0 12px 30px -16px rgba(20,30,60,.30)}
 `;

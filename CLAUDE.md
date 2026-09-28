@@ -716,8 +716,8 @@ speak. but it stays in blue", then "the message sidebar"): in the light
 theme the agent's text bubbles, every card and the selected sidebar row are
 white sheets (a hairline edge and a soft deep shadow, no blur, so nothing
 costs a frame on scroll), the person's bubble keeps its painted blue under
-the same edge and lift, and the search field and initials circle are white
-with a hairline. The Messages grey above is superseded in light; dark keeps
+the same edge and lift, and the search field is white with a hairline (the
+initials circle stays the renderer's own). The Messages grey above is superseded in light; dark keeps
 the renderer's own. `AGENT_SHEET_CSS` in `router-renderer-patch.mjs`
 (features `agent-message-sheet`, `cards-sheet`, `user-bubble-sheet`,
 `sidebar-sheet`); the same patch gives an agent with no messages the docked
