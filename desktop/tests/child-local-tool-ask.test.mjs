@@ -28,7 +28,7 @@ async function loadController() {
     banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" },
   });
   const module = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);
-  return { module, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 test("the toolset scopes every identity's local tools to the agent's id", async () => {

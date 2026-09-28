@@ -14,7 +14,7 @@ async function loadModule(entry, name) {
   const output = path.join(temporary, `${name}.mjs`);
   await build({ entryPoints: [path.join(repoRoot, entry)], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22" });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
-  return { module, dataDir: temporary, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, dataDir: temporary, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 function sse(events) {

@@ -21,7 +21,7 @@ async function loadName() {
     target: "node22",
   });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
-  return { module, dataDir: temporary, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, dataDir: temporary, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 test("saving a name keeps it locally when the profile RPC is unimplemented", async () => {

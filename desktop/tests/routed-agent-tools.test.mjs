@@ -21,7 +21,7 @@ async function load() {
     target: "node22",
   });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
-  return { module, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 test("CopyToBox on the host only asks; it does not read the Mac path", async () => {

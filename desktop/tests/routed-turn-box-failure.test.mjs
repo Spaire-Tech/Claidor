@@ -41,7 +41,7 @@ async function loadRouter() {
   });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
   globalThis.__routedCalls = [];
-  return { module, dataDir: temporary, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, dataDir: temporary, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 async function waitFor(predicate, timeoutMs = 8_000) {

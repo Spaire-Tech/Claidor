@@ -14,7 +14,7 @@ async function loadNotice() {
   const output = path.join(temporary, "notice.mjs");
   await build({ entryPoints: [path.join(repoRoot, "source/electron-preload/computer-stream-notice.ts")], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
-  return { module, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 test("a spinner that outlives the delay gets the last reason and the log path painted under it", async () => {

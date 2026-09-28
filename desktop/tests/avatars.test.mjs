@@ -33,7 +33,7 @@ async function loadCharacter() {
     logLevel: "silent",
   });
   loaded = await import(`${pathToFileURL(output).href}?${Date.now()}`);
-  test.after(() => rm(temporary, { recursive: true, force: true }));
+  test.after(() => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
   return loaded;
 }
 

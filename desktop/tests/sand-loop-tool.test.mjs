@@ -36,7 +36,7 @@ async function loadHarness() {
   const output = path.join(temporary, "sand-loop-tool.mjs");
   await build({ entryPoints: [path.join(repoRoot, "tests/fixtures/sand-loop-tool-entry.ts")], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent", external: ["jsonc-parser"], banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" } });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
-  return { module, dataDir: temporary, dispose: () => rm(temporary, { recursive: true, force: true }) };
+  return { module, dataDir: temporary, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
 function sse(events) {
