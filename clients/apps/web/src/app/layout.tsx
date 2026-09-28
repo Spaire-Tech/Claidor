@@ -167,6 +167,7 @@ export default async function RootLayout({
       className={`antialiased ${GeistSans.variable} ${GeistMono.variable} ${inter.variable} ${instrumentSerif.variable} ${dmSans.variable} ${barlowCondensed.variable} ${poppins.variable} ${sourceSerif.variable}`}
     >
       <head>
+        <link href="/apple-touch-icon.png" rel="apple-touch-icon" />
         {CONFIG.ENVIRONMENT === 'development' ? (
           <>
             <link

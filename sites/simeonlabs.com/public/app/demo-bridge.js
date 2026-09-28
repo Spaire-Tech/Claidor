@@ -933,7 +933,6 @@
     ...extra
   });
   var file = (id, minutesAgo, path) => card(id, minutesAgo, { type: "attachment", url: `file:///home/box/${encodeURI(path)}` });
-  var question = (id, minutesAgo, prompt, options) => card(id, minutesAgo, { type: "widget", widget: { prompt, options } });
   var AGENTS = [
     { id: "simeon", name: "Simeon", title: "Chief of staff", description: "Runs your day and keeps the team pointed at what matters.", color: "blue", minutesAgo: 0 },
     { id: "yodo", name: "Yodo", title: "Delivery", description: "Keeps the launch on track in Linear and Slack.", color: "red", minutesAgo: 95 },
@@ -982,64 +981,19 @@
       ...step(2100, "m1", "CallMcpTool", "Checking Linear", "Checked Linear", 1300, "Linear"),
       ...step(3500, "m2", "CallMcpTool", "Reading #launch in Slack", "Read #launch in Slack", 1200, "Slack"),
       ...step(4800, "m3", "CallMcpTool", "Checking your calendar", "Checked your calendar", 1e3, "Google Calendar"),
-      { at: 6e3, kind: "typing", agent: "simeon", on: true },
-      { at: 7e3, kind: "append", agent: "simeon", entry: says("m0a", 0, "Morning Bass. Thursday is on track:\n\n- **12 of 15** launch tickets are done in **Linear**.\n- **LIN-482**, the pricing page bug, is in review. Marcus expects it Wednesday.\n- The launch review is **Thursday at 2 pm** with Dana and Marcus.") },
-      { at: 7800, kind: "append", agent: "simeon", entry: question("m0q", 0, "Want me to get the launch review ready?", [
-        { label: "Yes, prepare the doc and agenda", value: "prepare" },
-        { label: "Just send me the open risks", value: "risks" }
-      ]) },
-      { at: 7900, kind: "typing", agent: "simeon", on: false }
-    ];
-  }
-  function prepareScript() {
-    return [
-      { at: 300, kind: "typing", agent: "simeon", on: true },
-      ...step(600, "p1", "SendToAgent", "Asking Scout for customer quotes", "Got customer quotes from Scout", 1500, void 0, "scout"),
-      ...step(2300, "p2", "SendToAgent", "Asking Yodo for the ticket status", "Got the ticket status from Yodo", 1300, void 0, "yodo"),
-      ...step(3800, "p3", "Write", "Writing the review doc", "Wrote the review doc", 1600),
-      { at: 5600, kind: "append", agent: "simeon", entry: says("p0a", 0, "Here's the review doc: status from Yodo, the three customer themes from Scout, and the one open risk.") },
-      { at: 5800, kind: "append", agent: "simeon", entry: file("p0f", 0, "docs/Launch review, Thursday.docx") },
-      { at: 6600, kind: "append", agent: "simeon", entry: question("p0q", 0, "Send the agenda to Dana and Marcus?", [
-        { label: "Send it", value: "send" },
-        { label: "I'll send it myself", value: "self" }
-      ]) },
-      { at: 6700, kind: "typing", agent: "simeon", on: false }
-    ];
-  }
-  function risksScript() {
-    return [
-      { at: 300, kind: "typing", agent: "simeon", on: true },
-      ...step(600, "r1", "SendToAgent", "Checking with Yodo", "Checked with Yodo", 1400, void 0, "yodo"),
-      { at: 2400, kind: "append", agent: "simeon", entry: says("r0a", 0, "One real risk and one small one:\n\n1. **LIN-482** has to merge by Wednesday noon, or the pricing page ships a day late.\n2. Two onboarding screens still wait on Dana's review. She has it on her list for today.") },
-      { at: 3200, kind: "append", agent: "simeon", entry: question("r0q", 0, "Want me to nudge Marcus about LIN-482?", [
-        { label: "Yes, message him on Slack", value: "nudge" },
-        { label: "No, I'll talk to him", value: "self" }
-      ]) },
-      { at: 3300, kind: "typing", agent: "simeon", on: false }
-    ];
-  }
-  function closingScript(choice) {
-    if (choice === "send") {
-      return [
-        { at: 300, kind: "typing", agent: "simeon", on: true },
-        ...step(600, "c1", "CallMcpTool", "Sending from Gmail", "Sent from Gmail", 1400, "Gmail"),
-        ...step(2100, "c2", "CallMcpTool", "Adding the doc to the invite", "Added the doc to the invite", 1100, "Google Calendar"),
-        { at: 3400, kind: "append", agent: "simeon", entry: says("c0a", 0, "Sent from your **Gmail** to Dana and Marcus, and the doc is on Thursday's invite in **Google Calendar**. I'll check in Wednesday afternoon on LIN-482.") },
-        { at: 3500, kind: "typing", agent: "simeon", on: false }
-      ];
-    }
-    if (choice === "nudge") {
-      return [
-        { at: 300, kind: "typing", agent: "simeon", on: true },
-        ...step(600, "c3", "CallMcpTool", "Messaging Marcus on Slack", "Messaged Marcus on Slack", 1400, "Slack"),
-        { at: 2200, kind: "append", agent: "simeon", entry: says("c1a", 0, "Done. I asked Marcus on **Slack** whether LIN-482 is still good for Wednesday noon. I'll tell you as soon as he answers.") },
-        { at: 2300, kind: "typing", agent: "simeon", on: false }
-      ];
-    }
-    return [
-      { at: 400, kind: "typing", agent: "simeon", on: true },
-      { at: 1400, kind: "append", agent: "simeon", entry: says("c2a", 0, "Sounds good. It's all in this chat when you need it.") },
-      { at: 1500, kind: "typing", agent: "simeon", on: false }
+      { at: 6e3, kind: "append", agent: "simeon", entry: says("m0a", 0, "Thursday is on track: 12 of 15 launch tickets are done in **Linear**, and the review is Thursday at 2 pm.") },
+      ...step(6800, "m4", "SendToAgent", "Asking Scout for customer quotes", "Messages from Scout", 1500, void 0, "scout"),
+      ...step(8500, "m5", "SendToAgent", "Asking Yodo about the last tickets", "Messages from Yodo", 1300, void 0, "yodo"),
+      { at: 1e4, kind: "append", agent: "simeon", entry: says("m1a", 0, "Scout pulled three customer quotes and Yodo closed the last two tickets. The review doc is ready.") },
+      { at: 10300, kind: "append", agent: "simeon", entry: file("m1f", 0, "docs/Launch review.docx") },
+      { at: 10400, kind: "typing", agent: "simeon", on: false },
+      { at: 12600, kind: "user", agent: "simeon", entry: you("m2u", 0, "Looks great. Send the agenda to Dana and Marcus, and check in like this every Monday.") },
+      { at: 13300, kind: "react", agent: "simeon", entryId: "m2u", emoji: "\u{1F44D}", by: "simeon" },
+      { at: 13600, kind: "typing", agent: "simeon", on: true },
+      ...step(14e3, "m6", "CallMcpTool", "Sending the agenda from Gmail", "Sent the agenda from Gmail", 1300, "Gmail"),
+      ...step(15500, "m7", "UpdateState", "Creating routine Monday launch check", "Created routine Monday launch check", 1e3),
+      { at: 16800, kind: "append", agent: "simeon", entry: says("m2a", 0, "Done. The agenda went out from **Gmail**.") },
+      { at: 16900, kind: "typing", agent: "simeon", on: false }
     ];
   }
 
@@ -1069,7 +1023,6 @@
   });
   function createDemoBackend(hooks) {
     const scale = hooks.timeScale ?? 1;
-    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms * scale));
     const dark = typeof location !== "undefined" && new URLSearchParams(location.search).get("theme") === "dark";
     const theme = dark ? { preference: "dark", resolved: "dark" } : { preference: "light", resolved: "light" };
     const persisted = /* @__PURE__ */ new Map();
@@ -1092,7 +1045,6 @@
     let activeAgentId = "simeon";
     let snapshotSeq = 0;
     let openingStarted = false;
-    const answered = /* @__PURE__ */ new Set();
     const lastText = (entries) => {
       for (let i = entries.length - 1; i >= 0; i--) {
         const e = entries[i];
@@ -1214,15 +1166,11 @@
           case "append":
             append(beat.agent, beat.entry);
             break;
+          case "react":
+            update(beat.agent, beat.entryId, (e) => ({ ...e, reactions: [...e.reactions ?? [], { emoji: beat.emoji, by: beat.by }] }));
+            break;
         }
       }
-    }
-    async function onWidgetAnswer(agentId, entryId, value) {
-      if (agentId !== "simeon" || answered.has(entryId)) return;
-      answered.add(entryId);
-      await wait(300);
-      if (entryId === "m0q") await play(value === "prepare" ? prepareScript() : risksScript());
-      else await play(closingScript(value));
     }
     const main = {
       getThemeState: () => theme,
@@ -1278,7 +1226,6 @@
         const agentId = args.agentId ?? activeAgentId;
         const updated = update(agentId, args.entryId, (e) => ({ ...e, respondedValue: args.value }));
         if (updated == null) return { accepted: false };
-        void onWidgetAnswer(agentId, String(args.entryId), String(args.value));
         return { accepted: true };
       },
       dismissWidget: (args) => {

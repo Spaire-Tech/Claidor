@@ -7,7 +7,7 @@
  * the way it draws a real session.
  */
 import {
-  AGENTS, GROUP, GROUP_TRANSCRIPT, TRANSCRIPTS, at, closingScript, openingScript, prepareScript, risksScript,
+  AGENTS, GROUP, GROUP_TRANSCRIPT, TRANSCRIPTS, at, openingScript,
   type Beat, type DemoAgent, type Entry,
 } from "./scenario.js";
 
@@ -42,7 +42,6 @@ type Row = DemoAgent & { readonly isGroup?: boolean; readonly memberIds?: readon
 
 export function createDemoBackend(hooks: DemoBackendHooks) {
   const scale = hooks.timeScale ?? 1;
-  const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms * scale));
   // Light, as the founder asked for the demo; `?theme=dark` opens it dark to check the dark theme.
   const dark = typeof location !== "undefined" && new URLSearchParams(location.search).get("theme") === "dark";
   const theme = dark ? { preference: "dark", resolved: "dark" } : { preference: "light", resolved: "light" };
@@ -67,7 +66,6 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
   let activeAgentId = "simeon";
   let snapshotSeq = 0;
   let openingStarted = false;
-  const answered = new Set<string>();
 
   const lastText = (entries: readonly Entry[]) => {
     for (let i = entries.length - 1; i >= 0; i--) {
@@ -164,18 +162,12 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
           setRunning(beat.agent, true, beat.status === "running" ? { kind: "tool", tool: beat.name, detail: beat.detail ?? beat.summary, ...(beat.target == null ? {} : { target: beat.target }) } : undefined);
           break;
         case "append": append(beat.agent, beat.entry); break;
+        case "react": update(beat.agent, beat.entryId, (e: any) => ({ ...e, reactions: [...(e.reactions ?? []), { emoji: beat.emoji, by: beat.by }] })); break;
       }
     }
   }
 
-  /** Simeon's questions are the only way forward: each answer plays the next part of the story, once. */
-  async function onWidgetAnswer(agentId: string, entryId: string, value: string): Promise<void> {
-    if (agentId !== "simeon" || answered.has(entryId)) return;
-    answered.add(entryId);
-    await wait(300);
-    if (entryId === "m0q") await play(value === "prepare" ? prepareScript() : risksScript());
-    else await play(closingScript(value));
-  }
+
 
   const main: Record<string, (args: any) => unknown> = {
     getThemeState: () => theme,
@@ -229,7 +221,6 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
       const agentId = args.agentId ?? activeAgentId;
       const updated = update(agentId, args.entryId, (e) => ({ ...e, respondedValue: args.value }));
       if (updated == null) return { accepted: false };
-      void onWidgetAnswer(agentId, String(args.entryId), String(args.value));
       return { accepted: true };
     },
     dismissWidget: (args) => {

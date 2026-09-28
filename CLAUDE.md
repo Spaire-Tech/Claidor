@@ -1038,6 +1038,18 @@ menu, Connect apps, the New and attach buttons and the computer do nothing
 plays the story at 1/100 speed. Seen headless only, not yet on a Mac.
 Since 28 September it plays at twice the scripted pace (`timeScale: 0.5` in
 `bridge.ts`; "the ai needs to be faster").
+**Corrected 28 September 2026, later:** Simeon's conversation no longer has
+question cards to choose from. It plays through by itself, the same thread
+the website's phone still shows ("have the same text for simeon in the
+laptop"): Simeon checks Linear, Slack and the calendar, answers, hears from
+Scout and Yodo, hands you the review doc, and after your scripted reply
+("…check in like this every Monday") gives it a thumbs up, sends the agenda
+from Gmail and creates the Monday routine. The finished tool steps ("Messages
+from Scout", "Created routine …") show while they run and are then hidden by
+the pinned window, which has no such lines. The group's avatar in the sidebar
+draws each member with its own three-stop palette (`palette-still-ink`,
+`palette-still-stops` in `router-renderer-patch.mjs`); until then every still
+mark was one flat colour.
 
 **Published on the website, decided 28 September 2026.** The "never
 published" above no longer holds: the founder chose to ship the live demo on
