@@ -179,7 +179,7 @@ SURGERY = r"""([TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML]) => {
   stage.className = 'sd-stage';
   stage.innerHTML = '<div class="sd-frame"><div class="sd-bar"><span class="sd-dots"><i></i><i></i><i></i></span><span class="sd-title">Simeon</span></div>'
     + '<div class="sd-screen"><div class="sd-window"><picture class="sd-poster">'
-    + '<source media="(max-width:599.98px)" srcset="app-poster-phone.jpg"><source media="(max-width:809.98px)" srcset="app-poster-tall.jpg">'
+    + '<source media="(min-width:1024px) and (min-height:620px) and (prefers-reduced-motion: no-preference)" srcset="app-poster-held.jpg"><source media="(max-width:599.98px)" srcset="app-poster-phone.jpg"><source media="(max-width:809.98px)" srcset="app-poster-tall.jpg">'
     + '<img src="app-poster-wide.jpg" alt="" fetchpriority="high" decoding="sync"></picture>'
     + '<iframe data-hold src="app/index.html" title="Simeon, playing a launch week" loading="eager"></iframe></div></div></div>';
   hero.appendChild(stage);
@@ -291,7 +291,7 @@ section[data-framer-name="Hero"] .framer-hy289i{display:none!important}
 .sd-pin,.sd-sticky{display:contents}
 .sd-bleed,.sd-word{display:none}
 .sd-scrolly{--card-w:min(1079px,calc(100vw - 80px),calc((100vh - 100px) * 1.3272));--card-h:calc(var(--card-w) * .75347);--pin-top:calc(60px + (100vh - 60px - var(--card-h)) / 2)}
-.sd-scrolly .sd-pin{display:block;width:100%;height:calc(var(--card-h) + 70vh)}
+.sd-scrolly .sd-pin{display:block;width:100%;height:calc(var(--card-h) + 35vh)}
 .sd-scrolly .sd-sticky{display:flex;justify-content:center;position:sticky;top:var(--pin-top)}
 .sd-scrolly .framer-t7h7mm-container{max-width:var(--card-w)}
 .sd-scrolly .framer-gx3vnz,.sd-scrolly section[data-framer-name="Hero"] .framer-115oxcp{overflow:visible!important}
@@ -525,14 +525,16 @@ HERO_JS = """<script>
     root.style.setProperty('--box-w', box.offsetWidth + 'px');
     const a1 = Math.max(1, Math.round(pin.getBoundingClientRect().top + scrollY - (parseFloat(getComputedStyle(sticky).top) || 0)));
     const hold = Math.max(1, pin.offsetHeight - box.offsetHeight);
-    g = { a1, w0: a1 + hold * 0.04, w1: a1 + hold * 0.38, s0: a1 + hold * 0.28, s1: a1 + hold * 0.7 };
+    // Quick: the wordmark goes and the window rises while the card is still settling, and the
+    // window is fully up soon after the card pins.
+    g = { a1, w0: a1 * 0.55, w1: a1 + hold * 0.15, s0: a1 * 0.75, s1: a1 + hold * 0.4 };
     for (const k of ['a1', 'w0', 'w1', 's0', 's1']) root.style.setProperty('--r-' + k, Math.round(g[k]) + 'px');
     tick();
   };
   const clamp = (v) => Math.max(0, Math.min(1, v));
   const inout = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
   const out = (t) => 1 - Math.pow(1 - t, 2);
-  let queued = false, up = false;
+  let queued = false, up = false, started = false;
   const tick = () => {
     queued = false;
     if (!g) return;
@@ -547,9 +549,8 @@ HERO_JS = """<script>
       stage.style.opacity = e.toFixed(3);
       stage.style.transform = 'translateY(' + (28 * (1 - e)).toFixed(2) + 'px) scale(' + (0.97 + 0.03 * e).toFixed(4) + ')';
     }
-    // The story starts when the window is half up, and the window takes clicks once it is there.
-    const half = (g.s0 + g.s1) / 2;
-    if (y >= half) sdReleaseDemo();
+    // The story starts only once the window is fully up, and the window takes clicks from then.
+    if (y >= g.s1 && !started) { started = true; setTimeout(sdReleaseDemo, 250); }
     if ((y >= g.s0 + (g.s1 - g.s0) * 0.9) !== up) { up = !up; stage.classList.toggle('sd-up', up); }
   };
   const ask = () => { if (!queued) { queued = true; requestAnimationFrame(tick); } };
@@ -737,8 +738,12 @@ async def posters():
     try:
         async with async_playwright() as p:
             b = await p.chromium.launch(executable_path=exe, args=["--no-sandbox"])
-            for name, w, h in (("wide", 880, 618), ("tall", 880, 1290), ("phone", 440, 632)):
+            # "held" is the laptop scene's still: the app before its story starts, as the page holds it
+            # until the window is up (demo-gate.js reads the iframe's data-hold through frameElement).
+            for name, w, h in (("wide", 880, 618), ("tall", 880, 1290), ("phone", 440, 632), ("held", 880, 618)):
                 pg = await b.new_page(viewport={"width": w, "height": h}, device_scale_factor=2)
+                if name == "held":
+                    await pg.add_init_script("Object.defineProperty(window, 'frameElement', { get: () => ({ hasAttribute: () => true, removeAttribute() {} }) })")
                 await pg.goto(f"http://127.0.0.1:{srv.server_port}/app/index.html")
                 # The same moment the page reveals the live app: its sidebar drawn and its fonts in.
                 await pg.wait_for_selector(".sand-agents-sidebar", state="attached")
@@ -776,7 +781,8 @@ async def main():
     js = re.search(r'src="\./(assets/index-[^"]+\.js)"', app_idx).group(1)
     css = re.search(r'href="\./(assets/index-[^"]+\.css)"', app_idx).group(1)
     head = ("<script>if (matchMedia('(min-width:1024px) and (min-height:620px) and (prefers-reduced-motion: no-preference)').matches) document.documentElement.classList.add('sd-scrolly', ...(CSS.supports('animation-timeline: scroll()') ? ['sd-sda'] : []))</script>\n"
-            '<link rel="preload" as="image" href="app-poster-wide.jpg" media="(min-width:810px)" fetchpriority="high">\n'
+            '<link rel="preload" as="image" href="app-poster-held.jpg" media="(min-width:1024px) and (min-height:620px) and (prefers-reduced-motion: no-preference)" fetchpriority="high">\n'
+            '<link rel="preload" as="image" href="app-poster-wide.jpg" media="(min-width:810px) and (max-width:1023.98px), (min-width:1024px) and (max-height:619.98px)" fetchpriority="high">\n'
             '<link rel="preload" as="image" href="app-poster-tall.jpg" media="(min-width:600px) and (max-width:809.98px)" fetchpriority="high">\n'
             '<link rel="preload" as="image" href="app-poster-phone.jpg" media="(max-width:599.98px)" fetchpriority="high">\n'
             f'<link rel="modulepreload" crossorigin href="app/{js}">\n<link rel="preload" as="style" crossorigin href="app/{css}">\n' + head)
