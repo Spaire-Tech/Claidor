@@ -59,6 +59,10 @@ test("every logo is a readable image, and the stylesheet paints each file kind a
   assert.ok(sheet.includes('[data-theme*="light"]:not(#\\#):not(#\\#),[data-theme*="light"] :is(.sand-1wuigm2,.ui-1lzgia1):not(#\\#):not(#\\#){--sand-fill-bubble-agent:#e9e9eb}'));
   assert.ok(sheet.includes("{--simeon-card-fill:var(--sand-fill-bubble-agent)}"));
   assert.ok(!/--sand-fill-bubble-agent:light-dark/.test(sheet), "no dark value is forced on the agent bubble");
+  // Slack's tile and its name in a message carry the founder's full-colour mark; a file card's empty meta line is dropped.
+  assert.match(sheet, /\.sand-tool-icon:has\(>svg path\[d\^="M5\.042 15\.165"\]\)[^{]*\{background:#fff url\("data:image\/webp;base64,/);
+  assert.ok(sheet.includes('.simeon-app[data-app="slack"]>.simeon-app__logo{background-image:url("data:image/webp;base64,'));
+  assert.ok(sheet.includes(".sand-file-card__meta:empty:not(#\\#):not(#\\#):not(#\\#){display:none}"));
   // A near-black brand is near-white in the dark theme.
   assert.ok(sheet.includes('.simeon-app[data-app="notion"]{--simeon-app-color:light-dark(#000000,#ececec)}'));
   // The narrow sidebar's New button matches the 36 px initials circle, and the wide-sidebar account rules leave the narrow one alone.
@@ -81,6 +85,7 @@ test("the button says Connect apps and PowerPoint gets its own kind, on anchors 
   assert.equal(patched.split("const __simeonAppMentions=").length - 1, 1);
   assert.ok(patched.includes('children:"Connect apps"'));
   assert.ok(patched.includes('notion:{kind:"brand",hex:"#FFFFFF",path:'), "Notion draws its light-mode logo");
+  assert.ok(patched.includes('slack:{kind:"brand",hex:"#FFFFFF",path:"M5.042 15.165'), "Slack's tile is white under its colour mark, and the glyph the stylesheet keys on is still there");
   assert.ok(chunk.includes('kWkggS:"sand-1g0q52m",kMwMTN:"sand-1wd3ewq"'), "sand-1g0q52m is still the agent message's background class");
   assert.ok(patched.includes('"data-simeon-approval":N?"pending":void 0,role:"status"'), "the pending approval badge is marked");
   assert.ok(!patched.includes('name:"plug",size:14'));

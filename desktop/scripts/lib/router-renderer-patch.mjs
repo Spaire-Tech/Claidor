@@ -232,6 +232,12 @@ export function patchOriginalCopy(source) {
  * unknown-extension branch, and the kind table `tin` gains `slides`; the
  * preview router (`gAe`) is untouched, so nothing new is offered a preview.
  * The sidebar's Plugins button keeps its action and becomes "Connect apps".
+ * Slack's service tile, one flat aubergine glyph in the window's table, is
+ * a white tile with the founder's full-colour Slack mark ("you using the
+ * wrong slack logo"), found by the start of its glyph path; the same mark
+ * sits beside "Slack" in a message. A file card's empty second line (size,
+ * date) is dropped so the title centres on the download button ("the
+ * titles be proportionate with the download icon").
  *
  * An app named in a message wears its logo and its colour: one rehype step
  * appended to the message pipeline (`yPn`, after the prose cards) wraps each
@@ -253,6 +259,8 @@ export function patchOriginalCopy(source) {
 const BRAND_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../brand");
 export const FILE_ICON_SOURCES = Object.freeze({ pdf: "file-icons/pdf.svg", word: "file-icons/word.webp", excel: "file-icons/excel.webp", powerpoint: "file-icons/powerpoint.webp" });
 export const APP_LOGO_SOURCES = Object.freeze({ gmail: "app-logos/gmail.webp", calendar: "app-logos/google-calendar.webp", drive: "app-logos/google-drive.svg" });
+/** Service tiles the window draws as one flat colour that should carry the brand's full-colour logo instead, keyed by the start of the tile's glyph path. */
+export const TILE_LOGO_SOURCES = Object.freeze({ slack: { file: "app-logos/slack.webp", pathStart: "M5.042 15.165" } });
 export const APP_MENTIONS_MANIFEST = "app-logos/apps.json";
 /** Extra spellings that name the same app as a manifest entry. */
 const APP_MENTION_ALIASES = Object.freeze({ "Microsoft Word": "word", "Microsoft Excel": "excel", "Microsoft PowerPoint": "powerpoint", "Google Calendar": "google-calendar", "Microsoft Outlook": "outlook" });
@@ -275,6 +283,7 @@ export const LOGO_REPLACEMENTS = Object.freeze([
   ["file-kind-slides", 'return r!=null&&A6n.has(r)?"archive":null', 'return r==="pptx"||r==="ppt"?"slides":r==="doc"||r==="rtf"?"document":r!=null&&A6n.has(r)?"archive":null'],
   ["file-kind-table-slides", "tin={markdown:", 'tin={slides:{icon24:"file",icon36:"file",tint:"neutral"},markdown:'],
   ["notion-tile-light", 'notion:{kind:"brand",hex:"#0F0F10",path:', 'notion:{kind:"brand",hex:"#FFFFFF",path:'],
+  ["slack-tile-light", 'slack:{kind:"brand",hex:"#4A154B",path:', 'slack:{kind:"brand",hex:"#FFFFFF",path:'],
   ["approval-badge-marker", 'p.jsxs("span",{...Fe(lc.badge,N?lc.badgePending:FAn[y.kind]),role:"status",children:[N?p.jsx(bt,{"aria-hidden":!0,color:"yellow"', 'p.jsxs("span",{...Fe(lc.badge,N?lc.badgePending:FAn[y.kind]),"data-simeon-approval":N?"pending":void 0,role:"status",children:[N?p.jsx(bt,{"aria-hidden":!0,color:"yellow"'],
   ["message-app-mentions", MESSAGE_REHYPE_BEFORE, (names) => `${appMentionsPluginSource(names)}${MESSAGE_REHYPE_BEFORE.replace("syntheticProseCards:n}]]}", "syntheticProseCards:n}],__simeonAppMentions]}")}`],
 ]);
@@ -301,7 +310,8 @@ export async function readLogoAssets(brandDir = BRAND_DIR) {
   const read = async (sources) => Object.fromEntries(await Promise.all(Object.entries(sources).map(async ([key, file]) => [key, dataUrl(await readFile(path.join(brandDir, file)), file)])));
   const manifest = JSON.parse(await readFile(path.join(brandDir, APP_MENTIONS_MANIFEST), "utf8"));
   const mentions = await Promise.all(manifest.map(async (app) => ({ ...app, logo: dataUrl(await readFile(path.join(brandDir, "app-logos", app.logo)), app.logo) })));
-  return { files: await read(FILE_ICON_SOURCES), apps: await read(APP_LOGO_SOURCES), mentions };
+  const tiles = await Promise.all(Object.entries(TILE_LOGO_SOURCES).map(async ([key, { file, pathStart }]) => ({ key, pathStart, logo: dataUrl(await readFile(path.join(brandDir, file)), file) })));
+  return { files: await read(FILE_ICON_SOURCES), apps: await read(APP_LOGO_SOURCES), mentions, tiles };
 }
 
 const rgbOf = (hex) => [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16) / 255);
@@ -324,7 +334,7 @@ export const MESSAGE_GREY_DARK = "#262626";
 export const LOGOS_MARKER = "/* Simeon: files and apps wear their real logos";
 const HI = ":not(#\\#):not(#\\#):not(#\\#)";
 
-export function logosCss({ files, apps, mentions = [] }) {
+export function logosCss({ files, apps, mentions = [], tiles = [] }) {
   const kinds = [["pdf", files.pdf], ["document", files.word], ["markdown", files.word], ["table", files.excel], ["slides", files.powerpoint]];
   const box = (kind) => `span[data-kind="${kind}"][data-size]${HI}`;
   return `${LOGOS_MARKER} (27 September 2026). */
@@ -344,6 +354,8 @@ ${kinds.map(([kind, url]) => `${box(kind)}{--simeon-file-logo:url("${url}")}`).j
 .simeon-connect-apps__logos>i:first-child{margin-left:0;transform:rotate(-7deg)}
 .simeon-connect-apps__logos>i:last-child{transform:rotate(7deg)}
 ${Object.entries(apps).map(([app, url]) => `.simeon-connect-apps__logos>i[data-app="${app}"]{background-image:url("${url}")}`).join("\n")}
+${tiles.map(({ pathStart, logo }) => `.sand-tool-icon:has(>svg path[d^="${pathStart}"])${HI}{background:#fff url("${logo}") center/62% no-repeat!important;box-shadow:inset 0 0 0 1px var(--sand-border-default)}\n.sand-tool-icon:has(>svg path[d^="${pathStart}"])${HI}>svg{visibility:hidden}`).join("\n")}
+.sand-file-card__meta:empty${HI}{display:none}
 .simeon-app{color:var(--simeon-app-color,inherit);font-weight:500;white-space:nowrap}
 .simeon-app__logo{display:inline-block;width:1.05em;height:1.05em;margin:0 .26em 0 .04em;vertical-align:-.18em;background:center/contain no-repeat}
 .sand-mvmkjj .simeon-app{color:inherit}
@@ -824,7 +836,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

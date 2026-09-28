@@ -100,9 +100,9 @@
  {
   "name": "Slack",
   "key": "slack",
-  "logo": "si-slack.svg",
+  "logo": "slack.webp",
   "color": "#4A154B",
-  "mono": true
+  "mono": false
  },
  {
   "name": "Figma",
