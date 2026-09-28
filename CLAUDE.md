@@ -1036,6 +1036,20 @@ Nobody types: the composer is `inert`, plain keys are stopped at the page
 menu, Connect apps, the New and attach buttons and the computer do nothing
 (`INERT_IN_DEMO`). `?theme=dark` opens it dark. `tests/app-demo.test.mjs`
 plays the story at 1/100 speed. Seen headless only, not yet on a Mac.
+Since 28 September it plays at twice the scripted pace (`timeScale: 0.5` in
+`bridge.ts`; "the ai needs to be faster").
+
+**Published on the website, decided 28 September 2026.** The "never
+published" above no longer holds: the founder chose to ship the live demo on
+the public site, fully public, when asked whether to use a video instead
+("Live demo, fully public"). `sites/simeonlabs.com/` is the site: the Framer
+design made static by `source/build.py`, the demo in the hero
+(`public/app/`, Grok Bot 0.18.0's renderer with Simeon's patches, the only
+copy of that code in git; `desktop/.gitignore` still keeps
+`/src/app/dist/` out), four feature boxes the page draws itself, Simeon's
+pricing and FAQ, and no link anywhere ("the thing should lead nowhere as
+it's just to try"). Served by Vercel from that folder (`vercel.json`);
+`sites/simeonlabs.com/README.md` says how to rebuild it.
 
 ## The whole-product design audit, and the switch-or-coming-soon rule (25 September 2026)
 
