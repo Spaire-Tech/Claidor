@@ -1058,6 +1058,19 @@ widget on the text message and `stripFieldsOfOtherTypes` dropped it silently;
 a real widget (a prompt and two or more distinct labels) is now sent right
 after the text as its own message (`followUpWidgetOf`), blank or padded ones
 still dropped. `tests/founder-test-2026-09-28.test.mjs`. Not yet run on a Mac.
+**Corrected the same evening: the options still never came.** The cue is
+Grok Bot's word for word (checked against the reconstruction of the 0.18.0
+artifact); what differs is the model, and GPT-5.6 answers "offer any choice as
+a question widget" with a prose question. One sentence now spells out Grok
+Bot's own opening as the founder copied it: a text hello (by first name; "a
+blank slate" when the agent has no description), then a question widget "what
+should I mainly help you with", three or four options, `allowCustom`, and the
+helpText "Pick one, or type your own. You can hand me a real task instead, and
+I'll just start on it." And the agent never knew the person's name: the server
+dropped Google's `name` at sign-in and the profile route sent only an e-mail
+nickname; Google's name is now kept in `user.meta` and served as `name`
+(`integrations/google/service.py`, `desktop/service.py`), from the next Google
+sign-in.
 
 ## The rest of the connectors are apps under Simeon's name (28 September 2026)
 
