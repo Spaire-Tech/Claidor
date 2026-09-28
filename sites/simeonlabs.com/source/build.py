@@ -140,13 +140,43 @@ TALK_HTML = ('<div class="sd-talk" aria-label="Iris, Otto and Nova passing work 
   + "".join(bubble(*m).replace('class="sd-msg ', 'class="sd-msg sd-late ', 1) for m in TALK[3:])
   + '</div></div>')
 
+# The phone hero: a still of the app, drawn by the page, nothing to load, scroll or touch.
+# Simeon's thread with both sides talking, the agents down the left as the window shows them.
+shutil.copy(f"{REPO}/desktop/brand/file-icons/word.webp", f"{OUT}/logos/word.webp")
+def mface(f, tint=""):
+    return f'<img src="faces/{f}.png" alt="" style="{"filter:" + tint if tint else ""}">'
+def tag(f, name, color):
+    return f'<span class="sd-m-tag" style="color:{color}"><img src="faces/{f}.png" alt="">{name}</span>'
+MON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>'
+PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
+MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>'
+CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
+rail = "".join(f'<span class="sd-m-av{" sd-m-on" if i == 0 else ""}">{mface(f, t)}</span>' for i, (f, t) in enumerate([
+    ("simeon", ""), ("scout", ""), ("yodo", ""), ("scout", "hue-rotate(90deg)"), ("yodo", "hue-rotate(60deg)"), ("yodo", "hue-rotate(300deg)")]))
+group = '<span class="sd-m-av sd-m-group">' + mface("simeon") + mface("scout") + mface("yodo") + '</span>'
+MOBILE_HTML = ('<div class="sd-mob" aria-label="Simeon, a chief of staff agent, talking with you about a launch">'
+  '<div class="sd-m-rail"><span class="sd-m-lights"><i></i><i></i><i></i></span>' + rail + group
+  + '<span class="sd-m-fill"></span><span class="sd-m-new">' + PLUS + '</span><span class="sd-m-me">BF</span></div>'
+  '<div class="sd-m-main"><div class="sd-m-head">' + mface("simeon") + '<b>Simeon</b><span class="sd-m-role">Chief of staff</span><span class="sd-m-mon">' + MON + '</span></div>'
+  '<div class="sd-m-thread"><div class="sd-m-feed">'
+  f'<div class="sd-m-in">Thursday is on track: 12 of 15 launch tickets are done in {chip("linear")}, and the review is Thursday at 2 pm.</div>'
+  '<div class="sd-m-sys">Messages from ' + tag("scout", "Scout", "#3f7f78") + ' and ' + tag("yodo", "Yodo", "#b0603c") + '</div>'
+  '<div class="sd-m-in">' + tag("scout", "Scout", "#3f7f78") + ' pulled three customer quotes and ' + tag("yodo", "Yodo", "#b0603c") + ' closed the last two tickets. The review doc is ready.</div>'
+  '<div class="sd-m-file"><img src="logos/word.webp" alt="">Launch review.docx</div>'
+  '<div class="sd-m-out">Looks great. Send the agenda to Dana and Marcus, and check in like this every Monday.<span class="sd-m-react">&#128077;</span></div>'
+  '<div class="sd-m-sys">Created routine <span class="sd-m-clock">' + CLOCK + '</span><b>Monday launch check</b></div>'
+  f'<div class="sd-m-in">Done. The agenda went out from {chip("gmail")}.</div>'
+  '</div></div>'
+  '<div class="sd-m-compose"><span class="sd-m-plus">' + PLUS + '</span><span class="sd-m-ph">Message Simeon</span><span class="sd-m-mic">' + MIC + '</span></div>'
+  '</div></div>')
+
 mark = open(f"{HERE}/simeon-mark.svg").read()
 open(f"{OUT}/logos/simeon.svg", "w").write(mark)
 orbit_items = "".join(f'<img class="sd-orb" src="{logo(k)[0]}" alt="{logo(k)[1]}" data-color="{logo(k)[2]}">' for k in ORBIT)
 ORBIT_HTML = f'<div class="sd-orbit" aria-label="Simeon connects to your apps">{orbit_items}<div class="sd-tile"><img src="logos/simeon.svg" alt="Simeon"></div></div>'
 open(f"{TMP}/stripped.html", "w", encoding="utf-8").write(html)
 
-SURGERY = r"""([TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML]) => {
+SURGERY = r"""([TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML, MOBILE_HTML]) => {
   const gone = ['#__framer-badge-container', '#__framer-editorbar-container', '#hl-aria-live-message-container', '#hl-aria-live-alert-container'];
   gone.forEach((s) => document.querySelectorAll(s).forEach((n) => n.remove()));
   // Only the Framer editor bar and the extension used these; nothing else refers to them.
@@ -179,10 +209,11 @@ SURGERY = r"""([TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML]) => {
   stage.className = 'sd-stage';
   stage.innerHTML = '<div class="sd-frame"><div class="sd-bar"><span class="sd-dots"><i></i><i></i><i></i></span><span class="sd-title">Simeon</span></div>'
     + '<div class="sd-screen"><div class="sd-window"><picture class="sd-poster">'
-    + '<source media="(min-width:1024px) and (min-height:620px) and (prefers-reduced-motion: no-preference)" srcset="app-poster-held.jpg"><source media="(max-width:599.98px)" srcset="app-poster-phone.jpg"><source media="(max-width:809.98px)" srcset="app-poster-tall.jpg">'
+    + '<source media="(min-width:1024px) and (min-height:620px) and (prefers-reduced-motion: no-preference)" srcset="app-poster-held.jpg"><source media="(max-width:599.98px)" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="><source media="(max-width:809.98px)" srcset="app-poster-tall.jpg">'
     + '<img src="app-poster-wide.jpg" alt="" fetchpriority="high" decoding="sync"></picture>'
-    + '<iframe data-hold src="app/index.html" title="Simeon, playing a launch week" loading="eager"></iframe></div></div></div>';
+    + '<iframe data-hold data-src="app/index.html" title="Simeon, playing a launch week" loading="eager"></iframe></div></div></div>';
   hero.appendChild(stage);
+  stage.insertAdjacentHTML('beforeend', MOBILE_HTML);
   // On a laptop the hero is a scroll scene: the painting spans the page with Simeon's wordmark,
   // narrows into the card as you scroll, and the app window rises onto it (HERO_JS).
   const paint = (hero.querySelector('.framer-es6gsc img') || hero.querySelector('img')).getAttribute('src');
@@ -325,6 +356,53 @@ section[data-framer-name="Hero"] .framer-hy289i{display:none!important}
   -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;filter:drop-shadow(0 2px 18px rgba(20,40,80,.18));will-change:opacity,transform}
 .sd-scrolly .sd-stage{opacity:0;pointer-events:none;will-change:opacity,transform}
 .sd-scrolly .sd-stage.sd-up{pointer-events:auto}
+/* The phone hero: a still of the app window filling the hero box. */
+.sd-mob{display:none}
+@media (max-width:599.98px){
+  .framer-t7h7mm-container{aspect-ratio:3/5!important}
+  .sd-frame{display:none!important}
+  .sd-mob{position:absolute;inset:0;display:flex;container-type:inline-size;background:#fbfbfa;border-radius:inherit;overflow:hidden;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;color:#1d1d1f;-webkit-font-smoothing:antialiased;
+    -webkit-user-select:none;user-select:none}
+  .sd-m-rail{flex:none;width:21cqw;display:flex;flex-direction:column;align-items:center;gap:2.6cqw;padding:4.4cqw 0 4cqw;background:#f4f4f3;border-right:1px solid rgba(0,0,0,.07)}
+  .sd-m-lights{display:flex;gap:1.6cqw;margin-bottom:2.4cqw}
+  .sd-m-lights i{width:2.9cqw;height:2.9cqw;border-radius:50%;background:#ff5f57}
+  .sd-m-lights i:nth-child(2){background:#febc2e}.sd-m-lights i:nth-child(3){background:#28c840}
+  .sd-m-av{position:relative;display:grid;place-items:center;width:15cqw;height:12.4cqw;border-radius:3cqw}
+  .sd-m-av img{width:11cqw;height:11cqw;object-fit:contain}
+  .sd-m-on{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.05)}
+  .sd-m-group img{position:absolute;width:6.6cqw;height:6.6cqw}
+  .sd-m-group img:nth-child(1){top:1.2cqw;left:4.2cqw}.sd-m-group img:nth-child(2){bottom:1.4cqw;left:1.6cqw}.sd-m-group img:nth-child(3){bottom:1.4cqw;right:1.6cqw}
+  .sd-m-fill{flex:1}
+  .sd-m-new{width:6cqw;height:6cqw;color:#6e6e73}
+  .sd-m-new svg,.sd-m-mon svg,.sd-m-plus svg,.sd-m-mic svg,.sd-m-clock svg{display:block;width:100%;height:100%}
+  .sd-m-me{display:grid;place-items:center;width:9cqw;height:9cqw;border-radius:50%;background:#ececea;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);font-size:3.2cqw;color:#555;letter-spacing:.02em}
+  .sd-m-main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .sd-m-head{display:flex;align-items:center;gap:2cqw;padding:4.2cqw 4cqw 3.4cqw;border-bottom:1px solid rgba(0,0,0,.06);font-size:4.2cqw}
+  .sd-m-head img{width:7.4cqw;height:7.4cqw;object-fit:contain}
+  .sd-m-head b{font-weight:500}
+  .sd-m-role{font-size:3.3cqw;color:#255a93}
+  .sd-m-mon{margin-left:auto;width:5.4cqw;height:5.4cqw;color:#6e6e73}
+  .sd-m-thread{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:0 3.6cqw;
+    -webkit-mask-image:linear-gradient(#0000 0,#000 9cqw);mask-image:linear-gradient(#0000 0,#000 9cqw)}
+  .sd-m-feed{display:flex;flex-direction:column;gap:2.2cqw;padding:3cqw 0 2cqw}
+  .sd-m-in,.sd-m-out{position:relative;max-width:88%;padding:2.6cqw 3.6cqw;border-radius:4.8cqw;font-size:3.9cqw;line-height:1.42}
+  .sd-m-in{align-self:flex-start;background:#e9e9eb}
+  .sd-m-out{align-self:flex-end;background:#255a93;color:#fff;margin:1.6cqw 0 2.4cqw}
+  .sd-m-react{position:absolute;right:-1.4cqw;bottom:-3.6cqw;display:grid;place-items:center;width:7cqw;height:7cqw;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.18);font-size:3.6cqw;line-height:1}
+  .sd-m-sys{align-self:center;display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:1.2cqw;margin:1.4cqw 0;font-size:3.3cqw;color:#8e8e93}
+  .sd-m-sys b{font-weight:500;color:#1d1d1f}
+  .sd-m-clock{width:4cqw;height:4cqw;color:#3a3a3c}
+  .sd-m-tag{display:inline-flex;align-items:center;gap:.8cqw;font-weight:500;vertical-align:middle;position:relative;top:-.1em}
+  .sd-m-tag img{width:4.4cqw;height:4.4cqw;object-fit:contain}
+  .sd-m-in .sd-app{font-size:.96em}
+  .sd-m-file{align-self:flex-start;display:flex;align-items:center;gap:2.4cqw;padding:2.4cqw 4cqw 2.4cqw 2.6cqw;border-radius:3.6cqw;background:#e9e9eb;font-size:3.7cqw}
+  .sd-m-file img{width:7cqw;height:7cqw;object-fit:contain}
+  .sd-m-compose{display:flex;align-items:center;gap:2.4cqw;margin:1cqw 3.6cqw 4cqw;padding:1.8cqw 1.8cqw 1.8cqw 2cqw;border-radius:99px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.09),0 2px 8px -4px rgba(0,0,0,.1)}
+  .sd-m-plus{width:7cqw;height:7cqw;padding:1.3cqw;border-radius:50%;background:#f1f1f0;color:#6e6e73;box-sizing:border-box}
+  .sd-m-ph{flex:1;font-size:3.8cqw;color:#a1a1a6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sd-m-mic{width:8cqw;height:8cqw;padding:1.9cqw;border-radius:50%;background:#255a93;color:#fff;box-sizing:border-box}
+}
 /* Nothing below the hero moves until it is on screen. */
 .sd-marquee .sd-track{animation-play-state:paused}
 .sd-marquee.sd-seen .sd-track{animation-play-state:running}
@@ -496,6 +574,10 @@ FIT = """<script>
     if (performance.now() - t0 > 20000) return reveal();
     setTimeout(poll, 60);
   };
+  // Phones show the still (.sd-mob) and never load the app; wider screens load it as soon as they are wider.
+  const wide = matchMedia('(min-width:600px)');
+  const load = () => { if (wide.matches && !iframe.getAttribute('src')) iframe.setAttribute('src', iframe.dataset.src); };
+  wide.addEventListener('change', load); load();
   poll();
   // Off the laptop scene the demo plays at once; in it, HERO_JS lets it go when the window rises.
   window.sdReleaseDemo = () => {
@@ -740,7 +822,7 @@ async def posters():
             b = await p.chromium.launch(executable_path=exe, args=["--no-sandbox"])
             # "held" is the laptop scene's still: the app before its story starts, as the page holds it
             # until the window is up (demo-gate.js reads the iframe's data-hold through frameElement).
-            for name, w, h in (("wide", 880, 618), ("tall", 880, 1290), ("phone", 440, 632), ("held", 880, 618)):
+            for name, w, h in (("wide", 880, 618), ("tall", 880, 1290), ("held", 880, 618)):
                 pg = await b.new_page(viewport={"width": w, "height": h}, device_scale_factor=2)
                 if name == "held":
                     await pg.add_init_script("Object.defineProperty(window, 'frameElement', { get: () => ({ hasAttribute: () => true, removeAttribute() {} }) })")
@@ -762,7 +844,7 @@ async def main():
         pg = await b.new_page()
         await pg.route("**/*", lambda r: r.abort() if r.request.url.startswith("http") else r.continue_())
         await pg.goto("file://" + f"{TMP}/stripped.html")
-        r = await pg.evaluate(SURGERY, [TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML])
+        r = await pg.evaluate(SURGERY, [TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML, MOBILE_HTML])
         await b.close()
     print("appear states finished:", r["shown"])
     head = re.sub(r"<meta[^>]*charset[^>]*>|<meta[^>]*viewport[^>]*>|<title>.*?</title>", "", r["head"], flags=re.S | re.I)
@@ -784,8 +866,8 @@ async def main():
             '<link rel="preload" as="image" href="app-poster-held.jpg" media="(min-width:1024px) and (min-height:620px) and (prefers-reduced-motion: no-preference)" fetchpriority="high">\n'
             '<link rel="preload" as="image" href="app-poster-wide.jpg" media="(min-width:810px) and (max-width:1023.98px), (min-width:1024px) and (max-height:619.98px)" fetchpriority="high">\n'
             '<link rel="preload" as="image" href="app-poster-tall.jpg" media="(min-width:600px) and (max-width:809.98px)" fetchpriority="high">\n'
-            '<link rel="preload" as="image" href="app-poster-phone.jpg" media="(max-width:599.98px)" fetchpriority="high">\n'
-            f'<link rel="modulepreload" crossorigin href="app/{js}">\n<link rel="preload" as="style" crossorigin href="app/{css}">\n' + head)
+            "<script>if (matchMedia('(min-width:600px)').matches) for (const [rel, as, href] of [['modulepreload', '', 'app/" + js + "'], ['preload', 'style', 'app/" + css + "']]) "
+            "{ const l = document.createElement('link'); l.rel = rel; if (as) l.as = as; l.crossOrigin = ''; l.href = href; document.head.appendChild(l); }</script>\n" + head)
     page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
             '<title>Simeon</title>\n' + head +
             "<style>" + CSS.replace("%TOKENS%", r["tokens"]) + "</style>\n</head>\n<body>\n" + r["body"] + FIT + HERO_JS + VIEW_JS + ORBIT_JS + SCENES_JS + TALK_JS + BILL_JS + FAQ_JS + "\n</body>\n</html>\n")

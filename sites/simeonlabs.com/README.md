@@ -38,7 +38,9 @@ scene instead: the painting spans the page with Simeon's wordmark, narrows
 into the card as you scroll, the card pins under the nav, the wordmark fades
 and the app window rises onto the painting; the demo's story starts only
 then (`source/demo-gate.js` holds it until the page calls it). Smaller
-screens keep the window in the card from the start. Each animation below the hero starts when it scrolls into view and starts
+screens keep the window in the card from the start. Phones (under 600 px) show no live app at all: the hero is a still of
+the window drawn by the page (a Simeon thread with both sides talking), so
+there is nothing to load and the page scrolls natively over it. Each animation below the hero starts when it scrolls into view and starts
 over when you come back to it. The four
 feature boxes are drawn by the page itself: connectors behind the Simeon
 glass tile, Iris, Otto and Nova talking, Otto's computer asking you to sign
