@@ -516,6 +516,17 @@ const PALETTE_SD_STYLE_BEFORE = 'D={...Z.style,width:J,height:J,"--fg":r?.flat??
 const PALETTE_SD_STYLE_AFTER = 'D={...Z.style,width:J,height:J,"--fg":r?.flat??MNe(t),"--ink-from":r?.gradientFrom??OrbInk(t).from,"--ink-mid":r?.gradientFrom??OrbInk(t).mid,"--ink-to":r?.gradientTo??OrbInk(t).to,"--bg":f??String(nd["--sand-bg-base"])}';
 const PALETTE_MIRROR_STYLE_BEFORE = 'f={...x.style,width:m,height:m,"--fg":i?.flat??MNe(s),"--bg":o??String(nd["--sand-bg-base"])}';
 const PALETTE_MIRROR_STYLE_AFTER = 'f={...x.style,width:m,height:m,"--fg":i?.flat??MNe(s),"--ink-from":i?.gradientFrom??OrbInk(s).from,"--ink-mid":i?.gradientFrom??OrbInk(s).mid,"--ink-to":i?.gradientTo??OrbInk(s).to,"--bg":o??String(nd["--sand-bg-base"])}';
+// The still marks (group avatars, and every place the window draws a mark as an image rather
+// than the animator): _Ne gave the drawing one flat colour, the old palette's middle, as a
+// from = to gradient, so the Launch squad's three clouds were pale single colours next to the
+// agents' own three-stop marks (the founder, 28 September 2026: "make sure the message side bar
+// group message use the real colors"). They take the palette's three stops now, and the
+// drawing's gradient carries the middle stop when one is given.
+const PALETTE_STILL_INK_BEFORE = "inkGradient:{light:{from:r,to:r},dark:{from:i,to:i}}";
+const PALETTE_STILL_INK_AFTER = "inkGradient:(e=>e?{light:{from:e.lightFrom,mid:e.lightMid,to:e.lightTo},dark:{from:e.darkFrom,mid:e.darkMid,to:e.darkTo}}:{light:{from:r,to:r},dark:{from:i,to:i}})(G_t[s])";
+const PALETTE_STILL_STOPS_BEFORE = '<stop offset="0" stop-color="${A.from}"/><stop offset="1" stop-color="${A.to}"/>';
+const PALETTE_STILL_STOPS_AFTER = '<stop offset="0" stop-color="${A.from}"/>${A.mid?`<stop offset=".55" stop-color="${A.mid}"/>`:""}<stop offset="1" stop-color="${A.to}"/>';
+
 export const PALETTE_REPLACEMENTS = Object.freeze([
   ["palette-gradients", PALETTE_G_T_BEFORE, PALETTE_G_T_AFTER],
   ["palette-flat", PALETTE_SNT_BEFORE, PALETTE_SNT_AFTER],
@@ -527,6 +538,8 @@ export const PALETTE_REPLACEMENTS = Object.freeze([
   ["palette-body-fill", PALETTE_BODY_BEFORE, PALETTE_BODY_AFTER],
   ["palette-mark-vars", PALETTE_SD_STYLE_BEFORE, PALETTE_SD_STYLE_AFTER],
   ["palette-mirror-vars", PALETTE_MIRROR_STYLE_BEFORE, PALETTE_MIRROR_STYLE_AFTER],
+  ["palette-still-ink", PALETTE_STILL_INK_BEFORE, PALETTE_STILL_INK_AFTER],
+  ["palette-still-stops", PALETTE_STILL_STOPS_BEFORE, PALETTE_STILL_STOPS_AFTER],
 ]);
 
 export function patchOriginalPalette(source) {

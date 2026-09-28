@@ -576,9 +576,8 @@ FIT = """<script>
   };
   // Phones show the still (.sd-mob) and never load the app; wider screens load it as soon as they are wider.
   const wide = matchMedia('(min-width:600px)');
-  const load = () => { if (wide.matches && !iframe.getAttribute('src')) iframe.setAttribute('src', iframe.dataset.src); };
+  const load = () => { if (wide.matches && !iframe.getAttribute('src')) { iframe.setAttribute('src', iframe.dataset.src); poll(); } };
   wide.addEventListener('change', load); load();
-  poll();
   // Off the laptop scene the demo plays at once; in it, HERO_JS lets it go when the window rises.
   window.sdReleaseDemo = () => {
     if (!iframe.hasAttribute('data-hold')) return;
