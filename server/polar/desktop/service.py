@@ -688,9 +688,14 @@ class DesktopService:
             )
             or user.email
         )
+        meta = user.meta or {}
+        name = str(meta.get("name") or "").strip()
         return {
             "id": str(user.id),
             "nickname": nickname,
+            # The name Google gave at sign-in, when there is one; the agent's
+            # user-info block reads it (`user-full-name-service.ts`).
+            **({"name": name} if name else {}),
             "email": user.email,
             "avatarUrl": user.avatar_url,
             "phone": None,
