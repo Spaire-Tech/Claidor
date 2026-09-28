@@ -731,9 +731,12 @@ the Plugins (Connect apps) dialog are a #f5f5f7 page with every settings
 group, plugin row, the selected nav item and tab, and the search field as
 white sheets; a switch that is on is the chat's blue in both themes; in dark,
 the Gmail/Calendar/Drive tiles beside "Connect apps" are dark
-(`SWITCH_AND_TILES_CSS`); and the window opens at zoom 1.1, Cmd-0 returning
-there (`DEFAULT_ZOOM_FACTOR`, `host-window-chords.ts`, the main window's
-`webPreferences.zoomFactor`). Seen headless in the demo; not yet on a Mac.
+(`SWITCH_AND_TILES_CSS`). The window opened at zoom 1.1 for one build and is
+back at 1.0 ("revert the zoom in"). Also reverted the same day: the long soft
+shadow under the chat's bubbles and cards ("the chats have a dark shadow below
+them and im not a fan"); they keep the hairline edge and a 1 px lift, in the
+app and on the website's phone still. Seen headless in the demo; not yet on a
+Mac.
 **The chat header is the agent's card, 23 September, later still**
 ("the name of the agent are up top, left. i want to middle it … like
 muse … remove the line"): a CSS block appended to the pinned stylesheet
