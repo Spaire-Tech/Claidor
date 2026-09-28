@@ -88,6 +88,20 @@ export interface VendorMcpBackendExecOptions {
   /** On the Mac: merges the box's copy of the store in before a read, so a connector the agent installed in the box has a row here (`box-pull.ts`). */
   readonly syncStore?: () => Promise<void>;
   readonly log?: (message: string) => void;
+  /**
+   * The bearer for Simeon Labs' own server: the app's access token on the
+   * Mac, the box's own credential in the box. Used only for apps our server
+   * serves (`appsToolkit` in the catalog); a vendor keeps its own credential.
+   */
+  readonly getServerAccessToken?: () => Promise<string | null | undefined>;
+}
+
+/** The credential row an app our server serves carries once connected: a marker, never a token (the token is always the account's current one). */
+export const APPS_CONNECTED_CLIENT_ID = "simeon-apps";
+
+/** `…/desktop/api/apps/mcp/<toolkit>` → `…/desktop/api/apps/<toolkit><suffix>`. */
+export function appsRouteUrl(mcpUrl: string, suffix: string): string {
+  return mcpUrl.replace(/\/mcp\/([^/?#]+)\/?$/, (_match, toolkit: string) => `/${toolkit}${suffix}`);
 }
 
 const errorLabel = (error: unknown): string => error instanceof Error ? error.message || error.name : String(error);
@@ -110,6 +124,33 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
   const synced = async (): Promise<void> => {
     try { await options.syncStore?.(); } catch (error) { log(`vendor-mcp store sync skipped: ${errorLabel(error)}`); }
   };
+  const isApp = (install: VendorMcpInstall): boolean => vendorMcpConnectorById(install.id)?.appsToolkit != null;
+  const serverToken = async (): Promise<string | undefined> => {
+    try { const token = await options.getServerAccessToken?.(); return typeof token === "string" && token.length > 0 ? token : undefined; } catch { return undefined; }
+  };
+  // Whether the person has this app connected, from our server; undefined when it could not be asked.
+  const appConnected = async (install: VendorMcpInstall): Promise<boolean | undefined> => {
+    const token = await serverToken();
+    if (token == null) return undefined;
+    try {
+      const response = await fetchImpl(appsRouteUrl(install.url, "/status"), { headers: { authorization: `Bearer ${token}`, accept: "application/json" } });
+      if (!response.ok) { log(`apps status for ${install.id} answered ${response.status}`); return undefined; }
+      const body = await response.json() as { connected?: unknown };
+      return body.connected === true;
+    } catch (error) {
+      log(`apps status for ${install.id} failed: ${errorLabel(error)}`);
+      return undefined;
+    }
+  };
+  // The row's "connected" mark, kept in step with the server so the list shows Connected and the box follows.
+  const markApp = (install: VendorMcpInstall, connected: boolean): void => {
+    const marked = install.credential?.clientId === APPS_CONNECTED_CLIENT_ID;
+    if (connected && !marked) {
+      if (setVendorMcpCredential(options.rootDir(), install.id, { accessToken: "connected", tokenEndpoint: appsRouteUrl(install.url, "/status"), clientId: APPS_CONNECTED_CLIENT_ID }) != null) options.onCredentialChanged?.(install.id);
+    } else if (!connected && install.credential != null) {
+      if (clearVendorMcpCredential(options.rootDir(), install.id)) options.onCredentialChanged?.(install.id);
+    }
+  };
   const installFor = (serverIdentifier: string): VendorMcpInstall | undefined => {
     const connector = vendorMcpConnectorById(serverIdentifier);
     if (connector == null || connector.comingSoon === true) return undefined;
@@ -126,6 +167,11 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
   // the box an expired token reads as needsAuth: the Mac refreshes and sends
   // the store again, and the box never spends the refresh token.
   const usableCredential = async (install: VendorMcpInstall): Promise<VendorMcpCredential | undefined> => {
+    if (isApp(install)) {
+      // An app our server serves answers with the account's own bearer; a 401 on its tools means "not connected yet".
+      const token = await serverToken();
+      return token == null ? undefined : { accessToken: token, tokenEndpoint: appsRouteUrl(install.url, "/status"), clientId: APPS_CONNECTED_CLIENT_ID };
+    }
     const credential = install.credential;
     if (credential == null) return undefined;
     if (isVendorMcpGrantFresh(credential, now())) return credential;
@@ -151,6 +197,7 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
     if (credential == null) return { ...base, status: "needsAuth", tools: [] };
     try {
       const tools = await vendorMcpListTools({ url: install.url, accessToken: credential.accessToken, fetch: fetchImpl });
+      if (isApp(install)) markApp(install, true);
       return {
         ...base,
         status: "connected",
@@ -167,6 +214,47 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
       if (error instanceof VendorMcpAuthRequiredError) return { ...base, status: "needsAuth", tools: [] };
       log(`vendor-mcp tools/list failed for ${install.id}: ${errorLabel(error)}`);
       return { ...base, status: "error", tools: [] };
+    }
+  };
+
+  const disconnectApp = async (install: VendorMcpInstall): Promise<void> => {
+    const token = await serverToken();
+    if (token != null) {
+      try {
+        const response = await fetchImpl(appsRouteUrl(install.url, ""), { method: "DELETE", headers: { authorization: `Bearer ${token}`, accept: "application/json" } });
+        if (!response.ok) log(`apps disconnect for ${install.id} answered ${response.status}`);
+      } catch (error) { log(`apps disconnect for ${install.id} failed: ${errorLabel(error)}`); }
+    }
+    forgetVendorMcpSession(install.url, token);
+    markApp(install, false);
+  };
+
+  // Sign-in for an app our server serves: the server says whether it is connected and, on the Mac, gives the link.
+  const appAuthStatus = async (id: string, install: VendorMcpInstall, forceReauth: boolean): Promise<VendorMcpAuthStatus> => {
+    const name = vendorMcpConnectorById(install.id)?.name ?? install.id;
+    const connected = forceReauth ? undefined : await appConnected(install);
+    if (connected === true) { markApp(install, true); return { id, isAvailable: true, requiresAuth: false, hasValidToken: true, authUrl: "", error: "" }; }
+    if (connected === false) markApp(install, false);
+    // The box cannot open a browser: "sign-in needed" draws the card, the Mac does the rest (as for any vendor).
+    if (!options.canStartAuth) return { id, isAvailable: true, requiresAuth: true, hasValidToken: false, authUrl: install.url, error: "" };
+    const token = await serverToken();
+    if (token == null) return { id, isAvailable: false, requiresAuth: false, hasValidToken: false, authUrl: "", error: "Sign in to Simeon first." };
+    try {
+      const response = await fetchImpl(appsRouteUrl(install.url, "/connect"), { method: "POST", headers: { authorization: `Bearer ${token}`, accept: "application/json" } });
+      const body = await response.json().catch(() => ({})) as { connected?: unknown; url?: unknown; error?: { message?: unknown } };
+      if (!response.ok) {
+        // A server without the apps routes (404) or without the provider's key (503) cannot serve the app: coming soon, not an error.
+        const message = response.status === 404 || response.status === 503 ? `${name} is coming soon in Simeon.` : typeof body.error?.message === "string" ? body.error.message : `${name} could not start its sign-in (${response.status}).`;
+        appendVendorMcpSigninLog(options.rootDir(), `${install.id} sign-in failed to start: ${message}`, now);
+        return { id, isAvailable: false, requiresAuth: false, hasValidToken: false, authUrl: "", error: message };
+      }
+      if (body.connected === true) { markApp(install, true); return { id, isAvailable: true, requiresAuth: false, hasValidToken: true, authUrl: "", error: "" }; }
+      if (typeof body.url !== "string" || body.url.length === 0) return { id, isAvailable: false, requiresAuth: false, hasValidToken: false, authUrl: "", error: `${name} gave no sign-in link.` };
+      appendVendorMcpSigninLog(options.rootDir(), `${install.id} sign-in started through Simeon's apps service`, now);
+      return { id, isAvailable: true, requiresAuth: true, hasValidToken: false, authUrl: body.url, error: "" };
+    } catch (error) {
+      appendVendorMcpSigninLog(options.rootDir(), `${install.id} sign-in failed to start: ${errorLabel(error)}`, now);
+      return { id, isAvailable: false, requiresAuth: false, hasValidToken: false, authUrl: "", error: `${name} could not be reached.` };
     }
   };
 
@@ -233,6 +321,7 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
       }
       const install = installFor(vendorPluginId);
       if (install == null) return { id, isAvailable: false, requiresAuth: false, hasValidToken: false, authUrl: "", error: `${connector?.name ?? vendorPluginId} is not installed.` };
+      if (isApp(install)) return await appAuthStatus(id, install, args.forceReauth === true);
       const credential = args.forceReauth === true ? undefined : await usableCredential(install);
       if (credential != null) return { id, isAvailable: true, requiresAuth: false, hasValidToken: true, authUrl: "", error: "" };
       if (!options.canStartAuth) {
@@ -278,6 +367,12 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
       for (const target of targets) {
         const install = installForUrl(target.serverUrl);
         if (install == null) { others.push(target); continue; }
+        if (isApp(install)) {
+          const connected = await appConnected(install);
+          if (connected != null) markApp(install, connected);
+          vendor.push({ serverUrl: target.serverUrl, accountKey: target.accountKey, hasValidToken: connected === true });
+          continue;
+        }
         vendor.push({ serverUrl: target.serverUrl, accountKey: target.accountKey, hasValidToken: (await usableCredential(install)) != null });
       }
       let rest: readonly unknown[] = [];
@@ -288,6 +383,7 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
     async logoutAccount(args: { serverUrl: string; accountKey: string }): Promise<void> {
       const install = installForUrl(args.serverUrl);
       if (install == null) { await fallback.logoutAccount?.(args); return; }
+      if (isApp(install)) { await disconnectApp(install); return; }
       if (install.credential != null) forgetVendorMcpSession(install.url, install.credential.accessToken);
       if (clearVendorMcpCredential(options.rootDir(), install.id)) options.onCredentialChanged?.(install.id);
     },
@@ -300,6 +396,7 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
     async deleteAccount(args: { serverId: string; accountKey: string }): Promise<void> {
       const install = installForServerId(args.serverId);
       if (install == null) { await fallback.deleteAccount?.(args); return; }
+      if (isApp(install)) { await disconnectApp(install); return; }
       if (install.credential != null) forgetVendorMcpSession(install.url, install.credential.accessToken);
       if (clearVendorMcpCredential(options.rootDir(), install.id)) options.onCredentialChanged?.(install.id);
     },

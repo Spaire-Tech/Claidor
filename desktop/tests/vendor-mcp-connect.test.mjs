@@ -121,7 +121,7 @@ test("installed live connectors are account rows with one slot; the merge keeps 
       { id: "gmail", url: "https://nowhere", connected: false },
       { id: "unknown", url: "https://nowhere", connected: false },
     ]);
-    assert.deepEqual(rows.map((row) => row.serverIdentifier), ["notion", "notion"]);
+    assert.deepEqual(rows.map((row) => row.serverIdentifier), ["notion", "notion", "gmail"]);
     assert.equal(rows[0].name, "Notion");
     assert.match(rows[0].id, /^\d+$/);
     assert.deepEqual(rows[0].config, { url: FIGMA, type: "http" });
