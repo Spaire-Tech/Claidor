@@ -456,6 +456,21 @@ const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:var(--sime
 .sand-widget-option--selected [title="Selected"]${HI}{display:none}
 `;
 
+/**
+ * The agent's messages speak like the permission sheet on the website
+ * (the founder, 28 September 2026: "you really did a great job on Stay in
+ * control … can you try to bring this style everywhere the ai talk. lets try
+ * first in the chat, the ai messages"): a white sheet instead of the Messages
+ * grey, a hairline edge, a soft deep shadow that lifts it off the page, more
+ * air inside, Apple's system face at regular weight in near-black. Only the
+ * agent's text bubbles (`.sand-message` without the user bubble's class);
+ * cards keep their grey, and the dark theme keeps the renderer's own bubble.
+ * No blur: a backdrop filter on every bubble would cost frames on scroll.
+ */
+const AGENT_SHEET_CSS = () => `[data-theme*="light"] .sand-message.sand-1g0q52m:not(.sand-mvmkjj)${HI}{background:#fff;color:#1d1d1f;padding:10px 15px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04),0 12px 30px -16px rgba(20,30,60,.30);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
+[data-theme*="light"] .sand-message-block:has(>.sand-message.sand-1g0q52m:not(.sand-mvmkjj))${HI}{gap:6px}
+`;
+
 const GREY_CARD = [
   "background:var(--simeon-card-fill)",
   "border-color:transparent",
@@ -468,7 +483,7 @@ export const cardBlueCss = () => `${CARD_BLUE_MARKER} (27 September 2026). */
 .sand-message-card{--sand-fill-bubble-agent:transparent}
 .sand-message-card>:is(article,form,section)${HI},.sand-message-card :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card)${HI}{${GREY_CARD}}
 .sand-message-card .sand-tool-icon[style*="background-color: rgb(255, 255, 255)"]${HI}{box-shadow:inset 0 0 0 1px var(--sand-border-default)}
-${CHOICE_RADIO_CSS()}.sand-agent-item[data-active="true"]${HI}:not(#\\#){background:light-dark(#fff,rgba(255,255,255,.12));box-shadow:0 0 0 .5px light-dark(rgba(20,20,20,.08),rgba(255,255,255,.08)),0 1px 2px light-dark(rgba(20,20,20,.06),rgba(0,0,0,.3))}
+${CHOICE_RADIO_CSS()}${AGENT_SHEET_CSS()}.sand-agent-item[data-active="true"]${HI}:not(#\\#){background:light-dark(#fff,rgba(255,255,255,.12));box-shadow:0 0 0 .5px light-dark(rgba(20,20,20,.08),rgba(255,255,255,.08)),0 1px 2px light-dark(rgba(20,20,20,.06),rgba(0,0,0,.3))}
 .sand-chat-header__name${HI}:not(#\\#){background:linear-gradient(180deg,light-dark(rgba(255,255,255,.92),rgba(255,255,255,.18)),light-dark(rgba(255,255,255,.72),rgba(255,255,255,.08)));-webkit-backdrop-filter:blur(20px) saturate(1.8);backdrop-filter:blur(20px) saturate(1.8);border:.5px solid light-dark(rgba(255,255,255,.9),rgba(255,255,255,.18));box-shadow:inset 0 1px 0 light-dark(#fff,rgba(255,255,255,.22)),0 0 0 .5px light-dark(rgba(20,20,40,.1),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(20,20,40,.14),rgba(0,0,0,.5))}
 .sand-prompt-send${HI}:not(#\\#){background-color:light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK});color:#fff}
 .sand-prompt-send${HI}:not(#\\#):hover:not(:disabled){background-color:light-dark(#1e4d80,#2a62a0)}
@@ -871,7 +886,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty"],
+    features: ["settings-local-docker-vm", "brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
