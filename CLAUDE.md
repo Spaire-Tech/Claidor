@@ -709,6 +709,20 @@ frosted composer, menus, pills and name pill are gone. `npm run demo`
 paints a neutral grey where the desktop would be (`LOGO_REPLACEMENTS`, `logosCss`,
 `desktop/brand/file-icons`, `desktop/brand/app-logos`). Not yet seen on
 a Mac.
+**The chat speaks on sheets, 28 September 2026** (the founder, after the
+website's "Stay in control" permission sheet: "bring this style everywhere
+the ai talk", then "do the cards. and bring this design to the blue the user
+speak. but it stays in blue", then "the message sidebar"): in the light
+theme the agent's text bubbles, every card and the selected sidebar row are
+white sheets (a hairline edge and a soft deep shadow, no blur, so nothing
+costs a frame on scroll), the person's bubble keeps its painted blue under
+the same edge and lift, and the search field is white with a hairline (the
+initials circle stays the renderer's own). The Messages grey above is superseded in light; dark keeps
+the renderer's own. `AGENT_SHEET_CSS` in `router-renderer-patch.mjs`
+(features `agent-message-sheet`, `cards-sheet`, `user-bubble-sheet`,
+`sidebar-sheet`); the same patch gives an agent with no messages the docked
+chat instead of the centred empty hero (`chat-active-when-open`). Seen in
+the website demo, built from the same patched window; not yet on a Mac.
 **The chat header is the agent's card, 23 September, later still**
 ("the name of the agent are up top, left. i want to middle it … like
 muse … remove the line"): a CSS block appended to the pinned stylesheet
