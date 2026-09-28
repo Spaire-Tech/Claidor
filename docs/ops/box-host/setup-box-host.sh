@@ -38,17 +38,33 @@ docker info --format 'engine {{.ServerVersion}} on {{.Architecture}}'
 echo "== 2. Certificates (CA, server with SAN, client)"
 mkdir -p "$CERT_DIR" "$CLIENT_DIR"; chmod 700 "$CERT_DIR" "$CLIENT_DIR"
 cd "$CERT_DIR"
+# Python 3.13 and later (the API runs 3.14) verify with VERIFY_X509_STRICT,
+# which refuses a CA without a key-usage extension: "CA cert does not
+# include key usage extension" on every EnsureSandBox, while curl accepted
+# the same files (measured 28 September 2026). So the CA carries
+# basicConstraints and keyUsage, the two leaves carry theirs and the key
+# identifiers, and a CA made by an earlier run of this script, which has
+# no key usage, is replaced. Replacing the CA means the three client files
+# change: put the new ones on Render.
+if [ -f ca.pem ] && ! openssl x509 -in ca.pem -noout -text | grep -q "X509v3 Key Usage"; then
+  echo "the existing CA has no key usage extension; making a new one"
+  rm -f ca.pem ca-key.pem ca.srl
+fi
 if [ ! -f ca.pem ]; then
   openssl genrsa -out ca-key.pem 4096
-  openssl req -new -x509 -days 3650 -key ca-key.pem -sha256 -subj "/CN=simeon-box-host-ca" -out ca.pem
+  openssl req -new -x509 -days 3650 -key ca-key.pem -sha256 -subj "/CN=simeon-box-host-ca" \
+    -addext "basicConstraints=critical,CA:TRUE" \
+    -addext "keyUsage=critical,keyCertSign,cRLSign" \
+    -addext "subjectKeyIdentifier=hash" \
+    -out ca.pem
 fi
 openssl genrsa -out server-key.pem 4096
 openssl req -subj "/CN=$BOX_HOST_NAME" -sha256 -new -key server-key.pem -out server.csr
-printf 'subjectAltName = DNS:%s,IP:%s,IP:127.0.0.1\nextendedKeyUsage = serverAuth\n' "$BOX_HOST_NAME" "$BOX_HOST_IP" > server-ext.cnf
+printf 'basicConstraints = critical,CA:FALSE\nkeyUsage = critical,digitalSignature,keyEncipherment\nsubjectAltName = DNS:%s,IP:%s,IP:127.0.0.1\nextendedKeyUsage = serverAuth\nsubjectKeyIdentifier = hash\nauthorityKeyIdentifier = keyid,issuer\n' "$BOX_HOST_NAME" "$BOX_HOST_IP" > server-ext.cnf
 openssl x509 -req -days 3650 -sha256 -in server.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out server-cert.pem -extfile server-ext.cnf
 openssl genrsa -out "$CLIENT_DIR/key.pem" 4096
 openssl req -subj '/CN=simeon-api' -new -key "$CLIENT_DIR/key.pem" -out client.csr
-printf 'extendedKeyUsage = clientAuth\n' > client-ext.cnf
+printf 'basicConstraints = critical,CA:FALSE\nkeyUsage = critical,digitalSignature,keyEncipherment\nextendedKeyUsage = clientAuth\nsubjectKeyIdentifier = hash\nauthorityKeyIdentifier = keyid,issuer\n' > client-ext.cnf
 openssl x509 -req -days 3650 -sha256 -in client.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out "$CLIENT_DIR/cert.pem" -extfile client-ext.cnf
 cp ca.pem "$CLIENT_DIR/ca.pem"
 rm -f server.csr client.csr server-ext.cnf client-ext.cnf

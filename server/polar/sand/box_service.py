@@ -594,7 +594,11 @@ class BoxBrokerService:
             return RUN_STATE_ABSENT, False
         if box.provider != host.name:
             return RUN_STATE_ABSENT, False
-        state = await host.run_state(box.provider_box_id)
+        try:
+            state = await host.run_state(box.provider_box_id)
+        except BoxHostError as error:
+            log.warning("sand.box.run_state.unknown", box=str(box.id), error=str(error))
+            return RUN_STATE_ABSENT, False
         box.state = (
             "running"
             if state == "running"

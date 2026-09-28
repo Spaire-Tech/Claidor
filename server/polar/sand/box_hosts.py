@@ -245,6 +245,31 @@ def _docker_base_url(docker_host: str) -> tuple[str, str | None]:
     )
 
 
+class _HostReachTransport(httpx.AsyncBaseTransport):
+    """Every failure to reach the Docker daemon becomes a `BoxHostError`
+    with the reason in it, so EnsureSandBox answers one sentence the app
+    shows and `sand.box.ensure.refused` logs, and the sleeper and the wake
+    log it, instead of an unhandled 500. The first real run (28 September
+    2026) failed 129 times as a bare 500 on a certificate the API refused
+    ("CA cert does not include key usage extension")."""
+
+    def __init__(self, inner: httpx.AsyncBaseTransport, where: str) -> None:
+        self.inner = inner
+        self.where = where
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        try:
+            return await self.inner.handle_async_request(request)
+        except httpx.TransportError as error:
+            raise BoxHostError(
+                f"Simeon's cloud computer host at {self.where} could not be "
+                f"reached: {error}"
+            ) from error
+
+    async def aclose(self) -> None:
+        await self.inner.aclose()
+
+
 def docker_client_from_settings() -> httpx.AsyncClient:
     if not settings.BOX_DOCKER_HOST:
         raise BoxHostUnavailable(
@@ -258,7 +283,9 @@ def docker_client_from_settings() -> httpx.AsyncClient:
             settings.BOX_DOCKER_TLS_CERT, settings.BOX_DOCKER_TLS_KEY or None
         )
         verify = context
-    transport = httpx.AsyncHTTPTransport(uds=uds, verify=verify)
+    transport = _HostReachTransport(
+        httpx.AsyncHTTPTransport(uds=uds, verify=verify), settings.BOX_DOCKER_HOST
+    )
     return httpx.AsyncClient(
         base_url=base_url, transport=transport, timeout=httpx.Timeout(30.0, read=600.0)
     )
