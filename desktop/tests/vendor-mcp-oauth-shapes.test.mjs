@@ -163,66 +163,24 @@ test("a registration the vendor refuses names the status in the error, and a ven
   }
 });
 
-test("apps our server serves (Figma, Asana, Gmail…) sign in, list and disconnect through Simeon's apps service, never the vendor (28 September 2026)", async () => {
-  const catalog = await load("source/shared/node/vendor-mcp/catalog.ts", "vendor-catalog-apps");
-  const backend = await load("source/shared/node/vendor-mcp/backend-exec.ts", "vendor-backend-apps");
-  const installs = await load("source/shared/node/vendor-mcp/installs.ts", "vendor-installs-apps");
-  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-apps-"));
+test("Figma and Asana are coming soon with the reason, and the Mac writes every sign-in outcome to vendor-mcp-signin.log", async () => {
+  const catalog = await load("source/shared/node/vendor-mcp/catalog.ts", "vendor-catalog-soon");
+  const backend = await load("source/shared/node/vendor-mcp/backend-exec.ts", "vendor-backend-log");
+  const root = await mkdtemp(path.join(os.tmpdir(), "caisra-signin-log-"));
   try {
     const figma = catalog.module.vendorMcpConnectorById("figma");
-    assert.equal(figma.comingSoon, undefined);
-    assert.equal(figma.appsToolkit, "figma");
-    assert.equal(catalog.module.appsMcpUrl("figma", "https://api.simeonlabs.com"), "https://api.simeonlabs.com/desktop/api/apps/mcp/figma");
-    assert.equal(catalog.module.VENDOR_MCP_CONNECTORS.some((item) => item.comingSoon === true), false, "nothing is coming soon any more");
-    assert.equal(backend.module.appsRouteUrl("https://api.simeonlabs.com/desktop/api/apps/mcp/figma", "/connect"), "https://api.simeonlabs.com/desktop/api/apps/figma/connect");
-    const url = "https://api.simeonlabs.com/desktop/api/apps/mcp/figma";
-    installs.module.upsertVendorMcpInstall(root, { id: "figma", url, connected: false });
-
-    let connected = false;
-    const calls = [];
-    const fetch = async (target, init = {}) => {
-      calls.push({ target: String(target), method: init.method ?? "GET", auth: init.headers?.authorization });
-      if (String(target).endsWith("/figma/status")) return Response.json({ toolkit: "figma", connected });
-      if (String(target).endsWith("/figma/connect")) return Response.json({ toolkit: "figma", connected: false, url: "https://accounts.example.com/consent?x=1" });
-      if (init.method === "DELETE") { connected = false; return Response.json({ toolkit: "figma", disconnected: 1 }); }
-      const body = JSON.parse(init.body ?? "{}");
-      if (!connected && body.method === "tools/list") return new Response("", { status: 401 });
-      if (body.method === "initialize") return Response.json({ jsonrpc: "2.0", id: body.id, result: { protocolVersion: "2025-06-18", capabilities: { tools: {} }, serverInfo: { name: "Simeon", version: "1" } } });
-      if (body.method === "tools/list") return Response.json({ jsonrpc: "2.0", id: body.id, result: { tools: [{ name: "FIGMA_GET_FILE", description: "Read a file.", inputSchema: { type: "object" } }] } });
-      return new Response(null, { status: 202 });
-    };
-    const changed = [];
-    const mac = backend.module.createVendorMcpBackendExec({ rootDir: () => root, fetch, canStartAuth: true, getServerAccessToken: async () => "mac-token", onCredentialChanged: (id) => changed.push(id), now: () => 1_700_000_000_000 });
-    const box = backend.module.createVendorMcpBackendExec({ rootDir: () => root, fetch, canStartAuth: false, getServerAccessToken: async () => "box-token" });
-    const serverId = mac.serverIdForPlugin("figma");
-
-    const [before] = await box.listTools(["figma"]);
-    assert.equal(before.status, "needsAuth");
-    const boxStatus = await box.checkAuthStatus({ serverId, accountKey: "default", oauthRedirectUri: "http://localhost:1/cb" });
-    assert.deepEqual([boxStatus.requiresAuth, boxStatus.authUrl], [true, url], "the box draws the card and leaves the browser to the Mac");
-
-    const started = await mac.checkAuthStatus({ serverId, accountKey: "default", oauthRedirectUri: "http://localhost:1/cb" });
-    assert.deepEqual([started.requiresAuth, started.authUrl], [true, "https://accounts.example.com/consent?x=1"]);
-    assert.ok(calls.some((call) => call.target.endsWith("/figma/connect") && call.method === "POST" && call.auth === "Bearer mac-token"));
-    assert.match(await readFile(path.join(root, "vendor-mcp-signin.log"), "utf8"), /figma sign-in started through Simeon's apps service/);
-
-    connected = true;
-    const [landed] = await box.validateTokens([{ serverUrl: url, accountKey: "default" }]);
-    assert.equal(landed.hasValidToken, true);
-    assert.equal(installs.module.vendorMcpInstallById(root, "figma").credential.clientId, backend.module.APPS_CONNECTED_CLIENT_ID, "the row reads connected");
-    const [after] = await box.listTools(["figma"]);
-    assert.equal(after.status, "connected");
-    assert.deepEqual(after.tools.map((tool) => tool.toolName), ["FIGMA_GET_FILE"]);
-    assert.ok(calls.some((call) => call.method === "POST" && call.target === url && call.auth === "Bearer box-token"), "the box calls with its own credential");
-
-    await mac.logoutAccount({ serverUrl: url, accountKey: "default" });
-    assert.ok(calls.some((call) => call.method === "DELETE" && call.target === "https://api.simeonlabs.com/desktop/api/apps/figma"));
-    assert.equal(installs.module.vendorMcpInstallById(root, "figma").credential, undefined);
-    assert.ok(changed.includes("figma"));
+    assert.equal(figma.comingSoon, true);
+    assert.match(figma.description, /MCP Catalog/);
+    assert.equal(catalog.module.vendorMcpConnectorById("asana").comingSoon, true);
+    const exec = backend.module.createVendorMcpBackendExec({ rootDir: () => root, fetch: async () => new Response("", { status: 404 }), canStartAuth: true, now: () => 1_700_000_000_000 });
+    const status = await exec.checkAuthStatus({ serverId: exec.serverIdForPlugin("figma"), accountKey: "default", oauthRedirectUri: "http://localhost:8787/callback" });
+    assert.equal(status.isAvailable, false);
+    assert.match(status.error, /Figma only admits MCP clients listed in its MCP Catalog/);
+    const log = await readFile(path.join(root, "vendor-mcp-signin.log"), "utf8");
+    assert.match(log, /^2023-11-14T22:13:20\.000Z figma sign-in refused: Coming soon\. Figma only admits MCP clients/m);
   } finally {
     await rm(root, { recursive: true, force: true });
     await catalog.dispose();
     await backend.dispose();
-    await installs.dispose();
   }
 });

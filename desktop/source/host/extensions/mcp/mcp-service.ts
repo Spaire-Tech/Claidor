@@ -234,8 +234,7 @@ export class McpHostService {
     // Vendor connectors are served here, in the box, from the credential
     // store the Mac sends (`vendor-mcp/backend-exec.ts`); the box never opens
     // a sign-in, so a missing credential reads as needsAuth and draws the card.
-    // Apps Simeon Labs' server serves take the box's own credential (`vendor-mcp/backend-exec.ts`, `appsToolkit`).
-    const backendMcpExec = createVendorMcpBackendExec({ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: false, getServerAccessToken: async () => { try { const token = await deps.auth.getAccessToken({ backendUrl: getSandInferenceBackendUrl() }); return token.length > 0 ? token : null; } catch { return null; } }, log: deps.log });
+    const backendMcpExec = createVendorMcpBackendExec({ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: false, log: deps.log });
     this.hostMcp = createHostMcp({
       log: deps.log,
       onServerAuthenticated: (completion) => this.emitAuthCompletion(completion),
