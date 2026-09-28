@@ -8,8 +8,6 @@ import {
 export const ZOOM_FACTOR_MIN = 0.5;
 export const ZOOM_FACTOR_MAX = 3;
 export const ZOOM_FACTOR_STEP = 0.1;
-/** Simeon opens a little larger than Grok Bot drew it (the founder, 28 September 2026: "zoom in the app a little bit"); Cmd-0 returns here. */
-export const DEFAULT_ZOOM_FACTOR = 1.1;
 
 export type HostZoomDirection = "in" | "out" | "reset";
 
@@ -75,7 +73,7 @@ export function createHostWindowChords(deps: {
   function applyHostZoom(direction: HostZoomDirection): void {
     const contents = deps.getMainWindow()?.webContents;
     if (contents == null || contents.isDestroyed()) return;
-    let factor = DEFAULT_ZOOM_FACTOR;
+    let factor = 1;
     if (direction !== "reset") {
       const delta = direction === "in" ? ZOOM_FACTOR_STEP : -ZOOM_FACTOR_STEP;
       const next = Math.min(
