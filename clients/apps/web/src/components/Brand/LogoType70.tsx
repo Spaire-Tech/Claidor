@@ -1,15 +1,9 @@
 import { twMerge } from 'tailwind-merge'
 
+import LogoType from './LogoType'
+
 const LogoType70 = ({ className }: { className?: string }) => {
-  return (
-    <img
-      src="/assets/logotype-claidor.png"
-      alt="Simeon"
-      width={198}
-      height={70}
-      className={twMerge(className ? className : '')}
-    />
-  )
+  return <LogoType className={twMerge('h-[70px]', className)} />
 }
 
 export default LogoType70
