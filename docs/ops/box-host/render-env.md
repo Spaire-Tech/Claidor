@@ -14,6 +14,26 @@ mismatch, the DNS record for `box1.simeonlabs.com` is not the VM's IP yet
 the IP, so `https://2.28.35.75:2376/version` works meanwhile and
 `CLAIDOR_BOX_DOCKER_HOST` may name the IP instead).
 
+## If the API says "CA cert does not include key usage extension" (28 September 2026)
+
+The first real run failed that way on every EnsureSandBox. The API runs
+Python 3.14, whose TLS check is strict (`VERIFY_X509_STRICT`), and the CA the
+first version of `setup-box-host.sh` made had no key-usage extension, which
+curl accepts and Python refuses. The script on `main` makes a CA that passes
+and replaces an old one when it runs. To fix a host made by the old script:
+
+1. On the VM, run `setup-box-host.sh` from `main` again with the same four
+   variables. It prints "the existing CA has no key usage extension; making
+   a new one", restarts Docker on the new certificates and rewrites the
+   firewall rules as before.
+2. Copy the three new files from `/root/box-host-client/` and prove them with
+   the `curl … /version` above.
+3. Replace the three secret files in the shared environment group with the
+   new ones, and redeploy the API and the worker.
+
+Since the same day a failure to reach the daemon is one sentence
+(`sand.box.ensure.refused`), not an unhandled 500.
+
 ## On Render, the shared environment group
 
 **Corrected 28 September 2026:** put everything below in the environment

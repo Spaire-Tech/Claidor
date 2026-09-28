@@ -19,13 +19,16 @@ import httpx
 import pytest
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
+from pytest_mock import MockerFixture
 
+from polar.config import settings
 from polar.sand.box_hosts import (
     BoxHostError,
     BoxSpec,
     DockerBoxHost,
     HostBundle,
     box_image_reference,
+    docker_client_from_settings,
 )
 
 
@@ -294,3 +297,30 @@ def test_a_bundle_missing_a_file_is_refused_with_the_build_command() -> None:
         tar.addfile(info, io.BytesIO(b"x"))
     with pytest.raises(BoxHostError, match="box-exec-daemon/main.cjs"):
         HostBundle.from_tar(buffer.getvalue())
+
+
+@pytest.mark.asyncio
+async def test_an_unreachable_daemon_is_one_sentence_not_a_500(
+    mocker: MockerFixture,
+) -> None:
+    """The first real run failed 129 times as an unhandled 500 on a TLS
+    refusal; the reason now reaches the app and the log as a sentence."""
+    mocker.patch.object(settings, "BOX_DOCKER_HOST", "tcp://box.example:2376")
+    mocker.patch.object(settings, "BOX_DOCKER_TLS_CERT", "")
+    client = docker_client_from_settings()
+
+    async def refuse(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError(
+            "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: "
+            "CA cert does not include key usage extension",
+            request=request,
+        )
+
+    inner = client._transport
+    inner.inner = httpx.MockTransport(refuse)  # type: ignore[attr-defined]
+    host = DockerBoxHost(client, host_address="box.example", bundle=None)
+    with pytest.raises(BoxHostError) as raised:
+        await host.run_state("abc")
+    assert "tcp://box.example:2376 could not be reached" in str(raised.value)
+    assert "key usage extension" in str(raised.value)
+    await client.aclose()
