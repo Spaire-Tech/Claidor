@@ -52,8 +52,22 @@ export interface ClaidorCredentialSource {
   readonly backendUrl?: string;
 }
 
-export const DEFAULT_CLAIDOR_MODEL = "gpt-5.6-terra";
-export const DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-5.6-luna";
+// GPT-6 Sol and Luna since 28 September 2026 (released 22 September at half
+// the GPT-5.6 prices; the founder: "lets keep chat gpt"). Simeon Labs' server
+// offers them as primary and cheap and keeps serving the GPT-5.6 pair to
+// older apps (`ModelRole.retired`, polar/desktop/pricing.py).
+export const DEFAULT_CLAIDOR_MODEL = "gpt-6-sol";
+export const DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-6-luna";
+// A server not yet deployed with GPT-6 refuses it ("This model is not offered
+// by the desktop app."); the step then runs on the model it replaced, once,
+// with a `[claidor] model-legacy` line, so the order of a server deploy and an
+// app rebuild cannot leave the agent silent.
+export const LEGACY_CLAIDOR_MODELS: Readonly<Record<string, string>> = { "gpt-6-sol": "gpt-5.6-terra", "gpt-6-luna": "gpt-5.6-luna" };
+export function isModelNotOfferedError(error: unknown): boolean {
+  const record = error as { message?: unknown; responseBody?: unknown } | null;
+  const text = `${typeof record?.message === "string" ? record.message : String(error)} ${typeof record?.responseBody === "string" ? record.responseBody : ""}`;
+  return /not offered by the desktop app/i.test(text);
+}
 export const CLAIDOR_FETCH_TIMEOUT_MS = 45_000;
 export const CLAIDOR_CREDENTIAL_WAIT_MS = 5_000;
 export { CLAIDOR_WORKING_CONTEXT_TOKENS };
@@ -65,7 +79,9 @@ export { CLAIDOR_WORKING_CONTEXT_TOKENS };
 // SAND_COMPUTER_USE_MODEL_SELECTION). Until 22 September the executor sent
 // no effort at all, so every Terra call ran at OpenAI's default. The proxy
 // forwards the Responses body untouched, so the value reaches OpenAI as is.
-export const CLAIDOR_REASONING_EFFORTS = ["minimal", "low", "medium", "high"] as const;
+// GPT-6's levels (none, low, medium, high, xhigh, max). "minimal" was
+// GPT-5.6's and reads as low.
+export const CLAIDOR_REASONING_EFFORTS = ["none", "low", "medium", "high", "xhigh", "max"] as const;
 export type ClaidorReasoningEffort = (typeof CLAIDOR_REASONING_EFFORTS)[number];
 export const DEFAULT_CLAIDOR_REASONING_EFFORT: ClaidorReasoningEffort = "high";
 export const DEFAULT_CLAIDOR_CHEAP_REASONING_EFFORT: ClaidorReasoningEffort = "low";
@@ -73,7 +89,8 @@ export const SAND_CLAIDOR_REASONING_EFFORT_ENV = "SAND_CLAIDOR_REASONING_EFFORT"
 export const SAND_CLAIDOR_CHEAP_REASONING_EFFORT_ENV = "SAND_CLAIDOR_CHEAP_REASONING_EFFORT";
 
 function parseReasoningEffort(value: string | undefined, fallback: ClaidorReasoningEffort): ClaidorReasoningEffort {
-  const trimmed = value?.trim().toLowerCase();
+  const raw = value?.trim().toLowerCase();
+  const trimmed = raw === "minimal" ? "low" : raw;
   return (CLAIDOR_REASONING_EFFORTS as readonly string[]).includes(trimmed ?? "") ? trimmed as ClaidorReasoningEffort : fallback;
 }
 
@@ -219,7 +236,8 @@ export function withPromptCacheKey(body: unknown, promptCacheKey: string | undef
 }
 
 function claidorAuthenticatedFetch(source: ClaidorCredentialSource, promptCacheKey?: string): typeof fetch {
-  const authenticated: typeof fetch = async (input, init) => {
+  const authenticated: typeof fetch = async (input, rawInit) => {
+    const init = rawInit?.body == null ? rawInit : { ...rawInit, body: withRealModelName(rawInit.body) as BodyInit };
     const accessToken = await withTimeout(
       source.getAccessToken(),
       CLAIDOR_CREDENTIAL_WAIT_MS,
@@ -501,8 +519,30 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
 
 // Claidor's metered proxy, on the Responses wire: the one that takes reasoning
 // and function tools in the same request (server/polar/desktop/endpoints.py).
+// @ai-sdk/openai 1.3 decides a model reasons by its name alone
+// (`getResponsesModelConfig`: "o…" or "gpt-5…"), so for gpt-6-sol it would
+// drop the reasoning effort without a word and send the brief as a "system"
+// message instead of "developer" (found 28 September 2026, moving to GPT-6).
+// A GPT model of a later generation is handed to the SDK under a name it
+// recognises and renamed back on the wire (`withRealModelName`), so the
+// request OpenAI sees is the SDK's reasoning request for the real model.
+export const SDK_REASONING_ALIAS = "gpt-5-as:";
+export function sdkModelIdFor(id: string): string {
+  return /^gpt-(\d+)/.test(id) && Number(/^gpt-(\d+)/.exec(id)?.[1]) > 5 ? `${SDK_REASONING_ALIAS}${id}` : id;
+}
+export function withRealModelName(body: unknown): unknown {
+  if (typeof body !== "string" || !body.includes(SDK_REASONING_ALIAS)) return body;
+  try {
+    const parsed = JSON.parse(body) as { model?: unknown };
+    if (typeof parsed.model !== "string" || !parsed.model.startsWith(SDK_REASONING_ALIAS)) return body;
+    return JSON.stringify({ ...parsed, model: parsed.model.slice(SDK_REASONING_ALIAS.length) });
+  } catch {
+    return body;
+  }
+}
+
 function claidorLanguageModel(source: ClaidorCredentialSource, id: string, promptCacheKey?: string): LanguageModelV1 {
-  return createOpenAI({ apiKey: "claidor-desktop-access-token", baseURL: claidorProxyBaseUrl(source.backendUrl), name: "claidor", fetch: claidorAuthenticatedFetch(source, promptCacheKey) }).responses(id);
+  return createOpenAI({ apiKey: "claidor-desktop-access-token", baseURL: claidorProxyBaseUrl(source.backendUrl), name: "claidor", fetch: claidorAuthenticatedFetch(source, promptCacheKey) }).responses(sdkModelIdFor(id));
 }
 
 function geminiTools(definitions: readonly Loose[] | undefined): GeminiDirectTool[] | undefined {
@@ -576,11 +616,17 @@ function claidorExecutor(messages: readonly ProviderMessage[], invocationId: str
   const cheap = configuredClaidorCheapModel();
   const start = (id: string) => aiSdkExecutor(claidorLanguageModel(source, id, promptCacheKey), messages, invocationId, definitions, executeTool, onUsage, CLAIDOR_WORKING_CONTEXT_TOKENS, { reasoningEffort }, { model: id, effort: reasoningEffort, ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }) }, onRequestId, promptCacheKey);
 
-  if (requested === cheap) return start(requested);
+  const startOrLegacy = (id: string) => {
+    const legacy = LEGACY_CLAIDOR_MODELS[id];
+    if (legacy == null) return start(id);
+    return withCheapRateLimitFallback(start(id), () => start(legacy), () => modelCallLog(`${HOST_LOG_PREFIX} model-legacy from=${id} to=${legacy} reason=the server does not offer ${id} yet`), isModelNotOfferedError);
+  };
+
+  if (requested === cheap) return startOrLegacy(requested);
   // A relayed rate limit re-runs the step on the cheap model. The swap used
   // to be silent; it now leaves a line beside the `[claidor] model=` lines,
   // and the model= line of the retried step names the cheap model (F-003).
-  return withCheapRateLimitFallback(start(requested), () => start(cheap), (error) => modelCallLog(`${HOST_LOG_PREFIX} model-fallback from=${requested} to=${cheap} reason=${clipForHostLog(redactSandAutoReviewInlineSecrets(error instanceof Error ? error.message : String(error)), 300)}`));
+  return withCheapRateLimitFallback(startOrLegacy(requested), () => startOrLegacy(cheap), (error) => modelCallLog(`${HOST_LOG_PREFIX} model-fallback from=${requested} to=${cheap} reason=${clipForHostLog(redactSandAutoReviewInlineSecrets(error instanceof Error ? error.message : String(error)), 300)}`));
 }
 
 // How many model calls a session may make. Counted across every executor

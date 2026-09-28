@@ -27,6 +27,8 @@ export function withCheapRateLimitFallback<TPart, TResponse, TUsage, TExtended, 
   primary: CheapRateLimitStream<TPart, TResponse, TUsage, TExtended, TMetadata>,
   fallback: () => CheapRateLimitStream<TPart, TResponse, TUsage, TExtended, TMetadata>,
   onFallback?: (error: unknown) => void,
+  // Which failure hands the step to the fallback; a relayed rate limit unless told otherwise.
+  shouldFallBack: (error: unknown) => boolean = isProviderRateLimitError,
 ): CheapRateLimitStream<TPart, TResponse, TUsage, TExtended, TMetadata> {
   ignoreSettled(primary);
   const resultResponse = deferred<TResponse>();
@@ -57,7 +59,7 @@ export function withCheapRateLimitFallback<TPart, TResponse, TUsage, TExtended, 
     try {
       yield* take(primary);
     } catch (error) {
-      if (!isProviderRateLimitError(error)) {
+      if (!shouldFallBack(error)) {
         fail(error);
         throw error;
       }

@@ -1086,6 +1086,25 @@ Google Tasks) are apps behind Simeon Labs' server, Coming soon until it is
 deployed with `COMPOSIO_API_KEY`; until then only the vendor connectors
 (Notion, Linear, …) can be proposed.
 
+## The agent runs on GPT-6 Sol and Luna (28 September 2026)
+
+"lets keep chat gpt. but … OpenAI launched GPT-6 Sol and Luna on Sep 22, at
+half the price of GPT-5.6. Terra no longer appears on OpenAI's pricing page."
+Checked (Requesty, VentureBeat; openai.com refused this container): `gpt-6-sol`
+$2 in / $0.20 cached / $10 out, `gpt-6-luna` $0.10 / $0.01 / $0.50 per million,
+efforts none…max. `pricing.py` gives them `primary` and `cheap` (output weight
+5); GPT-5.6 Terra and Luna take a new `retired` role, served by the proxy to
+apps built before the switch and never offered; web search stays on GPT-5.6
+Luna until GPT-6 Luna's `web_search` is established. The app's defaults are
+the new ids (`provider-session.ts`). **Found on the way:** @ai-sdk/openai 1.3
+treats only "o…" and "gpt-5…" as reasoning models, so GPT-6 would have lost its
+effort and gone out as a plain `system` message without a word; the SDK gets
+`gpt-5-as:<id>` and `withRealModelName` puts the real name back on the wire.
+And an app rebuilt before the server deploys runs the step on the model it
+replaced once (`LEGACY_CLAIDOR_MODELS`, a `[claidor] model-legacy` line), so
+the order of deploy and rebuild cannot silence the agent. The "Terra"/"Luna"
+names elsewhere in this file mean these roles. Not yet run against OpenAI.
+
 ## The rest of the connectors are apps under Simeon's name (28 September 2026)
 
 "for the rest of the connectors, lets use composio. but i want to white label

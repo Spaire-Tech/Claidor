@@ -60,7 +60,7 @@ function functionCallStream(n, name, args) {
   const item = { type: "function_call", id: `fc_${n}`, call_id: `call_${n}`, name, arguments: "" };
   const text = JSON.stringify(args);
   return sse([
-    { type: "response.created", response: { id: `resp_${n}`, created_at: 1_700_000_001, model: "gpt-5.6-terra" } },
+    { type: "response.created", response: { id: `resp_${n}`, created_at: 1_700_000_001, model: "gpt-6-sol" } },
     { type: "response.output_item.added", output_index: 0, item },
     ...[text.slice(0, 12), text.slice(12)].map((delta) => ({ type: "response.function_call_arguments.delta", item_id: item.id, output_index: 0, delta })),
     { type: "response.output_item.done", output_index: 0, item: { ...item, arguments: text, status: "completed" } },
@@ -70,7 +70,7 @@ function functionCallStream(n, name, args) {
 
 function textStream(n, text) {
   return sse([
-    { type: "response.created", response: { id: `resp_${n}`, created_at: 1_700_000_000, model: "gpt-5.6-terra" } },
+    { type: "response.created", response: { id: `resp_${n}`, created_at: 1_700_000_000, model: "gpt-6-sol" } },
     { type: "response.output_item.added", output_index: 0, item: { type: "message", id: `msg_${n}` } },
     ...[...text].map((delta) => ({ type: "response.output_text.delta", delta })),
     { type: "response.output_item.done", output_index: 0, item: { type: "message" } },
@@ -126,7 +126,7 @@ async function runTurn(loaded, { ingest, firstCallArgs = { type: "text", content
     emittedConnectorCards: new Set(),
   });
   const config = m.createSandAgentStaticConfig({
-    modelId: "gpt-5.6-terra",
+    modelId: "gpt-6-sol",
     agentTokenLimit: 200_000,
     conversationId: "agent-1",
     isBoxScopedSubagent: false,

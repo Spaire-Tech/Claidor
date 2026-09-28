@@ -47,7 +47,7 @@ test("a hidden session's budget is 40, an asked one's 5,000, and the model line 
     assert.deepEqual([asked.limit, asked.hidden], [5000, false]);
     for (let i = 0; i < 40; i += 1) module.spendModelCall(hidden);
     assert.throws(() => module.spendModelCall(hidden), /ran without being asked and reached its budget of 40 model calls/);
-    const line = module.formatModelCallLogLine({ model: "gpt-5.6-terra", effort: "high", inputTokens: 1, cachedTokens: 0, outputTokens: 1, reasoningTokens: 0, elapsedMs: 1, tools: "-", offered: "SendMessage", budget: "40 hidden=true" });
+    const line = module.formatModelCallLogLine({ model: "gpt-6-sol", effort: "high", inputTokens: 1, cachedTokens: 0, outputTokens: 1, reasoningTokens: 0, elapsedMs: 1, tools: "-", offered: "SendMessage", budget: "40 hidden=true" });
     assert.match(line, / offered=SendMessage budget=40 hidden=true$/);
   } finally {
     await dispose();

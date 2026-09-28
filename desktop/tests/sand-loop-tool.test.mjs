@@ -46,7 +46,7 @@ function sse(events) {
 
 function textStream(text) {
   return sse([
-    { type: "response.created", response: { id: "resp_text", created_at: 1_700_000_000, model: "gpt-5.6-luna" } },
+    { type: "response.created", response: { id: "resp_text", created_at: 1_700_000_000, model: "gpt-6-luna" } },
     { type: "response.output_item.added", output_index: 0, item: { type: "message", id: "msg_1" } },
     ...[...text].map((delta) => ({ type: "response.output_text.delta", delta })),
     { type: "response.output_item.done", output_index: 0, item: { type: "message" } },
@@ -57,7 +57,7 @@ function textStream(text) {
 function functionCallStream(name, args) {
   const item = { type: "function_call", id: "fc_1", call_id: "call_1", name, arguments: "" };
   return sse([
-    { type: "response.created", response: { id: "resp_call", created_at: 1_700_000_001, model: "gpt-5.6-luna" } },
+    { type: "response.created", response: { id: "resp_call", created_at: 1_700_000_001, model: "gpt-6-luna" } },
     { type: "response.output_item.added", output_index: 0, item },
     { type: "response.function_call_arguments.delta", item_id: "fc_1", output_index: 0, delta: JSON.stringify(args) },
     { type: "response.output_item.done", output_index: 0, item: { ...item, arguments: JSON.stringify(args), status: "completed" } },

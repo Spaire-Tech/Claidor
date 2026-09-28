@@ -64,7 +64,7 @@ test("a Terra TPM refusal still answers on Luna in the same turn", async () => {
   const loaded = await load("source/shared/inference/cheap-rate-limit-fallback.ts", "cheap-fallback");
   try {
     const tpm = new Error(
-      "Rate limit reached for gpt-5.6-terra in organization org-test on tokens per minute (TPM): Limit 500000, Used 454422, Requested 46589. Please try again in 121ms.",
+      "Rate limit reached for gpt-6-sol in organization org-test on tokens per minute (TPM): Limit 500000, Used 454422, Requested 46589. Please try again in 121ms.",
     );
     let fallbacks = 0;
     const result = loaded.module.withCheapRateLimitFallback(
@@ -73,7 +73,7 @@ test("a Terra TPM refusal still answers on Luna in the same turn", async () => {
         fallbacks += 1;
         return stream(
           [{ type: "text-delta", textDelta: "Hey — I'm here." }],
-          settled({ id: "gpt-5.6-luna" }),
+          settled({ id: "gpt-6-luna" }),
         );
       },
     );
@@ -81,8 +81,8 @@ test("a Terra TPM refusal still answers on Luna in the same turn", async () => {
     for await (const part of result.fullStream) parts.push(part);
     assert.equal(fallbacks, 1);
     assert.deepEqual(parts, [{ type: "text-delta", textDelta: "Hey — I'm here." }]);
-    assert.equal((await result.response).id, "gpt-5.6-luna");
-    assert.equal((await result.providerMetadata).model, "gpt-5.6-luna");
+    assert.equal((await result.response).id, "gpt-6-luna");
+    assert.equal((await result.providerMetadata).model, "gpt-6-luna");
   } finally {
     await loaded.dispose();
   }
@@ -97,7 +97,7 @@ test("a non-rate-limit failure does not fall through to Luna", async () => {
       stream([boom], rejected(boom)),
       () => {
         fallbacks += 1;
-        return stream([{ type: "text-delta", textDelta: "should not run" }], settled({ id: "gpt-5.6-luna" }));
+        return stream([{ type: "text-delta", textDelta: "should not run" }], settled({ id: "gpt-6-luna" }));
       },
     );
     const responseFailure = assert.rejects(() => result.response, /dashboard unavailable/);
@@ -117,6 +117,6 @@ test("Claidor's Terra executor falls through to Luna on TPM", async () => {
   const providers = await readFile(path.join(repoRoot, "source/host/extensions/inference/provider-session.ts"), "utf8");
   assert.match(providers, /withCheapRateLimitFallback/);
   assert.match(providers, /configuredClaidorCheapModel\(\)/);
-  assert.match(providers, /if \(requested === cheap\) return start\(requested\)/);
-  assert.match(providers, /withCheapRateLimitFallback\(start\(requested\), \(\) => start\(cheap\), \(error\) => modelCallLog/);
+  assert.match(providers, /if \(requested === cheap\) return startOrLegacy\(requested\)/);
+  assert.match(providers, /withCheapRateLimitFallback\(startOrLegacy\(requested\), \(\) => startOrLegacy\(cheap\), \(error\) => modelCallLog/);
 });

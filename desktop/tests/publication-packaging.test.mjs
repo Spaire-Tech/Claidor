@@ -125,8 +125,8 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(coordinator, /provider\(\): SandInferenceProvider \{ return resolveProductInferenceProvider\(options\.env \?\? process\.env\); \}/);
   assert.match(coordinator, /STORED_PROVIDERS\.includes\(String\(row\.provider\)\)/);
   assert.match(coordinatorMain, /command<[^>]*>\(commands, "mintInferenceCredential", \{\}\)/);
-  assert.match(providers, /\.responses\(id\)/);
-  assert.match(providers, /DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-5\.6-luna"/);
+  assert.match(providers, /\.responses\(sdkModelIdFor\(id\)\)/);
+  assert.match(providers, /DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-6-luna"/);
   assert.match(providers, /export function claidorModelForSession/);
   assert.match(inference, /cheap: true, isSummarizationSession: true/);
   assert.match(turnShell, /cheap: true, isSummarizationSession: true/);

@@ -30,7 +30,7 @@ test("an OpenAI TPM refusal is a rate limit, not a transient retry", async () =>
     const { isProviderRateLimitError } = loaded.module;
     assert.equal(
       isProviderRateLimitError(
-        "Rate limit reached for gpt-5.6-terra in organization org-test on tokens per minute (TPM): Limit 500000, Used 465216, Requested 35272. Please try again in 558ms.",
+        "Rate limit reached for gpt-6-sol in organization org-test on tokens per minute (TPM): Limit 500000, Used 465216, Requested 35272. Please try again in 558ms.",
       ),
       true,
     );
@@ -86,7 +86,7 @@ test("the first-run intro runs on the full runner, and product turns on the host
   assert.match(shared, /return !envFlagDisabled\(raw\)/);
   assert.match(routing, /export \{ SAND_CLAIDOR_FULL_AGENT_ENV, routesClaidorThroughHost \}/);
   assert.match(routing, /SAND_CLAIDOR_FULL_AGENT=off escape hatch/);
-  assert.match(providers, /DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-5\.6-luna"/);
-  assert.match(providers, /withCheapRateLimitFallback\(start\(requested\), \(\) => start\(cheap\), \(error\) => modelCallLog/);
+  assert.match(providers, /DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-6-luna"/);
+  assert.match(providers, /withCheapRateLimitFallback\(startOrLegacy\(requested\), \(\) => startOrLegacy\(cheap\), \(error\) => modelCallLog/);
   assert.match(retry, /isProviderRateLimitError\(error\)\) return false/);
 });

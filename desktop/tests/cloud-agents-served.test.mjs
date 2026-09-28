@@ -38,9 +38,9 @@ function simeonServer() {
   const composerOf = (agent) => ({ bcId: agent.bcId, createdAtMs: 1_758_800_000_000, updatedAtMs: 1_758_800_001_000, name: agent.name, branchName: "", repoUrl: agent.repoUrl, isArchived: false, status: agent.status, prUrl: "", isPrMerged: false, linesAdded: 0, linesRemoved: 0, filesChanged: 0, commitCount: 0, workspaceRootPath: "/workspace", hasStartedVm: agent.status !== 4, isKilled: false, ...(agent.modelId ? { requestedModel: { modelId: agent.modelId } } : {}) });
   const detailedOf = (agent) => ({ composer: composerOf(agent), status: agent.status, baseBranch: "main", prompt: { text: agent.prompt }, prs: [], autoCreatePr: false, autoBranch: false, environmentName: "Simeon's computer", ...(agent.status === 2 ? { summary: agent.summary } : {}) });
   const models = { models: [
-    { name: "gpt-5.6-terra", defaultOn: true, serverModelName: "gpt-5.6-terra", clientDisplayName: "GPT-5.6 Terra", tagline: "The loop's model.", vendorName: "openai", supportsAgent: true, supportsImages: true, supportsThinking: false, supportsMaxMode: false, supportsNonMaxMode: true, isHidden: false, isChatOnly: false, isLongContextOnly: false, isRecommendedForBackgroundComposer: true, contextTokenLimit: 400000, price: 0.6667, parameterDefinitions: [], variants: [], idAliases: [], legacySlugs: [] },
-    { name: "gpt-5.6-luna", defaultOn: false, serverModelName: "gpt-5.6-luna", clientDisplayName: "GPT-5.6 Luna", vendorName: "openai", supportsAgent: true, supportsImages: true, supportsThinking: false, supportsMaxMode: false, supportsNonMaxMode: true, isHidden: false, isChatOnly: false, isLongContextOnly: false, parameterDefinitions: [], variants: [], idAliases: [], legacySlugs: [] },
-  ], modelNames: ["gpt-5.6-terra", "gpt-5.6-luna"], useModelParameters: true };
+    { name: "gpt-6-sol", defaultOn: true, serverModelName: "gpt-6-sol", clientDisplayName: "GPT-5.6 Terra", tagline: "The loop's model.", vendorName: "openai", supportsAgent: true, supportsImages: true, supportsThinking: false, supportsMaxMode: false, supportsNonMaxMode: true, isHidden: false, isChatOnly: false, isLongContextOnly: false, isRecommendedForBackgroundComposer: true, contextTokenLimit: 400000, price: 0.6667, parameterDefinitions: [], variants: [], idAliases: [], legacySlugs: [] },
+    { name: "gpt-6-luna", defaultOn: false, serverModelName: "gpt-6-luna", clientDisplayName: "GPT-5.6 Luna", vendorName: "openai", supportsAgent: true, supportsImages: true, supportsThinking: false, supportsMaxMode: false, supportsNonMaxMode: true, isHidden: false, isChatOnly: false, isLongContextOnly: false, parameterDefinitions: [], variants: [], idAliases: [], legacySlugs: [] },
+  ], modelNames: ["gpt-6-sol", "gpt-6-luna"], useModelParameters: true };
   const answer = (pathname, body) => {
     switch (pathname) {
       case "/aiserver.v1.DashboardService/GetUserPrivacyMode": return [200, { privacyMode: 2, isEnforcedByTeam: false }];
@@ -107,7 +107,7 @@ test("the manager launches, polls, lists, dumps and reads the catalogue through 
       convertConversationMessagesToTrace: (conversation) => convertConversationMessagesToTrace(conversation, HistoryVisibilityMode.NO_PREAMBLE),
     });
 
-    const launched = await manager.launch({ prompt: "Summarise the README.", repoUrl: "simeonlabs/demo", startingRef: "main", title: "Readme summary", modelId: "gpt-5.6-terra" });
+    const launched = await manager.launch({ prompt: "Summarise the README.", repoUrl: "simeonlabs/demo", startingRef: "main", title: "Readme summary", modelId: "gpt-6-sol" });
     assert.match(launched.bcId, /^bc-[0-9a-f-]{36}$/);
     assert.equal(launched.url, `https://app.simeonlabs.com/agents/${launched.bcId}`, "the card's link is Simeon's page, not cursor.com");
     const start = fake.seen.find((entry) => entry.path.endsWith("/StartBackgroundComposerFromSnapshot"));
@@ -119,7 +119,7 @@ test("the manager launches, polls, lists, dumps and reads the catalogue through 
     assert.equal(start.body.baseBranch, "main");
     assert.equal(start.body.name, "Readme summary");
     assert.equal(start.body.conversationAction.userMessageAction.userMessage.text, "Summarise the README.");
-    assert.deepEqual(start.body.requestedModels.map((model) => model.modelId), ["gpt-5.6-terra"]);
+    assert.deepEqual(start.body.requestedModels.map((model) => model.modelId), ["gpt-6-sol"]);
     assert.ok(fake.seen.some((entry) => entry.path.endsWith("/GetUserPrivacyMode")), "the privacy pre-flight went to our DashboardService");
 
     let info = await manager.getInfo(launched.bcId);
@@ -153,7 +153,7 @@ test("the manager launches, polls, lists, dumps and reads the catalogue through 
     assert.notEqual(followup.body.synchronous, true);
 
     const catalogue = await manager.listModels();
-    assert.deepEqual(catalogue.map((entry) => [entry.id, entry.displayName, entry.aliases]), [["gpt-5.6-terra", "GPT-5.6 Terra", []], ["gpt-5.6-luna", "GPT-5.6 Luna", []]]);
+    assert.deepEqual(catalogue.map((entry) => [entry.id, entry.displayName, entry.aliases]), [["gpt-6-sol", "GPT-5.6 Terra", []], ["gpt-6-luna", "GPT-5.6 Luna", []]]);
 
     await manager.cancel(launched.bcId);
     await manager.rename(launched.bcId, "Renamed");
