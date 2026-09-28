@@ -1,5 +1,5 @@
 import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
-import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
+import { createSandCursorBackendClient, getSandInferenceBackendUrl } from "../../shared/node/cursor-backend/cursor-inference.js";
 import { createDashboardSandBackendMcpExec, type DashboardMcpExecClient } from "../../shared/node/cursor-backend/backend-mcp-exec.js";
 import { createSandMcpOAuthLoopback } from "../../shared/node/mcp/mcp-oauth-loopback.js";
 import { createVendorMcpBackendExec } from "../../shared/node/vendor-mcp/backend-exec.js";
@@ -51,6 +51,7 @@ export function createProductionMcpOAuthLoopbackFactory(ports: ProductionMcpOAut
       rootDir: getSandRootDir,
       fallback: accountExec,
       canStartAuth: true,
+      getServerAccessToken: () => ports.getAccessToken({ backendUrl: getSandInferenceBackendUrl() }),
       ...(ports.onVendorCredentialChanged == null ? {} : { onCredentialChanged: ports.onVendorCredentialChanged }),
       log: ports.log,
     });

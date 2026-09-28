@@ -1058,6 +1058,70 @@ widget on the text message and `stripFieldsOfOtherTypes` dropped it silently;
 a real widget (a prompt and two or more distinct labels) is now sent right
 after the text as its own message (`followUpWidgetOf`), blank or padded ones
 still dropped. `tests/founder-test-2026-09-28.test.mjs`. Not yet run on a Mac.
+**Corrected the same evening: the options still never came.** The cue is
+Grok Bot's word for word (checked against the reconstruction of the 0.18.0
+artifact); what differs is the model, and GPT-5.6 answers "offer any choice as
+a question widget" with a prose question. One sentence now spells out Grok
+Bot's own opening as the founder copied it: a text hello (by first name; "a
+blank slate" when the agent has no description), then a question widget "what
+should I mainly help you with", three or four options, `allowCustom`, and the
+helpText "Pick one, or type your own. You can hand me a real task instead, and
+I'll just start on it." And the agent never knew the person's name: the server
+dropped Google's `name` at sign-in and the profile route sent only an e-mail
+nickname; Google's name is now kept in `user.meta` and served as `name`
+(`integrations/google/service.py`, `desktop/service.py`), from the next Google
+sign-in.
+**Then the turns after it, the same night.** The card came; the next turn
+("Stay organized") was a prose question and no connector ("grok bot will
+always give you more cards, suggest connectors"). The cue stays in the
+conversation state after the hidden first turn (`turn-settle.ts` drops nothing
+for `hidden`), so the model still held "offer any choice as a question widget"
+and "propose it with ProposeConnector"; GPT-5.6 did neither. One more sentence
+spells it out for the getting-started turns: every question a widget with
+options and `allowCustom`, never prose; once an answer shows where the work
+lives, SearchPlugins, then two or three ProposeConnector cards in the same turn.
+**Found on the way:** ProposeConnector refuses a Coming soon plugin, and the
+services a "stay organized" answer points at (Google Calendar, Gmail, Todoist,
+Google Tasks) are apps behind Simeon Labs' server, Coming soon until it is
+deployed with `COMPOSIO_API_KEY`; until then only the vendor connectors
+(Notion, Linear, …) can be proposed.
+
+## The rest of the connectors are apps under Simeon's name (28 September 2026)
+
+"for the rest of the connectors, lets use composio. but i want to white label
+it." The eighteen "Coming soon" connectors and thirteen more are served by
+`server/polar/desktop/apps.py`: one MCP server of ours per app at
+`/desktop/api/apps/mcp/{toolkit}`, with the sign-in link, status and disconnect
+beside it, the provider's key on the server and its name scrubbed from every
+description, result and error. In the app each is a vendor connector with
+`appsToolkit` (`vendor-mcp/catalog.ts`), so the connect card, the agent's
+tools and the Mac↔box store are the code that already worked; the 21 vendor
+connectors are untouched and nothing is "Coming soon". The bearer is the
+account's own (the box's credential in the box). Google's consent screen still
+names the provider (its managed Google app, the founder's choice for now).
+**Needs `COMPOSIO_API_KEY` on Render.** `docs/product/apps-served.md` is the
+record. Not yet run against the live provider or on a Mac.
+**Withdrawn from the app the same evening.** The founder: "you've clearly
+messed up the connectors completely … cant sign in in composio, it takes me
+nowhere." Measured: `api.simeonlabs.com` answered 404 to every new route
+(Render had not deployed #234; routes of 25 September answer), so every app
+card asked a server that did not have the route. Why the vendor connectors
+stopped for the founder is **not established**: the diff touches no vendor
+path and their tests pass, and no log has been read. The app side of #234 is
+reverted byte for byte (catalog, backend, the three wiring sites, tests); the
+server module stays, unused until deployed. Re-land only after the routes
+answer on `api.simeonlabs.com` and one app is signed in end to end.
+**Re-landed the same night, behind a check** ("bring back composio … make
+sure it works by being careful on how and where you wire it"): the app side is
+back as it was, and every app card offers Connect only when our server answers
+`GET /desktop/api/apps` with `{"available": true}` (`vendor-mcp/apps-availability.ts`,
+asked from the marketplace listing, cached a minute). A server without the
+route, without the provider's key, unreachable, or a signed-out app keeps the
+cards Coming soon, and a sign-in answered 404/503 says "coming soon in
+Simeon". Every Connect, card and InstallPlugin decision reads that one
+listing, so the window and the agent agree. The vendor connectors are not
+touched by any of it (`tests/vendor-mcp.test.mjs` connects Linear while the
+apps are off).
 
 ## The app-window demo (27 September 2026)
 

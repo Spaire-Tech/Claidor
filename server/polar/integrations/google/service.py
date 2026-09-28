@@ -28,6 +28,24 @@ class GoogleUserProfile(TypedDict):
     email: str
     email_verified: bool
     picture: str | None
+    name: str | None
+    given_name: str | None
+
+
+def remember_google_name(user: User, profile: GoogleUserProfile) -> None:
+    """The person's name as Google gives it, kept in `meta` (the user row has
+    no name column). The desktop's profile route hands it to the agent, which
+    greets the person by it, as Grok Bot does (28 September 2026)."""
+    name = (profile.get("name") or "").strip()
+    given = (profile.get("given_name") or "").strip()
+    if not name and not given:
+        return
+    meta = dict(user.meta or {})
+    if meta.get("name") == name and meta.get("given_name") == given:
+        return
+    meta["name"] = name
+    meta["given_name"] = given
+    user.meta = meta
 
 
 class GoogleServiceError(PolarError): ...
@@ -76,6 +94,8 @@ class GoogleService:
             oauth_account.expires_at = token["expires_at"]
             oauth_account.account_username = google_profile["email"]
             session.add(oauth_account)
+            remember_google_name(user, google_profile)
+            session.add(user)
             return (user, False)
 
         oauth_account = OAuthAccount(
@@ -91,6 +111,7 @@ class GoogleService:
         if user is not None:
             if google_profile["email_verified"]:
                 user.oauth_accounts.append(oauth_account)
+                remember_google_name(user, google_profile)
                 session.add(user)
                 return (user, False)
             else:
@@ -103,6 +124,7 @@ class GoogleService:
             oauth_accounts=[oauth_account],
             signup_attribution=signup_attribution,
         )
+        remember_google_name(user, google_profile)
 
         session.add(user)
         await session.flush()
@@ -163,6 +185,8 @@ class GoogleService:
                 "email": data["email"],
                 "email_verified": data["email_verified"],
                 "picture": data.get("picture"),
+                "name": data.get("name"),
+                "given_name": data.get("given_name"),
             }
 
 

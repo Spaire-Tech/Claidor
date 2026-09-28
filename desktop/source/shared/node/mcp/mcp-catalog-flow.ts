@@ -149,7 +149,7 @@ export class SandMcpCatalogFlow {
     if (plugin.composioToolkit != null) {
       if (this.core.connectComposioToolkit == null) {
         throw new SandMcpConfigError(
-          `Connecting "${plugin.displayName}" needs Composio on this desktop.`,
+          `Connecting "${plugin.displayName}" needs the Simeon desktop app.`,
         );
       }
       await this.core.connectComposioToolkit(plugin.composioToolkit);
