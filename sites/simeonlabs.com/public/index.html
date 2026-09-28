@@ -150,7 +150,7 @@ section[data-framer-name="Hero"] .framer-hy289i{display:none!important}
 .sd-dots i{display:block;border-radius:50%;background:#dcdcda;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.1)}
 .sd-screen{position:relative;overflow:hidden;background:#f5f5f7}
 .sd-window{position:absolute;left:0;top:0;transform-origin:0 0;overflow:hidden}
-.sd-window iframe{position:absolute;inset:0;display:block;width:100%;height:100%;border:0;opacity:0;transition:opacity .35s ease}
+.sd-window iframe{position:absolute;inset:0;display:block;width:100%;height:100%;border:0;opacity:0;transition:opacity .35s ease;pointer-events:none}
 .sd-window.sd-live iframe{opacity:1}
 .sd-poster,.sd-poster img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:0 0}
 .sd-window.sd-live.sd-settled .sd-poster{display:none}
@@ -191,7 +191,9 @@ section[data-framer-name="Hero"] .framer-hy289i{display:none!important}
 .sd-scrolly .sd-word{display:block;position:absolute;z-index:3;left:50%;top:47%;width:36%;aspect-ratio:1024/460;transform:translate(-50%,-50%);background:#fff;opacity:.92;
   -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;filter:drop-shadow(0 2px 18px rgba(20,40,80,.18));will-change:opacity,transform}
 .sd-scrolly .sd-stage{opacity:0;pointer-events:none;will-change:opacity,transform}
-.sd-scrolly .sd-stage.sd-up{pointer-events:auto}
+/* The demo plays by itself and has nothing to click, so neither the window nor the app in it
+   takes the pointer: a wheel or a finger over it scrolls the page on the browser's own scroll
+   thread and never waits on the app (the founder, 28 September 2026: "i want zero lag"). */
 /* The phone hero: a still of the app window filling the hero box. */
 .sd-mob{display:none}
 @media (max-width:599.98px){
@@ -442,6 +444,16 @@ section[data-framer-name="Hero"] .framer-115oxcp{isolation:isolate}
   const wide = matchMedia('(min-width:600px)');
   const load = () => { if (wide.matches && !iframe.getAttribute('src')) { iframe.setAttribute('src', iframe.dataset.src); poll(); } };
   wide.addEventListener('change', load); load();
+  // The app redraws its agents' faces every frame, on this page's own thread. Nothing of it may
+  // cost a frame of scrolling: its frame loop is paused while the page scrolls, while the window
+  // is not showing (the laptop scene's painting, or the hero scrolled past), and resumes at rest.
+  let offscreen = false, thaw = null;
+  const freeze = (on) => { try { iframe.contentWindow.__sdFreeze && iframe.contentWindow.__sdFreeze(on); } catch {} };
+  const hidden = () => offscreen || (window.sdWindowHidden ? window.sdWindowHidden() : false);
+  window.sdSettleApp = () => { if (!thaw) freeze(hidden()); };
+  new IntersectionObserver(([e]) => { offscreen = !e.isIntersecting; sdSettleApp(); }).observe(stage);
+  addEventListener('scroll', () => { freeze(true); clearTimeout(thaw); thaw = setTimeout(() => { thaw = null; freeze(hidden()); }, 180); }, { passive: true });
+  iframe.addEventListener('load', () => sdSettleApp());
   // Off the laptop scene the demo plays at once; in it, HERO_JS lets it go when the window rises.
   window.sdReleaseDemo = () => {
     if (!iframe.hasAttribute('data-hold')) return;
@@ -477,7 +489,7 @@ section[data-framer-name="Hero"] .framer-115oxcp{isolation:isolate}
   const clamp = (v) => Math.max(0, Math.min(1, v));
   const inout = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
   const out = (t) => 1 - Math.pow(1 - t, 2);
-  let queued = false, up = false, started = false;
+  let queued = false, started = false;
   const tick = () => {
     queued = false;
     if (!g) return;
@@ -492,10 +504,11 @@ section[data-framer-name="Hero"] .framer-115oxcp{isolation:isolate}
       stage.style.opacity = e.toFixed(3);
       stage.style.transform = 'translateY(' + (28 * (1 - e)).toFixed(2) + 'px) scale(' + (0.97 + 0.03 * e).toFixed(4) + ')';
     }
-    // The story starts only once the window is fully up, and the window takes clicks from then.
+    // The story starts only once the window is fully up.
     if (y >= g.s1 && !started) { started = true; setTimeout(sdReleaseDemo, 250); }
-    if ((y >= g.s0 + (g.s1 - g.s0) * 0.9) !== up) { up = !up; stage.classList.toggle('sd-up', up); }
   };
+  // Before the window rises the app is out of sight, so FIT keeps its frame loop paused.
+  window.sdWindowHidden = () => g != null && scrollY < g.s0;
   const ask = () => { if (!queued) { queued = true; requestAnimationFrame(tick); } };
   const mode = () => {
     root.classList.toggle('sd-scrolly', q.matches);
@@ -566,7 +579,8 @@ window.sdWhenSeen = (el, start, stop) => {
         orb.style.opacity = Math.max(0, Math.min(1, 1.9 - d)).toFixed(2);
       });
     }
-    if (!still) requestAnimationFrame(frame(id));
+    // Pass 0 only lays the scene out; runs from 1 up loop while it is on screen.
+    if (!still && id > 0) requestAnimationFrame(frame(id));
   };
   // Laid out once so the tile and logos are in place before the scroll reaches them.
   frame(0)(performance.now()); t0 = null;

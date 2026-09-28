@@ -29,7 +29,10 @@ framerusercontent.com (it fetches the fonts and pictures once). It rewrites
 
 The hero runs the real patched app window (`public/app/`) in an iframe inside
 the hero box, scaled from the box's own size, with `scroll-guard.js` so the
-app never scrolls the page and the wheel over it scrolls the page. The app's
+app never scrolls the page. The window takes no pointer at all (the demo
+plays by itself), so the wheel and a finger over it scroll the page on the
+browser's own scroll thread, and the app's frame loop is paused while the
+page scrolls or the window is out of sight. The app's
 code is about 6 MB, so the page first shows a still of its opening screen
 (`app-poster-{wide,tall,phone}.jpg`, captured by `build.py` from the app
 itself) and fades the live app in over it once the app has drawn its sidebar.

@@ -29,40 +29,21 @@
   if (Element.prototype.scrollIntoViewIfNeeded) {
     Element.prototype.scrollIntoViewIfNeeded = function () { this.scrollIntoView({ block: "nearest" }); };
   }
-  // Over the demo the wheel and a finger scroll the page, never the chat:
-  // it is a picture of the app on a page people are reading, and a chat
-  // that swallows the scroll traps them (the founder, 28 September 2026).
-  let host = null;
-  try { host = window.parent !== window && window.parent.scrollBy ? window.parent : null; } catch { host = null; }
-  if (host) {
-    const px = (e) => e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * innerHeight : e.deltaY;
-    // Only the first tick of a wheel gesture goes through here. The window then steps out of the
-    // pointer's way, so the rest of the gesture scrolls the page natively, on the browser's own
-    // thread, smooth whatever the app is busy drawing; it takes clicks again once the page rests.
-    let rest = null;
-    const back = () => { rest = null; try { window.frameElement.style.pointerEvents = ""; } catch {} };
-    const later = () => { clearTimeout(rest); rest = setTimeout(back, 220); };
-    host.addEventListener("scroll", () => { if (rest) later(); }, { passive: true });
-    window.addEventListener("wheel", (e) => {
-      if (e.ctrlKey || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
-      e.preventDefault();
-      host.scrollBy(0, px(e));
-      try { window.frameElement.style.pointerEvents = "none"; } catch {}
-      later();
-    }, { passive: false, capture: true });
-    let lastY = null;
-    window.addEventListener("touchstart", (e) => { lastY = e.touches.length === 1 ? e.touches[0].clientY : null; }, { passive: true, capture: true });
-    window.addEventListener("touchmove", (e) => {
-      if (lastY == null || e.touches.length !== 1) return;
-      const y = e.touches[0].clientY;
-      e.preventDefault();
-      // The window is drawn scaled, so a finger's travel is converted to page pixels.
-      let k = 1; try { k = window.frameElement.getBoundingClientRect().height / innerHeight || 1; } catch {}
-      host.scrollBy(0, (lastY - y) * k);
-      lastY = y;
-    }, { passive: false, capture: true });
-    window.addEventListener("touchend", () => { lastY = null; }, { passive: true, capture: true });
-  }
+  // The wheel and a finger never reach this window: the page gives it pointer-events:none, so
+  // they scroll the page on the browser's scroll thread (28 September 2026, "zero lag").
+  // The page pauses this window's frame loop while it scrolls or while the window is out of
+  // sight (__sdFreeze), so the app's animations never take a frame from the page. Callbacks
+  // asked for meanwhile run together on the first frame after it resumes.
+  const raf = window.requestAnimationFrame.bind(window), caf = window.cancelAnimationFrame.bind(window);
+  const held = new Map();
+  let frozen = false, nextId = 0;
+  window.requestAnimationFrame = (cb) => { if (!frozen) return raf(cb); const id = --nextId; held.set(id, cb); return id; };
+  window.cancelAnimationFrame = (id) => { if (id < 0) held.delete(id); else caf(id); };
+  window.__sdFreeze = (on) => {
+    if (on === frozen) return;
+    frozen = on;
+    if (!on && held.size) { const cbs = [...held.values()]; held.clear(); raf((t) => { for (const cb of cbs) cb(t); }); }
+  };
   const focus = HTMLElement.prototype.focus;
   HTMLElement.prototype.focus = function (o) { return focus.call(this, Object.assign({}, o, { preventScroll: true })); };
 })();
