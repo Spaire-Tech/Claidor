@@ -27,7 +27,7 @@ framerusercontent.com (it fetches the fonts and pictures once). It rewrites
 
 ## What is in the page
 
-The hero runs the real patched app window (`public/app/`) in an iframe inside
+The hero runs the real patched app window (`public/app/<digest>/`) in an iframe inside
 the hero box, scaled from the box's own size, with `scroll-guard.js` so the
 app never scrolls the page. The app in the window takes no pointer, so the
 wheel and a finger over it scroll the page on the browser's own scroll
@@ -57,3 +57,9 @@ and Max $100 a month, 20% less yearly, 7-day trial on each.
 founder chose on 28 September 2026 to publish it with the site, knowing the
 repository otherwise keeps that code out of git (`desktop/.gitignore`,
 `/src/app/dist/`).
+
+**The app's folder is named after its content** (`app/<first 12 of a SHA-256
+over every file>/`, written by `build.py`). The patched files keep the names
+Vite gave them before the patch, and `vercel.json` lets browsers keep
+`/app/*/*` for a year, so a fixed `public/app/` would keep serving an old
+window to anyone who had seen it; a new build is a new address instead.

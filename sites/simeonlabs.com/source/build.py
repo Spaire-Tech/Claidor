@@ -872,7 +872,7 @@ def strip_dark(css):
     out.append(css[i:])
     return "".join(out)
 
-async def posters():
+async def posters(app_path):
     """Stills of the app's first screen, shown the moment the page opens while the live app loads.
     One per window shape FIT lays out: computer (880 wide), a narrow tablet (880, tall) and a phone (440)."""
     import functools, http.server, threading
@@ -891,7 +891,7 @@ async def posters():
                 pg = await b.new_page(viewport={"width": w, "height": h}, device_scale_factor=2)
                 if name == "held":
                     await pg.add_init_script("Object.defineProperty(window, 'frameElement', { get: () => ({ hasAttribute: () => true, removeAttribute() {} }) })")
-                await pg.goto(f"http://127.0.0.1:{srv.server_port}/app/index.html")
+                await pg.goto(f"http://127.0.0.1:{srv.server_port}/{app_path}/index.html")
                 # The same moment the page reveals the live app: its sidebar drawn and its fonts in.
                 await pg.wait_for_selector(".sand-agents-sidebar", state="attached")
                 await pg.evaluate("document.fonts.ready")
@@ -957,7 +957,21 @@ async def main():
     assert before in idx
     idx = idx.replace(before, before + 'html body .sand-agents-sidebar{background-color:var(--cursor-bg-chrome)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}')
     open(f"{OUT}/app/index.html", "w").write(idx)
-    await posters()
+    # The app lives under a folder named after its content (app/<digest>/), so a changed window is a
+    # new address: its files keep the same names from build to build (the patch rewrites them after
+    # Vite hashed them), and vercel.json keeps them a year, so a fixed path would serve an old app.
+    digest = hashlib.sha256()
+    for root, dirs, files in sorted(os.walk(f"{OUT}/app")):
+        dirs.sort()
+        for name in sorted(files):
+            full = os.path.join(root, name)
+            digest.update(os.path.relpath(full, f"{OUT}/app").encode()); digest.update(open(full, "rb").read())
+    app_path = f"app/{digest.hexdigest()[:12]}"
+    os.rename(f"{OUT}/app", f"{OUT}/app-staged"); os.makedirs(f"{OUT}/app"); os.rename(f"{OUT}/app-staged", f"{OUT}/{app_path}")
+    home = open(f"{OUT}/index.html", encoding="utf-8").read()
+    assert home.count('data-src="app/index.html"') == 1
+    open(f"{OUT}/index.html", "w", encoding="utf-8").write(home.replace('data-src="app/index.html"', f'data-src="{app_path}/index.html"'))
+    await posters(app_path)
     shutil.rmtree(TMP, ignore_errors=True)
     print("site written to", os.path.abspath(OUT))
 
