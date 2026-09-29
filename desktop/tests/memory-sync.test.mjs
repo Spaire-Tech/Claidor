@@ -12,7 +12,7 @@
  * pulls; a local change pushes with its base version; a server-side newer
  * version is merged into the file; a deleted name removes the file; a local
  * deletion is told; the state file carries the versions; the watcher
- * triggers a round; the off switch; and the `[claidor] memory-sync` line.
+ * triggers a round; the off switch; and the `[simeon] memory-sync` line.
  */
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
@@ -62,7 +62,7 @@ function startMemoryServer() {
         requests.push({ method: "POST", url: req.url, body: parsed });
         for (const file of parsed.files ?? []) {
           // A server older than this client: it does not keep project.md.
-          if (!/^(agents|user-memory|projects)\/[A-Za-z0-9][A-Za-z0-9._-]*\/.+\.md$/.test(file.name) || file.name.endsWith("/project.md")) { res.writeHead(400, { "content-type": "application/json" }); res.end(JSON.stringify({ code: 40001, message: `'${file.name}' is not a memory file Claidor keeps.` })); return; }
+          if (!/^(agents|user-memory|projects)\/[A-Za-z0-9][A-Za-z0-9._-]*\/.+\.md$/.test(file.name) || file.name.endsWith("/project.md")) { res.writeHead(400, { "content-type": "application/json" }); res.end(JSON.stringify({ code: 40001, message: `'${file.name}' is not a memory file Simeon keeps.` })); return; }
           const stored = rows.get(file.name);
           if (stored == null) { rows.set(file.name, { content: file.content, version: 1, deleted: false }); continue; }
           if (stored.deleted) { if (file.base_version >= stored.version) rows.set(file.name, { content: file.content, version: stored.version + 1, deleted: false }); continue; }
@@ -120,8 +120,8 @@ test("a fresh box pulls what the server holds, a local change pushes with its ba
     assert.equal(state.files["user-memory/agents/a1/log/2026-09.md"].version, 1);
     assert.deepEqual(server.requests.map((r) => r.method), ["GET", "POST"], "the start-up lists, then syncs");
     assert.deepEqual(server.requests[1].body, { files: [], deleted: [] }, "a fresh box sends nothing");
-    assert.ok(ext.lines.some((line) => /^\[claidor\] memory-sync server holds 2 file\(s\)/.test(line)), ext.lines.join("\n"));
-    assert.ok(ext.lines.some((line) => /^\[claidor\] memory-sync pushed=0 pulled=2 deleted=0 held=2/.test(line)), ext.lines.join("\n"));
+    assert.ok(ext.lines.some((line) => /^\[simeon\] memory-sync server holds 2 file\(s\)/.test(line)), ext.lines.join("\n"));
+    assert.ok(ext.lines.some((line) => /^\[simeon\] memory-sync pushed=0 pulled=2 deleted=0 held=2/.test(line)), ext.lines.join("\n"));
 
     // A local change (what runTurnMemory's addMemory writes) goes up with
     // the version it started from…
@@ -146,7 +146,7 @@ test("a fresh box pulls what the server holds, a local change pushes with its ba
     assert.equal(merged.kind, "synced"); assert.equal(merged.pulled, 1);
     assert.equal(await readFile(path.join(sandRoot, "agents", "a1", "memory", "profile.md"), "utf8"), "# About the user\n\n- (2026-09-20) The founder is called Bass.\n- (2026-09-25) Ships on Fridays.\n- (2026-09-25) Dog named Ada.\n- (2026-09-25) Stand-up at 9.\n");
     assert.equal(JSON.parse(await readFile(path.join(sandRoot, ".memory-sync", "state.json"), "utf8")).files[profile].version, 6);
-    assert.ok(ext.lines.some((line) => line.startsWith(`[claidor] memory-sync pushed=1 pulled=1 deleted=0 held=2 versions=${profile}@6`)), ext.lines.join("\n"));
+    assert.ok(ext.lines.some((line) => line.startsWith(`[simeon] memory-sync pushed=1 pulled=1 deleted=0 held=2 versions=${profile}@6`)), ext.lines.join("\n"));
     await ext.stop();
   } finally {
     await server.close(); await rm(sandRoot, { recursive: true, force: true }); await dispose();
@@ -215,7 +215,7 @@ test("a write under a watched root triggers a round after the debounce, a refusa
     await mkdir(path.join(sandRoot, "projects", "launch"), { recursive: true });
     await writeFile(path.join(sandRoot, "projects", "launch", "project.md"), "---\nname: Launch\n---\n");
     await until(() => ext.lines.some((line) => line.includes("memory-sync refused")), 12000);
-    assert.ok(ext.lines.some((line) => /^\[claidor\] memory-sync refused 400 'projects\/launch\/project\.md' is not a memory file Claidor keeps\./.test(line)), ext.lines.join("\n"));
+    assert.ok(ext.lines.some((line) => /^\[simeon\] memory-sync refused 400 'projects\/launch\/project\.md' is not a memory file Simeon keeps\./.test(line)), ext.lines.join("\n"));
     assert.ok(!("projects/launch/project.md" in JSON.parse(await readFile(path.join(sandRoot, ".memory-sync", "state.json"), "utf8")).files));
     await ext.stop();
 
@@ -233,7 +233,7 @@ test("a write under a watched root triggers a round after the debounce, a refusa
     assert.equal((await off.api.syncNow()).kind, "nothing-to-do");
     await wait(50);
     assert.equal(server.requests.length, count);
-    assert.ok(off.lines.some((line) => line === "[claidor] memory-sync off (SAND_MEMORY_SYNC=0)"));
+    assert.ok(off.lines.some((line) => line === "[simeon] memory-sync off (SAND_MEMORY_SYNC=0)"));
     await off.stop();
   } finally {
     await server.close(); await rm(sandRoot, { recursive: true, force: true }); await dispose();

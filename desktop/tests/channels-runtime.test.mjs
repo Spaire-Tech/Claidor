@@ -157,7 +157,7 @@ test("Discord: connect with the stored token, an inbound DM wakes the agent with
     await waitFor(() => fake.statuses.some((s) => s.status === "connected"), { label: "Discord connected" });
     assert.deepEqual(discord.identified.intents, (1 << 0) | (1 << 9) | (1 << 10) | (1 << 12) | (1 << 13) | (1 << 15), "guild, DM, reaction and message-content intents");
     assert.equal(discord.identified.properties.browser, "simeon");
-    assert.match(lines.find((l) => l.includes("event=connect")), /^\[claidor\] channel=discord agent=a1 event=connect url=ws:\/\/127\.0\.0\.1:\d+\/gateway token=…\(10\) attempt=0 resume=false$/);
+    assert.match(lines.find((l) => l.includes("event=connect")), /^\[simeon\] channel=discord agent=a1 event=connect url=ws:\/\/127\.0\.0\.1:\d+\/gateway token=…\(10\) attempt=0 resume=false$/);
     assert.ok(lines.some((l) => /channel=discord agent=a1 event=ready bot=simeon botId=BOT1 guilds=1/.test(l)), "ready line");
     assert.deepEqual(fake.statuses.at(-1), { agentId: "a1", platform: "discord", status: "connected", detail: "Connected as simeon." });
 
@@ -209,7 +209,7 @@ test("Discord: connect with the stored token, an inbound DM wakes the agent with
     configs.a1 = [];
     fake.hooks.changed();
     await waitFor(() => discord.connections === 0, { label: "gateway socket closed" });
-    assert.ok(lines.some((l) => l === "[claidor] channel=discord agent=a1 event=stop reason=removed"), "stop line");
+    assert.ok(lines.some((l) => l === "[simeon] channel=discord agent=a1 event=stop reason=removed"), "stop line");
     await assert.rejects(fake.hooks.deliver("a1", "discord:C1", { kind: "text", text: "x" }), /No live Discord connection for this agent/);
   } finally {
     await runtime.stop();

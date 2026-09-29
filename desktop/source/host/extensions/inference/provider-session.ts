@@ -60,7 +60,7 @@ export const DEFAULT_CLAIDOR_MODEL = "gpt-6-sol";
 export const DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-6-luna";
 // A server not yet deployed with GPT-6 refuses it ("This model is not offered
 // by the desktop app."); the step then runs on the model it replaced, once,
-// with a `[claidor] model-legacy` line, so the order of a server deploy and an
+// with a `[simeon] model-legacy` line, so the order of a server deploy and an
 // app rebuild cannot leave the agent silent.
 export const LEGACY_CLAIDOR_MODELS: Readonly<Record<string, string>> = { "gpt-6-sol": "gpt-5.6-terra", "gpt-6-luna": "gpt-5.6-luna" };
 export function isModelNotOfferedError(error: unknown): boolean {
@@ -387,7 +387,7 @@ export interface ModelCallLogLine {
 // the executor wrote nothing and a fifty-minute loop left no trace but
 // the bill.
 export function formatModelCallLogLine(line: ModelCallLogLine): string {
-  return `[claidor] model=${line.model} effort=${line.effort} input=${line.inputTokens} cached=${line.cachedTokens} output=${line.outputTokens} reasoning=${line.reasoningTokens} ms=${line.elapsedMs} tools=${line.tools}${line.offered === undefined ? "" : ` offered=${line.offered}`}${line.budget === undefined ? "" : ` budget=${line.budget}`}${line.prefix === undefined ? "" : ` prefix=${line.prefix}`}`;
+  return `[simeon] model=${line.model} effort=${line.effort} input=${line.inputTokens} cached=${line.cachedTokens} output=${line.outputTokens} reasoning=${line.reasoningTokens} ms=${line.elapsedMs} tools=${line.tools}${line.offered === undefined ? "" : ` offered=${line.offered}`}${line.budget === undefined ? "" : ` budget=${line.budget}`}${line.prefix === undefined ? "" : ` prefix=${line.prefix}`}`;
 }
 
 function shortHash(value: string): string {
@@ -564,8 +564,8 @@ function geminiTools(definitions: readonly Loose[] | undefined): GeminiDirectToo
 // request is written by `gemini-direct-generate.ts`, which is where the
 // video's bytes, mime type and frame rate come off the loop's message and
 // onto the wire; no other executor of ours carries them. The stream is the
-// same shape the Codex executor returns, and the same `[claidor] model=`
-// line is written, plus one `[claidor] video` line naming what was sent.
+// same shape the Codex executor returns, and the same `[simeon] model=`
+// line is written, plus one `[simeon] video` line naming what was sent.
 function geminiExecutor(source: ClaidorCredentialSource, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, modelId: string = configuredClaidorVideoModel(), reasoningEffort: ClaidorReasoningEffort = configuredClaidorCheapReasoningEffort(), budget?: ModelCallBudget, onRequestId?: (requestId: string) => void) {
   const usage = deferred<{ promptTokens: number; completionTokens: number; totalTokens: number }>();
   const extendedUsage = deferred<{ inputTokens: number; outputTokens: number; cacheReadTokens: number; cacheWriteTokens: number; maxTokens: number }>();
@@ -624,7 +624,7 @@ function claidorExecutor(messages: readonly ProviderMessage[], invocationId: str
 
   if (requested === cheap) return startOrLegacy(requested);
   // A relayed rate limit re-runs the step on the cheap model. The swap used
-  // to be silent; it now leaves a line beside the `[claidor] model=` lines,
+  // to be silent; it now leaves a line beside the `[simeon] model=` lines,
   // and the model= line of the retried step names the cheap model (F-003).
   return withCheapRateLimitFallback(startOrLegacy(requested), () => startOrLegacy(cheap), (error) => modelCallLog(`${HOST_LOG_PREFIX} model-fallback from=${requested} to=${cheap} reason=${clipForHostLog(redactSandAutoReviewInlineSecrets(error instanceof Error ? error.message : String(error)), 300)}`));
 }

@@ -97,7 +97,7 @@ export async function startBoxStreamGuard(options: {
     refusals += 1;
     // One line for the first refusal and every hundredth after: a page
     // probing the port should be visible without flooding the log.
-    if (refusals === 1 || refusals % 100 === 0) options.log?.(`[claidor] box-stream refused ${what} without the network token (${refusals} so far)`);
+    if (refusals === 1 || refusals % 100 === 0) options.log?.(`[simeon] box-stream refused ${what} without the network token (${refusals} so far)`);
   };
   for (const route of routes) {
     const server = createServer((request: IncomingMessage, response: ServerResponse) => {
@@ -157,7 +157,7 @@ export async function startBoxStreamGuard(options: {
     ports.push(typeof address === "object" && address != null ? address.port : route.listenPort);
     servers.push(server);
   }
-  options.log?.(`[claidor] box-stream guarded on ${ports.join(", ")} -> ${routes.map((route) => route.targetPort).join(", ")} (network token required)`);
+  options.log?.(`[simeon] box-stream guarded on ${ports.join(", ")} -> ${routes.map((route) => route.targetPort).join(", ")} (network token required)`);
   return {
     ports,
     close: async () => {
@@ -192,7 +192,7 @@ export function startBoxStreamGuardFromEnv(options: {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (count >= maxAttempts) {
-        options.log(`[claidor] box-stream guard could not start (${message}); the desktop stream is unreachable until the host restarts`);
+        options.log(`[simeon] box-stream guard could not start (${message}); the desktop stream is unreachable until the host restarts`);
         return undefined;
       }
       await new Promise((resolve) => { const timer = setTimeout(resolve, retryDelayMs); timer.unref?.(); });

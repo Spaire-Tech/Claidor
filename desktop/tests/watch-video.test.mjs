@@ -174,8 +174,8 @@ test("a video child's session speaks Gemini's wire through the proxy with the vi
     assert.equal(extended.cacheReadTokens, 100);
     assert.equal(extended.outputTokens, 25);
     // The two host-log lines: what was sent, and the call's meter.
-    assert.ok(logLines.some((line) => line.includes("[claidor] video model=gemini-2.5-flash parts=1 video/mp4@4fps") && line.includes("offered=Shell")), logLines.join("\n"));
-    assert.ok(logLines.some((line) => line.startsWith("[claidor] model=gemini-2.5-flash effort=low input=1000 cached=100 output=25 reasoning=5") && line.includes("tools=Shell(")), logLines.join("\n"));
+    assert.ok(logLines.some((line) => line.includes("[simeon] video model=gemini-2.5-flash parts=1 video/mp4@4fps") && line.includes("offered=Shell")), logLines.join("\n"));
+    assert.ok(logLines.some((line) => line.startsWith("[simeon] model=gemini-2.5-flash effort=low input=1000 cached=100 output=25 reasoning=5") && line.includes("tools=Shell(")), logLines.join("\n"));
   } finally {
     module.setModelCallLog(null);
     globalThis.fetch = previousFetch;

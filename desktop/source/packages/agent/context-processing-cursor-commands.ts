@@ -19,7 +19,7 @@ export function renderSelectedCursorCommands(
   }
   const commandsText = cursorCommands.map((command) => `
 
---- Cursor Command: ${command.name} ---
+--- Command: ${command.name} ---
 ${command.content}
 --- End Command ---`).join("\n");
   if (!commandsText) {
@@ -27,7 +27,7 @@ ${command.content}
   }
   return {
     type: "text",
-    text: `<cursor_commands>${commandsText}
-</cursor_commands>`,
+    text: `<commands>${commandsText}
+</commands>`,
   };
 }

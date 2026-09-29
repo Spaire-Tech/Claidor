@@ -2,7 +2,7 @@ export const LOCAL_PR_CREATION_FORGE_RULE_PATH = "cursor://internal/local-pr-cre
 export const LOCAL_PR_CREATION_FORGE_GUIDANCE_HEADER = "Preferred pull request host:";
 export const LEGACY_LOCAL_PR_CREATION_FORGE_GUIDANCE_HEADER = "Pull request forge (Creation Provider):";
 export const FORGE_CLI_GLOSSARY = [
-  "Cursor can open new pull requests on either:",
+  "You can open new pull requests on either:",
   "- GitHub, with the `gh` CLI (`gh pr create`)",
   "- Origin (a pull-request host — not the git remote named `origin`), with the `origin` CLI (`origin pr create`)",
   "Prefer `gh` or `origin` over `gt`. If you use `gt`, you MUST pass `--github` or `--origin` for the intended host.",

@@ -290,7 +290,7 @@ function toolDescription(version: string, minimal: boolean, explicitOffsetLimit:
 
 function cursorRuleReminder(rules: readonly CursorRule[]): string | undefined {
   if (rules.length === 0) return undefined;
-  return ["The following cursor rule files are relevant to the files you just read:", ...rules.map(rule => `- ${rule.fullPath ?? "(unknown rule path)"}\n${rule.content.trimEnd() || "(Rule file is empty.)"}`), "Consider these rules if they affect your changes."].join("\n\n");
+  return ["The following rule files are relevant to the files you just read:", ...rules.map(rule => `- ${rule.fullPath ?? "(unknown rule path)"}\n${rule.content.trimEnd() || "(Rule file is empty.)"}`), "Consider these rules if they affect your changes."].join("\n\n");
 }
 
 function skillReminder(skills: readonly ReadSkill[]): string | undefined {

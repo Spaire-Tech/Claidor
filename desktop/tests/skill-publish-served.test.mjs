@@ -248,7 +248,7 @@ test("an inline plugin's files are written to disk and its skills land in the ma
   }
 });
 
-test("a failed daily sync writes one [claidor] plugins line and throws to nobody's turn", async () => {
+test("a failed daily sync writes one [simeon] plugins line and throws to nobody's turn", async () => {
   const { module, dispose } = await load("source/host/extensions/mcp/plugin-skills.ts", "plugin-skills-log", { extraExports: [["source/shared/host-log.ts", ["setHostLogSink"]]] });
   const sandRoot = await mkdtemp(path.join(os.tmpdir(), "caisra-plugin-skills-log-"));
   const hostLines = [];
@@ -256,13 +256,13 @@ test("a failed daily sync writes one [claidor] plugins line and throws to nobody
   try {
     const service = new module.SandPluginSkillsService({ sandRootDir: sandRoot, load: async () => { throw new Error("connect ECONNREFUSED 127.0.0.1:1"); } });
     await assert.rejects(service.sync("refresh"), /ECONNREFUSED/);
-    assert.deepEqual(hostLines, ["[claidor] plugins sync=refresh failed: connect ECONNREFUSED 127.0.0.1:1"]);
+    assert.deepEqual(hostLines, ["[simeon] plugins sync=refresh failed: connect ECONNREFUSED 127.0.0.1:1"]);
     // The extension's poll swallows it (`startPluginSkillsWhenAuthenticated`), so a turn never sees it.
     assert.match(await src("host/extensions/mcp/extension.ts"), /try\{await options\.service\?\.sync\(trigger\);[^}]*\}catch\{\}/);
     hostLines.length = 0;
     const ok = new module.SandPluginSkillsService({ sandRootDir: sandRoot, load: async () => ({ plugins: [], authBlocked: [], listedPluginIds: [], listedCacheKeys: [], publisherFacts: new Map(), currentUserId: 7 }) });
     await ok.sync("startup");
-    assert.deepEqual(hostLines, ["[claidor] plugins sync=startup skills=0 plugins=0 changed=false"]);
+    assert.deepEqual(hostLines, ["[simeon] plugins sync=startup skills=0 plugins=0 changed=false"]);
   } finally {
     module.setHostLogSink(null);
     await rm(sandRoot, { recursive: true, force: true });

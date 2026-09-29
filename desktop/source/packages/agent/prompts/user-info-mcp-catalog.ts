@@ -12,7 +12,7 @@ import type { McpDescriptor as McpDescriptorType } from "../../proto/generated/a
 import { jsx, jsxs, Fragment } from "../../prompt-jsx/jsx-runtime.js";
 import type { PromptNode } from "../../prompt-jsx/jsx-runtime.js";
 
-const CURSOR_DYNAMIC_TOOLS_NAMESPACE = "cursor";
+const CURSOR_DYNAMIC_TOOLS_NAMESPACE = "simeon";
 const CURSOR_APP_CONTROL_SERVER = "cursor-app-control";
 const WORKSPACE_MUTATION_TOOLS = new Set([
   "move_agent_to_root",
@@ -32,7 +32,7 @@ function buildMcpMetaToolServerEntries(
       if (d.serverUseInstructions) {
         attrs.push(`namespaceUseInstructions="${d.serverUseInstructions}"`);
       }
-      attrs.push(`source="${d.serverIdentifier === CURSOR_DYNAMIC_TOOLS_NAMESPACE ? "cursor" : "mcp"}"`);
+      attrs.push(`source="${d.serverIdentifier === CURSOR_DYNAMIC_TOOLS_NAMESPACE ? "simeon" : "mcp"}"`);
       return `<namespace ${attrs.join(" ")} />`;
     }
     if (d.serverUseInstructions) {

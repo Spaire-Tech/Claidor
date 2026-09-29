@@ -14,7 +14,7 @@ function transformToolMatcher(matcher: string | undefined, logger: Logger = noop
     const trimmedTool = tool.trim();
     if (trimmedTool.startsWith("mcp__")) { const parts = trimmedTool.split("__"); if (parts.length >= 3) { transformedTools.push(`MCP:${parts.slice(2).join("__")}`); continue; } }
     const cursorTool = CLAUDE_TOOL_TO_CURSOR_TOOL[trimmedTool];
-    if (cursorTool === null) { if ((UNSUPPORTED_CLAUDE_TOOLS as readonly string[]).includes(trimmedTool)) warnings.push(`Tool "${trimmedTool}" is not supported in Cursor and will be ignored`); continue; }
+    if (cursorTool === null) { if ((UNSUPPORTED_CLAUDE_TOOLS as readonly string[]).includes(trimmedTool)) warnings.push(`Tool "${trimmedTool}" is not supported in Simeon and will be ignored`); continue; }
     if (cursorTool !== undefined) { if (!transformedTools.includes(cursorTool)) transformedTools.push(cursorTool); } else transformedTools.push(trimmedTool);
   }
   for (const warning of warnings) logger.warn(warning);
@@ -28,14 +28,14 @@ function transformHookScript(script: ClaudeHookScript, matcher: string | undefin
 function transformHookEntry(entry: ClaudeHookEntry, event: string, logger: Logger = noopLogger): CursorHookScript[] {
   const usesToolMatcher = event === "PreToolUse" || event === "PostToolUse"; let effectiveMatcher: string | undefined;
   if (usesToolMatcher) { const transformed = transformToolMatcher(entry.matcher, logger); if (transformed === null) { logger.warn(`All tools in matcher "${entry.matcher}" are unsupported, skipping hooks`); return []; } effectiveMatcher = transformed === "*" ? undefined : transformed; }
-  else if (event === "SessionStart" || event === "PreCompact") { if (entry.matcher && entry.matcher !== "*" && entry.matcher !== "" && (event === "SessionStart" ? ["startup", "resume", "clear", "compact"].includes(entry.matcher) : ["manual", "auto"].includes(entry.matcher))) logger.warn(`${event} trigger matcher "${entry.matcher}" is not supported in Cursor, hooks will fire for all triggers`); effectiveMatcher = undefined; }
+  else if (event === "SessionStart" || event === "PreCompact") { if (entry.matcher && entry.matcher !== "*" && entry.matcher !== "" && (event === "SessionStart" ? ["startup", "resume", "clear", "compact"].includes(entry.matcher) : ["manual", "auto"].includes(entry.matcher))) logger.warn(`${event} trigger matcher "${entry.matcher}" is not supported in Simeon, hooks will fire for all triggers`); effectiveMatcher = undefined; }
   else effectiveMatcher = undefined;
   const result: CursorHookScript[] = []; for (const script of entry.hooks) { const transformed = transformHookScript(script, effectiveMatcher); if (transformed) result.push(transformed); } return result;
 }
 export function transformClaudeHooksToConfig(claudeHooks: Record<string, unknown>, logger: Logger = noopLogger): CursorHooksConfig {
   const cursorHooks: Record<string, CursorHookScript[]> = {};
   for (const [eventName, entries] of Object.entries(claudeHooks)) {
-    if ((UNSUPPORTED_CLAUDE_EVENTS as readonly string[]).includes(eventName)) { logger.warn(`Claude Code event "${eventName}" is not supported in Cursor and will be ignored`); continue; }
+    if ((UNSUPPORTED_CLAUDE_EVENTS as readonly string[]).includes(eventName)) { logger.warn(`Claude Code event "${eventName}" is not supported in Simeon and will be ignored`); continue; }
     const cursorStep = (CLAUDE_EVENT_TO_CURSOR_STEP as Record<string, string | null | undefined>)[eventName]; if (!cursorStep) { logger.warn(`Unknown Claude Code event "${eventName}", skipping`); continue; }
     const scripts: CursorHookScript[] = []; if (Array.isArray(entries)) for (const entry of entries) scripts.push(...transformHookEntry(entry as ClaudeHookEntry, eventName, logger)); else if (entries !== undefined) logger.warn(`Claude Code event "${eventName}" has invalid value (expected array), skipping`);
     if (scripts.length > 0) cursorHooks[cursorStep] = [...(cursorHooks[cursorStep] ?? []), ...scripts];

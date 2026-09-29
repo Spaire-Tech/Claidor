@@ -1,6 +1,6 @@
 import { Value } from "@bufbuild/protobuf";
 
-import { CURSOR_DYNAMIC_TOOLS_NAMESPACE } from "../../../agent-exec/mcp.js";
+import { CURSOR_DYNAMIC_TOOLS_NAMESPACE, isFirstPartyToolsNamespace } from "../../../agent-exec/mcp.js";
 import {
   McpImageContent,
   McpResult as McpToolResult,
@@ -106,7 +106,7 @@ function buildBuiltinToolsMcpDescriptorFromTools(tools: BuiltinTool[], descripti
 }
 
 export function isReservedDynamicToolsNamespace(namespace: string): boolean {
-  return namespace === CURSOR_DYNAMIC_TOOLS_NAMESPACE;
+  return isFirstPartyToolsNamespace(namespace);
 }
 
 export function resolveDynamicDispatchToolName(rawArgs: string, dynamicToolRegistry: Pick<DynamicToolRegistry, "getTool">): string | undefined {

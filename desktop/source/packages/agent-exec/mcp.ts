@@ -34,7 +34,11 @@ export const NON_AUTHENTICATABLE_MCP_PROVIDER_IDS = new Set([
   "fsd"
 ]);
 
-export const CURSOR_DYNAMIC_TOOLS_NAMESPACE = "cursor";
+export const CURSOR_DYNAMIC_TOOLS_NAMESPACE = "simeon";
+/** The first-party namespace, under its name or the earlier one ("cursor"), which tool calls saved before the rename still carry. */
+export function isFirstPartyToolsNamespace(namespace: string | undefined): boolean {
+  return namespace === CURSOR_DYNAMIC_TOOLS_NAMESPACE || namespace === "cursor";
+}
 
 export const BROWSER_MCP_PROVIDER_IDS = new Set([
   CURSOR_SELF_CONTROL_PROVIDER_ID,

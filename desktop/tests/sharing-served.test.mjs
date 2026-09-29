@@ -87,7 +87,7 @@ test("a dev host pointed at api.simeonlabs.com is allowed; Cursor's production o
     assert.deepEqual(module.resolveXuserSharingEnvironment({ backendUrl: "http://127.0.0.1:8000", env: dev }), { isAllowed: true });
     const cursor = module.resolveXuserSharingEnvironment({ backendUrl: "https://api2.cursor.sh", env: dev });
     assert.equal(cursor.isAllowed, false);
-    assert.match(cursor.reason, /Cursor's PRODUCTION backend/);
+    assert.match(cursor.reason, /a backend that is not Simeon Labs'/);
     assert.deepEqual(module.resolveXuserSharingEnvironment({ backendUrl: "https://api2.cursor.sh", env: { ...dev, SAND_XUSER_SHARING_ALLOW_PROD: "1" } }), { isAllowed: true });
     assert.equal(module.resolveXuserSharingEnvironment({ backendUrl: "https://api.simeonlabs.com", env: { SAND_PACKAGED: "0" } }).isAllowed, false, "a dev host still opts in with SAND_DEV_XUSER_SHARING=1");
     assert.deepEqual(module.resolveXuserSharingEnvironment({ backendUrl: "https://api.simeonlabs.com", env: { SAND_PACKAGED: "1" } }), { isAllowed: true });

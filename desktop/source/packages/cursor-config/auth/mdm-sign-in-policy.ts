@@ -9,8 +9,8 @@ const execFileAsync = promisify(execFile);
 export const MDM_SIGN_IN_POLICY_HEADER_NAME = "x-cursor-mdm-signin-policy";
 export const SIGN_IN_POLICY_VIOLATION_ERROR = "sign_in_policy_violation";
 export const SIGN_IN_POLICY_VIOLATION_MESSAGE = "Sign-in on this device is restricted by your organization's device policy. Sign in with an allowed account to continue.";
-export const MACOS_POLICY_DOMAINS = ["com.todesktop.230313mzl4w4u92", "co.anysphere.cursor.dev"] as const;
-export const WINDOWS_POLICY_REGISTRY_KEYS = ["HKLM\\SOFTWARE\\Policies\\Cursor\\Cursor", "HKLM\\SOFTWARE\\Policies\\Microsoft\\Cursor", "HKLM\\SOFTWARE\\Policies\\Cursor\\Cursor Dev"] as const;
+export const MACOS_POLICY_DOMAINS = ["com.simeonlabs.simeon"] as const;
+export const WINDOWS_POLICY_REGISTRY_KEYS = ["HKLM\\SOFTWARE\\Policies\\Simeon Labs\\Simeon"] as const;
 export const POLICY_CACHE_TTL_MS = 30_000;
 
 export class SignInPolicyViolationError extends Error {

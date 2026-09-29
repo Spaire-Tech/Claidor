@@ -47,6 +47,6 @@ export function resolveXuserSharingEnvironment(args: {
   if (env[SAND_XUSER_SHARING_ALLOW_PROD_ENV] === "1") return { isAllowed: true };
   return {
     isAllowed: false,
-    reason: `this dev host is pointed at Cursor's PRODUCTION backend; cross-user sharing stays off so it cannot ingest (or steal relay events from) that account's production rooms. Set ${SAND_XUSER_SHARING_ALLOW_PROD_ENV}=1 to opt in deliberately.`,
+    reason: `this dev host is pointed at a backend that is not Simeon Labs'; cross-user sharing stays off so it cannot ingest (or steal relay events from) that account's production rooms. Set ${SAND_XUSER_SHARING_ALLOW_PROD_ENV}=1 to opt in deliberately.`,
   };
 }

@@ -235,7 +235,7 @@ export class SandCursorAuthService {
   private async rollbackSupersededAuthentication(): Promise<void> {
     this.credentialState = "revoked";
     const failures = await this.removeStoredCredentials();
-    if (failures.length > 0) throw new AggregateError(failures, "Failed to remove superseded Cursor credentials");
+    if (failures.length > 0) throw new AggregateError(failures, "Failed to remove superseded Simeon credentials");
   }
   private async settleSecureStorage(): Promise<void> {
     if (this.options.waitForEncryptedStorage != null) { await this.options.waitForEncryptedStorage(() => this.secrets.isEncryptedStorageAvailable(), this.options.secureStorageWaitOptions ?? {}); return; }
@@ -324,7 +324,7 @@ export class SandCursorAuthService {
     const current = this.isCurrentAuthOperation(logoutOperationEpoch); const retained = current && (options.emitStatus ? startedRetained || failures.length > 0 : startedRetained && failures.length > 0); if (current) this.credentialState = retained ? "retained-after-failed-logout" : "revoked";
     if (settlement != null) { this.options.reportSessionSettlement?.(settlement); reportSigninSignout(settlement.durable ? signinSignoutCause(settlement.cause) : "retained_after_failed_logout"); }
     const reported = retained ? RETAINED_AFTER_FAILED_LOGOUT_STATUS : status; if (current && options.emitStatus) this.emitStatus(reported);
-    if (failures.length > 0) throw new AggregateError(failures, retained ? RETAINED_AFTER_FAILED_LOGOUT_STATUS.errorMessage : "Failed to remove Cursor credentials"); return reported;
+    if (failures.length > 0) throw new AggregateError(failures, retained ? RETAINED_AFTER_FAILED_LOGOUT_STATUS.errorMessage : "Failed to remove Simeon credentials"); return reported;
   }
   async devLogin(args: { readonly tier?: string; readonly email?: string }): Promise<SandAuthStatus> {
     const backendUrl = this.options.getBackendUrl?.() ?? getConfiguredBackendUrl(); if (!isDevAuthBackend(backendUrl)) throw new SandDevLoginError(`Refusing dev-login against non-dev backend ${backendUrl}. Set SAND_BACKEND_URL to a local backend (e.g. https://localhost:8000).`);

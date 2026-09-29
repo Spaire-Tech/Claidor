@@ -14,7 +14,7 @@
  * - Auth is the box's own access token (`auth.getAccessToken`, the same
  *   token the model proxy takes); the server takes it since the same day
  *   (`get_desktop_or_box_session` on the memory routes).
- * - `SAND_MEMORY_SYNC=0` switches it off. One `[claidor] memory-sync` line
+ * - `SAND_MEMORY_SYNC=0` switches it off. One `[simeon] memory-sync` line
  *   per round names what moved, or the refusal.
  */
 import type { DebouncePolicy } from "../../../internal/scheduling.js";

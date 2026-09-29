@@ -1,7 +1,7 @@
 import { clipForHostLog, HOST_LOG_PREFIX, logHostLine } from "../../../shared/host-log.js";
 
 /**
- * One `[claidor] channel=<platform> agent=<id> event=<what> …` line per
+ * One `[simeon] channel=<platform> agent=<id> event=<what> …` line per
  * connect, ready, disconnect, inbound, delivery and error, on the stdout
  * channel that reaches the box's `/tmp/sand-host.log` (the loop's own logger
  * is silenced there; CLAUDE.md, 23 September 2026). Credentials never
