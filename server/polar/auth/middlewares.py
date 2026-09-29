@@ -1,3 +1,5 @@
+import re
+
 import logfire
 import structlog
 from fastapi import Request
@@ -106,6 +108,14 @@ async def get_member_session(session: AsyncSession, value: str) -> MemberSession
     return await member_session_service.get_by_token(session, value)
 
 
+_BOX_PROXY_PATH = re.compile(r"^/sand-box/[0-9a-fA-F-]{36}/p/\d+(?:/|$)")
+
+
+def is_box_proxy_path(path: str) -> bool:
+    """`/sand-box/{box_id}/p/{port}` and everything under it."""
+    return _BOX_PROXY_PATH.match(path) is not None
+
+
 async def get_auth_subject(
     request: Request, session: AsyncSession
 ) -> AuthSubject[Subject]:
@@ -115,6 +125,16 @@ async def get_auth_subject(
     # so an unrecognised token cannot become an OAuth2 error before the
     # runner's own check has had a chance to refuse it properly.
     if is_runner_path(request.url.path):
+        return AuthSubject(Anonymous(), set(), None)
+
+    # The cloud box's proxy (polar.sand.box_proxy) forwards the app's
+    # request as it came, and the app's bearer there is the box gateway's
+    # own token, which belongs to no person. The proxy checks the network
+    # token and the gateway checks the bearer. Reading that bearer here
+    # answered every proxied call with an OAuth2 401 before the proxy ran
+    # (the first live cloud box, 28 September 2026: /health passed because
+    # it carried no bearer, /events and every /api call were refused).
+    if is_box_proxy_path(request.url.path):
         return AuthSubject(Anonymous(), set(), None)
 
     token = get_bearer_token(request)
