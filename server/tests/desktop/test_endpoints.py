@@ -742,7 +742,8 @@ class TestTwoProviders:
         assert {one["provider"] for one in offered["data"]} == {"anthropic", "openai"}
         # The wire format follows the provider, with no converter between.
         assert by_id["claude-sonnet-5"]["apiFormat"] == "anthropic"
-        assert by_id["gpt-5.6-terra"]["apiFormat"] == "openai"
+        assert by_id["gpt-6-sol"]["apiFormat"] == "openai"
+        assert "gpt-5.6-terra" not in by_id, "retired: served, never offered"
 
     async def test_a_gpt_call_goes_to_openai_in_openai_s_language(
         self,
@@ -1664,4 +1665,7 @@ class TestWithheldModelsAreNotServed:
                 headers=headers,
             )
             assert response.status_code == 400, (path, response.text)
-            assert response.json()["error"]["message"] == "This model is not offered by the desktop app."
+            assert (
+                response.json()["error"]["message"]
+                == "This model is not offered by the desktop app."
+            )

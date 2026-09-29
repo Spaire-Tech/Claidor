@@ -107,6 +107,21 @@ class BoxSpec:
     workspace_volume: str
     data_volume: str
     extra_env: dict[str, str] = field(default_factory=dict)
+    #: `--memory` (no swap beyond it) and `--cpus`; zero is no limit. The
+    #: Mac's `docker run` sets neither (Docker Desktop's VM is the bound);
+    #: a shared host needs both (`CLAIDOR_BOX_MEMORY_LIMIT_MB`, `_CPU_LIMIT`).
+    memory_mb: int = 0
+    cpus: float = 0.0
+
+    def resource_limits(self) -> dict[str, int]:
+        limits: dict[str, int] = {}
+        if self.memory_mb > 0:
+            memory = self.memory_mb * 1024 * 1024
+            limits["Memory"] = memory
+            limits["MemorySwap"] = memory
+        if self.cpus > 0:
+            limits["NanoCpus"] = int(self.cpus * 1_000_000_000)
+        return limits
 
     def environment(self) -> list[str]:
         # The local Docker path's environment, line for line
@@ -202,6 +217,28 @@ class HostBundle:
             )
         return cls(members[cls.HOST_MAIN], members[cls.BOX_EXEC_DAEMON])
 
+    def archive(self) -> bytes:
+        """Both files in one tar, to be extracted at `/`. Docker's archive
+        PUT needs its target directory to exist, and the box image has no
+        `/home/box/sand-host` (the Mac bind-mounts the file, which makes
+        the directory; a copy does not): uploading to that directory was
+        refused with 404 "Could not find the file", and every box stayed
+        Created and never started (28 September 2026, measured against a
+        real Docker Engine). Extracting at `/` makes the missing parent
+        directories. No directory entry is written, so `/home/box` and
+        `/home/box/box-exec-daemon` keep their owner and mode."""
+        buffer = io.BytesIO()
+        with tarfile.open(fileobj=buffer, mode="w") as archive:
+            for name, data in (
+                ("home/box/sand-host/host-main.cjs", self.host_main),
+                ("home/box/box-exec-daemon/main.cjs", self.box_exec_daemon),
+            ):
+                info = tarfile.TarInfo(name)
+                info.size = len(data)
+                info.mode = 0o644
+                archive.addfile(info, io.BytesIO(data))
+        return buffer.getvalue()
+
     @staticmethod
     def single_file_tar(name: str, data: bytes, mode: int = 0o644) -> bytes:
         buffer = io.BytesIO()
@@ -230,6 +267,34 @@ def _docker_base_url(docker_host: str) -> tuple[str, str | None]:
     )
 
 
+class _HostReachTransport(httpx.AsyncBaseTransport):
+    """Every failure to reach the Docker daemon becomes a `BoxHostError`
+    with the reason in it, so EnsureSandBox answers one sentence the app
+    shows and `sand.box.ensure.refused` logs, and the sleeper and the wake
+    log it, instead of an unhandled 500. The first real run (28 September
+    2026) failed 129 times as a bare 500 on a certificate the API refused
+    ("CA cert does not include key usage extension")."""
+
+    def __init__(self, inner: httpx.AsyncBaseTransport, where: str) -> None:
+        self.inner = inner
+        self.where = where
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        try:
+            return await self.inner.handle_async_request(request)
+        except httpx.TransportError as error:
+            # A timeout or a reset often carries no message at all; the
+            # first run logged "could not be reached: " and nothing after.
+            reason = str(error).strip() or type(error).__name__
+            raise BoxHostError(
+                f"Simeon's cloud computer host at {self.where} could not be "
+                f"reached ({request.method} {request.url.path}): {reason}"
+            ) from error
+
+    async def aclose(self) -> None:
+        await self.inner.aclose()
+
+
 def docker_client_from_settings() -> httpx.AsyncClient:
     if not settings.BOX_DOCKER_HOST:
         raise BoxHostUnavailable(
@@ -243,7 +308,9 @@ def docker_client_from_settings() -> httpx.AsyncClient:
             settings.BOX_DOCKER_TLS_CERT, settings.BOX_DOCKER_TLS_KEY or None
         )
         verify = context
-    transport = httpx.AsyncHTTPTransport(uds=uds, verify=verify)
+    transport = _HostReachTransport(
+        httpx.AsyncHTTPTransport(uds=uds, verify=verify), settings.BOX_DOCKER_HOST
+    )
     return httpx.AsyncClient(
         base_url=base_url, transport=transport, timeout=httpx.Timeout(30.0, read=600.0)
     )
@@ -320,6 +387,7 @@ class DockerBoxHost:
                 "PortBindings": {
                     key: [{"HostIp": "0.0.0.0", "HostPort": ""}] for key in exposed
                 },
+                **spec.resource_limits(),
             },
         }
         params = {"name": spec.name, "platform": self.platform}
@@ -346,16 +414,31 @@ class DockerBoxHost:
                 f"Docker could not create the box: {response.status_code} {response.text[:300]}"
             )
         container_id = str(response.json().get("Id", ""))
-        if self.bundle is not None:
-            await self._upload_bundle(container_id)
-        started = await self.client.post(f"/containers/{container_id}/start")
-        if started.status_code not in (204, 304):
-            raise BoxHostError(
-                f"Docker could not start the box: {started.status_code} {started.text[:300]}"
-            )
-        inspected = await self.inspect(container_id)
-        if inspected is None:
-            raise BoxHostError("Docker lost the box right after starting it.")
+        try:
+            if self.bundle is not None:
+                await self._upload_bundle(container_id)
+            started = await self.client.post(f"/containers/{container_id}/start")
+            if started.status_code not in (204, 304):
+                raise BoxHostError(
+                    f"Docker could not start the box: {started.status_code} {started.text[:300]}"
+                )
+            inspected = await self.inspect(container_id)
+            if inspected is None:
+                raise BoxHostError("Docker lost the box right after starting it.")
+        except BaseException:
+            # Never leave a half-made box behind: the first run left one
+            # Created container per EnsureSandBox, 89 in a few minutes.
+            try:
+                await self.client.delete(
+                    f"/containers/{quote(container_id)}", params={"force": "true"}
+                )
+            except Exception as error:
+                log.warning(
+                    "sand.box.docker.cleanup_failed",
+                    container=container_id,
+                    error=str(error),
+                )
+            raise
         log.info(
             "sand.box.docker.created", container=container_id, ports=inspected.ports
         )
@@ -363,20 +446,16 @@ class DockerBoxHost:
 
     async def _upload_bundle(self, container_id: str) -> None:
         assert self.bundle is not None
-        for path, name, data in (
-            ("/home/box/sand-host", "host-main.cjs", self.bundle.host_main),
-            ("/home/box/box-exec-daemon", "main.cjs", self.bundle.box_exec_daemon),
-        ):
-            response = await self.client.put(
-                f"/containers/{container_id}/archive",
-                params={"path": path},
-                content=HostBundle.single_file_tar(name, data),
-                headers={"content-type": "application/x-tar"},
+        response = await self.client.put(
+            f"/containers/{container_id}/archive",
+            params={"path": "/"},
+            content=self.bundle.archive(),
+            headers={"content-type": "application/x-tar"},
+        )
+        if response.status_code != 200:
+            raise BoxHostError(
+                f"Docker refused the host bundle: {response.status_code} {response.text[:200]}"
             )
-            if response.status_code != 200:
-                raise BoxHostError(
-                    f"Docker refused the host bundle at {path}: {response.status_code} {response.text[:200]}"
-                )
 
     async def _json(self, provider_box_id: str) -> dict[str, Any] | None:
         response = await self.client.get(f"/containers/{quote(provider_box_id)}/json")

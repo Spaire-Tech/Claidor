@@ -70,6 +70,16 @@ class SandBox(RecordModel):
     last_ensured_at: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True, default=None
     )
+    #: The last time the box was busy (the host's `lastBusyAtMs`), asked
+    #: for, or woken: `TeamMemberSandBoxPod.last_active_at_ms` in Grok
+    #: Bot's contract. The sleeper measures idleness from it.
+    last_active_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+    #: When the sleeper last stopped it; None while it runs.
+    hibernated_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
 
     @declared_attr
     def user(cls) -> Mapped["User"]:

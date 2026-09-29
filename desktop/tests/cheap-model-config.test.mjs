@@ -68,22 +68,22 @@ test("machinery sessions stay on Luna; unknown Cursor model ids cannot steal Ter
       createProviderPromptSession,
       isConfiguredClaidorModelId,
     } = loaded.module;
-    assert.equal(DEFAULT_CLAIDOR_MODEL, "gpt-5.6-terra");
-    assert.equal(DEFAULT_CLAIDOR_CHEAP_MODEL, "gpt-5.6-luna");
+    assert.equal(DEFAULT_CLAIDOR_MODEL, "gpt-6-sol");
+    assert.equal(DEFAULT_CLAIDOR_CHEAP_MODEL, "gpt-6-luna");
     assert.equal(CLAIDOR_WORKING_CONTEXT_TOKENS, 200_000);
-    assert.equal(claidorModelForSession(), "gpt-5.6-terra");
-    assert.equal(claidorModelForSession({ cheap: true }), "gpt-5.6-luna");
-    assert.equal(claidorModelForSession({ isSummarizationSession: true, modelId: "gemini-2.5-flash" }), "gpt-5.6-luna");
-    assert.equal(claidorModelForSession({ isComputerUseSubagent: true }), "gpt-5.6-luna");
-    assert.equal(claidorModelForSession({ isBrowserUseSubagent: true }), "gpt-5.6-luna");
-    assert.equal(claidorModelForSession({ model: "gpt-5.6-luna" }), "gpt-5.6-luna");
-    assert.equal(claidorModelForSession({ modelId: "gpt-5.6-luna" }), "gpt-5.6-luna");
-    assert.equal(claidorModelForSession({ modelId: "grok-4.5" }), "gpt-5.6-terra");
-    assert.equal(claidorModelForSession({ model: "gemini-2.5-flash", cheap: true }), "gpt-5.6-luna");
-    assert.equal(isConfiguredClaidorModelId("gpt-5.6-luna"), true);
+    assert.equal(claidorModelForSession(), "gpt-6-sol");
+    assert.equal(claidorModelForSession({ cheap: true }), "gpt-6-luna");
+    assert.equal(claidorModelForSession({ isSummarizationSession: true, modelId: "gemini-2.5-flash" }), "gpt-6-luna");
+    assert.equal(claidorModelForSession({ isComputerUseSubagent: true }), "gpt-6-luna");
+    assert.equal(claidorModelForSession({ isBrowserUseSubagent: true }), "gpt-6-luna");
+    assert.equal(claidorModelForSession({ model: "gpt-6-luna" }), "gpt-6-luna");
+    assert.equal(claidorModelForSession({ modelId: "gpt-6-luna" }), "gpt-6-luna");
+    assert.equal(claidorModelForSession({ modelId: "grok-4.5" }), "gpt-6-sol");
+    assert.equal(claidorModelForSession({ model: "gemini-2.5-flash", cheap: true }), "gpt-6-luna");
+    assert.equal(isConfiguredClaidorModelId("gpt-6-luna"), true);
     assert.equal(isConfiguredClaidorModelId("grok-4.5"), false);
-    assert.equal(createProviderPromptSession("claidor").getModelId(), "gpt-5.6-terra");
-    assert.equal(createProviderPromptSession("claidor", { cheap: true, isSummarizationSession: true }).getModelId(), "gpt-5.6-luna");
+    assert.equal(createProviderPromptSession("claidor").getModelId(), "gpt-6-sol");
+    assert.equal(createProviderPromptSession("claidor", { cheap: true, isSummarizationSession: true }).getModelId(), "gpt-6-luna");
   } finally {
     if (previousModel === undefined) delete process.env.SAND_CLAIDOR_MODEL;
     else process.env.SAND_CLAIDOR_MODEL = previousModel;

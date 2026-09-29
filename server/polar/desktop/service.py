@@ -170,7 +170,9 @@ def offered_models() -> tuple[DesktopModel, ...]:
     return tuple(
         one
         for one in MODELS
-        if one.role is not None and provider_configured(one.provider)
+        if one.role is not None
+        and one.role is not ModelRole.retired
+        and provider_configured(one.provider)
     )
 
 

@@ -30,7 +30,7 @@ function sse(events) {
 
 function textStream(text) {
   return sse([
-    { type: "response.created", response: { id: "resp_text", created_at: 1_700_000_000, model: "gpt-5.6-terra" } },
+    { type: "response.created", response: { id: "resp_text", created_at: 1_700_000_000, model: "gpt-6-sol" } },
     { type: "response.output_item.added", output_index: 0, item: { type: "message", id: "msg_1" } },
     ...[...text].map((delta) => ({ type: "response.output_text.delta", delta })),
     { type: "response.output_item.done", output_index: 0, item: { type: "message" } },
@@ -41,7 +41,7 @@ function textStream(text) {
 function functionCallStream(name, args) {
   const item = { type: "function_call", id: "fc_1", call_id: "call_1", name, arguments: "" };
   return sse([
-    { type: "response.created", response: { id: "resp_call", created_at: 1_700_000_001, model: "gpt-5.6-terra" } },
+    { type: "response.created", response: { id: "resp_call", created_at: 1_700_000_001, model: "gpt-6-sol" } },
     { type: "response.output_item.added", output_index: 0, item },
     { type: "response.function_call_arguments.delta", item_id: "fc_1", output_index: 0, delta: JSON.stringify(args) },
     { type: "response.output_item.done", output_index: 0, item: { ...item, arguments: JSON.stringify(args), status: "completed" } },
@@ -145,7 +145,7 @@ test("the host's tool loop completes a two-step turn on the claidor provider", a
     for (const request of requests) {
       assert.equal(request.url, "https://api.simeonlabs.com/desktop/api/proxy/v1/responses");
       assert.equal(request.headers.get("authorization"), "Bearer claidor_da_loop");
-      assert.equal(request.body.model, "gpt-5.6-terra");
+      assert.equal(request.body.model, "gpt-6-sol");
       // The loop runs at Grok Bot's effort (high), on every step.
       assert.deepEqual(request.body.reasoning, { effort: "high" });
       // The host wraps tool schemas with the AI SDK's jsonSchema(); the wire

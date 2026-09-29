@@ -130,6 +130,160 @@ and dials the VM's TLS proxy directly (below).
 `SAND_BACKEND_URL` inside the container is `CLAIDOR_BASE_URL`
 (`https://api.simeonlabs.com`).
 
+## Sleep, size and capacity (28 September 2026)
+
+The founder: "build it exactly how grok bot built it … be careful and
+true to it." Grok Bot's pods slept when idle and woke when asked for.
+The client half of that was already in the tree and is unchanged; this
+is the server half Cursor ran, built from what the client states.
+
+**What Grok Bot's code says, and where:**
+
+- The host answers `GET /health` with `isBusy`, `busyOnlyAwaitingApproval`
+  and `lastBusyAtMs` (`host/gateway-server.ts`, `SandHost.getHealth` in
+  `host/sand-host.ts`). It is busy while a turn, a background shell, a
+  carried wake or a mid-drain revival runs. `lastBusyAtMs` moves only
+  while it is busy on something other than an approval card, so a box
+  that waits on the person's Allow card may sleep.
+- Cursor's server read the same pair (`AdminSandBoxHostStatusResponse`:
+  `is_busy`, `last_busy_at_ms`) and kept `last_active_at_ms` per pod
+  (`TeamMemberSandBoxPod`).
+- `AdminHibernateSandBox` takes `force` and answers `started` and `reason`:
+  a busy box is refused unless forced.
+- `GetSandBoxRunState` answers `SAND_BOX_RUN_STATE_HIBERNATED`. The
+  window draws it as "sleeping", and as "Waking your computer…" on the
+  cover.
+- Waking is EnsureSandBox. The app's gateway client reconnects its event
+  stream for as long as Simeon is open (`gateway-client.ts`), and every
+  reconnect goes through `BrokeredHostConnector.connect` → EnsureSandBox,
+  which starts a stopped box. The descriptor cache calls the broker again
+  after its first live connection (`gateway-descriptor-cache.ts`), so a
+  sleeping box is not dialled from a stale cache forever.
+- When the box's notify stream connects, it drains every topic
+  (`notify-bus/extension.ts:40`), so a box that has just woken picks up
+  what the server queued while it slept.
+- A full host is refused with the `SAND_BOX_BLOCKED` hint, a
+  `retry-after` and the title and detail the window shows
+  (`BrokeredHostConnector.connect`, `readBlockedInfoOrEmpty`).
+- Pods came in sizes (`flavor` on `TeamMemberSandBoxPod` and the admin
+  requests). The Mac's own `docker run` sets no limit; Docker Desktop's
+  VM is its bound.
+
+**What was built:**
+
+- `last_active_at` and `hibernated_at` on `sand_boxes` (migration
+  `sand_box_sleep_0928`).
+- `box_service.hibernate` (`AdminHibernateSandBox`'s rule): stop the
+  container and keep its volumes, credential and tokens; a busy box is
+  refused ("busy") unless forced.
+- `box_service.hibernate_idle`, the sleeper (`sand.box.hibernate_idle`,
+  every minute, `box_tasks.py`). For each box the broker left running:
+  - a box stopped or removed outside the broker is recorded as such;
+  - a box that holds work stays awake and its `last_active_at` moves;
+  - the host's `lastBusyAtMs` moves `last_active_at` forward;
+  - a box the app is attached to through the API's proxy stays awake
+    (below);
+  - anything else idle for `CLAIDOR_BOX_IDLE_HIBERNATE_AFTER` sleeps
+    (`sand.box.hibernated`). A box whose `/health` does not answer counts
+    as idle, so a broken box does not run forever.
+- **Attached.** The proxy keeps `sand:box:attached:<id>` alive in Redis
+  (3-minute expiry, refreshed every minute) while any request, stream or
+  WebSocket to the box is open. Why: with Simeon open, the app holds the
+  event stream and reconnects it, so a box put to sleep under an open app
+  would be woken at once by that reconnect. The effect is Grok Bot's in
+  practice: the box sleeps once the app is closed and nothing runs.
+- **Wake.** `notify.publish` (a routine's fire, a listener event, a
+  shared room's turn) also queues `sand.box.wake`, which starts a
+  sleeping box (`sand.box.woken`). A person's box is asked at most once
+  every 30 seconds, however many events arrive. When the host is full,
+  the wake waits (`sand.box.wake.deferred`) and is tried again every
+  minute for an hour.
+- **Capacity.** EnsureSandBox, a recreate and a wake count the other
+  boxes awake on the host before creating or starting one. At
+  `CLAIDOR_BOX_MAX_RUNNING` they refuse with the `SAND_BOX_BLOCKED` hold:
+  reason `capacity`, title "Simeon's cloud computers are all in use",
+  detail "Every cloud computer is busy right now. Simeon tries again in
+  a minute.", `retry-after: 60` (`sand.box.capacity.refused`). A box that
+  is already awake is never refused. The count is a soft limit: two
+  EnsureSandBox calls in the same instant can both pass it.
+- **Size.** Every new box is created with `Memory` = `MemorySwap` =
+  `CLAIDOR_BOX_MEMORY_LIMIT_MB` (4096) and `NanoCpus` from
+  `CLAIDOR_BOX_CPU_LIMIT` (2.0). A box created before this change keeps
+  no limit until it is recreated.
+
+**Ours, not Grok Bot's, because the client does not say:**
+
+- How long a box may idle before it sleeps: 30 minutes.
+- The size of a box: 4 GB and 2 CPUs.
+- How many boxes may be awake at once: 3.
+- Counting an attached app as activity. Grok Bot's pod proxy saw the
+  same traffic; whether it counted it is not in the client.
+- Waking on `notify.publish`.
+
+**Not done:**
+
+- The pre-sleep image update. Cursor asked the box to update before it
+  slept (`autoUpdateBoxNow`, `pre_hibernation`). Our boxes run with
+  `SAND_BOX_AUTO_UPDATE=0`, so that call would answer
+  "auto-update-disabled"; it is not made.
+- Messaging channels (Discord, Slack) run inside the box and disconnect
+  while it sleeps. A DM sent to a sleeping box is not delivered until
+  something wakes it.
+- A person who tried the cloud computer and went back to local Docker
+  still has a cloud box row. A routine's fire wakes that box too, and
+  whichever box drains first runs it.
+- The direct path (`CLAIDOR_BOX_PUBLIC_URL_TEMPLATE`) bypasses the API's
+  proxy, so an attached app is not seen there. An idle open app is put to
+  sleep and woken again by its next reconnect.
+
+**Where it runs:** the sleeper and the wake are worker jobs, so the
+worker needs the box host's settings and certificate files as well as the
+API (`docs/ops/box-host/render-env.md`, shared environment group).
+
+**Measured offline:**
+
+- `server/tests/sand/test_box_sleep.py`:
+  - an idle box sleeps, reads HIBERNATED, and EnsureSandBox wakes the
+    same container;
+  - a recent, busy, recently-busy or attached box stays awake;
+  - a box that only waits on an approval card sleeps, and so does an
+    unreachable one;
+  - hibernate refuses a busy box unless forced;
+  - wake starts a sleeping box and waits when the host is full;
+  - `publish` queues a wake;
+  - a full host refuses with the blocked hold; the person's own awake box
+    is never refused; a sleeping box frees its place;
+  - zero switches each limit off;
+  - the caps reach the box spec.
+- `test_box_hosts.py`: the caps reach the Docker Engine's create call.
+
+**Not yet run** against the Hetzner VM or on a Mac. The lines to read in
+Render's logs: `sand.box.hibernated`, `sand.box.woken`,
+`sand.box.capacity.refused`. In the window: "sleeping", then "Waking your
+computer…".
+
+## The first real run, 28 September 2026
+
+Two failures, in order, each measured and each fixed:
+
+1. **"CA cert does not include key usage extension"**, 129 times as an
+   unhandled 500. The API's Python 3.14 verifies TLS strictly; the CA the
+   first `setup-box-host.sh` made had no key-usage extension (curl accepted
+   it). The script now makes a CA that passes and replaces an old one
+   (`docs/ops/box-host/render-env.md`).
+2. **Every box stayed Created and never started, and one was left per
+   EnsureSandBox** (89 in minutes). The host bundle was uploaded to
+   `/home/box/sand-host`, which the image does not have: Docker's archive
+   PUT answers 404 "Could not find the file" for a missing target (the Mac
+   bind-mounts the file, which makes the directory; a copy does not).
+   Reproduced against a real Docker Engine (29.3) with the published
+   bundle. Now both files go in one tar extracted at `/`, which makes the
+   missing directory and leaves `/home/box`'s owner and mode untouched
+   (checked with a uid-1000, 0750 `/home/box`); a box that fails after
+   its container is made is removed, and a brand-new box's two volumes
+   with it; and a transport error with no message logs its type and the
+   request instead of nothing.
+
 ## What the founder must create
 
 1. **A VM with Docker** (amd64; the image is `linux/amd64`, 4 GB+ RAM per

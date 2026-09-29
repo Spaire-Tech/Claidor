@@ -63,6 +63,11 @@ class ModelRole(StrEnum):
     #: person never talks to it — but offered, so the app can register the
     #: subagent when the provider has a key (25 September 2026).
     video = "video"
+    #: Replaced, still served: the proxy answers a request that names it,
+    #: so an app built before the replacement keeps working until it is
+    #: rebuilt, but it is never offered and never chosen. GPT-5.6 Terra and
+    #: GPT-5.6 Luna since GPT-6 Sol and Luna (28 September 2026).
+    retired = "retired"
 
 
 class DesktopProvider(StrEnum):
@@ -329,14 +334,43 @@ MODELS: tuple[DesktopModel, ...] = (
     # it costs reasoning rather than every answer.
     #
     # $2.00 per million input tokens, output 6×.
+    # GPT-6 Sol and GPT-6 Luna, released 22 September 2026 at half the
+    # GPT-5.6 prices, take the primary and cheap roles (the founder, 28
+    # September: "lets keep chat gpt … GPT-6 Sol and Luna … at half the
+    # price"). Per million tokens: Sol $2.00 in, $0.20 cached, $10.00 out;
+    # Luna $0.10 in, $0.01 cached, $0.50 out (Requesty and VentureBeat,
+    # 22 September; openai.com/api/pricing refused this container). Output
+    # is 5x input, not the 6x of the GPT-5.6 list; cached reads a tenth.
     DesktopModel(
-        "gpt-5.6-terra",
-        "GPT-5.6 Terra",
+        "gpt-6-sol",
+        "GPT-6 Sol",
         "OpenAI's everyday model: intelligence against cost.",
         2.00 / CREDIT_USD_PER_MILLION_INPUT,
         provider=DesktopProvider.openai,
         context_window=1_050_000,
+        output_weight=5.0,
         role=ModelRole.primary,
+    ),
+    DesktopModel(
+        "gpt-6-luna",
+        "GPT-6 Luna",
+        "OpenAI's quickest and cheapest model, for simple steps.",
+        0.10 / CREDIT_USD_PER_MILLION_INPUT,
+        provider=DesktopProvider.openai,
+        context_window=1_050_000,
+        output_weight=5.0,
+        role=ModelRole.cheap,
+    ),
+    # $2.00 per million input tokens, output 6x. Retired: served to an app
+    # built before GPT-6, never offered.
+    DesktopModel(
+        "gpt-5.6-terra",
+        "GPT-5.6 Terra",
+        "OpenAI's previous everyday model.",
+        2.00 / CREDIT_USD_PER_MILLION_INPUT,
+        provider=DesktopProvider.openai,
+        context_window=1_050_000,
+        role=ModelRole.retired,
     ),
     # $10.00 per million input tokens, output 5x.
     #
@@ -359,15 +393,17 @@ MODELS: tuple[DesktopModel, ...] = (
         context_window=1_050_000,
         output_weight=5.0,
     ),
-    # $0.20 per million input tokens, output 6×.
+    # $0.20 per million input tokens, output 6x. Retired like Terra; web
+    # search still runs on it (`WEB_SEARCH_MODEL_ID`), since whether GPT-6
+    # Luna takes the web_search tool is not established.
     DesktopModel(
         "gpt-5.6-luna",
         "GPT-5.6 Luna",
-        "OpenAI's quickest and cheapest model, for simple steps.",
+        "OpenAI's previous quick model.",
         0.20 / CREDIT_USD_PER_MILLION_INPUT,
         provider=DesktopProvider.openai,
         context_window=1_050_000,
-        role=ModelRole.cheap,
+        role=ModelRole.retired,
     ),
     # The video role, 25 September 2026: the only provider that takes a
     # video as input, reached on its own wire

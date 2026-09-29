@@ -33,7 +33,7 @@ async function load() {
 
 function responsesStream(text) {
   const events = [
-    { type: "response.created", response: { id: "resp_1", created_at: 1_700_000_000, model: "gpt-5.6-terra" } },
+    { type: "response.created", response: { id: "resp_1", created_at: 1_700_000_000, model: "gpt-6-sol" } },
     { type: "response.output_item.added", output_index: 0, item: { type: "message", id: "msg_1" } },
     ...[...text].map((delta) => ({ type: "response.output_text.delta", delta })),
     { type: "response.output_item.done", output_index: 0, item: { type: "message" } },

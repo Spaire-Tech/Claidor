@@ -44,7 +44,7 @@ from polar.postgres import AsyncSession, get_db_session
 from polar.routing import APIRouter
 
 from .box_hosts import BOX_PORTS
-from .box_service import broker
+from .box_service import ATTACHED_REFRESH_SECONDS, broker, mark_attached
 
 log = structlog.get_logger()
 
@@ -110,6 +110,20 @@ def upstream_target(box: SandBox, port: int) -> tuple[str, int] | None:
     return box.host_address, host_port
 
 
+def _redis_of(connection: Request | WebSocket) -> Any:
+    return getattr(connection.state, "redis", None)
+
+
+async def keep_attached(redis: Any, box_id: UUID) -> None:
+    """While a request or stream to the box is open, the box counts as in
+    use and the sleeper leaves it (`box_service.attached_key`)."""
+    if redis is None:
+        return
+    while True:
+        await mark_attached(redis, box_id)
+        await asyncio.sleep(ATTACHED_REFRESH_SECONDS)
+
+
 def forwardable(headers: Any) -> dict[str, str]:
     return {k: v for k, v in headers.items() if k.lower() not in HOP_BY_HOP}
 
@@ -137,7 +151,10 @@ async def _proxy_http(
     )
     if isinstance(resolved, JSONResponse):
         return resolved
-    _, host, host_port = resolved
+    box, host, host_port = resolved
+    redis = _redis_of(request)
+    if redis is not None:
+        await mark_attached(redis, box.id)
     query = request.url.query
     url = f"http://{host}:{host_port}/{path}" + (f"?{query}" if query else "")
     client = _client_factory()
@@ -160,10 +177,12 @@ async def _proxy_http(
         )
 
     async def body() -> AsyncIterator[bytes]:
+        attached = asyncio.create_task(keep_attached(redis, box.id))
         try:
             async for chunk in response.aiter_raw():
                 yield chunk
         finally:
+            attached.cancel()
             await response.aclose()
 
     return StreamingResponse(
@@ -259,7 +278,7 @@ async def _proxy_ws(
             else "port not proxied",
         )
         return
-    _, host, host_port = resolved
+    box, host, host_port = resolved
     query = websocket.url.query
     url = f"ws://{host}:{host_port}/{path}" + (f"?{query}" if query else "")
     requested: list[Subprotocol] = [
@@ -292,6 +311,7 @@ async def _proxy_ws(
         )
         return
     await websocket.accept(subprotocol=upstream.subprotocol)
+    attached = asyncio.create_task(keep_attached(_redis_of(websocket), box.id))
     try:
         await pump(websocket, upstream)
     except Exception as error:
@@ -299,6 +319,7 @@ async def _proxy_ws(
             "sand.box.proxy.ws_failed", box=str(box_id), port=port, error=str(error)
         )
     finally:
+        attached.cancel()
         await upstream.close()
         try:
             await websocket.close()

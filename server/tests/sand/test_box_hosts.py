@@ -19,13 +19,16 @@ import httpx
 import pytest
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
+from pytest_mock import MockerFixture
 
+from polar.config import settings
 from polar.sand.box_hosts import (
     BoxHostError,
     BoxSpec,
     DockerBoxHost,
     HostBundle,
     box_image_reference,
+    docker_client_from_settings,
 )
 
 
@@ -35,6 +38,7 @@ class FakeDaemon:
         self.images: set[str] = set()
         self.containers: dict[str, dict[str, Any]] = {}
         self.archives: list[tuple[str, str, bytes]] = []
+        self.existing_dirs = {"/", "/home/box/box-exec-daemon"}
         self.volumes_removed: list[str] = []
         self.pulls: list[dict[str, str]] = []
         self.serial = 0
@@ -84,6 +88,14 @@ class FakeDaemon:
         @app.put("/containers/{container_id}/archive")
         async def archive(container_id: str, request: Request) -> Response:
             path = request.query_params["path"]
+            # Docker refuses a target directory the container does not
+            # have (404 "Could not find the file"); the box image has no
+            # /home/box/sand-host.
+            if path not in self.existing_dirs:
+                return JSONResponse(
+                    {"message": f"Could not find the file {path} in container"},
+                    status_code=404,
+                )
             data = await request.body()
             with tarfile.open(fileobj=io.BytesIO(data), mode="r:") as tar:
                 for member in tar.getmembers():
@@ -91,7 +103,7 @@ class FakeDaemon:
                     self.archives.append(
                         (
                             container_id,
-                            f"{path}/{member.name}",
+                            f"{path.rstrip('/')}/{member.name}",
                             extracted.read() if extracted else b"",
                         )
                     )
@@ -265,6 +277,27 @@ async def test_without_a_bundle_the_image_is_trusted_to_carry_the_host() -> None
     await client.aclose()
 
 
+@pytest.mark.asyncio
+async def test_the_memory_and_cpu_caps_reach_the_engine() -> None:
+    daemon = FakeDaemon()
+    client = httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=daemon.app), base_url="http://docker"
+    )
+    host = DockerBoxHost(client, host_address="box.example", bundle=None)
+    capped = await host.create(_spec(memory_mb=4096, cpus=2.0))
+    config = daemon.containers[capped.provider_box_id]["HostConfig"]
+    assert config["Memory"] == 4096 * 1024 * 1024
+    assert config["MemorySwap"] == 4096 * 1024 * 1024
+    assert config["NanoCpus"] == 2_000_000_000
+    # Nothing else of the Mac's line moves.
+    assert config["RestartPolicy"] == {"Name": "unless-stopped"}
+    uncapped = await host.create(_spec(name="simeon-box-def"))
+    config = daemon.containers[uncapped.provider_box_id]["HostConfig"]
+    assert "Memory" not in config
+    assert "NanoCpus" not in config
+    await client.aclose()
+
+
 def test_a_bundle_missing_a_file_is_refused_with_the_build_command() -> None:
     buffer = io.BytesIO()
     with tarfile.open(fileobj=buffer, mode="w") as tar:
@@ -273,3 +306,30 @@ def test_a_bundle_missing_a_file_is_refused_with_the_build_command() -> None:
         tar.addfile(info, io.BytesIO(b"x"))
     with pytest.raises(BoxHostError, match="box-exec-daemon/main.cjs"):
         HostBundle.from_tar(buffer.getvalue())
+
+
+@pytest.mark.asyncio
+async def test_an_unreachable_daemon_is_one_sentence_not_a_500(
+    mocker: MockerFixture,
+) -> None:
+    """The first real run failed 129 times as an unhandled 500 on a TLS
+    refusal; the reason now reaches the app and the log as a sentence."""
+    mocker.patch.object(settings, "BOX_DOCKER_HOST", "tcp://box.example:2376")
+    mocker.patch.object(settings, "BOX_DOCKER_TLS_CERT", "")
+    client = docker_client_from_settings()
+
+    async def refuse(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError(
+            "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: "
+            "CA cert does not include key usage extension",
+            request=request,
+        )
+
+    inner = client._transport
+    inner.inner = httpx.MockTransport(refuse)  # type: ignore[attr-defined]
+    host = DockerBoxHost(client, host_address="box.example", bundle=None)
+    with pytest.raises(BoxHostError) as raised:
+        await host.run_state("abc")
+    assert "tcp://box.example:2376 could not be reached" in str(raised.value)
+    assert "key usage extension" in str(raised.value)
+    await client.aclose()

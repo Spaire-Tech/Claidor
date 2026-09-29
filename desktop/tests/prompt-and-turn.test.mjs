@@ -37,7 +37,7 @@ test("the executor's deadline covers the headers only, the cheap swap is logged,
   assert.match(providers, /const headersDeadline = new AbortController\(\);/);
   assert.match(providers, /clearTimeout\(timer\);/);
   assert.doesNotMatch(providers, /AbortSignal\.timeout\(CLAIDOR_FETCH_TIMEOUT_MS\)/, "no whole-request abort");
-  assert.match(providers, /withCheapRateLimitFallback\(start\(requested\), \(\) => start\(cheap\), \(error\) => modelCallLog\(`\$\{HOST_LOG_PREFIX\} model-fallback from=\$\{requested\} to=\$\{cheap\}/);
+  assert.match(providers, /withCheapRateLimitFallback\(startOrLegacy\(requested\), \(\) => startOrLegacy\(cheap\), \(error\) => modelCallLog\(`\$\{HOST_LOG_PREFIX\} model-fallback from=\$\{requested\} to=\$\{cheap\}/);
   assert.match(providers, /if \(onRequestId != null\) void race\(result\.response\)\.then/);
   assert.match(providers, /model-error-system \$\{clipForHostLog\(redactSandAutoReviewInlineSecrets\(systemPromptText\(messages\)\), 12000\)\}/);
   assert.match(await src("host/extensions/inference/inference-service.ts"), /createProviderPromptSession\(provider, sessionOptions, onRequestId\)/);

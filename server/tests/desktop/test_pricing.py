@@ -90,8 +90,11 @@ class TestCatalogue:
             if model.role is not None:
                 by_role.setdefault(model.role, []).append(model.model_id)
 
-        assert by_role[ModelRole.primary] == ["gpt-5.6-terra"]
-        assert by_role[ModelRole.cheap] == ["gpt-5.6-luna"]
+        # 28 September 2026: GPT-6 Sol and Luna replace GPT-5.6 Terra and
+        # Luna, which stay served to older apps under `retired`.
+        assert by_role[ModelRole.primary] == ["gpt-6-sol"]
+        assert by_role[ModelRole.cheap] == ["gpt-6-luna"]
+        assert by_role[ModelRole.retired] == ["gpt-5.6-terra", "gpt-5.6-luna"]
         assert by_role[ModelRole.fallback] == ["claude-sonnet-5"]
         assert by_role[ModelRole.video] == ["gemini-2.5-flash"]
 
@@ -119,8 +122,8 @@ class TestCatalogue:
         assert astra.cost_multiplier > 0
 
     def test_available_carries_the_role(self) -> None:
-        terra = next(model for model in MODELS if model.model_id == "gpt-5.6-terra")
-        assert terra.available()["role"] == "primary"
+        sol = next(model for model in MODELS if model.model_id == "gpt-6-sol")
+        assert sol.available()["role"] == "primary"
 
     def test_the_gpt_multipliers_are_the_published_prices_in_credit_units(
         self,
@@ -129,6 +132,8 @@ class TestCatalogue:
         # in dollars per million input tokens.
         published = {
             "gpt-6-astra": 10.00,
+            "gpt-6-sol": 2.00,
+            "gpt-6-luna": 0.10,
             "gpt-5.6-terra": 2.00,
             "gpt-5.6-luna": 0.20,
         }
@@ -371,3 +376,10 @@ class TestTheMenuAnOpenAiCompatibleClientReads:
             "object": "list",
             "data": [],
         }
+
+
+def test_gpt_6_output_is_five_times_input() -> None:
+    # $2 in / $10 out for Sol, $0.10 / $0.50 for Luna (22 September 2026).
+    for model_id in ("gpt-6-sol", "gpt-6-luna"):
+        model = next(one for one in MODELS if one.model_id == model_id)
+        assert model.output_weight == 5.0
