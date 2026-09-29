@@ -16,7 +16,9 @@ tunnel is derived from the gateway URL (`egress-tunnel/box-connection.ts`).
 from __future__ import annotations
 
 import asyncio
+import json
 import secrets
+import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -48,7 +50,8 @@ from .box_hosts import (
     BoxSpec,
     ProvisionedBox,
     box_image_reference,
-    resolve_box_host,
+    find_box_host,
+    resolve_box_hosts,
 )
 from .box_repository import SandBoxRepository
 
@@ -108,50 +111,74 @@ class RecreateOutcome:
 # handles.
 
 
+#: A box's migration events: a Redis list, so the worker that records a
+#: recreate and the one serving the app's stream need not be the same
+#: (several API workers, 29 September 2026). Kept an hour after the last event.
+MIGRATION_TTL_S = 3600
+
+
+def _migration_key(box_id: UUID) -> str:
+    return f"sand:box:migration:{box_id}"
+
+
 class MigrationLog:
     def __init__(self) -> None:
-        self.events: dict[UUID, list[dict[str, Any]]] = {}
-        self.changed: dict[UUID, asyncio.Event] = {}
         #: How long a stream waits for another event before ending.
         self.idle = 25.0
+        #: How often a waiting stream looks for one.
+        self.poll = 0.5
 
-    def record(
-        self, box_id: UUID, operation_id: str, phase: int, detail: str = ""
+    async def record(
+        self,
+        redis: Redis,
+        box_id: UUID,
+        operation_id: str,
+        phase: int,
+        detail: str = "",
     ) -> None:
-        events = self.events.setdefault(box_id, [])
-        events.append(
-            {
-                "phase": phase,
-                "detail": detail,
-                "atMs": str(int(utc_now().timestamp() * 1000)),
-                "offsetKey": str(len(events) + 1),
-                "operationId": operation_id,
-            }
+        key = _migration_key(box_id)
+        await redis.rpush(
+            key,
+            json.dumps(
+                {
+                    "phase": phase,
+                    "detail": detail,
+                    "atMs": str(int(utc_now().timestamp() * 1000)),
+                    "operationId": operation_id,
+                }
+            ),
         )
-        event = self.changed.setdefault(box_id, asyncio.Event())
-        event.set()
-        event.clear()
+        await redis.expire(key, MIGRATION_TTL_S)
 
     async def watch(
-        self, box_id: UUID, from_offset_key: str, include_finished: bool
+        self,
+        redis: Redis,
+        box_id: UUID,
+        from_offset_key: str,
+        include_finished: bool,
     ) -> AsyncIterator[dict[str, Any]]:
+        """Each event after `from_offset_key` (its 1-based place in the
+        list), then each new one, until none comes for `idle` seconds."""
+        key = _migration_key(box_id)
         after = int(from_offset_key) if from_offset_key.isdigit() else 0
+        quiet_since = time.monotonic()
         while True:
-            events = self.events.get(box_id, [])
-            pending = [e for e in events if int(e["offsetKey"]) > after]
-            for event in pending:
-                after = int(event["offsetKey"])
+            raw = await redis.lrange(key, after, -1)
+            if raw:
+                quiet_since = time.monotonic()
+            for item in raw:
+                after += 1
+                event = {**json.loads(item), "offsetKey": str(after)}
                 if not include_finished and event["phase"] in (
                     PHASE_DONE,
                     PHASE_FAILED,
                 ):
                     continue
                 yield event
-            waiter = self.changed.setdefault(box_id, asyncio.Event())
-            try:
-                await asyncio.wait_for(waiter.wait(), timeout=self.idle)
-            except TimeoutError:
+            waited = time.monotonic() - quiet_since
+            if waited >= self.idle:
                 return
+            await asyncio.sleep(min(self.poll, self.idle - waited))
 
 
 migrations = MigrationLog()
@@ -430,11 +457,15 @@ class BoxBrokerService:
         with its URLs stamped. Raises `BoxBrokerRefused` (a Connect code
         and a sentence) and `BoxHostError`."""
         parent = await self._parent_of(db, caller)
-        host = await resolve_box_host()
         repository = SandBoxRepository.from_session(db)
         box = await repository.get_by_user(parent.user_id)
+        # A box stays on the server it was made on: its volumes live there.
+        host = await find_box_host(box.provider) if box is not None else None
+        if host is None:
+            # Raises the app's one sentence when no server is configured.
+            await resolve_box_hosts()
         created = False
-        if box is not None and box.provider == host.name:
+        if box is not None and host is not None:
             state = await host.run_state(box.provider_box_id)
             credential_live = await self._credential_is_live(db, box)
             # The Mac's rules (local-docker-host-connector.ts): a container
@@ -454,6 +485,19 @@ class BoxBrokerService:
                     stale_image = current.image != box_image_reference()
                 if expected_host is not None:
                     stale_host = current is None or current.host_sha256 != expected_host
+            if (stale_host or stale_image) and state == "running":
+                # Grok Bot's supervisor swaps the host only when the box is
+                # idle (the upgrade command waits while it is busy): a box
+                # working, or waiting on the person's approval, keeps its
+                # program until the app connects to it idle.
+                if (await self.health_of(box)).is_busy:
+                    log.info(
+                        "sand.box.update_deferred",
+                        box=str(box.id),
+                        stale_host=stale_host,
+                        stale_image=stale_image,
+                    )
+                    stale_host = stale_image = False
             if state is None or not credential_live or stale_host or stale_image:
                 # Absent on the host, its credential died with a sign-out, or
                 # the wrong host program or image: a fresh container on the
@@ -486,19 +530,23 @@ class BoxBrokerService:
                 box.state = "running"
         else:
             if box is not None:
-                # A row from another provider: leave its container to that
-                # host; the person gets a box on the configured one.
+                # A row from a server that is no longer configured: leave
+                # its container to that server; the person gets a new box.
+                log.warning(
+                    "sand.box.server_gone", box=str(box.id), provider=box.provider
+                )
                 await repository.soft_delete(box)
             box = SandBox(
                 id=generate_uuid(),
                 user_id=parent.user_id,
-                provider=host.name,
+                provider="",
                 provider_box_id="",
                 host_address="",
                 gateway_token="",
                 network_token="",
             )
-            await self.check_capacity(repository, host, box)
+            host = await self.place(repository, box)
+            box.provider = host.name
             try:
                 await self._create(db, host, parent, box)
             except BoxHostError:
@@ -539,6 +587,7 @@ class BoxBrokerService:
         db: AsyncSession,
         caller: DesktopSession,
         *,
+        redis: Redis,
         preserve_data: bool,
         force: bool,
     ) -> RecreateOutcome:
@@ -554,17 +603,18 @@ class BoxBrokerService:
             box = await repository.get_by_user(caller.user_id)
         parent = await self._parent_of(db, caller)
         try:
-            host = await resolve_box_host()
+            host = await find_box_host(box.provider) if box is not None else None
         except BoxHostError as error:
             return RecreateOutcome(started=False, reason=str(error))
-        if box is None or box.provider != host.name:
+        if box is None or host is None:
             return RecreateOutcome(
                 started=False,
                 reason="There is no cloud computer to recreate yet; connect once first.",
             )
         operation_id = uuid4().hex
         workspace, data = self.volumes(box.id)
-        migrations.record(
+        await migrations.record(
+            redis,
             box.id,
             operation_id,
             PHASE_CREATING,
@@ -577,8 +627,8 @@ class BoxBrokerService:
                 await self.check_capacity(repository, host, box)
             if state is not None:
                 if not preserve_data:
-                    migrations.record(
-                        box.id, operation_id, PHASE_WIPING, "Removing the files"
+                    await migrations.record(
+                        redis, box.id, operation_id, PHASE_WIPING, "Removing the files"
                     )
                 await host.remove(
                     box.provider_box_id,
@@ -595,10 +645,14 @@ class BoxBrokerService:
             box.hibernated_at = None
             await repository.update(box, flush=True)
         except BoxHostError as error:
-            migrations.record(box.id, operation_id, PHASE_FAILED, str(error))
+            await migrations.record(
+                redis, box.id, operation_id, PHASE_FAILED, str(error)
+            )
             log.warning("sand.box.recreate.failed", box=str(box.id), error=str(error))
             return RecreateOutcome(started=False, reason=str(error))
-        migrations.record(box.id, operation_id, PHASE_DONE, "The computer is back")
+        await migrations.record(
+            redis, box.id, operation_id, PHASE_DONE, "The computer is back"
+        )
         log.info(
             "sand.box.recreate",
             box=str(box.id),
@@ -625,10 +679,10 @@ class BoxBrokerService:
             if box is None:
                 return RUN_STATE_ABSENT, False
         try:
-            host = await resolve_box_host()
+            host = await find_box_host(box.provider)
         except BoxHostError:
             return RUN_STATE_ABSENT, False
-        if box.provider != host.name:
+        if host is None:
             return RUN_STATE_ABSENT, False
         try:
             state = await host.run_state(box.provider_box_id)
@@ -654,11 +708,11 @@ class BoxBrokerService:
     async def check_capacity(
         self, repository: SandBoxRepository, host: BoxHost, box: SandBox
     ) -> None:
-        """Before a box is created or started: refuse with Grok Bot's
-        blocked hold when `CLAIDOR_BOX_MAX_RUNNING` others are awake on
-        this host. The app holds for `retry-after` and asks again
+        """Before a box is started on its server: refuse with Grok Bot's
+        blocked hold when the server's limit of others are awake on it. The
+        app holds for `retry-after` and asks again
         (`BrokeredHostConnector.connect`); the sleeper frees room."""
-        limit = settings.BOX_MAX_RUNNING
+        limit = host.max_running
         if limit <= 0:
             return
         awake = await repository.count_awake(host.name, excluding=box.id)
@@ -668,15 +722,45 @@ class BoxBrokerService:
             "sand.box.capacity.refused",
             box=str(box.id),
             user=str(box.user_id),
+            server=host.name,
             awake=awake,
             limit=limit,
         )
-        raise BoxBlocked(
+        raise self._blocked()
+
+    @staticmethod
+    def _blocked() -> BoxBlocked:
+        return BoxBlocked(
             CAPACITY_BLOCK_REASON,
             title=CAPACITY_BLOCK_TITLE,
             detail=CAPACITY_BLOCK_DETAIL,
             retry_after_s=CAPACITY_RETRY_AFTER_S,
         )
+
+    async def place(self, repository: SandBoxRepository, box: SandBox) -> BoxHost:
+        """The server a new box is made on: of the accepting servers with
+        room, the one with the largest share of its limit free (a server
+        with no limit counts as all free). None with room: Grok Bot's
+        blocked hold, the same one a full single server gave."""
+        best: BoxHost | None = None
+        best_free = -1.0
+        for host in await resolve_box_hosts():
+            if not host.accepting:
+                continue
+            limit = host.max_running
+            awake = await repository.count_awake(host.name, excluding=box.id)
+            if limit > 0 and awake >= limit:
+                continue
+            free = 1.0 if limit <= 0 else (limit - awake) / limit
+            if free > best_free:
+                best, best_free = host, free
+        if best is None:
+            log.warning(
+                "sand.box.capacity.refused", box=str(box.id), user=str(box.user_id)
+            )
+            raise self._blocked()
+        log.info("sand.box.placed", box=str(box.id), server=best.name)
+        return best
 
     async def health_of(self, box: SandBox) -> BoxHealth:
         url = self.internal_url(box, GATEWAY_PORT)
@@ -718,13 +802,17 @@ class BoxBrokerService:
         if after.total_seconds() <= 0:
             return []
         try:
-            host = await resolve_box_host()
+            hosts = await resolve_box_hosts()
         except BoxHostError:
             return []
         repository = SandBoxRepository.from_session(db)
         now = utc_now()
         slept: list[UUID] = []
-        for box in await repository.list_awake(host.name):
+        for host, box in [
+            (host, box)
+            for host in hosts
+            for box in await repository.list_awake(host.name)
+        ]:
             try:
                 state = await host.run_state(box.provider_box_id)
             except BoxHostError as error:
@@ -772,10 +860,10 @@ class BoxBrokerService:
         if box is None:
             return "no-box"
         try:
-            host = await resolve_box_host()
+            host = await find_box_host(box.provider)
         except BoxHostError:
             return "no-box"
-        if box.provider != host.name:
+        if host is None:
             return "no-box"
         state = await host.run_state(box.provider_box_id)
         if state is None:

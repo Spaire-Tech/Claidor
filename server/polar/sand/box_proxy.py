@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import AbstractAsyncContextManager
 from typing import Any
 from uuid import UUID
 
@@ -34,13 +35,14 @@ import structlog
 from fastapi import Depends, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from starlette.background import BackgroundTask
+from starlette.requests import HTTPConnection
 from websockets.asyncio.client import ClientConnection, connect
 from websockets.exceptions import ConnectionClosed
 from websockets.typing import Subprotocol
 
 from polar.models import SandBox
 from polar.openapi import APITag
-from polar.postgres import AsyncSession, get_db_session
+from polar.postgres import AsyncSession
 from polar.routing import APIRouter
 
 from .box_hosts import BOX_PORTS
@@ -70,6 +72,25 @@ HOP_BY_HOP = frozenset(
 )
 
 BoxLookup = Callable[[AsyncSession, UUID, str], Awaitable[SandBox | None]]
+
+#: Opens a database session for the box lookup alone.
+LookupSessions = Callable[[], AbstractAsyncContextManager[AsyncSession]]
+
+
+def lookup_sessions(connection: HTTPConnection) -> LookupSessions:
+    """The proxy's database sessions, one per lookup and closed before the
+    response streams. The request's own session lives until its response has
+    finished (`AsyncSessionMiddleware`), and the app keeps several requests
+    open through this proxy for minutes: the event stream, the local-exec and
+    webauthn long-polls, one tail per open chat, the screen's websocket. When
+    each held a connection, the pool (5 + 10) ran dry and every other request
+    waited 30 s for one ("QueuePool limit of size 5 overflow 10 reached",
+    Render's log, 29 September 2026): a create the app gave up on reached the
+    box later, so agents appeared that the app never started."""
+    sessionmaker: LookupSessions = connection.state.async_sessionmaker
+    return sessionmaker
+
+
 _lookup: BoxLookup = broker.box_for_network_token
 
 
@@ -129,9 +150,10 @@ def forwardable(headers: Any) -> dict[str, str]:
 
 
 async def _resolve(
-    db: AsyncSession, box_id: UUID, port: int, token: str
+    sessions: LookupSessions, box_id: UUID, port: int, token: str
 ) -> tuple[SandBox, str, int] | JSONResponse:
-    box = await _lookup(db, box_id, token)
+    async with sessions() as db:
+        box = await _lookup(db, box_id, token)
     if box is None:
         # Never the token itself: only whether one came.
         log.warning(
@@ -151,10 +173,13 @@ async def _resolve(
 
 
 async def _proxy_http(
-    request: Request, box_id: UUID, port: int, path: str, db: AsyncSession
+    request: Request, box_id: UUID, port: int, path: str, sessions: LookupSessions
 ) -> Any:
     resolved = await _resolve(
-        db, box_id, port, read_network_token(request.headers, request.query_params)
+        sessions,
+        box_id,
+        port,
+        read_network_token(request.headers, request.query_params),
     )
     if isinstance(resolved, JSONResponse):
         return resolved
@@ -232,9 +257,9 @@ async def proxy_root(
     request: Request,
     box_id: UUID,
     port: int,
-    db: AsyncSession = Depends(get_db_session),
+    sessions: LookupSessions = Depends(lookup_sessions),
 ) -> Any:
-    return await _proxy_http(request, box_id, port, "", db)
+    return await _proxy_http(request, box_id, port, "", sessions)
 
 
 @router.api_route(
@@ -245,9 +270,9 @@ async def proxy(
     box_id: UUID,
     port: int,
     path: str,
-    db: AsyncSession = Depends(get_db_session),
+    sessions: LookupSessions = Depends(lookup_sessions),
 ) -> Any:
-    return await _proxy_http(request, box_id, port, path, db)
+    return await _proxy_http(request, box_id, port, path, sessions)
 
 
 # --- WebSocket ---------------------------------------------------------------------
@@ -294,10 +319,13 @@ async def pump(client: WebSocket, upstream: ClientConnection) -> None:
 
 
 async def _proxy_ws(
-    websocket: WebSocket, box_id: UUID, port: int, path: str, db: AsyncSession
+    websocket: WebSocket, box_id: UUID, port: int, path: str, sessions: LookupSessions
 ) -> None:
     resolved = await _resolve(
-        db, box_id, port, read_network_token(websocket.headers, websocket.query_params)
+        sessions,
+        box_id,
+        port,
+        read_network_token(websocket.headers, websocket.query_params),
     )
     if isinstance(resolved, JSONResponse):
         await websocket.close(
@@ -361,9 +389,9 @@ async def proxy_ws_root(
     websocket: WebSocket,
     box_id: UUID,
     port: int,
-    db: AsyncSession = Depends(get_db_session),
+    sessions: LookupSessions = Depends(lookup_sessions),
 ) -> None:
-    await _proxy_ws(websocket, box_id, port, "", db)
+    await _proxy_ws(websocket, box_id, port, "", sessions)
 
 
 @router.websocket("/sand-box/{box_id}/p/{port}/{path:path}")
@@ -372,9 +400,14 @@ async def proxy_ws(
     box_id: UUID,
     port: int,
     path: str,
-    db: AsyncSession = Depends(get_db_session),
+    sessions: LookupSessions = Depends(lookup_sessions),
 ) -> None:
-    await _proxy_ws(websocket, box_id, port, path, db)
+    await _proxy_ws(websocket, box_id, port, path, sessions)
 
 
-__all__ = ["router", "set_client_factory_for_tests", "set_lookup_for_tests"]
+__all__ = [
+    "lookup_sessions",
+    "router",
+    "set_client_factory_for_tests",
+    "set_lookup_for_tests",
+]

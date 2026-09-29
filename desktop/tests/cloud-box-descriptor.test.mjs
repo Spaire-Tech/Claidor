@@ -91,29 +91,18 @@ test("the brokered connector builds the descriptor from the broker's answer and 
   }
 });
 
-test("setBoxRuntime probes the cloud computer before stopping the local box, and falls back with one sentence", async () => {
+test("setBoxRuntime switches nothing: the computer is the cloud's, as in Grok Bot", async () => {
   const { module, dispose } = await load("source/electron-main/main-edge.ts", "main-edge");
   try {
-    const { createMainEdgeHandlers, remoteBoxFailureSentence } = module;
-    const state = { boxRuntime: "local-docker" };
+    const { createMainEdgeHandlers } = module;
     const log = [];
-    const settingsStore = { settingsPath: path.join(os.tmpdir(), "no-such-settings.json"), getBoxRuntime: () => state.boxRuntime, setBoxRuntime: (mode) => { state.boxRuntime = mode; log.push(`set:${mode}`); } };
-    const unavailable = Object.assign(new Error("[unavailable] Simeon's cloud computer needs a host; set CLAIDOR_BOX_HOST_PROVIDER"), { rawMessage: "Simeon's cloud computer needs a host; set CLAIDOR_BOX_HOST_PROVIDER" });
-    const boxRecovery = { probeRemoteBox: async () => { log.push("probe"); throw unavailable; }, restartCoordinator: () => log.push("restart") };
-    const handlers = createMainEdgeHandlers({ settingsStore, boxRecovery, readLiveUpdateService: () => null, readThemeController: () => null, readEgressTunnelController: () => null, agentPrefsStore: {}, boxToggleStore: {}, onboardingSeen: {}, shell: {}, windowChrome: {}, avatarImages: {}, attachments: {}, cursorAccount: {}, experiments: {}, syncHostSettingsToBox: async () => null, readHostSettingsFromBox: async () => ({}), recordLocalToolApproval: async () => {}, clearLocalToolApprovals: async () => {}, getComputerUseModelOverride: () => null, fetchAvailableModels: () => [], emitEgressTunnelChanged: () => {}, emitWebauthnProxyChanged: () => {}, ensureTranscriptionManager: async () => ({}), platform: "darwin" });
-    await assert.rejects(handlers.setBoxRuntime({ mode: "remote" }), (error) => error.message === "Simeon's cloud computer needs a host; set CLAIDOR_BOX_HOST_PROVIDER");
-    // Set to remote for the probe, put back on refusal, the local box never stopped, the coordinator not restarted.
-    assert.deepEqual(log, ["set:remote", "probe", "set:local-docker"]);
-    assert.equal(state.boxRuntime, "local-docker");
-    assert.equal(remoteBoxFailureSentence(new Error("plain")), "plain");
-    // With SAND_CONNECT_SERVED=0 the old refusal stands and nothing is probed.
-    process.env.SAND_CONNECT_SERVED = "0";
-    try {
-      await assert.rejects(handlers.setBoxRuntime({ mode: "remote" }), /switched off in this build/);
-    } finally {
-      delete process.env.SAND_CONNECT_SERVED;
-    }
-    assert.deepEqual(log, ["set:remote", "probe", "set:local-docker"]);
+    const settingsStore = { settingsPath: path.join(os.tmpdir(), "no-such-settings.json"), getBoxRuntime: () => "remote", setBoxRuntime: (mode) => log.push(`set:${mode}`) };
+    const boxRecovery = { probeRemoteBox: async () => log.push("probe"), restartCoordinator: () => log.push("restart") };
+    const handlers = createMainEdgeHandlers({ settingsStore, boxRecovery, readLiveUpdateService: () => null, readThemeController: () => null, readEgressTunnelController: () => null, agentPrefsStore: {}, boxToggleStore: {}, onboardingSeen: {} });
+    assert.deepEqual(await handlers.getBoxRuntime(), { mode: "remote", status: null });
+    assert.deepEqual(await handlers.setBoxRuntime({ mode: "remote" }), { mode: "remote", status: null });
+    await assert.rejects(handlers.setBoxRuntime({ mode: "local-docker" }), /runs on its cloud computer/);
+    assert.deepEqual(log, []);
   } finally {
     await dispose();
   }
@@ -134,15 +123,7 @@ test("the box recovery exposes the probe on the connector's connect", async () =
   }
 });
 
-test("the settings switch is enabled both ways and no longer says coming soon", async () => {
+test("Settings has no computer switch: the Docker panel is gone from the window", async () => {
   const patch = await readFile(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs"), "utf8");
-  const start = patch.indexOf("function RBoxRuntime()");
-  const body = patch.slice(start, patch.indexOf("function RRouterPanel()", start));
-  assert.ok(start >= 0);
-  assert.doesNotMatch(body, /coming soon/i);
-  assert.match(body, /disabled:s\.busy,/);
-  assert.match(body, /Switch off to use Simeon's cloud computer/);
-  assert.match(body, /run on Simeon's cloud computer/);
-  // The served set still lists the broker, so the edge lets a person pick "remote".
-  assert.match(await src("shared/cloud-agents-availability.ts"), /"aiserver\.v1\.GrokBotService",/);
+  assert.doesNotMatch(patch, /RBoxRuntime|settings-local-docker-vm|title:"Computer"/);
 });

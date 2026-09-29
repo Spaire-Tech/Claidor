@@ -12,10 +12,11 @@ migration watcher (`box-migration-watcher.ts`) and the local-exec daemon
 from __future__ import annotations
 
 import asyncio
-import dataclasses
 import base64
+import dataclasses
 from collections.abc import AsyncIterator
-from typing import Any
+from contextlib import asynccontextmanager, nullcontext
+from typing import Any, cast
 from uuid import UUID
 
 import httpx
@@ -29,7 +30,7 @@ from websockets.asyncio.server import serve
 
 from polar.config import settings
 from polar.models import SandBox, User
-from polar.postgres import AsyncSession, get_db_session
+from polar.postgres import AsyncSession
 from polar.sand import box_hosts, box_proxy, box_service
 from polar.sand.box_hosts import (
     BOX_HOST_UNAVAILABLE_SENTENCE,
@@ -59,9 +60,10 @@ class FakeBoxHost:
     """A host that keeps its boxes in a dict: what `DockerBoxHost` does
     against a daemon, without one."""
 
-    name = "docker"
-
-    def __init__(self) -> None:
+    def __init__(self, name: str = "docker", max_running: int | None = None) -> None:
+        self.name = name
+        self._max_running = max_running
+        self.accepting = True
         self.boxes: dict[str, dict[str, Any]] = {}
         self.created: list[BoxSpec] = []
         self.removed: list[tuple[str, list[str]]] = []
@@ -70,6 +72,13 @@ class FakeBoxHost:
         # The bundle's fingerprint, as `DockerBoxHost` reports it; None is
         # a host with no bundle, which never replaces for it.
         self.expected_host_sha256: str | None = None
+
+    @property
+    def max_running(self) -> int:
+        # The setting, read live, unless this server has a limit of its own.
+        if self._max_running is not None:
+            return self._max_running
+        return settings.BOX_MAX_RUNNING
 
     async def create(self, spec: BoxSpec) -> ProvisionedBox:
         if self.blocked is not None:
@@ -129,7 +138,6 @@ def host() -> Any:
         return True
 
     box_service.set_health_check_for_tests(healthy)
-    box_service.migrations.events.clear()
     yield fake
     box_hosts.set_box_host_for_tests(None)
     box_service.set_health_check_for_tests(None)
@@ -617,6 +625,33 @@ async def proxied_upstream() -> AsyncIterator[FastAPI]:
 
 
 @pytest.mark.asyncio
+async def test_the_proxy_gives_its_database_connection_back_before_it_streams() -> None:
+    # A proxied stream stays open for minutes; a connection held for each
+    # emptied the pool and every other request waited 30 s (29 September).
+    calls: list[str] = []
+
+    @asynccontextmanager
+    async def sessions() -> AsyncIterator[AsyncSession]:
+        calls.append("open")
+        yield cast(AsyncSession, object())
+        calls.append("closed")
+
+    box = SandBox(host_address="10.0.0.7", ports={"1340": 40000}, network_token="n")
+
+    async def lookup(db: AsyncSession, box_id: UUID, token: str) -> SandBox:
+        calls.append("lookup")
+        return box
+
+    box_proxy.set_lookup_for_tests(lookup)
+    try:
+        resolved = await box_proxy._resolve(sessions, UUID(int=1), 1340, "n")
+    finally:
+        box_proxy.set_lookup_for_tests(None)
+    assert calls == ["open", "lookup", "closed"]
+    assert resolved == (box, "10.0.0.7", 40000)
+
+
+@pytest.mark.asyncio
 class TestProxy:
     async def test_the_network_token_gates_every_port_and_the_path_reaches_the_box(
         self,
@@ -737,10 +772,9 @@ def test_websockify_and_the_egress_tunnel_are_proxied_as_websockets() -> None:
             app = FastAPI()
             app.include_router(box_proxy.router)
 
-            async def no_db() -> Any:
-                yield None
-
-            app.dependency_overrides[get_db_session] = no_db
+            app.dependency_overrides[box_proxy.lookup_sessions] = lambda: (
+                lambda: nullcontext(None)
+            )
             box_proxy.set_lookup_for_tests(lookup)
             try:
                 await asyncio.to_thread(_drive, app, box)

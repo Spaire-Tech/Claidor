@@ -1,4 +1,4 @@
-import { cloudAgentWebUrl, isCloudAgentsServed, isConnectServed } from "../shared/cloud-agents-availability.js";
+import { cloudAgentWebUrl, isCloudAgentsServed } from "../shared/cloud-agents-availability.js";
 import { isSandAgentModelSelection, resolveComputerUseModelSelection } from "../shared/agents/sand-agent-model.js";
 import { normalizeSandAutoReviewInstructions } from "../shared/sand-auto-review-instructions.js";
 import { isSandLocalToolAction, normalizeSandLocalToolPermission } from "../shared/local-tool-permission.js";
@@ -9,7 +9,7 @@ import { sandWebauthnProxyMirroredEnablement } from "../shared/webauthn-proxy-av
 import { reportDesktopEdgeFailure } from "./desktop-edge-failures.js";
 import { resolveProductInferenceProvider } from "../shared/inference-router.js";
 import { isSandBoxRuntime } from "../shared/box-runtime.js";
-import { getLocalDockerStatus, startLocalDockerBox, stopLocalDockerBox } from "./box/local-docker-host-connector.js";
+import { getLocalDockerStatus } from "./box/local-docker-host-connector.js";
 
 export const MAIN_EDGE_UNSERVED = "main/unserved-method";
 export const MAIN_EDGE_UPDATE_UNAVAILABLE = "main/update-unavailable";
@@ -121,14 +121,12 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
     getAvailableModels: () => deps.fetchAvailableModels(),
     getInferenceRouter: async () => { const settings = await deps.readHostSettingsFromBox().catch(() => ({} as UnknownRecord)); const provider = resolveProductInferenceProvider(); return { provider, usage: settings.inferenceRouterUsage ?? invoke(deps.settingsStore, "getInferenceRouterUsage") ?? null }; },
     setInferenceRouter: async () => { const provider = resolveProductInferenceProvider(); invoke(deps.settingsStore, "setInferenceProvider", provider); const settings = await deps.syncHostSettingsToBox({ inferenceProvider: provider }).catch(() => null); return { provider, usage: settings?.inferenceRouterUsage ?? invoke(deps.settingsStore, "getInferenceRouterUsage") ?? null }; },
-    getBoxRuntime: async () => { const mode = invoke(deps.settingsStore, "getBoxRuntime"); invariant(isSandBoxRuntime(mode), "Unknown box runtime."); return { mode, status: await getLocalDockerStatus(String(Reflect.get(deps.settingsStore, "settingsPath"))) }; },
-    // Switching to the cloud computer (25 September 2026): the broker is
-    // served (`polar/sand/box_broker.py`), so "remote" is allowed; it is
-    // probed before the local box is stopped, and a refusal (no host on the
-    // server: "Simeon's cloud computer needs a host; set
-    // CLAIDOR_BOX_HOST_PROVIDER") puts the setting back and shows that one
-    // sentence. `SAND_CONNECT_SERVED=0` keeps the old refusal.
-    setBoxRuntime: async (raw) => { const mode = req(raw).mode; invariant(isSandBoxRuntime(mode), "Unknown box runtime."); if (mode === "remote" && !isConnectServed(process.env, "aiserver.v1.GrokBotService")) throw new Error("Simeon's cloud computer is switched off in this build (SAND_CONNECT_SERVED); the box runs in Docker on this Mac."); const settingsPath = String(Reflect.get(deps.settingsStore, "settingsPath")); invoke(deps.settingsStore, "setBoxRuntime", mode); try { if (mode === "local-docker") await startLocalDockerBox(settingsPath); else { await Promise.resolve(invoke(deps.boxRecovery, "probeRemoteBox")); await stopLocalDockerBox(); } } catch (error) { invoke(deps.settingsStore, "setBoxRuntime", mode === "local-docker" ? "remote" : "local-docker"); throw new Error(remoteBoxFailureSentence(error)); } invoke(deps.boxRecovery, "restartCoordinator"); return { mode, status: await getLocalDockerStatus(settingsPath) }; },
+    getBoxRuntime: async () => { const mode = invoke(deps.settingsStore, "getBoxRuntime"); invariant(isSandBoxRuntime(mode), "Unknown box runtime."); return { mode, status: mode === "local-docker" ? await getLocalDockerStatus(String(Reflect.get(deps.settingsStore, "settingsPath"))) : null }; },
+    // The computer is not a person's choice (29 September 2026): Grok Bot runs
+    // every person on its cloud computer and has no switch, and neither does
+    // Simeon. `SAND_BOX_RUNTIME=local-docker` selects the Docker box for our
+    // own testing (`resolveSandBoxRuntime`); asking for anything else fails.
+    setBoxRuntime: async (raw) => { const mode = req(raw).mode; invariant(isSandBoxRuntime(mode), "Unknown box runtime."); const current = invoke(deps.settingsStore, "getBoxRuntime"); if (mode !== current) throw new Error("Simeon runs on its cloud computer; there is nothing to switch."); return { mode, status: mode === "local-docker" ? await getLocalDockerStatus(String(Reflect.get(deps.settingsStore, "settingsPath"))) : null }; },
 
     getEgressTunnelEnabled: () => invoke(deps.boxToggleStore, "getEgressTunnelEnabled"),
     setEgressTunnelEnabled: (raw) => { const enabled = req(raw).enabled === true; invoke(deps.boxToggleStore, "setEgressTunnelEnabled", enabled); invoke(egressController(deps), "setEnabled", enabled); deps.emitEgressTunnelChanged(enabled); return enabled; },

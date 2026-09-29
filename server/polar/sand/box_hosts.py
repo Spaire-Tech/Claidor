@@ -26,11 +26,16 @@ Nothing here touches the database; the broker keeps the row.
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import io
+import json
+import re
 import ssl
 import tarfile
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 from typing import Any, Literal, Protocol
 from urllib.parse import quote, urlsplit
 
@@ -63,7 +68,8 @@ BoxRunState = Literal["running", "stopped"]
 #: Where the box host keeps each host bundle, one folder per bundle, for
 #: boxes to mount read-only (DockerBoxHost.create).
 BOX_HOST_BUNDLE_ROOT = "/var/lib/simeon/box-host"
-_installed_bundle_dirs: set[str] = set()
+#: (server, folder) pairs already written: each server has its own disk.
+_installed_bundle_dirs: set[tuple[str, str]] = set()
 
 
 class BoxHostError(Exception):
@@ -170,7 +176,16 @@ class ProvisionedBox:
 
 
 class BoxHost(Protocol):
+    #: The server's name, stored on each box it makes (`SandBox.provider`).
     name: str
+
+    @property
+    def max_running(self) -> int:
+        """Boxes awake at once on this server; zero or less: no limit."""
+        ...
+
+    #: False drains the server: it keeps its boxes and takes no new one.
+    accepting: bool
 
     async def create(self, spec: BoxSpec) -> ProvisionedBox: ...
 
@@ -312,12 +327,13 @@ class _HostReachTransport(httpx.AsyncBaseTransport):
         await self.inner.aclose()
 
 
-def docker_client_from_settings() -> httpx.AsyncClient:
-    if not settings.BOX_DOCKER_HOST:
+def docker_client_from_settings(docker_host: str | None = None) -> httpx.AsyncClient:
+    docker_host = settings.BOX_DOCKER_HOST if docker_host is None else docker_host
+    if not docker_host:
         raise BoxHostUnavailable(
             "CLAIDOR_BOX_HOST_PROVIDER=docker needs CLAIDOR_BOX_DOCKER_HOST."
         )
-    base_url, uds = _docker_base_url(settings.BOX_DOCKER_HOST)
+    base_url, uds = _docker_base_url(docker_host)
     verify: ssl.SSLContext | bool = True
     if settings.BOX_DOCKER_TLS_CERT:
         context = ssl.create_default_context(cafile=settings.BOX_DOCKER_TLS_CA or None)
@@ -326,17 +342,20 @@ def docker_client_from_settings() -> httpx.AsyncClient:
         )
         verify = context
     transport = _HostReachTransport(
-        httpx.AsyncHTTPTransport(uds=uds, verify=verify), settings.BOX_DOCKER_HOST
+        httpx.AsyncHTTPTransport(uds=uds, verify=verify), docker_host
     )
     return httpx.AsyncClient(
         base_url=base_url, transport=transport, timeout=httpx.Timeout(30.0, read=600.0)
     )
 
 
-def docker_host_address_from_settings() -> str:
-    if settings.BOX_HOST_ADDRESS:
-        return settings.BOX_HOST_ADDRESS
-    parts = urlsplit(settings.BOX_DOCKER_HOST)
+def docker_host_address_from_settings(
+    docker_host: str | None = None, address: str | None = None
+) -> str:
+    address = settings.BOX_HOST_ADDRESS if address is None else address
+    if address:
+        return address
+    parts = urlsplit(settings.BOX_DOCKER_HOST if docker_host is None else docker_host)
     if parts.hostname:
         return parts.hostname
     raise BoxHostUnavailable(
@@ -348,8 +367,6 @@ def docker_host_address_from_settings() -> str:
 class DockerBoxHost:
     """The Docker Engine HTTP API, the way the CLI would call it."""
 
-    name = "docker"
-
     def __init__(
         self,
         client: httpx.AsyncClient,
@@ -357,11 +374,19 @@ class DockerBoxHost:
         host_address: str,
         bundle: HostBundle | None,
         platform: str = "linux/amd64",
+        name: str = "docker",
+        max_running: int | None = None,
+        accepting: bool = True,
     ) -> None:
         self.client = client
         self.host_address = host_address
         self.bundle = bundle
         self.platform = platform
+        self.name = name
+        self.max_running = (
+            settings.BOX_MAX_RUNNING if max_running is None else max_running
+        )
+        self.accepting = accepting
 
     async def _pull(self, image: str) -> None:
         # `repo:tag` → fromImage=repo, tag=tag; `repo@sha256:…` → fromImage as is.
@@ -425,7 +450,7 @@ class DockerBoxHost:
         started."""
         assert self.bundle is not None
         folder = self.bundle_dir()
-        if folder in _installed_bundle_dirs:
+        if (self.name, folder) in _installed_bundle_dirs:
             return
         name = f"simeon-host-bundle-{self.bundle.key}"
         body: dict[str, Any] = {
@@ -454,7 +479,7 @@ class DockerBoxHost:
             await self.client.delete(
                 f"/containers/{quote(helper)}", params={"force": "true"}
             )
-        _installed_bundle_dirs.add(folder)
+        _installed_bundle_dirs.add((self.name, folder))
         log.info("sand.box.docker.bundle_installed", folder=folder)
 
     async def create(self, spec: BoxSpec) -> ProvisionedBox:
@@ -624,6 +649,8 @@ class E2BBoxHost:
     not fit the app's tunnel rule; see the module docstring."""
 
     name = "e2b"
+    max_running = 0
+    accepting = True
 
     def _refuse(self) -> BoxHostUnavailable:
         return BoxHostUnavailable(
@@ -653,47 +680,212 @@ class E2BBoxHost:
 # --- choosing one --------------------------------------------------------------
 
 _bundle_cache: dict[str, HostBundle] = {}
-_host_override: BoxHost | None = None
+_host_override: list[BoxHost] | None = None
+#: The configured servers, built once per process per configuration.
+_fleet_cache: tuple[str, list[BoxHost]] | None = None
 
 
-def set_box_host_for_tests(host: BoxHost | None) -> None:
+def set_box_host_for_tests(host: BoxHost | list[BoxHost] | None) -> None:
     global _host_override
-    _host_override = host
+    _host_override = (
+        None if host is None else host if isinstance(host, list) else [host]
+    )
 
 
-async def load_host_bundle(url: str) -> HostBundle | None:
-    if not url:
-        return None
+#: Grok Bot's publish layout (`host-bundle-source.ts`): a pointer file holding
+#: a commit id, and one tarball per commit id beside it.
+LATEST_VERSION_FILE = "sand-host-bundle-latest.version"
+HOST_BUNDLE_PREFIX = "sand-host-bundle"
+_VERSION_PATTERN = re.compile(r"^[0-9a-f]{7,40}$")
+#: How long a read pointer is trusted: Grok Bot's `VERSION_CACHE_TTL_MS`.
+BUNDLE_POINTER_TTL = timedelta(minutes=10)
+_pointer_cache: dict[str, tuple[str, datetime]] = {}
+
+
+def _bundle_http() -> httpx.AsyncClient:
+    return httpx.AsyncClient(timeout=120.0, follow_redirects=True)
+
+
+_bundle_http_factory: Callable[[], httpx.AsyncClient] = _bundle_http
+
+
+def set_bundle_http_for_tests(factory: Callable[[], httpx.AsyncClient] | None) -> None:
+    global _bundle_http_factory
+    _bundle_http_factory = factory or _bundle_http
+    _pointer_cache.clear()
+    _bundle_cache.clear()
+
+
+def is_bundle_channel(url: str) -> bool:
+    """A folder in Grok Bot's layout, as opposed to one fixed tar file."""
+    path = urlsplit(url).path
+    return not path.endswith((".tgz", ".tar", ".tar.gz"))
+
+
+async def _fetch_bundle(url: str) -> HostBundle:
     cached = _bundle_cache.get(url)
     if cached is not None:
         return cached
-    async with httpx.AsyncClient(timeout=120.0, follow_redirects=True) as client:
+    async with _bundle_http_factory() as client:
         response = await client.get(url)
     if response.status_code != 200:
-        raise BoxHostError(
-            f"The host bundle at CLAIDOR_BOX_HOST_BUNDLE_URL answered {response.status_code}."
-        )
+        raise BoxHostError(f"The host bundle at {url} answered {response.status_code}.")
     bundle = HostBundle.from_tar(response.content)
+    # Each version published stays cached; three are plenty (about 4 MB each).
+    while len(_bundle_cache) >= 3:
+        _bundle_cache.pop(next(iter(_bundle_cache)))
     _bundle_cache[url] = bundle
     return bundle
 
 
-async def resolve_box_host() -> BoxHost:
-    """The configured host, or `BoxHostUnavailable` with the sentence the
-    app shows. Read on every call so a setting change on Render takes
-    effect at the next EnsureSandBox."""
+async def _current_version(base: str) -> str:
+    """The commit id the channel's pointer names, read at most every
+    `BUNDLE_POINTER_TTL`. A pointer that cannot be read keeps the last one
+    read, so a moment of S3 trouble never takes the cloud computers down."""
+    now = datetime.now(UTC)
+    cached = _pointer_cache.get(base)
+    if cached is not None and now - cached[1] < BUNDLE_POINTER_TTL:
+        return cached[0]
+    try:
+        async with _bundle_http_factory() as client:
+            response = await client.get(f"{base}/{LATEST_VERSION_FILE}")
+        if response.status_code != 200:
+            raise BoxHostError(
+                f"The host bundle pointer at {base} answered {response.status_code}."
+            )
+        version = response.text.strip()
+        if not _VERSION_PATTERN.match(version):
+            raise BoxHostError(
+                f"The host bundle pointer at {base} names {version[:40]!r}, "
+                "not a commit id."
+            )
+    except (BoxHostError, httpx.HTTPError) as error:
+        if cached is None:
+            raise BoxHostError(str(error) or type(error).__name__) from error
+        log.warning("sand.box.bundle.pointer_unread", base=base, error=str(error))
+        _pointer_cache[base] = (cached[0], now)
+        return cached[0]
+    if cached is None or cached[0] != version:
+        log.info("sand.box.bundle.version", base=base, version=version)
+    _pointer_cache[base] = (version, now)
+    return version
+
+
+async def load_host_bundle(url: str) -> HostBundle | None:
+    """The host bundle the cloud computers mount. `url` is either one tar
+    file (read once per process) or a folder in Grok Bot's layout, whose
+    pointer is followed: a new version published there reaches the server
+    within `BUNDLE_POINTER_TTL`, with no restart, and each box moves to it
+    when it is next idle (`box_service.ensure`)."""
+    if not url:
+        return None
+    if not is_bundle_channel(url):
+        return await _fetch_bundle(url)
+    base = url.rstrip("/")
+    version = await _current_version(base)
+    return await _fetch_bundle(f"{base}/{HOST_BUNDLE_PREFIX}-{version}.tgz")
+
+
+@dataclass(frozen=True)
+class BoxHostEntry:
+    """One box server in `CLAIDOR_BOX_HOSTS`."""
+
+    name: str
+    docker_host: str
+    address: str = ""
+    max_running: int | None = None
+    accepting: bool = True
+
+
+def box_host_entries() -> list[BoxHostEntry]:
+    """The configured servers: `CLAIDOR_BOX_HOSTS`, or the one server of
+    `CLAIDOR_BOX_DOCKER_HOST` named "docker" (the name the boxes made
+    before 29 September carry)."""
+    raw = settings.BOX_HOSTS.strip()
+    if not raw:
+        return [
+            BoxHostEntry(
+                name="docker",
+                docker_host=settings.BOX_DOCKER_HOST,
+                address=settings.BOX_HOST_ADDRESS,
+            )
+        ]
+    try:
+        items = json.loads(raw)
+    except ValueError as error:
+        raise BoxHostUnavailable(f"CLAIDOR_BOX_HOSTS is not JSON: {error}")
+    if not isinstance(items, list) or not items:
+        raise BoxHostUnavailable("CLAIDOR_BOX_HOSTS must be a non-empty JSON list.")
+    entries: list[BoxHostEntry] = []
+    for item in items:
+        if not isinstance(item, dict):
+            raise BoxHostUnavailable("Each CLAIDOR_BOX_HOSTS entry must be an object.")
+        name = str(item.get("name") or "").strip()
+        docker_host = str(item.get("docker_host") or "").strip()
+        if not name or not docker_host:
+            raise BoxHostUnavailable(
+                "Each CLAIDOR_BOX_HOSTS entry needs a name and a docker_host."
+            )
+        max_running = item.get("max_running")
+        entries.append(
+            BoxHostEntry(
+                name=name,
+                docker_host=docker_host,
+                address=str(item.get("address") or "").strip(),
+                max_running=int(max_running) if max_running is not None else None,
+                accepting=item.get("accepting", True) is not False,
+            )
+        )
+    names = [entry.name for entry in entries]
+    if len(set(names)) != len(names):
+        raise BoxHostUnavailable("CLAIDOR_BOX_HOSTS names must be unique.")
+    return entries
+
+
+async def resolve_box_hosts() -> list[BoxHost]:
+    """Every configured server, or `BoxHostUnavailable` with the sentence the
+    app shows. Built once per process for a given configuration (settings
+    change only with a restart), so each server keeps one connection pool."""
+    global _fleet_cache
     if _host_override is not None:
         return _host_override
     provider = settings.BOX_HOST_PROVIDER.strip().lower()
-    if provider == "docker":
-        return DockerBoxHost(
-            docker_client_from_settings(),
-            host_address=docker_host_address_from_settings(),
-            bundle=await load_host_bundle(settings.BOX_HOST_BUNDLE_URL),
-        )
     if provider == "e2b":
-        return E2BBoxHost()
-    raise BoxHostUnavailable(BOX_HOST_UNAVAILABLE_SENTENCE)
+        return [E2BBoxHost()]
+    if provider != "docker":
+        raise BoxHostUnavailable(BOX_HOST_UNAVAILABLE_SENTENCE)
+    bundle = await load_host_bundle(settings.BOX_HOST_BUNDLE_URL)
+    entries = box_host_entries()
+    key = json.dumps(
+        [dataclasses.asdict(entry) for entry in entries]
+        + [bundle.key if bundle is not None else ""]
+    )
+    if _fleet_cache is not None and _fleet_cache[0] == key:
+        return _fleet_cache[1]
+    fleet: list[BoxHost] = [
+        DockerBoxHost(
+            docker_client_from_settings(entry.docker_host),
+            host_address=docker_host_address_from_settings(
+                entry.docker_host, entry.address
+            ),
+            bundle=bundle,
+            name=entry.name,
+            max_running=entry.max_running,
+            accepting=entry.accepting,
+        )
+        for entry in entries
+    ]
+    _fleet_cache = (key, fleet)
+    return fleet
+
+
+async def find_box_host(name: str) -> BoxHost | None:
+    """The server a box was made on, by the name stored with it; None when
+    that server is no longer configured."""
+    for host in await resolve_box_hosts():
+        if host.name == name:
+            return host
+    return None
 
 
 def box_image_reference() -> str:

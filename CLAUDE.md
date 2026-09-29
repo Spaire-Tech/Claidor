@@ -1145,6 +1145,31 @@ The cloud box is now pinned to the Mac's 16 September build
 image is replaced. The Mac still floats on the tag; a fresh pull there
 breaks the same way until it is pinned too.
 
+## Every person runs on the cloud computer, as in Grok Bot (29 September 2026)
+
+"make Simeon work exactly like the original Grok Bot architecture, rather than
+continuing with the Docker detour." Grok Bot 0.18's default was `"remote"`
+(`box-runtime.ts` at the re-founding commit `ce9fc2d8`), and its window has no
+Docker option (0 matches in the pinned renderer). We switched the default to
+Docker on 19 September (`ecb58213`) only because the server could not make a
+cloud computer yet. Now: the runtime is the cloud unless
+`SAND_BOX_RUNTIME=local-docker` (our testing only); a saved "local-docker" is
+not read; the Settings "Computer" panel is gone; `setBoxRuntime` refuses to
+switch. **Several box servers:** `CLAIDOR_BOX_HOSTS` (JSON) lists them; a new
+computer goes to the accepting server with the largest share of its limit
+free and stays there; the first server keeps the name `"docker"`;
+`"accepting": false` drains one (`box_hosts.py`, `box_service.place`).
+**Host program updates:** `npm run publish:host-bundle` publishes the
+packaged app's host in Grok Bot's layout (`sand-host-bundle-latest.version` +
+`sand-host-bundle-<commit>.tgz`); `CLAIDOR_BOX_HOST_BUNDLE_URL` may name that
+folder, read every ten minutes with no restart, and a box moves to a new
+version only when it is not busy. **Several API workers are safe:** the box
+proxy and `WatchSandBoxMigration` give their database connection back before
+they stream, and the migration log is in Redis. Tested against two real
+Docker Engines and a Python 3.14 TLS handshake across two servers' CAs; **not
+yet run in the packaged app on a Mac**. `docs/ops/box-host/render-env.md` is
+the operator's guide.
+
 ## The rest of the connectors are apps under Simeon's name (28 September 2026)
 
 "for the rest of the connectors, lets use composio. but i want to white label
