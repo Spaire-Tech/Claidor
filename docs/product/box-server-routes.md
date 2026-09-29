@@ -1002,3 +1002,74 @@ files is `main`'s, and this branch adds none.
 Unchanged, and still the whole of the risk here: **nothing has ever contacted
 E2B, no sandbox has been started, no command has run in a box, and CI has never
 executed a line of this diff.**
+
+---
+
+## §19 — §17's flake is fixed on `main`, by someone who found it independently (29 September 2026, morning)
+
+`main` moved `9650f49e` → `2e8672f5`, eight commits, all cloud box. Merged as
+the head below, no conflicts, **no new migration** — so `alembic heads` printed
+one without anything to re-point, the first merge in four that did not collide.
+
+**§17 is closed, and not by me.** `main`'s `9eaec6d8` carries the same
+diagnosis and the same fix I wrote up and offered:
+
+```python
+-    with tarfile.open(fileobj=buffer, mode="w:gz") as archive:
++    with gzip.GzipFile(fileobj=buffer, mode="wb", mtime=0) as zipped:
++        with tarfile.open(fileobj=zipped, mode="w") as archive:
+```
+
+with the comment "gzip writes the current second into its header, so two builds
+that straddle a second differ … A fixed mtime makes the bytes deterministic."
+Arrived at independently — I never pushed my fix, only the measurement in §17.
+One difference worth keeping straight rather than smoothing over: their comment
+says the flake was "about 1 run in 10", and I measured **7 failures in 25** on a
+clean `main` worktree. Both are estimates of the same thing from different
+sample sizes and neither is worth re-running; mine is the one that was counted.
+
+So the 15th failure of §18 will not come back, and the expected result for this
+scope is the known fourteen and nothing else.
+
+**One change read because it sits under my routes, and does not touch them.**
+`polar/auth/middlewares.py` now returns an anonymous subject for
+`/sand-box/{box_id}/p/{port}` and everything under it, because the cloud box's
+proxy forwards the app's request with the box gateway's own bearer, which
+belongs to no person, and reading it answered every proxied call with an OAuth2
+401 before the proxy ran. The regex requires a 36-character UUID and a numeric
+port, the proxy checks the network token and the gateway checks the bearer.
+It is `main`'s, it is deliberate, and it has a test
+(`tests/sand/test_box_proxy_auth.py`). **It does not reach this branch's
+routes**: mine are `/api/proxy/box/*` on the desktop router, a different prefix
+entirely.
+
+Also on `main`: the cloud box's image is now pinned by digest to the 16
+September build, because the 28 September build's supervisor starts
+`/opt/sand/sand-host/host-main.cjs` instead of `/home/box/sand-host/host-main.cjs`
+and so runs the image's own host whatever is mounted over it. Not mine, recorded
+because it is the kind of thing that explains a later "the box ignores our
+bundle" report.
+
+### Measured this round
+
+`pytest tests/desktop tests/maty tests/sand tests/integrations/google`:
+**14 failed / 509 passed**, 523 collected (up from 517). The fourteen are the
+known set — twelve `test_endpoints.py` proxy tests wanting provider keys, two in
+`tests/maty/test_service.py`.
+
+Structural, after the merge: ten `/api/proxy/box/*` routes at 1451, the
+`/api/proxy/{path:path}` catch-all last at 1791, `hourly_exhausted` once, no
+duplicate top-level names in `pricing.py` / `endpoints.py` / `boxes.py`, the box
+pricing symbols all present, one Alembic head.
+
+Ruff: **both trees now format clean** — `polar/config.py` had been the one
+unformatted file on either side for days, and `main`'s own edit to it this round
+fixed that. Findings: mine 3, `main`'s own copies of the same files 5, mine
+still a strict subset (`endpoints.py` I001, `models/__init__.py` I001 +
+RUF022; `main` also carries `config.py:1` and `models/desktop.py:28`).
+
+Unchanged: **nothing here has ever contacted E2B, no sandbox has been started,
+no command has run in a box, and CI has never executed a line of this diff.**
+The four things offered in §18 and in comment `5882313175` — the meter into
+`main`'s `box_service`, the E2B salvage, the #200 stale proxy tests, the
+skill_registry fix (now moot) — remain offered and unstarted.
