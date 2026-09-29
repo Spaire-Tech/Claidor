@@ -30,9 +30,12 @@ import dataclasses
 import hashlib
 import io
 import json
+import re
 import ssl
 import tarfile
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 from typing import Any, Literal, Protocol
 from urllib.parse import quote, urlsplit
 
@@ -689,21 +692,98 @@ def set_box_host_for_tests(host: BoxHost | list[BoxHost] | None) -> None:
     )
 
 
-async def load_host_bundle(url: str) -> HostBundle | None:
-    if not url:
-        return None
+#: Grok Bot's publish layout (`host-bundle-source.ts`): a pointer file holding
+#: a commit id, and one tarball per commit id beside it.
+LATEST_VERSION_FILE = "sand-host-bundle-latest.version"
+HOST_BUNDLE_PREFIX = "sand-host-bundle"
+_VERSION_PATTERN = re.compile(r"^[0-9a-f]{7,40}$")
+#: How long a read pointer is trusted: Grok Bot's `VERSION_CACHE_TTL_MS`.
+BUNDLE_POINTER_TTL = timedelta(minutes=10)
+_pointer_cache: dict[str, tuple[str, datetime]] = {}
+
+
+def _bundle_http() -> httpx.AsyncClient:
+    return httpx.AsyncClient(timeout=120.0, follow_redirects=True)
+
+
+_bundle_http_factory: Callable[[], httpx.AsyncClient] = _bundle_http
+
+
+def set_bundle_http_for_tests(factory: Callable[[], httpx.AsyncClient] | None) -> None:
+    global _bundle_http_factory
+    _bundle_http_factory = factory or _bundle_http
+    _pointer_cache.clear()
+    _bundle_cache.clear()
+
+
+def is_bundle_channel(url: str) -> bool:
+    """A folder in Grok Bot's layout, as opposed to one fixed tar file."""
+    path = urlsplit(url).path
+    return not path.endswith((".tgz", ".tar", ".tar.gz"))
+
+
+async def _fetch_bundle(url: str) -> HostBundle:
     cached = _bundle_cache.get(url)
     if cached is not None:
         return cached
-    async with httpx.AsyncClient(timeout=120.0, follow_redirects=True) as client:
+    async with _bundle_http_factory() as client:
         response = await client.get(url)
     if response.status_code != 200:
-        raise BoxHostError(
-            f"The host bundle at CLAIDOR_BOX_HOST_BUNDLE_URL answered {response.status_code}."
-        )
+        raise BoxHostError(f"The host bundle at {url} answered {response.status_code}.")
     bundle = HostBundle.from_tar(response.content)
+    # Each version published stays cached; three are plenty (about 4 MB each).
+    while len(_bundle_cache) >= 3:
+        _bundle_cache.pop(next(iter(_bundle_cache)))
     _bundle_cache[url] = bundle
     return bundle
+
+
+async def _current_version(base: str) -> str:
+    """The commit id the channel's pointer names, read at most every
+    `BUNDLE_POINTER_TTL`. A pointer that cannot be read keeps the last one
+    read, so a moment of S3 trouble never takes the cloud computers down."""
+    now = datetime.now(UTC)
+    cached = _pointer_cache.get(base)
+    if cached is not None and now - cached[1] < BUNDLE_POINTER_TTL:
+        return cached[0]
+    try:
+        async with _bundle_http_factory() as client:
+            response = await client.get(f"{base}/{LATEST_VERSION_FILE}")
+        if response.status_code != 200:
+            raise BoxHostError(
+                f"The host bundle pointer at {base} answered {response.status_code}."
+            )
+        version = response.text.strip()
+        if not _VERSION_PATTERN.match(version):
+            raise BoxHostError(
+                f"The host bundle pointer at {base} names {version[:40]!r}, "
+                "not a commit id."
+            )
+    except (BoxHostError, httpx.HTTPError) as error:
+        if cached is None:
+            raise BoxHostError(str(error) or type(error).__name__) from error
+        log.warning("sand.box.bundle.pointer_unread", base=base, error=str(error))
+        _pointer_cache[base] = (cached[0], now)
+        return cached[0]
+    if cached is None or cached[0] != version:
+        log.info("sand.box.bundle.version", base=base, version=version)
+    _pointer_cache[base] = (version, now)
+    return version
+
+
+async def load_host_bundle(url: str) -> HostBundle | None:
+    """The host bundle the cloud computers mount. `url` is either one tar
+    file (read once per process) or a folder in Grok Bot's layout, whose
+    pointer is followed: a new version published there reaches the server
+    within `BUNDLE_POINTER_TTL`, with no restart, and each box moves to it
+    when it is next idle (`box_service.ensure`)."""
+    if not url:
+        return None
+    if not is_bundle_channel(url):
+        return await _fetch_bundle(url)
+    base = url.rstrip("/")
+    version = await _current_version(base)
+    return await _fetch_bundle(f"{base}/{HOST_BUNDLE_PREFIX}-{version}.tgz")
 
 
 @dataclass(frozen=True)

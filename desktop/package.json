@@ -29,7 +29,8 @@
     "typecheck": "tsc --project frontend/tsconfig.json",
     "source:typecheck": "tsc --project source/tsconfig.json",
     "verify": "npm run preflight && node scripts/verify.mjs",
-    "preflight": "node scripts/preflight-bootstrap.mjs"
+    "preflight": "node scripts/preflight-bootstrap.mjs",
+    "publish:host-bundle": "node scripts/publish-host-bundle.mjs"
   },
   "devDependencies": {
     "@electron/asar": "4.2.1",

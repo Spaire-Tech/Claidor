@@ -459,6 +459,19 @@ class BoxBrokerService:
                     stale_image = current.image != box_image_reference()
                 if expected_host is not None:
                     stale_host = current is None or current.host_sha256 != expected_host
+            if (stale_host or stale_image) and state == "running":
+                # Grok Bot's supervisor swaps the host only when the box is
+                # idle (the upgrade command waits while it is busy): a box
+                # working, or waiting on the person's approval, keeps its
+                # program until the app connects to it idle.
+                if (await self.health_of(box)).is_busy:
+                    log.info(
+                        "sand.box.update_deferred",
+                        box=str(box.id),
+                        stale_host=stale_host,
+                        stale_image=stale_image,
+                    )
+                    stale_host = stale_image = False
             if state is None or not credential_live or stale_host or stale_image:
                 # Absent on the host, its credential died with a sign-out, or
                 # the wrong host program or image: a fresh container on the
