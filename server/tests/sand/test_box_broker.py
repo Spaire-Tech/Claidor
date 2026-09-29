@@ -717,3 +717,52 @@ def test_websockify_and_the_egress_tunnel_are_proxied_as_websockets() -> None:
         or seen["path"] == "/"
     )
     assert seen["authorization"] == "Bearer g"
+
+
+@pytest.mark.asyncio
+async def test_the_boxs_own_refusal_reaches_the_app_and_the_log(
+    client: httpx.AsyncClient,
+    session: AsyncSession,
+    user: User,
+    host: FakeBoxHost,
+    mocker: Any,
+) -> None:
+    """The first real run showed only "401" on the app's side; the proxy
+    now logs who refused, and forwards the box's own body unchanged."""
+    upstream = FastAPI()
+
+    @upstream.get("/events")
+    async def events() -> JSONResponse:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    transport = httpx.ASGITransport(app=upstream)
+    box_proxy.set_client_factory_for_tests(
+        lambda: httpx.AsyncClient(transport=transport, timeout=None)
+    )
+    logged = mocker.patch.object(box_proxy.log, "warning")
+    try:
+        access, _ = await _signed_in(client, session, user)
+        box = (await _ensure(client, access)).json()
+        base = f"/sand-box/{box['podId']}/p/1340"
+        response = await client.get(
+            f"{base}/events",
+            headers={
+                "x-anyrun-network-token": box["networkToken"],
+                "authorization": f"Bearer {box['gatewayToken']}",
+            },
+        )
+        assert response.status_code == 401
+        assert response.json() == {"error": "unauthorized"}
+        event, fields = logged.call_args.args[0], logged.call_args.kwargs
+        assert event == "sand.box.proxy.upstream_error"
+        assert fields["status"] == 401
+        assert fields["body"] == '{"error":"unauthorized"}'
+        assert fields["authorization_sent"] is True
+        assert box["gatewayToken"] not in str(fields)
+
+        refused = await client.get(f"{base}/events")
+        assert refused.status_code == 401
+        assert logged.call_args.args[0] == "sand.box.proxy.refused"
+        assert logged.call_args.kwargs["network_token_sent"] is False
+    finally:
+        box_proxy.set_client_factory_for_tests(None)
