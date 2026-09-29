@@ -45,9 +45,6 @@ const Footer = () => {
             <h3 className="text-gray-500">Resources</h3>
             <div className="flex flex-col gap-y-3">
               <FooterLink href="/resources/why">Why Simeon</FooterLink>
-              <FooterLink href="/resources/merchant-of-record">
-                Merchant of Record
-              </FooterLink>
               <FooterLink href="/resources/pricing">Pricing</FooterLink>
               <FooterLink href="/downloads">Downloads</FooterLink>
             </div>

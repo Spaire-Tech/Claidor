@@ -1,6 +1,5 @@
 import { Preview, Section } from '@react-email/components'
 import BodyText from '../components/BodyText'
-import Button from '../components/Button'
 import Footer from '../components/Footer'
 import IntroWithHi from '../components/IntroWithHi'
 import WrapperPolar from '../components/WrapperPolar'
@@ -27,9 +26,8 @@ export function OrganizationUnderReview({
         </BodyText>
         <BodyText>
           This is a normal step that happens after the first transaction for all
-          accounts. As a Merchant of Record, we&apos;re required to verify
-          business details and ensure everything is compliant before continuing
-          to process payments at scale.
+          accounts. We verify business details and make sure everything is
+          compliant before continuing to process payments at scale.
         </BodyText>
         <BodyText>
           <strong>What happens next?</strong>
@@ -44,11 +42,6 @@ export function OrganizationUnderReview({
           During this review period, you can continue setting up your products
           and integrate Simeon. We&apos;ll notify you as soon as the review is
           complete.
-        </BodyText>
-        <BodyText>
-          <Button href="https://docs.simeonlabs.com/merchant-of-record/account-reviews">
-            Read more about our review process
-          </Button>
         </BodyText>
         <BodyText>
           If you have any questions in the meantime, feel free to reach out to

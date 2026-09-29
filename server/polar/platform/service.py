@@ -78,7 +78,7 @@ class PlatformService:
         otherwise None.
 
         This is the signal behind the payout-hold: while a creator owes
-        Simeon, we hold their merchant-of-record balance as leverage rather
+        Simeon, we hold their balance as leverage rather
         than letting them withdraw. Resolves the same org -> customer ->
         subscription chain as the entitlements service. Returns None when
         platform billing isn't configured, the org IS the platform org, or

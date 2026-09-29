@@ -912,9 +912,6 @@ const BaseCheckoutForm = ({
             </div>
           </form>
         </Form>
-        <p className="text-center text-xs text-gray-500">
-          {t('checkout.footer.merchantOfRecord')}
-        </p>
       </div>
       <a
         href="https://www.simeonlabs.com?utm_source=checkout"

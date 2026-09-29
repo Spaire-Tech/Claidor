@@ -1,9 +1,7 @@
 import { api } from '@/utils/client'
-import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
 import { isValidationError, schemas } from '@simeon/client'
 import { formatCurrency } from '@simeon/currency'
 import Button from '@simeon/ui/components/atoms/Button'
-import Link from 'next/link'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Modal } from '../Modal'
 import { DetailRow } from '../Shared/DetailRow'
@@ -103,24 +101,6 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
                   Your organization is currently under review, as part of our
                   compliance process. Withdrawals are disabled until the review
                   is complete.
-                </p>
-                <p>
-                  <Link
-                    href="https://docs.simeonlabs.com/merchant-of-record/account-reviews"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Button
-                      variant="default"
-                      className="flex flex-row items-center"
-                    >
-                      <span>Learn more</span>
-                      <ArrowOutwardOutlined
-                        className="ml-2"
-                        fontSize="inherit"
-                      />
-                    </Button>
-                  </Link>
                 </p>
               </div>
             )}

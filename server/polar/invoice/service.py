@@ -123,12 +123,7 @@ class InvoiceService:
                     amount=payout_fees_amount,
                 ),
             ],
-            notes=(f"{account.billing_notes}\n\n" if account.billing_notes else "")
-            + (
-                "Simeon Labs is the merchant of record reselling digital services.\n"
-                "Simeon Labs captures and remits international sales tax from such sales – as needed.\n"
-                "Payouts (reverse invoices) are therefore without taxes."
-            ),
+            notes=account.billing_notes or None,
             extra_heading_items=[
                 InvoiceHeadingItem(label="Paid at", value=payout.paid_at),
                 InvoiceHeadingItem(

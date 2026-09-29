@@ -84,10 +84,9 @@ class Invoice(BaseModel):
     due_date: date | None = None
     on_behalf_of_label: str | None = None
     # True when Simeon Labs itself is the seller (platform self-billing:
-    # Simeon Labs billing a creator for their plan). The Merchant-of-Record
-    # footer is about reselling on behalf of a creator; for a first-party
-    # invoice "issued by Simeon Labs, Inc. on behalf of Simeon Labs, Inc. …
-    # Merchant of Record" is legally wrong framing.
+    # Simeon Labs billing a creator for their plan). The "on behalf of"
+    # footer is about invoicing for a creator; for a first-party invoice
+    # "issued by Simeon Labs, Inc. on behalf of Simeon Labs, Inc." is wrong.
     first_party: bool = False
 
     @property
@@ -318,14 +317,13 @@ class InvoiceGenerator(FPDF):
         self.ln(4)
 
         # Legal text (centered). First-party invoices (Simeon Labs billing a
-        # creator for their own plan) carry no Merchant-of-Record framing.
+        # creator for their own plan) carry no "on behalf of" line.
         if self.data.first_party:
             legal_text = "This invoice is issued by Simeon Labs, Inc."
         else:
             on_behalf = self.data.on_behalf_of_label or self.data.seller_name
             legal_text = (
-                f"This invoice is issued by Simeon Labs, Inc. on behalf of {on_behalf}. "
-                f"Simeon Labs, Inc. acts as the Merchant of Record for this transaction."
+                f"This invoice is issued by Simeon Labs, Inc. on behalf of {on_behalf}."
             )
         self.multi_cell(
             w=0,

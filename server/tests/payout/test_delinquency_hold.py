@@ -1,7 +1,6 @@
 """Payout-hold: while a creator owes Simeon, their merchant balance is held.
 
-Simeon is the merchant of record, so the balance we'd pay out is leverage.
-If a creator org's own Simeon subscription is `past_due` (a charge failed and
+The balance we'd pay out is leverage. If a creator org's own Simeon subscription is `past_due` (a charge failed and
 dunning is running), both the payout *estimate* and *creation* are refused
 until they settle. A healthy plan — or no platform billing at all — lets
 payouts through unchanged.

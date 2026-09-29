@@ -2,14 +2,12 @@ export default {
   checkout: {
     footer: {
       poweredBy: 'Powered by',
-      merchantOfRecord:
-        'Questo ordine è elaborato dal nostro rivenditore online e Merchant of Record, Simeon Labs, che gestisce anche le richieste relative agli ordini e i resi.',
       mandateSubscriptionTrial:
-        'Cliccando su "{buttonLabel}", autorizzi Simeon Labs, il nostro rivenditore online e merchant of record, ad addebitare sul metodo di pagamento selezionato l\'importo sopra indicato al termine del periodo di prova e a ogni successiva data di fatturazione fino alla disdetta. Puoi annullare in qualsiasi momento prima della fine della prova per evitare l\'addebito.',
+        'Cliccando su "{buttonLabel}", autorizzi Simeon Labs ad addebitare sul metodo di pagamento selezionato l\'importo sopra indicato al termine del periodo di prova e a ogni successiva data di fatturazione fino alla disdetta. Puoi annullare in qualsiasi momento prima della fine della prova per evitare l\'addebito.',
       mandateSubscription:
-        'Cliccando su "{buttonLabel}", autorizzi Simeon Labs, il nostro rivenditore online e merchant of record, ad addebitare immediatamente sul metodo di pagamento selezionato l\'importo sopra indicato e ad addebitare lo stesso importo a ogni successiva data di fatturazione fino alla disdetta.',
+        'Cliccando su "{buttonLabel}", autorizzi Simeon Labs ad addebitare immediatamente sul metodo di pagamento selezionato l\'importo sopra indicato e ad addebitare lo stesso importo a ogni successiva data di fatturazione fino alla disdetta.',
       mandateOneTime:
-        'Cliccando su "{buttonLabel}", autorizzi Simeon Labs, il nostro rivenditore online e merchant of record, ad addebitare sul metodo di pagamento selezionato l\'importo sopra indicato. Si tratta di un addebito una tantum.',
+        'Cliccando su "{buttonLabel}", autorizzi Simeon Labs ad addebitare sul metodo di pagamento selezionato l\'importo sopra indicato. Si tratta di un addebito una tantum.',
     },
     form: {
       email: 'Email',

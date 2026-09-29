@@ -4,8 +4,7 @@ nor enrolls them in Simeon's marketing automation.
 
 A creator's Simeon plan order is sold BY the platform org (Simeon) TO the
 creator-as-customer. The generic order-confirmation path would render the
-platform org's own header ("Simeon / Simeon"), the "Merchant of Record … by
-Simeon Labs" footer, and a $0 invoice for a free trial. These tests pin the
+platform org's own header ("Simeon / Simeon") and a $0 invoice for a free trial. These tests pin the
 new behavior:
   * trial start ($0)         -> platform_welcome, no invoice, no marketing
   * a real charge (> $0)     -> platform_receipt, with invoice

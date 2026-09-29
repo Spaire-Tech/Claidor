@@ -731,7 +731,6 @@ const formatCount = (n: number): string => {
 // in the card carries the inheritance, so re-listing identical rows
 // would just inflate the cards.
 const starterLines = (plan: TierPlan): string[] => [
-  'Merchant of Record — Simeon handles tax & VAT',
   `${formatTransactionFee(plan.transaction_fee)} per transaction`,
   `${plan.limits.published_courses} published courses`,
   `${formatCount(plan.limits.email_subscribers ?? 0)} email subscribers`,

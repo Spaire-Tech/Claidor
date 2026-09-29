@@ -15,17 +15,6 @@ export default function SupportedUseCases() {
           <li>• Physical goods or products requiring shipping</li>
           <li>• Human services (custom development, design and consultancy)</li>
           <li>• Marketplaces</li>
-          <li>
-            • Anything in our list of{' '}
-            <a
-              href="https://docs.simeonlabs.com/merchant-of-record/acceptable-use"
-              className="text-blue-500 underline"
-              target="_blank"
-              rel="noreferrer"
-            >
-              prohibited products
-            </a>
-          </li>
         </ul>
       </div>
 

@@ -81,8 +81,8 @@ export default function IdentityStep({
       <div>
         <h3 className="font-medium">Verify your identity</h3>
         <p className="mx-auto mt-1 max-w-sm text-sm text-gray-500">
-          As your merchant of record, we&apos;re required to verify account
-          holders. This takes less than 2 minutes.
+          We&apos;re required to verify account holders. This takes less than
+          2 minutes.
         </p>
       </div>
       <Button onClick={onStartIdentityVerification} className="mt-2">

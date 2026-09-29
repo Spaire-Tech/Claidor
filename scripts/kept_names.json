@@ -15,6 +15,43 @@
       "reason": "The app's notice states where the window and shell come from and who made them."
     },
     {
+      "kind": "record",
+      "names": [
+        "grok",
+        "caisra",
+        "anysphere",
+        "claidor",
+        "ohada",
+        "swens",
+        "spaire",
+        "spacex",
+        "xai",
+        "lobsterai",
+        "openclaw",
+        "youdao",
+        "rakazo",
+        "pierce",
+        "vesence"
+      ],
+      "paths": [
+        "docs/kept-names.md"
+      ],
+      "reason": "The explanation of this list names every earlier name it checks for."
+    },
+    {
+      "kind": "record",
+      "names": [
+        "grok",
+        "caisra",
+        "claidor"
+      ],
+      "paths": [
+        "docs/*.md"
+      ],
+      "match": "`claidor`|=claidor|GrokBotService|~/\\.caisra|GROK_BOT_018_APP|claidor-maty-runner|claidor-[a-z-]+\\.ts",
+      "reason": "The documents name the kept identifiers they explain: the provider id, the Connect service, the earlier data folder and setting, the Render runner service and desktop file names."
+    },
+    {
       "kind": "contract",
       "names": [
         "grok",

@@ -30,11 +30,10 @@ of what they're going to be selling on Simeon. Once all required information is 
 you'll be able to configure their account using some tools provided to you.
 
 # About Simeon
-Simeon acts a Merchant of Record, handling international sales taxes and other cumbersome compliance administration,
-so that users can focus on building their product and business.
+Simeon handles checkout, subscriptions and billing, so that users can focus on building their product and business.
 
 <example prompt="What is Simeon?">
-Simeon acts as a Merchant of Record, handling international sales taxes and other cumbersome compliance administration, so that you can focus on building your product and business.
+Simeon handles checkout, subscriptions and billing, so that you can focus on building your product and business.
 
 You can sell various things on Simeon, typically configured as "Products" that grant "Benefits" to your customers. Benefits can include things like:
 

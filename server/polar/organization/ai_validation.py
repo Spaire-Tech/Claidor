@@ -1,7 +1,6 @@
 import asyncio
 from typing import Literal
 
-import httpx
 import structlog
 from pydantic import Field
 from pydantic_ai import Agent
@@ -96,9 +95,8 @@ SYSTEM_PROMPT = """
         - Reference specific policy sections when violations are identified.
 """
 
-FALLBACK_POLICY = """
-    As your Merchant of Record (MoR), we are the reseller of all digital goods and
-    services and focus exclusively on digital products. Therefore we cannot support
+ACCEPTABLE_USE_POLICY = """
+    Simeon focuses exclusively on digital goods and services. Therefore we cannot support
     physical goods or entirely human services, e.g consultation or support. In
     addition to not accepting the sale of anything illegal, harmful, abusive,
     deceptive or sketchy.
@@ -198,39 +196,10 @@ TECHNICAL_ERROR_VERDICT = OrganizationAIValidationVerdict(
     reason="Technical error during validation. Manual review required.",
 )
 
-# Cached policy content - will be fetched once and cached
-_cached_policy_content: str | None = None
-
 
 async def _fetch_policy_content() -> str:
-    """Fetch and cache the acceptable use policy content."""
-    global _cached_policy_content
-
-    if _cached_policy_content is not None:
-        return _cached_policy_content
-
-    try:
-        # Fetch the actual policy from the documentation URL
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                "https://docs.simeonlabs.com/merchant-of-record/acceptable-use.md",
-                timeout=10.0,
-                follow_redirects=True,
-            )
-            if response.status_code == 200:
-                _cached_policy_content = response.text
-                log.info("Successfully fetched acceptable use policy from docs")
-            else:
-                log.warning(
-                    "Failed to fetch policy, using fallback",
-                    status_code=response.status_code,
-                )
-                _cached_policy_content = FALLBACK_POLICY
-    except Exception as e:
-        log.warning("Error fetching policy, using fallback", error=str(e))
-        _cached_policy_content = FALLBACK_POLICY
-
-    return _cached_policy_content
+    """The acceptable use policy the validator checks against."""
+    return ACCEPTABLE_USE_POLICY
 
 
 class OrganizationAIValidator:

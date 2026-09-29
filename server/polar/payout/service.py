@@ -191,8 +191,7 @@ class PayoutService:
     ) -> None:
         """Hold payouts while any creator org on this account owes Simeon.
 
-        Simeon is the merchant of record, so the balance we're about to pay
-        out is leverage: if a creator's own Simeon subscription is past_due
+        The balance we're about to pay out is leverage: if a creator's own Simeon subscription is past_due
         (a charge failed and dunning is running), we refuse the withdrawal
         until they settle, rather than handing over money we're using to get
         them current. Any one delinquent org on the account holds the lot —

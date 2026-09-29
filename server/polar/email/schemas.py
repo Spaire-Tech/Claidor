@@ -355,8 +355,7 @@ class UserWelcomeEmail(BaseModel):
 #
 # Transactional, Simeon-branded receipt for the platform's OWN billing of a
 # creator org. Distinct from the creator-commerce templates above — those
-# render the *selling* org's header + "Merchant of Record … by Simeon" and
-# are for a creator billing THEIR customers. On a Simeon plan the seller IS
+# render the *selling* org's header and are for a creator billing THEIR customers. On a Simeon plan the seller IS
 # the platform org, so those templates render "Simeon / Simeon" nonsense.
 # Uses the Simeon logo (WrapperPolar) and a transactional footer (no
 # unsubscribe). The trial-start welcome reuses the founder `user_welcome`.

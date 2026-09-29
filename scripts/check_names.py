@@ -9,7 +9,8 @@ rule must still match something, so the list cannot quietly go stale.
     python3 scripts/check_names.py            # check; exit 1 on a finding
     python3 scripts/check_names.py --summary  # also count each kept rule
 
-Only files tracked by git are read. Binary files are skipped.
+Files tracked by git and new files git does not ignore are read. Binary
+files are skipped.
 """
 
 from __future__ import annotations
@@ -49,9 +50,12 @@ PATTERNS = {name: re.compile(regex, re.IGNORECASE) for name, regex in NAMES.item
 
 def tracked_files() -> list[str]:
     out = subprocess.run(
-        ["git", "ls-files", "-z"], cwd=ROOT, capture_output=True, check=True
+        ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+        cwd=ROOT,
+        capture_output=True,
+        check=True,
     ).stdout
-    return [path for path in out.decode().split("\0") if path]
+    return sorted({path for path in out.decode().split("\0") if path})
 
 
 def load_rules() -> list[dict]:

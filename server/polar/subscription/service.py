@@ -2423,7 +2423,7 @@ class SubscriptionService:
 
         # Simeon self-billing: the seller IS the platform org, so the
         # creator-commerce templates below would render "Simeon / Simeon"
-        # headers and Merchant-of-Record footers, and the recipient may be
+        # headers, and the recipient may be
         # the undeliverable platform placeholder. Route to the Simeon-branded
         # transactional notice instead.
         if platform_service.is_platform_organization(organization.id):

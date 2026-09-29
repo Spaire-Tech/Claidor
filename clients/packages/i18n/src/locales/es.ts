@@ -2,14 +2,12 @@ export default {
   checkout: {
     footer: {
       poweredBy: 'Desarrollado por',
-      merchantOfRecord:
-        'Este pedido es procesado por nuestro revendedor en línea y Comerciante registrado, Simeon Labs, quien también gestiona las consultas y devoluciones relacionadas con el pedido.',
       mandateSubscriptionTrial:
-        'Al hacer clic en "{buttonLabel}", autorizas a Simeon Labs, nuestro revendedor en línea y comerciante registrado, a cobrar en tu método de pago seleccionado el importe mostrado arriba al finalizar tu periodo de prueba y en cada fecha de facturación posterior hasta que canceles. Puedes cancelar en cualquier momento antes de que finalice la prueba para evitar el cargo.',
+        'Al hacer clic en "{buttonLabel}", autorizas a Simeon Labs a cobrar en tu método de pago seleccionado el importe mostrado arriba al finalizar tu periodo de prueba y en cada fecha de facturación posterior hasta que canceles. Puedes cancelar en cualquier momento antes de que finalice la prueba para evitar el cargo.',
       mandateSubscription:
-        'Al hacer clic en "{buttonLabel}", autorizas a Simeon Labs, nuestro revendedor en línea y comerciante registrado, a cobrar inmediatamente en tu método de pago seleccionado el importe mostrado arriba y a cobrar el mismo importe en cada fecha de facturación posterior hasta que canceles.',
+        'Al hacer clic en "{buttonLabel}", autorizas a Simeon Labs a cobrar inmediatamente en tu método de pago seleccionado el importe mostrado arriba y a cobrar el mismo importe en cada fecha de facturación posterior hasta que canceles.',
       mandateOneTime:
-        'Al hacer clic en "{buttonLabel}", autorizas a Simeon Labs, nuestro revendedor en línea y comerciante registrado, a cobrar en tu método de pago seleccionado el importe mostrado arriba. Este es un cargo único.',
+        'Al hacer clic en "{buttonLabel}", autorizas a Simeon Labs a cobrar en tu método de pago seleccionado el importe mostrado arriba. Este es un cargo único.',
     },
     form: {
       email: 'Email',

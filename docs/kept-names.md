@@ -16,8 +16,8 @@ It runs on every pull request (`.github/workflows/names.yml`).
 
 Grok (not as part of "ngrok"), Caisra, Anysphere, Claidor, OHADA, Swens,
 Spaire, SpaceX, xAI, LobsterAI, OpenClaw, Youdao, Rakazo, Pierce and Vesence,
-in any case, in the text and the name of every file git tracks. Binary files
-are skipped.
+in any case, in the text and the name of every file in the repository
+(tracked, or new and not ignored by git). Binary files are skipped.
 
 "Cursor" is not on the list: it is an ordinary English word and appears
 thousands of times in code (a text cursor, a database cursor, a page cursor).
@@ -30,8 +30,9 @@ package build records how many "Cursor" and "Anysphere" survive it
 Each rule names the earlier names it allows, the files it allows them in, an
 optional pattern the line must match, and the reason.
 
-- **record**: a statement of where something comes from that has to name its
-  source. The Mac app's `desktop/NOTICE.md` is the only one.
+- **record**: text that has to name an earlier name: the Mac app's
+  `desktop/NOTICE.md`, which states where the app comes from, and the
+  documents here that explain a kept identifier.
 - **contract**: a name another program expects, which we do not build and
   cannot change. The upstream app's download name and bundle names, the
   strings the window patch looks for in order to replace them, generated

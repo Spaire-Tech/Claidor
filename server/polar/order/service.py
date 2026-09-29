@@ -1402,9 +1402,8 @@ class OrderService:
         # Simeon self-billing: when the seller IS the platform org, this order
         # is Simeon billing a creator for their plan — not a creator billing
         # their own customer. The creator-commerce templates below would
-        # render the platform org's own header ("Simeon / Simeon"), the
-        # "Merchant of Record … by Simeon" footer, and a $0 invoice for a free
-        # trial. Send the Simeon-branded transactional emails instead.
+        # render the platform org's own header ("Simeon / Simeon") and a $0
+        # invoice for a free trial. Send the Simeon-branded transactional emails instead.
         if platform_service.is_platform_organization(organization.id):
             await self._send_platform_billing_email(session, order, organization)
             return

@@ -229,14 +229,7 @@ const OrganizationSelectionPage = ({
                         </label>
                         <ul className="flex flex-col gap-y-1 text-sm text-gray-500">
                           <li>
-                            <a
-                              href="https://docs.simeonlabs.com/merchant-of-record/account-reviews"
-                              className="text-blue-600 hover:underline"
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              Account Reviews Policy
-                            </a>
+                            Account Reviews Policy
                             {' - '}I&apos;ll comply with KYC/AML requirements
                             including website and social verification
                           </li>
