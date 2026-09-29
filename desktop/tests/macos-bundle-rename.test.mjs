@@ -55,7 +55,7 @@ test("the name rule follows electron-packager: the product name and every name t
 });
 
 test("the executable, the four helpers, their executables and their plists are renamed together", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "caisra-bundle-rename-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-bundle-rename-"));
   try {
     const app = await fakeShell(root, "Grok Bot");
     const result = await renameMacBundleIdentity({ appPath: app, fromName: "Grok Bot", toName: "Simeon", plist: jsonPlist });
@@ -87,7 +87,7 @@ test("the executable, the four helpers, their executables and their plists are r
 });
 
 test("a bundle whose executable is not the expected name, or that has no helpers, is refused untouched", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "caisra-bundle-rename-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-bundle-rename-"));
   try {
     const app = await fakeShell(root, "Grok Bot");
     await assert.rejects(renameMacBundleIdentity({ appPath: app, fromName: "Other", toName: "Simeon", plist: jsonPlist }), /Expected CFBundleExecutable "Other"/);

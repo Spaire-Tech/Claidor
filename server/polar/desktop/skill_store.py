@@ -5,8 +5,8 @@ https://github.com/anthropics/skills at the commit named in
 `skills/NOTICE`, and `skills/catalog.json` says which ones are offered,
 with what description and tags, and at what version.
 
-*26 September 2026 (ledger F-186, F-194): the app described below is the
-LobsterAI-era one, which left the tree on 18 September; nothing in the
+*26 September 2026 (ledger F-186, F-194): the app described below is an
+earlier version, gone since 18 September; nothing in the
 current app calls this store, whose skills are Anthropic's developer
 skills rather than a consumer assistant's. It stays served; which skills
 Simeon's agents carry, and by what path into the box, is a product

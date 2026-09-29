@@ -1,5 +1,5 @@
 /**
- * Sharing is served (25 September 2026, docs/product/sharing-served.md).
+ * Sharing is served (25 September 2026, docs/services-agents.md).
  *
  * The cross-user sharing client (`host/extensions/cross-user-sharing/`) was
  * complete and waited on a relay Simeon Labs' server did not serve

@@ -84,7 +84,7 @@ test("a vendor connector has a stable numeric server id and reads back as a plug
 
 test("the install store carries a credential, survives a re-install, and is replaced whole by the host", async () => {
   const { module, dispose } = await load("source/shared/node/vendor-mcp/installs.ts", "vendor-store");
-  const root = await mkdtemp(path.join(os.tmpdir(), "caisra-vendor-store-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-vendor-store-"));
   try {
     const { upsertVendorMcpInstall, setVendorMcpCredential, clearVendorMcpCredential, loadVendorMcpInstalls, replaceVendorMcpInstalls, vendorMcpInstallsPath } = module;
     upsertVendorMcpInstall(root, { id: "notion", url: FIGMA, connected: false });
@@ -112,7 +112,7 @@ test("the install store carries a credential, survives a re-install, and is repl
 
 test("installed live connectors are account rows with one slot; the merge keeps the base scope", async () => {
   const { module, dispose } = await load("source/shared/node/vendor-mcp/display.ts", "vendor-display");
-  const root = await mkdtemp(path.join(os.tmpdir(), "caisra-vendor-display-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-vendor-display-"));
   try {
     const { vendorAccountServersFromInstalls, withVendorAccountServers, VENDOR_MCP_CACHE_SCOPE } = module;
     const rows = vendorAccountServersFromInstalls([
@@ -142,7 +142,7 @@ test("installed live connectors are account rows with one slot; the merge keeps 
     const failed = await withVendorAccountServers(Promise.reject(new Error("no backend")), () => root);
     assert.equal(failed.cacheScope, "acct", "a failed read keeps the last scope so pending sign-ins are not cancelled");
     assert.equal(failed.servers.length, 1);
-    const fresh = await mkdtemp(path.join(os.tmpdir(), "caisra-vendor-display-2-"));
+    const fresh = await mkdtemp(path.join(os.tmpdir(), "simeon-vendor-display-2-"));
     writeFileSync(path.join(fresh, "vendor-mcp-installs.json"), JSON.stringify([{ id: "notion", url: FIGMA, connected: false }]));
     assert.equal((await withVendorAccountServers(null, () => fresh)).cacheScope, VENDOR_MCP_CACHE_SCOPE);
     await rm(fresh, { recursive: true, force: true });
@@ -176,7 +176,7 @@ test("the HTTP MCP client initializes once, lists tools over SSE, calls a tool, 
 
 test("on the Mac the backend starts a sign-in, finishes it from the loopback, lists and calls tools, and refreshes", async () => {
   const { module, dispose } = await load("source/shared/node/vendor-mcp/backend-exec.ts", "vendor-backend-mac");
-  const root = await mkdtemp(path.join(os.tmpdir(), "caisra-vendor-mac-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-vendor-mac-"));
   try {
     const { createVendorMcpBackendExec } = module;
     const { writeFileSync, readFileSync } = await import("node:fs");
@@ -260,7 +260,7 @@ test("on the Mac the backend starts a sign-in, finishes it from the loopback, li
 
 test("in the box the backend never opens a sign-in: no credential is needsAuth with the connect card's door, an expired one too", async () => {
   const { module, dispose } = await load("source/shared/node/vendor-mcp/backend-exec.ts", "vendor-backend-box");
-  const root = await mkdtemp(path.join(os.tmpdir(), "caisra-vendor-box-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-vendor-box-"));
   try {
     const { createVendorMcpBackendExec } = module;
     const { writeFileSync } = await import("node:fs");

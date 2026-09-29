@@ -1306,7 +1306,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             method(remoteBox, "downloadFile")?.(ctx, session.id, boxPath),
           // The agent's own avatar set/clear (UpdateState target avatar)
           // writes the file and calls this; without it the roster never
-          // redrew (docs/product/avatar-audit-2026-09-24.md).
+          // redrew (docs/services-agents.md).
           onAvatarChanged: () => {
             void method(transcript, "emitAgentUpdate")?.(session.id);
           },
@@ -1378,7 +1378,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
     // context (turn-toolset.ts, turn-agent-composition.ts:305/775,
     // system-prompt-assembly.ts:197). Until 24 September 2026 the flag was
     // hard-coded false for every identity, so a child ran with the agent's
-    // toolset around Computer (docs/product/computer-use-child-audit-2026-09-24.md).
+    // toolset around Computer.
     const isBoxScopedIdentity = (promptIdentity: PromptIdentity): boolean =>
       promptIdentity.isSubagentRunner && (promptIdentity.isComputerUseSubagent || promptIdentity.isBrowserUseSubagent);
     const AGENT_PROMPT_IDENTITY: PromptIdentity = { isSubagentRunner: false, isComputerUseSubagent: false, isBrowserUseSubagent: false };
@@ -2701,7 +2701,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       const isComputerUseTurn = identity.isSubagentRunner && isComputerUseSubagentType(identity.subagentType);
       const isBrowserUseTurn = identity.isSubagentRunner && isBrowserUseSubagentType(identity.subagentType);
       // A watchVideo / videoReview child runs on the video model (Gemini
-      // through Simeon Labs' proxy, `docs/product/video-served.md`): the
+      // through Simeon Labs' proxy, `docs/services-agents.md`): the
       // model id below is what its state carries, so context processing
       // accepts the video (`isGeminiModelId`) and the executor speaks
       // Gemini's wire (`isGeminiVideoModelId` in provider-session.ts).
@@ -2902,8 +2902,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             // a revival) is marked `hidden` by its caller and gets the
             // 40-call budget in createProviderPromptSession. Until 25
             // September 2026 this input dropped the flag, so every hidden
-            // turn ran with the asked-turn cap of 5,000
-            // (docs/product/design-audit-ledger.md F-001, F-015, F-117).
+            // turn ran with the asked-turn cap of 5,000.
             ...(runOptions.hidden === undefined
               ? {}
               : { hidden: runOptions.hidden === true }),

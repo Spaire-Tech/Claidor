@@ -281,7 +281,7 @@ def create_app() -> FastAPI:
 
     # /sand/*, /aiserver.v1.*, /agent.v1.*: the half of Cursor's server the
     # app expects, root-level for the same reason as sign-in
-    # (docs/product/cursor-dependencies-map.md).
+    # (docs/services-agents.md).
     app.include_router(sand_router)
 
     if settings.BACKOFFICE_HOST is None:

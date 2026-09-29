@@ -566,7 +566,7 @@ export async function launchPackagedApp({ appPath, timeoutMs = 15_000, pollMs = 
     };
   }
   const { executable } = prerequisites;
-  const userDataRoot = await mkdtemp(path.join(tmpdir(), "grok-bot-native-e2e-"));
+  const userDataRoot = await mkdtemp(path.join(tmpdir(), "simeon-native-e2e-"));
   let output = "", child;
   try {
     const nativeEnvironment = createNativeTestEnvironment(process.env, userDataRoot);

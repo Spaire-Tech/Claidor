@@ -3,7 +3,7 @@ person's cloud box, answer where it is, recreate it, watch a recreate,
 and mint the local-exec daemon's credential.
 
 What is reused, not built: the box credential (`DesktopService.
-issue_box_credential`, the `claidor_db_` child row the box trades at
+issue_box_credential`, the `simeon_db_` child row the box trades at
 `POST /sand-box/inference-credential`), the token helpers
 (`polar.kit.crypto`), and the `docker run` of the Mac's local path
 (`BoxSpec.environment` in `box_hosts.py`). The URL shapes come from the
@@ -214,7 +214,7 @@ def set_health_check_for_tests(check: HealthCheck | None) -> None:
 
 # --- sleep: what the box says about itself ------------------------------------------
 #
-# Grok Bot's contract, read from the host and the generated protos
+# The upstream app's contract, read from the host and the generated protos
 # (28 September 2026). The host answers `GET /health` with `isBusy`,
 # `busyOnlyAwaitingApproval` and `lastBusyAtMs` (`gateway-server.ts`,
 # `SandHost.getHealth`): busy while a turn, a background shell, a carried
@@ -354,7 +354,7 @@ class BoxBrokerService:
     @classmethod
     def novnc_url(cls, proxy_base: str, network_token: str) -> str:
         # `buildSandBoxNoVncUrl` in `packages/constants/sand-box.ts`, so the
-        # page the app's webview loads is the one Grok Bot's renderer loads.
+        # page the app's webview loads is the one the upstream app's renderer loads.
         websockify = f"websockify?network_token={network_token}&{NOVNC_WAKE}"
         return (
             f"{proxy_base}/vnc.html?network_token={network_token}&{NOVNC_WAKE}"
@@ -490,7 +490,7 @@ class BoxBrokerService:
                 if expected_host is not None:
                     stale_host = current is None or current.host_sha256 != expected_host
             if (stale_host or stale_image) and state == "running":
-                # Grok Bot's supervisor swaps the host only when the box is
+                # The upstream app's supervisor swaps the host only when the box is
                 # idle (the upgrade command waits while it is busy): a box
                 # working, or waiting on the person's approval, keeps its
                 # program until the app connects to it idle.
@@ -712,7 +712,7 @@ class BoxBrokerService:
     async def check_capacity(
         self, repository: SandBoxRepository, host: BoxHost, box: SandBox
     ) -> None:
-        """Before a box is started on its server: refuse with Grok Bot's
+        """Before a box is started on its server: refuse with the upstream app's
         blocked hold when the server's limit of others are awake on it. The
         app holds for `retry-after` and asks again
         (`BrokeredHostConnector.connect`); the sleeper frees room."""
@@ -744,7 +744,7 @@ class BoxBrokerService:
     async def place(self, repository: SandBoxRepository, box: SandBox) -> BoxHost:
         """The server a new box is made on: of the accepting servers with
         room, the one with the largest share of its limit free (a server
-        with no limit counts as all free). None with room: Grok Bot's
+        with no limit counts as all free). None with room: the upstream app's
         blocked hold, the same one a full single server gave."""
         best: BoxHost | None = None
         best_free = -1.0
@@ -925,7 +925,7 @@ class BoxBrokerService:
     # connection goes stale, trades it for the box's current connection
     # (`resolveLocalExecConnectionFromBackend`, `POST /sand-box/local-exec-connection`,
     # `{baseUrl, token, networkToken}`). Same machinery as the box's
-    # credential: a child `desktop_sessions` row with the `claidor_db_`
+    # credential: a child `desktop_sessions` row with the `simeon_db_`
     # prefix, told apart by its user agent, revoked with its parent on
     # sign-out and by the next box credential mint (one mint revokes every
     # child; the daemon asks again on its next tick).

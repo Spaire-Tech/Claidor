@@ -1,6 +1,6 @@
 """The cloud box's sleep and wake (28 September 2026).
 
-Grok Bot's pods hibernated when idle and woke when asked for; the client
+The upstream app's pods hibernated when idle and woke when asked for; the client
 half is in the tree and unchanged (the host's `/health` reports `isBusy`
 and `lastBusyAtMs`, the window draws `SAND_BOX_RUN_STATE_HIBERNATED` as
 "sleeping", every reconnect is an EnsureSandBox that starts it again, and

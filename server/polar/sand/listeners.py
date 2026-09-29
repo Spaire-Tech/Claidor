@@ -1,6 +1,6 @@
 """Event routines (listeners) — Slack, GitHub, Linear, Sentry, PagerDuty
 — served from Simeon Labs' server (25 September 2026,
-`docs/product/listeners-served.md`).
+`docs/services-agents.md`).
 
 The app side never changed: the automations extension in the box
 (`desktop/source/host/extensions/automations/`) registers what it

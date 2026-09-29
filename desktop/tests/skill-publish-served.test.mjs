@@ -1,6 +1,6 @@
 /**
  * Publishing a skill runs against Simeon Labs' server (25 September 2026,
- * design-audit-ledger.md F-157, docs/product/skill-publish-served.md).
+ * design-audit-ledger.md F-157, docs/services-agents.md).
  *
  * The app side never changed shape: `SandSkillPublishService` packs the
  * skill folder as a plugin tar.gz, posts it to
@@ -134,7 +134,7 @@ test("a skill publishes to Just me, confirms on the first sync, and unpublish re
   const registry = await startRegistry();
   delete process.env.SAND_CONNECT_SERVED;
   process.env.SAND_BACKEND_URL = registry.url;
-  const sandRoot = await mkdtemp(path.join(os.tmpdir(), "caisra-skill-publish-root-"));
+  const sandRoot = await mkdtemp(path.join(os.tmpdir(), "simeon-skill-publish-root-"));
   const publish = await load("source/host/extensions/mcp/skill-publish.ts", "skill-publish");
   const skills = await load("source/host/extensions/mcp/plugin-skills.ts", "plugin-skills");
   try {
@@ -215,7 +215,7 @@ test("the server's own sentence reaches the card when targets or a publish fail;
     assert.equal(module.serverSentence(connectError), "The registry is down for maintenance.");
     assert.equal(module.serverSentence(new Error("socket hang up")), "socket hang up");
     // A refusal on the publish itself is the server's sentence behind the refusal prefix.
-    const skillDir = await mkdtemp(path.join(os.tmpdir(), "caisra-skill-"));
+    const skillDir = await mkdtemp(path.join(os.tmpdir(), "simeon-skill-"));
     await writeFile(path.join(skillDir, "SKILL.md"), "---\nname: X\ndescription: d\n---\n\nbody\n");
     await assert.rejects(service.upload({ skillDir, skillRelativePath: "x", name: "X", description: "d", teamId: 1, pluginName: "x" }), /skill-publish\/refused: The registry is down for maintenance\./);
     await rm(skillDir, { recursive: true, force: true });
@@ -228,7 +228,7 @@ test("the server's own sentence reaches the card when targets or a publish fail;
 
 test("an inline plugin's files are written to disk and its skills land in the manifest", async () => {
   const { module, dispose } = await load("source/packages/cursor-plugins/inline-plugin-synthesizer.ts", "inline-synth");
-  const targetDir = await mkdtemp(path.join(os.tmpdir(), "caisra-inline-plugin-"));
+  const targetDir = await mkdtemp(path.join(os.tmpdir(), "simeon-inline-plugin-"));
   try {
     await module.synthesizeInlinePluginDir({ targetDir, pluginName: "meeting-notes", inlineContentJson: JSON.stringify({ files: [
       { path: "plugin.json", content: JSON.stringify({ name: "meeting-notes", displayName: "Meeting Notes", skills: ["skills/meeting-notes"] }) },
@@ -250,7 +250,7 @@ test("an inline plugin's files are written to disk and its skills land in the ma
 
 test("a failed daily sync writes one [simeon] plugins line and throws to nobody's turn", async () => {
   const { module, dispose } = await load("source/host/extensions/mcp/plugin-skills.ts", "plugin-skills-log", { extraExports: [["source/shared/host-log.ts", ["setHostLogSink"]]] });
-  const sandRoot = await mkdtemp(path.join(os.tmpdir(), "caisra-plugin-skills-log-"));
+  const sandRoot = await mkdtemp(path.join(os.tmpdir(), "simeon-plugin-skills-log-"));
   const hostLines = [];
   module.setHostLogSink((line) => hostLines.push(line));
   try {

@@ -1,6 +1,6 @@
 /**
  * Memory backed up to Simeon Labs' server (25 September 2026,
- * docs/product/memory-sync-served.md).
+ * docs/services-core.md).
  *
  * The server has served `POST /desktop/api/memory/sync` and
  * `GET /desktop/api/memory` since 11 September and nothing on the app side
@@ -105,7 +105,7 @@ const until = async (predicate, ms = 4000) => { const end = Date.now() + ms; whi
 test("a fresh box pulls what the server holds, a local change pushes with its base version, a newer server copy is merged in, and the state carries the versions", async () => {
   const { module, dispose } = await load("source/host/extensions/memory-sync/extension.ts", "memory-sync");
   const server = await startMemoryServer();
-  const sandRoot = await mkdtemp(path.join(os.tmpdir(), "caisra-memsync-root-"));
+  const sandRoot = await mkdtemp(path.join(os.tmpdir(), "simeon-memsync-root-"));
   const profile = "agents/a1/memory/profile.md";
   server.rows.set(profile, { content: "# About the user\n\n- (2026-09-20) The founder is called Bass.\n", version: 3, deleted: false });
   server.rows.set("user-memory/agents/a1/log/2026-09.md", { content: "- (2026-09-24) Dakar this week.\n", version: 1, deleted: false });
@@ -156,7 +156,7 @@ test("a fresh box pulls what the server holds, a local change pushes with its ba
 test("a name deleted on another machine is removed here, a local deletion is told, and .dreaming never travels", async () => {
   const { module, dispose } = await load("source/host/extensions/memory-sync/extension.ts", "memory-sync-del");
   const server = await startMemoryServer();
-  const sandRoot = await mkdtemp(path.join(os.tmpdir(), "caisra-memsync-root-"));
+  const sandRoot = await mkdtemp(path.join(os.tmpdir(), "simeon-memsync-root-"));
   const log = "agents/a1/memory/log/2026-08.md";
   const profile = "agents/a1/memory/profile.md";
   await mkdir(path.join(sandRoot, "agents", "a1", "memory", "log"), { recursive: true });
@@ -199,7 +199,7 @@ test("a write under a watched root triggers a round after the debounce, a refusa
   const server = await startMemoryServer();
   // The real path: on macOS the temp folder is reached through a symlink (/var -> /private/var),
   // and the recursive file watcher (FSEvents there) is slow and unreliable on the linked path.
-  const sandRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "caisra-memsync-root-")));
+  const sandRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "simeon-memsync-root-")));
   try {
     const ext = startExtension(module, { sandRoot, url: server.url, debounce: after(100) });
     await ext.api.whenStarted;

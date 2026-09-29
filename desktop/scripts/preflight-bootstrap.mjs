@@ -42,7 +42,7 @@ if (missing.length > 0) {
       `  It needs Grok Bot 0.18.0. Do not point SIMEON_UPSTREAM_APP at\n` +
       `  /Applications/Grok Bot.app unless plutil prints 0.18.0 — that copy\n` +
       `  is often a newer Grok Bot. Otherwise bootstrap downloads the pinned\n` +
-      `  DMG. See docs/product/building-the-app.md.`,
+      `  DMG. See docs/building-the-app.md.`,
   );
 }
 

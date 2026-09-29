@@ -1,5 +1,5 @@
 // The watchVideo and videoReview subagents, registered again (25 September
-// 2026, docs/product/video-served.md). Grok Bot's Task tool knows both
+// 2026, docs/services-agents.md). Grok Bot's Task tool knows both
 // types by their proto cases (`subagent-config.ts`, `getSubagentTypeName`:
 // `watchVideo` → "watchVideo", `mediaReview` → "videoReview";
 // `isGeminiVideoSubagentType` is what lets a Task carry a video in

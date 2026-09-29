@@ -2,7 +2,7 @@
 // ours takes: a video.
 //
 // The watchVideo / videoReview subagents run on a Gemini model
-// (`docs/product/video-served.md`, 25 September 2026). The executor for
+// (`docs/services-agents.md`, 25 September 2026). The executor for
 // every other model is the AI SDK's OpenAI provider on the Responses wire
 // (`provider-session.ts`), and that wire has no video part; `@ai-sdk/google`
 // is not in `package.json` (measured: `node_modules/@ai-sdk/` holds openai,

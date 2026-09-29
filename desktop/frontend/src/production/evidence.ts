@@ -169,7 +169,7 @@ export const UI_TEXT = {
   continueInBrowser: "Continue in your browser",
   copied: "Copied",
   copyVersionInfo: "Copy version info",
-  copyright: "Copyright © 2026 Spaire",
+  copyright: "Copyright © 2026 Simeon Labs",
   feedbackIntroduction: "Tell the Simeon team what happened or what you want changed. Reports go straight to the team.",
   feedbackPlaceholder: "What happened? What did you expect?",
   helpCenter: "Help Center",

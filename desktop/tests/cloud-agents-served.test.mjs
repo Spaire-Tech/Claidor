@@ -1,6 +1,6 @@
 /**
  * Cloud agents are served (25 September 2026, `polar/sand/cloud_agents.py`
- * over the maty queue; `docs/product/cloud-agents-served.md`).
+ * over the maty queue; `docs/services-agents.md`).
  *
  * The client is Grok Bot's own, unchanged in what it sends:
  * `SandCloudAgentManager` composes each Connect request and reads each

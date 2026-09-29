@@ -224,7 +224,7 @@ export async function fetchCursorProfile(getAccessToken: AccessTokenReader, deps
   }
 }
 // The rename stays local, as before: the name is written to
-// `~/.caisra/account-display-name` first and `DashboardService/UpdateUserName`
+// `~/.simeon/account-display-name` first and `DashboardService/UpdateUserName`
 // is still attempted, where its "unimplemented" answer from Simeon Labs'
 // server is swallowed by `persistAccountDisplayName`. It already worked
 // that way; nothing here changed on 24 September 2026.

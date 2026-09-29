@@ -17,17 +17,17 @@ pnpm install --frozen-lockfile
 # This avoids OOM issues from DTS generation in container
 echo "Checking workspace packages..."
 if [[ ! -d "packages/client/dist" ]]; then
-    echo "Building @polar-sh/client..."
-    pnpm --filter @polar-sh/client build
+    echo "Building @simeon/client..."
+    pnpm --filter @simeon/client build
 else
-    echo "@polar-sh/client already built"
+    echo "@simeon/client already built"
 fi
 
 if [[ ! -d "packages/ui/dist" ]]; then
-    echo "Building @polar-sh/ui..."
-    pnpm --filter @polar-sh/ui build
+    echo "Building @simeon/ui..."
+    pnpm --filter @simeon/ui build
 else
-    echo "@polar-sh/ui already built"
+    echo "@simeon/ui already built"
 fi
 
 if [[ ! -d "packages/checkout/dist" ]]; then

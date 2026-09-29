@@ -4,7 +4,7 @@
 The app's cross-user sharing (`desktop/source/host/extensions/cross-user-sharing/`,
 complete since the reconstruction) spoke Cursor's relay; this module is
 that relay on Simeon Labs' server, route for route and field for field
-(`docs/product/cursor-dependencies-map.md` §8, `docs/product/sharing-served.md`).
+(`docs/services-agents.md` §8, `docs/services-agents.md`).
 The service runs in the box, so every route takes the box's credential
 (`get_desktop_or_box_session`). Plain JSON in, plain JSON out; a body the
 relay cannot act on (not a member, not the host, a malformed link) is

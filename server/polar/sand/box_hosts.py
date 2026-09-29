@@ -8,18 +8,19 @@ Two implementations, chosen by `SIMEON_BOX_HOST_PROVIDER`:
   `desktop/source/electron-main/box/local-docker-host-connector.ts`
   (image, environment, labels, volumes, published ports), spoken to a
   Docker Engine at `SIMEON_BOX_DOCKER_HOST` over its HTTP API with httpx
-  (no new dependency). Two things differ from the Mac by necessity: the
-  box credential rides in `SAND_INFERENCE_RENEWAL_CREDENTIAL` instead of
-  a mounted token file (the daemon is on another machine, so there is
-  nothing to bind-mount), and the host bundle is uploaded into the
-  container with `PUT /containers/{id}/archive` before it starts, or
-  baked into `SIMEON_BOX_IMAGE`.
+  (no new dependency). The box credential rides in its environment
+  (`SAND_INFERENCE_RENEWAL_CREDENTIAL`), as on the Mac. The host bundle
+  is written once per version into a folder on the Docker machine
+  (`/var/lib/simeon/box-host/<key>/`, through a short-lived helper
+  container and `PUT /containers/{id}/archive`) and bind-mounted
+  read-only into every box, which is labelled with its sha256 so a box
+  on an older bundle is replaced.
 - `e2b`: a stub. The `e2b` package is not in `uv.lock` (checked 25
   September 2026: `grep -n 'name = "e2b"' server/uv.lock` finds nothing),
   and E2B's per-port hostnames are `<port>-<id>.e2b.app`, which is not
   the `<label>-<port>` shape the app's tunnel derivation reads
   (`box-connection.ts`); both are written up in
-  `docs/product/cloud-computer-served.md`.
+  `docs/services-core.md`.
 
 Nothing here touches the database; the broker keeps the row.
 """
@@ -692,12 +693,12 @@ def set_box_host_for_tests(host: BoxHost | list[BoxHost] | None) -> None:
     )
 
 
-#: Grok Bot's publish layout (`host-bundle-source.ts`): a pointer file holding
+#: The upstream app's publish layout (`host-bundle-source.ts`): a pointer file holding
 #: a commit id, and one tarball per commit id beside it.
 LATEST_VERSION_FILE = "sand-host-bundle-latest.version"
 HOST_BUNDLE_PREFIX = "sand-host-bundle"
 _VERSION_PATTERN = re.compile(r"^[0-9a-f]{7,40}$")
-#: How long a read pointer is trusted: Grok Bot's `VERSION_CACHE_TTL_MS`.
+#: How long a read pointer is trusted: the upstream app's `VERSION_CACHE_TTL_MS`.
 BUNDLE_POINTER_TTL = timedelta(minutes=10)
 _pointer_cache: dict[str, tuple[str, datetime]] = {}
 
@@ -717,7 +718,7 @@ def set_bundle_http_for_tests(factory: Callable[[], httpx.AsyncClient] | None) -
 
 
 def is_bundle_channel(url: str) -> bool:
-    """A folder in Grok Bot's layout, as opposed to one fixed tar file."""
+    """A folder in the upstream app's layout, as opposed to one fixed tar file."""
     path = urlsplit(url).path
     return not path.endswith((".tgz", ".tar", ".tar.gz"))
 
@@ -773,7 +774,7 @@ async def _current_version(base: str) -> str:
 
 async def load_host_bundle(url: str) -> HostBundle | None:
     """The host bundle the cloud computers mount. `url` is either one tar
-    file (read once per process) or a folder in Grok Bot's layout, whose
+    file (read once per process) or a folder in the upstream app's layout, whose
     pointer is followed: a new version published there reaches the server
     within `BUNDLE_POINTER_TTL`, with no restart, and each box moves to it
     when it is next idle (`box_service.ensure`)."""

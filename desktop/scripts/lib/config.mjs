@@ -76,7 +76,7 @@ export const simeonExecutableName = simeonName;
  * Both names are required and neither is redundant: `SAND_BACKEND_URL` is read
  * only by `getConfiguredBackendUrl`, while the login manager that actually
  * opens the browser reads `SIMEON_API_BASE_URL` and `SIMEON_WEBSITE_URL` and
- * nothing else. Measured — see `docs/product/app-sign-in.md`.
+ * nothing else. Measured — see `docs/services-core.md`.
  *
  * `SAND_AUTH_CLIENT_ID` is deliberately absent: setting it makes
  * `isDevAuthBackend` true, and `shouldRefreshAccessToken` then returns true

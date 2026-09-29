@@ -82,7 +82,7 @@ DEEP_LINK_PATH = "://app/v1/open"
 NO_STORE = {"Cache-Control": "no-store"}
 
 #: What the app calls itself to the person. The internal identifiers
-#: stay as they are (`docs/product/direction.md` §0); this is the name
+#: stay as they are (docs/kept-names.md); this is the name
 #: on a page somebody reads.
 PRODUCT = "Simeon"
 
@@ -241,7 +241,7 @@ async def auth_poll(
     the pair. The app reads 404 as « keep waiting » and resets its error
     count on it, so it must not be an error shape.
 
-    Grok Bot's protocol carries the PKCE verifier in the query string,
+    The upstream app's protocol carries the PKCE verifier in the query string,
     which lands in every access log (F-258). Since 25 September 2026 the
     app posts it instead (`/auth/poll` with a JSON body, below); this GET
     stays for a build from before that day."""
@@ -347,7 +347,7 @@ async def oauth_token(
 async def box_inference_credential(
     request: Request, session: AsyncSession = Depends(get_db_session)
 ) -> JSONResponse:
-    """The box's own renewal (25 September 2026). Grok Bot's host renews
+    """The box's own renewal (25 September 2026). The upstream app's host renews
     its inference credential at this path on its backend
     (`desktop/source/host/extensions/auth/credential-renewer.ts`,
     `RENEWAL_PATH`, `{credential}` in, `{accessToken, expiresAtMs}`

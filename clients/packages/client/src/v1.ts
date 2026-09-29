@@ -187,7 +187,7 @@ export interface paths {
      * @description Send Feedback, recorded as one log line against the person.
      *
      *     Added 24 September 2026. Until then the app posted its feedback to
-     *     `{api}/sand/feedback`, Grok Bot's address at Cursor, which this
+     *     `{api}/sand/feedback`, the upstream app's address at Cursor, which this
      *     server answered 404, so every message a person wrote in the sheet
      *     was lost and the sheet said « unavailable ». There is no table: a
      *     log line with the user id is what the founder asked for, and it is
@@ -467,8 +467,8 @@ export interface paths {
      *     curation.
      *
      *     The app reads ``data.value.kits`` and appends its own built-in kits.
-     *     (Checked 25 September 2026: no caller in ``desktop/`` since the
-     *     re-founding; the paths below name the LobsterAI tree.)
+     *     (Checked 25 September 2026: nothing in ``desktop/`` calls it; the
+     *     paths below name an earlier version of the app.)
      *
      *     Three facts settle what can honestly go here, all of them in the desktop
      *     app rather than in this file:
@@ -661,12 +661,8 @@ export interface paths {
      *     `/api/proxy/v1/responses`.
      *
      *     It is, however, the wire every general OpenAI-compatible client
-     *     speaks, and Rakazo is one of them — its model connection posts here
-     *     and nowhere else
-     *     (the Rakazo attempt, removed 18 September; see `docs/product/going-back-brief.md`,
-     *     which builds every model with `api: "openai-completions"`). So this
-     *     route stopped being a courtesy to old clients the day Simeon was
-     *     connected to a server it did not write.
+     *     speaks, so a program we did not write can use the model proxy through
+     *     it with a personal access token.
      */
     post: operations['desktop:desktop:chat_completions']
     delete?: never
@@ -881,7 +877,7 @@ export interface paths {
      *     the pair. The app reads 404 as « keep waiting » and resets its error
      *     count on it, so it must not be an error shape.
      *
-     *     Grok Bot's protocol carries the PKCE verifier in the query string,
+     *     The upstream app's protocol carries the PKCE verifier in the query string,
      *     which lands in every access log (F-258). Since 25 September 2026 the
      *     app posts it instead (`/auth/poll` with a JSON body, below); this GET
      *     stays for a build from before that day.
@@ -938,7 +934,7 @@ export interface paths {
     put?: never
     /**
      * Desktop:Box Inference Credential
-     * @description The box's own renewal (25 September 2026). Grok Bot's host renews
+     * @description The box's own renewal (25 September 2026). The upstream app's host renews
      *     its inference credential at this path on its backend
      *     (`desktop/source/host/extensions/auth/credential-renewer.ts`,
      *     `RENEWAL_PATH`, `{credential}` in, `{accessToken, expiresAtMs}`

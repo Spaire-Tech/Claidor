@@ -229,7 +229,7 @@ class TestNames:
 
 
 class TestTheAppsNames:
-    """The Grok Bot reconstruction's own layout under the sand root
+    """The reconstruction's own layout under the sand root
     (25 September 2026, `memory-service.ts`), widened into the accepted
     list so the box's host can sync what it actually writes."""
 

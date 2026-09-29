@@ -100,7 +100,7 @@ test("the brief follows the tools it has and carries the founder's voice, and a 
     assert.match(prompt, /## Documents you make\nA report, plan, guide, memo, deck or spreadsheet the user asked for is a file, not a long chat reply: write a \.docx, \.pptx or \.xlsx/);
     assert.doesNotMatch(prompt, /read-only Screenshot tool|Screenshot views of the box/, "no Screenshot promise while the tool is withheld");
     assert.match(prompt, /a computerUse subagent's screenshots/);
-    // Since 25 September 2026 watchVideo is served (docs/product/video-served.md,
+    // Since 25 September 2026 watchVideo is served (docs/services-agents.md,
     // tests/watch-video.test.mjs): the brief delegates a video to it, and the
     // coming-soon sentence sits behind `SAND_VIDEO_SUBAGENT_SERVED=0`.
     assert.match(prompt, /dispatch Task with subagent_type watchVideo/);

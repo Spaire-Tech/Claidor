@@ -35,7 +35,7 @@ class GoogleUserProfile(TypedDict):
 def remember_google_name(user: User, profile: GoogleUserProfile) -> None:
     """The person's name as Google gives it, kept in `meta` (the user row has
     no name column). The desktop's profile route hands it to the agent, which
-    greets the person by it, as Grok Bot does (28 September 2026)."""
+    greets the person by it, as the upstream app does (28 September 2026)."""
     name = (profile.get("name") or "").strip()
     given = (profile.get("given_name") or "").strip()
     if not name and not given:

@@ -1,6 +1,6 @@
 /**
  * Watching a video is served (25 September 2026,
- * docs/product/video-served.md; ledger F-236, F-273, F-329).
+ * docs/services-agents.md; ledger F-236, F-273, F-329).
  *
  * Grok Bot's watchVideo / videoReview subagents ran a Gemini model on
  * Cursor's inference service. Simeon Labs' server now serves Gemini's own

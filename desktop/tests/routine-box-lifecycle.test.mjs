@@ -53,7 +53,7 @@ test("quit keeps the box for an enabled routine and stops it otherwise; the two 
     assert.equal(await stopLocalDockerBoxOnQuit({ boxRuntime: "local-docker", env: {}, stop, log: (line) => lines.push(line), hasEnabledRoutine: async () => { throw new Error("box gone"); } }), "stopped", "a box that cannot be asked is stopped");
     assert.ok(lines.some((line) => line.includes("could not ask the box for its routines (box gone)")));
 
-    const settingsDir = await mkdtemp(path.join(os.tmpdir(), "caisra-quit-settings-"));
+    const settingsDir = await mkdtemp(path.join(os.tmpdir(), "simeon-quit-settings-"));
     // The gateway token is read from the encrypted store (F-148).
     module.configureLocalDockerSecretStorage({ isEncryptionAvailable: () => true, encryptString: (value) => Buffer.from(value).reverse(), decryptString: (value) => Buffer.from(value).reverse().toString() });
     try {

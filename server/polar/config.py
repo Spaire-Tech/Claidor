@@ -195,23 +195,22 @@ class Settings(BaseSettings):
     # User session
     USER_SESSION_TTL: timedelta = timedelta(days=31)
 
-    # The desktop app (desktop/, the vendored LobsterAI app) signing in to
+    # The desktop app (desktop/) signing in to
     # Simeon: the browser hands it a code, the code becomes a session,
     # the session meters model calls against a monthly allowance.
     DESKTOP_AUTH_CODE_TTL: timedelta = timedelta(minutes=5)
     DESKTOP_ACCESS_TOKEN_TTL: timedelta = timedelta(hours=1)
     DESKTOP_REFRESH_TOKEN_TTL: timedelta = timedelta(days=30)
-    # How long the access token a refresh replaces stays good. The box
-    # holds a copy of the Mac's token and the Mac rewrites it every five
-    # minutes (`startInferenceCredentialKeepFresh`); killing the old token
-    # at the exchange made every box call 401 until that rewrite.
+    # How long the access token a refresh replaces stays good, so a call
+    # already in flight with the old token (from the Mac, or from a box that
+    # was handed it) does not fail with 401 the moment the app refreshes.
     DESKTOP_REFRESH_GRACE: timedelta = timedelta(minutes=5)
     # Credits per calendar month per person; see polar.desktop.service.
     DESKTOP_MONTHLY_CREDITS: int = 3_000_000
     # Credits per sliding hour per person: the brake on a runaway turn.
     # 200,000 credits is about sixty cents at the price table. Measured
     # 22 September 2026: one unattended first-run loop spent 1.9M credits
-    # in fifty minutes with nothing on screen (docs/product/spend-guards.md).
+    # in fifty minutes with nothing on screen (docs/services-core.md).
     DESKTOP_HOURLY_CREDITS: int = 200_000
     # One address per provider the catalogue names. The key that goes
     # with each is ANTHROPIC_API_KEY / OPENAI_API_KEY below; a provider
@@ -225,7 +224,7 @@ class Settings(BaseSettings):
     DESKTOP_SHARE_INVITE_TTL: timedelta = timedelta(days=7)
     DESKTOP_SHARE_JOINS_PER_MINUTE: int = 10
 
-    # Event routines (polar/sand/listeners*.py, docs/product/listeners-served.md).
+    # Event routines (polar/sand/listeners*.py, docs/services-agents.md).
     # Simeon's Slack app: the person installs it in their workspace from
     # the app's connect card (OAuth v2, one bot token per workspace, held
     # on the server); Slack's Events API posts to
@@ -253,7 +252,7 @@ class Settings(BaseSettings):
 
     # The person's computer in the cloud (polar/sand/box_broker.py, 25
     # September 2026). Empty provider: the broker answers `unavailable`
-    # with one sentence and the app stays on the Docker box on the Mac.
+    # with one sentence and the app has no computer to run on.
     # `docker`: a Docker Engine API at BOX_DOCKER_HOST (http(s)://host:2376
     # or unix:///var/run/docker.sock) on a VM the founder provisions;
     # `e2b`: not built (the `e2b` package is not in the lockfile).
@@ -297,7 +296,7 @@ class Settings(BaseSettings):
     # the image is assumed to carry them.
     BOX_HOST_BUNDLE_URL: str = ""
     # Per-port public hostnames, e.g. "https://{box}-{port}.boxes.simeonlabs.com",
-    # served by a TLS proxy on the box VM (docs/product/cloud-computer-served.md).
+    # served by a TLS proxy on the box VM (docs/services-core.md).
     # Empty: the API proxies the ports itself at /sand-box/{id}/p/{port}/.
     BOX_PUBLIC_URL_TEMPLATE: str = ""
     # How long EnsureSandBox waits for a new box's gateway before answering.
@@ -315,8 +314,8 @@ class Settings(BaseSettings):
     BOX_MEMORY_LIMIT_MB: int = 4096
     BOX_CPU_LIMIT: float = 2.0
     # Boxes awake at once on a server (a BOX_HOSTS entry may say its own);
-    # when every accepting server is full, one more is refused with Grok
-    # Bot's SAND_BOX_BLOCKED hold and a retry-after. Zero: no limit.
+    # when every accepting server is full, one more is refused with the
+    # SAND_BOX_BLOCKED hold and a retry-after. Zero: no limit.
     BOX_MAX_RUNNING: int = 3
 
     # Apps through Composio (polar/desktop/composio.py). One key for the

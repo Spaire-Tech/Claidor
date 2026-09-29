@@ -3,7 +3,7 @@
 Measured in `sand-automation-cloud-sync.ts` `shouldScheduleLocally`:
 once the `AutomationsService` answers, the box stops firing a cron-only
 routine itself (`triggerListeners(...).length === 0` → not local) and
-waits for the server's fire, the way Grok Bot waited for Cursor's. So
+waits for the server's fire, the way the upstream app waited for Cursor's. So
 serving the RPCs without this actor would silence every cron routine.
 The box still fires locally a routine the server does not list as
 enabled (a Slack DM listener, one whose create failed), so nothing is

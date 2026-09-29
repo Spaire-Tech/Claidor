@@ -91,7 +91,7 @@ test("web fetch checks every redirect hop, and the Mac-local hatch is covered by
 test("sign-out forgets the box's credential and stops the box; a 5xx on refresh is not a sign-out", async () => {
   const { module, dispose } = await load("source/electron-main/box/local-docker-host-connector.ts", "local-docker-forget");
   try {
-    const dir = await mkdtemp(path.join(os.tmpdir(), "caisra-forget-"));
+    const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-forget-"));
     const settingsPath = path.join(dir, "settings.json");
     // A plain token file left by a build before 26 September goes too.
     const file = path.join(dir, "local-docker-credential", "inference.json");

@@ -1,6 +1,6 @@
 /**
  * The computer in the cloud, app side (25 September 2026,
- * docs/product/cloud-computer-served.md).
+ * docs/services-core.md).
  *
  * Nothing here is new app code beyond two things: the egress tunnel's
  * derivation learned the API proxy's `/p/<port>` shape next to Cursor's

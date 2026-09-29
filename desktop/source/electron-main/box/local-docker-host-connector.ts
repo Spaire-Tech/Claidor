@@ -21,7 +21,7 @@ export const LOCAL_DOCKER_BOX_IMAGE = "public.ecr.aws/k0i0n2g5/cursorenvironment
 // `SAND_BOX_IMAGE_DIGEST=<64 hex>` makes every create run `image@sha256:<digest>`
 // and refuse a container on any other reference. The digest is read on a
 // Mac (`docker image inspect --format '{{index .RepoDigests 0}}' <image>`)
-// and recorded in docs/product/box-substrate-read.md; none is pinned yet.
+// and recorded in docs/services-core.md; none is pinned yet.
 export function localDockerBoxImageReference(env: NodeJS.ProcessEnv = process.env): string {
   const digest = env.SAND_BOX_IMAGE_DIGEST?.trim().toLowerCase().replace(/^sha256:/, "") ?? "";
   return /^[0-9a-f]{64}$/.test(digest) ? `${LOCAL_DOCKER_BOX_IMAGE}@sha256:${digest}` : LOCAL_DOCKER_BOX_IMAGE;
@@ -404,7 +404,7 @@ export function localDockerInferenceEnvironmentArguments(boxCredential?: string,
     "--env", "SAND_DISABLE_TELEMETRY=1",
     "--env", "SAND_DISABLE_ANALYTICS=1",
     "--env", "SAND_BOX_LOG_SHIP_DISABLED=1",
-    // The served switches (docs/product/cursor-dependencies-map.md) default
+    // The served switches (docs/services-agents.md) default
     // on in both processes; an override set on the Mac reaches the box
     // too, since the host in the box is what polls the relay.
     ...SERVED_SWITCH_ENVS.flatMap((name) => { const value = env[name]?.trim(); return value == null || value.length === 0 ? [] : ["--env", `${name}=${value}`]; }),

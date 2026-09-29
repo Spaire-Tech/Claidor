@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { build } from "esbuild";
 
-// The founder's twenty-one avatars (docs/product/faces-adventurer-measured.md):
+// The founder's twenty-one avatars (brand/avatars):
 // what the port promised to keep, measured on the component and the generator
 // rather than reasoned about.
 
@@ -18,7 +18,7 @@ const LEGACY = ["blob", "pebble", "squircle", "tablet", "wedge", "hex", "cloud",
 let loaded = null;
 async function loadCharacter() {
   if (loaded != null) return loaded;
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-avatars-"));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-avatars-"));
   const output = path.join(temporary, "character.mjs");
   await build({
     entryPoints: [path.join(repoRoot, "tests/fixtures/avatars-entry.tsx")],

@@ -1,6 +1,6 @@
 /**
  * Event listeners are served by Simeon Labs' server since 25 September
- * 2026 (`server/polar/sand/listeners*.py`, `docs/product/listeners-served.md`).
+ * 2026 (`server/polar/sand/listeners*.py`, `docs/services-agents.md`).
  *
  * A listener routine (Slack, GitHub, Linear, Sentry, PagerDuty) fires
  * through the relay Grok Bot reached on Cursor's server:

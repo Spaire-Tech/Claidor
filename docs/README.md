@@ -1,33 +1,16 @@
-# Claidor docs
+# Simeon documentation
 
-Using Mintlify.
+| File | What it covers |
+|---|---|
+| [architecture.md](architecture.md) | How the Mac app, the agent's computer, the API server, the worker, the runner, the web app and the website fit together. Logs and switches. |
+| [building-the-app.md](building-the-app.md) | Building, installing and checking the Mac app. Publishing the host bundle. |
+| [services-core.md](services-core.md) | What the server does for the app, part 1: sign-in, the model proxy and spend guards, memory sync, the cloud computer. |
+| [services-agents.md](services-agents.md) | Part 2: cloud agents, routines and event listeners, sharing, Discord and Slack, video, skill publish, connectors, and agent features that touch the server. |
+| [ops/box-host/](ops/box-host/) | Setting up a server for cloud computers, and the settings Render needs. |
+| [kept-names.md](kept-names.md) | Which earlier names are still in the code, why, and how the name check works. |
 
-**Core concepts**
-- `docs.json` contains [navigation](https://mintlify.com/docs/navigation/overview), [redirects](https://mintlify.com/docs/settings/broken-links) and core settings
+Patterns for writing server code are in `server/CLAUDE.md`, for the web app in
+`clients/CLAUDE.md`. Running the server and web app locally is in
+`DEVELOPMENT.md` at the repository root.
 
-## Development
-
-**Installation**
-```bash Terminal
-pnpm install
-```
-
-**Development Server**
-```bash Terminal
-pnpm dev
-```
-
-### Update schema and webhooks
-
-We have a script that takes care of:
-
-* Downloading latest schema with Speakeasy overlays
-* Generate missing webhooks schema pages
-    * By default, new pages are added at the bottom of the `Webhooks Events` navigation section, but you can move them to a specific group if needed.
-    * Existing pages are not updated, so you can safely edit them without losing your changes.
-
-```bash Terminal
-./update-schema.sh https://spec.speakeasy.com/claidor/claidor-workspace/claidor-oas
-```
-
-The script is run automatically by the CI pipeline every day and opens a PR if there are changes.
+Believe the code over a document: if they disagree, fix the document.

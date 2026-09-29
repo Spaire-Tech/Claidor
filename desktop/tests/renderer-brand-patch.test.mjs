@@ -39,7 +39,7 @@ test("the full patch renames the staged renderer and records what it changed, an
   const registry = JSON.parse(`"${anchor("REGISTRY_BEFORE").slice(1, -1).replace(/"/g, '\\"')}"`);
   const general = JSON.parse(`"${anchor("GENERAL_BEFORE").slice(1, -1).replace(/"/g, '\\"')}"`);
   const usage = JSON.parse(`"${anchor("USAGE_BEFORE").slice(1, -1).replace(/"/g, '\\"')}"`);
-  const stage = await mkdtemp(path.join(os.tmpdir(), "caisra-brand-stage-"));
+  const stage = await mkdtemp(path.join(os.tmpdir(), "simeon-brand-stage-"));
   try {
     const assets = path.join(stage, "dist", "renderer", "assets");
     await mkdir(assets, { recursive: true });

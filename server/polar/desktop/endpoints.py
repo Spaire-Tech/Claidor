@@ -114,7 +114,7 @@ router = APIRouter(prefix="/desktop", tags=["desktop", APITag.private])
 
 ANTHROPIC_VERSION = "2023-06-01"
 # The app's URL scheme is `simeon://` since 23 September 2026 (the
-# packager's bundle rename, `docs/product/name-measured.md`); `caisra://`
+# packager's bundle rename); `caisra://`
 # is still taken so a build from before that day can finish a sign-in.
 DEEP_LINK_CALLBACK = "simeon://auth/callback"
 DEEP_LINK_SCHEMES = ("simeon", "caisra")
@@ -357,7 +357,7 @@ async def feedback(
     """Send Feedback, recorded as one log line against the person.
 
     Added 24 September 2026. Until then the app posted its feedback to
-    `{api}/sand/feedback`, Grok Bot's address at Cursor, which this
+    `{api}/sand/feedback`, the upstream app's address at Cursor, which this
     server answered 404, so every message a person wrote in the sheet
     was lost and the sheet said « unavailable ». There is no table: a
     log line with the user id is what the founder asked for, and it is
@@ -635,8 +635,8 @@ async def kit_store() -> JSONResponse:
     curation.
 
     The app reads ``data.value.kits`` and appends its own built-in kits.
-    (Checked 25 September 2026: no caller in ``desktop/`` since the
-    re-founding; the paths below name the LobsterAI tree.)
+    (Checked 25 September 2026: nothing in ``desktop/`` calls it; the
+    paths below name an earlier version of the app.)
 
     Three facts settle what can honestly go here, all of them in the desktop
     app rather than in this file:
@@ -914,12 +914,8 @@ async def proxy_chat_completions(
     `/api/proxy/v1/responses`.
 
     It is, however, the wire every general OpenAI-compatible client
-    speaks, and Rakazo is one of them — its model connection posts here
-    and nowhere else
-    (the Rakazo attempt, removed 18 September; see `docs/product/going-back-brief.md`,
-    which builds every model with `api: "openai-completions"`). So this
-    route stopped being a courtesy to old clients the day Simeon was
-    connected to a server it did not write.
+    speaks, so a program we did not write can use the model proxy through
+    it with a personal access token.
     """
     return await _proxy(request, caller, session, SpokenApi.openai_completions)
 
@@ -1003,10 +999,9 @@ async def proxy_models(
     `/api/models/available` is the same question answered in the desktop
     app's vocabulary. This is the answer an OpenAI-compatible client
     expects, because such a client knows nothing about Simeon and asks
-    the one question its own protocol defines. Rakazo asks it while a
-    person is connecting a model, and fills the list it is given
-    (the Rakazo attempt, removed 18 September; see `docs/product/going-back-brief.md`,
-    `probeOpenAiCompatibleModels`, which GETs `<base URL>/models`).
+    the one question its own protocol defines, usually while a person is
+    connecting a model, and fills the list it is given from
+    `<base URL>/models`.
 
     Until this route existed that GET fell through to the catch-all below
     and answered 404, so connecting meant typing a model id from memory
@@ -1228,8 +1223,7 @@ async def proxy_speech(
 
     OpenAI's own `/v1/audio/speech` shape in, audio bytes out, metered.
     Nothing in Simeon calls it yet (25 September 2026: the app has
-    dictation and no text-to-speech; an earlier docstring here named an
-    OpenClaw speech provider that left the tree on 18 September, F-239).
+    dictation and no text-to-speech).
     It stays as the metered door for the day the app speaks.
 
     Unlike the model proxy there is nothing to read back: the answer is

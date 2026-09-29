@@ -27,8 +27,8 @@ const credential = { accessToken: "notion-token", refreshToken: "r", expiresAtMs
 
 test("an install the agent ran in the box reaches the Mac, and the Mac's credential reaches the box", async () => {
   const { module, dispose } = await load("source/shared/node/vendor-mcp/installs.ts", "vendor-installs");
-  const mac = await mkdtemp(path.join(os.tmpdir(), "caisra-mac-"));
-  const box = await mkdtemp(path.join(os.tmpdir(), "caisra-box-"));
+  const mac = await mkdtemp(path.join(os.tmpdir(), "simeon-mac-"));
+  const box = await mkdtemp(path.join(os.tmpdir(), "simeon-box-"));
   try {
     let clock = 1_000;
     const now = () => clock;
@@ -81,7 +81,7 @@ test("an install the agent ran in the box reaches the Mac, and the Mac's credent
 test("the Mac's pull is throttled, bounded, and merges the box's answer", async () => {
   const { module, dispose } = await load("source/shared/node/vendor-mcp/box-pull.ts", "vendor-box-pull");
   const installs = await load("source/shared/node/vendor-mcp/installs.ts", "vendor-installs-2");
-  const mac = await mkdtemp(path.join(os.tmpdir(), "caisra-mac2-"));
+  const mac = await mkdtemp(path.join(os.tmpdir(), "simeon-mac2-"));
   try {
     let reads = 0;
     let clock = 0;

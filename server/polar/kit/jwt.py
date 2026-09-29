@@ -27,7 +27,7 @@ TYPE = Literal[
     "customer_oauth",
     "email_unsubscribe",
     # The envelope the desktop app's access token travels in. The token
-    # itself is still the opaque, hashed `claidor_da_` value; this only
+    # itself is still the opaque, hashed `simeon_da_` value; this only
     # carries it, plus the `sub`, `email` and `exp` the app reads off it
     # (`desktop/source/shared/node/cursor-token.ts`, `parseJwtPayload`).
     "desktop_access",

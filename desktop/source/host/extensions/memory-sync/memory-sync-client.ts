@@ -1,6 +1,6 @@
 /**
  * Memory backed up to Simeon Labs' server (25 September 2026,
- * `docs/product/memory-sync-served.md`).
+ * `docs/services-core.md`).
  *
  * The server has served `POST /desktop/api/memory/sync` and
  * `GET /desktop/api/memory` since 11 September (`server/polar/desktop/`),

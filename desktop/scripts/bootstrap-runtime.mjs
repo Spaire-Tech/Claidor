@@ -60,7 +60,7 @@ async function downloadDmg() {
 }
 
 async function extractRuntime() {
-  const mountRoot = await mkdtemp(path.join(tmpdir(), "grok-bot-018-mount-"));
+  const mountRoot = await mkdtemp(path.join(tmpdir(), "simeon-018-mount-"));
   let attached = false;
   try {
     await run(SYSTEM_TOOLS.hdiutil, ["attach", "-readonly", "-nobrowse", "-mountpoint", mountRoot, cachedDmg]);

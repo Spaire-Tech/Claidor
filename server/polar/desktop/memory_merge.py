@@ -24,12 +24,12 @@ Three rules, one per kind of file:
 Two blocks are the same fact when their fingerprints match: lowercased,
 every character that is not a letter, a digit or whitespace turned into
 a space, whitespace collapsed, trimmed. That is exactly what the app
-does in `desktop/src/main/libs/openclawMemoryFile.ts`, so a fact
+did in an earlier version of the app, so a fact
 written on either side is recognised as the same fact. (The app hashes
 the normalised text; comparing the normalised text itself answers the
 same question.)
 
-A fourth rule, added 25 September 2026 for the Grok Bot reconstruction's
+A fourth rule, added 25 September 2026 for the reconstruction's
 own layout (`desktop/source/host/extensions/memory/memory-service.ts`):
 
 - **facts** (`agents/<id>/memory/profile.md`, `…/log/YYYY-MM.md`, the
@@ -117,8 +117,8 @@ class _Segment:
 class _Parser:
     """The app's own reading of a memory file, line by line.
 
-    Mirrors `parseMemorySegments` in
-    `desktop/src/main/libs/openclawMemoryFile.ts`, with one addition: a
+    Mirrors `parseMemorySegments` from an earlier version of the app,
+    with one addition: a
     heading starts a segment of its own, so every segment sits under
     exactly one heading and a new block can be filed under the heading
     it came from.

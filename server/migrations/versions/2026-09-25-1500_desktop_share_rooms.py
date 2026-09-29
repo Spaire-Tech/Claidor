@@ -6,7 +6,7 @@ Create Date: 2026-09-25 15:00:00.000000
 
 The state behind `/sand/xuser/*`, `/sand/share-rooms/*` and
 `/sand/share-state`, which the app's cross-user sharing extension speaks
-(`docs/product/sharing-served.md`). Invite links are signed tokens and
+(`docs/services-agents.md`). Invite links are signed tokens and
 have no table.
 """
 

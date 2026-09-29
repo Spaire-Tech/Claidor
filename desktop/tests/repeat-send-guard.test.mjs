@@ -17,7 +17,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function load() {
-  const dir = await mkdtemp(path.join(os.tmpdir(), "caisra-repeat-send-"));
+  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-repeat-send-"));
   const outfile = path.join(dir, "entry.mjs");
   await build({ entryPoints: [path.join(repoRoot, "source/host/runner/repeat-send-guard.ts")], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);

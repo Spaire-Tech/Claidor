@@ -464,11 +464,8 @@ def openai_models_list(
     """`GET /v1/models`, in OpenAI's shape, for one wire.
 
     An OpenAI-compatible client asks this before it asks anything else,
-    to find out what it may name. Rakazo is one such client: it GETs
-    `<base URL>/models` and reads `data[].id`, falling back to a hand-typed
-    model id when the call fails
-    (the Rakazo attempt, removed 18 September; see `docs/product/going-back-brief.md`,
-    `probeOpenAiCompatibleModels`).
+    to find out what it may name: it GETs `<base URL>/models` and reads
+    `data[].id`, falling back to a hand-typed model id when the call fails.
 
     Filtered by `reachable_on`, so what the list offers is what the next
     request will accept. On the Chat Completions wire that means the

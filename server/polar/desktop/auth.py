@@ -121,10 +121,9 @@ async def get_proxy_caller(
     **A personal access token carrying `model_proxy`.** What a server
     holds. A program handed a credential once, storing it, with no refresh
     loop to run, cannot use a one-hour token: it would work for an hour
-    and then answer 401 in the middle of somebody's conversation. Rakazo's
-    OpenAI-compatible model connection is precisely that shape — the base
-    URL, the model id and one static key, entered once
-    (the Rakazo attempt, removed 18 September; see `docs/product/going-back-brief.md`).
+    and then answer 401 in the middle of somebody's conversation. An
+    OpenAI-compatible model connection in another program is precisely that
+    shape — the base URL, the model id and one static key, entered once.
 
     The scope is the whole grant. A token holding it reaches the three
     proxy routes, speech, and the model list; it reaches nothing else here,

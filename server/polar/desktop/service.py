@@ -4,10 +4,8 @@ Everything the desktop app, Maties (`desktop/`), asks of its server in
 account mode, on Simeon's side: auth codes, sessions with rotating
 refresh tokens, the model catalogue the app may call, the monthly
 credit allowance, and the metering of every call made through the
-proxy. The wire shapes are the app's own, read from its source
-(`desktop/src/main/main.ts`, `desktop/src/main/authQuota.ts`,
-`desktop/src/main/libs/openclawTokenProxy.ts`); nothing here is
-invented beyond what that code reads.
+proxy. The wire shapes are the app's own, read from its source;
+nothing here is invented beyond what that code reads.
 """
 
 from __future__ import annotations
@@ -238,7 +236,7 @@ class MemorySync:
 # sent to the wrong host signs the person out. Hence an envelope.
 #
 # It is an envelope and not a credential. The credential inside it is
-# the same opaque `claidor_da_` token as ever, hashed into
+# the same opaque `simeon_da_` token as ever, hashed into
 # `desktop_sessions.access_token_hash`, and `authenticate` still answers
 # by that hash and nothing else. There is one way to check a desktop
 # token, which is the whole point of `polar.desktop.auth`'s first

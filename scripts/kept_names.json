@@ -1,0 +1,285 @@
+{
+  "about": "Earlier names allowed in the repository, where, and why. Read by scripts/check_names.py; explained in docs/kept-names.md. kind: contract = a name another program we do not build expects; data = a value already stored or deployed; fallback = an earlier name still read so old installs and deployments keep working; record = a statement of origin that must name it; phase-6 = our own code names, renamed in the next step and removed from this list then.",
+  "rules": [
+    {
+      "kind": "record",
+      "names": [
+        "grok",
+        "anysphere",
+        "spacex",
+        "xai"
+      ],
+      "paths": [
+        "desktop/NOTICE.md"
+      ],
+      "reason": "The app's notice states where the window and shell come from and who made them."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "grok",
+        "anysphere",
+        "caisra",
+        "spacex",
+        "xai"
+      ],
+      "paths": [
+        "sites/simeonlabs.com/public/app/**"
+      ],
+      "reason": "The website's demo is the app's window: the upstream compiled renderer, patched. Its internal identifiers are the upstream bytes."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "anysphere",
+        "grok"
+      ],
+      "paths": [
+        "desktop/src/app/package.json"
+      ],
+      "reason": "The upstream app's own dependency list (@anysphere/* packages) that the pinned renderer and shell were built with; the identity fields are Simeon's."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "grok"
+      ],
+      "paths": [
+        "desktop/scripts/lib/config.mjs",
+        "desktop/scripts/lib/runtime.mjs",
+        "desktop/scripts/bootstrap-runtime.mjs",
+        "desktop/scripts/preflight-bootstrap.mjs"
+      ],
+      "reason": "Bootstrap reads the upstream 0.18.0 app by its real name and download address (Grok Bot.app, Grok_Bot_0.18.0.dmg)."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "grok",
+        "caisra"
+      ],
+      "paths": [
+        "desktop/scripts/lib/router-renderer-patch.mjs",
+        "desktop/tests/renderer-*.test.mjs"
+      ],
+      "reason": "The window patch finds the upstream strings (Grok Bot, New Bot, Caisra, the .sand-grok-bot-mark class) to replace them, and its tests feed it those strings."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "grok"
+      ],
+      "paths": [
+        "desktop/scripts/lib/macos-bundle-rename.mjs",
+        "desktop/tests/macos-bundle-rename.test.mjs"
+      ],
+      "reason": "The packager renames the upstream shell's executable and helper bundles, which are named Grok Bot, to Simeon."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "grok",
+        "anysphere",
+        "spacex",
+        "xai"
+      ],
+      "paths": [
+        "desktop/scripts/lib/macos-plist-identity.mjs",
+        "desktop/tests/macos-plist-identity.test.mjs"
+      ],
+      "reason": "The packager recognises the upstream maker's names in Info.plist strings in order to replace them."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "grok",
+        "xai",
+        "anysphere"
+      ],
+      "paths": [
+        "desktop/source/packages/proto/generated/**",
+        "desktop/source/packages/redacted-protos/generated/**"
+      ],
+      "reason": "Generated protocol code: service, message and field names the pinned window and the server speak on the wire (aiserver.v1.GrokBotService, Xai* messages)."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "grok"
+      ],
+      "paths": [
+        "server/polar/sand/**",
+        "server/tests/sand/**",
+        "server/migrations/versions/**",
+        "server/polar/models/sand_*.py"
+      ],
+      "match": "GrokBotService|GROK_BOT|grok_bot",
+      "reason": "The server answers the Connect service aiserver.v1.GrokBotService and the GROK_BOT source enum the app sends."
+    },
+    {
+      "kind": "fallback",
+      "names": [
+        "claidor"
+      ],
+      "paths": [
+        "server/polar/config.py",
+        "server/tests/test_config_prefix.py",
+        "runner/src/settings.ts",
+        "runner/src/settings.test.ts",
+        "runner/README.md",
+        "README.md",
+        "CLAUDE.md",
+        "docs/**",
+        "clients/apps/web/src/utils/creatorOnboarding.ts",
+        "clients/packages/checkout/tsup.config.ts"
+      ],
+      "match": "CLAIDOR_|claidor_\"|\"claidor_|from-claidor",
+      "reason": "Settings are read as SIMEON_<NAME> and the earlier CLAIDOR_<NAME> is still read, so deployments keep working while their variables are renamed."
+    },
+    {
+      "kind": "fallback",
+      "names": [
+        "claidor"
+      ],
+      "paths": [
+        "server/polar/**",
+        "server/tests/**",
+        "clients/apps/web/src/proxy.ts",
+        "clients/apps/web/src/proxy.test.ts",
+        "clients/apps/web/next.config.mjs"
+      ],
+      "match": "claidor_(session|oauth_state|original_session|da_|db_|mst_|cst_|crt_)|_claidor-verify|billing\\.claidorhq\\.internal|X-Claidor-",
+      "reason": "Sessions, tokens, custom-domain records, placeholder e-mails and webhook headers made before the rename carry the earlier name and are still accepted (or still sent)."
+    },
+    {
+      "kind": "fallback",
+      "names": [
+        "caisra",
+        "grok"
+      ],
+      "paths": [
+        "desktop/source/host/host-paths.ts",
+        "desktop/source/electron-main/startup/startup-data-root-migration.ts",
+        "desktop/source/shared/sensitive-local-paths.ts",
+        "desktop/tests/electron-shell-batch4.test.mjs"
+      ],
+      "match": "caisra|grokbot",
+      "reason": "The data folder was ~/.caisra (with a .grokbot-data-root-v1 marker); the first start moves it to ~/.simeon, and the earlier folder stays protected from the local-exec daemon."
+    },
+    {
+      "kind": "fallback",
+      "names": [
+        "grok"
+      ],
+      "paths": [
+        "desktop/source/electron-main/box/local-docker-host-connector.ts"
+      ],
+      "match": "com\\.grok-bot\\.local-vm",
+      "reason": "A testing Docker box made before the rename carries the earlier owner label and is still recognised, so it is replaced cleanly."
+    },
+    {
+      "kind": "fallback",
+      "names": [
+        "caisra"
+      ],
+      "paths": [
+        "server/polar/desktop/endpoints.py"
+      ],
+      "match": "caisra",
+      "reason": "The app's sign-in callback scheme was caisra:// before simeon://; a build from before the rename can still finish a sign-in."
+    },
+    {
+      "kind": "data",
+      "names": [
+        "claidor"
+      ],
+      "paths": [
+        "server/polar/**",
+        "server/scripts/**",
+        "server/tests/**"
+      ],
+      "match": "claidor\\.(storage|video|email|quota)|claidor-\\{user|\"claidor_mor\"",
+      "reason": "Meter event names and Composio user ids already stored under the earlier name."
+    },
+    {
+      "kind": "data",
+      "names": [
+        "claidor"
+      ],
+      "paths": [
+        "clients/apps/web/**"
+      ],
+      "match": "claidor-production-files-public",
+      "reason": "A real S3 bucket that serves images; renaming it means moving the files first."
+    },
+    {
+      "kind": "data",
+      "names": [
+        "spaire"
+      ],
+      "paths": [
+        "clients/**"
+      ],
+      "match": "@spaire/sdk|SpaireCore",
+      "reason": "A published npm package (@spaire/sdk) the checkout imports; its name is not ours to change."
+    },
+    {
+      "kind": "data",
+      "names": [
+        "claidor",
+        "ohada",
+        "swens",
+        "pierce",
+        "grok"
+      ],
+      "paths": [
+        "server/migrations/versions/**"
+      ],
+      "reason": "Database migrations are the history of the live schema: table and column names they created (court_decisions.ohadata_code, the tie-out tables) exist in the database, and a past migration's text is not rewritten."
+    },
+    {
+      "kind": "data",
+      "names": [
+        "claidor",
+        "spaire"
+      ],
+      "paths": [
+        "render.yaml"
+      ],
+      "reason": "The Render blueprint keeps the service names, the CLAIDOR_ variable keys and the repository address that exist on Render until they are changed there (a renamed service in the blueprint would be a new, empty service)."
+    },
+    {
+      "kind": "phase-6",
+      "names": [
+        "grok",
+        "claidor"
+      ],
+      "paths": [
+        "server/polar/sand/**",
+        "server/tests/sand/**",
+        "server/polar/desktop/**"
+      ],
+      "match": "com\\.grok-bot\\.local-vm|\"grok-bot\"|SAND_INFERENCE_PROVIDER|claidor-[a-z-]+\\.ts",
+      "reason": "Values the app and the box send or read: the cloud computer's Docker owner label, the cloud-agent source value \"grok-bot\", the model provider id \"claidor\", and desktop file names. Renamed together with the app's side, with the earlier value still accepted."
+    },
+    {
+      "kind": "phase-6",
+      "names": [
+        "grok",
+        "claidor",
+        "anysphere",
+        "caisra",
+        "xai",
+        "spacex"
+      ],
+      "paths": [
+        "desktop/source/**",
+        "desktop/tests/**",
+        "desktop/frontend/**",
+        "desktop/scripts/**",
+        "desktop/manifests/**"
+      ],
+      "reason": "The Mac app's own code names, comments and file names that still carry an earlier name (the provider id \"claidor\", GrokBot*/Anysphere* types, @anysphere logger names, [claidor] test fixtures). Phase 6 renames them and removes this rule; strings a person can see are already Simeon's."
+    }
+  ]
+}

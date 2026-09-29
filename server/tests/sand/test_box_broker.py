@@ -190,7 +190,7 @@ class TestEnsureSandBox:
         # `/api/…` onto and the tunnel derivation swaps `/p/1340` → `/p/8790`.
         assert body["gatewayUrl"] == f"{settings.BASE_URL}/sand-box/{box_id}/p/1340"
         assert body["forkVncBaseUrl"] == f"{settings.BASE_URL}/sand-box/{box_id}/p/6081"
-        # `buildSandBoxNoVncUrl` in sand-box.ts, so the webview loads what Grok Bot's loads.
+        # `buildSandBoxNoVncUrl` in sand-box.ts, so the webview loads what the upstream app's loads.
         assert body["vncUrl"].startswith(
             f"{settings.BASE_URL}/sand-box/{box_id}/p/6080/vnc.html?network_token="
         )

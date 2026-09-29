@@ -26,7 +26,7 @@ async function load(entry, name) {
 
 test("an agent can rename itself: updateProfile reads the profile and writes through the deps", async () => {
   const { module, dispose } = await load("source/host/extensions/memory/agent-state.ts", "agent-state");
-  const dir = await mkdtemp(path.join(os.tmpdir(), "caisra-agent-state-"));
+  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-agent-state-"));
   try {
     const writes = [];
     const settings = [];

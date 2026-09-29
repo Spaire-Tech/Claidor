@@ -7,7 +7,7 @@
  * artifacts, the cloud-agent card's link); `polar/sand/cloud_agents.py`
  * serves it over the maty queue. A messaging channel is a Discord or Slack
  * connector the box runs itself (`host/extensions/channels/`, no server in
- * the path; docs/product/channels-served.md). The reach points below keep
+ * the path; docs/services-agents.md). The reach points below keep
  * their Coming Soon branch behind the switches: `SAND_CLOUD_AGENTS_SERVED=0`
  * withholds the `cursor-agent` type, the CloudAgent tool and the brief's
  * cloud-agent sections; `SAND_CHANNELS_SERVED=0` (`shared/channels.ts`)
@@ -23,7 +23,7 @@ export const CLOUD_AGENTS_SERVED_ENV = "SAND_CLOUD_AGENTS_SERVED";
  * Where a cloud agent's page lives, for the card's "open" and the plain
  * link a channel gets. Grok Bot opened `https://cursor.com/agents/<bcId>`;
  * ours is Simeon's dashboard on Vercel. The page itself does not exist
- * yet (needs-web, `docs/product/cloud-agents-served.md`): until it does,
+ * yet (needs-web, `docs/services-agents.md`): until it does,
  * the card's conversation in the app is the record of the run.
  */
 export const CLOUD_AGENTS_WEB_BASE_ENV = "SAND_CLOUD_AGENTS_WEB_BASE";
@@ -53,7 +53,7 @@ export function isCloudAgentsServed(env: NodeJS.ProcessEnv = process.env): boole
 }
 
 // Which Connect services Simeon Labs' server answers (25 September 2026,
-// docs/product/cursor-dependencies-map.md). Until then one switch,
+// docs/services-agents.md). Until then one switch,
 // SAND_CONNECT_SERVED=1, turned every client on at once, and every call
 // 404ed on a server that served no Connect RPC at all. Now `polar/sand`
 // serves these at the root of the API host and answers `unimplemented`

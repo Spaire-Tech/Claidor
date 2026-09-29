@@ -10,7 +10,7 @@ import os from "node:os";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function loadStamp() {
-  const dir = await mkdtemp(path.join(os.tmpdir(), "caisra-permission-scope-"));
+  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-permission-scope-"));
   const outfile = path.join(dir, "stamp.mjs");
   await build({ entryPoints: [path.join(repoRoot, "source/node-agent-coordinator/permission-scope-stamp.ts")], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${outfile}?${Date.now()}`);

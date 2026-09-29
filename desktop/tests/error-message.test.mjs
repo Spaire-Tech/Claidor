@@ -10,7 +10,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function loadErrors() {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-error-message-"));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-error-message-"));
   const output = path.join(temporary, "errors.mjs");
   await build({
     entryPoints: [path.join(repoRoot, "source/shared/errors.ts")],

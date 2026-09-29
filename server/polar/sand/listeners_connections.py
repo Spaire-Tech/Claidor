@@ -5,8 +5,8 @@ The app asks three `DashboardService` methods before it draws a
 listener's connect card and after the person clicks it
 (`host/extensions/automations/listener-integrations.ts`,
 `listener-connect-watcher.ts`): `GetSlackUserSettings.hasSlackAuth`,
-`GetScmConnectionStatus.connected`, and `GetSlackInstallUrl.url`. Grok
-Bot's install URL was cursor.com's dashboard; ours is on this host:
+`GetScmConnectionStatus.connected`, and `GetSlackInstallUrl.url`. The
+upstream install URL was cursor.com's dashboard; ours is on this host:
 
 - `GET /sand/slack/install` sends the signed-in person to Slack's OAuth
   v2 consent page for Simeon's Slack app and `GET /sand/slack/callback`

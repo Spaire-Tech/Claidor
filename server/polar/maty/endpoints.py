@@ -125,7 +125,7 @@ class ClaimedJobBody(BaseModel):
     #: Which executor runs it. `maty-runner` is the only one that exists:
     #: the Render container that reads a file and calls a model
     #: (`runner/src/executor.ts`). The box executor of
-    #: `docs/product/box-substrate-read.md` gets its own name here when it
+    #: `docs/services-core.md` gets its own name here when it
     #: lands; nothing about the queue changes for it.
     executor: str = "maty-runner"
     #: The conversation this job continues (a cloud agent's turn), the

@@ -198,7 +198,7 @@ export function createSubagentRuntime(host: SubagentRuntimeHost) {
     const label = record == null ? "" : ` [${record.subagentType}] "${record.title}"`;
     host.log?.(`[sand][subagent] ${phase} ${subagentAgentId}${label}${status == null ? "" : ` status=${status}`}`);
     // The line above goes through the loop's logger, which the box silences
-    // (`docs/product/ai-does-not-answer-measured.md`); this one reaches
+    // (docs/architecture.md, "Logs"); this one reaches
     // /tmp/sand-host.log. Until 24 September 2026 a Task that ran and came
     // back empty ("finished without producing any text output") left no
     // trace of having been dispatched at all.

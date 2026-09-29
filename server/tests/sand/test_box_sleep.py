@@ -1,6 +1,6 @@
 """The cloud box's sleep, wake and capacity (28 September 2026).
 
-Measured against the contract Grok Bot's client states: the host's
+Measured against the contract the upstream app's client states: the host's
 `/health` (`isBusy`, `busyOnlyAwaitingApproval`, `lastBusyAtMs`),
 `AdminHibernateSandBox`'s busy refusal unless forced,
 `SAND_BOX_RUN_STATE_HIBERNATED` for a stopped box, EnsureSandBox starting

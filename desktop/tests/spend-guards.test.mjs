@@ -9,7 +9,7 @@ import { build } from "esbuild";
 
 // The spend guards, added 22 September 2026 after one unattended first-run
 // turn made 481 model calls in fifty minutes with nothing on screen
-// (docs/product/spend-guards.md). Each guard is read off the code that
+// (docs/services-core.md). Each guard is read off the code that
 // enforces it, not off a helper alone.
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -156,7 +156,7 @@ test("the box's credentials survive a burst of concurrent connects", async () =>
   // concurrent writers once broke the token file). The encrypted store
   // takes one change at a time, so the burst yields one token, one file.
   const loaded = await loadModule("source/electron-main/box/local-docker-host-connector.ts", "token-file");
-  const dataDir = await mkdtemp(path.join(os.tmpdir(), "caisra-token-"));
+  const dataDir = await mkdtemp(path.join(os.tmpdir(), "simeon-token-"));
   try {
     const settingsPath = path.join(dataDir, "settings.json");
     loaded.module.configureLocalDockerSecretStorage({ isEncryptionAvailable: () => true, encryptString: (value) => Buffer.from(value).reverse(), decryptString: (value) => Buffer.from(value).reverse().toString() });

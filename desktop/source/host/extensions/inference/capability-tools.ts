@@ -5,7 +5,7 @@ import { fetchWebPage, type WebFetchOptions, type WebFetchResult } from "../../.
 // host composition already had (`production.ts`, `createWebSearch` and
 // `createWebFetch`). Until 19 September 2026 both were Connect RPC calls on
 // `aiserver.v1.AiService` that Claidor never served
-// (`docs/product/capabilities-measured.md`).
+// (`docs/services-core.md`).
 
 export interface WebSearchDocument { readonly url: string; readonly title: string; readonly text: string }
 export interface WebSearchAnswer { readonly answer: string; readonly documents: readonly WebSearchDocument[]; /** How many times the hosted search actually ran; 0 means the model answered from memory (F-290). */ readonly searches?: number }

@@ -1,8 +1,8 @@
-"""Host bundle updates in Grok Bot's layout (29 September 2026): the server
+"""Host bundle updates in the upstream app's layout (29 September 2026): the server
 follows `sand-host-bundle-latest.version` in the bundle folder, re-reads it
 every ten minutes with no restart, keeps the last version when the pointer
 cannot be read, and each cloud computer moves to a new version only when it
-is idle, as Grok Bot's supervisor does.
+is idle, as the upstream app's supervisor does.
 """
 
 from __future__ import annotations
@@ -91,7 +91,7 @@ class TestChannel:
         assert first is not None
         assert first.host_main == b"host v1"
         channel.pointer = "bbbbbbb2"
-        # Within Grok Bot's ten minutes the pointer is not read again.
+        # Within the upstream app's ten minutes the pointer is not read again.
         again = await load_host_bundle(BASE)
         assert again is not None
         assert again.host_main == b"host v1"

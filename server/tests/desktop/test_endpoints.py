@@ -1409,7 +1409,7 @@ async def _model_proxy_token(
             token=token_hash,
             scope=scopes,
             expires_at=utc_now() + timedelta(days=365),
-            comment="Rakazo",
+            comment="OpenAI-compatible client",
             user_id=user.id,
         )
     )
@@ -1418,7 +1418,7 @@ async def _model_proxy_token(
 
 @pytest.mark.asyncio
 class TestTheProxyFromAServerWeDidNotWrite:
-    """Rakazo, and anything else that speaks plain OpenAI.
+    """Any program that speaks plain OpenAI.
 
     Such a client is handed a base URL, a model id and one static key, and
     then never asked anything again — there is no refresh loop for it to

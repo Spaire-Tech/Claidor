@@ -235,7 +235,7 @@ SURGERY = r"""([TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML, MOBILE_HTM
   featureBox(/their own computers/).insertAdjacentHTML('beforeend', VM_HTML);
   featureBox(/Stay in control/).insertAdjacentHTML('beforeend', APPROVE_HTML);
   // Pricing: Standard, Pro, Max. The same Simeon on every plan, a 7-day trial on all three;
-  // what changes is the weekly usage, as in Grok Bot, whose plans differed by usage alone.
+  // what changes is the weekly usage.
   const plans = [
     { name: 'Standard', monthly: 20, usage: 'Weekly Simeon usage included' },
     { name: 'Pro', monthly: 60, usage: '5× the weekly usage of Standard' },

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Builds the avatar preview page (frontend/src/dev/face-preview.tsx) into
 // .build/face-preview/ and, when playwright-core and a Chromium are on hand,
-// screenshots it into docs/product/faces-adventurer/. Neither is part of the app.
+// screenshots it into .build/face-preview/shots/. Neither is part of the app.
 //
 //   node scripts/face-preview.mjs            build + screenshots
 //   node scripts/face-preview.mjs --no-shots build only
@@ -13,7 +13,7 @@ import { build } from "esbuild";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outDir = path.join(root, ".build/face-preview");
-const shotsDir = path.resolve(root, "../docs/product/faces-adventurer");
+const shotsDir = path.join(outDir, "shots");
 const args = new Set(process.argv.slice(2));
 
 const CSS = `

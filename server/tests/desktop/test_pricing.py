@@ -317,11 +317,8 @@ class TestTheMenuAnOpenAiCompatibleClientReads:
     """`GET /v1/models`, which is how a client that knows nothing about
     Simeon finds out what it may name.
 
-    Written when Simeon was connected to Rakazo, a server we did not
-    write. Its model connection speaks plain OpenAI and asks this one
-    question before any other
-    (the Rakazo attempt, removed 18 September; see `docs/product/going-back-brief.md`,
-    `probeOpenAiCompatibleModels`).
+    Such a client speaks plain OpenAI and asks this one question before
+    any other.
     """
 
     def test_the_completions_wire_offers_openai_models_and_not_claude(self) -> None:

@@ -1,5 +1,5 @@
 <!--
-Thank you for contributing to Polar! 🎉
+Thank you for contributing to Simeon! 🎉
 
 Before submitting your PR, please ensure:
 - An issue exists and you're assigned to it (unless it's a minor fix)

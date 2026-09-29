@@ -3,7 +3,7 @@
 One `SharingRelay` per request, acting as the signed-in person (the
 `DesktopSession.user` behind the bearer, the Mac's or the box's). Every
 answer is the JSON shape `desktop/source/host/extensions/cross-user-sharing/`
-reads, with its field names; `docs/product/sharing-served.md` is the record.
+reads, with its field names; `docs/services-agents.md` is the record.
 
 Identity on the wire is the person's user id: the app reads `sub` off
 its access-token envelope (`envelope_access_token`, `getSelfAuthId` in
@@ -50,7 +50,7 @@ INVITE_TOKEN_TYPE = "desktop_share_invite"
 #: Where an invite link points. No page answers it yet: the person pastes
 #: the whole link into Simeon's join box, and `/sand/share-rooms/join`
 #: reads the token off the last path segment. A landing page on the web
-#: app is the founder's call (`docs/product/sharing-served.md`).
+#: app is the founder's call (`docs/services-agents.md`).
 INVITE_PATH = "/share/"
 #: `room-typing` lives this long in Redis and on the other members' screens.
 TYPING_TTL_SECONDS = 8

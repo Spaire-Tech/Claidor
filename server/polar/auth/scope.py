@@ -128,10 +128,8 @@ class Scope(StrEnum):
     # (`settings.DESKTOP_ACCESS_TOKEN_TTL`) that it refreshes behind the
     # person's back. That is right for an app and wrong for a server, which
     # is handed a credential once, stores it, and has no refresh loop to
-    # run — Rakazo's OpenAI-compatible model connection is exactly that
-    # shape (that attempt was removed on 18 September; see
-    # `docs/product/going-back-brief.md`). Given a session token such a
-    # connection would work for an hour and then answer 401 in the middle
+    # run — an OpenAI-compatible model connection in another program is
+    # exactly that shape. Given a session token such a connection would work for an hour and then answer 401 in the middle
     # of somebody's conversation.
     #
     # So a personal access token carries this instead: user-scoped,

@@ -143,7 +143,7 @@ class TestLoginDeepControl:
     ) -> None:
         # Since 23 September 2026 the app sends `simeon` (its own scheme,
         # `SAND_DEEP_LINK_SCHEME` in desktop/source/shared/desktop.ts) and
-        # claims only `simeon://` in its bundle; `sand://` is Grok Bot's.
+        # claims only `simeon://` in its bundle; `sand://` is the upstream app's.
         # The server builds the link from what the app sends, so no
         # server change is needed for the app's scheme to change.
         _, challenge, uuid = _login_metadata()

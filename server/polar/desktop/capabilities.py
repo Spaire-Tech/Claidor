@@ -5,7 +5,7 @@ The desktop agent advertises four tools that are not a model turn. Until
 `aiserver.v1.AiService` — `RunWebSearch`, `RunWebFetch`,
 `RunGenerateImage`, `TranscribeAudio` — which Simeon never served, so
 every one of them failed the moment the app was pointed here
-(`docs/product/capabilities-measured.md`). Web fetch now runs on the
+(`docs/services-core.md`). Web fetch now runs on the
 person's machine and needs nothing from us. The other three need a
 provider, and these are their doors: each on OpenAI with Simeon's key,
 each metered in the same unit as a model turn (`pricing.py`).
@@ -362,8 +362,7 @@ async def images_generations(
     caller: ProxyCaller = Depends(get_proxy_caller),
     session: AsyncSession = Depends(get_db_session),
 ) -> Response:
-    """One picture from a description, the way `docs/product/images-state.md`
-    recommended: synchronous, OpenAI's own shape, one route.
+    """One picture from a description: synchronous, OpenAI's own shape, one route.
 
     `{prompt, size?, quality?, reference_images?}` in; `{data: [{b64_json,
     mime_type}], usage}` out. With no reference the call is

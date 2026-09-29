@@ -7,7 +7,7 @@ import { ADVENTURER_CREDIT, AVATAR_KEYS, AVATAR_SOURCE_BOX, AVATARS, type Avatar
 // The shipped engine geometry is the inline 259px mark, not an image asset. The
 // box, its centre and the state table are kept; what is drawn inside the box is
 // one of the founder's twenty-one avatars (brand/avatars, DiceBear "Adventurer",
-// decided 23 September 2026, docs/product/faces-adventurer-measured.md). An
+// decided 23 September 2026). An
 // avatar is a finished drawing: no shape axis, no colour axis, no skin tone.
 // Choosing a different one changes the whole face. Nothing outside this file
 // paints the mark.

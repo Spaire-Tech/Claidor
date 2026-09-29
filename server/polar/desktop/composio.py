@@ -41,8 +41,7 @@ from polar.models import DesktopSession, User
 log = structlog.get_logger()
 
 # The six calls, as `@composio/client` 0.1.0-alpha.76 makes them and as
-# the app's two clients (`openclaw-extensions/composio/client.ts` and
-# `src/main/libs/composio/composioApi.ts`) repeat them. Anything else
+# the app's client (`shared/node/composio/composio-api.ts`) repeats them. Anything else
 # is not forwarded: the key must not become a general-purpose door.
 _SESSION = "api/v3.1/tool_router/session"
 _SESSION_ID = r"[A-Za-z0-9_\-]{1,128}"

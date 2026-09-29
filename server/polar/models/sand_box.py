@@ -12,7 +12,7 @@ the egress tunnel); this table is what the broker answers from.
 - `network_token` is what Cursor's pod proxy checked as
   `x-anyrun-network-token`; here `polar.sand.box_proxy` checks it on
   every proxied request, and the Caddy on a box VM checks it when the
-  founder runs the per-port hostnames instead (`docs/product/cloud-computer-served.md`).
+  founder runs the per-port hostnames instead (`docs/services-core.md`).
 - `ports` maps the box's inner ports (1340 gateway, 6080/6081 noVNC,
   8790 egress tunnel) to the host ports the box host published them on.
 - `credential_session_id` is the `desktop_sessions` row (a box
@@ -71,8 +71,8 @@ class SandBox(RecordModel):
         TIMESTAMP(timezone=True), nullable=True, default=None
     )
     #: The last time the box was busy (the host's `lastBusyAtMs`), asked
-    #: for, or woken: `TeamMemberSandBoxPod.last_active_at_ms` in Grok
-    #: Bot's contract. The sleeper measures idleness from it.
+    #: for, or woken: `TeamMemberSandBoxPod.last_active_at_ms` in the
+    #: upstream contract. The sleeper measures idleness from it.
     last_active_at: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True, default=None
     )

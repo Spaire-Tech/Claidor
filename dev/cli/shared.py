@@ -20,7 +20,7 @@ DEFAULT_DB_PORT = 5432
 DEFAULT_REDIS_PORT = 6379
 DEFAULT_MINIO_PORT = 9000
 DEFAULT_TINYBIRD_PORT = 7181
-SECRETS_FILE = Path.home() / ".config" / "polar" / "secrets.env"
+SECRETS_FILE = Path.home() / ".config" / "simeon" / "secrets.env"
 
 
 @dataclass

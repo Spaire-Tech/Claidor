@@ -14,7 +14,7 @@ export interface ConnectorManifest {
 // runtime in the box (`host/extensions/channels/`) opens Discord's Gateway
 // and Slack's Socket Mode with the token the person gives the Channels tab
 // (or a secret-request card), delivers through their REST APIs and wakes
-// the agent for every inbound message (docs/product/channels-served.md).
+// the agent for every inbound message (docs/services-agents.md).
 // No server of ours is in the path: it is bring-your-own bot token, the way
 // Grok Bot's channel design was written. `SAND_CHANNELS_SERVED=0` restores
 // the coming-soon paths. Teams, WhatsApp, Telegram, Signal and iMessage are

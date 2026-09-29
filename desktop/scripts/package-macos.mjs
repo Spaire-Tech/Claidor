@@ -99,7 +99,7 @@ await run(SYSTEM_TOOLS.plutil, [
 // launch (SIGTRAP in ElectronMain, "Unable to find helper app"); the rename
 // refuses to touch the main executable unless it found helpers to rename with
 // it. The old name is read from the bundle, not assumed. Signed below, as the
-// signature covers every renamed path. docs/product/name-measured.md.
+// signature covers every renamed path.
 const renamed = await renameMacBundleIdentity({
   appPath: outputApp,
   fromName: await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleExecutable", "raw", infoPlist]),

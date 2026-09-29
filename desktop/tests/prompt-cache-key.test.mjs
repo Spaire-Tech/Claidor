@@ -24,7 +24,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function load() {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-prompt-cache-key-"));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-prompt-cache-key-"));
   const outfile = path.join(temporary, "entry.mjs");
   await build({ entryPoints: [path.join(repoRoot, "tests/fixtures/prompt-cache-key-entry.ts")], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);

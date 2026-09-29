@@ -10,7 +10,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function loadAbsence() {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-automation-absence-"));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-automation-absence-"));
   const output = path.join(temporary, "cloud-service-absence.mjs");
   await build({
     entryPoints: [path.join(repoRoot, "source/host/extensions/automations/cloud-service-absence.ts")],

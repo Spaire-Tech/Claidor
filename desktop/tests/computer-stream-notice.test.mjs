@@ -10,7 +10,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function loadNotice() {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-stream-notice-"));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-stream-notice-"));
   const output = path.join(temporary, "notice.mjs");
   await build({ entryPoints: [path.join(repoRoot, "source/electron-preload/computer-stream-notice.ts")], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);

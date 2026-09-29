@@ -1,5 +1,5 @@
 """The skill registry behind `aiserver.v1.DashboardService` (25 September
-2026, `docs/product/skill-publish-served.md`).
+2026, `docs/services-agents.md`).
 
 The app packs a skill folder as a plugin tar.gz (`plugin.json` +
 `skills/<name>/SKILL.md`), posts it to `PublishPlugin`, and confirms the

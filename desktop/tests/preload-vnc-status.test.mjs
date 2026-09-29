@@ -10,7 +10,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function loadPreload() {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-vnc-status-"));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-vnc-status-"));
   const output = path.join(temporary, "preload-vnc.mjs");
   await build({ entryPoints: [path.join(repoRoot, "source/electron-preload/preload-vnc.ts")], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent", external: ["electron"] });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);

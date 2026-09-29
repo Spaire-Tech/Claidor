@@ -10,8 +10,7 @@ import { build } from "esbuild";
 
 // 23 September 2026. On a Mac, "hi" to a fresh agent made one model call
 // every 3–4 seconds until the proxy's hourly budget refused, every call a
-// SendMessage the model wrote correctly, and nothing reached the chat
-// (docs/product/handoff-2026-09-23-ai-does-not-answer.md). The earlier
+// SendMessage the model wrote correctly, and nothing reached the chat. The earlier
 // offline test drove the tool through the executor with a stub in place of
 // the InteractionHandler. This one drives the real Agent — the step loop,
 // the InteractionHandler, the forwarding listener, the redaction wrapper,
@@ -27,7 +26,7 @@ async function loadHarness() {
   // The bundle sits inside the tree so the UMD packages it leaves external
   // resolve from node_modules; `/.tmp*/` is ignored by git.
   const bundleDir = path.join(repoRoot, `.tmp-agent-loop-${randomBytes(4).toString("hex")}`);
-  const dataDir = await mkdtemp(path.join(os.tmpdir(), "caisra-agent-loop-"));
+  const dataDir = await mkdtemp(path.join(os.tmpdir(), "simeon-agent-loop-"));
   const output = path.join(bundleDir, "agent-loop.mjs");
   await build({
     entryPoints: [path.join(repoRoot, "tests/fixtures/claidor-agent-loop-entry.ts")],

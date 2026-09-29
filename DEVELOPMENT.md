@@ -1,6 +1,6 @@
 # Development
 
-Polar's stack consists of the following elements:
+Simeon's server and web app consist of the following elements (the Mac app is in `desktop/`; see `docs/building-the-app.md`):
 
 - A backend written in Python, exposing a REST API and workers
 - A frontend written in JavaScript
@@ -43,14 +43,13 @@ flowchart TD
 
 ## Prerequisites
 
-Polar needs a [Python 3](https://www.python.org/downloads/) and [Node.js 24](https://nodejs.org/en/download/package-manager) installations.
+The server and web app need [Python 3](https://www.python.org/downloads/) and [Node.js 24](https://nodejs.org/en/download/package-manager) installations.
 
 ## Setup environment
 
 > [!TIP]
-> Want to get started quickly? Use GitHub Codespaces.
+> The steps below are for a Mac or Linux machine with Docker.
 >
-> [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/polarsource/polar?machine=standardLinux32gb)
 
 > [!TIP]
 > **New: `dev` CLI (beta)** - A single command to set up everything automatically.
@@ -64,7 +63,7 @@ Polar needs a [Python 3](https://www.python.org/downloads/) and [Node.js 24](htt
 
 ### Setup environment variables
 
-For the Polar stack to run properly, it needs quite a bunch of settings defined as environment variables. To ease things, we provide a script to bootstrap them. It requires [uv](https://docs.astral.sh/uv/getting-started/installation/) to be installed on your system.
+For the stack to run properly, it needs quite a bunch of settings defined as environment variables. To ease things, we provide a script to bootstrap them. It requires [uv](https://docs.astral.sh/uv/getting-started/installation/) to be installed on your system.
 
 ```sh
 ./dev/setup-environment
@@ -74,7 +73,7 @@ Once done, the script will automatically create `server/.env` and `clients/apps/
 
 **Optional: setup GitHub App**
 
-If you want to work with GitHub login and issue funding, you'll need to have a [GitHub App](https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/about-creating-github-apps) for your development environment. Our script is able to help in this task by passing the following parameters:
+If you want to work with GitHub login, you'll need to have a [GitHub App](https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/about-creating-github-apps) for your development environment. Our script is able to help in this task by passing the following parameters:
 
 ```sh
 ./dev/setup-environment --setup-github-app --backend-external-url https://mydomain.ngrok.dev
@@ -95,14 +94,14 @@ Your browser will open a new page and you'll be prompted to **create a GitHub Ap
 
 **Shared secrets (multi-worktree development)**
 
-If you work with multiple Git worktrees, secrets (GitHub, Stripe) are automatically shared via `~/.config/polar/secrets.env`:
+If you work with multiple Git worktrees, secrets (GitHub, Stripe) are automatically shared via `~/.config/simeon/secrets.env`:
 
 1. Run `./dev/setup-environment` in your first worktree
 2. If you set up a GitHub App with `--setup-github-app`, credentials are saved automatically to the central file
-3. For Stripe, edit `~/.config/polar/secrets.env` and add your keys (see template at `dev/secrets.env.template`)
+3. For Stripe, edit `~/.config/simeon/secrets.env` and add your keys (see template at `dev/secrets.env.template`)
 4. Run `./dev/setup-environment` in each additional worktree - secrets are merged automatically
 
-You can override the secrets file location with `POLAR_SECRETS_FILE` environment variable.
+You can override the secrets file location with `SIMEON_SECRETS_FILE` environment variable.
 
 **Optional: setup Stripe**
 
@@ -363,6 +362,6 @@ To log in for the first time, follow these steps:
 1. Navigate to the login page.
 2. Enter your email address in the provided field.
 3. Click the "Login" button.
-4. To use the seeded admin, use **admin@polar.sh** ([seeds_load.py](server/scripts/seeds_load.py)).
+4. To use the seeded admin, use **admin@simeonlabs.com** ([seeds_load.py](server/scripts/seeds_load.py)).
 5. Check the terminal where the API is running (`uv run task api`) to get the OTP code.
 6. Enter the OTP code in the login form.

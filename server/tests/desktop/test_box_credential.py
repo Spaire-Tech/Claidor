@@ -5,7 +5,7 @@ the Mac is awake. With the app gone nothing rewrote the box's one-hour
 access token, so the Mac now asks for a box credential once
 (`POST /desktop/api/box/renewal-credential`) and writes it into the box's
 token file, and the box trades it for a fresh access token at
-`POST /sand-box/inference-credential`, the path Grok Bot's host already
+`POST /sand-box/inference-credential`, the path the upstream app's host already
 renews on (`credential-renewer.ts`, `RENEWAL_PATH`).
 """
 

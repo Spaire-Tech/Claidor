@@ -139,7 +139,7 @@ test("connected vendor installs become enabled user plugins; Coming soon never d
 
 test("vendor installs persist under the sand root", async () => {
   const loaded = await load("source/shared/node/vendor-mcp/installs.ts", "vendor-installs");
-  const root = await mkdtemp(path.join(os.tmpdir(), "caisra-vendor-root-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-vendor-root-"));
   try {
     const { loadVendorMcpInstalls, upsertVendorMcpInstall, removeVendorMcpInstall, vendorMcpInstallsPath } = loaded.module;
     assert.deepEqual(loadVendorMcpInstalls(root), []);
@@ -183,7 +183,7 @@ test("vendor OAuth discovers the issuer, registers Simeon, and opens the vendor 
         });
       }
       if (String(url).endsWith("/register")) {
-        return json({ client_id: "caisra-client" });
+        return json({ client_id: "simeon-client" });
       }
       return json({ error: "unexpected" }, 500);
     };
@@ -194,10 +194,10 @@ test("vendor OAuth discovers the issuer, registers Simeon, and opens the vendor 
       fetch: fetchImpl,
     });
     assert.match(started.authorizationUrl, /^https:\/\/auth\.notion\.com\/authorize\?/);
-    assert.match(started.authorizationUrl, /client_id=caisra-client/);
+    assert.match(started.authorizationUrl, /client_id=simeon-client/);
     assert.match(started.authorizationUrl, /code_challenge=/);
     assert.equal(started.pending.pluginId, "notion");
-    assert.equal(started.pending.clientId, "caisra-client");
+    assert.equal(started.pending.clientId, "simeon-client");
     assert.equal(JSON.parse(calls.find((call) => call.method === "POST").body).client_name, "Simeon");
 
     const noDcr = async (url) => {

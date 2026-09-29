@@ -148,7 +148,7 @@ test("Mac product tools and prompt are Grok Bot's, not a Simeon overlay", async 
     });
     assert.equal(file, "     1|hello");
     assert.deepEqual(readRuns, [{ path: "/Users/bass/note.txt", offset: 1, limit: 20 }]);
-    const workspace = await mkdtemp(path.join(os.tmpdir(), "caisra-laptop-"));
+    const workspace = await mkdtemp(path.join(os.tmpdir(), "simeon-laptop-"));
     try {
       const notePath = path.join(workspace, "note.txt");
       await writeFile(notePath, "alpha\nbeta\ngamma\n");

@@ -41,7 +41,7 @@ test("the box runtime is Grok Bot's: the cloud computer, Docker only by the inte
 
 test("a settings store reports the cloud computer, even with local Docker saved by the old switch", async () => {
   const loaded = await loadModule("source/shared/node/settings/sand-settings-store.ts", "sand-settings-store");
-  const dataDir = await mkdtemp(path.join(os.tmpdir(), "caisra-settings-"));
+  const dataDir = await mkdtemp(path.join(os.tmpdir(), "simeon-settings-"));
   const saved = process.env.SAND_BOX_RUNTIME;
   delete process.env.SAND_BOX_RUNTIME;
   try {

@@ -1,6 +1,6 @@
 """`/sand/*`, `/aiserver.v1.*` and `/agent.v1.*`: the half of Cursor's
 server the app in `desktop/` expects, served by Simeon Labs (25 September
-2026, `docs/product/cursor-dependencies-map.md`).
+2026, `docs/services-agents.md`).
 
 Every route here sits at the root of the API host because the app builds
 each with a leading slash (see `polar.desktop.app_sign_in`). One module

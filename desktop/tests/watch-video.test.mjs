@@ -1,5 +1,5 @@
 /**
- * Watching a video, served (25 September 2026, docs/product/video-served.md).
+ * Watching a video, served (25 September 2026, docs/services-agents.md).
  *
  * Grok Bot's watchVideo / videoReview subagents were in the tree and
  * refused: nothing registered them (`resolveSubagentConfigs`), the

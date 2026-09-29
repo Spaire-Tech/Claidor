@@ -21,7 +21,7 @@ export async function runRoutedProviderText(provider, messages, options) {
 `;
 
 async function loadRouter() {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-routed-turn-"));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-routed-turn-"));
   const stubPath = path.join(temporary, "provider-session-stub.mjs");
   await writeFile(stubPath, PROVIDER_STUB);
   const output = path.join(temporary, "inference-router.mjs");

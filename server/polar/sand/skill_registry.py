@@ -1,7 +1,7 @@
 """`aiserver.v1.DashboardService`, the team and plugin half: the skill
-registry (25 September 2026, `docs/product/skill-publish-served.md`).
+registry (25 September 2026, `docs/services-agents.md`).
 
-Five methods the app calls (`docs/product/cursor-dependencies-map.md` §7):
+Five methods the app calls (`docs/services-agents.md` §7):
 `GetTeams` for the publish targets, `PublishPlugin` with the tar.gz,
 `UnpublishPlugin`, `GetEffectiveUserPlugins` on every plugin sync, and
 `GetMe`, which `dashboard.py` already answers. The registry itself is

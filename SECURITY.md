@@ -1,7 +1,5 @@
-# Security Policy
+# Security
 
-## Reporting a Vulnerability
-
-If you believe you have found a security vulnerability in Polar, we encourage you to responsibly disclose this and not open a public issue. Please report it using [GitHub Security Advisory](https://github.com/polarsource/polar/security/advisories/new) tool, to ensure confidentiality and security.
-
-We'll review it as soon as possible and publish a fix accordingly.
+If you believe you have found a security problem in Simeon, please do not open a
+public issue. Write to security@simeonlabs.com with what you found and how to
+reproduce it. We will answer as soon as we can and publish a fix.

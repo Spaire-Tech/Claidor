@@ -3,7 +3,7 @@
 Cursor's server brokered the box the app runs its agent in; Simeon Labs'
 server did not, so `setBoxRuntime("remote")` was refused and Settings
 said Coming Soon (design-audit-ledger.md F-137). The app side was
-complete the whole time (`docs/product/cursor-dependencies-map.md` §5):
+complete the whole time (`docs/services-agents.md` §5):
 `BrokeredHostConnector` calls `EnsureSandBox` and builds the descriptor
 from `gateway_url`, `gateway_token`, `network_token`, `vnc_url` and
 `fork_vnc_base_url`; `RecreateSandBox` / `ForceRecreateSandBox` answer

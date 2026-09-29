@@ -455,8 +455,8 @@ async def create_seed_data(session: AsyncSession, redis: Redis) -> None:
         {
             "name": "Admin Org",
             "slug": "admin-org",
-            "email": "admin@polar.sh",
-            "website": "https://polar.sh",
+            "email": "admin@simeonlabs.com",
+            "website": "https://simeonlabs.com",
             "bio": "The admin organization of Polar",
             "status": OrganizationStatus.ACTIVE,
             "is_admin": True,
@@ -482,7 +482,7 @@ async def create_seed_data(session: AsyncSession, redis: Redis) -> None:
         {
             "name": "SeatBased Members Corp",
             "slug": "seatbased-members-corp",
-            "email": "admin@polar.sh",
+            "email": "admin@simeonlabs.com",
             "website": "https://seatbased-members.com",
             "bio": "Organization with seat-based pricing and members model enabled",
             "status": OrganizationStatus.ACTIVE,
@@ -521,7 +521,7 @@ async def create_seed_data(session: AsyncSession, redis: Redis) -> None:
         {
             "name": "SeatBased Only Corp",
             "slug": "seatbased-only-corp",
-            "email": "admin@polar.sh",
+            "email": "admin@simeonlabs.com",
             "website": "https://seatbased-only.com",
             "bio": "Organization with seat-based pricing but members model disabled",
             "status": OrganizationStatus.ACTIVE,

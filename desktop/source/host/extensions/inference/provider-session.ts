@@ -560,7 +560,7 @@ function geminiTools(definitions: readonly Loose[] | undefined): GeminiDirectToo
 }
 
 // A Gemini model through Simeon Labs' proxy, on Gemini's own wire: the
-// watchVideo / videoReview children (`docs/product/video-served.md`). The
+// watchVideo / videoReview children (`docs/services-agents.md`). The
 // request is written by `gemini-direct-generate.ts`, which is where the
 // video's bytes, mime type and frame rate come off the loop's message and
 // onto the wire; no other executor of ours carries them. The stream is the

@@ -18,7 +18,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function loadProjection() {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-session-projection-"));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-session-projection-"));
   const output = path.join(temporary, "projection.mjs");
   await build({ entryPoints: [path.join(repoRoot, "source/host/extensions/session/session-projection.ts")], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);

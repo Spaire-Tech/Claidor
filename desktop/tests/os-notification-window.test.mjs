@@ -12,7 +12,7 @@ let SandOsNotificationManager;
 let temporary;
 
 before(async () => {
-  temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-os-notification-"));
+  temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-os-notification-"));
   const output = path.join(temporary, "manager.mjs");
   await build({
     entryPoints: [path.join(repoRoot, "source/electron-main/notifications/os-notification-manager.ts")],

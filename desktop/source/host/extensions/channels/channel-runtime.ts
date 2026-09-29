@@ -12,7 +12,7 @@ import type { CreateChannelSocket } from "./socket.js";
 
 /**
  * The module the transcript manager's channel hooks were waiting for (25
- * September 2026; docs/product/cursor-dependencies-map.md §2). It reads
+ * September 2026; docs/services-agents.md §2). It reads
  * every agent's stored channel credentials, keeps one connector per
  * (agent, platform), registers `setChannelDelivery`, `setChannelActivity`
  * and `setChannelConfigChanged` on the manager, and turns each inbound
