@@ -191,6 +191,7 @@ async def recreate_sand_box(call: ConnectCall) -> dict[str, Any]:
         outcome = await broker.recreate(
             call.db,
             call.caller,
+            redis=call.redis,
             preserve_data=preserve is not False,
             force=force is True,
         )
@@ -203,7 +204,7 @@ async def recreate_sand_box(call: ConnectCall) -> dict[str, Any]:
 async def force_recreate_sand_box(call: ConnectCall) -> dict[str, Any]:
     try:
         outcome = await broker.recreate(
-            call.db, call.caller, preserve_data=False, force=True
+            call.db, call.caller, redis=call.redis, preserve_data=False, force=True
         )
     except BoxBrokerRefused as error:
         raise connect_error_for(error)
@@ -215,10 +216,16 @@ async def watch_sand_box_migration(call: ConnectCall) -> AsyncIterator[dict[str,
     box = await broker.box_of_watcher(call.db, call.caller)
     if box is None:
         return
+    box_id = box.id
+    # The stream waits up to 25 s at a time; it needs the database no more.
+    await call.release_db()
     from_offset = call.message.get("fromOffsetKey")
     include_finished = call.message.get("includeFinished") is not False
     async for event in migrations.watch(
-        box.id, from_offset if isinstance(from_offset, str) else "", include_finished
+        call.redis,
+        box_id,
+        from_offset if isinstance(from_offset, str) else "",
+        include_finished,
     ):
         yield event
 

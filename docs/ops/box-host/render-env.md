@@ -66,7 +66,7 @@ Environment variables:
 | `CLAIDOR_BOX_DOCKER_TLS_CA` | `/etc/secrets/ca.pem` |
 | `CLAIDOR_BOX_DOCKER_TLS_CERT` | `/etc/secrets/cert.pem` |
 | `CLAIDOR_BOX_DOCKER_TLS_KEY` | `/etc/secrets/key.pem` |
-| `CLAIDOR_BOX_HOST_BUNDLE_URL` | the S3 URL of the host bundle (below) |
+| `CLAIDOR_BOX_HOST_BUNDLE_URL` | the public HTTPS address of the host bundle folder (below) |
 
 Leave `CLAIDOR_BOX_HOST_ADDRESS` and `CLAIDOR_BOX_PUBLIC_URL_TEMPLATE`
 empty: the API proxies the box's ports itself at `/sand-box/{id}/p/…`
@@ -86,21 +86,70 @@ differs (28 September 2026; `docs/product/cloud-computer-served.md`
 Size `CLAIDOR_BOX_MAX_RUNNING` to the VM: its memory, less about 2 GB for
 the system, divided by `CLAIDOR_BOX_MEMORY_LIMIT_MB`.
 
-## The host bundle
+## Several box servers (29 September 2026)
 
-On the Mac, after `cd desktop && npm run package`:
+`CLAIDOR_BOX_HOSTS` lists every server as JSON. A new person's computer is
+made on the accepting server with the largest share of its limit free and
+stays there for good (its files live on that server). With the list set,
+`CLAIDOR_BOX_DOCKER_HOST` is not read.
 
 ```
-cd desktop/dist
-tar czf ~/Desktop/simeon-host-bundle.tgz host/host-main.cjs box-exec-daemon/main.cjs
+[{"name": "docker", "docker_host": "tcp://box1.simeonlabs.com:2376", "accepting": false},
+ {"name": "us-west-1", "docker_host": "tcp://box2.simeonlabs.com:2376", "max_running": 3}]
 ```
 
-Upload the tar to S3 (any bucket the API can read; a presigned or public
-URL both work) and put its URL in `CLAIDOR_BOX_HOST_BUNDLE_URL`. The
-bundle is fetched once per API process and copied into each new box.
+- `name`: stored on each computer made there. **The first server must stay
+  `"docker"`**: that is the name every computer made before this carries.
+- `max_running`: computers awake at once there (default
+  `CLAIDOR_BOX_MAX_RUNNING`).
+- `accepting: false` drains a server: it keeps the computers it has and gets
+  no new one. Do not remove a server from the list while it still holds
+  people's computers: a computer whose server is gone is made again,
+  empty, on another one.
+- `address`: only when the API reaches the published ports at another
+  address than the `docker_host` name.
+
+Every server is set up with the same certificate authority, so the three
+secret files above open all of them: run `setup-box-host.sh` on the new VM
+with `JOIN_CA_DIR` (the script's header says how). Put the new server's
+Render outbound addresses in its firewall the same way.
+
+## The API's size
+
+Every message and every screen frame between an app and its computer
+passes through the API (`/sand-box/{id}/p/…`). On `starter` Render runs one
+worker process. A larger plan runs more (`WEB_CONCURRENCY` follows the
+CPUs), and more instances can run side by side: the proxy, the migration
+stream and the rate limits keep no state in one process (Redis holds it).
+Each worker opens up to 15 database connections (`CLAIDOR_DATABASE_POOL_SIZE`
+5 plus 10 overflow): workers × instances × 15, plus the worker service's,
+must stay under the Postgres plan's connection limit.
+
+## The host bundle (updated 29 September 2026)
+
+The cloud computers run the program the packaged app carries, published in
+Grok Bot's layout: a folder holding `sand-host-bundle-latest.version` (a
+commit id) and `sand-host-bundle-<commit>.tgz`. The server reads the pointer
+at most every ten minutes, with no restart, and moves each computer to a new
+version the next time it is idle.
+
+On the Mac, after `cd desktop && npm run package`, with the `aws` command
+line signed in to an account that can write the folder:
+
+```
+SIMEON_HOST_BUNDLE_S3=s3://<bucket>/host-bundles npm run publish:host-bundle
+```
+
+It refuses a build with uncommitted changes (the version is the commit).
+The folder must be readable over plain HTTPS without credentials (the same
+program ships inside every copy of the app, so it is not a secret);
+`CLAIDOR_BOX_HOST_BUNDLE_URL` is that folder's address, for example
+`https://<bucket>.s3.<region>.amazonaws.com/host-bundles`. A URL ending in
+`.tgz` still names one fixed file, read once per process, as before.
 
 ## Then
 
-Simeon → Settings → box runtime → remote. Render's API log shows
+Since 29 September 2026 every app uses the cloud computer; there is no
+switch. Render's API log shows
 `sand.box.ensure` with the box id, or `sand.box.ensure.refused` naming
 what is missing. `docker ps` on the VM shows the container.

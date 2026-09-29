@@ -53,7 +53,7 @@ test("the patch records its style anchors and only the chunks a transform change
   assert.equal(record.includes('"usage-current-provider"'), false);
   assert.equal(record.includes('"router-panel"'), false);
   assert.equal(record.includes('"usage-panel"'), false);
-  assert.match(record, /features: \["settings-local-docker-vm", "brand-simeon",/);
+  assert.match(record, /features: \["brand-simeon",/);
 });
 
 test("the gate table says why browserUse stays off and multitask on", async () => {

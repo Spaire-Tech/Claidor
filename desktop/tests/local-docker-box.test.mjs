@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -27,22 +27,32 @@ function envOf(args) {
   return env;
 }
 
-test("the box runtime defaults to local Docker", async () => {
+test("the box runtime is Grok Bot's: the cloud computer, Docker only by the internal switch", async () => {
   const loaded = await loadModule("source/shared/box-runtime.ts", "box-runtime");
   try {
-    assert.equal(loaded.module.DEFAULT_SAND_BOX_RUNTIME, "local-docker");
+    assert.equal(loaded.module.DEFAULT_SAND_BOX_RUNTIME, "remote");
+    assert.equal(loaded.module.resolveSandBoxRuntime({}), "remote");
+    assert.equal(loaded.module.resolveSandBoxRuntime({ SAND_BOX_RUNTIME: "local-docker" }), "local-docker");
+    assert.equal(loaded.module.resolveSandBoxRuntime({ SAND_BOX_RUNTIME: "anything" }), "remote");
   } finally {
     await loaded.dispose();
   }
 });
 
-test("a fresh settings store reports local Docker as the box runtime", async () => {
+test("a settings store reports the cloud computer, even with local Docker saved by the old switch", async () => {
   const loaded = await loadModule("source/shared/node/settings/sand-settings-store.ts", "sand-settings-store");
   const dataDir = await mkdtemp(path.join(os.tmpdir(), "caisra-settings-"));
+  const saved = process.env.SAND_BOX_RUNTIME;
+  delete process.env.SAND_BOX_RUNTIME;
   try {
-    const store = new loaded.module.SandSettingsStore(path.join(dataDir, "settings.json"));
-    assert.equal(store.getBoxRuntime(), "local-docker");
+    const settingsPath = path.join(dataDir, "settings.json");
+    assert.equal(new loaded.module.SandSettingsStore(settingsPath).getBoxRuntime(), "remote");
+    await writeFile(settingsPath, JSON.stringify({ boxRuntime: "local-docker" }));
+    assert.equal(new loaded.module.SandSettingsStore(settingsPath).getBoxRuntime(), "remote");
+    process.env.SAND_BOX_RUNTIME = "local-docker";
+    assert.equal(new loaded.module.SandSettingsStore(settingsPath).getBoxRuntime(), "local-docker");
   } finally {
+    if (saved === undefined) delete process.env.SAND_BOX_RUNTIME; else process.env.SAND_BOX_RUNTIME = saved;
     await rm(dataDir, { recursive: true, force: true });
     await loaded.dispose();
   }

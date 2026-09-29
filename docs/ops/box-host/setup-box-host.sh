@@ -7,6 +7,13 @@
 #   RENDER_EGRESS_IPS="74.220.51.0/24,74.220.59.0/24" ADMIN_SSH_IP=any \
 #   bash setup-box-host.sh
 #
+# A second server (29 September 2026) joins the first one's certificate
+# authority, so the one client certificate Render holds opens every server:
+# copy /etc/docker/certs/ca.pem and ca-key.pem from the first server into a
+# folder here and add JOIN_CA_DIR=/that/folder. The server certificate is
+# then signed by that CA and no new client files are made; Render needs
+# only the new server in CLAIDOR_BOX_HOSTS (render-env.md).
+#
 # ADMIN_SSH_IP is the address you SSH from, or `any` to leave SSH open to
 # every address with key login only (password login is turned off when
 # root already has a key, never before). Safe to run again: every rule,
@@ -27,7 +34,10 @@ set -euo pipefail
 
 CERT_DIR=/etc/docker/certs
 CLIENT_DIR=/root/box-host-client
-BOX_IMAGE=${BOX_IMAGE:-public.ecr.aws/k0i0n2g5/cursorenvironments/universal:sand-box-latest}
+# The pinned image the server runs (CLAIDOR_BOX_IMAGE_DIGEST's default in
+# server/polar/config.py), not the moving sand-box-latest tag: the 28
+# September build runs the image's own host (cloud-computer-served.md).
+BOX_IMAGE=${BOX_IMAGE:-public.ecr.aws/k0i0n2g5/cursorenvironments/universal:sand-box-latest@sha256:322c3a9031d61e210a05400dd74c82bbb1fdb42db315a8cf5ab39368c2f0c1c8}
 
 echo "== 1. Docker"
 apt-get update -q
@@ -38,6 +48,12 @@ docker info --format 'engine {{.ServerVersion}} on {{.Architecture}}'
 echo "== 2. Certificates (CA, server with SAN, client)"
 mkdir -p "$CERT_DIR" "$CLIENT_DIR"; chmod 700 "$CERT_DIR" "$CLIENT_DIR"
 cd "$CERT_DIR"
+if [ -n "${JOIN_CA_DIR:-}" ]; then
+  [ -f "$JOIN_CA_DIR/ca.pem" ] && [ -f "$JOIN_CA_DIR/ca-key.pem" ] || { echo "JOIN_CA_DIR needs ca.pem and ca-key.pem from the first server"; exit 1; }
+  openssl x509 -in "$JOIN_CA_DIR/ca.pem" -noout -text | grep -q "X509v3 Key Usage" || { echo "the first server's CA has no key usage extension; run this script on it again first"; exit 1; }
+  cp "$JOIN_CA_DIR/ca.pem" ca.pem; cp "$JOIN_CA_DIR/ca-key.pem" ca-key.pem
+  echo "joining the first server's certificate authority"
+fi
 # Python 3.13 and later (the API runs 3.14) verify with VERIFY_X509_STRICT,
 # which refuses a CA without a key-usage extension: "CA cert does not
 # include key usage extension" on every EnsureSandBox, while curl accepted
@@ -62,13 +78,16 @@ openssl genrsa -out server-key.pem 4096
 openssl req -subj "/CN=$BOX_HOST_NAME" -sha256 -new -key server-key.pem -out server.csr
 printf 'basicConstraints = critical,CA:FALSE\nkeyUsage = critical,digitalSignature,keyEncipherment\nsubjectAltName = DNS:%s,IP:%s,IP:127.0.0.1\nextendedKeyUsage = serverAuth\nsubjectKeyIdentifier = hash\nauthorityKeyIdentifier = keyid,issuer\n' "$BOX_HOST_NAME" "$BOX_HOST_IP" > server-ext.cnf
 openssl x509 -req -days 3650 -sha256 -in server.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out server-cert.pem -extfile server-ext.cnf
-openssl genrsa -out "$CLIENT_DIR/key.pem" 4096
-openssl req -subj '/CN=simeon-api' -new -key "$CLIENT_DIR/key.pem" -out client.csr
-printf 'basicConstraints = critical,CA:FALSE\nkeyUsage = critical,digitalSignature,keyEncipherment\nextendedKeyUsage = clientAuth\nsubjectKeyIdentifier = hash\nauthorityKeyIdentifier = keyid,issuer\n' > client-ext.cnf
-openssl x509 -req -days 3650 -sha256 -in client.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out "$CLIENT_DIR/cert.pem" -extfile client-ext.cnf
-cp ca.pem "$CLIENT_DIR/ca.pem"
+if [ -z "${JOIN_CA_DIR:-}" ]; then
+  openssl genrsa -out "$CLIENT_DIR/key.pem" 4096
+  openssl req -subj '/CN=simeon-api' -new -key "$CLIENT_DIR/key.pem" -out client.csr
+  printf 'basicConstraints = critical,CA:FALSE\nkeyUsage = critical,digitalSignature,keyEncipherment\nextendedKeyUsage = clientAuth\nsubjectKeyIdentifier = hash\nauthorityKeyIdentifier = keyid,issuer\n' > client-ext.cnf
+  openssl x509 -req -days 3650 -sha256 -in client.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out "$CLIENT_DIR/cert.pem" -extfile client-ext.cnf
+  cp ca.pem "$CLIENT_DIR/ca.pem"
+  chmod 600 "$CLIENT_DIR"/key.pem
+fi
 rm -f server.csr client.csr server-ext.cnf client-ext.cnf
-chmod 600 "$CERT_DIR"/*-key.pem "$CLIENT_DIR"/key.pem
+chmod 600 "$CERT_DIR"/*-key.pem
 
 echo "== 3. Engine API on 2376 with client-certificate auth"
 cat > /etc/docker/daemon.json <<EOF
@@ -150,8 +169,14 @@ echo "== 5. The box image, pulled once so the first EnsureSandBox does not wait 
 docker pull "$BOX_IMAGE"
 
 echo
-echo "Done. Copy these three files to your Mac and add them on Render as secret files:"
-ls -la "$CLIENT_DIR"
-echo
-echo "Prove it from your Mac (after scp of $CLIENT_DIR):"
-echo "  curl --cacert ca.pem --cert cert.pem --key key.pem https://$BOX_HOST_NAME:2376/version"
+if [ -n "${JOIN_CA_DIR:-}" ]; then
+  echo "Done. This server trusts the client certificate Render already holds."
+  echo "Add it to CLAIDOR_BOX_HOSTS on Render (render-env.md), then prove it from Render's Shell:"
+  echo "  curl --cacert /etc/secrets/ca.pem --cert /etc/secrets/cert.pem --key /etc/secrets/key.pem https://$BOX_HOST_NAME:2376/version"
+else
+  echo "Done. Copy these three files to your Mac and add them on Render as secret files:"
+  ls -la "$CLIENT_DIR"
+  echo
+  echo "Prove it from your Mac (after scp of $CLIENT_DIR):"
+  echo "  curl --cacert ca.pem --cert cert.pem --key key.pem https://$BOX_HOST_NAME:2376/version"
+fi

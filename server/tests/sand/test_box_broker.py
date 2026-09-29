@@ -60,9 +60,10 @@ class FakeBoxHost:
     """A host that keeps its boxes in a dict: what `DockerBoxHost` does
     against a daemon, without one."""
 
-    name = "docker"
-
-    def __init__(self) -> None:
+    def __init__(self, name: str = "docker", max_running: int | None = None) -> None:
+        self.name = name
+        self._max_running = max_running
+        self.accepting = True
         self.boxes: dict[str, dict[str, Any]] = {}
         self.created: list[BoxSpec] = []
         self.removed: list[tuple[str, list[str]]] = []
@@ -71,6 +72,13 @@ class FakeBoxHost:
         # The bundle's fingerprint, as `DockerBoxHost` reports it; None is
         # a host with no bundle, which never replaces for it.
         self.expected_host_sha256: str | None = None
+
+    @property
+    def max_running(self) -> int:
+        # The setting, read live, unless this server has a limit of its own.
+        if self._max_running is not None:
+            return self._max_running
+        return settings.BOX_MAX_RUNNING
 
     async def create(self, spec: BoxSpec) -> ProvisionedBox:
         if self.blocked is not None:
@@ -130,7 +138,6 @@ def host() -> Any:
         return True
 
     box_service.set_health_check_for_tests(healthy)
-    box_service.migrations.events.clear()
     yield fake
     box_hosts.set_box_host_for_tests(None)
     box_service.set_health_check_for_tests(None)
