@@ -32,9 +32,9 @@ class FileServiceTypes(StrEnum):
     organization_avatar = "organization_avatar"
     storefront_header = "storefront_header"
     storefront_link = "storefront_link"
-    # A piece of a matter's case file. Private storage: reachable only
-    # through the dossier it belongs to, by the lawyers assigned to it.
-    dossier_document = "dossier_document"
+    # A retired file type: no new file is created with it, and rows made
+    # before it was retired stay readable. The stored value is unchanged.
+    archived_document = "dossier_document"
 
 
 class File(RecordModel):
@@ -109,7 +109,7 @@ class StorefrontLinkFile(File):
     }
 
 
-class DossierDocumentFile(File):
+class ArchivedDocumentFile(File):
     __mapper_args__ = {
-        "polymorphic_identity": FileServiceTypes.dossier_document,
+        "polymorphic_identity": FileServiceTypes.archived_document,
     }

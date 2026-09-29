@@ -100,30 +100,12 @@ class StorefrontLinkFileCreate(FileCreateBase):
     )
 
 
-class DossierDocumentFileCreate(FileCreateBase):
-    """Schema to create a pièce uploaded into a dossier.
-
-    Any document type is accepted — extraction decides afterwards, in the
-    open, whether the piece is readable. A scanned exhibit belongs in the
-    file even when the machine cannot read it.
-    """
-
-    service: Literal[FileServiceTypes.dossier_document]
-    size: int = Field(
-        description=(
-            "Size of the file. A maximum of 100 MB is allowed for this type of file."
-        ),
-        le=100 * 1024 * 1024,
-    )
-
-
 FileCreate = Annotated[
     DownloadableFileCreate
     | ProductMediaFileCreate
     | OrganizationAvatarFileCreate
     | StorefrontHeaderFileCreate
-    | StorefrontLinkFileCreate
-    | DossierDocumentFileCreate,
+    | StorefrontLinkFileCreate,
     Discriminator("service"),
     SetSchemaReference("FileCreate"),
 ]
@@ -173,14 +155,11 @@ class StorefrontLinkFileRead(PublicFileReadBase):
     service: Literal[FileServiceTypes.storefront_link]
 
 
-class DossierDocumentFileRead(FileReadBase):
-    """A pièce uploaded into a dossier.
+class ArchivedDocumentFileRead(FileReadBase):
+    """A private document of a retired file type. No new one can be
+    created; existing rows stay readable. Never a public file."""
 
-    Deliberately NOT a public file: pieces are reachable only through the
-    dossier's own membership-gated endpoints, never by URL.
-    """
-
-    service: Literal[FileServiceTypes.dossier_document]
+    service: Literal[FileServiceTypes.archived_document]
 
 
 FileRead = Annotated[
@@ -189,7 +168,7 @@ FileRead = Annotated[
     | OrganizationAvatarFileRead
     | StorefrontHeaderFileRead
     | StorefrontLinkFileRead
-    | DossierDocumentFileRead,
+    | ArchivedDocumentFileRead,
     Discriminator("service"),
     MergeJSONSchema({"title": "FileRead"}),
     ClassName("FileRead"),

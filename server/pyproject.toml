@@ -59,17 +59,10 @@ dependencies = [
   "clickhouse-connect>=0.8.0",
   "tzdata>=2025.3",
   "pypdf>=6.14.2",
-  # Runtime, not tooling: polar.tieout reads a banker's deck and model
-  # directly. Both are imported at module level, so a dev-only listing
-  # would break the first endpoint that reaches for a tie-out.
   "python-pptx>=1.0.2",
   "openpyxl>=3.1.5",
   "xlrd>=2.0.2",
   "olefile>=0.47",
-  # Already present, as python-pptx depends on it. Declared because
-  # polar.tieout.metadata imports it directly to read an OOXML package
-  # part by part, and a direct import on a transitive dependency breaks
-  # the day the dependency that carried it changes its mind.
   "lxml>=5.0",
   "pdfplumber>=0.11",
   "formualizer>=0.8.4",
@@ -124,9 +117,6 @@ clean = { cmd = "find * -name '*.pyc' -delete && find * -name '__pycache__' -del
 verify_github_app = { cmd = "python -m polar.verify_github_app", help = "verify that the github app is correctly configured" }
 generate_dev_jwks = { cmd = "python -m polar.kit.jwk claidor_dev > ./.jwks.json", help = "generate a development JWKS file" }
 seeds_load = { cmd = "python -m scripts.seeds_load", help = "load sample/test data into the database" }
-librarian_eval = { cmd = "python -m scripts.librarian_eval", help = "graded legal-accuracy eval (separate from pytest)" }
-registry_fetch = { cmd = "python -m scripts.registry_fetch", help = "fetch opinion text for a registry doctrine (resumable)" }
-registry_screen = { cmd = "python -m scripts.registry_screen", help = "screen a registry doctrine's candidates (resumable)" }
 loadtest_setup = { cmd = "python -m scripts.loadtest_setup", help = "setup load test data for event ingestion" }
 platform_verify = { cmd = "python -m scripts.platform verify", help = "verify CLAIDOR_PLATFORM_ORG_ID points to a real organization" }
 seed_platform_products = { cmd = "python -m scripts.seed_platform_products", help = "idempotently seed Starter/Studio/Scale products and overage meters in the platform organization" }

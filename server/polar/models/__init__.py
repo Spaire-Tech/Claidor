@@ -1,14 +1,7 @@
 from polar.kit.db.models import Model, TimestampedModel
 
-# The Chain's fact store lives in its own package; imported here so the
-# tables register in the metadata alembic and the test harness build from.
-from polar.tieout.chain.link import ChainLink
-from polar.tieout.chain.store import ChainFact, ChainRefusal
-from polar.tieout.chain.terms import ChainTerm
-
 from .account import Account
 from .account_credit import AccountCredit
-from .agent_task import AgentStep, AgentTask
 from .benefit import Benefit
 from .benefit_grant import BenefitGrant
 from .billing_entry import BillingEntry
@@ -18,20 +11,6 @@ from .checkout_link import CheckoutLink
 from .checkout_link_product import CheckoutLinkProduct
 from .checkout_product import CheckoutProduct
 from .client_invoice import ClientInvoice, ClientInvoiceLineItem, ClientInvoiceStatus
-from .connector import (
-    ConnectedFolder,
-    Connection,
-    ConnectionProvider,
-    ConnectionStatus,
-)
-from .court_decision import (
-    CourtDecision,
-    DecisionArticleLink,
-    DecisionArticleTreatment,
-    DecisionKind,
-    DecisionLinkStatus,
-    TreatmentStatus,
-)
 from .custom_field import CustomField
 from .customer import Customer
 from .customer_meter import CustomerMeter
@@ -59,20 +38,6 @@ from .discount import Discount
 from .discount_product import DiscountProduct
 from .discount_redemption import DiscountRedemption
 from .dispute import Dispute
-from .dossier import (
-    CitationNature,
-    CitationSourceKind,
-    DocumentCategory,
-    Dossier,
-    DossierCitation,
-    DossierDocument,
-    DossierMember,
-    DossierQuestion,
-    DossierRole,
-    DossierStatus,
-    ExtractionStatus,
-    QuestionStatus,
-)
 from .downloadable import Downloadable
 from .email_broadcast import EmailBroadcast
 from .email_broadcast_ab_test import EmailBroadcastABTest
@@ -98,9 +63,6 @@ from .form import Form, FormCustomField, FormStatus
 from .form_submission import FormSubmission
 from .held_balance import HeldBalance
 from .issue_reward import IssueReward
-from .legal_act import ArticleEquivalenceRelation, LegalAct, LegalActVersion
-from .legal_article import LegalArticle, LegalArticleEquivalence
-from .librarian_question import LibrarianQuestion
 from .license_key import LicenseKey
 from .license_key_activation import LicenseKeyActivation
 from .login_code import LoginCode
@@ -133,10 +95,6 @@ from .payment import Payment
 from .payment_method import PaymentMethod
 from .payout import Payout
 from .personal_access_token import PersonalAccessToken
-from .playbook import (
-    Playbook,
-    PlaybookRule,
-)
 from .pledge import Pledge
 from .pledge_transaction import PledgeTransaction
 from .processor_transaction import ProcessorTransaction
@@ -159,46 +117,16 @@ from .product_review import ProductReview
 from .quota_notification import QuotaNotification
 from .refund import Refund
 from .sand_plugin import SandPlugin, SandPluginUserSetting
-from .registry import (
-    OpinionSource,
-    RegistryCandidate,
-    RegistryOpinion,
-    ScreeningVerdict,
-)
 from .resend_webhook_event import ResendWebhookEvent
-from .saved_prompt import SavedPrompt
 from .subscription import Subscription
 from .subscription_meter import SubscriptionMeter
 from .subscription_product_price import SubscriptionProductPrice
-from .tieout import (
-    Artifact,
-    ArtifactKind,
-    ArtifactStatus,
-    CheckKind,
-    CheckRun,
-    CheckStatus,
-    Correction,
-    CorrectionState,
-    CorrectionWhere,
-    DealVisit,
-    Figure,
-    FigureLink,
-    Finding,
-    FindingKind,
-    FindingSeverity,
-    FindingState,
-    HouseRules,
-    LinkState,
-    ModelCell,
-    OneOffCheck,
-)
 from .transaction import Transaction
 from .trial_redemption import TrialRedemption
 from .user import OAuthAccount, User
 from .user_notification import UserNotification
 from .user_organization import UserOrganization
 from .user_session import UserSession
-from .veille import Veille, VeilleSignal, WatchTarget
 from .wallet import Wallet
 from .wallet_transaction import WalletTransaction
 from .webhook_delivery import WebhookDelivery
@@ -208,40 +136,17 @@ from .webhook_event import WebhookEvent
 __all__ = [
     "Account",
     "AccountCredit",
-    "AgentStep",
-    "AgentTask",
-    "ArticleEquivalenceRelation",
-    "Artifact",
-    "ArtifactKind",
-    "ArtifactStatus",
     "Benefit",
     "BenefitGrant",
     "BillingEntry",
     "Campaign",
-    "ChainFact",
-    "ChainLink",
-    "ChainRefusal",
-    "ChainTerm",
-    "CheckKind",
-    "CheckRun",
-    "CheckStatus",
     "Checkout",
     "CheckoutLink",
     "CheckoutLinkProduct",
     "CheckoutProduct",
-    "CitationNature",
-    "CitationSourceKind",
     "ClientInvoice",
     "ClientInvoiceLineItem",
     "ClientInvoiceStatus",
-    "ConnectedFolder",
-    "Connection",
-    "ConnectionProvider",
-    "ConnectionStatus",
-    "Correction",
-    "CorrectionState",
-    "CorrectionWhere",
-    "CourtDecision",
     "CustomField",
     "Customer",
     "CustomerMeter",
@@ -250,11 +155,6 @@ __all__ = [
     "CustomerSeat",
     "CustomerSession",
     "CustomerSessionCode",
-    "DealVisit",
-    "DecisionArticleLink",
-    "DecisionArticleTreatment",
-    "DecisionKind",
-    "DecisionLinkStatus",
     "DesktopAuthCode",
     "DesktopMemoryFile",
     "DesktopSession",
@@ -268,14 +168,6 @@ __all__ = [
     "DiscountProduct",
     "DiscountRedemption",
     "Dispute",
-    "DocumentCategory",
-    "Dossier",
-    "DossierCitation",
-    "DossierDocument",
-    "DossierMember",
-    "DossierQuestion",
-    "DossierRole",
-    "DossierStatus",
     "Downloadable",
     "EmailBroadcast",
     "EmailBroadcastABTest",
@@ -298,32 +190,18 @@ __all__ = [
     "EventClosure",
     "EventType",
     "ExternalEvent",
-    "ExtractionStatus",
-    "Figure",
-    "FigureLink",
     "File",
-    "Finding",
-    "FindingKind",
-    "FindingSeverity",
-    "FindingState",
     "Form",
     "FormCustomField",
     "FormStatus",
     "FormSubmission",
     "HeldBalance",
-    "HouseRules",
     "IssueReward",
     "LegacyRecurringProductPriceCustom",
     "LegacyRecurringProductPriceFixed",
     "LegacyRecurringProductPriceFree",
-    "LegalAct",
-    "LegalActVersion",
-    "LegalArticle",
-    "LegalArticleEquivalence",
-    "LibrarianQuestion",
     "LicenseKey",
     "LicenseKeyActivation",
-    "LinkState",
     "LoginCode",
     "MatyJob",
     "MatyJobKind",
@@ -340,7 +218,6 @@ __all__ = [
     "Meter",
     "MeterEvent",
     "Model",
-    "ModelCell",
     "Notification",
     "NotificationRecipient",
     "OAuth2AuthorizationCode",
@@ -348,8 +225,6 @@ __all__ = [
     "OAuth2Grant",
     "OAuth2Token",
     "OAuthAccount",
-    "OneOffCheck",
-    "OpinionSource",
     "Order",
     "OrderItem",
     "Organization",
@@ -360,8 +235,6 @@ __all__ = [
     "PaymentMethod",
     "Payout",
     "PersonalAccessToken",
-    "Playbook",
-    "PlaybookRule",
     "Pledge",
     "PledgeTransaction",
     "ProcessorTransaction",
@@ -377,33 +250,24 @@ __all__ = [
     "ProductPriceSeatUnit",
     "ProductReview",
     "ProductVisibility",
-    "QuestionStatus",
     "QuotaNotification",
     "Refund",
-    "RegistryCandidate",
-    "RegistryOpinion",
     "ResendWebhookEvent",
     "SandPlugin",
     "SandPluginUserSetting",
-    "SavedPrompt",
-    "ScreeningVerdict",
     "SeatStatus",
     "Subscription",
     "SubscriptionMeter",
     "SubscriptionProductPrice",
     "TimestampedModel",
     "Transaction",
-    "TreatmentStatus",
     "TrialRedemption",
     "User",
     "UserNotification",
     "UserOrganization",
     "UserSession",
-    "Veille",
-    "VeilleSignal",
     "Wallet",
     "WalletTransaction",
-    "WatchTarget",
     "WebhookDelivery",
     "WebhookEndpoint",
     "WebhookEvent",

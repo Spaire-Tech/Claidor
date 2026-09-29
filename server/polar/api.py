@@ -1,7 +1,6 @@
 from fastapi import APIRouter
 
 from polar.account.endpoints import router as accounts_router
-from polar.analysis.endpoints import router as analysis_router
 from polar.audit_log.endpoints import router as audit_log_router
 from polar.auth.endpoints import router as auth_router
 from polar.benefit.endpoints import router as benefits_router
@@ -10,8 +9,6 @@ from polar.checkout.endpoints import router as checkout_router
 from polar.checkout_link.endpoints import router as checkout_link_router
 from polar.cli.endpoints import router as cli_router
 from polar.client_invoice.endpoints import router as client_invoice_router
-from polar.connector.endpoints import router as connector_router
-from polar.corpus.endpoints import router as corpus_router
 from polar.custom_field.endpoints import router as custom_field_router
 from polar.customer.endpoints import router as customer_router
 from polar.customer_meter.endpoints import router as customer_meter_router
@@ -23,7 +20,6 @@ from polar.customer_seat.endpoints import router as customer_seat_router
 from polar.customer_session.endpoints import router as customer_session_router
 from polar.discount.endpoints import router as discount_router
 from polar.dispute.endpoints import router as dispute_router
-from polar.dossier.endpoints import router as dossier_router
 from polar.email_broadcast.endpoints import router as email_broadcast_router
 from polar.email_segment.endpoints import router as email_segment_router
 from polar.email_sequence.endpoints import router as email_sequence_router
@@ -48,8 +44,6 @@ from polar.integrations.google.endpoints import router as google_router
 from polar.integrations.plain.endpoints import router as plain_router
 from polar.integrations.resend.endpoints import router as resend_router
 from polar.integrations.stripe.endpoints import router as stripe_router
-from polar.lecteur.endpoints import router as lecteur_router
-from polar.librarian.endpoints import router as librarian_router
 from polar.license_key.endpoints import router as license_key_router
 from polar.login_code.endpoints import router as login_code_router
 from polar.member.endpoints import router as member_router
@@ -72,14 +66,11 @@ from polar.personal_access_token.endpoints import router as pat_router
 from polar.platform.endpoints import router as platform_router
 from polar.product.endpoints import router as product_router
 from polar.product_review.endpoints import router as product_review_router
-from polar.prompt.endpoints import router as prompt_router
-from polar.redline.endpoints import router as redline_router
 from polar.refund.endpoints import router as refund_router
 from polar.storefront.endpoints import router as storefront_router
 from polar.subscription.endpoints import router as subscription_router
 from polar.transaction.endpoints import router as transaction_router
 from polar.user.endpoints import router as user_router
-from polar.veille.endpoints import router as veille_router
 from polar.wallet.endpoints import router as wallet_router
 from polar.webhook.endpoints import router as webhook_router
 
@@ -151,29 +142,8 @@ router.include_router(platform_router)
 router.include_router(audit_log_router)
 # /integrations/google
 router.include_router(google_router)
-# /librarian
-router.include_router(librarian_router)
-# /corpus
-router.include_router(corpus_router)
-# /analyses
-router.include_router(analysis_router)
-# /prompts
-router.include_router(prompt_router)
-# /veilles
-router.include_router(veille_router)
-# /lecteur
-router.include_router(lecteur_router)
 
-# /redline
-router.include_router(redline_router)
-# /tieout and /chain — Swens (model review for finance) is archived.
-# The engine stays under polar/tieout as a record; its routes are not
-# mounted. Last working state: git tag `swens-final`.
 
-# /connector
-router.include_router(connector_router)
-# /dossiers
-router.include_router(dossier_router)
 # /license-keys
 router.include_router(license_key_router)
 # /checkout-links

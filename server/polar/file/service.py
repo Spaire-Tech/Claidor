@@ -35,11 +35,7 @@ STORAGE_EXEMPT_SERVICES: frozenset[FileServiceTypes] = frozenset(
         FileServiceTypes.organization_avatar,
         FileServiceTypes.storefront_header,
         FileServiceTypes.storefront_link,
-        # Dossier pieces: Claidor workspaces are auto-provisioned without a
-        # plan, so they resolve to the `inactive` tier (storage_gb=0) — the
-        # inherited course-content quota would reject every pièce. A
-        # matter's file is core product, not quota-gated content.
-        FileServiceTypes.dossier_document,
+        FileServiceTypes.archived_document,
     }
 )
 

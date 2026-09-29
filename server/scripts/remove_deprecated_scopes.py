@@ -23,6 +23,10 @@ DEPRECATED_SCOPES = [
     "issues:write",
     "repositories:read",
     "repositories:write",
+    "redline:read",
+    "redline:write",
+    "tieout:read",
+    "tieout:write",
 ]
 
 # Tables with a `scope` column (space-separated scopes)

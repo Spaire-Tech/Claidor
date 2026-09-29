@@ -27,7 +27,7 @@ class PersonalAccessTokenCreate(Schema):
         min_length=1,
         max_length=120,
         description="What this token is for. Shown in the token list.",
-        examples=["Word add-in on my laptop"],
+        examples=["Script on my laptop"],
     )
     scopes: list[Scope] = Field(
         min_length=1,
@@ -35,7 +35,7 @@ class PersonalAccessTokenCreate(Schema):
             "What the token may do. Reserved scopes (web:read, web:write) are "
             "refused, and so is any scope the caller does not hold."
         ),
-        examples=[["redline:read"]],
+        examples=[["products:read"]],
     )
     expires_in_days: int | None = Field(
         default=None,

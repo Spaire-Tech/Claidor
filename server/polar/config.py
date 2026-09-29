@@ -47,7 +47,7 @@ def _validate_email_renderer_binary_path(value: Path) -> Path:
 
     The renderer is a Node artifact used only when an email is actually
     rendered. Refusing to load settings without it meant the whole
-    application — the librarian, the corpus, every dossier — could not boot
+    application could not boot
     on a deployment that has no email configured at all. The check now
     happens where the binary is used, so a missing renderer breaks sending
     email and nothing else.

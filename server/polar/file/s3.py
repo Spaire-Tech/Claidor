@@ -25,5 +25,5 @@ S3_SERVICES: dict[FileServiceTypes, S3Service] = {
         settings.S3_FILES_PUBLIC_BUCKET_NAME
     ),
     # Private bucket — case files are never publicly readable.
-    FileServiceTypes.dossier_document: _get_s3_service(settings.S3_FILES_BUCKET_NAME),
+    FileServiceTypes.archived_document: _get_s3_service(settings.S3_FILES_BUCKET_NAME),
 }

@@ -112,23 +112,15 @@ class Scope(StrEnum):
     organization_access_tokens_read = "organization_access_tokens:read"
     organization_access_tokens_write = "organization_access_tokens:write"
 
-    # The document checks. These exist because the Word add-in is not a
-    # browser: it runs in an iframe on its own origin, so a SameSite=Lax
-    # session cookie is never sent with its requests, and Safari and Edge
-    # block third-party cookies outright. web:read and web:write are
-    # reserved to the dashboard's own cookie session and cannot be held by
-    # any token, so without a pair of their own the check routes are
-    # reachable only from a browser — which is every surface except the one
-    # they were written for.
-    redline_read = "redline:read"
-    redline_write = "redline:write"
-
-    # The tie-out, for the same reason and one more: the panel that runs
-    # inside PowerPoint and Excel is where a banker sees a finding on the
-    # slide in front of them, and it is an iframe on its own origin exactly
-    # like the Word one.
-    tieout_read = "tieout:read"
-    tieout_write = "tieout:write"
+    # Retired: no route checks these any more. Tokens issued before they
+    # were retired may still carry them, and a stored scope that is not a
+    # member here would fail to parse, so they stay until
+    # `scripts.remove_deprecated_scopes` has stripped them from the
+    # database.
+    retired_documents_read = "redline:read"
+    retired_documents_write = "redline:write"
+    retired_figures_read = "tieout:read"
+    retired_figures_write = "tieout:write"
 
     # The model proxy, for a client that is not our desktop app.
     #
@@ -230,13 +222,10 @@ SCOPES_SUPPORTED_DISPLAY_NAMES: dict[Scope, str] = {
     Scope.notification_recipients_write: "Create or modify notification recipients",
     Scope.organization_access_tokens_read: "Read organization access tokens",
     Scope.organization_access_tokens_write: "Create or modify organization access tokens",
-    # Worded for the consent screen, where the reader is a lawyer deciding
-    # whether to let Word see a client's draft. « Check documents » says
-    # what happens; « redline:read » says nothing.
-    Scope.redline_read: "Check documents for defects",
-    Scope.redline_write: "Apply fixes to documents",
-    Scope.tieout_read: "See which figures tie back to the model",
-    Scope.tieout_write: "Upload files and confirm what a figure refers to",
+    Scope.retired_documents_read: "Retired",
+    Scope.retired_documents_write: "Retired",
+    Scope.retired_figures_read: "Retired",
+    Scope.retired_figures_write: "Retired",
     Scope.model_proxy: "Send messages to models through your allowance",
 }
 

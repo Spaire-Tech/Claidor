@@ -59,9 +59,9 @@ RESPONSES_ANSWER: dict[str, Any] = {
             "status": "completed",
             "action": {
                 "type": "search",
-                "query": "ohada uniform act",
+                "query": "tide tables brest",
                 "sources": [
-                    {"type": "url", "url": "https://ohada.org/acts"},
+                    {"type": "url", "url": "https://tides.example/brest"},
                     {"type": "url", "url": "https://example.org/cited"},
                 ],
             },
@@ -72,12 +72,12 @@ RESPONSES_ANSWER: dict[str, Any] = {
             "content": [
                 {
                     "type": "output_text",
-                    "text": "OHADA has ten uniform acts. The first was adopted in 1997.",
+                    "text": "Brest has two high tides a day. The next is at 14:02.",
                     "annotations": [
                         {
                             "type": "url_citation",
                             "start_index": 0,
-                            "end_index": 28,
+                            "end_index": 32,
                             "url": "https://example.org/cited",
                             "title": "Cited page",
                         }
@@ -98,7 +98,7 @@ class TestReadingASearchAnswer:
     def test_the_answer_its_pages_and_the_count_of_searches(self) -> None:
         result = web_search_answer(RESPONSES_ANSWER)
         assert result["answer"] == (
-            "OHADA has ten uniform acts. The first was adopted in 1997."
+            "Brest has two high tides a day. The next is at 14:02."
         )
         assert result["searches"] == 1
         # The cited page comes first, carrying the sentence it supports;
@@ -107,9 +107,9 @@ class TestReadingASearchAnswer:
             {
                 "url": "https://example.org/cited",
                 "title": "Cited page",
-                "text": "OHADA has ten uniform acts.",
+                "text": "Brest has two high tides a day.",
             },
-            {"url": "https://ohada.org/acts", "title": "", "text": ""},
+            {"url": "https://tides.example/brest", "title": "", "text": ""},
         ]
 
     def test_garbage_is_an_empty_answer_not_an_error(self) -> None:
@@ -135,20 +135,20 @@ class TestWebSearch:
             response = await client.post(
                 "/desktop/api/proxy/v1/web/search",
                 headers=headers,
-                json={"query": "ohada uniform act", "explanation": "the person asked"},
+                json={"query": "tide tables brest", "explanation": "the person asked"},
             )
         assert response.status_code == 200, response.text
         body = response.json()
-        assert body["answer"].startswith("OHADA has ten")
+        assert body["answer"].startswith("Brest has two")
         assert [one["url"] for one in body["documents"]] == [
             "https://example.org/cited",
-            "https://ohada.org/acts",
+            "https://tides.example/brest",
         ]
 
         sent = json.loads(route.calls[0].request.content)
         assert route.calls[0].request.headers["authorization"] == "Bearer sk-openai"
         assert sent["model"] == WEB_SEARCH_MODEL.model_id
-        assert sent["input"] == "ohada uniform act"
+        assert sent["input"] == "tide tables brest"
         assert sent["tools"] == [{"type": "web_search"}]
         assert "stream" not in sent
 
