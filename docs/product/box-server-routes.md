@@ -882,3 +882,123 @@ locally started PostgreSQL 16 and Redis with `moto_server` standing in for
 Minio, on Python 3.14.0rc2 through a local uncommitted `sitecustomize.py`
 shim, against the 3.14-final that `server/CLAUDE.md` requires — none of which
 is in the diff, and none of which is how CI would run it.
+
+---
+
+## §18 — main built the cloud box's lifecycle and gave it no meter (29 September 2026)
+
+`main` moved `7bd7c208` → `9650f49e`, nine commits, and this one lands in
+`server/` harder than any move since this branch opened: eleven files under
+`polar/`, a new migration, four test files. Merged as `3a0137e8`, no conflicts.
+
+### The two heads, third time
+
+`main`'s new `sand_box_sleep_0928` declares `down_revision =
+"sand_plugins_0925"` — the parent this branch's `desktop_boxes_0918` was given
+on 25 September. So `alembic heads` printed **two heads**, and `upgrade head`
+refuses to run with two. Re-pointed onto `sand_box_sleep_0928` (`62f33a83`);
+the migration's own docstring now records all three re-pointings.
+
+Measured, not assumed: the whole chain applied forward to a real PostgreSQL 16
+through `main`'s migration into this one, `desktop_boxes` created with its
+partial unique index `ix_desktop_boxes_live_scope` on `(user_id, scope_key)
+WHERE deleted_at IS NULL` — the index that makes `POST /box/sandboxes` mean
+*ensure* — then `downgrade -1` and `to_regclass('desktop_boxes')` came back
+empty.
+
+**Nothing warns about this and nothing will.** The suite builds its schema from
+`Model.metadata.create_all`, so all 517 tests pass with two heads, and
+`Server: Migration Check` has never been given a runner. `alembic heads` by
+hand after every merge of `main` is the only thing that catches it.
+
+### Models moved under this branch again
+
+`main` put the agent on GPT-6 Sol (primary) and GPT-6 Luna (cheap) and added a
+new role, `ModelRole.retired`, for GPT-5.6 Terra and Luna: a model that keeps a
+role so the proxy still answers a request naming it, but is never offered. That
+is **consistent with** this branch's `_proxy` role gate rather than in conflict
+with it — the gate refuses `role is None`, and a retired model has a role.
+Read off the merged tree rather than the diff:
+
+```
+primary:  ['gpt-6-sol']          cheap:    ['gpt-6-luna']
+retired:  ['gpt-5.6-terra', 'gpt-5.6-luna']
+roleless: ['claude-opus-5', 'claude-haiku-4-5-20251001', 'gpt-6-astra', 'gemini-2.5-pro']
+caisra-box in MODELS: False
+```
+
+The box's own row is built on the fly by `box_model()` and is not in `MODELS`,
+so the role gate refuses `caisra-box` like any unknown id and the box is
+metered only through this branch's own settlement path. That is the behaviour
+it always had; it is worth writing down because the gate is new-ish and the box
+row is roleless by design.
+
+### The finding that bears on the open decision
+
+`main`'s cloud box grew a real lifecycle this move: hibernate-when-idle on a
+cron every minute, wake on `notify.publish` (a routine's fire, a listener
+event, a shared room), a size and a capacity, key-only SSH to the host, a CA
+that Python's strict TLS accepts, the host bundle uploaded where Docker can
+reach it, and `last_active_at` / `hibernated_at` on `sand_boxes`.
+
+**It does not bill anybody.** Searched, so this is not an impression:
+
+```
+grep -rnE "credits_for|desktop_usage|DesktopUsage|record_usage|billed_through" polar/sand/
+  → no matches
+```
+
+So the repository now holds the cloud box's *lifecycle* on `main`, with no
+meter, and the box *meter* on this branch, attached to the wrong substrate
+(E2B) and the wrong wire (ten REST routes where the app speaks
+`EnsureSandBox` / `RecreateSandBox` / `ForceRecreateSandBox` over Connect RPC).
+
+That sharpens the open question and — I should say plainly — it argues the
+opposite of what I recommended on 20 September. I said then that the box half's
+route layer was the rewrite and the metering the salvage. The metering is now
+the part **nobody else has built**, and `main`'s box is the one being taken to
+production. Hibernation makes the awake-seconds model cheaper rather than
+redundant: a box that sleeps has fewer awake seconds to charge for, and
+`last_active_at` / `hibernated_at` are exactly the anchors `_settle` wants in
+place of `running_since` / `billed_through`.
+
+What would port, unchanged in shape: settlement in slices on every call that
+touches a box, the `BOX_MAX_SECONDS_PER_SETTLEMENT` clock guard (25 hours),
+never-zero for a box that was actually awake, and one `desktop_usage` row per
+slice under a roleless model id. What would not: the ten handlers, the E2B
+client, the `desktop_boxes` table.
+
+**Not started.** Wiring a meter into `polar/sand/box_service.py` is a real
+change to someone else's live module and it is not mine to begin unasked.
+
+### One precision about this branch's own code, found on the way
+
+`grep -rn "credits_for_box" --include=*.py .` shows **no production caller**:
+`_settle` charges through `desktop.record_usage(model=box_model(...),
+usage=Usage(input_tokens=charged))`, and `credits_for_box` is referenced only
+by `tests/desktop/test_box_pricing.py` and by `test_boxes.py:608`, where it is
+the oracle the production path is checked against. That is deliberate and its
+docstring says so ("one piece of arithmetic cannot disagree with itself" — it
+routes through the same `credits_for`), so the test checks the wiring rather
+than re-deriving the arithmetic. Worth stating because "the metering model" has
+been described in this PR as though `credits_for_box` were on the hot path. It
+is not; `box_model`'s `cost_multiplier` is.
+
+### What ran, and what did not
+
+`pytest tests/desktop tests/maty tests/sand tests/integrations/google` on the
+merged tree: **14 failed / 503 passed** (517 collected, up from 494 —
+`main` brought `test_box_sleep.py`). The fourteen are the known set; the
+`skill_registry` gzip flake of §17 did not trip this run, which is what a 28%
+flake does.
+
+Ruff on the ten files this branch touches: 3 findings and `polar/config.py`
+unformatted. `main`'s own copies of the same files, extracted and linted with
+the same config, carry **5** findings and the same unformatted `config.py` —
+the three of mine plus `polar/config.py:1` and `polar/models/desktop.py:28`,
+both of which this branch's edits happen to fix. So every finding on my touched
+files is `main`'s, and this branch adds none.
+
+Unchanged, and still the whole of the risk here: **nothing has ever contacted
+E2B, no sandbox has been started, no command has run in a box, and CI has never
+executed a line of this diff.**
