@@ -1073,3 +1073,65 @@ no command has run in a box, and CI has never executed a line of this diff.**
 The four things offered in §18 and in comment `5882313175` — the meter into
 `main`'s `box_service`, the E2B salvage, the #200 stale proxy tests, the
 skill_registry fix (now moot) — remain offered and unstarted.
+
+---
+
+## §20 — the cloud box is now every person's computer, and it still bills nobody (29 September 2026, midday)
+
+`main` moved `2e8672f5` → `822d3850`, eight commits, cloud box again. Merged,
+no conflicts, **no new migration**, so one Alembic head with nothing to
+re-point — two merges running.
+
+### The fact that changes §18 from architecture to urgency
+
+`195f61ae` sets `DEFAULT_SAND_BOX_RUNTIME = "remote"` in
+`desktop/source/shared/box-runtime.ts`. Read rather than inferred from the
+title: the Docker box is now an internal test path selected only by
+`SAND_BOX_RUNTIME=local-docker`, a `"local-docker"` previously saved in
+settings is deliberately **not** read, `setBoxRuntime` refuses to switch, and
+the Settings switch is removed from the window patch. So every person's
+computer is the cloud box.
+
+And §18's finding still holds — re-run on this merged tree rather than carried
+forward on trust:
+
+```
+grep -rnE "credits_for|desktop_usage|DesktopUsage|record_usage|billed_through" polar/sand/
+  → no matches
+```
+
+`main` spent this move making that box fleet-ready — one box per person across
+several servers with capacity accounting (`afb1dede`), the host bundle
+published in Grok Bot's layout and followed live (`3f922dbf`), the proxy no
+longer holding a database connection while it streams (`86e6224e`; a few dozen
+waiting streams emptied the pool), and the box migration stream moved out of
+one worker's memory into Redis so the API can run several workers
+(`b3cd94ef`). That last commit's word "migration" is the box's
+`WatchSandBoxMigration` stream, **not** Alembic — a name collision worth not
+tripping on.
+
+None of that adds a meter. The cloud computer is now the default for everyone,
+it sleeps when idle, it has a size and a capacity, and nothing charges for it.
+That is the single most decision-relevant thing in this note, and it is
+someone else's module to change: **not started**, offered in §18 and in PR
+comment `5882313175`, which has been edited to carry this fact.
+
+### Measured this round
+
+`pytest tests/desktop tests/maty tests/sand tests/integrations/google`:
+**14 failed / 528 passed / 1 skipped**. The fourteen are the known set. The
+skip is new and was chased rather than waved through: `main`'s
+`tests/sand/test_box_fleet_docker.py:97`, "set SIMEON_E2E_DOCKER_HOSTS to run
+against real engines" — a deliberate end-to-end gate, not a silent loss.
+
+`server/tests/fixtures/base.py` changed, which is the shared fixture this
+branch's tests use too; the addition is a `dependency_overrides` entry for
+`polar.sand.box_proxy.lookup_sessions` only, so it does not reach them.
+
+Structural after the merge: ten `/api/proxy/box/*` routes at 1451, catch-all
+last at 1791, `hourly_exhausted` once, no duplicate top-level names, box
+pricing symbols present, one Alembic head. Ruff: mine 3 findings, `main`'s own
+copies of the same files 5, mine a strict subset, both trees format clean.
+
+Unchanged: **nothing here has ever contacted E2B, no sandbox has been started,
+no command has run in a box, and CI has never executed a line of this diff.**
