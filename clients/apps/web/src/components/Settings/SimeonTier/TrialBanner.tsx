@@ -1,6 +1,6 @@
 'use client'
 
-import { useClaidorSubscription } from '@/hooks/queries/claidorTier'
+import { useSimeonSubscription } from '@/hooks/queries/simeonTier'
 import Link from 'next/link'
 
 interface TrialBannerProps {
@@ -26,7 +26,7 @@ const TrialBanner = ({
   organizationId,
   organizationSlug,
 }: TrialBannerProps) => {
-  const subscription = useClaidorSubscription(organizationId)
+  const subscription = useSimeonSubscription(organizationId)
   const sub = subscription.data
 
   if (!sub || sub.status !== 'trialing') {

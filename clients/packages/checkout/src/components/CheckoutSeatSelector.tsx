@@ -1,10 +1,10 @@
 'use client'
 
-import { formatCurrency } from '@claidor/currency'
+import { formatCurrency } from '@simeon/currency'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
 import type { CheckoutUpdatePublic } from '@spaire/sdk/models/components/checkoutupdatepublic'
 import { HTTPValidationError } from '@spaire/sdk/models/errors/httpvalidationerror'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
 import { useEffect, useState } from 'react'
 import type { ProductCheckoutPublic } from '../guards'
 import MeteredPricesDisplay from './MeteredPricesDisplay'
@@ -145,10 +145,8 @@ const CheckoutSeatSelector = ({
       {/* Seat row */}
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-0.5">
-          <span className="text-sm font-medium text-gray-900">
-            Seats
-          </span>
-          <span className=" text-xs text-gray-500">
+          <span className="text-sm font-medium text-gray-900">Seats</span>
+          <span className="text-xs text-gray-500">
             {formatCurrency('compact')(pricePerSeat, currency)} per seat
           </span>
         </div>
@@ -190,7 +188,7 @@ const CheckoutSeatSelector = ({
               type="button"
               onClick={handleSeatClick}
               disabled={isUpdating}
-              className=" w-10 rounded-lg py-0.5 text-center text-sm tabular-nums text-gray-900 transition-all hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-10 rounded-lg py-0.5 text-center text-sm text-gray-900 tabular-nums transition-all hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Click to edit seat count"
               title="Click to edit"
             >
@@ -227,13 +225,9 @@ const CheckoutSeatSelector = ({
       </div>
 
       {seatLimitText && (
-        <p className=" text-xs text-gray-500">
-          {seatLimitText}
-        </p>
+        <p className="text-xs text-gray-500">{seatLimitText}</p>
       )}
-      {error && (
-        <p className="text-destructive-foreground text-sm">{error}</p>
-      )}
+      {error && <p className="text-destructive-foreground text-sm">{error}</p>}
 
       <MeteredPricesDisplay checkout={checkout} />
     </div>

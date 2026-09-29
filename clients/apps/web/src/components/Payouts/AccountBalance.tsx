@@ -1,8 +1,8 @@
 import { useTransactionsSummary } from '@/hooks/queries'
 import { Skeleton } from '@mui/material'
-import { schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
+import Button from '@simeon/ui/components/atoms/Button'
 import React, { useCallback } from 'react'
 import { useModal } from '../Modal/useModal'
 import { Well, WellContent, WellFooter, WellHeader } from '../Shared/Well'
@@ -73,7 +73,7 @@ const AccountBalance: React.FC<AccountBalanceProps> = ({
           </div>
         </WellContent>
         <WellFooter>
-          <p className=" text-gray-500">
+          <p className="text-gray-500">
             You may only withdraw funds above $10.
           </p>
         </WellFooter>
@@ -102,7 +102,7 @@ const AccountBalance: React.FC<AccountBalanceProps> = ({
           </div>
         </WellContent>
         <WellFooter>
-          <p className=" text-gray-500">
+          <p className="text-gray-500">
             Fees are first deducted from any available credits.
           </p>
         </WellFooter>

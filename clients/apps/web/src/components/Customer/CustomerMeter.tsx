@@ -1,10 +1,10 @@
 import { ParsedMeterQuantities } from '@/hooks/queries/meters'
 import { ParsedMetricPeriod } from '@/hooks/queries/metrics'
-import { schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
-import FormattedInterval from '@claidor/ui/components/atoms/FormattedInterval'
-import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
+import { schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
+import FormattedInterval from '@simeon/ui/components/atoms/FormattedInterval'
+import ShadowBox from '@simeon/ui/components/atoms/ShadowBox'
 import { useMemo } from 'react'
 import FormattedUnits from '../Meter/FormattedUnits'
 import MetricChart from '../Metrics/MetricChart'
@@ -45,7 +45,7 @@ export const CustomerMeter = ({
   }, [customerMeter.balance, unitPrice])
 
   return (
-    <ShadowBox className=" flex flex-col p-2">
+    <ShadowBox className="flex flex-col p-2">
       <div className="mb-2 flex flex-row items-center justify-between gap-x-2 p-6">
         <h2 className="text-xl">{meter.name}</h2>
         <span className="text-xl">
@@ -55,15 +55,13 @@ export const CustomerMeter = ({
       {customerMeter.subscription && (
         <div className="-mt-2 mb-6 flex flex-row flex-wrap items-start gap-x-8 gap-y-2 rounded-2xl px-6">
           <div className="flex flex-col">
-            <span className=" text-sm text-gray-500">
-              Subscription
-            </span>
+            <span className="text-sm text-gray-500">Subscription</span>
             <h3 className="text-lg">
               {customerMeter.subscription.product.name}
             </h3>
           </div>
           <div className="flex flex-col">
-            <span className=" text-sm text-gray-500">
+            <span className="text-sm text-gray-500">
               Current billing period
             </span>
             <h3 className="text-lg">
@@ -85,38 +83,30 @@ export const CustomerMeter = ({
             </h3>
           </div>
           <div className="flex flex-col">
-            <span className=" text-sm text-gray-500">
-              Total
-            </span>
+            <span className="text-sm text-gray-500">Total</span>
             <h3 className="text-lg">
               <FormattedUnits value={customerMeter.consumed_units} />
             </h3>
           </div>
           <div className="flex flex-col">
-            <span className=" text-sm text-gray-500">
-              Credited
-            </span>
+            <span className="text-sm text-gray-500">Credited</span>
             <h3 className="text-lg">
               <FormattedUnits value={customerMeter.credited_units} />
             </h3>
           </div>
           <div className="flex flex-col">
-            <span className=" text-sm text-gray-500">
-              Balance
-            </span>
+            <span className="text-sm text-gray-500">Balance</span>
             <h3 className="text-lg">
               <FormattedUnits value={Math.abs(customerMeter.balance)} />
               {customerMeter.balance > 0 && (
-                <span className=" ml-1 text-xs text-gray-500">
+                <span className="ml-1 text-xs text-gray-500">
                   credits remaining
                 </span>
               )}
             </h3>
           </div>
           <div className="flex flex-col">
-            <span className=" text-sm text-gray-500">
-              Overages
-            </span>
+            <span className="text-sm text-gray-500">Overages</span>
             <h3 className="text-lg">
               {unitPrice &&
                 formatCurrency('compact')(
@@ -127,7 +117,7 @@ export const CustomerMeter = ({
           </div>
         </div>
       )}
-      <div className=" rounded-3xl bg-white p-4">
+      <div className="rounded-3xl bg-white p-4">
         <MetricChart
           data={quantities as unknown as ParsedMetricPeriod[]}
           interval="day"

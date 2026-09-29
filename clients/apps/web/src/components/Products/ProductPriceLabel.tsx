@@ -1,5 +1,5 @@
 import { isLegacyRecurringPrice } from '@/utils/product'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import AmountLabel from '../Shared/AmountLabel'
 
 interface ProductPriceLabelProps {
@@ -49,14 +49,14 @@ const ProductPriceLabel: React.FC<ProductPriceLabelProps> = ({
       return (
         <div className="flex items-baseline gap-1.5">
           {hasMultipleTiers && (
-            <span className=" text-xs text-gray-500">From</span>
+            <span className="text-xs text-gray-500">From</span>
           )}
           <AmountLabel
             amount={firstTier.price_per_seat}
             currency={staticPrice.price_currency}
             interval={product.recurring_interval || undefined}
           />
-          <span className=" text-xs text-gray-500">/ seat</span>
+          <span className="text-xs text-gray-500">/ seat</span>
         </div>
       )
     }

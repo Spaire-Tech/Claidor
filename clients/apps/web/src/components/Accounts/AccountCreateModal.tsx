@@ -1,8 +1,8 @@
 import { setValidationErrors } from '@/utils/api/errors'
 import { api } from '@/utils/client'
-import { enums, isValidationError, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import CountryPicker from '@claidor/ui/components/atoms/CountryPicker'
+import { enums, isValidationError, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import CountryPicker from '@simeon/ui/components/atoms/CountryPicker'
 import {
   Form,
   FormControl,
@@ -11,7 +11,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { useCallback, useState } from 'react'
 import { useForm, useFormContext } from 'react-hook-form'
 

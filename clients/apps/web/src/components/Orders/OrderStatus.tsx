@@ -1,15 +1,12 @@
-import { schemas } from '@claidor/client'
-import { Status } from '@claidor/ui/components/atoms/Status'
+import { schemas } from '@simeon/client'
+import { Status } from '@simeon/ui/components/atoms/Status'
 import { twMerge } from 'tailwind-merge'
 
 const OrderStatusColors = {
   paid: 'bg-emerald-100 text-emerald-500 ',
-  pending:
-    'bg-yellow-100 text-yellow-500 ',
-  refunded:
-    'bg-blue-100 text-blue-500 ',
-  partially_refunded:
-    'bg-blue-100 text-blue-500 ',
+  pending: 'bg-yellow-100 text-yellow-500 ',
+  refunded: 'bg-blue-100 text-blue-500 ',
+  partially_refunded: 'bg-blue-100 text-blue-500 ',
 } as const
 
 export const OrderStatus = ({

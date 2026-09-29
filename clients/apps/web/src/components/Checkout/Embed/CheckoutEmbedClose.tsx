@@ -1,6 +1,6 @@
 'use client'
 
-import { ClaidorEmbedCheckout } from '@claidor/checkout/embed'
+import { SimeonEmbedCheckout } from '@simeon/checkout/embed'
 import type { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic'
 import { X } from 'lucide-react'
 import { useCallback, useEffect } from 'react'
@@ -16,23 +16,23 @@ const CheckoutEmbedClose: React.FC<
     if (!checkout.embedOrigin) {
       return
     }
-    ClaidorEmbedCheckout.postMessage({ event: 'close' }, checkout.embedOrigin)
+    SimeonEmbedCheckout.postMessage({ event: 'close' }, checkout.embedOrigin)
   }, [checkout])
 
   useEffect(() => {
     const outsideClickListener = (event: MouseEvent) => {
-      const contentElement = document.getElementById('claidor-embed-content')
+      const contentElement = document.getElementById('simeon-embed-content')
       if (contentElement && !contentElement.contains(event.target as Node)) {
         onClose()
       }
     }
     document
-      .getElementById('claidor-embed-layout')
+      .getElementById('simeon-embed-layout')
       ?.addEventListener('click', outsideClickListener)
 
     return () => {
       document
-        .getElementById('claidor-embed-layout')
+        .getElementById('simeon-embed-layout')
         ?.removeEventListener('click', outsideClickListener)
     }
   }, [onClose])
@@ -40,7 +40,7 @@ const CheckoutEmbedClose: React.FC<
   return (
     <button
       type="button"
-      className=" fixed top-2 right-2 rounded-full bg-transparent bg-white p-2 shadow-xl md:top-4 md:right-4"
+      className="fixed top-2 right-2 rounded-full bg-transparent bg-white p-2 shadow-xl md:top-4 md:right-4"
       onClick={onClose}
     >
       <X className="h-4 w-4 md:h-6 md:w-6" />

@@ -1,4 +1,4 @@
-const ClaidorLogo = ({
+const SimeonLogo = ({
   className,
   width,
   height,
@@ -18,4 +18,4 @@ const ClaidorLogo = ({
   )
 }
 
-export default ClaidorLogo
+export default SimeonLogo

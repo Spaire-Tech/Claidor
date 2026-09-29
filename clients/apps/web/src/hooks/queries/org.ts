@@ -1,7 +1,7 @@
 import revalidate from '@/app/actions'
 import { getQueryClient } from '@/utils/api/query'
 import { api } from '@/utils/client'
-import { operations, schemas, unwrap } from '@claidor/client'
+import { operations, schemas, unwrap } from '@simeon/client'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { defaultRetry } from './retry'
 
@@ -118,7 +118,10 @@ export const useUpdateOrganization = () =>
       // already succeeded — so swallow individual errors here. Worst
       // case the public storefront page serves stale content for one
       // ISR window.
-      const safeRevalidate = async (tag: string, opts?: { expire?: number }) => {
+      const safeRevalidate = async (
+        tag: string,
+        opts?: { expire?: number },
+      ) => {
         try {
           await revalidate(tag, opts)
         } catch {
@@ -148,7 +151,9 @@ export const useOrganization = (id: string, enabled: boolean = true) =>
 
 export const useOrganizationAccount = (
   id?: string,
-  options?: { refetchInterval?: number | false | ((data: any) => number | false) },
+  options?: {
+    refetchInterval?: number | false | ((data: any) => number | false)
+  },
 ) =>
   useQuery({
     queryKey: ['organizations', 'account', id],

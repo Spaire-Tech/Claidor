@@ -1,12 +1,12 @@
 import { DataTableSortingState } from '@/utils/datatable'
-import { schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
+import { schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
 import {
   DataTable,
   DataTableColumnDef,
   DataTableColumnHeader,
-} from '@claidor/ui/components/atoms/DataTable'
-import { Status } from '@claidor/ui/components/atoms/Status'
+} from '@simeon/ui/components/atoms/DataTable'
+import { Status } from '@simeon/ui/components/atoms/Status'
 import {
   OnChangeFn,
   PaginationState,
@@ -58,7 +58,7 @@ export const LicenseKeysList = ({
             />
             <div className="flex flex-col">
               <span className="text-sm">{licenseKey.customer.name}</span>
-              <span className=" text-xs text-gray-500">
+              <span className="text-xs text-gray-500">
                 {licenseKey.customer.email}
               </span>
             </div>

@@ -1,4 +1,4 @@
-import { ShadowBoxOnMd } from '@claidor/ui/components/atoms/ShadowBox'
+import { ShadowBoxOnMd } from '@simeon/ui/components/atoms/ShadowBox'
 import { CircleAlertIcon } from 'lucide-react'
 
 export interface AccessRestrictedProps {
@@ -15,7 +15,7 @@ export default function AccessRestricted({
       <CircleAlertIcon className="h-8 w-8 shrink-0 text-red-500" />
       <div className="flex flex-col gap-2">
         <h2 className="text-lg font-medium">Access Restricted</h2>
-        <p className=" text-gray-500">{message}</p>
+        <p className="text-gray-500">{message}</p>
       </div>
     </div>
   )

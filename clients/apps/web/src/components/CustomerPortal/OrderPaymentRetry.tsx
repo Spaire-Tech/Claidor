@@ -4,8 +4,8 @@ import {
   useCustomerOrderConfirmPayment,
   useCustomerOrderPaymentStatus,
 } from '@/hooks/queries'
-import { type Client, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { type Client, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import { PaymentElement } from '@stripe/react-stripe-js'
 import {
   ConfirmationToken,
@@ -373,7 +373,7 @@ export const OrderPaymentRetry = ({
   return (
     <div className="space-y-4">
       {/* Order Summary */}
-      <div className=" rounded-lg bg-gray-50 p-4">
+      <div className="rounded-lg bg-gray-50 p-4">
         <h3 className="mb-2 font-medium">Order Summary</h3>
         <div className="space-y-1 text-sm">
           <div className="flex justify-between">
@@ -412,7 +412,7 @@ export const OrderPaymentRetry = ({
             <p className="text-lg font-medium">
               {showRetryButton ? 'Payment Failed' : 'Payment Successful!'}
             </p>
-            <p className=" mt-2 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-gray-500">
               {showRetryButton
                 ? 'You can try again or contact support if the issue persists.'
                 : 'Thank you for your payment. You can now close this window.'}

@@ -2,10 +2,10 @@
 
 import { useAssignSeatFromCheckout } from '@/hooks/queries'
 import { validateEmail } from '@/utils/validation'
-import { hasProductCheckout } from '@claidor/checkout/guards'
+import { hasProductCheckout } from '@simeon/checkout/guards'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
 import type { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
 import { CheckCircleIcon, PlusIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Well, WellContent, WellHeader } from '../Shared/Well'
@@ -131,10 +131,10 @@ const CheckoutSeatInvitations = ({
   }
 
   return (
-    <Well className=" w-full border border-gray-200 bg-transparent">
+    <Well className="w-full border border-gray-200 bg-transparent">
       <WellHeader className="gap-y-4">
         <h2 className="text-xl">Invite team members</h2>
-        <p className=" text-sm text-gray-500">
+        <p className="text-sm text-gray-500">
           You purchased {seats} {seats === 1 ? 'seat' : 'seats'}. Invite team
           members to access the benefits.
         </p>
@@ -149,7 +149,7 @@ const CheckoutSeatInvitations = ({
               onClick={inviteSelf}
               loading={isSendingSelf}
               disabled={isSendingSelf}
-              className=" text-xs text-gray-600"
+              className="text-xs text-gray-600"
             >
               Assign seat to yourself
             </Button>
@@ -166,10 +166,10 @@ const CheckoutSeatInvitations = ({
                   type="email"
                   value={checkout.customerEmail || ''}
                   disabled
-                  className=" bg-gray-50"
+                  className="bg-gray-50"
                 />
               </div>
-              <CheckCircleIcon className=" mt-2 h-6 w-6 text-gray-400" />
+              <CheckCircleIcon className="mt-2 h-6 w-6 text-gray-400" />
             </div>
           )}
           {emailInputs.map((input) => (
@@ -188,7 +188,7 @@ const CheckoutSeatInvitations = ({
                 )}
               </div>
               {input.sent ? (
-                <CheckCircleIcon className=" mt-2 h-6 w-6 text-gray-400" />
+                <CheckCircleIcon className="mt-2 h-6 w-6 text-gray-400" />
               ) : (
                 emailInputs.length > 1 &&
                 !input.sent && (
@@ -231,7 +231,7 @@ const CheckoutSeatInvitations = ({
         </Button>
 
         {(sentCount > 0 || selfInvited) && (
-          <p className=" text-center text-sm text-gray-500">
+          <p className="text-center text-sm text-gray-500">
             Successfully assigned {sentCount + (selfInvited ? 1 : 0)}{' '}
             {sentCount + (selfInvited ? 1 : 0) === 1 ? 'seat' : 'seats'}
           </p>

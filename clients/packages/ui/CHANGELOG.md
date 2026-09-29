@@ -1,4 +1,4 @@
-# @claidor/ui
+# @simeon/ui
 
 ## 0.1.2
 

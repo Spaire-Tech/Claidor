@@ -13,17 +13,16 @@ import AddOutlined from '@mui/icons-material/AddOutlined'
 import ArrowDownward from '@mui/icons-material/ArrowDownward'
 import ArrowUpward from '@mui/icons-material/ArrowUpward'
 import Search from '@mui/icons-material/Search'
-import { schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
-import { ShadowBoxOnMd } from '@claidor/ui/components/atoms/ShadowBox'
+import { schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@claidor/ui/components/ui/dropdown-menu'
+} from '@simeon/ui/components/ui/dropdown-menu'
 import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
@@ -55,7 +54,9 @@ export const CustomerListPage = ({ organization }: CustomerListPageProps) => {
     [data],
   )
 
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null)
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
+    null,
+  )
 
   const {
     show: showCreateModal,
@@ -128,12 +129,12 @@ export const CustomerListPage = ({ organization }: CustomerListPageProps) => {
                 </Button>
               </div>
             </div>
-            <div className=" flex flex-col divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-200">
+            <div className="flex flex-col divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-200">
               {customers.map((customer) => (
                 <button
                   key={customer.id}
                   type="button"
-                  className=" flex flex-row items-center gap-4 px-6 py-4 text-left transition-colors hover:bg-gray-50"
+                  className="flex flex-row items-center gap-4 px-6 py-4 text-left transition-colors hover:bg-gray-50"
                   onClick={() => setSelectedCustomerId(customer.id)}
                 >
                   <Avatar
@@ -146,12 +147,12 @@ export const CustomerListPage = ({ organization }: CustomerListPageProps) => {
                       {customer.name || customer.email}
                     </span>
                     {customer.name && (
-                      <span className=" truncate text-xs text-gray-500">
+                      <span className="truncate text-xs text-gray-500">
                         {customer.email}
                       </span>
                     )}
                   </div>
-                  <span className=" shrink-0 text-xs text-gray-400">
+                  <span className="shrink-0 text-xs text-gray-400">
                     {new Date(customer.created_at).toLocaleDateString()}
                   </span>
                 </button>
@@ -168,9 +169,18 @@ export const CustomerListPage = ({ organization }: CustomerListPageProps) => {
           </>
         ) : (
           <div className="flex min-h-[70vh] flex-col items-center justify-center gap-8 text-center">
-            <div style={{ isolation: 'isolate' }} className="relative h-[88px] w-[88px]">
-              <div style={{ mixBlendMode: 'multiply' }} className="absolute top-0 left-0 h-14 w-14 rounded-full bg-cyan-300" />
-              <div style={{ mixBlendMode: 'multiply' }} className="absolute bottom-0 right-0 h-14 w-14 rounded-full bg-blue-300" />
+            <div
+              style={{ isolation: 'isolate' }}
+              className="relative h-[88px] w-[88px]"
+            >
+              <div
+                style={{ mixBlendMode: 'multiply' }}
+                className="absolute top-0 left-0 h-14 w-14 rounded-full bg-cyan-300"
+              />
+              <div
+                style={{ mixBlendMode: 'multiply' }}
+                className="absolute right-0 bottom-0 h-14 w-14 rounded-full bg-blue-300"
+              />
             </div>
             <div className="flex max-w-lg flex-col gap-3">
               <h2 className="text-3xl font-bold text-gray-900">

@@ -31,10 +31,10 @@ else
 fi
 
 if [[ ! -d "packages/checkout/dist" ]]; then
-    echo "Building @claidor/checkout..."
-    pnpm --filter @claidor/checkout build
+    echo "Building @simeon/checkout..."
+    pnpm --filter @simeon/checkout build
 else
-    echo "@claidor/checkout already built"
+    echo "@simeon/checkout already built"
 fi
 
 # Start the requested mode

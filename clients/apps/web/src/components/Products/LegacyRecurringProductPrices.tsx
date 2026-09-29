@@ -1,7 +1,7 @@
 'use client'
 
 import { isLegacyRecurringPrice } from '@/utils/product'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import ProductPriceLabel from './ProductPriceLabel'
 
 interface LegacyRecurringProductPricesProps {

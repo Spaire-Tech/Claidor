@@ -1,8 +1,8 @@
 import { useCreateBenefit } from '@/hooks/queries'
 import { setValidationErrors } from '@/utils/api/errors'
-import { enums, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { Form } from '@claidor/ui/components/ui/form'
+import { enums, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { Form } from '@simeon/ui/components/ui/form'
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
@@ -100,7 +100,7 @@ const CreateBenefitModalContent = ({
     <div className="flex flex-col gap-y-6 px-8 py-10">
       <div>
         <h2 className="text-lg">Create Benefit</h2>
-        <p className=" mt-2 text-sm text-gray-500">
+        <p className="mt-2 text-sm text-gray-500">
           Created benefits will be available for use in all products of your
           organization
         </p>

@@ -3,15 +3,15 @@ import { useOutsideClick } from '@/utils/useOutsideClick'
 import BoltOutlined from '@mui/icons-material/BoltOutlined'
 import InfoOutlined from '@mui/icons-material/InfoOutlined'
 import ShoppingBagOutlined from '@mui/icons-material/ShoppingBagOutlined'
-import { schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
-import Button from '@claidor/ui/components/atoms/Button'
-import ClaidorTimeAgo from '@claidor/ui/components/atoms/ClaidorTimeAgo'
+import { schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
+import Button from '@simeon/ui/components/atoms/Button'
+import SimeonTimeAgo from '@simeon/ui/components/atoms/SimeonTimeAgo'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@claidor/ui/components/ui/popover'
+} from '@simeon/ui/components/ui/popover'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -93,7 +93,7 @@ export const NotificationsPopover = () => {
             aria-hidden="true"
           />
           {showBadge && (
-            <div className=" bg-blue absolute top-1 right-1 h-1.5 w-1.5 rounded-full" />
+            <div className="bg-blue absolute top-1 right-1 h-1.5 w-1.5 rounded-full" />
           )}
         </PopoverTrigger>
       </Button>
@@ -119,7 +119,7 @@ export const List = ({
   return (
     <div className="h-full max-h-[800px] space-y-5 overflow-x-scroll">
       {notifications.length === 0 && (
-        <div className=" flex w-full flex-row items-center justify-center p-4 text-center text-sm text-black/60">
+        <div className="flex w-full flex-row items-center justify-center p-4 text-center text-sm text-black/60">
           You don&apos;t have any notifications
         </div>
       )}
@@ -150,8 +150,8 @@ const Item = ({
       <Icon classes={twMerge('mt-1 p-1', iconClasses)} icon={children.icon} />
       <div>
         <div>{children.text}</div>
-        <div className=" text-gray-500">
-          <ClaidorTimeAgo date={new Date(n.created_at)} />
+        <div className="text-gray-500">
+          <SimeonTimeAgo date={new Date(n.created_at)} />
         </div>
       </div>
     </div>

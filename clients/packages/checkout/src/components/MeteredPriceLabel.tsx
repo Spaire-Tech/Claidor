@@ -1,4 +1,4 @@
-import { formatCurrency } from '@claidor/currency'
+import { formatCurrency } from '@simeon/currency'
 import type { ProductPriceMeteredUnit } from '@spaire/sdk/models/components/productpricemeteredunit.js'
 
 interface MeteredPriceLabelProps {
@@ -12,9 +12,7 @@ const MeteredPriceLabel: React.FC<MeteredPriceLabelProps> = ({ price }) => {
         Number.parseFloat(price.unitAmount),
         price.priceCurrency,
       )}
-      <span className=" text-[max(12px,0.5em)] text-gray-500">
-        / unit
-      </span>
+      <span className="text-[max(12px,0.5em)] text-gray-500">/ unit</span>
     </div>
   )
 }

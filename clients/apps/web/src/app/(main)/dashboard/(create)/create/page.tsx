@@ -2,14 +2,14 @@ import revalidate from '@/app/actions'
 import { getServerSideAPI } from '@/utils/client/serverside'
 import { creatorOnboardingEnabled } from '@/utils/creatorOnboarding'
 import { getAuthenticatedUser } from '@/utils/user'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import CreatePage from './CreatePage'
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: 'Create Organization', // " | Polar is added by the template"
+    title: 'Create Organization', // " | Simeon is added by the template"
   }
 }
 

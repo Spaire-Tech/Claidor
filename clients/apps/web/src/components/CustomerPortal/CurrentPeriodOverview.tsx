@@ -1,6 +1,6 @@
 import { useCustomerSubscriptionChargePreview } from '@/hooks/queries/customerPortal'
-import { Client, schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
+import { Client, schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
 import ProductPriceLabel from '../Products/ProductPriceLabel'
 
 interface CurrentPeriodOverviewProps {
@@ -64,10 +64,10 @@ export const CurrentPeriodOverview = ({
   }
 
   return (
-    <div className=" flex flex-col gap-4 rounded-3xl border border-gray-200 p-8">
+    <div className="flex flex-col gap-4 rounded-3xl border border-gray-200 p-8">
       <div className="items-center justify-between space-y-1.5 sm:flex sm:space-y-0">
         <h4 className="text-lg font-medium">{headerTitle}</h4>
-        <span className=" text-sm text-gray-500">
+        <span className="text-sm text-gray-500">
           {dateLabel} —{' '}
           {chargeDate
             ? new Date(chargeDate).toLocaleDateString('en-US', {
@@ -79,9 +79,7 @@ export const CurrentPeriodOverview = ({
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <span className=" text-gray-600">
-            {subscription.product.name}
-          </span>
+          <span className="text-gray-600">{subscription.product.name}</span>
           <span
             className={isCancelingAtPeriodEnd ? 'text-gray-500' : 'font-medium'}
           >
@@ -99,9 +97,7 @@ export const CurrentPeriodOverview = ({
 
             {subscription.meters.map((meter) => (
               <div key={meter.id} className="flex items-center justify-between">
-                <span className=" text-gray-600">
-                  {meter.meter.name}
-                </span>
+                <span className="text-gray-600">{meter.meter.name}</span>
                 <span className="font-medium">
                   {formatCurrency('compact')(
                     meter.amount,
@@ -113,9 +109,9 @@ export const CurrentPeriodOverview = ({
           </>
         )}
 
-        <div className=" mt-2 border-t border-gray-200 pt-2">
+        <div className="mt-2 border-t border-gray-200 pt-2">
           {(hasTaxes || hasDiscount) && (
-            <div className=" mb-1.5 flex items-center justify-between text-gray-500">
+            <div className="mb-1.5 flex items-center justify-between text-gray-500">
               <span>Subtotal</span>
               <span>
                 {formatCurrency('compact')(
@@ -127,7 +123,7 @@ export const CurrentPeriodOverview = ({
           )}
 
           {hasDiscount && (
-            <div className=" mb-1 flex items-center justify-between text-gray-500">
+            <div className="mb-1 flex items-center justify-between text-gray-500">
               <span>Discount</span>
               <span>
                 {formatCurrency('compact')(
@@ -139,7 +135,7 @@ export const CurrentPeriodOverview = ({
           )}
 
           {hasTaxes && (
-            <div className=" mb-1 flex items-center justify-between text-gray-500">
+            <div className="mb-1 flex items-center justify-between text-gray-500">
               <span>Taxes</span>
               <span>
                 {formatCurrency('compact')(
@@ -161,9 +157,7 @@ export const CurrentPeriodOverview = ({
                   subscription.currency,
                 )
               ) : (
-                <span className=" animate-pulse text-gray-500">
-                  Loading…
-                </span>
+                <span className="animate-pulse text-gray-500">Loading…</span>
               )}
             </span>
           </div>

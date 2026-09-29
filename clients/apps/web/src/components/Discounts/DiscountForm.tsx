@@ -1,16 +1,16 @@
 import AutorenewOutlined from '@mui/icons-material/AutorenewOutlined'
+import { schemas } from '@simeon/client'
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@claidor/ui/components/atoms/Accordion'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
-import MoneyInput from '@claidor/ui/components/atoms/MoneyInput'
-import PercentageInput from '@claidor/ui/components/atoms/PercentageInput'
-import { schemas } from '@claidor/client'
-import DateTimePicker from '@claidor/ui/components/atoms/DateTimePicker'
+} from '@simeon/ui/components/atoms/Accordion'
+import Button from '@simeon/ui/components/atoms/Button'
+import DateTimePicker from '@simeon/ui/components/atoms/DateTimePicker'
+import Input from '@simeon/ui/components/atoms/Input'
+import MoneyInput from '@simeon/ui/components/atoms/MoneyInput'
+import PercentageInput from '@simeon/ui/components/atoms/PercentageInput'
 import {
   FormControl,
   FormDescription,
@@ -18,12 +18,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
-import { Label } from '@claidor/ui/components/ui/label'
+} from '@simeon/ui/components/ui/form'
+import { Label } from '@simeon/ui/components/ui/label'
 import {
   RadioGroup,
   RadioGroupItem,
-} from '@claidor/ui/components/ui/radio-group'
+} from '@simeon/ui/components/ui/radio-group'
 import React, { useCallback, useMemo } from 'react'
 import { useFormContext } from 'react-hook-form'
 import ProductSelect from '../Products/ProductSelect'
@@ -151,8 +151,8 @@ const DiscountForm: React.FC<DiscountFormProps> = ({
                 htmlFor={`discount-type-${option.value}`}
                 className={`flex cursor-pointer flex-col gap-3 rounded-2xl border p-5 font-normal transition-colors ${
                   type === option.value
-                    ? ' bg-gray-50'
-                    : '    border-gray-100 text-gray-500 hover:border-gray-200'
+                    ? 'bg-gray-50'
+                    : 'border-gray-100 text-gray-500 hover:border-gray-200'
                 }`}
               >
                 <div className="flex items-center gap-2.5 font-medium">
@@ -162,9 +162,7 @@ const DiscountForm: React.FC<DiscountFormProps> = ({
                   />
                   {option.title}
                 </div>
-                <p className=" text-sm text-gray-500">
-                  {option.description}
-                </p>
+                <p className="text-sm text-gray-500">{option.description}</p>
               </Label>
             ))}
           </RadioGroup>
@@ -247,7 +245,7 @@ const DiscountForm: React.FC<DiscountFormProps> = ({
       <Accordion type="single" collapsible className="flex flex-col gap-y-6">
         <AccordionItem
           value="form-input-options"
-          className=" rounded-xl border border-gray-200 px-4"
+          className="rounded-xl border border-gray-200 px-4"
         >
           <AccordionTrigger className="hover:no-underline">
             Recurring options
@@ -296,8 +294,8 @@ const DiscountForm: React.FC<DiscountFormProps> = ({
                                 : 'cursor-pointer'
                             } ${
                               field.value === option.value
-                                ? ' bg-gray-50'
-                                : '    border-gray-100 text-gray-500 hover:border-gray-200'
+                                ? 'bg-gray-50'
+                                : 'border-gray-100 text-gray-500 hover:border-gray-200'
                             }`}
                           >
                             <div className="flex items-center gap-2.5 font-medium">
@@ -308,7 +306,7 @@ const DiscountForm: React.FC<DiscountFormProps> = ({
                               />
                               {option.title}
                             </div>
-                            <p className=" text-sm text-gray-500">
+                            <p className="text-sm text-gray-500">
                               {option.description}
                             </p>
                           </Label>
@@ -365,7 +363,7 @@ const DiscountForm: React.FC<DiscountFormProps> = ({
       <Accordion type="single" collapsible className="flex flex-col gap-y-6">
         <AccordionItem
           value="form-input-options"
-          className=" rounded-xl border border-gray-200 px-4"
+          className="rounded-xl border border-gray-200 px-4"
         >
           <AccordionTrigger className="hover:no-underline">
             Restrictions

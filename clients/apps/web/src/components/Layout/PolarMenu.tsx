@@ -4,8 +4,8 @@ import PublicProfileDropdown from '@/components/Navigation/PublicProfileDropdown
 import { useLoginLink } from '@/hooks/login'
 import { usePostHog } from '@/hooks/posthog'
 import { CONFIG } from '@/utils/config'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import Link from 'next/link'
 import GetStartedButton from '../Auth/GetStartedButton'
 
@@ -65,7 +65,7 @@ const PolarMenu = ({
           <Link
             href={loginLink}
             onClick={onLoginClick}
-            className="text-sm text-blue-500 hover:text-blue-400 "
+            className="text-sm text-blue-500 hover:text-blue-400"
           >
             Log in
           </Link>

@@ -4,11 +4,11 @@ import { InlineModal } from '@/components/Modal/InlineModal'
 import { useModal } from '@/components/Modal/useModal'
 import { useOAuth2Clients } from '@/hooks/queries/oauth'
 import ArrowForward from '@mui/icons-material/ArrowForward'
-import { schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
-import Button from '@claidor/ui/components/atoms/Button'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
-import ShadowListGroup from '@claidor/ui/components/atoms/ShadowListGroup'
+import { schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
+import Button from '@simeon/ui/components/atoms/Button'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
+import ShadowListGroup from '@simeon/ui/components/atoms/ShadowListGroup'
 import { useState } from 'react'
 import { EditOAuthClientModal } from './EditOAuthClientModal'
 import { NewOAuthClientModal } from './NewOAuthClientModal'
@@ -61,7 +61,7 @@ const OAuthSettings = () => {
         })
       ) : (
         <ShadowListGroup.Item>
-          <p className=" text-sm text-gray-500">
+          <p className="text-sm text-gray-500">
             You don&apos;t have any configured OAuth Applications
           </p>
         </ShadowListGroup.Item>
@@ -125,7 +125,7 @@ const OAuthClientDetails = ({ client, onClick }: OAuthClientDetailsProps) => {
             <h3 className="text-md mr-4 text-ellipsis whitespace-nowrap">
               {client.client_name}
             </h3>
-            <p className=" text-sm text-gray-500">
+            <p className="text-sm text-gray-500">
               <FormattedDateTime
                 datetime={client.created_at}
                 dateStyle="long"

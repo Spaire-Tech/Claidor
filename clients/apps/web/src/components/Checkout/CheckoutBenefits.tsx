@@ -1,8 +1,8 @@
 import { useCustomerBenefitGrants } from '@/hooks/queries/customerPortal'
 import { useCustomerSSE } from '@/hooks/sse'
 import { createClientSideAPI } from '@/utils/client'
-import type { ProductCheckoutPublic } from '@claidor/checkout/guards'
-import { List, ListItem } from '@claidor/ui/components/atoms/List'
+import type { ProductCheckoutPublic } from '@simeon/checkout/guards'
+import { List, ListItem } from '@simeon/ui/components/atoms/List'
 import { useEffect } from 'react'
 import { BenefitGrant } from '../Benefit/BenefitGrant'
 import { SpinnerNoMargin } from '../Shared/Spinner'
@@ -49,7 +49,7 @@ const CheckoutBenefits = ({
           {benefitGrants?.items.map((benefitGrant) => (
             <ListItem
               key={benefitGrant.id}
-              className=" bg-white p-4 hover:bg-white"
+              className="bg-white p-4 hover:bg-white"
             >
               <BenefitGrant api={api} benefitGrant={benefitGrant} />
             </ListItem>
@@ -57,9 +57,7 @@ const CheckoutBenefits = ({
           {benefitGrants && benefitGrants.items.length < expectedBenefits && (
             <ListItem className="flex flex-row items-center justify-center gap-2">
               <SpinnerNoMargin className="h-4 w-4" />
-              <p className=" text-gray-500">
-                Granting benefits...
-              </p>
+              <p className="text-gray-500">Granting benefits...</p>
             </ListItem>
           )}
         </List>

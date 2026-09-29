@@ -1,7 +1,7 @@
 'use client'
 
-import { schemas } from '@claidor/client'
-import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
+import { schemas } from '@simeon/client'
+import ShadowBox from '@simeon/ui/components/atoms/ShadowBox'
 
 const OPERATOR_DISPLAY_NAMES: Record<schemas['FilterOperator'], string> = {
   eq: 'equals',

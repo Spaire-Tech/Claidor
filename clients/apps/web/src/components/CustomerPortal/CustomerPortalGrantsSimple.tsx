@@ -1,7 +1,7 @@
 'use client'
 
-import { Client, schemas } from '@claidor/client'
-import { List, ListItem } from '@claidor/ui/components/atoms/List'
+import { Client, schemas } from '@simeon/client'
+import { List, ListItem } from '@simeon/ui/components/atoms/List'
 import { BenefitGrant } from '../Benefit/BenefitGrant'
 
 export interface CustomerPortalGrantsSimpleProps {

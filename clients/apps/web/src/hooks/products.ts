@@ -2,7 +2,7 @@ import {
   getRecurringBillingLabel,
   getRecurringProductPrice,
 } from '@/components/Subscriptions/utils'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { Dispatch, SetStateAction, useMemo, useState } from 'react'
 import { useProducts } from './queries'
 

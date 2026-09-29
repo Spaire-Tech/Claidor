@@ -8,21 +8,21 @@ import {
   useOrganizationAccessTokens,
   useUpdateOrganizationAccessToken,
 } from '@/hooks/queries'
-import { enums, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import CopyToClipboardInput from '@claidor/ui/components/atoms/CopyToClipboardInput'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
-import Input from '@claidor/ui/components/atoms/Input'
+import { enums, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import CopyToClipboardInput from '@simeon/ui/components/atoms/CopyToClipboardInput'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
-import ShadowListGroup from '@claidor/ui/components/atoms/ShadowListGroup'
-import Banner from '@claidor/ui/components/molecules/Banner'
-import { Checkbox } from '@claidor/ui/components/ui/checkbox'
+} from '@simeon/ui/components/atoms/Select'
+import ShadowListGroup from '@simeon/ui/components/atoms/ShadowListGroup'
+import Banner from '@simeon/ui/components/molecules/Banner'
+import { Checkbox } from '@simeon/ui/components/ui/checkbox'
 import {
   Form,
   FormControl,
@@ -30,7 +30,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { useCallback, useMemo, useState, type MouseEvent } from 'react'
 import { useForm, useFormContext } from 'react-hook-form'
 import { ConfirmModal } from '../Modal/ConfirmModal'
@@ -121,9 +121,7 @@ const AccessTokenForm = ({ update }: { update?: boolean }) => {
                       </SelectItem>
                     ))}
                     <SelectItem value="no-expiration">
-                      <span className="text-red-500">
-                        No expiration
-                      </span>
+                      <span className="text-red-500">No expiration</span>
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -350,7 +348,7 @@ const AccessTokenItem = ({
           <div className="gap-y flex flex-col">
             <h3 className="text-md">{token.comment}</h3>
             {!minimal && (
-              <p className=" text-sm text-gray-500">
+              <p className="text-sm text-gray-500">
                 {token.expires_at ? (
                   <>
                     Expires on{' '}
@@ -360,9 +358,7 @@ const AccessTokenItem = ({
                     />
                   </>
                 ) : (
-                  <span className="text-red-500">
-                    Never expires
-                  </span>
+                  <span className="text-red-500">Never expires</span>
                 )}{' '}
                 —{' '}
                 {token.last_used_at ? (
@@ -380,7 +376,7 @@ const AccessTokenItem = ({
             )}
           </div>
         </div>{' '}
-        <div className=" flex flex-row items-center gap-2 text-gray-500">
+        <div className="flex flex-row items-center gap-2 text-gray-500">
           <Button onClick={showUpdateModal} size="sm">
             Update
           </Button>
@@ -481,7 +477,7 @@ const OrganizationAccessTokensSettings = ({
               return (
                 <div
                   key={token.id}
-                  className=" w-full rounded-2xl bg-transparent p-5 ring-1 ring-gray-200"
+                  className="w-full rounded-2xl bg-transparent p-5 ring-1 ring-gray-200"
                 >
                   <AccessTokenItem
                     token={token}
@@ -530,7 +526,7 @@ const OrganizationAccessTokensSettings = ({
           })
         ) : (
           <ShadowListGroup.Item>
-            <p className=" text-sm text-gray-500">
+            <p className="text-sm text-gray-500">
               You don&apos;t have any active Organization Access Tokens.
             </p>
           </ShadowListGroup.Item>

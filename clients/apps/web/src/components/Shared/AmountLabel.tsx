@@ -1,5 +1,5 @@
-import { schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
+import { schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
 import { useMemo } from 'react'
 
 interface AmountLabelProps {

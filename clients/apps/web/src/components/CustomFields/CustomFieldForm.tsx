@@ -1,21 +1,21 @@
 import ClearOutlined from '@mui/icons-material/ClearOutlined'
-import { enums, schemas } from '@claidor/client'
+import { enums, schemas } from '@simeon/client'
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@claidor/ui/components/atoms/Accordion'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
+} from '@simeon/ui/components/atoms/Accordion'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
-import Switch from '@claidor/ui/components/atoms/Switch'
+} from '@simeon/ui/components/atoms/Select'
+import Switch from '@simeon/ui/components/atoms/Switch'
 import {
   FormControl,
   FormDescription,
@@ -23,7 +23,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import React from 'react'
 import { useFieldArray, useFormContext } from 'react-hook-form'
 import CustomFieldTypeLabel from './CustomFieldTypeLabel'
@@ -356,7 +356,7 @@ const CustomFieldForm: React.FC<CustomFieldFormBaseProps> = ({ update }) => {
       <Accordion type="single" collapsible className="flex flex-col gap-y-6">
         <AccordionItem
           value="form-input-options"
-          className=" rounded-xl border border-gray-200 px-4"
+          className="rounded-xl border border-gray-200 px-4"
         >
           <AccordionTrigger className="hover:no-underline">
             Form input options
@@ -460,7 +460,7 @@ const CustomFieldForm: React.FC<CustomFieldFormBaseProps> = ({ update }) => {
         {(type === 'text' || type === 'number' || type === 'date') && (
           <AccordionItem
             value="validation-constraints"
-            className=" rounded-xl border border-gray-200 px-4"
+            className="rounded-xl border border-gray-200 px-4"
           >
             <AccordionTrigger className="hover:no-underline">
               Validation constraints

@@ -1,5 +1,5 @@
 import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
-import Button from '@claidor/ui/components/atoms/Button'
+import Button from '@simeon/ui/components/atoms/Button'
 import Link from 'next/link'
 import { Well } from '../Shared/Well'
 import {
@@ -13,22 +13,22 @@ export const EventCostCreationGuideModal = () => {
       <div className="flex flex-col gap-8 p-6">
         <div className="flex flex-col gap-y-4">
           <h1 className="text-2xl">Event Cost Ingestion</h1>
-          <p className=" text-gray-500">
+          <p className="text-gray-500">
             Associate costs with events by adding a{' '}
             <code className="font-mono text-sm">_cost</code> property to your
             event metadata.
           </p>
         </div>
-        <Well className=" rounded-lg bg-gray-100 p-4 text-sm">
+        <Well className="rounded-lg bg-gray-100 p-4 text-sm">
           <SyntaxHighlighterClient
             lang="typescript"
-            code={`import { Claidor } from "@spaire/sdk";
+            code={`import { Simeon } from "@spaire/sdk";
 
-const claidor = new Claidor({
-  accessToken: process.env["CLAIDOR_ACCESS_TOKEN"] ?? "",
+const simeon = new Simeon({
+  accessToken: process.env["SIMEON_ACCESS_TOKEN"] ?? "",
 });
 
-const result = await claidor.events.ingest({
+const result = await simeon.events.ingest({
   events: [
     {
       name: "<value>",
@@ -47,7 +47,7 @@ const result = await claidor.events.ingest({
         </Well>
         <div className="flex flex-row items-center gap-x-4">
           <Link
-            href="https://docs.claidorhq.com/features/cost-insights/cost-events"
+            href="https://docs.simeonlabs.com/features/cost-insights/cost-events"
             target="_blank"
             className="flex flex-row items-center"
           >

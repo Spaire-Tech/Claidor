@@ -1,6 +1,6 @@
 'use client'
 
-import Button from '@claidor/ui/components/atoms/Button'
+import Button from '@simeon/ui/components/atoms/Button'
 import React, { useEffect, useState } from 'react'
 
 interface ConfirmationButtonProps {
@@ -78,16 +78,14 @@ export default function ConfirmationButton({
   const getConfirmationStyles = () => {
     if (destructive) {
       return {
-        container:
-          'border-red-200 bg-red-50 ',
+        container: 'border-red-200 bg-red-50 ',
         icon: 'text-red-500',
         message: 'text-red-800',
         confirmButton: 'destructive' as const,
       }
     }
     return {
-      container:
-        'border-blue-200 bg-blue-50 ',
+      container: 'border-blue-200 bg-blue-50 ',
       icon: 'text-blue-500',
       message: 'text-blue-800',
       confirmButton: 'default' as const,

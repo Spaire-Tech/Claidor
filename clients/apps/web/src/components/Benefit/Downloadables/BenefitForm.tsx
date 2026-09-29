@@ -4,7 +4,7 @@ import { FileObject, useFileUpload } from '@/components/FileUpload'
 import { FileRead } from '@/components/FileUpload/Upload'
 import { useFiles } from '@/hooks/queries/files'
 import FileUploadIcon from '@mui/icons-material/FileUploadOutlined'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { ReactElement, useEffect, useRef, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { twMerge } from 'tailwind-merge'
@@ -20,10 +20,8 @@ const DropzoneView = ({
   return (
     <div
       className={twMerge(
-        ' flex w-full cursor-pointer items-center justify-center rounded-2xl border border-gray-200 pt-8 pb-8 text-black',
-        isDragActive
-          ? 'border-blue-100 bg-blue-50 '
-          : ' bg-gray-100',
+        'flex w-full cursor-pointer items-center justify-center rounded-2xl border border-gray-200 pt-8 pb-8 text-black',
+        isDragActive ? 'border-blue-100 bg-blue-50' : 'bg-gray-100',
       )}
     >
       <div className="flex flex-col items-center gap-y-4 text-center">

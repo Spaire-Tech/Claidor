@@ -5,16 +5,16 @@ import {
   useOrganizationRoutes,
 } from '@/components/Dashboard/navigation'
 import { getServerURL } from '@/utils/api'
-import { schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
+import * as Dialog from '@radix-ui/react-dialog'
+import { schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
 import {
   Command,
   CommandGroup,
   CommandInput,
   CommandItem,
   CommandList,
-} from '@claidor/ui/components/ui/command'
-import * as Dialog from '@radix-ui/react-dialog'
+} from '@simeon/ui/components/ui/command'
 import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -259,10 +259,10 @@ export const OmniSearch = ({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50" />
-        <Dialog.Content className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-bottom-4 data-[state=open]:slide-in-from-bottom-4  fixed top-[15%] left-[50%] z-50 w-full max-w-2xl translate-x-[-50%] overflow-hidden rounded-xl border border-gray-200/80 bg-white p-0 shadow-2xl ring-1 ring-black/5 ">
+        <Dialog.Content className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-bottom-4 data-[state=open]:slide-in-from-bottom-4 fixed top-[15%] left-[50%] z-50 w-full max-w-2xl translate-x-[-50%] overflow-hidden rounded-xl border border-gray-200/80 bg-white p-0 shadow-2xl ring-1 ring-black/5">
           <Dialog.DialogTitle className="sr-only">Search</Dialog.DialogTitle>
           <Command
-            className="[&_[cmdk-group-heading]]:text-xxs rounded-xl border-none [&_[cmdk-group-heading]]:px-0 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-gray-500! [&_[cmdk-group-heading]]:uppercase  [&_[cmdk-group]]:px-3 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-14 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5"
+            className="[&_[cmdk-group-heading]]:text-xxs rounded-xl border-none [&_[cmdk-group-heading]]:px-0 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-gray-500! [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group]]:px-3 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-14 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5"
             shouldFilter={false}
           >
             <div className="flex grow items-center px-4">
@@ -271,25 +271,25 @@ export const OmniSearch = ({
                 value={query}
                 onValueChange={setQuery}
                 wrapperClassName="border-none grow"
-                className=" flex w-full grow border-0 text-base placeholder:text-gray-400 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="flex w-full grow border-0 text-base placeholder:text-gray-400 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
             </div>
 
             <CommandList
               className={twMerge(
-                ' max-h-[420px] overflow-y-auto border-t border-gray-200 px-0 pt-2 pb-3',
+                'max-h-[420px] overflow-y-auto border-t border-gray-200 px-0 pt-2 pb-3',
                 cleanState ? 'hidden' : '',
               )}
             >
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className=" h-6 w-6 animate-spin text-gray-500" />
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
                 </div>
               ) : !loading &&
                 hasSearched &&
                 query &&
                 combinedResults.length === 0 ? (
-                <div className=" py-12 text-center text-sm text-gray-500">
+                <div className="py-12 text-center text-sm text-gray-500">
                   No results found for "{query}"
                 </div>
               ) : (
@@ -319,7 +319,7 @@ export const OmniSearch = ({
                                 value={key}
                                 onSelect={() => handleSelect(result)}
                                 className={twMerge(
-                                  'group cursor-pointer rounded-xl px-3 py-3 text-gray-700 data-[selected=true]:bg-gray-50 data-[selected=true]:text-inherit ',
+                                  'group cursor-pointer rounded-xl px-3 py-3 text-gray-700 data-[selected=true]:bg-gray-50 data-[selected=true]:text-inherit',
                                   isFirst ? 'scroll-mt-12' : '',
                                   isLastItem
                                     ? 'mb-3 scroll-mb-12'

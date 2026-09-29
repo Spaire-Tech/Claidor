@@ -2,9 +2,9 @@
 
 import { DetailRow } from '@/components/Shared/DetailRow'
 import { useSubscriptionChargePreview } from '@/hooks/queries/subscriptions'
-import { schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
-import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
+import { schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
+import ShadowBox from '@simeon/ui/components/atoms/ShadowBox'
 
 const UpcomingChargeCard = ({
   subscription,
@@ -56,7 +56,7 @@ const UpcomingChargeCard = ({
   }
 
   return (
-    <ShadowBox className=" flex flex-col divide-y divide-gray-200 border-gray-200 bg-transparent p-0 md:rounded-3xl!">
+    <ShadowBox className="flex flex-col divide-y divide-gray-200 border-gray-200 bg-transparent p-0 md:rounded-3xl!">
       <div className="flex flex-col gap-6 p-8">
         <div className="items-center justify-between space-y-1.5 sm:flex sm:space-y-0">
           <h3 className="text-lg font-medium">{headerTitle}</h3>
@@ -104,13 +104,11 @@ const UpcomingChargeCard = ({
             </>
           )}
 
-          <div className=" mt-2 border-t border-gray-200 pt-2">
+          <div className="mt-2 border-t border-gray-200 pt-2">
             {isFetching ? (
               <div className="flex items-center justify-between">
                 <span className="font-medium">Total</span>
-                <span className=" animate-pulse text-gray-500">
-                  Loading…
-                </span>
+                <span className="animate-pulse text-gray-500">Loading…</span>
               </div>
             ) : (
               chargePreview && (

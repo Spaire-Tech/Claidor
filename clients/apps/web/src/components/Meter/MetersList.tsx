@@ -1,12 +1,12 @@
 import { DataTableSortingState } from '@/utils/datatable'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import {
   DataTable,
   DataTableColumnDef,
   DataTableColumnHeader,
-} from '@claidor/ui/components/atoms/DataTable'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
-import { Status } from '@claidor/ui/components/atoms/Status'
+} from '@simeon/ui/components/atoms/DataTable'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
+import { Status } from '@simeon/ui/components/atoms/Status'
 import {
   OnChangeFn,
   PaginationState,
@@ -58,7 +58,7 @@ export const MetersList = ({
       cell: ({ row: { original: meter } }) => {
         return (
           <Status
-            className=" w-fit bg-gray-200 text-gray-500 capitalize"
+            className="w-fit bg-gray-200 text-gray-500 capitalize"
             status={meter.aggregation.func}
           />
         )

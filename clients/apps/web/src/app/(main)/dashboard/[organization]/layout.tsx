@@ -1,8 +1,8 @@
-import PastDueBanner from '@/components/Settings/ClaidorTier/PastDueBanner'
+import PastDueBanner from '@/components/Settings/SimeonTier/PastDueBanner'
 import { OrganizationContextProvider } from '@/providers/maintainerOrganization'
 // Trial banner temporarily hidden per request — re-enable by uncommenting
 // this import and the <TrialBanner /> render below.
-// import TrialBanner from '@/components/Settings/ClaidorTier/TrialBanner'
+// import TrialBanner from '@/components/Settings/SimeonTier/TrialBanner'
 import { getServerSideAPI } from '@/utils/client/serverside'
 import { creatorOnboardingEnabled } from '@/utils/creatorOnboarding'
 import { getOrganizationBySlugOrNotFound } from '@/utils/organization'
@@ -73,7 +73,7 @@ export default async function Layout(props: {
   // a-payout flows initiated from the AI assistant can finish even
   // when the assistant marks onboarding complete from a side path.
   const requestHeaders = await headers()
-  const pathname = requestHeaders.get('x-claidor-pathname') ?? ''
+  const pathname = requestHeaders.get('x-simeon-pathname') ?? ''
   const orgPathPrefix = `/dashboard/${params.organization}`
   const isOnboardingRoute = pathname.startsWith(`${orgPathPrefix}/onboarding`)
   const isFinanceAccountRoute = pathname.startsWith(

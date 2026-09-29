@@ -1,8 +1,8 @@
 'use client'
 
 import { useProduct } from '@/hooks/queries'
-import { schemas } from '@claidor/client'
 import ArrowBackOutlined from '@mui/icons-material/ArrowBackOutlined'
+import { schemas } from '@simeon/client'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useState } from 'react'
@@ -53,11 +53,11 @@ const CreateProductSplitPageInner = ({
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       {/* Left panel — product form */}
-      <div className="flex flex-1 min-w-0 flex-col overflow-hidden border-r border-gray-200 bg-white ">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden border-r border-gray-200 bg-white">
         <div className="border-b border-gray-200 px-6 py-4">
           <Link
             href={returnTo}
-            className="flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-black "
+            className="flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-black"
           >
             <ArrowBackOutlined fontSize="small" />
             <span>{backLabel}</span>
@@ -74,7 +74,7 @@ const CreateProductSplitPageInner = ({
       </div>
 
       {/* Right panel — preview */}
-      <div className="hidden md:flex w-[420px] shrink-0 flex-col overflow-y-auto p-8">
+      <div className="hidden w-[420px] shrink-0 flex-col overflow-y-auto p-8 md:flex">
         <div className="mx-auto w-full max-w-sm">
           <ProductPreviewPanel
             priceAmount={previewPrice.amount}
@@ -98,9 +98,7 @@ export const CreateProductSplitPage = ({
   if (fromProductId && isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <p className=" text-gray-500">
-          Loading product...
-        </p>
+        <p className="text-gray-500">Loading product...</p>
       </div>
     )
   }

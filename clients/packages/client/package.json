@@ -1,5 +1,5 @@
 {
-  "name": "@claidor/client",
+  "name": "@simeon/client",
   "description": "Simeon Internal API Client",
   "author": "Simeon Labs",
   "license": "Apache-2.0",
@@ -25,7 +25,7 @@
     }
   },
   "devDependencies": {
-    "@claidor/typescript-config": "workspace:*",
+    "@simeon/typescript-config": "workspace:*",
     "openapi-typescript": "^7.10.1",
     "tsup": "^8.5.1",
     "typescript": "latest"

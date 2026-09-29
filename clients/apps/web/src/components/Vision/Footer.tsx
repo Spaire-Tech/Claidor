@@ -7,7 +7,7 @@ export const Footer = ({ className }: { className?: string }) => {
   return (
     <div
       className={twMerge(
-        'border-claidor-600 hidden flex-row gap-x-12 border-t pt-6 text-xs md:flex',
+        'border-simeon-600 hidden flex-row gap-x-12 border-t pt-6 text-xs md:flex',
         className,
       )}
     >
@@ -52,7 +52,7 @@ const OpenSourceLegend = () => {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'o') {
-        window.open('https://github.com/claidor-tech', '_blank')
+        window.open('https://github.com/simeon-tech', '_blank')
       }
     }
 
@@ -77,7 +77,7 @@ const ContactUsLegend = () => {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'm') {
-        window.open('mailto:support@claidorhq.com', '_blank')
+        window.open('mailto:support@simeonlabs.com', '_blank')
       }
     }
 

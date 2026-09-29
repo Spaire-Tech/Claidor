@@ -1,7 +1,7 @@
 import { useProducts, useSelectedProducts } from '@/hooks/queries'
 import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined'
-import { operations, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { operations, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import {
   Command,
   CommandEmpty,
@@ -10,12 +10,12 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@claidor/ui/components/ui/command'
+} from '@simeon/ui/components/ui/command'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@claidor/ui/components/ui/popover'
+} from '@simeon/ui/components/ui/popover'
 import { CheckIcon } from 'lucide-react'
 import React, { useCallback, useMemo, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -219,7 +219,7 @@ const ProductSelect: React.FC<ProductSelectProps> = ({
           role="combobox"
           aria-expanded={open}
           className={twMerge(
-            'ring-offset-background placeholder:text-muted-foreground focus:ring-ring    flex h-10 w-full! flex-row items-center justify-between gap-x-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-normal shadow-xs transition-colors hover:border-gray-300 hover:bg-white focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1',
+            'ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex h-10 w-full! flex-row items-center justify-between gap-x-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-normal shadow-xs transition-colors hover:border-gray-300 hover:bg-white focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1',
             className,
           )}
           wrapperClassNames="justify-between w-full min-w-[200px]"

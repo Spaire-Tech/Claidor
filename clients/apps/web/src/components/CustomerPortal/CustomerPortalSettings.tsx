@@ -3,11 +3,11 @@
 import revalidate from '@/app/actions'
 import { useCustomerPaymentMethods } from '@/hooks/queries'
 import { createClientSideAPI } from '@/utils/client'
-import { schemas } from '@claidor/client'
-import { useCustomerPortalCustomer } from '@claidor/customer-portal/react'
-import Button from '@claidor/ui/components/atoms/Button'
-import { Separator } from '@claidor/ui/components/ui/separator'
-import { getThemePreset } from '@claidor/ui/hooks/theming'
+import { schemas } from '@simeon/client'
+import { useCustomerPortalCustomer } from '@simeon/customer-portal/react'
+import Button from '@simeon/ui/components/atoms/Button'
+import { Separator } from '@simeon/ui/components/ui/separator'
+import { getThemePreset } from '@simeon/ui/hooks/theming'
 import { useRouter } from 'next/navigation'
 import { Modal } from '../Modal'
 import { useModal } from '../Modal/useModal'
@@ -33,10 +33,7 @@ export const CustomerPortalSettings = ({
   const api = createClientSideAPI(customerSessionToken)
   const router = useRouter()
 
-  const themePreset = getThemePreset(
-    organization.slug,
-    'light',
-  )
+  const themePreset = getThemePreset(organization.slug, 'light')
 
   const {
     isShown: isAddPaymentMethodModalOpen,
@@ -53,11 +50,11 @@ export const CustomerPortalSettings = ({
   return (
     <div className="flex flex-col gap-y-8">
       <h3 className="text-2xl">Settings</h3>
-      <Well className=" flex flex-col gap-y-6 bg-gray-50">
+      <Well className="flex flex-col gap-y-6 bg-gray-50">
         <WellHeader className="flex-row items-start justify-between">
           <div className="flex flex-col gap-y-2">
             <h3 className="text-xl">Payment Methods</h3>
-            <p className=" text-gray-500">
+            <p className="text-gray-500">
               Methods used for subscriptions & one-time purchases
             </p>
           </div>
@@ -77,13 +74,11 @@ export const CustomerPortalSettings = ({
           ))}
         </WellContent>
       </Well>
-      <Well className=" flex flex-col gap-y-6 bg-gray-50">
+      <Well className="flex flex-col gap-y-6 bg-gray-50">
         <WellHeader className="flex-row items-center justify-between">
           <div className="flex flex-col gap-y-2">
             <h3 className="text-xl">Billing Details</h3>
-            <p className=" text-gray-500">
-              Update your billing details
-            </p>
+            <p className="text-gray-500">Update your billing details</p>
           </div>
         </WellHeader>
         <Separator className="" />

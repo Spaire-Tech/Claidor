@@ -3,15 +3,15 @@ import {
   DataTablePaginationState,
   DataTableSortingState,
 } from '@/utils/datatable'
-import { schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
+import { schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
 import {
   DataTable,
   DataTableColumnDef,
   DataTableColumnHeader,
   ReactQueryLoading,
-} from '@claidor/ui/components/atoms/DataTable'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
+} from '@simeon/ui/components/atoms/DataTable'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
 import { useMemo } from 'react'
 
 const getTransactionMeta = (transaction: schemas['Transaction']) => {
@@ -63,7 +63,7 @@ const TransactionMeta: React.FC<TransactionMetaProps> = ({ transaction }) => {
             {'product' in transactionMeta.meta &&
               transactionMeta.meta.product && (
                 <>
-                  <span className=" truncate text-sm text-gray-500">
+                  <span className="truncate text-sm text-gray-500">
                     {transactionMeta.meta.product.name}
                   </span>
                 </>

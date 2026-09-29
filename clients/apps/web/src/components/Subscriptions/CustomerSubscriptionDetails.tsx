@@ -7,12 +7,12 @@ import {
   useCustomerCancelSubscription,
   useCustomerUncancelSubscription,
 } from '@/hooks/queries'
-import { Client, schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
-import Button from '@claidor/ui/components/atoms/Button'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
-import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
-import { getThemePreset } from '@claidor/ui/hooks/theming'
+import { Client, schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
+import Button from '@simeon/ui/components/atoms/Button'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
+import ShadowBox from '@simeon/ui/components/atoms/ShadowBox'
+import { getThemePreset } from '@simeon/ui/hooks/theming'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
@@ -129,11 +129,11 @@ const CustomerSubscriptionDetails = ({
   }
 
   return (
-    <ShadowBox className=" flex w-full flex-col gap-y-6 bg-gray-50">
+    <ShadowBox className="flex w-full flex-col gap-y-6 bg-gray-50">
       <div className="flex flex-row items-start justify-between">
         <div className="flex flex-row items-baseline gap-x-6">
           <h3 className="truncate text-xl">{subscription.product.name}</h3>
-          <div className=" text-xl text-gray-500">
+          <div className="text-xl text-gray-500">
             {subscription.amount && subscription.currency ? (
               <span className="flex flex-row justify-end gap-x-1">
                 {subscriptionBaseAmount &&
@@ -160,14 +160,12 @@ const CustomerSubscriptionDetails = ({
       </div>
       <div className="flex flex-col gap-y-2 text-sm">
         <div className="flex flex-row items-center justify-between">
-          <span className=" text-gray-500">Status</span>
+          <span className="text-gray-500">Status</span>
           <SubscriptionStatusLabel subscription={subscription} />
         </div>
         {subscription.started_at && (
           <div className="flex flex-row items-center justify-between">
-            <span className=" text-gray-500">
-              Start Date
-            </span>
+            <span className="text-gray-500">Start Date</span>
             <span>
               <FormattedDateTime
                 datetime={subscription.started_at}
@@ -178,9 +176,7 @@ const CustomerSubscriptionDetails = ({
         )}
         {subscription.trial_end && subscription.status === 'trialing' ? (
           <div className="flex flex-row items-center justify-between">
-            <span className=" text-gray-500">
-              Trial Ends
-            </span>
+            <span className="text-gray-500">Trial Ends</span>
             <span>
               <FormattedDateTime
                 datetime={subscription.trial_end}
@@ -192,7 +188,7 @@ const CustomerSubscriptionDetails = ({
           !subscription.ended_at &&
           subscription.current_period_end && (
             <div className="flex flex-row items-center justify-between">
-              <span className=" text-gray-500">
+              <span className="text-gray-500">
                 {subscription.cancel_at_period_end
                   ? 'Expiry Date'
                   : 'Renewal Date'}
@@ -215,7 +211,7 @@ const CustomerSubscriptionDetails = ({
                   key={subscriptionMeter.meter.id}
                   className="flex flex-row items-center justify-between"
                 >
-                  <span className=" text-gray-500">
+                  <span className="text-gray-500">
                     {subscriptionMeter.meter.name}
                   </span>
                   <span>
@@ -231,7 +227,7 @@ const CustomerSubscriptionDetails = ({
         )}
         {subscription.ended_at && (
           <div className="flex flex-row items-center justify-between">
-            <span className=" text-gray-500">Expired</span>
+            <span className="text-gray-500">Expired</span>
             <span>
               <FormattedDateTime
                 datetime={subscription.ended_at}

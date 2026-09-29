@@ -1,17 +1,17 @@
 'use client'
 
-import { useCheckoutForm } from '@claidor/checkout/providers'
-import type { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic'
-import type { CheckoutUpdatePublic } from '@spaire/sdk/models/components/checkoutupdatepublic'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
+import { useCheckoutForm } from '@simeon/checkout/providers'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
+import type { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic'
+import type { CheckoutUpdatePublic } from '@spaire/sdk/models/components/checkoutupdatepublic'
 import { useCallback, useState } from 'react'
 
 const XIcon = ({ className }: { className?: string }) => {
@@ -91,9 +91,7 @@ export const CheckoutDiscountInput = ({
         {!collapsible && (
           <label className="flex flex-row items-center justify-between text-sm">
             <span>Discount code</span>
-            <span className=" text-xs font-normal text-gray-500">
-              Optional
-            </span>
+            <span className="text-xs font-normal text-gray-500">Optional</span>
           </label>
         )}
         <FormField

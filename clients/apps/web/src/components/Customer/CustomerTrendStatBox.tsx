@@ -1,11 +1,11 @@
 import { formatHumanFriendlyScalar, formatPercentage } from '@/utils/formatters'
-import { schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
+import { schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@claidor/ui/components/ui/tooltip'
+} from '@simeon/ui/components/ui/tooltip'
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
 import { PropsWithChildren, useMemo } from 'react'
 import { CustomerStatBox, CustomerStatBoxProps } from './CustomerStatBox'
@@ -66,7 +66,7 @@ export const CustomerTrendStatBox = ({
                         ? trendUpIsBad
                           ? 'text-emerald-500'
                           : 'text-red-500'
-                        : ' text-gray-500'
+                        : 'text-gray-500'
                   }`}
                 >
                   {trend.direction === 'up' ? (
@@ -79,7 +79,7 @@ export const CustomerTrendStatBox = ({
               </div>
             </TooltipTrigger>
             <TooltipContent className="flex flex-col gap-1">
-              <span className=" font-sans text-sm text-gray-500">
+              <span className="font-sans text-sm text-gray-500">
                 Previous Period
               </span>
               <span>{formatter?.(trend.previousValue, 'usd')}</span>

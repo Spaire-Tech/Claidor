@@ -85,8 +85,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: 'bg-blue-500 text-white hover:bg-blue-600',
-        secondary:
-          'bg-gray-100 text-gray-900',
+        secondary: 'bg-gray-100 text-gray-900',
         outline: 'border border-gray-200 bg-transparent',
         ghost: 'hover:bg-gray-100',
       },
@@ -124,7 +123,7 @@ const Button = ({ className, variant, size, ...props }) => (
 ### ShadowBox Pattern
 
 ```tsx
-import { ShadowBox } from '@claidor/ui'
+import { ShadowBox } from '@simeon/ui'
 ;<ShadowBox>{/* Content with consistent card styling */}</ShadowBox>
 ```
 
@@ -212,31 +211,27 @@ const MyForm = () => {
 }
 ```
 
-## Imports from @claidor/ui
+## Imports from @simeon/ui
 
 ```tsx
 // Atoms
-import Button from '@claidor/ui/components/atoms/Button'
-import { Input } from '@claidor/ui/components/atoms/Input'
-import {
-  Card,
-  CardHeader,
-  CardContent,
-} from '@claidor/ui/components/atoms/Card'
-import { ShadowBox } from '@claidor/ui/components/atoms/ShadowBox'
-import { Avatar } from '@claidor/ui/components/atoms/Avatar'
+import Button from '@simeon/ui/components/atoms/Button'
+import { Input } from '@simeon/ui/components/atoms/Input'
+import { Card, CardHeader, CardContent } from '@simeon/ui/components/atoms/Card'
+import { ShadowBox } from '@simeon/ui/components/atoms/ShadowBox'
+import { Avatar } from '@simeon/ui/components/atoms/Avatar'
 import {
   Tabs,
   TabsList,
   TabsTrigger,
   TabsContent,
-} from '@claidor/ui/components/atoms/Tabs'
+} from '@simeon/ui/components/atoms/Tabs'
 
 // Molecules
-import { Banner } from '@claidor/ui/components/molecules/Banner'
+import { Banner } from '@simeon/ui/components/molecules/Banner'
 
 // Utils
-import { cn } from '@claidor/ui/lib/utils' // className merger
+import { cn } from '@simeon/ui/lib/utils' // className merger
 ```
 
 ## Common Patterns
@@ -245,9 +240,7 @@ import { cn } from '@claidor/ui/lib/utils' // className merger
 
 ```tsx
 if (isLoading) {
-  return (
-    <div className="h-32 animate-pulse rounded-xl bg-gray-100" />
-  )
+  return <div className="h-32 animate-pulse rounded-xl bg-gray-100" />
 }
 ```
 
@@ -271,9 +264,7 @@ if (!data?.length) {
 ```tsx
 if (error) {
   return (
-    <div className="rounded-xl bg-red-50 p-4 text-red-600">
-      {error.message}
-    </div>
+    <div className="rounded-xl bg-red-50 p-4 text-red-600">{error.message}</div>
   )
 }
 ```

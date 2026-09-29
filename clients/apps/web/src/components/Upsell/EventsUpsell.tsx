@@ -1,8 +1,8 @@
 import { UpsellKey, useUpsell } from '@/hooks/upsell'
 import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
-import { formatCurrency } from '@claidor/currency'
-import AvatarWrapper from '@claidor/ui/components/atoms/Avatar'
-import Button from '@claidor/ui/components/atoms/Button'
+import { formatCurrency } from '@simeon/currency'
+import AvatarWrapper from '@simeon/ui/components/atoms/Avatar'
+import Button from '@simeon/ui/components/atoms/Button'
 import { motion, useMotionValue, useMotionValueEvent } from 'framer-motion'
 import Link from 'next/link'
 import { useMemo, useRef, useState } from 'react'
@@ -63,7 +63,7 @@ export const EventsUpsell = () => {
   }
 
   return (
-    <div className=" relative flex w-full flex-col gap-y-6 overflow-hidden rounded-4xl bg-gray-50 p-2 xl:flex-row">
+    <div className="relative flex w-full flex-col gap-y-6 overflow-hidden rounded-4xl bg-gray-50 p-2 xl:flex-row">
       <div className="flex w-full flex-1 flex-col gap-y-8 p-6 md:p-12">
         <span className="bg-blue w-fit rounded-full px-3 py-1 text-xs font-medium text-white">
           Now in Beta
@@ -71,7 +71,7 @@ export const EventsUpsell = () => {
         <h3 className="text-3xl leading-tight! text-balance md:text-4xl">
           A realtime view of your revenue & costs
         </h3>
-        <p className=" text-lg text-gray-500">
+        <p className="text-lg text-gray-500">
           Track revenue, costs & profits in realtime. Understand your business
           performance like never before.
         </p>
@@ -98,13 +98,13 @@ export const EventsUpsell = () => {
           </Button>
         </div>
       </div>
-      <div className=" flex w-full flex-1 flex-col gap-y-4 rounded-3xl bg-white p-8">
+      <div className="flex w-full flex-1 flex-col gap-y-4 rounded-3xl bg-white p-8">
         <div className="flex flex-row items-center justify-between gap-x-4">
           <h3>Activity</h3>
           <div className="flex flex-row items-center gap-x-4">
             <div className="flex flex-row items-center gap-x-4 font-mono text-xs">
               <span>Profit</span>
-              <span className=" text-gray-500">
+              <span className="text-gray-500">
                 {formatCurrency('subcent')(profit, 'usd')}
               </span>
             </div>
@@ -139,11 +139,11 @@ export const EventsUpsell = () => {
             {mockedEvents.map((event, idx) => (
               <motion.div
                 key={idx}
-                className=" flex w-full flex-row items-center justify-between gap-x-8 rounded-md border border-gray-100 bg-gray-100 p-2 px-4 font-mono text-xs"
+                className="flex w-full flex-row items-center justify-between gap-x-8 rounded-md border border-gray-100 bg-gray-100 p-2 px-4 font-mono text-xs"
               >
                 <div className="flex w-fit flex-row items-center gap-x-8">
                   <h3 className="w-full truncate xl:w-36">{event.name}</h3>
-                  <p className=" hidden w-28 text-xs text-gray-500 xl:flex">
+                  <p className="hidden w-28 text-xs text-gray-500 xl:flex">
                     {event.timestamp.toLocaleDateString('en-US', {
                       day: 'numeric',
                       month: 'short',

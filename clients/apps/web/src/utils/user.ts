@@ -1,5 +1,5 @@
-import { Client, schemas } from '@claidor/client'
 import * as Sentry from '@sentry/nextjs'
+import { Client, schemas } from '@simeon/client'
 import { headers } from 'next/headers'
 import { cache } from 'react'
 

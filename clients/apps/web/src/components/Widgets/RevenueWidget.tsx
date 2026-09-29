@@ -2,13 +2,13 @@ import { useMetrics } from '@/hooks/queries'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown'
 import KeyboardArrowUp from '@mui/icons-material/KeyboardArrowUp'
-import { formatCurrency } from '@claidor/currency'
-import { Card } from '@claidor/ui/components/atoms/Card'
+import { formatCurrency } from '@simeon/currency'
+import { Card } from '@simeon/ui/components/atoms/Card'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@claidor/ui/components/ui/tooltip'
+} from '@simeon/ui/components/ui/tooltip'
 import { endOfMonth, format, startOfMonth, subMonths } from 'date-fns'
 import { useContext } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -39,15 +39,13 @@ const RevenueWidget = ({ className, productId }: RevenueWidgetProps) => {
   return (
     <Card
       className={twMerge(
-        ' flex h-full w-full flex-col gap-y-8 bg-gray-50 p-6',
+        'flex h-full w-full flex-col gap-y-8 bg-gray-50 p-6',
         className,
       )}
     >
       <div className="flex flex-col gap-y-4">
         <div className="flex items-center justify-between">
-          <h2 className=" text-lg text-gray-500">
-            Last 6 Months
-          </h2>
+          <h2 className="text-lg text-gray-500">Last 6 Months</h2>
         </div>
 
         <h3 className="text-4xl font-light">
@@ -78,7 +76,7 @@ const RevenueWidget = ({ className, productId }: RevenueWidgetProps) => {
               <Tooltip>
                 <TooltipTrigger className="relative h-full min-h-48 overflow-hidden rounded-2xl bg-[repeating-linear-gradient(-45deg,rgba(0,0,0,0.05),rgba(0,0,0,0.05)_2px,transparent_2px,transparent_8px)]">
                   {revenueMetrics.isLoading ? (
-                    <div className=" flex h-full w-full items-center justify-center rounded-2xl bg-gray-200">
+                    <div className="flex h-full w-full items-center justify-center rounded-2xl bg-gray-200">
                       <Spinner />
                     </div>
                   ) : (
@@ -87,7 +85,7 @@ const RevenueWidget = ({ className, productId }: RevenueWidgetProps) => {
                         'absolute bottom-0 w-full rounded-2xl',
                         index === array.length - 1
                           ? 'bg-blue-400'
-                          : ' bg-gray-300',
+                          : 'bg-gray-300',
                       )}
                       style={{
                         height: `${((period.revenue ?? 0) / maxRevenue) * 100}%`,
@@ -107,7 +105,7 @@ const RevenueWidget = ({ className, productId }: RevenueWidgetProps) => {
                   {format(period.timestamp, 'MMMM')}
                 </span>
                 <div className="flex flex-row items-center justify-between gap-x-2">
-                  <span className=" text-sm text-gray-500">
+                  <span className="text-sm text-gray-500">
                     {formatCurrency('statistics')(period.revenue ?? 0, 'usd')}
                   </span>
                   {!isTrendFlat ? (

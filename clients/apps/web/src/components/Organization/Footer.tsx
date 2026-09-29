@@ -1,7 +1,7 @@
 import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
 import Link from 'next/link'
 import { PropsWithChildren } from 'react'
-import { ClaidorLogotype } from '../Layout/Public/ClaidorLogotype'
+import { SimeonLogotype } from '../Layout/Public/SimeonLogotype'
 
 const Footer = () => {
   return (
@@ -10,7 +10,7 @@ const Footer = () => {
         <div className="grid w-full grid-cols-1 gap-12 md:grid-cols-2 md:justify-between md:gap-16 lg:grid-cols-6">
           <div className="flex h-full flex-1 flex-col justify-between gap-y-6 md:col-span-2">
             <span className="text-black md:ml-0">
-              <ClaidorLogotype
+              <SimeonLogotype
                 className="ml-2 md:ml-0"
                 logoVariant="logotype"
                 size={120}
@@ -24,14 +24,14 @@ const Footer = () => {
                 <span>Join Simeon today</span>
                 <ArrowOutwardOutlined fontSize="inherit" />
               </Link>
-              <span className=" w-full text-gray-500">
+              <span className="w-full text-gray-500">
                 &copy; Simeon Labs {new Date().getFullYear()}
               </span>
             </div>
           </div>
 
           <div className="flex flex-col gap-y-4 text-sm">
-            <h3 className=" text-gray-500">Features</h3>
+            <h3 className="text-gray-500">Features</h3>
             <div className="flex flex-col gap-y-3">
               <FooterLink href="/features/products">Products</FooterLink>
               <FooterLink href="/features/analytics">Usage Billing</FooterLink>
@@ -42,7 +42,7 @@ const Footer = () => {
             </div>
           </div>
           <div className="flex flex-col gap-y-4 text-sm">
-            <h3 className=" text-gray-500">Resources</h3>
+            <h3 className="text-gray-500">Resources</h3>
             <div className="flex flex-col gap-y-3">
               <FooterLink href="/resources/why">Why Simeon</FooterLink>
               <FooterLink href="/resources/merchant-of-record">
@@ -53,33 +53,37 @@ const Footer = () => {
             </div>
           </div>
           <div className="flex flex-col gap-y-4 text-sm">
-            <h3 className=" text-gray-500">Company</h3>
+            <h3 className="text-gray-500">Company</h3>
             <div className="flex flex-col gap-y-3">
               <FooterLink href="/company">About Simeon</FooterLink>
-              <FooterLink href="https://github.com/claidor-tech">
+              <FooterLink href="https://github.com/simeon-tech">
                 GitHub
               </FooterLink>
-              <FooterLink href="https://x.com/claidor_hq">X / Twitter</FooterLink>
+              <FooterLink href="https://x.com/simeon_hq">
+                X / Twitter
+              </FooterLink>
               <FooterLink href="https://discord.gg/Pnhfz3UThd">
                 Discord
               </FooterLink>
-              <FooterLink href="https://claidorhq.com/assets/brand/claidor_brand.zip">
+              <FooterLink href="https://simeonlabs.com/assets/brand/simeon_brand.zip">
                 Brand Assets
               </FooterLink>
-              <FooterLink href="https://www.claidorhq.com/legal/terms-of-service">
+              <FooterLink href="https://www.simeonlabs.com/legal/terms-of-service">
                 Terms of Service
               </FooterLink>
-              <FooterLink href="https://www.claidorhq.com/legal/privacy-policy">
+              <FooterLink href="https://www.simeonlabs.com/legal/privacy-policy">
                 Privacy Policy
               </FooterLink>
             </div>
           </div>
           <div className="flex flex-col gap-y-4 text-sm">
-            <h3 className=" text-gray-500">Support</h3>
+            <h3 className="text-gray-500">Support</h3>
             <div className="flex flex-col gap-y-3">
-              <FooterLink href="https://docs.claidorhq.com">Docs</FooterLink>
-              <FooterLink href="mailto:support@claidorhq.com">Contact</FooterLink>
-              <FooterLink href="https://status.claidorhq.com">
+              <FooterLink href="https://docs.simeonlabs.com">Docs</FooterLink>
+              <FooterLink href="mailto:support@simeonlabs.com">
+                Contact
+              </FooterLink>
+              <FooterLink href="https://status.simeonlabs.com">
                 Service Status
               </FooterLink>
             </div>

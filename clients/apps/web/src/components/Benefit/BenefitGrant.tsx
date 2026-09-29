@@ -1,15 +1,15 @@
 import { useCustomerBenefitGrantUpdate } from '@/hooks/queries'
 import { markdownOptions } from '@/utils/markdown'
-import { Client, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { Client, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
-import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
+} from '@simeon/ui/components/atoms/Select'
+import ShadowBox from '@simeon/ui/components/atoms/ShadowBox'
 import Markdown from 'markdown-to-jsx'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -36,8 +36,8 @@ const BenefitGrantCustom = ({
     return null
   }
   return (
-    <ShadowBox className=" bg-white p-6 lg:rounded-3xl">
-      <div className="prose prose-headings:font-medium prose-headings:text-black prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-h4:text-sm prose-h5:text-sm prose-h6:text-sm   prose-p:text-sm leading-normal text-gray-800 [&>*>*:first-child]:mt-0">
+    <ShadowBox className="bg-white p-6 lg:rounded-3xl">
+      <div className="prose prose-headings:font-medium prose-headings:text-black prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-h4:text-sm prose-h5:text-sm prose-h6:text-sm prose-p:text-sm leading-normal text-gray-800 [&>*>*:first-child]:mt-0">
         <Markdown options={markdownOptions}>{note}</Markdown>
       </div>
     </ShadowBox>
@@ -257,9 +257,7 @@ const BenefitGrantOAuth = ({
         )}
       </div>
       {(error || grantError) && (
-        <p className="text-sm text-red-500">
-          {error || grantError?.message}
-        </p>
+        <p className="text-sm text-red-500">{error || grantError?.message}</p>
       )}
     </div>
   )
@@ -322,13 +320,13 @@ export const BenefitGrant = ({ api, benefitGrant }: BenefitGrantProps) => {
     <div className="flex w-full flex-col gap-4">
       <div className="flex flex-row items-center gap-x-4">
         <div className="flex flex-row items-center gap-x-2 text-xs text-gray-500">
-          <span className=" flex h-8 w-8 flex-row items-center justify-center rounded-full bg-gray-50 text-sm">
+          <span className="flex h-8 w-8 flex-row items-center justify-center rounded-full bg-gray-50 text-sm">
             {resolveBenefitIcon(benefit.type, 'h-3 w-3')}
           </span>
         </div>
         <div className="flex flex-col">
           <h3 className="text-sm font-medium">{benefit.description}</h3>
-          <p className=" flex flex-row gap-x-1 truncate text-sm text-gray-500">
+          <p className="flex flex-row gap-x-1 truncate text-sm text-gray-500">
             {benefitsDisplayNames[benefit.type]}
           </p>
         </div>

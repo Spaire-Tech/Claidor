@@ -1,7 +1,7 @@
 'use client'
 
-import type { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import type { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import { useState } from 'react'
 import CreditCardBrandIcon from '../CreditCardBrandIcon'
 
@@ -65,20 +65,20 @@ export const SavedCardsSelector = ({
                 className={`w-full rounded-lg border p-3 text-left transition-colors ${
                   isSelected
                     ? 'border-blue-500 bg-blue-50'
-                    : ' border-gray-200 hover:bg-gray-50'
+                    : 'border-gray-200 hover:bg-gray-50'
                 } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} `}
               >
                 <div className="flex items-center gap-3">
                   <CreditCardBrandIcon
                     width="2.5em"
                     brand={brand}
-                    className=" shrink-0 rounded-sm border border-gray-200 p-1"
+                    className="shrink-0 rounded-sm border border-gray-200 p-1"
                   />
                   <div className="grow">
                     <div className="font-medium capitalize">
                       {brand} •••• {last4}
                     </div>
-                    <div className=" text-sm text-gray-500">
+                    <div className="text-sm text-gray-500">
                       Expires {exp_month.toString().padStart(2, '0')}/{exp_year}
                     </div>
                   </div>

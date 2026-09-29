@@ -1,10 +1,10 @@
 import { toast } from '@/components/Toast/use-toast'
 import { useCustomerLicenseKeyDeactivate } from '@/hooks/queries'
 import CloseOutlined from '@mui/icons-material/CloseOutlined'
-import { Client, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
-import { List, ListItem } from '@claidor/ui/components/atoms/List'
+import { Client, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
+import { List, ListItem } from '@simeon/ui/components/atoms/List'
 import { useCallback } from 'react'
 
 interface LicenseKeyActivationsProps {
@@ -56,7 +56,7 @@ export const LicenseKeyActivations = ({
           <ListItem key={activation.id} size="small">
             <h3 className="text-sm">{activation.label}</h3>
             <div className="flex flex-row items-center gap-x-4">
-              <span className=" text-sm text-gray-500">
+              <span className="text-sm text-gray-500">
                 <FormattedDateTime datetime={activation.created_at} />
               </span>
               <Button

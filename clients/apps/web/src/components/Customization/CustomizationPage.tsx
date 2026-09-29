@@ -17,12 +17,12 @@ import '@/styles/space-dark.css'
 import { setValidationErrors } from '@/utils/api/errors'
 import { storefrontLink } from '@/utils/nav'
 import { withStorefrontSettingsDefaults } from '@/utils/storefrontSettings'
-import { isValidationError, schemas } from '@claidor/client'
-import { Form } from '@claidor/ui/components/ui/form'
-import { cn } from '@claidor/ui/lib/utils'
 import ChevronLeftOutlined from '@mui/icons-material/ChevronLeftOutlined'
 import DarkModeOutlined from '@mui/icons-material/DarkModeOutlined'
 import LightModeOutlined from '@mui/icons-material/LightModeOutlined'
+import { isValidationError, schemas } from '@simeon/client'
+import { Form } from '@simeon/ui/components/ui/form'
+import { cn } from '@simeon/ui/lib/utils'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
@@ -454,10 +454,7 @@ const Customization = ({
           app in a bg-white container). */}
       <SpaceDocumentBackground dark={dark} />
       <div
-        className={cn(
-          'claidor-editor claidor-editor-root',
-          dark && 'space-dark',
-        )}
+        className={cn('simeon-editor simeon-editor-root', dark && 'space-dark')}
       >
         {/* ── Chrome: course-editor top bar + tabs ──────────────────
             The whole editor root carries `.space-dark` when the Space theme is

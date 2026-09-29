@@ -1,6 +1,6 @@
 'use client'
 
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 
 // The redesigned customer portal renders its own sticky top bar inside
 // PortalShell (`<TopBar />`). The old "logo above content" header is no

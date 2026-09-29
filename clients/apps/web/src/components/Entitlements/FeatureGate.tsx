@@ -2,7 +2,7 @@
 
 import { FeatureKey, useEntitlements } from '@/hooks/queries/entitlements'
 import LockOutlined from '@mui/icons-material/LockOutlined'
-import Button from '@claidor/ui/components/atoms/Button'
+import Button from '@simeon/ui/components/atoms/Button'
 import Link from 'next/link'
 import { ReactNode } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -52,7 +52,8 @@ export const FeatureGate = ({
   }
 
   const requiredTier = requiredTierFor(feature)
-  const headline = title ?? `${FEATURE_NICE_NAME[feature]} is on ${requiredTier}`
+  const headline =
+    title ?? `${FEATURE_NICE_NAME[feature]} is on ${requiredTier}`
   const sub =
     description ??
     `Upgrade to ${requiredTier} to unlock ${FEATURE_NICE_NAME[feature].toLowerCase()}.`

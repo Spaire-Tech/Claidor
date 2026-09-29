@@ -191,6 +191,9 @@ async def list_connections(
     methods=["GET", "POST", "DELETE"],
     name="desktop:connectors_mcp",
     response_model=None,
+    # One route answering three methods would be three operations with one
+    # id; it is the app's own proxy and not part of the public API.
+    include_in_schema=False,
 )
 async def mcp(
     slug: str,

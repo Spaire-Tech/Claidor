@@ -1,10 +1,10 @@
 'use client'
 
-import LogoIcon from '../Brand/LogoIcon'
 import CheckOutlined from '@mui/icons-material/CheckOutlined'
-import { schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
+import { schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
 import { twMerge } from 'tailwind-merge'
+import LogoIcon from '../Brand/LogoIcon'
 
 export interface OnboardingStep {
   id: string
@@ -46,10 +46,10 @@ export const OnboardingStepper = ({
   showLogo = true,
 }: OnboardingStepperProps) => {
   return (
-    <div className=" hidden h-full w-[300px] shrink-0 flex-col justify-between border-r border-gray-100 bg-white p-10 md:flex">
+    <div className="hidden h-full w-[300px] shrink-0 flex-col justify-between border-r border-gray-100 bg-white p-10 md:flex">
       <div className="flex flex-col gap-y-16">
-        {showLogo && (
-          organization ? (
+        {showLogo &&
+          (organization ? (
             <Avatar
               name={organization.name}
               avatar_url={organization.avatar_url}
@@ -57,8 +57,7 @@ export const OnboardingStepper = ({
             />
           ) : (
             <LogoIcon size={36} />
-          )
-        )}
+          ))}
         <div className="flex flex-col gap-y-2">
           {steps.map((step, index) => {
             const isCompleted = index < currentStep
@@ -71,12 +70,9 @@ export const OnboardingStepper = ({
                   <div
                     className={twMerge(
                       'flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium transition-colors',
-                      isCompleted &&
-                        'bg-blue-500 text-white',
-                      isActive &&
-                        ' border-2 border-blue-500 text-blue-500',
-                      isPending &&
-                        ' border-2 border-gray-200 text-gray-400',
+                      isCompleted && 'bg-blue-500 text-white',
+                      isActive && 'border-2 border-blue-500 text-blue-500',
+                      isPending && 'border-2 border-gray-200 text-gray-400',
                     )}
                   >
                     {isCompleted ? (
@@ -89,9 +85,7 @@ export const OnboardingStepper = ({
                     <div
                       className={twMerge(
                         'my-1.5 h-10 w-0.5',
-                        isCompleted
-                          ? 'bg-blue-500'
-                          : ' bg-gray-200',
+                        isCompleted ? 'bg-blue-500' : 'bg-gray-200',
                       )}
                     />
                   )}
@@ -105,18 +99,18 @@ export const OnboardingStepper = ({
                           ? 'text-gray-900'
                           : isCompleted
                             ? 'text-gray-700'
-                            : ' text-gray-400',
+                            : 'text-gray-400',
                       )}
                     >
                       {step.label}
                     </span>
                     {step.optional && (
-                      <span className=" text-[10px] font-medium text-gray-400">
+                      <span className="text-[10px] font-medium text-gray-400">
                         Optional
                       </span>
                     )}
                   </span>
-                  <span className=" text-xs text-gray-400">
+                  <span className="text-xs text-gray-400">
                     {step.description}
                   </span>
                 </div>

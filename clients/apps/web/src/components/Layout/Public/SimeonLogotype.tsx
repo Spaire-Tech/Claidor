@@ -9,13 +9,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@claidor/ui/components/ui/dropdown-menu'
+} from '@simeon/ui/components/ui/dropdown-menu'
 import { ArrowDown, Clipboard } from 'lucide-react'
 import Link from 'next/link'
 import { MouseEventHandler, useCallback, useRef, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 
-export const ClaidorLogotype = ({
+export const SimeonLogotype = ({
   logoVariant = 'icon',
   size,
   className,
@@ -28,35 +28,32 @@ export const ClaidorLogotype = ({
   logoClassName?: string
   href?: string
 }) => {
-  const ClaidorLogotypeRef = useRef<HTMLDivElement>(null)
+  const SimeonLogotypeRef = useRef<HTMLDivElement>(null)
 
-  useOutsideClick([ClaidorLogotypeRef], () => setClaidorLogotypeOpen(false))
+  useOutsideClick([SimeonLogotypeRef], () => setSimeonLogotypeOpen(false))
 
-  const [ClaidorLogotypeOpen, setClaidorLogotypeOpen] = useState(false)
+  const [SimeonLogotypeOpen, setSimeonLogotypeOpen] = useState(false)
 
   const handleTriggerClick: MouseEventHandler<HTMLElement> = useCallback(
     (e) => {
       e.preventDefault()
       e.stopPropagation()
-      setClaidorLogotypeOpen(true)
+      setSimeonLogotypeOpen(true)
     },
     [],
   )
 
   const handleCopyLogoToClipboard = useCallback(() => {
     navigator.clipboard.writeText(
-      logoVariant === 'icon' ? ClaidorIconSVGString : ClaidorLogoSVGString,
+      logoVariant === 'icon' ? SimeonIconSVGString : SimeonLogoSVGString,
     )
-    setClaidorLogotypeOpen(false)
+    setSimeonLogotypeOpen(false)
   }, [logoVariant])
 
   const LogoComponent =
     logoVariant === 'logotype' ? (
       <LogoType
-        className={twMerge(
-          '-ml-2 text-black md:ml-0',
-          logoClassName,
-        )}
+        className={twMerge('-ml-2 text-black md:ml-0', logoClassName)}
         width={size ?? 100}
       />
     ) : (
@@ -68,7 +65,7 @@ export const ClaidorLogotype = ({
 
   return (
     <div className={twMerge('relative flex flex-row items-center', className)}>
-      <DropdownMenu open={ClaidorLogotypeOpen}>
+      <DropdownMenu open={SimeonLogotypeOpen}>
         <DropdownMenuTrigger onContextMenu={handleTriggerClick}>
           {href ? (
             <Link href={href}>{LogoComponent}</Link>
@@ -76,7 +73,7 @@ export const ClaidorLogotype = ({
             <div>{LogoComponent}</div>
           )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent ref={ClaidorLogotypeRef} align="start">
+        <DropdownMenuContent ref={SimeonLogotypeRef} align="start">
           <DropdownMenuItem
             className="flex flex-row gap-x-3"
             onClick={handleCopyLogoToClipboard}
@@ -86,10 +83,10 @@ export const ClaidorLogotype = ({
           </DropdownMenuItem>
           <DropdownMenuItem
             className="flex flex-row gap-x-3"
-            onClick={() => setClaidorLogotypeOpen(false)}
+            onClick={() => setSimeonLogotypeOpen(false)}
           >
             <ArrowDown className="h-3 w-3" />
-            <Link href="/assets/brand/claidor_brand.zip">
+            <Link href="/assets/brand/simeon_brand.zip">
               Download Branding Assets
             </Link>
           </DropdownMenuItem>
@@ -99,6 +96,6 @@ export const ClaidorLogotype = ({
   )
 }
 
-const ClaidorIconSVGString = ''
+const SimeonIconSVGString = ''
 
-const ClaidorLogoSVGString = ''
+const SimeonLogoSVGString = ''

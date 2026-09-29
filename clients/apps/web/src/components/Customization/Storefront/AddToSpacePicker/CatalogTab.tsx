@@ -1,7 +1,7 @@
 'use client'
 
 import { useProducts } from '@/hooks/queries'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { useEffect, useMemo, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 

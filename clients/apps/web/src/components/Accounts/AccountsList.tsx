@@ -1,7 +1,7 @@
 import { ACCOUNT_TYPE_DISPLAY_NAMES } from '@/utils/account'
 import { api } from '@/utils/client'
-import { schemas, unwrap } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas, unwrap } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import { useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'
 
@@ -24,7 +24,7 @@ const AccountsList = ({ accounts }: AccountsListProps) => {
 
   return (
     <table className="-mx-4 w-full text-left">
-      <thead className=" text-gray-500">
+      <thead className="text-gray-500">
         <tr className="text-sm">
           <th
             scope="col"

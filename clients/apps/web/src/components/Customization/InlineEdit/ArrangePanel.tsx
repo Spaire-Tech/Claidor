@@ -11,19 +11,13 @@ import {
   type ResolvedSpaceItem,
 } from '@/components/Profile/spaceItems'
 import { FormPublic } from '@/hooks/queries/forms'
-import DeleteOutlineOutlined from '@mui/icons-material/DeleteOutlineOutlined'
-import DragIndicatorOutlined from '@mui/icons-material/DragIndicatorOutlined'
-import LinkOutlined from '@mui/icons-material/LinkOutlined'
-import OndemandVideoOutlined from '@mui/icons-material/OndemandVideoOutlined'
-import VisibilityOffOutlined from '@mui/icons-material/VisibilityOffOutlined'
-import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined'
 import {
   closestCenter,
   DndContext,
-  type DragEndEvent,
   PointerSensor,
   useSensor,
   useSensors,
+  type DragEndEvent,
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -31,7 +25,13 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { schemas } from '@claidor/client'
+import DeleteOutlineOutlined from '@mui/icons-material/DeleteOutlineOutlined'
+import DragIndicatorOutlined from '@mui/icons-material/DragIndicatorOutlined'
+import LinkOutlined from '@mui/icons-material/LinkOutlined'
+import OndemandVideoOutlined from '@mui/icons-material/OndemandVideoOutlined'
+import VisibilityOffOutlined from '@mui/icons-material/VisibilityOffOutlined'
+import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined'
+import { schemas } from '@simeon/client'
 import { useMemo } from 'react'
 import { useFormContext } from 'react-hook-form'
 
@@ -115,9 +115,9 @@ const Grip = ({
 // "Product" when the product has no category or one we don't have a
 // label for — preferable to a blank chip on a row that's clearly a
 // product.
-const productCategoryLabel = (
-  product: { category?: string | null },
-): string => {
+const productCategoryLabel = (product: {
+  category?: string | null
+}): string => {
   const cat = product.category
   if (cat && cat in CATEGORY_LABELS) return CATEGORY_LABELS[cat]
   return 'Product'
@@ -134,11 +134,7 @@ const ItemRowBody = ({ item }: { item: ResolvedSpaceItem }) => {
       <>
         {product.medias[0]?.public_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={product.medias[0].public_url}
-            alt=""
-            className="ap-thumb"
-          />
+          <img src={product.medias[0].public_url} alt="" className="ap-thumb" />
         ) : (
           <span className="ap-thumb ap-thumb-empty" />
         )}
@@ -225,7 +221,10 @@ export const ArrangePanel = ({
   ) => {
     setValue(
       'storefront_settings',
-      { ...(settings ?? {}), ...patch } as schemas['OrganizationStorefrontSettings'],
+      {
+        ...(settings ?? {}),
+        ...patch,
+      } as schemas['OrganizationStorefrontSettings'],
       { shouldDirty: true },
     )
   }

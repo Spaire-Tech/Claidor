@@ -5,7 +5,7 @@ import { toast } from '@/components/Toast/use-toast'
 import {
   BillingInterval,
   breakevenGmvDollars,
-  CurrentClaidorSubscription,
+  CurrentSimeonSubscription,
   formatDollarAmount,
   formatTransactionFee,
   headlinePriceForPlan,
@@ -13,21 +13,21 @@ import {
   renewalSentence,
   tierDisplayName,
   TierPlan,
-  useCancelClaidorSubscription,
+  useCancelSimeonSubscription,
   useCreateUpgradeCheckout,
-  useClaidorPlans,
-  useClaidorSubscription,
-  useSwitchClaidorPlan,
-} from '@/hooks/queries/claidorTier'
+  useSimeonPlans,
+  useSimeonSubscription,
+  useSwitchSimeonPlan,
+} from '@/hooks/queries/simeonTier'
 import CheckOutlined from '@mui/icons-material/CheckOutlined'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { ConfirmModal } from '../../Modal/ConfirmModal'
 
-interface ClaidorPlanCardsProps {
+interface SimeonPlanCardsProps {
   organization: schemas['Organization']
 }
 
@@ -41,13 +41,13 @@ interface ClaidorPlanCardsProps {
  * black CTA that maps to the right action ("Upgrade", "Switch to X",
  * or "Add payment & keep your plan" during a trial).
  */
-const ClaidorPlanCards = ({ organization }: ClaidorPlanCardsProps) => {
-  const plans = useClaidorPlans()
-  const subscription = useClaidorSubscription(organization.id)
+const SimeonPlanCards = ({ organization }: SimeonPlanCardsProps) => {
+  const plans = useSimeonPlans()
+  const subscription = useSimeonSubscription(organization.id)
   const queryClient = useQueryClient()
   const createCheckout = useCreateUpgradeCheckout(organization.id)
-  const switchPlan = useSwitchClaidorPlan(organization.id)
-  const cancelSub = useCancelClaidorSubscription(organization.id)
+  const switchPlan = useSwitchSimeonPlan(organization.id)
+  const cancelSub = useCancelSimeonSubscription(organization.id)
 
   const confirmCancel = useModal()
   const confirmSwitch = useModal()
@@ -113,7 +113,7 @@ const ClaidorPlanCards = ({ organization }: ClaidorPlanCardsProps) => {
           success_url: `${window.location.origin}/dashboard/${organization.slug}/settings/plan?upgraded=1`,
         })
         queryClient.invalidateQueries({
-          queryKey: ['claidor', 'subscription', organization.id],
+          queryKey: ['simeon', 'subscription', organization.id],
         })
         window.location.href = result.checkout_url
       } catch (err) {
@@ -136,7 +136,7 @@ const ClaidorPlanCards = ({ organization }: ClaidorPlanCardsProps) => {
           description: `You're now on Simeon ${tierDisplayName(tier)}${interval === 'year' ? ' (annual)' : ''}.`,
         })
         queryClient.invalidateQueries({
-          queryKey: ['claidor', 'subscription', organization.id],
+          queryKey: ['simeon', 'subscription', organization.id],
         })
       } catch (err) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -183,7 +183,7 @@ const ClaidorPlanCards = ({ organization }: ClaidorPlanCardsProps) => {
           : 'Your Simeon subscription will end at the close of the current billing period, after which your org will have no active plan until you pick one.',
       })
       queryClient.invalidateQueries({
-        queryKey: ['claidor', 'subscription', organization.id],
+        queryKey: ['simeon', 'subscription', organization.id],
       })
       confirmCancel.hide()
     } catch (err) {
@@ -294,7 +294,7 @@ const ClaidorPlanCards = ({ organization }: ClaidorPlanCardsProps) => {
 }
 
 interface HeaderProps {
-  sub: CurrentClaidorSubscription | undefined
+  sub: CurrentSimeonSubscription | undefined
   plansLoading: boolean
   subLoading: boolean
   interval: BillingInterval
@@ -377,7 +377,7 @@ interface PlanCardProps {
   plan: TierPlan
   previousPlan: TierPlan | null
   interval: BillingInterval
-  currentTier: CurrentClaidorSubscription['tier'] | undefined
+  currentTier: CurrentSimeonSubscription['tier'] | undefined
   currentInterval: BillingInterval | null
   isTrial: boolean
   status: string | null
@@ -527,7 +527,7 @@ type CtaKind =
 interface ResolveCtaArgs {
   plan: TierPlan
   interval: BillingInterval
-  currentTier: CurrentClaidorSubscription['tier'] | undefined
+  currentTier: CurrentSimeonSubscription['tier'] | undefined
   currentInterval: BillingInterval | null
   isTrial: boolean
   status: string | null
@@ -760,4 +760,4 @@ const scaleLines = (plan: TierPlan): string[] => [
   'Custom pricing above $50k/mo GMV',
 ]
 
-export default ClaidorPlanCards
+export default SimeonPlanCards

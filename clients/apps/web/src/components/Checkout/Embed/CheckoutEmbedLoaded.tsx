@@ -1,6 +1,6 @@
 'use client'
 
-import { ClaidorEmbedCheckout } from '@claidor/checkout/embed'
+import { SimeonEmbedCheckout } from '@simeon/checkout/embed'
 import type { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic'
 import { useEffect } from 'react'
 
@@ -15,7 +15,7 @@ const CheckoutEmbedLoaded: React.FC<
     if (!checkout.embedOrigin) {
       return
     }
-    ClaidorEmbedCheckout.postMessage({ event: 'loaded' }, checkout.embedOrigin)
+    SimeonEmbedCheckout.postMessage({ event: 'loaded' }, checkout.embedOrigin)
   }, [])
 
   return null

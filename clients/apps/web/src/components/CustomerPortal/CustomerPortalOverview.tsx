@@ -4,7 +4,7 @@ import { usePortalAuthenticatedUser } from '@/hooks/queries'
 import { createClientSideAPI } from '@/utils/client'
 import { hasBillingPermission } from '@/utils/customerPortal'
 import AllInclusiveOutlined from '@mui/icons-material/AllInclusiveOutlined'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { CurrentPeriodOverview } from './CurrentPeriodOverview'
 import { CustomerPortalGrants } from './CustomerPortalGrants'
 import {
@@ -75,18 +75,18 @@ export const CustomerPortalOverview = ({
         <div className="flex flex-col gap-y-4">
           <div className="flex flex-col gap-y-2">
             <h3 className="text-xl">Team Seat Access</h3>
-            <p className=" text-gray-500">
+            <p className="text-gray-500">
               Access provided through team subscription
             </p>
           </div>
           {activeClaimedSubscriptions.map((s) => (
             <div
               key={s.id}
-              className=" flex justify-between rounded-2xl bg-gray-50 px-6 py-4"
+              className="flex justify-between rounded-2xl bg-gray-50 px-6 py-4"
             >
               <div className="flex flex-col gap-1">
                 <span>{s.product.name}</span>
-                <span className=" text-sm text-gray-500">
+                <span className="text-sm text-gray-500">
                   {s.product.organization.name}
                 </span>
               </div>

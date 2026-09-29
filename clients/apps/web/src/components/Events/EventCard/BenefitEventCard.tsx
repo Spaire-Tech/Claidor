@@ -4,8 +4,8 @@ import {
 } from '@/components/Benefit/utils'
 import { useBenefit } from '@/hooks/queries'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
-import { schemas } from '@claidor/client'
-import { Status } from '@claidor/ui/components/atoms/Status'
+import { schemas } from '@simeon/client'
+import { Status } from '@simeon/ui/components/atoms/Status'
 import Link from 'next/link'
 import { useContext, useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -29,25 +29,13 @@ export const BenefitEventCard = ({ event }: BenefitGrantEventCardProps) => {
   const status = useMemo(() => {
     switch (event.name) {
       case 'benefit.granted':
-        return [
-          'Granted',
-          'bg-emerald-100 text-emerald-500 ',
-        ]
+        return ['Granted', 'bg-emerald-100 text-emerald-500 ']
       case 'benefit.cycled':
-        return [
-          'Cycled',
-          'bg-yellow-100 text-yellow-500 ',
-        ]
+        return ['Cycled', 'bg-yellow-100 text-yellow-500 ']
       case 'benefit.updated':
-        return [
-          'Updated',
-          'bg-blue-100 text-blue-500 ',
-        ]
+        return ['Updated', 'bg-blue-100 text-blue-500 ']
       case 'benefit.revoked':
-        return [
-          'Revoked',
-          'bg-red-100 text-red-500 ',
-        ]
+        return ['Revoked', 'bg-red-100 text-red-500 ']
       default:
         return null
     }
@@ -65,7 +53,7 @@ export const BenefitEventCard = ({ event }: BenefitGrantEventCardProps) => {
               {resolveBenefitIcon(benefit.type, 'h-3 w-3')}
               <span className="">{benefit.description ?? '—'}</span>
             </div>
-            <span className=" text-gray-500">
+            <span className="text-gray-500">
               {benefitsDisplayNames[benefit.type]}
             </span>
           </div>

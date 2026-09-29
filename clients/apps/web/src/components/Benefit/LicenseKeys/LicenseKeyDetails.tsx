@@ -1,6 +1,6 @@
-import { schemas } from '@claidor/client'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
-import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
+import { schemas } from '@simeon/client'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
+import ShadowBox from '@simeon/ui/components/atoms/ShadowBox'
 import { twMerge } from 'tailwind-merge'
 
 export interface LicenseKeyDetails {
@@ -14,35 +14,28 @@ export const LicenseKeyDetails = ({
 }: LicenseKeyDetails) => {
   return (
     <ShadowBox
-      className={twMerge(
-        ' bg-gray-100 p-6 text-sm lg:rounded-2xl',
-        className,
-      )}
+      className={twMerge('bg-gray-100 p-6 text-sm lg:rounded-2xl', className)}
     >
       <div className="flex flex-col gap-y-6">
         <div className="flex flex-col gap-y-2">
           <div className="flex flex-row items-center justify-between">
-            <span className=" text-gray-500">Status</span>
+            <span className="text-gray-500">Status</span>
             <span className="capitalize">{licenseKey.status}</span>
           </div>
           {licenseKey.limit_usage && (
             <div className="flex flex-row items-center justify-between">
-              <span className=" text-gray-500">Usage</span>
+              <span className="text-gray-500">Usage</span>
               <span>
                 {licenseKey.usage} / {licenseKey.limit_usage}
               </span>
             </div>
           )}
           <div className="flex flex-row items-center justify-between">
-            <span className=" text-gray-500">
-              Validations
-            </span>
+            <span className="text-gray-500">Validations</span>
             <span>{licenseKey.validations}</span>
           </div>
           <div className="flex flex-row items-center justify-between">
-            <span className=" text-gray-500">
-              Validated At
-            </span>
+            <span className="text-gray-500">Validated At</span>
             <span>
               {licenseKey.last_validated_at ? (
                 <FormattedDateTime
@@ -54,9 +47,7 @@ export const LicenseKeyDetails = ({
             </span>
           </div>
           <div className="flex flex-row items-center justify-between">
-            <span className=" text-gray-500">
-              Expiry Date
-            </span>
+            <span className="text-gray-500">Expiry Date</span>
             <span>
               {licenseKey.expires_at ? (
                 <FormattedDateTime datetime={licenseKey.expires_at ?? ''} />

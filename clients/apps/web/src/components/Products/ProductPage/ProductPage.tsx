@@ -5,22 +5,22 @@ import { useMetrics, useUpdateProduct } from '@/hooks/queries'
 import { apiErrorToast } from '@/utils/api/errors'
 import { getChartRangeParams } from '@/utils/metrics'
 import MoreVert from '@mui/icons-material/MoreVert'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { Status } from '@claidor/ui/components/atoms/Status'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { Status } from '@simeon/ui/components/atoms/Status'
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@claidor/ui/components/atoms/Tabs'
+} from '@simeon/ui/components/atoms/Tabs'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@claidor/ui/components/ui/dropdown-menu'
+} from '@simeon/ui/components/ui/dropdown-menu'
 import { useRouter } from 'next/navigation'
 import { useCallback } from 'react'
 import { DashboardBody } from '../../Layout/DashboardLayout'
@@ -30,8 +30,7 @@ import { ProductOverview } from './ProductOverview'
 
 const ProductTypeDisplayColor: Record<string, string> = {
   subscription: 'bg-emerald-100 text-emerald-500',
-  one_time:
-    'bg-blue-100 text-blue-500 ',
+  one_time: 'bg-blue-100 text-blue-500 ',
 }
 
 export interface ProductPageProps {
@@ -159,10 +158,7 @@ export const ProductPage = ({ organization, product }: ProductPageProps) => {
                 }
               />
               {product.is_archived && (
-                <Status
-                  status="Archived"
-                  className="bg-red-100 text-red-500"
-                />
+                <Status status="Archived" className="bg-red-100 text-red-500" />
               )}
             </div>
           </div>

@@ -1,9 +1,9 @@
 'use client'
 
-import { OnboardingProgressBar } from '@/components/Onboarding/OnboardingProgressBar'
 import LogoIcon from '@/components/Brand/LogoIcon'
+import { OnboardingProgressBar } from '@/components/Onboarding/OnboardingProgressBar'
 import { toast } from '@/components/Toast/use-toast'
-import { BillingInterval, PaidTierKey } from '@/hooks/queries/claidorTier'
+import { BillingInterval, PaidTierKey } from '@/hooks/queries/simeonTier'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import { api } from '@/utils/client'
 import { ReactNode, useCallback, useContext, useEffect, useState } from 'react'
@@ -18,7 +18,7 @@ import { twMerge } from 'tailwind-merge'
  * supporting text and the same blue-600 rounded-full CTA.
  * The creator picks a tier + billing interval, and clicking a card's CTA
  * hands off to upgrade-checkout which converts the trialing subscription in
- * place and redirects to the Polar-hosted checkout. Success returns to
+ * place and redirects to the hosted checkout. Success returns to
  * /onboarding/review, which invisibly verifies the checkout, marks
  * onboarding complete, and forwards the creator into the course wizard.
  */
@@ -49,7 +49,10 @@ const TIERS: DesignTier[] = [
     recommended: false,
     includes: 'Includes',
     features: [
-      { label: <>Merchant of Record — Simeon handles tax &amp; VAT</>, shield: true },
+      {
+        label: <>Merchant of Record — Simeon handles tax &amp; VAT</>,
+        shield: true,
+      },
       { label: <>7% + $0.30 per transaction</> },
       { label: <>5 published courses</> },
       { label: <>10K email subscribers</> },
@@ -116,7 +119,7 @@ const TIERS: DesignTier[] = [
   },
 ]
 
-const BILLING_STORAGE_KEY = 'claidor_billing_cycle'
+const BILLING_STORAGE_KEY = 'simeon_billing_cycle'
 
 export default function PlanPage() {
   const { organization } = useContext(OrganizationContext)
@@ -303,8 +306,7 @@ export default function PlanPage() {
                   {isPending ? 'Starting…' : 'Start free trial'}
                 </button>
                 <div className="mt-2.5 text-center text-xs text-gray-400">
-                  Card required. Won&rsquo;t be charged during the 14-day
-                  trial.
+                  Card required. Won&rsquo;t be charged during the 14-day trial.
                 </div>
 
                 <div className="my-5 border-t border-gray-100" />

@@ -1,5 +1,5 @@
 {
-  "extends": "@claidor/typescript-config/nextjs.json",
+  "extends": "@simeon/typescript-config/nextjs.json",
   "compilerOptions": {
     "outDir": "dist",
     "baseUrl": "src/",

@@ -28,7 +28,7 @@ export async function generateMetadata(props: {
   const ogImage =
     settings?.header_image_url ??
     organization.avatar_url ??
-    `https://claidorhq.com/og?org=${organization.slug}`
+    `https://simeonlabs.com/og?org=${organization.slug}`
   const canonicalUrl = storefrontLink(organization)
   // `index` defaults to true; only emit a robots directive when the creator
   // has explicitly turned indexing off.

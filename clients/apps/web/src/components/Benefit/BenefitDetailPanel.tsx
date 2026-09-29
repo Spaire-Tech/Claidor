@@ -8,22 +8,21 @@ import {
   resolveBenefitIcon,
 } from '@/components/Benefit/utils'
 import { ConfirmModal } from '@/components/Modal/ConfirmModal'
-import { InlineModal } from '@/components/Modal/InlineModal'
-import { InlineModalHeader } from '@/components/Modal/InlineModal'
+import { InlineModal, InlineModalHeader } from '@/components/Modal/InlineModal'
 import { useModal } from '@/components/Modal/useModal'
 import { SpinnerNoMargin } from '@/components/Shared/Spinner'
 import { useToast } from '@/components/Toast/use-toast'
 import { useBenefit, useDeleteBenefit } from '@/hooks/queries'
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@claidor/ui/components/ui/dropdown-menu'
+} from '@simeon/ui/components/ui/dropdown-menu'
 import { useCallback } from 'react'
 
 interface BenefitDetailPanelProps {
@@ -59,9 +58,7 @@ export const BenefitDetailPanel = ({
           <span>Benefit</span>
         </InlineModalHeader>
         <div className="flex flex-1 items-center justify-center">
-          <p className=" text-gray-500">
-            Benefit not found
-          </p>
+          <p className="text-gray-500">Benefit not found</p>
         </div>
       </div>
     )
@@ -87,11 +84,7 @@ const BenefitDetailPanelContent = ({
 }) => {
   const { toast } = useToast()
 
-  const {
-    isShown: isEditShown,
-    show: showEdit,
-    hide: hideEdit,
-  } = useModal()
+  const { isShown: isEditShown, show: showEdit, hide: hideEdit } = useModal()
 
   const {
     isShown: isDeleteShown,
@@ -137,7 +130,7 @@ const BenefitDetailPanelContent = ({
     <div className="flex h-full flex-col">
       <InlineModalHeader hide={onClose}>
         <div className="flex flex-row items-center gap-3">
-          <span className=" flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-600">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-600">
             {resolveBenefitIcon(benefit.type, 'h-4 w-4')}
           </span>
           <div className="flex flex-col">
@@ -146,7 +139,7 @@ const BenefitDetailPanelContent = ({
                 ? benefit.description
                 : '—'}
             </span>
-            <span className=" text-xs text-gray-500">
+            <span className="text-xs text-gray-500">
               {benefitsDisplayNames[benefit.type]}
             </span>
           </div>
@@ -164,10 +157,7 @@ const BenefitDetailPanelContent = ({
                 <MoreVertOutlined fontSize="inherit" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className=" bg-gray-50 shadow-lg"
-            >
+            <DropdownMenuContent align="end" className="bg-gray-50 shadow-lg">
               <DropdownMenuItem onClick={copyBenefitId}>
                 Copy ID
               </DropdownMenuItem>

@@ -1,8 +1,8 @@
 import { useInViewport } from '@/hooks/utils'
 import AddOutlined from '@mui/icons-material/AddOutlined'
 import Search from '@mui/icons-material/Search'
-import Button, { ButtonProps } from '@claidor/ui/components/atoms/Button'
-import Input, { InputProps } from '@claidor/ui/components/atoms/Input'
+import Button, { ButtonProps } from '@simeon/ui/components/atoms/Button'
+import Input, { InputProps } from '@simeon/ui/components/atoms/Input'
 import { twMerge } from 'tailwind-merge'
 import Spinner from '../Shared/Spinner'
 
@@ -36,7 +36,7 @@ export const ContextList = ({
   const { ref: loadingRef } = useInViewport()
 
   return (
-    <div className=" flex h-full flex-col divide-y divide-gray-200">
+    <div className="flex h-full flex-col divide-y divide-gray-200">
       <div className="flex flex-row items-center justify-between gap-6 px-4 py-4">
         <div>{title}</div>
         <div className="flex flex-row items-center gap-4">
@@ -47,11 +47,8 @@ export const ContextList = ({
       </div>
       {search && (
         <div className="flex flex-row items-center gap-3 px-4 py-2">
-          <div className=" flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
-            <Search
-              fontSize="inherit"
-              className=" text-gray-500"
-            />
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
+            <Search fontSize="inherit" className="text-gray-500" />
           </div>
           <Input
             placeholder="Search"
@@ -60,21 +57,21 @@ export const ContextList = ({
           />
         </div>
       )}
-      <div className=" flex h-full grow flex-col divide-y divide-gray-50 overflow-y-auto">
+      <div className="flex h-full grow flex-col divide-y divide-gray-50 overflow-y-auto">
         {items.map((item) => (
           <div
             key={item.id}
             onClick={() => onSelect?.(item.id)}
             className={twMerge(
-              ' cursor-pointer hover:bg-gray-100',
-              item.active && ' bg-gray-100',
+              'cursor-pointer hover:bg-gray-100',
+              item.active && 'bg-gray-100',
             )}
           >
             <div className="flex flex-row items-center gap-3 px-4 py-3">
               {item.icon}
               <div className="flex min-w-0 flex-col">
                 <div className="w-full truncate text-sm">{item.title}</div>
-                <div className=" w-full truncate text-xs text-gray-500">
+                <div className="w-full truncate text-xs text-gray-500">
                   {item.subtitle}
                 </div>
               </div>

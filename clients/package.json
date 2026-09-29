@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "polar",
+  "name": "simeon",
   "scripts": {
     "build": "turbo run build --filter='!./examples/*'",
     "dev": "turbo watch dev",

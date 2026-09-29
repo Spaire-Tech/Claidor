@@ -1,8 +1,8 @@
 'use client'
 
-import { enums, schemas } from '@claidor/client'
-import Input from '@claidor/ui/components/atoms/Input'
-import Switch from '@claidor/ui/components/atoms/Switch'
+import { enums, schemas } from '@simeon/client'
+import Input from '@simeon/ui/components/atoms/Input'
+import Switch from '@simeon/ui/components/atoms/Switch'
 
 import {
   Select,
@@ -10,7 +10,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
+} from '@simeon/ui/components/atoms/Select'
 import {
   FormControl,
   FormDescription,
@@ -18,7 +18,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { useCallback, useMemo, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { twMerge } from 'tailwind-merge'
@@ -80,8 +80,8 @@ export const TrialConfigurationForm = ({
       className={twMerge(
         'w-full cursor-pointer rounded-2xl border p-4 transition-colors',
         trialEnabled
-          ? ' bg-gray-50'
-          : '    border-gray-100 text-gray-500 hover:border-gray-200',
+          ? 'bg-gray-50'
+          : 'border-gray-100 text-gray-500 hover:border-gray-200',
       )}
       htmlFor="trial-enable"
     >

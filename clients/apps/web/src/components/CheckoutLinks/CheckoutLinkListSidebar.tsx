@@ -12,8 +12,8 @@ import AddOutlined from '@mui/icons-material/AddOutlined'
 import ArrowDownward from '@mui/icons-material/ArrowDownward'
 import ArrowUpward from '@mui/icons-material/ArrowUpward'
 import LinkOutlined from '@mui/icons-material/LinkOutlined'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
@@ -99,7 +99,7 @@ export const CheckoutLinkListSidebar = ({
 
   return (
     <>
-      <div className=" flex h-full flex-col divide-y divide-gray-200">
+      <div className="flex h-full flex-col divide-y divide-gray-200">
         <div className="flex flex-row items-center justify-between gap-6 px-4 py-4">
           <div>Checkout Links</div>
           <div className="flex flex-row items-center gap-4">
@@ -135,7 +135,7 @@ export const CheckoutLinkListSidebar = ({
             onChange={(productIds) => setProductIds(productIds)}
           />
         </div>
-        <div className=" flex h-full grow flex-col divide-y divide-gray-50 overflow-y-auto">
+        <div className="flex h-full grow flex-col divide-y divide-gray-50 overflow-y-auto">
           {checkoutLinks.map((checkoutLink) => {
             const productLabel =
               checkoutLink.products.length === 1
@@ -150,9 +150,8 @@ export const CheckoutLinkListSidebar = ({
                 key={checkoutLink.id}
                 href={checkoutLinkHref}
                 className={twMerge(
-                  ' cursor-pointer hover:bg-gray-100',
-                  selectedCheckoutLinkId === checkoutLink.id &&
-                    ' bg-gray-100',
+                  'cursor-pointer hover:bg-gray-100',
+                  selectedCheckoutLinkId === checkoutLink.id && 'bg-gray-100',
                 )}
               >
                 <div className="flex flex-row items-center gap-3 px-4 py-3">
@@ -161,7 +160,7 @@ export const CheckoutLinkListSidebar = ({
                       {checkoutLink.label ?? 'Untitled'}
                     </div>
                     <div>
-                      <div className=" w-full truncate text-sm text-gray-500">
+                      <div className="w-full truncate text-sm text-gray-500">
                         {productLabel}
                       </div>
                     </div>

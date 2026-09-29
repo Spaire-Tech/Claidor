@@ -6,15 +6,15 @@ import { useDiscounts } from '@/hooks/queries'
 import { useOrders } from '@/hooks/queries/orders'
 import { useSubscriptions } from '@/hooks/queries/subscriptions'
 import { getDiscountDisplay } from '@/utils/discount'
-import { schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
+import Button from '@simeon/ui/components/atoms/Button'
 import {
   DataTable,
   DataTableColumnHeader,
-} from '@claidor/ui/components/atoms/DataTable'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
+} from '@simeon/ui/components/atoms/DataTable'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
 import Link from 'next/link'
 
 export interface ProductOverviewProps {
@@ -102,7 +102,7 @@ export const ProductOverview = ({
           <div className="flex flex-row items-center justify-between gap-x-6">
             <div className="flex flex-col gap-y-1">
               <h2 className="text-lg">Subscriptions</h2>
-              <p className=" text-sm text-gray-500">
+              <p className="text-sm text-gray-500">
                 Showing 10 most recent subscriptions for {product.name}
               </p>
             </div>
@@ -217,7 +217,7 @@ export const ProductOverview = ({
         <div className="flex flex-row items-center justify-between gap-x-6">
           <div className="flex flex-col gap-y-1">
             <h2 className="text-lg">Orders</h2>
-            <p className=" text-sm text-gray-500">
+            <p className="text-sm text-gray-500">
               Showing last 10 orders for {product.name}
             </p>
           </div>
@@ -312,7 +312,7 @@ export const ProductOverview = ({
           <div className="flex flex-row items-center justify-between gap-x-6">
             <div className="flex flex-col gap-y-1">
               <h2 className="text-lg">Applicable Discounts</h2>
-              <p className=" text-sm text-gray-500">
+              <p className="text-sm text-gray-500">
                 All Discounts valid for {product.name}
               </p>
             </div>

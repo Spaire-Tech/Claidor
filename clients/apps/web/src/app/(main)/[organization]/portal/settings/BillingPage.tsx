@@ -9,8 +9,8 @@ import {
   useDeleteCustomerPaymentMethod,
 } from '@/hooks/queries'
 import { createClientSideAPI } from '@/utils/client'
-import { schemas } from '@claidor/client'
-import { getThemePreset } from '@claidor/ui/hooks/theming'
+import { schemas } from '@simeon/client'
+import { getThemePreset } from '@simeon/ui/hooks/theming'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
@@ -419,7 +419,7 @@ const BillingBody = ({
         title="Add payment method"
         isShown={isAddCardOpen}
         hide={hideAddCard}
-        wrapperClassName={'claidor-portal' + (dark ? ' sp-dark' : '')}
+        wrapperClassName={'simeon-portal' + (dark ? ' sp-dark' : '')}
         modalContent={
           <AddPaymentMethodModal
             api={api}

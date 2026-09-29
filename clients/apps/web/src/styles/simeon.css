@@ -1,13 +1,13 @@
 /*
- * Claidor design tokens — from docs/design/claidor-v1-styles.css.
+ * Simeon design tokens — from docs/design/simeon-v1-styles.css.
  *
- * Scoped to .claidor-app rather than :root so the inherited dashboard
+ * Scoped to .simeon-app rather than :root so the inherited dashboard
  * chrome (which still serves the legacy routes) keeps its own palette
  * while both live in the same bundle. Dark mode is an attribute on <html>
  * (set before paint by the shell) so a reload does not flash light.
  */
 
-.claidor-app {
+.simeon-app {
   --ink: #17181a;
   --ink2: #26272a;
   --black: #000000;
@@ -59,7 +59,7 @@
   background: var(--surface);
 }
 
-[data-claidor-dark] .claidor-app {
+[data-simeon-dark] .simeon-app {
   --ink: #e8e5e1;
   --ink2: #dcd9d5;
   --black: #e8e5e1;
@@ -105,30 +105,30 @@
   --on-accent: #1f1d1a;
 }
 
-.claidor-serif {
-  font-family: var(--font-claidor-serif, 'Source Serif 4'), Georgia, serif;
+.simeon-serif {
+  font-family: var(--font-simeon-serif, 'Source Serif 4'), Georgia, serif;
   letter-spacing: -0.01em;
 }
 
 /* The design expresses hover states inline; components use this class. */
-.claidor-hover-row {
+.simeon-hover-row {
   transition: background 0.1s ease;
 }
-.claidor-hover-row:hover {
+.simeon-hover-row:hover {
   background: var(--s4);
 }
 
-.claidor-app ::selection {
+.simeon-app ::selection {
   background: var(--hl);
 }
 
-.claidor-app textarea,
-.claidor-app input {
+.simeon-app textarea,
+.simeon-app input {
   font: inherit;
   color: inherit;
 }
 
-@keyframes claidor-blink {
+@keyframes simeon-blink {
   0%,
   100% {
     opacity: 1;
@@ -137,17 +137,17 @@
     opacity: 0;
   }
 }
-.claidor-cursor {
+.simeon-cursor {
   display: inline-block;
   width: 7px;
   height: 15px;
   background: var(--ink);
   vertical-align: -2px;
   margin-left: 1px;
-  animation: claidor-blink 0.9s steps(1) infinite;
+  animation: simeon-blink 0.9s steps(1) infinite;
 }
 
-@keyframes claidor-toast-in {
+@keyframes simeon-toast-in {
   from {
     opacity: 0;
     transform: translateY(6px);
@@ -157,14 +157,14 @@
     transform: translateY(0);
   }
 }
-.claidor-toast {
-  animation: claidor-toast-in 0.15s ease;
+.simeon-toast {
+  animation: simeon-toast-in 0.15s ease;
 }
 
 /* Word-level reveal for streamed answers: fade + 3px rise, staggered by
    arrival. Under prefers-reduced-motion words appear instantly (the
    drain also reveals everything at once there). */
-@keyframes claidor-word-in {
+@keyframes simeon-word-in {
   from {
     opacity: 0;
     transform: translateY(3px);
@@ -174,12 +174,12 @@
     transform: none;
   }
 }
-.claidor-word {
+.simeon-word {
   display: inline-block;
-  animation: claidor-word-in 300ms ease-out both;
+  animation: simeon-word-in 300ms ease-out both;
 }
 @media (prefers-reduced-motion: reduce) {
-  .claidor-word {
+  .simeon-word {
     animation: none;
   }
 }

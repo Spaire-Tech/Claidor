@@ -2,7 +2,7 @@ import {
   hasLegacyRecurringPrices,
   isLegacyRecurringPrice,
 } from '@/utils/product'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'
 

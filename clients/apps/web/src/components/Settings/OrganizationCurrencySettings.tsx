@@ -3,21 +3,21 @@
 import { useUpdateOrganization } from '@/hooks/queries'
 import { useAutoSave } from '@/hooks/useAutoSave'
 import { setValidationErrors } from '@/utils/api/errors'
-import { isValidationError, schemas } from '@claidor/client'
+import { isValidationError, schemas } from '@simeon/client'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
+} from '@simeon/ui/components/atoms/Select'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import React from 'react'
 import { useForm } from 'react-hook-form'
 import { CURRENCIES } from './currencies'

@@ -58,24 +58,6 @@ importers:
       '@ai-sdk/react':
         specifier: ^2.0.115
         version: 2.0.115(react@19.2.4)(zod@4.3.6)
-      '@claidor/checkout':
-        specifier: workspace:^
-        version: link:../../packages/checkout
-      '@claidor/client':
-        specifier: workspace:*
-        version: link:../../packages/client
-      '@claidor/currency':
-        specifier: workspace:^
-        version: link:../../packages/currency
-      '@claidor/customer-portal':
-        specifier: workspace:*
-        version: link:../../packages/customer-portal
-      '@claidor/mdx':
-        specifier: workspace:*
-        version: link:../../packages/mdx
-      '@claidor/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@cloudflare/stream-react':
         specifier: ^1.9.3
         version: 1.9.3(react@19.2.4)
@@ -157,6 +139,24 @@ importers:
       '@shikijs/rehype':
         specifier: ^3.21.0
         version: 3.21.0
+      '@simeon/checkout':
+        specifier: workspace:^
+        version: link:../../packages/checkout
+      '@simeon/client':
+        specifier: workspace:*
+        version: link:../../packages/client
+      '@simeon/currency':
+        specifier: workspace:^
+        version: link:../../packages/currency
+      '@simeon/customer-portal':
+        specifier: workspace:*
+        version: link:../../packages/customer-portal
+      '@simeon/mdx':
+        specifier: workspace:*
+        version: link:../../packages/mdx
+      '@simeon/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@spaire/sdk':
         specifier: ^0.45.1
         version: 0.45.1
@@ -344,15 +344,15 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
-      '@claidor/eslint-config':
-        specifier: workspace:*
-        version: link:../../packages/eslint-config
-      '@claidor/typescript-config':
-        specifier: workspace:*
-        version: link:../../packages/typescript-config
       '@next/bundle-analyzer':
         specifier: ^16.1.5
         version: 16.1.5
+      '@simeon/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config
+      '@simeon/typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
       '@types/big.js':
         specifier: ^6.2.2
         version: 6.2.2
@@ -449,7 +449,7 @@ importers:
 
   examples/checkout-embed:
     dependencies:
-      '@claidor/checkout':
+      '@simeon/checkout':
         specifier: workspace:*
         version: link:../../packages/checkout
       http-server:
@@ -458,7 +458,7 @@ importers:
 
   packages/checkout:
     dependencies:
-      '@claidor/ui':
+      '@simeon/ui':
         specifier: workspace:^
         version: link:../ui
       '@spaire/sdk':
@@ -477,13 +477,13 @@ importers:
         specifier: ~7.71.1
         version: 7.71.1(react@19.2.4)
     devDependencies:
-      '@claidor/currency':
+      '@simeon/currency':
         specifier: workspace:^
         version: link:../currency
-      '@claidor/i18n':
+      '@simeon/i18n':
         specifier: workspace:^
         version: link:../i18n
-      '@claidor/typescript-config':
+      '@simeon/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@stripe/react-stripe-js':
@@ -517,7 +517,7 @@ importers:
         specifier: ^0.0.15
         version: 0.0.15
     devDependencies:
-      '@claidor/typescript-config':
+      '@simeon/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       openapi-typescript:
@@ -532,7 +532,7 @@ importers:
 
   packages/currency:
     devDependencies:
-      '@claidor/typescript-config':
+      '@simeon/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       tsup:
@@ -547,7 +547,7 @@ importers:
 
   packages/customer-portal:
     dependencies:
-      '@claidor/client':
+      '@simeon/client':
         specifier: workspace:*
         version: link:../client
       '@tanstack/react-query':
@@ -557,10 +557,10 @@ importers:
         specifier: ^18.0.0 || ^19.0.0
         version: 19.2.4
     devDependencies:
-      '@claidor/eslint-config':
+      '@simeon/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@claidor/typescript-config':
+      '@simeon/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@testing-library/react':
@@ -626,7 +626,7 @@ importers:
 
   packages/i18n:
     devDependencies:
-      '@claidor/typescript-config':
+      '@simeon/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/react':
@@ -761,10 +761,10 @@ importers:
         specifier: ^3.4.0
         version: 3.4.0
     devDependencies:
-      '@claidor/currency':
+      '@simeon/currency':
         specifier: workspace:^
         version: link:../currency
-      '@claidor/typescript-config':
+      '@simeon/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/react':

@@ -1,5 +1,10 @@
 'use client'
 
+import {
+  DEFAULT_LOCALE,
+  useTranslations,
+  type AcceptedLocale,
+} from '@simeon/i18n'
 import type { AddressInput } from '@spaire/sdk/models/components/addressinput'
 import type { CheckoutConfirmStripe } from '@spaire/sdk/models/components/checkoutconfirmstripe'
 import type { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic'
@@ -17,7 +22,6 @@ import type {
   StripeElements,
   StripeError,
 } from '@stripe/stripe-js'
-import { DEFAULT_LOCALE, useTranslations, type AcceptedLocale } from '@claidor/i18n'
 import { createContext, useCallback, useContext, useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { useForm } from 'react-hook-form'
@@ -52,7 +56,9 @@ export const CheckoutFormProvider = ({
   locale: localeProp,
 }: React.PropsWithChildren<{ locale?: string }>) => {
   const { checkout, update: updateOuter, confirm: confirmOuter } = useCheckout()
-  const locale = (localeProp || checkout.locale || DEFAULT_LOCALE) as AcceptedLocale
+  const locale = (localeProp ||
+    checkout.locale ||
+    DEFAULT_LOCALE) as AcceptedLocale
   const t = useTranslations(locale)
   const [loading, setLoading] = useState(false)
   const [loadingLabel, setLoadingLabel] = useState<string | undefined>()

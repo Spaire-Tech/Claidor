@@ -1,21 +1,21 @@
-import { schemas } from '@claidor/client'
-import Input from '@claidor/ui/components/atoms/Input'
+import { schemas } from '@simeon/client'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
-import Textarea from '@claidor/ui/components/atoms/TextArea'
-import { Checkbox } from '@claidor/ui/components/ui/checkbox'
+} from '@simeon/ui/components/atoms/Select'
+import Textarea from '@simeon/ui/components/atoms/TextArea'
+import { Checkbox } from '@simeon/ui/components/ui/checkbox'
 import {
   FormControl,
   FormDescription,
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import Markdown, { MarkdownToJSX } from 'markdown-to-jsx'
 import { ControllerRenderProps } from 'react-hook-form'
 

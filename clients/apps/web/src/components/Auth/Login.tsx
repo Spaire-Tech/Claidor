@@ -1,13 +1,12 @@
 'use client'
 
 import { usePostHog, type EventName } from '@/hooks/posthog'
-import { schemas } from '@claidor/client'
-import LabeledSeparator from '@claidor/ui/components/atoms/LabeledSeparator'
+import { schemas } from '@simeon/client'
+import LabeledSeparator from '@simeon/ui/components/atoms/LabeledSeparator'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo } from 'react'
 import LoginCodeForm from '../Auth/LoginCodeForm'
 import GoogleLoginButton from './GoogleLoginButton'
-
 
 const Login = ({
   returnTo,
@@ -88,18 +87,18 @@ const Login = ({
         <LabeledSeparator label="Or" />
         <LoginCodeForm {...loginProps} />
       </div>
-      <div className=" mt-6 text-center text-xs text-gray-400">
+      <div className="mt-6 text-center text-xs text-gray-400">
         By using Simeon you agree to our{' '}
         <a
-          className=" text-gray-600"
-          href="https://www.claidorhq.com/legal/terms-of-service"
+          className="text-gray-600"
+          href="https://www.simeonlabs.com/legal/terms-of-service"
         >
           Terms of Service
         </a>{' '}
         and{' '}
         <a
-          className=" text-gray-600"
-          href="https://www.claidorhq.com/legal/privacy-policy"
+          className="text-gray-600"
+          href="https://www.simeonlabs.com/legal/privacy-policy"
         >
           Privacy Policy
         </a>

@@ -4,21 +4,21 @@ import revalidate from '@/app/actions'
 import { Modal, ModalProps } from '@/components/Modal'
 import { useCustomerCancelSubscription } from '@/hooks/queries'
 import { setValidationErrors } from '@/utils/api/errors'
-import { isValidationError, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import TextArea from '@claidor/ui/components/atoms/TextArea'
+import { isValidationError, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import TextArea from '@simeon/ui/components/atoms/TextArea'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
-import { Label } from '@claidor/ui/components/ui/label'
+} from '@simeon/ui/components/ui/form'
+import { Label } from '@simeon/ui/components/ui/label'
 import {
   RadioGroup,
   RadioGroupItem,
-} from '@claidor/ui/components/ui/radio-group'
+} from '@simeon/ui/components/ui/radio-group'
 import { useRouter } from 'next/navigation'
 import { useCallback } from 'react'
 import { useForm } from 'react-hook-form'
@@ -112,7 +112,7 @@ const CustomerCancellationModal = ({
         <div className="flex flex-col gap-y-6 p-6 sm:p-12">
           <div className="flex flex-col gap-y-2">
             <h3 className="text-2xl">We&apos;re sorry to see you go!</h3>
-            <p className=" leading-relaxed text-balance text-gray-500">
+            <p className="leading-relaxed text-balance text-gray-500">
               You&apos;re always welcome back! Let us know why you&apos;re
               leaving to help us improve our product.
             </p>

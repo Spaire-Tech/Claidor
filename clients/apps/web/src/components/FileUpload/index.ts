@@ -1,9 +1,9 @@
 'use client'
 
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { useState } from 'react'
 import { Accept, FileRejection, useDropzone } from 'react-dropzone'
-import { FileRead, Upload } from './Upload'
+import { FileRead, Upload, UploadableFileService } from './Upload'
 
 export type FileObject<
   T extends FileRead | schemas['FileUpload'] = FileRead | schemas['FileUpload'],
@@ -32,7 +32,7 @@ const buildFileObjects = <T extends FileRead | schemas['FileUpload']>(
 }
 
 interface FileUploadProps<T extends FileRead | schemas['FileUpload']> {
-  service: schemas['FileServiceTypes']
+  service: UploadableFileService
   accept?: Accept
   maxSize?: number
   organization: schemas['Organization']

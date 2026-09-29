@@ -78,15 +78,15 @@ export const CompanySection = ({ active }: { active: boolean }) => {
         startups – the future enterprises, without the headcount.
       </p>
       <p>
-        Simeon Labs is a small team with big ambitions, empowered by a culture of
-        ownership and autonomy. We&apos;re proud to be open source & built for
-        transparency to shape the future with our community.
+        Simeon Labs is a small team with big ambitions, empowered by a culture
+        of ownership and autonomy. We&apos;re proud to be open source & built
+        for transparency to shape the future with our community.
       </p>
       <div className="flex flex-col gap-y-2">
-        <Link href="https://github.com/claidor-tech" target="_blank" prefetch>
+        <Link href="https://github.com/simeon-tech" target="_blank" prefetch>
           Simeon on GitHub →
         </Link>
-        <Link href="https://x.com/claidor_hq" target="_blank" prefetch>
+        <Link href="https://x.com/simeon_hq" target="_blank" prefetch>
           Join the conversation →
         </Link>
       </div>
@@ -112,7 +112,7 @@ const Profile = ({ name, title, image }: ProfileProps) => {
       />
       <div className="flex flex-col text-left">
         <h1 className="text-xs">{name}</h1>
-        <h1 className="text-claidor-500 text-xs">{title}</h1>
+        <h1 className="text-simeon-500 text-xs">{title}</h1>
       </div>
     </div>
   )

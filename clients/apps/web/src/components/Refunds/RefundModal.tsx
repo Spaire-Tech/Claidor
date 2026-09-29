@@ -1,16 +1,16 @@
 import { useCreateRefund } from '@/hooks/queries'
-import { enums, schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
-import Button from '@claidor/ui/components/atoms/Button'
-import MoneyInput from '@claidor/ui/components/atoms/MoneyInput'
+import { enums, schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
+import Button from '@simeon/ui/components/atoms/Button'
+import MoneyInput from '@simeon/ui/components/atoms/MoneyInput'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
-import { Checkbox } from '@claidor/ui/components/ui/checkbox'
+} from '@simeon/ui/components/atoms/Select'
+import { Checkbox } from '@simeon/ui/components/ui/checkbox'
 import {
   Form,
   FormControl,
@@ -18,7 +18,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { Well, WellContent, WellFooter, WellHeader } from '../Shared/Well'
 import { toast } from '../Toast/use-toast'
@@ -79,7 +79,7 @@ export const RefundModal = ({ order, hide }: RefundModalProps) => {
   return (
     <div className="flex flex-col gap-8 overflow-y-auto px-8 py-12">
       <h2 className="text-xl">Refund Order</h2>
-      <p className=" text-gray-500">
+      <p className="text-gray-500">
         You can refund in part or full. Customer&apos;s see it on their bank
         statement in 5-10 days.
       </p>
@@ -184,7 +184,7 @@ export const RefundModal = ({ order, hide }: RefundModalProps) => {
               </h3>
             </WellHeader>
             <WellContent>
-              <p className=" text-gray-500">
+              <p className="text-gray-500">
                 Underlying payment processors still charge us for the original
                 payment - even in case of a full refund. However, no additional
                 fees are applied of course.
@@ -192,7 +192,7 @@ export const RefundModal = ({ order, hide }: RefundModalProps) => {
             </WellContent>
             <WellFooter>
               <a
-                href="https://docs.claidorhq.com/documentation/features/refunds"
+                href="https://docs.simeonlabs.com/documentation/features/refunds"
                 className="text-blue-500"
                 target="_blank"
                 rel="noreferrer"

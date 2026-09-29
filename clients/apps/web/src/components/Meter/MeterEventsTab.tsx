@@ -1,8 +1,8 @@
 'use client'
 
 import { useInfiniteEvents } from '@/hooks/queries/events'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import { useMemo } from 'react'
 import { Events } from '../Events/Events'
 

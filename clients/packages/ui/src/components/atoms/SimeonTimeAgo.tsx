@@ -1,6 +1,6 @@
 import TimeAgo from 'react-timeago'
 
-const ClaidorTimeAgo = (props: { date: Date; suffix?: string }) => {
+const SimeonTimeAgo = (props: { date: Date; suffix?: string }) => {
   return (
     <TimeAgo
       date={props.date}
@@ -16,4 +16,4 @@ const ClaidorTimeAgo = (props: { date: Date; suffix?: string }) => {
   )
 }
 
-export default ClaidorTimeAgo
+export default SimeonTimeAgo

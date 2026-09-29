@@ -8,7 +8,7 @@ import {
 import { defaultRetry } from './retry'
 
 /**
- * The Claidor-tier endpoints are generated into @claidor/client after
+ * The Simeon-tier endpoints are generated into @simeon/client after
  * `pnpm generate` runs against a deployed API. Until that's been
  * regenerated, the typed client doesn't know about these paths and
  * TypeScript would refuse to call api.GET('/v1/platform/plans'). We
@@ -23,7 +23,7 @@ const platformApi = api as unknown as any
 // Types — mirror polar/platform/schemas.py
 // -----------------------------------------------------------------------------
 
-export type ClaidorTierKey =
+export type SimeonTierKey =
   | 'starter'
   | 'studio'
   | 'scale'
@@ -72,7 +72,7 @@ export interface TierFeatures {
 }
 
 export interface Entitlements {
-  tier: ClaidorTierKey
+  tier: SimeonTierKey
   transaction_fee: TransactionFee
   limits: TierLimits
   features: TierFeatures
@@ -81,7 +81,7 @@ export interface Entitlements {
 }
 
 export interface TierPlan {
-  tier: ClaidorTierKey
+  tier: SimeonTierKey
   name: string
   description: string | null
   product_id: string | null
@@ -96,8 +96,8 @@ export interface TierPlan {
   limits: TierLimits
 }
 
-export interface CurrentClaidorSubscription {
-  tier: ClaidorTierKey
+export interface CurrentSimeonSubscription {
+  tier: SimeonTierKey
   billing_interval: BillingInterval | null
   status: string
   monthly_price_cents: number
@@ -105,7 +105,7 @@ export interface CurrentClaidorSubscription {
   current_period_end: string | null
   trial_end: string | null
   cancel_at_period_end: boolean
-  // Set only while status === 'past_due' (a Claidor charge failed). past_due_at
+  // Set only while status === 'past_due' (a Simeon charge failed). past_due_at
   // is when it first failed; suspension_at is the deadline to pay before the
   // subscription is canceled and the org drops to no-plan.
   past_due_at: string | null
@@ -145,9 +145,9 @@ export interface UpgradeCheckout {
 // Queries
 // -----------------------------------------------------------------------------
 
-export const useClaidorPlans: () => UseQueryResult<{ items: TierPlan[] }> = () =>
+export const useSimeonPlans: () => UseQueryResult<{ items: TierPlan[] }> = () =>
   useQuery({
-    queryKey: ['claidor', 'plans'],
+    queryKey: ['simeon', 'plans'],
     queryFn: async () => {
       const { data, error } = await platformApi.GET('/v1/platform/plans')
       if (error) throw error
@@ -157,28 +157,28 @@ export const useClaidorPlans: () => UseQueryResult<{ items: TierPlan[] }> = () =
     staleTime: 5 * 60 * 1000, // 5 minutes — plans rarely change
   })
 
-export const useClaidorSubscription = (
+export const useSimeonSubscription = (
   organizationId: string | undefined,
-): UseQueryResult<CurrentClaidorSubscription> =>
+): UseQueryResult<CurrentSimeonSubscription> =>
   useQuery({
-    queryKey: ['claidor', 'subscription', organizationId],
+    queryKey: ['simeon', 'subscription', organizationId],
     queryFn: async () => {
       const { data, error } = await platformApi.GET(
         '/v1/platform/organizations/{organization_id}/subscription',
         { params: { path: { organization_id: organizationId as string } } },
       )
       if (error) throw error
-      return data as CurrentClaidorSubscription
+      return data as CurrentSimeonSubscription
     },
     retry: defaultRetry,
     enabled: !!organizationId,
   })
 
-export const useClaidorUsage = (
+export const useSimeonUsage = (
   organizationId: string | undefined,
 ): UseQueryResult<OrganizationUsage> =>
   useQuery({
-    queryKey: ['claidor', 'usage', organizationId],
+    queryKey: ['simeon', 'usage', organizationId],
     queryFn: async () => {
       const { data, error } = await platformApi.GET(
         '/v1/platform/organizations/{organization_id}/usage',
@@ -217,13 +217,13 @@ export const useCreateUpgradeCheckout = (organizationId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['claidor', 'subscription', organizationId],
+        queryKey: ['simeon', 'subscription', organizationId],
       })
     },
   })
 }
 
-export const useSwitchClaidorPlan = (organizationId: string) => {
+export const useSwitchSimeonPlan = (organizationId: string) => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (input: {
@@ -242,13 +242,13 @@ export const useSwitchClaidorPlan = (organizationId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['claidor', 'subscription', organizationId],
+        queryKey: ['simeon', 'subscription', organizationId],
       })
     },
   })
 }
 
-export const useCancelClaidorSubscription = (organizationId: string) => {
+export const useCancelSimeonSubscription = (organizationId: string) => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async () => {
@@ -264,7 +264,7 @@ export const useCancelClaidorSubscription = (organizationId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['claidor', 'subscription', organizationId],
+        queryKey: ['simeon', 'subscription', organizationId],
       })
     },
   })
@@ -296,7 +296,7 @@ export const useCreateCustomerPortalSession = (organizationId: string) =>
 // download invoice, get/update billing address).
 // -----------------------------------------------------------------------------
 
-export interface ClaidorPaymentMethod {
+export interface SimeonPaymentMethod {
   id: string
   type: string
   method_metadata: {
@@ -308,7 +308,7 @@ export interface ClaidorPaymentMethod {
   }
 }
 
-export interface ClaidorBillingAddress {
+export interface SimeonBillingAddress {
   line1: string | null
   line2: string | null
   postal_code: string | null
@@ -317,14 +317,14 @@ export interface ClaidorBillingAddress {
   country: string | null
 }
 
-export interface ClaidorBillingDetails {
+export interface SimeonBillingDetails {
   billing_name: string | null
-  billing_address: ClaidorBillingAddress | null
+  billing_address: SimeonBillingAddress | null
   tax_id: [string, string] | null
   default_payment_method_id: string | null
 }
 
-export interface ClaidorOrder {
+export interface SimeonOrder {
   id: string
   created_at: string
   invoice_number: string | null
@@ -336,28 +336,28 @@ export interface ClaidorOrder {
   is_invoice_generated: boolean
 }
 
-export const useClaidorPaymentMethods = (
+export const useSimeonPaymentMethods = (
   organizationId: string | undefined,
-): UseQueryResult<{ items: ClaidorPaymentMethod[] }> =>
+): UseQueryResult<{ items: SimeonPaymentMethod[] }> =>
   useQuery({
-    queryKey: ['claidor', 'payment-methods', organizationId],
+    queryKey: ['simeon', 'payment-methods', organizationId],
     queryFn: async () => {
       const { data, error } = await platformApi.GET(
         '/v1/platform/organizations/{organization_id}/payment-methods',
         { params: { path: { organization_id: organizationId as string } } },
       )
       if (error) throw error
-      return data as { items: ClaidorPaymentMethod[] }
+      return data as { items: SimeonPaymentMethod[] }
     },
     retry: defaultRetry,
     enabled: !!organizationId,
   })
 
-export const useClaidorOrders = (
+export const useSimeonOrders = (
   organizationId: string | undefined,
-): UseQueryResult<{ items: ClaidorOrder[] }> =>
+): UseQueryResult<{ items: SimeonOrder[] }> =>
   useQuery({
-    queryKey: ['claidor', 'orders', organizationId],
+    queryKey: ['simeon', 'orders', organizationId],
     queryFn: async () => {
       const { data, error } = await platformApi.GET(
         '/v1/platform/organizations/{organization_id}/orders',
@@ -369,30 +369,30 @@ export const useClaidorOrders = (
         },
       )
       if (error) throw error
-      return data as { items: ClaidorOrder[] }
+      return data as { items: SimeonOrder[] }
     },
     retry: defaultRetry,
     enabled: !!organizationId,
   })
 
-export const useClaidorBillingDetails = (
+export const useSimeonBillingDetails = (
   organizationId: string | undefined,
-): UseQueryResult<ClaidorBillingDetails> =>
+): UseQueryResult<SimeonBillingDetails> =>
   useQuery({
-    queryKey: ['claidor', 'billing-details', organizationId],
+    queryKey: ['simeon', 'billing-details', organizationId],
     queryFn: async () => {
       const { data, error } = await platformApi.GET(
         '/v1/platform/organizations/{organization_id}/billing-details',
         { params: { path: { organization_id: organizationId as string } } },
       )
       if (error) throw error
-      return data as ClaidorBillingDetails
+      return data as SimeonBillingDetails
     },
     retry: defaultRetry,
     enabled: !!organizationId,
   })
 
-export const useDeleteClaidorPaymentMethod = (organizationId: string) => {
+export const useDeleteSimeonPaymentMethod = (organizationId: string) => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (paymentMethodId: string) => {
@@ -411,16 +411,16 @@ export const useDeleteClaidorPaymentMethod = (organizationId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['claidor', 'payment-methods', organizationId],
+        queryKey: ['simeon', 'payment-methods', organizationId],
       })
       queryClient.invalidateQueries({
-        queryKey: ['claidor', 'billing-details', organizationId],
+        queryKey: ['simeon', 'billing-details', organizationId],
       })
     },
   })
 }
 
-export const useSetDefaultClaidorPaymentMethod = (organizationId: string) => {
+export const useSetDefaultSimeonPaymentMethod = (organizationId: string) => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (paymentMethodId: string) => {
@@ -439,23 +439,23 @@ export const useSetDefaultClaidorPaymentMethod = (organizationId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['claidor', 'payment-methods', organizationId],
+        queryKey: ['simeon', 'payment-methods', organizationId],
       })
       queryClient.invalidateQueries({
-        queryKey: ['claidor', 'billing-details', organizationId],
+        queryKey: ['simeon', 'billing-details', organizationId],
       })
     },
   })
 }
 
-export const useUpdateClaidorBillingDetails = (organizationId: string) => {
+export const useUpdateSimeonBillingDetails = (organizationId: string) => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (input: {
       billing_name?: string | null
-      billing_address?: Partial<ClaidorBillingAddress> | null
+      billing_address?: Partial<SimeonBillingAddress> | null
       tax_id?: string | null
-    }): Promise<ClaidorBillingDetails> => {
+    }): Promise<SimeonBillingDetails> => {
       const { data, error } = await platformApi.PATCH(
         '/v1/platform/organizations/{organization_id}/billing-details',
         {
@@ -464,17 +464,17 @@ export const useUpdateClaidorBillingDetails = (organizationId: string) => {
         },
       )
       if (error) throw error
-      return data as ClaidorBillingDetails
+      return data as SimeonBillingDetails
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['claidor', 'billing-details', organizationId],
+        queryKey: ['simeon', 'billing-details', organizationId],
       })
     },
   })
 }
 
-export const useGetClaidorOrderInvoice = (organizationId: string) =>
+export const useGetSimeonOrderInvoice = (organizationId: string) =>
   useMutation({
     mutationFn: async (orderId: string): Promise<{ url: string }> => {
       const { data, error } = await platformApi.GET(
@@ -581,7 +581,7 @@ export const breakevenGmvDollars = (
  * Returns null if there's no active subscription yet (no plan / pre-trial).
  */
 export const renewalSentence = (
-  sub: CurrentClaidorSubscription,
+  sub: CurrentSimeonSubscription,
 ): string | null => {
   const formatDate = (iso: string): string =>
     new Date(iso).toLocaleDateString('en-US', {
@@ -615,7 +615,7 @@ export const renewalSentence = (
   return `This site is charged on a ${cadence} basis and renews on ${formatted}.`
 }
 
-const TIER_DISPLAY_NAME: Record<ClaidorTierKey, string> = {
+const TIER_DISPLAY_NAME: Record<SimeonTierKey, string> = {
   starter: 'Starter',
   studio: 'Studio',
   scale: 'Scale',
@@ -626,5 +626,5 @@ const TIER_DISPLAY_NAME: Record<ClaidorTierKey, string> = {
 // The Starter tier shipped originally as "pro". The backend now normalizes
 // it to "starter" everywhere, but tolerate a stale/cached "pro" value so the
 // UI never renders an empty plan name.
-export const tierDisplayName = (tier: ClaidorTierKey | 'pro'): string =>
+export const tierDisplayName = (tier: SimeonTierKey | 'pro'): string =>
   tier === 'pro' ? 'Starter' : TIER_DISPLAY_NAME[tier]

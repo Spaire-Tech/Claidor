@@ -14,9 +14,9 @@ import AddOutlined from '@mui/icons-material/AddOutlined'
 import ArrowDownward from '@mui/icons-material/ArrowDownward'
 import ArrowUpward from '@mui/icons-material/ArrowUpward'
 import Search from '@mui/icons-material/Search'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import {
@@ -100,7 +100,7 @@ export const BenefitListSidebar = ({
 
   return (
     <>
-      <div className=" flex h-full flex-col divide-y divide-gray-200">
+      <div className="flex h-full flex-col divide-y divide-gray-200">
         <div className="flex flex-row items-center justify-between gap-6 px-4 py-4">
           <div>Benefits</div>
           <div className="flex flex-row items-center gap-4">
@@ -130,11 +130,8 @@ export const BenefitListSidebar = ({
           </div>
         </div>
         <div className="flex flex-row items-center gap-3 px-4 py-2">
-          <div className=" flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
-            <Search
-              fontSize="inherit"
-              className=" text-gray-500"
-            />
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
+            <Search fontSize="inherit" className="text-gray-500" />
           </div>
           <Input
             className="w-full rounded-none border-none bg-transparent p-0 shadow-none! ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -143,7 +140,7 @@ export const BenefitListSidebar = ({
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <div className=" flex h-full grow flex-col divide-y divide-gray-50 overflow-y-auto">
+        <div className="flex h-full grow flex-col divide-y divide-gray-50 overflow-y-auto">
           {benefits.map((benefit) => {
             const queryString = searchParams.toString()
             const benefitHref = `/dashboard/${organization.slug}/products/benefits/${benefit.id}${queryString ? `?${queryString}` : ''}`
@@ -153,20 +150,19 @@ export const BenefitListSidebar = ({
                 key={benefit.id}
                 href={benefitHref}
                 className={twMerge(
-                  ' cursor-pointer hover:bg-gray-100',
-                  selectedBenefitId === benefit.id &&
-                    ' bg-gray-100',
+                  'cursor-pointer hover:bg-gray-100',
+                  selectedBenefitId === benefit.id && 'bg-gray-100',
                 )}
               >
                 <div className="flex flex-row items-center gap-3 px-4 py-3">
-                  <span className=" flex h-6 w-6 shrink-0 flex-row items-center justify-center rounded-full bg-gray-200 text-2xl text-black">
+                  <span className="flex h-6 w-6 shrink-0 flex-row items-center justify-center rounded-full bg-gray-200 text-2xl text-black">
                     {resolveBenefitIcon(benefit.type, 'h-3 w-3')}
                   </span>
                   <div className="flex min-w-0 flex-col">
                     <div className="w-full truncate text-sm">
                       {benefit.description}
                     </div>
-                    <div className=" w-full truncate text-xs text-gray-500">
+                    <div className="w-full truncate text-xs text-gray-500">
                       {benefitsDisplayNames[benefit.type]}
                     </div>
                   </div>

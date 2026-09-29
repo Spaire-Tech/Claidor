@@ -3,8 +3,8 @@
 import { Upload } from '@/components/FileUpload/Upload'
 import FileUploadOutlined from '@mui/icons-material/FileUploadOutlined'
 import InsertDriveFileOutlined from '@mui/icons-material/InsertDriveFileOutlined'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import { useCallback, useRef, useState } from 'react'
 
 export interface LeadMagnetUploadProps {

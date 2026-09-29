@@ -1,15 +1,15 @@
-import { FormField } from '@claidor/ui/components/ui/form'
+import { FormField } from '@simeon/ui/components/ui/form'
 
 import AddOutlined from '@mui/icons-material/AddOutlined'
 import ClearOutlined from '@mui/icons-material/ClearOutlined'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   FormControl,
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { useFieldArray, useFormContext } from 'react-hook-form'
 import { CustomerCreateForm } from './CreateCustomerModal'
 import { CustomerUpdateForm } from './EditCustomerModal'

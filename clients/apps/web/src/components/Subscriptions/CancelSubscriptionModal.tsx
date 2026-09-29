@@ -2,15 +2,15 @@
 
 import { useUpdateSubscription } from '@/hooks/queries'
 import { setValidationErrors } from '@/utils/api/errors'
-import { isValidationError, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { isValidationError, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
+} from '@simeon/ui/components/atoms/Select'
 import {
   Form,
   FormControl,
@@ -19,7 +19,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from '../Toast/use-toast'
@@ -185,11 +185,7 @@ const CancelSubscriptionModal = ({
                         defaultValue={undefined}
                       >
                         <SelectTrigger
-                          className={
-                            field.value
-                              ? ''
-                              : ' text-gray-400'
-                          }
+                          className={field.value ? '' : 'text-gray-400'}
                         >
                           <SelectValue placeholder="Select customer cancellation reason" />
                         </SelectTrigger>

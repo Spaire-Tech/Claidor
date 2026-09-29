@@ -1,7 +1,7 @@
 import { useInfiniteEvents } from '@/hooks/queries/events'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { TabsContent } from '@claidor/ui/components/atoms/Tabs'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { TabsContent } from '@simeon/ui/components/atoms/Tabs'
 import { parseAsString, useQueryState } from 'nuqs'
 import { Events } from '../Events/Events'
 import EventSelect from '../Events/EventSelect'
@@ -65,9 +65,9 @@ export const CustomerEventsView = ({
         />
       </div>
       {events?.pages.flatMap((page) => page.items).length === 0 ? (
-        <div className=" flex min-h-96 w-full flex-col items-center justify-center gap-4 rounded-4xl border border-gray-200 p-24">
+        <div className="flex min-h-96 w-full flex-col items-center justify-center gap-4 rounded-4xl border border-gray-200 p-24">
           <h1 className="text-2xl font-normal">No Events Found</h1>
-          <p className=" text-gray-500">
+          <p className="text-gray-500">
             There are no events matching your current filters
           </p>
         </div>

@@ -1,15 +1,15 @@
 import { useUpdateOrganization } from '@/hooks/queries'
 import { useAutoSave } from '@/hooks/useAutoSave'
 import { setValidationErrors } from '@/utils/api/errors'
-import { isValidationError, schemas } from '@claidor/client'
-import Switch from '@claidor/ui/components/atoms/Switch'
+import { isValidationError, schemas } from '@simeon/client'
+import Switch from '@simeon/ui/components/atoms/Switch'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import React from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from '../Toast/use-toast'

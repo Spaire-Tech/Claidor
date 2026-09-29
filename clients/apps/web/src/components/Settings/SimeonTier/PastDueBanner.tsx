@@ -3,8 +3,8 @@
 import { toast } from '@/components/Toast/use-toast'
 import {
   useCreateCustomerPortalSession,
-  useClaidorSubscription,
-} from '@/hooks/queries/claidorTier'
+  useSimeonSubscription,
+} from '@/hooks/queries/simeonTier'
 import { useCallback, useState } from 'react'
 
 interface PastDueBannerProps {
@@ -23,14 +23,14 @@ const formatDate = (iso: string | null): string | null => {
 }
 
 /**
- * Persistent banner shown across the dashboard while the creator's Claidor
- * subscription is `past_due` (a charge failed). Polar's dunning is already
+ * Persistent banner shown across the dashboard while the creator's Simeon
+ * subscription is `past_due` (a charge failed). the server's dunning is already
  * retrying the card; this surfaces the state and gives the creator a direct
  * "Pay now" path to the customer portal to update the card / settle the
  * balance before the suspension deadline. Renders nothing otherwise.
  */
 const PastDueBanner = ({ organizationId }: PastDueBannerProps) => {
-  const subscription = useClaidorSubscription(organizationId)
+  const subscription = useSimeonSubscription(organizationId)
   const createSession = useCreateCustomerPortalSession(organizationId)
   const [pending, setPending] = useState(false)
   const sub = subscription.data

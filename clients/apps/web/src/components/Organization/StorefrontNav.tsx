@@ -3,7 +3,7 @@
 import { useCustomerOrders } from '@/hooks/queries'
 import { api } from '@/utils/client'
 import { organizationPageLink } from '@/utils/nav'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import Link from 'next/link'
 import { useSelectedLayoutSegment } from 'next/navigation'
 import { twMerge } from 'tailwind-merge'
@@ -23,13 +23,25 @@ export const StorefrontNav = ({
   const { data: orders } = useCustomerOrders(api)
 
   const tabs = [
-    { id: 'products', label: 'Products', href: organizationPageLink(organization) },
-    { id: 'about', label: 'About', href: organizationPageLink(organization, 'about') },
-    ...(
-      (orders?.items.length ?? 0) > 0
-        ? [{ id: 'portal', label: 'My Orders', href: organizationPageLink(organization, 'portal') }]
-        : []
-    ),
+    {
+      id: 'products',
+      label: 'Products',
+      href: organizationPageLink(organization),
+    },
+    {
+      id: 'about',
+      label: 'About',
+      href: organizationPageLink(organization, 'about'),
+    },
+    ...((orders?.items.length ?? 0) > 0
+      ? [
+          {
+            id: 'portal',
+            label: 'My Orders',
+            href: organizationPageLink(organization, 'portal'),
+          },
+        ]
+      : []),
   ]
 
   return (

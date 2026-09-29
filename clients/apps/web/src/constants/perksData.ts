@@ -105,10 +105,10 @@ export const PERKS: Perk[] = [
     incentive: '6 Months Free + Notion AI',
     description:
       'Simeon Labs has partnered with Notion to give early-stage startups 6 months of Notion Business — with Notion AI included. One workspace for your docs, specs, roadmaps, and team knowledge, with AI built in from day one.',
-    url: 'https://ntn.so/claidor',
+    url: 'https://ntn.so/simeon',
     featured: true,
     details: {
-      claimUrl: 'https://ntn.so/claidor',
+      claimUrl: 'https://ntn.so/simeon',
       sections: [
         {
           heading: 'What is Notion?',
@@ -133,10 +133,7 @@ export const PERKS: Perk[] = [
             {
               type: 'unordered-list',
               label: 'Eligible startups receive:',
-              items: [
-                '6 months free of Notion Business',
-                'Notion AI included',
-              ],
+              items: ['6 months free of Notion Business', 'Notion AI included'],
             },
             {
               type: 'paragraph',
@@ -171,10 +168,10 @@ export const PERKS: Perk[] = [
     incentive: '$250 Mercury Credit + $250 Simeon Credit',
     description:
       'Open a Mercury startup bank account through Simeon and receive $250 in Mercury credits plus $250 in Simeon platform credits. Mercury provides modern banking built for startups, with powerful financial tools and integrations.',
-    url: 'https://mercury.com/r/claidor',
+    url: 'https://mercury.com/r/simeon',
     featured: true,
     details: {
-      claimUrl: 'https://mercury.com/r/claidor',
+      claimUrl: 'https://mercury.com/r/simeon',
       sections: [
         {
           heading: 'What is Mercury?',
@@ -454,11 +451,12 @@ export const PERKS: Perk[] = [
     logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/Apolo+logo.jpg',
     incentive: '50% Off Annual Plan',
     description:
-      'Simeon startups receive 50% off Apollo\'s sales intelligence platform for one year. Access a database of over 270M contacts and powerful outreach tools to find customers, start conversations, and grow your first revenue.',
-    url: 'https://www.apollo.io/partners/partnership-startup-promo?utm_medium=partner&utm_source=communities_startup&utm_campaign=communities_claidor',
+      "Simeon startups receive 50% off Apollo's sales intelligence platform for one year. Access a database of over 270M contacts and powerful outreach tools to find customers, start conversations, and grow your first revenue.",
+    url: 'https://www.apollo.io/partners/partnership-startup-promo?utm_medium=partner&utm_source=communities_startup&utm_campaign=communities_simeon',
     featured: true,
     details: {
-      claimUrl: 'https://www.apollo.io/partners/partnership-startup-promo?utm_medium=partner&utm_source=communities_startup&utm_campaign=communities_claidor',
+      claimUrl:
+        'https://www.apollo.io/partners/partnership-startup-promo?utm_medium=partner&utm_source=communities_startup&utm_campaign=communities_simeon',
       sections: [
         {
           heading: 'What is Apollo?',
@@ -543,7 +541,7 @@ export const PERKS: Perk[] = [
           blocks: [
             {
               type: 'paragraph',
-              text: 'DocSend is a secure document sharing and analytics platform that helps startups share important files and track how they\'re viewed.',
+              text: "DocSend is a secure document sharing and analytics platform that helps startups share important files and track how they're viewed.",
             },
             {
               type: 'paragraph',
@@ -680,7 +678,8 @@ export const PERKS: Perk[] = [
     url: 'https://carta.com/partners/referral/requestdemo-is/?mercury&PID=mercury/?utm_medium=bdreferral&utm_source=mercury/',
     featured: true,
     details: {
-      claimUrl: 'https://carta.com/partners/referral/requestdemo-is/?mercury&PID=mercury/?utm_medium=bdreferral&utm_source=mercury/',
+      claimUrl:
+        'https://carta.com/partners/referral/requestdemo-is/?mercury&PID=mercury/?utm_medium=bdreferral&utm_source=mercury/',
       sections: [
         {
           heading: 'What is Carta?',
@@ -705,7 +704,9 @@ export const PERKS: Perk[] = [
             {
               type: 'unordered-list',
               label: 'Eligible startups receive:',
-              items: ["20% off the first year of Carta's Fund Administration services"],
+              items: [
+                "20% off the first year of Carta's Fund Administration services",
+              ],
             },
             {
               type: 'paragraph',
@@ -761,7 +762,8 @@ export const PERKS: Perk[] = [
     url: 'https://www.upwork.com/offers/investment-backed?utm_source=mercury%20&utm_medium=partner_offers&utm_campaign=channel_partnerships&utm_content=mercury_offers_page&campaign_message=promo',
     featured: true,
     details: {
-      claimUrl: 'https://www.upwork.com/offers/investment-backed?utm_source=mercury%20&utm_medium=partner_offers&utm_campaign=channel_partnerships&utm_content=mercury_offers_page&campaign_message=promo',
+      claimUrl:
+        'https://www.upwork.com/offers/investment-backed?utm_source=mercury%20&utm_medium=partner_offers&utm_campaign=channel_partnerships&utm_content=mercury_offers_page&campaign_message=promo',
       sections: [
         {
           heading: 'What is Upwork?',
@@ -934,7 +936,8 @@ export const PERKS: Perk[] = [
     url: 'https://cloud.google.com/startup/apply?utm_campaign=FY21-Q1-global-demandgen-website-cs-startup_program_mc&utm_content=Mercury&utm_source=CJ&utm_medium=affiliate&refparam=CJ-16985197-100861638',
     featured: true,
     details: {
-      claimUrl: 'https://cloud.google.com/startup/apply?utm_campaign=FY21-Q1-global-demandgen-website-cs-startup_program_mc&utm_content=Mercury&utm_source=CJ&utm_medium=affiliate&refparam=CJ-16985197-100861638',
+      claimUrl:
+        'https://cloud.google.com/startup/apply?utm_campaign=FY21-Q1-global-demandgen-website-cs-startup_program_mc&utm_content=Mercury&utm_source=CJ&utm_medium=affiliate&refparam=CJ-16985197-100861638',
       sections: [
         {
           heading: 'What is Google Cloud?',
@@ -959,7 +962,9 @@ export const PERKS: Perk[] = [
             {
               type: 'unordered-list',
               label: 'Eligible startups can receive:',
-              items: ['Up to $200,000 in Google Cloud and Firebase credits over 2 years'],
+              items: [
+                'Up to $200,000 in Google Cloud and Firebase credits over 2 years',
+              ],
             },
             {
               type: 'paragraph',

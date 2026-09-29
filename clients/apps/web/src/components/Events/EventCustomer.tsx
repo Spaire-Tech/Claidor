@@ -1,14 +1,14 @@
 import { AnonymousCustomerAvatar } from '@/components/Customer/AnonymousCustomerAvatar'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import { getAnonymousCustomerName } from '@/utils/anonymous-customer'
-import { schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
+import Button from '@simeon/ui/components/atoms/Button'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@claidor/ui/components/ui/popover'
+} from '@simeon/ui/components/ui/popover'
 import Link from 'next/link'
 import { useContext } from 'react'
 
@@ -49,7 +49,7 @@ export const EventCustomer = ({ event }: { event: schemas['Event'] }) => {
               className="size-6 shrink-0"
             />
             <div className="flex flex-row items-baseline gap-x-2">
-              <span className=" text-sm text-gray-500 group-data-[state=open]:text-gray-600">
+              <span className="text-sm text-gray-500 group-data-[state=open]:text-gray-600">
                 {name}
               </span>
             </div>
@@ -70,7 +70,7 @@ export const EventCustomer = ({ event }: { event: schemas['Event'] }) => {
               <span className="text-sm/4 font-medium whitespace-nowrap text-gray-700">
                 {name}
               </span>
-              <span className=" pr-2 font-mono text-xs whitespace-nowrap text-gray-500">
+              <span className="pr-2 font-mono text-xs whitespace-nowrap text-gray-500">
                 {event.external_customer_id}
               </span>
             </div>
@@ -91,7 +91,7 @@ export const EventCustomer = ({ event }: { event: schemas['Event'] }) => {
                 name={event.customer.name ?? event.customer.email}
                 avatar_url={event.customer.avatar_url ?? null}
               />
-              <div className=" flex flex-row items-baseline gap-x-2 text-sm whitespace-nowrap text-gray-700">
+              <div className="flex flex-row items-baseline gap-x-2 text-sm whitespace-nowrap text-gray-700">
                 {event.customer.name ?? event.customer.email}
               </div>
             </div>
@@ -113,7 +113,7 @@ export const EventCustomer = ({ event }: { event: schemas['Event'] }) => {
               <span className="text-sm/4 font-medium whitespace-nowrap text-gray-700">
                 {event.customer.name ?? event.customer.email}
               </span>
-              <span className=" pr-2 font-mono text-xs whitespace-nowrap text-gray-500">
+              <span className="pr-2 font-mono text-xs whitespace-nowrap text-gray-500">
                 {event.external_customer_id}
               </span>
             </div>

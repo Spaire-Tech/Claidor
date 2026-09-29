@@ -11,12 +11,12 @@ import {
 } from '@/hooks/queries'
 import { hasBillingPermission } from '@/utils/customerPortal'
 import { validateEmail } from '@/utils/validation'
-import { Client, schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
-import Button from '@claidor/ui/components/atoms/Button'
-import { DataTable } from '@claidor/ui/components/atoms/DataTable'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
-import Input from '@claidor/ui/components/atoms/Input'
+import { Client, schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
+import Button from '@simeon/ui/components/atoms/Button'
+import { DataTable } from '@simeon/ui/components/atoms/DataTable'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
+import Input from '@simeon/ui/components/atoms/Input'
 import { useState } from 'react'
 import { useModal } from '../Modal/useModal'
 import { DownloadInvoicePortal } from '../Orders/DownloadInvoice'
@@ -250,7 +250,7 @@ const CustomerPortalSubscription = ({
 
           <div className="flex flex-col gap-y-2">
             <h3 className="text-lg">Invite Members</h3>
-            <p className=" text-sm text-gray-500">
+            <p className="text-sm text-gray-500">
               Send invitations to claim available seats
             </p>
           </div>
@@ -272,11 +272,7 @@ const CustomerPortalSubscription = ({
                     }
                   }}
                 />
-                {error && (
-                  <p className=" mt-1 text-xs text-gray-500">
-                    {error}
-                  </p>
-                )}
+                {error && <p className="mt-1 text-xs text-gray-500">{error}</p>}
               </div>
               <Button
                 onClick={handleAssignSeat}
@@ -326,7 +322,7 @@ const CustomerPortalSubscription = ({
                   accessorKey: 'amount',
                   header: 'Amount',
                   cell: ({ row }) => (
-                    <span className=" text-sm text-gray-500">
+                    <span className="text-sm text-gray-500">
                       {formatCurrency('compact')(
                         row.original.total_amount,
                         row.original.currency,
@@ -359,7 +355,7 @@ const CustomerPortalSubscription = ({
                         resolution="day"
                       />
                     </span>
-                    <span className=" text-xs text-gray-500">
+                    <span className="text-xs text-gray-500">
                       {formatCurrency('compact')(
                         row.original.total_amount,
                         row.original.currency,

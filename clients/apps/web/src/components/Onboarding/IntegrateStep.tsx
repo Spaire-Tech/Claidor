@@ -1,16 +1,15 @@
 import { useOnboardingTracking } from '@/hooks'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { Tabs, TabsList, TabsTrigger } from '@claidor/ui/components/atoms/Tabs'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { Tabs, TabsList, TabsTrigger } from '@simeon/ui/components/atoms/Tabs'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useContext, useEffect, useMemo, useState } from 'react'
 import slugify from 'slugify'
 import { twMerge } from 'tailwind-merge'
 import LogoIcon from '../Brand/LogoIcon'
-import { OnboardingStepper } from './OnboardingStepper'
 import BetterAuthIcon from '../Icons/frameworks/better-auth'
 import NextJsIcon from '../Icons/frameworks/nextjs'
 import NodeJsIcon from '../Icons/frameworks/nodejs'
@@ -20,6 +19,7 @@ import {
   SyntaxHighlighterClient,
   SyntaxHighlighterProvider,
 } from '../SyntaxHighlighterShiki/SyntaxHighlighterClient'
+import { OnboardingStepper } from './OnboardingStepper'
 
 const packageManagers = ['pnpm', 'npm', 'yarn', 'bun'] as const
 type PackageManager = (typeof packageManagers)[number]
@@ -45,35 +45,35 @@ const frameworks = (products: schemas['Product'][]) =>
     {
       slug: 'nextjs',
       name: 'Next.js',
-      link: 'https://docs.claidorhq.com/integrate/sdk/adapters/nextjs',
+      link: 'https://docs.simeonlabs.com/integrate/sdk/adapters/nextjs',
       icon: <NextJsIcon size={24} />,
-      packages: '@claidor/nextjs',
-      code: `import { Checkout } from "@claidor/nextjs";
+      packages: '@simeon/nextjs',
+      code: `import { Checkout } from "@simeon/nextjs";
 
 export const GET = Checkout({
-  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
-  successUrl: process.env.CLAIDOR_SUCCESS_URL
+  accessToken: process.env.SIMEON_ACCESS_TOKEN,
+  successUrl: process.env.SIMEON_SUCCESS_URL
 });`,
     },
     {
       slug: 'better-auth',
       name: 'BetterAuth',
-      link: 'https://docs.claidorhq.com/integrate/sdk/adapters/better-auth',
+      link: 'https://docs.simeonlabs.com/integrate/sdk/adapters/better-auth',
       icon: <BetterAuthIcon size={24} />,
-      packages: 'better-auth @claidor/better-auth @spaire/sdk',
+      packages: 'better-auth @simeon/better-auth @spaire/sdk',
       code: `import { betterAuth } from "better-auth";
-import { claidor, checkout, portal, usage, webhooks } from "@claidor/better-auth";
-import { Claidor } from "@spaire/sdk";
+import { simeon, checkout, portal, usage, webhooks } from "@simeon/better-auth";
+import { Simeon } from "@spaire/sdk";
 
-const claidorClient = new Claidor({
-    accessToken: process.env.CLAIDOR_ACCESS_TOKEN
+const simeonClient = new Simeon({
+    accessToken: process.env.SIMEON_ACCESS_TOKEN
 });
 
 const auth = betterAuth({
     // ... Better Auth config
     plugins: [
-        claidor({
-            client: claidorClient,
+        simeon({
+            client: simeonClient,
             createCustomerOnSignUp: true,
             use: [
                 checkout({
@@ -87,7 +87,7 @@ ${products
   )
   .join(',\n')}
                     ],
-                    successUrl: process.env.CLAIDOR_SUCCESS_URL,
+                    successUrl: process.env.SIMEON_SUCCESS_URL,
                     authenticatedUsersOnly: true
                 })
             ],
@@ -98,20 +98,20 @@ ${products
     {
       slug: 'nodejs',
       name: 'Node.js',
-      link: 'https://docs.claidorhq.com/integrate/sdk/typescript',
+      link: 'https://docs.simeonlabs.com/integrate/sdk/typescript',
       icon: <NodeJsIcon size={24} />,
       packages: '@spaire/sdk',
-      code: `import { Claidor } from "@spaire/sdk";
+      code: `import { Simeon } from "@spaire/sdk";
 
-const claidor = new Claidor({
-  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
+const simeon = new Simeon({
+  accessToken: process.env.SIMEON_ACCESS_TOKEN,
 });
 
-const checkout = await claidor.checkouts.create({
+const checkout = await simeon.checkouts.create({
   products: [
 ${products.map((p) => `    "${p.id}"`).join(',\n')}
   ],
-  successUrl: process.env.CLAIDOR_SUCCESS_URL
+  successUrl: process.env.SIMEON_SUCCESS_URL
 });
 
 redirect(checkout.url)`,
@@ -119,21 +119,21 @@ redirect(checkout.url)`,
     {
       slug: 'python',
       name: 'Python',
-      link: 'https://docs.claidorhq.com/integrate/sdk/python',
+      link: 'https://docs.simeonlabs.com/integrate/sdk/python',
       icon: <PythonIcon size={24} />,
-      pythonInstall: 'pip install claidor-sdk',
+      pythonInstall: 'pip install simeon-sdk',
       code: `import os
-from claidor_sdk import Claidor
+from simeon_sdk import Simeon
 
-with Claidor(
-    access_token=os.environ.get("CLAIDOR_ACCESS_TOKEN"),
-) as claidor:
+with Simeon(
+    access_token=os.environ.get("SIMEON_ACCESS_TOKEN"),
+) as simeon:
 
-    res = claidor.checkouts.create(request={
+    res = simeon.checkouts.create(request={
         "products": [
 ${products.map((p) => `            "${p.id}"`).join(',\n')}
         ],
-        "success_url": os.environ.get("CLAIDOR_SUCCESS_URL")
+        "success_url": os.environ.get("SIMEON_SUCCESS_URL")
     })
 
     # Handle response
@@ -202,15 +202,13 @@ export const IntegrateStep = ({ products }: IntegrateStepProps) => {
       <OnboardingStepper currentStep={1} />
 
       {/* Left panel: framework selection & actions */}
-      <div className=" flex h-full min-h-0 w-full flex-col gap-8 overflow-y-auto p-12 md:max-w-md">
+      <div className="flex h-full min-h-0 w-full flex-col gap-8 overflow-y-auto p-12 md:max-w-md">
         <div className="flex flex-col gap-y-4">
-          <div className="md:hidden mb-4">
+          <div className="mb-4 md:hidden">
             <LogoIcon size={40} />
           </div>
-          <h1 className="text-2xl font-medium md:text-3xl">
-            Connect your app
-          </h1>
-          <p className=" text-gray-500">
+          <h1 className="text-2xl font-medium md:text-3xl">Connect your app</h1>
+          <p className="text-gray-500">
             Pick your stack and add a checkout in minutes.
           </p>
         </div>
@@ -228,7 +226,7 @@ export const IntegrateStep = ({ products }: IntegrateStepProps) => {
           </div>
           <div className="flex flex-col gap-y-3">
             <Link
-              href={`https://docs.claidorhq.com/integrate/sdk/adapters/nextjs`}
+              href={`https://docs.simeonlabs.com/integrate/sdk/adapters/nextjs`}
               target="_blank"
               className="w-full"
             >
@@ -246,8 +244,8 @@ export const IntegrateStep = ({ products }: IntegrateStepProps) => {
 
       {/* Right panel: code preview */}
       <SyntaxHighlighterProvider>
-        <div className=" hidden flex-1 grow flex-col items-center gap-12 overflow-y-auto bg-gray-100 p-16 md:flex">
-          <div className=" flex w-full max-w-3xl flex-col gap-y-12 rounded-3xl bg-white p-12">
+        <div className="hidden flex-1 grow flex-col items-center gap-12 overflow-y-auto bg-gray-100 p-16 md:flex">
+          <div className="flex w-full max-w-3xl flex-col gap-y-12 rounded-3xl bg-white p-12">
             <div className="flex flex-col gap-y-6">
               <div className="flex flex-row items-center justify-between">
                 <h2 className="text-lg">1. Install Dependencies</h2>
@@ -258,12 +256,12 @@ export const IntegrateStep = ({ products }: IntegrateStepProps) => {
                       setPackageManager(v as PackageManager)
                     }
                   >
-                    <TabsList className=" rounded-sm bg-gray-100 p-0.5">
+                    <TabsList className="rounded-sm bg-gray-100 p-0.5">
                       {packageManagers.map((pm) => (
                         <TabsTrigger
                           key={pm}
                           value={pm}
-                          className=" !rounded-sm px-2.5 py-1 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                          className="!rounded-sm px-2.5 py-1 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm"
                         >
                           {pm}
                         </TabsTrigger>
@@ -288,8 +286,8 @@ export const IntegrateStep = ({ products }: IntegrateStepProps) => {
               <CodeWrapper>
                 <SyntaxHighlighterClient
                   lang="bash"
-                  code={`CLAIDOR_ACCESS_TOKEN=${createdToken ?? 'XXX'}
-CLAIDOR_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`}
+                  code={`SIMEON_ACCESS_TOKEN=${createdToken ?? 'XXX'}
+SIMEON_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`}
                 />
               </CodeWrapper>
             </div>
@@ -322,7 +320,7 @@ CLAIDOR_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`}
 
 const CodeWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className=" w-full rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm">
+    <div className="w-full rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm">
       {children}
     </div>
   )
@@ -346,17 +344,15 @@ const FrameworkCard = ({
   return (
     <div
       className={twMerge(
-        ' flex cursor-pointer flex-col gap-y-4 rounded-xl border border-transparent bg-gray-100 p-4',
+        'flex cursor-pointer flex-col gap-y-4 rounded-xl border border-transparent bg-gray-100 p-4',
         active
-          ? 'shadow-3xl border-gray-100 bg-black text-white '
+          ? 'shadow-3xl border-gray-100 bg-black text-white'
           : 'transition-opacity hover:opacity-70',
       )}
       role="button"
       onClick={() => onClick(slug)}
     >
-      {icon ?? (
-        <div className=" h-8 w-8 rounded-full bg-gray-200" />
-      )}
+      {icon ?? <div className="h-8 w-8 rounded-full bg-gray-200" />}
       <h2 className="text-lg">{name}</h2>
     </div>
   )

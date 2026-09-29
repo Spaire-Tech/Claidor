@@ -1,5 +1,5 @@
 import { createClientSideAPI } from '@/utils/client'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import WalletCard from '../Wallet/WalletCard'
 
 export interface CustomerPortalWalletProps {

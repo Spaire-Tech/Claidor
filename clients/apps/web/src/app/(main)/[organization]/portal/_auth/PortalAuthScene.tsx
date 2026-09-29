@@ -1,6 +1,6 @@
 'use client'
 
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import './portal-auth.css'
 
 /**

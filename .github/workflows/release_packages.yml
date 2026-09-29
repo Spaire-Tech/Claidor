@@ -49,4 +49,4 @@ jobs:
           cwd: ${{ github.workspace }}/clients
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CLAIDOR_CHECKOUT_EMBED_SCRIPT_ALLOWED_ORIGINS: "https://checkout.claidorhq.com,https://sandbox-checkout.claidorhq.com"
+          SIMEON_CHECKOUT_EMBED_SCRIPT_ALLOWED_ORIGINS: "https://checkout.simeonlabs.com,https://sandbox-checkout.simeonlabs.com"

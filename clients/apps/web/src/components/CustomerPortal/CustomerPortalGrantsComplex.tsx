@@ -1,9 +1,9 @@
 'use client'
 
 import { useCustomerBenefitGrants } from '@/hooks/queries/customerPortal'
-import { Client } from '@claidor/client'
-import Input from '@claidor/ui/components/atoms/Input'
-import { List, ListItem } from '@claidor/ui/components/atoms/List'
+import { Client } from '@simeon/client'
+import Input from '@simeon/ui/components/atoms/Input'
+import { List, ListItem } from '@simeon/ui/components/atoms/List'
 import { Loader2, Search } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { BenefitGrant } from '../Benefit/BenefitGrant'
@@ -68,7 +68,7 @@ export const CustomerPortalGrantsComplex = ({
       {/* Grants list with loading overlay */}
       <div className="relative">
         {grants.length === 0 && !isLoading ? (
-          <div className=" rounded-xl border border-gray-200 py-8 text-center text-sm text-gray-500">
+          <div className="rounded-xl border border-gray-200 py-8 text-center text-sm text-gray-500">
             No course access found
           </div>
         ) : (
@@ -89,7 +89,7 @@ export const CustomerPortalGrantsComplex = ({
         {/* Loading overlay */}
         {(isLoading || isFetching) && (
           <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/50">
-            <Loader2 className=" h-5 w-5 animate-spin text-gray-500" />
+            <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
           </div>
         )}
       </div>

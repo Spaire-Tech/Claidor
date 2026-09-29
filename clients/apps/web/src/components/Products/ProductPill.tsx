@@ -1,4 +1,4 @@
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 
 interface ProductPillProps {
   product:
@@ -14,7 +14,7 @@ const ProductPill: React.FC<ProductPillProps> = ({ product }) => {
     <div className="flex items-center justify-between gap-3">
       <div
         style={{ backgroundColor: color }}
-        className=" inline-flex gap-1 rounded-xl px-3 py-1 text-xs whitespace-nowrap text-white"
+        className="inline-flex gap-1 rounded-xl px-3 py-1 text-xs whitespace-nowrap text-white"
       >
         <div>{product.name}</div>
       </div>

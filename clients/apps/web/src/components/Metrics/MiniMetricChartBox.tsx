@@ -1,11 +1,7 @@
 import { formatHumanFriendlyScalar } from '@/utils/formatters'
-import { schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-} from '@claidor/ui/components/atoms/Card'
+import { schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
+import { Card, CardContent, CardHeader } from '@simeon/ui/components/atoms/Card'
 
 export interface MiniMetricBoxProps {
   title?: string
@@ -21,9 +17,7 @@ export const MiniMetricChartBox = ({
   return (
     <Card className="rounded-2xl">
       <CardHeader className="pb-2">
-        <span className=" text-gray-500">
-          {title ?? metric?.display_name}
-        </span>
+        <span className="text-gray-500">{title ?? metric?.display_name}</span>
       </CardHeader>
       <CardContent>
         <h3 className="text-2xl">

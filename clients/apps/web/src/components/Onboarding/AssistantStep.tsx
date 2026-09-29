@@ -12,8 +12,8 @@ import { MemoizedMarkdown } from '@/components/Markdown/MemoizedMarkdown'
 import { useOnboardingTracking } from '@/hooks/onboarding'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 
-import Button from '@claidor/ui/components/atoms/Button'
-import TextArea from '@claidor/ui/components/atoms/TextArea'
+import Button from '@simeon/ui/components/atoms/Button'
+import TextArea from '@simeon/ui/components/atoms/TextArea'
 
 import { FadeUp } from '../Animated/FadeUp'
 import { ToolCallGroup } from './ToolCallGroup'
@@ -153,11 +153,11 @@ export const AssistantStep = ({
 
   return (
     <FadeUp className="flex flex-col gap-y-4">
-      <div className=" flex flex-col overflow-hidden rounded-3xl">
+      <div className="flex flex-col overflow-hidden rounded-3xl">
         {messages.length > 0 && (
           <div
             className={twMerge(
-              ' flex h-full max-h-[640px] flex-1 flex-col gap-y-6 overflow-y-auto rounded-t-3xl border border-gray-200 p-6',
+              'flex h-full max-h-[640px] flex-1 flex-col gap-y-6 overflow-y-auto rounded-t-3xl border border-gray-200 p-6',
               hasRedirectedToManualSetup || isFinished
                 ? 'rounded-b-3xl border-b'
                 : 'border-b-0',
@@ -173,7 +173,7 @@ export const AssistantStep = ({
                 <div
                   className={`prose text-sm ${
                     message.role === 'user'
-                      ? ' rounded-2xl bg-gray-100 px-4 py-2'
+                      ? 'rounded-2xl bg-gray-100 px-4 py-2'
                       : 'w-full space-y-4'
                   }`}
                 >
@@ -205,7 +205,7 @@ export const AssistantStep = ({
                         return (
                           <p
                             key={`${message.id}-${index}`}
-                            className=" animate-pulse text-sm text-gray-500 italic"
+                            className="animate-pulse text-sm text-gray-500 italic"
                           >
                             Thinking…
                           </p>
@@ -229,7 +229,7 @@ export const AssistantStep = ({
                           return (
                             <div
                               key={`${message.id}-${index}`}
-                              className=" flex flex-col items-center gap-y-4 rounded-2xl bg-gray-100 p-4 text-center text-gray-500"
+                              className="flex flex-col items-center gap-y-4 rounded-2xl bg-gray-100 p-4 text-center text-gray-500"
                             >
                               {reason === 'unsupported_benefit_type' ? (
                                 'Sorry, but this configuration needs manual input.'
@@ -245,7 +245,7 @@ export const AssistantStep = ({
                               )}
                               <Button
                                 variant="secondary"
-                                className=" rounded-full border-transparent bg-white hover:bg-white "
+                                className="rounded-full border-transparent bg-white hover:bg-white"
                                 onClick={() => onEjectToManual()}
                               >
                                 Configure Manually
@@ -272,13 +272,13 @@ export const AssistantStep = ({
                           return (
                             <div
                               key={`${message.id}-${index}`}
-                              className=" flex flex-col items-center gap-y-4 rounded-2xl bg-gray-100 p-4 text-center text-gray-500"
+                              className="flex flex-col items-center gap-y-4 rounded-2xl bg-gray-100 p-4 text-center text-gray-500"
                             >
                               You&rsquo;re all set!
                               <br />
                               Now, let&rsquo;s integrate your checkout flow.
                               <Link href={nextStep}>
-                                <Button className=" rounded-full bg-black text-white hover:bg-gray-800 ">
+                                <Button className="rounded-full bg-black text-white hover:bg-gray-800">
                                   Integrate Checkout
                                 </Button>
                               </Link>
@@ -300,7 +300,7 @@ export const AssistantStep = ({
         )}
 
         {error && (
-          <div className=" border-t border-gray-200 px-6 py-3 text-xs text-red-500">
+          <div className="border-t border-gray-200 px-6 py-3 text-xs text-red-500">
             {error.message}
           </div>
         )}
@@ -308,7 +308,7 @@ export const AssistantStep = ({
         {!hasRedirectedToManualSetup && !isFinished && (
           <form
             onSubmit={handleSubmit}
-            className=" flex shrink-0 flex-col gap-3 overflow-hidden rounded-b-3xl border first:rounded-t-3xl"
+            className="flex shrink-0 flex-col gap-3 overflow-hidden rounded-b-3xl border first:rounded-t-3xl"
           >
             <TextArea
               ref={textareaRef}
@@ -329,7 +329,7 @@ export const AssistantStep = ({
                 type="submit"
                 disabled={status !== 'ready' || !input.trim()}
                 loading={status === 'submitted' || status === 'streaming'}
-                className=" rounded-full bg-black text-white hover:bg-gray-800 "
+                className="rounded-full bg-black text-white hover:bg-gray-800"
               >
                 {messages.length === 0 ? 'Setup' : 'Send'}
                 <ArrowForwardOutlined className="ml-2" fontSize="inherit" />

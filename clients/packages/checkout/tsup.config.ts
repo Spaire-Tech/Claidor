@@ -8,7 +8,7 @@ export const options: Options[] = [
     minify: 'terser',
     define: {
       // @ts-ignore
-      __CLAIDOR_CHECKOUT_EMBED_SCRIPT_ALLOWED_ORIGINS__: `'${process.env.CLAIDOR_CHECKOUT_EMBED_SCRIPT_ALLOWED_ORIGINS ?? 'http://127.0.0.1:3000'}'`,
+      __SIMEON_CHECKOUT_EMBED_SCRIPT_ALLOWED_ORIGINS__: `'${process.env.SIMEON_CHECKOUT_EMBED_SCRIPT_ALLOWED_ORIGINS ?? process.env.CLAIDOR_CHECKOUT_EMBED_SCRIPT_ALLOWED_ORIGINS ?? 'http://127.0.0.1:3000'}'`,
     },
   },
   {
