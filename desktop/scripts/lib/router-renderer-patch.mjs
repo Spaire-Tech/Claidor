@@ -491,14 +491,19 @@ const SWITCH_AND_TILES_CSS = () => `[role=switch][aria-checked="true"]${HI}:not(
  * the selected agent is the white sheet with its lift and larger corners,
  * and the search field is white with a hairline. The initials circle stays
  * the renderer's own, as it has been since the glass came off.
+ *
+ * Since 29 September 2026 the agent's text bubbles and every card are the
+ * Messages grey again (AGENT_BUBBLE_LIGHT, #E9E9EB; the founder: "the grey
+ * it was before … not super grey, but apple grey. that counts for all cards
+ * too"). Only the colour changed: the edges, padding and type stay.
  */
-const AGENT_SHEET_CSS = () => `[data-theme*="light"] .sand-message.sand-1g0q52m:not(.sand-mvmkjj)${HI}{background:#fff;color:#1d1d1f;padding:10px 15px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
+const AGENT_SHEET_CSS = () => `[data-theme*="light"] .sand-message.sand-1g0q52m:not(.sand-mvmkjj)${HI}{background:${AGENT_BUBBLE_LIGHT};color:#1d1d1f;padding:10px 15px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
 [data-theme*="light"] .sand-message-block:has(>.sand-message.sand-1g0q52m:not(.sand-mvmkjj))${HI}{gap:6px}
 [data-theme*="light"] .sand-message.sand-mvmkjj${HI}:not(#\\#){padding:10px 15px;box-shadow:inset 0 1px 0 rgba(255,255,255,.30),inset 0 0 0 .5px rgba(255,255,255,.12),0 0 0 .5px rgba(20,45,90,.24),0 1px 2px rgba(20,45,90,.10);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
 [data-theme*="light"] .sand-agent-item[data-active="true"]${HI}:not(#\\#):not(#\\#){border-radius:14px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
 [data-theme*="light"] .sand-agent-item${HI}{border-radius:14px}
 [data-theme*="light"] .sand-agents-sidebar__search${HI}{background:#fff;border-radius:10px;box-shadow:0 0 0 .5px rgba(20,30,60,.09),0 1px 2px rgba(20,30,60,.05)}
-[data-theme*="light"] .sand-message-card${HI}{--simeon-card-fill:#fff}
+[data-theme*="light"] .sand-message-card${HI}{--simeon-card-fill:${AGENT_BUBBLE_LIGHT}}
 [data-theme*="light"] :is(.sand-settings-dialog,.sand-plugins-dialog)${HI}{background:#f5f5f7;box-shadow:0 0 0 .5px rgba(20,30,60,.10),0 30px 80px -24px rgba(20,30,60,.45)}
 [data-theme*="light"] .sand-settings-nav${HI}{background:transparent;box-shadow:inset -.5px 0 0 rgba(20,30,60,.10)}
 [data-theme*="light"] .sand-settings-nav__item:not(.sand-jbqb8w)${HI}{background:#fff;border-radius:10px;box-shadow: 0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
@@ -509,7 +514,7 @@ const AGENT_SHEET_CSS = () => `[data-theme*="light"] .sand-message.sand-1g0q52m:
 [data-theme*="light"] .sand-plugins-row${HI}{background:#fff;border-radius:14px;padding:10px 14px;box-shadow: 0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
 [data-theme*="light"] .sand-plugins__grid${HI}{gap:12px}
 [data-theme*="light"] :is(.sand-plugins-detail,.sand-plugins-dialog) .sand-connector-card${HI}{background:#fff;border-color:transparent;border-radius:14px;box-shadow: 0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
-[data-theme*="light"] .sand-message-card>:is(article,form,section)${HI},[data-theme*="light"] .sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card):not(.sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card) *)${HI}{background:#fff;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
+[data-theme*="light"] .sand-message-card>:is(article,form,section)${HI},[data-theme*="light"] .sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card):not(.sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card) *)${HI}{background:${AGENT_BUBBLE_LIGHT};box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
 `;
 
 const GREY_CARD = [
