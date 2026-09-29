@@ -261,7 +261,7 @@ class TestCreate:
         auth_subject: AuthSubject[User],
         session: AsyncSession,
     ) -> None:
-        enqueue_job_mock = mocker.patch("polar.{module}.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.{module}.service.enqueue_job")
 
         resource = await resource_service.create(
             session, auth_subject, ResourceCreate(name="Test")

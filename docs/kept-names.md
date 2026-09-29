@@ -14,10 +14,10 @@ It runs on every pull request (`.github/workflows/names.yml`).
 
 ## What it looks for
 
-Grok (not as part of "ngrok"), Caisra, Anysphere, Claidor, OHADA, Swens,
-Spaire, SpaceX, xAI, LobsterAI, OpenClaw, Youdao, Rakazo, Pierce and Vesence,
-in any case, in the text and the name of every file in the repository
-(tracked, or new and not ignored by git). Binary files are skipped.
+Grok (not as part of "ngrok"), Caisra, Anysphere, Claidor, Polar, OHADA,
+Swens, Spaire, SpaceX, xAI, LobsterAI, OpenClaw, Youdao, Rakazo, Pierce and
+Vesence, in any case, in the text and the name of every file in the
+repository (tracked, or new and not ignored by git). Binary files are skipped.
 
 "Cursor" is not on the list: it is an ordinary English word and appears
 thousands of times in code (a text cursor, a database cursor, a page cursor).
@@ -40,7 +40,10 @@ optional pattern the line must match, and the reason.
 - **fallback**: an earlier name still read so that existing installs and
   deployments keep working: `CLAIDOR_` settings, tokens and cookies issued
   before the rename, the `~/.caisra` data folder the app moves once, the
-  earlier Docker label and the `caisra://` sign-in callback.
+  earlier Docker label and the `caisra://` sign-in callback, and
+  `server/polar/`, a three-file stand-in that forwards the old start commands
+  (`polar.app:app`, `polar.worker.run`) to the `simeon` package until every
+  Render service starts `simeon.*`.
 - **data**: a value already stored or deployed under an earlier name: meter
   event names, an S3 bucket, database migrations, a published npm package, the
   Render service names.
@@ -53,11 +56,6 @@ optional pattern the line must match, and the reason.
   (`SAND_*` settings, `/sand/*` routes, `sand-*` file and class names). Nobody
   using Simeon sees it, and much of it has to match the pinned window and the
   box image, so it stays as a code word (decided 29 September 2026).
-- **`polar`** (`server/polar/`) is a three-file stand-in that forwards the old
-  start commands (`polar.app:app`, `polar.worker.run`) to the `simeon`
-  package, because Render keeps each service's start command in its own
-  settings. Remove it once every Render service starts `simeon.*`.
-
 ## Changing the list
 
 - **To remove a name**: rename it (keeping a fallback if anything stored or

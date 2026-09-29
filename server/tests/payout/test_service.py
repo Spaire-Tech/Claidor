@@ -442,7 +442,7 @@ class TestTriggerInvoiceGeneration:
             billing_address=Address(country=CountryAlpha2("US"), line1="123 Test St"),
         )
 
-        original_invoice_number = "POLAR-12345"
+        original_invoice_number = "SIMEON-12345"
         payout = await create_payout(
             save_fixture,
             account=account,

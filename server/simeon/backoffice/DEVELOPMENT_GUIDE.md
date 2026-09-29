@@ -1,6 +1,6 @@
 # Backoffice Development Guide
 
-This guide covers everything you need to know to create and maintain backoffice pages for the Polar billing platform.
+This guide covers everything you need to know to create and maintain backoffice pages for the Simeon billing platform.
 
 ## Table of Contents
 

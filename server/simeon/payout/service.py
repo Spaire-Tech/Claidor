@@ -272,7 +272,7 @@ class PayoutService:
             payout = await repository.create(
                 Payout(
                     processor=account.account_type,
-                    currency="usd",  # FIXME: Main Polar currency
+                    currency="usd",  # FIXME: Main Simeon currency
                     amount=balance_amount_after_fees,
                     fees_amount=balance_amount - balance_amount_after_fees,
                     account_currency=account.currency,

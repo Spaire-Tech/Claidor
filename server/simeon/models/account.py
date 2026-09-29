@@ -12,7 +12,7 @@ from simeon.enums import AccountType
 from simeon.kit.address import Address, AddressType
 from simeon.kit.db.models import RecordModel
 from simeon.kit.extensions.sqlalchemy import StringEnum
-from simeon.kit.math import polar_round
+from simeon.kit.math import round_half_away_from_zero
 
 if TYPE_CHECKING:
     from .account_credit import AccountCredit
@@ -185,7 +185,7 @@ class Account(RecordModel):
         basis_points, fixed = self.platform_fee
         fee_in_cents = (amount_in_cents * (basis_points / 10_000)) + fixed
         # Apply same logic as Stripe fee rounding
-        return polar_round(fee_in_cents)
+        return round_half_away_from_zero(fee_in_cents)
 
     def reduce_credit_balance(self, amount: int) -> None:
         self.credit_balance -= min(amount, self.credit_balance)

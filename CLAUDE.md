@@ -9,7 +9,7 @@ product people see is **Simeon** (spelled Simeon, never Simon).
 | Folder | What it is |
 |---|---|
 | `desktop/` | The Mac app. `docs/architecture.md`, `docs/building-the-app.md`. |
-| `server/` | The API at `api.simeonlabs.com` (FastAPI, PostgreSQL, Redis, Dramatiq). The Python package is still called `polar`. Patterns: `server/CLAUDE.md`. |
+| `server/` | The API at `api.simeonlabs.com` (FastAPI, PostgreSQL, Redis, Dramatiq). The Python package is `simeon`. Patterns: `server/CLAUDE.md`. |
 | `runner/` | The cloud runner (Node): queued work while the Mac is closed. |
 | `clients/` | The web app at `app.simeonlabs.com` (sign-in pages, account dashboard). Patterns: `clients/CLAUDE.md`. |
 | `sites/simeonlabs.com/` | The public website and its live demo. |

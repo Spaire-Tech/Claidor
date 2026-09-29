@@ -8,7 +8,7 @@ GET  /v1/platform/organizations/{organization_id}/subscription
     resolved entitlements.
 
 POST /v1/platform/organizations/{organization_id}/upgrade-checkout
-    Starts a Polar checkout for the target Pro/Studio/Scale tier.
+    Starts a Simeon checkout for the target Pro/Studio/Scale tier.
     Returns a URL the creator visits to enter their card and complete
     the upgrade.
 """
@@ -297,7 +297,7 @@ async def get_subscription(
                     suspension_at = subscription.past_due_deadline
                 # The org-creation hook stamps managed_by=trial on the
                 # auto-attached Pro trial. After the creator goes
-                # through upgrade-checkout, Polar creates a new
+                # through upgrade-checkout, Simeon creates a new
                 # subscription on the chosen tier and that becomes the
                 # most-recent active sub — it carries no managed_by, so
                 # is_default_trial flips False. The onboarding review
@@ -365,7 +365,7 @@ async def create_upgrade_checkout(
     session: AsyncSession = Depends(get_db_session),
     locker: Locker = Depends(get_locker),
 ) -> UpgradeCheckout:
-    """Create a Polar checkout for the target Pro/Scale tier on the
+    """Create a Simeon checkout for the target Pro/Scale tier on the
     Simeon platform org. Returns a URL the creator visits to enter their
     card and complete the upgrade.
     """
@@ -669,7 +669,7 @@ async def verify_email_sender_domain(
 # Customer via get_for_creator_org (after the standard org-readable check)
 # and reuses the existing customer-portal services, which take a bare
 # Customer/Order — just authenticated with the dashboard session instead
-# of a customer-session token. Mirrors Polar's own /v1/organizations/{id}
+# of a customer-session token. Mirrors Simeon's own /v1/organizations/{id}
 # billing endpoints.
 # ----------------------------------------------------------------------
 

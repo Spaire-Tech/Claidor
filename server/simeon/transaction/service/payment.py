@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from simeon.integrations.stripe.service import stripe as stripe_service
 from simeon.integrations.stripe.utils import get_expandable_id
-from simeon.kit.math import polar_round
+from simeon.kit.math import round_half_away_from_zero
 from simeon.models import Transaction
 from simeon.models.transaction import Processor, TransactionType
 from simeon.postgres import AsyncSession
@@ -63,7 +63,7 @@ class PaymentTransactionService(BaseTransactionService):
         tax_amount = 0
         tax_country = None
         tax_state = None
-        # Polar Custom Checkout sets tax info in metadata
+        # Simeon Custom Checkout sets tax info in metadata
         if "tax_amount" in charge.metadata:
             tax_amount = int(charge.metadata["tax_amount"])
             tax_country = charge.metadata["tax_country"]
@@ -72,7 +72,7 @@ class PaymentTransactionService(BaseTransactionService):
         settlement_amount = balance_transaction.amount
         settlement_currency = balance_transaction.currency
         exchange_rate = balance_transaction.exchange_rate or 1.0
-        settlement_tax_amount = polar_round(tax_amount * exchange_rate)
+        settlement_tax_amount = round_half_away_from_zero(tax_amount * exchange_rate)
 
         risk = getattr(charge, "outcome", {})
         transaction = Transaction(

@@ -44,6 +44,7 @@ NAMES: dict[str, str] = {
     "rakazo": r"rakazo",
     "pierce": r"\bpierce\b",
     "vesence": r"vesence",
+    "polar": r"(?<![a-z])polar(?![a-z])",
 }
 PATTERNS = {name: re.compile(regex, re.IGNORECASE) for name, regex in NAMES.items()}
 

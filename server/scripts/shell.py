@@ -22,7 +22,7 @@ Similar to how the `django shell` or `flask shell` commands work.
 I allows you to:
 
 >>> customer_repository = CustomerRepository.from_session(session)
->>> stmt = customer_repository.get_base_statement().where(Customer.email == 'test+customer045@polar.sh')
+>>> stmt = customer_repository.get_base_statement().where(Customer.email == 'test+customer045@simeonlabs.com')
 >>> await customer_repository.get_one_or_none(stmt)
 """
 
@@ -98,7 +98,7 @@ def shell_asyncio(loop: asyncio.AbstractEventLoop, **namespace: object) -> None:
 
 def start_shell() -> None:
     rich.print("""
-[bold cyan]Welcome to the Polar shell![/bold cyan]
+[bold cyan]Welcome to the Simeon shell![/bold cyan]
 
 [bold yellow]Important notes:[/bold yellow]
 

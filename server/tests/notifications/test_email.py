@@ -17,8 +17,8 @@ async def check_diff(email: tuple[str, str]) -> None:
     (subject, body) = email
     expected = f"{subject}\n<hr>\n{body}"
 
-    # Run with `POLAR_TEST_RECORD=1 pytest` to produce new golden files :-)
-    record = os.environ.get("POLAR_TEST_RECORD", False) == "1"
+    # Run with `SIMEON_TEST_RECORD=1 pytest` to produce new golden files :-)
+    record = os.environ.get("SIMEON_TEST_RECORD", False) == "1"
 
     name = inspect.stack()[1].function
 
@@ -51,7 +51,7 @@ async def test_MaintainerNewPaidSubscriptionNotification() -> None:
 @pytest.mark.asyncio
 async def test_MaintainerNewProductSaleNotification() -> None:
     n = MaintainerNewProductSaleNotificationPayload(
-        customer_email="birk@polar.sh",
+        customer_email="birk@simeonlabs.com",
         customer_name="Birk",
         billing_address_country="US",
         billing_address_city="San Francisco",

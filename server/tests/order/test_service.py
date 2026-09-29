@@ -32,7 +32,7 @@ from simeon.kit.address import (
     CountryAlpha2Input,
 )
 from simeon.kit.db.postgres import AsyncSession
-from simeon.kit.math import polar_round
+from simeon.kit.math import round_half_away_from_zero
 from simeon.kit.pagination import PaginationParams
 from simeon.kit.utils import utc_now
 from simeon.models import (
@@ -184,7 +184,7 @@ def calculate_tax_mock(tax_service_mock: MagicMock) -> AsyncMock:
     ) -> TaxCalculation:
         return {
             "processor_id": "TAX_PROCESSOR_ID",
-            "amount": polar_round(amount * 0.20),
+            "amount": round_half_away_from_zero(amount * 0.20),
             "currency": currency,
             "tax_behavior": tax_behavior,
             "taxability_reason": TaxabilityReason.standard_rated,
@@ -930,7 +930,9 @@ class TestCreateSubscriptionOrder:
         )
 
         assert billing_entry.amount is not None
-        assert order.tax_amount == polar_round(billing_entry.amount * 0.20)
+        assert order.tax_amount == round_half_away_from_zero(
+            billing_entry.amount * 0.20
+        )
         assert order.tax_calculation_processor_id == "TAX_PROCESSOR_ID"
         assert order.taxability_reason == TaxabilityReason.standard_rated
         assert order.tax_rate is None

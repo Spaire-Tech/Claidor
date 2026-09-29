@@ -1,6 +1,6 @@
 """Docker-based isolated development environment.
 
-Runs the full Polar stack (API, worker, web, DB, Redis, MinIO) in Docker
+Runs the full Simeon stack (API, worker, web, DB, Redis, MinIO) in Docker
 containers with support for multiple isolated instances via port offsets.
 """
 
@@ -66,7 +66,7 @@ def _build_compose_env(instance: int) -> dict[str, str]:
 
 def _build_compose_cmd(instance: int, monitoring: bool = False) -> list[str]:
     """Build the base docker compose command."""
-    project_name = f"polar-dev-{instance}"
+    project_name = f"simeon-dev-{instance}"
     cmd = [
         "docker", "compose",
         "-p", project_name,
@@ -92,7 +92,7 @@ def _print_access_info(ctx: typer.Context, instance: int, monitoring: bool = Fal
     """Print service access URLs."""
     offset = instance * 100
     console.print()
-    console.print("[bold]Polar Docker Development Environment[/bold]")
+    console.print("[bold]Simeon Docker Development Environment[/bold]")
     console.print(f"Instance: {instance}")
     console.print()
     console.print("[bold]Services:[/bold]")
@@ -103,7 +103,7 @@ def _print_access_info(ctx: typer.Context, instance: int, monitoring: bool = Fal
     console.print(f"  Redis:         localhost:{6379 + offset}")
     if monitoring:
         console.print(f"  Prometheus:    http://localhost:{9090 + offset}")
-        console.print(f"  Grafana:       http://localhost:{3001 + offset} (admin/polar)")
+        console.print(f"  Grafana:       http://localhost:{3001 + offset} (admin/simeon)")
     console.print()
     console.print("[bold]Commands:[/bold]")
     i_flag = f" -i {instance}" if _instance_was_explicit(ctx) else ""
@@ -156,7 +156,7 @@ def register(app: typer.Typer, prompt_setup: callable) -> None:
         env = _build_compose_env(instance)
         cmd = _build_compose_cmd(instance, monitoring)
 
-        console.print(f"\n[bold blue]Starting Polar Docker environment (instance {instance})[/bold blue]\n")
+        console.print(f"\n[bold blue]Starting Simeon Docker environment (instance {instance})[/bold blue]\n")
 
         if build:
             console.print("[dim]Building images...[/dim]")
@@ -195,7 +195,7 @@ def register(app: typer.Typer, prompt_setup: callable) -> None:
         env = _build_compose_env(instance)
         cmd = _build_compose_cmd(instance) + ["down"] + (services or [])
 
-        console.print(f"[dim]Stopping Polar Docker environment (instance {instance})...[/dim]")
+        console.print(f"[dim]Stopping Simeon Docker environment (instance {instance})...[/dim]")
         result = run_command(cmd, env=env)
         if result and result.returncode == 0:
             console.print("[green]Environment stopped[/green]")
@@ -316,7 +316,7 @@ def register(app: typer.Typer, prompt_setup: callable) -> None:
         env = _build_compose_env(instance)
         cmd = _build_compose_cmd(instance) + ["down", "-v", "--remove-orphans"]
 
-        console.print(f"[dim]Cleaning up Polar Docker environment (instance {instance})...[/dim]")
+        console.print(f"[dim]Cleaning up Simeon Docker environment (instance {instance})...[/dim]")
         result = run_command(cmd, env=env)
         if result and result.returncode == 0:
             console.print("[green]Environment cleaned up (containers and volumes removed)[/green]")

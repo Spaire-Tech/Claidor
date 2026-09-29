@@ -53,7 +53,7 @@ async def platform_fee_sync_task(organization_id: uuid.UUID) -> None:
 # ---------------------------------------------------------------------------
 #
 # The live 14-day trial is card-required: at trial_end the subscription-cycle
-# scheduler (simeon/worker/scheduler.py + subscription/scheduler.py — Polar's
+# scheduler (simeon/worker/scheduler.py + subscription/scheduler.py — Simeon's
 # OWN billing engine, not Stripe) picks the subscription up and charges the
 # card on file (trial -> active), or hands off to dunning on failure.
 #

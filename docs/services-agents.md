@@ -1,6 +1,6 @@
 # What the server does for the app, part 2
 
-This page covers the features where Simeon Labs' server (`server/`, Python package `polar`,
+This page covers the features where Simeon Labs' server (`server/`, Python package `simeon`,
 at `https://api.simeonlabs.com`) works for the Simeon app (`desktop/`) beyond sign-in and the
 model proxy: cloud agents, routines and listeners, sharing, messaging channels, video, skill
 publish, connectors, and a few agent features (avatars, group chats, auto-review, drafts).

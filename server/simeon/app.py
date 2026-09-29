@@ -74,7 +74,7 @@ log: Logger = structlog.get_logger()
 def configure_cors(app: FastAPI) -> None:
     configs: list[CORSConfig] = []
 
-    # Polar frontend CORS configuration
+    # Simeon frontend CORS configuration
     # Always include FRONTEND_BASE_URL so the configured frontend origin is
     # allowed with credentials even when CORS_ORIGINS is not explicitly set
     # (e.g. sandbox environments where the origin would otherwise fall through
@@ -83,17 +83,17 @@ def configure_cors(app: FastAPI) -> None:
     if settings.STOREFRONT_BASE_URL:
         frontend_origins.add(settings.STOREFRONT_BASE_URL)
 
-    def polar_frontend_matcher(origin: str, scope: Scope) -> bool:
+    def simeon_frontend_matcher(origin: str, scope: Scope) -> bool:
         return origin in frontend_origins
 
-    polar_frontend_config = CORSConfig(
-        polar_frontend_matcher,
+    simeon_frontend_config = CORSConfig(
+        simeon_frontend_matcher,
         allow_origins=list(frontend_origins),
         allow_credentials=True,  # Cookies are allowed, but only there!
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    configs.append(polar_frontend_config)
+    configs.append(simeon_frontend_config)
 
     # Creator custom storefront domains (learn.creator.com). The web app
     # sends credentials: 'include' on every request, and browsers reject
@@ -147,7 +147,7 @@ class State(TypedDict):
 
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[State]:
-    log.info("Starting Polar API")
+    log.info("Starting Simeon API")
 
     # Apply pending migrations before anything queries the database. This is
     # opt-in (MIGRATE_ON_STARTUP) for deploys that can only migrate after
@@ -205,7 +205,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
         )
         ip_geolocation_client = None
 
-    log.info("Polar API started")
+    log.info("Simeon API started")
 
     yield {
         "async_engine": async_engine,
@@ -231,7 +231,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
     if ip_geolocation_client is not None:
         ip_geolocation_client.close()
 
-    log.info("Polar API stopped")
+    log.info("Simeon API stopped")
 
 
 def create_app() -> FastAPI:

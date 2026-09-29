@@ -1,6 +1,6 @@
 # Local Environment Management
 
-Manage the Polar local development environment using Docker.
+Manage the Simeon local development environment using Docker.
 
 ## Instructions
 

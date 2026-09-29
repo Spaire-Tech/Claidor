@@ -52,7 +52,7 @@ const oauth2CSP = `
   frame-ancestors 'none';
 `
 
-// We rewrite Mintlify docs to polar.sh/docs, so we need a specific CSP for them
+// A specific CSP for pages served from a Mintlify docs site
 // Ref: https://www.mintlify.com/docs/guides/csp-configuration#content-security-policy-csp-configuration
 const docsCSP = `
   default-src 'self';
@@ -64,7 +64,7 @@ const docsCSP = `
   img-src 'self' data: blob: d3gk2c5xim1je2.cloudfront.net mintcdn.com *.mintcdn.com cdn.jsdelivr.net mintlify.s3.us-west-1.amazonaws.com;
   connect-src 'self' *.mintlify.dev *.mintlify.com d1ctpt7j8wusba.cloudfront.net mintcdn.com *.mintcdn.com
   api.mintlifytrieve.com www.googletagmanager.com cdn.segment.com plausible.io us.posthog.com browser.sentry-cdn.com;
-  frame-src 'self' *.mintlify.dev https://polar-public-assets.s3.us-east-2.amazonaws.com;
+  frame-src 'self' *.mintlify.dev;
 `
 
 /** @type {import('next').NextConfig} */
@@ -153,55 +153,10 @@ const nextConfig = {
 
   async redirects() {
     return [
-      // dashboard.polar.sh redirections
-      {
-        source: '/',
-        destination: '/login',
-        has: [
-          {
-            type: 'host',
-            value: 'dashboard.polar.sh',
-          },
-        ],
-        permanent: false,
-      },
-      {
-        source: '/:path*',
-        destination: 'https://simeonlabs.com/:path*',
-        has: [
-          {
-            type: 'host',
-            value: 'dashboard.polar.sh',
-          },
-        ],
-        permanent: false,
-      },
       {
         source: '/careers',
         destination: 'https://simeonlabs.com/company',
         permanent: false,
-      },
-      {
-        source: '/llms.txt',
-        destination: 'https://polar.sh/docs/llms.txt',
-        permanent: true,
-        has: [
-          {
-            type: 'host',
-            value: 'polar.sh',
-          },
-        ],
-      },
-      {
-        source: '/llms-full.txt',
-        destination: 'https://polar.sh/docs/llms-full.txt',
-        permanent: true,
-        has: [
-          {
-            type: 'host',
-            value: 'polar.sh',
-          },
-        ],
       },
 
       // Logged-in user redirections (check both new and legacy cookie names)
@@ -236,7 +191,7 @@ const nextConfig = {
         permanent: false,
       },
 
-      // Redirect /maintainer to polar.sh if on a different domain name
+      // Send the dashboard to its own host when served from another one
       // Skip in development so local dev server serves the dashboard directly
       ...(ENVIRONMENT !== 'development'
         ? [
@@ -341,31 +296,6 @@ const nextConfig = {
       {
         source: '/settings/tokens',
         destination: '/account/developer',
-        permanent: false,
-      },
-
-      // Old blog redirects
-      {
-        source: '/polarsource/posts',
-        destination: '/blog',
-        permanent: false,
-      },
-      {
-        source: '/polarsource/posts/:path(.*)',
-        destination: '/blog/:path*',
-        permanent: false,
-      },
-
-      // Fallback blog redirect
-      {
-        source: '/:path*',
-        destination: 'https://polar.sh/polarsource',
-        has: [
-          {
-            type: 'host',
-            value: 'blog.polar.sh',
-          },
-        ],
         permanent: false,
       },
     ]
@@ -505,8 +435,8 @@ const createConfig = async () => {
     // For all available options, see:
     // https://github.com/getsentry/sentry-webpack-plugin#options
 
-    org: 'polar-sh',
-    project: 'dashboard',
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT ?? 'dashboard',
 
     // Pass the auth token
     authToken: process.env.SENTRY_AUTH_TOKEN,

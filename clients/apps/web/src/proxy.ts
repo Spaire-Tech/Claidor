@@ -118,10 +118,13 @@ const resolveCustomDomainSlug = async (
   }
 
   const apiUrl =
-    process.env.POLAR_API_URL || process.env.NEXT_PUBLIC_API_URL || ''
+    process.env.SIMEON_API_URL ||
+    process.env.POLAR_API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    ''
   if (!apiUrl) {
     console.error(
-      '[proxy] Custom domain lookup skipped: POLAR_API_URL and NEXT_PUBLIC_API_URL are both unset',
+      '[proxy] Custom domain lookup skipped: SIMEON_API_URL and NEXT_PUBLIC_API_URL are both unset',
     )
     return null
   }
@@ -348,7 +351,10 @@ export async function proxy(request: NextRequest) {
   // Resolve API URL at request time (not module load time) to ensure
   // runtime env vars are available in Edge Runtime
   const apiUrl =
-    process.env.POLAR_API_URL || process.env.NEXT_PUBLIC_API_URL || ''
+    process.env.SIMEON_API_URL ||
+    process.env.POLAR_API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    ''
 
   const hasCookie =
     request.cookies.has(AUTH_COOKIE_KEY) ||
@@ -400,7 +406,7 @@ export async function proxy(request: NextRequest) {
   if (requiresAuthentication(request) && !user) {
     if (!apiUrl) {
       console.error(
-        '[proxy] Auth redirect: POLAR_API_URL and NEXT_PUBLIC_API_URL are both unset - cannot verify sessions',
+        '[proxy] Auth redirect: SIMEON_API_URL and NEXT_PUBLIC_API_URL are both unset - cannot verify sessions',
       )
     } else if (!hasCookie) {
       console.error(
@@ -427,7 +433,7 @@ export async function proxy(request: NextRequest) {
     'x-simeon-pathname': request.nextUrl.pathname,
   }
   if (user) {
-    headers['x-polar-user'] = JSON.stringify(user)
+    headers['x-simeon-user'] = JSON.stringify(user)
   }
 
   const response = NextResponse.next({ headers })

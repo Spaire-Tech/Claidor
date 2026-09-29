@@ -31,7 +31,7 @@ from simeon.enums import SubscriptionRecurringInterval, TaxBehaviorOption
 from simeon.kit.currency import format_currency
 from simeon.kit.db.models import RecordModel
 from simeon.kit.extensions.sqlalchemy.types import StringEnum
-from simeon.kit.math import polar_round
+from simeon.kit.math import round_half_away_from_zero
 
 if TYPE_CHECKING:
     from simeon.models import Meter, Product
@@ -336,7 +336,7 @@ class ProductPriceMeteredUnit(ProductPrice, NewProductPrice):
 
         billable_units = Decimal(max(0, units))
         raw_amount = self.unit_amount * billable_units
-        amount = polar_round(raw_amount)
+        amount = round_half_away_from_zero(raw_amount)
 
         if self.cap_amount is not None and amount > self.cap_amount:
             amount = self.cap_amount

@@ -4,7 +4,7 @@ This page covers four things the server at `api.simeonlabs.com` does for the
 Simeon app on the Mac: sign-in, the model proxy with its prices and spend
 limits, memory sync, and the cloud computer.
 
-Server code lives in `server/simeon/` (the Python package is `polar`). App code
+Server code lives in `server/simeon/` (the Python package is `simeon`). App code
 lives in `desktop/source/`.
 
 **Settings on Render.** Every server setting is read as `SIMEON_<NAME>`. The

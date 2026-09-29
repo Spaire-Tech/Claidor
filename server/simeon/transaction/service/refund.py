@@ -9,7 +9,7 @@ from simeon.enums import PaymentProcessor
 from simeon.event.service import event as event_service
 from simeon.event.system import BalanceRefundMetadata, SystemEvent, build_system_event
 from simeon.integrations.stripe.service import stripe as stripe_service
-from simeon.kit.math import polar_round
+from simeon.kit.math import round_half_away_from_zero
 from simeon.logging import Logger
 from simeon.models import Customer, Refund, Transaction
 from simeon.models.refund import RefundStatus
@@ -73,7 +73,9 @@ class RefundTransactionService(BaseTransactionService):
             settlement_amount = balance_transaction.amount
             settlement_currency = balance_transaction.currency
             exchange_rate = -settlement_amount / (refund.amount + refund.tax_amount)
-            settlement_tax_amount = -polar_round(refund.tax_amount * exchange_rate)
+            settlement_tax_amount = -round_half_away_from_zero(
+                refund.tax_amount * exchange_rate
+            )
         else:
             raise NotImplementedError()
 

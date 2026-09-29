@@ -39,19 +39,19 @@ class TransactionType(StrEnum):
     """
 
     payment = "payment"
-    """Polar received a payment."""
+    """Simeon received a payment."""
     processor_fee = "processor_fee"
-    """A payment processor fee was charged to Polar."""
+    """A payment processor fee was charged to Simeon."""
     refund = "refund"
-    """Polar refunded a payment (totally or partially)."""
+    """Simeon refunded a payment (totally or partially)."""
     refund_reversal = "refund_reversal"
-    """A Polar refund is reversed (totally or partially)."""
+    """A Simeon refund is reversed (totally or partially)."""
     dispute = "dispute"
-    """A Polar payment is disputed (totally or partially)."""
+    """A Simeon payment is disputed (totally or partially)."""
     dispute_reversal = "dispute_reversal"
-    """A Polar payment dispute is reversed (totally or partially)."""
+    """A Simeon payment dispute is reversed (totally or partially)."""
     balance = "balance"
-    """Money flow between Polar and a user's account."""
+    """Money flow between Simeon and a user's account."""
     payout = "payout"
     """Money paid to the user's bank account."""
 
@@ -99,7 +99,7 @@ class ProcessorFeeType(StrEnum):
 
     cross_border_transfer = "cross_border_transfer"
     """
-    Fee applied when money is transferred to a different country than Polar's.
+    Fee applied when money is transferred to a different country than Simeon's.
 
     For Stripe, it varies per country. Usually around **0.25% and 1% of the amount**.
     """
@@ -127,7 +127,7 @@ class ProcessorFeeType(StrEnum):
 
 class PlatformFeeType(StrEnum):
     """
-    Type of fees applied by Polar, and billed to the users.
+    Type of fees applied by Simeon, and billed to the users.
     """
 
     payment = "payment"
@@ -153,7 +153,7 @@ class PlatformFeeType(StrEnum):
     cross_border_transfer = "cross_border_transfer"
     """
     Fee applied by the payment processor when money is transferred
-    to a different country than Polar's.
+    to a different country than Simeon's.
     """
 
     payout = "payout"
@@ -180,7 +180,7 @@ class PlatformFeeType(StrEnum):
 
     platform = "platform"
     """
-    Polar platform fee.
+    Simeon platform fee.
 
     **Deprecated: we no longer have a generic platform fee. They're always associated with a specific reason.**
     """
@@ -188,7 +188,7 @@ class PlatformFeeType(StrEnum):
 
 class Transaction(RecordModel):
     """
-    Represent a money flow in the Polar system.
+    Represent a money flow in the Simeon system.
     """
 
     __tablename__ = "transactions"
@@ -201,25 +201,25 @@ class Transaction(RecordModel):
     """Payment processor. For TransactionType.balance, it should be `None`."""
 
     currency: Mapped[str] = mapped_column(String(3), nullable=False)
-    """Currency of this transaction from Polar's perspective. Should be `usd`."""
+    """Currency of this transaction from Simeon's perspective. Should be `usd`."""
     amount: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    """Amount in cents of this transaction from Polar's perspective."""
+    """Amount in cents of this transaction from Simeon's perspective."""
     account_currency: Mapped[str] = mapped_column(String(3), nullable=False)
     """Currency of this transaction from user's account perspective. Might not be `usd`."""
     account_amount: Mapped[int] = mapped_column(BigInteger, nullable=False)
     """Amount in cents of this transaction from user's account perspective."""
     tax_amount: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    """Amount of tax collected by Polar for this payment."""
+    """Amount of tax collected by Simeon for this payment."""
     tax_country: Mapped[str] = mapped_column(String(2), nullable=True, index=True)
-    """Country for which Polar collected the tax."""
+    """Country for which Simeon collected the tax."""
     tax_state: Mapped[str] = mapped_column(String(2), nullable=True, index=True)
-    """State for which Polar collected the tax."""
+    """State for which Simeon collected the tax."""
     presentment_amount: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     """Amount in cents of this transaction from customer's perspective."""
     presentment_tax_amount: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True
     )
-    """Amount of tax in the presentment currency collected by Polar for this payment."""
+    """Amount of tax in the presentment currency collected by Simeon for this payment."""
     presentment_currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
     """Currency in which the customer made the payment."""
     tax_processor: Mapped[TaxProcessor | None] = mapped_column(
@@ -227,9 +227,9 @@ class Transaction(RecordModel):
     )
     """Tax processor used to calculate and collect tax for this payment."""
     tax_filing_amount: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
-    """Amount of tax filed to the jurisdiction by Polar for this payment."""
+    """Amount of tax filed to the jurisdiction by Simeon for this payment."""
     tax_filing_currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
-    """Currency in which the tax was filed to the jurisdiction by Polar."""
+    """Currency in which the tax was filed to the jurisdiction by Simeon."""
     tax_processor_id: Mapped[str | None] = mapped_column(
         String, nullable=True, default=None
     )
@@ -289,7 +289,7 @@ class Transaction(RecordModel):
     """
     ID of the `Account` concerned by this transaction.
 
-    If `None`, this transaction concerns Polar directly.
+    If `None`, this transaction concerns Simeon directly.
     """
 
     @declared_attr

@@ -42,7 +42,7 @@ class BalanceTransactionService(BaseTransactionService):
         issue_reward: IssueReward | None = None,
         platform_fee_type: PlatformFeeType | None = None,
     ) -> tuple[Transaction, Transaction]:
-        currency = "usd"  # FIXME: Main Polar currency
+        currency = "usd"  # FIXME: Main Simeon currency
 
         balance_correlation_key = str(uuid.uuid4())
 
@@ -160,7 +160,7 @@ class BalanceTransactionService(BaseTransactionService):
         outgoing_incurred_by: Transaction | None = None,
         incoming_incurred_by: Transaction | None = None,
     ) -> tuple[Transaction, Transaction]:
-        currency = "usd"  # FIXME: Main Polar currency
+        currency = "usd"  # FIXME: Main Simeon currency
 
         outgoing, incoming = balance_transactions
         source_account_id = incoming.account_id
@@ -190,7 +190,7 @@ class BalanceTransactionService(BaseTransactionService):
         )
         incoming_reversal = Transaction(
             id=generate_uuid(),
-            account=None,  # Polar account
+            account=None,  # Simeon account
             type=TransactionType.balance,
             currency=currency,
             amount=amount,  # Add the amount

@@ -83,7 +83,7 @@ def _topological_sort_events(events: list[dict[str, Any]]) -> list[dict[str, Any
     Sort events by dependency order so parents come before children.
     Events without parents come first, followed by their children in order.
 
-    Handles parent_id references that can be either Polar IDs or external_id strings.
+    Handles parent_id references that can be either Simeon IDs or external_id strings.
     Uses Kahn's algorithm for topological sorting.
     """
     if not events:

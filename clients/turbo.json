@@ -2,6 +2,7 @@
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local"],
   "globalEnv": [
+    "SIMEON_API_URL",
     "POLAR_API_URL",
     "CODESPACES",
     "CODESPACE_NAME",
@@ -33,7 +34,9 @@
     "NEXT_PUBLIC_SENTRY_DSN",
     "SENTRY_PROJECT",
     "SENTRY_ORG",
+    "SIMEON_AUTH_COOKIE_KEY",
     "POLAR_AUTH_COOKIE_KEY",
+    "SIMEON_AUTH_MCP_COOKIE_KEY",
     "POLAR_AUTH_MCP_COOKIE_KEY",
     "SIMEON_CHECKOUT_EMBED_SCRIPT_ALLOWED_ORIGINS",
     "POLAR_CHECKOUT_EMBED_SCRIPT_ALLOWED_ORIGINS",

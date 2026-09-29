@@ -138,7 +138,7 @@ const Checkout = ({
 
     const cookies = document.cookie.split(';')
     const distinctIdCookie = cookies.find((c) =>
-      c.trim().startsWith('polar_distinct_id='),
+      c.trim().startsWith('simeon_distinct_id='),
     )
     const distinctId = distinctIdCookie?.split('=')[1]?.trim()
 

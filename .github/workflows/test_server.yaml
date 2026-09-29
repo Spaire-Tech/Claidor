@@ -199,7 +199,7 @@ jobs:
         image: postgres:15.1-bullseye
         env:
           # Must match .env.testing, which SIMEON_ENV=testing makes the
-          # app read. These said polar/polar_test, left over from upstream.
+          # app read. These used the upstream project's names.
           POSTGRES_USER: simeon
           POSTGRES_PASSWORD: simeon
           POSTGRES_DB: simeon_test

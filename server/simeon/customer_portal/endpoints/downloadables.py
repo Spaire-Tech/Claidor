@@ -29,7 +29,7 @@ async def _enrich_downloadables(
 ) -> list[DownloadableRead]:
     """Decorate each downloadable with the product it belongs to.
 
-    Polar already stores `Product.category` (ebook / template / video / …),
+    Simeon already stores `Product.category` (ebook / template / video / …),
     which the redesigned customer portal surfaces as filter chips. Doing one
     extra round-trip here keeps the schema enrichment off the hot path of
     every downloadable consumer (benefit-grant cards still work without it).

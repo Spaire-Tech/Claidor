@@ -21,7 +21,7 @@ class Properties(TypedDict, total=False):
     subscribed: bool
     createdAt: str
 
-    # Polar custom properties
+    # Simeon custom properties
     signupIntent: str
     emailLogin: bool
     githubLogin: bool

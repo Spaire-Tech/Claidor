@@ -23,10 +23,10 @@ def non_negative_running_sum(values: Iterator[int]) -> int:
     return current_sum
 
 
-def polar_round(number: int | float | Decimal) -> int:
+def round_half_away_from_zero(number: int | float | Decimal) -> int:
     """
     Round to nearest integer, but round .5 away from 0.
-    This means `polar_round(8.5) == 9.0` and `polar_round(-8.5) == -9.0`.
+    This means `round_half_away_from_zero(8.5) == 9.0` and `round_half_away_from_zero(-8.5) == -9.0`.
 
     We can't use Python's built-in `round()` as that rounds 0.5 to 0.0.
     """

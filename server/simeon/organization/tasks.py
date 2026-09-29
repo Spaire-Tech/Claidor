@@ -73,7 +73,7 @@ async def organization_created(organization_id: uuid.UUID) -> None:
         # upgrade-checkout endpoint has something to attach to from the
         # very first click. We do NOT start a trial here: the 14-day trial
         # is card-required and begins when the creator picks a plan and
-        # enters a card (Polar's checkout captures the card via a setup
+        # enters a card (Simeon's checkout captures the card via a setup
         # intent and starts the trial). Until then the org has no plan and
         # resolves to `inactive`; the dashboard plan-gate routes them to
         # /onboarding/plan. No platform org configured (dev / single-tenant)

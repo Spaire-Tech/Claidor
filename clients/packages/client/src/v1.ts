@@ -1121,7 +1121,7 @@ export interface paths {
      * Disconnect Oauth Account
      * @description Disconnect an OAuth account (GitHub or Google) from the authenticated user.
      *
-     *     This allows users to unlink their OAuth provider while keeping their Polar account.
+     *     This allows users to unlink their OAuth provider while keeping their Simeon account.
      *     They can still authenticate using other methods (email magic link or other OAuth providers).
      *
      *     Note: You cannot disconnect your last authentication method if your email is not verified.
@@ -3496,7 +3496,7 @@ export interface paths {
     put?: never
     /**
      * Create Upgrade Checkout
-     * @description Create a Polar checkout for the target Pro/Scale tier on the
+     * @description Create a Simeon checkout for the target Pro/Scale tier on the
      *     Simeon platform org. Returns a URL the creator visits to enter their
      *     card and complete the upgrade.
      *
@@ -18860,7 +18860,7 @@ export interface components {
       name: string
       /** Position */
       position: number
-      /** Is Polar Bot */
+      /** Is Simeon Bot */
       is_polar_bot: boolean
       /**
        * Color
@@ -25742,7 +25742,7 @@ export interface components {
     }
     /**
      * PlatformFeeType
-     * @description Type of fees applied by Polar, and billed to the users.
+     * @description Type of fees applied by Simeon, and billed to the users.
      * @enum {string}
      */
     PlatformFeeType:
@@ -28595,7 +28595,7 @@ export interface components {
        *
        *     **IMPORTANT:**
        *     Do not use this to store internal notes! It's intended to be input
-       *     from the customer and is therefore also available in their Polar
+       *     from the customer and is therefore also available in their Simeon
        *     purchases library.
        *
        *     Only set this in case your own service is requesting the reason from the
@@ -29261,7 +29261,7 @@ export interface components {
        *
        *     **IMPORTANT:**
        *     Do not use this to store internal notes! It's intended to be input
-       *     from the customer and is therefore also available in their Polar
+       *     from the customer and is therefore also available in their Simeon
        *     purchases library.
        *
        *     Only set this in case your own service is requesting the reason from the

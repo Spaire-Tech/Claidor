@@ -27,7 +27,7 @@ from sqlalchemy.orm import (
 )
 
 from simeon.kit.db.models import RecordModel
-from simeon.kit.math import polar_round
+from simeon.kit.math import round_half_away_from_zero
 from simeon.kit.metadata import MetadataMixin
 
 if TYPE_CHECKING:
@@ -195,7 +195,7 @@ class DiscountPercentage(Discount):
 
     def get_discount_amount(self, amount: int) -> int:
         discount_amount_float = amount * (self.basis_points / 10_000)
-        return polar_round(discount_amount_float)
+        return round_half_away_from_zero(discount_amount_float)
 
     def is_applicable(self, product: "Product", currency: str) -> bool:
         if len(self.products) == 0:

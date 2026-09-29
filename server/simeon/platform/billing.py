@@ -151,7 +151,7 @@ class PlatformBillingService:
         the platform Customer (``ensure_platform_customer``); the real,
         card-required 14-day trial is created through the upgrade-checkout
         flow, which captures a payment method via a setup intent. At
-        trial_end Polar's own cycle scheduler (not Stripe — there is no
+        trial_end Simeon's own cycle scheduler (not Stripe — there is no
         Stripe subscription object) charges the saved card.
 
         This helper creates a LOCAL trialing subscription with no captured

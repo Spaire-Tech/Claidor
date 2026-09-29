@@ -169,7 +169,7 @@ class TransactionService(BaseTransactionService):
 
         result = await session.execute(statement)
 
-        currency = "usd"  # FIXME: Main Polar currency
+        currency = "usd"  # FIXME: Main Simeon currency
         account_currency = account.currency
         assert account_currency is not None
 

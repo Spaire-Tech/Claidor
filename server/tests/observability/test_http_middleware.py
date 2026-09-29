@@ -1,6 +1,6 @@
 """Tests for HTTP metrics middleware.
 
-These tests are isolated from the main Polar infrastructure to avoid
+These tests are isolated from the main Simeon infrastructure to avoid
 database and service connections during unit testing.
 """
 
@@ -154,7 +154,7 @@ class TestPathNormalizationDirect:
 
 
 class TestDenyListLogic:
-    """Test deny list logic without importing polar modules."""
+    """Test deny list logic without importing simeon modules."""
 
     def test_healthz_in_deny_list(self) -> None:
         """Test that /healthz would be denied."""

@@ -100,7 +100,7 @@ def _update_secrets_file(key: str, value: str | None) -> None:
         existing[key] = value
 
     with open(SECRETS_FILE, "w") as f:
-        f.write("# Polar Development Secrets\n")
+        f.write("# Simeon Development Secrets\n")
         f.write("# Shared across Git worktrees\n\n")
         for k, v in existing.items():
             delimiter = "'" if '"' in v else '"'

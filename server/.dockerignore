@@ -5,7 +5,7 @@
 .vscode/
 
 .minio/
-polar_backoffice/
+simeon_backoffice/
 tests/
 emails/node_modules/
 simeon/backoffice/node_modules/

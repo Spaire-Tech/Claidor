@@ -276,7 +276,7 @@ class AccountService:
         self, session: AsyncSession, account: Account
     ) -> str | None:
         # The account name is visible for users and is used to differentiate accounts
-        # from the same Platform ("Polar") in Stripe Express.
+        # from the same Platform ("Simeon") in Stripe Express.
         await session.refresh(account, {"users", "organizations"})
         associations = []
         for user in account.users:

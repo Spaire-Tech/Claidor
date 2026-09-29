@@ -492,7 +492,7 @@ class Organization(RateLimitGroupMixin, RecordModel):
         return cls.status.in_(OrganizationStatus.review_statuses())
 
     @property
-    def polar_site_url(self) -> str:
+    def simeon_site_url(self) -> str:
         return f"{settings.FRONTEND_BASE_URL}/{self.slug}"
 
     @property

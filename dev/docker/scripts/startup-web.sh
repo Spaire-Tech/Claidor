@@ -1,12 +1,12 @@
 #!/bin/bash
-# Startup script for Polar Web frontend in development mode
+# Startup script for Simeon Web frontend in development mode
 # This script handles dependency installation and starts Next.js with Turbopack.
 
 set -euo pipefail
 
 cd /app/clients
 
-echo "=== Polar Web Frontend Startup ==="
+echo "=== Simeon Web Frontend Startup ==="
 
 # Always run pnpm install to ensure dependencies are installed
 # pnpm is smart enough to skip if nothing changed

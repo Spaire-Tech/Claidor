@@ -17,7 +17,7 @@ from simeon.exceptions import (
 log = structlog.get_logger()
 
 
-async def polar_exception_handler(request: Request, exc: PolarError) -> JSONResponse:
+async def simeon_exception_handler(request: Request, exc: PolarError) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": type(exc).__name__, "detail": exc.message},
@@ -34,7 +34,7 @@ async def request_validation_exception_handler(
     )
 
 
-async def polar_redirection_exception_handler(
+async def simeon_redirection_exception_handler(
     request: Request, exc: PolarRedirectionError
 ) -> RedirectResponse:
     error_url_params = urlencode(
@@ -47,7 +47,7 @@ async def polar_redirection_exception_handler(
     return RedirectResponse(error_url, 303)
 
 
-async def polar_not_modified_handler(
+async def simeon_not_modified_handler(
     request: Request, exc: ResourceNotModified
 ) -> Response:
     return Response(status_code=exc.status_code)
@@ -86,11 +86,11 @@ async def internal_server_error_handler(
 def add_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         PolarRedirectionError,
-        polar_redirection_exception_handler,  # type: ignore
+        simeon_redirection_exception_handler,  # type: ignore
     )
     app.add_exception_handler(
         ResourceNotModified,
-        polar_not_modified_handler,  # type: ignore
+        simeon_not_modified_handler,  # type: ignore
     )
 
     app.add_exception_handler(
@@ -101,5 +101,5 @@ def add_exception_handlers(app: FastAPI) -> None:
         SimeonRequestValidationError,
         request_validation_exception_handler,  # type: ignore
     )
-    app.add_exception_handler(PolarError, polar_exception_handler)  # type: ignore
+    app.add_exception_handler(PolarError, simeon_exception_handler)  # type: ignore
     app.add_exception_handler(Exception, internal_server_error_handler)  # type: ignore

@@ -54,11 +54,11 @@ class Payout(RecordModel):
     )
     """Date and time when this payout was paid. Might be `None` if not yet paid."""
     currency: Mapped[str] = mapped_column(String(3), nullable=False)
-    """Currency of this transaction from Polar's perspective. Should be `usd`."""
+    """Currency of this transaction from Simeon's perspective. Should be `usd`."""
     amount: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    """Amount in cents of this transaction from Polar's perspective."""
+    """Amount in cents of this transaction from Simeon's perspective."""
     fees_amount: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    """Fees amount in cents of this transaction from Polar's perspective."""
+    """Fees amount in cents of this transaction from Simeon's perspective."""
     account_currency: Mapped[str] = mapped_column(String(3), nullable=False)
     """Currency of this transaction from user's account perspective. Might not be `usd`."""
     account_amount: Mapped[int] = mapped_column(BigInteger, nullable=False)

@@ -4,7 +4,7 @@ Three reminders per trial — at T-7, T-2, and T-0 days before
 `trial_end`. Each one is sent at most once per (subscription, marker)
 pair; we record the marker in the subscription's `user_metadata` to
 keep the implementation table-less. The trial is card-required, so at
-`trial_end` Polar's own cycle scheduler charges the card on file and the
+`trial_end` Simeon's own cycle scheduler charges the card on file and the
 subscription converts to `active` (or to `past_due` -> dunning if the
 charge fails). These reminders just warn the creator before that charge.
 

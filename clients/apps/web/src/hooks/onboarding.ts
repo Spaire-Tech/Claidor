@@ -5,7 +5,7 @@ import { schemas } from '@simeon/client'
 import { usePostHog } from 'posthog-js/react'
 import { useCallback, useMemo } from 'react'
 
-const ONBOARDING_COOKIE_NAME = 'polar_onboarding_session'
+const ONBOARDING_COOKIE_NAME = 'simeon_onboarding_session'
 const SESSION_TIMEOUT_HOURS = 24
 
 /** @deprecated 'lovable' and 'product' are kept for backward compatibility with existing components */

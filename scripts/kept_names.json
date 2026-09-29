@@ -31,7 +31,8 @@
         "youdao",
         "rakazo",
         "pierce",
-        "vesence"
+        "vesence",
+        "polar"
       ],
       "paths": [
         "docs/kept-names.md"
@@ -58,7 +59,8 @@
         "anysphere",
         "caisra",
         "spacex",
-        "xai"
+        "xai",
+        "polar"
       ],
       "paths": [
         "sites/simeonlabs.com/public/app/**"
@@ -273,7 +275,8 @@
         "ohada",
         "swens",
         "pierce",
-        "grok"
+        "grok",
+        "polar"
       ],
       "paths": [
         "server/migrations/versions/**"
@@ -371,6 +374,71 @@
       ],
       "match": "doesNotMatch|never reads|no longer|Claidor account|Sign in to Claidor|Claidor sign-in|Claidor API|Sign In with Claidor",
       "reason": "Tests that check an earlier name is gone from what a person or the agent reads have to name it."
+    },
+    {
+      "kind": "record",
+      "names": [
+        "polar"
+      ],
+      "paths": [
+        "LICENSE",
+        "NOTICE",
+        "README.md"
+      ],
+      "reason": "The server and web app are derived from Polar (Apache 2.0); the licence and notice name it."
+    },
+    {
+      "kind": "fallback",
+      "names": [
+        "polar"
+      ],
+      "paths": [
+        "server/polar/**"
+      ],
+      "reason": "A stand-in that forwards the old start commands (polar.app:app, polar.worker.run) to the simeon package, because Render keeps each service's start command in its own settings. Remove once every Render service starts simeon.*."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "polar"
+      ],
+      "paths": [
+        "server/pyproject.toml",
+        "server/uv.lock",
+        ".github/dependabot.yml",
+        "server/tests/test_sdk.py"
+      ],
+      "match": "polar[-_]sdk|\\bPolar\\b|\\bpolar\\b",
+      "reason": "polar-sdk is a published Python package the server's SDK test uses (its client class is Polar); its name is not ours."
+    },
+    {
+      "kind": "data",
+      "names": [
+        "polar"
+      ],
+      "paths": [
+        "server/simeon/**",
+        "server/tests/**",
+        "server/monitoring/**",
+        "server/emails/**",
+        "server/.jwks.production.json",
+        "clients/**"
+      ],
+      "match": "polar_(http|task|checkout|queue|gc|slo)_|[\"'`]polar:|f\"polar:|polar-(id|organization-id|name|size|sha256)|polar-public-(assets|sandbox)|logfire-us\\.pydantic\\.dev/polar|polar_prod_|polar_anonymous|product_name_on_polar|is_polar_bot|x-polar-(allowed-subjects|selector-widget)|X-Polar-|POLAR_(API_URL|AUTH_COOKIE_KEY|AUTH_MCP_COOKIE_KEY|CHECKOUT_EMBED_SCRIPT_ALLOWED_ORIGINS)|recharts-polar",
+      "reason": "Values already stored, deployed or published under the earlier name: Prometheus metric names and the Grafana dashboards that query them, Redis keys, Stripe idempotency keys, S3 object metadata and the upstream's public image bucket the e-mails still load, the Logfire project, the production JWK id, the PostHog anonymous id, a CSV import column, API field and OpenAPI extension names the web client reads, the X-Polar-* response headers, the web app's earlier env names (still read after SIMEON_*), and a charting library's own class name."
+    },
+    {
+      "kind": "record",
+      "names": [
+        "polar"
+      ],
+      "paths": [
+        "clients/apps/web/src/components/Meter/MeterPage.tsx",
+        "server/simeon/metrics/queries.py",
+        "server/tests/metrics/test_service.py"
+      ],
+      "match": "github\\.com/polarsource/polar/(issues|pull)/",
+      "reason": "Links to the upstream issue or pull request that explains the code next to them."
     }
   ]
 }

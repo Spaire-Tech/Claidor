@@ -215,7 +215,7 @@ describe('middleware function', () => {
     const response = await proxy(request)
 
     expect(response.status).toBe(200)
-    expect(response.headers.get('x-polar-user')).toBe(JSON.stringify(mockUser))
+    expect(response.headers.get('x-simeon-user')).toBe(JSON.stringify(mockUser))
   })
 
   it('should allow unauthenticated access to public routes', async () => {
@@ -224,7 +224,7 @@ describe('middleware function', () => {
     const response = await proxy(request)
 
     expect(response.status).toBe(200)
-    expect(response.headers.get('x-polar-user')).toBeNull()
+    expect(response.headers.get('x-simeon-user')).toBeNull()
   })
 
   it('should redirect to login with query params preserved', async () => {

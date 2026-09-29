@@ -46,8 +46,7 @@ RUN --mount=type=secret,id=IPINFO_ACCESS_TOKEN \
 
 # Stage 4: Final production image
 FROM --platform=$BUILDPLATFORM python:3.14-slim
-LABEL org.opencontainers.image.source=https://github.com/polarsource/polar
-LABEL org.opencontainers.image.description="Polar"
+LABEL org.opencontainers.image.description="Simeon"
 LABEL org.opencontainers.image.licenses=Apache-2.0
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 

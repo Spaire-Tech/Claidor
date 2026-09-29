@@ -1,4 +1,4 @@
-# Polar Code Review
+# Simeon Code Review
 
 Comprehensive code review with 3 specialized agents running in parallel.
 
@@ -18,7 +18,7 @@ Comprehensive code review with 3 specialized agents running in parallel.
 description: "Security review"
 subagent_type: "feature-dev:code-reviewer"
 prompt: |
-  SECURITY REVIEW for Polar codebase.
+  SECURITY REVIEW for Simeon codebase.
 
   Review these changed files for security vulnerabilities:
   [INSERT CHANGED FILES LIST]
@@ -64,9 +64,9 @@ prompt: |
 description: "Conventions review"
 subagent_type: "feature-dev:code-reviewer"
 prompt: |
-  CONVENTIONS REVIEW for Polar codebase.
+  CONVENTIONS REVIEW for Simeon codebase.
 
-  Review these changed files against Polar conventions:
+  Review these changed files against Simeon conventions:
   [INSERT CHANGED FILES LIST]
 
   **Backend Conventions (server/simeon/):**
@@ -82,7 +82,7 @@ prompt: |
   - Use `get_readable_statement(auth_subject)` for auth-aware queries
 
   **Frontend Conventions (clients/):**
-  - Use design tokens: blue-500, gray-100, polar-800 (dark mode)
+  - Use design tokens: blue-500, gray-100, gray-800 (dark mode)
   - Always provide dark: variants for colors
   - Border radius: rounded-xl (default), rounded-2xl (large cards)
   - TanStack Query for data fetching
@@ -105,7 +105,7 @@ prompt: |
 description: "Simplification review"
 subagent_type: "feature-dev:code-reviewer"
 prompt: |
-  SIMPLIFICATION REVIEW for Polar codebase.
+  SIMPLIFICATION REVIEW for Simeon codebase.
 
   Review these changed files for opportunities to simplify:
   [INSERT CHANGED FILES LIST]

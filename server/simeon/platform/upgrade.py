@@ -305,7 +305,7 @@ class PlatformUpgradeService:
         #     here — payment must succeed first, after which
         #     maybe_supersede_platform_trial revokes it. If the creator
         #     abandons checkout, the trial is untouched and they keep
-        #     their remaining days. Polar's checkout uniqueness check is
+        #     their remaining days. Simeon's checkout uniqueness check is
         #     satisfied because the platform org runs with
         #     allow_multiple_subscriptions enabled.
         #   - past_due (dunning window): allowed through, billed

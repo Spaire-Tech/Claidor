@@ -20,8 +20,8 @@ class TestLicenseKeyPrefixValidation:
 
     def test_valid_prefix_preserved(self) -> None:
         """Test that valid prefix is preserved."""
-        properties = BenefitLicenseKeysCreateProperties(prefix="POLAR")
-        assert properties.prefix == "POLAR"
+        properties = BenefitLicenseKeysCreateProperties(prefix="SIMEON")
+        assert properties.prefix == "SIMEON"
 
     def test_none_prefix_preserved(self) -> None:
         """Test that None prefix is preserved."""

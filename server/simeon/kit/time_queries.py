@@ -41,7 +41,7 @@ def get_timestamp_series_cte(
     )
 
 
-MIN_DATETIME = datetime(2023, 1, 1)  # Before that, Polar didn't even exist! 🚀
+MIN_DATETIME = datetime(2023, 1, 1)  # Before that, Simeon didn't even exist! 🚀
 MIN_DATE = MIN_DATETIME.date()
 
 MAX_INTERVAL_DAYS: dict[TimeInterval, int] = {

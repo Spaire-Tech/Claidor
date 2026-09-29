@@ -1,5 +1,5 @@
 {
-  description = "Super simple starting point for Polar development flake";
+  description = "Super simple starting point for Simeon development flake";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";

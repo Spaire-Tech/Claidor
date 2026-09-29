@@ -457,11 +457,11 @@ async def create_seed_data(session: AsyncSession, redis: Redis) -> None:
             "slug": "admin-org",
             "email": "admin@simeonlabs.com",
             "website": "https://simeonlabs.com",
-            "bio": "The admin organization of Polar",
+            "bio": "The admin organization of Simeon",
             "status": OrganizationStatus.ACTIVE,
             "is_admin": True,
             "details": {
-                "about": "Polar is an open source payment infrastructure platform for developers",
+                "about": "Simeon is an open source payment infrastructure platform for developers",
                 "intended_use": "We provide payment processing and subscription management for developers and creators.",
                 "switching": False,
                 "switching_from": None,
@@ -472,8 +472,8 @@ async def create_seed_data(session: AsyncSession, redis: Redis) -> None:
             },
             "products": [
                 {
-                    "name": "Polar Pro",
-                    "description": "Monthly subscription to Polar Pro features",
+                    "name": "Simeon Pro",
+                    "description": "Monthly subscription to Simeon Pro features",
                     "price": 2000,
                     "recurring": SubscriptionRecurringInterval.month,
                 },
@@ -511,7 +511,7 @@ async def create_seed_data(session: AsyncSession, redis: Redis) -> None:
             ],
             "seat_based_customers": [
                 {
-                    "email": "customer-with-members@polar.sh",
+                    "email": "customer-with-members@simeonlabs.com",
                     "name": "Customer With Members Inc",
                     "seats_purchased": 5,
                     "seats_allocated": 2,
@@ -550,7 +550,7 @@ async def create_seed_data(session: AsyncSession, redis: Redis) -> None:
             ],
             "seat_based_customers": [
                 {
-                    "email": "customer-no-members@polar.sh",
+                    "email": "customer-no-members@simeonlabs.com",
                     "name": "Customer Without Members Inc",
                     "seats_purchased": 5,
                     "seats_allocated": 2,
@@ -840,7 +840,7 @@ async def create_seed_data(session: AsyncSession, redis: Redis) -> None:
         )
         for i in range(num_customers):
             # customer_email = f"customer_{org_data['slug']}_{i + 1}@example.com"
-            customer_email = f"customer_{org_data['slug']}_{i + 1}@polar.sh"
+            customer_email = f"customer_{org_data['slug']}_{i + 1}@simeonlabs.com"
             customer = await customer_service.create(
                 session=session,
                 customer_create=CustomerCreate(

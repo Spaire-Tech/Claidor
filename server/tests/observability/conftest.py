@@ -1,7 +1,7 @@
 """Conftest for observability tests - isolated from main fixtures.
 
 These tests are designed to run in isolation without requiring the full
-Polar infrastructure (database, Minio, Redis, etc.). We override the
+Simeon infrastructure (database, Minio, Redis, etc.). We override the
 session-scoped autouse fixtures from the main test suite to prevent
 connection attempts.
 """
@@ -11,7 +11,7 @@ from typing import Any
 
 import pytest
 
-# Set up test environment before any polar imports
+# Set up test environment before any simeon imports
 os.environ["SIMEON_ENV"] = "testing"
 
 

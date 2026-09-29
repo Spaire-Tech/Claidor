@@ -112,7 +112,7 @@ ACCEPTABLE_USE_POLICY = """
 
     Digital goods, software or services that can be fulfilled by…
 
-    1. Polar on your behalf (License Keys, File Downloads, GitHub- or Discord invites or private links, e.g premium YouTube videos etc)
+    1. Simeon on your behalf (License Keys, File Downloads, GitHub- or Discord invites or private links, e.g premium YouTube videos etc)
     2. Your site/service using our APIs to grant immediate access to digital assets
     or services for customers with a one-time purchase or subscriptions
 
@@ -135,13 +135,13 @@ ACCEPTABLE_USE_POLICY = """
     * Violates laws in the jurisdictions where your business is located or to which your business is targeted
     * Violates any rules or regulations from payment processors & credit card networks, e.g [Stripe](https://stripe.com/en-se/legal/restricted-businesses)
     * Reselling or distributing customer data to other parties for commercial, promotional or any other reason (disclosed service providers are accepted).
-    * Threatens reputation of Polar or any of our partners and payment providers
+    * Threatens reputation of Simeon or any of our partners and payment providers
     * Causes or has a significant risk of refunds, chargebacks, fines, damages, or harm and liability
     * Services used by-, intended for or advertised towards minors
     * Physical goods of any kind. Including SaaS services offering or requiring fulfilment via physical delivery or human services.
     * Human services, e.g marketing, design, web development and consulting in general.
     * Donations or charity, i.e price is greater than product value or there is no exchange at all (pure money transfer). Open source maintainers with sponsorship can be supported - reach out.
-    * Marketplaces. Selling others’ products or services using Polar against an upfront payment or with an agreed upon revenue share.
+    * Marketplaces. Selling others’ products or services using Simeon against an upfront payment or with an agreed upon revenue share.
     * Adult services or content. Including by AI or proxy, e.g
     * AI Girlfriend/Boyfriend services.
     * OnlyFans related services.

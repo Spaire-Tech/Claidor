@@ -10,7 +10,7 @@ from simeon.config import settings
 
 class PolarError(Exception):
     """
-    Base exception class for all errors raised by Polar.
+    Base exception class for all errors raised by Simeon.
 
     A custom exception handler for FastAPI takes care
     of catching and returning a proper HTTP error from them.

@@ -34,7 +34,7 @@ const _getAuthenticatedUser = async (): Promise<
   schemas['UserRead'] | undefined
 > => {
   // Middleware set this header for authenticated requests
-  const userData = (await headers()).get('x-polar-user')
+  const userData = (await headers()).get('x-simeon-user')
   if (userData) {
     return JSON.parse(userData)
   }

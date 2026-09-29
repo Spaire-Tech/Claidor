@@ -581,12 +581,12 @@ class TestRevert:
         )
         assert len(balance_transactions) == 6
 
-        assert balance_transactions[0] == outgoing_balance  # From Polar...
+        assert balance_transactions[0] == outgoing_balance  # From Simeon...
         assert balance_transactions[1] == incoming_balance  # ... to Account
         assert balance_transactions[2] == refund_outgoing_balance  # From Account...
-        assert balance_transactions[3] == refund_incoming_balance  # ... to Polar
+        assert balance_transactions[3] == refund_incoming_balance  # ... to Simeon
 
-        reverse_balance_account = balance_transactions[4]  # From Polar...
+        reverse_balance_account = balance_transactions[4]  # From Simeon...
         assert reverse_balance_account.account is None
         assert reverse_balance_account.balance_reversal_transaction is not None
         assert reverse_balance_account.balance_reversal_transaction == outgoing_balance
@@ -598,16 +598,16 @@ class TestRevert:
         assert reverse_balance_account.amount == -refund_incoming_balance.amount
         assert reverse_balance_account.payment_transaction is None
 
-        reverse_balance_polar = balance_transactions[5]  # ... to Account
-        assert reverse_balance_polar.account is not None
-        assert reverse_balance_polar.balance_reversal_transaction is not None
-        assert reverse_balance_polar.balance_reversal_transaction == incoming_balance
+        reverse_balance_platform = balance_transactions[5]  # ... to Account
+        assert reverse_balance_platform.account is not None
+        assert reverse_balance_platform.balance_reversal_transaction is not None
+        assert reverse_balance_platform.balance_reversal_transaction == incoming_balance
         assert (
-            reverse_balance_polar.balance_reversal_transaction.amount
-            == reverse_balance_polar.amount
+            reverse_balance_platform.balance_reversal_transaction.amount
+            == reverse_balance_platform.amount
         )
-        assert reverse_balance_polar.amount == -refund_outgoing_balance.amount
-        assert reverse_balance_polar.payment_transaction is None
+        assert reverse_balance_platform.amount == -refund_outgoing_balance.amount
+        assert reverse_balance_platform.payment_transaction is None
 
     async def test_valid_different_settlement_currency(
         self,
@@ -762,12 +762,12 @@ class TestRevert:
         )
         assert len(balance_transactions) == 6
 
-        assert balance_transactions[0] == outgoing_balance  # From Polar...
+        assert balance_transactions[0] == outgoing_balance  # From Simeon...
         assert balance_transactions[1] == incoming_balance  # ... to Account
         assert balance_transactions[2] == refund_outgoing_balance  # From Account...
-        assert balance_transactions[3] == refund_incoming_balance  # ... to Polar
+        assert balance_transactions[3] == refund_incoming_balance  # ... to Simeon
 
-        reverse_balance_account = balance_transactions[4]  # From Polar...
+        reverse_balance_account = balance_transactions[4]  # From Simeon...
         assert reverse_balance_account.account is None
         assert reverse_balance_account.balance_reversal_transaction is not None
         assert reverse_balance_account.balance_reversal_transaction == outgoing_balance
@@ -779,16 +779,16 @@ class TestRevert:
         assert reverse_balance_account.amount == -refund_incoming_balance.amount
         assert reverse_balance_account.payment_transaction is None
 
-        reverse_balance_polar = balance_transactions[5]  # ... to Account
-        assert reverse_balance_polar.account is not None
-        assert reverse_balance_polar.balance_reversal_transaction is not None
-        assert reverse_balance_polar.balance_reversal_transaction == incoming_balance
+        reverse_balance_platform = balance_transactions[5]  # ... to Account
+        assert reverse_balance_platform.account is not None
+        assert reverse_balance_platform.balance_reversal_transaction is not None
+        assert reverse_balance_platform.balance_reversal_transaction == incoming_balance
         assert (
-            reverse_balance_polar.balance_reversal_transaction.amount
-            == reverse_balance_polar.amount
+            reverse_balance_platform.balance_reversal_transaction.amount
+            == reverse_balance_platform.amount
         )
-        assert reverse_balance_polar.amount == -refund_outgoing_balance.amount
-        assert reverse_balance_polar.payment_transaction is None
+        assert reverse_balance_platform.amount == -refund_outgoing_balance.amount
+        assert reverse_balance_platform.payment_transaction is None
 
 
 @pytest.mark.asyncio

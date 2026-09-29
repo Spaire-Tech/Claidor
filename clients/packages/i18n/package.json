@@ -1,16 +1,11 @@
 {
   "name": "@simeon/i18n",
   "version": "0.1.0",
-  "description": "Polar i18n - Locale files and translation utilities",
-  "author": "Polar",
+  "description": "Simeon i18n - Locale files and translation utilities",
+  "author": "Simeon",
   "license": "Apache-2.0",
   "type": "module",
   "private": true,
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/polarsource/polar.git",
-    "directory": "clients/packages/i18n"
-  },
   "scripts": {
     "lint": "prettier -c .",
     "typecheck": "tsc --noEmit",

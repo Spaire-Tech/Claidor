@@ -231,7 +231,7 @@ def _ensure_secrets_file() -> bool:
         shutil.copy(template_path, SECRETS_FILE_PATH)
     else:
         with open(SECRETS_FILE_PATH, "w") as f:
-            f.write("# Polar Development Secrets\n")
+            f.write("# Simeon Development Secrets\n")
             f.write("# See dev/secrets.env.template for all options\n")
     return True
 
@@ -261,7 +261,7 @@ def _save_github_app_to_secrets(github_app: dict[str, typing.Any]) -> None:
     )
 
     with open(SECRETS_FILE_PATH, "w") as f:
-        f.write("# Polar Development Secrets\n")
+        f.write("# Simeon Development Secrets\n")
         f.write("# Shared across Git worktrees. See dev/secrets.env.template\n\n")
         for key, value in secrets.items():
             delimiter = "'" if '"' in str(value) else '"'
@@ -374,17 +374,17 @@ def _generate_jwks() -> None:
 def _get_options():
     if IS_CODESPACES:
         default_backend_external_url = f"https://{os.environ['CODESPACE_NAME']}-8080.{os.environ['GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN']}"
-        default_github_app_name = f"polar-{os.environ['CODESPACE_NAME']}"
+        default_github_app_name = f"simeon-{os.environ['CODESPACE_NAME']}"
         default_github_setup_base_url = f"https://{os.environ['CODESPACE_NAME']}-51562.{os.environ['GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN']}"
     else:
         default_backend_external_url = None
         default_github_app_name = (
-            f"polar-development-{''.join(random.choices(string.ascii_lowercase, k=8))}"
+            f"simeon-development-{''.join(random.choices(string.ascii_lowercase, k=8))}"
         )
         default_github_setup_base_url = "http://localhost:51562"
 
     parser = argparse.ArgumentParser(
-        description="Setup the environment files for Polar development"
+        description="Setup the environment files for Simeon development"
     )
     parser.add_argument(
         "--setup-github-app",
@@ -394,14 +394,14 @@ def _get_options():
     parser.add_argument(
         "--backend-external-url",
         type=str,
-        help="The Polar backend base URL, available externally.",
+        help="The Simeon backend base URL, available externally.",
         default=default_backend_external_url,
         required=False,
     )
     parser.add_argument(
         "--github-app-name",
         type=str,
-        help="The name of the Polar backend app",
+        help="The name of the Simeon backend app",
         default=default_github_app_name,
     )
     parser.add_argument(

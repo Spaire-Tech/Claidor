@@ -74,7 +74,7 @@ We also need to create an IAM User.
 - Credentials: Upon creating the user goto `Security credentials` and scroll
 down to `Access keys` to generate them
 
-#### 4. Configure Polar settings
+#### 4. Configure Simeon settings
 
-Update your `.env` for the `POLAR_AWS_*` settings to contain the credentials,
+Update your `.env` for the `SIMEON_AWS_*` settings to contain the credentials,
 bucket name etc from above.

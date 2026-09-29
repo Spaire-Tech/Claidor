@@ -94,8 +94,8 @@ should use it.
 
 ## The API server (`server/`)
 
-Python, FastAPI, at `api.simeonlabs.com`. The package keeps the internal name
-`polar`. The same code runs as the API and as the worker. Every setting is
+Python, FastAPI, at `api.simeonlabs.com`. The package is
+`simeon`. The same code runs as the API and as the worker. Every setting is
 read as `SIMEON_<NAME>`, and `CLAIDOR_<NAME>` is still read when the `SIMEON_`
 name is not set (`simeon/config.py`). Route groups:
 

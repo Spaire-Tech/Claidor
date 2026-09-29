@@ -49,7 +49,7 @@ async def _compute_dispute_fees_by_order(session: AsyncSession) -> dict[str, int
     Compute dispute fees for each order.
 
     Dispute fees are balance transactions with platform_fee_type='dispute',
-    where account_id is NULL (Polar's share).
+    where account_id is NULL (Simeon's share).
     """
     fees_result = await session.execute(
         select(Transaction.order_id, func.sum(Transaction.amount))

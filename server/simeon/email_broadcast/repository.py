@@ -68,7 +68,7 @@ class EmailBroadcastRepository(
             return {}
         # `total` here means "emails actually dispatched" — rows that
         # reached Resend or further. We exclude `pending` (still queued)
-        # and `failed` (never left Polar) because counting them as
+        # and `failed` (never left Simeon) because counting them as
         # "Recipients" / "Emails sent" mis-states what happened.
         sent_or_later = EmailBroadcastSend.status.in_(
             [
@@ -186,7 +186,7 @@ class EmailBroadcastRepository(
         # in flight), failed, and pending_approval broadcasts must not
         # contribute to "Emails sent" — even if stale `EmailBroadcastSend`
         # rows exist from an aborted send.
-        # `total_sent` only counts rows that actually left Polar — i.e.
+        # `total_sent` only counts rows that actually left Simeon — i.e.
         # status reached `sent` or later. Including `pending` / `failed`
         # in this number was the cause of "Emails sent: 0 (or wrong)"
         # complaints when broadcasts had stuck or rejected sends.

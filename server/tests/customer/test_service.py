@@ -252,11 +252,11 @@ class TestCreate:
         await save_fixture(organization)
 
         payload: dict[str, Any] = {
-            "email": "customer@polar.sh",
+            "email": "customer@simeonlabs.com",
             "name": "Customer Name",
             "external_id": "customer_ext_123",
             "owner": {
-                "email": "owner@polar.sh",
+                "email": "owner@simeonlabs.com",
                 "name": "Owner Name",
                 "external_id": "owner_ext_456",
             },
@@ -269,17 +269,17 @@ class TestCreate:
         )
         await session.flush()
 
-        assert customer.email == "customer@polar.sh"
+        assert customer.email == "customer@simeonlabs.com"
         assert customer.name == "Customer Name"
         assert customer.external_id == "customer_ext_123"
 
         member_repository = MemberRepository.from_session(session)
         member = await member_repository.get_by_customer_and_email(
-            session, customer, email="owner@polar.sh"
+            session, customer, email="owner@simeonlabs.com"
         )
         assert member is not None
         assert member.customer_id == customer.id
-        assert member.email == "owner@polar.sh"
+        assert member.email == "owner@simeonlabs.com"
         assert member.name == "Owner Name"
         assert member.external_id == "owner_ext_456"
         assert member.role == MemberRole.owner
@@ -300,11 +300,11 @@ class TestCreate:
         await save_fixture(organization)
 
         payload: dict[str, Any] = {
-            "email": "customer@polar.sh",
+            "email": "customer@simeonlabs.com",
             "name": "Customer Name",
             "external_id": "customer_ext_789",
             "owner": {
-                "email": "different.owner@polar.sh",
+                "email": "different.owner@simeonlabs.com",
             },
         }
         if is_user(auth_subject):
@@ -315,17 +315,17 @@ class TestCreate:
         )
         await session.flush()
 
-        assert customer.email == "customer@polar.sh"
+        assert customer.email == "customer@simeonlabs.com"
         assert customer.name == "Customer Name"
         assert customer.external_id == "customer_ext_789"
 
         member_repository = MemberRepository.from_session(session)
         member = await member_repository.get_by_customer_and_email(
-            session, customer, email="different.owner@polar.sh"
+            session, customer, email="different.owner@simeonlabs.com"
         )
         assert member is not None
         assert member.customer_id == customer.id
-        assert member.email == "different.owner@polar.sh"
+        assert member.email == "different.owner@simeonlabs.com"
         assert member.name == "Customer Name"
         assert member.external_id == "customer_ext_789"
         assert member.role == MemberRole.owner
@@ -346,7 +346,7 @@ class TestCreate:
         await save_fixture(organization)
 
         payload: dict[str, Any] = {
-            "email": "customer@polar.sh",
+            "email": "customer@simeonlabs.com",
             "name": "Customer Name",
             "external_id": "customer_ext_abc",
             "owner": {
@@ -365,7 +365,7 @@ class TestCreate:
         member = await member_repository.get_by_customer_and_email(session, customer)
         assert member is not None
         assert member.customer_id == customer.id
-        assert member.email == "customer@polar.sh"
+        assert member.email == "customer@simeonlabs.com"
         assert member.name == "Different Owner Name"
         assert member.external_id == "customer_ext_abc"
         assert member.role == MemberRole.owner
@@ -386,7 +386,7 @@ class TestCreate:
         await save_fixture(organization)
 
         payload: dict[str, Any] = {
-            "email": "customer@polar.sh",
+            "email": "customer@simeonlabs.com",
             "name": "Customer Name",
             "external_id": "customer_ext_xyz",
             "owner": {
@@ -405,7 +405,7 @@ class TestCreate:
         member = await member_repository.get_by_customer_and_email(session, customer)
         assert member is not None
         assert member.customer_id == customer.id
-        assert member.email == "customer@polar.sh"
+        assert member.email == "customer@simeonlabs.com"
         assert member.name == "Customer Name"
         assert member.external_id == "different_owner_ext_id"
         assert member.role == MemberRole.owner

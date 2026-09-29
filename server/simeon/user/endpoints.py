@@ -99,7 +99,7 @@ async def disconnect_oauth_account(
     """
     Disconnect an OAuth account (GitHub or Google) from the authenticated user.
 
-    This allows users to unlink their OAuth provider while keeping their Polar account.
+    This allows users to unlink their OAuth provider while keeping their Simeon account.
     They can still authenticate using other methods (email magic link or other OAuth providers).
 
     Note: You cannot disconnect your last authentication method if your email is not verified.

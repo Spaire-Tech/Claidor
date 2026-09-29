@@ -423,7 +423,7 @@ class EventRepository(RepositoryBase[Event], RepositoryIDMixin[Event, UUID]):
                         del aggregated["_cost"]
                     elif "currency" not in cost_obj:
                         # Add default currency if missing
-                        cost_obj["currency"] = "usd"  # FIXME: Main Polar currency
+                        cost_obj["currency"] = "usd"  # FIXME: Main Simeon currency
 
                 event.user_metadata = aggregated
 

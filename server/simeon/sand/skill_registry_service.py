@@ -13,7 +13,7 @@ So the contract here is: no git anywhere, the tarball's files ride back
 as inline content, and the commit sha is that very hash, computed from
 the same two numbers we send.
 
-Teams are Polar's organizations (`user_organizations`). The app keeps
+Teams are Simeon's organizations (`user_organizations`). The app keeps
 only teams with `id > 0 && isDirectMember`, and every publish, resync
 and unpublish carries a team id, so "just me" is a team too: its id is
 the person's own 31-bit user id (`dashboard.user_id_of`), and a request

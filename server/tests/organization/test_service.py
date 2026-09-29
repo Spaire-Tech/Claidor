@@ -47,7 +47,7 @@ class TestCreate:
             "",
             "a",
             "ab",
-            "Polar Software Inc 🌀",
+            "Simeon Labs Inc 🌀",
             "slug/with/slashes",
             *settings.ORGANIZATION_SLUG_RESERVED_KEYWORDS,
         ],
@@ -77,7 +77,7 @@ class TestCreate:
             )
 
     @pytest.mark.auth
-    @pytest.mark.parametrize("slug", ["polar-software-inc", "slug-with-dashes"])
+    @pytest.mark.parametrize("slug", ["simeon-labs-inc", "slug-with-dashes"])
     async def test_valid(
         self,
         slug: str,
@@ -1715,7 +1715,7 @@ class TestSoftDeleteOrganization:
         assert result.website != "https://test.com"
         assert result.bio != "Test bio"
 
-        # Avatar should be set to Polar logo
+        # Avatar should be set to Simeon logo
         assert result.avatar_url is not None
         assert "avatars.githubusercontent.com" in result.avatar_url
 

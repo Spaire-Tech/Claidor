@@ -152,7 +152,7 @@ async def create_loadtest_data(
     api_token_line = (
         f"LOAD_TEST_API_TOKEN={existing_token}"
         if existing_token
-        else "LOAD_TEST_API_TOKEN=polar_pat_REPLACE_WITH_YOUR_TOKEN"
+        else "LOAD_TEST_API_TOKEN=simeon_pat_REPLACE_WITH_YOUR_TOKEN"
     )
 
     # Output .env format
@@ -161,7 +161,7 @@ async def create_loadtest_data(
 # Organization: {organization.name} ({organization_slug})
 
 # Required: API host and authentication
-# Note: Use an organization access token (polar_oat_*) for this organization
+# Note: Use an organization access token (simeon_oat_*) for this organization
 LOAD_TEST_HOST=http://127.0.0.1:8000
 {api_token_line}
 

@@ -21,7 +21,7 @@ def register(app: typer.Typer, prompt_setup: callable) -> None:
             "uv", "run", "dramatiq",
             "-p", "1", "-t", "1",
             "--queues", "high_priority", "medium_priority", "low_priority",
-            "--watch", "polar",
+            "--watch", "simeon",
             "-f", "simeon.worker.scheduler:start",
             "simeon.worker.run",
         ]

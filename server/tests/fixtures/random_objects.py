@@ -246,7 +246,7 @@ async def create_pledge(
     save_fixture: SaveFixture,
     organization: Organization,
     *,
-    issue_reference: str = "polarsource/polar/1",
+    issue_reference: str = "simeonlabs/simeon/1",
     pledging_organization: Organization | None = None,
     pledging_user: User | None = None,
     state: PledgeState = PledgeState.created,
@@ -2034,7 +2034,7 @@ async def create_payout(
         account_currency=account_currency,
         account_amount=account_amount,
         transaction=transaction,
-        invoice_number=invoice_number or rstr("POLAR-"),
+        invoice_number=invoice_number or rstr("SIMEON-"),
     )
     await save_fixture(payout)
     return payout

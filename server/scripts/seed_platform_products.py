@@ -311,7 +311,7 @@ def _configure_platform_org(platform_org: Organization, *, dry_run: bool) -> str
     can create a creator's new paid subscription WHILE their auto-trial is
     still active (the trial is only superseded once payment succeeds). Each
     creator still ends up with exactly one active platform subscription —
-    the setting only relaxes Polar's checkout uniqueness guard, which would
+    the setting only relaxes Simeon's checkout uniqueness guard, which would
     otherwise reject the conversion checkout.
     """
     current = dict(platform_org.subscription_settings)
@@ -448,7 +448,7 @@ async def _upsert_product(
             name=spec.name,
             description=spec.description,
             recurring_interval=spec.recurring_interval,
-            # Polar's checkout asserts product.recurring_interval_count
+            # Simeon's checkout asserts product.recurring_interval_count
             # is not None when creating a subscription. We always bill
             # every interval (every month or every year), so 1 is the
             # right value for every tier; setting it explicitly avoids
@@ -478,7 +478,7 @@ async def _upsert_product(
         changed = True
     if existing.recurring_interval_count != 1:
         # Backfill the field on previously-seeded rows so the next
-        # checkout doesn't trip Polar's assertion.
+        # checkout doesn't trip Simeon's assertion.
         if not dry_run:
             existing.recurring_interval_count = 1
         changed = True

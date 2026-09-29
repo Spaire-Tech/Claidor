@@ -608,12 +608,12 @@ class TestCreateCustomer:
         response = await client.post(
             "/v1/customers/",
             json={
-                "email": "customer@polar.sh",
+                "email": "customer@simeonlabs.com",
                 "name": "Customer Name",
                 "external_id": "customer_ext_123",
                 "organization_id": str(organization.id),
                 "owner": {
-                    "email": "owner@polar.sh",
+                    "email": "owner@simeonlabs.com",
                     "name": "Owner Name",
                     "external_id": "owner_ext_456",
                 },
@@ -624,14 +624,14 @@ class TestCreateCustomer:
         assert response.status_code == 201
 
         json = response.json()
-        assert json["email"] == "customer@polar.sh"
+        assert json["email"] == "customer@simeonlabs.com"
         assert json["name"] == "Customer Name"
         assert json["external_id"] == "customer_ext_123"
         assert "members" in json
         assert len(json["members"]) == 1
 
         owner = json["members"][0]
-        assert owner["email"] == "owner@polar.sh"
+        assert owner["email"] == "owner@simeonlabs.com"
         assert owner["name"] == "Owner Name"
         assert owner["external_id"] == "owner_ext_456"
         assert owner["role"] == "owner"
@@ -651,12 +651,12 @@ class TestCreateCustomer:
         response = await client.post(
             "/v1/customers/",
             json={
-                "email": "customer@polar.sh",
+                "email": "customer@simeonlabs.com",
                 "name": "Customer Name",
                 "external_id": "customer_ext_789",
                 "organization_id": str(organization.id),
                 "owner": {
-                    "email": "different.owner@polar.sh",
+                    "email": "different.owner@simeonlabs.com",
                 },
             },
             params={"include_members": True},
@@ -665,14 +665,14 @@ class TestCreateCustomer:
         assert response.status_code == 201
 
         json = response.json()
-        assert json["email"] == "customer@polar.sh"
+        assert json["email"] == "customer@simeonlabs.com"
         assert json["name"] == "Customer Name"
         assert json["external_id"] == "customer_ext_789"
         assert "members" in json
         assert len(json["members"]) == 1
 
         owner = json["members"][0]
-        assert owner["email"] == "different.owner@polar.sh"
+        assert owner["email"] == "different.owner@simeonlabs.com"
         assert owner["name"] == "Customer Name"
         assert owner["external_id"] == "customer_ext_789"
         assert owner["role"] == "owner"
@@ -692,7 +692,7 @@ class TestCreateCustomer:
         response = await client.post(
             "/v1/customers/",
             json={
-                "email": "customer@polar.sh",
+                "email": "customer@simeonlabs.com",
                 "name": "Customer Name",
                 "external_id": "customer_ext_abc",
                 "organization_id": str(organization.id),
@@ -706,14 +706,14 @@ class TestCreateCustomer:
         assert response.status_code == 201
 
         json = response.json()
-        assert json["email"] == "customer@polar.sh"
+        assert json["email"] == "customer@simeonlabs.com"
         assert json["name"] == "Customer Name"
         assert json["external_id"] == "customer_ext_abc"
         assert "members" in json
         assert len(json["members"]) == 1
 
         owner = json["members"][0]
-        assert owner["email"] == "customer@polar.sh"
+        assert owner["email"] == "customer@simeonlabs.com"
         assert owner["name"] == "Different Owner Name"
         assert owner["external_id"] == "customer_ext_abc"
         assert owner["role"] == "owner"
@@ -733,7 +733,7 @@ class TestCreateCustomer:
         response = await client.post(
             "/v1/customers/",
             json={
-                "email": "customer@polar.sh",
+                "email": "customer@simeonlabs.com",
                 "name": "Customer Name",
                 "external_id": "customer_ext_xyz",
                 "organization_id": str(organization.id),
@@ -747,14 +747,14 @@ class TestCreateCustomer:
         assert response.status_code == 201
 
         json = response.json()
-        assert json["email"] == "customer@polar.sh"
+        assert json["email"] == "customer@simeonlabs.com"
         assert json["name"] == "Customer Name"
         assert json["external_id"] == "customer_ext_xyz"
         assert "members" in json
         assert len(json["members"]) == 1
 
         owner = json["members"][0]
-        assert owner["email"] == "customer@polar.sh"
+        assert owner["email"] == "customer@simeonlabs.com"
         assert owner["name"] == "Customer Name"
         assert owner["external_id"] == "different_owner_ext_id"
         assert owner["role"] == "owner"

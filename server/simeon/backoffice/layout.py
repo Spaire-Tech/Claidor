@@ -23,7 +23,7 @@ def layout(
     - Responsive drawer-based sidebar for mobile
     - Fixed sidebar for desktop (lg+ breakpoints)
     - Mobile hamburger menu toggle
-    - Polar logo in sidebar
+    - Simeon logo in sidebar
     - Breadcrumb navigation in main content
     - HTMX boost integration for SPA-like navigation
 

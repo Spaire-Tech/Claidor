@@ -7,7 +7,7 @@ import pytest
 import pytest_asyncio
 from fastapi import FastAPI
 
-from simeon.app import app as polar_app
+from simeon.app import app as simeon_app
 from simeon.auth.dependencies import _auth_subject_factory_cache
 from simeon.auth.models import AuthSubject, Subject
 from simeon.checkout.ip_geolocation import _get_client_dependency
@@ -45,20 +45,20 @@ class IsolatedSessionTestClient(httpx.AsyncClient):
 async def app(
     auth_subject: AuthSubject[Subject], session: AsyncSession, redis: Redis
 ) -> AsyncGenerator[FastAPI]:
-    polar_app.dependency_overrides[get_db_session] = lambda: session
-    polar_app.dependency_overrides[get_db_read_session] = lambda: session
-    polar_app.dependency_overrides[get_redis] = lambda: redis
+    simeon_app.dependency_overrides[get_db_session] = lambda: session
+    simeon_app.dependency_overrides[get_db_read_session] = lambda: session
+    simeon_app.dependency_overrides[get_redis] = lambda: redis
     # The box proxy's lookup session is the test's session, left open.
-    polar_app.dependency_overrides[lookup_sessions] = lambda: lambda: nullcontext(
+    simeon_app.dependency_overrides[lookup_sessions] = lambda: lambda: nullcontext(
         session
     )
-    polar_app.dependency_overrides[_get_client_dependency] = lambda: None
+    simeon_app.dependency_overrides[_get_client_dependency] = lambda: None
     for auth_subject_getter in _auth_subject_factory_cache.values():
-        polar_app.dependency_overrides[auth_subject_getter] = lambda: auth_subject
+        simeon_app.dependency_overrides[auth_subject_getter] = lambda: auth_subject
 
-    yield polar_app
+    yield simeon_app
 
-    polar_app.dependency_overrides.pop(get_db_session)
+    simeon_app.dependency_overrides.pop(get_db_session)
 
 
 @pytest_asyncio.fixture

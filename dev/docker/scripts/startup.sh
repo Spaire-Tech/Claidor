@@ -1,5 +1,5 @@
 #!/bin/bash
-# Startup script for Polar API and Worker services in development mode
+# Startup script for Simeon API and Worker services in development mode
 # This script handles dependency installation, email template building,
 # database migrations, and service startup with hot-reloading.
 
@@ -7,7 +7,7 @@ set -euo pipefail
 
 cd /app/server
 
-echo "=== Polar Backend Startup ==="
+echo "=== Simeon Backend Startup ==="
 echo "Service: ${1:-api}"
 
 # Install Python dependencies if not present or outdated
@@ -54,7 +54,7 @@ if [[ ! -f ".jwks.json" ]]; then
     echo "Generating development JWKS..."
     uv run python -c "
 from authlib.jose import JsonWebKey, KeySet
-options = {'kid': 'polar_dev', 'use': 'sig'}
+options = {'kid': 'simeon_dev', 'use': 'sig'}
 key = JsonWebKey.generate_key('RSA', 2048, options, is_private=True)
 keyset = KeySet(keys=[key])
 with open('.jwks.json', 'w') as f:

@@ -1,10 +1,10 @@
 overlay: 1.0.0
 info:
-  title: Overlay to remove Polar branding from generated SDKs
+  title: Overlay to remove Simeon branding from generated SDKs
   version: 0.0.1
 actions:
   - target: "$.components.schemas.SubscriptionCancel.properties.customer_cancellation_comment"
-    description: Replace Polar reference in customerCancellationComment description
+    description: Replace Simeon reference in customerCancellationComment description
     update:
       description: |
         Customer feedback and why they decided to cancel.
@@ -18,7 +18,7 @@ actions:
         customer. Or you copy a message directly from a customer
         conversation, i.e support.
   - target: "$.components.schemas.SubscriptionRevoke.properties.customer_cancellation_comment"
-    description: Replace Polar reference in customerCancellationComment description
+    description: Replace Simeon reference in customerCancellationComment description
     update:
       description: |
         Customer feedback and why they decided to cancel.

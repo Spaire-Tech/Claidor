@@ -120,7 +120,7 @@ class Subscription(CustomFieldDataMixin, MetadataMixin, RecordModel):
     Original ID of the subscription in Stripe.
 
     If set, indicates that the subscription was originally managed by Stripe Billing,
-    but has been migrated to be managed by Polar.
+    but has been migrated to be managed by Simeon.
     """
 
     tax_exempted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
