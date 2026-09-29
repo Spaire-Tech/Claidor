@@ -4,15 +4,15 @@ from uuid import UUID
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.entitlements.tiers import TierKey
-from polar.enums import RateLimitGroup, SubscriptionRecurringInterval
-from polar.models import Account, Organization, Product, User
-from polar.models.subscription import SubscriptionStatus
-from polar.platform.fee_sync import (
+from simeon.entitlements.tiers import TierKey
+from simeon.enums import RateLimitGroup, SubscriptionRecurringInterval
+from simeon.models import Account, Organization, Product, User
+from simeon.models.subscription import SubscriptionStatus
+from simeon.platform.fee_sync import (
     maybe_enqueue_sync_from_subscription,
     platform_fee_sync,
 )
-from polar.postgres import AsyncSession
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     PriceFixtureType,
@@ -26,7 +26,7 @@ from tests.fixtures.random_objects import (
 
 
 def _patch_platform_org_id(mocker: MockerFixture, org_id: UUID | None) -> None:
-    mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", org_id)
+    mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", org_id)
 
 
 async def _seed_tier_product(
@@ -333,7 +333,7 @@ class TestMaybeEnqueueFromSubscription:
         session: AsyncSession,
         save_fixture: SaveFixture,
     ) -> None:
-        enqueue = mocker.patch("polar.platform.fee_sync.enqueue_sync")
+        enqueue = mocker.patch("simeon.platform.fee_sync.enqueue_sync")
         platform_org = await create_organization(save_fixture)
         _patch_platform_org_id(mocker, platform_org.id)
         creator = await create_organization(save_fixture)
@@ -366,7 +366,7 @@ class TestMaybeEnqueueFromSubscription:
         session: AsyncSession,
         save_fixture: SaveFixture,
     ) -> None:
-        enqueue = mocker.patch("polar.platform.fee_sync.enqueue_sync")
+        enqueue = mocker.patch("simeon.platform.fee_sync.enqueue_sync")
         platform_org = await create_organization(save_fixture)
         _patch_platform_org_id(mocker, platform_org.id)
 
@@ -401,7 +401,7 @@ class TestMaybeEnqueueFromSubscription:
         session: AsyncSession,
         save_fixture: SaveFixture,
     ) -> None:
-        enqueue = mocker.patch("polar.platform.fee_sync.enqueue_sync")
+        enqueue = mocker.patch("simeon.platform.fee_sync.enqueue_sync")
         _patch_platform_org_id(mocker, None)
         any_org = await create_organization(save_fixture)
         end_customer = await create_customer(
@@ -430,7 +430,7 @@ class TestMaybeEnqueueFromSubscription:
         session: AsyncSession,
         save_fixture: SaveFixture,
     ) -> None:
-        enqueue = mocker.patch("polar.platform.fee_sync.enqueue_sync")
+        enqueue = mocker.patch("simeon.platform.fee_sync.enqueue_sync")
         platform_org = await create_organization(save_fixture)
         _patch_platform_org_id(mocker, platform_org.id)
         product = await _seed_tier_product(

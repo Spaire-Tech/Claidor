@@ -21,8 +21,6 @@ from pytest_mock import MockerFixture
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from polar.models import Customer, Order, OrderItem, Organization, Product
-from polar.models.order import OrderBillingReasonInternal, OrderStatus
 from scripts.swap_org_slug import (
     SwapError,
     _default_release_slug,
@@ -30,6 +28,8 @@ from scripts.swap_org_slug import (
     _run,
     perform_swap,
 )
+from simeon.models import Customer, Order, OrderItem, Organization, Product
+from simeon.models.order import OrderBillingReasonInternal, OrderStatus
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_customer,

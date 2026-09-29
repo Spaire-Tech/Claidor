@@ -1,22 +1,22 @@
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.entitlements.exceptions import FeatureNotInPlanError
-from polar.entitlements.tiers import TierKey
-from polar.models import Organization, OrganizationCustomDomain
-from polar.models.organization_custom_domain import OrganizationCustomDomainStatus
-from polar.organization_custom_domain import dns
-from polar.organization_custom_domain.service import (
+from simeon.config import settings
+from simeon.entitlements.exceptions import FeatureNotInPlanError
+from simeon.entitlements.tiers import TierKey
+from simeon.models import Organization, OrganizationCustomDomain
+from simeon.models.organization_custom_domain import OrganizationCustomDomainStatus
+from simeon.organization_custom_domain import dns
+from simeon.organization_custom_domain.service import (
     DomainAlreadyInUse,
     InvalidDomain,
     NoDomainConfigured,
     normalize_and_validate_domain,
 )
-from polar.organization_custom_domain.service import (
+from simeon.organization_custom_domain.service import (
     organization_custom_domain as custom_domain_service,
 )
-from polar.postgres import AsyncSession
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_organization
 
@@ -74,7 +74,7 @@ def _mock_dns(mocker: MockerFixture, responses: dict[str, list[str]]) -> None:
         return responses[record_type]
 
     mocker.patch(
-        "polar.organization_custom_domain.service.dns.resolve", side_effect=resolve
+        "simeon.organization_custom_domain.service.dns.resolve", side_effect=resolve
     )
 
 
@@ -87,7 +87,7 @@ class TestSetDomain:
         organization: Organization,
     ) -> None:
         enqueue_job_mock = mocker.patch(
-            "polar.organization_custom_domain.service.enqueue_job"
+            "simeon.organization_custom_domain.service.enqueue_job"
         )
 
         custom_domain = await custom_domain_service.set_domain(
@@ -109,7 +109,7 @@ class TestSetDomain:
         session: AsyncSession,
         organization: Organization,
     ) -> None:
-        mocker.patch("polar.organization_custom_domain.service.enqueue_job")
+        mocker.patch("simeon.organization_custom_domain.service.enqueue_job")
 
         first = await custom_domain_service.set_domain(
             session, organization, "learn.creator.com"
@@ -129,7 +129,7 @@ class TestSetDomain:
         organization: Organization,
     ) -> None:
         enqueue_job_mock = mocker.patch(
-            "polar.organization_custom_domain.service.enqueue_job"
+            "simeon.organization_custom_domain.service.enqueue_job"
         )
         first = await custom_domain_service.set_domain(
             session, organization, "learn.creator.com"
@@ -160,7 +160,7 @@ class TestSetDomain:
         save_fixture: SaveFixture,
         organization: Organization,
     ) -> None:
-        mocker.patch("polar.organization_custom_domain.service.enqueue_job")
+        mocker.patch("simeon.organization_custom_domain.service.enqueue_job")
         other = await create_organization(save_fixture)
         await custom_domain_service.set_domain(session, other, "learn.creator.com")
 
@@ -176,7 +176,7 @@ class TestSetDomain:
         organization: Organization,
     ) -> None:
         mocker.patch(
-            "polar.organization_custom_domain.service.entitlements_service.require_feature",
+            "simeon.organization_custom_domain.service.entitlements_service.require_feature",
             side_effect=FeatureNotInPlanError(
                 "custom_storefront_domain", TierKey.starter
             ),
@@ -197,7 +197,7 @@ class TestVerify:
         organization: Organization,
     ) -> OrganizationCustomDomain:
         self.enqueue_job_mock = mocker.patch(
-            "polar.organization_custom_domain.service.enqueue_job"
+            "simeon.organization_custom_domain.service.enqueue_job"
         )
         return await custom_domain_service.set_domain(
             session, organization, "learn.creator.com"
@@ -258,7 +258,7 @@ class TestVerify:
             return [token] if name.startswith("_claidor-verify.") else []
 
         mocker.patch(
-            "polar.organization_custom_domain.service.dns.resolve",
+            "simeon.organization_custom_domain.service.dns.resolve",
             side_effect=resolve,
         )
 
@@ -363,7 +363,7 @@ class TestVerify:
     ) -> None:
         custom_domain = await self._create_domain(mocker, session, organization)
         mocker.patch(
-            "polar.organization_custom_domain.service.dns.resolve",
+            "simeon.organization_custom_domain.service.dns.resolve",
             side_effect=dns.DNSResolutionError(custom_domain.domain, "TXT", "boom"),
         )
 
@@ -383,7 +383,7 @@ class TestRemove:
         organization: Organization,
     ) -> None:
         enqueue_job_mock = mocker.patch(
-            "polar.organization_custom_domain.service.enqueue_job"
+            "simeon.organization_custom_domain.service.enqueue_job"
         )
         await custom_domain_service.set_domain(
             session, organization, "learn.creator.com"

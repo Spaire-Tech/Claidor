@@ -3,30 +3,30 @@ from datetime import datetime
 
 import pytest
 
-from polar.auth.models import AuthSubject
-from polar.customer_portal.schemas.subscription import (
+from simeon.auth.models import AuthSubject
+from simeon.customer_portal.schemas.subscription import (
     CustomerSubscriptionUpdateProduct,
     CustomerSubscriptionUpdateSeats,
 )
-from polar.customer_portal.service.subscription import (
+from simeon.customer_portal.service.subscription import (
     UpdateSubscriptionPlanNotAllowed,
     UpdateSubscriptionSeatsNotAllowed,
 )
-from polar.customer_portal.service.subscription import (
+from simeon.customer_portal.service.subscription import (
     customer_subscription as customer_subscription_service,
 )
-from polar.exceptions import SimeonRequestValidationError
-from polar.kit.pagination import PaginationParams
-from polar.models import (
+from simeon.exceptions import SimeonRequestValidationError
+from simeon.kit.pagination import PaginationParams
+from simeon.models import (
     Customer,
     Organization,
     Product,
     ProductPriceFixed,
     Subscription,
 )
-from polar.models.subscription import CustomerCancellationReason, SubscriptionStatus
-from polar.postgres import AsyncSession
-from polar.subscription.service import AlreadyCanceledSubscription
+from simeon.models.subscription import CustomerCancellationReason, SubscriptionStatus
+from simeon.postgres import AsyncSession
+from simeon.subscription.service import AlreadyCanceledSubscription
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
@@ -89,7 +89,7 @@ class TestList:
         organization: Organization,
         customer: Customer,
     ) -> None:
-        from polar.enums import SubscriptionRecurringInterval
+        from simeon.enums import SubscriptionRecurringInterval
 
         product_match = await create_product(
             save_fixture,
@@ -135,7 +135,7 @@ class TestList:
         customer: Customer,
     ) -> None:
         """Test that % in query is treated as literal, not wildcard."""
-        from polar.enums import SubscriptionRecurringInterval
+        from simeon.enums import SubscriptionRecurringInterval
 
         product_with_percent = await create_product(
             save_fixture,
@@ -181,7 +181,7 @@ class TestList:
         customer: Customer,
     ) -> None:
         """Test that _ in query is treated as literal, not single-char wildcard."""
-        from polar.enums import SubscriptionRecurringInterval
+        from simeon.enums import SubscriptionRecurringInterval
 
         product_with_underscore = await create_product(
             save_fixture,

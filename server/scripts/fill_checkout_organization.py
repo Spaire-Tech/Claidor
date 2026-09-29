@@ -8,11 +8,11 @@ import typer
 from rich.progress import Progress
 from sqlalchemy import bindparam, func, select, update
 
-from polar import tasks  # noqa: F401
-from polar.config import settings
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.models import Checkout, Product
-from polar.postgres import create_async_engine
+from simeon import tasks  # noqa: F401
+from simeon.config import settings
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.models import Checkout, Product
+from simeon.postgres import create_async_engine
 
 cli = typer.Typer()
 

@@ -2,9 +2,9 @@ from typing import Any, Literal
 
 import pytest
 
-from polar.auth.models import Anonymous, AuthSubject, Subject
-from polar.auth.scope import Scope
-from polar.models import Customer, Member, Organization, User
+from simeon.auth.models import Anonymous, AuthSubject, Subject
+from simeon.auth.scope import Scope
+from simeon.models import Customer, Member, Organization, User
 
 
 class AuthSubjectFixture:

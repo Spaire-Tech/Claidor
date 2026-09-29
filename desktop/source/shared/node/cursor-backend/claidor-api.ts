@@ -3,8 +3,8 @@ import { getConfiguredBackendUrl } from "../cursor-token.js";
 // Claidor's metered doors for the desktop app, all under one prefix on the
 // API host: the model proxy (`/responses`, `/messages`, `/chat/completions`),
 // speech, and — since 19 September 2026 — web search, pictures and dictation
-// (`server/polar/desktop/capabilities.py`). Measured, not recalled: the
-// router in `server/polar/desktop/endpoints.py` carries `prefix="/desktop"`,
+// (`server/simeon/desktop/capabilities.py`). Measured, not recalled: the
+// router in `server/simeon/desktop/endpoints.py` carries `prefix="/desktop"`,
 // and `POST https://api.simeonlabs.com/api/proxy/v1/models` answers 404 while
 // `/desktop/api/proxy/v1/...` answers. Every caller builds its address here
 // so there is one place for that fact to live.
@@ -12,7 +12,7 @@ export const CLAIDOR_PROXY_PREFIX = "desktop/api/proxy/v1";
 export const CLAIDOR_COMPOSIO_PREFIX = "desktop/api/proxy/composio";
 // The account doors — profile, quota, the model menu, sign-out, feedback —
 // sit one level up, under `/desktop/api`, and answer the app's own envelope
-// `{ code, data }` (`_ok` in `server/polar/desktop/endpoints.py`) rather
+// `{ code, data }` (`_ok` in `server/simeon/desktop/endpoints.py`) rather
 // than a provider's shape. Added 24 September 2026 when the account screens
 // were moved off Cursor's Connect RPCs.
 export const CLAIDOR_API_PREFIX = "desktop/api";

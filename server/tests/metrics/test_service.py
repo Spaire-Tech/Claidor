@@ -7,13 +7,13 @@ import pytest_asyncio
 from apscheduler.util import ZoneInfo
 from sqlalchemy import select
 
-from polar.auth.models import AuthSubject
-from polar.config import settings
-from polar.enums import SubscriptionRecurringInterval
-from polar.kit.time_queries import TimeInterval
-from polar.metrics.schemas import MetricsResponse
-from polar.metrics.service import metrics as metrics_service
-from polar.models import (
+from simeon.auth.models import AuthSubject
+from simeon.config import settings
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.kit.time_queries import TimeInterval
+from simeon.metrics.schemas import MetricsResponse
+from simeon.metrics.service import metrics as metrics_service
+from simeon.models import (
     Customer,
     Discount,
     Order,
@@ -23,12 +23,12 @@ from polar.models import (
     User,
     UserOrganization,
 )
-from polar.models.discount import DiscountDuration, DiscountType
-from polar.models.event import EventSource
-from polar.models.order import OrderStatus
-from polar.models.product import ProductBillingType
-from polar.models.subscription import SubscriptionStatus
-from polar.postgres import AsyncSession
+from simeon.models.discount import DiscountDuration, DiscountType
+from simeon.models.event import EventSource
+from simeon.models.order import OrderStatus
+from simeon.models.product import ProductBillingType
+from simeon.models.subscription import SubscriptionStatus
+from simeon.postgres import AsyncSession
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
@@ -2435,7 +2435,7 @@ class TestCheckoutMetrics:
         If 2 checkouts are opened and 1 succeeds, conversion should be 50%,
         NOT based on total created checkouts.
         """
-        from polar.models.checkout import CheckoutStatus
+        from simeon.models.checkout import CheckoutStatus
 
         product = await create_product(
             save_fixture,

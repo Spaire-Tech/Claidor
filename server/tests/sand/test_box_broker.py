@@ -28,24 +28,24 @@ from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 from websockets.asyncio.server import serve
 
-from polar.config import settings
-from polar.models import SandBox, User
-from polar.postgres import AsyncSession
-from polar.sand import box_hosts, box_proxy, box_service
-from polar.sand.box_hosts import (
+from simeon.config import settings
+from simeon.models import SandBox, User
+from simeon.postgres import AsyncSession
+from simeon.sand import box_hosts, box_proxy, box_service
+from simeon.sand.box_hosts import (
     BOX_HOST_UNAVAILABLE_SENTENCE,
     BoxBlocked,
     BoxSpec,
     ProvisionedBox,
 )
-from polar.sand.box_service import (
+from simeon.sand.box_service import (
     PHASE_CREATING,
     PHASE_DONE,
     RUN_STATE_ABSENT,
     RUN_STATE_HIBERNATED,
     RUN_STATE_RUNNING,
 )
-from polar.sand.connect import decode_stream_frames
+from simeon.sand.connect import decode_stream_frames
 from tests.desktop.test_endpoints import _signed_in
 
 ENSURE = "/aiserver.v1.GrokBotService/EnsureSandBox"

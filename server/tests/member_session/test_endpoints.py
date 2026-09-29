@@ -3,10 +3,10 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
-from polar.auth.scope import Scope
-from polar.models import Member, Organization, UserOrganization
-from polar.models.member import MemberRole
-from polar.models.member_session import MEMBER_SESSION_TOKEN_PREFIX
+from simeon.auth.scope import Scope
+from simeon.models import Member, Organization, UserOrganization
+from simeon.models.member import MemberRole
+from simeon.models.member_session import MEMBER_SESSION_TOKEN_PREFIX
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_customer

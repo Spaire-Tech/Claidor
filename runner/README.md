@@ -34,7 +34,7 @@ never starts a second job while one is running.
 
 ### A cloud agent's turn
 
-The app's cloud agents (`server/polar/sand/cloud_agents.py`) are jobs on
+The app's cloud agents (`server/simeon/sand/cloud_agents.py`) are jobs on
 this same queue, one per turn. Such a job carries `conversation` on the
 claim — the person's messages and the earlier turns' replies — and the
 runner asks the model the whole list instead of `prompt` alone, then

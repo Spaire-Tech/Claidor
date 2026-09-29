@@ -18,9 +18,9 @@ import pytest
 from pytest_mock import MockerFixture
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from polar.enums import SubscriptionRecurringInterval
-from polar.kit.address import Address, CountryAlpha2
-from polar.models import (
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.kit.address import Address, CountryAlpha2
+from simeon.models import (
     Customer,
     Order,
     OrderItem,
@@ -28,9 +28,9 @@ from polar.models import (
     Product,
     Subscription,
 )
-from polar.models.order import OrderBillingReasonInternal, OrderStatus
-from polar.models.subscription import SubscriptionStatus
-from polar.order.service import order as order_service
+from simeon.models.order import OrderBillingReasonInternal, OrderStatus
+from simeon.models.subscription import SubscriptionStatus
+from simeon.order.service import order as order_service
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_customer,
@@ -45,7 +45,7 @@ async def _platform_setup(
 ) -> tuple[Organization, Product, Customer]:
     """A platform (Simeon) org with a Studio plan + a creator-customer."""
     platform_org = await create_organization(save_fixture)
-    mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+    mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
     product = await create_product(
         save_fixture,
         organization=platform_org,
@@ -127,9 +127,9 @@ class TestPlatformConfirmationEmail:
         await save_fixture(order)
 
         render = mocker.patch(
-            "polar.order.service.render_email_template", return_value="<html></html>"
+            "simeon.order.service.render_email_template", return_value="<html></html>"
         )
-        enqueue_email = mocker.patch("polar.order.service.enqueue_email")
+        enqueue_email = mocker.patch("simeon.order.service.enqueue_email")
         generate_invoice = mocker.patch.object(order_service, "generate_invoice")
 
         await order_service.send_confirmation_email(session, order)
@@ -164,9 +164,9 @@ class TestPlatformConfirmationEmail:
         await save_fixture(order)
 
         render = mocker.patch(
-            "polar.order.service.render_email_template", return_value="<html></html>"
+            "simeon.order.service.render_email_template", return_value="<html></html>"
         )
-        enqueue_email = mocker.patch("polar.order.service.enqueue_email")
+        enqueue_email = mocker.patch("simeon.order.service.enqueue_email")
 
         # Avoid real S3/PDF generation: pretend the invoice was produced.
         async def _gen(_session: AsyncSession, o: Order) -> Order:
@@ -222,9 +222,9 @@ class TestPlatformConfirmationEmail:
         await save_fixture(order)
 
         render = mocker.patch(
-            "polar.order.service.render_email_template", return_value="<html></html>"
+            "simeon.order.service.render_email_template", return_value="<html></html>"
         )
-        mocker.patch("polar.order.service.enqueue_email")
+        mocker.patch("simeon.order.service.enqueue_email")
         mocker.patch.object(order_service, "generate_invoice")
 
         await order_service.send_confirmation_email(session, order)
@@ -250,7 +250,7 @@ class TestPlatformMarketingSuppression:
             trial_end=datetime.now(UTC) + timedelta(days=14),
         )
 
-        enqueue = mocker.patch("polar.order.service.enqueue_job")
+        enqueue = mocker.patch("simeon.order.service.enqueue_job")
 
         # The real trial-start path: create_trial_order -> _on_order_paid.
         await order_service.create_trial_order(

@@ -15,9 +15,9 @@ This document provides essential guidance for AI agents contributing to the Sime
 Simeon is a team of always-on agents on your Mac, made by Simeon Labs. The repository holds the Mac app, the API server, the cloud runner, the web app and the website. `CLAUDE.md` at the root is the map, and `docs/` explains each part.
 
 - **`server/`**: The backend is a Python application built with the **FastAPI** framework.
-    - **Database**: It uses **PostgreSQL** as its database, with **SQLAlchemy** as the ORM. Database models are located in `server/polar/models`.
+    - **Database**: It uses **PostgreSQL** as its database, with **SQLAlchemy** as the ORM. Database models are located in `server/simeon/models`.
     - **Background Jobs**: Asynchronous tasks are handled by **Dramatiq** workers.
-    - **API**: The core API logic is in `server/polar/`, with routes organized into modules.
+    - **API**: The core API logic is in `server/simeon/`, with routes organized into modules.
 - **`clients/`**: The frontend is a **Next.js** application managed with **Turborepo** and **pnpm**.
     - **`clients/apps/web/`**: This is the main web dashboard application.
     - **`clients/packages/ui/`**: A shared library of React components built with Radix UI and Tailwind CSS.
@@ -92,18 +92,18 @@ uv run pytest tests/path/to/test_file.py::TestClassName::test_method_name
 
 ## Backend Conventions
 
-- **Modular Structure**: The code is organized in a modular way, with each module in its own folder under `server/polar/`. A typical module contains:
+- **Modular Structure**: The code is organized in a modular way, with each module in its own folder under `server/simeon/`. A typical module contains:
     - `endpoints.py`: API endpoints.
     - `service.py`: Business logic, encapsulated in service classes.
     - `schemas.py`: Pydantic schemas for API request/response validation and serialization.
     - `repository.py`: Database query logic, using SQLAlchemy.
-- **Models**: Note that SQLAlchemy models are an exception to the modular structure and are defined globally in `server/polar/models`.
+- **Models**: Note that SQLAlchemy models are an exception to the modular structure and are defined globally in `server/simeon/models`.
 - **API Client Generation**: The frontend's TypeScript client is generated from the backend's OpenAPI schema. After making changes to the API, you may need to run `pnpm run generate` in `clients/packages/client` to update the client.
 
 ### Import Organization
 
 - **imports at module top**: Import statements like `from sqlalchemy import update, select` should be at the top of the file, not inside methods or functions.
-- **Follow modular structure**: Import models from `polar.models`, services from their respective modules, following the established patterns.
+- **Follow modular structure**: Import models from `simeon.models`, services from their respective modules, following the established patterns.
 - **Dependency injection**: Use FastAPI's dependency injection system for repositories and services.
 
 ### Repository Layer Standards
@@ -159,7 +159,7 @@ If you need to ensure that data is flushed to the database, to run constraints o
 
 ### Testing Standards
 
-- **Test file structure**: Test files mirror the source code structure. If you have `server/polar/foo/endpoints.py`, the corresponding tests will be in `tests/foo/test_endpoints.py`.
+- **Test file structure**: Test files mirror the source code structure. If you have `server/simeon/foo/endpoints.py`, the corresponding tests will be in `tests/foo/test_endpoints.py`.
 - **Avoid redundant fixture setup**: Don't manually set data that fixtures already provide (e.g., `customer.stripe_customer_id` when the `customer` fixture includes it).
 - **Descriptive test names**: Use method names that clearly describe the behavior being tested.
 - **Encapsulate test logic**: Use class based tests. Usually we have one class per method that we want to test, and each test case is a different scenario for that method.
@@ -170,7 +170,7 @@ If you need to ensure that data is flushed to the database, to run constraints o
 
 ### Tax ID Validation
 
-When adding or modifying tax ID validators in `server/polar/tax/tax_id.py`:
+When adding or modifying tax ID validators in `server/simeon/tax/tax_id.py`:
 
 - **Keep validators minimal**: Do not add lengthy docstrings to validator classes. The code should be self-explanatory.
 - **Follow existing patterns**: Use the same structure as other validators (e.g., `CLTINValidator`, `TRTINValidator`).
@@ -196,14 +196,14 @@ The backend uses a custom authentication system built on FastAPI's dependency in
 - **`AuthSubject`**: The core of the system is the `AuthSubject[T]` type, which represents the authenticated entity. `T` can be `User`, `Organization`, `Customer`, or `Anonymous`. It's available in endpoint signatures as a dependency. If an endpoint does not have an `auth_subject` dependency, it is public and accessible to anonymous users.
 - **Module-Specific Authentication**: For most API, authentication models should be defined within each module's `auth.py` file. This allows creating authenticators with specific scopes and allowed subjects.
     ```python
-    # server/polar/discount/auth.py
+    # server/simeon/discount/auth.py
     _DiscountWrite = Authenticator(
         required_scopes={Scope.web_default, Scope.discounts_write},
         allowed_subjects={User, Organization},
     )
     DiscountWrite = Annotated[AuthSubject[User | Organization], Depends(_DiscountWrite)]
     ```
-- **Specific Cases**: For API endpoints that should only be used in the context of our web dashboard or our internal backoffice, use one of the predefined authenticator dependencies from `server/polar/auth/dependencies.py`.
+- **Specific Cases**: For API endpoints that should only be used in the context of our web dashboard or our internal backoffice, use one of the predefined authenticator dependencies from `server/simeon/auth/dependencies.py`.
     - `WebUser`: Requires a logged-in user (`AuthSubject[User]`).
     - `WebUserOrAnonymous`: Allows either a logged-in user or an anonymous user (`AuthSubject[User | Anonymous]`).
     - `AdminUser`: Requires a user with admin privileges.
@@ -211,8 +211,8 @@ The backend uses a custom authentication system built on FastAPI's dependency in
 - **Example**:
 
     ```python
-    from polar.models import User
-    from polar.discount.auth import DiscountWrite
+    from simeon.models import User
+    from simeon.discount.auth import DiscountWrite
 
     @router.post("/discounts")
     def create_discount(auth_subject: DiscountWrite) -> Discount:

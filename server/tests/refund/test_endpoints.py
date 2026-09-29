@@ -4,11 +4,11 @@ import pytest
 from httpx import AsyncClient
 from pytest_mock import MockerFixture
 
-from polar.auth.scope import Scope
-from polar.benefit.grant.service import benefit_grant as benefit_grant_service
-from polar.integrations.stripe.service import StripeService
-from polar.kit.utils import generate_uuid
-from polar.models import (
+from simeon.auth.scope import Scope
+from simeon.benefit.grant.service import benefit_grant as benefit_grant_service
+from simeon.integrations.stripe.service import StripeService
+from simeon.kit.utils import generate_uuid
+from simeon.models import (
     Customer,
     Order,
     Organization,
@@ -18,13 +18,13 @@ from polar.models import (
     Transaction,
     UserOrganization,
 )
-from polar.models.dispute import DisputeStatus
-from polar.models.order import OrderStatus
-from polar.models.refund import RefundReason, RefundStatus
-from polar.models.subscription import SubscriptionStatus
-from polar.order.repository import OrderRepository
-from polar.postgres import AsyncSession
-from polar.refund.schemas import RefundCreate
+from simeon.models.dispute import DisputeStatus
+from simeon.models.order import OrderStatus
+from simeon.models.refund import RefundReason, RefundStatus
+from simeon.models.subscription import SubscriptionStatus
+from simeon.order.repository import OrderRepository
+from simeon.postgres import AsyncSession
+from simeon.refund.schemas import RefundCreate
 from tests.fixtures import random_objects as ro
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
@@ -36,14 +36,14 @@ from .test_service import StripeRefund
 @pytest.fixture(autouse=True)
 def stripe_service_mock(mocker: MockerFixture) -> MagicMock:
     mock = MagicMock(spec=StripeService)
-    mocker.patch("polar.refund.service.stripe_service", new=mock)
+    mocker.patch("simeon.refund.service.stripe_service", new=mock)
     return mock
 
 
 @pytest.fixture(autouse=True)
 def refund_transaction_service_mock(mocker: MockerFixture) -> MagicMock:
     mock = mocker.patch(
-        "polar.refund.service.refund_transaction_service", autospec=True
+        "simeon.refund.service.refund_transaction_service", autospec=True
     )
     return mock
 

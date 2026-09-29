@@ -120,7 +120,7 @@ jobs:
             if [[ "$file" == server/migrations/* ]]; then
               continue
             fi
-            if [[ "$file" == server/polar/models/* ]]; then
+            if [[ "$file" == server/simeon/models/* ]]; then
               continue
             fi
             if [[ "$file" == .github/* ]]; then

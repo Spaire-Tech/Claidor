@@ -2,7 +2,7 @@
  * Cloud agents and messaging channels were Coming Soon at every reach point
  * on 25 September 2026 (design-audit-ledger.md cluster `cloud-agents-channels`:
  * F-007, F-210, F-055, F-056, F-057, F-081, F-472), and both are served
- * since later that day: cloud agents by `polar/sand/cloud_agents.py`,
+ * since later that day: cloud agents by `simeon/sand/cloud_agents.py`,
  * channels by the connector runtime in the box (`host/extensions/channels/`,
  * tests/channels-runtime.test.mjs). This test keeps the Coming Soon branch
  * honest behind its switches (`SAND_CLOUD_AGENTS_SERVED=0`,
@@ -33,7 +33,7 @@ async function load(entry, name) {
 }
 
 test("SendMessage: cursor-agent served by default, a dropped channel, a refused secret-request; the flag at 0 restores coming soon", async () => {
-  // Cloud agents are served by default since 25 September 2026 (polar/sand/cloud_agents.py).
+  // Cloud agents are served by default since 25 September 2026 (simeon/sand/cloud_agents.py).
   process.env.SAND_CLOUD_AGENTS_SERVED = "0";
   process.env.SAND_CHANNELS_SERVED = "0";
   const { module, dispose } = await load("source/host/runner/tools/send-message-schema.ts", "send-message-schema");
@@ -91,7 +91,7 @@ test("the brief: cloud agents coming soon, no admin, no Origin, no CloudAgent to
     assert.doesNotMatch(disabled, /CloudAgent tool/);
     assert.match(module.SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION, /^## Cloud agents coming soon\n/);
     assert.doesNotMatch(module.SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION, /admin/);
-    // Served since 25 September 2026 (polar/sand/cloud_agents.py): the enabled
+    // Served since 25 September 2026 (simeon/sand/cloud_agents.py): the enabled
     // sections are on, and say Simeon where Grok Bot said Cursor
     // (tests/cloud-agents-served.test.mjs measures the sentences).
     assert.match(module.buildSandBaseSystemPrompt({ cloudAgentsEnabled: true }), /## Repositories/, "Grok Bot's served structure is kept behind the flag, as Simeon's");

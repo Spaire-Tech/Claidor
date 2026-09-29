@@ -15,7 +15,7 @@ describing a different product.)
 
 import secrets
 
-from polar.kit.jwk import generate_jwks
+from simeon.kit.jwk import generate_jwks
 
 KID = "simeon_prod"
 

@@ -1,4 +1,4 @@
-from polar.kit.math import polar_round
+from simeon.kit.math import polar_round
 
 
 def test_polar_round() -> None:

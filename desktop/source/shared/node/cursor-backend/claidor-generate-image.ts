@@ -1,7 +1,7 @@
 import { claidorProxyRequest, ClaidorApiError, type ClaidorApiAuth } from "./claidor-api.js";
 
 // Pictures, on Claidor's `/images/generations` door
-// (`server/polar/desktop/capabilities.py`). Until 19 September 2026 this was
+// (`server/simeon/desktop/capabilities.py`). Until 19 September 2026 this was
 // a Connect RPC call on `aiserver.v1.AiService/RunGenerateImage`, which
 // Claidor never served; the tool that calls it
 // (`packages/agent/tools/core/generate-image.ts`) and the avatar picker are

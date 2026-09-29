@@ -82,7 +82,7 @@ export interface CursorProfileDeps {
 export const CLAIDOR_PROFILE_PATH = "user/profile";
 export const CLAIDOR_QUOTA_PATH = "user/quota";
 
-/** `user_payload()` in `server/polar/desktop/service.py`. */
+/** `user_payload()` in `server/simeon/desktop/service.py`. */
 export interface ClaidorProfileRow {
   readonly id?: string;
   readonly email?: string;
@@ -93,7 +93,7 @@ export interface ClaidorProfileRow {
   readonly accountMode?: string;
 }
 
-/** `quota()` in `server/polar/desktop/service.py`. */
+/** `quota()` in `server/simeon/desktop/service.py`. */
 export interface ClaidorQuotaRow {
   readonly planName?: string;
   readonly subscriptionStatus?: string;

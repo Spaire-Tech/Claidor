@@ -7,7 +7,7 @@
  * ever called them (design-audit-ledger.md F-065, F-252, F-358). The
  * memory-sync host extension is that client. This runs it against an
  * in-process HTTP server that answers the two routes the way
- * `server/polar/desktop/service.py` does — versions, a union merge on a
+ * `server/simeon/desktop/service.py` does — versions, a union merge on a
  * stale base, tombstones under `deleted` — and measures: a fresh box
  * pulls; a local change pushes with its base version; a server-side newer
  * version is merged into the file; a deleted name removes the file; a local
@@ -257,6 +257,6 @@ test("the names it syncs are the server's shapes and nothing else; the extension
   const extension = await src("host/extensions/memory-sync/extension.ts");
   assert.match(extension, /dependencies: \[HostExtensions\.Auth, HostExtensions\.Memory\]/);
   assert.match(extension, /getAccessToken: \(options\) => auth\.getAccessToken\(options\)/, "the box's own token, the one the model proxy takes");
-  const endpoints = await readFile(path.join(repoRoot, "..", "server", "polar", "desktop", "endpoints.py"), "utf8");
+  const endpoints = await readFile(path.join(repoRoot, "..", "server", "simeon", "desktop", "endpoints.py"), "utf8");
   assert.match(endpoints, /"\/api\/memory\/sync",[\s\S]*?Depends\(get_desktop_or_box_session\)/, "the server takes the box's credential on the sync route");
 });

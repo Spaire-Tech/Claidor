@@ -29,8 +29,8 @@ import sys
 
 from sqlalchemy import delete, func, select
 
-from polar.kit.db.postgres import AsyncSession, create_async_sessionmaker
-from polar.models import (
+from simeon.kit.db.postgres import AsyncSession, create_async_sessionmaker
+from simeon.models import (
     DesktopAuthCode,
     DesktopMemoryFile,
     DesktopSession,
@@ -38,7 +38,7 @@ from polar.models import (
     MatyJob,
     User,
 )
-from polar.postgres import create_async_engine
+from simeon.postgres import create_async_engine
 
 TABLES = (
     ("desktop_usage", DesktopUsage),

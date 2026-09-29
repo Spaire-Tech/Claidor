@@ -1,7 +1,7 @@
 import { claidorApiUrl } from "../../shared/node/cursor-backend/claidor-api.js";
 
 // Sign-out on Simeon Labs' server: `POST /desktop/api/auth/logout` with the
-// departing bearer (`server/polar/desktop/endpoints.py`, `logout`), which
+// departing bearer (`server/simeon/desktop/endpoints.py`, `logout`), which
 // revokes the session row behind it — the envelope token and the opaque
 // one alike, since `authenticate` unwraps before it looks up.
 //

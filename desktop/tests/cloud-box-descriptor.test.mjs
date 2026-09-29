@@ -7,7 +7,7 @@
  * `-<port>` label, and `setBoxRuntime("remote")` probes the broker before
  * stopping the local box. Everything else was already built
  * (`BrokeredHostConnector`, the descriptor, the blocked hold); these tests
- * drive it with the JSON `polar/sand/box_broker.py` answers.
+ * drive it with the JSON `simeon/sand/box_broker.py` answers.
  */
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";

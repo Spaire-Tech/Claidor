@@ -55,7 +55,7 @@ export interface ClaidorCredentialSource {
 // GPT-6 Sol and Luna since 28 September 2026 (released 22 September at half
 // the GPT-5.6 prices; the founder: "lets keep chat gpt"). Simeon Labs' server
 // offers them as primary and cheap and keeps serving the GPT-5.6 pair to
-// older apps (`ModelRole.retired`, polar/desktop/pricing.py).
+// older apps (`ModelRole.retired`, simeon/desktop/pricing.py).
 export const DEFAULT_CLAIDOR_MODEL = "gpt-6-sol";
 export const DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-6-luna";
 // A server not yet deployed with GPT-6 refuses it ("This model is not offered
@@ -518,7 +518,7 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
 }
 
 // Claidor's metered proxy, on the Responses wire: the one that takes reasoning
-// and function tools in the same request (server/polar/desktop/endpoints.py).
+// and function tools in the same request (server/simeon/desktop/endpoints.py).
 // @ai-sdk/openai 1.3 decides a model reasons by its name alone
 // (`getResponsesModelConfig`: "o…" or "gpt-5…"), so for gpt-6-sol it would
 // drop the reasoning effort without a word and send the brief as a "system"

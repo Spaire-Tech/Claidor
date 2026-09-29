@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 from httpx import AsyncClient
 
-from polar.models import OAuth2Client, User
+from simeon.models import OAuth2Client, User
 from tests.fixtures.database import SaveFixture
 
 from ...conftest import create_oauth2_token

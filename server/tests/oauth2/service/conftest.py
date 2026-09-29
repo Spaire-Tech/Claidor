@@ -1,8 +1,8 @@
 import pytest
 import pytest_asyncio
 
-from polar.kit.db.postgres import AsyncSession
-from polar.models import OAuth2Client, User
+from simeon.kit.db.postgres import AsyncSession
+from simeon.models import OAuth2Client, User
 from tests.fixtures.database import SaveFixture, save_fixture_factory
 
 

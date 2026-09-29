@@ -402,7 +402,7 @@ export interface paths {
      *     ``data.value.localSkill`` (names and descriptions for the bundled skills)
      *     and ``data.value.marketTags``.
      *
-     *     ``marketplace`` is the catalogue in ``polar/desktop/skill_store.py``:
+     *     ``marketplace`` is the catalogue in ``simeon/desktop/skill_store.py``:
      *     the skills of https://github.com/anthropics/skills that carry the
      *     Apache License 2.0, vendored under ``skills/`` next to that module
      *     and each downloadable as a zip from the route below. Four of that

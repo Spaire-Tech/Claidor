@@ -20,7 +20,7 @@ import { defaultRetry } from './retry'
 const platformApi = api as unknown as any
 
 // -----------------------------------------------------------------------------
-// Types — mirror polar/platform/schemas.py
+// Types — mirror simeon/platform/schemas.py
 // -----------------------------------------------------------------------------
 
 export type SimeonTierKey =
@@ -292,7 +292,7 @@ export const useCreateCustomerPortalSession = (organizationId: string) =>
 //
 // These power the in-dashboard Billing sections so a creator never has to
 // leave for the customer portal. They hit the platform endpoints added in
-// polar/platform/endpoints.py (list/delete/set-default cards, list orders,
+// simeon/platform/endpoints.py (list/delete/set-default cards, list orders,
 // download invoice, get/update billing address).
 // -----------------------------------------------------------------------------
 

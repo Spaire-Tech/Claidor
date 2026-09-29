@@ -12,30 +12,30 @@ from pytest_mock import MockerFixture
 from sqlalchemy.orm import joinedload
 from structlog.testing import capture_logs
 
-from polar.auth.models import AuthSubject
-from polar.checkout.eventstream import CheckoutEvent
-from polar.enums import (
+from simeon.auth.models import AuthSubject
+from simeon.checkout.eventstream import CheckoutEvent
+from simeon.enums import (
     InvoiceNumbering,
     PaymentProcessor,
     SubscriptionRecurringInterval,
     TaxBehavior,
     TaxProcessor,
 )
-from polar.exceptions import SimeonRequestValidationError
-from polar.held_balance.service import held_balance as held_balance_service
-from polar.integrations.stripe.service import StripeService
-from polar.kit.address import (
+from simeon.exceptions import SimeonRequestValidationError
+from simeon.held_balance.service import held_balance as held_balance_service
+from simeon.integrations.stripe.service import StripeService
+from simeon.kit.address import (
     Address,
     AddressDict,
     AddressInput,
     CountryAlpha2,
     CountryAlpha2Input,
 )
-from polar.kit.db.postgres import AsyncSession
-from polar.kit.math import polar_round
-from polar.kit.pagination import PaginationParams
-from polar.kit.utils import utc_now
-from polar.models import (
+from simeon.kit.db.postgres import AsyncSession
+from simeon.kit.math import polar_round
+from simeon.kit.pagination import PaginationParams
+from simeon.kit.utils import utc_now
+from simeon.models import (
     Account,
     BillingEntry,
     Customer,
@@ -48,18 +48,18 @@ from polar.models import (
     User,
     UserOrganization,
 )
-from polar.models.billing_entry import BillingEntryDirection, BillingEntryType
-from polar.models.checkout import CheckoutStatus
-from polar.models.discount import DiscountDuration, DiscountType
-from polar.models.order import OrderBillingReasonInternal, OrderStatus
-from polar.models.organization import Organization
-from polar.models.payment import PaymentStatus
-from polar.models.product import ProductBillingType
-from polar.models.subscription import SubscriptionStatus
-from polar.models.transaction import PlatformFeeType, TransactionType
-from polar.models.wallet import WalletType
-from polar.order.schemas import OrderUpdate
-from polar.order.service import (
+from simeon.models.billing_entry import BillingEntryDirection, BillingEntryType
+from simeon.models.checkout import CheckoutStatus
+from simeon.models.discount import DiscountDuration, DiscountType
+from simeon.models.order import OrderBillingReasonInternal, OrderStatus
+from simeon.models.organization import Organization
+from simeon.models.payment import PaymentStatus
+from simeon.models.product import ProductBillingType
+from simeon.models.subscription import SubscriptionStatus
+from simeon.models.transaction import PlatformFeeType, TransactionType
+from simeon.models.wallet import WalletType
+from simeon.order.schemas import OrderUpdate
+from simeon.order.service import (
     CardPaymentFailed,
     MissingCheckoutCustomer,
     NoPendingBillingEntries,
@@ -70,18 +70,18 @@ from polar.order.service import (
     RecurringProduct,
     SubscriptionNotTrialing,
 )
-from polar.order.service import order as order_service
-from polar.product.guard import is_fixed_price, is_static_price
-from polar.product.price_set import PriceSet
-from polar.subscription.service import SubscriptionService
-from polar.tax.calculation import TaxabilityReason, TaxCalculation
-from polar.tax.tax_id import TaxID
-from polar.transaction.service.balance import PaymentTransactionForChargeDoesNotExist
-from polar.transaction.service.payment import (
+from simeon.order.service import order as order_service
+from simeon.product.guard import is_fixed_price, is_static_price
+from simeon.product.price_set import PriceSet
+from simeon.subscription.service import SubscriptionService
+from simeon.tax.calculation import TaxabilityReason, TaxCalculation
+from simeon.tax.tax_id import TaxID
+from simeon.transaction.service.balance import PaymentTransactionForChargeDoesNotExist
+from simeon.transaction.service.payment import (
     payment_transaction as payment_transaction_service,
 )
-from polar.transaction.service.platform_fee import PlatformFeeTransactionService
-from polar.wallet.service import wallet as wallet_service
+from simeon.transaction.service.platform_fee import PlatformFeeTransactionService
+from simeon.wallet.service import wallet as wallet_service
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
@@ -129,7 +129,7 @@ def build_stripe_payment_intent(
 @pytest.fixture(autouse=True)
 def stripe_service_mock(mocker: MockerFixture, customer: Customer) -> MagicMock:
     mock = MagicMock(spec=StripeService)
-    mocker.patch("polar.order.service.stripe_service", new=mock)
+    mocker.patch("simeon.order.service.stripe_service", new=mock)
 
     mock.get_customer.return_value = SimpleNamespace(
         id=customer.stripe_customer_id,
@@ -143,17 +143,17 @@ def stripe_service_mock(mocker: MockerFixture, customer: Customer) -> MagicMock:
 
 @pytest.fixture
 def enqueue_job_mock(mocker: MockerFixture) -> MagicMock:
-    return mocker.patch("polar.order.service.enqueue_job")
+    return mocker.patch("simeon.order.service.enqueue_job")
 
 
 @pytest.fixture
 def enqueue_email_mock(mocker: MockerFixture) -> MagicMock:
-    return mocker.patch("polar.order.service.enqueue_email", autospec=True)
+    return mocker.patch("simeon.order.service.enqueue_email", autospec=True)
 
 
 @pytest.fixture
 def publish_checkout_event_mock(mocker: MockerFixture) -> AsyncMock:
-    return mocker.patch("polar.order.service.publish_checkout_event")
+    return mocker.patch("simeon.order.service.publish_checkout_event")
 
 
 @pytest.fixture
@@ -165,7 +165,7 @@ def event_creation_time() -> tuple[datetime, int]:
 
 @pytest.fixture(autouse=True)
 def tax_service_mock(mocker: MockerFixture) -> MagicMock:
-    mock = mocker.patch("polar.order.service.get_tax_service")
+    mock = mocker.patch("simeon.order.service.get_tax_service")
     mock.return_value.record = AsyncMock(return_value="TAX_TRANSACTION_ID")
     return mock.return_value
 
@@ -1560,7 +1560,7 @@ class TestCreateSubscriptionOrder:
         reset to start fresh for the new period.
         """
         subscription_service_mock = mocker.patch(
-            "polar.order.service.subscription_service", spec=SubscriptionService
+            "simeon.order.service.subscription_service", spec=SubscriptionService
         )
 
         subscription = await create_active_subscription(
@@ -1610,7 +1610,7 @@ class TestCreateSubscriptionOrder:
         were resetting meters mid-cycle without re-applying benefit credits.
         """
         subscription_service_mock = mocker.patch(
-            "polar.order.service.subscription_service", spec=SubscriptionService
+            "simeon.order.service.subscription_service", spec=SubscriptionService
         )
 
         subscription = await create_active_subscription(
@@ -2041,7 +2041,7 @@ class TestCreateOrderBalance:
         )
 
         create_balance_from_charge_mock = mocker.patch(
-            "polar.order.service.balance_transaction_service.create_balance_from_charge"
+            "simeon.order.service.balance_transaction_service.create_balance_from_charge"
         )
         create_balance_from_charge_mock.return_value = (
             Transaction(type=TransactionType.balance, amount=-order.net_amount),
@@ -2053,7 +2053,7 @@ class TestCreateOrderBalance:
         )
 
         platform_fee_transaction_service_mock = mocker.patch(
-            "polar.order.service.platform_fee_transaction_service",
+            "simeon.order.service.platform_fee_transaction_service",
             spec=PlatformFeeTransactionService,
         )
         platform_fee_transaction_service_mock.create_fees_reversal_balances.return_value = [
@@ -2273,7 +2273,7 @@ class TestHandlePaymentFailure:
         await save_fixture(order)
 
         mock_mark_past_due = mocker.patch(
-            "polar.subscription.service.subscription.mark_past_due"
+            "simeon.subscription.service.subscription.mark_past_due"
         )
         mock_mark_past_due.return_value = subscription
 
@@ -2315,12 +2315,12 @@ class TestHandlePaymentFailure:
         await save_fixture(order)
 
         mock_mark_past_due = mocker.patch(
-            "polar.subscription.service.subscription.mark_past_due"
+            "simeon.subscription.service.subscription.mark_past_due"
         )
         mock_mark_past_due.return_value = subscription
 
         mock_enqueue_benefits_grants = mocker.patch(
-            "polar.subscription.service.subscription.enqueue_benefits_grants"
+            "simeon.subscription.service.subscription.enqueue_benefits_grants"
         )
 
         await order_service.handle_payment_failure(session, order)
@@ -2354,7 +2354,7 @@ class TestHandlePaymentFailure:
         await save_fixture(order)
 
         mock_mark_past_due = mocker.patch(
-            "polar.subscription.service.subscription.mark_past_due"
+            "simeon.subscription.service.subscription.mark_past_due"
         )
 
         # When
@@ -2385,7 +2385,7 @@ class TestHandlePaymentFailure:
         await save_fixture(order)
 
         mock_mark_past_due = mocker.patch(
-            "polar.subscription.service.subscription.mark_past_due"
+            "simeon.subscription.service.subscription.mark_past_due"
         )
 
         # When
@@ -2431,7 +2431,7 @@ class TestHandlePaymentFailure:
         )
 
         mock_mark_past_due = mocker.patch(
-            "polar.subscription.service.subscription.mark_past_due"
+            "simeon.subscription.service.subscription.mark_past_due"
         )
 
         # When
@@ -2486,7 +2486,7 @@ class TestHandlePaymentFailure:
         )
 
         mock_mark_past_due = mocker.patch(
-            "polar.subscription.service.subscription.mark_past_due"
+            "simeon.subscription.service.subscription.mark_past_due"
         )
 
         # When
@@ -2536,9 +2536,9 @@ class TestHandlePaymentFailure:
             )
 
         mock_mark_past_due = mocker.patch(
-            "polar.subscription.service.subscription.mark_past_due"
+            "simeon.subscription.service.subscription.mark_past_due"
         )
-        mock_revoke = mocker.patch("polar.subscription.service.subscription.revoke")
+        mock_revoke = mocker.patch("simeon.subscription.service.subscription.revoke")
 
         # When
         result_order = await order_service.handle_payment_failure(session, order)
@@ -2585,9 +2585,9 @@ class TestHandlePaymentFailure:
             )
 
         mock_mark_past_due = mocker.patch(
-            "polar.subscription.service.subscription.mark_past_due"
+            "simeon.subscription.service.subscription.mark_past_due"
         )
-        mock_revoke = mocker.patch("polar.subscription.service.subscription.revoke")
+        mock_revoke = mocker.patch("simeon.subscription.service.subscription.revoke")
 
         # When
         result_order = await order_service.handle_payment_failure(session, order)
@@ -2638,7 +2638,7 @@ class TestHandlePaymentFailure:
         )
 
         mock_mark_past_due = mocker.patch(
-            "polar.subscription.service.subscription.mark_past_due"
+            "simeon.subscription.service.subscription.mark_past_due"
         )
 
         # When
@@ -2684,7 +2684,7 @@ class TestHandlePaymentFailure:
         order.next_payment_attempt_at = utc_now() - timedelta(days=1)  # Past due
         await save_fixture(order)
 
-        mock_revoke = mocker.patch("polar.subscription.service.subscription.revoke")
+        mock_revoke = mocker.patch("simeon.subscription.service.subscription.revoke")
 
         # When
         result_order = await order_service.handle_payment_failure(session, order)
@@ -3039,7 +3039,7 @@ class TestTriggerPayment:
         )
         await save_fixture(order)
 
-        delete_mock = mocker.patch("polar.order.service.payment_method_service.delete")
+        delete_mock = mocker.patch("simeon.order.service.payment_method_service.delete")
         invalid_error = stripe_lib.InvalidRequestError(
             message="Amount must be no more than $999,999.99",
             param="amount",
@@ -3072,7 +3072,7 @@ class TestTriggerPayment:
         )
         await save_fixture(order)
 
-        delete_mock = mocker.patch("polar.order.service.payment_method_service.delete")
+        delete_mock = mocker.patch("simeon.order.service.payment_method_service.delete")
         message = "The payment method supplied does not belong to the customer."
         invalid_error = stripe_lib.InvalidRequestError(
             message=message,
@@ -3213,7 +3213,7 @@ class TestTriggerPayment:
 
         descriptor = call_kwargs["statement_descriptor_suffix"]
         assert descriptor.endswith(" TRIAL OVER")
-        from polar.config import settings
+        from simeon.config import settings
 
         assert len(descriptor) <= settings.stripe_descriptor_suffix_max_length
         # The slug prefix is truncated to whatever room the suffix leaves,
@@ -3554,7 +3554,7 @@ class TestProcessRetryPayment:
         )
         await save_fixture(order)
 
-        from polar.order.service import OrderNotEligibleForRetry
+        from simeon.order.service import OrderNotEligibleForRetry
 
         with pytest.raises(OrderNotEligibleForRetry):
             await order_service.process_retry_payment(
@@ -3676,7 +3676,7 @@ class TestOnOrderPaidCustomerTypeUpgrade:
         organization: Organization,
     ) -> None:
         """Test that purchasing a seat-based product upgrades individual customer to team."""
-        from polar.models.customer import CustomerType
+        from simeon.models.customer import CustomerType
 
         # Create a seat-based product
         product = await create_product(
@@ -3717,7 +3717,7 @@ class TestOnOrderPaidCustomerTypeUpgrade:
         organization: Organization,
     ) -> None:
         """Test that team customers remain team when purchasing seat-based products."""
-        from polar.models.customer import CustomerType
+        from simeon.models.customer import CustomerType
 
         # Create a seat-based product
         product = await create_product(
@@ -3759,7 +3759,7 @@ class TestOnOrderPaidCustomerTypeUpgrade:
         product: Product,  # This is a non-seat-based fixture product
     ) -> None:
         """Test that non-seat-based products don't change customer type."""
-        from polar.models.customer import CustomerType
+        from simeon.models.customer import CustomerType
 
         # Create an individual customer
         customer = await create_customer(
@@ -3792,7 +3792,7 @@ class TestOnOrderPaidCustomerTypeUpgrade:
         organization: Organization,
     ) -> None:
         """Test that legacy customers with NULL type are upgraded to team."""
-        from polar.models.customer import CustomerType
+        from simeon.models.customer import CustomerType
 
         # Create a seat-based product
         product = await create_product(

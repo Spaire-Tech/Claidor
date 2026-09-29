@@ -20,7 +20,7 @@
       "request": "launch",
       "module": "uvicorn",
       "args": [
-        "polar.app:app",
+        "simeon.app:app",
         "--reload",
         "--workers",
         "1",

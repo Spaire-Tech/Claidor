@@ -26,7 +26,7 @@ skills, connectors, avatars, approvals). Running the box servers:
 ## Rules
 
 - **Measure, don't guess.** Before saying something is missing, broken or
-  fine, search the code (`desktop/source`, `server/polar`) or run it, and say
+  fine, search the code (`desktop/source`, `server/simeon`) or run it, and say
   what you searched. Read the log line before reasoning about a failure.
 - **Nothing is done until it has run in the packaged app on a Mac.** Tests
   and a green build are not that. Say plainly what was and was not verified.

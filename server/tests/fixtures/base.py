@@ -7,13 +7,13 @@ import pytest
 import pytest_asyncio
 from fastapi import FastAPI
 
-from polar.app import app as polar_app
-from polar.auth.dependencies import _auth_subject_factory_cache
-from polar.auth.models import AuthSubject, Subject
-from polar.checkout.ip_geolocation import _get_client_dependency
-from polar.postgres import AsyncSession, get_db_read_session, get_db_session
-from polar.redis import Redis, get_redis
-from polar.sand.box_proxy import lookup_sessions
+from simeon.app import app as polar_app
+from simeon.auth.dependencies import _auth_subject_factory_cache
+from simeon.auth.models import AuthSubject, Subject
+from simeon.checkout.ip_geolocation import _get_client_dependency
+from simeon.postgres import AsyncSession, get_db_read_session, get_db_session
+from simeon.redis import Redis, get_redis
+from simeon.sand.box_proxy import lookup_sessions
 
 
 class IsolatedSessionTestClient(httpx.AsyncClient):

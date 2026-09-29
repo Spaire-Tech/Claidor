@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
-from polar.kit.comments import (
+from simeon.kit.comments import (
     find_orphan_parent_ids,
     merge_with_tombstones,
 )

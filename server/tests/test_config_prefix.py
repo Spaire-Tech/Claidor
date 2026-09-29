@@ -4,7 +4,7 @@ variables are renamed."""
 
 import pytest
 
-from polar.config import Settings
+from simeon.config import Settings
 
 
 def test_the_simeon_name_is_read(monkeypatch: pytest.MonkeyPatch) -> None:

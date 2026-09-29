@@ -1,5 +1,5 @@
 """The sign-in the app in `desktop/` actually speaks
-(`polar/desktop/app_sign_in.py`), end to end over HTTP.
+(`simeon/desktop/app_sign_in.py`), end to end over HTTP.
 
 Every shape asserted here was read off the app's own source, and the
 comments say where, because the app is the half of this contract we do
@@ -17,9 +17,9 @@ from urllib.parse import parse_qs, urlparse
 import httpx
 import pytest
 
-from polar.config import settings
-from polar.desktop.repository import DesktopAuthCodeRepository
-from polar.desktop.service import (
+from simeon.config import settings
+from simeon.desktop.repository import DesktopAuthCodeRepository
+from simeon.desktop.service import (
     ACCESS_TOKEN_PREFIX,
     DEEP_CONTROL_NAMESPACE,
     challenge_for,
@@ -27,12 +27,12 @@ from polar.desktop.service import (
     envelope_access_token,
     unwrap_access_token,
 )
-from polar.kit import jwt
-from polar.kit.crypto import get_token_hash
-from polar.kit.utils import utc_now
-from polar.models import User
-from polar.models.maty import MatyJob, MatyJobKind, MatyJobStatus
-from polar.postgres import AsyncSession
+from simeon.kit import jwt
+from simeon.kit.crypto import get_token_hash
+from simeon.kit.utils import utc_now
+from simeon.models import User
+from simeon.models.maty import MatyJob, MatyJobKind, MatyJobStatus
+from simeon.postgres import AsyncSession
 
 
 def _login_metadata() -> tuple[str, str, str]:
@@ -331,7 +331,7 @@ class TestTheAccessToken:
         ).json()
 
         access = body["accessToken"]
-        # The prefix stays on the outside: polar.auth.middlewares refuses
+        # The prefix stays on the outside: simeon.auth.middlewares refuses
         # every bearer it does not recognise, and recognises this one by
         # prefix alone.
         assert access.startswith(ACCESS_TOKEN_PREFIX)

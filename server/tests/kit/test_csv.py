@@ -1,6 +1,6 @@
 import pytest
 
-from polar.kit.csv import get_emails_from_csv
+from simeon.kit.csv import get_emails_from_csv
 
 
 @pytest.mark.asyncio

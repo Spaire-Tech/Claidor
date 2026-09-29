@@ -3,8 +3,8 @@ import os
 
 import pytest
 
-from polar.models.order import OrderBillingReasonInternal
-from polar.notifications.notification import (
+from simeon.models.order import OrderBillingReasonInternal
+from simeon.notifications.notification import (
     MaintainerAccountCreditsGrantedNotificationPayload,
     MaintainerCreateAccountNotificationPayload,
     MaintainerNewPaidSubscriptionNotificationPayload,

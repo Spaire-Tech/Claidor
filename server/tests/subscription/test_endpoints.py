@@ -4,17 +4,17 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from httpx import AsyncClient
 
-from polar.enums import SubscriptionRecurringInterval
-from polar.models import (
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.models import (
     Customer,
     Organization,
     Product,
     Subscription,
     UserOrganization,
 )
-from polar.models.customer_seat import SeatStatus
-from polar.models.subscription import SubscriptionStatus
-from polar.postgres import AsyncSession
+from simeon.models.customer_seat import SeatStatus
+from simeon.models.subscription import SubscriptionStatus
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_active_subscription,

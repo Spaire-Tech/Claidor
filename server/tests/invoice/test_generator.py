@@ -4,9 +4,9 @@ from typing import Any
 
 import pytest
 
-from polar.invoice.generator import Invoice, InvoiceGenerator, InvoiceItem
-from polar.kit.address import Address, CountryAlpha2
-from polar.tax.calculation import TaxabilityReason
+from simeon.invoice.generator import Invoice, InvoiceGenerator, InvoiceItem
+from simeon.kit.address import Address, CountryAlpha2
+from simeon.tax.calculation import TaxabilityReason
 
 
 @pytest.fixture

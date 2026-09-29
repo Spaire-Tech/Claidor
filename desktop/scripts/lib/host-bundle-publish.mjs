@@ -2,7 +2,7 @@
 // (29 September 2026): `<base>/sand-host-bundle-latest.version` holds a
 // commit id and `<base>/sand-host-bundle-<id>.tgz` is the bundle
 // (`source/host/extensions/host-upgrade/host-bundle-source.ts`). Simeon Labs'
-// server follows that pointer (`server/polar/sand/box_hosts.py`) and mounts
+// server follows that pointer (`server/simeon/sand/box_hosts.py`) and mounts
 // the bundle into each cloud computer, which is replaced when it is idle.
 //
 // The two files come out of the packaged app's `app.asar`, the same bytes

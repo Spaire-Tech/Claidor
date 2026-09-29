@@ -1,5 +1,5 @@
 """The desktop app's sign-in and proxy, end to end over HTTP
-(`polar/desktop/endpoints.py`)."""
+(`simeon/desktop/endpoints.py`)."""
 
 import io
 import json
@@ -15,32 +15,32 @@ import respx
 from pytest_mock import MockerFixture
 from structlog.testing import capture_logs
 
-from polar.config import settings
-from polar.desktop import proxy_common as proxy_common_module
-from polar.desktop.proxy_common import UPSTREAM_REFUSED
-from polar.desktop.service import (
+from simeon.config import settings
+from simeon.desktop import proxy_common as proxy_common_module
+from simeon.desktop.proxy_common import UPSTREAM_REFUSED
+from simeon.desktop.service import (
     Usage,
     UsageTally,
     credits_for,
     desktop,
     model_by_id,
 )
-from polar.desktop.skill_store import (
+from simeon.desktop.skill_store import (
     NOT_OFFERED,
     SKILLS_ROOT,
     skill_md_with_version,
 )
-from polar.desktop.skill_store import catalog as skill_store_catalog
-from polar.kit.crypto import generate_token_hash_pair
-from polar.kit.utils import utc_now
-from polar.models import (
+from simeon.desktop.skill_store import catalog as skill_store_catalog
+from simeon.kit.crypto import generate_token_hash_pair
+from simeon.kit.utils import utc_now
+from simeon.models import (
     DesktopSession,
     DesktopUsage,
     PersonalAccessToken,
     User,
 )
-from polar.personal_access_token.service import TOKEN_PREFIX as PAT_TOKEN_PREFIX
-from polar.postgres import AsyncSession
+from simeon.personal_access_token.service import TOKEN_PREFIX as PAT_TOKEN_PREFIX
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 
 CALLBACK = "http://127.0.0.1:51234/auth/callback?return_to=http%3A%2F%2F127.0.0.1%3A8000%2Fdesktop%2Flogin"
@@ -1089,8 +1089,8 @@ class TestMiddleware:
         through as Anonymous so the desktop endpoints can check it."""
         from starlette.requests import Request
 
-        from polar.auth.middlewares import get_auth_subject
-        from polar.auth.models import Anonymous
+        from simeon.auth.middlewares import get_auth_subject
+        from simeon.auth.models import Anonymous
 
         scope = {
             "type": "http",
@@ -1144,7 +1144,7 @@ def _frontmatter(raw: str) -> dict[str, Any]:
 
 @pytest.mark.asyncio
 class TestSkillStore:
-    """The marketplace and its archives (`polar/desktop/skill_store.py`)."""
+    """The marketplace and its archives (`simeon/desktop/skill_store.py`)."""
 
     async def test_the_store_lists_the_vendored_skills_and_none_of_the_excluded(
         self, client: httpx.AsyncClient
@@ -1260,7 +1260,7 @@ class TestSkillStoreFiles:
 @pytest.mark.asyncio
 class TestComposio:
     """Apps through Composio: the app's calls forwarded with Simeon's key
-    and the account's own Composio user id (`polar/desktop/composio.py`)."""
+    and the account's own Composio user id (`simeon/desktop/composio.py`)."""
 
     async def test_the_session_carries_the_key_and_the_account_not_the_apps_word(
         self,

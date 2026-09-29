@@ -7,16 +7,16 @@ import structlog
 import typer
 from sqlalchemy import select
 
-from polar.config import settings
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.models import Organization
-from polar.platform.service import (
+from simeon.config import settings
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.models import Organization
+from simeon.platform.service import (
     PlatformError,
 )
-from polar.platform.service import (
+from simeon.platform.service import (
     platform as platform_service,
 )
-from polar.postgres import create_async_engine
+from simeon.postgres import create_async_engine
 
 cli = typer.Typer()
 

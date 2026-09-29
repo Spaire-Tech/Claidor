@@ -17,22 +17,22 @@ from uuid import UUID, uuid4
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.entitlements.tiers import TierKey
-from polar.enums import SubscriptionRecurringInterval
-from polar.kit.trial import TrialInterval
-from polar.kit.utils import utc_now
-from polar.models import Customer, Organization, Product
-from polar.models.subscription import SubscriptionStatus
-from polar.platform.fee_sync import (
+from simeon.entitlements.tiers import TierKey
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.kit.trial import TrialInterval
+from simeon.kit.utils import utc_now
+from simeon.models import Customer, Organization, Product
+from simeon.models.subscription import SubscriptionStatus
+from simeon.platform.fee_sync import (
     maybe_mark_platform_trial_consumed,
     maybe_supersede_platform_trial,
 )
-from polar.platform.upgrade import (
+from simeon.platform.upgrade import (
     AlreadyOnPaidTier,
     _plus_tagged_email,
     platform_upgrade,
 )
-from polar.postgres import AsyncSession
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     PriceFixtureType,
@@ -44,7 +44,7 @@ from tests.fixtures.random_objects import (
 
 
 def _patch_platform_org_id(mocker: MockerFixture, org_id: UUID | None) -> None:
-    mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", org_id)
+    mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", org_id)
 
 
 async def _tier_product(
@@ -331,7 +331,7 @@ class TestCreateCheckout:
             },
         )()
         return mocker.patch(
-            "polar.platform.upgrade.checkout_service.create",
+            "simeon.platform.upgrade.checkout_service.create",
             new=AsyncMock(return_value=fake_checkout),
         )
 

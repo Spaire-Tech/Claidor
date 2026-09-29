@@ -12,16 +12,16 @@ from uuid import uuid4
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.email_sequence.service import email_sequence as sequence_service
-from polar.email_subscriber.service import (
+from simeon.email_sequence.service import email_sequence as sequence_service
+from simeon.email_subscriber.service import (
     email_subscriber as email_subscriber_service,
 )
-from polar.models.email_sequence import (
+from simeon.models.email_sequence import (
     EmailSequence,
     EmailSequenceStatus,
     EmailSequenceTriggerType,
 )
-from polar.postgres import AsyncSession
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_organization
 
@@ -69,7 +69,7 @@ class TestSubscriptionStartedTrigger:
             status=EmailSequenceStatus.draft,
         )
 
-        enqueue = mocker.patch("polar.email_sequence.service.enqueue_job")
+        enqueue = mocker.patch("simeon.email_sequence.service.enqueue_job")
 
         # Mirror what the order-paid task now does at a trial/sub start:
         # create the buyer's subscriber, then fire on_subscription_created.
@@ -114,7 +114,7 @@ class TestSubscriptionStartedTrigger:
             status=EmailSequenceStatus.active,
         )
 
-        enqueue = mocker.patch("polar.email_sequence.service.enqueue_job")
+        enqueue = mocker.patch("simeon.email_sequence.service.enqueue_job")
 
         subscriber = await email_subscriber_service.subscribe_from_purchase(
             session,

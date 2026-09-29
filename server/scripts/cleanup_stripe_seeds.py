@@ -3,8 +3,8 @@ from functools import wraps
 
 import typer
 
-from polar.config import settings
-from polar.integrations.stripe.service import stripe_lib  # type: ignore[attr-defined]
+from simeon.config import settings
+from simeon.integrations.stripe.service import stripe_lib  # type: ignore[attr-defined]
 
 cli = typer.Typer()
 

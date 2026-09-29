@@ -1,9 +1,9 @@
 from datetime import datetime
 from uuid import uuid4
 
-from polar.customer_seat.schemas import CustomerSeat as CustomerSeatSchema
-from polar.models.customer_seat import SeatStatus
-from polar.models.member import MemberRole
+from simeon.customer_seat.schemas import CustomerSeat as CustomerSeatSchema
+from simeon.models.customer_seat import SeatStatus
+from simeon.models.member import MemberRole
 
 
 class TestCustomerSeatSchema:

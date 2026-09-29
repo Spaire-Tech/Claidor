@@ -1,14 +1,16 @@
 import pytest
 
-from polar.auth.models import AuthSubject
-from polar.customer_portal.service.order import (
+from simeon.auth.models import AuthSubject
+from simeon.customer_portal.service.order import (
     CustomerOrderSortProperty,
 )
-from polar.customer_portal.service.order import customer_order as customer_order_service
-from polar.kit.db.postgres import AsyncSession
-from polar.kit.pagination import PaginationParams
-from polar.kit.sorting import Sorting
-from polar.models import Customer, Organization, Product
+from simeon.customer_portal.service.order import (
+    customer_order as customer_order_service,
+)
+from simeon.kit.db.postgres import AsyncSession
+from simeon.kit.pagination import PaginationParams
+from simeon.kit.sorting import Sorting
+from simeon.models import Customer, Organization, Product
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (

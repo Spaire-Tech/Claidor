@@ -79,7 +79,7 @@ services:
     dockerContext: ./server
     plan: starter
     autoDeploy: true
-    dockerCommand: uv run dramatiq -p 2 -t 4 -f polar.worker.scheduler:start polar.worker.run
+    dockerCommand: uv run dramatiq -p 2 -t 4 -f simeon.worker.scheduler:start simeon.worker.run
     envVarGroups:
       - claidor-shared
     envVars:
@@ -219,7 +219,7 @@ envVarGroups:
       # Composio carries most of the Apps cards. The key lives here and
       # nowhere else: the app never holds one ("my users should never put
       # a key. everything happens under the hood. not a setting."), and
-      # `polar/desktop/composio.py` is the only reader. Unset, every one
+      # `simeon/desktop/composio.py` is the only reader. Unset, every one
       # of the six proxied calls is refused here in a few milliseconds
       # with 503 "Apps are not configured on this server." — Composio is
       # never reached, and in the app every Connect and every Install

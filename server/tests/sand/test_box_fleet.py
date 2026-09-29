@@ -13,13 +13,13 @@ import httpx
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.models import User
-from polar.postgres import AsyncSession
-from polar.redis import Redis
-from polar.sand import box_hosts
-from polar.sand.box_hosts import BoxHostEntry, BoxHostUnavailable, box_host_entries
-from polar.sand.box_service import CAPACITY_BLOCK_REASON, broker
+from simeon.config import settings
+from simeon.models import User
+from simeon.postgres import AsyncSession
+from simeon.redis import Redis
+from simeon.sand import box_hosts
+from simeon.sand.box_hosts import BoxHostEntry, BoxHostUnavailable, box_host_entries
+from simeon.sand.box_service import CAPACITY_BLOCK_REASON, broker
 from tests.desktop.test_endpoints import _signed_in
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_user
@@ -35,7 +35,7 @@ def fleet() -> Iterator[tuple[FakeBoxHost, FakeBoxHost]]:
     async def healthy(url: str, token: str) -> bool:
         return True
 
-    from polar.sand import box_service
+    from simeon.sand import box_service
 
     box_service.set_health_check_for_tests(healthy)
     yield first, second
@@ -220,7 +220,7 @@ async def test_a_restart_recorded_by_one_worker_streams_from_another(
     # serves the app's WatchSandBoxMigration share only Redis.
     from uuid import uuid4
 
-    from polar.sand.box_service import PHASE_CREATING, PHASE_DONE, MigrationLog
+    from simeon.sand.box_service import PHASE_CREATING, PHASE_DONE, MigrationLog
 
     recorder, streamer = MigrationLog(), MigrationLog()
     streamer.idle = 0.05

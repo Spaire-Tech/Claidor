@@ -7,7 +7,7 @@ light dark`) that invites the mail client's own dark-mode recolouring. The
 lock is enforced at send time so those keep working without a re-save.
 """
 
-from polar.email.compose import (
+from simeon.email.compose import (
     finalize_email_html,
     force_light_color_scheme,
     is_full_html_document,

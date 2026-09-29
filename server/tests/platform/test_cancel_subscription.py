@@ -16,14 +16,14 @@ from pydantic import ValidationError
 from pytest_mock import MockerFixture
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from polar.enums import SubscriptionRecurringInterval
-from polar.locker import Locker
-from polar.models import Organization, Subscription
-from polar.models.subscription import SubscriptionStatus
-from polar.platform.endpoints import _serialize_subscription
-from polar.platform.management import platform_management
-from polar.subscription.repository import SubscriptionRepository
-from polar.subscription.schemas import Subscription as SubscriptionSchema
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.locker import Locker
+from simeon.models import Organization, Subscription
+from simeon.models.subscription import SubscriptionStatus
+from simeon.platform.endpoints import _serialize_subscription
+from simeon.platform.management import platform_management
+from simeon.subscription.repository import SubscriptionRepository
+from simeon.subscription.schemas import Subscription as SubscriptionSchema
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     PriceFixtureType,
@@ -40,7 +40,7 @@ async def _trialing_creator(
 ) -> Organization:
     """A creator org on a trialing Starter Simeon subscription."""
     platform_org = await create_organization(save_fixture)
-    mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+    mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
     prices: list[PriceFixtureType] = [(4900, "usd")]
     product = await create_product(
         save_fixture,
@@ -102,7 +102,7 @@ class TestCancelSubscription:
         save_fixture: SaveFixture,
         locker: Locker,
     ) -> None:
-        from polar.subscription.service import (
+        from simeon.subscription.service import (
             subscription as subscription_service,
         )
 

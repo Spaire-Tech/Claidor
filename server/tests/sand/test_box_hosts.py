@@ -21,9 +21,9 @@ from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.sand import box_hosts
-from polar.sand.box_hosts import (
+from simeon.config import settings
+from simeon.sand import box_hosts
+from simeon.sand.box_hosts import (
     BOX_HOST_BUNDLE_ROOT,
     BoxHostError,
     BoxSpec,

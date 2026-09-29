@@ -73,7 +73,7 @@ test("feedback posts to /desktop/api/feedback with the fields the server reads",
 });
 
 test("the server route the app posts to exists, takes the same body and logs the person", async () => {
-  const endpoints = await readFile(path.join(repoRoot, "../server/polar/desktop/endpoints.py"), "utf8");
+  const endpoints = await readFile(path.join(repoRoot, "../server/simeon/desktop/endpoints.py"), "utf8");
   assert.match(endpoints, /@router\.post\("\/api\/feedback", name="desktop:feedback"\)/);
   assert.match(endpoints, /desktop_session: DesktopSession = Depends\(get_desktop_session\)/);
   assert.match(endpoints, /"desktop\.feedback\.received"/);

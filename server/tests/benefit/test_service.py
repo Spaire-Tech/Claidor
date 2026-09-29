@@ -4,27 +4,27 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.auth.models import AuthSubject
-from polar.benefit.grant.service import BenefitGrantService
-from polar.benefit.service import benefit as benefit_service
-from polar.benefit.service import (  # type: ignore[attr-defined]
+from simeon.auth.models import AuthSubject
+from simeon.benefit.grant.service import BenefitGrantService
+from simeon.benefit.service import benefit as benefit_service
+from simeon.benefit.service import (  # type: ignore[attr-defined]
     benefit_grant_service,
 )
-from polar.benefit.strategies import (
+from simeon.benefit.strategies import (
     BenefitPropertiesValidationError,
     BenefitServiceProtocol,
 )
-from polar.benefit.strategies.custom.schemas import (
+from simeon.benefit.strategies.custom.schemas import (
     BenefitCustomCreate,
     BenefitCustomCreateProperties,
     BenefitCustomUpdate,
 )
-from polar.exceptions import NotPermitted, SimeonRequestValidationError
-from polar.kit.pagination import PaginationParams
-from polar.models import Benefit, Organization, User, UserOrganization
-from polar.models.benefit import BenefitType
-from polar.postgres import AsyncSession
-from polar.redis import Redis
+from simeon.exceptions import NotPermitted, SimeonRequestValidationError
+from simeon.kit.pagination import PaginationParams
+from simeon.models import Benefit, Organization, User, UserOrganization
+from simeon.models.benefit import BenefitType
+from simeon.postgres import AsyncSession
+from simeon.redis import Redis
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_benefit
@@ -32,7 +32,7 @@ from tests.fixtures.random_objects import create_benefit
 
 @pytest.fixture
 def enqueue_job_mock(mocker: MockerFixture) -> AsyncMock:
-    return mocker.patch("polar.benefit.service.enqueue_job")
+    return mocker.patch("simeon.benefit.service.enqueue_job")
 
 
 @pytest.mark.asyncio
@@ -340,7 +340,7 @@ class TestUserCreate:
                 }
             ]
         )
-        mock = mocker.patch("polar.benefit.service.get_benefit_strategy")
+        mock = mocker.patch("simeon.benefit.service.get_benefit_strategy")
         mock.return_value = service_mock
 
         create_schema = BenefitCustomCreate(

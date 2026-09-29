@@ -18,21 +18,21 @@ from botocore.exceptions import ClientError
 from httpx import AsyncClient, Response
 from minio import Minio
 
-from polar.config import settings
-from polar.file.repository import FileRepository
-from polar.file.s3 import S3_SERVICES
-from polar.file.schemas import DownloadableFileCreate, FileUpload, FileUploadCompleted
-from polar.file.service import file as file_service
-from polar.integrations.aws.s3.schemas import (
+from simeon.config import settings
+from simeon.file.repository import FileRepository
+from simeon.file.s3 import S3_SERVICES
+from simeon.file.schemas import DownloadableFileCreate, FileUpload, FileUploadCompleted
+from simeon.file.service import file as file_service
+from simeon.integrations.aws.s3.schemas import (
     S3FileCreateMultipart,
     S3FileCreatePart,
     S3FileUploadCompleted,
     S3FileUploadCompletedPart,
     S3FileUploadPart,
 )
-from polar.models import File, Organization
-from polar.models.file import FileServiceTypes
-from polar.postgres import AsyncSession
+from simeon.models import File, Organization
+from simeon.models.file import FileServiceTypes
+from simeon.postgres import AsyncSession
 
 pwd = Path(__file__).parent.absolute()
 

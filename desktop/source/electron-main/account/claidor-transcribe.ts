@@ -9,7 +9,7 @@ const TRANSCRIBE_TIMEOUT_MS = 60_000;
 const transcribeDeadline = createDeadlinePolicy(realClock, { name: "claidor-transcribe-audio", timeoutMs: TRANSCRIBE_TIMEOUT_MS });
 
 // Dictation, on Claidor's `/audio/transcriptions` door
-// (`server/polar/desktop/capabilities.py`). Until 19 September 2026 this was
+// (`server/simeon/desktop/capabilities.py`). Until 19 September 2026 this was
 // a Connect RPC call on `aiserver.v1.AiService/TranscribeAudio`, which
 // Claidor never served. The edge (`main-edge.ts`, `transcribeAudio`) and the
 // renderer still call `manager.transcribe({ audio, mimeType, language })` and

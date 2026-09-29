@@ -45,7 +45,7 @@ group both services read (the shared environment group of the Simeon
 project on Render), not on the API service alone. Since the cloud box
 sleeps when idle, the **worker** talks to the box host too: it runs the
 sleeper every minute and wakes a box when a routine fires
-(`polar/sand/box_tasks.py`). Settings on the API alone leave the worker
+(`simeon/sand/box_tasks.py`). Settings on the API alone leave the worker
 without a host, so no box ever sleeps and a sleeping box is never woken
 for a routine. Render environment groups hold secret files as well as
 variables.

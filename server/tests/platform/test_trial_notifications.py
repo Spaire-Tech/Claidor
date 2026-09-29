@@ -16,14 +16,14 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.enums import SubscriptionRecurringInterval
-from polar.models.subscription import SubscriptionStatus
-from polar.platform.trial_notifications import (
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.models.subscription import SubscriptionStatus
+from simeon.platform.trial_notifications import (
     _REMINDER_DAYS,
     _due_marker,
     check_pending_trial_reminders,
 )
-from polar.postgres import AsyncSession
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_customer,
@@ -76,7 +76,7 @@ async def _trialing_setup(
     managed_by_trial: bool = False,
 ):
     platform_org = await create_organization(save_fixture)
-    mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+    mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
     product = await create_product(
         save_fixture,
         organization=platform_org,
@@ -117,10 +117,10 @@ class TestCheckPendingTrialReminders:
     ) -> None:
         _, subscription = await _trialing_setup(save_fixture, mocker)
         mocker.patch(
-            "polar.platform.trial_notifications.resolve_billing_contact_email",
+            "simeon.platform.trial_notifications.resolve_billing_contact_email",
             return_value=None,
         )
-        enqueue = mocker.patch("polar.platform.trial_notifications.enqueue_email")
+        enqueue = mocker.patch("simeon.platform.trial_notifications.enqueue_email")
 
         counters = await check_pending_trial_reminders(session)
 
@@ -139,10 +139,10 @@ class TestCheckPendingTrialReminders:
     ) -> None:
         _, subscription = await _trialing_setup(save_fixture, mocker)
         mocker.patch(
-            "polar.platform.trial_notifications.resolve_billing_contact_email",
+            "simeon.platform.trial_notifications.resolve_billing_contact_email",
             return_value="founder@example.com",
         )
-        enqueue = mocker.patch("polar.platform.trial_notifications.enqueue_email")
+        enqueue = mocker.patch("simeon.platform.trial_notifications.enqueue_email")
 
         counters = await check_pending_trial_reminders(session)
 
@@ -159,7 +159,7 @@ class TestCheckPendingTrialReminders:
         save_fixture: SaveFixture,
     ) -> None:
         await _trialing_setup(save_fixture, mocker, cancel_at_period_end=True)
-        enqueue = mocker.patch("polar.platform.trial_notifications.enqueue_email")
+        enqueue = mocker.patch("simeon.platform.trial_notifications.enqueue_email")
 
         counters = await check_pending_trial_reminders(session)
 
@@ -175,7 +175,7 @@ class TestCheckPendingTrialReminders:
         save_fixture: SaveFixture,
     ) -> None:
         await _trialing_setup(save_fixture, mocker, managed_by_trial=True)
-        enqueue = mocker.patch("polar.platform.trial_notifications.enqueue_email")
+        enqueue = mocker.patch("simeon.platform.trial_notifications.enqueue_email")
 
         counters = await check_pending_trial_reminders(session)
 

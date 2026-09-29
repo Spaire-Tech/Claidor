@@ -3,16 +3,16 @@ from unittest.mock import MagicMock
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.enums import TokenType
-from polar.models import OAuth2Client
-from polar.oauth2.service.oauth2_client import oauth2_client as oauth2_client_service
-from polar.postgres import AsyncSession
+from simeon.enums import TokenType
+from simeon.models import OAuth2Client
+from simeon.oauth2.service.oauth2_client import oauth2_client as oauth2_client_service
+from simeon.postgres import AsyncSession
 
 
 @pytest.fixture(autouse=True)
 def enqueue_email_mock(mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
-        "polar.oauth2.service.oauth2_client.enqueue_email", autospec=True
+        "simeon.oauth2.service.oauth2_client.enqueue_email", autospec=True
     )
 
 

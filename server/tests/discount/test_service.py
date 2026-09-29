@@ -3,17 +3,17 @@ from typing import Literal
 
 import pytest
 
-from polar.auth.models import AuthSubject, User
-from polar.checkout.schemas import CheckoutUpdatePublic
-from polar.checkout.service import checkout as checkout_service
-from polar.discount.schemas import (
+from simeon.auth.models import AuthSubject, User
+from simeon.checkout.schemas import CheckoutUpdatePublic
+from simeon.checkout.service import checkout as checkout_service
+from simeon.discount.schemas import (
     DiscountFixedOnceForeverDurationCreate,
     DiscountUpdate,
 )
-from polar.discount.service import discount as discount_service
-from polar.exceptions import SimeonRequestValidationError
-from polar.kit.utils import utc_now
-from polar.models import (
+from simeon.discount.service import discount as discount_service
+from simeon.exceptions import SimeonRequestValidationError
+from simeon.kit.utils import utc_now
+from simeon.models import (
     Checkout,
     Discount,
     DiscountRedemption,
@@ -21,13 +21,13 @@ from polar.models import (
     Product,
     UserOrganization,
 )
-from polar.models.discount import (
+from simeon.models.discount import (
     DiscountDuration,
     DiscountFixed,
     DiscountPercentage,
     DiscountType,
 )
-from polar.postgres import AsyncSession
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_checkout, create_discount
 

@@ -1,6 +1,6 @@
 import boto3
 
-from polar.config import settings
+from simeon.config import settings
 
 s3 = boto3.client(
     "s3",

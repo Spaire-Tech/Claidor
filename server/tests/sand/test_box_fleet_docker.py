@@ -26,10 +26,10 @@ import pytest
 import pytest_asyncio
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.postgres import AsyncSession
-from polar.sand import box_hosts, box_service
-from polar.sand.box_hosts import OWNER_LABEL, docker_client_from_settings
+from simeon.config import settings
+from simeon.postgres import AsyncSession
+from simeon.sand import box_hosts, box_service
+from simeon.sand.box_hosts import OWNER_LABEL, docker_client_from_settings
 from tests.desktop.test_endpoints import _signed_in
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_user

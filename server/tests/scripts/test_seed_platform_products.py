@@ -2,12 +2,6 @@ import pytest
 from pytest_mock import MockerFixture
 from sqlalchemy import func, select
 
-from polar.enums import SubscriptionRecurringInterval
-from polar.kit.db.postgres import AsyncSession
-from polar.models import Meter, Product, ProductPrice
-from polar.models.product_price import (
-    ProductPriceFixed,
-)
 from scripts.seed_platform_products import (
     METER_SPECS,
     PRODUCT_SPECS,
@@ -16,6 +10,12 @@ from scripts.seed_platform_products import (
     _upsert_catalog_price,
     _upsert_meter,
     _upsert_product,
+)
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.kit.db.postgres import AsyncSession
+from simeon.models import Meter, Product, ProductPrice
+from simeon.models.product_price import (
+    ProductPriceFixed,
 )
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_organization, create_product
@@ -30,7 +30,9 @@ class TestSeedPlatformProducts:
         save_fixture: SaveFixture,
     ) -> None:
         platform_org = await create_organization(save_fixture)
-        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+        mocker.patch(
+            "simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
+        )
 
         for meter_spec in METER_SPECS:
             _, action = await _upsert_meter(
@@ -75,7 +77,9 @@ class TestSeedPlatformProducts:
         save_fixture: SaveFixture,
     ) -> None:
         platform_org = await create_organization(save_fixture)
-        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+        mocker.patch(
+            "simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
+        )
 
         # First pass.
         for meter_spec in METER_SPECS:
@@ -131,7 +135,9 @@ class TestSeedPlatformProducts:
         save_fixture: SaveFixture,
     ) -> None:
         platform_org = await create_organization(save_fixture)
-        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+        mocker.patch(
+            "simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
+        )
 
         for product_spec in PRODUCT_SPECS:
             product, _ = await _upsert_product(
@@ -225,7 +231,9 @@ class TestSeedPlatformProducts:
         save_fixture: SaveFixture,
     ) -> None:
         platform_org = await create_organization(save_fixture)
-        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+        mocker.patch(
+            "simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
+        )
         starter_spec = next(s for s in PRODUCT_SPECS if s.tier == "starter")
 
         product, _ = await _upsert_product(
@@ -301,7 +309,9 @@ class TestSeedPlatformProducts:
         the Starter spec and re-stamped to "starter" — same row, no
         duplicate — so existing subscriptions keep pointing at it."""
         platform_org = await create_organization(save_fixture)
-        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+        mocker.patch(
+            "simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
+        )
 
         legacy_pro = await create_product(
             save_fixture,

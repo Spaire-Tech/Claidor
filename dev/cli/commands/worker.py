@@ -22,8 +22,8 @@ def register(app: typer.Typer, prompt_setup: callable) -> None:
             "-p", "1", "-t", "1",
             "--queues", "high_priority", "medium_priority", "low_priority",
             "--watch", "polar",
-            "-f", "polar.worker.scheduler:start",
-            "polar.worker.run",
+            "-f", "simeon.worker.scheduler:start",
+            "simeon.worker.run",
         ]
 
         os.execvp(cmd[0], cmd)

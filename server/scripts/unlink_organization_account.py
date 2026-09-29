@@ -37,18 +37,18 @@ import typer
 from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload
 
-from polar.account.repository import AccountRepository
-from polar.email.react import render_email_template
-from polar.email.schemas import (
+from simeon.account.repository import AccountRepository
+from simeon.email.react import render_email_template
+from simeon.email.schemas import (
     OrganizationAccountUnlinkEmail,
     OrganizationAccountUnlinkProps,
 )
-from polar.email.sender import email_sender
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.models import Account, Customer, Order, Organization
-from polar.organization.repository import OrganizationRepository
-from polar.organization.service import organization as organization_service
-from polar.postgres import AsyncSession, create_async_engine
+from simeon.email.sender import email_sender
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.models import Account, Customer, Order, Organization
+from simeon.organization.repository import OrganizationRepository
+from simeon.organization.service import organization as organization_service
+from simeon.postgres import AsyncSession, create_async_engine
 
 cli = typer.Typer()
 

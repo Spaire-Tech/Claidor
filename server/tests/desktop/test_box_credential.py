@@ -12,10 +12,10 @@ renews on (`credential-renewer.ts`, `RENEWAL_PATH`).
 import httpx
 import pytest
 
-from polar.desktop.service import ACCESS_TOKEN_PREFIX, unwrap_access_token
-from polar.desktop.tokens import BOX_CREDENTIAL_PREFIX
-from polar.models import User
-from polar.postgres import AsyncSession
+from simeon.desktop.service import ACCESS_TOKEN_PREFIX, unwrap_access_token
+from simeon.desktop.tokens import BOX_CREDENTIAL_PREFIX
+from simeon.models import User
+from simeon.postgres import AsyncSession
 
 from .test_endpoints import _signed_in
 

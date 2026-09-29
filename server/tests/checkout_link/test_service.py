@@ -4,19 +4,19 @@ import pytest
 import pytest_asyncio
 from pydantic import HttpUrl
 
-from polar.auth.models import AuthSubject
-from polar.checkout_link.schemas import (
+from simeon.auth.models import AuthSubject
+from simeon.checkout_link.schemas import (
     CheckoutLinkCreateProducts,
     CheckoutLinkUpdate,
 )
-from polar.checkout_link.service import checkout_link as checkout_link_service
-from polar.enums import PaymentProcessor
-from polar.exceptions import SimeonRequestValidationError
-from polar.kit.pagination import PaginationParams
-from polar.models import Discount, Organization, Product, User, UserOrganization
-from polar.models.checkout_link import CheckoutLink
-from polar.models.product_price import ProductPriceFixed
-from polar.postgres import AsyncSession
+from simeon.checkout_link.service import checkout_link as checkout_link_service
+from simeon.enums import PaymentProcessor
+from simeon.exceptions import SimeonRequestValidationError
+from simeon.kit.pagination import PaginationParams
+from simeon.models import Discount, Organization, Product, User, UserOrganization
+from simeon.models.checkout_link import CheckoutLink
+from simeon.models.product_price import ProductPriceFixed
+from simeon.postgres import AsyncSession
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (

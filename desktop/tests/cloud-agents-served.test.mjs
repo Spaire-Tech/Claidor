@@ -1,5 +1,5 @@
 /**
- * Cloud agents are served (25 September 2026, `polar/sand/cloud_agents.py`
+ * Cloud agents are served (25 September 2026, `simeon/sand/cloud_agents.py`
  * over the maty queue; `docs/services-agents.md`).
  *
  * The client is Grok Bot's own, unchanged in what it sends:
@@ -31,7 +31,7 @@ async function load(entry, name) {
   return { module, dispose: () => rm(dir, { recursive: true, force: true }) };
 }
 
-/** The projection `polar/sand/cloud_agents_service.py` writes, in memory. */
+/** The projection `simeon/sand/cloud_agents_service.py` writes, in memory. */
 function simeonServer() {
   const agents = new Map();
   const seen = [];

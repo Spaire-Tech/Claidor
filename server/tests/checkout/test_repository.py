@@ -2,11 +2,11 @@ from datetime import timedelta
 
 import pytest
 
-from polar.checkout.repository import CheckoutRepository
-from polar.kit.utils import utc_now
-from polar.models import Product
-from polar.models.checkout import CheckoutStatus
-from polar.postgres import AsyncSession
+from simeon.checkout.repository import CheckoutRepository
+from simeon.kit.utils import utc_now
+from simeon.models import Product
+from simeon.models.checkout import CheckoutStatus
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_checkout
 

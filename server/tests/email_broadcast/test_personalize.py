@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from polar.email.personalize import build_variables, render, sample_subscriber
+from simeon.email.personalize import build_variables, render, sample_subscriber
 
 
 def _sub(name: str | None = "Ada Lovelace", email: str = "ada@example.com") -> object:

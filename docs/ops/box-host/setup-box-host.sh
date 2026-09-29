@@ -35,7 +35,7 @@ set -euo pipefail
 CERT_DIR=/etc/docker/certs
 CLIENT_DIR=/root/box-host-client
 # The pinned image the server runs (SIMEON_BOX_IMAGE_DIGEST's default in
-# server/polar/config.py), not the moving sand-box-latest tag: the 28
+# server/simeon/config.py), not the moving sand-box-latest tag: the 28
 # September build runs the image's own host (cloud-computer-served.md).
 BOX_IMAGE=${BOX_IMAGE:-public.ecr.aws/k0i0n2g5/cursorenvironments/universal:sand-box-latest@sha256:322c3a9031d61e210a05400dd74c82bbb1fdb42db315a8cf5ab39368c2f0c1c8}
 

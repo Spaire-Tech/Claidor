@@ -3,9 +3,9 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
-from polar.models import Customer, Member, Organization, Product, Subscription
-from polar.models.subscription import SubscriptionStatus
-from polar.postgres import AsyncSession
+from simeon.models import Customer, Member, Organization, Product, Subscription
+from simeon.models.subscription import SubscriptionStatus
+from simeon.postgres import AsyncSession
 from tests.fixtures.auth import (
     CUSTOMER_AUTH_SUBJECT,
     MEMBER_AUTH_SUBJECT,

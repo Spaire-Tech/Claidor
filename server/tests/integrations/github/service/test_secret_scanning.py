@@ -8,8 +8,8 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from fastapi.exceptions import RequestValidationError
 from pytest_mock import MockerFixture
 
-from polar.integrations.github.service.secret_scanning import InvalidSignature
-from polar.integrations.github.service.secret_scanning import (
+from simeon.integrations.github.service.secret_scanning import InvalidSignature
+from simeon.integrations.github.service.secret_scanning import (
     secret_scanning as secret_scanning_service,
 )
 

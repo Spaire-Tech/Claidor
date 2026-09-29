@@ -4,9 +4,9 @@ from urllib.parse import parse_qs, urlparse
 import pytest
 from httpx import AsyncClient
 
-from polar.config import settings
-from polar.kit import jwt
-from polar.models import Customer
+from simeon.config import settings
+from simeon.kit import jwt
+from simeon.models import Customer
 from tests.fixtures.auth import CUSTOMER_AUTH_SUBJECT
 
 

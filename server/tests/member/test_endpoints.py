@@ -3,7 +3,7 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
-from polar.models import Member, Organization, UserOrganization
+from simeon.models import Member, Organization, UserOrganization
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_customer, create_organization
@@ -322,7 +322,7 @@ class TestCreateMember:
         organization: Organization,
         user_organization: UserOrganization,
     ) -> None:
-        from polar.models.customer import CustomerType
+        from simeon.models.customer import CustomerType
 
         organization.feature_settings = {"member_model_enabled": True}
         await save_fixture(organization)

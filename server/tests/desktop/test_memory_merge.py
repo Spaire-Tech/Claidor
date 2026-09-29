@@ -1,12 +1,12 @@
 """The merge rules of the shared memory, on their own
-(`polar/desktop/memory_merge.py`). No database, no I/O: two strings in,
+(`simeon/desktop/memory_merge.py`). No database, no I/O: two strings in,
 one string out."""
 
 import hashlib
 
 import pytest
 
-from polar.desktop.memory_merge import (
+from simeon.desktop.memory_merge import (
     MEMORY_FILE_RULES,
     MemoryRule,
     fact_id,

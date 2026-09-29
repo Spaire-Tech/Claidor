@@ -69,7 +69,7 @@ prompt: |
   Review these changed files against Polar conventions:
   [INSERT CHANGED FILES LIST]
 
-  **Backend Conventions (server/polar/):**
+  **Backend Conventions (server/simeon/):**
   - All DB queries MUST be in repository files, not services
   - NEVER call session.commit() - framework handles this
   - Services are singletons (instance at module level: `resource = ResourceService()`)

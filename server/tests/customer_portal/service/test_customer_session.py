@@ -3,21 +3,21 @@ from datetime import timedelta
 
 import pytest
 
-from polar.customer_portal.service.customer_session import (
+from simeon.customer_portal.service.customer_session import (
     CustomerDoesNotExist,
     CustomerSelectionRequired,
     CustomerSessionCodeInvalidOrExpired,
     OrganizationDoesNotExist,
 )
-from polar.customer_portal.service.customer_session import (
+from simeon.customer_portal.service.customer_session import (
     customer_session as customer_session_service,
 )
-from polar.customer_session.service import CUSTOMER_SESSION_TOKEN_PREFIX
-from polar.kit.utils import utc_now
-from polar.models import CustomerSession, Member, MemberSession, Organization
-from polar.models.member import MemberRole
-from polar.models.member_session import MEMBER_SESSION_TOKEN_PREFIX
-from polar.postgres import AsyncSession
+from simeon.customer_session.service import CUSTOMER_SESSION_TOKEN_PREFIX
+from simeon.kit.utils import utc_now
+from simeon.models import CustomerSession, Member, MemberSession, Organization
+from simeon.models.member import MemberRole
+from simeon.models.member_session import MEMBER_SESSION_TOKEN_PREFIX
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_customer, create_organization
 
@@ -405,7 +405,7 @@ class TestRequestMemberEnabledOrg:
         organization: Organization,
     ) -> None:
         """Test that soft-deleted members are not found."""
-        from polar.kit.utils import utc_now
+        from simeon.kit.utils import utc_now
 
         organization.feature_settings = {"member_model_enabled": True}
         await save_fixture(organization)
@@ -619,7 +619,7 @@ class TestAuthenticate:
         organization: Organization,
     ) -> None:
         """Test that authenticate raises error when member not found by email."""
-        from polar.models import CustomerSessionCode
+        from simeon.models import CustomerSessionCode
 
         organization.feature_settings = {"member_model_enabled": True}
         await save_fixture(organization)

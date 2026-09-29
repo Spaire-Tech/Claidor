@@ -7,10 +7,10 @@ no bearer."""
 import pytest
 from starlette.requests import Request
 
-from polar.auth.middlewares import get_auth_subject, is_box_proxy_path
-from polar.auth.models import Anonymous
-from polar.oauth2.exceptions import InvalidTokenError
-from polar.postgres import AsyncSession
+from simeon.auth.middlewares import get_auth_subject, is_box_proxy_path
+from simeon.auth.models import Anonymous
+from simeon.oauth2.exceptions import InvalidTokenError
+from simeon.postgres import AsyncSession
 
 BOX = "1da35e98-a0cb-4cbc-9612-69333079cc45"
 GATEWAY_BEARER = "ab" * 32

@@ -3,12 +3,12 @@ from unittest.mock import MagicMock
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.auth.models import AuthSubject
-from polar.kit.pagination import PaginationParams
-from polar.member.service import member_service
-from polar.models import Customer, Member, Organization, User, UserOrganization
-from polar.models.member import MemberRole
-from polar.postgres import AsyncSession
+from simeon.auth.models import AuthSubject
+from simeon.kit.pagination import PaginationParams
+from simeon.member.service import member_service
+from simeon.models import Customer, Member, Organization, User, UserOrganization
+from simeon.models.member import MemberRole
+from simeon.postgres import AsyncSession
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_customer
@@ -310,8 +310,8 @@ class TestCreate:
         user_organization: UserOrganization,
     ) -> None:
         """Test that individual customers can only have 1 member (the owner)."""
-        from polar.exceptions import NotPermitted
-        from polar.models.customer import CustomerType
+        from simeon.exceptions import NotPermitted
+        from simeon.models.customer import CustomerType
 
         organization.feature_settings = {"member_model_enabled": True}
         await save_fixture(organization)
@@ -360,7 +360,7 @@ class TestCreate:
         user_organization: UserOrganization,
     ) -> None:
         """Test that team customers can have multiple members."""
-        from polar.models.customer import CustomerType
+        from simeon.models.customer import CustomerType
 
         organization.feature_settings = {"member_model_enabled": True}
         await save_fixture(organization)
@@ -505,7 +505,7 @@ class TestUpdate:
         organization: Organization,
     ) -> None:
         """Test that cannot change role when member is the only owner."""
-        from polar.exceptions import SimeonRequestValidationError
+        from simeon.exceptions import SimeonRequestValidationError
 
         customer = await create_customer(
             save_fixture,
@@ -535,7 +535,7 @@ class TestUpdate:
         organization: Organization,
     ) -> None:
         """Test that cannot promote member to owner when an owner already exists."""
-        from polar.exceptions import SimeonRequestValidationError
+        from simeon.exceptions import SimeonRequestValidationError
 
         customer = await create_customer(
             save_fixture,
@@ -607,7 +607,7 @@ class TestDelete:
         organization: Organization,
     ) -> None:
         """Test that deleting a member enqueues a job to revoke their seats."""
-        enqueue_job_mock: MagicMock = mocker.patch("polar.member.service.enqueue_job")
+        enqueue_job_mock: MagicMock = mocker.patch("simeon.member.service.enqueue_job")
 
         customer = await create_customer(
             save_fixture,
@@ -653,7 +653,7 @@ class TestDelete:
         organization: Organization,
     ) -> None:
         """Test that the only owner cannot be deleted."""
-        from polar.exceptions import SimeonRequestValidationError
+        from simeon.exceptions import SimeonRequestValidationError
 
         customer = await create_customer(
             save_fixture,

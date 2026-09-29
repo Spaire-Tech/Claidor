@@ -8,7 +8,7 @@ publish, connectors, and a few agent features (avatars, group chats, auto-review
 Conventions used below:
 
 - **Settings on Render** are read as `SIMEON_<NAME>`. The older `CLAIDOR_<NAME>` is still read
-  when the `SIMEON_` one is not set (`server/polar/config.py`). Keys and secrets here are empty by
+  when the `SIMEON_` one is not set (`server/simeon/config.py`). Keys and secrets here are empty by
   default, and a path that needs a missing one answers with a sentence naming it.
 - **App switches** are `SAND_*` environment variables read by the host program inside the
   agent's computer (the box). The on/off switches are on by default; `0` turns one off. The
@@ -19,8 +19,8 @@ Conventions used below:
   (`shared/host-log.ts`). **Server log** is the API's log on Render.
 - App paths are relative to `desktop/source/` unless they say otherwise.
 - Most server features here are Connect RPC services or JSON routes mounted at the **root** of
-  the API host by `server/polar/sand/__init__.py`. The app's Connect transport sends JSON
-  (`useBinaryFormat: false`); `polar/sand/connect.py` reads only JSON.
+  the API host by `server/simeon/sand/__init__.py`. The app's Connect transport sends JSON
+  (`useBinaryFormat: false`); `simeon/sand/connect.py` reads only JSON.
 
 ## 1. Cloud agents
 
@@ -30,12 +30,12 @@ answers in words only: it does not check out code, run commands or open pull req
 
 **How it works.**
 
-- Server: `server/polar/sand/cloud_agents.py` (Connect surface), `cloud_agents_service.py`,
+- Server: `server/simeon/sand/cloud_agents.py` (Connect surface), `cloud_agents_service.py`,
   `cloud_agents_repository.py`. It serves `aiserver.v1.BackgroundComposerService` (start, info,
   list, follow-up, pause, rename, archive, delete, artifacts, conversation, and empty
   pull-request and diff answers) and `aiserver.v1.AiService/AvailableModels`.
 - A cloud agent is a `sand_cloud_agents` row over one `MatyJob` per turn in the job queue
-  (`server/polar/maty/`). A follow-up on a finished turn is a continuation job with the whole
+  (`server/simeon/maty/`). A follow-up on a finished turn is a continuation job with the whole
   conversation; on a running turn it waits and is queued when the turn settles. Pause calls off
   a queued job, or sets `cancel_requested` on a running one, which the runner reads from its
   heartbeat. There is one environment, `simeon-computer` ("Simeon's computer").
@@ -132,7 +132,7 @@ agents. A turn for an agent always runs in its owner's computer.
 
 **How it works.**
 
-- Server: `server/polar/sand/sharing.py` (routes), `sharing_service.py`,
+- Server: `server/simeon/sand/sharing.py` (routes), `sharing_service.py`,
   `sharing_repository.py`; tables `desktop_share_rooms`, `desktop_share_room_members`,
   `desktop_share_join_requests`, `desktop_share_events`. Invite links are signed tokens with no
   table; typing state and turn nonces live in Redis.
@@ -210,8 +210,8 @@ it.
   with the video inline at 4 fps by default. Videos up to 15 MB are accepted; the brief tells
   the agent to trim a larger one first.
 - Server: `POST /desktop/api/proxy/v1beta/models/{model}:generateContent` and
-  `:streamGenerateContent` (`proxy_gemini_generate` in `server/polar/desktop/endpoints.py`,
-  helpers in `polar/desktop/video.py`). It adds Simeon's key, meters usage into
+  `:streamGenerateContent` (`proxy_gemini_generate` in `server/simeon/desktop/endpoints.py`,
+  helpers in `simeon/desktop/video.py`). It adds Simeon's key, meters usage into
   `desktop_usage` with provider `gemini`, and applies the monthly allowance and the hourly
   brake. The video model is `gemini-2.5-flash` (`ModelRole.video` in `pricing.py`); the
   person never picks it.
@@ -236,7 +236,7 @@ the next plugin sync.
 
 **How it works.**
 
-- Server: `server/polar/sand/skill_registry.py`, `skill_registry_service.py`,
+- Server: `server/simeon/sand/skill_registry.py`, `skill_registry_service.py`,
   `skill_registry_repository.py`, as methods of `aiserver.v1.DashboardService`: `GetTeams`
   ("Just me" first, then one team per organization the person belongs to), `PublishPlugin`
   (a tar.gz of at most 10 MB packed, 50 MB unpacked and 2,000 files, which must contain
@@ -323,7 +323,7 @@ and Ashby connect through Simeon. The provider behind them is never named in the
 
 **How it works.**
 
-- Server: `server/polar/desktop/apps.py`, under `/desktop`: `GET /desktop/api/apps`
+- Server: `server/simeon/desktop/apps.py`, under `/desktop`: `GET /desktop/api/apps`
   (`{"available": true}` when configured), `POST /desktop/api/apps/mcp/{toolkit}` (our MCP
   server per app), `GET /desktop/api/apps/{toolkit}/status`,
   `POST /desktop/api/apps/{toolkit}/connect` (the sign-in link),
@@ -358,7 +358,7 @@ sentence.
 **How it works.** **Upload** stays on the Mac and in the box: a file dialog, a crop, then
 `setAgentAvatarBytes`, which writes `avatar.png` in the agent's folder and refuses an empty
 payload, one over 5 MB, or one that is not an image. **Generate** posts to
-`POST /desktop/api/proxy/v1/images/generations` (`server/polar/desktop/capabilities.py`, model
+`POST /desktop/api/proxy/v1/images/generations` (`server/simeon/desktop/capabilities.py`, model
 `gpt-image-1`) at low quality (`electron-main/adapters/avatar-images.ts`); the result is
 cropped and saved by the same upload path. The roster reads the picture into every row
 (`readAgentAvatarForSummary` in `host/extensions/session/session-summaries.ts`), and an avatar

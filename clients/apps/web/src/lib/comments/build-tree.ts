@@ -4,7 +4,7 @@
  * Lifted from CommentThread.tsx so the lesson-comments thread and the
  * community-comments thread render the same nesting + tombstone behavior
  * without duplicating the loop. The kit on the server side
- * (polar.kit.comments) handles tombstone fetching; this builder handles
+ * (simeon.kit.comments) handles tombstone fetching; this builder handles
  * the client-side flat-list → tree shape used by both surfaces.
  *
  * Generic so each surface can pass its own row shape — both

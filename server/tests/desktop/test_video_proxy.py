@@ -1,6 +1,6 @@
 """Watching a video: the Gemini door on the model proxy
-(`polar/desktop/endpoints.py`, `proxy_gemini_generate`; the parsing in
-`polar/desktop/video.py`), end to end over HTTP against a fake Google,
+(`simeon/desktop/endpoints.py`, `proxy_gemini_generate`; the parsing in
+`simeon/desktop/video.py`), end to end over HTTP against a fake Google,
 and the video model in the two model lists."""
 
 import json
@@ -13,18 +13,18 @@ import respx
 from pytest_mock import MockerFixture
 from sqlalchemy import Row
 
-from polar.config import settings
-from polar.desktop.pricing import (
+from simeon.config import settings
+from simeon.desktop.pricing import (
     GeminiUsageTally,
     Usage,
     credits_for,
     model_by_id,
     video_models,
 )
-from polar.desktop.service import desktop, offered_models
-from polar.desktop.video import count_video_parts, parse_gemini_call
-from polar.models import DesktopUsage, User
-from polar.postgres import AsyncSession
+from simeon.desktop.service import desktop, offered_models
+from simeon.desktop.video import count_video_parts, parse_gemini_call
+from simeon.models import DesktopUsage, User
+from simeon.postgres import AsyncSession
 
 GEMINI = settings.DESKTOP_GEMINI_BASE_URL
 FLASH = "gemini-2.5-flash"
@@ -434,7 +434,7 @@ class TestTheGeminiDoor:
         mocker: MockerFixture,
     ) -> None:
         mocker.patch.object(settings, "GEMINI_API_KEY", "AIza-test")
-        from polar.desktop import proxy_common as proxy_common_module
+        from simeon.desktop import proxy_common as proxy_common_module
 
         warn = mocker.patch.object(proxy_common_module.log, "warning")
         headers = await _signed_in(client, session, user)

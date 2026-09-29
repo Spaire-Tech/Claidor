@@ -29,15 +29,15 @@ import { envGateOverride } from "./cursor-experiments.js";
 // `sand_multiplayer` — sharing a room with another person's agent. Off in
 // the bundled table; on since 25 September 2026 (F-403), now that Simeon
 // Labs' server serves the `/sand/xuser` and `/sand/share-rooms` relay
-// (`server/polar/sand/sharing.py`). The cross-user-sharing extension reads
+// (`server/simeon/sand/sharing.py`). The cross-user-sharing extension reads
 // it through `getFeatureGateProperty`, which this table also covers.
 //
 // `sand_notify_bus` — the box's one SSE stream to `GET /sand/notify`, which
 // wakes the listener relay poller and the fire consumer the moment an
 // event or a cron fire lands instead of at their next poll. Off in the
 // bundled table; on since 25 September 2026, now that Simeon Labs' server
-// serves the stream (polar/sand/notify.py) and the listener relay behind
-// it (polar/sand/listeners*.py). The safety polls stay on.
+// serves the stream (simeon/sand/notify.py) and the listener relay behind
+// it (simeon/sand/listeners*.py). The safety polls stay on.
 // Two gates this table does not name, and why (F-209, 25 September 2026):
 // `sand_browser_use_subagent` stays at its bundled default, off. The
 // browserUse child and its fifteen tools are wired

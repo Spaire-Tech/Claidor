@@ -30,21 +30,21 @@ import structlog
 import typer
 from sqlalchemy import select
 
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.kit.utils import utc_now
-from polar.models import Organization
-from polar.models.subscription import SubscriptionStatus
-from polar.platform.repository import (
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.kit.utils import utc_now
+from simeon.models import Organization
+from simeon.models.subscription import SubscriptionStatus
+from simeon.platform.repository import (
     platform_customer_repository,
     platform_subscription_repository,
 )
-from polar.platform.service import PlatformError
-from polar.platform.service import platform as platform_service
-from polar.platform.trial_notifications import (
+from simeon.platform.service import PlatformError
+from simeon.platform.service import platform as platform_service
+from simeon.platform.trial_notifications import (
     encode_sent_markers,
     parse_sent_markers,
 )
-from polar.postgres import create_async_engine
+from simeon.postgres import create_async_engine
 
 cli = typer.Typer()
 

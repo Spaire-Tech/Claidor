@@ -3,7 +3,7 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
-from polar.models import (
+from simeon.models import (
     Benefit,
     Customer,
     Member,
@@ -11,8 +11,8 @@ from polar.models import (
     Product,
     UserOrganization,
 )
-from polar.postgres import AsyncSession
-from polar.tax.tax_id import TaxIDFormat
+from simeon.postgres import AsyncSession
+from simeon.tax.tax_id import TaxIDFormat
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (

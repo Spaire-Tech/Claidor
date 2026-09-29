@@ -1,16 +1,16 @@
-"""The gate and the cache, on their own (`polar/connectors/service.py`)."""
+"""The gate and the cache, on their own (`simeon/connectors/service.py`)."""
 
 from datetime import UTC, datetime
 
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.connectors.provider import Connection
-from polar.connectors.service import ENTITLED_PLANS, connectors
-from polar.desktop.service import desktop
-from polar.models import User
-from polar.postgres import AsyncSession
+from simeon.config import settings
+from simeon.connectors.provider import Connection
+from simeon.connectors.service import ENTITLED_PLANS, connectors
+from simeon.desktop.service import desktop
+from simeon.models import User
+from simeon.postgres import AsyncSession
 
 
 @pytest.mark.asyncio

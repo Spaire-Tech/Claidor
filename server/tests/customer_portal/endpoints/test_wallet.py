@@ -4,8 +4,8 @@ import pytest
 import pytest_asyncio
 from httpx import AsyncClient
 
-from polar.models import Customer, Wallet
-from polar.models.wallet import WalletType
+from simeon.models import Customer, Wallet
+from simeon.models.wallet import WalletType
 from tests.fixtures.auth import CUSTOMER_AUTH_SUBJECT
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_wallet

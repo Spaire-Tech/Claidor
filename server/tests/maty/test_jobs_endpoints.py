@@ -1,5 +1,5 @@
 """The person's four routes, end to end over HTTP
-(`polar/maty/desktop_endpoints.py`).
+(`simeon/maty/desktop_endpoints.py`).
 
 What is checked here and nowhere else:
 
@@ -22,16 +22,16 @@ import httpx
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.desktop.service import desktop
-from polar.maty.service import (
+from simeon.config import settings
+from simeon.desktop.service import desktop
+from simeon.maty.service import (
     CANCELLED_REASON,
     LIVE_JOB_LIMIT,
     PROMPT_MAX_LENGTH,
     maty,
 )
-from polar.models import MatyJobKind, MatyJobStatus, User
-from polar.postgres import AsyncSession
+from simeon.models import MatyJobKind, MatyJobStatus, User
+from simeon.postgres import AsyncSession
 
 JOBS = "/desktop/api/maty/jobs"
 

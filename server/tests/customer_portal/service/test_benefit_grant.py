@@ -1,15 +1,17 @@
 import pytest
 
-from polar.auth.models import AuthSubject
-from polar.customer_portal.service.benefit_grant import CustomerBenefitGrantSortProperty
-from polar.customer_portal.service.benefit_grant import (
+from simeon.auth.models import AuthSubject
+from simeon.customer_portal.service.benefit_grant import (
+    CustomerBenefitGrantSortProperty,
+)
+from simeon.customer_portal.service.benefit_grant import (
     customer_benefit_grant as customer_benefit_grant_service,
 )
-from polar.kit.db.postgres import AsyncSession
-from polar.kit.pagination import PaginationParams
-from polar.kit.sorting import Sorting
-from polar.models import Benefit, Customer, Member, Organization, Subscription
-from polar.models.member import MemberRole
+from simeon.kit.db.postgres import AsyncSession
+from simeon.kit.pagination import PaginationParams
+from simeon.kit.sorting import Sorting
+from simeon.models import Benefit, Customer, Member, Organization, Subscription
+from simeon.models.member import MemberRole
 from tests.fixtures.auth import MEMBER_AUTH_SUBJECT, AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_benefit_grant, create_member

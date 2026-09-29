@@ -5,10 +5,10 @@ Revises: desktop_box_credential_0925
 Create Date: 2026-09-25 15:00:00.000000
 
 `sand_boxes` is what `aiserver.v1.GrokBotService/EnsureSandBox` answers
-from (`polar.sand.box_broker`): which box host runs the person's box,
+from (`simeon.sand.box_broker`): which box host runs the person's box,
 where its ports were published, the gateway and network tokens the app
 is handed, and the box credential injected into the container. See
-`polar.models.sand_box`.
+`simeon.models.sand_box`.
 """
 
 import sqlalchemy as sa

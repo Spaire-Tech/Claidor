@@ -14,7 +14,7 @@ export type LimitKey = keyof TierLimits
 
 /**
  * The minimum paid tier that unlocks each feature. Mirrors
- * polar/entitlements/tiers.py — keep in sync when you flip a feature
+ * simeon/entitlements/tiers.py — keep in sync when you flip a feature
  * up or down a tier.
  */
 const FEATURE_REQUIRED_TIER: Record<FeatureKey, SimeonTierKey> = {

@@ -145,10 +145,10 @@
         "grok"
       ],
       "paths": [
-        "server/polar/sand/**",
+        "server/simeon/sand/**",
         "server/tests/sand/**",
         "server/migrations/versions/**",
-        "server/polar/models/sand_*.py"
+        "server/simeon/models/sand_*.py"
       ],
       "match": "GrokBotService|GROK_BOT|grok_bot",
       "reason": "The server answers the Connect service aiserver.v1.GrokBotService and the GROK_BOT source enum the app sends."
@@ -159,7 +159,7 @@
         "claidor"
       ],
       "paths": [
-        "server/polar/config.py",
+        "server/simeon/config.py",
         "server/tests/test_config_prefix.py",
         "runner/src/settings.ts",
         "runner/src/settings.test.ts",
@@ -179,7 +179,7 @@
         "claidor"
       ],
       "paths": [
-        "server/polar/**",
+        "server/simeon/**",
         "server/tests/**",
         "clients/apps/web/src/proxy.ts",
         "clients/apps/web/src/proxy.test.ts",
@@ -220,7 +220,7 @@
         "caisra"
       ],
       "paths": [
-        "server/polar/desktop/endpoints.py"
+        "server/simeon/desktop/endpoints.py"
       ],
       "match": "caisra",
       "reason": "The app's sign-in callback scheme was caisra:// before simeon://; a build from before the rename can still finish a sign-in."
@@ -231,7 +231,7 @@
         "claidor"
       ],
       "paths": [
-        "server/polar/**",
+        "server/simeon/**",
         "server/scripts/**",
         "server/tests/**"
       ],
@@ -292,9 +292,9 @@
         "claidor"
       ],
       "paths": [
-        "server/polar/sand/**",
+        "server/simeon/sand/**",
         "server/tests/sand/**",
-        "server/polar/desktop/**"
+        "server/simeon/desktop/**"
       ],
       "match": "com\\.grok-bot\\.local-vm|\"grok-bot\"|SAND_INFERENCE_PROVIDER|claidor-[a-z-]+\\.ts",
       "reason": "Values the app and the box send or read: the cloud computer's Docker owner label, the cloud-agent source value \"grok-bot\", the model provider id \"claidor\", and desktop file names. Renamed together with the app's side, with the earlier value still accepted."

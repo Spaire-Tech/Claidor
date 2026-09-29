@@ -26,7 +26,7 @@ function envelope(data, status = 200) {
   return new Response(JSON.stringify({ code: 0, data }), { status, headers: { "content-type": "application/json" } });
 }
 
-// `DesktopModel.available()` in `server/polar/desktop/pricing.py`, one row each.
+// `DesktopModel.available()` in `server/simeon/desktop/pricing.py`, one row each.
 const SERVER_ROWS = [
   { modelId: "gpt-5.6", modelName: "Terra", provider: "openai", apiFormat: "openai", description: "Every reply you read.", costMultiplier: 0.67, accessible: true, supportsImage: true, supportsVideo: false, supportsThinking: false, supportsToolCalling: true, agenticReady: true, role: "primary", transportApi: "openai-responses", contextWindow: 400000, maxTokens: 128000, explicitContextCache: false },
   { modelId: "gpt-5.6-mini", modelName: "Luna", provider: "openai", apiFormat: "openai", description: "Machinery.", costMultiplier: 0.07, accessible: true, supportsImage: true, supportsVideo: false, supportsThinking: false, supportsToolCalling: true, agenticReady: true, role: "cheap", transportApi: "openai-responses", contextWindow: 400000, maxTokens: 128000, explicitContextCache: false },

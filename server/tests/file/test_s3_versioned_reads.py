@@ -11,8 +11,8 @@ version is both safe and enough to keep the product working.
 import pytest
 from botocore.exceptions import ClientError
 
-from polar.integrations.aws.s3.exceptions import S3FileError
-from polar.integrations.aws.s3.service import S3Service
+from simeon.integrations.aws.s3.exceptions import S3FileError
+from simeon.integrations.aws.s3.service import S3Service
 
 HEAD = {
     "ContentType": "application/pdf",

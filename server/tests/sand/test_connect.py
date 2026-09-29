@@ -13,17 +13,16 @@ import httpx
 import pytest
 from fastapi import FastAPI
 
-from polar.models import User
-from polar.postgres import AsyncSession
-from polar.sand import router as sand_router
-from polar.sand.connect import (
+from simeon.models import User
+from simeon.postgres import AsyncSession
+from simeon.sand import router as sand_router
+from simeon.sand.connect import (
     ConnectCall,
     ConnectError,
     ConnectService,
     decode_stream_frames,
     encode_stream_frames,
 )
-
 from tests.desktop.test_endpoints import _signed_in
 
 demo = ConnectService("aiserver.v1.DemoService")
@@ -59,7 +58,7 @@ def _mount(app: FastAPI) -> None:
     # The catch-all is already mounted and Starlette matches in order, so
     # the demo service is included (which binds the app's dependency
     # overrides into each route) and then moved in front of it, the way a
-    # real module is included before `unimplemented_router` in `polar.sand`.
+    # real module is included before `unimplemented_router` in `simeon.sand`.
     if any(getattr(route, "path", "") == "/aiserver.v1.DemoService/Echo" for route in app.routes):
         return
     before = len(app.router.routes)

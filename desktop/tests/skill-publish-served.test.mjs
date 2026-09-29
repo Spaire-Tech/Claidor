@@ -8,7 +8,7 @@
  * until `GetEffectiveUserPlugins` lists the answered `pluginId` at the
  * answered `commitSha`; `unpublish` restores the library copy and posts
  * `UnpublishPlugin`. This test stands up an in-process Connect JSON server
- * with the exact shapes `server/polar/sand/skill_registry.py` answers
+ * with the exact shapes `server/simeon/sand/skill_registry.py` answers
  * (`Just me` as the personal team, the tarball's files as
  * `inlineContentJson`, `commitSha = sha256("{id}:{updatedAt}")[:40]`) and
  * drives the real service, the real plugin-skills sync and the real
@@ -71,7 +71,7 @@ function unpackTarGz(blob) {
 const USER_ID = 4242; // `user_id_of(call)`, the 31-bit hash of the user's UUID on the server.
 const commitShaOf = (id, updatedAt) => createHash("sha256").update(`${id}:${updatedAt}`).digest("hex").slice(0, 40);
 
-/** `polar/sand/skill_registry.py`, in 60 lines: the five methods, the same field names. */
+/** `simeon/sand/skill_registry.py`, in 60 lines: the five methods, the same field names. */
 function startRegistry() {
   const plugins = new Map();
   let nextId = 1000;

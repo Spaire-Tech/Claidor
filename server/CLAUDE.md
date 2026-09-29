@@ -19,9 +19,9 @@ uv run alembic upgrade head                              # Apply migrations
 
 ## Module Structure
 
-Each module in `polar/` follows this structure:
+Each module in `simeon/` follows this structure:
 ```
-polar/{module}/
+simeon/{module}/
 ├── __init__.py
 ├── auth.py           # Authentication dependencies
 ├── endpoints.py      # FastAPI route handlers
@@ -37,8 +37,8 @@ polar/{module}/
 **ALL database queries MUST be in repository files.**
 
 ```python
-# polar/{module}/repository.py
-from polar.kit.repository import (
+# simeon/{module}/repository.py
+from simeon.kit.repository import (
     RepositoryBase,
     RepositorySoftDeletionMixin,
     RepositorySortingMixin,
@@ -91,7 +91,7 @@ class ResourceRepository(
 Services contain business logic and call repositories.
 
 ```python
-# polar/{module}/service.py
+# simeon/{module}/service.py
 class ResourceService:
     async def list(
         self,
@@ -132,8 +132,8 @@ resource = ResourceService()
 ## Endpoint Pattern
 
 ```python
-# polar/{module}/endpoints.py
-from polar.kit.pagination import ListResource, Pagination, PaginationParamsQuery
+# simeon/{module}/endpoints.py
+from simeon.kit.pagination import ListResource, Pagination, PaginationParamsQuery
 
 router = APIRouter(prefix="/resources", tags=["resources"])
 
@@ -164,10 +164,10 @@ async def create_resource(
 ## Auth Dependencies
 
 ```python
-# polar/{module}/auth.py
-from polar.auth.dependencies import Authenticator
-from polar.auth.models import AuthSubject
-from polar.auth.scope import Scope
+# simeon/{module}/auth.py
+from simeon.auth.dependencies import Authenticator
+from simeon.auth.models import AuthSubject
+from simeon.auth.scope import Scope
 
 ResourcesRead = Annotated[
     AuthSubject[User | Organization],
@@ -193,8 +193,8 @@ ResourcesWrite = Annotated[
 ## Pydantic Schemas
 
 ```python
-# polar/{module}/schemas.py
-from polar.kit.schemas import Schema, TimestampedSchema
+# simeon/{module}/schemas.py
+from simeon.kit.schemas import Schema, TimestampedSchema
 
 class ResourceBase(Schema):
     name: str = Field(description="Resource name")
@@ -217,8 +217,8 @@ class ResourceUpdate(Schema):
 ## Background Tasks
 
 ```python
-# polar/{module}/tasks.py
-from polar.worker import AsyncSessionMaker, TaskPriority, actor, enqueue_job
+# simeon/{module}/tasks.py
+from simeon.worker import AsyncSessionMaker, TaskPriority, actor, enqueue_job
 
 class ResourceTaskError(PolarTaskError): ...
 
@@ -296,8 +296,8 @@ class TestListResources:
 
 ## Key Files Reference
 
-- Repository base: `polar/kit/repository/base.py`
-- Auth models: `polar/auth/models.py`
-- Pagination: `polar/kit/pagination.py`
-- Worker: `polar/worker.py`
-- Example module: `polar/organization/`
+- Repository base: `simeon/kit/repository/base.py`
+- Auth models: `simeon/auth/models.py`
+- Pagination: `simeon/kit/pagination.py`
+- Worker: `simeon/worker.py`
+- Example module: `simeon/organization/`

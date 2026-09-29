@@ -4,22 +4,22 @@ from unittest.mock import MagicMock
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.enums import TokenType
-from polar.kit.crypto import get_token_hash
-from polar.kit.utils import utc_now
-from polar.models import PersonalAccessToken, User
-from polar.personal_access_token.service import (
+from simeon.config import settings
+from simeon.enums import TokenType
+from simeon.kit.crypto import get_token_hash
+from simeon.kit.utils import utc_now
+from simeon.models import PersonalAccessToken, User
+from simeon.personal_access_token.service import (
     personal_access_token as personal_access_token_service,
 )
-from polar.postgres import AsyncSession
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 
 
 @pytest.fixture(autouse=True)
 def enqueue_email_mock(mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
-        "polar.personal_access_token.service.enqueue_email", autospec=True
+        "simeon.personal_access_token.service.enqueue_email", autospec=True
     )
 
 

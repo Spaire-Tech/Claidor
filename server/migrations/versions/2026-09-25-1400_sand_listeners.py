@@ -4,7 +4,7 @@ Revision ID: sand_listeners_0925
 Revises: desktop_box_credential_0925
 Create Date: 2026-09-25 14:00:00.000000
 
-Five tables for `polar.sand.listeners`, the half of Cursor's listener
+Five tables for `simeon.sand.listeners`, the half of Cursor's listener
 relay the app in `desktop/` expects (`docs/services-agents.md`):
 `sand_automations` (one shadow workflow per person per routine),
 `sand_listener_subscriptions` (what a box listens for),

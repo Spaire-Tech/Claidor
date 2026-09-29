@@ -12,12 +12,12 @@ from rich.progress import Progress
 from sqlalchemy import CursorResult, literal, or_, select
 from sqlalchemy.dialects.postgresql import insert
 
-from polar.config import settings
-from polar.event.repository import EventRepository
-from polar.kit.db.postgres import AsyncSession, create_async_sessionmaker
-from polar.kit.db.postgres import create_async_engine as _create_async_engine
-from polar.meter.repository import MeterRepository
-from polar.models import Event, Meter, MeterEvent
+from simeon.config import settings
+from simeon.event.repository import EventRepository
+from simeon.kit.db.postgres import AsyncSession, create_async_sessionmaker
+from simeon.kit.db.postgres import create_async_engine as _create_async_engine
+from simeon.meter.repository import MeterRepository
+from simeon.models import Event, Meter, MeterEvent
 
 cli = typer.Typer()
 

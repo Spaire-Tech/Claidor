@@ -6,15 +6,15 @@ from unittest.mock import AsyncMock, call
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.auth.models import AuthSubject
-from polar.entitlements.exceptions import FeatureNotInPlanError
-from polar.entitlements.tiers import TierKey
-from polar.enums import SubscriptionRecurringInterval
-from polar.exceptions import SimeonRequestValidationError
-from polar.kit.currency import PresentmentCurrency
-from polar.kit.pagination import PaginationParams
-from polar.kit.trial import TrialInterval
-from polar.models import (
+from simeon.auth.models import AuthSubject
+from simeon.entitlements.exceptions import FeatureNotInPlanError
+from simeon.entitlements.tiers import TierKey
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.exceptions import SimeonRequestValidationError
+from simeon.kit.currency import PresentmentCurrency
+from simeon.kit.pagination import PaginationParams
+from simeon.kit.trial import TrialInterval
+from simeon.models import (
     Benefit,
     File,
     Meter,
@@ -23,15 +23,15 @@ from polar.models import (
     User,
     UserOrganization,
 )
-from polar.models.benefit import BenefitType
-from polar.models.file import FileServiceTypes, ProductMediaFile
-from polar.models.product_price import (
+from simeon.models.benefit import BenefitType
+from simeon.models.file import FileServiceTypes, ProductMediaFile
+from simeon.models.product_price import (
     ProductPriceAmountType,
     ProductPriceFixed,
 )
-from polar.postgres import AsyncSession
-from polar.product.guard import is_metered_price, is_static_price
-from polar.product.schemas import (
+from simeon.postgres import AsyncSession
+from simeon.product.guard import is_metered_price, is_static_price
+from simeon.product.schemas import (
     ExistingProductPrice,
     ProductCreate,
     ProductCreateOneTime,
@@ -45,8 +45,8 @@ from polar.product.schemas import (
     ProductPriceSeatTiers,
     ProductUpdate,
 )
-from polar.product.service import product as product_service
-from polar.product.sorting import ProductSortProperty
+from simeon.product.service import product as product_service
+from simeon.product.sorting import ProductSortProperty
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
@@ -60,7 +60,7 @@ from tests.fixtures.random_objects import (
 
 @pytest.fixture
 def enqueue_job_mock(mocker: MockerFixture) -> AsyncMock:
-    return mocker.patch("polar.product.service.enqueue_job")
+    return mocker.patch("simeon.product.service.enqueue_job")
 
 
 @pytest.mark.asyncio
@@ -980,7 +980,7 @@ class TestUpdateSeatPricingGate:
     ) -> None:
         # `product` has no seat price. Simulate a tier without the feature.
         require_feature = mocker.patch(
-            "polar.product.service.entitlements_service.require_feature",
+            "simeon.product.service.entitlements_service.require_feature",
             side_effect=FeatureNotInPlanError(
                 "seat_based_product_pricing", TierKey.starter
             ),
@@ -1012,7 +1012,7 @@ class TestUpdateSeatPricingGate:
             prices=[("seat", 1000, "usd")],
         )
         require_feature = mocker.patch(
-            "polar.product.service.entitlements_service.require_feature",
+            "simeon.product.service.entitlements_service.require_feature",
         )
 
         update_schema = ProductUpdate(name="Renamed seat product")

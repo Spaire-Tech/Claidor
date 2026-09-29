@@ -17,20 +17,20 @@ from datetime import datetime
 import dramatiq
 import typer
 
-import polar.tasks  # noqa: F401 - Import tasks to register all dramatiq actors
-from polar.auth.models import AuthSubject
-from polar.customer.schemas.customer import CustomerCreate
-from polar.customer.service import customer as customer_service
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.meter.aggregation import AggregationFunction, PropertyAggregation
-from polar.meter.filter import Filter, FilterClause, FilterConjunction, FilterOperator
-from polar.meter.schemas import MeterCreate
-from polar.meter.service import meter as meter_service
-from polar.organization.repository import OrganizationRepository
-from polar.postgres import AsyncSession, create_async_engine
-from polar.redis import create_redis
-from polar.user_organization.service import UserOrganizationService
-from polar.worker import JobQueueManager
+import simeon.tasks  # noqa: F401 - Import tasks to register all dramatiq actors
+from simeon.auth.models import AuthSubject
+from simeon.customer.schemas.customer import CustomerCreate
+from simeon.customer.service import customer as customer_service
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.meter.aggregation import AggregationFunction, PropertyAggregation
+from simeon.meter.filter import Filter, FilterClause, FilterConjunction, FilterOperator
+from simeon.meter.schemas import MeterCreate
+from simeon.meter.service import meter as meter_service
+from simeon.organization.repository import OrganizationRepository
+from simeon.postgres import AsyncSession, create_async_engine
+from simeon.redis import create_redis
+from simeon.user_organization.service import UserOrganizationService
+from simeon.worker import JobQueueManager
 
 cli = typer.Typer()
 

@@ -26,7 +26,7 @@ function envelope(data, status = 200) {
   return new Response(JSON.stringify({ code: 0, data }), { status, headers: { "content-type": "application/json" } });
 }
 
-// `user_payload()` and `quota()` in `server/polar/desktop/service.py`.
+// `user_payload()` and `quota()` in `server/simeon/desktop/service.py`.
 const PROFILE = { id: "6d1e…", nickname: "Bass Fall", email: "bass@simeonlabs.com", avatarUrl: "https://lh3.googleusercontent.com/a/photo=s96-c", phone: null, accountMode: "personal" };
 const QUOTA = { planName: "Free", subscriptionStatus: "free", creditsLimit: 2_000_000, creditsUsed: 500_000, creditsRemaining: 1_500_000, hasPaidCredits: false, mediaGenerationEntitled: false, shareEntitled: false, deploymentEntitled: false, periodStart: "2026-09-01T00:00:00+00:00", periodEnd: "2026-10-01T00:00:00+00:00" };
 

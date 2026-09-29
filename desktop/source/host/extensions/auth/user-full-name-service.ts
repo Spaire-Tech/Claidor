@@ -5,7 +5,7 @@ export const GET_ME_TIMEOUT_MS = 10_000;
 // Until 25 September 2026 the name was asked of Cursor's DashboardService
 // (GetMe), which Simeon Labs' server does not serve, so the agent never
 // had it. The profile route answers the box's own credential too
-// (`get_desktop_or_box_session`, server/polar/desktop/auth.py).
+// (`get_desktop_or_box_session`, server/simeon/desktop/auth.py).
 export const USER_PROFILE_PATH = "/desktop/api/user/profile";
 
 export function nonEmpty(value: string | null | undefined): string | undefined {

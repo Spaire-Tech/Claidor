@@ -309,7 +309,7 @@ dev docker up -b -d
 
 - Primary database
 - Port: 5432 (default)
-- Credentials: polar/polar
+- Credentials: simeon/polar
 - Data persisted in `postgres_data` volume
 - Health check: `pg_isready`
 
@@ -324,7 +324,7 @@ dev docker up -b -d
 - File storage (images, downloads, etc.)
 - API Port: 9000
 - Console Port: 9001
-- Credentials: polar/polarpolar
+- Credentials: simeon/polarpolar
 - Data persisted in `minio_data` volume
 - Buckets: `polar-s3`, `polar-s3-public`
 
@@ -366,7 +366,7 @@ dev docker up -b -d
 **grafana (Dashboards)**
 
 - Port: 3001
-- Credentials: polar/polar
+- Credentials: simeon/polar
 - Pre-configured dashboards
 - Enable with: `--monitoring`
 
@@ -459,7 +459,7 @@ Services use Docker network hostnames:
 
     ```bash
     dev docker shell api
-    ls -la /app/server/polar/
+    ls -la /app/server/simeon/
     ```
 
 2. Restart the service:

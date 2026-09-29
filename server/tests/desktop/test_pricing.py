@@ -1,10 +1,10 @@
 """The catalogue and the price table, on their own
-(`polar/desktop/pricing.py`). No settings, no database, no pydantic:
+(`simeon/desktop/pricing.py`). No settings, no database, no pydantic:
 this is the module that decides what a person is charged, and it can be
 read and run by itself — `pytest --noconftest tests/desktop/test_pricing.py`.
 """
 
-from polar.desktop.pricing import (
+from simeon.desktop.pricing import (
     CREDIT_USD_PER_MILLION_INPUT,
     MODELS,
     MODELS_OWNER,

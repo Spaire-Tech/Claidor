@@ -1,6 +1,6 @@
 """Test for license key prefix validation fix."""
 
-from polar.benefit.strategies.license_keys.schemas import (
+from simeon.benefit.strategies.license_keys.schemas import (
     BenefitLicenseKeysCreateProperties,
 )
 

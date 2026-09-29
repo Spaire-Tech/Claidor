@@ -53,7 +53,7 @@ psql -U polar -d polar -c "SELECT 1"
 **Check file mounting:**
 ```bash
 dev docker shell api
-ls -la /app/server/polar/
+ls -la /app/server/simeon/
 ```
 
 **Restart the service:**

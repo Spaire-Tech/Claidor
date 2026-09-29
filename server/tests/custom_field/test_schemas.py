@@ -3,8 +3,8 @@ from typing import Any
 import pytest
 from pydantic import TypeAdapter, ValidationError
 
-from polar.custom_field.schemas import CustomFieldCreate
-from polar.models.custom_field import CustomFieldType
+from simeon.custom_field.schemas import CustomFieldCreate
+from simeon.models.custom_field import CustomFieldType
 
 CustomFieldCreateAdapter: TypeAdapter[CustomFieldCreate] = TypeAdapter(
     CustomFieldCreate

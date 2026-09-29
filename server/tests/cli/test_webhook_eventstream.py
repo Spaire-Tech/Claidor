@@ -4,13 +4,13 @@ from unittest.mock import MagicMock
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.redis import Redis
-from polar.webhook.eventstream import publish_webhook_event
+from simeon.redis import Redis
+from simeon.webhook.eventstream import publish_webhook_event
 
 
 @pytest.fixture
 def publish_mock(mocker: MockerFixture) -> MagicMock:
-    return mocker.patch("polar.webhook.eventstream.publish")
+    return mocker.patch("simeon.webhook.eventstream.publish")
 
 
 @pytest.mark.asyncio
@@ -27,7 +27,7 @@ class TestPublishWebhookEvent:
     async def test_publishes_when_listener_active(
         self, publish_mock: MagicMock, redis: Redis
     ) -> None:
-        from polar.cli.listener import mark_active
+        from simeon.cli.listener import mark_active
 
         org_id = uuid.uuid4()
         await mark_active(redis, org_id)
@@ -45,7 +45,7 @@ class TestPublishWebhookEvent:
     async def test_skips_after_listener_disconnects(
         self, publish_mock: MagicMock, redis: Redis
     ) -> None:
-        from polar.cli.listener import mark_active, mark_inactive
+        from simeon.cli.listener import mark_active, mark_inactive
 
         org_id = uuid.uuid4()
         await mark_active(redis, org_id)
@@ -58,7 +58,7 @@ class TestPublishWebhookEvent:
     async def test_only_publishes_to_listening_org(
         self, publish_mock: MagicMock, redis: Redis
     ) -> None:
-        from polar.cli.listener import mark_active
+        from simeon.cli.listener import mark_active
 
         listening_org = uuid.uuid4()
         other_org = uuid.uuid4()

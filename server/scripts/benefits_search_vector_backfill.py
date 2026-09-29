@@ -1,13 +1,13 @@
 import typer
 from sqlalchemy import select, update
 
-from polar.models import Benefit
 from scripts.helper import (
     configure_script_logging,
     limit_bindparam,
     run_batched_update,
     typer_async,
 )
+from simeon.models import Benefit
 
 cli = typer.Typer()
 

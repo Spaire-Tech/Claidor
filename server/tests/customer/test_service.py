@@ -4,19 +4,19 @@ import pytest
 from pytest_mock import MockerFixture
 from sqlalchemy.exc import IntegrityError
 
-from polar.auth.models import AuthSubject, is_user
-from polar.customer.schemas.customer import CustomerCreate, CustomerUpdate
-from polar.customer.service import customer as customer_service
-from polar.exceptions import SimeonRequestValidationError
-from polar.kit.address import AddressInput, CountryAlpha2, CountryAlpha2Input
-from polar.kit.pagination import PaginationParams
-from polar.member.repository import MemberRepository
-from polar.models import Customer, Organization, User, UserOrganization
-from polar.models.member import MemberRole
-from polar.models.webhook_endpoint import CustomerWebhookEventType, WebhookEventType
-from polar.postgres import AsyncSession
-from polar.redis import Redis
-from polar.tax.tax_id import TaxIDFormat
+from simeon.auth.models import AuthSubject, is_user
+from simeon.customer.schemas.customer import CustomerCreate, CustomerUpdate
+from simeon.customer.service import customer as customer_service
+from simeon.exceptions import SimeonRequestValidationError
+from simeon.kit.address import AddressInput, CountryAlpha2, CountryAlpha2Input
+from simeon.kit.pagination import PaginationParams
+from simeon.member.repository import MemberRepository
+from simeon.models import Customer, Organization, User, UserOrganization
+from simeon.models.member import MemberRole
+from simeon.models.webhook_endpoint import CustomerWebhookEventType, WebhookEventType
+from simeon.postgres import AsyncSession
+from simeon.redis import Redis
+from simeon.tax.tax_id import TaxIDFormat
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_customer
@@ -546,7 +546,7 @@ class TestUpdate:
         organization: Organization,
     ) -> None:
         """Test that customer type can be upgraded from individual to team."""
-        from polar.models.customer import CustomerType
+        from simeon.models.customer import CustomerType
 
         customer = await create_customer(
             save_fixture,
@@ -573,7 +573,7 @@ class TestUpdate:
         organization: Organization,
     ) -> None:
         """Test that customer type cannot be downgraded from team to individual."""
-        from polar.models.customer import CustomerType
+        from simeon.models.customer import CustomerType
 
         customer = await create_customer(
             save_fixture,
@@ -600,7 +600,7 @@ class TestUpdate:
         organization: Organization,
     ) -> None:
         """Test that updating to the same type is allowed."""
-        from polar.models.customer import CustomerType
+        from simeon.models.customer import CustomerType
 
         customer = await create_customer(
             save_fixture,
@@ -807,7 +807,7 @@ class TestAnonymize:
         organization: Organization,
     ) -> None:
         """Billing address should be cleared (invoices retain original)."""
-        from polar.kit.address import Address
+        from simeon.kit.address import Address
 
         customer = await create_customer(
             save_fixture,
@@ -935,7 +935,7 @@ class TestWebhook:
         redis: Redis,
         customer: Customer,
     ) -> None:
-        send_mock = mocker.patch("polar.webhook.service.webhook.send")
+        send_mock = mocker.patch("simeon.webhook.service.webhook.send")
 
         await customer_service.webhook(session, redis, event_type, customer)
 
@@ -948,7 +948,7 @@ class TestWebhook:
         redis: Redis,
         customer: Customer,
     ) -> None:
-        send_mock = mocker.patch("polar.webhook.service.webhook.send")
+        send_mock = mocker.patch("simeon.webhook.service.webhook.send")
 
         await customer_service.webhook(
             session, redis, WebhookEventType.customer_state_changed, customer

@@ -33,7 +33,7 @@ export interface VendorMcpConnector {
    */
   readonly clientId?: string;
   /**
-   * An app served by Simeon Labs' own apps service (`server/polar/desktop/apps.py`)
+   * An app served by Simeon Labs' own apps service (`server/simeon/desktop/apps.py`)
    * instead of a vendor's MCP: the tools and the sign-in link come from our
    * server, the app's slug is this. Added 28 September 2026 ("for the rest of
    * the connectors … white label it"); `url` is our server's address for it.

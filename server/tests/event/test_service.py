@@ -8,24 +8,24 @@ import pytest
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
 
-from polar.auth.models import AuthSubject, is_user
-from polar.event.repository import EventRepository
-from polar.event.schemas import (
+from simeon.auth.models import AuthSubject, is_user
+from simeon.event.repository import EventRepository
+from simeon.event.schemas import (
     EventCreateCustomer,
     EventCreateExternalCustomer,
     EventsIngest,
 )
-from polar.event.service import event as event_service
-from polar.event.sorting import EventNamesSortProperty
-from polar.event.system import SystemEvent
-from polar.event_type.repository import EventTypeRepository
-from polar.exceptions import SimeonRequestValidationError
-from polar.kit.pagination import PaginationParams
-from polar.kit.time_queries import TimeInterval
-from polar.kit.utils import utc_now
-from polar.meter.aggregation import AggregationFunction, PropertyAggregation
-from polar.meter.filter import Filter, FilterClause, FilterConjunction, FilterOperator
-from polar.models import (
+from simeon.event.service import event as event_service
+from simeon.event.sorting import EventNamesSortProperty
+from simeon.event.system import SystemEvent
+from simeon.event_type.repository import EventTypeRepository
+from simeon.exceptions import SimeonRequestValidationError
+from simeon.kit.pagination import PaginationParams
+from simeon.kit.time_queries import TimeInterval
+from simeon.kit.utils import utc_now
+from simeon.meter.aggregation import AggregationFunction, PropertyAggregation
+from simeon.meter.filter import Filter, FilterClause, FilterConjunction, FilterOperator
+from simeon.models import (
     Customer,
     CustomerMeter,
     EventType,
@@ -35,14 +35,14 @@ from polar.models import (
     User,
     UserOrganization,
 )
-from polar.models.checkout import CheckoutStatus
-from polar.models.discount import DiscountDuration, DiscountType
-from polar.models.event import EventSource
-from polar.models.order import OrderStatus
-from polar.models.subscription import CustomerCancellationReason
-from polar.order.service import order as order_service
-from polar.postgres import AsyncSession
-from polar.subscription.service import subscription as subscription_service
+from simeon.models.checkout import CheckoutStatus
+from simeon.models.discount import DiscountDuration, DiscountType
+from simeon.models.event import EventSource
+from simeon.models.order import OrderStatus
+from simeon.models.subscription import CustomerCancellationReason
+from simeon.order.service import order as order_service
+from simeon.postgres import AsyncSession
+from simeon.subscription.service import subscription as subscription_service
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
@@ -59,12 +59,12 @@ from tests.fixtures.random_objects import (
 
 @pytest.fixture
 def enqueue_job_mock(mocker: MockerFixture) -> MagicMock:
-    return mocker.patch("polar.event.service.enqueue_job")
+    return mocker.patch("simeon.event.service.enqueue_job")
 
 
 @pytest.fixture
 def enqueue_events_mock(mocker: MockerFixture) -> AsyncMock:
-    return mocker.patch("polar.event.service.enqueue_events")
+    return mocker.patch("simeon.event.service.enqueue_events")
 
 
 @pytest.mark.asyncio

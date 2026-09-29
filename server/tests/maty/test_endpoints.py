@@ -1,5 +1,5 @@
 """The runner's four verbs over HTTP, and the wall between the runner's
-token and a person's (`polar/maty/endpoints.py`, `polar/maty/auth.py`).
+token and a person's (`simeon/maty/endpoints.py`, `simeon/maty/auth.py`).
 
 Two refusals matter more than the rest and are tested from both sides: a
 person's desktop token opens nothing at `/maty/runner`, and the runner's
@@ -16,16 +16,16 @@ import respx
 from fastapi import Request
 from pytest_mock import MockerFixture
 
-from polar.auth.middlewares import get_auth_subject
-from polar.auth.models import is_anonymous
-from polar.config import settings
-from polar.desktop.service import Usage, credits_for, desktop, model_by_id
-from polar.kit.utils import utc_now
-from polar.maty.service import maty
-from polar.maty.tokens import is_runner_path
-from polar.models import MatyJobKind, MatyJobStatus, User
-from polar.oauth2.exceptions import InvalidTokenError
-from polar.postgres import AsyncSession
+from simeon.auth.middlewares import get_auth_subject
+from simeon.auth.models import is_anonymous
+from simeon.config import settings
+from simeon.desktop.service import Usage, credits_for, desktop, model_by_id
+from simeon.kit.utils import utc_now
+from simeon.maty.service import maty
+from simeon.maty.tokens import is_runner_path
+from simeon.models import MatyJobKind, MatyJobStatus, User
+from simeon.oauth2.exceptions import InvalidTokenError
+from simeon.postgres import AsyncSession
 
 RUNNER_TOKEN = "a-service-secret-that-belongs-to-no-person"
 RUNNER = {"Authorization": f"Bearer {RUNNER_TOKEN}"}
@@ -142,7 +142,7 @@ def _scope(path: str, token: str) -> dict[str, Any]:
 
 @pytest.mark.asyncio
 class TestTheAuthMiddleware:
-    """The runner's token matches none of the shapes `polar.auth` knows.
+    """The runner's token matches none of the shapes `simeon.auth` knows.
 
     In production every request passes `get_auth_subject` before it
     reaches a route, and an unrecognised bearer there is an OAuth2 error —

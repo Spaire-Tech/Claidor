@@ -15,7 +15,7 @@ interface InlineHook {
 /**
  * A file of the plugin as it was packed (25 September 2026): Simeon Labs'
  * server keeps a published skill's tarball as `files` in the plugin's
- * `inline_content_json` (`server/polar/sand/skill_registry_service.py`,
+ * `inline_content_json` (`server/simeon/sand/skill_registry_service.py`,
  * `inline_content_of`), so nothing is ever cloned. `content` is text;
  * `contentBase64` anything else.
  */

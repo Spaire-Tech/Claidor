@@ -32,9 +32,9 @@ import typer
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.models import Customer, Order, Organization, Product
-from polar.postgres import create_async_engine
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.models import Customer, Order, Organization, Product
+from simeon.postgres import create_async_engine
 
 cli = typer.Typer()
 

@@ -4,7 +4,7 @@
  * morning, design-audit-ledger.md cluster `cloud-agents-channels`).
  *
  * A cloud agent is Cursor's BackgroundComposerService (launch, reply,
- * artifacts, the cloud-agent card's link); `polar/sand/cloud_agents.py`
+ * artifacts, the cloud-agent card's link); `simeon/sand/cloud_agents.py`
  * serves it over the maty queue. A messaging channel is a Discord or Slack
  * connector the box runs itself (`host/extensions/channels/`, no server in
  * the path; docs/services-agents.md). The reach points below keep
@@ -42,7 +42,7 @@ export const CLOUD_AGENTS_COMING_SOON_SENTENCE =
 export const CHANNELS_COMING_SOON_SENTENCE =
   "Messaging channels (Slack, Discord) are coming soon on Simeon: there is no channel to deliver to and no channel credential store to write to yet. Never ask the user to paste a key, token or password into the chat; if the service is a connector, use its connect card instead.";
 
-// On by default since 25 September 2026: `polar/sand/cloud_agents.py`
+// On by default since 25 September 2026: `simeon/sand/cloud_agents.py`
 // serves BackgroundComposerService over the maty queue. "0" turns the
 // paths off again.
 export function isCloudAgentsServed(env: NodeJS.ProcessEnv = process.env): boolean {
@@ -55,7 +55,7 @@ export function isCloudAgentsServed(env: NodeJS.ProcessEnv = process.env): boole
 // Which Connect services Simeon Labs' server answers (25 September 2026,
 // docs/services-agents.md). Until then one switch,
 // SAND_CONNECT_SERVED=1, turned every client on at once, and every call
-// 404ed on a server that served no Connect RPC at all. Now `polar/sand`
+// 404ed on a server that served no Connect RPC at all. Now `simeon/sand`
 // serves these at the root of the API host and answers `unimplemented`
 // for anything else, so a client is served by service name:
 //   - unset: the services below;

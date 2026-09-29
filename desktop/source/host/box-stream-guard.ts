@@ -19,7 +19,7 @@
  * listeners instead of websockify and hands the app the `vncProxy`
  * descriptor, so the coordinator (`box-vnc-proxy.ts`) and Electron carry the
  * token exactly as they do for Grok Bot's cloud box. Our cloud box's proxy
- * (`server/polar/sand/box_proxy.py`) checks the same token the same way.
+ * (`server/simeon/sand/box_proxy.py`) checks the same token the same way.
  */
 import { timingSafeEqual } from "node:crypto";
 import { createServer, request as httpRequest, type IncomingMessage, type Server, type ServerResponse } from "node:http";

@@ -16,11 +16,11 @@ import httpx
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.models import User
-from polar.postgres import AsyncSession
-from polar.sand import box_hosts
-from polar.sand.box_hosts import BoxHostError, load_host_bundle
-from polar.sand.box_service import BoxHealth
+from simeon.models import User
+from simeon.postgres import AsyncSession
+from simeon.sand import box_hosts
+from simeon.sand.box_hosts import BoxHostError, load_host_bundle
+from simeon.sand.box_service import BoxHealth
 from tests.sand.test_box_broker import FakeBoxHost, _ensure, host  # noqa: F401
 from tests.sand.test_box_sleep import _awake_box, health  # noqa: F401
 

@@ -33,13 +33,13 @@ import structlog
 import typer
 from sqlalchemy import func, select
 
-from polar.file.service import STORAGE_EXEMPT_SERVICES
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.models import Course, CourseLesson, CourseModule, File, Organization
-from polar.postgres import create_async_engine
-from polar.quotas.definitions import QuotaKey, get_definition
-from polar.quotas.producers import emit_storage_delta, emit_video_uploaded
-from polar.quotas.repository import quota_event_repository
+from simeon.file.service import STORAGE_EXEMPT_SERVICES
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.models import Course, CourseLesson, CourseModule, File, Organization
+from simeon.postgres import create_async_engine
+from simeon.quotas.definitions import QuotaKey, get_definition
+from simeon.quotas.producers import emit_storage_delta, emit_video_uploaded
+from simeon.quotas.repository import quota_event_repository
 
 cli = typer.Typer()
 

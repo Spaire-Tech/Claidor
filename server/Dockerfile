@@ -78,8 +78,8 @@ ADD . /app/server/
 COPY --from=build-emails-bin /app/bin/react-email-pkg /app/server/
 ENV SIMEON_EMAIL_RENDERER_BINARY_PATH=/app/server/react-email-pkg
 
-COPY --from=build-backoffice /app/static /app/server/polar/backoffice/static
-RUN ls -la /app/server/polar/backoffice/static
+COPY --from=build-backoffice /app/static /app/server/simeon/backoffice/static
+RUN ls -la /app/server/simeon/backoffice/static
 
 COPY --from=download-ipinfo /data /data
 ENV SIMEON_IP_GEOLOCATION_DATABASE_DIRECTORY_PATH=/data
@@ -88,4 +88,4 @@ ENV SIMEON_IP_GEOLOCATION_DATABASE_NAME=country_asn.mmdb
 ARG RELEASE_VERSION
 ENV RELEASE_VERSION=${RELEASE_VERSION}
 
-CMD ["uv", "run", "uvicorn", "polar.app:app", "--host", "0.0.0.0", "--port", "10000"]
+CMD ["uv", "run", "uvicorn", "simeon.app:app", "--host", "0.0.0.0", "--port", "10000"]

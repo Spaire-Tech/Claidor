@@ -1,4 +1,4 @@
-"""Cloud agents over the maty queue (`polar/sand/cloud_agents.py`,
+"""Cloud agents over the maty queue (`simeon/sand/cloud_agents.py`,
 25 September 2026).
 
 The app's client (`desktop/source/host/extensions/cloud-agents/`) is not
@@ -17,11 +17,10 @@ import httpx
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.maty.service import CANCELLED_REASON
-from polar.models import User
-from polar.postgres import AsyncSession
-
+from simeon.config import settings
+from simeon.maty.service import CANCELLED_REASON
+from simeon.models import User
+from simeon.postgres import AsyncSession
 from tests.desktop.test_endpoints import _signed_in
 
 BC = "/aiserver.v1.BackgroundComposerService"

@@ -3,7 +3,7 @@
  * `docs/services-core.md`).
  *
  * The server has served `POST /desktop/api/memory/sync` and
- * `GET /desktop/api/memory` since 11 September (`server/polar/desktop/`),
+ * `GET /desktop/api/memory` since 11 September (`server/simeon/desktop/`),
  * with a per-file version and a merge that is the server's alone; the maty
  * runner already lays a job's memory out from them (`runner/src/memory.ts`).
  * Nothing on the app side ever called them. This is that client: it reads

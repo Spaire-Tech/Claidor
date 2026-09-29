@@ -4,12 +4,12 @@ This page covers four things the server at `api.simeonlabs.com` does for the
 Simeon app on the Mac: sign-in, the model proxy with its prices and spend
 limits, memory sync, and the cloud computer.
 
-Server code lives in `server/polar/` (the Python package is `polar`). App code
+Server code lives in `server/simeon/` (the Python package is `polar`). App code
 lives in `desktop/source/`.
 
 **Settings on Render.** Every server setting is read as `SIMEON_<NAME>`. The
 older `CLAIDOR_<NAME>` is still read when the `SIMEON_` name is not set
-(`server/polar/config.py`). This page always uses the `SIMEON_` form. Settings
+(`server/simeon/config.py`). This page always uses the `SIMEON_` form. Settings
 that are durations (for example `SIMEON_BOX_IDLE_HIBERNATE_AFTER`) are written
 as ISO 8601, such as `PT30M`.
 
@@ -30,7 +30,7 @@ stays signed in by itself until the person signs out.
 
 The app calls three routes. They sit at the **root** of the API host, not under
 `/desktop`, because the app builds each URL with a leading slash
-(`server/polar/desktop/app_sign_in.py`):
+(`server/simeon/desktop/app_sign_in.py`):
 
 | Route | What it does |
 |---|---|
@@ -47,12 +47,12 @@ access log.
 **The access-token envelope.** The app reads `sub`, `email` and `exp` from its
 access token. If it cannot read `exp`, it refreshes before every call. So the
 server wraps the real, opaque access token in a signed JWT
-(`envelope_access_token` in `server/polar/desktop/service.py`). The prefix stays
+(`envelope_access_token` in `server/simeon/desktop/service.py`). The prefix stays
 on the outside. When a request comes in, `authenticate` unwraps the envelope
 and looks the inner token up by its hash in `desktop_sessions`. There is still
 only one way to check a desktop credential.
 
-**Token prefixes** (`server/polar/desktop/tokens.py`):
+**Token prefixes** (`server/simeon/desktop/tokens.py`):
 
 | Token | Prefix now | Older prefix still accepted |
 |---|---|---|
@@ -64,7 +64,7 @@ only one way to check a desktop credential.
 Older tokens stay valid because a token is found by the hash of the whole
 string.
 
-**Lifetimes** (`server/polar/config.py`):
+**Lifetimes** (`server/simeon/config.py`):
 
 - Access token: 1 hour (`SIMEON_DESKTOP_ACCESS_TOKEN_TTL`).
 - Refresh token: 30 days (`SIMEON_DESKTOP_REFRESH_TOKEN_TTL`).
@@ -79,14 +79,14 @@ the session, the box credentials that belong to it, and any access token of
 that person still inside its refresh grace. A box credential or a cloud job's
 token cannot sign anyone out.
 
-**Rate limits** (`server/polar/rate_limit.py`):
+**Rate limits** (`server/simeon/rate_limit.py`):
 
 - `/loginDeepControl`: 20 a minute, 100 an hour.
 - `/auth/poll`: 120 a minute.
 - `/oauth/token`: 30 a minute.
 
 **The person's name.** When the person signs in with Google, the server keeps
-their Google name in `user.meta` (`server/polar/integrations/google/service.py`).
+their Google name in `user.meta` (`server/simeon/integrations/google/service.py`).
 `GET /desktop/api/user/profile` returns it as `name`.
 
 ### Settings on Render
@@ -124,8 +124,8 @@ before it spends much.
 
 ### Routes
 
-All are under `/desktop` (`server/polar/desktop/endpoints.py`,
-`server/polar/desktop/capabilities.py`):
+All are under `/desktop` (`server/simeon/desktop/endpoints.py`,
+`server/simeon/desktop/capabilities.py`):
 
 | Route | Wire |
 |---|---|
@@ -146,7 +146,7 @@ reports is converted to credits and stored as a `desktop_usage` row.
 
 ### Model roles and prices
 
-The catalogue is `MODELS` in `server/polar/desktop/pricing.py`. One credit is
+The catalogue is `MODELS` in `server/simeon/desktop/pricing.py`. One credit is
 one input token at $3.00 per million.
 
 | Model id | Role | Price per million tokens |
@@ -185,7 +185,7 @@ line. This means the server and the app can be deployed in either order.
 ### Spend guards
 
 On the server, every metered route checks two limits before calling a provider
-(`budget_refusal` in `server/polar/desktop/proxy_common.py`):
+(`budget_refusal` in `server/simeon/desktop/proxy_common.py`):
 
 - **Monthly allowance:** `SIMEON_DESKTOP_MONTHLY_CREDITS` (3,000,000). Over it,
   the route answers `402` with code `40200`.
@@ -249,7 +249,7 @@ the whole memory, and changes made in one place reach the other.
 
 ### How it works
 
-Routes, under `/desktop` (`server/polar/desktop/endpoints.py`):
+Routes, under `/desktop` (`server/simeon/desktop/endpoints.py`):
 
 - `POST /desktop/api/memory/sync`: the client sends the files it has changed,
   each with the version it last saw (`base_version`), plus any names it
@@ -261,7 +261,7 @@ Routes, under `/desktop` (`server/polar/desktop/endpoints.py`):
 Both routes take either a signed-in desktop or the box's own credential
 (`get_desktop_or_box_session`).
 
-The server is the only side that merges (`server/polar/desktop/memory_merge.py`).
+The server is the only side that merges (`server/simeon/desktop/memory_merge.py`).
 The rule depends on the kind of file:
 
 - **Fact files** (`agents/<id>/memory/profile.md`, the monthly `log/YYYY-MM.md` files,
@@ -274,7 +274,7 @@ The rule depends on the kind of file:
 - **Daily notes**: merged line by line.
 - **`USER.md`**: a document. The newer text wins whole.
 
-Limits (`server/polar/desktop/service.py`): 1 MB per file, 8 MB per request,
+Limits (`server/simeon/desktop/service.py`): 1 MB per file, 8 MB per request,
 2,000 files per person. Tombstones are kept for 90 days. A refused sync
 answers code `40001` with a sentence.
 
@@ -317,10 +317,10 @@ runtime for real users. It sleeps when nobody uses it and wakes when needed.
 ### How it works
 
 **The broker.** The app speaks Connect RPC to `aiserver.v1.GrokBotService` at
-the root of the API host (`server/polar/sand/box_broker.py`). Its methods are
+the root of the API host (`server/simeon/sand/box_broker.py`). Its methods are
 `EnsureSandBox`, `RecreateSandBox`, `ForceRecreateSandBox`,
 `WatchSandBoxMigration` and `GetSandBoxRunState`. The logic is in
-`server/polar/sand/box_service.py`, and `server/polar/sand/box_hosts.py` talks
+`server/simeon/sand/box_service.py`, and `server/simeon/sand/box_hosts.py` talks
 to Docker Engine over its HTTP API with TLS client certificates.
 
 `EnsureSandBox` finds the person's box, starts it if it is stopped, and
@@ -338,7 +338,7 @@ it while it is idle (`sand.box.update_deferred`).
 Each box has two volumes: `/workspace` and `/home/box/sand-data`.
 
 **The proxy.** The API forwards the box's ports at `/sand-box/{box_id}/p/{port}/…`,
-for both HTTP and WebSocket (`server/polar/sand/box_proxy.py`). The ports are
+for both HTTP and WebSocket (`server/simeon/sand/box_proxy.py`). The ports are
 1340 (gateway), 6080 and 6081 (screens) and 8790 (egress tunnel). A request
 passes only with the box's network token, sent as the `network_token` query
 parameter or the `x-anyrun-network-token` header. Inside the box, the host runs
@@ -374,7 +374,7 @@ All servers share one CA, so one client certificate opens every one of them.
   refused with the `SAND_BOX_BLOCKED` hold and `retry-after: 60`, and the app
   waits and asks again.
 - **Sleep.** The worker job `sand.box.hibernate_idle` runs every minute
-  (`server/polar/sand/box_tasks.py`). It asks each running box's `/health`:
+  (`server/simeon/sand/box_tasks.py`). It asks each running box's `/health`:
   - A box that is busy stays awake. A box that is only waiting on the person's
     approval can still sleep.
   - So does a box the app is attached to through the proxy, tracked by a Redis

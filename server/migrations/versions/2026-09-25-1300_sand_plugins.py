@@ -5,7 +5,7 @@ Revises: desktop_box_credential_0925
 Create Date: 2026-09-25 13:00:00.000000
 
 Two tables behind `aiserver.v1.DashboardService`'s PublishPlugin /
-UnpublishPlugin / GetEffectiveUserPlugins (`polar.sand.skill_registry`):
+UnpublishPlugin / GetEffectiveUserPlugins (`simeon.sand.skill_registry`):
 `sand_plugins`, one row per published plugin (personal when
 `organization_id` is null, a team's otherwise), and
 `sand_plugin_user_settings`, one person's on/off switch for one plugin.

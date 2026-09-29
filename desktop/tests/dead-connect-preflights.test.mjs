@@ -34,7 +34,7 @@ test("the privacy-mode pre-flight, the team-admin prefetch and the cloud-agent w
   assert.match(session, /resolvePrivacyMode: \(\) => isConnectServed\(process\.env, "aiserver\.v1\.DashboardService"\) \? resolveSandRunPrivacyMode\(auth\) : Promise\.resolve\(SAND_RUN_PRIVACY_MODE_FALLBACK\)/);
   const { module, dispose } = await load("source/shared/cloud-agents-availability.ts", "availability");
   try {
-    // The served set (polar/sand, 25 September 2026): our Connect services
+    // The served set (simeon/sand, 25 September 2026): our Connect services
     // by name, everything with "1", nothing with "0", a list otherwise.
     assert.equal(module.isConnectServed({}, "aiserver.v1.GrokBotService"), true);
     assert.equal(module.isConnectServed({}, "aiserver.v1.DashboardService"), true);
@@ -69,7 +69,7 @@ test("the Coming Soon brief no longer blames a team admin, and no string the age
 });
 
 test("sharing is served by default with the Coming Soon answer kept behind SAND_SHARING_SERVED=0, and the struck tunnel's port is not published", async () => {
-  // Served since 25 September 2026 (server/polar/sand/sharing.py); tests/sharing-served.test.mjs measures the switch and the relay.
+  // Served since 25 September 2026 (server/simeon/sand/sharing.py); tests/sharing-served.test.mjs measures the switch and the relay.
   const sharing = await src("host/extensions/cross-user-sharing/extension.ts");
   assert.match(sharing, /SHARING_DISABLED_MESSAGE = "Sharing is coming soon in Simeon\."/);
   assert.match(sharing, /if \(on && !isSharingServed\(\)\) \{[^}]*applyGate\(false\); return; \}/);

@@ -4,10 +4,10 @@ from datetime import timedelta
 import pytest
 from httpx import AsyncClient
 
-from polar.auth.scope import Scope
-from polar.kit.utils import utc_now
-from polar.models import EventType, Organization, UserOrganization
-from polar.models.event import EventSource
+from simeon.auth.scope import Scope
+from simeon.kit.utils import utc_now
+from simeon.models import EventType, Organization, UserOrganization
+from simeon.models.event import EventSource
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_event, create_event_type
@@ -292,7 +292,7 @@ class TestListEventTypes:
         user_organization: UserOrganization,
         save_fixture: SaveFixture,
     ) -> None:
-        from polar.models.event import EventSource
+        from simeon.models.event import EventSource
 
         event_type_1 = await create_event_type(
             save_fixture,

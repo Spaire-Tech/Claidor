@@ -7,21 +7,21 @@ from dramatiq import Retry
 from pytest_mock import MockerFixture
 from structlog.testing import capture_logs
 
-from polar.kit.db.postgres import AsyncSession
-from polar.kit.utils import utc_now
-from polar.models import Organization, Product
-from polar.models.order import OrderBillingReasonInternal, OrderStatus
-from polar.models.payment import PaymentStatus
-from polar.models.subscription import SubscriptionStatus
-from polar.order.repository import OrderRepository
-from polar.order.service import order as order_service
-from polar.order.tasks import (
+from simeon.kit.db.postgres import AsyncSession
+from simeon.kit.utils import utc_now
+from simeon.models import Organization, Product
+from simeon.models.order import OrderBillingReasonInternal, OrderStatus
+from simeon.models.payment import PaymentStatus
+from simeon.models.subscription import SubscriptionStatus
+from simeon.order.repository import OrderRepository
+from simeon.order.service import order as order_service
+from simeon.order.tasks import (
     OrderDoesNotExist,
     process_dunning,
     process_dunning_order,
     trigger_payment,
 )
-from polar.subscription.repository import SubscriptionRepository
+from simeon.subscription.repository import SubscriptionRepository
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_customer,
@@ -53,7 +53,7 @@ class TestProcessDunning:
         order.next_payment_attempt_at = past_time
         await save_fixture(order)
 
-        enqueue_job_mock = mocker.patch("polar.order.tasks.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.order.tasks.enqueue_job")
 
         # When
         await process_dunning()
@@ -83,7 +83,7 @@ class TestProcessDunning:
         order.next_payment_attempt_at = future_time
         await save_fixture(order)
 
-        enqueue_job_mock = mocker.patch("polar.order.tasks.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.order.tasks.enqueue_job")
 
         # When
         await process_dunning()
@@ -120,7 +120,7 @@ class TestProcessDunning:
         order2.next_payment_attempt_at = past_time
         await save_fixture(order2)
 
-        enqueue_job_mock = mocker.patch("polar.order.tasks.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.order.tasks.enqueue_job")
 
         # When
         await process_dunning()
@@ -257,7 +257,7 @@ class TestProcessDunningOrder:
             billing_reason=OrderBillingReasonInternal.subscription_cycle,
         )
 
-        enqueue_job_mock = mocker.patch("polar.order.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.order.service.enqueue_job")
 
         # When
         await process_dunning_order(order.id)
@@ -315,7 +315,7 @@ class TestProcessDunningOrder:
         assert result_order.status == OrderStatus.paid
         assert result_order.next_payment_attempt_at is None
 
-        from polar.subscription.repository import SubscriptionRepository
+        from simeon.subscription.repository import SubscriptionRepository
 
         subscription_repo = SubscriptionRepository.from_session(session)
         updated_subscription = await subscription_repo.get_by_id(subscription.id)
@@ -441,7 +441,7 @@ class TestTriggerPayment:
 
         # Mock the Stripe service instead of the order service
         mock_create_payment_intent = mocker.patch(
-            "polar.order.service.stripe_service.create_payment_intent",
+            "simeon.order.service.stripe_service.create_payment_intent",
             return_value=None,
         )
 
@@ -475,7 +475,7 @@ class TestTriggerPayment:
             code="card_declined",
         )
         mock_create_payment_intent = mocker.patch(
-            "polar.order.service.stripe_service.create_payment_intent",
+            "simeon.order.service.stripe_service.create_payment_intent",
             side_effect=card_error,
         )
 
@@ -506,12 +506,12 @@ class TestTriggerPayment:
         # Mock Stripe service to raise APIConnectionError
         api_error = stripe_lib.APIConnectionError("Network error")
         mock_create_payment_intent = mocker.patch(
-            "polar.order.service.stripe_service.create_payment_intent",
+            "simeon.order.service.stripe_service.create_payment_intent",
             side_effect=api_error,
         )
 
         # Mock can_retry to return True
-        mocker.patch("polar.order.tasks.can_retry", return_value=True)
+        mocker.patch("simeon.order.tasks.can_retry", return_value=True)
 
         # When/Then - should raise Retry exception
         with pytest.raises(Retry):  # Retry exception

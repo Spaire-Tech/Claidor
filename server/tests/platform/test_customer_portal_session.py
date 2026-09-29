@@ -10,10 +10,10 @@ import pytest
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from polar.customer_session.service import (
+from simeon.customer_session.service import (
     customer_session as customer_session_service,
 )
-from polar.platform.repository import platform_customer_repository
+from simeon.platform.repository import platform_customer_repository
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_customer, create_organization
 

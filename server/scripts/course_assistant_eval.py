@@ -1,6 +1,6 @@
 """Course Assistant — Phase 0 dogfooding & eval harness.
 
-Exercises the "brain" (``polar.course_assistant.ai``) against a single course:
+Exercises the "brain" (``simeon.course_assistant.ai``) against a single course:
 parses transcripts, assembles the knowledge base, builds the grounded /
 voice-matched prompt, and (in ``--live`` mode) actually asks Claude the eval
 questions and prints the answers + citations.
@@ -20,7 +20,7 @@ Modes
         answer to every eval question and print answers, citations, and token
         usage. Add --question "..." to ask a single ad-hoc question.
 
-This module imports only ``polar.course_assistant.ai`` (which is import-light),
+This module imports only ``simeon.course_assistant.ai`` (which is import-light),
 so it runs even where the full app stack can't be imported.
 """
 
@@ -38,7 +38,7 @@ from pathlib import Path
 # (the parent of scripts/) is importable.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from polar.course_assistant import ai
+from simeon.course_assistant import ai
 
 DATA_DIR = Path(__file__).parent / "course_assistant_eval_data"
 COURSE_TITLE = "Writing Short Fiction"

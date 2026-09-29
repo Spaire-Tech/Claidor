@@ -22,13 +22,13 @@ from typing import Any
 import httpx
 import pytest
 
-from polar.config import settings
-from polar.integrations.aws.s3 import S3Service
-from polar.models import Organization, User, UserOrganization
-from polar.postgres import AsyncSession
-from polar.sand.dashboard import user_id_of
-from polar.sand.skill_registry_repository import SandPluginRepository
-from polar.sand.skill_registry_service import (
+from simeon.config import settings
+from simeon.integrations.aws.s3 import S3Service
+from simeon.models import Organization, User, UserOrganization
+from simeon.postgres import AsyncSession
+from simeon.sand.dashboard import user_id_of
+from simeon.sand.skill_registry_repository import SandPluginRepository
+from simeon.sand.skill_registry_service import (
     PERSONAL_MARKETPLACE_SLUG,
     PERSONAL_TEAM_NAME,
     stable_int32,

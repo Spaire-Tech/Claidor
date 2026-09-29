@@ -1,7 +1,7 @@
 """What speech costs.
 
 Runs with ``pytest --noconftest tests/desktop/test_speech_pricing.py``:
-``polar.desktop.pricing`` is pure stdlib, so it can be tested on an
+``simeon.desktop.pricing`` is pure stdlib, so it can be tested on an
 interpreter that pydantic refuses (``server/CLAUDE.md``). That matters
 more here than anywhere — this is the file that decides what leaves a
 person's account.
@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from math import isclose
 
-from polar.desktop.pricing import (
+from simeon.desktop.pricing import (
     CREDIT_USD_PER_MILLION_INPUT,
     SPEECH_MAX_CHARACTERS,
     SPEECH_MODEL,

@@ -13,30 +13,30 @@ from freezegun import freeze_time
 from pytest_mock import MockerFixture
 from sqlalchemy.util.typing import TypeAlias
 
-from polar.auth.models import AuthSubject
-from polar.billing_entry.repository import BillingEntryRepository
-from polar.checkout.eventstream import CheckoutEvent
-from polar.enums import (
+from simeon.auth.models import AuthSubject
+from simeon.billing_entry.repository import BillingEntryRepository
+from simeon.checkout.eventstream import CheckoutEvent
+from simeon.enums import (
     PaymentProcessor,
     SubscriptionProrationBehavior,
     SubscriptionRecurringInterval,
     TaxBehavior,
 )
-from polar.event.repository import EventRepository
-from polar.event.system import SystemEvent
-from polar.exceptions import (
+from simeon.event.repository import EventRepository
+from simeon.event.system import SystemEvent
+from simeon.exceptions import (
     BadRequest,
     ResourceUnavailable,
     SimeonRequestValidationError,
 )
-from polar.kit.currency import PresentmentCurrency
-from polar.kit.pagination import PaginationParams
-from polar.kit.trial import TrialInterval
-from polar.kit.utils import utc_now
-from polar.locker import Locker
-from polar.meter.aggregation import AggregationFunction, PropertyAggregation
-from polar.meter.filter import Filter, FilterConjunction
-from polar.models import (
+from simeon.kit.currency import PresentmentCurrency
+from simeon.kit.pagination import PaginationParams
+from simeon.kit.trial import TrialInterval
+from simeon.kit.utils import utc_now
+from simeon.locker import Locker
+from simeon.meter.aggregation import AggregationFunction, PropertyAggregation
+from simeon.meter.filter import Filter, FilterConjunction
+from simeon.models import (
     Benefit,
     BillingEntry,
     Customer,
@@ -50,26 +50,26 @@ from polar.models import (
     User,
     UserOrganization,
 )
-from polar.models.billing_entry import BillingEntryDirection, BillingEntryType
-from polar.models.checkout import CheckoutStatus
-from polar.models.customer_seat import SeatStatus
-from polar.models.discount import DiscountDuration, DiscountType
-from polar.models.order import OrderBillingReasonInternal
-from polar.models.product_price import ProductPriceSeatUnit
-from polar.models.subscription import SubscriptionStatus
-from polar.postgres import AsyncSession
-from polar.product.guard import (
+from simeon.models.billing_entry import BillingEntryDirection, BillingEntryType
+from simeon.models.checkout import CheckoutStatus
+from simeon.models.customer_seat import SeatStatus
+from simeon.models.discount import DiscountDuration, DiscountType
+from simeon.models.order import OrderBillingReasonInternal
+from simeon.models.product_price import ProductPriceSeatUnit
+from simeon.models.subscription import SubscriptionStatus
+from simeon.postgres import AsyncSession
+from simeon.product.guard import (
     MeteredPrice,
     is_fixed_price,
     is_free_price,
     is_metered_price,
 )
-from polar.product.price_set import PriceSet
-from polar.subscription.schemas import (
+from simeon.product.price_set import PriceSet
+from simeon.subscription.schemas import (
     SubscriptionCreateCustomer,
     SubscriptionCreateExternalCustomer,
 )
-from polar.subscription.service import (
+from simeon.subscription.service import (
     AboveMaximumSeats,
     AlreadyCanceledSubscription,
     BelowMinimumSeats,
@@ -80,7 +80,7 @@ from polar.subscription.service import (
     SeatsAlreadyAssigned,
     TrialingSubscription,
 )
-from polar.subscription.service import subscription as subscription_service
+from simeon.subscription.service import subscription as subscription_service
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
@@ -156,7 +156,7 @@ def subscription_hooks(mocker: MockerFixture) -> Hooks:
 
 @pytest.fixture
 def publish_checkout_event_mock(mocker: MockerFixture) -> AsyncMock:
-    return mocker.patch("polar.subscription.service.publish_checkout_event")
+    return mocker.patch("simeon.subscription.service.publish_checkout_event")
 
 
 @pytest.fixture
@@ -166,12 +166,12 @@ def enqueue_benefits_grants_mock(mocker: MockerFixture) -> MagicMock:
 
 @pytest.fixture
 def enqueue_job_mock(mocker: MockerFixture) -> MagicMock:
-    return mocker.patch("polar.subscription.service.enqueue_job")
+    return mocker.patch("simeon.subscription.service.enqueue_job")
 
 
 @pytest.fixture
 def enqueue_email_mock(mocker: MockerFixture) -> MagicMock:
-    return mocker.patch("polar.subscription.service.enqueue_email")
+    return mocker.patch("simeon.subscription.service.enqueue_email")
 
 
 @pytest.fixture
@@ -1617,7 +1617,7 @@ class TestEnqueueBenefitsGrants:
         benefits: list[Benefit],
         subscription: Subscription,
     ) -> None:
-        enqueue_job_mock = mocker.patch("polar.subscription.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.subscription.service.enqueue_job")
 
         product = await set_product_benefits(
             save_fixture,
@@ -1646,7 +1646,7 @@ class TestEnqueueBenefitsGrants:
         benefits: list[Benefit],
         subscription: Subscription,
     ) -> None:
-        enqueue_job_mock = mocker.patch("polar.subscription.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.subscription.service.enqueue_job")
 
         product = await set_product_benefits(
             save_fixture,
@@ -1691,7 +1691,7 @@ class TestEnqueueBenefitsGrants:
         benefits: list[Benefit],
         subscription: Subscription,
     ) -> None:
-        enqueue_job_mock = mocker.patch("polar.subscription.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.subscription.service.enqueue_job")
 
         product = await set_product_benefits(
             save_fixture,
@@ -1725,7 +1725,7 @@ class TestEnqueueBenefitsGrants:
         save_fixture: SaveFixture,
         organization: Organization,
     ) -> None:
-        enqueue_job_mock = mocker.patch("polar.subscription.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.subscription.service.enqueue_job")
 
         product = await create_product(
             save_fixture,
@@ -1756,7 +1756,7 @@ class TestEnqueueBenefitsGrants:
     ) -> None:
         from tests.fixtures.random_objects import create_customer
 
-        enqueue_job_mock = mocker.patch("polar.subscription.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.subscription.service.enqueue_job")
 
         product = await create_product(
             save_fixture,
@@ -3447,7 +3447,7 @@ class TestEnqueueBenefitsGrantsGracePeriod:
         subscription.past_due_at = utc_now() - timedelta(days=2)
         await save_fixture(subscription)
 
-        enqueue_job_mock = mocker.patch("polar.subscription.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.subscription.service.enqueue_job")
         await subscription_service.enqueue_benefits_grants(session, subscription)
         enqueue_job_mock.assert_not_called()
 
@@ -3473,7 +3473,7 @@ class TestEnqueueBenefitsGrantsGracePeriod:
         subscription.past_due_at = utc_now() - timedelta(days=8)
         await save_fixture(subscription)
 
-        enqueue_job_mock = mocker.patch("polar.subscription.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.subscription.service.enqueue_job")
 
         await subscription_service.enqueue_benefits_grants(session, subscription)
         enqueue_job_mock.assert_called_once_with(
@@ -3507,7 +3507,7 @@ class TestEnqueueBenefitsGrantsGracePeriod:
         subscription.past_due_at = utc_now() - timedelta(minutes=1)
         await save_fixture(subscription)
 
-        enqueue_job_mock = mocker.patch("polar.subscription.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.subscription.service.enqueue_job")
 
         await subscription_service.enqueue_benefits_grants(session, subscription)
         enqueue_job_mock.assert_called_once_with(
@@ -3540,7 +3540,7 @@ class TestEnqueueBenefitsGrantsGracePeriod:
         subscription.status = SubscriptionStatus.canceled
         await save_fixture(subscription)
 
-        enqueue_job_mock = mocker.patch("polar.subscription.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.subscription.service.enqueue_job")
         await subscription_service.enqueue_benefits_grants(session, subscription)
         enqueue_job_mock.assert_called_once_with(
             "benefit.enqueue_benefits_grants",

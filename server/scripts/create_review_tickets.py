@@ -34,14 +34,14 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
-from polar.integrations.plain.service import plain as plain_service
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.models import Organization
-from polar.models.transaction import TransactionType
-from polar.organization.repository import OrganizationRepository
-from polar.postgres import create_async_engine
-from polar.transaction.service.transaction import transaction as transaction_service
-from polar.user.repository import UserRepository
+from simeon.integrations.plain.service import plain as plain_service
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.models import Organization
+from simeon.models.transaction import TransactionType
+from simeon.organization.repository import OrganizationRepository
+from simeon.postgres import create_async_engine
+from simeon.transaction.service.transaction import transaction as transaction_service
+from simeon.user.repository import UserRepository
 
 log = structlog.get_logger()
 

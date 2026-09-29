@@ -1,11 +1,5 @@
 import pytest
 
-from polar.event.repository import EventRepository
-from polar.event.system import SystemEvent
-from polar.kit.db.postgres import AsyncSession
-from polar.models import Event, Organization, Product, Transaction
-from polar.models.event import EventSource
-from polar.models.transaction import PlatformFeeType, TransactionType
 from scripts.backfill_balance_events import (
     create_missing_balance_dispute_events,
     create_missing_balance_dispute_reversal_events,
@@ -13,6 +7,12 @@ from scripts.backfill_balance_events import (
     create_missing_balance_refund_events,
     create_missing_balance_refund_reversal_events,
 )
+from simeon.event.repository import EventRepository
+from simeon.event.system import SystemEvent
+from simeon.kit.db.postgres import AsyncSession
+from simeon.models import Event, Organization, Product, Transaction
+from simeon.models.event import EventSource
+from simeon.models.transaction import PlatformFeeType, TransactionType
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_customer,

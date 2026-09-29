@@ -4,13 +4,13 @@ import pytest
 import pytest_asyncio
 from httpx import AsyncClient
 
-from polar.auth.scope import Scope
-from polar.auth.service import USER_SESSION_TOKEN_PREFIX
-from polar.config import settings
-from polar.kit.crypto import generate_token_hash_pair
-from polar.kit.db.postgres import Session
-from polar.kit.utils import utc_now
-from polar.models import (
+from simeon.auth.scope import Scope
+from simeon.auth.service import USER_SESSION_TOKEN_PREFIX
+from simeon.config import settings
+from simeon.kit.crypto import generate_token_hash_pair
+from simeon.kit.db.postgres import Session
+from simeon.kit.utils import utc_now
+from simeon.models import (
     OAuth2Client,
     OAuth2Grant,
     Organization,
@@ -18,8 +18,8 @@ from polar.models import (
     UserOrganization,
     UserSession,
 )
-from polar.oauth2.service.oauth2_grant import oauth2_grant as oauth2_grant_service
-from polar.oauth2.sub_type import SubType
+from simeon.oauth2.service.oauth2_grant import oauth2_grant as oauth2_grant_service
+from simeon.oauth2.sub_type import SubType
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 

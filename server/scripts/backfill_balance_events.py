@@ -10,24 +10,24 @@ from sqlalchemy import func, literal, select, text, tuple_
 from sqlalchemy.engine import CursorResult
 from sqlalchemy.orm import selectinload
 
-from polar.config import settings
-from polar.event.repository import EventRepository
-from polar.event.system import (
+from simeon.config import settings
+from simeon.event.repository import EventRepository
+from simeon.event.system import (
     BalanceCreditOrderMetadata,
     BalanceDisputeMetadata,
     BalanceOrderMetadata,
     BalanceRefundMetadata,
     SystemEvent,
 )
-from polar.integrations.tinybird.service import ingest_events as tinybird_ingest_events
-from polar.kit.db.postgres import AsyncSession, create_async_sessionmaker
-from polar.kit.db.postgres import create_async_engine as _create_async_engine
-from polar.models import Customer, Dispute, Event, Order, Refund, Transaction
-from polar.models.event import EventSource
-from polar.models.held_balance import HeldBalance
-from polar.models.order import OrderStatus
-from polar.models.refund import RefundStatus
-from polar.models.transaction import PlatformFeeType, TransactionType
+from simeon.integrations.tinybird.service import ingest_events as tinybird_ingest_events
+from simeon.kit.db.postgres import AsyncSession, create_async_sessionmaker
+from simeon.kit.db.postgres import create_async_engine as _create_async_engine
+from simeon.models import Customer, Dispute, Event, Order, Refund, Transaction
+from simeon.models.event import EventSource
+from simeon.models.held_balance import HeldBalance
+from simeon.models.order import OrderStatus
+from simeon.models.refund import RefundStatus
+from simeon.models.transaction import PlatformFeeType, TransactionType
 
 cli = typer.Typer()
 

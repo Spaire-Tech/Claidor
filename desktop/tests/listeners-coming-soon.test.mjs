@@ -33,7 +33,7 @@ async function load(entry, name) {
 }
 
 test("with the relay switched off the tool refuses a listener trigger with the Coming Soon sentence, and keeps taking cron", async () => {
-  // The relay is served by default since 25 September 2026 (polar/sand/listeners.py); "0" is the earlier behaviour.
+  // The relay is served by default since 25 September 2026 (simeon/sand/listeners.py); "0" is the earlier behaviour.
   process.env.SAND_LISTENER_RELAY_SERVED = "0";
   const { module, dispose } = await load("source/host/runner/tools/sand-state-tool.ts", "sand-state-tool");
   try {

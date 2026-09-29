@@ -1,7 +1,7 @@
 // Whether Simeon Labs' server serves apps right now (28 September 2026).
 //
 // The apps in the catalog (`appsToolkit`) sign in and run through our server
-// (`server/polar/desktop/apps.py`). The first time they shipped, the server
+// (`server/simeon/desktop/apps.py`). The first time they shipped, the server
 // had not been deployed and every card's sign-in went nowhere. So the
 // marketplace asks first: `GET /desktop/api/apps` answering
 // `{"available": true}` offers Connect; anything else (a 404 from a server

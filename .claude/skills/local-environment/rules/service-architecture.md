@@ -12,7 +12,7 @@ tags: architecture, services, infrastructure
 
 - **Purpose:** Primary database
 - **Port:** 5432
-- **Credentials:** polar/polar
+- **Credentials:** simeon/polar
 - **Volume:** postgres_data
 - **Health check:** pg_isready (2s interval)
 
@@ -26,7 +26,7 @@ tags: architecture, services, infrastructure
 
 - **Purpose:** File storage
 - **Ports:** 9000 (API), 9001 (Console)
-- **Credentials:** polar/polarpolar
+- **Credentials:** simeon/polarpolar
 - **Volume:** minio_data
 - **Buckets:** polar-s3, polar-s3-public
 
@@ -73,7 +73,7 @@ tags: architecture, services, infrastructure
 
 - **Purpose:** Dashboards
 - **Port:** 3001
-- **Credentials:** polar/polar
+- **Credentials:** simeon/polar
 - **Enable:** --monitoring flag
 
 ## Container Dependencies

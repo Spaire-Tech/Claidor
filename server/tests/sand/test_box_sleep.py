@@ -18,15 +18,15 @@ import httpx
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.kit.utils import utc_now
-from polar.models import SandBox, User
-from polar.postgres import AsyncSession
-from polar.redis import Redis
-from polar.sand import box_service, notify
-from polar.sand.box_hosts import BoxSpec
-from polar.sand.box_repository import SandBoxRepository
-from polar.sand.box_service import (
+from simeon.config import settings
+from simeon.kit.utils import utc_now
+from simeon.models import SandBox, User
+from simeon.postgres import AsyncSession
+from simeon.redis import Redis
+from simeon.sand import box_service, notify
+from simeon.sand.box_hosts import BoxSpec
+from simeon.sand.box_repository import SandBoxRepository
+from simeon.sand.box_service import (
     CAPACITY_BLOCK_DETAIL,
     CAPACITY_BLOCK_TITLE,
     RUN_STATE_HIBERNATED,

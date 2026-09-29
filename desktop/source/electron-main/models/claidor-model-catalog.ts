@@ -9,7 +9,7 @@ import { claidorApiData, type ClaidorApiAuth } from "../../shared/node/cursor-ba
 // a Connect RPC that Simeon Labs' server never served, so the picker got a
 // 404 wrapped as a ConnectError and the renderer showed the error instead
 // of a list. The menu the server does serve is `GET /desktop/api/models/available`
-// (`server/polar/desktop/endpoints.py`, `models_available`), one row per
+// (`server/simeon/desktop/endpoints.py`, `models_available`), one row per
 // `DesktopModel.available()` in `pricing.py`. This file reads that and hands
 // back the same `AvailableModelsResponse` the edge already serialises with
 // `toJson()`, so nothing between the binding and the renderer changed.

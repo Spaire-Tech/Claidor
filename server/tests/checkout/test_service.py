@@ -12,9 +12,9 @@ from pydantic import HttpUrl, ValidationError
 from pytest_mock import MockerFixture
 from sqlalchemy.orm import joinedload
 
-from polar.auth.models import Anonymous, AuthSubject
-from polar.checkout.guard import has_product_checkout
-from polar.checkout.schemas import (
+from simeon.auth.models import Anonymous, AuthSubject
+from simeon.checkout.guard import has_product_checkout
+from simeon.checkout.schemas import (
     CheckoutConfirm,
     CheckoutConfirmStripe,
     CheckoutCreatePublic,
@@ -24,32 +24,32 @@ from polar.checkout.schemas import (
     CheckoutUpdate,
     CheckoutUpdatePublic,
 )
-from polar.checkout.service import (
+from simeon.checkout.service import (
     AlreadyActiveSubscriptionError,
     NotConfirmedCheckout,
     NotOpenCheckout,
     TrialAlreadyRedeemed,
 )
-from polar.checkout.service import checkout as checkout_service
-from polar.config import Environment
-from polar.customer_session.service import customer_session as customer_session_service
-from polar.discount.repository import DiscountRedemptionRepository
-from polar.discount.service import discount as discount_service
-from polar.enums import (
+from simeon.checkout.service import checkout as checkout_service
+from simeon.config import Environment
+from simeon.customer_session.service import customer_session as customer_session_service
+from simeon.discount.repository import DiscountRedemptionRepository
+from simeon.discount.service import discount as discount_service
+from simeon.enums import (
     AccountType,
     PaymentProcessor,
     SubscriptionRecurringInterval,
     TaxBehavior,
 )
-from polar.event.repository import EventRepository
-from polar.event.system import SystemEvent
-from polar.exceptions import PaymentNotReady, SimeonRequestValidationError
-from polar.integrations.stripe.service import StripeService
-from polar.kit.address import AddressInput
-from polar.kit.currency import PresentmentCurrency
-from polar.kit.trial import TrialInterval
-from polar.kit.utils import utc_now
-from polar.models import (
+from simeon.event.repository import EventRepository
+from simeon.event.system import SystemEvent
+from simeon.exceptions import PaymentNotReady, SimeonRequestValidationError
+from simeon.integrations.stripe.service import StripeService
+from simeon.kit.address import AddressInput
+from simeon.kit.currency import PresentmentCurrency
+from simeon.kit.trial import TrialInterval
+from simeon.kit.utils import utc_now
+from simeon.models import (
     Account,
     Checkout,
     CheckoutProduct,
@@ -63,34 +63,34 @@ from polar.models import (
     User,
     UserOrganization,
 )
-from polar.models.checkout import CheckoutStatus
-from polar.models.custom_field import CustomFieldType
-from polar.models.discount import DiscountDuration, DiscountType
-from polar.models.order import OrderBillingReasonInternal
-from polar.models.organization import OrganizationStatus
-from polar.models.product_price import (
+from simeon.models.checkout import CheckoutStatus
+from simeon.models.custom_field import CustomFieldType
+from simeon.models.discount import DiscountDuration, DiscountType
+from simeon.models.order import OrderBillingReasonInternal
+from simeon.models.organization import OrganizationStatus
+from simeon.models.product_price import (
     ProductPriceAmountType,
     ProductPriceCustom,
     ProductPriceFixed,
     ProductPriceFree,
     ProductPriceSeatUnit,
 )
-from polar.models.subscription import SubscriptionStatus
-from polar.models.user import IdentityVerificationStatus
-from polar.models.webhook_endpoint import WebhookEventType
-from polar.order.service import OrderService
-from polar.postgres import AsyncSession
-from polar.product.guard import (
+from simeon.models.subscription import SubscriptionStatus
+from simeon.models.user import IdentityVerificationStatus
+from simeon.models.webhook_endpoint import WebhookEventType
+from simeon.order.service import OrderService
+from simeon.postgres import AsyncSession
+from simeon.product.guard import (
     is_fixed_price,
     is_metered_price,
     is_seat_price,
 )
-from polar.product.schemas import ProductPriceFixedCreate
-from polar.subscription.service import SubscriptionService
-from polar.tax.calculation import TaxabilityReason
-from polar.tax.calculation.base import TaxCalculationError
-from polar.tax.tax_id import TaxIDFormat
-from polar.trial_redemption.repository import TrialRedemptionRepository
+from simeon.product.schemas import ProductPriceFixedCreate
+from simeon.subscription.service import SubscriptionService
+from simeon.tax.calculation import TaxabilityReason
+from simeon.tax.calculation.base import TaxCalculationError
+from simeon.tax.tax_id import TaxIDFormat
+from simeon.trial_redemption.repository import TrialRedemptionRepository
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
@@ -114,27 +114,27 @@ PRESET_AMOUNT = 5000
 @pytest.fixture(autouse=True)
 def stripe_service_mock(mocker: MockerFixture) -> MagicMock:
     mock = MagicMock(spec=StripeService)
-    mocker.patch("polar.checkout.service.stripe_service", new=mock)
+    mocker.patch("simeon.checkout.service.stripe_service", new=mock)
     return mock
 
 
 @pytest.fixture(autouse=True)
 def subscription_service_mock(mocker: MockerFixture) -> MagicMock:
     mock = MagicMock(spec=SubscriptionService)
-    mocker.patch("polar.checkout.service.subscription_service", new=mock)
+    mocker.patch("simeon.checkout.service.subscription_service", new=mock)
     return mock
 
 
 @pytest.fixture(autouse=True)
 def order_service_mock(mocker: MockerFixture) -> MagicMock:
     mock = MagicMock(spec=OrderService)
-    mocker.patch("polar.checkout.service.order_service", new=mock)
+    mocker.patch("simeon.checkout.service.order_service", new=mock)
     return mock
 
 
 @pytest.fixture(autouse=True)
 def calculate_tax_mock(mocker: MockerFixture) -> AsyncMock:
-    mock = mocker.patch("polar.checkout.service.get_tax_service")
+    mock = mocker.patch("simeon.checkout.service.get_tax_service")
     mock.return_value.calculate = AsyncMock(
         return_value={
             "processor_id": "TAX_PROCESSOR_ID",
@@ -4194,7 +4194,7 @@ class TestConfirm:
         auth_subject: AuthSubject[Anonymous],
         checkout_one_time_free: Checkout,
     ) -> None:
-        enqueue_job_mock = mocker.patch("polar.checkout.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.checkout.service.enqueue_job")
 
         stripe_service_mock.create_customer.return_value = SimpleNamespace(
             id="STRIPE_CUSTOMER_ID"
@@ -4659,7 +4659,7 @@ class TestConfirm:
         await save_fixture(organization)
 
         # Mock environment to be sandbox
-        mocker.patch("polar.checkout.service.settings.ENV", Environment.sandbox)
+        mocker.patch("simeon.checkout.service.settings.ENV", Environment.sandbox)
 
         # Setup Stripe mocks
         confirmation_token = MagicMock(spec=stripe_lib.ConfirmationToken)
@@ -4715,13 +4715,13 @@ class TestConfirm:
         await save_fixture(organization)
 
         # Mock Stripe service for customer creation
-        stripe_service_mock = mocker.patch("polar.checkout.service.stripe_service")
+        stripe_service_mock = mocker.patch("simeon.checkout.service.stripe_service")
         stripe_service_mock.create_customer = AsyncMock(
             return_value=SimpleNamespace(id="STRIPE_CUSTOMER_ID")
         )
 
         # Mock the free checkout success flow
-        mocker.patch("polar.checkout.service.enqueue_job")
+        mocker.patch("simeon.checkout.service.enqueue_job")
 
         # Free products should be allowed even when payment not ready
         confirmed_checkout = await checkout_service.confirm(
@@ -5097,7 +5097,7 @@ class TestMarkOpened:
         session: AsyncSession,
         checkout_one_time_fixed: Checkout,
     ) -> None:
-        posthog_mock = mocker.patch("polar.checkout.service.posthog")
+        posthog_mock = mocker.patch("simeon.checkout.service.posthog")
 
         assert checkout_one_time_fixed.analytics_metadata is None
 
@@ -5112,7 +5112,7 @@ class TestMarkOpened:
         session: AsyncSession,
         checkout_one_time_fixed: Checkout,
     ) -> None:
-        posthog_mock = mocker.patch("polar.checkout.service.posthog")
+        posthog_mock = mocker.patch("simeon.checkout.service.posthog")
 
         checkout_one_time_fixed.customer_email = "test@example.com"
 
@@ -5133,7 +5133,7 @@ class TestMarkOpened:
         session: AsyncSession,
         checkout_one_time_fixed: Checkout,
     ) -> None:
-        posthog_mock = mocker.patch("polar.checkout.service.posthog")
+        posthog_mock = mocker.patch("simeon.checkout.service.posthog")
 
         original_opened_at = utc_now().isoformat()
         checkout_one_time_fixed.analytics_metadata = {"opened_at": original_opened_at}
@@ -5152,7 +5152,7 @@ class TestMarkOpened:
         checkout_one_time_fixed: Checkout,
     ) -> None:
         """When no distinct_id or email, falls back to checkout:{id} for A/B test consistency."""
-        posthog_mock = mocker.patch("polar.checkout.service.posthog")
+        posthog_mock = mocker.patch("simeon.checkout.service.posthog")
 
         checkout_one_time_fixed.customer_email = None
 
@@ -5169,9 +5169,9 @@ class TestMarkOpened:
         checkout_one_time_fixed: Checkout,
     ) -> None:
         """PostHog failures should be caught and logged, not break the checkout flow."""
-        posthog_mock = mocker.patch("polar.checkout.service.posthog")
+        posthog_mock = mocker.patch("simeon.checkout.service.posthog")
         posthog_mock.capture.side_effect = Exception("PostHog is down")
-        log_mock = mocker.patch("polar.checkout.service.log")
+        log_mock = mocker.patch("simeon.checkout.service.log")
 
         assert checkout_one_time_fixed.analytics_metadata is None
 
@@ -5192,7 +5192,7 @@ class TestHandleSuccessPostHogTracking:
         checkout_confirmed_one_time: Checkout,
         payment: Payment,
     ) -> None:
-        posthog_mock = mocker.patch("polar.checkout.service.posthog")
+        posthog_mock = mocker.patch("simeon.checkout.service.posthog")
         checkout_confirmed_one_time.customer_email = "customer@example.com"
 
         checkout = await checkout_service.handle_success(
@@ -5216,7 +5216,7 @@ class TestHandleSuccessPostHogTracking:
         payment: Payment,
     ) -> None:
         """When no distinct_id or email, falls back to checkout:{id} for A/B test consistency."""
-        posthog_mock = mocker.patch("polar.checkout.service.posthog")
+        posthog_mock = mocker.patch("simeon.checkout.service.posthog")
         checkout_confirmed_one_time.customer_email = None
 
         await checkout_service.handle_success(
@@ -5239,9 +5239,9 @@ class TestHandleSuccessPostHogTracking:
         payment: Payment,
     ) -> None:
         """PostHog failures should be caught and logged, not break the checkout flow."""
-        posthog_mock = mocker.patch("polar.checkout.service.posthog")
+        posthog_mock = mocker.patch("simeon.checkout.service.posthog")
         posthog_mock.capture.side_effect = Exception("PostHog is down")
-        log_mock = mocker.patch("polar.checkout.service.log")
+        log_mock = mocker.patch("simeon.checkout.service.log")
 
         checkout = await checkout_service.handle_success(
             session, checkout_confirmed_one_time, payment
@@ -5265,7 +5265,7 @@ async def test_send_expiration_events(
         expires_at=utc_now() - timedelta(days=1),
     )
 
-    mock_send = mocker.patch("polar.checkout.service.webhook_service.send")
+    mock_send = mocker.patch("simeon.checkout.service.webhook_service.send")
 
     await checkout_service.send_expiration_events(session, checkout)
 

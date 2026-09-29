@@ -17,7 +17,7 @@
 // read off the loop's own message dialect (`context-processing.ts` ~283:
 // `{type: "image", image: <data URI | URL>, mimeType, providerOptions:
 // {cursor: {mimeType, videoFps}}}`). Simeon Labs' server forwards the body
-// untouched (`proxy_gemini_generate` in `server/polar/desktop/endpoints.py`).
+// untouched (`proxy_gemini_generate` in `server/simeon/desktop/endpoints.py`).
 import { claidorProxyBaseUrl } from "../../../shared/node/cursor-backend/claidor-api.js";
 
 type Loose = Record<string, any>;

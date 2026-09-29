@@ -1,5 +1,5 @@
 """The cloud engine's queue: the claim, the lease, the tries and the
-job-scoped token (`polar/maty/service.py`).
+job-scoped token (`simeon/maty/service.py`).
 
 Time is passed in rather than waited for: every verb takes a `now`, so
 « the lease ran out » is a value and not a sleep. The one exception is
@@ -19,21 +19,21 @@ from pytest_mock import MockerFixture
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession as SQLAlchemyAsyncSession
 
-from polar.config import settings
-from polar.desktop.service import DesktopUnauthenticated, desktop
-from polar.desktop.tokens import ACCESS_TOKEN_PREFIX, REFRESH_TOKEN_PREFIX
-from polar.kit.crypto import generate_token_hash_pair
-from polar.kit.db.postgres import create_async_engine
-from polar.kit.utils import utc_now
-from polar.maty.repository import MatyJobRepository, MatyJobSessionRepository
-from polar.maty.service import (
+from simeon.config import settings
+from simeon.desktop.service import DesktopUnauthenticated, desktop
+from simeon.desktop.tokens import ACCESS_TOKEN_PREFIX, REFRESH_TOKEN_PREFIX
+from simeon.kit.crypto import generate_token_hash_pair
+from simeon.kit.db.postgres import create_async_engine
+from simeon.kit.utils import utc_now
+from simeon.maty.repository import MatyJobRepository, MatyJobSessionRepository
+from simeon.maty.service import (
     MatyJobNotFound,
     MatyJobNotHeld,
     maty,
     retry_delay,
 )
-from polar.models import DesktopSession, MatyJob, MatyJobKind, MatyJobStatus, User
-from polar.postgres import AsyncReadSession, AsyncSession
+from simeon.models import DesktopSession, MatyJob, MatyJobKind, MatyJobStatus, User
+from simeon.postgres import AsyncReadSession, AsyncSession
 from tests.fixtures.database import (
     get_database_url,
     save_fixture_factory,

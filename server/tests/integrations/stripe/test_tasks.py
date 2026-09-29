@@ -6,15 +6,15 @@ import stripe as stripe_lib
 from pytest_mock import MockerFixture
 from sqlalchemy.orm import selectinload
 
-from polar.enums import PaymentProcessor, SubscriptionRecurringInterval
-from polar.integrations.stripe.tasks import payment_intent_succeeded
-from polar.models import (
+from simeon.enums import PaymentProcessor, SubscriptionRecurringInterval
+from simeon.integrations.stripe.tasks import payment_intent_succeeded
+from simeon.models import (
     Customer,
     Organization,
     PaymentMethod,
 )
-from polar.postgres import AsyncSession
-from polar.subscription.repository import SubscriptionRepository
+from simeon.postgres import AsyncSession
+from simeon.subscription.repository import SubscriptionRepository
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_active_subscription,
@@ -104,14 +104,14 @@ class TestPaymentIntentSucceeded:
         event_mock.stripe_data.data.object = payment_intent
 
         context_mock = mocker.patch(
-            "polar.integrations.stripe.tasks.external_event_service.handle_stripe"
+            "simeon.integrations.stripe.tasks.external_event_service.handle_stripe"
         )
         context_mock.return_value.__aenter__ = AsyncMock(return_value=event_mock)
         context_mock.return_value.__aexit__ = AsyncMock(return_value=None)
 
         # Mock Stripe API calls
         mocker.patch(
-            "polar.integrations.stripe.tasks.payment.resolve_order", return_value=order
+            "simeon.integrations.stripe.tasks.payment.resolve_order", return_value=order
         )
 
         stripe_payment_method = stripe_lib.PaymentMethod.construct_from(
@@ -130,7 +130,7 @@ class TestPaymentIntentSucceeded:
             stripe_lib.api_key,
         )
         mocker.patch(
-            "polar.integrations.stripe.service.stripe.get_payment_method",
+            "simeon.integrations.stripe.service.stripe.get_payment_method",
             return_value=stripe_payment_method,
         )
 
@@ -180,17 +180,17 @@ class TestPaymentIntentSucceeded:
         event_mock.stripe_data.data.object = payment_intent
 
         context_mock = mocker.patch(
-            "polar.integrations.stripe.tasks.external_event_service.handle_stripe"
+            "simeon.integrations.stripe.tasks.external_event_service.handle_stripe"
         )
         context_mock.return_value.__aenter__ = AsyncMock(return_value=event_mock)
         context_mock.return_value.__aexit__ = AsyncMock(return_value=None)
 
         mocker.patch(
-            "polar.integrations.stripe.tasks.payment.resolve_order", return_value=order
+            "simeon.integrations.stripe.tasks.payment.resolve_order", return_value=order
         )
 
         subscription_service_mock = mocker.patch(
-            "polar.integrations.stripe.tasks.subscription_service.update_payment_method_from_retry"
+            "simeon.integrations.stripe.tasks.subscription_service.update_payment_method_from_retry"
         )
 
         # When: Process webhook
@@ -211,13 +211,13 @@ class TestPaymentIntentSucceeded:
         event_mock.stripe_data.data.object = payment_intent
 
         context_mock = mocker.patch(
-            "polar.integrations.stripe.tasks.external_event_service.handle_stripe"
+            "simeon.integrations.stripe.tasks.external_event_service.handle_stripe"
         )
         context_mock.return_value.__aenter__ = AsyncMock(return_value=event_mock)
         context_mock.return_value.__aexit__ = AsyncMock(return_value=None)
 
         payment_method_service_mock = mocker.patch(
-            "polar.integrations.stripe.tasks.payment_method_service.upsert_from_stripe_payment_intent_for_order"
+            "simeon.integrations.stripe.tasks.payment_method_service.upsert_from_stripe_payment_intent_for_order"
         )
 
         # When: Process webhook

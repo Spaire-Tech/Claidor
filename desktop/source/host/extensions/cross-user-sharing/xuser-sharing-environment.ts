@@ -3,7 +3,7 @@ import { DEFAULT_CURSOR_BACKEND_URL } from "../../../shared/node/cursor-token.js
 export const SAND_DEV_XUSER_SHARING_ENV = "SAND_DEV_XUSER_SHARING";
 export const SAND_XUSER_SHARING_ALLOW_PROD_ENV = "SAND_XUSER_SHARING_ALLOW_PROD";
 // Simeon Labs' server is the production relay since 25 September 2026
-// (`server/polar/sand/sharing.py`); a dev host pointed at it is pointed at
+// (`server/simeon/sand/sharing.py`); a dev host pointed at it is pointed at
 // its own account's rooms, so it is allowed without the opt-in below. The
 // refusal stays for Cursor's production origin, whose rooms are not ours.
 export const SIMEON_BACKEND_ORIGIN = "https://api.simeonlabs.com";

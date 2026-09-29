@@ -1,7 +1,7 @@
 import { createDeadlinePolicy, realClock } from "../../internal/scheduling.js"; import { SAND_FEEDBACK_ACCOUNT_SLOT_MAX_CHARS, SAND_FEEDBACK_CONVERSATION_ID_MAX_CHARS, SAND_FEEDBACK_MESSAGE_MAX_CHARS, SAND_FEEDBACK_SENTRY_EVENT_ID_MAX_COUNT, SAND_FEEDBACK_SENTRY_EVENT_ID_PATTERN } from "../../shared/feedback.js"; import { parseJwtPayload, getConfiguredBackendUrl } from "../../shared/node/cursor-token.js"; import { claidorApiUrl } from "../../shared/node/cursor-backend/claidor-api.js"; import { createCursorChecksum } from "../../shared/node/experiments/statsig-bootstrap.js"; import { getSandBackendClientHeaders } from "../../shared/node/sand-client-metadata.js";
 const feedbackRequestDeadline = createDeadlinePolicy(realClock, { name: "sand-feedback-submit", timeoutMs: 15_000 }); const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 // Send Feedback posts to `POST /desktop/api/feedback` on Simeon Labs' server
-// (`server/polar/desktop/endpoints.py`, `feedback`, added 24 September 2026),
+// (`server/simeon/desktop/endpoints.py`, `feedback`, added 24 September 2026),
 // which logs `desktop.feedback.received` against the person and answers
 // `{ received: true }`. Until then this posted to `{api}/sand/feedback`,
 // Grok Bot's own address at Cursor, which answered 404 here, so every

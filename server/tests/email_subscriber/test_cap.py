@@ -14,15 +14,15 @@ from uuid import UUID
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.email_subscriber.repository import EmailSubscriberRepository
-from polar.email_subscriber.service import email_subscriber as email_subscriber_service
-from polar.entitlements.exceptions import TierLimitReachedError
-from polar.entitlements.tiers import TierKey, get_definition
-from polar.enums import SubscriptionRecurringInterval
-from polar.models import Organization, Product
-from polar.models.email_subscriber import EmailSubscriberSource
-from polar.models.subscription import SubscriptionStatus
-from polar.postgres import AsyncSession
+from simeon.email_subscriber.repository import EmailSubscriberRepository
+from simeon.email_subscriber.service import email_subscriber as email_subscriber_service
+from simeon.entitlements.exceptions import TierLimitReachedError
+from simeon.entitlements.tiers import TierKey, get_definition
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.models import Organization, Product
+from simeon.models.email_subscriber import EmailSubscriberSource
+from simeon.models.subscription import SubscriptionStatus
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     PriceFixtureType,
@@ -34,7 +34,7 @@ from tests.fixtures.random_objects import (
 
 
 def _patch_platform_org_id(mocker: MockerFixture, org_id: UUID | None) -> None:
-    mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", org_id)
+    mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", org_id)
 
 
 def _patch_starter_limits(mocker: MockerFixture, **limit_overrides: int | None) -> None:
@@ -49,7 +49,7 @@ def _patch_starter_limits(mocker: MockerFixture, **limit_overrides: int | None) 
             return overridden
         return get_definition(tier)
 
-    mocker.patch("polar.entitlements.service.get_definition", side_effect=_resolve)
+    mocker.patch("simeon.entitlements.service.get_definition", side_effect=_resolve)
 
 
 async def _seed_tier_product(

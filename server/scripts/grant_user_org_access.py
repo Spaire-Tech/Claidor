@@ -31,10 +31,10 @@ import structlog
 import typer
 from sqlalchemy import select
 
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.models import Organization, User
-from polar.models.user_organization import UserOrganization
-from polar.postgres import create_async_engine
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.models import Organization, User
+from simeon.models.user_organization import UserOrganization
+from simeon.postgres import create_async_engine
 
 cli = typer.Typer()
 

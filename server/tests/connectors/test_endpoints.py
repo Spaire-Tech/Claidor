@@ -1,5 +1,5 @@
 """The four connector routes, end to end over HTTP
-(`polar/connectors/endpoints.py`, `polar/connectors/service.py`).
+(`simeon/connectors/endpoints.py`, `simeon/connectors/service.py`).
 
 Three things are checked here that cannot be checked anywhere else: the
 gate answers on every route, an unconfigured Simeon says so rather than
@@ -16,11 +16,11 @@ import pytest
 import respx
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.connectors.pipedream import API_BASE_URL, MCP_BASE_URL
-from polar.desktop.service import desktop
-from polar.models import User
-from polar.postgres import AsyncSession
+from simeon.config import settings
+from simeon.connectors.pipedream import API_BASE_URL, MCP_BASE_URL
+from simeon.desktop.service import desktop
+from simeon.models import User
+from simeon.postgres import AsyncSession
 
 PROJECT_ID = "proj_test"
 ACCOUNTS_URL = f"{API_BASE_URL}/connect/{PROJECT_ID}/accounts"

@@ -3,7 +3,7 @@
  *
  * The cross-user sharing client (`host/extensions/cross-user-sharing/`) was
  * complete and waited on a relay Simeon Labs' server did not serve
- * (`server/polar/sand/sharing.py` serves it now). This measures the app
+ * (`server/simeon/sand/sharing.py` serves it now). This measures the app
  * side offline: the served switch is on by default and "0" restores the
  * Coming Soon answer; the environment allows api.simeonlabs.com on a dev
  * host and still refuses Cursor's production origin; the `sand_multiplayer`
@@ -42,7 +42,7 @@ const ROOM = { roomId: "33333333-3333-4333-8333-333333333333", name: "Muse", hos
 ] };
 const ENTRY = { kind: "human-message", entryId: "e1", authorAuthId: HOST, authorName: "Bass", text: "hello from the host", images: [], timestampMs: 1_700_000_000_000 };
 
-/** The relay as server/polar/sand/sharing.py answers it, for the guest. */
+/** The relay as server/simeon/sand/sharing.py answers it, for the guest. */
 async function startRelay() {
   const polls = [];
   let delivered = false;

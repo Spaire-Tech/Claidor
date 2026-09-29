@@ -16,21 +16,21 @@ import pytest
 from fastapi import Request
 from httpx import AsyncClient
 
-from polar.auth.middlewares import get_auth_subject
-from polar.auth.models import AuthSubject
-from polar.auth.scope import Scope
-from polar.config import settings
-from polar.kit.crypto import get_token_hash
-from polar.models import User
-from polar.oauth2.exceptions import InvalidTokenError
-from polar.personal_access_token.service import (
+from simeon.auth.middlewares import get_auth_subject
+from simeon.auth.models import AuthSubject
+from simeon.auth.scope import Scope
+from simeon.config import settings
+from simeon.kit.crypto import get_token_hash
+from simeon.models import User
+from simeon.oauth2.exceptions import InvalidTokenError
+from simeon.personal_access_token.service import (
     MAX_LIFETIME,
     TokenScopeError,
 )
-from polar.personal_access_token.service import (
+from simeon.personal_access_token.service import (
     personal_access_token as personal_access_token_service,
 )
-from polar.postgres import AsyncSession
+from simeon.postgres import AsyncSession
 from tests.fixtures.auth import AuthSubjectFixture
 
 
@@ -211,7 +211,7 @@ class TestCreateRoute:
     ) -> None:
         """Mint it through a browser session, then resolve it as a bearer.
 
-        Not through HTTP, and the reason matters. `polar/app.py` skips
+        Not through HTTP, and the reason matters. `simeon/app.py` skips
         AuthSubjectMiddleware entirely when `settings.is_testing()`, and the
         `client` fixture replaces the auth-subject dependency with a fixed
         value — so an Authorization header sent to `client` is decoration

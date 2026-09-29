@@ -16,7 +16,7 @@
  * `SAND_VIDEO_SUBAGENT_SERVED=0` turns the subagent off and puts the
  * coming-soon sentence back in the brief; `SAND_CLAIDOR_VIDEO_MODEL`
  * names the model, default the server's video role, `gemini-2.5-flash`
- * (`server/polar/desktop/pricing.py`, `ModelRole.video`). A server with
+ * (`server/simeon/desktop/pricing.py`, `ModelRole.video`). A server with
  * no Gemini key answers the child's first call with 503 "The model
  * service is not configured.", which comes back as the Task's result.
  */

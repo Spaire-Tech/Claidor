@@ -6,11 +6,11 @@ import pytest
 from fastapi.responses import RedirectResponse
 from starlette.requests import Request
 
-from polar.auth.scope import Scope
-from polar.auth.service import auth as auth_service
-from polar.config import settings
-from polar.models import User
-from polar.postgres import AsyncSession
+from simeon.auth.scope import Scope
+from simeon.auth.service import auth as auth_service
+from simeon.config import settings
+from simeon.models import User
+from simeon.postgres import AsyncSession
 
 
 def _request(cookies: dict[str, str]) -> Request:

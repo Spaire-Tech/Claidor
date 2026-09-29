@@ -1,6 +1,6 @@
 /**
  * Event listeners are served by Simeon Labs' server since 25 September
- * 2026 (`server/polar/sand/listeners*.py`, `docs/services-agents.md`).
+ * 2026 (`server/simeon/sand/listeners*.py`, `docs/services-agents.md`).
  *
  * A listener routine (Slack, GitHub, Linear, Sentry, PagerDuty) fires
  * through the relay Grok Bot reached on Cursor's server:
@@ -32,7 +32,7 @@ export const LISTENERS_COMING_SOON_SENTENCE =
 export const ROUTINES_AWAY_COMING_SOON_SENTENCE =
   "A routine fires while this computer is awake, whether Simeon is open or closed; it cannot fire while the computer is asleep or off, and it does not run anywhere else.";
 
-// On by default since 25 September 2026: `polar/sand/listeners.py` serves
+// On by default since 25 September 2026: `simeon/sand/listeners.py` serves
 // the relay routes at the root of the API host. "0" turns the paths off.
 export function isListenerRelayServed(env: NodeJS.ProcessEnv = process.env): boolean {
   const raw = env[LISTENER_RELAY_SERVED_ENV]?.trim();

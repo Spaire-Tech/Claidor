@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from polar.models.customer import short_id_to_base26
+from simeon.models.customer import short_id_to_base26
 
 
 @pytest.mark.asyncio

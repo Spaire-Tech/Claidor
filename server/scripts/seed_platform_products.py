@@ -27,34 +27,34 @@ import typer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from polar.enums import SubscriptionRecurringInterval, TaxBehaviorOption
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.kit.trial import TrialInterval
-from polar.meter.aggregation import (
+from simeon.enums import SubscriptionRecurringInterval, TaxBehaviorOption
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.kit.trial import TrialInterval
+from simeon.meter.aggregation import (
     AggregationFunction,
     CountAggregation,
     PropertyAggregation,
 )
-from polar.meter.filter import (
+from simeon.meter.filter import (
     Filter,
     FilterClause,
     FilterConjunction,
     FilterOperator,
 )
-from polar.models import (
+from simeon.models import (
     Meter,
     Organization,
     Product,
     ProductPrice,
 )
-from polar.models.product_price import (
+from simeon.models.product_price import (
     ProductPriceAmountType,
     ProductPriceFixed,
     ProductPriceFree,
 )
-from polar.platform.service import PlatformError
-from polar.platform.service import platform as platform_service
-from polar.postgres import create_async_engine
+from simeon.platform.service import PlatformError
+from simeon.platform.service import platform as platform_service
+from simeon.postgres import create_async_engine
 
 cli = typer.Typer()
 

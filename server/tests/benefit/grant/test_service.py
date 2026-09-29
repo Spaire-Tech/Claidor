@@ -4,10 +4,10 @@ from unittest.mock import MagicMock, call
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.benefit.grant.repository import BenefitGrantRepository
-from polar.benefit.grant.service import benefit_grant as benefit_grant_service
-from polar.benefit.strategies import BenefitActionRequiredError, BenefitServiceProtocol
-from polar.models import (
+from simeon.benefit.grant.repository import BenefitGrantRepository
+from simeon.benefit.grant.service import benefit_grant as benefit_grant_service
+from simeon.benefit.strategies import BenefitActionRequiredError, BenefitServiceProtocol
+from simeon.models import (
     Benefit,
     BenefitGrant,
     Customer,
@@ -16,9 +16,9 @@ from polar.models import (
     Product,
     Subscription,
 )
-from polar.models.member import MemberRole
-from polar.postgres import AsyncSession
-from polar.redis import Redis
+from simeon.models.member import MemberRole
+from simeon.postgres import AsyncSession
+from simeon.redis import Redis
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_benefit_grant,
@@ -36,7 +36,7 @@ def benefit_strategy_mock(mocker: MockerFixture) -> MagicMock:
     strategy_mock.grant.return_value = {}
     strategy_mock.revoke.return_value = {}
     strategy_mock.cycle.return_value = {}
-    mock = mocker.patch("polar.benefit.grant.service.get_benefit_strategy")
+    mock = mocker.patch("simeon.benefit.grant.service.get_benefit_strategy")
     mock.return_value = strategy_mock
     return strategy_mock
 
@@ -387,7 +387,7 @@ class TestEnqueueBenefitsGrants:
         subscription: Subscription,
     ) -> None:
         """Test that all benefits are enqueued when there are no existing grants."""
-        enqueue_job_mock = mocker.patch("polar.benefit.grant.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.benefit.grant.service.enqueue_job")
 
         product = await set_product_benefits(
             save_fixture, product=product, benefits=benefits
@@ -421,7 +421,7 @@ class TestEnqueueBenefitsGrants:
         subscription: Subscription,
     ) -> None:
         """Test that already granted benefits are skipped."""
-        enqueue_job_mock = mocker.patch("polar.benefit.grant.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.benefit.grant.service.enqueue_job")
 
         # Grant the first benefit
         grant = BenefitGrant(
@@ -467,7 +467,7 @@ class TestEnqueueBenefitsGrants:
         subscription: Subscription,
     ) -> None:
         """Test that benefits with errors (e.g., BenefitActionRequiredError) are skipped."""
-        enqueue_job_mock = mocker.patch("polar.benefit.grant.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.benefit.grant.service.enqueue_job")
 
         # Create a grant with an error for the first benefit
         grant = BenefitGrant(
@@ -513,7 +513,7 @@ class TestEnqueueBenefitsGrants:
         subscription: Subscription,
     ) -> None:
         """Test that only granted benefits are revoked."""
-        enqueue_job_mock = mocker.patch("polar.benefit.grant.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.benefit.grant.service.enqueue_job")
 
         # Grant only the first benefit
         grant = BenefitGrant(
@@ -550,7 +550,7 @@ class TestEnqueueBenefitsGrants:
         subscription: Subscription,
     ) -> None:
         """Test that no revoke jobs are enqueued when there are no grants."""
-        enqueue_job_mock = mocker.patch("polar.benefit.grant.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.benefit.grant.service.enqueue_job")
 
         product = await set_product_benefits(
             save_fixture, product=product, benefits=benefits
@@ -572,7 +572,7 @@ class TestEnqueueBenefitsGrants:
         subscription: Subscription,
         customer: Customer,
     ) -> None:
-        enqueue_job_mock = mocker.patch("polar.benefit.grant.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.benefit.grant.service.enqueue_job")
 
         grant = BenefitGrant(
             subscription=subscription, customer=customer, benefit=benefits[0]
@@ -607,7 +607,7 @@ class TestEnqueueBenefitGrantUpdates:
         benefit_organization: Benefit,
         benefit_strategy_mock: MagicMock,
     ) -> None:
-        enqueue_job_mock = mocker.patch("polar.benefit.grant.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.benefit.grant.service.enqueue_job")
         benefit_strategy_mock.requires_update.return_value = False
 
         await benefit_grant_service.enqueue_benefit_grant_updates(
@@ -644,7 +644,7 @@ class TestEnqueueBenefitGrantUpdates:
         other_benefit_grant.set_granted()
         await save_fixture(other_benefit_grant)
 
-        enqueue_job_mock = mocker.patch("polar.benefit.grant.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.benefit.grant.service.enqueue_job")
         benefit_strategy_mock.requires_update.return_value = True
 
         await benefit_grant_service.enqueue_benefit_grant_updates(
@@ -682,7 +682,7 @@ class TestEnqueueBenefitGrantUpdates:
         other_benefit_grant.set_granted()
         await save_fixture(other_benefit_grant)
 
-        enqueue_job_mock = mocker.patch("polar.benefit.grant.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.benefit.grant.service.enqueue_job")
         benefit_strategy_mock.requires_update.return_value = True
 
         await benefit_grant_service.enqueue_benefit_grant_updates(
@@ -816,7 +816,7 @@ class TestEnqueueBenefitGrantCycles:
         grant.set_granted()
         await save_fixture(grant)
 
-        enqueue_job_mock = mocker.patch("polar.benefit.grant.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.benefit.grant.service.enqueue_job")
 
         await benefit_grant_service.enqueue_benefit_grant_cycles(
             session, redis, subscription=subscription
@@ -943,7 +943,7 @@ class TestEnqueueBenefitGrantDeletions:
         other_benefit_grant.set_granted()
         await save_fixture(other_benefit_grant)
 
-        enqueue_job_mock = mocker.patch("polar.benefit.grant.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.benefit.grant.service.enqueue_job")
 
         await benefit_grant_service.enqueue_benefit_grant_deletions(
             session, benefit_organization
@@ -980,7 +980,7 @@ class TestEnqueueCustomerGrantDeletions:
         grant2.set_granted()
         await save_fixture(grant2)
 
-        enqueue_job_mock = mocker.patch("polar.benefit.grant.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.benefit.grant.service.enqueue_job")
 
         await benefit_grant_service.enqueue_customer_grant_deletions(session, customer)
 

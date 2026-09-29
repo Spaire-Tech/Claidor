@@ -4,15 +4,15 @@ import pytest
 from pytest_mock import MockerFixture
 from sqlalchemy import func, select
 
-from polar.entitlements.tiers import TierKey
-from polar.enums import SubscriptionRecurringInterval
-from polar.models import Customer, Organization, Product, Subscription
-from polar.models.subscription import SubscriptionStatus
-from polar.platform.billing import (
+from simeon.entitlements.tiers import TierKey
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.models import Customer, Organization, Product, Subscription
+from simeon.models.subscription import SubscriptionStatus
+from simeon.platform.billing import (
     TierProductMissing,
     platform_billing,
 )
-from polar.postgres import AsyncSession
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     PriceFixtureType,
@@ -22,7 +22,7 @@ from tests.fixtures.random_objects import (
 
 
 def _patch_platform_org_id(mocker: MockerFixture, org_id: UUID | None) -> None:
-    mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", org_id)
+    mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", org_id)
 
 
 async def _seed_tier_product(
@@ -257,7 +257,7 @@ class TestEnsureStarterTrialSubscription:
 
 
 def test_both_placeholder_domains_are_recognised() -> None:
-    from polar.platform.contacts import is_placeholder_email
+    from simeon.platform.contacts import is_placeholder_email
 
     assert is_placeholder_email("creator-a@billing.simeonlabs.internal")
     # Customers provisioned before the rename.

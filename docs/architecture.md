@@ -50,13 +50,13 @@ internal id is still `claidor`
 (`host/extensions/inference/provider-session.ts`). The default models are
 `gpt-6-sol` for the loop and `gpt-6-luna` for cheap work (summaries, memory,
 computer and browser subagents, the auto-review classifier). The server
-decides which models are offered (`server/polar/desktop/pricing.py`).
+decides which models are offered (`server/simeon/desktop/pricing.py`).
 
 ## The cloud computer (the "box")
 
 Every person runs on a cloud box. The app has no setting to change this.
 
-- The API server finds or creates the box (`server/polar/sand/box_service.py`,
+- The API server finds or creates the box (`server/simeon/sand/box_service.py`,
   `ensure`). A new box is placed on the accepting box server with the most
   room and stays there (`box_service.place`, `box_hosts.py`). Box servers are
   Docker Engines reached over TLS; `SIMEON_BOX_HOSTS` lists several,
@@ -97,28 +97,28 @@ should use it.
 Python, FastAPI, at `api.simeonlabs.com`. The package keeps the internal name
 `polar`. The same code runs as the API and as the worker. Every setting is
 read as `SIMEON_<NAME>`, and `CLAIDOR_<NAME>` is still read when the `SIMEON_`
-name is not set (`polar/config.py`). Route groups:
+name is not set (`simeon/config.py`). Route groups:
 
 | Group | Where | What |
 | --- | --- | --- |
-| Sign-in | root: `/loginDeepControl`, `/auth/poll`, `/oauth/token` | The app's sign-in (`polar/desktop/app_sign_in.py`). At the root because the app builds each path with a leading slash. |
-| Desktop API | `/desktop/api/*` | Model proxy (`/proxy/v1/responses` and others), models, profile, quota, feedback, memory sync, apps, box renewal credential (`polar/desktop/endpoints.py`, `capabilities.py`, `apps.py`, `video.py`). |
-| Sand routes | `/sand/*` | Notifications, listener relay and ingress, sharing (`polar/sand/`). |
+| Sign-in | root: `/loginDeepControl`, `/auth/poll`, `/oauth/token` | The app's sign-in (`simeon/desktop/app_sign_in.py`). At the root because the app builds each path with a leading slash. |
+| Desktop API | `/desktop/api/*` | Model proxy (`/proxy/v1/responses` and others), models, profile, quota, feedback, memory sync, apps, box renewal credential (`simeon/desktop/endpoints.py`, `capabilities.py`, `apps.py`, `video.py`). |
+| Sand routes | `/sand/*` | Notifications, listener relay and ingress, sharing (`simeon/sand/`). |
 | Connect RPC | `/aiserver.v1.*` | Box broker (`GrokBotService`), cloud agents (`BackgroundComposerService`), `AiService/AvailableModels`, `DashboardService`, `AutomationsService`. Anything else answers `unimplemented`. |
 | Box proxy | `/sand-box/*` | The box port proxy, local-exec credentials, the box's token renewal. |
-| Cloud runner queue | `/maty/runner/*` | Where the cloud runner claims jobs (`polar/maty/`). |
+| Cloud runner queue | `/maty/runner/*` | Where the cloud runner claims jobs (`simeon/maty/`). |
 
 Connect calls must be JSON (`useBinaryFormat: false` on the app's transport);
-`polar/sand/connect.py` does not read binary protobuf. Desktop tokens start
+`simeon/sand/connect.py` does not read binary protobuf. Desktop tokens start
 `simeon_da_` (access), `simeon_dr_` (refresh) and `simeon_db_` (box
 credential); the earlier `claidor_` prefixes are still accepted
-(`polar/desktop/tokens.py`).
+(`simeon/desktop/tokens.py`).
 
 ## The worker
 
 The worker runs the background jobs (Dramatiq). For Simeon that includes the
-box sleeper and waker (`polar/sand/box_tasks.py`) and the routine cron firing
-for listeners (`polar/sand/listeners_tasks.py`). It talks to the box servers
+box sleeper and waker (`simeon/sand/box_tasks.py`) and the routine cron firing
+for listeners (`simeon/sand/listeners_tasks.py`). It talks to the box servers
 too, so it needs the same box settings and certificate files as the API.
 
 ## The cloud runner (`runner/`)
@@ -126,7 +126,7 @@ too, so it needs the same box settings and certificate files as the API.
 A Node service that claims jobs from `/maty/runner/*`, loads the person's
 memory, asks the model one turn through the API's proxy on a per-job token,
 and reports the answer. It has no tools. Each cloud-agent turn
-(`polar/sand/cloud_agents.py`) is one job.
+(`simeon/sand/cloud_agents.py`) is one job.
 
 ## The web app (`clients/apps/web`)
 

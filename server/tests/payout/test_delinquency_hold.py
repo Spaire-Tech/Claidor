@@ -12,15 +12,15 @@ from unittest.mock import MagicMock
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.enums import SubscriptionRecurringInterval
-from polar.integrations.stripe.service import StripeService
-from polar.locker import Locker
-from polar.models import Organization, Transaction, User
-from polar.models.subscription import SubscriptionStatus
-from polar.payout.service import AccountDelinquent
-from polar.payout.service import payout as payout_service
-from polar.postgres import AsyncSession
-from polar.transaction.service.payout import PayoutTransactionService
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.integrations.stripe.service import StripeService
+from simeon.locker import Locker
+from simeon.models import Organization, Transaction, User
+from simeon.models.subscription import SubscriptionStatus
+from simeon.payout.service import AccountDelinquent
+from simeon.payout.service import payout as payout_service
+from simeon.postgres import AsyncSession
+from simeon.transaction.service.payout import PayoutTransactionService
 from tests.fixtures import random_objects as ro
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
@@ -36,14 +36,14 @@ from tests.fixtures.random_objects import (
 @pytest.fixture(autouse=True)
 def payout_transaction_service_mock(mocker: MockerFixture) -> MagicMock:
     mock = MagicMock(spec=PayoutTransactionService)
-    mocker.patch("polar.payout.service.payout_transaction_service", new=mock)
+    mocker.patch("simeon.payout.service.payout_transaction_service", new=mock)
     return mock
 
 
 @pytest.fixture(autouse=True)
 def stripe_service_mock(mocker: MockerFixture) -> MagicMock:
     mock = MagicMock(spec=StripeService)
-    mocker.patch("polar.payout.service.stripe_service", new=mock)
+    mocker.patch("simeon.payout.service.stripe_service", new=mock)
     return mock
 
 
@@ -61,7 +61,7 @@ async def _platform_plan(
     """Configure a platform org and give `creator` a Simeon subscription in
     the given status (the creator is a Customer of the platform org)."""
     platform_org = await create_organization(save_fixture)
-    mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+    mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
     prices: list[PriceFixtureType] = [(4900, "usd")]
     product = await create_product(
         save_fixture,

@@ -1,5 +1,5 @@
 """The agent's other three calls — web search, pictures, dictation — end
-to end over HTTP (`polar/desktop/capabilities.py`), and the speech
+to end over HTTP (`simeon/desktop/capabilities.py`), and the speech
 route's address, which these were copied from."""
 
 import base64
@@ -13,10 +13,10 @@ import respx
 from pytest_mock import MockerFixture
 from sqlalchemy import Row
 
-from polar.config import settings
-from polar.desktop import proxy_common as proxy_common_module
-from polar.desktop.capabilities import WEB_SEARCH_MODEL, web_search_answer
-from polar.desktop.pricing import (
+from simeon.config import settings
+from simeon.desktop import proxy_common as proxy_common_module
+from simeon.desktop.capabilities import WEB_SEARCH_MODEL, web_search_answer
+from simeon.desktop.pricing import (
     IMAGE_MODEL,
     SPEECH_MODEL,
     TRANSCRIPTION_MODEL,
@@ -26,10 +26,10 @@ from polar.desktop.pricing import (
     image_usage,
     transcription_seconds,
 )
-from polar.desktop.proxy_common import UPSTREAM_REFUSED
-from polar.desktop.service import desktop
-from polar.models import DesktopUsage, User
-from polar.postgres import AsyncSession
+from simeon.desktop.proxy_common import UPSTREAM_REFUSED
+from simeon.desktop.service import desktop
+from simeon.models import DesktopUsage, User
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 
 OPENAI = settings.DESKTOP_OPENAI_BASE_URL

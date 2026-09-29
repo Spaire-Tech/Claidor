@@ -1,9 +1,9 @@
 import pytest
 from httpx import AsyncClient
 
-from polar.auth.scope import Scope
-from polar.kit.time_queries import TimeInterval
-from polar.models import UserOrganization
+from simeon.auth.scope import Scope
+from simeon.kit.time_queries import TimeInterval
+from simeon.models import UserOrganization
 from tests.fixtures.auth import AuthSubjectFixture
 
 

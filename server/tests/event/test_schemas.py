@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from polar.event.schemas import EventCreateCustomer, EventCreateExternalCustomer
+from simeon.event.schemas import EventCreateCustomer, EventCreateExternalCustomer
 
 
 @pytest.mark.parametrize(

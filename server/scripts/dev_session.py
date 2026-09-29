@@ -25,14 +25,14 @@ import asyncio
 
 from sqlalchemy import select
 
-from polar.auth.scope import Scope
-from polar.auth.service import USER_SESSION_TOKEN_PREFIX
-from polar.config import Environment, settings
-from polar.kit.crypto import generate_token_hash_pair
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.kit.utils import utc_now
-from polar.models import User, UserSession
-from polar.postgres import create_async_engine
+from simeon.auth.scope import Scope
+from simeon.auth.service import USER_SESSION_TOKEN_PREFIX
+from simeon.config import Environment, settings
+from simeon.kit.crypto import generate_token_hash_pair
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.kit.utils import utc_now
+from simeon.models import User, UserSession
+from simeon.postgres import create_async_engine
 
 
 async def mint() -> None:

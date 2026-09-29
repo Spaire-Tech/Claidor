@@ -15,7 +15,7 @@ export const WEB_SEARCH_CLIENT_TIMEOUT_MS = 90_000;
 
 // Search goes to Claidor's `web/search` door, which runs OpenAI's hosted
 // search and meters it against the person's account
-// (`server/polar/desktop/capabilities.py`).
+// (`server/simeon/desktop/capabilities.py`).
 export function createClaidorWebSearchService(options: ClaidorApiAuth & { readonly fetch?: typeof fetch }) {
   return async (_ctx: unknown, args: { searchTerm: string; explanation?: string }): Promise<WebSearchAnswer> => {
     const response = await claidorProxyRequest(options, "web/search", {

@@ -1,9 +1,9 @@
 """The name Google gives at sign-in is kept and reaches the desktop's profile
 route, so the agent can greet the person by it (28 September 2026)."""
 
-from polar.desktop.service import desktop
-from polar.integrations.google.service import GoogleUserProfile, remember_google_name
-from polar.models import User
+from simeon.desktop.service import desktop
+from simeon.integrations.google.service import GoogleUserProfile, remember_google_name
+from simeon.models import User
 
 
 def _profile(name: str | None, given: str | None) -> GoogleUserProfile:

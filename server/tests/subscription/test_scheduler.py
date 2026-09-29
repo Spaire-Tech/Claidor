@@ -15,13 +15,13 @@ from datetime import timedelta
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.enums import SubscriptionRecurringInterval
-from polar.kit.utils import utc_now
-from polar.models import Organization, Product
-from polar.models.subscription import SubscriptionStatus
-from polar.postgres import AsyncSession
-from polar.subscription.scheduler import SubscriptionJobStore
+from simeon.config import settings
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.kit.utils import utc_now
+from simeon.models import Organization, Product
+from simeon.models.subscription import SubscriptionStatus
+from simeon.postgres import AsyncSession
+from simeon.subscription.scheduler import SubscriptionJobStore
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_active_subscription,

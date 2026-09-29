@@ -6,25 +6,25 @@ import stripe as stripe_lib
 from httpx import AsyncClient, Response
 from pytest_mock import MockerFixture
 
-from polar.integrations.stripe.service import StripeService
-from polar.models import (
+from simeon.integrations.stripe.service import StripeService
+from simeon.models import (
     Customer,
     Order,
     Organization,
     Product,
     Transaction,
 )
-from polar.models.dispute import DisputeAlertProcessor
-from polar.models.order import OrderStatus
-from polar.models.refund import RefundReason, RefundStatus
-from polar.models.webhook_endpoint import WebhookEventType
-from polar.order.repository import OrderRepository
-from polar.order.service import order as order_service
-from polar.postgres import AsyncSession
-from polar.refund.schemas import RefundCreate
-from polar.refund.service import MissingRelatedDispute, RefundedAlready
-from polar.refund.service import refund as refund_service
-from polar.wallet.service import wallet as wallet_service
+from simeon.models.dispute import DisputeAlertProcessor
+from simeon.models.order import OrderStatus
+from simeon.models.refund import RefundReason, RefundStatus
+from simeon.models.webhook_endpoint import WebhookEventType
+from simeon.order.repository import OrderRepository
+from simeon.order.service import order as order_service
+from simeon.postgres import AsyncSession
+from simeon.refund.schemas import RefundCreate
+from simeon.refund.service import MissingRelatedDispute, RefundedAlready
+from simeon.refund.service import refund as refund_service
+from simeon.wallet.service import wallet as wallet_service
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_dispute,
@@ -40,14 +40,14 @@ from tests.fixtures.stripe import build_stripe_refund
 @pytest.fixture(autouse=True)
 def stripe_service_mock(mocker: MockerFixture) -> MagicMock:
     mock = MagicMock(spec=StripeService)
-    mocker.patch("polar.refund.service.stripe_service", new=mock)
+    mocker.patch("simeon.refund.service.stripe_service", new=mock)
     return mock
 
 
 @pytest.fixture(autouse=True)
 def refund_transaction_service_mock(mocker: MockerFixture) -> MagicMock:
     mock = mocker.patch(
-        "polar.refund.service.refund_transaction_service", autospec=True
+        "simeon.refund.service.refund_transaction_service", autospec=True
     )
     return mock
 

@@ -9,11 +9,11 @@ import dramatiq
 import rich
 import structlog
 
-from polar import tasks  # noqa: F401
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.postgres import create_async_engine
-from polar.redis import create_redis
-from polar.worker import JobQueueManager
+from simeon import tasks  # noqa: F401
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.postgres import create_async_engine
+from simeon.redis import create_redis
+from simeon.worker import JobQueueManager
 
 """
 This script allows interacting with the database and our services in a REPL.

@@ -3,18 +3,18 @@ from unittest.mock import MagicMock
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.models import WebhookEndpoint, WebhookEvent
-from polar.models.webhook_endpoint import WebhookEventType
-from polar.postgres import AsyncSession
-from polar.webhook.service import webhook as webhook_service
-from polar.webhook.tasks import _webhook_event_send
+from simeon.config import settings
+from simeon.models import WebhookEndpoint, WebhookEvent
+from simeon.models.webhook_endpoint import WebhookEventType
+from simeon.postgres import AsyncSession
+from simeon.webhook.service import webhook as webhook_service
+from simeon.webhook.tasks import _webhook_event_send
 from tests.fixtures.database import SaveFixture
 
 
 @pytest.fixture
 def enqueue_job_mock(mocker: MockerFixture) -> MagicMock:
-    return mocker.patch("polar.webhook.tasks.enqueue_job")
+    return mocker.patch("simeon.webhook.tasks.enqueue_job")
 
 
 @pytest.mark.asyncio

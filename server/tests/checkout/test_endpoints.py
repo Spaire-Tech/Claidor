@@ -8,15 +8,15 @@ import pytest_asyncio
 from httpx import AsyncClient
 from pytest_mock import MockerFixture
 
-from polar.auth.models import AuthSubject
-from polar.auth.scope import Scope
-from polar.checkout.repository import CheckoutRepository
-from polar.checkout.schemas import CheckoutProductCreate
-from polar.checkout.service import checkout as checkout_service
-from polar.enums import SubscriptionRecurringInterval, TaxBehavior
-from polar.integrations.stripe.service import StripeService
-from polar.kit.utils import utc_now
-from polar.models import (
+from simeon.auth.models import AuthSubject
+from simeon.auth.scope import Scope
+from simeon.checkout.repository import CheckoutRepository
+from simeon.checkout.schemas import CheckoutProductCreate
+from simeon.checkout.service import checkout as checkout_service
+from simeon.enums import SubscriptionRecurringInterval, TaxBehavior
+from simeon.integrations.stripe.service import StripeService
+from simeon.kit.utils import utc_now
+from simeon.models import (
     Checkout,
     Customer,
     Discount,
@@ -27,10 +27,10 @@ from polar.models import (
     UserOrganization,
     WebhookEndpoint,
 )
-from polar.models.checkout import CheckoutStatus
-from polar.models.discount import DiscountDuration, DiscountType
-from polar.postgres import AsyncSession
-from polar.tax.calculation.base import TaxabilityReason
+from simeon.models.checkout import CheckoutStatus
+from simeon.models.discount import DiscountDuration, DiscountType
+from simeon.postgres import AsyncSession
+from simeon.tax.calculation.base import TaxabilityReason
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
@@ -55,13 +55,13 @@ def api_prefix(request: pytest.FixtureRequest) -> str:
 @pytest.fixture(autouse=True)
 def stripe_service_mock(mocker: MockerFixture) -> MagicMock:
     mock = MagicMock(spec=StripeService)
-    mocker.patch("polar.checkout.service.stripe_service", new=mock)
+    mocker.patch("simeon.checkout.service.stripe_service", new=mock)
     return mock
 
 
 @pytest.fixture(autouse=True)
 def calculate_tax_mock(mocker: MockerFixture) -> AsyncMock:
-    mock = mocker.patch("polar.checkout.service.get_tax_service")
+    mock = mocker.patch("simeon.checkout.service.get_tax_service")
     mock.return_value.calculate = AsyncMock(
         return_value={
             "processor_id": "TAX_PROCESSOR_ID",
