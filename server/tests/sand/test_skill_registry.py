@@ -12,6 +12,7 @@ tests build that tarball and read the listing the way the loader does.
 from __future__ import annotations
 
 import base64
+import gzip
 import hashlib
 import io
 import json
@@ -48,12 +49,16 @@ def plugin_tar_gz(name: str = "meeting-notes", body: str = "Take notes.") -> byt
         f"skills/{name}/helper.py": "print('hi')\n",
     }
     buffer = io.BytesIO()
-    with tarfile.open(fileobj=buffer, mode="w:gz") as archive:
-        for path, content in files.items():
-            data = content.encode("utf-8")
-            info = tarfile.TarInfo(name=path)
-            info.size = len(data)
-            archive.addfile(info, io.BytesIO(data))
+    # gzip writes the current second into its header, so two builds that
+    # straddle a second differ and the "same tarball" assertion flaked
+    # (about 1 run in 10). A fixed mtime makes the bytes deterministic.
+    with gzip.GzipFile(fileobj=buffer, mode="wb", mtime=0) as zipped:
+        with tarfile.open(fileobj=zipped, mode="w") as archive:
+            for path, content in files.items():
+                data = content.encode("utf-8")
+                info = tarfile.TarInfo(name=path)
+                info.size = len(data)
+                archive.addfile(info, io.BytesIO(data))
     return buffer.getvalue()
 
 
@@ -399,6 +404,8 @@ class TestManagedSetupAnswersEmpty:
             ("GetTeamRules", {"teamId": 1}),
             ("ListMarketplacePlugins", {"limit": 20}),
         ):
-            response = await client.post(f"/aiserver.v1.DashboardService/{method}", json=body, headers=headers)
+            response = await client.post(
+                f"/aiserver.v1.DashboardService/{method}", json=body, headers=headers
+            )
             assert response.status_code == 200, (method, response.text)
             assert response.json() == {}
