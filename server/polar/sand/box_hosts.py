@@ -26,6 +26,7 @@ Nothing here touches the database; the broker keeps the row.
 
 from __future__ import annotations
 
+import hashlib
 import io
 import ssl
 import tarfile
@@ -58,6 +59,11 @@ OWNER_LABEL = "com.grok-bot.local-vm"
 SCHEMA_VERSION = "10"
 
 BoxRunState = Literal["running", "stopped"]
+
+#: Where the box host keeps each host bundle, one folder per bundle, for
+#: boxes to mount read-only (DockerBoxHost.create).
+BOX_HOST_BUNDLE_ROOT = "/var/lib/simeon/box-host"
+_installed_bundle_dirs: set[str] = set()
 
 
 class BoxHostError(Exception):
@@ -133,6 +139,7 @@ class BoxSpec:
             "SAND_SUPERVISOR_ENABLED": "1",
             "SAND_BOX_AUTO_UPDATE": "0",
             "SAND_USE_EXISTING_BOX_EXEC_DAEMON": "1",
+            "SAND_DATA_ROOT": "/home/box/sand-data",
             "SAND_TREE_SITTER_NODE_DEPS": "/home/box/deps",
             "NODE_PATH": "/home/box/deps",
             "SAND_GATEWAY_BIND_HOST": "0.0.0.0",
@@ -157,6 +164,9 @@ class ProvisionedBox:
     ports: dict[int, int]
     image: str
     image_digest: str | None = None
+    #: The `com.grok-bot.local-vm.host-sha256` label: which host program
+    #: the container mounts. None on a container made before 29 September.
+    host_sha256: str | None = None
 
 
 class BoxHost(Protocol):
@@ -217,21 +227,28 @@ class HostBundle:
             )
         return cls(members[cls.HOST_MAIN], members[cls.BOX_EXEC_DAEMON])
 
-    def archive(self) -> bytes:
-        """Both files in one tar, to be extracted at `/`. Docker's archive
-        PUT needs its target directory to exist, and the box image has no
-        `/home/box/sand-host` (the Mac bind-mounts the file, which makes
-        the directory; a copy does not): uploading to that directory was
-        refused with 404 "Could not find the file", and every box stayed
-        Created and never started (28 September 2026, measured against a
-        real Docker Engine). Extracting at `/` makes the missing parent
-        directories. No directory entry is written, so `/home/box` and
-        `/home/box/box-exec-daemon` keep their owner and mode."""
+    @property
+    def host_sha256(self) -> str:
+        return hashlib.sha256(self.host_main).hexdigest()
+
+    @property
+    def box_exec_daemon_sha256(self) -> str:
+        return hashlib.sha256(self.box_exec_daemon).hexdigest()
+
+    @property
+    def key(self) -> str:
+        """The folder on the box host that holds this bundle."""
+        both = hashlib.sha256(self.host_main + b"\0" + self.box_exec_daemon)
+        return both.hexdigest()[:16]
+
+    def disk_archive(self) -> bytes:
+        """The two files as the box host keeps them, one folder per
+        bundle: `host-main.cjs` and `box-exec-daemon/main.cjs`."""
         buffer = io.BytesIO()
         with tarfile.open(fileobj=buffer, mode="w") as archive:
             for name, data in (
-                ("home/box/sand-host/host-main.cjs", self.host_main),
-                ("home/box/box-exec-daemon/main.cjs", self.box_exec_daemon),
+                ("host-main.cjs", self.host_main),
+                ("box-exec-daemon/main.cjs", self.box_exec_daemon),
             ):
                 info = tarfile.TarInfo(name)
                 info.size = len(data)
@@ -366,36 +383,25 @@ class DockerBoxHost:
                     f"Docker could not pull {image}: {response.status_code}"
                 )
 
-    async def create(self, spec: BoxSpec) -> ProvisionedBox:
-        exposed: dict[str, dict[str, Any]] = {f"{port}/tcp": {} for port in BOX_PORTS}
-        body: dict[str, Any] = {
-            "Image": spec.image,
-            "Env": spec.environment(),
-            "Labels": {
-                OWNER_LABEL: "1",
-                f"{OWNER_LABEL}.schema-version": SCHEMA_VERSION,
-                f"{OWNER_LABEL}.inference-credential": "1",
-                "com.simeonlabs.box": "1",
-            },
-            "ExposedPorts": exposed,
-            "HostConfig": {
-                "RestartPolicy": {"Name": "unless-stopped"},
-                "Binds": [
-                    f"{spec.workspace_volume}:/workspace",
-                    f"{spec.data_volume}:/home/box/sand-data",
-                ],
-                "PortBindings": {
-                    key: [{"HostIp": "0.0.0.0", "HostPort": ""}] for key in exposed
-                },
-                **spec.resource_limits(),
-            },
-        }
-        params = {"name": spec.name, "platform": self.platform}
+    @property
+    def expected_host_sha256(self) -> str | None:
+        """The host program a box on this host should mount; None when the
+        image is trusted to carry its own (no `CLAIDOR_BOX_HOST_BUNDLE_URL`)."""
+        return self.bundle.host_sha256 if self.bundle is not None else None
+
+    def bundle_dir(self) -> str:
+        assert self.bundle is not None
+        return f"{BOX_HOST_BUNDLE_ROOT}/{self.bundle.key}"
+
+    async def _create_container(
+        self, name: str, body: dict[str, Any], image: str
+    ) -> httpx.Response:
+        params = {"name": name, "platform": self.platform}
         response = await self.client.post(
             "/containers/create", params=params, json=body
         )
         if response.status_code == 404:
-            await self._pull(spec.image)
+            await self._pull(image)
             response = await self.client.post(
                 "/containers/create", params=params, json=body
             )
@@ -404,19 +410,107 @@ class DockerBoxHost:
             # take it away and create again, the way the Mac replaces one
             # whose host bundle changed.
             await self.client.delete(
-                f"/containers/{quote(spec.name)}", params={"force": "true"}
+                f"/containers/{quote(name)}", params={"force": "true"}
             )
             response = await self.client.post(
                 "/containers/create", params=params, json=body
             )
+        return response
+
+    async def _install_bundle(self, image: str) -> None:
+        """Put the bundle on the box host's own disk, once per folder, so
+        boxes can mount it the way the Mac does (below). The Engine API
+        cannot write a host path directly, so a helper container that
+        binds the folder receives the files and is removed; it is never
+        started."""
+        assert self.bundle is not None
+        folder = self.bundle_dir()
+        if folder in _installed_bundle_dirs:
+            return
+        name = f"simeon-host-bundle-{self.bundle.key}"
+        body: dict[str, Any] = {
+            "Image": image,
+            "Labels": {"com.simeonlabs.box-bundle": "1"},
+            "HostConfig": {"Binds": [f"{folder}:/bundle"]},
+        }
+        response = await self._create_container(name, body, image)
+        if response.status_code != 201:
+            raise BoxHostError(
+                f"Docker could not prepare the host bundle: {response.status_code} {response.text[:300]}"
+            )
+        helper = str(response.json().get("Id", ""))
+        try:
+            written = await self.client.put(
+                f"/containers/{helper}/archive",
+                params={"path": "/bundle"},
+                content=self.bundle.disk_archive(),
+                headers={"content-type": "application/x-tar"},
+            )
+            if written.status_code != 200:
+                raise BoxHostError(
+                    f"Docker refused the host bundle: {written.status_code} {written.text[:200]}"
+                )
+        finally:
+            await self.client.delete(
+                f"/containers/{quote(helper)}", params={"force": "true"}
+            )
+        _installed_bundle_dirs.add(folder)
+        log.info("sand.box.docker.bundle_installed", folder=folder)
+
+    async def create(self, spec: BoxSpec) -> ProvisionedBox:
+        exposed: dict[str, dict[str, Any]] = {f"{port}/tcp": {} for port in BOX_PORTS}
+        labels: dict[str, str] = {
+            OWNER_LABEL: "1",
+            f"{OWNER_LABEL}.schema-version": SCHEMA_VERSION,
+            f"{OWNER_LABEL}.inference-credential": "1",
+            "com.simeonlabs.box": "1",
+        }
+        binds = [
+            f"{spec.workspace_volume}:/workspace",
+            f"{spec.data_volume}:/home/box/sand-data",
+        ]
+        if self.bundle is not None:
+            # Exactly the Mac's layout (local-docker-host-connector.ts, the
+            # `docker run`): the host program mounted read-only over
+            # /home/box/sand-host/host-main.cjs and the exec daemon's folder
+            # over /home/box/box-exec-daemon, with the two fingerprints as
+            # labels. Until 29 September the files were copied into the
+            # container instead, and the image ran its own host: the box
+            # answered "unknown gateway method: getSharingState" and asked
+            # Simeon Labs' server for CreateGrokBotAgent, neither of which
+            # our host does. A read-only mount is what the Mac has always
+            # done with this image, and it works there.
+            await self._install_bundle(spec.image)
+            folder = self.bundle_dir()
+            binds += [
+                f"{folder}/host-main.cjs:/home/box/sand-host/host-main.cjs:ro",
+                f"{folder}/box-exec-daemon:/home/box/box-exec-daemon:ro",
+            ]
+            labels[f"{OWNER_LABEL}.host-sha256"] = self.bundle.host_sha256
+            labels[f"{OWNER_LABEL}.box-exec-daemon-sha256"] = (
+                self.bundle.box_exec_daemon_sha256
+            )
+        body: dict[str, Any] = {
+            "Image": spec.image,
+            "Env": spec.environment(),
+            "Labels": labels,
+            "ExposedPorts": exposed,
+            "HostConfig": {
+                "RestartPolicy": {"Name": "unless-stopped"},
+                "Binds": binds,
+                "PortBindings": {
+                    key: [{"HostIp": "0.0.0.0", "HostPort": ""}] for key in exposed
+                },
+                **spec.resource_limits(),
+            },
+        }
+        response = await self._create_container(spec.name, body, spec.image)
         if response.status_code != 201:
             raise BoxHostError(
                 f"Docker could not create the box: {response.status_code} {response.text[:300]}"
             )
         container_id = str(response.json().get("Id", ""))
         try:
-            if self.bundle is not None:
-                await self._upload_bundle(container_id)
             started = await self.client.post(f"/containers/{container_id}/start")
             if started.status_code not in (204, 304):
                 raise BoxHostError(
@@ -443,19 +537,6 @@ class DockerBoxHost:
             "sand.box.docker.created", container=container_id, ports=inspected.ports
         )
         return inspected
-
-    async def _upload_bundle(self, container_id: str) -> None:
-        assert self.bundle is not None
-        response = await self.client.put(
-            f"/containers/{container_id}/archive",
-            params={"path": "/"},
-            content=self.bundle.archive(),
-            headers={"content-type": "application/x-tar"},
-        )
-        if response.status_code != 200:
-            raise BoxHostError(
-                f"Docker refused the host bundle: {response.status_code} {response.text[:200]}"
-            )
 
     async def _json(self, provider_box_id: str) -> dict[str, Any] | None:
         response = await self.client.get(f"/containers/{quote(provider_box_id)}/json")
@@ -485,12 +566,14 @@ class DockerBoxHost:
             (value.get("Image") or "") if isinstance(value.get("Image"), str) else ""
         )
         config = value.get("Config") or {}
+        labels = config.get("Labels") or {}
         return ProvisionedBox(
             provider_box_id=str(value.get("Id") or provider_box_id),
             host_address=self.host_address,
             ports=ports,
             image=str(config.get("Image") or ""),
             image_digest=image_id.removeprefix("sha256:") or None,
+            host_sha256=str(labels.get(f"{OWNER_LABEL}.host-sha256") or "") or None,
         )
 
     async def run_state(self, provider_box_id: str) -> BoxRunState | None:

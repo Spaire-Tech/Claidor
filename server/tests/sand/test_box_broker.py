@@ -66,6 +66,9 @@ class FakeBoxHost:
         self.removed: list[tuple[str, list[str]]] = []
         self.blocked: BoxBlocked | None = None
         self.next_port = 40000
+        # The bundle's fingerprint, as `DockerBoxHost` reports it; None is
+        # a host with no bundle, which never replaces for it.
+        self.expected_host_sha256: str | None = None
 
     async def create(self, spec: BoxSpec) -> ProvisionedBox:
         if self.blocked is not None:
@@ -76,15 +79,27 @@ class FakeBoxHost:
             port: self.next_port + i for i, port in enumerate((1340, 6080, 6081, 8790))
         }
         self.next_port += 10
-        self.boxes[box_id] = {"running": True, "ports": ports, "spec": spec}
-        return ProvisionedBox(box_id, "10.0.0.7", ports, spec.image, "abc")
+        self.boxes[box_id] = {
+            "running": True,
+            "ports": ports,
+            "spec": spec,
+            "host_sha256": self.expected_host_sha256,
+        }
+        return ProvisionedBox(
+            box_id, "10.0.0.7", ports, spec.image, "abc", self.expected_host_sha256
+        )
 
     async def inspect(self, provider_box_id: str) -> ProvisionedBox | None:
         box = self.boxes.get(provider_box_id)
         if box is None:
             return None
         return ProvisionedBox(
-            provider_box_id, "10.0.0.7", box["ports"], box["spec"].image, "abc"
+            provider_box_id,
+            "10.0.0.7",
+            box["ports"],
+            box["spec"].image,
+            "abc",
+            box["host_sha256"],
         )
 
     async def run_state(self, provider_box_id: str) -> Any:
@@ -214,6 +229,28 @@ class TestEnsureSandBox:
         assert third["podId"] == body["podId"]
         assert len(host.created) == 2
         assert host.created[1].workspace_volume == host.created[0].workspace_volume
+
+    async def test_a_box_running_another_host_program_is_replaced_on_its_volumes(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+    ) -> None:
+        # A box made before the bundle was mounted runs the image's own host.
+        access, _ = await _signed_in(client, session, user)
+        body = (await _ensure(client, access)).json()
+        old = next(iter(host.boxes))
+        host.expected_host_sha256 = "f2805435"
+        again = (await _ensure(client, access)).json()
+        assert again["podId"] == body["podId"]
+        assert len(host.created) == 2
+        assert old not in host.boxes
+        assert host.removed[-1] == (old, [])
+        assert host.created[1].workspace_volume == host.created[0].workspace_volume
+        # The replacement carries the bundle: no third container.
+        await _ensure(client, access)
+        assert len(host.created) == 2
 
     async def test_no_host_is_one_sentence_as_unavailable(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User

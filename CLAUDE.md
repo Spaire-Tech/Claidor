@@ -1125,6 +1125,19 @@ and certificate files too**: put them in the shared environment group
 disconnected. `docs/product/cloud-computer-served.md` §"Sleep, size and
 capacity" is the record; `server/tests/sand/test_box_sleep.py`. Not yet
 run against the VM.
+**A cloud box mounts our host the way the Mac does, 29 September 2026.**
+The first cloud box answered `unknown gateway method` for methods our host
+serves and called `CreateGrokBotAgent`, which nothing in `desktop/source`
+makes: the image's own host was running, because the server had copied the
+bundle into the container where the image's supervisor can replace it. The
+Mac bind-mounts it read-only (`local-docker-host-connector.ts`), labels the
+container with its sha256 and replaces a container whose label differs; the
+server now does all three (`box_hosts.py`, bundle under
+`/var/lib/simeon/box-host/<key>/` on the VM; `box_service.ensure`,
+`stale_host`). A box made before this is replaced on its volumes at the
+next EnsureSandBox. A new cloud box starts empty: the agents made on the
+Mac live in the Mac's local box. §"The first real run" of the record has
+the reading.
 
 ## The rest of the connectors are apps under Simeon's name (28 September 2026)
 
