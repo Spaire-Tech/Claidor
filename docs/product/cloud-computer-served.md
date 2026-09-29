@@ -48,7 +48,7 @@ Server, all in `server/polar/sand/`:
 |---|---|
 | `box_broker.py` | `aiserver.v1.GrokBotService`: `EnsureSandBox`, `RecreateSandBox`, `ForceRecreateSandBox`, `WatchSandBoxMigration` (stream), `GetSandBoxRunState`, `NotifySandAgentTurnFinished`; `POST /sand-box/local-exec-daemon-credential`; `POST /sand-box/local-exec-connection`; the hint headers and the hand-encoded `aiserver.v1.ErrorDetails` for a blocked box |
 | `box_service.py` | find-or-create, start a stopped box, recreate on a dead credential, recreate with or without the volumes, run state, the migration log, the URLs, the local-exec credential (a `claidor_db_` child row with user agent `simeon-local-exec/<desktop>`) |
-| `box_hosts.py` | `BoxHost` protocol; `DockerBoxHost` over the Docker Engine HTTP API with httpx (create → pull on 404 → upload the host bundle with `PUT /containers/{id}/archive` → start → inspect the published ports); `E2BBoxHost`, a documented stub |
+| `box_hosts.py` | `BoxHost` protocol; `DockerBoxHost` over the Docker Engine HTTP API with httpx (write the host bundle once per fingerprint to the box host (a helper container and `PUT /containers/{id}/archive`) → create with it bind-mounted read-only, as the Mac does → pull on 404 → start → inspect the published ports); `E2BBoxHost`, a documented stub |
 | `box_proxy.py` | `/sand-box/{box_id}/p/{port}/{path}` for HTTP (streamed, so `/events` SSE works) and WebSocket (websockify, the egress tunnel), gated by the network token as header or `network_token` query |
 | `box_repository.py`, `polar/models/sand_box.py`, migration `2026-09-25-1500_sand_boxes.py` | the `sand_boxes` table: one row per person |
 
@@ -283,6 +283,41 @@ Two failures, in order, each measured and each fixed:
    its container is made is removed, and a brand-new box's two volumes
    with it; and a transport error with no message logs its type and the
    request instead of nothing.
+3. **Every call through the API's proxy answered 401 `access_denied`.**
+   Polar's `AuthSubjectMiddleware` reads every `Authorization` header before
+   any route, and the app sends the box's gateway token there, which is no
+   Simeon token. The proxy paths `/sand-box/<uuid>/p/<port>` are now
+   anonymous to the middleware (`is_box_proxy_path`, `polar/auth/middlewares.py`);
+   the proxy checks the box's own network token as before.
+4. **The box answered with a host that is not ours, 29 September 2026.**
+   Render's log showed `unknown gateway method` for `getSharingState` and
+   `isAgentNetworkEnabled`, which our host serves (`host/extensions/`), and
+   calls to `CreateGrokBotAgent`, which nothing in `desktop/source` makes:
+   the image's own host was running, not the bundle we sent. The code
+   difference from the Mac, read line for line in `local-docker-host-connector.ts`
+   (~430–480): the Mac **bind-mounts** `host-main.cjs` read-only at
+   `/home/box/sand-host/host-main.cjs` and the exec daemon's folder at
+   `/home/box/box-exec-daemon`, sets `SAND_DATA_ROOT=/home/box/sand-data`,
+   labels the container with both files' sha256, and replaces a container
+   whose `host-sha256` label is not the current bundle's
+   (`localDockerContainerNeedsReplace`). The server copied the files into
+   the container's writable layer instead, which the image's supervisor
+   is free to overwrite with its own host (it keeps its own copy and
+   stages upgrades, `packages/constants/sand-supervisor.ts`); a read-only
+   mount is the one thing it cannot replace. The server now does what the
+   Mac does: the bundle is written once per fingerprint to
+   `/var/lib/simeon/box-host/<key>/` on the box host (through a helper
+   container that is never started and always removed), each box mounts it
+   read-only at the Mac's two paths, carries the Mac's two labels and
+   `SAND_DATA_ROOT`, and EnsureSandBox replaces a running box whose
+   `host-sha256` label differs, on the same volumes (`sand.box.ensure.recreate`
+   with `stale_host=True`). Measured against a real Docker Engine 29.3 with
+   the published bundle: both mounts read-only, the label equal to the
+   file's sha256, no helper left, a second box reusing the folder.
+   `tests/sand/test_box_hosts.py`, `test_box_broker.py`
+   (`test_a_box_running_another_host_program_is_replaced_on_its_volumes`).
+   Not yet measured on the VM: that the image's supervisor then runs our
+   host (the log line to read is the gateway answering `getSharingState`).
 
 ## What the founder must create
 

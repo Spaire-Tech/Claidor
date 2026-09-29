@@ -22,7 +22,9 @@ from fastapi.responses import JSONResponse
 from pytest_mock import MockerFixture
 
 from polar.config import settings
+from polar.sand import box_hosts
 from polar.sand.box_hosts import (
+    BOX_HOST_BUNDLE_ROOT,
     BoxHostError,
     BoxSpec,
     DockerBoxHost,
@@ -32,13 +34,23 @@ from polar.sand.box_hosts import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _fresh_bundle_cache() -> Any:
+    # The provider remembers which host folders it filled, per process.
+    box_hosts._installed_bundle_dirs.clear()
+    yield
+    box_hosts._installed_bundle_dirs.clear()
+
+
 class FakeDaemon:
     def __init__(self) -> None:
         self.app = FastAPI()
         self.images: set[str] = set()
         self.containers: dict[str, dict[str, Any]] = {}
         self.archives: list[tuple[str, str, bytes]] = []
-        self.existing_dirs = {"/", "/home/box/box-exec-daemon"}
+        # The helper binds /bundle, which Docker makes; the box image has
+        # /home/box/box-exec-daemon and no /home/box/sand-host.
+        self.existing_dirs = {"/", "/bundle", "/home/box/box-exec-daemon"}
         self.volumes_removed: list[str] = []
         self.pulls: list[dict[str, str]] = []
         self.serial = 0
@@ -76,7 +88,7 @@ class FakeDaemon:
                 "Image": "sha256:" + "ab" * 32,
                 "Config": {
                     "Image": body["Image"],
-                    "Env": body["Env"],
+                    "Env": body.get("Env", []),
                     "Labels": body["Labels"],
                 },
                 "HostConfig": body["HostConfig"],
@@ -178,7 +190,7 @@ def _bundle_tar() -> bytes:
 
 
 @pytest.mark.asyncio
-async def test_the_docker_provider_runs_the_macs_docker_run_with_the_bundle_uploaded() -> (
+async def test_the_docker_provider_runs_the_macs_docker_run_with_the_bundle_mounted() -> (
     None
 ):
     daemon = FakeDaemon()
@@ -218,22 +230,44 @@ async def test_the_docker_provider_runs_the_macs_docker_run_with_the_bundle_uplo
     assert container["Config"]["Labels"]["com.grok-bot.local-vm"] == "1"
     assert container["Config"]["Labels"]["com.grok-bot.local-vm.schema-version"] == "10"
     assert container["HostConfig"]["RestartPolicy"] == {"Name": "unless-stopped"}
+    assert env["SAND_DATA_ROOT"] == "/home/box/sand-data"
+    # The Mac's layout: the host program and the exec daemon's folder
+    # mounted read-only from the box host's disk, with their fingerprints.
+    bundle = host.bundle
+    assert bundle is not None
+    folder = f"{BOX_HOST_BUNDLE_ROOT}/{bundle.key}"
     assert container["HostConfig"]["Binds"] == [
         "simeon-box-abc-workspace:/workspace",
         "simeon-box-abc-data:/home/box/sand-data",
+        f"{folder}/host-main.cjs:/home/box/sand-host/host-main.cjs:ro",
+        f"{folder}/box-exec-daemon:/home/box/box-exec-daemon:ro",
     ]
+    labels = container["Config"]["Labels"]
+    assert labels["com.grok-bot.local-vm.host-sha256"] == bundle.host_sha256
+    assert (
+        labels["com.grok-bot.local-vm.box-exec-daemon-sha256"]
+        == bundle.box_exec_daemon_sha256
+    )
+    assert provisioned.host_sha256 == bundle.host_sha256
+    assert host.expected_host_sha256 == bundle.host_sha256
     assert set(container["HostConfig"]["PortBindings"]) == {
         "1340/tcp",
         "6080/tcp",
         "6081/tcp",
         "8790/tcp",
     }
-    # The bundle landed where the Mac bind-mounts it.
+    # The bundle went to the box host's disk through a helper container
+    # that binds the folder, was never started, and is gone.
     uploaded = {(path, data) for _, path, data in daemon.archives}
     assert uploaded == {
-        ("/home/box/sand-host/host-main.cjs", b"host"),
-        ("/home/box/box-exec-daemon/main.cjs", b"daemon"),
+        ("/bundle/host-main.cjs", b"host"),
+        ("/bundle/box-exec-daemon/main.cjs", b"daemon"),
     }
+    helper_ids = {cid for cid, _, _ in daemon.archives}
+    assert helper_ids.isdisjoint(daemon.containers)
+    assert not any(
+        c["Name"].startswith("simeon-host-bundle-") for c in daemon.containers.values()
+    )
     # Published ports were read back, and the address is the VM's.
     assert provisioned.host_address == "box.example"
     assert set(provisioned.ports) == {1340, 6080, 6081, 8790}
