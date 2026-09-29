@@ -253,9 +253,20 @@ class Settings(BaseSettings):
     # hostname of BOX_DOCKER_HOST.
     BOX_HOST_ADDRESS: str = ""
     # The box image; the local Docker path's image unless a Simeon image
-    # with the host bundle baked in is built. BOX_IMAGE_DIGEST pins it.
-    BOX_IMAGE: str = "public.ecr.aws/k0i0n2g5/cursorenvironments/universal:sand-box-latest"
-    BOX_IMAGE_DIGEST: str = ""
+    # with the host bundle baked in is built. BOX_IMAGE_DIGEST pins it, and
+    # the default pins the 16 September 2026 build: the one the Mac runs,
+    # whose supervisor starts /home/box/sand-host/host-main.cjs, the file
+    # the bundle is mounted at. The 28 September build (sha256:3e1d140e…)
+    # starts /opt/sand/sand-host/host-main.cjs instead, so a box on it runs
+    # the image's own host whatever is mounted (measured on the VM, 29
+    # September 2026). Move the pin only after reading which path a new
+    # build's supervisor starts.
+    BOX_IMAGE: str = (
+        "public.ecr.aws/k0i0n2g5/cursorenvironments/universal:sand-box-latest"
+    )
+    BOX_IMAGE_DIGEST: str = (
+        "322c3a9031d61e210a05400dd74c82bbb1fdb42db315a8cf5ab39368c2f0c1c8"
+    )
     # A .tar or .tar.gz with `host/host-main.cjs` and
     # `box-exec-daemon/main.cjs` (what `npm run package` builds into
     # desktop/dist), uploaded into the container before it starts. Empty:

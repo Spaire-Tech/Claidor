@@ -12,6 +12,7 @@ migration watcher (`box-migration-watcher.ts`) and the local-exec daemon
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import base64
 from collections.abc import AsyncIterator
 from typing import Any
@@ -66,6 +67,9 @@ class FakeBoxHost:
         self.removed: list[tuple[str, list[str]]] = []
         self.blocked: BoxBlocked | None = None
         self.next_port = 40000
+        # The bundle's fingerprint, as `DockerBoxHost` reports it; None is
+        # a host with no bundle, which never replaces for it.
+        self.expected_host_sha256: str | None = None
 
     async def create(self, spec: BoxSpec) -> ProvisionedBox:
         if self.blocked is not None:
@@ -76,15 +80,27 @@ class FakeBoxHost:
             port: self.next_port + i for i, port in enumerate((1340, 6080, 6081, 8790))
         }
         self.next_port += 10
-        self.boxes[box_id] = {"running": True, "ports": ports, "spec": spec}
-        return ProvisionedBox(box_id, "10.0.0.7", ports, spec.image, "abc")
+        self.boxes[box_id] = {
+            "running": True,
+            "ports": ports,
+            "spec": spec,
+            "host_sha256": self.expected_host_sha256,
+        }
+        return ProvisionedBox(
+            box_id, "10.0.0.7", ports, spec.image, "abc", self.expected_host_sha256
+        )
 
     async def inspect(self, provider_box_id: str) -> ProvisionedBox | None:
         box = self.boxes.get(provider_box_id)
         if box is None:
             return None
         return ProvisionedBox(
-            provider_box_id, "10.0.0.7", box["ports"], box["spec"].image, "abc"
+            provider_box_id,
+            "10.0.0.7",
+            box["ports"],
+            box["spec"].image,
+            "abc",
+            box["host_sha256"],
         )
 
     async def run_state(self, provider_box_id: str) -> Any:
@@ -214,6 +230,52 @@ class TestEnsureSandBox:
         assert third["podId"] == body["podId"]
         assert len(host.created) == 2
         assert host.created[1].workspace_volume == host.created[0].workspace_volume
+
+    async def test_a_box_running_another_host_program_is_replaced_on_its_volumes(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+    ) -> None:
+        # A box made before the bundle was mounted runs the image's own host.
+        access, _ = await _signed_in(client, session, user)
+        body = (await _ensure(client, access)).json()
+        old = next(iter(host.boxes))
+        host.expected_host_sha256 = "f2805435"
+        again = (await _ensure(client, access)).json()
+        assert again["podId"] == body["podId"]
+        assert len(host.created) == 2
+        assert old not in host.boxes
+        assert host.removed[-1] == (old, [])
+        assert host.created[1].workspace_volume == host.created[0].workspace_volume
+        # The replacement carries the bundle: no third container.
+        await _ensure(client, access)
+        assert len(host.created) == 2
+
+    async def test_a_box_on_another_image_is_replaced_on_its_volumes(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+    ) -> None:
+        # A box made on the moving tag runs that build's own host.
+        access, _ = await _signed_in(client, session, user)
+        body = (await _ensure(client, access)).json()
+        old = next(iter(host.boxes))
+        spec = host.boxes[old]["spec"]
+        host.boxes[old]["spec"] = dataclasses.replace(
+            spec, image=settings.BOX_IMAGE.split("@", 1)[0]
+        )
+        again = (await _ensure(client, access)).json()
+        assert again["podId"] == body["podId"]
+        assert len(host.created) == 2
+        assert host.removed[-1] == (old, [])
+        assert host.created[1].image == box_hosts.box_image_reference()
+        assert host.created[1].workspace_volume == host.created[0].workspace_volume
+        await _ensure(client, access)
+        assert len(host.created) == 2
 
     async def test_no_host_is_one_sentence_as_unavailable(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
@@ -717,3 +779,52 @@ def test_websockify_and_the_egress_tunnel_are_proxied_as_websockets() -> None:
         or seen["path"] == "/"
     )
     assert seen["authorization"] == "Bearer g"
+
+
+@pytest.mark.asyncio
+async def test_the_boxs_own_refusal_reaches_the_app_and_the_log(
+    client: httpx.AsyncClient,
+    session: AsyncSession,
+    user: User,
+    host: FakeBoxHost,
+    mocker: Any,
+) -> None:
+    """The first real run showed only "401" on the app's side; the proxy
+    now logs who refused, and forwards the box's own body unchanged."""
+    upstream = FastAPI()
+
+    @upstream.get("/events")
+    async def events() -> JSONResponse:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    transport = httpx.ASGITransport(app=upstream)
+    box_proxy.set_client_factory_for_tests(
+        lambda: httpx.AsyncClient(transport=transport, timeout=None)
+    )
+    logged = mocker.patch.object(box_proxy.log, "warning")
+    try:
+        access, _ = await _signed_in(client, session, user)
+        box = (await _ensure(client, access)).json()
+        base = f"/sand-box/{box['podId']}/p/1340"
+        response = await client.get(
+            f"{base}/events",
+            headers={
+                "x-anyrun-network-token": box["networkToken"],
+                "authorization": f"Bearer {box['gatewayToken']}",
+            },
+        )
+        assert response.status_code == 401
+        assert response.json() == {"error": "unauthorized"}
+        event, fields = logged.call_args.args[0], logged.call_args.kwargs
+        assert event == "sand.box.proxy.upstream_error"
+        assert fields["status"] == 401
+        assert fields["body"] == '{"error":"unauthorized"}'
+        assert fields["authorization_sent"] is True
+        assert box["gatewayToken"] not in str(fields)
+
+        refused = await client.get(f"{base}/events")
+        assert refused.status_code == 401
+        assert logged.call_args.args[0] == "sand.box.proxy.refused"
+        assert logged.call_args.kwargs["network_token_sent"] is False
+    finally:
+        box_proxy.set_client_factory_for_tests(None)

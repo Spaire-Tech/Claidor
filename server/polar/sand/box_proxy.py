@@ -32,7 +32,7 @@ from uuid import UUID
 import httpx
 import structlog
 from fastapi import Depends, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 from starlette.background import BackgroundTask
 from websockets.asyncio.client import ClientConnection, connect
 from websockets.exceptions import ConnectionClosed
@@ -133,6 +133,13 @@ async def _resolve(
 ) -> tuple[SandBox, str, int] | JSONResponse:
     box = await _lookup(db, box_id, token)
     if box is None:
+        # Never the token itself: only whether one came.
+        log.warning(
+            "sand.box.proxy.refused",
+            box=str(box_id),
+            port=port,
+            network_token_sent=bool(token),
+        )
         return JSONResponse({"error": "network token refused"}, status_code=401)
     target = upstream_target(box, port)
     if target is None:
@@ -174,6 +181,28 @@ async def _proxy_http(
         return JSONResponse(
             {"error": f"the box did not answer on port {port}: {error}"},
             status_code=502,
+        )
+
+    if response.status_code >= 400:
+        # The box's own refusal, read whole (a gateway error is a short
+        # JSON sentence) so the log names it: the first real run showed
+        # only "401" from the app's side (28 September 2026).
+        content = await response.aread()
+        await response.aclose()
+        await client.aclose()
+        log.warning(
+            "sand.box.proxy.upstream_error",
+            box=str(box.id),
+            port=port,
+            path=path[:120],
+            status=response.status_code,
+            body=content[:300].decode("utf-8", "replace"),
+            authorization_sent="authorization" in request.headers,
+        )
+        return Response(
+            content=content,
+            status_code=response.status_code,
+            headers=forwardable(response.headers),
         )
 
     async def body() -> AsyncIterator[bytes]:
