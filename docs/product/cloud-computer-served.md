@@ -339,6 +339,29 @@ Two failures, in order, each measured and each fixed:
    (the Mac refuses a container on another image), so it is a separate
    change.
 
+5. **Agents the app never asked for, and "New Agent"s named after the first
+   message, 29 September 2026, cloud only.** The proxy looked the box up in
+   the request's own database session, which `AsyncSessionMiddleware` keeps
+   until the response has finished streaming. The app keeps several requests
+   open through the proxy for minutes (the event stream, the local-exec and
+   webauthn long-polls, one tail per open chat, the screen's websocket), so
+   each held a pool connection, the pool (5 + 10) ran dry, and every other
+   request waited up to 30 s ("QueuePool limit of size 5 overflow 10
+   reached", in Render's log). The app's gateway deadline is 15 s
+   (`SEND_POST_TIMEOUT_MS`), so a create it gave up on still reached the box
+   when a connection freed up. The box's nonce ledger stops a *retry* from
+   making a second agent (`host-gateway-api.ts`), but not a fresh attempt.
+   And an agent whose create the app counted as failed never got
+   `kickstartAgent`, so it had no introduction, its transcript was empty at
+   the person's first message, and the host's rule for an empty "New Agent"
+   (`send-acceptance.ts`) named it after that message. On the Mac's Docker
+   box nothing stands between the app and the box, so none of it happens
+   there. Now the proxy looks the box up in a session of its own, closed
+   before anything streams (`lookup_sessions`).
+   `test_the_proxy_gives_its_database_connection_back_before_it_streams`.
+   The same day the brief says who made the agent ("made by Simeon Labs"):
+   asked "who created you?", it answered "OpenAI".
+
 ## What the founder must create
 
 1. **A VM with Docker** (amd64; the image is `linux/amd64`, 4 GB+ RAM per
