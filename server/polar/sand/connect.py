@@ -48,6 +48,7 @@ from polar.desktop.auth import get_desktop_or_box_session, get_desktop_session
 from polar.models import DesktopSession
 from polar.openapi import APITag
 from polar.postgres import AsyncSession, get_db_session
+from polar.redis import Redis, get_redis
 from polar.routing import APIRouter
 
 ConnectCode = Literal[
@@ -126,9 +127,7 @@ class ConnectError(Exception):
 
 Auth = Literal["desktop", "desktop-or-box", "none"]
 
-UnaryHandler = Callable[
-    ["ConnectCall"], Awaitable[dict[str, Any]]
-]
+UnaryHandler = Callable[["ConnectCall"], Awaitable[dict[str, Any]]]
 StreamHandler = Callable[["ConnectCall"], AsyncIterator[dict[str, Any]]]
 
 
@@ -143,11 +142,28 @@ class ConnectCall:
         session: DesktopSession | None,
         db: AsyncSession,
         request: Request,
+        redis: Redis | None = None,
     ) -> None:
         self.message = message
         self.session = session
         self.db = db
         self.request = request
+        self._redis = redis
+
+    @property
+    def redis(self) -> Redis:
+        if self._redis is None:
+            raise ConnectError("internal", "No Redis for this call.")
+        return self._redis
+
+    async def release_db(self) -> None:
+        """Give the database connection back before a stream waits. The
+        request's session lives until the response has finished
+        (`AsyncSessionMiddleware`); a stream that waits minutes would hold
+        a pool connection all that time, and a few dozen such streams
+        emptied the pool (29 September 2026). Reads only: nothing is
+        committed early, and the session opens again if it is used."""
+        await self.db.close()
 
     @property
     def caller(self) -> DesktopSession:
@@ -198,7 +214,9 @@ async def _read_message(request: Request) -> dict[str, Any]:
     if decoded is None:
         return {}
     if not isinstance(decoded, dict):
-        raise ConnectError("invalid_argument", "The request body must be a JSON object.")
+        raise ConnectError(
+            "invalid_argument", "The request body must be a JSON object."
+        )
     return decoded
 
 
@@ -211,7 +229,9 @@ async def _caller(
         if auth == "desktop-or-box":
             return await get_desktop_or_box_session(request, db)
     except Exception as error:  # DesktopUnauthenticated, in Connect's shape
-        message = getattr(error, "message", None) or str(error) or "Sign in to the app first."
+        message = (
+            getattr(error, "message", None) or str(error) or "Sign in to the app first."
+        )
         raise ConnectError("unauthenticated", message)
     return None
 
@@ -225,37 +245,53 @@ class ConnectService:
         self.router = APIRouter(tags=["sand", APITag.private], include_in_schema=False)
         self.methods: dict[str, str] = {}
 
-    def unary(self, method: str, *, auth: Auth = "desktop") -> Callable[[UnaryHandler], UnaryHandler]:
+    def unary(
+        self, method: str, *, auth: Auth = "desktop"
+    ) -> Callable[[UnaryHandler], UnaryHandler]:
         def register(handler: UnaryHandler) -> UnaryHandler:
             path = f"/{self.name}/{method}"
             self.methods[method] = "unary"
 
             async def endpoint(
-                request: Request, db: AsyncSession = Depends(get_db_session)
+                request: Request,
+                db: AsyncSession = Depends(get_db_session),
+                redis: Redis = Depends(get_redis),
             ) -> JSONResponse:
                 try:
                     session = await _caller(auth, request, db)
                     message = await _read_message(request)
                     result = await handler(
-                        ConnectCall(message=message, session=session, db=db, request=request)
+                        ConnectCall(
+                            message=message,
+                            session=session,
+                            db=db,
+                            request=request,
+                            redis=redis,
+                        )
                     )
                 except ConnectError as error:
                     return error.response()
                 return JSONResponse(status_code=200, content=result)
 
             endpoint.__name__ = f"{self.name}_{method}"
-            self.router.add_api_route(path, endpoint, methods=["POST"], response_model=None)
+            self.router.add_api_route(
+                path, endpoint, methods=["POST"], response_model=None
+            )
             return handler
 
         return register
 
-    def stream(self, method: str, *, auth: Auth = "desktop") -> Callable[[StreamHandler], StreamHandler]:
+    def stream(
+        self, method: str, *, auth: Auth = "desktop"
+    ) -> Callable[[StreamHandler], StreamHandler]:
         def register(handler: StreamHandler) -> StreamHandler:
             path = f"/{self.name}/{method}"
             self.methods[method] = "server-stream"
 
             async def endpoint(
-                request: Request, db: AsyncSession = Depends(get_db_session)
+                request: Request,
+                db: AsyncSession = Depends(get_db_session),
+                redis: Redis = Depends(get_redis),
             ) -> StreamingResponse | JSONResponse:
                 try:
                     session = await _caller(auth, request, db)
@@ -263,7 +299,13 @@ class ConnectService:
                 except ConnectError as error:
                     # Before the first frame a stream error is still a JSON error.
                     return error.response()
-                call = ConnectCall(message=message, session=session, db=db, request=request)
+                call = ConnectCall(
+                    message=message,
+                    session=session,
+                    db=db,
+                    request=request,
+                    redis=redis,
+                )
 
                 async def frames() -> AsyncIterator[bytes]:
                     try:
@@ -274,10 +316,14 @@ class ConnectService:
                         return
                     yield _frame(0x02, {})
 
-                return StreamingResponse(frames(), media_type="application/connect+json")
+                return StreamingResponse(
+                    frames(), media_type="application/connect+json"
+                )
 
             endpoint.__name__ = f"{self.name}_{method}"
-            self.router.add_api_route(path, endpoint, methods=["POST"], response_model=None)
+            self.router.add_api_route(
+                path, endpoint, methods=["POST"], response_model=None
+            )
             return handler
 
         return register
@@ -291,7 +337,9 @@ def unimplemented_router(*packages: str) -> APIRouter:
     router = APIRouter(tags=["sand", APITag.private], include_in_schema=False)
     for package in packages:
 
-        async def endpoint(service: str, method: str, package: str = package) -> JSONResponse:
+        async def endpoint(
+            service: str, method: str, package: str = package
+        ) -> JSONResponse:
             return ConnectError(
                 "unimplemented",
                 f"{package}.{service}/{method} is not served by Simeon Labs' server.",

@@ -210,3 +210,29 @@ class TestConfiguration:
         mocker.patch.object(settings, "BOX_HOSTS", raw)
         with pytest.raises(BoxHostUnavailable):
             box_host_entries()
+
+
+@pytest.mark.asyncio
+async def test_a_restart_recorded_by_one_worker_streams_from_another(
+    redis: Redis,
+) -> None:
+    # Several API workers: the one that records a recreate and the one that
+    # serves the app's WatchSandBoxMigration share only Redis.
+    from uuid import uuid4
+
+    from polar.sand.box_service import PHASE_CREATING, PHASE_DONE, MigrationLog
+
+    recorder, streamer = MigrationLog(), MigrationLog()
+    streamer.idle = 0.05
+    box_id = uuid4()
+    await recorder.record(redis, box_id, "op", PHASE_CREATING, "Replacing")
+    await recorder.record(redis, box_id, "op", PHASE_DONE, "Back")
+    events = [event async for event in streamer.watch(redis, box_id, "", True)]
+    assert [(e["phase"], e["offsetKey"]) for e in events] == [
+        (PHASE_CREATING, "1"),
+        (PHASE_DONE, "2"),
+    ]
+    after_first = [e async for e in streamer.watch(redis, box_id, "1", True)]
+    assert [e["offsetKey"] for e in after_first] == ["2"]
+    unfinished = [e async for e in streamer.watch(redis, box_id, "", False)]
+    assert [e["phase"] for e in unfinished] == [PHASE_CREATING]

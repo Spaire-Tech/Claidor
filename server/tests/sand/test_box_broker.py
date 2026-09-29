@@ -138,7 +138,6 @@ def host() -> Any:
         return True
 
     box_service.set_health_check_for_tests(healthy)
-    box_service.migrations.events.clear()
     yield fake
     box_hosts.set_box_host_for_tests(None)
     box_service.set_health_check_for_tests(None)

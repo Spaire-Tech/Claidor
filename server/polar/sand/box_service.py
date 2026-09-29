@@ -16,7 +16,9 @@ tunnel is derived from the gateway URL (`egress-tunnel/box-connection.ts`).
 from __future__ import annotations
 
 import asyncio
+import json
 import secrets
+import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -109,50 +111,74 @@ class RecreateOutcome:
 # handles.
 
 
+#: A box's migration events: a Redis list, so the worker that records a
+#: recreate and the one serving the app's stream need not be the same
+#: (several API workers, 29 September 2026). Kept an hour after the last event.
+MIGRATION_TTL_S = 3600
+
+
+def _migration_key(box_id: UUID) -> str:
+    return f"sand:box:migration:{box_id}"
+
+
 class MigrationLog:
     def __init__(self) -> None:
-        self.events: dict[UUID, list[dict[str, Any]]] = {}
-        self.changed: dict[UUID, asyncio.Event] = {}
         #: How long a stream waits for another event before ending.
         self.idle = 25.0
+        #: How often a waiting stream looks for one.
+        self.poll = 0.5
 
-    def record(
-        self, box_id: UUID, operation_id: str, phase: int, detail: str = ""
+    async def record(
+        self,
+        redis: Redis,
+        box_id: UUID,
+        operation_id: str,
+        phase: int,
+        detail: str = "",
     ) -> None:
-        events = self.events.setdefault(box_id, [])
-        events.append(
-            {
-                "phase": phase,
-                "detail": detail,
-                "atMs": str(int(utc_now().timestamp() * 1000)),
-                "offsetKey": str(len(events) + 1),
-                "operationId": operation_id,
-            }
+        key = _migration_key(box_id)
+        await redis.rpush(
+            key,
+            json.dumps(
+                {
+                    "phase": phase,
+                    "detail": detail,
+                    "atMs": str(int(utc_now().timestamp() * 1000)),
+                    "operationId": operation_id,
+                }
+            ),
         )
-        event = self.changed.setdefault(box_id, asyncio.Event())
-        event.set()
-        event.clear()
+        await redis.expire(key, MIGRATION_TTL_S)
 
     async def watch(
-        self, box_id: UUID, from_offset_key: str, include_finished: bool
+        self,
+        redis: Redis,
+        box_id: UUID,
+        from_offset_key: str,
+        include_finished: bool,
     ) -> AsyncIterator[dict[str, Any]]:
+        """Each event after `from_offset_key` (its 1-based place in the
+        list), then each new one, until none comes for `idle` seconds."""
+        key = _migration_key(box_id)
         after = int(from_offset_key) if from_offset_key.isdigit() else 0
+        quiet_since = time.monotonic()
         while True:
-            events = self.events.get(box_id, [])
-            pending = [e for e in events if int(e["offsetKey"]) > after]
-            for event in pending:
-                after = int(event["offsetKey"])
+            raw = await redis.lrange(key, after, -1)
+            if raw:
+                quiet_since = time.monotonic()
+            for item in raw:
+                after += 1
+                event = {**json.loads(item), "offsetKey": str(after)}
                 if not include_finished and event["phase"] in (
                     PHASE_DONE,
                     PHASE_FAILED,
                 ):
                     continue
                 yield event
-            waiter = self.changed.setdefault(box_id, asyncio.Event())
-            try:
-                await asyncio.wait_for(waiter.wait(), timeout=self.idle)
-            except TimeoutError:
+            waited = time.monotonic() - quiet_since
+            if waited >= self.idle:
                 return
+            await asyncio.sleep(min(self.poll, self.idle - waited))
 
 
 migrations = MigrationLog()
@@ -561,6 +587,7 @@ class BoxBrokerService:
         db: AsyncSession,
         caller: DesktopSession,
         *,
+        redis: Redis,
         preserve_data: bool,
         force: bool,
     ) -> RecreateOutcome:
@@ -586,7 +613,8 @@ class BoxBrokerService:
             )
         operation_id = uuid4().hex
         workspace, data = self.volumes(box.id)
-        migrations.record(
+        await migrations.record(
+            redis,
             box.id,
             operation_id,
             PHASE_CREATING,
@@ -599,8 +627,8 @@ class BoxBrokerService:
                 await self.check_capacity(repository, host, box)
             if state is not None:
                 if not preserve_data:
-                    migrations.record(
-                        box.id, operation_id, PHASE_WIPING, "Removing the files"
+                    await migrations.record(
+                        redis, box.id, operation_id, PHASE_WIPING, "Removing the files"
                     )
                 await host.remove(
                     box.provider_box_id,
@@ -617,10 +645,14 @@ class BoxBrokerService:
             box.hibernated_at = None
             await repository.update(box, flush=True)
         except BoxHostError as error:
-            migrations.record(box.id, operation_id, PHASE_FAILED, str(error))
+            await migrations.record(
+                redis, box.id, operation_id, PHASE_FAILED, str(error)
+            )
             log.warning("sand.box.recreate.failed", box=str(box.id), error=str(error))
             return RecreateOutcome(started=False, reason=str(error))
-        migrations.record(box.id, operation_id, PHASE_DONE, "The computer is back")
+        await migrations.record(
+            redis, box.id, operation_id, PHASE_DONE, "The computer is back"
+        )
         log.info(
             "sand.box.recreate",
             box=str(box.id),
