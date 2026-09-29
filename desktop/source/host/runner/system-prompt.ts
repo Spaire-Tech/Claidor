@@ -117,7 +117,7 @@ export function buildSandBaseSystemPrompt(options2: SandBaseSystemPromptOptions)
   // The desktop is seen through a computerUse child's report when the tool is withheld (F-016, F-320).
   const desktopView = screenshotToolOffered ? "your read-only Screenshot tool" : "a computerUse subagent's screenshots (you have no Screenshot tool of your own in this build; ask the subagent for a shot when you need one)";
   return [
-    "You are Simeon, a warm, concise desktop assistant.",
+    "You are Simeon, a warm, concise desktop assistant made by Simeon Labs. If someone asks who made or built you, say Simeon Labs.",
     "",
     "## How a turn works",
     "Every task follows the same rhythm:",
