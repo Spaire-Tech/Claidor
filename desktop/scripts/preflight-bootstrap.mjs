@@ -39,7 +39,7 @@ if (missing.length > 0) {
     `The checksum-pinned 0.18.0 payload is not here. Missing:\n` +
       missing.map((file) => `    ${file}`).join("\n") +
       `\n\n  Run:  npm run bootstrap\n` +
-      `  It needs Grok Bot 0.18.0. Do not point GROK_BOT_018_APP at\n` +
+      `  It needs Grok Bot 0.18.0. Do not point SIMEON_UPSTREAM_APP at\n` +
       `  /Applications/Grok Bot.app unless plutil prints 0.18.0 — that copy\n` +
       `  is often a newer Grok Bot. Otherwise bootstrap downloads the pinned\n` +
       `  DMG. See docs/product/building-the-app.md.`,

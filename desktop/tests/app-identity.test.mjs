@@ -17,8 +17,8 @@ async function loadModule(entry, name) {
   return { module: await import(`${pathToFileURL(output).href}?${Date.now()}`), dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
-test("the app is com.claidor.simeon and claims simeon://, and only that", () => {
-  assert.equal(simeonBundleId, "com.claidor.simeon");
+test("the app is com.simeonlabs.simeon and claims simeon://, and only that", () => {
+  assert.equal(simeonBundleId, "com.simeonlabs.simeon");
   assert.equal(simeonUrlScheme, "simeon");
 });
 

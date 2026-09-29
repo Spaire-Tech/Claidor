@@ -181,7 +181,7 @@ test("the box is created with its credentials in its environment, no token file,
     assert.doesNotMatch(source, /dst=\/run\/grok-bot/, "no token folder is mounted from the Mac");
     assert.doesNotMatch(source, /function (startInferenceCredentialKeepFresh|persistInferenceCredential|refreshInferenceCredentialFile)\b/, "the Mac no longer writes a token for the box");
     assert.match(source, /"--env", `SAND_BOX_STREAM_NETWORK_TOKEN=\$\{streamToken\}`/);
-    assert.match(source, /"--label", `com\.grok-bot\.local-vm\.credentials-sha256=\$\{credentialsSha256\}`/);
+    assert.match(source, /"--label", `\$\{LOCAL_DOCKER_LABEL_PREFIX\}\.credentials-sha256=\$\{credentialsSha256\}`/);
     assert.match(source, /const credential = await ensureBoxCredential\(settings\.settingsPath, remote\.issueBoxRenewalCredential == null \? undefined : \(\) => remote\.issueBoxRenewalCredential!\(\)\);/);
     assert.match(source, /return credential !== before \? await queuedEnsure\(settings\.settingsPath\) : connection;/, "a fresh mint replaces a box started without it, at connect");
   } finally {

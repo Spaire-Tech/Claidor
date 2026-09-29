@@ -7,7 +7,9 @@ import { isPathWithin } from "../shared/node/paths.js";
 import { findSystemErrno } from "../shared/system-errno.js";
 
 export const SAND_DATA_ROOT_ENV = "SAND_DATA_ROOT";
-export const SAND_PRODUCTION_DATA_DIRNAME = ".caisra";
+export const SAND_PRODUCTION_DATA_DIRNAME = ".simeon";
+/** The data root's name until 29 September 2026; moved to `~/.simeon` once, at startup. */
+export const PREVIOUS_PRODUCTION_DATA_DIRNAME = ".caisra";
 export const SAND_USER_DATA_DIR_ENV = "SAND_USER_DATA_DIR";
 export const SAND_DATA_DIRNAME = "sand-data";
 export const USER_DATA_DIR_FLAG = "--user-data-dir";
@@ -57,6 +59,7 @@ export function resolveSandUserDataDir(argv: readonly string[] = [], env: NodeJS
 }
 
 export function getSandProductionRootDir(homeDir = homedir()): string { return join(homeDir, SAND_PRODUCTION_DATA_DIRNAME); }
+export function getPreviousProductionRootDir(homeDir = homedir()): string { return join(homeDir, PREVIOUS_PRODUCTION_DATA_DIRNAME); }
 
 export function resolveSandDataRootOverride(env: NodeJS.ProcessEnv = process.env): string | null {
   const override = env[SAND_DATA_ROOT_ENV]?.trim();

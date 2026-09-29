@@ -30,7 +30,7 @@ async function loadMigration() {
   return { module, temporary, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
-test("a packaged Simeon leaves Grok Bot's ~/.cursor/sand alone and takes ~/.caisra", async () => {
+test("a packaged Simeon leaves another app's ~/.cursor/sand alone and takes ~/.simeon", async () => {
   const loaded = await loadMigration();
   try {
     const home = path.join(loaded.temporary, "home");
@@ -46,16 +46,74 @@ test("a packaged Simeon leaves Grok Bot's ~/.cursor/sand alone and takes ~/.cais
     });
     assert.equal(settlement.route, "canonical");
     assert.equal(settlement.reason, "canonical-fresh");
-    assert.equal(settlement.root, path.join(home, ".caisra"));
+    assert.equal(settlement.root, path.join(home, ".simeon"));
     assert.ok(existsSync(grokBotRoot), "Grok Bot's root is still there");
     assert.ok(existsSync(path.join(grokBotRoot, "agents.json")));
-    assert.equal(existsSync(path.join(home, ".caisra", loaded.module.DATA_ROOT_MARKER_FILENAME)), true);
+    assert.equal(existsSync(path.join(home, ".simeon", loaded.module.DATA_ROOT_MARKER_FILENAME)), true);
     // Never idle-legacy-writer, so the startup move check never retires that daemon.
     assert.notEqual(settlement.reason, "idle-legacy-writer");
-    // The existing-root resolver answers ~/.caisra even when only ~/.cursor/sand exists.
+    // The existing-root resolver answers ~/.simeon even when only ~/.cursor/sand exists.
     const other = path.join(loaded.temporary, "home2");
     await mkdir(path.join(other, ".cursor", "sand"), { recursive: true });
-    assert.equal(loaded.module.resolveExistingSandProductionRootDir(other), path.join(other, ".caisra"));
+    assert.equal(loaded.module.resolveExistingSandProductionRootDir(other), path.join(other, ".simeon"));
+  } finally {
+    await loaded.dispose();
+  }
+});
+
+const packaged = (home, extra = {}) => ({ isPackaged: true, isLabBuild: false, hasDataRootOverride: false, hasIsolatedUserData: false, homeDir: home, isProcessAlive: () => false, isSandHostProcess: () => false, ...extra });
+
+test("~/.caisra is moved to ~/.simeon once, whole, with its contents", async () => {
+  const loaded = await loadMigration();
+  try {
+    const home = path.join(loaded.temporary, "home");
+    const previous = path.join(home, ".caisra");
+    await mkdir(path.join(previous, "agents"), { recursive: true });
+    await writeFile(path.join(previous, ".grokbot-data-root-v1"), '{"version":1}\n');
+    await writeFile(path.join(previous, "vendor-mcp-installs.json"), '{"linear":{}}');
+    const settlement = loaded.module.settleStartupDataRoot(packaged(home));
+    assert.deepEqual(settlement, { route: "canonical", reason: "migrated", root: path.join(home, ".simeon") });
+    assert.equal(existsSync(previous), false);
+    assert.equal(await readFile(path.join(home, ".simeon", "vendor-mcp-installs.json"), "utf8"), '{"linear":{}}');
+    assert.ok(existsSync(path.join(home, ".simeon", "agents")));
+    // The next start finds ~/.simeon and changes nothing.
+    assert.equal(loaded.module.settleStartupDataRoot(packaged(home)).reason, "canonical-existing");
+  } finally {
+    await loaded.dispose();
+  }
+});
+
+test("while a host of the earlier build holds ~/.caisra, this run keeps it and nothing moves", async () => {
+  const loaded = await loadMigration();
+  try {
+    const home = path.join(loaded.temporary, "home");
+    const previous = path.join(home, ".caisra");
+    await mkdir(previous, { recursive: true });
+    await writeFile(path.join(previous, "host.lock"), "4242");
+    await writeFile(path.join(previous, "settings.json"), "{}");
+    const settlement = loaded.module.settleStartupDataRoot(packaged(home, {
+      isProcessAlive: (pid) => pid === 4242, isSandHostProcess: (pid) => pid === 4242,
+      rename: () => { throw new Error("rename must not be attempted"); },
+    }));
+    assert.deepEqual(settlement, { route: "legacy", reason: "live-legacy-host", root: previous });
+    assert.ok(existsSync(path.join(previous, "settings.json")));
+    assert.equal(existsSync(path.join(home, ".simeon")), false);
+  } finally {
+    await loaded.dispose();
+  }
+});
+
+test("with ~/.simeon already there, ~/.caisra is left as it is", async () => {
+  const loaded = await loadMigration();
+  try {
+    const home = path.join(loaded.temporary, "home");
+    await mkdir(path.join(home, ".caisra"), { recursive: true });
+    await writeFile(path.join(home, ".caisra", "settings.json"), "{}");
+    await mkdir(path.join(home, ".simeon"), { recursive: true });
+    await writeFile(path.join(home, ".simeon", "settings.json"), "{}");
+    const settlement = loaded.module.settleStartupDataRoot(packaged(home, { rename: () => { throw new Error("rename must not be attempted"); } }));
+    assert.equal(settlement.root, path.join(home, ".simeon"));
+    assert.ok(existsSync(path.join(home, ".caisra", "settings.json")));
   } finally {
     await loaded.dispose();
   }

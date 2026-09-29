@@ -11,6 +11,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
 import {
+  getPreviousProductionRootDir,
   getSandProductionRootDir,
   resolveSandDataRootOverride,
   SAND_DATA_ROOT_ENV,
@@ -18,11 +19,14 @@ import {
 import { isSandHostProcess } from "../../host/host-lock.js";
 import { findSystemErrno } from "../../shared/system-errno.js";
 
-export const DATA_ROOT_MARKER_FILENAME = ".grokbot-data-root-v1";
+export const DATA_ROOT_MARKER_FILENAME = ".simeon-data-root-v1";
+/** The marker's name in roots made before 29 September 2026. */
+export const PREVIOUS_DATA_ROOT_MARKER_FILENAME = ".grokbot-data-root-v1";
 export const LOCAL_EXEC_DAEMON_DISCOVERY_FILENAME = "local-exec-daemon.json";
 export const HOST_LOCK_FILENAME = "host.lock";
 export const SAND_ROOT_SIGNATURE_ENTRIES = new Set([
   DATA_ROOT_MARKER_FILENAME,
+  PREVIOUS_DATA_ROOT_MARKER_FILENAME,
   LOCAL_EXEC_DAEMON_DISCOVERY_FILENAME,
   HOST_LOCK_FILENAME,
   "agents",
@@ -74,8 +78,10 @@ export function defaultIsProcessAlive(pid: number): boolean {
 }
 
 export function hasDataRootMarker(root: string): boolean {
-  const inspected = attemptSync(() => lstatSync(join(root, DATA_ROOT_MARKER_FILENAME)));
-  return inspected.ok && inspected.value.isFile();
+  return [DATA_ROOT_MARKER_FILENAME, PREVIOUS_DATA_ROOT_MARKER_FILENAME].some((name) => {
+    const inspected = attemptSync(() => lstatSync(join(root, name)));
+    return inspected.ok && inspected.value.isFile();
+  });
 }
 
 export function markDataRoot(root: string): boolean {
@@ -197,18 +203,38 @@ export function settleStartupDataRoot(options: SettleStartupDataRootOptions): Da
 
   const legacyRoot = getLegacySandProductionRootDir(options.homeDir);
   const canonicalRoot = getSandProductionRootDir(options.homeDir);
-  // 25 September 2026 (F-217): `~/.cursor/sand` is a real Grok Bot's data
-  // root, never Simeon's. Until today a packaged Simeon that found it with
-  // no live host or daemon renamed it into `~/.caisra` (and the startup
-  // move check retired its idle local-exec daemon), which took an installed
-  // Grok Bot's data away from it. Simeon's root is `~/.caisra`, whatever
-  // sits beside it; the probes and `migrateLegacyRoot` stay exported for the record and are not run.
+  const moved = movePreviousRoot(options, getPreviousProductionRootDir(options.homeDir), canonicalRoot);
+  if (moved != null) return moved;
+  // `~/.cursor/sand` belongs to another app and is never Simeon's: it is
+  // left alone, whatever sits beside it.
   return settleWithoutLegacy(legacyRoot, canonicalRoot);
 }
 
+/**
+ * Simeon's data root was `~/.caisra` until 29 September 2026 and is
+ * `~/.simeon` since. The first start that finds only the earlier one moves
+ * it, whole, with a rename, so nothing is copied and nothing is lost. While
+ * a host or local-exec daemon of the earlier build still holds it, this run
+ * keeps using it and the move waits for a later start. Null when there is
+ * nothing to move: `~/.simeon` exists, or `~/.caisra` does not, or holds
+ * something that is not a Simeon root.
+ */
+function movePreviousRoot(options: SettleStartupDataRootOptions, previousRoot: string, canonicalRoot: string): DataRootSettlement | null {
+  if (inspectDataRootDirectory(canonicalRoot) !== "absent") return null;
+  if (inspectDataRootDirectory(previousRoot) !== "directory") return null;
+  if (!hasDataRootMarker(previousRoot) && readCanonicalOccupancy(previousRoot) !== "sand") return null;
+  const isProcessAlive = options.isProcessAlive ?? defaultIsProcessAlive;
+  const host = probeLegacyHost(previousRoot, isProcessAlive, options.isSandHostProcess ?? isSandHostProcess);
+  if (host === "live") return { route: "legacy", reason: "live-legacy-host", root: previousRoot };
+  if (host === "unknown") return { route: "legacy", reason: "unknown-legacy-writer", root: previousRoot };
+  const writer = probeLegacyWriter(previousRoot, isProcessAlive);
+  if (writer.kind === "live") return { route: "legacy", reason: writer.inflightCount > 0 ? "busy-legacy-writer" : "idle-legacy-writer", root: previousRoot, pid: writer.pid };
+  if (writer.kind === "unknown") return { route: "legacy", reason: "unknown-legacy-writer", root: previousRoot };
+  return migrateLegacyRoot({ legacyRoot: previousRoot, canonicalRoot, rename: options.rename ?? renameSync });
+}
+
 export function resolveExistingSandProductionRootDir(homeDir = homedir()): string {
-  // Always `~/.caisra` (F-217): until 25 September 2026 a missing canonical
-  // root fell back to Grok Bot's own `~/.cursor/sand`, shared live.
+  // Always Simeon's own root, never another app's.
   return getSandProductionRootDir(homeDir);
 }
 

@@ -21,35 +21,34 @@ export const fidelityCandidateManifest = path.join(fidelityBuildDir, "release-ca
 export const fidelityE2ECandidateManifest = path.join(fidelityBuildDir, "e2e-candidate.json");
 export const fidelityReleaseEvidenceDir = path.join(fidelityBuildDir, "release-evidence");
 export const outputDir = path.join(repoRoot, "dist");
-const configuredOutputName = process.env.GROK_BOT_OUTPUT_APP_NAME?.trim();
+const configuredOutputName = process.env.SIMEON_OUTPUT_APP_NAME?.trim();
 export const outputApp = path.join(
   outputDir,
   // The bundle on disk, its display name, its executable and its helper
   // bundles all carry the product's name (scripts/lib/macos-bundle-rename.mjs).
   configuredOutputName ? path.basename(configuredOutputName) : "Simeon.app"
 );
-export const fidelityOutputApp = path.join(outputDir, "Grok Bot 0.18 Fidelity.app");
+export const fidelityOutputApp = path.join(outputDir, "Simeon Fidelity.app");
 export const fidelityOutputAppForAsarHash = asarHash => {
   if (!/^[0-9a-f]{64}$/.test(asarHash)) throw new TypeError("A full lowercase ASAR SHA-256 is required");
-  return path.join(outputDir, `Grok Bot 0.18 Fidelity-${asarHash.slice(0, 12)}.app`);
+  return path.join(outputDir, `Simeon Fidelity-${asarHash.slice(0, 12)}.app`);
 };
 export const fidelityInstalledAppForAsarHash = asarHash => path.join("/Applications", path.basename(fidelityOutputAppForAsarHash(asarHash)));
 export const recoveredFrontendDir = path.join(repoRoot, "recovered", "frontend");
 export const recoveredRendererDir = path.join(recoveredFrontendDir, "app");
 export const frontendDir = path.join(repoRoot, "frontend");
-export const devOutputApp = path.join(outputDir, "Grok Bot 0.18 Dev.app");
+export const devOutputApp = path.join(outputDir, "Simeon Dev.app");
 export const devProfileDir = path.join(cacheDir, "dev-profile");
 
 export const upstreamVersion = "0.18.0";
 /**
- * The app's own identity, since 23 September 2026 ("com.claidor.simeon is
- * fine"). Until then it was com.anysphere.sand.reconstructed, Grok Bot's
- * maker's name with a suffix. macOS keys the Keychain access to safeStorage
+ * The app's own identity. macOS keys the Keychain access to safeStorage
  * secrets and the privacy grants (screen recording, accessibility,
  * automation) on this, so the person may sign in once more and grant them
- * again after the first build carrying it.
+ * again after the first build carrying a new one. It was
+ * com.claidor.simeon until 29 September 2026.
  */
-export const simeonBundleId = "com.claidor.simeon";
+export const simeonBundleId = "com.simeonlabs.simeon";
 /** The URL scheme the bundle claims; must equal SAND_DEEP_LINK_SCHEME in source/shared/desktop.ts. */
 export const simeonUrlScheme = "simeon";
 export const simeonName = process.env.SIMEON_DISPLAY_NAME?.trim() || "Simeon";
@@ -76,7 +75,7 @@ export const simeonExecutableName = simeonName;
  *
  * Both names are required and neither is redundant: `SAND_BACKEND_URL` is read
  * only by `getConfiguredBackendUrl`, while the login manager that actually
- * opens the browser reads `CURSOR_API_BASE_URL` and `CURSOR_WEBSITE_URL` and
+ * opens the browser reads `SIMEON_API_BASE_URL` and `SIMEON_WEBSITE_URL` and
  * nothing else. Measured — see `docs/product/app-sign-in.md`.
  *
  * `SAND_AUTH_CLIENT_ID` is deliberately absent: setting it makes
@@ -84,12 +83,12 @@ export const simeonExecutableName = simeonName;
  * unconditionally, which is a token rotation before every model call.
  */
 export const packagedEnvironment = Object.freeze({
-  CURSOR_API_BASE_URL: process.env.SIMEON_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
-  CURSOR_WEBSITE_URL: process.env.SIMEON_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
+  SIMEON_API_BASE_URL: process.env.SIMEON_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
+  SIMEON_WEBSITE_URL: process.env.SIMEON_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
   SAND_BACKEND_URL: process.env.SIMEON_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
 });
-export const fidelityBundleId = "com.anysphere.sand.reconstructed.fidelity";
-export const fidelityName = "Grok Bot 0.18 Fidelity";
+export const fidelityBundleId = "com.simeonlabs.simeon.fidelity";
+export const fidelityName = "Simeon Fidelity";
 export const dmgUrl = "https://downloads.cursor.com/grokbot/stable/darwin-arm64/0.18.0/Grok_Bot_0.18.0.dmg";
 export const dmgSha256 = "a253ccd8aab01e083f9812a0264354c5034d8ba7f0610bbb557e82ae77d203eb";
 export const upstreamAsarSha256 = "6665408168466f9cacc6087e917890c17f59d2e2e9c2404a5c4a59ad79c1de58";

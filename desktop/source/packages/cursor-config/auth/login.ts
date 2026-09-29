@@ -10,8 +10,8 @@ export interface LoginLinkHandler { openUrl(url: string): Promise<void> }
 
 function stripTrailingSlashes(url: string): string { return url.replace(/\/+$/, ""); }
 // With no environment named, the login manager goes to Simeon Labs' API host (which serves sign-in at its root), not Cursor's (25 September 2026, F-227).
-function resolveWebsiteUrl(url?: string): string { return stripTrailingSlashes(url ?? process.env.CURSOR_WEBSITE_URL ?? "https://api.simeonlabs.com"); }
-function resolveApiBaseUrl(url?: string): string { return stripTrailingSlashes(url ?? process.env.CURSOR_API_BASE_URL ?? "https://api.simeonlabs.com"); }
+function resolveWebsiteUrl(url?: string): string { return stripTrailingSlashes(url ?? process.env.SIMEON_WEBSITE_URL ?? "https://api.simeonlabs.com"); }
+function resolveApiBaseUrl(url?: string): string { return stripTrailingSlashes(url ?? process.env.SIMEON_API_BASE_URL ?? "https://api.simeonlabs.com"); }
 function base64UrlEncode(bytes: Uint8Array): string { return Buffer.from(bytes).toString("base64url"); }
 function sha256(data: string): Buffer { return createHash("sha256").update(data).digest(); }
 

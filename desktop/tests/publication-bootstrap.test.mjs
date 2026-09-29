@@ -70,7 +70,7 @@ test("a newer Applications Grok Bot is not the 0.18.0 runtime", () => {
   });
   assert.equal(newer.kind, "missing");
   assert.match(newer.message, /0\.57\.1/);
-  assert.match(newer.message, /Unset GROK_BOT_018_APP/);
+  assert.match(newer.message, /Unset SIMEON_UPSTREAM_APP/);
 
   const fallback = selectRuntimeSource({
     configuredPath: "/Applications/Grok Bot.app",

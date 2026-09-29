@@ -111,9 +111,9 @@ test("the local box is Simeon's own container, on the volumes it always had", as
       path.join(repoRoot, "source/electron-main/box/local-docker-host-connector.ts"),
       "utf8",
     );
-    // The rename must not lose the person's workspace or the host's data:
-    // the renamed container mounts the same two volumes.
-    assert.match(source, /"--volume", "grok-bot-local-vm-workspace:\/workspace", "--volume", "grok-bot-local-vm-data:\/home\/box\/sand-data"/);
+    // The container mounts Simeon-named volumes (internal testing only;
+    // people run on the cloud computer).
+    assert.match(source, /"--volume", "simeon-box-workspace:\/workspace", "--volume", "simeon-box-data:\/home\/box\/sand-data"/);
     // Every docker call names the container through the constant, never by a literal.
     assert.doesNotMatch(source, /"(?:inspect|start|stop|restart|rm|logs|run)"[^\n]*"grok-bot-local-vm"/);
   } finally {
@@ -139,7 +139,7 @@ test("the local Docker box is always told our backend, credential or not", async
     assert.equal(withCredential.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
     assert.equal(withCredential.SAND_INFERENCE_RENEWAL_CREDENTIAL, "claidor_db_box");
 
-    const fromCursorVariable = envOf(localDockerInferenceEnvironmentArguments(undefined, { CURSOR_API_BASE_URL: "https://api.simeonlabs.com" }));
+    const fromCursorVariable = envOf(localDockerInferenceEnvironmentArguments(undefined, { SIMEON_API_BASE_URL: "https://api.simeonlabs.com" }));
     assert.equal(fromCursorVariable.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
   } finally {
     await loaded.dispose();

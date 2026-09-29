@@ -26,18 +26,17 @@ export function localDockerBoxImageReference(env: NodeJS.ProcessEnv = process.en
   const digest = env.SAND_BOX_IMAGE_DIGEST?.trim().toLowerCase().replace(/^sha256:/, "") ?? "";
   return /^[0-9a-f]{64}$/.test(digest) ? `${LOCAL_DOCKER_BOX_IMAGE}@sha256:${digest}` : LOCAL_DOCKER_BOX_IMAGE;
 }
-// The container carries our own name. Until 23 September 2026 it was
-// "grok-bot-local-vm", the name this tree's origin (Grok Bot 0.18) gave its
-// own local mode, so an installed Grok Bot and Simeon would have contended
-// for one container, and the replace below would have removed the other's.
-// The two volumes keep their names on purpose: the workspace and the host's
-// data carry over to the renamed container unchanged. A leftover
-// "grok-bot-local-vm" is not removed by this app, because the same name may
-// be the real Grok Bot's; `docker rm -f grok-bot-local-vm` by hand, once,
-// after checking that it mounts our host bundle.
+// The container, its two volumes and its labels carry Simeon's names. A
+// container made before 29 September 2026 carries the earlier owner label
+// (LEGACY_LOCAL_DOCKER_LABEL_PREFIX); it still counts as ours, so it is
+// replaced like any stale one, and it starts on fresh volumes. This path is
+// for internal testing only (SAND_BOX_RUNTIME=local-docker); people run on
+// the cloud computer.
 export const LOCAL_DOCKER_BOX_CONTAINER = "simeon-box";
 export const LOCAL_DOCKER_GATEWAY_URL = "http://127.0.0.1:1340";
-export const LOCAL_DOCKER_OWNER_LABEL = "com.grok-bot.local-vm=1";
+const LOCAL_DOCKER_LABEL_PREFIX = "com.simeonlabs.box";
+const LEGACY_LOCAL_DOCKER_LABEL_PREFIX = "com.grok-bot.local-vm";
+export const LOCAL_DOCKER_OWNER_LABEL = `${LOCAL_DOCKER_LABEL_PREFIX}=1`;
 // 11 since 26 September 2026: the stream is published through the host's
 // token guard instead of websockify's bare ports (ledger F-135). 12 the same
 // day: the box's credentials reach it in its environment, the way Grok Bot's
@@ -310,12 +309,12 @@ async function inspectContainer(): Promise<{ exists: boolean; running: boolean; 
     return {
       exists: true,
       running: value.State?.Running === true,
-      owned: value.Config?.Labels?.["com.grok-bot.local-vm"] === "1",
+      owned: value.Config?.Labels?.[LOCAL_DOCKER_LABEL_PREFIX] === "1" || value.Config?.Labels?.[LEGACY_LOCAL_DOCKER_LABEL_PREFIX] === "1",
       image: typeof value.Config?.Image === "string" ? value.Config.Image : "",
-      hostSha256: typeof value.Config?.Labels?.["com.grok-bot.local-vm.host-sha256"] === "string" ? value.Config.Labels["com.grok-bot.local-vm.host-sha256"] as string : "",
-      hasInferenceCredential: value.Config?.Labels?.["com.grok-bot.local-vm.inference-credential"] === "1",
-      schemaVersion: typeof value.Config?.Labels?.["com.grok-bot.local-vm.schema-version"] === "string" ? value.Config.Labels["com.grok-bot.local-vm.schema-version"] as string : "",
-      credentialsSha256: typeof value.Config?.Labels?.["com.grok-bot.local-vm.credentials-sha256"] === "string" ? value.Config.Labels["com.grok-bot.local-vm.credentials-sha256"] as string : "",
+      hostSha256: typeof value.Config?.Labels?.[`${LOCAL_DOCKER_LABEL_PREFIX}.host-sha256`] === "string" ? value.Config.Labels[`${LOCAL_DOCKER_LABEL_PREFIX}.host-sha256`] as string : "",
+      hasInferenceCredential: value.Config?.Labels?.[`${LOCAL_DOCKER_LABEL_PREFIX}.inference-credential`] === "1",
+      schemaVersion: typeof value.Config?.Labels?.[`${LOCAL_DOCKER_LABEL_PREFIX}.schema-version`] === "string" ? value.Config.Labels[`${LOCAL_DOCKER_LABEL_PREFIX}.schema-version`] as string : "",
+      credentialsSha256: typeof value.Config?.Labels?.[`${LOCAL_DOCKER_LABEL_PREFIX}.credentials-sha256`] === "string" ? value.Config.Labels[`${LOCAL_DOCKER_LABEL_PREFIX}.credentials-sha256`] as string : "",
     };
   } catch { throw new Error("Docker returned malformed container inspection data."); }
 }
@@ -452,11 +451,11 @@ async function ensureLocalDockerBoxNarrated(settingsPath: string): Promise<Gatew
     const authMounts = await localAuthMountArguments();
     const created = await runDocker([
       "run", "--detach", "--name", LOCAL_DOCKER_BOX_CONTAINER,
-      "--label", LOCAL_DOCKER_OWNER_LABEL, "--label", `com.grok-bot.local-vm.host-sha256=${hostBundle.sha256}`,
-      "--label", `com.grok-bot.local-vm.box-exec-daemon-sha256=${hostBundle.boxExecDaemonSha256}`,
-      "--label", `com.grok-bot.local-vm.inference-credential=${boxCredential == null ? "0" : "1"}`,
-      "--label", `com.grok-bot.local-vm.schema-version=${LOCAL_DOCKER_SCHEMA_VERSION}`,
-      "--label", `com.grok-bot.local-vm.credentials-sha256=${credentialsSha256}`,
+      "--label", LOCAL_DOCKER_OWNER_LABEL, "--label", `${LOCAL_DOCKER_LABEL_PREFIX}.host-sha256=${hostBundle.sha256}`,
+      "--label", `${LOCAL_DOCKER_LABEL_PREFIX}.box-exec-daemon-sha256=${hostBundle.boxExecDaemonSha256}`,
+      "--label", `${LOCAL_DOCKER_LABEL_PREFIX}.inference-credential=${boxCredential == null ? "0" : "1"}`,
+      "--label", `${LOCAL_DOCKER_LABEL_PREFIX}.schema-version=${LOCAL_DOCKER_SCHEMA_VERSION}`,
+      "--label", `${LOCAL_DOCKER_LABEL_PREFIX}.credentials-sha256=${credentialsSha256}`,
       "--platform", "linux/amd64", "--restart", "unless-stopped",
       "--env", "SAND_SUPERVISOR_ENABLED=1", "--env", "SAND_BOX_AUTO_UPDATE=0", "--env", "SAND_USE_EXISTING_BOX_EXEC_DAEMON=1",
       // The host's data root is the volume below, said here rather than left to the image's environment (F-362).
@@ -471,7 +470,7 @@ async function ensureLocalDockerBoxNarrated(settingsPath: string): Promise<Gatew
       // web page open on the Mac could drive the agent's desktop.
       "--publish", "127.0.0.1:1340:1340",
       ...LOCAL_DOCKER_STREAM_PUBLISH.flatMap((mapping) => ["--publish", mapping]),
-      "--volume", "grok-bot-local-vm-workspace:/workspace", "--volume", "grok-bot-local-vm-data:/home/box/sand-data",
+      "--volume", "simeon-box-workspace:/workspace", "--volume", "simeon-box-data:/home/box/sand-data",
       "--mount", `type=bind,src=${hostBundle.path},dst=/home/box/sand-host/host-main.cjs,readonly`,
       "--mount", `type=bind,src=${dirname(hostBundle.boxExecDaemonPath)},dst=/home/box/box-exec-daemon,readonly`,
       ...authMounts,
