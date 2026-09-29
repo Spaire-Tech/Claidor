@@ -65,14 +65,14 @@ test("a routed turn completes when every box call fails", async () => {
     process.env.SAND_INFERENCE_PROVIDER = "openrouter";
     const router = loaded.module.createCoordinatorInferenceRouter({
       dataDir,
-      env: { SAND_CLAIDOR_FULL_AGENT: "off", SAND_INFERENCE_PROVIDER: "openrouter" },
+      env: { SAND_SIMEON_FULL_AGENT: "off", SAND_INFERENCE_PROVIDER: "openrouter" },
       postEvent: (family, payload) => events.push({ family, payload }),
       dispatchRemote: async (method) => { remoteCalls.push(method); throw new Error(`box unreachable (${method})`); },
     });
 
     const result = await router.dispatch("sendPrompt", { agentId: "agent-1", prompt: "hello", clientNonce: "nonce-1" });
     assert.equal(result.handled, true);
-    assert.equal(result.value.provider, "claidor");
+    assert.equal(result.value.provider, "simeon");
 
     await waitFor(() => events.some((event) => event.family === "transcript" && event.payload.entry?.kind === "send-message"));
 
@@ -105,19 +105,19 @@ test("a routed turn completes when every box call fails", async () => {
   }
 });
 
-test("choosing a hello card continues on Mac Claidor without a host runner turn", async () => {
+test("choosing a hello card continues on Mac Simeon without a host runner turn", async () => {
   const loaded = await loadRouter();
   try {
     const events = [];
     const remoteCalls = [];
     const dataDir = path.join(loaded.dataDir, "data");
     await mkdir(dataDir, { recursive: true });
-    await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "claidor" }));
+    await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "simeon" }));
     await writeFile(path.join(dataDir, "inference-router-transcript.json"), JSON.stringify({
       schemaVersion: 2,
       agents: {
         "agent-1": [{
-          provider: "claidor",
+          provider: "simeon",
           role: "assistant",
           content: "",
           message: { type: "widget", widget: { prompt: "What first?", options: [{ label: "Research", value: "research" }] } },
@@ -128,7 +128,7 @@ test("choosing a hello card continues on Mac Claidor without a host runner turn"
     }));
     const router = loaded.module.createCoordinatorInferenceRouter({
       dataDir,
-      env: { SAND_CLAIDOR_FULL_AGENT: "off" },
+      env: { SAND_SIMEON_FULL_AGENT: "off" },
       postEvent: (family, payload) => events.push({ family, payload }),
       dispatchRemote: async (method, args) => {
         remoteCalls.push({ method, args });
@@ -167,10 +167,10 @@ test("a leftover hung Docker host cannot swallow a card tap", async () => {
     const events = [];
     const dataDir = path.join(loaded.dataDir, "data");
     await mkdir(dataDir, { recursive: true });
-    await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "claidor" }));
+    await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "simeon" }));
     const router = loaded.module.createCoordinatorInferenceRouter({
       dataDir,
-      env: { SAND_CLAIDOR_FULL_AGENT: "off" },
+      env: { SAND_SIMEON_FULL_AGENT: "off" },
       postEvent: (family, payload) => events.push({ family, payload }),
       dispatchRemote: () => new Promise(() => {}),
     });
@@ -199,7 +199,7 @@ test("the transcript tail still answers from local history when the box is down"
     }));
     const router = loaded.module.createCoordinatorInferenceRouter({
       dataDir,
-      env: { SAND_CLAIDOR_FULL_AGENT: "off", SAND_INFERENCE_PROVIDER: "codex" },
+      env: { SAND_SIMEON_FULL_AGENT: "off", SAND_INFERENCE_PROVIDER: "codex" },
       postEvent: () => {},
       dispatchRemote: async () => { throw new Error("box unreachable"); },
     });
@@ -223,7 +223,7 @@ test("Mac follow-ups keep the host intro in the model history", async () => {
     await mkdir(dataDir, { recursive: true });
     const router = loaded.module.createCoordinatorInferenceRouter({
       dataDir,
-      env: { SAND_CLAIDOR_FULL_AGENT: "off" },
+      env: { SAND_SIMEON_FULL_AGENT: "off" },
       postEvent: (family, payload) => events.push({ family, payload }),
       dispatchRemote: async (method) => {
         if (method === "getAgentTranscriptTail") {
@@ -259,7 +259,7 @@ test("ExternalShell asks on the host before spawning on the Mac", async () => {
     await mkdir(dataDir, { recursive: true });
     const router = loaded.module.createCoordinatorInferenceRouter({
       dataDir,
-      env: { SAND_CLAIDOR_FULL_AGENT: "off" },
+      env: { SAND_SIMEON_FULL_AGENT: "off" },
       postEvent: (family, payload) => events.push({ family, payload }),
       dispatchRemote: async (method, args) => {
         remoteCalls.push({ method, args });

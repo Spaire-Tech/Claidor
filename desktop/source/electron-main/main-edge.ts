@@ -122,7 +122,7 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
     getInferenceRouter: async () => { const settings = await deps.readHostSettingsFromBox().catch(() => ({} as UnknownRecord)); const provider = resolveProductInferenceProvider(); return { provider, usage: settings.inferenceRouterUsage ?? invoke(deps.settingsStore, "getInferenceRouterUsage") ?? null }; },
     setInferenceRouter: async () => { const provider = resolveProductInferenceProvider(); invoke(deps.settingsStore, "setInferenceProvider", provider); const settings = await deps.syncHostSettingsToBox({ inferenceProvider: provider }).catch(() => null); return { provider, usage: settings?.inferenceRouterUsage ?? invoke(deps.settingsStore, "getInferenceRouterUsage") ?? null }; },
     getBoxRuntime: async () => { const mode = invoke(deps.settingsStore, "getBoxRuntime"); invariant(isSandBoxRuntime(mode), "Unknown box runtime."); return { mode, status: mode === "local-docker" ? await getLocalDockerStatus(String(Reflect.get(deps.settingsStore, "settingsPath"))) : null }; },
-    // The computer is not a person's choice (29 September 2026): Grok Bot runs
+    // The computer is not a person's choice (29 September 2026): the upstream app runs
     // every person on its cloud computer and has no switch, and neither does
     // Simeon. `SAND_BOX_RUNTIME=local-docker` selects the Docker box for our
     // own testing (`resolveSandBoxRuntime`); asking for anything else fails.

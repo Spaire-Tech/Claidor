@@ -284,7 +284,7 @@ export class SandCursorAuthService {
   }
   async getValidAccessToken(options?: { readonly backendUrl?: string }): Promise<string> {
     const operationEpoch = this.authOperationEpoch; if (this.credentialUseRevoked) throw new SandAuthSignInRequiredError();
-    // The refresh goes to the configured backend (Claidor), never to Cursor's
+    // The refresh goes to the configured backend (Simeon), never to Cursor's
     // default host. Until 24 September a caller that named no backend
     // (dictation, avatar generation) refreshed against api2.cursor.sh when the
     // token was within five minutes of expiry; the non-2xx there revoked the

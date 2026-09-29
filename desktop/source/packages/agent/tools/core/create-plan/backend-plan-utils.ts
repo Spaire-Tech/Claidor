@@ -22,7 +22,7 @@ import { resolveWorkerLocation } from "../worker-script-location.js";
 import { generateSeededUuid } from "../../common.js";
 import { todoStatusToString } from "../todo/common.js";
 
-const logger = createLogger("@anysphere/agent:backend-plan-utils");
+const logger = createLogger("@sand/agent:backend-plan-utils");
 
 export const planTodoFrontmatterSchema = z.object({
   id: z.string(),

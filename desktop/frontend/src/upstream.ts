@@ -5,7 +5,7 @@ interface UpstreamManifest {
 
 declare global {
   interface Window {
-    __grokUpstreamBoot?: Promise<unknown>;
+    __simeonUpstreamBoot?: Promise<unknown>;
   }
 }
 
@@ -31,6 +31,6 @@ async function loadRecoveredRenderer(): Promise<unknown> {
 }
 
 export function bootRecoveredRenderer(): Promise<unknown> {
-  window.__grokUpstreamBoot ??= loadRecoveredRenderer();
-  return window.__grokUpstreamBoot;
+  window.__simeonUpstreamBoot ??= loadRecoveredRenderer();
+  return window.__simeonUpstreamBoot;
 }

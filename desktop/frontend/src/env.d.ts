@@ -3,7 +3,7 @@ import type { CoordinatorPortBridge, DesktopBridge } from "./recovered/contracts
 
 declare global {
   interface Window {
-    __grokDevRoot?: Root;
+    __simeonDevRoot?: Root;
     desktop?: DesktopBridge;
     coordinatorPort?: CoordinatorPortBridge;
   }

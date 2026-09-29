@@ -275,7 +275,7 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
     reportFailure: (error) => reportDesktopEdgeFailure("window-focus", "push", error),
   });
 
-  // DevTools in a packaged build: Grok Bot gated it on Cursor staff membership, which Simeon's profile never grants (F-221); `SAND_DEVTOOLS=1` in the environment opens it for whoever launched the app that way.
+  // DevTools in a packaged build: the upstream app gated it on Cursor staff membership, which Simeon's profile never grants (F-221); `SAND_DEVTOOLS=1` in the environment opens it for whoever launched the app that way.
   const devToolsGate = createDevToolsGate({ isDevBuild: !deps.app.isPackaged || process.env.SAND_DEVTOOLS?.trim() === "1" });
   const hostChords = createHostWindowChords({
     getMainWindow: () => mainWindow,

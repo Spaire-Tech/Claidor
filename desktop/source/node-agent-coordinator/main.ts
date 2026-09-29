@@ -21,8 +21,8 @@ import { createSpawnedWebAuthnSigner, resolveWebAuthnSignerPath } from "./webaut
 import { ClientSideToolV2Relay } from "./client-side-tool-v2-relay.js";
 import { carriesPermissionCard, stampTranscriptEvent, stampTranscriptReply, type TranscriptPermissionScope } from "./permission-scope-stamp.js";
 import { createCoordinatorInferenceRouter } from "./inference-router.js";
-import { routesClaidorThroughHost } from "../shared/inference-router.js";
-import { setClaidorCredentialSource } from "../host/extensions/inference/provider-session.js";
+import { routesSimeonThroughHost } from "../shared/inference-router.js";
+import { setSimeonCredentialSource } from "../host/extensions/inference/provider-session.js";
 
 export interface McpOAuthPending {
   readonly serverName: string;
@@ -245,7 +245,7 @@ export async function composeCoordinator(dependencies: ComposeCoordinatorDepende
   }
 
   const gatewayDispatch = createGatewayRequestDispatch(gatewayClient);
-  setClaidorCredentialSource({
+  setSimeonCredentialSource({
     getAccessToken: async () => {
       const issued = await command<{ accessToken?: unknown; backendUrl?: unknown } | null>(commands, "mintInferenceCredential", {});
       if (typeof issued?.accessToken !== "string" || issued.accessToken.length === 0) throw new Error("Simeon runs on the signed-in account, but the desktop has no credential to lend. Sign in to Simeon and try again.");
@@ -271,7 +271,7 @@ export async function composeCoordinator(dependencies: ComposeCoordinatorDepende
     const outcome = await gatewayDispatch(method, args, signal);
     if (outcome.status !== "ok" || !carriesPermissionCard(outcome.value)) return outcome;
     await fetchPermissionScopeSlot();
-    return { status: "ok" as const, value: stampTranscriptReply(method, outcome.value, permissionScope(), { sortByTimestamp: !routesClaidorThroughHost() }) };
+    return { status: "ok" as const, value: stampTranscriptReply(method, outcome.value, permissionScope(), { sortByTimestamp: !routesSimeonThroughHost() }) };
   };
   server = createRendererPortServer(
     { post: (frame) => carrier.data.post(frame), close: () => carrier.data.close() },

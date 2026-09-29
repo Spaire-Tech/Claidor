@@ -9,7 +9,7 @@ import { build } from "esbuild";
 
 // Phase 3, measured offline: the host's own tool loop
 // (packages/agent/tool-stream-executor.ts, the code every real turn runs)
-// driving the claidor executor against a fake Responses server. No Mac, no
+// driving the simeon executor against a fake Responses server. No Mac, no
 // box, no key. What this proves is the executor contract; what it cannot
 // prove is a live model's behaviour, and it does not pretend to.
 
@@ -18,7 +18,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 async function loadHarness() {
   const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-host-loop-"));
   const output = path.join(temporary, "host-loop.mjs");
-  await build({ entryPoints: [path.join(repoRoot, "tests/fixtures/claidor-host-loop-entry.ts")], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
+  await build({ entryPoints: [path.join(repoRoot, "tests/fixtures/simeon-host-loop-entry.ts")], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
   return { module, dataDir: temporary, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
@@ -97,7 +97,7 @@ function pin(module, dataDir) {
   for (const key of ["SAND_DATA_ROOT", "SAND_BACKEND_URL"]) env.previous[key] = process.env[key];
   process.env.SAND_DATA_ROOT = dataDir;
   process.env.SAND_BACKEND_URL = "https://api.simeonlabs.com";
-  module.setClaidorCredentialSource({ getAccessToken: async () => "claidor_da_loop" });
+  module.setSimeonCredentialSource({ getAccessToken: async () => "simeon_da_loop" });
 }
 function unpin() {
   for (const [key, value] of Object.entries(env.previous)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }
@@ -107,7 +107,7 @@ function inputItems(request) {
   return request.body.input.map((item) => ("role" in item ? { role: item.role, content: item.content } : item));
 }
 
-test("the host's tool loop completes a two-step turn on the claidor provider", async () => {
+test("the host's tool loop completes a two-step turn on the simeon provider", async () => {
   const loaded = await loadHarness();
   const previousFetch = globalThis.fetch;
   const requests = [];
@@ -118,7 +118,7 @@ test("the host's tool loop completes a two-step turn on the claidor provider", a
       return requests.length === 1 ? functionCallStream("run_shell", { command: "ls" }) : textStream("done");
     };
     const { tool, executed } = shellTool(loaded.module, () => ({ content: [{ type: "text", text: "a.txt" }] }));
-    const executor = new loaded.module.SimplePromptToolExecutor(loaded.module.createProviderPromptSession("claidor").getExecutor(initialState()));
+    const executor = new loaded.module.SimplePromptToolExecutor(loaded.module.createProviderPromptSession("simeon").getExecutor(initialState()));
     const ctx = loaded.module.createContext();
 
     const first = await runStep(executor, ctx, tool);
@@ -144,9 +144,9 @@ test("the host's tool loop completes a two-step turn on the claidor provider", a
     assert.equal(requests.length, 2);
     for (const request of requests) {
       assert.equal(request.url, "https://api.simeonlabs.com/desktop/api/proxy/v1/responses");
-      assert.equal(request.headers.get("authorization"), "Bearer claidor_da_loop");
+      assert.equal(request.headers.get("authorization"), "Bearer simeon_da_loop");
       assert.equal(request.body.model, "gpt-6-sol");
-      // The loop runs at Grok Bot's effort (high), on every step.
+      // The loop runs at the upstream app's effort (high), on every step.
       assert.deepEqual(request.body.reasoning, { effort: "high" });
       // The host wraps tool schemas with the AI SDK's jsonSchema(); the wire
       // must see the bare schema, not the wrapper.
@@ -185,7 +185,7 @@ test("an image in a tool result reaches the model instead of being dropped", asy
     };
     const png = Buffer.from("not-really-a-png").toString("base64");
     const { tool } = shellTool(loaded.module, () => ({ content: [{ type: "image", data: png, mimeType: "image/png" }] }));
-    const executor = new loaded.module.SimplePromptToolExecutor(loaded.module.createProviderPromptSession("claidor").getExecutor(initialState()));
+    const executor = new loaded.module.SimplePromptToolExecutor(loaded.module.createProviderPromptSession("simeon").getExecutor(initialState()));
     const ctx = loaded.module.createContext();
 
     const first = await runStep(executor, ctx, tool);
@@ -217,7 +217,7 @@ test("a proxy refusal ends the step with the provider's sentence instead of hang
     pin(loaded.module, loaded.dataDir);
     globalThis.fetch = async () => new Response(JSON.stringify({ error: { message: "desktop access token expired", type: "invalid_request_error" } }), { status: 401, headers: { "content-type": "application/json" } });
     const { tool, executed } = shellTool(loaded.module, () => ({ content: [{ type: "text", text: "" }] }));
-    const executor = new loaded.module.SimplePromptToolExecutor(loaded.module.createProviderPromptSession("claidor").getExecutor(initialState()));
+    const executor = new loaded.module.SimplePromptToolExecutor(loaded.module.createProviderPromptSession("simeon").getExecutor(initialState()));
 
     const step = await runStep(executor, loaded.module.createContext(), tool);
     assert.match(String(step.streamError?.message), /expired/);

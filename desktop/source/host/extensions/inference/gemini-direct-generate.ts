@@ -18,7 +18,7 @@
 // `{type: "image", image: <data URI | URL>, mimeType, providerOptions:
 // {cursor: {mimeType, videoFps}}}`). Simeon Labs' server forwards the body
 // untouched (`proxy_gemini_generate` in `server/simeon/desktop/endpoints.py`).
-import { claidorProxyBaseUrl } from "../../../shared/node/cursor-backend/claidor-api.js";
+import { simeonProxyBaseUrl } from "../../../shared/node/cursor-backend/simeon-api.js";
 
 type Loose = Record<string, any>;
 
@@ -65,8 +65,8 @@ export type GeminiDirectOptions = {
 };
 
 /** `…/desktop/api/proxy/v1beta/models/{model}:streamGenerateContent?alt=sse` on Simeon Labs' server. */
-export function claidorGeminiEndpoint(modelId: string, backendUrl?: string): string {
-  const base = claidorProxyBaseUrl(backendUrl).replace(/\/+$/, "").replace(/\/v1$/, "/v1beta");
+export function simeonGeminiEndpoint(modelId: string, backendUrl?: string): string {
+  const base = simeonProxyBaseUrl(backendUrl).replace(/\/+$/, "").replace(/\/v1$/, "/v1beta");
   return `${base}/models/${encodeURIComponent(modelId)}:streamGenerateContent?alt=sse`;
 }
 

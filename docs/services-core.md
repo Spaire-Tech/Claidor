@@ -161,7 +161,7 @@ one input token at $3.00 per million.
 `/desktop/api/models/available` lists only models that have a role, are not
 retired, and whose provider has a key on the server. The app's model menu keeps
 only the `primary` row, so there is nothing for the person to choose
-(`desktop/source/electron-main/models/claidor-model-catalog.ts`). The proxy
+(`desktop/source/electron-main/models/simeon-model-catalog.ts`). The proxy
 refuses any model with no role: "This model is not offered by the desktop app."
 
 **Effort.** The app sends reasoning effort by role: `high` for the agent loop
@@ -170,7 +170,7 @@ and `low` for the cheap roles
 
 **Older model ids.** If the server does not offer `gpt-6-sol` or `gpt-6-luna`
 yet, the app retries the step on the model it replaced (`gpt-5.6-terra` or
-`gpt-5.6-luna`, `LEGACY_CLAIDOR_MODELS`) and writes a `[simeon] model-legacy`
+`gpt-5.6-luna`, `LEGACY_SIMEON_MODELS`) and writes a `[simeon] model-legacy`
 line. This means the server and the app can be deployed in either order.
 
 ### Capabilities
@@ -219,7 +219,7 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
 
 ### In the app
 
-- `SAND_CLAIDOR_REASONING_EFFORT`, `SAND_CLAIDOR_CHEAP_REASONING_EFFORT`:
+- `SAND_SIMEON_REASONING_EFFORT`, `SAND_SIMEON_CHEAP_REASONING_EFFORT`:
   override the effort (`none`, `low`, `medium`, `high`, `xhigh`, `max`).
 - `SAND_AGENT_MAX_STEPS`, `SAND_HIDDEN_TURN_MAX_STEPS`: the step limits.
 

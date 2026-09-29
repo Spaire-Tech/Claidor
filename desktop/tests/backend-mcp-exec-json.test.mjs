@@ -10,7 +10,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function loadModule(entry = "source/shared/node/cursor-backend/backend-mcp-exec.ts") {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "grok-backend-mcp-exec-"));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-backend-mcp-exec-"));
   const output = path.join(temporary, "backend-mcp-exec.mjs");
   await build({
     entryPoints: [path.join(repoRoot, entry)],

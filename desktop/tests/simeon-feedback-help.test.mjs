@@ -25,14 +25,14 @@ async function loadModule(entry, name) {
 // account slot the renderer sends back with the feedback.
 function envelopeToken(sub) {
   const part = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
-  return `claidor_da_${part({ alg: "HS256", typ: "JWT" })}.${part({ sub, email: "bass@simeonlabs.com", exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`;
+  return `simeon_da_${part({ alg: "HS256", typ: "JWT" })}.${part({ sub, email: "bass@simeonlabs.com", exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`;
 }
 
 test("feedback posts to /desktop/api/feedback with the fields the server reads", async () => {
   const loaded = await loadModule("source/electron-main/feedback/feedback-report.ts", "feedback-report");
   try {
-    const { submitFeedbackReport, CLAIDOR_FEEDBACK_PATH } = loaded.module;
-    assert.equal(CLAIDOR_FEEDBACK_PATH, "feedback");
+    const { submitFeedbackReport, SIMEON_FEEDBACK_PATH } = loaded.module;
+    assert.equal(SIMEON_FEEDBACK_PATH, "feedback");
     const requests = [];
     const deps = {
       getAccessToken: async () => envelopeToken("user-1"),
@@ -48,7 +48,7 @@ test("feedback posts to /desktop/api/feedback with the fields the server reads",
     assert.equal(requests.length, 1);
     assert.equal(requests[0].url, "https://api.simeonlabs.com/desktop/api/feedback");
     assert.equal(requests[0].method, "POST");
-    assert.match(requests[0].headers.get("authorization"), /^Bearer claidor_da_/);
+    assert.match(requests[0].headers.get("authorization"), /^Bearer simeon_da_/);
     assert.equal(requests[0].headers.get("content-type"), "application/json");
     assert.equal(requests[0].body.message, "The picker is empty.");
     assert.equal(requests[0].body.category, "app");
@@ -66,7 +66,7 @@ test("feedback posts to /desktop/api/feedback with the fields the server reads",
 
     const source = await readFile(path.join(repoRoot, "source/electron-main/feedback/feedback-report.ts"), "utf8");
     assert.equal(source.includes('new URL("/sand/feedback"'), false);
-    assert.match(source, /claidorApiUrl\(CLAIDOR_FEEDBACK_PATH/);
+    assert.match(source, /simeonApiUrl\(SIMEON_FEEDBACK_PATH/);
   } finally {
     await loaded.dispose();
   }

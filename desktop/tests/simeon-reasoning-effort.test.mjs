@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { build } from "esbuild";
 
-// Reasoning effort follows the role, as Grok Bot sets it: the agent loop at
+// Reasoning effort follows the role, as the upstream app sets it: the agent loop at
 // high (SAND_DEFAULT_MODEL_SELECTION, effort high) and the cheap roles —
 // summarization, memory, the computer and browser subagents — at low
 // (SAND_COMPUTER_USE_MODEL_SELECTION, effort low). Read off the wire, not
@@ -18,7 +18,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 async function loadHarness() {
   const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-effort-"));
   const output = path.join(temporary, "effort.mjs");
-  await build({ entryPoints: [path.join(repoRoot, "tests/fixtures/claidor-host-loop-entry.ts")], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
+  await build({ entryPoints: [path.join(repoRoot, "tests/fixtures/simeon-host-loop-entry.ts")], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
   return { module, dataDir: temporary, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
@@ -35,13 +35,13 @@ function textStream(text, model) {
   return new Response(body, { status: 200, headers: { "content-type": "text/event-stream" } });
 }
 
-const ENV_KEYS = ["SAND_DATA_ROOT", "SAND_BACKEND_URL", "SAND_CLAIDOR_REASONING_EFFORT", "SAND_CLAIDOR_CHEAP_REASONING_EFFORT"];
+const ENV_KEYS = ["SAND_DATA_ROOT", "SAND_BACKEND_URL", "SAND_SIMEON_REASONING_EFFORT", "SAND_SIMEON_CHEAP_REASONING_EFFORT"];
 function pin(module, dataDir) {
   const previous = {};
   for (const key of ENV_KEYS) { previous[key] = process.env[key]; delete process.env[key]; }
   process.env.SAND_DATA_ROOT = dataDir;
   process.env.SAND_BACKEND_URL = "https://api.simeonlabs.com";
-  module.setClaidorCredentialSource({ getAccessToken: async () => "claidor_da_effort" });
+  module.setSimeonCredentialSource({ getAccessToken: async () => "simeon_da_effort" });
   return () => { for (const [key, value] of Object.entries(previous)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; } };
 }
 
@@ -63,10 +63,10 @@ test("effort follows the role: high on the loop, low on the cheap sessions", asy
       return textStream("ok", body.model);
     };
     const state = [{ role: "system", content: "You are the real system prompt." }, { role: "user", content: [{ type: "text", text: "hello" }] }];
-    await collect(loaded.module.createProviderPromptSession("claidor").getExecutor(state));
-    await collect(loaded.module.createProviderPromptSession("claidor", { cheap: true, isSummarizationSession: true }).getExecutor(state));
-    await collect(loaded.module.createProviderPromptSession("claidor", { isComputerUseSubagent: true }).getExecutor(state));
-    await collect(loaded.module.createProviderPromptSession("claidor", { isBrowserUseSubagent: true }).getExecutor(state));
+    await collect(loaded.module.createProviderPromptSession("simeon").getExecutor(state));
+    await collect(loaded.module.createProviderPromptSession("simeon", { cheap: true, isSummarizationSession: true }).getExecutor(state));
+    await collect(loaded.module.createProviderPromptSession("simeon", { isComputerUseSubagent: true }).getExecutor(state));
+    await collect(loaded.module.createProviderPromptSession("simeon", { isBrowserUseSubagent: true }).getExecutor(state));
 
     assert.deepEqual(requests.map((body) => [body.model, body.reasoning?.effort]), [
       ["gpt-6-sol", "high"],
@@ -93,19 +93,19 @@ test("the text helper carries the effort too, and the environment can override b
       return textStream("ok", body.model);
     };
     const messages = [{ role: "user", content: [{ type: "text", text: "hello" }] }];
-    await loaded.module.runRoutedProviderText("claidor", messages);
-    await loaded.module.runRoutedProviderText("claidor", messages, { cheap: true });
-    process.env.SAND_CLAIDOR_REASONING_EFFORT = "medium";
-    process.env.SAND_CLAIDOR_CHEAP_REASONING_EFFORT = "MINIMAL";
-    await loaded.module.runRoutedProviderText("claidor", messages);
-    await loaded.module.runRoutedProviderText("claidor", messages, { cheap: true });
-    process.env.SAND_CLAIDOR_REASONING_EFFORT = "turbo";
-    await loaded.module.runRoutedProviderText("claidor", messages);
+    await loaded.module.runRoutedProviderText("simeon", messages);
+    await loaded.module.runRoutedProviderText("simeon", messages, { cheap: true });
+    process.env.SAND_SIMEON_REASONING_EFFORT = "medium";
+    process.env.SAND_SIMEON_CHEAP_REASONING_EFFORT = "MINIMAL";
+    await loaded.module.runRoutedProviderText("simeon", messages);
+    await loaded.module.runRoutedProviderText("simeon", messages, { cheap: true });
+    process.env.SAND_SIMEON_REASONING_EFFORT = "turbo";
+    await loaded.module.runRoutedProviderText("simeon", messages);
 
     assert.deepEqual(requests.map((body) => body.reasoning?.effort), ["high", "low", "medium", "low", "high"]);
-    assert.equal(loaded.module.DEFAULT_CLAIDOR_REASONING_EFFORT, "high");
-    assert.equal(loaded.module.DEFAULT_CLAIDOR_CHEAP_REASONING_EFFORT, "low");
-    assert.equal(loaded.module.claidorReasoningEffortForSession({ modelId: "gpt-6-luna" }, {}), "high", "a model name is not a role; effort follows the role flags");
+    assert.equal(loaded.module.DEFAULT_SIMEON_REASONING_EFFORT, "high");
+    assert.equal(loaded.module.DEFAULT_SIMEON_CHEAP_REASONING_EFFORT, "low");
+    assert.equal(loaded.module.simeonReasoningEffortForSession({ modelId: "gpt-6-luna" }, {}), "high", "a model name is not a role; effort follows the role flags");
   } finally {
     globalThis.fetch = previousFetch;
     unpin();
@@ -119,15 +119,15 @@ test("GPT-6 reaches OpenAI as a reasoning model under its real name, and falls b
   await build({ entryPoints: [path.join(repoRoot, "source/host/extensions/inference/provider-session.ts")], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent", external: ["electron"], banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" } });
   const loaded = { module: await import(`${pathToFileURL(output).href}?${Date.now()}`), dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
   try {
-    const { sdkModelIdFor, withRealModelName, isModelNotOfferedError, LEGACY_CLAIDOR_MODELS, DEFAULT_CLAIDOR_MODEL, DEFAULT_CLAIDOR_CHEAP_MODEL } = loaded.module;
-    assert.equal(DEFAULT_CLAIDOR_MODEL, "gpt-6-sol");
-    assert.equal(DEFAULT_CLAIDOR_CHEAP_MODEL, "gpt-6-luna");
+    const { sdkModelIdFor, withRealModelName, isModelNotOfferedError, LEGACY_SIMEON_MODELS, DEFAULT_SIMEON_MODEL, DEFAULT_SIMEON_CHEAP_MODEL } = loaded.module;
+    assert.equal(DEFAULT_SIMEON_MODEL, "gpt-6-sol");
+    assert.equal(DEFAULT_SIMEON_CHEAP_MODEL, "gpt-6-luna");
     assert.equal(sdkModelIdFor("gpt-6-sol"), "gpt-5-as:gpt-6-sol", "the SDK only treats o… and gpt-5… as reasoning models");
     assert.equal(sdkModelIdFor("gpt-5.6-terra"), "gpt-5.6-terra");
     assert.equal(sdkModelIdFor("claude-sonnet-5"), "claude-sonnet-5");
     assert.equal(JSON.parse(withRealModelName(JSON.stringify({ model: "gpt-5-as:gpt-6-sol", reasoning: { effort: "high" } }))).model, "gpt-6-sol");
     assert.equal(withRealModelName('{"model":"gpt-6-luna"}'), '{"model":"gpt-6-luna"}');
-    assert.deepEqual(LEGACY_CLAIDOR_MODELS, { "gpt-6-sol": "gpt-5.6-terra", "gpt-6-luna": "gpt-5.6-luna" });
+    assert.deepEqual(LEGACY_SIMEON_MODELS, { "gpt-6-sol": "gpt-5.6-terra", "gpt-6-luna": "gpt-5.6-luna" });
     assert.equal(isModelNotOfferedError(new Error("This model is not offered by the desktop app.")), true);
     assert.equal(isModelNotOfferedError(Object.assign(new Error("Bad Request"), { responseBody: '{"error":{"message":"This model is not offered by the desktop app."}}' })), true);
     assert.equal(isModelNotOfferedError(new Error("rate limit exceeded")), false);

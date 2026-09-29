@@ -25,7 +25,7 @@ export { PrivacyMode } from "../../source/packages/redaction/privacy-mode.js";
 export { createContext } from "../../source/packages/context/core.js";
 export { loggerKey } from "../../source/packages/context/logger.js";
 export { createSendMessageTool, SAND_SEND_MESSAGE_TOOL_NAME } from "../../source/host/runner/tools/send-message-tool.js";
-export { setClaidorCredentialSource, setModelCallLog } from "../../source/host/extensions/inference/provider-session.js";
+export { setSimeonCredentialSource, setModelCallLog } from "../../source/host/extensions/inference/provider-session.js";
 export { DEFAULT_SAND_SYSTEM_PROMPT } from "../../source/host/runner/system-prompt.js";
 export { createProductionRunnerContext } from "../../source/host/runner-context-production-provider.js";
 export { setHostLogSink } from "../../source/shared/host-log.js";

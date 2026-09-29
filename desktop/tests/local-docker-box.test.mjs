@@ -27,7 +27,7 @@ function envOf(args) {
   return env;
 }
 
-test("the box runtime is Grok Bot's: the cloud computer, Docker only by the internal switch", async () => {
+test("the box runtime is the upstream app's: the cloud computer, Docker only by the internal switch", async () => {
   const loaded = await loadModule("source/shared/box-runtime.ts", "box-runtime");
   try {
     assert.equal(loaded.module.DEFAULT_SAND_BOX_RUNTIME, "remote");
@@ -78,7 +78,7 @@ test("a late inference credential does not tear down a running box", async () =>
     assert.doesNotMatch(source, /inferenceCredential != null && !inspected\.hasInferenceCredential/);
     assert.doesNotMatch(source, /OPTIONAL_CREDENTIAL_TIMEOUT_MS = 3_000/);
     // Since 26 September 2026 the box's credentials reach it in its
-    // environment, Grok Bot's pod contract, and no token file is mounted
+    // environment, the upstream app's pod contract, and no token file is mounted
     // (F-148; tests/local-docker-credentials.test.mjs).
     assert.doesNotMatch(source, /SAND_DEV_INFERENCE_TOKEN_FILE=/);
     assert.doesNotMatch(source, /dst=\/run\/grok-bot/);
@@ -90,7 +90,7 @@ test("a late inference credential does not tear down a running box", async () =>
       "utf8",
     );
     assert.match(production, /startLocalDockerBox\(settingsStore\.settingsPath\)/);
-    assert.doesNotMatch(production, /routesClaidorThroughHost\(env\)/);
+    assert.doesNotMatch(production, /routesSimeonThroughHost\(env\)/);
     assert.doesNotMatch(source, /usesLeftoverDockerHost/);
     const computerUse = await (await import("node:fs/promises")).readFile(
       path.join(repoRoot, "source/host/runner/computer-use.ts"),
@@ -130,14 +130,14 @@ test("the local Docker box is always told our backend, credential or not", async
     const withoutCredential = envOf(localDockerInferenceEnvironmentArguments(undefined, env));
     assert.equal(withoutCredential.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
     assert.equal(withoutCredential.SAND_INFERENCE_RENEWAL_CREDENTIAL, undefined);
-    assert.equal(withoutCredential.SAND_INFERENCE_PROVIDER, "claidor");
+    assert.equal(withoutCredential.SAND_INFERENCE_PROVIDER, "simeon");
     assert.equal(withoutCredential.SAND_DISABLE_TELEMETRY, "1", "no Cursor telemetry from the box");
     assert.equal(withoutCredential.SAND_DISABLE_ANALYTICS, "1");
     assert.equal(withoutCredential.SAND_BOX_LOG_SHIP_DISABLED, "1");
 
-    const withCredential = envOf(localDockerInferenceEnvironmentArguments("claidor_db_box", env));
+    const withCredential = envOf(localDockerInferenceEnvironmentArguments("simeon_db_box", env));
     assert.equal(withCredential.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
-    assert.equal(withCredential.SAND_INFERENCE_RENEWAL_CREDENTIAL, "claidor_db_box");
+    assert.equal(withCredential.SAND_INFERENCE_RENEWAL_CREDENTIAL, "simeon_db_box");
 
     const fromCursorVariable = envOf(localDockerInferenceEnvironmentArguments(undefined, { SIMEON_API_BASE_URL: "https://api.simeonlabs.com" }));
     assert.equal(fromCursorVariable.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
@@ -158,8 +158,8 @@ test("an empty inference token file is a wait, not a hard failure", async () => 
 
 test("the box renews its own token, so the Mac no longer rewrites one every five minutes", async () => {
   // Until 26 September 2026 the Mac re-issued a one-hour token into a file
-  // the box read (Grok Bot's development path). The box now holds its
-  // renewal credential in its environment and renews on Grok Bot's
+  // the box read (the upstream app's development path). The box now holds its
+  // renewal credential in its environment and renews on the upstream app's
   // production path (F-148; tests/local-docker-credentials.test.mjs).
   const source = await (await import("node:fs/promises")).readFile(path.join(repoRoot, "source/electron-main/box/local-docker-host-connector.ts"), "utf8");
   assert.doesNotMatch(source, /function startInferenceCredentialKeepFresh\b/);

@@ -1,6 +1,6 @@
 // How many model calls one turn may make.
 //
-// Grok Bot caps a turn at 5,000 steps (`runner/turn-agent-composition.ts`,
+// The upstream app caps a turn at 5,000 steps (`runner/turn-agent-composition.ts`,
 // SAND_AGENT_MAX_STEPS) and has no money cap at all. A turn nobody asked
 // for — the first-run intro, a reply nudge, an automation — gets a far
 // smaller cap here. Measured 22 September 2026: one unattended first-run

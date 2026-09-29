@@ -54,7 +54,7 @@ test("the generated module is what the sources and the measurements produce", as
   }
 });
 
-test("identity: a stored key is kept, a Grok Bot shape name maps onto the first eight, an unknown one hashes onto the twenty-one", async () => {
+test("identity: a stored key is kept, a the upstream app shape name maps onto the first eight, an unknown one hashes onto the twenty-one", async () => {
   const { AVATAR_KEYS, resolvePersonaShape, resolvePersonaColor, isAvatarKey } = await loadCharacter();
   assert.equal(AVATAR_KEYS.length, 21);
   for (const key of AVATAR_KEYS) assert.equal(resolvePersonaShape("any-agent", key), key);

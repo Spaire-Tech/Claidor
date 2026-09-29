@@ -45,8 +45,8 @@ export const upstreamVersion = "0.18.0";
  * The app's own identity. macOS keys the Keychain access to safeStorage
  * secrets and the privacy grants (screen recording, accessibility,
  * automation) on this, so the person may sign in once more and grant them
- * again after the first build carrying a new one. It was
- * com.claidor.simeon until 29 September 2026.
+ * again after the first build carrying a new one. It last changed on
+ * 29 September 2026.
  */
 export const simeonBundleId = "com.simeonlabs.simeon";
 /** The URL scheme the bundle claims; must equal SAND_DEEP_LINK_SCHEME in source/shared/desktop.ts. */

@@ -21,7 +21,7 @@ export interface TrustedPathOnlyAttachmentResult {
   readonly trustedPath: string | undefined;
 }
 
-const logger = createLogger("@anysphere/agent/context-processing");
+const logger = createLogger("@sand/agent/context-processing");
 
 // Extracted from ../packages/agent/dist/context-processing.js as an
 // uncomposed path-trust leaf. The parent processSelectedContext function

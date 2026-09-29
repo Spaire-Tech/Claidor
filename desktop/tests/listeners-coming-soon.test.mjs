@@ -55,7 +55,7 @@ test("with the relay switched off the tool refuses a listener trigger with the C
   }
 });
 
-test("the agent's brief offers Grok Bot's listener text by default; the flag at 0 offers cron only and names what is coming soon", async () => {
+test("the agent's brief offers the upstream app's listener text by default; the flag at 0 offers cron only and names what is coming soon", async () => {
   process.env.SAND_LISTENER_RELAY_SERVED = "0";
   const { module, dispose } = await load("source/host/automations/automation.ts", "automation-prompt");
   try {

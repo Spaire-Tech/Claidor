@@ -489,7 +489,7 @@ async def audio_transcriptions(
 ) -> Response:
     """What was said, as text. OpenAI's own multipart shape in — `file`,
     and `language` when the app sends one (it sends none since 24 September
-    2026, `claidor-transcribe.ts`, so OpenAI detects the language; a
+    2026, `simeon-transcribe.ts`, so OpenAI detects the language; a
     `en-US` still becomes the two letters OpenAI takes) — and
     `{text, seconds}` out.
 

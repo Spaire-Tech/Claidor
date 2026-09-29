@@ -6,7 +6,7 @@
 // marketplace asks first: `GET /desktop/api/apps` answering
 // `{"available": true}` offers Connect; anything else (a 404 from a server
 // that predates the route, a 503 without the provider's key, no network, no
-// sign-in) keeps the cards Coming soon, the way Grok Bot only offers Connect
+// sign-in) keeps the cards Coming soon, the way the upstream app only offers Connect
 // for what can actually connect.
 
 import { getConfiguredBackendUrl } from "../cursor-token.js";

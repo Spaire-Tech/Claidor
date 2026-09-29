@@ -15,10 +15,10 @@ const VIEWBOX = "-15 -15 259 259";
 const CENTER = 114.2705;
 export { ADVENTURER_CREDIT, AVATAR_KEYS };
 
-// The eleven colour names Grok Bot stored per agent. They are still resolved
+// The eleven colour names the upstream app stored per agent. They are still resolved
 // (the sidebar wrapper writes `data-avatar-color`) but draw nothing now.
 const COLOR_KEYS = ["black", "brown", "red", "orange", "yellow", "green", "cyan", "blue", "violet", "magenta", "gray"] as const;
-// Grok Bot's eight shape names map onto the first eight avatars, so a scene
+// The upstream app's eight shape names map onto the first eight avatars, so a scene
 // or a stored agent that still says "blob" keeps a face.
 const LEGACY_SHAPES = ["blob", "pebble", "squircle", "tablet", "wedge", "hex", "cloud", "teardrop"] as const;
 

@@ -51,14 +51,14 @@ test("Cursor's compaction trigger is dead when maxTokens is 0, and live on the 2
   }
 });
 
-test("Claidor reports the working window, not Terra's 1.05M physical one", async () => {
-  const window = await load("source/shared/inference/claidor-context-window.ts", "claidor-window");
+test("Simeon reports the working window, not Terra's 1.05M physical one", async () => {
+  const window = await load("source/shared/inference/simeon-context-window.ts", "simeon-window");
   const providers = await readFile(path.join(repoRoot, "source/host/extensions/inference/provider-session.ts"), "utf8");
   const host = await readFile(path.join(repoRoot, "source/host/host-runner-composition.ts"), "utf8");
   try {
-    assert.equal(window.module.CLAIDOR_WORKING_CONTEXT_TOKENS, 200_000);
-    assert.match(providers, /aiSdkExecutor\([^\n]+CLAIDOR_WORKING_CONTEXT_TOKENS, \{ reasoningEffort \}, \{ model: id, effort: reasoningEffort[^\n]*\}\)/);
-    assert.match(host, /agentTokenLimit: CLAIDOR_WORKING_CONTEXT_TOKENS/);
+    assert.equal(window.module.SIMEON_WORKING_CONTEXT_TOKENS, 200_000);
+    assert.match(providers, /aiSdkExecutor\([^\n]+SIMEON_WORKING_CONTEXT_TOKENS, \{ reasoningEffort \}, \{ model: id, effort: reasoningEffort[^\n]*\}\)/);
+    assert.match(host, /agentTokenLimit: SIMEON_WORKING_CONTEXT_TOKENS/);
     assert.doesNotMatch(providers, /maxTokens: 0 \}\)\);\n  if \(onUsage/);
   } finally {
     await window.dispose();

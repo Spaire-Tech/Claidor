@@ -21,7 +21,7 @@ export const CLOUD_AGENTS_SERVED_ENV = "SAND_CLOUD_AGENTS_SERVED";
 
 /**
  * Where a cloud agent's page lives, for the card's "open" and the plain
- * link a channel gets. Grok Bot opened `https://cursor.com/agents/<bcId>`;
+ * link a channel gets. The upstream app opened `https://cursor.com/agents/<bcId>`;
  * ours is Simeon's dashboard on Vercel. The page itself does not exist
  * yet (needs-web, `docs/services-agents.md`): until it does,
  * the card's conversation in the app is the record of the run.
@@ -59,7 +59,7 @@ export function isCloudAgentsServed(env: NodeJS.ProcessEnv = process.env): boole
 // serves these at the root of the API host and answers `unimplemented`
 // for anything else, so a client is served by service name:
 //   - unset: the services below;
-//   - "1": every service (Grok Bot's own behaviour, for a Cursor backend);
+//   - "1": every service (the upstream app's own behaviour, for a Cursor backend);
 //   - "0": none (the 24 September behaviour);
 //   - "a.b.C,d.e.F": exactly those.
 // A name that is not a Connect service (Cursor's Statsig bootstrap is a

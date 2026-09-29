@@ -14,7 +14,7 @@ interface Message {
   readonly providerOptions?: { readonly cursor?: CursorProviderOptions };
 }
 
-const logger = createLogger("@anysphere/agent");
+const logger = createLogger("@sand/agent");
 const CONSECUTIVE_USER_MESSAGE_WARNING_THRESHOLD = 3;
 const TAIL_INSPECTION_WINDOW = 12;
 

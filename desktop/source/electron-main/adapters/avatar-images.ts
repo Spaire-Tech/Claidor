@@ -1,7 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { createContext } from "../../packages/context/core.js";
 import { loggerKey } from "../../packages/context/logger.js";
-import { createClaidorGenerateImageService } from "../../shared/node/cursor-backend/claidor-generate-image.js";
+import { createSimeonGenerateImageService } from "../../shared/node/cursor-backend/simeon-generate-image.js";
 import {
   createAvatarImageEdgePort,
   registerImageContextMenu,
@@ -60,7 +60,7 @@ export function createProductionAvatarImagesAdapter(
   validatePorts(ports);
   return {
     create(context) {
-      let generator: ReturnType<typeof createClaidorGenerateImageService> | undefined;
+      let generator: ReturnType<typeof createSimeonGenerateImageService> | undefined;
       const deps: AvatarImageDeps = {
         getMainWindow: () => context.getMainWindow() ?? null,
         createHiddenWindow: (options) => new ports.electron.BrowserWindow(options),
@@ -68,7 +68,7 @@ export function createProductionAvatarImagesAdapter(
         createFromPath: (path) => ports.electron.nativeImage.createFromPath(path),
         createFromBuffer: (bytes) => ports.electron.nativeImage.createFromBuffer(bytes),
         generate: async (description) => {
-          generator ??= createClaidorGenerateImageService({
+          generator ??= createSimeonGenerateImageService({
             getAccessToken: () => context.requireAccount().getAuthService().then((auth) => auth.getValidAccessToken()),
             // A thumbnail: the cheapest quality gpt-image-1 offers (F-240, 25 September 2026).
             quality: "low",

@@ -25,7 +25,7 @@ async function load(entry, name) {
 }
 
 test("host intro widgets and Allow cards become later-turn chat history", async () => {
-  const loaded = await load("source/shared/grok-bot-transcript.ts", "grok-bot-transcript");
+  const loaded = await load("source/shared/sand-transcript.ts", "sand-transcript");
   try {
     const { chatMessageFromTranscriptEntry, mergeHostAndLocalChatHistory } = loaded.module;
     const widget = chatMessageFromTranscriptEntry({

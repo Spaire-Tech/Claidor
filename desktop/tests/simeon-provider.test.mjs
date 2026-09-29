@@ -43,16 +43,27 @@ function functionCallStream(name, args) {
   ]);
 }
 
-test("claidor is a provider everywhere a provider is listed", async () => {
+test("simeon is a provider everywhere a provider is listed", async () => {
   const shared = await loadModule("source/shared/inference-router.ts", "shared-inference-router");
   const router = await loadModule("source/node-agent-coordinator/inference-router.ts", "coordinator-inference-router");
   try {
-    assert.ok(shared.module.SAND_INFERENCE_PROVIDERS.includes("claidor"));
-    assert.ok(shared.module.isSandInferenceProvider("claidor"));
+    assert.ok(shared.module.SAND_INFERENCE_PROVIDERS.includes("simeon"));
+    assert.ok(shared.module.isSandInferenceProvider("simeon"));
+    // The id was "claidor" until 29 September 2026; stored settings and
+    // transcripts still carry it, and the SAND_CLAIDOR_* names still work.
+    assert.ok(!shared.module.SAND_INFERENCE_PROVIDERS.includes("claidor"));
+    assert.equal(shared.module.normalizeSandInferenceProvider("claidor"), "simeon");
+    assert.equal(shared.module.normalizeSandInferenceProvider("simeon"), "simeon");
+    assert.equal(shared.module.normalizeSandInferenceProvider("nope"), undefined);
+    assert.equal(shared.module.readSimeonEnv({ SAND_CLAIDOR_MODEL: "old" }, "SAND_SIMEON_MODEL"), "old");
+    assert.equal(shared.module.readSimeonEnv({ SAND_CLAIDOR_MODEL: "old", SAND_SIMEON_MODEL: "new" }, "SAND_SIMEON_MODEL"), "new");
+    assert.equal(shared.module.routesSimeonThroughHost({ SAND_CLAIDOR_FULL_AGENT: "off" }), false);
+    const legacy = router.module.parseInferenceRouterTranscriptStore({ schemaVersion: 2, agents: { a: [{ provider: "claidor", role: "user", content: "hi", id: "u1", timestampMs: 1 }] } });
+    assert.equal(legacy.agents.a[0].provider, "simeon");
     assert.deepEqual(Object.keys(shared.module.emptySandInferenceRouterUsage().providers).sort(), [...shared.module.SAND_INFERENCE_PROVIDERS].sort());
 
     // The second, independent list the brief warns about: stored history must
-    // survive a reload for every local provider, claidor included.
+    // survive a reload for every local provider, simeon included.
     const store = router.module.parseInferenceRouterTranscriptStore({
       schemaVersion: 2,
       agents: { agent: shared.module.SAND_INFERENCE_PROVIDERS.filter((provider) => provider !== "cursor").map((provider, index) => ({
@@ -66,28 +77,28 @@ test("claidor is a provider everywhere a provider is listed", async () => {
   }
 });
 
-test("claidor turns run Grok Bot's loop on the host by default; off is the Mac hatch", async () => {
+test("simeon turns run the upstream app's loop on the host by default; off is the Mac hatch", async () => {
   const router = await loadModule("source/node-agent-coordinator/inference-router.ts", "coordinator-inference-router-switch");
   try {
     const { mkdir, writeFile } = await import("node:fs/promises");
     const dataDir = path.join(router.dataDir, "data");
     await mkdir(dataDir, { recursive: true });
-    await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "claidor" }));
+    await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "simeon" }));
     const events = [];
     const make = (env) => router.module.createCoordinatorInferenceRouter({
       dataDir, env, postEvent: (family, payload) => events.push({ family, payload }), dispatchRemote: async () => { throw new Error("box unreachable"); },
     });
 
     // The founder's decision of 22 September: the original loop, everything.
-    assert.equal(router.module.routesClaidorThroughHost({}), true);
-    assert.equal(router.module.routesClaidorThroughHost({ SAND_CLAIDOR_FULL_AGENT: "" }), true);
-    assert.equal(router.module.routesClaidorThroughHost({ SAND_CLAIDOR_FULL_AGENT: "1" }), true);
+    assert.equal(router.module.routesSimeonThroughHost({}), true);
+    assert.equal(router.module.routesSimeonThroughHost({ SAND_SIMEON_FULL_AGENT: "" }), true);
+    assert.equal(router.module.routesSimeonThroughHost({ SAND_SIMEON_FULL_AGENT: "1" }), true);
     for (const off of ["off", "0", "false", "no", "OFF"]) {
-      assert.equal(router.module.routesClaidorThroughHost({ SAND_CLAIDOR_FULL_AGENT: off }), false, off);
+      assert.equal(router.module.routesSimeonThroughHost({ SAND_SIMEON_FULL_AGENT: off }), false, off);
     }
 
     // On the loop, the coordinator passes every turn and every card tap to the host.
-    for (const env of [{}, { SAND_CLAIDOR_FULL_AGENT: "1" }]) {
+    for (const env of [{}, { SAND_SIMEON_FULL_AGENT: "1" }]) {
       const passthrough = await make(env).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
       assert.deepEqual(passthrough, { handled: false });
       const widget = await make(env).dispatch("respondToWidget", { agentId: "a", entryId: "t0s1", value: "research" });
@@ -97,10 +108,10 @@ test("claidor turns run Grok Bot's loop on the host by default; off is the Mac h
     }
 
     // The hatch still answers on this Mac.
-    const hatch = { SAND_CLAIDOR_FULL_AGENT: "off" };
+    const hatch = { SAND_SIMEON_FULL_AGENT: "off" };
     const local = await make(hatch).dispatch("sendPrompt", { agentId: "a", prompt: "x" });
     assert.equal(local.handled, true);
-    assert.equal(local.value.provider, "claidor");
+    assert.equal(local.value.provider, "simeon");
     const widget = await make(hatch).dispatch("respondToWidget", { agentId: "a", entryId: "t0s1", value: "research" });
     assert.equal(widget.handled, true);
     assert.equal(widget.value.accepted, true);
@@ -115,17 +126,17 @@ test("claidor turns run Grok Bot's loop on the host by default; off is the Mac h
   }
 });
 
-test("a Mac-hatch Claidor turn does not wait on a hung box", async () => {
+test("a Mac-hatch Simeon turn does not wait on a hung box", async () => {
   const router = await loadModule("source/node-agent-coordinator/inference-router.ts", "coordinator-inference-router-hung-box");
   try {
     const { mkdir, writeFile } = await import("node:fs/promises");
     const dataDir = path.join(router.dataDir, "data");
     await mkdir(dataDir, { recursive: true });
-    await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "claidor" }));
+    await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "simeon" }));
     const events = [];
     const hung = router.module.createCoordinatorInferenceRouter({
       dataDir,
-      env: { SAND_CLAIDOR_FULL_AGENT: "off" },
+      env: { SAND_SIMEON_FULL_AGENT: "off" },
       postEvent: (family, payload) => events.push({ family, payload }),
       dispatchRemote: () => new Promise(() => {}),
     });
@@ -145,13 +156,13 @@ test("a Mac-hatch Claidor turn does not wait on a hung box", async () => {
   }
 });
 
-test("a Claidor host-loop send is admitted without waiting on the box", async () => {
+test("a Simeon host-loop send is admitted without waiting on the box", async () => {
   const router = await loadModule("source/node-agent-coordinator/inference-router.ts", "coordinator-inference-router-host-admit");
   try {
     const { mkdir, writeFile } = await import("node:fs/promises");
     const dataDir = path.join(router.dataDir, "data");
     await mkdir(dataDir, { recursive: true });
-    await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "claidor" }));
+    await writeFile(path.join(dataDir, "settings.json"), JSON.stringify({ version: 1, inferenceProvider: "simeon" }));
     const hung = router.module.createCoordinatorInferenceRouter({
       dataDir,
       env: {},
@@ -167,7 +178,7 @@ test("a Claidor host-loop send is admitted without waiting on the box", async ()
   }
 });
 
-test("the claidor provider speaks the Responses wire to our proxy with the signed-in token", async () => {
+test("the simeon provider speaks the Responses wire to our proxy with the signed-in token", async () => {
   const loaded = await loadModule("source/host/extensions/inference/provider-session.ts", "provider-session");
   const previousFetch = globalThis.fetch;
   const previousDataRoot = process.env.SAND_DATA_ROOT;
@@ -181,27 +192,27 @@ test("the claidor provider speaks the Responses wire to our proxy with the signe
       requests.push({ url, headers: new Headers(init?.headers), body: JSON.parse(init?.body ?? "{}") });
       return responsesStream("bonjour");
     };
-    const { claidorProxyBaseUrl, configuredClaidorModel, setClaidorCredentialSource, runRoutedProviderText, DEFAULT_CLAIDOR_MODEL } = loaded.module;
+    const { simeonProxyBaseUrl, configuredSimeonModel, setSimeonCredentialSource, runRoutedProviderText, DEFAULT_SIMEON_MODEL } = loaded.module;
 
-    assert.equal(claidorProxyBaseUrl("https://api.simeonlabs.com"), "https://api.simeonlabs.com/desktop/api/proxy/v1");
-    assert.equal(claidorProxyBaseUrl("https://api.simeonlabs.com/"), "https://api.simeonlabs.com/desktop/api/proxy/v1");
-    assert.equal(configuredClaidorModel(), DEFAULT_CLAIDOR_MODEL);
-    assert.equal(DEFAULT_CLAIDOR_MODEL, "gpt-6-sol");
+    assert.equal(simeonProxyBaseUrl("https://api.simeonlabs.com"), "https://api.simeonlabs.com/desktop/api/proxy/v1");
+    assert.equal(simeonProxyBaseUrl("https://api.simeonlabs.com/"), "https://api.simeonlabs.com/desktop/api/proxy/v1");
+    assert.equal(configuredSimeonModel(), DEFAULT_SIMEON_MODEL);
+    assert.equal(DEFAULT_SIMEON_MODEL, "gpt-6-sol");
 
-    setClaidorCredentialSource(null);
-    await assert.rejects(() => runRoutedProviderText("claidor", [{ role: "user", content: "hi" }]), /has no credential source/);
+    setSimeonCredentialSource(null);
+    await assert.rejects(() => runRoutedProviderText("simeon", [{ role: "user", content: "hi" }]), /has no credential source/);
     assert.deepEqual(requests, []);
 
     let minted = 0;
-    setClaidorCredentialSource({ getAccessToken: async () => { minted += 1; return `claidor_da_token_${minted}`; } });
+    setSimeonCredentialSource({ getAccessToken: async () => { minted += 1; return `simeon_da_token_${minted}`; } });
     const deltas = [];
-    const text = await runRoutedProviderText("claidor", [{ role: "user", content: "say hello" }], { onTextDelta: (delta) => deltas.push(delta) });
+    const text = await runRoutedProviderText("simeon", [{ role: "user", content: "say hello" }], { onTextDelta: (delta) => deltas.push(delta) });
 
     assert.equal(text, "bonjour");
     assert.equal(deltas.join(""), "bonjour");
     assert.equal(requests.length, 1);
     assert.equal(requests[0].url, "https://api.simeonlabs.com/desktop/api/proxy/v1/responses");
-    assert.equal(requests[0].headers.get("authorization"), "Bearer claidor_da_token_1");
+    assert.equal(requests[0].headers.get("authorization"), "Bearer simeon_da_token_1");
     assert.equal(requests[0].body.model, "gpt-6-sol");
     assert.equal(requests[0].body.stream, true);
     assert.ok(JSON.stringify(requests[0].body.input).includes("say hello"));
@@ -216,7 +227,7 @@ test("the claidor provider speaks the Responses wire to our proxy with the signe
       requests.push({ url, headers: new Headers(init?.headers), body: JSON.parse(init?.body ?? "{}") });
       return requests.length === 1 ? functionCallStream("gmail_search", { query: "invoices" }) : responsesStream("3 invoices");
     };
-    const toolText = await runRoutedProviderText("claidor", [{ role: "user", content: "any invoices?" }], {
+    const toolText = await runRoutedProviderText("simeon", [{ role: "user", content: "any invoices?" }], {
       tools: [{ name: "gmail_search", providerIdentifier: "gmail", toolName: "search", description: "Search mail", inputSchema: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } }],
       executeTool: async (definition, args, toolCallId) => { executed.push({ name: definition.name, args, toolCallId }); return { hits: 3 }; },
     });
@@ -228,7 +239,7 @@ test("the claidor provider speaks the Responses wire to our proxy with the signe
     const secondInput = JSON.stringify(requests[1].body.input);
     assert.ok(secondInput.includes("call_1"));
     assert.ok(secondInput.includes("\"hits\":3") || secondInput.includes("hits"));
-    assert.equal(requests[1].headers.get("authorization"), "Bearer claidor_da_token_3");
+    assert.equal(requests[1].headers.get("authorization"), "Bearer simeon_da_token_3");
   } finally {
     globalThis.fetch = previousFetch;
     if (previousDataRoot === undefined) delete process.env.SAND_DATA_ROOT; else process.env.SAND_DATA_ROOT = previousDataRoot;
@@ -241,7 +252,7 @@ test("every connector wrapper between electron-main and the coordinator forwards
   const egress = await loadModule("source/electron-main/box/remote-connector-egress.ts", "remote-connector-egress");
   const pause = await loadModule("source/electron-main/box/box-client-pause.ts", "box-client-pause");
   try {
-    const credential = { accessToken: "claidor_da_x", backendUrl: "https://api.simeonlabs.com/", expiresAtMs: 1 };
+    const credential = { accessToken: "simeon_da_x", backendUrl: "https://api.simeonlabs.com/", expiresAtMs: 1 };
     const base = { connect: async () => ({}), issueLocalExecDaemonCredential: async () => undefined, issueInferenceCredential: async () => credential };
 
     const observed = egress.module.createEgressConnectionObserver().wrap(base);
@@ -270,20 +281,20 @@ test("the product lock ignores stored providers", async () => {
     delete process.env.SAND_INFERENCE_PROVIDER;
 
     const { resolveProductInferenceProvider, PRODUCT_INFERENCE_PROVIDER } = shared.module;
-    assert.equal(PRODUCT_INFERENCE_PROVIDER, "claidor");
-    assert.equal(resolveProductInferenceProvider({}), "claidor");
-    assert.equal(resolveProductInferenceProvider({ SAND_INFERENCE_PROVIDER: "openrouter" }), "claidor");
-    assert.equal(resolveProductInferenceProvider({ SAND_INFERENCE_PROVIDER: "claude-code" }), "claidor");
-    assert.equal(resolveProductInferenceProvider({ SAND_INFERENCE_PROVIDER: "cursor" }), "claidor");
-    assert.equal(resolveProductInferenceProvider({ SAND_INFERENCE_PROVIDER: "not-a-provider" }), "claidor");
+    assert.equal(PRODUCT_INFERENCE_PROVIDER, "simeon");
+    assert.equal(resolveProductInferenceProvider({}), "simeon");
+    assert.equal(resolveProductInferenceProvider({ SAND_INFERENCE_PROVIDER: "openrouter" }), "simeon");
+    assert.equal(resolveProductInferenceProvider({ SAND_INFERENCE_PROVIDER: "claude-code" }), "simeon");
+    assert.equal(resolveProductInferenceProvider({ SAND_INFERENCE_PROVIDER: "cursor" }), "simeon");
+    assert.equal(resolveProductInferenceProvider({ SAND_INFERENCE_PROVIDER: "not-a-provider" }), "simeon");
 
     const settingsPath = path.join(storeLoaded.dataDir, "settings.json");
     await writeFile(settingsPath, JSON.stringify({ version: 1, inferenceProvider: "claude-code" }));
     const store = new storeLoaded.module.SandSettingsStore(settingsPath);
-    assert.equal(store.getInferenceProvider(), "claidor");
+    assert.equal(store.getInferenceProvider(), "simeon");
     store.setInferenceProvider("openrouter");
-    assert.equal(store.getInferenceProvider(), "claidor");
-    assert.equal(JSON.parse(await readFile(settingsPath, "utf8")).inferenceProvider, "claidor");
+    assert.equal(store.getInferenceProvider(), "simeon");
+    assert.equal(JSON.parse(await readFile(settingsPath, "utf8")).inferenceProvider, "simeon");
 
     const dataDir = path.join(router.dataDir, "data");
     await mkdir(dataDir, { recursive: true });
@@ -294,7 +305,7 @@ test("the product lock ignores stored providers", async () => {
       postEvent: () => {},
       dispatchRemote: async () => { throw new Error("unused"); },
     });
-    assert.equal(created.provider(), "claidor");
+    assert.equal(created.provider(), "simeon");
   } finally {
     if (previousOverride === undefined) delete process.env.SAND_INFERENCE_PROVIDER;
     else process.env.SAND_INFERENCE_PROVIDER = previousOverride;

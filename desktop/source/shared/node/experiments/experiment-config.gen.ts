@@ -3448,7 +3448,7 @@ export const FLAGS = {
       },
       // Rollout of sparse partial clones + subprocess kill budgets for plugin
       // repos, so plugins in large monorepos install without hitting the legacy
-      // 30s full-clone timeout. See @anysphere/cursor-plugins.
+      // 30s full-clone timeout. See @sand/cursor-plugins.
       enable_sparse_plugin_clones: {
         client: true,
         default: true

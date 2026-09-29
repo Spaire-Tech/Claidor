@@ -1,6 +1,6 @@
 import type { AgentDesktopBridge } from "../../../contracts/desktop-bridge";
 
-export type RouterProviderId = "cursor" | "claidor" | "claude-code" | "codex" | "openrouter";
+export type RouterProviderId = "cursor" | "simeon" | "claude-code" | "codex" | "openrouter";
 
 export interface RouterProvider {
   readonly id: RouterProviderId;
@@ -10,22 +10,22 @@ export interface RouterProvider {
   readonly usageSource: "cursor" | "external";
 }
 
-export const DEFAULT_ROUTER_PROVIDER: RouterProviderId = "claidor";
+export const DEFAULT_ROUTER_PROVIDER: RouterProviderId = "simeon";
 export const ROUTER_PROVIDER_PERSISTENCE_KEY = "settings.router-provider.v1";
 
 export const ROUTER_PROVIDERS: readonly RouterProvider[] = [
   {
     id: "cursor",
-    label: "Claidor",
-    description: "Use your signed-in Claidor account and its hosted agent models.",
-    usageDescription: "Included and on-demand usage from your Claidor account.",
+    label: "Simeon",
+    description: "Use your signed-in Simeon account and its hosted agent models.",
+    usageDescription: "Included and on-demand usage from your Simeon account.",
     usageSource: "cursor"
   },
   {
-    id: "claidor",
-    label: "Claidor",
-    description: "Use your signed-in Claidor account and its metered models.",
-    usageDescription: "Requests and tokens recorded locally; credits are metered by your Claidor account.",
+    id: "simeon",
+    label: "Simeon",
+    description: "Use your signed-in Simeon account and its metered models.",
+    usageDescription: "Requests and tokens recorded locally; credits are metered by your Simeon account.",
     usageSource: "external"
   },
   {

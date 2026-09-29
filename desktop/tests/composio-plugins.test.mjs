@@ -68,7 +68,7 @@ test("the marketplace listing is the static Composio catalog, not Cursor", async
     assert.equal(signedOut.includesPrivateMarketplaces, false);
     assert.ok(signedOut.plugins.every((plugin) => typeof plugin.composioToolkit === "string"));
 
-    const signedIn = await marketplace.module.fetchComposioMarketplacePlugins(async () => "claidor_da_test");
+    const signedIn = await marketplace.module.fetchComposioMarketplacePlugins(async () => "simeon_da_test");
     assert.equal(signedIn.includesPrivateMarketplaces, true);
     assert.equal(signedIn.plugins.find((plugin) => plugin.pluginId === "gmail")?.composioToolkit, "gmail");
 
@@ -107,12 +107,12 @@ test("connected toolkits become enabled user plugins, and a 503 degrades to none
   }
 });
 
-test("the Claidor Composio client talks session, link, toolkits, and disconnect", async () => {
+test("the Simeon Composio client talks session, link, toolkits, and disconnect", async () => {
   const loaded = await load("source/shared/node/composio/composio-api.ts", "composio-api");
-  const urls = await load("source/shared/node/cursor-backend/claidor-api.ts", "claidor-api");
+  const urls = await load("source/shared/node/cursor-backend/simeon-api.ts", "simeon-api");
   try {
     assert.equal(
-      urls.module.claidorComposioUrl("api/v3.1/tool_router/session", "https://api.simeonlabs.com/"),
+      urls.module.simeonComposioUrl("api/v3.1/tool_router/session", "https://api.simeonlabs.com/"),
       "https://api.simeonlabs.com/desktop/api/proxy/composio/api/v3.1/tool_router/session",
     );
     assert.equal(loaded.module.composioFailureMessage(401), "You are signed out. Sign in again to connect apps.");
@@ -122,7 +122,7 @@ test("the Claidor Composio client talks session, link, toolkits, and disconnect"
 
     const calls = [];
     const api = loaded.module.createComposioApi({
-      getAccessToken: async () => "claidor_da_test",
+      getAccessToken: async () => "simeon_da_test",
       backendUrl: "https://api.simeonlabs.com/",
       fetch: async (url, init) => {
         calls.push({ url: String(url), method: init.method, body: init.body });

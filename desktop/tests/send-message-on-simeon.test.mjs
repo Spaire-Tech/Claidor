@@ -8,7 +8,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
 
 // The real SendMessage tool — the agent's only voice — driven through the
-// host's real tool loop on the claidor executor against a fake Responses
+// host's real tool loop on the simeon executor against a fake Responses
 // server. 23 September 2026: on a Mac, turns ran for fifty minutes and
 // nothing reached the person. This is the offline half of finding out why:
 // does a SendMessage the model actually calls land, and what schema does
@@ -19,7 +19,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 async function loadHarness() {
   const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-send-message-"));
   const output = path.join(temporary, "send-message.mjs");
-  await build({ entryPoints: [path.join(repoRoot, "tests/fixtures/claidor-host-loop-entry.ts")], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
+  await build({ entryPoints: [path.join(repoRoot, "tests/fixtures/simeon-host-loop-entry.ts")], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
   return { module, dataDir: temporary, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
@@ -82,7 +82,7 @@ function pin(module, dataDir) {
   for (const key of ["SAND_DATA_ROOT", "SAND_BACKEND_URL"]) env.previous[key] = process.env[key];
   process.env.SAND_DATA_ROOT = dataDir;
   process.env.SAND_BACKEND_URL = "https://api.simeonlabs.com";
-  module.setClaidorCredentialSource({ getAccessToken: async () => "claidor_da_send" });
+  module.setSimeonCredentialSource({ getAccessToken: async () => "simeon_da_send" });
 }
 function unpin() {
   for (const [key, value] of Object.entries(env.previous)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }
@@ -110,7 +110,7 @@ test("a SendMessage the model calls lands, and the model is told it landed", asy
       { role: "system", content: "You are the real system prompt. Nothing reaches the user unless it's inside a SendMessage." },
       { role: "user", content: [{ type: "text", text: "hi" }] },
     ];
-    const executor = new loaded.module.SimplePromptToolExecutor(loaded.module.createProviderPromptSession("claidor").getExecutor(state));
+    const executor = new loaded.module.SimplePromptToolExecutor(loaded.module.createProviderPromptSession("simeon").getExecutor(state));
     const ctx = loaded.module.createContext();
 
     const first = await runStep(executor, ctx, tool);

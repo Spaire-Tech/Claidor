@@ -12,7 +12,7 @@ import { CANVAS_POST_EDIT_DIAGNOSTICS_TIMEOUT_MS } from "../../../utils/overrida
 import { delay } from "../../../../utils/promise-extras.js";
 import { isManagedCanvasPath } from "../../../../utils/canvas-path.js";
 
-const logger = createLogger("@anysphere/agent");
+const logger = createLogger("@sand/agent");
 const eagerStoreConflictBarrier = createCounter("agent.store.eager_barrier", {
   description: "Eager same-result agent-store conflict barrier outcomes.",
 });

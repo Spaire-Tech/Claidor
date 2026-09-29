@@ -128,7 +128,7 @@ function startRegistry() {
   return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve({ url: `http://127.0.0.1:${server.address().port}`, plugins, calls, close: () => new Promise((done) => server.close(done)) })));
 }
 
-const auth = { getAccessToken: async () => "claidor_da_test", getMachineId: async () => "machine-test", peekAccessToken: () => "claidor_da_test" };
+const auth = { getAccessToken: async () => "simeon_da_test", getMachineId: async () => "machine-test", peekAccessToken: () => "simeon_da_test" };
 
 test("a skill publishes to Just me, confirms on the first sync, and unpublish restores the library", async () => {
   const registry = await startRegistry();

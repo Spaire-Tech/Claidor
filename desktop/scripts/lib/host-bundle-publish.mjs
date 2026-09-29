@@ -1,4 +1,4 @@
-// The cloud computer's host program, published in Grok Bot's layout
+// The cloud computer's host program, published in the upstream app's layout
 // (29 September 2026): `<base>/sand-host-bundle-latest.version` holds a
 // commit id and `<base>/sand-host-bundle-<id>.tgz` is the bundle
 // (`source/host/extensions/host-upgrade/host-bundle-source.ts`). Simeon Labs'
@@ -16,7 +16,7 @@ import { gzipSync } from "node:zlib";
 
 export const HOST_BUNDLE_PREFIX = "sand-host-bundle";
 export const LATEST_VERSION_FILE = "sand-host-bundle-latest.version";
-/** Grok Bot's rule for a version (`SHORT_GIT_SHA_REGEX`). */
+/** the upstream app's rule for a version (`SHORT_GIT_SHA_REGEX`). */
 export const VERSION_PATTERN = /^[0-9a-f]{7,40}$/;
 export const BUNDLE_MEMBERS = Object.freeze({
   host: "host/host-main.cjs",

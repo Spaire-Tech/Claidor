@@ -49,7 +49,7 @@ import { registerProductionTelemetryIpc } from "./telemetry/production-telemetry
 import type { SandAuthStatus } from "./account/cursor-auth.js";
 import type { SecureStorageCodec } from "./secrets/secret-store.js";
 import { recordLocalToolApproval as persistLocalToolApproval, clearLocalToolApprovals as clearPersistedLocalToolApprovals } from "../host/local-exec/local-tool-approvals.js";
-import { fetchClaidorAvailableModels } from "./models/claidor-model-catalog.js";
+import { fetchSimeonAvailableModels } from "./models/simeon-model-catalog.js";
 import { migrationWatchForBoxRuntime } from "./box/box-recovery.js";
 import type { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
 import type {
@@ -461,7 +461,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
   const env = bindings.env ?? process.env, platform = bindings.platform ?? process.platform;
   const metadata = bindings.metadata ?? readElectronPackageMetadata(bindings.moduleDir, bindings.readPackageText);
   // The local Docker box's credentials are kept encrypted with safeStorage,
-  // as Grok Bot keeps its box descriptor (F-148). Set before anything below
+  // as the upstream app keeps its box descriptor (F-148). Set before anything below
   // can start, quit or ask the box.
   configureLocalDockerSecretStorage(bindings.native.safeStorage);
   const resources = resolveElectronProductionResources({ moduleDir: bindings.moduleDir, app: bindings.native.app, env, metadata, ...(bindings.attachProdBoxPreferencePath == null ? {} : { attachProdBoxPreferencePath: bindings.attachProdBoxPreferencePath }) });
@@ -739,9 +739,9 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         // `AiService/AvailableModels`, a Cursor Connect RPC the server does
         // not serve, and the 404 reached the renderer as the picker's
         // error. Same edge method, same `toJson()` shape; only the wire
-        // changed (`models/claidor-model-catalog.ts`).
+        // changed (`models/simeon-model-catalog.ts`).
         fetchAvailableModels: async () => {
-          const response = await fetchClaidorAvailableModels({
+          const response = await fetchSimeonAvailableModels({
             getAccessToken: async () => await (await requireValue(account, "account").getAuthService()).getValidAccessToken(),
           });
           return response.toJson();

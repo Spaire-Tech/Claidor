@@ -26,7 +26,7 @@ export interface WriteCodeSelectionToFileArgs {
   readonly resourceAccessor: CodeSelectionResourceAccessor | undefined;
 }
 
-const logger = createLogger("@anysphere/agent/context-processing");
+const logger = createLogger("@sand/agent/context-processing");
 
 // Extracted from ../packages/agent/dist/context-processing.js as an
 // uncomposed long-code-selection file-spill leaf. The parent

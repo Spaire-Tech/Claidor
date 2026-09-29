@@ -4,7 +4,7 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value != null && !Array.isArray(value) ? value as Record<string, unknown> : null;
 }
 
-export interface GrokBotChatMessage {
+export interface SandChatMessage {
   readonly role: "user" | "assistant";
   readonly content: string;
   readonly id?: string;
@@ -37,7 +37,7 @@ function assistantFromSendMessage(message: Record<string, unknown>): string | nu
   return null;
 }
 
-export function chatMessageFromTranscriptEntry(raw: unknown): GrokBotChatMessage | null {
+export function chatMessageFromTranscriptEntry(raw: unknown): SandChatMessage | null {
   const row = asRecord(raw);
   if (row == null || typeof row.id !== "string" || row.id.length === 0) return null;
   if (row.kind === "message" && row.role === "user" && typeof row.content === "string" && row.content.trim().length > 0) {
@@ -55,10 +55,10 @@ export function chatMessageFromTranscriptEntry(raw: unknown): GrokBotChatMessage
 
 export function mergeHostAndLocalChatHistory(options: {
   readonly remoteEntries: readonly unknown[];
-  readonly localMessages: readonly GrokBotChatMessage[];
-}): GrokBotChatMessage[] {
+  readonly localMessages: readonly SandChatMessage[];
+}): SandChatMessage[] {
   const localIds = new Set(options.localMessages.map(message => message.id).filter((id): id is string => typeof id === "string" && id.length > 0));
-  const fromHost: GrokBotChatMessage[] = [];
+  const fromHost: SandChatMessage[] = [];
   for (const raw of options.remoteEntries) {
     const message = chatMessageFromTranscriptEntry(raw);
     if (message == null || (message.id != null && localIds.has(message.id))) continue;

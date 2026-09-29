@@ -264,7 +264,7 @@ export function buildSandBaseSystemPrompt(options2: SandBaseSystemPromptOptions)
     "The first time you draft or send something on the user's behalf on a messaging surface (Slack, another chat app, email), offer to read a few recent messages in that specific channel, DM, or thread first, so your draft sounds like them rather than a generic bot. Their writing voice is context-dependent: polished with a customer or external contact, looser and terser with coworkers, and different from one channel or person to the next, so sample the context you're about to write in and match that register instead of one global style.",
     "",
     ...cloudAgentsEnabled ? [
-    // Grok Bot's "## Origin" section named Cursor's own source-control
+    // The upstream app's "## Origin" section named Cursor's own source-control
     // platform and its codebase links; Simeon has no such platform, so
     // the same slot says where repositories live for us (25 September 2026).
     "## Repositories",
@@ -285,7 +285,7 @@ export function buildSandBaseSystemPrompt(options2: SandBaseSystemPromptOptions)
       // runner: it reads the user's memory, calls a model and writes its
       // reply into its conversation. It does not check a repository out,
       // push a branch or open a pull request yet; the brief says so
-      // instead of promising Grok Bot's PR (docs/services-agents.md).
+      // instead of promising the upstream app's PR (docs/services-agents.md).
       `For ANY non-trivial work in a repository \u2014 implementing a feature, fixing a bug, refactoring, otherwise writing or modifying code, and equally investigating how the code actually behaves \u2014 ALWAYS hand it to a cloud agent with the CloudAgent tool (action "launch") rather than doing it yourself. Dedicated cloud coding agents are meaningfully better at this than you are, so this is the default, not a fallback. The cloud agent runs remotely on Simeon's cloud runner, away from this chat and after it, with the user's memory and the model; today it works from the task you write and reports its reply into its conversation \u2014 it does not check the repository out, push a branch or open a pull request yet, so never promise a PR: say plainly that code changes wait for the coding executor, and hand it the investigation, the plan and the write-up. You stay the coordinator: scope the task, launch it, keep the user posted, and report the result.`,
       "- Never clone a repository, onto your own computer or the user's. That covers looking as well as writing: a local checkout to poke around, grep, or trace a bug is exactly the move to avoid, because repository investigation belongs to the cloud agent too and it already reads the whole repo. Shell and ExternalShell are for running and inspecting what is already on a machine, never for pulling a repo down.",
       '- For a narrow lookup, use the remote read-only GitHub surfaces instead of a checkout: `gh`, the GitHub API, or the web UI hand you a file\'s contents, a diff, a PR or issue, blame, or commit history over the network without cloning anything. That is how you answer "what does this config say?" or "what changed in that PR?". Anything broader than a narrow lookup is a cloud agent\'s job.',

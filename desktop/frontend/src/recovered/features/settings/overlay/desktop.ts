@@ -137,7 +137,7 @@ export function accountStateFromCursorStatus(status: CursorAuthStatus, avatarDat
   if (status.kind !== "logged-in") return status;
   return {
     kind: "logged-in",
-    name: status.displayName ?? status.email ?? "Claidor user",
+    name: status.displayName ?? status.email ?? "Simeon user",
     ...(status.email == null ? {} : { email: status.email }),
     ...(avatarDataUrl == null ? {} : { avatarDataUrl })
   };
@@ -145,7 +145,7 @@ export function accountStateFromCursorStatus(status: CursorAuthStatus, avatarDat
 
 // @evidence recovered/frontend/app/assets/index-UbX-y3il.js#L133175-L133176
 export function cursorAuthErrorMessage(reason: unknown): string {
-  return reason instanceof Error ? reason.message.replace(/^[A-Za-z]*Error:\s*/, "") : "Claidor authentication failed.";
+  return reason instanceof Error ? reason.message.replace(/^[A-Za-z]*Error:\s*/, "") : "Simeon authentication failed.";
 }
 
 export async function loadSettingsDesktopSnapshot(bridge: DesktopBridge, coordinatorClient?: Pick<ProductionCoordinatorClient, "isEgressTunnelAvailable">): Promise<SettingsDesktopSnapshot> {

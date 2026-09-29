@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // `npm run publish:host-bundle` (29 September 2026): after `npm run package`,
 // publishes the packaged app's host program for the cloud computers, in
-// Grok Bot's layout (scripts/lib/host-bundle-publish.mjs). The server picks
+// The upstream app's layout (scripts/lib/host-bundle-publish.mjs). The server picks
 // it up within ten minutes, with no restart, and each cloud computer moves to
 // it the next time it is idle.
 //

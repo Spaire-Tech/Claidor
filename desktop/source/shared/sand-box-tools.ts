@@ -89,7 +89,7 @@ const BROWSER_TOOL_SPECS: readonly { readonly name: string; readonly description
   { name: "browser_take_screenshot", description: "Take a screenshot of the current page. Usually redundant: every browser action already returns one.", properties: { fullPage: { type: "boolean" } } },
 ];
 
-export const GROK_BOT_HOST_TOOL_NAMES = [
+export const SAND_HOST_TOOL_NAMES = [
   "Shell",
   "Read",
   "AwaitShell",
@@ -109,7 +109,7 @@ export const GROK_BOT_HOST_TOOL_NAMES = [
   ...BROWSER_TOOL_SPECS.map(spec => spec.name),
 ] as const;
 
-export const GROK_BOT_BOX_TOOLS: readonly Record<string, unknown>[] = [
+export const SAND_BOX_TOOLS: readonly Record<string, unknown>[] = [
   tool("Shell", BOX_SHELL_DESCRIPTION, SHELL_PROPERTIES, ["command"]),
   tool("Read", BOX_READ_DESCRIPTION, {
     path: { type: "string", description: "The absolute path of the file to read on your own computer." },

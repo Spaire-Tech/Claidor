@@ -45,9 +45,9 @@ The app is Electron, macOS on Apple Silicon only. Its code lives under
 A chat turn runs the host's full agent loop in the box
 (`host/runner/turn-run-shell.ts`). The loop keeps one transcript per agent,
 carries tool calls into the next turn, and can start teammates and subagents.
-Every model call goes to Simeon Labs' proxy through the model provider whose
-internal id is still `claidor`
-(`host/extensions/inference/provider-session.ts`). The default models are
+Every model call goes to Simeon Labs' proxy through the `simeon` model
+provider (`host/extensions/inference/provider-session.ts`). Settings files
+written before 29 September 2026 name it `claidor`, which is still read. The default models are
 `gpt-6-sol` for the loop and `gpt-6-luna` for cheap work (summaries, memory,
 computer and browser subagents, the auto-review classifier). The server
 decides which models are offered (`server/simeon/desktop/pricing.py`).
@@ -71,7 +71,7 @@ Every person runs on a cloud box. The app has no setting to change this.
   server reads the pointer at most every ten minutes, with no restart.
   `npm run publish:host-bundle` writes it (see `docs/building-the-app.md`).
 - The server gives the box a fixed environment (`box_hosts.py`), including
-  `SAND_BACKEND_URL`, `SAND_INFERENCE_PROVIDER=claidor` and the box's own
+  `SAND_BACKEND_URL`, `SAND_INFERENCE_PROVIDER=simeon` and the box's own
   renewal credential. The box trades that credential for fresh model tokens
   at `POST /sand-box/inference-credential`.
 - Sleep: the worker checks every minute (`sand.box.hibernate_idle`). A box
@@ -200,7 +200,7 @@ On the Mac (environment of the app process):
 | `SAND_STOP_BOX_ON_QUIT=1` / `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` | Local box: always stop, or always keep, on quit. By default it keeps running only when an enabled routine exists. |
 | `SAND_DISABLE_HWA=1` | Turn off GPU acceleration (on by default). |
 | `SAND_DEVTOOLS=1` | Allow DevTools in a packaged build. |
-| `SAND_CLAIDOR_FULL_AGENT=off` | Text-only escape hatch that runs turns on the Mac instead of the box loop. |
+| `SAND_SIMEON_FULL_AGENT=off` | Text-only escape hatch that runs turns on the Mac instead of the box loop. |
 | `SIMEON_API_BASE_URL`, `SIMEON_WEBSITE_URL`, `SAND_BACKEND_URL` | Backend hosts; the packaged app sets them in `LSEnvironment`. |
 
 In the host (inside the box):
@@ -211,9 +211,12 @@ In the host (inside the box):
 | `SAND_AGENT_MAX_STEPS`, `SAND_HIDDEN_TURN_MAX_STEPS` | Model-call budgets for asked turns and hidden turns. |
 | `SAND_MEMORY_SYNC=0` | Turn memory sync off. |
 | `SAND_LISTENER_RELAY_SERVED=0`, `SAND_SHARING_SERVED=0`, `SAND_CHANNELS_SERVED=0`, `SAND_VIDEO_SUBAGENT_SERVED=0` | Turn a served feature back to "coming soon". |
-| `SAND_CLAIDOR_VIDEO_MODEL` | Model for the video subagents. |
+| `SAND_SIMEON_VIDEO_MODEL` | Model for the video subagents. |
 | `SAND_AGENT_SCREENSHOT_TOOL=1` | Offer the agent's Screenshot tool (off by default). |
 | `SAND_FEATURE_GATE_OVERRIDES` | Force feature gates, e.g. `sand_teach_by_demonstration=1`. |
+
+Every `SAND_SIMEON_*` switch is also read under its earlier name,
+`SAND_CLAIDOR_*`.
 
 A cloud box gets its environment from the server, not from the Mac. The Mac
 forwards the host switches in `SERVED_SWITCH_ENVS`

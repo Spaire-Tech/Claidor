@@ -4,7 +4,7 @@
  * self-check that `*-production-activation.mjs` requires.
  *
  * Packaging used to leave those two runtimes as artifact-fallback, so
- * `npm run package` shipped Grok's host (no Terra→Luna) even after the
+ * `npm run package` shipped the upstream app's host (no Terra→Luna) even after the
  * recovered source was on main.
  */
 

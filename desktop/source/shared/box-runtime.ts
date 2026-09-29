@@ -1,6 +1,6 @@
 export type SandBoxRuntime = "remote" | "local-docker";
 
-// Grok Bot's own default (0.18.0): every person's computer is in the cloud,
+// The upstream app's own default (0.18.0): every person's computer is in the cloud,
 // made by the backend (`EnsureSandBox`). From 19 September to 29 September
 // 2026 this was "local-docker", because Simeon Labs' server could not make a
 // cloud computer yet; it can now (`server/simeon/sand/box_*.py`).

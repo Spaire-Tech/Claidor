@@ -206,7 +206,7 @@ if (rendererComposition?.mode === "clean-source") {
     } else if (bytes.byteLength !== file.bytes || sha256(bytes) !== file.sha256) throw new Error(`Packaged artifact renderer differs from its checksum inventory: ${file.path}`);
   }
   // A Simeon package always carries the patch record: without it the
-  // renderer would still say Grok Bot (ledger F-455, 26 September 2026).
+  // renderer would still say the upstream app (ledger F-455, 26 September 2026).
   if (patchedRendererFiles.size === 0) throw new Error(`Packaged renderer has no patch record at ${rendererExtensionPath}; the brand pass did not run.`);
   const unpinnedPatched = [...patchedRendererFiles.keys()].filter(relative => !declaredPaths.has(relative));
   if (unpinnedPatched.length > 0) throw new Error(`Renderer patch record lists files outside the pinned inventory: ${unpinnedPatched.join(", ")}`);
@@ -289,7 +289,7 @@ if (plistText.includes("ElectronAsarIntegrity")) throw new Error("Stale Electron
 if (plistText.includes("CFBundleIconName")) throw new Error("CFBundleIconName remains in the reconstructed application; the Dock would show the shell's Assets.car icon, not Simeon's");
 const urlTypes = await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleURLTypes", "xml1", "-o", "-", infoPlist]);
 if (!urlTypes.includes(`<string>${simeonUrlScheme}</string>`)) throw new Error(`Reconstructed application has no ${simeonUrlScheme} URL registration`);
-if (urlTypes.includes("<string>sand</string>")) throw new Error("Reconstructed application still claims Grok Bot's sand URL scheme");
+if (urlTypes.includes("<string>sand</string>")) throw new Error("Reconstructed application still claims the upstream app's sand URL scheme");
 // What scripts/package-macos.mjs writes beyond the identity above, checked
 // here since 26 September 2026 (ledger F-455): the renamed executable and
 // its helpers (the menu bar's name; a half-renamed bundle dies at launch),

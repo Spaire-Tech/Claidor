@@ -1,9 +1,9 @@
-import { claidorProxyRequest, ClaidorApiError, type ClaidorApiAuth } from "./claidor-api.js";
+import { simeonProxyRequest, SimeonApiError, type SimeonApiAuth } from "./simeon-api.js";
 
-// Pictures, on Claidor's `/images/generations` door
+// Pictures, on Simeon's `/images/generations` door
 // (`server/simeon/desktop/capabilities.py`). Until 19 September 2026 this was
 // a Connect RPC call on `aiserver.v1.AiService/RunGenerateImage`, which
-// Claidor never served; the tool that calls it
+// Simeon never served; the tool that calls it
 // (`packages/agent/tools/core/generate-image.ts`) and the avatar picker are
 // unchanged, because the shape they were given is kept.
 
@@ -35,17 +35,17 @@ export function imageSizeForAspectRatio(aspectRatio: string | undefined): Genera
 export interface GenerateImageReference { readonly data: string; readonly mimeType: string }
 export interface GeneratedImageBytes { readonly imageData: string; readonly mimeType: string; readonly usage?: unknown }
 
-export interface ClaidorGenerateImageOptions extends ClaidorApiAuth {
+export interface SimeonGenerateImageOptions extends SimeonApiAuth {
   readonly fetch?: typeof fetch;
   readonly quality?: "auto" | "low" | "medium" | "high";
 }
 
-export function createClaidorGenerateImageService(options: ClaidorGenerateImageOptions) {
+export function createSimeonGenerateImageService(options: SimeonGenerateImageOptions) {
   return async (_context: unknown, description: string, referenceImages?: readonly GenerateImageReference[], aspectRatio?: string): Promise<GeneratedImageBytes> => {
     const references = (referenceImages ?? []).filter((image) => typeof image?.data === "string" && image.data.length > 0);
     let response: Response;
     try {
-      response = await claidorProxyRequest(options, "images/generations", {
+      response = await simeonProxyRequest(options, "images/generations", {
         ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
         json: {
           prompt: description,
@@ -55,7 +55,7 @@ export function createClaidorGenerateImageService(options: ClaidorGenerateImageO
         },
       });
     } catch (error) {
-      if (error instanceof ClaidorApiError) {
+      if (error instanceof SimeonApiError) {
         // A 402 is the person's allowance, not the picture: the tool tells the
         // agent the model is closed to it rather than that the drawing failed.
         if (error.status === 402) throw new SandGenerateImageModelRestrictedError(error.message);

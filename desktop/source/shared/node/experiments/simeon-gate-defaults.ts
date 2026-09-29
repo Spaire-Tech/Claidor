@@ -1,8 +1,8 @@
 import { envGateOverride } from "./cursor-experiments.js";
 
-// Feature gates Simeon turns on that Grok Bot's bundled table
+// Feature gates Simeon turns on that the upstream app's bundled table
 // (`experiment-config.gen.ts`, a generated file that is not edited) leaves
-// off. Grok Bot flips these from Cursor's experiments server, which Simeon
+// off. The upstream app flips these from Cursor's experiments server, which Simeon
 // Labs' server does not serve, so without this the bundled default is the
 // only value the app ever sees.
 //
@@ -23,7 +23,7 @@ import { envGateOverride } from "./cursor-experiments.js";
 // 2026 (design-audit-ledger.md F-340), now that the classifier runs on Luna
 // through Simeon Labs' proxy and the box host reads this table.
 //
-// `sand_product_analytics` — Grok Bot's event stream to Cursor's
+// `sand_product_analytics` — the upstream app's event stream to Cursor's
 // AnalyticsService, which nothing serves here; off (F-378).
 //
 // `sand_multiplayer` — sharing a room with another person's agent. Off in
@@ -46,7 +46,7 @@ import { envGateOverride } from "./cursor-experiments.js";
 // screen; the founder decides when to try the dedicated child
 // (`SAND_FEATURE_GATE_OVERRIDES=sand_browser_use_subagent=1` tries it
 // without a rebuild). `sand_multitask` stays at its bundled default, on:
-// it is Grok Bot's own loop ("i want literally everything", 22 September).
+// it is the upstream app's own loop ("i want literally everything", 22 September).
 export const SIMEON_FEATURE_GATE_DEFAULTS: Readonly<Record<string, boolean>> = Object.freeze({
   sand_usage_page: true,
   sand_auto_review: true,

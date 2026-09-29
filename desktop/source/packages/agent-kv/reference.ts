@@ -7,7 +7,7 @@ import type { BlobType, Serde } from "./serde.js";
 import { toHex } from "./serde.js";
 import { getBlobMetadataCallback } from "./typed-blob-store.js";
 
-const logger = createLogger("@anysphere/agent-kv:reference");
+const logger = createLogger("@sand/agent-kv:reference");
 const LARGE_LAZY_REFERENCE_BLOB_BYTES = 512 * 1024;
 const SLOW_LAZY_REFERENCE_DESERIALIZE_MS = 100;
 

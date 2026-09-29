@@ -73,7 +73,7 @@ export interface ProcessedSelectedVideoData {
   readonly videoUrl?: string;
 }
 
-const logger = createLogger("@anysphere/agent/context-processing");
+const logger = createLogger("@sand/agent/context-processing");
 
 // Extracted from ../packages/agent/dist/context-processing.js as the exact
 // selected-video data/blob, signed-URL, and filesystem-materialization branch.

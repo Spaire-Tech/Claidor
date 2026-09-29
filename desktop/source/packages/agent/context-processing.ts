@@ -120,7 +120,7 @@ interface ContextProcessingConfig {
   readonly documentationHydrationService: DocumentationHydrationService<DocumentationResult>;
 }
 
-const logger = createLogger("@anysphere/agent/context-processing");
+const logger = createLogger("@sand/agent/context-processing");
 const enrichContextDuration = createHistogram("agent.ttft.enrichContextMs", {
   description: "Time for the parallelizable context enrichment tasks in processSelectedContext (external links, documentation, PR hydration, etc.)",
 });

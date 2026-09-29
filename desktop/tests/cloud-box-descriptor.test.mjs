@@ -70,7 +70,7 @@ test("the brokered connector builds the descriptor from the broker's answer and 
       recreateSandBox: async (request) => { calls.push(["recreate", request]); return { started: true, reason: "", operationId: "op-1" }; },
       forceRecreateSandBox: async () => ({ started: false, reason: "no host", operationId: "" }),
     };
-    const connector = new BrokeredHostConnector({ getAccessToken: async () => "claidor_da_x", getMachineId: () => "m" }, client);
+    const connector = new BrokeredHostConnector({ getAccessToken: async () => "simeon_da_x", getMachineId: () => "m" }, client);
     const descriptor = await connector.connect();
     assert.deepEqual(descriptor, {
       baseUrl: brokerAnswer.gatewayUrl,
@@ -91,7 +91,7 @@ test("the brokered connector builds the descriptor from the broker's answer and 
   }
 });
 
-test("setBoxRuntime switches nothing: the computer is the cloud's, as in Grok Bot", async () => {
+test("setBoxRuntime switches nothing: the computer is the cloud's, as in the upstream app", async () => {
   const { module, dispose } = await load("source/electron-main/main-edge.ts", "main-edge");
   try {
     const { createMainEdgeHandlers } = module;

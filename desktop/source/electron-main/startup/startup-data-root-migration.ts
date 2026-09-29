@@ -158,7 +158,7 @@ function settleWithoutLegacy(legacyRoot: string, canonicalRoot: string): DataRoo
     if (!hasDataRootMarker(canonicalRoot)) {
       const occupancy = readCanonicalOccupancy(canonicalRoot);
       if (occupancy === "foreign" || occupancy === "unreadable") {
-        // Not ours and not Grok Bot's either: leave the root unset rather
+        // Not ours and not the upstream app's either: leave the root unset rather
         // than point Simeon at `~/.cursor/sand` (F-217).
         return { route: "unchanged", reason: "canonical-conflict" };
       }

@@ -20,7 +20,7 @@ export interface EgressTunnelConfig {
 // `simeon/sand/box_proxy.py`): the path ends in `/p/<port>`
 // (`https://api.simeonlabs.com/sand-box/<id>/p/1340`), swapped the same way,
 // with the path kept. The label rule is tried first so a Cursor-shaped
-// descriptor, or a founder's per-port hostnames (`CLAIDOR_BOX_PUBLIC_URL_TEMPLATE`),
+// descriptor, or a founder's per-port hostnames (`SIMEON_BOX_PUBLIC_URL_TEMPLATE`),
 // derive exactly as before.
 const PROXY_PATH_PORT = /\/p\/(\d+)\/?$/;
 

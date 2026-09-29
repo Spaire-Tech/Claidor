@@ -8,7 +8,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
 
 // Phase 4, offline: the four capability doors the agent advertises that
-// are not a model turn. Three go to Claidor's proxy (search, pictures,
+// are not a model turn. Three go to Simeon's proxy (search, pictures,
 // dictation). Fetch stays on this machine. No key, no Mac, no live
 // provider — a stubbed fetch and the real HTML-to-text path.
 
@@ -26,27 +26,27 @@ function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 }
 
-test("every Claidor door lives under /desktop/api/proxy/v1", async () => {
-  const loaded = await loadModule("source/shared/node/cursor-backend/claidor-api.ts", "claidor-api");
+test("every Simeon door lives under /desktop/api/proxy/v1", async () => {
+  const loaded = await loadModule("source/shared/node/cursor-backend/simeon-api.ts", "simeon-api");
   try {
-    const { claidorProxyBaseUrl, claidorProxyUrl, CLAIDOR_PROXY_PREFIX } = loaded.module;
-    assert.equal(CLAIDOR_PROXY_PREFIX, "desktop/api/proxy/v1");
-    assert.equal(claidorProxyBaseUrl("https://api.simeonlabs.com"), "https://api.simeonlabs.com/desktop/api/proxy/v1");
-    assert.equal(claidorProxyBaseUrl("https://api.simeonlabs.com/"), "https://api.simeonlabs.com/desktop/api/proxy/v1");
-    assert.equal(claidorProxyUrl("web/search", "https://api.simeonlabs.com"), "https://api.simeonlabs.com/desktop/api/proxy/v1/web/search");
-    assert.equal(claidorProxyUrl("/images/generations", "https://api.simeonlabs.com/"), "https://api.simeonlabs.com/desktop/api/proxy/v1/images/generations");
-    assert.equal(claidorProxyUrl("audio/transcriptions", "https://api.simeonlabs.com"), "https://api.simeonlabs.com/desktop/api/proxy/v1/audio/transcriptions");
+    const { simeonProxyBaseUrl, simeonProxyUrl, SIMEON_PROXY_PREFIX } = loaded.module;
+    assert.equal(SIMEON_PROXY_PREFIX, "desktop/api/proxy/v1");
+    assert.equal(simeonProxyBaseUrl("https://api.simeonlabs.com"), "https://api.simeonlabs.com/desktop/api/proxy/v1");
+    assert.equal(simeonProxyBaseUrl("https://api.simeonlabs.com/"), "https://api.simeonlabs.com/desktop/api/proxy/v1");
+    assert.equal(simeonProxyUrl("web/search", "https://api.simeonlabs.com"), "https://api.simeonlabs.com/desktop/api/proxy/v1/web/search");
+    assert.equal(simeonProxyUrl("/images/generations", "https://api.simeonlabs.com/"), "https://api.simeonlabs.com/desktop/api/proxy/v1/images/generations");
+    assert.equal(simeonProxyUrl("audio/transcriptions", "https://api.simeonlabs.com"), "https://api.simeonlabs.com/desktop/api/proxy/v1/audio/transcriptions");
   } finally {
     await loaded.dispose();
   }
 });
 
-test("web search speaks Claidor's door and keeps the tool's answer shape", async () => {
+test("web search speaks Simeon's door and keeps the tool's answer shape", async () => {
   const loaded = await loadModule("source/host/extensions/inference/capability-tools.ts", "capability-tools");
   const requests = [];
   try {
-    const search = loaded.module.createClaidorWebSearchService({
-      getAccessToken: async () => "claidor_da_search",
+    const search = loaded.module.createSimeonWebSearchService({
+      getAccessToken: async () => "simeon_da_search",
       backendUrl: "https://api.simeonlabs.com",
       fetch: async (input, init) => {
         requests.push({ url: typeof input === "string" ? input : input.url, headers: new Headers(init?.headers), body: JSON.parse(init?.body ?? "{}") });
@@ -65,14 +65,14 @@ test("web search speaks Claidor's door and keeps the tool's answer shape", async
     assert.deepEqual(result.documents, [{ url: "https://en.wikipedia.org/wiki/Paris", title: "Paris", text: "capital and largest city" }, { url: "https://example.com/drop-me", title: "", text: "" }]);
     assert.equal(requests.length, 1);
     assert.equal(requests[0].url, "https://api.simeonlabs.com/desktop/api/proxy/v1/web/search");
-    assert.equal(requests[0].headers.get("authorization"), "Bearer claidor_da_search");
+    assert.equal(requests[0].headers.get("authorization"), "Bearer simeon_da_search");
     assert.deepEqual(requests[0].body, { query: "capital of France", explanation: "need a city" });
   } finally {
     await loaded.dispose();
   }
 });
 
-test("web fetch reads the page on this machine and never calls Claidor", async () => {
+test("web fetch reads the page on this machine and never calls Simeon", async () => {
   const loaded = await loadModule("source/shared/node/web-fetch.ts", "web-fetch");
   try {
     const { htmlToText, fetchWebPage, WEB_FETCH_USER_AGENT } = loaded.module;
@@ -106,18 +106,18 @@ test("web fetch reads the page on this machine and never calls Claidor", async (
   }
 });
 
-test("image generation posts to Claidor and maps a 402 to the tool's restricted error", async () => {
-  const loaded = await loadModule("source/shared/node/cursor-backend/claidor-generate-image.ts", "claidor-generate-image");
+test("image generation posts to Simeon and maps a 402 to the tool's restricted error", async () => {
+  const loaded = await loadModule("source/shared/node/cursor-backend/simeon-generate-image.ts", "simeon-generate-image");
   const requests = [];
   try {
-    const { createClaidorGenerateImageService, imageSizeForAspectRatio, SandGenerateImageModelRestrictedError } = loaded.module;
+    const { createSimeonGenerateImageService, imageSizeForAspectRatio, SandGenerateImageModelRestrictedError } = loaded.module;
     assert.equal(imageSizeForAspectRatio("16:9"), "1536x1024");
     assert.equal(imageSizeForAspectRatio("9:16"), "1024x1536");
     assert.equal(imageSizeForAspectRatio("1:1"), "1024x1024");
     assert.equal(imageSizeForAspectRatio(), "auto");
 
-    const generate = createClaidorGenerateImageService({
-      getAccessToken: async () => "claidor_da_img",
+    const generate = createSimeonGenerateImageService({
+      getAccessToken: async () => "simeon_da_img",
       backendUrl: "https://api.simeonlabs.com",
       fetch: async (input, init) => {
         requests.push({ url: typeof input === "string" ? input : input.url, headers: new Headers(init?.headers), body: JSON.parse(init?.body ?? "{}") });
@@ -128,7 +128,7 @@ test("image generation posts to Claidor and maps a 402 to the tool's restricted 
     assert.equal(picture.imageData, Buffer.from("png").toString("base64"));
     assert.equal(picture.mimeType, "image/png");
     assert.equal(requests[0].url, "https://api.simeonlabs.com/desktop/api/proxy/v1/images/generations");
-    assert.equal(requests[0].headers.get("authorization"), "Bearer claidor_da_img");
+    assert.equal(requests[0].headers.get("authorization"), "Bearer simeon_da_img");
     assert.deepEqual(requests[0].body, {
       prompt: "a red boat",
       size: "1536x1024",
@@ -136,8 +136,8 @@ test("image generation posts to Claidor and maps a 402 to the tool's restricted 
       reference_images: [{ data: "abc", mime_type: "image/png" }],
     });
 
-    const restricted = createClaidorGenerateImageService({
-      getAccessToken: async () => "claidor_da_img",
+    const restricted = createSimeonGenerateImageService({
+      getAccessToken: async () => "simeon_da_img",
       backendUrl: "https://api.simeonlabs.com",
       fetch: async () => jsonResponse({ error: { type: "insufficient_quota", message: "Allowance exhausted." } }, 402),
     });
@@ -153,12 +153,12 @@ test("image generation posts to Claidor and maps a 402 to the tool's restricted 
 });
 
 test("transcription posts the clip as multipart and never talks protobuf", async () => {
-  const loaded = await loadModule("source/electron-main/account/claidor-transcribe.ts", "claidor-transcribe");
+  const loaded = await loadModule("source/electron-main/account/simeon-transcribe.ts", "simeon-transcribe");
   const requests = [];
   try {
     const { SandTranscriptionManager, SandTranscribeEmptyAudioError } = loaded.module;
     const manager = new SandTranscriptionManager({
-      getAccessToken: async () => "claidor_da_voice",
+      getAccessToken: async () => "simeon_da_voice",
       backendUrl: "https://api.simeonlabs.com",
       fetch: async (input, init) => {
         const body = init?.body;
@@ -182,7 +182,7 @@ test("transcription posts the clip as multipart and never talks protobuf", async
     assert.deepEqual(result, { text: "hello there", transcriptionTimeMs: 1500 });
     assert.equal(requests.length, 1);
     assert.equal(requests[0].url, "https://api.simeonlabs.com/desktop/api/proxy/v1/audio/transcriptions");
-    assert.equal(requests[0].headers.get("authorization"), "Bearer claidor_da_voice");
+    assert.equal(requests[0].headers.get("authorization"), "Bearer simeon_da_voice");
     assert.equal(requests[0].language, "fr-FR");
     assert.equal(requests[0].filename, "audio.webm");
     assert.equal(requests[0].mime, "audio/webm");
@@ -194,7 +194,7 @@ test("transcription posts the clip as multipart and never talks protobuf", async
     assert.equal(requests.length, 2);
     assert.equal(requests[1].language, null);
     assert.match(loaded.module.SandTranscriptionManager.toString() + Object.keys(loaded.module).join(","), /SandTranscriptionManager/);
-    const source = await import("node:fs/promises").then((fs) => fs.readFile(path.join(repoRoot, "source/electron-main/account/claidor-transcribe.ts"), "utf8"));
+    const source = await import("node:fs/promises").then((fs) => fs.readFile(path.join(repoRoot, "source/electron-main/account/simeon-transcribe.ts"), "utf8"));
     assert.equal(source.includes("from \"../../packages/proto/generated/aiserver"), false);
     assert.equal(source.includes("TranscribeAudioRequest"), false);
     assert.equal(source.includes("createSandCursorBackendClient"), false);
@@ -216,9 +216,9 @@ test("sand generate-image service registers for turn-toolset and persist failure
     assert.equal(typeof getRegisteredSandGenerateImageService, "function");
     assert.equal(typeof createSandGenerateImageService, "function");
 
-    const absolutePath = "/Users/bassfall/.claidor/agents/a1/assets/deadbeef.png";
+    const absolutePath = "/Users/bassfall/.simeon/agents/a1/assets/deadbeef.png";
     const sand = createSandGenerateImageService(
-      { getAccessToken: async () => "claidor_da_picture", getMachineId: async () => "machine-1" },
+      { getAccessToken: async () => "simeon_da_picture", getMachineId: async () => "machine-1" },
       {
         persistImage: async (_bytes, mimeType) => {
           assert.equal(mimeType, "image/png");

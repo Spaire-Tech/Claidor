@@ -1,4 +1,4 @@
-import { claidorApiUrl } from "../../shared/node/cursor-backend/claidor-api.js";
+import { simeonApiUrl } from "../../shared/node/cursor-backend/simeon-api.js";
 
 // Sign-out on Simeon Labs' server: `POST /desktop/api/auth/logout` with the
 // departing bearer (`server/simeon/desktop/endpoints.py`, `logout`), which
@@ -8,7 +8,7 @@ import { claidorApiUrl } from "../../shared/node/cursor-backend/claidor-api.js";
 // Until 24 September 2026 the app's sign-out (`cursor-auth.ts`,
 // `revokeCredentials`) only deleted the two keychain entries; the server
 // session lived on until its refresh token expired, so a token copied out
-// of the keychain before sign-out kept working. Grok Bot never revoked
+// of the keychain before sign-out kept working. The upstream app never revoked
 // either (Cursor's session ends server-side by other means), which is why
 // there was no hook here to point at anything.
 //
@@ -16,10 +16,10 @@ import { claidorApiUrl } from "../../shared/node/cursor-backend/claidor-api.js";
 // whatever the server said. A sign-out that hangs on a dead network would
 // be worse than a session the server times out on its own.
 
-export const CLAIDOR_SIGN_OUT_PATH = "auth/logout";
-export const CLAIDOR_SIGN_OUT_TIMEOUT_MS = 5_000;
+export const SIMEON_SIGN_OUT_PATH = "auth/logout";
+export const SIMEON_SIGN_OUT_TIMEOUT_MS = 5_000;
 
-export interface ClaidorSignOutOptions {
+export interface SimeonSignOutOptions {
   readonly backendUrl?: string;
   readonly fetch?: typeof fetch;
   readonly timeoutMs?: number;
@@ -27,13 +27,13 @@ export interface ClaidorSignOutOptions {
 }
 
 /** Resolves true when the server acknowledged, false otherwise. Never throws. */
-export async function revokeClaidorSession(accessToken: string, options: ClaidorSignOutOptions = {}): Promise<boolean> {
+export async function revokeSimeonSession(accessToken: string, options: SimeonSignOutOptions = {}): Promise<boolean> {
   if (accessToken.length === 0) return false;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(new Error("Sign-out on Simeon Labs' server timed out.")), options.timeoutMs ?? CLAIDOR_SIGN_OUT_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(new Error("Sign-out on Simeon Labs' server timed out.")), options.timeoutMs ?? SIMEON_SIGN_OUT_TIMEOUT_MS);
   timer.unref?.();
   try {
-    const response = await (options.fetch ?? fetch)(claidorApiUrl(CLAIDOR_SIGN_OUT_PATH, options.backendUrl), {
+    const response = await (options.fetch ?? fetch)(simeonApiUrl(SIMEON_SIGN_OUT_PATH, options.backendUrl), {
       method: "POST",
       headers: { authorization: `Bearer ${accessToken}`, accept: "application/json" },
       signal: controller.signal,

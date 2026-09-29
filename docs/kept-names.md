@@ -44,10 +44,19 @@ optional pattern the line must match, and the reason.
 - **data**: a value already stored or deployed under an earlier name: meter
   event names, an S3 bucket, database migrations, a published npm package, the
   Render service names.
-- **phase-6**: our own code names that still carry an earlier name (the
-  model provider id `claidor`, `GrokBot*` and `Anysphere*` types, logger
-  names, test file names). They are renamed in the next step, and these rules
-  go with them.
+- **guard**: a test that checks an earlier name is gone from what a person or
+  the agent reads has to name it.
+
+## Kept on purpose, not checked
+
+- **`sand`** is the upstream app's internal word for the agent's computer
+  (`SAND_*` settings, `/sand/*` routes, `sand-*` file and class names). Nobody
+  using Simeon sees it, and much of it has to match the pinned window and the
+  box image, so it stays as a code word (decided 29 September 2026).
+- **`polar`** (`server/polar/`) is a three-file stand-in that forwards the old
+  start commands (`polar.app:app`, `polar.worker.run`) to the `simeon`
+  package, because Render keeps each service's start command in its own
+  settings. Remove it once every Render service starts `simeon.*`.
 
 ## Changing the list
 

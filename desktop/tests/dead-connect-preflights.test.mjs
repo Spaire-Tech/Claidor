@@ -38,7 +38,7 @@ test("the privacy-mode pre-flight, the team-admin prefetch and the cloud-agent w
     // by name, everything with "1", nothing with "0", a list otherwise.
     assert.equal(module.isConnectServed({}, "aiserver.v1.GrokBotService"), true);
     assert.equal(module.isConnectServed({}, "aiserver.v1.DashboardService"), true);
-    assert.equal(module.isConnectServed({}, "aiserver.v1.InferenceService"), false, "the loop runs on the claidor executor, never on Cursor's inference");
+    assert.equal(module.isConnectServed({}, "aiserver.v1.InferenceService"), false, "the loop runs on the simeon executor, never on Cursor's inference");
     assert.equal(module.isConnectServed({}, "cursor.statsig-bootstrap"), false, "Cursor's feature-gate server is not ours");
     assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "0" }, "aiserver.v1.GrokBotService"), false);
     assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "1" }, "cursor.statsig-bootstrap"), true);
@@ -54,7 +54,7 @@ test("the privacy-mode pre-flight, the team-admin prefetch and the cloud-agent w
   assert.match(await src("host/host-runner-composition.ts"), /\.\.\.\(awaitCloudAgent === undefined \|\| !isCloudAgentsServed\(\)\n\s*\? \{\}/);
 });
 
-test("the Coming Soon brief no longer blames a team admin, and no string the agent or a person reads says Claidor account", async () => {
+test("the Coming Soon brief no longer blames a team admin, and no string the agent or a person reads says Simeon account", async () => {
   const { module, dispose } = await load("source/host/runner/system-prompt.ts", "system-prompt-brief");
   try {
     assert.doesNotMatch(module.SAND_SYSTEM_PROMPT_CLOUD_AGENTS_DISABLED, /team has disabled|team's admin/);
@@ -63,7 +63,7 @@ test("the Coming Soon brief no longer blames a team admin, and no string the age
   } finally {
     await dispose();
   }
-  for (const file of ["host/runner/system-prompt.ts", "host/runner/tools/sand-mcp-management-tools.ts", "shared/grok-bot-tools.ts", "shared/node/mcp/mcp-manager.ts", "electron-main/account/cursor-auth.ts", "host/automations/automation.ts"]) {
+  for (const file of ["host/runner/system-prompt.ts", "host/runner/tools/sand-mcp-management-tools.ts", "shared/sand-tools.ts", "shared/node/mcp/mcp-manager.ts", "electron-main/account/cursor-auth.ts", "host/automations/automation.ts"]) {
     assert.ok(!(await src(file)).includes("Claidor account"), `${file} says Simeon account`);
   }
 });

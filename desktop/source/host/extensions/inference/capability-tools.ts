@@ -1,10 +1,10 @@
-import { claidorProxyRequest, type ClaidorApiAuth } from "../../../shared/node/cursor-backend/claidor-api.js";
+import { simeonProxyRequest, type SimeonApiAuth } from "../../../shared/node/cursor-backend/simeon-api.js";
 import { fetchWebPage, type WebFetchOptions, type WebFetchResult } from "../../../shared/node/web-fetch.js";
 
 // The agent's `web_search` and `web_fetch` tools, behind the two seams the
 // host composition already had (`production.ts`, `createWebSearch` and
 // `createWebFetch`). Until 19 September 2026 both were Connect RPC calls on
-// `aiserver.v1.AiService` that Claidor never served
+// `aiserver.v1.AiService` that Simeon never served
 // (`docs/services-core.md`).
 
 export interface WebSearchDocument { readonly url: string; readonly title: string; readonly text: string }
@@ -13,12 +13,12 @@ export interface WebSearchAnswer { readonly answer: string; readonly documents: 
 /** A search that hangs used to hold the turn for the server's 600 s (F-295); the client gives up first. */
 export const WEB_SEARCH_CLIENT_TIMEOUT_MS = 90_000;
 
-// Search goes to Claidor's `web/search` door, which runs OpenAI's hosted
+// Search goes to Simeon's `web/search` door, which runs OpenAI's hosted
 // search and meters it against the person's account
 // (`server/simeon/desktop/capabilities.py`).
-export function createClaidorWebSearchService(options: ClaidorApiAuth & { readonly fetch?: typeof fetch }) {
+export function createSimeonWebSearchService(options: SimeonApiAuth & { readonly fetch?: typeof fetch }) {
   return async (_ctx: unknown, args: { searchTerm: string; explanation?: string }): Promise<WebSearchAnswer> => {
-    const response = await claidorProxyRequest(options, "web/search", {
+    const response = await simeonProxyRequest(options, "web/search", {
       ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
       signal: AbortSignal.timeout(WEB_SEARCH_CLIENT_TIMEOUT_MS),
       json: { query: args.searchTerm, ...(args.explanation === undefined ? {} : { explanation: args.explanation }) },

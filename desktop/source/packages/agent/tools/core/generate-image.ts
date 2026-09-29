@@ -401,7 +401,7 @@ function crossPlatformBasename(filePath: string): string {
   return basename(filePath.replaceAll("\\", "/"));
 }
 
-// Claidor's sand generate service already persists into the agent media
+// Simeon's sand generate service already persists into the agent media
 // store and returns an absolute path. Treat that as the final file so we
 // do not require a workspace projectFolder or a second write.
 function isAlreadyPersistedImagePath(filePath: string): boolean {

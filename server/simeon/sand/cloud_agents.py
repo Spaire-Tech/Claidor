@@ -195,7 +195,7 @@ async def update_background_composer_user_settings(call: ConnectCall) -> dict[st
 def available_model_row(row: dict[str, Any]) -> dict[str, Any] | None:
     """One `/desktop/api/models/available` row as
     `AvailableModelsResponse.AvailableModel`: the same mapping the Mac's
-    `availableModelFromSimeonRow` (`electron-main/models/claidor-model-catalog.ts`)
+    `availableModelFromSimeonRow` (`electron-main/models/simeon-model-catalog.ts`)
     applies, so the cloud-agent catalogue and the model picker agree."""
     if (
         row.get("accessible") is False

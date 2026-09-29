@@ -39,7 +39,7 @@ const toolLocalSemanticMismatches = Object.freeze([
 ]);
 
 /**
- * Grok Bot's carriers held a Piscina producer for a `pdf-worker` file that
+ * The upstream app's carriers held a Piscina producer for a `pdf-worker` file that
  * neither carrier shipped, so PDF reads failed closed. The replacement is an
  * in-process pdf.js extractor bound into both Read tools. This is detected,
  * not assumed: the extractor module, both bindings in the composition, the

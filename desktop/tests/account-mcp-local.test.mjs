@@ -1,6 +1,6 @@
 /**
  * The account's MCP configuration lives on this machine (24 September 2026).
- * Grok Bot kept it on Cursor's server and the reconstruction still called
+ * The upstream app kept it on Cursor's server and the reconstruction still called
  * those RPCs (GetAvailableMcpServers, GetMcpConfig, SetMcpConfig,
  * InstallUserPlugin, UninstallUserPlugin, UpdateUserPluginInstall), which
  * Simeon Labs' server does not serve: reads came back unavailable and every
@@ -78,7 +78,7 @@ async function startCustomMcpServer({ requireBearer = false, apiKey } = {}) {
   return { origin, url: `${origin}/mcp`, hits, close: () => new Promise((resolve) => { server.closeAllConnections?.(); server.close(() => resolve()); }) };
 }
 
-const deps = (root, extra = {}) => ({ getAccessToken: async () => "claidor_da_test", getMachineId: async () => "machine", getBackendUrl: () => "https://api.simeonlabs.com", rootDir: () => root, ...extra });
+const deps = (root, extra = {}) => ({ getAccessToken: async () => "simeon_da_test", getMachineId: async () => "machine", getBackendUrl: () => "https://api.simeonlabs.com", rootDir: () => root, ...extra });
 const readStore = (root) => JSON.parse(readFileSync(path.join(root, "account-mcp-config.json"), "utf8"));
 
 test("SetMcpConfig then GetMcpConfig round-trips through account-mcp-config.json; a removal is a tombstone", async () => {

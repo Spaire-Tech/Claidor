@@ -7,7 +7,7 @@ import { withTimeout } from "../../utils/promise-extras.js";
 import { getAgentEventTracker } from "./event-tracking.js";
 import { parseSmartModeClassifierFailureMetadata } from "./smart-mode-classifier-error-metadata.js";
 
-const logger = createLogger("@anysphere/agent:smart-mode-classifier");
+const logger = createLogger("@sand/agent:smart-mode-classifier");
 // 30 s since 25 September 2026 (was 10 s): the executor behind it allows 30 s
 // (simeon-smart-mode-classifier-exec.ts), and a deadline shorter than the
 // call it waits on is a reject, not a measurement (ledger F-347).

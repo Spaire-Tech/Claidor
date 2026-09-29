@@ -115,7 +115,7 @@ function hasAutoRunInstructions(instructions: {
     (instructions.allowInstructions.length > 0 || instructions.blockInstructions.length > 0);
 }
 
-const logger = createLogger("@anysphere/agent");
+const logger = createLogger("@sand/agent");
 
 async function loadUserPermissionsFileAutoRunInstructions(
   ctx: Context,

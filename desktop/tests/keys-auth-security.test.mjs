@@ -12,7 +12,7 @@
  * into the local network; the host log carried tool arguments verbatim;
  * credential files were written with the umask; the exec daemon and the
  * fork router were published on the Mac's loopback with a fixed bearer;
- * and the person still read "Claidor" in sign-in errors.
+ * and the person still read "Simeon" in sign-in errors.
  */
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm, writeFile, stat, mkdir } from "node:fs/promises";
@@ -96,9 +96,9 @@ test("sign-out forgets the box's credential and stops the box; a 5xx on refresh 
     // A plain token file left by a build before 26 September goes too.
     const file = path.join(dir, "local-docker-credential", "inference.json");
     await mkdir(path.dirname(file), { recursive: true });
-    await writeFile(file, JSON.stringify({ accessToken: "claidor_da_x", expiresAtMs: 1 }));
+    await writeFile(file, JSON.stringify({ accessToken: "simeon_da_x", expiresAtMs: 1 }));
     module.configureLocalDockerSecretStorage({ isEncryptionAvailable: () => true, encryptString: (value) => Buffer.from(value).reverse(), decryptString: (value) => Buffer.from(value).reverse().toString() });
-    await module.storeBoxCredential(settingsPath, "claidor_db_y");
+    await module.storeBoxCredential(settingsPath, "simeon_db_y");
     const lines = [];
     await module.forgetInferenceCredential(settingsPath, { log: (line) => lines.push(line) });
     await assert.rejects(() => stat(file), /ENOENT/);

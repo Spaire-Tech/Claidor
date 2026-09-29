@@ -27,7 +27,7 @@ test("checked-in production bindings resolve only to reviewed source", async () 
 });
 
 test("bootstrap hydration verifies and extracts the minimum upstream runtime payload", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "grok-publication-bootstrap-"));
+  const root = await mkdtemp(path.join(tmpdir(), "simeon-publication-bootstrap-"));
   try {
     const source = path.join(root, "source");
     const destination = path.join(root, "destination");

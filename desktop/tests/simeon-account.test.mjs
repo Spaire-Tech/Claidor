@@ -34,14 +34,14 @@ test("the profile comes from /desktop/api/user/profile and fills the CursorProfi
   const loaded = await loadModule("source/electron-main/account/cursor-profile.ts", "cursor-profile");
   const requests = [];
   try {
-    const { fetchCursorProfile, cursorProfileFromClaidor } = loaded.module;
-    const profile = await fetchCursorProfile(async () => "claidor_da_me", {
+    const { fetchCursorProfile, cursorProfileFromSimeon } = loaded.module;
+    const profile = await fetchCursorProfile(async () => "simeon_da_me", {
       backendUrl: "https://api.simeonlabs.com",
       fetch: async (input, init) => { requests.push({ url: String(input), method: init?.method, headers: new Headers(init?.headers) }); return envelope(PROFILE); },
     });
     assert.equal(requests[0].url, "https://api.simeonlabs.com/desktop/api/user/profile");
     assert.equal(requests[0].method, "GET");
-    assert.equal(requests[0].headers.get("authorization"), "Bearer claidor_da_me");
+    assert.equal(requests[0].headers.get("authorization"), "Bearer simeon_da_me");
     // The local rename, when there is one, still wins; here there is none
     // on this machine, so the server's nickname shows.
     assert.equal(profile.email, "bass@simeonlabs.com");
@@ -49,16 +49,16 @@ test("the profile comes from /desktop/api/user/profile and fills the CursorProfi
     assert.equal(profile.isAnysphereUser, false);
     assert.ok(profile.displayName === "Bass Fall" || typeof profile.displayName === "string");
 
-    assert.deepEqual(cursorProfileFromClaidor(PROFILE, undefined), { displayName: "Bass Fall", email: "bass@simeonlabs.com", profilePictureUrl: "https://lh3.googleusercontent.com/a/photo=s96-c", isAnysphereUser: false });
-    assert.deepEqual(cursorProfileFromClaidor({ ...PROFILE, name: "Bassirou Fall" }, undefined).displayName, "Bassirou Fall");
-    assert.deepEqual(cursorProfileFromClaidor(PROFILE, "Simeon's Person").displayName, "Simeon's Person");
-    assert.equal(cursorProfileFromClaidor({ ...PROFILE, avatarUrl: null }, undefined).profilePictureUrl, undefined);
+    assert.deepEqual(cursorProfileFromSimeon(PROFILE, undefined), { displayName: "Bass Fall", email: "bass@simeonlabs.com", profilePictureUrl: "https://lh3.googleusercontent.com/a/photo=s96-c", isAnysphereUser: false });
+    assert.deepEqual(cursorProfileFromSimeon({ ...PROFILE, name: "Bassirou Fall" }, undefined).displayName, "Bassirou Fall");
+    assert.deepEqual(cursorProfileFromSimeon(PROFILE, "Simeon's Person").displayName, "Simeon's Person");
+    assert.equal(cursorProfileFromSimeon({ ...PROFILE, avatarUrl: null }, undefined).profilePictureUrl, undefined);
 
     // A refusal is reported and degrades the way it always did.
     const failures = [];
     const refused = await fetchCursorProfile(async () => "x", { backendUrl: "https://api.simeonlabs.com", fetch: async () => new Response("{}", { status: 401 }), reportFailure: (area, leg) => failures.push(`${area}/${leg}`) });
     assert.ok(refused === null || refused.email === undefined);
-    assert.deepEqual(failures, ["cursor-profile/claidor-profile"]);
+    assert.deepEqual(failures, ["cursor-profile/simeon-profile"]);
 
     const source = await readFile(path.join(repoRoot, "source/electron-main/account/cursor-profile.ts"), "utf8");
     assert.equal(/client\.getMe\(/.test(source), false);
@@ -93,11 +93,11 @@ test("usage comes from /desktop/api/user/quota, in the shapes the header and Set
   const loaded = await loadModule("source/electron-main/account/cursor-profile.ts", "cursor-profile");
   const requests = [];
   try {
-    const { fetchSandWeeklyUsage, fetchSandUsageSummary, weeklyUsageFromClaidorQuota, usageSummaryFromClaidorQuota } = loaded.module;
+    const { fetchSandWeeklyUsage, fetchSandUsageSummary, weeklyUsageFromSimeonQuota, usageSummaryFromSimeonQuota } = loaded.module;
     const deps = { backendUrl: "https://api.simeonlabs.com", fetch: async (input) => { requests.push(String(input)); return envelope(QUOTA); } };
-    const weekly = await fetchSandWeeklyUsage(async () => "claidor_da_usage", deps);
+    const weekly = await fetchSandWeeklyUsage(async () => "simeon_da_usage", deps);
     assert.deepEqual(weekly, { percentUsed: 25, nextResetMs: Date.parse("2026-10-01T00:00:00+00:00"), hasNonZeroIncludedLimit: true, onDemand: null });
-    const summary = await fetchSandUsageSummary(async () => "claidor_da_usage", deps);
+    const summary = await fetchSandUsageSummary(async () => "simeon_da_usage", deps);
     assert.deepEqual(summary, {
       isEnterprise: false,
       sandUsagePercent: 25,
@@ -113,17 +113,17 @@ test("usage comes from /desktop/api/user/quota, in the shapes the header and Set
     assert.deepEqual(requests, ["https://api.simeonlabs.com/desktop/api/user/quota", "https://api.simeonlabs.com/desktop/api/user/quota"]);
 
     // Exhausted, over, and a limit of nothing.
-    assert.equal(usageSummaryFromClaidorQuota({ ...QUOTA, creditsUsed: 2_000_000, creditsRemaining: 0 }).hasAvailableUsage, false);
-    assert.equal(weeklyUsageFromClaidorQuota({ ...QUOTA, creditsUsed: 3_000_000 }).percentUsed, 100);
-    assert.deepEqual(weeklyUsageFromClaidorQuota({ ...QUOTA, creditsLimit: 0, creditsUsed: 0 }), { percentUsed: 0, nextResetMs: Date.parse("2026-10-01T00:00:00+00:00"), hasNonZeroIncludedLimit: false, onDemand: null });
-    assert.equal(weeklyUsageFromClaidorQuota({ planName: "Free" }), null);
-    assert.equal(usageSummaryFromClaidorQuota({ planName: "Free" }).sandUsagePercent, null);
+    assert.equal(usageSummaryFromSimeonQuota({ ...QUOTA, creditsUsed: 2_000_000, creditsRemaining: 0 }).hasAvailableUsage, false);
+    assert.equal(weeklyUsageFromSimeonQuota({ ...QUOTA, creditsUsed: 3_000_000 }).percentUsed, 100);
+    assert.deepEqual(weeklyUsageFromSimeonQuota({ ...QUOTA, creditsLimit: 0, creditsUsed: 0 }), { percentUsed: 0, nextResetMs: Date.parse("2026-10-01T00:00:00+00:00"), hasNonZeroIncludedLimit: false, onDemand: null });
+    assert.equal(weeklyUsageFromSimeonQuota({ planName: "Free" }), null);
+    assert.equal(usageSummaryFromSimeonQuota({ planName: "Free" }).sandUsagePercent, null);
 
     // The header's read degrades to null; Settings' read throws so the
     // renderer can show the sentence.
     const failures = [];
     assert.equal(await fetchSandWeeklyUsage(async () => "x", { backendUrl: "https://api.simeonlabs.com", fetch: async () => new Response("", { status: 503 }), reportFailure: (area, leg) => failures.push(`${area}/${leg}`) }), null);
-    assert.deepEqual(failures, ["cursor-usage/claidor-quota"]);
+    assert.deepEqual(failures, ["cursor-usage/simeon-quota"]);
     await assert.rejects(() => fetchSandUsageSummary(async () => "x", { backendUrl: "https://api.simeonlabs.com", fetch: async () => new Response(JSON.stringify({ error: { message: "Allowance service is down." } }), { status: 503 }) }), /Allowance service is down/);
   } finally {
     await loaded.dispose();
@@ -176,23 +176,23 @@ test("sand_usage_page is on by Simeon's default, over the bundled table, under t
 });
 
 test("sign-out posts the departing bearer to /desktop/api/auth/logout, best effort, before the keychain is emptied", async () => {
-  const signOut = await loadModule("source/electron-main/account/claidor-sign-out.ts", "claidor-sign-out");
+  const signOut = await loadModule("source/electron-main/account/simeon-sign-out.ts", "simeon-sign-out");
   try {
-    const { revokeClaidorSession, CLAIDOR_SIGN_OUT_TIMEOUT_MS } = signOut.module;
-    assert.equal(CLAIDOR_SIGN_OUT_TIMEOUT_MS, 5_000);
+    const { revokeSimeonSession, SIMEON_SIGN_OUT_TIMEOUT_MS } = signOut.module;
+    assert.equal(SIMEON_SIGN_OUT_TIMEOUT_MS, 5_000);
     const requests = [];
-    assert.equal(await revokeClaidorSession("claidor_da_bye", { backendUrl: "https://api.simeonlabs.com", fetch: async (input, init) => { requests.push({ url: String(input), method: init?.method, headers: new Headers(init?.headers), signal: init?.signal }); return envelope({}); } }), true);
+    assert.equal(await revokeSimeonSession("simeon_da_bye", { backendUrl: "https://api.simeonlabs.com", fetch: async (input, init) => { requests.push({ url: String(input), method: init?.method, headers: new Headers(init?.headers), signal: init?.signal }); return envelope({}); } }), true);
     assert.equal(requests[0].url, "https://api.simeonlabs.com/desktop/api/auth/logout");
     assert.equal(requests[0].method, "POST");
-    assert.equal(requests[0].headers.get("authorization"), "Bearer claidor_da_bye");
+    assert.equal(requests[0].headers.get("authorization"), "Bearer simeon_da_bye");
     assert.ok(requests[0].signal instanceof AbortSignal);
 
     // Failure never throws: a refusal, a dead network, a hang past the deadline.
     const failures = [];
-    assert.equal(await revokeClaidorSession("t", { backendUrl: "https://api.simeonlabs.com", fetch: async () => new Response("", { status: 500 }), reportFailure: (error) => failures.push(error.message) }), false);
-    assert.equal(await revokeClaidorSession("t", { backendUrl: "https://api.simeonlabs.com", fetch: async () => { throw new Error("ECONNREFUSED"); }, reportFailure: (error) => failures.push(error.message) }), false);
-    assert.equal(await revokeClaidorSession("t", { backendUrl: "https://api.simeonlabs.com", timeoutMs: 20, fetch: (_input, init) => new Promise((_resolve, reject) => init.signal.addEventListener("abort", () => reject(init.signal.reason))), reportFailure: (error) => failures.push(error.message) }), false);
-    assert.equal(await revokeClaidorSession("", { fetch: async () => { throw new Error("must not fetch"); } }), false);
+    assert.equal(await revokeSimeonSession("t", { backendUrl: "https://api.simeonlabs.com", fetch: async () => new Response("", { status: 500 }), reportFailure: (error) => failures.push(error.message) }), false);
+    assert.equal(await revokeSimeonSession("t", { backendUrl: "https://api.simeonlabs.com", fetch: async () => { throw new Error("ECONNREFUSED"); }, reportFailure: (error) => failures.push(error.message) }), false);
+    assert.equal(await revokeSimeonSession("t", { backendUrl: "https://api.simeonlabs.com", timeoutMs: 20, fetch: (_input, init) => new Promise((_resolve, reject) => init.signal.addEventListener("abort", () => reject(init.signal.reason))), reportFailure: (error) => failures.push(error.message) }), false);
+    assert.equal(await revokeSimeonSession("", { fetch: async () => { throw new Error("must not fetch"); } }), false);
     assert.deepEqual(failures, ["Sign-out on Simeon Labs' server answered 500.", "ECONNREFUSED", "Sign-out on Simeon Labs' server timed out."]);
   } finally {
     await signOut.dispose();
@@ -205,14 +205,14 @@ test("sign-out posts the departing bearer to /desktop/api/auth/logout, best effo
     const { SandCursorAuthService, ACCESS_TOKEN_SECRET_KEY, REFRESH_TOKEN_SECRET_KEY } = auth.module;
     const order = [];
     const makeSecrets = () => {
-      const store = new Map([[ACCESS_TOKEN_SECRET_KEY, "claidor_da_live"], [REFRESH_TOKEN_SECRET_KEY, "claidor_dr_live"]]);
+      const store = new Map([[ACCESS_TOKEN_SECRET_KEY, "simeon_da_live"], [REFRESH_TOKEN_SECRET_KEY, "simeon_dr_live"]]);
       return { store, readSecret: async (key) => store.get(key) ?? null, writeSecret: async (key, value) => { store.set(key, value); }, deleteSecret: async (key) => { order.push(`delete:${key}`); store.delete(key); }, isEncryptedStorageAvailable: () => true };
     };
     const secrets = makeSecrets();
     const service = new SandCursorAuthService({ openExternal: async () => {}, secrets, revokeSession: async (token) => { order.push(`revoke:${token}:${secrets.store.has(ACCESS_TOKEN_SECRET_KEY) ? "still-stored" : "gone"}`); } });
     const status = await service.logout();
     assert.equal(status.kind, "logged-out");
-    assert.deepEqual(order, ["revoke:claidor_da_live:still-stored", `delete:${ACCESS_TOKEN_SECRET_KEY}`, `delete:${REFRESH_TOKEN_SECRET_KEY}`]);
+    assert.deepEqual(order, ["revoke:simeon_da_live:still-stored", `delete:${ACCESS_TOKEN_SECRET_KEY}`, `delete:${REFRESH_TOKEN_SECRET_KEY}`]);
     assert.equal(secrets.store.size, 0);
 
     const reported = [];
@@ -223,7 +223,7 @@ test("sign-out posts the departing bearer to /desktop/api/auth/logout, best effo
     assert.deepEqual(reported, ["session-revoke:server down"]);
 
     const wiring = await readFile(path.join(repoRoot, "source/electron-main/account/cursor-auth-wiring.ts"), "utf8");
-    assert.match(wiring, /revokeSession: deps\.revokeSession \?\? \(\(accessToken\) => revokeClaidorSession\(/);
+    assert.match(wiring, /revokeSession: deps\.revokeSession \?\? \(\(accessToken\) => revokeSimeonSession\(/);
   } finally {
     await auth.dispose();
   }

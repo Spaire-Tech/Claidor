@@ -2,9 +2,9 @@
  * The Electron shell, batch 4 cluster 4 (25 September 2026; ledger F-217,
  * F-223, F-228, F-230).
  *
- * Offline: a packaged Simeon that finds Grok Bot's `~/.cursor/sand` beside
+ * Offline: a packaged Simeon that finds the upstream app's `~/.cursor/sand` beside
  * an absent `~/.caisra` leaves it alone and takes `~/.caisra` (until today
- * it renamed Grok Bot's root into its own and could retire Grok Bot's idle
+ * it renamed the upstream app's root into its own and could retire the upstream app's idle
  * local-exec daemon); the existing-root resolver never answers
  * `~/.cursor/sand`; the main window is reloaded when its renderer dies;
  * the move-to-Applications dialog no longer promises updates; and the
@@ -34,11 +34,11 @@ test("a packaged Simeon leaves another app's ~/.cursor/sand alone and takes ~/.s
   const loaded = await loadMigration();
   try {
     const home = path.join(loaded.temporary, "home");
-    const grokBotRoot = path.join(home, ".cursor", "sand");
-    await mkdir(grokBotRoot, { recursive: true });
-    // A real Grok Bot's idle local-exec daemon, the case that used to be "migrated".
-    await writeFile(path.join(grokBotRoot, loaded.module.LOCAL_EXEC_DAEMON_DISCOVERY_FILENAME), JSON.stringify({ pid: 4242, startedAt: 1, inflightCount: 0 }));
-    await writeFile(path.join(grokBotRoot, "agents.json"), "{}");
+    const sandRoot = path.join(home, ".cursor", "sand");
+    await mkdir(sandRoot, { recursive: true });
+    // A real the upstream app's idle local-exec daemon, the case that used to be "migrated".
+    await writeFile(path.join(sandRoot, loaded.module.LOCAL_EXEC_DAEMON_DISCOVERY_FILENAME), JSON.stringify({ pid: 4242, startedAt: 1, inflightCount: 0 }));
+    await writeFile(path.join(sandRoot, "agents.json"), "{}");
     const settlement = loaded.module.settleStartupDataRoot({
       isPackaged: true, isLabBuild: false, hasDataRootOverride: false, hasIsolatedUserData: false, homeDir: home,
       isProcessAlive: () => true, isSandHostProcess: () => false,
@@ -47,8 +47,8 @@ test("a packaged Simeon leaves another app's ~/.cursor/sand alone and takes ~/.s
     assert.equal(settlement.route, "canonical");
     assert.equal(settlement.reason, "canonical-fresh");
     assert.equal(settlement.root, path.join(home, ".simeon"));
-    assert.ok(existsSync(grokBotRoot), "Grok Bot's root is still there");
-    assert.ok(existsSync(path.join(grokBotRoot, "agents.json")));
+    assert.ok(existsSync(sandRoot), "the upstream app's root is still there");
+    assert.ok(existsSync(path.join(sandRoot, "agents.json")));
     assert.equal(existsSync(path.join(home, ".simeon", loaded.module.DATA_ROOT_MARKER_FILENAME)), true);
     // Never idle-legacy-writer, so the startup move check never retires that daemon.
     assert.notEqual(settlement.reason, "idle-legacy-writer");

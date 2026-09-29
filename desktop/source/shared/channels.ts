@@ -16,7 +16,7 @@ export interface ConnectorManifest {
 // (or a secret-request card), delivers through their REST APIs and wakes
 // the agent for every inbound message (docs/services-agents.md).
 // No server of ours is in the path: it is bring-your-own bot token, the way
-// Grok Bot's channel design was written. `SAND_CHANNELS_SERVED=0` restores
+// The upstream app's channel design was written. `SAND_CHANNELS_SERVED=0` restores
 // the coming-soon paths. Teams, WhatsApp, Telegram, Signal and iMessage are
 // not in this list at all: each is its own client library (iMessage a
 // Mac-side bridge) and none exists in the tree.

@@ -104,7 +104,7 @@ function classifyWebSearchProviderError(error: unknown): CustomToolCallError | u
   const causeMessage = getErrorMessage(cause);
   if (causeMessage !== undefined) messages.push(causeMessage);
   // Simeon Labs' server refuses with its own sentence and a status on the
-  // error (`ClaidorApiError`: too long, the monthly allowance, the hourly
+  // error (`SimeonApiError`: too long, the monthly allowance, the hourly
   // brake); the model reads that sentence instead of a generic one (F-291).
   const served = typeof error === "object" && error !== null && "status" in error && typeof (error as { status: unknown }).status === "number" ? (error as { status: number }) : undefined;
   if (served !== undefined && directMessage !== undefined) {

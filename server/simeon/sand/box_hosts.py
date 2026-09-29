@@ -60,8 +60,10 @@ BOX_HOST_UNAVAILABLE_SENTENCE = (
 )
 
 #: Labels of the local Docker path, so `docker ps` on the VM reads the
-#: same way `docker ps` on a Mac does.
-OWNER_LABEL = "com.grok-bot.local-vm"
+#: same way `docker ps` on a Mac does. A box made before 29 September 2026
+#: carries the earlier prefix; its host version is still read from it.
+OWNER_LABEL = "com.simeonlabs.box"
+LEGACY_OWNER_LABEL = "com.grok-bot.local-vm"
 SCHEMA_VERSION = "10"
 
 BoxRunState = Literal["running", "stopped"]
@@ -154,7 +156,7 @@ class BoxSpec:
             "SAND_GATEWAY_TOKEN": self.gateway_token,
             "SAND_BACKEND_URL": self.backend_url,
             "SAND_INFERENCE_RENEWAL_CREDENTIAL": self.renewal_credential,
-            "SAND_INFERENCE_PROVIDER": "claidor",
+            "SAND_INFERENCE_PROVIDER": "simeon",
             "SAND_DISABLE_TELEMETRY": "1",
             "SAND_DISABLE_ANALYTICS": "1",
             "SAND_BOX_LOG_SHIP_DISABLED": "1",
@@ -171,7 +173,7 @@ class ProvisionedBox:
     ports: dict[int, int]
     image: str
     image_digest: str | None = None
-    #: The `com.grok-bot.local-vm.host-sha256` label: which host program
+    #: The `com.simeonlabs.box.host-sha256` label: which host program
     #: the container mounts. None on a container made before 29 September.
     host_sha256: str | None = None
 
@@ -599,7 +601,12 @@ class DockerBoxHost:
             ports=ports,
             image=str(config.get("Image") or ""),
             image_digest=image_id.removeprefix("sha256:") or None,
-            host_sha256=str(labels.get(f"{OWNER_LABEL}.host-sha256") or "") or None,
+            host_sha256=str(
+                labels.get(f"{OWNER_LABEL}.host-sha256")
+                or labels.get(f"{LEGACY_OWNER_LABEL}.host-sha256")
+                or ""
+            )
+            or None,
         )
 
     async def run_state(self, provider_box_id: str) -> BoxRunState | None:

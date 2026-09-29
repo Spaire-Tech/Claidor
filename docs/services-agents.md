@@ -219,7 +219,7 @@ it.
 * **Settings on Render.** `SIMEON_GEMINI_API_KEY` (optional `SIMEON_DESKTOP_GEMINI_BASE_URL`).
   Without the key the child's first call answers 503, and that sentence is the task's result.
 * **App switches.** `SAND_VIDEO_SUBAGENT_SERVED` (off puts the "coming soon" sentence back in
-  the brief); `SAND_CLAIDOR_VIDEO_MODEL` (the model id, default `gemini-2.5-flash`).
+  the brief); `SAND_SIMEON_VIDEO_MODEL` (the model id, default `gemini-2.5-flash`).
 * **Log lines.** Box: `[simeon] prompt … identity=video:watchVideo`,
   `[simeon] video model=gemini-2.5-flash parts=1 video/mp4@4fps …`, and `[simeon] model-error …`
   on a failure. Server: `desktop.video.generate`, and `desktop.proxy.upstream_refused` with

@@ -149,7 +149,7 @@ export async function buildAsar({
   // Electron reads app.name from the staged package.json's productName: the
   // application menu, "About …", the window title and the user-data folder
   // (~/Library/Application Support/<name>) all follow it. Until 22 September
-  // 2026 it stayed "Grok Bot", so the app shared that folder with Grok Bot.
+  // 2026 it stayed "the upstream app", so the app shared that folder with the upstream app.
   {
     const stagedPackagePath = path.join(stageRoot, "package.json");
     const stagedPackage = JSON.parse(await readFile(stagedPackagePath, "utf8"));

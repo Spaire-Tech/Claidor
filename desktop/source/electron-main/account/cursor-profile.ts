@@ -2,7 +2,7 @@ import { isConnectServed } from "../../shared/cloud-agents-availability.js";
 import { PrivacyMode } from "../../shared/observability/sentry-privacy-mode.js";
 import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
 import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
-import { claidorApiData } from "../../shared/node/cursor-backend/claidor-api.js";
+import { simeonApiData } from "../../shared/node/cursor-backend/simeon-api.js";
 import { getOrCreateMachineId } from "./cursor-machine-id.js";
 import { persistAccountDisplayName, readLocalAccountDisplayName } from "./account-display-name.js";
 export { ACCOUNT_DISPLAY_NAME_FILE, isUnimplementedProfileError, persistAccountDisplayName, readLocalAccountDisplayName, writeLocalAccountDisplayName } from "./account-display-name.js";
@@ -69,7 +69,7 @@ export interface CursorProfileDeps {
 // `GetTeams` and the usage from `GetSandUsageStatus` + `GetCurrentPeriodUsage`,
 // four Cursor Connect RPCs that Simeon Labs' server never served. `fetchCursorProfile`
 // swallowed the failure and answered null (or the locally stored name with
-// no e-mail and no picture), so the account menu showed "Claidor user" with
+// no e-mail and no picture), so the account menu showed "Simeon user" with
 // no avatar; `fetchSandWeeklyUsage` answered null so the header never showed
 // usage. The renderer still calls the same edge methods and reads the same
 // shapes (`CursorProfile`, `WeeklyUsage`, the usage summary of
@@ -79,11 +79,11 @@ export interface CursorProfileDeps {
 // quota's remaining credits under `creditItems` and adds nothing the
 // renderer reads, so it is not called.
 
-export const CLAIDOR_PROFILE_PATH = "user/profile";
-export const CLAIDOR_QUOTA_PATH = "user/quota";
+export const SIMEON_PROFILE_PATH = "user/profile";
+export const SIMEON_QUOTA_PATH = "user/quota";
 
 /** `user_payload()` in `server/simeon/desktop/service.py`. */
-export interface ClaidorProfileRow {
+export interface SimeonProfileRow {
   readonly id?: string;
   readonly email?: string;
   readonly name?: string;
@@ -94,7 +94,7 @@ export interface ClaidorProfileRow {
 }
 
 /** `quota()` in `server/simeon/desktop/service.py`. */
-export interface ClaidorQuotaRow {
+export interface SimeonQuotaRow {
   readonly planName?: string;
   readonly subscriptionStatus?: string;
   readonly creditsLimit?: number;
@@ -105,20 +105,20 @@ export interface ClaidorQuotaRow {
   readonly periodEnd?: string;
 }
 
-function claidorAuth(getAccessToken: AccessTokenReader, deps: CursorProfileDeps) {
+function simeonAuth(getAccessToken: AccessTokenReader, deps: CursorProfileDeps) {
   return { getAccessToken: () => getAccessToken(), ...(deps.backendUrl === undefined ? {} : { backendUrl: deps.backendUrl }) };
 }
-async function readClaidorProfile(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<ClaidorProfileRow> {
-  return await claidorApiData<ClaidorProfileRow>(claidorAuth(getAccessToken, deps), CLAIDOR_PROFILE_PATH, { method: "GET", ...(deps.fetch === undefined ? {} : { fetch: deps.fetch }) });
+async function readSimeonProfile(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<SimeonProfileRow> {
+  return await simeonApiData<SimeonProfileRow>(simeonAuth(getAccessToken, deps), SIMEON_PROFILE_PATH, { method: "GET", ...(deps.fetch === undefined ? {} : { fetch: deps.fetch }) });
 }
-export async function readClaidorQuota(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<ClaidorQuotaRow> {
-  return await claidorApiData<ClaidorQuotaRow>(claidorAuth(getAccessToken, deps), CLAIDOR_QUOTA_PATH, { method: "GET", ...(deps.fetch === undefined ? {} : { fetch: deps.fetch }) });
+export async function readSimeonQuota(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<SimeonQuotaRow> {
+  return await simeonApiData<SimeonQuotaRow>(simeonAuth(getAccessToken, deps), SIMEON_QUOTA_PATH, { method: "GET", ...(deps.fetch === undefined ? {} : { fetch: deps.fetch }) });
 }
 
 function finiteOrNull(value: unknown): number | null { return typeof value === "number" && Number.isFinite(value) ? value : null; }
 function isoToMs(value: unknown): number | null { if (typeof value !== "string" || value.length === 0) return null; const ms = Date.parse(value); return Number.isFinite(ms) && ms > 0 ? ms : null; }
 
-export function cursorProfileFromClaidor(row: ClaidorProfileRow, localName: string | undefined): CursorProfile {
+export function cursorProfileFromSimeon(row: SimeonProfileRow, localName: string | undefined): CursorProfile {
   const avatar = typeof row.avatarUrl === "string" ? nonEmpty(row.avatarUrl) : undefined;
   return {
     displayName: localName ?? nonEmpty(row.name) ?? nonEmpty(row.nickname),
@@ -134,15 +134,15 @@ export function cursorProfileFromClaidor(row: ClaidorProfileRow, localName: stri
  * reset is the period's end; the pinned renderer titles that meter "Weekly
  * usage", which is its own string and not ours to change here.
  */
-export function weeklyUsageFromClaidorQuota(quota: ClaidorQuotaRow): WeeklyUsage | null {
+export function weeklyUsageFromSimeonQuota(quota: SimeonQuotaRow): WeeklyUsage | null {
   const limit = finiteOrNull(quota.creditsLimit); const used = finiteOrNull(quota.creditsUsed);
   if (limit == null || used == null) return null;
   const included = limit > 0;
   return { percentUsed: included ? Math.max(0, Math.min(100, (used / limit) * 100)) : 0, nextResetMs: isoToMs(quota.periodEnd), hasNonZeroIncludedLimit: included, onDemand: null };
 }
 
-export function usageSummaryFromClaidorQuota(quota: ClaidorQuotaRow): unknown {
-  const weekly = weeklyUsageFromClaidorQuota(quota);
+export function usageSummaryFromSimeonQuota(quota: SimeonQuotaRow): unknown {
+  const weekly = weeklyUsageFromSimeonQuota(quota);
   const remaining = finiteOrNull(quota.creditsRemaining);
   return {
     isEnterprise: false,
@@ -217,9 +217,9 @@ export function buildSandUsageSummary(args: { readonly sandStatus: SandUsageStat
 export async function fetchCursorProfile(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<CursorProfile | null> {
   const localName = readLocalAccountDisplayName();
   try {
-    return cursorProfileFromClaidor(await readClaidorProfile(getAccessToken, deps), localName);
+    return cursorProfileFromSimeon(await readSimeonProfile(getAccessToken, deps), localName);
   } catch (error) {
-    deps.reportFailure?.("cursor-profile", "claidor-profile", error);
+    deps.reportFailure?.("cursor-profile", "simeon-profile", error);
     return localName == null ? null : { displayName: localName, email: undefined, profilePictureUrl: undefined, isAnysphereUser: false };
   }
 }
@@ -238,7 +238,7 @@ export async function fetchUserPrivacyModeEnabled(getAccessToken: AccessTokenRea
 // The header's usage, from `GET /desktop/api/user/quota`. Until
 // 24 September 2026 this was `GetSandUsageStatus` + `GetCurrentPeriodUsage`
 // (see above) and always answered null here.
-export async function fetchSandWeeklyUsage(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<WeeklyUsage | null> { try { return weeklyUsageFromClaidorQuota(await readClaidorQuota(getAccessToken, deps)); } catch (error) { deps.reportFailure?.("cursor-usage", "claidor-quota", error); return null; } }
+export async function fetchSandWeeklyUsage(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<WeeklyUsage | null> { try { return weeklyUsageFromSimeonQuota(await readSimeonQuota(getAccessToken, deps)); } catch (error) { deps.reportFailure?.("cursor-usage", "simeon-quota", error); return null; } }
 export async function fetchLocalToolPermissionCeiling(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<"never" | "ask" | "always" | undefined> { if (!isConnectServed(process.env, "aiserver.v1.DashboardService")) return undefined; try { const value = (await profileClient(getAccessToken, deps).getTeamAdminSettingsOrEmptyIfNotInTeam({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })).localToolControls?.permissionCeiling; const c = deps.localToolPermissionCeilings ?? { never: 1, ask: 2, always: 3 }; return value === c.never ? "never" : value === c.ask ? "ask" : value === c.always ? "always" : undefined; } catch { return undefined; } }
 // Settings → Usage & Billing and the account menu's usage card, from
 // `GET /desktop/api/user/quota`. Until 24 September 2026 this was four
@@ -246,6 +246,6 @@ export async function fetchLocalToolPermissionCeiling(getAccessToken: AccessToke
 // off, so the page never showed. A failure is thrown, as before: the
 // renderer's `loadUsageState` turns it into its "failed" state with the
 // server's sentence.
-export async function fetchSandUsageSummary(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<unknown> { return usageSummaryFromClaidorQuota(await readClaidorQuota(getAccessToken, deps)); }
+export async function fetchSandUsageSummary(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<unknown> { return usageSummaryFromSimeonQuota(await readSimeonQuota(getAccessToken, deps)); }
 export async function cancelSandTrial(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<{ ok: boolean; message: string | null }> { try { await profileClient(getAccessToken, deps).cancelSandTrial({}, { timeoutMs: USAGE_REQUEST_TIMEOUT_MS }); return { ok: true, message: null }; } catch (error) { return { ok: false, message: nonEmpty(deps.connectRawMessage?.(error)) ?? null }; } }
 export async function invokeSandDashboardAction(getAccessToken: AccessTokenReader, request: { readonly action: string; readonly args: Readonly<Record<string, string>> }, deps: CursorProfileDeps): Promise<{ ok: boolean; message: string | null }> { const response = await profileClient(getAccessToken, deps).clientAction(request, { timeoutMs: USAGE_REQUEST_TIMEOUT_MS }); return { ok: response.success, message: nonEmpty(response.success ? response.infoMessage : response.errorMessage) ?? null }; }

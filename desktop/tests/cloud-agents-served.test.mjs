@@ -2,7 +2,7 @@
  * Cloud agents are served (25 September 2026, `simeon/sand/cloud_agents.py`
  * over the maty queue; `docs/services-agents.md`).
  *
- * The client is Grok Bot's own, unchanged in what it sends:
+ * The client is the upstream app's own, unchanged in what it sends:
  * `SandCloudAgentManager` composes each Connect request and reads each
  * answer. This drives it against an in-process Connect JSON server that
  * answers the shapes Simeon Labs' server writes (the same field names
@@ -100,7 +100,7 @@ test("the manager launches, polls, lists, dumps and reads the catalogue through 
     const { SandCloudAgentManager } = service.module;
     const { convertConversationMessagesToTrace, HistoryVisibilityMode } = trace.module;
     const manager = new SandCloudAgentManager({
-      getCursorAccessToken: async () => "claidor_da_test",
+      getCursorAccessToken: async () => "simeon_da_test",
       getMachineId: async () => "machine-1",
       completionPolling: { start: () => ({ dispose() {} }) },
       clock: { monotonicNow: () => Date.now() },
@@ -112,7 +112,7 @@ test("the manager launches, polls, lists, dumps and reads the catalogue through 
     assert.equal(launched.url, `https://app.simeonlabs.com/agents/${launched.bcId}`, "the card's link is Simeon's page, not cursor.com");
     const start = fake.seen.find((entry) => entry.path.endsWith("/StartBackgroundComposerFromSnapshot"));
     assert.ok(start, "the launch reached the server");
-    assert.equal(start.headers.authorization, "Bearer claidor_da_test");
+    assert.equal(start.headers.authorization, "Bearer simeon_da_test");
     assert.equal(start.headers["x-cursor-client-type"], "sand");
     assert.equal(start.body.bcId, launched.bcId);
     assert.equal(start.body.repoUrl, "https://github.com/simeonlabs/demo");
@@ -173,7 +173,7 @@ test("the manager launches, polls, lists, dumps and reads the catalogue through 
   }
 });
 
-test("the brief and the app say Simeon where Grok Bot said Cursor, and the card opens Simeon's page", async () => {
+test("the brief and the app say Simeon where the upstream app said Cursor, and the card opens Simeon's page", async () => {
   delete process.env.SAND_CLOUD_AGENTS_SERVED;
   const { module, dispose } = await load("source/host/runner/system-prompt.ts", "system-prompt-served");
   try {
@@ -185,7 +185,7 @@ test("the brief and the app say Simeon where Grok Bot said Cursor, and the card 
     assert.match(enabled, /does not check the repository out, push a branch or open a pull request yet/);
     assert.doesNotMatch(enabled, /mobile-ios-mac/, "no self-hosted pool is offered");
     assert.match(enabled, /"type":"environment","name":"Simeon's computer"/);
-    assert.match(enabled, /CloudAgent tool \(action "launch"\)/, "Grok Bot's structure is kept");
+    assert.match(enabled, /CloudAgent tool \(action "launch"\)/, "the upstream app's structure is kept");
     assert.match(module.DEFAULT_SAND_SYSTEM_PROMPT, /## Repositories/, "served by default");
   } finally {
     await dispose();

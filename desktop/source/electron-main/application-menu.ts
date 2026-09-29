@@ -100,7 +100,7 @@ export function buildApplicationMenuTemplate(
       {
         label: "Help Center",
         // Simeon Labs' site. Until 24 September 2026 this opened
-        // `https://cursor.com/help`, Grok Bot's own help, which has nothing
+        // `https://cursor.com/help`, the upstream app's own help, which has nothing
         // to say about Simeon.
         click: () => {
           void electron.openExternal(HELP_CENTER_URL);

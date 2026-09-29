@@ -1,6 +1,6 @@
 import type { HostExtensionContext } from "../../../internal/host-extensions.js";
 import type { SandAgentModelSelection } from "../../../shared/agents/sand-agent-model.js";
-import { createClaidorWebSearchService, createLocalWebFetchService } from "./capability-tools.js";
+import { createSimeonWebSearchService, createLocalWebFetchService } from "./capability-tools.js";
 import { createHostInference } from "./inference-service.js";
 import type { InferenceExtensionContext } from "./extension.js";
 
@@ -23,7 +23,7 @@ export function createInferenceProductionExtras(
       });
     },
     createWebSearch() {
-      return createClaidorWebSearchService({ getAccessToken: auth.getAccessToken });
+      return createSimeonWebSearchService({ getAccessToken: auth.getAccessToken });
     },
     createWebFetch() {
       return createLocalWebFetchService();

@@ -1,5 +1,5 @@
 import { AvailableModelsResponse, AvailableModelsResponse_AvailableModel } from "../../packages/proto/generated/aiserver/v1/aiserver_pb.js";
-import { claidorApiData, type ClaidorApiAuth } from "../../shared/node/cursor-backend/claidor-api.js";
+import { simeonApiData, type SimeonApiAuth } from "../../shared/node/cursor-backend/simeon-api.js";
 
 // The model picker, on Simeon Labs' server's own menu.
 //
@@ -18,10 +18,10 @@ import { claidorApiData, type ClaidorApiAuth } from "../../shared/node/cursor-ba
 // (`host/extensions/cloud-agents/model-catalog-fetch.ts` speaks the same
 // RPC); the Mac binding no longer calls it.
 
-export const CLAIDOR_AVAILABLE_MODELS_PATH = "models/available";
+export const SIMEON_AVAILABLE_MODELS_PATH = "models/available";
 
 /** One row of `/desktop/api/models/available`, as `pricing.py` writes it. */
-export interface ClaidorAvailableModelRow {
+export interface SimeonAvailableModelRow {
   readonly modelId: string;
   readonly modelName?: string;
   readonly provider?: string;
@@ -40,7 +40,7 @@ export interface ClaidorAvailableModelRow {
   readonly maxTokens?: number;
 }
 
-function isRow(value: unknown): value is ClaidorAvailableModelRow {
+function isRow(value: unknown): value is SimeonAvailableModelRow {
   return typeof value === "object" && value != null && !Array.isArray(value) && typeof (value as { modelId?: unknown }).modelId === "string" && (value as { modelId: string }).modelId.trim().length > 0;
 }
 
@@ -52,13 +52,13 @@ function nonEmpty(value: unknown): string | undefined {
  * The rows the window's model menu shows: the `primary` role and nothing
  * else. `pricing.py`: "there is one model they talk to and cheap ones for
  * machinery they never see"; the founder, 26 September 2026: "no one in
- * grok bot choose what model they want." So a `cheap` row (Luna) is not
+ * [the upstream app] choose what model they want." So a `cheap` row (Luna) is not
  * offered either, the way `fallback` ("never shown, never in a menu") and
  * `video` (the watchVideo subagent's) never were, and a row marked not
  * available is left off. The menu holds one row, on by default; the
  * choice is the server's, made with a deploy (F-120).
  */
-export function availableModelFromClaidorRow(row: ClaidorAvailableModelRow): AvailableModelsResponse_AvailableModel | null {
+export function availableModelFromSimeonRow(row: SimeonAvailableModelRow): AvailableModelsResponse_AvailableModel | null {
   if (row.accessible === false || row.available === false || row.role !== "primary") return null;
   const displayName = nonEmpty(row.modelName);
   const description = nonEmpty(row.description);
@@ -84,12 +84,12 @@ export function availableModelFromClaidorRow(row: ClaidorAvailableModelRow): Ava
   });
 }
 
-export function availableModelsResponseFromClaidor(rows: unknown): AvailableModelsResponse {
+export function availableModelsResponseFromSimeon(rows: unknown): AvailableModelsResponse {
   const models: AvailableModelsResponse_AvailableModel[] = [];
   if (Array.isArray(rows)) {
     for (const row of rows) {
       if (!isRow(row)) continue;
-      const model = availableModelFromClaidorRow(row);
+      const model = availableModelFromSimeonRow(row);
       if (model != null) models.push(model);
     }
   }
@@ -100,14 +100,14 @@ export function availableModelsResponseFromClaidor(rows: unknown): AvailableMode
   return new AvailableModelsResponse({ models });
 }
 
-export interface ClaidorModelCatalogOptions extends ClaidorApiAuth {
+export interface SimeonModelCatalogOptions extends SimeonApiAuth {
   readonly fetch?: typeof fetch;
 }
 
-export async function fetchClaidorAvailableModels(options: ClaidorModelCatalogOptions): Promise<AvailableModelsResponse> {
-  const rows = await claidorApiData<unknown>(options, CLAIDOR_AVAILABLE_MODELS_PATH, {
+export async function fetchSimeonAvailableModels(options: SimeonModelCatalogOptions): Promise<AvailableModelsResponse> {
+  const rows = await simeonApiData<unknown>(options, SIMEON_AVAILABLE_MODELS_PATH, {
     method: "GET",
     ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
   });
-  return availableModelsResponseFromClaidor(rows);
+  return availableModelsResponseFromSimeon(rows);
 }

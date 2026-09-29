@@ -29,7 +29,7 @@ async function loadHarness() {
   const dataDir = await mkdtemp(path.join(os.tmpdir(), "simeon-agent-loop-"));
   const output = path.join(bundleDir, "agent-loop.mjs");
   await build({
-    entryPoints: [path.join(repoRoot, "tests/fixtures/claidor-agent-loop-entry.ts")],
+    entryPoints: [path.join(repoRoot, "tests/fixtures/simeon-agent-loop-entry.ts")],
     outfile: output,
     bundle: true,
     format: "esm",
@@ -93,7 +93,7 @@ async function runTurn(loaded, { ingest, firstCallArgs = { type: "text", content
   const requests = [];
   const hostLog = [];
   m.setHostLogSink((line) => hostLog.push(line));
-  m.setClaidorCredentialSource({ getAccessToken: async () => "claidor_da_loop" });
+  m.setSimeonCredentialSource({ getAccessToken: async () => "simeon_da_loop" });
   globalThis.fetch = async (_input, init) => {
     requests.push(JSON.parse(init?.body ?? "{}"));
     // Step one: the model greets through SendMessage. Then it writes text

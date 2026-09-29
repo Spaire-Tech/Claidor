@@ -1,7 +1,7 @@
 /**
  * Watching a video, served (25 September 2026, docs/services-agents.md).
  *
- * Grok Bot's watchVideo / videoReview subagents were in the tree and
+ * The upstream app's watchVideo / videoReview subagents were in the tree and
  * refused: nothing registered them (`resolveSubagentConfigs`), the
  * executor spoke only the Responses wire (no video part) and dropped
  * `providerOptions.cursor.videoFps`, and the brief said "You can't watch
@@ -31,13 +31,13 @@ async function load() {
   return { module, dataDir: temporary, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
-const ENV_KEYS = ["SAND_DATA_ROOT", "SAND_BACKEND_URL", "SAND_VIDEO_SUBAGENT_SERVED", "SAND_CLAIDOR_VIDEO_MODEL"];
+const ENV_KEYS = ["SAND_DATA_ROOT", "SAND_BACKEND_URL", "SAND_VIDEO_SUBAGENT_SERVED", "SAND_SIMEON_VIDEO_MODEL"];
 function pin(module, dataDir) {
   const previous = {};
   for (const key of ENV_KEYS) { previous[key] = process.env[key]; delete process.env[key]; }
   process.env.SAND_DATA_ROOT = dataDir;
   process.env.SAND_BACKEND_URL = "https://api.simeonlabs.com";
-  module.setClaidorCredentialSource({ getAccessToken: async () => "claidor_da_video" });
+  module.setSimeonCredentialSource({ getAccessToken: async () => "simeon_da_video" });
   return () => { for (const [key, value] of Object.entries(previous)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; } };
 }
 
@@ -84,7 +84,7 @@ test("the two video subagents are registered on the Gemini model and the Task to
     assert.equal(module.isVideoSubagentServed(), true);
     process.env.SAND_VIDEO_SUBAGENT_SERVED = "0";
     assert.equal(module.isVideoSubagentServed(), false);
-    process.env.SAND_CLAIDOR_VIDEO_MODEL = "gemini-2.5-pro";
+    process.env.SAND_SIMEON_VIDEO_MODEL = "gemini-2.5-pro";
     assert.equal(module.createSandVideoSubagentConfigs()[0].userRequestedModelId, "gemini-2.5-pro");
   } finally {
     unpin();
@@ -96,7 +96,7 @@ test("the composition registers the configs behind the switch and puts a video c
   const composition = await readFile(path.join(repoRoot, "source/host/host-runner-composition.ts"), "utf8");
   assert.match(composition, /if \(isVideoSubagentServed\(\)\) configs\.push\(\.\.\.createSandVideoSubagentConfigs\(\)\);/);
   assert.match(composition, /const isVideoTurn = identity\.isSubagentRunner && isVideoSubagentType\(identity\.subagentType\);/);
-  assert.match(composition, /const turnModelId = isVideoTurn \? configuredClaidorVideoModel\(\) : staticModelId;/, "the child's state carries the Gemini id, so the video is accepted");
+  assert.match(composition, /const turnModelId = isVideoTurn \? configuredSimeonVideoModel\(\) : staticModelId;/, "the child's state carries the Gemini id, so the video is accepted");
   assert.match(composition, /staticConfig: \{\n\s*modelId: turnModelId,/);
   assert.match(composition, /\.\.\.\(isVideoTurn \? \{ isVideoSubagent: true \} : \{\}\),/, "the executor is put on the video model by the flag");
   const shell = await readFile(path.join(repoRoot, "source/host/runner/turn-run-shell.ts"), "utf8");
@@ -113,14 +113,14 @@ test("a video child's session speaks Gemini's wire through the proxy with the vi
   const logLines = [];
   module.setModelCallLog((line) => logLines.push(line));
   try {
-    assert.equal(module.claidorModelForSession({ isVideoSubagent: true }), "gemini-2.5-flash");
-    assert.equal(module.claidorModelForSession({ isVideoSubagent: true, modelId: "gemini-2.5-flash" }), "gemini-2.5-flash");
-    assert.equal(module.claidorReasoningEffortForSession({ isVideoSubagent: true }, {}), "low");
-    // By the flag only: the summarization session names gemini-2.5-flash too (Grok Bot's SAND_SUMMARIZATION_MODEL_ID) and stays on Luna.
-    assert.equal(module.isConfiguredClaidorModelId("gemini-2.5-flash"), false);
-    assert.equal(module.claidorModelForSession({ modelId: "gemini-2.5-flash" }), "gpt-6-sol");
-    assert.equal(module.claidorModelForSession({ isSummarizationSession: true, modelId: "gemini-2.5-flash" }), "gpt-6-luna");
-    assert.equal(module.claidorGeminiEndpoint("gemini-2.5-flash", "https://api.simeonlabs.com"), "https://api.simeonlabs.com/desktop/api/proxy/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse");
+    assert.equal(module.simeonModelForSession({ isVideoSubagent: true }), "gemini-2.5-flash");
+    assert.equal(module.simeonModelForSession({ isVideoSubagent: true, modelId: "gemini-2.5-flash" }), "gemini-2.5-flash");
+    assert.equal(module.simeonReasoningEffortForSession({ isVideoSubagent: true }, {}), "low");
+    // By the flag only: the summarization session names gemini-2.5-flash too (the upstream app's SAND_SUMMARIZATION_MODEL_ID) and stays on Luna.
+    assert.equal(module.isConfiguredSimeonModelId("gemini-2.5-flash"), false);
+    assert.equal(module.simeonModelForSession({ modelId: "gemini-2.5-flash" }), "gpt-6-sol");
+    assert.equal(module.simeonModelForSession({ isSummarizationSession: true, modelId: "gemini-2.5-flash" }), "gpt-6-luna");
+    assert.equal(module.simeonGeminiEndpoint("gemini-2.5-flash", "https://api.simeonlabs.com"), "https://api.simeonlabs.com/desktop/api/proxy/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse");
 
     globalThis.fetch = async (input, init) => {
       requests.push({ url: String(input), headers: new Headers(init?.headers), body: JSON.parse(init?.body ?? "{}") });
@@ -139,7 +139,7 @@ test("a video child's session speaks Gemini's wire through the proxy with the vi
       ] },
     ];
     const definitions = [{ name: "Shell", description: "Run a command", parameters: { jsonSchema: { $schema: "http://json-schema.org/draft-07/schema#", type: "object", additionalProperties: false, properties: { command: { type: "string", description: "the command" }, block_until_ms: { type: ["number", "null"], default: 0 } }, required: ["command"] } } }];
-    const executor = module.createProviderPromptSession("claidor", { isVideoSubagent: true, modelId: "gemini-2.5-flash" }).getExecutor(state);
+    const executor = module.createProviderPromptSession("simeon", { isVideoSubagent: true, modelId: "gemini-2.5-flash" }).getExecutor(state);
     const result = executor.stream({}, "inv-video", definitions);
     const parts = [];
     for await (const part of result.fullStream) parts.push(part);
@@ -150,7 +150,7 @@ test("a video child's session speaks Gemini's wire through the proxy with the vi
     assert.equal(requests.length, 1);
     const [request] = requests;
     assert.equal(request.url, "https://api.simeonlabs.com/desktop/api/proxy/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse");
-    assert.equal(request.headers.get("authorization"), "Bearer claidor_da_video");
+    assert.equal(request.headers.get("authorization"), "Bearer simeon_da_video");
     assert.deepEqual(request.body.systemInstruction, { parts: [{ text: "You are Simeon running as the watchVideo subagent." }] });
     assert.deepEqual(request.body.contents, [{ role: "user", parts: [
       { text: "What happens in this clip?" },
@@ -236,10 +236,10 @@ test("the brief follows the served switch, and a video child's prompt says the v
 test("the Mac keeps the video model off the picker and forwards the switches into the box", async () => {
   const { module, dispose } = await load();
   try {
-    assert.equal(module.availableModelFromClaidorRow({ modelId: "gemini-2.5-flash", role: "video", supportsVideo: true }), null);
-    assert.ok(module.availableModelFromClaidorRow({ modelId: "gpt-6-sol", role: "primary" }) != null);
+    assert.equal(module.availableModelFromSimeonRow({ modelId: "gemini-2.5-flash", role: "video", supportsVideo: true }), null);
+    assert.ok(module.availableModelFromSimeonRow({ modelId: "gpt-6-sol", role: "primary" }) != null);
     assert.ok(module.SERVED_SWITCH_ENVS.includes("SAND_VIDEO_SUBAGENT_SERVED"));
-    assert.ok(module.SERVED_SWITCH_ENVS.includes("SAND_CLAIDOR_VIDEO_MODEL"));
+    assert.ok(module.SERVED_SWITCH_ENVS.includes("SAND_SIMEON_VIDEO_MODEL"));
   } finally {
     await dispose();
   }

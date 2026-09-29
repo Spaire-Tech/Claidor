@@ -1,5 +1,5 @@
 {
-  "about": "Earlier names allowed in the repository, where, and why. Read by scripts/check_names.py; explained in docs/kept-names.md. kind: contract = a name another program we do not build expects; data = a value already stored or deployed; fallback = an earlier name still read so old installs and deployments keep working; record = a statement of origin that must name it; phase-6 = our own code names, renamed in the next step and removed from this list then.",
+  "about": "Earlier names allowed in the repository, where, and why. Read by scripts/check_names.py; explained in docs/kept-names.md. kind: contract = a name another program we do not build expects; data = a value already stored or deployed; fallback = an earlier name still read so old installs and deployments keep working; record = a statement of origin that must name it; guard = a test that checks an earlier name is gone.",
   "rules": [
     {
       "kind": "record",
@@ -85,21 +85,26 @@
         "desktop/scripts/lib/config.mjs",
         "desktop/scripts/lib/runtime.mjs",
         "desktop/scripts/bootstrap-runtime.mjs",
-        "desktop/scripts/preflight-bootstrap.mjs"
+        "desktop/scripts/preflight-bootstrap.mjs",
+        "desktop/tests/publication-bootstrap.test.mjs",
+        "desktop/scripts/lib/macos-package-verification.mjs",
+        "desktop/scripts/package-fidelity-diagnostic.mjs",
+        "desktop/scripts/native-e2e-check.mjs"
       ],
-      "reason": "Bootstrap reads the upstream 0.18.0 app by its real name and download address (Grok Bot.app, Grok_Bot_0.18.0.dmg)."
+      "reason": "Bootstrap and the package checks read the upstream 0.18.0 app by its real name, download address and executable (Grok Bot.app, Grok_Bot_0.18.0.dmg, Contents/MacOS/Grok Bot)."
     },
     {
       "kind": "contract",
       "names": [
         "grok",
-        "caisra"
+        "caisra",
+        "anysphere"
       ],
       "paths": [
         "desktop/scripts/lib/router-renderer-patch.mjs",
         "desktop/tests/renderer-*.test.mjs"
       ],
-      "reason": "The window patch finds the upstream strings (Grok Bot, New Bot, Caisra, the .sand-grok-bot-mark class) to replace them, and its tests feed it those strings."
+      "reason": "The window patch finds the upstream strings (Grok Bot, New Bot, Caisra, the .sand-grok-bot-mark class) to replace them, counts the upstream maker's name left after the brand pass, and its tests feed it those strings."
     },
     {
       "kind": "contract",
@@ -150,8 +155,8 @@
         "server/migrations/versions/**",
         "server/simeon/models/sand_*.py"
       ],
-      "match": "GrokBotService|GROK_BOT|grok_bot",
-      "reason": "The server answers the Connect service aiserver.v1.GrokBotService and the GROK_BOT source enum the app sends."
+      "match": "GrokBotService|GROK_BOT|grok_bot|\"grok-bot\"",
+      "reason": "The server answers the Connect service aiserver.v1.GrokBotService, and the GROK_BOT source enum (\"grok-bot\" in JSON) the app sends with a cloud agent."
     },
     {
       "kind": "fallback",
@@ -198,7 +203,8 @@
         "desktop/source/host/host-paths.ts",
         "desktop/source/electron-main/startup/startup-data-root-migration.ts",
         "desktop/source/shared/sensitive-local-paths.ts",
-        "desktop/tests/electron-shell-batch4.test.mjs"
+        "desktop/tests/electron-shell-batch4.test.mjs",
+        "desktop/tests/keys-auth-security.test.mjs"
       ],
       "match": "caisra|grokbot",
       "reason": "The data folder was ~/.caisra (with a .grokbot-data-root-v1 marker); the first start moves it to ~/.simeon, and the earlier folder stays protected from the local-exec daemon."
@@ -286,37 +292,85 @@
       "reason": "The Render blueprint keeps the service names, the CLAIDOR_ variable keys and the repository address that exist on Render until they are changed there (a renamed service in the blueprint would be a new, empty service)."
     },
     {
-      "kind": "phase-6",
+      "kind": "contract",
       "names": [
         "grok",
-        "claidor"
+        "anysphere",
+        "xai"
       ],
       "paths": [
-        "server/simeon/sand/**",
-        "server/tests/sand/**",
-        "server/simeon/desktop/**"
+        "desktop/source/**",
+        "desktop/frontend/**",
+        "desktop/tests/**",
+        "desktop/scripts/**"
       ],
-      "match": "com\\.grok-bot\\.local-vm|\"grok-bot\"|SAND_INFERENCE_PROVIDER|claidor-[a-z-]+\\.ts",
-      "reason": "Values the app and the box send or read: the cloud computer's Docker owner label, the cloud-agent source value \"grok-bot\", the model provider id \"claidor\", and desktop file names. Renamed together with the app's side, with the earlier value still accepted."
+      "match": "GrokBotService|grok_bot_connect|BackgroundComposerSource\\.GROK_BOT|\"grok-bot\"|grok[-_]4|GROK_4|[Ii]sAnysphereUser|ANYSPHERE_TEAM_ID|AnysphereMembership|anysphere-membership|isanysphereteam|IsAnysphereTeam|sand-grok-bot-mark|data-grok-state|grok_bot_\\w+|app/grok-bot|grokCloudTesting|isGrok45|accounts/anysphere|anysphere\\.cursor-mcp|xai-compaction|`grokbot`|\\.\\(\\?:sand-\\|grok-",
+      "reason": "Names the pinned window, the generated protocol code or the upstream agent code read or send: the Connect service and its source enum, the account status field isAnysphereUser the window reads, upstream model ids (grok-4.5) that saved agents carry, the window's mark class and state attribute, feature-gate and prompt-flag names, the MCP OAuth extension id and a summary kind stored in conversation state."
     },
     {
-      "kind": "phase-6",
+      "kind": "contract",
       "names": [
         "grok",
-        "claidor",
         "anysphere",
-        "caisra",
         "xai",
         "spacex"
       ],
       "paths": [
-        "desktop/source/**",
-        "desktop/tests/**",
-        "desktop/frontend/**",
-        "desktop/scripts/**",
-        "desktop/manifests/**"
+        "desktop/source/shared/node/experiments/experiment-config.gen.ts",
+        "desktop/frontend/src/production/evidence.ts",
+        "desktop/frontend/manifests/**",
+        "desktop/manifests/reconstruction/**",
+        "desktop/source/electron-main/adapters/EVIDENCE.md"
       ],
-      "reason": "The Mac app's own code names, comments and file names that still carry an earlier name (the provider id \"claidor\", GrokBot*/Anysphere* types, @anysphere logger names, [claidor] test fixtures). Phase 6 renames them and removes this rule; strings a person can see are already Simeon's."
+      "reason": "Generated from, or a record of, the upstream app's own bytes: the feature-gate table and the evidence files that list its strings and offsets."
+    },
+    {
+      "kind": "fallback",
+      "names": [
+        "grok"
+      ],
+      "paths": [
+        "desktop/source/**",
+        "desktop/tests/**"
+      ],
+      "match": "/run/grok-bot|\"Grok Bot\"|Grok Bot\\.app|\\.grokbot|grok-bot-local-vm|[!=]== ?\"Grok\"|Grok Bot user-data",
+      "reason": "Earlier names still recognised on a Mac: the upstream app's user-data folder (Grok Bot) and data markers the first start migrates from, the token folder path an older box mounted (still refused to attachments), and \"Grok\", the upstream default agent name a saved agent may carry."
+    },
+    {
+      "kind": "fallback",
+      "names": [
+        "claidor"
+      ],
+      "paths": [
+        "desktop/source/shared/inference-router.ts",
+        "desktop/source/shared/node/settings/sand-settings-store.ts",
+        "desktop/tests/simeon-provider.test.mjs"
+      ],
+      "reason": "The model provider id was \"claidor\" and its settings SAND_CLAIDOR_* until 29 September 2026; stored settings, usage and transcripts on a Mac still carry the old id, and both setting names are read."
+    },
+    {
+      "kind": "fallback",
+      "names": [
+        "grok"
+      ],
+      "paths": [
+        "server/simeon/sand/box_hosts.py",
+        "server/tests/sand/test_box_hosts.py"
+      ],
+      "match": "com\\.grok-bot\\.local-vm",
+      "reason": "A cloud box made before 29 September 2026 carries the earlier Docker label prefix; its host version is still read from it."
+    },
+    {
+      "kind": "guard",
+      "names": [
+        "claidor",
+        "grok"
+      ],
+      "paths": [
+        "desktop/tests/**"
+      ],
+      "match": "doesNotMatch|never reads|no longer|Claidor account|Sign in to Claidor|Claidor sign-in|Claidor API|Sign In with Claidor",
+      "reason": "Tests that check an earlier name is gone from what a person or the agent reads have to name it."
     }
   ]
 }

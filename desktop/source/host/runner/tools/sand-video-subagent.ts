@@ -1,5 +1,5 @@
 // The watchVideo and videoReview subagents, registered again (25 September
-// 2026, docs/services-agents.md). Grok Bot's Task tool knows both
+// 2026, docs/services-agents.md). The upstream app's Task tool knows both
 // types by their proto cases (`subagent-config.ts`, `getSubagentTypeName`:
 // `watchVideo` → "watchVideo", `mediaReview` → "videoReview";
 // `isGeminiVideoSubagentType` is what lets a Task carry a video in
@@ -9,7 +9,7 @@
 // model, which `resolveSubagentModel` accepts as is (the production Task
 // options say every model is valid), so the Task's `resolvedModelId` says
 // gemini and the attachment path stops refusing the video.
-import { configuredClaidorVideoModel, VIDEO_INLINE_MAX_MB } from "../../../shared/video-availability.js";
+import { configuredSimeonVideoModel, VIDEO_INLINE_MAX_MB } from "../../../shared/video-availability.js";
 
 export const WATCH_VIDEO_SUBAGENT_TYPE = "watchVideo";
 export const VIDEO_REVIEW_SUBAGENT_TYPE = "videoReview";
@@ -44,7 +44,7 @@ export const VIDEO_REVIEW_SUBAGENT_DESCRIPTION = [
 // (`sand-computer-use-subagent.ts`); the Task tool reads
 // `subagent_type.type.case` off it. The proto cases are the real ones, so
 // `isGeminiVideoSubagentType` says yes and the video travels.
-export function createSandVideoSubagentConfigs(modelId: string = configuredClaidorVideoModel()) {
+export function createSandVideoSubagentConfigs(modelId: string = configuredSimeonVideoModel()) {
   return [
     {
       subagent_type: { type: { case: "watchVideo", value: {} } },

@@ -51,7 +51,7 @@ export interface AnthropicCompactionOptions extends SelfSummaryRetryOptions {
   readonly anthropicCompactionInstructions?: string | undefined;
 }
 
-const logger = createLogger("@anysphere/agent");
+const logger = createLogger("@sand/agent");
 const MIN_ANTHROPIC_COMPACTION_INPUT_TOKENS = 50_000;
 const APPROX_CHARS_PER_TOKEN = 4;
 const compactionInputTokens = createHistogram("anthropic_compaction.input_token", {

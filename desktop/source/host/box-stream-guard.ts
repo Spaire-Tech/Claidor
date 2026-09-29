@@ -1,14 +1,14 @@
 /**
- * The box desktop's stream, behind Grok Bot's network token (ledger F-135,
+ * The box desktop's stream, behind the upstream app's network token (ledger F-135,
  * 26 September 2026).
  *
- * Grok Bot never exposed noVNC bare in production. Its cloud box sat behind
+ * The upstream app never exposed noVNC bare in production. Its cloud box sat behind
  * the pod's egress proxy, which let a request through only with the box's
  * network token, as the `network_token` query parameter (the noVNC page and
  * its websockify URL, `buildSandBoxNoVncUrl`) or the `x-anyrun-network-token`
  * header (every other request of the page; the Electron box session adds it,
  * `vnc-trust.ts` `beforeSendHeaders`). The loopback box, which a local Docker
- * box uses, is Grok Bot's development path and published websockify's 6080
+ * box uses, is the upstream app's development path and published websockify's 6080
  * and 6081 with no credential, so any web page open on the Mac could open
  * ws://127.0.0.1:6080/websockify and drive the desktop that holds the
  * agent's signed-in browser.
@@ -18,7 +18,7 @@
  * the box's own loopback once the token matches. The Mac publishes these
  * listeners instead of websockify and hands the app the `vncProxy`
  * descriptor, so the coordinator (`box-vnc-proxy.ts`) and Electron carry the
- * token exactly as they do for Grok Bot's cloud box. Our cloud box's proxy
+ * token exactly as they do for the upstream app's cloud box. Our cloud box's proxy
  * (`server/simeon/sand/box_proxy.py`) checks the same token the same way.
  */
 import { timingSafeEqual } from "node:crypto";
@@ -29,7 +29,7 @@ export const BOX_STREAM_NETWORK_TOKEN_HEADER = "x-anyrun-network-token";
 export const BOX_STREAM_NETWORK_TOKEN_QUERY = "network_token";
 /**
  * The token, in the box's environment, set by the Mac when it creates the
- * box: Grok Bot's pod receives its credentials the same way (F-148).
+ * box: the upstream app's pod receives its credentials the same way (F-148).
  */
 export const SAND_BOX_STREAM_NETWORK_TOKEN_ENV = "SAND_BOX_STREAM_NETWORK_TOKEN";
 /** websockify's ports inside the box, and the guard's, which the Mac publishes as 6080 and 6081. */

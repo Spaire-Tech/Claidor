@@ -50,7 +50,7 @@ import { AbstractUserMessageActionHandler } from "./abstract-user-message-action
 
 type Any = any;
 
-const logger70 = createLogger("@anysphere/agent:user-message-action");
+const logger70 = createLogger("@sand/agent:user-message-action");
 const conversationInitDuration = createHistogram("agent.ttft.conversationInitMs", {
   description: "Time for initializeConversation (system prompt, rules, turn creation)",
 });

@@ -36,12 +36,12 @@ const SERVER_ROWS = [
 ];
 
 test("the picker's list comes from /desktop/api/models/available and keeps the proto shape", async () => {
-  const loaded = await loadModule("source/electron-main/models/claidor-model-catalog.ts", "claidor-model-catalog");
+  const loaded = await loadModule("source/electron-main/models/simeon-model-catalog.ts", "simeon-model-catalog");
   const requests = [];
   try {
-    const { fetchClaidorAvailableModels } = loaded.module;
-    const response = await fetchClaidorAvailableModels({
-      getAccessToken: async () => "claidor_da_picker",
+    const { fetchSimeonAvailableModels } = loaded.module;
+    const response = await fetchSimeonAvailableModels({
+      getAccessToken: async () => "simeon_da_picker",
       backendUrl: "https://api.simeonlabs.com",
       fetch: async (input, init) => {
         requests.push({ url: typeof input === "string" ? input : input.url, method: init?.method, headers: new Headers(init?.headers) });
@@ -51,17 +51,17 @@ test("the picker's list comes from /desktop/api/models/available and keeps the p
     assert.equal(requests.length, 1);
     assert.equal(requests[0].url, "https://api.simeonlabs.com/desktop/api/models/available");
     assert.equal(requests[0].method, "GET");
-    assert.equal(requests[0].headers.get("authorization"), "Bearer claidor_da_picker");
+    assert.equal(requests[0].headers.get("authorization"), "Bearer simeon_da_picker");
 
     // What the edge serialises for the renderer, exactly as before: proto
     // JSON, so a false `defaultOn` is simply absent, as it always was.
     const json = response.toJson();
     // One row: the primary. Luna is machinery and is not offered (F-120,
-    // 26 September 2026: "no one in grok bot choose what model they want").
+    // 26 September 2026: "no one in [the upstream app] choose what model they want").
     assert.deepEqual(json.models.map((model) => model.name), ["gpt-5.6"]);
     assert.deepEqual(json.models.map((model) => model.defaultOn ?? false), [true]);
     assert.deepEqual(response.models.map((model) => model.defaultOn), [true]);
-    assert.equal(loaded.module.availableModelFromClaidorRow({ modelId: "x", role: "cheap" }), null);
+    assert.equal(loaded.module.availableModelFromSimeonRow({ modelId: "x", role: "cheap" }), null);
     const terra = json.models[0];
     assert.equal(terra.clientDisplayName, "Terra");
     assert.equal(terra.serverModelName, "gpt-5.6");
@@ -85,44 +85,44 @@ test("the picker's list comes from /desktop/api/models/available and keeps the p
 });
 
 test("a fallback role, an unavailable row and a row without an id are left off; one default always", async () => {
-  const loaded = await loadModule("source/electron-main/models/claidor-model-catalog.ts", "claidor-model-catalog");
+  const loaded = await loadModule("source/electron-main/models/simeon-model-catalog.ts", "simeon-model-catalog");
   try {
-    const { availableModelsResponseFromClaidor, availableModelFromClaidorRow } = loaded.module;
-    assert.equal(availableModelFromClaidorRow({ modelId: "x", role: "fallback" }), null);
-    assert.equal(availableModelFromClaidorRow({ modelId: "x", accessible: false }), null);
-    assert.equal(availableModelFromClaidorRow({ modelId: "x", available: false }), null);
+    const { availableModelsResponseFromSimeon, availableModelFromSimeonRow } = loaded.module;
+    assert.equal(availableModelFromSimeonRow({ modelId: "x", role: "fallback" }), null);
+    assert.equal(availableModelFromSimeonRow({ modelId: "x", accessible: false }), null);
+    assert.equal(availableModelFromSimeonRow({ modelId: "x", available: false }), null);
 
-    const noPrimary = availableModelsResponseFromClaidor([{ modelId: "a", role: "cheap" }, { modelId: "b", role: "cheap" }]);
+    const noPrimary = availableModelsResponseFromSimeon([{ modelId: "a", role: "cheap" }, { modelId: "b", role: "cheap" }]);
     assert.deepEqual(noPrimary.models, []);
 
-    const twoPrimaries = availableModelsResponseFromClaidor([{ modelId: "a", role: "cheap" }, { modelId: "b", role: "primary" }, { modelId: "c", role: "primary" }]);
+    const twoPrimaries = availableModelsResponseFromSimeon([{ modelId: "a", role: "cheap" }, { modelId: "b", role: "primary" }, { modelId: "c", role: "primary" }]);
     assert.deepEqual(twoPrimaries.models.map((model) => [model.name, model.defaultOn]), [["b", true], ["c", false]]);
 
-    assert.deepEqual(availableModelsResponseFromClaidor(null).toJson(), {});
-    assert.deepEqual(availableModelsResponseFromClaidor({ not: "a list" }).toJson(), {});
+    assert.deepEqual(availableModelsResponseFromSimeon(null).toJson(), {});
+    assert.deepEqual(availableModelsResponseFromSimeon({ not: "a list" }).toJson(), {});
   } finally {
     await loaded.dispose();
   }
 });
 
 test("a refusal from the server is the server's own sentence, and the Mac binding no longer speaks the RPC", async () => {
-  const loaded = await loadModule("source/electron-main/models/claidor-model-catalog.ts", "claidor-model-catalog");
+  const loaded = await loadModule("source/electron-main/models/simeon-model-catalog.ts", "simeon-model-catalog");
   try {
-    const { fetchClaidorAvailableModels } = loaded.module;
+    const { fetchSimeonAvailableModels } = loaded.module;
     await assert.rejects(
-      () => fetchClaidorAvailableModels({ getAccessToken: async () => "x", backendUrl: "https://api.simeonlabs.com", fetch: async () => new Response(JSON.stringify({ error: { type: "unauthorized", message: "This desktop session has expired." } }), { status: 401 }) }),
-      (error) => { assert.equal(error.name, "ClaidorApiError"); assert.equal(error.status, 401); assert.match(error.message, /expired/); return true; },
+      () => fetchSimeonAvailableModels({ getAccessToken: async () => "x", backendUrl: "https://api.simeonlabs.com", fetch: async () => new Response(JSON.stringify({ error: { type: "unauthorized", message: "This desktop session has expired." } }), { status: 401 }) }),
+      (error) => { assert.equal(error.name, "SimeonApiError"); assert.equal(error.status, 401); assert.match(error.message, /expired/); return true; },
     );
     await assert.rejects(
-      () => fetchClaidorAvailableModels({ getAccessToken: async () => "x", backendUrl: "https://api.simeonlabs.com", fetch: async () => new Response(JSON.stringify({ code: 40101, message: "Sign in first." }), { status: 200 }) }),
-      (error) => { assert.equal(error.name, "ClaidorApiError"); assert.equal(error.message, "Sign in first."); return true; },
+      () => fetchSimeonAvailableModels({ getAccessToken: async () => "x", backendUrl: "https://api.simeonlabs.com", fetch: async () => new Response(JSON.stringify({ code: 40101, message: "Sign in first." }), { status: 200 }) }),
+      (error) => { assert.equal(error.name, "SimeonApiError"); assert.equal(error.message, "Sign in first."); return true; },
     );
-    const adapter = await readFile(path.join(repoRoot, "source/electron-main/models/claidor-model-catalog.ts"), "utf8");
+    const adapter = await readFile(path.join(repoRoot, "source/electron-main/models/simeon-model-catalog.ts"), "utf8");
     assert.equal(adapter.includes("createSandCursorBackendClient"), false);
     assert.equal(adapter.includes("aiserver_connect"), false);
     const services = await readFile(path.join(repoRoot, "source/electron-main/main-production-services.ts"), "utf8");
     assert.equal(services.includes("fetchSandAvailableModels"), false);
-    assert.match(services, /fetchClaidorAvailableModels\(/);
+    assert.match(services, /fetchSimeonAvailableModels\(/);
     // The cloud-agent path keeps its RPC; only the Mac binding moved.
     const cloud = await readFile(path.join(repoRoot, "source/electron-main/models/cursor-model-catalog.ts"), "utf8");
     assert.match(cloud, /export async function fetchSandAvailableModels/);

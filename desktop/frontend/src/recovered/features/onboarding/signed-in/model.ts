@@ -104,7 +104,7 @@ export const CHARACTER_COLORS = [
 ] as const;
 // Since 23 September 2026 a "shape" is one of the founder's twenty-one avatars
 // (brand/avatars). The scene's "blob" and the eight
-// Grok Bot names map onto the first eight in character.tsx.
+// The upstream app names map onto the first eight in character.tsx.
 export const CHARACTER_SHAPES = AVATAR_KEYS;
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5435957

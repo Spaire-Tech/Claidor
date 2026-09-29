@@ -1,3 +1,3 @@
 import { createLogger } from "../context/logger.js";
 
-const logger = createLogger("@anysphere/agent/state-utils");
+const logger = createLogger("@sand/agent/state-utils");

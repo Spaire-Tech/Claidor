@@ -4,7 +4,7 @@ import { homedir } from "node:os";
 import { isAbsolute, resolve } from "node:path";
 
 import { SAND_SEND_MESSAGE_TOOL_DESCRIPTION } from "../host/runner/tools/send-message-tool.js";
-import { GROK_BOT_BOX_TOOLS, GROK_BOT_HOST_TOOL_NAMES } from "./grok-bot-box-tools.js";
+import { SAND_BOX_TOOLS, SAND_HOST_TOOL_NAMES } from "./sand-box-tools.js";
 import { sandWidgetSchema } from "./sand-widgets.js";
 
 const CREATE_AGENT_DESCRIPTION = "Create a new agent (a new teammate assistant) for your user, with a name and an optional persona/description. Returns the new agent's id so you can immediately message it with SendToAgent. Use this to spin up a focused teammate for a job. You have no tool to delete an agent, so only create one when it is genuinely useful; the user can delete an agent themselves from the sidebar (right-click the agent → \"Delete\").";
@@ -35,10 +35,10 @@ const EXTERNAL_READ_DESCRIPTION = `Reads a file on the user's computer, the same
 
 Text files include line numbers and support offset/limit paging. Image files (jpeg/jpg, png, gif, webp) are returned inline so you can see them. PDF files are converted to text.`;
 
-export const GROK_BOT_EXTERNAL_SHELL_DEFAULT_MS = 30_000;
-export const GROK_BOT_EXTERNAL_READ_MAX_CHARS = 100_000;
+export const SAND_EXTERNAL_SHELL_DEFAULT_MS = 30_000;
+export const SAND_EXTERNAL_READ_MAX_CHARS = 100_000;
 
-export const GROK_BOT_LOCAL_TOOL_NAMES = [
+export const SAND_LOCAL_TOOL_NAMES = [
   "SendMessage",
   "CreateAgent",
   "UpdateAgent",
@@ -49,30 +49,30 @@ export const GROK_BOT_LOCAL_TOOL_NAMES = [
   "ExternalRead",
 ] as const;
 
-export const GROK_BOT_TOOL_NAMES = [
-  ...GROK_BOT_LOCAL_TOOL_NAMES,
-  ...GROK_BOT_HOST_TOOL_NAMES,
+export const SAND_TOOL_NAMES = [
+  ...SAND_LOCAL_TOOL_NAMES,
+  ...SAND_HOST_TOOL_NAMES,
 ] as const;
 
-export type GrokBotLocalToolName = (typeof GROK_BOT_LOCAL_TOOL_NAMES)[number];
-export type GrokBotHostToolName = (typeof GROK_BOT_HOST_TOOL_NAMES)[number];
-export type GrokBotToolName = (typeof GROK_BOT_TOOL_NAMES)[number];
+export type SandLocalToolName = (typeof SAND_LOCAL_TOOL_NAMES)[number];
+export type SandHostToolName = (typeof SAND_HOST_TOOL_NAMES)[number];
+export type SandToolName = (typeof SAND_TOOL_NAMES)[number];
 
-export function isGrokBotLocalToolName(name: string): name is GrokBotLocalToolName {
-  return (GROK_BOT_LOCAL_TOOL_NAMES as readonly string[]).includes(name);
+export function isSandLocalToolName(name: string): name is SandLocalToolName {
+  return (SAND_LOCAL_TOOL_NAMES as readonly string[]).includes(name);
 }
 
-export function isGrokBotHostToolName(name: string): name is GrokBotHostToolName {
-  return (GROK_BOT_HOST_TOOL_NAMES as readonly string[]).includes(name);
+export function isSandHostToolName(name: string): name is SandHostToolName {
+  return (SAND_HOST_TOOL_NAMES as readonly string[]).includes(name);
 }
 
-export function isGrokBotToolName(name: string): name is GrokBotToolName {
-  return isGrokBotLocalToolName(name) || isGrokBotHostToolName(name);
+export function isSandToolName(name: string): name is SandToolName {
+  return isSandLocalToolName(name) || isSandHostToolName(name);
 }
 
-export { GROK_BOT_HOST_TOOL_NAMES };
+export { SAND_HOST_TOOL_NAMES };
 
-const GROK_BOT_LOCAL_TOOLS: readonly Record<string, unknown>[] = [
+const SAND_LOCAL_TOOLS: readonly Record<string, unknown>[] = [
   {
     name: "SendMessage",
     description: SAND_SEND_MESSAGE_TOOL_DESCRIPTION,
@@ -214,9 +214,9 @@ const GROK_BOT_LOCAL_TOOLS: readonly Record<string, unknown>[] = [
   },
 ];
 
-export const GROK_BOT_TOOLS: readonly Record<string, unknown>[] = [
-  ...GROK_BOT_LOCAL_TOOLS,
-  ...GROK_BOT_BOX_TOOLS,
+export const SAND_TOOLS: readonly Record<string, unknown>[] = [
+  ...SAND_LOCAL_TOOLS,
+  ...SAND_BOX_TOOLS,
 ];
 
 export function asRecord(value: unknown): Record<string, unknown> | null {
@@ -282,7 +282,7 @@ export interface ExternalReadInput {
   readonly limit?: number;
 }
 
-export interface GrokBotToolContext {
+export interface SandToolContext {
   readonly agentId: string;
   readonly dispatchRemote: (method: string, args: unknown) => Promise<unknown>;
   readonly emitSendMessage: (message: Record<string, unknown>) => Promise<string | undefined>;
@@ -306,7 +306,7 @@ export async function defaultRunExternalShell(input: ExternalShellInput): Promis
     : homedir();
   const timeoutMs = typeof input.blockUntilMs === "number" && Number.isFinite(input.blockUntilMs) && input.blockUntilMs > 0
     ? Math.min(Math.floor(input.blockUntilMs), 600_000)
-    : GROK_BOT_EXTERNAL_SHELL_DEFAULT_MS;
+    : SAND_EXTERNAL_SHELL_DEFAULT_MS;
   const shell = (process.env.SHELL ?? "").trim() || "/bin/zsh";
   return await new Promise(resolvePromise => {
     let child: ReturnType<typeof spawn>;
@@ -378,8 +378,8 @@ export async function defaultReadExternalFile(input: ExternalReadInput): Promise
       : lines.length - start;
     const slice = lines.slice(start, start + count);
     const numbered = slice.map((line, index) => `${String(start + index + 1).padStart(6)}|${line}`).join("\n");
-    if (numbered.length > GROK_BOT_EXTERNAL_READ_MAX_CHARS) {
-      return `${numbered.slice(0, GROK_BOT_EXTERNAL_READ_MAX_CHARS)}\n\n[truncated: file is too long; use offset and limit]`;
+    if (numbered.length > SAND_EXTERNAL_READ_MAX_CHARS) {
+      return `${numbered.slice(0, SAND_EXTERNAL_READ_MAX_CHARS)}\n\n[truncated: file is too long; use offset and limit]`;
     }
     return numbered;
   } catch (error) {
@@ -388,7 +388,7 @@ export async function defaultReadExternalFile(input: ExternalReadInput): Promise
   }
 }
 
-async function executeSendMessage(args: unknown, context: GrokBotToolContext): Promise<string> {
+async function executeSendMessage(args: unknown, context: SandToolContext): Promise<string> {
   const message = sendMessageFromToolArgs(args);
   if ("error" in message) return `Failed to send the message to the user: ${message.error}`;
   if (message.type === "connector") {
@@ -404,7 +404,7 @@ async function executeSendMessage(args: unknown, context: GrokBotToolContext): P
   return id != null && id.length > 0 ? `Message sent to user. (id: ${id})` : "Message sent to user.";
 }
 
-async function executeCreateAgent(args: unknown, context: GrokBotToolContext): Promise<string> {
+async function executeCreateAgent(args: unknown, context: SandToolContext): Promise<string> {
   const record = asRecord(args);
   const name = typeof record?.name === "string" ? record.name.trim() : "";
   if (name.length === 0) return "CreateAgent needs a name.";
@@ -422,7 +422,7 @@ async function executeCreateAgent(args: unknown, context: GrokBotToolContext): P
     : `Created agent "${createdName}".`;
 }
 
-async function executeUpdateAgent(args: unknown, context: GrokBotToolContext): Promise<string> {
+async function executeUpdateAgent(args: unknown, context: SandToolContext): Promise<string> {
   const record = asRecord(args);
   const requested = typeof record?.agent_id === "string" ? record.agent_id.trim() : "";
   const agentId = requested.length > 0 ? requested : context.agentId.trim();
@@ -447,10 +447,10 @@ async function executeUpdateAgent(args: unknown, context: GrokBotToolContext): P
     : `Updated agent "${updatedName}" (id: ${agentId}).`;
 }
 
-export async function executeGrokBotTool(
+export async function executeSandTool(
   name: string,
   args: unknown,
-  context: GrokBotToolContext,
+  context: SandToolContext,
 ): Promise<string> {
   if (name === "SendMessage") return executeSendMessage(args, context);
   if (name === "CreateAgent") return executeCreateAgent(args, context);

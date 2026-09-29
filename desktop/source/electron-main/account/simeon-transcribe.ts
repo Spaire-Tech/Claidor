@@ -1,17 +1,17 @@
 import { createDeadlinePolicy, realClock, type DeadlinePolicy } from "../../internal/scheduling.js";
-import { claidorProxyRequest, type ClaidorApiAuth } from "../../shared/node/cursor-backend/claidor-api.js";
+import { simeonProxyRequest, type SimeonApiAuth } from "../../shared/node/cursor-backend/simeon-api.js";
 
 const TRANSCRIBE_TIMEOUT_MS = 60_000;
 // No default language. Until 24 September 2026 a request with none was sent
 // as `en-US`, and the composer's mic sends none, so every dictation was
 // transcribed as English whatever was spoken. Without the field the server
 // omits it and OpenAI detects the language itself.
-const transcribeDeadline = createDeadlinePolicy(realClock, { name: "claidor-transcribe-audio", timeoutMs: TRANSCRIBE_TIMEOUT_MS });
+const transcribeDeadline = createDeadlinePolicy(realClock, { name: "simeon-transcribe-audio", timeoutMs: TRANSCRIBE_TIMEOUT_MS });
 
-// Dictation, on Claidor's `/audio/transcriptions` door
+// Dictation, on Simeon's `/audio/transcriptions` door
 // (`server/simeon/desktop/capabilities.py`). Until 19 September 2026 this was
 // a Connect RPC call on `aiserver.v1.AiService/TranscribeAudio`, which
-// Claidor never served. The edge (`main-edge.ts`, `transcribeAudio`) and the
+// Simeon never served. The edge (`main-edge.ts`, `transcribeAudio`) and the
 // renderer still call `manager.transcribe({ audio, mimeType, language })` and
 // get `{ text, transcriptionTimeMs }` back; only the wire changed.
 
@@ -19,7 +19,7 @@ export class SandTranscribeEmptyAudioError extends Error {
   constructor() { super("Cannot transcribe empty audio."); }
 }
 
-export interface SandTranscriptionOptions extends ClaidorApiAuth {
+export interface SandTranscriptionOptions extends SimeonApiAuth {
   readonly fetch?: typeof fetch;
   readonly deadline?: DeadlinePolicy;
 }
@@ -42,7 +42,7 @@ export class SandTranscriptionManager {
       bytes.set(args.audio);
       form.append("file", new Blob([bytes], { type: mimeType }), audioFilename(mimeType));
       if (language !== undefined) form.append("language", language);
-      const response = await claidorProxyRequest(this.options, "audio/transcriptions", {
+      const response = await simeonProxyRequest(this.options, "audio/transcriptions", {
         form,
         signal,
         ...(this.options.fetch === undefined ? {} : { fetch: this.options.fetch }),

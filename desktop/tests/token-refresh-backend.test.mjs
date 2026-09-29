@@ -1,5 +1,5 @@
 /**
- * A token refresh goes to the configured backend (Claidor), never to Cursor's
+ * A token refresh goes to the configured backend (Simeon), never to Cursor's
  * default host. Found in the 24 September audit: `getValidAccessToken()` with
  * no backend named (dictation, avatar generation) defaulted to
  * `https://api2.cursor.sh`, so when the access token was within five minutes
@@ -38,7 +38,7 @@ test("a refresh with no backend named goes to SAND_BACKEND_URL, not api2.cursor.
     const nowSeconds = Math.floor(Date.now() / 1000);
     const expiring = jwt({ sub: "user|1", exp: nowSeconds + 60 });
     const fresh = jwt({ sub: "user|1", exp: nowSeconds + 3600 });
-    const store = new Map([["cursor-access-token", expiring], ["cursor-refresh-token", "claidor_da_refresh"]]);
+    const store = new Map([["cursor-access-token", expiring], ["cursor-refresh-token", "simeon_da_refresh"]]);
     const requests = [];
     const service = new module.SandCursorAuthService({
       openExternal: () => {},
@@ -50,7 +50,7 @@ test("a refresh with no backend named goes to SAND_BACKEND_URL, not api2.cursor.
       },
       fetchOAuthToken: async (url) => {
         requests.push(String(url));
-        return new Response(JSON.stringify({ access_token: fresh, refresh_token: "claidor_da_refresh" }), { status: 200, headers: { "content-type": "application/json" } });
+        return new Response(JSON.stringify({ access_token: fresh, refresh_token: "simeon_da_refresh" }), { status: 200, headers: { "content-type": "application/json" } });
       },
     });
     const token = await service.getValidAccessToken();

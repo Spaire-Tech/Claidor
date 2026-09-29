@@ -184,7 +184,7 @@ export const UI_TEXT = {
   signIn: "Sign in",
   signInTagline: "Your team of always-on agents that you can give real work to.",
   signOut: "Sign out",
-  signOutDescription: "You’ll need to sign in again to use your Claidor account with Simeon.",
+  signOutDescription: "You’ll need to sign in again to use your Simeon account with Simeon.",
   signOutTitle: "Sign out?",
   title: "Simeon"
 } as const;
