@@ -1,7 +1,7 @@
 """Who may speak to the cloud runner's routes.
 
-Nobody, unless they hold `CLAIDOR_MATY_RUNNER_TOKEN`. These routes are
-service-to-service: the runner is a process on Claidor's own servers,
+Nobody, unless they hold `SIMEON_MATY_RUNNER_TOKEN`. These routes are
+service-to-service: the runner is a process on Simeon's own servers,
 not a person, and it must never be possible to reach them with a
 person's session, a desktop token or an organization's API key. So this
 is not built on `polar.auth` at all — no auth subject is resolved here
@@ -40,7 +40,7 @@ def _bearer(request: Request) -> str | None:
 
 
 async def authenticate_runner(request: Request) -> None:
-    """Let the request through only for Claidor's own cloud runner."""
+    """Let the request through only for Simeon's own cloud runner."""
     expected = settings.MATY_RUNNER_TOKEN
     if not expected:
         raise MatyRunnerUnauthenticated(

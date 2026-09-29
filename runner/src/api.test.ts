@@ -3,7 +3,7 @@ import type { AddressInfo } from 'node:net';
 
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
-import { ClaidorError, JOB_KINDS, PersonClient, RunnerQueue, refusalOf } from './claidor.js';
+import { ApiError, JOB_KINDS, PersonClient, RunnerQueue, refusalOf } from './api.js';
 import { readAnswer } from './engine.js';
 
 interface Seen {
@@ -113,11 +113,11 @@ describe('the queue', () => {
 
   test('turns a refusal into a real error', async () => {
     reply = () => ({ status: 401, body: { error: 'unauthorized', detail: 'unknown runner token' } });
-    await expect(new RunnerQueue(baseUrl, 'bad', 'runner-1').claim()).rejects.toBeInstanceOf(ClaidorError);
+    await expect(new RunnerQueue(baseUrl, 'bad', 'runner-1').claim()).rejects.toBeInstanceOf(ApiError);
   });
 
   test('says why when the lease is no longer ours', async () => {
-    // 409 is Claidor saying the lease ran out or belongs to another runner.
+    // 409 is the API saying the lease ran out or belongs to another runner.
     reply = () => ({ status: 409, body: { error: 'lease_lost', detail: 'the lease expired' } });
     await expect(
       new RunnerQueue(baseUrl, 'runner-token', 'runner-1').complete('j1', 'done', {}),
@@ -166,7 +166,7 @@ describe('what a refusal said', () => {
 });
 
 describe('the kinds of job', () => {
-  test('are the three Claidor sends', () => {
+  test('are the three the API sends', () => {
     expect([...JOB_KINDS]).toEqual(['routine', 'mail', 'task']);
   });
 });
@@ -193,7 +193,7 @@ describe('the person\'s side', () => {
     ]);
   });
 
-  test('takes the model list from Claidor rather than naming one', async () => {
+  test('takes the model list from the API rather than naming one', async () => {
     reply = () => ({
       status: 200,
       body: {

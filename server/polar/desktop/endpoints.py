@@ -1,4 +1,4 @@
-"""The desktop app's server, on Claidor.
+"""The desktop app's server, on Simeon.
 
 The desktop app, Maties (`desktop/`), is pointed at
 `{BASE_URL}/desktop` and calls the paths below exactly as its own
@@ -8,7 +8,7 @@ server mode does. Sign-in works like this:
    (the redirect is a loopback callback the app is listening on; when
    it could not open one it comes with no redirect and expects a
    `simeon://` deep link instead).
-2. With no Claidor session in the browser, that page sends the person
+2. With no Simeon session in the browser, that page sends the person
    to the web login and asks to be returned to.
 3. With one, it mints a five-minute, single-use code and redirects to
    the app's callback with `code` and `state`.
@@ -17,7 +17,7 @@ server mode does. Sign-in works like this:
 
 Every later call carries the access token as a bearer; the model proxy
 forwards to the provider that serves the model asked for — Anthropic or
-OpenAI — with Claidor's key, and meters what came back against that
+OpenAI — with Simeon's key, and meters what came back against that
 provider's price list (`polar/desktop/pricing.py`). There is no API-key
 screen in the app and there will not be one: a person picks a model,
 never a key.
@@ -440,9 +440,9 @@ async def memory_sync(
     """The shared memory, one round (`docs/maties/cloud.md`, section 3).
 
     The client sends every memory file it has and the version it last
-    saw for each; Claidor merges and answers with every file it holds,
+    saw for each; Simeon merges and answers with every file it holds,
     so a fresh computer receives the whole memory by sending nothing.
-    Merging is Claidor's job alone, so two engines cannot disagree.
+    Merging is Simeon's job alone, so two engines cannot disagree.
 
     The caller is a signed-in desktop, a cloud job, or — since 25
     September 2026 — the person's box: the host that keeps the memory
@@ -484,7 +484,7 @@ async def memory_list(
     desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
     session: AsyncSession = Depends(get_db_session),
 ) -> MemoryListResponse:
-    """What Claidor holds, without the text of it: a cheap way for a
+    """What Simeon holds, without the text of it: a cheap way for a
     client to see whether it is behind before sending anything."""
     return MemoryListResponse(
         files=[
@@ -505,7 +505,7 @@ async def memory_list(
 async def models_available(
     desktop_session: DesktopSession = Depends(get_desktop_session),
 ) -> JSONResponse:
-    """The menu. A provider Claidor holds no key for is not on it: a
+    """The menu. A provider Simeon holds no key for is not on it: a
     missing key reads as « not available here », never as an error at the
     moment somebody sends a message."""
     return _ok([one.available() for one in offered_models()])
@@ -527,7 +527,7 @@ async def pricing_catalog() -> JSONResponse:
     )
 
 
-# --- what the app asks for and Claidor does not have ------------------------
+# --- what the app asks for and Simeon does not have ------------------------
 
 
 @router.get("/api/client-banners/active-list", name="desktop:banners")
@@ -557,7 +557,7 @@ async def client_banner_snapshot(request: Request) -> JSONResponse:
 async def updates_check() -> JSONResponse:
     """The app asks whether a newer Maties exists.
 
-    Claidor does not publish desktop releases yet, so the answer is « nothing
+    Simeon does not publish desktop releases yet, so the answer is « nothing
     newer »: the app reads ``data.value`` and treats ``None`` as up to date.
     """
     return _ok({"value": None})
@@ -682,7 +682,7 @@ async def mcp_marketplace() -> JSONResponse:
 async def analytics_events() -> Response:
     """Usage events the app sends when the person allows usage statistics.
 
-    Acknowledged and discarded: Claidor keeps no usage analytics for the
+    Acknowledged and discarded: Simeon keeps no usage analytics for the
     desktop app yet. The app only checks that the request succeeded.
     """
     return Response(status_code=204)
@@ -690,7 +690,7 @@ async def analytics_events() -> Response:
 
 @router.get("/api/enterprise/context", name="desktop:enterprise_context")
 async def enterprise_context() -> JSONResponse:
-    """Enterprise accounts do not exist on Claidor; every account is
+    """Enterprise accounts do not exist on Simeon; every account is
     personal. 41602 is the app's « not a member » code: it clears any
     stale enterprise context and carries on."""
     return _fail(41602, "This account is a personal account.", status=404)
@@ -890,7 +890,7 @@ async def proxy_messages(
     caller: ProxyCaller = Depends(get_proxy_caller),
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse | StreamingResponse:
-    """Anthropic's Messages API, behind Claidor's key and the person's
+    """Anthropic's Messages API, behind Simeon's key and the person's
     monthly allowance. The body goes through untouched; the usage
     Anthropic reports comes back as credits."""
     return await _proxy(request, caller, session, SpokenApi.anthropic_messages)
@@ -906,7 +906,7 @@ async def proxy_chat_completions(
     caller: ProxyCaller = Depends(get_proxy_caller),
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse | StreamingResponse:
-    """OpenAI's older Chat Completions API, behind Claidor's key and the
+    """OpenAI's older Chat Completions API, behind Simeon's key and the
     same allowance.
 
     Not what our own engine is pointed at: this wire refuses reasoning
@@ -918,7 +918,7 @@ async def proxy_chat_completions(
     and nowhere else
     (the Rakazo attempt, removed 18 September; see `docs/product/going-back-brief.md`,
     which builds every model with `api: "openai-completions"`). So this
-    route stopped being a courtesy to old clients the day Claidor was
+    route stopped being a courtesy to old clients the day Simeon was
     connected to a server it did not write.
     """
     return await _proxy(request, caller, session, SpokenApi.openai_completions)
@@ -934,7 +934,7 @@ async def proxy_responses(
     caller: ProxyCaller = Depends(get_proxy_caller),
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse | StreamingResponse:
-    """OpenAI's Responses API, behind Claidor's key and the person's
+    """OpenAI's Responses API, behind Simeon's key and the person's
     monthly allowance.
 
     The wire the engine speaks to every OpenAI model of ours, because it
@@ -957,7 +957,7 @@ async def proxy_gemini_generate(
     caller: ProxyCaller = Depends(get_proxy_caller),
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse | StreamingResponse:
-    """Gemini's own API, behind Claidor's key and the person's allowance:
+    """Gemini's own API, behind Simeon's key and the person's allowance:
     the wire that takes a video as input, spoken by the app's watchVideo
     and videoReview subagents (25 September 2026).
 
@@ -1002,7 +1002,7 @@ async def proxy_models(
 
     `/api/models/available` is the same question answered in the desktop
     app's vocabulary. This is the answer an OpenAI-compatible client
-    expects, because such a client knows nothing about Claidor and asks
+    expects, because such a client knows nothing about Simeon and asks
     the one question its own protocol defines. Rakazo asks it while a
     person is connecting a model, and fills the list it is given
     (the Rakazo attempt, removed 18 September; see `docs/product/going-back-brief.md`,
@@ -1361,7 +1361,7 @@ router.include_router(capabilities_router)
 router.include_router(apps_router)
 
 
-# Apps through Composio: the app's six calls, forwarded with Claidor's
+# Apps through Composio: the app's six calls, forwarded with Simeon's
 # key and the account's own Composio user id (`composio.py`). Declared
 # before the catch-all below, because FastAPI takes the first route
 # that matches and `/api/proxy/{path}` would take this one.
@@ -1396,7 +1396,7 @@ async def proxy_other(path: str) -> JSONResponse:
 
 # The four routes of `docs/maties/connectors.md` are their own module,
 # because everything about the middleman is kept away from the rest of
-# Claidor, but they are the desktop app's routes and belong at the
+# Simeon, but they are the desktop app's routes and belong at the
 # desktop app's address. Included here, they come out under
 # `/desktop/api/connectors`.
 router.include_router(connectors_router)
@@ -1405,7 +1405,7 @@ router.include_router(connectors_router)
 # --- the cloud engine -------------------------------------------------------
 
 # The person's side of `docs/maties/cloud.md`: asking for a piece of work
-# to be done on Claidor's servers, and seeing what came of it. The
+# to be done on Simeon's servers, and seeing what came of it. The
 # runner's own four verbs are a router of their own at `/maty/runner`,
 # mounted in `polar.app` and reachable only with the service token; these
 # are the app's, and belong at the app's address. Included here, they

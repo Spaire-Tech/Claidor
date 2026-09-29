@@ -20,7 +20,7 @@ Dry run by default. Nothing is deleted without ``--yes``.
     python -m scripts.desktop_reset_account someone@example.com
     python -m scripts.desktop_reset_account someone@example.com --yes
 
-Run it where the server runs (the ``claidor-api`` shell on Render), so it
+Run it where the server runs (the API service's shell on Render), so it
 reads the same ``POSTGRES_*`` environment as the API.
 """
 

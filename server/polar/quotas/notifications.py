@@ -59,14 +59,14 @@ def _render_email(
     limit = usage.limit if usage.limit is not None else "unlimited"
 
     if threshold >= 100:
-        subject = f"You've reached your Claidor {label} limit"
+        subject = f"You've reached your Simeon {label} limit"
         headline = (
             f"Your organization has used {usage.used} of {limit} {unit} of "
             f"{label}. New activity for this quota is blocked on your "
             "current plan."
         )
     else:
-        subject = f"You're approaching your Claidor {label} limit"
+        subject = f"You're approaching your Simeon {label} limit"
         headline = (
             f"Your organization has used {usage.used} of {limit} {unit} of "
             f"{label} ({threshold}% of the cap)."
@@ -78,8 +78,8 @@ def _render_email(
         f"<h2>{subject}</h2>"
         f"<p>Hi {organization.name},</p>"
         f"<p>{headline}</p>"
-        "<p>Upgrade your Claidor plan to raise this limit.</p>"
-        "<p>— Claidor</p>"
+        "<p>Upgrade your Simeon plan to raise this limit.</p>"
+        "<p>— Simeon</p>"
         "</body></html>"
     )
     return subject, html_content

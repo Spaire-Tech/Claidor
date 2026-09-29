@@ -200,7 +200,7 @@ class TestEnsureSandBox:
         env = dict(line.split("=", 1) for line in host.created[0].environment())
         assert env["SAND_GATEWAY_TOKEN"] == body["gatewayToken"]
         assert env["SAND_BACKEND_URL"] == settings.BASE_URL
-        assert env["SAND_INFERENCE_RENEWAL_CREDENTIAL"].startswith("claidor_db_")
+        assert env["SAND_INFERENCE_RENEWAL_CREDENTIAL"].startswith("simeon_db_")
         assert (
             env["SAND_SUPERVISOR_ENABLED"] == "1"
             and env["SAND_USE_EXISTING_BOX_EXEC_DAEMON"] == "1"
@@ -526,7 +526,7 @@ class TestLocalExecCredential:
         )
         assert minted.status_code == 200, minted.text
         credential = minted.json()["credential"]
-        assert credential.startswith("claidor_db_") and isinstance(
+        assert credential.startswith("simeon_db_") and isinstance(
             minted.json()["expiresAtMs"], int
         )
         # No cloud box yet: the daemon keeps what it has.
@@ -548,7 +548,7 @@ class TestLocalExecCredential:
         assert (
             await client.post(
                 "/sand-box/local-exec-connection",
-                json={"credential": "claidor_db_nope"},
+                json={"credential": "simeon_db_nope"},
             )
         ).status_code == 401
         assert (

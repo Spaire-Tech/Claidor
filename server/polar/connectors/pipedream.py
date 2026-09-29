@@ -1,7 +1,7 @@
 """The middleman, today: Pipedream Connect.
 
 `docs/maties/connectors.md`, section 3. Everything Pipedream-shaped in
-Claidor is in this file and stops at this file — the routes above it see
+Simeon is in this file and stops at this file — the routes above it see
 only `polar.connectors.provider`.
 
 **The one thing to understand before changing anything here.** The
@@ -80,7 +80,7 @@ TOKEN_EXPIRY_SKEW = timedelta(minutes=2)
 ACCOUNTS_PAGE_SIZE = 100
 ACCOUNTS_PAGE_LIMIT = 5
 
-#: The provider is not on Claidor's network and a sign-in window is not
+#: The provider is not on Simeon's network and a sign-in window is not
 #: waiting on these; short enough that a route cannot hang on them.
 REQUEST_TIMEOUT = httpx.Timeout(30.0, connect=10.0)
 
@@ -170,7 +170,7 @@ class PipedreamProvider:
     async def link(self, user: User, slug: str) -> ConnectorLink:
         """A one-use address the person signs in at.
 
-        The identity we give Pipedream is the person's Claidor user id:
+        The identity we give Pipedream is the person's Simeon user id:
         it already exists, it is stable, and it is not a secret
         (`docs/maties/connectors.md`, section 4). It is created here and
         nowhere else, which is what makes a Pipedream person cost money
@@ -292,7 +292,7 @@ class PipedreamProvider:
         key = f"polar:connectors:pipedream:token:{self._credentials.client_id}"
         cached = await self._token_store.get(key)
         if cached:
-            # Claidor's Redis decodes responses, but a store that does not
+            # Simeon's Redis decodes responses, but a store that does not
             # would hand back bytes and `str()` would quietly turn a token
             # into the four characters `b'...`.
             return cached.decode() if isinstance(cached, bytes) else str(cached)
@@ -318,7 +318,7 @@ class PipedreamProvider:
             # that carries the client secret, and a refusal that echoed
             # the request would put it in a log.
             raise ConnectorUpstreamError(
-                "The connection service refused Claidor's credentials.",
+                "The connection service refused Simeon's credentials.",
                 status=response.status_code,
             )
         try:

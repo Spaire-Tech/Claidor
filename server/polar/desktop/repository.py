@@ -99,7 +99,7 @@ class DesktopMemoryFileRepository(RepositoryBase[DesktopMemoryFile]):
     async def list_by_user(
         self, user_id: UUID, *, include_deleted: bool = False
     ) -> Sequence[DesktopMemoryFile]:
-        """Everything Claidor holds for one person, in name order. A
+        """Everything Simeon holds for one person, in name order. A
         tombstone (`deleted_at` set) is a name one machine removed and
         the others have still to hear about; it is left out unless
         asked for."""

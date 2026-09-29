@@ -72,7 +72,7 @@ class DesktopAuthCode(RecordModel):
 class DesktopSession(RecordModel):
     """One signed-in desktop — or, when `job_id` is set, one cloud job.
 
-    A row with a `job_id` is not a device: it is the credential Claidor
+    A row with a `job_id` is not a device: it is the credential Simeon
     mints when a runner claims a job, so the runner can act as that one
     person for the life of the lease and no longer. It is a
     `DesktopSession` on purpose — see
@@ -195,7 +195,7 @@ class DesktopUsage(RecordModel):
 
 
 class DesktopMemoryFile(RecordModel):
-    """One memory file of one person, as Claidor holds it.
+    """One memory file of one person, as Simeon holds it.
 
     The assistant's memory is a handful of small text files in its
     workspace: the durable facts (`MEMORY.md`), a note file per day
@@ -210,7 +210,7 @@ class DesktopMemoryFile(RecordModel):
     boundary that keeps a name from escaping the workspace.
 
     `version` counts writes, starting at 1. A side that writes sends the
-    version it started from; when the row has moved on since, Claidor
+    version it started from; when the row has moved on since, Simeon
     merges the two copies by the file's rule and the version goes up by
     one again.
     """

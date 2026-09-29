@@ -2,11 +2,12 @@ import { nanoid } from 'nanoid'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
-const POLAR_AUTH_COOKIE_KEY =
-  process.env.POLAR_AUTH_COOKIE_KEY || 'claidor_session'
-// Legacy cookie name fallback - the backend may still set 'polar_session'
-// if it hasn't been redeployed with the rebrand changes yet
-const LEGACY_AUTH_COOKIE_KEY = 'polar_session'
+const AUTH_COOKIE_KEY =
+  process.env.SIMEON_AUTH_COOKIE_KEY ||
+  process.env.POLAR_AUTH_COOKIE_KEY ||
+  'simeon_session'
+// Sessions made before the rename carry the earlier cookie name.
+const LEGACY_AUTH_COOKIE_KEY = 'claidor_session'
 
 const DISTINCT_ID_COOKIE = 'claidor_distinct_id'
 const DISTINCT_ID_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
@@ -348,7 +349,7 @@ export async function proxy(request: NextRequest) {
     process.env.POLAR_API_URL || process.env.NEXT_PUBLIC_API_URL || ''
 
   const hasCookie =
-    request.cookies.has(POLAR_AUTH_COOKIE_KEY) ||
+    request.cookies.has(AUTH_COOKIE_KEY) ||
     request.cookies.has(LEGACY_AUTH_COOKIE_KEY)
   if (hasCookie && apiUrl) {
     // Build Cookie header from all incoming request cookies
@@ -379,7 +380,7 @@ export async function proxy(request: NextRequest) {
         user = await authResponse.json()
       } else if (authResponse.status === 401) {
         console.error(
-          `[proxy] Auth cookie '${POLAR_AUTH_COOKIE_KEY}' present but /v1/users/me returned 401. apiUrl: ${apiUrl}`,
+          `[proxy] Auth cookie '${AUTH_COOKIE_KEY}' present but /v1/users/me returned 401. apiUrl: ${apiUrl}`,
         )
       } else {
         console.error(
@@ -401,7 +402,7 @@ export async function proxy(request: NextRequest) {
       )
     } else if (!hasCookie) {
       console.error(
-        `[proxy] Auth redirect: cookie '${POLAR_AUTH_COOKIE_KEY}' not found. Available cookies: ${
+        `[proxy] Auth redirect: cookie '${AUTH_COOKIE_KEY}' not found. Available cookies: ${
           request.cookies
             .getAll()
             .map((c) => c.name)

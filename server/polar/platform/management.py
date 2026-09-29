@@ -1,4 +1,4 @@
-"""Server-side helpers for managing an existing Claidor subscription:
+"""Server-side helpers for managing an existing Simeon subscription:
 switching between paid tiers (Starter <-> Studio <-> Scale) and
 canceling a paid subscription.
 
@@ -40,7 +40,7 @@ class PlatformManagementError(PolarError): ...
 class NoActiveSubscription(PlatformManagementError):
     def __init__(self) -> None:
         super().__init__(
-            "Your organization has no active Claidor subscription to modify.",
+            "Your organization has no active Simeon subscription to modify.",
             404,
         )
 
@@ -56,7 +56,7 @@ class CannotSwitchToSameTier(PlatformManagementError):
 class CannotSwitchToNonPaidTier(PlatformManagementError):
     def __init__(self) -> None:
         super().__init__(
-            "Use the cancel endpoint to end your paid Claidor subscription.",
+            "Use the cancel endpoint to end your paid Simeon subscription.",
             400,
         )
 
@@ -217,7 +217,7 @@ class PlatformManagementService:
         *,
         organization: Organization,
     ) -> Subscription:
-        """Cancel the creator org's Claidor subscription.
+        """Cancel the creator org's Simeon subscription.
 
         - Active paid subs schedule end-of-period cancellation; the
           subscription stays valid through the current billing window, then

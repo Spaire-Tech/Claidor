@@ -1,17 +1,17 @@
 import type { MemoryFile, OutgoingMemoryFile } from './memory.js';
 
 /**
- * The two ways the runner talks to Claidor.
+ * The two ways the runner talks to the API.
  *
  * The queue is spoken with the service's own token, which belongs to no
  * person. Everything about a person — their memory, their model calls — is
- * spoken with the short-lived token Claidor mints when the job is claimed,
+ * spoken with the short-lived token the API mints when the job is claimed,
  * which dies with the lease. The two never mix: a `PersonClient` is handed
  * the job token and nothing else, and the engine's environment never
  * carries the runner's token at all.
  */
 
-/** The three reasons a job exists, as Claidor names them. */
+/** The three reasons a job exists, as the API names them. */
 export const JOB_KINDS = ['routine', 'mail', 'task'] as const;
 
 /**
@@ -38,7 +38,7 @@ export interface TurnArtifact {
   updatedAtMs: number;
 }
 
-/** The runner as Claidor names it: the only executor that exists. */
+/** The runner as the API names it: the only executor that exists. */
 export const MATY_RUNNER_EXECUTOR = 'maty-runner';
 
 export interface Job {
@@ -46,12 +46,12 @@ export interface Job {
   /** One of JOB_KINDS. The runner does the same thing with all three. */
   kind: string;
   prompt: string;
-  /** Where Claidor should deliver the answer. The runner never delivers. */
+  /** Where the API should deliver the answer. The runner never delivers. */
   deliver?: unknown;
   /** What this routine's owner allowed it to do. */
   allow?: string[];
   /**
-   * Which executor runs it. `maty-runner` (this process) unless Claidor
+   * Which executor runs it. `maty-runner` (this process) unless the API
    * names another; see `executor.ts` for the seam.
    */
   executor: string;
@@ -69,7 +69,7 @@ export interface JobUsage {
   [key: string]: unknown;
 }
 
-/** Where the job stands after a heartbeat, as Claidor answers it. */
+/** Where the job stands after a heartbeat, as the API answers it. */
 export interface JobState {
   /** True once the person asked the job to stop. */
   cancelRequested: boolean;
@@ -80,12 +80,12 @@ export interface CompletionExtras {
   artifacts?: readonly TurnArtifact[];
 }
 
-export class ClaidorError extends Error {
+export class ApiError extends Error {
   readonly status: number;
 
   constructor(status: number, message: string) {
     super(message);
-    this.name = 'ClaidorError';
+    this.name = 'ApiError';
     this.status = status;
   }
 }
@@ -137,10 +137,10 @@ export const request = async (baseUrl: string, options: HttpOptions): Promise<un
     });
     const raw = await response.text();
     if (!response.ok) {
-      // Claidor's refusals are `{error, detail}` with the reason in the
+      // The API's refusals are `{error, detail}` with the reason in the
       // status: 404 no such job, 409 the lease is not ours or has run out,
       // 401 our service token is wrong, 422 a bad body.
-      throw new ClaidorError(
+      throw new ApiError(
         response.status,
         `${options.method} ${options.path} answered ${response.status}: ${refusalOf(raw)}`,
       );
@@ -149,7 +149,7 @@ export const request = async (baseUrl: string, options: HttpOptions): Promise<un
     try {
       return JSON.parse(raw) as unknown;
     } catch {
-      throw new ClaidorError(response.status, `${options.method} ${options.path} answered something that is not JSON.`);
+      throw new ApiError(response.status, `${options.method} ${options.path} answered something that is not JSON.`);
     }
   } finally {
     clearTimeout(timeout);
@@ -160,7 +160,7 @@ export const request = async (baseUrl: string, options: HttpOptions): Promise<un
  * The queue. Spoken with the service's own token and nothing else.
  *
  * Every call names the runner, including the three that address a job by
- * id: the lease belongs to a named runner, and Claidor answers 409 when the
+ * id: the lease belongs to a named runner, and the API answers 409 when the
  * name on the call is not the one holding it.
  */
 export class RunnerQueue {
@@ -191,11 +191,11 @@ export class RunnerQueue {
     const id = text(fields.id);
     const prompt = text(fields.prompt);
     if (!id || !prompt) {
-      throw new ClaidorError(200, 'Claidor handed out a job with no id or no instruction.');
+      throw new ApiError(200, 'The API handed out a job with no id or no instruction.');
     }
     const accessToken = text(answer.access_token);
     if (!accessToken) {
-      throw new ClaidorError(200, `Claidor handed out job ${id} with no access token for the person.`);
+      throw new ApiError(200, `The API handed out job ${id} with no access token for the person.`);
     }
     const conversation = Array.isArray(fields.conversation)
       ? fields.conversation
@@ -286,7 +286,7 @@ export class PersonClient {
 
   /**
    * One round of the shared memory. Sending nothing asks for everything
-   * Claidor holds, which is what a fresh job directory needs.
+   * the API holds, which is what a fresh job directory needs.
    */
   async syncMemory(files: readonly OutgoingMemoryFile[]): Promise<MemoryFile[]> {
     const answer = asRecord(
@@ -311,7 +311,7 @@ export class PersonClient {
   /**
    * The models this person may use. The runner takes the first one rather
    * than naming a model anywhere in its own code: which models exist is
-   * Claidor's to decide and ours to follow.
+   * the API's to decide and ours to follow.
    */
   async models(): Promise<AvailableModel[]> {
     const answer = asRecord(

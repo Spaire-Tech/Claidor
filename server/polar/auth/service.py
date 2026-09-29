@@ -18,7 +18,7 @@ from polar.postgres import AsyncSession
 
 log: Logger = structlog.get_logger()
 
-USER_SESSION_TOKEN_PREFIX = "claidor_us_"
+USER_SESSION_TOKEN_PREFIX = "simeon_us_"
 
 R = TypeVar("R", bound=Response)
 
@@ -62,6 +62,8 @@ class AuthService:
         cookie: str = settings.USER_SESSION_COOKIE_KEY,
     ) -> UserSession | None:
         token = request.cookies.get(cookie)
+        if token is None and cookie == settings.USER_SESSION_COOKIE_KEY:
+            token = request.cookies.get(settings.LEGACY_USER_SESSION_COOKIE_KEY)
         if token is None or not token.isascii():
             return None
 
@@ -138,6 +140,12 @@ class AuthService:
 
         return token, user_session
 
+    def session_token(self, request: Request) -> str | None:
+        """The session cookie's value, under its name or the earlier one."""
+        return request.cookies.get(
+            settings.USER_SESSION_COOKIE_KEY
+        ) or request.cookies.get(settings.LEGACY_USER_SESSION_COOKIE_KEY)
+
     def _set_user_session_cookie(
         self, request: Request, response: R, value: str, expires: int | datetime
     ) -> R:
@@ -153,6 +161,19 @@ class AuthService:
             httponly=True,
             samesite="lax",
         )
+        # Whatever happens to the session, the earlier cookie name goes, so
+        # a sign-out never leaves a session behind under the old name.
+        if settings.LEGACY_USER_SESSION_COOKIE_KEY in request.cookies:
+            response.set_cookie(
+                settings.LEGACY_USER_SESSION_COOKIE_KEY,
+                value="",
+                expires=0,
+                path="/",
+                domain=settings.USER_SESSION_COOKIE_DOMAIN,
+                secure=secure,
+                httponly=True,
+                samesite="lax",
+            )
         return response
 
 

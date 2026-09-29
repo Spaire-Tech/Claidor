@@ -5,9 +5,9 @@ from fastapi import Depends
 
 from polar.auth.models import is_member
 from polar.exceptions import (
-    ClaidorRequestValidationError,
     NotPermitted,
     ResourceNotFound,
+    SimeonRequestValidationError,
 )
 from polar.member.service import member_service
 from polar.models.customer import CustomerType
@@ -103,7 +103,7 @@ async def add_member(
 
     # Prevent adding a new owner - there must be exactly one
     if member_create.role == MemberRole.owner:
-        raise ClaidorRequestValidationError(
+        raise SimeonRequestValidationError(
             [
                 {
                     "type": "value_error",
@@ -165,7 +165,7 @@ async def update_member(
 
     # Prevent self-modification
     if member.id == actor_member.id:
-        raise ClaidorRequestValidationError(
+        raise SimeonRequestValidationError(
             [
                 {
                     "type": "value_error",
@@ -218,7 +218,7 @@ async def remove_member(
 
     # Prevent self-removal
     if member.id == actor_member.id:
-        raise ClaidorRequestValidationError(
+        raise SimeonRequestValidationError(
             [
                 {
                     "type": "value_error",

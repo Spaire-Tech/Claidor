@@ -3,11 +3,11 @@
 The desktop agent advertises four tools that are not a model turn. Until
 19 September 2026 all four were Connect RPC calls on
 `aiserver.v1.AiService` — `RunWebSearch`, `RunWebFetch`,
-`RunGenerateImage`, `TranscribeAudio` — which Claidor never served, so
+`RunGenerateImage`, `TranscribeAudio` — which Simeon never served, so
 every one of them failed the moment the app was pointed here
 (`docs/product/capabilities-measured.md`). Web fetch now runs on the
 person's machine and needs nothing from us. The other three need a
-provider, and these are their doors: each on OpenAI with Claidor's key,
+provider, and these are their doors: each on OpenAI with Simeon's key,
 each metered in the same unit as a model turn (`pricing.py`).
 
 Same manners as the speech route in `endpoints.py`: the body is read by

@@ -1,8 +1,8 @@
-"""Platform-side billing: subscribe creator organizations to Claidor's own
+"""Platform-side billing: subscribe creator organizations to Simeon's own
 Pro/Studio/Scale plans.
 
 This is the write counterpart to polar.entitlements.service (read-only).
-Claidor is itself an Organization (the "platform org"); every creator org
+Simeon is itself an Organization (the "platform org"); every creator org
 is a Customer of that platform org and holds a Subscription to one of
 the platform's products. This module manages that linkage.
 """
@@ -24,6 +24,7 @@ from polar.models.product_price import (
 )
 from polar.models.subscription import SubscriptionStatus
 from polar.models.subscription_product_price import SubscriptionProductPrice
+from polar.platform.contacts import PLACEHOLDER_EMAIL_DOMAIN
 from polar.platform.service import platform as platform_service
 from polar.postgres import AsyncSession
 
@@ -46,7 +47,7 @@ class TierProductMissing(PlatformBillingError):
 
     Surfaces when scripts.seed_platform_products hasn't been run on this
     environment. The caller (a Dramatiq task) catches this, logs, and
-    returns — we'd rather have an org without a Claidor subscription than
+    returns — we'd rather have an org without a Simeon subscription than
     block its creation.
     """
 
@@ -60,12 +61,12 @@ class TierProductMissing(PlatformBillingError):
 
 def _billing_email(organization: Organization) -> str:
     """Synthetic Customer.email for the platform-org Customer that anchors
-    this creator org's Claidor subscription. During the Pro trial Claidor
+    this creator org's Simeon subscription. During the Pro trial Simeon
     doesn't send invoices, so the address doesn't need to be deliverable.
     When the creator goes through checkout to convert / upgrade, real
     billing details are captured and overwrite this synthetic value.
     """
-    return f"creator-{organization.slug}@billing.claidorhq.internal"
+    return f"creator-{organization.slug}@{PLACEHOLDER_EMAIL_DOMAIN}"
 
 
 def _price_amount_cents(product: Product) -> int:

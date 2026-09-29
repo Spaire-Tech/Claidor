@@ -1,6 +1,6 @@
 import os
 
-os.environ["CLAIDOR_ENV"] = "testing"
+os.environ["SIMEON_ENV"] = "testing"
 
 
 from tests.fixtures import *  # noqa

@@ -180,7 +180,7 @@ class TestExportOrders:
         assert response.headers["content-type"] == "text/csv; charset=utf-8"
         assert (
             response.headers["content-disposition"]
-            == "attachment; filename=claidor-orders.csv"
+            == "attachment; filename=simeon-orders.csv"
         )
 
         # Should only have header row since user is not a member
@@ -207,7 +207,7 @@ class TestExportOrders:
         assert response.headers["content-type"] == "text/csv; charset=utf-8"
         assert (
             response.headers["content-disposition"]
-            == "attachment; filename=claidor-orders.csv"
+            == "attachment; filename=simeon-orders.csv"
         )
 
         csv_lines = response.text.strip().split("\r\n")

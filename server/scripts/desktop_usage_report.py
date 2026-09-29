@@ -13,7 +13,7 @@ Nothing is written.
     python -m scripts.desktop_usage_report someone@example.com
     python -m scripts.desktop_usage_report someone@example.com --hours 48
 
-Run it where the server runs, so it reads the same ``CLAIDOR_POSTGRES_*``
+Run it where the server runs, so it reads the same ``SIMEON_POSTGRES_*``
 environment as the API.
 """
 

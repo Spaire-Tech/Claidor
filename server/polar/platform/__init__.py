@@ -1,4 +1,4 @@
-"""Claidor-on-Claidor platform billing.
+"""Simeon-on-Simeon platform billing.
 
 Submodules are deliberately not re-exported at the package level:
 importing `polar.platform.billing` or `polar.platform.fee_sync` from

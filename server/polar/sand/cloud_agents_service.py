@@ -42,7 +42,7 @@ What each RPC becomes:
   computer", with no repositories configured, so a launch on it still
   needs `repo_url`, the way the client's resolver already works.
 
-A `[claidor] cloud-agent` log line per state change names what happened,
+A `[simeon] cloud-agent` log line per state change names what happened,
 so a failure on a Mac names its cause from the API's log.
 """
 
@@ -320,7 +320,7 @@ class CloudAgentsService:
         session.add(agent)
         await session.flush()
         log.info(
-            "[claidor] cloud-agent started bcId=%s job=%s repo=%s model=%s",
+            "[simeon] cloud-agent started bcId=%s job=%s repo=%s model=%s",
             bc_id,
             job.id,
             agent.repo_url or "-",
@@ -381,7 +381,7 @@ class CloudAgentsService:
                 session, user, agent, job, [*(job.conversation or []), message]
             )
             log.info(
-                "[claidor] cloud-agent follow-up bcId=%s continuation=%s",
+                "[simeon] cloud-agent follow-up bcId=%s continuation=%s",
                 bc_id,
                 continuation.id,
             )
@@ -396,13 +396,13 @@ class CloudAgentsService:
         if interrupt and job.status is MatyJobStatus.running:
             await maty.request_cancel(session, user, job.id)
             log.info(
-                "[claidor] cloud-agent follow-up bcId=%s job=%s interrupt",
+                "[simeon] cloud-agent follow-up bcId=%s job=%s interrupt",
                 bc_id,
                 job.id,
             )
         else:
             log.info(
-                "[claidor] cloud-agent follow-up bcId=%s job=%s queued", bc_id, job.id
+                "[simeon] cloud-agent follow-up bcId=%s job=%s queued", bc_id, job.id
             )
         await session.flush()
         return str(job.id)
@@ -442,7 +442,7 @@ class CloudAgentsService:
         except MatyJobNotFound as error:
             raise _connect_error(error)
         log.info(
-            "[claidor] cloud-agent pause bcId=%s job=%s status=%s cancelRequested=%s",
+            "[simeon] cloud-agent pause bcId=%s job=%s status=%s cancelRequested=%s",
             bc_id,
             job.id,
             job.status.value,
@@ -472,7 +472,7 @@ class CloudAgentsService:
         agent.deleted_at = utc_now()
         session.add(agent)
         await session.flush()
-        log.info("[claidor] cloud-agent deleted bcId=%s", bc_id)
+        log.info("[simeon] cloud-agent deleted bcId=%s", bc_id)
 
     async def artifacts(
         self, session: AsyncSession, user: User, bc_id: str
@@ -517,14 +517,14 @@ class CloudAgentsService:
             )
         except ConnectError as error:
             log.warning(
-                "[claidor] cloud-agent continuation refused bcId=%s job=%s: %s",
+                "[simeon] cloud-agent continuation refused bcId=%s job=%s: %s",
                 agent.bc_id,
                 job.id,
                 error.message,
             )
             return
         log.info(
-            "[claidor] cloud-agent continuation bcId=%s after=%s job=%s",
+            "[simeon] cloud-agent continuation bcId=%s after=%s job=%s",
             agent.bc_id,
             job.id,
             continuation.id,

@@ -1,7 +1,7 @@
 """The desktop app's account service.
 
 Everything the desktop app, Maties (`desktop/`), asks of its server in
-account mode, on Claidor's side: auth codes, sessions with rotating
+account mode, on Simeon's side: auth codes, sessions with rotating
 refresh tokens, the model catalogue the app may call, the monthly
 credit allowance, and the metering of every call made through the
 proxy. The wire shapes are the app's own, read from its source
@@ -25,7 +25,9 @@ from polar.desktop.tokens import (
     ACCESS_TOKEN_PREFIX,
     AUTH_CODE_PREFIX,
     BOX_CREDENTIAL_PREFIX,
+    BOX_CREDENTIAL_PREFIXES,
     REFRESH_TOKEN_PREFIX,
+    strip_access_token_prefix,
 )
 from polar.exceptions import PolarError
 from polar.kit import jwt
@@ -74,7 +76,7 @@ HOURLY_BUDGET_CODE = 40201
 AUTH_CODE_INVALID = 40101
 REFRESH_INVALID = 40102
 UNAUTHENTICATED = 40100
-#: A memory sync Claidor will not carry out: a name it does not keep, or
+#: A memory sync Simeon will not carry out: a name it does not keep, or
 #: more text than it accepts.
 MEMORY_REFUSED = 40001
 
@@ -131,7 +133,7 @@ class DesktopMemoryRefused(DesktopError):
 
 
 def provider_api_key(provider: DesktopProvider) -> str:
-    """Claidor's key for one provider, or "" where none is configured."""
+    """Simeon's key for one provider, or "" where none is configured."""
     if provider is DesktopProvider.openai:
         return settings.OPENAI_API_KEY
     if provider is DesktopProvider.gemini:
@@ -153,7 +155,7 @@ def provider_configured(provider: DesktopProvider) -> bool:
 
 def offered_models() -> tuple[DesktopModel, ...]:
     """The models the app is told about: the ones carrying a role, whose
-    provider Claidor holds a key for.
+    provider Simeon holds a key for.
 
     Two filters, for two different reasons. A provider with no key is not
     offered at all, because a missing key must read as « not available
@@ -205,7 +207,7 @@ class IncomingMemoryFile:
 
 @dataclass(frozen=True)
 class MemoryFileState:
-    """One file as Claidor holds it once the sync is done. `changed`
+    """One file as Simeon holds it once the sync is done. `changed`
     means the client must write this back: either it differs from what
     the client sent, or the client did not send it at all."""
 
@@ -218,7 +220,7 @@ class MemoryFileState:
 @dataclass(frozen=True)
 class MemorySync:
     """The whole truth about a person's memory after a sync: every file
-    Claidor holds, and the names that are gone — pruned, or removed on
+    Simeon holds, and the names that are gone — pruned, or removed on
     another machine and not yet heard of here."""
 
     files: list[MemoryFileState]
@@ -270,9 +272,9 @@ def unwrap_access_token(token: str) -> str | None:
     """The opaque token inside an envelope, or None when the bearer is
     not one — which is the ordinary case for `/desktop`, whose tokens
     are opaque and stay opaque."""
-    if not token.startswith(ACCESS_TOKEN_PREFIX):
+    envelope = strip_access_token_prefix(token)
+    if envelope is None:
         return None
-    envelope = token[len(ACCESS_TOKEN_PREFIX) :]
     if envelope.count(".") != 2:
         return None
     try:
@@ -565,7 +567,7 @@ class DesktopService:
         if (
             not token
             or not token.isascii()
-            or not token.startswith(BOX_CREDENTIAL_PREFIX)
+            or not token.startswith(BOX_CREDENTIAL_PREFIXES)
         ):
             raise DesktopUnauthenticated("The box credential is invalid.")
         repository = DesktopSessionRepository.from_session(session)
@@ -783,7 +785,7 @@ class DesktopService:
     async def list_memory_files(
         self, session: AsyncSession, user: User
     ) -> Sequence[DesktopMemoryFile]:
-        """Everything Claidor holds for one person, in name order."""
+        """Everything Simeon holds for one person, in name order."""
         return await DesktopMemoryFileRepository.from_session(session).list_by_user(
             user.id
         )
@@ -799,15 +801,15 @@ class DesktopService:
 
         For each file the client sends:
 
-        - a name Claidor does not keep refuses the whole sync, and
+        - a name Simeon does not keep refuses the whole sync, and
           nothing is written (`polar.desktop.memory_merge`);
-        - a name Claidor has no row for is stored as sent, at version 1;
+        - a name Simeon has no row for is stored as sent, at version 1;
         - a name whose stored version is the one the client started from
           is stored as sent, at version + 1;
         - anything else means both sides wrote since: the two copies are
           merged by that file's rule and the merge is stored at version
           + 1. For the profile, which is one document with one owner,
-          « merged » means Claidor's copy wins, because it is the one
+          « merged » means Simeon's copy wins, because it is the one
           that moved on.
         - a name another machine deleted (a tombstone) is written again
           only by a client that saw the deletion — its `base_version` is
@@ -823,7 +825,7 @@ class DesktopService:
         idle app syncing every few minutes does not count upwards for
         ever.
 
-        The answer carries **every** live file Claidor holds afterwards,
+        The answer carries **every** live file Simeon holds afterwards,
         so a fresh computer receives the whole memory by sending nothing,
         and under `deleted` every name that is gone: pruned now, or a
         tombstone younger than `MEMORY_TOMBSTONE_DAYS`.
@@ -898,12 +900,12 @@ class DesktopService:
         for name in deleted:
             if not is_accepted_memory_name(name):
                 raise DesktopMemoryRefused(
-                    f"{name!r} is not a memory file Claidor keeps."
+                    f"{name!r} is not a memory file Simeon keeps."
                 )
         for file in files:
             if not is_accepted_memory_name(file.name):
                 raise DesktopMemoryRefused(
-                    f"{file.name!r} is not a memory file Claidor keeps."
+                    f"{file.name!r} is not a memory file Simeon keeps."
                 )
             size = len(file.content.encode("utf-8"))
             if size > MEMORY_FILE_MAX_BYTES:

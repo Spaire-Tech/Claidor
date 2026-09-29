@@ -3,16 +3,16 @@
 The founder: "my users should never put a key. everything happens under
 the hood. not a setting." So the desktop app carries no Composio key.
 Its six calls (the Tool Router session, search, execute, the sign-in
-link, the toolkit list, and disconnect) come to Claidor under the
+link, the toolkit list, and disconnect) come to Simeon under the
 account's own bearer token, and this module forwards each one to
-Composio with Claidor's key. That is the whole of it: an allow-list of
+Composio with Simeon's key. That is the whole of it: an allow-list of
 the six paths, the key added, the answer passed back as Composio gave
 it.
 
 One thing is decided here and not by the app: **who the person is to
 Composio.** Composio scopes sign-ins by a `user_id` given when the
 session is made. The app sends a placeholder; it is replaced with a name
-derived from the Claidor user id, so one account's Gmail is never
+derived from the Simeon user id, so one account's Gmail is never
 another's, whatever the app said.
 
 What this does not do, said plainly: it does not remember which Composio

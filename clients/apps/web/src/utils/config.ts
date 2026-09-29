@@ -17,7 +17,10 @@ const defaults = {
   SPACE_BASE_URL:
     process.env.NEXT_PUBLIC_SPACE_BASE_URL || 'https://space.claidorhq.com',
   BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000',
-  AUTH_COOKIE_KEY: process.env.POLAR_AUTH_COOKIE_KEY || 'claidor_session',
+  AUTH_COOKIE_KEY:
+    process.env.SIMEON_AUTH_COOKIE_KEY ||
+    process.env.POLAR_AUTH_COOKIE_KEY ||
+    'simeon_session',
   AUTH_MCP_COOKIE_KEY:
     process.env.POLAR_AUTH_MCP_COOKIE_KEY || 'claidor_mcp_session',
   LOGIN_PATH: process.env.NEXT_PUBLIC_LOGIN_PATH || '/login',

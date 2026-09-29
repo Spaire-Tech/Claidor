@@ -165,7 +165,7 @@ def _spec(**overrides: Any) -> BoxSpec:
     values: dict[str, Any] = {
         "name": "simeon-box-abc",
         "gateway_token": "gw",
-        "renewal_credential": "claidor_db_x",
+        "renewal_credential": "simeon_db_x",
         "backend_url": "https://api.simeonlabs.com",
         "image": box_image_reference(),
         "workspace_volume": "simeon-box-abc-workspace",
@@ -225,7 +225,7 @@ async def test_the_docker_provider_runs_the_macs_docker_run_with_the_bundle_moun
     assert env["SAND_HOST_PORT"] == "1340"
     assert env["SAND_GATEWAY_TOKEN"] == "gw"
     assert env["SAND_BACKEND_URL"] == "https://api.simeonlabs.com"
-    assert env["SAND_INFERENCE_RENEWAL_CREDENTIAL"] == "claidor_db_x"
+    assert env["SAND_INFERENCE_RENEWAL_CREDENTIAL"] == "simeon_db_x"
     assert env["SAND_INFERENCE_PROVIDER"] == "claidor"
     assert env["SAND_DISABLE_TELEMETRY"] == "1"
     assert env["SAND_DISABLE_ANALYTICS"] == "1"

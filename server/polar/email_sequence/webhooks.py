@@ -32,13 +32,13 @@ log = structlog.get_logger()
 
 
 # Signing secret for action webhooks. Receivers can verify by computing
-# `hmac_sha256(secret, raw_body)` and comparing to the `X-Claidor-Signature`
+# `hmac_sha256(secret, raw_body)` and comparing to the `X-Simeon-Signature`
 # header. Pulled from settings if available, else the SECRET key.
 def _signing_secret() -> str:
     return (
         getattr(settings, "EMAIL_SEQUENCE_WEBHOOK_SECRET", None)
         or getattr(settings, "SECRET", None)
-        or "claidor-dev-webhook-secret"
+        or "simeon-dev-webhook-secret"
     )
 
 
@@ -94,6 +94,9 @@ async def dispatch_action_webhook(
     headers = {
         "Content-Type": "application/json",
         "User-Agent": "Simeon-Webhooks/1.0",
+        "X-Simeon-Signature": f"sha256={signature}",
+        "X-Simeon-Event": "email_sequence.action",
+        # The earlier names, for receivers set up before the rename.
         "X-Claidor-Signature": f"sha256={signature}",
         "X-Claidor-Event": "email_sequence.action",
     }

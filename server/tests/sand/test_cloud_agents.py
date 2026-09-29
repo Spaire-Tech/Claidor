@@ -5,7 +5,7 @@ The app's client (`desktop/source/host/extensions/cloud-agents/`) is not
 changed; this measures the server it now has. Every call below is the
 request the manager composes, in the JSON the generated protos spell,
 and every assertion reads the field the client reads. The runner's side
-is driven through `/maty/runner/*` the way `claidor-maty-runner` speaks it.
+is driven through `/maty/runner/*` the way the cloud runner speaks it.
 """
 
 from __future__ import annotations

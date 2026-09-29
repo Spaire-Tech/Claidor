@@ -26,7 +26,7 @@ from polar.postgres import AsyncSession
 
 log: Logger = structlog.get_logger()
 
-TOKEN_PREFIX = "claidor_pat_"
+TOKEN_PREFIX = "simeon_pat_"
 
 
 #: A token nobody remembers issuing is a token nobody revokes, so every one
@@ -219,7 +219,7 @@ class PersonalAccessTokenService(ResourceServiceReader[PersonalAccessToken]):
 
         enqueue_email(
             to_email_addr=email,
-            subject="Security Notice - Your Claidor Personal Access Token has been leaked",
+            subject="Security Notice - Your Simeon Personal Access Token has been leaked",
             html_content=body,
         )
 

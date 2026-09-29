@@ -1,10 +1,10 @@
-"""The cloud engine's queue, on Claidor's side.
+"""The cloud engine's queue, on Simeon's side.
 
 `docs/maties/cloud.md`, section 4. A runner service asks for a job, is
 given one under a lease, works, and says what happened. Everything that
 can go wrong with that — two runners asking at once, a runner dying
 mid-job, a job that can never work — is answered here rather than in the
-runner, because Claidor is the only side that sees all of them.
+runner, because Simeon is the only side that sees all of them.
 
 The three rules the rest of this file exists to keep:
 
@@ -21,7 +21,7 @@ The three rules the rest of this file exists to keep:
 The other half of this file is the person's side — what the app may ask
 for (`create_for_person` and the three that follow it). It is a separate
 set of methods rather than a flag on the same ones because the whole
-difference between the two callers is what gets checked: Claidor's own
+difference between the two callers is what gets checked: Simeon's own
 `enqueue` is trusted about delivery and permission, and a client is
 trusted about neither.
 """
@@ -95,7 +95,7 @@ class MatyRunnerUnauthenticated(MatyError):
     them, and neither does a missing or wrong service token."""
 
     def __init__(
-        self, message: str = "This endpoint is for Claidor's cloud runner."
+        self, message: str = "This endpoint is for Simeon's cloud runner."
     ) -> None:
         super().__init__(message, status_code=401)
 
@@ -116,7 +116,7 @@ class MatyJobNotHeld(MatyError):
 
 
 class MatyNotAvailable(MatyError):
-    """This Claidor has no cloud runner, so there is nothing to queue for.
+    """This Simeon has no cloud runner, so there is nothing to queue for.
 
     503 and not 202: a job nobody will ever take is worse than a refusal,
     because the person is told their work is under way and it is not. The
@@ -125,7 +125,7 @@ class MatyNotAvailable(MatyError):
     """
 
     def __init__(
-        self, message: str = "The cloud engine is not available on this Claidor."
+        self, message: str = "The cloud engine is not available on this server."
     ) -> None:
         super().__init__(message, status_code=503)
 
@@ -198,13 +198,13 @@ class MatyService:
     def available(self) -> bool:
         """Whether the cloud engine can actually do anything here.
 
-        The runner authenticates with `CLAIDOR_MATY_RUNNER_TOKEN`
-        (`polar.maty.auth`), so a Claidor without that setting has no way
+        The runner authenticates with `SIMEON_MATY_RUNNER_TOKEN`
+        (`polar.maty.auth`), so a Simeon without that setting has no way
         to let a runner in, and a job queued on it would sit there for
         ever. One fact, read the same way by the listing (which says
         `available: false` so the app can hide the button) and by the
         create route (which refuses, so a patched app cannot queue work
-        nobody will do). A development machine and a production Claidor
+        nobody will do). A development machine and a production Simeon
         that has lost its environment variable look identical from here,
         which is right: in both, the answer to « can this run in the
         cloud » is no.
@@ -249,7 +249,7 @@ class MatyService:
 
     # --- the person's four verbs ----------------------------------------
     #
-    # `enqueue` above is Claidor's own way in: a routine coming due, a
+    # `enqueue` above is Simeon's own way in: a routine coming due, a
     # piece of mail, a retry. Everything below is the app asking on a
     # person's behalf, and it is the only path a client can reach. The
     # difference is entirely in what is checked, which is why these are

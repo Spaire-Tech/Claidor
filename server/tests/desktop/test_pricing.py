@@ -315,9 +315,9 @@ class TestTallies:
 
 class TestTheMenuAnOpenAiCompatibleClientReads:
     """`GET /v1/models`, which is how a client that knows nothing about
-    Claidor finds out what it may name.
+    Simeon finds out what it may name.
 
-    Written when Claidor was connected to Rakazo, a server we did not
+    Written when Simeon was connected to Rakazo, a server we did not
     write. Its model connection speaks plain OpenAI and asks this one
     question before any other
     (the Rakazo attempt, removed 18 September; see `docs/product/going-back-brief.md`,
@@ -369,7 +369,7 @@ class TestTheMenuAnOpenAiCompatibleClientReads:
                 assert model.reachable_on(spoken), (row["id"], spoken)
 
     def test_an_empty_catalogue_is_an_empty_list_not_a_failure(self) -> None:
-        # `offered_models()` drops every model of a provider Claidor holds
+        # `offered_models()` drops every model of a provider Simeon holds
         # no key for. With no OpenAI key the honest answer is a menu with
         # nothing on it, which a client reads as "nothing to connect".
         assert openai_models_list([], SpokenApi.openai_completions) == {

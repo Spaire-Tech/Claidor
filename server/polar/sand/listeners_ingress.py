@@ -142,7 +142,7 @@ async def slack_events(
         log.warning(
             "sand.listeners.ingress_refused",
             platform="slack",
-            reason="CLAIDOR_SLACK_SIGNING_SECRET is empty",
+            reason="SIMEON_SLACK_SIGNING_SECRET is empty",
         )
         return JSONResponse(
             {"error": "Simeon's Slack app is not registered on this server yet."},
@@ -385,7 +385,7 @@ async def github_events(
         log.warning(
             "sand.listeners.ingress_refused",
             platform="github",
-            reason="CLAIDOR_SAND_GITHUB_WEBHOOK_SECRET is empty",
+            reason="SIMEON_SAND_GITHUB_WEBHOOK_SECRET is empty",
         )
         return JSONResponse(
             {"error": "Simeon's GitHub App is not registered on this server yet."},

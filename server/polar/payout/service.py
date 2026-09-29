@@ -10,7 +10,7 @@ from polar.auth.models import AuthSubject, User
 from polar.config import settings
 from polar.enums import AccountType
 from polar.eventstream.service import publish as eventstream_publish
-from polar.exceptions import ClaidorRequestValidationError, PolarError
+from polar.exceptions import PolarError, SimeonRequestValidationError
 from polar.integrations.stripe.service import stripe as stripe_service
 from polar.integrations.stripe.utils import get_expandable_id
 from polar.invoice.service import invoice as invoice_service
@@ -73,13 +73,13 @@ class NotReadyAccount(PayoutError):
 
 class AccountDelinquent(PayoutError):
     """Payouts are held because a creator org on this account has a past_due
-    Claidor subscription. The merchant balance is held as leverage until the
-    creator settles their Claidor plan (Settings -> Plan -> Pay balance)."""
+    Simeon subscription. The merchant balance is held as leverage until the
+    creator settles their Simeon plan (Settings -> Plan -> Pay balance)."""
 
     def __init__(self, account: Account) -> None:
         self.account = account
         message = (
-            "Payouts are paused because your Claidor plan payment failed. "
+            "Payouts are paused because your Simeon plan payment failed. "
             "Settle your plan balance from Settings → Plan to resume payouts."
         )
         super().__init__(message, 402)
@@ -189,10 +189,10 @@ class PayoutService:
     async def _assert_not_delinquent(
         self, session: AsyncSession, account: Account
     ) -> None:
-        """Hold payouts while any creator org on this account owes Claidor.
+        """Hold payouts while any creator org on this account owes Simeon.
 
-        Claidor is the merchant of record, so the balance we're about to pay
-        out is leverage: if a creator's own Claidor subscription is past_due
+        Simeon is the merchant of record, so the balance we're about to pay
+        out is leverage: if a creator's own Simeon subscription is past_due
         (a charge failed and dunning is running), we refuse the withdrawal
         until they settle, rather than handing over money we're using to get
         them current. Any one delinquent org on the account holds the lot —
@@ -458,7 +458,7 @@ class PayoutService:
                 account.id, payout_generate_invoice.invoice_number
             )
             if existing_payout is not None and existing_payout.id != payout.id:
-                raise ClaidorRequestValidationError(
+                raise SimeonRequestValidationError(
                     [
                         {
                             "type": "value_error",

@@ -1,6 +1,6 @@
-"""Startup verification for Claidor-on-Claidor billing.
+"""Startup verification for Simeon-on-Simeon billing.
 
-When CLAIDOR_PLATFORM_ORG_ID is set, the API requires the three tier
+When SIMEON_PLATFORM_ORG_ID is set, the API requires the three tier
 products (starter, studio, scale) and the four overage meters to exist on
 the platform org. Without them:
 
@@ -57,7 +57,7 @@ async def verify_platform_setup(session: AsyncSession) -> None:
         platform_org = await platform_service.get(session)
     except PlatformError as exc:
         raise PlatformStartupError(
-            f"CLAIDOR_PLATFORM_ORG_ID is set but the organization does not "
+            f"SIMEON_PLATFORM_ORG_ID is set but the organization does not "
             f"exist. {exc.message}"
         ) from exc
 

@@ -65,7 +65,7 @@ async def list(
         },
         402: {
             "description": "Payouts are held: a creator org on the account "
-            "has a past_due Claidor subscription.",
+            "has a past_due Simeon subscription.",
             "model": AccountDelinquent.schema(),
         },
         403: {
@@ -115,7 +115,7 @@ async def get_csv(
         raise ResourceNotFound()
 
     content = payout_service.get_csv(session, sessionmaker, payout)
-    filename = f"claidor-payout-{payout.created_at.isoformat()}.csv"
+    filename = f"simeon-payout-{payout.created_at.isoformat()}.csv"
 
     return StreamingResponse(
         content,

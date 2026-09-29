@@ -16,7 +16,13 @@ from pydantic import (
     PostgresDsn,
     model_validator,
 )
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import (
+    BaseSettings,
+    DotEnvSettingsSource,
+    EnvSettingsSource,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
 
 from polar.enums import TaxProcessor
 from polar.kit.address import Address, CountryAlpha2
@@ -88,7 +94,15 @@ def _seconds_or_timedelta(value: object) -> object:
 SecondsTimedelta = Annotated[timedelta, BeforeValidator(_seconds_or_timedelta)]
 
 
-env = Environment(os.getenv("CLAIDOR_ENV", Environment.development))
+# Every setting is read as SIMEON_<NAME>. The earlier prefix, CLAIDOR_, is
+# still read when the SIMEON_ name is not set, so a deployment keeps working
+# while its variables are renamed; `Settings.settings_customise_sources`
+# holds the order. ENV is read here, before the class, to pick the env file.
+ENV_PREFIX = "simeon_"
+LEGACY_ENV_PREFIX = "claidor_"
+env = Environment(
+    os.getenv("SIMEON_ENV") or os.getenv("CLAIDOR_ENV") or Environment.development
+)
 if env == Environment.testing:
     env_file = ".env.testing"
 elif env == Environment.test:
@@ -136,8 +150,8 @@ class Settings(BaseSettings):
 
     SECRET: str = "super secret jwt secret"
     JWKS: JWKSFile = Field(default="./.jwks.json")
-    CURRENT_JWK_KID: str = "claidor_dev"
-    WWW_AUTHENTICATE_REALM: str = "claidor"
+    CURRENT_JWK_KID: str = "simeon_dev"
+    WWW_AUTHENTICATE_REALM: str = "simeon"
 
     # JSON list of accepted CORS origins
     CORS_ORIGINS: list[str] = []
@@ -182,7 +196,7 @@ class Settings(BaseSettings):
     USER_SESSION_TTL: timedelta = timedelta(days=31)
 
     # The desktop app (desktop/, the vendored LobsterAI app) signing in to
-    # Claidor: the browser hands it a code, the code becomes a session,
+    # Simeon: the browser hands it a code, the code becomes a session,
     # the session meters model calls against a monthly allowance.
     DESKTOP_AUTH_CODE_TTL: timedelta = timedelta(minutes=5)
     DESKTOP_ACCESS_TOKEN_TTL: timedelta = timedelta(hours=1)
@@ -232,7 +246,7 @@ class Settings(BaseSettings):
     # serves the desktop app's watchVideo / videoReview subagents through
     # `POST /desktop/api/proxy/v1beta/models/{model}:streamGenerateContent`
     # (`polar/desktop/endpoints.py`, 25 September 2026). The key is
-    # `CLAIDOR_GEMINI_API_KEY` on Render; empty means no video model is
+    # `SIMEON_GEMINI_API_KEY` on Render; empty means no video model is
     # offered and the app says so, never an error mid-turn.
     DESKTOP_GEMINI_BASE_URL: str = "https://generativelanguage.googleapis.com"
     GEMINI_API_KEY: str = ""
@@ -306,9 +320,9 @@ class Settings(BaseSettings):
     BOX_MAX_RUNNING: int = 3
 
     # Apps through Composio (polar/desktop/composio.py). One key for the
-    # whole of Claidor, held here and nowhere else: the desktop app never
+    # whole of Simeon, held here and nowhere else: the desktop app never
     # sees it and never asks a person for one. Each account is a Composio
-    # user of its own, named from the Claidor user id, so one person's
+    # user of its own, named from the Simeon user id, so one person's
     # sign-ins are never another's. Left empty, the route answers 503
     # and the app says apps are not switched on yet.
     COMPOSIO_API_KEY: str = ""
@@ -326,7 +340,7 @@ class Settings(BaseSettings):
     PIPEDREAM_PROJECT_ID: str = ""
     # "development" (free, ten people) or "production". Their own word for
     # which set of a project's accounts a call is about; it is not
-    # Claidor's CLAIDOR_ENV and the two move independently.
+    # Simeon's SIMEON_ENV and the two move independently.
     PIPEDREAM_ENVIRONMENT: str = "development"
     # Who may use connections before there is a plan to buy (section 5 of
     # the note): the founder's account, and staff. The plan does the real
@@ -340,7 +354,7 @@ class Settings(BaseSettings):
     # The cloud engine's queue (polar/maty/, docs/maties/cloud.md). The
     # runner service is the only thing that speaks /maty/runner, and it
     # does so with a shared secret of its own that belongs to no person:
-    # CLAIDOR_MATY_RUNNER_TOKEN in the environment. Left empty, the runner
+    # SIMEON_MATY_RUNNER_TOKEN in the environment. Left empty, the runner
     # routes refuse everyone — a missing secret must never mean that
     # everybody is a runner.
     MATY_RUNNER_TOKEN: str = ""
@@ -353,7 +367,10 @@ class Settings(BaseSettings):
     MATY_JOB_MAX_ATTEMPTS: int = 3
     # The wait before a failed job is due again, doubling with each try.
     MATY_JOB_RETRY_BACKOFF: timedelta = timedelta(minutes=1)
-    USER_SESSION_COOKIE_KEY: str = "claidor_session"
+    USER_SESSION_COOKIE_KEY: str = "simeon_session"
+    # Sessions made before the rename carry this earlier cookie name. It is
+    # still read, and cleared at the next sign-in or sign-out.
+    LEGACY_USER_SESSION_COOKIE_KEY: str = "claidor_session"
     USER_SESSION_COOKIE_DOMAIN: str = "127.0.0.1"
 
     # Customer session
@@ -362,8 +379,8 @@ class Settings(BaseSettings):
     CUSTOMER_SESSION_CODE_LENGTH: int = 6
 
     # Impersonation session
-    IMPERSONATION_COOKIE_KEY: str = "claidor_original_session"
-    IMPERSONATION_INDICATOR_COOKIE_KEY: str = "claidor_is_impersonating"
+    IMPERSONATION_COOKIE_KEY: str = "simeon_original_session"
+    IMPERSONATION_INDICATOR_COOKIE_KEY: str = "simeon_is_impersonating"
 
     # Login code
     LOGIN_CODE_TTL_SECONDS: int = 60 * 30  # 30 minutes
@@ -371,7 +388,9 @@ class Settings(BaseSettings):
 
     # OAuth state
     OAUTH_STATE_TTL: timedelta = timedelta(minutes=10)
-    OAUTH_STATE_COOKIE_KEY: str = "claidor_oauth_state"
+    OAUTH_STATE_COOKIE_KEY: str = "simeon_oauth_state"
+    # An OAuth round trip that began before the rename carries this name.
+    LEGACY_OAUTH_STATE_COOKIE_KEY: str = "claidor_oauth_state"
 
     # App Review bypass (for testing login flow during Apple/Google app reviews)
     APP_REVIEW_EMAIL: str | None = None
@@ -386,11 +405,11 @@ class Settings(BaseSettings):
     IP_GEOLOCATION_DATABASE_NAME: str = "ip-geolocation.mmdb"
 
     # Database
-    POSTGRES_USER: str = "claidor"
-    POSTGRES_PWD: str = "claidor"
+    POSTGRES_USER: str = "simeon"
+    POSTGRES_PWD: str = "simeon"
     POSTGRES_HOST: str = "127.0.0.1"
     POSTGRES_PORT: int = 5432
-    POSTGRES_DATABASE: str = "claidor"
+    POSTGRES_DATABASE: str = "simeon"
     DATABASE_POOL_SIZE: int = 5
     DATABASE_SYNC_POOL_SIZE: int = 1  # Specific pool size for sync connection: since we only use it in OAuth2 router, don't waste resources.
     DATABASE_POOL_RECYCLE_SECONDS: int = 600  # 10 minutes
@@ -484,30 +503,21 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "o4-mini-2025-04-16"
 
-    # Anthropic / Claude — powers AI features (email copy today; the legal
-    # research assistant in Phase 1). When the key is empty, AI features are
-    # treated as not configured and their endpoints return 503.
+    # Anthropic / Claude — powers AI features (email copy, and Claude models
+    # through the desktop model proxy). When the key is empty, AI features
+    # are treated as not configured and their endpoints return 503.
     #
     # Read from the unprefixed `ANTHROPIC_API_KEY` (the name the Anthropic SDK
     # itself uses, and what's set in the deployment env), falling back to the
-    # `claidor_`-prefixed `CLAIDOR_ANTHROPIC_API_KEY` for consistency with the
-    # rest of the settings. An explicit validation_alias overrides env_prefix.
+    # prefixed names. An explicit validation_alias overrides env_prefix.
     ANTHROPIC_API_KEY: str = Field(
         default="",
-        validation_alias=AliasChoices("ANTHROPIC_API_KEY", "CLAIDOR_ANTHROPIC_API_KEY"),
-    )
-    # CourtListener (Free Law Project) — the clause failure registry's
-    # source of court opinions. Search is open; fetching an opinion's text
-    # needs this token. Empty means the registry can harvest candidates but
-    # not read them, which the fetcher says out loud rather than storing
-    # nothing and looking successful.
-    COURTLISTENER_API_TOKEN: str = Field(
-        default="",
         validation_alias=AliasChoices(
-            "COURTLISTENER_API_TOKEN", "CLAIDOR_COURTLISTENER_API_TOKEN"
+            "ANTHROPIC_API_KEY",
+            "SIMEON_ANTHROPIC_API_KEY",
+            "CLAIDOR_ANTHROPIC_API_KEY",
         ),
     )
-
     # Lifecycle email copy generation — short, creative generation that
     # benefits from the strongest model.
     EMAIL_COPY_MODEL: str = "claude-opus-4-8"
@@ -538,8 +548,8 @@ class Settings(BaseSettings):
     SENTRY_DSN: str | None = None
 
     # Discord
-    FAVICON_URL: str = "https://raw.githubusercontent.com/Spaire-Tech/Claidor/main/clients/apps/web/public/apple-touch-icon.png"
-    THUMBNAIL_URL: str = "https://raw.githubusercontent.com/Spaire-Tech/Claidor/main/clients/apps/web/public/apple-touch-icon.png"
+    FAVICON_URL: str = "https://app.simeonlabs.com/apple-touch-icon.png"
+    THUMBNAIL_URL: str = "https://app.simeonlabs.com/apple-touch-icon.png"
 
     # Posthog
     POSTHOG_PROJECT_API_KEY: str = ""
@@ -589,29 +599,29 @@ class Settings(BaseSettings):
     PLAIN_CHAT_SECRET: str | None = None
 
     # AWS (File Downloads)
-    AWS_ACCESS_KEY_ID: str = "claidor-development"
-    AWS_SECRET_ACCESS_KEY: str = "claidor123456789"
+    AWS_ACCESS_KEY_ID: str = "simeon-development"
+    AWS_SECRET_ACCESS_KEY: str = "simeon123456789"
     AWS_REGION: str = "us-east-2"
     AWS_SIGNATURE_VERSION: str = "v4"
 
     # Downloadable files
-    S3_FILES_BUCKET_NAME: str = "claidor-s3"
-    S3_FILES_PUBLIC_BUCKET_NAME: str = "claidor-s3-public"
+    S3_FILES_BUCKET_NAME: str = "simeon-s3"
+    S3_FILES_PUBLIC_BUCKET_NAME: str = "simeon-s3-public"
     S3_FILES_PRESIGN_TTL: int = 3600  # 60 minutes
     S3_FILES_DOWNLOAD_SECRET: str = "supersecret"
     S3_FILES_DOWNLOAD_SALT: str = "saltysalty"
     # Override to http://127.0.0.1:9000 in .env during development
     S3_ENDPOINT_URL: str | None = None
 
-    MINIO_USER: str = "claidor"
-    MINIO_PWD: str = "claidorclaidor"
+    MINIO_USER: str = "simeon"
+    MINIO_PWD: str = "simeonsimeon"
 
     # Chargeback Stop
     CHARGEBACK_STOP_WEBHOOK_SECRET: str = ""
 
     # Invoices
-    S3_CUSTOMER_INVOICES_BUCKET_NAME: str = "claidor-customer-invoices"
-    S3_PAYOUT_INVOICES_BUCKET_NAME: str = "claidor-payout-invoices"
+    S3_CUSTOMER_INVOICES_BUCKET_NAME: str = "simeon-customer-invoices"
+    S3_PAYOUT_INVOICES_BUCKET_NAME: str = "simeon-payout-invoices"
     INVOICES_NAME: str = "Simeon Labs, Inc."
     INVOICES_ADDRESS: Address = Address(
         line1="1111B S Governors Ave",
@@ -624,7 +634,7 @@ class Settings(BaseSettings):
     INVOICES_ADDITIONAL_INFO: str | None = (
         "[support@simeonlabs.com](mailto:support@simeonlabs.com)"
     )
-    PAYOUT_INVOICES_PREFIX: str = "CLAIDOR-"
+    PAYOUT_INVOICES_PREFIX: str = "SIMEON-"
 
     # Bank transfer details shown on invoices (all optional; section hidden if INVOICES_BANK_NAME is unset)
     INVOICES_BANK_NAME: str | None = None
@@ -681,7 +691,7 @@ class Settings(BaseSettings):
     PLATFORM_FEE_BASIS_POINTS: int = 500
     PLATFORM_FEE_FIXED: int = 50
 
-    # The Organization that represents Claidor itself. This org sells the
+    # The Organization that represents Simeon itself. This org sells the
     # Starter/Studio/Scale subscriptions to every other creator org, and
     # every creator org is a Customer of it. Unset = no tier billing is
     # wired up (single-tenant / development).
@@ -730,12 +740,42 @@ class Settings(BaseSettings):
     DEFAULT_TAX_PROCESSOR: TaxProcessor = TaxProcessor.stripe
 
     model_config = SettingsConfigDict(
-        env_prefix="claidor_",
+        env_prefix=ENV_PREFIX,
         env_file_encoding="utf-8",
         case_sensitive=False,
         env_file=env_file,
         extra="allow",
     )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        # First match wins: SIMEON_ in the environment, then CLAIDOR_ in the
+        # environment, then the same two in the env file.
+        legacy_env = EnvSettingsSource(
+            settings_cls, env_prefix=LEGACY_ENV_PREFIX, case_sensitive=False
+        )
+        legacy_dotenv = DotEnvSettingsSource(
+            settings_cls,
+            env_file=env_file,
+            env_file_encoding="utf-8",
+            env_prefix=LEGACY_ENV_PREFIX,
+            case_sensitive=False,
+        )
+        return (
+            init_settings,
+            env_settings,
+            legacy_env,
+            dotenv_settings,
+            legacy_dotenv,
+            file_secret_settings,
+        )
 
     @property
     def redis_url(self) -> str:
@@ -793,7 +833,7 @@ class Settings(BaseSettings):
         """
         if self.ENV == Environment.production:
             # Report the exact environment-variable names (with the configured
-            # prefix, e.g. CLAIDOR_SECRET) so the fix is unambiguous.
+            # prefix, e.g. SIMEON_SECRET) so the fix is unambiguous.
             prefix = str(self.model_config.get("env_prefix", "")).upper()
             insecure: list[str] = []
             if self.SECRET == "super secret jwt secret":

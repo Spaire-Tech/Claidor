@@ -43,9 +43,9 @@ from polar.event.system import (
 )
 from polar.exceptions import (
     BadRequest,
-    ClaidorRequestValidationError,
     PolarError,
     ResourceUnavailable,
+    SimeonRequestValidationError,
     ValidationError,
 )
 from polar.kit.db.postgres import AsyncReadSession, AsyncSession
@@ -465,7 +465,7 @@ class SubscriptionService:
             )
 
         if len(errors) > 0:
-            raise ClaidorRequestValidationError(errors)
+            raise SimeonRequestValidationError(errors)
 
         assert product is not None
         assert customer is not None
@@ -824,12 +824,12 @@ class SubscriptionService:
             session, subscription, WebhookEventType.subscription_created
         )
 
-        # If this subscription is on the Claidor platform org (i.e. a
-        # creator's Claidor tier subscription), keep the creator's
+        # If this subscription is on the Simeon platform org (i.e. a
+        # creator's Simeon tier subscription), keep the creator's
         # Account.platform_fee aligned with the tier's list rate.
         await maybe_enqueue_sync_from_subscription(session, subscription)
 
-        # If this is a creator's new paid Claidor subscription (the outcome
+        # If this is a creator's new paid Simeon subscription (the outcome
         # of the upgrade checkout), cancel any other active platform sub
         # (e.g. the prior trial on a mid-trial switch).
         await maybe_supersede_platform_trial(session, subscription)
@@ -975,7 +975,7 @@ class SubscriptionService:
         )
 
         if product is None:
-            raise ClaidorRequestValidationError(
+            raise SimeonRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -987,7 +987,7 @@ class SubscriptionService:
             )
 
         if product.is_archived:
-            raise ClaidorRequestValidationError(
+            raise SimeonRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -999,7 +999,7 @@ class SubscriptionService:
             )
 
         if product.visibility != ProductVisibility.public:
-            raise ClaidorRequestValidationError(
+            raise SimeonRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -1011,7 +1011,7 @@ class SubscriptionService:
             )
 
         if not product.is_recurring:
-            raise ClaidorRequestValidationError(
+            raise SimeonRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -1023,7 +1023,7 @@ class SubscriptionService:
             )
 
         if product.is_legacy_recurring_price:
-            raise ClaidorRequestValidationError(
+            raise SimeonRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -1039,7 +1039,7 @@ class SubscriptionService:
         try:
             currency_prices = PriceSet.from_product(product, subscription.currency)
         except NoPricesForCurrencies as e:
-            raise ClaidorRequestValidationError(
+            raise SimeonRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -1052,7 +1052,7 @@ class SubscriptionService:
 
         for price in currency_prices:
             if is_custom_price(price):
-                raise ClaidorRequestValidationError(
+                raise SimeonRequestValidationError(
                     [
                         {
                             "type": "value_error",
@@ -1066,7 +1066,7 @@ class SubscriptionService:
         old_has_seat_prices = any(is_seat_price(p) for p in previous_prices)
         new_has_seat_prices = any(is_seat_price(p) for p in currency_prices)
         if old_has_seat_prices != new_has_seat_prices:
-            raise ClaidorRequestValidationError(
+            raise SimeonRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -1274,7 +1274,7 @@ class SubscriptionService:
                 products=[subscription.product],
             )
             if discount is None:
-                raise ClaidorRequestValidationError(
+                raise SimeonRequestValidationError(
                     [
                         {
                             "type": "value_error",
@@ -1289,7 +1289,7 @@ class SubscriptionService:
                     ]
                 )
             if discount == subscription.discount:
-                raise ClaidorRequestValidationError(
+                raise SimeonRequestValidationError(
                     [
                         {
                             "type": "value_error",
@@ -1348,7 +1348,7 @@ class SubscriptionService:
         else:
             # Can't end trial if not trialing
             if trial_end == "now":
-                raise ClaidorRequestValidationError(
+                raise SimeonRequestValidationError(
                     [
                         {
                             "type": "value_error",
@@ -1366,7 +1366,7 @@ class SubscriptionService:
                     subscription.current_period_end is not None
                     and trial_end_datetime <= subscription.current_period_end
                 ):
-                    raise ClaidorRequestValidationError(
+                    raise SimeonRequestValidationError(
                         [
                             {
                                 "type": "value_error",
@@ -1522,7 +1522,7 @@ class SubscriptionService:
             raise AlreadyCanceledSubscription(subscription)
 
         if subscription.current_period_end is None:
-            raise ClaidorRequestValidationError(
+            raise SimeonRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -1534,7 +1534,7 @@ class SubscriptionService:
             )
 
         if new_period_end < subscription.current_period_end:
-            raise ClaidorRequestValidationError(
+            raise SimeonRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -2113,7 +2113,7 @@ class SubscriptionService:
             session, subscription, WebhookEventType.subscription_revoked
         )
 
-        # No auto-resubscribe: a creator whose Claidor subscription is revoked
+        # No auto-resubscribe: a creator whose Simeon subscription is revoked
         # has no active plan and resolves to `inactive` (no free fallback).
         # The dashboard plan-gate and the delinquency lifecycle handle access.
 
@@ -2136,7 +2136,7 @@ class SubscriptionService:
 
         # Win-back automations ("on subscription cancelled" trigger) for the
         # creator's own customers. Fires when the subscription actually ends
-        # (not at cancel-scheduling, which can be undone), never for Claidor's
+        # (not at cancel-scheduling, which can be undone), never for Simeon's
         # own platform billing, and never for upgrade-supersede revocations.
         if not platform_service.is_platform_organization(
             subscription.organization.id
@@ -2421,10 +2421,10 @@ class SubscriptionService:
         )
         assert organization is not None
 
-        # Claidor self-billing: the seller IS the platform org, so the
-        # creator-commerce templates below would render "Claidor / Claidor"
+        # Simeon self-billing: the seller IS the platform org, so the
+        # creator-commerce templates below would render "Simeon / Simeon"
         # headers and Merchant-of-Record footers, and the recipient may be
-        # the undeliverable platform placeholder. Route to the Claidor-branded
+        # the undeliverable platform placeholder. Route to the Simeon-branded
         # transactional notice instead.
         if platform_service.is_platform_organization(organization.id):
             await self._send_platform_lifecycle_email(
@@ -2488,7 +2488,7 @@ class SubscriptionService:
             "subscription_updated",
         ],
     ) -> None:
-        """Claidor-branded lifecycle notice for the platform's own billing of
+        """Simeon-branded lifecycle notice for the platform's own billing of
         a creator. Money-critical transactional mail: not gated by
         customer_email_settings, and the recipient is re-resolved to a real
         org member when the platform Customer still carries the
@@ -2550,7 +2550,7 @@ class SubscriptionService:
         body_lines: list[str]
         cta_label = "Manage my plan"
         if template_name == "subscription_past_due":
-            title = "Your Claidor payment failed"
+            title = "Your Simeon payment failed"
             body_lines = [
                 f"We couldn't charge your card for the {plan_name} plan.",
                 "We'll retry automatically over the next few days. To keep "
@@ -2558,7 +2558,7 @@ class SubscriptionService:
             ]
             cta_label = "Update payment method"
         elif template_name == "subscription_revoked":
-            title = "Your Claidor plan has ended"
+            title = "Your Simeon plan has ended"
             body_lines = [
                 f"Your {plan_name} subscription has ended and your "
                 "organization no longer has an active plan.",
@@ -2567,7 +2567,7 @@ class SubscriptionService:
             cta_label = "Choose a plan"
         elif template_name == "subscription_cancellation":
             if subscription.trialing:
-                title = "Your Claidor trial is canceled"
+                title = "Your Simeon trial is canceled"
                 body_lines = [
                     f"Your {plan_name} trial keeps running"
                     + (f" until {ends_on}" if ends_on else "")
@@ -2577,7 +2577,7 @@ class SubscriptionService:
                     "before the trial ends.",
                 ]
             else:
-                title = "Your Claidor plan is set to cancel"
+                title = "Your Simeon plan is set to cancel"
                 body_lines = [
                     f"Your {plan_name} plan stays active"
                     + (
@@ -2590,13 +2590,13 @@ class SubscriptionService:
                     "before then.",
                 ]
         elif template_name == "subscription_uncanceled":
-            title = "Your Claidor plan will continue"
+            title = "Your Simeon plan will continue"
             body_lines = [
                 f"The scheduled cancellation of your {plan_name} plan has "
                 "been reversed — your plan continues as before.",
             ]
         else:  # subscription_updated
-            title = "Your Claidor plan has changed"
+            title = "Your Simeon plan has changed"
             body_lines = [
                 f"Your organization is now on the {plan_name} plan.",
             ]

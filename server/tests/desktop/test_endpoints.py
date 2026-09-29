@@ -96,7 +96,7 @@ class TestLogin:
         assert query["state"] == ["abc"]
         assert "return_to" in query
         code = query["code"][0]
-        assert code.startswith("claidor_dc_")
+        assert code.startswith("simeon_dc_")
 
         exchanged = await client.post(
             "/desktop/api/auth/exchange", json={"authCode": code}
@@ -143,7 +143,7 @@ class TestExchange:
         assert second.json()["code"] == 40101
 
         bad = await client.post(
-            "/desktop/api/auth/exchange", json={"authCode": "claidor_dc_nonsense"}
+            "/desktop/api/auth/exchange", json={"authCode": "simeon_dc_nonsense"}
         )
         assert bad.json()["code"] == 40101
 
@@ -1096,7 +1096,7 @@ class TestMiddleware:
             "type": "http",
             "method": "GET",
             "path": "/desktop/api/user/quota",
-            "headers": [(b"authorization", b"Bearer claidor_da_notevenreal")],
+            "headers": [(b"authorization", b"Bearer simeon_da_notevenreal")],
             "query_string": b"",
         }
         subject = await get_auth_subject(Request(scope), session)
@@ -1259,7 +1259,7 @@ class TestSkillStoreFiles:
 
 @pytest.mark.asyncio
 class TestComposio:
-    """Apps through Composio: the app's calls forwarded with Claidor's key
+    """Apps through Composio: the app's calls forwarded with Simeon's key
     and the account's own Composio user id (`polar/desktop/composio.py`)."""
 
     async def test_the_session_carries_the_key_and_the_account_not_the_apps_word(
@@ -1269,7 +1269,7 @@ class TestComposio:
         user: User,
         mocker: MockerFixture,
     ) -> None:
-        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_claidor")
+        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_simeon")
         access, _ = await _signed_in(client, session, user)
         with respx.mock(assert_all_called=True) as mock:
             route = mock.post(
@@ -1283,7 +1283,7 @@ class TestComposio:
         assert response.status_code == 200
         assert response.json() == {"session_id": "sess_1"}
         sent = route.calls[0].request
-        assert sent.headers["x-api-key"] == "ck_claidor"
+        assert sent.headers["x-api-key"] == "ck_simeon"
         assert "authorization" not in sent.headers
         assert json.loads(sent.content) == {"user_id": f"claidor-{user.id}"}
 
@@ -1294,7 +1294,7 @@ class TestComposio:
         user: User,
         mocker: MockerFixture,
     ) -> None:
-        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_claidor")
+        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_simeon")
         access, _ = await _signed_in(client, session, user)
         base = f"{settings.COMPOSIO_BASE_URL}/api/v3.1"
         with respx.mock(assert_all_called=True) as mock:
@@ -1339,7 +1339,7 @@ class TestComposio:
         mocker: MockerFixture,
     ) -> None:
         # The key must not become a general door onto Composio's API.
-        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_claidor")
+        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_simeon")
         access, _ = await _signed_in(client, session, user)
         headers = {"Authorization": f"Bearer {access}"}
         with respx.mock(assert_all_called=False) as mock:
@@ -1379,7 +1379,7 @@ class TestComposio:
     async def test_signed_out_is_refused_before_anything_is_forwarded(
         self, client: httpx.AsyncClient, mocker: MockerFixture
     ) -> None:
-        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_claidor")
+        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_simeon")
         with respx.mock(assert_all_called=False) as mock:
             anything = mock.route().mock(return_value=httpx.Response(200, json={}))
             response = await client.post(
@@ -1457,7 +1457,7 @@ class TestTheProxyFromAServerWeDidNotWrite:
                 json={"model": "gpt-5.6-luna", "messages": []},
             )
         assert response.status_code == 200
-        # Claidor's key went up, never the caller's token.
+        # Simeon's key went up, never the caller's token.
         assert route.calls[0].request.headers["authorization"] == "Bearer sk-openai"
 
         usage = (

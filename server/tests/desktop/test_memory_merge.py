@@ -354,6 +354,6 @@ class TestMergeMemoryFile:
             == "theirs\n"
         )
 
-    def test_a_name_claidor_does_not_keep_raises(self) -> None:
+    def test_a_name_the_server_does_not_keep_raises(self) -> None:
         with pytest.raises(ValueError, match="SOUL.md"):
             merge_memory_file("SOUL.md", "a", "b")

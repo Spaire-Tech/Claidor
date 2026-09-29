@@ -8,10 +8,10 @@ from fastapi.responses import JSONResponse, RedirectResponse, Response
 
 from polar.config import settings
 from polar.exceptions import (
-    ClaidorRequestValidationError,
     PolarError,
     PolarRedirectionError,
     ResourceNotModified,
+    SimeonRequestValidationError,
 )
 
 log = structlog.get_logger()
@@ -26,7 +26,7 @@ async def polar_exception_handler(request: Request, exc: PolarError) -> JSONResp
 
 
 async def request_validation_exception_handler(
-    request: Request, exc: RequestValidationError | ClaidorRequestValidationError
+    request: Request, exc: RequestValidationError | SimeonRequestValidationError
 ) -> JSONResponse:
     return JSONResponse(
         status_code=422,
@@ -98,7 +98,7 @@ def add_exception_handlers(app: FastAPI) -> None:
         request_validation_exception_handler,  # type: ignore
     )
     app.add_exception_handler(
-        ClaidorRequestValidationError,
+        SimeonRequestValidationError,
         request_validation_exception_handler,  # type: ignore
     )
     app.add_exception_handler(PolarError, polar_exception_handler)  # type: ignore

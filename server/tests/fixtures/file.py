@@ -256,7 +256,7 @@ def s3_backend_enforces_signatures() -> bool:
     """
     response = httpx.get(
         f"{settings.S3_ENDPOINT_URL}/{settings.S3_FILES_BUCKET_NAME}"
-        "/claidor-test-signature-probe"
+        "/simeon-test-signature-probe"
     )
     return response.status_code == 403
 

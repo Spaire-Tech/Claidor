@@ -193,7 +193,7 @@ def _render(
         '<html><body style="font-family:sans-serif;line-height:1.5;">'
         f"<h2>{subject}</h2>"
         f"<p>{body}</p>"
-        "<p>— Claidor</p>"
+        "<p>— Simeon</p>"
         "</body></html>"
     )
     return subject, html_content

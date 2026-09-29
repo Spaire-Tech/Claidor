@@ -243,6 +243,30 @@ class TestVerify:
             organization.storefront_url("/portal") == "https://learn.creator.com/portal"
         )
 
+    async def test_the_record_under_the_earlier_name_still_verifies(
+        self,
+        mocker: MockerFixture,
+        session: AsyncSession,
+        organization: Organization,
+    ) -> None:
+        custom_domain = await self._create_domain(mocker, session, organization)
+        token = custom_domain.verification_token
+
+        async def resolve(name: str, record_type: str) -> list[str]:
+            if record_type == "CNAME":
+                return [settings.CUSTOM_DOMAIN_CNAME_TARGET]
+            return [token] if name.startswith("_claidor-verify.") else []
+
+        mocker.patch(
+            "polar.organization_custom_domain.service.dns.resolve",
+            side_effect=resolve,
+        )
+
+        result = await custom_domain_service.verify(session, custom_domain)
+
+        assert result.txt_ok is True
+        assert custom_domain.status == OrganizationCustomDomainStatus.active
+
     async def test_demotion_clears_organization_custom_domain(
         self,
         mocker: MockerFixture,

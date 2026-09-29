@@ -6,9 +6,9 @@ const Header = () => (
   <Section>
     <div className="relative h-[48px]">
       <Img
-        alt="Claidor Logo"
+        alt="Simeon Logo"
         height="48"
-        src="https://claidor-production-files-public.s3.us-east-1.amazonaws.com/claidor+(27).png"
+        src="https://www.simeonlabs.com/apple-touch-icon.png"
       />
     </div>
   </Section>

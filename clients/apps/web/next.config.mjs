@@ -4,8 +4,12 @@ import createMDX from '@next/mdx'
 import { withSentryConfig } from '@sentry/nextjs'
 import { themeConfig } from './shiki.config.mjs'
 
-const POLAR_AUTH_COOKIE_KEY =
-  process.env.POLAR_AUTH_COOKIE_KEY || 'claidor_session'
+const AUTH_COOKIE_KEY =
+  process.env.SIMEON_AUTH_COOKIE_KEY ||
+  process.env.POLAR_AUTH_COOKIE_KEY ||
+  'simeon_session'
+// Sessions made before the rename carry the earlier cookie name.
+const LEGACY_AUTH_COOKIE_KEY = 'claidor_session'
 const ENVIRONMENT =
   process.env.VERCEL_ENV || process.env.NEXT_PUBLIC_VERCEL_ENV || 'development'
 const CODESPACES = process.env.CODESPACES === 'true'
@@ -207,7 +211,7 @@ const nextConfig = {
         has: [
           {
             type: 'cookie',
-            key: POLAR_AUTH_COOKIE_KEY,
+            key: AUTH_COOKIE_KEY,
           },
           {
             type: 'host',
@@ -222,7 +226,7 @@ const nextConfig = {
         has: [
           {
             type: 'cookie',
-            key: 'polar_session',
+            key: LEGACY_AUTH_COOKIE_KEY,
           },
           {
             type: 'host',

@@ -1,7 +1,7 @@
 """The queue the cloud engine takes its work from.
 
 Maties runs in two places (`docs/maties/cloud.md`): on the person's own
-computer, where the desktop app drives the engine, and on Claidor's
+computer, where the desktop app drives the engine, and on Simeon's
 servers, where a runner service picks up one piece of work, does it, and
 stops. This table is the queue between the two — the only thing the
 runner ever reads from, and the only record afterwards of what it did.
@@ -57,7 +57,7 @@ class MatyJobKind(StrEnum):
     routine = "routine"
     #: Mail sent to the assistant's own address.
     mail = "mail"
-    #: A one-off the person or Claidor asked for.
+    #: A one-off the person or Simeon asked for.
     task = "task"
 
 

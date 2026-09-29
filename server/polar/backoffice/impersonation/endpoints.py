@@ -66,7 +66,7 @@ async def start_impersonation(
     )
 
     # Get the current session token to preserve it
-    current_token = request.cookies.get(settings.USER_SESSION_COOKIE_KEY)
+    current_token = auth_service.session_token(request)
 
     # Create response object
     org_repository = OrganizationRepository.from_session(session)
@@ -135,7 +135,7 @@ async def end_impersonation(
 
     # Get the current impersonated session to delete it
     impersonated_user_id = None
-    current_token = request.cookies.get(settings.USER_SESSION_COOKIE_KEY)
+    current_token = auth_service.session_token(request)
     if current_token:
         current_session = await auth_service._get_user_session_by_token(
             session, current_token

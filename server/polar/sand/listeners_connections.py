@@ -55,11 +55,11 @@ CHANNEL_CACHE_SECONDS = 5 * 60
 #: app yet; the same sentence is what the log line carries.
 SLACK_NOT_REGISTERED = (
     "Simeon's Slack app is not registered on this server yet "
-    "(CLAIDOR_SLACK_CLIENT_ID and CLAIDOR_SLACK_CLIENT_SECRET are empty), so Slack cannot be connected."
+    "(SIMEON_SLACK_CLIENT_ID and SIMEON_SLACK_CLIENT_SECRET are empty), so Slack cannot be connected."
 )
 GITHUB_NOT_REGISTERED = (
     "Simeon's GitHub App is not registered on this server yet "
-    "(CLAIDOR_SAND_GITHUB_APP_SLUG is empty), so GitHub cannot be connected."
+    "(SIMEON_SAND_GITHUB_APP_SLUG is empty), so GitHub cannot be connected."
 )
 
 service = ConnectService("aiserver.v1.DashboardService")

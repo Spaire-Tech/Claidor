@@ -2,18 +2,18 @@
 
 `BoxHost` is the one thing the broker (`box_service.py`) asks of a host:
 create a box from a `BoxSpec`, say whether it runs, start, stop, remove.
-Two implementations, chosen by `CLAIDOR_BOX_HOST_PROVIDER`:
+Two implementations, chosen by `SIMEON_BOX_HOST_PROVIDER`:
 
 - `docker`: the same `docker run` the Mac performs in
   `desktop/source/electron-main/box/local-docker-host-connector.ts`
   (image, environment, labels, volumes, published ports), spoken to a
-  Docker Engine at `CLAIDOR_BOX_DOCKER_HOST` over its HTTP API with httpx
+  Docker Engine at `SIMEON_BOX_DOCKER_HOST` over its HTTP API with httpx
   (no new dependency). Two things differ from the Mac by necessity: the
   box credential rides in `SAND_INFERENCE_RENEWAL_CREDENTIAL` instead of
   a mounted token file (the daemon is on another machine, so there is
   nothing to bind-mount), and the host bundle is uploaded into the
   container with `PUT /containers/{id}/archive` before it starts, or
-  baked into `CLAIDOR_BOX_IMAGE`.
+  baked into `SIMEON_BOX_IMAGE`.
 - `e2b`: a stub. The `e2b` package is not in `uv.lock` (checked 25
   September 2026: `grep -n 'name = "e2b"' server/uv.lock` finds nothing),
   and E2B's per-port hostnames are `<port>-<id>.e2b.app`, which is not
@@ -55,7 +55,7 @@ FORK_NOVNC_PORT = 6081
 EGRESS_TUNNEL_PORT = 8790
 
 BOX_HOST_UNAVAILABLE_SENTENCE = (
-    "Simeon's cloud computer needs a host; set CLAIDOR_BOX_HOST_PROVIDER"
+    "Simeon's cloud computer needs a host; set SIMEON_BOX_HOST_PROVIDER"
 )
 
 #: Labels of the local Docker path, so `docker ps` on the VM reads the
@@ -121,7 +121,7 @@ class BoxSpec:
     extra_env: dict[str, str] = field(default_factory=dict)
     #: `--memory` (no swap beyond it) and `--cpus`; zero is no limit. The
     #: Mac's `docker run` sets neither (Docker Desktop's VM is the bound);
-    #: a shared host needs both (`CLAIDOR_BOX_MEMORY_LIMIT_MB`, `_CPU_LIMIT`).
+    #: a shared host needs both (`SIMEON_BOX_MEMORY_LIMIT_MB`, `_CPU_LIMIT`).
     memory_mb: int = 0
     cpus: float = 0.0
 
@@ -213,7 +213,7 @@ class HostBundle:
     """The host bundle uploaded into a new container: `host/host-main.cjs`
     to `/home/box/sand-host/host-main.cjs` and `box-exec-daemon/main.cjs`
     to `/home/box/box-exec-daemon/main.cjs`, the two paths the Mac
-    bind-mounts. Read once from `CLAIDOR_BOX_HOST_BUNDLE_URL` (a tar or
+    bind-mounts. Read once from `SIMEON_BOX_HOST_BUNDLE_URL` (a tar or
     tar.gz) and kept in memory."""
 
     HOST_MAIN = "host/host-main.cjs"
@@ -293,7 +293,7 @@ def _docker_base_url(docker_host: str) -> tuple[str, str | None]:
     if parts.scheme in ("http", "https"):
         return f"{parts.scheme}://{parts.netloc}", None
     raise BoxHostUnavailable(
-        f"CLAIDOR_BOX_DOCKER_HOST={docker_host!r} is not a URL this server can dial; "
+        f"SIMEON_BOX_DOCKER_HOST={docker_host!r} is not a URL this server can dial; "
         "use http(s)://host:2376, tcp://host:2376 or unix:///var/run/docker.sock "
         "(an ssh:// daemon needs an SSH tunnel to one of those)."
     )
@@ -331,7 +331,7 @@ def docker_client_from_settings(docker_host: str | None = None) -> httpx.AsyncCl
     docker_host = settings.BOX_DOCKER_HOST if docker_host is None else docker_host
     if not docker_host:
         raise BoxHostUnavailable(
-            "CLAIDOR_BOX_HOST_PROVIDER=docker needs CLAIDOR_BOX_DOCKER_HOST."
+            "SIMEON_BOX_HOST_PROVIDER=docker needs SIMEON_BOX_DOCKER_HOST."
         )
     base_url, uds = _docker_base_url(docker_host)
     verify: ssl.SSLContext | bool = True
@@ -359,7 +359,7 @@ def docker_host_address_from_settings(
     if parts.hostname:
         return parts.hostname
     raise BoxHostUnavailable(
-        "CLAIDOR_BOX_HOST_ADDRESS is needed when the Docker daemon is a unix socket: "
+        "SIMEON_BOX_HOST_ADDRESS is needed when the Docker daemon is a unix socket: "
         "it is the address the API reaches the box's published ports on."
     )
 
@@ -411,7 +411,7 @@ class DockerBoxHost:
     @property
     def expected_host_sha256(self) -> str | None:
         """The host program a box on this host should mount; None when the
-        image is trusted to carry its own (no `CLAIDOR_BOX_HOST_BUNDLE_URL`)."""
+        image is trusted to carry its own (no `SIMEON_BOX_HOST_BUNDLE_URL`)."""
         return self.bundle.host_sha256 if self.bundle is not None else None
 
     def bundle_dir(self) -> str:
@@ -655,7 +655,7 @@ class E2BBoxHost:
     def _refuse(self) -> BoxHostUnavailable:
         return BoxHostUnavailable(
             "Simeon's cloud computer on E2B is not built yet (the e2b package is not "
-            "installed); set CLAIDOR_BOX_HOST_PROVIDER=docker with a Docker daemon."
+            "installed); set SIMEON_BOX_HOST_PROVIDER=docker with a Docker daemon."
         )
 
     async def create(self, spec: BoxSpec) -> ProvisionedBox:
@@ -788,7 +788,7 @@ async def load_host_bundle(url: str) -> HostBundle | None:
 
 @dataclass(frozen=True)
 class BoxHostEntry:
-    """One box server in `CLAIDOR_BOX_HOSTS`."""
+    """One box server in `SIMEON_BOX_HOSTS`."""
 
     name: str
     docker_host: str
@@ -798,8 +798,8 @@ class BoxHostEntry:
 
 
 def box_host_entries() -> list[BoxHostEntry]:
-    """The configured servers: `CLAIDOR_BOX_HOSTS`, or the one server of
-    `CLAIDOR_BOX_DOCKER_HOST` named "docker" (the name the boxes made
+    """The configured servers: `SIMEON_BOX_HOSTS`, or the one server of
+    `SIMEON_BOX_DOCKER_HOST` named "docker" (the name the boxes made
     before 29 September carry)."""
     raw = settings.BOX_HOSTS.strip()
     if not raw:
@@ -813,18 +813,18 @@ def box_host_entries() -> list[BoxHostEntry]:
     try:
         items = json.loads(raw)
     except ValueError as error:
-        raise BoxHostUnavailable(f"CLAIDOR_BOX_HOSTS is not JSON: {error}")
+        raise BoxHostUnavailable(f"SIMEON_BOX_HOSTS is not JSON: {error}")
     if not isinstance(items, list) or not items:
-        raise BoxHostUnavailable("CLAIDOR_BOX_HOSTS must be a non-empty JSON list.")
+        raise BoxHostUnavailable("SIMEON_BOX_HOSTS must be a non-empty JSON list.")
     entries: list[BoxHostEntry] = []
     for item in items:
         if not isinstance(item, dict):
-            raise BoxHostUnavailable("Each CLAIDOR_BOX_HOSTS entry must be an object.")
+            raise BoxHostUnavailable("Each SIMEON_BOX_HOSTS entry must be an object.")
         name = str(item.get("name") or "").strip()
         docker_host = str(item.get("docker_host") or "").strip()
         if not name or not docker_host:
             raise BoxHostUnavailable(
-                "Each CLAIDOR_BOX_HOSTS entry needs a name and a docker_host."
+                "Each SIMEON_BOX_HOSTS entry needs a name and a docker_host."
             )
         max_running = item.get("max_running")
         entries.append(
@@ -838,7 +838,7 @@ def box_host_entries() -> list[BoxHostEntry]:
         )
     names = [entry.name for entry in entries]
     if len(set(names)) != len(names):
-        raise BoxHostUnavailable("CLAIDOR_BOX_HOSTS names must be unique.")
+        raise BoxHostUnavailable("SIMEON_BOX_HOSTS names must be unique.")
     return entries
 
 

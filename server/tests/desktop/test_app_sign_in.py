@@ -242,7 +242,7 @@ class TestAuthPoll:
         # exactly these two names, both strings.
         assert isinstance(body["accessToken"], str)
         assert isinstance(body["refreshToken"], str)
-        assert body["refreshToken"].startswith("claidor_dr_")
+        assert body["refreshToken"].startswith("simeon_dr_")
 
         second = await client.get(
             "/auth/poll", params={"uuid": uuid, "verifier": verifier}
@@ -397,11 +397,31 @@ class TestTheAccessToken:
             await client.get("/desktop/api/user/profile", headers=header)
         ).status_code == 401
 
+    @pytest.mark.auth
+    async def test_an_envelope_under_the_earlier_prefix_still_opens(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        """An app signed in before the rename holds `simeon_da_…`; the
+        envelope inside is the same, so it keeps working."""
+        verifier, challenge, uuid = _login_metadata()
+        await _confirm(client, uuid=uuid, challenge=challenge)
+        access = (
+            await client.get("/auth/poll", params={"uuid": uuid, "verifier": verifier})
+        ).json()["accessToken"]
+        assert access.startswith("simeon_da_")
+        earlier = "claidor_da_" + access.removeprefix("simeon_da_")
+        assert unwrap_access_token(earlier) == unwrap_access_token(access)
+        response = await client.get(
+            "/desktop/api/user/profile",
+            headers={"Authorization": f"Bearer {earlier}"},
+        )
+        assert response.status_code == 200
+
     async def test_a_forged_envelope_opens_nothing(
         self, client: httpx.AsyncClient
     ) -> None:
         forged = ACCESS_TOKEN_PREFIX + jwt.encode(
-            data={"sub": "somebody", "cat": "claidor_da_whatever"},
+            data={"sub": "somebody", "cat": "simeon_da_whatever"},
             secret="not-the-server-s-secret",
             type="desktop_access",  # type: ignore[arg-type]
         )
@@ -414,7 +434,7 @@ class TestTheAccessToken:
 
     async def test_an_envelope_of_the_wrong_type_opens_nothing(self) -> None:
         wrong = ACCESS_TOKEN_PREFIX + jwt.encode(
-            data={"sub": "somebody", "cat": "claidor_da_whatever"},
+            data={"sub": "somebody", "cat": "simeon_da_whatever"},
             secret=settings.SECRET,
             type="auth",
         )
@@ -423,8 +443,9 @@ class TestTheAccessToken:
     async def test_an_opaque_token_is_left_exactly_as_it_is(self) -> None:
         """`/desktop` still hands out opaque tokens and they must keep
         working untouched."""
+        assert unwrap_access_token("simeon_da_abcdefgh") is None
         assert unwrap_access_token("claidor_da_abcdefgh") is None
-        assert unwrap_access_token("claidor_pat_abcdefgh") is None
+        assert unwrap_access_token("simeon_pat_abcdefgh") is None
         assert unwrap_access_token("") is None
 
     async def test_the_envelope_expires_with_the_session_it_names(
@@ -493,7 +514,7 @@ class TestOAuthToken:
     ) -> None:
         response = await client.post(
             "/oauth/token",
-            json={"grant_type": "refresh_token", "refresh_token": "claidor_dr_nope"},
+            json={"grant_type": "refresh_token", "refresh_token": "simeon_dr_nope"},
         )
         assert response.status_code == 200
         assert response.json()["shouldLogout"] is True
@@ -557,19 +578,31 @@ class TestPollByPost:
         self, client: httpx.AsyncClient
     ) -> None:
         verifier, challenge, uuid = _login_metadata()
-        pending = await client.post("/auth/poll", json={"uuid": uuid, "verifier": verifier})
+        pending = await client.post(
+            "/auth/poll", json={"uuid": uuid, "verifier": verifier}
+        )
         assert pending.status_code == 404
         assert pending.json() == {"error": "not_found"}
         await _confirm(client, uuid=uuid, challenge=challenge)
-        issued = await client.post("/auth/poll", json={"uuid": uuid, "verifier": verifier})
+        issued = await client.post(
+            "/auth/poll", json={"uuid": uuid, "verifier": verifier}
+        )
         assert issued.status_code == 200, issued.text
         body = issued.json()
         assert body["accessToken"] and body["refreshToken"]
-        again = await client.post("/auth/poll", json={"uuid": uuid, "verifier": verifier})
+        again = await client.post(
+            "/auth/poll", json={"uuid": uuid, "verifier": verifier}
+        )
         assert again.status_code == 404
 
-    async def test_a_body_that_is_not_json_is_a_wait(self, client: httpx.AsyncClient) -> None:
-        response = await client.post("/auth/poll", content=b"not json", headers={"content-type": "application/json"})
+    async def test_a_body_that_is_not_json_is_a_wait(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        response = await client.post(
+            "/auth/poll",
+            content=b"not json",
+            headers={"content-type": "application/json"},
+        )
         assert response.status_code == 404
         response = await client.post("/auth/poll", json=["a", "list"])
         assert response.status_code == 404

@@ -74,7 +74,7 @@ def get_branded_discord_embed(embed: DiscordEmbed) -> DiscordEmbed:
             "url": settings.THUMBNAIL_URL,
         },
         "footer": {
-            "text": "Powered by Claidor",
+            "text": "Powered by Simeon",
         },
         **embed,
     }

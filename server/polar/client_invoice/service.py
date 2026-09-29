@@ -258,7 +258,7 @@ class ClientInvoiceService:
         stripe_metadata: dict[str, str] = {
             "client_invoice_id": str(new_id),
             "organization_id": str(organization.id),
-            "claidor_mor": "true",
+            "simeon_mor": "true",
         }
         if create_schema.user_metadata:
             for k, v in create_schema.user_metadata.items():
@@ -431,7 +431,7 @@ class ClientInvoiceService:
         effective_logo = logo_bytes if invoice.show_logo else None
         effective_label: str | None = None
         if effective_logo and invoice.show_mor_attribution:
-            effective_label = "via claidor"
+            effective_label = "via Simeon"
 
         generator = InvoiceGenerator(
             inv,
@@ -559,7 +559,7 @@ class ClientInvoiceService:
 
         logo_label: str | None = None
         if logo_bytes and preview.show_mor_attribution:
-            logo_label = "via claidor"
+            logo_label = "via Simeon"
 
         generator = InvoiceGenerator(
             inv,

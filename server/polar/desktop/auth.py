@@ -101,7 +101,7 @@ def _token_subject(request: Request) -> AuthSubject[Subject] | None:
     """The auth subject the middleware already resolved, if any.
 
     `polar.auth.middlewares.get_auth_subject` runs for every request and
-    has already looked a `claidor_pat_` token up, checked that it has not
+    has already looked a `simeon_pat_` token up, checked that it has not
     expired or been revoked, and attached the person and their scopes. So
     this reads that answer rather than asking a second time — a second way
     to check a token would be a second way to get it wrong.

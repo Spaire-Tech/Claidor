@@ -30,7 +30,7 @@ Three things this file is careful about, in the order they matter:
   body and refused if they carry anything — read `create_for_person` for
   why refused and not quietly emptied.
 - **Whether there is a runner at all.** `available` on the listing, and a
-  503 from create. A Claidor with no runner token must read as « not
+  503 from create. A Simeon with no runner token must read as « not
   available here » and never as a job that waits for ever.
 """
 
@@ -82,7 +82,7 @@ class CreateJobBody(BaseModel):
     allow: dict[str, Any] = Field(default_factory=dict)
 
 
-# --- what Claidor answers ---------------------------------------------------
+# --- what Simeon answers ---------------------------------------------------
 
 
 def _job(job: MatyJob) -> dict[str, Any]:
@@ -133,7 +133,7 @@ async def create_job(
     Every refusal this can give — 503 with no runner, 400 for an empty or
     over-long prompt or for a `deliver`/`allow` the server will not take
     from a client, 429 over the live-job cap — is raised by the service
-    and turned into `{error, detail}` by Claidor's own handler. Nothing
+    and turned into `{error, detail}` by Simeon's own handler. Nothing
     is written on any of those paths.
     """
     job = await maty.create_for_person(

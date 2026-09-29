@@ -2,7 +2,7 @@
 
 The assistant's memory is a handful of small text files in its
 workspace, and two sides write them: the app on the person's computer,
-and later the cloud runner. Nobody locks anything, so Claidor merges,
+and later the cloud runner. Nobody locks anything, so Simeon merges,
 and it is the only side that does — the app and the runner cannot
 disagree about a merge they never perform (`docs/maties/cloud.md`,
 section 3).
@@ -534,7 +534,7 @@ def _canonical(name: str) -> str | None:
 
 
 def is_accepted_memory_name(name: str) -> bool:
-    """Whether Claidor stores a file under this name at all."""
+    """Whether Simeon stores a file under this name at all."""
     return _canonical(name) is not None
 
 
@@ -557,10 +557,10 @@ def merge_memory_file(
 ) -> str:
     """Merge two copies of one named file by that file's rule.
 
-    `ours` is what Claidor holds, `theirs` what the client sent. Raises
-    `ValueError` for a name Claidor does not accept.
+    `ours` is what Simeon holds, `theirs` what the client sent. Raises
+    `ValueError` for a name Simeon does not accept.
     """
     rule = rule_for(name)
     if rule is None:
-        raise ValueError(f"{name!r} is not a memory file Claidor keeps.")
+        raise ValueError(f"{name!r} is not a memory file Simeon keeps.")
     return _MERGERS[rule](ours, theirs, ours_is_newer)

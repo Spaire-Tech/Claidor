@@ -1,4 +1,4 @@
-"""The app's own sign-in, on Claidor.
+"""The app's own sign-in, on Simeon.
 
 `polar.desktop.endpoints` serves the protocol the older desktop client
 spoke: `/desktop/login`, a code, `/desktop/api/auth/exchange`. The app
@@ -17,7 +17,7 @@ would never be called.
     1. The app opens `{websiteUrl}/loginDeepControl?challenge=…&uuid=…`
        in the browser. The challenge is `base64url(sha256(verifier))`
        for a verifier only the app holds.
-    2. With no Claidor session in the browser, that page sends the
+    2. With no Simeon session in the browser, that page sends the
        person to the web login and asks to be returned to — the same
        hand-off `/desktop/login` makes.
     3. With one, it **asks**. A sign-in confirmed by a bare GET would

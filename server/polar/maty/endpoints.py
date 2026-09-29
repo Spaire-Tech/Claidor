@@ -16,10 +16,10 @@ POST /maty/runner/jobs/{id}/fail        { "runner": "<name>", "reason": "…",
                                           "retryable": true }
 ```
 
-The whole router is behind `CLAIDOR_MATY_RUNNER_TOKEN`
+The whole router is behind `SIMEON_MATY_RUNNER_TOKEN`
 (`polar.maty.auth`); no person's token opens any of it. The `runner`
 field in each body is the name the claim took its lease under — it is
-how Claidor knows the caller is reporting on work it actually holds, and
+how Simeon knows the caller is reporting on work it actually holds, and
 it is a label, not a credential. Refusals are real HTTP failures with a
 reason, like the memory routes and unlike the older desktop ones: 404
 for a job that does not exist, 409 for a job the caller does not hold.
@@ -106,11 +106,11 @@ class CompleteBody(RunnerBody):
 class FailBody(RunnerBody):
     reason: str = Field(min_length=1, max_length=REASON_MAX_LENGTH)
     #: True when another try might work. Even then the job stops after
-    #: `CLAIDOR_MATY_JOB_MAX_ATTEMPTS` tries.
+    #: `SIMEON_MATY_JOB_MAX_ATTEMPTS` tries.
     retryable: bool = False
 
 
-# --- what Claidor answers --------------------------------------------------
+# --- what Simeon answers --------------------------------------------------
 
 
 class ClaimedJobBody(BaseModel):

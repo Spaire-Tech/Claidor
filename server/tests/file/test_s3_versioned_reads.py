@@ -58,7 +58,7 @@ class DeniedClient:
 
 
 def _service(client: object) -> S3Service:
-    return S3Service(bucket="claidor-files", client=client)  # type: ignore[arg-type]
+    return S3Service(bucket="simeon-files", client=client)  # type: ignore[arg-type]
 
 
 def test_head_falls_back_to_the_current_version() -> None:

@@ -5,7 +5,7 @@ What is checked here and nowhere else:
 
 - somebody else's job id is a 404, indistinguishable from an id that
   never existed, so an id cannot be probed;
-- a Claidor with no runner says `available: false` and refuses to queue
+- a Simeon with no runner says `available: false` and refuses to queue
   anything, rather than accepting work nobody will ever do;
 - `deliver` and `allow` are refused rather than quietly emptied;
 - the live-job cap, so a loop in the app cannot fill the queue;
@@ -41,7 +41,7 @@ RUNNER = {"Authorization": f"Bearer {RUNNER_TOKEN}"}
 
 @pytest.fixture
 def configured_runner(mocker: MockerFixture) -> None:
-    """A Claidor a cloud runner can reach, which is what makes the cloud
+    """A Simeon a cloud runner can reach, which is what makes the cloud
     engine `available`."""
     mocker.patch.object(settings, "MATY_RUNNER_TOKEN", RUNNER_TOKEN)
 
@@ -582,7 +582,7 @@ class TestTheWholeRound:
             "First.",
         ]
 
-    async def test_claidor_s_own_enqueue_is_not_bound_by_the_app_s_rules(
+    async def test_the_server_s_own_enqueue_is_not_bound_by_the_app_s_rules(
         self,
         client: httpx.AsyncClient,
         session: AsyncSession,

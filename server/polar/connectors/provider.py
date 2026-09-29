@@ -13,7 +13,7 @@ answers are deliberately small: a URL to open, a list of what is
 connected, nothing at all, and an address the MCP conversation is
 proxied to. Everything else stays on the far side.
 
-This module imports nothing from the rest of Claidor at runtime, so the
+This module imports nothing from the rest of Simeon at runtime, so the
 implementations behind it stay testable on their own.
 """
 

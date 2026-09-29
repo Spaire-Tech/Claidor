@@ -351,14 +351,14 @@ class UserWelcomeEmail(BaseModel):
 
 
 # ----------------------------------------------------------------------
-# Claidor platform billing (self-billing: Claidor bills the creator)
+# Simeon platform billing (self-billing: Simeon bills the creator)
 #
-# Transactional, Claidor-branded receipt for the platform's OWN billing of a
+# Transactional, Simeon-branded receipt for the platform's OWN billing of a
 # creator org. Distinct from the creator-commerce templates above — those
-# render the *selling* org's header + "Merchant of Record … by Claidor" and
-# are for a creator billing THEIR customers. On a Claidor plan the seller IS
-# the platform org, so those templates render "Claidor / Claidor" nonsense.
-# Uses the Claidor logo (WrapperPolar) and a transactional footer (no
+# render the *selling* org's header + "Merchant of Record … by Simeon" and
+# are for a creator billing THEIR customers. On a Simeon plan the seller IS
+# the platform org, so those templates render "Simeon / Simeon" nonsense.
+# Uses the Simeon logo (WrapperPolar) and a transactional footer (no
 # unsubscribe). The trial-start welcome reuses the founder `user_welcome`.
 # ----------------------------------------------------------------------
 
@@ -378,7 +378,7 @@ class PlatformReceiptEmail(BaseModel):
 
 
 class PlatformSubscriptionNoticeProps(EmailProps):
-    """Claidor-branded lifecycle notice for the platform's own billing of a
+    """Simeon-branded lifecycle notice for the platform's own billing of a
     creator (payment failed, plan ended, cancellation scheduled, …). One
     generic branded shell; the Python side composes title/body per event so
     a new lifecycle message never needs a new template."""

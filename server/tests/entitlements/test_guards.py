@@ -84,7 +84,7 @@ async def _subscribe(
     customer = await create_customer(
         save_fixture,
         organization=platform_org,
-        email=f"creator-{creator.id}@billing.claidor",
+        email=f"creator-{creator.id}@billing.simeon",
         user_metadata={"creator_org_id": str(creator.id)},
     )
     await create_subscription(

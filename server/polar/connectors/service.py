@@ -1,4 +1,4 @@
-"""The connections, on Claidor's side.
+"""The connections, on Simeon's side.
 
 `docs/maties/connectors.md`, sections 4 and 5. Three things live here and
 nothing else does: who is allowed to use connections, which middleman is
@@ -104,7 +104,7 @@ class ConnectorsService:
         return self._credentials().configured
 
     def provider(self, redis: Redis) -> ConnectorProvider:
-        """Today's middleman. The one place in Claidor that names one.
+        """Today's middleman. The one place in Simeon that names one.
 
         A second provider — our own sign-ins, or somebody else's — is a
         new class implementing `ConnectorProvider` and a branch here.

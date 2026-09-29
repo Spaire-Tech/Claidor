@@ -79,7 +79,7 @@ class TestWhoMaySpeak:
         )
         assert response.status_code == 401
 
-    async def test_an_unconfigured_claidor_accepts_nobody(
+    async def test_an_unconfigured_server_accepts_nobody(
         self, client: httpx.AsyncClient, mocker: MockerFixture
     ) -> None:
         """A missing secret must never read as « no secret needed »."""
@@ -221,7 +221,7 @@ class TestTheQueueOverTheWire:
             # exists). A cloud agent's turn would carry `conversation` too.
             "executor": "maty-runner",
         }
-        assert body["access_token"].startswith("claidor_da_")
+        assert body["access_token"].startswith("simeon_da_")
         assert datetime.fromisoformat(body["expires_at"]) > utc_now()
 
     async def test_the_job_s_token_reaches_the_shared_memory(

@@ -1,5 +1,5 @@
-import { RunnerQueue } from './claidor.js';
-import type { ClaimedJob, JobState } from './claidor.js';
+import { RunnerQueue } from './api.js';
+import type { ClaimedJob, JobState } from './api.js';
 import { runOnExecutor } from './executor.js';
 import type { JobResult } from './job.js';
 import { log, reasonOf } from './log.js';
@@ -56,7 +56,7 @@ export const turn = async (settings: RunnerSettings, deps: LoopDeps): Promise<bo
         }
       })
       .catch((error) => {
-        log.warn(`job ${claimed.job.id}: the heartbeat did not reach Claidor: ${reasonOf(error)}`);
+        log.warn(`job ${claimed.job.id}: the heartbeat did not reach the API: ${reasonOf(error)}`);
       });
   }, settings.heartbeatIntervalMs);
 
@@ -76,7 +76,7 @@ export const turn = async (settings: RunnerSettings, deps: LoopDeps): Promise<bo
       await deps.queue.fail(claimed.job.id, cancelled ? CANCELLED_REASON : reasonOf(error), retryable);
     } catch (reportError) {
       // The lease will lapse and the job will come back on its own.
-      log.error(`job ${claimed.job.id}: the failure did not reach Claidor either`, reportError);
+      log.error(`job ${claimed.job.id}: the failure did not reach the API either`, reportError);
     }
   } finally {
     clearInterval(beat);

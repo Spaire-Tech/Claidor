@@ -1,8 +1,8 @@
 {
-  "name": "claidor-maty-runner",
+  "name": "simeon-runner",
   "version": "0.1.0",
   "private": true,
-  "description": "Simeon Labs' cloud runner: takes one Maty job at a time and runs it as one model turn through Claidor's metered proxy.",
+  "description": "Simeon Labs' cloud runner: takes one Maty job at a time and runs it as one model turn through the API's metered proxy.",
   "license": "Apache-2.0",
   "type": "module",
   "engines": {

@@ -15,7 +15,9 @@ if TYPE_CHECKING:
 
 from .member import Member
 
-MEMBER_SESSION_TOKEN_PREFIX = "claidor_mst_"
+MEMBER_SESSION_TOKEN_PREFIX = "simeon_mst_"
+# Sessions made before the rename carry the earlier prefix and stay valid.
+MEMBER_SESSION_TOKEN_PREFIXES = (MEMBER_SESSION_TOKEN_PREFIX, "claidor_mst_")
 
 
 def get_expires_at() -> datetime:

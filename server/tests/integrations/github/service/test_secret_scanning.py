@@ -84,12 +84,12 @@ class TestValidatePayload:
                 [
                     {
                         "token": "TOKEN",
-                        "type": "claidor_personal_access_token",
+                        "type": "simeon_personal_access_token",
                         "source": "github",
                     },
                     {
                         "token": "TOKEN",
-                        "type": "claidor_client_secret",
+                        "type": "simeon_client_secret",
                         "source": "github",
                         "url": "https://example.com",
                     },
@@ -100,7 +100,7 @@ class TestValidatePayload:
                 [
                     {
                         "token": "TOKEN",
-                        "type": "CLAIDOR_PERSONAL_ACCESS_TOKEN",
+                        "type": "SIMEON_PERSONAL_ACCESS_TOKEN",
                         "source": "github",
                     }
                 ],

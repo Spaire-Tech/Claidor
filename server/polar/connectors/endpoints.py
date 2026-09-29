@@ -18,14 +18,14 @@ ANY    /desktop/api/connectors/mcp/{slug}
 ```
 
 Every one of them answers 402 when the person is not entitled and 503
-when Claidor has no connection service configured at all. The gate is
+when Simeon has no connection service configured at all. The gate is
 here rather than in the app because an app can be patched and a server
 cannot (section 5).
 
 **Why any of this is a proxy.** The provider's developer token is
 project-wide: whoever holds it can name any external user id in a header
 and reach that person's accounts. So the desktop app holds only its own
-Claidor session token, and this module adds the developer credential and
+Simeon session token, and this module adds the developer credential and
 pins the external user id to the person that session belongs to. The
 single most important line in the file is in `mcp`, where the target's
 headers are applied *after* anything copied from the request, and the
@@ -97,7 +97,7 @@ MCP_TIMEOUT = httpx.Timeout(600.0, connect=30.0)
 
 def _not_configured() -> JSONResponse:
     return JSONResponse(
-        {"detail": "Connections are not configured on this Claidor."}, status_code=503
+        {"detail": "Connections are not configured on this server."}, status_code=503
     )
 
 
@@ -215,7 +215,7 @@ async def mcp(
     if refusal is not None:
         return refusal
     if not SLUG_PATTERN.match(slug):
-        return _bad_request("That is not a service Claidor can connect.")
+        return _bad_request("That is not a service Simeon can connect.")
 
     provider: ConnectorProvider = connectors.provider(redis)
     try:
@@ -285,7 +285,7 @@ async def link(
     if refusal is not None:
         return refusal
     if not SLUG_PATTERN.match(slug):
-        return _bad_request("That is not a service Claidor can connect.")
+        return _bad_request("That is not a service Simeon can connect.")
     provider = connectors.provider(redis)
     try:
         connector_link = await provider.link(user, slug)
@@ -320,7 +320,7 @@ async def disconnect(
     if refusal is not None:
         return refusal
     if not ACCOUNT_ID_PATTERN.match(account_id):
-        return _bad_request("That is not a connection Claidor can remove.")
+        return _bad_request("That is not a connection Simeon can remove.")
     provider = connectors.provider(redis)
     try:
         await provider.disconnect(user, account_id)

@@ -11,7 +11,7 @@ from polar.auth.models import AuthSubject, Organization, User
 from polar.config import settings
 from polar.customer.repository import CustomerRepository
 from polar.enums import TokenType
-from polar.exceptions import ClaidorRequestValidationError
+from polar.exceptions import SimeonRequestValidationError
 from polar.kit.crypto import generate_token_hash_pair, get_token_hash
 from polar.kit.services import ResourceServiceReader
 from polar.kit.utils import utc_now
@@ -25,7 +25,9 @@ from .schemas import CustomerSessionCreate, CustomerSessionCustomerIDCreate
 
 log: Logger = structlog.get_logger()
 
-CUSTOMER_SESSION_TOKEN_PREFIX = "claidor_cst_"
+CUSTOMER_SESSION_TOKEN_PREFIX = "simeon_cst_"
+# Sessions made before the rename carry the earlier prefix and stay valid.
+CUSTOMER_SESSION_TOKEN_PREFIXES = (CUSTOMER_SESSION_TOKEN_PREFIX, "claidor_cst_")
 
 
 class CustomerSessionService(ResourceServiceReader[CustomerSession]):
@@ -56,7 +58,7 @@ class CustomerSessionService(ResourceServiceReader[CustomerSession]):
         customer = await repository.get_one_or_none(statement)
 
         if customer is None:
-            raise ClaidorRequestValidationError(
+            raise SimeonRequestValidationError(
                 [
                     {
                         "loc": ("body", id_field),
@@ -75,7 +77,7 @@ class CustomerSessionService(ResourceServiceReader[CustomerSession]):
                 session, customer.id
             )
             if owner_member is None:
-                raise ClaidorRequestValidationError(
+                raise SimeonRequestValidationError(
                     [
                         {
                             "loc": ("body", id_field),

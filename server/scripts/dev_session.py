@@ -15,7 +15,7 @@ row and hands back the plaintext token — with no email in the middle.
 It prints the cookie to set. Drive a browser with it, or:
 
     curl -s http://127.0.0.1:8000/v1/tieout/deals \\
-      -H "Cookie: claidor_session=<token>"
+      -H "Cookie: simeon_session=<token>"
 
 Refuses to run outside development, because a script that mints a session
 for an arbitrary user is exactly what it looks like.

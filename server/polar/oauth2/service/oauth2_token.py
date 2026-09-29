@@ -112,7 +112,7 @@ class OAuth2TokenService(ResourceServiceReader[OAuth2Token]):
             )
             enqueue_email(
                 to_email_addr=recipient,
-                subject="Security Notice - Your Claidor Access Token has been leaked",
+                subject="Security Notice - Your Simeon Access Token has been leaked",
                 html_content=body,
             )
 

@@ -8,7 +8,7 @@ from starlette.types import ASGIApp, Receive, Send
 from starlette.types import Scope as ASGIScope
 
 from polar.customer_session.service import (
-    CUSTOMER_SESSION_TOKEN_PREFIX,
+    CUSTOMER_SESSION_TOKEN_PREFIXES,
 )
 from polar.customer_session.service import (
     customer_session as customer_session_service,
@@ -26,7 +26,7 @@ from polar.models import (
     PersonalAccessToken,
     UserSession,
 )
-from polar.models.member_session import MEMBER_SESSION_TOKEN_PREFIX
+from polar.models.member_session import MEMBER_SESSION_TOKEN_PREFIXES
 from polar.oauth2.constants import is_registration_token_prefix
 from polar.oauth2.exception_handlers import OAuth2Error, oauth2_error_exception_handler
 from polar.oauth2.exceptions import InvalidTokenError
@@ -147,8 +147,8 @@ async def get_auth_subject(
         if is_desktop_access_token(token):
             return AuthSubject(Anonymous(), set(), None)
 
-        # Try MemberSession first (claidor_mst_ prefix)
-        if token.startswith(MEMBER_SESSION_TOKEN_PREFIX):
+        # Try MemberSession first (simeon_mst_, or the earlier claidor_mst_)
+        if token.startswith(MEMBER_SESSION_TOKEN_PREFIXES):
             member_session = await get_member_session(session, token)
             if member_session:
                 return AuthSubject(
@@ -158,7 +158,7 @@ async def get_auth_subject(
                 )
             raise InvalidTokenError()
 
-        if token.startswith(CUSTOMER_SESSION_TOKEN_PREFIX):
+        if token.startswith(CUSTOMER_SESSION_TOKEN_PREFIXES):
             customer_session = await get_customer_session(session, token)
             if customer_session:
                 customer = customer_session.customer

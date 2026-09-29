@@ -149,7 +149,7 @@ class ValidationError(TypedDict):
     url: NotRequired[str]
 
 
-class ClaidorRequestValidationError(PolarError):
+class SimeonRequestValidationError(PolarError):
     def __init__(self, errors: Sequence[ValidationError]) -> None:
         self._errors = errors
 

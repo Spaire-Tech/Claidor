@@ -19,7 +19,7 @@ Plus the two plain routes the app posts to at the root of the API host:
 `local-exec-daemon.ts:23`), and the reverse proxy in `box_proxy.py`.
 
 Every failure is one sentence: the host's (`BoxHostError`), or
-"Simeon's cloud computer needs a host; set CLAIDOR_BOX_HOST_PROVIDER"
+"Simeon's cloud computer needs a host; set SIMEON_BOX_HOST_PROVIDER"
 as `unavailable` when none is configured, which `setBoxRuntime` shows and
 falls back from.
 """

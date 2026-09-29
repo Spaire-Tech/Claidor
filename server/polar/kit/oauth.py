@@ -131,7 +131,9 @@ async def validate_callback(
     if not state:
         raise OAuthCallbackError("No state")
 
-    cookie_nonce = request.cookies.get(settings.OAUTH_STATE_COOKIE_KEY)
+    cookie_nonce = request.cookies.get(
+        settings.OAUTH_STATE_COOKIE_KEY
+    ) or request.cookies.get(settings.LEGACY_OAUTH_STATE_COOKIE_KEY)
     if cookie_nonce is None:
         raise OAuthCallbackError("Invalid session cookie")
 

@@ -1604,7 +1604,7 @@ async def impersonate_user(
     response = HXRedirectResponse(request, redirect_url, 303)
 
     # Get current admin session token
-    current_token = request.cookies.get(settings.USER_SESSION_COOKIE_KEY)
+    current_token = auth_service.session_token(request)
 
     # Preserve admin session in impersonation cookie
     if current_token:

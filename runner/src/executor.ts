@@ -1,18 +1,16 @@
-import type { ClaimedJob } from './claidor.js';
-import { MATY_RUNNER_EXECUTOR } from './claidor.js';
+import type { ClaimedJob } from './api.js';
+import { MATY_RUNNER_EXECUTOR } from './api.js';
 import { runJob } from './job.js';
 import type { JobResult } from './job.js';
 import type { RunnerSettings } from './settings.js';
 
 /**
- * The seam between the queue and whatever does the work (25 September
- * 2026, `docs/product/box-substrate-read.md`: "keep the queue, change the
- * executor").
+ * The seam between the queue and whatever does the work.
  *
- * Claidor names an executor on every claimed job (`executor`, default
+ * The API names an executor on every claimed job (`executor`, default
  * `maty-runner`). Today there is exactly one: this process, a Render
- * container with no Docker, which lays out the person's memory, starts
- * the engine and asks it the job's conversation — a cloud agent's turn
+ * container with no Docker, which lays out the person's memory and
+ * asks the model the job's conversation — a cloud agent's turn
  * runs on it as "read a file, call a model, write the reply back", and
  * branch, pull request and diff stay empty. The box executor (a clone, a
  * shell, a commit, a PR) registers here under its own name when it
@@ -25,7 +23,7 @@ export interface Executor {
 
 export class UnknownExecutor extends Error {
   constructor(name: string) {
-    super(`Claidor asked for the '${name}' executor, which this runner does not have.`);
+    super(`The API asked for the '${name}' executor, which this runner does not have.`);
     this.name = 'UnknownExecutor';
   }
 }

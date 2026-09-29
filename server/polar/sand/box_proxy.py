@@ -4,7 +4,7 @@ Cursor's pod proxy stood between the app and the box: per-port hostnames
 (`<pod>-1340.…`, `<pod>-6080.…`, `<pod>-8790.…`), TLS, and a check of
 `x-anyrun-network-token` on every request. This module is that proxy when
 no TLS proxy of the founder's serves per-port hostnames
-(`CLAIDOR_BOX_PUBLIC_URL_TEMPLATE` empty):
+(`SIMEON_BOX_PUBLIC_URL_TEMPLATE` empty):
 
     https://api.simeonlabs.com/sand-box/{box_id}/p/{port}/{path}
 

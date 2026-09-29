@@ -65,7 +65,7 @@ class TestCreate:
             scopes={Scope.products_read},
         )
 
-        assert token.startswith("claidor_pat_")
+        assert token.startswith("simeon_pat_")
         # What is stored must be the hash, never the token. If these were
         # ever equal, a database read would be a credential.
         assert record.token != token
@@ -173,7 +173,7 @@ class TestCreateRoute:
 
         assert response.status_code == 201
         body = response.json()
-        assert body["token"].startswith("claidor_pat_")
+        assert body["token"].startswith("simeon_pat_")
         assert body["personal_access_token"]["scopes"] == ["products:read"]
         assert body["personal_access_token"]["comment"] == "Script on my laptop"
 
@@ -244,5 +244,5 @@ class TestCreateRoute:
         # make the test above pass for the wrong reason.
         with pytest.raises(InvalidTokenError):
             await get_auth_subject(
-                request_carrying("claidor_pat_notarealtokenatall"), session
+                request_carrying("simeon_pat_notarealtokenatall"), session
             )

@@ -191,7 +191,7 @@ class TestBoxCredential:
         assert (
             await client.post(
                 "/sand-box/inference-credential",
-                json={"credential": "claidor_dr_notabox"},
+                json={"credential": "simeon_dr_notabox"},
             )
         ).status_code == 401
         assert (

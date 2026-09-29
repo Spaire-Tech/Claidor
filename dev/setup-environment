@@ -32,8 +32,8 @@ ROOT_PATH = pathlib.Path(__file__).parent.parent
 IS_CODESPACES = os.getenv("CODESPACES", "false") == "true"
 SECRETS_FILE_PATH = pathlib.Path(
     os.environ.get(
-        "CLAIDOR_SECRETS_FILE",
-        pathlib.Path.home() / ".config" / "claidor" / "secrets.env",
+        "SIMEON_SECRETS_FILE",
+        pathlib.Path.home() / ".config" / "simeon" / "secrets.env",
     )
 )
 SETUP_PAGE = """
@@ -242,17 +242,17 @@ def _save_github_app_to_secrets(github_app: dict[str, typing.Any]) -> None:
     secrets = _load_central_secrets()
     secrets.update(
         {
-            "CLAIDOR_GITHUB_APP_NAMESPACE": github_app["slug"],
-            "CLAIDOR_GITHUB_CLIENT_ID": github_app["client_id"],
-            "CLAIDOR_GITHUB_CLIENT_SECRET": github_app["client_secret"],
-            "CLAIDOR_GITHUB_APP_WEBHOOK_SECRET": github_app["webhook_secret"],
-            "CLAIDOR_GITHUB_APP_IDENTIFIER": str(github_app["id"]),
-            "CLAIDOR_GITHUB_APP_PRIVATE_KEY": github_app["pem"],
-            "CLAIDOR_GITHUB_REPOSITORY_BENEFITS_APP_NAMESPACE": github_app["slug"],
-            "CLAIDOR_GITHUB_REPOSITORY_BENEFITS_APP_IDENTIFIER": str(github_app["id"]),
-            "CLAIDOR_GITHUB_REPOSITORY_BENEFITS_APP_PRIVATE_KEY": github_app["pem"],
-            "CLAIDOR_GITHUB_REPOSITORY_BENEFITS_CLIENT_ID": github_app["client_id"],
-            "CLAIDOR_GITHUB_REPOSITORY_BENEFITS_CLIENT_SECRET": github_app[
+            "SIMEON_GITHUB_APP_NAMESPACE": github_app["slug"],
+            "SIMEON_GITHUB_CLIENT_ID": github_app["client_id"],
+            "SIMEON_GITHUB_CLIENT_SECRET": github_app["client_secret"],
+            "SIMEON_GITHUB_APP_WEBHOOK_SECRET": github_app["webhook_secret"],
+            "SIMEON_GITHUB_APP_IDENTIFIER": str(github_app["id"]),
+            "SIMEON_GITHUB_APP_PRIVATE_KEY": github_app["pem"],
+            "SIMEON_GITHUB_REPOSITORY_BENEFITS_APP_NAMESPACE": github_app["slug"],
+            "SIMEON_GITHUB_REPOSITORY_BENEFITS_APP_IDENTIFIER": str(github_app["id"]),
+            "SIMEON_GITHUB_REPOSITORY_BENEFITS_APP_PRIVATE_KEY": github_app["pem"],
+            "SIMEON_GITHUB_REPOSITORY_BENEFITS_CLIENT_ID": github_app["client_id"],
+            "SIMEON_GITHUB_REPOSITORY_BENEFITS_CLIENT_SECRET": github_app[
                 "client_secret"
             ],
             # Frontend env vars (used by Docker web container)
@@ -298,43 +298,43 @@ def _write_server_env_file(github_app: dict[str, typing.Any] | None = None) -> N
     replacements = {**replacements, **central_secrets}
 
     # Map backend secrets to frontend env vars (used by Docker web container)
-    if "CLAIDOR_STRIPE_PUBLISHABLE_KEY" in replacements:
+    if "SIMEON_STRIPE_PUBLISHABLE_KEY" in replacements:
         replacements["NEXT_PUBLIC_STRIPE_KEY"] = replacements[
-            "CLAIDOR_STRIPE_PUBLISHABLE_KEY"
+            "SIMEON_STRIPE_PUBLISHABLE_KEY"
         ]
-    if "CLAIDOR_GITHUB_APP_NAMESPACE" in replacements:
+    if "SIMEON_GITHUB_APP_NAMESPACE" in replacements:
         replacements["NEXT_PUBLIC_GITHUB_APP_NAMESPACE"] = replacements[
-            "CLAIDOR_GITHUB_APP_NAMESPACE"
+            "SIMEON_GITHUB_APP_NAMESPACE"
         ]
 
     if IS_CODESPACES:
         replacements = {
             **replacements,
-            "CLAIDOR_ALLOWED_HOSTS": json.dumps(
+            "SIMEON_ALLOWED_HOSTS": json.dumps(
                 [
                     f"{os.environ['CODESPACE_NAME']}-8080.{os.environ['GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN']}",
                     "localhost:3000",
                     "127.0.0.1:3000",
                 ]
             ),
-            "CLAIDOR_FRONTEND_BASE_URL": f"https://{os.environ['CODESPACE_NAME']}-8080.{os.environ['GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN']}",
-            "CLAIDOR_CHECKOUT_BASE_URL": f"https://{os.environ['CODESPACE_NAME']}-8080.{os.environ['GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN']}/v1/checkout-links/{{client_secret}}/redirect",
-            "CLAIDOR_USER_SESSION_COOKIE_DOMAIN": f"{os.environ['CODESPACE_NAME']}-8080.{os.environ['GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN']}",
+            "SIMEON_FRONTEND_BASE_URL": f"https://{os.environ['CODESPACE_NAME']}-8080.{os.environ['GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN']}",
+            "SIMEON_CHECKOUT_BASE_URL": f"https://{os.environ['CODESPACE_NAME']}-8080.{os.environ['GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN']}/v1/checkout-links/{{client_secret}}/redirect",
+            "SIMEON_USER_SESSION_COOKIE_DOMAIN": f"{os.environ['CODESPACE_NAME']}-8080.{os.environ['GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN']}",
         }
     if github_app is not None:
         replacements = {
             **replacements,
-            "CLAIDOR_GITHUB_APP_NAMESPACE": github_app["slug"],
-            "CLAIDOR_GITHUB_CLIENT_ID": github_app["client_id"],
-            "CLAIDOR_GITHUB_CLIENT_SECRET": github_app["client_secret"],
-            "CLAIDOR_GITHUB_APP_WEBHOOK_SECRET": github_app["webhook_secret"],
-            "CLAIDOR_GITHUB_APP_IDENTIFIER": github_app["id"],
-            "CLAIDOR_GITHUB_APP_PRIVATE_KEY": github_app["pem"],
-            "CLAIDOR_GITHUB_REPOSITORY_BENEFITS_APP_NAMESPACE": github_app["slug"],
-            "CLAIDOR_GITHUB_REPOSITORY_BENEFITS_APP_IDENTIFIER": github_app["id"],
-            "CLAIDOR_GITHUB_REPOSITORY_BENEFITS_APP_PRIVATE_KEY": github_app["pem"],
-            "CLAIDOR_GITHUB_REPOSITORY_BENEFITS_CLIENT_ID": github_app["client_id"],
-            "CLAIDOR_GITHUB_REPOSITORY_BENEFITS_CLIENT_SECRET": github_app[
+            "SIMEON_GITHUB_APP_NAMESPACE": github_app["slug"],
+            "SIMEON_GITHUB_CLIENT_ID": github_app["client_id"],
+            "SIMEON_GITHUB_CLIENT_SECRET": github_app["client_secret"],
+            "SIMEON_GITHUB_APP_WEBHOOK_SECRET": github_app["webhook_secret"],
+            "SIMEON_GITHUB_APP_IDENTIFIER": github_app["id"],
+            "SIMEON_GITHUB_APP_PRIVATE_KEY": github_app["pem"],
+            "SIMEON_GITHUB_REPOSITORY_BENEFITS_APP_NAMESPACE": github_app["slug"],
+            "SIMEON_GITHUB_REPOSITORY_BENEFITS_APP_IDENTIFIER": github_app["id"],
+            "SIMEON_GITHUB_REPOSITORY_BENEFITS_APP_PRIVATE_KEY": github_app["pem"],
+            "SIMEON_GITHUB_REPOSITORY_BENEFITS_CLIENT_ID": github_app["client_id"],
+            "SIMEON_GITHUB_REPOSITORY_BENEFITS_CLIENT_SECRET": github_app[
                 "client_secret"
             ],
             # Also set frontend env vars
@@ -363,7 +363,7 @@ def _write_apps_web_env_file(github_app: dict[str, typing.Any] | None = None) ->
 
 
 def _generate_jwks() -> None:
-    options = {"kid": "claidor_dev", "use": "sig"}
+    options = {"kid": "simeon_dev", "use": "sig"}
     key = JsonWebKey.generate_key("RSA", 2048, options, is_private=True)
     keyset = KeySet(keys=[key])
     json_keyset = keyset.as_json(is_private=True)

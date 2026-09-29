@@ -2,7 +2,7 @@
 (`polar/connectors/endpoints.py`, `polar/connectors/service.py`).
 
 Three things are checked here that cannot be checked anywhere else: the
-gate answers on every route, an unconfigured Claidor says so rather than
+gate answers on every route, an unconfigured Simeon says so rather than
 failing, and — the one the whole design rests on — the person an MCP
 conversation is about is the person holding the session token, whatever
 the request says about it.
@@ -33,7 +33,7 @@ CONNECT_LINK = (
 
 
 def configure(mocker: MockerFixture) -> None:
-    """A Claidor with a connection service behind it."""
+    """A Simeon with a connection service behind it."""
     mocker.patch.object(settings, "PIPEDREAM_CLIENT_ID", "pd-client-id")
     mocker.patch.object(settings, "PIPEDREAM_CLIENT_SECRET", "pd-client-secret")
     mocker.patch.object(settings, "PIPEDREAM_PROJECT_ID", PROJECT_ID)
@@ -159,7 +159,7 @@ class TestTheGate:
 
 @pytest.mark.asyncio
 class TestNotConfigured:
-    async def test_a_claidor_with_no_connection_service_says_so(
+    async def test_a_server_with_no_connection_service_says_so(
         self,
         client: httpx.AsyncClient,
         session: AsyncSession,
@@ -294,7 +294,7 @@ class TestTheExternalUserId:
     Their developer token is project-wide: it reaches whichever person
     the `x-pd-external-user-id` header names. If a client could set that
     header — or the query parameter their server also accepts — it could
-    read every customer Claidor has.
+    read every customer Simeon has.
     """
 
     async def test_the_person_is_the_session_and_no_header_changes_it(

@@ -32,7 +32,11 @@ import structlog
 from polar.config import settings
 from polar.desktop.repository import DesktopSessionRepository
 from polar.desktop.service import DesktopUnauthenticated, desktop
-from polar.desktop.tokens import ACCESS_TOKEN_PREFIX, BOX_CREDENTIAL_PREFIX
+from polar.desktop.tokens import (
+    ACCESS_TOKEN_PREFIX,
+    BOX_CREDENTIAL_PREFIX,
+    BOX_CREDENTIAL_PREFIXES,
+)
 from polar.kit.crypto import generate_token_hash_pair, get_token_hash
 from polar.kit.utils import generate_uuid, utc_now
 from polar.models import DesktopSession, SandBox
@@ -221,7 +225,7 @@ def set_health_check_for_tests(check: HealthCheck | None) -> None:
 # pod with `AdminHibernateSandBox(force)`, which answers `started`/`reason`,
 # and reported `SAND_BOX_RUN_STATE_HIBERNATED`, which the window draws as
 # "sleeping" and "Waking your computer…". How long Cursor waited before
-# hibernating is not in the client; `CLAIDOR_BOX_IDLE_HIBERNATE_AFTER` is ours.
+# hibernating is not in the client; `SIMEON_BOX_IDLE_HIBERNATE_AFTER` is ours.
 
 
 @dataclass(frozen=True)
@@ -336,7 +340,7 @@ class BoxBrokerService:
 
     @classmethod
     def public_base(cls, box: SandBox, inner_port: int) -> str:
-        """What the app is told. With `CLAIDOR_BOX_PUBLIC_URL_TEMPLATE` the
+        """What the app is told. With `SIMEON_BOX_PUBLIC_URL_TEMPLATE` the
         per-port hostname a TLS proxy on the box VM serves (first label
         `<box>-<port>`, which is the `-<digits>` shape the tunnel
         derivation swaps for `-8790`); without it the API's own proxy,
@@ -796,7 +800,7 @@ class BoxBrokerService:
         """The sleeper, every minute (`box_tasks.py`): each box the broker
         left running on this host is asked how it is; one that holds work
         stays awake and has its `last_active_at` moved; one that has been
-        idle for `CLAIDOR_BOX_IDLE_HIBERNATE_AFTER`, and that no app is
+        idle for `SIMEON_BOX_IDLE_HIBERNATE_AFTER`, and that no app is
         attached to through the proxy, is put to sleep."""
         after = settings.BOX_IDLE_HIBERNATE_AFTER
         if after.total_seconds() <= 0:
@@ -974,7 +978,7 @@ class BoxBrokerService:
         if (
             not token
             or not token.isascii()
-            or not token.startswith(BOX_CREDENTIAL_PREFIX)
+            or not token.startswith(BOX_CREDENTIAL_PREFIXES)
         ):
             raise BoxBrokerRefused(
                 "unauthenticated", "The local-exec credential is invalid."

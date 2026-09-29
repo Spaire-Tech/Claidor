@@ -115,7 +115,7 @@ class TierEntitlements:
     limits: TierLimits
     features: TierFeatures
     rate_limit_group: str
-    # The monthly fee Claidor charges for this tier itself (informational —
+    # The monthly fee Simeon charges for this tier itself (informational —
     # the actual billing is driven by the platform-org subscription).
     monthly_price_cents: int
     # Soft overage grace above the limit, expressed as a percent. Legacy
@@ -256,7 +256,7 @@ _STARTER = TierEntitlements(
         cohort_analytics=False,
         custom_pricing_negotiation=False,
         customer_wallet=False,
-        # Sandbox is a separate environment (sandbox.claidorhq.com)
+        # Sandbox is a separate environment (its own API host)
         # available to every creator; the entitlement is informational
         # and not used as a require_feature gate.
         sandbox_mode=True,

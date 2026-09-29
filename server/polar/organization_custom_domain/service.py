@@ -23,7 +23,9 @@ from .schemas import CustomDomainDNSRecord
 
 log: structlog.stdlib.BoundLogger = structlog.get_logger()
 
-VERIFICATION_TXT_PREFIX = "_claidor-verify"
+VERIFICATION_TXT_PREFIX = "_simeon-verify"
+# Domains set up before the rename carry their record under this name.
+LEGACY_VERIFICATION_TXT_PREFIX = "_claidor-verify"
 
 _LABEL_RE = re.compile(r"^(?!-)[a-z0-9-]{1,63}(?<!-)$")
 _TLD_RE = re.compile(r"^[a-z]{2,63}$")
@@ -84,7 +86,7 @@ def _platform_hostnames() -> set[str]:
 
 def _platform_parent_domains() -> set[str]:
     # Registrable parent (last two labels) of every platform hostname —
-    # good enough to fence off claidorhq.com and its subdomains.
+    # good enough to fence off simeonlabs.com and its subdomains.
     parents: set[str] = set()
     for hostname in _platform_hostnames():
         labels = hostname.split(".")
@@ -230,6 +232,11 @@ class OrganizationCustomDomainService:
             f"{VERIFICATION_TXT_PREFIX}.{custom_domain.domain}", "TXT"
         )
         txt_ok = custom_domain.verification_token in txt_values
+        if not txt_ok:
+            legacy_values = await dns.resolve(
+                f"{LEGACY_VERIFICATION_TXT_PREFIX}.{custom_domain.domain}", "TXT"
+            )
+            txt_ok = custom_domain.verification_token in legacy_values
 
         cname_values = await dns.resolve(custom_domain.domain, "CNAME")
         cname_ok = settings.CUSTOM_DOMAIN_CNAME_TARGET in cname_values

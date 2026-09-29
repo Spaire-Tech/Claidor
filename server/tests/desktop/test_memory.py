@@ -34,7 +34,7 @@ def _sent(name: str, content: str, base_version: int = 0) -> IncomingMemoryFile:
 
 @pytest.mark.asyncio
 class TestSyncMemoryFiles:
-    async def test_a_file_claidor_does_not_have_is_stored_as_sent_at_version_1(
+    async def test_a_file_the_server_does_not_have_is_stored_as_sent_at_version_1(
         self, session: AsyncSession, user: User
     ) -> None:
         synced = await desktop.sync_memory_files(
@@ -143,7 +143,7 @@ class TestSyncMemoryFiles:
             ("USER.md", True),
         ]
 
-    async def test_a_name_claidor_does_not_keep_refuses_the_whole_sync(
+    async def test_a_name_the_server_does_not_keep_refuses_the_whole_sync(
         self, session: AsyncSession, user: User
     ) -> None:
         with pytest.raises(DesktopMemoryRefused):
@@ -318,7 +318,7 @@ class TestSyncMemoryFiles:
         assert synced.deleted == []
         assert await desktop.list_memory_files(session, user) == []
 
-    async def test_a_deleted_name_claidor_does_not_keep_refuses_the_sync(
+    async def test_a_deleted_name_the_server_does_not_keep_refuses_the_sync(
         self, session: AsyncSession, user: User
     ) -> None:
         with pytest.raises(DesktopMemoryRefused):
@@ -408,7 +408,7 @@ class TestMemoryEndpoints:
             "files": [{"name": "USER.md", "version": 1, "size": 6}]
         }
 
-    async def test_a_name_claidor_does_not_keep_is_refused_on_the_wire(
+    async def test_a_name_the_server_does_not_keep_is_refused_on_the_wire(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:
         headers = await _bearer(client, session, user)

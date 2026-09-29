@@ -232,7 +232,7 @@ class TestEnsureStarterTrialSubscription:
         )
 
         existing_customer = Customer(
-            email=f"creator-{creator.slug}@billing.claidorhq.internal",
+            email=f"creator-{creator.slug}@billing.simeonlabs.internal",
             name=creator.name,
             organization_id=platform_org.id,
             user_metadata={"creator_org_id": str(creator.id)},
@@ -254,3 +254,12 @@ class TestEnsureStarterTrialSubscription:
             )
         ).scalar_one()
         assert customer_count == 1
+
+
+def test_both_placeholder_domains_are_recognised() -> None:
+    from polar.platform.contacts import is_placeholder_email
+
+    assert is_placeholder_email("creator-a@billing.simeonlabs.internal")
+    # Customers provisioned before the rename.
+    assert is_placeholder_email("creator-a@billing.claidorhq.internal")
+    assert not is_placeholder_email("person@example.com")

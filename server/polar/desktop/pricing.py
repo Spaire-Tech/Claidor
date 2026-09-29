@@ -453,9 +453,9 @@ def video_models(models: Sequence[DesktopModel]) -> tuple[DesktopModel, ...]:
 
 #: Who the models belong to, in OpenAI's `owned_by` field. Their own
 #: servers put the vendor there; ours puts us, because from a client's
-#: side of the proxy these are Claidor's models at Claidor's prices,
+#: side of the proxy these are Simeon's models at Simeon's prices,
 #: whoever runs the hardware.
-MODELS_OWNER = "claidor"
+MODELS_OWNER = "simeonlabs"
 
 
 def openai_models_list(
@@ -839,7 +839,7 @@ def usage_from_answer(spoken: SpokenApi, answer: Any) -> Usage:
 # web fetch, image generation and audio transcription. Fetch runs on the
 # person's machine and costs nothing here. The other three are served by
 # the routes in `polar.desktop.capabilities`, each on OpenAI with
-# Claidor's key, and each priced below in the same unit as everything
+# Simeon's key, and each priced below in the same unit as everything
 # else so the usage table keeps meaning one thing.
 #
 # ⚠️ **None of the four dollar figures below has been checked against a
