@@ -85,9 +85,8 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(mainEdge, /invoke\(deps\.settingsStore, "setInferenceProvider", provider\)/);
   assert.match(mainEdge, /return \{ provider, usage:/);
   assert.match(mainEdge, /invoke\(deps\.boxRecovery, "restartCoordinator"\)/);
-  // "remote" is probed through the box recovery before the local box is stopped (25 September 2026).
-  assert.match(mainEdge, /mode === "local-docker"\) await startLocalDockerBox\(settingsPath\); else \{ await Promise\.resolve\(invoke\(deps\.boxRecovery, "probeRemoteBox"\)\); await stopLocalDockerBox\(\); \}/);
-  assert.match(mainEdge, /setBoxRuntime", mode === "local-docker" \? "remote" : "local-docker"/);
+  // No computer switch since 29 September 2026: the cloud, as in Grok Bot.
+  assert.match(mainEdge, /Simeon runs on its cloud computer; there is nothing to switch\./);
   assert.match(localDocker, /public\.ecr\.aws\/k0i0n2g5\/cursorenvironments\/universal:sand-box-latest/);
   assert.match(localDocker, /"127\.0\.0\.1:1340:1340"/);
   assert.match(localDocker, /SAND_BOX_AUTO_UPDATE=0/);
