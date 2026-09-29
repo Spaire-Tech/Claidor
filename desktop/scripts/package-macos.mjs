@@ -12,6 +12,7 @@ import {
 import { buildFidelityReconstructedAsar } from "./clean-build.mjs";
 import { signAppBundleAdHoc } from "./lib/codesign.mjs";
 import { renameMacBundleIdentity } from "./lib/macos-bundle-rename.mjs";
+import { plistIdentityRewrites } from "./lib/macos-plist-identity.mjs";
 import { verifyOfficialMacReference, verifyReconstructedMacPackage } from "./lib/macos-package-verification.mjs";
 import { capture, run } from "./lib/process.mjs";
 import { SYSTEM_TOOLS } from "./lib/system-tools.mjs";
@@ -109,6 +110,27 @@ const renamed = await renameMacBundleIdentity({
   },
   log: (line) => console.log(`[package] ${line}`),
 });
+
+// Every plist in the bundle, main and helpers: the copyright line, the
+// permission prompts and the helper bundle ids name Simeon, not the 0.18.0
+// shell's maker (scripts/lib/macos-plist-identity.mjs). Before signing, as
+// the signature covers them.
+{
+  const frameworks = path.join(outputApp, "Contents", "Frameworks");
+  const helperPlists = (await readdir(frameworks).catch(() => []))
+    .filter((entry) => entry.endsWith(".app"))
+    .map((entry) => path.join(frameworks, entry, "Contents", "Info.plist"));
+  for (const [file, role] of [[infoPlist, "main"], ...helperPlists.map((file) => [file, "helper"])]) {
+    const json = await capture(SYSTEM_TOOLS.plutil, ["-convert", "json", "-o", "-", file]).catch(() => null);
+    if (json == null) { console.warn(`[package] ${file}: could not read as JSON; its strings were not checked`); continue; }
+    const { rewrites, reported } = plistIdentityRewrites(JSON.parse(json), { bundleId: simeonBundleId, name: simeonName, role });
+    for (const [key, value] of Object.entries(rewrites)) {
+      await run(SYSTEM_TOOLS.plutil, ["-replace", key, "-string", value, file]);
+      console.log(`[package] ${path.relative(outputApp, file)}: ${key} -> ${value}`);
+    }
+    for (const key of reported) console.warn(`[package] ${path.relative(outputApp, file)}: ${key} still names the shell's maker and was left as it is`);
+  }
+}
 
 await rm(path.join(outputApp, "Contents", "_CodeSignature"), { recursive: true, force: true });
 try {

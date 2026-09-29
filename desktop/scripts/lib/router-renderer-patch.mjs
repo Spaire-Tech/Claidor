@@ -63,6 +63,31 @@ export const BRAND_WORD_REPLACEMENTS = Object.freeze([
 ]);
 
 /**
+ * Whole sentences of the pinned window's copy that named Cursor, as they
+ * read after the pass above (29 September 2026). A full sentence cannot be
+ * an identifier, so these are safe to rewrite in minified code; each is
+ * counted in the record like the words above. Found by reading every string
+ * of the patched window for Cursor, Grok and Anysphere.
+ */
+export const BRAND_PHRASE_REPLACEMENTS = Object.freeze([
+  ["Sign In with Cursor", "Sign In"],
+  ["Signed in to Cursor", "Signed in"],
+  ["Connect your Cursor account to Simeon", "Sign in to Simeon"],
+  ["You\u2019ll need to sign in again to use your Cursor account with Simeon.", "You\u2019ll need to sign in again to use Simeon."],
+  ["Sign in to Cursor in settings, then ask anything.", "Sign in to Simeon in settings, then ask anything."],
+  ["Open this cloud agent in Cursor", "Open this cloud agent"],
+  ["Open in Cursor", "Open"],
+  ["Cursor cloud agent", "Cloud agent"],
+  ["Cursor agent: ", "Cloud agent: "],
+  ["This setting is shared with Cursor. Leaving Legacy can\u2019t be undone.", "Leaving Legacy can\u2019t be undone."],
+  ["Cursor authentication failed.", "Sign-in failed."],
+  ["Managed by Cursor", "Managed by your organization"],
+  ["Cursor backend ", "Simeon Labs backend "],
+  ["Cursor session ", "Simeon session "],
+  ["session's Cursor tokens", "session's sign-in tokens"],
+]);
+
+/**
  * Words the brand pass does not rename, counted after it runs so the record
  * says whether any of Cursor's names are still in the shipped bytes (ledger
  * F-454, 26 September 2026). "Cursor" and "Anysphere" are left because in
@@ -94,6 +119,11 @@ export function patchOriginalBrandStrings(source) {
     const count = (out.match(pattern) ?? []).length;
     counts[label] = count;
     if (count > 0) out = out.replace(pattern, after);
+  }
+  for (const [before, after] of BRAND_PHRASE_REPLACEMENTS) {
+    const count = out.split(before).length - 1;
+    counts[before] = count;
+    if (count > 0) out = out.split(before).join(after);
   }
   return { source: out, counts };
 }
@@ -879,7 +909,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   };
   // The name, over every chunk and the page, after the Settings patch landed.
   const brandFiles = [];
-  const brandTotals = Object.fromEntries([...BRAND_REPLACEMENTS.map(([before]) => before), ...BRAND_WORD_REPLACEMENTS.map(([, , label]) => label)].map((key) => [key, 0]));
+  const brandTotals = Object.fromEntries([...BRAND_REPLACEMENTS.map(([before]) => before), ...BRAND_WORD_REPLACEMENTS.map(([, , label]) => label), ...BRAND_PHRASE_REPLACEMENTS.map(([before]) => before)].map((key) => [key, 0]));
   const brandTargets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".js") || name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   brandTargets.push(path.join(stageRoot, "dist", "renderer", "index.html"));
   const brandSources = [];
@@ -917,7 +947,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     chunks: changes,
     marks,
     files,
-    brand: { replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after }))], totals: brandTotals, files: brandFiles, residue: brandResidue },
+    brand: { replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after })), ...BRAND_PHRASE_REPLACEMENTS.map(([before, after]) => ({ before, after }))], totals: brandTotals, files: brandFiles, residue: brandResidue },
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
