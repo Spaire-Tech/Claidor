@@ -1,5 +1,6 @@
 import { createDeadlinePolicy, realClock, type Clock, type DeadlinePolicy } from "../../internal/scheduling.js";
 import { classifyBaseUrlKind, classifyGatewayFetchFailure, outcomeForHttpStatus } from "./gateway-reachability.js";
+import { GATEWAY_AUTH_SCHEME } from "../../shared/gateway-wire.js";
 
 export const HEALTH_TIMEOUT_MS = 1_500;
 export const HEALTH_PROBE_TTL_MS = 5_000;
@@ -35,6 +36,19 @@ export interface HealthReachabilityReport {
   baseUrlKind: "unknown" | "loopback" | "pod_proxy";
   httpStatus?: number;
   causeSummary?: string;
+}
+
+/**
+ * The headers a health probe needs: the connection's own headers and its
+ * gateway token. The host answers /health with 401 without the token, and
+ * a cloud box is reached through Simeon Labs' proxy, which forwards what it
+ * is given; until 29 September 2026 the probe sent no token, every probe
+ * failed, and each failure dropped the connection and made a new one.
+ */
+export function healthHeaders(connection: GatewayConnection): Record<string, string> | undefined {
+  const token = typeof connection.token === "string" ? connection.token : "";
+  if (token.length === 0) return connection.headers;
+  return { ...(connection.headers ?? {}), authorization: `${GATEWAY_AUTH_SCHEME} ${token}` };
 }
 
 export async function fetchHealth(
@@ -138,7 +152,7 @@ export class SandHostSupervisor {
       if (!this.streamLivenessDisabled && this.options.isTransportLive?.() === true) return cached;
       if (!this.healthTtlDisabled && this.options.timing.clock.monotonicNow() - this.lastHealthyAtMs < HEALTH_PROBE_TTL_MS) return cached;
       const epochAtProbe = this.healthEpoch;
-      if (await fetchHealth(this.options.timing, cached.baseUrl, cached.headers, this.options.onReachability) != null) {
+      if (await fetchHealth(this.options.timing, cached.baseUrl, healthHeaders(cached), this.options.onReachability) != null) {
         if (epochAtProbe === this.healthEpoch) this.lastHealthyAtMs = this.options.timing.clock.monotonicNow();
         return cached;
       }

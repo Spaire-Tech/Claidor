@@ -109,6 +109,8 @@ test("a fresh box pulls what the server holds, a local change pushes with its ba
   const profile = "agents/a1/memory/profile.md";
   server.rows.set(profile, { content: "# About the user\n\n- (2026-09-20) The founder is called Bass.\n", version: 3, deleted: false });
   server.rows.set("user-memory/agents/a1/log/2026-09.md", { content: "- (2026-09-24) Dakar this week.\n", version: 1, deleted: false });
+  // The agent is on this box; its memory comes back.
+  await mkdir(path.join(sandRoot, "agents", "a1"), { recursive: true });
   try {
     const ext = startExtension(module, { sandRoot, url: server.url });
     await ext.api.whenStarted;
@@ -147,6 +149,34 @@ test("a fresh box pulls what the server holds, a local change pushes with its ba
     assert.equal(await readFile(path.join(sandRoot, "agents", "a1", "memory", "profile.md"), "utf8"), "# About the user\n\n- (2026-09-20) The founder is called Bass.\n- (2026-09-25) Ships on Fridays.\n- (2026-09-25) Dog named Ada.\n- (2026-09-25) Stand-up at 9.\n");
     assert.equal(JSON.parse(await readFile(path.join(sandRoot, ".memory-sync", "state.json"), "utf8")).files[profile].version, 6);
     assert.ok(ext.lines.some((line) => line.startsWith(`[simeon] memory-sync pushed=1 pulled=1 deleted=0 held=2 versions=${profile}@6`)), ext.lines.join("\n"));
+    await ext.stop();
+  } finally {
+    await server.close(); await rm(sandRoot, { recursive: true, force: true }); await dispose();
+  }
+});
+
+test("memory of an agent this box does not have stays on the server and creates no agent folder", async () => {
+  const { module, dispose } = await load("source/host/extensions/memory-sync/extension.ts", "memory-sync-missing");
+  const server = await startMemoryServer();
+  const sandRoot = await mkdtemp(path.join(os.tmpdir(), "simeon-memsync-missing-"));
+  // 29 September 2026: a new cloud computer pulled the memory of four
+  // agents from the old one, and the roster listed each folder as a blank
+  // "New Agent".
+  server.rows.set("agents/old-agent/memory/profile.md", { content: "- (2026-09-20) An old agent's fact.\n", version: 2, deleted: false });
+  server.rows.set("agents/old-agent/memory/log/2026-09.md", { content: "- (2026-09-21) An old log.\n", version: 1, deleted: false });
+  server.rows.set("user-memory/agents/old-agent/profile.md", { content: "- (2026-09-22) About the user.\n", version: 1, deleted: false });
+  try {
+    const ext = startExtension(module, { sandRoot, url: server.url });
+    await ext.api.whenStarted;
+    assert.equal(existsSync(path.join(sandRoot, "agents", "old-agent")), false, "no folder for an agent this box does not have");
+    assert.equal(await readFile(path.join(sandRoot, "user-memory", "agents", "old-agent", "profile.md"), "utf8"), "- (2026-09-22) About the user.\n", "memory about the user still comes back");
+    const state = JSON.parse(await readFile(path.join(sandRoot, ".memory-sync", "state.json"), "utf8"));
+    assert.equal(state.files["agents/old-agent/memory/profile.md"], undefined, "not recorded, so it is never told deleted");
+    assert.ok(ext.lines.some((line) => /memory-sync pushed=0 pulled=1 deleted=0 skipped-other-agents=2 held=3/.test(line)), ext.lines.join("\n"));
+    // A later round sends no deletion for the files it never wrote.
+    await ext.api.syncNow({ pullEvenIfNothingChanged: true });
+    assert.ok(server.requests.every((r) => r.method !== "POST" || (r.body.deleted ?? []).length === 0), "nothing is told deleted");
+    assert.equal(server.rows.get("agents/old-agent/memory/profile.md").deleted, false, "the server keeps it");
     await ext.stop();
   } finally {
     await server.close(); await rm(sandRoot, { recursive: true, force: true }); await dispose();
