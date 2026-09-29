@@ -24,11 +24,11 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 WORKDIR /app
 
-COPY ./polar/backoffice/pnpm-lock.yaml .
-COPY ./polar/backoffice/package.json .
+COPY ./simeon/backoffice/pnpm-lock.yaml .
+COPY ./simeon/backoffice/package.json .
 RUN pnpm install --frozen-lockfile
 
-COPY ./polar/backoffice/ .
+COPY ./simeon/backoffice/ .
 
 RUN pnpm run build
 
