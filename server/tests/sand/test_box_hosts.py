@@ -202,12 +202,16 @@ async def test_the_docker_provider_runs_the_macs_docker_run_with_the_bundle_moun
     )
     spec = _spec()
     provisioned = await host.create(spec)
-    # Pulled once (the image was not there), as `repo` + `tag`, for amd64.
+    # Pulled once (the image was not there), by the pinned digest (the
+    # 16 September build the Mac runs), for amd64.
     assert daemon.pulls == [
         {
             "platform": "linux/amd64",
-            "fromImage": "public.ecr.aws/k0i0n2g5/cursorenvironments/universal",
-            "tag": "sand-box-latest",
+            # The Mac's form, tag and digest (localDockerBoxImageReference);
+            # Docker pulls by the digest.
+            "fromImage": "public.ecr.aws/k0i0n2g5/cursorenvironments/universal"
+            ":sand-box-latest"
+            "@sha256:322c3a9031d61e210a05400dd74c82bbb1fdb42db315a8cf5ab39368c2f0c1c8",
         }
     ]
     container = daemon.containers[provisioned.provider_box_id]

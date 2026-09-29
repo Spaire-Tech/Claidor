@@ -1137,7 +1137,13 @@ server now does all three (`box_hosts.py`, bundle under
 `stale_host`). A box made before this is replaced on its volumes at the
 next EnsureSandBox. A new cloud box starts empty: the agents made on the
 Mac live in the Mac's local box. §"The first real run" of the record has
-the reading.
+the reading. **It was not enough, measured on the VM the same morning:**
+`sand-box-latest` moved on 28 September to a build whose supervisor starts
+the host from `/opt/sand/sand-host/`, so the mounted file is never read.
+The cloud box is now pinned to the Mac's 16 September build
+(`CLAIDOR_BOX_IMAGE_DIGEST` default `322c3a90…`) and a box on any other
+image is replaced. The Mac still floats on the tag; a fresh pull there
+breaks the same way until it is pinned too.
 
 ## The rest of the connectors are apps under Simeon's name (28 September 2026)
 

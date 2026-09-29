@@ -316,8 +316,28 @@ Two failures, in order, each measured and each fixed:
    file's sha256, no helper left, a second box reusing the folder.
    `tests/sand/test_box_hosts.py`, `test_box_broker.py`
    (`test_a_box_running_another_host_program_is_replaced_on_its_volumes`).
-   Not yet measured on the VM: that the image's supervisor then runs our
-   host (the log line to read is the gateway answering `getSharingState`).
+   **Measured on the VM the same morning, and it was not enough.** Read
+   through the Docker API from Render's Shell: the box had been replaced at
+   06:36:57 with both read-only mounts and the right label, and the host
+   running was `/opt/sand/sand-host/host-main.cjs`. The VM had pulled
+   `sand-box-latest` on 28 September (`sha256:3e1d140e…`, built 28
+   September 20:20), whose supervisor starts the host from `/opt/sand`; the
+   founder's Mac runs the 16 September build (`sha256:322c3a90…`), whose
+   supervisor starts `/home/box/sand-host/host-main.cjs`, the mounted file.
+   The tag moved under us. The answering host's `"failureCode":
+   "gateway/unknown-method"` and its `CreateGrokBotAgent` calls are in
+   neither our source nor the bundle (checked by grep of both). Now
+   `CLAIDOR_BOX_IMAGE_DIGEST` defaults to the Mac's build, and EnsureSandBox
+   replaces a box whose image is not the configured reference
+   (`stale_image`), the rule the Mac applies by refusing one. The registry
+   still serves that digest (200 on its manifest, 29 September), and a real
+   Docker Engine accepts the tag-and-digest form the Mac and the server
+   both build. `test_a_box_on_another_image_is_replaced_on_its_volumes`.
+   **The Mac floats on the same tag**: a Mac that pulls the image fresh
+   today gets the 28 September build and the same foreign host. Pinning
+   it there too needs the app rebuilt and its existing container removed
+   (the Mac refuses a container on another image), so it is a separate
+   change.
 
 ## What the founder must create
 

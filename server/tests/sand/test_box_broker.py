@@ -12,6 +12,7 @@ migration watcher (`box-migration-watcher.ts`) and the local-exec daemon
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import base64
 from collections.abc import AsyncIterator
 from typing import Any
@@ -249,6 +250,30 @@ class TestEnsureSandBox:
         assert host.removed[-1] == (old, [])
         assert host.created[1].workspace_volume == host.created[0].workspace_volume
         # The replacement carries the bundle: no third container.
+        await _ensure(client, access)
+        assert len(host.created) == 2
+
+    async def test_a_box_on_another_image_is_replaced_on_its_volumes(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+    ) -> None:
+        # A box made on the moving tag runs that build's own host.
+        access, _ = await _signed_in(client, session, user)
+        body = (await _ensure(client, access)).json()
+        old = next(iter(host.boxes))
+        spec = host.boxes[old]["spec"]
+        host.boxes[old]["spec"] = dataclasses.replace(
+            spec, image=settings.BOX_IMAGE.split("@", 1)[0]
+        )
+        again = (await _ensure(client, access)).json()
+        assert again["podId"] == body["podId"]
+        assert len(host.created) == 2
+        assert host.removed[-1] == (old, [])
+        assert host.created[1].image == box_hosts.box_image_reference()
+        assert host.created[1].workspace_volume == host.created[0].workspace_volume
         await _ensure(client, access)
         assert len(host.created) == 2
 

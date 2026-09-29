@@ -437,25 +437,34 @@ class BoxBrokerService:
         if box is not None and box.provider == host.name:
             state = await host.run_state(box.provider_box_id)
             credential_live = await self._credential_is_live(db, box)
-            # The Mac's rule (`localDockerContainerNeedsReplace` in local-docker-host-connector.ts):
-            # a container whose host program is not the current bundle is
+            # The Mac's rules (local-docker-host-connector.ts): a container
+            # whose host program is not the current bundle
+            # (`localDockerContainerNeedsReplace`), or that runs another
+            # image than the one configured (the Mac refuses it), is
             # replaced on the same volumes. A box made before 29 September
-            # mounts no host at all and ran the image's own.
+            # mounts no host at all; one on a later image than the pinned
+            # one runs the image's own host from /opt/sand and never reads
+            # the mounted one.
             expected_host = getattr(host, "expected_host_sha256", None)
             stale_host = False
-            if state is not None and credential_live and expected_host is not None:
+            stale_image = False
+            if state is not None and credential_live:
                 current = await host.inspect(box.provider_box_id)
-                stale_host = current is None or current.host_sha256 != expected_host
-            if state is None or not credential_live or stale_host:
+                if current is not None:
+                    stale_image = current.image != box_image_reference()
+                if expected_host is not None:
+                    stale_host = current is None or current.host_sha256 != expected_host
+            if state is None or not credential_live or stale_host or stale_image:
                 # Absent on the host, its credential died with a sign-out, or
-                # the wrong host program: a fresh container on the same
-                # volumes, a fresh credential.
+                # the wrong host program or image: a fresh container on the
+                # same volumes, a fresh credential.
                 log.info(
                     "sand.box.ensure.recreate",
                     box=str(box.id),
                     state=state,
                     credential_live=credential_live,
                     stale_host=stale_host,
+                    stale_image=stale_image,
                 )
                 if state != "running":
                     await self.check_capacity(repository, host, box)
