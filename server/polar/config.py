@@ -245,6 +245,16 @@ class Settings(BaseSettings):
     # `e2b`: not built (the `e2b` package is not in the lockfile).
     BOX_HOST_PROVIDER: str = ""
     BOX_DOCKER_HOST: str = ""
+    # Several box servers (29 September 2026), as JSON: a list of
+    # {"name", "docker_host", "address"?, "max_running"?, "accepting"?}.
+    # Each person's computer is made on the accepting server with the most
+    # room and stays there (its volumes live on that server); "accepting":
+    # false drains a server, which keeps the computers it has and takes no
+    # new one. One client certificate (BOX_DOCKER_TLS_*) serves them all, so
+    # every server's certificate is signed by the same CA
+    # (docs/ops/box-host/setup-box-host.sh). Empty: the one server above,
+    # named "docker", which is the name the computers made before this carry.
+    BOX_HOSTS: str = ""
     # Client certificate for a TLS-protected daemon (`docker --tlsverify`).
     BOX_DOCKER_TLS_CA: str = ""
     BOX_DOCKER_TLS_CERT: str = ""
@@ -290,8 +300,9 @@ class Settings(BaseSettings):
     # Zero: no limit.
     BOX_MEMORY_LIMIT_MB: int = 4096
     BOX_CPU_LIMIT: float = 2.0
-    # Boxes awake at once on the host; one more is refused with Grok Bot's
-    # SAND_BOX_BLOCKED hold and a retry-after. Zero: no limit.
+    # Boxes awake at once on a server (a BOX_HOSTS entry may say its own);
+    # when every accepting server is full, one more is refused with Grok
+    # Bot's SAND_BOX_BLOCKED hold and a retry-after. Zero: no limit.
     BOX_MAX_RUNNING: int = 3
 
     # Apps through Composio (polar/desktop/composio.py). One key for the

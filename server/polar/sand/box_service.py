@@ -48,7 +48,8 @@ from .box_hosts import (
     BoxSpec,
     ProvisionedBox,
     box_image_reference,
-    resolve_box_host,
+    find_box_host,
+    resolve_box_hosts,
 )
 from .box_repository import SandBoxRepository
 
@@ -430,11 +431,15 @@ class BoxBrokerService:
         with its URLs stamped. Raises `BoxBrokerRefused` (a Connect code
         and a sentence) and `BoxHostError`."""
         parent = await self._parent_of(db, caller)
-        host = await resolve_box_host()
         repository = SandBoxRepository.from_session(db)
         box = await repository.get_by_user(parent.user_id)
+        # A box stays on the server it was made on: its volumes live there.
+        host = await find_box_host(box.provider) if box is not None else None
+        if host is None:
+            # Raises the app's one sentence when no server is configured.
+            await resolve_box_hosts()
         created = False
-        if box is not None and box.provider == host.name:
+        if box is not None and host is not None:
             state = await host.run_state(box.provider_box_id)
             credential_live = await self._credential_is_live(db, box)
             # The Mac's rules (local-docker-host-connector.ts): a container
@@ -486,19 +491,23 @@ class BoxBrokerService:
                 box.state = "running"
         else:
             if box is not None:
-                # A row from another provider: leave its container to that
-                # host; the person gets a box on the configured one.
+                # A row from a server that is no longer configured: leave
+                # its container to that server; the person gets a new box.
+                log.warning(
+                    "sand.box.server_gone", box=str(box.id), provider=box.provider
+                )
                 await repository.soft_delete(box)
             box = SandBox(
                 id=generate_uuid(),
                 user_id=parent.user_id,
-                provider=host.name,
+                provider="",
                 provider_box_id="",
                 host_address="",
                 gateway_token="",
                 network_token="",
             )
-            await self.check_capacity(repository, host, box)
+            host = await self.place(repository, box)
+            box.provider = host.name
             try:
                 await self._create(db, host, parent, box)
             except BoxHostError:
@@ -554,10 +563,10 @@ class BoxBrokerService:
             box = await repository.get_by_user(caller.user_id)
         parent = await self._parent_of(db, caller)
         try:
-            host = await resolve_box_host()
+            host = await find_box_host(box.provider) if box is not None else None
         except BoxHostError as error:
             return RecreateOutcome(started=False, reason=str(error))
-        if box is None or box.provider != host.name:
+        if box is None or host is None:
             return RecreateOutcome(
                 started=False,
                 reason="There is no cloud computer to recreate yet; connect once first.",
@@ -625,10 +634,10 @@ class BoxBrokerService:
             if box is None:
                 return RUN_STATE_ABSENT, False
         try:
-            host = await resolve_box_host()
+            host = await find_box_host(box.provider)
         except BoxHostError:
             return RUN_STATE_ABSENT, False
-        if box.provider != host.name:
+        if host is None:
             return RUN_STATE_ABSENT, False
         try:
             state = await host.run_state(box.provider_box_id)
@@ -654,11 +663,11 @@ class BoxBrokerService:
     async def check_capacity(
         self, repository: SandBoxRepository, host: BoxHost, box: SandBox
     ) -> None:
-        """Before a box is created or started: refuse with Grok Bot's
-        blocked hold when `CLAIDOR_BOX_MAX_RUNNING` others are awake on
-        this host. The app holds for `retry-after` and asks again
+        """Before a box is started on its server: refuse with Grok Bot's
+        blocked hold when the server's limit of others are awake on it. The
+        app holds for `retry-after` and asks again
         (`BrokeredHostConnector.connect`); the sleeper frees room."""
-        limit = settings.BOX_MAX_RUNNING
+        limit = host.max_running
         if limit <= 0:
             return
         awake = await repository.count_awake(host.name, excluding=box.id)
@@ -668,15 +677,45 @@ class BoxBrokerService:
             "sand.box.capacity.refused",
             box=str(box.id),
             user=str(box.user_id),
+            server=host.name,
             awake=awake,
             limit=limit,
         )
-        raise BoxBlocked(
+        raise self._blocked()
+
+    @staticmethod
+    def _blocked() -> BoxBlocked:
+        return BoxBlocked(
             CAPACITY_BLOCK_REASON,
             title=CAPACITY_BLOCK_TITLE,
             detail=CAPACITY_BLOCK_DETAIL,
             retry_after_s=CAPACITY_RETRY_AFTER_S,
         )
+
+    async def place(self, repository: SandBoxRepository, box: SandBox) -> BoxHost:
+        """The server a new box is made on: of the accepting servers with
+        room, the one with the largest share of its limit free (a server
+        with no limit counts as all free). None with room: Grok Bot's
+        blocked hold, the same one a full single server gave."""
+        best: BoxHost | None = None
+        best_free = -1.0
+        for host in await resolve_box_hosts():
+            if not host.accepting:
+                continue
+            limit = host.max_running
+            awake = await repository.count_awake(host.name, excluding=box.id)
+            if limit > 0 and awake >= limit:
+                continue
+            free = 1.0 if limit <= 0 else (limit - awake) / limit
+            if free > best_free:
+                best, best_free = host, free
+        if best is None:
+            log.warning(
+                "sand.box.capacity.refused", box=str(box.id), user=str(box.user_id)
+            )
+            raise self._blocked()
+        log.info("sand.box.placed", box=str(box.id), server=best.name)
+        return best
 
     async def health_of(self, box: SandBox) -> BoxHealth:
         url = self.internal_url(box, GATEWAY_PORT)
@@ -718,13 +757,17 @@ class BoxBrokerService:
         if after.total_seconds() <= 0:
             return []
         try:
-            host = await resolve_box_host()
+            hosts = await resolve_box_hosts()
         except BoxHostError:
             return []
         repository = SandBoxRepository.from_session(db)
         now = utc_now()
         slept: list[UUID] = []
-        for box in await repository.list_awake(host.name):
+        for host, box in [
+            (host, box)
+            for host in hosts
+            for box in await repository.list_awake(host.name)
+        ]:
             try:
                 state = await host.run_state(box.provider_box_id)
             except BoxHostError as error:
@@ -772,10 +815,10 @@ class BoxBrokerService:
         if box is None:
             return "no-box"
         try:
-            host = await resolve_box_host()
+            host = await find_box_host(box.provider)
         except BoxHostError:
             return "no-box"
-        if box.provider != host.name:
+        if host is None:
             return "no-box"
         state = await host.run_state(box.provider_box_id)
         if state is None:
