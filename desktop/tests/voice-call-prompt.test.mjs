@@ -68,14 +68,16 @@ test("the greeting has the agent's name and varies with the pick", () => {
   assert.equal(prompt.buildFirstMessage("Ada", Number.NaN), prompt.buildFirstMessage("Ada", 0));
 });
 
-test("the overrides carry the prompt, greeting, language and the agent's voice, else the default voice", () => {
+test("the overrides carry the prompt, greeting, language and the agent's voice, else no voice", () => {
   const withVoice = prompt.buildVoiceCallOverrides({ agent: { name: "Ada" }, transcript: [], voiceId: "abc123", pick: 0 });
   assert.equal(withVoice.tts.voiceId, "abc123");
   assert.equal(withVoice.agent.language, "en");
   assert.match(withVoice.agent.prompt.prompt, /You are Ada/);
   assert.match(withVoice.agent.firstMessage, /Ada/);
-  assert.equal(prompt.buildVoiceCallOverrides({ agent: { name: "Ada" }, transcript: [], voiceId: "  ", pick: 0 }).tts.voiceId, prompt.VOICE_CALL_DEFAULT_VOICE_ID);
-  assert.equal(prompt.VOICE_CALL_DEFAULT_VOICE_ID, "kdmDKE6EkgrWrrykO9Qt");
+  // No voice chosen: the platform agent's own, which the server picked from
+  // the workspace's voices (a voice it lacks fails the call: voice_not_found).
+  assert.equal(prompt.buildVoiceCallOverrides({ agent: { name: "Ada" }, transcript: [], voiceId: "  ", pick: 0 }).tts, undefined);
+  assert.equal(prompt.VOICE_CALL_DEFAULT_VOICE_ID, "cjVigY5qzO86Huf0OWal");
 });
 
 test("the status line reads the task, then the agent's own activity", () => {

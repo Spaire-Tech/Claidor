@@ -220,7 +220,7 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
       now,
       ...(options.schedule === undefined ? {} : { schedule: options.schedule }),
     });
-    options.log(`connect: token issued for agent ${active.agentId} (voice ${overrides.tts.voiceId}, ${entries.length} chat entries read)`);
+    options.log(`connect: token issued for agent ${active.agentId} (voice ${overrides.tts?.voiceId ?? "the agent's own"}, ${entries.length} chat entries read)`);
     return { ok: true, token: ticket.token, conversationId: ticket.conversationId, overrides };
   };
 

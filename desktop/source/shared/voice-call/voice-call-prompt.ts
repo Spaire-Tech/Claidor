@@ -30,11 +30,13 @@ export const VOICE_CALL_LINE_MAX_CHARS = 600;
 /** The call's language. ElevenLabs hears and speaks it; English until the app has a setting. */
 export const VOICE_CALL_LANGUAGE = "en";
 /**
- * The voice a call speaks in when the agent has none chosen: Alexandra,
- * the server's own default and the first voice of its curated list
- * (`VOICE_DEFAULT_VOICE_ID` in `server/simeon/desktop/voice.py`).
+ * The voice the picker shows as chosen when the agent has none: Eric, the
+ * server's own default (`VOICE_DEFAULT_VOICE_ID` in
+ * `server/simeon/desktop/voice.py`). A call for such an agent sends no voice
+ * at all and speaks in the platform agent's, which the server picked from
+ * the voices the workspace has: a voice it does not have fails the call.
  */
-export const VOICE_CALL_DEFAULT_VOICE_ID = "kdmDKE6EkgrWrrykO9Qt";
+export const VOICE_CALL_DEFAULT_VOICE_ID = "cjVigY5qzO86Huf0OWal";
 
 const collapse = (text: string): string => text.replace(/\s+/g, " ").trim();
 const clamp = (text: string, max: number): string => (text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text);
@@ -125,7 +127,7 @@ export function buildFirstMessage(agentName: string, pick: number): string {
 
 export interface VoiceCallOverrides {
   readonly agent: { readonly prompt: { readonly prompt: string }; readonly firstMessage: string; readonly language: string };
-  readonly tts: { readonly voiceId: string };
+  readonly tts?: { readonly voiceId: string };
 }
 
 /** The `overrides` object `Conversation.startSession` takes, for one call. */
@@ -135,14 +137,14 @@ export function buildVoiceCallOverrides(args: {
   readonly voiceId?: string | null;
   readonly pick: number;
 }): VoiceCallOverrides {
-  const voiceId = typeof args.voiceId === "string" && args.voiceId.trim().length > 0 ? args.voiceId.trim() : VOICE_CALL_DEFAULT_VOICE_ID;
+  const voiceId = typeof args.voiceId === "string" && args.voiceId.trim().length > 0 ? args.voiceId.trim() : null;
   return {
     agent: {
       prompt: { prompt: buildVoiceCallPrompt({ agent: args.agent, transcript: args.transcript }) },
       firstMessage: buildFirstMessage(args.agent.name, args.pick),
       language: VOICE_CALL_LANGUAGE,
     },
-    tts: { voiceId },
+    ...(voiceId == null ? {} : { tts: { voiceId } }),
   };
 }
 

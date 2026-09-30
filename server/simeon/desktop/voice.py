@@ -76,7 +76,7 @@ VOICE_AGENT_NAME = "Simeon voice"
 
 #: Bump when anything in `agent_config` or `CLIENT_TOOLS` changes: the next
 #: call finds the agent without this version's tag and rewrites it.
-VOICE_AGENT_CONFIG_VERSION = 2
+VOICE_AGENT_CONFIG_VERSION = 3
 VOICE_AGENT_VERSION_TAG = f"simeon-voice-config-v{VOICE_AGENT_CONFIG_VERSION}"
 VOICE_AGENT_TAGS = ["simeon", "simeon-voice", VOICE_AGENT_VERSION_TAG]
 
@@ -90,9 +90,12 @@ VOICE_LLM = "gemini-2.5-flash"
 #: turbo or flash v2" (seen on the first real call, 30 September 2026).
 VOICE_TTS_MODEL = "eleven_flash_v2"
 
-#: The voice a call speaks in when the app names none (Alexandra, the
-#: first of `CURATED_VOICES`).
-VOICE_DEFAULT_VOICE_ID = "kdmDKE6EkgrWrrykO9Qt"
+#: The voice a call speaks in when the app names none: Eric, one of
+#: ElevenLabs' default voices (every workspace has those; a Voice Library
+#: voice exists only once added, and the first real call's agent was refused
+#: with `voice_not_found` for one, 30 September 2026). The agent is created
+#: with whichever voice `_pick_voice` finds in the workspace, this one first.
+VOICE_DEFAULT_VOICE_ID = "cjVigY5qzO86Huf0OWal"
 
 VOICE_DEFAULT_LANGUAGE = "en"
 VOICE_DEFAULT_FIRST_MESSAGE = "Hi, it's me. What's up?"
@@ -184,7 +187,9 @@ def _system_tool(name: str) -> dict[str, Any]:
     }
 
 
-def agent_config(tool_ids: list[str]) -> dict[str, Any]:
+def agent_config(
+    tool_ids: list[str], voice_id: str = VOICE_DEFAULT_VOICE_ID
+) -> dict[str, Any]:
     """The whole of the platform agent, as `POST /v1/convai/agents/create`
     and `PATCH /v1/convai/agents/{id}` take it."""
     return {
@@ -206,7 +211,7 @@ def agent_config(tool_ids: list[str]) -> dict[str, Any]:
             },
             "tts": {
                 "model_id": VOICE_TTS_MODEL,
-                "voice_id": VOICE_DEFAULT_VOICE_ID,
+                "voice_id": voice_id,
             },
             "turn": {
                 "turn_timeout": 7,
@@ -234,20 +239,20 @@ def agent_config(tool_ids: list[str]) -> dict[str, Any]:
     }
 
 
-#: The voices the picker offers, in this order: good conversational
-#: voices from ElevenLabs' default library. One the API no longer
-#: returns is skipped.
+#: The voices the picker offers, in this order: conversational voices from
+#: ElevenLabs' default voices, which every workspace has. One the API no
+#: longer returns is skipped.
 CURATED_VOICES: tuple[tuple[str, str], ...] = (
-    ("kdmDKE6EkgrWrrykO9Qt", "Alexandra"),
-    ("L0Dsvb3SLTyegXwtm47J", "Archer"),
-    ("g6xIsTj2HwM6VR4iXFCw", "Jessica"),
-    ("OYTbf65OHHFELVut7v2H", "Hope"),
-    ("dj3G1R1ilKoFKhBnWOzG", "Eryn"),
-    ("HDA9tsk27wYi3uq0fPcK", "Stuart"),
-    ("1SM7GgM6IMuvQlz2BwM3", "Mark"),
-    ("PT4nqlKZfc06VW1BuClj", "Angela"),
-    ("vBKc2FfBKJfcZNyEt1n6", "Finn"),
-    ("56AoDkrOh6qfVPDXZ7Pt", "Cassidy"),
+    (VOICE_DEFAULT_VOICE_ID, "Eric"),
+    ("EXAVITQu4vr4xnSDxMaL", "Sarah"),
+    ("cgSgspJ2msm6clMCkdW9", "Jessica"),
+    ("nPczCjzI2devNBz1zQrb", "Brian"),
+    ("FGY2WhTYpPnrIDTdsKV5", "Laura"),
+    ("JBFqnCBsd6RMkjVDRZzb", "George"),
+    ("Xb7hH8MSUJpSbSDYk0k2", "Alice"),
+    ("iP95p4xoKVk53GoZ742B", "Chris"),
+    ("pFZP5JQG7iQjIQuC4Bku", "Lily"),
+    ("onwK4e9ZLuTAKqWW03F9", "Daniel"),
 )
 VOICES_CACHE_SECONDS = 3600.0
 
@@ -457,6 +462,25 @@ def _oldest(agents: list[dict[str, Any]]) -> str | None:
     return str(named[0]["agent_id"])
 
 
+async def _pick_voice(api: ElevenLabsClient) -> str:
+    """A voice the workspace has, for the agent's own: the default, else
+    the first curated one listed, else the first listed. A voice ElevenLabs
+    cannot find fails the whole agent (`voice_not_found`)."""
+    try:
+        listed = [
+            one["voice_id"]
+            for one in await api.list_default_voices()
+            if isinstance(one.get("voice_id"), str)
+        ]
+    except ElevenLabsError as error:
+        log.warning("desktop.voice.voices_unlisted", status=error.status)
+        return VOICE_DEFAULT_VOICE_ID
+    for voice_id, _ in CURATED_VOICES:
+        if voice_id in listed:
+            return voice_id
+    return listed[0] if listed else VOICE_DEFAULT_VOICE_ID
+
+
 async def _sync_agent(api: ElevenLabsClient) -> str:
     agent_id = _oldest(await api.find_agents(VOICE_AGENT_NAME))
     if agent_id is not None:
@@ -464,12 +488,14 @@ async def _sync_agent(api: ElevenLabsClient) -> str:
         if VOICE_AGENT_VERSION_TAG in tags:
             log.info("desktop.voice.agent_ready", agent_id=agent_id)
             return agent_id
-    config = agent_config(await _ensure_tools(api))
+    voice_id = await _pick_voice(api)
+    config = agent_config(await _ensure_tools(api), voice_id)
     if agent_id is None:
         agent_id = await api.create_agent(config)
         log.info(
             "desktop.voice.agent_created",
             agent_id=agent_id,
+            voice_id=voice_id,
             version=VOICE_AGENT_CONFIG_VERSION,
         )
     else:
@@ -477,6 +503,7 @@ async def _sync_agent(api: ElevenLabsClient) -> str:
         log.info(
             "desktop.voice.agent_synced",
             agent_id=agent_id,
+            voice_id=voice_id,
             version=VOICE_AGENT_CONFIG_VERSION,
         )
     return agent_id

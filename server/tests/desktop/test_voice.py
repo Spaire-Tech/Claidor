@@ -263,6 +263,36 @@ class TestThePlatformAgent:
             )
         )
 
+    async def test_the_agent_speaks_in_a_voice_the_workspace_has(
+        self, fake: FakeElevenLabs
+    ) -> None:
+        # The first real call's agent was refused with `voice_not_found`: a
+        # voice the workspace does not have fails the whole agent.
+        fake.voices = [
+            {"voice_id": "only-this-one", "name": "Someone"},
+            {"voice_id": "EXAVITQu4vr4xnSDxMaL", "name": "Sarah"},
+        ]
+        agent_id = await ensure_agent(fake)
+        tts = fake.agents[agent_id]["conversation_config"]["tts"]
+        assert tts["voice_id"] == "EXAVITQu4vr4xnSDxMaL"
+
+        voice.forget_agent()
+        fake.agents.clear()
+        fake.voices = [{"voice_id": "only-this-one", "name": "Someone"}]
+        agent_id = await ensure_agent(fake)
+        tts = fake.agents[agent_id]["conversation_config"]["tts"]
+        assert tts["voice_id"] == "only-this-one"
+
+        voice.forget_agent()
+        fake.agents.clear()
+        fake.voices = [
+            {"voice_id": "only-this-one", "name": "Someone"},
+            {"voice_id": voice.VOICE_DEFAULT_VOICE_ID, "name": "Eric"},
+        ]
+        agent_id = await ensure_agent(fake)
+        tts = fake.agents[agent_id]["conversation_config"]["tts"]
+        assert tts["voice_id"] == voice.VOICE_DEFAULT_VOICE_ID
+
     async def test_an_agent_named_in_the_settings_is_never_touched(
         self, fake: FakeElevenLabs, mocker: MockerFixture
     ) -> None:
@@ -487,7 +517,7 @@ class TestTheVoicePicker:
     ) -> None:
         fake.voices = [
             {
-                "voice_id": "g6xIsTj2HwM6VR4iXFCw",
+                "voice_id": "cgSgspJ2msm6clMCkdW9",
                 "name": "Jessica",
                 "description": "Warm",
                 "labels": {"accent": "american"},
@@ -496,11 +526,11 @@ class TestTheVoicePicker:
             },
             {"voice_id": "not-curated", "name": "Someone", "labels": {}},
             {
-                "voice_id": "kdmDKE6EkgrWrrykO9Qt",
-                "name": "Alexandra",
+                "voice_id": "cjVigY5qzO86Huf0OWal",
+                "name": "Eric",
                 "description": None,
                 "labels": None,
-                "preview_url": "https://cdn.test/alexandra.mp3",
+                "preview_url": "https://cdn.test/eric.mp3",
             },
         ]
         headers = await _signed_in(client, session, user)
@@ -508,14 +538,14 @@ class TestTheVoicePicker:
         assert response.status_code == 200, response.text
         assert response.json() == [
             {
-                "id": "kdmDKE6EkgrWrrykO9Qt",
-                "name": "Alexandra",
+                "id": "cjVigY5qzO86Huf0OWal",
+                "name": "Eric",
                 "description": None,
                 "labels": {},
-                "preview_url": "https://cdn.test/alexandra.mp3",
+                "preview_url": "https://cdn.test/eric.mp3",
             },
             {
-                "id": "g6xIsTj2HwM6VR4iXFCw",
+                "id": "cgSgspJ2msm6clMCkdW9",
                 "name": "Jessica",
                 "description": "Warm",
                 "labels": {"accent": "american"},
