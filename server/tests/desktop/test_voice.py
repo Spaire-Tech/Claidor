@@ -568,3 +568,13 @@ class TestTheClient:
         assert raised.value.status == 422
         assert seen[1].method == "PATCH"
         assert seen[1].url.path == "/v1/convai/agents/agent_1"
+
+
+def test_an_english_agent_uses_a_model_elevenlabs_accepts_for_english() -> None:
+    # ElevenLabs refuses an English agent on any other model ("English Agents
+    # must use turbo or flash v2"), the first real call's failure.
+    from simeon.desktop.voice import VOICE_DEFAULT_LANGUAGE, agent_config
+
+    config = agent_config([])["conversation_config"]
+    assert config["agent"]["language"] == VOICE_DEFAULT_LANGUAGE == "en"
+    assert config["tts"]["model_id"] in {"eleven_flash_v2", "eleven_turbo_v2"}

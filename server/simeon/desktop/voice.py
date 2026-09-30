@@ -76,7 +76,7 @@ VOICE_AGENT_NAME = "Simeon voice"
 
 #: Bump when anything in `agent_config` or `CLIENT_TOOLS` changes: the next
 #: call finds the agent without this version's tag and rewrites it.
-VOICE_AGENT_CONFIG_VERSION = 1
+VOICE_AGENT_CONFIG_VERSION = 2
 VOICE_AGENT_VERSION_TAG = f"simeon-voice-config-v{VOICE_AGENT_CONFIG_VERSION}"
 VOICE_AGENT_TAGS = ["simeon", "simeon-voice", VOICE_AGENT_VERSION_TAG]
 
@@ -85,8 +85,10 @@ VOICE_AGENT_TAGS = ["simeon", "simeon-voice", VOICE_AGENT_VERSION_TAG]
 #: pause before every sentence is what makes a voice feel broken.
 VOICE_LLM = "gemini-2.5-flash"
 
-#: ElevenLabs' low-latency voice model.
-VOICE_TTS_MODEL = "eleven_flash_v2_5"
+#: ElevenLabs' low-latency voice model. An English agent must use a turbo or
+#: flash v2 model: `eleven_flash_v2_5` is refused with "English Agents must use
+#: turbo or flash v2" (seen on the first real call, 30 September 2026).
+VOICE_TTS_MODEL = "eleven_flash_v2"
 
 #: The voice a call speaks in when the app names none (Alexandra, the
 #: first of `CURATED_VOICES`).
