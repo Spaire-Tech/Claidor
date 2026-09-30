@@ -860,25 +860,6 @@ FAQ_JS = """<script>
 })();
 </script>"""
 
-# The felt clouds (source/clouds, see its pre.js): one module, loaded once the page has finished loading
-# and the browser is idle, so they never hold up the page. three.js comes from jsDelivr (the import map
-# in the head names it; the site sets no Content-Security-Policy).
-CLOUD_PARTS = ["pre.js", "a_utils.js", "b_mesh.js", "c_glsl.js", "d_markdata.js", "d_engine.js", "e_felt.js", "site.js"]
-IMPORTMAP = ('<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",'
-             '"three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>\n')
-CLOUDS_JS = """<script>
-(() => {
-  const go = () => import('./clouds.js').catch((e) => console.warn('clouds:', e));
-  const idle = () => (window.requestIdleCallback ? requestIdleCallback(go, { timeout: 3000 }) : setTimeout(go, 1200));
-  if (document.readyState === 'complete') idle(); else addEventListener('load', idle, { once: true });
-})();
-</script>"""
-
-def write_clouds():
-    with open(f"{OUT}/clouds.js", "w", encoding="utf-8") as f:
-        for name in CLOUD_PARTS:
-            f.write(open(f"{HERE}/clouds/{name}", encoding="utf-8").read().rstrip("\n") + "\n")
-
 def strip_dark(css):
     """Removes every @media (prefers-color-scheme: dark) block, braces matched."""
     out, i = [], 0
@@ -956,13 +937,12 @@ async def main():
             "<script>if (matchMedia('(min-width:600px)').matches) for (const [rel, as, href] of [['modulepreload', '', 'app/" + js + "'], ['preload', 'style', 'app/" + css + "']]) "
             "{ const l = document.createElement('link'); l.rel = rel; if (as) l.as = as; l.crossOrigin = ''; l.href = href; document.head.appendChild(l); }</script>\n" + head)
     page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
-            '<title>Simeon</title>\n' + IMPORTMAP + head +
-            "<style>" + CSS.replace("%TOKENS%", r["tokens"]) + "</style>\n</head>\n<body>\n" + r["body"] + FIT + HERO_JS + VIEW_JS + ORBIT_JS + SCENES_JS + TALK_JS + BILL_JS + FAQ_JS + CLOUDS_JS + "\n</body>\n</html>\n")
+            '<title>Simeon</title>\n' + head +
+            "<style>" + CSS.replace("%TOKENS%", r["tokens"]) + "</style>\n</head>\n<body>\n" + r["body"] + FIT + HERO_JS + VIEW_JS + ORBIT_JS + SCENES_JS + TALK_JS + BILL_JS + FAQ_JS + "\n</body>\n</html>\n")
     assert "prefers-color-scheme:dark" not in page.replace(" ", ""), "dark mode left in the page"
     for bad in ("framerusercontent.com/assets", "framerusercontent.com/third", "fonts.gstatic", "chrome-extension", "Simeon le site_files"):
         assert bad not in page, bad
     open(f"{OUT}/index.html", "w", encoding="utf-8").write(page)
-    write_clouds()
     # Simeon's petal mark (desktop/scripts/make-favicons.mjs site source/favicons).
     for name in ("favicon.svg", "favicon.ico", "apple-touch-icon.png"): shutil.copy(f"{HERE}/favicons/{name}", f"{OUT}/{name}")
     shutil.copytree(APP, f"{OUT}/app")
