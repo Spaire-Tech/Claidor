@@ -1,11 +1,11 @@
 /**
- * The box desktop's stream behind Grok Bot's network token (ledger F-135,
+ * The box desktop's stream behind the upstream app's network token (ledger F-135,
  * 26 September 2026).
  *
  * Offline, against a fake websockify: the guard refuses a page or a
  * WebSocket without the token, passes one with it (header or query) and
  * strips the header before websockify; the starter retries a busy port and
- * never fails the host; the local connection hands the app Grok Bot's
+ * never fails the host; the local connection hands the app the upstream app's
  * `vncProxy`, and the coordinator's own rewrite turns the box's bare
  * stream URLs into token-carrying ones; the container publishes the guard,
  * not websockify.
@@ -135,7 +135,7 @@ test("the starter reads the token file, retries a busy port, and never fails the
   const { startBoxStreamGuardFromEnv, readBoxStreamNetworkToken } = loaded.module;
   try {
     assert.equal(await startBoxStreamGuardFromEnv({ env: {}, log: () => {} }), undefined, "no token: no guard, nothing thrown");
-    // The token reaches the box in its environment, as Grok Bot's pod receives its credentials (F-148).
+    // The token reaches the box in its environment, as the upstream app's pod receives its credentials (F-148).
     assert.equal(readBoxStreamNetworkToken({ SAND_BOX_STREAM_NETWORK_TOKEN: "short" }), undefined, "a token under 32 characters is refused");
     assert.equal(readBoxStreamNetworkToken({ SAND_BOX_STREAM_NETWORK_TOKEN: ` ${TOKEN} ` }), TOKEN);
     const env = { SAND_BOX_STREAM_NETWORK_TOKEN: TOKEN };
@@ -152,7 +152,7 @@ test("the starter reads the token file, retries a busy port, and never fails the
   }
 });
 
-test("the local connection carries Grok Bot's vncProxy and the coordinator rewrites the box's bare URLs through it", async () => {
+test("the local connection carries the upstream app's vncProxy and the coordinator rewrites the box's bare URLs through it", async () => {
   const loaded = await load();
   const { localDockerVncProxy, proxifyBoxVncUrl, proxifyForeverBoxStatus, readOrCreateStreamToken, configureLocalDockerSecretStorage, LOCAL_DOCKER_STREAM_PUBLISH, PERSISTED_GATEWAY_DESCRIPTOR_VERSION } = loaded.module;
   try {
@@ -163,7 +163,7 @@ test("the local connection carries Grok Bot's vncProxy and the coordinator rewri
     assert.equal(primary.pathname, "/vnc.html");
     assert.equal(primary.searchParams.get("network_token"), TOKEN);
     assert.match(primary.searchParams.get("path"), new RegExp(`^websockify\\?network_token=${TOKEN}&`));
-    // The URL the host inside the box reports, rewritten by Grok Bot's own coordinator code.
+    // The URL the host inside the box reports, rewritten by the upstream app's own coordinator code.
     assert.equal(proxifyBoxVncUrl("http://127.0.0.1:6080/vnc.html", proxy), proxy.primaryUrl);
     const fork = new URL(proxifyBoxVncUrl(`http://127.0.0.1:6081/vnc.html?path=${encodeURIComponent("websockify?token=3")}`, proxy));
     assert.equal(fork.origin, "http://127.0.0.1:6081");
@@ -183,7 +183,7 @@ test("the local connection carries Grok Bot's vncProxy and the coordinator rewri
     const connector = await readFile(path.join(repoRoot, "source/electron-main/box/local-docker-host-connector.ts"), "utf8");
     assert.doesNotMatch(connector, /"--publish", "127\.0\.0\.1:6080:6080"/, "websockify is never published bare");
     assert.match(connector, /return \{ baseUrl: LOCAL_DOCKER_GATEWAY_URL, token, vncProxy: localDockerVncProxy\(streamToken\) \};/);
-    assert.match(connector, /"--env", `SAND_BOX_STREAM_NETWORK_TOKEN=\$\{streamToken\}`/, "in the box's environment, Grok Bot's pod contract");
+    assert.match(connector, /"--env", `SAND_BOX_STREAM_NETWORK_TOKEN=\$\{streamToken\}`/, "in the box's environment, the upstream app's pod contract");
     const main = await readFile(path.join(repoRoot, "source/host/main.ts"), "utf8");
     assert.match(main, /void startBoxStreamGuardFromEnv\(\{ log: line => log\.log\(line\) \}\);/);
   } finally {

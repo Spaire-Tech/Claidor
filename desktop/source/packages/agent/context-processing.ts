@@ -120,7 +120,7 @@ interface ContextProcessingConfig {
   readonly documentationHydrationService: DocumentationHydrationService<DocumentationResult>;
 }
 
-const logger = createLogger("@anysphere/agent/context-processing");
+const logger = createLogger("@sand/agent/context-processing");
 const enrichContextDuration = createHistogram("agent.ttft.enrichContextMs", {
   description: "Time for the parallelizable context enrichment tasks in processSelectedContext (external links, documentation, PR hydration, etc.)",
 });
@@ -412,7 +412,7 @@ export async function processSelectedContext(
   const dropCustomPromptContext = config3.featureFlags?.dropCustomPromptContext === true;
   if (!dropCustomPromptContext && regularRules.length > 0) {
     const rulesText = regularRules.map(rule => `Rule Name: ${rule.fullPath ? getFilenameWithoutExtension(rule.fullPath) : "Rule"}\nDescription: ${rule.content?.slice(0, MAX_RULE_LENGTH) ?? ""}`).join("\n\n");
-    userContent.push({ type: "text", text: `<cursor_rules_context>\nCursor Rules are extra documentation provided by the user to help the AI understand the codebase.\nUse them if they seem useful to the users most recent query, but do not use them if they seem unrelated to the current query.\n\n${rulesText}\n</cursor_rules_context>\n` });
+    userContent.push({ type: "text", text: `<rules_context>\nRules are extra documentation provided by the user to help the AI understand the codebase.\nUse them if they seem useful to the users most recent query, but do not use them if they seem unrelated to the current query.\n\n${rulesText}\n</rules_context>\n` });
   }
   if (!dropCustomPromptContext && selectedSkills.length > 0) {
     const attachedSkills = selectedSkills.filter((skill): skill is typeof skill & { fullPath: string; content: string } =>

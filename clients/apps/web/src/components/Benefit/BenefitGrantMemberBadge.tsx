@@ -1,5 +1,5 @@
-import { schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
+import { schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
 
 interface BenefitGrantMemberBadgeProps {
   member: schemas['Member'] | null | undefined
@@ -9,7 +9,7 @@ export const BenefitGrantMemberBadge = ({
   member,
 }: BenefitGrantMemberBadgeProps) => {
   if (!member) {
-    return <span className=" text-sm text-gray-500">—</span>
+    return <span className="text-sm text-gray-500">—</span>
   }
 
   return (
@@ -24,7 +24,7 @@ export const BenefitGrantMemberBadge = ({
           {member.name ?? member.email}
         </div>
         {member.name && (
-          <div className=" w-full truncate text-xs text-gray-500">
+          <div className="w-full truncate text-xs text-gray-500">
             {member.email}
           </div>
         )}

@@ -1,7 +1,7 @@
 'use client'
 
 import { CustomerPortalWallet } from '@/components/CustomerPortal/CustomerPortalWallet'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 
 const ClientPage = ({

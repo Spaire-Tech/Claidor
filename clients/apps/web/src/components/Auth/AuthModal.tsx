@@ -1,4 +1,4 @@
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import LogoIcon from '../Brand/LogoIcon'
 import Login from './Login'
 
@@ -17,7 +17,7 @@ export const AuthModal = ({
   const title = isSignup ? 'Sign Up' : 'Log In'
 
   const copy = isSignup ? (
-    <p className=" text-xl text-gray-500">
+    <p className="text-xl text-gray-500">
       Join thousands of developers &amp; startups monetizing their products with
       Simeon.
     </p>

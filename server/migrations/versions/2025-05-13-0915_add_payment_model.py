@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-from polar.kit.extensions.sqlalchemy.types import StrEnumType
+from simeon.kit.extensions.sqlalchemy.types import StrEnumType
 
 # Polar Custom Imports
 

@@ -8,9 +8,9 @@ import {
 } from '@/components/Settings/Webhook/WebhookForm'
 import { toast } from '@/components/Toast/use-toast'
 import { useEditWebhookEndpoint } from '@/hooks/queries'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { Form } from '@claidor/ui/components/ui/form'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { Form } from '@simeon/ui/components/ui/form'
 import { useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 

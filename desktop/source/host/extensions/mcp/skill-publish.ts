@@ -95,7 +95,7 @@ export class SandSkillPublishService {
       response = await this.options.client.getTeams(new GetTeamsRequest({ activeOnly: true }), { timeoutMs: PUBLISH_TARGETS_RPC_TIMEOUT_MS });
     } catch (error) {
       // Simeon Labs' server serves GetTeams since 25 September 2026
-      // (`polar/sand/skill_registry.py`): "Just me" first, then every
+      // (`simeon/sand/skill_registry.py`): "Just me" first, then every
       // organization the person is in. A failure here is the server's own
       // sentence, or the transport's, never a Coming Soon.
       const sentence = serverSentence(error);

@@ -11,16 +11,16 @@ import { createClientSideAPI } from '@/utils/client'
 import { validateEmail } from '@/utils/validation'
 import GroupOutlined from '@mui/icons-material/GroupOutlined'
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined'
-import Button from '@claidor/ui/components/atoms/Button'
-import { DataTable } from '@claidor/ui/components/atoms/DataTable'
+import Button from '@simeon/ui/components/atoms/Button'
+import { DataTable } from '@simeon/ui/components/atoms/DataTable'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@claidor/ui/components/atoms/DropdownMenu'
-import Input from '@claidor/ui/components/atoms/Input'
-import { Status } from '@claidor/ui/components/atoms/Status'
+} from '@simeon/ui/components/atoms/DropdownMenu'
+import Input from '@simeon/ui/components/atoms/Input'
+import { Status } from '@simeon/ui/components/atoms/Status'
 import { useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { ConfirmModal } from '../Modal/ConfirmModal'
@@ -32,18 +32,9 @@ interface CustomerPortalTeamProps {
 }
 
 const roleDisplayNames: Record<string, [string, string]> = {
-  owner: [
-    'Owner',
-    'bg-blue-100 text-blue-600 ',
-  ],
-  billing_manager: [
-    'Billing Manager',
-    'bg-blue-100 text-blue-600 ',
-  ],
-  member: [
-    'Member',
-    'bg-gray-100 text-gray-600 ',
-  ],
+  owner: ['Owner', 'bg-blue-100 text-blue-600 '],
+  billing_manager: ['Billing Manager', 'bg-blue-100 text-blue-600 '],
+  member: ['Member', 'bg-gray-100 text-gray-600 '],
 }
 
 const availableRoles = [
@@ -195,10 +186,11 @@ export const CustomerPortalTeam = ({
       roleDisplayNames[member.role] || roleDisplayNames.member
     return (
       <div className="flex items-center gap-2">
-        <Status className={twMerge(className, 'w-fit text-xs')} status={label} />
-        {isCurrentUser && (
-          <span className=" text-xs text-gray-500">(you)</span>
-        )}
+        <Status
+          className={twMerge(className, 'w-fit text-xs')}
+          status={label}
+        />
+        {isCurrentUser && <span className="text-xs text-gray-500">(you)</span>}
       </div>
     )
   }
@@ -251,7 +243,7 @@ export const CustomerPortalTeam = ({
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
         <h3 className="text-lg">Team Members</h3>
-        <p className=" text-sm text-gray-500">
+        <p className="text-sm text-gray-500">
           Manage your team members and their roles
         </p>
       </div>
@@ -259,7 +251,7 @@ export const CustomerPortalTeam = ({
       <div className="flex flex-col gap-y-4">
         <div className="flex flex-col gap-y-2">
           <h4 className="text-md font-medium">Add Member</h4>
-          <p className=" text-sm text-gray-500">
+          <p className="text-sm text-gray-500">
             Invite someone to join your team
           </p>
         </div>
@@ -313,7 +305,7 @@ export const CustomerPortalTeam = ({
                   <span className="text-sm font-medium">
                     {row.original.name || '—'}
                   </span>
-                  <span className=" text-xs text-gray-500">
+                  <span className="text-xs text-gray-500">
                     {row.original.email}
                   </span>
                 </div>
@@ -328,7 +320,7 @@ export const CustomerPortalTeam = ({
               accessorKey: 'created_at',
               header: 'Joined',
               cell: ({ row }) => (
-                <span className=" text-sm text-gray-500">
+                <span className="text-sm text-gray-500">
                   {formatDate(row.original.created_at)}
                 </span>
               ),
@@ -352,7 +344,7 @@ export const CustomerPortalTeam = ({
                   </span>
                   <div className="flex flex-wrap items-center gap-2">
                     {memberRoleBadge(member)}
-                    <span className=" text-xs text-gray-500">
+                    <span className="text-xs text-gray-500">
                       Joined {formatDate(member.created_at)}
                     </span>
                   </div>

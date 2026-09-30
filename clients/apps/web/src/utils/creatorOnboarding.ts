@@ -1,19 +1,20 @@
 import revalidate from '@/app/actions'
-import { Client, schemas } from '@claidor/client'
+import { Client, schemas } from '@simeon/client'
 
 /**
  * The creator-onboarding funnel — "choose your plan", connect payouts,
- * integrate — is inherited from the upstream payments platform. Claidor
+ * integrate — is inherited from the upstream payments platform. Simeon
  * sells no plans, so that gate stands in front of a step with nothing on
  * the other side of it: it can be entered but never meaningfully
  * completed, and it holds a signed-in user out of their own dashboard.
  *
  * The flow stays in the tree rather than being deleted, because the
  * billing model is not settled. It is simply off unless asked for:
- * set `CLAIDOR_CREATOR_ONBOARDING=true` to bring it back.
+ * set `SIMEON_CREATOR_ONBOARDING=true` to bring it back.
  */
 export const creatorOnboardingEnabled = (): boolean =>
-  process.env.CLAIDOR_CREATOR_ONBOARDING === 'true'
+  (process.env.SIMEON_CREATOR_ONBOARDING ??
+    process.env.CLAIDOR_CREATOR_ONBOARDING) === 'true'
 
 /** Used when the email local part has nothing slug-shaped left in it. */
 const FALLBACK_SLUG = 'workspace'
@@ -51,7 +52,7 @@ const isSlugTaken = (error: unknown): boolean => {
 /**
  * Give a user who has no organization one, without asking.
  *
- * Everything in Claidor hangs off an organization — a dossier belongs to
+ * Everything in Simeon hangs off an organization — a dossier belongs to
  * one, and so does every document in it — so the record genuinely has to
  * exist. What does not have to exist is a form asking someone to invent a
  * name for a workspace they are the only member of. So we derive a name

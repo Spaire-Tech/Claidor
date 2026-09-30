@@ -1,7 +1,7 @@
 'use client'
 
-import { enums, schemas } from '@claidor/client'
-import Input from '@claidor/ui/components/atoms/Input'
+import { enums, schemas } from '@simeon/client'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   FormControl,
   FormDescription,
@@ -9,12 +9,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
-import { Label } from '@claidor/ui/components/ui/label'
+} from '@simeon/ui/components/ui/form'
+import { Label } from '@simeon/ui/components/ui/label'
 import {
   RadioGroup,
   RadioGroupItem,
-} from '@claidor/ui/components/ui/radio-group'
+} from '@simeon/ui/components/ui/radio-group'
 import { useFormContext } from 'react-hook-form'
 
 const AGGREGATION_FUNCTIONS = [
@@ -83,8 +83,8 @@ const AggregationRadioItem = ({
       htmlFor={`aggregation-${option.value}`}
       className={`flex flex-col gap-3 rounded-lg border p-4 font-normal transition-colors ${
         isSelected
-          ? ' border-gray-300 bg-gray-50'
-          : '   border-gray-100 hover:border-gray-300'
+          ? 'border-gray-300 bg-gray-50'
+          : 'border-gray-100 hover:border-gray-300'
       }`}
     >
       <div className="flex items-start gap-3">
@@ -94,9 +94,7 @@ const AggregationRadioItem = ({
         />
         <div className="flex flex-1 flex-col gap-1">
           <span className="cursor-pointer font-medium">{option.label}</span>
-          <p className=" text-sm text-gray-600">
-            {option.description}
-          </p>
+          <p className="text-sm text-gray-600">{option.description}</p>
         </div>
       </div>
       {isSelected && showPropertyInput && (

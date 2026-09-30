@@ -1,7 +1,7 @@
 'use client'
 
 // Shared empty-state hero used in three places:
-//   - The Claidor Space editor canvas (creator view, with the
+//   - The Simeon Space editor canvas (creator view, with the
 //     "Add to Space" CTA wired to the picker)
 //   - The in-editor preview when isSpaceEnabled && !isEditing
 //   - The public storefront a visitor sees at /<organization>
@@ -26,8 +26,7 @@ export const SpaceEmptyHero = ({
       background: '#000',
       isolation: 'isolate',
       border: '1px solid oklch(0.92 0.003 280)',
-      boxShadow:
-        '0 2px 6px rgba(0,0,0,0.06), 0 24px 60px rgba(0,0,0,0.10)',
+      boxShadow: '0 2px 6px rgba(0,0,0,0.06), 0 24px 60px rgba(0,0,0,0.10)',
     }}
   >
     <img
@@ -88,9 +87,9 @@ export const SpaceEmptyHero = ({
           lineHeight: 1.5,
         }}
       >
-        Create a space where everything you offer is clearly presented,
-        easily discovered, and ready for your audience to buy whenever
-        they&rsquo;re interested.
+        Create a space where everything you offer is clearly presented, easily
+        discovered, and ready for your audience to buy whenever they&rsquo;re
+        interested.
       </p>
       {onAddToSpace && (
         <button

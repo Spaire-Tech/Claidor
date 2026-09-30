@@ -34,13 +34,13 @@ export const NEXTJS_INTEGRATION: SdkIntegration = {
   name: 'Next.js',
   tagline: 'Build with Next.js. Monetize with Simeon.',
   description:
-    'The official @claidor/nextjs adapter gives you checkout, customer portal, and webhooks out of the box \u2014 the full billing loop in a single package.',
+    'The official @simeon/nextjs adapter gives you checkout, customer portal, and webhooks out of the box \u2014 the full billing loop in a single package.',
   category: 'framework',
   categoryLabel: 'Framework',
   howItWorks: [
     {
       title: 'Install adapter',
-      description: 'Add @claidor/nextjs to your project',
+      description: 'Add @simeon/nextjs to your project',
     },
     {
       title: 'Add route handler',
@@ -51,17 +51,17 @@ export const NEXTJS_INTEGRATION: SdkIntegration = {
       description: 'Checkout, portal, and webhooks ready',
     },
   ],
-  packages: '@claidor/nextjs',
-  docsLink: 'https://docs.claidorhq.com/integrate/sdk/adapters/nextjs',
+  packages: '@simeon/nextjs',
+  docsLink: 'https://docs.simeonlabs.com/integrate/sdk/adapters/nextjs',
   codeLang: 'typescript',
-  envVars: `CLAIDOR_ACCESS_TOKEN=your_access_token
-CLAIDOR_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
-  code: `import { Checkout } from "@claidor/nextjs";
+  envVars: `SIMEON_ACCESS_TOKEN=your_access_token
+SIMEON_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
+  code: `import { Checkout } from "@simeon/nextjs";
 
 // app/api/checkout/route.ts
 export const GET = Checkout({
-  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
-  successUrl: process.env.CLAIDOR_SUCCESS_URL,
+  accessToken: process.env.SIMEON_ACCESS_TOKEN,
+  successUrl: process.env.SIMEON_SUCCESS_URL,
 });`,
 }
 
@@ -95,11 +95,11 @@ Please do the following:
 
 1. Add this script tag to index.html, right before the closing </body> tag:
 
-<script defer data-auto-init src="https://cdn.claidorhq.com/checkout/embed.js"></script>
+<script defer data-auto-init src="https://cdn.simeonlabs.com/checkout/embed.js"></script>
 
 2. Create a /pricing page with a clean layout showing plan cards. For each plan's call-to-action button, use an anchor tag like this:
 
-<a href="CHECKOUT_LINK_URL" data-claidor-checkout data-claidor-checkout-theme="light">
+<a href="CHECKOUT_LINK_URL" data-simeon-checkout data-simeon-checkout-theme="light">
   Get Started
 </a>
 
@@ -139,22 +139,22 @@ export const SUPABASE_INTEGRATION: SdkIntegration = {
     },
   ],
   packages: '@spaire/sdk',
-  docsLink: 'https://docs.claidorhq.com/integrate/sdk/adapters/supabase',
+  docsLink: 'https://docs.simeonlabs.com/integrate/sdk/adapters/supabase',
   codeLang: 'typescript',
-  envVars: `CLAIDOR_ACCESS_TOKEN=your_access_token
-CLAIDOR_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
-  code: `import { Claidor } from "@spaire/sdk";
+  envVars: `SIMEON_ACCESS_TOKEN=your_access_token
+SIMEON_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
+  code: `import { Simeon } from "@spaire/sdk";
 
-const claidor = new Claidor({
-  accessToken: Deno.env.get("CLAIDOR_ACCESS_TOKEN")!,
+const simeon = new Simeon({
+  accessToken: Deno.env.get("SIMEON_ACCESS_TOKEN")!,
 });
 
 Deno.serve(async (req) => {
   const { productId } = await req.json();
 
-  const checkout = await claidor.checkouts.create({
+  const checkout = await simeon.checkouts.create({
     products: [productId],
-    successUrl: Deno.env.get("CLAIDOR_SUCCESS_URL")!,
+    successUrl: Deno.env.get("SIMEON_SUCCESS_URL")!,
   });
 
   return new Response(
@@ -200,7 +200,7 @@ import Script from "next/script";
 <Script
   defer
   data-auto-init
-  src="https://cdn.claidorhq.com/checkout/embed.js"
+  src="https://cdn.simeonlabs.com/checkout/embed.js"
   strategy="afterInteractive"
 />
 
@@ -208,8 +208,8 @@ import Script from "next/script";
 
 <a
   href="CHECKOUT_LINK_URL"
-  data-claidor-checkout
-  data-claidor-checkout-theme="light"
+  data-simeon-checkout
+  data-simeon-checkout-theme="light"
   className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
 >
   Get Started
@@ -227,7 +227,7 @@ Use "CHECKOUT_LINK_URL" as a placeholder \u2014 I'll replace it with my actual c
    - Each card showing the plan name, price, feature list, and CTA button
    - A "Most Popular" badge on the recommended plan
    - Light/dark mode support using Tailwind's variants`,
-  promptFileName: 'v0-claidor-prompt.txt',
+  promptFileName: 'v0-simeon-prompt.txt',
   footerNote:
     'After creating your product in the Simeon dashboard, you\u2019ll get a checkout link URL to replace the CHECKOUT_LINK_URL placeholder above.',
 }
@@ -262,11 +262,11 @@ Please do the following:
 
 1. Add this script tag to the main HTML file (index.html or equivalent), right before the closing </body> tag:
 
-<script defer data-auto-init src="https://cdn.claidorhq.com/checkout/embed.js"></script>
+<script defer data-auto-init src="https://cdn.simeonlabs.com/checkout/embed.js"></script>
 
 2. Create a /pricing page with a clean layout showing plan cards. For each plan's call-to-action button, use an anchor tag like this:
 
-<a href="CHECKOUT_LINK_URL" data-claidor-checkout data-claidor-checkout-theme="light">
+<a href="CHECKOUT_LINK_URL" data-simeon-checkout data-simeon-checkout-theme="light">
   Get Started
 </a>
 
@@ -312,11 +312,11 @@ Please do the following:
 
 1. Add this script tag to index.html, right before the closing </body> tag:
 
-<script defer data-auto-init src="https://cdn.claidorhq.com/checkout/embed.js"></script>
+<script defer data-auto-init src="https://cdn.simeonlabs.com/checkout/embed.js"></script>
 
 2. Create a /pricing page with a clean layout showing plan cards. For each plan's call-to-action button, use an anchor tag like this:
 
-<a href="CHECKOUT_LINK_URL" data-claidor-checkout data-claidor-checkout-theme="light">
+<a href="CHECKOUT_LINK_URL" data-simeon-checkout data-simeon-checkout-theme="light">
   Get Started
 </a>
 
@@ -344,7 +344,7 @@ export const BETTERAUTH_INTEGRATION: SdkIntegration = {
   howItWorks: [
     {
       title: 'Install plugin',
-      description: 'Add @claidor/better-auth to your project',
+      description: 'Add @simeon/better-auth to your project',
     },
     {
       title: 'Configure auth',
@@ -355,31 +355,31 @@ export const BETTERAUTH_INTEGRATION: SdkIntegration = {
       description: 'Users get checkout, portal, and billing out of the box',
     },
   ],
-  packages: 'better-auth @claidor/better-auth @spaire/sdk',
-  docsLink: 'https://docs.claidorhq.com/integrate/sdk/adapters/better-auth',
+  packages: 'better-auth @simeon/better-auth @spaire/sdk',
+  docsLink: 'https://docs.simeonlabs.com/integrate/sdk/adapters/better-auth',
   codeLang: 'typescript',
-  envVars: `CLAIDOR_ACCESS_TOKEN=your_access_token
-CLAIDOR_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
+  envVars: `SIMEON_ACCESS_TOKEN=your_access_token
+SIMEON_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
   code: `import { betterAuth } from "better-auth";
-import { claidor, checkout, portal, usage, webhooks } from "@claidor/better-auth";
-import { Claidor } from "@spaire/sdk";
+import { simeon, checkout, portal, usage, webhooks } from "@simeon/better-auth";
+import { Simeon } from "@spaire/sdk";
 
-const claidorClient = new Claidor({
-  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
+const simeonClient = new Simeon({
+  accessToken: process.env.SIMEON_ACCESS_TOKEN,
 });
 
 const auth = betterAuth({
   // ... your Better Auth config
   plugins: [
-    claidor({
-      client: claidorClient,
+    simeon({
+      client: simeonClient,
       createCustomerOnSignUp: true,
       use: [
         checkout({
           products: [
             { productId: "YOUR_PRODUCT_ID", slug: "pro" },
           ],
-          successUrl: process.env.CLAIDOR_SUCCESS_URL,
+          successUrl: process.env.SIMEON_SUCCESS_URL,
           authenticatedUsersOnly: true,
         }),
       ],
@@ -412,32 +412,32 @@ export const EXPRESS_INTEGRATION: SdkIntegration = {
     },
   ],
   packages: '@spaire/sdk',
-  docsLink: 'https://docs.claidorhq.com/integrate/sdk/typescript',
+  docsLink: 'https://docs.simeonlabs.com/integrate/sdk/typescript',
   codeLang: 'typescript',
-  envVars: `CLAIDOR_ACCESS_TOKEN=your_access_token
-CLAIDOR_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}
-CLAIDOR_WEBHOOK_SECRET=your_webhook_secret`,
+  envVars: `SIMEON_ACCESS_TOKEN=your_access_token
+SIMEON_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}
+SIMEON_WEBHOOK_SECRET=your_webhook_secret`,
   code: `import express from "express";
-import { Claidor } from "@spaire/sdk";
+import { Simeon } from "@spaire/sdk";
 
 const app = express();
 app.use(express.json());
 
-const claidor = new Claidor({
-  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
+const simeon = new Simeon({
+  accessToken: process.env.SIMEON_ACCESS_TOKEN,
 });
 
 // Create a checkout session
 app.post("/api/checkout", async (req, res) => {
-  const checkout = await claidor.checkouts.create({
+  const checkout = await simeon.checkouts.create({
     products: [req.body.productId],
-    successUrl: process.env.CLAIDOR_SUCCESS_URL,
+    successUrl: process.env.SIMEON_SUCCESS_URL,
   });
   res.json({ url: checkout.url });
 });
 
 // Handle webhooks
-app.post("/api/webhooks/claidor", async (req, res) => {
+app.post("/api/webhooks/simeon", async (req, res) => {
   const event = req.body;
 
   if (event.type === "checkout.completed") {
@@ -463,7 +463,7 @@ export const PYTHON_SDK_INTEGRATION: SdkIntegration = {
   howItWorks: [
     {
       title: 'Install SDK',
-      description: 'Add claidor-sdk to your project',
+      description: 'Add simeon-sdk to your project',
     },
     {
       title: 'Configure credentials',
@@ -474,24 +474,24 @@ export const PYTHON_SDK_INTEGRATION: SdkIntegration = {
       description: 'Create checkouts and handle webhooks',
     },
   ],
-  packages: 'claidor-sdk',
-  pythonInstall: 'pip install claidor-sdk',
-  docsLink: 'https://docs.claidorhq.com/integrate/sdk/python',
+  packages: 'simeon-sdk',
+  pythonInstall: 'pip install simeon-sdk',
+  docsLink: 'https://docs.simeonlabs.com/integrate/sdk/python',
   codeLang: 'python',
-  envVars: `CLAIDOR_ACCESS_TOKEN=your_access_token
-CLAIDOR_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
+  envVars: `SIMEON_ACCESS_TOKEN=your_access_token
+SIMEON_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
   code: `import os
-from claidor_sdk import Claidor
+from simeon_sdk import Simeon
 
-with Claidor(
-    access_token=os.environ.get("CLAIDOR_ACCESS_TOKEN"),
-) as claidor:
+with Simeon(
+    access_token=os.environ.get("SIMEON_ACCESS_TOKEN"),
+) as simeon:
 
-    res = claidor.checkouts.create(request={
+    res = simeon.checkouts.create(request={
         "products": [
             "YOUR_PRODUCT_ID"
         ],
-        "success_url": os.environ.get("CLAIDOR_SUCCESS_URL")
+        "success_url": os.environ.get("SIMEON_SUCCESS_URL")
     })
 
     # Handle response
@@ -510,7 +510,7 @@ export const PHP_SDK_INTEGRATION: SdkIntegration = {
   howItWorks: [
     {
       title: 'Install SDK',
-      description: 'Add claidor-tech/claidor-php via Composer',
+      description: 'Add simeon-tech/simeon-php via Composer',
     },
     {
       title: 'Configure credentials',
@@ -521,27 +521,27 @@ export const PHP_SDK_INTEGRATION: SdkIntegration = {
       description: 'Create checkouts and handle webhooks',
     },
   ],
-  packages: 'claidor-tech/claidor-php',
-  pythonInstall: 'composer require claidor-tech/claidor-php',
-  docsLink: 'https://docs.claidorhq.com/integrate/sdk/php',
+  packages: 'simeon-tech/simeon-php',
+  pythonInstall: 'composer require simeon-tech/simeon-php',
+  docsLink: 'https://docs.simeonlabs.com/integrate/sdk/php',
   codeLang: 'php',
-  envVars: `CLAIDOR_ACCESS_TOKEN=your_access_token
-CLAIDOR_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
+  envVars: `SIMEON_ACCESS_TOKEN=your_access_token
+SIMEON_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
   code: `<?php
 
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
 
-use Claidor\\Claidor;
+use Simeon\\Simeon;
 
-$sdk = Claidor::builder()
-    ->setSecurity(getenv('CLAIDOR_ACCESS_TOKEN'))
+$sdk = Simeon::builder()
+    ->setSecurity(getenv('SIMEON_ACCESS_TOKEN'))
     ->build();
 
 $response = $sdk->checkouts->create([
     'products' => ['YOUR_PRODUCT_ID'],
-    'success_url' => getenv('CLAIDOR_SUCCESS_URL'),
+    'success_url' => getenv('SIMEON_SUCCESS_URL'),
 ]);
 
 // Redirect to checkout
@@ -572,19 +572,19 @@ export const TYPESCRIPT_SDK_INTEGRATION: SdkIntegration = {
     },
   ],
   packages: '@spaire/sdk',
-  docsLink: 'https://docs.claidorhq.com/integrate/sdk/typescript',
+  docsLink: 'https://docs.simeonlabs.com/integrate/sdk/typescript',
   codeLang: 'typescript',
-  envVars: `CLAIDOR_ACCESS_TOKEN=your_access_token
-CLAIDOR_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
-  code: `import { Claidor } from "@spaire/sdk";
+  envVars: `SIMEON_ACCESS_TOKEN=your_access_token
+SIMEON_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
+  code: `import { Simeon } from "@spaire/sdk";
 
-const claidor = new Claidor({
-  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
+const simeon = new Simeon({
+  accessToken: process.env.SIMEON_ACCESS_TOKEN,
 });
 
-const checkout = await claidor.checkouts.create({
+const checkout = await simeon.checkouts.create({
   products: ["YOUR_PRODUCT_ID"],
-  successUrl: process.env.CLAIDOR_SUCCESS_URL,
+  successUrl: process.env.SIMEON_SUCCESS_URL,
 });
 
 // Redirect to checkout
@@ -603,7 +603,7 @@ export const RUBY_SDK_INTEGRATION: SdkIntegration = {
   howItWorks: [
     {
       title: 'Install gem',
-      description: 'Add claidor to your project via gem or Bundler',
+      description: 'Add simeon to your project via gem or Bundler',
     },
     {
       title: 'Configure credentials',
@@ -614,15 +614,15 @@ export const RUBY_SDK_INTEGRATION: SdkIntegration = {
       description: 'Create checkouts and handle webhooks',
     },
   ],
-  packages: 'claidor',
-  pythonInstall: 'gem install claidor',
-  docsLink: 'https://docs.claidorhq.com/integrate/sdk/ruby',
+  packages: 'simeon',
+  pythonInstall: 'gem install simeon',
+  docsLink: 'https://docs.simeonlabs.com/integrate/sdk/ruby',
   codeLang: 'bash',
-  envVars: `CLAIDOR_ACCESS_TOKEN=your_access_token`,
-  code: `require 'claidor'
+  envVars: `SIMEON_ACCESS_TOKEN=your_access_token`,
+  code: `require 'simeon'
 
-s = OpenApiSDK::Claidor.new(
-  access_token: ENV['CLAIDOR_ACCESS_TOKEN']
+s = OpenApiSDK::Simeon.new(
+  access_token: ENV['SIMEON_ACCESS_TOKEN']
 )
 
 res = s.checkouts.create(
@@ -640,13 +640,13 @@ export const ASTRO_INTEGRATION: SdkIntegration = {
   name: 'Astro',
   tagline: 'Build with Astro. Monetize with Simeon.',
   description:
-    'The official @claidor/astro adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
+    'The official @simeon/astro adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
   category: 'framework',
   categoryLabel: 'Framework',
   howItWorks: [
     {
       title: 'Install adapter',
-      description: 'Add @claidor/astro to your project',
+      description: 'Add @simeon/astro to your project',
     },
     {
       title: 'Add route handler',
@@ -657,18 +657,18 @@ export const ASTRO_INTEGRATION: SdkIntegration = {
       description: 'Checkout, portal, and webhooks ready',
     },
   ],
-  packages: 'zod @claidor/astro',
-  docsLink: 'https://docs.claidorhq.com/integrate/sdk/adapters/astro',
+  packages: 'zod @simeon/astro',
+  docsLink: 'https://docs.simeonlabs.com/integrate/sdk/adapters/astro',
   codeLang: 'typescript',
-  envVars: `CLAIDOR_ACCESS_TOKEN=your_access_token
-CLAIDOR_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
-  code: `import { Checkout } from "@claidor/astro";
-import { CLAIDOR_ACCESS_TOKEN, CLAIDOR_SUCCESS_URL } from "astro:env/server";
+  envVars: `SIMEON_ACCESS_TOKEN=your_access_token
+SIMEON_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
+  code: `import { Checkout } from "@simeon/astro";
+import { SIMEON_ACCESS_TOKEN, SIMEON_SUCCESS_URL } from "astro:env/server";
 
 // src/pages/api/checkout.ts
 export const GET = Checkout({
-  accessToken: CLAIDOR_ACCESS_TOKEN,
-  successUrl: CLAIDOR_SUCCESS_URL,
+  accessToken: SIMEON_ACCESS_TOKEN,
+  successUrl: SIMEON_SUCCESS_URL,
 });`,
 }
 
@@ -678,13 +678,13 @@ export const ELYSIA_INTEGRATION: SdkIntegration = {
   name: 'Elysia',
   tagline: 'Build with Elysia. Monetize with Simeon.',
   description:
-    'The official @claidor/elysia adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
+    'The official @simeon/elysia adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
   category: 'framework',
   categoryLabel: 'Framework',
   howItWorks: [
     {
       title: 'Install adapter',
-      description: 'Add @claidor/elysia to your project',
+      description: 'Add @simeon/elysia to your project',
     },
     {
       title: 'Add route handler',
@@ -695,21 +695,21 @@ export const ELYSIA_INTEGRATION: SdkIntegration = {
       description: 'Checkout, portal, and webhooks ready',
     },
   ],
-  packages: 'zod @claidor/elysia',
-  docsLink: 'https://docs.claidorhq.com/integrate/sdk/adapters/elysia',
+  packages: 'zod @simeon/elysia',
+  docsLink: 'https://docs.simeonlabs.com/integrate/sdk/adapters/elysia',
   codeLang: 'typescript',
-  envVars: `CLAIDOR_ACCESS_TOKEN=your_access_token
-CLAIDOR_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
+  envVars: `SIMEON_ACCESS_TOKEN=your_access_token
+SIMEON_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
   code: `import { Elysia } from "elysia";
-import { Checkout } from "@claidor/elysia";
+import { Checkout } from "@simeon/elysia";
 
 const app = new Elysia();
 
 app.get(
   "/checkout",
   Checkout({
-    accessToken: process.env.CLAIDOR_ACCESS_TOKEN!,
-    successUrl: process.env.CLAIDOR_SUCCESS_URL!,
+    accessToken: process.env.SIMEON_ACCESS_TOKEN!,
+    successUrl: process.env.SIMEON_SUCCESS_URL!,
   })
 );`,
 }
@@ -720,13 +720,13 @@ export const FASTIFY_INTEGRATION: SdkIntegration = {
   name: 'Fastify',
   tagline: 'Build with Fastify. Monetize with Simeon.',
   description:
-    'The official @claidor/fastify adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
+    'The official @simeon/fastify adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
   category: 'framework',
   categoryLabel: 'Framework',
   howItWorks: [
     {
       title: 'Install adapter',
-      description: 'Add @claidor/fastify to your project',
+      description: 'Add @simeon/fastify to your project',
     },
     {
       title: 'Add route handler',
@@ -737,21 +737,21 @@ export const FASTIFY_INTEGRATION: SdkIntegration = {
       description: 'Checkout, portal, and webhooks ready',
     },
   ],
-  packages: 'zod @claidor/fastify',
-  docsLink: 'https://docs.claidorhq.com/integrate/sdk/adapters/fastify',
+  packages: 'zod @simeon/fastify',
+  docsLink: 'https://docs.simeonlabs.com/integrate/sdk/adapters/fastify',
   codeLang: 'typescript',
-  envVars: `CLAIDOR_ACCESS_TOKEN=your_access_token
-CLAIDOR_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
+  envVars: `SIMEON_ACCESS_TOKEN=your_access_token
+SIMEON_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
   code: `import fastify from "fastify";
-import { Checkout } from "@claidor/fastify";
+import { Checkout } from "@simeon/fastify";
 
 const app = fastify();
 
 app.get(
   "/checkout",
   Checkout({
-    accessToken: process.env.CLAIDOR_ACCESS_TOKEN!,
-    successUrl: process.env.CLAIDOR_SUCCESS_URL!,
+    accessToken: process.env.SIMEON_ACCESS_TOKEN!,
+    successUrl: process.env.SIMEON_SUCCESS_URL!,
   })
 );`,
 }
@@ -762,13 +762,13 @@ export const HONO_INTEGRATION: SdkIntegration = {
   name: 'Hono',
   tagline: 'Build with Hono. Monetize with Simeon.',
   description:
-    'The official @claidor/hono adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
+    'The official @simeon/hono adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
   category: 'framework',
   categoryLabel: 'Framework',
   howItWorks: [
     {
       title: 'Install adapter',
-      description: 'Add @claidor/hono to your project',
+      description: 'Add @simeon/hono to your project',
     },
     {
       title: 'Add route handler',
@@ -779,21 +779,21 @@ export const HONO_INTEGRATION: SdkIntegration = {
       description: 'Checkout, portal, and webhooks ready',
     },
   ],
-  packages: 'zod @claidor/hono',
-  docsLink: 'https://docs.claidorhq.com/integrate/sdk/adapters/hono',
+  packages: 'zod @simeon/hono',
+  docsLink: 'https://docs.simeonlabs.com/integrate/sdk/adapters/hono',
   codeLang: 'typescript',
-  envVars: `CLAIDOR_ACCESS_TOKEN=your_access_token
-CLAIDOR_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
+  envVars: `SIMEON_ACCESS_TOKEN=your_access_token
+SIMEON_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
   code: `import { Hono } from "hono";
-import { Checkout } from "@claidor/hono";
+import { Checkout } from "@simeon/hono";
 
 const app = new Hono();
 
 app.get(
   "/checkout",
   Checkout({
-    accessToken: process.env.CLAIDOR_ACCESS_TOKEN!,
-    successUrl: process.env.CLAIDOR_SUCCESS_URL!,
+    accessToken: process.env.SIMEON_ACCESS_TOKEN!,
+    successUrl: process.env.SIMEON_SUCCESS_URL!,
   })
 );`,
 }
@@ -810,29 +810,29 @@ export const LARAVEL_INTEGRATION: SdkIntegration = {
   howItWorks: [
     {
       title: 'Install package',
-      description: 'Add laravel-claidor via Composer',
+      description: 'Add laravel-simeon via Composer',
     },
     {
       title: 'Run installer',
-      description: 'php artisan claidor:install sets up everything',
+      description: 'php artisan simeon:install sets up everything',
     },
     {
       title: 'Go live',
       description: 'Checkout, subscriptions, and webhooks ready',
     },
   ],
-  packages: 'danestves/laravel-claidor',
-  pythonInstall: 'composer require danestves/laravel-claidor',
-  docsLink: 'https://docs.claidorhq.com/integrate/sdk/adapters/laravel',
+  packages: 'danestves/laravel-simeon',
+  pythonInstall: 'composer require danestves/laravel-simeon',
+  docsLink: 'https://docs.simeonlabs.com/integrate/sdk/adapters/laravel',
   codeLang: 'php',
-  envVars: `CLAIDOR_ACCESS_TOKEN=your_access_token
-CLAIDOR_WEBHOOK_SECRET=your_webhook_secret`,
+  envVars: `SIMEON_ACCESS_TOKEN=your_access_token
+SIMEON_WEBHOOK_SECRET=your_webhook_secret`,
   code: `<?php
 
 use Illuminate\\Http\\Request;
 
 // Add Billable trait to your User model
-// use Danestves\\LaravelClaidor\\Billable;
+// use Danestves\\LaravelSimeon\\Billable;
 
 Route::post('/checkout', function (Request $request) {
     return $request->user()->checkout(['product_id_123']);
@@ -849,13 +849,13 @@ export const NUXT_INTEGRATION: SdkIntegration = {
   name: 'Nuxt',
   tagline: 'Build with Nuxt. Monetize with Simeon.',
   description:
-    'The official @claidor/nuxt module gives you checkout, customer portal, and webhooks out of the box — the full billing loop as a Nuxt module.',
+    'The official @simeon/nuxt module gives you checkout, customer portal, and webhooks out of the box — the full billing loop as a Nuxt module.',
   category: 'framework',
   categoryLabel: 'Framework',
   howItWorks: [
     {
       title: 'Install module',
-      description: 'Add @claidor/nuxt to your project',
+      description: 'Add @simeon/nuxt to your project',
     },
     {
       title: 'Register module',
@@ -866,23 +866,23 @@ export const NUXT_INTEGRATION: SdkIntegration = {
       description: 'Checkout, portal, and webhooks ready',
     },
   ],
-  packages: 'zod @claidor/nuxt',
-  docsLink: 'https://docs.claidorhq.com/integrate/sdk/adapters/nuxt',
+  packages: 'zod @simeon/nuxt',
+  docsLink: 'https://docs.simeonlabs.com/integrate/sdk/adapters/nuxt',
   codeLang: 'typescript',
-  envVars: `CLAIDOR_ACCESS_TOKEN=your_access_token
-CLAIDOR_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
+  envVars: `SIMEON_ACCESS_TOKEN=your_access_token
+SIMEON_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
   code: `// nuxt.config.ts
 export default defineNuxtConfig({
-  modules: ["@claidor/nuxt"],
+  modules: ["@simeon/nuxt"],
 });
 
 // server/routes/api/checkout.post.ts
-import { Checkout } from "@claidor/nuxt";
+import { Checkout } from "@simeon/nuxt";
 
 export default defineEventHandler((event) => {
   return Checkout({
-    accessToken: process.env.CLAIDOR_ACCESS_TOKEN!,
-    successUrl: process.env.CLAIDOR_SUCCESS_URL!,
+    accessToken: process.env.SIMEON_ACCESS_TOKEN!,
+    successUrl: process.env.SIMEON_SUCCESS_URL!,
   })(event);
 });`,
 }
@@ -893,13 +893,13 @@ export const REMIX_INTEGRATION: SdkIntegration = {
   name: 'Remix',
   tagline: 'Build with Remix. Monetize with Simeon.',
   description:
-    'The official @claidor/remix adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
+    'The official @simeon/remix adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
   category: 'framework',
   categoryLabel: 'Framework',
   howItWorks: [
     {
       title: 'Install adapter',
-      description: 'Add @claidor/remix to your project',
+      description: 'Add @simeon/remix to your project',
     },
     {
       title: 'Add loader',
@@ -910,17 +910,17 @@ export const REMIX_INTEGRATION: SdkIntegration = {
       description: 'Checkout, portal, and webhooks ready',
     },
   ],
-  packages: 'zod @claidor/remix',
-  docsLink: 'https://docs.claidorhq.com/integrate/sdk/adapters/remix',
+  packages: 'zod @simeon/remix',
+  docsLink: 'https://docs.simeonlabs.com/integrate/sdk/adapters/remix',
   codeLang: 'typescript',
-  envVars: `CLAIDOR_ACCESS_TOKEN=your_access_token
-CLAIDOR_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
-  code: `import { Checkout } from "@claidor/remix";
+  envVars: `SIMEON_ACCESS_TOKEN=your_access_token
+SIMEON_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
+  code: `import { Checkout } from "@simeon/remix";
 
 // app/routes/checkout.tsx
 export const loader = Checkout({
-  accessToken: process.env.CLAIDOR_ACCESS_TOKEN!,
-  successUrl: process.env.CLAIDOR_SUCCESS_URL!,
+  accessToken: process.env.SIMEON_ACCESS_TOKEN!,
+  successUrl: process.env.SIMEON_SUCCESS_URL!,
 });`,
 }
 
@@ -930,13 +930,13 @@ export const SVELTEKIT_INTEGRATION: SdkIntegration = {
   name: 'SvelteKit',
   tagline: 'Build with SvelteKit. Monetize with Simeon.',
   description:
-    'The official @claidor/sveltekit adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
+    'The official @simeon/sveltekit adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
   category: 'framework',
   categoryLabel: 'Framework',
   howItWorks: [
     {
       title: 'Install adapter',
-      description: 'Add @claidor/sveltekit to your project',
+      description: 'Add @simeon/sveltekit to your project',
     },
     {
       title: 'Add server route',
@@ -947,17 +947,17 @@ export const SVELTEKIT_INTEGRATION: SdkIntegration = {
       description: 'Checkout, portal, and webhooks ready',
     },
   ],
-  packages: 'zod @claidor/sveltekit',
-  docsLink: 'https://docs.claidorhq.com/integrate/sdk/adapters/sveltekit',
+  packages: 'zod @simeon/sveltekit',
+  docsLink: 'https://docs.simeonlabs.com/integrate/sdk/adapters/sveltekit',
   codeLang: 'typescript',
-  envVars: `CLAIDOR_ACCESS_TOKEN=your_access_token
-CLAIDOR_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
-  code: `import { Checkout } from "@claidor/sveltekit";
+  envVars: `SIMEON_ACCESS_TOKEN=your_access_token
+SIMEON_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
+  code: `import { Checkout } from "@simeon/sveltekit";
 
 // src/routes/checkout/+server.ts
 export const GET = Checkout({
-  accessToken: process.env.CLAIDOR_ACCESS_TOKEN!,
-  successUrl: process.env.CLAIDOR_SUCCESS_URL!,
+  accessToken: process.env.SIMEON_ACCESS_TOKEN!,
+  successUrl: process.env.SIMEON_SUCCESS_URL!,
 });`,
 }
 
@@ -967,13 +967,13 @@ export const TANSTACK_START_INTEGRATION: SdkIntegration = {
   name: 'TanStack Start',
   tagline: 'Build with TanStack Start. Monetize with Simeon.',
   description:
-    'The official @claidor/tanstack-start adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
+    'The official @simeon/tanstack-start adapter gives you checkout, customer portal, and webhooks out of the box — the full billing loop in a single package.',
   category: 'framework',
   categoryLabel: 'Framework',
   howItWorks: [
     {
       title: 'Install adapter',
-      description: 'Add @claidor/tanstack-start to your project',
+      description: 'Add @simeon/tanstack-start to your project',
     },
     {
       title: 'Add file route',
@@ -984,12 +984,12 @@ export const TANSTACK_START_INTEGRATION: SdkIntegration = {
       description: 'Checkout, portal, and webhooks ready',
     },
   ],
-  packages: 'zod @claidor/tanstack-start',
-  docsLink: 'https://docs.claidorhq.com/integrate/sdk/adapters/tanstack-start',
+  packages: 'zod @simeon/tanstack-start',
+  docsLink: 'https://docs.simeonlabs.com/integrate/sdk/adapters/tanstack-start',
   codeLang: 'typescript',
-  envVars: `CLAIDOR_ACCESS_TOKEN=your_access_token
-CLAIDOR_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
-  code: `import { Checkout } from "@claidor/tanstack-start";
+  envVars: `SIMEON_ACCESS_TOKEN=your_access_token
+SIMEON_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`,
+  code: `import { Checkout } from "@simeon/tanstack-start";
 import { createFileRoute } from "@tanstack/react-start";
 
 // routes/api/checkout.ts
@@ -997,8 +997,8 @@ export const Route = createFileRoute("/api/checkout")({
   server: {
     handlers: {
       GET: Checkout({
-        accessToken: process.env.CLAIDOR_ACCESS_TOKEN!,
-        successUrl: process.env.CLAIDOR_SUCCESS_URL!,
+        accessToken: process.env.SIMEON_ACCESS_TOKEN!,
+        successUrl: process.env.SIMEON_SUCCESS_URL!,
       }),
     },
   },
@@ -1025,8 +1025,6 @@ export const ALL_INTEGRATIONS: Integration[] = [
   PHP_SDK_INTEGRATION,
 ]
 
-export const getIntegrationBySlug = (
-  slug: string,
-): Integration | undefined => {
+export const getIntegrationBySlug = (slug: string): Integration | undefined => {
   return ALL_INTEGRATIONS.find((i) => i.slug === slug)
 }

@@ -11,7 +11,7 @@ import { createChannelSocket, socketText, SOCKET_OPEN, type ChannelSocket, type 
  * by its envelope_id, `message` and `reaction_added` become inbound
  * envelopes, and delivery goes through the Web API with the bot token
  * (xoxb-…). Built 25 September 2026 against the transcript manager's
- * channel hooks (docs/product/channels-served.md).
+ * channel hooks (docs/services-agents.md).
  */
 export const SLACK_API_BASE = "https://slack.com/api";
 export const SLACK_MESSAGE_LIMIT = 4000;

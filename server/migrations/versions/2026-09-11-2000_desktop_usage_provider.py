@@ -5,7 +5,7 @@ Revises: maty_jobs_0911
 Create Date: 2026-09-11 20:00:00.000000
 
 The desktop app now offers models from two suppliers, and a GPT token is
-not priced like a Claude token (`polar/desktop/pricing.py`). A usage row
+not priced like a Claude token (`simeon/desktop/pricing.py`). A usage row
 that does not say who served the call cannot be traced back to the price
 list its credit figure was read off, so the figures of the two suppliers
 stop being comparable the first time either list moves.

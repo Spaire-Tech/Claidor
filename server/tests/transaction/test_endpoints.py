@@ -3,8 +3,8 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
-from polar.models import Account, Pledge, Transaction, UserOrganization
-from polar.models.transaction import TransactionType
+from simeon.models import Account, Pledge, Transaction, UserOrganization
+from simeon.models.transaction import TransactionType
 from tests.fixtures.database import SaveFixture
 from tests.transaction.conftest import create_transaction
 

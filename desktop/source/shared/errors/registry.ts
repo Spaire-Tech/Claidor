@@ -70,7 +70,7 @@ export const SAND_ERROR_DEFINITIONS = {
     "name": "backendHttpStatus",
     "domain": "transport",
     "retryable": true,
-    "summary": "Cursor backend replied with a non-ok HTTP status.",
+    "summary": "Simeon Labs backend replied with a non-ok HTTP status.",
     "payload": [
       "httpStatus"
     ],
@@ -80,7 +80,7 @@ export const SAND_ERROR_DEFINITIONS = {
     "name": "backendUnreachable",
     "domain": "transport",
     "retryable": true,
-    "summary": "Cursor backend was unreachable over the transport.",
+    "summary": "Simeon Labs backend was unreachable over the transport.",
     "payload": [
       "errno"
     ],
@@ -258,7 +258,7 @@ export const SAND_ERROR_DEFINITIONS = {
     "name": "sessionRefreshHttpStatus",
     "domain": "auth",
     "retryable": true,
-    "summary": "Cursor session token refresh got a non-ok HTTP status; the session is kept and a later refresh may succeed.",
+    "summary": "Simeon session token refresh got a non-ok HTTP status; the session is kept and a later refresh may succeed.",
     "payload": [
       "httpStatus"
     ],
@@ -268,7 +268,7 @@ export const SAND_ERROR_DEFINITIONS = {
     "name": "sessionRefreshNetwork",
     "domain": "auth",
     "retryable": true,
-    "summary": "Cursor session token refresh failed on the transport before any backend verdict; the session is kept.",
+    "summary": "Simeon session token refresh failed on the transport before any backend verdict; the session is kept.",
     "payload": [
       "errno"
     ],
@@ -278,7 +278,7 @@ export const SAND_ERROR_DEFINITIONS = {
     "name": "sessionRefreshBadPayload",
     "domain": "auth",
     "retryable": true,
-    "summary": "Cursor session token refresh returned an ok status without a usable token payload; the session is kept.",
+    "summary": "Simeon session token refresh returned an ok status without a usable token payload; the session is kept.",
     "payload": [],
     "seededFrom": "unreadable body / empty access_token branches in cursor-auth.ts runRefreshAccessToken"
   },
@@ -286,7 +286,7 @@ export const SAND_ERROR_DEFINITIONS = {
     "name": "sessionRefreshRejected",
     "domain": "auth",
     "retryable": false,
-    "summary": "Cursor session refresh was terminally rejected (backend shouldLogout verdict or an unparseable token response) with no rotation-race rescue; the user was signed out.",
+    "summary": "Simeon session refresh was terminally rejected (backend shouldLogout verdict or an unparseable token response) with no rotation-race rescue; the user was signed out.",
     "payload": [],
     "seededFrom": "shouldLogout / parse-failure sign-out in cursor-auth.ts runRefreshAccessToken"
   },
@@ -294,7 +294,7 @@ export const SAND_ERROR_DEFINITIONS = {
     "name": "sessionPolicyRefused",
     "domain": "auth",
     "retryable": false,
-    "summary": "Cursor session refresh was refused by the device's MDM sign-in policy; the user was signed out.",
+    "summary": "Simeon session refresh was refused by the device's MDM sign-in policy; the user was signed out.",
     "payload": [],
     "seededFrom": "MDM policy verdict in cursor-auth.ts runRefreshAccessToken"
   },
@@ -302,7 +302,7 @@ export const SAND_ERROR_DEFINITIONS = {
     "name": "sessionSecretsUnavailable",
     "domain": "auth",
     "retryable": false,
-    "summary": "OS secure storage is unavailable, so the signed-in session's Cursor tokens are held in memory only and will not survive a restart.",
+    "summary": "OS secure storage is unavailable, so the signed-in session's sign-in tokens are held in memory only and will not survive a restart.",
     "payload": [],
     "seededFrom": "noteSecretsUnavailableSession in cursor-auth.ts storeAuthentication callers"
   },

@@ -1,5 +1,5 @@
-import { Client, schemas } from '@claidor/client'
 import * as Sentry from '@sentry/nextjs'
+import { Client, schemas } from '@simeon/client'
 import { headers } from 'next/headers'
 import { cache } from 'react'
 
@@ -34,7 +34,7 @@ const _getAuthenticatedUser = async (): Promise<
   schemas['UserRead'] | undefined
 > => {
   // Middleware set this header for authenticated requests
-  const userData = (await headers()).get('x-polar-user')
+  const userData = (await headers()).get('x-simeon-user')
   if (userData) {
     return JSON.parse(userData)
   }

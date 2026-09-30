@@ -2,12 +2,6 @@ import pytest
 from pytest_mock import MockerFixture
 from sqlalchemy import func, select
 
-from polar.enums import SubscriptionRecurringInterval
-from polar.kit.db.postgres import AsyncSession
-from polar.models import Meter, Product, ProductPrice
-from polar.models.product_price import (
-    ProductPriceFixed,
-)
 from scripts.seed_platform_products import (
     METER_SPECS,
     PRODUCT_SPECS,
@@ -16,6 +10,12 @@ from scripts.seed_platform_products import (
     _upsert_catalog_price,
     _upsert_meter,
     _upsert_product,
+)
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.kit.db.postgres import AsyncSession
+from simeon.models import Meter, Product, ProductPrice
+from simeon.models.product_price import (
+    ProductPriceFixed,
 )
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_organization, create_product
@@ -30,7 +30,9 @@ class TestSeedPlatformProducts:
         save_fixture: SaveFixture,
     ) -> None:
         platform_org = await create_organization(save_fixture)
-        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+        mocker.patch(
+            "simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
+        )
 
         for meter_spec in METER_SPECS:
             _, action = await _upsert_meter(
@@ -75,7 +77,9 @@ class TestSeedPlatformProducts:
         save_fixture: SaveFixture,
     ) -> None:
         platform_org = await create_organization(save_fixture)
-        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+        mocker.patch(
+            "simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
+        )
 
         # First pass.
         for meter_spec in METER_SPECS:
@@ -131,7 +135,9 @@ class TestSeedPlatformProducts:
         save_fixture: SaveFixture,
     ) -> None:
         platform_org = await create_organization(save_fixture)
-        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+        mocker.patch(
+            "simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
+        )
 
         for product_spec in PRODUCT_SPECS:
             product, _ = await _upsert_product(
@@ -177,14 +183,14 @@ class TestSeedPlatformProducts:
         # Starter — monthly $49 + annual $470 (~20% off 12 × $49 = $588,
         # rounded to a whole dollar).
         starter_monthly = await _find("starter", "month")
-        assert starter_monthly.name == "Claidor Starter"
+        assert starter_monthly.name == "Simeon Starter"
         assert starter_monthly.trial_interval_count == 14
         starter_monthly_price = await _price_for(starter_monthly)
         assert isinstance(starter_monthly_price, ProductPriceFixed)
         assert starter_monthly_price.price_amount == 4900
 
         starter_annual = await _find("starter", "year")
-        assert starter_annual.name == "Claidor Starter (Annual)"
+        assert starter_annual.name == "Simeon Starter (Annual)"
         assert starter_annual.trial_interval_count == 14
         starter_annual_price = await _price_for(starter_annual)
         assert isinstance(starter_annual_price, ProductPriceFixed)
@@ -192,28 +198,28 @@ class TestSeedPlatformProducts:
 
         # Studio — monthly $129 + annual $1,238.
         studio_monthly = await _find("studio", "month")
-        assert studio_monthly.name == "Claidor Studio"
+        assert studio_monthly.name == "Simeon Studio"
         assert studio_monthly.trial_interval_count == 14
         studio_monthly_price = await _price_for(studio_monthly)
         assert isinstance(studio_monthly_price, ProductPriceFixed)
         assert studio_monthly_price.price_amount == 12900
 
         studio_annual = await _find("studio", "year")
-        assert studio_annual.name == "Claidor Studio (Annual)"
+        assert studio_annual.name == "Simeon Studio (Annual)"
         studio_annual_price = await _price_for(studio_annual)
         assert isinstance(studio_annual_price, ProductPriceFixed)
         assert studio_annual_price.price_amount == 123800  # $1,238.00
 
         # Scale — monthly $299 + annual $2,870.
         scale_monthly = await _find("scale", "month")
-        assert scale_monthly.name == "Claidor Scale"
+        assert scale_monthly.name == "Simeon Scale"
         assert scale_monthly.trial_interval_count == 14
         scale_monthly_price = await _price_for(scale_monthly)
         assert isinstance(scale_monthly_price, ProductPriceFixed)
         assert scale_monthly_price.price_amount == 29900
 
         scale_annual = await _find("scale", "year")
-        assert scale_annual.name == "Claidor Scale (Annual)"
+        assert scale_annual.name == "Simeon Scale (Annual)"
         scale_annual_price = await _price_for(scale_annual)
         assert isinstance(scale_annual_price, ProductPriceFixed)
         assert scale_annual_price.price_amount == 287000  # $2,870.00
@@ -225,7 +231,9 @@ class TestSeedPlatformProducts:
         save_fixture: SaveFixture,
     ) -> None:
         platform_org = await create_organization(save_fixture)
-        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+        mocker.patch(
+            "simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
+        )
         starter_spec = next(s for s in PRODUCT_SPECS if s.tier == "starter")
 
         product, _ = await _upsert_product(
@@ -301,12 +309,14 @@ class TestSeedPlatformProducts:
         the Starter spec and re-stamped to "starter" — same row, no
         duplicate — so existing subscriptions keep pointing at it."""
         platform_org = await create_organization(save_fixture)
-        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+        mocker.patch(
+            "simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
+        )
 
         legacy_pro = await create_product(
             save_fixture,
             organization=platform_org,
-            name="Claidor Pro",
+            name="Simeon Pro",
             recurring_interval=SubscriptionRecurringInterval.month,
             prices=[(4900, "usd")],
         )
@@ -333,7 +343,7 @@ class TestSeedPlatformProducts:
         assert product.id == legacy_pro.id
         assert action == "updated"
         assert product.user_metadata["tier"] == "starter"
-        assert product.name == "Claidor Starter"
+        assert product.name == "Simeon Starter"
 
         total = (
             await session.execute(

@@ -3,7 +3,7 @@
  * cards-plan row 6).
  *
  * The pinned renderer draws the `email-draft` and `slack-draft` cards and
- * the transport carries both kinds; Grok Bot 0.18 shipped the card's Send
+ * the transport carries both kinds; the upstream app 0.18 shipped the card's Send
  * and Discard callbacks empty and the reconstruction had no tool that
  * emits a draft. Now `DraftExternalMessage` (host/runner/tools/
  * draft-message-tool.ts) appends the card, and the gateway takes `sendDraft`

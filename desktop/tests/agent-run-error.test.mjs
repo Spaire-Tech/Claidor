@@ -11,11 +11,11 @@ test("OpenAI account-quota refusals do not send the person to platform.openai.co
     path.join(repoRoot, "source/host/extensions/transcript/agent-run-error.ts"),
     "utf8",
   );
-  assert.match(source, /export function claidorFacingProviderError/);
+  assert.match(source, /export function simeonFacingProviderError/);
   assert.match(source, /no credits remaining\|insufficient_quota\|platform\\.openai\\.com/);
   assert.match(source, /OpenAI has no credits left on Simeon Labs' account/);
   assert.match(source, /Claude Code is not installed/);
   assert.match(source, /Simeon talks to Simeon Labs' server, not Claude Code/);
-  assert.match(source, /claidorFacingProviderError\(shown\)/);
+  assert.match(source, /simeonFacingProviderError\(shown\)/);
   assert.doesNotMatch(source, /Add credits to continue using the API/);
 });

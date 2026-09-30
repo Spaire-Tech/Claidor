@@ -6,7 +6,7 @@
  * the Mac under the person's own account, and the approval card names a
  * command or a path, not what is behind it. A path here holds keys or
  * sign-ins (SSH and GPG keys, cloud CLI credentials, the app's own token
- * files under `~/.caisra`, the keychains, browser profiles with their
+ * files under `~/.simeon` (and the earlier `~/.caisra`), the keychains, browser profiles with their
  * cookies), so the daemon refuses it whatever the permission setting says
  * and tells the agent why. The person can still do it themselves.
  */
@@ -27,6 +27,7 @@ export const SENSITIVE_LOCAL_PATHS: readonly string[] = [
   ".netrc",
   ".npmrc",
   ".pypirc",
+  ".simeon",
   ".caisra",
   ".cursor",
   "Library/Keychains",

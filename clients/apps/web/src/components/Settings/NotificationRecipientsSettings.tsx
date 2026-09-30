@@ -1,8 +1,8 @@
 'use client'
 
 import { useListNotificationRecipients } from '@/hooks/queries/notifications'
-import { schemas } from '@claidor/client'
-import ShadowListGroup from '@claidor/ui/components/atoms/ShadowListGroup'
+import { schemas } from '@simeon/client'
+import ShadowListGroup from '@simeon/ui/components/atoms/ShadowListGroup'
 
 const NotificationRecipientItem = ({
   recipient,
@@ -12,7 +12,7 @@ const NotificationRecipientItem = ({
   return (
     <div className="flex flex-col gap-y-2">
       <span className="font-medium">{recipient.platform} Device</span>
-      <span className=" font-mono text-xs text-gray-500">
+      <span className="font-mono text-xs text-gray-500">
         {recipient.expo_push_token}
       </span>
     </div>
@@ -35,7 +35,7 @@ export const NotificationRecipientsSettings = () => {
         })
       ) : (
         <ShadowListGroup.Item>
-          <p className=" text-sm text-gray-500">
+          <p className="text-sm text-gray-500">
             You don&apos;t have any active Notification Recipients.
           </p>
         </ShadowListGroup.Item>

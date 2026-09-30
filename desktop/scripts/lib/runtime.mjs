@@ -45,7 +45,7 @@ export function selectRuntimeSource({
       kind: "missing",
       message:
         `Expected Grok Bot ${expectedVersion}, got ${configuredVersion ?? "unreadable"} at ${configuredPath}. ` +
-        `Unset GROK_BOT_018_APP and run \`npm run bootstrap\` so it can fetch the pinned 0.18.0 DMG. ` +
+        `Unset SIMEON_UPSTREAM_APP and run \`npm run bootstrap\` so it can fetch the pinned 0.18.0 DMG. ` +
         `/Applications/Grok Bot.app is often a newer Grok Bot, not ${expectedVersion}.`,
     };
   }
@@ -66,7 +66,7 @@ export async function validateRuntimeApp(appPath) {
 }
 
 export async function resolveRuntimeApp() {
-  const configured = process.env.GROK_BOT_018_APP?.trim();
+  const configured = (process.env.SIMEON_UPSTREAM_APP ?? process.env.GROK_BOT_018_APP)?.trim();
   const configuredPath = configured ? path.resolve(configured) : undefined;
   const configuredVersion = configuredPath && await exists(configuredPath)
     ? await readRuntimeVersion(configuredPath)
@@ -82,7 +82,7 @@ export async function resolveRuntimeApp() {
   if (selection.kind === "cache") {
     if (selection.skippedConfigured) {
       console.warn(
-        `GROK_BOT_018_APP is ${selection.configuredVersion ?? "unreadable"}, not ${upstreamVersion}. Using ${cachedRuntimeApp}.`,
+        `SIMEON_UPSTREAM_APP is ${selection.configuredVersion ?? "unreadable"}, not ${upstreamVersion}. Using ${cachedRuntimeApp}.`,
       );
     }
     return await validateRuntimeApp(cachedRuntimeApp);

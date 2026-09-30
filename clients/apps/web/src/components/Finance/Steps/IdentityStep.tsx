@@ -1,6 +1,6 @@
 'use client'
 
-import Button from '@claidor/ui/components/atoms/Button'
+import Button from '@simeon/ui/components/atoms/Button'
 import {
   ArrowRight,
   CheckCircle,
@@ -8,7 +8,6 @@ import {
   Loader2,
   XCircle,
 } from 'lucide-react'
-import React from 'react'
 
 interface IdentityStepProps {
   identityVerificationStatus?: string
@@ -27,7 +26,7 @@ export default function IdentityStep({
         </div>
         <div>
           <h3 className="font-medium">Identity verified</h3>
-          <p className=" mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-500">
             Your identity has been successfully verified.
           </p>
         </div>
@@ -42,10 +41,8 @@ export default function IdentityStep({
           <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
         </div>
         <div>
-          <h3 className="font-medium">
-            Verification in progress
-          </h3>
-          <p className=" mx-auto mt-1 max-w-sm text-sm text-gray-500">
+          <h3 className="font-medium">Verification in progress</h3>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-gray-500">
             Your identity verification is being processed. This usually takes a
             few minutes but can take up to 24 hours.
           </p>
@@ -61,10 +58,8 @@ export default function IdentityStep({
           <XCircle className="h-6 w-6 text-red-500" />
         </div>
         <div>
-          <h3 className="font-medium text-red-600">
-            Verification failed
-          </h3>
-          <p className=" mx-auto mt-1 max-w-sm text-sm text-gray-500">
+          <h3 className="font-medium text-red-600">Verification failed</h3>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-gray-500">
             We were unable to verify your identity. This could be due to
             document quality or information mismatch. Please try again.
           </p>
@@ -85,9 +80,9 @@ export default function IdentityStep({
       </div>
       <div>
         <h3 className="font-medium">Verify your identity</h3>
-        <p className=" mx-auto mt-1 max-w-sm text-sm text-gray-500">
-          As your merchant of record, we&apos;re required to verify account
-          holders. This takes less than 2 minutes.
+        <p className="mx-auto mt-1 max-w-sm text-sm text-gray-500">
+          We&apos;re required to verify account holders. This takes less than
+          2 minutes.
         </p>
       </div>
       <Button onClick={onStartIdentityVerification} className="mt-2">

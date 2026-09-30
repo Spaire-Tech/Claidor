@@ -53,7 +53,7 @@ test("quit keeps the box for an enabled routine and stops it otherwise; the two 
     assert.equal(await stopLocalDockerBoxOnQuit({ boxRuntime: "local-docker", env: {}, stop, log: (line) => lines.push(line), hasEnabledRoutine: async () => { throw new Error("box gone"); } }), "stopped", "a box that cannot be asked is stopped");
     assert.ok(lines.some((line) => line.includes("could not ask the box for its routines (box gone)")));
 
-    const settingsDir = await mkdtemp(path.join(os.tmpdir(), "caisra-quit-settings-"));
+    const settingsDir = await mkdtemp(path.join(os.tmpdir(), "simeon-quit-settings-"));
     // The gateway token is read from the encrypted store (F-148).
     module.configureLocalDockerSecretStorage({ isEncryptionAvailable: () => true, encryptString: (value) => Buffer.from(value).reverse(), decryptString: (value) => Buffer.from(value).reverse().toString() });
     try {
@@ -76,7 +76,7 @@ test("quit keeps the box for an enabled routine and stops it otherwise; the two 
 
 test("the box gets its own renewal credential at connect, so it renews without the Mac", async () => {
   // Since 26 September 2026 (F-148) the credential reaches the box in its
-  // environment, Grok Bot's pod contract, instead of in a token file the
+  // environment, the upstream app's pod contract, instead of in a token file the
   // Mac rewrote; tests/local-docker-credentials.test.mjs measures the store,
   // the single mint and the box's own renewal.
   const source = await readFile(path.join(repoRoot, "source/electron-main/box/local-docker-host-connector.ts"), "utf8");
@@ -112,16 +112,16 @@ test("the box renews with the file's credential when the file is stale, and uses
       return built;
     };
 
-    const fresh = await service({ accessToken: "mac-token", expiresAtMs: Date.now() + 3_600_000, renewalCredential: "claidor_db_box" });
+    const fresh = await service({ accessToken: "mac-token", expiresAtMs: Date.now() + 3_600_000, renewalCredential: "simeon_db_box" });
     try {
       assert.equal(await fresh.getAccessToken(), "mac-token", "a fresh file is the token, as before");
       assert.deepEqual(renewals, [], "and nothing is renewed while the Mac keeps the file fresh");
     } finally { fresh.dispose(); }
 
-    const stale = await service({ accessToken: "mac-token", expiresAtMs: Date.now() - 1, renewalCredential: "claidor_db_box" });
+    const stale = await service({ accessToken: "mac-token", expiresAtMs: Date.now() - 1, renewalCredential: "simeon_db_box" });
     try {
       assert.equal(await stale.getAccessToken(), "box-token", "a stale file is traded for a token with the box's own credential");
-      assert.deepEqual(renewals, [{ backendUrl: "https://api.simeonlabs.com/", credential: "claidor_db_box" }]);
+      assert.deepEqual(renewals, [{ backendUrl: "https://api.simeonlabs.com/", credential: "simeon_db_box" }]);
     } finally { stale.dispose(); }
 
     const plain = await service({ accessToken: "mac-token", expiresAtMs: Date.now() - 1 });
@@ -138,7 +138,7 @@ test("the token file reader carries the credential through", async () => {
   const { module, dispose } = await load("source/host/extensions/auth/credential-renewer.ts", "credential-renewer");
   try {
     const read = (raw) => module.readDevInferenceCredentialFile({ path: "/x", readFileImpl: async () => raw });
-    assert.deepEqual(await read(JSON.stringify({ accessToken: "t", expiresAtMs: 5, renewalCredential: "claidor_db_x" })), { accessToken: "t", expiresAtMs: 5, renewalCredential: "claidor_db_x" });
+    assert.deepEqual(await read(JSON.stringify({ accessToken: "t", expiresAtMs: 5, renewalCredential: "simeon_db_x" })), { accessToken: "t", expiresAtMs: 5, renewalCredential: "simeon_db_x" });
     assert.deepEqual(await read(JSON.stringify({ accessToken: "t", expiresAtMs: 5 })), { accessToken: "t", expiresAtMs: 5 });
     assert.deepEqual(await read(JSON.stringify({ accessToken: "t", expiresAtMs: 5, renewalCredential: "" })), { accessToken: "t", expiresAtMs: 5 }, "an empty credential is none");
   } finally {

@@ -1,8 +1,8 @@
 import { useCustomerMeters } from '@/hooks/queries/customerMeters'
 import { useMeterQuantities } from '@/hooks/queries/meters'
 import { useSubscriptions } from '@/hooks/queries/subscriptions'
-import { schemas } from '@claidor/client'
-import { TabsContent } from '@claidor/ui/components/atoms/Tabs'
+import { schemas } from '@simeon/client'
+import { TabsContent } from '@simeon/ui/components/atoms/Tabs'
 import { useMemo } from 'react'
 import { CustomerMeter } from './CustomerMeter'
 
@@ -68,7 +68,7 @@ export const CustomerUsageView = ({
           <div className="flex flex-col items-center gap-y-6">
             <div className="flex flex-col items-center gap-y-2">
               <h3 className="text-lg font-medium">No active meter</h3>
-              <p className=" text-gray-500">
+              <p className="text-gray-500">
                 This customer has no active meters.
               </p>
             </div>

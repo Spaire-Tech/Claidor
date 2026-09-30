@@ -14,7 +14,7 @@ import WrapperBase from './WrapperBase'
 
 // Props are snake_case to match the JSON the Python renderer emits
 // (Pydantic dumps using the field name, not an alias). Keep this in
-// sync with `MarketingEmailProps` in `polar/email/schemas.py`.
+// sync with `MarketingEmailProps` in `simeon/email/schemas.py`.
 interface MarketingEmailWrapperProps {
   organization_name: string
   organization_logo_url?: string | null

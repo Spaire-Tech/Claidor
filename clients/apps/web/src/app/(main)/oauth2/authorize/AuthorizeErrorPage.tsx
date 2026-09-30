@@ -1,5 +1,5 @@
-import Alert from '@claidor/ui/components/atoms/Alert'
-import Button from '@claidor/ui/components/atoms/Button'
+import Alert from '@simeon/ui/components/atoms/Alert'
+import Button from '@simeon/ui/components/atoms/Button'
 import SharedLayout from './components/SharedLayout'
 
 const AuthorizeErrorPage = ({

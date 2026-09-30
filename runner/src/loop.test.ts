@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 
-import type { ClaimedJob } from './claidor.js';
+import type { ClaimedJob } from './api.js';
 import { isRetryable, loop, turn } from './loop.js';
 import type { LoopDeps } from './loop.js';
 import type { RunnerSettings } from './settings.js';
@@ -77,12 +77,12 @@ describe('one turn', () => {
     expect(d.calls.fail).toEqual([['j2', 'the engine would not start', true]]);
   });
 
-  test('survives Claidor refusing the failure report', async () => {
+  test('survives the API refusing the failure report', async () => {
     const d = deps({
       queue: {
         claim: async () => aJob('j3'),
         fail: async () => {
-          throw new Error('Claidor is down');
+          throw new Error('the API is down');
         },
       } as LoopDeps['queue'],
       run: async () => {

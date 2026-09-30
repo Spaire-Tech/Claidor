@@ -2,17 +2,17 @@
 
 import { useCustomerMeters } from '@/hooks/queries/customerMeters'
 import { getAPIParams } from '@/utils/datatable'
-import { schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
+import { schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
 import {
   DataTable,
   DataTableColumnHeader,
-} from '@claidor/ui/components/atoms/DataTable'
+} from '@simeon/ui/components/atoms/DataTable'
 import {
   DataTablePaginationState,
   DataTableSortingState,
-} from '@claidor/ui/components/atoms/datatable/DataTable'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
+} from '@simeon/ui/components/atoms/datatable/DataTable'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
 import Link from 'next/link'
 import { useState } from 'react'
 import FormattedUnits from './FormattedUnits'
@@ -69,13 +69,13 @@ const MeterCustomersTab = ({
               className="flex items-center gap-x-3"
             >
               <Avatar
-                className=" text-xxs h-8 w-8 bg-white"
+                className="text-xxs h-8 w-8 bg-white"
                 name={customer.name ?? customer.email ?? '—'}
                 avatar_url={customer.avatar_url ?? null}
               />
               <div className="flex flex-col">
                 <span className="text-xs">{customer.name ?? '—'}</span>
-                <span className=" text-xxs text-gray-500">
+                <span className="text-xxs text-gray-500">
                   {customer.email ?? '—'}
                 </span>
               </div>

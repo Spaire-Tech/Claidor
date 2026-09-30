@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from polar.models import Meter, Product
+from simeon.models import Meter, Product
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_product_price_metered_unit
 

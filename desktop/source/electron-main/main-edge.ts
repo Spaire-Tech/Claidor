@@ -15,6 +15,7 @@ export const MAIN_EDGE_UNSERVED = "main/unserved-method";
 export const MAIN_EDGE_UPDATE_UNAVAILABLE = "main/update-unavailable";
 export const MAIN_EDGE_THEME_UNAVAILABLE = "main/theme-unavailable";
 export const MAIN_EDGE_EGRESS_TUNNEL_UNAVAILABLE = "main/egress-tunnel-unavailable";
+export const MAIN_EDGE_VOICE_CALLS_UNAVAILABLE = "main/voice-calls-unavailable";
 
 type UnknownRecord = Record<string, unknown>;
 type Handler = (request: UnknownRecord) => unknown;
@@ -62,6 +63,8 @@ export interface MainEdgeDeps {
   readonly emitEgressTunnelChanged: (enabled: boolean) => void;
   readonly emitWebauthnProxyChanged: (enabled: boolean) => void;
   readonly ensureTranscriptionManager: () => Promise<UnknownRecord>;
+  /** The voice-call service (`voice/voice-call-service.ts`); absent, the voice methods answer unavailable. */
+  readonly voiceCalls?: UnknownRecord;
   readonly platform: NodeJS.Platform;
   readonly delay?: (milliseconds: number) => Promise<void>;
   readonly detectTimeZone?: () => string | null | undefined;
@@ -78,6 +81,7 @@ export const unserved = (): never => { throw new EdgeCallFailure({ code: MAIN_ED
 function required(read: () => UnknownRecord | null, code: string, detail: string): UnknownRecord { const value = read(); if (value == null) throw new EdgeCallFailure({ code, detail }); return value; }
 function updateService(deps: MainEdgeDeps) { return required(deps.readLiveUpdateService, MAIN_EDGE_UPDATE_UNAVAILABLE, "The update service is not running."); }
 function themeController(deps: MainEdgeDeps) { return required(deps.readThemeController, MAIN_EDGE_THEME_UNAVAILABLE, "The theme controller is not running."); }
+function voiceCalls(deps: MainEdgeDeps) { return required(() => deps.voiceCalls ?? null, MAIN_EDGE_VOICE_CALLS_UNAVAILABLE, "Voice calls are not running."); }
 function egressController(deps: MainEdgeDeps) { return required(deps.readEgressTunnelController, MAIN_EDGE_EGRESS_TUNNEL_UNAVAILABLE, "The egress tunnel controller is not running."); }
 async function echo(deps: MainEdgeDeps, field: string, value: unknown, label: string): Promise<unknown> { const result = await deps.syncHostSettingsToBox({ [field]: value }); if (result == null) throw new SandHostSettingsUnreachableError(`Couldn't reach the computer to save ${label}.`); return result[field] ?? null; }
 function computerUseModel(deps: MainEdgeDeps): unknown { const stored = invoke(deps.agentPrefsStore, "getComputerUseModel"); const override = deps.getComputerUseModelOverride(); return resolveComputerUseModelSelection({ ...(isSandAgentModelSelection(stored) ? { storedModel: stored } : {}), ...(isSandAgentModelSelection(override) ? { overrideModel: override } : {}) }) ?? null; }
@@ -122,7 +126,7 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
     getInferenceRouter: async () => { const settings = await deps.readHostSettingsFromBox().catch(() => ({} as UnknownRecord)); const provider = resolveProductInferenceProvider(); return { provider, usage: settings.inferenceRouterUsage ?? invoke(deps.settingsStore, "getInferenceRouterUsage") ?? null }; },
     setInferenceRouter: async () => { const provider = resolveProductInferenceProvider(); invoke(deps.settingsStore, "setInferenceProvider", provider); const settings = await deps.syncHostSettingsToBox({ inferenceProvider: provider }).catch(() => null); return { provider, usage: settings?.inferenceRouterUsage ?? invoke(deps.settingsStore, "getInferenceRouterUsage") ?? null }; },
     getBoxRuntime: async () => { const mode = invoke(deps.settingsStore, "getBoxRuntime"); invariant(isSandBoxRuntime(mode), "Unknown box runtime."); return { mode, status: mode === "local-docker" ? await getLocalDockerStatus(String(Reflect.get(deps.settingsStore, "settingsPath"))) : null }; },
-    // The computer is not a person's choice (29 September 2026): Grok Bot runs
+    // The computer is not a person's choice (29 September 2026): the upstream app runs
     // every person on its cloud computer and has no switch, and neither does
     // Simeon. `SAND_BOX_RUNTIME=local-docker` selects the Docker box for our
     // own testing (`resolveSandBoxRuntime`); asking for anything else fails.
@@ -153,6 +157,13 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
     resolveAttachmentMedia: (raw) => invoke(deps.attachments, "resolveMedia", req(raw).source), readAttachmentText: (raw) => invoke(deps.attachments, "readText", req(raw).path), readAttachmentBytes: (raw) => invoke(deps.attachments, "readBytes", req(raw).path, req(raw).maxBytes), stageAttachmentBytes: (raw) => invoke(deps.attachments, "stageBytes", req(raw).filename, req(raw).bytes), downloadAttachment: (raw) => invoke(deps.attachments, "download", req(raw).path, req(raw).suggestedName), commitStagedAttachments: (raw) => invoke(deps.attachments, "commitStaged", req(raw).paths, req(raw).filenames), discardStagedAttachment: (raw) => invoke(deps.attachments, "discardStaged", req(raw).path), getLinkMetadata: (raw) => invoke(deps.attachments, "getLinkMetadata", req(raw).url),
     getCursorAuthStatus: () => invoke(deps.cursorAccount, "getAuthStatus"), loginCursor: () => invoke(deps.cursorAccount, "login"), cancelCursorLogin: () => invoke(deps.cursorAccount, "cancelLogin"), logoutCursor: () => invoke(deps.cursorAccount, "logout"), updateCursorAccountName: (raw) => invoke(deps.cursorAccount, "updateAccountName", req(raw).name), getCursorAvatar: () => invoke(deps.cursorAccount, "getAvatar"), getCursorWeeklyUsage: () => invoke(deps.cursorAccount, "getWeeklyUsage"), getCursorUsageSummary: () => invoke(deps.cursorAccount, "getUsageSummary"), getCursorPrReviewPreferences: () => invoke(deps.cursorAccount, "getPrReviewPreferences"), getCursorPrivacyModeEnabled: () => invoke(deps.cursorAccount, "getPrivacyModeEnabled"), getSandAccess: () => invoke(deps.cursorAccount, "getSandAccess"), getSandAccessFresh: () => invoke(deps.cursorAccount, "getSandAccessFresh"), invokeCursorDashboardAction: (raw) => invoke(deps.cursorAccount, "invokeDashboardAction", raw), cancelCursorSandTrial: () => invoke(deps.cursorAccount, "cancelTrial"),
     transcribeAudio: async (raw) => { const request = req(raw); const audio = request.audio instanceof Uint8Array ? request.audio : request.audio instanceof ArrayBuffer ? new Uint8Array(request.audio) : null; invariant(audio != null && audio.length > 0, "transcribeAudio requires non-empty audio bytes."); const mimeType = typeof request.mimeType === "string" && request.mimeType.length > 0 ? request.mimeType : "audio/webm"; const language = typeof request.language === "string" && request.language.length > 0 ? request.language : undefined; const manager = await deps.ensureTranscriptionManager(); return await Promise.resolve(invoke(manager, "transcribe", { audio, mimeType, ...(language === undefined ? {} : { language }) })); },
+    getVoiceCallAvailability: () => ({ enabled: deps.voiceCalls != null && invoke(deps.voiceCalls, "isEnabled") === true, inCall: deps.voiceCalls != null && invoke(deps.voiceCalls, "isCallActive") === true }),
+    startVoiceCall: (raw) => invoke(voiceCalls(deps), "start", req(raw).agentId, req(raw).agentName),
+    noteVoiceCallAgent: (raw) => { if (deps.voiceCalls != null) invoke(deps.voiceCalls, "noteSelectedAgent", req(raw).agentId ?? null, req(raw).agentName); },
+    listVoiceCallVoices: () => invoke(voiceCalls(deps), "listVoices"),
+    getAgentVoice: (raw) => invoke(voiceCalls(deps), "getAgentVoice", req(raw).agentId),
+    setAgentVoice: (raw) => invoke(voiceCalls(deps), "setAgentVoice", req(raw).agentId, req(raw).voiceId ?? null),
+    getVoicePreviewUrl: (raw) => invoke(voiceCalls(deps), "voicePreviewUrl", req(raw).voiceId),
     getExperimentsSnapshot: async () => invoke(req(await Promise.resolve(invoke(deps.experiments, "ensureService"))), "getSnapshot"),
     applyFeatureFlagOverride: async (raw) => { const service = req(await Promise.resolve(invoke(deps.experiments, "ensureService"))); invoke(service, "applyFeatureFlagOverrideCommand", req(raw).command); },
     refreshFeatureFlags: async () => { const service = req(await Promise.resolve(invoke(deps.experiments, "ensureService"))); await Promise.resolve(invoke(service, "refreshNow")); },

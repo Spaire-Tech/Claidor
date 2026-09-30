@@ -2,7 +2,7 @@
 25 September 2026). The middleware only mounts in production and sandbox,
 so this reads the rule tables it would mount."""
 
-from polar.rate_limit import _PRODUCTION_RULES, _SANDBOX_RULES
+from simeon.rate_limit import _PRODUCTION_RULES, _SANDBOX_RULES
 
 
 def test_desktop_sign_in_and_token_routes_carry_rules() -> None:

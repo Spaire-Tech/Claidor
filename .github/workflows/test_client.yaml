@@ -74,7 +74,7 @@ jobs:
 
       # One `turbo run test` rather than a filter per package. The list
       # of filters had gone stale at the rebrand — every one of them named
-      # `@polar-sh/…`, none of which exists any more, so all three steps
+      # the upstream project's packages, none of which exists any more, so all three steps
       # failed and the panel's tests were never run at all. A task that
       # picks up new packages by itself cannot go stale the same way.
       - name: 🧪 Test

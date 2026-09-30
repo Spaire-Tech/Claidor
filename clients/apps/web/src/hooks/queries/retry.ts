@@ -2,7 +2,7 @@ import {
   ClientResponseError,
   NotFoundResponseError,
   UnauthorizedResponseError,
-} from '@claidor/client'
+} from '@simeon/client'
 
 export const authenticatingRetry = (
   failureCount: number,

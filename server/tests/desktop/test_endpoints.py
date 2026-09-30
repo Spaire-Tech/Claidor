@@ -1,5 +1,5 @@
 """The desktop app's sign-in and proxy, end to end over HTTP
-(`polar/desktop/endpoints.py`)."""
+(`simeon/desktop/endpoints.py`)."""
 
 import io
 import json
@@ -15,32 +15,32 @@ import respx
 from pytest_mock import MockerFixture
 from structlog.testing import capture_logs
 
-from polar.config import settings
-from polar.desktop import proxy_common as proxy_common_module
-from polar.desktop.proxy_common import UPSTREAM_REFUSED
-from polar.desktop.service import (
+from simeon.config import settings
+from simeon.desktop import proxy_common as proxy_common_module
+from simeon.desktop.proxy_common import UPSTREAM_REFUSED
+from simeon.desktop.service import (
     Usage,
     UsageTally,
     credits_for,
     desktop,
     model_by_id,
 )
-from polar.desktop.skill_store import (
+from simeon.desktop.skill_store import (
     NOT_OFFERED,
     SKILLS_ROOT,
     skill_md_with_version,
 )
-from polar.desktop.skill_store import catalog as skill_store_catalog
-from polar.kit.crypto import generate_token_hash_pair
-from polar.kit.utils import utc_now
-from polar.models import (
+from simeon.desktop.skill_store import catalog as skill_store_catalog
+from simeon.kit.crypto import generate_token_hash_pair
+from simeon.kit.utils import utc_now
+from simeon.models import (
     DesktopSession,
     DesktopUsage,
     PersonalAccessToken,
     User,
 )
-from polar.personal_access_token.service import TOKEN_PREFIX as PAT_TOKEN_PREFIX
-from polar.postgres import AsyncSession
+from simeon.personal_access_token.service import TOKEN_PREFIX as PAT_TOKEN_PREFIX
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 
 CALLBACK = "http://127.0.0.1:51234/auth/callback?return_to=http%3A%2F%2F127.0.0.1%3A8000%2Fdesktop%2Flogin"
@@ -96,7 +96,7 @@ class TestLogin:
         assert query["state"] == ["abc"]
         assert "return_to" in query
         code = query["code"][0]
-        assert code.startswith("claidor_dc_")
+        assert code.startswith("simeon_dc_")
 
         exchanged = await client.post(
             "/desktop/api/auth/exchange", json={"authCode": code}
@@ -143,7 +143,7 @@ class TestExchange:
         assert second.json()["code"] == 40101
 
         bad = await client.post(
-            "/desktop/api/auth/exchange", json={"authCode": "claidor_dc_nonsense"}
+            "/desktop/api/auth/exchange", json={"authCode": "simeon_dc_nonsense"}
         )
         assert bad.json()["code"] == 40101
 
@@ -1089,14 +1089,14 @@ class TestMiddleware:
         through as Anonymous so the desktop endpoints can check it."""
         from starlette.requests import Request
 
-        from polar.auth.middlewares import get_auth_subject
-        from polar.auth.models import Anonymous
+        from simeon.auth.middlewares import get_auth_subject
+        from simeon.auth.models import Anonymous
 
         scope = {
             "type": "http",
             "method": "GET",
             "path": "/desktop/api/user/quota",
-            "headers": [(b"authorization", b"Bearer claidor_da_notevenreal")],
+            "headers": [(b"authorization", b"Bearer simeon_da_notevenreal")],
             "query_string": b"",
         }
         subject = await get_auth_subject(Request(scope), session)
@@ -1144,7 +1144,7 @@ def _frontmatter(raw: str) -> dict[str, Any]:
 
 @pytest.mark.asyncio
 class TestSkillStore:
-    """The marketplace and its archives (`polar/desktop/skill_store.py`)."""
+    """The marketplace and its archives (`simeon/desktop/skill_store.py`)."""
 
     async def test_the_store_lists_the_vendored_skills_and_none_of_the_excluded(
         self, client: httpx.AsyncClient
@@ -1259,8 +1259,8 @@ class TestSkillStoreFiles:
 
 @pytest.mark.asyncio
 class TestComposio:
-    """Apps through Composio: the app's calls forwarded with Claidor's key
-    and the account's own Composio user id (`polar/desktop/composio.py`)."""
+    """Apps through Composio: the app's calls forwarded with Simeon's key
+    and the account's own Composio user id (`simeon/desktop/composio.py`)."""
 
     async def test_the_session_carries_the_key_and_the_account_not_the_apps_word(
         self,
@@ -1269,7 +1269,7 @@ class TestComposio:
         user: User,
         mocker: MockerFixture,
     ) -> None:
-        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_claidor")
+        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_simeon")
         access, _ = await _signed_in(client, session, user)
         with respx.mock(assert_all_called=True) as mock:
             route = mock.post(
@@ -1283,7 +1283,7 @@ class TestComposio:
         assert response.status_code == 200
         assert response.json() == {"session_id": "sess_1"}
         sent = route.calls[0].request
-        assert sent.headers["x-api-key"] == "ck_claidor"
+        assert sent.headers["x-api-key"] == "ck_simeon"
         assert "authorization" not in sent.headers
         assert json.loads(sent.content) == {"user_id": f"claidor-{user.id}"}
 
@@ -1294,7 +1294,7 @@ class TestComposio:
         user: User,
         mocker: MockerFixture,
     ) -> None:
-        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_claidor")
+        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_simeon")
         access, _ = await _signed_in(client, session, user)
         base = f"{settings.COMPOSIO_BASE_URL}/api/v3.1"
         with respx.mock(assert_all_called=True) as mock:
@@ -1339,7 +1339,7 @@ class TestComposio:
         mocker: MockerFixture,
     ) -> None:
         # The key must not become a general door onto Composio's API.
-        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_claidor")
+        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_simeon")
         access, _ = await _signed_in(client, session, user)
         headers = {"Authorization": f"Bearer {access}"}
         with respx.mock(assert_all_called=False) as mock:
@@ -1379,7 +1379,7 @@ class TestComposio:
     async def test_signed_out_is_refused_before_anything_is_forwarded(
         self, client: httpx.AsyncClient, mocker: MockerFixture
     ) -> None:
-        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_claidor")
+        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_simeon")
         with respx.mock(assert_all_called=False) as mock:
             anything = mock.route().mock(return_value=httpx.Response(200, json={}))
             response = await client.post(
@@ -1409,7 +1409,7 @@ async def _model_proxy_token(
             token=token_hash,
             scope=scopes,
             expires_at=utc_now() + timedelta(days=365),
-            comment="Rakazo",
+            comment="OpenAI-compatible client",
             user_id=user.id,
         )
     )
@@ -1418,7 +1418,7 @@ async def _model_proxy_token(
 
 @pytest.mark.asyncio
 class TestTheProxyFromAServerWeDidNotWrite:
-    """Rakazo, and anything else that speaks plain OpenAI.
+    """Any program that speaks plain OpenAI.
 
     Such a client is handed a base URL, a model id and one static key, and
     then never asked anything again — there is no refresh loop for it to
@@ -1457,7 +1457,7 @@ class TestTheProxyFromAServerWeDidNotWrite:
                 json={"model": "gpt-5.6-luna", "messages": []},
             )
         assert response.status_code == 200
-        # Claidor's key went up, never the caller's token.
+        # Simeon's key went up, never the caller's token.
         assert route.calls[0].request.headers["authorization"] == "Bearer sk-openai"
 
         usage = (

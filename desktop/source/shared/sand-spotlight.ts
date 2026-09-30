@@ -1,5 +1,7 @@
-export const SPOTLIGHT_TAG = "cursor_untrusted_data_1337"; export const SPOTLIGHT_TAG_REDACTION = "cursor_untrusted_data_redacted";
-const SPOTLIGHT_TAG_PATTERN = new RegExp(SPOTLIGHT_TAG, "gi");
+export const SPOTLIGHT_TAG = "simeon_untrusted_data_1337"; export const SPOTLIGHT_TAG_REDACTION = "simeon_untrusted_data_redacted";
+// The fence was named cursor_untrusted_data_1337 before the rename; a forged
+// marker under either name is neutralised.
+const SPOTLIGHT_TAG_PATTERN = new RegExp(`${SPOTLIGHT_TAG}|cursor_untrusted_data_1337`, "gi");
 export function stripSpotlightTag(text: string): string { return text.replace(SPOTLIGHT_TAG_PATTERN, SPOTLIGHT_TAG_REDACTION); }
 export function sanitizeSource(source: string): string { return stripSpotlightTag(source).replaceAll(/["<>]/g, ""); }
 export function spotlightOpen(source: string): string { return `<${SPOTLIGHT_TAG} source="${sanitizeSource(source)}">`; }

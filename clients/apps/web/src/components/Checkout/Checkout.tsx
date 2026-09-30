@@ -13,30 +13,28 @@ import {
   CheckoutProductSwitcher,
   CheckoutPWYWForm,
   CheckoutSeatSelector,
-} from '@claidor/checkout/components'
+} from '@simeon/checkout/components'
 import {
   enrichCheckout,
-  hasProductCheckout,
   type ProductCheckoutPublic,
-} from '@claidor/checkout/guards'
-import { useCheckoutFulfillmentListener } from '@claidor/checkout/hooks'
-import { useCheckout, useCheckoutForm } from '@claidor/checkout/providers'
-import type { CheckoutConfirmStripe } from '@spaire/sdk/models/components/checkoutconfirmstripe'
-import type { CheckoutPublicConfirmed } from '@spaire/sdk/models/components/checkoutpublicconfirmed'
-import type { CheckoutUpdatePublic } from '@spaire/sdk/models/components/checkoutupdatepublic'
-import { ProductPriceCustom } from '@spaire/sdk/models/components/productpricecustom.js'
-import { ExpiredCheckoutError } from '@spaire/sdk/models/errors/expiredcheckouterror'
-import Alert from '@claidor/ui/components/atoms/Alert'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
-import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
+} from '@simeon/checkout/guards'
+import { useCheckoutFulfillmentListener } from '@simeon/checkout/hooks'
+import { useCheckout, useCheckoutForm } from '@simeon/checkout/providers'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
+import ShadowBox from '@simeon/ui/components/atoms/ShadowBox'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@claidor/ui/components/ui/dialog'
-import { getThemePreset } from '@claidor/ui/hooks/theming'
+} from '@simeon/ui/components/ui/dialog'
+import { getThemePreset } from '@simeon/ui/hooks/theming'
+import type { CheckoutConfirmStripe } from '@spaire/sdk/models/components/checkoutconfirmstripe'
+import type { CheckoutPublicConfirmed } from '@spaire/sdk/models/components/checkoutpublicconfirmed'
+import type { CheckoutUpdatePublic } from '@spaire/sdk/models/components/checkoutupdatepublic'
+import { ProductPriceCustom } from '@spaire/sdk/models/components/productpricecustom.js'
+import { ExpiredCheckoutError } from '@spaire/sdk/models/errors/expiredcheckouterror'
 import type { Stripe, StripeElements } from '@stripe/stripe-js'
 import Markdown from 'markdown-to-jsx'
 import Link from 'next/link'
@@ -68,14 +66,14 @@ const TruncatedDescription = ({
       <div className="flex flex-col gap-y-1">
         <div
           ref={textRef}
-          className="prose prose-headings:text-xs prose-p:text-xs prose-ul:text-xs prose-ol:text-xs  line-clamp-2 max-w-none text-left text-xs text-gray-600"
+          className="prose prose-headings:text-xs prose-p:text-xs prose-ul:text-xs prose-ol:text-xs line-clamp-2 max-w-none text-left text-xs text-gray-600"
         >
           <Markdown options={markdownOptions}>{description}</Markdown>
         </div>
         {isClamped && (
           <button
             onClick={() => setIsModalOpen(true)}
-            className=" cursor-pointer self-start text-xs text-gray-500 hover:text-gray-700"
+            className="cursor-pointer self-start text-xs text-gray-500 hover:text-gray-700"
           >
             Read more
           </button>
@@ -83,14 +81,14 @@ const TruncatedDescription = ({
       </div>
       {isModalOpen && (
         <Dialog open onOpenChange={(open) => !open && setIsModalOpen(false)}>
-          <DialogContent className=" max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{productName}</DialogTitle>
               <DialogDescription className="sr-only">
                 Product description
               </DialogDescription>
             </DialogHeader>
-            <div className="prose prose-headings:mt-4 prose-headings:font-medium prose-headings:text-black prose-h1:text-xl prose-h2:text-lg prose-h3:text-md   p-2 leading-normal text-gray-800">
+            <div className="prose prose-headings:mt-4 prose-headings:font-medium prose-headings:text-black prose-h1:text-xl prose-h2:text-lg prose-h3:text-md p-2 leading-normal text-gray-800">
               <Markdown options={markdownOptions}>{description}</Markdown>
             </div>
           </DialogContent>
@@ -140,7 +138,7 @@ const Checkout = ({
 
     const cookies = document.cookie.split(';')
     const distinctIdCookie = cookies.find((c) =>
-      c.trim().startsWith('polar_distinct_id='),
+      c.trim().startsWith('simeon_distinct_id='),
     )
     const distinctId = distinctIdCookie?.split('=')[1]?.trim()
 
@@ -193,8 +191,10 @@ const Checkout = ({
     const isDenied = paymentStatus?.organization_status === 'denied'
 
     return (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800  ">
-        <span className="font-medium">Payments are currently unavailable. </span>
+      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <span className="font-medium">
+          Payments are currently unavailable.{' '}
+        </span>
         {isDenied
           ? `${checkout.organization.name} doesn't allow payments.`
           : `${checkout.organization.name} needs to complete their payment setup. You can still test with free products or 100% discount orders.`}
@@ -265,7 +265,7 @@ const Checkout = ({
 
   if (embed) {
     return (
-      <ShadowBox className=" flex flex-col gap-y-12 divide-gray-200 overflow-hidden rounded-3xl md:bg-white">
+      <ShadowBox className="flex flex-col gap-y-12 divide-gray-200 overflow-hidden rounded-3xl md:bg-white">
         <PaymentNotReadyBanner />
         {enrichedCheckout && (
           <>
@@ -282,7 +282,9 @@ const Checkout = ({
               <CheckoutPWYWForm
                 checkout={enrichedCheckout}
                 update={update}
-                productPrice={enrichedCheckout.productPrice as ProductPriceCustom}
+                productPrice={
+                  enrichedCheckout.productPrice as ProductPriceCustom
+                }
                 themePreset={themePreset}
               />
             )}
@@ -313,10 +315,7 @@ const Checkout = ({
   const orgHeader = (
     <div className="flex flex-row items-center gap-x-4">
       {checkout.returnUrl && (
-        <Link
-          href={checkout.returnUrl}
-          className=" text-gray-600"
-        >
+        <Link href={checkout.returnUrl} className="text-gray-600">
           <ArrowBackOutlined fontSize="small" />
         </Link>
       )}
@@ -328,9 +327,7 @@ const Checkout = ({
             className="h-6 w-6"
           />
         )}
-        <span className="text-sm">
-          {checkout.organization.name}
-        </span>
+        <span className="text-sm">{checkout.organization.name}</span>
       </div>
     </div>
   )
@@ -365,13 +362,16 @@ const Checkout = ({
                   <CheckoutPWYWForm
                     checkout={enrichedCheckout}
                     update={update}
-                    productPrice={enrichedCheckout.productPrice as ProductPriceCustom}
+                    productPrice={
+                      enrichedCheckout.productPrice as ProductPriceCustom
+                    }
                     themePreset={themePreset}
                   />
                 )}
                 {!enrichedCheckout.isFreeProductPrice && (
                   <div className="flex flex-col gap-4 text-sm">
-                    {enrichedCheckout.productPrice?.amountType === 'seat_based' && (
+                    {enrichedCheckout.productPrice?.amountType ===
+                      'seat_based' && (
                       <CheckoutSeatSelector
                         checkout={enrichedCheckout}
                         update={
@@ -416,7 +416,7 @@ const Checkout = ({
                   hasMarkdown(enrichedCheckout.product.description) && (
                     <div
                       id="description"
-                      className="prose prose-headings:mt-4 prose-headings:font-medium prose-headings:text-black prose-h1:text-xl prose-h2:text-lg prose-h3:text-md   leading-normal text-gray-800"
+                      className="prose prose-headings:mt-4 prose-headings:font-medium prose-headings:text-black prose-h1:text-xl prose-h2:text-lg prose-h3:text-md leading-normal text-gray-800"
                     >
                       <Markdown options={markdownOptions}>
                         {enrichedCheckout.product.description}
@@ -428,7 +428,7 @@ const Checkout = ({
           </div>
         </div>
       </div>
-      <div className=" md:bg-white">
+      <div className="md:bg-white">
         <div className="mx-auto flex w-full max-w-[480px] flex-col gap-y-8 px-4 py-6 md:mx-0 md:py-12 md:pr-4 md:pl-12">
           <PaymentNotReadyBanner />
           <CheckoutForm

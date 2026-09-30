@@ -33,7 +33,7 @@ import { formatShellResult, formatShellResultDsv3 } from "../tools/core/shell/fo
 
 type Any = any;
 
-const logger = createLogger("@anysphere/agent/actions/shell-command-action-handler");
+const logger = createLogger("@sand/agent/actions/shell-command-action-handler");
 
 export class ShellCommandActionHandler {
   constructor(

@@ -8,12 +8,12 @@ import {
 } from '@/hooks/queries'
 import { canRetryOrderPayment } from '@/utils/order'
 import { validateEmail } from '@/utils/validation'
-import { Client, schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
-import { Status } from '@claidor/ui/components/atoms/Status'
-import { ThemingPresetProps } from '@claidor/ui/hooks/theming'
+import { Client, schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
+import { Status } from '@simeon/ui/components/atoms/Status'
+import { ThemingPresetProps } from '@simeon/ui/hooks/theming'
 import React, { useMemo, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { DownloadInvoicePortal } from '../Orders/DownloadInvoice'
@@ -25,12 +25,9 @@ import { SeatManagementTable } from './SeatManagementTable'
 
 const statusColors = {
   paid: 'bg-emerald-100 text-emerald-500 ',
-  pending:
-    'bg-yellow-100 text-yellow-500 ',
-  refunded:
-    'bg-blue-100 text-blue-500 ',
-  partially_refunded:
-    'bg-blue-100 text-blue-500 ',
+  pending: 'bg-yellow-100 text-yellow-500 ',
+  refunded: 'bg-blue-100 text-blue-500 ',
+  partially_refunded: 'bg-blue-100 text-blue-500 ',
 }
 
 const CustomerPortalOrder = ({
@@ -44,7 +41,7 @@ const CustomerPortalOrder = ({
   order: schemas['CustomerOrder']
   customerSessionToken: string
   themingPreset: ThemingPresetProps
-  /** Theme scope for portaled modals (e.g. 'claidor-portal sp-dark'). */
+  /** Theme scope for portaled modals (e.g. 'simeon-portal sp-dark'). */
   modalWrapperClassName?: string
 }) => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
@@ -325,7 +322,7 @@ const CustomerPortalOrder = ({
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-y-2">
               <h3 className="text-lg">Seats</h3>
-              <p className=" text-sm text-gray-500">
+              <p className="text-sm text-gray-500">
                 {availableSeats} of {totalSeats} seats available
               </p>
             </div>
@@ -348,9 +345,7 @@ const CustomerPortalOrder = ({
                     }}
                   />
                   {error && (
-                    <p className=" mt-1 text-xs text-gray-500">
-                      {error}
-                    </p>
+                    <p className="mt-1 text-xs text-gray-500">{error}</p>
                   )}
                 </div>
                 <Button

@@ -18,8 +18,8 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # Polar Custom Imports
-from polar.config import settings
-from polar.integrations.stripe.utils import get_expandable_id
+from simeon.config import settings
+from simeon.integrations.stripe.utils import get_expandable_id
 
 # revision identifiers, used by Alembic.
 revision = "197161f42f14"

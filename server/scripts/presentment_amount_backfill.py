@@ -1,14 +1,14 @@
 import typer
 from sqlalchemy import select, update
 
-from polar.models import Transaction
-from polar.models.transaction import TransactionType
 from scripts.helper import (
     configure_script_logging,
     limit_bindparam,
     run_batched_update,
     typer_async,
 )
+from simeon.models import Transaction
+from simeon.models.transaction import TransactionType
 
 cli = typer.Typer()
 

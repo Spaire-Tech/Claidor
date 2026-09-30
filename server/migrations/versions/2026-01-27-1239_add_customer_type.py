@@ -9,7 +9,7 @@ Create Date: 2026-01-27 12:39:49.518183
 import sqlalchemy as sa
 from alembic import op
 
-from polar.models.customer import CustomerType
+from simeon.models.customer import CustomerType
 
 # Polar Custom Imports
 

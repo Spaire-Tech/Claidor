@@ -1,12 +1,12 @@
 {
-  "name": "@claidor/ui",
+  "name": "@simeon/ui",
   "version": "0.1.4",
   "description": "Simeon UI Components",
   "author": "Simeon Labs",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Claidor-Tech/polar.git",
+    "url": "https://github.com/simeonlabs/simeon.git",
     "directory": "clients/packages/ui"
   },
   "publishConfig": {
@@ -63,8 +63,8 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
-    "@claidor/currency": "workspace:^",
-    "@claidor/typescript-config": "workspace:*",
+    "@simeon/currency": "workspace:^",
+    "@simeon/typescript-config": "workspace:*",
     "@types/react": "19.2.10",
     "@types/react-dom": "19.2.3",
     "prettier": "^3.8.1",

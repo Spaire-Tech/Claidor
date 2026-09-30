@@ -4,12 +4,12 @@ import pytest
 import pytest_asyncio
 from pydantic import BaseModel, ValidationError
 
-from polar.custom_field.data import (
+from simeon.custom_field.data import (
     build_custom_field_data_schema,
     custom_field_data_models,
 )
-from polar.models import Organization
-from polar.models.custom_field import CustomFieldType
+from simeon.models import Organization
+from simeon.models.custom_field import CustomFieldType
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_custom_field
 

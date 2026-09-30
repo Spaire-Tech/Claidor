@@ -1,19 +1,9 @@
 name: Runner image
 
-# Publishes the cloud runner's image to GHCR, by hand only.
-#
-# Render no longer pulls this image: since 25 September 2026 `render.yaml`
-# has Render build `claidor-maty-runner` from the repository
-# (`runtime: docker`, `runner/Dockerfile`, context the repository root),
-# because the OpenClaw engine that made the image too heavy for Render's
-# build machine is gone from the runner (`runner/src/engine.ts`). Until 26
-# September this workflow still described that engine build, ran on every
-# push to `main` touching `runner/**`, and watched `desktop/scripts/patches/**`,
-# a folder that left the tree with the 18 September re-founding (ledger
-# F-456). It is kept as a way to publish a tagged image for a deploy target
-# that is not Render; nothing depends on it, and the repository's own
-# workflows get no runner while Actions is billing-locked (CLAUDE.md, "On
-# CI").
+# Publishes the cloud runner's image to GHCR, by hand only. Render builds
+# the runner from the repository itself (`render.yaml`, `runner/Dockerfile`),
+# so nothing depends on this; it is a way to publish a tagged image for a
+# deploy target that is not Render.
 #
 # The whole build is the Dockerfile, run here, so a developer's
 # `docker build -f runner/Dockerfile .` produces the same image.
@@ -66,7 +56,7 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: |
-            ghcr.io/spaire-tech/claidor-maty-runner
+            ghcr.io/${{ github.repository_owner }}/simeon-runner
           # The commit sha names one exact image forever; `main` follows the
           # default branch.
           tags: |

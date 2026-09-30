@@ -18,8 +18,8 @@ from rich.table import Table
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import joinedload
 
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.models import (
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.models import (
     Benefit,
     BenefitGrant,
     BillingEntry,
@@ -40,8 +40,8 @@ from polar.models import (
     Subscription,
     TrialRedemption,
 )
-from polar.organization.repository import OrganizationRepository
-from polar.postgres import AsyncSession, create_async_engine
+from simeon.organization.repository import OrganizationRepository
+from simeon.postgres import AsyncSession, create_async_engine
 
 cli = typer.Typer()
 

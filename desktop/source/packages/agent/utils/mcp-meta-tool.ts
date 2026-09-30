@@ -1,5 +1,5 @@
 import { McpDescriptor, type McpDescriptor as McpDescriptorType } from "../../proto/generated/agent/v1/mcp_pb.js";
-import { CUSTOM_USER_TOOLS_PROVIDER_ID, CURSOR_DYNAMIC_TOOLS_NAMESPACE } from "../../agent-exec/mcp.js";
+import { CUSTOM_USER_TOOLS_PROVIDER_ID, isFirstPartyToolsNamespace } from "../../agent-exec/mcp.js";
 
 export interface McpSnapshotToolNames {
   readonly discoveryToolName: string;
@@ -56,7 +56,7 @@ function patchCustomUserToolsDescriptorInstructions(
 }
 
 function isReservedDynamicToolsNamespace(namespace: string): boolean {
-  return namespace === CURSOR_DYNAMIC_TOOLS_NAMESPACE;
+  return isFirstPartyToolsNamespace(namespace);
 }
 
 function withMcpMetaToolSnapshotToolNames(

@@ -2,7 +2,7 @@ from typing import Any
 
 import stripe as stripe_lib
 
-from polar.kit.utils import generate_uuid
+from simeon.kit.utils import generate_uuid
 
 
 def construct_stripe_customer(

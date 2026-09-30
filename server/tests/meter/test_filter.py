@@ -3,12 +3,12 @@ from datetime import UTC, timedelta
 import pytest
 from pydantic import ValidationError
 
-from polar.event.repository import EventRepository
-from polar.kit.utils import utc_now
-from polar.meter.filter import Filter, FilterClause, FilterConjunction, FilterOperator
-from polar.models import Event, Organization
-from polar.models.event import EventSource
-from polar.postgres import AsyncSession
+from simeon.event.repository import EventRepository
+from simeon.kit.utils import utc_now
+from simeon.meter.filter import Filter, FilterClause, FilterConjunction, FilterOperator
+from simeon.models import Event, Organization
+from simeon.models.event import EventSource
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_event
 

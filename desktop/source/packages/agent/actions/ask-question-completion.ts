@@ -90,7 +90,7 @@ type AskQuestionCompletionApplication =
   | AppliedAskQuestionCompletion
   | { readonly outcome: "invalid" | "already-applied" };
 
-const logger = createLogger("@anysphere/agent/ask-question-completion");
+const logger = createLogger("@sand/agent/ask-question-completion");
 
 export function isValidAskQuestionCompletion(action: AskQuestionCompletionAction): boolean {
   const resultCase = action.result?.result.case;

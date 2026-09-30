@@ -1,4 +1,4 @@
-import { formatCurrency } from '@claidor/currency'
+import { formatCurrency } from '@simeon/currency'
 import type { CheckoutDiscountFixedOnceForeverDuration } from '@spaire/sdk/models/components/checkoutdiscountfixedonceforeverduration'
 import type { CheckoutDiscountFixedRepeatDuration } from '@spaire/sdk/models/components/checkoutdiscountfixedrepeatduration'
 import type { CheckoutDiscountPercentageOnceForeverDuration } from '@spaire/sdk/models/components/checkoutdiscountpercentageonceforeverduration'

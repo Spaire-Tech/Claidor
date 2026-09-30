@@ -1,17 +1,17 @@
 'use client'
 
 import { Section } from '@/components/Layout/Section'
-import ClearOutlined from '@mui/icons-material/ClearOutlined'
 import AddOutlined from '@mui/icons-material/AddOutlined'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
+import ClearOutlined from '@mui/icons-material/ClearOutlined'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
+} from '@simeon/ui/components/atoms/Select'
 import { useCallback, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { ProductFormType } from './ProductForm'
@@ -63,7 +63,11 @@ export const ProductAdditionalDetailsSection = () => {
     const without = details.filter((d) => d.key !== pendingKey)
     setValue(
       'metadata',
-      [...otherMetadata, ...without, { key: pendingKey, value: pendingValue.trim() }],
+      [
+        ...otherMetadata,
+        ...without,
+        { key: pendingKey, value: pendingValue.trim() },
+      ],
       { shouldDirty: true },
     )
     setPendingKey('')
@@ -112,15 +116,18 @@ export const ProductAdditionalDetailsSection = () => {
                 className="flex flex-row items-center gap-2"
               >
                 <div className="w-40 shrink-0">
-                  <div className=" flex h-10 items-center rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-700">
-                    {DETAIL_OPTION_MAP[String(detail.key)] ?? String(detail.key)}
+                  <div className="flex h-10 items-center rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-700">
+                    {DETAIL_OPTION_MAP[String(detail.key)] ??
+                      String(detail.key)}
                   </div>
                 </div>
                 <div className="flex-1">
                   <Input
                     value={String(detail.value)}
                     placeholder="Value"
-                    onChange={(e) => updateDetail(String(detail.key), e.target.value)}
+                    onChange={(e) =>
+                      updateDetail(String(detail.key), e.target.value)
+                    }
                   />
                 </div>
                 <Button
@@ -163,7 +170,11 @@ export const ProductAdditionalDetailsSection = () => {
             <div className="flex-1">
               <Input
                 value={pendingValue}
-                placeholder={pendingKey ? `Enter ${DETAIL_OPTION_MAP[pendingKey]?.toLowerCase() ?? 'value'}` : 'Value'}
+                placeholder={
+                  pendingKey
+                    ? `Enter ${DETAIL_OPTION_MAP[pendingKey]?.toLowerCase() ?? 'value'}`
+                    : 'Value'
+                }
                 disabled={!pendingKey}
                 onChange={(e) => setPendingValue(e.target.value)}
                 onKeyDown={(e) => {
@@ -185,7 +196,6 @@ export const ProductAdditionalDetailsSection = () => {
             </Button>
           </div>
         )}
-
       </div>
     </Section>
   )

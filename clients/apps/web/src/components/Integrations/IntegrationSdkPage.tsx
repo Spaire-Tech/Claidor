@@ -1,14 +1,14 @@
 'use client'
 
 import { DashboardBody } from '@/components/Layout/DashboardLayout'
+import { OrganizationContext } from '@/providers/maintainerOrganization'
 import ArrowBackOutlined from '@mui/icons-material/ArrowBackOutlined'
 import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
-import { OrganizationContext } from '@/providers/maintainerOrganization'
-import Button from '@claidor/ui/components/atoms/Button'
-import { Tabs, TabsList, TabsTrigger } from '@claidor/ui/components/atoms/Tabs'
+import Button from '@simeon/ui/components/atoms/Button'
+import { Tabs, TabsList, TabsTrigger } from '@simeon/ui/components/atoms/Tabs'
+import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useContext, useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
 import { FadeUp } from '../Animated/FadeUp'
 import OrganizationAccessTokensSettings from '../Settings/OrganizationAccessTokensSettings'
 import {
@@ -57,7 +57,8 @@ export default function IntegrationSdkPage({
   }, [integration, packageManager])
 
   const isPython = integration.codeLang === 'python'
-  const isNonJs = isPython || integration.codeLang === 'go' || integration.codeLang === 'php'
+  const isNonJs =
+    isPython || integration.codeLang === 'go' || integration.codeLang === 'php'
 
   const envVarsWithToken = useMemo(() => {
     if (createdToken) {
@@ -80,7 +81,7 @@ export default function IntegrationSdkPage({
             <FadeUp className="flex flex-row justify-start">
               <Link
                 href={`/dashboard/${organization.slug}/integrations`}
-                className="flex cursor-pointer items-center gap-x-1.5 rounded-full px-3 py-1.5 text-sm text-blue-500 transition-colors duration-100 hover:bg-blue-50 hover:text-blue-600  "
+                className="flex cursor-pointer items-center gap-x-1.5 rounded-full px-3 py-1.5 text-sm text-blue-500 transition-colors duration-100 hover:bg-blue-50 hover:text-blue-600"
               >
                 <ArrowBackOutlined sx={{ fontSize: 16 }} />
                 All Integrations
@@ -91,21 +92,21 @@ export default function IntegrationSdkPage({
             <FadeUp className="flex flex-col gap-y-4">
               <div className="flex items-center gap-x-3">
                 {icon}
-                <span className=" rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
                   {integration.categoryLabel}
                 </span>
               </div>
               <h1 className="mt-1 text-2xl font-medium tracking-tight md:text-3xl">
                 {integration.tagline}
               </h1>
-              <p className=" max-w-lg text-base leading-relaxed text-gray-500">
+              <p className="max-w-lg text-base leading-relaxed text-gray-500">
                 {integration.description}
               </p>
             </FadeUp>
 
             {/* How it works */}
             <FadeUp className="flex flex-col gap-y-5">
-              <h2 className="text-sm font-medium uppercase tracking-wider text-gray-400">
+              <h2 className="text-sm font-medium tracking-wider text-gray-400 uppercase">
                 How it works
               </h2>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -133,12 +134,12 @@ export default function IntegrationSdkPage({
                       setPackageManager(v as PackageManager)
                     }
                   >
-                    <TabsList className=" rounded-sm bg-gray-100 p-0.5">
+                    <TabsList className="rounded-sm bg-gray-100 p-0.5">
                       {packageManagers.map((pm) => (
                         <TabsTrigger
                           key={pm}
                           value={pm}
-                          className=" !rounded-sm px-2.5 py-1 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                          className="!rounded-sm px-2.5 py-1 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm"
                         >
                           {pm}
                         </TabsTrigger>
@@ -164,10 +165,7 @@ export default function IntegrationSdkPage({
                 onTokenCreated={setCreatedToken}
               />
               <CodeWrapper>
-                <SyntaxHighlighterClient
-                  lang="bash"
-                  code={envVarsWithToken}
-                />
+                <SyntaxHighlighterClient lang="bash" code={envVarsWithToken} />
               </CodeWrapper>
             </FadeUp>
 
@@ -176,7 +174,15 @@ export default function IntegrationSdkPage({
               <h2 className="text-base font-medium">3. Add Checkout Code</h2>
               <CodeWrapper>
                 <SyntaxHighlighterClient
-                  lang={integration.codeLang === 'python' ? 'python' : integration.codeLang === 'go' ? 'go' : integration.codeLang === 'php' ? 'php' : 'typescript'}
+                  lang={
+                    integration.codeLang === 'python'
+                      ? 'python'
+                      : integration.codeLang === 'go'
+                        ? 'go'
+                        : integration.codeLang === 'php'
+                          ? 'php'
+                          : 'typescript'
+                  }
                   code={integration.code}
                 />
               </CodeWrapper>
@@ -197,7 +203,7 @@ export default function IntegrationSdkPage({
               <div className="flex flex-row items-center justify-center pt-1">
                 <Link
                   href={`/dashboard/${organization.slug}/integrations`}
-                  className="cursor-pointer rounded-full px-3 py-1.5 text-sm text-blue-500 transition-colors duration-100 hover:bg-blue-50 hover:text-blue-600  "
+                  className="cursor-pointer rounded-full px-3 py-1.5 text-sm text-blue-500 transition-colors duration-100 hover:bg-blue-50 hover:text-blue-600"
                 >
                   Back to all integrations
                 </Link>
@@ -212,7 +218,7 @@ export default function IntegrationSdkPage({
 
 const CodeWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className=" w-full rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm">
+    <div className="w-full rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm">
       {children}
     </div>
   )
@@ -227,13 +233,13 @@ const HowItWorksCard = ({
   title: string
   description: string
 }) => (
-  <div className=" flex flex-col gap-y-3 rounded-2xl border border-gray-200 bg-white p-5">
-    <span className=" flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs font-medium text-gray-600">
+  <div className="flex flex-col gap-y-3 rounded-2xl border border-gray-200 bg-white p-5">
+    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs font-medium text-gray-600">
       {number}
     </span>
     <div className="flex flex-col gap-y-1">
       <span className="text-sm font-medium">{title}</span>
-      <span className=" text-xs leading-relaxed text-gray-400">
+      <span className="text-xs leading-relaxed text-gray-400">
         {description}
       </span>
     </div>

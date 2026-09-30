@@ -10,10 +10,10 @@ set -u
 
 MINIO_BIN=${MINIO_BIN:-/tmp/minio}
 MINIO_DATA=${MINIO_DATA:-/tmp/miniodata}
-ROOT_USER=${CLAIDOR_MINIO_USER:-claidor}
-ROOT_PASSWORD=${CLAIDOR_MINIO_PWD:-claidorclaidor}
-ACCESS_KEY=${CLAIDOR_AWS_ACCESS_KEY_ID:-claidor-development}
-SECRET_KEY=${CLAIDOR_AWS_SECRET_ACCESS_KEY:-claidor123456789}
+ROOT_USER=${SIMEON_MINIO_USER:-simeon}
+ROOT_PASSWORD=${SIMEON_MINIO_PWD:-simeonsimeon}
+ACCESS_KEY=${SIMEON_AWS_ACCESS_KEY_ID:-simeon-development}
+SECRET_KEY=${SIMEON_AWS_SECRET_ACCESS_KEY:-simeon123456789}
 
 pg_isready -q || pg_ctlcluster 16 main start
 redis-cli ping >/dev/null 2>&1 || redis-server --daemonize yes
@@ -70,12 +70,12 @@ elif [ -n "$MC" ] && [ -x "$MC" ]; then
 else
   mc_run() { :; }
 fi
-for bucket in claidor-s3 claidor-s3-public testing-claidor-s3; do
+for bucket in simeon-s3 simeon-s3-public testing-simeon-s3; do
   mc_run mb --ignore-existing "local/$bucket" >/dev/null
 done
 mc_run admin user add local "$ACCESS_KEY" "$SECRET_KEY" >/dev/null 2>&1
 mc_run admin policy attach local readwrite --user "$ACCESS_KEY" >/dev/null 2>&1
-mc_run anonymous set download local/claidor-s3-public >/dev/null 2>&1
+mc_run anonymous set download local/simeon-s3-public >/dev/null 2>&1
 
 pg_isready && redis-cli ping && curl -s -o /dev/null -w "minio %{http_code}\n" \
   http://127.0.0.1:9000/minio/health/live

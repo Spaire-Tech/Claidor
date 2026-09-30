@@ -19,7 +19,7 @@ import { estimateTokenCount, extractTextContent } from "../self-summary/token-es
 
 type Any = any;
 
-const logger = createLogger("@anysphere/agent:summarize");
+const logger = createLogger("@sand/agent:summarize");
 
 function summarizedConversationCharCount(messages: readonly Any[]): number {
   let total = 0;

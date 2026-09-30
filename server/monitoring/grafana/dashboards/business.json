@@ -957,7 +957,7 @@
   ],
   "refresh": "30s",
   "schemaVersion": 39,
-  "tags": ["polar", "checkout", "business", "payment"],
+  "tags": ["simeon", "checkout", "business", "payment"],
   "templating": {
     "list": [
       {
@@ -1015,8 +1015,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Polar Business Metrics",
-  "uid": "polar-business",
+  "title": "Simeon Business Metrics",
+  "uid": "simeon-business",
   "version": 1,
   "weekStart": ""
 }

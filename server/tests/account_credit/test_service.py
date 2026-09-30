@@ -3,15 +3,15 @@ from unittest.mock import ANY
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.account_credit.repository import AccountCreditRepository
-from polar.account_credit.service import account_credit_service
-from polar.models import Account, Organization
-from polar.notifications.notification import (
+from simeon.account_credit.repository import AccountCreditRepository
+from simeon.account_credit.service import account_credit_service
+from simeon.models import Account, Organization
+from simeon.notifications.notification import (
     MaintainerAccountCreditsGrantedNotificationPayload,
     NotificationType,
 )
-from polar.notifications.service import PartialNotification
-from polar.postgres import AsyncSession
+from simeon.notifications.service import PartialNotification
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 
 
@@ -48,7 +48,7 @@ class TestGrant:
         organization: Organization,
     ) -> None:
         send_to_org_members_mock = mocker.patch(
-            "polar.account_credit.service.notifications_service.send_to_org_members"
+            "simeon.account_credit.service.notifications_service.send_to_org_members"
         )
 
         # Link organization to account

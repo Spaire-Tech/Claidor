@@ -1,7 +1,7 @@
 'use client'
 
 import { OrganizationStep } from '@/components/Onboarding/OrganizationStep'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 
 export interface ClientPageProps {
   slug?: string

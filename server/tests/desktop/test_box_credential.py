@@ -5,17 +5,17 @@ the Mac is awake. With the app gone nothing rewrote the box's one-hour
 access token, so the Mac now asks for a box credential once
 (`POST /desktop/api/box/renewal-credential`) and writes it into the box's
 token file, and the box trades it for a fresh access token at
-`POST /sand-box/inference-credential`, the path Grok Bot's host already
+`POST /sand-box/inference-credential`, the path the upstream app's host already
 renews on (`credential-renewer.ts`, `RENEWAL_PATH`).
 """
 
 import httpx
 import pytest
 
-from polar.desktop.service import ACCESS_TOKEN_PREFIX, unwrap_access_token
-from polar.desktop.tokens import BOX_CREDENTIAL_PREFIX
-from polar.models import User
-from polar.postgres import AsyncSession
+from simeon.desktop.service import ACCESS_TOKEN_PREFIX, unwrap_access_token
+from simeon.desktop.tokens import BOX_CREDENTIAL_PREFIX
+from simeon.models import User
+from simeon.postgres import AsyncSession
 
 from .test_endpoints import _signed_in
 
@@ -191,7 +191,7 @@ class TestBoxCredential:
         assert (
             await client.post(
                 "/sand-box/inference-credential",
-                json={"credential": "claidor_dr_notabox"},
+                json={"credential": "simeon_dr_notabox"},
             )
         ).status_code == 401
         assert (

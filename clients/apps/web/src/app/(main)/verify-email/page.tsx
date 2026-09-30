@@ -1,6 +1,6 @@
 import LogoIcon from '@/components/Brand/LogoIcon'
 import { CONFIG } from '@/utils/config'
-import Button from '@claidor/ui/components/atoms/Button'
+import Button from '@simeon/ui/components/atoms/Button'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -20,13 +20,13 @@ export default async function Page(props: {
 
   return (
     <form
-      className=" flex h-screen w-full grow items-center justify-center bg-gray-50"
+      className="flex h-screen w-full grow items-center justify-center bg-gray-50"
       method="POST"
       action={`${CONFIG.BASE_URL}/v1/email-update/verify?${urlSearchParams.toString()}`}
     >
       <div className="flex w-80 flex-col items-center gap-4">
         <LogoIcon size={60} className="mb-6 text-blue-500" />
-        <div className=" text-center text-gray-500">
+        <div className="text-center text-gray-500">
           To complete the email update process, please click the button below:
         </div>
         <input type="hidden" name="token" value={token} />

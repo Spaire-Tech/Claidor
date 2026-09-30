@@ -5,12 +5,12 @@ import uuid
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.account.service import AccountExternalIdDoesNotExist
-from polar.account.service import account as account_service
-from polar.enums import AccountType
-from polar.integrations.stripe.service import V2AccountInfo, extract_v2_account_info
-from polar.models import Account, User
-from polar.postgres import AsyncSession
+from simeon.account.service import AccountExternalIdDoesNotExist
+from simeon.account.service import account as account_service
+from simeon.enums import AccountType
+from simeon.integrations.stripe.service import V2AccountInfo, extract_v2_account_info
+from simeon.models import Account, User
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 
 _PAYOUTS_MISSING = object()  # sentinel for "no payouts attribute"
@@ -225,7 +225,7 @@ class TestV2AccountCreation:
     """Test account creation using the v2 API."""
 
     async def test_create_account_returns_v2_info(self, mocker: MockerFixture) -> None:
-        from polar.integrations.stripe.service import StripeService
+        from simeon.integrations.stripe.service import StripeService
 
         service = StripeService()
 
@@ -239,11 +239,11 @@ class TestV2AccountCreation:
         )
 
         mock_create = mocker.patch(
-            "polar.integrations.stripe.service.stripe_client.v2.core.accounts.create_async",
+            "simeon.integrations.stripe.service.stripe_client.v2.core.accounts.create_async",
             return_value=mock_v2_account,
         )
 
-        from polar.account.schemas import AccountCreateForOrganization
+        from simeon.account.schemas import AccountCreateForOrganization
 
         account_create = AccountCreateForOrganization(
             organization_id=uuid.uuid4(),
@@ -307,7 +307,7 @@ class TestV2AccountUpdate:
         )
 
         mocker.patch(
-            "polar.integrations.stripe.service.StripeService.retrieve_v2_account",
+            "simeon.integrations.stripe.service.StripeService.retrieve_v2_account",
             return_value=active_v2_info,
         )
 
@@ -364,7 +364,7 @@ class TestV2CapabilityStatusTransitions:
         )
 
         mocker.patch(
-            "polar.integrations.stripe.service.StripeService.retrieve_v2_account",
+            "simeon.integrations.stripe.service.StripeService.retrieve_v2_account",
             return_value=active_v2_info,
         )
 
@@ -407,7 +407,7 @@ class TestV2CapabilityStatusTransitions:
         )
 
         mocker.patch(
-            "polar.integrations.stripe.service.StripeService.retrieve_v2_account",
+            "simeon.integrations.stripe.service.StripeService.retrieve_v2_account",
             return_value=restricted_v2_info,
         )
 

@@ -21,9 +21,9 @@ from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.sand import box_hosts
-from polar.sand.box_hosts import (
+from simeon.config import settings
+from simeon.sand import box_hosts
+from simeon.sand.box_hosts import (
     BOX_HOST_BUNDLE_ROOT,
     BoxHostError,
     BoxSpec,
@@ -165,7 +165,7 @@ def _spec(**overrides: Any) -> BoxSpec:
     values: dict[str, Any] = {
         "name": "simeon-box-abc",
         "gateway_token": "gw",
-        "renewal_credential": "claidor_db_x",
+        "renewal_credential": "simeon_db_x",
         "backend_url": "https://api.simeonlabs.com",
         "image": box_image_reference(),
         "workspace_volume": "simeon-box-abc-workspace",
@@ -225,14 +225,14 @@ async def test_the_docker_provider_runs_the_macs_docker_run_with_the_bundle_moun
     assert env["SAND_HOST_PORT"] == "1340"
     assert env["SAND_GATEWAY_TOKEN"] == "gw"
     assert env["SAND_BACKEND_URL"] == "https://api.simeonlabs.com"
-    assert env["SAND_INFERENCE_RENEWAL_CREDENTIAL"] == "claidor_db_x"
-    assert env["SAND_INFERENCE_PROVIDER"] == "claidor"
+    assert env["SAND_INFERENCE_RENEWAL_CREDENTIAL"] == "simeon_db_x"
+    assert env["SAND_INFERENCE_PROVIDER"] == "simeon"
     assert env["SAND_DISABLE_TELEMETRY"] == "1"
     assert env["SAND_DISABLE_ANALYTICS"] == "1"
     assert env["SAND_BOX_LOG_SHIP_DISABLED"] == "1"
     assert "SAND_DEV_INFERENCE_TOKEN_FILE" not in env
-    assert container["Config"]["Labels"]["com.grok-bot.local-vm"] == "1"
-    assert container["Config"]["Labels"]["com.grok-bot.local-vm.schema-version"] == "10"
+    assert container["Config"]["Labels"]["com.simeonlabs.box"] == "1"
+    assert container["Config"]["Labels"]["com.simeonlabs.box.schema-version"] == "10"
     assert container["HostConfig"]["RestartPolicy"] == {"Name": "unless-stopped"}
     assert env["SAND_DATA_ROOT"] == "/home/box/sand-data"
     # The Mac's layout: the host program and the exec daemon's folder
@@ -247,13 +247,23 @@ async def test_the_docker_provider_runs_the_macs_docker_run_with_the_bundle_moun
         f"{folder}/box-exec-daemon:/home/box/box-exec-daemon:ro",
     ]
     labels = container["Config"]["Labels"]
-    assert labels["com.grok-bot.local-vm.host-sha256"] == bundle.host_sha256
+    assert labels["com.simeonlabs.box.host-sha256"] == bundle.host_sha256
     assert (
-        labels["com.grok-bot.local-vm.box-exec-daemon-sha256"]
+        labels["com.simeonlabs.box.box-exec-daemon-sha256"]
         == bundle.box_exec_daemon_sha256
     )
     assert provisioned.host_sha256 == bundle.host_sha256
     assert host.expected_host_sha256 == bundle.host_sha256
+    # A box made before the labels were renamed keeps its host version, so
+    # the rename alone does not replace it.
+    for key in list(labels):
+        if key.startswith("com.simeonlabs.box"):
+            labels["com.grok-bot.local-vm" + key.removeprefix("com.simeonlabs.box")] = (
+                labels.pop(key)
+            )
+    legacy = await host.inspect(provisioned.provider_box_id)
+    assert legacy is not None
+    assert legacy.host_sha256 == bundle.host_sha256
     assert set(container["HostConfig"]["PortBindings"]) == {
         "1340/tcp",
         "6080/tcp",

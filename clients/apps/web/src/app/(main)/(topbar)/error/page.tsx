@@ -1,5 +1,5 @@
 import LogoType70 from '@/components/Brand/LogoType70'
-import Button from '@claidor/ui/components/atoms/Button'
+import Button from '@simeon/ui/components/atoms/Button'
 import Link from 'next/link'
 
 export default async function Page(props: {
@@ -10,7 +10,7 @@ export default async function Page(props: {
   const { message, return_to } = searchParams
 
   return (
-    <div className=" flex h-screen w-full grow items-center justify-center bg-gray-50">
+    <div className="flex h-screen w-full grow items-center justify-center bg-gray-50">
       <div className="flex w-80 flex-col items-center gap-6 text-center">
         <LogoType70 className="h-10" />
         <h1 className="text-3xl">Oh no!</h1>

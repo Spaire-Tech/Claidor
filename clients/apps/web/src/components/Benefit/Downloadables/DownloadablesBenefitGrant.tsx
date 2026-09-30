@@ -1,15 +1,15 @@
 import { useCustomerDownloadables } from '@/hooks/queries'
 import ArrowDownward from '@mui/icons-material/ArrowDownward'
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined'
-import { Client, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import Pill from '@claidor/ui/components/atoms/Pill'
+import { Client, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import Pill from '@simeon/ui/components/atoms/Pill'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@claidor/ui/components/ui/dropdown-menu'
+} from '@simeon/ui/components/ui/dropdown-menu'
 import { useCallback, useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { FilePreview } from './FileList/FileListItem'
@@ -34,7 +34,7 @@ export const DownloadableItem = ({
   return (
     <div
       className={twMerge(
-        ' flex w-full flex-row items-center justify-between gap-x-6 rounded-2xl bg-gray-50 px-4 py-3',
+        'flex w-full flex-row items-center justify-between gap-x-6 rounded-2xl bg-gray-50 px-4 py-3',
         className,
       )}
     >
@@ -45,7 +45,7 @@ export const DownloadableItem = ({
             {downloadable.file.name}
           </span>
           <div className="flex flex-row items-center gap-x-2 text-xs">
-            <span className=" text-gray-500">
+            <span className="text-gray-500">
               {downloadable.file.size_readable}
             </span>
             {historic && (
@@ -70,10 +70,7 @@ export const DownloadableItem = ({
                 <MoreVertOutlined fontSize="inherit" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className=" bg-gray-50 shadow-lg"
-            >
+            <DropdownMenuContent align="end" className="bg-gray-50 shadow-lg">
               {downloadable.file.checksum_sha256_hex && (
                 <>
                   <DropdownMenuItem onClick={onCopySHA}>

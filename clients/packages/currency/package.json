@@ -1,5 +1,5 @@
 {
-  "name": "@claidor/currency",
+  "name": "@simeon/currency",
   "description": "Simeon Currency Utilities",
   "author": "Simeon Labs",
   "license": "Apache-2.0",
@@ -8,7 +8,7 @@
   "version": "0.1.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Claidor-Tech/polar.git",
+    "url": "https://github.com/simeonlabs/simeon.git",
     "directory": "clients/packages/currency"
   },
   "main": "./dist/index.cjs",
@@ -33,7 +33,7 @@
     }
   },
   "devDependencies": {
-    "@claidor/typescript-config": "workspace:*",
+    "@simeon/typescript-config": "workspace:*",
     "tsup": "^8.5.1",
     "typescript": "latest",
     "vitest": "^4.0.18"

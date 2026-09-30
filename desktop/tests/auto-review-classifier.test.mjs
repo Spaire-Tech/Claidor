@@ -61,7 +61,7 @@ test("the classifier asks the cheap model with the action and the conversation, 
     assert.match(blocking.messages[1].content, /rm -rf ~\/Documents/);
     assert.match(blocking.messages[1].content, /never delete my documents/);
     assert.match(blocking.messages[1].content, /user: clean up my downloads folder/);
-    assert.match(lines[0], /\[claidor\] auto-review action=shell mode=enforce verdict=block/);
+    assert.match(lines[0], /\[simeon\] auto-review action=shell mode=enforce verdict=block/);
 
     const allowing = module.createSimeonSmartModeClassifierExecutor({ createExecutor: () => fakeExecutor("Sure. {\"decision\": \"ALLOW\"}"), log: () => {} });
     const allowed = await allowing.execute(contextModule.module.createContext(), args);

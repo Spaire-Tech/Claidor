@@ -129,7 +129,7 @@ function currentMode(): SecretStorageMode {
 function warnInMemoryOnce(): void {
   if (warnedInMemory) return;
   warnedInMemory = true;
-  captureSandSentryWarning("[sand] OS secure storage (keychain/keyring) is unavailable; Cursor tokens are kept in memory for this session only and will NOT persist across restart. Set up a system keychain/keyring for persistent encrypted sign-in.");
+  captureSandSentryWarning("[sand] OS secure storage (keychain/keyring) is unavailable; Simeon sign-in tokens are kept in memory for this session only and will NOT persist across restart. Set up a system keychain/keyring for persistent encrypted sign-in.");
 }
 
 function getStorePath(): string {
@@ -422,7 +422,7 @@ export class DesktopSecretStore {
   private warnInMemoryOnce(): void {
     if (this.warnedInMemory) return;
     this.warnedInMemory = true;
-    this.options.warn?.("[sand] OS secure storage (keychain/keyring) is unavailable; Cursor tokens are kept in memory for this session only and will NOT persist across restart. Set up a system keychain/keyring for persistent encrypted sign-in.");
+    this.options.warn?.("[sand] OS secure storage (keychain/keyring) is unavailable; Simeon sign-in tokens are kept in memory for this session only and will NOT persist across restart. Set up a system keychain/keyring for persistent encrypted sign-in.");
   }
 
   private encryptSecret(key: string, value: string): string {

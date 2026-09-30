@@ -1,25 +1,25 @@
 import { isSandDefaultAgentName } from "./agents.js";
-// Grok Bot's own first-run cue, as the reconstruction first shipped it
+// The upstream app's own first-run cue, as the reconstruction first shipped it
 // (`ce9fc2d8`), restored on 27 September 2026 ("ours say what can i help you
-// with, and when i tested grok bot, it gives me suggestion"). The spend
+// with, and when i tested [the upstream app], it gives me suggestion"). The spend
 // guards of 23 September had rewritten three of its sentences into "ask one
 // real question … do not start any assignment", which is what stopped the
 // suggestions. What stopped the 481-call first run was not the words: the
 // message schema refusing every greeting (fixed, `stripFieldsOfOtherTypes`)
 // and the intro re-running on every open (it runs once, `agent-lifecycle.ts`).
-// Since 27 September the intro also has Grok Bot's own budget, 5,000 calls
+// Since 27 September the intro also has the upstream app's own budget, 5,000 calls
 // like any turn (`fullStepBudget`), behind the server's hourly cap. One
-// sentence stays ours: Grok Bot's names
+// sentence stays ours: the upstream app's names
 // a "connectors prompt" message SendMessage cannot send here (ledger F-335),
-// so it names ProposeConnector, followed by Grok Bot's own last sentence.
-// One sentence more, 28 September 2026: the cue is Grok Bot's word for word,
-// but GPT-5.6 answers it with a prose question where Grok Bot's own model
-// sends a hello and a question card. The founder's copy of Grok Bot's first
+// so it names ProposeConnector, followed by the upstream app's own last sentence.
+// One sentence more, 28 September 2026: the cue is the upstream app's word for word,
+// but GPT-5.6 answers it with a prose question where the upstream app's own model
+// sends a hello and a question card. The founder's copy of the upstream app's first
 // message ("Hi Bass, I'm New Bot. I'm a blank slate right now, so I'd like to
 // know what you want me for before I start guessing." / "What should I mainly
 // help you with?" / "Pick one, or type your own. You can hand me a real task
 // instead, and I'll just start on it.") is spelled out so this model sends it too.
-// And the turns after it (the founder, the same night: "grok bot will always give
+// And the turns after it (the founder, the same night: "[the upstream app] will always give
 // you more cards, suggest connectors … here it just texted me again"): GPT-5.6
 // asked its second question in prose and proposed nothing, though the cue it
 // still holds says "offer any choice as a question widget" and "propose it

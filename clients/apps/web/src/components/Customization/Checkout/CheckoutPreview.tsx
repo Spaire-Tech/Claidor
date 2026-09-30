@@ -2,8 +2,8 @@
 
 import Checkout from '@/components/Checkout/Checkout'
 import { DummyCheckoutContextProvider } from '@/components/Checkout/DummyCheckoutContextProvider'
-import { schemas } from '@claidor/client'
-import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
+import { schemas } from '@simeon/client'
+import ShadowBox from '@simeon/ui/components/atoms/ShadowBox'
 import { CHECKOUT_PREVIEW } from '../utils'
 
 export interface CheckoutPreviewProps {
@@ -13,7 +13,7 @@ export interface CheckoutPreviewProps {
 
 export const CheckoutPreview = ({}: CheckoutPreviewProps) => {
   return (
-    <ShadowBox className=" flex h-full w-full flex-col items-center overflow-y-auto bg-white">
+    <ShadowBox className="flex h-full w-full flex-col items-center overflow-y-auto bg-white">
       <div className="pointer-events-none flex w-full max-w-7xl flex-col items-center gap-y-12">
         <DummyCheckoutContextProvider checkout={CHECKOUT_PREVIEW}>
           <Checkout />

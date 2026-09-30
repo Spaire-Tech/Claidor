@@ -114,7 +114,7 @@ import { processSelectedContext } from "./context-processing.js";
 // remain deliberately absent and uncomposed. The
 // recovered tracking and serde helpers are private implementation details.
 
-const _logger3 = createLogger("@anysphere/agent:state");
+const _logger3 = createLogger("@sand/agent:state");
 const textDecoder2 = new TextDecoder();
 
 const conversationStateRestoreDurationMs = createHistogram("agent.conversation_state.restore.duration_ms", {

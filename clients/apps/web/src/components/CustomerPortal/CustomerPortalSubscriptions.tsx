@@ -1,10 +1,10 @@
 import revalidate from '@/app/actions'
 import { useCustomerOrders } from '@/hooks/queries'
-import { Client, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { DataTable } from '@claidor/ui/components/atoms/DataTable'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
-import { getThemePreset } from '@claidor/ui/hooks/theming'
+import { Client, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { DataTable } from '@simeon/ui/components/atoms/DataTable'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
+import { getThemePreset } from '@simeon/ui/hooks/theming'
 import { useRouter } from 'next/navigation'
 import { useCallback, useMemo, useState } from 'react'
 import { InlineModal } from '../Modal/InlineModal'
@@ -47,7 +47,7 @@ export const ActiveSubscriptionsOverview = ({
             />
           ))
         ) : (
-          <div className=" flex flex-col items-center justify-center rounded-2xl border border-gray-200 p-12 text-gray-500">
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-200 p-12 text-gray-500">
             <p>No Subscriptions Found</p>
           </div>
         )}
@@ -68,10 +68,7 @@ export const InactiveSubscriptionsOverview = ({
   customerSessionToken,
 }: SubscriptionsOverviewProps) => {
   const router = useRouter()
-  const themingPreset = getThemePreset(
-    organization.slug,
-    'light',
-  )
+  const themingPreset = getThemePreset(organization.slug, 'light')
 
   const [selectedSubscription, setSelectedSubscription] = useState<
     schemas['CustomerSubscription'] | null

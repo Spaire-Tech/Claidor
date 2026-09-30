@@ -12,6 +12,7 @@ import {
 import { buildFidelityReconstructedAsar } from "./clean-build.mjs";
 import { signAppBundleAdHoc } from "./lib/codesign.mjs";
 import { renameMacBundleIdentity } from "./lib/macos-bundle-rename.mjs";
+import { plistIdentityRewrites } from "./lib/macos-plist-identity.mjs";
 import { verifyOfficialMacReference, verifyReconstructedMacPackage } from "./lib/macos-package-verification.mjs";
 import { capture, run } from "./lib/process.mjs";
 import { SYSTEM_TOOLS } from "./lib/system-tools.mjs";
@@ -24,7 +25,7 @@ if (process.platform !== "darwin") {
 // Keep the checksum-pinned shipped renderer as the window chrome. Product
 // work in frontend/ is a recovered skeleton without the atom stylesheet;
 // shipping it emptied the sidebar and composer. The ignited host still
-// replaces Grok's 0.18.0 agent runtime (Terra→Luna, Claidor proxy).
+// replaces the upstream app's 0.18.0 agent runtime (Terra→Luna, Simeon proxy).
 const { builtAsar, builtAsarUnpacked, runtimeApp } = await buildFidelityReconstructedAsar();
 // Keep the signed release audit separate from the reconstructed package audit:
 // the official app is reference-only and is never used as the runtime payload.
@@ -32,7 +33,7 @@ await verifyOfficialMacReference({ runtimeApp });
 await mkdir(outputDir, { recursive: true });
 await rm(outputApp, { recursive: true, force: true });
 await run(SYSTEM_TOOLS.ditto, [runtimeApp, outputApp]);
-// The source DMG's quarantine/provenance applies to Anysphere's signed artifact,
+// The source DMG's quarantine/provenance applies to the upstream maker's signed artifact,
 // not to this differently identified local reconstruction. Leaving it attached
 // makes Gatekeeper reject the otherwise valid ad-hoc signature before launch.
 await run(SYSTEM_TOOLS.xattr, ["-cr", outputApp]);
@@ -67,13 +68,14 @@ const infoPlist = path.join(outputApp, "Contents", "Info.plist");
 await run(SYSTEM_TOOLS.plutil, ["-remove", "ElectronAsarIntegrity", infoPlist]);
 await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleIdentifier", "-string", simeonBundleId, infoPlist]);
 await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleDisplayName", "-string", simeonName, infoPlist]);
-// macOS kills an app that touches the microphone without this key; dictation
-// is the one capture Simeon does (F-230, 25 September 2026). `-replace`
-// writes it whether or not the 0.18.0 shell carried one.
-await run(SYSTEM_TOOLS.plutil, ["-replace", "NSMicrophoneUsageDescription", "-string", "Simeon uses the microphone to take your dictation.", infoPlist]);
+// macOS kills an app that touches the microphone without this key. Simeon
+// captures for dictation (F-230, 25 September 2026) and, since 30 September
+// 2026, for voice calls with an agent. `-replace` writes it whether or not
+// the 0.18.0 shell carried one.
+await run(SYSTEM_TOOLS.plutil, ["-replace", "NSMicrophoneUsageDescription", "-string", "Simeon uses the microphone to take your dictation and for voice calls with your agents.", infoPlist]);
 // The bundle claims our own scheme and nothing inherited (`sand`, `grokbot`):
-// Claidor's sign-in returns to whatever scheme the app names, and `sand` is
-// Grok Bot's, which macOS may hand the callback to instead.
+// Simeon's sign-in returns to whatever scheme the app names, and `sand` is
+// The upstream app's, which macOS may hand the callback to instead.
 await run(SYSTEM_TOOLS.plutil, ["-remove", "CFBundleURLTypes", infoPlist]);
 await run(SYSTEM_TOOLS.plutil, ["-insert", "CFBundleURLTypes", "-xml", `<array><dict><key>CFBundleTypeRole</key><string>Viewer</string><key>CFBundleURLName</key><string>Simeon auth callback</string><key>CFBundleURLSchemes</key><array><string>${simeonUrlScheme}</string></array></dict></array>`, infoPlist]);
 // The packaged bundle carries its own backend. A bundle launched from Finder
@@ -98,7 +100,7 @@ await run(SYSTEM_TOOLS.plutil, [
 // launch (SIGTRAP in ElectronMain, "Unable to find helper app"); the rename
 // refuses to touch the main executable unless it found helpers to rename with
 // it. The old name is read from the bundle, not assumed. Signed below, as the
-// signature covers every renamed path. docs/product/name-measured.md.
+// signature covers every renamed path.
 const renamed = await renameMacBundleIdentity({
   appPath: outputApp,
   fromName: await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleExecutable", "raw", infoPlist]),
@@ -109,6 +111,27 @@ const renamed = await renameMacBundleIdentity({
   },
   log: (line) => console.log(`[package] ${line}`),
 });
+
+// Every plist in the bundle, main and helpers: the copyright line, the
+// permission prompts and the helper bundle ids name Simeon, not the 0.18.0
+// shell's maker (scripts/lib/macos-plist-identity.mjs). Before signing, as
+// the signature covers them.
+{
+  const frameworks = path.join(outputApp, "Contents", "Frameworks");
+  const helperPlists = (await readdir(frameworks).catch(() => []))
+    .filter((entry) => entry.endsWith(".app"))
+    .map((entry) => path.join(frameworks, entry, "Contents", "Info.plist"));
+  for (const [file, role] of [[infoPlist, "main"], ...helperPlists.map((file) => [file, "helper"])]) {
+    const json = await capture(SYSTEM_TOOLS.plutil, ["-convert", "json", "-o", "-", file]).catch(() => null);
+    if (json == null) { console.warn(`[package] ${file}: could not read as JSON; its strings were not checked`); continue; }
+    const { rewrites, reported } = plistIdentityRewrites(JSON.parse(json), { bundleId: simeonBundleId, name: simeonName, role });
+    for (const [key, value] of Object.entries(rewrites)) {
+      await run(SYSTEM_TOOLS.plutil, ["-replace", key, "-string", value, file]);
+      console.log(`[package] ${path.relative(outputApp, file)}: ${key} -> ${value}`);
+    }
+    for (const key of reported) console.warn(`[package] ${path.relative(outputApp, file)}: ${key} still names the shell's maker and was left as it is`);
+  }
+}
 
 await rm(path.join(outputApp, "Contents", "_CodeSignature"), { recursive: true, force: true });
 try {
@@ -123,7 +146,7 @@ try {
 await run(SYSTEM_TOOLS.codesign, ["--verify", "--deep", "--strict", outputApp]);
 // macOS caches an app's icon and name by bundle; a touched bundle and a
 // re-registration make Finder and the Dock read the finished one instead of
-// the cached Grok Bot icon. Done last, once the bundle is in its final shape.
+// the cached the upstream app icon. Done last, once the bundle is in its final shape.
 await run("/usr/bin/touch", [outputApp]).catch(() => {});
 await run("/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister", ["-f", outputApp]).catch(() => {});
 const verification = await verifyReconstructedMacPackage({

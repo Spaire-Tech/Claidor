@@ -60,7 +60,7 @@ test("the memory extension serves user and project memory, and the shards are re
   assert.match(extension, /createUserMemory:\(options:\{agentId:string;resolveAgentName/);
   assert.match(extension, /createProjectMemory:\(options:\{agentDir:string;agentId:string;resolveAgentName/);
   const { module, dispose } = await load("source/host/extensions/memory/shared-memory.ts", "shared-memory");
-  const root = await mkdtemp(path.join(os.tmpdir(), "caisra-shared-memory-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-shared-memory-"));
   try {
     const names = { a1: "Simeon", a2: "Muse" };
     const resolve = (id) => names[id] ?? null;

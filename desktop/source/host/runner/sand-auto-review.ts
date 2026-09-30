@@ -15,7 +15,7 @@ export interface SandAutoReviewModes {
   readonly boxShell: SandAutoReviewMode;
   readonly mcp: SandAutoReviewMode;
   readonly computer: SandAutoReviewMode;
-  // Grok Bot 0.18 shipped this surface pinned "off" in every table (a
+  // The upstream app 0.18 shipped this surface pinned "off" in every table (a
   // not-yet-rolled-out marker). Since 25 September 2026 it follows the
   // others: the classifier runs on Luna through Simeon Labs' proxy and
   // the confirm card path is complete (design-audit-ledger.md F-034).

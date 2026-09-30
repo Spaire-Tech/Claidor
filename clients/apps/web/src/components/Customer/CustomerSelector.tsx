@@ -5,15 +5,15 @@ import { useCustomers } from '@/hooks/queries'
 import { useInViewport } from '@/hooks/utils'
 import Close from '@mui/icons-material/Close'
 import Search from '@mui/icons-material/Search'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
-import { List, ListItem } from '@claidor/ui/components/atoms/List'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
+import { List, ListItem } from '@simeon/ui/components/atoms/List'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@claidor/ui/components/ui/popover'
+} from '@simeon/ui/components/ui/popover'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 interface CustomerSelectorProps {
@@ -143,7 +143,7 @@ export const CustomerSelector = ({
               </div>
             )}
             {allCustomers.length === 0 && !hasNextPage && (
-              <div className=" flex w-full items-center justify-center py-8 text-sm text-gray-500">
+              <div className="flex w-full items-center justify-center py-8 text-sm text-gray-500">
                 {query ? 'No customers found' : 'No customers yet'}
               </div>
             )}
@@ -170,7 +170,7 @@ export const CustomerSelector = ({
               <Button
                 size="icon"
                 variant="ghost"
-                className=" size-6 text-gray-500 opacity-0 transition-all group-hover:opacity-100"
+                className="size-6 text-gray-500 opacity-0 transition-all group-hover:opacity-100"
                 onClick={(e) => {
                   e.stopPropagation()
                   handleToggleCustomer(customer.id)

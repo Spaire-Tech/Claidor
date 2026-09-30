@@ -2,7 +2,7 @@
 
 import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded'
 import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded'
-import Button from '@claidor/ui/components/atoms/Button'
+import Button from '@simeon/ui/components/atoms/Button'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useState } from 'react'
 
@@ -49,7 +49,7 @@ export const Slideshow = ({ images }: SlideshowProps) => {
   )
 
   return (
-    <div className=" relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl bg-gray-100 bg-cover bg-center lg:rounded-3xl ">
+    <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl bg-gray-100 bg-cover bg-center lg:rounded-3xl">
       <AnimatePresence initial={false} custom={direction}>
         <motion.div
           className="absolute inset-0 h-full w-full bg-cover bg-center"

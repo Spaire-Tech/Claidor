@@ -34,6 +34,8 @@ const executableReplacements = [
   "dist/electron-preload/preload-dev-controls.cjs",
   "dist/electron-preload/preload-webview.cjs",
   "dist/electron-preload/preload-vnc.cjs",
+  "dist/electron-preload/preload-voice-call.cjs",
+  "dist/voice-call",
   "dist/host/agent-isolation/agent-store-worker.cjs",
   "dist/host/agent-isolation/transcript-mirror-worker.cjs",
   "dist/host/extensions/box-store-sync/box-store-vacuum-worker.cjs",
@@ -56,6 +58,8 @@ export const runtimeComposition = Object.freeze([
   { runtime: "dev-controls-preload", path: "dist/electron-preload/preload-dev-controls.cjs", mode: "clean-source", source: "source/electron-preload/preload-dev-controls.ts", entrypoint: "source/electron-preload/runtime/dev-controls.ts" },
   { runtime: "webview-preload", path: "dist/electron-preload/preload-webview.cjs", mode: "clean-source", source: "source/electron-preload/preload-webview.ts", entrypoint: "source/electron-preload/runtime/webview.ts" },
   { runtime: "vnc-preload", path: "dist/electron-preload/preload-vnc.cjs", mode: "clean-source", source: "source/electron-preload/preload-vnc.ts", entrypoint: "source/electron-preload/runtime/vnc.ts" },
+  { runtime: "voice-call-preload", path: "dist/electron-preload/preload-voice-call.cjs", mode: "clean-source", source: "source/electron-preload/preload-voice-call.ts", entrypoint: "source/electron-preload/runtime/voice-call.ts" },
+  { runtime: "voice-call-banner", path: "dist/voice-call/banner.js", mode: "clean-source", source: "source/voice-call/main.ts" },
   { runtime: "node-agent-coordinator", path: "dist/node-agent-coordinator/main.cjs", mode: "clean-source", source: "source/node-agent-coordinator/main.ts" },
   { runtime: "host", path: "dist/host/host-main.cjs", mode: "artifact-fallback", sourceBundle: "dist/recovered-source/host/host-main.cjs", reason: "Recovered host main requires concrete host factories and process bootstrap dependencies." },
   { runtime: "host-agent-store-worker", path: "dist/host/agent-isolation/agent-store-worker.cjs", mode: "clean-source", source: "source/host/agent-isolation/agent-store-worker.ts" },
@@ -120,6 +124,32 @@ async function bundlePreloadSource(entry, outfile) {
     define: {},
     entryPoints: [path.join(repoRoot, entry)],
     banner: { js: `// Deterministic clean-source preload bundle: ${entry}` },
+  });
+}
+
+/**
+ * The voice-call banner's page (30 September 2026): its HTML and stylesheet
+ * as written, and one browser bundle with the ElevenLabs SDK in it. The page
+ * runs in a window of its own (source/electron-main/voice/voice-call-window.ts).
+ */
+export const VOICE_CALL_PAGE_FILES = Object.freeze(["index.html", "banner.css"]);
+
+export async function bundleVoiceCallPage(outputDir) {
+  await mkdir(outputDir, { recursive: true });
+  for (const name of VOICE_CALL_PAGE_FILES) await cp(path.join(repoRoot, "source/voice-call", name), path.join(outputDir, name));
+  await esbuild({
+    absWorkingDir: repoRoot,
+    entryPoints: [path.join(repoRoot, "source/voice-call/main.ts")],
+    bundle: true,
+    format: "iife",
+    platform: "browser",
+    target: "chrome130",
+    outfile: path.join(outputDir, "banner.js"),
+    minify: true,
+    legalComments: "none",
+    logLevel: "silent",
+    sourcemap: false,
+    banner: { js: "// Deterministic clean-source voice-call banner: source/voice-call/main.ts" },
   });
 }
 
@@ -205,6 +235,8 @@ async function buildRuntimeDistribution({ outputRoot, composition, rendererMode 
   await bundlePreloadSource("source/electron-preload/runtime/dev-controls.ts", path.join(outputRoot, "dist/electron-preload/preload-dev-controls.cjs"));
   await bundlePreloadSource("source/electron-preload/runtime/webview.ts", path.join(outputRoot, "dist/electron-preload/preload-webview.cjs"));
   await bundlePreloadSource("source/electron-preload/runtime/vnc.ts", path.join(outputRoot, "dist/electron-preload/preload-vnc.cjs"));
+  await bundlePreloadSource("source/electron-preload/runtime/voice-call.ts", path.join(outputRoot, "dist/electron-preload/preload-voice-call.cjs"));
+  await bundleVoiceCallPage(path.join(outputRoot, "dist/voice-call"));
   await bundleSource("source/host/agent-isolation/agent-store-worker.ts", path.join(outputRoot, "dist/host/agent-isolation/agent-store-worker.cjs"));
   await bundleSource("source/host/agent-isolation/transcript-mirror-worker.ts", path.join(outputRoot, "dist/host/agent-isolation/transcript-mirror-worker.cjs"));
   await bundleSource("source/host/extensions/box-store-sync/box-store-vacuum-worker.ts", path.join(outputRoot, "dist/host/extensions/box-store-sync/box-store-vacuum-worker.cjs"));
@@ -291,6 +323,6 @@ export async function buildReconstructedAsar({ pack = true } = {}) {
     await packStagedAppWithIntegrity({ stageRoot: stagedAppDir, archivePath: builtAsar, unpackedRoot: builtAsarUnpacked });
     console.log(`Source-aware ASAR ready: ${builtAsar}`);
   }
-  console.log("Executable clean replacements: renderer, coordinator, box exec-daemon, local-exec daemon, primary/dev-controls/webview/VNC preloads, and four host workers.");
+  console.log("Executable clean replacements: renderer, coordinator, box exec-daemon, local-exec daemon, primary/dev-controls/webview/VNC/voice-call preloads, the voice-call banner, and four host workers.");
   return { ...fallback, ...clean };
 }

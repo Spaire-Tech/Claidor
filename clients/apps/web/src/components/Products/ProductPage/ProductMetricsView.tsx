@@ -1,6 +1,6 @@
 import MetricChartBox from '@/components/Metrics/MetricChartBox'
 import { ParsedMetricsResponse } from '@/hooks/queries'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 
 export interface ProductMetricsViewProps {
   data?: ParsedMetricsResponse

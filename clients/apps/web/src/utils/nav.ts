@@ -1,5 +1,5 @@
 import { CONFIG } from '@/utils/config'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import type { Organization as OrganizationSDK } from '@spaire/sdk/models/components/organization'
 
 export const organizationPageLink = (
@@ -13,8 +13,8 @@ export const organizationPageLink = (
 }
 
 /**
- * Generate a public Claidor Space URL for sharing and SEO.
- * e.g., https://space.claidorhq.com/miles-becker
+ * Generate a public Simeon Space URL for sharing and SEO.
+ * e.g., https://space.simeonlabs.com/miles-becker
  */
 export const spacePageLink = (
   org:

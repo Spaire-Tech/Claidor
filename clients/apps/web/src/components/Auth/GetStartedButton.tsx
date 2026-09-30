@@ -2,8 +2,8 @@
 
 import { usePostHog } from '@/hooks/posthog'
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import { ComponentProps, FormEvent, useCallback, useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { Modal } from '../Modal'
@@ -64,7 +64,7 @@ const GetStartedButton = ({
         size={size}
         onClick={onClick}
         onSubmit={onSubmit}
-        className=" rounded-full bg-black font-medium text-white hover:bg-gray-800 "
+        className="rounded-full bg-black font-medium text-white hover:bg-gray-800"
         {...props}
       >
         <div>{text}</div>

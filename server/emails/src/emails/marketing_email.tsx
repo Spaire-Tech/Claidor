@@ -1,7 +1,7 @@
 import MarketingEmailWrapper from '../components/MarketingEmailWrapper'
 
 // Props match the snake_case JSON the Python renderer emits — see
-// `MarketingEmailProps` in `polar/email/schemas.py`.
+// `MarketingEmailProps` in `simeon/email/schemas.py`.
 export interface MarketingEmailProps {
   organization_name: string
   organization_logo_url?: string | null

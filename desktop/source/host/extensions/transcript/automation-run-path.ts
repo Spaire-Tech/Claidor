@@ -227,7 +227,7 @@ export class AutomationRunPath {
                 `${buildAutomationWakePrompt(currentAutomation, { timeZone: this.tm.sessionStore.getUserTimeZone(), ...(isEventFire ? { events: eventBatch } : {}), ...(args.trigger === "manual" ? { trigger: "manual" as const } : {}) })}${spendGuardReminder == null ? "" : `\n\n${spendGuardReminder}`}`,
                 {
                   hidden: true,
-                  // A routine does real work unattended; Grok Bot ran it
+                  // A routine does real work unattended; the upstream app ran it
                   // under the same 5,000-call cap as any turn.
                   fullStepBudget: true,
                   isSilenceAllowed: true,

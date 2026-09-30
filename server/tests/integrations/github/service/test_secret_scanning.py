@@ -8,8 +8,8 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from fastapi.exceptions import RequestValidationError
 from pytest_mock import MockerFixture
 
-from polar.integrations.github.service.secret_scanning import InvalidSignature
-from polar.integrations.github.service.secret_scanning import (
+from simeon.integrations.github.service.secret_scanning import InvalidSignature
+from simeon.integrations.github.service.secret_scanning import (
     secret_scanning as secret_scanning_service,
 )
 
@@ -84,12 +84,12 @@ class TestValidatePayload:
                 [
                     {
                         "token": "TOKEN",
-                        "type": "claidor_personal_access_token",
+                        "type": "simeon_personal_access_token",
                         "source": "github",
                     },
                     {
                         "token": "TOKEN",
-                        "type": "claidor_client_secret",
+                        "type": "simeon_client_secret",
                         "source": "github",
                         "url": "https://example.com",
                     },
@@ -100,7 +100,7 @@ class TestValidatePayload:
                 [
                     {
                         "token": "TOKEN",
-                        "type": "CLAIDOR_PERSONAL_ACCESS_TOKEN",
+                        "type": "SIMEON_PERSONAL_ACCESS_TOKEN",
                         "source": "github",
                     }
                 ],

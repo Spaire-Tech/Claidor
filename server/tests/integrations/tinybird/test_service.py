@@ -4,15 +4,15 @@ from datetime import UTC, datetime
 
 import pytest
 
-from polar.integrations.tinybird.client import TinybirdClient
-from polar.integrations.tinybird.service import (
+from simeon.integrations.tinybird.client import TinybirdClient
+from simeon.integrations.tinybird.service import (
     DATASOURCE_EVENTS,
     TinybirdEventsQuery,
     TinybirdEventTypesQuery,
     _event_to_tinybird,
 )
-from polar.models import Event
-from polar.models.event import EventSource
+from simeon.models import Event
+from simeon.models.event import EventSource
 from tests.fixtures.tinybird import tinybird_available
 
 

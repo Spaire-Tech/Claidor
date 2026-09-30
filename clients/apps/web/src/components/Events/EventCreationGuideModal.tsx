@@ -1,4 +1,4 @@
-import Button from '@claidor/ui/components/atoms/Button'
+import Button from '@simeon/ui/components/atoms/Button'
 import { Well } from '../Shared/Well'
 import {
   SyntaxHighlighterClient,
@@ -17,16 +17,16 @@ export const EventCreationGuideModal = ({
       <div className="flex flex-col gap-4 p-8">
         <h1 className="text-2xl">Event Ingestion</h1>
         <p>Events can only be created through the Simeon Ingestion API.</p>
-        <Well className=" rounded-lg bg-gray-100 p-4 text-sm">
+        <Well className="rounded-lg bg-gray-100 p-4 text-sm">
           <SyntaxHighlighterClient
             lang="typescript"
-            code={`import { Claidor } from "@spaire/sdk";
+            code={`import { Simeon } from "@spaire/sdk";
 
-const claidor = new Claidor({
-  accessToken: process.env["CLAIDOR_ACCESS_TOKEN"] ?? "",
+const simeon = new Simeon({
+  accessToken: process.env["SIMEON_ACCESS_TOKEN"] ?? "",
 });
 
-const result = await claidor.events.ingest({
+const result = await simeon.events.ingest({
   events: [
     {
       name: "<value>",

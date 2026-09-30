@@ -1,8 +1,8 @@
 import { envGateOverride } from "./cursor-experiments.js";
 
-// Feature gates Simeon turns on that Grok Bot's bundled table
+// Feature gates Simeon turns on that the upstream app's bundled table
 // (`experiment-config.gen.ts`, a generated file that is not edited) leaves
-// off. Grok Bot flips these from Cursor's experiments server, which Simeon
+// off. The upstream app flips these from Cursor's experiments server, which Simeon
 // Labs' server does not serve, so without this the bundled default is the
 // only value the app ever sees.
 //
@@ -23,21 +23,21 @@ import { envGateOverride } from "./cursor-experiments.js";
 // 2026 (design-audit-ledger.md F-340), now that the classifier runs on Luna
 // through Simeon Labs' proxy and the box host reads this table.
 //
-// `sand_product_analytics` — Grok Bot's event stream to Cursor's
+// `sand_product_analytics` — the upstream app's event stream to Cursor's
 // AnalyticsService, which nothing serves here; off (F-378).
 //
 // `sand_multiplayer` — sharing a room with another person's agent. Off in
 // the bundled table; on since 25 September 2026 (F-403), now that Simeon
 // Labs' server serves the `/sand/xuser` and `/sand/share-rooms` relay
-// (`server/polar/sand/sharing.py`). The cross-user-sharing extension reads
+// (`server/simeon/sand/sharing.py`). The cross-user-sharing extension reads
 // it through `getFeatureGateProperty`, which this table also covers.
 //
 // `sand_notify_bus` — the box's one SSE stream to `GET /sand/notify`, which
 // wakes the listener relay poller and the fire consumer the moment an
 // event or a cron fire lands instead of at their next poll. Off in the
 // bundled table; on since 25 September 2026, now that Simeon Labs' server
-// serves the stream (polar/sand/notify.py) and the listener relay behind
-// it (polar/sand/listeners*.py). The safety polls stay on.
+// serves the stream (simeon/sand/notify.py) and the listener relay behind
+// it (simeon/sand/listeners*.py). The safety polls stay on.
 // Two gates this table does not name, and why (F-209, 25 September 2026):
 // `sand_browser_use_subagent` stays at its bundled default, off. The
 // browserUse child and its fifteen tools are wired
@@ -46,7 +46,7 @@ import { envGateOverride } from "./cursor-experiments.js";
 // screen; the founder decides when to try the dedicated child
 // (`SAND_FEATURE_GATE_OVERRIDES=sand_browser_use_subagent=1` tries it
 // without a rebuild). `sand_multitask` stays at its bundled default, on:
-// it is Grok Bot's own loop ("i want literally everything", 22 September).
+// it is the upstream app's own loop ("i want literally everything", 22 September).
 export const SIMEON_FEATURE_GATE_DEFAULTS: Readonly<Record<string, boolean>> = Object.freeze({
   sand_usage_page: true,
   sand_auto_review: true,

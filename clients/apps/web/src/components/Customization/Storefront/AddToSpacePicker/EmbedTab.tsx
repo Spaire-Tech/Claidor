@@ -1,7 +1,7 @@
 'use client'
 
 import { platformLogoUrl } from '@/components/Profile/linkPlatforms'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { useEffect, useState } from 'react'
 import { LinkDraft, LinkEditForm } from './LinkEditForm'
 import {

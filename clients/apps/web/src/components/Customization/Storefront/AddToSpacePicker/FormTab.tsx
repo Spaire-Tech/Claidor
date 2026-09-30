@@ -1,7 +1,7 @@
 'use client'
 
 import { useForms } from '@/hooks/queries/forms'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import Link from 'next/link'
 
 export type FormPickPayload = {

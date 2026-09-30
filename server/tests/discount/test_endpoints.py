@@ -1,7 +1,7 @@
 import pytest
 from httpx import AsyncClient
 
-from polar.models import Organization, UserOrganization
+from simeon.models import Organization, UserOrganization
 
 
 @pytest.mark.asyncio

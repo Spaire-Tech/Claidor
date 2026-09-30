@@ -3,22 +3,22 @@
 import CustomFieldTypeIcon from '@/components/CustomFields/CustomFieldTypeIcon'
 import { useCustomFields } from '@/hooks/queries'
 import ClearOutlined from '@mui/icons-material/ClearOutlined'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { List, ListItem } from '@claidor/ui/components/atoms/List'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { List, ListItem } from '@simeon/ui/components/atoms/List'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
-import Switch from '@claidor/ui/components/atoms/Switch'
+} from '@simeon/ui/components/atoms/Select'
+import Switch from '@simeon/ui/components/atoms/Switch'
 import {
   FormControl,
   FormField,
   FormLabel,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { useMemo, useState } from 'react'
 import { useFieldArray, useFormContext } from 'react-hook-form'
 import { twMerge } from 'tailwind-merge'
@@ -102,9 +102,7 @@ export const ProductCustomFieldSection = ({
                             <FormLabel
                               className={twMerge(
                                 'text-sm',
-                                field.value
-                                  ? ''
-                                  : ' text-gray-500',
+                                field.value ? '' : 'text-gray-500',
                               )}
                             >
                               Required

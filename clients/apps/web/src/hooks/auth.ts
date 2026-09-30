@@ -1,8 +1,8 @@
 import { usePostHog } from '@/hooks/posthog'
 import { AuthContext } from '@/providers/auth'
 import { api } from '@/utils/client'
-import { schemas, unwrap } from '@claidor/client'
 import * as Sentry from '@sentry/nextjs'
+import { schemas, unwrap } from '@simeon/client'
 import { useContext, useEffect } from 'react'
 
 export const useAuth = (): {

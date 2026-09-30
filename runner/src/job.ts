@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import type { ClaimedJob, TurnMessage } from './claidor.js';
-import { PersonClient } from './claidor.js';
+import type { ClaimedJob, TurnMessage } from './api.js';
+import { PersonClient } from './api.js';
 import { Engine } from './engine.js';
 import type { EngineMessage } from './engine.js';
 import { buildWorkspaceInstructions } from './engineConfig.js';
@@ -14,7 +14,7 @@ import type { RunnerSettings } from './settings.js';
  * One job, start to finish.
  *
  * A fresh empty directory, the person's memory laid out in it, one model
- * turn over it through Claidor's proxy, the answer, the memory written back,
+ * turn over it through the API's proxy, the answer, the memory written back,
  * and the directory deleted — on the way out of a failure just as surely as
  * on the way out of a success. Nothing is carried from one job to the next.
  */
@@ -38,7 +38,7 @@ export const engineInput = (job: ClaimedJob['job']): string | EngineMessage[] =>
 
 export class NoModelAvailable extends Error {
   constructor() {
-    super('Claidor offers this person no model, so there is nothing to run the work with.');
+    super('The API offers this person no model, so there is nothing to run the work with.');
     this.name = 'NoModelAvailable';
   }
 }
@@ -57,7 +57,7 @@ export const runJob = async (claimed: ClaimedJob, settings: RunnerSettings, sign
   const person = new PersonClient(settings.apiBaseUrl, claimed.accessToken);
   let engine: Engine | null = null;
   try {
-    // Sending nothing asks for everything Claidor holds.
+    // Sending nothing asks for everything the API holds.
     const bundle = (await person.syncMemory([])).filter((file) => isMemoryName(file.name));
     await layOutMemory(workspace, bundle);
     await fs.writeFile(

@@ -4,14 +4,14 @@ from uuid import UUID
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.entitlements.tiers import TierKey, get_definition
-from polar.enums import SubscriptionRecurringInterval
-from polar.models import Organization, Product
-from polar.models.event import EventSource
-from polar.models.subscription import SubscriptionStatus
-from polar.postgres import AsyncSession
-from polar.quotas.definitions import QuotaKey
-from polar.quotas.service import quotas
+from simeon.entitlements.tiers import TierKey, get_definition
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.models import Organization, Product
+from simeon.models.event import EventSource
+from simeon.models.subscription import SubscriptionStatus
+from simeon.postgres import AsyncSession
+from simeon.quotas.definitions import QuotaKey
+from simeon.quotas.service import quotas
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     PriceFixtureType,
@@ -24,7 +24,7 @@ from tests.fixtures.random_objects import (
 
 
 def _patch_platform_org_id(mocker: MockerFixture, org_id: UUID | None) -> None:
-    mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", org_id)
+    mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", org_id)
 
 
 def _patch_starter_limits(mocker: MockerFixture, **limit_overrides: int | None) -> None:
@@ -47,7 +47,7 @@ def _patch_starter_limits(mocker: MockerFixture, **limit_overrides: int | None) 
             return overridden
         return get_definition(tier)
 
-    mocker.patch("polar.entitlements.service.get_definition", side_effect=_resolve)
+    mocker.patch("simeon.entitlements.service.get_definition", side_effect=_resolve)
 
 
 async def _seed_tier_product(
@@ -88,7 +88,7 @@ async def _subscribe_to_tier(
     customer = await create_customer(
         save_fixture,
         organization=platform_org,
-        email=f"creator-{creator.id}@billing.claidor",
+        email=f"creator-{creator.id}@billing.simeon",
         user_metadata={"creator_org_id": str(creator.id)},
     )
     await create_subscription(

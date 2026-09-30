@@ -33,7 +33,7 @@ import {
 import { AbstractUserMessageActionHandler } from "./user-message-action/abstract-user-message-action-handler.js";
 
 type Any = any;
-const logger = createLogger("@anysphere/agent");
+const logger = createLogger("@sand/agent");
 
 function logBackgroundTaskCompletionOutcome(ctx: Any, outcome: string, summary: Any, extra: Any): void {
   logger.info(ctx, "agent.background_task_completion", { event: "agent.background_task_completion", outcome, ...summary, ...extra });

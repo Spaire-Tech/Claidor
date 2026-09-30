@@ -4,9 +4,14 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy import func, select
 
-from polar.models import EmailSubscriber, FormSubmission, Organization, UserOrganization
-from polar.models.custom_field import CustomFieldType
-from polar.postgres import AsyncSession
+from simeon.models import (
+    EmailSubscriber,
+    FormSubmission,
+    Organization,
+    UserOrganization,
+)
+from simeon.models.custom_field import CustomFieldType
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_custom_field
 

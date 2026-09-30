@@ -70,7 +70,7 @@ export const automationsExtension = defineHostExtension({
       onRecovery: (agentId) => { const id = routineSyncFailureTrayIds.get(agentId); if (id == null) return; deps.trays.dismiss({ id }); routineSyncFailureTrayIds.delete(agentId); },
       onSchedulingAuthorityChanged: () => notifySchedulingAuthorityChanged(),
       // Simeon Labs' server serves the AutomationsService and the /sand/*
-      // relay since 25 September 2026 (polar/sand/listeners.py), so the
+      // relay since 25 September 2026 (simeon/sand/listeners.py), so the
       // cloud service is present by default and the server fires cron for
       // every routine it lists as enabled (`shouldScheduleLocally` stops
       // firing a cron-only routine locally once the RPCs answer). With

@@ -1,11 +1,11 @@
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
+} from '@simeon/ui/components/atoms/Select'
 import { twMerge } from 'tailwind-merge'
 import SubscriptionTierRecurringIntervalSwitch from '../Subscriptions/SubscriptionTierRecurringIntervalSwitch'
 

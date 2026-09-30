@@ -5,7 +5,7 @@
  * /tmp/sand-host.log had no line saying a subagent had run at all — the
  * runtime's lifecycle line goes through the loop's logger, which the box
  * silences. Now the dispatch, the settle and the result the parent will
- * read each write a `[claidor] subagent=` line.
+ * read each write a `[simeon] subagent=` line.
  */
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -50,13 +50,13 @@ test("dispatch, settle and the result reach the host log, an empty result includ
 
     assert.equal(completions.length, 3);
     assert.equal(completions.find((c) => c.subagentAgentId === "sub-empty").result, "(the task finished without producing any text output)");
-    const subagentLines = lines.filter((line) => line.startsWith("[claidor] subagent="));
-    assert.ok(subagentLines.some((line) => line.startsWith('[claidor] subagent=dispatched id=sub-empty type=computerUse title="Open Render in the browser and report the page"')), subagentLines.join("\n"));
-    assert.ok(subagentLines.some((line) => line.startsWith("[claidor] subagent=settled id=sub-empty type=computerUse status=done")), subagentLines.join("\n"));
-    assert.ok(subagentLines.some((line) => line === '[claidor] subagent=result id=sub-empty chars=53 text="(the task finished without producing any text output)"'), subagentLines.join("\n"));
-    assert.ok(subagentLines.some((line) => line === '[claidor] subagent=result id=sub-text chars=28 text="Render shows three services."'), subagentLines.join("\n"));
-    assert.ok(subagentLines.some((line) => line.startsWith("[claidor] subagent=settled id=sub-error type=computerUse status=error")), subagentLines.join("\n"));
-    assert.ok(subagentLines.some((line) => line === '[claidor] subagent=result id=sub-error chars=15 text="box unreachable"'), subagentLines.join("\n"));
+    const subagentLines = lines.filter((line) => line.startsWith("[simeon] subagent="));
+    assert.ok(subagentLines.some((line) => line.startsWith('[simeon] subagent=dispatched id=sub-empty type=computerUse title="Open Render in the browser and report the page"')), subagentLines.join("\n"));
+    assert.ok(subagentLines.some((line) => line.startsWith("[simeon] subagent=settled id=sub-empty type=computerUse status=done")), subagentLines.join("\n"));
+    assert.ok(subagentLines.some((line) => line === '[simeon] subagent=result id=sub-empty chars=53 text="(the task finished without producing any text output)"'), subagentLines.join("\n"));
+    assert.ok(subagentLines.some((line) => line === '[simeon] subagent=result id=sub-text chars=28 text="Render shows three services."'), subagentLines.join("\n"));
+    assert.ok(subagentLines.some((line) => line.startsWith("[simeon] subagent=settled id=sub-error type=computerUse status=error")), subagentLines.join("\n"));
+    assert.ok(subagentLines.some((line) => line === '[simeon] subagent=result id=sub-error chars=15 text="box unreachable"'), subagentLines.join("\n"));
   } finally {
     console.info = info;
     await runtime.dispose();

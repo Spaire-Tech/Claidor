@@ -1,8 +1,8 @@
 import { useCreateMeter } from '@/hooks/queries/meters'
 import { setValidationErrors } from '@/utils/api/errors'
-import { isValidationError, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { Form } from '@claidor/ui/components/ui/form'
+import { isValidationError, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { Form } from '@simeon/ui/components/ui/form'
 import { useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { useToast } from '../Toast/use-toast'
@@ -79,7 +79,7 @@ const CreateMeterModalContent = ({
     <div className="flex flex-col gap-y-6 overflow-y-auto px-8 py-10">
       <div>
         <h2 className="text-lg">Create Meter</h2>
-        <div className=" mt-2 space-y-2 text-sm text-gray-500">
+        <div className="mt-2 space-y-2 text-sm text-gray-500">
           <p>
             Meters are aggregated filters on ingested events. They are used to
             calculate your customer&apos;s usage of whatever you choose to

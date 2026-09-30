@@ -1,5 +1,5 @@
 import { api } from '@/utils/client'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { useAuth } from '.'

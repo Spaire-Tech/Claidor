@@ -184,7 +184,7 @@ export async function createTurnAgentRunContext<ContextValue>(
     skipLabeling: input.isSubagentRunner || input.hidden === true,
     ...(input.lineage === undefined ? {} : { lineage: input.lineage }),
   };
-  const inferenceProvider = "claidor" as const;
+  const inferenceProvider = "simeon" as const;
   const hidden = input.hidden === true;
   const agent = createProviderPromptSession(inferenceProvider, { ...sessionOptions, hidden, ...(input.fullStepBudget === true ? { fullStepBudget: true } : {}) }) as unknown as TurnAgentPromptSession;
   const summarizationSession = createProviderPromptSession(inferenceProvider, { cheap: true, isSummarizationSession: true, hidden }) as unknown as SummarizationPromptSession;
@@ -344,9 +344,9 @@ export interface TurnRunOptions {
   readonly replyContext?: unknown;
   readonly hidden?: boolean;
   /**
-   * A hidden run that gets Grok Bot's asked-turn call budget (5,000) instead
-   * of the 40-call hidden one: the first message and a routine, which Grok
-   * Bot ran under the same cap as any turn (27 September 2026).
+   * A hidden run that gets the upstream app's asked-turn call budget (5,000) instead
+   * of the 40-call hidden one: the first message and a routine, which the
+   * upstream app ran under the same cap as any turn (27 September 2026).
    */
   readonly fullStepBudget?: boolean;
   readonly isSilenceAllowed?: boolean;

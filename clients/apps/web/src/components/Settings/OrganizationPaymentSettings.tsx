@@ -3,21 +3,21 @@
 import { useUpdateOrganization } from '@/hooks/queries'
 import { useAutoSave } from '@/hooks/useAutoSave'
 import { setValidationErrors } from '@/utils/api/errors'
-import { enums, isValidationError, schemas } from '@claidor/client'
+import { enums, isValidationError, schemas } from '@simeon/client'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
+} from '@simeon/ui/components/atoms/Select'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import React from 'react'
 import { useForm } from 'react-hook-form'
 import { CURRENCIES } from './currencies'
@@ -152,9 +152,11 @@ const OrganizationPaymentSettings: React.FC<
                     >
                       <SelectTrigger className="w-72">
                         <SelectValue>
-                          {TAX_BEHAVIOR_LABELS[
-                            (field.value as TaxBehaviorOption) ?? 'location'
-                          ]}
+                          {
+                            TAX_BEHAVIOR_LABELS[
+                              (field.value as TaxBehaviorOption) ?? 'location'
+                            ]
+                          }
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>

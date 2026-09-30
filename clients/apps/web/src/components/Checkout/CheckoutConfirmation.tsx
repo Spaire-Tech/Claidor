@@ -3,13 +3,13 @@
 import { useCheckoutConfirmedRedirect } from '@/hooks/checkout'
 import { useCheckoutClientSSE } from '@/hooks/sse'
 import { getServerURL } from '@/utils/api'
-import { hasProductCheckout } from '@claidor/checkout/guards'
+import { hasProductCheckout } from '@simeon/checkout/guards'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
+import Button from '@simeon/ui/components/atoms/Button'
+import ShadowBox from '@simeon/ui/components/atoms/ShadowBox'
 import { SpaireCore } from '@spaire/sdk/core'
 import { checkoutsClientGet } from '@spaire/sdk/funcs/checkoutsClientGet'
 import type { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
-import Button from '@claidor/ui/components/atoms/Button'
-import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
 import { Elements, ElementsConsumer } from '@stripe/react-stripe-js'
 import { Stripe, loadStripe } from '@stripe/stripe-js'
 import { useRouter } from 'next/navigation'
@@ -109,7 +109,10 @@ export const CheckoutConfirmation = ({
   maxWaitingTimeMs = 15000,
 }: CheckoutConfirmationProps) => {
   const router = useRouter()
-  const client = useMemo(() => new SpaireCore({ serverURL: getServerURL() }), [])
+  const client = useMemo(
+    () => new SpaireCore({ serverURL: getServerURL() }),
+    [],
+  )
   const [checkout, setCheckout] = useState(_checkout)
   const { status, organization } = checkout
 
@@ -177,7 +180,7 @@ export const CheckoutConfirmation = ({
           {status === 'failed' &&
             'A problem occurred while processing your order'}
         </h1>
-        <p className=" text-gray-500">
+        <p className="text-gray-500">
           {status === 'confirmed' &&
             'Please wait while we confirm your payment.'}
           {status === 'succeeded' && (
@@ -214,7 +217,7 @@ export const CheckoutConfirmation = ({
                   maxWaitingTimeMs={maxWaitingTimeMs}
                 />
               )}
-            <p className=" text-center text-xs text-gray-500">
+            <p className="text-center text-xs text-gray-500">
               This order was processed by our online reseller & Merchant of
               Record, Simeon Labs, who also handles order-related inquiries and
               returns.
@@ -222,7 +225,7 @@ export const CheckoutConfirmation = ({
           </>
         )}
       </div>
-      <div className=" flex w-full flex-row items-center justify-center gap-x-3 text-sm text-gray-500">
+      <div className="flex w-full flex-row items-center justify-center gap-x-3 text-sm text-gray-500">
         <span>Powered by</span>
         <LogoType className="h-5" />
       </div>

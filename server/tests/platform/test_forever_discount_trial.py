@@ -1,4 +1,4 @@
-"""End-to-end simulation of the owner's reported state: a Claidor plan
+"""End-to-end simulation of the owner's reported state: a Simeon plan
 trial started through checkout with a 100% FOREVER discount, whose
 trial_end is days in the past, still sitting in `trialing`.
 
@@ -13,17 +13,17 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.enums import SubscriptionRecurringInterval
-from polar.models import Discount, Organization, Product, Subscription
-from polar.models.discount import DiscountDuration, DiscountType
-from polar.models.order import OrderStatus
-from polar.models.subscription import SubscriptionStatus
-from polar.order.service import OrderBillingReasonInternal
-from polar.order.service import order as order_service
-from polar.postgres import AsyncSession
-from polar.subscription.scheduler import SubscriptionJobStore
-from polar.subscription.service import subscription as subscription_service
+from simeon.config import settings
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.models import Discount, Organization, Product, Subscription
+from simeon.models.discount import DiscountDuration, DiscountType
+from simeon.models.order import OrderStatus
+from simeon.models.subscription import SubscriptionStatus
+from simeon.order.service import OrderBillingReasonInternal
+from simeon.order.service import order as order_service
+from simeon.postgres import AsyncSession
+from simeon.subscription.scheduler import SubscriptionJobStore
+from simeon.subscription.service import subscription as subscription_service
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_customer,
@@ -44,7 +44,7 @@ async def _expired_forever_discount_trial(
 ) -> tuple[Organization, Product, Discount, Subscription]:
     platform_org = await create_organization(save_fixture)
     mocker.patch.object(settings, "PLATFORM_ORG_ID", platform_org.id)
-    mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+    mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
     product = await create_product(
         save_fixture,
         organization=platform_org,

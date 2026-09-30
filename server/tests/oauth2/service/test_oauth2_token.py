@@ -3,10 +3,10 @@ from unittest.mock import MagicMock
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.enums import TokenType
-from polar.models import OAuth2Client, Organization, User, UserOrganization
-from polar.oauth2.service.oauth2_token import oauth2_token as oauth2_token_service
-from polar.postgres import AsyncSession
+from simeon.enums import TokenType
+from simeon.models import OAuth2Client, Organization, User, UserOrganization
+from simeon.oauth2.service.oauth2_token import oauth2_token as oauth2_token_service
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 
 from ..conftest import create_oauth2_token
@@ -15,7 +15,7 @@ from ..conftest import create_oauth2_token
 @pytest.fixture(autouse=True)
 def enqueue_email_mock(mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
-        "polar.oauth2.service.oauth2_token.enqueue_email", autospec=True
+        "simeon.oauth2.service.oauth2_token.enqueue_email", autospec=True
     )
 
 
@@ -24,10 +24,10 @@ class TestRevokeLeaked:
     @pytest.mark.parametrize(
         ("token", "token_type"),
         [
-            ("claidor_at_u_123", TokenType.access_token),
-            ("claidor_rt_u_123", TokenType.refresh_token),
-            ("claidor_at_o_123", TokenType.access_token),
-            ("claidor_rt_o_123", TokenType.refresh_token),
+            ("simeon_at_u_123", TokenType.access_token),
+            ("simeon_rt_u_123", TokenType.refresh_token),
+            ("simeon_at_o_123", TokenType.access_token),
+            ("simeon_rt_o_123", TokenType.refresh_token),
         ],
     )
     async def test_false_positive(
@@ -47,8 +47,8 @@ class TestRevokeLeaked:
     @pytest.mark.parametrize(
         ("token", "token_type"),
         [
-            ("claidor_at_u_123", TokenType.access_token),
-            ("claidor_rt_u_123", TokenType.refresh_token),
+            ("simeon_at_u_123", TokenType.access_token),
+            ("simeon_rt_u_123", TokenType.refresh_token),
         ],
     )
     async def test_true_positive_user(
@@ -64,8 +64,8 @@ class TestRevokeLeaked:
         oauth2_token = await create_oauth2_token(
             save_fixture,
             client=oauth2_client,
-            access_token="claidor_at_u_123",
-            refresh_token="claidor_rt_u_123",
+            access_token="simeon_at_u_123",
+            refresh_token="simeon_rt_u_123",
             scopes=["openid"],
             user=user,
         )
@@ -83,8 +83,8 @@ class TestRevokeLeaked:
     @pytest.mark.parametrize(
         ("token", "token_type"),
         [
-            ("claidor_at_o_123", TokenType.access_token),
-            ("claidor_rt_o_123", TokenType.refresh_token),
+            ("simeon_at_o_123", TokenType.access_token),
+            ("simeon_rt_o_123", TokenType.refresh_token),
         ],
     )
     async def test_true_positive_organization(
@@ -101,8 +101,8 @@ class TestRevokeLeaked:
         oauth2_token = await create_oauth2_token(
             save_fixture,
             client=oauth2_client,
-            access_token="claidor_at_o_123",
-            refresh_token="claidor_rt_o_123",
+            access_token="simeon_at_o_123",
+            refresh_token="simeon_rt_o_123",
             scopes=["openid"],
             organization=organization,
         )
@@ -128,8 +128,8 @@ class TestRevokeLeaked:
         await create_oauth2_token(
             save_fixture,
             client=oauth2_client,
-            access_token="claidor_at_u_123",
-            refresh_token="claidor_rt_u_123",
+            access_token="simeon_at_u_123",
+            refresh_token="simeon_rt_u_123",
             scopes=["openid"],
             user=user,
             access_token_revoked_at=1,
@@ -137,7 +137,7 @@ class TestRevokeLeaked:
         )
 
         result = await oauth2_token_service.revoke_leaked(
-            session, "claidor_at_u_123", TokenType.access_token, notifier="github"
+            session, "simeon_at_u_123", TokenType.access_token, notifier="github"
         )
         assert result is True
 

@@ -1,6 +1,6 @@
 import type { BlobStore } from "./blob-store.js";
 
-export const BLOB_METADATA_CALLBACK_SYMBOL = Symbol.for("anysphere.blobMetadataCallback");
+export const BLOB_METADATA_CALLBACK_SYMBOL = Symbol.for("sand.blobMetadataCallback");
 export interface BlobMetadata { blobId: Uint8Array; blobType: unknown }
 export type BlobMetadataCallback = (metadata: BlobMetadata) => void;
 type MetadataStore<Context> = BlobStore<Context> & { [BLOB_METADATA_CALLBACK_SYMBOL]?: BlobMetadataCallback };

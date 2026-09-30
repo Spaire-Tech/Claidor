@@ -2,7 +2,6 @@ import { Hr, Section, Text } from '@react-email/components'
 import { schemas } from '../types'
 
 const FooterCustomer = ({
-  organization,
   email,
 }: {
   organization: schemas['Organization']
@@ -31,11 +30,6 @@ const FooterCustomer = ({
           </span>
         </a>
         .
-      </Text>
-      <Text className="text-gray-900">
-        Merchant of Record services provided to{' '}
-        <span className="font-semibold">{organization.name}</span> by{' '}
-        <span className="font-semibold">Claidor, Inc</span>
       </Text>
     </Section>
   </>

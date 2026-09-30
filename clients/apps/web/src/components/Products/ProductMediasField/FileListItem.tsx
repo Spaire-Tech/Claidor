@@ -7,7 +7,7 @@ import { twMerge } from 'tailwind-merge'
 import { FileObject } from '@/components/FileUpload'
 import { toast } from '@/components/Toast/use-toast'
 import ClearOutlined from '@mui/icons-material/ClearOutlined'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { useMemo } from 'react'
 
 type ProductMediaFileObject = FileObject<schemas['ProductMediaFileRead']>

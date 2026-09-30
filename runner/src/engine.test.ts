@@ -8,7 +8,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { buildRequest, buildSystemPrompt, Engine, EngineError, JobCancelled, readAnswer } from './engine.js';
 
 /**
- * The runner's model call goes straight to Claidor's proxy (25 September
+ * The runner's model call goes straight to the API's proxy (25 September
  * 2026): a fake proxy here records what it was asked and answers on the
  * three wires the real one serves.
  */

@@ -2,7 +2,7 @@
  * Pure sticky-bottom / auto-scroll state helpers for the virtual transcript plane.
  * No React, no DOM — just state transitions for pin tracking and scroll disposition.
  *
- * Golden config from Grok bundle (index-UbX-y3il.js, CAn):
+ * Golden config from the upstream bundle (index-UbX-y3il.js, CAn):
  *   nearBottomThresholdPx:  4   — distance from bottom to consider "pinned"
  *   userInputWindowMs:    250   — debounce window for user scroll gestures
  *   driftTolerancePx:       1   — ignore programmatic drift smaller than this

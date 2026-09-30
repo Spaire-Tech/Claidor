@@ -2,7 +2,7 @@
 /**
  * `npm run demo`: builds the app-window demo from the patched renderer that
  * `npm run package` staged, serves it on 127.0.0.1 only, and opens it in the
- * browser. The window is still Grok Bot's pinned renderer, so this stays a
+ * browser. The window is still the upstream pinned renderer, so this stays a
  * private preview on your own machine: nothing here publishes anything.
  */
 import { execFileSync, spawn } from "node:child_process";

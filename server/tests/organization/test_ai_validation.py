@@ -6,8 +6,8 @@ import pytest
 from pydantic_ai import models
 from pydantic_ai.models.test import TestModel
 
-from polar.models.organization import Organization
-from polar.organization.ai_validation import (
+from simeon.models.organization import Organization
+from simeon.organization.ai_validation import (
     OrganizationAIValidationResult,
     OrganizationAIValidator,
 )
@@ -20,7 +20,7 @@ class TestOrganizationAIValidator:
     """Test suite for OrganizationAIValidator."""
 
     @pytest.mark.asyncio
-    @patch("polar.organization.ai_validation._fetch_policy_content")
+    @patch("simeon.organization.ai_validation._fetch_policy_content")
     async def test_validate_organization_details_timeout(
         self, mock_fetch_policy: MagicMock
     ) -> None:
@@ -47,7 +47,7 @@ class TestOrganizationAIValidator:
             assert "timed out" in result.verdict.reason.lower()
 
     @pytest.mark.asyncio
-    @patch("polar.organization.ai_validation._fetch_policy_content")
+    @patch("simeon.organization.ai_validation._fetch_policy_content")
     async def test_validate_organization_details_success(
         self, mock_fetch_policy: MagicMock
     ) -> None:

@@ -1,8 +1,8 @@
 'use client'
 
 import { Upload } from '@/components/FileUpload/Upload'
-import { schemas } from '@claidor/client'
 import AddPhotoAlternateOutlined from '@mui/icons-material/AddPhotoAlternateOutlined'
+import { schemas } from '@simeon/client'
 import { useRef, useState } from 'react'
 
 // Once a URL or Embed has fetched a preview, this form lets the
@@ -78,7 +78,7 @@ export const LinkEditForm = ({
         <div>
           <label className="mb-1.5 block text-xs font-semibold tracking-wide text-gray-500 uppercase">
             Cover image
-            <span className="ml-1.5 normal-case tracking-normal text-[10px] font-normal text-gray-400">
+            <span className="ml-1.5 text-[10px] font-normal tracking-normal text-gray-400 normal-case">
               Displays as 16:9 on your Space
             </span>
           </label>
@@ -141,9 +141,7 @@ export const LinkEditForm = ({
           <input
             type="text"
             value={draft.title}
-            onChange={(e) =>
-              setDraft((d) => ({ ...d, title: e.target.value }))
-            }
+            onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
             placeholder={initial.title || 'Title'}
             className="atsp-form-input"
           />

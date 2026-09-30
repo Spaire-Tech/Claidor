@@ -10,7 +10,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function load() {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-routed-tools-"));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-routed-tools-"));
   const output = path.join(temporary, "routed-agent-tools.mjs");
   await build({
     entryPoints: [path.join(repoRoot, "source/host/extensions/transcript/routed-agent-tools.ts")],
@@ -55,7 +55,7 @@ test("CopyToBox on the host only asks; it does not read the Mac path", async () 
 
 test("WriteBoxFile lands bytes on the box after Mac has already read them", async () => {
   const loaded = await load();
-  const workspace = await mkdtemp(path.join(os.tmpdir(), "caisra-box-write-"));
+  const workspace = await mkdtemp(path.join(os.tmpdir(), "simeon-box-write-"));
   try {
     const { executeRoutedAgentTool } = loaded.module;
     const dest = path.join(workspace, "uploads", "note.txt");
@@ -77,7 +77,7 @@ test("WriteBoxFile lands bytes on the box after Mac has already read them", asyn
 
 test("CopyFromBox authorizes then returns box bytes, not a Mac write", async () => {
   const loaded = await load();
-  const workspace = await mkdtemp(path.join(os.tmpdir(), "caisra-box-read-"));
+  const workspace = await mkdtemp(path.join(os.tmpdir(), "simeon-box-read-"));
   try {
     const boxPath = path.join(workspace, "from-box.txt");
     await mkdir(workspace, { recursive: true });

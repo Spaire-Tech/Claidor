@@ -4,9 +4,9 @@ import {
   useOrganizationAIValidation,
   useOrganizationReviewStatus,
 } from '@/hooks/queries/org'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { Card } from '@claidor/ui/components/ui/card'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { Card } from '@simeon/ui/components/ui/card'
 import {
   AlertTriangle,
   ArrowRight,
@@ -111,8 +111,7 @@ const AIValidationResult: React.FC<AIValidationResultProps> = ({
         return {
           type: 'pass',
           title: 'Verification Passed',
-          message:
-            'Your SaaS business has been verified and approved.',
+          message: 'Your SaaS business has been verified and approved.',
           icon: <CheckCircle className="h-8 w-8 text-gray-600" />,
         }
       case 'FAIL':
@@ -140,24 +139,22 @@ const AIValidationResult: React.FC<AIValidationResultProps> = ({
           <div className="shrink-0">{status.icon}</div>
           <div className="flex-1">
             <h3 className={`text-lg font-medium`}>{status.title}</h3>
-            <p className=" mt-1 text-sm text-gray-600">
-              {status.message}
-            </p>
+            <p className="mt-1 text-sm text-gray-600">{status.message}</p>
           </div>
         </div>
 
         {/* Information Message */}
         <Card className={`rounded-lg p-4`}>
           <div className="flex items-start space-x-3">
-            <Info className={` h-5 w-5 text-gray-600`} />
+            <Info className={`h-5 w-5 text-gray-600`} />
             <div className="flex-1">
               <h4 className={`text-sm font-medium`}>What happens next?</h4>
-              <p className={` mt-1 text-sm text-gray-600`}>
+              <p className={`mt-1 text-sm text-gray-600`}>
                 {status.type === 'pass'
                   ? 'Your business has been verified. You can start accepting payments immediately. A final review will happen before your first payout.'
                   : status.type === 'review_required'
                     ? "We couldn't verify your business automatically. You can submit additional details below for manual review."
-                    : "Please wait while we verify your business details."}
+                    : 'Please wait while we verify your business details.'}
               </p>
             </div>
           </div>

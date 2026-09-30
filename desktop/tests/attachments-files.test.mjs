@@ -50,7 +50,7 @@ test("the attached-files note says the file is on the box, under its name, and n
 test("staging keeps the original name, avoids collisions, and reports a failed upload", async () => {
   const { module, dispose } = await load("source/host/extensions/attachments/box-staging.ts", "box-staging");
   try {
-    const dir = await mkdtemp(path.join(os.tmpdir(), "caisra-staging-src-"));
+    const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-staging-src-"));
     const { writeFile } = await import("node:fs/promises");
     const a = path.join(dir, "1111.csv"); const b = path.join(dir, "2222.csv");
     await writeFile(a, "a"); await writeFile(b, "b");

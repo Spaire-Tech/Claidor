@@ -6,8 +6,8 @@ import {
 } from '@/components/Benefit/utils'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import { GripVertical, X } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
 
@@ -39,14 +39,14 @@ export const SortableBenefitRow = ({
       ref={setNodeRef}
       style={style}
       className={twMerge(
-        ' flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3',
+        'flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3',
         isDragging && 'opacity-50',
       )}
     >
       <div className="flex items-center gap-3">
         <button
           type="button"
-          className=" cursor-grab text-gray-400 hover:text-gray-600 active:cursor-grabbing"
+          className="cursor-grab text-gray-400 hover:text-gray-600 active:cursor-grabbing"
           {...attributes}
           {...listeners}
         >
@@ -55,14 +55,14 @@ export const SortableBenefitRow = ({
         <div
           className={twMerge(
             'flex h-8 w-8 items-center justify-center rounded-lg',
-            'bg-blue-100 text-blue-500 ',
+            'bg-blue-100 text-blue-500',
           )}
         >
           {resolveBenefitIcon(benefit.type, 'h-4 w-4')}
         </div>
         <div className="flex flex-col">
           <span className="text-sm font-medium">{benefit.description}</span>
-          <span className=" text-xs text-gray-500">
+          <span className="text-xs text-gray-500">
             {benefitsDisplayNames[benefit.type]}
           </span>
         </div>

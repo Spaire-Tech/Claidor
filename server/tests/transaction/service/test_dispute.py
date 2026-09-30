@@ -4,9 +4,9 @@ import pytest
 import pytest_asyncio
 from pytest_mock import MockerFixture
 
-from polar.enums import AccountType
-from polar.integrations.stripe.service import StripeService
-from polar.models import (
+from simeon.enums import AccountType
+from simeon.integrations.stripe.service import StripeService
+from simeon.models import (
     Account,
     Customer,
     Order,
@@ -15,24 +15,24 @@ from polar.models import (
     Transaction,
     User,
 )
-from polar.models.dispute import DisputeStatus
-from polar.models.transaction import Processor, TransactionType
-from polar.postgres import AsyncSession
-from polar.transaction.service.balance import BalanceTransactionService
-from polar.transaction.service.balance import (
+from simeon.models.dispute import DisputeStatus
+from simeon.models.transaction import Processor, TransactionType
+from simeon.postgres import AsyncSession
+from simeon.transaction.service.balance import BalanceTransactionService
+from simeon.transaction.service.balance import (
     balance_transaction as balance_transaction_service,
 )
-from polar.transaction.service.dispute import (  # type: ignore[attr-defined]
+from simeon.transaction.service.dispute import (  # type: ignore[attr-defined]
     DisputeNotResolved,
     DisputeTransactionAlreadyExistsError,
     platform_fee_transaction_service,
     processor_fee_transaction_service,
 )
-from polar.transaction.service.dispute import (
+from simeon.transaction.service.dispute import (
     dispute_transaction as dispute_transaction_service,
 )
-from polar.transaction.service.platform_fee import PlatformFeeTransactionService
-from polar.transaction.service.processor_fee import ProcessorFeeTransactionService
+from simeon.transaction.service.platform_fee import PlatformFeeTransactionService
+from simeon.transaction.service.processor_fee import ProcessorFeeTransactionService
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_dispute, create_order, create_payment
 from tests.fixtures.stripe import (
@@ -47,7 +47,7 @@ from tests.transaction.conftest import create_transaction
 def balance_transaction_service_mock(mocker: MockerFixture) -> MagicMock:
     mock = MagicMock(spec=BalanceTransactionService)
     mocker.patch(
-        "polar.transaction.service.dispute.balance_transaction_service", new=mock
+        "simeon.transaction.service.dispute.balance_transaction_service", new=mock
     )
     return mock
 
@@ -75,7 +75,7 @@ def create_dispute_fees_balances_mock(mocker: MockerFixture) -> AsyncMock:
 @pytest.fixture(autouse=True)
 def stripe_service_mock(mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
-        "polar.transaction.service.dispute.stripe_service", spec=StripeService
+        "simeon.transaction.service.dispute.stripe_service", spec=StripeService
     )
 
 

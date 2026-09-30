@@ -135,7 +135,7 @@ export function createSandBoxStoreServiceClient(
 ): SandBoxStoreServiceClient {
   if (deps.client !== undefined) return deps.client;
   throw new SandBoxStoreSyncError(
-    "sand-box-store service client construction requires the unrecovered GrokBot Connect transport",
+    "sand-box-store service client construction requires the unrecovered Sand Connect transport",
   );
 }
 

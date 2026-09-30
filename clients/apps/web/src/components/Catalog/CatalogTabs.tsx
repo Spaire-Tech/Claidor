@@ -1,6 +1,6 @@
 'use client'
 
-import { Tabs, TabsList, TabsTrigger } from '@claidor/ui/components/atoms/Tabs'
+import { Tabs, TabsList, TabsTrigger } from '@simeon/ui/components/atoms/Tabs'
 import Link from 'next/link'
 import { useParams, usePathname } from 'next/navigation'
 
@@ -31,14 +31,15 @@ export function CatalogTabs() {
       }) ?? catalogTabs[0]
 
   return (
-    <div
-      className="overflow-x-auto px-4 pt-6 md:px-8"
-      data-catalog-tabs="true"
-    >
+    <div className="overflow-x-auto px-4 pt-6 md:px-8" data-catalog-tabs="true">
       <Tabs value={activeTab.title}>
-        <TabsList className="flex min-w-max flex-row bg-transparent ring-0 ">
+        <TabsList className="flex min-w-max flex-row bg-transparent ring-0">
           {catalogTabs.map((tab) => (
-            <Link key={tab.title} href={`${orgBase}${tab.path}`} prefetch={true}>
+            <Link
+              key={tab.title}
+              href={`${orgBase}${tab.path}`}
+              prefetch={true}
+            >
               <TabsTrigger
                 className="flex flex-row items-center gap-x-2 px-4"
                 value={tab.title}

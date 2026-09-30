@@ -11,7 +11,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # Polar Custom Imports
-from polar.kit.extensions.sqlalchemy import StringEnum
+from simeon.kit.extensions.sqlalchemy import StringEnum
 
 # revision identifiers, used by Alembic.
 revision = "d784000f1f80"

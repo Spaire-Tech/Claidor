@@ -1,6 +1,6 @@
 'use client'
 
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import * as React from 'react'

@@ -1,8 +1,8 @@
 'use client'
 
 import { useCreatePersonalAccessToken } from '@/hooks/queries'
-import Button from '@claidor/ui/components/atoms/Button'
-import CopyToClipboardInput from '@claidor/ui/components/atoms/CopyToClipboardInput'
+import Button from '@simeon/ui/components/atoms/Button'
+import CopyToClipboardInput from '@simeon/ui/components/atoms/CopyToClipboardInput'
 import { useCallback, useState } from 'react'
 import { toast } from '../Toast/use-toast'
 
@@ -51,18 +51,18 @@ const ConnectWordSettings = () => {
   return (
     <div className="flex flex-col gap-y-4">
       <p className="text-sm text-gray-500">
-        The Word add-in checks documents against the Simeon engine, and
-        needs a token to reach it. Create one here, then paste it into the
-        Check panel in Word.
+        The Word add-in checks documents against the Simeon engine, and needs a
+        token to reach it. Create one here, then paste it into the Check panel
+        in Word.
       </p>
 
       {token ? (
         <div className="flex flex-col gap-y-2">
           <CopyToClipboardInput value={token} />
           <p className="text-sm text-gray-500">
-            Copy it now. This is the only time it can be shown — Simeon
-            stores a one-way hash of it and cannot recover the token itself.
-            If you lose it, revoke it below and create another.
+            Copy it now. This is the only time it can be shown — Simeon stores a
+            one-way hash of it and cannot recover the token itself. If you lose
+            it, revoke it below and create another.
           </p>
         </div>
       ) : (

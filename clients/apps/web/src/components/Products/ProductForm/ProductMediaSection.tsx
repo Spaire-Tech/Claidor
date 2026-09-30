@@ -1,13 +1,13 @@
 'use client'
 
 import { Section } from '@/components/Layout/Section'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import {
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { useFormContext } from 'react-hook-form'
 import ProductMediasField from '../ProductMediasField'
 import { ProductFormType } from './ProductForm'

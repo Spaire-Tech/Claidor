@@ -5,9 +5,9 @@ import pytest
 from httpx import AsyncClient
 from pytest_mock import MockerFixture
 
-from polar.models import Member, Organization
-from polar.models.member import MemberRole
-from polar.postgres import AsyncSession
+from simeon.models import Member, Organization
+from simeon.models.member import MemberRole
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_customer
 
@@ -16,7 +16,7 @@ from tests.fixtures.random_objects import create_customer
 def mock_send_email(mocker: MockerFixture) -> MagicMock:
     """Mock the customer session service send method to prevent actual email sending."""
     return mocker.patch(
-        "polar.customer_portal.endpoints.customer_session.customer_session_service.send",
+        "simeon.customer_portal.endpoints.customer_session.customer_session_service.send",
         autospec=True,
     )
 

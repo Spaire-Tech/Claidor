@@ -1,6 +1,6 @@
 """Tests for HTTP metrics middleware.
 
-These tests are isolated from the main Polar infrastructure to avoid
+These tests are isolated from the main Simeon infrastructure to avoid
 database and service connections during unit testing.
 """
 
@@ -154,7 +154,7 @@ class TestPathNormalizationDirect:
 
 
 class TestDenyListLogic:
-    """Test deny list logic without importing polar modules."""
+    """Test deny list logic without importing simeon modules."""
 
     def test_healthz_in_deny_list(self) -> None:
         """Test that /healthz would be denied."""
@@ -283,13 +283,13 @@ class TestMiddlewareIntegration:
 
     def test_middleware_imports_successfully(self, prometheus_tmpdir: str) -> None:
         """Test that the middleware can be imported."""
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         assert HttpMetricsMiddleware is not None
 
     def test_middleware_denies_healthz(self, prometheus_tmpdir: str) -> None:
         """Test that middleware denies /healthz."""
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         middleware = HttpMetricsMiddleware(lambda s, r, se: None)  # type: ignore
 
@@ -299,7 +299,7 @@ class TestMiddlewareIntegration:
 
     def test_middleware_uses_route_path(self, prometheus_tmpdir: str) -> None:
         """Test that middleware uses route.path when available."""
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         middleware = HttpMetricsMiddleware(lambda s, r, se: None)  # type: ignore
 
@@ -317,7 +317,7 @@ class TestMiddlewareIntegration:
 
     def test_middleware_route_without_path_attr(self, prometheus_tmpdir: str) -> None:
         """Test that unmatched routes return None (no metrics)."""
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         middleware = HttpMetricsMiddleware(lambda s, r, se: None)  # type: ignore
 
@@ -336,7 +336,7 @@ class TestMiddlewareIntegration:
 
     def test_middleware_prefix_deny(self, prometheus_tmpdir: str) -> None:
         """Test that paths starting with denied prefixes are blocked."""
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         middleware = HttpMetricsMiddleware(lambda s, r, se: None)  # type: ignore
 
@@ -346,7 +346,7 @@ class TestMiddlewareIntegration:
 
     def test_middleware_denies_readyz(self, prometheus_tmpdir: str) -> None:
         """Test that middleware denies /readyz."""
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         middleware = HttpMetricsMiddleware(lambda s, r, se: None)  # type: ignore
 
@@ -356,7 +356,7 @@ class TestMiddlewareIntegration:
 
     def test_middleware_denies_well_known(self, prometheus_tmpdir: str) -> None:
         """Test that middleware denies /.well-known paths."""
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         middleware = HttpMetricsMiddleware(lambda s, r, se: None)  # type: ignore
 
@@ -366,7 +366,7 @@ class TestMiddlewareIntegration:
 
     def test_middleware_empty_path(self, prometheus_tmpdir: str) -> None:
         """Test middleware with empty path."""
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         middleware = HttpMetricsMiddleware(lambda s, r, se: None)  # type: ignore
 
@@ -377,7 +377,7 @@ class TestMiddlewareIntegration:
 
     def test_middleware_missing_path(self, prometheus_tmpdir: str) -> None:
         """Test middleware when path is missing from scope."""
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         middleware = HttpMetricsMiddleware(lambda s, r, se: None)  # type: ignore
 
@@ -390,7 +390,7 @@ class TestMiddlewareIntegration:
         self, prometheus_tmpdir: str
     ) -> None:
         """Test that unknown routes return None (no metrics exported)."""
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         middleware = HttpMetricsMiddleware(lambda s, r, se: None)  # type: ignore
 
@@ -413,7 +413,7 @@ class TestMiddlewareASGIBehavior:
 
     def test_non_http_scope_passthrough(self, prometheus_tmpdir: str) -> None:
         """Test that non-HTTP scopes are passed through without metrics."""
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         app_called = False
 
@@ -434,7 +434,7 @@ class TestMiddlewareASGIBehavior:
 
     def test_lifespan_scope_passthrough(self, prometheus_tmpdir: str) -> None:
         """Test that lifespan scopes are passed through without metrics."""
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         app_called = False
 
@@ -455,7 +455,7 @@ class TestMiddlewareASGIBehavior:
 
     def test_status_code_capture(self, prometheus_tmpdir: str) -> None:
         """Test that status codes are correctly captured."""
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         async def mock_app(scope: Scope, receive: Receive, send: Send) -> None:
             await send({"type": "http.response.start", "status": 201})
@@ -486,7 +486,7 @@ class TestMiddlewareASGIBehavior:
 
     def test_exception_still_records_metrics(self, prometheus_tmpdir: str) -> None:
         """Test that metrics are recorded even when app raises exception."""
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         async def mock_app(scope: Scope, receive: Receive, send: Send) -> None:
             raise ValueError("Test exception")
@@ -514,7 +514,7 @@ class TestMiddlewareASGIBehavior:
 
     def test_default_status_code_on_exception(self, prometheus_tmpdir: str) -> None:
         """Test that status code defaults to 500 when no response sent."""
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         # This tests that status_code starts as "500" (line 89 in middleware)
         # and stays that way if app crashes before sending response
@@ -547,7 +547,7 @@ class TestMiddlewareASGIBehavior:
 
     def test_missing_method_uses_unknown(self, prometheus_tmpdir: str) -> None:
         """Test that missing method in scope results in UNKNOWN."""
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         async def mock_app(scope: Scope, receive: Receive, send: Send) -> None:
             await send({"type": "http.response.start", "status": 200})
@@ -575,7 +575,7 @@ class TestMiddlewareASGIBehavior:
 
     def test_various_http_methods(self, prometheus_tmpdir: str) -> None:
         """Test that various HTTP methods are handled correctly."""
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         async def mock_app(scope: Scope, receive: Receive, send: Send) -> None:
             await send({"type": "http.response.start", "status": 200})
@@ -605,7 +605,7 @@ class TestMiddlewareASGIBehavior:
 
     def test_various_status_codes(self, prometheus_tmpdir: str) -> None:
         """Test that various status codes are captured correctly."""
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         status_codes = [200, 201, 204, 301, 400, 401, 403, 404, 500, 502, 503]
 
@@ -641,11 +641,11 @@ class TestMiddlewareASGIBehavior:
 
     def test_middleware_excludes_app(self, prometheus_tmpdir: str) -> None:
         """Test that middleware excludes apps registered with exclude_app_from_metrics."""
-        from polar.observability.http_metrics import (
+        from simeon.observability.http_metrics import (
             METRICS_EXCLUDED_APPS,
             exclude_app_from_metrics,
         )
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         middleware = HttpMetricsMiddleware(lambda s, r, se: None)  # type: ignore
 
@@ -680,11 +680,11 @@ class TestMiddlewareASGIBehavior:
         self, prometheus_tmpdir: str
     ) -> None:
         """Test that excluded apps are skipped even with valid routes."""
-        from polar.observability.http_metrics import (
+        from simeon.observability.http_metrics import (
             METRICS_EXCLUDED_APPS,
             exclude_app_from_metrics,
         )
-        from polar.observability.http_middleware import HttpMetricsMiddleware
+        from simeon.observability.http_middleware import HttpMetricsMiddleware
 
         middleware = HttpMetricsMiddleware(lambda s, r, se: None)  # type: ignore
 

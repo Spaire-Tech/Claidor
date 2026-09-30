@@ -3,9 +3,8 @@ import path from 'node:path';
 
 /**
  * The person's memory, laid out as the engine's workspace and read back
- * again. The names are fixed by `docs/maties/cloud.md`, section 3:
- * `MEMORY.md`, `USER.md`, and `memory/YYYY-MM-DD.md`. Nothing else is a
- * memory file, so no name out of Claidor can point outside the workspace.
+ * again. The names are fixed: `MEMORY.md`, `USER.md`, and `memory/YYYY-MM-DD.md`. Nothing else is a
+ * memory file, so no name out of the API can point outside the workspace.
  */
 
 const DAILY_NOTE = /^memory\/\d{4}-\d{2}-\d{2}\.md$/;
@@ -38,12 +37,12 @@ export const isCloudWritable = (name: string): boolean =>
 
 export class BadMemoryName extends Error {
   constructor(name: string) {
-    super(`Claidor sent a memory file named "${name}", which is not a memory file name.`);
+    super(`The API sent a memory file named "${name}", which is not a memory file name.`);
     this.name = 'BadMemoryName';
   }
 }
 
-/** Today's daily note, in the person's own zone when Claidor gave us one. */
+/** Today's daily note, in the person's own zone when the API gave us one. */
 export const dailyNoteName = (now: Date, timeZone?: string): string => {
   const formatter = new Intl.DateTimeFormat('en-CA', {
     year: 'numeric',
@@ -68,7 +67,7 @@ export const layOutMemory = async (workspace: string, files: readonly MemoryFile
 /**
  * What changed in the workspace while the engine worked: the files whose
  * text differs from what we laid out, plus any daily note the run created.
- * Each carries the version it started from, so Claidor can merge rather
+ * Each carries the version it started from, so the API can merge rather
  * than overwrite.
  */
 export const collectMemoryChanges = async (
@@ -88,7 +87,7 @@ export const collectMemoryChanges = async (
   for (const name of [...names].sort()) {
     const content = await readIfPresent(path.join(workspace, name));
     // A file the run deleted is not a deletion we forward: memory is never
-    // taken away quietly. Claidor keeps what it holds.
+    // taken away quietly. The API keeps what it holds.
     if (content === null) continue;
     const was = before.get(name);
     if (was && was.content === content) continue;

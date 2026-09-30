@@ -14,11 +14,11 @@ from typing import Literal, cast
 import pytest
 from authlib.oauth2.rfc7636 import create_s256_code_challenge
 
-from polar.app import app
-from polar.config import settings
-from polar.kit.crypto import get_token_hash
-from polar.kit.db.postgres import Engine, Session, create_sync_engine
-from polar.models import (
+from simeon.app import app
+from simeon.config import settings
+from simeon.kit.crypto import get_token_hash
+from simeon.kit.db.postgres import Engine, Session, create_sync_engine
+from simeon.models import (
     Model,
     OAuth2AuthorizationCode,
     OAuth2Client,
@@ -26,9 +26,9 @@ from polar.models import (
     Organization,
     User,
 )
-from polar.oauth2.authorization_server import AuthorizationServer
-from polar.oauth2.dependencies import get_authorization_server
-from polar.oauth2.sub_type import SubType
+from simeon.oauth2.authorization_server import AuthorizationServer
+from simeon.oauth2.dependencies import get_authorization_server
+from simeon.oauth2.sub_type import SubType
 from tests.fixtures.database import SaveFixture, get_database_url
 
 

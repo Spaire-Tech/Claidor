@@ -8,7 +8,7 @@ One nullable column on `desktop_sessions`: `box_of_session_id`, the
 signed-in desktop a row is the box credential of. The person's box keeps
 running after Simeon quits so routines fire while the Mac is awake, and
 with the app gone nothing rewrote its one-hour access token; a row with
-this set is what the box renews with (`polar.desktop.service`,
+this set is what the box renews with (`simeon.desktop.service`,
 `renew_box_access`). Null for every session a person signed in to and for
 every job token.
 """

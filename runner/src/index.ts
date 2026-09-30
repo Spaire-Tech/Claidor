@@ -9,7 +9,7 @@ const main = async (): Promise<void> => {
 
   await fs.mkdir(settings.workRoot, { recursive: true });
 
-  log.info(`${settings.runnerName} starting; Claidor at ${settings.apiBaseUrl}`);
+  log.info(`${settings.runnerName} starting; API at ${settings.apiBaseUrl}`);
   await start(settings);
 };
 

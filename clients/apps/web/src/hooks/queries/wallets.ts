@@ -1,5 +1,5 @@
 import { api } from '@/utils/client'
-import { operations, unwrap } from '@claidor/client'
+import { operations, unwrap } from '@simeon/client'
 import { useQuery } from '@tanstack/react-query'
 import { defaultRetry } from './retry'
 

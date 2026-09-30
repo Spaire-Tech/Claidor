@@ -9,18 +9,14 @@ import { ParsedMetricPeriod } from '@/hooks/queries/metrics'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import { dateRangeToInterval } from '@/utils/metrics'
 import { UTCDate } from '@date-fns/utc'
-import { schemas } from '@claidor/client'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-} from '@claidor/ui/components/atoms/Card'
+import { schemas } from '@simeon/client'
+import { Card, CardContent, CardHeader } from '@simeon/ui/components/atoms/Card'
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@claidor/ui/components/atoms/Tabs'
+} from '@simeon/ui/components/atoms/Tabs'
 import { endOfMonth, startOfMonth, subMonths } from 'date-fns'
 import { useCallback, useContext, useMemo, useState } from 'react'
 import DateRangePicker from '../Metrics/DateRangePicker'
@@ -118,7 +114,7 @@ export const MeterPage = ({
                 />
               </div>
             </WellHeader>
-            <WellContent className=" flex-col rounded-3xl bg-white p-4">
+            <WellContent className="flex-col rounded-3xl bg-white p-4">
               {chartLoading ? (
                 <div className="flex h-[300px] flex-col items-center justify-center">
                   <Spinner />
@@ -156,9 +152,7 @@ export const MeterPage = ({
             <div className="flex flex-col gap-y-6">
               <div className="flex flex-col gap-y-2">
                 <h3 className="text-xl">Latest meter events</h3>
-                <p className=" text-gray-500">
-                  Recently received meter events
-                </p>
+                <p className="text-gray-500">Recently received meter events</p>
               </div>
               <Events events={meterEvents} organization={organization} />
             </div>
@@ -251,7 +245,7 @@ const MeterActivityCards = ({ meter }: { meter: schemas['Meter'] }) => {
         <Card key={i} className="flex-1 rounded-3xl">
           <CardHeader className="flex flex-col gap-y-0">
             <h3 className="text-lg">{card.title}</h3>
-            <span className=" text-gray-500">
+            <span className="text-gray-500">
               {card.startDate.toLocaleDateString('en-US', {
                 month: 'long',
                 day: 'numeric',

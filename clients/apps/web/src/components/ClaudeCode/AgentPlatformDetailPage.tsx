@@ -1,20 +1,20 @@
 'use client'
 
 import { DashboardBody } from '@/components/Layout/DashboardLayout'
+import { OrganizationContext } from '@/providers/maintainerOrganization'
 import ArrowBackOutlined from '@mui/icons-material/ArrowBackOutlined'
 import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
 import CheckOutlined from '@mui/icons-material/CheckOutlined'
 import ContentCopyOutlined from '@mui/icons-material/ContentCopyOutlined'
-import { OrganizationContext } from '@/providers/maintainerOrganization'
-import Button from '@claidor/ui/components/atoms/Button'
+import Button from '@simeon/ui/components/atoms/Button'
+import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useCallback, useContext, useState } from 'react'
-import { motion } from 'framer-motion'
 import { twMerge } from 'tailwind-merge'
 import { FadeUp } from '../Animated/FadeUp'
 import ClaudeCodeIcon from '../Icons/frameworks/claude-code'
-import CursorIcon from '../Icons/frameworks/cursor'
 import CodexIcon from '../Icons/frameworks/codex'
+import CursorIcon from '../Icons/frameworks/cursor'
 import GitHubCopilotIcon from '../Icons/frameworks/github-copilot'
 import {
   SyntaxHighlighterClient,
@@ -55,14 +55,11 @@ export default function AgentPlatformDetailPage({
     setTimeout(() => setSetupCopied(false), 2500)
   }, [platform.setupSnippet])
 
-  const handleCopyCommand = useCallback(
-    (slug: string, snippet: string) => {
-      navigator.clipboard.writeText(snippet)
-      setCopiedCommand(slug)
-      setTimeout(() => setCopiedCommand(null), 2500)
-    },
-    [],
-  )
+  const handleCopyCommand = useCallback((slug: string, snippet: string) => {
+    navigator.clipboard.writeText(snippet)
+    setCopiedCommand(slug)
+    setTimeout(() => setCopiedCommand(null), 2500)
+  }, [])
 
   const icon = PLATFORM_ICONS[platform.slug]
 
@@ -82,7 +79,7 @@ export default function AgentPlatformDetailPage({
             <FadeUp className="flex flex-row justify-start">
               <Link
                 href={`/dashboard/${organization.slug}/integrations`}
-                className="flex cursor-pointer items-center gap-x-1.5 rounded-full px-3 py-1.5 text-sm text-blue-500 transition-colors duration-100 hover:bg-blue-50 hover:text-blue-600  "
+                className="flex cursor-pointer items-center gap-x-1.5 rounded-full px-3 py-1.5 text-sm text-blue-500 transition-colors duration-100 hover:bg-blue-50 hover:text-blue-600"
               >
                 <ArrowBackOutlined sx={{ fontSize: 16 }} />
                 Agent Install
@@ -102,14 +99,14 @@ export default function AgentPlatformDetailPage({
               <h1 className="mt-1 text-2xl font-medium tracking-tight md:text-3xl">
                 {platform.tagline}
               </h1>
-              <p className=" max-w-lg text-base leading-relaxed text-gray-500">
+              <p className="max-w-lg text-base leading-relaxed text-gray-500">
                 {platform.description}
               </p>
             </FadeUp>
 
             {/* How it works */}
             <FadeUp className="flex flex-col gap-y-5">
-              <h2 className=" text-sm font-medium uppercase tracking-wider text-gray-400">
+              <h2 className="text-sm font-medium tracking-wider text-gray-400 uppercase">
                 How it works
               </h2>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -146,7 +143,7 @@ export default function AgentPlatformDetailPage({
               </FadeUp>
             )}
 
-            {/* Load Claidor playbooks */}
+            {/* Load Simeon playbooks */}
             {platform.setupSnippet && (
               <FadeUp className="flex flex-col gap-y-6">
                 <div className="flex flex-row items-center justify-between">
@@ -166,7 +163,7 @@ export default function AgentPlatformDetailPage({
                   />
                 </CodeWrapper>
                 {platform.setupNote && (
-                  <p className=" text-xs leading-relaxed text-gray-400">
+                  <p className="text-xs leading-relaxed text-gray-400">
                     {platform.setupNote}
                   </p>
                 )}
@@ -179,12 +176,12 @@ export default function AgentPlatformDetailPage({
                 <h2 className="text-base font-medium">
                   {stepIndex++}. Context file already configured
                 </h2>
-                <div className=" flex items-start gap-x-3 rounded-xl border border-gray-200 p-4">
+                <div className="flex items-start gap-x-3 rounded-xl border border-gray-200 p-4">
                   <CheckOutlined
                     className="mt-0.5 shrink-0 text-emerald-500"
                     sx={{ fontSize: 16 }}
                   />
-                  <p className=" text-sm leading-relaxed text-gray-500">
+                  <p className="text-sm leading-relaxed text-gray-500">
                     {platform.setupNote}
                   </p>
                 </div>
@@ -200,19 +197,19 @@ export default function AgentPlatformDetailPage({
                 {platform.commands.map((cmd) => (
                   <div
                     key={cmd.slug}
-                    className=" flex flex-col gap-y-4 rounded-2xl border border-gray-200 p-6"
+                    className="flex flex-col gap-y-4 rounded-2xl border border-gray-200 p-6"
                   >
                     <div className="flex flex-row items-start justify-between">
                       <div className="flex flex-col gap-y-1">
                         <h3 className="text-sm font-medium">{cmd.name}</h3>
-                        <p className=" text-xs leading-relaxed text-gray-400">
+                        <p className="text-xs leading-relaxed text-gray-400">
                           {cmd.description}
                         </p>
                       </div>
                       {cmd.detailPageSlug && (
                         <Link
                           href={`/dashboard/${organization.slug}/integrations/${cmd.detailPageSlug}`}
-                          className="flex shrink-0 items-center gap-x-1 rounded-full px-3 py-1.5 text-xs text-blue-500 transition-colors hover:bg-blue-50 hover:text-blue-600 "
+                          className="flex shrink-0 items-center gap-x-1 rounded-full px-3 py-1.5 text-xs text-blue-500 transition-colors hover:bg-blue-50 hover:text-blue-600"
                         >
                           Full guide
                           <ArrowOutwardOutlined sx={{ fontSize: 12 }} />
@@ -221,12 +218,14 @@ export default function AgentPlatformDetailPage({
                     </div>
                     <div className="flex flex-col gap-y-2">
                       <div className="flex flex-row items-center justify-between">
-                        <span className=" text-[11px] font-medium uppercase tracking-wider text-gray-400">
+                        <span className="text-[11px] font-medium tracking-wider text-gray-400 uppercase">
                           {cmd.snippetLabel}
                         </span>
                         <CopyButton
                           copied={copiedCommand === cmd.slug}
-                          onCopy={() => handleCopyCommand(cmd.slug, cmd.snippet)}
+                          onCopy={() =>
+                            handleCopyCommand(cmd.slug, cmd.snippet)
+                          }
                           label="Copy"
                         />
                       </div>
@@ -253,7 +252,7 @@ export default function AgentPlatformDetailPage({
               <div className="flex flex-row items-center justify-center pt-1">
                 <Link
                   href={`/dashboard/${organization.slug}/integrations`}
-                  className="cursor-pointer rounded-full px-3 py-1.5 text-sm text-blue-500 transition-colors duration-100 hover:bg-blue-50 hover:text-blue-600  "
+                  className="cursor-pointer rounded-full px-3 py-1.5 text-sm text-blue-500 transition-colors duration-100 hover:bg-blue-50 hover:text-blue-600"
                 >
                   Back to Agent Install
                 </Link>
@@ -267,7 +266,7 @@ export default function AgentPlatformDetailPage({
 }
 
 const CodeWrapper = ({ children }: { children: React.ReactNode }) => (
-  <div className=" w-full rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm">
+  <div className="w-full rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm">
     {children}
   </div>
 )
@@ -286,8 +285,8 @@ const CopyButton = ({
     className={twMerge(
       'flex items-center gap-x-1.5 rounded-full px-4 py-2 text-xs font-medium transition-all',
       copied
-        ? 'bg-emerald-50 text-emerald-600 '
-        : '  bg-gray-100 text-gray-600 hover:bg-gray-200',
+        ? 'bg-emerald-50 text-emerald-600'
+        : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
     )}
   >
     {copied ? (
@@ -313,13 +312,13 @@ const HowItWorksCard = ({
   title: string
   description: string
 }) => (
-  <div className=" flex flex-col gap-y-3 rounded-2xl border border-gray-200 bg-white p-5">
-    <span className=" flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs font-medium text-gray-600">
+  <div className="flex flex-col gap-y-3 rounded-2xl border border-gray-200 bg-white p-5">
+    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs font-medium text-gray-600">
       {number}
     </span>
     <div className="flex flex-col gap-y-1">
       <span className="text-sm font-medium">{title}</span>
-      <span className=" text-xs leading-relaxed text-gray-400">
+      <span className="text-xs leading-relaxed text-gray-400">
         {description}
       </span>
     </div>

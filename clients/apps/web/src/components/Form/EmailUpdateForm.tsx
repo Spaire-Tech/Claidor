@@ -3,9 +3,9 @@
 import { useSendEmailUpdate } from '@/hooks/emailUpdate'
 import { setValidationErrors } from '@/utils/api/errors'
 import { FormControl } from '@mui/material'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
-import { Form, FormField, FormItem } from '@claidor/ui/components/ui/form'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
+import { Form, FormField, FormItem } from '@simeon/ui/components/ui/form'
 import { useState } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 
@@ -97,9 +97,7 @@ const EmailUpdateForm: React.FC<EmailUpdateformProps> = ({
           }}
         />
         {errorMessage && (
-          <div className="text-sm text-red-700">
-            {errorMessage}
-          </div>
+          <div className="text-sm text-red-700">{errorMessage}</div>
         )}
       </form>
     </Form>

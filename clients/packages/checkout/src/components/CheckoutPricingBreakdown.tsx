@@ -1,8 +1,8 @@
 'use client'
 
-import { formatCurrency } from '@claidor/currency'
+import { formatCurrency } from '@simeon/currency'
+import { cn } from '@simeon/ui/lib/utils'
 import type { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic'
-import { cn } from '@claidor/ui/lib/utils'
 import { PropsWithChildren, useMemo } from 'react'
 import { hasProductCheckout } from '../guards'
 import { getDiscountDisplay } from '../utils/discount'
@@ -24,7 +24,7 @@ const DetailRow = ({
     <div
       className={cn(
         'flex flex-row items-start justify-between gap-x-8',
-        emphasis ? 'font-medium' : ' text-gray-500',
+        emphasis ? 'font-medium' : 'text-gray-500',
         className,
       )}
     >
@@ -72,7 +72,8 @@ const CheckoutPricingBreakdown = ({
 
   const { product, prices } = checkout
   const meteredPrices = useMemo(
-    () => (product && prices ? getMeteredPrices(prices[product.id] as any) : []),
+    () =>
+      product && prices ? getMeteredPrices(prices[product.id] as any) : [],
     [product, prices],
   )
 
@@ -147,7 +148,7 @@ const CheckoutPricingBreakdown = ({
       {(checkout.trialEnd ||
         (checkout.activeTrialInterval &&
           checkout.activeTrialIntervalCount)) && (
-        <div className=" mt-3 border-t border-gray-300 pt-4">
+        <div className="mt-3 border-t border-gray-300 pt-4">
           {checkout.activeTrialInterval &&
             checkout.activeTrialIntervalCount && (
               <DetailRow
@@ -166,7 +167,7 @@ const CheckoutPricingBreakdown = ({
               </DetailRow>
             )}
           {checkout.trialEnd && (
-            <span className=" text-sm text-gray-500">
+            <span className="text-sm text-gray-500">
               Trial ends{' '}
               {new Intl.DateTimeFormat('en-US', {
                 month: 'long',

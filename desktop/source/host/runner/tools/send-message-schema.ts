@@ -87,7 +87,7 @@ export function stripFieldsOfOtherTypes(value: unknown): unknown {
 }
 // A real question the model put on a text message (GPT-5.6 greets with
 // {"type":"text","content":"Hey…","widget":{"prompt":"What first?","options":[…]}}).
-// Grok Bot refused that call ("Re-send as separate SendMessage calls, one per
+// The upstream app refused that call ("Re-send as separate SendMessage calls, one per
 // type"), which with GPT-5.6 looped; dropping it silently (above) lost every
 // first message's options (28 September 2026). So a widget that is really one,
 // a prompt and at least two distinct labelled options, is sent after the text

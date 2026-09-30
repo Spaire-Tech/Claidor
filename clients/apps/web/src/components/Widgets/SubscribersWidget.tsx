@@ -1,16 +1,12 @@
 import { useMetrics } from '@/hooks/queries'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
-import {
-  Card,
-  CardFooter,
-  CardHeader,
-} from '@claidor/ui/components/atoms/Card'
+import { Card, CardFooter, CardHeader } from '@simeon/ui/components/atoms/Card'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@claidor/ui/components/ui/tooltip'
+} from '@simeon/ui/components/ui/tooltip'
 import { useContext } from 'react'
 import { twMerge } from 'tailwind-merge'
 
@@ -61,7 +57,7 @@ export const SubscribersWidget = ({ className }: SubscribersWidgetProps) => {
         </h2>
       </CardHeader>
       <TooltipProvider>
-        <CardFooter className=" m-2 flex h-full flex-row items-end justify-between gap-x-1 rounded-3xl bg-white p-4">
+        <CardFooter className="m-2 flex h-full flex-row items-end justify-between gap-x-1 rounded-3xl bg-white p-4">
           {subscriberMetrics.data?.periods.map((period, i) => {
             const activeClass =
               i === subscriberMetrics.data.periods.length - 1
@@ -87,7 +83,7 @@ export const SubscribersWidget = ({ className }: SubscribersWidgetProps) => {
                     )}%`,
                   }}
                   className={twMerge(
-                    ' w-3 shrink rounded-full bg-gray-300',
+                    'w-3 shrink rounded-full bg-gray-300',
                     activeClass,
                   )}
                 />

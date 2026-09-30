@@ -1,5 +1,5 @@
 #!/bin/bash
-# Startup script for Polar API and Worker services in development mode
+# Startup script for Simeon API and Worker services in development mode
 # This script handles dependency installation, email template building,
 # database migrations, and service startup with hot-reloading.
 
@@ -7,7 +7,7 @@ set -euo pipefail
 
 cd /app/server
 
-echo "=== Polar Backend Startup ==="
+echo "=== Simeon Backend Startup ==="
 echo "Service: ${1:-api}"
 
 # Install Python dependencies if not present or outdated
@@ -54,7 +54,7 @@ if [[ ! -f ".jwks.json" ]]; then
     echo "Generating development JWKS..."
     uv run python -c "
 from authlib.jose import JsonWebKey, KeySet
-options = {'kid': 'polar_dev', 'use': 'sig'}
+options = {'kid': 'simeon_dev', 'use': 'sig'}
 key = JsonWebKey.generate_key('RSA', 2048, options, is_private=True)
 keyset = KeySet(keys=[key])
 with open('.jwks.json', 'w') as f:
@@ -69,7 +69,7 @@ fi
 echo "Waiting for database..."
 max_attempts=30
 attempt=0
-while ! pg_isready -h "$CLAIDOR_POSTGRES_HOST" -p "$CLAIDOR_POSTGRES_PORT" -U "$CLAIDOR_POSTGRES_USER" -q; do
+while ! pg_isready -h "$SIMEON_POSTGRES_HOST" -p "$SIMEON_POSTGRES_PORT" -U "$SIMEON_POSTGRES_USER" -q; do
     attempt=$((attempt + 1))
     if [[ $attempt -ge $max_attempts ]]; then
         echo "ERROR: Database not ready after $max_attempts attempts"
@@ -97,7 +97,7 @@ if [[ "${1:-api}" == "api" ]]; then
     echo "Checking for seed data..."
     SEED_CHECK=$(uv run python -c "
 import asyncio
-from polar.postgres import create_async_engine
+from simeon.postgres import create_async_engine
 from sqlalchemy import text
 
 async def check():
@@ -125,9 +125,9 @@ case "${1:-api}" in
     api)
         echo "Starting API server with hot-reload..."
         echo "API will be available at http://localhost:8000"
-        exec uv run uvicorn polar.app:app \
+        exec uv run uvicorn simeon.app:app \
             --reload \
-            --reload-dir polar \
+            --reload-dir simeon \
             --host 0.0.0.0 \
             --port 8000 \
             --workers 1
@@ -138,9 +138,9 @@ case "${1:-api}" in
             -p 1 \
             -t 1 \
             --queues high_priority medium_priority low_priority webhooks \
-            --watch polar \
-            -f polar.worker.scheduler:start \
-            polar.worker.run
+            --watch simeon \
+            -f simeon.worker.scheduler:start \
+            simeon.worker.run
         ;;
     shell)
         echo "Starting shell..."

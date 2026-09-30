@@ -4,7 +4,7 @@ Mirrors tests/course_assistant/test_ai.py — these exercise the prompt builder
 and the defensive JSON parser without importing the Anthropic SDK.
 """
 
-from polar.email_copy import ai
+from simeon.email_copy import ai
 
 
 class TestBuildCourseBrief:

@@ -1252,7 +1252,7 @@
   ],
   "refresh": "10s",
   "schemaVersion": 39,
-  "tags": ["polar", "worker", "dramatiq"],
+  "tags": ["simeon", "worker", "dramatiq"],
   "templating": {
     "list": [
       {
@@ -1330,8 +1330,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Polar Worker",
-  "uid": "polar-worker",
+  "title": "Simeon Worker",
+  "uid": "simeon-worker",
   "version": 1,
   "weekStart": ""
 }

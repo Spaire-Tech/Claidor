@@ -1,16 +1,16 @@
 'use client'
 
-import { schemas } from '@claidor/client'
-import Input from '@claidor/ui/components/atoms/Input'
+import { schemas } from '@simeon/client'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
-import Switch from '@claidor/ui/components/atoms/Switch'
-import { Checkbox } from '@claidor/ui/components/ui/checkbox'
+} from '@simeon/ui/components/atoms/Select'
+import Switch from '@simeon/ui/components/atoms/Switch'
+import { Checkbox } from '@simeon/ui/components/ui/checkbox'
 import {
   FormControl,
   FormDescription,
@@ -18,7 +18,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 

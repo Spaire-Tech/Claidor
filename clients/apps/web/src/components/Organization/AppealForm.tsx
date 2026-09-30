@@ -5,10 +5,10 @@ import {
   useOrganizationReviewStatus,
 } from '@/hooks/queries/org'
 import { getQueryClient } from '@/utils/api/query'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { Card } from '@claidor/ui/components/ui/card'
-import { Textarea } from '@claidor/ui/components/ui/textarea'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { Card } from '@simeon/ui/components/ui/card'
+import { Textarea } from '@simeon/ui/components/ui/textarea'
 import { ArrowRight, Loader2, Send, X } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 
@@ -87,7 +87,7 @@ const AppealForm: React.FC<AppealFormProps> = ({
                     ? 'Review Denied'
                     : 'Under Review'}
               </h3>
-              <p className=" mt-1 text-sm text-gray-600">
+              <p className="mt-1 text-sm text-gray-600">
                 {decision === 'approved'
                   ? 'Your business has been approved. You can proceed with setup.'
                   : decision === 'rejected'
@@ -95,7 +95,7 @@ const AppealForm: React.FC<AppealFormProps> = ({
                     : 'Thanks for the additional details. Our team will review your case shortly.'}
               </p>
               {submissionDate && (
-                <p className=" mt-2 text-xs text-gray-500">
+                <p className="mt-2 text-xs text-gray-500">
                   Submitted: {new Date(submissionDate).toLocaleDateString()}
                   {reviewedAt &&
                     ` • Reviewed: ${new Date(reviewedAt).toLocaleDateString()}`}
@@ -124,11 +124,11 @@ const AppealForm: React.FC<AppealFormProps> = ({
           {/* Show the appeal reason */}
           {appealReason && (
             <div className="border-t pt-4">
-              <h4 className=" mb-2 text-sm font-medium text-gray-700">
+              <h4 className="mb-2 text-sm font-medium text-gray-700">
                 Your Submission:
               </h4>
-              <div className=" rounded-lg bg-gray-50 p-3">
-                <p className=" text-sm whitespace-pre-wrap text-gray-700">
+              <div className="rounded-lg bg-gray-50 p-3">
+                <p className="text-sm whitespace-pre-wrap text-gray-700">
                   {appealReason}
                 </p>
               </div>
@@ -144,7 +144,7 @@ const AppealForm: React.FC<AppealFormProps> = ({
       <Card className={`p-6 ${disabled ? 'opacity-60' : ''}`}>
         <div className="space-y-4 text-center">
           <h3 className="text-lg font-medium">Request Manual Review</h3>
-          <p className=" text-sm text-gray-600">
+          <p className="text-sm text-gray-600">
             {disabled
               ? 'Manual review is currently unavailable. Please contact support if you believe this is a mistake.'
               : 'If you believe this is a mistake, provide more details and our team will review your case.'}
@@ -182,7 +182,7 @@ const AppealForm: React.FC<AppealFormProps> = ({
           <label className="text-sm font-medium">
             Tell us more about your SaaS business *
           </label>
-          <p className=" text-xs text-gray-500">
+          <p className="text-xs text-gray-500">
             {disabled
               ? 'Manual review is currently unavailable. Please contact support for assistance.'
               : 'Describe your SaaS product, your customers, and how you generate revenue. The more detail you provide, the faster we can review your case.'}

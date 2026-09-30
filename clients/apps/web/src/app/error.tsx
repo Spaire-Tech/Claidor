@@ -1,6 +1,6 @@
 'use client'
 
-import Button from '@claidor/ui/components/atoms/Button'
+import Button from '@simeon/ui/components/atoms/Button'
 
 export default function Error({ error }: { error: Error }) {
   return (

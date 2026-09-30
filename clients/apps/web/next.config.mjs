@@ -4,15 +4,19 @@ import createMDX from '@next/mdx'
 import { withSentryConfig } from '@sentry/nextjs'
 import { themeConfig } from './shiki.config.mjs'
 
-const POLAR_AUTH_COOKIE_KEY =
-  process.env.POLAR_AUTH_COOKIE_KEY || 'claidor_session'
+const AUTH_COOKIE_KEY =
+  process.env.SIMEON_AUTH_COOKIE_KEY ||
+  process.env.POLAR_AUTH_COOKIE_KEY ||
+  'simeon_session'
+// Sessions made before the rename carry the earlier cookie name.
+const LEGACY_AUTH_COOKIE_KEY = 'claidor_session'
 const ENVIRONMENT =
   process.env.VERCEL_ENV || process.env.NEXT_PUBLIC_VERCEL_ENV || 'development'
 const CODESPACES = process.env.CODESPACES === 'true'
 
 const defaultFrontendHostname = process.env.NEXT_PUBLIC_FRONTEND_BASE_URL
   ? new URL(process.env.NEXT_PUBLIC_FRONTEND_BASE_URL).hostname
-  : 'app.claidorhq.com'
+  : 'app.simeonlabs.com'
 
 const S3_PUBLIC_IMAGES_BUCKET_ORIGIN = process.env
   .S3_PUBLIC_IMAGES_BUCKET_HOSTNAME
@@ -21,9 +25,9 @@ const S3_PUBLIC_IMAGES_BUCKET_ORIGIN = process.env
 const baseCSP = `
     default-src 'self';
     connect-src 'self' blob: ${process.env.NEXT_PUBLIC_API_URL} ${process.env.S3_UPLOAD_ORIGINS} https://api.stripe.com https://maps.googleapis.com https://*.google-analytics.com https://chat.uk.plain.com https://prod-uk-services-attachm-attachmentsuploadbucket2-1l2e4906o2asm.s3.eu-west-2.amazonaws.com https://*.mux.com https://api.giphy.com;
-    frame-src 'self' https://*.js.stripe.com https://js.stripe.com https://hooks.stripe.com https://customer-wl21dabnj6qtvcai.cloudflarestream.com videodelivery.net *.cloudflarestream.com https://buy.claidorhq.com https://www.youtube.com https://youtube.com https://open.spotify.com https://w.soundcloud.com https://www.tiktok.com https://www.instagram.com https://player.vimeo.com https://embed.music.apple.com https://stream.mux.com;
+    frame-src 'self' https://*.js.stripe.com https://js.stripe.com https://hooks.stripe.com https://customer-wl21dabnj6qtvcai.cloudflarestream.com videodelivery.net *.cloudflarestream.com https://buy.simeonlabs.com https://www.youtube.com https://youtube.com https://open.spotify.com https://w.soundcloud.com https://www.tiktok.com https://www.instagram.com https://player.vimeo.com https://embed.music.apple.com https://stream.mux.com;
     media-src 'self' blob: https://*.mux.com https://stream.mux.com ${S3_PUBLIC_IMAGES_BUCKET_ORIGIN} https://claidor-production-files-public.s3.amazonaws.com https://claidor-production-files-public.s3.us-east-1.amazonaws.com https://prod-uk-services-workspac-workspacefilespublicbuck-vs4gjqpqjkh6.s3.amazonaws.com https://prod-uk-services-attachm-attachmentsbucket28b3ccf-uwfssb4vt2us.s3.eu-west-2.amazonaws.com;
-    script-src 'self' blob: 'unsafe-eval' 'unsafe-inline' https://*.js.stripe.com https://js.stripe.com https://maps.googleapis.com https://www.googletagmanager.com https://chat.cdn-plain.com https://embed.cloudflarestream.com https://static.cloudflareinsights.com https://cdn.claidorhq.com;
+    script-src 'self' blob: 'unsafe-eval' 'unsafe-inline' https://*.js.stripe.com https://js.stripe.com https://maps.googleapis.com https://www.googletagmanager.com https://chat.cdn-plain.com https://embed.cloudflarestream.com https://static.cloudflareinsights.com https://cdn.simeonlabs.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' blob: data: https://www.gravatar.com https://img.logo.dev https://lh3.googleusercontent.com https://avatars.githubusercontent.com ${S3_PUBLIC_IMAGES_BUCKET_ORIGIN} https://claidor-production-files-public.s3.amazonaws.com https://claidor-production-files-public.s3.us-east-1.amazonaws.com https://prod-uk-services-workspac-workspacefilespublicbuck-vs4gjqpqjkh6.s3.amazonaws.com https://prod-uk-services-attachm-attachmentsbucket28b3ccf-uwfssb4vt2us.s3.eu-west-2.amazonaws.com https://i0.wp.com https://img.youtube.com https://i.ytimg.com https://yt3.ggpht.com https://yt3.googleusercontent.com https://www.google.com https://i.scdn.co https://i1.sndcdn.com https://p16-sign.tiktokcdn-us.com https://p19-sign.tiktokcdn-us.com https://*.cdninstagram.com https://*.fbcdn.net https://i.vimeocdn.com https://*.mzstatic.com https://image.mux.com https://*.giphy.com https://cdn.jsdelivr.net;
     font-src 'self' blob: data:;
@@ -48,20 +52,7 @@ const oauth2CSP = `
   frame-ancestors 'none';
 `
 
-// The Office task pane. Office hosts render it inside their own frames —
-// word.cloud.microsoft, *.officeapps.live.com, Outlook on the web — so the
-// base frame-ancestors 'self' showed « app.simeonlabs.com refused to connect »
-// inside real Word on the very first sideload. Only frame-ancestors is
-// declared, deliberately: the pane loads office.js from Microsoft's CDN and
-// its own assets besides, and a fuller policy here would be a second way
-// for the pane to break that nothing else on the site shares. Desktop
-// Office loads the pane top-level (no ancestor), so this list is for the
-// web hosts; no X-Frame-Options is sent for these paths at all.
-const panelCSP = `
-  frame-ancestors 'self' https://*.cloud.microsoft https://*.office.com https://*.officeapps.live.com https://*.sharepoint.com https://outlook.office.com https://outlook.office365.com;
-`
-
-// We rewrite Mintlify docs to polar.sh/docs, so we need a specific CSP for them
+// A specific CSP for pages served from a Mintlify docs site
 // Ref: https://www.mintlify.com/docs/guides/csp-configuration#content-security-policy-csp-configuration
 const docsCSP = `
   default-src 'self';
@@ -73,7 +64,7 @@ const docsCSP = `
   img-src 'self' data: blob: d3gk2c5xim1je2.cloudfront.net mintcdn.com *.mintcdn.com cdn.jsdelivr.net mintlify.s3.us-west-1.amazonaws.com;
   connect-src 'self' *.mintlify.dev *.mintlify.com d1ctpt7j8wusba.cloudfront.net mintcdn.com *.mintcdn.com
   api.mintlifytrieve.com www.googletagmanager.com cdn.segment.com plausible.io us.posthog.com browser.sentry-cdn.com;
-  frame-src 'self' *.mintlify.dev https://polar-public-assets.s3.us-east-2.amazonaws.com;
+  frame-src 'self' *.mintlify.dev;
 `
 
 /** @type {import('next').NextConfig} */
@@ -162,55 +153,10 @@ const nextConfig = {
 
   async redirects() {
     return [
-      // dashboard.polar.sh redirections
-      {
-        source: '/',
-        destination: '/login',
-        has: [
-          {
-            type: 'host',
-            value: 'dashboard.polar.sh',
-          },
-        ],
-        permanent: false,
-      },
-      {
-        source: '/:path*',
-        destination: 'https://claidorhq.com/:path*',
-        has: [
-          {
-            type: 'host',
-            value: 'dashboard.polar.sh',
-          },
-        ],
-        permanent: false,
-      },
       {
         source: '/careers',
-        destination: 'https://claidorhq.com/company',
+        destination: 'https://simeonlabs.com/company',
         permanent: false,
-      },
-      {
-        source: '/llms.txt',
-        destination: 'https://polar.sh/docs/llms.txt',
-        permanent: true,
-        has: [
-          {
-            type: 'host',
-            value: 'polar.sh',
-          },
-        ],
-      },
-      {
-        source: '/llms-full.txt',
-        destination: 'https://polar.sh/docs/llms-full.txt',
-        permanent: true,
-        has: [
-          {
-            type: 'host',
-            value: 'polar.sh',
-          },
-        ],
       },
 
       // Logged-in user redirections (check both new and legacy cookie names)
@@ -220,7 +166,7 @@ const nextConfig = {
         has: [
           {
             type: 'cookie',
-            key: POLAR_AUTH_COOKIE_KEY,
+            key: AUTH_COOKIE_KEY,
           },
           {
             type: 'host',
@@ -235,7 +181,7 @@ const nextConfig = {
         has: [
           {
             type: 'cookie',
-            key: 'polar_session',
+            key: LEGACY_AUTH_COOKIE_KEY,
           },
           {
             type: 'host',
@@ -245,7 +191,7 @@ const nextConfig = {
         permanent: false,
       },
 
-      // Redirect /maintainer to polar.sh if on a different domain name
+      // Send the dashboard to its own host when served from another one
       // Skip in development so local dev server serves the dashboard directly
       ...(ENVIRONMENT !== 'development'
         ? [
@@ -352,31 +298,6 @@ const nextConfig = {
         destination: '/account/developer',
         permanent: false,
       },
-
-      // Old blog redirects
-      {
-        source: '/polarsource/posts',
-        destination: '/blog',
-        permanent: false,
-      },
-      {
-        source: '/polarsource/posts/:path(.*)',
-        destination: '/blog/:path*',
-        permanent: false,
-      },
-
-      // Fallback blog redirect
-      {
-        source: '/:path*',
-        destination: 'https://polar.sh/polarsource',
-        has: [
-          {
-            type: 'host',
-            value: 'blog.polar.sh',
-          },
-        ],
-        permanent: false,
-      },
     ]
   },
   async headers() {
@@ -406,17 +327,8 @@ const nextConfig = {
 
     return [
       {
-        source: '/((?!checkout|oauth2|docs|panel).*)',
+        source: '/((?!checkout|oauth2|docs).*)',
         headers: baseHeaders,
-      },
-      {
-        source: '/panel/:path*',
-        headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: panelCSP.replace(/\n/g, ''),
-          },
-        ],
       },
       {
         source: '/oauth2/:path*',
@@ -523,8 +435,8 @@ const createConfig = async () => {
     // For all available options, see:
     // https://github.com/getsentry/sentry-webpack-plugin#options
 
-    org: 'polar-sh',
-    project: 'dashboard',
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT ?? 'dashboard',
 
     // Pass the auth token
     authToken: process.env.SENTRY_AUTH_TOKEN,

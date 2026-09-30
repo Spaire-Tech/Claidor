@@ -1,7 +1,7 @@
 'use client'
 
 import { ParsedMetricsResponse } from '@/hooks/queries'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { useMemo, useState } from 'react'
 import {
   CANCELLATION_REASONS,
@@ -87,7 +87,7 @@ export default function CancellationsDistributionChart({
 
       <div className="relative px-4 pb-4">
         <div
-          className=" flex w-full overflow-hidden rounded-xs bg-gray-100"
+          className="flex w-full overflow-hidden rounded-xs bg-gray-100"
           style={{ height }}
         >
           {chartData.map((item) => (
@@ -114,7 +114,7 @@ export default function CancellationsDistributionChart({
               />
               <span className="font-normal">{item.label}</span>
               <span
-                className=" -m-1 ml-auto p-1 text-right font-medium text-gray-500 tabular-nums"
+                className="-m-1 ml-auto p-1 text-right font-medium text-gray-500 tabular-nums"
                 onClick={() =>
                   setDisplayMode((previousValue) =>
                     previousValue === 'count' ? 'percentage' : 'count',
@@ -127,10 +127,8 @@ export default function CancellationsDistributionChart({
               </span>
             </div>
           ))}
-          <div className=" mt-1 flex items-center justify-between gap-2 border-t border-gray-200 pt-2">
-            <span className=" font-medium text-gray-500">
-              Total
-            </span>
+          <div className="mt-1 flex items-center justify-between gap-2 border-t border-gray-200 pt-2">
+            <span className="font-medium text-gray-500">Total</span>
             <span className="ml-auto text-right font-medium tabular-nums">
               {legendData.reduce((sum, item) => sum + item.total, 0)}
             </span>

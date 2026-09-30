@@ -19,11 +19,11 @@ import httpx
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.models import SandListenerConnection, User
-from polar.postgres import AsyncSession
-from polar.sand.listeners_service import listeners
-from polar.sand.listeners_slack import verify_signature
+from simeon.config import settings
+from simeon.models import SandListenerConnection, User
+from simeon.postgres import AsyncSession
+from simeon.sand.listeners_service import listeners
+from simeon.sand.listeners_slack import verify_signature
 from tests.desktop.test_endpoints import _signed_in
 from tests.fixtures.database import SaveFixture
 
@@ -131,7 +131,7 @@ def _github_workflow(repo: str = "simeon-labs/app") -> dict[str, Any]:
 
 @pytest.fixture
 def notify_publish(mocker: MockerFixture) -> AsyncMock:
-    return mocker.patch("polar.sand.listeners_service.publish", new=AsyncMock())
+    return mocker.patch("simeon.sand.listeners_service.publish", new=AsyncMock())
 
 
 @pytest.mark.asyncio
@@ -499,7 +499,7 @@ class TestGithubIngress:
         assert (
             await client.post("/sand/ingress/github/events", content=raw, headers=sig)
         ).status_code == 200
-        from polar.sand.listeners_repository import SandListenerConnectionRepository
+        from simeon.sand.listeners_repository import SandListenerConnectionRepository
 
         row = await SandListenerConnectionRepository.from_session(
             session
@@ -664,7 +664,7 @@ class TestCron:
             },
             headers=headers,
         )
-        from polar.sand.listeners_repository import SandAutomationRepository
+        from simeon.sand.listeners_repository import SandAutomationRepository
 
         row = await SandAutomationRepository.from_session(session).get_by_automation_id(
             user.id, "auto-tick"

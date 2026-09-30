@@ -10,8 +10,7 @@ import { build } from "esbuild";
 
 // 23 September 2026. On a Mac, "hi" to a fresh agent made one model call
 // every 3–4 seconds until the proxy's hourly budget refused, every call a
-// SendMessage the model wrote correctly, and nothing reached the chat
-// (docs/product/handoff-2026-09-23-ai-does-not-answer.md). The earlier
+// SendMessage the model wrote correctly, and nothing reached the chat. The earlier
 // offline test drove the tool through the executor with a stub in place of
 // the InteractionHandler. This one drives the real Agent — the step loop,
 // the InteractionHandler, the forwarding listener, the redaction wrapper,
@@ -27,10 +26,10 @@ async function loadHarness() {
   // The bundle sits inside the tree so the UMD packages it leaves external
   // resolve from node_modules; `/.tmp*/` is ignored by git.
   const bundleDir = path.join(repoRoot, `.tmp-agent-loop-${randomBytes(4).toString("hex")}`);
-  const dataDir = await mkdtemp(path.join(os.tmpdir(), "caisra-agent-loop-"));
+  const dataDir = await mkdtemp(path.join(os.tmpdir(), "simeon-agent-loop-"));
   const output = path.join(bundleDir, "agent-loop.mjs");
   await build({
-    entryPoints: [path.join(repoRoot, "tests/fixtures/claidor-agent-loop-entry.ts")],
+    entryPoints: [path.join(repoRoot, "tests/fixtures/simeon-agent-loop-entry.ts")],
     outfile: output,
     bundle: true,
     format: "esm",
@@ -94,7 +93,7 @@ async function runTurn(loaded, { ingest, firstCallArgs = { type: "text", content
   const requests = [];
   const hostLog = [];
   m.setHostLogSink((line) => hostLog.push(line));
-  m.setClaidorCredentialSource({ getAccessToken: async () => "claidor_da_loop" });
+  m.setSimeonCredentialSource({ getAccessToken: async () => "simeon_da_loop" });
   globalThis.fetch = async (_input, init) => {
     requests.push(JSON.parse(init?.body ?? "{}"));
     // Step one: the model greets through SendMessage. Then it writes text
@@ -202,9 +201,9 @@ test("the real Agent loop delivers a SendMessage the model calls and ends the tu
     assert.equal(turn.requests.length, 2, "one call to greet, one to finish");
     assert.deepEqual(written, [{ type: "text", content: GREETING }]);
     assert.deepEqual(toolOutputs(turn.requests[1]), ["Message sent to user. (id: t1s1)"]);
-    assert.ok(turn.hostLog.some((line) => line.startsWith("[claidor] model=") && line.includes("tools=SendMessage(")), turn.hostLog.join("\n"));
-    assert.ok(turn.hostLog.includes("[claidor] send-message written id=t1s1 type=text"), turn.hostLog.join("\n"));
-    assert.ok(turn.hostLog.some((line) => /^\[claidor\] tool=sendMessageToolCall id=call_1 result=success /.test(line)), turn.hostLog.join("\n"));
+    assert.ok(turn.hostLog.some((line) => line.startsWith("[simeon] model=") && line.includes("tools=SendMessage(")), turn.hostLog.join("\n"));
+    assert.ok(turn.hostLog.includes("[simeon] send-message written id=t1s1 type=text"), turn.hostLog.join("\n"));
+    assert.ok(turn.hostLog.some((line) => /^\[simeon\] tool=sendMessageToolCall id=call_1 result=success /.test(line)), turn.hostLog.join("\n"));
   } finally {
     console_.restore();
     globalThis.fetch = previousFetch;
@@ -226,8 +225,8 @@ test("when delivery throws, the model is told 'Failed to send the message to the
     // logger of the production runner context. Nothing of it reaches stdout.
     assert.equal(console_.lines.filter((line) => line.includes("nal.")).length, 0, console_.lines.join("\n"));
     // The host log, which does reach /tmp/sand-host.log, carries the sentence twice: at the hop and at the tool.
-    assert.ok(turn.hostLog.some((line) => line.startsWith("[claidor] send-message not written type=text error=Error: the transcript hop broke")), turn.hostLog.join("\n"));
-    assert.ok(turn.hostLog.some((line) => line.startsWith("[claidor] tool=sendMessageToolCall id=call_1 result=error detail=the transcript hop broke")), turn.hostLog.join("\n"));
+    assert.ok(turn.hostLog.some((line) => line.startsWith("[simeon] send-message not written type=text error=Error: the transcript hop broke")), turn.hostLog.join("\n"));
+    assert.ok(turn.hostLog.some((line) => line.startsWith("[simeon] tool=sendMessageToolCall id=call_1 result=error detail=the transcript hop broke")), turn.hostLog.join("\n"));
   } finally {
     console_.restore();
     globalThis.fetch = previousFetch;
@@ -252,7 +251,7 @@ test("the greeting GPT-5.6 actually sends — a text with every other field padd
     assert.equal(turn.requests.length, 2);
     assert.deepEqual(written, [{ type: "text", content: GREETING }]);
     assert.deepEqual(toolOutputs(turn.requests[1]), ["Message sent to user. (id: t1s1)"]);
-    assert.ok(turn.hostLog.some((line) => /^\[claidor\] tool=sendMessageToolCall id=call_1 result=success /.test(line)), turn.hostLog.join("\n"));
+    assert.ok(turn.hostLog.some((line) => /^\[simeon\] tool=sendMessageToolCall id=call_1 result=success /.test(line)), turn.hostLog.join("\n"));
   } finally {
     console_.restore();
     globalThis.fetch = previousFetch;

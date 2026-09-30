@@ -1,5 +1,5 @@
 import type { toast as toastFunction } from '@/components/Toast/use-toast'
-import Button from '@claidor/ui/components/atoms/Button'
+import Button from '@simeon/ui/components/atoms/Button'
 import { useCallback } from 'react'
 
 export const useSafeCopy = (toast: typeof toastFunction) => {

@@ -68,7 +68,7 @@ test("the first-run intro runs on the full runner, and product turns on the host
   const routing = await readFile(path.join(repoRoot, "source/node-agent-coordinator/inference-router.ts"), "utf8");
   const shared = await readFile(path.join(repoRoot, "source/shared/inference-router.ts"), "utf8");
   const turnShell = await readFile(path.join(repoRoot, "source/host/runner/turn-run-shell.ts"), "utf8");
-  // Grok Bot's own kickstart: the real runner, a hidden turn, the reply nudge,
+  // The upstream app's own kickstart: the real runner, a hidden turn, the reply nudge,
   // and introductionPending cleared only once something was delivered.
   assert.match(lifecycle, /SAND_ONBOARDING_KICKSTART_PROMPT/);
   assert.match(lifecycle, /runner\.run\(prompt, \{ hidden: true, fullStepBudget: true \}\)/);
@@ -79,14 +79,14 @@ test("the first-run intro runs on the full runner, and product turns on the host
   assert.doesNotMatch(lifecycle, /SEND_MESSAGE_PLAIN_TEXT_RETRY/);
   assert.doesNotMatch(lifecycle, /cheapIntroductionMessages/);
   assert.doesNotMatch(lifecycle, /buildSimeonProductSystemPrompt|withLeadingHello|firstHelloText/);
-  // That runner speaks Claidor.
-  assert.match(turnShell, /const inferenceProvider = "claidor" as const/);
+  // That runner speaks Simeon.
+  assert.match(turnShell, /const inferenceProvider = "simeon" as const/);
   // Product turns go to the host by default; off is the Mac hatch.
   assert.match(shared, /if \(raw\.length === 0\) return true/);
   assert.match(shared, /return !envFlagDisabled\(raw\)/);
-  assert.match(routing, /export \{ SAND_CLAIDOR_FULL_AGENT_ENV, routesClaidorThroughHost \}/);
-  assert.match(routing, /SAND_CLAIDOR_FULL_AGENT=off escape hatch/);
-  assert.match(providers, /DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-6-luna"/);
+  assert.match(routing, /export \{ SAND_SIMEON_FULL_AGENT_ENV, routesSimeonThroughHost \}/);
+  assert.match(routing, /SAND_SIMEON_FULL_AGENT=off escape hatch/);
+  assert.match(providers, /DEFAULT_SIMEON_CHEAP_MODEL = "gpt-6-luna"/);
   assert.match(providers, /withCheapRateLimitFallback\(startOrLegacy\(requested\), \(\) => startOrLegacy\(cheap\), \(error\) => modelCallLog/);
   assert.match(retry, /isProviderRateLimitError\(error\)\) return false/);
 });

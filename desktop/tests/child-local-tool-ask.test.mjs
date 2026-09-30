@@ -1,6 +1,6 @@
 /**
  * A Task child's local-tool asks land on the agent's Allow surface (ledger
- * F-017, 26 September 2026), the way Grok Bot's runner had it: a child
+ * F-017, 26 September 2026), the way the upstream app's runner had it: a child
  * inherited `getAgentId: () => session.id`, so its `getConversationId()`
  * was the agent's and only its transcript id was its own.
  *
@@ -66,7 +66,7 @@ test("an ask scoped to the agent reaches its surface; one scoped to a child id i
     assert.equal(refused.allowed, false);
     assert.match(refused.reason, /nowhere to ask for it/);
     assert.equal(created.length, 0);
-    // Scoped to the agent (Grok Bot's shape): the Allow card is raised in
+    // Scoped to the agent (the upstream app's shape): the Allow card is raised in
     // the agent's chat, and Allow lets the child's command run.
     const decision = controller.authorize({ agentId: "agent-1", toolCallId: "call-2", action: "run-command" }, request);
     assert.equal(created.length, 1);

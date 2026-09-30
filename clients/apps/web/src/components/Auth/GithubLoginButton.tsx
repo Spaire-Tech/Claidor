@@ -2,8 +2,8 @@
 
 import { usePostHog, type EventName } from '@/hooks/posthog'
 import { getGitHubAuthorizeLoginURL } from '@/utils/auth'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import Link from 'next/link'
 import { twMerge } from 'tailwind-merge'
 

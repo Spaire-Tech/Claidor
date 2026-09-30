@@ -1,0 +1,50 @@
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+
+from simeon.kit.services import ResourceServiceReader
+from simeon.models import Organization, Product, ProductVisibility
+from simeon.postgres import AsyncSession
+
+
+class CustomerOrganizationService(ResourceServiceReader[Organization]):
+    async def resolve_sign_in_image(
+        self, session: AsyncSession, organization: Organization
+    ) -> tuple[str | None, str | None]:
+        """Image + object-position for the customer portal sign-in screen.
+
+        Uses the organization's explicitly uploaded image (and its saved
+        position) when set. Returns (image_url, object_position)."""
+        if organization.customer_portal_sign_in_image_url:
+            return (
+                organization.customer_portal_sign_in_image_url,
+                organization.customer_portal_sign_in_image_position,
+            )
+        return (None, None)
+
+    async def get_by_slug(
+        self, session: AsyncSession, slug: str
+    ) -> Organization | None:
+        statement = (
+            select(Organization)
+            .where(
+                Organization.deleted_at.is_(None),
+                Organization.blocked_at.is_(None),
+                Organization.slug == slug,
+            )
+            .options(
+                selectinload(
+                    Organization.products.and_(
+                        Product.deleted_at.is_(None),
+                        Product.is_archived.is_(False),
+                        Product.visibility == ProductVisibility.public,
+                    )
+                ).options(
+                    selectinload(Product.product_medias),
+                )
+            )
+        )
+        result = await session.execute(statement)
+        return result.unique().scalar_one_or_none()
+
+
+customer_organization = CustomerOrganizationService(Organization)

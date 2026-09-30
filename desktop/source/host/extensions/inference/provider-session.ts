@@ -15,14 +15,14 @@ import { asError } from "../../../shared/errors.js";
 import { withCheapRateLimitFallback } from "../../../shared/inference/cheap-rate-limit-fallback.js";
 import { clipForHostLog, HOST_LOG_PREFIX, logHostLine, setHostLogSink } from "../../../shared/host-log.js";
 import { redactSandAutoReviewInlineSecrets } from "../../../shared/sand-auto-review-redact.js";
-import { CLAIDOR_WORKING_CONTEXT_TOKENS } from "../../../shared/inference/claidor-context-window.js";
+import { SIMEON_WORKING_CONTEXT_TOKENS } from "../../../shared/inference/simeon-context-window.js";
 import { resolveSandAgentStepCap, stepBudgetExceededMessage } from "../../../shared/inference/turn-step-budget.js";
-import type { SandInferenceProvider } from "../../../shared/inference-router.js";
-import { claidorProxyBaseUrl } from "../../../shared/node/cursor-backend/claidor-api.js";
+import { readSimeonEnv, type SandInferenceProvider } from "../../../shared/inference-router.js";
+import { simeonProxyBaseUrl } from "../../../shared/node/cursor-backend/simeon-api.js";
 import { getSandRootDir } from "../../host-paths.js";
 import { SandSettingsStore } from "../../../shared/node/settings/sand-settings-store.js";
-import { claidorGeminiEndpoint, streamGeminiGenerateContent, toGeminiRequest, type GeminiDirectTool } from "./gemini-direct-generate.js";
-import { configuredClaidorVideoModel, isGeminiVideoModelId } from "../../../shared/video-availability.js";
+import { simeonGeminiEndpoint, streamGeminiGenerateContent, toGeminiRequest, type GeminiDirectTool } from "./gemini-direct-generate.js";
+import { configuredSimeonVideoModel, isGeminiVideoModelId } from "../../../shared/video-availability.js";
 import type { LabelMessage, PromptExecutor } from "./sand-labeling.js";
 
 type Loose = Record<string, any>;
@@ -33,11 +33,11 @@ type RoutedToolExecutor = (tool: Loose, args: unknown, toolCallId: string) => Pr
 
 // The Codex, Claude Code and OpenRouter executors that sat beside this one
 // were the reconstruction author's router experiment ("an inference router
-// for Cursor, Claude Code, Codex, and OpenRouter", its README), never Grok
-// Bot's, and nothing could reach them since the executor was pinned to
+// for Cursor, Claude Code, Codex, and OpenRouter", its README), never the
+// upstream app's, and nothing could reach them since the executor was pinned to
 // Simeon Labs' proxy; they are gone since 26 September 2026 (ledger F-128).
 // The provider names stay in SAND_INFERENCE_PROVIDERS so stored usage reads.
-const GROK_ROUTER_SYSTEM_PROMPT = [
+const ROUTER_SYSTEM_PROMPT = [
   "You are Simeon, a warm, concise desktop assistant made by Simeon Labs. If someone asks who made or built you, say Simeon Labs.",
   "The tools supplied with this request are Simeon's already-connected plugins and accounts. Use them whenever they are relevant instead of claiming that a plugin is unavailable or asking the user to reconnect it.",
   "Never ask for an API key for an already-connected plugin. Respond directly to the user in natural language after completing any necessary tool calls.",
@@ -47,7 +47,7 @@ function recordRoutedUsage(provider: RoutedProvider, usage: UsageRecord): void {
   new SandSettingsStore(join(getSandRootDir(), "settings.json")).recordInferenceUsage(provider, usage);
 }
 
-export interface ClaidorCredentialSource {
+export interface SimeonCredentialSource {
   readonly getAccessToken: () => Promise<string>;
   readonly backendUrl?: string;
 }
@@ -55,24 +55,24 @@ export interface ClaidorCredentialSource {
 // GPT-6 Sol and Luna since 28 September 2026 (released 22 September at half
 // the GPT-5.6 prices; the founder: "lets keep chat gpt"). Simeon Labs' server
 // offers them as primary and cheap and keeps serving the GPT-5.6 pair to
-// older apps (`ModelRole.retired`, polar/desktop/pricing.py).
-export const DEFAULT_CLAIDOR_MODEL = "gpt-6-sol";
-export const DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-6-luna";
+// older apps (`ModelRole.retired`, simeon/desktop/pricing.py).
+export const DEFAULT_SIMEON_MODEL = "gpt-6-sol";
+export const DEFAULT_SIMEON_CHEAP_MODEL = "gpt-6-luna";
 // A server not yet deployed with GPT-6 refuses it ("This model is not offered
 // by the desktop app."); the step then runs on the model it replaced, once,
-// with a `[claidor] model-legacy` line, so the order of a server deploy and an
+// with a `[simeon] model-legacy` line, so the order of a server deploy and an
 // app rebuild cannot leave the agent silent.
-export const LEGACY_CLAIDOR_MODELS: Readonly<Record<string, string>> = { "gpt-6-sol": "gpt-5.6-terra", "gpt-6-luna": "gpt-5.6-luna" };
+export const LEGACY_SIMEON_MODELS: Readonly<Record<string, string>> = { "gpt-6-sol": "gpt-5.6-terra", "gpt-6-luna": "gpt-5.6-luna" };
 export function isModelNotOfferedError(error: unknown): boolean {
   const record = error as { message?: unknown; responseBody?: unknown } | null;
   const text = `${typeof record?.message === "string" ? record.message : String(error)} ${typeof record?.responseBody === "string" ? record.responseBody : ""}`;
   return /not offered by the desktop app/i.test(text);
 }
-export const CLAIDOR_FETCH_TIMEOUT_MS = 45_000;
-export const CLAIDOR_CREDENTIAL_WAIT_MS = 5_000;
-export { CLAIDOR_WORKING_CONTEXT_TOKENS };
+export const SIMEON_FETCH_TIMEOUT_MS = 45_000;
+export const SIMEON_CREDENTIAL_WAIT_MS = 5_000;
+export { SIMEON_WORKING_CONTEXT_TOKENS };
 
-// Reasoning effort follows the role, the way Grok Bot sets it: the agent
+// Reasoning effort follows the role, the way the upstream app sets it: the agent
 // loop runs at `effort: high` (`shared/agents/agent-model.ts`,
 // SAND_DEFAULT_MODEL_SELECTION) and the computer-use subagent at
 // `effort: low` with thinking off (`sand-agent-model.ts`,
@@ -81,61 +81,61 @@ export { CLAIDOR_WORKING_CONTEXT_TOKENS };
 // forwards the Responses body untouched, so the value reaches OpenAI as is.
 // GPT-6's levels (none, low, medium, high, xhigh, max). "minimal" was
 // GPT-5.6's and reads as low.
-export const CLAIDOR_REASONING_EFFORTS = ["none", "low", "medium", "high", "xhigh", "max"] as const;
-export type ClaidorReasoningEffort = (typeof CLAIDOR_REASONING_EFFORTS)[number];
-export const DEFAULT_CLAIDOR_REASONING_EFFORT: ClaidorReasoningEffort = "high";
-export const DEFAULT_CLAIDOR_CHEAP_REASONING_EFFORT: ClaidorReasoningEffort = "low";
-export const SAND_CLAIDOR_REASONING_EFFORT_ENV = "SAND_CLAIDOR_REASONING_EFFORT";
-export const SAND_CLAIDOR_CHEAP_REASONING_EFFORT_ENV = "SAND_CLAIDOR_CHEAP_REASONING_EFFORT";
+export const SIMEON_REASONING_EFFORTS = ["none", "low", "medium", "high", "xhigh", "max"] as const;
+export type SimeonReasoningEffort = (typeof SIMEON_REASONING_EFFORTS)[number];
+export const DEFAULT_SIMEON_REASONING_EFFORT: SimeonReasoningEffort = "high";
+export const DEFAULT_SIMEON_CHEAP_REASONING_EFFORT: SimeonReasoningEffort = "low";
+export const SAND_SIMEON_REASONING_EFFORT_ENV = "SAND_SIMEON_REASONING_EFFORT";
+export const SAND_SIMEON_CHEAP_REASONING_EFFORT_ENV = "SAND_SIMEON_CHEAP_REASONING_EFFORT";
 
-function parseReasoningEffort(value: string | undefined, fallback: ClaidorReasoningEffort): ClaidorReasoningEffort {
+function parseReasoningEffort(value: string | undefined, fallback: SimeonReasoningEffort): SimeonReasoningEffort {
   const raw = value?.trim().toLowerCase();
   const trimmed = raw === "minimal" ? "low" : raw;
-  return (CLAIDOR_REASONING_EFFORTS as readonly string[]).includes(trimmed ?? "") ? trimmed as ClaidorReasoningEffort : fallback;
+  return (SIMEON_REASONING_EFFORTS as readonly string[]).includes(trimmed ?? "") ? trimmed as SimeonReasoningEffort : fallback;
 }
 
-export function configuredClaidorReasoningEffort(env: NodeJS.ProcessEnv = process.env): ClaidorReasoningEffort {
-  return parseReasoningEffort(env[SAND_CLAIDOR_REASONING_EFFORT_ENV], DEFAULT_CLAIDOR_REASONING_EFFORT);
+export function configuredSimeonReasoningEffort(env: NodeJS.ProcessEnv = process.env): SimeonReasoningEffort {
+  return parseReasoningEffort(readSimeonEnv(env, SAND_SIMEON_REASONING_EFFORT_ENV), DEFAULT_SIMEON_REASONING_EFFORT);
 }
 
-export function configuredClaidorCheapReasoningEffort(env: NodeJS.ProcessEnv = process.env): ClaidorReasoningEffort {
-  return parseReasoningEffort(env[SAND_CLAIDOR_CHEAP_REASONING_EFFORT_ENV], DEFAULT_CLAIDOR_CHEAP_REASONING_EFFORT);
+export function configuredSimeonCheapReasoningEffort(env: NodeJS.ProcessEnv = process.env): SimeonReasoningEffort {
+  return parseReasoningEffort(readSimeonEnv(env, SAND_SIMEON_CHEAP_REASONING_EFFORT_ENV), DEFAULT_SIMEON_CHEAP_REASONING_EFFORT);
 }
 
-// The Claidor provider is the signed-in account. Which process holds that
+// The Simeon provider is the signed-in account. Which process holds that
 // credential differs: the host reads it from its auth service, the coordinator
 // asks electron-main over the control port. Each registers its source once.
-let claidorCredentialSource: ClaidorCredentialSource | null = null;
+let simeonCredentialSource: SimeonCredentialSource | null = null;
 
-export function setClaidorCredentialSource(source: ClaidorCredentialSource | null): void {
-  claidorCredentialSource = source;
+export function setSimeonCredentialSource(source: SimeonCredentialSource | null): void {
+  simeonCredentialSource = source;
 }
 
-export function configuredClaidorModel(): string {
-  return process.env.SAND_CLAIDOR_MODEL?.trim() || DEFAULT_CLAIDOR_MODEL;
+export function configuredSimeonModel(): string {
+  return readSimeonEnv(process.env, "SAND_SIMEON_MODEL")?.trim() || DEFAULT_SIMEON_MODEL;
 }
 
-export function configuredClaidorCheapModel(): string {
-  return process.env.SAND_CLAIDOR_CHEAP_MODEL?.trim() || DEFAULT_CLAIDOR_CHEAP_MODEL;
+export function configuredSimeonCheapModel(): string {
+  return readSimeonEnv(process.env, "SAND_SIMEON_CHEAP_MODEL")?.trim() || DEFAULT_SIMEON_CHEAP_MODEL;
 }
 
 // The video model (Gemini, `shared/video-availability.ts`) is reached by
-// the `isVideoSubagent` flag alone, never by name: Grok Bot's
+// the `isVideoSubagent` flag alone, never by name: the upstream app's
 // summarization session names `gemini-2.5-flash` too
 // (SAND_SUMMARIZATION_MODEL_ID) and must stay on Luna
 // (tests/cheap-model-config.test.mjs).
-export { configuredClaidorVideoModel };
+export { configuredSimeonVideoModel };
 
-export function isConfiguredClaidorModelId(value: string | undefined): boolean {
+export function isConfiguredSimeonModelId(value: string | undefined): boolean {
   const id = value?.trim();
   if (!id) return false;
-  return id === configuredClaidorModel()
-    || id === configuredClaidorCheapModel()
-    || id === DEFAULT_CLAIDOR_MODEL
-    || id === DEFAULT_CLAIDOR_CHEAP_MODEL;
+  return id === configuredSimeonModel()
+    || id === configuredSimeonCheapModel()
+    || id === DEFAULT_SIMEON_MODEL
+    || id === DEFAULT_SIMEON_CHEAP_MODEL;
 }
 
-export type ClaidorSessionModelOptions = {
+export type SimeonSessionModelOptions = {
   readonly model?: string;
   readonly modelId?: string;
   readonly cheap?: boolean;
@@ -150,17 +150,17 @@ export type ClaidorSessionModelOptions = {
   // `fullStepBudget` says otherwise.
   readonly hidden?: boolean;
   // A hidden turn that gets the asked-turn budget: the first message and a
-  // routine, which Grok Bot ran under its one 5,000-call cap (27 September
+  // routine, which the upstream app ran under its one 5,000-call cap (27 September
   // 2026). Reply nudges, wake-ups after a sign-in and memory extraction keep
   // the 40-call hidden budget.
   readonly fullStepBudget?: boolean;
 };
 
-// The cheap roles, as Grok Bot separates them: summarization and memory
+// The cheap roles, as the upstream app separates them: summarization and memory
 // (their gemini-2.5-flash), the computer-use, browser-use and video
 // subagents (their opus at effort low, their gemini for a video), and
 // anything a caller marks cheap.
-export function isCheapClaidorSession(options?: ClaidorSessionModelOptions): boolean {
+export function isCheapSimeonSession(options?: SimeonSessionModelOptions): boolean {
   return options?.cheap === true
     || options?.isSummarizationSession === true
     || options?.isComputerUseSubagent === true
@@ -168,26 +168,26 @@ export function isCheapClaidorSession(options?: ClaidorSessionModelOptions): boo
     || options?.isVideoSubagent === true;
 }
 
-export function claidorModelForSession(options?: ClaidorSessionModelOptions): string {
-  if (options?.isVideoSubagent === true) return configuredClaidorVideoModel();
+export function simeonModelForSession(options?: SimeonSessionModelOptions): string {
+  if (options?.isVideoSubagent === true) return configuredSimeonVideoModel();
   const named = options?.model?.trim();
-  if (named && isConfiguredClaidorModelId(named)) return named;
+  if (named && isConfiguredSimeonModelId(named)) return named;
   const sessionModel = options?.modelId?.trim();
-  if (sessionModel && isConfiguredClaidorModelId(sessionModel)) return sessionModel;
-  if (isCheapClaidorSession(options)) return configuredClaidorCheapModel();
-  return configuredClaidorModel();
+  if (sessionModel && isConfiguredSimeonModelId(sessionModel)) return sessionModel;
+  if (isCheapSimeonSession(options)) return configuredSimeonCheapModel();
+  return configuredSimeonModel();
 }
 
 // Effort follows the role, not the model: a loop turn that falls back to
 // Luna on a rate limit keeps the loop's effort.
-export function claidorReasoningEffortForSession(options?: ClaidorSessionModelOptions, env: NodeJS.ProcessEnv = process.env): ClaidorReasoningEffort {
-  return isCheapClaidorSession(options) ? configuredClaidorCheapReasoningEffort(env) : configuredClaidorReasoningEffort(env);
+export function simeonReasoningEffortForSession(options?: SimeonSessionModelOptions, env: NodeJS.ProcessEnv = process.env): SimeonReasoningEffort {
+  return isCheapSimeonSession(options) ? configuredSimeonCheapReasoningEffort(env) : configuredSimeonReasoningEffort(env);
 }
 
 // One definition of where the proxy lives, shared with the other three
-// Claidor doors; it was `api/proxy/v1` here until 19 September, which the
-// API host answers with 404 (`claidor-api.ts`).
-export { claidorProxyBaseUrl };
+// Simeon doors; it was `api/proxy/v1` here until 19 September, which the
+// API host answers with 404 (`simeon-api.ts`).
+export { simeonProxyBaseUrl };
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -203,7 +203,7 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: s
   }
 }
 
-// Grok Bot's loop names the conversation on every model request: the agent
+// The upstream app's loop names the conversation on every model request: the agent
 // puts its conversation id in the context (`packages/agent/index.ts`,
 // `conversationIdKey`) and the inference client sends it as
 // `InferenceStreamRequest.conversationId` (`chat-inference-proto/client.ts`),
@@ -214,7 +214,7 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: s
 // previous turn's call with the same prefix. OpenAI's own form of that key is
 // `prompt_cache_key`, which routes requests that share it (and their prefix)
 // to the same cache. The id is hashed: OpenAI needs a stable key, not ours.
-export function claidorPromptCacheKey(conversationId: unknown): string | undefined {
+export function simeonPromptCacheKey(conversationId: unknown): string | undefined {
   if (typeof conversationId !== "string" || conversationId.trim().length === 0) return undefined;
   return `simeon-${createHash("sha256").update(conversationId.trim()).digest("hex").slice(0, 32)}`;
 }
@@ -235,12 +235,12 @@ export function withPromptCacheKey(body: unknown, promptCacheKey: string | undef
   }
 }
 
-function claidorAuthenticatedFetch(source: ClaidorCredentialSource, promptCacheKey?: string): typeof fetch {
+function simeonAuthenticatedFetch(source: SimeonCredentialSource, promptCacheKey?: string): typeof fetch {
   const authenticated: typeof fetch = async (input, rawInit) => {
     const init = rawInit?.body == null ? rawInit : { ...rawInit, body: withRealModelName(rawInit.body) as BodyInit };
     const accessToken = await withTimeout(
       source.getAccessToken(),
-      CLAIDOR_CREDENTIAL_WAIT_MS,
+      SIMEON_CREDENTIAL_WAIT_MS,
       "Timed out waiting for a Simeon sign-in.",
     );
     const headers = new Headers(init?.headers);
@@ -253,7 +253,7 @@ function claidorAuthenticatedFetch(source: ClaidorCredentialSource, promptCacheK
     // (DEFAULT_FIRST_TOKEN_STALL_DEADLINE_MS). The body stays on the caller's
     // signal (ledger F-002).
     const headersDeadline = new AbortController();
-    const timer = setTimeout(() => headersDeadline.abort(new Error(`Simeon Labs' server did not answer within ${CLAIDOR_FETCH_TIMEOUT_MS / 1000} s.`)), CLAIDOR_FETCH_TIMEOUT_MS);
+    const timer = setTimeout(() => headersDeadline.abort(new Error(`Simeon Labs' server did not answer within ${SIMEON_FETCH_TIMEOUT_MS / 1000} s.`)), SIMEON_FETCH_TIMEOUT_MS);
     const signal = init?.signal == null ? headersDeadline.signal : AbortSignal.any([init.signal, headersDeadline.signal]);
     try {
       return await fetch(input, { ...init, headers, signal });
@@ -387,7 +387,7 @@ export interface ModelCallLogLine {
 // the executor wrote nothing and a fifty-minute loop left no trace but
 // the bill.
 export function formatModelCallLogLine(line: ModelCallLogLine): string {
-  return `[claidor] model=${line.model} effort=${line.effort} input=${line.inputTokens} cached=${line.cachedTokens} output=${line.outputTokens} reasoning=${line.reasoningTokens} ms=${line.elapsedMs} tools=${line.tools}${line.offered === undefined ? "" : ` offered=${line.offered}`}${line.budget === undefined ? "" : ` budget=${line.budget}`}${line.prefix === undefined ? "" : ` prefix=${line.prefix}`}`;
+  return `[simeon] model=${line.model} effort=${line.effort} input=${line.inputTokens} cached=${line.cachedTokens} output=${line.outputTokens} reasoning=${line.reasoningTokens} ms=${line.elapsedMs} tools=${line.tools}${line.offered === undefined ? "" : ` offered=${line.offered}`}${line.budget === undefined ? "" : ` budget=${line.budget}`}${line.prefix === undefined ? "" : ` prefix=${line.prefix}`}`;
 }
 
 function shortHash(value: string): string {
@@ -502,7 +502,7 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
   const prefixedCallInfo = callInfo === undefined ? undefined : { ...callInfo, prefix: promptPrefixFingerprint(coreMessages, definitions, promptCacheKey) };
   // The host loop's state carries its own system prompt; the router prompt is
   // for the connector-only path, where nothing else says who the agent is.
-  const system = coreMessages.some(message => message.role === "system") ? undefined : GROK_ROUTER_SYSTEM_PROMPT;
+  const system = coreMessages.some(message => message.role === "system") ? undefined : ROUTER_SYSTEM_PROMPT;
   // Cursor-era tool schemas (Task included) omit additionalProperties.
   // OpenAI's Responses default is strict:true, which then refuses them.
   const result = streamText({
@@ -517,8 +517,8 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
   return settleAiSdkStream(result, invocationId, onUsage, maxTokens, prefixedCallInfo, tools, coreMessages, onRequestId);
 }
 
-// Claidor's metered proxy, on the Responses wire: the one that takes reasoning
-// and function tools in the same request (server/polar/desktop/endpoints.py).
+// Simeon's metered proxy, on the Responses wire: the one that takes reasoning
+// and function tools in the same request (server/simeon/desktop/endpoints.py).
 // @ai-sdk/openai 1.3 decides a model reasons by its name alone
 // (`getResponsesModelConfig`: "o…" or "gpt-5…"), so for gpt-6-sol it would
 // drop the reasoning effort without a word and send the brief as a "system"
@@ -541,8 +541,8 @@ export function withRealModelName(body: unknown): unknown {
   }
 }
 
-function claidorLanguageModel(source: ClaidorCredentialSource, id: string, promptCacheKey?: string): LanguageModelV1 {
-  return createOpenAI({ apiKey: "claidor-desktop-access-token", baseURL: claidorProxyBaseUrl(source.backendUrl), name: "claidor", fetch: claidorAuthenticatedFetch(source, promptCacheKey) }).responses(sdkModelIdFor(id));
+function simeonLanguageModel(source: SimeonCredentialSource, id: string, promptCacheKey?: string): LanguageModelV1 {
+  return createOpenAI({ apiKey: "simeon-desktop-access-token", baseURL: simeonProxyBaseUrl(source.backendUrl), name: "simeon", fetch: simeonAuthenticatedFetch(source, promptCacheKey) }).responses(sdkModelIdFor(id));
 }
 
 function geminiTools(definitions: readonly Loose[] | undefined): GeminiDirectTool[] | undefined {
@@ -560,13 +560,13 @@ function geminiTools(definitions: readonly Loose[] | undefined): GeminiDirectToo
 }
 
 // A Gemini model through Simeon Labs' proxy, on Gemini's own wire: the
-// watchVideo / videoReview children (`docs/product/video-served.md`). The
+// watchVideo / videoReview children (`docs/services-agents.md`). The
 // request is written by `gemini-direct-generate.ts`, which is where the
 // video's bytes, mime type and frame rate come off the loop's message and
 // onto the wire; no other executor of ours carries them. The stream is the
-// same shape the Codex executor returns, and the same `[claidor] model=`
-// line is written, plus one `[claidor] video` line naming what was sent.
-function geminiExecutor(source: ClaidorCredentialSource, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, modelId: string = configuredClaidorVideoModel(), reasoningEffort: ClaidorReasoningEffort = configuredClaidorCheapReasoningEffort(), budget?: ModelCallBudget, onRequestId?: (requestId: string) => void) {
+// same shape the Codex executor returns, and the same `[simeon] model=`
+// line is written, plus one `[simeon] video` line naming what was sent.
+function geminiExecutor(source: SimeonCredentialSource, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, modelId: string = configuredSimeonVideoModel(), reasoningEffort: SimeonReasoningEffort = configuredSimeonCheapReasoningEffort(), budget?: ModelCallBudget, onRequestId?: (requestId: string) => void) {
   const usage = deferred<{ promptTokens: number; completionTokens: number; totalTokens: number }>();
   const extendedUsage = deferred<{ inputTokens: number; outputTokens: number; cacheReadTokens: number; cacheWriteTokens: number; maxTokens: number }>();
   const resultResponse = deferred<ReturnType<typeof response>>();
@@ -580,8 +580,8 @@ function geminiExecutor(source: ClaidorCredentialSource, messages: readonly Prov
     try {
       modelCallLog(`${HOST_LOG_PREFIX} video model=${modelId} parts=${request.videoParts.length} ${request.videoParts.map((part) => `${part.mimeType}${part.fps === undefined ? "" : `@${part.fps}fps`}${part.bytes === undefined ? "" : ` ${Math.round(part.bytes / 1024)}KB`}${part.uri === undefined ? "" : " uri"}`).join(",") || "-"} offered=${tools?.map((tool) => tool.name).join(",") || "-"}`);
       for await (const event of streamGeminiGenerateContent({
-        fetch: claidorAuthenticatedFetch(source),
-        endpoint: claidorGeminiEndpoint(modelId, source.backendUrl),
+        fetch: simeonAuthenticatedFetch(source),
+        endpoint: simeonGeminiEndpoint(modelId, source.backendUrl),
         request,
         ...(tools == null ? {} : { tools }),
         ...(executeTool == null ? {} : { executeTool: async (selected, args, toolCallId) => await executeTool(selected.source, args, toolCallId) }),
@@ -589,7 +589,7 @@ function geminiExecutor(source: ClaidorCredentialSource, messages: readonly Prov
         if (event.type === "text-delta") { text += event.delta; yield { type: "text-delta" as const, textDelta: event.delta }; continue; }
         if (event.type === "tool-call") { calls.push({ toolName: event.toolName, args: event.args }); yield { type: "tool-call" as const, toolCallId: event.toolCallId, toolName: event.toolName, args: event.args }; continue; }
         const basic = { promptTokens: event.usage.inputTokens + event.usage.cacheReadTokens, completionTokens: event.usage.outputTokens, totalTokens: event.usage.inputTokens + event.usage.cacheReadTokens + event.usage.outputTokens };
-        const extended = { inputTokens: event.usage.inputTokens, outputTokens: event.usage.outputTokens, cacheReadTokens: event.usage.cacheReadTokens, cacheWriteTokens: 0, maxTokens: CLAIDOR_WORKING_CONTEXT_TOKENS };
+        const extended = { inputTokens: event.usage.inputTokens, outputTokens: event.usage.outputTokens, cacheReadTokens: event.usage.cacheReadTokens, cacheWriteTokens: 0, maxTokens: SIMEON_WORKING_CONTEXT_TOKENS };
         modelCallLog(formatModelCallLogLine({ model: modelId, effort: reasoningEffort, inputTokens: basic.promptTokens, cachedTokens: event.usage.cacheReadTokens, outputTokens: event.usage.outputTokens, reasoningTokens: event.usage.reasoningTokens, elapsedMs: Date.now() - startedAtMs, tools: summarizeToolCalls(calls), offered: tools?.map((tool) => tool.name).join(",") || "-", ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }) }));
         if (event.responseId.length > 0) onRequestId?.(event.responseId);
         onUsage?.(extended);
@@ -606,36 +606,36 @@ function geminiExecutor(source: ClaidorCredentialSource, messages: readonly Prov
   return { fullStream, response: resultResponse.promise, usage: usage.promise, extendedUsage: extendedUsage.promise, providerMetadata: metadata.promise, invocationId: Promise.resolve(invocationId) };
 }
 
-function claidorExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, modelId?: string, reasoningEffort: ClaidorReasoningEffort = configuredClaidorReasoningEffort(), budget?: ModelCallBudget, onRequestId?: (requestId: string) => void, promptCacheKey?: string) {
-  const source = claidorCredentialSource;
+function simeonExecutor(messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, modelId?: string, reasoningEffort: SimeonReasoningEffort = configuredSimeonReasoningEffort(), budget?: ModelCallBudget, onRequestId?: (requestId: string) => void, promptCacheKey?: string) {
+  const source = simeonCredentialSource;
   if (source == null) throw new Error("Simeon runs on the signed-in account, but this process has no credential source. Sign in to Simeon and try again.");
-  const requested = modelId?.trim() || configuredClaidorModel();
+  const requested = modelId?.trim() || configuredSimeonModel();
   // A Gemini id goes on Gemini's wire. No rate-limit fallback to Luna: a
   // model that cannot see the video is not an answer to a video question.
   if (isGeminiVideoModelId(requested)) return geminiExecutor(source, messages, invocationId, definitions, executeTool, onUsage, requested, reasoningEffort, budget, onRequestId);
-  const cheap = configuredClaidorCheapModel();
-  const start = (id: string) => aiSdkExecutor(claidorLanguageModel(source, id, promptCacheKey), messages, invocationId, definitions, executeTool, onUsage, CLAIDOR_WORKING_CONTEXT_TOKENS, { reasoningEffort }, { model: id, effort: reasoningEffort, ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }) }, onRequestId, promptCacheKey);
+  const cheap = configuredSimeonCheapModel();
+  const start = (id: string) => aiSdkExecutor(simeonLanguageModel(source, id, promptCacheKey), messages, invocationId, definitions, executeTool, onUsage, SIMEON_WORKING_CONTEXT_TOKENS, { reasoningEffort }, { model: id, effort: reasoningEffort, ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }) }, onRequestId, promptCacheKey);
 
   const startOrLegacy = (id: string) => {
-    const legacy = LEGACY_CLAIDOR_MODELS[id];
+    const legacy = LEGACY_SIMEON_MODELS[id];
     if (legacy == null) return start(id);
     return withCheapRateLimitFallback(start(id), () => start(legacy), () => modelCallLog(`${HOST_LOG_PREFIX} model-legacy from=${id} to=${legacy} reason=the server does not offer ${id} yet`), isModelNotOfferedError);
   };
 
   if (requested === cheap) return startOrLegacy(requested);
   // A relayed rate limit re-runs the step on the cheap model. The swap used
-  // to be silent; it now leaves a line beside the `[claidor] model=` lines,
+  // to be silent; it now leaves a line beside the `[simeon] model=` lines,
   // and the model= line of the retried step names the cheap model (F-003).
   return withCheapRateLimitFallback(startOrLegacy(requested), () => startOrLegacy(cheap), (error) => modelCallLog(`${HOST_LOG_PREFIX} model-fallback from=${requested} to=${cheap} reason=${clipForHostLog(redactSandAutoReviewInlineSecrets(error instanceof Error ? error.message : String(error)), 300)}`));
 }
 
 // How many model calls a session may make. Counted across every executor
 // the session hands out, because the turn shell asks for a fresh executor
-// per step. The cap is Grok Bot's 5,000 for a turn the person asked for
+// per step. The cap is the upstream app's 5,000 for a turn the person asked for
 // and SAND_HIDDEN_TURN_MAX_STEPS for one nobody asked for.
 export interface ModelCallBudget { readonly limit: number; readonly hidden: boolean; readonly fullStepBudget?: boolean; used: number }
 
-export function createModelCallBudget(options?: ClaidorSessionModelOptions, env: NodeJS.ProcessEnv = process.env): ModelCallBudget {
+export function createModelCallBudget(options?: SimeonSessionModelOptions, env: NodeJS.ProcessEnv = process.env): ModelCallBudget {
   const hidden = options?.hidden === true;
   const capped = hidden && options?.fullStepBudget !== true;
   return { limit: resolveSandAgentStepCap({ hidden: capped }, env), hidden, used: 0, ...(hidden && !capped ? { fullStepBudget: true } : {}) };
@@ -653,17 +653,17 @@ function conversationIdFromContext(ctx: unknown): unknown {
 }
 
 class ProviderPromptExecutor extends BasePromptExecutor<ProviderMessage> {
-  constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void, readonly modelId?: string, readonly reasoningEffort?: ClaidorReasoningEffort, readonly budget?: ModelCallBudget, readonly onRequestId?: (requestId: string) => void) { super(new BasePromptBuilder(initialMessages)); }
+  constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void, readonly modelId?: string, readonly reasoningEffort?: SimeonReasoningEffort, readonly budget?: ModelCallBudget, readonly onRequestId?: (requestId: string) => void) { super(new BasePromptBuilder(initialMessages)); }
   stream(ctx: unknown, invocationId = crypto.randomUUID(), definitions?: readonly Loose[]) {
     if (this.budget != null) spendModelCall(this.budget);
-    return claidorExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage, this.modelId, this.reasoningEffort, this.budget, this.onRequestId, claidorPromptCacheKey(conversationIdFromContext(ctx)));
+    return simeonExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage, this.modelId, this.reasoningEffort, this.budget, this.onRequestId, simeonPromptCacheKey(conversationIdFromContext(ctx)));
   }
 }
 
-export function createProviderPromptSession(_provider: RoutedProvider, options?: ClaidorSessionModelOptions, onRequestId?: (requestId: string) => void): { getModelId(): string; getExecutor(state?: unknown): PromptExecutor } {
-  const provider: RoutedProvider = "claidor";
-  const modelId = claidorModelForSession(options);
-  const reasoningEffort = claidorReasoningEffortForSession(options);
+export function createProviderPromptSession(_provider: RoutedProvider, options?: SimeonSessionModelOptions, onRequestId?: (requestId: string) => void): { getModelId(): string; getExecutor(state?: unknown): PromptExecutor } {
+  const provider: RoutedProvider = "simeon";
+  const modelId = simeonModelForSession(options);
+  const reasoningEffort = simeonReasoningEffortForSession(options);
   const budget = createModelCallBudget(options);
   return { getModelId: () => modelId, getExecutor: state => new ProviderPromptExecutor(provider, Array.isArray(state) ? state as ProviderMessage[] : undefined, usage => recordRoutedUsage(provider, usage), modelId, reasoningEffort, budget, onRequestId) };
 }
@@ -681,7 +681,7 @@ export async function runRoutedProviderText(provider: RoutedProvider, messages: 
   const invocationId = crypto.randomUUID();
   const onUsage = (usage: UsageRecord) => recordRoutedUsage(provider, usage);
   if (options?.budget != null) spendModelCall(options.budget);
-  const result = claidorExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage, claidorModelForSession(options), claidorReasoningEffortForSession(options), options?.budget);
+  const result = simeonExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage, simeonModelForSession(options), simeonReasoningEffortForSession(options), options?.budget);
   let text = "";
   for await (const event of result.fullStream) {
     if (event.type === "text-delta" && typeof event.textDelta === "string") {

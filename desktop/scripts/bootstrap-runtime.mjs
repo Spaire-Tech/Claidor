@@ -60,7 +60,7 @@ async function downloadDmg() {
 }
 
 async function extractRuntime() {
-  const mountRoot = await mkdtemp(path.join(tmpdir(), "grok-bot-018-mount-"));
+  const mountRoot = await mkdtemp(path.join(tmpdir(), "simeon-018-mount-"));
   let attached = false;
   try {
     await run(SYSTEM_TOOLS.hdiutil, ["attach", "-readonly", "-nobrowse", "-mountpoint", mountRoot, cachedDmg]);
@@ -72,7 +72,7 @@ async function extractRuntime() {
   }
 }
 
-const configuredApp = process.env.GROK_BOT_018_APP?.trim();
+const configuredApp = (process.env.SIMEON_UPSTREAM_APP ?? process.env.GROK_BOT_018_APP)?.trim();
 let runtimeApp;
 if (configuredApp) {
   const configuredVersion = await readRuntimeVersion(path.resolve(configuredApp));
@@ -80,7 +80,7 @@ if (configuredApp) {
     runtimeApp = await cacheRuntimeFromApp(configuredApp);
   } else {
     console.warn(
-      `GROK_BOT_018_APP is ${configuredVersion ?? "unreadable"} at ${configuredApp}, not ${upstreamVersion}. Ignoring it.`,
+      `SIMEON_UPSTREAM_APP is ${configuredVersion ?? "unreadable"} at ${configuredApp}, not ${upstreamVersion}. Ignoring it.`,
     );
   }
 }

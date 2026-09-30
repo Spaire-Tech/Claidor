@@ -7,16 +7,16 @@ import structlog
 import typer
 from sqlalchemy import select
 
-from polar.config import settings
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.models import Organization
-from polar.platform.service import (
+from simeon.config import settings
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.models import Organization
+from simeon.platform.service import (
     PlatformError,
 )
-from polar.platform.service import (
+from simeon.platform.service import (
     platform as platform_service,
 )
-from polar.postgres import create_async_engine
+from simeon.postgres import create_async_engine
 
 cli = typer.Typer()
 
@@ -47,11 +47,11 @@ def typer_async(f):  # type: ignore
 async def verify() -> None:
     if not platform_service.is_configured():
         typer.echo(
-            "CLAIDOR_PLATFORM_ORG_ID is not set.\n"
+            "SIMEON_PLATFORM_ORG_ID is not set.\n"
             "\n"
             "To configure:\n"
             "  1. Run `python -m scripts.platform list` to find candidate orgs.\n"
-            "  2. Set CLAIDOR_PLATFORM_ORG_ID=<uuid> in your environment.\n"
+            "  2. Set SIMEON_PLATFORM_ORG_ID=<uuid> in your environment.\n"
             "  3. Re-run this command to confirm.\n"
         )
         raise typer.Exit(code=1)
@@ -76,11 +76,11 @@ async def verify() -> None:
 @cli.command(
     help=(
         "List candidate organizations whose slug starts with the given prefix "
-        "(default: 'claidor')."
+        "(default: 'simeon')."
     )
 )
 @typer_async
-async def list(slug_prefix: str = "claidor") -> None:
+async def list(slug_prefix: str = "simeon") -> None:
     engine = create_async_engine("script")
     sessionmaker = create_async_sessionmaker(engine)
     async with sessionmaker() as session:
@@ -108,7 +108,7 @@ async def list(slug_prefix: str = "claidor") -> None:
         if configured_id is None:
             typer.echo(
                 "\nTo configure one of these as the platform org, set:\n"
-                "  CLAIDOR_PLATFORM_ORG_ID=<id>\n"
+                "  SIMEON_PLATFORM_ORG_ID=<id>\n"
             )
 
 

@@ -1,4 +1,4 @@
-"""The middleman's own behaviour (`polar/connectors/pipedream.py`).
+"""The middleman's own behaviour (`simeon/connectors/pipedream.py`).
 
 Nothing here touches the database, Redis or pydantic, and nothing here
 touches the network: the HTTP calls go through `httpx.MockTransport` and
@@ -21,19 +21,19 @@ from uuid import UUID
 import httpx
 import pytest
 
-from polar.connectors.pipedream import (
+from simeon.connectors.pipedream import (
     PipedreamCredentials,
     PipedreamProvider,
     with_query,
 )
-from polar.connectors.provider import (
+from simeon.connectors.provider import (
     ConnectorNotFound,
     ConnectorsNotConfigured,
     ConnectorUpstreamError,
 )
 
 if TYPE_CHECKING:
-    from polar.models import User
+    from simeon.models import User
 
 USER_ID = UUID("11111111-1111-1111-1111-111111111111")
 SOMEBODY_ELSE = UUID("22222222-2222-2222-2222-222222222222")

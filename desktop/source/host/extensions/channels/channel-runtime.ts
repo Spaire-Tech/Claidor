@@ -12,7 +12,7 @@ import type { CreateChannelSocket } from "./socket.js";
 
 /**
  * The module the transcript manager's channel hooks were waiting for (25
- * September 2026; docs/product/cursor-dependencies-map.md §2). It reads
+ * September 2026; docs/services-agents.md §2). It reads
  * every agent's stored channel credentials, keeps one connector per
  * (agent, platform), registers `setChannelDelivery`, `setChannelActivity`
  * and `setChannelConfigChanged` on the manager, and turns each inbound
@@ -80,7 +80,7 @@ export function createChannelRuntime(options: ChannelRuntimeOptions) {
   const record = (agentId: string, platform: string, status: ChannelConnectionStatus, detail: string | null) => {
     const slot = slots.get(slotKey(agentId, platform));
     if (slot != null) { slot.status = status; slot.detail = detail; }
-    try { options.transcript.sessionStore?.writeChannelStatus?.(agentId, platform, status, detail); } catch (error) { sink(`[claidor] channel=${platform} agent=${agentId} event=error detail="status not written: ${errorSentence(error)}"`); }
+    try { options.transcript.sessionStore?.writeChannelStatus?.(agentId, platform, status, detail); } catch (error) { sink(`[simeon] channel=${platform} agent=${agentId} event=error detail="status not written: ${errorSentence(error)}"`); }
   };
 
   const build = (agentId: string, platform: string, secrets: Record<string, string>): ChannelConnector | null => {
@@ -103,10 +103,10 @@ export function createChannelRuntime(options: ChannelRuntimeOptions) {
     const wanted = new Map<string, { agentId: string; platform: string; secrets: Record<string, string> }>();
     if (!stopped && isChannelsServed(env)) {
       let agentIds: readonly string[] = [];
-      try { agentIds = await options.transcript.listAgentIds(); } catch (error) { sink(`[claidor] channel=runtime agent=- event=error detail="agents not listed: ${errorSentence(error)}"`); }
+      try { agentIds = await options.transcript.listAgentIds(); } catch (error) { sink(`[simeon] channel=runtime agent=- event=error detail="agents not listed: ${errorSentence(error)}"`); }
       for (const agentId of agentIds) {
         let configs: ReturnType<ChannelRuntimeTranscript["listChannelConfigs"]> = [];
-        try { configs = options.transcript.listChannelConfigs(agentId); } catch (error) { sink(`[claidor] channel=runtime agent=${agentId} event=error detail="channels not listed: ${errorSentence(error)}"`); continue; }
+        try { configs = options.transcript.listChannelConfigs(agentId); } catch (error) { sink(`[simeon] channel=runtime agent=${agentId} event=error detail="channels not listed: ${errorSentence(error)}"`); continue; }
         for (const config of configs) {
           if (findConnectorManifest(config.platform, env)?.availability !== "available") continue;
           const secrets: Record<string, string> = { ...(config.secrets ?? {}) };
@@ -121,7 +121,7 @@ export function createChannelRuntime(options: ChannelRuntimeOptions) {
       slots.delete(key);
       if (slot.connector != null) {
         const [agentId, platform] = key.split("\u0000") as [string, string];
-        sink(`[claidor] channel=${platform} agent=${agentId} event=stop reason=${want == null ? "removed" : "credential-changed"}`);
+        sink(`[simeon] channel=${platform} agent=${agentId} event=stop reason=${want == null ? "removed" : "credential-changed"}`);
         await slot.connector.stop().catch(() => {});
       }
     }
@@ -132,7 +132,7 @@ export function createChannelRuntime(options: ChannelRuntimeOptions) {
       if (missing.length > 0) {
         slots.set(key, { fingerprint, connector: null, status: "pending", detail: null });
         record(want.agentId, want.platform, "pending", missingCredentialSentence(want.platform, missing));
-        sink(`[claidor] channel=${want.platform} agent=${want.agentId} event=pending missing=${missing.join(",")}`);
+        sink(`[simeon] channel=${want.platform} agent=${want.agentId} event=pending missing=${missing.join(",")}`);
         continue;
       }
       const connector = build(want.agentId, want.platform, want.secrets);
@@ -162,7 +162,7 @@ export function createChannelRuntime(options: ChannelRuntimeOptions) {
     const outbound = "kind" in message ? message : buildChannelOutboundMessage(message as never);
     if (outbound == null) throw new Error("Nothing to deliver: the message has no text and no attachment.");
     try { await slot.connector.deliver(address.chat, outbound); }
-    catch (error) { sink(`[claidor] channel=${address.platform} agent=${agentId} event=delivery-failed chat=${address.chat} detail=${JSON.stringify(errorSentence(error))}`); throw error; }
+    catch (error) { sink(`[simeon] channel=${address.platform} agent=${agentId} event=delivery-failed chat=${address.chat} detail=${JSON.stringify(errorSentence(error))}`); throw error; }
   };
 
   const activity = (agentId: string, addressToken: string, isActive: boolean) => {
@@ -176,7 +176,7 @@ export function createChannelRuntime(options: ChannelRuntimeOptions) {
       options.transcript.setChannelDelivery(deliver);
       options.transcript.setChannelActivity(activity);
       options.transcript.setChannelConfigChanged(() => { void reconcile(); });
-      sink(`[claidor] channel=runtime agent=- event=start served=${isChannelsServed(env)} poll=${options.pollMs ?? CHANNEL_RECONCILE_POLL_MS}`);
+      sink(`[simeon] channel=runtime agent=- event=start served=${isChannelsServed(env)} poll=${options.pollMs ?? CHANNEL_RECONCILE_POLL_MS}`);
       void reconcile();
       poll = clock.setInterval(() => { void reconcile(); }, options.pollMs ?? CHANNEL_RECONCILE_POLL_MS);
     },

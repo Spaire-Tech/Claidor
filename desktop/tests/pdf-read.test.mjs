@@ -1,6 +1,5 @@
 // The Read tool's PDF branch: "Read PDF worker is not bound" was thrown for
-// every PDF because no composition passed a pdfTextExtractor
-// (docs/product/reconstruction-gaps-2026-09-24.md, item 4). These tests run
+// every PDF because no composition passed a pdfTextExtractor. These tests run
 // the in-process pdf.js extractor on a PDF written by hand, and check that
 // both Read inputs in host-runner-composition.ts name it and that the host
 // bundle carries pdf.js (the box gets host-main.cjs alone).

@@ -1,10 +1,10 @@
 // The one channel that is known to reach the box's host log
-// (`/tmp/sand-host.log`): a line on stdout. The `[claidor]` model-call line
+// (`/tmp/sand-host.log`): a line on stdout. The `[simeon]` model-call line
 // has travelled it since 22 September 2026; the tool-result and
 // send-message lines join it on 23 September. Nothing here goes through the
 // loop's own logger, which the production runner context silences
 // (`host/runner-context-production-provider.ts`).
-export const HOST_LOG_PREFIX = "[claidor]";
+export const HOST_LOG_PREFIX = "[simeon]";
 
 let sink: (line: string) => void = (line) => console.info(line);
 

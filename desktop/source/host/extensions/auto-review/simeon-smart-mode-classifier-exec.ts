@@ -16,7 +16,7 @@ import { clipForHostLog, HOST_LOG_PREFIX, logHostLine } from "../../../shared/ho
 
 // Auto-review's risky-or-safe classifier, on Simeon's own model path.
 //
-// Grok Bot asked Cursor's server (`DashboardService/ClassifySandAutoReview`,
+// The upstream app asked Cursor's server (`DashboardService/ClassifySandAutoReview`,
 // `sand-backend-smart-mode-classifier-exec.ts`), which Simeon Labs' server
 // does not serve; until 24 September 2026 every classification therefore
 // failed and `runSandAutoReviewClassifier` fell closed to `reject`, so an

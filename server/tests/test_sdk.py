@@ -6,9 +6,9 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from polar_sdk import Polar
 
-from polar.auth.scope import Scope
-from polar.kit.utils import utc_now
-from polar.models import Benefit, Customer, Organization, Product, UserOrganization
+from simeon.auth.scope import Scope
+from simeon.kit.utils import utc_now
+from simeon.models import Benefit, Customer, Organization, Product, UserOrganization
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (

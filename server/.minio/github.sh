@@ -10,8 +10,8 @@
 #   An error occurred trying to start process '/usr/bin/bash' with working
 #   directory '.../server/.minio'. No such file or directory
 #
-# What the tests need comes from `.env.testing`, which `CLAIDOR_ENV=testing`
-# makes the app read — not from upstream Polar's names. Values are passed in
+# What the tests need comes from `.env.testing`, which `SIMEON_ENV=testing`
+# makes the app read. Values are passed in
 # as environment so nothing is hardcoded here.
 #
 # `mc` comes from a container, not from a download. dl.min.io now answers

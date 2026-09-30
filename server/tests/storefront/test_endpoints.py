@@ -3,9 +3,9 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
-from polar.models import Organization, OrganizationCustomDomain, Product, User
-from polar.models.organization_custom_domain import OrganizationCustomDomainStatus
-from polar.models.product import ProductCategory
+from simeon.models import Organization, OrganizationCustomDomain, Product, User
+from simeon.models.organization_custom_domain import OrganizationCustomDomainStatus
+from simeon.models.product import ProductCategory
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_customer,

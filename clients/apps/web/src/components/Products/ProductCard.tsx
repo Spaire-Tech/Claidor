@@ -1,7 +1,7 @@
 'use client'
 
 import { hasLegacyRecurringPrices } from '@/utils/product'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { useCallback, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import LogoIcon from '../Brand/LogoIcon'
@@ -47,7 +47,10 @@ export const ProductCard = ({
           <div className="relative overflow-hidden rounded-3xl">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              className={twMerge(aspect, 'w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]')}
+              className={twMerge(
+                aspect,
+                'w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]',
+              )}
               alt={medias[current]?.name ?? product.name}
               width={600}
               height={450}
@@ -57,26 +60,60 @@ export const ProductCard = ({
               <>
                 <button
                   type="button"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); goTo(current - 1) }}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    goTo(current - 1)
+                  }}
                   className="absolute top-1/2 left-3 -translate-y-1/2 rounded-full bg-white/80 p-1.5 opacity-0 shadow transition-opacity group-hover:opacity-100"
                   aria-label="Previous image"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="m15 18-6-6 6-6" />
+                  </svg>
                 </button>
                 <button
                   type="button"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); goTo(current + 1) }}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    goTo(current + 1)
+                  }}
                   className="absolute top-1/2 right-3 -translate-y-1/2 rounded-full bg-white/80 p-1.5 opacity-0 shadow transition-opacity group-hover:opacity-100"
                   aria-label="Next image"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
                 </button>
                 <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1">
                   {medias.map((_, i) => (
                     <button
                       key={i}
                       type="button"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); goTo(i) }}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        goTo(i)
+                      }}
                       className={twMerge(
                         'h-1.5 rounded-full transition-all',
                         i === current ? 'w-3 bg-white' : 'w-1.5 bg-white/50',
@@ -100,7 +137,16 @@ export const ProductCard = ({
         )}
         {/* Arrow icon — top right, glass circle with thin border */}
         <div className="absolute top-4 right-4 flex h-11 w-11 items-center justify-center rounded-full border border-gray-900/25 bg-white/20 backdrop-blur-sm">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M7 17 17 7" />
             <path d="M7 7h10v10" />
           </svg>

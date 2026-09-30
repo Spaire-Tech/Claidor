@@ -1,9 +1,9 @@
 import { useMetrics } from '@/hooks/queries'
 import { useOrders } from '@/hooks/queries/orders'
 import { getTimestampFormatter } from '@/utils/metrics'
-import { schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
-import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
+import { schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
+import ShadowBox from '@simeon/ui/components/atoms/ShadowBox'
 import { startOfDay, subDays } from 'date-fns'
 import {
   CircleDollarSignIcon,
@@ -91,7 +91,7 @@ const CashflowChart = ({
   return (
     <ShadowBox
       className={twMerge(
-        ' flex w-full flex-col bg-gray-50 p-2 shadow-xs',
+        'flex w-full flex-col bg-gray-50 p-2 shadow-xs',
         className,
       )}
     >
@@ -99,9 +99,7 @@ const CashflowChart = ({
         <div className="flex flex-col gap-y-4">
           <div className="flex flex-row gap-x-4">
             <h3 className="text-xl">Cashflow</h3>
-            <span className=" text-xl text-gray-500">
-              Last 30 Days
-            </span>
+            <span className="text-xl text-gray-500">Last 30 Days</span>
           </div>
           <h3 className="text-5xl font-light">
             {formatCurrency('compact')(
@@ -111,7 +109,7 @@ const CashflowChart = ({
           </h3>
         </div>
       </div>
-      <div className=" flex max-h-[464px] w-full flex-col gap-y-2 overflow-y-auto rounded-3xl bg-white p-4 pl-8">
+      <div className="flex max-h-[464px] w-full flex-col gap-y-2 overflow-y-auto rounded-3xl bg-white p-4 pl-8">
         {metricsLoading ? (
           <div className="flex flex-col items-center justify-center">
             <Spinner />
@@ -140,7 +138,7 @@ const CashflowChart = ({
                     {timestampFormatter(period.timestamp)}
                   </dt>
                   <dd className="w-full space-y-2">
-                    <div className=" flex h-8 w-full items-center justify-start rounded-full bg-gray-100">
+                    <div className="flex h-8 w-full items-center justify-start rounded-full bg-gray-100">
                       <div
                         className="flex h-full min-w-fit items-center justify-start rounded-full bg-red-500 px-[7px] text-right text-sm text-white data-empty:text-black/20"
                         style={{

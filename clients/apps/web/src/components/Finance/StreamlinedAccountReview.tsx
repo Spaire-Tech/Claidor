@@ -2,7 +2,7 @@
 
 import AIValidationResult from '@/components/Organization/AIValidationResult'
 import OrganizationProfileSettings from '@/components/Settings/OrganizationProfileSettings'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { Check } from 'lucide-react'
 import React, { useState } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -82,18 +82,16 @@ const StepProgress = ({
                 onClick={() => isClickable && onStepClick(step.id)}
                 className={twMerge(
                   'flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-all duration-200',
-                  isCompleted &&
-                    'bg-blue-500 text-white',
+                  isCompleted && 'bg-blue-500 text-white',
                   isCurrent &&
                     !isFailed &&
-                    'border-2 border-blue-500 bg-blue-50 text-blue-600 ',
-                  isFailed &&
-                    'border-2 border-red-400 bg-red-50 text-red-500 ',
+                    'border-2 border-blue-500 bg-blue-50 text-blue-600',
+                  isFailed && 'border-2 border-red-400 bg-red-50 text-red-500',
                   !isCompleted &&
                     !isCurrent &&
-                    'border-2 border-gray-200 text-gray-400 ',
+                    'border-2 border-gray-200 text-gray-400',
                   isClickable &&
-                    'cursor-pointer hover:bg-blue-600 hover:text-white hover:border-blue-600',
+                    'cursor-pointer hover:border-blue-600 hover:bg-blue-600 hover:text-white',
                 )}
               >
                 {isCompleted ? (
@@ -104,15 +102,11 @@ const StepProgress = ({
               </button>
               <span
                 className={twMerge(
-                  'text-[11px] font-medium tracking-wide uppercase whitespace-nowrap',
+                  'text-[11px] font-medium tracking-wide whitespace-nowrap uppercase',
                   isCompleted && 'text-blue-500',
-                  isCurrent &&
-                    !isFailed &&
-                    'text-blue-600',
+                  isCurrent && !isFailed && 'text-blue-600',
                   isFailed && 'text-red-500',
-                  !isCompleted &&
-                    !isCurrent &&
-                    'text-gray-400',
+                  !isCompleted && !isCurrent && 'text-gray-400',
                 )}
               >
                 {step.label}
@@ -123,10 +117,8 @@ const StepProgress = ({
             {index < steps.length - 1 && (
               <div
                 className={twMerge(
-                  'mb-6 h-[2px] flex-1 mx-2 rounded-full transition-colors duration-300',
-                  index < currentIndex
-                    ? 'bg-blue-500'
-                    : 'bg-gray-200',
+                  'mx-2 mb-6 h-[2px] flex-1 rounded-full transition-colors duration-300',
+                  index < currentIndex ? 'bg-blue-500' : 'bg-gray-200',
                 )}
               />
             )}
@@ -150,13 +142,11 @@ const StepCard = ({
   subtitle: string
   children: React.ReactNode
 }) => (
-  <div className=" overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+  <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
     {/* Card header */}
-    <div className=" border-b border-gray-100 px-8 py-6 text-center">
+    <div className="border-b border-gray-100 px-8 py-6 text-center">
       <h2 className="text-lg font-semibold">{title}</h2>
-      <p className=" mt-1 text-sm text-gray-500">
-        {subtitle}
-      </p>
+      <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
     </div>
     {/* Card body */}
     <div className="px-8 py-6">{children}</div>
@@ -374,7 +364,6 @@ export default function StreamlinedAccountReview({
           />
         </StepCard>
       )}
-
     </div>
   )
 }

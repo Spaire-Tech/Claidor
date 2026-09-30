@@ -3,11 +3,11 @@ import uuid
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.customer_seat.tasks import revoke_seats_for_member
-from polar.models import Organization
-from polar.models.customer_seat import SeatStatus
-from polar.models.member import Member, MemberRole
-from polar.postgres import AsyncSession
+from simeon.customer_seat.tasks import revoke_seats_for_member
+from simeon.models import Organization
+from simeon.models.customer_seat import SeatStatus
+from simeon.models.member import Member, MemberRole
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_customer,
@@ -53,9 +53,9 @@ class TestRevokeSeatForMember:
         organization: Organization,
     ) -> None:
         """Test that task revokes all active seats for a member."""
-        from polar.enums import SubscriptionRecurringInterval
-        from polar.kit.utils import utc_now
-        from polar.models.subscription import SubscriptionStatus
+        from simeon.enums import SubscriptionRecurringInterval
+        from simeon.kit.utils import utc_now
+        from simeon.models.subscription import SubscriptionStatus
 
         organization.feature_settings = {
             **organization.feature_settings,
@@ -113,7 +113,7 @@ class TestRevokeSeatForMember:
         await revoke_seats_for_member(member.id)
 
         # Re-fetch the seat to verify it was revoked
-        from polar.customer_seat.repository import CustomerSeatRepository
+        from simeon.customer_seat.repository import CustomerSeatRepository
 
         repository = CustomerSeatRepository.from_session(session)
         updated_seat = await repository.get_by_id(seat_id)

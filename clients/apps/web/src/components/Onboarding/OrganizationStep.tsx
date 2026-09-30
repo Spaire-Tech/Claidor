@@ -7,33 +7,33 @@ import { usePostHog } from '@/hooks/posthog'
 import { useCreateOrganization, useUpdateOrganization } from '@/hooks/queries'
 import { setValidationErrors } from '@/utils/api/errors'
 import { CONFIG } from '@/utils/config'
-import { schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
+import AddPhotoAlternateOutlined from '@mui/icons-material/AddPhotoAlternateOutlined'
+import { FormControl } from '@mui/material'
+import { schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
+} from '@simeon/ui/components/atoms/Select'
 import {
   Form,
   FormField,
   FormItem,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
-import { Label } from '@claidor/ui/components/ui/label'
-import AddPhotoAlternateOutlined from '@mui/icons-material/AddPhotoAlternateOutlined'
-import { FormControl } from '@mui/material'
+} from '@simeon/ui/components/ui/form'
+import { Label } from '@simeon/ui/components/ui/label'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import slugify from 'slugify'
 import LogoIcon from '../Brand/LogoIcon'
-import { Upload } from '../FileUpload/Upload'
+import { Upload, UploadableFileService } from '../FileUpload/Upload'
 import { CURRENCIES } from '../Settings/currencies'
 import { toast } from '../Toast/use-toast'
 import { getStatusRedirect } from '../Toast/utils'
@@ -136,7 +136,7 @@ export const OrganizationStep = ({
 
   const uploadFile = (
     organization: schemas['Organization'],
-    service: schemas['FileServiceTypes'],
+    service: UploadableFileService,
     file: File,
   ): Promise<string> =>
     new Promise<string>((resolve, reject) => {
@@ -363,7 +363,7 @@ export const OrganizationStep = ({
                         <Label htmlFor="slug">Username</Label>
                         <div className="flex items-center overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xs transition-all focus-within:z-10 focus-within:border-blue-300 focus-within:ring-[3px] focus-within:ring-blue-100">
                           <span className="border-r border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-400 select-none">
-                            claidorhq.com/
+                            simeonlabs.com/
                           </span>
                           <input
                             {...field}

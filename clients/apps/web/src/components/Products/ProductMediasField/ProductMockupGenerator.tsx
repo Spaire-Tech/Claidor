@@ -4,14 +4,14 @@ import AddPhotoAlternateOutlined from '@mui/icons-material/AddPhotoAlternateOutl
 import AutoFixHighOutlined from '@mui/icons-material/AutoFixHighOutlined'
 import CheckOutlined from '@mui/icons-material/CheckOutlined'
 import DownloadOutlined from '@mui/icons-material/DownloadOutlined'
-import Button from '@claidor/ui/components/atoms/Button'
-import { cn } from '@claidor/ui/lib/utils'
+import Button from '@simeon/ui/components/atoms/Button'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@claidor/ui/components/ui/dialog'
+} from '@simeon/ui/components/ui/dialog'
+import { cn } from '@simeon/ui/lib/utils'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 export type FrameStyle =
@@ -295,7 +295,7 @@ export const ProductMockupGenerator = ({
         if (!v) onClose()
       }}
     >
-      <DialogContent className=" max-w-4xl gap-5 border-gray-200 bg-white">
+      <DialogContent className="max-w-4xl gap-5 border-gray-200 bg-white">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-gray-900">
             <AutoFixHighOutlined fontSize="small" />
@@ -314,20 +314,15 @@ export const ProductMockupGenerator = ({
                 'flex flex-col items-start gap-1.5 rounded-xl border p-3 text-left transition-all',
                 frameStyle === opt.id
                   ? 'border-blue-500 bg-blue-50'
-                  : ' border-gray-200 hover:border-gray-300',
+                  : 'border-gray-200 hover:border-gray-300',
               )}
             >
               {/* Mini frame preview */}
-              <div
-                className={cn(
-                  'h-6 w-full rounded-md',
-                  opt.bgClass,
-                )}
-              />
+              <div className={cn('h-6 w-full rounded-md', opt.bgClass)} />
               <span className="text-xs font-medium text-gray-900">
                 {opt.label}
               </span>
-              <span className=" text-[11px] leading-tight text-gray-500">
+              <span className="text-[11px] leading-tight text-gray-500">
                 {opt.description}
               </span>
             </button>
@@ -335,7 +330,7 @@ export const ProductMockupGenerator = ({
         </div>
 
         {/* Canvas preview */}
-        <div className=" relative overflow-hidden rounded-xl bg-gray-100">
+        <div className="relative overflow-hidden rounded-xl bg-gray-100">
           <canvas
             ref={canvasRef}
             width={CANVAS_W}
@@ -344,7 +339,7 @@ export const ProductMockupGenerator = ({
           />
           {!screenshot && (
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2">
-              <p className=" rounded-md bg-black/20 px-3 py-1.5 text-sm text-gray-600 backdrop-blur-sm ">
+              <p className="rounded-md bg-black/20 px-3 py-1.5 text-sm text-gray-600 backdrop-blur-sm">
                 Upload a screenshot to preview your mockup
               </p>
             </div>
@@ -373,11 +368,7 @@ export const ProductMockupGenerator = ({
 
           {screenshot && (
             <>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleDownload}
-              >
+              <Button type="button" variant="outline" onClick={handleDownload}>
                 <DownloadOutlined fontSize="small" className="mr-1.5" />
                 Download
               </Button>

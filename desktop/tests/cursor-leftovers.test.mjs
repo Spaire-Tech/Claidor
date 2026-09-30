@@ -36,17 +36,17 @@ test("an unpackaged run with no backend named goes to Simeon Labs, and Cursor's 
   try {
     const { module } = loaded;
     assert.equal(module.getConfiguredBackendUrl({}), "https://api.simeonlabs.com/");
-    assert.equal(module.getConfiguredBackendUrl({ CURSOR_API_BASE_URL: "https://api.simeonlabs.com" }), "https://api.simeonlabs.com/");
+    assert.equal(module.getConfiguredBackendUrl({ SIMEON_API_BASE_URL: "https://api.simeonlabs.com" }), "https://api.simeonlabs.com/");
     assert.equal(module.getConfiguredBackendUrl({ SAND_BACKEND_URL: "http://127.0.0.1:8000" }), "http://127.0.0.1:8000/");
     assert.equal(module.DEFAULT_SAND_BACKEND_URL, "https://api.simeonlabs.com");
     assert.equal(module.DEFAULT_CURSOR_BACKEND_URL, "https://api2.cursor.sh");
     assert.equal(new URL(module.getAuthWebsiteUrl("https://api.simeonlabs.com", {})).origin, "https://api.simeonlabs.com");
-    assert.equal(module.DEFAULT_CURSOR_WEBSITE_URL, "https://api.simeonlabs.com");
+    assert.equal(module.DEFAULT_SIMEON_WEBSITE_URL, "https://api.simeonlabs.com");
     const login = await readFile(path.join(repoRoot, "source/packages/cursor-config/auth/login.ts"), "utf8");
     assert.equal(login.includes('?? "https://cursor.com"'), false);
     assert.equal(login.includes('?? "https://api2.cursor.sh"'), false);
-    assert.match(login, /CURSOR_WEBSITE_URL \?\? "https:\/\/api\.simeonlabs\.com"/);
-    assert.match(login, /CURSOR_API_BASE_URL \?\? "https:\/\/api\.simeonlabs\.com"/);
+    assert.match(login, /SIMEON_WEBSITE_URL \?\? "https:\/\/api\.simeonlabs\.com"/);
+    assert.match(login, /SIMEON_API_BASE_URL \?\? "https:\/\/api\.simeonlabs\.com"/);
   } finally {
     await loaded.dispose();
   }

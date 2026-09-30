@@ -6,10 +6,10 @@ import {
   useCustomerUpdateSubscription,
 } from '@/hooks/queries'
 import { hasLegacyRecurringPrices } from '@/utils/product'
-import { Client, schemas, unwrap } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { List, ListItem } from '@claidor/ui/components/atoms/List'
-import { Checkbox } from '@claidor/ui/components/ui/checkbox'
+import { Client, schemas, unwrap } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { List, ListItem } from '@simeon/ui/components/atoms/List'
+import { Checkbox } from '@simeon/ui/components/ui/checkbox'
 import { useRouter } from 'next/navigation'
 import { useCallback, useMemo, useState } from 'react'
 import { resolveBenefitIcon } from '../Benefit/utils'
@@ -266,7 +266,7 @@ const CustomerChangePlanModal = ({
               <div className="flex flex-col gap-y-2">
                 {addedBenefits.map((benefit) => (
                   <div key={benefit.id} className="flex flex-row align-middle">
-                    <span className=" flex h-6 w-6 shrink-0 flex-row items-center justify-center rounded-full bg-blue-50 text-2xl text-blue-500">
+                    <span className="flex h-6 w-6 shrink-0 flex-row items-center justify-center rounded-full bg-blue-50 text-2xl text-blue-500">
                       {resolveBenefitIcon(benefit.type, 'h-3 w-3')}
                     </span>
                     <span className="ml-2 text-sm">{benefit.description}</span>
@@ -283,7 +283,7 @@ const CustomerChangePlanModal = ({
               <div className="flex flex-col gap-y-2">
                 {removedBenefits.map((benefit) => (
                   <div key={benefit.id} className="flex flex-row align-middle">
-                    <span className=" flex h-6 w-6 shrink-0 flex-row items-center justify-center rounded-full bg-blue-50 text-2xl text-blue-500">
+                    <span className="flex h-6 w-6 shrink-0 flex-row items-center justify-center rounded-full bg-blue-50 text-2xl text-blue-500">
                       {resolveBenefitIcon(benefit.type, 'h-3 w-3')}
                     </span>
                     <span className="ml-2 text-sm">{benefit.description}</span>
@@ -303,14 +303,12 @@ const CustomerChangePlanModal = ({
                 />
               )}
 
-              <span className=" text-sm text-gray-500">
-                {invoicingMessage}
-              </span>
+              <span className="text-sm text-gray-500">{invoicingMessage}</span>
             </label>
           )}
         </div>
         {needToAddPaymentMethod && (
-          <p className=" text-sm text-gray-500">
+          <p className="text-sm text-gray-500">
             You need to add a payment method before updating your plan. Head to
             the Customer Portal Settings to add a payment method.
           </p>

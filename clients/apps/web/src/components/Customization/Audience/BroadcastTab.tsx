@@ -12,7 +12,7 @@ import {
   useEmailBroadcasts,
   useEmailSubscriberStats,
 } from '@/hooks/queries/emailMarketing'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { useCallback, useState } from 'react'
 import './audience.css'
 import {
@@ -295,13 +295,19 @@ export function BroadcastTab({
               menu.push({
                 label: 'Cancel schedule',
                 onClick: () =>
-                  runMutation(cancelMutation, b.id, 'Could not cancel schedule'),
+                  runMutation(
+                    cancelMutation,
+                    b.id,
+                    'Could not cancel schedule',
+                  ),
               })
             menu.push({
               label: 'Archive',
               destructive: true,
               onClick: () => {
-                if (window.confirm(`Archive "${b.subject || 'this broadcast'}"?`))
+                if (
+                  window.confirm(`Archive "${b.subject || 'this broadcast'}"?`)
+                )
                   runMutation(archiveMutation, b.id, 'Could not archive')
               },
             })
@@ -323,7 +329,9 @@ export function BroadcastTab({
                   <div className="a-bc-subject">{b.subject}</div>
                   <div className="a-bc-meta">
                     <span
-                      className={'a-status' + (b.status === 'sent' ? '' : ' off')}
+                      className={
+                        'a-status' + (b.status === 'sent' ? '' : ' off')
+                      }
                     >
                       <span className="sd" />
                       {statusLabel(b.status)}
@@ -449,7 +457,9 @@ function BroadcastDetail({
           </div>
           <div className="cell">
             <span className="cl">Clicks</span>
-            <span className="cv">{a ? `${a.click_rate.toFixed(1)}%` : '—'}</span>
+            <span className="cv">
+              {a ? `${a.click_rate.toFixed(1)}%` : '—'}
+            </span>
           </div>
         </div>
       </div>

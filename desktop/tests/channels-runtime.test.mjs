@@ -1,5 +1,5 @@
 /**
- * Messaging channels are served (25 September 2026, docs/product/channels-served.md;
+ * Messaging channels are served (25 September 2026, docs/services-agents.md;
  * design-audit-ledger.md cluster `cloud-agents-channels`, F-055, F-057, F-081).
  *
  * The transcript manager had every channel hook (`setChannelDelivery`,
@@ -157,7 +157,7 @@ test("Discord: connect with the stored token, an inbound DM wakes the agent with
     await waitFor(() => fake.statuses.some((s) => s.status === "connected"), { label: "Discord connected" });
     assert.deepEqual(discord.identified.intents, (1 << 0) | (1 << 9) | (1 << 10) | (1 << 12) | (1 << 13) | (1 << 15), "guild, DM, reaction and message-content intents");
     assert.equal(discord.identified.properties.browser, "simeon");
-    assert.match(lines.find((l) => l.includes("event=connect")), /^\[claidor\] channel=discord agent=a1 event=connect url=ws:\/\/127\.0\.0\.1:\d+\/gateway token=…\(10\) attempt=0 resume=false$/);
+    assert.match(lines.find((l) => l.includes("event=connect")), /^\[simeon\] channel=discord agent=a1 event=connect url=ws:\/\/127\.0\.0\.1:\d+\/gateway token=…\(10\) attempt=0 resume=false$/);
     assert.ok(lines.some((l) => /channel=discord agent=a1 event=ready bot=simeon botId=BOT1 guilds=1/.test(l)), "ready line");
     assert.deepEqual(fake.statuses.at(-1), { agentId: "a1", platform: "discord", status: "connected", detail: "Connected as simeon." });
 
@@ -187,7 +187,7 @@ test("Discord: connect with the stored token, an inbound DM wakes the agent with
     assert.deepEqual(JSON.parse(discord.rest.requests.filter((r) => r.url === "/channels/C1/messages").at(-1).body.toString()), { content: "raw shape too" });
     await fake.hooks.deliver("a1", "discord:C1", { kind: "attachment", url: "https://example.com/report.pdf", caption: "The report" });
     assert.deepEqual(JSON.parse(discord.rest.requests.filter((r) => r.url === "/channels/C1/messages").at(-1).body.toString()), { content: "The report\nhttps://example.com/report.pdf" });
-    const dir = await mkdtemp(path.join(os.tmpdir(), "caisra-channel-file-"));
+    const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-channel-file-"));
     const filePath = path.join(dir, "chart.png");
     await writeFile(filePath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
     await fake.hooks.deliver("a1", "discord:C1", { kind: "attachment", url: pathToFileURL(filePath).href, caption: null });
@@ -209,7 +209,7 @@ test("Discord: connect with the stored token, an inbound DM wakes the agent with
     configs.a1 = [];
     fake.hooks.changed();
     await waitFor(() => discord.connections === 0, { label: "gateway socket closed" });
-    assert.ok(lines.some((l) => l === "[claidor] channel=discord agent=a1 event=stop reason=removed"), "stop line");
+    assert.ok(lines.some((l) => l === "[simeon] channel=discord agent=a1 event=stop reason=removed"), "stop line");
     await assert.rejects(fake.hooks.deliver("a1", "discord:C1", { kind: "text", text: "x" }), /No live Discord connection for this agent/);
   } finally {
     await runtime.stop();
@@ -281,7 +281,7 @@ test("Slack: Socket Mode with the app token, the bot token for the Web API, the 
     assert.equal(post.auth, "Bearer xoxb-1-B");
     assert.deepEqual(post.json, { channel: "C7", text: "Yes — shipping by 5.", thread_ts: "1700000000.000100" }, "replies in the thread the last inbound came from");
     assert.ok(lines.some((l) => /channel=slack agent=a2 event=delivery chat=C7 kind=text chars=20 thread=true/.test(l)), "delivery line");
-    const dir = await mkdtemp(path.join(os.tmpdir(), "caisra-channel-slack-file-"));
+    const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-channel-slack-file-"));
     const filePath = path.join(dir, "notes.txt");
     await writeFile(filePath, "hello");
     await fake.hooks.deliver("a2", "slack:C7", { kind: "attachment", url: pathToFileURL(filePath).href, caption: "Notes" });
@@ -367,7 +367,7 @@ test("the Channels tab's one field carries Slack's two tokens; the store and the
 });
 
 test("the channel store keeps the runtime's status beside the label, never a credential, and the brief reads it", async () => {
-  const dir = await mkdtemp(path.join(os.tmpdir(), "caisra-channel-store-"));
+  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-channel-store-"));
   const { module, dispose } = await load("source/host/extensions/session/channel-store.ts", "channel-store");
   try {
     const store = new module.FileChannelStore(path.join(dir, "channels"));

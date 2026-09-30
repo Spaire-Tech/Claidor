@@ -26,10 +26,10 @@ export function createProductionExperimentsAdapter(
         getMachineId: async () => context.machineId,
         getCacheDir: () => context.native.app.getPath("userData"),
         isDevBuild: context.env.SAND_PACKAGED !== "1",
-        // Simeon's own gate defaults over Grok Bot's bundled table. Until
+        // Simeon's own gate defaults over the upstream app's bundled table. Until
         // 24 September 2026 the service answered the bundled default for
         // every gate (Cursor's experiments server, which fills them for
-        // Grok Bot, is not served here), so `sand_usage_page` read false
+        // The upstream app, is not served here), so `sand_usage_page` read false
         // in `checkFeatureGate` and in the snapshot the renderer gates
         // Settings → Usage & Billing on, and the page never showed.
         createExperimentService: (options) => applySimeonGateDefaults(new SandExperimentService(options), context.env),

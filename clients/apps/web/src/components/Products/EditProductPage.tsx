@@ -5,13 +5,10 @@ import {
   useUpdateProductBenefits,
 } from '@/hooks/queries'
 import { setProductValidationErrors } from '@/utils/api/errors'
-import {
-  ProductEditOrCreateForm,
-  SUBTITLE_METADATA_KEY,
-} from '@/utils/product'
-import { isValidationError, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { Form } from '@claidor/ui/components/ui/form'
+import { ProductEditOrCreateForm, SUBTITLE_METADATA_KEY } from '@/utils/product'
+import { isValidationError, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { Form } from '@simeon/ui/components/ui/form'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -205,7 +202,7 @@ export const EditProductPage = ({
         </Button>
       }
     >
-      <div className=" flex flex-col divide-y divide-gray-200 rounded-4xl border border-gray-200">
+      <div className="flex flex-col divide-y divide-gray-200 rounded-4xl border border-gray-200">
         <Form {...form}>
           <form
             onSubmit={handleSubmit(onSubmit)}

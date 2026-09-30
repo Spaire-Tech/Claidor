@@ -1,4 +1,4 @@
-/* Claidor Space — publishable dark theme.
+/* Simeon Space — publishable dark theme.
 
    Applied via `.space-dark` on the Space root, on BOTH surfaces that render a
    creator's Space:
@@ -21,7 +21,7 @@
 
 /* The editor canvas root sets its own white background (styles/editor.css);
    override it when the Space theme is dark. */
-.claidor-editor.space-dark {
+.simeon-editor.space-dark {
   background: #0c0c10 !important;
   /* editor.css drives most of its chrome/canvas off these tokens, so flipping
      them here themes everything that uses var(--ink/--line/--muted/…). The raw
@@ -249,9 +249,8 @@
 }
 
 /* ---- form fields (bare inputs default to white UA background) ---- */
-.space-dark input:not([type='checkbox']):not([type='radio']):not(
-    [type='range']
-  ),
+.space-dark
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
 .space-dark textarea,
 .space-dark select {
   background-color: #17171b !important;

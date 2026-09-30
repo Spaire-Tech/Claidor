@@ -4,9 +4,9 @@ import pytest
 from dramatiq import Retry
 from pytest_mock import MockerFixture
 
-from polar.benefit.grant.service import BenefitGrantService
-from polar.benefit.strategies import BenefitRetriableError
-from polar.benefit.tasks import (  # type: ignore[attr-defined]
+from simeon.benefit.grant.service import BenefitGrantService
+from simeon.benefit.strategies import BenefitRetriableError
+from simeon.benefit.tasks import (  # type: ignore[attr-defined]
     BenefitDoesNotExist,
     BenefitGrantDoesNotExist,
     CustomerDoesNotExist,
@@ -17,8 +17,8 @@ from polar.benefit.tasks import (  # type: ignore[attr-defined]
     benefit_revoke,
     benefit_update,
 )
-from polar.models import Benefit, BenefitGrant, Customer, Subscription
-from polar.postgres import AsyncSession
+from simeon.models import Benefit, BenefitGrant, Customer, Subscription
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 
 
@@ -269,7 +269,7 @@ class TestBenefitDelete:
         benefit_organization: Benefit,
         session: AsyncSession,
     ) -> None:
-        enqueue_job_mock = mocker.patch("polar.benefit.grant.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.benefit.grant.service.enqueue_job")
 
         grant = BenefitGrant(
             subscription=subscription, customer=customer, benefit=benefit_organization

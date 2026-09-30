@@ -1,9 +1,7 @@
 import { api } from '@/utils/client'
-import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
-import { isValidationError, schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
-import Button from '@claidor/ui/components/atoms/Button'
-import Link from 'next/link'
+import { isValidationError, schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
+import Button from '@simeon/ui/components/atoms/Button'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Modal } from '../Modal'
 import { DetailRow } from '../Shared/DetailRow'
@@ -104,24 +102,6 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
                   compliance process. Withdrawals are disabled until the review
                   is complete.
                 </p>
-                <p>
-                  <Link
-                    href="https://docs.claidorhq.com/merchant-of-record/account-reviews"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Button
-                      variant="default"
-                      className="flex flex-row items-center"
-                    >
-                      <span>Learn more</span>
-                      <ArrowOutwardOutlined
-                        className="ml-2"
-                        fontSize="inherit"
-                      />
-                    </Button>
-                  </Link>
-                </p>
               </div>
             )}
 
@@ -140,7 +120,7 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 <div className="flex flex-col gap-8">
                   <div className="flex flex-col gap-2">
                     <h1 className="text-2xl">Withdraw your balance</h1>
-                    <p className=" text-gray-500">
+                    <p className="text-gray-500">
                       You&apos;re about to withdraw your balance to your bank
                       account.
                     </p>

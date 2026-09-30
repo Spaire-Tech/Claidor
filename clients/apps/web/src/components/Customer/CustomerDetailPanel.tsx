@@ -1,35 +1,33 @@
 'use client'
 
-import { useCustomer } from '@/hooks/queries'
-import { schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
-import { SpinnerNoMargin } from '../Shared/Spinner'
-import { CustomerPage } from './CustomerPage'
-import { InlineModalHeader } from '../Modal/InlineModal'
-import DateRangePicker from '../Metrics/DateRangePicker'
-import IntervalPicker, { getNextValidInterval } from '../Metrics/IntervalPicker'
-import { useDateRange } from '@/utils/date'
-import { endOfToday, startOfDay } from 'date-fns'
-import { parseAsStringLiteral, useQueryState } from 'nuqs'
-import { useCallback, useEffect } from 'react'
-import { EditCustomerModal } from './EditCustomerModal'
-import { ConfirmModal } from '../Modal/ConfirmModal'
-import { InlineModal } from '../Modal/InlineModal'
-import { useModal } from '../Modal/useModal'
-import { toast } from '../Toast/use-toast'
 import { useSafeCopy } from '@/hooks/clipboard'
-import { useDeleteCustomer } from '@/hooks/queries'
+import { useCustomer, useDeleteCustomer } from '@/hooks/queries'
 import { api } from '@/utils/client'
 import { CONFIG } from '@/utils/config'
+import { useDateRange } from '@/utils/date'
 import MoreVert from '@mui/icons-material/MoreVert'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
+import Button from '@simeon/ui/components/atoms/Button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@claidor/ui/components/ui/dropdown-menu'
+} from '@simeon/ui/components/ui/dropdown-menu'
+import { endOfToday, startOfDay } from 'date-fns'
+import { parseAsStringLiteral, useQueryState } from 'nuqs'
+import { useCallback, useEffect } from 'react'
+import DateRangePicker from '../Metrics/DateRangePicker'
+import IntervalPicker, { getNextValidInterval } from '../Metrics/IntervalPicker'
+import { ConfirmModal } from '../Modal/ConfirmModal'
+import { InlineModal, InlineModalHeader } from '../Modal/InlineModal'
+import { useModal } from '../Modal/useModal'
+import { SpinnerNoMargin } from '../Shared/Spinner'
+import { toast } from '../Toast/use-toast'
+import { CustomerPage } from './CustomerPage'
+import { EditCustomerModal } from './EditCustomerModal'
 
 interface CustomerDetailPanelProps {
   customerId: string
@@ -64,7 +62,7 @@ export const CustomerDetailPanel = ({
           <span>Customer</span>
         </InlineModalHeader>
         <div className="flex flex-1 items-center justify-center">
-          <p className=" text-gray-500">Customer not found</p>
+          <p className="text-gray-500">Customer not found</p>
         </div>
       </div>
     )
@@ -133,15 +131,24 @@ const CustomerDetailPanelContent = ({
     toast({ title: 'Copied', description: 'Customer Portal link copied.' })
   }, [safeCopy, customer, organization])
 
-  const deleteCustomer = useDeleteCustomer(customer.id, customer.organization_id)
+  const deleteCustomer = useDeleteCustomer(
+    customer.id,
+    customer.organization_id,
+  )
 
   const onDeleteCustomer = useCallback(async () => {
     deleteCustomer.mutateAsync().then((response) => {
       if (response.error) {
-        toast({ title: 'Delete Failed', description: `Error: ${response.error.detail}` })
+        toast({
+          title: 'Delete Failed',
+          description: `Error: ${response.error.detail}`,
+        })
         return
       }
-      toast({ title: 'Customer Deleted', description: `${customer.email} deleted.` })
+      toast({
+        title: 'Customer Deleted',
+        description: `${customer.email} deleted.`,
+      })
       onClose()
     })
   }, [deleteCustomer, customer.email, onClose])
@@ -177,12 +184,12 @@ const CustomerDetailPanelContent = ({
           />
           <div className="flex flex-col">
             <span className="text-sm font-medium">
-              {(customer.name?.length ?? 0) > 0 ? customer.name : customer.email}
+              {(customer.name?.length ?? 0) > 0
+                ? customer.name
+                : customer.email}
             </span>
             {(customer.name?.length ?? 0) > 0 && (
-              <span className=" text-xs text-gray-500">
-                {customer.email}
-              </span>
+              <span className="text-xs text-gray-500">{customer.email}</span>
             )}
           </div>
         </div>
@@ -198,7 +205,9 @@ const CustomerDetailPanelContent = ({
           />
           <DateRangePicker
             date={
-              startDate && endDate ? { from: startDate, to: endDate } : undefined
+              startDate && endDate
+                ? { from: startDate, to: endDate }
+                : undefined
             }
             onDateChange={onDateChange}
           />
@@ -249,7 +258,7 @@ const CustomerDetailPanelContent = ({
         hide={hideDeleteModal}
         title={`Delete "${customer.email}"?`}
         body={
-          <div className=" flex flex-col gap-y-2 text-sm leading-relaxed text-gray-500">
+          <div className="flex flex-col gap-y-2 text-sm leading-relaxed text-gray-500">
             <p>This action cannot be undone and will immediately:</p>
             <ol className="list-inside list-disc pl-4">
               <li>Cancel any active subscriptions</li>

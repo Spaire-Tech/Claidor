@@ -1,12 +1,12 @@
 #!/bin/bash
-# Startup script for Polar Web frontend in development mode
+# Startup script for Simeon Web frontend in development mode
 # This script handles dependency installation and starts Next.js with Turbopack.
 
 set -euo pipefail
 
 cd /app/clients
 
-echo "=== Polar Web Frontend Startup ==="
+echo "=== Simeon Web Frontend Startup ==="
 
 # Always run pnpm install to ensure dependencies are installed
 # pnpm is smart enough to skip if nothing changed
@@ -17,24 +17,24 @@ pnpm install --frozen-lockfile
 # This avoids OOM issues from DTS generation in container
 echo "Checking workspace packages..."
 if [[ ! -d "packages/client/dist" ]]; then
-    echo "Building @polar-sh/client..."
-    pnpm --filter @polar-sh/client build
+    echo "Building @simeon/client..."
+    pnpm --filter @simeon/client build
 else
-    echo "@polar-sh/client already built"
+    echo "@simeon/client already built"
 fi
 
 if [[ ! -d "packages/ui/dist" ]]; then
-    echo "Building @polar-sh/ui..."
-    pnpm --filter @polar-sh/ui build
+    echo "Building @simeon/ui..."
+    pnpm --filter @simeon/ui build
 else
-    echo "@polar-sh/ui already built"
+    echo "@simeon/ui already built"
 fi
 
 if [[ ! -d "packages/checkout/dist" ]]; then
-    echo "Building @claidor/checkout..."
-    pnpm --filter @claidor/checkout build
+    echo "Building @simeon/checkout..."
+    pnpm --filter @simeon/checkout build
 else
-    echo "@claidor/checkout already built"
+    echo "@simeon/checkout already built"
 fi
 
 # Start the requested mode

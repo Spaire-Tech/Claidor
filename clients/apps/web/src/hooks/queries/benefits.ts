@@ -7,7 +7,7 @@ import {
 
 import { getQueryClient } from '@/utils/api/query'
 import { api } from '@/utils/client'
-import { operations, schemas, unwrap } from '@claidor/client'
+import { operations, schemas, unwrap } from '@simeon/client'
 import { defaultRetry } from './retry'
 
 const _invalidateBenefitsQueries = ({

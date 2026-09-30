@@ -2,12 +2,6 @@ from datetime import UTC, datetime
 
 import pytest
 
-from polar.event.repository import EventRepository
-from polar.event.system import SystemEvent
-from polar.kit.db.postgres import AsyncSession
-from polar.models import Event, Organization, Product
-from polar.models.event import EventSource
-from polar.models.subscription import SubscriptionStatus
 from scripts.backfill_system_events import (
     backfill_order_paid_metadata,
     backfill_subscription_canceled_metadata,
@@ -19,6 +13,12 @@ from scripts.backfill_system_events import (
     create_missing_subscription_created_events,
     create_missing_subscription_revoked_events,
 )
+from simeon.event.repository import EventRepository
+from simeon.event.system import SystemEvent
+from simeon.kit.db.postgres import AsyncSession
+from simeon.models import Event, Organization, Product
+from simeon.models.event import EventSource
+from simeon.models.subscription import SubscriptionStatus
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_checkout,

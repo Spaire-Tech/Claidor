@@ -1,6 +1,6 @@
 /**
  * Publishing a skill runs against Simeon Labs' server (25 September 2026,
- * design-audit-ledger.md F-157, docs/product/skill-publish-served.md).
+ * design-audit-ledger.md F-157, docs/services-agents.md).
  *
  * The app side never changed shape: `SandSkillPublishService` packs the
  * skill folder as a plugin tar.gz, posts it to
@@ -8,7 +8,7 @@
  * until `GetEffectiveUserPlugins` lists the answered `pluginId` at the
  * answered `commitSha`; `unpublish` restores the library copy and posts
  * `UnpublishPlugin`. This test stands up an in-process Connect JSON server
- * with the exact shapes `server/polar/sand/skill_registry.py` answers
+ * with the exact shapes `server/simeon/sand/skill_registry.py` answers
  * (`Just me` as the personal team, the tarball's files as
  * `inlineContentJson`, `commitSha = sha256("{id}:{updatedAt}")[:40]`) and
  * drives the real service, the real plugin-skills sync and the real
@@ -71,7 +71,7 @@ function unpackTarGz(blob) {
 const USER_ID = 4242; // `user_id_of(call)`, the 31-bit hash of the user's UUID on the server.
 const commitShaOf = (id, updatedAt) => createHash("sha256").update(`${id}:${updatedAt}`).digest("hex").slice(0, 40);
 
-/** `polar/sand/skill_registry.py`, in 60 lines: the five methods, the same field names. */
+/** `simeon/sand/skill_registry.py`, in 60 lines: the five methods, the same field names. */
 function startRegistry() {
   const plugins = new Map();
   let nextId = 1000;
@@ -128,13 +128,13 @@ function startRegistry() {
   return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve({ url: `http://127.0.0.1:${server.address().port}`, plugins, calls, close: () => new Promise((done) => server.close(done)) })));
 }
 
-const auth = { getAccessToken: async () => "claidor_da_test", getMachineId: async () => "machine-test", peekAccessToken: () => "claidor_da_test" };
+const auth = { getAccessToken: async () => "simeon_da_test", getMachineId: async () => "machine-test", peekAccessToken: () => "simeon_da_test" };
 
 test("a skill publishes to Just me, confirms on the first sync, and unpublish restores the library", async () => {
   const registry = await startRegistry();
   delete process.env.SAND_CONNECT_SERVED;
   process.env.SAND_BACKEND_URL = registry.url;
-  const sandRoot = await mkdtemp(path.join(os.tmpdir(), "caisra-skill-publish-root-"));
+  const sandRoot = await mkdtemp(path.join(os.tmpdir(), "simeon-skill-publish-root-"));
   const publish = await load("source/host/extensions/mcp/skill-publish.ts", "skill-publish");
   const skills = await load("source/host/extensions/mcp/plugin-skills.ts", "plugin-skills");
   try {
@@ -215,7 +215,7 @@ test("the server's own sentence reaches the card when targets or a publish fail;
     assert.equal(module.serverSentence(connectError), "The registry is down for maintenance.");
     assert.equal(module.serverSentence(new Error("socket hang up")), "socket hang up");
     // A refusal on the publish itself is the server's sentence behind the refusal prefix.
-    const skillDir = await mkdtemp(path.join(os.tmpdir(), "caisra-skill-"));
+    const skillDir = await mkdtemp(path.join(os.tmpdir(), "simeon-skill-"));
     await writeFile(path.join(skillDir, "SKILL.md"), "---\nname: X\ndescription: d\n---\n\nbody\n");
     await assert.rejects(service.upload({ skillDir, skillRelativePath: "x", name: "X", description: "d", teamId: 1, pluginName: "x" }), /skill-publish\/refused: The registry is down for maintenance\./);
     await rm(skillDir, { recursive: true, force: true });
@@ -228,7 +228,7 @@ test("the server's own sentence reaches the card when targets or a publish fail;
 
 test("an inline plugin's files are written to disk and its skills land in the manifest", async () => {
   const { module, dispose } = await load("source/packages/cursor-plugins/inline-plugin-synthesizer.ts", "inline-synth");
-  const targetDir = await mkdtemp(path.join(os.tmpdir(), "caisra-inline-plugin-"));
+  const targetDir = await mkdtemp(path.join(os.tmpdir(), "simeon-inline-plugin-"));
   try {
     await module.synthesizeInlinePluginDir({ targetDir, pluginName: "meeting-notes", inlineContentJson: JSON.stringify({ files: [
       { path: "plugin.json", content: JSON.stringify({ name: "meeting-notes", displayName: "Meeting Notes", skills: ["skills/meeting-notes"] }) },
@@ -248,21 +248,21 @@ test("an inline plugin's files are written to disk and its skills land in the ma
   }
 });
 
-test("a failed daily sync writes one [claidor] plugins line and throws to nobody's turn", async () => {
+test("a failed daily sync writes one [simeon] plugins line and throws to nobody's turn", async () => {
   const { module, dispose } = await load("source/host/extensions/mcp/plugin-skills.ts", "plugin-skills-log", { extraExports: [["source/shared/host-log.ts", ["setHostLogSink"]]] });
-  const sandRoot = await mkdtemp(path.join(os.tmpdir(), "caisra-plugin-skills-log-"));
+  const sandRoot = await mkdtemp(path.join(os.tmpdir(), "simeon-plugin-skills-log-"));
   const hostLines = [];
   module.setHostLogSink((line) => hostLines.push(line));
   try {
     const service = new module.SandPluginSkillsService({ sandRootDir: sandRoot, load: async () => { throw new Error("connect ECONNREFUSED 127.0.0.1:1"); } });
     await assert.rejects(service.sync("refresh"), /ECONNREFUSED/);
-    assert.deepEqual(hostLines, ["[claidor] plugins sync=refresh failed: connect ECONNREFUSED 127.0.0.1:1"]);
+    assert.deepEqual(hostLines, ["[simeon] plugins sync=refresh failed: connect ECONNREFUSED 127.0.0.1:1"]);
     // The extension's poll swallows it (`startPluginSkillsWhenAuthenticated`), so a turn never sees it.
     assert.match(await src("host/extensions/mcp/extension.ts"), /try\{await options\.service\?\.sync\(trigger\);[^}]*\}catch\{\}/);
     hostLines.length = 0;
     const ok = new module.SandPluginSkillsService({ sandRootDir: sandRoot, load: async () => ({ plugins: [], authBlocked: [], listedPluginIds: [], listedCacheKeys: [], publisherFacts: new Map(), currentUserId: 7 }) });
     await ok.sync("startup");
-    assert.deepEqual(hostLines, ["[claidor] plugins sync=startup skills=0 plugins=0 changed=false"]);
+    assert.deepEqual(hostLines, ["[simeon] plugins sync=startup skills=0 plugins=0 changed=false"]);
   } finally {
     module.setHostLogSink(null);
     await rm(sandRoot, { recursive: true, force: true });

@@ -1,4 +1,4 @@
-import { ClaidorApiError, claidorComposioUrl } from "../cursor-backend/claidor-api.js";
+import { SimeonApiError, simeonComposioUrl } from "../cursor-backend/simeon-api.js";
 import { getConfiguredBackendUrl } from "../cursor-token.js";
 import { composioConnectorById, composioConnectorByToolkit } from "./catalog.js";
 
@@ -59,7 +59,7 @@ export function createComposioApi(options: ComposioApiOptions): ComposioApi {
       accept: "application/json",
     };
     if (body !== undefined) headers["content-type"] = "application/json";
-    const response = await fetchImpl(claidorComposioUrl(path, backendUrl), {
+    const response = await fetchImpl(simeonComposioUrl(path, backendUrl), {
       method,
       headers,
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -75,7 +75,7 @@ export function createComposioApi(options: ComposioApiOptions): ComposioApi {
     }
     if (!response.ok) {
       if (isRecord(payload) && isRecord(payload.error) && typeof payload.error.message === "string") {
-        throw new ClaidorApiError(composioFailureMessage(response.status, payload), response.status, typeof payload.error.type === "string" ? payload.error.type : undefined);
+        throw new SimeonApiError(composioFailureMessage(response.status, payload), response.status, typeof payload.error.type === "string" ? payload.error.type : undefined);
       }
       if (response.status === 401 || response.status === 503) throw new Error(composioFailureMessage(response.status, payload));
       throw new Error(composioFailureMessage(response.status, payload));

@@ -9,15 +9,15 @@ import { UserContextProvider } from '@/providers/auth'
 import { getServerSideAPI } from '@/utils/client/serverside'
 import { CONFIG } from '@/utils/config'
 import { getAuthenticatedUser, getUserOrganizations } from '@/utils/user'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { GeistMono } from 'geist/font/mono'
 import { GeistSans } from 'geist/font/sans'
 import { PHASE_PRODUCTION_BUILD } from 'next/constants'
 import {
   Barlow_Condensed,
   DM_Sans,
-  Inter,
   Instrument_Serif,
+  Inter,
   Poppins,
   Source_Serif_4,
 } from 'next/font/google'
@@ -59,11 +59,11 @@ const barlowCondensed = Barlow_Condensed({
   display: 'swap',
 })
 
-// Source Serif 4 — the Claidor display face (docs/design).
+// Source Serif 4 — the Simeon display face (docs/design).
 const sourceSerif = Source_Serif_4({
   subsets: ['latin'],
   weight: ['400', '600'],
-  variable: '--font-claidor-serif',
+  variable: '--font-simeon-serif',
   display: 'swap',
 })
 
@@ -82,7 +82,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: 'The Masterclass Builder for Creators.',
     openGraph: {
-      images: 'https://app.claidorhq.com/assets/brand/claidor_og.jpg',
+      images: 'https://app.simeonlabs.com/assets/brand/simeon_og.jpg',
       type: 'website',
       siteName: 'Simeon',
       title: 'Simeon | Build and sell cinematic masterclasses',
@@ -90,14 +90,14 @@ export async function generateMetadata(): Promise<Metadata> {
       locale: 'en_US',
     },
     twitter: {
-      images: 'https://app.claidorhq.com/assets/brand/claidor_og.jpg',
+      images: 'https://app.simeonlabs.com/assets/brand/simeon_og.jpg',
       card: 'summary_large_image',
       title: 'Simeon | Build and sell cinematic masterclasses',
       description: 'The Masterclass Builder for Creators.',
     },
-    metadataBase: new URL('https://app.claidorhq.com/'),
+    metadataBase: new URL('https://app.simeonlabs.com/'),
     alternates: {
-      canonical: 'https://app.claidorhq.com/',
+      canonical: 'https://app.simeonlabs.com/',
     },
   }
 

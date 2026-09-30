@@ -1,6 +1,6 @@
 import pytest
 
-from polar.tax.tax_id import InvalidTaxID, TaxID, TaxIDFormat, validate_tax_id
+from simeon.tax.tax_id import InvalidTaxID, TaxID, TaxIDFormat, validate_tax_id
 
 
 @pytest.mark.parametrize(

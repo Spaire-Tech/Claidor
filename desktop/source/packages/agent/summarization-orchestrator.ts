@@ -204,7 +204,7 @@ export type SelfSummarizerFactory = (
   descriptionProps: Record<string, unknown> | undefined,
 ) => Summarizer;
 
-const logger = createLogger("@anysphere/agent");
+const logger = createLogger("@sand/agent");
 
 function countMessageKinds(messages: readonly {
   readonly role: string;

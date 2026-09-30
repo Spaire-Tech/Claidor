@@ -2,7 +2,7 @@ import pytest
 from httpx import AsyncClient
 from pytest_mock import MockerFixture
 
-from polar.organization_custom_domain import cors
+from simeon.organization_custom_domain import cors
 
 
 def _patch_active(mocker: MockerFixture, domains: set[str]) -> None:

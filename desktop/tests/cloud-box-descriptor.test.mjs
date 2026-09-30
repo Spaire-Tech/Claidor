@@ -1,13 +1,13 @@
 /**
  * The computer in the cloud, app side (25 September 2026,
- * docs/product/cloud-computer-served.md).
+ * docs/services-core.md).
  *
  * Nothing here is new app code beyond two things: the egress tunnel's
  * derivation learned the API proxy's `/p/<port>` shape next to Cursor's
  * `-<port>` label, and `setBoxRuntime("remote")` probes the broker before
  * stopping the local box. Everything else was already built
  * (`BrokeredHostConnector`, the descriptor, the blocked hold); these tests
- * drive it with the JSON `polar/sand/box_broker.py` answers.
+ * drive it with the JSON `simeon/sand/box_broker.py` answers.
  */
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
@@ -70,7 +70,7 @@ test("the brokered connector builds the descriptor from the broker's answer and 
       recreateSandBox: async (request) => { calls.push(["recreate", request]); return { started: true, reason: "", operationId: "op-1" }; },
       forceRecreateSandBox: async () => ({ started: false, reason: "no host", operationId: "" }),
     };
-    const connector = new BrokeredHostConnector({ getAccessToken: async () => "claidor_da_x", getMachineId: () => "m" }, client);
+    const connector = new BrokeredHostConnector({ getAccessToken: async () => "simeon_da_x", getMachineId: () => "m" }, client);
     const descriptor = await connector.connect();
     assert.deepEqual(descriptor, {
       baseUrl: brokerAnswer.gatewayUrl,
@@ -91,7 +91,7 @@ test("the brokered connector builds the descriptor from the broker's answer and 
   }
 });
 
-test("setBoxRuntime switches nothing: the computer is the cloud's, as in Grok Bot", async () => {
+test("setBoxRuntime switches nothing: the computer is the cloud's, as in the upstream app", async () => {
   const { module, dispose } = await load("source/electron-main/main-edge.ts", "main-edge");
   try {
     const { createMainEdgeHandlers } = module;

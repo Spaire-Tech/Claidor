@@ -3,17 +3,17 @@ from typing import Literal
 
 import pytest
 
-from polar.auth.models import AuthSubject, User
-from polar.checkout.schemas import CheckoutUpdatePublic
-from polar.checkout.service import checkout as checkout_service
-from polar.discount.schemas import (
+from simeon.auth.models import AuthSubject, User
+from simeon.checkout.schemas import CheckoutUpdatePublic
+from simeon.checkout.service import checkout as checkout_service
+from simeon.discount.schemas import (
     DiscountFixedOnceForeverDurationCreate,
     DiscountUpdate,
 )
-from polar.discount.service import discount as discount_service
-from polar.exceptions import ClaidorRequestValidationError
-from polar.kit.utils import utc_now
-from polar.models import (
+from simeon.discount.service import discount as discount_service
+from simeon.exceptions import SimeonRequestValidationError
+from simeon.kit.utils import utc_now
+from simeon.models import (
     Checkout,
     Discount,
     DiscountRedemption,
@@ -21,13 +21,13 @@ from polar.models import (
     Product,
     UserOrganization,
 )
-from polar.models.discount import (
+from simeon.models.discount import (
     DiscountDuration,
     DiscountFixed,
     DiscountPercentage,
     DiscountType,
 )
-from polar.postgres import AsyncSession
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_checkout, create_discount
 
@@ -89,7 +89,7 @@ class TestUpdate:
             organization=organization,
         )
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await discount_service.update(
                 session,
                 discount,
@@ -111,7 +111,7 @@ class TestUpdate:
             organization=organization,
         )
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await discount_service.update(
                 session,
                 discount,
@@ -158,7 +158,7 @@ class TestUpdate:
         )
         await session.refresh(discount)
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await discount_service.update(
                 session,
                 discount,
@@ -361,7 +361,7 @@ class TestUpdate:
             code="OTHER",
         )
 
-        with pytest.raises(ClaidorRequestValidationError) as exc_info:
+        with pytest.raises(SimeonRequestValidationError) as exc_info:
             await discount_service.update(
                 session,
                 discount_to_update,

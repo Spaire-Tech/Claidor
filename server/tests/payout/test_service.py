@@ -6,27 +6,27 @@ from unittest.mock import MagicMock
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.exceptions import ClaidorRequestValidationError
-from polar.integrations.stripe.service import StripeService
-from polar.kit.address import Address, CountryAlpha2
-from polar.kit.utils import utc_now
-from polar.locker import Locker
-from polar.models import Organization, Transaction, User
-from polar.models.payout import PayoutStatus
-from polar.models.transaction import TransactionType
-from polar.payout.schemas import PayoutGenerateInvoice
-from polar.payout.service import (
+from simeon.config import settings
+from simeon.exceptions import SimeonRequestValidationError
+from simeon.integrations.stripe.service import StripeService
+from simeon.kit.address import Address, CountryAlpha2
+from simeon.kit.utils import utc_now
+from simeon.locker import Locker
+from simeon.models import Organization, Transaction, User
+from simeon.models.payout import PayoutStatus
+from simeon.models.transaction import TransactionType
+from simeon.payout.schemas import PayoutGenerateInvoice
+from simeon.payout.service import (
     InsufficientBalance,
     InvoiceAlreadyExists,
     MissingInvoiceBillingDetails,
     NotReadyAccount,
     PayoutNotSucceeded,
 )
-from polar.payout.service import payout as payout_service
-from polar.postgres import AsyncSession
-from polar.transaction.repository import PayoutTransactionRepository
-from polar.transaction.service.payout import (
+from simeon.payout.service import payout as payout_service
+from simeon.postgres import AsyncSession
+from simeon.transaction.repository import PayoutTransactionRepository
+from simeon.transaction.service.payout import (
     PayoutTransactionService,
 )
 from tests.fixtures import random_objects as ro
@@ -38,14 +38,14 @@ from tests.transaction.conftest import create_transaction
 @pytest.fixture(autouse=True)
 def payout_transaction_service_mock(mocker: MockerFixture) -> MagicMock:
     mock = MagicMock(spec=PayoutTransactionService)
-    mocker.patch("polar.payout.service.payout_transaction_service", new=mock)
+    mocker.patch("simeon.payout.service.payout_transaction_service", new=mock)
     return mock
 
 
 @pytest.fixture(autouse=True)
 def stripe_service_mock(mocker: MockerFixture) -> MagicMock:
     mock = MagicMock(spec=StripeService)
-    mocker.patch("polar.payout.service.stripe_service", new=mock)
+    mocker.patch("simeon.payout.service.stripe_service", new=mock)
     return mock
 
 
@@ -219,7 +219,7 @@ class TestTriggerStripePayouts:
         organization_second: Organization,
         user_second: User,
     ) -> None:
-        enqueue_job_mock = mocker.patch("polar.payout.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.payout.service.enqueue_job")
 
         account_1 = await create_account(save_fixture, organization, user)
         account_2 = await create_account(save_fixture, organization_second, user_second)
@@ -384,7 +384,7 @@ class TestTriggerInvoiceGeneration:
         await save_fixture(payout2)
 
         # Try to set the same invoice number on the second payout
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await payout_service.trigger_invoice_generation(
                 session, payout2, PayoutGenerateInvoice(invoice_number=invoice_number)
             )
@@ -397,7 +397,7 @@ class TestTriggerInvoiceGeneration:
         organization: Organization,
         user: User,
     ) -> None:
-        enqueue_job_mock = mocker.patch("polar.payout.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.payout.service.enqueue_job")
 
         account = await create_account(
             save_fixture,
@@ -432,7 +432,7 @@ class TestTriggerInvoiceGeneration:
         organization: Organization,
         user: User,
     ) -> None:
-        enqueue_job_mock = mocker.patch("polar.payout.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.payout.service.enqueue_job")
 
         account = await create_account(
             save_fixture,
@@ -442,7 +442,7 @@ class TestTriggerInvoiceGeneration:
             billing_address=Address(country=CountryAlpha2("US"), line1="123 Test St"),
         )
 
-        original_invoice_number = "POLAR-12345"
+        original_invoice_number = "SIMEON-12345"
         payout = await create_payout(
             save_fixture,
             account=account,

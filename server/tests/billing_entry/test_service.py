@@ -3,12 +3,12 @@ from decimal import Decimal
 import pytest
 import pytest_asyncio
 
-from polar.billing_entry.service import billing_entry as billing_entry_service
-from polar.enums import SubscriptionRecurringInterval
-from polar.event.system import SystemEvent
-from polar.meter.aggregation import AggregationFunction, PropertyAggregation
-from polar.meter.filter import Filter, FilterConjunction
-from polar.models import (
+from simeon.billing_entry.service import billing_entry as billing_entry_service
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.event.system import SystemEvent
+from simeon.meter.aggregation import AggregationFunction, PropertyAggregation
+from simeon.meter.filter import Filter, FilterConjunction
+from simeon.models import (
     BillingEntry,
     Customer,
     Meter,
@@ -19,11 +19,11 @@ from polar.models import (
     ProductPrice,
     Subscription,
 )
-from polar.models.billing_entry import BillingEntryDirection, BillingEntryType
-from polar.models.event import EventSource
-from polar.models.subscription_product_price import SubscriptionProductPrice
-from polar.postgres import AsyncSession
-from polar.product.guard import (
+from simeon.models.billing_entry import BillingEntryDirection, BillingEntryType
+from simeon.models.event import EventSource
+from simeon.models.subscription_product_price import SubscriptionProductPrice
+from simeon.postgres import AsyncSession
+from simeon.product.guard import (
     StaticPrice,
     is_custom_price,
     is_fixed_price,

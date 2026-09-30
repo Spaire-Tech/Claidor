@@ -1,4 +1,4 @@
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import React from 'react'
 
 interface ProductPriceTypeLabelProps {

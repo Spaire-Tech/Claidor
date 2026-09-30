@@ -6,9 +6,9 @@ import { useOutsideClick } from '@/utils/useOutsideClick'
 import Face from '@mui/icons-material/Face'
 import LogoutOutlined from '@mui/icons-material/LogoutOutlined'
 import SpaceDashboardOutlined from '@mui/icons-material/SpaceDashboardOutlined'
-import { schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
-import { Separator } from '@claidor/ui/components/ui/separator'
+import { schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
+import { Separator } from '@simeon/ui/components/ui/separator'
 import Link from 'next/link'
 import { useRef, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -45,7 +45,7 @@ const PublicProfileDropdown = ({
     <>
       <div className={classNames}>
         <div
-          className=" relative flex shrink-0 cursor-pointer flex-row items-center rounded-full border-2 border-gray-50 shadow-xs transition-colors hover:border-blue-100"
+          className="relative flex shrink-0 cursor-pointer flex-row items-center rounded-full border-2 border-gray-50 shadow-xs transition-colors hover:border-blue-100"
           onClick={() => setOpen(true)}
         >
           <Avatar
@@ -59,7 +59,7 @@ const PublicProfileDropdown = ({
           <div
             ref={ref}
             className={twMerge(
-              '  absolute z-50 w-[300px] overflow-hidden rounded-3xl bg-white p-2 shadow-xl ',
+              'absolute z-50 w-[300px] overflow-hidden rounded-3xl bg-white p-2 shadow-xl',
               anchor === 'bottombar' ? 'bottom-12 left-0' : 'top-12 right-0',
             )}
           >

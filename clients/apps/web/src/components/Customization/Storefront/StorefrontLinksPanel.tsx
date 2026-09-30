@@ -23,7 +23,7 @@ import ShareOutlined from '@mui/icons-material/ShareOutlined'
 import StorefrontOutlined from '@mui/icons-material/StorefrontOutlined'
 import WorkOutlineOutlined from '@mui/icons-material/WorkOutlineOutlined'
 import YouTube from '@mui/icons-material/YouTube'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { useCallback, useRef, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { twMerge } from 'tailwind-merge'
@@ -417,9 +417,9 @@ export const StorefrontLinksPanel = ({
     setFetchingId(id)
     setExpandedIds((prev) => new Set([...prev, id]))
 
-    const currentSettings =
-      (getValues('storefront_settings') as any) ?? {}
-    const current = (currentSettings.storefront_links ?? []) as StorefrontLinkItem[]
+    const currentSettings = (getValues('storefront_settings') as any) ?? {}
+    const current = (currentSettings.storefront_links ??
+      []) as StorefrontLinkItem[]
     // Also stitch the new link into space_items so it actually shows
     // on the Space. We deliberately do NOT auto-append "unseen" link
     // ids in the resolver anymore (see Profile/spaceItems.ts — that
@@ -492,9 +492,9 @@ export const StorefrontLinksPanel = ({
 
   const removeLink = useCallback(
     (id: string) => {
-      const currentSettings =
-        (getValues('storefront_settings') as any) ?? {}
-      const current = (currentSettings.storefront_links ?? []) as StorefrontLinkItem[]
+      const currentSettings = (getValues('storefront_settings') as any) ?? {}
+      const current = (currentSettings.storefront_links ??
+        []) as StorefrontLinkItem[]
       // Drop the link from storefront_links AND from space_items so
       // the renderer can't resurrect it from the materialised order.
       // Same caveat as addLink: only patch space_items when it's

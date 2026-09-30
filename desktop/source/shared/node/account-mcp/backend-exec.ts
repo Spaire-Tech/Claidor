@@ -1,5 +1,5 @@
 // The backend the MCP manager talks to for a custom URL server (24 September
-// 2026). Grok Bot routed every HTTP server through Cursor's backend
+// 2026). The upstream app routed every HTTP server through Cursor's backend
 // (`cursor-backend/backend-mcp-exec.ts`: ListSandMcpTools, ExecuteSandMcpTool,
 // CheckHttpMcpStatus, CompleteMcpOAuth, …), which Simeon Labs' server does
 // not serve. This object answers for the servers in the account store

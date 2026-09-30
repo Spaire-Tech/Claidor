@@ -1,4 +1,4 @@
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { EventCardBase } from './EventCardBase'
 import { UserEventCard } from './UserEventCard'
 
@@ -14,7 +14,7 @@ const DataRow = ({
       <div className="flex w-48 flex-row items-center gap-x-4">
         <span>{label}</span>
       </div>
-      <span className=" text-gray-500">{value}</span>
+      <span className="text-gray-500">{value}</span>
     </div>
   )
 }

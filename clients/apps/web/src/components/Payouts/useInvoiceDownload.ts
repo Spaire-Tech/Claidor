@@ -2,7 +2,7 @@ import { useOrganizationSSE } from '@/hooks/sse'
 import { setValidationErrors } from '@/utils/api/errors'
 import { getQueryClient } from '@/utils/api/query'
 import { api } from '@/utils/client'
-import { isValidationError, type schemas } from '@claidor/client'
+import { isValidationError, type schemas } from '@simeon/client'
 import { useCallback, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 

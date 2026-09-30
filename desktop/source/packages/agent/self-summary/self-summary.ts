@@ -30,7 +30,7 @@ export interface SelfSummaryTokenDetails {
   readonly maxTokens?: number | undefined;
 }
 
-const logger = createLogger("@anysphere/agent");
+const logger = createLogger("@sand/agent");
 
 export function findLastUserMessageIndex(
   messages: readonly SelfSummaryMessage[],

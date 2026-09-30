@@ -1,6 +1,6 @@
-"""The dashboard-native Claidor billing endpoints resolve the creator org's
+"""The dashboard-native Simeon billing endpoints resolve the creator org's
 platform Customer and return its cards / orders / billing details — so a
-creator manages their Claidor subscription inside the dashboard instead of
+creator manages their Simeon subscription inside the dashboard instead of
 being redirected to the customer portal.
 
 These drive the endpoint functions directly with an Organization auth
@@ -15,21 +15,21 @@ import pytest
 from pytest_mock import MockerFixture
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from polar.auth.models import AuthSubject
-from polar.auth.scope import Scope
-from polar.enums import PaymentProcessor, SubscriptionRecurringInterval
-from polar.kit.address import AddressInput
-from polar.kit.pagination import PaginationParams
-from polar.models import (
+from simeon.auth.models import AuthSubject
+from simeon.auth.scope import Scope
+from simeon.enums import PaymentProcessor, SubscriptionRecurringInterval
+from simeon.kit.address import AddressInput
+from simeon.kit.pagination import PaginationParams
+from simeon.models import (
     Customer,
     Order,
     OrderItem,
     Organization,
     PaymentMethod,
 )
-from polar.models.order import OrderBillingReasonInternal, OrderStatus
-from polar.platform import endpoints as platform_endpoints
-from polar.platform.schemas import PlatformBillingDetailsUpdate
+from simeon.models.order import OrderBillingReasonInternal, OrderStatus
+from simeon.platform import endpoints as platform_endpoints
+from simeon.platform.schemas import PlatformBillingDetailsUpdate
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_customer,
@@ -49,9 +49,9 @@ _PAGINATION = PaginationParams(page=1, limit=20)
 async def _setup(
     save_fixture: SaveFixture, mocker: MockerFixture
 ) -> tuple[Organization, Organization, Customer]:
-    """Platform (Claidor) org + a creator org that is its Customer."""
+    """Platform (Simeon) org + a creator org that is its Customer."""
     platform_org = await create_organization(save_fixture)
-    mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+    mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
     creator = await create_organization(save_fixture)
     customer = await create_customer(
         save_fixture,
@@ -128,7 +128,7 @@ class TestPlatformBillingEndpoints:
             applied_balance_amount=0,
             currency="usd",
             billing_reason=OrderBillingReasonInternal.subscription_cycle,
-            invoice_number=f"CLAIDOR-{uuid.uuid4().hex[:6].upper()}-0001",
+            invoice_number=f"SIMEON-{uuid.uuid4().hex[:6].upper()}-0001",
             customer=customer,
             items=[
                 OrderItem(
@@ -184,7 +184,7 @@ class TestPlatformBillingEndpoints:
                 applied_balance_amount=0,
                 currency="usd",
                 billing_reason=OrderBillingReasonInternal.subscription_create,
-                invoice_number=f"CLAIDOR-{uuid.uuid4().hex[:6].upper()}-0001",
+                invoice_number=f"SIMEON-{uuid.uuid4().hex[:6].upper()}-0001",
                 customer=customer,
                 custom_field_data={},
                 user_metadata={},
@@ -270,10 +270,12 @@ class TestPlatformBillingEndpoints:
     ) -> None:
         # A creator org with no platform Customer yet -> ResourceNotFound.
         platform_org = await create_organization(save_fixture)
-        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+        mocker.patch(
+            "simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
+        )
         creator = await create_organization(save_fixture)
 
-        from polar.exceptions import ResourceNotFound
+        from simeon.exceptions import ResourceNotFound
 
         with pytest.raises(ResourceNotFound):
             await platform_endpoints.get_billing_details(

@@ -12,13 +12,9 @@ name: Desktop app (macOS)
 # where it did.
 #
 # The same build runs on a Mac for nothing: the loop in
-# docs/product/building-the-app.md. Until 25 September 2026 this workflow
-# still ran the LobsterAI-era steps (build-whisper.sh, npm run
-# dist:mac:arm64), none of which exist in the tree; it now runs the real
-# loop. Not measured: `npm run bootstrap` needs a genuine Grok Bot 0.18.0
-# app, which the runner has to download from Cursor's host (403 from a
-# build container on 19 September); if that step fails here, the build is
-# a Mac-only build until the archive is provided another way.
+# docs/building-the-app.md. `npm run bootstrap` needs the upstream 0.18.0
+# app (desktop/NOTICE.md); whether a GitHub runner can download it is not
+# measured, so this may stay a Mac-only build.
 on:
   workflow_dispatch:
 

@@ -1,4 +1,4 @@
-export type ThemePreset = 'claidor' | 'midday'
+export type ThemePreset = 'simeon' | 'midday'
 
 export type StripeThemingPresetProps = Record<string, unknown>
 

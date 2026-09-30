@@ -5,24 +5,28 @@ from unittest.mock import MagicMock
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.auth.models import AuthSubject
-from polar.auth.scope import Scope
-from polar.checkout.eventstream import CheckoutEvent
-from polar.exceptions import ClaidorRequestValidationError, ResourceNotFound
-from polar.kit.utils import utc_now
-from polar.models import (
+from simeon.auth.models import AuthSubject
+from simeon.auth.scope import Scope
+from simeon.checkout.eventstream import CheckoutEvent
+from simeon.exceptions import ResourceNotFound, SimeonRequestValidationError
+from simeon.kit.utils import utc_now
+from simeon.models import (
     Organization,
     Product,
     WebhookDelivery,
     WebhookEndpoint,
     WebhookEvent,
 )
-from polar.models.webhook_endpoint import WebhookEventType, WebhookFormat
-from polar.postgres import AsyncSession
-from polar.webhook.schemas import HttpsUrl, WebhookEndpointCreate, WebhookEndpointUpdate
-from polar.webhook.service import EventDoesNotExist, EventNotSuccessul
-from polar.webhook.service import webhook as webhook_service
-from polar.webhook.webhooks import WebhookCheckoutUpdatedPayload
+from simeon.models.webhook_endpoint import WebhookEventType, WebhookFormat
+from simeon.postgres import AsyncSession
+from simeon.webhook.schemas import (
+    HttpsUrl,
+    WebhookEndpointCreate,
+    WebhookEndpointUpdate,
+)
+from simeon.webhook.service import EventDoesNotExist, EventNotSuccessul
+from simeon.webhook.service import webhook as webhook_service
+from simeon.webhook.webhooks import WebhookCheckoutUpdatedPayload
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_checkout
@@ -30,7 +34,7 @@ from tests.fixtures.random_objects import create_checkout
 
 @pytest.fixture
 def enqueue_job_mock(mocker: MockerFixture) -> MagicMock:
-    return mocker.patch("polar.webhook.service.enqueue_job")
+    return mocker.patch("simeon.webhook.service.enqueue_job")
 
 
 webhook_url = cast(HttpsUrl, "https://example.com/hook")
@@ -51,7 +55,7 @@ class TestCreateEndpoint:
             organization_id=uuid.uuid4(),
         )
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await webhook_service.create_endpoint(session, auth_subject, create_schema)
 
     @pytest.mark.auth(
@@ -187,7 +191,7 @@ class TestOnEventSuccess:
         webhook_endpoint_organization: WebhookEndpoint,
     ) -> None:
         publish_checkout_event_mock = mocker.patch(
-            "polar.webhook.service.publish_checkout_event"
+            "simeon.webhook.service.publish_checkout_event"
         )
         checkout = await create_checkout(save_fixture, products=[product])
         timestamp = utc_now()

@@ -259,7 +259,7 @@ export async function main(
       `[sand-host] gateway listening on ${scheme}://${gatewayConfig.host}:${gateway.port}` +
       (gatewayConfig.authToken != null ? " (auth required)" : "")
     );
-    // The desktop stream behind Grok Bot's network token, when the Mac
+    // The desktop stream behind the upstream app's network token, when the Mac
     // handed the box one (box-stream-guard.ts, ledger F-135). Never awaited:
     // the host serves its gateway whatever becomes of the stream.
     void startBoxStreamGuardFromEnv({ log: line => log.log(line) });

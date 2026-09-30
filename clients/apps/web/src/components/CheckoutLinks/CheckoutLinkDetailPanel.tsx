@@ -7,16 +7,16 @@ import { useModal } from '@/components/Modal/useModal'
 import { SpinnerNoMargin } from '@/components/Shared/Spinner'
 import { toast } from '@/components/Toast/use-toast'
 import { useCheckoutLink, useDeleteCheckoutLink } from '@/hooks/queries'
-import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined'
 import LinkOutlined from '@mui/icons-material/LinkOutlined'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@claidor/ui/components/ui/dropdown-menu'
+} from '@simeon/ui/components/ui/dropdown-menu'
 
 interface CheckoutLinkDetailPanelProps {
   checkoutLinkId: string
@@ -51,7 +51,7 @@ export const CheckoutLinkDetailPanel = ({
           <span>Payment Link</span>
         </InlineModalHeader>
         <div className="flex flex-1 items-center justify-center">
-          <p className=" text-gray-500">Link not found</p>
+          <p className="text-gray-500">Link not found</p>
         </div>
       </div>
     )
@@ -110,7 +110,7 @@ const CheckoutLinkDetailPanelContent = ({
     <div className="flex h-full flex-col">
       <InlineModalHeader hide={onClose}>
         <div className="flex flex-row items-center gap-3">
-          <span className=" flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-600">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-600">
             <LinkOutlined fontSize="small" />
           </span>
           <div className="flex flex-col">
@@ -119,7 +119,7 @@ const CheckoutLinkDetailPanelContent = ({
                 ? checkoutLink.label
                 : 'Untitled'}
             </span>
-            <span className=" font-mono text-xs text-gray-500">
+            <span className="font-mono text-xs text-gray-500">
               {productLabel}
             </span>
           </div>
@@ -133,10 +133,7 @@ const CheckoutLinkDetailPanelContent = ({
               <MoreVertOutlined fontSize="inherit" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className=" bg-gray-50 shadow-lg"
-          >
+          <DropdownMenuContent align="end" className="bg-gray-50 shadow-lg">
             <DropdownMenuItem destructive onClick={showDeleteModal}>
               Delete payment link
             </DropdownMenuItem>

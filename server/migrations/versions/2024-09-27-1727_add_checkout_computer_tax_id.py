@@ -10,7 +10,7 @@ Create Date: 2024-09-27 17:27:44.293334
 import sqlalchemy as sa
 from alembic import op
 
-from polar.tax.tax_id import TaxIDType
+from simeon.tax.tax_id import TaxIDType
 
 # revision identifiers, used by Alembic.
 revision = "e4473617a8e9"

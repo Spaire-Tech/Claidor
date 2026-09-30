@@ -24,9 +24,6 @@ import { StorefrontLinkItem } from '@/components/Profile/StorefrontLinks'
 import { toast } from '@/components/Toast/use-toast'
 import { useUpdateOrganization } from '@/hooks/queries'
 import { withStorefrontSettingsDefaults } from '@/utils/storefrontSettings'
-import { isValidationError, schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
-import Switch from '@claidor/ui/components/atoms/Switch'
 import {
   closestCorners,
   DndContext,
@@ -46,6 +43,9 @@ import CloseOutlined from '@mui/icons-material/CloseOutlined'
 import EditOutlined from '@mui/icons-material/EditOutlined'
 import TranslateOutlined from '@mui/icons-material/TranslateOutlined'
 import Verified from '@mui/icons-material/Verified'
+import { isValidationError, schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
+import Switch from '@simeon/ui/components/atoms/Switch'
 import {
   useCallback,
   useEffect,

@@ -1,12 +1,12 @@
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { MouseEvent, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { Modal, ModalProps } from '.'
@@ -75,7 +75,7 @@ export const ConfirmModal = ({
             <>
               <h3 className="text-xl font-medium">{title}</h3>
               {description && (
-                <p className=" max-w-full text-sm text-gray-500">
+                <p className="max-w-full text-sm text-gray-500">
                   {description}
                 </p>
               )}
@@ -87,7 +87,7 @@ export const ConfirmModal = ({
                 >
                   {confirmPrompt && (
                     <>
-                      <p className=" max-w-full text-sm text-gray-500">
+                      <p className="max-w-full text-sm text-gray-500">
                         Please enter &quot;{confirmPrompt}&quot; to confirm:
                       </p>
                       <FormField

@@ -3,11 +3,11 @@
 import GithubLoginButton from '@/components/Auth/GithubLoginButton'
 import { useAuth } from '@/hooks'
 import ArrowForwardOutlined from '@mui/icons-material/ArrowForwardOutlined'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ClaidorLogotype } from './ClaidorLogotype'
+import { SimeonLogotype } from './SimeonLogotype'
 import TopbarRight from './TopbarRight'
 
 const Topbar = ({
@@ -74,7 +74,7 @@ const Topbar = ({
     <div className="z-50 flex w-full flex-col items-center py-4">
       <div className="flex w-full max-w-7xl flex-row flex-wrap justify-between gap-y-4 px-2">
         <div className="flex shrink-0 flex-row items-center gap-x-4 md:gap-x-12">
-          <ClaidorLogotype />
+          <SimeonLogotype />
         </div>
         {!hideProfile ? (
           <div className="relative flex flex-1 shrink-0 flex-row items-center justify-end gap-x-6 md:ml-0">

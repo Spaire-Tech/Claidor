@@ -6,13 +6,13 @@ import {
 } from '@/components/Profile/socialPlatforms'
 import DeleteOutlined from '@mui/icons-material/DeleteOutlined'
 import Public from '@mui/icons-material/Public'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-} from '@claidor/ui/components/atoms/Select'
+} from '@simeon/ui/components/atoms/Select'
 import { useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { isValidSocialUrl, normalizeSocialUrl } from './utils'
@@ -77,7 +77,7 @@ export const SocialLinkRow = ({
           placeholder="https://example.com"
           aria-invalid={showError ? true : undefined}
           className={twMerge(
-            'min-w-0 flex-1 rounded-xl border bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-0',
+            'min-w-0 flex-1 rounded-xl border bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0 focus:outline-none',
             showError
               ? 'border-red-300 focus:border-red-400'
               : 'border-gray-200 focus:border-[#0066cc]',

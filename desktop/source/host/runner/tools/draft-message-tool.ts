@@ -1,7 +1,7 @@
 /**
  * DraftExternalMessage and MarkDraftDelivered (25 September 2026).
  *
- * Grok Bot's draft composer rule (docs/product/sources/grok-bot-cards.md §6):
+ * The upstream draft composer rule:
  * any email or Slack message that would go out under the user's name is a
  * draft card by default; the user edits it and presses Send; drafting sends
  * nothing and does not end the turn by itself; a discarded card is a

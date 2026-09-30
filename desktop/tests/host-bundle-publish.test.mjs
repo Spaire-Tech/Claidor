@@ -4,7 +4,7 @@ import test from "node:test";
 
 import { buildHostBundle, LATEST_VERSION_FILE } from "../scripts/lib/host-bundle-publish.mjs";
 
-// The bundle the cloud computers mount, in Grok Bot's layout (29 September 2026).
+// The bundle the cloud computers mount, in the upstream app's layout (29 September 2026).
 function members(tarGz) {
   const tar = gunzipSync(tarGz);
   const found = [];
@@ -19,7 +19,7 @@ function members(tarGz) {
   return found;
 }
 
-test("the bundle is Grok Bot's layout, the same bytes every time, with the two files the server reads", () => {
+test("the bundle is the upstream app's layout, the same bytes every time, with the two files the server reads", () => {
   const input = { version: "afb1dedebc53", hostBytes: Buffer.from("host"), boxExecDaemonBytes: Buffer.from("daemon") };
   const first = buildHostBundle(input);
   assert.equal(first.tarballName, "sand-host-bundle-afb1dedebc53.tgz");

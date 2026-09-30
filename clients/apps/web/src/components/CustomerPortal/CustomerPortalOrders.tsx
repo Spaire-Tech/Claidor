@@ -1,9 +1,9 @@
 import { createClientSideAPI } from '@/utils/client'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { DataTable } from '@claidor/ui/components/atoms/DataTable'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
-import { getThemePreset } from '@claidor/ui/hooks/theming'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { DataTable } from '@simeon/ui/components/atoms/DataTable'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
+import { getThemePreset } from '@simeon/ui/hooks/theming'
 import Link from 'next/link'
 import { useState } from 'react'
 import { InlineModal } from '../Modal/InlineModal'
@@ -28,10 +28,7 @@ export const CustomerPortalOrders = ({
     schemas['CustomerOrder'] | null
   >(null)
 
-  const themingPreset = getThemePreset(
-    organization.slug,
-    'light',
-  )
+  const themingPreset = getThemePreset(organization.slug, 'light')
 
   const {
     isShown: isOrderModalOpen,

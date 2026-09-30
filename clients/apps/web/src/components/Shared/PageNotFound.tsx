@@ -1,6 +1,6 @@
 'use client'
 
-import Button from '@claidor/ui/components/atoms/Button'
+import Button from '@simeon/ui/components/atoms/Button'
 import Link from 'next/link'
 
 const PageNotFound = () => {

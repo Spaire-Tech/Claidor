@@ -1,10 +1,10 @@
 import pytest
 from sqlalchemy import delete, select, update
 
-from polar.kit.db.postgres import AsyncSession
-from polar.models import Event, EventClosure, Organization
-from polar.models.event import EventSource
 from scripts.backfill_event_closure import run_backfill
+from simeon.kit.db.postgres import AsyncSession
+from simeon.models import Event, EventClosure, Organization
+from simeon.models.event import EventSource
 from tests.fixtures.database import SaveFixture
 
 

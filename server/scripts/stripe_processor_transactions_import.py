@@ -10,10 +10,10 @@ import typer
 from rich.progress import Progress
 from sqlalchemy.dialects.postgresql import insert
 
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.models import ProcessorTransaction
-from polar.models.processor_transaction import Processor
-from polar.postgres import create_async_engine
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.models import ProcessorTransaction
+from simeon.models.processor_transaction import Processor
+from simeon.postgres import create_async_engine
 
 cli = typer.Typer()
 

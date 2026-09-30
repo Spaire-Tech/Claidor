@@ -16,7 +16,7 @@ To regenerate the golden HTML after an intentional renderer change:
 
 from __future__ import annotations
 
-from polar.email_broadcast.render import render_blocks_to_html
+from simeon.email_broadcast.render import render_blocks_to_html
 
 PARITY_FIXTURE = {
     "version": 1,

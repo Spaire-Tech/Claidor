@@ -1,5 +1,5 @@
-import { getCurrencyDecimalFactor } from '@claidor/currency'
-import Input from '@claidor/ui/components/atoms/Input'
+import { getCurrencyDecimalFactor } from '@simeon/currency'
+import Input from '@simeon/ui/components/atoms/Input'
 import Big from 'big.js'
 import React, { ComponentProps, useCallback, useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -100,7 +100,7 @@ const UnitAmountInput = ({
   )
 
   const currencyLabel = (
-    <span className=" text-sm font-medium text-gray-500">
+    <span className="text-sm font-medium text-gray-500">
       {currency.toUpperCase()}
     </span>
   )
@@ -110,7 +110,7 @@ const UnitAmountInput = ({
       ref={ref}
       {...rest}
       className={twMerge(
-        ' block w-full px-4 pl-14 text-base font-normal placeholder:text-gray-400',
+        'block w-full px-4 pl-14 text-base font-normal placeholder:text-gray-400',
         className ?? '',
       )}
       type="text"

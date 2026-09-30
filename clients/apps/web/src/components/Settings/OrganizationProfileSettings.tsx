@@ -13,18 +13,18 @@ import LinkedIn from '@mui/icons-material/LinkedIn'
 import Public from '@mui/icons-material/Public'
 import X from '@mui/icons-material/X'
 import YouTube from '@mui/icons-material/YouTube'
-import { isValidationError, schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
-import Button from '@claidor/ui/components/atoms/Button'
-import CopyToClipboardInput from '@claidor/ui/components/atoms/CopyToClipboardInput'
-import Input from '@claidor/ui/components/atoms/Input'
-import TextArea from '@claidor/ui/components/atoms/TextArea'
+import { isValidationError, schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
+import Button from '@simeon/ui/components/atoms/Button'
+import CopyToClipboardInput from '@simeon/ui/components/atoms/CopyToClipboardInput'
+import Input from '@simeon/ui/components/atoms/Input'
+import TextArea from '@simeon/ui/components/atoms/TextArea'
 import {
   Form,
   FormControl,
   FormField,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { AlertTriangle, CheckCircle, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import React, { useCallback } from 'react'
@@ -239,7 +239,8 @@ export const OrganizationDetailsForm: React.FC<
     onFileError: (_, error) => {
       toast({
         title: 'Upload failed',
-        description: error.message || 'Failed to upload image. Please try again.',
+        description:
+          error.message || 'Failed to upload image. Please try again.',
       })
     },
     initialFiles: [],
@@ -282,9 +283,7 @@ export const OrganizationDetailsForm: React.FC<
 
           <div className="space-y-4 sm:col-span-10">
             <div>
-              <label className="mb-2 block text-sm font-medium">
-                Name *
-              </label>
+              <label className="mb-2 block text-sm font-medium">Name *</label>
               <FormField
                 control={control}
                 name="name"
@@ -443,7 +442,6 @@ export const OrganizationDetailsForm: React.FC<
                 )}
               />
             </div>
-
           </div>
         </div>
       )}
@@ -494,7 +492,8 @@ const OrganizationProfileSettings: React.FC<
       if (response.status === 401) {
         toast({
           title: 'Session Expired',
-          description: 'Your session has expired. Please refresh the page and try again.',
+          description:
+            'Your session has expired. Please refresh the page and try again.',
         })
         return
       }

@@ -7,9 +7,9 @@ import stripe as stripe_lib
 from pytest_mock import MockerFixture
 from sqlalchemy.orm import joinedload
 
-from polar.enums import AccountType
-from polar.integrations.stripe.service import StripeService
-from polar.models import (
+from simeon.enums import AccountType
+from simeon.integrations.stripe.service import StripeService
+from simeon.models import (
     Account,
     IssueReward,
     Order,
@@ -18,15 +18,15 @@ from polar.models import (
     Transaction,
     User,
 )
-from polar.models.transaction import (
+from simeon.models.transaction import (
     PlatformFeeType,
     Processor,
     ProcessorFeeType,
     TransactionType,
 )
-from polar.postgres import AsyncSession
-from polar.transaction.service.platform_fee import PayoutAmountTooLow
-from polar.transaction.service.platform_fee import (
+from simeon.postgres import AsyncSession
+from simeon.transaction.service.platform_fee import PayoutAmountTooLow
+from simeon.transaction.service.platform_fee import (
     platform_fee_transaction as platform_fee_transaction_service,
 )
 from tests.fixtures.database import SaveFixture
@@ -329,7 +329,7 @@ class TestCreateFeesReversalBalances:
     ) -> None:
         stripe_service_mock = MagicMock(spec=StripeService)
         mocker.patch(
-            "polar.transaction.service.platform_fee.stripe_service",
+            "simeon.transaction.service.platform_fee.stripe_service",
             new=stripe_service_mock,
         )
         stripe_service_mock.get_charge.return_value = stripe_lib.Charge.construct_from(
@@ -421,7 +421,7 @@ class TestCreateFeesReversalBalances:
     ) -> None:
         stripe_service_mock = MagicMock(spec=StripeService)
         mocker.patch(
-            "polar.transaction.service.platform_fee.stripe_service",
+            "simeon.transaction.service.platform_fee.stripe_service",
             new=stripe_service_mock,
         )
         stripe_service_mock.get_charge.return_value = stripe_lib.Charge.construct_from(

@@ -13,16 +13,16 @@ import ArrowDownward from '@mui/icons-material/ArrowDownward'
 import ArrowUpward from '@mui/icons-material/ArrowUpward'
 import MoreVert from '@mui/icons-material/MoreVert'
 import Search from '@mui/icons-material/Search'
-import { schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
+import { schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@claidor/ui/components/ui/dropdown-menu'
+} from '@simeon/ui/components/ui/dropdown-menu'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs'
@@ -114,7 +114,7 @@ export const CustomerListSidebar: React.FC<CustomerListSidebarProps> = ({
 
   return (
     <>
-      <div className=" flex h-full flex-col divide-y divide-gray-200">
+      <div className="flex h-full flex-col divide-y divide-gray-200">
         <div className="flex flex-row items-center justify-between gap-6 px-4 py-4">
           <div>Customers</div>
           <div className="flex flex-row items-center gap-4">
@@ -159,11 +159,8 @@ export const CustomerListSidebar: React.FC<CustomerListSidebarProps> = ({
         </div>
         <div className="flex flex-row items-center gap-3 px-4 py-2">
           <div className="flex flex-1 flex-row items-center gap-3">
-            <div className=" flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
-              <Search
-                fontSize="inherit"
-                className=" text-gray-500"
-              />
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
+              <Search fontSize="inherit" className="text-gray-500" />
             </div>
             <Input
               className="w-full rounded-none border-none bg-transparent p-0 shadow-none! ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -173,7 +170,7 @@ export const CustomerListSidebar: React.FC<CustomerListSidebarProps> = ({
             />
           </div>
         </div>
-        <div className=" flex h-full grow flex-col divide-y divide-gray-50 overflow-y-auto">
+        <div className="flex h-full grow flex-col divide-y divide-gray-50 overflow-y-auto">
           {customers.map((customer) => {
             return (
               <Link
@@ -182,9 +179,8 @@ export const CustomerListSidebar: React.FC<CustomerListSidebarProps> = ({
                   `/dashboard/${organization.slug}/customers/${customer.id}`,
                 )}
                 className={twMerge(
-                  ' cursor-pointer hover:bg-gray-100',
-                  selectedCustomerId === customer.id &&
-                    ' bg-gray-100',
+                  'cursor-pointer hover:bg-gray-100',
+                  selectedCustomerId === customer.id && 'bg-gray-100',
                 )}
               >
                 <div className="flex flex-row items-center gap-3 px-4 py-3">
@@ -197,7 +193,7 @@ export const CustomerListSidebar: React.FC<CustomerListSidebarProps> = ({
                     <div className="w-full truncate text-sm">
                       {customer.name ?? '—'}
                     </div>
-                    <div className=" w-full truncate text-xs text-gray-500">
+                    <div className="w-full truncate text-xs text-gray-500">
                       {customer.email}
                     </div>
                   </div>

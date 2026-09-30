@@ -1,5 +1,5 @@
 import { useProduct } from '@/hooks/queries'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { DashboardBody } from '../Layout/DashboardLayout'
 import { CreateProductPage } from './CreateProductPage'
 
@@ -22,9 +22,7 @@ export const CreateProductPageWrapper = ({
         className="gap-y-16"
       >
         <div className="flex items-center justify-center py-16">
-          <p className=" text-gray-500">
-            Loading product...
-          </p>
+          <p className="text-gray-500">Loading product...</p>
         </div>
       </DashboardBody>
     )

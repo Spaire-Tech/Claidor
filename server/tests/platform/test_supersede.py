@@ -11,11 +11,11 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.enums import SubscriptionRecurringInterval
-from polar.models import Customer, Organization, Product
-from polar.models.subscription import SubscriptionStatus
-from polar.platform.fee_sync import maybe_supersede_platform_trial
-from polar.postgres import AsyncSession
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.models import Customer, Organization, Product
+from simeon.models.subscription import SubscriptionStatus
+from simeon.platform.fee_sync import maybe_supersede_platform_trial
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_customer,
@@ -29,7 +29,7 @@ async def _setup(
     save_fixture: SaveFixture, mocker: MockerFixture
 ) -> tuple[Organization, Product, Customer]:
     platform_org = await create_organization(save_fixture)
-    mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+    mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
     product = await create_product(
         save_fixture,
         organization=platform_org,
@@ -121,7 +121,7 @@ class TestMaybeSupersedePlatformTrial:
         session: AsyncSession,
         save_fixture: SaveFixture,
     ) -> None:
-        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", None)
+        mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", None)
         org = await create_organization(save_fixture)
         product = await create_product(
             save_fixture,

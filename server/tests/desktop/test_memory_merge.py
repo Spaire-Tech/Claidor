@@ -1,12 +1,12 @@
 """The merge rules of the shared memory, on their own
-(`polar/desktop/memory_merge.py`). No database, no I/O: two strings in,
+(`simeon/desktop/memory_merge.py`). No database, no I/O: two strings in,
 one string out."""
 
 import hashlib
 
 import pytest
 
-from polar.desktop.memory_merge import (
+from simeon.desktop.memory_merge import (
     MEMORY_FILE_RULES,
     MemoryRule,
     fact_id,
@@ -229,7 +229,7 @@ class TestNames:
 
 
 class TestTheAppsNames:
-    """The Grok Bot reconstruction's own layout under the sand root
+    """The reconstruction's own layout under the sand root
     (25 September 2026, `memory-service.ts`), widened into the accepted
     list so the box's host can sync what it actually writes."""
 
@@ -354,6 +354,6 @@ class TestMergeMemoryFile:
             == "theirs\n"
         )
 
-    def test_a_name_claidor_does_not_keep_raises(self) -> None:
+    def test_a_name_the_server_does_not_keep_raises(self) -> None:
         with pytest.raises(ValueError, match="SOUL.md"):
             merge_memory_file("SOUL.md", "a", "b")

@@ -27,34 +27,34 @@ import typer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from polar.enums import SubscriptionRecurringInterval, TaxBehaviorOption
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.kit.trial import TrialInterval
-from polar.meter.aggregation import (
+from simeon.enums import SubscriptionRecurringInterval, TaxBehaviorOption
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.kit.trial import TrialInterval
+from simeon.meter.aggregation import (
     AggregationFunction,
     CountAggregation,
     PropertyAggregation,
 )
-from polar.meter.filter import (
+from simeon.meter.filter import (
     Filter,
     FilterClause,
     FilterConjunction,
     FilterOperator,
 )
-from polar.models import (
+from simeon.models import (
     Meter,
     Organization,
     Product,
     ProductPrice,
 )
-from polar.models.product_price import (
+from simeon.models.product_price import (
     ProductPriceAmountType,
     ProductPriceFixed,
     ProductPriceFree,
 )
-from polar.platform.service import PlatformError
-from polar.platform.service import platform as platform_service
-from polar.postgres import create_async_engine
+from simeon.platform.service import PlatformError
+from simeon.platform.service import platform as platform_service
+from simeon.postgres import create_async_engine
 
 cli = typer.Typer()
 
@@ -311,7 +311,7 @@ def _configure_platform_org(platform_org: Organization, *, dry_run: bool) -> str
     can create a creator's new paid subscription WHILE their auto-trial is
     still active (the trial is only superseded once payment succeeds). Each
     creator still ends up with exactly one active platform subscription —
-    the setting only relaxes Polar's checkout uniqueness guard, which would
+    the setting only relaxes Simeon's checkout uniqueness guard, which would
     otherwise reject the conversion checkout.
     """
     current = dict(platform_org.subscription_settings)
@@ -448,7 +448,7 @@ async def _upsert_product(
             name=spec.name,
             description=spec.description,
             recurring_interval=spec.recurring_interval,
-            # Polar's checkout asserts product.recurring_interval_count
+            # Simeon's checkout asserts product.recurring_interval_count
             # is not None when creating a subscription. We always bill
             # every interval (every month or every year), so 1 is the
             # right value for every tier; setting it explicitly avoids
@@ -478,7 +478,7 @@ async def _upsert_product(
         changed = True
     if existing.recurring_interval_count != 1:
         # Backfill the field on previously-seeded rows so the next
-        # checkout doesn't trip Polar's assertion.
+        # checkout doesn't trip Simeon's assertion.
         if not dry_run:
             existing.recurring_interval_count = 1
         changed = True

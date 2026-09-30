@@ -9,7 +9,7 @@ Create Date: 2025-06-04 15:06:32.396008
 import sqlalchemy as sa
 from alembic import op
 
-from polar.kit.address import AddressType
+from simeon.kit.address import AddressType
 
 # Polar Custom Imports
 

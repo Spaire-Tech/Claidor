@@ -1,7 +1,7 @@
 import { markdownOptions } from '@/utils/markdown'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
 import type { CheckoutOrganization } from '@spaire/sdk/models/components/checkoutorganization'
 import type { CheckoutProduct } from '@spaire/sdk/models/components/checkoutproduct'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
 import Markdown from 'markdown-to-jsx'
 import { Slideshow } from '../Products/Slideshow'
 
@@ -25,14 +25,14 @@ const CheckoutProductInfo = ({
         {product.name ? (
           <h1 className="text-3xl">{product.name}</h1>
         ) : (
-          <div className=" h-6 w-48 animate-pulse rounded-md bg-gray-200" />
+          <div className="h-6 w-48 animate-pulse rounded-md bg-gray-200" />
         )}
       </div>
       {product.medias.length > 0 && (
         <Slideshow images={product.medias.map((m) => m.publicUrl)} />
       )}
       {product.description && (
-        <div className="prose prose-headings:mt-8 prose-headings:font-medium prose-headings:text-black prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-h4:text-md prose-h5:text-sm prose-h6:text-sm   max-w-4xl leading-normal text-gray-800">
+        <div className="prose prose-headings:mt-8 prose-headings:font-medium prose-headings:text-black prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-h4:text-md prose-h5:text-sm prose-h6:text-sm max-w-4xl leading-normal text-gray-800">
           <Markdown options={markdownOptions}>{product.description}</Markdown>
         </div>
       )}

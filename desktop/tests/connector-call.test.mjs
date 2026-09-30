@@ -1,7 +1,7 @@
 /**
  * The founder's Notion thread (26 September 2026): the first write failed,
  * the agent said the connector was "adding its own Notion prefix twice" and
- * retried with a guessed shorter name. Grok Bot's CallMcpTool builds `name: "<server>-<tool>"` beside
+ * retried with a guessed shorter name. The upstream app's CallMcpTool builds `name: "<server>-<tool>"` beside
  * `toolName: "<tool>"` (`buildMcpArgs`), and discovery sent `name` to
  * the server. It sends `toolName` now.
  */
@@ -35,7 +35,7 @@ test("a CallMcpTool call reaches the server under the server's own tool name", a
       definitionSource: { getServerUrlForIdentifier: async () => "https://mcp.notion.com/mcp", getStdioServerConfigs: async () => ({}) },
     };
     const discovery = module.createMcpToolsDiscovery(core);
-    // The shape Grok Bot's buildMcpArgs produces for server "notion", tool
+    // The shape the upstream app's buildMcpArgs produces for server "notion", tool
     // "notion-create-pages".
     await discovery.executeTool(undefined, { name: "notion-notion-create-pages", toolName: "notion-create-pages", providerIdentifier: "notion", serverIdentifier: "notion", args: {}, toolCallId: "call-1" }, { agentId: "agent-1" });
     assert.equal(sent.length, 1);

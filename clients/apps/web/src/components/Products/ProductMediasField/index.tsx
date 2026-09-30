@@ -1,5 +1,5 @@
 import AddPhotoAlternateOutlined from '@mui/icons-material/AddPhotoAlternateOutlined'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { ReactNode, useCallback, useState } from 'react'
 import { FileRejection } from 'react-dropzone'
 import { twMerge } from 'tailwind-merge'
@@ -19,16 +19,14 @@ const DropzoneView = ({
       <div
         className={twMerge(
           'flex aspect-video w-full cursor-pointer items-center justify-center rounded-2xl border border-transparent px-4',
-          isDragActive
-            ? ' border-blue-100 bg-blue-50'
-            : ' bg-gray-100',
+          isDragActive ? 'border-blue-100 bg-blue-50' : 'bg-gray-100',
         )}
       >
-        <div className=" text-center text-gray-500">
+        <div className="text-center text-gray-500">
           <div className="mb-4">
             <AddPhotoAlternateOutlined fontSize="medium" />
           </div>
-          <p className=" text-xs font-medium text-gray-700">
+          <p className="text-xs font-medium text-gray-700">
             {isDragActive ? "Drop it like it's hot" : 'Add product media'}
           </p>
           <p className="mt-2 text-xs">
@@ -85,7 +83,8 @@ const ProductMediasField = ({
     onFileError: (_, error) => {
       toast({
         title: 'Upload failed',
-        description: error.message || 'Failed to upload file. Please try again.',
+        description:
+          error.message || 'Failed to upload file. Please try again.',
       })
     },
     initialFiles: value || [],
@@ -103,7 +102,7 @@ const ProductMediasField = ({
       </div>
 
       {filesRejected.length > 0 && (
-        <div className="rounded-lg border border-red-200 bg-red-100 p-4 text-red-800  ">
+        <div className="rounded-lg border border-red-200 bg-red-100 p-4 text-red-800">
           {filesRejected.map((file) => (
             <p key={file.file.name}>
               {file.file.name} is not a valid image or is too large.
@@ -111,7 +110,6 @@ const ProductMediasField = ({
           ))}
         </div>
       )}
-
     </>
   )
 }

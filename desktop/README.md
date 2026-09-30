@@ -1,31 +1,34 @@
-# Simeon, the desktop app
+# Simeon, the Mac app
 
-Simeon is a team of always-on agents on your Mac, each with a computer of
-its own. This directory is the Electron app: the window is the pinned Grok
-Bot 0.18.0 renderer, patched at package time to say Simeon; the host, the
-agent loop, the box connectors and the Electron main process compile from
-the readable sources under `source/`; and every model call goes to Simeon
-Labs' server (`api.simeonlabs.com`, the `server/` directory of this
-repository), never to Cursor.
+Simeon is a team of always-on agents, each with a computer of its own. This
+directory is the Mac app, built with Electron:
 
-`docs/product/building-the-app.md` is the map of what the packaged bundle
-contains and where each piece comes from. `PROVENANCE.md` and `NOTICE.md`
-say what is taken from the shipped 0.18.0 app and on what terms.
+- **The window** is an upstream app's compiled renderer, pinned by checksum
+  and patched at package time to be Simeon's (`NOTICE.md` says where it
+  comes from and on what terms).
+- **Everything else** compiles from the readable sources under `source/`:
+  the Electron main process, the host with the agent loop and its tools,
+  and the connectors to the agent's computer.
+- **Every model call** goes to Simeon Labs' server (`api.simeonlabs.com`,
+  the `server/` folder of this repository).
+
+`../docs/building-the-app.md` explains the build in full, and
+`../docs/architecture.md` explains how the parts fit together.
 
 ## Build and install
 
-macOS on Apple Silicon only, Node 26, Xcode Command Line Tools, and a
-genuine Grok Bot 0.18.0 app for `npm run bootstrap` to read (not in this
-repository; see `building-the-app.md` for how it is found).
+You need macOS on Apple Silicon, Node 26, the Xcode Command Line Tools, and
+the upstream 0.18.0 app for `npm run bootstrap` to read. That app is not in
+this repository; `../docs/building-the-app.md` says how bootstrap finds it.
 
 ```sh
 cd desktop
 source ~/.nvm/nvm.sh && nvm use 26
 npm ci                 # never npm install: the lockfile is the contract
-npm run bootstrap      # hydrate src/app/dist from the pinned 0.18.0 app
-npm run check          # typecheck + node --test, a required gate
+npm run bootstrap      # fill src/app/dist from the pinned 0.18.0 app
+npm run check          # typecheck and tests; must pass
 npm run package        # dist/Simeon.app, ad-hoc signed
-npm run verify         # audit the bundle, a required gate
+npm run verify         # checks the packaged app; must pass
 ```
 
 Then quit Simeon and install the new build:
@@ -34,45 +37,37 @@ Then quit Simeon and install the new build:
 rm -rf /Applications/Simeon.app && cp -R dist/Simeon.app /Applications/ && open /Applications/Simeon.app
 ```
 
-The app is ad-hoc signed until an Apple certificate exists, so macOS re-keys
-the Keychain entries on every new build; sign in again if asked.
+The app is ad-hoc signed until an Apple certificate exists, so macOS asks for
+Keychain access again after each new build. Sign in again if asked.
 
 ## What runs where
 
-- **The window**: `dist/renderer/`, the checksum-pinned 0.18.0 renderer.
-  Its bytes are edited only by `scripts/lib/router-renderer-patch.mjs` at
-  package time (brand strings, marks, palette, header card, glass), and
-  the patch record (`dist/renderer-router-extension.json`) carries every
-  touched file's original and patched hash, which `npm run verify` reads.
-- **The Electron main process** (`source/electron-main/`): sign-in to
-  Simeon Labs, the account, settings, the local Docker box connector, the
-  coordinator, the noVNC computer panel.
-- **The host** (`source/host/`): the agent loop and its tools, running
-  inside the box; `/tmp/sand-host.log` in the container is where every
-  `[claidor]` line goes.
-- **The box**: a local Docker container (`simeon-box`) by default; a cloud
-  box through Simeon Labs' broker when a host is configured.
-- **`frontend/`**: a readable partial reconstruction of the renderer. It is
-  not what `npm run package` ships (the atom stylesheet was never
-  recovered), and it is kept for reading and for the twenty-one avatars.
+- **The window**: `dist/renderer/`. Only `scripts/lib/router-renderer-patch.mjs`
+  changes its bytes, at package time (names, marks, colours, layout). The
+  patch record (`dist/renderer-router-extension.json`) holds the original and
+  patched hash of every file it touched, and `npm run verify` reads it.
+- **The Electron main process** (`source/electron-main/`): sign-in, the
+  account, settings, the connection to the agent's computer, the coordinator,
+  and the computer's screen panel.
+- **The host** (`source/host/`): the agent loop and its tools. It runs inside
+  the agent's computer and writes its log to `/tmp/sand-host.log` there;
+  Simeon's own lines start with `[simeon]`.
+- **The agent's computer**: a cloud computer run by Simeon Labs' server.
+  A local Docker computer (`SAND_BOX_RUNTIME=local-docker`) is for testing
+  only.
+- **`frontend/`**: a readable partial reconstruction of the window. It is not
+  what `npm run package` ships; it is kept for reading and for the avatars.
 
-## Development commands
+## Other commands
 
 ```sh
-npm test                  # node --test tests/*.test.mjs
-npm run typecheck         # frontend TypeScript
-npm run source:typecheck  # runtime TypeScript
-npm run start:clean-source # the reconstructed UI, for reading
-npm run package:diagnostic # the fidelity bundle, for measuring
-npm run verify            # verify an existing packaged app
+npm test                   # node --test tests/*.test.mjs
+npm run typecheck          # frontend TypeScript
+npm run source:typecheck   # runtime TypeScript
+npm run start:clean-source # the reconstructed window, for reading
+npm run package:diagnostic # the full-fidelity bundle, for measuring
+npm run demo               # the patched window in a browser, after package
 ```
 
-Generated directories (`.cache`, `.build`, `dist`, `src/app/dist`, `.tmp*`)
-are ignored.
-
-## Where the records are
-
-The product's decisions and measurements are in `docs/product/` at the
-repository root, one dated file per subject; `CLAUDE.md` at the root is the
-index. Nothing in this directory should be described from memory: read the
-record, or run the build.
+Generated folders (`.cache`, `.build`, `dist`, `src/app/dist`, `.tmp*`) are
+ignored by git.

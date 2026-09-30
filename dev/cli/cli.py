@@ -7,9 +7,9 @@
 # ]
 # ///
 """
-Polar Development CLI
+Simeon Development CLI
 
-A CLI tool to streamline Polar development environment setup and management.
+A CLI tool to streamline Simeon development environment setup and management.
 """
 
 import importlib.util
@@ -35,7 +35,7 @@ from shared import (
 
 app = typer.Typer(
     name="dev",
-    help="Polar Development CLI - streamline your dev environment",
+    help="Simeon Development CLI - streamline your dev environment",
     no_args_is_help=True,
 )
 
@@ -145,7 +145,7 @@ def up(
     Installs dependencies, starts infrastructure, runs migrations,
     and prompts to configure GitHub and Stripe integrations.
     """
-    console.print("\n[bold blue]Setting up Polar development environment[/bold blue]\n")
+    console.print("\n[bold blue]Setting up Simeon development environment[/bold blue]\n")
 
     ctx = Context(clean=clean, skip_integrations=skip_integrations)
     steps = discover_steps()
@@ -168,7 +168,7 @@ def up(
 @app.command()
 def help() -> None:
     """Show all available commands."""
-    console.print("\n[bold blue]Polar Development CLI[/bold blue]\n")
+    console.print("\n[bold blue]Simeon Development CLI[/bold blue]\n")
     console.print("Usage: [bold]dev <command>[/bold]\n")
 
     console.print("[bold]Setup & Environment:[/bold]")

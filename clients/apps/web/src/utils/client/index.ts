@@ -3,7 +3,7 @@ import {
   createClient as baseCreateClient,
   Client,
   Middleware,
-} from '@claidor/client'
+} from '@simeon/client'
 import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies'
 import { NextRequest } from 'next/server'
 
@@ -53,10 +53,12 @@ export const createServerSideAPI = async (
     }
   }
 
-  // Use POLAR_API_URL for server-side requests (e.g., in Docker containers)
+  // Use SIMEON_API_URL for server-side requests (e.g., in Docker containers)
   // Fall back to NEXT_PUBLIC_API_URL for local development
   const apiUrl =
-    process.env.POLAR_API_URL || (process.env.NEXT_PUBLIC_API_URL as string)
+    process.env.SIMEON_API_URL ||
+    process.env.POLAR_API_URL ||
+    (process.env.NEXT_PUBLIC_API_URL as string)
 
   const client = baseCreateClient(apiUrl, token, apiHeaders)
 

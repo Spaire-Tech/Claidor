@@ -6,7 +6,7 @@ import { chmod, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises"
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { PRODUCT_INFERENCE_PROVIDER, SAND_INFERENCE_PROVIDER_ENV } from "../../shared/inference-router.js";
+import { PRODUCT_INFERENCE_PROVIDER, readSimeonEnv, SAND_INFERENCE_PROVIDER_ENV } from "../../shared/inference-router.js";
 import { getConfiguredBackendUrl } from "../../shared/node/cursor-token.js";
 import { buildSandBoxNoVncUrl } from "../../packages/constants/sand-box.js";
 import type { SandSettingsStore } from "../../shared/node/settings/sand-settings-store.js";
@@ -21,42 +21,41 @@ export const LOCAL_DOCKER_BOX_IMAGE = "public.ecr.aws/k0i0n2g5/cursorenvironment
 // `SAND_BOX_IMAGE_DIGEST=<64 hex>` makes every create run `image@sha256:<digest>`
 // and refuse a container on any other reference. The digest is read on a
 // Mac (`docker image inspect --format '{{index .RepoDigests 0}}' <image>`)
-// and recorded in docs/product/box-substrate-read.md; none is pinned yet.
+// and recorded in docs/services-core.md; none is pinned yet.
 export function localDockerBoxImageReference(env: NodeJS.ProcessEnv = process.env): string {
   const digest = env.SAND_BOX_IMAGE_DIGEST?.trim().toLowerCase().replace(/^sha256:/, "") ?? "";
   return /^[0-9a-f]{64}$/.test(digest) ? `${LOCAL_DOCKER_BOX_IMAGE}@sha256:${digest}` : LOCAL_DOCKER_BOX_IMAGE;
 }
-// The container carries our own name. Until 23 September 2026 it was
-// "grok-bot-local-vm", the name this tree's origin (Grok Bot 0.18) gave its
-// own local mode, so an installed Grok Bot and Simeon would have contended
-// for one container, and the replace below would have removed the other's.
-// The two volumes keep their names on purpose: the workspace and the host's
-// data carry over to the renamed container unchanged. A leftover
-// "grok-bot-local-vm" is not removed by this app, because the same name may
-// be the real Grok Bot's; `docker rm -f grok-bot-local-vm` by hand, once,
-// after checking that it mounts our host bundle.
+// The container, its two volumes and its labels carry Simeon's names. A
+// container made before 29 September 2026 carries the earlier owner label
+// (LEGACY_LOCAL_DOCKER_LABEL_PREFIX); it still counts as ours, so it is
+// replaced like any stale one, and it starts on fresh volumes. This path is
+// for internal testing only (SAND_BOX_RUNTIME=local-docker); people run on
+// the cloud computer.
 export const LOCAL_DOCKER_BOX_CONTAINER = "simeon-box";
 export const LOCAL_DOCKER_GATEWAY_URL = "http://127.0.0.1:1340";
-export const LOCAL_DOCKER_OWNER_LABEL = "com.grok-bot.local-vm=1";
+const LOCAL_DOCKER_LABEL_PREFIX = "com.simeonlabs.box";
+const LEGACY_LOCAL_DOCKER_LABEL_PREFIX = "com.grok-bot.local-vm";
+export const LOCAL_DOCKER_OWNER_LABEL = `${LOCAL_DOCKER_LABEL_PREFIX}=1`;
 // 11 since 26 September 2026: the stream is published through the host's
 // token guard instead of websockify's bare ports (ledger F-135). 12 the same
-// day: the box's credentials reach it in its environment, the way Grok Bot's
+// day: the box's credentials reach it in its environment, the way the upstream app's
 // pod receives them, and no token file is mounted from the Mac (F-148).
 export const LOCAL_DOCKER_SCHEMA_VERSION = "12";
 /**
  * Where the stream is published on the Mac, and to what in the box: the
  * guard's listeners (16080, 16081), never websockify's own 6080 and 6081,
  * which only the guard reaches, on the box's loopback. The Mac keeps the
- * port numbers Grok Bot's URLs name.
+ * port numbers the upstream app's URLs name.
  */
 export const LOCAL_DOCKER_STREAM_PUBLISH = Object.freeze(["127.0.0.1:6080:16080", "127.0.0.1:6081:16081"]);
 export const LOCAL_DOCKER_STREAM_PRIMARY_BASE = "http://127.0.0.1:6080";
 export const LOCAL_DOCKER_STREAM_FORK_BASE = "http://127.0.0.1:6081";
 /**
- * Grok Bot's `vncProxy` descriptor for the local box: the coordinator
+ * The upstream app's `vncProxy` descriptor for the local box: the coordinator
  * rewrites every box status's stream URL through it (`box-vnc-proxy.ts`)
  * and Electron's box session sends the token on every request of the page
- * (`vnc-trust.ts`), exactly as for Grok Bot's cloud box.
+ * (`vnc-trust.ts`), exactly as for the upstream app's cloud box.
  */
 export function localDockerVncProxy(networkToken: string): NonNullable<GatewayConnection["vncProxy"]> {
   return {
@@ -124,10 +123,10 @@ function runDocker(args: readonly string[]): Promise<CommandResult> {
 }
 
 /**
- * The box's credentials, kept the way Grok Bot keeps them (ledger F-148,
+ * The box's credentials, kept the way the upstream app keeps them (ledger F-148,
  * 26 September 2026).
  *
- * Grok Bot never leaves a box credential on the person's Mac in the clear.
+ * The upstream app never leaves a box credential on the person's Mac in the clear.
  * Its box descriptor, gateway token and network token included, is written
  * encrypted with Electron's `safeStorage` (`gateway-descriptor-store.ts`),
  * and its secret store holds a value encrypted when encryption is available
@@ -137,12 +136,12 @@ function runDocker(args: readonly string[]): Promise<CommandResult> {
  * environment (`SAND_GATEWAY_TOKEN`, `SAND_INFERENCE_RENEWAL_CREDENTIAL`) and
  * renews its short-lived model token itself (`host/extensions/auth`).
  *
- * The local Docker box used Grok Bot's development path instead: the
+ * The local Docker box used the upstream app's development path instead: the
  * gateway token in plain `local-docker-vm.json`, and a one-hour model token,
  * later with the renewal credential beside it, in plain
  * `local-docker-credential/inference.json`, mounted into the box and
  * rewritten every five minutes (`SAND_DEV_INFERENCE_TOKEN_FILE`). Now the Mac
- * plays Grok Bot's broker: the three secrets live in one file encrypted with
+ * plays the upstream app's broker: the three secrets live in one file encrypted with
  * `safeStorage` (in memory only when encryption is unavailable), the box gets
  * them in its environment at creation, and it renews its own token. Those
  * plain files are adopted once and then removed.
@@ -162,7 +161,7 @@ export function configureLocalDockerSecretStorage(storage: LocalDockerSecretStor
   secretsCache = undefined;
 }
 
-// Grok Bot's rule, `resolveSecretStorageMode` in `secret-store.ts`: encrypted
+// The upstream app's rule, `resolveSecretStorageMode` in `secret-store.ts`: encrypted
 // when encryption is available, in memory when it is not. Restated here so the
 // connector does not load that module's telemetry.
 function storageMode(storage: LocalDockerSecretStorage): "encrypted" | "in-memory" {
@@ -234,7 +233,7 @@ async function persistSecrets(settingsPath: string, value: LocalDockerSecrets, o
   secretsCache = { path, value };
   const storage = requireSecretStorage();
   if (storageMode(storage) !== "encrypted") {
-    // Grok Bot's rule: without encryption nothing is written; the values
+    // The upstream app's rule: without encryption nothing is written; the values
     // live for this run only. Plain files already on disk are left alone.
     if (!reportedInMemory) { reportedInMemory = true; computerStreamLine("local docker: encryption is unavailable, so the box's credentials are kept in memory for this run only"); }
     return;
@@ -310,12 +309,12 @@ async function inspectContainer(): Promise<{ exists: boolean; running: boolean; 
     return {
       exists: true,
       running: value.State?.Running === true,
-      owned: value.Config?.Labels?.["com.grok-bot.local-vm"] === "1",
+      owned: value.Config?.Labels?.[LOCAL_DOCKER_LABEL_PREFIX] === "1" || value.Config?.Labels?.[LEGACY_LOCAL_DOCKER_LABEL_PREFIX] === "1",
       image: typeof value.Config?.Image === "string" ? value.Config.Image : "",
-      hostSha256: typeof value.Config?.Labels?.["com.grok-bot.local-vm.host-sha256"] === "string" ? value.Config.Labels["com.grok-bot.local-vm.host-sha256"] as string : "",
-      hasInferenceCredential: value.Config?.Labels?.["com.grok-bot.local-vm.inference-credential"] === "1",
-      schemaVersion: typeof value.Config?.Labels?.["com.grok-bot.local-vm.schema-version"] === "string" ? value.Config.Labels["com.grok-bot.local-vm.schema-version"] as string : "",
-      credentialsSha256: typeof value.Config?.Labels?.["com.grok-bot.local-vm.credentials-sha256"] === "string" ? value.Config.Labels["com.grok-bot.local-vm.credentials-sha256"] as string : "",
+      hostSha256: typeof value.Config?.Labels?.[`${LOCAL_DOCKER_LABEL_PREFIX}.host-sha256`] === "string" ? value.Config.Labels[`${LOCAL_DOCKER_LABEL_PREFIX}.host-sha256`] as string : "",
+      hasInferenceCredential: value.Config?.Labels?.[`${LOCAL_DOCKER_LABEL_PREFIX}.inference-credential`] === "1",
+      schemaVersion: typeof value.Config?.Labels?.[`${LOCAL_DOCKER_LABEL_PREFIX}.schema-version`] === "string" ? value.Config.Labels[`${LOCAL_DOCKER_LABEL_PREFIX}.schema-version`] as string : "",
+      credentialsSha256: typeof value.Config?.Labels?.[`${LOCAL_DOCKER_LABEL_PREFIX}.credentials-sha256`] === "string" ? value.Config.Labels[`${LOCAL_DOCKER_LABEL_PREFIX}.credentials-sha256`] as string : "",
     };
   } catch { throw new Error("Docker returned malformed container inspection data."); }
 }
@@ -388,7 +387,7 @@ async function localAuthMountArguments(): Promise<string[]> {
 // The box image carries its own default backend host. The container must be
 // told ours on every creation: a container created without one would send
 // its credential to the image's default host. The renewal credential is
-// Grok Bot's pod contract (`SAND_INFERENCE_RENEWAL_CREDENTIAL`): the host
+// The upstream app's pod contract (`SAND_INFERENCE_RENEWAL_CREDENTIAL`): the host
 // trades it for a short-lived model token at the backend and renews it
 // itself, so nothing on the Mac writes a token for the box any more (F-148).
 export function localDockerInferenceEnvironmentArguments(boxCredential?: string, env: NodeJS.ProcessEnv = process.env): string[] {
@@ -405,13 +404,13 @@ export function localDockerInferenceEnvironmentArguments(boxCredential?: string,
     "--env", "SAND_DISABLE_TELEMETRY=1",
     "--env", "SAND_DISABLE_ANALYTICS=1",
     "--env", "SAND_BOX_LOG_SHIP_DISABLED=1",
-    // The served switches (docs/product/cursor-dependencies-map.md) default
+    // The served switches (docs/services-agents.md) default
     // on in both processes; an override set on the Mac reaches the box
     // too, since the host in the box is what polls the relay.
-    ...SERVED_SWITCH_ENVS.flatMap((name) => { const value = env[name]?.trim(); return value == null || value.length === 0 ? [] : ["--env", `${name}=${value}`]; }),
+    ...SERVED_SWITCH_ENVS.flatMap((name) => { const value = readSimeonEnv(env, name)?.trim(); return value == null || value.length === 0 ? [] : ["--env", `${name}=${value}`]; }),
   ];
 }
-export const SERVED_SWITCH_ENVS = ["SAND_CONNECT_SERVED", "SAND_LISTENER_RELAY_SERVED", "SAND_CLOUD_AGENTS_SERVED", "SAND_SHARING_SERVED", "SAND_CHANNELS_SERVED", "SAND_VIDEO_SUBAGENT_SERVED", "SAND_CLAIDOR_VIDEO_MODEL", "SAND_AGENT_SCREENSHOT_TOOL", "SAND_FEATURE_GATE_OVERRIDES"] as const;
+export const SERVED_SWITCH_ENVS = ["SAND_CONNECT_SERVED", "SAND_LISTENER_RELAY_SERVED", "SAND_CLOUD_AGENTS_SERVED", "SAND_SHARING_SERVED", "SAND_CHANNELS_SERVED", "SAND_VIDEO_SUBAGENT_SERVED", "SAND_SIMEON_VIDEO_MODEL", "SAND_AGENT_SCREENSHOT_TOOL", "SAND_FEATURE_GATE_OVERRIDES"] as const;
 
 async function ensureLocalDockerBox(settingsPath: string): Promise<GatewayConnection> {
   try {
@@ -452,11 +451,11 @@ async function ensureLocalDockerBoxNarrated(settingsPath: string): Promise<Gatew
     const authMounts = await localAuthMountArguments();
     const created = await runDocker([
       "run", "--detach", "--name", LOCAL_DOCKER_BOX_CONTAINER,
-      "--label", LOCAL_DOCKER_OWNER_LABEL, "--label", `com.grok-bot.local-vm.host-sha256=${hostBundle.sha256}`,
-      "--label", `com.grok-bot.local-vm.box-exec-daemon-sha256=${hostBundle.boxExecDaemonSha256}`,
-      "--label", `com.grok-bot.local-vm.inference-credential=${boxCredential == null ? "0" : "1"}`,
-      "--label", `com.grok-bot.local-vm.schema-version=${LOCAL_DOCKER_SCHEMA_VERSION}`,
-      "--label", `com.grok-bot.local-vm.credentials-sha256=${credentialsSha256}`,
+      "--label", LOCAL_DOCKER_OWNER_LABEL, "--label", `${LOCAL_DOCKER_LABEL_PREFIX}.host-sha256=${hostBundle.sha256}`,
+      "--label", `${LOCAL_DOCKER_LABEL_PREFIX}.box-exec-daemon-sha256=${hostBundle.boxExecDaemonSha256}`,
+      "--label", `${LOCAL_DOCKER_LABEL_PREFIX}.inference-credential=${boxCredential == null ? "0" : "1"}`,
+      "--label", `${LOCAL_DOCKER_LABEL_PREFIX}.schema-version=${LOCAL_DOCKER_SCHEMA_VERSION}`,
+      "--label", `${LOCAL_DOCKER_LABEL_PREFIX}.credentials-sha256=${credentialsSha256}`,
       "--platform", "linux/amd64", "--restart", "unless-stopped",
       "--env", "SAND_SUPERVISOR_ENABLED=1", "--env", "SAND_BOX_AUTO_UPDATE=0", "--env", "SAND_USE_EXISTING_BOX_EXEC_DAEMON=1",
       // The host's data root is the volume below, said here rather than left to the image's environment (F-362).
@@ -471,7 +470,7 @@ async function ensureLocalDockerBoxNarrated(settingsPath: string): Promise<Gatew
       // web page open on the Mac could drive the agent's desktop.
       "--publish", "127.0.0.1:1340:1340",
       ...LOCAL_DOCKER_STREAM_PUBLISH.flatMap((mapping) => ["--publish", mapping]),
-      "--volume", "grok-bot-local-vm-workspace:/workspace", "--volume", "grok-bot-local-vm-data:/home/box/sand-data",
+      "--volume", "simeon-box-workspace:/workspace", "--volume", "simeon-box-data:/home/box/sand-data",
       "--mount", `type=bind,src=${hostBundle.path},dst=/home/box/sand-host/host-main.cjs,readonly`,
       "--mount", `type=bind,src=${dirname(hostBundle.boxExecDaemonPath)},dst=/home/box/box-exec-daemon,readonly`,
       ...authMounts,
@@ -566,8 +565,8 @@ export async function stopLocalDockerBox(): Promise<void> {
   if (!stopped.ok) throw new Error(`Could not stop the local Docker VM: ${stopped.output}`);
 }
 
-// The box renews its own model token with its renewal credential (Grok
-// Bot's production path, `host/extensions/auth/auth-service.ts`), so the
+// The box renews its own model token with its renewal credential (the
+// upstream app's production path, `host/extensions/auth/auth-service.ts`), so the
 // Mac no longer rewrites a token file every five minutes (F-148, 26
 // September 2026; until then `startInferenceCredentialKeepFresh` did, the
 // development path's way of keeping a one-hour token alive).

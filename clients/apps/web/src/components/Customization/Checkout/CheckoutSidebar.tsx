@@ -1,7 +1,7 @@
 'use client'
 
-import Button from '@claidor/ui/components/atoms/Button'
-import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
+import Button from '@simeon/ui/components/atoms/Button'
+import ShadowBox from '@simeon/ui/components/atoms/ShadowBox'
 import { PropsWithChildren } from 'react'
 const CheckoutSidebarContentWrapper = ({
   title,

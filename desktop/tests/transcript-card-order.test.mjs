@@ -15,7 +15,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function loadStamp() {
-  const dir = await mkdtemp(path.join(os.tmpdir(), "caisra-header-card-"));
+  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-header-card-"));
   const outfile = path.join(dir, "stamp.mjs");
   await build({
     entryPoints: [path.join(repoRoot, "source/node-agent-coordinator/permission-scope-stamp.ts")],

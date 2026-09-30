@@ -1,7 +1,7 @@
 """Tests for the platform upgrade-checkout flow and trial supersession.
 
 Covers the platform upgrade / supersession behavior:
-  - maybe_supersede_platform_trial: a new paid Claidor sub cancels the
+  - maybe_supersede_platform_trial: a new paid Simeon sub cancels the
     creator's leftover auto-trial, and is a no-op for the trial itself,
     non-platform subs, and non-paid subs.
   - PlatformUpgradeService.create_checkout: does NOT pre-revoke the trial,
@@ -17,22 +17,22 @@ from uuid import UUID, uuid4
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.entitlements.tiers import TierKey
-from polar.enums import SubscriptionRecurringInterval
-from polar.kit.trial import TrialInterval
-from polar.kit.utils import utc_now
-from polar.models import Customer, Organization, Product
-from polar.models.subscription import SubscriptionStatus
-from polar.platform.fee_sync import (
+from simeon.entitlements.tiers import TierKey
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.kit.trial import TrialInterval
+from simeon.kit.utils import utc_now
+from simeon.models import Customer, Organization, Product
+from simeon.models.subscription import SubscriptionStatus
+from simeon.platform.fee_sync import (
     maybe_mark_platform_trial_consumed,
     maybe_supersede_platform_trial,
 )
-from polar.platform.upgrade import (
+from simeon.platform.upgrade import (
     AlreadyOnPaidTier,
     _plus_tagged_email,
     platform_upgrade,
 )
-from polar.postgres import AsyncSession
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     PriceFixtureType,
@@ -44,7 +44,7 @@ from tests.fixtures.random_objects import (
 
 
 def _patch_platform_org_id(mocker: MockerFixture, org_id: UUID | None) -> None:
-    mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", org_id)
+    mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", org_id)
 
 
 async def _tier_product(
@@ -79,7 +79,7 @@ async def _platform_customer(
     return await create_customer(
         save_fixture,
         organization=platform_org,
-        email=email or f"creator-{creator.slug}@billing.claidorhq.internal",
+        email=email or f"creator-{creator.slug}@billing.simeonlabs.internal",
         user_metadata={"creator_org_id": str(creator.id)},
     )
 
@@ -331,7 +331,7 @@ class TestCreateCheckout:
             },
         )()
         return mocker.patch(
-            "polar.platform.upgrade.checkout_service.create",
+            "simeon.platform.upgrade.checkout_service.create",
             new=AsyncMock(return_value=fake_checkout),
         )
 
@@ -509,7 +509,7 @@ class TestCreateCheckout:
         await _tier_product(save_fixture, platform_org=platform_org, tier="starter")
         self._mock_checkout_create(mocker)
 
-        assert synthetic.endswith("@billing.claidorhq.internal")
+        assert synthetic.endswith("@billing.simeonlabs.internal")
 
         await platform_upgrade.create_checkout(
             session,
@@ -554,7 +554,7 @@ class TestCreateCheckout:
         assert customer_a.email == real_email
 
         # Org B (same person, same email) collides. It must NOT keep the
-        # @billing.claidorhq.internal placeholder — it adopts a plus-addressed
+        # @billing.simeonlabs.internal placeholder — it adopts a plus-addressed
         # variant that routes to the same inbox and stays unique.
         org_b = await create_organization(save_fixture)
         customer_b = await _platform_customer(
@@ -571,7 +571,7 @@ class TestCreateCheckout:
         expected = _plus_tagged_email(real_email, org_b.slug)
         assert customer_b.email == expected
         assert customer_b.email != real_email
-        assert "@billing.claidorhq.internal" not in customer_b.email
+        assert "@billing.simeonlabs.internal" not in customer_b.email
         # Same real mailbox: base local part + real domain.
         assert customer_b.email.split("+", 1)[0] == "niki"
         assert customer_b.email.endswith("@gmail.com")

@@ -1,6 +1,6 @@
 import Close from '@mui/icons-material/Close'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import QRCode from 'qrcode'
 import { useEffect, useRef } from 'react'
 import { toast } from '../Toast/use-toast'

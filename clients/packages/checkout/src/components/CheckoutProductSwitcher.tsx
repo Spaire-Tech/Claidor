@@ -1,14 +1,14 @@
 'use client'
 
-import type { CheckoutUpdatePublic } from '@spaire/sdk/models/components/checkoutupdatepublic'
-import { LegacyRecurringProductPrice } from '@spaire/sdk/models/components/legacyrecurringproductprice.js'
-import type { ProductPrice } from '@spaire/sdk/models/components/productprice.js'
 import {
   RadioGroup,
   RadioGroupItem,
-} from '@claidor/ui/components/ui/radio-group'
-import { ThemingPresetProps } from '@claidor/ui/hooks/theming'
-import { cn } from '@claidor/ui/lib/utils'
+} from '@simeon/ui/components/ui/radio-group'
+import { ThemingPresetProps } from '@simeon/ui/hooks/theming'
+import { cn } from '@simeon/ui/lib/utils'
+import type { CheckoutUpdatePublic } from '@spaire/sdk/models/components/checkoutupdatepublic'
+import { LegacyRecurringProductPrice } from '@spaire/sdk/models/components/legacyrecurringproductprice.js'
+import type { ProductPrice } from '@spaire/sdk/models/components/productprice.js'
 import { Fragment, useCallback } from 'react'
 import type { ProductCheckoutPublic } from '../guards'
 import {
@@ -87,10 +87,8 @@ const CheckoutProductSwitcher = ({
               <label
                 key={price.id}
                 className={cn(
-                  ` flex cursor-pointer flex-col divide-y divide-gray-200 rounded-2xl border shadow-xs transition-colors hover:border-blue-500 md:bg-white md:shadow-none`,
-                  price.id === selectedProduct.id
-                    ? 'border-blue-500'
-                    : '',
+                  `flex cursor-pointer flex-col divide-y divide-gray-200 rounded-2xl border shadow-xs transition-colors hover:border-blue-500 md:bg-white md:shadow-none`,
+                  price.id === selectedProduct.id ? 'border-blue-500' : '',
                 )}
                 htmlFor={`product-${price.id}`}
               >
@@ -105,7 +103,7 @@ const CheckoutProductSwitcher = ({
                   </div>
                 </div>
                 <div className="flex grow flex-row items-center justify-between p-4 text-sm">
-                  <p className=" text-gray-500">
+                  <p className="text-gray-500">
                     {getDescription(product, price)}
                   </p>
                 </div>
@@ -116,10 +114,8 @@ const CheckoutProductSwitcher = ({
           <label
             key={product.id}
             className={cn(
-              ` flex cursor-pointer flex-col divide-y divide-gray-200 rounded-2xl border shadow-xs transition-colors hover:border-blue-500 md:bg-white md:shadow-none`,
-              product.id === selectedProduct.id
-                ? 'border-blue-500'
-                : '',
+              `flex cursor-pointer flex-col divide-y divide-gray-200 rounded-2xl border shadow-xs transition-colors hover:border-blue-500 md:bg-white md:shadow-none`,
+              product.id === selectedProduct.id ? 'border-blue-500' : '',
             )}
             htmlFor={`product-${product.id}`}
           >
@@ -137,7 +133,7 @@ const CheckoutProductSwitcher = ({
               </div>
             </div>
             <div className="flex grow flex-row items-center justify-between p-4 text-sm">
-              <p className=" text-gray-500">
+              <p className="text-gray-500">
                 {getDescription(product, prices[product.id][0])}
               </p>
             </div>

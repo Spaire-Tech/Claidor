@@ -1,57 +1,55 @@
-# Claidor
+# Simeon
 
-**Ask a question about OHADA law. Get the answer, the article, and the case.**
+**A team of always-on agents on your Mac, each with a computer of its own.**
 
-Seventeen African countries share one body of business law. Claidor is its
-definitive record — every uniform act down to the article, every amendment
-resolved, every CCJA decision linked to the provisions it interprets — and the
-fastest way to get an answer from it: ask in French, get a sourced answer with
-the precise article and the case law behind it, one click from the source text.
+Simeon is made by Simeon Labs ([simeonlabs.com](https://simeonlabs.com)).
+This repository holds the whole product:
 
-- **The record**: OHADA uniform acts, versioned (the 2023 AUPSRVE and the 1998
-  act it replaced are both in active legal life — Claidor knows which applies).
-- **The librarian**: answers grounded strictly in the corpus, with citations
-  that open the source text beside the answer, and an authority signal —
-  *jurisprudence constante* or *décision unique* — on every answer.
-- **The graph**: from any article, the decisions that applied it, the articles
-  cited alongside it, and what changed in each revision.
+| Folder | What it is |
+|---|---|
+| `desktop/` | The Mac app: the window, the Electron main process, and the agent loop that runs on each person's cloud computer. |
+| `server/` | The API at `api.simeonlabs.com`: sign-in, the model proxy, memory, the cloud computers, routines, sharing, connectors, billing. FastAPI and PostgreSQL. |
+| `runner/` | The cloud runner: does a person's queued work when their Mac is closed. |
+| `clients/` | The web app at `app.simeonlabs.com` (sign-in pages and the account dashboard) and its shared packages. |
+| `sites/simeonlabs.com/` | The public website, with the live demo. |
+| `docs/` | How it fits together, how to build it, what each server feature does, and how to run the servers. |
 
-Project documents: [`docs/claidor-stack-audit.md`](docs/claidor-stack-audit.md)
-(why this codebase), [`docs/claidor-v1-plan.md`](docs/claidor-v1-plan.md)
-(the phase plan).
+Start with [`docs/README.md`](docs/README.md).
 
-## Status
+## Build the Mac app
 
-Phase 0 (chassis). This codebase is a pruned and rebranded fork of the Spaire
-platform (itself built on [Polar](https://github.com/polarsource/polar),
-Apache 2.0): the SaaS chassis — auth, organizations, seats, billing, email,
-files, background jobs, admin backoffice — is operational; the legal corpus
-modules arrive in Phase 1.
+macOS on Apple Silicon only. See [`docs/building-the-app.md`](docs/building-the-app.md).
 
-## Development
+```sh
+cd desktop
+npm ci && npm run bootstrap && npm run check && npm run package && npm run verify
+```
 
-```bash
-# Backend (http://127.0.0.1:8000)
+## Run the server and web app locally
+
+```sh
+# API (http://127.0.0.1:8000)
 cd server
-docker compose up -d          # PostgreSQL, Redis, Minio
-uv sync && uv run task api    # install deps & start API
+docker compose up -d          # PostgreSQL, Redis, MinIO
+uv sync && uv run task api
 
-# Frontend (http://127.0.0.1:3000)
+# Web app (http://127.0.0.1:3000)
 cd clients
 pnpm install && pnpm dev
 
 # Tests
-cd server && uv run task test # backend
-cd clients && pnpm test       # frontend
+cd server && uv run task test
+cd clients && pnpm test
+cd desktop && npm test
 ```
 
-Environment variables use the `CLAIDOR_` prefix; the environment selector is
-`CLAIDOR_ENV`. Note: the backend's internal Python package retains the name
-`polar` (imports read `from polar. ...`) — a deliberate carry-over from the
-upstream codebase; renaming it is mechanical churn with no user-visible value
-and is deferred indefinitely.
+Settings are read from the environment as `SIMEON_<NAME>` (the earlier
+`CLAIDOR_<NAME>` is still read, so deployments keep working while they are
+renamed). The environment is chosen by `SIMEON_ENV`.
 
-## License
+## Licence
 
-Apache 2.0 — see [LICENSE](LICENSE). Derived from Polar (Polar Software Inc.)
-via the Spaire platform.
+The server and web app are derived from [Polar](https://github.com/polarsource/polar)
+(Polar Software Inc.) and are under the Apache 2.0 licence in [LICENSE](LICENSE);
+[NOTICE](NOTICE) lists the attributions. The Mac app's origin and terms are in
+[`desktop/NOTICE.md`](desktop/NOTICE.md).

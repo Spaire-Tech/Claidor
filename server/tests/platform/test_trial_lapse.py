@@ -14,12 +14,12 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.enums import SubscriptionRecurringInterval
-from polar.models import Customer, Organization, Product, Subscription
-from polar.models.subscription import SubscriptionStatus
-from polar.platform.trial_lapse import lapse_stale_legacy_trials
-from polar.postgres import AsyncSession
-from polar.subscription.repository import SubscriptionRepository
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.models import Customer, Organization, Product, Subscription
+from simeon.models.subscription import SubscriptionStatus
+from simeon.platform.trial_lapse import lapse_stale_legacy_trials
+from simeon.postgres import AsyncSession
+from simeon.subscription.repository import SubscriptionRepository
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_customer,
@@ -33,7 +33,7 @@ async def _platform_setup(
     save_fixture: SaveFixture, mocker: MockerFixture
 ) -> tuple[Organization, Product]:
     platform_org = await create_organization(save_fixture)
-    mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+    mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
     product = await create_product(
         save_fixture,
         organization=platform_org,
@@ -56,7 +56,7 @@ async def _legacy_trial(
     customer = await create_customer(
         save_fixture,
         organization=platform_org,
-        email=f"creator-{creator.slug}@billing.claidorhq.internal",
+        email=f"creator-{creator.slug}@billing.simeonlabs.internal",
         user_metadata={"creator_org_id": str(creator.id)},
     )
     subscription = await create_subscription(
@@ -178,7 +178,7 @@ class TestLapseStaleLegacyTrials:
         mocker: MockerFixture,
         session: AsyncSession,
     ) -> None:
-        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", None)
+        mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", None)
         counters = await lapse_stale_legacy_trials(session)
         assert counters["lapsed"] == 0
         assert counters["trial_consumed_stamped"] == 0

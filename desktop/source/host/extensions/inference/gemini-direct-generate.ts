@@ -2,7 +2,7 @@
 // ours takes: a video.
 //
 // The watchVideo / videoReview subagents run on a Gemini model
-// (`docs/product/video-served.md`, 25 September 2026). The executor for
+// (`docs/services-agents.md`, 25 September 2026). The executor for
 // every other model is the AI SDK's OpenAI provider on the Responses wire
 // (`provider-session.ts`), and that wire has no video part; `@ai-sdk/google`
 // is not in `package.json` (measured: `node_modules/@ai-sdk/` holds openai,
@@ -17,8 +17,8 @@
 // read off the loop's own message dialect (`context-processing.ts` ~283:
 // `{type: "image", image: <data URI | URL>, mimeType, providerOptions:
 // {cursor: {mimeType, videoFps}}}`). Simeon Labs' server forwards the body
-// untouched (`proxy_gemini_generate` in `server/polar/desktop/endpoints.py`).
-import { claidorProxyBaseUrl } from "../../../shared/node/cursor-backend/claidor-api.js";
+// untouched (`proxy_gemini_generate` in `server/simeon/desktop/endpoints.py`).
+import { simeonProxyBaseUrl } from "../../../shared/node/cursor-backend/simeon-api.js";
 
 type Loose = Record<string, any>;
 
@@ -65,8 +65,8 @@ export type GeminiDirectOptions = {
 };
 
 /** `…/desktop/api/proxy/v1beta/models/{model}:streamGenerateContent?alt=sse` on Simeon Labs' server. */
-export function claidorGeminiEndpoint(modelId: string, backendUrl?: string): string {
-  const base = claidorProxyBaseUrl(backendUrl).replace(/\/+$/, "").replace(/\/v1$/, "/v1beta");
+export function simeonGeminiEndpoint(modelId: string, backendUrl?: string): string {
+  const base = simeonProxyBaseUrl(backendUrl).replace(/\/+$/, "").replace(/\/v1$/, "/v1beta");
   return `${base}/models/${encodeURIComponent(modelId)}:streamGenerateContent?alt=sse`;
 }
 

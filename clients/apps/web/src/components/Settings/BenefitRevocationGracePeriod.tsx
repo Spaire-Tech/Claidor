@@ -5,7 +5,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-} from '@claidor/ui/components/atoms/Select'
+} from '@simeon/ui/components/atoms/Select'
 
 const BENEFIT_REVOCATION_GRACE_PERIOD_LABELS: Record<number, string> = {
   0: 'Immediately',

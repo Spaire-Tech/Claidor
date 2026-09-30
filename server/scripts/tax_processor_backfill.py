@@ -3,14 +3,14 @@ from typing import Literal
 import typer
 from sqlalchemy import select, update
 
-from polar.enums import TaxProcessor
-from polar.models import Checkout, Order, Transaction, WalletTransaction
 from scripts.helper import (
     configure_script_logging,
     limit_bindparam,
     run_batched_update,
     typer_async,
 )
+from simeon.enums import TaxProcessor
+from simeon.models import Checkout, Order, Transaction, WalletTransaction
 
 cli = typer.Typer()
 

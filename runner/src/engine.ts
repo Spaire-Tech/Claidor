@@ -5,25 +5,16 @@ import { log, reasonOf } from './log.js';
 import { isMemoryName } from './memory.js';
 
 /**
- * The runner's model call, spoken straight to Claidor's metered proxy
- * (25 September 2026).
+ * The runner's model call, spoken straight to the API's metered proxy.
  *
- * Until then this file started the OpenClaw gateway that the LobsterAI-era
- * desktop app shipped, and the image built that engine from source with
- * the desktop's patches (`desktop/scripts/patches`). Those patches, the
- * script that applied them and the desktop's pin left the repository with
- * the 18 September re-founding, so the image could not be built from the
- * tree at all, and the product's own agent loop no longer runs on that
- * engine anyway. What a cloud job actually does today is one model turn
- * over the person's memory and the conversation, with no tools; that is a
- * request to the proxy on the person's job token, the same door the
- * desktop's executor uses, so this is now that request and nothing else.
+ * A cloud job is one model turn over the person's memory and the
+ * conversation, with no tools: a request to the proxy on the person's job
+ * token, the same door the desktop's executor uses.
  *
  * The memory the queue lays out in the workspace is read into the system
  * prompt (the workspace instructions first, then every memory file). The
  * model has no way to write files, so `collectMemoryChanges` in job.ts
- * finds nothing; memory written by a cloud turn is a follow-up
- * (`docs/product/cloud-agents-served.md`).
+ * finds nothing; memory written by a cloud turn is a follow-up.
  */
 
 export interface EngineModel {

@@ -1,10 +1,10 @@
 import pytest
 
-from polar.kit.utils import utc_now
-from polar.member.repository import MemberRepository
-from polar.models import Member, Organization
-from polar.models.member import MemberRole
-from polar.postgres import AsyncSession
+from simeon.kit.utils import utc_now
+from simeon.member.repository import MemberRepository
+from simeon.models import Member, Organization
+from simeon.models.member import MemberRole
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_customer, create_organization
 

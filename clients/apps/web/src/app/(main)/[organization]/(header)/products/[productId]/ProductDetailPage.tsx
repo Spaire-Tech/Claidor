@@ -5,11 +5,11 @@ import {
   DETAIL_OPTION_MAP,
 } from '@/components/Products/ProductForm/ProductAdditionalDetailsSection'
 import { useStorefrontSubscribe } from '@/hooks/queries/emailMarketing'
+import { api } from '@/utils/client'
 import { CONFIG } from '@/utils/config'
 import { SUBTITLE_METADATA_KEY } from '@/utils/product'
-import { api } from '@/utils/client'
-import { schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
+import { schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
 import { Poppins } from 'next/font/google'
 import Link from 'next/link'
 import {
@@ -117,49 +117,107 @@ type IcoProps = { style?: CSSProperties; width?: number; height?: number }
 const Ico = {
   chevL: (p: IcoProps) => (
     <svg width={18} height={18} viewBox="0 0 24 24" fill="none" {...p}>
-      <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M15 5l-7 7 7 7"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   ),
   chevR: (p: IcoProps) => (
     <svg width={18} height={18} viewBox="0 0 24 24" fill="none" {...p}>
-      <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M9 5l7 7-7 7"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   ),
   arrowBack: (p: IcoProps) => (
     <svg width={15} height={15} viewBox="0 0 24 24" fill="none" {...p}>
-      <path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M19 12H5M11 6l-6 6 6 6"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   ),
   bag: (p: IcoProps) => (
     <svg width={20} height={20} viewBox="0 0 24 24" fill="none" {...p}>
-      <path d="M6 8h12l-1 11.5a1.5 1.5 0 01-1.5 1.4H8.5A1.5 1.5 0 017 19.5L6 8z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-      <path d="M9 8.5V7a3 3 0 016 0v1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path
+        d="M6 8h12l-1 11.5a1.5 1.5 0 01-1.5 1.4H8.5A1.5 1.5 0 017 19.5L6 8z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9 8.5V7a3 3 0 016 0v1.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
     </svg>
   ),
   download: (p: IcoProps) => (
     <svg width={16} height={16} viewBox="0 0 24 24" fill="none" {...p}>
-      <path d="M12 4v11m0 0l-4-4m4 4l4-4M5 19h14" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M12 4v11m0 0l-4-4m4 4l4-4M5 19h14"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   ),
   heart: (p: IcoProps) => (
     <svg width={17} height={17} viewBox="0 0 24 24" fill="none" {...p}>
-      <path d="M12 20s-7-4.4-9.2-8.6C1.3 8.5 2.6 5.3 5.8 5.3c2 0 3.3 1.2 4.2 2.4.9-1.2 2.2-2.4 4.2-2.4 3.2 0 4.5 3.2 3 6.1C19 15.6 12 20 12 20z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path
+        d="M12 20s-7-4.4-9.2-8.6C1.3 8.5 2.6 5.3 5.8 5.3c2 0 3.3 1.2 4.2 2.4.9-1.2 2.2-2.4 4.2-2.4 3.2 0 4.5 3.2 3 6.1C19 15.6 12 20 12 20z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
     </svg>
   ),
   check: (p: IcoProps) => (
     <svg width={14} height={14} viewBox="0 0 24 24" fill="none" {...p}>
-      <path d="M5 12.5l4.2 4.5L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M5 12.5l4.2 4.5L19 7"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   ),
   lock: (p: IcoProps) => (
     <svg width={14} height={14} viewBox="0 0 24 24" fill="none" {...p}>
-      <rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <rect
+        x="5"
+        y="11"
+        width="14"
+        height="9"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
       <path d="M8 11V8a4 4 0 018 0v3" stroke="currentColor" strokeWidth="1.6" />
     </svg>
   ),
   bolt: (p: IcoProps) => (
     <svg width={14} height={14} viewBox="0 0 24 24" fill="none" {...p}>
-      <path d="M13 3L5 13h5l-1 8 8-10h-5l1-8z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      <path
+        d="M13 3L5 13h5l-1 8 8-10h-5l1-8z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
     </svg>
   ),
 }
@@ -248,7 +306,9 @@ function Gallery({
       <div className="stage">
         {n === 0 ? (
           <div className="frame active placeholder">
-            <span className="ph-mark">{(productName[0] ?? 'S').toUpperCase()}</span>
+            <span className="ph-mark">
+              {(productName[0] ?? 'S').toUpperCase()}
+            </span>
           </div>
         ) : (
           medias.map((m, i) => (
@@ -264,10 +324,18 @@ function Gallery({
         )}
         {n > 1 && (
           <>
-            <button className="nav-arrow prev" onClick={() => go(-1)} aria-label="Previous image">
+            <button
+              className="nav-arrow prev"
+              onClick={() => go(-1)}
+              aria-label="Previous image"
+            >
               {Ico.chevL({})}
             </button>
-            <button className="nav-arrow next" onClick={() => go(1)} aria-label="Next image">
+            <button
+              className="nav-arrow next"
+              onClick={() => go(1)}
+              aria-label="Next image"
+            >
               {Ico.chevR({})}
             </button>
             <div className="counter">
@@ -317,9 +385,12 @@ function BuyBlock({
           onBuy()
         }}
       >
-        <span className="lbl">{Ico.bag({ style: { opacity: 0.9 } })} Buy Now</span>
+        <span className="lbl">
+          {Ico.bag({ style: { opacity: 0.9 } })} Buy Now
+        </span>
         <span className="done-lbl">
-          {Ico.check({ style: { marginRight: 8, verticalAlign: -2 } })} Taking you to checkout
+          {Ico.check({ style: { marginRight: 8, verticalAlign: -2 } })} Taking
+          you to checkout
         </span>
       </button>
       <button
@@ -435,11 +506,7 @@ function initials(name: string): string {
 const EMAIL_REGEX =
   /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/
 
-function Creator({
-  organization,
-}: {
-  organization: schemas['Organization']
-}) {
+function Creator({ organization }: { organization: schemas['Organization'] }) {
   const settings = organization.storefront_settings
   const title = settings?.profile_title
   const bio = settings?.description
@@ -521,7 +588,9 @@ function Creator({
                   }}
                   placeholder="Enter your email…"
                   aria-invalid={subscribeError ? true : undefined}
-                  className={'creator-sub-input' + (subscribeError ? ' err' : '')}
+                  className={
+                    'creator-sub-input' + (subscribeError ? ' err' : '')
+                  }
                 />
                 <button
                   type="submit"
@@ -563,7 +632,10 @@ function MiniCover({
   ]
   const dark = index % 2 === 0
   return (
-    <div className="cover-fallback" style={{ background: grads[index % grads.length] }}>
+    <div
+      className="cover-fallback"
+      style={{ background: grads[index % grads.length] }}
+    >
       <span style={{ color: dark ? '#fff' : '#16171B' }}>{product.name}</span>
     </div>
   )
@@ -590,7 +662,11 @@ function MoreFromCreator({
         </div>
         <div className="cards">
           {products.slice(0, 4).map((p, i) => (
-            <Link className="card" key={p.id} href={`/${organization.slug}/products/${p.id}`}>
+            <Link
+              className="card"
+              key={p.id}
+              href={`/${organization.slug}/products/${p.id}`}
+            >
               <div className="ph">
                 <MiniCover product={p} index={i} />
               </div>
@@ -632,7 +708,9 @@ function StickyBar({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={activeMedia.public_url} alt="" />
           ) : (
-            <span className="ph-mark sm">{(product.name[0] ?? 'S').toUpperCase()}</span>
+            <span className="ph-mark sm">
+              {(product.name[0] ?? 'S').toUpperCase()}
+            </span>
           )}
         </div>
         <div className="info">
@@ -692,11 +770,9 @@ export const ProductDetailPage = ({
         setBarVisible(buyRef.current.getBoundingClientRect().bottom < 64)
       }
       const vh = window.innerHeight
-      rootRef.current
-        ?.querySelectorAll('.reveal:not(.in)')
-        .forEach((el) => {
-          if (el.getBoundingClientRect().top < vh * 0.9) el.classList.add('in')
-        })
+      rootRef.current?.querySelectorAll('.reveal:not(.in)').forEach((el) => {
+        if (el.getBoundingClientRect().top < vh * 0.9) el.classList.add('in')
+      })
     }
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -756,7 +832,7 @@ export const ProductDetailPage = ({
 }
 
 /* ============================================================
-   Scoped styles — ported 1:1 from the Claidor product-page design
+   Scoped styles — ported 1:1 from the Simeon product-page design
    (monochrome, Poppins). Every rule is namespaced under `.sppdp`
    so nothing leaks into the rest of the app.
    ============================================================ */

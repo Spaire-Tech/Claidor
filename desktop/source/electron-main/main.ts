@@ -1,4 +1,4 @@
-import { installApplicationMenu, type ApplicationMenuElectronPort } from "./application-menu.js";
+import { installApplicationMenu, type ApplicationMenuElectronPort, type ApplicationMenuVoiceCall } from "./application-menu.js";
 import { reportDesktopEdgeFailure } from "./desktop-edge-failures.js";
 import { createDevToolsGate, createDevToolsMembershipResolver } from "./devtools-gate.js";
 import {
@@ -124,6 +124,9 @@ export interface ElectronMainServices {
   readonly onWindowCreated?: (window: MainBrowserWindow) => void;
   /** Process-lifetime image context-menu listener installed after the application menu. */
   readonly registerImageContextMenu?: () => void;
+  /** Agent › Call <name> for the agent open in the window (voice calls, 30 September 2026). */
+  readonly voiceCallMenu?: () => ApplicationMenuVoiceCall | null;
+  readonly subscribeVoiceCallMenu?: (listener: () => void) => () => void;
   readonly dispose?: () => void | Promise<void>;
 }
 
@@ -275,7 +278,7 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
     reportFailure: (error) => reportDesktopEdgeFailure("window-focus", "push", error),
   });
 
-  // DevTools in a packaged build: Grok Bot gated it on Cursor staff membership, which Simeon's profile never grants (F-221); `SAND_DEVTOOLS=1` in the environment opens it for whoever launched the app that way.
+  // DevTools in a packaged build: the upstream app gated it on Cursor staff membership, which Simeon's profile never grants (F-221); `SAND_DEVTOOLS=1` in the environment opens it for whoever launched the app that way.
   const devToolsGate = createDevToolsGate({ isDevBuild: !deps.app.isPackaged || process.env.SAND_DEVTOOLS?.trim() === "1" });
   const hostChords = createHostWindowChords({
     getMainWindow: () => mainWindow,
@@ -415,6 +418,7 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
             canUseDevTools: devToolsGate.isAllowed,
             emitOpenAbout: () => services?.mainEdge.emit("open-about", {}),
             emitOpenFeedback: () => services?.mainEdge.emit("open-feedback", {}),
+            voiceCall: services?.voiceCallMenu?.() ?? null,
             platform,
           },
           deps.menu,
@@ -422,6 +426,7 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
       installMenu();
       services.registerImageContextMenu?.();
       devToolsGate.subscribe(installMenu);
+      services.subscribeVoiceCallMenu?.(installMenu);
 
       deps.startup.markPhase("window");
       isMainWindowCreationReady = true;

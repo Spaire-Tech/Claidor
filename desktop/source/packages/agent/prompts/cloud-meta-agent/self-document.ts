@@ -10,7 +10,7 @@ import { NAMED_AGENT_STORE_SELF_PATH } from "../../constants.js";
 
 type RedactedCoreMessage = Parameters<typeof fromRedactedCoreMessage>[0];
 
-const logger = createLogger("@anysphere/agent");
+const logger = createLogger("@sand/agent");
 const NAMED_AGENT_SELF_DOCUMENT_TAG = "agent_self_document";
 const SELF_DOCUMENT_OPEN = `<${NAMED_AGENT_SELF_DOCUMENT_TAG}>`;
 const SELF_DOCUMENT_CLOSE = `</${NAMED_AGENT_SELF_DOCUMENT_TAG}>`;

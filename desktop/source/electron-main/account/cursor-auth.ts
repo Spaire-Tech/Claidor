@@ -17,9 +17,9 @@ import { resolveAuthRedirectTarget } from "../auth/auth-callback-registration.js
 
 export const ACCESS_TOKEN_SECRET_KEY = "cursor-access-token";
 export const REFRESH_TOKEN_SECRET_KEY = "cursor-refresh-token";
-/** Sign-in with no `CURSOR_WEBSITE_URL` set goes to Simeon Labs' API host, where `app_sign_in.py` serves the login routes at the root; until 25 September 2026 an unpackaged run fell back to cursor.com (F-314). */
-export const DEFAULT_CURSOR_WEBSITE_URL = "https://api.simeonlabs.com";
-export const DEFAULT_LOCAL_CURSOR_WEBSITE_URL = "https://localhost:4443";
+/** Sign-in with no `SIMEON_WEBSITE_URL` set goes to Simeon Labs' API host, where `app_sign_in.py` serves the login routes at the root; until 25 September 2026 an unpackaged run fell back to cursor.com (F-314). */
+export const DEFAULT_SIMEON_WEBSITE_URL = "https://api.simeonlabs.com";
+export const DEFAULT_LOCAL_SIMEON_WEBSITE_URL = "https://localhost:4443";
 export const MAX_LOGIN_POLL_ATTEMPTS = 150;
 export { SignInPolicyViolationError, SIGN_IN_POLICY_VIOLATION_ERROR, SIGN_IN_POLICY_VIOLATION_MESSAGE } from "../../packages/cursor-config/auth/mdm-sign-in-policy.js";
 export class SandAuthOperationSupersededError extends Error { constructor() { super("Authentication operation was superseded."); } }
@@ -91,8 +91,8 @@ export function resolveDevLoginPlan(tier: string | null | undefined): { plan: "f
   }
 }
 export function getAuthWebsiteUrl(backendUrl: string, env: NodeJS.ProcessEnv = process.env): string {
-  const configured = env.SAND_CURSOR_WEBSITE_URL ?? env.CURSOR_WEBSITE_URL;
-  return configured != null && configured.length > 0 ? new URL(configured).toString() : isDevAuthBackend(backendUrl) ? DEFAULT_LOCAL_CURSOR_WEBSITE_URL : DEFAULT_CURSOR_WEBSITE_URL;
+  const configured = env.SAND_SIMEON_WEBSITE_URL ?? env.SIMEON_WEBSITE_URL;
+  return configured != null && configured.length > 0 ? new URL(configured).toString() : isDevAuthBackend(backendUrl) ? DEFAULT_LOCAL_SIMEON_WEBSITE_URL : DEFAULT_SIMEON_WEBSITE_URL;
 }
 
 function abortableDelay(delayMs: number, signal?: AbortSignal): Promise<void> {
@@ -235,7 +235,7 @@ export class SandCursorAuthService {
   private async rollbackSupersededAuthentication(): Promise<void> {
     this.credentialState = "revoked";
     const failures = await this.removeStoredCredentials();
-    if (failures.length > 0) throw new AggregateError(failures, "Failed to remove superseded Cursor credentials");
+    if (failures.length > 0) throw new AggregateError(failures, "Failed to remove superseded Simeon credentials");
   }
   private async settleSecureStorage(): Promise<void> {
     if (this.options.waitForEncryptedStorage != null) { await this.options.waitForEncryptedStorage(() => this.secrets.isEncryptedStorageAvailable(), this.options.secureStorageWaitOptions ?? {}); return; }
@@ -284,7 +284,7 @@ export class SandCursorAuthService {
   }
   async getValidAccessToken(options?: { readonly backendUrl?: string }): Promise<string> {
     const operationEpoch = this.authOperationEpoch; if (this.credentialUseRevoked) throw new SandAuthSignInRequiredError();
-    // The refresh goes to the configured backend (Claidor), never to Cursor's
+    // The refresh goes to the configured backend (Simeon), never to Cursor's
     // default host. Until 24 September a caller that named no backend
     // (dictation, avatar generation) refreshed against api2.cursor.sh when the
     // token was within five minutes of expiry; the non-2xx there revoked the
@@ -324,7 +324,7 @@ export class SandCursorAuthService {
     const current = this.isCurrentAuthOperation(logoutOperationEpoch); const retained = current && (options.emitStatus ? startedRetained || failures.length > 0 : startedRetained && failures.length > 0); if (current) this.credentialState = retained ? "retained-after-failed-logout" : "revoked";
     if (settlement != null) { this.options.reportSessionSettlement?.(settlement); reportSigninSignout(settlement.durable ? signinSignoutCause(settlement.cause) : "retained_after_failed_logout"); }
     const reported = retained ? RETAINED_AFTER_FAILED_LOGOUT_STATUS : status; if (current && options.emitStatus) this.emitStatus(reported);
-    if (failures.length > 0) throw new AggregateError(failures, retained ? RETAINED_AFTER_FAILED_LOGOUT_STATUS.errorMessage : "Failed to remove Cursor credentials"); return reported;
+    if (failures.length > 0) throw new AggregateError(failures, retained ? RETAINED_AFTER_FAILED_LOGOUT_STATUS.errorMessage : "Failed to remove Simeon credentials"); return reported;
   }
   async devLogin(args: { readonly tier?: string; readonly email?: string }): Promise<SandAuthStatus> {
     const backendUrl = this.options.getBackendUrl?.() ?? getConfiguredBackendUrl(); if (!isDevAuthBackend(backendUrl)) throw new SandDevLoginError(`Refusing dev-login against non-dev backend ${backendUrl}. Set SAND_BACKEND_URL to a local backend (e.g. https://localhost:8000).`);

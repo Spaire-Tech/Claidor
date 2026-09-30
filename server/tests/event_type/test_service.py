@@ -4,14 +4,14 @@ from unittest.mock import AsyncMock
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.auth.models import AuthSubject
-from polar.event_type.schemas import EventTypeWithStats
-from polar.event_type.service import EventTypeService
-from polar.event_type.sorting import EventTypesSortProperty
-from polar.integrations.tinybird.service import TinybirdEventTypeStats
-from polar.kit.pagination import PaginationParams
-from polar.models import Organization
-from polar.models.event import EventSource
+from simeon.auth.models import AuthSubject
+from simeon.event_type.schemas import EventTypeWithStats
+from simeon.event_type.service import EventTypeService
+from simeon.event_type.sorting import EventTypesSortProperty
+from simeon.integrations.tinybird.service import TinybirdEventTypeStats
+from simeon.kit.pagination import PaginationParams
+from simeon.models import Organization
+from simeon.models.event import EventSource
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_event, create_event_type
@@ -28,7 +28,7 @@ class TestListWithStatsDualRead:
         organization: Organization,
         save_fixture: SaveFixture,
     ) -> None:
-        mocker.patch("polar.event_type.service.settings.TINYBIRD_EVENTS_READ", False)
+        mocker.patch("simeon.event_type.service.settings.TINYBIRD_EVENTS_READ", False)
 
         event_type = await create_event_type(
             save_fixture, organization=organization, name="test.event"
@@ -61,7 +61,7 @@ class TestListWithStatsDualRead:
         organization: Organization,
         save_fixture: SaveFixture,
     ) -> None:
-        mocker.patch("polar.event_type.service.settings.TINYBIRD_EVENTS_READ", True)
+        mocker.patch("simeon.event_type.service.settings.TINYBIRD_EVENTS_READ", True)
         organization.feature_settings = {
             "tinybird_read": False,
             "tinybird_compare": False,
@@ -99,7 +99,7 @@ class TestListWithStatsDualRead:
         organization: Organization,
         save_fixture: SaveFixture,
     ) -> None:
-        mocker.patch("polar.event_type.service.settings.TINYBIRD_EVENTS_READ", True)
+        mocker.patch("simeon.event_type.service.settings.TINYBIRD_EVENTS_READ", True)
         organization.feature_settings = {
             "tinybird_read": True,
             "tinybird_compare": False,
@@ -157,7 +157,7 @@ class TestListWithStatsDualRead:
         organization: Organization,
         save_fixture: SaveFixture,
     ) -> None:
-        mocker.patch("polar.event_type.service.settings.TINYBIRD_EVENTS_READ", True)
+        mocker.patch("simeon.event_type.service.settings.TINYBIRD_EVENTS_READ", True)
         organization.feature_settings = {
             "tinybird_read": True,
             "tinybird_compare": True,
@@ -183,10 +183,10 @@ class TestListWithStatsDualRead:
         ]
 
         service = EventTypeService()
-        logfire_mock = mocker.patch("polar.event_type.service.logfire")
+        logfire_mock = mocker.patch("simeon.event_type.service.logfire")
 
         mocker.patch(
-            "polar.integrations.tinybird.service.TinybirdEventTypesQuery.get_event_type_stats",
+            "simeon.integrations.tinybird.service.TinybirdEventTypesQuery.get_event_type_stats",
             new_callable=AsyncMock,
             return_value=tinybird_stats,
         )

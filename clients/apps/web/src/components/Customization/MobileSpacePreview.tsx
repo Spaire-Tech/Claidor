@@ -8,11 +8,11 @@
 // The iframe loads the storefront at a SAME-ORIGIN path (`/{slug}`). The
 // storefront sends `X-Frame-Options: SAMEORIGIN` + CSP `frame-ancestors 'self'`,
 // so it can only be embedded from its own origin — the public vanity domain
-// (space.claidorhq.com) is a different origin and refuses to be framed. The same
+// (space.simeonlabs.com) is a different origin and refuses to be framed. The same
 // Next app serves the storefront at `/{slug}` on the editor's origin with no
 // redirect, so the relative URL renders the real page and is allowed to frame.
 
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 
 export const MobileSpacePreview = ({
   organization,

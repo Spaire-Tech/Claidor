@@ -46,7 +46,7 @@ export interface DesktopUserDataBootstrapOptions {
 export const PREVIOUS_USER_DATA_NAME = "Grok Bot";
 /** Chromium's caches: rebuilt on demand, never worth copying. */
 const USER_DATA_CACHE_ENTRIES = new Set(["Cache", "Code Cache", "GPUCache", "DawnCache", "DawnGraphiteCache", "DawnWebGPUCache", "blob_storage", "Crashpad", "logs",
-  // Grok Bot's Statsig bootstrap: a config with the person's Cursor user id
+  // The upstream app's Statsig bootstrap: a config with the person's Cursor user id
   // that would hydrate a client logging gate exposures to api3.cursor.sh
   // (design-audit-ledger.md F-388). Never copied.
   "sand-statsig-bootstrap.json"]);
@@ -54,7 +54,7 @@ const USER_DATA_CACHE_ENTRIES = new Set(["Cache", "Code Cache", "GPUCache", "Daw
  * Chromium's single-instance lock: three symlinks that name the running
  * process and its socket. They belong to whichever process made them and
  * mean nothing in another folder; a copied one would point a fresh Simeon
- * at Grok Bot's process. Measured 23 September 2026 on the founder's Mac:
+ * at the upstream app's process. Measured 23 September 2026 on the founder's Mac:
  * the three in Simeon's folder were Simeon's own (its pid, made at its
  * launch), so the copy had not left any behind there; this keeps it so.
  */
@@ -68,9 +68,9 @@ export interface UserDataRenameMigration {
 }
 
 /**
- * The app was named Grok Bot in Electron's eyes until 22 September 2026, so
- * its sign-in, secrets and persistence lived in Grok Bot's own folder,
- * shared with the real Grok Bot when both were installed. Now that it is
+ * The app was named the upstream app in Electron's eyes until 22 September 2026, so
+ * its sign-in, secrets and persistence lived in the upstream app's own folder,
+ * shared with the real the upstream app when both were installed. Now that it is
  * Simeon, the first launch copies that folder once, so nobody signs in
  * again. Copied, not moved: the other app may still be using it.
  */

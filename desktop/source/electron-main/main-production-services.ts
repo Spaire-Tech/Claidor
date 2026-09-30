@@ -49,8 +49,11 @@ import { registerProductionTelemetryIpc } from "./telemetry/production-telemetry
 import type { SandAuthStatus } from "./account/cursor-auth.js";
 import type { SecureStorageCodec } from "./secrets/secret-store.js";
 import { recordLocalToolApproval as persistLocalToolApproval, clearLocalToolApprovals as clearPersistedLocalToolApprovals } from "../host/local-exec/local-tool-approvals.js";
-import { fetchClaidorAvailableModels } from "./models/claidor-model-catalog.js";
+import { fetchSimeonAvailableModels } from "./models/simeon-model-catalog.js";
 import { migrationWatchForBoxRuntime } from "./box/box-recovery.js";
+import { createVoiceCallApi, type VoiceCallApi } from "./voice/voice-call-api.js";
+import { createVoiceCallService, type VoiceCallMenuItem, type VoiceCallService, type VoiceCallWindowPort } from "./voice/voice-call-service.js";
+import { createElectronVoiceCallWindow, createFileVoiceStore, createVoiceCallLog, createVoicePreviewCache, voiceCallResourcePaths, voiceCallsEnabled, VOICE_CALL_LOG_FILE, VOICE_CALL_STORE_FILE, VOICE_PREVIEW_DIR } from "./voice/voice-call-window.js";
 import type { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
 import type {
   ElectronMainDependencies,
@@ -384,6 +387,8 @@ export interface ProductionServiceContext {
   readonly createVncTrust: (routeHostInput: ElectronProductionVncTrustDeps["routeHostInput"]) => ReturnType<typeof registerElectronProductionVncTrust>;
   /** Renderer box-visibility state machine and its exact trusted-report projection. */
   readonly boxVisibilityTracker: SandBoxVisibilityTracker;
+  /** Voice calls with the person's agents (30 September 2026): `voice/voice-call-service.ts`. */
+  readonly voiceCalls?: VoiceCallService;
   readonly handleBoxVisibilityReport: Parameters<ReturnType<typeof createBoxVisibilityReportHandler>>[0] extends infer T ? (report: T) => void : never;
 }
 
@@ -461,7 +466,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
   const env = bindings.env ?? process.env, platform = bindings.platform ?? process.platform;
   const metadata = bindings.metadata ?? readElectronPackageMetadata(bindings.moduleDir, bindings.readPackageText);
   // The local Docker box's credentials are kept encrypted with safeStorage,
-  // as Grok Bot keeps its box descriptor (F-148). Set before anything below
+  // as the upstream app keeps its box descriptor (F-148). Set before anything below
   // can start, quit or ask the box.
   configureLocalDockerSecretStorage(bindings.native.safeStorage);
   const resources = resolveElectronProductionResources({ moduleDir: bindings.moduleDir, app: bindings.native.app, env, metadata, ...(bindings.attachProdBoxPreferencePath == null ? {} : { attachProdBoxPreferencePath: bindings.attachProdBoxPreferencePath }) });
@@ -493,6 +498,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
   let accountTransitionDeparting = false;
   let dataRootSettlement: DataRootSettlement | null = null, hasIsolatedUserData = false, foundationInitialized = false, initialization: Promise<ElectronMainServices> | undefined, disposed = false, quitState: "idle" | "flushing" | "settled" = "idle";
   const disposables: ProductionDisposable[] = [];
+  const voiceCallMenuListeners = new Set<() => void>();
   const disposedValues = new Set<object>();
   const requireValue = <T>(value: T | undefined, name: string): T => { if (value == null) throw new Error(`Electron production service ${name} was used before initialization.`); return value; };
   const focusWindow = (): void => { const window = runtime?.getMainWindow(); if (window == null || window.isDestroyed()) { runtime?.ensureMainWindow(); return; } if (window.isMinimized()) window.restore(); window.show(); window.focus(); };
@@ -718,6 +724,53 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         refreshMcp: (completion) => requireValue(mcp, "mcp").refreshHostMcp(completion),
         syncHostSettings: (update) => coordinatorResync.pushHostSettings(update),
       };
+      // Voice calls (30 September 2026). The banner window is made on the
+      // first call, so nothing Electron-only runs until someone calls.
+      const createProductionVoiceCalls = (): VoiceCallService => {
+        const userData = bindings.native.app.getPath("userData");
+        const log = createVoiceCallLog(join(userData, VOICE_CALL_LOG_FILE));
+        const resourcePaths = voiceCallResourcePaths(bindings.moduleDir);
+        let api: VoiceCallApi | undefined;
+        let electronWindow: ReturnType<typeof createElectronVoiceCallWindow> | undefined;
+        let service: VoiceCallService | undefined;
+        const bannerWindow = (): ReturnType<typeof createElectronVoiceCallWindow> => electronWindow ??= createElectronVoiceCallWindow({
+          preloadPath: resourcePaths.preload,
+          pagePath: resourcePaths.page,
+          handle: (method, args) => requireValue(service, "voice-calls").handlePanel(method, args),
+          onClosed: () => service?.windowClosed(),
+          log,
+          allowDevTools: !bindings.native.app.isPackaged || env.SAND_DEVTOOLS?.trim() === "1",
+          platform,
+        });
+        const windowPort: VoiceCallWindowPort = {
+          open: () => bannerWindow().open(),
+          focus: () => bannerWindow().focus(),
+          reload: () => bannerWindow().reload(),
+          close: () => electronWindow?.close(),
+          isOpen: () => electronWindow?.isOpen() ?? false,
+          send: (event) => electronWindow?.send(event),
+          setContentHeight: (height) => electronWindow?.setContentHeight(height),
+        };
+        disposables.push({ dispose: () => electronWindow?.dispose() });
+        service = createVoiceCallService({
+          legs: {
+            sendPrompt: (args) => coordinatorLegs.legs.sendPrompt!(args),
+            listAgents: () => coordinatorLegs.legs.listAgents!(),
+            getAgentTranscriptTail: (args) => coordinatorLegs.legs.getAgentTranscriptTail!(args),
+            updateAgent: (args) => coordinatorLegs.legs.updateAgent!(args),
+            appendSendMessage: (args) => coordinatorLegs.legs.appendSendMessage!(args),
+          },
+          api: () => api ??= createVoiceCallApi({ getAccessToken: async () => await (await requireValue(account, "account").getAuthService()).getValidAccessToken() }),
+          window: windowPort,
+          voiceStore: createFileVoiceStore(join(userData, VOICE_CALL_STORE_FILE)),
+          previews: createVoicePreviewCache(join(userData, VOICE_PREVIEW_DIR)),
+          focusAgentChat: (agentId) => { focusWindow(); requireValue(mainEdge, "main-edge").emit("focus-agent", { id: agentId }); },
+          isEnabled: () => voiceCallsEnabled(env),
+          log,
+          onMenuChanged: () => { for (const listener of [...voiceCallMenuListeners]) listener(); },
+        });
+        return service;
+      };
       const base: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "cursorAccount" | "ensureTranscriptionManager"> = {
         native: bindings.native, resources, env, machineId,
         isQuitting: () => quitState !== "idle",
@@ -739,9 +792,9 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         // `AiService/AvailableModels`, a Cursor Connect RPC the server does
         // not serve, and the 404 reached the renderer as the picker's
         // error. Same edge method, same `toJson()` shape; only the wire
-        // changed (`models/claidor-model-catalog.ts`).
+        // changed (`models/simeon-model-catalog.ts`).
         fetchAvailableModels: async () => {
-          const response = await fetchClaidorAvailableModels({
+          const response = await fetchSimeonAvailableModels({
             getAccessToken: async () => await (await requireValue(account, "account").getAuthService()).getValidAccessToken(),
           });
           return response.toJson();
@@ -776,6 +829,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
           return vncTrust;
         },
         boxVisibilityTracker: requireValue(boxVisibilityTracker, "box-visibility"), handleBoxVisibilityReport,
+        voiceCalls: createProductionVoiceCalls(),
       };
       const attachments = bindings.services.createAttachments(base);
       const avatarImages = bindings.services.createAvatarImages(base);
@@ -906,6 +960,8 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
           installBoxVisibilityDocumentReset(window.webContents, () => boxVisibilityTracker?.abandonAll());
           bindings.services.onWindowCreated?.(window, context!);
         },
+        voiceCallMenu: (): VoiceCallMenuItem | null => context?.voiceCalls?.menuItem() ?? null,
+        subscribeVoiceCallMenu: (listener) => { voiceCallMenuListeners.add(listener); return () => { voiceCallMenuListeners.delete(listener); }; },
         dispose: () => void disposeGraph(),
       };
     } catch (error) { await disposeGraph(); throw error; }

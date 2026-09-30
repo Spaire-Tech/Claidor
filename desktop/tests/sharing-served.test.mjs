@@ -1,9 +1,9 @@
 /**
- * Sharing is served (25 September 2026, docs/product/sharing-served.md).
+ * Sharing is served (25 September 2026, docs/services-agents.md).
  *
  * The cross-user sharing client (`host/extensions/cross-user-sharing/`) was
  * complete and waited on a relay Simeon Labs' server did not serve
- * (`server/polar/sand/sharing.py` serves it now). This measures the app
+ * (`server/simeon/sand/sharing.py` serves it now). This measures the app
  * side offline: the served switch is on by default and "0" restores the
  * Coming Soon answer; the environment allows api.simeonlabs.com on a dev
  * host and still refuses Cursor's production origin; the `sand_multiplayer`
@@ -42,7 +42,7 @@ const ROOM = { roomId: "33333333-3333-4333-8333-333333333333", name: "Muse", hos
 ] };
 const ENTRY = { kind: "human-message", entryId: "e1", authorAuthId: HOST, authorName: "Bass", text: "hello from the host", images: [], timestampMs: 1_700_000_000_000 };
 
-/** The relay as server/polar/sand/sharing.py answers it, for the guest. */
+/** The relay as server/simeon/sand/sharing.py answers it, for the guest. */
 async function startRelay() {
   const polls = [];
   let delivered = false;
@@ -87,7 +87,7 @@ test("a dev host pointed at api.simeonlabs.com is allowed; Cursor's production o
     assert.deepEqual(module.resolveXuserSharingEnvironment({ backendUrl: "http://127.0.0.1:8000", env: dev }), { isAllowed: true });
     const cursor = module.resolveXuserSharingEnvironment({ backendUrl: "https://api2.cursor.sh", env: dev });
     assert.equal(cursor.isAllowed, false);
-    assert.match(cursor.reason, /Cursor's PRODUCTION backend/);
+    assert.match(cursor.reason, /a backend that is not Simeon Labs'/);
     assert.deepEqual(module.resolveXuserSharingEnvironment({ backendUrl: "https://api2.cursor.sh", env: { ...dev, SAND_XUSER_SHARING_ALLOW_PROD: "1" } }), { isAllowed: true });
     assert.equal(module.resolveXuserSharingEnvironment({ backendUrl: "https://api.simeonlabs.com", env: { SAND_PACKAGED: "0" } }).isAllowed, false, "a dev host still opts in with SAND_DEV_XUSER_SHARING=1");
     assert.deepEqual(module.resolveXuserSharingEnvironment({ backendUrl: "https://api.simeonlabs.com", env: { SAND_PACKAGED: "1" } }), { isAllowed: true });

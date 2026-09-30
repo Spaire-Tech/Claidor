@@ -199,7 +199,7 @@ export function userInfoMatchesDynamicToolSnapshot(
   if (expectsDynamicToolNamespaces !== hasDynamicToolNamespaces) return false;
   if (!expectsDynamicToolNamespaces || mcpMetaToolOptions === undefined) return true;
   const cursorDescriptor = mcpMetaToolOptions.mcpDescriptors.find(descriptor => descriptor.serverIdentifier === CURSOR_DYNAMIC_TOOLS_NAMESPACE);
-  const priorHasCursorNamespace = content.includes(`<namespace name="${CURSOR_DYNAMIC_TOOLS_NAMESPACE}"`);
+  const priorHasCursorNamespace = content.includes(`<namespace name="${CURSOR_DYNAMIC_TOOLS_NAMESPACE}"`) || content.includes(`<namespace name="cursor"`);
   if (cursorDescriptor === undefined) return !priorHasCursorNamespace;
   return priorHasCursorNamespace;
 }

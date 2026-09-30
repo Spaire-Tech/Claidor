@@ -1,22 +1,13 @@
 'use client'
 
-import { DataTable } from '@claidor/ui/components/atoms/DataTable'
-import { Status } from '@claidor/ui/components/atoms/Status'
+import { DataTable } from '@simeon/ui/components/atoms/DataTable'
+import { Status } from '@simeon/ui/components/atoms/Status'
 import { twMerge } from 'tailwind-merge'
 
 const seatStatusToDisplayName = {
-  pending: [
-    'Pending',
-    'bg-yellow-100 text-yellow-500 ',
-  ],
-  claimed: [
-    'Claimed',
-    'bg-emerald-100 text-emerald-500 ',
-  ],
-  revoked: [
-    'Revoked',
-    'bg-gray-100 text-gray-500 ',
-  ],
+  pending: ['Pending', 'bg-yellow-100 text-yellow-500 '],
+  claimed: ['Claimed', 'bg-emerald-100 text-emerald-500 '],
+  revoked: ['Revoked', 'bg-gray-100 text-gray-500 '],
 } as const
 
 interface CustomerSeat {

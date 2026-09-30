@@ -9,7 +9,7 @@
 // usePortalTabs, shared with the desktop TopBar. Visible only at narrow
 // widths — the CSS in portal.css hides it on desktop.
 
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import * as React from 'react'

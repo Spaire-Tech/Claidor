@@ -17,8 +17,8 @@ async function loadModule(entry, name) {
   return { module: await import(`${pathToFileURL(output).href}?${Date.now()}`), dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
-test("the app is com.claidor.simeon and claims simeon://, and only that", () => {
-  assert.equal(simeonBundleId, "com.claidor.simeon");
+test("the app is com.simeonlabs.simeon and claims simeon://, and only that", () => {
+  assert.equal(simeonBundleId, "com.simeonlabs.simeon");
   assert.equal(simeonUrlScheme, "simeon");
 });
 
@@ -29,10 +29,10 @@ test("the scheme the app parses, registers and sends as redirectTarget is the on
   try {
     assert.equal(deepLink.module.SAND_DEEP_LINK_SCHEME, simeonUrlScheme);
     assert.equal(deepLink.module.SAND_OPEN_DEEP_LINK_URL, "simeon://app/v1/open");
-    // What Claidor's sign-in page opens after the POST (app_sign_in.py builds
+    // What Simeon's sign-in page opens after the POST (app_sign_in.py builds
     // `<redirectTarget>://app/v1/open`): parsed as the open route.
     assert.equal(deepLink.module.parseSandDeepLink("simeon://app/v1/open")?.link.route, "open");
-    // Grok Bot's scheme is no longer ours to answer.
+    // The upstream app's scheme is no longer ours to answer.
     assert.equal(deepLink.module.parseSandDeepLink("sand://app/v1/open"), null);
     assert.match(desktop.module.buildSandPluginDeepLink("42"), /^simeon:\/\/app\/v1\/plugin\/add\?id=42$/);
     assert.equal(auth.module.resolveAuthRedirectTarget({}), "simeon");

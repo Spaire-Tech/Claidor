@@ -1,4 +1,8 @@
-# Connecting Render to the box host (25 September 2026)
+# Connecting Render to the box servers
+
+Settings are named `SIMEON_<NAME>` below. A variable still named
+`CLAIDOR_<NAME>` on Render keeps working (the server reads both, and the
+`SIMEON_` one wins when both are set), so they can be renamed one at a time.
 
 After `setup-box-host.sh` ran on the VM, three files sit in
 `/root/box-host-client/` there. Copy them to your Mac:
@@ -12,9 +16,9 @@ The `curl` must print the daemon's version JSON. If it says hostname
 mismatch, the DNS record for `box1.simeonlabs.com` is not the VM's IP yet
 (create the A record first; the certificate carries both the name and
 the IP, so `https://2.28.35.75:2376/version` works meanwhile and
-`CLAIDOR_BOX_DOCKER_HOST` may name the IP instead).
+`SIMEON_BOX_DOCKER_HOST` may name the IP instead).
 
-## If the API says "CA cert does not include key usage extension" (28 September 2026)
+## If the API says "CA cert does not include key usage extension"
 
 The first real run failed that way on every EnsureSandBox. The API runs
 Python 3.14, whose TLS check is strict (`VERIFY_X509_STRICT`), and the CA the
@@ -36,12 +40,12 @@ Since the same day a failure to reach the daemon is one sentence
 
 ## On Render, the shared environment group
 
-**Corrected 28 September 2026:** put everything below in the environment
-group both services read (`claidor-shared` in `render.yaml`, or the Simeon
-project's equivalent), not on the API service alone. Since the cloud box
+Put everything below in the environment
+group both services read (the shared environment group of the Simeon
+project on Render), not on the API service alone. Since the cloud box
 sleeps when idle, the **worker** talks to the box host too: it runs the
 sleeper every minute and wakes a box when a routine fires
-(`polar/sand/box_tasks.py`). Settings on the API alone leave the worker
+(`simeon/sand/box_tasks.py`). Settings on the API alone leave the worker
 without a host, so no box ever sleeps and a sleeping box is never woken
 for a routine. Render environment groups hold secret files as well as
 variables.
@@ -61,37 +65,36 @@ Environment variables:
 
 | Name | Value |
 |---|---|
-| `CLAIDOR_BOX_HOST_PROVIDER` | `docker` |
-| `CLAIDOR_BOX_DOCKER_HOST` | `tcp://box1.simeonlabs.com:2376` |
-| `CLAIDOR_BOX_DOCKER_TLS_CA` | `/etc/secrets/ca.pem` |
-| `CLAIDOR_BOX_DOCKER_TLS_CERT` | `/etc/secrets/cert.pem` |
-| `CLAIDOR_BOX_DOCKER_TLS_KEY` | `/etc/secrets/key.pem` |
-| `CLAIDOR_BOX_HOST_BUNDLE_URL` | the public HTTPS address of the host bundle folder (below) |
+| `SIMEON_BOX_HOST_PROVIDER` | `docker` |
+| `SIMEON_BOX_DOCKER_HOST` | `tcp://box1.simeonlabs.com:2376` |
+| `SIMEON_BOX_DOCKER_TLS_CA` | `/etc/secrets/ca.pem` |
+| `SIMEON_BOX_DOCKER_TLS_CERT` | `/etc/secrets/cert.pem` |
+| `SIMEON_BOX_DOCKER_TLS_KEY` | `/etc/secrets/key.pem` |
+| `SIMEON_BOX_HOST_BUNDLE_URL` | the public HTTPS address of the host bundle folder (below) |
 
-Leave `CLAIDOR_BOX_HOST_ADDRESS` and `CLAIDOR_BOX_PUBLIC_URL_TEMPLATE`
+Leave `SIMEON_BOX_HOST_ADDRESS` and `SIMEON_BOX_PUBLIC_URL_TEMPLATE`
 empty: the API proxies the box's ports itself at `/sand-box/{id}/p/…`
 and reaches them on the daemon's hostname.
 
 Sleep, size and capacity have defaults and need nothing unless the VM
-differs (28 September 2026; `docs/product/cloud-computer-served.md`
-§"Sleep, size and capacity"):
+differs (`docs/services-core.md`, the cloud computer):
 
 | Name | Default | Meaning |
 |---|---|---|
-| `CLAIDOR_BOX_IDLE_HIBERNATE_AFTER` | `PT30M` (30 minutes) | a box idle this long, with no app attached, is stopped with its files kept; `PT0S` never |
-| `CLAIDOR_BOX_MEMORY_LIMIT_MB` | `4096` | memory per box, no swap beyond it; `0` no limit |
-| `CLAIDOR_BOX_CPU_LIMIT` | `2.0` | CPUs per box; `0` no limit |
-| `CLAIDOR_BOX_MAX_RUNNING` | `3` | boxes awake at once; one more is asked to wait a minute; `0` no limit |
+| `SIMEON_BOX_IDLE_HIBERNATE_AFTER` | `PT30M` (30 minutes) | a box idle this long, with no app attached, is stopped with its files kept; `PT0S` never |
+| `SIMEON_BOX_MEMORY_LIMIT_MB` | `4096` | memory per box, no swap beyond it; `0` no limit |
+| `SIMEON_BOX_CPU_LIMIT` | `2.0` | CPUs per box; `0` no limit |
+| `SIMEON_BOX_MAX_RUNNING` | `3` | boxes awake at once; one more is asked to wait a minute; `0` no limit |
 
-Size `CLAIDOR_BOX_MAX_RUNNING` to the VM: its memory, less about 2 GB for
-the system, divided by `CLAIDOR_BOX_MEMORY_LIMIT_MB`.
+Size `SIMEON_BOX_MAX_RUNNING` to the VM: its memory, less about 2 GB for
+the system, divided by `SIMEON_BOX_MEMORY_LIMIT_MB`.
 
-## Several box servers (29 September 2026)
+## Several box servers
 
-`CLAIDOR_BOX_HOSTS` lists every server as JSON. A new person's computer is
+`SIMEON_BOX_HOSTS` lists every server as JSON. A new person's computer is
 made on the accepting server with the largest share of its limit free and
 stays there for good (its files live on that server). With the list set,
-`CLAIDOR_BOX_DOCKER_HOST` is not read.
+`SIMEON_BOX_DOCKER_HOST` is not read.
 
 ```
 [{"name": "docker", "docker_host": "tcp://box1.simeonlabs.com:2376", "accepting": false},
@@ -101,7 +104,7 @@ stays there for good (its files live on that server). With the list set,
 - `name`: stored on each computer made there. **The first server must stay
   `"docker"`**: that is the name every computer made before this carries.
 - `max_running`: computers awake at once there (default
-  `CLAIDOR_BOX_MAX_RUNNING`).
+  `SIMEON_BOX_MAX_RUNNING`).
 - `accepting: false` drains a server: it keeps the computers it has and gets
   no new one. Do not remove a server from the list while it still holds
   people's computers: a computer whose server is gone is made again,
@@ -121,14 +124,14 @@ passes through the API (`/sand-box/{id}/p/…`). On `starter` Render runs one
 worker process. A larger plan runs more (`WEB_CONCURRENCY` follows the
 CPUs), and more instances can run side by side: the proxy, the migration
 stream and the rate limits keep no state in one process (Redis holds it).
-Each worker opens up to 15 database connections (`CLAIDOR_DATABASE_POOL_SIZE`
+Each worker opens up to 15 database connections (`SIMEON_DATABASE_POOL_SIZE`
 5 plus 10 overflow): workers × instances × 15, plus the worker service's,
 must stay under the Postgres plan's connection limit.
 
-## The host bundle (updated 29 September 2026)
+## The host bundle
 
 The cloud computers run the program the packaged app carries, published in
-Grok Bot's layout: a folder holding `sand-host-bundle-latest.version` (a
+this layout: a folder holding `sand-host-bundle-latest.version` (a
 commit id) and `sand-host-bundle-<commit>.tgz`. The server reads the pointer
 at most every ten minutes, with no restart, and moves each computer to a new
 version the next time it is idle.
@@ -143,13 +146,12 @@ SIMEON_HOST_BUNDLE_S3=s3://<bucket>/host-bundles npm run publish:host-bundle
 It refuses a build with uncommitted changes (the version is the commit).
 The folder must be readable over plain HTTPS without credentials (the same
 program ships inside every copy of the app, so it is not a secret);
-`CLAIDOR_BOX_HOST_BUNDLE_URL` is that folder's address, for example
+`SIMEON_BOX_HOST_BUNDLE_URL` is that folder's address, for example
 `https://<bucket>.s3.<region>.amazonaws.com/host-bundles`. A URL ending in
 `.tgz` still names one fixed file, read once per process, as before.
 
 ## Then
 
-Since 29 September 2026 every app uses the cloud computer; there is no
-switch. Render's API log shows
+Every app uses the cloud computer; there is no switch. Render's API log shows
 `sand.box.ensure` with the box id, or `sand.box.ensure.refused` naming
 what is missing. `docker ps` on the VM shows the container.

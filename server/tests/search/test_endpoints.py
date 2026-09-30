@@ -3,13 +3,13 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
-from polar.auth.scope import Scope
-from polar.enums import SubscriptionRecurringInterval
-from polar.models import (
+from simeon.auth.scope import Scope
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.models import (
     Organization,
     UserOrganization,
 )
-from polar.postgres import AsyncSession
+from simeon.postgres import AsyncSession
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (

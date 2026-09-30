@@ -2,11 +2,11 @@ import pytest
 from httpx import AsyncClient
 from pytest_mock import MockerFixture
 
-from polar.integrations.stripe.service import V2AccountInfo
-from polar.models.account import Account
-from polar.models.organization import Organization
-from polar.models.user import User
-from polar.models.user_organization import UserOrganization
+from simeon.integrations.stripe.service import V2AccountInfo
+from simeon.models.account import Account
+from simeon.models.organization import Organization
+from simeon.models.user import User
+from simeon.models.user_organization import UserOrganization
 
 
 @pytest.mark.asyncio
@@ -48,7 +48,7 @@ async def test_create_personal_stripe(
     )
 
     mocker.patch(
-        "polar.integrations.stripe.service.StripeService.create_account",
+        "simeon.integrations.stripe.service.StripeService.create_account",
         return_value=fake_v2_info,
     )
 

@@ -1,12 +1,12 @@
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
+} from '@simeon/ui/components/atoms/Select'
 import {
   FormControl,
   FormDescription,
@@ -14,14 +14,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { type MouseEvent } from 'react'
 
 import ImageUpload from '@/components/Form/ImageUpload'
 import AddOutlined from '@mui/icons-material/AddOutlined'
 import ClearOutlined from '@mui/icons-material/ClearOutlined'
-import { enums } from '@claidor/client'
-import { Checkbox } from '@claidor/ui/components/ui/checkbox'
+import { enums } from '@simeon/client'
+import { Checkbox } from '@simeon/ui/components/ui/checkbox'
 import Link from 'next/link'
 import { useCallback, useMemo } from 'react'
 import { useFieldArray, useFormContext } from 'react-hook-form'
@@ -84,8 +84,8 @@ export const FieldClientType = () => {
             or mobile app, select <em>Public Client</em>. Otherwise, choose{' '}
             <em>Confidential Client</em>.{' '}
             <Link
-              className="text-blue-500 hover:text-blue-400 "
-              href="https://docs.claidorhq.com/documentation/integration-guides/authenticating-with-claidor"
+              className="text-blue-500 hover:text-blue-400"
+              href="https://docs.simeonlabs.com/documentation/integration-guides/authenticating-with-simeon"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -131,8 +131,8 @@ export const FieldClientSecret = ({
         This is a sensitive value. Don&apos;t embed it in a public client like a
         SPA or mobile app.{' '}
         <Link
-          className="text-blue-500 hover:text-blue-400 "
-          href="https://docs.claidorhq.com/documentation/integration-guides/authenticating-with-claidor"
+          className="text-blue-500 hover:text-blue-400"
+          href="https://docs.simeonlabs.com/documentation/integration-guides/authenticating-with-simeon"
           target="_blank"
           rel="noopener noreferrer"
         >

@@ -3,7 +3,7 @@ import type { Context } from "../context/core.js";
 import { createCounter } from "../metrics/index.js";
 import { TimeoutError, withTimeout } from "../utils/promise-extras.js";
 
-const logger = createLogger("@anysphere/agent");
+const logger = createLogger("@sand/agent");
 const ABORT_DRAIN_TIMEOUT_MS = 5_000;
 const abortDrainOutcomeCounter = createCounter("agent.run_stream.abort_drain", {
   description:

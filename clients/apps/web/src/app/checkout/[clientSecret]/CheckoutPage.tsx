@@ -2,7 +2,7 @@
 
 import Checkout from '@/components/Checkout/Checkout'
 import CheckoutLayout from '@/components/Checkout/CheckoutLayout'
-import { useCheckout } from '@claidor/checkout/providers'
+import { useCheckout } from '@simeon/checkout/providers'
 
 const ClientPage = ({
   embed,

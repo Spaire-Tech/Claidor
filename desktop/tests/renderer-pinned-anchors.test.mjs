@@ -4,7 +4,7 @@
  *
  * Offline: the brand residue counter counts Cursor's names after the pass
  * and the record carries them. With a pinned renderer on disk (bootstrap's
- * path or GROK_BOT_PINNED_RENDERER): every class the header-card and
+ * path or SIMEON_PINNED_RENDERER): every class the header-card and
  * Liquid Glass blocks name appears in the shipped stylesheet or a chunk,
  * and the brand pass leaves no "Grok Bot" behind.
  */
@@ -20,7 +20,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const patchModule = pathToFileURL(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs")).href;
 
 test("the tests read bootstrap's renderer by default and the variable still wins", () => {
-  assert.equal(resolvePinnedRenderer({ GROK_BOT_PINNED_RENDERER: "/elsewhere/renderer" }), "/elsewhere/renderer");
+  assert.equal(resolvePinnedRenderer({ SIMEON_PINNED_RENDERER: "/elsewhere/renderer" }), "/elsewhere/renderer");
   assert.equal(BOOTSTRAPPED_RENDERER, path.join(repoRoot, "src", "app", "dist", "renderer"));
   const resolved = resolvePinnedRenderer({});
   assert.ok(resolved === undefined || resolved === BOOTSTRAPPED_RENDERER);

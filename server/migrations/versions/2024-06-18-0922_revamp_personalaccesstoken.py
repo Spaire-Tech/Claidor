@@ -10,10 +10,10 @@ import sqlalchemy as sa
 from alembic import op
 
 # Polar Custom Imports
-from polar.auth.service import AuthService
-from polar.config import settings
-from polar.kit import jwt
-from polar.kit.crypto import get_token_hash
+from simeon.auth.service import AuthService
+from simeon.config import settings
+from simeon.kit import jwt
+from simeon.kit.crypto import get_token_hash
 
 # revision identifiers, used by Alembic.
 revision = "8e40457497a3"

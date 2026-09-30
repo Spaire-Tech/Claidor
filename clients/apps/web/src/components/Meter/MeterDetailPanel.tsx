@@ -7,15 +7,15 @@ import { useToast } from '@/components/Toast/use-toast'
 import { useMeter, useUpdateMeter } from '@/hooks/queries/meters'
 import { apiErrorToast } from '@/utils/api/errors'
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { Status } from '@claidor/ui/components/atoms/Status'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { Status } from '@simeon/ui/components/atoms/Status'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@claidor/ui/components/ui/dropdown-menu'
+} from '@simeon/ui/components/ui/dropdown-menu'
 import { useCallback } from 'react'
 import { MeterPage } from './MeterPage'
 
@@ -52,7 +52,7 @@ export const MeterDetailPanel = ({
           <span>Meter</span>
         </InlineModalHeader>
         <div className="flex flex-1 items-center justify-center">
-          <p className=" text-gray-500">Meter not found</p>
+          <p className="text-gray-500">Meter not found</p>
         </div>
       </div>
     )
@@ -114,12 +114,12 @@ const MeterDetailPanelContent = ({
           <span className="text-sm font-medium">{meter.name}</span>
           <div className="flex flex-row items-center gap-x-2">
             <Status
-              className="bg-emerald-50 text-xs text-emerald-500 capitalize "
+              className="bg-emerald-50 text-xs text-emerald-500 capitalize"
               status={`${meter.aggregation.func}`}
             />
             {meter.archived_at && (
               <Status
-                className="bg-red-50 text-xs text-red-500 "
+                className="bg-red-50 text-xs text-red-500"
                 status="Archived"
               />
             )}
@@ -138,10 +138,7 @@ const MeterDetailPanelContent = ({
                 <MoreVertOutlined fontSize="inherit" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className=" bg-gray-50 shadow-lg"
-            >
+            <DropdownMenuContent align="end" className="bg-gray-50 shadow-lg">
               <DropdownMenuItem
                 destructive={!meter.archived_at}
                 onClick={handleArchiveMeter}

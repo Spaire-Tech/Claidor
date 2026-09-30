@@ -8,14 +8,14 @@ import structlog
 import typer
 from pydantic import UUID4
 
-from polar import tasks  # noqa: F401
-from polar.account.repository import AccountRepository
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.locker import Locker
-from polar.payout.service import payout as payout_service
-from polar.postgres import create_async_engine
-from polar.redis import create_redis
-from polar.worker import JobQueueManager
+from simeon import tasks  # noqa: F401
+from simeon.account.repository import AccountRepository
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.locker import Locker
+from simeon.payout.service import payout as payout_service
+from simeon.postgres import create_async_engine
+from simeon.redis import create_redis
+from simeon.worker import JobQueueManager
 
 cli = typer.Typer()
 

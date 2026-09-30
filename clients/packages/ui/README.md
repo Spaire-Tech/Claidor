@@ -1,9 +1,9 @@
-# @claidor/ui
+# @simeon/ui
 
-This is the UI library for the Polar project.
+This is the UI library for the Simeon project.
 
 > [!NOTE]
-> This is a private library for the Polar project. You probably shouldn't use it directly in your own projects.
+> This is a private library for the Simeon project. You probably shouldn't use it directly in your own projects.
 
 ## Structure
 

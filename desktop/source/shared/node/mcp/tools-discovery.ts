@@ -401,7 +401,7 @@ export function createMcpToolsDiscovery(
     if (await isHttpProvider(args.providerIdentifier)) {
       const result = await core.backendMcpExec.executeTool({
         serverIdentifier: args.providerIdentifier,
-        // The server's own tool name. Grok Bot's CallMcpTool builds its
+        // The server's own tool name. The upstream app's CallMcpTool builds its
         // args as `name: "<server>-<tool>"` beside `toolName: "<tool>"`
         // (`buildMcpArgs`, packages/agent/tools/mcp/mcp.ts), and this line
         // sent `name`, so every vendor call reached the server with the

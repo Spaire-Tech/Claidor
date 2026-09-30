@@ -6,7 +6,7 @@ import { CustomErrorDetails, ErrorDetails, ErrorDetails_Error } from "../../prot
 import { getAgentEventTracker } from "../utils/event-tracking.js";
 import { SingleMessageLoopDetector as BaseSingleMessageLoopDetector } from "./single-message-loop-detector.js";
 
-const logger = createLogger("@anysphere/agent:loop-detection");
+const logger = createLogger("@sand/agent:loop-detection");
 const loopDetectionCounter = createCounter("agent.assistant_message_looping", {
   description: "Count of agent message loops detected",
   labelNames: ["loop_kind", "isLoopReoccurrence", "caller"],
