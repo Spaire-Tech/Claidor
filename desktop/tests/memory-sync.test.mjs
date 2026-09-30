@@ -100,6 +100,11 @@ const startExtension = (module, { sandRoot, url, env = {}, debounce = never, tok
   return { api, lines, stop: async () => { for (const fn of stops.reverse()) await fn(); } };
 };
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+// Writes `file` and writes it again every second until `predicate` holds: FSEvents
+// on macOS can drop the first change made right after a recursive watch starts,
+// and a busy Mac (the whole suite running) reports late. Each rewrite is a new
+// change the watcher must see; the thing tested is that one is enough.
+const writeUntil = async (file, content, predicate, ms = 12000) => { const end = Date.now() + ms; let next = 0; while (Date.now() < end) { if (predicate()) return true; if (Date.now() >= next) { await writeFile(file, content); next = Date.now() + 1000; } await wait(20); } return predicate(); };
 const until = async (predicate, ms = 4000) => { const end = Date.now() + ms; while (Date.now() < end) { if (predicate()) return true; await wait(20); } return predicate(); };
 
 test("a fresh box pulls what the server holds, a local change pushes with its base version, a newer server copy is merged in, and the state carries the versions", async () => {
@@ -235,16 +240,13 @@ test("a write under a watched root triggers a round after the debounce, a refusa
     await ext.api.whenStarted;
     const before = server.requests.length;
     await mkdir(path.join(sandRoot, "user-memory", "agents", "a2"), { recursive: true });
-    await writeFile(path.join(sandRoot, "user-memory", "agents", "a2", "profile.md"), "- (2026-09-25) Muse says hi.\n");
-    // A generous wait: FSEvents on a busy Mac can take seconds to report the first change.
-    assert.ok(await until(() => server.rows.get("user-memory/agents/a2/profile.md")?.content === "- (2026-09-25) Muse says hi.\n", 12000), "the watcher's round pushed the new shard");
+    assert.ok(await writeUntil(path.join(sandRoot, "user-memory", "agents", "a2", "profile.md"), "- (2026-09-25) Muse says hi.\n", () => server.rows.get("user-memory/agents/a2/profile.md")?.content === "- (2026-09-25) Muse says hi.\n"), "the watcher's round pushed the new shard");
     assert.ok(server.requests.length > before);
 
     // A refusal (a name this server does not keep) is one line with the
     // server's sentence, and the state is left alone.
     await mkdir(path.join(sandRoot, "projects", "launch"), { recursive: true });
-    await writeFile(path.join(sandRoot, "projects", "launch", "project.md"), "---\nname: Launch\n---\n");
-    await until(() => ext.lines.some((line) => line.includes("memory-sync refused")), 12000);
+    await writeUntil(path.join(sandRoot, "projects", "launch", "project.md"), "---\nname: Launch\n---\n", () => ext.lines.some((line) => line.includes("memory-sync refused")));
     assert.ok(ext.lines.some((line) => /^\[simeon\] memory-sync refused 400 'projects\/launch\/project\.md' is not a memory file Simeon keeps\./.test(line)), ext.lines.join("\n"));
     assert.ok(!("projects/launch/project.md" in JSON.parse(await readFile(path.join(sandRoot, ".memory-sync", "state.json"), "utf8")).files));
     await ext.stop();
