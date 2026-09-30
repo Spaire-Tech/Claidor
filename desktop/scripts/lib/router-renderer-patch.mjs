@@ -452,6 +452,12 @@ export const AGENT_BUBBLE_LIGHT = "#e9e9eb";
  * hover or focus, and a blue dot on the chosen answer ("instead of a or b or
  * c have it being round picker. blue for the dot"). The keyboard shortcut
  * letters still work; only their drawing changed.
+ *
+ * Once answered (30 September 2026: "after you choose a choice in the picker
+ * card, the thing appears there just randomly without context"), the card
+ * keeps its grey card, the question stays as its title, and the answer sits
+ * in a white field with the chosen dot and a check. The answered card is a
+ * div, which the article/form/section card rule never reached.
  */
 const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:var(--simeon-card-fill);border-color:transparent}
 .sand-widget-option__key${HI}{box-sizing:border-box;width:18px;height:18px;min-width:18px;padding:0;border-radius:999px;border:1.5px solid light-dark(rgba(20,20,20,.3),rgba(255,255,255,.4));background:transparent}
@@ -459,6 +465,9 @@ const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:var(--sime
 .sand-widget-option:is(:hover,:focus-visible) .sand-widget-option__key${HI}{border-color:light-dark(${USER_BUBBLE_LIGHT},#5b9be0)}
 .sand-widget-option--selected .sand-widget-option__key${HI}{opacity:1;border-color:light-dark(${USER_BUBBLE_LIGHT},#5b9be0);background:radial-gradient(circle,light-dark(${USER_BUBBLE_LIGHT},#5b9be0) 0 4px,transparent 4.5px)}
 .sand-widget-option--selected [title="Selected"]${HI}{display:none}
+.sand-widget--resolved .sand-widget__options${HI}:not(#\\#){background:light-dark(#fff,rgba(255,255,255,.07));box-shadow:0 0 0 .5px light-dark(rgba(20,30,60,.10),rgba(255,255,255,.10))}
+.sand-widget--resolved .sand-widget-option__label${HI}{color:inherit;opacity:1}
+.sand-widget--resolved .sand-widget-option--selected [title="Selected"]${HI}:not(#\\#){display:inline-flex;color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8)}
 `;
 
 /**
@@ -514,7 +523,7 @@ const AGENT_SHEET_CSS = () => `[data-theme*="light"] .sand-message.sand-1g0q52m:
 [data-theme*="light"] .sand-plugins-row${HI}{background:#fff;border-radius:14px;padding:10px 14px;box-shadow: 0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
 [data-theme*="light"] .sand-plugins__grid${HI}{gap:12px}
 [data-theme*="light"] :is(.sand-plugins-detail,.sand-plugins-dialog) .sand-connector-card${HI}{background:#fff;border-color:transparent;border-radius:14px;box-shadow: 0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
-[data-theme*="light"] .sand-message-card>:is(article,form,section)${HI},[data-theme*="light"] .sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card):not(.sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card) *)${HI}{background:${AGENT_BUBBLE_LIGHT};box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
+[data-theme*="light"] .sand-message-card :is(.sand-widget--resolved,.sand-widget--dismissed)${HI},[data-theme*="light"] .sand-message-card>:is(article,form,section)${HI},[data-theme*="light"] .sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card):not(.sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card) *)${HI}{background:${AGENT_BUBBLE_LIGHT};box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
 `;
 
 const GREY_CARD = [
@@ -527,7 +536,7 @@ export const cardBlueCss = () => `${CARD_BLUE_MARKER} (27 September 2026). */
 [data-theme*="light"]:not(#\\#):not(#\\#),[data-theme*="light"] :is(.sand-1wuigm2,.ui-1lzgia1):not(#\\#):not(#\\#){--sand-fill-bubble-agent:${AGENT_BUBBLE_LIGHT}}
 :root:not(#\\#):not(#\\#):not(#\\#),[data-theme]:not(#\\#):not(#\\#):not(#\\#),:is(.sand-1wuigm2,.ui-1lzgia1):not(#\\#):not(#\\#):not(#\\#){--simeon-card-fill:var(--sand-fill-bubble-agent)}
 .sand-message-card{--sand-fill-bubble-agent:transparent}
-.sand-message-card>:is(article,form,section)${HI},.sand-message-card :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card)${HI}{${GREY_CARD}}
+.sand-message-card>:is(article,form,section)${HI},.sand-message-card :is(.sand-connector-card,.sand-widget--choices,.sand-widget--resolved,.sand-widget--dismissed,.sand-email-composer,.sand-file-card)${HI}{${GREY_CARD}}
 .sand-message-card .sand-tool-icon[style*="background-color: rgb(255, 255, 255)"]${HI}{box-shadow:inset 0 0 0 1px var(--sand-border-default)}
 ${CHOICE_RADIO_CSS()}${AGENT_SHEET_CSS()}${SWITCH_AND_TILES_CSS()}.sand-agent-item[data-active="true"]${HI}:not(#\\#){background:light-dark(#fff,rgba(255,255,255,.12));box-shadow:0 0 0 .5px light-dark(rgba(20,20,20,.08),rgba(255,255,255,.08)),0 1px 2px light-dark(rgba(20,20,20,.06),rgba(0,0,0,.3))}
 .sand-chat-header__name${HI}:not(#\\#){background:linear-gradient(180deg,light-dark(rgba(255,255,255,.92),rgba(255,255,255,.18)),light-dark(rgba(255,255,255,.72),rgba(255,255,255,.08)));-webkit-backdrop-filter:blur(20px) saturate(1.8);backdrop-filter:blur(20px) saturate(1.8);border:.5px solid light-dark(rgba(255,255,255,.9),rgba(255,255,255,.18));box-shadow:inset 0 1px 0 light-dark(#fff,rgba(255,255,255,.22)),0 0 0 .5px light-dark(rgba(20,20,40,.1),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(20,20,40,.14),rgba(0,0,0,.5))}
