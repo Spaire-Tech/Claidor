@@ -27,6 +27,7 @@ from .desktop import (
     DesktopMemoryFile,
     DesktopSession,
     DesktopUsage,
+    DesktopVoiceCall,
 )
 from .desktop_share import (
     DesktopShareEvent,
@@ -163,6 +164,7 @@ __all__ = [
     "DesktopShareRoom",
     "DesktopShareRoomMember",
     "DesktopUsage",
+    "DesktopVoiceCall",
     "SandBox",
     "Discount",
     "DiscountProduct",

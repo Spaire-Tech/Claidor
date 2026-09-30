@@ -80,6 +80,10 @@ class DesktopProvider(StrEnum):
     anthropic = "anthropic"
     openai = "openai"
     gemini = "gemini"
+    #: ElevenLabs Agents: the voice calls (`simeon.desktop.voice`). Serves
+    #: no model on the proxy and speaks none of the wires below; it is
+    #: here because a voice call's usage row names who billed it.
+    elevenlabs = "elevenlabs"
 
 
 class SpokenApi(StrEnum):
@@ -152,6 +156,11 @@ PROVIDER_TOKEN_WEIGHTS: dict[DesktopProvider, TokenWeights] = {
     ),
     DesktopProvider.gemini: TokenWeights(
         output=2.50 / 0.30, cache_creation=0.0, cache_read=0.1
+    ),
+    # A voice call is billed by the second and nothing else: its row
+    # counts seconds as input and has no output or cache to weigh.
+    DesktopProvider.elevenlabs: TokenWeights(
+        output=0.0, cache_creation=0.0, cache_read=0.0
     ),
 }
 
@@ -947,6 +956,37 @@ def transcription_seconds(payload: Any) -> int:
             if isinstance(value, int | float):
                 seconds = float(value)
     return max(1, ceil(seconds))
+
+
+#: What ElevenLabs Agents charges for a minute of a voice call, the
+#: voice both ways (speech to text, text to speech, turn-taking).
+#: ⚠️ Taken from the brief of 30 September 2026, not read off
+#: elevenlabs.io/pricing; like the figures above, a single constant so
+#: that checking and correcting it is a one-line change.
+VOICE_CALL_USD_PER_MINUTE = 0.08
+
+#: What Simeon adds on top. The call's language model (`VOICE_LLM` in
+#: `simeon.desktop.voice`) is billed by ElevenLabs on top of the minute,
+#: and the agent the call hands work to is metered on its own model rows;
+#: the margin covers the first and the rounding, not the second.
+VOICE_CALL_MARGIN = 1.25
+
+#: The longest call ElevenLabs is told to allow, and the most the app's
+#: own count can be billed for when ElevenLabs does not report one.
+VOICE_CALL_MAX_SECONDS = 1_800
+
+#: A voice call as a catalogue entry. Its input unit is **seconds of the
+#: call, not tokens**: a usage row naming this model counts the seconds
+#: billed, as ElevenLabs reported them when it did. No role: never on the
+#: menu, priced so its rows mean something.
+VOICE_CALL_MODEL = DesktopModel(
+    "elevenlabs-voice-call",
+    "ElevenLabs voice call",
+    "A spoken conversation with an agent.",
+    (VOICE_CALL_USD_PER_MINUTE * VOICE_CALL_MARGIN / 60)
+    / (CREDIT_USD_PER_MILLION_INPUT / 1_000_000),
+    provider=DesktopProvider.elevenlabs,
+)
 
 
 __all__ = [

@@ -1,0 +1,821 @@
+"""Voice calls: the person talks to one of their agents, out loud.
+
+The call itself runs between the Mac app and ElevenLabs Agents over
+WebRTC (`@elevenlabs/client` in the app). Simeon's part is small and is
+all here:
+
+- **The key.** ElevenLabs is reached with Simeon's key
+  (`ELEVENLABS_API_KEY`), which never leaves the server. For each call
+  the app asks `POST /desktop/api/proxy/v1/voice/calls` and is handed a
+  short-lived conversation token instead.
+- **The platform agent.** One ElevenLabs agent, "Simeon voice", serves
+  every Simeon agent: the app overrides its prompt, first message,
+  language and voice per call, so a call to "Ada" sounds and behaves
+  like Ada. The server finds it by name or creates it on first use, and
+  keeps its configuration in step with `VOICE_AGENT_CONFIG_VERSION`
+  (tagged on the agent) — bump the version and the next call rewrites it.
+  `ELEVENLABS_AGENT_ID` names an agent managed by hand instead, which is
+  then used as it is and never rewritten.
+- **The two client tools.** `hand_to_agent {task}` and `check_on_agent`
+  are declared on the platform agent and answered by the app, which
+  owns the real agent: the voice hands work over, the agent does it in
+  the background, and the voice can ask how it is going.
+- **The bill.** When the app hangs up it says so
+  (`…/voice/calls/{conversation_id}/end`). The server asks ElevenLabs how
+  long the call really lasted and bills those seconds on
+  `VOICE_CALL_MODEL`, once per conversation (`DesktopVoiceCall`).
+- **The voices.** A short curated list for the picker
+  (`…/voice/voices`), cached for an hour.
+
+Every ElevenLabs request goes through `ElevenLabsClient`, and the routes
+reach it through `client()`, so tests replace the one function and no
+request leaves the machine.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import re
+import time
+from typing import Any
+from urllib.parse import quote
+
+import httpx
+import structlog
+from fastapi import Depends, Request
+from fastapi.responses import JSONResponse, Response
+from sqlalchemy.exc import IntegrityError
+
+from simeon.config import settings
+from simeon.models import DesktopVoiceCall
+from simeon.postgres import AsyncSession, get_db_session
+from simeon.routing import APIRouter
+
+from .auth import ProxyCaller, get_proxy_caller
+from .pricing import VOICE_CALL_MAX_SECONDS, VOICE_CALL_MODEL
+from .proxy_common import budget_refusal, error_response
+from .repository import DesktopVoiceCallRepository
+from .service import (
+    DesktopProvider,
+    Usage,
+    desktop,
+    provider_api_key,
+    provider_base_url,
+    provider_configured,
+)
+
+log = structlog.get_logger()
+
+router = APIRouter(include_in_schema=False)
+
+# --- the platform agent's configuration --------------------------------------
+
+#: The platform agent's name, which is also how the server finds it again.
+VOICE_AGENT_NAME = "Simeon voice"
+
+#: Bump when anything in `agent_config` or `CLIENT_TOOLS` changes: the next
+#: call finds the agent without this version's tag and rewrites it.
+VOICE_AGENT_CONFIG_VERSION = 1
+VOICE_AGENT_VERSION_TAG = f"simeon-voice-config-v{VOICE_AGENT_CONFIG_VERSION}"
+VOICE_AGENT_TAGS = ["simeon", "simeon-voice", VOICE_AGENT_VERSION_TAG]
+
+#: The model that thinks during the call. Fast over clever: the call's
+#: real work is handed to the person's own agent (`hand_to_agent`), and a
+#: pause before every sentence is what makes a voice feel broken.
+VOICE_LLM = "gemini-2.5-flash"
+
+#: ElevenLabs' low-latency voice model.
+VOICE_TTS_MODEL = "eleven_flash_v2_5"
+
+#: The voice a call speaks in when the app names none (Alexandra, the
+#: first of `CURATED_VOICES`).
+VOICE_DEFAULT_VOICE_ID = "kdmDKE6EkgrWrrykO9Qt"
+
+VOICE_DEFAULT_LANGUAGE = "en"
+VOICE_DEFAULT_FIRST_MESSAGE = "Hi, it's me. What's up?"
+
+#: The fallback prompt. The app overrides it on every call with the
+#: agent's own (its name, its manner, what it is working on); this is
+#: what a call says when it does not.
+VOICE_BASE_PROMPT = """\
+You are the voice of one of the person's Simeon agents, on a live phone \
+call with them. Simeon is a team of always-on agents that work on the \
+person's Mac and on a cloud computer of their own. You are the agent's \
+voice; the agent itself does the work.
+
+How you speak:
+- This is a phone call. Answer in one or two short sentences, the way a \
+capable colleague talks. No lists, no headings, no markdown, no URLs \
+read aloud, no emoji.
+- Say numbers, dates and times the way a person says them.
+- If you did not catch something, say so and ask again. Never guess at \
+what the person said.
+- Do not pretend to have done something you have not done.
+
+How work gets done:
+- When the person asks for anything that needs doing (looking something \
+up, writing, changing a file, sending, scheduling, checking on a job), \
+call `hand_to_agent` with the task in one clear sentence, including \
+every detail the person gave. Tell them in a few words that you are on \
+it; the agent works in the background and the call can go on.
+- When the person asks how it is going, or you need the result to \
+answer, call `check_on_agent` and tell them what it says, briefly.
+- Never make up a result. If the agent has not finished, say so.
+
+Ending:
+- When the person says goodbye or is clearly done, say a short goodbye \
+and call `end_call`.
+- If the person is talking to someone else, or nothing needs saying, \
+call `skip_turn`.
+"""
+
+#: The two tools the app answers. `hand_to_agent` must come back fast
+#: (the app says "accepted" at once and the work continues behind the
+#: call), so its timeout is short and the voice always says something
+#: before calling it.
+CLIENT_TOOLS: tuple[dict[str, Any], ...] = (
+    {
+        "type": "client",
+        "name": "hand_to_agent",
+        "description": (
+            "Hand a task to the person's agent, which does it in the "
+            "background. Use it for anything that needs doing. Answers "
+            "at once that the task was accepted; the call continues."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "task": {
+                    "type": "string",
+                    "description": (
+                        "The task, in one clear sentence, with every "
+                        "detail the person gave."
+                    ),
+                }
+            },
+            "required": ["task"],
+        },
+        "expects_response": True,
+        "response_timeout_secs": 20,
+        "pre_tool_speech": "force",
+    },
+    {
+        "type": "client",
+        "name": "check_on_agent",
+        "description": (
+            "Ask the person's agent how the work handed to it is going, "
+            "and what it has found or done so far."
+        ),
+        "parameters": {"type": "object", "properties": {}, "required": []},
+        "expects_response": True,
+    },
+)
+
+
+def _system_tool(name: str) -> dict[str, Any]:
+    return {
+        "type": "system",
+        "name": name,
+        "description": "",
+        "params": {"system_tool_type": name},
+    }
+
+
+def agent_config(tool_ids: list[str]) -> dict[str, Any]:
+    """The whole of the platform agent, as `POST /v1/convai/agents/create`
+    and `PATCH /v1/convai/agents/{id}` take it."""
+    return {
+        "name": VOICE_AGENT_NAME,
+        "tags": VOICE_AGENT_TAGS,
+        "conversation_config": {
+            "agent": {
+                "first_message": VOICE_DEFAULT_FIRST_MESSAGE,
+                "language": VOICE_DEFAULT_LANGUAGE,
+                "prompt": {
+                    "prompt": VOICE_BASE_PROMPT,
+                    "llm": VOICE_LLM,
+                    "tool_ids": tool_ids,
+                    "built_in_tools": {
+                        "end_call": _system_tool("end_call"),
+                        "skip_turn": _system_tool("skip_turn"),
+                    },
+                },
+            },
+            "tts": {
+                "model_id": VOICE_TTS_MODEL,
+                "voice_id": VOICE_DEFAULT_VOICE_ID,
+            },
+            "turn": {
+                "turn_timeout": 7,
+                "silence_end_call_timeout": 25,
+                "turn_eagerness": "normal",
+            },
+            "conversation": {"max_duration_seconds": VOICE_CALL_MAX_SECONDS},
+        },
+        "platform_settings": {
+            # A conversation opens only with a token Simeon minted.
+            "auth": {"enable_auth": True},
+            # What the app may set per call, and nothing else.
+            "overrides": {
+                "conversation_config_override": {
+                    "agent": {
+                        "prompt": {"prompt": True},
+                        "first_message": True,
+                        "language": True,
+                    },
+                    "tts": {"voice_id": True},
+                }
+            },
+            "privacy": {"record_voice": False},
+        },
+    }
+
+
+#: The voices the picker offers, in this order: good conversational
+#: voices from ElevenLabs' default library. One the API no longer
+#: returns is skipped.
+CURATED_VOICES: tuple[tuple[str, str], ...] = (
+    ("kdmDKE6EkgrWrrykO9Qt", "Alexandra"),
+    ("L0Dsvb3SLTyegXwtm47J", "Archer"),
+    ("g6xIsTj2HwM6VR4iXFCw", "Jessica"),
+    ("OYTbf65OHHFELVut7v2H", "Hope"),
+    ("dj3G1R1ilKoFKhBnWOzG", "Eryn"),
+    ("HDA9tsk27wYi3uq0fPcK", "Stuart"),
+    ("1SM7GgM6IMuvQlz2BwM3", "Mark"),
+    ("PT4nqlKZfc06VW1BuClj", "Angela"),
+    ("vBKc2FfBKJfcZNyEt1n6", "Finn"),
+    ("56AoDkrOh6qfVPDXZ7Pt", "Cassidy"),
+)
+VOICES_CACHE_SECONDS = 3600.0
+
+#: ElevenLabs' conversation ids are `conv_` and letters and digits; this
+#: is looser than that and strict enough that the id is safe on a path.
+CONVERSATION_ID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
+
+
+# --- the ElevenLabs client ----------------------------------------------------
+
+
+class ElevenLabsError(Exception):
+    """ElevenLabs answered, and not with success, or could not be reached
+    (`status` 0)."""
+
+    def __init__(self, status: int, body: str, path: str) -> None:
+        self.status = status
+        self.body = body
+        self.path = path
+        super().__init__(f"ElevenLabs {path} answered {status}: {body[:300]}")
+
+
+class ElevenLabsClient:
+    """The dozen ElevenLabs calls Simeon makes, and nothing else."""
+
+    def __init__(self, api_key: str, base_url: str, *, timeout: float = 30.0) -> None:
+        self.api_key = api_key
+        self.base_url = base_url.rstrip("/")
+        self.timeout = timeout
+
+    @property
+    def cache_key(self) -> tuple[str, str]:
+        """Which ElevenLabs workspace this is, for the in-process caches:
+        a changed key or address is a different set of agents."""
+        return (self.base_url, self.api_key)
+
+    async def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: dict[str, Any] | None = None,
+        json: dict[str, Any] | None = None,
+    ) -> Any:
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as http:
+                response = await http.request(
+                    method,
+                    f"{self.base_url}{path}",
+                    params=params,
+                    json=json,
+                    headers={"xi-api-key": self.api_key},
+                )
+        except httpx.HTTPError as error:
+            raise ElevenLabsError(0, str(error), path) from error
+        if response.status_code >= 400:
+            raise ElevenLabsError(
+                response.status_code,
+                response.content.decode(errors="replace"),
+                path,
+            )
+        if not response.content:
+            return {}
+        try:
+            return response.json()
+        except ValueError as error:
+            raise ElevenLabsError(
+                response.status_code, "The answer is not JSON.", path
+            ) from error
+
+    # agents
+
+    async def find_agents(self, search: str) -> list[dict[str, Any]]:
+        answer = await self._request(
+            "GET", "/v1/convai/agents", params={"search": search, "page_size": 100}
+        )
+        agents = answer.get("agents") if isinstance(answer, dict) else None
+        return [one for one in agents or [] if isinstance(one, dict)]
+
+    async def get_agent(self, agent_id: str) -> dict[str, Any]:
+        answer = await self._request("GET", f"/v1/convai/agents/{quote(agent_id)}")
+        return answer if isinstance(answer, dict) else {}
+
+    async def create_agent(self, config: dict[str, Any]) -> str:
+        answer = await self._request("POST", "/v1/convai/agents/create", json=config)
+        agent_id = answer.get("agent_id") if isinstance(answer, dict) else None
+        if not isinstance(agent_id, str) or not agent_id:
+            raise ElevenLabsError(200, "No agent_id in the answer.", "agents/create")
+        return agent_id
+
+    async def update_agent(self, agent_id: str, config: dict[str, Any]) -> None:
+        await self._request(
+            "PATCH", f"/v1/convai/agents/{quote(agent_id)}", json=config
+        )
+
+    # tools
+
+    async def list_tools(self) -> list[dict[str, Any]]:
+        answer = await self._request("GET", "/v1/convai/tools")
+        tools = answer.get("tools") if isinstance(answer, dict) else None
+        return [one for one in tools or [] if isinstance(one, dict)]
+
+    async def create_tool(self, tool_config: dict[str, Any]) -> str:
+        answer = await self._request(
+            "POST", "/v1/convai/tools", json={"tool_config": tool_config}
+        )
+        tool_id = answer.get("id") if isinstance(answer, dict) else None
+        if not isinstance(tool_id, str) or not tool_id:
+            raise ElevenLabsError(200, "No id in the answer.", "tools")
+        return tool_id
+
+    async def update_tool(self, tool_id: str, tool_config: dict[str, Any]) -> None:
+        await self._request(
+            "PATCH",
+            f"/v1/convai/tools/{quote(tool_id)}",
+            json={"tool_config": tool_config},
+        )
+
+    # conversations
+
+    async def conversation_token(self, agent_id: str) -> dict[str, Any]:
+        answer = await self._request(
+            "GET", "/v1/convai/conversation/token", params={"agent_id": agent_id}
+        )
+        return answer if isinstance(answer, dict) else {}
+
+    async def get_conversation(self, conversation_id: str) -> dict[str, Any]:
+        answer = await self._request(
+            "GET", f"/v1/convai/conversations/{quote(conversation_id)}"
+        )
+        return answer if isinstance(answer, dict) else {}
+
+    # voices
+
+    async def list_default_voices(self) -> list[dict[str, Any]]:
+        answer = await self._request(
+            "GET",
+            "/v2/voices",
+            params={
+                "include_live_moderated": "false",
+                "voice_type": "default",
+                "page_size": 100,
+            },
+        )
+        voices = answer.get("voices") if isinstance(answer, dict) else None
+        return [one for one in voices or [] if isinstance(one, dict)]
+
+
+def client() -> ElevenLabsClient:
+    """The client the routes use. Tests replace this function."""
+    return ElevenLabsClient(
+        provider_api_key(DesktopProvider.elevenlabs),
+        provider_base_url(DesktopProvider.elevenlabs),
+    )
+
+
+# --- finding and syncing the platform agent -----------------------------------
+
+_agent_ids: dict[tuple[str, str], str] = {}
+_agent_lock = asyncio.Lock()
+
+
+def forget_agent() -> None:
+    """Drop what this process knows about the platform agent, so the next
+    call looks it up again. For tests, and after ElevenLabs says the
+    agent is gone."""
+    _agent_ids.clear()
+
+
+async def _ensure_tools(api: ElevenLabsClient) -> list[str]:
+    """The ids of `CLIENT_TOOLS` in the workspace, each created or
+    rewritten to this version's configuration."""
+    existing: dict[str, str] = {}
+    for tool in await api.list_tools():
+        config = tool.get("tool_config")
+        tool_id = tool.get("id")
+        if (
+            isinstance(config, dict)
+            and config.get("type") == "client"
+            and isinstance(config.get("name"), str)
+            and isinstance(tool_id, str)
+        ):
+            existing.setdefault(config["name"], tool_id)
+    ids: list[str] = []
+    for config in CLIENT_TOOLS:
+        name = config["name"]
+        if name in existing:
+            await api.update_tool(existing[name], dict(config))
+            ids.append(existing[name])
+        else:
+            ids.append(await api.create_tool(dict(config)))
+    return ids
+
+
+def _oldest(agents: list[dict[str, Any]]) -> str | None:
+    """Of the agents named exactly `VOICE_AGENT_NAME`, the one created
+    first: two API processes racing on a first call can each create one,
+    and every later lookup must settle on the same."""
+    named = [
+        one
+        for one in agents
+        if one.get("name") == VOICE_AGENT_NAME and isinstance(one.get("agent_id"), str)
+    ]
+    if not named:
+        return None
+    named.sort(key=lambda one: one.get("created_at_unix_secs") or 0)
+    return str(named[0]["agent_id"])
+
+
+async def _sync_agent(api: ElevenLabsClient) -> str:
+    agent_id = _oldest(await api.find_agents(VOICE_AGENT_NAME))
+    if agent_id is not None:
+        tags = (await api.get_agent(agent_id)).get("tags") or []
+        if VOICE_AGENT_VERSION_TAG in tags:
+            log.info("desktop.voice.agent_ready", agent_id=agent_id)
+            return agent_id
+    config = agent_config(await _ensure_tools(api))
+    if agent_id is None:
+        agent_id = await api.create_agent(config)
+        log.info(
+            "desktop.voice.agent_created",
+            agent_id=agent_id,
+            version=VOICE_AGENT_CONFIG_VERSION,
+        )
+    else:
+        await api.update_agent(agent_id, config)
+        log.info(
+            "desktop.voice.agent_synced",
+            agent_id=agent_id,
+            version=VOICE_AGENT_CONFIG_VERSION,
+        )
+    return agent_id
+
+
+async def ensure_agent(api: ElevenLabsClient) -> str:
+    """The platform agent's id: `ELEVENLABS_AGENT_ID` when set, otherwise
+    Simeon's own, found or created and brought to this version once per
+    process."""
+    if settings.ELEVENLABS_AGENT_ID:
+        return settings.ELEVENLABS_AGENT_ID
+    known = _agent_ids.get(api.cache_key)
+    if known is not None:
+        return known
+    async with _agent_lock:
+        known = _agent_ids.get(api.cache_key)
+        if known is not None:
+            return known
+        agent_id = await _sync_agent(api)
+        _agent_ids[api.cache_key] = agent_id
+        return agent_id
+
+
+# --- the routes ---------------------------------------------------------------
+
+
+def _not_configured() -> JSONResponse:
+    return error_response(
+        "api_error", "Voice calls are not switched on on this server.", 503
+    )
+
+
+def _upstream_failed(error: ElevenLabsError, what: str) -> JSONResponse:
+    """Write down what ElevenLabs said, in full, once, and answer the app
+    with a sentence. The body carries no key: the key goes up in a header."""
+    if error.status == 0:
+        log.warning(
+            "desktop.voice.upstream_unreachable", path=error.path, error=error.body
+        )
+        return error_response(
+            "api_error", "The voice service could not be reached.", 502
+        )
+    log.warning(
+        "desktop.voice.upstream_refused",
+        path=error.path,
+        status=error.status,
+        body=error.body[:1000] or "(empty)",
+    )
+    return error_response("api_error", f"The voice service refused {what}.", 502)
+
+
+@router.post(
+    "/api/proxy/v1/voice/calls", name="desktop:voice_call_start", response_model=None
+)
+async def start_call(
+    caller: ProxyCaller = Depends(get_proxy_caller),
+    session: AsyncSession = Depends(get_db_session),
+) -> Response:
+    """Open one call: `{token, conversation_id, agent_id}` out.
+
+    The token opens one WebRTC conversation with the platform agent and
+    expires in minutes; the app passes it to `Conversation.startSession`
+    with its overrides. `conversation_id` is null when ElevenLabs does not
+    name the conversation before it starts; the SDK reports it once
+    connected, and that is the id the app ends the call with.
+    """
+    if not provider_configured(DesktopProvider.elevenlabs):
+        return _not_configured()
+    refused = await budget_refusal(session, caller.user)
+    if refused is not None:
+        return refused
+
+    api = client()
+    try:
+        agent_id = await ensure_agent(api)
+        try:
+            answer = await api.conversation_token(agent_id)
+        except ElevenLabsError as error:
+            if error.status != 404 or settings.ELEVENLABS_AGENT_ID:
+                raise
+            # The agent was deleted behind this process's back: find or
+            # create it again, once.
+            forget_agent()
+            agent_id = await ensure_agent(api)
+            answer = await api.conversation_token(agent_id)
+    except ElevenLabsError as error:
+        return _upstream_failed(error, "the call")
+
+    token = answer.get("token")
+    if not isinstance(token, str) or not token:
+        log.warning("desktop.voice.upstream_refused", path="token", body="no token")
+        return error_response("api_error", "The voice service sent no token.", 502)
+    conversation_id = answer.get("conversation_id")
+    log.info(
+        "desktop.voice.call_started",
+        user_id=str(caller.user.id),
+        agent_id=agent_id,
+        conversation_id=conversation_id,
+    )
+    return JSONResponse(
+        {
+            "token": token,
+            "conversation_id": conversation_id
+            if isinstance(conversation_id, str)
+            else None,
+            "agent_id": agent_id,
+        },
+        headers={"cache-control": "no-store"},
+    )
+
+
+def _summary(conversation: dict[str, Any] | None) -> str | None:
+    analysis = conversation.get("analysis") if conversation else None
+    summary = analysis.get("transcript_summary") if isinstance(analysis, dict) else None
+    return summary.strip() if isinstance(summary, str) and summary.strip() else None
+
+
+def _reported_seconds(conversation: dict[str, Any] | None) -> int | None:
+    metadata = conversation.get("metadata") if conversation else None
+    value = metadata.get("call_duration_secs") if isinstance(metadata, dict) else None
+    if isinstance(value, bool) or not isinstance(value, int | float) or value < 0:
+        return None
+    return min(int(value + 0.999), VOICE_CALL_MAX_SECONDS)
+
+
+def _app_seconds(value: Any) -> int | None:
+    if value is None:
+        return 0
+    if isinstance(value, bool) or not isinstance(value, int | float) or value < 0:
+        return None
+    return min(int(value + 0.999), VOICE_CALL_MAX_SECONDS)
+
+
+async def _fetch_conversation(
+    api: ElevenLabsClient, conversation_id: str
+) -> dict[str, Any] | None:
+    try:
+        return await api.get_conversation(conversation_id)
+    except ElevenLabsError as error:
+        log.warning(
+            "desktop.voice.conversation_unread",
+            conversation_id=conversation_id,
+            status=error.status,
+            body=error.body[:1000] or "(empty)",
+        )
+        return None
+
+
+async def _expected_agent(api: ElevenLabsClient) -> str | None:
+    try:
+        return await ensure_agent(api)
+    except ElevenLabsError:
+        return None
+
+
+@router.post(
+    "/api/proxy/v1/voice/calls/{conversation_id}/end",
+    name="desktop:voice_call_end",
+    response_model=None,
+)
+async def end_call(
+    conversation_id: str,
+    request: Request,
+    caller: ProxyCaller = Depends(get_proxy_caller),
+    session: AsyncSession = Depends(get_db_session),
+) -> Response:
+    """The app hung up: `{seconds}` in, `{seconds, summary}` out.
+
+    Billed once per conversation. The seconds are ElevenLabs' own
+    (`metadata.call_duration_secs`) when it reports them, and the app's
+    count, capped at `VOICE_CALL_MAX_SECONDS`, when it does not. Asked
+    again, the route bills nothing and answers with the seconds already
+    billed and the summary, which ElevenLabs writes a little after the
+    call ends — so asking again later is how the app gets it.
+    """
+    if not CONVERSATION_ID.match(conversation_id):
+        return error_response(
+            "invalid_request_error", "That is not a conversation id.", 400
+        )
+    raw = await request.body()
+    try:
+        payload = json.loads(raw or b"{}")
+    except ValueError:
+        return error_response("invalid_request_error", "The body is not JSON.", 400)
+    if not isinstance(payload, dict):
+        return error_response(
+            "invalid_request_error", "The body must be an object.", 400
+        )
+    app_seconds = _app_seconds(payload.get("seconds"))
+    if app_seconds is None:
+        return error_response(
+            "invalid_request_error", "seconds is a number of seconds.", 400
+        )
+    if not provider_configured(DesktopProvider.elevenlabs):
+        return _not_configured()
+
+    repository = DesktopVoiceCallRepository.from_session(session)
+    api = client()
+    billed = await repository.get_by_conversation_id(conversation_id)
+    if billed is not None:
+        if billed.user_id != caller.user.id:
+            return error_response("not_found_error", "No such call.", 404)
+        conversation = await _fetch_conversation(api, conversation_id)
+        return JSONResponse(
+            {"seconds": billed.seconds, "summary": _summary(conversation)},
+            headers={"cache-control": "no-store"},
+        )
+
+    conversation = await _fetch_conversation(api, conversation_id)
+    if conversation is not None:
+        # A conversation of another ElevenLabs agent is not a Simeon call
+        # and is not the caller's to claim.
+        owner = conversation.get("agent_id")
+        expected = await _expected_agent(api)
+        if isinstance(owner, str) and expected is not None and owner != expected:
+            log.warning(
+                "desktop.voice.foreign_conversation",
+                conversation_id=conversation_id,
+                agent_id=owner,
+                user_id=str(caller.user.id),
+            )
+            return error_response("not_found_error", "No such call.", 404)
+
+    reported = _reported_seconds(conversation)
+    seconds = reported if reported is not None else app_seconds
+    source = "provider" if reported is not None else "app"
+
+    try:
+        async with session.begin_nested():
+            await repository.create(
+                DesktopVoiceCall(
+                    user_id=caller.user.id,
+                    session_id=caller.session_id,
+                    conversation_id=conversation_id,
+                    seconds=seconds,
+                    duration_source=source,
+                ),
+                flush=True,
+            )
+            await desktop.record_usage(
+                session,
+                user_id=caller.user.id,
+                session_id=caller.session_id,
+                model=VOICE_CALL_MODEL,
+                usage=Usage(input_tokens=seconds),
+                stream=False,
+                upstream_status=200,
+            )
+    except IntegrityError:
+        # The same call ended twice at once; the other request billed it.
+        billed = await repository.get_by_conversation_id(conversation_id)
+        if billed is None or billed.user_id != caller.user.id:
+            return error_response("not_found_error", "No such call.", 404)
+        seconds = billed.seconds
+
+    log.info(
+        "desktop.voice.call_ended",
+        user_id=str(caller.user.id),
+        conversation_id=conversation_id,
+        seconds=seconds,
+        source=source,
+        app_seconds=app_seconds,
+    )
+    return JSONResponse(
+        {"seconds": seconds, "summary": _summary(conversation)},
+        headers={"cache-control": "no-store"},
+    )
+
+
+_voices: dict[tuple[str, str], tuple[float, list[dict[str, Any]]]] = {}
+
+
+def forget_voices() -> None:
+    """Drop the cached voice list. For tests."""
+    _voices.clear()
+
+
+def _voice_row(voice: dict[str, Any]) -> dict[str, Any]:
+    labels = voice.get("labels")
+    return {
+        "id": voice.get("voice_id"),
+        "name": voice.get("name"),
+        "description": voice.get("description"),
+        "labels": labels if isinstance(labels, dict) else {},
+        "preview_url": voice.get("preview_url"),
+    }
+
+
+def curate(voices: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The curated voices among `voices`, in `CURATED_VOICES`' order.
+    Should none of them be there any more, every default voice rather
+    than an empty picker."""
+    by_id = {one.get("voice_id"): one for one in voices}
+    picked = [
+        _voice_row(by_id[voice_id])
+        for voice_id, _ in CURATED_VOICES
+        if voice_id in by_id
+    ]
+    if picked:
+        return picked
+    return [_voice_row(one) for one in voices if isinstance(one.get("voice_id"), str)]
+
+
+@router.get(
+    "/api/proxy/v1/voice/voices",
+    name="desktop:voice_voices",
+    response_model=None,
+    dependencies=[Depends(get_proxy_caller)],
+)
+async def list_voices() -> Response:
+    """The voice picker: `[{id, name, description, labels, preview_url}]`."""
+    if not provider_configured(DesktopProvider.elevenlabs):
+        return _not_configured()
+    api = client()
+    cached = _voices.get(api.cache_key)
+    now = time.monotonic()
+    if cached is not None and cached[0] > now:
+        return JSONResponse(
+            cached[1], headers={"cache-control": "private, max-age=3600"}
+        )
+    try:
+        voices = curate(await api.list_default_voices())
+    except ElevenLabsError as error:
+        return _upstream_failed(error, "the list of voices")
+    _voices[api.cache_key] = (now + VOICES_CACHE_SECONDS, voices)
+    return JSONResponse(voices, headers={"cache-control": "private, max-age=3600"})
+
+
+__all__ = [
+    "CLIENT_TOOLS",
+    "CURATED_VOICES",
+    "VOICE_AGENT_CONFIG_VERSION",
+    "VOICE_AGENT_NAME",
+    "VOICE_LLM",
+    "VOICE_TTS_MODEL",
+    "ElevenLabsClient",
+    "ElevenLabsError",
+    "agent_config",
+    "client",
+    "ensure_agent",
+    "forget_agent",
+    "forget_voices",
+    "router",
+]

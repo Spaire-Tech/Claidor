@@ -107,6 +107,7 @@ from .skill_store import archive as skill_archive_bytes
 from .skill_store import archive_path, marketplace_item
 from .skill_store import catalog as skill_store_catalog
 from .video import VIDEO_CALL_LOG, count_video_parts, parse_gemini_call
+from .voice import router as voice_router
 
 log = structlog.get_logger()
 
@@ -1349,6 +1350,11 @@ async def proxy_speech(
 # like the model calls. Included before the catch-all for the same
 # reason Composio is declared before it.
 router.include_router(capabilities_router)
+
+# Voice calls through ElevenLabs Agents (`voice.py`): the call token, the
+# bill when the app hangs up, and the voice picker. Before the catch-all
+# for the same reason.
+router.include_router(voice_router)
 
 # Apps under Simeon's own name (`apps.py`): each app an MCP server of ours,
 # the sign-in link, status and disconnect; the provider behind them never named.

@@ -41,6 +41,16 @@ services:
       - key: CLAIDOR_MATY_RUNNER_TOKEN
         sync: false
 
+      # Voice calls (simeon/desktop/voice.py, docs/services-agents.md).
+      # ElevenLabs Agents: the API mints one conversation token per call
+      # with this key and the app never holds it. Only the API reads it,
+      # so it is here and not in claidor-shared: the worker has no use
+      # for it. Unset, the call routes answer 503 "Voice calls are not
+      # switched on on this server." Written with the SIMEON_ prefix,
+      # which the settings read first (the CLAIDOR_ spelling still works).
+      - key: SIMEON_ELEVENLABS_API_KEY
+        sync: false
+
       # --- database (Render-managed, Claidor's own) ---
       - key: CLAIDOR_POSTGRES_HOST
         fromDatabase: { name: claidor-postgres, property: host }

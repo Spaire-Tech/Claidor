@@ -250,6 +250,18 @@ class Settings(BaseSettings):
     DESKTOP_GEMINI_BASE_URL: str = "https://generativelanguage.googleapis.com"
     GEMINI_API_KEY: str = ""
 
+    # ElevenLabs Agents, the provider behind the app's voice calls
+    # (`simeon/desktop/voice.py`). The key stays here: the app is handed a
+    # short-lived conversation token per call and never sees it. It is
+    # `SIMEON_ELEVENLABS_API_KEY` on Render; empty means the call routes
+    # answer 503 and the app says calls are not switched on. With no
+    # ELEVENLABS_AGENT_ID the server finds or creates its own platform
+    # agent ("Simeon voice") and keeps its configuration in sync; set it
+    # to use an agent managed by hand instead, which is then left alone.
+    ELEVENLABS_API_KEY: str = ""
+    ELEVENLABS_BASE_URL: str = "https://api.elevenlabs.io"
+    ELEVENLABS_AGENT_ID: str = ""
+
     # The person's computer in the cloud (simeon/sand/box_broker.py, 25
     # September 2026). Empty provider: the broker answers `unavailable`
     # with one sentence and the app has no computer to run on.

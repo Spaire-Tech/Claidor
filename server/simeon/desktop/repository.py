@@ -13,6 +13,7 @@ from simeon.models import (
     DesktopMemoryFile,
     DesktopSession,
     DesktopUsage,
+    DesktopVoiceCall,
 )
 
 
@@ -148,3 +149,15 @@ class DesktopMemoryFileRepository(RepositoryBase[DesktopMemoryFile]):
             update_dict={"content": "", "version": version, "deleted_at": utc_now()},
             flush=True,
         )
+
+
+class DesktopVoiceCallRepository(RepositoryBase[DesktopVoiceCall]):
+    model = DesktopVoiceCall
+
+    async def get_by_conversation_id(
+        self, conversation_id: str
+    ) -> DesktopVoiceCall | None:
+        statement = self.get_base_statement().where(
+            DesktopVoiceCall.conversation_id == conversation_id
+        )
+        return await self.get_one_or_none(statement)

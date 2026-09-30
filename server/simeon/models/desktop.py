@@ -225,3 +225,39 @@ class DesktopMemoryFile(RecordModel):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False, default="")
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+
+class DesktopVoiceCall(RecordModel):
+    """One voice call the app placed to an agent, once it was billed.
+
+    The call itself runs between the app and ElevenLabs
+    (`simeon.desktop.voice`); Simeon only mints the token that opens it
+    and, when the app hangs up, bills the minutes. This row is written at
+    that moment and is what makes the bill idempotent: the conversation
+    id is unique, so an app that says « ended » twice is billed once, and
+    a conversation already claimed by one person is never another's.
+    """
+
+    __tablename__ = "desktop_voice_calls"
+
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
+    )
+    session_id: Mapped[UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("desktop_sessions.id", ondelete="set null"),
+        nullable=True,
+        index=True,
+    )
+    #: ElevenLabs' own id for the conversation (`conv_…`).
+    conversation_id: Mapped[str] = mapped_column(
+        String(128), nullable=False, unique=True
+    )
+    #: The seconds billed.
+    seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    #: Where `seconds` came from: `provider` when ElevenLabs reported the
+    #: call's duration, `app` when it did not and the app's own count
+    #: (capped) was used instead.
+    duration_source: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="provider"
+    )

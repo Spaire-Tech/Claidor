@@ -125,7 +125,7 @@ before it spends much.
 ### Routes
 
 All are under `/desktop` (`server/simeon/desktop/endpoints.py`,
-`server/simeon/desktop/capabilities.py`):
+`server/simeon/desktop/capabilities.py`, `server/simeon/desktop/voice.py`):
 
 | Route | Wire |
 |---|---|
@@ -137,6 +137,9 @@ All are under `/desktop` (`server/simeon/desktop/endpoints.py`,
 | `POST /desktop/api/proxy/v1/images/generations` | Image generation. |
 | `POST /desktop/api/proxy/v1/audio/transcriptions` | Speech to text. |
 | `POST /desktop/api/proxy/v1/audio/speech` | Text to speech. |
+| `POST /desktop/api/proxy/v1/voice/calls` | Opens a voice call: `{token, conversation_id, agent_id}` for ElevenLabs Agents (`server/simeon/desktop/voice.py`, `docs/services-agents.md` section 9). |
+| `POST /desktop/api/proxy/v1/voice/calls/{conversation_id}/end` | The app hung up: `{seconds}` in, `{seconds, summary}` out. Bills the call once. |
+| `GET /desktop/api/proxy/v1/voice/voices` | The voice picker's curated list, cached for an hour. |
 | `GET /desktop/api/models/available` | The models offered to the app. |
 | `GET /desktop/api/models/pricing-catalog` | Their prices. |
 | `GET /desktop/api/user/quota` | The person's usage, for the Usage tab. |

@@ -3,7 +3,8 @@
 This page covers the features where Simeon Labs' server (`server/`, Python package `simeon`,
 at `https://api.simeonlabs.com`) works for the Simeon app (`desktop/`) beyond sign-in and the
 model proxy: cloud agents, routines and listeners, sharing, messaging channels, video, skill
-publish, connectors, and a few agent features (avatars, group chats, auto-review, drafts).
+publish, connectors, a few agent features (avatars, group chats, auto-review, drafts), and
+voice calls.
 
 Conventions used below:
 
@@ -418,3 +419,68 @@ editable).
   shipped window's callbacks are empty, and no package-time patch binds them yet (there is no
   draft patch in `desktop/scripts/lib/router-renderer-patch.mjs`).
 * **Not yet verified.** Not run on a Mac.
+
+## 9. Voice calls
+
+**For the person.** The person calls one of their agents and talks to it out loud. The voice
+answers in a sentence or two, hands anything that needs doing to the agent, which works in
+the background while the call goes on, and says how it is going when asked.
+
+**How it works.**
+
+- The call runs between the Mac app and ElevenLabs Agents over WebRTC (`@elevenlabs/client`).
+  Simeon's ElevenLabs key never reaches the Mac: for each call the app asks the server for a
+  short-lived conversation token.
+- One ElevenLabs agent, "Simeon voice", serves every Simeon agent. The app overrides its
+  prompt, first message, language and voice per call, so each agent keeps its own name and
+  voice. The server finds it by name (`GET /v1/convai/agents?search=`) or creates it on first
+  use, and rewrites it whenever `VOICE_AGENT_CONFIG_VERSION` in
+  `server/simeon/desktop/voice.py` changes (the version is a tag on the agent; the id is
+  remembered per process). Its configuration: authentication required, the four overrides
+  above and no others, `gemini-2.5-flash` as the voice's model, `eleven_flash_v2_5` for
+  speech, `end_call` and `skip_turn`, a 7 s turn timeout, the call ended after 25 s of
+  silence, 30 minutes at most, and no voice recording kept.
+- Two client tools, answered by the app: `hand_to_agent {task}` (the app answers "accepted"
+  at once and the agent works in the background; 20 s timeout, the voice always speaks first)
+  and `check_on_agent` (how the work is going).
+- Routes, all under the model proxy's credential (`get_proxy_caller`):
+  - `POST /desktop/api/proxy/v1/voice/calls` checks the monthly allowance and the hourly
+    brake, makes sure the platform agent exists, and returns `{token, conversation_id,
+    agent_id}`. `conversation_id` is null when ElevenLabs does not name the call before it
+    starts; the SDK reports it once connected.
+  - `POST /desktop/api/proxy/v1/voice/calls/{conversation_id}/end` with `{seconds}`: the
+    server asks ElevenLabs how long the call lasted (`metadata.call_duration_secs`) and bills
+    that; when ElevenLabs does not say, it bills the app's count, capped at 30 minutes. The
+    call is billed once (`desktop_voice_calls`, unique on the conversation id); asking again
+    bills nothing and returns the summary (`analysis.transcript_summary`), which ElevenLabs
+    writes shortly after the call ends. A conversation of another ElevenLabs agent, or one
+    already billed to someone else, is answered 404.
+  - `GET /desktop/api/proxy/v1/voice/voices`: the picker's list, ten curated conversational
+    voices from ElevenLabs' default library in a fixed order (one no longer offered is
+    skipped), `[{id, name, description, labels, preview_url}]`, cached for an hour.
+- Price: `VOICE_CALL_MODEL` in `server/simeon/desktop/pricing.py`, by the second, at $0.08 a
+  minute times a 1.25 margin (`VOICE_CALL_MARGIN`): about 33,000 credits a minute. Usage rows
+  carry provider `elevenlabs`.
+
+* **Settings on Render.** `SIMEON_ELEVENLABS_API_KEY` on the API service (declared in
+  `render.yaml`). Optional: `SIMEON_ELEVENLABS_BASE_URL` (default
+  `https://api.elevenlabs.io`) and `SIMEON_ELEVENLABS_AGENT_ID`, which names an agent managed
+  by hand; that agent is then used as it is and never rewritten. Without the key every voice
+  route answers 503 "Voice calls are not switched on on this server."
+* **Log lines.** Server: `desktop.voice.call_started`, `desktop.voice.call_ended` (seconds,
+  and `source=provider|app`), `desktop.voice.agent_created`, `desktop.voice.agent_synced`,
+  `desktop.voice.agent_ready`; on failure `desktop.voice.upstream_refused` with ElevenLabs'
+  own answer, `desktop.voice.upstream_unreachable`, `desktop.voice.conversation_unread` (the
+  duration could not be read, so the app's count was billed) and
+  `desktop.voice.foreign_conversation`.
+* **Known limits.** The allowance is checked when a call starts, not during it, and a call is
+  billed only when the app says it ended: a call the app never ends is not billed. At about
+  33,000 credits a minute the hourly brake (200,000) stops a new call after roughly six
+  minutes of calling in an hour. ElevenLabs bills the voice's model on top of the minute; the
+  margin is meant to cover it. The $0.08 figure was not read off ElevenLabs' price page. Two
+  API processes making the first call at once can each create a platform agent; every later
+  lookup settles on the older one.
+* **Not yet verified.** Nothing has reached ElevenLabs: the tests replace it with a fake, and
+  the agent and tool configuration shapes (`pre_tool_speech`, `built_in_tools`, `tags`) are
+  written from the brief, not checked against the live API. No call has been placed from a
+  Mac.
