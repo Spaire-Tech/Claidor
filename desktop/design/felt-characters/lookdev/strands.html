@@ -1,0 +1,1537 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Felt Strands Lookdev</title>
+<style>
+  :root { --bg:#e6edf7; --ink:#1b2130; --muted:#5a6477; --panel:rgba(255,255,255,.8); --line:rgba(20,30,50,.14); }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#0f131b; --ink:#e7ebf3; --muted:#9aa4b8; --panel:rgba(18,22,30,.8); --line:rgba(255,255,255,.14); }
+  }
+  :root[data-theme="dark"] { --bg:#0f131b; --ink:#e7ebf3; --muted:#9aa4b8; --panel:rgba(18,22,30,.8); --line:rgba(255,255,255,.14); }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--ink); overflow:hidden;
+    font:13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+  canvas#c { display:block; width:100vw; height:100vh; touch-action:none; }
+  .ui { position:fixed; left:16px; top:16px; display:flex; flex-direction:column; gap:8px; max-width:calc(100vw - 32px); }
+  .row { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .sw { width:22px; height:22px; border-radius:50%; border:2px solid var(--panel); box-shadow:0 0 0 1px var(--line); cursor:pointer; padding:0; }
+  .sw[aria-pressed="true"] { box-shadow:0 0 0 2px var(--ink); }
+  .btn { background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:999px; padding:4px 10px; cursor:pointer; font:inherit; }
+  .btn[aria-pressed="true"] { background:var(--ink); color:var(--bg); }
+  #hud { position:fixed; left:16px; bottom:16px; background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:8px 10px; font:11px/1.45 ui-monospace, Menlo, monospace; white-space:pre; color:var(--ink); }
+  body.clean .ui, body.clean #hud { display:none; }
+  #thumbs { position:fixed; inset:0; display:none; }
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="ui">
+  <div class="row" id="swatches" aria-label="Body colour"></div>
+  <div class="row" id="views" aria-label="Camera"></div>
+  <div class="row" id="lods" aria-label="Level of detail"></div>
+</div>
+<div id="hud"></div>
+<script type="module">
+import * as THREE from 'three';
+
+/* =====================================================================================
+   Simeon felt character look-dev — technique: real instanced strands over a velvet
+   underlayer.
+
+   Pipeline
+   1. Shapes are signed distance fields (head+ears+muzzle+nose+brows fused with smooth
+      unions, body+arms+feet, a knitted sweater shell). Each is polygonised once with
+      naive surface nets; ambient occlusion is baked per vertex from the whole-scene SDF.
+   2. Eyelids are parametric shells swept around each eye's horizontal axis, so a blink
+      is a single rotation. Eyes are spheres with a refracted iris and a studio
+      reflection.
+   3. Tens of thousands of strands are grown from area-sampled roots. Each strand is an
+      instance of one tiny ribbon template; the curve (lean, bend, crimp) is evaluated
+      in the vertex shader, camera facing, clamped to a minimum pixel width with the
+      lost coverage moved into alpha. Shading: Kajiya-Kay diffuse + two shifted
+      specular lobes, a back-light transmission lobe, root-to-tip occlusion.
+   4. Strands follow "bones" (body, head, four lids) through a mat4 uniform array, so
+      breathing, blinking and gaze are just transform updates.
+   5. LOD: strands are shuffled at build time, so drawing the first N instances is a
+      uniform subsample; width grows as the count drops.
+   ===================================================================================== */
+
+const Q = new URLSearchParams(location.search);
+const qnum = (k, d) => (Q.has(k) ? parseFloat(Q.get(k)) : d);
+if (Q.has('clean')) document.body.classList.add('clean');
+
+// ------------------------------------------------------------------ cost knobs
+const KNOBS = {
+  pixelRatio: Math.min(qnum('pr', window.devicePixelRatio || 1), 2),
+  shadowSize: 2048,
+  shortSegments: 3,     // ribbon segments for coat fibres
+  longSegments: 10,     // ribbon segments for flyaways, tuft, mohair
+  sdfCell: { head: 0.016, body: 0.02, sweater: 0.013 },
+  // hero strand budget per character (instances). LOD tiers draw a prefix of these.
+  budget: {
+    headCoat: 52000, headFly: 2200, tuft: 700, lidCoat: 3200, lowerLid: 700,
+    bodyCoat: 9000, bodyFly: 350, knitFuzz: 18000, mohair: 4500,
+  },
+  tiers: [ // min on-screen height in device px -> fraction of strands drawn
+    { name: 'hero',   minPx: 700, frac: 1.0 },
+    { name: 'large',  minPx: 360, frac: 0.45 },
+    { name: 'medium', minPx: 170, frac: 0.18 },
+    { name: 'small',  minPx: 70,  frac: 0.07 },
+    { name: 'tiny',   minPx: 0,   frac: 0.025 },
+  ],
+};
+
+// ------------------------------------------------------------------ palette
+const PAL = {
+  black:  ['#000000', '#4A4A50', '#1C1C20'],
+  brown:  ['#936439', '#AE8968', '#855C36'],
+  red:    ['#FF263C', '#FF5667', '#E02135'],
+  orange: ['#FF6700', '#FF8838', '#E05B00'],
+  yellow: ['#FF9800', '#FFAF38', '#E08600'],
+  green:  ['#00C972', '#1CCF82', '#009957'],
+  cyan:   ['#00BCA6', '#58D3C5', '#00A592'],
+  blue:   ['#1084FE', '#459FFE', '#0E74E0'],
+  violet: ['#9159FE', '#B792FE', '#804EE0'],
+  magenta:['#FF309B', '#FF77BE', '#E02A88'],
+  gray:   ['#777777', '#A6A6A6', '#696969'],
+};
+const hex3 = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+const mixS = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+const lumS = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+const desatS = (c, t) => { const l = lumS(c); return c.map((v) => v + (l - v) * t); };
+const lin = (c) => new THREE.Color().setRGB(c[0], c[1], c[2], THREE.SRGBColorSpace);
+
+function scheme(id) {
+  const [b, f, t] = PAL[id].map(hex3);
+  const black = id === 'black';
+  const fur = black ? hex3('#2C2C31') : b;                       // black renders as charcoal felt
+  const furLight = black ? hex3('#7D7D86') : mixS(f, hex3('#FFF6EA'), 0.6);
+  const furDark = black ? hex3('#121215') : mixS(t, [0, 0, 0], 0.52);
+  const brow = black ? hex3('#18181B') : mixS(t, [0, 0, 0], 0.22);
+  const warm = ['orange', 'red', 'yellow'].includes(id);
+  const yarn = warm ? hex3('#1084FE') : hex3('#FF6700');
+  const yarnLight = warm ? hex3('#459FFE') : hex3('#FF8838');
+  const bgBase = black ? hex3('#9A9CA3') : f;
+  const bg = mixS(desatS(bgBase, 0.42), hex3('#EEF1F5'), 0.36);
+  return { fur, furLight, furDark, brow, yarn, yarnLight, bg };
+}
+
+// ------------------------------------------------------------------ small math / rng
+const { sqrt, abs, min, max, sin, cos, atan2, PI } = Math;
+const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
+const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+function rngOf(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const v3 = (x, y, z) => [x, y, z];
+const vsub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const vadd = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const vmul = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
+const vdot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const vcross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const vlen = (a) => sqrt(vdot(a, a));
+const vnorm = (a) => { const l = vlen(a) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+
+// smooth 3D value noise (for fur flow / clumping fields)
+function hash3(i, j, k) { let h = (i * 374761393 + j * 668265263 + k * 1274126177) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+function vnoise(x, y, z) {
+  const i = Math.floor(x), j = Math.floor(y), k = Math.floor(z);
+  const fx = x - i, fy = y - j, fz = z - k;
+  const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy), uz = fz * fz * (3 - 2 * fz);
+  const L = (a, b, t) => a + (b - a) * t;
+  return L(L(L(hash3(i, j, k), hash3(i + 1, j, k), ux), L(hash3(i, j + 1, k), hash3(i + 1, j + 1, k), ux), uy),
+           L(L(hash3(i, j, k + 1), hash3(i + 1, j, k + 1), ux), L(hash3(i, j + 1, k + 1), hash3(i + 1, j + 1, k + 1), ux), uy), uz);
+}
+// felted wool is not combed: fibres swirl in coherent patches. Returns [swirl angle, lean mult, length mult]
+function woolField(p) {
+  const a = vnoise(p[0] * 9 + 3.1, p[1] * 9, p[2] * 9) * 0.65 + vnoise(p[0] * 23, p[1] * 23 + 7.7, p[2] * 23) * 0.35;
+  const b = vnoise(p[0] * 17 + 11, p[1] * 17, p[2] * 17 + 5);
+  const c = vnoise(p[0] * 31, p[1] * 31 + 2, p[2] * 31 + 9);
+  return [(a - 0.5) * 5.0, 0.75 + 0.6 * b, 0.7 + 0.6 * c];
+}
+
+// ------------------------------------------------------------------ SDF primitives
+function sdSph(x, y, z, c, r) { const dx = x - c[0], dy = y - c[1], dz = z - c[2]; return sqrt(dx * dx + dy * dy + dz * dz) - r; }
+function sdEll(x, y, z, c, r) {
+  const px = (x - c[0]) / r[0], py = (y - c[1]) / r[1], pz = (z - c[2]) / r[2];
+  const k0 = sqrt(px * px + py * py + pz * pz);
+  const qx = px / r[0], qy = py / r[1], qz = pz / r[2];
+  const k1 = sqrt(qx * qx + qy * qy + qz * qz);
+  return k1 < 1e-9 ? -min(r[0], r[1], r[2]) : (k0 * (k0 - 1)) / k1;
+}
+function sdCap(x, y, z, a, b, r) {
+  const pax = x - a[0], pay = y - a[1], paz = z - a[2];
+  const bax = b[0] - a[0], bay = b[1] - a[1], baz = b[2] - a[2];
+  let h = (pax * bax + pay * bay + paz * baz) / (bax * bax + bay * bay + baz * baz);
+  h = h < 0 ? 0 : h > 1 ? 1 : h;
+  const dx = pax - bax * h, dy = pay - bay * h, dz = paz - baz * h;
+  return sqrt(dx * dx + dy * dy + dz * dz) - r;
+}
+function sdRoundCone(qx, py, r1, r2, h) { // qx = radial distance from axis, py = along axis
+  const b = (r1 - r2) / h, a = sqrt(1 - b * b);
+  const k = qx * -b + py * a;
+  if (k < 0) return sqrt(qx * qx + py * py) - r1;
+  if (k > a * h) return sqrt(qx * qx + (py - h) * (py - h)) - r2;
+  return qx * a + py * b - r1;
+}
+function smin(a, b, k) { const h = max(k - abs(a - b), 0) / k; return min(a, b) - h * h * k * 0.25; }
+function smax(a, b, k) { return -smin(-a, -b, k); }
+function boxDist(x, y, z, bb) { // distance to an AABB (0 inside) — a cheap lower bound
+  const dx = max(bb[0] - x, 0, x - bb[3]), dy = max(bb[1] - y, 0, y - bb[4]), dz = max(bb[2] - z, 0, z - bb[5]);
+  return sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+// ------------------------------------------------------------------ the character's shape (units: head radius ~ 1)
+const HC = [0, 2.32, 0];
+const at = (dx, dy, dz) => [HC[0] + dx, HC[1] + dy, HC[2] + dz];
+const SHAPE = {
+  head: { c: at(0, 0.02, 0), r: [1.1, 0.93, 0.97] },
+  cheeks: [[at(-0.5, -0.3, 0.26), 0.56], [at(0.5, -0.3, 0.26), 0.56]],
+  muzzle: { c: at(0, -0.31, 0.79), r: [0.44, 0.28, 0.3] },
+  nose: { c: at(0, -0.1, 1.06), r: [0.155, 0.105, 0.11] },
+  eyeR: 0.2,
+  eyes: [at(-0.37, 0.12, 0.8), at(0.37, 0.12, 0.8)],
+  ears: [
+    { base: at(-0.58, 0.62, -0.08), tip: at(-0.94, 1.2, -0.16), r1: 0.37, r2: 0.17, flat: 0.55, yaw: -0.25 },
+    { base: at(0.58, 0.62, -0.08), tip: at(0.94, 1.2, -0.16), r1: 0.37, r2: 0.17, flat: 0.55, yaw: 0.25 },
+  ],
+  brows: [ // capsule a->b radius
+    { a: at(-0.58, 0.45, 0.72), b: at(-0.22, 0.37, 0.86), r: 0.05 },
+    { a: at(0.58, 0.45, 0.72), b: at(0.22, 0.37, 0.86), r: 0.05 },
+  ],
+  mouth: [
+    { a: at(0, -0.2, 1.075), b: at(0, -0.33, 1.07), r: 0.014 },
+    { a: at(0, -0.33, 1.065), b: at(-0.11, -0.37, 1.04), r: 0.015 },
+    { a: at(0, -0.33, 1.065), b: at(0.11, -0.37, 1.04), r: 0.015 },
+  ],
+  // body
+  torsoLow: [[0, 0.74, 0], 0.72], torsoUp: [[0, 1.06, 0.0], 0.47],
+  neck: { a: [0, 0.95, 0], b: [0, 1.6, 0], r: 0.27 },
+  arms: [
+    { s: [-0.5, 1.08, 0.03], w: [-0.8, 0.55, 0.16], r: 0.15 },
+    { s: [0.5, 1.08, 0.03], w: [0.8, 0.55, 0.16], r: 0.15 },
+  ],
+  paws: [[[-0.84, 0.45, 0.19], [0.16, 0.15, 0.16]], [[0.84, 0.45, 0.19], [0.16, 0.15, 0.16]]],
+  feet: [[[-0.33, 0.1, 0.24], [0.24, 0.13, 0.3]], [[0.33, 0.1, 0.24], [0.24, 0.13, 0.3]]],
+  // sweater
+  knitThick: 0.045, hemY: 0.34, hemBand: 0.11, cuffLen: 0.1, sleeveEnd: 0.8, // fraction of shoulder->wrist
+  collar: { c: [0, 1.29, 0.0], R: 0.305, r: 0.075 },
+};
+// ear frames (s = side, u = axis, f = front)
+for (const e of SHAPE.ears) {
+  e.u = vnorm(vsub(e.tip, e.base)); e.h = vlen(vsub(e.tip, e.base));
+  let f = [sin(e.yaw), 0.18, cos(e.yaw)]; f = vnorm(vsub(f, vmul(e.u, vdot(f, e.u))));
+  e.f = f; e.s = vcross(e.u, f);
+  e.dish = { c: vadd(vadd(e.base, vmul(e.u, e.h * 0.52)), vmul(e.f, e.r1 * e.flat * 0.95)), r: [e.r1 * 0.6, e.h * 0.46, 0.13] };
+}
+const EYE_N = SHAPE.eyes.map((c) => { // outward socket normal ~ ellipsoid normal
+  const r = SHAPE.head.r, p = vsub(c, SHAPE.head.c);
+  return vnorm([p[0] / (r[0] * r[0]), p[1] / (r[1] * r[1]), p[2] / (r[2] * r[2])]);
+});
+
+function earSDF(x, y, z, e, withDish) {
+  const qx0 = x - e.base[0], qy0 = y - e.base[1], qz0 = z - e.base[2];
+  const ls = qx0 * e.s[0] + qy0 * e.s[1] + qz0 * e.s[2];
+  const lu = qx0 * e.u[0] + qy0 * e.u[1] + qz0 * e.u[2];
+  const lf = (qx0 * e.f[0] + qy0 * e.f[1] + qz0 * e.f[2]) / e.flat;
+  let d = sdRoundCone(sqrt(ls * ls + lf * lf), lu, e.r1, e.r2, e.h) * e.flat;
+  if (withDish) {
+    // dish in ear-local space (s,u,f)
+    const dx = x - e.dish.c[0], dy = y - e.dish.c[1], dz = z - e.dish.c[2];
+    const ds = dx * e.s[0] + dy * e.s[1] + dz * e.s[2], du = dx * e.u[0] + dy * e.u[1] + dz * e.u[2], df = dx * e.f[0] + dy * e.f[1] + dz * e.f[2];
+    const dd = sdEll(ds, du, df, [0, 0, 0], e.dish.r);
+    d = smax(d, -dd, 0.05);
+    return [d, dd];
+  }
+  return [d, 1];
+}
+
+// Head SDF. If reg (Float32Array(4)) is given, fills region weights [base, light, dark, brow].
+function headSDF(x, y, z, reg) {
+  const S = SHAPE;
+  let d = sdEll(x, y, z, S.head.c, S.head.r);
+  for (const [c, r] of S.cheeks) d = smin(d, sdSph(x, y, z, c, r), 0.36);
+  const dm = sdEll(x, y, z, S.muzzle.c, S.muzzle.r); d = smin(d, dm, 0.2);
+  const dn = sdEll(x, y, z, S.nose.c, S.nose.r); d = smin(d, dn, 0.035);
+  let dDish = 9, dEarNoDish = 9;
+  for (const e of S.ears) {
+    const [de, dd] = earSDF(x, y, z, e, true);
+    d = smin(d, de, 0.17);
+    if (dd < dDish) dDish = dd;
+    const [dn2] = earSDF(x, y, z, e, false); if (dn2 < dEarNoDish) dEarNoDish = dn2;
+  }
+  let dBrow = 9;
+  for (const b of S.brows) { const db = sdCap(x, y, z, b.a, b.b, b.r); dBrow = min(dBrow, db); }
+  d = smin(d, dBrow, 0.06);
+  for (const c of S.eyes) d = smax(d, -(sdSph(x, y, z, c, S.eyeR + 0.012)), 0.05);
+  let dMouth = 9;
+  for (const m of S.mouth) dMouth = min(dMouth, sdCap(x, y, z, m.a, m.b, m.r));
+  d = smax(d, -dMouth, 0.018);
+  if (reg) {
+    const wN = sstep(0.02, 0.0, dn);
+    const wMo = sstep(0.03, 0.012, dMouth) * 0.7;
+    const wM = sstep(0.085, 0.045, dm) * (1 - wN);
+    const wE = sstep(0.03, -0.005, dDish) * sstep(0.06, 0.0, dEarNoDish);
+    const wB = sstep(0.012, -0.012, dBrow) * (1 - wN);
+    const light = max(wM, wE) * (1 - wMo);
+    const dark = max(wN, wMo);
+    reg[1] = light; reg[2] = dark; reg[3] = wB * (1 - dark);
+    reg[0] = max(0, 1 - reg[1] - reg[2] - reg[3]);
+  }
+  return d;
+}
+
+function torsoSDF(x, y, z) {
+  const S = SHAPE;
+  return smin(sdSph(x, y, z, S.torsoLow[0], S.torsoLow[1]), sdSph(x, y, z, S.torsoUp[0], S.torsoUp[1]), 0.45);
+}
+function bodySDF(x, y, z) {
+  const S = SHAPE;
+  let d = torsoSDF(x, y, z);
+  d = smin(d, sdCap(x, y, z, S.neck.a, S.neck.b, S.neck.r), 0.18);
+  for (const a of S.arms) d = smin(d, sdCap(x, y, z, a.s, a.w, a.r), 0.12);
+  for (const [c, r] of S.paws) d = smin(d, sdEll(x, y, z, c, r), 0.07);
+  for (const [c, r] of S.feet) d = smin(d, sdEll(x, y, z, c, r), 0.14);
+  return d;
+}
+const ARM_AX = SHAPE.arms.map((a) => ({ a: a.s, b: a.w, dir: vnorm(vsub(a.w, a.s)), len: vlen(vsub(a.w, a.s)) }));
+// Sweater SDF. knit (Float32Array(4)) receives [sleeveL, sleeveR, rib, collar] weights.
+function sweaterSDF(x, y, z, knit) {
+  const S = SHAPE, T = S.knitThick;
+  // torso shell, cut at hem and neck
+  let dt = torsoSDF(x, y, z) - T;
+  dt = smax(dt, S.hemY - y, 0.02);
+  dt = smax(dt, -(sqrt(x * x + (z - 0.0) * (z - 0.0)) - (S.collar.R - 0.02)), 0.04); // neck hole
+  dt = smax(dt, y - 1.45, 0.05);
+  // hem rib band: slightly proud ring
+  let dh = torsoSDF(x, y, z) - T - 0.018;
+  dh = smax(dh, abs(y - (S.hemY + S.hemBand * 0.5)) - S.hemBand * 0.5, 0.03);
+  // sleeves
+  let dsl = 9, dcf = 9, sl = [0, 0];
+  for (let i = 0; i < 2; i++) {
+    const A = ARM_AX[i], a = S.arms[i];
+    const end = vadd(A.a, vmul(A.dir, A.len * S.sleeveEnd));
+    let ds = sdCap(x, y, z, vadd(A.a, vmul(A.dir, -0.05)), end, a.r + T + 0.012);
+    const along = (x - A.a[0]) * A.dir[0] + (y - A.a[1]) * A.dir[1] + (z - A.a[2]) * A.dir[2];
+    ds = smax(ds, along - A.len * S.sleeveEnd, 0.02);
+    let dc = sdCap(x, y, z, vadd(A.a, vmul(A.dir, A.len * S.sleeveEnd - S.cuffLen)), end, a.r + T + 0.03);
+    dc = smax(dc, along - A.len * S.sleeveEnd, 0.02);
+    dc = smax(dc, A.len * S.sleeveEnd - S.cuffLen - along, 0.02);
+    if (ds < dsl) dsl = ds; if (dc < dcf) dcf = dc;
+    sl[i] = min(ds, dc);
+  }
+  // rolled collar torus
+  const C = S.collar;
+  const qx = sqrt(x * x + (z - C.c[2]) * (z - C.c[2])) - C.R, qy = y - C.c[1];
+  const dcol = sqrt(qx * qx + qy * qy) - C.r;
+  let d = smin(dt, dsl, 0.06);
+  d = smin(d, dh, 0.015);
+  d = smin(d, dcf, 0.015);
+  d = smin(d, dcol, 0.03);
+  if (knit) {
+    knit[0] = sstep(0.02, -0.02, sl[0] - dt);
+    knit[1] = sstep(0.02, -0.02, sl[1] - dt);
+    const rib = max(sstep(0.012, -0.004, dh - min(dt, dsl) + 0.012), sstep(0.012, -0.004, dcf - dsl + 0.012));
+    knit[3] = sstep(0.02, -0.01, dcol - min(dt, dsl));
+    knit[2] = max(rib, knit[3]);
+  }
+  return d;
+}
+
+// Eyelid volume (approx) used for AO and culling: shell over the upper part of each eyeball.
+const LID = { gap: 0.006, thick: 0.066, edgeRest: 0.0, back: 2.45, lowerEdge: -0.72, lowerThick: 0.034, lowerBack: 0.75, roll: 0.13, blinkMax: 0.86 };
+function eyeSDF(x, y, z) { let d = 9; for (const c of SHAPE.eyes) d = min(d, sdSph(x, y, z, c, SHAPE.eyeR)); return d; }
+function lidApproxSDF(x, y, z) { // upper lid volume at rest (for AO only)
+  let d = 9;
+  SHAPE.eyes.forEach((c, i) => {
+    const n = EYE_N[i];
+    const px = x - c[0], py = y - c[1], pz = z - c[2];
+    const r = sqrt(px * px + py * py + pz * pz);
+    const shell = abs(r - (SHAPE.eyeR + LID.gap + LID.thick * 0.4)) - LID.thick * 0.4;
+    // plane through the lid edge: keep the part above
+    const up = [0, 1, 0]; const fwd = n;
+    const b = atan2(px * up[0] + py * up[1] + pz * up[2], px * fwd[0] + py * fwd[1] + pz * fwd[2]);
+    const cut = max((LID.edgeRest - b) * r, (b - LID.edgeRest - 1.1) * r);
+    d = min(d, max(shell, cut));
+  });
+  return d;
+}
+
+const BB = { // AABBs for fast AO lower bounds
+  head: [-1.45, 1.05, -1.15, 1.45, 3.6, 1.25],
+  body: [-1.1, -0.1, -0.85, 1.1, 1.7, 0.85],
+  sweater: [-1.1, 0.25, -0.85, 1.1, 1.5, 0.85],
+};
+function sceneSDF(x, y, z) {
+  let d = 9;
+  const bh = boxDist(x, y, z, BB.head); d = min(d, bh > 0.4 ? bh : headSDF(x, y, z));
+  const bb = boxDist(x, y, z, BB.body); d = min(d, bb > 0.4 ? bb : bodySDF(x, y, z));
+  const bs = boxDist(x, y, z, BB.sweater); d = min(d, bs > 0.4 ? bs : sweaterSDF(x, y, z));
+  d = min(d, eyeSDF(x, y, z), lidApproxSDF(x, y, z));
+  d = min(d, y + 0.0); // floor
+  return d;
+}
+function bakeAO(x, y, z, nx, ny, nz, self) {
+  // classic SDF AO: compare distance along the normal with the actual field
+  let occ = 0, w = 1;
+  const steps = [0.03, 0.07, 0.13, 0.22, 0.34];
+  for (const h of steps) {
+    const px = x + nx * h, py = y + ny * h, pz = z + nz * h;
+    const d = sceneSDF(px, py, pz);
+    occ += w * max(0, h - d);
+    w *= 0.62;
+  }
+  return clamp(1 - occ * 2.4, 0.08, 1);
+}
+
+// ------------------------------------------------------------------ surface nets
+function surfaceNets(sdf, bmin, bmax, h) {
+  const nx = Math.ceil((bmax[0] - bmin[0]) / h) + 1, ny = Math.ceil((bmax[1] - bmin[1]) / h) + 1, nz = Math.ceil((bmax[2] - bmin[2]) / h) + 1;
+  const val = new Float32Array(nx * ny * nz);
+  const C = 4, cx = Math.ceil((nx - 1) / C) + 1, cy = Math.ceil((ny - 1) / C) + 1, cz = Math.ceil((nz - 1) / C) + 1;
+  const cv = new Float32Array(cx * cy * cz);
+  for (let k = 0; k < cz; k++) for (let j = 0; j < cy; j++) for (let i = 0; i < cx; i++)
+    cv[i + cx * (j + cy * k)] = sdf(bmin[0] + i * C * h, bmin[1] + j * C * h, bmin[2] + k * C * h);
+  const band = (C * h + 2.5 * h) * 1.7;
+  for (let k = 0; k < nz; k++) {
+    const z = bmin[2] + k * h, kc = min(Math.round(k / C), cz - 1);
+    for (let j = 0; j < ny; j++) {
+      const y = bmin[1] + j * h, jc = min(Math.round(j / C), cy - 1);
+      for (let i = 0; i < nx; i++) {
+        const ic = min(Math.round(i / C), cx - 1);
+        const d0 = cv[ic + cx * (jc + cy * kc)];
+        val[i + nx * (j + ny * k)] = abs(d0) > band ? d0 : sdf(bmin[0] + i * h, y, z);
+      }
+    }
+  }
+  const cnx = nx - 1, cny = ny - 1, cnz = nz - 1;
+  const cell = new Int32Array(cnx * cny * cnz).fill(-1);
+  const pos = [];
+  const OFF = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]];
+  const EDG = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]];
+  const g = new Float32Array(8);
+  for (let k = 0; k < cnz; k++) for (let j = 0; j < cny; j++) for (let i = 0; i < cnx; i++) {
+    let mask = 0;
+    for (let c = 0; c < 8; c++) { const o = OFF[c]; const v = val[(i + o[0]) + nx * ((j + o[1]) + ny * (k + o[2]))]; g[c] = v; if (v < 0) mask |= 1 << c; }
+    if (mask === 0 || mask === 255) continue;
+    let sx = 0, sy = 0, sz = 0, n = 0;
+    for (const [a, b] of EDG) {
+      if ((g[a] < 0) !== (g[b] < 0)) {
+        const t = g[a] / (g[a] - g[b]);
+        sx += OFF[a][0] + (OFF[b][0] - OFF[a][0]) * t; sy += OFF[a][1] + (OFF[b][1] - OFF[a][1]) * t; sz += OFF[a][2] + (OFF[b][2] - OFF[a][2]) * t; n++;
+      }
+    }
+    cell[i + cnx * (j + cny * k)] = pos.length / 3;
+    pos.push(bmin[0] + (i + sx / n) * h, bmin[1] + (j + sy / n) * h, bmin[2] + (k + sz / n) * h);
+  }
+  const CI = (i, j, k) => cell[i + cnx * (j + cny * k)];
+  const idx = [];
+  const quad = (a, b, c, d) => { if (a < 0 || b < 0 || c < 0 || d < 0) return; idx.push(a, b, c, a, c, d); };
+  for (let k = 0; k < nz; k++) for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const p = i + nx * (j + ny * k), v0 = val[p] < 0;
+    if (i < cnx && j > 0 && k > 0 && j < ny - 1 + 1 && (val[p + 1] < 0) !== v0) quad(CI(i, j - 1, k - 1), CI(i, j, k - 1), CI(i, j, k), CI(i, j - 1, k));
+    if (j < cny && i > 0 && k > 0 && (val[p + nx] < 0) !== v0) quad(CI(i - 1, j, k - 1), CI(i, j, k - 1), CI(i, j, k), CI(i - 1, j, k));
+    if (k < cnz && i > 0 && j > 0 && (val[p + nx * ny] < 0) !== v0) quad(CI(i - 1, j - 1, k), CI(i, j - 1, k), CI(i, j, k), CI(i - 1, j, k));
+  }
+  // project to surface and compute gradient normals
+  const P = new Float32Array(pos), N = new Float32Array(pos.length);
+  const e = h * 0.5;
+  for (let v = 0; v < P.length; v += 3) {
+    let x = P[v], y = P[v + 1], z = P[v + 2];
+    for (let it = 0; it < 2; it++) {
+      const d = sdf(x, y, z);
+      let gx = sdf(x + e, y, z) - sdf(x - e, y, z), gy = sdf(x, y + e, z) - sdf(x, y - e, z), gz = sdf(x, y, z + e) - sdf(x, y, z - e);
+      const gl = sqrt(gx * gx + gy * gy + gz * gz) || 1; gx /= gl; gy /= gl; gz /= gl;
+      if (it === 0) { const s = clamp(d, -h, h); x -= gx * s; y -= gy * s; z -= gz * s; }
+      else { N[v] = gx; N[v + 1] = gy; N[v + 2] = gz; }
+    }
+    P[v] = x; P[v + 1] = y; P[v + 2] = z;
+  }
+  // orient triangles with the field gradient
+  for (let t = 0; t < idx.length; t += 3) {
+    const a = idx[t] * 3, b = idx[t + 1] * 3, c = idx[t + 2] * 3;
+    const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2];
+    const wx = P[c] - P[a], wy = P[c + 1] - P[a + 1], wz = P[c + 2] - P[a + 2];
+    const fx = uy * wz - uz * wy, fy = uz * wx - ux * wz, fz = ux * wy - uy * wx;
+    const s = fx * (N[a] + N[b] + N[c]) + fy * (N[a + 1] + N[b + 1] + N[c + 1]) + fz * (N[a + 2] + N[b + 2] + N[c + 2]);
+    if (s < 0) { const tmp = idx[t + 1]; idx[t + 1] = idx[t + 2]; idx[t + 2] = tmp; }
+  }
+  return { P, N, idx: new Uint32Array(idx) };
+}
+
+function meshGeometry(m, extra) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(m.P, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(m.N, 3));
+  for (const k in extra) g.setAttribute(k, new THREE.BufferAttribute(extra[k].array, extra[k].size));
+  g.setIndex(new THREE.BufferAttribute(m.idx, 1));
+  g.computeBoundingSphere();
+  return g;
+}
+
+// ------------------------------------------------------------------ eyelid shell geometry (eye-local, blink axis = +x)
+function lidGeometry(o) {
+  // o: r0 inner radius, thick, bEdge (edge angle from +z toward +y), bBack, dir (+1 upper, -1 lower)
+  const prof = [];
+  const nO = 20, nL = 12, nI = 6, rMid = o.r0 + o.thick / 2, hr = o.thick / 2;
+  for (let i = 0; i <= nO; i++) { const s = i / nO; const tap = Math.pow(sstep(0, 0.72, s), 0.8); prof.push({ r: o.r0 + 0.002 + (o.thick - 0.002) * tap, b: o.bBack + (o.bEdge - o.bBack) * s, fur: s > 0.12 ? 1 : 0 }); }
+  for (let i = 1; i < nL; i++) { const ps = (PI * i) / nL; prof.push({ r: rMid + hr * cos(ps), b: o.bEdge - o.dir * (hr * sin(ps) * o.lip) / rMid, fur: ps < PI * 0.62 ? 1 : 0, lip: 1 }); }
+  for (let i = 0; i <= nI; i++) { const s = i / nI; prof.push({ r: o.r0, b: o.bEdge + (o.bBack - o.bEdge) * s, fur: 0 }); }
+  const nA = 56, a0 = 0.05;
+  const pos = [], fur = [], lipA = [];
+  for (let ia = 0; ia <= nA; ia++) {
+    const a = a0 + (PI - 2 * a0) * (ia / nA), sa = sin(a);
+    const pinch = Math.pow(sa, 0.55);
+    const bOff = o.edgeCurve * (1 - sa);
+    for (const p of prof) {
+      const r = o.r0 + (p.r - o.r0) * pinch;
+      const b = p.b + (p.b === o.bBack ? 0 : bOff * sstep(0.5, 0, abs(p.b - o.bEdge)));
+      pos.push(r * cos(a), r * sa * sin(b), r * sa * cos(b));
+      fur.push(p.fur); lipA.push(p.lip ? 1 : 0);
+    }
+  }
+  const idx = [], np = prof.length;
+  for (let ia = 0; ia < nA; ia++) for (let ip = 0; ip < np - 1; ip++) {
+    const a = ia * np + ip, b = a + np;
+    if (o.dir > 0) idx.push(a, b, a + 1, b, b + 1, a + 1); else idx.push(a, a + 1, b, b, a + 1, b + 1);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  g.setAttribute('aFur', new THREE.Float32BufferAttribute(fur, 1));
+  g.setAttribute('aLip', new THREE.Float32BufferAttribute(lipA, 1));
+  return g;
+}
+
+// ------------------------------------------------------------------ area sampling of roots
+function makeSampler(pos, idx, weightFn) {
+  const nT = idx.length / 3, cdf = new Float64Array(nT);
+  let acc = 0;
+  for (let t = 0; t < nT; t++) {
+    const a = idx[3 * t] * 3, b = idx[3 * t + 1] * 3, c = idx[3 * t + 2] * 3;
+    const ux = pos[b] - pos[a], uy = pos[b + 1] - pos[a + 1], uz = pos[b + 2] - pos[a + 2];
+    const wx = pos[c] - pos[a], wy = pos[c + 1] - pos[a + 1], wz = pos[c + 2] - pos[a + 2];
+    const cx = uy * wz - uz * wy, cy = uz * wx - ux * wz, cz = ux * wy - uy * wx;
+    let area = 0.5 * sqrt(cx * cx + cy * cy + cz * cz);
+    if (weightFn) area *= weightFn(idx[3 * t], idx[3 * t + 1], idx[3 * t + 2]);
+    acc += area; cdf[t] = acc;
+  }
+  return (rng) => {
+    const r = rng() * acc; let lo = 0, hi = nT - 1;
+    while (lo < hi) { const m = (lo + hi) >> 1; if (cdf[m] < r) lo = m + 1; else hi = m; }
+    let u = rng(), v = rng(); if (u + v > 1) { u = 1 - u; v = 1 - v; }
+    return { tri: lo, a: idx[3 * lo], b: idx[3 * lo + 1], c: idx[3 * lo + 2], u, v, w: 1 - u - v };
+  };
+}
+const bary = (arr, size, s) => { const o = []; for (let k = 0; k < size; k++) o.push(arr[s.a * size + k] * s.w + arr[s.b * size + k] * s.u + arr[s.c * size + k] * s.v); return o; };
+
+// ------------------------------------------------------------------ strand store
+class StrandSet {
+  constructor() { this.root = []; this.nrm = []; this.dir = []; this.shape = []; this.misc = []; this.curl = []; this.n = 0; }
+  add(p, n, d, len, width, lean, bend, seed, region, ao, bone, amp, freq, alpha) {
+    this.root.push(p[0], p[1], p[2]); this.nrm.push(n[0], n[1], n[2]); this.dir.push(d[0], d[1], d[2]);
+    this.shape.push(len, width, lean, bend); this.misc.push(seed, region, ao, bone); this.curl.push(amp, freq, alpha);
+    this.n++;
+  }
+  build(segments, rng) {
+    // shuffle so any prefix is a uniform subsample (LOD by instanceCount)
+    const n = this.n, perm = new Uint32Array(n);
+    for (let i = 0; i < n; i++) perm[i] = i;
+    for (let i = n - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); const t = perm[i]; perm[i] = perm[j]; perm[j] = t; }
+    const pack = (src, size) => { const out = new Float32Array(n * size); for (let i = 0; i < n; i++) for (let k = 0; k < size; k++) out[i * size + k] = src[perm[i] * size + k]; return out; };
+    const g = new THREE.InstancedBufferGeometry();
+    const tpos = [], tidx = [];
+    for (let s = 0; s <= segments; s++) { const t = s / segments; tpos.push(t, -1, 0, t, 1, 0); }
+    for (let s = 0; s < segments; s++) { const a = s * 2; tidx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    g.setAttribute('position', new THREE.Float32BufferAttribute(tpos, 3));
+    g.setIndex(tidx);
+    g.setAttribute('iRoot', new THREE.InstancedBufferAttribute(pack(this.root, 3), 3));
+    g.setAttribute('iNrm', new THREE.InstancedBufferAttribute(pack(this.nrm, 3), 3));
+    g.setAttribute('iDir', new THREE.InstancedBufferAttribute(pack(this.dir, 3), 3));
+    g.setAttribute('iShape', new THREE.InstancedBufferAttribute(pack(this.shape, 4), 4));
+    g.setAttribute('iMisc', new THREE.InstancedBufferAttribute(pack(this.misc, 4), 4));
+    g.setAttribute('iCurl', new THREE.InstancedBufferAttribute(pack(this.curl, 3), 3));
+    g.instanceCount = n; g.userData.total = n;
+    g.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 1.7, 0), 3);
+    return g;
+  }
+}
+// rotate vector d around axis n by angle a
+function rotAround(d, n, a) { const c = cos(a), s = sin(a), k = vcross(n, d), dn = vdot(n, d); return [d[0] * c + k[0] * s + n[0] * dn * (1 - c), d[1] * c + k[1] * s + n[1] * dn * (1 - c), d[2] * c + k[2] * s + n[2] * dn * (1 - c)]; }
+function tangentize(d, n) { const t = vsub(d, vmul(n, vdot(d, n))); const l = vlen(t); if (l < 1e-4) { const alt = abs(n[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0]; return vnorm(vcross(n, alt)); } return vmul(t, 1 / l); }
+
+// ------------------------------------------------------------------ GLSL
+const GLSL_NOISE = /* glsl */`
+vec3 mod289(vec3 x){return x-floor(x*(1./289.))*289.;}
+vec4 mod289(vec4 x){return x-floor(x*(1./289.))*289.;}
+vec4 permute(vec4 x){return mod289(((x*34.)+10.)*x);}
+vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}
+float snoise(vec3 v){
+  const vec2 C=vec2(1./6.,1./3.); const vec4 D=vec4(0.,.5,1.,2.);
+  vec3 i=floor(v+dot(v,C.yyy)); vec3 x0=v-i+dot(i,C.xxx);
+  vec3 g=step(x0.yzx,x0.xyz); vec3 l=1.-g; vec3 i1=min(g.xyz,l.zxy); vec3 i2=max(g.xyz,l.zxy);
+  vec3 x1=x0-i1+C.xxx; vec3 x2=x0-i2+C.yyy; vec3 x3=x0-D.yyy;
+  i=mod289(i);
+  vec4 p=permute(permute(permute(i.z+vec4(0.,i1.z,i2.z,1.))+i.y+vec4(0.,i1.y,i2.y,1.))+i.x+vec4(0.,i1.x,i2.x,1.));
+  float n_=0.142857142857; vec3 ns=n_*D.wyz-D.xzx;
+  vec4 j=p-49.*floor(p*ns.z*ns.z);
+  vec4 x_=floor(j*ns.z); vec4 y_=floor(j-7.*x_);
+  vec4 x=x_*ns.x+ns.yyyy; vec4 y=y_*ns.x+ns.yyyy; vec4 h=1.-abs(x)-abs(y);
+  vec4 b0=vec4(x.xy,y.xy); vec4 b1=vec4(x.zw,y.zw);
+  vec4 s0=floor(b0)*2.+1.; vec4 s1=floor(b1)*2.+1.; vec4 sh=-step(h,vec4(0.));
+  vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy; vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
+  vec3 p0=vec3(a0.xy,h.x); vec3 p1=vec3(a0.zw,h.y); vec3 p2=vec3(a1.xy,h.z); vec3 p3=vec3(a1.zw,h.w);
+  vec4 norm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
+  p0*=norm.x;p1*=norm.y;p2*=norm.z;p3*=norm.w;
+  vec4 m=max(.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.); m=m*m;
+  return 42.*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
+}
+float hash11(float p){ p=fract(p*.1031); p*=p+33.33; p*=p+p; return fract(p); }
+float ign(vec2 p){ return fract(52.9829189*fract(dot(p, vec2(0.06711056,0.00583715)))); }
+`;
+const GLSL_LIGHT = /* glsl */`
+uniform vec3 uCamPos;
+uniform vec3 uKeyDir; uniform vec3 uKeyCol;
+uniform vec3 uFillDir; uniform vec3 uFillCol;
+uniform vec3 uRimDir; uniform vec3 uRimCol;
+uniform vec3 uSkyCol; uniform vec3 uGroundCol;
+uniform sampler2DShadow uShadowMap; uniform mat4 uShadowMat; uniform float uShadowBias;
+const vec2 PD[12] = vec2[12](vec2(-0.326,-0.406),vec2(-0.840,-0.074),vec2(-0.696,0.457),vec2(-0.203,0.621),vec2(0.962,-0.195),vec2(0.473,-0.480),vec2(0.519,0.767),vec2(0.185,-0.893),vec2(0.507,0.064),vec2(0.896,0.412),vec2(-0.322,-0.933),vec2(-0.792,-0.598));
+// hardware-filtered (bilinear compare) PCF over a fixed Poisson disc: smooth, no per-pixel dither noise
+float shadowAt(vec3 wp, float soft, float rot, int taps){
+  vec4 sc = uShadowMat*vec4(wp,1.); vec3 s = sc.xyz/sc.w*.5+.5;
+  if(s.x<0.||s.x>1.||s.y<0.||s.y>1.||s.z>1.) return 1.;
+  float c=cos(rot), sn=sin(rot); float acc=0.; float n=0.;
+  for(int i=0;i<12;i++){ if(i>=taps) break; vec2 o=PD[i]; o=vec2(c*o.x-sn*o.y, sn*o.x+c*o.y)*soft;
+    acc += texture(uShadowMap, vec3(s.xy+o, s.z-uShadowBias)); n+=1.; }
+  return acc/n;
+}
+vec3 hemi(vec3 N){ return mix(uGroundCol, uSkyCol, clamp(N.y*.5+.5,0.,1.)); }
+float charlieD(float rough, float NoH){ float inv=1./rough; float s2=max(1.-NoH*NoH, 1e-4); return (2.+inv)*pow(s2, inv*.5)/6.2831853; }
+`;
+
+// --- velvet/felt underlayer
+const FELT_VS = /* glsl */`
+attribute vec4 aReg; attribute float aAO;
+varying vec3 vW; varying vec3 vN; varying vec3 vO; varying vec4 vReg; varying float vAO;
+void main(){
+  vec4 w = modelMatrix*vec4(position,1.);
+  vW = w.xyz; vN = normalize(mat3(modelMatrix)*normal); vO = position; vReg = aReg; vAO = aAO;
+  gl_Position = projectionMatrix*viewMatrix*w;
+}`;
+const FELT_FS = /* glsl */`
+${GLSL_NOISE}
+${GLSL_LIGHT}
+uniform vec3 uPal[4];
+uniform float uFeltFreq; uniform float uBump; uniform float uSheen; uniform float uWrap; uniform float uAOAmt;
+varying vec3 vW; varying vec3 vN; varying vec3 vO; varying vec4 vReg; varying float vAO;
+vec3 feltLight(vec3 N, vec3 V, vec3 L, vec3 Lc, vec3 alb, vec3 sheenCol){
+  float NoL = dot(N,L);
+  float diff = max(0., (NoL + uWrap)/(1.+uWrap));
+  // wool scatters: the terminator goes saturated instead of grey
+  float term = smoothstep(-uWrap, 0.1, NoL) * (1.-smoothstep(0.1, 0.7, NoL));
+  vec3 satAlb = alb * mix(vec3(1.), alb/max(max(alb.r,max(alb.g,alb.b)),1e-3), 0.55*term);
+  vec3 H = normalize(L+V); float NoV = max(dot(N,V),1e-3); float nl = max(NoL,0.);
+  float D = charlieD(0.55, max(dot(N,H),0.)); float Vis = 1./(4.*(nl+NoV-nl*NoV)+1e-3);
+  vec3 sheen = sheenCol * D * Vis * nl * uSheen;
+  return (satAlb*diff + sheen) * Lc;
+}
+void main(){
+  vec4 rw = vReg / max(1e-3, vReg.x+vReg.y+vReg.z+vReg.w);
+  vec3 base = uPal[0]*rw.x + uPal[1]*rw.y + uPal[2]*rw.z + uPal[3]*rw.w;
+  vec3 q = vO * uFeltFreq;
+  float n1 = snoise(q), n2 = snoise(q*2.13+vec3(7.1,3.3,1.7)), n3 = snoise(q*0.31+11.);
+  float fib = pow(1.-abs(n1), 4.)*0.6 + pow(1.-abs(n2), 4.)*0.4;   // squiggly tangled fibres
+  float fw = length(fwidth(q));
+  float detail = 1. - smoothstep(0.35, 1.2, fw);                  // fade before it aliases
+  float h = (n1*0.22 + n3*0.35) * detail;   // smooth only: sharp ridges through dFdx give 2x2-block grain
+  vec3 N0 = normalize(vN);
+  vec3 dpx = dFdx(vW), dpy = dFdy(vW); float dhx = dFdx(h), dhy = dFdy(h);
+  vec3 r1 = cross(dpy, N0), r2 = cross(N0, dpx); float det = dot(dpx, r1);
+  vec3 grad = sign(det)*(dhx*r1 + dhy*r2);
+  vec3 N = normalize(abs(det)*N0 - uBump*grad);
+  if (!gl_FrontFacing) N = -N;
+  vec3 alb = base * mix(1., mix(0.9, 1.05, fib) * (1.+n3*0.05), detail);
+  vec3 V = normalize(uCamPos - vW);
+  float sh = shadowAt(vW + N0*0.012, 0.0065, 0.7, 8);
+  float ao = mix(1., vAO, uAOAmt);
+  vec3 sheenCol = mix(alb, vec3(1.), 0.35);
+  vec3 col = feltLight(N, V, uKeyDir, uKeyCol*sh, alb, sheenCol)*mix(0.6,1.,ao)
+           + feltLight(N, V, uFillDir, uFillCol, alb, sheenCol)*ao
+           + feltLight(N, V, uRimDir, uRimCol, alb, sheenCol)*ao;
+  // back-lit fuzz: fibres on the silhouette scatter the rim light
+  float NoV = max(dot(N0,V),0.);
+  float rimScatter = pow(1.-NoV, 3.) * max(0., dot(uRimDir, -V)*.5+.5);
+  col += alb * uRimCol * rimScatter * 0.9 * ao;
+  col += alb * hemi(N) * ao * (0.85 + 0.15*fib);
+  gl_FragColor = vec4(col, 1.);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}`;
+
+// --- knit (stockinette + 1x1 rib), procedural, derivative-filtered
+const KNIT_VS = /* glsl */`
+attribute vec4 aKnit; attribute float aAO;
+varying vec3 vW; varying vec3 vN; varying vec3 vO; varying vec4 vKnit; varying float vAO;
+void main(){
+  vec4 w = modelMatrix*vec4(position,1.);
+  vW = w.xyz; vN = normalize(mat3(modelMatrix)*normal); vO = position; vKnit = aKnit; vAO = aAO;
+  gl_Position = projectionMatrix*viewMatrix*w;
+}`;
+const KNIT_FS = /* glsl */`
+${GLSL_NOISE}
+${GLSL_LIGHT}
+uniform vec3 uYarn; uniform vec3 uYarnLight;
+uniform vec3 uArmA[2]; uniform vec3 uArmDir[2];
+uniform vec2 uStitch;       // stitch width, row height (object units)
+uniform float uBump;
+varying vec3 vW; varying vec3 vN; varying vec3 vO; varying vec4 vKnit; varying float vAO;
+// one yarn leg: rounded tube with an elliptical footprint.
+// returns (height, ply coordinate, d height/d uv) - the gradient is analytic so the bump has no 2x2-quad grain
+vec4 leg(vec2 p, vec2 c, vec2 ax, float hl, float hw){
+  vec2 d = p - c; vec2 px = vec2(-ax.y, ax.x); float a = dot(d, ax); float b = dot(d, px);
+  float e = (a*a)/(hl*hl) + (b*b)/(hw*hw);
+  float m = max(0., 1.-e);
+  float h = pow(m, 0.62);                                  // rounder shoulder, soft contact with the next leg
+  vec2 de = 2.*a/(hl*hl)*ax + 2.*b/(hw*hw)*px;
+  vec2 g = m > 1e-3 ? -0.62*pow(m, -0.38)*de : vec2(0.);
+  g = g/(1.+length(g)*0.08);
+  return vec4(h, a*9. + b*16., g);
+}
+struct K { float h; float ply; vec2 g; float id; };
+// stockinette: columns of V's, uv in stitch units (x across, y up); hand-knit jitter per stitch
+K stock(vec2 uv){
+  vec2 cell = floor(uv); vec2 f = uv - cell;
+  K k; k.h = 0.; k.ply = 0.; k.g = vec2(0.); k.id = 0.;
+  vec2 aL = normalize(vec2(-0.42, 1.)), aR = normalize(vec2(0.42, 1.));
+  for (int dy=-1; dy<=1; dy++) for (int dx=-1; dx<=1; dx++){
+    vec2 o = vec2(float(dx), float(dy));
+    float hj = hash11(dot(cell+o, vec2(17.13, 91.7)));
+    vec2 j = (vec2(hj, hash11(hj*77.1+3.))-.5)*vec2(0.07, 0.09);
+    float sz = 0.94 + 0.1*hj;
+    vec4 L1 = leg(f, o + j + vec2(0.5-0.215, 0.64), aL, 0.6*sz, 0.235*sz);
+    vec4 R1 = leg(f, o + j + vec2(0.5+0.215, 0.64), aR, 0.6*sz, 0.235*sz);
+    if (L1.x > k.h) { k.h = L1.x; k.ply = L1.y; k.g = L1.zw; k.id = hash11(dot(cell+o, vec2(12.9898, 78.233))); }
+    if (R1.x > k.h) { k.h = R1.x; k.ply = R1.y + 3.1; k.g = R1.zw; k.id = hash11(dot(cell+o, vec2(12.9898, 78.233))+.37); }
+  }
+  return k;
+}
+// 1x1 rib: raised knit columns (V's), recessed purl columns (small horizontal bumps, mostly hidden)
+K rib(vec2 uv){
+  // 1x1 rib pulls in: knit columns take ~72% of each 2-column repeat, purl sits deep in the valley
+  float rep = uv.x*0.5; float cid = floor(rep); float fx = fract(rep);
+  K k; k.h = 0.; k.ply = 0.; k.g = vec2(0.); k.id = hash11(cid*7.13+.5);
+  float kw = 0.72;
+  if (fx < kw){
+    float sx = 1./(2.*kw);                       // du_local/du
+    vec2 g = vec2(fx/kw, fract(uv.y));
+    vec2 aL = normalize(vec2(-0.36, 1.)), aR = normalize(vec2(0.36, 1.));
+    for (int dy=-1; dy<=1; dy++){
+      vec2 o = vec2(0., float(dy));
+      vec4 L1 = leg(g, o + vec2(0.5-0.2, 0.64), aL, 0.6, 0.27);
+      vec4 R1 = leg(g, o + vec2(0.5+0.2, 0.64), aR, 0.6, 0.27);
+      if (L1.x > k.h) { k.h = L1.x; k.ply = L1.y; k.g = L1.zw; }
+      if (R1.x > k.h) { k.h = R1.x; k.ply = R1.y; k.g = R1.zw; }
+    }
+    k.h = 0.25 + 0.75*k.h; k.g *= vec2(sx, 1.)*0.75;
+    // columns roll down into the valley on both sides
+    float edge = min(fx, kw-fx)/kw;
+    k.h *= smoothstep(0.0, 0.18, edge);
+  } else {
+    float px = (fx-kw)/(1.-kw);
+    vec2 g = vec2(px, fract(uv.y*1.0));
+    vec4 B = leg(g, vec2(0.5, 0.5), vec2(1.,0.), 0.5, 0.3);
+    k.h = B.x*0.1; k.ply = B.y; k.g = B.zw*0.1;
+  }
+  return k;
+}
+void main(){
+  vec3 p = vO;
+  // choose mapping: torso cylinder vs sleeve cylinder
+  float wl = vKnit.x, wr = vKnit.y;
+  vec2 uv;
+  float isRib = step(0.5, vKnit.z);
+  if (max(wl, wr) > 0.5){
+    int i = wl > wr ? 0 : 1;
+    vec3 ax = uArmDir[i]; vec3 q = p - uArmA[i];
+    float along = dot(q, ax); vec3 rad = q - ax*along;
+    vec3 ef = normalize(vec3(0.,0.,1.) - ax*ax.z); vec3 es = cross(ax, ef);
+    float ang = atan(dot(rad, es), dot(rad, ef));
+    uv = vec2(ang*0.2/uStitch.x, -along/uStitch.y);
+  } else {
+    float ang = atan(p.x, p.z);
+    float R = vKnit.w > 0.5 ? 0.34 : 0.74;
+    uv = vec2(ang*R/uStitch.x, p.y/uStitch.y);
+    if (vKnit.w > 0.5) uv.y = (p.y - 1.29)/uStitch.y*1.4;
+  }
+  vec2 kuv = isRib > 0.5 ? uv*vec2(2.1,1.) : uv;
+  K k; if (isRib > 0.5) k = rib(kuv); else k = stock(uv);
+  float stitchVar = k.id;
+  float fw = max(length(fwidth(uv)), 1e-4);
+  float detail = 1. - smoothstep(0.22, 0.6, fw);
+  // yarn: ply twist and fibre noise
+  float plyT = 0.5+0.5*sin(k.ply);
+  float fn2 = snoise(vO*45.+3.);
+  vec3 N0 = normalize(vN);
+  // cotangent frame from the (smooth) uv mapping, then perturb with the analytic stitch gradient
+  vec3 dpx = dFdx(vW), dpy = dFdy(vW); vec2 dux = dFdx(kuv), duy = dFdy(kuv);
+  vec3 dp2perp = cross(dpy, N0), dp1perp = cross(N0, dpx);
+  vec3 Tu = dp2perp*dux.x + dp1perp*duy.x; vec3 Tv = dp2perp*dux.y + dp1perp*duy.y;
+  float invmax = inversesqrt(max(dot(Tu,Tu), dot(Tv,Tv)) + 1e-12);
+  Tu *= invmax; Tv *= invmax;
+  vec2 gk = k.g * detail * step(0.02, k.h);
+  vec3 N = normalize(N0 - uBump*(gk.x*Tu + gk.y*Tv));
+  if (!gl_FrontFacing) N = -N;
+  float h = mix(0.55, k.h, detail);
+  float cavity = mix(1., mix(0.55, 1., smoothstep(0.0, 0.5, k.h)), detail);
+  vec3 fq = vO*150.; float fdet = 1. - smoothstep(0.3, 0.9, length(fwidth(fq)));
+  float fib = snoise(fq*vec3(1.,2.6,1.)) ;
+  float plyD = detail * (1. - smoothstep(0.35, 1.2, length(fwidth(vec2(k.ply)))*0.15));
+  vec3 alb = uYarn * (0.88 + 0.16*plyT*plyD) * (1. + fn2*0.06) * (1. + (stitchVar-.5)*0.16*detail) * (1. + fib*0.1*fdet);
+  alb = mix(alb, uYarnLight, 0.16*smoothstep(0.5,1.,k.h)*detail);
+  vec3 V = normalize(uCamPos - vW);
+  float sh = shadowAt(vW + N0*0.012, 0.0065, 0.7, 8);
+  float ao = vAO * cavity;
+  vec3 col = vec3(0.);
+  vec3 Ls[3]; Ls[0]=uKeyDir; Ls[1]=uFillDir; Ls[2]=uRimDir;
+  vec3 Cs[3]; Cs[0]=uKeyCol*sh; Cs[1]=uFillCol; Cs[2]=uRimCol;
+  float NoV = max(dot(N,V),1e-3);
+  for (int i=0;i<3;i++){
+    float NoL = dot(N, Ls[i]);
+    float diff = max(0., (NoL+0.35)/1.35);
+    vec3 H = normalize(Ls[i]+V); float nl = max(NoL,0.);
+    float D = charlieD(0.45, max(dot(N,H),0.)); float Vis = 1./(4.*(nl+NoV-nl*NoV)+1e-3);
+    vec3 sheen = mix(alb, vec3(1.), 0.4) * D*Vis*nl*0.6;
+    col += (alb*diff + sheen) * Cs[i] * (i==0 ? mix(0.55,1.,ao) : ao);
+  }
+  float rimScatter = pow(1.-max(dot(N0,V),0.), 3.) * max(0., dot(uRimDir, -V)*.5+.5);
+  col += alb * uRimCol * rimScatter * 0.7 * ao;
+  col += alb * hemi(N) * ao;
+  gl_FragColor = vec4(col, 1.);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}`;
+
+// --- strands
+const STRAND_VS = /* glsl */`
+${GLSL_NOISE}
+${GLSL_LIGHT}
+uniform mat4 uBones[6];
+uniform vec3 uPal[8];
+uniform float uViewH; uniform float uWidthScale; uniform float uMinPx; uniform float uLenScale; uniform float uTime;
+uniform float uTipRatio;
+attribute vec3 iRoot; attribute vec3 iNrm; attribute vec3 iDir;
+attribute vec4 iShape;   // len, width, lean, bend
+attribute vec4 iMisc;    // seed, region, ao, bone
+attribute vec3 iCurl;    // amp, freq, alpha
+varying vec3 vT; varying vec3 vN; varying vec3 vW; varying vec3 vCol;
+varying float vTt; varying float vAlpha; varying float vAO; varying float vSh; varying float vSide;
+vec3 curve(float t, vec3 R, vec3 N, vec3 D, vec3 B, float L, float lean, float bend, float amp, float freq, float ph){
+  float k = abs(bend) < 1e-3 ? 1e-3 : bend;
+  float a = lean + k*t;
+  float cn = (sin(a) - sin(lean))/k;
+  float cd = (cos(lean) - cos(a))/k;
+  vec3 P = R + L*(N*cn + D*cd);
+  float c = amp*L*sqrt(t);
+  float w = 6.2831853*freq*t + ph;
+  vec3 perp = N*(-sin(a)) + D*cos(a);
+  P += c*(B*sin(w) + perp*cos(w)*0.7);
+  return P;
+}
+void main(){
+  float t = position.x; float side = position.y;
+  int bi = int(iMisc.w + .5);
+  mat4 M = uBones[bi];
+  vec3 R = (M*vec4(iRoot,1.)).xyz;
+  vec3 N = normalize(mat3(M)*iNrm);
+  vec3 D = mat3(M)*iDir; D = normalize(D - N*dot(D,N));
+  vec3 B = cross(N, D);
+  float seed = iMisc.x;
+  float L = iShape.x*uLenScale;
+  float ph = seed*61.7;
+  vec3 P = curve(t, R, N, D, B, L, iShape.z, iShape.w, iCurl.x, iCurl.y, ph);
+  float dt = t < .95 ? .03 : -.03;
+  vec3 P2 = curve(t+dt, R, N, D, B, L, iShape.z, iShape.w, iCurl.x, iCurl.y, ph);
+  vec3 T = normalize((P2 - P)*sign(dt));
+  vec3 toCam = uCamPos - P;
+  vec3 S = cross(T, toCam); float sl = length(S); S = sl > 1e-6 ? S/sl : vec3(1.,0.,0.);
+  float w = iShape.y*uWidthScale*mix(1., uTipRatio, t);
+  vec4 clip = projectionMatrix*viewMatrix*vec4(P,1.);
+  float px = clip.w*2./(projectionMatrix[1][1]*uViewH);
+  float wMin = px*uMinPx; float cov = 1.;
+  if (w < wMin) { cov = w/wMin; w = wMin; }
+  vec3 Pw = P + S*side*w*.5;
+  gl_Position = projectionMatrix*viewMatrix*vec4(Pw,1.);
+  // colour
+  int reg = int(iMisc.y + .5);
+  vec3 base = uPal[reg];
+  float h1 = hash11(seed*1000.+.5), h2 = hash11(seed*1731.+7.3), h3 = hash11(seed*913.+2.1);
+  base *= 0.92 + 0.14*h1;
+  base = mix(base, base*base/max(max(base.r,max(base.g,base.b)),1e-3), 0.15*h3);   // some fibres deeper
+  if (h2 > 0.97) base = mix(base, vec3(1.), 0.2);                               // a few pale fibres
+  vCol = base;
+  vT = T; vN = N; vW = P; vTt = t; vAO = iMisc.z; vSide = side;
+  float tipFade = 1. - smoothstep(0.62, 1., t);
+  vAlpha = cov * iCurl.z * tipFade;
+  vSh = shadowAt(P + N*0.006, 0.006, seed*6.2831, 6);
+}`;
+const STRAND_FS = /* glsl */`
+${GLSL_LIGHT}
+uniform vec2 uSpecShift; uniform vec2 uSpecExp; uniform vec2 uSpecAmt; uniform float uTrans; uniform float uRootOcc;
+uniform float uOpacity; uniform float uTipLight; uniform float uHalo;
+varying vec3 vT; varying vec3 vN; varying vec3 vW; varying vec3 vCol;
+varying float vTt; varying float vAlpha; varying float vAO; varying float vSh; varying float vSide;
+vec3 hairLight(vec3 L, vec3 Lc, vec3 T, vec3 N, vec3 V, vec3 base, float t, float occ){
+  float NoL = dot(N, L);
+  float wrap = clamp((NoL + .55)/1.55, 0., 1.);
+  float TL = dot(T, L); float kk = sqrt(max(0., 1. - TL*TL));
+  float diff = wrap * mix(1., kk, .45);
+  vec3 H = normalize(L + V);
+  float a1 = dot(normalize(T + N*uSpecShift.x), H); float s1 = pow(sqrt(max(0.,1.-a1*a1)), uSpecExp.x);
+  float a2 = dot(normalize(T + N*uSpecShift.y), H); float s2 = pow(sqrt(max(0.,1.-a2*a2)), uSpecExp.y);
+  float facing = smoothstep(-.2, .4, NoL);
+  vec3 spec = (vec3(s1)*uSpecAmt.x + base*s2*uSpecAmt.y) * facing;
+  float back = max(0., dot(L, -V));
+  vec3 trans = base * pow(back, 3.) * kk * uTrans * (.35 + .65*t);
+  return (base*diff*occ + spec*mix(.4,1.,t) + trans) * Lc;
+}
+void main(){
+  float t = vTt;
+  float a = vAlpha * uOpacity;
+  if (a < 0.004) discard;
+  vec3 T = normalize(vT); vec3 N = normalize(vN); vec3 V = normalize(uCamPos - vW);
+  float occ = mix(uRootOcc, 1., smoothstep(0., .9, t)) * mix(vAO, 1., .45 + .55*t);
+  vec3 base = vCol;
+  // thin tips scatter more and read lighter / less saturated than the roots
+  vec3 tipCol = mix(base, vec3(max(base.r, max(base.g, base.b))), 0.3) * 1.18;
+  base = mix(base, tipCol, t*t*uTipLight);
+  vec3 col = hairLight(uKeyDir, uKeyCol*vSh, T, N, V, base, t, occ)
+           + hairLight(uFillDir, uFillCol, T, N, V, base, t, occ)
+           + hairLight(uRimDir, uRimCol, T, N, V, base, t, occ);
+  col += base * hemi(N) * occ;
+  // silhouette halo: tips seen edge-on against the backdrop scatter the rim + sky light
+  float edgeOn = pow(1. - abs(dot(N, V)), 2.5);
+  col += mix(base, vec3(1.), .35) * (uRimCol*.55 + uSkyCol*.6) * edgeOn * t * uHalo;
+  gl_FragColor = vec4(col, 1.);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+  gl_FragColor = vec4(gl_FragColor.rgb * a, a);
+}`;
+
+// --- eye
+const EYE_VS = /* glsl */`
+varying vec3 vW; varying vec3 vN; varying vec3 vL;
+uniform float uEyeR;
+void main(){ vL = position/uEyeR; vec4 w = modelMatrix*vec4(position,1.); vW = w.xyz; vN = normalize(mat3(modelMatrix)*normal); gl_Position = projectionMatrix*viewMatrix*w; }`;
+const EYE_FS = /* glsl */`
+${GLSL_NOISE}
+${GLSL_LIGHT}
+uniform vec3 uCamLocal; uniform float uIrisAng; uniform float uPupil; uniform float uIrisDepth;
+uniform vec3 uIris; uniform vec3 uIrisDark; uniform vec3 uSclera;
+uniform mat4 uLidInv; uniform mat4 uLowInv; uniform float uLidEdge; uniform float uLowEdge;
+varying vec3 vW; varying vec3 vN; varying vec3 vL;
+vec3 studioEnv(vec3 R){
+  vec3 c = mix(uGroundCol*0.35, uSkyCol*1.05, smoothstep(-0.35, 0.75, R.y));
+  vec3 k = normalize(uKeyDir); vec3 ku = normalize(cross(vec3(0.,1.,0.), k)); vec3 kv = cross(k, ku);
+  float d = dot(R, k);
+  if (d > 0.){ vec2 q = vec2(dot(R,ku), dot(R,kv))/d; vec2 b = abs(q) - vec2(0.2, 0.28); float sd = length(max(b,0.)) + min(max(b.x,b.y),0.) - 0.08; c += uKeyCol*7.*smoothstep(0.04, -0.04, sd); }
+  vec3 r = normalize(uRimDir); vec3 ru = normalize(cross(vec3(0.,1.,0.), r)); vec3 rv = cross(r, ru);
+  float d2 = dot(R, r);
+  if (d2 > 0.){ vec2 q = vec2(dot(R,ru), dot(R,rv))/d2; vec2 b = abs(q) - vec2(0.08, 0.5); float sd = length(max(b,0.)) + min(max(b.x,b.y),0.) - 0.04; c += uRimCol*4.*smoothstep(0.04, -0.04, sd); }
+  // round beauty-dish near the camera, up-left: the catchlight that sits just under the lid
+  vec3 bd = normalize(vec3(-0.36, -0.28, 1.0)); float db = dot(R, bd);
+  c += vec3(1.,.98,.95)*9.*smoothstep(0.9965, 0.998, db);
+  c += vec3(1.)*0.9*smoothstep(0.985, 0.998, db);
+  return c;
+}
+void main(){
+  vec3 n = normalize(vL);
+  vec3 Vl = normalize(uCamLocal - n);
+  vec3 N = normalize(vN); vec3 V = normalize(uCamPos - vW);
+  float cz = cos(uIrisAng), sz = sin(uIrisAng);
+  // refract into the anterior chamber and hit the recessed iris plane
+  vec3 rd = refract(-Vl, n, 1./1.376);
+  float planeZ = cz - uIrisDepth;
+  float tt = (planeZ - n.z)/min(rd.z, -1e-3);
+  vec3 hp = n + rd*max(tt, 0.);
+  vec2 ip = hp.xy/sz;
+  float r = length(ip); float ang = atan(ip.y, ip.x);
+  float corneaMask = smoothstep(cz - 0.035, cz + 0.01, n.z);
+  float irisMask = corneaMask * smoothstep(1.03, 0.95, r);
+  float streak = snoise(vec3(cos(ang)*9., sin(ang)*9., r*2.2)) * 0.5 + snoise(vec3(cos(ang)*22., sin(ang)*22., r*5.)) * 0.35;
+  vec3 iris = mix(uIrisDark, uIris, smoothstep(1.0, 0.6, r));
+  iris *= 0.8 + 0.35*streak;
+  iris = mix(iris, uIris*1.35, 0.35*smoothstep(0.1, 0.0, abs(r - uPupil*1.45)));
+  float pupil = smoothstep(uPupil + 0.035, uPupil - 0.035, r);
+  iris = mix(iris, vec3(0.004, 0.004, 0.006), pupil);
+  vec3 sclera = uSclera * mix(1., 0.8, smoothstep(0.35, -0.5, n.z));
+  vec3 alb = mix(sclera, iris, irisMask);
+  // lid contact shadows (analytic): angle below the upper lid edge, above the lower lid edge
+  vec3 lu = (uLidInv*vec4(vW,1.)).xyz; float bu = atan(lu.y, lu.z);
+  float lidAO = mix(0.4, 1., smoothstep(-0.02, 0.22, uLidEdge - bu));
+  vec3 ll = (uLowInv*vec4(vW,1.)).xyz; float bl = atan(ll.y, ll.z);
+  lidAO *= mix(0.6, 1., smoothstep(0.0, 0.16, bl - uLowEdge));
+  float sh = shadowAt(vW + N*0.004, 0.004, 0.7, 8);
+  float NoV = max(dot(N,V), 1e-3);
+  vec3 col = vec3(0.);
+  vec3 Ls[3]; Ls[0]=uKeyDir; Ls[1]=uFillDir; Ls[2]=uRimDir;
+  vec3 Cs[3]; Cs[0]=uKeyCol*sh; Cs[1]=uFillCol; Cs[2]=uRimCol;
+  for (int i=0;i<3;i++){ float NoL = dot(N, Ls[i]); col += alb*max(0.,(NoL+.25)/1.25)*Cs[i]; }
+  col += alb*hemi(N);
+  col *= lidAO;
+  // wet cornea: fresnel reflection of the studio + a tight key highlight
+  vec3 R = reflect(-V, N);
+  float F = 0.045 + 0.955*pow(1.-NoV, 5.);
+  vec3 env = studioEnv(R);
+  float spec = pow(max(dot(R, uKeyDir),0.), 900.)*18.;
+  col = col*(1.-F) + env*F*mix(0.45,1.,lidAO) + uKeyCol*spec*0.25*sh*lidAO;
+  // wet meniscus where the lower lid meets the eye: a thin bright line
+  float men = smoothstep(0.07, 0.0, bl - uLowEdge) * smoothstep(-0.02, 0.01, bl - uLowEdge);
+  col += vec3(0.9,0.95,1.)*men*0.22*pow(max(dot(R, normalize(vec3(0.,0.6,1.))),0.),4.);
+  gl_FragColor = vec4(col, 1.);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}`;
+
+// --- backdrop (cyclorama) with contact AO from analytic occluders
+const BG_VS = /* glsl */`
+varying vec3 vW; varying vec3 vN;
+void main(){ vec4 w = modelMatrix*vec4(position,1.); vW = w.xyz; vN = normalize(mat3(modelMatrix)*normal); gl_Position = projectionMatrix*viewMatrix*w; }`;
+const BG_FS = /* glsl */`
+${GLSL_LIGHT}
+uniform vec3 uBg; uniform vec3 uBgFloor; uniform vec4 uOcc[6]; uniform float uNOcc;
+varying vec3 vW; varying vec3 vN;
+float ign2(vec2 p){ return fract(52.9829189*fract(dot(p, vec2(0.06711056,0.00583715)))); }
+void main(){
+  vec3 N = normalize(vN);
+  float wall = smoothstep(0.2, 3.5, vW.y);
+  vec3 base = mix(uBgFloor, uBg, wall);
+  // soft top-to-bottom studio falloff and a gentle vignette around the subject
+  float r = length(vec2(vW.x*0.55, (vW.y-1.8)*0.8 + min(vW.z,0.)*0.0));
+  base *= mix(1.06, 0.84, smoothstep(1.5, 9., r));
+  float occ = 0.;
+  for (int i=0;i<6;i++){ if (float(i) >= uNOcc) break; vec3 d = uOcc[i].xyz - vW; float l = length(d); float rr = uOcc[i].w;
+    occ += rr*rr*max(dot(N, d/l), 0.)/(l*l) ; }
+  float ao = 1. - 0.55*clamp(occ, 0., 1.);
+  float sh = shadowAt(vW + N*0.02, 0.018, 0.7, 12);
+  float key = max(dot(N, uKeyDir), 0.);
+  vec3 col = base * (0.78 + 0.28*key*mix(0.55, 1., sh)) * ao;
+  gl_FragColor = vec4(col, 1.);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}`;
+
+// ------------------------------------------------------------------ renderer / scene
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(KNOBS.pixelRatio);
+renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.toneMappingExposure = qnum('exposure', 1.0);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.setClearColor(0xdde6f2, 1);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(28, 1, 0.05, 80);
+
+const SH = {
+  uCamPos: { value: new THREE.Vector3() },
+  uKeyDir: { value: new THREE.Vector3(-0.52, 0.66, 0.54).normalize() },
+  uKeyCol: { value: new THREE.Color(1.0, 0.97, 0.92).multiplyScalar(1.75) },
+  uFillDir: { value: new THREE.Vector3(0.8, 0.12, 0.58).normalize() },
+  uFillCol: { value: new THREE.Color(0.86, 0.92, 1.0).multiplyScalar(0.34) },
+  uRimDir: { value: new THREE.Vector3(0.18, 0.5, -0.85).normalize() },
+  uRimCol: { value: new THREE.Color(1.0, 1.0, 1.0).multiplyScalar(0.9) },
+  uSkyCol: { value: new THREE.Color(0.62, 0.66, 0.72) },
+  uGroundCol: { value: new THREE.Color(0.3, 0.33, 0.4) },
+  uShadowMap: { value: null },
+  uShadowMat: { value: new THREE.Matrix4() },
+  uShadowBias: { value: 0.0015 },
+};
+
+// shadow map (key light)
+const shadowRT = new THREE.WebGLRenderTarget(KNOBS.shadowSize, KNOBS.shadowSize, {
+  depthTexture: new THREE.DepthTexture(KNOBS.shadowSize, KNOBS.shadowSize), depthBuffer: true,
+});
+shadowRT.depthTexture.compareFunction = THREE.LessEqualCompare;
+shadowRT.depthTexture.minFilter = shadowRT.depthTexture.magFilter = THREE.LinearFilter;
+SH.uShadowMap.value = shadowRT.depthTexture;
+const shadowCam = new THREE.OrthographicCamera(-2.4, 2.4, 2.4, -2.4, 1, 18);
+shadowCam.layers.set(1);
+const depthMat = new THREE.MeshBasicMaterial({ colorWrite: false, side: THREE.DoubleSide });
+
+// ------------------------------------------------------------------ build character
+const t0 = performance.now();
+const timings = {};
+function timed(name, fn) { const a = performance.now(); const r = fn(); timings[name] = Math.round(performance.now() - a); return r; }
+
+const headMesh = timed('head sdf', () => surfaceNets((x, y, z) => headSDF(x, y, z), [-1.45, 1.1, -1.15], [1.45, 3.62, 1.25], KNOBS.sdfCell.head));
+const bodyMesh = timed('body sdf', () => surfaceNets((x, y, z) => bodySDF(x, y, z), [-1.1, -0.2, -0.85], [1.1, 1.75, 0.85], KNOBS.sdfCell.body));
+const sweaterMesh = timed('sweater sdf', () => surfaceNets((x, y, z) => sweaterSDF(x, y, z), [-1.12, 0.22, -0.88], [1.12, 1.52, 0.88], KNOBS.sdfCell.sweater));
+
+function vertexAttrs(m, regFn, aoOn) {
+  const n = m.P.length / 3, reg = new Float32Array(n * 4), ao = new Float32Array(n);
+  const tmp = new Float32Array(4);
+  for (let i = 0; i < n; i++) {
+    const x = m.P[3 * i], y = m.P[3 * i + 1], z = m.P[3 * i + 2];
+    if (regFn) { tmp.fill(0); regFn(x, y, z, tmp); reg.set(tmp, 4 * i); } else reg[4 * i] = 1;
+    ao[i] = aoOn ? bakeAO(x + m.N[3 * i] * 0.004, y + m.N[3 * i + 1] * 0.004, z + m.N[3 * i + 2] * 0.004, m.N[3 * i], m.N[3 * i + 1], m.N[3 * i + 2]) : 1;
+  }
+  return { reg, ao };
+}
+const headAttr = timed('head attrs+ao', () => vertexAttrs(headMesh, (x, y, z, r) => headSDF(x, y, z, r), true));
+const bodyAttr = timed('body attrs+ao', () => vertexAttrs(bodyMesh, null, true));
+const sweaterAttr = timed('sweater attrs+ao', () => vertexAttrs(sweaterMesh, (x, y, z, r) => sweaterSDF(x, y, z, r), true));
+
+// materials
+function feltMaterial() {
+  return new THREE.ShaderMaterial({
+    vertexShader: FELT_VS, fragmentShader: FELT_FS,
+    uniforms: { ...SH, uPal: { value: [new THREE.Color(), new THREE.Color(), new THREE.Color(), new THREE.Color()] },
+      uFeltFreq: { value: 95 }, uBump: { value: 0.0045 }, uSheen: { value: 0.55 }, uWrap: { value: 0.5 }, uAOAmt: { value: 1 } },
+  });
+}
+const feltMat = feltMaterial();
+const knitMat = new THREE.ShaderMaterial({
+  vertexShader: KNIT_VS, fragmentShader: KNIT_FS,
+  uniforms: { ...SH, uYarn: { value: new THREE.Color() }, uYarnLight: { value: new THREE.Color() },
+    uArmA: { value: ARM_AX.map((a) => new THREE.Vector3(...a.a)) }, uArmDir: { value: ARM_AX.map((a) => new THREE.Vector3(...a.dir)) },
+    uStitch: { value: new THREE.Vector2(0.092, 0.07) }, uBump: { value: 0.55 } },
+});
+const strandUniforms = {
+  uBones: { value: Array.from({ length: 6 }, () => new THREE.Matrix4()) },
+  uPal: { value: Array.from({ length: 8 }, () => new THREE.Color()) },
+  uViewH: { value: 1000 }, uWidthScale: { value: 1 }, uMinPx: { value: 0.85 }, uLenScale: { value: 1 }, uTime: { value: 0 },
+  uTipRatio: { value: 0.3 },
+  uSpecShift: { value: new THREE.Vector2(0.12, -0.18) }, uSpecExp: { value: new THREE.Vector2(60, 14) }, uSpecAmt: { value: new THREE.Vector2(0.1, 0.22) },
+  uTrans: { value: 1.6 }, uRootOcc: { value: 0.58 }, uOpacity: { value: 1 }, uTipLight: { value: 0.55 }, uHalo: { value: 0.7 },
+};
+function strandMaterial() {
+  return new THREE.ShaderMaterial({
+    vertexShader: STRAND_VS, fragmentShader: STRAND_FS,
+    uniforms: { ...SH, ...strandUniforms },
+    transparent: true, depthWrite: false, depthTest: true, side: THREE.DoubleSide,
+    blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor,
+    blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneMinusSrcAlphaFactor,
+  });
+}
+
+// rig
+const charRoot = new THREE.Group(); scene.add(charRoot);
+const bodyBone = new THREE.Group(); charRoot.add(bodyBone);
+const headPivot = new THREE.Group(); headPivot.position.set(0, 1.3, 0); charRoot.add(headPivot);
+const headBone = new THREE.Group(); headBone.position.set(0, -1.3, 0); headPivot.add(headBone);
+
+const headGeo = meshGeometry(headMesh, { aReg: { array: headAttr.reg, size: 4 }, aAO: { array: headAttr.ao, size: 1 } });
+const bodyGeo = meshGeometry(bodyMesh, { aReg: { array: bodyAttr.reg, size: 4 }, aAO: { array: bodyAttr.ao, size: 1 } });
+const sweaterGeo = meshGeometry(sweaterMesh, { aKnit: { array: sweaterAttr.reg, size: 4 }, aAO: { array: sweaterAttr.ao, size: 1 } });
+const headM = new THREE.Mesh(headGeo, feltMat); headBone.add(headM);
+const bodyM = new THREE.Mesh(bodyGeo, feltMat); bodyBone.add(bodyM);
+const sweaterM = new THREE.Mesh(sweaterGeo, knitMat); bodyBone.add(sweaterM);
+for (const m of [headM, bodyM, sweaterM]) m.layers.enable(1);
+
+// eyes + lids
+const eyeGeo = new THREE.SphereGeometry(SHAPE.eyeR, 72, 54);
+const upperLidGeo = [], lowerLidGeo = [];
+const eyes = [];
+const lidOpts = { r0: SHAPE.eyeR + LID.gap, thick: LID.thick, bEdge: LID.edgeRest, bBack: LID.edgeRest + LID.back, dir: 1, lip: 1.0, edgeCurve: 0.06 };
+const lowOpts = { r0: SHAPE.eyeR + LID.gap, thick: LID.lowerThick, bEdge: LID.lowerEdge, bBack: LID.lowerEdge - LID.lowerBack, dir: -1, lip: 1.0, edgeCurve: -0.04 };
+const lidG = lidGeometry(lidOpts), lowG = lidGeometry(lowOpts);
+function lidAttrs(g, frame) {
+  const P = g.attributes.position.array, Nn = g.attributes.normal.array, n = P.length / 3;
+  const reg = new Float32Array(n * 4), ao = new Float32Array(n);
+  const v = new THREE.Vector3(), nn = new THREE.Vector3();
+  const nm = new THREE.Matrix3().getNormalMatrix(frame);
+  for (let i = 0; i < n; i++) {
+    reg[4 * i] = 1;
+    v.set(P[3 * i], P[3 * i + 1], P[3 * i + 2]).applyMatrix4(frame);
+    nn.set(Nn[3 * i], Nn[3 * i + 1], Nn[3 * i + 2]).applyMatrix3(nm).normalize();
+    // lids: AO only from the head (exclude the lid's own approx volume)
+    let occ = 0, w = 1;
+    for (const h of [0.03, 0.07, 0.13, 0.22]) {
+      const px = v.x + nn.x * h, py = v.y + nn.y * h, pz = v.z + nn.z * h;
+      const d = min(headSDF(px, py, pz), eyeSDF(px, py, pz) + 0.0);
+      occ += w * max(0, h - d); w *= 0.62;
+    }
+    ao[i] = clamp(1 - occ * 2.0, 0.25, 1);
+  }
+  g.setAttribute('aReg', new THREE.BufferAttribute(reg, 4));
+  g.setAttribute('aAO', new THREE.BufferAttribute(ao, 1));
+}
+SHAPE.eyes.forEach((c, i) => {
+  const side = i === 0 ? -1 : 1;
+  const socket = new THREE.Group(); socket.position.set(...c); headBone.add(socket);
+  // eyeball (gaze rotation applied per frame)
+  const eyeMat = new THREE.ShaderMaterial({
+    vertexShader: EYE_VS, fragmentShader: EYE_FS,
+    uniforms: { ...SH, uEyeR: { value: SHAPE.eyeR }, uCamLocal: { value: new THREE.Vector3() },
+      uIrisAng: { value: 0.7 }, uPupil: { value: 0.45 }, uIrisDepth: { value: 0.1 },
+      uIris: { value: new THREE.Color() }, uIrisDark: { value: new THREE.Color() }, uSclera: { value: new THREE.Color() },
+      uLidInv: { value: new THREE.Matrix4() }, uLowInv: { value: new THREE.Matrix4() },
+      uLidEdge: { value: LID.edgeRest }, uLowEdge: { value: LID.lowerEdge } },
+  });
+  const eyeball = new THREE.Mesh(eyeGeo, eyeMat); socket.add(eyeball); eyeball.layers.enable(1);
+  // lid frame: face the socket normal, roll for the grumpy tilt (inner corners lower)
+  const frame = new THREE.Group(); socket.add(frame);
+  const nrm = new THREE.Vector3(...EYE_N[i]);
+  const yaw = Math.atan2(nrm.x, nrm.z), pitch = -Math.asin(nrm.y) * 0.8;
+  frame.rotation.set(pitch, yaw, -side * -LID.roll, 'YXZ');
+  const upper = new THREE.Group(); frame.add(upper);
+  const lower = new THREE.Group(); frame.add(lower);
+  const upperM = new THREE.Mesh(lidG, feltMat); upper.add(upperM); upperM.layers.enable(1);
+  const lowerM = new THREE.Mesh(lowG, feltMat); lower.add(lowerM); lowerM.layers.enable(1);
+  eyes.push({ socket, eyeball, eyeMat, frame, upper, lower, side });
+});
+headBone.updateMatrixWorld(true);
+{ // bake lid AO in head space using the left eye frame (both are mirror images)
+  const e = eyes[0]; e.upper.updateMatrixWorld(true);
+  lidAttrs(lidG, e.upper.matrixWorld.clone()); lidAttrs(lowG, e.lower.matrixWorld.clone());
+}
+
+// ------------------------------------------------------------------ strands
+const shortSet = new StrandSet(), longSet = new StrandSet();
+const BONE = { body: 0, head: 1, lidL: 2, lidR: 3, lowL: 4, lowR: 5 };
+const REG = { fur: 0, light: 1, dark: 2, brow: 3, yarn: 4, yarnFuzz: 5, fly: 6, tuft: 7 };
+const rng = rngOf(1234567);
+const FACE_C = at(0, -0.16, 1.35);
+
+function pickRegion(w, r) { const s = w[0] + w[1] + w[2] + w[3]; let x = r * s; for (let k = 0; k < 4; k++) { x -= w[k]; if (x <= 0) return k; } return 0; }
+function nearEye(p) { let best = 9, bi = 0; SHAPE.eyes.forEach((c, i) => { const d = vlen(vsub(p, c)) - SHAPE.eyeR; if (d < best) { best = d; bi = i; } }); return [best, bi]; }
+function underLid(p) { // inside the upper-lid shell region of either eye (at rest)
+  return lidApproxSDF(p[0], p[1], p[2]) < 0.012;
+}
+function headFlow(p, n) {
+  // fibres flow away from the face centre, up the ears towards the tips, around the eyes
+  let d = vsub(p, FACE_C);
+  for (const e of SHAPE.ears) {
+    const q = vsub(p, e.base); const along = vdot(q, e.u);
+    const w = sstep(-0.05, 0.2, along) * sstep(0.7, 0.3, vlen(vsub(q, vmul(e.u, along))));
+    d = vadd(vmul(d, 1 - w), vmul(e.u, w * 2));
+  }
+  const [de, ei] = nearEye(p);
+  if (de < 0.2) { const away = vnorm(vsub(p, SHAPE.eyes[ei])); const w = sstep(0.2, 0.02, de); d = vadd(vmul(vnorm(d), 1 - w), vmul(away, w)); }
+  return tangentize(vnorm(d), n);
+}
+
+timed('grow strands', () => {
+  // ---- head coat
+  {
+    const m = headMesh, samp = makeSampler(m.P, m.idx);
+    const reg = headAttr.reg, ao = headAttr.ao, w = new Float32Array(4);
+    let made = 0, tries = 0;
+    while (made < KNOBS.budget.headCoat && tries < KNOBS.budget.headCoat * 3) {
+      tries++;
+      const s = samp(rng);
+      const p = bary(m.P, 3, s), n = vnorm(bary(m.N, 3, s)), rw = bary(reg, 4, s), a = bary(ao, 1, s)[0];
+      if (bodySDF(p[0], p[1], p[2]) < -0.01 || sweaterSDF(p[0], p[1], p[2]) < 0.0) continue;
+      const [de] = nearEye(p);
+      if (de < 0.03 || underLid(p)) continue;
+      const r = pickRegion(rw, rng());
+      const eyeShort = sstep(0.03, 0.16, de);
+      let len, width = 0.0042, lean = 0.75 + rng() * 0.75, bend = (rng() - 0.35) * 1.6, amp = 0.16 + rng() * 0.12, freq = 1.0 + rng() * 1.8, alpha = 0.95;
+      if (r === REG.fur) len = 0.046 * (0.6 + rng() * 0.8);
+      else if (r === REG.light) { len = 0.034 * (0.6 + rng() * 0.8); lean = 0.9 + rng() * 0.6; }
+      else if (r === REG.dark) { len = 0.016 * (0.6 + rng() * 0.8); width = 0.0036; lean = 0.5 + rng() * 0.6; amp = 0.1; }
+      else { len = 0.036 * (0.6 + rng() * 0.8); }
+      len *= 0.35 + 0.65 * eyeShort;
+      const wf = woolField(p);
+      len *= wf[2]; lean = Math.min(lean * wf[1], 1.55);
+      let dir = headFlow(p, n);
+      dir = rotAround(dir, n, wf[0] * (r === REG.fur ? 1 : 0.5) + (rng() - 0.5) * 0.7);
+      shortSet.add(p, n, dir, len, width, lean, bend, rng(), r, a, BONE.head, amp, freq, alpha);
+      made++;
+    }
+    // ---- flyaways (long, sparse, wild)
+    for (let i = 0, tries2 = 0; i < KNOBS.budget.headFly && tries2 < 20000; tries2++) {
+      const s = samp(rng);
+      const p = bary(m.P, 3, s), n = vnorm(bary(m.N, 3, s)), rw = bary(reg, 4, s), a = bary(ao, 1, s)[0];
+      if (bodySDF(p[0], p[1], p[2]) < 0.02 || sweaterSDF(p[0], p[1], p[2]) < 0.05) continue;
+      const [de] = nearEye(p); if (de < 0.12 || underLid(p) || rw[2] > 0.3) continue;
+      let dir = rotAround(headFlow(p, n), n, (rng() - 0.5) * 3.0);
+      const len = 0.07 + Math.pow(rng(), 2.2) * 0.2;
+      longSet.add(p, n, dir, len, 0.0028, 0.35 + rng() * 1.1, (rng() - 0.5) * 3.2, rng(), rw[1] > 0.5 ? REG.light : REG.fly, a, BONE.head, 0.22 + rng() * 0.25, 0.5 + rng() * 1.4, 0.6);
+      i++;
+    }
+    // ---- crown tuft
+    for (let i = 0, tries3 = 0; i < KNOBS.budget.tuft && tries3 < 200000; tries3++) {
+      const s = samp(rng);
+      const p = bary(m.P, 3, s), n = vnorm(bary(m.N, 3, s)), a = bary(ao, 1, s)[0];
+      const q = vsub(p, at(0.02, 0.9, 0.12));
+      const rr = sqrt(q[0] * q[0] / 0.05 + q[2] * q[2] / 0.035);
+      if (p[1] < HC[1] + 0.7 || rr > 1) continue;
+      const dir = tangentize([0.25 * (rng() - 0.5), 0, 1], n);
+      const len = (0.16 + rng() * 0.16) * (1 - 0.5 * rr);
+      longSet.add(p, n, rotAround(dir, n, (rng() - 0.5) * 0.9), len, 0.0042, 0.15 + rng() * 0.35, 0.9 + rng() * 1.6, rng(), REG.tuft, a, BONE.head, 0.1 + rng() * 0.12, 0.4 + rng() * 0.8, 0.95);
+      i++;
+    }
+  }
+  // ---- lids (upper + lower, both eyes) — roots in lid-local space
+  const addLid = (g, count, boneL, boneR, upper) => {
+    const P = g.attributes.position.array, Nn = g.attributes.normal.array, F = g.attributes.aFur.array, Lp = g.attributes.aLip.array, AOa = g.attributes.aAO.array;
+    const idx = g.index.array;
+    const samp = makeSampler(P, idx, (a, b, c) => (F[a] + F[b] + F[c]) / 3);
+    for (let i = 0, tries = 0; i < count && tries < count * 6; tries++) {
+      const s = samp(rng);
+      const p = bary(P, 3, s), n = vnorm(bary(Nn, 3, s)), lip = bary(Lp, 1, s)[0], a = bary(AOa, 1, s)[0];
+      const b = atan2(p[1], p[2]);
+      // the lid shell runs far back so a blink never uncovers the eyeball; fur only where it can be seen
+      if (upper && b > LID.edgeRest + 1.65) continue;
+      i++;
+      const toEdge = upper ? [0, -cos(b), sin(b)] : [0, cos(b), -sin(b)];
+      const dir = rotAround(tangentize(toEdge, n), n, (rng() - 0.5) * 1.0);
+      const len = (upper ? 0.03 : 0.018) * (0.55 + rng() * 0.7) * (lip > 0.5 ? 0.8 : 1);
+      const lean = lip > 0.5 ? 1.0 + rng() * 0.4 : 0.8 + rng() * 0.6;
+      for (const bone of [boneL, boneR]) {
+        // mirror for the right eye: the rig mirrors the frame, so local coords are identical
+        shortSet.add(p, n, dir, len, 0.0038, lean, (rng() - 0.3) * 1.2, rng(), REG.fur, a, bone, 0.14 + rng() * 0.1, 1 + rng() * 1.5, 0.95);
+      }
+    }
+  };
+  addLid(lidG, KNOBS.budget.lidCoat, BONE.lidL, BONE.lidR, true);
+  addLid(lowG, KNOBS.budget.lowerLid, BONE.lowL, BONE.lowR, false);
+  // ---- body (paws, feet, bottom, neck)
+  {
+    const m = bodyMesh, samp = makeSampler(m.P, m.idx), ao = bodyAttr.ao;
+    for (let i = 0, tries = 0; i < KNOBS.budget.bodyCoat && tries < KNOBS.budget.bodyCoat * 8; tries++) {
+      const s = samp(rng);
+      const p = bary(m.P, 3, s), n = vnorm(bary(m.N, 3, s)), a = bary(ao, 1, s)[0];
+      const ds = sweaterSDF(p[0], p[1], p[2]);
+      if (ds < 0.004 || headSDF(p[0], p[1], p[2]) < 0.0) continue;
+      const wf = woolField(p);
+      let dir = tangentize([0, -1, 0.3], n);
+      dir = rotAround(dir, n, wf[0] + (rng() - 0.5) * 0.7);
+      const len = 0.04 * (0.6 + rng() * 0.8) * wf[2] * (0.55 + 0.45 * sstep(0.0, 0.06, ds));
+      shortSet.add(p, n, dir, len, 0.0042, 0.8 + rng() * 0.7, (rng() - 0.35) * 1.6, rng(), REG.fur, a, BONE.body, 0.16 + rng() * 0.12, 1 + rng() * 1.8, 0.95);
+      i++;
+      if (i < KNOBS.budget.bodyFly && rng() < 0.2) longSet.add(p, n, rotAround(dir, n, (rng() - 0.5) * 2.5), 0.07 + rng() * 0.1, 0.0032, 0.4 + rng(), (rng() - 0.5) * 3, rng(), REG.fly, a, BONE.body, 0.25, 0.8, 0.7);
+    }
+  }
+  // ---- knit fuzz + mohair halo
+  {
+    const m = sweaterMesh, samp = makeSampler(m.P, m.idx), ao = sweaterAttr.ao;
+    for (let i = 0; i < KNOBS.budget.knitFuzz; i++) {
+      const s = samp(rng);
+      const p = bary(m.P, 3, s), n = vnorm(bary(m.N, 3, s)), a = bary(ao, 1, s)[0];
+      if (headSDF(p[0], p[1], p[2]) < 0.0) continue;
+      const dir = tangentize([rng() - 0.5, rng() - 0.5, rng() - 0.5], n);
+      shortSet.add(p, n, dir, 0.03 * (0.5 + rng()), 0.0032, 0.5 + rng() * 1.0, (rng() - 0.5) * 3, rng(), REG.yarnFuzz, a, BONE.body, 0.3 + rng() * 0.3, 0.8 + rng() * 1.6, 0.6);
+    }
+    for (let i = 0; i < KNOBS.budget.mohair; i++) {
+      const s = samp(rng);
+      const p = bary(m.P, 3, s), n = vnorm(bary(m.N, 3, s)), a = bary(ao, 1, s)[0];
+      if (headSDF(p[0], p[1], p[2]) < 0.02) continue;
+      const dir = tangentize([rng() - 0.5, rng() - 0.5, rng() - 0.5], n);
+      longSet.add(p, n, dir, 0.05 + Math.pow(rng(), 2) * 0.1, 0.0028, 0.5 + rng() * 0.9, (rng() - 0.5) * 4, rng(), REG.yarnFuzz, a, BONE.body, 0.3 + rng() * 0.3, 0.5 + rng() * 1.2, 0.55);
+    }
+  }
+});
+
+const shortGeo = shortSet.build(KNOBS.shortSegments, rng);
+const longGeo = longSet.build(KNOBS.longSegments, rng);
+const shortMat = strandMaterial(), longMat = strandMaterial();
+const shortMesh = new THREE.Mesh(shortGeo, shortMat), longMesh = new THREE.Mesh(longGeo, longMat);
+for (const m of [shortMesh, longMesh]) { m.frustumCulled = false; m.renderOrder = 10; charRoot.add(m); }
+longMesh.renderOrder = 11;
+const BONES = () => [bodyBone, headBone, eyes[0].upper, eyes[1].upper, eyes[0].lower, eyes[1].lower];
+if (Q.has('nostrands')) { shortMesh.visible = false; longMesh.visible = false; }
+
+// ------------------------------------------------------------------ backdrop
+function cycloramaGeometry() {
+  const prof = []; // (z, y) from front floor to top of wall
+  for (let i = 0; i <= 10; i++) prof.push([12 - i * 1.6, 0]);          // floor z: 12 -> -4
+  for (let i = 1; i <= 24; i++) { const a = (i / 24) * (PI / 2); prof.push([-4 - sin(a) * 5, 5 - cos(a) * 5]); }
+  for (let i = 1; i <= 6; i++) prof.push([-9, 5 + i * 4]);
+  const xs = 24, pos = [], idx = [];
+  for (let j = 0; j < prof.length; j++) for (let i = 0; i <= xs; i++) pos.push(-30 + (60 * i) / xs, prof[j][1], prof[j][0]);
+  for (let j = 0; j < prof.length - 1; j++) for (let i = 0; i < xs; i++) { const a = j * (xs + 1) + i, b = a + xs + 1; idx.push(a, a + 1, b, a + 1, b + 1, b); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
+const bgMat = new THREE.ShaderMaterial({
+  vertexShader: BG_VS, fragmentShader: BG_FS,
+  uniforms: { ...SH, uBg: { value: new THREE.Color() }, uBgFloor: { value: new THREE.Color() },
+    uOcc: { value: [
+      new THREE.Vector4(...SHAPE.feet[0][0], 0.2), new THREE.Vector4(...SHAPE.feet[1][0], 0.2),
+      new THREE.Vector4(0, 0.74, 0, 0.62), new THREE.Vector4(-0.84, 0.45, 0.19, 0.14), new THREE.Vector4(0.84, 0.45, 0.19, 0.14),
+      new THREE.Vector4(0, 2.2, 0, 0.9)] }, uNOcc: { value: 6 } },
+});
+const backdrop = new THREE.Mesh(cycloramaGeometry(), bgMat); scene.add(backdrop);
+
+// ------------------------------------------------------------------ colour
+let currentColor = 'blue';
+function setColor(id) {
+  if (!PAL[id]) return;
+  if (window.redraw && frozen !== null) setTimeout(window.redraw, 0);
+  currentColor = id;
+  const s = scheme(id);
+  const pal = feltMat.uniforms.uPal.value;
+  pal[0].copy(lin(s.fur)); pal[1].copy(lin(s.furLight)); pal[2].copy(lin(s.furDark)); pal[3].copy(lin(s.brow));
+  knitMat.uniforms.uYarn.value.copy(lin(s.yarn)); knitMat.uniforms.uYarnLight.value.copy(lin(s.yarnLight));
+  const sp = strandUniforms.uPal.value;
+  sp[REG.fur].copy(lin(s.fur)); sp[REG.light].copy(lin(s.furLight)); sp[REG.dark].copy(lin(s.furDark)); sp[REG.brow].copy(lin(s.brow));
+  sp[REG.yarn].copy(lin(s.yarn)); sp[REG.yarnFuzz].copy(lin(mixS(s.yarn, s.yarnLight, 0.7)));
+  sp[REG.fly].copy(lin(mixS(s.fur, s.furLight, 0.55))); sp[REG.tuft].copy(lin(s.fur));
+  bgMat.uniforms.uBg.value.copy(lin(s.bg)); bgMat.uniforms.uBgFloor.value.copy(lin(mixS(s.bg, [0, 0, 0], 0.08)));
+  // bounce light takes the backdrop tint
+  SH.uGroundCol.value.copy(lin(mixS(s.bg, [0, 0, 0], 0.4))).multiplyScalar(0.55);
+  SH.uSkyCol.value.copy(lin(mixS(s.bg, [1, 1, 1], 0.55))).multiplyScalar(0.5);
+  for (const e of eyes) {
+    e.eyeMat.uniforms.uIris.value.copy(lin(hex3('#6CB4F4')));
+    e.eyeMat.uniforms.uIrisDark.value.copy(lin(hex3('#12386E')));
+    e.eyeMat.uniforms.uSclera.value.copy(lin(hex3('#F2EEE8')));
+  }
+  renderer.setClearColor(lin(s.bg));
+  document.querySelectorAll('.sw').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
+}
+
+// ------------------------------------------------------------------ views
+const VIEWS = {
+  front:        { pos: [0, 1.95, 10.6], tgt: [0, 1.72, 0], fov: 28 },
+  threequarter: { pos: [5.9, 2.45, 8.9], tgt: [0.05, 1.75, 0], fov: 28 },
+  close:        { pos: [0.5, 2.5, 5.0], tgt: [0, 2.12, 0.5], fov: 28 },
+  avatar:       { pos: [0, 2.35, 7.4], tgt: [0, 2.0, 0], fov: 28 },
+  eyes:         { pos: [-0.62, 2.42, 2.35], tgt: [-0.36, 2.3, 0.82], fov: 22 },
+  furedge:      { pos: [1.5, 3.05, 2.6], tgt: [1.02, 2.9, 0.05], fov: 20 },
+  knit:         { pos: [1.6, 1.25, 3.5], tgt: [0.3, 0.9, 0.4], fov: 26 },
+};
+let currentView = 'front';
+function setView(name) {
+  const v = VIEWS[name]; if (!v) return;
+  currentView = name;
+  camera.position.set(...v.pos); camera.fov = v.fov; camera.lookAt(...v.tgt); camera.updateProjectionMatrix();
+  document.querySelectorAll('#views .btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === name)));
+}
+
+// ------------------------------------------------------------------ LOD
+let lodMode = Q.get('lod') || 'auto', lodTier = 'hero';
+function applyLOD(frac, name) {
+  lodTier = name;
+  for (const g of [shortGeo, longGeo]) g.instanceCount = Math.max(1, Math.floor(g.userData.total * frac));
+  // fewer strands -> thicker ones, so coverage (count x width) holds
+  strandUniforms.uWidthScale.value = Math.pow(1 / frac, 0.55);
+  longMesh.visible = !Q.has('nostrands') && frac > 0.05;
+}
+function autoLOD(heightPx) {
+  if (lodMode !== 'auto') { const t = KNOBS.tiers.find((x) => x.name === lodMode) || KNOBS.tiers[0]; applyLOD(t.frac, t.name); return; }
+  const t = KNOBS.tiers.find((x) => heightPx >= x.minPx) || KNOBS.tiers[KNOBS.tiers.length - 1];
+  applyLOD(t.frac, t.name);
+}
+
+// ------------------------------------------------------------------ animation
+let frozen = Q.has('t') ? qnum('t', 0) : null;
+let blinkAt = 2.2, blinkSeed = rngOf(99);
+const gaze = { yaw: 0, pitch: -0.03 };
+function blinkCurve(t) { // 0 open -> 1 closed -> 0, ~170 ms, with a slower opening
+  if (t < 0 || t > 0.28) return 0;
+  return t < 0.08 ? sstep(0, 0.08, t) : 1 - sstep(0.1, 0.28, t);
+}
+function animate(time) {
+  const breath = sin(time * 2 * PI / 4.2);
+  bodyBone.scale.set(1 + 0.008 * breath, 1 + 0.014 * breath, 1 + 0.008 * breath);
+  headPivot.position.y = 1.3 + 0.012 * breath;
+  headPivot.rotation.set(0.02 * sin(time * 0.7) - 0.03, 0.05 * sin(time * 0.43), 0.02 * sin(time * 0.31));
+  // blink every 3-5.5 s
+  let bl = 0;
+  if (Q.has('blink')) bl = qnum('blink', 0);
+  else { let tb = time % 4.6; bl = blinkCurve(tb - 2.2); }
+  const lidRot = bl * (LID.blinkMax);
+  for (const e of eyes) {
+    e.upper.rotation.x = lidRot;
+    e.lower.rotation.x = -bl * 0.12;
+    const gy = gaze.yaw + 0.06 * sin(time * 0.53) , gp = gaze.pitch + 0.03 * sin(time * 0.37);
+    e.eyeball.rotation.set(-gp, gy + e.side * 0.13, 0, 'YXZ');
+  }
+}
+
+// ------------------------------------------------------------------ UI
+const sw = document.getElementById('swatches');
+for (const id of Object.keys(PAL)) {
+  const b = document.createElement('button'); b.className = 'sw'; b.dataset.id = id; b.title = id; b.setAttribute('aria-label', id);
+  b.style.background = `linear-gradient(135deg, ${PAL[id][1]}, ${PAL[id][2]})`; b.onclick = () => setColor(id); sw.append(b);
+}
+const vw = document.getElementById('views');
+for (const id of Object.keys(VIEWS)) { const b = document.createElement('button'); b.className = 'btn'; b.dataset.id = id; b.textContent = id; b.onclick = () => setView(id); vw.append(b); }
+const ld = document.getElementById('lods');
+for (const id of ['auto', ...KNOBS.tiers.map((t) => t.name)]) { const b = document.createElement('button'); b.className = 'btn'; b.dataset.id = id; b.textContent = id; b.onclick = () => { lodMode = id; ld.querySelectorAll('.btn').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.id === id))); }; ld.append(b); }
+ld.querySelector('[data-id="auto"]').setAttribute('aria-pressed', 'true');
+
+// orbit (drag)
+let drag = null, orbit = { yaw: 0, pitch: 0 };
+canvas.addEventListener('pointerdown', (e) => { drag = [e.clientX, e.clientY]; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointermove', (e) => { if (!drag) return; orbit.yaw -= (e.clientX - drag[0]) * 0.006; orbit.pitch = clamp(orbit.pitch + (e.clientY - drag[1]) * 0.004, -0.4, 0.6); drag = [e.clientX, e.clientY]; });
+canvas.addEventListener('pointerup', () => { drag = null; });
+
+// ------------------------------------------------------------------ frame
+const hud = document.getElementById('hud');
+const tmpV = new THREE.Vector3(), tmpM = new THREE.Matrix4();
+let last = performance.now(), fpsAcc = 0, fpsN = 0, fps = 0;
+function resize() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+
+function frame(now) {
+  const time = frozen !== null ? frozen : now / 1000;
+  animate(time);
+  // camera orbit around the view target
+  const v = VIEWS[currentView];
+  const tg = new THREE.Vector3(...v.tgt), p0 = new THREE.Vector3(...v.pos).sub(tg);
+  p0.applyAxisAngle(new THREE.Vector3(0, 1, 0), orbit.yaw);
+  camera.position.copy(tg).add(p0); camera.position.y += orbit.pitch * p0.length() * 0.5; camera.lookAt(tg);
+  scene.updateMatrixWorld(true);
+  SH.uCamPos.value.copy(camera.position);
+  // bones
+  const bones = BONES();
+  for (let i = 0; i < 6; i++) strandUniforms.uBones.value[i].copy(bones[i].matrixWorld);
+  // eyes: camera in eye-local space, lid inverse matrices
+  for (const e of eyes) {
+    tmpM.copy(e.eyeball.matrixWorld).invert();
+    e.eyeMat.uniforms.uCamLocal.value.copy(camera.position).applyMatrix4(tmpM).divideScalar(SHAPE.eyeR);
+    e.eyeMat.uniforms.uLidInv.value.copy(e.upper.matrixWorld).invert();
+    e.eyeMat.uniforms.uLowInv.value.copy(e.lower.matrixWorld).invert();
+  }
+  // LOD from projected height
+  const dist = camera.position.distanceTo(new THREE.Vector3(0, 1.75, 0));
+  const hPx = (3.5 / (2 * dist * Math.tan((camera.fov * PI) / 360))) * renderer.domElement.height;
+  autoLOD(hPx);
+  strandUniforms.uViewH.value = renderer.domElement.height;
+  // shadow pass
+  const kd = SH.uKeyDir.value;
+  shadowCam.position.set(kd.x * 9, 1.75 + kd.y * 9, kd.z * 9); shadowCam.lookAt(0, 1.75, 0); shadowCam.updateMatrixWorld(true);
+  SH.uShadowMat.value.multiplyMatrices(shadowCam.projectionMatrix, shadowCam.matrixWorldInverse);
+  scene.overrideMaterial = depthMat;
+  renderer.setRenderTarget(shadowRT); renderer.clear(); renderer.render(scene, shadowCam);
+  scene.overrideMaterial = null; renderer.setRenderTarget(null);
+  renderer.render(scene, camera);
+  // hud
+  const dt = now - last; last = now; fpsAcc += dt; fpsN++;
+  if (fpsAcc > 500) { fps = (1000 * fpsN) / fpsAcc; fpsAcc = 0; fpsN = 0; }
+  const info = renderer.info.render;
+  hud.textContent = `strands ${(shortGeo.instanceCount + (longMesh.visible ? longGeo.instanceCount : 0)).toLocaleString()} / ${(shortGeo.userData.total + longGeo.userData.total).toLocaleString()}  lod ${lodTier} (${Math.round(hPx)}px)\n` +
+    `tris ${info.triangles.toLocaleString()}  calls ${info.calls}  ${fps.toFixed(1)} fps  pr ${renderer.getPixelRatio()}\n` +
+    `build ${Object.entries(timings).map(([k, v]) => k + ' ' + v).join(', ')} ms`;
+  frameCount++;
+  if (frozen !== null && frameCount >= maxFrames) { window.__done = true; looping = false; return; }
+  requestAnimationFrame(frame);
+}
+let frameCount = 0, looping = true;
+const maxFrames = qnum('frames', 2);
+window.redraw = () => { frameCount = 0; if (!looping) { looping = true; requestAnimationFrame(frame); } };
+
+// ------------------------------------------------------------------ api
+window.setColor = setColor;
+window.setView = (n) => { orbit = { yaw: 0, pitch: 0 }; setView(n); if (frozen !== null) window.redraw(); };
+window.freeze = (t) => { frozen = t === undefined || t === null ? null : t; window.redraw(); };
+window.setLOD = (n) => { lodMode = n; };
+window.KNOBS = KNOBS;
+setColor(Q.get('color') || 'blue');
+setView(Q.get('angle') || Q.get('view') || 'front');
+resize();
+timings.total = Math.round(performance.now() - t0);
+requestAnimationFrame(frame);
+document.title = 'Felt Strands Lookdev';
+window.__ready = true;
+</script>
+</body>
+</html>
