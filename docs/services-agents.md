@@ -437,8 +437,10 @@ the background while the call goes on, and says how it is going when asked.
   use, and rewrites it whenever `VOICE_AGENT_CONFIG_VERSION` in
   `server/simeon/desktop/voice.py` changes (the version is a tag on the agent; the id is
   remembered per process). Its configuration: authentication required, the four overrides
-  above and no others, `gemini-2.5-flash` as the voice's model, `eleven_flash_v2_5` for
-  speech, `end_call` and `skip_turn`, a 7 s turn timeout, the call ended after 25 s of
+  above and no others, `gemini-2.5-flash` as the voice's model, `eleven_flash_v2` for
+  speech (an English agent is refused on any other), a voice the workspace has (Eric, else
+  the first curated voice `/v2/voices` lists, else the first it lists: a missing voice is
+  refused with `voice_not_found`), `end_call` and `skip_turn`, a 7 s turn timeout, the call ended after 25 s of
   silence, 30 minutes at most, and no voice recording kept.
 - Two client tools, answered by the app: `hand_to_agent {task}` (the app answers "accepted"
   at once and the agent works in the background; 20 s timeout, the voice always speaks first)
@@ -456,7 +458,7 @@ the background while the call goes on, and says how it is going when asked.
     writes shortly after the call ends. A conversation of another ElevenLabs agent, or one
     already billed to someone else, is answered 404.
   - `GET /desktop/api/proxy/v1/voice/voices`: the picker's list, ten curated conversational
-    voices from ElevenLabs' default library in a fixed order (one no longer offered is
+    voices from ElevenLabs' default voices (every workspace has them) in a fixed order (one no longer offered is
     skipped), `[{id, name, description, labels, preview_url}]`, cached for an hour.
 - Price: `VOICE_CALL_MODEL` in `server/simeon/desktop/pricing.py`, by the second, at $0.08 a
   minute times a 1.25 margin (`VOICE_CALL_MARGIN`): about 33,000 credits a minute. Usage rows
@@ -499,7 +501,8 @@ the background while the call goes on, and says how it is going when asked.
   `appendSendMessage`), so the agent remembers the call. A banner closed mid-call still ends
   and bills the call.
 - **The voice.** Each agent's `voiceId` is in its profile (`host/agents/agent-profile.ts`;
-  a profile without one reads as empty, which means Alexandra, the server's default). The
+  a profile without one reads as empty: the call then sends no voice and speaks in the
+  platform agent's, which the server picked from the workspace's voices). The
   picker under "Character color" (Edit agent avatar › Agent) lists `voice/voices`, plays a
   sample (downloaded once to `voice-previews/` in the app's folder and played through
   `sand-media:`), and saves through the host's `updateAgent`. The Mac also keeps each choice
