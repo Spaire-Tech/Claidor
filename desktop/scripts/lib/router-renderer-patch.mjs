@@ -233,9 +233,10 @@ export function patchOriginalChatLayout(source) {
  *      the name pill, in the pill's own white glass. It tells main which
  *      agent is open (for Agent › Call <name>) and draws nothing when calls
  *      are switched off on this Mac (`SIMEON_VOICE_CALLS=0`).
- *   2. A voice picker under "Character color" in the agent's character
- *      settings (`e3n`): play a sample, name and description, a round radio,
- *      the chat's blue on the chosen voice. Choosing saves the agent's
+ *   2. A voice dropdown under "Character color" in the agent's character
+ *      settings (`e3n`): each option is the voice's name and description, and
+ *      a round play button beside it plays the chosen voice (first a list
+ *      with radios; the founder asked for a dropdown). Choosing saves the agent's
  *      `voiceId` through main (the host's updateAgent), and the next call
  *      speaks in it. The column's memo slot (e[21..23]) is replaced the same
  *      way.
@@ -261,8 +262,9 @@ export const VOICE_CALL_COMPONENTS_SOURCE = [
   "const pick=o=>{const b=c;sc({voiceId:o.id,isDefault:!1}),sx(null),Promise.resolve(d.setAgentVoice(n.agentId,o.id)).then(k=>sc(k),()=>{sc(b),sx(\"Couldn’t save the voice.\")})};",
   "const play=o=>{if(g===o.id){au.current?.pause();au.current=null;sg(null);return}au.current?.pause();sg(o.id);Promise.resolve(d.previewUrl(o.id)).then(u=>{if(u==null){sg(null);return}const m=new Audio(u);au.current=m;m.onended=()=>{au.current===m&&sg(null)};return m.play()}).catch(()=>sg(null))};",
   "const line=o=>{const t=(o.description??\"\").trim();if(t.length>0)return t;const l=o.labels??{},j=[l.accent,l.age,l.gender,l.use_case??l[\"use case\"]].filter(q=>typeof q==\"string\"&&q.length>0).join(\" · \");return j.charAt(0).toUpperCase()+j.slice(1)};",
-  "return p.jsxs(\"div\",{\"aria-label\":\"Voice\",className:\"simeon-voice-picker\",children:[p.jsx(\"div\",{className:\"simeon-voice-picker__title\",children:\"Voice\"}),x==null?null:p.jsx(\"div\",{className:\"simeon-voice-picker__note\",role:\"status\",children:x}),v==null||v.length===0?null:p.jsx(\"div\",{className:\"simeon-voice-picker__list\",role:\"radiogroup\",\"aria-label\":\"Voice\",children:v.map(o=>{const on=c?.voiceId===o.id,pl=g===o.id;",
-  `return p.jsxs("div",{className:"simeon-voice-row","data-selected":on?"true":void 0,children:[p.jsx("button",{"aria-label":pl?\`Stop \${o.name}\`:\`Play \${o.name}\`,className:"simeon-voice-row__play",disabled:o.hasPreview!==!0,onClick:()=>play(o),type:"button",children:p.jsx("svg",{"aria-hidden":!0,viewBox:"0 0 24 24",children:p.jsx("path",{fill:"currentColor",d:pl?"M7 5h4v14H7zM13 5h4v14h-4z":"M8 5.2v13.6L19 12z"})})}),p.jsxs("button",{"aria-checked":on,className:"simeon-voice-row__main",onClick:()=>pick(o),role:"radio",type:"button",children:[p.jsxs("span",{className:"simeon-voice-row__text",children:[p.jsx("span",{className:"simeon-voice-row__name",children:o.name}),line(o).length>0?p.jsx("span",{className:"simeon-voice-row__desc",children:line(o)}):null]}),p.jsx("span",{"aria-hidden":!0,className:"simeon-voice-row__radio"})]})]},o.id)})})]})}`,
+  // A dropdown (the founder: "have voice be a drop down"), with a play button for the chosen voice beside it.
+  "const cur=c?.voiceId??v?.[0]?.id??\"\",sel=v?.find(o=>o.id===cur)??null,pl=sel!=null&&g===sel.id;",
+  `return p.jsxs("div",{"aria-label":"Voice",className:"simeon-voice-picker",children:[p.jsx("label",{className:"simeon-voice-picker__title",htmlFor:\`simeon-voice-\${n.agentId}\`,children:"Voice"}),x==null?null:p.jsx("div",{className:"simeon-voice-picker__note",role:"status",children:x}),v==null||v.length===0?null:p.jsxs("div",{className:"simeon-voice-picker__row",children:[p.jsx("select",{className:"simeon-voice-picker__select",id:\`simeon-voice-\${n.agentId}\`,value:cur,onChange:e=>{const o=v.find(q=>q.id===e.target.value);o!=null&&pick(o)},children:v.map(o=>{const t=line(o);return p.jsx("option",{value:o.id,children:t.length>0?\`\${o.name} \u2014 \${t}\`:o.name},o.id)})}),p.jsx("button",{"aria-label":sel==null?"Play":pl?\`Stop \${sel.name}\`:\`Play \${sel.name}\`,className:"simeon-voice-picker__play",disabled:sel==null||sel.hasPreview!==!0,onClick:()=>sel!=null&&play(sel),type:"button",children:p.jsx("svg",{"aria-hidden":!0,viewBox:"0 0 24 24",children:p.jsx("path",{fill:"currentColor",d:pl?"M7 5h4v14H7zM13 5h4v14h-4z":"M8 5.2v13.6L19 12z"})})})]})]})}`,
 ].join("");
 const VOICE_COMPONENTS_ANCHOR = "function e3n(n){";
 const VOICE_PICKER_BEFORE = 'let A;return e[21]!==E||e[22]!==v?(A=p.jsxs("div",{className:f,children:[v,E]}),e[21]=E,e[22]=v,e[23]=A):A=e[23],A}';
@@ -300,20 +302,12 @@ export const voiceCallCss = () => `${VOICE_CALL_MARKER} (30 September 2026). */
 .simeon-voice-picker{display:flex;flex-direction:column;gap:6px;width:100%;margin-top:6px}
 .simeon-voice-picker__title{font-size:12px;line-height:16px;font-weight:600;color:var(--sand-text-secondary);padding:0 2px}
 .simeon-voice-picker__note{font-size:12px;line-height:16px;color:var(--sand-text-secondary);padding:0 2px}
-.simeon-voice-picker__list{display:flex;flex-direction:column;max-height:228px;overflow-y:auto;border-radius:12px;background:light-dark(#fff,rgba(255,255,255,.06));box-shadow:0 0 0 .5px light-dark(rgba(20,30,60,.10),rgba(255,255,255,.10))}
-.simeon-voice-row{display:grid;grid-template-columns:28px minmax(0,1fr);align-items:center;gap:10px;padding:6px 12px}
-.simeon-voice-row+.simeon-voice-row{box-shadow:inset 0 .5px 0 light-dark(rgba(20,30,60,.08),rgba(255,255,255,.08))}
-.simeon-voice-row__play{width:28px;height:28px;padding:0;border:0;border-radius:999px;display:grid;place-items:center;cursor:pointer;color:var(--sand-text-primary);background:light-dark(rgba(120,120,128,.12),rgba(120,120,128,.24))}
-.simeon-voice-row__play:disabled{opacity:.4;cursor:default}
-.simeon-voice-row__play>svg{width:12px;height:12px}
-.simeon-voice-row__main{display:grid;grid-template-columns:minmax(0,1fr) 18px;align-items:center;gap:10px;min-width:0;padding:2px 0;border:0;background:transparent;text-align:left;cursor:pointer;color:inherit;font:inherit}
-.simeon-voice-row__text{display:flex;flex-direction:column;min-width:0}
-.simeon-voice-row__name{font-size:13px;line-height:18px;font-weight:500;color:var(--sand-text-primary)}
-.simeon-voice-row__desc{font-size:12px;line-height:16px;color:var(--sand-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.simeon-voice-row__radio{box-sizing:border-box;width:18px;height:18px;border-radius:999px;border:1.5px solid light-dark(rgba(20,20,20,.3),rgba(255,255,255,.4))}
-.simeon-voice-row__main:is(:hover,:focus-visible) .simeon-voice-row__radio{border-color:light-dark(${USER_BUBBLE_LIGHT},#5b9be0)}
-.simeon-voice-row__main[aria-checked="true"] .simeon-voice-row__radio{border-color:light-dark(${USER_BUBBLE_LIGHT},#5b9be0);background:radial-gradient(circle,light-dark(${USER_BUBBLE_LIGHT},#5b9be0) 0 4px,transparent 4.5px)}
-.simeon-voice-row__main:focus-visible{outline:none}
+.simeon-voice-picker__row{display:grid;grid-template-columns:minmax(0,1fr) 30px;align-items:center;gap:8px}
+.simeon-voice-picker__select{appearance:none;-webkit-appearance:none;min-width:0;height:30px;padding:0 30px 0 11px;border:0;border-radius:8px;font:inherit;font-size:13px;color:var(--sand-text-primary);background-color:light-dark(#fff,rgba(255,255,255,.08));background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 16'%3E%3Cpath d='M2 6l3-3 3 3M2 10l3 3 3-3' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:8px 13px;box-shadow:0 0 0 .5px light-dark(rgba(20,30,60,.14),rgba(255,255,255,.12)),0 1px 1px light-dark(rgba(20,30,60,.05),transparent);text-overflow:ellipsis;cursor:pointer}
+.simeon-voice-picker__select:focus-visible{outline:2px solid light-dark(${USER_BUBBLE_LIGHT},#5b9be0);outline-offset:1px}
+.simeon-voice-picker__play{width:30px;height:30px;padding:0;border:0;border-radius:999px;display:grid;place-items:center;cursor:pointer;color:var(--sand-text-primary);background:light-dark(rgba(120,120,128,.12),rgba(120,120,128,.24))}
+.simeon-voice-picker__play:disabled{opacity:.4;cursor:default}
+.simeon-voice-picker__play>svg{width:12px;height:12px}
 `;
 
 export function patchOriginalVoiceCallStylesheet(css) {
