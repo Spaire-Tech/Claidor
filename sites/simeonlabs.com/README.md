@@ -53,6 +53,15 @@ glass tile, Iris, Otto and Nova talking, Otto's computer asking you to sign
 in, Iris asking before she sends an email. Pricing is Standard $20, Pro $60
 and Max $100 a month, 20% less yearly, 7-day trial on each.
 
+**The felt clouds.** Once the page has loaded and the browser is idle, `clouds.js` puts about six of the
+approved 3D felt clouds (three on a phone) in open space around the page: beside the hero's headline and in
+the margins and gaps of the sections, never over text, controls, pictures or the app's window. Each load
+picks new places, sizes and palettes (the app's 12), and each cloud plays its own mix of the app's states,
+looks at the pointer, blinks and hops when clicked. One WebGL renderer draws them all (three.js 0.170.0
+from jsDelivr, named by the import map in the head); only clouds on screen are drawn, at most 30 times a
+second, and with Reduce Motion each is a still. `build.py` writes `clouds.js` from `source/clouds/`
+(see its `pre.js`); `?clouds=debug` exposes `window.__clouds.report()`.
+
 **`public/app/` is the app's window: the upstream 0.18.0 renderer with Simeon's patches (see `desktop/NOTICE.md`).** The
 founder chose on 28 September 2026 to publish it with the site, knowing the
 repository otherwise keeps that code out of git (`desktop/.gitignore`,

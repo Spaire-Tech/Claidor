@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Simeon</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 <script>if (matchMedia('(min-width:1024px) and (min-height:620px) and (prefers-reduced-motion: no-preference)').matches) document.documentElement.classList.add('sd-scrolly', ...(CSS.supports('animation-timeline: scroll()') ? ['sd-sda'] : []))</script>
 <link rel="preload" as="image" href="app-poster-held.jpg" media="(min-width:1024px) and (min-height:620px) and (prefers-reduced-motion: no-preference)" fetchpriority="high">
 <link rel="preload" as="image" href="app-poster-wide.jpg" media="(min-width:810px) and (max-width:1023.98px), (min-width:1024px) and (max-height:619.98px)" fetchpriority="high">
@@ -710,6 +711,12 @@ window.sdWhenSeen = (el, start, stop) => {
     head.addEventListener('click', toggle);
     head.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
   }
+})();
+</script><script>
+(() => {
+  const go = () => import('./clouds.js').catch((e) => console.warn('clouds:', e));
+  const idle = () => (window.requestIdleCallback ? requestIdleCallback(go, { timeout: 3000 }) : setTimeout(go, 1200));
+  if (document.readyState === 'complete') idle(); else addEventListener('load', idle, { once: true });
 })();
 </script>
 </body>
