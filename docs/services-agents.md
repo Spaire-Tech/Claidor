@@ -462,6 +462,83 @@ the background while the call goes on, and says how it is going when asked.
   minute times a 1.25 margin (`VOICE_CALL_MARGIN`): about 33,000 credits a minute. Usage rows
   carry provider `elevenlabs`.
 
+**On the Mac.** (`electron-main/voice/`, `shared/voice-call/`, `voice-call/`)
+
+- **Starting.** A phone button beside the agent's name in the chat header, and Agent › Call
+  <name> in the menu bar for the agent open in the window. Both reach main's
+  `startVoiceCall` (`window.desktop.voiceCall.start`). One call at a time: a second start
+  brings the banner forward. The button and the picker are patched into the pinned window by
+  `scripts/lib/router-renderer-patch.mjs` (`VOICE_CALL_REPLACEMENTS`, `voiceCallCss`).
+- **The banner.** A window of its own (`voice-call-window.ts`): borderless, transparent,
+  always on top, on every Space, shown without taking focus, top right of the display under
+  the pointer, 330 pt wide, growing and shrinking with the call. It runs its own page
+  (`dist/voice-call/index.html`, `banner.css`, `banner.js` with the SDK bundled in) and
+  preload (`dist/electron-preload/preload-voice-call.cjs`), because the main window's
+  Content-Security-Policy refuses ElevenLabs. The page's own policy allows only ElevenLabs'
+  API and LiveKit hosts, microphone and playback streams, and blob: for the SDK's audio
+  worklets. The glass is CSS (the page cannot blur the desktop behind it, so the fill is
+  denser than the mock-up's; see the top of `banner.css`).
+- **A call.** Two soft rings (WebAudio) while main asks `voice/calls` for the token and reads
+  the agent's profile and last 20 chat messages; then `Conversation.startSession` over WebRTC
+  with the per-call prompt, greeting (`voice-call-prompt.ts`, every sentence in one module),
+  language `en` and the agent's voice. The waveform follows the SDK's frequency data; Mute and
+  End are the SDK's. If the token or the connection fails, the banner says "Couldn't connect"
+  ("Calls aren't switched on yet" on a 503, "Out of credit for calls" on a 402) with Close.
+- **Handing work over.** `hand_to_agent` sends the task into the agent's chat as a typed
+  message (the host's `sendPrompt`, through the coordinator's main-process leg) and answers
+  "Accepted" at once. Main then reads the roster every 1.5 s: while the agent runs, the
+  banner's status line shows its activity ("Using Gmail…", or the task: "Sending the agenda
+  to Dana…"); when its turn ends, its new messages are pushed into the call
+  (`sendContextualUpdate`, then a one-line `sendUserMessage` nudge, once the voice has
+  stopped speaking) so the voice tells the person. `check_on_agent` answers from the same
+  roster and chat (`shared/voice-call/handoff.ts`).
+- **After.** "Call ended · 2:48" with Call Again and Chat; the banner leaves by itself after
+  12 s unless the pointer is on it. Main posts `voice/calls/{id}/end` with the seconds, asks
+  twice more for the summary (after 5 s and 10 s) if it is not ready, and adds
+  "Voice call · 2:48" plus the summary to the agent's chat as the agent's message (the host's
+  `appendSendMessage`), so the agent remembers the call. A banner closed mid-call still ends
+  and bills the call.
+- **The voice.** Each agent's `voiceId` is in its profile (`host/agents/agent-profile.ts`;
+  a profile without one reads as empty, which means Alexandra, the server's default). The
+  picker under "Character color" (Edit agent avatar › Agent) lists `voice/voices`, plays a
+  sample (downloaded once to `voice-previews/` in the app's folder and played through
+  `sand-media:`), and saves through the host's `updateAgent`. The Mac also keeps each choice
+  in `voice-calls.json`, used while the box's host is older than `voiceId`.
+- **App switch.** `SIMEON_VOICE_CALLS=0` (or `off`) in the app's environment hides the button,
+  the picker and the menu item. Otherwise calls are on, and the server decides: without its
+  key the banner says calls aren't switched on.
+- **Log.** `voice-call.log` in `~/Library/Application Support/Simeon`, also on stderr as
+  `[simeon] voice-call …`: `call started`, `connect: token issued … (voice …)`, `connect: the
+  server refused the call: …`, `connected: conversation …`, `hand-off: …`, `banner: sdk error:
+  …`, `call ended: conversation …, 168s, billed …s, summary yes|no`, `call record not added
+  to the chat: …`.
+- **Needs a new host bundle.** The voice is saved in the profile by the host in the box;
+  until `npm run publish:host-bundle` has shipped this commit, the choice lives only on the
+  Mac (above). Everything else uses host methods that already exist.
+
+**Try this on the Mac** (after `npm run package`, with `SIMEON_ELEVENLABS_API_KEY` set on
+the API):
+
+1. Open an agent. A round phone button sits right of its name pill. Agent › Call <name> in
+   the menu bar names the same agent.
+2. Press it. The banner appears top right without taking focus from the window, rings twice
+   (soft), and macOS asks for the microphone the first time. The agent greets you by its name.
+3. Talk; the waveform moves with your voice and with the agent's. Mute turns orange and says
+   Unmute; the waveform goes flat while you are muted.
+4. Ask for something that needs doing ("send the agenda to Dana"). The voice says it is on it;
+   the task appears in the agent's chat as your message; the banner's line shows the work.
+   When the agent answers in the chat, the voice tells you, in its own words.
+5. Ask "how's it going?" while it works: it answers from the agent's activity.
+6. Say "thanks, that's all": the voice says goodbye and hangs up. The banner reads "Call ended
+   · m:ss"; a few seconds later the chat shows "Voice call · m:ss" and a summary.
+7. Chat opens the agent's chat; Call Again rings again. Press the phone button during a call:
+   the banner comes forward, no second call starts.
+8. Edit agent avatar › Agent: under the colours, the Voice list. Play a sample, choose one,
+   call again: the agent speaks in it. Relaunch the app: the choice is kept.
+9. Light and dark: switch the system appearance; the banner follows.
+10. With the server's key removed, a call says "Calls aren't switched on yet" with Close.
+11. `~/Library/Application Support/Simeon/voice-call.log` has a line for each step above.
+
 * **Settings on Render.** `SIMEON_ELEVENLABS_API_KEY` on the API service (declared in
   `render.yaml`). Optional: `SIMEON_ELEVENLABS_BASE_URL` (default
   `https://api.elevenlabs.io`) and `SIMEON_ELEVENLABS_AGENT_ID`, which names an agent managed
@@ -483,4 +560,6 @@ the background while the call goes on, and says how it is going when asked.
 * **Not yet verified.** Nothing has reached ElevenLabs: the tests replace it with a fake, and
   the agent and tool configuration shapes (`pre_tool_speech`, `built_in_tools`, `tags`) are
   written from the brief, not checked against the live API. No call has been placed from a
-  Mac.
+  Mac: the banner was rendered in headless Chromium with a fake call, and the phone button
+  and the picker in the patched window's demo, but the window, the microphone, WebRTC, the
+  worklets under the page's policy and the ring have not run in the packaged app.

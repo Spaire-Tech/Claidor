@@ -68,10 +68,11 @@ const infoPlist = path.join(outputApp, "Contents", "Info.plist");
 await run(SYSTEM_TOOLS.plutil, ["-remove", "ElectronAsarIntegrity", infoPlist]);
 await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleIdentifier", "-string", simeonBundleId, infoPlist]);
 await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleDisplayName", "-string", simeonName, infoPlist]);
-// macOS kills an app that touches the microphone without this key; dictation
-// is the one capture Simeon does (F-230, 25 September 2026). `-replace`
-// writes it whether or not the 0.18.0 shell carried one.
-await run(SYSTEM_TOOLS.plutil, ["-replace", "NSMicrophoneUsageDescription", "-string", "Simeon uses the microphone to take your dictation.", infoPlist]);
+// macOS kills an app that touches the microphone without this key. Simeon
+// captures for dictation (F-230, 25 September 2026) and, since 30 September
+// 2026, for voice calls with an agent. `-replace` writes it whether or not
+// the 0.18.0 shell carried one.
+await run(SYSTEM_TOOLS.plutil, ["-replace", "NSMicrophoneUsageDescription", "-string", "Simeon uses the microphone to take your dictation and for voice calls with your agents.", infoPlist]);
 // The bundle claims our own scheme and nothing inherited (`sand`, `grokbot`):
 // Simeon's sign-in returns to whatever scheme the app names, and `sand` is
 // The upstream app's, which macOS may hand the callback to instead.

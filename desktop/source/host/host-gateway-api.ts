@@ -96,7 +96,8 @@ export function createHostGatewayApi(
           : { avatarShape: args.avatarShape }),
         ...(args.avatarColor === undefined
           ? {}
-          : { avatarColor: args.avatarColor })
+          : { avatarColor: args.avatarColor }),
+        ...(typeof args.voiceId === "string" ? { voiceId: args.voiceId } : {})
       },
       args.origin,
       {

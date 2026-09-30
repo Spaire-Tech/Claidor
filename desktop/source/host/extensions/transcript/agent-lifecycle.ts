@@ -524,6 +524,9 @@ export class AgentLifecycle {
       name: profile.name.trim(),
       description: profile.description.trim(),
       ...(profile.title === undefined ? {} : { title: profile.title.trim() }),
+      ...(typeof profile.voiceId === "string"
+        ? { voiceId: profile.voiceId.trim() }
+        : {}),
     };
     const stamp = this.tm.roster.reserveSnapshotStamp();
     const active = this.tm.sessions.activeSession;

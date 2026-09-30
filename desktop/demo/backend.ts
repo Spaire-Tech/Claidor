@@ -192,6 +192,10 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
     getHostPinnedAgents: () => [],
     getHostSidebarSections: () => [],
     getAgentDefaultModel: () => null,
+    // Voice calls need the Mac, a microphone and the server's voice key: the
+    // demo says they are off, so the window draws no phone button or picker.
+    getVoiceCallAvailability: () => ({ enabled: false, inCall: false }),
+    noteVoiceCallAgent: () => undefined,
     getCursorAvatar: () => null,
     resolveAttachmentMedia: () => null,
     getLinkMetadata: () => null,

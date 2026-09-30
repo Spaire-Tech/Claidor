@@ -62,6 +62,8 @@ export async function simeonErrorFromResponse(response: Response): Promise<Simeo
 }
 
 export interface SimeonProxyRequest {
+  /** POST unless named; a GET carries no body (the voice list, 30 September 2026). */
+  readonly method?: "GET" | "POST";
   readonly json?: unknown;
   readonly form?: FormData;
   readonly signal?: AbortSignal;
@@ -83,7 +85,7 @@ export async function simeonProxyRequest(auth: SimeonApiAuth, path: string, requ
   }
   const doFetch = request.fetch ?? fetch;
   const response = await doFetch(simeonProxyUrl(path, auth.backendUrl), {
-    method: "POST",
+    method: request.method ?? "POST",
     headers,
     ...(body === undefined ? {} : { body }),
     ...(request.signal === undefined ? {} : { signal: request.signal }),

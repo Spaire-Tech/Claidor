@@ -159,6 +159,18 @@ export function createDesktopPreloadBridge(options: {
     onWidgetGallery: (listener: (payload: unknown) => void) => subscribeIpc(ipc, "sand:dev-widget-gallery", listener),
     onForceOnboarding: (listener: () => void) => subscribe("force-onboarding", () => listener()),
     transcribeAudio: (audio: Uint8Array, mimeType: string, language?: string) => edge("transcribeAudio", { audio, mimeType, language }),
+    // Voice calls (30 September 2026): the chat header's phone button and the
+    // voice picker in the agent's character settings, patched into the
+    // pinned window by scripts/lib/router-renderer-patch.mjs.
+    voiceCall: {
+      getAvailability: () => edge("getVoiceCallAvailability"),
+      start: (agentId: string, agentName?: string) => edge("startVoiceCall", { agentId, agentName }),
+      noteAgent: (agentId: string | null, agentName?: string) => edge("noteVoiceCallAgent", { agentId, agentName }),
+      listVoices: () => edge("listVoiceCallVoices"),
+      getAgentVoice: (agentId: string) => edge("getAgentVoice", { agentId }),
+      setAgentVoice: (agentId: string, voiceId: string | null) => edge("setAgentVoice", { agentId, voiceId }),
+      previewUrl: (voiceId: string) => edge("getVoicePreviewUrl", { voiceId }),
+    },
     cursorAccount: {
       getStatus: () => edge("getCursorAuthStatus"),
       login: () => edge("loginCursor"),

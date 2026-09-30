@@ -219,6 +219,109 @@ export function patchOriginalChatLayout(source) {
 }
 
 /**
+ * Voice calls, 30 September 2026 (the founder approved the call banner's
+ * design the same day): two things in the window, both calling the
+ * `window.desktop.voiceCall` bridge the main preload adds
+ * (source/electron-preload/preload.ts).
+ *
+ *   1. A phone button beside the agent's name in the chat header. The
+ *      identity row (`aSn`) draws [identity button, shared badge]; the call
+ *      button goes between them, outside the identity button, which is
+ *      itself a button that opens the agent's settings. The row's memo slot
+ *      (e[97..101]) is replaced by a plain element so the button always
+ *      carries the open agent's id. The stylesheet places it just right of
+ *      the name pill, in the pill's own white glass. It tells main which
+ *      agent is open (for Agent › Call <name>) and draws nothing when calls
+ *      are switched off on this Mac (`SIMEON_VOICE_CALLS=0`).
+ *   2. A voice picker under "Character color" in the agent's character
+ *      settings (`e3n`): play a sample, name and description, a round radio,
+ *      the chat's blue on the chosen voice. Choosing saves the agent's
+ *      `voiceId` through main (the host's updateAgent), and the next call
+ *      speaks in it. The column's memo slot (e[21..23]) is replaced the same
+ *      way.
+ *
+ * The two components are defined once, at module scope, before `e3n`; they
+ * use the chunk's own React (`S`) and JSX runtime (`p`).
+ */
+const PHONE_ICON_PATH = "M7.2 3.5c.5 0 .9.3 1.1.7l1.4 3.3c.2.5.1 1-.3 1.3l-1.7 1.4a12 12 0 0 0 6.1 6.1l1.4-1.7c.3-.4.9-.5 1.3-.3l3.3 1.4c.5.2.7.6.7 1.1v2.7c0 .7-.5 1.2-1.2 1.2C10.6 20.7 3.3 13.4 3.3 4.7c0-.7.5-1.2 1.2-1.2h2.7z";
+export const VOICE_CALL_COMPONENTS_SOURCE = [
+  // The phone button.
+  "function __simeonCallButton(n){",
+  "const d=typeof window<\"u\"?window.desktop?.voiceCall:void 0,[a,s]=S.useState(null);",
+  "S.useEffect(()=>{if(d==null)return;let l=!0;Promise.resolve(d.getAvailability()).then(v=>{l&&s(v)},()=>{});return()=>{l=!1}},[d]);",
+  "S.useEffect(()=>{if(d==null||n.agentId==null)return;Promise.resolve(d.noteAgent(n.agentId,n.agentName)).catch(()=>{});return()=>{Promise.resolve(d.noteAgent(null)).catch(()=>{})}},[d,n.agentId,n.agentName]);",
+  "if(d==null||a?.enabled!==!0)return null;",
+  "const c=`Call ${n.agentName}`;",
+  `return p.jsx("button",{"aria-label":c,className:"simeon-call-button",onClick:e=>{e.stopPropagation(),Promise.resolve(d.start(n.agentId,n.agentName)).catch(()=>{})},title:c,type:"button",children:p.jsx("svg",{"aria-hidden":!0,viewBox:"0 0 24 24",children:p.jsx("path",{fill:"currentColor",d:"${PHONE_ICON_PATH}"})})})}`,
+  // The voice picker.
+  "function __simeonVoicePicker(n){",
+  "const d=typeof window<\"u\"?window.desktop?.voiceCall:void 0,[v,sv]=S.useState(null),[c,sc]=S.useState(null),[x,sx]=S.useState(null),[g,sg]=S.useState(null),au=S.useRef(null);",
+  "S.useEffect(()=>{if(d==null||n.agentId==null)return;let l=!0;sx(null);Promise.all([d.getAvailability(),d.listVoices(),d.getAgentVoice(n.agentId)]).then(([a,o,k])=>{if(!l)return;if(a?.enabled!==!0){sv([]);return}sv(Array.isArray(o)?o:[]),sc(k)},()=>{l&&sx(\"Voices aren’t available right now.\")});return()=>{l=!1;au.current?.pause();au.current=null;sg(null)}},[d,n.agentId]);",
+  "if(d==null||(v==null||v.length===0)&&x==null)return null;",
+  "const pick=o=>{const b=c;sc({voiceId:o.id,isDefault:!1}),sx(null),Promise.resolve(d.setAgentVoice(n.agentId,o.id)).then(k=>sc(k),()=>{sc(b),sx(\"Couldn’t save the voice.\")})};",
+  "const play=o=>{if(g===o.id){au.current?.pause();au.current=null;sg(null);return}au.current?.pause();sg(o.id);Promise.resolve(d.previewUrl(o.id)).then(u=>{if(u==null){sg(null);return}const m=new Audio(u);au.current=m;m.onended=()=>{au.current===m&&sg(null)};return m.play()}).catch(()=>sg(null))};",
+  "const line=o=>{const t=(o.description??\"\").trim();if(t.length>0)return t;const l=o.labels??{},j=[l.accent,l.age,l.gender,l.use_case??l[\"use case\"]].filter(q=>typeof q==\"string\"&&q.length>0).join(\" · \");return j.charAt(0).toUpperCase()+j.slice(1)};",
+  "return p.jsxs(\"div\",{\"aria-label\":\"Voice\",className:\"simeon-voice-picker\",children:[p.jsx(\"div\",{className:\"simeon-voice-picker__title\",children:\"Voice\"}),x==null?null:p.jsx(\"div\",{className:\"simeon-voice-picker__note\",role:\"status\",children:x}),v==null||v.length===0?null:p.jsx(\"div\",{className:\"simeon-voice-picker__list\",role:\"radiogroup\",\"aria-label\":\"Voice\",children:v.map(o=>{const on=c?.voiceId===o.id,pl=g===o.id;",
+  `return p.jsxs("div",{className:"simeon-voice-row","data-selected":on?"true":void 0,children:[p.jsx("button",{"aria-label":pl?\`Stop \${o.name}\`:\`Play \${o.name}\`,className:"simeon-voice-row__play",disabled:o.hasPreview!==!0,onClick:()=>play(o),type:"button",children:p.jsx("svg",{"aria-hidden":!0,viewBox:"0 0 24 24",children:p.jsx("path",{fill:"currentColor",d:pl?"M7 5h4v14H7zM13 5h4v14h-4z":"M8 5.2v13.6L19 12z"})})}),p.jsxs("button",{"aria-checked":on,className:"simeon-voice-row__main",onClick:()=>pick(o),role:"radio",type:"button",children:[p.jsxs("span",{className:"simeon-voice-row__text",children:[p.jsx("span",{className:"simeon-voice-row__name",children:o.name}),line(o).length>0?p.jsx("span",{className:"simeon-voice-row__desc",children:line(o)}):null]}),p.jsx("span",{"aria-hidden":!0,className:"simeon-voice-row__radio"})]})]},o.id)})})]})}`,
+].join("");
+const VOICE_COMPONENTS_ANCHOR = "function e3n(n){";
+const VOICE_PICKER_BEFORE = 'let A;return e[21]!==E||e[22]!==v?(A=p.jsxs("div",{className:f,children:[v,E]}),e[21]=E,e[22]=v,e[23]=A):A=e[23],A}';
+const VOICE_PICKER_AFTER = 'return p.jsxs("div",{className:f,children:[v,E,p.jsx(__simeonVoicePicker,{agentId:t.id},"simeon-voice")]})}';
+const CALL_BUTTON_BEFORE = 'let B;e[97]!==N||e[98]!==E||e[99]!==A||e[100]!==I?(B=p.jsxs("div",{className:N,style:E,children:[A,I]}),e[97]=N,e[98]=E,e[99]=A,e[100]=I,e[101]=B):B=e[101];';
+const CALL_BUTTON_AFTER = 'const B=p.jsxs("div",{className:N,style:E,children:[A,p.jsx(__simeonCallButton,{agentId:t.id,agentName:t.name},"simeon-call"),I]});';
+export const VOICE_CALL_REPLACEMENTS = Object.freeze([
+  ["voice-call-components", VOICE_COMPONENTS_ANCHOR, `${VOICE_CALL_COMPONENTS_SOURCE}${VOICE_COMPONENTS_ANCHOR}`],
+  ["voice-picker-under-character-color", VOICE_PICKER_BEFORE, VOICE_PICKER_AFTER],
+  ["call-button-beside-agent-name", CALL_BUTTON_BEFORE, CALL_BUTTON_AFTER],
+]);
+
+export function patchOriginalVoiceCall(source) {
+  let out = source;
+  for (const [label, before, after] of VOICE_CALL_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export const VOICE_CALL_MARKER = "/* Simeon: voice calls, the phone button and the voice picker";
+/**
+ * The phone button sits in the header card's identity row, right of the name
+ * pill: the identity button is 52 pt of avatar, a 4 pt gap, then the 24 pt
+ * pill (HEADER_CARD_CSS), so the button's top is 56 pt and it is 24 pt round,
+ * in the pill's white glass with the chat's blue glyph. The row is drawn
+ * as wide as the header, so it is shrunk to its content for the button's
+ * \`left:100%\` to land beside the pill. A function, as the
+ * blue is declared further down the file.
+ */
+export const voiceCallCss = () => `${VOICE_CALL_MARKER} (30 September 2026). */
+.sand-chat-header__identity-row:has(>.simeon-call-button){position:relative;flex:0 0 auto!important;width:max-content!important;max-width:100%}
+.simeon-call-button{position:absolute;left:100%;top:56px;margin-left:0;width:24px;height:24px;padding:0;display:grid;place-items:center;border-radius:999px;cursor:pointer;color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8);background:linear-gradient(180deg,light-dark(rgba(255,255,255,.92),rgba(255,255,255,.18)),light-dark(rgba(255,255,255,.72),rgba(255,255,255,.08)));-webkit-backdrop-filter:blur(20px) saturate(1.8);backdrop-filter:blur(20px) saturate(1.8);border:.5px solid light-dark(rgba(255,255,255,.9),rgba(255,255,255,.18));box-shadow:inset 0 1px 0 light-dark(#fff,rgba(255,255,255,.22)),0 0 0 .5px light-dark(rgba(20,20,40,.1),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(20,20,40,.14),rgba(0,0,0,.5))}
+.simeon-call-button:hover{color:light-dark(#1b4a7d,#a9ccf0)}
+.simeon-call-button:focus-visible{outline:2px solid light-dark(rgba(37,90,147,.45),rgba(140,184,232,.55));outline-offset:2px}
+.simeon-call-button>svg{width:13px;height:13px}
+.simeon-voice-picker{display:flex;flex-direction:column;gap:6px;width:100%;margin-top:6px}
+.simeon-voice-picker__title{font-size:12px;line-height:16px;font-weight:600;color:var(--sand-text-secondary);padding:0 2px}
+.simeon-voice-picker__note{font-size:12px;line-height:16px;color:var(--sand-text-secondary);padding:0 2px}
+.simeon-voice-picker__list{display:flex;flex-direction:column;max-height:228px;overflow-y:auto;border-radius:12px;background:light-dark(#fff,rgba(255,255,255,.06));box-shadow:0 0 0 .5px light-dark(rgba(20,30,60,.10),rgba(255,255,255,.10))}
+.simeon-voice-row{display:grid;grid-template-columns:28px minmax(0,1fr);align-items:center;gap:10px;padding:6px 12px}
+.simeon-voice-row+.simeon-voice-row{box-shadow:inset 0 .5px 0 light-dark(rgba(20,30,60,.08),rgba(255,255,255,.08))}
+.simeon-voice-row__play{width:28px;height:28px;padding:0;border:0;border-radius:999px;display:grid;place-items:center;cursor:pointer;color:var(--sand-text-primary);background:light-dark(rgba(120,120,128,.12),rgba(120,120,128,.24))}
+.simeon-voice-row__play:disabled{opacity:.4;cursor:default}
+.simeon-voice-row__play>svg{width:12px;height:12px}
+.simeon-voice-row__main{display:grid;grid-template-columns:minmax(0,1fr) 18px;align-items:center;gap:10px;min-width:0;padding:2px 0;border:0;background:transparent;text-align:left;cursor:pointer;color:inherit;font:inherit}
+.simeon-voice-row__text{display:flex;flex-direction:column;min-width:0}
+.simeon-voice-row__name{font-size:13px;line-height:18px;font-weight:500;color:var(--sand-text-primary)}
+.simeon-voice-row__desc{font-size:12px;line-height:16px;color:var(--sand-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.simeon-voice-row__radio{box-sizing:border-box;width:18px;height:18px;border-radius:999px;border:1.5px solid light-dark(rgba(20,20,20,.3),rgba(255,255,255,.4))}
+.simeon-voice-row__main:is(:hover,:focus-visible) .simeon-voice-row__radio{border-color:light-dark(${USER_BUBBLE_LIGHT},#5b9be0)}
+.simeon-voice-row__main[aria-checked="true"] .simeon-voice-row__radio{border-color:light-dark(${USER_BUBBLE_LIGHT},#5b9be0);background:radial-gradient(circle,light-dark(${USER_BUBBLE_LIGHT},#5b9be0) 0 4px,transparent 4.5px)}
+.simeon-voice-row__main:focus-visible{outline:none}
+`;
+
+export function patchOriginalVoiceCallStylesheet(css) {
+  if (css.includes(VOICE_CALL_MARKER)) throw new Error("Original renderer voice-call block is already present.");
+  return `${css}\n${voiceCallCss()}`;
+}
+
+/**
  * Onboarding copy, 27 September 2026 (the founder's words): the sign-in
  * tagline, the sentence typed into the composer on the "meet" screen, and
  * the three example teammates' names. Their ids (`invoice-chaser`,
@@ -858,8 +961,9 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!SHAPE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer shape anchors are not all in the mark chunk.");
   if (!COPY_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer onboarding copy anchors are not all in the mark chunk.");
   if (!LOGO_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer file-kind and Plugins-button anchors are not all in the mark chunk.");
+  if (!VOICE_CALL_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer voice-call anchors (chat header identity row, character settings) are not all in the mark chunk.");
   const logoAssets = await readLogoAssets();
-  const markPatched = patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions)));
+  const markPatched = patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions))));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -868,12 +972,14 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  const stylesheetPatched = patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets);
+  const stylesheetPatched = patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets));
   const chunkSources = [];
   for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
   const styleAnchors = {
     header: countStyleAnchors(styleAnchorClasses(HEADER_CARD_CSS), [bubbleSheets[0].css, ...chunkSources]),
     glass: countStyleAnchors(styleAnchorClasses(LIQUID_GLASS_CSS), [bubbleSheets[0].css, ...chunkSources]),
+    // Only the window's own classes: the simeon- ones are drawn by this patch.
+    voiceCall: countStyleAnchors(styleAnchorClasses(voiceCallCss()).filter((name) => name.startsWith("sand-")), [bubbleSheets[0].css, ...chunkSources]),
   };
   for (const [block, result] of Object.entries(styleAnchors)) {
     if (result.missing.length > 0) console.warn(`renderer patch: ${result.missing.length} ${block} style anchor(s) appear nowhere in the pinned renderer: ${result.missing.join(", ")}`);
@@ -886,7 +992,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const appIconAfter = await readFile(appIconTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
-    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos"],
+    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos", "voice-call-styles"],
     userBubble: { light: USER_BUBBLE_LIGHT, dark: USER_BUBBLE_DARK, stylesheet: path.relative(stageRoot, bubbleSheets[0].target) },
     // The stylesheet's hashes, so `npm run verify` can check the packaged
     // file against what this patch wrote (25 September 2026: verify read
@@ -941,7 +1047,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

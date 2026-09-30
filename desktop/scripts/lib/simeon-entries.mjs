@@ -205,11 +205,12 @@ process.on("uncaughtException", (error) => {
  * `invariant(hasDesktopBridge(candidate.desktop))` before React mounts — a dark,
  * empty window with the error only visible in the devtools console.
  */
-const PRELOAD_ENTRYPOINTS = {
+export const PRELOAD_ENTRYPOINTS = {
   "preload": ["installPrimaryPreloadEntrypoint", "loadPrimaryPreloadElectron"],
   "preload-dev-controls": ["installDevControlsPreloadEntrypoint", "loadDevControlsPreloadElectron"],
   "preload-webview": ["installWebviewPreloadEntrypoint", "loadBrowserPreloadElectron"],
   "preload-vnc": ["installVncPreloadEntrypoint", "loadVncPreloadElectron"],
+  "preload-voice-call": ["installVoiceCallPreloadEntrypoint", "loadVoiceCallPreloadElectron"],
 };
 
 export function preloadEntrySource(name) {

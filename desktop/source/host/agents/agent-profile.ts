@@ -9,6 +9,12 @@ export interface SandAgentProfile {
   title: string;
   avatarShape: string;
   avatarColor: string;
+  /**
+   * The ElevenLabs voice the agent speaks in on a voice call (30 September
+   * 2026). A profile written before then has no such key and reads as "",
+   * which the Mac turns into the default voice.
+   */
+  voiceId: string;
 }
 
 export function getSandProfilePath(agentDir: string): string { return join(agentDir, SAND_PROFILE_FILENAME); }
@@ -28,7 +34,8 @@ export function readSandProfileFile(path: string): SandAgentProfile | null {
     description: typeof parsed.description === "string" ? parsed.description : "",
     title: typeof parsed.title === "string" ? parsed.title.trim() : "",
     avatarShape: typeof parsed.avatarShape === "string" ? parsed.avatarShape.trim() : "",
-    avatarColor: typeof parsed.avatarColor === "string" ? parsed.avatarColor.trim() : ""
+    avatarColor: typeof parsed.avatarColor === "string" ? parsed.avatarColor.trim() : "",
+    voiceId: typeof parsed.voiceId === "string" ? parsed.voiceId.trim() : ""
   };
 }
 
@@ -41,7 +48,7 @@ export function readLegacyProfileAvatarField(path: string): string | null {
 
 export function writeSandProfileFile(path: string, profile: SandAgentProfile): void {
   mkdirSync(dirname(path), { recursive: true });
-  const serialized = `${JSON.stringify({ ...profile, title: profile.title.trim(), avatarShape: profile.avatarShape.trim(), avatarColor: profile.avatarColor.trim() }, null, 2)}\n`;
+  const serialized = `${JSON.stringify({ ...profile, title: profile.title.trim(), avatarShape: profile.avatarShape.trim(), avatarColor: profile.avatarColor.trim(), voiceId: profile.voiceId.trim() }, null, 2)}\n`;
   const temporary = `${path}.${process.pid}.${Date.now()}.tmp`;
   writeFileSync(temporary, serialized, "utf8");
   renameSync(temporary, path);

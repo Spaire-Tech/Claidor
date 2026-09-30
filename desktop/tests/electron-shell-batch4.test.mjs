@@ -127,5 +127,5 @@ test("the main window reloads when its renderer dies, the move dialog promises n
   assert.equal(move.includes("cannot install updates"), false);
   assert.match(move, /detail: "Simeon runs from the Applications folder\. It will reopen after moving\."/);
   const packager = await readFile(path.join(repoRoot, "scripts/package-macos.mjs"), "utf8");
-  assert.match(packager, /\["-replace", "NSMicrophoneUsageDescription", "-string", "Simeon uses the microphone to take your dictation\.", infoPlist\]/);
+  assert.match(packager, /\["-replace", "NSMicrophoneUsageDescription", "-string", "Simeon uses the microphone to take your dictation and for voice calls with your agents\.", infoPlist\]/);
 });

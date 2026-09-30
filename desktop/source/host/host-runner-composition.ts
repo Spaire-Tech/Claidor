@@ -1296,6 +1296,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               ...(profile.title === undefined ? {} : { title: profile.title }),
               ...(profile.avatarShape === undefined ? {} : { avatarShape: profile.avatarShape }),
               ...(profile.avatarColor === undefined ? {} : { avatarColor: profile.avatarColor }),
+              ...(profile.voiceId === undefined ? {} : { voiceId: profile.voiceId }),
             });
           },
           writeSettings: (settings: Record<string, boolean>) => {

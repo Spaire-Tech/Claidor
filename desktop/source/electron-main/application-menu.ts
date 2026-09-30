@@ -16,6 +16,7 @@ export type ApplicationMenuRole =
 
 export interface ApplicationMenuItem {
   readonly label?: string;
+  readonly enabled?: boolean;
   readonly role?: ApplicationMenuRole;
   readonly type?: "separator";
   readonly accelerator?: string;
@@ -30,11 +31,20 @@ export interface ApplicationMenuElectronPort {
   readonly openExternal: (url: string) => Promise<unknown>;
 }
 
+/** Agent › Call <name>: the agent open in the window, or a disabled "Call Agent" when none is. */
+export interface ApplicationMenuVoiceCall {
+  readonly label: string;
+  readonly enabled: boolean;
+  readonly start: () => void;
+}
+
 export interface ApplicationMenuOptions {
   readonly applyWindowShortcut: (shortcut: WindowShortcut) => void;
   readonly canUseDevTools: () => boolean;
   readonly emitOpenAbout: () => void;
   readonly emitOpenFeedback: () => void;
+  /** Voice calls (30 September 2026); null or absent when calls are switched off. */
+  readonly voiceCall?: ApplicationMenuVoiceCall | null;
   readonly platform?: NodeJS.Platform;
 }
 
@@ -93,6 +103,13 @@ export function buildApplicationMenuTemplate(
         },
   );
   template.push({ label: "View", submenu: viewSubmenu });
+  const voiceCall = options.voiceCall;
+  if (voiceCall != null) {
+    template.push({
+      label: "Agent",
+      submenu: [{ label: voiceCall.label, enabled: voiceCall.enabled, click: () => voiceCall.start() }],
+    });
+  }
   template.push({ role: "windowMenu" });
   template.push({
     role: "help",
