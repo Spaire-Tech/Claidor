@@ -77,7 +77,7 @@ interface BrowserWindowLike {
   getBounds(): Rect;
   setBounds(bounds: Rect, animate?: boolean): void;
   setAlwaysOnTop(flag: boolean, level?: string): void;
-  setVisibleOnAllWorkspaces(flag: boolean, options?: { visibleOnFullScreen?: boolean }): void;
+  setVisibleOnAllWorkspaces(flag: boolean, options?: { visibleOnFullScreen?: boolean; skipTransformProcessType?: boolean }): void;
   showInactive(): void;
   moveTop(): void;
   close(): void;
@@ -160,7 +160,11 @@ export function createElectronVoiceCallWindow(options: ElectronVoiceCallWindowOp
     });
     window = created;
     created.setAlwaysOnTop(true, "floating");
-    created.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    // No `visibleOnFullScreen`: on macOS Electron makes that work by turning the
+    // whole app into a background-only app for a moment, which hands focus to
+    // whatever app was in front before (Terminal, Chrome) and scrambles the
+    // main window. `skipTransformProcessType` keeps Simeon a normal app.
+    created.setVisibleOnAllWorkspaces(true, { skipTransformProcessType: true });
     created.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
     created.webContents.on("will-navigate", (event) => event.preventDefault());
     created.webContents.on("render-process-gone", (_event, details) => options.log(`banner page gone: ${details.reason}`));
