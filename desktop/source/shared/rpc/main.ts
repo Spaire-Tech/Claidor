@@ -132,6 +132,7 @@ export const MAIN_METHOD_TABLE = {
   getAgentVoice: { args: "object" },
   setAgentVoice: { args: "object" },
   getVoicePreviewUrl: { args: "object" },
+  rateVoiceCall: { args: "object" },
 } as const;
 
 export type MainMethod = keyof typeof MAIN_METHOD_TABLE;

@@ -19,6 +19,7 @@ import {
   CALL_STATUS_NO_CREDIT,
   CALL_STATUS_NOT_SWITCHED_ON,
   callRecordText,
+  type CallRecordLine,
   transcriptLinesFromEntries,
   VOICE_CALL_DEFAULT_VOICE_ID,
 } from "../../shared/voice-call/voice-call-prompt.js";
@@ -91,13 +92,24 @@ export const VOICES_CACHE_MS = 10 * 60_000;
 export const SUMMARY_RETRY_WAITS_MS: readonly number[] = [5_000, 10_000];
 export const VOICE_ID_PATTERN = /^[A-Za-z0-9]{1,64}$/;
 const MIN_BANNER_HEIGHT = 40;
-const MAX_BANNER_HEIGHT = 400;
+/** Room for the live transcript under the banner. */
+const MAX_BANNER_HEIGHT = 480;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 const text = (value: unknown): string => (typeof value === "string" ? value : "");
 const errorText = (error: unknown): string => (error instanceof Error ? error.message : String(error));
+
+/** The banner's live transcript, as it sends it when the call ends: at most 400 lines of what was said. */
+export function heardLines(value: unknown): CallRecordLine[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter(isRecord)
+    .map((line) => ({ speaker: line.speaker === "agent" ? "agent" as const : "user" as const, text: text(line.text).trim().slice(0, 4_000) }))
+    .filter((line) => line.text.length > 0)
+    .slice(0, 400);
+}
 
 /** The sentence the banner shows when a call cannot start. */
 export function connectFailureMessage(error: unknown): string {
@@ -116,6 +128,10 @@ interface ActiveCall {
   conversationId: string | null;
   connectedAtMs: number | null;
   isFinished: boolean;
+  /** What the banner heard said, live, in case ElevenLabs' own transcript is not ready when the call ends. */
+  heard: readonly CallRecordLine[];
+  /** The name the person goes by, read when the call connects. */
+  personName: string | null;
 }
 
 export interface VoiceCallService {
@@ -129,6 +145,8 @@ export interface VoiceCallService {
   getAgentVoice(agentId: unknown): Promise<{ readonly voiceId: string; readonly isDefault: boolean }>;
   setAgentVoice(agentId: unknown, voiceId: unknown): Promise<{ readonly voiceId: string; readonly isDefault: boolean }>;
   voicePreviewUrl(voiceId: unknown): Promise<string | null>;
+  /** The person's thumbs on a finished call, from its card in the chat: true, false, or null to take it back. */
+  rateCall(conversationId: unknown, like: unknown): Promise<{ readonly ok: boolean }>;
   noteSelectedAgent(agentId: unknown, name: unknown): void;
   menuItem(): VoiceCallMenuItem | null;
   /** Settles the record of the last call; tests wait on it. */
@@ -144,12 +162,17 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
   let voices: { readonly atMs: number; readonly list: VoiceOption[] } | null = null;
   let finishing: Promise<void> = Promise.resolve();
 
+  let roster: readonly Record<string, unknown>[] = [];
   const findAgent = async (agentId: string): Promise<Record<string, unknown> | null> => {
     const agents = await options.legs.listAgents();
-    const rows = Array.isArray(agents) ? agents : [];
-    for (const row of rows) if (isRecord(row) && row.id === agentId) return row;
-    return null;
+    roster = (Array.isArray(agents) ? agents : []).filter(isRecord);
+    return roster.find((row) => row.id === agentId) ?? null;
   };
+  /** The agent's teammates by name: the rest of the roster, groups and shared rooms left out. */
+  const teammatesOf = (agentId: string): { name: string; title?: string }[] =>
+    roster
+      .filter((row) => row.id !== agentId && row.isGroup !== true && row.remoteRoom == null && row.isHiddenFromSidebar !== true && text(row.name).trim().length > 0)
+      .map((row) => ({ name: text(row.name).trim(), ...(text(row.title).trim().length > 0 ? { title: text(row.title).trim() } : {}) }));
 
   const storedVoice = (agentId: string, row: Record<string, unknown> | null): string | null => {
     const fromHost = row != null && typeof row.voiceId === "string" && VOICE_ID_PATTERN.test(row.voiceId) ? row.voiceId : null;
@@ -162,7 +185,7 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
   };
 
   const newCallId = options.newCallId ?? (() => globalThis.crypto.randomUUID());
-  const newCall = (agentId: string, hintName: string | null): ActiveCall => ({ agentId, hintName, callId: newCallId(), channel: null, conversationId: null, connectedAtMs: null, isFinished: false });
+  const newCall = (agentId: string, hintName: string | null): ActiveCall => ({ agentId, hintName, callId: newCallId(), channel: null, conversationId: null, connectedAtMs: null, isFinished: false, heard: [], personName: null });
 
   const finishCall = (active: ActiveCall, conversationId: string | null, seconds: number): void => {
     if (active.isFinished) return;
@@ -171,28 +194,37 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
     const id = conversationId != null && CONVERSATION_ID_PATTERN.test(conversationId) ? conversationId : active.conversationId;
     if (id == null || active.connectedAtMs == null) {
       options.log(`call ended before it connected (agent ${active.agentId})`);
-      if (channel != null) finishing = finishing.then(async () => { await channel.end({ seconds: 0, recap: null, transcript: [] }); channel.dispose(); });
+      if (channel != null) finishing = finishing.then(async () => { await channel.end({ seconds: 0, recap: null, transcript: [], personName: null }); channel.dispose(); });
       return;
     }
     const whole = Math.max(0, Math.round(Number.isFinite(seconds) ? seconds : (now() - active.connectedAtMs) / 1000));
     finishing = finishing.then(async () => {
       let summary: string | null = null;
-      let transcript: { readonly speaker: "user" | "agent"; readonly text: string }[] = [];
+      let transcript: CallRecordLine[] = [];
       try {
         let ending = await options.api().endCall(id, whole);
         for (const delay of SUMMARY_RETRY_WAITS_MS) {
-          if (ending.summary != null) break;
+          if (ending.summary != null && (ending.transcript?.length ?? 0) > 0) break;
           await wait(delay);
           ending = await options.api().endCall(id, whole);
         }
         summary = ending.summary;
         transcript = [...(ending.transcript ?? [])];
+        if (transcript.length === 0 && active.heard.length > 0) {
+          transcript = [...active.heard];
+          options.log(`call record: ElevenLabs had no transcript yet; the banner's ${active.heard.length} line(s) are used`);
+        }
         options.log(`call ended: conversation ${id}, ${whole}s, billed ${ending.seconds}s, summary ${summary == null ? "none" : "yes"}`);
       } catch (error) {
         options.log(`call end not recorded on the server (conversation ${id}): ${errorText(error)}`);
+        transcript = [...active.heard];
       }
-      // The call's address closes, and its record goes to the agent's voice-calls/ folder.
-      if (channel != null) { await channel.end({ seconds: whole, recap: summary, transcript }); channel.dispose(); }
+      // The call's address closes, its record goes to the agent's voice-calls/ folder, and
+      // the host writes what was said into the agent's chat as an exchange with the person.
+      let written = 0;
+      if (channel != null) { written = await channel.end({ seconds: whole, recap: summary, transcript, personName: active.personName }); channel.dispose(); }
+      if (written > 0) return;
+      // A host from before 2 October 2026 writes no exchange: the call's line and recap instead.
       try {
         await options.legs.appendSendMessage({ agentId: active.agentId, message: { type: "text", content: callRecordText(whole, summary) } });
       } catch (error) {
@@ -220,10 +252,12 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
     try { personName = (await options.getPersonName?.()) ?? null; }
     catch (error) { options.log(`connect: the person's name could not be read: ${errorText(error)}`); }
     if (call !== active || active.isFinished) return { ok: false, message: CALL_STATUS_COULD_NOT_CONNECT };
+    active.personName = personName;
     const name = text(row?.name).trim() || active.hintName || "your agent";
     const overrides = buildVoiceCallOverrides({
       agent: { name, title: text(row?.title), description: text(row?.description) },
       transcript: transcriptLinesFromEntries(entries),
+      teammates: teammatesOf(active.agentId),
       voiceId: storedVoice(active.agentId, row),
       pick: random(),
       personName,
@@ -301,6 +335,7 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
           return active.channel == null ? "The text messages could not be read just now." : await active.channel.recallTextMessages();
         case "callEnded": {
           const seconds = typeof args.seconds === "number" ? args.seconds : Number.NaN;
+          active.heard = heardLines(args.transcript);
           finishCall(active, typeof args.conversationId === "string" ? args.conversationId : null, seconds);
           options.onMenuChanged?.();
           return null;
@@ -361,6 +396,18 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
       options.voiceStore.set(agentId, voiceId);
       options.log(`voice for agent ${agentId}: ${voiceId ?? "default"}`);
       return { voiceId: voiceId ?? VOICE_CALL_DEFAULT_VOICE_ID, isDefault: voiceId == null };
+    },
+    async rateCall(conversationIdRaw, likeRaw) {
+      if (typeof conversationIdRaw !== "string" || !CONVERSATION_ID_PATTERN.test(conversationIdRaw)) return { ok: false };
+      const like = likeRaw === true ? true : likeRaw === false ? false : null;
+      try {
+        await options.api().rateCall(conversationIdRaw, like);
+        options.log(`call ${conversationIdRaw} rated ${like == null ? "(cleared)" : like ? "good" : "bad"}`);
+        return { ok: true };
+      } catch (error) {
+        options.log(`call rating not sent (conversation ${conversationIdRaw}): ${errorText(error)}`);
+        return { ok: false };
+      }
     },
     async voicePreviewUrl(voiceIdRaw) {
       if (typeof voiceIdRaw !== "string" || !VOICE_ID_PATTERN.test(voiceIdRaw)) return null;

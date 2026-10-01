@@ -272,6 +272,16 @@ export const VOICE_CALL_COMPONENTS_SOURCE = [
   "function __simeonCallRecord(n){",
   "const c=__simeonCallRecordParse(n.content),[o,so]=S.useState(!1);if(c==null)return null;const has=c.recap!=null&&c.recap.length>0;",
   `return p.jsxs("div",{className:"simeon-call-record","data-open":o&&has?"true":"false",children:[p.jsxs("button",{type:"button",className:"simeon-call-record__head","aria-expanded":has?o:void 0,disabled:!has,onClick:()=>so(v=>!v),children:[p.jsx("span",{className:"simeon-call-record__glyph","aria-hidden":!0,children:p.jsx("svg",{viewBox:"0 0 24 24",children:p.jsx("path",{fill:"currentColor",d:"${PHONE_ICON_PATH}"})})}),p.jsxs("span",{className:"simeon-call-record__what",children:[p.jsx("b",{children:"Voice call"}),p.jsx("span",{children:c.duration})]}),has?p.jsx("svg",{className:"simeon-call-record__chevron",viewBox:"0 0 24 24","aria-hidden":!0,children:p.jsx("path",{fill:"none",stroke:"currentColor",strokeWidth:2.4,strokeLinecap:"round",strokeLinejoin:"round",d:"M9 6l6 6-6 6"})}):null]}),has?p.jsx("div",{className:"simeon-call-record__recap",children:p.jsx("div",{children:p.jsx("p",{children:c.recap})})}):null]})}`,
+  // The call in the chat (2 October 2026, the founder: "the after chat is just a chat opened in a
+  // panel like the convo between agents, this time its just between us. we dont need to redesign
+  // anything"). The agent's host writes what was said as an exchange with one peer,
+  // `voice-call:<call>:<seconds>` (host/extensions/transcript/voice-call-channel.ts); the window's
+  // own "Messaged Dawn" line is drawn for it as "Voice chat · 02:30", and opens the window's own
+  // read-only exchange panel.
+  "function __simeonVoiceCall(n){const ps=n==null?null:n.kind===\"single\"?[n.peer]:n.peers;if(!Array.isArray(ps)||ps.length!==1||ps[0]==null)return null;const m=/^voice-call:[A-Za-z0-9_-]+:(\\d+)$/.exec(String(ps[0].id));if(m==null)return null;const t=Number(m[1]),h=Math.floor(t/3600),mm=String(Math.floor(t%3600/60)).padStart(2,\"0\"),ss=String(t%60).padStart(2,\"0\");return{peerId:ps[0].id,name:ps[0].name,duration:h>0?`${h}:${mm}:${ss}`:`${mm}:${ss}`}}",
+  "function __simeonVoiceEvent(n){",
+  "const c=n.call,{openAgentExchange:r}=r1(),l=`Voice chat · ${c.duration}`;",
+  `return p.jsx(fre,{className:"sand-system-event",children:p.jsx(X4e,{"aria-label":\`Open \${l}\`,leading:p.jsx("svg",{"aria-hidden":!0,className:"simeon-voice-event__glyph",viewBox:"0 0 24 24",children:p.jsx("path",{fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",d:"M5 10v4M9 7v10M13 9v6M17 6v12M21 10v4"})}),leadingGap:4,onClick:m=>{m.stopPropagation(),r(c.peerId,c.name)},title:l,children:l})})}`,
   // The name sheet (1 October 2026): once, after onboarding, "What should your agents call you?",
   // offered Google's first name, never one made from the e-mail. Saved through the account's own
   // rename (`cursorAccount.updateName`, now `POST /desktop/api/user/name`). "Not now" asks again next launch.
@@ -291,11 +301,17 @@ const CALL_BUTTON_BEFORE = 'let B;e[97]!==N||e[98]!==E||e[99]!==A||e[100]!==I?(B
 const CALL_BUTTON_AFTER = 'const B=p.jsxs("div",{className:N,style:E,children:[A,p.jsx(__simeonCallButton,{agentId:t.id,agentName:t.name},"simeon-call"),I]});';
 const CALL_RECORD_BEFORE = 'p.jsx(JPn,{cachedLinkUrls:nMn,content:r,isStreaming:h,matcher:b,promoteStandaloneLinks:!1})';
 const CALL_RECORD_AFTER = `(!h&&__simeonCallRecordParse(r)!=null?p.jsx(__simeonCallRecord,{content:r}):${CALL_RECORD_BEFORE})`;
+const VOICE_EVENT_BEFORE = "function vpt(n){const e=he.c(9),{summary:t}=n;";
+const VOICE_EVENT_AFTER = "function vpt(n){const __sv=__simeonVoiceCall(n.summary);if(__sv!=null)return p.jsx(__simeonVoiceEvent,{call:__sv});const e=he.c(9),{summary:t}=n;";
+const VOICE_EVENT_TEXT_BEFORE = "function JIn(n){switch(n.kind){";
+const VOICE_EVENT_TEXT_AFTER = "function JIn(n){const __sv=__simeonVoiceCall(n);if(__sv!=null)return`Voice chat · ${__sv.duration}`;switch(n.kind){";
 const NAME_SHEET_BEFORE = 'p.jsx(BGn,{}),p.jsx(Yzn,{children:p.jsx($zn,{})})]';
 const NAME_SHEET_AFTER = 'p.jsx(BGn,{}),p.jsx(Yzn,{children:p.jsx($zn,{})}),p.jsx(__simeonNameSheet,{},"simeon-name-sheet")]';
 export const VOICE_CALL_REPLACEMENTS = Object.freeze([
   ["voice-call-components", VOICE_COMPONENTS_ANCHOR, `${VOICE_CALL_COMPONENTS_SOURCE}${VOICE_COMPONENTS_ANCHOR}`],
   ["call-record-card", CALL_RECORD_BEFORE, CALL_RECORD_AFTER],
+  ["voice-chat-event", VOICE_EVENT_BEFORE, VOICE_EVENT_AFTER],
+  ["voice-chat-event-text", VOICE_EVENT_TEXT_BEFORE, VOICE_EVENT_TEXT_AFTER],
   ["name-sheet-at-root", NAME_SHEET_BEFORE, NAME_SHEET_AFTER],
   ["voice-picker-under-character-color", VOICE_PICKER_BEFORE, VOICE_PICKER_AFTER],
   ["call-button-beside-agent-name", CALL_BUTTON_BEFORE, CALL_BUTTON_AFTER],
@@ -332,6 +348,7 @@ export const voiceCallCss = () => `${VOICE_CALL_MARKER} (30 September 2026). */
 .simeon-voice-picker__play{width:30px;height:30px;padding:0;border:0;border-radius:999px;display:grid;place-items:center;cursor:pointer;color:var(--sand-text-primary);background:light-dark(rgba(120,120,128,.12),rgba(120,120,128,.24))}
 .simeon-voice-picker__play:disabled{opacity:.4;cursor:default}
 .simeon-voice-picker__play>svg{width:12px;height:12px}
+.simeon-voice-event__glyph{width:14px;height:14px;flex:none}
 .simeon-call-record{display:grid;width:340px;max-width:100%}
 .simeon-call-record__head{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:10px;cursor:pointer;border-radius:12px;margin:-2px -6px;padding:2px 6px}
 .simeon-call-record__head:disabled{cursor:default}

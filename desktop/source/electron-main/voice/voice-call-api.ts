@@ -6,6 +6,7 @@
  *   POST voice/calls                     → { token, conversation_id, agent_id }
  *   POST voice/calls/{conversation}/end  { seconds } → { seconds, summary }
  *   GET  voice/voices                    → [{ id, name, description, labels, preview_url }]
+ *   POST voice/calls/{conversation}/feedback { like } → {}
  *
  * A refusal arrives as `SimeonApiError` with the server's own sentence and
  * status; 503 means the server has no ElevenLabs key.
@@ -42,6 +43,8 @@ export interface VoiceCallApi {
   startCall(): Promise<VoiceCallTicket>;
   endCall(conversationId: string, seconds: number): Promise<VoiceCallEnding>;
   listVoices(): Promise<VoiceOption[]>;
+  /** The person's thumbs on a call: ElevenLabs' own rating of the conversation. */
+  rateCall(conversationId: string, like: boolean | null): Promise<void>;
 }
 
 export interface VoiceCallApiOptions extends SimeonApiAuth {
@@ -107,6 +110,10 @@ export function createVoiceCallApi(options: VoiceCallApiOptions): VoiceCallApi {
       const whole = Math.max(0, Math.ceil(Number.isFinite(seconds) ? seconds : 0));
       const response = await simeonProxyRequest(options, `${VOICE_CALLS_PATH}/${conversationId}/end`, { json: { seconds: whole }, signal, ...fetchOption });
       return parseVoiceCallEnding(await response.json().catch(() => null), whole);
+    }),
+    rateCall: (conversationId, like) => deadline.run(async (signal) => {
+      if (!CONVERSATION_ID_PATTERN.test(conversationId)) throw new Error("That is not a conversation id.");
+      await simeonProxyRequest(options, `${VOICE_CALLS_PATH}/${conversationId}/feedback`, { json: { like }, signal, ...fetchOption });
     }),
     listVoices: () => deadline.run(async (signal) => {
       const response = await simeonProxyRequest(options, VOICE_VOICES_PATH, { method: "GET", signal, ...fetchOption });

@@ -100,7 +100,7 @@ test("the call is a channel into the agent: send_task relays the request, and wh
   assert.equal(await channel.sendTask({ task: "Book it" }), "That did not come back. Say you could not get to it, and offer to try again.", "nothing relays before the call's channel is open");
   assert.equal(await channel.open(), true);
   assert.deepEqual(calls.find(([name, args]) => name === "voiceCall" && args.kind === "open")[1], { agentId: "a1", callId: "call-1234", kind: "open" });
-  assert.equal(await channel.sendTask({ task: "Send the agenda to Dana", quote: "tell her it's final" }), "Sent. Say you're on it, in a few words, and carry on with them. What it turns up comes back to you here.");
+  assert.equal(await channel.sendTask({ task: "Send the agenda to Dana", quote: "tell her it's final" }), "Sent. If you have not acknowledged it yet, do so in a few words, then carry on with them. What it turns up comes back to you here.");
   assert.deepEqual(calls.find(([name, args]) => name === "voiceCall" && args.kind === "request")[1], { agentId: "a1", callId: "call-1234", kind: "request", request: "Send the agenda to Dana", quotes: ["tell her it's final"] });
   assert.deepEqual(statuses, ["Sending the agenda to Dana…"]);
   const long = "x".repeat(2_500);
@@ -197,8 +197,8 @@ test("one call at a time: a second start brings the banner forward; the call's s
   await svc.settled();
   assert.deepEqual(calls2, [["end", "conv_7", 168]]);
   const record = calls.find(([name]) => name === "append")[1];
-  assert.deepEqual(record, { agentId: "a1", message: { type: "text", content: "Voice call · 2:48\n\nTalked about the week." } });
-  assert.deepEqual(calls.find(([name, args]) => name === "voiceCall" && args.kind === "ended")[1].record, { seconds: 168, recap: "Talked about the week.", transcript: [{ speaker: "user", text: "Book it" }] }, "the call's record goes to the agent as its channel closes");
+  assert.deepEqual(record, { agentId: "a1", message: { type: "text", content: "Voice call · 2:48\n\nTalked about the week." } }, "a host that writes no exchange gets the call's line and recap");
+  assert.deepEqual(calls.find(([name, args]) => name === "voiceCall" && args.kind === "ended")[1].record, { seconds: 168, recap: "Talked about the week.", transcript: [{ speaker: "user", text: "Book it" }], personName: null }, "the call's record goes to the agent as its channel closes");
   svc.windowClosed();
   window.isOpenNow = false;
   assert.equal(svc.isCallActive(), false);

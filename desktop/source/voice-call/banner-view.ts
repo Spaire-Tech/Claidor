@@ -21,6 +21,8 @@ export interface BannerElements {
   readonly quick: HTMLButtonElement;
   readonly wave: HTMLElement;
   readonly mute: HTMLButtonElement;
+  readonly talk: HTMLButtonElement;
+  readonly live: HTMLElement;
   readonly end: HTMLButtonElement;
   readonly again: HTMLButtonElement;
   readonly chat: HTMLButtonElement;
@@ -42,6 +44,8 @@ export function bannerElements(root: ParentNode = document): BannerElements {
     quick: required(root, ".quick"),
     wave: required(root, ".wave"),
     mute: required(root, ".mute"),
+    talk: required(root, ".talk"),
+    live: required(root, ".live"),
     end: required(root, ".end"),
     again: required(root, ".again"),
     chat: required(root, ".chat"),
@@ -56,6 +60,9 @@ export interface BannerPainter {
   setLevels(levels: readonly number[] | null, mode: "speaking" | "listening"): void;
   /** Breath and blink, driven by the page's animation frame. */
   animate(nowMs: number, state: string): void;
+  /** One line said on the call, at the end of the live transcript. */
+  addLine(speaker: "user" | "agent", text: string): void;
+  setTranscriptOpen(isOpen: boolean): void;
 }
 
 export function createBannerPainter(elements: BannerElements, options: { readonly reducedMotion: boolean; readonly seed: number }): BannerPainter {
@@ -110,6 +117,21 @@ export function createBannerPainter(elements: BannerElements, options: { readonl
         const level = levels == null ? 0 : Math.max(0, Math.min(1, levels[index] ?? 0));
         bar.style.height = `${(2 + level * amplitude * window).toFixed(1)}px`;
       });
+    },
+    addLine(speaker, text) {
+      const live = elements.live;
+      live.querySelector(".empty")?.remove();
+      const isAtBottom = live.scrollHeight - live.scrollTop - live.clientHeight < 24;
+      const line = live.ownerDocument.createElement("p");
+      line.className = `say ${speaker === "user" ? "me" : "them"}`;
+      line.textContent = text;
+      live.append(line);
+      if (isAtBottom) live.scrollTop = live.scrollHeight;
+    },
+    setTranscriptOpen(isOpen) {
+      elements.banner.dataset.transcript = isOpen ? "open" : "closed";
+      elements.talk.setAttribute("aria-pressed", String(isOpen));
+      if (isOpen) elements.live.scrollTop = elements.live.scrollHeight;
     },
     animate(nowMs, state) {
       if (options.reducedMotion || mark == null) return;

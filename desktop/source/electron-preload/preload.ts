@@ -170,6 +170,8 @@ export function createDesktopPreloadBridge(options: {
       getAgentVoice: (agentId: string) => edge("getAgentVoice", { agentId }),
       setAgentVoice: (agentId: string, voiceId: string | null) => edge("setAgentVoice", { agentId, voiceId }),
       previewUrl: (voiceId: string) => edge("getVoicePreviewUrl", { voiceId }),
+      // The thumbs on a finished call's card in the chat (2 October 2026).
+      rateCall: (conversationId: string, like: boolean | null) => edge("rateVoiceCall", { conversationId, like }),
     },
     cursorAccount: {
       getStatus: () => edge("getCursorAuthStatus"),

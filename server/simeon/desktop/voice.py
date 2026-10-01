@@ -78,7 +78,7 @@ VOICE_AGENT_NAME = "Simeon voice"
 
 #: Bump when anything in `agent_config` or `CLIENT_TOOLS` changes: the next
 #: call finds the agent without this version's tag and rewrites it.
-VOICE_AGENT_CONFIG_VERSION = 7
+VOICE_AGENT_CONFIG_VERSION = 8
 VOICE_AGENT_VERSION_TAG = f"simeon-voice-config-v{VOICE_AGENT_CONFIG_VERSION}"
 VOICE_AGENT_TAGS = ["simeon", "simeon-voice", VOICE_AGENT_VERSION_TAG]
 
@@ -97,6 +97,12 @@ VOICE_LLM_THINKING_BUDGET = 0
 #: flash v2 model: `eleven_flash_v2_5` is refused with "English Agents must use
 #: turbo or flash v2" (seen on the first real call, 30 September 2026).
 VOICE_TTS_MODEL = "eleven_flash_v2"
+
+#: How even the voice's delivery is. ElevenLabs' default (0.5) let the pitch
+#: swing from one sentence to the next (the founder, 1 October 2026: "one
+#: second its low pitched, the other its high"); higher is steadier, and too
+#: high goes flat.
+VOICE_TTS_STABILITY = 0.7
 
 #: The voice a call speaks in when the app names none: the first of the
 #: founder's voices (`CURATED_VOICES`). The agent is created with whichever
@@ -119,8 +125,9 @@ VOICE_BASE_PROMPT = """\
 You are one of the person's Simeon agents, on a live phone call with them. \
 Simeon is a team of always-on agents that work for them on their Mac and on \
 a cloud computer of their own. Speak as yourself, in the first person ("I'll \
-do that", "I've sent it"). Never mention another agent, an assistant, a \
-system or a hand-off, and never say you are passing anything on.
+do that", "I've sent it"). The work you set going is your own: never talk \
+about a hand-off, a second voice or a system behind you. When they ask you \
+to reach one of their other agents, you can: set it going with `send_task`.
 
 How you speak:
 - This is a phone call. Answer in one or two short sentences, the way a \
@@ -134,7 +141,8 @@ How you get things done:
 - Your work runs behind the call while you talk. For anything that needs \
 doing or finding out, call `send_task` with what is needed in one clear \
 sentence carrying every detail they gave; when their exact wording matters, \
-put their words in `quote`. Say a few words, like "on it", and carry on.
+put their words in `quote`. Acknowledge it once, in a few words, and carry \
+on. Set each thing going once.
 - Never say something is done, sent, booked or found until a note tells you \
 your work came back with it. When it does, tell them, briefly, as your own.
 - When they refer to something you wrote to each other, call \
@@ -149,8 +157,7 @@ Ending:
 
 #: The voice's two client tools, the upstream app's: `send_task` relays a request to
 #: the person's agent over the call's `voice:<call>` channel (the app answers
-#: at once and the work goes on behind the call, so its timeout is short and
-#: the voice always speaks before calling it), and `recall_text_messages`
+#: at once and the work goes on behind the call, so its timeout is short), and `recall_text_messages`
 #: reads the latest texts between the person and the agent. Ending the call
 #: and staying silent are ElevenLabs' own `end_call` and `skip_turn`.
 CLIENT_TOOLS: tuple[dict[str, Any], ...] = (
@@ -184,7 +191,10 @@ CLIENT_TOOLS: tuple[dict[str, Any], ...] = (
         },
         "expects_response": True,
         "response_timeout_secs": 20,
-        "pre_tool_speech": "force",
+        # It answers at once, and its answer asks for one short
+        # acknowledgement; speaking before it as well made the voice say
+        # "on it" twice (the founder, 1 October 2026).
+        "pre_tool_speech": "off",
     },
     {
         "type": "client",
@@ -250,6 +260,7 @@ def agent_config(
             "tts": {
                 "model_id": VOICE_TTS_MODEL,
                 "voice_id": voice_id,
+                "stability": VOICE_TTS_STABILITY,
             },
             "turn": {
                 "turn_timeout": 7,
@@ -437,6 +448,15 @@ class ElevenLabsClient:
             "GET", f"/v1/convai/conversations/{quote(conversation_id)}"
         )
         return answer if isinstance(answer, dict) else {}
+
+    async def rate_conversation(self, conversation_id: str, like: bool | None) -> None:
+        await self._request(
+            "POST",
+            f"/v1/convai/conversations/{quote(conversation_id)}/feedback",
+            json={
+                "feedback": None if like is None else ("like" if like else "dislike")
+            },
+        )
 
     # voices
 
@@ -940,6 +960,54 @@ async def end_call(
         },
         headers={"cache-control": "no-store"},
     )
+
+
+@router.post(
+    "/api/proxy/v1/voice/calls/{conversation_id}/feedback",
+    name="desktop:voice_call_feedback",
+    response_model=None,
+)
+async def rate_call(
+    conversation_id: str,
+    request: Request,
+    caller: ProxyCaller = Depends(get_proxy_caller),
+    session: AsyncSession = Depends(get_db_session),
+) -> Response:
+    """The thumbs on a finished call's card in the chat: `{like: true |
+    false | null}` in, passed to ElevenLabs as the conversation's own
+    rating (2 October 2026, the upstream app's "How was the call?"). Only the
+    caller's own billed calls can be rated."""
+    if not CONVERSATION_ID.match(conversation_id):
+        return error_response(
+            "invalid_request_error", "That is not a conversation id.", 400
+        )
+    try:
+        payload = json.loads(await request.body() or b"{}")
+    except ValueError:
+        return error_response("invalid_request_error", "The body is not JSON.", 400)
+    like = payload.get("like") if isinstance(payload, dict) else None
+    if like is not None and not isinstance(like, bool):
+        return error_response(
+            "invalid_request_error", "like is true, false or null.", 400
+        )
+    if not provider_configured(DesktopProvider.elevenlabs):
+        return _not_configured()
+    billed = await DesktopVoiceCallRepository.from_session(
+        session
+    ).get_by_conversation_id(conversation_id)
+    if billed is None or billed.user_id != caller.user.id:
+        return error_response("not_found_error", "No such call.", 404)
+    try:
+        await client().rate_conversation(conversation_id, like)
+    except ElevenLabsError as error:
+        return _upstream_failed(error, "the rating")
+    log.info(
+        "desktop.voice.call_rated",
+        user_id=str(caller.user.id),
+        conversation_id=conversation_id,
+        like=like,
+    )
+    return JSONResponse({}, headers={"cache-control": "no-store"})
 
 
 _voices: dict[tuple[str, str], tuple[float, list[dict[str, Any]]]] = {}

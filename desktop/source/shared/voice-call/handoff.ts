@@ -47,6 +47,8 @@ export interface CallChannelLegs {
 
 export interface CallChannelRecord {
   readonly seconds: number;
+  /** The name the person goes by, for their side of the call in the agent's chat. */
+  readonly personName?: string | null;
   readonly recap: string | null;
   readonly transcript: readonly { readonly speaker: "user" | "agent"; readonly text: string }[];
 }
@@ -108,7 +110,8 @@ export interface CallChannel {
   open(): Promise<boolean>;
   sendTask(parameters: unknown): Promise<string>;
   recallTextMessages(): Promise<string>;
-  end(record: CallChannelRecord): Promise<void>;
+  /** Closes the call; resolves to how many lines the host wrote into the agent's chat (0 for none). */
+  end(record: CallChannelRecord): Promise<number>;
   dispose(): void;
 }
 
@@ -230,12 +233,15 @@ export function createCallChannel(options: CallChannelOptions): CallChannel {
       isOpen = false;
       stop();
       setStatus(null);
-      if (!wasOpen || viaChat) return;
+      if (!wasOpen || viaChat) return 0;
       try {
-        await options.legs.voiceCall({ ...base, kind: "ended", record });
-        log(`call channel: voice:${options.callId} closed`);
+        const answer = await options.legs.voiceCall({ ...base, kind: "ended", record });
+        const written = isRecord(answer) && typeof answer.exchange === "number" ? answer.exchange : 0;
+        log(`call channel: voice:${options.callId} closed (${written} line(s) in the chat)`);
+        return written;
       } catch (error) {
         log(`call channel: the call's end did not reach the agent: ${errorText(error)}`);
+        return 0;
       }
     },
     dispose() { isDisposed = true; isOpen = false; stop(); },

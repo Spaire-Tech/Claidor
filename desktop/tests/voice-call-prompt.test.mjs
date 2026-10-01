@@ -46,12 +46,17 @@ test("the chat becomes the latest person and agent lines, oldest first, cards an
   assert.equal(prompt.VOICE_CALL_TRANSCRIPT_LINES, 6, "a short prompt, so each reply starts sooner");
 });
 
-test("the voice is the agent itself: first person, its recent chat, the upstream app's tools, never another agent", () => {
+test("the voice is the agent itself: first person, its recent chat, the upstream app's tools, no hand-off", () => {
   const text = prompt.buildVoiceCallPrompt({ agent: { name: "Ada", title: "Chief of staff", description: "Runs my week." }, transcript: prompt.transcriptLinesFromEntries(entries) });
   assert.match(text, /You are Ada, Chief of staff, one of the person's Simeon agents, on a live phone call with the person\./);
   assert.match(text, /What you are for, in their words: Runs my week\./);
   assert.match(text, /You are Ada yourself\. Speak in the first person/);
-  assert.match(text, /Never mention another agent, an assistant, a system or a hand-off/);
+  assert.match(text, /never talk about a hand-off, a second voice or a system behind you/);
+  assert.doesNotMatch(text, /Never mention another agent/, "teammates can be named and reached");
+  assert.match(text, /Acknowledge it once, in a few words that fit what they asked, never the same phrase twice in a call/);
+  assert.match(text, /Set each thing going once\./);
+  assert.match(text, /If it repeats something you already told them, or is not about anything they asked, say nothing about it/);
+  assert.match(text, /You have no teammates yet/);
   assert.match(text, /Them: Can you draft the agenda\?\nYou: Drafted\. It's in the doc\./);
   assert.match(text, /contractions/);
   assert.match(text, /Never use lists, headings, markdown/);
@@ -64,6 +69,10 @@ test("the voice is the agent itself: first person, its recent chat, the upstream
   assert.match(text, /If the line goes quiet, check in lightly once/);
   // The voice never speaks of "the agent" as someone else.
   assert.doesNotMatch(text, /the agent|hand_to_agent|check_on_agent/i);
+  const team = prompt.buildVoiceCallPrompt({ agent: { name: "Don" }, transcript: [], personName: "Bass", teammates: [{ name: "Lena", title: "Research" }, { name: "Dawn" }, { name: "Don" }, { name: "  " }] });
+  assert.match(team, /Your teammates, other agents on Bass's team that you can message, ask and hand work to: Lena \(Research\), Dawn\./);
+  assert.match(team, /Never say you can't reach a teammate\./);
+  assert.match(prompt.SEND_TASK_ACCEPTED, /^Sent\. If you have not acknowledged it yet/);
   const empty = prompt.buildVoiceCallPrompt({ agent: { name: "Ada" }, transcript: [] });
   assert.match(empty, /have not written to each other yet/);
 });
@@ -109,7 +118,7 @@ test("the call's record and durations read like the banner", () => {
 });
 
 test("what the voice's tools answer, and what its work coming back says, are its own", () => {
-  assert.equal(prompt.SEND_TASK_ACCEPTED, "Sent. Say you're on it, in a few words, and carry on with them. What it turns up comes back to you here.");
+  assert.equal(prompt.SEND_TASK_ACCEPTED, "Sent. If you have not acknowledged it yet, do so in a few words, then carry on with them. What it turns up comes back to you here.");
   assert.equal(prompt.workCameBackUpdate(["Sent it to Dana.", "She's in at ten."]), "Your work came back: Sent it to Dana. She's in at ten. Tell them now, briefly, in your own words, as yours.");
   assert.equal(prompt.WORK_CAME_BACK_NUDGE, "(Your work just came back. Tell me what it found.)");
   assert.equal(prompt.recallTextMessagesAnswer([]), "There are no text messages between you yet.");

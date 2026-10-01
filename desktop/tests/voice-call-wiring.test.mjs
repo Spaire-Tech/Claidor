@@ -47,7 +47,7 @@ test("an agent's voice round-trips through its profile, and a profile without on
 
 test("the voice-call anchors apply exactly once, and a second pass refuses", async () => {
   const { VOICE_CALL_REPLACEMENTS, patchOriginalVoiceCall, patchOriginalVoiceCallStylesheet, VOICE_CALL_MARKER } = await import(patchModule);
-  assert.deepEqual(VOICE_CALL_REPLACEMENTS.map(([label]) => label), ["voice-call-components", "call-record-card", "name-sheet-at-root", "voice-picker-under-character-color", "call-button-beside-agent-name"]);
+  assert.deepEqual(VOICE_CALL_REPLACEMENTS.map(([label]) => label), ["voice-call-components", "call-record-card", "voice-chat-event", "voice-chat-event-text", "name-sheet-at-root", "voice-picker-under-character-color", "call-button-beside-agent-name"]);
   const chunk = VOICE_CALL_REPLACEMENTS.map(([, before]) => before).join(";\n");
   const patched = patchOriginalVoiceCall(chunk);
   assert.match(patched, /function __simeonCallButton\(n\)\{/);
@@ -137,7 +137,7 @@ test("the preloads and the edge carry the voice methods; the banner window sits 
   for (const name of ["voiceCall", "getAgentTranscriptTail", "updateAgent", "appendSendMessage"]) assert.equal(coordinatorMain.isCoordinatorMainMethod(name), true);
 
   const windowModule = await loadModule("source/electron-main/voice/voice-call-window.ts", "voice-call-window");
-  assert.deepEqual(windowModule.bannerWindowBounds({ x: 0, y: 25, width: 1512, height: 920 }, 66), { x: 1138, y: 27, width: 386, height: 122 });
+  assert.deepEqual(windowModule.bannerWindowBounds({ x: 0, y: 25, width: 1512, height: 920 }, 66), { x: 1108, y: 27, width: 416, height: 122 });
   // Hidden until the call channel ships to every cloud computer: off unless switched on.
   assert.equal(windowModule.voiceCallsEnabled({}), false);
   assert.equal(windowModule.voiceCallsEnabled({ SIMEON_VOICE_CALLS: "off" }), false);
@@ -170,4 +170,22 @@ test("a call record reads back as the card: its length, and the recap when there
   assert.equal(parse("Voice call · soon"), null);
   assert.equal(parse("We talked about the voice call · 0:43"), null);
   assert.equal(parse(42), null);
+});
+
+test("a call written as an exchange is drawn as the window's own event line, Voice chat · 02:30, opening the exchange panel", async () => {
+  const { VOICE_CALL_COMPONENTS_SOURCE } = await import(patchModule);
+  const opened = [];
+  const p = { jsx: (type, props) => ({ type, props }) };
+  const { call, event } = new Function("p", "r1", "fre", "X4e", `${VOICE_CALL_COMPONENTS_SOURCE};return { call: __simeonVoiceCall, event: __simeonVoiceEvent };`)(p, () => ({ openAgentExchange: (...args) => opened.push(args) }), "fre", "X4e");
+  assert.deepEqual(call({ kind: "thread", messageCount: 6, peers: [{ id: "voice-call:call-1:150", name: "Bass" }] }), { peerId: "voice-call:call-1:150", name: "Bass", duration: "02:30" });
+  assert.equal(call({ kind: "single", direction: "inbound", peer: { id: "voice-call:call-1:3723", name: "Bass" } }).duration, "1:02:03");
+  assert.equal(call({ kind: "single", direction: "outbound", peer: { id: "agent-2", name: "Dawn" } }), null, "another agent keeps its Messaged line");
+  assert.equal(call({ kind: "fanout", peers: [{ id: "voice-call:call-1:3", name: "Bass" }, { id: "agent-2", name: "Dawn" }] }), null);
+  const line = event({ call: call({ kind: "thread", peers: [{ id: "voice-call:call-1:150", name: "Bass" }] }) });
+  assert.equal(line.type, "fre");
+  assert.equal(line.props.className, "sand-system-event");
+  assert.equal(line.props.children.type, "X4e");
+  assert.equal(line.props.children.props.children, "Voice chat · 02:30");
+  line.props.children.props.onClick({ stopPropagation() {} });
+  assert.deepEqual(opened, [["voice-call:call-1:150", "Bass"]]);
 });
