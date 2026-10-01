@@ -59,7 +59,7 @@ export function installComputerStreamNotice(options: ComputerStreamNoticeOptions
       notice.setAttribute(COMPUTER_STREAM_NOTICE_ATTR, "1");
       setStyle(notice, {
         position: "absolute", left: "8px", right: "8px", bottom: "8px", "z-index": "3",
-        font: "12px/1.35 -apple-system, system-ui, sans-serif", color: "#8a1c1c",
+        font: "12px/1.35 -apple-system, system-ui, sans-serif", color: "light-dark(#8a1c1c, #ff8a80)",
         background: "rgba(255,255,255,0.92)", "border-radius": "8px", padding: "6px 8px",
         "text-align": "center", "pointer-events": "none", "word-break": "break-word",
       });
@@ -101,7 +101,7 @@ export function installComputerStreamNotice(options: ComputerStreamNoticeOptions
       if (notice == null) {
         notice = doc.createElement("div");
         notice.setAttribute(COMPUTER_STREAM_NOTICE_ATTR, "1");
-        setStyle(notice, { font: "12px/1.35 -apple-system, system-ui, sans-serif", color: "#8a1c1c", "text-align": "center", "max-width": "36em", margin: "6px auto 0", "word-break": "break-word" });
+        setStyle(notice, { font: "12px/1.35 -apple-system, system-ui, sans-serif", color: "light-dark(#8a1c1c, #ff8a80)", "text-align": "center", "max-width": "36em", margin: "6px auto 0", "word-break": "break-word" });
         placeholder.append(notice);
       }
       const text = noticeText(reason, filePath, "The computer's status could not be read.");

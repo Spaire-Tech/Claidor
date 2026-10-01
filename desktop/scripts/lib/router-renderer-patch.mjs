@@ -397,6 +397,113 @@ export function patchOriginalVoiceCallStylesheet(css) {
 }
 
 /**
+ * The agent's pane (1 October 2026, the founder: "the computer icon goes
+ * away. so the [panel] appears when you click on the avatar … no
+ * 'connected' … the choices on the picker are obviously avatar edit,
+ * routines, computer, channels … the apple style … no accent color, keep it
+ * simple and apple premium"). The window's own pane (`p3n`) kept three views
+ * behind a gear and a back arrow: an overview (the computer's preview, the
+ * routines, a link to Channels), Settings (avatar, name, title, description,
+ * notifications) and Channels. It is now one page: the agent's avatar with
+ * its pencil, the name and the title, then a segmented control, Profile ·
+ * Routines · Computer · Channels, over the same views the window already
+ * draws. Channels is offered only where the window would offer it (the
+ * channel manifests are served). The gear is gone; the back arrow is left
+ * for the one level that is deeper, a routine's editor. The chat header's
+ * computer button is gone, and the avatar in the header opens and closes
+ * the pane. The pane opens on Profile.
+ *
+ * View ids are the window's own: `settings` is Profile, `overview` is
+ * Computer, `channels` is Channels; `routines` is new and admitted by `pin`,
+ * the view guard. A request for a routine (`automationId`) lands on
+ * Routines, where the editor opens.
+ */
+const AGENT_PANE_COMPONENTS_SOURCE = [
+  "function __simeonPaneSegments(n){const{value:v,onChange:c,hasChannels:h}=n,items=[[\"settings\",\"Profile\"],[\"routines\",\"Routines\"],[\"overview\",\"Computer\"],...(h?[[\"channels\",\"Channels\"]]:[])],at=Math.max(0,items.findIndex(x=>x[0]===v));",
+  "return p.jsxs(\"div\",{className:\"simeon-segments\",role:\"tablist\",\"aria-label\":\"Agent\",style:{\"--simeon-seg-count\":items.length,\"--simeon-seg-index\":at},children:[p.jsx(\"span\",{className:\"simeon-segments__thumb\",\"aria-hidden\":!0}),...items.map(([id,label])=>p.jsx(\"button\",{type:\"button\",role:\"tab\",\"aria-selected\":id===v,className:\"simeon-segments__item\",onClick:()=>c(id),children:p.jsx(\"span\",{\"data-label\":label,children:label})},id))]})}",
+].join("");
+const AGENT_PANE_ANCHOR = "function p3n(n){";
+const AGENT_PANE_BODY_BEFORE = "p.jsx(Ar,{className:re(\"sand-info-pane__section-content\",\"sand-1iyjqo2 sand-s83m0k sand-dl72j9 sand-2lwn1j\"),ref:Y,children:F===\"overview\"?p.jsxs(\"div\",{className:\"sand-9f619 sand-78zum5 sand-dt5ytf sand-1v2ro7d sand-1nn3v0j sand-yfqnmn sand-1l90r2v sand-nm25rq sand-1iyjqo2 sand-s83m0k sand-dl72j9\",children:[l,b?p.jsx(z2n,{agent:t,onOpenAgentChat:f}):null,p.jsxs(\"div\",{className:{0:{className:\"sand-78zum5 sand-dt5ytf sand-17d4w8g\"},1:{className:\"sand-78zum5 sand-dt5ytf sand-17d4w8g sand-1iyjqo2 sand-s83m0k sand-dl72j9 sand-2lwn1j\"}}[!!Cmt(x)<<0].className,children:[N.length>0?p.jsxs(\"div\",{className:\"sand-78zum5 sand-6s0dn4 sand-1qughib sand-167g77z sand-mix8c7\",children:[p.jsx(\"span\",{className:re(\"sand-info-pane__section-heading\",Fe(FUe.sectionHeading,Us.medium).className),id:ye,children:\"Routines\"}),p.jsx(yo,{content:\"Create Routine\",children:p.jsx(fr,{\"aria-label\":\"Create Routine\",className:\"sand-info-pane__section-heading-action\",\"data-routine-row\":\"new\",icon:\"plus\",onClick:xe,size:\"sm\",style:FUe.sectionHeadingAction})})]}):null,p.jsx(K2n,{agentId:t.id,labelledBy:ye,onCreateRoutine:xe,onOpenRoutine:Ie=>_({kind:\"existing\",id:Ie})})]}),k.length>0?p.jsx(D2n,{counts:I,onOpenSection:J,sections:k}):null]}):p.jsxs(\"div\",{className:\"sand-9f619 sand-78zum5 sand-dt5ytf sand-1v2ro7d sand-1nn3v0j sand-yfqnmn sand-1l90r2v sand-nm25rq sand-1iyjqo2 sand-s83m0k sand-dl72j9\",\"aria-labelledby\":ve,id:ge,role:\"region\",children:[F===\"settings\"?p.jsx(h3n,{agent:t,onDescriptionChange:m,onNameChange:u,onTitleChange:d}):null,F===\"channels\"?p.jsx(_0n,{agentId:t.id,labelledBy:ve}):null]})})";
+const AGENT_PANE_BODY_AFTER = 'p.jsx(Ar,{className:re("sand-info-pane__section-content","sand-1iyjqo2 sand-s83m0k sand-dl72j9 sand-2lwn1j"),ref:Y,children:p.jsxs("div",{className:"simeon-pane","data-segment":F,children:['
+  + 'p.jsxs("div",{className:"simeon-pane__head",children:[p.jsx(f3n,{agent:t}),p.jsx("div",{className:"simeon-pane__name",children:t.name}),typeof t.title==="string"&&t.title.trim().length>0?p.jsx("div",{className:"simeon-pane__title",children:t.title}):null]}),'
+  + 'p.jsx(__simeonPaneSegments,{value:F,onChange:J,hasChannels:k.some(Ie=>Ie.id==="channels")}),'
+  + 'p.jsxs("div",{className:"simeon-pane__body",id:ge,role:"tabpanel",children:['
+  + 'F==="settings"?p.jsx(h3n,{agent:t,onDescriptionChange:m,onNameChange:u,onTitleChange:d}):null,'
+  + 'F==="routines"?p.jsxs("div",{className:"simeon-pane__routines",children:[p.jsx("span",{id:ye,hidden:!0,children:"Routines"}),N.length>0?p.jsx("div",{className:"simeon-pane__add",children:p.jsxs("button",{type:"button","data-routine-row":"new",onClick:xe,children:[p.jsx(bt,{name:"plus",size:"sm"}),"New Routine"]})}):null,p.jsx(K2n,{agentId:t.id,labelledBy:ye,onCreateRoutine:xe,onOpenRoutine:Ie=>_({kind:"existing",id:Ie})})]}):null,'
+  + 'F==="overview"?p.jsxs("div",{className:"simeon-pane__computer",children:[l,b?p.jsx(z2n,{agent:t,onOpenAgentChat:f}):null]}):null,'
+  + 'F==="channels"?p.jsx(_0n,{agentId:t.id,labelledBy:ve}):null]})]})})';
+export const AGENT_PANE_REPLACEMENTS = Object.freeze([
+  ["agent-pane-components", AGENT_PANE_ANCHOR, `${AGENT_PANE_COMPONENTS_SOURCE}${AGENT_PANE_ANCHOR}`],
+  ["agent-pane-routines-view", 'function pin(n,e){return e==="overview"||e==="settings"||', 'function pin(n,e){return e==="overview"||e==="settings"||e==="routines"||'],
+  ["agent-pane-opens-on-profile", '[P,J]=S.useState("overview")', '[P,J]=S.useState("settings")'],
+  ["agent-pane-routine-request", 'J(r.section??"overview")', 'J(r.automationId!=null?"routines":r.section??"overview")'],
+  ["agent-pane-routine-editor", 'F!=="overview"&&O!=null&&_(null);const z=F==="overview"?O:null', 'F!=="routines"&&O!=null&&_(null);const z=F==="routines"?O:null'],
+  ["agent-pane-no-subpage-title", 'Ne=F!=="overview";', "Ne=!1;"],
+  ["agent-pane-no-gear", "(Ie={onOpenSettings:fe},", "(Ie={},"],
+  ["agent-pane-close-x", 'icon:"chevrons-right",iconSize:zwe,onClick:c,title:"Close details"', 'icon:"x",iconSize:zwe,onClick:c,title:"Close"'],
+  ["agent-pane-avatar-toggles", 'n.isOpen&&n.view==="settings"?"close":"open-settings"', 'n.isOpen?"close":"open-settings"'],
+  ["agent-pane-no-computer-button", "ne=!o||m?p.jsx(yo,{content:iSn", "ne=!1?p.jsx(yo,{content:iSn"],
+  ["agent-pane-one-page", AGENT_PANE_BODY_BEFORE, AGENT_PANE_BODY_AFTER],
+]);
+
+export function patchOriginalAgentPane(source) {
+  let out = source;
+  for (const [label, before, after] of AGENT_PANE_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export const AGENT_PANE_MARKER = "/* Simeon: the agent's pane, one page with a segmented control";
+const PANE_FONT = '-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif';
+export const AGENT_PANE_CSS = `${AGENT_PANE_MARKER} (1 October 2026). */
+.sand-agents-sidebar~.sand-info-pane,.sand-info-pane .sand-info-pane__inner{background-color:light-dark(#f5f5f7,#1c1c1e)!important}
+.simeon-pane{--simeon-card:light-dark(#ffffff,#2c2c2e);--simeon-hairline:light-dark(rgba(60,60,67,.14),rgba(84,84,88,.6));--simeon-ink:light-dark(#1d1d1f,#f5f5f7);--simeon-ink-2:light-dark(#6e6e73,#98989d);display:flex;flex-direction:column;padding:0 16px 32px;font-family:${PANE_FONT};-webkit-font-smoothing:antialiased;color:var(--simeon-ink)}
+.simeon-pane__head{display:flex;flex-direction:column;align-items:center;padding:4px 0 22px}
+.simeon-pane__head .sand-avatar-trigger-row{width:100%!important;height:auto!important;justify-content:center!important}
+.simeon-pane__head .sand-avatar-trigger{width:auto!important;height:auto!important}
+.simeon-pane__head .sand-avatar-trigger__button{position:relative;width:88px!important;height:88px!important;overflow:visible!important;border-radius:50%!important;background:none!important}
+.simeon-pane__head .sand-avatar-trigger__button>span:first-child,.simeon-pane__head .sand-grok-bot-mark-avatar,.simeon-pane__head .sand-grok-bot-mark-avatar>svg,.simeon-pane__head img{width:88px!important;height:88px!important}
+.simeon-pane__head img{border-radius:50%;object-fit:cover}
+.simeon-pane__head .sand-avatar-trigger__overlay{inset:auto 2px 4px auto!important;width:28px!important;height:28px!important;border-radius:50%!important;opacity:1!important;-webkit-mask-image:none!important;mask-image:none!important;background:var(--simeon-card)!important;color:var(--simeon-ink)!important;box-shadow:0 1px 3px rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.06)!important;display:flex!important;align-items:center;justify-content:center;transition:transform .15s}
+.simeon-pane__head .sand-avatar-trigger__button:hover .sand-avatar-trigger__overlay{transform:scale(1.06)}
+.simeon-pane__name{margin-top:14px;font-size:20px;line-height:24px;font-weight:600;letter-spacing:-.02em;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.simeon-pane__title{margin-top:2px;font-size:13px;line-height:18px;color:var(--simeon-ink-2);text-align:center}
+.simeon-segments{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;padding:2px;margin:0 0 22px;border-radius:9px;background:light-dark(rgba(118,118,128,.12),rgba(118,118,128,.24))}
+.simeon-segments__thumb{position:absolute;top:2px;bottom:2px;left:2px;width:calc((100% - 4px) / var(--simeon-seg-count));transform:translateX(calc(var(--simeon-seg-index) * 100%));border-radius:7px;background:light-dark(#fff,#636366);box-shadow:0 3px 8px rgba(0,0,0,.12),0 3px 1px rgba(0,0,0,.04),0 0 0 .5px rgba(0,0,0,.04);transition:transform .32s cubic-bezier(.3,.7,.2,1)}
+.simeon-segments__item{position:relative;z-index:1;appearance:none;border:0;margin:0;padding:0 2px;height:28px;background:none;border-radius:7px;font:inherit;font-size:12px;font-weight:400;letter-spacing:-.005em;color:var(--simeon-ink);cursor:default;outline:none;white-space:nowrap}
+.simeon-segments__item>span{display:inline-grid}
+.simeon-segments__item>span::after{content:attr(data-label);font-weight:600;visibility:hidden;height:0;overflow:hidden}
+.simeon-segments__item[aria-selected="true"]{font-weight:600}
+.simeon-segments__item:focus-visible{box-shadow:0 0 0 3px light-dark(rgba(0,0,0,.18),rgba(255,255,255,.28))}
+.simeon-segments__item+.simeon-segments__item::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:1px;background:light-dark(rgba(60,60,67,.18),rgba(235,235,245,.18));transition:opacity .2s}
+.simeon-segments__item[aria-selected="true"]::before,.simeon-segments__item[aria-selected="true"]+.simeon-segments__item::before{opacity:0}
+.simeon-pane__body{display:flex;flex-direction:column;gap:16px;font-size:13px}
+.simeon-pane__body .sand-agent-settings{gap:16px!important}
+.simeon-pane__body .sand-agent-settings div:has(>.sand-avatar-trigger-row){display:none!important}
+.simeon-pane__body .sand-agent-settings>div:first-child{display:grid!important;grid-template-columns:84px minmax(0,1fr);align-items:start;padding:0 14px;border-radius:12px;background:var(--simeon-card);box-shadow:0 0 0 .5px rgba(0,0,0,.04),0 1px 2px rgba(0,0,0,.03)}
+.simeon-pane__body .sand-agent-settings>div:first-child>div:not(:has(.sand-avatar-trigger-row)){margin:0!important;padding:11px 0!important;font-size:13px!important;line-height:18px!important;font-weight:400!important;color:var(--simeon-ink-2)!important}
+.simeon-pane__body .sand-agent-settings>div:first-child>:is(input,textarea){margin:0!important;padding:11px 0!important;min-height:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;outline:none!important;font:inherit!important;font-size:13px!important;line-height:18px!important;color:var(--simeon-ink)!important}
+.simeon-pane__body .sand-agent-settings>div:first-child>textarea{resize:none!important;field-sizing:content;min-height:54px!important}
+.simeon-pane__body .sand-agent-settings>div:first-child>:nth-child(n+4){border-top:.5px solid var(--simeon-hairline)!important}
+.simeon-pane__body .sand-agent-settings__card,.simeon-pane__body .sand-channel-row{border:0!important;border-radius:12px!important;background:var(--simeon-card)!important;box-shadow:0 0 0 .5px rgba(0,0,0,.04),0 1px 2px rgba(0,0,0,.03)!important}
+.simeon-pane__body .sand-agent-settings__card{padding:12px 14px!important}
+.sand-info-pane [role="switch"][aria-checked="true"]{background-color:light-dark(#1d1d1f,#f5f5f7)!important;border-color:transparent!important}
+.sand-info-pane [role="switch"][aria-checked="true"]>span{background-color:light-dark(#ffffff,#1c1c1e)!important}
+.simeon-pane__computer .sand-computer-preview{padding:8px 8px 4px!important;border-radius:14px!important;background:var(--simeon-card)!important;box-shadow:0 0 0 .5px rgba(0,0,0,.04),0 1px 2px rgba(0,0,0,.03)!important}
+.simeon-pane__computer .sand-computer-preview__frame{border-radius:8px!important;background:light-dark(rgba(118,118,128,.1),rgba(118,118,128,.18))!important}
+.simeon-pane__computer .sand-computer-stage__placeholder{background:transparent!important;box-shadow:none!important}
+.simeon-pane__computer .sand-computer-stage__retry{background:light-dark(rgba(118,118,128,.14),rgba(118,118,128,.28))!important;border:0!important;box-shadow:none!important;color:var(--simeon-ink)!important}
+.simeon-pane__computer{display:flex;flex-direction:column;gap:16px}
+.simeon-pane__add{display:flex;justify-content:flex-end}
+.simeon-pane__add button{display:inline-flex;align-items:center;gap:4px;appearance:none;border:0;background:none;padding:4px 2px;font:inherit;font-size:13px;color:var(--simeon-ink);cursor:default}
+.simeon-pane__add button:hover{opacity:.7}
+`;
+
+export function patchOriginalAgentPaneStylesheet(css) {
+  if (css.includes(AGENT_PANE_MARKER)) throw new Error("Original renderer agent pane block is already present.");
+  return `${css}\n${AGENT_PANE_CSS}`;
+}
+
+/**
  * Onboarding copy, 27 September 2026 (the founder's words): the sign-in
  * tagline, the sentence typed into the composer on the "meet" screen, and
  * the three example teammates' names. Their ids (`invoice-chaser`,
@@ -1040,8 +1147,9 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!COPY_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer onboarding copy anchors are not all in the mark chunk.");
   if (!LOGO_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer file-kind and Plugins-button anchors are not all in the mark chunk.");
   if (!VOICE_CALL_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer voice-call anchors (chat header identity row, character settings) are not all in the mark chunk.");
+  if (!AGENT_PANE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer agent pane anchors (the info pane, its view guard, the chat header's computer button) are not all in the mark chunk.");
   const logoAssets = await readLogoAssets();
-  const markPatched = patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions))));
+  const markPatched = patchOriginalAgentPane(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions)))));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -1050,7 +1158,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  const stylesheetPatched = patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets));
+  const stylesheetPatched = patchOriginalAgentPaneStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets)));
   const chunkSources = [];
   for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
   const styleAnchors = {
@@ -1070,7 +1178,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const appIconAfter = await readFile(appIconTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
-    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos", "voice-call-styles"],
+    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, ...AGENT_PANE_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos", "voice-call-styles", "agent-pane-styles"],
     userBubble: { light: USER_BUBBLE_LIGHT, dark: USER_BUBBLE_DARK, stylesheet: path.relative(stageRoot, bubbleSheets[0].target) },
     // The stylesheet's hashes, so `npm run verify` can check the packaged
     // file against what this patch wrote (25 September 2026: verify read

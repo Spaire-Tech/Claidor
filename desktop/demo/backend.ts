@@ -10,6 +10,7 @@ import {
   AGENTS, GROUP, GROUP_TRANSCRIPT, TRANSCRIPTS, at, openingScript,
   type Beat, type DemoAgent, type Entry,
 } from "./scenario.js";
+import { CONNECTOR_MANIFESTS } from "../source/shared/channels.js";
 
 export interface DemoBackendHooks {
   readonly pushCoordinatorEvent: (family: string, payload: unknown) => void;
@@ -255,7 +256,7 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
     getAgentAutomations: () => [],
     listAllAutomations: () => [],
     getAgentMemories: () => [],
-    getAgentChannels: () => ({ channels: [] }),
+    getAgentChannels: () => ({ manifests: CONNECTOR_MANIFESTS, connections: [] }),
     getForeverBoxStatus: () => ({ state: "ready" }),
   };
 

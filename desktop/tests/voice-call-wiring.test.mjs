@@ -68,7 +68,7 @@ test("the voice-call anchors apply exactly once, and a second pass refuses", asy
   assert.throws(() => patchOriginalVoiceCallStylesheet(css), /already present/);
   const source = await readFile(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs"), "utf8");
   assert.match(source, /patchOriginalVoiceCall\(patchOriginalChatLayout\(/);
-  assert.match(source, /\.\.\.VOICE_CALL_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT\]\.map/);
+  assert.match(source, /\.\.\.VOICE_CALL_REPLACEMENTS, \.\.\.AGENT_PANE_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT\]\.map/);
   assert.match(source, /"voice-call-button", "voice-picker"\]/);
 });
 
