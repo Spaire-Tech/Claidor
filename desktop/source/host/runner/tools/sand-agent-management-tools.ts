@@ -138,7 +138,7 @@ export function createCreateAgentTool(management: AgentManagementDependencies) {
         name: args.name,
         description: args.description,
       });
-      return `Created agent "${created.name}" (id: ${created.id}). Message it with SendToAgent using that id.`;
+      return `Created agent "${created.name}" (id: ${created.id}). It introduces itself to the user in its own chat now, so there is no need to ask it to. Message it with SendToAgent using that id to brief it.`;
     },
   });
 }

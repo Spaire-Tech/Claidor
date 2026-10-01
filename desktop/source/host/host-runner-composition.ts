@@ -1247,6 +1247,11 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           description: input.description
         }, "user");
         const agent = result.agent;
+        // The new agent introduces itself to the person now, the way one they
+        // create themselves does: the window starts that for its own creations
+        // only, so an agent made here waited until its chat was opened, which
+        // on a call never happens (1 October 2026).
+        void Promise.resolve(method(transcript, "kickstartCreatedAgent")?.(agent.id)).catch(() => {});
         return {
           id: agent.id,
           name: agent.name,
