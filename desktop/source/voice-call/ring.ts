@@ -59,3 +59,42 @@ export function createRinger(createContext: () => AudioContext = () => new Audio
     },
   };
 }
+
+/**
+ * The tone a finished call makes (2 October 2026, the founder: "make a sound
+ * for when it hang up, apple style"): two short, soft notes falling a fifth,
+ * like a phone's call-ended tone. Its own audio context, since the ringer's
+ * is closed once the call connects.
+ */
+export const HANG_UP_NOTES: readonly number[] = [784, 523.25];
+const HANG_UP_NOTE_SECONDS = 0.13;
+const HANG_UP_GAP_SECONDS = 0.04;
+const HANG_UP_GAIN = 0.07;
+
+export function playHangUpTone(createContext: () => AudioContext = () => new AudioContext()): void {
+  try {
+    const context = createContext();
+    const master = context.createGain();
+    master.gain.value = HANG_UP_GAIN;
+    master.connect(context.destination);
+    const start = context.currentTime + 0.02;
+    HANG_UP_NOTES.forEach((frequency, index) => {
+      const at = start + index * (HANG_UP_NOTE_SECONDS + HANG_UP_GAP_SECONDS);
+      const envelope = context.createGain();
+      envelope.gain.setValueAtTime(0, at);
+      envelope.gain.linearRampToValueAtTime(1, at + 0.012);
+      envelope.gain.exponentialRampToValueAtTime(0.001, at + HANG_UP_NOTE_SECONDS);
+      envelope.connect(master);
+      const oscillator = context.createOscillator();
+      oscillator.type = "sine";
+      oscillator.frequency.value = frequency;
+      oscillator.connect(envelope);
+      oscillator.start(at);
+      oscillator.stop(at + HANG_UP_NOTE_SECONDS + 0.02);
+    });
+    const total = HANG_UP_NOTES.length * (HANG_UP_NOTE_SECONDS + HANG_UP_GAP_SECONDS) + 0.2;
+    setTimeout(() => { void context.close().catch(() => {}); }, Math.round(total * 1000));
+  } catch {
+    // No audio output: the call still ends.
+  }
+}

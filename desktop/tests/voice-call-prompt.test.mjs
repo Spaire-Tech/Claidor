@@ -56,7 +56,7 @@ test("the voice is the agent itself: first person, its recent chat, the upstream
   assert.match(text, /Acknowledge it once, in a few words that fit what they asked, never the same phrase twice in a call/);
   assert.match(text, /Set each thing going once\./);
   assert.match(text, /If it repeats something you already told them, or is not about anything they asked, say nothing about it/);
-  assert.match(text, /You have no teammates yet/);
+  assert.match(text, /You have no teammates yet\. When they ask for one, you can create one/);
   assert.match(text, /Them: Can you draft the agenda\?\nYou: Drafted\. It's in the doc\./);
   assert.match(text, /contractions/);
   assert.match(text, /Never use lists, headings, markdown/);
@@ -71,7 +71,7 @@ test("the voice is the agent itself: first person, its recent chat, the upstream
   assert.doesNotMatch(text, /the agent|hand_to_agent|check_on_agent/i);
   const team = prompt.buildVoiceCallPrompt({ agent: { name: "Don" }, transcript: [], personName: "Bass", teammates: [{ name: "Lena", title: "Research" }, { name: "Dawn" }, { name: "Don" }, { name: "  " }] });
   assert.match(team, /Your teammates, other agents on Bass's team that you can message, ask and hand work to: Lena \(Research\), Dawn\./);
-  assert.match(team, /Never say you can't reach a teammate\./);
+  assert.match(team, /Never say you can't reach, message or talk to a teammate\./);
   assert.match(prompt.SEND_TASK_ACCEPTED, /^Sent\. If you have not acknowledged it yet/);
   const empty = prompt.buildVoiceCallPrompt({ agent: { name: "Ada" }, transcript: [] });
   assert.match(empty, /have not written to each other yet/);

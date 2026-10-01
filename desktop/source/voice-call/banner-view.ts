@@ -24,8 +24,6 @@ export interface BannerElements {
   readonly talk: HTMLButtonElement;
   readonly live: HTMLElement;
   readonly end: HTMLButtonElement;
-  readonly again: HTMLButtonElement;
-  readonly chat: HTMLButtonElement;
   readonly close: HTMLButtonElement;
 }
 
@@ -47,8 +45,6 @@ export function bannerElements(root: ParentNode = document): BannerElements {
     talk: required(root, ".talk"),
     live: required(root, ".live"),
     end: required(root, ".end"),
-    again: required(root, ".again"),
-    chat: required(root, ".chat"),
     close: required(root, ".close"),
   };
 }

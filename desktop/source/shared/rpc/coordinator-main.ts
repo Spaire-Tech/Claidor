@@ -26,7 +26,9 @@ export const COORDINATOR_MAIN_METHOD_TABLE = {
   updateAgent: { args: "object" },
   appendSendMessage: { args: "object" },
   // The call as a channel into the agent, `voice:<call>` (1 October 2026).
-  voiceCall: { args: "object" }
+  voiceCall: { args: "object" },
+  // The agent's picture for the call banner (2 October 2026): the roster carries no picture.
+  getAgentAvatar: { args: "object" }
 } as const;
 
 export type CoordinatorMainMethod = keyof typeof COORDINATOR_MAIN_METHOD_TABLE;

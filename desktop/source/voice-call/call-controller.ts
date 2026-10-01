@@ -55,6 +55,8 @@ export interface CallControllerDeps {
   readonly startSession: (options: SessionStart) => Promise<ConversationLike>;
   readonly ring: (cycles: number) => Promise<void>;
   readonly stopRinging: () => void;
+  /** The short tone a finished call makes. */
+  readonly playHangUp: () => void;
   readonly now: () => number;
   readonly requestFrame: (callback: (timeMs: number) => void) => void;
   readonly setTimer: (run: () => void, ms: number) => () => void;
@@ -64,8 +66,8 @@ export interface CallControllerDeps {
 /** Rings before the call connects, and the most it rings while the token is still on its way. */
 export const RINGS_BEFORE_CONNECT = 2;
 export const MAX_RINGS = 7;
-/** A finished call's banner leaves by itself after this, unless the pointer is on it. */
-export const ENDED_DISMISS_MS = 12_000;
+/** A finished call's banner leaves by itself after this, once the hang-up tone has played (the founder, 2 October 2026: "quit the banner once the call is finished"). */
+export const ENDED_DISMISS_MS = 1_200;
 export const FAILED_DISMISS_MS = 20_000;
 /** How long a finished hand-off waits for the voice to stop talking before it is pushed in anyway. */
 export const REPLY_WAIT_MS = 8_000;
@@ -113,7 +115,9 @@ export function createCallController(deps: CallControllerDeps): CallController {
   const scheduleDismiss = (): void => {
     cancelDismiss?.();
     cancelDismiss = null;
-    if (isHovered || (state.phase !== "ended" && state.phase !== "failed")) return;
+    if (state.phase !== "ended" && state.phase !== "failed") return;
+    // A finished call goes at once; a failure stays while the pointer is on it, to be read.
+    if (state.phase === "failed" && isHovered) return;
     cancelDismiss = deps.setTimer(() => { void deps.bridge.close(); }, state.phase === "failed" ? FAILED_DISMISS_MS : ENDED_DISMISS_MS);
   };
 
@@ -129,7 +133,7 @@ export function createCallController(deps: CallControllerDeps): CallController {
     if (state === before) return;
     if (state.phase !== before.phase) {
       if (state.phase !== "ringing") deps.stopRinging();
-      if (state.phase === "ended") reportEnd();
+      if (state.phase === "ended") { reportEnd(); if (before.phase === "live") deps.playHangUp(); }
       if (state.phase === "ended" || state.phase === "failed") { pendingReply?.cancel(); pendingReply = null; scheduleDismiss(); }
     }
     if (state.mode === "listening" && before.mode !== "listening") flushReply();
@@ -221,8 +225,6 @@ export function createCallController(deps: CallControllerDeps): CallController {
       isTranscriptOpen = !isTranscriptOpen;
       deps.painter.setTranscriptOpen(isTranscriptOpen);
     });
-    elements.again.addEventListener("click", () => { void deps.bridge.callAgain(); });
-    elements.chat.addEventListener("click", () => { void deps.bridge.openChat(); });
     elements.close.addEventListener("click", () => { void deps.bridge.close(); });
     elements.banner.addEventListener("mouseenter", () => { isHovered = true; cancelDismiss?.(); cancelDismiss = null; });
     elements.banner.addEventListener("mouseleave", () => { isHovered = false; scheduleDismiss(); });

@@ -7,7 +7,7 @@ import { Conversation } from "@elevenlabs/client";
 
 import { bannerElements, createBannerPainter } from "./banner-view.js";
 import { createCallController, type ConversationLike, type SimeonCallBridge } from "./call-controller.js";
-import { createRinger } from "./ring.js";
+import { createRinger, playHangUpTone } from "./ring.js";
 
 declare global {
   interface Window { readonly simeonCall?: SimeonCallBridge }
@@ -26,6 +26,7 @@ function run(): void {
     painter,
     ring: (cycles) => ringer.ring(cycles),
     stopRinging: () => ringer.stop(),
+    playHangUp: () => playHangUpTone(),
     now: () => Date.now(),
     requestFrame: (callback) => { window.requestAnimationFrame(callback); },
     setTimer: (run, ms) => { const timer = window.setTimeout(run, ms); return () => window.clearTimeout(timer); },
