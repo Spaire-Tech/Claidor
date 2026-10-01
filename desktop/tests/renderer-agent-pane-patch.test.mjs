@@ -39,13 +39,14 @@ test("the segments read Profile, Routines, Computer and, where served, Channels"
   assert.match(components, /\.\.\.\(h\?\[\["channels","Channels"\]\]:\[\]\)/);
 });
 
-test("the pane's styles carry no accent colour", async () => {
-  const { AGENT_PANE_CSS, patchOriginalAgentPaneStylesheet } = await import(patchModule);
+test("the pane's styles are greys only, and every switch in the window is the main blue", async () => {
+  const { AGENT_PANE_CSS, patchOriginalAgentPaneStylesheet, switchBlueCss, USER_BUBBLE_LIGHT, SWITCH_BLUE_DARK } = await import(patchModule);
   assert.ok(AGENT_PANE_CSS.startsWith("/* Simeon: the agent's pane, one page with a segmented control"));
   const colours = AGENT_PANE_CSS.match(/#[0-9a-f]{6}\b/gi) ?? [];
   const neutral = (hex) => { const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)); return Math.max(r, g, b) - Math.min(r, g, b) <= 12; };
   assert.deepEqual(colours.filter((hex) => !neutral(hex)), [], "greys only");
-  assert.match(AGENT_PANE_CSS, /\.sand-info-pane \[role="switch"\]\[aria-checked="true"\]\{background-color:light-dark\(#1d1d1f,#f5f5f7\)!important/);
+  assert.ok(switchBlueCss().includes(`[role="switch"][aria-checked="true"]:not(#\\#):not(#\\#):not(#\\#):not(#\\#){background-color:light-dark(${USER_BUBBLE_LIGHT},${SWITCH_BLUE_DARK})!important`));
+  assert.equal(USER_BUBBLE_LIGHT, "#255a93");
   assert.throws(() => patchOriginalAgentPaneStylesheet(`x\n${AGENT_PANE_CSS}`), /agent pane block is already present/);
 });
 
