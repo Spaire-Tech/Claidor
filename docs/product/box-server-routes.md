@@ -1309,6 +1309,20 @@ Nothing is blocked today — the workflow has never had a runner. Whoever owns t
 name check should decide between that rule and rewriting the notes; I would
 rather be told than assume.
 
+### A correction to the dead-runner signature itself
+
+On the next head (`16e2b790`) the `Names` job took **38 seconds**, not the 2–4 s
+every dead job on this PR has taken. Long enough to have checked out, installed
+Python and run the script — so I checked instead of assuming, and it had still
+never run: `runner_id: 0`, empty `runner_name`, and `GET .../logs` answers
+**404**, no log ever written.
+
+So **duration is not part of the signature** and I should stop treating it as
+though it were. The three fields that mean it are `runner_id: 0`, the empty
+`runner_name`, and the 404 on the logs. `started_at == created_at` and a
+two-second death are common but not required; a job can sit for half a minute
+and still never be given a machine.
+
 Unchanged: **nothing here has ever contacted E2B, no sandbox has been started,
 no command has run in a box, and CI has never executed a line of this diff** —
 which is, this time, also what made two of the renames safe.
