@@ -176,6 +176,7 @@ export function createAccountMcpBackendExec(options: AccountMcpBackendExecOption
           providerIdentifier: server.name,
           toolName: tool.name,
           clientKey: server.name,
+          ...(tool.title == null ? {} : { title: tool.title }),
           ...(tool.description == null ? {} : { description: tool.description }),
           ...(tool.inputSchema === undefined ? {} : { inputSchema: tool.inputSchema }),
         })),

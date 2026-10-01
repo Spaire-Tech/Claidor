@@ -31,7 +31,7 @@ export interface McpDiscoveryResultFactory extends McpResultFactory {
   error(message: string): McpResultLike;
 }
 
-type Tool = { providerIdentifier: string; name: string; toolName: string; description?: string; inputSchema?: JsonValue };
+type Tool = { providerIdentifier: string; name: string; toolName: string; title?: string; description?: string; inputSchema?: JsonValue };
 type ToolServer = {
   serverIdentifier: string;
   tools: Tool[];

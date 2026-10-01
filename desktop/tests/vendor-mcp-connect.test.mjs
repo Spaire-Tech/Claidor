@@ -54,7 +54,7 @@ function vendorFixture({ token = "tok-1", expiresIn = 3600, refreshed = "tok-2",
       const request = JSON.parse(String(init?.body));
       if (request.method === "initialize") return json({ jsonrpc: "2.0", id: request.id, result: { protocolVersion: "2025-06-18", capabilities: {}, serverInfo: { name: "notion" } } }, 200, { "mcp-session-id": "sess-1" });
       if (request.method === "notifications/initialized") return new Response("", { status: 202 });
-      if (request.method === "tools/list") return sse([{ jsonrpc: "2.0", id: request.id, result: { tools: [{ name: "get_file", description: "Read a file", inputSchema: { type: "object" } }, { name: "get_node" }] } }]);
+      if (request.method === "tools/list") return sse([{ jsonrpc: "2.0", id: request.id, result: { tools: [{ name: "get_file", title: "Get file", description: "Read a file", inputSchema: { type: "object" } }, { name: "get_node" }] } }]);
       if (request.method === "tools/call") return json({ jsonrpc: "2.0", id: request.id, result: { content: [{ type: "text", text: `called ${request.params.name} with ${JSON.stringify(request.params.arguments)}` }], isError: false } });
       return json({ jsonrpc: "2.0", id: request.id, error: { code: -32601, message: "no such method" } });
     }
@@ -160,6 +160,8 @@ test("the HTTP MCP client initializes once, lists tools over SSE, calls a tool, 
     const tools = await vendorMcpListTools({ url: FIGMA, accessToken: "tok-1", fetch: fetchImpl });
     assert.deepEqual(tools.map((tool) => tool.name), ["get_file", "get_node"]);
     assert.equal(tools[0].description, "Read a file");
+    assert.equal(tools[0].title, "Get file", "the display name is kept");
+    assert.equal(tools[1].title, undefined);
     const methods = calls.map((call) => JSON.parse(String(call.body)).method);
     assert.deepEqual(methods, ["initialize", "notifications/initialized", "tools/list"]);
     assert.equal(calls[2].headers["mcp-session-id"], "sess-1", "the session id from initialize is sent back");
