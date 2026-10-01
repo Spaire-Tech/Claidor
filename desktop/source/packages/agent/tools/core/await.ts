@@ -1,3 +1,4 @@
+import { redactSecretValues } from "../../../../shared/box-secret-redaction.js";
 import { RE2JS } from "re2js";
 import { z } from "zod";
 
@@ -187,7 +188,7 @@ async function readSnapshot(ctx: Context, resourceAccessor: AwaitResourceAccesso
   switch (result.result.case) {
     case "success": {
       const output = result.result.value.output;
-      const content = output.case === "content" ? output.value : output.case === "data" ? Buffer.from(output.value).toString("utf8") : "";
+      const content = redactSecretValues(output.case === "content" ? output.value : output.case === "data" ? Buffer.from(output.value).toString("utf8") : "");
       const outputLength = Number(result.result.value.fileSize);
       return { exists: true, content, outputLength: Number.isFinite(outputLength) && outputLength > 0 ? outputLength : content.length };
     }

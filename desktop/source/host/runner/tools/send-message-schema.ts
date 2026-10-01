@@ -2,18 +2,19 @@ import { isVoiceAddress } from "../../../shared/voice-call/main-loop-voice.js";
 import { z } from "zod";
 import { sandWidgetSchema } from "../../../shared/sand-widgets.js";
 import { CHANNELS_COMING_SOON_SENTENCE, CLOUD_AGENTS_COMING_SOON_SENTENCE, isAnyChannelAvailable, isCloudAgentsServed } from "../../../shared/cloud-agents-availability.js";
+import { CONNECTOR_MANIFESTS } from "../../../shared/channels.js";
 export const SEND_MESSAGE_TYPES = ["text", "attachment", "widget", "cursor-agent", "secret-request"] as const;
 // Coming Soon at the reach point (shared/cloud-agents-availability.ts): the
 // types the model is offered when cloud agents and channels are not served.
 export function describeSendMessageTypes(env: NodeJS.ProcessEnv = process.env): string {
-  const cloud = isCloudAgentsServed(env), channels = isAnyChannelAvailable(undefined, env);
+  const cloud = isCloudAgentsServed(env);
   return [
     "text for chat messages, attachment for actual files or standalone media, widget for an interactive question with selectable options",
     cloud ? ", cursor-agent to reference a cloud agent by its bcId (renders as a card that opens the agent on click)" : "",
-    channels ? ", secret-request to ask the user for a credential through a secure masked input (never a chat paste)" : "",
+    ", secret-request to ask the user for a credential through a secure masked input (never a chat paste)",
     ".",
     cloud ? "" : " cursor-agent is not available: cloud agents are coming soon in Simeon.",
-    channels ? "" : " secret-request is not available: messaging channels are coming soon in Simeon, never ask for a key in the chat.",
+  
   ].join("");
 }
 export type SendMessageType = typeof SEND_MESSAGE_TYPES[number];
@@ -106,10 +107,15 @@ export function followUpWidgetOf(input: unknown): unknown {
   const distinct = new Set(labels.filter((label) => label.length > 1).map((label) => label.toLowerCase()));
   return prompt.length > 3 && distinct.size >= 2 && distinct.size === labels.length ? parsed.data : undefined;
 }
+function isMessagingConnector(connector: unknown): boolean {
+  return typeof connector === "string" && CONNECTOR_MANIFESTS.some((manifest) => manifest.platform === connector.trim().toLowerCase());
+}
+
 export function refineSendMessage(value: SendMessageInput, env: NodeJS.ProcessEnv = process.env): SendMessageIssue[] {
   const issues: SendMessageIssue[] = [];
   if (value.type === "cursor-agent" && !isCloudAgentsServed(env)) issues.push({ path: ["type"], message: CLOUD_AGENTS_COMING_SOON_SENTENCE });
-  if (value.type === "secret-request" && !isAnyChannelAvailable(undefined, env)) issues.push({ path: ["type"], message: CHANNELS_COMING_SOON_SENTENCE });
+  // Only a messaging connector's key needs channels; any other key becomes a secret on the computer.
+  if (value.type === "secret-request" && isMessagingConnector(value.secret?.connector) && !isAnyChannelAvailable(undefined, env)) issues.push({ path: ["type"], message: CHANNELS_COMING_SOON_SENTENCE });
   if (value.channel && value.type !== "text" && value.type !== "attachment") issues.push({ path: ["channel"], message: "channel can only be set for type:text or type:attachment, not widgets or cloud-agent cards" });
   if ((value.images?.length ?? 0) > 0 && value.type !== "text") issues.push({ path: ["images"], message: "images can only be set for type:text (they attach to a text message); for a standalone attachment use type:attachment with url" });
   if (value.type === "text") {

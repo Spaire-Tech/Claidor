@@ -370,6 +370,27 @@ change made by the agent itself redraws the roster (`onAvatarChanged`).
   editor; on the server, `desktop.proxy.upstream_refused`. The Mac keeps no log for this path.
 * **Not yet verified.** Neither flow has been measured on a Mac since the roster fix.
 
+### Keys an agent asks for in the chat
+
+Added 2 October 2026; the upstream app had no path for this. An agent asks for a key
+with `SendMessage` `{"type":"secret-request","secret":{"label","connector","field"}}`,
+and the person types it into a masked input.
+
+- **For a messaging connector** (`discord`, `slack`): the key goes to that connector's
+  credential file, as before.
+- **For any other service**: the key becomes a secret in the cloud computer's environment,
+  named for the service and what it is (connector `render`, field `api_key` →
+  `RENDER_API_KEY`; `shared/box-secret-redaction.ts`). The agent is told the name and uses
+  it as `"$RENDER_API_KEY"` in its commands; it never sees the value.
+- **Where these keys live:** the box's own file (`agent-keys.json` beside
+  `box-secrets.json`, mode 600). They join the person's Secrets from the Mac's Settings;
+  the person's Secrets win a clash (`host/extensions/secrets/secrets-service.ts`).
+- **Blanking:** every secret value the box was given is blanked to `[secret]` in what the
+  shell and await tools hand the agent, so a command that prints one does not put it in
+  the chat.
+- **Log:** the host logs `agent key <NAME> stored for the box's commands`.
+- **Needs** a host bundle from 2 October 2026 or later.
+
 ### Group chats
 
 **For the person.** A group holds several agents. Each member answers in turn, and an
