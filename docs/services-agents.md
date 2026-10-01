@@ -437,7 +437,8 @@ the background while the call goes on, and says how it is going when asked.
   use, and rewrites it whenever `VOICE_AGENT_CONFIG_VERSION` in
   `server/simeon/desktop/voice.py` changes (the version is a tag on the agent; the id is
   remembered per process). Its configuration: authentication required, the four overrides
-  above and no others, `gemini-2.5-flash` as the voice's model, `eleven_flash_v2` for
+  above and no others, `gemini-2.5-flash` as the voice's model with `thinking_budget: 0` (2.5 Flash thinks
+  before every reply by default, and the replies waited on it), `eleven_flash_v2` for
   speech (an English agent is refused on any other), a voice the workspace has (the first of the
   founder's voices the account has, else the first ElevenLabs default, else Eric: a missing
   voice is refused with `voice_not_found`), `end_call` and `skip_turn`, a 7 s turn timeout,
@@ -514,6 +515,12 @@ the background while the call goes on, and says how it is going when asked.
     its own. The banner's status line shows the agent's activity meanwhile ("Using Gmail…").
   - A request that does not reach the agent answers the voice "That did not come back. Say
     you could not get to it, and offer to try again."
+  - A host without the channel (a cloud computer still on a host bundle from before 1
+    October 2026, so `voiceCall` fails) gets the call through the agent's chat instead: the
+    request is sent as the person's own message (`sendPrompt`, "(On our call) …"), and each
+    new text the agent writes in the chat (read every 1.2 s from the chat's tail) is said by
+    the voice. No `voice-calls/` record is written that way. Main's log says
+    `call channel: voice:<id> goes through the agent's chat`.
   - On hang-up the address closes (`kind:"ended"`, with the seconds, the recap and the
     transcript). The record is written to `voice-calls/<start>-<callId>.json` in the agent's
     own files. If anything was asked on the call, the agent is told "The call ended…" and puts
@@ -578,7 +585,9 @@ the API):
   by hand; that agent is then used as it is and never rewritten. Without the key every voice
   route answers 503 "Voice calls are not switched on on this server."
 * **Log lines.** Server: `desktop.voice.call_started`, `desktop.voice.call_ended` (seconds,
-  and `source=provider|app`), `desktop.voice.agent_created`, `desktop.voice.agent_synced`,
+  and `source=provider|app`), `desktop.voice.call_latency` (ElevenLabs' own per-turn
+  timings for the call, the median and slowest of each, such as the model's time to first
+  word, and the model that answered: read it before reasoning about a slow voice), `desktop.voice.agent_created`, `desktop.voice.agent_synced`,
   `desktop.voice.agent_ready`; on failure `desktop.voice.upstream_refused` with ElevenLabs'
   own answer, `desktop.voice.upstream_unreachable`, `desktop.voice.conversation_unread` (the
   duration could not be read, so the app's count was billed) and

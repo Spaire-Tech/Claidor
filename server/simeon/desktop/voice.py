@@ -78,7 +78,7 @@ VOICE_AGENT_NAME = "Simeon voice"
 
 #: Bump when anything in `agent_config` or `CLIENT_TOOLS` changes: the next
 #: call finds the agent without this version's tag and rewrites it.
-VOICE_AGENT_CONFIG_VERSION = 6
+VOICE_AGENT_CONFIG_VERSION = 7
 VOICE_AGENT_VERSION_TAG = f"simeon-voice-config-v{VOICE_AGENT_CONFIG_VERSION}"
 VOICE_AGENT_TAGS = ["simeon", "simeon-voice", VOICE_AGENT_VERSION_TAG]
 
@@ -86,6 +86,12 @@ VOICE_AGENT_TAGS = ["simeon", "simeon-voice", VOICE_AGENT_VERSION_TAG]
 #: real work runs in the person's own agent behind the call (`send_task`), and a
 #: pause before every sentence is what makes a voice feel broken.
 VOICE_LLM = "gemini-2.5-flash"
+
+#: No thinking before it speaks. Gemini 2.5 Flash thinks by default, and
+#: every reply waited on it (the founder, 1 October 2026: "it also takes time
+#: to answer me"). ElevenLabs: "Use 0 to turn off if supported by the model";
+#: 2.5 Flash supports it. The real work is the person's agent's, not this.
+VOICE_LLM_THINKING_BUDGET = 0
 
 #: ElevenLabs' low-latency voice model. An English agent must use a turbo or
 #: flash v2 model: `eleven_flash_v2_5` is refused with "English Agents must use
@@ -233,6 +239,7 @@ def agent_config(
                 "prompt": {
                     "prompt": VOICE_BASE_PROMPT,
                     "llm": VOICE_LLM,
+                    "thinking_budget": VOICE_LLM_THINKING_BUDGET,
                     "tool_ids": tool_ids,
                     "built_in_tools": {
                         "end_call": _system_tool("end_call"),
@@ -739,6 +746,36 @@ def _person_name(user: Any) -> str | None:
     )
 
 
+def turn_latency(conversation: dict[str, Any] | None) -> dict[str, Any]:
+    """How long the call's replies took, from ElevenLabs' own per-turn
+    metrics: for each metric (`convai_llm_service_ttfb`, the voice's, …),
+    the median and the slowest in seconds over the agent's turns, plus the
+    model that answered. Names are taken as ElevenLabs sends them."""
+    lines = conversation.get("transcript") if conversation else None
+    seen: dict[str, list[float]] = {}
+    models: set[str] = set()
+    for line in lines if isinstance(lines, list) else []:
+        if not isinstance(line, dict) or line.get("role") != "agent":
+            continue
+        model = line.get("producing_llm")
+        if isinstance(model, str) and model:
+            models.add(model)
+        turn = line.get("conversation_turn_metrics")
+        metrics = turn.get("metrics") if isinstance(turn, dict) else None
+        for name, record in (metrics if isinstance(metrics, dict) else {}).items():
+            value = record.get("elapsed_time") if isinstance(record, dict) else None
+            if isinstance(value, int | float) and not isinstance(value, bool):
+                seen.setdefault(str(name), []).append(float(value))
+    out: dict[str, Any] = {}
+    for name, values in sorted(seen.items()):
+        ordered = sorted(values)
+        out[f"{name}_median"] = round(ordered[len(ordered) // 2], 3)
+        out[f"{name}_max"] = round(ordered[-1], 3)
+    if models:
+        out["llm"] = ",".join(sorted(models))
+    return out
+
+
 def _reported_seconds(conversation: dict[str, Any] | None) -> int | None:
     metadata = conversation.get("metadata") if conversation else None
     value = metadata.get("call_duration_secs") if isinstance(metadata, dict) else None
@@ -888,6 +925,12 @@ async def end_call(
         seconds=seconds,
         source=source,
         app_seconds=app_seconds,
+    )
+    # How fast the voice answered, turn by turn, to measure and not guess.
+    log.info(
+        "desktop.voice.call_latency",
+        conversation_id=conversation_id,
+        **turn_latency(conversation),
     )
     return JSONResponse(
         {
