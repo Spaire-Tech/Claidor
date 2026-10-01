@@ -725,8 +725,22 @@ const furSvg = ([tag, attrs, children]) => {
 };
 /** The animator's filter, as the bundle's JSX (`id` is `${N}-fur`). */
 export const FUR_FILTER_JSX = `p.jsxs("filter",{id:\`\${N}-fur\`,${Object.entries(FUR_REGION).map(([k, v]) => `${k}:${JSON.stringify(v)}`).join(",")},colorInterpolationFilters:"sRGB",children:[${FUR_FILTER.map(furJsx).join(",")}]})`;
+/**
+ * The still drawings' fur. They are always small (the group avatars are 20 px), where the
+ * fringe and fly-aways fall under a pixel and read as blur (the founder, 1 October 2026:
+ * "Launch squad 3 avatars are kinda blurry"). The same texture and volume with a firm edge:
+ * no fringe, no fly-aways, no softening, gentler lumps.
+ */
+export const FUR_STILL_FILTER = Object.freeze(FUR_FILTER
+  .filter(([tag, attrs]) => !(tag === "feGaussianBlur" && attrs.in === "bodyHard"))
+  .map(([tag, attrs, children]) => {
+    if (tag === "feMerge") return [tag, attrs, children.filter(([, node]) => node.in !== "fly" && node.in !== "fuzzLit")];
+    if (attrs.result === "lumpy") return [tag, { ...attrs, scale: "4" }];
+    if (attrs.result === "bodyHard") return [tag, { ...attrs, scale: "3", result: "body" }];
+    return children == null ? [tag, attrs] : [tag, attrs, children];
+  }));
 /** The still drawing's filter, as SVG text (`id="fur"`). */
-export const FUR_FILTER_SVG = `<filter id="fur"${Object.entries(FUR_REGION).map(([k, v]) => ` ${k}="${v}"`).join("")} color-interpolation-filters="sRGB">${FUR_FILTER.map(furSvg).join("")}</filter>`;
+export const FUR_FILTER_SVG = `<filter id="fur"${Object.entries(FUR_REGION).map(([k, v]) => ` ${k}="${v}"`).join("")} color-interpolation-filters="sRGB">${FUR_STILL_FILTER.map(furSvg).join("")}</filter>`;
 
 /**
  * The agents' colours, replaced whole on 23 September 2026 ("i wanna change
