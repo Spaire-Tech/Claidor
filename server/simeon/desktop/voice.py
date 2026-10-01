@@ -60,6 +60,7 @@ from .service import (
     DesktopProvider,
     Usage,
     desktop,
+    preferred_name,
     provider_api_key,
     provider_base_url,
     provider_configured,
@@ -76,7 +77,7 @@ VOICE_AGENT_NAME = "Simeon voice"
 
 #: Bump when anything in `agent_config` or `CLIENT_TOOLS` changes: the next
 #: call finds the agent without this version's tag and rewrites it.
-VOICE_AGENT_CONFIG_VERSION = 3
+VOICE_AGENT_CONFIG_VERSION = 4
 VOICE_AGENT_VERSION_TAG = f"simeon-voice-config-v{VOICE_AGENT_CONFIG_VERSION}"
 VOICE_AGENT_TAGS = ["simeon", "simeon-voice", VOICE_AGENT_VERSION_TAG]
 
@@ -187,6 +188,22 @@ def _system_tool(name: str) -> dict[str, Any]:
     }
 
 
+#: The call's recap in the person's chat, our own field on the agent's
+#: analysis. ElevenLabs' built-in `transcript_summary` is written about "the
+#: user" in the third person and its prompt is not ours to change (the
+#: founder, 1 October 2026: "whats the deal with him calling me 'the user'").
+#: The server puts the person's name in front (`recap_for`).
+VOICE_RECAP_FIELD = "recap"
+VOICE_RECAP_DESCRIPTION = (
+    "A recap of this call for the chat between the agent and the person who "
+    "called. Write it as the agent, speaking to the person directly: 'you' for "
+    "them, 'I' for the agent. Start with 'You'. One or two short sentences: "
+    "what they called about, and what the agent did or will do. Plain, warm, "
+    "no greeting, no sign-off. Never write 'the user', 'the caller' or 'the "
+    "customer', and never name the person."
+)
+
+
 def agent_config(
     tool_ids: list[str], voice_id: str = VOICE_DEFAULT_VOICE_ID
 ) -> dict[str, Any]:
@@ -235,6 +252,12 @@ def agent_config(
                 }
             },
             "privacy": {"record_voice": False},
+            "data_collection": {
+                VOICE_RECAP_FIELD: {
+                    "type": "string",
+                    "description": VOICE_RECAP_DESCRIPTION,
+                }
+            },
         },
     }
 
@@ -616,9 +639,44 @@ async def start_call(
 
 
 def _summary(conversation: dict[str, Any] | None) -> str | None:
+    """The call's recap from our `recap` field, or None while ElevenLabs has
+    not written it. ElevenLabs' own `transcript_summary` is not used: it
+    speaks of "the user"."""
     analysis = conversation.get("analysis") if conversation else None
-    summary = analysis.get("transcript_summary") if isinstance(analysis, dict) else None
-    return summary.strip() if isinstance(summary, str) and summary.strip() else None
+    results = (
+        analysis.get("data_collection_results") if isinstance(analysis, dict) else None
+    )
+    field = results.get(VOICE_RECAP_FIELD) if isinstance(results, dict) else None
+    if field is None and isinstance(analysis, dict):
+        # The same results as a list, which the API also answers with.
+        listed = analysis.get("data_collection_results_list")
+        field = next(
+            (
+                one
+                for one in (listed if isinstance(listed, list) else [])
+                if isinstance(one, dict)
+                and one.get("data_collection_id") == VOICE_RECAP_FIELD
+            ),
+            None,
+        )
+    value = field.get("value") if isinstance(field, dict) else None
+    return value.strip() if isinstance(value, str) and value.strip() else None
+
+
+def recap_for(recap: str | None, name: str | None) -> str | None:
+    """The recap with the person's name in front: "Bass, you asked me to…"."""
+    if recap is None or not name:
+        return recap
+    if recap[:3].lower() == "you" and (len(recap) == 3 or not recap[3].isalpha()):
+        return f"{name}, {recap[:1].lower()}{recap[1:]}"
+    return recap
+
+
+def _person_name(user: Any) -> str | None:
+    """The name the person asked to be called, else Google's first name."""
+    return preferred_name(user) or (
+        str((user.meta or {}).get("given_name") or "").strip() or None
+    )
 
 
 def _reported_seconds(conversation: dict[str, Any] | None) -> int | None:
@@ -708,7 +766,10 @@ async def end_call(
             return error_response("not_found_error", "No such call.", 404)
         conversation = await _fetch_conversation(api, conversation_id)
         return JSONResponse(
-            {"seconds": billed.seconds, "summary": _summary(conversation)},
+            {
+                "seconds": billed.seconds,
+                "summary": recap_for(_summary(conversation), _person_name(caller.user)),
+            },
             headers={"cache-control": "no-store"},
         )
 
@@ -768,7 +829,10 @@ async def end_call(
         app_seconds=app_seconds,
     )
     return JSONResponse(
-        {"seconds": seconds, "summary": _summary(conversation)},
+        {
+            "seconds": seconds,
+            "summary": recap_for(_summary(conversation), _person_name(caller.user)),
+        },
         headers={"cache-control": "no-store"},
     )
 

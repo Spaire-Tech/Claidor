@@ -162,7 +162,18 @@ def _conversation(agent_id: str, seconds: Any, summary: str | None = None) -> An
         "metadata": {"call_duration_secs": seconds},
     }
     if summary is not None:
-        answer["analysis"] = {"transcript_summary": summary}
+        # ElevenLabs' own summary speaks of "the user" and is never shown;
+        # our `recap` field is.
+        answer["analysis"] = {
+            "transcript_summary": "The user called the agent.",
+            "data_collection_results": {
+                "recap": {
+                    "data_collection_id": "recap",
+                    "value": summary,
+                    "rationale": "",
+                }
+            },
+        }
     return answer
 
 
@@ -427,13 +438,28 @@ class TestEndingACall:
         assert (call.seconds, call.duration_source) == (95, "provider")
 
         # Asked again once the summary is written: the summary, no new bill.
-        fake.conversations["conv_1"] = _conversation(agent_id, 94.2, "Booked a table.")
+        fake.conversations["conv_1"] = _conversation(
+            agent_id, 94.2, "You asked me to book a table. Done."
+        )
         again = await client.post(
             f"{CALLS}/conv_1/end", headers=headers, json={"seconds": 400}
         )
         assert again.status_code == 200
-        assert again.json() == {"seconds": 95, "summary": "Booked a table."}
+        assert again.json() == {
+            "seconds": 95,
+            "summary": "You asked me to book a table. Done.",
+        }
         assert len(await _usage(session)) == 1
+
+        # With a name, the recap is addressed to the person by it.
+        renamed = await client.post(
+            "/desktop/api/user/name", headers=headers, json={"name": "  Bass "}
+        )
+        assert renamed.json()["data"]["preferredName"] == "Bass"
+        named = await client.post(
+            f"{CALLS}/conv_1/end", headers=headers, json={"seconds": 400}
+        )
+        assert named.json()["summary"] == "Bass, you asked me to book a table. Done."
 
     async def test_without_a_duration_the_app_count_is_billed_capped(
         self,
@@ -608,3 +634,39 @@ def test_an_english_agent_uses_a_model_elevenlabs_accepts_for_english() -> None:
     config = agent_config([])["conversation_config"]
     assert config["agent"]["language"] == VOICE_DEFAULT_LANGUAGE == "en"
     assert config["tts"]["model_id"] in {"eleven_flash_v2", "eleven_turbo_v2"}
+
+
+def test_the_recap_is_our_own_field_and_never_the_user() -> None:
+    from simeon.desktop.voice import VOICE_RECAP_FIELD, agent_config, recap_for
+
+    field = agent_config([])["platform_settings"]["data_collection"][VOICE_RECAP_FIELD]
+    assert field["type"] == "string"
+    assert "Never write 'the user'" in field["description"]
+    assert recap_for("You called to test the voice.", "Bass") == (
+        "Bass, you called to test the voice."
+    )
+    assert recap_for("You'll get the numbers by noon.", "Bass") == (
+        "Bass, you'll get the numbers by noon."
+    )
+    assert recap_for("Your invoice went out.", "Bass") == "Your invoice went out."
+    assert recap_for("You called.", None) == "You called."
+    assert recap_for(None, "Bass") is None
+
+
+def test_the_recap_is_read_from_the_list_form_too() -> None:
+    from simeon.desktop.voice import _summary
+
+    listed = {
+        "analysis": {
+            "data_collection_results_list": [
+                {"data_collection_id": "other", "value": "x", "rationale": ""},
+                {
+                    "data_collection_id": "recap",
+                    "value": " You called. ",
+                    "rationale": "",
+                },
+            ]
+        }
+    }
+    assert _summary(listed) == "You called."
+    assert _summary({"analysis": {"transcript_summary": "The user called."}}) is None

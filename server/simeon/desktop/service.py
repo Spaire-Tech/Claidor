@@ -316,6 +316,27 @@ def is_deep_control_param(value: str) -> bool:
 # --- the service ---------------------------------------------------------------
 
 
+PREFERRED_NAME_MAX = 60
+
+
+def preferred_name(user: User) -> str | None:
+    """What the person asked their agents to call them, or None."""
+    value = str((user.meta or {}).get("preferred_name") or "").strip()
+    return value or None
+
+
+def set_preferred_name(user: User, raw: str) -> str:
+    """Keep `raw`, whitespace collapsed, as the name the agents call the
+    person by. Raises ValueError when it is empty or too long."""
+    value = " ".join(raw.split())
+    if not value or len(value) > PREFERRED_NAME_MAX:
+        raise ValueError("A name of 1 to 60 characters.")
+    meta = dict(user.meta or {})
+    meta["preferred_name"] = value
+    user.meta = meta
+    return value
+
+
 class DesktopService:
     # auth codes
 
@@ -696,12 +717,19 @@ class DesktopService:
         )
         meta = user.meta or {}
         name = str(meta.get("name") or "").strip()
+        preferred = preferred_name(user)
+        suggested = str(meta.get("given_name") or "").strip()
         return {
             "id": str(user.id),
             "nickname": nickname,
-            # The name Google gave at sign-in, when there is one; the agent's
-            # user-info block reads it (`user-full-name-service.ts`).
+            # The name Google gave at sign-in, when there is one.
             **({"name": name} if name else {}),
+            # What the person asked their agents to call them (the app asks
+            # once, after onboarding); the agents, calls and recaps use it.
+            **({"preferredName": preferred} if preferred else {}),
+            # What the app offers in that question: Google's first name. Never
+            # the e-mail's local part, which is not a name.
+            **({"suggestedName": suggested} if suggested else {}),
             "email": user.email,
             "avatarUrl": user.avatar_url,
             "phone": None,

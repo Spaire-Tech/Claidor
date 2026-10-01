@@ -454,8 +454,12 @@ the background while the call goes on, and says how it is going when asked.
     server asks ElevenLabs how long the call lasted (`metadata.call_duration_secs`) and bills
     that; when ElevenLabs does not say, it bills the app's count, capped at 30 minutes. The
     call is billed once (`desktop_voice_calls`, unique on the conversation id); asking again
-    bills nothing and returns the summary (`analysis.transcript_summary`), which ElevenLabs
-    writes shortly after the call ends. A conversation of another ElevenLabs agent, or one
+    bills nothing and returns the recap, which ElevenLabs
+    writes shortly after the call ends. The recap is our own `recap` field on the agent's
+    analysis (`platform_settings.data_collection`, read from
+    `analysis.data_collection_results.recap.value`): written by the agent to the person
+    ("You asked me to…"), with the person's name put in front by the server
+    (`recap_for`). ElevenLabs' own `transcript_summary` speaks of "the user" and is not used. A conversation of another ElevenLabs agent, or one
     already billed to someone else, is answered 404.
   - `GET /desktop/api/proxy/v1/voice/voices`: the picker's list, ten curated conversational
     voices from ElevenLabs' default voices (every workspace has them) in a fixed order (one no longer offered is
@@ -497,8 +501,10 @@ the background while the call goes on, and says how it is going when asked.
 - **After.** "Call ended · 2:48" with Call Again and Chat; the banner leaves by itself after
   12 s unless the pointer is on it. Main posts `voice/calls/{id}/end` with the seconds, asks
   twice more for the summary (after 5 s and 10 s) if it is not ready, and adds
-  "Voice call · 2:48" plus the summary to the agent's chat as the agent's message (the host's
-  `appendSendMessage`), so the agent remembers the call. A banner closed mid-call still ends
+  "Voice call · 2:48" plus the recap to the agent's chat as the agent's message (the host's
+  `appendSendMessage`), so the agent remembers the call. The window draws that message as a
+  card (`__simeonCallRecord`): a phone, "Voice call" and the length, opening to the recap on
+  a click. A banner closed mid-call still ends
   and bills the call.
 - **The voice.** Each agent's `voiceId` is in its profile (`host/agents/agent-profile.ts`;
   a profile without one reads as empty: the call then sends no voice and speaks in the

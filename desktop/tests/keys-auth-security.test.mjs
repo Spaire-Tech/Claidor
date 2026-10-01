@@ -126,12 +126,30 @@ test("the person's name comes from the profile route, and the person never reads
   const { module, dispose } = await load("source/host/extensions/auth/user-full-name-service.ts", "full-name");
   try {
     assert.equal(module.USER_PROFILE_PATH, "/desktop/api/user/profile");
-    assert.equal(module.fullNameFromProfileBody({ code: 0, data: { nickname: "Bass Fall", email: "b@x" } }), "Bass Fall");
+    // The chosen name, else Google's; never the e-mail-made nickname (1 October 2026).
+    assert.equal(module.fullNameFromProfileBody({ code: 0, data: { nickname: "Bxss Fall", email: "b@x" } }), undefined);
+    assert.equal(module.fullNameFromProfileBody({ code: 0, data: { nickname: "Bxss Fall", name: "Bass Fall" } }), "Bass Fall");
+    assert.equal(module.fullNameFromProfileBody({ code: 0, data: { nickname: "Bxss Fall", name: "Bass Fall", preferredName: "Bass" } }), "Bass");
+    // A name read once is read again after the refresh window, so a rename reaches the agent.
+    let clock = 0, calls = 0, name = "Bass";
+    const token = `x.${Buffer.from(JSON.stringify({ sub: "p1" })).toString("base64url")}.y`;
+    const resolver = module.createSandUserFullNameResolver({ getAccessToken: async () => token, peekAccessToken: () => token, getMachineId: async () => "m", fetchFullName: async () => { calls += 1; return name; }, log: () => {}, now: () => clock });
+    await resolver.refresh();
+    assert.equal(resolver.getUserFullName(), "Bass");
+    name = "Bassy"; clock += module.USER_NAME_REFRESH_MS;
+    assert.equal(resolver.getUserFullName(), "Bass", "the read that notices staleness still answers at once");
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    assert.equal(resolver.getUserFullName(), "Bassy");
+    assert.equal(calls, 2);
     assert.equal(module.fullNameFromProfileBody({ code: 40101, message: "expired" }), undefined);
-    assert.equal(module.fullNameFromProfileBody({ code: 0, data: { nickname: "  " } }), undefined);
+    assert.equal(module.fullNameFromProfileBody({ code: 0, data: { preferredName: "  " } }), undefined);
   } finally {
     await dispose();
   }
+  // The request context reads the name as a value: an `async` wrapper made it a Promise and the agent never had it.
+  const composition = await src("host/host-runner-composition.ts");
+  assert.match(composition, /getUserFullName: \(\) => method\(auth, "getUserFullName"\)\?\.\(\)/);
+  assert.doesNotMatch(composition, /getUserFullName: async/);
   const service = await src("host/extensions/auth/user-full-name-service.ts");
   assert.doesNotMatch(service, /new GetMeRequest|dashboard_connect\.js/);
   for (const [file, gone] of [

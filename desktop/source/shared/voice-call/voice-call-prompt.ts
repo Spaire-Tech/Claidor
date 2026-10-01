@@ -78,20 +78,23 @@ export function transcriptLinesFromEntries(entries: readonly unknown[], limit = 
 }
 
 /** The per-call system prompt: who the voice is, what was said lately, and the rules. */
-export function buildVoiceCallPrompt(args: { readonly agent: VoiceCallAgentProfile; readonly transcript: readonly VoiceCallTranscriptLine[] }): string {
+export function buildVoiceCallPrompt(args: { readonly agent: VoiceCallAgentProfile; readonly transcript: readonly VoiceCallTranscriptLine[]; readonly personName?: string | null }): string {
   const name = collapse(args.agent.name) || "your agent";
+  const person = clamp(collapse(args.personName ?? ""), 60);
   const title = collapse(args.agent.title ?? "");
   const description = collapse(args.agent.description ?? "");
   const who = [
     `You are ${name}${title.length > 0 ? `, ${title}` : ""}, one of the person's Simeon agents, and you are on a live phone call with them.`,
     "Simeon is a team of always-on agents that work for the person on their Mac and on a computer of their own.",
     ...(description.length > 0 ? [`What ${name} is for, in the person's words: ${clamp(description, 800)}`] : []),
+    // The name the person gave in the app (1 October 2026), never one made from their e-mail.
+    ...(person.length > 0 ? [`The person is ${person}. Call them ${person} now and then, the way a colleague would, never in every sentence.`] : []),
   ].join(" ");
   const recent = args.transcript.length === 0
     ? "You and the person have not written to each other yet."
     : [
         "Your most recent chat with the person, oldest first, so you know what you are both talking about:",
-        ...args.transcript.map((line) => `${line.speaker === "person" ? "Person" : name}: ${line.text}`),
+        ...args.transcript.map((line) => `${line.speaker === "person" ? (person.length > 0 ? person : "Person") : name}: ${line.text}`),
       ].join("\n");
   const rules = [
     "How you talk:",
@@ -110,19 +113,20 @@ export function buildVoiceCallPrompt(args: { readonly agent: VoiceCallAgentProfi
   return `${who}\n\n${recent}\n\n${rules}`;
 }
 
-const GREETINGS: readonly ((name: string) => string)[] = [
-  (name) => `Hey, it's ${name}. What's up?`,
-  (name) => `Hi, ${name} here. What can I do for you?`,
-  (name) => `Hey! ${name} speaking. What do you need?`,
-  (name) => `Hi there, it's ${name}. How can I help?`,
+const GREETINGS: readonly ((name: string, person: string) => string)[] = [
+  (name, person) => `Hey${person}, it's ${name}. What's up?`,
+  (name, person) => `Hi${person}, ${name} here. What can I do for you?`,
+  (name, person) => `Hey${person}! ${name} speaking. What do you need?`,
+  (name, person) => `Hi${person}, it's ${name}. How can I help?`,
   (name) => `${name} here. What's on your mind?`,
 ];
 
 /** A short greeting with the agent's name; `pick` in [0, 1) chooses which, so calls do not all open alike. */
-export function buildFirstMessage(agentName: string, pick: number): string {
+export function buildFirstMessage(agentName: string, pick: number, personName?: string | null): string {
   const name = collapse(agentName) || "your agent";
+  const person = clamp(collapse(personName ?? ""), 60);
   const index = Math.min(GREETINGS.length - 1, Math.max(0, Math.floor((Number.isFinite(pick) ? pick : 0) * GREETINGS.length)));
-  return GREETINGS[index]!(name);
+  return GREETINGS[index]!(name, person.length > 0 ? ` ${person}` : "");
 }
 
 export interface VoiceCallOverrides {
@@ -136,12 +140,13 @@ export function buildVoiceCallOverrides(args: {
   readonly transcript: readonly VoiceCallTranscriptLine[];
   readonly voiceId?: string | null;
   readonly pick: number;
+  readonly personName?: string | null;
 }): VoiceCallOverrides {
   const voiceId = typeof args.voiceId === "string" && args.voiceId.trim().length > 0 ? args.voiceId.trim() : null;
   return {
     agent: {
-      prompt: { prompt: buildVoiceCallPrompt({ agent: args.agent, transcript: args.transcript }) },
-      firstMessage: buildFirstMessage(args.agent.name, args.pick),
+      prompt: { prompt: buildVoiceCallPrompt({ agent: args.agent, transcript: args.transcript, personName: args.personName ?? null }) },
+      firstMessage: buildFirstMessage(args.agent.name, args.pick, args.personName ?? null),
       language: VOICE_CALL_LANGUAGE,
     },
     ...(voiceId == null ? {} : { tts: { voiceId } }),

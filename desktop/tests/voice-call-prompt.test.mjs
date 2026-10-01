@@ -109,3 +109,14 @@ test("check_on_agent and the hand-off result say what the agent reported, and no
   assert.match(prompt.handOffResultUpdate([]), /did not send a message/);
   assert.equal(prompt.HAND_OFF_ACCEPTED, "Accepted. The agent is working on it.");
 });
+
+test("the voice calls the person by the name they gave, never by one made from their e-mail", () => {
+  const named = prompt.buildVoiceCallOverrides({ agent: { name: "Ada" }, transcript: [{ speaker: "person", text: "Hi" }], pick: 0, personName: " Bass " });
+  assert.match(named.agent.prompt.prompt, /The person is Bass\./);
+  assert.match(named.agent.prompt.prompt, /^Bass: Hi$/m);
+  assert.equal(named.agent.firstMessage, "Hey Bass, it's Ada. What's up?");
+  const unnamed = prompt.buildVoiceCallOverrides({ agent: { name: "Ada" }, transcript: [{ speaker: "person", text: "Hi" }], pick: 0 });
+  assert.doesNotMatch(unnamed.agent.prompt.prompt, /The person is/);
+  assert.match(unnamed.agent.prompt.prompt, /^Person: Hi$/m);
+  assert.equal(unnamed.agent.firstMessage, "Hey, it's Ada. What's up?");
+});

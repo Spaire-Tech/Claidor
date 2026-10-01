@@ -2,6 +2,9 @@ import { parseJwtPayload } from "../../../shared/node/cursor-token.js";
 import { getSandInferenceBackendUrl } from "../../../shared/node/cursor-backend/cursor-inference.js";
 
 export const GET_ME_TIMEOUT_MS = 10_000;
+export const USER_NAME_REFRESH_MS = 5 * 60_000;
+/** A failed read is not asked again by every turn: once a minute at most. */
+export const USER_NAME_RETRY_MS = 60_000;
 // Until 25 September 2026 the name was asked of Cursor's DashboardService
 // (GetMe), which Simeon Labs' server does not serve, so the agent never
 // had it. The profile route answers the box's own credential too
@@ -22,8 +25,11 @@ export function fullNameFromProfileBody(body: unknown): string | undefined {
   if (body == null || typeof body !== "object") return undefined;
   const record = body as { readonly code?: unknown; readonly data?: unknown };
   if (record.code !== 0 || record.data == null || typeof record.data !== "object") return undefined;
-  const data = record.data as { readonly nickname?: unknown; readonly name?: unknown };
-  return nonEmpty(typeof data.name === "string" ? data.name : typeof data.nickname === "string" ? data.nickname : undefined);
+  // What the person asked to be called (the app's name sheet), else the name
+  // Google gave. Never `nickname`: the server makes it from the e-mail's local
+  // part ("bxss.fall" is "Bxss Fall"), which is not a name (1 October 2026).
+  const data = record.data as { readonly preferredName?: unknown; readonly name?: unknown };
+  return nonEmpty(typeof data.preferredName === "string" ? data.preferredName : typeof data.name === "string" ? data.name : undefined);
 }
 
 async function fetchFullNameOverBackend(accessToken: string, fetchImpl: typeof fetch = fetch): Promise<string | undefined> {
@@ -42,10 +48,14 @@ export function createSandUserFullNameResolver(options: {
   readonly fetchFullName?: (accessToken: string) => Promise<string | undefined>;
   readonly fetchImpl?: typeof fetch;
   readonly log: (message: string) => void;
+  readonly now?: () => number;
 }) {
   const fetchFullName = options.fetchFullName ?? ((accessToken: string) => fetchFullNameOverBackend(accessToken, options.fetchImpl));
   let resolvedPrincipal: string | undefined;
   let resolvedFullName: string | undefined;
+  let resolvedAtMs = 0;
+  let attemptedAtMs = 0;
+  const now = options.now ?? Date.now;
   let inFlight: { principal: string; done: Promise<void> } | undefined;
   let inFlightGeneration = 0;
   const currentPrincipal = () => {
@@ -53,6 +63,7 @@ export function createSandUserFullNameResolver(options: {
     return token == null ? undefined : parseJwtPayload(token)?.sub;
   };
   const resolve = async (principal: string) => {
+    attemptedAtMs = now();
     try {
       const accessToken = await options.getAccessToken({ backendUrl: getSandInferenceBackendUrl() });
       if (parseJwtPayload(accessToken)?.sub !== principal) return;
@@ -60,13 +71,20 @@ export function createSandUserFullNameResolver(options: {
       if (currentPrincipal() !== principal) return;
       resolvedPrincipal = principal;
       resolvedFullName = fullName;
+      resolvedAtMs = now();
     } catch (error) { options.log(`user full-name resolve failed: ${String(error)}`); }
   };
   return {
-    getUserFullName: (): string | undefined => resolvedPrincipal !== undefined && resolvedPrincipal === currentPrincipal() ? resolvedFullName : undefined,
+    // A name the person changes reaches the next turn after at most
+    // `USER_NAME_REFRESH_MS`: a read after that asks the server again.
+    getUserFullName(): string | undefined {
+      const principal = currentPrincipal();
+      if (principal !== undefined && now() - resolvedAtMs >= USER_NAME_REFRESH_MS && now() - attemptedAtMs >= USER_NAME_RETRY_MS) void this.refresh();
+      return resolvedPrincipal !== undefined && resolvedPrincipal === principal ? resolvedFullName : undefined;
+    },
     async refresh(): Promise<void> {
       const principal = currentPrincipal();
-      if (principal === undefined || resolvedPrincipal === principal) return;
+      if (principal === undefined || (resolvedPrincipal === principal && now() - resolvedAtMs < USER_NAME_REFRESH_MS)) return;
       let pending = inFlight;
       if (pending === undefined || pending.principal !== principal) {
         const generation = ++inFlightGeneration;

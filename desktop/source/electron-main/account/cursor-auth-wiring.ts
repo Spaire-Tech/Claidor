@@ -1,6 +1,6 @@
 import { createSandAccessReader, readSandAccessOnce, type SandAccess } from "./access.js";
 import { SandCursorAuthService, type AccessTokenReader, type SandAuthStatus, type SandCursorAuthServiceOptions } from "./cursor-auth.js";
-import { fetchCursorProfile, fetchLocalToolPermissionCeiling, fetchUserPrivacyMode, updateCursorProfileName } from "./cursor-profile.js";
+import { fetchCursorProfile, fetchLocalToolPermissionCeiling, fetchNamePrompt, fetchPersonName, fetchUserPrivacyMode, updateCursorProfileName } from "./cursor-profile.js";
 import { SandTranscriptionManager, type SandTranscriptionOptions } from "./simeon-transcribe.js";
 import { revokeSimeonSession } from "./simeon-sign-out.js";
 import { syncSandSentryAccount } from "../telemetry/sentry.js";
@@ -169,6 +169,9 @@ export function createCursorAccountEdgePort(deps: {
       if (typeof name !== "string" || name.length > 200) throw new Error("updateCursorAccountName requires a bounded name string.");
       return await withService(async (service) => { const result = await service.updateDisplayName(name); return await deps.getAccountRuntime()?.whenIdle() ?? result; });
     },
+    // The name sheet after onboarding, and the name a voice call uses (1 October 2026).
+    getNamePrompt: async () => withService(async (service) => (await service.getStatus()).kind === "logged-in" ? await fetchNamePrompt(tokenReader(service), {}) : { needed: false, suggested: null }),
+    getPersonName: async () => withService(async (service) => (await service.getStatus()).kind === "logged-in" ? await fetchPersonName(tokenReader(service), {}) : null),
     getAvatar: async () => withService(async (service) => { const status = await service.getStatus(); return status.kind !== "logged-in" || status.authId == null ? null : await deps.resolveAvatar(status.authId, status.profilePictureUrl); }),
     getWeeklyUsage: async () => withService(async (service) => (await service.getStatus()).kind === "logged-in" ? await deps.fetchWeeklyUsage(tokenReader(service)) : null),
     getUsageSummary: async () => !await deps.isUsagePageEnabled() ? null : await withService(async (service) => (await service.getStatus()).kind === "logged-in" ? await deps.fetchUsageSummary(tokenReader(service)) : null),

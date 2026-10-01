@@ -74,6 +74,7 @@ export const MAIN_METHOD_TABLE = {
   cancelCursorLogin: { args: "none" },
   logoutCursor: { args: "none" },
   updateCursorAccountName: { args: "object" },
+  getCursorNamePrompt: { args: "none" },
   getCursorAvatar: { args: "none" },
   getCursorWeeklyUsage: { args: "none" },
   getCursorUsageSummary: { args: "none" },

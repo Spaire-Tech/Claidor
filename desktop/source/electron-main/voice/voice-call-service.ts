@@ -58,6 +58,8 @@ export interface VoiceCallServiceOptions {
   readonly previews: VoicePreviewPort;
   readonly focusAgentChat: (agentId: string) => void;
   readonly isEnabled: () => boolean;
+  /** The name the person gave (else Google's first name), for the voice to call them by; null when none. */
+  readonly getPersonName?: () => Promise<string | null>;
   readonly log: (line: string) => void;
   readonly onMenuChanged?: () => void;
   readonly now?: () => number;
@@ -202,12 +204,17 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
       return { ok: false, message: connectFailureMessage(error) };
     }
     if (call !== active || active.isFinished) return { ok: false, message: CALL_STATUS_COULD_NOT_CONNECT };
+    let personName: string | null = null;
+    try { personName = (await options.getPersonName?.()) ?? null; }
+    catch (error) { options.log(`connect: the person's name could not be read: ${errorText(error)}`); }
+    if (call !== active || active.isFinished) return { ok: false, message: CALL_STATUS_COULD_NOT_CONNECT };
     const name = text(row?.name).trim() || active.hintName || "your agent";
     const overrides = buildVoiceCallOverrides({
       agent: { name, title: text(row?.title), description: text(row?.description) },
       transcript: transcriptLinesFromEntries(entries),
       voiceId: storedVoice(active.agentId, row),
       pick: random(),
+      personName,
     });
     active.conversationId = ticket.conversationId;
     active.handoff?.dispose();

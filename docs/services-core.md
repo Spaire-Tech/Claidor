@@ -87,7 +87,20 @@ token cannot sign anyone out.
 
 **The person's name.** When the person signs in with Google, the server keeps
 their Google name in `user.meta` (`server/simeon/integrations/google/service.py`).
-`GET /desktop/api/user/profile` returns it as `name`.
+`GET /desktop/api/user/profile` returns it as `name`, Google's first name as
+`suggestedName`, and the name the person chose as `preferredName`.
+
+- **Asked once, after onboarding.** The window shows "What should your agents
+  call you?" (`__simeonNameSheet` in `desktop/scripts/lib/router-renderer-patch.mjs`)
+  while the profile has no `preferredName` and onboarding is done, offering
+  `suggestedName`. "Continue" saves it through the account's rename
+  (`POST /desktop/api/user/name`, kept in `user.meta["preferred_name"]`); "Not
+  now" asks again at the next launch.
+- **Where it is used.** The agents' system prompt (`preferredName`, else `name`;
+  `host/extensions/auth/user-full-name-service.ts`, read again every 5 minutes so a
+  rename reaches the next turn), the voice call's prompt and greeting, and the
+  call recap. `nickname` is made from the e-mail's local part and is never used
+  as the person's name.
 
 ### Settings on Render
 
