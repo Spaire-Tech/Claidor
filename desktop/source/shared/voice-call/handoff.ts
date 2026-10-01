@@ -1,202 +1,177 @@
 /**
- * The call's two client tools, answered on the Mac (30 September 2026).
+ * The call as a channel into the agent, on the Mac (1 October 2026; until
+ * then a "hand-off" that typed the task into the chat).
  *
- * `hand_to_agent {task}` puts the task into the agent's chat exactly as if
- * the person had typed it (the host's `sendPrompt`, the same door the
- * window's composer uses) and answers at once, so the voice can say "on it"
- * and the call goes on. Behind the call this watches the agent: the roster
- * row's `isRunning` and `currentActivity` give the banner its status line,
- * and when the turn ends the agent's own new messages are handed back
- * (`onDone`) for the voice to tell the person. `check_on_agent` answers
- * with what the agent is doing and what it has said.
+ * The upstream app's way, which the founder asked for exactly: the voice the person
+ * hears is the agent's own voice, a second agent that relays what the caller
+ * needs over a `voice:<call>` channel. The person's agent wakes on it as an
+ * `[inbound]` message (`host/extensions/transcript/voice-call-channel.ts`),
+ * knows it is on a call, and answers with SendMessage on that address; what
+ * it sends is read back here and given to the voice to say as its own.
  *
- * The coordinator's main-process leg carries the three calls; the main-port
- * client ignores event frames, so the turn's end is found by polling.
+ *   - `open` when the call connects.
+ *   - `sendTask` is the voice's `send_task`: the request, at most 2,000
+ *     characters, and the caller's own words when the voice quotes them.
+ *   - The outbox is read every `pollMs` while the call is up; new messages go
+ *     to `onSaid`, and the roster's activity line to `onStatus`.
+ *   - `recallTextMessages` is the voice's `recall_text_messages`: the latest
+ *     texts between the person and the agent in their chat.
+ *   - `end` closes the address and leaves the call's record with the agent.
  */
 import {
-  agentMessageText,
-  checkOnAgentAnswer,
+  RELAY_SOFT_FAIL,
+  VOICE_RELAY_MAX_CHARS,
+} from "./main-loop-voice.js";
+import {
   describeAgentActivity,
-  HAND_OFF_ACCEPTED,
-  HAND_OFF_EMPTY,
-  handOffFailed,
+  recallTextMessagesAnswer,
+  SEND_TASK_ACCEPTED,
+  transcriptLinesFromEntries,
   workingLabel,
 } from "./voice-call-prompt.js";
 
-export interface HandoffLegs {
-  sendPrompt(args: { readonly prompt: string; readonly agentId: string; readonly clientNonce: string; readonly attachmentPaths: readonly string[]; readonly attachmentNames: readonly string[] }): Promise<unknown>;
+export interface CallChannelLegs {
+  voiceCall(args: Record<string, unknown>): Promise<unknown>;
   listAgents(): Promise<unknown>;
   getAgentTranscriptTail(args: { readonly id: string; readonly limit: number }): Promise<unknown>;
 }
 
-export interface HandoffOptions {
-  readonly agentId: string;
-  readonly legs: HandoffLegs;
-  /** The status line while the agent works, or null when it is done. */
-  readonly onStatus: (label: string | null) => void;
-  /** The agent's turn ended; `replies` are its new messages, oldest first. */
-  readonly onDone: (replies: readonly string[]) => void;
-  readonly log?: (line: string) => void;
-  readonly now?: () => number;
-  readonly schedule?: (run: () => void, ms: number) => () => void;
-  readonly newNonce?: () => string;
-  /** How often the roster is read while work is pending. */
-  readonly pollMs?: number;
-  /** A turn never seen running counts as finished after this long. */
-  readonly startGraceMs?: number;
-  /** Past this, the watch gives up quietly; the reply still lands in the chat. */
-  readonly maxWorkMs?: number;
+export interface CallChannelRecord {
+  readonly seconds: number;
+  readonly recap: string | null;
+  readonly transcript: readonly { readonly speaker: "user" | "agent"; readonly text: string }[];
 }
 
-export const HANDOFF_TAIL_LIMIT = 40;
-export const HANDOFF_POLL_MS = 1_500;
-export const HANDOFF_START_GRACE_MS = 8_000;
-export const HANDOFF_MAX_WORK_MS = 20 * 60_000;
-const MAX_POLL_FAILURES = 8;
+export interface CallChannelOptions {
+  readonly agentId: string;
+  /** The call's id; its address is `voice:<callId>`. */
+  readonly callId: string;
+  readonly legs: CallChannelLegs;
+  /** The banner's status line while the agent works, or null when it is idle. */
+  readonly onStatus: (label: string | null) => void;
+  /** What the agent sent on the call, oldest first, for the voice to say. */
+  readonly onSaid: (texts: readonly string[]) => void;
+  readonly log?: (line: string) => void;
+  readonly schedule?: (run: () => void, ms: number) => () => void;
+  readonly pollMs?: number;
+}
+
+export const CALL_CHANNEL_POLL_MS = 1_200;
+export const RECALL_TAIL_LIMIT = 60;
+const MAX_POLL_FAILURES = 10;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-
-function entriesOf(page: unknown): readonly unknown[] {
-  if (Array.isArray(page)) return page;
-  return isRecord(page) && Array.isArray(page.entries) ? page.entries : [];
-}
-
-function entryId(entry: unknown): string | null {
-  return isRecord(entry) && typeof entry.id === "string" ? entry.id : null;
-}
-
+const errorText = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 function rosterRow(agents: unknown, agentId: string): Record<string, unknown> | null {
   const rows = Array.isArray(agents) ? agents : isRecord(agents) && Array.isArray(agents.agents) ? agents.agents : [];
   for (const row of rows) if (isRecord(row) && row.id === agentId) return row;
   return null;
 }
 
-const errorText = (error: unknown): string => (error instanceof Error ? error.message : String(error));
-
-export interface AgentHandoff {
-  handToAgent(parameters: unknown): Promise<string>;
-  checkOnAgent(): Promise<string>;
-  isWorking(): boolean;
+export interface CallChannel {
+  open(): Promise<boolean>;
+  sendTask(parameters: unknown): Promise<string>;
+  recallTextMessages(): Promise<string>;
+  end(record: CallChannelRecord): Promise<void>;
   dispose(): void;
 }
 
-export function createAgentHandoff(options: HandoffOptions): AgentHandoff {
-  const now = options.now ?? Date.now;
+export function createCallChannel(options: CallChannelOptions): CallChannel {
   const schedule = options.schedule ?? ((run, ms) => { const timer = setTimeout(run, ms); return () => clearTimeout(timer); });
-  const newNonce = options.newNonce ?? (() => `voice-call-${globalThis.crypto.randomUUID()}`);
-  const pollMs = options.pollMs ?? HANDOFF_POLL_MS;
-  const startGraceMs = options.startGraceMs ?? HANDOFF_START_GRACE_MS;
-  const maxWorkMs = options.maxWorkMs ?? HANDOFF_MAX_WORK_MS;
+  const pollMs = options.pollMs ?? CALL_CHANNEL_POLL_MS;
   const log = options.log ?? (() => {});
-
-  interface Pending { readonly baseline: ReadonlySet<string>; readonly startedAtMs: number; hasSeenRunning: boolean; taskLabel: string; status: string | null; failures: number }
-  let pending: Pending | null = null;
-  let cancelPoll: (() => void) | null = null;
+  const base = { agentId: options.agentId, callId: options.callId };
+  let isOpen = false;
   let isDisposed = false;
+  let after = 0;
+  let failures = 0;
+  let status: string | null = null;
+  let lastTask: string | null = null;
+  let cancelPoll: (() => void) | null = null;
 
-  const readTail = async (): Promise<readonly unknown[]> => entriesOf(await options.legs.getAgentTranscriptTail({ id: options.agentId, limit: HANDOFF_TAIL_LIMIT }));
-  const newReplies = (entries: readonly unknown[], baseline: ReadonlySet<string>): string[] => {
-    const replies: string[] = [];
-    for (const entry of entries) {
-      const id = entryId(entry);
-      if (id != null && baseline.has(id)) continue;
-      const text = agentMessageText(entry);
-      if (text != null) replies.push(text);
-    }
-    return replies;
-  };
-  const setStatus = (work: Pending, label: string | null): void => {
-    if (work.status === label) return;
-    work.status = label;
-    options.onStatus(label);
-  };
-  const stopPolling = (): void => { cancelPoll?.(); cancelPoll = null; };
-  const plan = (): void => { stopPolling(); if (!isDisposed && pending != null) cancelPoll = schedule(() => { void poll(); }, pollMs); };
-
-  const finish = async (work: Pending): Promise<void> => {
-    let replies: string[] = [];
-    try { replies = newReplies(await readTail(), work.baseline); } catch (error) { log(`hand-off: reading the reply failed: ${errorText(error)}`); }
-    if (pending !== work || isDisposed) return;
-    pending = null;
-    stopPolling();
-    options.onStatus(null);
-    log(`hand-off: the agent's turn ended with ${replies.length} message(s)`);
-    options.onDone(replies);
-  };
+  const setStatus = (label: string | null): void => { if (status !== label) { status = label; options.onStatus(label); } };
+  const stop = (): void => { cancelPoll?.(); cancelPoll = null; };
+  const plan = (): void => { stop(); if (isOpen && !isDisposed) cancelPoll = schedule(() => { void poll(); }, pollMs); };
 
   const poll = async (): Promise<void> => {
-    const work = pending;
-    if (work == null || isDisposed) return;
-    if (now() - work.startedAtMs > maxWorkMs) {
-      log("hand-off: still working after the watch limit; the reply will land in the chat");
-      pending = null; stopPolling(); options.onStatus(null);
-      return;
+    if (!isOpen || isDisposed) return;
+    try {
+      const [outbox, agents] = await Promise.all([options.legs.voiceCall({ ...base, kind: "outbox", after }), options.legs.listAgents()]);
+      failures = 0;
+      if (!isOpen || isDisposed) return;
+      const messages = isRecord(outbox) && Array.isArray(outbox.messages) ? outbox.messages.filter(isRecord) : [];
+      const fresh: string[] = [];
+      for (const message of messages) {
+        const seq = typeof message.seq === "number" ? message.seq : 0;
+        if (seq <= after) continue;
+        after = seq;
+        if (typeof message.text === "string" && message.text.trim().length > 0) fresh.push(message.text.trim());
+      }
+      const row = rosterRow(agents, options.agentId);
+      setStatus(row?.isRunning === true ? describeAgentActivity(row.currentActivity) ?? (lastTask == null ? null : workingLabel(lastTask)) : null);
+      if (fresh.length > 0) { log(`call channel: the agent said ${fresh.length} thing(s) on the call`); options.onSaid(fresh); }
+    } catch (error) {
+      failures += 1;
+      log(`call channel: reading the call's outbox failed (${failures}): ${errorText(error)}`);
+      if (failures >= MAX_POLL_FAILURES) { setStatus(null); return; }
     }
-    let row: Record<string, unknown> | null;
-    try { row = rosterRow(await options.legs.listAgents(), options.agentId); work.failures = 0; }
-    catch (error) {
-      work.failures += 1;
-      log(`hand-off: reading the roster failed (${work.failures}): ${errorText(error)}`);
-      if (work.failures >= MAX_POLL_FAILURES) { pending = null; stopPolling(); options.onStatus(null); return; }
-      plan();
-      return;
-    }
-    if (pending !== work || isDisposed) return;
-    if (row?.isRunning === true) {
-      work.hasSeenRunning = true;
-      setStatus(work, describeAgentActivity(row.currentActivity) ?? work.taskLabel);
-      plan();
-      return;
-    }
-    if (work.hasSeenRunning || now() - work.startedAtMs >= startGraceMs) { await finish(work); return; }
     plan();
   };
 
-  const baselineIds = async (): Promise<Set<string>> => {
-    try { return new Set((await readTail()).map(entryId).filter((id): id is string => id != null)); }
-    catch (error) { log(`hand-off: reading the chat before sending failed: ${errorText(error)}`); return new Set(); }
-  };
-
   return {
-    async handToAgent(parameters) {
-      const task = isRecord(parameters) && typeof parameters.task === "string" ? parameters.task.trim() : "";
-      if (task.length === 0) return HAND_OFF_EMPTY;
-      if (isDisposed) return handOffFailed("the call has ended");
-      const work: Pending = pending ?? { baseline: await baselineIds(), startedAtMs: now(), hasSeenRunning: false, taskLabel: workingLabel(task), status: null, failures: 0 };
+    async open() {
       try {
-        await options.legs.sendPrompt({ prompt: task, agentId: options.agentId, clientNonce: newNonce(), attachmentPaths: [], attachmentNames: [] });
+        await options.legs.voiceCall({ ...base, kind: "open" });
+        isOpen = !isDisposed;
+        log(`call channel: voice:${options.callId} open`);
+        plan();
+        return true;
       } catch (error) {
-        log(`hand-off: sendPrompt failed: ${errorText(error)}`);
-        return handOffFailed(errorText(error));
-      }
-      if (isDisposed) return HAND_OFF_ACCEPTED;
-      work.taskLabel = workingLabel(task);
-      if (pending == null) pending = work;
-      setStatus(work, work.taskLabel);
-      log(`hand-off: sent a ${task.length}-character task`);
-      plan();
-      return HAND_OFF_ACCEPTED;
-    },
-    async checkOnAgent() {
-      const work = pending;
-      try {
-        const [agents, entries] = await Promise.all([options.legs.listAgents(), readTail()]);
-        const row = rosterRow(agents, options.agentId);
-        const isRunning = row?.isRunning === true;
-        if (work != null) {
-          return checkOnAgentAnswer({ isWorking: isRunning || !work.hasSeenRunning, activity: isRunning ? describeAgentActivity(row?.currentActivity) : null, replies: newReplies(entries, work.baseline), lastMessage: null });
-        }
-        let lastMessage: string | null = null;
-        for (const entry of entries) lastMessage = agentMessageText(entry) ?? lastMessage;
-        return checkOnAgentAnswer({ isWorking: isRunning, activity: isRunning ? describeAgentActivity(row?.currentActivity) : null, replies: [], lastMessage });
-      } catch (error) {
-        log(`hand-off: check failed: ${errorText(error)}`);
-        return work != null ? "The agent is still working on it; its status could not be read just now." : "The agent's status could not be read just now.";
+        log(`call channel: the call could not be opened on the agent: ${errorText(error)}`);
+        return false;
       }
     },
-    isWorking: () => pending != null,
-    dispose() { isDisposed = true; pending = null; stopPolling(); },
+    async sendTask(parameters) {
+      const record = isRecord(parameters) ? parameters : {};
+      const task = typeof record.task === "string" ? record.task.trim().slice(0, VOICE_RELAY_MAX_CHARS) : "";
+      const quote = typeof record.quote === "string" ? record.quote.trim().slice(0, VOICE_RELAY_MAX_CHARS) : "";
+      if (!isOpen || isDisposed) return RELAY_SOFT_FAIL;
+      try {
+        await options.legs.voiceCall({ ...base, kind: "request", request: task, ...(quote.length > 0 ? { quotes: [quote] } : {}) });
+      } catch (error) {
+        log(`call channel: the request did not reach the agent: ${errorText(error)}`);
+        return RELAY_SOFT_FAIL;
+      }
+      if (task.length > 0) lastTask = task;
+      setStatus(task.length > 0 ? workingLabel(task) : status);
+      log(`call channel: relayed a ${task.length}-character request`);
+      return SEND_TASK_ACCEPTED;
+    },
+    async recallTextMessages() {
+      try {
+        const page = await options.legs.getAgentTranscriptTail({ id: options.agentId, limit: RECALL_TAIL_LIMIT });
+        const entries = isRecord(page) && Array.isArray(page.entries) ? page.entries : Array.isArray(page) ? page : [];
+        return recallTextMessagesAnswer(transcriptLinesFromEntries(entries));
+      } catch (error) {
+        log(`call channel: reading the chat failed: ${errorText(error)}`);
+        return "The text messages could not be read just now.";
+      }
+    },
+    async end(record) {
+      const wasOpen = isOpen;
+      isOpen = false;
+      stop();
+      setStatus(null);
+      if (!wasOpen) return;
+      try {
+        await options.legs.voiceCall({ ...base, kind: "ended", record });
+        log(`call channel: voice:${options.callId} closed`);
+      } catch (error) {
+        log(`call channel: the call's end did not reach the agent: ${errorText(error)}`);
+      }
+    },
+    dispose() { isDisposed = true; isOpen = false; stop(); },
   };
 }

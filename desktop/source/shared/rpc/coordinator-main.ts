@@ -24,7 +24,9 @@ export const COORDINATOR_MAIN_METHOD_TABLE = {
   sendPrompt: { args: "object" },
   getAgentTranscriptTail: { args: "object" },
   updateAgent: { args: "object" },
-  appendSendMessage: { args: "object" }
+  appendSendMessage: { args: "object" },
+  // The call as a channel into the agent, `voice:<call>` (1 October 2026).
+  voiceCall: { args: "object" }
 } as const;
 
 export type CoordinatorMainMethod = keyof typeof COORDINATOR_MAIN_METHOD_TABLE;

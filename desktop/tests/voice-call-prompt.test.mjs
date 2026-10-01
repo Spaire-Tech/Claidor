@@ -45,18 +45,24 @@ test("the chat becomes the latest person and agent lines, oldest first, cards an
   assert.equal(lines[0].text, "line 10");
 });
 
-test("the persona names the agent, carries its recent chat and the firm rules", () => {
+test("the voice is the agent itself: first person, its recent chat, the upstream app's tools, never another agent", () => {
   const text = prompt.buildVoiceCallPrompt({ agent: { name: "Ada", title: "Chief of staff", description: "Runs my week." }, transcript: prompt.transcriptLinesFromEntries(entries) });
-  assert.match(text, /You are Ada, Chief of staff, one of the person's Simeon agents, and you are on a live phone call with them\./);
-  assert.match(text, /Runs my week\./);
-  assert.match(text, /Person: Can you draft the agenda\?\nAda: Drafted\. It's in the doc\./);
+  assert.match(text, /You are Ada, Chief of staff, one of the person's Simeon agents, on a live phone call with the person\./);
+  assert.match(text, /What you are for, in their words: Runs my week\./);
+  assert.match(text, /You are Ada yourself\. Speak in the first person/);
+  assert.match(text, /Never mention another agent, an assistant, a system or a hand-off/);
+  assert.match(text, /Them: Can you draft the agenda\?\nYou: Drafted\. It's in the doc\./);
   assert.match(text, /contractions/);
   assert.match(text, /Never use lists, headings, markdown/);
-  assert.match(text, /You do not do tasks yourself\. .*call hand_to_agent/);
-  assert.match(text, /Never say something is done, sent, booked or found unless the agent reported it/);
-  assert.match(text, /call check_on_agent/);
+  assert.match(text, /Your work runs behind the call while you talk\. .*call send_task/);
+  assert.match(text, /put their words in quote/);
+  assert.match(text, /Never say something is done, sent, booked or found until a note tells you your work came back with it/);
+  assert.match(text, /call recall_text_messages/);
+  assert.match(text, /stay silent with skip_turn/);
   assert.match(text, /say a short, natural goodbye in your own words and call end_call/);
   assert.match(text, /If the line goes quiet, check in lightly once/);
+  // The voice never speaks of "the agent" as someone else.
+  assert.doesNotMatch(text, /the agent|hand_to_agent|check_on_agent/i);
   const empty = prompt.buildVoiceCallPrompt({ agent: { name: "Ada" }, transcript: [] });
   assert.match(empty, /have not written to each other yet/);
 });
@@ -101,22 +107,22 @@ test("the call's record and durations read like the banner", () => {
   assert.equal(prompt.callRecordText(168, "  Talked about the agenda. "), "Voice call · 2:48\n\nTalked about the agenda.");
 });
 
-test("check_on_agent and the hand-off result say what the agent reported, and nothing it did not", () => {
-  assert.equal(prompt.checkOnAgentAnswer({ isWorking: true, activity: "Searching the web…", replies: [], lastMessage: null }), "The agent is still working on it: searching the web. It has not reported anything yet.");
-  assert.match(prompt.checkOnAgentAnswer({ isWorking: false, activity: null, replies: ["Sent."], lastMessage: null }), /^The agent finished\. It said: Sent\.$/);
-  assert.match(prompt.checkOnAgentAnswer({ isWorking: false, activity: null, replies: [], lastMessage: "Hi" }), /not working on anything right now\. Its last message was: Hi/);
-  assert.match(prompt.handOffResultUpdate(["Sent it to Dana."]), /It reported: Sent it to Dana\./);
-  assert.match(prompt.handOffResultUpdate([]), /did not send a message/);
-  assert.equal(prompt.HAND_OFF_ACCEPTED, "Accepted. The agent is working on it.");
+test("what the voice's tools answer, and what its work coming back says, are its own", () => {
+  assert.equal(prompt.SEND_TASK_ACCEPTED, "Sent. Say you're on it, in a few words, and carry on with them. What it turns up comes back to you here.");
+  assert.equal(prompt.workCameBackUpdate(["Sent it to Dana.", "She's in at ten."]), "Your work came back: Sent it to Dana. She's in at ten. Tell them now, briefly, in your own words, as yours.");
+  assert.equal(prompt.WORK_CAME_BACK_NUDGE, "(Your work just came back. Tell me what it found.)");
+  assert.equal(prompt.recallTextMessagesAnswer([]), "There are no text messages between you yet.");
+  assert.equal(prompt.recallTextMessagesAnswer([{ speaker: "person", text: "Hi" }, { speaker: "agent", text: "Hey" }]), "Your latest text messages, oldest first:\nThem: Hi\nYou: Hey");
 });
 
 test("the voice calls the person by the name they gave, never by one made from their e-mail", () => {
   const named = prompt.buildVoiceCallOverrides({ agent: { name: "Ada" }, transcript: [{ speaker: "person", text: "Hi" }], pick: 0, personName: " Bass " });
-  assert.match(named.agent.prompt.prompt, /The person is Bass\./);
+  assert.match(named.agent.prompt.prompt, /one of Bass's Simeon agents, on a live phone call with Bass\./);
+  assert.match(named.agent.prompt.prompt, /Call them Bass now and then/);
   assert.match(named.agent.prompt.prompt, /^Bass: Hi$/m);
   assert.equal(named.agent.firstMessage, "Hey Bass, it's Ada. What's up?");
   const unnamed = prompt.buildVoiceCallOverrides({ agent: { name: "Ada" }, transcript: [{ speaker: "person", text: "Hi" }], pick: 0 });
-  assert.doesNotMatch(unnamed.agent.prompt.prompt, /The person is/);
-  assert.match(unnamed.agent.prompt.prompt, /^Person: Hi$/m);
+  assert.doesNotMatch(unnamed.agent.prompt.prompt, /Call them/);
+  assert.match(unnamed.agent.prompt.prompt, /^Them: Hi$/m);
   assert.equal(unnamed.agent.firstMessage, "Hey, it's Ada. What's up?");
 });

@@ -26,6 +26,8 @@ export interface VoiceCallTicket {
 export interface VoiceCallEnding {
   readonly seconds: number;
   readonly summary: string | null;
+  /** What was said on the call, for the record in the agent's voice-calls/ folder. */
+  readonly transcript?: readonly { readonly speaker: "user" | "agent"; readonly text: string }[];
 }
 
 export interface VoiceOption {
@@ -65,6 +67,9 @@ export function parseVoiceCallEnding(body: unknown, fallbackSeconds: number): Vo
   return {
     seconds: typeof record.seconds === "number" && Number.isFinite(record.seconds) ? record.seconds : fallbackSeconds,
     summary: typeof record.summary === "string" && record.summary.trim().length > 0 ? record.summary.trim() : null,
+    transcript: Array.isArray(record.transcript)
+      ? record.transcript.filter(isRecord).map((line) => ({ speaker: line.speaker === "agent" ? "agent" as const : "user" as const, text: typeof line.text === "string" ? line.text.trim() : "" })).filter((line) => line.text.length > 0).slice(0, 400)
+      : [],
   };
 }
 

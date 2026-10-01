@@ -106,6 +106,8 @@ export const COORDINATOR_METHOD_TABLE = {
   discardDraft: { args: "object", reply: "record-or-null" },
   appendConnectorCard: { args: "object", reply: "void" },
   appendSendMessage: { args: "object", reply: "record" },
+  // The voice channel (1 October 2026): a call opens, relays to, reads and ends here.
+  voiceCall: { args: "object", reply: "record" },
   searchPlugins: { args: "object", reply: "string" },
   getPlugin: { args: "object", reply: "string" },
   installPlugin: { args: "object", reply: "string" },

@@ -1,4 +1,4 @@
-export const REQUEST_SOURCES = new Set(["turn", "automation", "notification", "connector", "event", "handoff-resume", "background-revival", "web-search", "web-fetch"] as const);
+export const REQUEST_SOURCES = new Set(["turn", "automation", "notification", "connector", "event", "handoff-resume", "voice-call", "background-revival", "web-search", "web-fetch"] as const);
 export const EMPTY_SAND_PROFILE = { description: "", avatarPath: null } as const;
 export const EMPTY_UNREAD_STATE = { lastActivityAt: 0, lastViewedAt: 0, isManuallyUnread: false, unreadCount: 0 } as const;
 export const EMPTY_SPEND_GUARD_STATE = { nudgedAtMs: null, snoozedUntilMs: null, optedOut: false, cardEntryIds: [], pausedAutomationIds: [] } as const;
