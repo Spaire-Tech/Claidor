@@ -53,15 +53,15 @@ export function voiceCallResourcePaths(electronMainDir: string): { readonly prel
 }
 
 /**
- * `SIMEON_VOICE_CALLS`: calls are off unless it is `1`/`on`/`true`/`yes`
- * (1 October 2026, the founder: "we probably need to hide it for now until we
- * figure it out. i'm trying to publish the app soon"). Off, the phone button,
- * the voice picker and the Agent › Call item are not shown. On, the server
- * decides the rest: it answers 503 while it has no ElevenLabs key.
+ * `SIMEON_VOICE_CALLS`: calls are on unless it is `0`/`off`/`false`/`no`
+ * (shown again on 2 October 2026, the founder: "unhide voice"; hidden from
+ * 1 October). Off, the phone button, the voice picker and the Agent › Call
+ * item are not shown. On, the server decides the rest: it answers 503 while
+ * it has no ElevenLabs key.
  */
 export function voiceCallsEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
   const value = env.SIMEON_VOICE_CALLS?.trim().toLowerCase();
-  return value === "1" || value === "on" || value === "true" || value === "yes";
+  return !(value === "0" || value === "off" || value === "false" || value === "no");
 }
 
 // --- the Electron window ---------------------------------------------------------
