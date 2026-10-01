@@ -279,6 +279,12 @@ export const VOICE_CALL_COMPONENTS_SOURCE = [
   // own "Messaged Dawn" line is drawn for it as "Voice chat · 02:30", and opens the window's own
   // read-only exchange panel.
   "function __simeonVoiceCall(n){const ps=n==null?null:n.kind===\"single\"?[n.peer]:n.peers;if(!Array.isArray(ps)||ps.length!==1||ps[0]==null)return null;const m=/^voice-call:[A-Za-z0-9_-]+:(\\d+)$/.exec(String(ps[0].id));if(m==null)return null;const t=Number(m[1]),h=Math.floor(t/3600),mm=String(Math.floor(t%3600/60)).padStart(2,\"0\"),ss=String(t%60).padStart(2,\"0\");return{peerId:ps[0].id,name:ps[0].name,duration:h>0?`${h}:${mm}:${ss}`:`${mm}:${ss}`}}",
+  // Inside the call's panel the person is the person (2 October 2026, the founder: "why not just use the
+  // real blue on me talking??? on the right side, like a real normal convo"): their lines lose the peer
+  // they were written with and draw as their own messages, and the header is the agent's own, not
+  // "Agent ⇄ <name>".
+  "function __simeonIsVoicePeer(n){const id=typeof n===\"string\"?n:n?.id;return typeof id===\"string\"&&id.startsWith(\"voice-call:\")}",
+  "function __simeonVoiceTunnelEntries(n){return Array.isArray(n)?n.map(e=>e?.fromAgent!=null&&__simeonIsVoicePeer(e.fromAgent)?(({fromAgent:_f,...r})=>r)(e):e):n}",
   "function __simeonVoiceEvent(n){",
   "const c=n.call,{openAgentExchange:r}=r1(),l=`Voice chat · ${c.duration}`;",
   `return p.jsx(fre,{className:"sand-system-event",children:p.jsx(X4e,{"aria-label":\`Open \${l}\`,leading:p.jsx("svg",{"aria-hidden":!0,className:"simeon-voice-event__glyph",viewBox:"0 0 24 24",children:p.jsx("path",{fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",d:"M5 10v4M9 7v10M13 9v6M17 6v12M21 10v4"})}),leadingGap:4,onClick:m=>{m.stopPropagation(),r(c.peerId,c.name)},title:l,children:l})})}`,
@@ -305,6 +311,10 @@ const VOICE_EVENT_BEFORE = "function vpt(n){const e=he.c(9),{summary:t}=n;";
 const VOICE_EVENT_AFTER = "function vpt(n){const __sv=__simeonVoiceCall(n.summary);if(__sv!=null)return p.jsx(__simeonVoiceEvent,{call:__sv});const e=he.c(9),{summary:t}=n;";
 const VOICE_EVENT_TEXT_BEFORE = "function JIn(n){switch(n.kind){";
 const VOICE_EVENT_TEXT_AFTER = "function JIn(n){const __sv=__simeonVoiceCall(n);if(__sv!=null)return`Voice chat · ${__sv.duration}`;switch(n.kind){";
+const VOICE_TUNNEL_ENTRIES_BEFORE = "p.jsx(JMn,{dockInsetPx:n.dockInsetPx,entries:e.tunnelEntries,";
+const VOICE_TUNNEL_ENTRIES_AFTER = "p.jsx(JMn,{dockInsetPx:n.dockInsetPx,entries:__simeonVoiceTunnelEntries(e.tunnelEntries),";
+const VOICE_TUNNEL_HEADER_BEFORE = "exchange:l?null:e.tunnelExchange";
+const VOICE_TUNNEL_HEADER_AFTER = "exchange:l||__simeonIsVoicePeer(e.tunnelPeer)?null:e.tunnelExchange";
 const NAME_SHEET_BEFORE = 'p.jsx(BGn,{}),p.jsx(Yzn,{children:p.jsx($zn,{})})]';
 const NAME_SHEET_AFTER = 'p.jsx(BGn,{}),p.jsx(Yzn,{children:p.jsx($zn,{})}),p.jsx(__simeonNameSheet,{},"simeon-name-sheet")]';
 export const VOICE_CALL_REPLACEMENTS = Object.freeze([
@@ -312,6 +322,8 @@ export const VOICE_CALL_REPLACEMENTS = Object.freeze([
   ["call-record-card", CALL_RECORD_BEFORE, CALL_RECORD_AFTER],
   ["voice-chat-event", VOICE_EVENT_BEFORE, VOICE_EVENT_AFTER],
   ["voice-chat-event-text", VOICE_EVENT_TEXT_BEFORE, VOICE_EVENT_TEXT_AFTER],
+  ["voice-chat-person-is-person", VOICE_TUNNEL_ENTRIES_BEFORE, VOICE_TUNNEL_ENTRIES_AFTER],
+  ["voice-chat-agent-header", VOICE_TUNNEL_HEADER_BEFORE, VOICE_TUNNEL_HEADER_AFTER],
   ["name-sheet-at-root", NAME_SHEET_BEFORE, NAME_SHEET_AFTER],
   ["voice-picker-under-character-color", VOICE_PICKER_BEFORE, VOICE_PICKER_AFTER],
   ["call-button-beside-agent-name", CALL_BUTTON_BEFORE, CALL_BUTTON_AFTER],
