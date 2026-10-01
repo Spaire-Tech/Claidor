@@ -441,6 +441,10 @@ const PANE_ICONS = {
 };
 const AGENT_PANE_COMPONENTS_SOURCE = [
   `const __simeonPaneIcons=${JSON.stringify(PANE_ICONS)};`,
+  // Whether the pane, not the person, compacted the sidebar: kept across launches, so a pane left
+  // open at quit still gives the sidebar back when it closes.
+  "let __simeonPaneTookSidebar=(()=>{try{return localStorage.getItem(\"simeon.paneTookSidebar\")===\"1\"}catch{return!1}})();",
+  "function __simeonSetPaneTookSidebar(v){__simeonPaneTookSidebar=v;try{localStorage.setItem(\"simeon.paneTookSidebar\",v?\"1\":\"0\")}catch{}}",
   "function __simeonPaneSegments(n){const{value:v,onChange:c,hasChannels:h}=n,items=[[\"settings\",\"Profile\"],[\"routines\",\"Routines\"],[\"overview\",\"Computer\"],...(h?[[\"channels\",\"Channels\"]]:[])],at=Math.max(0,items.findIndex(x=>x[0]===v));",
   "return p.jsxs(\"div\",{className:\"simeon-segments\",role:\"tablist\",\"aria-label\":\"Agent\",style:{\"--simeon-seg-count\":items.length,\"--simeon-seg-index\":at},children:[p.jsx(\"span\",{className:\"simeon-segments__thumb\",\"aria-hidden\":!0}),...items.map(([id,label])=>p.jsx(yo,{content:label,children:p.jsx(\"button\",{type:\"button\",role:\"tab\",\"aria-selected\":id===v,\"aria-label\":label,\"data-segment\":id,className:\"simeon-segments__item\",onClick:()=>c(id),children:p.jsx(\"svg\",{viewBox:\"0 0 24 24\",\"aria-hidden\":!0,dangerouslySetInnerHTML:{__html:__simeonPaneIcons[id]}})})},id))]})}",
 ].join("");
@@ -466,6 +470,15 @@ export const AGENT_PANE_REPLACEMENTS = Object.freeze([
   ["agent-pane-avatar-toggles", 'n.isOpen&&n.view==="settings"?"close":"open-settings"', 'n.isOpen?"close":"open-settings"'],
   ["agent-pane-no-computer-button", "ne=!o||m?p.jsx(yo,{content:iSn", "ne=!1?p.jsx(yo,{content:iSn"],
   ["agent-pane-one-page", AGENT_PANE_BODY_BEFORE, AGENT_PANE_BODY_AFTER],
+  // The sidebar steps back while the pane is open (1 October 2026, the founder: "whenever the right
+  // panel open, the left message sidebar should minimize like in mobile, and come back to normal once
+  // the right side is close"): opening the pane compacts an open sidebar to its avatar rail (the
+  // window's own ⌘B state, through the same `WFe`, which draws it on the shell and returns the
+  // layout to keep); closing it gives the sidebar back, unless the person compacted it themselves. Whether the pane fits, and how far the window grows for it, is reckoned with the
+  // rail it is about to have.
+  ["agent-pane-compacts-sidebar", 'setInfoPaneOpen:L=>{y||r.get().isOpen===L||(r.update(D=>({...D,isOpen:L})),N())}', 'setInfoPaneOpen:L=>{if(y||r.get().isOpen===L)return;r.update(D=>({...D,isOpen:L}));const __sb=s.get(),__sh=document.querySelector(".sand-shell"),__to=c=>__sh!=null?WFe(__sh,__sb,c,window.innerWidth):{...__sb,isCollapsed:c};if(L){__simeonSetPaneTookSidebar(!__sb.isCollapsed);__sb.isCollapsed||s.set(__to(!0))}else{__simeonPaneTookSidebar&&__sb.isCollapsed&&s.set(__to(!1));__simeonSetPaneTookSidebar(!1)}N()}'],
+  ["agent-pane-fits-beside-the-rail", 'A=S.useCallback(()=>{let V=h||E.current!=null;if(!h){', 'A=S.useCallback(()=>{const __fit=uan({windowWidth:window.innerWidth,sidebar:{...m,isCollapsed:!0},paneWidth:u});let V=__fit||E.current!=null;if(!__fit){'],
+  ["agent-pane-grows-beside-the-rail", 'G=dan({windowWidth:H,sidebar:m,paneWidth:u})', 'G=dan({windowWidth:H,sidebar:{...m,isCollapsed:!0},paneWidth:u})'],
 ]);
 
 export function patchOriginalAgentPane(source) {

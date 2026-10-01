@@ -17,6 +17,7 @@ test("the pane patch admits a routines view, opens on Profile, and draws the seg
     "agent-pane-components", "agent-pane-routines-view", "agent-pane-opens-on-profile", "agent-pane-routine-request",
     "agent-pane-routine-editor", "agent-pane-no-subpage-title", "agent-pane-no-gear", "agent-pane-close-x",
     "agent-pane-avatar-toggles", "agent-pane-no-computer-button", "agent-pane-one-page",
+    "agent-pane-compacts-sidebar", "agent-pane-fits-beside-the-rail", "agent-pane-grows-beside-the-rail",
   ]);
   const patched = patchOriginalAgentPane(AGENT_PANE_REPLACEMENTS.map(([, before]) => before).join("\n"));
   assert.match(patched, /e==="routines"\|\|/, "the view guard admits routines");
@@ -27,7 +28,28 @@ test("the pane patch admits a routines view, opens on Profile, and draws the seg
   assert.match(patched, /p\.jsx\(__simeonPaneSegments,\{value:F,onChange:J,hasChannels:k\.some\(Ie=>Ie\.id==="channels"\)\}\)/);
   for (const view of ['F==="settings"?p.jsx(h3n,', 'F==="routines"?', 'F==="overview"?', 'F==="channels"?p.jsx(_0n,']) assert.ok(patched.includes(view), view);
   assert.ok(!patched.includes("Connected"), "no connection status under the name");
+  // The sidebar steps back to its rail while the pane is open, the same way ⌘B draws it (WFe), and
+  // comes back when the pane closes only if the pane took it.
+  assert.ok(patched.includes('if(L){__simeonSetPaneTookSidebar(!__sb.isCollapsed);__sb.isCollapsed||s.set(__to(!0))}else{__simeonPaneTookSidebar&&__sb.isCollapsed&&s.set(__to(!1));__simeonSetPaneTookSidebar(!1)}'));
+  assert.ok(patched.includes('__to=c=>__sh!=null?WFe(__sh,__sb,c,window.innerWidth):{...__sb,isCollapsed:c}'));
+  assert.ok(patched.includes("uan({windowWidth:window.innerWidth,sidebar:{...m,isCollapsed:!0},paneWidth:u})"), "the pane's fit is reckoned beside the rail");
+  assert.ok(patched.includes("G=dan({windowWidth:H,sidebar:{...m,isCollapsed:!0},paneWidth:u})"), "the window grows only for the rail");
   assert.throws(() => patchOriginalAgentPane(patched), /anchor is missing or ambiguous/);
+});
+
+test("the pane remembers across launches whether it took the sidebar", async () => {
+  const { AGENT_PANE_REPLACEMENTS } = await import(patchModule);
+  const source = AGENT_PANE_REPLACEMENTS[0][2];
+  const store = new Map();
+  const localStorage = { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) };
+  const run = () => new Function("localStorage", "p", "yo", "S", `${source.slice(0, source.indexOf("function __simeonPaneSegments"))}function p3n(){};return { took: () => __simeonPaneTookSidebar, set: __simeonSetPaneTookSidebar };`)(localStorage, {}, {}, {});
+  const first = run();
+  assert.equal(first.took(), false);
+  first.set(true);
+  assert.equal(store.get("simeon.paneTookSidebar"), "1");
+  assert.equal(run().took(), true, "a relaunch reads it back");
+  const broken = new Function("localStorage", `${source.slice(0, source.indexOf("function __simeonPaneSegments"))};return __simeonPaneTookSidebar;`)({ getItem() { throw new Error("blocked"); } });
+  assert.equal(broken, false, "storage that throws reads as not taken");
 });
 
 test("the segments read Profile, Routines, Computer and, where served, Channels", async () => {
