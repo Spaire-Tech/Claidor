@@ -1,3 +1,4 @@
+import { isVoiceAddress } from "../../../shared/voice-call/main-loop-voice.js";
 import { isMessageAddress } from "../../../shared/message-reference.js";
 import { sandDualSurfaceToolTelemetry } from "../../../shared/agents/agent-tool-names.js";
 import { SAND_REACTION_AGENT } from "../../../shared/transcript.js";
@@ -726,6 +727,9 @@ export class TurnRuntime {
             incoming,
             incoming.channel,
           );
+        // What the agent says on a voice call goes to the call only: the upstream app's
+        // "Anything you already sent on that closed address is not in this chat".
+        if (isVoiceAddress(incoming.channel)) return undefined;
         if (incoming.type === "listener-connect")
           this.notifyListenerConnect(runSession, incoming);
         if (incoming.type === "connector" && incoming.variant === "connect")

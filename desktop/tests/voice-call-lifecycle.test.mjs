@@ -1,6 +1,6 @@
 /**
  * Voice calls (30 September 2026): the call's lifecycle (call-state.ts), the
- * two client tools answered on the Mac with a fake coordinator (handoff.ts),
+ * call as a channel into the agent, answered on the Mac with a fake coordinator (handoff.ts),
  * and the main-process service that opens the banner, starts the call and
  * writes its record (voice-call-service.ts).
  */
@@ -70,7 +70,14 @@ function fakeLegs({ tail = [], roster = [] } = {}) {
   const legs = {
     tail: [...tail],
     roster: [...roster],
-    sendPrompt: async (args) => { calls.push(["sendPrompt", args]); },
+    outbox: [],
+    voiceFails: false,
+    voiceCall: async (args) => {
+      calls.push(["voiceCall", args]);
+      if (legs.voiceFails) throw new Error("box asleep");
+      if (args.kind === "outbox") return { messages: legs.outbox.filter((message) => message.seq > args.after), open: true };
+      return args.kind === "open" ? { address: `voice:${args.callId}` } : args.kind === "request" ? { accepted: true } : { closed: true };
+    },
     listAgents: async () => legs.roster,
     getAgentTranscriptTail: async (args) => { calls.push(["tail", args]); return { entries: legs.tail }; },
     appendSendMessage: async (args) => { calls.push(["append", args]); return { id: "s9" }; },
@@ -84,46 +91,48 @@ function manualScheduler() {
   return { schedule: (run) => { queue.push(run); return () => { const index = queue.indexOf(run); if (index >= 0) queue.splice(index, 1); }; }, async step() { const run = queue.shift(); run?.(); await new Promise((resolve) => setImmediate(resolve)); await new Promise((resolve) => setImmediate(resolve)); }, get size() { return queue.length; } };
 }
 
-test("hand_to_agent sends the task as a typed message, answers at once, and hands the agent's reply back when its turn ends", async () => {
-  const { legs, calls } = fakeLegs({ tail: [{ kind: "send-message", id: "old", message: { type: "text", content: "Earlier." } }], roster: [{ id: "a1", isRunning: false }] });
+test("the call is a channel into the agent: send_task relays the request, and what the agent sends on the call comes back to the voice", async () => {
+  const { legs, calls } = fakeLegs({ tail: [{ kind: "message", id: "u0", role: "user", content: "Morning" }, { kind: "send-message", id: "s0", message: { type: "text", content: "Morning, Bass." } }], roster: [{ id: "a1", isRunning: false }] });
   const statuses = [];
-  const done = [];
-  let clock = 0;
+  const said = [];
   const scheduler = manualScheduler();
-  const watch = handoff.createAgentHandoff({ agentId: "a1", legs, onStatus: (label) => statuses.push(label), onDone: (replies) => done.push(replies), now: () => clock, schedule: scheduler.schedule, newNonce: () => "n1" });
-  assert.equal(await watch.handToAgent({ task: "" }), "No task was given. Ask the person what they want done.");
-  assert.equal(await watch.handToAgent({ task: "Send the agenda to Dana" }), "Accepted. The agent is working on it.");
-  assert.deepEqual(calls.find(([name]) => name === "sendPrompt")[1], { prompt: "Send the agenda to Dana", agentId: "a1", clientNonce: "n1", attachmentPaths: [], attachmentNames: [] });
+  const channel = handoff.createCallChannel({ agentId: "a1", callId: "call-1234", legs, onStatus: (label) => statuses.push(label), onSaid: (texts) => said.push(texts), schedule: scheduler.schedule });
+  assert.equal(await channel.sendTask({ task: "Book it" }), "That did not come back. Say you could not get to it, and offer to try again.", "nothing relays before the call's channel is open");
+  assert.equal(await channel.open(), true);
+  assert.deepEqual(calls.find(([name, args]) => name === "voiceCall" && args.kind === "open")[1], { agentId: "a1", callId: "call-1234", kind: "open" });
+  assert.equal(await channel.sendTask({ task: "Send the agenda to Dana", quote: "tell her it's final" }), "Sent. Say you're on it, in a few words, and carry on with them. What it turns up comes back to you here.");
+  assert.deepEqual(calls.find(([name, args]) => name === "voiceCall" && args.kind === "request")[1], { agentId: "a1", callId: "call-1234", kind: "request", request: "Send the agenda to Dana", quotes: ["tell her it's final"] });
   assert.deepEqual(statuses, ["Sending the agenda to Dana…"]);
-  assert.equal(watch.isWorking(), true);
+  const long = "x".repeat(2_500);
+  await channel.sendTask({ task: long });
+  assert.equal(calls.filter(([name, args]) => name === "voiceCall" && args.kind === "request").at(-1)[1].request.length, 2_000, "a relayed request is at most 2,000 characters");
   legs.roster = [{ id: "a1", isRunning: true, currentActivity: { kind: "tool", tool: "CallMcpTool", detail: "gmail", callId: "c" } }];
   await scheduler.step();
   assert.equal(statuses.at(-1), "Using Gmail…");
-  assert.match(await watch.checkOnAgent(), /still working on it: using gmail/);
+  assert.deepEqual(said, []);
+  legs.outbox.push({ seq: 1, text: "Sent it to Dana." }, { seq: 2, text: "She's in at ten." });
   legs.roster = [{ id: "a1", isRunning: false }];
-  legs.tail.push({ kind: "message", id: "u1", role: "user", content: "Send the agenda to Dana" }, { kind: "send-message", id: "new", message: { type: "text", content: "Sent it to Dana." } });
   await scheduler.step();
-  assert.deepEqual(done, [["Sent it to Dana."]]);
+  assert.deepEqual(said, [["Sent it to Dana.", "She's in at ten."]]);
   assert.equal(statuses.at(-1), null);
-  assert.equal(watch.isWorking(), false);
-  assert.match(await watch.checkOnAgent(), /Its last message was: Sent it to Dana\./);
-  watch.dispose();
+  await scheduler.step();
+  assert.deepEqual(said, [["Sent it to Dana.", "She's in at ten."]], "a message is said once");
+  assert.equal(await channel.recallTextMessages(), "Your latest text messages, oldest first:\nThem: Morning\nYou: Morning, Bass.");
+  await channel.end({ seconds: 42, recap: "You asked me to send the agenda.", transcript: [{ speaker: "user", text: "Send it" }] });
+  assert.deepEqual(calls.find(([name, args]) => name === "voiceCall" && args.kind === "ended")[1], { agentId: "a1", callId: "call-1234", kind: "ended", record: { seconds: 42, recap: "You asked me to send the agenda.", transcript: [{ speaker: "user", text: "Send it" }] } });
+  assert.equal(scheduler.size, 0, "the outbox is not read after the call ends");
+  assert.equal(await channel.sendTask({ task: "One more" }), "That did not come back. Say you could not get to it, and offer to try again.");
 });
 
-test("a turn never seen running counts as finished after the grace period; a failed send says so", async () => {
+test("a request that does not reach the agent gets the upstream app's soft fail; an empty chat says so", async () => {
   const { legs } = fakeLegs({ roster: [{ id: "a1", isRunning: false }] });
-  let clock = 0;
-  const done = [];
   const scheduler = manualScheduler();
-  const watch = handoff.createAgentHandoff({ agentId: "a1", legs, onStatus: () => {}, onDone: (replies) => done.push(replies), now: () => clock, schedule: scheduler.schedule, startGraceMs: 5_000 });
-  await watch.handToAgent({ task: "check the weather" });
-  await scheduler.step();
-  assert.equal(done.length, 0);
-  clock = 6_000;
-  await scheduler.step();
-  assert.deepEqual(done, [[]]);
-  const failing = handoff.createAgentHandoff({ agentId: "a1", legs: { ...legs, sendPrompt: async () => { throw new Error("box asleep"); } }, onStatus: () => {}, onDone: () => {}, schedule: scheduler.schedule });
-  assert.match(await failing.handToAgent({ task: "do it" }), /did not go through \(box asleep\)/);
+  const channel = handoff.createCallChannel({ agentId: "a1", callId: "call-5678", legs, onStatus: () => {}, onSaid: () => {}, schedule: scheduler.schedule });
+  await channel.open();
+  legs.voiceFails = true;
+  assert.equal(await channel.sendTask({ task: "do it" }), "That did not come back. Say you could not get to it, and offer to try again.");
+  assert.equal(await channel.recallTextMessages(), "There are no text messages between you yet.");
+  channel.dispose();
 });
 
 function fakeWindow() {
@@ -141,8 +150,8 @@ test("one call at a time: a second start brings the banner forward; the call's s
   const window = fakeWindow();
   const voices = memoryStore();
   const calls2 = [];
-  const voiceApi = { startCall: async () => ({ token: "tok", conversationId: null, agentId: "el" }), endCall: async (id, seconds) => { calls2.push(["end", id, seconds]); return { seconds, summary: "Talked about the week." }; }, listVoices: async () => [] };
-  const svc = service.createVoiceCallService({ legs, api: () => voiceApi, window, voiceStore: voices, previews: { urlFor: async () => null }, focusAgentChat: () => {}, isEnabled: () => true, log: () => {}, random: () => 0, now: () => 50_000, wait: async () => {} });
+  const voiceApi = { startCall: async () => ({ token: "tok", conversationId: null, agentId: "el" }), endCall: async (id, seconds) => { calls2.push(["end", id, seconds]); return { seconds, summary: "Talked about the week.", transcript: [{ speaker: "user", text: "Book it" }] }; }, listVoices: async () => [] };
+  const svc = service.createVoiceCallService({ legs, api: () => voiceApi, window, voiceStore: voices, previews: { urlFor: async () => null }, focusAgentChat: () => {}, isEnabled: () => true, log: () => {}, random: () => 0, now: () => 50_000, wait: async () => {}, newCallId: () => "call-abcdef", schedule: manualScheduler().schedule });
   assert.deepEqual(svc.start("a1"), { status: "started", agentId: "a1" });
   assert.deepEqual(svc.start("a2"), { status: "focused", agentId: "a1" });
   assert.equal(window.opened, 1);
@@ -153,9 +162,10 @@ test("one call at a time: a second start brings the banner forward; the call's s
   assert.equal(connected.token, "tok");
   assert.equal(connected.overrides.tts.voiceId, "L0Dsvb3SLTyegXwtm47J");
   assert.match(connected.overrides.agent.prompt.prompt, /You are Ada, Chief of staff/);
-  assert.match(connected.overrides.agent.prompt.prompt, /Person: Hi Ada/);
-  assert.equal(await svc.handlePanel("handToAgent", { task: "Book it" }), "Accepted. The agent is working on it.");
-  assert.equal(calls.filter(([name]) => name === "sendPrompt").length, 1);
+  assert.match(connected.overrides.agent.prompt.prompt, /Them: Hi Ada/);
+  assert.deepEqual(calls.find(([name, args]) => name === "voiceCall" && args.kind === "open")[1], { agentId: "a1", callId: "call-abcdef", kind: "open" }, "the call's channel opens as it connects");
+  assert.match(await svc.handlePanel("sendTask", { task: "Book it" }), /^Sent\./);
+  assert.equal(calls.filter(([name, args]) => name === "voiceCall" && args.kind === "request").length, 1);
   await svc.handlePanel("connected", { conversationId: "conv_7" });
   await svc.handlePanel("resize", { height: 129 });
   assert.deepEqual(window.heights, [129]);
@@ -164,6 +174,7 @@ test("one call at a time: a second start brings the banner forward; the call's s
   assert.deepEqual(calls2, [["end", "conv_7", 168]]);
   const record = calls.find(([name]) => name === "append")[1];
   assert.deepEqual(record, { agentId: "a1", message: { type: "text", content: "Voice call · 2:48\n\nTalked about the week." } });
+  assert.deepEqual(calls.find(([name, args]) => name === "voiceCall" && args.kind === "ended")[1].record, { seconds: 168, recap: "Talked about the week.", transcript: [{ speaker: "user", text: "Book it" }] }, "the call's record goes to the agent as its channel closes");
   svc.windowClosed();
   window.isOpenNow = false;
   assert.equal(svc.isCallActive(), false);
@@ -209,8 +220,8 @@ test("the voice picker saves the agent's voice through updateAgent, keeps a Mac 
 test("the server's answers are read defensively", () => {
   assert.deepEqual(api.parseVoiceCallTicket({ token: "t", conversation_id: null, agent_id: "a" }), { token: "t", conversationId: null, agentId: "a" });
   assert.throws(() => api.parseVoiceCallTicket({}), /no call token/);
-  assert.deepEqual(api.parseVoiceCallEnding({ seconds: 170, summary: " ok " }, 168), { seconds: 170, summary: "ok" });
-  assert.deepEqual(api.parseVoiceCallEnding(null, 168), { seconds: 168, summary: null });
+  assert.deepEqual(api.parseVoiceCallEnding({ seconds: 170, summary: " ok ", transcript: [{ speaker: "agent", text: " Hi " }, { speaker: "x", text: "Yo" }, { text: "" }, "bad"] }, 168), { seconds: 170, summary: "ok", transcript: [{ speaker: "agent", text: "Hi" }, { speaker: "user", text: "Yo" }] });
+  assert.deepEqual(api.parseVoiceCallEnding(null, 168), { seconds: 168, summary: null, transcript: [] });
   assert.equal(api.CONVERSATION_ID_PATTERN.test("conv_01abc"), true);
   assert.equal(api.CONVERSATION_ID_PATTERN.test("../x"), false);
 });

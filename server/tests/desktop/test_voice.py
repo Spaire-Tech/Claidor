@@ -219,14 +219,15 @@ class TestThePlatformAgent:
         assert overrides["tts"] == {"voice_id": True}
 
         tools = {one["name"]: one for one in fake.tools.values()}
-        assert set(tools) == {"hand_to_agent", "check_on_agent"}
-        hand = tools["hand_to_agent"]
+        assert set(tools) == {"send_task", "recall_text_messages"}
+        hand = tools["send_task"]
         assert hand["type"] == "client"
         assert hand["parameters"]["required"] == ["task"]
         assert hand["expects_response"] is True
         assert hand["response_timeout_secs"] == 20
         assert hand["pre_tool_speech"] == "force"
-        assert tools["check_on_agent"]["expects_response"] is True
+        assert hand["parameters"]["properties"]["quote"]["type"] == "string"
+        assert tools["recall_text_messages"]["expects_response"] is True
 
         # Known for the rest of the process: no second lookup.
         fake.calls.clear()
@@ -252,8 +253,8 @@ class TestThePlatformAgent:
             "name": VOICE_AGENT_NAME,
             "tags": ["simeon-voice-config-v0"],
         }
-        fake.tools["tool_hand"] = {"type": "client", "name": "hand_to_agent"}
-        fake.tools["tool_other"] = {"type": "webhook", "name": "check_on_agent"}
+        fake.tools["tool_hand"] = {"type": "client", "name": "send_task"}
+        fake.tools["tool_other"] = {"type": "webhook", "name": "recall_text_messages"}
 
         assert await ensure_agent(fake) == "agent_old"
 
@@ -427,7 +428,7 @@ class TestEndingACall:
             f"{CALLS}/conv_1/end", headers=headers, json={"seconds": 400}
         )
         assert response.status_code == 200, response.text
-        assert response.json() == {"seconds": 95, "summary": None}
+        assert response.json() == {"seconds": 95, "summary": None, "transcript": []}
 
         rows = await _usage(session)
         assert [(row.model, row.provider, row.input_tokens) for row in rows] == [
@@ -448,6 +449,7 @@ class TestEndingACall:
         assert again.json() == {
             "seconds": 95,
             "summary": "You asked me to book a table. Done.",
+            "transcript": [],
         }
         assert len(await _usage(session)) == 1
 
@@ -474,7 +476,11 @@ class TestEndingACall:
             f"{CALLS}/conv_2/end", headers=headers, json={"seconds": 99_999}
         )
         assert response.status_code == 200, response.text
-        assert response.json() == {"seconds": VOICE_CALL_MAX_SECONDS, "summary": None}
+        assert response.json() == {
+            "seconds": VOICE_CALL_MAX_SECONDS,
+            "summary": None,
+            "transcript": [],
+        }
         (call,) = await _voice_calls(session)
         assert call.duration_source == "app"
 
@@ -670,3 +676,21 @@ def test_the_recap_is_read_from_the_list_form_too() -> None:
     }
     assert _summary(listed) == "You called."
     assert _summary({"analysis": {"transcript_summary": "The user called."}}) is None
+
+
+def test_the_transcript_is_handed_back_for_the_record() -> None:
+    from simeon.desktop.voice import _transcript
+
+    conversation = {
+        "transcript": [
+            {"role": "agent", "message": " Hey Bass, it's Ada. "},
+            {"role": "user", "message": "Move Friday's review to Monday."},
+            {"role": "agent", "message": None, "tool_calls": [{}]},
+            "not a line",
+        ]
+    }
+    assert _transcript(conversation) == [
+        {"speaker": "agent", "text": "Hey Bass, it's Ada."},
+        {"speaker": "user", "text": "Move Friday's review to Monday."},
+    ]
+    assert _transcript(None) == []

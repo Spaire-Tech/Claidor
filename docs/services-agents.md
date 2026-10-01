@@ -442,9 +442,11 @@ the background while the call goes on, and says how it is going when asked.
   the first curated voice `/v2/voices` lists, else the first it lists: a missing voice is
   refused with `voice_not_found`), `end_call` and `skip_turn`, a 7 s turn timeout, the call ended after 25 s of
   silence, 30 minutes at most, and no voice recording kept.
-- Two client tools, answered by the app: `hand_to_agent {task}` (the app answers "accepted"
-  at once and the agent works in the background; 20 s timeout, the voice always speaks first)
-  and `check_on_agent` (how the work is going).
+- Two client tools, the upstream app's, answered by the app: `send_task {task, quote?}`
+  (relayed to the person's agent over the call's channel; the app answers at once; 20 s
+  timeout, the voice always speaks first) and `recall_text_messages` (the latest texts between
+  the person and the agent). The voice speaks as the agent itself, in the first person, and
+  never mentions another agent or a hand-off.
 - Routes, all under the model proxy's credential (`get_proxy_caller`):
   - `POST /desktop/api/proxy/v1/voice/calls` checks the monthly allowance and the hourly
     brake, makes sure the platform agent exists, and returns `{token, conversation_id,
@@ -490,14 +492,28 @@ the background while the call goes on, and says how it is going when asked.
   language `en` and the agent's voice. The waveform follows the SDK's frequency data; Mute and
   End are the SDK's. If the token or the connection fails, the banner says "Couldn't connect"
   ("Calls aren't switched on yet" on a 503, "Out of credit for calls" on a 402) with Close.
-- **Handing work over.** `hand_to_agent` sends the task into the agent's chat as a typed
-  message (the host's `sendPrompt`, through the coordinator's main-process leg) and answers
-  "Accepted" at once. Main then reads the roster every 1.5 s: while the agent runs, the
-  banner's status line shows its activity ("Using Gmail…", or the task: "Sending the agenda
-  to Dana…"); when its turn ends, its new messages are pushed into the call
-  (`sendContextualUpdate`, then a one-line `sendUserMessage` nudge, once the voice has
-  stopped speaking) so the voice tells the person. `check_on_agent` answers from the same
-  roster and chat (`shared/voice-call/handoff.ts`).
+- **The call is a channel into the agent** (1 October 2026, the upstream app's design, its
+  text in `shared/voice-call/main-loop-voice.ts`). When the call connects, main opens
+  `voice:<callId>` on the agent's host (`voiceCall {kind:"open"}`, through the coordinator's
+  main-process leg; `host/extensions/transcript/voice-call-channel.ts`).
+  - `send_task` relays the request (at most 2,000 characters, and the caller's own words when
+    the voice quotes them). The agent wakes at once on a hidden `[inbound] From voice:<call>:`
+    message carrying the voice channel's rules and how to answer; a run in progress is
+    interrupted and the message says it landed mid-turn. A turn that sends nothing to the
+    call is nudged once.
+  - The agent answers with `SendMessage` with `channel` set to the call's address. That
+    message goes to the call, not to the chat. Main reads the call's outbox every 1.2 s and
+    pushes new messages into the call (`sendContextualUpdate`, then a one-line
+    `sendUserMessage` nudge, once the voice has stopped speaking), and the voice says them as
+    its own. The banner's status line shows the agent's activity meanwhile ("Using Gmail…").
+  - A request that does not reach the agent answers the voice "That did not come back. Say
+    you could not get to it, and offer to try again."
+  - On hang-up the address closes (`kind:"ended"`, with the seconds, the recap and the
+    transcript). The record is written to `voice-calls/<start>-<callId>.json` in the agent's
+    own files. If anything was asked on the call, the agent is told "The call ended…" and puts
+    anything still owed into the chat, nudged once if it sent nothing.
+  - Every agent's system prompt carries the `## Voice calls` section.
+  - The host part ships with the host bundle (`npm run publish:host-bundle`).
 - **After.** "Call ended · 2:48" with Call Again and Chat; the banner leaves by itself after
   12 s unless the pointer is on it. Main posts `voice/calls/{id}/end` with the seconds, asks
   twice more for the summary (after 5 s and 10 s) if it is not ready, and adds
@@ -518,7 +534,7 @@ the background while the call goes on, and says how it is going when asked.
   key the banner says calls aren't switched on.
 - **Log.** `voice-call.log` in `~/Library/Application Support/Simeon`, also on stderr as
   `[simeon] voice-call …`: `call started`, `connect: token issued … (voice …)`, `connect: the
-  server refused the call: …`, `connected: conversation …`, `hand-off: …`, `banner: sdk error:
+  server refused the call: …`, `connected: conversation …`, `call channel: …`, `banner: sdk error:
   …`, `call ended: conversation …, 168s, billed …s, summary yes|no`, `call record not added
   to the chat: …`.
 - **Needs a new host bundle.** The voice is saved in the profile by the host in the box;

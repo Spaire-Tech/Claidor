@@ -10,7 +10,8 @@
  * with fakes; `voice-call-window.ts` is the Electron half.
  */
 import { SimeonApiError } from "../../shared/node/cursor-backend/simeon-api.js";
-import { createAgentHandoff, type AgentHandoff, type HandoffLegs } from "../../shared/voice-call/handoff.js";
+import { createCallChannel, type CallChannel, type CallChannelLegs } from "../../shared/voice-call/handoff.js";
+import { RELAY_SOFT_FAIL } from "../../shared/voice-call/main-loop-voice.js";
 import type { VoiceCallConnectResult, VoiceCallPanelEvent, VoiceCallPanelMethod, VoiceCallSetup } from "../../shared/voice-call/panel-protocol.js";
 import {
   buildVoiceCallOverrides,
@@ -18,13 +19,12 @@ import {
   CALL_STATUS_NO_CREDIT,
   CALL_STATUS_NOT_SWITCHED_ON,
   callRecordText,
-  handOffFailed,
   transcriptLinesFromEntries,
   VOICE_CALL_DEFAULT_VOICE_ID,
 } from "../../shared/voice-call/voice-call-prompt.js";
 import { CONVERSATION_ID_PATTERN, type VoiceCallApi, type VoiceOption } from "./voice-call-api.js";
 
-export interface VoiceCallLegs extends HandoffLegs {
+export interface VoiceCallLegs extends CallChannelLegs {
   appendSendMessage(args: { readonly agentId: string; readonly message: { readonly type: "text"; readonly content: string } }): Promise<unknown>;
   updateAgent(args: { readonly id: string; readonly profile: Record<string, string> }): Promise<unknown>;
 }
@@ -65,8 +65,10 @@ export interface VoiceCallServiceOptions {
   readonly now?: () => number;
   readonly random?: () => number;
   readonly wait?: (ms: number) => Promise<void>;
-  /** Passed to the hand-off watch (tests make it synchronous). */
+  /** Passed to the call channel's outbox reads (tests make it synchronous). */
   readonly schedule?: (run: () => void, ms: number) => () => void;
+  /** A new call's id, its channel address being `voice:<id>`. */
+  readonly newCallId?: () => string;
 }
 
 export interface VoiceCallMenuItem {
@@ -109,7 +111,8 @@ export function connectFailureMessage(error: unknown): string {
 interface ActiveCall {
   readonly agentId: string;
   readonly hintName: string | null;
-  handoff: AgentHandoff | null;
+  readonly callId: string;
+  channel: CallChannel | null;
   conversationId: string | null;
   connectedAtMs: number | null;
   isFinished: boolean;
@@ -158,17 +161,23 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
     return value.trim();
   };
 
-  const newCall = (agentId: string, hintName: string | null): ActiveCall => ({ agentId, hintName, handoff: null, conversationId: null, connectedAtMs: null, isFinished: false });
+  const newCallId = options.newCallId ?? (() => globalThis.crypto.randomUUID());
+  const newCall = (agentId: string, hintName: string | null): ActiveCall => ({ agentId, hintName, callId: newCallId(), channel: null, conversationId: null, connectedAtMs: null, isFinished: false });
 
   const finishCall = (active: ActiveCall, conversationId: string | null, seconds: number): void => {
     if (active.isFinished) return;
     active.isFinished = true;
-    active.handoff?.dispose();
+    const channel = active.channel;
     const id = conversationId != null && CONVERSATION_ID_PATTERN.test(conversationId) ? conversationId : active.conversationId;
-    if (id == null || active.connectedAtMs == null) { options.log(`call ended before it connected (agent ${active.agentId})`); return; }
+    if (id == null || active.connectedAtMs == null) {
+      options.log(`call ended before it connected (agent ${active.agentId})`);
+      if (channel != null) finishing = finishing.then(async () => { await channel.end({ seconds: 0, recap: null, transcript: [] }); channel.dispose(); });
+      return;
+    }
     const whole = Math.max(0, Math.round(Number.isFinite(seconds) ? seconds : (now() - active.connectedAtMs) / 1000));
     finishing = finishing.then(async () => {
       let summary: string | null = null;
+      let transcript: { readonly speaker: "user" | "agent"; readonly text: string }[] = [];
       try {
         let ending = await options.api().endCall(id, whole);
         for (const delay of SUMMARY_RETRY_WAITS_MS) {
@@ -177,10 +186,13 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
           ending = await options.api().endCall(id, whole);
         }
         summary = ending.summary;
+        transcript = [...(ending.transcript ?? [])];
         options.log(`call ended: conversation ${id}, ${whole}s, billed ${ending.seconds}s, summary ${summary == null ? "none" : "yes"}`);
       } catch (error) {
         options.log(`call end not recorded on the server (conversation ${id}): ${errorText(error)}`);
       }
+      // The call's address closes, and its record goes to the agent's voice-calls/ folder.
+      if (channel != null) { await channel.end({ seconds: whole, recap: summary, transcript }); channel.dispose(); }
       try {
         await options.legs.appendSendMessage({ agentId: active.agentId, message: { type: "text", content: callRecordText(whole, summary) } });
       } catch (error) {
@@ -217,16 +229,17 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
       personName,
     });
     active.conversationId = ticket.conversationId;
-    active.handoff?.dispose();
-    active.handoff = createAgentHandoff({
+    active.channel?.dispose();
+    active.channel = createCallChannel({
       agentId: active.agentId,
+      callId: active.callId,
       legs: options.legs,
       onStatus: (label) => { if (call === active) options.window.send({ type: "agent-status", label }); },
-      onDone: (replies) => { if (call === active) options.window.send({ type: "agent-done", replies }); },
+      onSaid: (texts) => { if (call === active) options.window.send({ type: "work-came-back", texts }); },
       log: (line) => options.log(line),
-      now,
       ...(options.schedule === undefined ? {} : { schedule: options.schedule }),
     });
+    if (!(await active.channel.open())) options.log(`connect: the call is up without its channel to agent ${active.agentId}`);
     options.log(`connect: token issued for agent ${active.agentId} (voice ${overrides.tts?.voiceId ?? "the agent's own"}, ${entries.length} chat entries read)`);
     return { ok: true, token: ticket.token, conversationId: ticket.conversationId, overrides };
   };
@@ -282,10 +295,10 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
           options.log(`connected: conversation ${active.conversationId ?? "unknown"}`);
           return null;
         }
-        case "handToAgent":
-          return active.handoff == null ? handOffFailed("the call is not connected") : await active.handoff.handToAgent(args);
-        case "checkOnAgent":
-          return active.handoff == null ? "The agent's status could not be read just now." : await active.handoff.checkOnAgent();
+        case "sendTask":
+          return active.channel == null ? RELAY_SOFT_FAIL : await active.channel.sendTask(args);
+        case "recallTextMessages":
+          return active.channel == null ? "The text messages could not be read just now." : await active.channel.recallTextMessages();
         case "callEnded": {
           const seconds = typeof args.seconds === "number" ? args.seconds : Number.NaN;
           finishCall(active, typeof args.conversationId === "string" ? args.conversationId : null, seconds);

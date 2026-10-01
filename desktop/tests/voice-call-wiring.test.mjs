@@ -124,8 +124,8 @@ test("the preloads and the edge carry the voice methods; the banner window sits 
   const panel = await loadModule("source/electron-preload/preload-voice-call.ts", "preload-voice-call");
   const sent = [];
   const bridge = panel.createVoiceCallBridge({ invoke: async (channel, payload) => { sent.push([channel, payload]); }, on: () => {}, off: () => {} });
-  await bridge.handToAgent({ task: "x" });
-  assert.deepEqual(sent, [["simeon-voice-call:invoke", { method: "handToAgent", args: { task: "x" } }]]);
+  await bridge.sendTask({ task: "x" });
+  assert.deepEqual(sent, [["simeon-voice-call:invoke", { method: "sendTask", args: { task: "x" } }]]);
 
   const edge = await loadModule("source/electron-main/main-edge.ts", "main-edge");
   const rpc = await loadModule("source/shared/rpc/main.ts", "rpc-main");
@@ -134,7 +134,7 @@ test("the preloads and the edge carry the voice methods; the banner window sits 
   assert.deepEqual(handlers.getVoiceCallAvailability({}), { enabled: true, inCall: false });
   assert.deepEqual(handlers.startVoiceCall({ agentId: "a1", agentName: "Ada" }), { status: "started", agentId: "a1", name: "Ada" });
   const coordinatorMain = await loadModule("source/shared/rpc/coordinator-main.ts", "coordinator-main");
-  for (const name of ["sendPrompt", "getAgentTranscriptTail", "updateAgent", "appendSendMessage"]) assert.equal(coordinatorMain.isCoordinatorMainMethod(name), true);
+  for (const name of ["voiceCall", "getAgentTranscriptTail", "updateAgent", "appendSendMessage"]) assert.equal(coordinatorMain.isCoordinatorMainMethod(name), true);
 
   const windowModule = await loadModule("source/electron-main/voice/voice-call-window.ts", "voice-call-window");
   assert.deepEqual(windowModule.bannerWindowBounds({ x: 0, y: 25, width: 1512, height: 920 }, 66), { x: 1138, y: 27, width: 386, height: 122 });

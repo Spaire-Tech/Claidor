@@ -755,7 +755,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         disposables.push({ dispose: () => electronWindow?.dispose() });
         service = createVoiceCallService({
           legs: {
-            sendPrompt: (args) => coordinatorLegs.legs.sendPrompt!(args),
+            voiceCall: (args) => coordinatorLegs.legs.voiceCall!(args),
             listAgents: () => coordinatorLegs.legs.listAgents!(),
             getAgentTranscriptTail: (args) => coordinatorLegs.legs.getAgentTranscriptTail!(args),
             updateAgent: (args) => coordinatorLegs.legs.updateAgent!(args),

@@ -22,6 +22,7 @@ export const SAND_GATEWAY_COMMANDS = {
   discardDraft: (api: GatewayApi, body: string) => api.discardDraft(parseCommandArgs(body)),
   appendConnectorCard: (api: GatewayApi, body: string) => api.appendConnectorCard(parseCommandArgs(body)),
   appendSendMessage: (api: GatewayApi, body: string) => api.appendSendMessage(parseCommandArgs(body)),
+  voiceCall: (api: GatewayApi, body: string) => api.voiceCall(parseCommandArgs(body)),
   searchPlugins: (api: GatewayApi, body: string) => api.searchPlugins(parseCommandArgs(body)),
   getPlugin: (api: GatewayApi, body: string) => api.getPlugin(parseCommandArgs(body)),
   installPlugin: (api: GatewayApi, body: string) => api.installPlugin(parseCommandArgs(body)),

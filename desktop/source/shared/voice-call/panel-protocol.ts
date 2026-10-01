@@ -13,8 +13,8 @@ export const VOICE_CALL_PANEL_METHODS = [
   "getSetup",
   "connect",
   "connected",
-  "handToAgent",
-  "checkOnAgent",
+  "sendTask",
+  "recallTextMessages",
   "callEnded",
   "resize",
   "callAgain",
@@ -42,5 +42,6 @@ export type VoiceCallConnectResult =
 
 export type VoiceCallPanelEvent =
   | { readonly type: "agent-status"; readonly label: string | null }
-  | { readonly type: "agent-done"; readonly replies: readonly string[] }
+  /** What the agent sent on the call (`voice:<call>`), for the voice to say as its own. */
+  | { readonly type: "work-came-back"; readonly texts: readonly string[] }
   | { readonly type: "hang-up" };

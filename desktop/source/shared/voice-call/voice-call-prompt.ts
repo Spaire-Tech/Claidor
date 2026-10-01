@@ -2,9 +2,10 @@
  * Every sentence a voice call puts in front of the voice model or the
  * person, in one place (30 September 2026): the per-call prompt built from
  * the agent's profile and its recent chat, the greeting, what the two client
- * tools answer, the nudge that makes the voice tell the person what the
- * agent reported, the banner's status line while the agent works, and the
- * record the call leaves in the agent's chat.
+ * tools answer, the note that makes the voice say what its work came back
+ * with, the banner's status line while the agent works, and the record the
+ * call leaves in the agent's chat. The agent's own side of a call is in
+ * `main-loop-voice.ts`.
  *
  * The call itself is an ElevenLabs Agents conversation (the server's
  * `server/simeon/desktop/voice.py` keeps the key and the one platform
@@ -77,37 +78,47 @@ export function transcriptLinesFromEntries(entries: readonly unknown[], limit = 
   return lines.slice(-Math.max(0, limit));
 }
 
-/** The per-call system prompt: who the voice is, what was said lately, and the rules. */
+/**
+ * The per-call system prompt (1 October 2026, the upstream app's way: the founder's
+ * agent "was talking to me like he wasnt the agent"). The voice IS the
+ * agent: it speaks in the first person and never mentions another agent or a
+ * hand-off. Its work runs behind the call (`send_task` relays the request to
+ * the agent over the `voice:<call>` channel), and what comes back is said as
+ * its own.
+ */
 export function buildVoiceCallPrompt(args: { readonly agent: VoiceCallAgentProfile; readonly transcript: readonly VoiceCallTranscriptLine[]; readonly personName?: string | null }): string {
   const name = collapse(args.agent.name) || "your agent";
   const person = clamp(collapse(args.personName ?? ""), 60);
+  const them = person.length > 0 ? person : "the person";
   const title = collapse(args.agent.title ?? "");
   const description = collapse(args.agent.description ?? "");
   const who = [
-    `You are ${name}${title.length > 0 ? `, ${title}` : ""}, one of the person's Simeon agents, and you are on a live phone call with them.`,
-    "Simeon is a team of always-on agents that work for the person on their Mac and on a computer of their own.",
-    ...(description.length > 0 ? [`What ${name} is for, in the person's words: ${clamp(description, 800)}`] : []),
-    // The name the person gave in the app (1 October 2026), never one made from their e-mail.
-    ...(person.length > 0 ? [`The person is ${person}. Call them ${person} now and then, the way a colleague would, never in every sentence.`] : []),
+    `You are ${name}${title.length > 0 ? `, ${title}` : ""}, one of ${person.length > 0 ? `${person}'s` : "the person's"} Simeon agents, on a live phone call with ${them}.`,
+    "Simeon is a team of always-on agents that work for them on their Mac and on a computer of their own.",
+    ...(description.length > 0 ? [`What you are for, in their words: ${clamp(description, 800)}`] : []),
+    // The name the person gave in the app, never one made from their e-mail.
+    ...(person.length > 0 ? [`Call them ${person} now and then, the way a colleague would, never in every sentence.`] : []),
+    `You are ${name} yourself. Speak in the first person ("I'll do that", "I've sent it"). Never mention another agent, an assistant, a system or a hand-off, and never say you are passing anything on.`,
   ].join(" ");
   const recent = args.transcript.length === 0
-    ? "You and the person have not written to each other yet."
+    ? "You and they have not written to each other yet."
     : [
-        "Your most recent chat with the person, oldest first, so you know what you are both talking about:",
-        ...args.transcript.map((line) => `${line.speaker === "person" ? (person.length > 0 ? person : "Person") : name}: ${line.text}`),
+        "Your latest text messages with them, oldest first, so you know what you are both talking about:",
+        ...args.transcript.map((line) => `${line.speaker === "person" ? (person.length > 0 ? person : "Them") : "You"}: ${line.text}`),
       ].join("\n");
   const rules = [
     "How you talk:",
-    `- You are ${name} on a phone call. Speak briefly and naturally, like a person: one or two short sentences, contractions, plain words.`,
+    "- This is a phone call. Speak briefly and naturally, like a person: one or two short sentences, contractions, plain words.",
     "- Never use lists, headings, markdown, emoji, or read out links. Say numbers, dates and times the way people say them.",
-    "- If you did not catch something, say so and ask again. Never guess what the person said.",
-    "How work gets done:",
-    "- You do not do tasks yourself. For anything that needs doing (looking something up, writing, sending, scheduling, changing a file, checking on a job), call hand_to_agent with the task in one clear sentence that carries every detail the person gave, and say something short like \"on it\".",
-    "- Never say something is done, sent, booked or found unless the agent reported it. If it has not reported yet, say it is still working.",
-    "- When the person asks how it is going, call check_on_agent and tell them what it says, briefly.",
-    "- When a note tells you the agent finished, tell the person what it reported, in your own words and briefly.",
+    "- If you did not catch something, say so and ask again. Never guess what they said.",
+    "How you get things done:",
+    "- Your work runs behind the call while you talk. For anything that needs doing or finding out (looking something up, writing, sending, scheduling, changing a file, checking on something you are doing), call send_task with what is needed in one clear sentence that carries every detail they gave. When their exact wording matters, put their words in quote. Then say a few words, like \"on it\", and carry on with them.",
+    "- Never say something is done, sent, booked or found until a note tells you your work came back with it. Until then it is still in progress.",
+    "- When a note says your work came back, tell them what it says, briefly, in your own words, as yours.",
+    "- When they refer to something you wrote to each other, call recall_text_messages.",
+    "- When there is nothing for you to say (they are thinking, or talking to someone else), stay silent with skip_turn.",
     "Ending:",
-    "- When the person wraps up (thanks, that's all, bye), say a short, natural goodbye in your own words and call end_call.",
+    "- When they wrap up (thanks, that's all, bye), say a short, natural goodbye in your own words and call end_call.",
     "- If the line goes quiet, check in lightly once, like a person would.",
   ].join("\n");
   return `${who}\n\n${recent}\n\n${rules}`;
@@ -153,36 +164,24 @@ export function buildVoiceCallOverrides(args: {
   };
 }
 
-// --- the two client tools ----------------------------------------------------
+// --- the voice's two client tools (the upstream app's send_task and recall_text_messages) ---
 
-/** What `hand_to_agent` answers at once; the work goes on behind the call. */
-export const HAND_OFF_ACCEPTED = "Accepted. The agent is working on it.";
-export const HAND_OFF_EMPTY = "No task was given. Ask the person what they want done.";
-export function handOffFailed(reason: string): string {
-  return `The hand-off did not go through (${clamp(collapse(reason), 200)}). Tell the person it didn't work and offer to try again.`;
+/** What `send_task` answers at once; the work goes on behind the call. */
+export const SEND_TASK_ACCEPTED = "Sent. Say you're on it, in a few words, and carry on with them. What it turns up comes back to you here.";
+
+/** What `recall_text_messages` answers: the latest texts between them, oldest first. */
+export function recallTextMessagesAnswer(lines: readonly VoiceCallTranscriptLine[]): string {
+  if (lines.length === 0) return "There are no text messages between you yet.";
+  return ["Your latest text messages, oldest first:", ...lines.map((line) => `${line.speaker === "person" ? "Them" : "You"}: ${line.text}`)].join("\n");
 }
 
-/** What `check_on_agent` answers. */
-export function checkOnAgentAnswer(args: { readonly isWorking: boolean; readonly activity: string | null; readonly replies: readonly string[]; readonly lastMessage: string | null }): string {
-  const replies = args.replies.map((reply) => clamp(reply, 1_200));
-  if (args.isWorking) {
-    const doing = args.activity == null ? "The agent is still working on it." : `The agent is still working on it: ${args.activity.replace(/…$/, "").toLowerCase()}.`;
-    return replies.length === 0 ? `${doing} It has not reported anything yet.` : `${doing} So far it said: ${replies.join(" ")}`;
-  }
-  if (replies.length > 0) return `The agent finished. It said: ${replies.join(" ")}`;
-  return args.lastMessage == null
-    ? "The agent is not working on anything right now."
-    : `The agent is not working on anything right now. Its last message was: ${clamp(args.lastMessage, 1_200)}`;
-}
-
-/** The note pushed into the call (`sendContextualUpdate`) when the handed-off work is done. */
-export function handOffResultUpdate(replies: readonly string[]): string {
-  if (replies.length === 0) return "The agent finished the work it was handed, and did not send a message about it.";
-  return `The agent finished the work it was handed. It reported: ${replies.map((reply) => clamp(reply, 2_000)).join(" ")}`;
+/** The note pushed into the call (`sendContextualUpdate`) when the agent sent something on it. */
+export function workCameBackUpdate(texts: readonly string[]): string {
+  return `Your work came back: ${texts.map((text) => clamp(collapse(text), 2_000)).join(" ")} Tell them now, briefly, in your own words, as yours.`;
 }
 
 /** Then this, as a user turn (`sendUserMessage`), so the voice speaks now instead of waiting. */
-export const HAND_OFF_RESULT_NUDGE = "(The agent just reported back. Tell me what it said, briefly, in your own words.)";
+export const WORK_CAME_BACK_NUDGE = "(Your work just came back. Tell me what it found.)";
 
 // --- the banner's status line while the agent works --------------------------
 

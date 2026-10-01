@@ -16,10 +16,11 @@ all here:
   (tagged on the agent) — bump the version and the next call rewrites it.
   `ELEVENLABS_AGENT_ID` names an agent managed by hand instead, which is
   then used as it is and never rewritten.
-- **The two client tools.** `hand_to_agent {task}` and `check_on_agent`
-  are declared on the platform agent and answered by the app, which
-  owns the real agent: the voice hands work over, the agent does it in
-  the background, and the voice can ask how it is going.
+- **The two client tools.** `send_task {task, quote?}` and
+  `recall_text_messages`, the upstream app's, are declared on the platform agent and
+  answered by the app. The voice speaks as the person's agent; `send_task`
+  relays the request to that agent over the call's `voice:<call>` channel,
+  and what the agent sends on it comes back to the voice to say as its own.
 - **The bill.** When the app hangs up it says so
   (`…/voice/calls/{conversation_id}/end`). The server asks ElevenLabs how
   long the call really lasted and bills those seconds on
@@ -77,12 +78,12 @@ VOICE_AGENT_NAME = "Simeon voice"
 
 #: Bump when anything in `agent_config` or `CLIENT_TOOLS` changes: the next
 #: call finds the agent without this version's tag and rewrites it.
-VOICE_AGENT_CONFIG_VERSION = 4
+VOICE_AGENT_CONFIG_VERSION = 5
 VOICE_AGENT_VERSION_TAG = f"simeon-voice-config-v{VOICE_AGENT_CONFIG_VERSION}"
 VOICE_AGENT_TAGS = ["simeon", "simeon-voice", VOICE_AGENT_VERSION_TAG]
 
 #: The model that thinks during the call. Fast over clever: the call's
-#: real work is handed to the person's own agent (`hand_to_agent`), and a
+#: real work runs in the person's own agent behind the call (`send_task`), and a
 #: pause before every sentence is what makes a voice feel broken.
 VOICE_LLM = "gemini-2.5-flash"
 
@@ -105,49 +106,51 @@ VOICE_DEFAULT_FIRST_MESSAGE = "Hi, it's me. What's up?"
 #: agent's own (its name, its manner, what it is working on); this is
 #: what a call says when it does not.
 VOICE_BASE_PROMPT = """\
-You are the voice of one of the person's Simeon agents, on a live phone \
-call with them. Simeon is a team of always-on agents that work on the \
-person's Mac and on a cloud computer of their own. You are the agent's \
-voice; the agent itself does the work.
+You are one of the person's Simeon agents, on a live phone call with them. \
+Simeon is a team of always-on agents that work for them on their Mac and on \
+a cloud computer of their own. Speak as yourself, in the first person ("I'll \
+do that", "I've sent it"). Never mention another agent, an assistant, a \
+system or a hand-off, and never say you are passing anything on.
 
 How you speak:
 - This is a phone call. Answer in one or two short sentences, the way a \
-capable colleague talks. No lists, no headings, no markdown, no URLs \
-read aloud, no emoji.
+capable colleague talks. No lists, no headings, no markdown, no URLs read \
+aloud, no emoji.
 - Say numbers, dates and times the way a person says them.
-- If you did not catch something, say so and ask again. Never guess at \
-what the person said.
-- Do not pretend to have done something you have not done.
+- If you did not catch something, say so and ask again. Never guess at what \
+they said.
 
-How work gets done:
-- When the person asks for anything that needs doing (looking something \
-up, writing, changing a file, sending, scheduling, checking on a job), \
-call `hand_to_agent` with the task in one clear sentence, including \
-every detail the person gave. Tell them in a few words that you are on \
-it; the agent works in the background and the call can go on.
-- When the person asks how it is going, or you need the result to \
-answer, call `check_on_agent` and tell them what it says, briefly.
-- Never make up a result. If the agent has not finished, say so.
+How you get things done:
+- Your work runs behind the call while you talk. For anything that needs \
+doing or finding out, call `send_task` with what is needed in one clear \
+sentence carrying every detail they gave; when their exact wording matters, \
+put their words in `quote`. Say a few words, like "on it", and carry on.
+- Never say something is done, sent, booked or found until a note tells you \
+your work came back with it. When it does, tell them, briefly, as your own.
+- When they refer to something you wrote to each other, call \
+`recall_text_messages`.
 
 Ending:
-- When the person says goodbye or is clearly done, say a short goodbye \
-and call `end_call`.
-- If the person is talking to someone else, or nothing needs saying, \
-call `skip_turn`.
+- When they say goodbye or are clearly done, say a short goodbye and call \
+`end_call`.
+- If they are talking to someone else, or nothing needs saying, call \
+`skip_turn`.
 """
 
-#: The two tools the app answers. `hand_to_agent` must come back fast
-#: (the app says "accepted" at once and the work continues behind the
-#: call), so its timeout is short and the voice always says something
-#: before calling it.
+#: The voice's two client tools, the upstream app's: `send_task` relays a request to
+#: the person's agent over the call's `voice:<call>` channel (the app answers
+#: at once and the work goes on behind the call, so its timeout is short and
+#: the voice always speaks before calling it), and `recall_text_messages`
+#: reads the latest texts between the person and the agent. Ending the call
+#: and staying silent are ElevenLabs' own `end_call` and `skip_turn`.
 CLIENT_TOOLS: tuple[dict[str, Any], ...] = (
     {
         "type": "client",
-        "name": "hand_to_agent",
+        "name": "send_task",
         "description": (
-            "Hand a task to the person's agent, which does it in the "
-            "background. Use it for anything that needs doing. Answers "
-            "at once that the task was accepted; the call continues."
+            "Set your work going on what the caller needs, behind the call. "
+            "Use it for anything that needs doing or finding out. Answers at "
+            "once; what your work turns up comes back to you during the call."
         ),
         "parameters": {
             "type": "object",
@@ -155,10 +158,17 @@ CLIENT_TOOLS: tuple[dict[str, Any], ...] = (
                 "task": {
                     "type": "string",
                     "description": (
-                        "The task, in one clear sentence, with every "
-                        "detail the person gave."
+                        "What is needed, in one clear sentence, with every "
+                        "detail the caller gave."
                     ),
-                }
+                },
+                "quote": {
+                    "type": "string",
+                    "description": (
+                        "Optional. The caller's exact words, when the wording "
+                        "matters (a message to send, a name, a date)."
+                    ),
+                },
             },
             "required": ["task"],
         },
@@ -168,10 +178,10 @@ CLIENT_TOOLS: tuple[dict[str, Any], ...] = (
     },
     {
         "type": "client",
-        "name": "check_on_agent",
+        "name": "recall_text_messages",
         "description": (
-            "Ask the person's agent how the work handed to it is going, "
-            "and what it has found or done so far."
+            "Read the latest text messages between you and the caller in "
+            "your chat, oldest first."
         ),
         "parameters": {"type": "object", "properties": {}, "required": []},
         "expects_response": True,
@@ -663,6 +673,26 @@ def _summary(conversation: dict[str, Any] | None) -> str | None:
     return value.strip() if isinstance(value, str) and value.strip() else None
 
 
+#: The most lines of a call's transcript handed back for its record.
+VOICE_TRANSCRIPT_MAX_LINES = 400
+
+
+def _transcript(conversation: dict[str, Any] | None) -> list[dict[str, str]]:
+    """What was said on the call, `{speaker, text}` oldest first, for the
+    record the agent keeps in its voice-calls/ folder."""
+    lines = conversation.get("transcript") if conversation else None
+    out: list[dict[str, str]] = []
+    for line in lines if isinstance(lines, list) else []:
+        if not isinstance(line, dict):
+            continue
+        message = line.get("message")
+        if not isinstance(message, str) or not message.strip():
+            continue
+        speaker = "agent" if line.get("role") == "agent" else "user"
+        out.append({"speaker": speaker, "text": message.strip()})
+    return out[:VOICE_TRANSCRIPT_MAX_LINES]
+
+
 def recap_for(recap: str | None, name: str | None) -> str | None:
     """The recap with the person's name in front: "Bass, you asked me to…"."""
     if recap is None or not name:
@@ -769,6 +799,7 @@ async def end_call(
             {
                 "seconds": billed.seconds,
                 "summary": recap_for(_summary(conversation), _person_name(caller.user)),
+                "transcript": _transcript(conversation),
             },
             headers={"cache-control": "no-store"},
         )
@@ -832,6 +863,7 @@ async def end_call(
         {
             "seconds": seconds,
             "summary": recap_for(_summary(conversation), _person_name(caller.user)),
+            "transcript": _transcript(conversation),
         },
         headers={"cache-control": "no-store"},
     )

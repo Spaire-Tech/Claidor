@@ -8,15 +8,15 @@
  */
 import { bannerView, callSeconds, initialCallState, reduceCall, shouldStartSession, type CallEvent, type CallState } from "../shared/voice-call/call-state.js";
 import type { VoiceCallConnectResult, VoiceCallPanelEvent, VoiceCallSetup } from "../shared/voice-call/panel-protocol.js";
-import { CALL_STATUS_COULD_NOT_CONNECT, CALL_STATUS_NO_MICROPHONE, HAND_OFF_RESULT_NUDGE, handOffResultUpdate, type VoiceCallOverrides } from "../shared/voice-call/voice-call-prompt.js";
+import { CALL_STATUS_COULD_NOT_CONNECT, CALL_STATUS_NO_MICROPHONE, WORK_CAME_BACK_NUDGE, workCameBackUpdate, type VoiceCallOverrides } from "../shared/voice-call/voice-call-prompt.js";
 import { levelsFromFrequencies, type BannerElements, type BannerPainter } from "./banner-view.js";
 
 export interface SimeonCallBridge {
   getSetup(): Promise<VoiceCallSetup>;
   connect(): Promise<VoiceCallConnectResult>;
   connected(args: { conversationId: string | null }): Promise<unknown>;
-  handToAgent(args: { task?: unknown }): Promise<string>;
-  checkOnAgent(): Promise<string>;
+  sendTask(args: { task?: unknown; quote?: unknown }): Promise<string>;
+  recallTextMessages(): Promise<string>;
   callEnded(args: { conversationId: string | null; seconds: number }): Promise<unknown>;
   resize(args: { height: number }): Promise<unknown>;
   callAgain(): Promise<unknown>;
@@ -100,8 +100,8 @@ export function createCallController(deps: CallControllerDeps): CallController {
     pendingReply = null;
     pending.cancel();
     try {
-      conversation.sendContextualUpdate(handOffResultUpdate(pending.replies));
-      conversation.sendUserMessage(HAND_OFF_RESULT_NUDGE);
+      conversation.sendContextualUpdate(workCameBackUpdate(pending.replies));
+      conversation.sendUserMessage(WORK_CAME_BACK_NUDGE);
     } catch (error) { log(`pushing the agent's reply failed: ${errorText(error)}`); }
   };
 
@@ -144,8 +144,10 @@ export function createCallController(deps: CallControllerDeps): CallController {
         conversationToken: ticket.token,
         overrides: ticket.overrides,
         clientTools: {
-          hand_to_agent: async (parameters) => await deps.bridge.handToAgent({ task: parameters?.task }),
-          check_on_agent: async () => await deps.bridge.checkOnAgent(),
+          // the upstream app's two client tools: the request relayed to the agent over the
+          // call's channel, and the latest texts between the person and the agent.
+          send_task: async (parameters) => await deps.bridge.sendTask({ task: parameters?.task, quote: parameters?.quote }),
+          recall_text_messages: async () => await deps.bridge.recallTextMessages(),
         },
         onConnect: ({ conversationId }) => {
           const id = typeof conversationId === "string" && conversationId.length > 0 ? conversationId : ticket.conversationId;
@@ -211,10 +213,12 @@ export function createCallController(deps: CallControllerDeps): CallController {
     deps.bridge.onEvent((event) => {
       if (event.type === "agent-status") dispatch({ type: "work", label: event.label });
       else if (event.type === "hang-up") hangUp();
-      else if (event.type === "agent-done") {
+      else if (event.type === "work-came-back") {
+        // Several messages before the voice is free to speak are said together.
+        const earlier = pendingReply?.replies ?? [];
         pendingReply?.cancel();
         const cancel = deps.setTimer(() => flushReply(), REPLY_WAIT_MS);
-        pendingReply = { replies: event.replies, cancel };
+        pendingReply = { replies: [...earlier, ...event.texts], cancel };
         if (state.mode === "listening") flushReply();
       }
     });
