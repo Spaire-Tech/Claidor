@@ -397,6 +397,229 @@ export function patchOriginalVoiceCallStylesheet(css) {
 }
 
 /**
+ * The agent's pane (1 October 2026, the founder: "the computer icon goes
+ * away. so the [panel] appears when you click on the avatar … no
+ * 'connected' … the choices on the picker are obviously avatar edit,
+ * routines, computer, channels … the apple style … no accent color, keep it
+ * simple and apple premium"). The window's own pane (`p3n`) kept three views
+ * behind a gear and a back arrow: an overview (the computer's preview, the
+ * routines, a link to Channels), Settings (avatar, name, title, description,
+ * notifications) and Channels. It is now one page: the agent's avatar with
+ * its pencil, the name and the title, then a segmented control, Profile ·
+ * Routines · Computer · Channels, over the same views the window already
+ * draws. Channels is offered only where the window would offer it (the
+ * channel manifests are served). The gear is gone; the back arrow is left
+ * for the one level that is deeper, a routine's editor. The chat header's
+ * computer button is gone, and the avatar in the header opens and closes
+ * the pane. The pane opens on Profile.
+ *
+ * View ids are the window's own: `settings` is Profile, `overview` is
+ * Computer, `channels` is Channels; `routines` is new and admitted by `pin`,
+ * the view guard. A request for a routine (`automationId`) lands on
+ * Routines, where the editor opens.
+ */
+const PANE_ICONS = {
+  // Line glyphs in the weight of SF Symbols' regular, on a 24 pt grid, stroked in the text colour.
+  settings: '<circle cx="12" cy="8.2" r="3.6"/><path d="M4.8 19.6c1.3-3.4 4-5.2 7.2-5.2s5.9 1.8 7.2 5.2"/>',
+  routines: '<circle cx="12" cy="12" r="8.2"/><path d="M12 7.4V12l3.1 2"/>',
+  overview: '<rect x="3.2" y="4.4" width="17.6" height="12" rx="2.2"/><path d="M8.8 19.8h6.4M12 16.4v3.4"/>',
+  channels: '<path d="M19.8 11.6c0 3.8-3.5 6.9-7.8 6.9-1 0-2-.2-2.9-.5l-4.4 1.4 1.3-3.5c-1.1-1.2-1.8-2.7-1.8-4.3 0-3.8 3.5-6.9 7.8-6.9s7.8 3.1 7.8 6.9z"/>',
+};
+const AGENT_PANE_COMPONENTS_SOURCE = [
+  `const __simeonPaneIcons=${JSON.stringify(PANE_ICONS)};`,
+  "function __simeonPaneSegments(n){const{value:v,onChange:c,hasChannels:h}=n,items=[[\"settings\",\"Profile\"],[\"routines\",\"Routines\"],[\"overview\",\"Computer\"],...(h?[[\"channels\",\"Channels\"]]:[])],at=Math.max(0,items.findIndex(x=>x[0]===v));",
+  "return p.jsxs(\"div\",{className:\"simeon-segments\",role:\"tablist\",\"aria-label\":\"Agent\",style:{\"--simeon-seg-count\":items.length,\"--simeon-seg-index\":at},children:[p.jsx(\"span\",{className:\"simeon-segments__thumb\",\"aria-hidden\":!0}),...items.map(([id,label])=>p.jsx(yo,{content:label,children:p.jsx(\"button\",{type:\"button\",role:\"tab\",\"aria-selected\":id===v,\"aria-label\":label,\"data-segment\":id,className:\"simeon-segments__item\",onClick:()=>c(id),children:p.jsx(\"svg\",{viewBox:\"0 0 24 24\",\"aria-hidden\":!0,dangerouslySetInnerHTML:{__html:__simeonPaneIcons[id]}})})},id))]})}",
+].join("");
+const AGENT_PANE_ANCHOR = "function p3n(n){";
+const AGENT_PANE_BODY_BEFORE = "p.jsx(Ar,{className:re(\"sand-info-pane__section-content\",\"sand-1iyjqo2 sand-s83m0k sand-dl72j9 sand-2lwn1j\"),ref:Y,children:F===\"overview\"?p.jsxs(\"div\",{className:\"sand-9f619 sand-78zum5 sand-dt5ytf sand-1v2ro7d sand-1nn3v0j sand-yfqnmn sand-1l90r2v sand-nm25rq sand-1iyjqo2 sand-s83m0k sand-dl72j9\",children:[l,b?p.jsx(z2n,{agent:t,onOpenAgentChat:f}):null,p.jsxs(\"div\",{className:{0:{className:\"sand-78zum5 sand-dt5ytf sand-17d4w8g\"},1:{className:\"sand-78zum5 sand-dt5ytf sand-17d4w8g sand-1iyjqo2 sand-s83m0k sand-dl72j9 sand-2lwn1j\"}}[!!Cmt(x)<<0].className,children:[N.length>0?p.jsxs(\"div\",{className:\"sand-78zum5 sand-6s0dn4 sand-1qughib sand-167g77z sand-mix8c7\",children:[p.jsx(\"span\",{className:re(\"sand-info-pane__section-heading\",Fe(FUe.sectionHeading,Us.medium).className),id:ye,children:\"Routines\"}),p.jsx(yo,{content:\"Create Routine\",children:p.jsx(fr,{\"aria-label\":\"Create Routine\",className:\"sand-info-pane__section-heading-action\",\"data-routine-row\":\"new\",icon:\"plus\",onClick:xe,size:\"sm\",style:FUe.sectionHeadingAction})})]}):null,p.jsx(K2n,{agentId:t.id,labelledBy:ye,onCreateRoutine:xe,onOpenRoutine:Ie=>_({kind:\"existing\",id:Ie})})]}),k.length>0?p.jsx(D2n,{counts:I,onOpenSection:J,sections:k}):null]}):p.jsxs(\"div\",{className:\"sand-9f619 sand-78zum5 sand-dt5ytf sand-1v2ro7d sand-1nn3v0j sand-yfqnmn sand-1l90r2v sand-nm25rq sand-1iyjqo2 sand-s83m0k sand-dl72j9\",\"aria-labelledby\":ve,id:ge,role:\"region\",children:[F===\"settings\"?p.jsx(h3n,{agent:t,onDescriptionChange:m,onNameChange:u,onTitleChange:d}):null,F===\"channels\"?p.jsx(_0n,{agentId:t.id,labelledBy:ve}):null]})})";
+const AGENT_PANE_BODY_AFTER = 'p.jsx(Ar,{className:re("sand-info-pane__section-content","sand-1iyjqo2 sand-s83m0k sand-dl72j9 sand-2lwn1j"),ref:Y,children:p.jsxs("div",{className:"simeon-pane","data-segment":F,children:['
+  + 'p.jsxs("div",{className:"simeon-pane__head",children:[p.jsx(f3n,{agent:t}),p.jsx("div",{className:"simeon-pane__name",children:t.name}),typeof t.title==="string"&&t.title.trim().length>0?p.jsx("div",{className:"simeon-pane__title",children:t.title}):null]}),'
+  + 'p.jsx(__simeonPaneSegments,{value:F,onChange:J,hasChannels:k.some(Ie=>Ie.id==="channels")}),'
+  + 'p.jsxs("div",{className:"simeon-pane__body",id:ge,role:"tabpanel",children:['
+  + 'F==="settings"?p.jsx(h3n,{agent:t,onDescriptionChange:m,onNameChange:u,onTitleChange:d}):null,'
+  + 'F==="routines"?p.jsxs("div",{className:"simeon-pane__routines",children:[p.jsx("span",{id:ye,hidden:!0,children:"Routines"}),N.length>0?p.jsx("div",{className:"simeon-pane__add",children:p.jsxs("button",{type:"button","data-routine-row":"new",onClick:xe,children:[p.jsx(bt,{name:"plus",size:"sm"}),"New Routine"]})}):null,p.jsx(K2n,{agentId:t.id,labelledBy:ye,onCreateRoutine:xe,onOpenRoutine:Ie=>_({kind:"existing",id:Ie})})]}):null,'
+  + 'F==="overview"?p.jsxs("div",{className:"simeon-pane__computer",children:[l,b?p.jsx(z2n,{agent:t,onOpenAgentChat:f}):null]}):null,'
+  + 'F==="channels"?p.jsx(_0n,{agentId:t.id,labelledBy:ve}):null]})]})})';
+export const AGENT_PANE_REPLACEMENTS = Object.freeze([
+  ["agent-pane-components", AGENT_PANE_ANCHOR, `${AGENT_PANE_COMPONENTS_SOURCE}${AGENT_PANE_ANCHOR}`],
+  ["agent-pane-routines-view", 'function pin(n,e){return e==="overview"||e==="settings"||', 'function pin(n,e){return e==="overview"||e==="settings"||e==="routines"||'],
+  ["agent-pane-opens-on-profile", '[P,J]=S.useState("overview")', '[P,J]=S.useState("settings")'],
+  ["agent-pane-routine-request", 'J(r.section??"overview")', 'J(r.automationId!=null?"routines":r.section??"overview")'],
+  ["agent-pane-routine-editor", 'F!=="overview"&&O!=null&&_(null);const z=F==="overview"?O:null', 'F!=="routines"&&O!=null&&_(null);const z=F==="routines"?O:null'],
+  ["agent-pane-no-subpage-title", 'Ne=F!=="overview";', "Ne=!1;"],
+  ["agent-pane-no-gear", "(Ie={onOpenSettings:fe},", "(Ie={},"],
+  ["agent-pane-close-x", 'icon:"chevrons-right",iconSize:zwe,onClick:c,title:"Close details"', 'icon:"x",iconSize:zwe,onClick:c,title:"Close"'],
+  ["agent-pane-avatar-toggles", 'n.isOpen&&n.view==="settings"?"close":"open-settings"', 'n.isOpen?"close":"open-settings"'],
+  ["agent-pane-no-computer-button", "ne=!o||m?p.jsx(yo,{content:iSn", "ne=!1?p.jsx(yo,{content:iSn"],
+  ["agent-pane-one-page", AGENT_PANE_BODY_BEFORE, AGENT_PANE_BODY_AFTER],
+]);
+
+export function patchOriginalAgentPane(source) {
+  let out = source;
+  for (const [label, before, after] of AGENT_PANE_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export const AGENT_PANE_MARKER = "/* Simeon: the agent's pane, one page with a segmented control";
+const PANE_FONT = '-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif';
+export const AGENT_PANE_CSS = `${AGENT_PANE_MARKER} (1 October 2026). Measured on the founder's reference: a 96 pt avatar circle with a hairline and a 32 pt pencil on its edge, a 22 pt name, a 36 pt pill of icon segments, rows of 40 pt icon tiles with 15 pt titles, and air between them. No boxes, no accent. */
+.sand-agents-sidebar~.sand-info-pane,.sand-info-pane .sand-info-pane__inner{background-color:light-dark(#fbfbfd,#1c1c1e)!important}
+.simeon-pane{--simeon-ink:light-dark(#1d1d1f,#f5f5f7);--simeon-ink-2:light-dark(#86868b,#98989d);--simeon-fill:light-dark(#f2f2f4,#2c2c2e);--simeon-fill-2:light-dark(#e8e8ed,#3a3a3c);--simeon-hairline:light-dark(rgba(0,0,0,.08),rgba(255,255,255,.1));--simeon-paper:light-dark(#fbfbfd,#1c1c1e);display:flex;flex-direction:column;padding:6px 20px 40px;font-family:${PANE_FONT};-webkit-font-smoothing:antialiased;color:var(--simeon-ink);letter-spacing:-.01em}
+.simeon-pane__head{display:flex;flex-direction:column;align-items:center;padding:6px 0 0}
+.simeon-pane__head .sand-avatar-trigger-row{width:100%!important;height:auto!important;justify-content:center!important}
+.simeon-pane__head .sand-avatar-trigger{width:auto!important;height:auto!important}
+.simeon-pane__head .sand-avatar-trigger__button{position:relative;width:96px!important;height:96px!important;padding:0!important;overflow:visible!important;border-radius:50%!important;background:none!important;box-shadow:none!important}
+.simeon-pane__head .sand-avatar-trigger__button>span:first-child{display:flex!important;align-items:center;justify-content:center;width:96px!important;height:96px!important;border-radius:50%;overflow:hidden;background:light-dark(#ffffff,#2c2c2e);box-shadow:inset 0 0 0 1px var(--simeon-hairline)}
+.simeon-pane__head .sand-grok-bot-mark-avatar,.simeon-pane__head .sand-grok-bot-mark-avatar>svg{width:68px!important;height:68px!important}
+.simeon-pane__head .sand-avatar-trigger__button>span:first-child img{width:96px!important;height:96px!important;object-fit:cover}
+.simeon-pane__head .sand-avatar-trigger__overlay{position:absolute!important;inset:auto -3px -3px auto!important;width:32px!important;height:32px!important;border-radius:50%!important;opacity:1!important;-webkit-mask-image:none!important;mask-image:none!important;background:var(--simeon-fill)!important;box-shadow:0 0 0 3px var(--simeon-paper)!important;display:block!important;transition:background-color .15s}
+.simeon-pane__head .sand-avatar-trigger__overlay>*{display:none!important}
+.simeon-pane__head .sand-avatar-trigger__overlay::after{content:"";position:absolute;inset:7px;background:var(--simeon-ink);-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='M15.6 4.6a2.1 2.1 0 0 1 3 3L8.4 17.8l-4 1 1-4z'/><path d='M13.9 6.3l3 3'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='M15.6 4.6a2.1 2.1 0 0 1 3 3L8.4 17.8l-4 1 1-4z'/><path d='M13.9 6.3l3 3'/></svg>") center/contain no-repeat}
+.simeon-pane__head .sand-avatar-trigger__button:hover .sand-avatar-trigger__overlay{background:var(--simeon-fill-2)!important}
+.simeon-pane__name{margin-top:14px;font-size:22px;line-height:28px;font-weight:500;letter-spacing:-.022em;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.simeon-pane__title{margin-top:1px;font-size:15px;line-height:20px;color:var(--simeon-ink-2);text-align:center}
+.simeon-segments{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;height:36px;padding:3px;margin:32px 0 26px;border-radius:999px;background:var(--simeon-fill)}
+.simeon-segments__thumb{position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px) / var(--simeon-seg-count));transform:translateX(calc(var(--simeon-seg-index) * 100%));border-radius:999px;background:light-dark(#ffffff,#636366);box-shadow:0 1px 2px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.06);transition:transform .34s cubic-bezier(.32,.72,0,1)}
+.simeon-segments>:not(.simeon-segments__thumb){position:relative;z-index:1}
+.simeon-segments__item{display:flex;align-items:center;justify-content:center;width:100%;height:30px;appearance:none;border:0;margin:0;padding:0;background:none;border-radius:999px;color:light-dark(#6e6e73,#aeaeb2);cursor:default;outline:none;transition:color .2s}
+.simeon-segments__item[aria-selected="true"]{color:var(--simeon-ink)}
+.simeon-segments__item svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.simeon-segments__item:focus-visible{box-shadow:0 0 0 3px light-dark(rgba(0,0,0,.14),rgba(255,255,255,.24))}
+.simeon-segments>*+*::before{content:"";position:absolute;left:0;top:50%;height:16px;margin-top:-8px;width:1px;background:light-dark(#d8d8dd,#48484a);transition:opacity .2s}
+.simeon-segments__thumb+*::before{display:none}
+.simeon-segments>:has(>[aria-selected="true"])::before,.simeon-segments>:has(>[aria-selected="true"])+*::before,.simeon-segments>[aria-selected="true"]::before,.simeon-segments>[aria-selected="true"]+*::before{opacity:0}
+.simeon-pane__body{display:flex;flex-direction:column;gap:22px;font-size:15px;line-height:20px}
+.simeon-pane__body .sand-agent-settings{gap:22px!important}
+.simeon-pane__body .sand-agent-settings div:has(>.sand-avatar-trigger-row){display:none!important}
+.simeon-pane__body .sand-agent-settings>div:first-child{display:flex!important;flex-direction:column!important;gap:0!important}
+.simeon-pane__body .sand-agent-settings>div:first-child>div:not(:has(.sand-avatar-trigger-row)){margin:0!important;padding:14px 0 2px!important;font-size:13px!important;line-height:16px!important;font-weight:400!important;letter-spacing:0!important;color:var(--simeon-ink-2)!important}
+.simeon-pane__body .sand-agent-settings>div:first-child>div:nth-child(2){padding-top:0!important}
+.simeon-pane__body .sand-agent-settings>div:first-child>:is(input,textarea){margin:0!important;padding:4px 0 12px!important;min-height:0!important;border:0!important;border-bottom:1px solid var(--simeon-hairline)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;outline:none!important;font:inherit!important;font-size:15px!important;line-height:20px!important;color:var(--simeon-ink)!important}
+.simeon-pane__body .sand-agent-settings>div:first-child>:is(input,textarea):focus{border-bottom-color:var(--simeon-ink)!important}
+.simeon-pane__body .sand-agent-settings>div:first-child>textarea{resize:none!important;field-sizing:content;min-height:44px!important}
+.simeon-pane__body .sand-agent-settings__card{padding:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important}
+.simeon-pane__body .sand-agent-settings__row{display:grid!important;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:14px!important;padding:0!important}
+.simeon-pane__body .sand-agent-settings__row::before{content:"";width:40px;height:40px;border-radius:11px;background:var(--simeon-fill) no-repeat center/20px;background-image:none;-webkit-mask:none}
+.simeon-pane__body .sand-agent-settings__row::after{content:"";position:absolute;width:20px;height:20px;margin:10px;background:var(--simeon-ink);-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M6.2 16.6V11a5.8 5.8 0 0 1 11.6 0v5.6l1.5 1.6H4.7z'/><path d='M10 20.2a2.1 2.1 0 0 0 4 0'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M6.2 16.6V11a5.8 5.8 0 0 1 11.6 0v5.6l1.5 1.6H4.7z'/><path d='M10 20.2a2.1 2.1 0 0 0 4 0'/></svg>") center/contain no-repeat;pointer-events:none}
+.simeon-pane__body .sand-agent-settings__row{position:relative}
+.simeon-pane__body .sand-agent-settings__row::after{left:0;top:50%;margin:-10px 0 0 10px}
+.simeon-pane__body .sand-agent-settings__text>span:first-child{font-size:15px!important;line-height:20px!important;font-weight:500!important;color:var(--simeon-ink)!important}
+.simeon-pane__body .sand-agent-settings__text>span+span{font-size:13px!important;line-height:17px!important;color:var(--simeon-ink-2)!important}
+.simeon-pane__routines{display:flex;flex-direction:column;gap:6px}
+.simeon-pane__routines .sand-routine__empty{margin:0!important;font-size:15px!important;line-height:21px!important;color:var(--simeon-ink-2)!important;text-align:center}
+.simeon-pane__routines>div:has(>.sand-routine__empty){display:flex!important;flex-direction:column!important;align-items:center!important;gap:18px!important;padding:12px 8px 0!important}
+.simeon-pane__routines>div:has(>.sand-routine__empty)::before{content:"";width:56px;height:56px;border-radius:15px;background:var(--simeon-fill)}
+.simeon-pane__routines>div:has(>.sand-routine__empty)::after{content:"";position:absolute;width:26px;height:26px;margin-top:27px;background:var(--simeon-ink);-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='8.2'/><path d='M12 7.4V12l3.1 2'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='8.2'/><path d='M12 7.4V12l3.1 2'/></svg>") center/contain no-repeat}
+.simeon-pane__routines>div:has(>.sand-routine__empty){position:relative}
+.simeon-pane__routines>div:has(>.sand-routine__empty)::after{top:12px;margin:15px 0 0}
+.simeon-pane .sand-kit-button[data-routine-row="new"],.simeon-pane .sand-channel-row .sand-button{height:32px!important;padding:0 16px!important;border:0!important;border-radius:999px!important;background:var(--simeon-ink)!important;color:var(--simeon-paper)!important;box-shadow:none!important;font-size:14px!important;font-weight:500!important}
+.simeon-pane .sand-channel-row .sand-button{height:28px!important;padding:0 13px!important;font-size:13px!important;background:var(--simeon-fill)!important;color:var(--simeon-ink)!important}
+.simeon-pane__add{display:flex;justify-content:flex-end}
+.simeon-pane__add button{display:inline-flex;align-items:center;gap:5px;appearance:none;border:0;background:none;padding:2px 0;font:inherit;font-size:14px;font-weight:500;color:var(--simeon-ink);cursor:default}
+.simeon-pane__add button:hover{opacity:.65}
+.simeon-pane__body .sand-channels-tab{display:flex;flex-direction:column;gap:18px}
+.simeon-pane__body .sand-channels-tab>p span{font-size:13px!important;line-height:18px!important;color:var(--simeon-ink-2)!important}
+.simeon-pane__body .sand-channels-tab ul{display:flex!important;flex-direction:column!important;gap:16px!important}
+.simeon-pane__body .sand-channel-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important}
+.simeon-pane__body .sand-channel-row>div:first-child{display:grid!important;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:14px!important;min-width:0}
+.simeon-pane__body .sand-channel-row>div:first-child>span:first-child{width:40px!important;height:40px!important;border-radius:11px!important;background:var(--simeon-fill)!important;display:flex!important;align-items:center;justify-content:center}
+.simeon-pane__body .sand-channel-row>div:first-child>span:first-child svg{width:20px;height:20px}
+.simeon-pane__body .sand-channel-row>div:first-child>span:nth-child(2){gap:1px!important}
+.simeon-pane__body .sand-channel-row>div:first-child>span:nth-child(2)>span:first-child{font-size:15px!important;line-height:20px!important;font-weight:500!important;color:var(--simeon-ink)!important}
+.simeon-pane__body .sand-channel-row>div:first-child>span:nth-child(2)>span+span{font-size:13px!important;line-height:17px!important;color:var(--simeon-ink-2)!important;white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.simeon-pane__body .sand-channel-row>div+div{padding:0!important;margin:0!important}
+.simeon-pane__computer{display:flex;flex-direction:column;gap:10px}
+.simeon-pane__computer .sand-computer-preview{padding:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;gap:10px!important}
+.simeon-pane__computer .sand-computer-preview__frame{border-radius:14px!important;background:var(--simeon-fill)!important;border:0!important;box-shadow:inset 0 0 0 1px var(--simeon-hairline)!important}
+.simeon-pane__computer .sand-computer-stage__placeholder{background:transparent!important;box-shadow:none!important;font-size:14px}
+.simeon-pane__computer .sand-computer-stage__retry{height:28px!important;padding:0 13px!important;border-radius:999px!important;background:var(--simeon-fill-2)!important;border:0!important;box-shadow:none!important;color:var(--simeon-ink)!important;font-size:13px!important;font-weight:500!important}
+.simeon-pane__computer .sand-computer-preview>:last-child{font-size:13px!important;color:var(--simeon-ink-2)!important}
+`;
+
+/**
+ * Every switch in the window is the main blue when on (1 October 2026, the
+ * founder: "every single toggle get the main blue"): the person's bubble
+ * blue in light, one step brighter in dark so it reads on the dark pane.
+ * The knob stays white.
+ */
+export const SWITCH_BLUE_DARK = "#2f6db0";
+export const SWITCH_BLUE_MARKER = "/* Simeon: every switch is the main blue when on";
+export const switchBlueCss = () => `${SWITCH_BLUE_MARKER} (1 October 2026). */
+[role="switch"][aria-checked="true"]:not(#\\#):not(#\\#):not(#\\#):not(#\\#){background-color:light-dark(${USER_BUBBLE_LIGHT},${SWITCH_BLUE_DARK})!important;border-color:transparent!important}
+[role="switch"][aria-checked="true"]:not(#\\#):not(#\\#):not(#\\#):not(#\\#)>span{background-color:#ffffff!important}
+`;
+
+/**
+ * The agent asks the person to take over the computer (a SendMessage that
+ * carries `boxRequestId`; the window's own card is `Hbn`). Redrawn the
+ * Simeon way on 1 October 2026 ("can we design it differently, in our apple
+ * design"): the Messages grey of every card, a white 44 pt computer tile, "Your turn on the
+ * computer" over a quiet status with a pulsing blue dot while it waits, the
+ * agent's instruction in 15 pt, the screen's snapshot when the box sent one,
+ * then a blue Take over pill beside a grey I'm done, and Skip as a quiet
+ * link. Once settled the card says what happened (Done, Answered, Skipped)
+ * and offers Open computer. The window's handlers are the same ones.
+ */
+const HANDOFF_DISPLAY_ICON = '<rect x="3.2" y="4.4" width="17.6" height="12" rx="2.2"/><path d="M8.8 19.8h6.4M12 16.4v3.4"/>';
+const HANDOFF_CARD_SOURCE = [
+  `function __simeonHandoffCard(n){const{instruction:t,status:s,snapshotDataUrl:r,onOpen:o,onHandBack:hb,onDismiss:ds}=n,w=s==="waiting",done={handed_back:"Done",replied:"Answered",dismissed:"Skipped"}[s]??"Done",txt=typeof t==="string"?t.trim():"";`,
+  `return p.jsxs("article",{className:"simeon-handoff","data-status":s,"aria-label":w?"Your turn on the computer":"Computer",children:[`,
+  `p.jsxs("div",{className:"simeon-handoff__head",children:[p.jsx("span",{className:"simeon-handoff__tile","aria-hidden":!0,children:p.jsx("svg",{viewBox:"0 0 24 24",dangerouslySetInnerHTML:{__html:${JSON.stringify(HANDOFF_DISPLAY_ICON)}}})}),`,
+  `p.jsxs("div",{className:"simeon-handoff__titles",children:[p.jsx("div",{className:"simeon-handoff__title",children:w?"Your turn on the computer":"Computer"}),p.jsxs("div",{className:"simeon-handoff__status",role:"status",children:[p.jsx("span",{className:"simeon-handoff__dot","aria-hidden":!0}),w?"Waiting for you":done]})]})]}),`,
+  `txt.length>0?p.jsx("p",{className:"simeon-handoff__text",children:txt}):null,`,
+  `w&&r!=null?p.jsx("button",{type:"button",className:"simeon-handoff__screen",onClick:o,"aria-label":"Take over the computer",children:p.jsx("img",{src:r,alt:"",draggable:!1})}):null,`,
+  `w?p.jsxs("div",{className:"simeon-handoff__actions",children:[p.jsx("button",{type:"button",className:"simeon-handoff__primary",onClick:o,children:"Take over"}),p.jsx("button",{type:"button",className:"simeon-handoff__secondary",onClick:hb,children:"I’m done"}),p.jsx("button",{type:"button",className:"simeon-handoff__skip",onClick:ds,title:"Cancel this request without doing the step; the agent continues without it",children:"Skip"})]}):p.jsx("div",{className:"simeon-handoff__actions simeon-handoff__actions--settled",children:p.jsx("button",{type:"button",className:"simeon-handoff__secondary",onClick:o,children:"Open computer"})})]})}`,
+].join("");
+const HANDOFF_BEFORE = "function Hbn(n){const e=he.c(47),{instruction:t,status:s,snapshotDataUrl:r,onOpen:i,onHandBack:o,onDismiss:l}=n,";
+const HANDOFF_AFTER = `${HANDOFF_CARD_SOURCE}function Hbn(n){return p.jsx(__simeonHandoffCard,{...n})}function __simeonHbnOriginal(n){const e=he.c(47),{instruction:t,status:s,snapshotDataUrl:r,onOpen:i,onHandBack:o,onDismiss:l}=n,`;
+export const HANDOFF_REPLACEMENTS = Object.freeze([["handoff-card", HANDOFF_BEFORE, HANDOFF_AFTER]]);
+
+export function patchOriginalHandoff(source) {
+  let out = source;
+  for (const [label, before, after] of HANDOFF_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export const HANDOFF_MARKER = "/* Simeon: the take-over card";
+export const handoffCss = () => `${HANDOFF_MARKER} (1 October 2026). */
+.simeon-handoff{--h-ink:light-dark(#1d1d1f,#f5f5f7);--h-ink-2:light-dark(#6e6e73,#98989d);--h-fill:light-dark(#ffffff,#3a3a3c);--h-blue:light-dark(${USER_BUBBLE_LIGHT},${SWITCH_BLUE_DARK});box-sizing:border-box;width:100%;max-width:380px;display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:20px;background:light-dark(${AGENT_BUBBLE_LIGHT},#2c2c2e)!important;box-shadow:none;font-family:${PANE_FONT};-webkit-font-smoothing:antialiased;color:var(--h-ink);letter-spacing:-.01em}
+.simeon-handoff__head{display:grid;grid-template-columns:44px minmax(0,1fr);align-items:center;gap:12px}
+.simeon-handoff__tile{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;background:var(--h-fill)}
+.simeon-handoff__tile svg{width:22px;height:22px;fill:none;stroke:var(--h-ink);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.simeon-handoff__title{font-size:15px;line-height:20px;font-weight:600}
+.simeon-handoff__status{display:flex;align-items:center;gap:6px;margin-top:1px;font-size:13px;line-height:17px;color:var(--h-ink-2)}
+.simeon-handoff__dot{width:7px;height:7px;border-radius:50%;background:var(--h-ink-2)}
+.simeon-handoff[data-status="waiting"] .simeon-handoff__dot{background:var(--h-blue);animation:simeon-handoff-pulse 1.8s ease-in-out infinite}
+@keyframes simeon-handoff-pulse{0%,100%{box-shadow:0 0 0 0 light-dark(rgba(37,90,147,.35),rgba(47,109,176,.45))}50%{box-shadow:0 0 0 5px rgba(37,90,147,0)}}
+.simeon-handoff__text{margin:0;font-size:15px;line-height:21px;white-space:pre-wrap}
+.simeon-handoff:not([data-status="waiting"]) .simeon-handoff__text{color:var(--h-ink-2)}
+.simeon-handoff__screen{display:block;width:100%;aspect-ratio:16/10;padding:0;border:0;border-radius:12px;overflow:hidden;background:var(--h-fill);box-shadow:inset 0 0 0 1px light-dark(rgba(0,0,0,.06),rgba(255,255,255,.08));cursor:default}
+.simeon-handoff__screen img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
+.simeon-handoff__screen:hover img{transform:scale(1.02)}
+.simeon-handoff__actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.simeon-handoff__actions button{appearance:none;border:0;margin:0;font:inherit;cursor:default;outline:none}
+.simeon-handoff__primary,.simeon-handoff__secondary{height:36px;padding:0 16px;border-radius:999px;font-size:15px!important;font-weight:500!important;transition:filter .15s,background-color .15s}
+.simeon-handoff__primary{background:var(--h-blue);color:#ffffff}
+.simeon-handoff__primary:hover{filter:brightness(1.08)}
+.simeon-handoff__secondary{background:var(--h-fill);color:var(--h-ink)}
+.simeon-handoff__secondary:hover{background:light-dark(#f5f5f7,#48484a)}
+.simeon-handoff__skip{grid-column:1/-1;justify-self:center;height:24px;padding:0 8px;background:none;color:var(--h-ink-2);font-size:13px!important}
+.simeon-handoff__skip:hover{color:var(--h-ink)}
+.simeon-handoff__actions button:focus-visible{box-shadow:0 0 0 3px light-dark(rgba(37,90,147,.3),rgba(47,109,176,.45))}
+.simeon-handoff__actions--settled{display:flex}
+`;
+
+export function patchOriginalHandoffStylesheet(css) {
+  if (css.includes(HANDOFF_MARKER) || css.includes(SWITCH_BLUE_MARKER)) throw new Error("Original renderer take-over card or switch block is already present.");
+  return `${css}\n${switchBlueCss()}${handoffCss()}`;
+}
+
+export function patchOriginalAgentPaneStylesheet(css) {
+  if (css.includes(AGENT_PANE_MARKER)) throw new Error("Original renderer agent pane block is already present.");
+  return `${css}\n${AGENT_PANE_CSS}`;
+}
+
+/**
  * Onboarding copy, 27 September 2026 (the founder's words): the sign-in
  * tagline, the sentence typed into the composer on the "meet" screen, and
  * the three example teammates' names. Their ids (`invoice-chaser`,
@@ -1040,8 +1263,10 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!COPY_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer onboarding copy anchors are not all in the mark chunk.");
   if (!LOGO_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer file-kind and Plugins-button anchors are not all in the mark chunk.");
   if (!VOICE_CALL_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer voice-call anchors (chat header identity row, character settings) are not all in the mark chunk.");
+  if (!AGENT_PANE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer agent pane anchors (the info pane, its view guard, the chat header's computer button) are not all in the mark chunk.");
+  if (!HANDOFF_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer take-over card anchor is not in the mark chunk.");
   const logoAssets = await readLogoAssets();
-  const markPatched = patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions))));
+  const markPatched = patchOriginalHandoff(patchOriginalAgentPane(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions))))));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -1050,7 +1275,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  const stylesheetPatched = patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets));
+  const stylesheetPatched = patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets))));
   const chunkSources = [];
   for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
   const styleAnchors = {
@@ -1070,7 +1295,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const appIconAfter = await readFile(appIconTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
-    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos", "voice-call-styles"],
+    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, ...AGENT_PANE_REPLACEMENTS, ...HANDOFF_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos", "voice-call-styles", "agent-pane-styles", "switch-blue", "take-over-card-styles"],
     userBubble: { light: USER_BUBBLE_LIGHT, dark: USER_BUBBLE_DARK, stylesheet: path.relative(stageRoot, bubbleSheets[0].target) },
     // The stylesheet's hashes, so `npm run verify` can check the packaged
     // file against what this patch wrote (25 September 2026: verify read

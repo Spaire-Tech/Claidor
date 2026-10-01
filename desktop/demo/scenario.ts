@@ -129,5 +129,11 @@ export function openingScript(): Beat[] {
     ...step(15500, "m7", "UpdateState", "Creating routine Monday launch check", "Created routine Monday launch check", 1000),
     { at: 16800, kind: "append", agent: "simeon", entry: says("m2a", 0, "Done. The agenda went out from **Gmail**.") },
     { at: 16900, kind: "typing", agent: "simeon", on: false },
+    // The agent hands the computer to the person: a SendMessage carrying the box request (the window's take-over card).
+    { at: 19000, kind: "user", agent: "simeon", entry: you("m3u", 0, "Can you post the launch note on our LinkedIn page too?") },
+    { at: 19600, kind: "typing", agent: "simeon", on: true },
+    ...step(20000, "m8", "Computer", "Opening LinkedIn on the computer", "Opened LinkedIn on the computer", 1600),
+    { at: 22000, kind: "append", agent: "simeon", entry: card("m3h", 0, { type: "text", content: "LinkedIn wants you to sign in." }, { boxRequestId: "demo-take-over", boxInstruction: "LinkedIn is asking for your password and a code from your phone. Take over to sign in, then hand it back and I'll post the note.", boxResolution: "waiting" }) },
+    { at: 22100, kind: "typing", agent: "simeon", on: false },
   ];
 }
