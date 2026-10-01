@@ -295,70 +295,22 @@ export function formatCallDuration(totalSeconds: number): string {
   return hours > 0 ? `${hours}:${String(minutes).padStart(2, "0")}:${ss}` : `${minutes}:${ss}`;
 }
 
-/** "02:30", "1:02:03": the call's length on the chip in the chat (the upstream app's "Voice chat · 02:30"). */
-export function formatChipDuration(totalSeconds: number): string {
-  const seconds = Math.max(0, Math.floor(Number.isFinite(totalSeconds) ? totalSeconds : 0));
-  const hours = Math.floor(seconds / 3600);
-  const mm = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
-  const ss = String(seconds % 60).padStart(2, "0");
-  return hours > 0 ? `${hours}:${mm}:${ss}` : `${mm}:${ss}`;
-}
-
 /** One line said on the call: the person's (`user`) or the voice's (`agent`). */
 export interface CallRecordLine {
   readonly speaker: "user" | "agent";
   readonly text: string;
 }
 
-/** The most characters of transcript a call's record carries; a longer call keeps its opening and says it was cut. */
-export const CALL_RECORD_MAX_CHARS = 12_000;
-export const CALL_RECORD_PREFIX = "Voice chat · ";
-const CALL_RECORD_ID_LABEL = "Call id: ";
-
-/** Lines the app itself put into the call (the nudge that makes the voice speak), which nobody said. */
-export function isSpokenLine(line: CallRecordLine): boolean {
-  return collapse(line.text).length > 0 && collapse(line.text) !== WORK_CAME_BACK_NUDGE;
-}
-
 /**
- * What a call leaves in the agent's chat (2 October 2026, the upstream app's
- * way): "Voice chat · 02:30", then what was said, word for word, the
- * person's lines quoted ("> ") and the agent's plain, then the call's id for
- * its rating. The chat draws it as a chip that opens to the transcript
- * (`__simeonCallRecord` in scripts/lib/router-renderer-patch.mjs), and the
- * agent reads it as the call it was on.
+ * The line a call leaves in the agent's chat when its host writes no
+ * exchange (a host from before 2 October 2026): "Voice call · 2:48", then the
+ * summary when there is one. A current host writes the call into the chat as
+ * an exchange with the person instead (`voice-call-channel.ts`).
  */
-export function callRecordText(seconds: number, lines: readonly CallRecordLine[], conversationId?: string | null): string {
-  const out: string[] = [];
-  let used = 0;
-  let isCut = false;
-  for (const line of lines.filter(isSpokenLine)) {
-    const text = `${line.speaker === "user" ? "> " : ""}${collapse(line.text)}`;
-    if (used + text.length + 1 > CALL_RECORD_MAX_CHARS) { isCut = true; break; }
-    out.push(text);
-    used += text.length + 1;
-  }
-  if (isCut) out.push("…");
-  const id = typeof conversationId === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(conversationId) ? conversationId : null;
-  return [
-    `${CALL_RECORD_PREFIX}${formatChipDuration(seconds)}`,
-    ...(out.length > 0 ? ["", out.join("\n")] : []),
-    ...(id == null ? [] : ["", `${CALL_RECORD_ID_LABEL}${id}`]),
-  ].join("\n");
-}
-
-/** A call record read back: its length, its lines and its id (the old "Voice call · 0:43" records read as one recap line). */
-export function parseCallRecord(content: unknown): { readonly duration: string; readonly lines: readonly CallRecordLine[]; readonly conversationId: string | null } | null {
-  if (typeof content !== "string") return null;
-  const text = content.trim();
-  const current = /^Voice chat · (\d{1,2}:\d{2}(?::\d{2})?)(?:\n\n([\s\S]*?))?(?:\n\nCall id: ([A-Za-z0-9_-]{1,128}))?$/.exec(text);
-  if (current != null) {
-    const lines = (current[2] ?? "").split("\n").filter((line) => line.trim().length > 0).map((line): CallRecordLine => (line.startsWith("> ") ? { speaker: "user", text: line.slice(2).trim() } : { speaker: "agent", text: line.trim() }));
-    return { duration: current[1]!, lines, conversationId: current[3] ?? null };
-  }
-  const earlier = /^Voice call · (\d{1,2}:\d{2}(?::\d{2})?)(?:\n\n([\s\S]+))?$/.exec(text);
-  if (earlier == null) return null;
-  return { duration: earlier[1]!, lines: earlier[2] == null ? [] : [{ speaker: "agent", text: earlier[2].trim() }], conversationId: null };
+export function callRecordText(seconds: number, summary: string | null | undefined): string {
+  const head = `Voice call · ${formatCallDuration(seconds)}`;
+  const body = typeof summary === "string" ? summary.trim() : "";
+  return body.length > 0 ? `${head}\n\n${body}` : head;
 }
 
 // --- the banner's own sentences -------------------------------------------------

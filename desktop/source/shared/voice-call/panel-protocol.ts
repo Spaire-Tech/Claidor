@@ -19,7 +19,6 @@ export const VOICE_CALL_PANEL_METHODS = [
   "resize",
   "callAgain",
   "openChat",
-  "openSettings",
   "close",
   "log",
 ] as const;

@@ -113,17 +113,8 @@ test("the call's record and durations read like the banner", () => {
   assert.equal(prompt.formatCallDuration(12), "0:12");
   assert.equal(prompt.formatCallDuration(168), "2:48");
   assert.equal(prompt.formatCallDuration(3723), "1:02:03");
-  // The call's record is its transcript, word for word (2 October 2026).
-  assert.equal(prompt.callRecordText(168, []), "Voice chat · 02:48");
-  const record = prompt.callRecordText(150, [{ speaker: "user", text: "Hey." }, { speaker: "agent", text: "Hey, Bass.\nWhat's up?" }, { speaker: "user", text: prompt.WORK_CAME_BACK_NUDGE }, { speaker: "agent", text: "  " }], "conv_123");
-  assert.equal(record, "Voice chat · 02:30\n\n> Hey.\nHey, Bass. What's up?\n\nCall id: conv_123");
-  assert.deepEqual(prompt.parseCallRecord(record), { duration: "02:30", lines: [{ speaker: "user", text: "Hey." }, { speaker: "agent", text: "Hey, Bass. What's up?" }], conversationId: "conv_123" });
-  assert.deepEqual(prompt.parseCallRecord("Voice call · 0:43\n\nYou asked me to book it."), { duration: "0:43", lines: [{ speaker: "agent", text: "You asked me to book it." }], conversationId: null });
-  assert.equal(prompt.parseCallRecord("We talked about the voice chat · 02:30"), null);
-  const long = prompt.callRecordText(60, Array.from({ length: 400 }, (_, i) => ({ speaker: "agent", text: `line ${i} ${"x".repeat(60)}` })));
-  assert.ok(long.length <= prompt.CALL_RECORD_MAX_CHARS + 40);
-  assert.match(long, /\n…$/);
-  assert.equal(prompt.formatChipDuration(3723), "1:02:03");
+  assert.equal(prompt.callRecordText(168, null), "Voice call · 2:48");
+  assert.equal(prompt.callRecordText(168, "  Talked about the agenda. "), "Voice call · 2:48\n\nTalked about the agenda.");
 });
 
 test("what the voice's tools answer, and what its work coming back says, are its own", () => {

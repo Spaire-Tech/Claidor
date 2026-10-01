@@ -197,8 +197,8 @@ test("one call at a time: a second start brings the banner forward; the call's s
   await svc.settled();
   assert.deepEqual(calls2, [["end", "conv_7", 168]]);
   const record = calls.find(([name]) => name === "append")[1];
-  assert.deepEqual(record, { agentId: "a1", message: { type: "text", content: "Voice chat · 02:48\n\n> Book it\n\nCall id: conv_7" } }, "the chat gets the call's transcript, word for word");
-  assert.deepEqual(calls.find(([name, args]) => name === "voiceCall" && args.kind === "ended")[1].record, { seconds: 168, recap: "Talked about the week.", transcript: [{ speaker: "user", text: "Book it" }] }, "the call's record goes to the agent as its channel closes");
+  assert.deepEqual(record, { agentId: "a1", message: { type: "text", content: "Voice call · 2:48\n\nTalked about the week." } }, "a host that writes no exchange gets the call's line and recap");
+  assert.deepEqual(calls.find(([name, args]) => name === "voiceCall" && args.kind === "ended")[1].record, { seconds: 168, recap: "Talked about the week.", transcript: [{ speaker: "user", text: "Book it" }], personName: null }, "the call's record goes to the agent as its channel closes");
   svc.windowClosed();
   window.isOpenNow = false;
   assert.equal(svc.isCallActive(), false);

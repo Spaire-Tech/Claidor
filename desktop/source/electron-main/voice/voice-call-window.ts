@@ -23,13 +23,13 @@ import { isVoiceCallPanelMethod, VOICE_CALL_EVENT_CHANNEL, VOICE_CALL_INVOKE_CHA
 import type { VoiceOption } from "./voice-call-api.js";
 import type { VoiceCallWindowPort, VoicePreviewPort, VoiceStorePort } from "./voice-call-service.js";
 
-export const BANNER_WIDTH = 330;
+export const BANNER_WIDTH = 360;
 /** Transparent room around the banner for its drop shadow, in points. */
 export const BANNER_MARGIN = Object.freeze({ top: 10, right: 28, bottom: 46, left: 28 });
 /** Where the banner sits in the display's work area: 12 pt under the menu bar, 16 pt from the right edge. */
 export const BANNER_INSET = Object.freeze({ top: 12, right: 16 });
 /** The ringing banner's height (one row), before the page measures itself. */
-export const BANNER_INITIAL_HEIGHT = 66;
+export const BANNER_INITIAL_HEIGHT = 78;
 
 export interface Rect { readonly x: number; readonly y: number; readonly width: number; readonly height: number }
 

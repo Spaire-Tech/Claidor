@@ -43,6 +43,7 @@ function run(): void {
       onDisconnect: (details) => options.onDisconnect({ reason: details.reason, ...("message" in details ? { message: details.message } : {}) }),
       onError: options.onError,
       onModeChange: options.onModeChange,
+      onMessage: ({ message, source }) => options.onMessage({ message, source }),
     }) as unknown as ConversationLike,
   });
   void controller.start();

@@ -92,7 +92,8 @@ export const VOICES_CACHE_MS = 10 * 60_000;
 export const SUMMARY_RETRY_WAITS_MS: readonly number[] = [5_000, 10_000];
 export const VOICE_ID_PATTERN = /^[A-Za-z0-9]{1,64}$/;
 const MIN_BANNER_HEIGHT = 40;
-const MAX_BANNER_HEIGHT = 400;
+/** Room for the live transcript under the banner. */
+const MAX_BANNER_HEIGHT = 480;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -129,6 +130,8 @@ interface ActiveCall {
   isFinished: boolean;
   /** What the banner heard said, live, in case ElevenLabs' own transcript is not ready when the call ends. */
   heard: readonly CallRecordLine[];
+  /** The name the person goes by, read when the call connects. */
+  personName: string | null;
 }
 
 export interface VoiceCallService {
@@ -182,7 +185,7 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
   };
 
   const newCallId = options.newCallId ?? (() => globalThis.crypto.randomUUID());
-  const newCall = (agentId: string, hintName: string | null): ActiveCall => ({ agentId, hintName, callId: newCallId(), channel: null, conversationId: null, connectedAtMs: null, isFinished: false, heard: [] });
+  const newCall = (agentId: string, hintName: string | null): ActiveCall => ({ agentId, hintName, callId: newCallId(), channel: null, conversationId: null, connectedAtMs: null, isFinished: false, heard: [], personName: null });
 
   const finishCall = (active: ActiveCall, conversationId: string | null, seconds: number): void => {
     if (active.isFinished) return;
@@ -191,7 +194,7 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
     const id = conversationId != null && CONVERSATION_ID_PATTERN.test(conversationId) ? conversationId : active.conversationId;
     if (id == null || active.connectedAtMs == null) {
       options.log(`call ended before it connected (agent ${active.agentId})`);
-      if (channel != null) finishing = finishing.then(async () => { await channel.end({ seconds: 0, recap: null, transcript: [] }); channel.dispose(); });
+      if (channel != null) finishing = finishing.then(async () => { await channel.end({ seconds: 0, recap: null, transcript: [], personName: null }); channel.dispose(); });
       return;
     }
     const whole = Math.max(0, Math.round(Number.isFinite(seconds) ? seconds : (now() - active.connectedAtMs) / 1000));
@@ -216,10 +219,14 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
         options.log(`call end not recorded on the server (conversation ${id}): ${errorText(error)}`);
         transcript = [...active.heard];
       }
-      // The call's address closes, and its record goes to the agent's voice-calls/ folder.
-      if (channel != null) { await channel.end({ seconds: whole, recap: summary, transcript }); channel.dispose(); }
+      // The call's address closes, its record goes to the agent's voice-calls/ folder, and
+      // the host writes what was said into the agent's chat as an exchange with the person.
+      let written = 0;
+      if (channel != null) { written = await channel.end({ seconds: whole, recap: summary, transcript, personName: active.personName }); channel.dispose(); }
+      if (written > 0) return;
+      // A host from before 2 October 2026 writes no exchange: the call's line and recap instead.
       try {
-        await options.legs.appendSendMessage({ agentId: active.agentId, message: { type: "text", content: callRecordText(whole, transcript, id) } });
+        await options.legs.appendSendMessage({ agentId: active.agentId, message: { type: "text", content: callRecordText(whole, summary) } });
       } catch (error) {
         options.log(`call record not added to the chat: ${errorText(error)}`);
       }
@@ -245,6 +252,7 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
     try { personName = (await options.getPersonName?.()) ?? null; }
     catch (error) { options.log(`connect: the person's name could not be read: ${errorText(error)}`); }
     if (call !== active || active.isFinished) return { ok: false, message: CALL_STATUS_COULD_NOT_CONNECT };
+    active.personName = personName;
     const name = text(row?.name).trim() || active.hintName || "your agent";
     const overrides = buildVoiceCallOverrides({
       agent: { name, title: text(row?.title), description: text(row?.description) },
@@ -346,10 +354,6 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
         case "openChat":
           options.focusAgentChat(active.agentId);
           options.window.close();
-          return null;
-        case "openSettings":
-          // The pill's gear: the agent's own page, where its voice is chosen; the call stays up.
-          options.focusAgentChat(active.agentId);
           return null;
         case "close":
           options.window.close();

@@ -14,10 +14,20 @@
  *   - `ended`: the address closes; the call's record is written to
  *     `voice-calls/` in the agent's own files, and the agent is told the call
  *     ended, with one nudge if it owed the chat a word and sent none.
+ *
+ * The call in the chat (2 October 2026, the founder: "the after chat is just a
+ * chat opened in a panel like the convo between agents, this time its just
+ * between us"): what was said is written into the agent's chat the way a
+ * conversation with another agent is (`fromAgent` for the person's lines,
+ * `toAgent` for the agent's), all with one peer, `voice-call:<call>:<seconds>`
+ * named for the person. The window groups them into one line and opens them
+ * in its read-only exchange panel (`__simeonVoiceEvent` in
+ * scripts/lib/router-renderer-patch.mjs draws that line as "Voice chat · 02:30").
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { WORK_CAME_BACK_NUDGE } from "../../../shared/voice-call/voice-call-prompt.js";
 import {
   callEndedNudge,
   clampRelay,
@@ -29,6 +39,9 @@ import {
   voiceRequestWake,
   VOICE_CALLS_FOLDER,
 } from "../../../shared/voice-call/main-loop-voice.js";
+import { entryRaisesUserActivitySignal } from "../../../shared/transcript.js";
+import { nextEntryId } from "./transcript-entry-ids.js";
+import { getTranscript } from "./transcript-store.js";
 import type { TranscriptManagerLike } from "./transcript-hub.js";
 
 /** How long a closed call's outbox and state are kept, for a late read. */
@@ -52,7 +65,15 @@ interface VoiceCallState {
   relayed: number;
 }
 
+/** The peer a call's lines are written with: `voice-call:<call id>:<seconds>`. */
+export const VOICE_CALL_PEER_PREFIX = "voice-call:";
+export function voiceCallPeerId(callId: string, seconds: number): string {
+  return `${VOICE_CALL_PEER_PREFIX}${callId}:${Math.max(0, Math.round(Number.isFinite(seconds) ? seconds : 0))}`;
+}
+
 export interface VoiceCallRecordInput {
+  /** The name the person goes by, for their side of the exchange. */
+  readonly personName?: unknown;
   readonly agentName?: unknown;
   readonly seconds?: unknown;
   readonly recap?: unknown;
@@ -63,6 +84,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 const text = (value: unknown): string => (typeof value === "string" ? value : "");
+
+/** The call's lines from the Mac, the app's own nudges left out, at most 400. */
+function transcriptOf(record: VoiceCallRecordInput): { speaker: "user" | "agent"; text: string }[] {
+  if (!Array.isArray(record.transcript)) return [];
+  return record.transcript
+    .filter(isRecord)
+    .map((line) => ({ speaker: line.speaker === "agent" ? "agent" as const : "user" as const, text: text(line.text).trim() }))
+    .filter((line) => line.text.length > 0 && line.text !== WORK_CAME_BACK_NUDGE)
+    .slice(0, 400);
+}
 
 export class VoiceCallChannel {
   readonly calls = new Map<string, VoiceCallState>();
@@ -132,9 +163,11 @@ export class VoiceCallChannel {
         if (call == null || !call.open) return { closed: true };
         call.open = false;
         call.closedAtMs = this.now();
-        const recordPath = this.writeRecord(call, isRecord(args.record) ? args.record : {});
+        const input: VoiceCallRecordInput = isRecord(args.record) ? args.record : {};
+        const recordPath = this.writeRecord(call, input);
+        const exchange = await this.appendCallExchange(call, input).catch(() => 0);
         if (call.relayed > 0 || call.sentOnCall > 0) void this.runEnded(call).catch(() => {});
-        return { closed: true, ...(recordPath == null ? {} : { record: recordPath }) };
+        return { closed: true, exchange, ...(recordPath == null ? {} : { record: recordPath }) };
       }
       default:
         throw new Error("Unknown voiceCall kind.");
@@ -207,15 +240,45 @@ export class VoiceCallChannel {
     );
   }
 
+  /**
+   * What was said on the call, into the agent's chat as one exchange with the
+   * person. Returns how many lines were written (0 when there was nothing).
+   */
+  private async appendCallExchange(call: VoiceCallState, record: VoiceCallRecordInput): Promise<number> {
+    const lines = transcriptOf(record);
+    if (lines.length === 0) return 0;
+    const session = await this.tm.sessions.resolveBackgroundSession(call.agentId);
+    if (session == null || this.tm.groupChat.isGroupSession(session) || this.tm.groupChat.isRemoteRoomSession(session)) return 0;
+    const seconds = typeof record.seconds === "number" && Number.isFinite(record.seconds) ? record.seconds : ((call.closedAtMs ?? this.now()) - call.openedAtMs) / 1000;
+    const person = text(record.personName).replace(/\s+/g, " ").trim().slice(0, 60);
+    const peer = { id: voiceCallPeerId(call.callId, seconds), name: person.length > 0 ? person : "You" };
+    const isActive = session.id === this.tm.sessions.activeSession?.id;
+    const stamp = call.closedAtMs ?? this.now();
+    let raisesActivity = false;
+    lines.forEach((line, index) => {
+      const entries = isActive ? getTranscript() : session.db.getTranscriptEntries();
+      const timestampMs = stamp - (lines.length - index);
+      const entry = line.speaker === "user"
+        ? { kind: "message", id: nextEntryId(entries, "user-message"), role: "user", content: line.text, isStreaming: false, timestampMs, fromAgent: peer }
+        : { kind: "message", id: nextEntryId(entries, "assistant-message"), role: "assistant", content: line.text, isStreaming: false, timestampMs, toAgent: { ...peer, kind: "agent" } };
+      raisesActivity ||= entryRaisesUserActivitySignal(entry);
+      if (isActive) this.tm.appendEntry(entry);
+      else session.db.appendTranscriptEntry(entry);
+    });
+    if (!isActive) {
+      if (raisesActivity) this.tm.sessionStore.markSessionActivity(session);
+      void this.tm.roster.emitAgentUpdate(session.id);
+    }
+    return lines.length;
+  }
+
   /** One JSON file per finished call, in `voice-calls/` under the agent's own files. */
   private writeRecord(call: VoiceCallState, record: VoiceCallRecordInput): string | null {
     try {
       const dir = join(this.tm.sessionStore.getAgentDir(call.agentId), VOICE_CALLS_FOLDER);
       mkdirSync(dir, { recursive: true });
       const startedAt = new Date(call.openedAtMs).toISOString();
-      const transcript = Array.isArray(record.transcript)
-        ? record.transcript.filter(isRecord).map((line) => ({ speaker: line.speaker === "agent" ? "agent" : "user", text: text(line.text) })).filter((line) => line.text.length > 0)
-        : [];
+      const transcript = transcriptOf(record);
       const body = {
         call: call.address,
         startedAt,

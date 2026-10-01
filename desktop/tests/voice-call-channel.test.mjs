@@ -62,16 +62,18 @@ function fakeHost({ dir, sends = [], running = false }) {
   const prompts = [];
   const lanes = [];
   let interrupted = 0;
+  const written = [];
+  const db = { getTranscriptEntries: () => written, appendTranscriptEntry: (entry) => { written.push(entry); } };
   const tm = {
     execution: { canExecute: true },
-    sessions: { resolveBackgroundSession: async (id) => ({ id }) },
+    sessions: { resolveBackgroundSession: async (id) => ({ id, db }), activeSession: null },
     groupChat: { isGroupSession: () => false, isRemoteRoomSession: () => false },
     runnerRegistry: { getRunner: () => runner },
     runLifecycle: { runningAgentIds: () => new Set(running ? ["a1"] : []), beginSessionRun() {}, endSessionRun() {}, enqueueExclusiveRun: async (_id, run, options) => { lanes.push(options); await run(); } },
     backgroundWakes: { dmPreemptedWakeAgentIds: new Set() },
     turnRuntime: { activeRequestPrompts: new Map(), activeRequestSources: new Map() },
     roster: { emitAgentUpdate: async () => {} },
-    sessionStore: { getAgentDir: () => dir },
+    sessionStore: { getAgentDir: () => dir, markSessionActivity() {} },
   };
   const runner = {
     interrupt: () => { interrupted += 1; return running; },
@@ -85,7 +87,7 @@ function fakeHost({ dir, sends = [], running = false }) {
     },
   };
   const channel = new channelModule.VoiceCallChannel(tm);
-  return { channel, prompts, lanes, interruptions: () => interrupted, tm };
+  return { channel, prompts, lanes, interruptions: () => interrupted, tm, written };
 }
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
@@ -114,9 +116,17 @@ test("the call opens, relays mid-turn, carries the agent's answer back, nudges o
     assert.match(host.prompts[2], /^Your last turn sent nothing, so the call is still waiting on its result\./, "a turn that sent nothing to the call is nudged once");
 
     assert.equal(host.channel.deliver("a1", "voice:someone-else", { kind: "text", text: "x" }), false, "an address that is not this agent's call is not taken");
-    const ended = await host.channel.handle({ agentId: "a1", callId: "call-0001", kind: "ended", record: { seconds: 61, recap: "Bass, you moved the review.", transcript: [{ speaker: "user", text: "Move it" }, { speaker: "agent", text: "On it." }] } });
+    const ended = await host.channel.handle({ agentId: "a1", callId: "call-0001", kind: "ended", record: { seconds: 61, recap: "Bass, you moved the review.", personName: "Bass", transcript: [{ speaker: "user", text: "Move it" }, { speaker: "user", text: "(Your work just came back. Tell me what it found.)" }, { speaker: "agent", text: "On it." }] } });
     await settle();
     assert.equal(ended.closed, true);
+    // What was said goes into the agent's chat as one exchange with the person, the app's nudge left out.
+    assert.equal(ended.exchange, 2);
+    const said = host.written.filter((entry) => entry.fromAgent != null || entry.toAgent != null);
+    assert.deepEqual(said.map((entry) => [entry.role, entry.content, (entry.fromAgent ?? entry.toAgent).id, (entry.fromAgent ?? entry.toAgent).name]), [
+      ["user", "Move it", "voice-call:call-0001:61", "Bass"],
+      ["assistant", "On it.", "voice-call:call-0001:61", "Bass"],
+    ]);
+    assert.ok(said[0].timestampMs < said[1].timestampMs, "the lines keep their order");
     assert.match(host.prompts[3], /^\[inbound\] From voice:call-0001:\nThe call ended\. This channel is closed from now on/);
     assert.match(host.prompts[4], /^Your last turn sent nothing to this chat\./, "the call-ended turn that sent nothing is nudged once");
     assert.equal(host.channel.deliver("a1", "voice:call-0001", { kind: "text", text: "late" }), true, "a send on the closed address is dropped");

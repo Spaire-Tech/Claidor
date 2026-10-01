@@ -17,7 +17,7 @@ export interface SimeonCallBridge {
   connected(args: { conversationId: string | null }): Promise<unknown>;
   sendTask(args: { task?: unknown; quote?: unknown }): Promise<string>;
   recallTextMessages(): Promise<string>;
-  callEnded(args: { conversationId: string | null; seconds: number }): Promise<unknown>;
+  callEnded(args: { conversationId: string | null; seconds: number; transcript: readonly { speaker: "user" | "agent"; text: string }[] }): Promise<unknown>;
   resize(args: { height: number }): Promise<unknown>;
   callAgain(): Promise<unknown>;
   openChat(): Promise<unknown>;
@@ -44,6 +44,8 @@ export interface SessionStart {
   readonly onDisconnect: (details: { reason: string; message?: string }) => void;
   readonly onError: (message: string, context?: unknown) => void;
   readonly onModeChange: (props: { mode: "speaking" | "listening" }) => void;
+  /** A finished line from either side: the person's (`user`) or the voice's (`ai`). */
+  readonly onMessage: (props: { message: string; source: "user" | "ai" }) => void;
 }
 
 export interface CallControllerDeps {
@@ -90,6 +92,9 @@ export function createCallController(deps: CallControllerDeps): CallController {
   let levels: number[] | null = null;
   let cancelDismiss: (() => void) | null = null;
   let isHovered = false;
+  let isTranscriptOpen = false;
+  /** What was said, as the SDK reported it, for the call's record when ElevenLabs' own is not ready. */
+  const heard: { speaker: "user" | "agent"; text: string }[] = [];
 
   const render = (): void => deps.painter.paint(bannerView(state, deps.now()), state.isMuted);
   const log = (line: string): void => { void deps.bridge.log({ line }).catch(() => {}); };
@@ -115,7 +120,7 @@ export function createCallController(deps: CallControllerDeps): CallController {
   const reportEnd = (): void => {
     if (hasReportedEnd || state.phase !== "ended") return;
     hasReportedEnd = true;
-    void deps.bridge.callEnded({ conversationId: state.conversationId, seconds: callSeconds(state, deps.now()) }).catch(() => {});
+    void deps.bridge.callEnded({ conversationId: state.conversationId, seconds: callSeconds(state, deps.now()), transcript: heard }).catch(() => {});
   };
 
   const dispatch = (event: CallEvent): void => {
@@ -162,6 +167,14 @@ export function createCallController(deps: CallControllerDeps): CallController {
         },
         onError: (message) => { log(`sdk error: ${message}`); dispatch({ type: "error" }); },
         onModeChange: ({ mode }) => dispatch({ type: "mode", mode }),
+        onMessage: ({ message, source }) => {
+          const text = typeof message === "string" ? message.trim() : "";
+          // The nudge the app sends to make the voice speak is nobody's words.
+          if (text.length === 0 || text === WORK_CAME_BACK_NUDGE) return;
+          const speaker = source === "user" ? "user" : "agent";
+          heard.push({ speaker, text });
+          deps.painter.addLine(speaker, text);
+        },
       });
       if (state.phase === "ended" || state.phase === "failed") { await started.endSession().catch(() => {}); return; }
       conversation = started;
@@ -203,6 +216,10 @@ export function createCallController(deps: CallControllerDeps): CallController {
       const isMuted = !state.isMuted;
       conversation?.setMicMuted(isMuted);
       dispatch({ type: "mute", isMuted });
+    });
+    elements.talk.addEventListener("click", () => {
+      isTranscriptOpen = !isTranscriptOpen;
+      deps.painter.setTranscriptOpen(isTranscriptOpen);
     });
     elements.again.addEventListener("click", () => { void deps.bridge.callAgain(); });
     elements.chat.addEventListener("click", () => { void deps.bridge.openChat(); });
