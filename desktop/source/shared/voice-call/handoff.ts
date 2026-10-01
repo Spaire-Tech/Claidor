@@ -58,6 +58,8 @@ export interface CallChannelOptions {
 
 export const CALL_CHANNEL_POLL_MS = 1_200;
 export const RECALL_TAIL_LIMIT = 60;
+/** How many texts `recall_text_messages` reads back: further than the call's own prompt carries. */
+export const RECALL_TEXT_LINES = 20;
 const MAX_POLL_FAILURES = 10;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -153,7 +155,7 @@ export function createCallChannel(options: CallChannelOptions): CallChannel {
       try {
         const page = await options.legs.getAgentTranscriptTail({ id: options.agentId, limit: RECALL_TAIL_LIMIT });
         const entries = isRecord(page) && Array.isArray(page.entries) ? page.entries : Array.isArray(page) ? page : [];
-        return recallTextMessagesAnswer(transcriptLinesFromEntries(entries));
+        return recallTextMessagesAnswer(transcriptLinesFromEntries(entries, RECALL_TEXT_LINES));
       } catch (error) {
         log(`call channel: reading the chat failed: ${errorText(error)}`);
         return "The text messages could not be read just now.";

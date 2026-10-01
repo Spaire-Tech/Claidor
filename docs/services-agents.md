@@ -438,10 +438,13 @@ the background while the call goes on, and says how it is going when asked.
   `server/simeon/desktop/voice.py` changes (the version is a tag on the agent; the id is
   remembered per process). Its configuration: authentication required, the four overrides
   above and no others, `gemini-2.5-flash` as the voice's model, `eleven_flash_v2` for
-  speech (an English agent is refused on any other), a voice the workspace has (Eric, else
-  the first curated voice `/v2/voices` lists, else the first it lists: a missing voice is
-  refused with `voice_not_found`), `end_call` and `skip_turn`, a 7 s turn timeout, the call ended after 25 s of
-  silence, 30 minutes at most, and no voice recording kept.
+  speech (an English agent is refused on any other), a voice the workspace has (the first of the
+  founder's voices the account has, else the first ElevenLabs default, else Eric: a missing
+  voice is refused with `voice_not_found`), `end_call` and `skip_turn`, a 7 s turn timeout,
+  `turn_eagerness: eager` and `speculative_turn` (it answers soon after the caller stops and
+  starts thinking during the pause, which costs a little more), the call ended after 25 s of
+  silence, 30 minutes at most, and no voice recording kept. The per-call prompt carries the
+  last 6 chat messages; `recall_text_messages` reads up to 20.
 - Two client tools, the upstream app's, answered by the app: `send_task {task, quote?}`
   (relayed to the person's agent over the call's channel; the app answers at once; 20 s
   timeout, the voice always speaks first) and `recall_text_messages` (the latest texts between
@@ -463,9 +466,12 @@ the background while the call goes on, and says how it is going when asked.
     ("You asked me to…"), with the person's name put in front by the server
     (`recap_for`). ElevenLabs' own `transcript_summary` speaks of "the user" and is not used. A conversation of another ElevenLabs agent, or one
     already billed to someone else, is answered 404.
-  - `GET /desktop/api/proxy/v1/voice/voices`: the picker's list, ten curated conversational
-    voices from ElevenLabs' default voices (every workspace has them) in a fixed order (one no longer offered is
-    skipped), `[{id, name, description, labels, preview_url}]`, cached for an hour.
+  - `GET /desktop/api/proxy/v1/voice/voices`: the picker's list: the founder's 14 voices
+    (`CURATED_VOICES`, Jessica first and the default), looked up by id in the account
+    (`/v2/voices?voice_ids=…`) and shown by their names only. Each must be added to the
+    ElevenLabs account ("Add to my voices"); one it lacks is skipped, and with none of them
+    the picker offers ElevenLabs' defaults. `[{id, name, description, labels, preview_url}]`,
+    description and labels empty, cached for an hour.
 - Price: `VOICE_CALL_MODEL` in `server/simeon/desktop/pricing.py`, by the second, at $0.08 a
   minute times a 1.25 margin (`VOICE_CALL_MARGIN`): about 33,000 credits a minute. Usage rows
   carry provider `elevenlabs`.

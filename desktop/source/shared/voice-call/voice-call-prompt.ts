@@ -24,20 +24,24 @@ export interface VoiceCallTranscriptLine {
   readonly text: string;
 }
 
-/** How many recent chat messages the voice is given. */
-export const VOICE_CALL_TRANSCRIPT_LINES = 20;
+/**
+ * How many recent chat messages the voice is given: a few, so each reply
+ * starts sooner (the founder, 1 October 2026: "is there a way the voice
+ * answers faster?"); `recall_text_messages` reads further back.
+ */
+export const VOICE_CALL_TRANSCRIPT_LINES = 6;
 /** Longest single message the prompt carries, in characters. */
 export const VOICE_CALL_LINE_MAX_CHARS = 600;
 /** The call's language. ElevenLabs hears and speaks it; English until the app has a setting. */
 export const VOICE_CALL_LANGUAGE = "en";
 /**
- * The voice the picker shows as chosen when the agent has none: Eric, the
+ * The voice the picker shows as chosen when the agent has none: Jessica, the
  * server's own default (`VOICE_DEFAULT_VOICE_ID` in
  * `server/simeon/desktop/voice.py`). A call for such an agent sends no voice
  * at all and speaks in the platform agent's, which the server picked from
  * the voices the workspace has: a voice it does not have fails the call.
  */
-export const VOICE_CALL_DEFAULT_VOICE_ID = "cjVigY5qzO86Huf0OWal";
+export const VOICE_CALL_DEFAULT_VOICE_ID = "r1KmysJdVYZjJCm4mL3b";
 
 const collapse = (text: string): string => text.replace(/\s+/g, " ").trim();
 const clamp = (text: string, max: number): string => (text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text);
