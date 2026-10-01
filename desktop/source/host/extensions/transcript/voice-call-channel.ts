@@ -15,15 +15,21 @@
  *     `voice-calls/` in the agent's own files, and the agent is told the call
  *     ended, with one nudge if it owed the chat a word and sent none.
  *
- * The call in the chat (2 October 2026, the founder: "the after chat is just a
- * chat opened in a panel like the convo between agents, this time its just
- * between us"): what was said is written into the agent's chat the way a
- * conversation with another agent is (`fromAgent` for the person's lines,
- * `toAgent` for the agent's), all with one peer, `voice-call:<call>:<seconds>`
- * named for the person. The window groups them into one line and opens them
- * in its read-only exchange panel (`__simeonVoiceEvent` in
- * scripts/lib/router-renderer-patch.mjs draws that line as "Voice chat · 02:30").
+ * The call in the chat (1 October 2026, the founder: "i want things to behave
+ * the same way as it should behave when i text"): one line where the call
+ * began, the way a call shows in Messages. When the call opens, one event
+ * entry, `{type: "voice-call", status: "live"}`, goes into the agent's chat;
+ * everything the call asks of the agent lands below it, as it would below a
+ * text. When the call ends, the same entry is filled in with the duration and
+ * what was said (`status: "ended"`, `seconds`, `lines`), and the window draws
+ * it as "Voice chat · 01:49", opening the call as a chat between the person
+ * and the agent (`__simeonVoiceEvent` in scripts/lib/router-renderer-patch.mjs).
+ * A call that never connected leaves no line. The person is never written as
+ * a peer: before this, the lines were agent-to-agent messages with a
+ * `voice-call:` peer named for the person, which the window merged with the
+ * agent's other exchanges and drew as an agent.
  */
+import { randomUUID } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -37,11 +43,10 @@ import {
   voiceAddress,
   voiceEndedWake,
   voiceRequestWake,
+  VOICE_CALL_EVENT,
   VOICE_CALLS_FOLDER,
 } from "../../../shared/voice-call/main-loop-voice.js";
-import { entryRaisesUserActivitySignal } from "../../../shared/transcript.js";
-import { nextEntryId } from "./transcript-entry-ids.js";
-import { getTranscript } from "./transcript-store.js";
+import { removeEntry, updateEntry } from "./transcript-store.js";
 import type { TranscriptManagerLike } from "./transcript-hub.js";
 
 /** How long a closed call's outbox and state are kept, for a late read. */
@@ -63,16 +68,12 @@ interface VoiceCallState {
   sentOnCall: number;
   /** Requests the call relayed. */
   relayed: number;
-}
-
-/** The peer a call's lines are written with: `voice-call:<call id>:<seconds>`. */
-export const VOICE_CALL_PEER_PREFIX = "voice-call:";
-export function voiceCallPeerId(callId: string, seconds: number): string {
-  return `${VOICE_CALL_PEER_PREFIX}${callId}:${Math.max(0, Math.round(Number.isFinite(seconds) ? seconds : 0))}`;
+  /** The id of the call's line in the chat, once written (null when it could not be). */
+  receipt: Promise<string | null> | null;
 }
 
 export interface VoiceCallRecordInput {
-  /** The name the person goes by, for their side of the exchange. */
+  /** The name the person goes by (kept in the call's record file). */
   readonly personName?: unknown;
   readonly agentName?: unknown;
   readonly seconds?: unknown;
@@ -138,15 +139,19 @@ export class VoiceCallChannel {
     switch (args.kind) {
       case "open": {
         const existing = this.calls.get(address);
-        if (existing == null) this.calls.set(address, { agentId, callId, address, openedAtMs: this.now(), open: true, closedAtMs: null, nextSeq: 1, outbox: [], sentOnCall: 0, relayed: 0 });
-        else if (existing.agentId !== agentId) throw new Error("That call belongs to another agent.");
+        if (existing == null) {
+          const call: VoiceCallState = { agentId, callId, address, openedAtMs: this.now(), open: true, closedAtMs: null, nextSeq: 1, outbox: [], sentOnCall: 0, relayed: 0, receipt: null };
+          this.calls.set(address, call);
+          call.receipt = this.appendReceipt(call).catch(() => null);
+        } else if (existing.agentId !== agentId) throw new Error("That call belongs to another agent.");
         return { address };
       }
       case "request": {
         const call = this.requireOpen(agentId, address);
         call.relayed += 1;
         const quotes = Array.isArray(args.quotes) ? args.quotes.filter((line): line is string => typeof line === "string") : [];
-        void this.runRequest(call, text(args.request), quotes).catch(() => {});
+        // After the call's line, so the work it asks for sits below it in the chat.
+        void Promise.resolve(call.receipt).then(() => this.runRequest(call, text(args.request), quotes)).catch(() => {});
         return { accepted: true };
       }
       case "outbox": {
@@ -165,7 +170,7 @@ export class VoiceCallChannel {
         call.closedAtMs = this.now();
         const input: VoiceCallRecordInput = isRecord(args.record) ? args.record : {};
         const recordPath = this.writeRecord(call, input);
-        const exchange = await this.appendCallExchange(call, input).catch(() => 0);
+        const exchange = await this.settleReceipt(call, input).catch(() => 0);
         if (call.relayed > 0 || call.sentOnCall > 0) void this.runEnded(call).catch(() => {});
         return { closed: true, exchange, ...(recordPath == null ? {} : { record: recordPath }) };
       }
@@ -240,36 +245,56 @@ export class VoiceCallChannel {
     );
   }
 
-  /**
-   * What was said on the call, into the agent's chat as one exchange with the
-   * person. Returns how many lines were written (0 when there was nothing).
-   */
-  private async appendCallExchange(call: VoiceCallState, record: VoiceCallRecordInput): Promise<number> {
-    const lines = transcriptOf(record);
-    if (lines.length === 0) return 0;
+  /** The agent's own chat, or null for a group or a shared room (a call is one to one). */
+  private async chatOf(call: VoiceCallState): Promise<any | null> {
     const session = await this.tm.sessions.resolveBackgroundSession(call.agentId);
-    if (session == null || this.tm.groupChat.isGroupSession(session) || this.tm.groupChat.isRemoteRoomSession(session)) return 0;
-    const seconds = typeof record.seconds === "number" && Number.isFinite(record.seconds) ? record.seconds : ((call.closedAtMs ?? this.now()) - call.openedAtMs) / 1000;
-    const person = text(record.personName).replace(/\s+/g, " ").trim().slice(0, 60);
-    const peer = { id: voiceCallPeerId(call.callId, seconds), name: person.length > 0 ? person : "You" };
-    const isActive = session.id === this.tm.sessions.activeSession?.id;
-    const stamp = call.closedAtMs ?? this.now();
-    let raisesActivity = false;
-    lines.forEach((line, index) => {
-      const entries = isActive ? getTranscript() : session.db.getTranscriptEntries();
-      const timestampMs = stamp - (lines.length - index);
-      const entry = line.speaker === "user"
-        ? { kind: "message", id: nextEntryId(entries, "user-message"), role: "user", content: line.text, isStreaming: false, timestampMs, fromAgent: peer }
-        : { kind: "message", id: nextEntryId(entries, "assistant-message"), role: "assistant", content: line.text, isStreaming: false, timestampMs, toAgent: { ...peer, kind: "agent" } };
-      raisesActivity ||= entryRaisesUserActivitySignal(entry);
-      if (isActive) this.tm.appendEntry(entry);
-      else session.db.appendTranscriptEntry(entry);
-    });
-    if (!isActive) {
-      if (raisesActivity) this.tm.sessionStore.markSessionActivity(session);
+    if (session == null || this.tm.groupChat.isGroupSession(session) || this.tm.groupChat.isRemoteRoomSession(session)) return null;
+    return session;
+  }
+
+  private isOnScreen(session: any): boolean {
+    return session.id === this.tm.sessions.activeSession?.id && this.tm.sessions.inMemoryTranscriptAgentId === session.id;
+  }
+
+  /** The call's line, written where the call began. */
+  private async appendReceipt(call: VoiceCallState): Promise<string | null> {
+    const session = await this.chatOf(call);
+    if (session == null) return null;
+    const entry = { kind: "event", id: `event-${randomUUID()}`, event: { type: VOICE_CALL_EVENT, callId: call.callId, status: "live" }, timestampMs: call.openedAtMs };
+    if (session.id === this.tm.sessions.activeSession?.id) this.tm.appendEntry(entry);
+    else {
+      session.db.appendTranscriptEntry(entry);
       void this.tm.roster.emitAgentUpdate(session.id);
     }
-    return lines.length;
+    return entry.id;
+  }
+
+  /**
+   * The call ended: its line gets the duration and what was said, or goes
+   * away when the call never connected. Returns how many lines it holds (at
+   * least 1 when it stays), so the Mac adds nothing of its own.
+   */
+  private async settleReceipt(call: VoiceCallState, record: VoiceCallRecordInput): Promise<number> {
+    const id = await (call.receipt ?? Promise.resolve(null));
+    if (id == null) return 0;
+    const session = await this.chatOf(call);
+    if (session == null) return 0;
+    const lines = transcriptOf(record);
+    const reported = typeof record.seconds === "number" && Number.isFinite(record.seconds) ? record.seconds : null;
+    if ((reported ?? 0) <= 0 && lines.length === 0 && call.relayed === 0) {
+      session.db.deleteTranscriptEntry(id);
+      if (this.isOnScreen(session) && removeEntry(id)) this.tm.roster.emit({ type: "removed", id });
+      else void this.tm.roster.emitAgentUpdate(session.id);
+      return 0;
+    }
+    const seconds = Math.max(0, Math.round(reported ?? ((call.closedAtMs ?? this.now()) - call.openedAtMs) / 1000));
+    const apply = (entry: any): any =>
+      entry.kind === "event" && entry.event?.type === VOICE_CALL_EVENT ? { ...entry, event: { ...entry.event, status: "ended", seconds, lines } } : entry;
+    session.db.updateTranscriptEntry(id, apply);
+    const updated = this.isOnScreen(session) ? updateEntry(id, apply) : null;
+    if (updated != null) this.tm.roster.emit({ type: "updated", entry: updated });
+    else void this.tm.roster.emitAgentUpdate(session.id);
+    return Math.max(1, lines.length);
   }
 
   /** One JSON file per finished call, in `voice-calls/` under the agent's own files. */
