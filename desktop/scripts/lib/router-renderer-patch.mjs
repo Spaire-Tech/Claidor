@@ -8,32 +8,8 @@ import { SIMEON_PETALS } from "./simeon-logo.mjs";
 const REGISTRY_BEFORE = 'const wDn=[{id:"general",label:"General",icon:"settings-gear"},{id:"usage",label:"Usage & Billing",icon:"chart-bars"},{id:"beta",label:"Updates",icon:"cloud-download"}]';
 const REGISTRY_AFTER = REGISTRY_BEFORE;
 const GENERAL_BEFORE = 'Q=x==="general"?a.jsx(Te,{children:a.jsx(Sa,{auth:t})}):null';
-const GENERAL_AFTER = GENERAL_BEFORE;
 const USAGE_BEFORE = 'Z=x==="usage"?a.jsx(Te,{children:a.jsx(Na,{})}):null';
-const USAGE_AFTER = USAGE_BEFORE;
 const COMPONENT_ANCHOR = 'function Sa(s){';
-const COMPONENT_SOURCE = String.raw`
-const RRouterProviders=[
-  {value:"cursor",label:"Claidor",description:"Use your signed-in Claidor account.",kind:"account"},
-  {value:"claidor",label:"Claidor",description:"Use your signed-in Claidor account and its metered models.",kind:"account"},
-  {value:"claude-code",label:"Claude Code",description:"Use your existing Claude Code sign-in and Simeon's connected plugins.",kind:"local",localKey:"claude-code"},
-  {value:"codex",label:"Codex",description:"Use your existing ChatGPT sign-in from Codex with Simeon's connected plugins.",kind:"local",localKey:"codex"},
-  {value:"openrouter",label:"OpenRouter",description:"Route through your OpenRouter account and selected model.",kind:"key",secret:"OPENROUTER_API_KEY"}
-],RRouterOptions=RRouterProviders.map(s=>({value:s.value,label:s.label})),RRouterEmptyUsage={requests:0,inputTokens:0,outputTokens:0,cacheReadTokens:0,cacheWriteTokens:0,lastUsedAt:null},RRouterInputClass="sand-9f619 sand-h8yej3 sand-5f5z56 sand-u97haq sand-lrnmfh sand-uve7l6 sand-16b7oty sand-1rgtt3y sand-o7x2bt sand-mkeg23 sand-1y0btm7 sand-qz0629 sand-1043rbw sand-13l7odt sand-1wd3ewq sand-jb2p0i sand-4z9k3i sand-frs9s4 sand-tt52l0 sand-1odjw0f sand-1t137rt sand-ltfok3";
-function RRouterState(){
-  const[s,e]=de.useState({provider:"cursor",usage:null,local:null,error:null});
-  de.useEffect(()=>{let t=!0;const n=r=>{t&&e(r.detail)};window.addEventListener("sand-router-provider-changed",n);window.desktop.agent.getInferenceRouter().then(r=>{t&&e({...r,error:null})}).catch(r=>{t&&e(i=>({...i,error:String(r?.message??r)}))});return()=>{t=!1;window.removeEventListener("sand-router-provider-changed",n)}},[]);
-  const t=async n=>{const r=s;e(i=>({...i,provider:n,error:null}));try{const i=await window.desktop.agent.setInferenceRouter(n),o={...i,error:null};e(o);window.dispatchEvent(new CustomEvent("sand-router-provider-changed",{detail:o}))}catch(i){e({...r,error:String(i?.message??i)})}};
-  return[s,t]
-}
-function RRouterSecrets(){const[s,e]=de.useState([]),[t,n]=de.useState(0);de.useEffect(()=>{let r=!0;window.desktop.secrets.list().then(i=>{r&&e(Array.isArray(i?.keys)?i.keys:[])});return()=>{r=!1}},[t]);return[s,()=>n(r=>r+1)]}
-function RRouterNumber(s){return new Intl.NumberFormat().format(s)}
-function RRouterCredential({provider:s,state:e,keys:t,onSaved:n}){const[r,i]=de.useState(""),[o,l]=de.useState(!1);if(s.kind==="account")return a.jsx(se,{as:"span",color:"secondary",size:"sm",children:"Signed in"});if(s.kind==="local"){const c=e.local?.[s.localKey],d=c?.installed&&c?.authenticated;return a.jsx(se,{as:"span",color:d?"primary":"secondary",size:"sm",children:d?"Ready":c?.installed?"Sign in with "+(s.value==="codex"?"codex login":"claude"):"Not installed"})}const c=t.includes(s.secret),d=async()=>{if(r.trim().length===0)return;l(!0);try{await window.desktop.secrets.upsert({[s.secret]:r.trim()}),i(""),n()}finally{l(!1)}};return a.jsxs("div",{className:"sand-9f619 sand-78zum5 sand-6s0dn4 sand-h8yej3",style:{width:360},children:[a.jsx("input",{"aria-label":s.secret,className:RRouterInputClass,disabled:o,onChange:u=>i(u.currentTarget.value),placeholder:c?"Replace saved key":"Paste API key",style:{fontSize:13,height:34,minWidth:0,padding:"0 10px",width:270},type:"password",value:r}),a.jsx(oe,{disabled:o||r.trim().length===0,onClick:d,shape:"rectangular",size:"sm",variant:"secondary",children:o?"Saving…":"Save"})]})}
-function RRouterUsageRows({usage:s}){return a.jsxs("div",{children:[a.jsx(ie,{label:"Requests",variant:"card",children:a.jsx(se,{as:"span",color:"secondary",size:"sm",children:RRouterNumber(s.requests)})}),a.jsx(ie,{divided:!0,label:"Input tokens",variant:"card",children:a.jsx(se,{as:"span",color:"secondary",size:"sm",children:RRouterNumber(s.inputTokens)})}),a.jsx(ie,{divided:!0,label:"Output tokens",variant:"card",children:a.jsx(se,{as:"span",color:"secondary",size:"sm",children:RRouterNumber(s.outputTokens)})}),a.jsx(ie,{divided:!0,label:"Cache tokens",variant:"card",children:a.jsx(se,{as:"span",color:"secondary",size:"sm",children:RRouterNumber(s.cacheReadTokens+s.cacheWriteTokens)})}),a.jsx(ie,{divided:!0,label:"Last used",variant:"card",children:a.jsx(se,{as:"span",color:"secondary",size:"sm",children:s.lastUsedAt?new Date(s.lastUsedAt).toLocaleString():"Not used yet"})})]})}
-function RRouterPanel(){const[s,e]=RRouterState(),[t,n]=RRouterSecrets(),r=RRouterProviders.find(i=>i.value===s.provider)??RRouterProviders[0],i=s.usage?.providers?.[s.provider]??RRouterEmptyUsage,o=r.value==="codex"?"Uses the private ChatGPT login already stored by Codex on this Mac. Requests are made by Simeon directly.":r.kind==="local"?"Uses Claude Code's existing login on this Mac.":r.kind==="key"?"Stored securely with your other Simeon secrets.":"Uses the account already connected to Simeon.";return a.jsx(Te,{children:a.jsxs("div",{className:k("sand-settings-general","sand-9f619 sand-78zum5 sand-dt5ytf sand-3qzy4x"),children:[a.jsx(re,{title:"Routing",children:a.jsx(ie,{description:r.description,label:"Provider",variant:"card",children:a.jsx(ye,{"aria-label":"Routing provider",onValueChange:l=>{if(l!==null)void e(l)},options:RRouterOptions,placement:"bottom-end",size:"lg",value:s.provider,variant:"filled"})})}),a.jsx(re,{title:r.kind==="key"?"OpenRouter account":"Account",children:a.jsx(ie,{description:o,label:r.kind==="key"?"API key":"Status",variant:"card",children:a.jsx(RRouterCredential,{provider:r,state:s,keys:t,onSaved:n})})}),s.error?a.jsx(se,{as:"p",color:"red",size:"sm",children:s.error}):null,a.jsx(re,{title:"Usage for "+r.label,children:a.jsx(RRouterUsageRows,{usage:i})})]})})}
-function RRouterUsageSummary({provider:s,usage:e,current:t,divided:n}){const r=[RRouterNumber(e.requests)+" requests",RRouterNumber(e.inputTokens)+" input",RRouterNumber(e.outputTokens)+" output",RRouterNumber(e.cacheReadTokens+e.cacheWriteTokens)+" cached"].join(" · "),i=t?"Current route":e.lastUsedAt?new Date(e.lastUsedAt).toLocaleString():"Not used yet";return a.jsx(ie,{divided:n,description:r,label:s.label,variant:"card",children:a.jsx(se,{as:"span",color:t?"primary":"secondary",size:"sm",children:i})})}
-function RRouterUsage(){const[s]=RRouterState(),e=RRouterProviders.find(t=>t.value===s.provider)??RRouterProviders[0],t=RRouterProviders.filter(n=>n.value===s.provider||(s.usage?.providers?.[n.value]?.requests??0)>0);return a.jsxs("div",{className:k("sand-usage-section","sand-9f619 sand-78zum5 sand-dt5ytf sand-ou54vl"),children:[a.jsx(re,{title:"Current provider",children:a.jsx(ie,{description:e.description,label:e.label,variant:"card",children:a.jsx(se,{as:"span",color:"secondary",size:"sm",children:"Selected"})})}),a.jsx(re,{title:"Tracked activity",children:a.jsx("div",{children:t.map((n,r)=>a.jsx(RRouterUsageSummary,{provider:n,usage:s.usage?.providers?.[n.value]??RRouterEmptyUsage,current:n.value===s.provider,divided:r>0},n.value))})}),s.provider==="cursor"?a.jsx(Na,{}):null]})}
-`;
 
 /**
  * The product's name in the shipped 0.18.0 renderer, decided by the founder
@@ -60,6 +36,31 @@ export const BRAND_REPLACEMENTS = Object.freeze([
 export const BRAND_WORD_REPLACEMENTS = Object.freeze([
   [/(?<=["'` >])Bots(?=["'` <.,!?])/g, "Agents", "Bots"],
   [/(?<=["'` >])Bot(?=["'` <.,!?])/g, "Agent", "Bot"],
+]);
+
+/**
+ * Whole sentences of the pinned window's copy that named Cursor, as they
+ * read after the pass above (29 September 2026). A full sentence cannot be
+ * an identifier, so these are safe to rewrite in minified code; each is
+ * counted in the record like the words above. Found by reading every string
+ * of the patched window for Cursor, Grok and Anysphere.
+ */
+export const BRAND_PHRASE_REPLACEMENTS = Object.freeze([
+  ["Sign In with Cursor", "Sign In"],
+  ["Signed in to Cursor", "Signed in"],
+  ["Connect your Cursor account to Simeon", "Sign in to Simeon"],
+  ["You\u2019ll need to sign in again to use your Cursor account with Simeon.", "You\u2019ll need to sign in again to use Simeon."],
+  ["Sign in to Cursor in settings, then ask anything.", "Sign in to Simeon in settings, then ask anything."],
+  ["Open this cloud agent in Cursor", "Open this cloud agent"],
+  ["Open in Cursor", "Open"],
+  ["Cursor cloud agent", "Cloud agent"],
+  ["Cursor agent: ", "Cloud agent: "],
+  ["This setting is shared with Cursor. Leaving Legacy can\u2019t be undone.", "Leaving Legacy can\u2019t be undone."],
+  ["Cursor authentication failed.", "Sign-in failed."],
+  ["Managed by Cursor", "Managed by your organization"],
+  ["Cursor backend ", "Simeon Labs backend "],
+  ["Cursor session ", "Simeon session "],
+  ["session's Cursor tokens", "session's sign-in tokens"],
 ]);
 
 /**
@@ -94,6 +95,11 @@ export function patchOriginalBrandStrings(source) {
     const count = (out.match(pattern) ?? []).length;
     counts[label] = count;
     if (count > 0) out = out.replace(pattern, after);
+  }
+  for (const [before, after] of BRAND_PHRASE_REPLACEMENTS) {
+    const count = out.split(before).length - 1;
+    counts[before] = count;
+    if (count > 0) out = out.split(before).join(after);
   }
   return { source: out, counts };
 }
@@ -210,6 +216,184 @@ export function patchOriginalChatLayout(source) {
   let out = source;
   for (const [label, before, after] of CHAT_LAYOUT_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
   return out;
+}
+
+/**
+ * Voice calls, 30 September 2026 (the founder approved the call banner's
+ * design the same day): two things in the window, both calling the
+ * `window.desktop.voiceCall` bridge the main preload adds
+ * (source/electron-preload/preload.ts).
+ *
+ *   1. A phone button beside the agent's name in the chat header. The
+ *      identity row (`aSn`) draws [identity button, shared badge]; the call
+ *      button goes between them, outside the identity button, which is
+ *      itself a button that opens the agent's settings. The row's memo slot
+ *      (e[97..101]) is replaced by a plain element so the button always
+ *      carries the open agent's id. The stylesheet places it just right of
+ *      the name pill, in the pill's own white glass. It tells main which
+ *      agent is open (for Agent › Call <name>) and draws nothing when calls
+ *      are switched off on this Mac (`SIMEON_VOICE_CALLS=0`).
+ *   2. A voice dropdown under "Character color" in the agent's character
+ *      settings (`e3n`): each option is the voice's name and description, and
+ *      a round play button beside it plays the chosen voice (first a list
+ *      with radios; the founder asked for a dropdown). Choosing saves the agent's
+ *      `voiceId` through main (the host's updateAgent), and the next call
+ *      speaks in it. The column's memo slot (e[21..23]) is replaced the same
+ *      way.
+ *
+ * The two components are defined once, at module scope, before `e3n`; they
+ * use the chunk's own React (`S`) and JSX runtime (`p`).
+ */
+const PHONE_ICON_PATH = "M7.2 3.5c.5 0 .9.3 1.1.7l1.4 3.3c.2.5.1 1-.3 1.3l-1.7 1.4a12 12 0 0 0 6.1 6.1l1.4-1.7c.3-.4.9-.5 1.3-.3l3.3 1.4c.5.2.7.6.7 1.1v2.7c0 .7-.5 1.2-1.2 1.2C10.6 20.7 3.3 13.4 3.3 4.7c0-.7.5-1.2 1.2-1.2h2.7z";
+export const VOICE_CALL_COMPONENTS_SOURCE = [
+  // The phone button.
+  "function __simeonCallButton(n){",
+  "const d=typeof window<\"u\"?window.desktop?.voiceCall:void 0,[a,s]=S.useState(null);",
+  "S.useEffect(()=>{if(d==null)return;let l=!0;Promise.resolve(d.getAvailability()).then(v=>{l&&s(v)},()=>{});return()=>{l=!1}},[d]);",
+  "S.useEffect(()=>{if(d==null||n.agentId==null)return;Promise.resolve(d.noteAgent(n.agentId,n.agentName)).catch(()=>{});return()=>{Promise.resolve(d.noteAgent(null)).catch(()=>{})}},[d,n.agentId,n.agentName]);",
+  "if(d==null||a?.enabled!==!0)return null;",
+  "const c=`Call ${n.agentName}`;",
+  `return p.jsx("button",{"aria-label":c,className:"simeon-call-button",onClick:e=>{e.stopPropagation(),Promise.resolve(d.start(n.agentId,n.agentName)).catch(()=>{})},title:c,type:"button",children:p.jsx("svg",{"aria-hidden":!0,viewBox:"0 0 24 24",children:p.jsx("path",{fill:"currentColor",d:"${PHONE_ICON_PATH}"})})})}`,
+  // The voice picker.
+  "function __simeonVoicePicker(n){",
+  "const d=typeof window<\"u\"?window.desktop?.voiceCall:void 0,[v,sv]=S.useState(null),[c,sc]=S.useState(null),[x,sx]=S.useState(null),[g,sg]=S.useState(null),au=S.useRef(null);",
+  "S.useEffect(()=>{if(d==null||n.agentId==null)return;let l=!0;sx(null);Promise.all([d.getAvailability(),d.listVoices(),d.getAgentVoice(n.agentId)]).then(([a,o,k])=>{if(!l)return;if(a?.enabled!==!0){sv([]);return}sv(Array.isArray(o)?o:[]),sc(k)},()=>{l&&sx(\"Voices aren’t available right now.\")});return()=>{l=!1;au.current?.pause();au.current=null;sg(null)}},[d,n.agentId]);",
+  "if(d==null||(v==null||v.length===0)&&x==null)return null;",
+  "const pick=o=>{const b=c;sc({voiceId:o.id,isDefault:!1}),sx(null),Promise.resolve(d.setAgentVoice(n.agentId,o.id)).then(k=>sc(k),()=>{sc(b),sx(\"Couldn’t save the voice.\")})};",
+  "const play=o=>{if(g===o.id){au.current?.pause();au.current=null;sg(null);return}au.current?.pause();sg(o.id);Promise.resolve(d.previewUrl(o.id)).then(u=>{if(u==null){sg(null);return}const m=new Audio(u);au.current=m;m.onended=()=>{au.current===m&&sg(null)};return m.play()}).catch(()=>sg(null))};",
+  // A dropdown (the founder: "have voice be a drop down"), with a play button for the chosen voice beside it.
+  // Names only (1 October 2026: "the voice description / name makes no sense. should be just names").
+  "const cur=c?.voiceId??v?.[0]?.id??\"\",sel=v?.find(o=>o.id===cur)??null,pl=sel!=null&&g===sel.id;",
+  `return p.jsxs("div",{"aria-label":"Voice",className:"simeon-voice-picker",children:[p.jsx("label",{className:"simeon-voice-picker__title",htmlFor:\`simeon-voice-\${n.agentId}\`,children:"Voice"}),x==null?null:p.jsx("div",{className:"simeon-voice-picker__note",role:"status",children:x}),v==null||v.length===0?null:p.jsxs("div",{className:"simeon-voice-picker__row",children:[p.jsx("select",{className:"simeon-voice-picker__select",id:\`simeon-voice-\${n.agentId}\`,value:cur,onChange:e=>{const o=v.find(q=>q.id===e.target.value);o!=null&&pick(o)},children:v.map(o=>p.jsx("option",{value:o.id,children:o.name},o.id))}),p.jsx("button",{"aria-label":sel==null?"Play":pl?\`Stop \${sel.name}\`:\`Play \${sel.name}\`,className:"simeon-voice-picker__play",disabled:sel==null||sel.hasPreview!==!0,onClick:()=>sel!=null&&play(sel),type:"button",children:p.jsx("svg",{"aria-hidden":!0,viewBox:"0 0 24 24",children:p.jsx("path",{fill:"currentColor",d:pl?"M7 5h4v14H7zM13 5h4v14h-4z":"M8 5.2v13.6L19 12z"})})})]})]})}`,
+  // The call in the chat (1 October 2026, the founder: "the user should click on the summary to see the summary"):
+  // a message that is a call record ("Voice call · 0:43", then the recap; `callRecordText` in
+  // source/shared/voice-call/voice-call-prompt.ts) is drawn as one quiet row that opens to the recap.
+  "function __simeonCallRecordParse(n){if(typeof n!==\"string\")return null;const m=/^Voice call · (\\d{1,2}:\\d{2}(?::\\d{2})?)(?:\\n\\n([\\s\\S]+))?$/.exec(n.trim());return m==null?null:{duration:m[1],recap:m[2]==null?null:m[2].trim()}}",
+  "function __simeonCallRecord(n){",
+  "const c=__simeonCallRecordParse(n.content),[o,so]=S.useState(!1);if(c==null)return null;const has=c.recap!=null&&c.recap.length>0;",
+  `return p.jsxs("div",{className:"simeon-call-record","data-open":o&&has?"true":"false",children:[p.jsxs("button",{type:"button",className:"simeon-call-record__head","aria-expanded":has?o:void 0,disabled:!has,onClick:()=>so(v=>!v),children:[p.jsx("span",{className:"simeon-call-record__glyph","aria-hidden":!0,children:p.jsx("svg",{viewBox:"0 0 24 24",children:p.jsx("path",{fill:"currentColor",d:"${PHONE_ICON_PATH}"})})}),p.jsxs("span",{className:"simeon-call-record__what",children:[p.jsx("b",{children:"Voice call"}),p.jsx("span",{children:c.duration})]}),has?p.jsx("svg",{className:"simeon-call-record__chevron",viewBox:"0 0 24 24","aria-hidden":!0,children:p.jsx("path",{fill:"none",stroke:"currentColor",strokeWidth:2.4,strokeLinecap:"round",strokeLinejoin:"round",d:"M9 6l6 6-6 6"})}):null]}),has?p.jsx("div",{className:"simeon-call-record__recap",children:p.jsx("div",{children:p.jsx("p",{children:c.recap})})}):null]})}`,
+  // The call in the chat (2 October 2026, the founder: "the after chat is just a chat opened in a
+  // panel like the convo between agents, this time its just between us. we dont need to redesign
+  // anything"). The agent's host writes what was said as an exchange with one peer,
+  // `voice-call:<call>:<seconds>` (host/extensions/transcript/voice-call-channel.ts); the window's
+  // own "Messaged Dawn" line is drawn for it as "Voice chat · 02:30", and opens the window's own
+  // read-only exchange panel.
+  "function __simeonVoiceCall(n){const ps=n==null?null:n.kind===\"single\"?[n.peer]:n.peers;if(!Array.isArray(ps)||ps.length!==1||ps[0]==null)return null;const m=/^voice-call:[A-Za-z0-9_-]+:(\\d+)$/.exec(String(ps[0].id));if(m==null)return null;const t=Number(m[1]),h=Math.floor(t/3600),mm=String(Math.floor(t%3600/60)).padStart(2,\"0\"),ss=String(t%60).padStart(2,\"0\");return{peerId:ps[0].id,name:ps[0].name,duration:h>0?`${h}:${mm}:${ss}`:`${mm}:${ss}`}}",
+  // Inside the call's panel the person is the person (2 October 2026, the founder: "why not just use the
+  // real blue on me talking??? on the right side, like a real normal convo"): their lines lose the peer
+  // they were written with and draw as their own messages, and the header is the agent's own, not
+  // "Agent ⇄ <name>".
+  "function __simeonIsVoicePeer(n){const id=typeof n===\"string\"?n:n?.id;return typeof id===\"string\"&&id.startsWith(\"voice-call:\")}",
+  "function __simeonVoiceTunnelEntries(n){return Array.isArray(n)?n.map(e=>e?.fromAgent!=null&&__simeonIsVoicePeer(e.fromAgent)?(({fromAgent:_f,...r})=>r)(e):e):n}",
+  "function __simeonVoiceEvent(n){",
+  "const c=n.call,{openAgentExchange:r}=r1(),l=`Voice chat · ${c.duration}`;",
+  `return p.jsx(fre,{className:"sand-system-event",children:p.jsx(X4e,{"aria-label":\`Open \${l}\`,leading:p.jsx("svg",{"aria-hidden":!0,className:"simeon-voice-event__glyph",viewBox:"0 0 24 24",children:p.jsx("path",{fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",d:"M5 10v4M9 7v10M13 9v6M17 6v12M21 10v4"})}),leadingGap:4,onClick:m=>{m.stopPropagation(),r(c.peerId,c.name)},title:l,children:l})})}`,
+  // The name sheet (1 October 2026): once, after onboarding, "What should your agents call you?",
+  // offered Google's first name, never one made from the e-mail. Saved through the account's own
+  // rename (`cursorAccount.updateName`, now `POST /desktop/api/user/name`). "Not now" asks again next launch.
+  "function __simeonNameSheet(){",
+  "const d=typeof window<\"u\"?window.desktop:void 0,a=d?.cursorAccount,[st,ss]=S.useState(\"idle\"),[v,sv]=S.useState(\"\"),[er,se]=S.useState(null),ip=S.useRef(null);",
+  "S.useEffect(()=>{if(a?.getNamePrompt==null||a?.updateName==null)return;let l=!0,t=null;const look=()=>{Promise.all([a.getNamePrompt(),d.onboarding?.getSeen?.()]).then(([q,seen])=>{if(!l)return;if(q?.needed===!0&&seen===!0){sv(typeof q.suggested===\"string\"?q.suggested:\"\");ss(\"ask\");return}if(q?.needed===!0)t=setTimeout(look,4e3)},()=>{l&&(t=setTimeout(look,15e3))})};look();return()=>{l=!1;t!=null&&clearTimeout(t)}},[]);",
+  "S.useEffect(()=>{st===\"ask\"&&setTimeout(()=>{ip.current?.focus();ip.current?.select()},60)},[st]);",
+  "if(st!==\"ask\"&&st!==\"saving\")return null;",
+  "const name=v.replace(/\\s+/g,\" \").trim(),ok=name.length>0&&name.length<=60&&st!==\"saving\";",
+  "const save=()=>{if(!ok)return;ss(\"saving\");se(null);Promise.resolve(a.updateName(name)).then(()=>ss(\"done\"),()=>{ss(\"ask\");se(\"Couldn’t save your name. Try again.\")})};",
+  `return p.jsx("div",{className:"simeon-name-sheet",role:"presentation",children:p.jsxs("form",{className:"simeon-name-sheet__card",role:"dialog","aria-modal":!0,"aria-labelledby":"simeon-name-sheet-title",onSubmit:e=>{e.preventDefault();save()},children:[p.jsx("h2",{id:"simeon-name-sheet-title",className:"simeon-name-sheet__title",children:"What should your agents call you?"}),p.jsx("p",{className:"simeon-name-sheet__note",children:"They’ll use it in chat and on calls. You can change it later."}),p.jsx("input",{ref:ip,id:"simeon-name-sheet-input",className:"simeon-name-sheet__input",type:"text",autoComplete:"given-name",maxLength:60,placeholder:"Your name",value:v,onChange:e=>sv(e.target.value),"aria-label":"Your name"}),er==null?null:p.jsx("p",{className:"simeon-name-sheet__error",role:"alert",children:er}),p.jsxs("div",{className:"simeon-name-sheet__actions",children:[p.jsx("button",{type:"button",className:"simeon-name-sheet__later",onClick:()=>ss("later"),children:"Not now"}),p.jsx("button",{type:"submit",className:"simeon-name-sheet__save",disabled:!ok,children:st==="saving"?"Saving…":"Continue"})]})]})})}`,
+].join("");
+const VOICE_COMPONENTS_ANCHOR = "function e3n(n){";
+const VOICE_PICKER_BEFORE = 'let A;return e[21]!==E||e[22]!==v?(A=p.jsxs("div",{className:f,children:[v,E]}),e[21]=E,e[22]=v,e[23]=A):A=e[23],A}';
+const VOICE_PICKER_AFTER = 'return p.jsxs("div",{className:f,children:[v,E,p.jsx(__simeonVoicePicker,{agentId:t.id},"simeon-voice")]})}';
+const CALL_BUTTON_BEFORE = 'let B;e[97]!==N||e[98]!==E||e[99]!==A||e[100]!==I?(B=p.jsxs("div",{className:N,style:E,children:[A,I]}),e[97]=N,e[98]=E,e[99]=A,e[100]=I,e[101]=B):B=e[101];';
+const CALL_BUTTON_AFTER = 'const B=p.jsxs("div",{className:N,style:E,children:[A,p.jsx(__simeonCallButton,{agentId:t.id,agentName:t.name},"simeon-call"),I]});';
+const CALL_RECORD_BEFORE = 'p.jsx(JPn,{cachedLinkUrls:nMn,content:r,isStreaming:h,matcher:b,promoteStandaloneLinks:!1})';
+const CALL_RECORD_AFTER = `(!h&&__simeonCallRecordParse(r)!=null?p.jsx(__simeonCallRecord,{content:r}):${CALL_RECORD_BEFORE})`;
+const VOICE_EVENT_BEFORE = "function vpt(n){const e=he.c(9),{summary:t}=n;";
+const VOICE_EVENT_AFTER = "function vpt(n){const __sv=__simeonVoiceCall(n.summary);if(__sv!=null)return p.jsx(__simeonVoiceEvent,{call:__sv});const e=he.c(9),{summary:t}=n;";
+const VOICE_EVENT_TEXT_BEFORE = "function JIn(n){switch(n.kind){";
+const VOICE_EVENT_TEXT_AFTER = "function JIn(n){const __sv=__simeonVoiceCall(n);if(__sv!=null)return`Voice chat · ${__sv.duration}`;switch(n.kind){";
+const VOICE_TUNNEL_ENTRIES_BEFORE = "p.jsx(JMn,{dockInsetPx:n.dockInsetPx,entries:e.tunnelEntries,";
+const VOICE_TUNNEL_ENTRIES_AFTER = "p.jsx(JMn,{dockInsetPx:n.dockInsetPx,entries:__simeonVoiceTunnelEntries(e.tunnelEntries),";
+const VOICE_TUNNEL_HEADER_BEFORE = "exchange:l?null:e.tunnelExchange";
+const VOICE_TUNNEL_HEADER_AFTER = "exchange:l||__simeonIsVoicePeer(e.tunnelPeer)?null:e.tunnelExchange";
+const NAME_SHEET_BEFORE = 'p.jsx(BGn,{}),p.jsx(Yzn,{children:p.jsx($zn,{})})]';
+const NAME_SHEET_AFTER = 'p.jsx(BGn,{}),p.jsx(Yzn,{children:p.jsx($zn,{})}),p.jsx(__simeonNameSheet,{},"simeon-name-sheet")]';
+export const VOICE_CALL_REPLACEMENTS = Object.freeze([
+  ["voice-call-components", VOICE_COMPONENTS_ANCHOR, `${VOICE_CALL_COMPONENTS_SOURCE}${VOICE_COMPONENTS_ANCHOR}`],
+  ["call-record-card", CALL_RECORD_BEFORE, CALL_RECORD_AFTER],
+  ["voice-chat-event", VOICE_EVENT_BEFORE, VOICE_EVENT_AFTER],
+  ["voice-chat-event-text", VOICE_EVENT_TEXT_BEFORE, VOICE_EVENT_TEXT_AFTER],
+  ["voice-chat-person-is-person", VOICE_TUNNEL_ENTRIES_BEFORE, VOICE_TUNNEL_ENTRIES_AFTER],
+  ["voice-chat-agent-header", VOICE_TUNNEL_HEADER_BEFORE, VOICE_TUNNEL_HEADER_AFTER],
+  ["name-sheet-at-root", NAME_SHEET_BEFORE, NAME_SHEET_AFTER],
+  ["voice-picker-under-character-color", VOICE_PICKER_BEFORE, VOICE_PICKER_AFTER],
+  ["call-button-beside-agent-name", CALL_BUTTON_BEFORE, CALL_BUTTON_AFTER],
+]);
+
+export function patchOriginalVoiceCall(source) {
+  let out = source;
+  for (const [label, before, after] of VOICE_CALL_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export const VOICE_CALL_MARKER = "/* Simeon: voice calls, the phone button and the voice picker";
+/**
+ * The phone button sits in the header card's identity row, right of the name
+ * pill: the identity button is 52 pt of avatar, a 4 pt gap, then the 24 pt
+ * pill (HEADER_CARD_CSS), so the button's top is 56 pt and it is 24 pt round,
+ * in the pill's white glass with the chat's blue glyph. The row is drawn
+ * as wide as the header, so it is shrunk to its content for the button's
+ * \`left:100%\` to land beside the pill. A function, as the
+ * blue is declared further down the file.
+ */
+export const voiceCallCss = () => `${VOICE_CALL_MARKER} (30 September 2026). */
+.sand-chat-header__identity-row:has(>.simeon-call-button){position:relative;flex:0 0 auto!important;width:max-content!important;max-width:100%}
+.simeon-call-button{position:absolute;left:100%;top:56px;margin-left:0;width:24px;height:24px;padding:0;display:grid;place-items:center;border-radius:999px;cursor:pointer;color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8);background:linear-gradient(180deg,light-dark(rgba(255,255,255,.92),rgba(255,255,255,.18)),light-dark(rgba(255,255,255,.72),rgba(255,255,255,.08)));-webkit-backdrop-filter:blur(20px) saturate(1.8);backdrop-filter:blur(20px) saturate(1.8);border:.5px solid light-dark(rgba(255,255,255,.9),rgba(255,255,255,.18));box-shadow:inset 0 1px 0 light-dark(#fff,rgba(255,255,255,.22)),0 0 0 .5px light-dark(rgba(20,20,40,.1),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(20,20,40,.14),rgba(0,0,0,.5))}
+.simeon-call-button:hover{color:light-dark(#1b4a7d,#a9ccf0)}
+.simeon-call-button:focus-visible{outline:2px solid light-dark(rgba(37,90,147,.45),rgba(140,184,232,.55));outline-offset:2px}
+.simeon-call-button>svg{width:13px;height:13px}
+.simeon-voice-picker{display:flex;flex-direction:column;gap:6px;width:100%;margin-top:6px}
+.simeon-voice-picker__title{font-size:12px;line-height:16px;font-weight:600;color:var(--sand-text-secondary);padding:0 2px}
+.simeon-voice-picker__note{font-size:12px;line-height:16px;color:var(--sand-text-secondary);padding:0 2px}
+.simeon-voice-picker__row{display:grid;grid-template-columns:minmax(0,1fr) 30px;align-items:center;gap:8px}
+.simeon-voice-picker__select{appearance:none;-webkit-appearance:none;min-width:0;height:30px;padding:0 30px 0 11px;border:0;border-radius:8px;font:inherit;font-size:13px;color:var(--sand-text-primary);background-color:light-dark(#fff,rgba(255,255,255,.08));background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 16'%3E%3Cpath d='M2 6l3-3 3 3M2 10l3 3 3-3' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:8px 13px;box-shadow:0 0 0 .5px light-dark(rgba(20,30,60,.14),rgba(255,255,255,.12)),0 1px 1px light-dark(rgba(20,30,60,.05),transparent);text-overflow:ellipsis;cursor:pointer}
+.simeon-voice-picker__select:focus-visible{outline:2px solid light-dark(${USER_BUBBLE_LIGHT},#5b9be0);outline-offset:1px}
+.simeon-voice-picker__play{width:30px;height:30px;padding:0;border:0;border-radius:999px;display:grid;place-items:center;cursor:pointer;color:var(--sand-text-primary);background:light-dark(rgba(120,120,128,.12),rgba(120,120,128,.24))}
+.simeon-voice-picker__play:disabled{opacity:.4;cursor:default}
+.simeon-voice-picker__play>svg{width:12px;height:12px}
+.simeon-voice-event__glyph{width:14px;height:14px;flex:none}
+.simeon-call-record{display:grid;width:340px;max-width:100%}
+.simeon-call-record__head{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:10px;cursor:pointer;border-radius:12px;margin:-2px -6px;padding:2px 6px}
+.simeon-call-record__head:disabled{cursor:default}
+.simeon-call-record__head:focus-visible{outline:2px solid light-dark(${USER_BUBBLE_LIGHT},#5b9be0);outline-offset:1px}
+.simeon-call-record__glyph{flex:none;width:30px;height:30px;border-radius:999px;display:grid;place-items:center;color:var(--sand-text-primary);background:light-dark(rgba(0,0,0,.06),rgba(255,255,255,.10))}
+.simeon-call-record__glyph>svg{width:15px;height:15px}
+.simeon-call-record__what{display:grid;gap:1px;flex:1;min-width:0}
+.simeon-call-record__what>b{font-weight:600}
+.simeon-call-record__what>span{font-size:13px;line-height:17px;color:var(--sand-text-secondary);font-variant-numeric:tabular-nums}
+.simeon-call-record__chevron{flex:none;width:14px;height:14px;color:var(--sand-text-secondary);transition:transform .2s ease}
+.simeon-call-record[data-open="true"] .simeon-call-record__chevron{transform:rotate(90deg)}
+.simeon-call-record__recap{display:grid;grid-template-rows:0fr;transition:grid-template-rows .22s ease;width:0;min-width:100%}
+.simeon-call-record[data-open="true"] .simeon-call-record__recap{grid-template-rows:1fr}
+.simeon-call-record__recap>div{overflow:hidden}
+.simeon-call-record__recap p{margin:8px 0 0;padding:8px 0 0 40px;border-top:1px solid light-dark(rgba(0,0,0,.08),rgba(255,255,255,.10))}
+.simeon-name-sheet{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:16px;background:light-dark(rgba(0,0,0,.18),rgba(0,0,0,.45));-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.simeon-name-sheet__card{width:min(360px,100%);display:grid;gap:10px;padding:22px;border-radius:18px;background:light-dark(#fff,#2a2a2c);color:var(--sand-text-primary);box-shadow:0 24px 60px rgba(0,0,0,.22),0 0 0 1px light-dark(rgba(0,0,0,.06),rgba(255,255,255,.08))}
+.simeon-name-sheet__title{margin:0;font-size:17px;line-height:22px;font-weight:600}
+.simeon-name-sheet__note{margin:0;font-size:13px;line-height:18px;color:var(--sand-text-secondary)}
+.simeon-name-sheet__input{margin-top:4px;height:36px;padding:0 12px;border:0;border-radius:10px;font:inherit;font-size:15px;color:var(--sand-text-primary);background:light-dark(rgba(120,120,128,.12),rgba(120,120,128,.24));outline:none}
+.simeon-name-sheet__input:focus-visible{box-shadow:0 0 0 2px light-dark(${USER_BUBBLE_LIGHT},#5b9be0)}
+.simeon-name-sheet__error{margin:0;font-size:13px;color:light-dark(#c4302b,#ff6b63)}
+.simeon-name-sheet__actions{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+.simeon-name-sheet__actions>button{height:32px;padding:0 14px;border:0;border-radius:999px;font:inherit;font-size:14px;cursor:pointer}
+.simeon-name-sheet__later{background:transparent;color:var(--sand-text-secondary)}
+.simeon-name-sheet__save{background:light-dark(#1d1d1f,#f5f5f7);color:light-dark(#fff,#1d1d1f);font-weight:600}
+.simeon-name-sheet__save:disabled{opacity:.4;cursor:default}
+@media (prefers-reduced-motion:reduce){.simeon-call-record__chevron,.simeon-call-record__recap{transition:none}}
+`;
+
+export function patchOriginalVoiceCallStylesheet(css) {
+  if (css.includes(VOICE_CALL_MARKER)) throw new Error("Original renderer voice-call block is already present.");
+  return `${css}\n${voiceCallCss()}`;
 }
 
 /**
@@ -446,6 +630,12 @@ export const AGENT_BUBBLE_LIGHT = "#e9e9eb";
  * hover or focus, and a blue dot on the chosen answer ("instead of a or b or
  * c have it being round picker. blue for the dot"). The keyboard shortcut
  * letters still work; only their drawing changed.
+ *
+ * Once answered (30 September 2026: "after you choose a choice in the picker
+ * card, the thing appears there just randomly without context"), the card
+ * keeps its grey card, the question stays as its title, and the answer sits
+ * in a white field with the chosen dot and a check. The answered card is a
+ * div, which the article/form/section card rule never reached.
  */
 const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:var(--simeon-card-fill);border-color:transparent}
 .sand-widget-option__key${HI}{box-sizing:border-box;width:18px;height:18px;min-width:18px;padding:0;border-radius:999px;border:1.5px solid light-dark(rgba(20,20,20,.3),rgba(255,255,255,.4));background:transparent}
@@ -453,6 +643,9 @@ const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:var(--sime
 .sand-widget-option:is(:hover,:focus-visible) .sand-widget-option__key${HI}{border-color:light-dark(${USER_BUBBLE_LIGHT},#5b9be0)}
 .sand-widget-option--selected .sand-widget-option__key${HI}{opacity:1;border-color:light-dark(${USER_BUBBLE_LIGHT},#5b9be0);background:radial-gradient(circle,light-dark(${USER_BUBBLE_LIGHT},#5b9be0) 0 4px,transparent 4.5px)}
 .sand-widget-option--selected [title="Selected"]${HI}{display:none}
+.sand-widget--resolved .sand-widget__options${HI}:not(#\\#){background:light-dark(#fff,rgba(255,255,255,.07));box-shadow:0 0 0 .5px light-dark(rgba(20,30,60,.10),rgba(255,255,255,.10))}
+.sand-widget--resolved .sand-widget-option__label${HI}{color:inherit;opacity:1}
+.sand-widget--resolved .sand-widget-option--selected [title="Selected"]${HI}:not(#\\#){display:inline-flex;color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8)}
 `;
 
 /**
@@ -485,14 +678,19 @@ const SWITCH_AND_TILES_CSS = () => `[role=switch][aria-checked="true"]${HI}:not(
  * the selected agent is the white sheet with its lift and larger corners,
  * and the search field is white with a hairline. The initials circle stays
  * the renderer's own, as it has been since the glass came off.
+ *
+ * Since 29 September 2026 the agent's text bubbles and every card are the
+ * Messages grey again (AGENT_BUBBLE_LIGHT, #E9E9EB; the founder: "the grey
+ * it was before … not super grey, but apple grey. that counts for all cards
+ * too"). Only the colour changed: the edges, padding and type stay.
  */
-const AGENT_SHEET_CSS = () => `[data-theme*="light"] .sand-message.sand-1g0q52m:not(.sand-mvmkjj)${HI}{background:#fff;color:#1d1d1f;padding:10px 15px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
+const AGENT_SHEET_CSS = () => `[data-theme*="light"] .sand-message.sand-1g0q52m:not(.sand-mvmkjj)${HI}{background:${AGENT_BUBBLE_LIGHT};color:#1d1d1f;padding:10px 15px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
 [data-theme*="light"] .sand-message-block:has(>.sand-message.sand-1g0q52m:not(.sand-mvmkjj))${HI}{gap:6px}
 [data-theme*="light"] .sand-message.sand-mvmkjj${HI}:not(#\\#){padding:10px 15px;box-shadow:inset 0 1px 0 rgba(255,255,255,.30),inset 0 0 0 .5px rgba(255,255,255,.12),0 0 0 .5px rgba(20,45,90,.24),0 1px 2px rgba(20,45,90,.10);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
 [data-theme*="light"] .sand-agent-item[data-active="true"]${HI}:not(#\\#):not(#\\#){border-radius:14px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
 [data-theme*="light"] .sand-agent-item${HI}{border-radius:14px}
 [data-theme*="light"] .sand-agents-sidebar__search${HI}{background:#fff;border-radius:10px;box-shadow:0 0 0 .5px rgba(20,30,60,.09),0 1px 2px rgba(20,30,60,.05)}
-[data-theme*="light"] .sand-message-card${HI}{--simeon-card-fill:#fff}
+[data-theme*="light"] .sand-message-card${HI}{--simeon-card-fill:${AGENT_BUBBLE_LIGHT}}
 [data-theme*="light"] :is(.sand-settings-dialog,.sand-plugins-dialog)${HI}{background:#f5f5f7;box-shadow:0 0 0 .5px rgba(20,30,60,.10),0 30px 80px -24px rgba(20,30,60,.45)}
 [data-theme*="light"] .sand-settings-nav${HI}{background:transparent;box-shadow:inset -.5px 0 0 rgba(20,30,60,.10)}
 [data-theme*="light"] .sand-settings-nav__item:not(.sand-jbqb8w)${HI}{background:#fff;border-radius:10px;box-shadow: 0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
@@ -503,7 +701,7 @@ const AGENT_SHEET_CSS = () => `[data-theme*="light"] .sand-message.sand-1g0q52m:
 [data-theme*="light"] .sand-plugins-row${HI}{background:#fff;border-radius:14px;padding:10px 14px;box-shadow: 0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
 [data-theme*="light"] .sand-plugins__grid${HI}{gap:12px}
 [data-theme*="light"] :is(.sand-plugins-detail,.sand-plugins-dialog) .sand-connector-card${HI}{background:#fff;border-color:transparent;border-radius:14px;box-shadow: 0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
-[data-theme*="light"] .sand-message-card>:is(article,form,section)${HI},[data-theme*="light"] .sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card):not(.sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card) *)${HI}{background:#fff;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
+[data-theme*="light"] .sand-message-card :is(.sand-widget--resolved,.sand-widget--dismissed)${HI},[data-theme*="light"] .sand-message-card>:is(article,form,section)${HI},[data-theme*="light"] .sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card):not(.sand-message-card>* :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card) *)${HI}{background:${AGENT_BUBBLE_LIGHT};box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
 `;
 
 const GREY_CARD = [
@@ -516,7 +714,7 @@ export const cardBlueCss = () => `${CARD_BLUE_MARKER} (27 September 2026). */
 [data-theme*="light"]:not(#\\#):not(#\\#),[data-theme*="light"] :is(.sand-1wuigm2,.ui-1lzgia1):not(#\\#):not(#\\#){--sand-fill-bubble-agent:${AGENT_BUBBLE_LIGHT}}
 :root:not(#\\#):not(#\\#):not(#\\#),[data-theme]:not(#\\#):not(#\\#):not(#\\#),:is(.sand-1wuigm2,.ui-1lzgia1):not(#\\#):not(#\\#):not(#\\#){--simeon-card-fill:var(--sand-fill-bubble-agent)}
 .sand-message-card{--sand-fill-bubble-agent:transparent}
-.sand-message-card>:is(article,form,section)${HI},.sand-message-card :is(.sand-connector-card,.sand-widget--choices,.sand-email-composer,.sand-file-card)${HI}{${GREY_CARD}}
+.sand-message-card>:is(article,form,section)${HI},.sand-message-card :is(.sand-connector-card,.sand-widget--choices,.sand-widget--resolved,.sand-widget--dismissed,.sand-email-composer,.sand-file-card)${HI}{${GREY_CARD}}
 .sand-message-card .sand-tool-icon[style*="background-color: rgb(255, 255, 255)"]${HI}{box-shadow:inset 0 0 0 1px var(--sand-border-default)}
 ${CHOICE_RADIO_CSS()}${AGENT_SHEET_CSS()}${SWITCH_AND_TILES_CSS()}.sand-agent-item[data-active="true"]${HI}:not(#\\#){background:light-dark(#fff,rgba(255,255,255,.12));box-shadow:0 0 0 .5px light-dark(rgba(20,20,20,.08),rgba(255,255,255,.08)),0 1px 2px light-dark(rgba(20,20,20,.06),rgba(0,0,0,.3))}
 .sand-chat-header__name${HI}:not(#\\#){background:linear-gradient(180deg,light-dark(rgba(255,255,255,.92),rgba(255,255,255,.18)),light-dark(rgba(255,255,255,.72),rgba(255,255,255,.08)));-webkit-backdrop-filter:blur(20px) saturate(1.8);backdrop-filter:blur(20px) saturate(1.8);border:.5px solid light-dark(rgba(255,255,255,.9),rgba(255,255,255,.18));box-shadow:inset 0 1px 0 light-dark(#fff,rgba(255,255,255,.22)),0 0 0 .5px light-dark(rgba(20,20,40,.1),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(20,20,40,.14),rgba(0,0,0,.5))}
@@ -838,8 +1036,9 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!SHAPE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer shape anchors are not all in the mark chunk.");
   if (!COPY_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer onboarding copy anchors are not all in the mark chunk.");
   if (!LOGO_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer file-kind and Plugins-button anchors are not all in the mark chunk.");
+  if (!VOICE_CALL_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer voice-call anchors (chat header identity row, character settings) are not all in the mark chunk.");
   const logoAssets = await readLogoAssets();
-  const markPatched = patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions)));
+  const markPatched = patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions))));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -848,12 +1047,14 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  const stylesheetPatched = patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets);
+  const stylesheetPatched = patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets));
   const chunkSources = [];
   for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
   const styleAnchors = {
     header: countStyleAnchors(styleAnchorClasses(HEADER_CARD_CSS), [bubbleSheets[0].css, ...chunkSources]),
     glass: countStyleAnchors(styleAnchorClasses(LIQUID_GLASS_CSS), [bubbleSheets[0].css, ...chunkSources]),
+    // Only the window's own classes: the simeon- ones are drawn by this patch.
+    voiceCall: countStyleAnchors(styleAnchorClasses(voiceCallCss()).filter((name) => name.startsWith("sand-")), [bubbleSheets[0].css, ...chunkSources]),
   };
   for (const [block, result] of Object.entries(styleAnchors)) {
     if (result.missing.length > 0) console.warn(`renderer patch: ${result.missing.length} ${block} style anchor(s) appear nowhere in the pinned renderer: ${result.missing.join(", ")}`);
@@ -866,7 +1067,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const appIconAfter = await readFile(appIconTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
-    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos"],
+    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos", "voice-call-styles"],
     userBubble: { light: USER_BUBBLE_LIGHT, dark: USER_BUBBLE_DARK, stylesheet: path.relative(stageRoot, bubbleSheets[0].target) },
     // The stylesheet's hashes, so `npm run verify` can check the packaged
     // file against what this patch wrote (25 September 2026: verify read
@@ -879,7 +1080,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   };
   // The name, over every chunk and the page, after the Settings patch landed.
   const brandFiles = [];
-  const brandTotals = Object.fromEntries([...BRAND_REPLACEMENTS.map(([before]) => before), ...BRAND_WORD_REPLACEMENTS.map(([, , label]) => label)].map((key) => [key, 0]));
+  const brandTotals = Object.fromEntries([...BRAND_REPLACEMENTS.map(([before]) => before), ...BRAND_WORD_REPLACEMENTS.map(([, , label]) => label), ...BRAND_PHRASE_REPLACEMENTS.map(([before]) => before)].map((key) => [key, 0]));
   const brandTargets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".js") || name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   brandTargets.push(path.join(stageRoot, "dist", "renderer", "index.html"));
   const brandSources = [];
@@ -917,11 +1118,11 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     chunks: changes,
     marks,
     files,
-    brand: { replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after }))], totals: brandTotals, files: brandFiles, residue: brandResidue },
+    brand: { replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after })), ...BRAND_PHRASE_REPLACEMENTS.map(([before, after]) => ({ before, after }))], totals: brandTotals, files: brandFiles, residue: brandResidue },
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

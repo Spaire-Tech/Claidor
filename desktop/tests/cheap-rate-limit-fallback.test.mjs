@@ -113,10 +113,10 @@ test("a non-rate-limit failure does not fall through to Luna", async () => {
   }
 });
 
-test("Claidor's Terra executor falls through to Luna on TPM", async () => {
+test("Simeon's Terra executor falls through to Luna on TPM", async () => {
   const providers = await readFile(path.join(repoRoot, "source/host/extensions/inference/provider-session.ts"), "utf8");
   assert.match(providers, /withCheapRateLimitFallback/);
-  assert.match(providers, /configuredClaidorCheapModel\(\)/);
+  assert.match(providers, /configuredSimeonCheapModel\(\)/);
   assert.match(providers, /if \(requested === cheap\) return startOrLegacy\(requested\)/);
   assert.match(providers, /withCheapRateLimitFallback\(startOrLegacy\(requested\), \(\) => startOrLegacy\(cheap\), \(error\) => modelCallLog/);
 });

@@ -1,5 +1,5 @@
 [project]
-name = "polar"
+name = "simeon"
 version = "0.0.0"
 readme = "README.md"
 requires-python = ">=3.14.0"
@@ -59,17 +59,10 @@ dependencies = [
   "clickhouse-connect>=0.8.0",
   "tzdata>=2025.3",
   "pypdf>=6.14.2",
-  # Runtime, not tooling: polar.tieout reads a banker's deck and model
-  # directly. Both are imported at module level, so a dev-only listing
-  # would break the first endpoint that reaches for a tie-out.
   "python-pptx>=1.0.2",
   "openpyxl>=3.1.5",
   "xlrd>=2.0.2",
   "olefile>=0.47",
-  # Already present, as python-pptx depends on it. Declared because
-  # polar.tieout.metadata imports it directly to read an OOXML package
-  # part by part, and a direct import on a transitive dependency breaks
-  # the day the dependency that carried it changes its mind.
   "lxml>=5.0",
   "pdfplumber>=0.11",
   "formualizer>=0.8.4",
@@ -108,28 +101,25 @@ dev = [
 
 [tool.taskipy.tasks]
 emails = { cmd = "cd emails && pnpm i --frozen-lockfile && pnpm run build", help = "build emails" }
-backoffice = { cmd = "pnpm -C polar/backoffice install && pnpm -C polar/backoffice build", help = "build backoffice CSS and JS" }
-api = { cmd = "env AUTHLIB_INSECURE_TRANSPORT=true uvicorn polar.app:app --reload --workers 1 --host 127.0.0.1 --port 8000", help = "run api service" }
-worker = { cmd = "dramatiq -p 1 -t 1 --watch polar -f polar.worker.scheduler:start polar.worker.run", help = "run worker" }
-test = { cmd = "CLAIDOR_ENV=testing python -m pytest --cov polar/ --cov-report=term-missing", help = "run all tests" }
-test_fast = { cmd = "CLAIDOR_ENV=testing python -m pytest -n auto -p no:sugar --no-cov", help = "run all tests, but fast" }
+backoffice = { cmd = "pnpm -C simeon/backoffice install && pnpm -C simeon/backoffice build", help = "build backoffice CSS and JS" }
+api = { cmd = "env AUTHLIB_INSECURE_TRANSPORT=true uvicorn simeon.app:app --reload --workers 1 --host 127.0.0.1 --port 8000", help = "run api service" }
+worker = { cmd = "dramatiq -p 1 -t 1 --watch simeon -f simeon.worker.scheduler:start simeon.worker.run", help = "run worker" }
+test = { cmd = "SIMEON_ENV=testing python -m pytest --cov simeon/ --cov-report=term-missing", help = "run all tests" }
+test_fast = { cmd = "SIMEON_ENV=testing python -m pytest -n auto -p no:sugar --no-cov", help = "run all tests, but fast" }
 loadtest = { cmd = "locust -f load_tests/locustfile.py --host=http://127.0.0.1:8000", help = "run load tests (interactive)" }
 lint = { cmd = "ruff format . && ruff check --fix .", help = "run linters with autofix" }
 lint_check = { cmd = "ruff format --check . && ruff check .", help = "run ruff linter" }
-lint_types = { cmd = "mypy polar scripts tests", help = "run mypy type verify" }
+lint_types = { cmd = "mypy simeon scripts tests", help = "run mypy type verify" }
 db_migrate = { cmd = "python -m scripts.db upgrade", help = "run alembic upgrade" }
 db_recreate = { cmd = "python -m scripts.db recreate", help = "drop and recreate database" }
 db_reparent = { cmd = "python -m scripts.db reparent", help = "try to auto-fix conflicting migrations" }
 tb_deploy = { cmd = "python -m scripts.tinybird", help = "deploy tinybird datasources" }
 clean = { cmd = "find * -name '*.pyc' -delete && find * -name '__pycache__' -delete", help = "clean up .pyc and __pycache__" }
-verify_github_app = { cmd = "python -m polar.verify_github_app", help = "verify that the github app is correctly configured" }
-generate_dev_jwks = { cmd = "python -m polar.kit.jwk claidor_dev > ./.jwks.json", help = "generate a development JWKS file" }
+verify_github_app = { cmd = "python -m simeon.verify_github_app", help = "verify that the github app is correctly configured" }
+generate_dev_jwks = { cmd = "python -m simeon.kit.jwk simeon_dev > ./.jwks.json", help = "generate a development JWKS file" }
 seeds_load = { cmd = "python -m scripts.seeds_load", help = "load sample/test data into the database" }
-librarian_eval = { cmd = "python -m scripts.librarian_eval", help = "graded legal-accuracy eval (separate from pytest)" }
-registry_fetch = { cmd = "python -m scripts.registry_fetch", help = "fetch opinion text for a registry doctrine (resumable)" }
-registry_screen = { cmd = "python -m scripts.registry_screen", help = "screen a registry doctrine's candidates (resumable)" }
 loadtest_setup = { cmd = "python -m scripts.loadtest_setup", help = "setup load test data for event ingestion" }
-platform_verify = { cmd = "python -m scripts.platform verify", help = "verify CLAIDOR_PLATFORM_ORG_ID points to a real organization" }
+platform_verify = { cmd = "python -m scripts.platform verify", help = "verify SIMEON_PLATFORM_ORG_ID points to a real organization" }
 seed_platform_products = { cmd = "python -m scripts.seed_platform_products", help = "idempotently seed Starter/Studio/Scale products and overage meters in the platform organization" }
 extend_platform_trial = { cmd = "python -m scripts.extend_platform_trial", help = "extend a creator org's Starter/Studio/Scale trial (operator override)" }
 pre_deploy = { cmd = "task db_migrate && task seed_platform_products", help = "Pre-deploy command run by Render. Migrates DB then re-seeds platform tier products so the startup check passes against any new code." }
@@ -155,9 +145,9 @@ exclude_lines = [
 [tool.ruff]
 target-version = "py312"
 # Anthropic's skills, vendored byte for byte for the desktop skill store
-# (`polar/desktop/skills/NOTICE`). Their scripts are shipped to the app,
+# (`simeon/desktop/skills/NOTICE`). Their scripts are shipped to the app,
 # never imported here, and are not ours to restyle.
-extend-exclude = ["polar/desktop/skills"]
+extend-exclude = ["simeon/desktop/skills"]
 
 [tool.ruff.lint]
 extend-select = ["I", "UP", "T20", "B039", "PT", "RUF022", "RUF023", "RUF10", "RUF20"]
@@ -190,7 +180,7 @@ strict_equality = true
 disallow_untyped_defs = true
 skip_cache_mtime_checks = true
 # Same reason as ruff's extend-exclude above: vendored, not imported.
-exclude = ["^polar/desktop/skills/"]
+exclude = ["^simeon/desktop/skills/"]
 
 [tool.pydantic-mypy]
 init_forbid_extra = true

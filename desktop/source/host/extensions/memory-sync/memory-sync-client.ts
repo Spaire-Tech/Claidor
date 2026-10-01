@@ -1,9 +1,9 @@
 /**
  * Memory backed up to Simeon Labs' server (25 September 2026,
- * `docs/product/memory-sync-served.md`).
+ * `docs/services-core.md`).
  *
  * The server has served `POST /desktop/api/memory/sync` and
- * `GET /desktop/api/memory` since 11 September (`server/polar/desktop/`),
+ * `GET /desktop/api/memory` since 11 September (`server/simeon/desktop/`),
  * with a per-file version and a merge that is the server's alone; the maty
  * runner already lays a job's memory out from them (`runner/src/memory.ts`).
  * Nothing on the app side ever called them. This is that client: it reads
@@ -53,6 +53,22 @@ const SYNCED_NAMES: readonly RegExp[] = [
 export function isSyncedMemoryName(name: string): boolean {
   if (name.length === 0 || name.length > 200 || name.includes("\n") || name.includes("\0")) return false;
   return SYNCED_NAMES.some((pattern) => pattern.test(name));
+}
+
+const AGENT_MEMORY_NAME = new RegExp(`^agents/(${FOLDER})/memory/`);
+
+/**
+ * Whether a pulled name belongs to an agent this box does not have. The
+ * server keeps the memory of every agent the account ever synced, from any
+ * box; writing one of those files here would create `agents/<id>/`, and
+ * the roster would list that folder as a blank "New Agent" (29 September
+ * 2026: four appeared at once on a new cloud computer). Such a file is left
+ * on the server and not written here.
+ */
+export function isForMissingAgent(sandRoot: string, name: string): boolean {
+  const match = AGENT_MEMORY_NAME.exec(name);
+  if (match == null) return false;
+  return !existsSync(join(sandRoot, "agents", match[1]!));
 }
 
 /** The subtrees of the sand root that hold memory, and are watched. */
@@ -209,10 +225,12 @@ export class MemorySyncClient {
 
     const next: Record<string, MemorySyncFileState> = {};
     let pulled = 0;
+    let forMissingAgents = 0;
     const versions: string[] = [];
     const movedUnderneath: string[] = [];
     for (const row of answered) {
       if (typeof row.name !== "string" || typeof row.content !== "string" || typeof row.version !== "number" || !isSyncedMemoryName(row.name)) continue;
+      if (isForMissingAgent(sandRoot, row.name)) { forMissingAgents += 1; continue; }
       const path = localPath(sandRoot, row.name);
       if (local.get(row.name) !== row.content) {
         // The file may have been written again while the request was out
@@ -234,7 +252,7 @@ export class MemorySyncClient {
     }
     writeMemorySyncState(sandRoot, { version: 1, files: next });
     if (movedUnderneath.length > 0) { this.again = true; this.log(`${HOST_LOG_PREFIX} memory-sync ${movedUnderneath.length} file(s) changed during the round, kept and re-sent: ${clipForHostLog(movedUnderneath.join(", "))}`); }
-    this.log(`${HOST_LOG_PREFIX} memory-sync pushed=${files.length} pulled=${pulled} deleted=${removed}${deleted.length > 0 ? ` told-deleted=${deleted.length}` : ""} held=${answered.length}${versions.length > 0 ? ` versions=${clipForHostLog(versions.join(" "), 300)}` : ""}`);
+    this.log(`${HOST_LOG_PREFIX} memory-sync pushed=${files.length} pulled=${pulled} deleted=${removed}${deleted.length > 0 ? ` told-deleted=${deleted.length}` : ""}${forMissingAgents > 0 ? ` skipped-other-agents=${forMissingAgents}` : ""} held=${answered.length}${versions.length > 0 ? ` versions=${clipForHostLog(versions.join(" "), 300)}` : ""}`);
     return { kind: "synced", pushed: files.length, pulled, deleted: removed };
   }
 }

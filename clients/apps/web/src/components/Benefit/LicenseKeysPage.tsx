@@ -15,16 +15,16 @@ import {
   parseSearchParams,
   serializeSearchParams,
 } from '@/utils/datatable'
-import { schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
-import Button from '@claidor/ui/components/atoms/Button'
-import CopyToClipboardInput from '@claidor/ui/components/atoms/CopyToClipboardInput'
+import { schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
+import Button from '@simeon/ui/components/atoms/Button'
+import CopyToClipboardInput from '@simeon/ui/components/atoms/CopyToClipboardInput'
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@claidor/ui/components/atoms/Tabs'
+} from '@simeon/ui/components/atoms/Tabs'
 import { RowSelectionState } from '@tanstack/react-table'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useState } from 'react'

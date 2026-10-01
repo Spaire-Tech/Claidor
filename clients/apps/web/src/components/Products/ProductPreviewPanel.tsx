@@ -1,22 +1,18 @@
 'use client'
 
 import { api } from '@/utils/client'
-import { enums } from '@claidor/client'
-import CountryPicker from '@claidor/ui/components/atoms/CountryPicker'
-import Input from '@claidor/ui/components/atoms/Input'
+import { enums } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
+import CountryPicker from '@simeon/ui/components/atoms/CountryPicker'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-} from '@claidor/ui/components/atoms/Tabs'
-import { formatCurrency } from '@claidor/currency'
+} from '@simeon/ui/components/atoms/Select'
+import { Tabs, TabsList, TabsTrigger } from '@simeon/ui/components/atoms/Tabs'
 import { useCallback, useEffect, useState } from 'react'
 
 interface TaxPreviewResult {
@@ -137,15 +133,22 @@ export const ProductPreviewPanel = ({
 
   // When allPrices changes (new currencies added), keep selectedCurrency valid
   useEffect(() => {
-    if (allPrices.length > 0 && !allPrices.some((p) => p.currency === selectedCurrency)) {
+    if (
+      allPrices.length > 0 &&
+      !allPrices.some((p) => p.currency === selectedCurrency)
+    ) {
       setSelectedCurrency(allPrices[0].currency)
     }
   }, [allPrices, selectedCurrency])
 
   // Resolve the active price amount for the selected currency
-  const activePriceEntry = allPrices.find((p) => p.currency === selectedCurrency)
+  const activePriceEntry = allPrices.find(
+    (p) => p.currency === selectedCurrency,
+  )
   const activeCurrency = activePriceEntry?.currency ?? currency
-  const activeAmount = activePriceEntry?.amount ?? (activeCurrency === currency ? priceAmount : null)
+  const activeAmount =
+    activePriceEntry?.amount ??
+    (activeCurrency === currency ? priceAmount : null)
   const effectiveAmount = activeAmount ?? 0
 
   const handleCountryChange = (value: string) => {
@@ -194,9 +197,7 @@ export const ProductPreviewPanel = ({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900">
-          Preview
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900">Preview</h2>
         <p className="mt-1 text-sm text-gray-500">
           Estimate totals based on pricing model, unit quantity, and tax.
         </p>
@@ -232,9 +233,7 @@ export const ProductPreviewPanel = ({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700">
-            Location
-          </label>
+          <label className="text-sm font-medium text-gray-700">Location</label>
           <CountryPicker
             allowedCountries={enums.addressInputCountryValues}
             value={country || undefined}
@@ -244,9 +243,7 @@ export const ProductPreviewPanel = ({
 
         {country === 'US' && (
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700">
-              State
-            </label>
+            <label className="text-sm font-medium text-gray-700">State</label>
             <Select value={state} onValueChange={setState}>
               <SelectTrigger>
                 <SelectValue placeholder="Select state" />
@@ -305,13 +302,14 @@ export const ProductPreviewPanel = ({
 
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">
-                    Subtotal
-                  </span>
+                  <span className="text-gray-600">Subtotal</span>
                   <span className="font-medium text-gray-900">
                     {preview
                       ? formatAmount(preview.subtotal, activeCurrency)
-                      : formatAmount(effectiveAmount * quantity, activeCurrency)}
+                      : formatAmount(
+                          effectiveAmount * quantity,
+                          activeCurrency,
+                        )}
                   </span>
                 </div>
 
@@ -347,7 +345,10 @@ export const ProductPreviewPanel = ({
                     <span className="text-base font-semibold text-gray-900">
                       {preview
                         ? formatAmount(preview.total, activeCurrency)
-                        : formatAmount(effectiveAmount * quantity, activeCurrency)}
+                        : formatAmount(
+                            effectiveAmount * quantity,
+                            activeCurrency,
+                          )}
                     </span>
                   </div>
                 </div>

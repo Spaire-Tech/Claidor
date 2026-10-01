@@ -4,18 +4,18 @@ import pytest
 from dateutil.relativedelta import relativedelta
 from httpx import AsyncClient
 
-from polar.auth.models import AuthSubject
-from polar.benefit.strategies.license_keys.schemas import (
+from simeon.auth.models import AuthSubject
+from simeon.benefit.strategies.license_keys.schemas import (
     BenefitLicenseKeyActivationCreateProperties,
     BenefitLicenseKeysCreateProperties,
 )
-from polar.kit.pagination import PaginationParams
-from polar.kit.utils import generate_uuid, utc_now
-from polar.license_key.repository import LicenseKeyRepository
-from polar.license_key.service import license_key as license_key_service
-from polar.models import Customer, Organization, Product, User, UserOrganization
-from polar.postgres import AsyncSession
-from polar.redis import Redis
+from simeon.kit.pagination import PaginationParams
+from simeon.kit.utils import generate_uuid, utc_now
+from simeon.license_key.repository import LicenseKeyRepository
+from simeon.license_key.service import license_key as license_key_service
+from simeon.models import Customer, Organization, Product, User, UserOrganization
+from simeon.postgres import AsyncSession
+from simeon.redis import Redis
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.license_key import TestLicenseKey

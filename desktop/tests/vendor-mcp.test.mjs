@@ -98,14 +98,14 @@ test("the marketplace listing is our store, including Coming soon cards", async 
     assert.equal(outGmail.vendorMcpUrl, undefined);
 
     // A server that does not serve apps (not deployed, no key): Coming soon, and the vendors are untouched.
-    const unserved = await marketplace.module.fetchVendorMarketplacePlugins(async () => "claidor_da_test", undefined, { appsAvailable: async () => false });
+    const unserved = await marketplace.module.fetchVendorMarketplacePlugins(async () => "simeon_da_test", undefined, { appsAvailable: async () => false });
     const soonGmail = unserved.plugins.find((plugin) => plugin.pluginId === "gmail");
     assert.equal(soonGmail.comingSoon, true);
     assert.equal(soonGmail.vendorMcpUrl, undefined);
     assert.match(soonGmail.description, /^Coming soon\. /);
     assert.ok(unserved.plugins.some((plugin) => plugin.pluginId === "notion" && plugin.vendorMcpUrl === "https://mcp.notion.com/mcp" && plugin.comingSoon == null));
 
-    const signedIn = await marketplace.module.fetchVendorMarketplacePlugins(async () => "claidor_da_test", undefined, { appsAvailable: async () => true });
+    const signedIn = await marketplace.module.fetchVendorMarketplacePlugins(async () => "simeon_da_test", undefined, { appsAvailable: async () => true });
     assert.equal(signedIn.includesPrivateMarketplaces, true);
     assert.ok(signedIn.plugins.some((plugin) => plugin.pluginId === "gmail" && plugin.comingSoon == null && plugin.vendorMcpUrl.endsWith("/desktop/api/apps/mcp/gmail")));
     assert.equal(signedIn.plugins.find((plugin) => plugin.pluginId === "gmail").homepage, undefined);
@@ -139,7 +139,7 @@ test("connected vendor installs become enabled user plugins; Coming soon never d
 
 test("vendor installs persist under the sand root", async () => {
   const loaded = await load("source/shared/node/vendor-mcp/installs.ts", "vendor-installs");
-  const root = await mkdtemp(path.join(os.tmpdir(), "caisra-vendor-root-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-vendor-root-"));
   try {
     const { loadVendorMcpInstalls, upsertVendorMcpInstall, removeVendorMcpInstall, vendorMcpInstallsPath } = loaded.module;
     assert.deepEqual(loadVendorMcpInstalls(root), []);
@@ -183,7 +183,7 @@ test("vendor OAuth discovers the issuer, registers Simeon, and opens the vendor 
         });
       }
       if (String(url).endsWith("/register")) {
-        return json({ client_id: "caisra-client" });
+        return json({ client_id: "simeon-client" });
       }
       return json({ error: "unexpected" }, 500);
     };
@@ -194,10 +194,10 @@ test("vendor OAuth discovers the issuer, registers Simeon, and opens the vendor 
       fetch: fetchImpl,
     });
     assert.match(started.authorizationUrl, /^https:\/\/auth\.notion\.com\/authorize\?/);
-    assert.match(started.authorizationUrl, /client_id=caisra-client/);
+    assert.match(started.authorizationUrl, /client_id=simeon-client/);
     assert.match(started.authorizationUrl, /code_challenge=/);
     assert.equal(started.pending.pluginId, "notion");
-    assert.equal(started.pending.clientId, "caisra-client");
+    assert.equal(started.pending.clientId, "simeon-client");
     assert.equal(JSON.parse(calls.find((call) => call.method === "POST").body).client_name, "Simeon");
 
     const noDcr = async (url) => {
@@ -258,17 +258,17 @@ test("getCatalog lists our store; live Connect goes to the vendor, Coming soon d
       fetchMarketplace: served(true),
     });
 
-    const views = await flow.getCatalog(async () => "claidor_da_test");
+    const views = await flow.getCatalog(async () => "simeon_da_test");
     assert.equal(views.length, 52);
     assert.ok(views.some((view) => view.id === "notion" && view.vendorMcpUrl === "https://mcp.notion.com/mcp"));
     assert.ok(views.some((view) => view.id === "gmail" && view.comingSoon == null && view.vendorMcpUrl.endsWith("/desktop/api/apps/mcp/gmail")));
     assert.equal(views.some((view) => view.comingSoon === true), false);
 
-    await flow.installEntry({ entryId: "notion" }, async () => "claidor_da_test");
+    await flow.installEntry({ entryId: "notion" }, async () => "simeon_da_test");
     assert.deepEqual(connected.map((plugin) => plugin.pluginId), ["notion"]);
     assert.deepEqual(installs, []);
 
-    await flow.installEntry({ entryId: "gmail" }, async () => "claidor_da_test");
+    await flow.installEntry({ entryId: "gmail" }, async () => "simeon_da_test");
     assert.deepEqual(connected.map((plugin) => plugin.pluginId), ["notion", "gmail"]);
 
     // A server that does not serve apps: the app card refuses Connect as Coming soon; a vendor still connects.
@@ -280,10 +280,10 @@ test("getCatalog lists our store; live Connect goes to the vendor, Coming soon d
       connectVendorMcp: async (plugin) => { connected.push(plugin); },
       fetchMarketplace: served(false),
     });
-    const soonViews = await unserved.getCatalog(async () => "claidor_da_test");
+    const soonViews = await unserved.getCatalog(async () => "simeon_da_test");
     assert.ok(soonViews.some((view) => view.id === "gmail" && view.comingSoon === true));
-    await assert.rejects(() => unserved.installEntry({ entryId: "gmail" }, async () => "claidor_da_test"), /coming soon/i);
-    await unserved.installEntry({ entryId: "linear" }, async () => "claidor_da_test");
+    await assert.rejects(() => unserved.installEntry({ entryId: "gmail" }, async () => "simeon_da_test"), /coming soon/i);
+    await unserved.installEntry({ entryId: "linear" }, async () => "simeon_da_test");
     assert.deepEqual(connected.map((plugin) => plugin.pluginId), ["notion", "gmail", "linear"]);
 
     const missing = new loaded.module.SandMcpCatalogFlow({

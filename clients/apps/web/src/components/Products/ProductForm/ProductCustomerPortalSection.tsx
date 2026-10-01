@@ -7,12 +7,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
-import { Label } from '@claidor/ui/components/ui/label'
+} from '@simeon/ui/components/ui/form'
+import { Label } from '@simeon/ui/components/ui/label'
 import {
   RadioGroup,
   RadioGroupItem,
-} from '@claidor/ui/components/ui/radio-group'
+} from '@simeon/ui/components/ui/radio-group'
 import { useFormContext } from 'react-hook-form'
 import { ProductFormType } from './ProductForm'
 
@@ -47,15 +47,15 @@ export const ProductCustomerPortalSection = ({
                       htmlFor="visibility-public"
                       className={`flex cursor-pointer flex-col gap-3 rounded-2xl border p-5 font-normal transition-colors ${
                         field.value === 'public' || !field.value
-                          ? ' bg-gray-50'
-                          : '    border-gray-100 text-gray-500 hover:border-gray-200'
+                          ? 'bg-gray-50'
+                          : 'border-gray-100 text-gray-500 hover:border-gray-200'
                       }`}
                     >
                       <div className="flex items-center gap-2.5 font-medium">
                         <RadioGroupItem value="public" id="visibility-public" />
                         Public
                       </div>
-                      <p className=" text-sm text-gray-500">
+                      <p className="text-sm text-gray-500">
                         Visible in the customer portal.
                       </p>
                     </Label>
@@ -63,8 +63,8 @@ export const ProductCustomerPortalSection = ({
                       htmlFor="visibility-private"
                       className={`flex cursor-pointer flex-col gap-3 rounded-2xl border p-5 font-normal transition-colors ${
                         field.value === 'private'
-                          ? ' bg-gray-50'
-                          : '    border-gray-100 text-gray-500 hover:border-gray-200'
+                          ? 'bg-gray-50'
+                          : 'border-gray-100 text-gray-500 hover:border-gray-200'
                       }`}
                     >
                       <div className="flex items-center gap-2.5 font-medium">
@@ -74,7 +74,7 @@ export const ProductCustomerPortalSection = ({
                         />
                         Private
                       </div>
-                      <p className=" text-sm text-gray-500">
+                      <p className="text-sm text-gray-500">
                         Only accessible via a direct checkout link.
                       </p>
                     </Label>

@@ -1,7 +1,7 @@
 import { agentSkillsFromWorkflowStore } from "./runner/workflow-agent-skills.js";
 import { isCloudAgentsServed } from "../shared/cloud-agents-availability.js";
 import { dirname } from "node:path";
-import { CLAIDOR_WORKING_CONTEXT_TOKENS } from "../shared/inference/claidor-context-window.js";
+import { SIMEON_WORKING_CONTEXT_TOKENS } from "../shared/inference/simeon-context-window.js";
 import { TranscriptMirrorOffloadPool } from "./agent-isolation/transcript-mirror-offload.js";
 import { isRoutedLocalToolAskOpen } from "./extensions/transcript/routed-agent-tools.js";
 import type {
@@ -104,7 +104,7 @@ import { getSandProfilePath, readSandProfileFile } from "./agents/agent-profile.
 import { createSandComputerUseSubagentConfig, isComputerUseSubagentType } from "./runner/tools/sand-computer-use-subagent.js";
 import { createSandBrowserUseSubagentConfig, isBrowserUseSubagentType } from "./runner/tools/sand-browser-use-subagent.js";
 import { createSandVideoSubagentConfigs, isVideoSubagentType } from "./runner/tools/sand-video-subagent.js";
-import { configuredClaidorVideoModel, isVideoSubagentServed } from "../shared/video-availability.js";
+import { configuredSimeonVideoModel, isVideoSubagentServed } from "../shared/video-availability.js";
 import { createSandExecutorSubagentConfig } from "./sand-multitask.js";
 import type { TaskSubagentModelConfig } from "../packages/agent/tools/task-cluster-internal.js";
 import {
@@ -186,13 +186,13 @@ import type {
 } from "./runner/agent-adapters.js";
 import type { CursorRule } from "../packages/proto/generated/agent/v1/cursor_rules_pb.js";
 import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
-import { configuredClaidorModel } from "./extensions/inference/provider-session.js";
+import { configuredSimeonModel } from "./extensions/inference/provider-session.js";
 
 // The model id the composition projects onto the loop (parentModelInfo,
 // the Task tool's child configs, web search). It was Cursor's
 // "gpt-5.5-high-fast" until 25 September 2026, a model the executor does
 // not serve, so every consumer read a name that does not exist (F-006).
-export const DEFAULT_SAND_MODEL = configuredClaidorModel();
+export const DEFAULT_SAND_MODEL = configuredSimeonModel();
 // The agent's own Screenshot tool: one switch, in system-prompt.ts, so the brief and the request agree (F-016).
 const AGENT_SCREENSHOT_TOOL = AGENT_SCREENSHOT_TOOL_OFFERED;
 export const SAND_SUMMARIZATION_MAX_PROMPT_CHARS = 2_800_000;
@@ -319,7 +319,7 @@ export interface HostRunnerCompositionDependencies<Runner extends ProductionSess
     transcriptsDir: string;
     getUserTimeZone(): unknown;
     resolveTeamRules(): Promise<unknown>;
-    getUserFullName(): Promise<unknown>;
+    getUserFullName(): unknown;
   }): unknown;
   createTranscriptMirror?(options: {
     transcriptsDir: string;
@@ -1216,8 +1216,10 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               extensions.api("managed-setup"),
               "resolveTeamRules"
             )?.(),
-          getUserFullName: async () =>
-            await method(auth, "getUserFullName")?.()
+          // Synchronous: the request context reads it as a value. Wrapped in
+          // `async` until 1 October 2026, it was always a Promise there and the
+          // agent never had the person's name.
+          getUserFullName: () => method(auth, "getUserFullName")?.()
         });
 
     const resolveCloudAgentTitle = async (_ctx: unknown, bcId: string) =>
@@ -1296,6 +1298,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               ...(profile.title === undefined ? {} : { title: profile.title }),
               ...(profile.avatarShape === undefined ? {} : { avatarShape: profile.avatarShape }),
               ...(profile.avatarColor === undefined ? {} : { avatarColor: profile.avatarColor }),
+              ...(profile.voiceId === undefined ? {} : { voiceId: profile.voiceId }),
             });
           },
           writeSettings: (settings: Record<string, boolean>) => {
@@ -1306,7 +1309,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             method(remoteBox, "downloadFile")?.(ctx, session.id, boxPath),
           // The agent's own avatar set/clear (UpdateState target avatar)
           // writes the file and calls this; without it the roster never
-          // redrew (docs/product/avatar-audit-2026-09-24.md).
+          // redrew (docs/services-agents.md).
           onAvatarChanged: () => {
             void method(transcript, "emitAgentUpdate")?.(session.id);
           },
@@ -1372,13 +1375,13 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       } else remoteBoxAvailable = probe !== false;
     };
     refreshRemoteBoxAvailability();
-    // Grok Bot's computerUse and browserUse children are box-scoped: no
+    // The upstream app's computerUse and browserUse children are box-scoped: no
     // tools for the user's computer, no cloud agents, no transfers, no MCP,
     // no user-info block, no time zone, and the last screenshot kept in
     // context (turn-toolset.ts, turn-agent-composition.ts:305/775,
     // system-prompt-assembly.ts:197). Until 24 September 2026 the flag was
     // hard-coded false for every identity, so a child ran with the agent's
-    // toolset around Computer (docs/product/computer-use-child-audit-2026-09-24.md).
+    // toolset around Computer.
     const isBoxScopedIdentity = (promptIdentity: PromptIdentity): boolean =>
       promptIdentity.isSubagentRunner && (promptIdentity.isComputerUseSubagent || promptIdentity.isBrowserUseSubagent);
     const AGENT_PROMPT_IDENTITY: PromptIdentity = { isSubagentRunner: false, isComputerUseSubagent: false, isBrowserUseSubagent: false };
@@ -2369,7 +2372,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           toolName: SAND_EXTERNAL_READ_TOOL_NAME,
           toolIdentifier: "EXTERNAL_READ",
           toolDescription: SAND_EXTERNAL_READ_TOOL_DESCRIPTION,
-          // Grok Bot's carriers held a Piscina producer for a pdf-worker file
+          // The upstream app's carriers held a Piscina producer for a pdf-worker file
           // that was never shipped, so PDF reads threw "Read PDF worker is
           // not bound". The extractor is in-process pdf.js now
           // (runner/pdf-text-extractor.ts).
@@ -2701,7 +2704,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       const isComputerUseTurn = identity.isSubagentRunner && isComputerUseSubagentType(identity.subagentType);
       const isBrowserUseTurn = identity.isSubagentRunner && isBrowserUseSubagentType(identity.subagentType);
       // A watchVideo / videoReview child runs on the video model (Gemini
-      // through Simeon Labs' proxy, `docs/product/video-served.md`): the
+      // through Simeon Labs' proxy, `docs/services-agents.md`): the
       // model id below is what its state carries, so context processing
       // accepts the video (`isGeminiModelId`) and the executor speaks
       // Gemini's wire (`isGeminiVideoModelId` in provider-session.ts).
@@ -2752,7 +2755,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       // A video child's state names the video model, so context processing
       // accepts the video (`isGeminiModelId`); its executor is put on the
       // same model by the `isVideoSubagent` flag on the owner input.
-      const turnModelId = isVideoTurn ? configuredClaidorVideoModel() : staticModelId;
+      const turnModelId = isVideoTurn ? configuredSimeonVideoModel() : staticModelId;
       const lazyToolHost = () => createProductionTurnToolsetHost({
         turn: baseTurn,
         factoryProvider: createTurnToolsetFactoryProvider(hostDependencies()),
@@ -2767,7 +2770,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         // local-tool permission scope (ExternalShell, ExternalRead,
         // ExternalAwait, the file transfers; `withLocalToolScope`). It is
         // the agent's id for every identity, a Task child included. That is
-        // Grok Bot's own rule: its child runner inherited
+        // The upstream app's own rule: its child runner inherited
         // `getAgentId: () => session.id`, so a child's
         // `getConversationId()` was the agent's and its asks landed on the
         // agent's Allow surface, the one chat that has one; the child's own
@@ -2885,12 +2888,12 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             // September the owner input carried none and every turn fell
             // through to the executor's default whatever SAND_AGENT_MODEL
             // said; the executor still ignores an id the proxy does not
-            // serve (`isConfiguredClaidorModelId`). A video child's model
+            // serve (`isConfiguredSimeonModelId`). A video child's model
             // is chosen by its `isVideoSubagent` flag below, not by name.
             modelId: staticModelId,
             isSubagentRunner: identity.isSubagentRunner,
             // The computer/browser subagent flags pick its tools and put its
-            // turns on the cheap model at low effort (`claidorModelForSession`).
+            // turns on the cheap model at low effort (`simeonModelForSession`).
             isComputerUseSubagent: isComputerUseTurn,
             isBrowserUseSubagent: isBrowserUseTurn,
             ...(isVideoTurn ? { isVideoSubagent: true } : {}),
@@ -2902,13 +2905,12 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             // a revival) is marked `hidden` by its caller and gets the
             // 40-call budget in createProviderPromptSession. Until 25
             // September 2026 this input dropped the flag, so every hidden
-            // turn ran with the asked-turn cap of 5,000
-            // (docs/product/design-audit-ledger.md F-001, F-015, F-117).
+            // turn ran with the asked-turn cap of 5,000.
             ...(runOptions.hidden === undefined
               ? {}
               : { hidden: runOptions.hidden === true }),
             // The first message and a routine are hidden but get the asked
-            // turn's budget, as in Grok Bot (27 September 2026).
+            // turn's budget, as in the upstream app (27 September 2026).
             ...(runOptions.fullStepBudget === true ? { fullStepBudget: true } : {}),
             // The turn's prompt messages, for turn-settle's silent-tool-call
             // check (the closing-send nudge) and post-turn labelling. A
@@ -3056,7 +3058,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             turn,
             staticConfig: {
               modelId: turnModelId,
-              agentTokenLimit: CLAIDOR_WORKING_CONTEXT_TOKENS,
+              agentTokenLimit: SIMEON_WORKING_CONTEXT_TOKENS,
               conversationId: identity.conversationId,
               isBoxScopedSubagent: isBoxScopedTurn,
               isSubagentRunner: identity.isSubagentRunner,
@@ -3135,7 +3137,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         runGeneration: () => ((identity.isSubagentRunner ? identity.runner?.() : builtRunner) as { currentRunGeneration?: number } | undefined)?.currentRunGeneration ?? 0,
         setActiveTurnRequestSource: () => {},
         // A new message from the person retires the approvals and the
-        // refusals of the previous direction, the way Grok Bot's runner does
+        // refusals of the previous direction, the way the upstream app's runner does
         // (sand-agent-runner.ts); until 25 September 2026 both were no-ops on
         // the production shell (ledger F-343, F-344).
         beginAutoReviewUserMessageEpoch: () => {

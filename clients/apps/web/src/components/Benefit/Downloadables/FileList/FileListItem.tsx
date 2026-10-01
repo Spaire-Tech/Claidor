@@ -8,7 +8,7 @@ import ImageOutlined from '@mui/icons-material/ImageOutlined'
 import InsertDriveFileOutlined from '@mui/icons-material/InsertDriveFileOutlined'
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined'
 import VideoFileOutlined from '@mui/icons-material/VideoFileOutlined'
-import Switch from '@claidor/ui/components/atoms/Switch'
+import Switch from '@simeon/ui/components/atoms/Switch'
 import {
   FocusEvent,
   FormEventHandler,
@@ -24,13 +24,13 @@ import { FileObject } from '@/components/FileUpload'
 import { ConfirmModal } from '@/components/Modal/ConfirmModal'
 import { useModal } from '@/components/Modal/useModal'
 import { toast } from '@/components/Toast/use-toast'
-import Button from '@claidor/ui/components/atoms/Button'
+import Button from '@simeon/ui/components/atoms/Button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@claidor/ui/components/ui/dropdown-menu'
+} from '@simeon/ui/components/ui/dropdown-menu'
 import { useMemo } from 'react'
 
 export const FilePreview = ({ mimeType }: { mimeType: string }) => {
@@ -54,7 +54,7 @@ export const FilePreview = ({ mimeType }: { mimeType: string }) => {
   }, [mimeType])
 
   return (
-    <div className=" flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg bg-white text-blue-500">
+    <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg bg-white text-blue-500">
       {icon}
     </div>
   )
@@ -66,7 +66,7 @@ const FileUploadProgress = ({ file }: { file: FileObject }) => {
     <>
       <div className="flex w-full items-center space-x-4">
         <div className="grow">
-          <div className=" h-2 w-full rounded-sm bg-gray-200">
+          <div className="h-2 w-full rounded-sm bg-gray-200">
             <div
               className="h-2 rounded-sm bg-blue-400"
               style={{ width: `${pct}%` }}
@@ -171,7 +171,7 @@ const FilenameEditor = ({
 
 const FileUploadDetails = ({ file }: { file: FileObject }) => {
   return (
-    <div className=" text-gray-500">
+    <div className="text-gray-500">
       <p className="text-xs">{file.size_readable}</p>
     </div>
   )
@@ -275,7 +275,7 @@ export const FileListItem = ({
     <div
       ref={sortable ? sortable.setNodeRef : undefined}
       className={twMerge(
-        ' mb-2 flex flex-row items-center justify-between gap-x-8 gap-y-2 rounded-xl bg-gray-100 p-3 text-gray-500 transition-colors',
+        'mb-2 flex flex-row items-center justify-between gap-x-8 gap-y-2 rounded-xl bg-gray-100 p-3 text-gray-500 transition-colors',
         sortable?.isDragging && 'opacity-30',
       )}
       style={
@@ -322,10 +322,7 @@ export const FileListItem = ({
                 <MoreVertOutlined fontSize="inherit" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className=" bg-gray-50 shadow-lg"
-            >
+            <DropdownMenuContent align="end" className="bg-gray-50 shadow-lg">
               {file.checksum_sha256_hex && (
                 <>
                   <DropdownMenuItem onClick={onCopySHA}>

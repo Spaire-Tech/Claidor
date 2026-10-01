@@ -4,7 +4,7 @@ import sys
 
 import typer
 
-from polar.config import settings
+from simeon.config import settings
 
 cli = typer.Typer()
 

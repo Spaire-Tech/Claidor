@@ -1,7 +1,7 @@
 /**
  * One run, one copy of a text message (26 September 2026).
  *
- * After a Notion sign-in, the resume run (Grok Bot's prompt: "Your first
+ * After a Notion sign-in, the resume run (the upstream app's prompt: "Your first
  * action is a SendMessage telling the user it's connected … If there was
  * nothing else to do, just confirm it's ready and ask what they'd like")
  * sent "Notion is connected and ready…" and, on its next step, the same text

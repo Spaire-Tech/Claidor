@@ -125,7 +125,7 @@ export function buildMcpCallToolSchemas({
   });
   const parametersSchema = useDynamicToolNamespaces
     ? modelIdentityParametersSchema.extend({
-      mcpDetails: mcpDetailsParametersSchema.optional().describe("MCP-specific call metadata. Set this only when invoking a tool from an external MCP namespace; omit it for first-party tools in the cursor namespace."),
+      mcpDetails: mcpDetailsParametersSchema.optional().describe("MCP-specific call metadata. Set this only when invoking a tool from an external MCP namespace; omit it for first-party tools in the simeon namespace."),
       arguments: argumentsParameterSchema,
     })
     : modelIdentityParametersSchema.extend({

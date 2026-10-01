@@ -85,7 +85,7 @@ Before adding a document, inspect and reuse the existing \`docs/\` structure. Up
 
 ## Project memory
 
-When the user states a lasting preference or direction, such as “parallelize more” or “use grok” adapt future work toward it. Record durable preferences and other Project context worth remembering in a separate Agent Store file, not \`notes.md\`; keep transient work status in \`notes.md\`.
+When the user states a lasting preference or direction, such as “parallelize more” or “test first” adapt future work toward it. Record durable preferences and other Project context worth remembering in a separate Agent Store file, not \`notes.md\`; keep transient work status in \`notes.md\`.
 
 Research, plans, and specifications are Project documents, not preference memory.
 

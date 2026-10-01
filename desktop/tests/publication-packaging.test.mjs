@@ -85,7 +85,7 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(mainEdge, /invoke\(deps\.settingsStore, "setInferenceProvider", provider\)/);
   assert.match(mainEdge, /return \{ provider, usage:/);
   assert.match(mainEdge, /invoke\(deps\.boxRecovery, "restartCoordinator"\)/);
-  // No computer switch since 29 September 2026: the cloud, as in Grok Bot.
+  // No computer switch since 29 September 2026: the cloud, as in the upstream app.
   assert.match(mainEdge, /Simeon runs on its cloud computer; there is nothing to switch\./);
   assert.match(localDocker, /public\.ecr\.aws\/k0i0n2g5\/cursorenvironments\/universal:sand-box-latest/);
   assert.match(localDocker, /"127\.0\.0\.1:1340:1340"/);
@@ -101,59 +101,59 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(inference, /typeof extendedUsage\.then === "function"/);
   assert.match(inference, /createProviderPromptSession\(provider, sessionOptions, onRequestId\)/);
   // The Codex, Claude Code and OpenRouter executors were the reconstruction
-  // author's router, never Grok Bot's, and unreachable; gone since 26
+  // author's router, never the upstream app's, and unreachable; gone since 26
   // September 2026 (ledger F-128, F-462). Only Simeon Labs' proxy remains.
   assert.doesNotMatch(providers, /chatgpt\.com\/backend-api|claude-agent-sdk|queryClaude|openrouter\.ai|OPENROUTER_API_KEY|streamCodexDirectResponses/);
   assert.doesNotMatch(mainEdge, /getLocalInferenceCliStatus|\.credentials\.json|ANTHROPIC_API_KEY/, "no probe of the Mac for other assistants' credentials");
   assert.match(providers, /parameters: jsonSchema\(parameters\)/);
   assert.match(providers, /You are Simeon, a warm, concise desktop assistant/);
   assert.match(providers, /recordRoutedUsage\(provider, usage\)/);
-  assert.match(providers, /return claidorExecutor\(this\.getMessages\(\), invocationId, definitions, undefined, this\.onUsage, this\.modelId, this\.reasoningEffort, this\.budget, this\.onRequestId, claidorPromptCacheKey\(conversationIdFromContext\(ctx\)\)\);/);
+  assert.match(providers, /return simeonExecutor\(this\.getMessages\(\), invocationId, definitions, undefined, this\.onUsage, this\.modelId, this\.reasoningEffort, this\.budget, this\.onRequestId, simeonPromptCacheKey\(conversationIdFromContext\(ctx\)\)\);/);
   assert.match(cursorSession, /routedProvider !== "cursor"/);
   assert.match(cursorSession, /createProviderPromptSession\(routedProvider, sessionOptions\)/);
   assert.match(cursorBackend, /routedProvider !== "cursor"/);
   assert.match(cursorBackend, /createProviderPromptSession\(routedProvider, \{ modelId: options\.requestedModel\.modelId \}\)/);
   assert.doesNotMatch(rendererPatch, /ANTHROPIC_API_KEY|OPENAI_API_KEY/);
-  assert.match(turnShell, /const inferenceProvider = "claidor"/);
+  assert.match(turnShell, /const inferenceProvider = "simeon"/);
   assert.match(turnShell, /createProviderPromptSession\(inferenceProvider, \{ \.\.\.sessionOptions, hidden, \.\.\.\(input\.fullStepBudget === true \? \{ fullStepBudget: true \} : \{\}\) \}\)/);
   assert.match(coordinator, /method !== "sendPrompt" \|\| !handledLocally\(provider\)/);
   assert.match(coordinator, /method === "respondToWidget" && handledLocally\(provider\)/);
   assert.match(coordinator, /skipTurn: true/);
   assert.match(coordinator, /appendUserMessage !== false/);
-  assert.match(coordinator, /provider !== "cursor" && !\(provider === "claidor" && routesClaidorThroughHost\(options\.env\)\)/);
+  assert.match(coordinator, /provider !== "cursor" && !\(provider === "simeon" && routesSimeonThroughHost\(options\.env\)\)/);
   assert.match(coordinator, /provider\(\): SandInferenceProvider \{ return resolveProductInferenceProvider\(options\.env \?\? process\.env\); \}/);
-  assert.match(coordinator, /STORED_PROVIDERS\.includes\(String\(row\.provider\)\)/);
+  assert.match(coordinator, /STORED_PROVIDERS\.includes\(String\(normalizeSandInferenceProvider\(row\.provider\)\)\)/);
   assert.match(coordinatorMain, /command<[^>]*>\(commands, "mintInferenceCredential", \{\}\)/);
   assert.match(providers, /\.responses\(sdkModelIdFor\(id\)\)/);
-  assert.match(providers, /DEFAULT_CLAIDOR_CHEAP_MODEL = "gpt-6-luna"/);
-  assert.match(providers, /export function claidorModelForSession/);
+  assert.match(providers, /DEFAULT_SIMEON_CHEAP_MODEL = "gpt-6-luna"/);
+  assert.match(providers, /export function simeonModelForSession/);
   assert.match(inference, /cheap: true, isSummarizationSession: true/);
   assert.match(turnShell, /cheap: true, isSummarizationSession: true/);
   assert.match(providers, /providerOptions: \{ openai: \{ strictSchemas: false, \.\.\.openaiOptions \} \}/);
-  assert.match(providers, /from "\.\.\/\.\.\/\.\.\/shared\/node\/cursor-backend\/claidor-api\.js"/);
-  assert.match(providers, /export \{ claidorProxyBaseUrl \}/);
-  assert.match(await readFile(path.join(repoRoot, "source", "shared", "node", "cursor-backend", "claidor-api.ts"), "utf8"), /CLAIDOR_PROXY_PREFIX = "desktop\/api\/proxy\/v1"/);
+  assert.match(providers, /from "\.\.\/\.\.\/\.\.\/shared\/node\/cursor-backend\/simeon-api\.js"/);
+  assert.match(providers, /export \{ simeonProxyBaseUrl \}/);
+  assert.match(await readFile(path.join(repoRoot, "source", "shared", "node", "cursor-backend", "simeon-api.ts"), "utf8"), /SIMEON_PROXY_PREFIX = "desktop\/api\/proxy\/v1"/);
   assert.match(providers, /headers\.set\("authorization", `Bearer \$\{accessToken\}`\)/);
-  assert.match(inference, /setClaidorCredentialSource\(\{ getAccessToken: \(\) => auth\.getAccessToken\(\) \}\)/);
+  assert.match(inference, /setSimeonCredentialSource\(\{ getAccessToken: \(\) => auth\.getAccessToken\(\) \}\)/);
   assert.match(coordinator, /export const BOX_OPTIONAL_WAIT_MS = 800/);
-  assert.match(sharedRouter, /export const SAND_CLAIDOR_FULL_AGENT_ENV = "SAND_CLAIDOR_FULL_AGENT"/);
+  assert.match(sharedRouter, /export const SAND_SIMEON_FULL_AGENT_ENV = "SAND_SIMEON_FULL_AGENT"/);
   assert.match(sharedRouter, /if \(raw\.length === 0\) return true/);
   assert.match(sharedRouter, /return !envFlagDisabled\(raw\)/);
-  assert.match(coordinator, /export \{ SAND_CLAIDOR_FULL_AGENT_ENV, routesClaidorThroughHost \}/);
-  assert.match(coordinator, /GROK_BOT_TOOLS/);
-  assert.match(coordinator, /isGrokBotToolName/);
+  assert.match(coordinator, /export \{ SAND_SIMEON_FULL_AGENT_ENV, routesSimeonThroughHost \}/);
+  assert.match(coordinator, /SAND_TOOLS/);
+  assert.match(coordinator, /isSandToolName/);
   assert.match(coordinator, /executeRoutedAgentTool/);
   assert.match(coordinator, /mergeHostAndLocalChatHistory/);
   assert.match(gateway, /executeRoutedAgentTool/);
   assert.match(gateway, /appendSendMessage: messageArgs => method\(manager, "appendSendMessage"\)/);
   assert.match(gateway, /authorize: \(scope, request\) => method\(localToolPermission, "authorize"\)/);
   assert.match(await readFile(path.join(repoRoot, "source", "host", "gateway-protocol.ts"), "utf8"), /executeRoutedAgentTool/);
-  assert.match(await readFile(path.join(repoRoot, "source", "shared", "grok-bot-tools.ts"), "utf8"), /"ExternalShell"/);
-  assert.match(await readFile(path.join(repoRoot, "source", "shared", "grok-bot-tools.ts"), "utf8"), /"ExternalRead"/);
+  assert.match(await readFile(path.join(repoRoot, "source", "shared", "sand-tools.ts"), "utf8"), /"ExternalShell"/);
+  assert.match(await readFile(path.join(repoRoot, "source", "shared", "sand-tools.ts"), "utf8"), /"ExternalRead"/);
   assert.match(await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "gateway", "gateway-client.ts"), "utf8"), /SAND_ENABLE_SLIM_AVATARS/);
   assert.match(await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "gateway", "gateway-client.ts"), "utf8"), /if \(this\.slimAvatarsEnabled\) headers\[GATEWAY_SLIM_AVATARS_HEADER\] = "1"/);
   assert.doesNotMatch(await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "gateway", "gateway-client.ts"), "utf8"), /SAND_DISABLE_SLIM_AVATARS/);
-  assert.match(providers, /CLAIDOR_FETCH_TIMEOUT_MS = 45_000/);
+  assert.match(providers, /SIMEON_FETCH_TIMEOUT_MS = 45_000/);
   assert.match(providers, /Timed out waiting for a Simeon sign-in/);
   assert.match(await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "gateway", "gateway-client.ts"), "utf8"), /connectDeadline\.run\(\(signal\) => this\.resolveConnection\(signal\)\)/);
   assert.match(coordinator, /executeTool: async \(definition, toolArgs, toolCallId\)/);

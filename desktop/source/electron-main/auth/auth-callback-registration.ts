@@ -25,7 +25,7 @@ function configuredToken(value: string | undefined, fallback: string, label: str
 
 /**
  * The redirect target is the app's own scheme (`simeon` since 23 September
- * 2026); Claidor's sign-in builds `<target>://app/v1/open` from whatever the
+ * 2026); Simeon's sign-in builds `<target>://app/v1/open` from whatever the
  * app sends, so app and server agree by construction. An override must stay
  * a protocol-safe token and must match the scheme the bundle claims.
  */

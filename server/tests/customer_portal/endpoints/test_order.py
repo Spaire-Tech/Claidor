@@ -6,12 +6,12 @@ import stripe as stripe_lib
 from httpx import AsyncClient
 from pytest_mock import MockerFixture
 
-from polar.integrations.stripe.service import StripeService
-from polar.kit.utils import utc_now
-from polar.models import Customer, Product
-from polar.models.order import OrderStatus
-from polar.models.payment import PaymentStatus
-from polar.postgres import AsyncSession
+from simeon.integrations.stripe.service import StripeService
+from simeon.kit.utils import utc_now
+from simeon.models import Customer, Product
+from simeon.models.order import OrderStatus
+from simeon.models.payment import PaymentStatus
+from simeon.postgres import AsyncSession
 from tests.fixtures.auth import CUSTOMER_AUTH_SUBJECT
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
@@ -24,7 +24,7 @@ from tests.fixtures.random_objects import (
 @pytest.fixture(autouse=True)
 def stripe_service_mock(mocker: MockerFixture) -> MagicMock:
     mock = MagicMock(spec=StripeService)
-    mocker.patch("polar.order.service.stripe_service", new=mock)
+    mocker.patch("simeon.order.service.stripe_service", new=mock)
     return mock
 
 

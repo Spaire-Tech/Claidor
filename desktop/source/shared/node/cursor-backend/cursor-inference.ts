@@ -160,13 +160,13 @@ export function createSandBackendTransport(options: Omit<SandInferenceOptions, "
   // @connectrpc/connect-node's transport defaults to `useBinaryFormat: true`,
   // so every request left as `application/proto` and the client refused the
   // JSON answer ("unsupported content type application/json"). Simeon Labs'
-  // server (`server/polar/sand/connect.py`) speaks protobuf JSON only, which
+  // server (`server/simeon/sand/connect.py`) speaks protobuf JSON only, which
   // `createConnectTransport` sends with the binary format off. Cursor's server
   // took both, so nothing changes for `SAND_CONNECT_SERVED=1` against it.
   return createConnectTransport({ baseUrl: backendUrl, httpVersion: "1.1", useBinaryFormat: false, interceptors: [createSandRpcTracingInterceptor(), createSandInferenceInterceptor({ ...options, backendUrl })] });
 }
 // Simeon Labs' server serves the Connect services in the served set
-// (`shared/cloud-agents-availability.ts`; `polar/sand/`) since 25 September
+// (`shared/cloud-agents-availability.ts`; `simeon/sand/`) since 25 September
 // 2026 — DashboardService among them, which is where plugin skills daily
 // and skill publish go (ledger F-156, F-157, served; team popularity F-158
 // removed). For a service not in the set, or with SAND_CONNECT_SERVED=0, a

@@ -1,12 +1,12 @@
 import pytest
 from httpx import AsyncClient
 
-from polar.auth.scope import Scope
-from polar.models import User
-from polar.models.organization import Organization
-from polar.models.user_organization import UserOrganization
-from polar.models.webhook_delivery import WebhookDelivery
-from polar.models.webhook_endpoint import WebhookEndpoint
+from simeon.auth.scope import Scope
+from simeon.models import User
+from simeon.models.organization import Organization
+from simeon.models.user_organization import UserOrganization
+from simeon.models.webhook_delivery import WebhookDelivery
+from simeon.models.webhook_endpoint import WebhookEndpoint
 from tests.fixtures.auth import AuthSubjectFixture
 
 

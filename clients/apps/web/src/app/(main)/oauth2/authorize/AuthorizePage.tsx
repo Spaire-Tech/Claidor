@@ -1,8 +1,8 @@
 import { getServerURL } from '@/utils/api'
-import { schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
-import Button from '@claidor/ui/components/atoms/Button'
-import { List, ListItem } from '@claidor/ui/components/atoms/List'
+import { schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
+import Button from '@simeon/ui/components/atoms/Button'
+import { List, ListItem } from '@simeon/ui/components/atoms/List'
 import SharedLayout from './components/SharedLayout'
 
 const isSubTypeOrganization = (
@@ -48,11 +48,11 @@ const AuthorizePage = ({
         <>
           {sub && isSubTypeOrganization(sub_type, sub) && (
             <>
-              <div className=" w-full text-center text-lg text-gray-600">
+              <div className="w-full text-center text-lg text-gray-600">
                 <span className="font-medium">{clientName}</span> requests the
-                following permissions to your Polar organization.
+                following permissions to your Simeon organization.
               </div>
-              <div className=" mt-6 mb-0 inline-flex flex-row items-center justify-start gap-2 rounded-2xl border border-gray-100 bg-gray-50 p-2 pr-4 text-sm">
+              <div className="mt-6 mb-0 inline-flex flex-row items-center justify-start gap-2 rounded-2xl border border-gray-100 bg-gray-50 p-2 pr-4 text-sm">
                 <Avatar
                   className="h-8 w-8"
                   avatar_url={sub.avatar_url}
@@ -64,11 +64,11 @@ const AuthorizePage = ({
           )}
           {sub && isSubTypeUser(sub_type, sub) && (
             <>
-              <div className=" w-full text-center text-lg text-gray-600">
+              <div className="w-full text-center text-lg text-gray-600">
                 <span className="font-medium">{clientName}</span> requests the
-                following permissions to your personal Polar account.
+                following permissions to your personal Simeon account.
               </div>
-              <div className=" mt-6 mb-0 inline-flex flex-row items-center justify-start gap-2 rounded-2xl border border-gray-100 bg-gray-50 p-2 pr-4 text-sm">
+              <div className="mt-6 mb-0 inline-flex flex-row items-center justify-start gap-2 rounded-2xl border border-gray-100 bg-gray-50 p-2 pr-4 text-sm">
                 <Avatar
                   className="h-8 w-8"
                   avatar_url={sub.avatar_url}
@@ -87,7 +87,7 @@ const AuthorizePage = ({
             {Object.entries(groupScopes(scopes)).map(([key, scopes]) => (
               <ListItem
                 key={key}
-                className=" flex flex-col items-start gap-y-1 bg-white py-3 text-sm hover:bg-white"
+                className="flex flex-col items-start gap-y-1 bg-white py-3 text-sm hover:bg-white"
                 size="small"
               >
                 <h3 className="font-medium capitalize">
@@ -95,10 +95,7 @@ const AuthorizePage = ({
                 </h3>
                 <ul>
                   {scopes.map((scope) => (
-                    <li
-                      key={scope}
-                      className=" text-sm text-gray-500"
-                    >
+                    <li key={scope} className="text-sm text-gray-500">
                       {scope_display_names[scope]}
                     </li>
                   ))}
@@ -126,19 +123,13 @@ const AuthorizePage = ({
           <div className="mt-8 text-center text-sm text-gray-500">
             Before using this app, you can review {clientName}&apos;s{' '}
             {client.tos_uri && (
-              <a
-                className=" text-gray-700"
-                href={client.tos_uri}
-              >
+              <a className="text-gray-700" href={client.tos_uri}>
                 Terms of Service
               </a>
             )}
             {client.tos_uri && client.policy_uri && ' and '}
             {client.policy_uri && (
-              <a
-                className=" text-gray-700"
-                href={client.policy_uri}
-              >
+              <a className="text-gray-700" href={client.policy_uri}>
                 Privacy Policy
               </a>
             )}

@@ -1,6 +1,5 @@
 /**
- * The computerUse child, after the audit of 24 September 2026
- * (docs/product/computer-use-child-audit-2026-09-24.md). The founder's box
+ * The computerUse child, after the audit of 24 September 2026. The founder's box
  * log: a child on Luna made seven calls, every one Shell printing a
  * sentence to itself, and ended with no text. Two things were found:
  * `isBoxScopedSubagent` was hard-coded false for every identity, and the

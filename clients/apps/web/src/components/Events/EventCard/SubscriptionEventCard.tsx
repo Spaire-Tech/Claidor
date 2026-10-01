@@ -2,8 +2,8 @@ import ProductPriceLabel from '@/components/Products/ProductPriceLabel'
 import { useSubscription } from '@/hooks/queries'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import AllInclusiveOutlined from '@mui/icons-material/AllInclusiveOutlined'
-import { schemas } from '@claidor/client'
-import { Status } from '@claidor/ui/components/atoms/Status'
+import { schemas } from '@simeon/client'
+import { Status } from '@simeon/ui/components/atoms/Status'
 import Link from 'next/link'
 import { useContext, useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -26,20 +26,11 @@ export const SubscriptionEventCard = ({
   const status = useMemo(() => {
     switch (event.name) {
       case 'subscription.cycled':
-        return [
-          'Cycled',
-          'bg-emerald-100 text-emerald-500 ',
-        ]
+        return ['Cycled', 'bg-emerald-100 text-emerald-500 ']
       case 'subscription.revoked':
-        return [
-          'Revoked',
-          'bg-red-100 text-red-500 ',
-        ]
+        return ['Revoked', 'bg-red-100 text-red-500 ']
       case 'subscription.product_updated':
-        return [
-          'Product Updated',
-          'bg-blue-100 text-blue-500 ',
-        ]
+        return ['Product Updated', 'bg-blue-100 text-blue-500 ']
       default:
         return null
     }
@@ -57,7 +48,7 @@ export const SubscriptionEventCard = ({
               <AllInclusiveOutlined fontSize="inherit" />
               <span className="">{subscription.product.name}</span>
             </div>
-            <span className=" text-gray-500">
+            <span className="text-gray-500">
               <ProductPriceLabel product={subscription.product} />
             </span>
           </div>

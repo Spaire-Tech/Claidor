@@ -2,15 +2,15 @@ import uuid
 
 import pytest
 
-from polar.benefit.grant.scope import (
+from simeon.benefit.grant.scope import (
     CustomerDoesntHaveOwnerMember,
     MemberIdRequired,
     MemberNotFound,
     resolve_member,
 )
-from polar.models import Member
-from polar.models.member import MemberRole
-from polar.postgres import AsyncSession
+from simeon.models import Member
+from simeon.models.member import MemberRole
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_customer, create_organization
 

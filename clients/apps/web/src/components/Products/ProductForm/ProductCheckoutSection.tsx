@@ -1,20 +1,20 @@
 'use client'
 
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@claidor/ui/components/atoms/Accordion'
-import TextArea from '@claidor/ui/components/atoms/TextArea'
+} from '@simeon/ui/components/atoms/Accordion'
+import TextArea from '@simeon/ui/components/atoms/TextArea'
 import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import Link from 'next/link'
 import { useFormContext } from 'react-hook-form'
 import { twMerge } from 'tailwind-merge'
@@ -38,7 +38,7 @@ export const ProductCheckoutSection = ({
           <AccordionTrigger className="cursor-pointer hover:no-underline">
             <div className="flex flex-col items-start gap-y-2 text-left">
               <h2 className="text-lg font-medium">Checkout Page</h2>
-              <p className=" text-sm leading-snug font-normal text-gray-500">
+              <p className="text-sm leading-snug font-normal text-gray-500">
                 Control how this product appears during checkout
               </p>
             </div>
@@ -52,9 +52,7 @@ export const ProductCheckoutSection = ({
                   <FormItem className="flex flex-col gap-2">
                     <div className="flex flex-row items-center justify-between">
                       <FormLabel>Description</FormLabel>
-                      <p className=" text-sm text-gray-500">
-                        Markdown format
-                      </p>
+                      <p className="text-sm text-gray-500">Markdown format</p>
                     </div>
                     <FormControl>
                       <TextArea
@@ -92,7 +90,7 @@ export const ProductCheckoutSection = ({
               <div className="flex flex-col gap-2">
                 <div className="flex flex-row items-center justify-between">
                   <FormLabel>Custom fields</FormLabel>
-                  <p className=" text-sm text-gray-500">
+                  <p className="text-sm text-gray-500">
                     <Link
                       className="text-blue-500 hover:underline"
                       href={`/dashboard/${organization.slug}/settings/custom-fields`}

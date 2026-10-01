@@ -6,9 +6,9 @@ from httpx import AsyncClient
 from pytest_mock import MockerFixture
 from sqlalchemy.orm import attributes
 
-from polar.enums import SubscriptionRecurringInterval
-from polar.models import Customer, CustomerSeat, Organization, Subscription
-from polar.postgres import AsyncSession
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.models import Customer, CustomerSeat, Organization, Subscription
+from simeon.postgres import AsyncSession
 from tests.fixtures.auth import CUSTOMER_AUTH_SUBJECT
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
@@ -21,7 +21,7 @@ from tests.fixtures.random_objects import (
 @pytest.fixture(autouse=True)
 def email_sender_mock(mocker: MockerFixture) -> MagicMock:
     mock = MagicMock()
-    mocker.patch("polar.customer_seat.service.send_seat_invitation_email", new=mock)
+    mocker.patch("simeon.customer_seat.service.send_seat_invitation_email", new=mock)
     return mock
 
 

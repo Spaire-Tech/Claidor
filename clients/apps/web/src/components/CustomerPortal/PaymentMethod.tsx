@@ -1,8 +1,8 @@
 import { toast } from '@/components/Toast/use-toast'
 import { useDeleteCustomerPaymentMethod } from '@/hooks/queries'
-import type { Client, operations, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { Status } from '@claidor/ui/components/atoms/Status'
+import type { Client, operations, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { Status } from '@simeon/ui/components/atoms/Status'
 import { X } from 'lucide-react'
 import CreditCardBrandIcon from '../CreditCardBrandIcon'
 
@@ -26,11 +26,11 @@ const PaymentMethodCard = ({
       <CreditCardBrandIcon
         width="4em"
         brand={brand}
-        className=" rounded-lg border border-gray-200 p-2"
+        className="rounded-lg border border-gray-200 p-2"
       />
       <div className="flex flex-col">
         <span className="capitalize">{`${brand} •••• ${last4}`}</span>
-        <span className=" text-sm text-gray-500">
+        <span className="text-sm text-gray-500">
           Expires {exp_month}/{exp_year}
         </span>
       </div>

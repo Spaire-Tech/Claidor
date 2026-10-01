@@ -1,7 +1,7 @@
 import pytest
 from httpx import AsyncClient
 
-from polar.models import Benefit, Customer, Member, Organization, Subscription
+from simeon.models import Benefit, Customer, Member, Organization, Subscription
 from tests.fixtures.auth import CUSTOMER_AUTH_SUBJECT
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_benefit_grant

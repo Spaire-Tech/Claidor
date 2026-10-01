@@ -158,79 +158,12 @@ server/.tinyb
 # Wrangler
 .wrangler/
 
-# Real models downloaded by scripts/audit_eval.py for calibration. Free to
-# use, not ours to redistribute.
-server/.model-cache/
-
-# EUSES, downloaded by scripts/corpus_eval.py. CC-BY-4.0, and 50MB of
-# somebody else%s files is not what a source repository is for.
-server/.corpus-cache/
-
-# Real regulator models, fetched by scripts/model_corpus.py. Public
-# documents, but megabytes of binary and re-fetchable from a URL.
-server/scripts/corpus_models/
-server/scripts/custodes_work/
-server/scripts/corpus_au_uk/
-server/scripts/corpus_documents/pdfs/
-server/scripts/corpus_documents/sft/
-server/scripts/corpus_documents/ed2/*.pdf
-server/scripts/corpus_pairs/
-
-# Regulator corpus for the measurement rounds (Ofwat PR24, Ofgem RIIO-3).
-# Public documents under OGL, but tens of megabytes and re-fetchable —
-# docs/pierce/corpus-sources.md records where each file came from.
-server/scripts/corpus_regulator/
-
 # Redis persistence snapshot, written by the dev Redis into the working
 # tree. Runtime state, recreated on every save — never source.
 server/dump.rdb
 
-# SFT closed-deal corpus (Dumfries & Galloway pair and siblings),
-# fetched from contracts.scottishfuturestrust.org.uk's S3 bucket for the
-# closed-deal test. NOT openly licensed: SFT's terms allow personal-use
-# download only — cite and link, never republish, so never commit.
-# docs/pierce/closed-deal-ground-truth.md records what each file is.
-server/scripts/corpus_sft/
-
-# PR24 draft-determination models for the revision-defect study.
-# Fetched from the UK Government Web Archive by the commands recorded
-# in docs/pierce/revision-defect-protocol.md's round; results logs kept
-# beside them. Public files, not ours to redistribute.
-server/scripts/corpus_pr24dd/
-
-# Seeded-break copies for analytical-check recall tests. Made from the
-# corpus models by scripts/seed_break.py; never evidence of anything
-# except that a check catches what it exists to catch.
-server/scripts/seeded/
-
-# Scottish deal pairs (contract + close model), fetched by
-# scripts/corpus_documents_sft.py. Public, OGL-adjacent, re-fetchable.
-server/scripts/corpus_sft/
-
-# Finch (FinWorkBench), fetched by scripts/corpus_documents_finch.py.
-# Scribe: the Finch corpus bytes are CC BY 3.0 and re-fetchable, so
-# they are ignored — but the round JSONs beside them are judgements,
-# not corpus: a truth recorded before scoring is only a discipline if
-# the record shows the order, and an ignored file has no history.
-# So the bytes are ignored and the verdicts are tracked.
-server/scripts/corpus_finch/files/
-server/scripts/corpus_finch/README.md
-server/scripts/corpus_finch/*.jsonl
-
-# Dynamo: perturbed-workbook scratch from mining and narrowing runs.
-# These are written and deleted per run; only the JSON result is a record.
-docs/pierce/logs/dynamo/*-work/
-docs/pierce/*-work/
-
-# Formula-bearing model corpora — re-fetchable, never committed.
-server/scripts/corpus_formulas/
-
-# Partial output of a sweep still running — the consolidated JSON
-# beside it is the record; a half-written scratch file is not.
-docs/pierce/*.json.partial
-
-# The OpenClaw source checkout the desktop build clones next to desktop/
-/openclaw/
-
 # Agent worktrees (Claude Code isolation), never committed
 .claude/worktrees/
+
+# Turborepo cache when turbo runs from the repository root
+.turbo/

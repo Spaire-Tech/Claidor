@@ -13,19 +13,20 @@ import {
   isMeteredPrice,
   isStaticPrice,
 } from '@/utils/product'
-import { enums, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
-import MoneyInput from '@claidor/ui/components/atoms/MoneyInput'
+import CloseOutlined from '@mui/icons-material/CloseOutlined'
+import { enums, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
+import MoneyInput from '@simeon/ui/components/atoms/MoneyInput'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
-import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
-import { Tabs, TabsList, TabsTrigger } from '@claidor/ui/components/atoms/Tabs'
+} from '@simeon/ui/components/atoms/Select'
+import ShadowBox from '@simeon/ui/components/atoms/ShadowBox'
+import { Tabs, TabsList, TabsTrigger } from '@simeon/ui/components/atoms/Tabs'
 import {
   FormControl,
   FormDescription,
@@ -33,13 +34,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
-import { Label } from '@claidor/ui/components/ui/label'
+} from '@simeon/ui/components/ui/form'
+import { Label } from '@simeon/ui/components/ui/label'
 import {
   RadioGroup,
   RadioGroupItem,
-} from '@claidor/ui/components/ui/radio-group'
-import CloseOutlined from '@mui/icons-material/CloseOutlined'
+} from '@simeon/ui/components/ui/radio-group'
 import { PlusIcon } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useFieldArray, useFormContext } from 'react-hook-form'

@@ -8,28 +8,28 @@ from pydantic_ai.models.test import TestModel
 from pytest_mock import MockerFixture
 from sqlalchemy import select
 
-from polar.auth.models import AuthSubject
-from polar.config import Environment, settings
-from polar.enums import AccountType, InvoiceNumbering
-from polar.exceptions import ClaidorRequestValidationError
-from polar.models import Customer, Organization, Product, User
-from polar.models.account import Account
-from polar.models.organization import (
+from simeon.auth.models import AuthSubject
+from simeon.config import Environment, settings
+from simeon.enums import AccountType, InvoiceNumbering
+from simeon.exceptions import SimeonRequestValidationError
+from simeon.models import Customer, Organization, Product, User
+from simeon.models.account import Account
+from simeon.models.organization import (
     OrganizationNotificationSettings,
     OrganizationStatus,
 )
-from polar.models.organization_review import OrganizationReview
-from polar.models.user import IdentityVerificationStatus
-from polar.organization.ai_validation import (
+from simeon.models.organization_review import OrganizationReview
+from simeon.models.user import IdentityVerificationStatus
+from simeon.organization.ai_validation import (
     OrganizationAIValidationResult,
     OrganizationAIValidationVerdict,
     OrganizationAIValidator,
 )
-from polar.organization.schemas import OrganizationCreate, OrganizationFeatureSettings
-from polar.organization.service import AccountAlreadySet
-from polar.organization.service import organization as organization_service
-from polar.postgres import AsyncSession
-from polar.user_organization.service import (
+from simeon.organization.schemas import OrganizationCreate, OrganizationFeatureSettings
+from simeon.organization.service import AccountAlreadySet
+from simeon.organization.service import organization as organization_service
+from simeon.postgres import AsyncSession
+from simeon.user_organization.service import (
     user_organization as user_organization_service,
 )
 from tests.fixtures.database import SaveFixture
@@ -47,7 +47,7 @@ class TestCreate:
             "",
             "a",
             "ab",
-            "Polar Software Inc 🌀",
+            "Simeon Labs Inc 🌀",
             "slug/with/slashes",
             *settings.ORGANIZATION_SLUG_RESERVED_KEYWORDS,
         ],
@@ -69,7 +69,7 @@ class TestCreate:
         session: AsyncSession,
         organization: Organization,
     ) -> None:
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await organization_service.create(
                 session,
                 OrganizationCreate(name=organization.name, slug=organization.slug),
@@ -77,7 +77,7 @@ class TestCreate:
             )
 
     @pytest.mark.auth
-    @pytest.mark.parametrize("slug", ["polar-software-inc", "slug-with-dashes"])
+    @pytest.mark.parametrize("slug", ["simeon-labs-inc", "slug-with-dashes"])
     async def test_valid(
         self,
         slug: str,
@@ -85,7 +85,7 @@ class TestCreate:
         auth_subject: AuthSubject[User],
         session: AsyncSession,
     ) -> None:
-        enqueue_job_mock = mocker.patch("polar.organization.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.organization.service.enqueue_job")
 
         organization = await organization_service.create(
             session,
@@ -329,7 +329,7 @@ class TestCheckReviewThreshold:
         organization.next_review_threshold = 10000
 
         transaction_sum_mock = mocker.patch(
-            "polar.organization.service.transaction_service.get_transactions_sum",
+            "simeon.organization.service.transaction_service.get_transactions_sum",
             return_value=5000,
         )
 
@@ -354,7 +354,7 @@ class TestCheckReviewThreshold:
         organization.next_review_threshold = 0
 
         transaction_sum_mock = mocker.patch(
-            "polar.organization.service.transaction_service.get_transactions_sum",
+            "simeon.organization.service.transaction_service.get_transactions_sum",
             return_value=5000,
         )
 
@@ -379,10 +379,10 @@ class TestCheckReviewThreshold:
         organization.next_review_threshold = 1000
 
         transaction_sum_mock = mocker.patch(
-            "polar.organization.service.transaction_service.get_transactions_sum",
+            "simeon.organization.service.transaction_service.get_transactions_sum",
             return_value=5000,
         )
-        enqueue_job_mock = mocker.patch("polar.organization.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.organization.service.enqueue_job")
 
         # When
         result = await organization_service.check_review_threshold(
@@ -408,7 +408,7 @@ class TestConfirmOrganizationReviewed:
         # Given organization under review
         organization.status = OrganizationStatus.INITIAL_REVIEW
 
-        enqueue_job_mock = mocker.patch("polar.organization.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.organization.service.enqueue_job")
 
         # When
         result = await organization_service.confirm_organization_reviewed(
@@ -436,7 +436,7 @@ class TestConfirmOrganizationReviewed:
         initially_reviewed_at = datetime(2025, 1, 1, 12, 0, tzinfo=UTC)
         organization.initially_reviewed_at = initially_reviewed_at
 
-        enqueue_job_mock = mocker.patch("polar.organization.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.organization.service.enqueue_job")
 
         # When
         result = await organization_service.confirm_organization_reviewed(
@@ -483,7 +483,7 @@ class TestSetOrganizationUnderReview:
         organization.status = OrganizationStatus.ACTIVE
         organization.initially_reviewed_at = datetime(2025, 1, 1, 12, 0, tzinfo=UTC)
 
-        enqueue_job_mock = mocker.patch("polar.organization.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.organization.service.enqueue_job")
 
         # When
         result = await organization_service.set_organization_under_review(
@@ -506,7 +506,7 @@ class TestSetOrganizationUnderReview:
         organization.status = OrganizationStatus.ACTIVE
         organization.initially_reviewed_at = None
 
-        enqueue_job_mock = mocker.patch("polar.organization.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.organization.service.enqueue_job")
 
         # When
         result = await organization_service.set_organization_under_review(
@@ -602,7 +602,7 @@ class TestGetPaymentStatus:
 
         # Mock the API key count
         mocker.patch(
-            "polar.organization_access_token.repository.OrganizationAccessTokenRepository.count_by_organization_id",
+            "simeon.organization_access_token.repository.OrganizationAccessTokenRepository.count_by_organization_id",
             return_value=1,  # Has 1 API key
         )
 
@@ -685,7 +685,7 @@ class TestGetPaymentStatus:
 
         # Mock the API key count
         mocker.patch(
-            "polar.organization_access_token.repository.OrganizationAccessTokenRepository.count_by_organization_id",
+            "simeon.organization_access_token.repository.OrganizationAccessTokenRepository.count_by_organization_id",
             return_value=1,  # Has 1 API key
         )
 
@@ -738,7 +738,7 @@ class TestGetPaymentStatus:
 
         # Mock the API key count
         mocker.patch(
-            "polar.organization_access_token.repository.OrganizationAccessTokenRepository.count_by_organization_id",
+            "simeon.organization_access_token.repository.OrganizationAccessTokenRepository.count_by_organization_id",
             return_value=1,  # Has 1 API key
         )
 
@@ -764,7 +764,7 @@ class TestGetPaymentStatus:
         await save_fixture(organization)
 
         # Mock environment to be sandbox
-        mocker.patch("polar.organization.service.settings.ENV", Environment.sandbox)
+        mocker.patch("simeon.organization.service.settings.ENV", Environment.sandbox)
 
         payment_status = await organization_service.get_payment_status(
             session, organization
@@ -778,7 +778,7 @@ class TestGetPaymentStatus:
 class TestValidateWithAI:
     """Test AI validation integration in OrganizationService."""
 
-    @patch("polar.organization.ai_validation._fetch_policy_content")
+    @patch("simeon.organization.ai_validation._fetch_policy_content")
     async def test_validate_with_ai_success(
         self,
         mock_fetch_policy: MagicMock,
@@ -795,7 +795,7 @@ class TestValidateWithAI:
         # When
         validator = OrganizationAIValidator()
         with validator.agent.override(model=TestModel()):
-            with patch("polar.organization.service.organization_validator", validator):
+            with patch("simeon.organization.service.organization_validator", validator):
                 result = await organization_service.validate_with_ai(
                     session, organization
                 )
@@ -823,7 +823,7 @@ class TestValidateWithAI:
         assert db_record.organization_id == organization.id
         assert db_record.organization_details_snapshot is not None
 
-    @patch("polar.organization.ai_validation._fetch_policy_content")
+    @patch("simeon.organization.ai_validation._fetch_policy_content")
     async def test_validate_with_ai_fail_verdict(
         self,
         mock_fetch_policy: MagicMock,
@@ -840,7 +840,7 @@ class TestValidateWithAI:
         # When
         validator = OrganizationAIValidator()
         with validator.agent.override(model=TestModel()):
-            with patch("polar.organization.service.organization_validator", validator):
+            with patch("simeon.organization.service.organization_validator", validator):
                 result = await organization_service.validate_with_ai(
                     session, organization
                 )
@@ -865,7 +865,7 @@ class TestValidateWithAI:
         assert db_record.verdict == result.verdict
         assert db_record.violated_sections == result.violated_sections
 
-    @patch("polar.organization.ai_validation._fetch_policy_content")
+    @patch("simeon.organization.ai_validation._fetch_policy_content")
     async def test_validate_with_ai_timeout(
         self,
         mock_fetch_policy: MagicMock,
@@ -902,7 +902,7 @@ class TestValidateWithAI:
                 validator, "validate_organization_details", side_effect=mock_validate
             ):
                 with patch(
-                    "polar.organization.service.organization_validator", validator
+                    "simeon.organization.service.organization_validator", validator
                 ):
                     result = await organization_service.validate_with_ai(
                         session, organization
@@ -938,7 +938,7 @@ class TestValidateWithAI:
         with patch.object(validator, "validate_organization_details") as mock_validate:
             mock_validate.side_effect = Exception("AI service error")
 
-            with patch("polar.organization.service.organization_validator", validator):
+            with patch("simeon.organization.service.organization_validator", validator):
                 # Should raise the exception (service doesn't handle validator errors)
                 with pytest.raises(Exception, match="AI service error"):
                     await organization_service.validate_with_ai(session, organization)
@@ -953,7 +953,7 @@ class TestValidateWithAI:
 
         assert db_record is None
 
-    @patch("polar.organization.ai_validation._fetch_policy_content")
+    @patch("simeon.organization.ai_validation._fetch_policy_content")
     async def test_validate_with_ai_organization_snapshot(
         self, mock_fetch_policy: MagicMock, session: AsyncSession
     ) -> None:
@@ -979,7 +979,7 @@ class TestValidateWithAI:
         # When
         validator = OrganizationAIValidator()
         with validator.agent.override(model=TestModel()):
-            with patch("polar.organization.service.organization_validator", validator):
+            with patch("simeon.organization.service.organization_validator", validator):
                 result = await organization_service.validate_with_ai(session, org)
 
         # Then - verify snapshot contains expected data
@@ -1001,7 +1001,7 @@ class TestValidateWithAI:
         assert snapshot["details"]["industry"] == "Technology"
         assert "Web Development" in snapshot["details"]["services"]
 
-    @patch("polar.organization.ai_validation._fetch_policy_content")
+    @patch("simeon.organization.ai_validation._fetch_policy_content")
     async def test_validate_with_ai_multiple_validations(
         self,
         mock_fetch_policy: MagicMock,
@@ -1018,7 +1018,7 @@ class TestValidateWithAI:
         # When
         validator = OrganizationAIValidator()
         with validator.agent.override(model=TestModel()):
-            with patch("polar.organization.service.organization_validator", validator):
+            with patch("simeon.organization.service.organization_validator", validator):
                 # First validation
                 result1 = await organization_service.validate_with_ai(
                     session, organization
@@ -1147,7 +1147,7 @@ class TestSubmitAppeal:
         await save_fixture(review)
 
         mock_plain_service = mocker.patch(
-            "polar.organization.service.plain_service.create_appeal_review_thread"
+            "simeon.organization.service.plain_service.create_appeal_review_thread"
         )
 
         appeal_reason = "We selling templates and not consultancy services"
@@ -1236,7 +1236,7 @@ class TestSubmitAppeal:
         await save_fixture(review)
 
         mock_plain_service = mocker.patch(
-            "polar.organization.service.plain_service.create_appeal_review_thread"
+            "simeon.organization.service.plain_service.create_appeal_review_thread"
         )
 
         result = await organization_service.submit_appeal(
@@ -1445,7 +1445,7 @@ class TestCheckCanDelete:
         customer: Customer,
     ) -> None:
         """Organization with active subscriptions cannot be immediately deleted."""
-        from polar.models.subscription import SubscriptionStatus
+        from simeon.models.subscription import SubscriptionStatus
         from tests.fixtures.random_objects import create_subscription
 
         await create_subscription(
@@ -1469,7 +1469,7 @@ class TestCheckCanDelete:
         customer: Customer,
     ) -> None:
         """Organization with canceled subscriptions can be deleted."""
-        from polar.models.subscription import SubscriptionStatus
+        from simeon.models.subscription import SubscriptionStatus
         from tests.fixtures.random_objects import create_subscription
 
         await create_subscription(
@@ -1496,7 +1496,7 @@ class TestRequestDeletion:
         organization: Organization,
     ) -> None:
         """Organization with no activity is immediately deleted."""
-        enqueue_job_mock = mocker.patch("polar.organization.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.organization.service.enqueue_job")
 
         result = await organization_service.request_deletion(
             session, auth_subject, organization
@@ -1522,7 +1522,7 @@ class TestRequestDeletion:
 
         await create_order(save_fixture, customer=customer)
 
-        enqueue_job_mock = mocker.patch("polar.organization.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.organization.service.enqueue_job")
 
         result = await organization_service.request_deletion(
             session, auth_subject, organization
@@ -1566,10 +1566,10 @@ class TestRequestDeletion:
 
         # Mock Stripe account deletion
         mock_delete_stripe = mocker.patch(
-            "polar.account.service.AccountService.delete_stripe_account"
+            "simeon.account.service.AccountService.delete_stripe_account"
         )
         mock_delete_account = mocker.patch(
-            "polar.account.service.AccountService.delete"
+            "simeon.account.service.AccountService.delete"
         )
 
         result = await organization_service.request_deletion(
@@ -1610,10 +1610,10 @@ class TestRequestDeletion:
 
         # Mock Stripe account deletion to fail
         mocker.patch(
-            "polar.account.service.AccountService.delete_stripe_account",
+            "simeon.account.service.AccountService.delete_stripe_account",
             side_effect=Exception("Stripe deletion failed"),
         )
-        enqueue_job_mock = mocker.patch("polar.organization.service.enqueue_job")
+        enqueue_job_mock = mocker.patch("simeon.organization.service.enqueue_job")
 
         result = await organization_service.request_deletion(
             session, auth_subject, organization
@@ -1635,7 +1635,7 @@ class TestRequestDeletion:
         organization: Organization,
     ) -> None:
         """Non-admin cannot delete organization with an account."""
-        from polar.exceptions import NotPermitted
+        from simeon.exceptions import NotPermitted
 
         # Create a different user who is the admin
         other_user = User(email="admin@example.com")
@@ -1676,7 +1676,7 @@ class TestRequestDeletion:
         # Ensure no account is set
         assert organization.account_id is None
 
-        mocker.patch("polar.organization.service.enqueue_job")
+        mocker.patch("simeon.organization.service.enqueue_job")
 
         result = await organization_service.request_deletion(
             session, auth_subject, organization
@@ -1715,7 +1715,7 @@ class TestSoftDeleteOrganization:
         assert result.website != "https://test.com"
         assert result.bio != "Test bio"
 
-        # Avatar should be set to Polar logo
+        # Avatar should be set to Simeon logo
         assert result.avatar_url is not None
         assert "avatars.githubusercontent.com" in result.avatar_url
 

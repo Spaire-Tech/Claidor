@@ -24,11 +24,11 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 WORKDIR /app
 
-COPY ./polar/backoffice/pnpm-lock.yaml .
-COPY ./polar/backoffice/package.json .
+COPY ./simeon/backoffice/pnpm-lock.yaml .
+COPY ./simeon/backoffice/package.json .
 RUN pnpm install --frozen-lockfile
 
-COPY ./polar/backoffice/ .
+COPY ./simeon/backoffice/ .
 
 RUN pnpm run build
 
@@ -46,8 +46,7 @@ RUN --mount=type=secret,id=IPINFO_ACCESS_TOKEN \
 
 # Stage 4: Final production image
 FROM --platform=$BUILDPLATFORM python:3.14-slim
-LABEL org.opencontainers.image.source=https://github.com/polarsource/polar
-LABEL org.opencontainers.image.description="Polar"
+LABEL org.opencontainers.image.description="Simeon"
 LABEL org.opencontainers.image.licenses=Apache-2.0
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
@@ -76,16 +75,16 @@ RUN --mount=type=bind,source=uv.lock,target=uv.lock \
 ADD . /app/server/
 
 COPY --from=build-emails-bin /app/bin/react-email-pkg /app/server/
-ENV CLAIDOR_EMAIL_RENDERER_BINARY_PATH=/app/server/react-email-pkg
+ENV SIMEON_EMAIL_RENDERER_BINARY_PATH=/app/server/react-email-pkg
 
-COPY --from=build-backoffice /app/static /app/server/polar/backoffice/static
-RUN ls -la /app/server/polar/backoffice/static
+COPY --from=build-backoffice /app/static /app/server/simeon/backoffice/static
+RUN ls -la /app/server/simeon/backoffice/static
 
 COPY --from=download-ipinfo /data /data
-ENV CLAIDOR_IP_GEOLOCATION_DATABASE_DIRECTORY_PATH=/data
-ENV CLAIDOR_IP_GEOLOCATION_DATABASE_NAME=country_asn.mmdb
+ENV SIMEON_IP_GEOLOCATION_DATABASE_DIRECTORY_PATH=/data
+ENV SIMEON_IP_GEOLOCATION_DATABASE_NAME=country_asn.mmdb
 
 ARG RELEASE_VERSION
 ENV RELEASE_VERSION=${RELEASE_VERSION}
 
-CMD ["uv", "run", "uvicorn", "polar.app:app", "--host", "0.0.0.0", "--port", "10000"]
+CMD ["uv", "run", "uvicorn", "simeon.app:app", "--host", "0.0.0.0", "--port", "10000"]

@@ -1,6 +1,6 @@
-from polar.enums import AccountType
-from polar.models import Account, User
-from polar.postgres import AsyncSession
+from simeon.enums import AccountType
+from simeon.models import Account, User
+from simeon.postgres import AsyncSession
 
 
 def generate_account(

@@ -14,14 +14,14 @@ import {
 } from '@/utils/datatable'
 import KeyboardArrowDownOutlined from '@mui/icons-material/KeyboardArrowDownOutlined'
 import KeyboardArrowRightOutlined from '@mui/icons-material/KeyboardArrowRightOutlined'
-import { operations, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { operations, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import {
   DataTable,
   DataTableColumnDef,
   DataTableColumnHeader,
-} from '@claidor/ui/components/atoms/DataTable'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
+} from '@simeon/ui/components/atoms/DataTable'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
 import { CellContext } from '@tanstack/react-table'
 import { useRouter } from 'next/navigation'
 import React, { useCallback } from 'react'
@@ -137,9 +137,9 @@ const DeliveriesTable: React.FC<DeliveriesTableProps> = ({
             }}
           >
             {row.getIsExpanded() ? (
-              <KeyboardArrowDownOutlined className=" text-gray-500" />
+              <KeyboardArrowDownOutlined className="text-gray-500" />
             ) : (
-              <KeyboardArrowRightOutlined className=" text-gray-500" />
+              <KeyboardArrowRightOutlined className="text-gray-500" />
             )}
           </button>
         )

@@ -13,8 +13,8 @@ import { SandXuserSharingService, SELF_IDENTITY_RETRY_MS, STATE_RECONCILE_INTERV
 import { SandXuserTurnDedupeStore } from "./xuser-turn-dedupe-store.js";
 
 // Sharing rides the /sand/xuser and /sand/share-rooms relay. Served by
-// Simeon Labs' server since 25 September 2026 (`server/polar/sand/sharing.py`,
-// docs/product/sharing-served.md), so the switch is on by default and the
+// Simeon Labs' server since 25 September 2026 (`server/simeon/sand/sharing.py`,
+// docs/services-agents.md), so the switch is on by default and the
 // `sand_multiplayer` gate is on in Simeon's gate table; SAND_SHARING_SERVED=0
 // restores the Coming Soon answer below at every entry.
 export const SHARING_DISABLED_MESSAGE = "Sharing is coming soon in Simeon.";

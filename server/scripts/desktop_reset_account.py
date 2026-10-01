@@ -20,7 +20,7 @@ Dry run by default. Nothing is deleted without ``--yes``.
     python -m scripts.desktop_reset_account someone@example.com
     python -m scripts.desktop_reset_account someone@example.com --yes
 
-Run it where the server runs (the ``claidor-api`` shell on Render), so it
+Run it where the server runs (the API service's shell on Render), so it
 reads the same ``POSTGRES_*`` environment as the API.
 """
 
@@ -29,8 +29,8 @@ import sys
 
 from sqlalchemy import delete, func, select
 
-from polar.kit.db.postgres import AsyncSession, create_async_sessionmaker
-from polar.models import (
+from simeon.kit.db.postgres import AsyncSession, create_async_sessionmaker
+from simeon.models import (
     DesktopAuthCode,
     DesktopMemoryFile,
     DesktopSession,
@@ -38,7 +38,7 @@ from polar.models import (
     MatyJob,
     User,
 )
-from polar.postgres import create_async_engine
+from simeon.postgres import create_async_engine
 
 TABLES = (
     ("desktop_usage", DesktopUsage),

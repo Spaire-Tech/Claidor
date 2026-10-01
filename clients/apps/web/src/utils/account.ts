@@ -1,6 +1,6 @@
 import ManualPayout from '@/components/Icons/ManualPayout'
 import Stripe from '@/components/Icons/Stripe'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 
 export const ALL_ACCOUNT_TYPES: schemas['AccountType'][] = ['stripe']
 

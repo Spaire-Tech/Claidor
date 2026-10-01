@@ -2,13 +2,13 @@ import {
   PaymentStatusDisplayColor,
   PaymentStatusDisplayTitle,
 } from '@/utils/payment'
-import { schemas } from '@claidor/client'
-import { Status } from '@claidor/ui/components/atoms/Status'
+import { schemas } from '@simeon/client'
+import { Status } from '@simeon/ui/components/atoms/Status'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@claidor/ui/components/ui/tooltip'
+} from '@simeon/ui/components/ui/tooltip'
 import { twMerge } from 'tailwind-merge'
 
 const PaymentStatus = ({

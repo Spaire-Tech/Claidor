@@ -1,7 +1,7 @@
 'use client'
 
 import { useCustomerCustomerMeters, useCustomerWallets } from '@/hooks/queries'
-import { Client, schemas } from '@claidor/client'
+import { Client, schemas } from '@simeon/client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import * as React from 'react'

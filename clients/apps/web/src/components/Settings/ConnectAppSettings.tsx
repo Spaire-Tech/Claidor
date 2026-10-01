@@ -1,13 +1,13 @@
 'use client'
 
 import { useCreatePersonalAccessToken } from '@/hooks/queries'
-import Button from '@claidor/ui/components/atoms/Button'
-import CopyToClipboardInput from '@claidor/ui/components/atoms/CopyToClipboardInput'
+import Button from '@simeon/ui/components/atoms/Button'
+import CopyToClipboardInput from '@simeon/ui/components/atoms/CopyToClipboardInput'
 import { useCallback, useState } from 'react'
 import { toast } from '../Toast/use-toast'
 
 /**
- * Connecting the app's server to Claidor's model proxy.
+ * Connecting the app's server to Simeon's model proxy.
  *
  * The app's server is handed one credential, stores it, and has no refresh
  * loop to run. That rules out a desktop session, which is an access token
@@ -53,19 +53,19 @@ const ConnectAppSettings = () => {
   return (
     <div className="flex flex-col gap-y-4">
       <p className="text-sm text-gray-500">
-        A token for a program of your own that calls the model proxy, billed
-        to this account&apos;s allowance. Simeon on your Mac never needs one:
-        it signs in with your account. Keep the token where the program reads
-        it, and nowhere else.
+        A token for a program of your own that calls the model proxy, billed to
+        this account&apos;s allowance. Simeon on your Mac never needs one: it
+        signs in with your account. Keep the token where the program reads it,
+        and nowhere else.
       </p>
 
       {token ? (
         <div className="flex flex-col gap-y-2">
           <CopyToClipboardInput value={token} />
           <p className="text-sm text-gray-500">
-            Copy it now. This is the only time it can be shown — Simeon stores
-            a one-way hash of it and cannot recover the token itself. If you
-            lose it, revoke it below and create another.
+            Copy it now. This is the only time it can be shown — Simeon stores a
+            one-way hash of it and cannot recover the token itself. If you lose
+            it, revoke it below and create another.
           </p>
         </div>
       ) : (

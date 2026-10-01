@@ -1,16 +1,12 @@
 'use client'
 
-import {
-  useAuth,
-  useDisconnectOAuthAccount,
-  useGoogleAccount,
-} from '@/hooks'
+import { useAuth, useDisconnectOAuthAccount, useGoogleAccount } from '@/hooks'
 import { getGoogleAuthorizeLinkURL } from '@/utils/auth'
 import AlternateEmailOutlined from '@mui/icons-material/AlternateEmailOutlined'
 import Google from '@mui/icons-material/Google'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import ShadowListGroup from '@claidor/ui/components/atoms/ShadowListGroup'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import ShadowListGroup from '@simeon/ui/components/atoms/ShadowListGroup'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import EmailUpdateForm from '../Form/EmailUpdateForm'
@@ -32,9 +28,7 @@ const AuthenticationMethod: React.FC<AuthenticationMethodProps> = ({
       <div>{icon}</div>
       <div className="grow">
         <div className="font-medium">{title}</div>
-        <div className=" text-sm text-gray-500">
-          {subtitle}
-        </div>
+        <div className="text-sm text-gray-500">{subtitle}</div>
       </div>
       <div>{action}</div>
     </div>
@@ -126,7 +120,7 @@ const AuthenticationSettings = () => {
       />
     ),
     request: (
-      <div className=" text-center text-sm text-gray-500">
+      <div className="text-center text-sm text-gray-500">
         A verification email was sent to this address.
       </div>
     ),

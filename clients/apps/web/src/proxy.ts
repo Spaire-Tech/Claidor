@@ -2,13 +2,14 @@ import { nanoid } from 'nanoid'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
-const POLAR_AUTH_COOKIE_KEY =
-  process.env.POLAR_AUTH_COOKIE_KEY || 'claidor_session'
-// Legacy cookie name fallback - the backend may still set 'polar_session'
-// if it hasn't been redeployed with the rebrand changes yet
-const LEGACY_AUTH_COOKIE_KEY = 'polar_session'
+const AUTH_COOKIE_KEY =
+  process.env.SIMEON_AUTH_COOKIE_KEY ||
+  process.env.POLAR_AUTH_COOKIE_KEY ||
+  'simeon_session'
+// Sessions made before the rename carry the earlier cookie name.
+const LEGACY_AUTH_COOKIE_KEY = 'claidor_session'
 
-const DISTINCT_ID_COOKIE = 'claidor_distinct_id'
+const DISTINCT_ID_COOKIE = 'simeon_distinct_id'
 const DISTINCT_ID_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
 
 const AUTHENTICATED_ROUTES = [
@@ -70,7 +71,7 @@ const getLoginResponse = (request: NextRequest): NextResponse => {
 
 const SPACE_HOSTNAME = process.env.NEXT_PUBLIC_SPACE_BASE_URL
   ? new URL(process.env.NEXT_PUBLIC_SPACE_BASE_URL).hostname
-  : 'space.claidorhq.com'
+  : 'space.simeonlabs.com'
 
 const FRONTEND_HOSTNAME = process.env.NEXT_PUBLIC_FRONTEND_BASE_URL
   ? new URL(process.env.NEXT_PUBLIC_FRONTEND_BASE_URL).hostname
@@ -117,10 +118,13 @@ const resolveCustomDomainSlug = async (
   }
 
   const apiUrl =
-    process.env.POLAR_API_URL || process.env.NEXT_PUBLIC_API_URL || ''
+    process.env.SIMEON_API_URL ||
+    process.env.POLAR_API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    ''
   if (!apiUrl) {
     console.error(
-      '[proxy] Custom domain lookup skipped: POLAR_API_URL and NEXT_PUBLIC_API_URL are both unset',
+      '[proxy] Custom domain lookup skipped: SIMEON_API_URL and NEXT_PUBLIC_API_URL are both unset',
     )
     return null
   }
@@ -176,7 +180,7 @@ const handleCustomDomain = async (
   if (SPACE_BLOCKED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     const mainUrl = new URL(
       `${pathname}${request.nextUrl.search}`,
-      process.env.NEXT_PUBLIC_FRONTEND_BASE_URL || 'https://app.claidorhq.com',
+      process.env.NEXT_PUBLIC_FRONTEND_BASE_URL || 'https://app.simeonlabs.com',
     )
     return NextResponse.redirect(mainUrl)
   }
@@ -186,7 +190,8 @@ const handleCustomDomain = async (
     // Unknown or not-yet-verified domain: send visitors to the main app.
     return NextResponse.redirect(
       new URL(
-        process.env.NEXT_PUBLIC_FRONTEND_BASE_URL || 'https://app.claidorhq.com',
+        process.env.NEXT_PUBLIC_FRONTEND_BASE_URL ||
+          'https://app.simeonlabs.com',
       ),
     )
   }
@@ -206,12 +211,12 @@ const handleCustomDomain = async (
   rewriteURL.pathname = `/${slug}${pathname === '/' ? '' : pathname}`
 
   const requestHeaders = new Headers(request.headers)
-  requestHeaders.set('x-claidor-storefront-host', hostname)
-  requestHeaders.set('x-claidor-pathname', pathname)
+  requestHeaders.set('x-simeon-storefront-host', hostname)
+  requestHeaders.set('x-simeon-pathname', pathname)
 
   const { id: distinctId, isNew: isNewDistinctId } =
     getOrCreateDistinctId(request)
-  requestHeaders.set('x-claidor-distinct-id', distinctId)
+  requestHeaders.set('x-simeon-distinct-id', distinctId)
 
   const response = NextResponse.rewrite(rewriteURL, {
     request: { headers: requestHeaders },
@@ -237,7 +242,7 @@ export async function proxy(request: NextRequest) {
     return handleCustomDomain(request, hostname)
   }
 
-  // --- Claidor Space subdomain routing ---
+  // --- Simeon Space subdomain routing ---
   if (hostname === SPACE_HOSTNAME) {
     const { pathname } = request.nextUrl
 
@@ -245,7 +250,8 @@ export async function proxy(request: NextRequest) {
     if (SPACE_BLOCKED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
       const mainUrl = new URL(
         pathname,
-        process.env.NEXT_PUBLIC_FRONTEND_BASE_URL || 'https://app.claidorhq.com',
+        process.env.NEXT_PUBLIC_FRONTEND_BASE_URL ||
+          'https://app.simeonlabs.com',
       )
       return NextResponse.redirect(mainUrl)
     }
@@ -345,10 +351,13 @@ export async function proxy(request: NextRequest) {
   // Resolve API URL at request time (not module load time) to ensure
   // runtime env vars are available in Edge Runtime
   const apiUrl =
-    process.env.POLAR_API_URL || process.env.NEXT_PUBLIC_API_URL || ''
+    process.env.SIMEON_API_URL ||
+    process.env.POLAR_API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    ''
 
   const hasCookie =
-    request.cookies.has(POLAR_AUTH_COOKIE_KEY) ||
+    request.cookies.has(AUTH_COOKIE_KEY) ||
     request.cookies.has(LEGACY_AUTH_COOKIE_KEY)
   if (hasCookie && apiUrl) {
     // Build Cookie header from all incoming request cookies
@@ -379,7 +388,7 @@ export async function proxy(request: NextRequest) {
         user = await authResponse.json()
       } else if (authResponse.status === 401) {
         console.error(
-          `[proxy] Auth cookie '${POLAR_AUTH_COOKIE_KEY}' present but /v1/users/me returned 401. apiUrl: ${apiUrl}`,
+          `[proxy] Auth cookie '${AUTH_COOKIE_KEY}' present but /v1/users/me returned 401. apiUrl: ${apiUrl}`,
         )
       } else {
         console.error(
@@ -397,11 +406,11 @@ export async function proxy(request: NextRequest) {
   if (requiresAuthentication(request) && !user) {
     if (!apiUrl) {
       console.error(
-        '[proxy] Auth redirect: POLAR_API_URL and NEXT_PUBLIC_API_URL are both unset - cannot verify sessions',
+        '[proxy] Auth redirect: SIMEON_API_URL and NEXT_PUBLIC_API_URL are both unset - cannot verify sessions',
       )
     } else if (!hasCookie) {
       console.error(
-        `[proxy] Auth redirect: cookie '${POLAR_AUTH_COOKIE_KEY}' not found. Available cookies: ${
+        `[proxy] Auth redirect: cookie '${AUTH_COOKIE_KEY}' not found. Available cookies: ${
           request.cookies
             .getAll()
             .map((c) => c.name)
@@ -416,15 +425,15 @@ export async function proxy(request: NextRequest) {
     getOrCreateDistinctId(request)
 
   const headers: Record<string, string> = {
-    'x-claidor-distinct-id': distinctId,
+    'x-simeon-distinct-id': distinctId,
     // Forward the request path so server layouts can route on it. The
     // dashboard [organization]/layout.tsx uses this to skip the
     // "redirect to /onboarding/plan" gate when the request is itself
     // already an /onboarding route.
-    'x-claidor-pathname': request.nextUrl.pathname,
+    'x-simeon-pathname': request.nextUrl.pathname,
   }
   if (user) {
-    headers['x-polar-user'] = JSON.stringify(user)
+    headers['x-simeon-user'] = JSON.stringify(user)
   }
 
   const response = NextResponse.next({ headers })

@@ -49,6 +49,8 @@ export const ELECTRON_PRODUCTION_RESOURCE_LAYOUT = {
   devControlsPreload: "dist/electron-preload/preload-dev-controls.cjs",
   webviewPreload: "dist/electron-preload/preload-webview.cjs",
   vncPreload: "dist/electron-preload/preload-vnc.cjs",
+  voiceCallPreload: "dist/electron-preload/preload-voice-call.cjs",
+  voiceCallPage: "dist/voice-call/index.html",
   renderer: "dist/renderer/index.html",
   coordinator: "dist/node-agent-coordinator/main.cjs",
   mediaScheme: "sand-media",

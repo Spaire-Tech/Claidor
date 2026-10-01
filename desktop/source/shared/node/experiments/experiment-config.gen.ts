@@ -18,7 +18,7 @@ export function parseStringArray(value: unknown): string[] { if (!Array.isArray(
 const DEFAULT_FIRST_WINDOW_REACTIVATION_INACTIVE_DAYS = 7;
 const DEFAULT_ENVIRONMENT_SETUP_MAX_RESUME_AGE_MS = 7 * 24 * 60 * 60 * 1_000;
 const AUTO_SPILLOVER_UI_DEFAULTS = {
-  autoTitle: "Cursor Models", autoDescription: "Includes Cursor Grok 4.5 and Composer 2.5",
+  autoTitle: "Simeon Models", autoDescription: "Picked by Simeon for each task",
   apiTitle: "Other Models", apiDescription: "Consumed by named models.",
   autoBeyondLimitDescription: "Additional usage beyond limits consumes Other Models quota or on-demand spend.",
   autoUsageBarLabel: "your included total usage", apiUsageBarLabel: "your included API usage"
@@ -3448,7 +3448,7 @@ export const FLAGS = {
       },
       // Rollout of sparse partial clones + subprocess kill budgets for plugin
       // repos, so plugins in large monorepos install without hitting the legacy
-      // 30s full-clone timeout. See @anysphere/cursor-plugins.
+      // 30s full-clone timeout. See @sand/cursor-plugins.
       enable_sparse_plugin_clones: {
         client: true,
         default: true
@@ -4341,8 +4341,8 @@ export const EXPERIMENTS = {
         client: true,
         fallbackValues: {
           enabled: false,
-          message: "Install Cursor CLI?",
-          action: "curl https://cursor.com/install -fsS | bash",
+          message: "",
+          action: "",
           show_every_hours: 0,
           show_count: 0
         },
@@ -5905,7 +5905,7 @@ Requirements:
       canvas_prompt_text_config: {
         client: true,
         fallbackValues: {
-          skillDescription: "A Cursor Canvas is a live React app that the user can open beside the chat. You MUST use a canvas when the agent produces a standalone analytical artifact \u2014 quantitative analyses, billing investigations, security audits, architecture reviews, data-heavy content, timelines, charts, tables, interactive explorations, repeatable tools, or any response that benefits from visual layout. Especially prefer a canvas when presenting results from MCP tools (Datadog, Databricks, Linear, Sentry, Slack, etc.) where the data is the deliverable \u2014 render it in a rich canvas rather than dumping it into a markdown table or code block. If you catch yourself about to write a markdown table, stop and use a canvas instead. You MUST also read this skill whenever you create, edit, or debug any .canvas.tsx file.",
+          skillDescription: "A canvas is a live React app that the user can open beside the chat. You MUST use a canvas when the agent produces a standalone analytical artifact \u2014 quantitative analyses, billing investigations, security audits, architecture reviews, data-heavy content, timelines, charts, tables, interactive explorations, repeatable tools, or any response that benefits from visual layout. Especially prefer a canvas when presenting results from MCP tools (Datadog, Databricks, Linear, Sentry, Slack, etc.) where the data is the deliverable \u2014 render it in a rich canvas rather than dumping it into a markdown table or code block. If you catch yourself about to write a markdown table, stop and use a canvas instead. You MUST also read this skill whenever you create, edit, or debug any .canvas.tsx file.",
           errorFixPromptTemplate: [
             "The canvas at `{canvasPath}` has the following error:",
             "",

@@ -1,4 +1,4 @@
-import { formatCurrency } from '@claidor/currency'
+import { formatCurrency } from '@simeon/currency'
 import type { SubscriptionRecurringInterval } from '@spaire/sdk/models/components/subscriptionrecurringinterval'
 import { useMemo } from 'react'
 import { formatRecurringInterval } from '../utils/product'

@@ -1,6 +1,6 @@
 import pytest
 
-from polar.models import Customer, Product
+from simeon.models import Customer, Product
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_order
 

@@ -13,7 +13,7 @@ import {
 } from "./tools/turn-toolset.js";
 import type { Context } from "../../packages/context/core.js";
 import { requestIdKey } from "../../packages/chat-inference-proto/client.js";
-import { AnysphereAgent } from "../../packages/agent/index.js";
+import { SandAgent } from "../../packages/agent/index.js";
 import { SimplePromptToolExecutor } from "../../packages/agent/tool-stream-executor.js";
 import { NoopConversationActionReceiver } from "../../packages/agent-core/conversation-actions/remote.js";
 import { toRedactedInteractionListener } from "../../packages/agent-core/redacted-interaction-listener.js";
@@ -619,7 +619,7 @@ export interface TurnAgentBuildForRunInput
 }
 
 export interface BuiltTurnAgentForRun {
-  readonly agent: AnysphereAgent;
+  readonly agent: SandAgent;
   readonly config: ReturnType<typeof createSandAgentStaticConfig>;
   readonly parentModelInfo: PromptModelInfo;
   readonly subagentModels: ReturnType<typeof createSubagentModels>;
@@ -893,7 +893,7 @@ export interface TurnAgentConstructionInputs {
  */
 export function createTurnAgentForRun(
   input: TurnAgentConstructionInputs,
-): AnysphereAgent {
+): SandAgent {
   const interactionListener = toRedactedInteractionListener(
     new ForwardingInteractionListener(
       input.emitUpdate,
@@ -905,7 +905,7 @@ export function createTurnAgentForRun(
     input.summarizationSession,
     { preserveLatestImage: input.preserveLatestImage ?? false },
   );
-  return new AnysphereAgent(
+  return new SandAgent(
     input.config,
     input.toolSession,
     interactionListener,

@@ -4,8 +4,8 @@ import { useDraggable } from '@/hooks/draggable'
 import { useBenefits } from '@/hooks/queries'
 import { closestCenter, DndContext, DragOverlay } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { schemas } from '@claidor/client'
-import Input from '@claidor/ui/components/atoms/Input'
+import { schemas } from '@simeon/client'
+import Input from '@simeon/ui/components/atoms/Input'
 import { Loader2, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BenefitRow } from './components/BenefitRow'
@@ -176,17 +176,17 @@ export const BenefitSearchComplex = ({
         />
 
         {isDropdownOpen && (
-          <div className=" absolute top-full right-0 left-0 z-50 mt-1 max-h-80 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg">
+          <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-80 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg">
             {searchResultsQuery.isLoading ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className=" h-5 w-5 animate-spin text-gray-500" />
+                <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
               </div>
             ) : searchResults.length === 0 ? (
-              <div className=" py-8 text-center text-sm text-gray-500">
+              <div className="py-8 text-center text-sm text-gray-500">
                 No benefits found for &quot;{debouncedQuery}&quot;
               </div>
             ) : (
-              <div className=" flex flex-col divide-y divide-gray-100">
+              <div className="flex flex-col divide-y divide-gray-100">
                 {searchResults.map((benefit) => (
                   <BenefitRow
                     key={benefit.id}
@@ -205,7 +205,7 @@ export const BenefitSearchComplex = ({
       {selectedBenefitIds.length > 0 && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <h4 className=" text-xs font-medium tracking-wide text-gray-500 uppercase">
+            <h4 className="text-xs font-medium tracking-wide text-gray-500 uppercase">
               Enabled
               {enabledPagination && ` (${enabledPagination.total_count})`}
             </h4>
@@ -220,11 +220,11 @@ export const BenefitSearchComplex = ({
           <div className="relative">
             {enabledBenefits.length === 0 &&
             !enabledBenefitsQuery.isFetching ? (
-              <div className=" rounded-xl border border-gray-200 py-8 text-center text-sm text-gray-500">
+              <div className="rounded-xl border border-gray-200 py-8 text-center text-sm text-gray-500">
                 No enabled benefits
               </div>
             ) : (
-              <div className=" flex flex-col divide-y divide-gray-100 rounded-xl border border-gray-200">
+              <div className="flex flex-col divide-y divide-gray-100 rounded-xl border border-gray-200">
                 {enabledBenefits.map((benefit) => (
                   <BenefitRow
                     key={benefit.id}
@@ -238,7 +238,7 @@ export const BenefitSearchComplex = ({
             )}
             {enabledBenefitsQuery.isFetching && (
               <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/50">
-                <Loader2 className=" h-5 w-5 animate-spin text-gray-500" />
+                <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
               </div>
             )}
           </div>
@@ -247,7 +247,7 @@ export const BenefitSearchComplex = ({
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <h4 className=" text-xs font-medium tracking-wide text-gray-500 uppercase">
+          <h4 className="text-xs font-medium tracking-wide text-gray-500 uppercase">
             Available
             {availablePagination && ` (${availablePagination.total_count})`}
           </h4>
@@ -262,11 +262,11 @@ export const BenefitSearchComplex = ({
         <div className="relative">
           {availableBenefits.length === 0 &&
           !availableBenefitsQuery.isFetching ? (
-            <div className=" rounded-xl border border-gray-200 py-8 text-center text-sm text-gray-500">
+            <div className="rounded-xl border border-gray-200 py-8 text-center text-sm text-gray-500">
               No benefits available
             </div>
           ) : (
-            <div className=" flex flex-col divide-y divide-gray-100 rounded-xl border border-gray-200">
+            <div className="flex flex-col divide-y divide-gray-100 rounded-xl border border-gray-200">
               {availableBenefits.map((benefit) => (
                 <BenefitRow
                   key={benefit.id}
@@ -280,7 +280,7 @@ export const BenefitSearchComplex = ({
           )}
           {availableBenefitsQuery.isFetching && (
             <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/50">
-              <Loader2 className=" h-5 w-5 animate-spin text-gray-500" />
+              <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
             </div>
           )}
         </div>

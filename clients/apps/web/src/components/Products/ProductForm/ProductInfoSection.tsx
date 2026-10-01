@@ -1,22 +1,22 @@
 'use client'
 
 import { Section } from '@/components/Layout/Section'
-import Input from '@claidor/ui/components/atoms/Input'
-import TextArea from '@claidor/ui/components/atoms/TextArea'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
+} from '@simeon/ui/components/atoms/Select'
+import TextArea from '@simeon/ui/components/atoms/TextArea'
 import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { useFormContext } from 'react-hook-form'
 import { ProductFormType } from './ProductForm'
 
@@ -59,7 +59,10 @@ export const ProductInfoSection = ({
           name="name"
           rules={{
             required: 'This field is required',
-            minLength: { value: 3, message: 'Name must be at least 3 characters' },
+            minLength: {
+              value: 3,
+              message: 'Name must be at least 3 characters',
+            },
           }}
           defaultValue=""
           render={({ field }) => (
@@ -70,7 +73,7 @@ export const ProductInfoSection = ({
               <FormControl>
                 <Input {...field} value={field.value || ''} />
               </FormControl>
-              <p className=" text-xs text-gray-500">
+              <p className="text-xs text-gray-500">
                 50-60 characters is the recommended length for search engines.
               </p>
               <FormMessage />
@@ -109,9 +112,7 @@ export const ProductInfoSection = ({
             <FormItem className="flex flex-col gap-2">
               <div className="flex flex-row items-center justify-between">
                 <FormLabel>Description</FormLabel>
-                <p className=" text-sm text-gray-500">
-                  Markdown format
-                </p>
+                <p className="text-sm text-gray-500">Markdown format</p>
               </div>
               <FormControl>
                 <TextArea

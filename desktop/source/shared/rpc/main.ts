@@ -74,6 +74,7 @@ export const MAIN_METHOD_TABLE = {
   cancelCursorLogin: { args: "none" },
   logoutCursor: { args: "none" },
   updateCursorAccountName: { args: "object" },
+  getCursorNamePrompt: { args: "none" },
   getCursorAvatar: { args: "none" },
   getCursorWeeklyUsage: { args: "none" },
   getCursorUsageSummary: { args: "none" },
@@ -123,6 +124,15 @@ export const MAIN_METHOD_TABLE = {
   setMcpCustomInstructions: { args: "object" },
   listMcpServerTools: { args: "object" },
   toggleMcpToolDisabled: { args: "object" },
+  // Voice calls (30 September 2026): electron-main/voice/voice-call-service.ts.
+  getVoiceCallAvailability: { args: "none" },
+  startVoiceCall: { args: "object" },
+  noteVoiceCallAgent: { args: "object" },
+  listVoiceCallVoices: { args: "none" },
+  getAgentVoice: { args: "object" },
+  setAgentVoice: { args: "object" },
+  getVoicePreviewUrl: { args: "object" },
+  rateVoiceCall: { args: "object" },
 } as const;
 
 export type MainMethod = keyof typeof MAIN_METHOD_TABLE;

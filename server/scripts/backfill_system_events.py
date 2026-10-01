@@ -9,21 +9,21 @@ from rich.progress import Progress
 from sqlalchemy import String, func, or_, select, update
 from sqlalchemy.orm import selectinload
 
-from polar.config import settings
-from polar.event.repository import EventRepository
-from polar.event.system import (
+from simeon.config import settings
+from simeon.event.repository import EventRepository
+from simeon.event.system import (
     CheckoutCreatedMetadata,
     SubscriptionCanceledMetadata,
     SubscriptionCreatedMetadata,
     SubscriptionRevokedMetadata,
     SystemEvent,
 )
-from polar.kit.db.postgres import AsyncSession, create_async_sessionmaker
-from polar.kit.db.postgres import create_async_engine as _create_async_engine
-from polar.models import Checkout, Event, Order, Subscription
-from polar.models.checkout import CheckoutStatus
-from polar.models.event import EventSource
-from polar.models.subscription import SubscriptionStatus
+from simeon.kit.db.postgres import AsyncSession, create_async_sessionmaker
+from simeon.kit.db.postgres import create_async_engine as _create_async_engine
+from simeon.models import Checkout, Event, Order, Subscription
+from simeon.models.checkout import CheckoutStatus
+from simeon.models.event import EventSource
+from simeon.models.subscription import SubscriptionStatus
 
 cli = typer.Typer()
 

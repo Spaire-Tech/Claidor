@@ -378,7 +378,7 @@ def upgrade() -> None:
     # ============================================================
     # community_post_media — attachments
     # ============================================================
-    # Images go through polar.file (S3 presign), so we FK to files.id.
+    # Images go through simeon.file (S3 presign), so we FK to files.id.
     # Videos go through Mux direct-upload (same as course_lessons), so
     # we duplicate the mux_* columns rather than threading lessons.
     op.create_table(

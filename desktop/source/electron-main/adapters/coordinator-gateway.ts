@@ -19,7 +19,7 @@ function requireFunction(value: unknown, label: string): asserts value is (...ar
 }
 
 /**
- * Exact root handoff for the coordinator's generated GrokBot gateway client.
+ * Exact root handoff for the coordinator's generated Sand gateway client.
  * The connector remains account-scoped and process-owned; coordinator account
  * authorization/transition ports are intentionally supplied by the separate
  * coordinator binding and are not inferred here.

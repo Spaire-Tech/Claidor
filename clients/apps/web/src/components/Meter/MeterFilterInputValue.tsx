@@ -1,8 +1,8 @@
 'use client'
 
 import { useEventNames } from '@/hooks/queries/events'
-import { Combobox } from '@claidor/ui/components/atoms/Combobox'
-import Input from '@claidor/ui/components/atoms/Input'
+import { Combobox } from '@simeon/ui/components/atoms/Combobox'
+import Input from '@simeon/ui/components/atoms/Input'
 import { useMemo, useState } from 'react'
 import { ControllerRenderProps } from 'react-hook-form'
 

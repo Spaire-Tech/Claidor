@@ -11,9 +11,9 @@ import pytest
 from pytest_mock import MockerFixture
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from polar.enums import SubscriptionRecurringInterval
-from polar.models.order import OrderBillingReasonInternal
-from polar.order.service import order as order_service
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.models.order import OrderBillingReasonInternal
+from simeon.order.service import order as order_service
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_customer,
@@ -43,7 +43,7 @@ class TestTrialStartEnqueuesWelcome:
             save_fixture, product=product, customer=customer
         )
 
-        enqueue = mocker.patch("polar.order.service.enqueue_job")
+        enqueue = mocker.patch("simeon.order.service.enqueue_job")
 
         # The real trial-start order (what checkout creates for a trialing sub).
         await order_service.create_trial_order(

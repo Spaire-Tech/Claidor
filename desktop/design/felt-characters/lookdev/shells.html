@@ -1,0 +1,1613 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Felt Shells Lookdev</title>
+<style>
+  :root { --bg: #dfe8f5; --ink: #1d2433; }
+  html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; font: 12px/1.3 -apple-system, system-ui, sans-serif; color: var(--ink); }
+  #view { position: fixed; inset: 0; }
+  #view canvas { display: block; width: 100%; height: 100%; }
+  #hud { position: fixed; left: 12px; bottom: 10px; opacity: .55; pointer-events: none; white-space: pre; }
+  body.thumb #hud, body.list #hud { display: none; }
+  #list { display: none; position: fixed; inset: 0; padding: 16px; box-sizing: border-box; background: #fff; }
+  body.list #list { display: grid; grid-template-columns: repeat(2, 200px); gap: 10px 24px; align-content: start; }
+  body.list #view { left: -9999px; width: 80px; height: 80px; }
+  .row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .row canvas { width: 40px; height: 40px; border-radius: 10px; }
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+</head>
+<body>
+<div id="view"></div>
+<div id="list"></div>
+<div id="hud"></div>
+<script type="module">
+import * as THREE from "three";
+
+/* =====================================================================
+   Params, cost knobs
+   ===================================================================== */
+const Q = new URLSearchParams(location.search);
+const qp = (k, d) => (Q.has(k) ? Q.get(k) : d);
+const THUMB = Q.has("thumb");
+const LIST = Q.has("list");
+const KNOBS = {
+  shells: +qp("shells", THUMB || LIST ? 16 : 56),      // head shell count
+  strands: +qp("strands", THUMB || LIST ? 0.25 : 1),   // strand density multiplier
+  pixelRatio: +qp("pr", THUMB || LIST ? 2 : Math.min(window.devicePixelRatio || 1, 2)),
+  meshLOD: +qp("lod", 1),                               // 1 = full mesh density, 0.5 = half
+};
+if (THUMB) document.body.classList.add("thumb");
+if (LIST) document.body.classList.add("list");
+
+/* =====================================================================
+   Palette (app character colours) and derived felt colours
+   ===================================================================== */
+const PALETTE = {
+  black:   ["#000000", "#4a4a4f", "#1f1f22"],
+  brown:   ["#936439", "#AE8968", "#855C36"],
+  red:     ["#FF263C", "#FF5667", "#E02135"],
+  orange:  ["#FF6700", "#FF8838", "#E05B00"],
+  yellow:  ["#FF9800", "#FFAF38", "#E08600"],
+  green:   ["#00C972", "#1CCF82", "#009957"],
+  cyan:    ["#00BCA6", "#58D3C5", "#00A592"],
+  blue:    ["#1084FE", "#459FFE", "#0E74E0"],
+  violet:  ["#9159FE", "#B792FE", "#804EE0"],
+  magenta: ["#FF309B", "#FF77BE", "#E02A88"],
+  gray:    ["#777777", "#A6A6A6", "#696969"],
+};
+const hex3 = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
+const mix3 = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+const lin = (s) => new THREE.Color().setRGB(s[0], s[1], s[2], THREE.SRGBColorSpace); // sRGB triple -> working (linear) colour
+const lum3 = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+const sat3 = (c, s) => { const l = lum3(c); return c.map((v) => Math.min(1, Math.max(0, l + (v - l) * s))); };
+
+function feltColours(id) {
+  const [base, from, to] = PALETTE[id] || PALETTE.blue;
+  let b = hex3(base), f = hex3(from), t = hex3(to);
+  if (id === "black") { b = hex3("#2e2e33"); }            // black renders as soft charcoal felt
+  const cream = hex3("#fff6ea");
+  const patch = id === "black" ? hex3("#8d8d93") : id === "gray" ? hex3("#d9d9d9") : mix3(sat3(f, 0.9), cream, 0.45);
+  const nose = id === "black" ? hex3("#151517") : sat3(mix3(t, [0, 0, 0], 0.55), 1.1);
+  const bgA = mix3(sat3(f, 0.55), [1, 1, 1], 0.62);       // backdrop centre
+  const bgB = mix3(sat3(t, 0.55), [1, 1, 1], 0.40);       // backdrop edge
+  // sweater: orange family, except where the body itself is warm (keep contrast)
+  const warm = ["orange", "yellow", "red"].includes(id);
+  const knit = warm ? ["#1084FE", "#459FFE", "#0E74E0"].map(hex3) : ["#FF6700", "#FF8838", "#E05B00"].map(hex3);
+  return { body: b, from: f, to: t, patch, nose, bgA, bgB, knit };
+}
+
+/* =====================================================================
+   Renderer / scene / camera
+   ===================================================================== */
+const host = document.getElementById("view");
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer: LIST });
+renderer.setPixelRatio(KNOBS.pixelRatio);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.sortObjects = true;
+host.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(28, 1, 0.05, 50);
+
+/* =====================================================================
+   Lights (shared uniforms, world space; direction = towards the light)
+   ===================================================================== */
+const V3 = THREE.Vector3;
+const L = {
+  keyDir: new V3(-0.62, 0.72, 0.62).normalize(), keyCol: new THREE.Color(1.0, 0.965, 0.93).multiplyScalar(2.05),
+  fillDir: new V3(0.85, 0.12, 0.5).normalize(), fillCol: new THREE.Color(0.8, 0.88, 1.0).multiplyScalar(0.55),
+  rimDir: new V3(0.55, 0.5, -0.72).normalize(), rimCol: new THREE.Color(1.0, 0.98, 0.96).multiplyScalar(1.9),
+  rim2Dir: new V3(-0.72, 0.38, -0.6).normalize(), rim2Col: new THREE.Color(0.95, 0.97, 1.0).multiplyScalar(1.2),
+  sky: new THREE.Color(0.5, 0.54, 0.62), ground: new THREE.Color(0.22, 0.2, 0.19),
+  catchDir: new V3(-0.42, -0.06, 1.0).normalize(),
+};
+const U = {
+  uKeyDir: { value: L.keyDir }, uKeyCol: { value: L.keyCol },
+  uFillDir: { value: L.fillDir }, uFillCol: { value: L.fillCol },
+  uRimDir: { value: L.rimDir }, uRimCol: { value: L.rimCol },
+  uRim2Dir: { value: L.rim2Dir }, uRim2Col: { value: L.rim2Col },
+  uSky: { value: L.sky }, uGround: { value: L.ground },
+  uCatchDir: { value: L.catchDir },
+  uTime: { value: 0 },
+  uPC: { value: Array.from({ length: 8 }, () => new V3(0, -99, 0)) },  // shadow proxies (world ellipsoids)
+  uPR: { value: Array.from({ length: 8 }, () => new V3(0.01, 0.01, 0.01)) },
+  uPx: { value: 0.002 },  // world size of one pixel at unit distance (for strand width clamp)
+  uNoise: { value: null },
+};
+
+/* 3D tiling value-noise texture, sampled for clumps / mottling (one fetch instead of 8 hashes) */
+function makeNoise3D(N = 48) {
+  const data = new Uint8Array(N * N * N);
+  const rnd = new Float32Array(N * N * N);
+  let s = 1234567;
+  const r = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+  for (let i = 0; i < rnd.length; i++) rnd[i] = r();
+  // blur once for smoother value noise
+  const idx = (x, y, z) => ((z + N) % N) * N * N + ((y + N) % N) * N + ((x + N) % N);
+  for (let z = 0; z < N; z++) for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    let a = 0;
+    for (let k = -1; k <= 1; k++) for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) a += rnd[idx(x + i, y + j, z + k)] * (i === 0 ? 2 : 1) * (j === 0 ? 2 : 1) * (k === 0 ? 2 : 1);
+    data[idx(x, y, z)] = Math.max(0, Math.min(255, ((a / 64) - 0.5) * 3.2 * 255 + 128));
+  }
+  const t = new THREE.Data3DTexture(data, N, N, N);
+  t.format = THREE.RedFormat; t.type = THREE.UnsignedByteType;
+  t.minFilter = t.magFilter = THREE.LinearFilter; t.wrapS = t.wrapT = t.wrapR = THREE.RepeatWrapping;
+  t.unpackAlignment = 1; t.needsUpdate = true;
+  return t;
+}
+U.uNoise.value = makeNoise3D();
+
+/* =====================================================================
+   GLSL
+   ===================================================================== */
+const GLSL_COMMON = /* glsl */`
+#define PI 3.14159265
+uniform vec3 uKeyDir, uKeyCol, uFillDir, uFillCol, uRimDir, uRimCol, uRim2Dir, uRim2Col, uSky, uGround, uCatchDir;
+uniform float uTime;
+uniform vec3 uPC[8];
+uniform vec3 uPR[8];
+uniform highp sampler3D uNoise;
+float sat(float x){ return clamp(x, 0.0, 1.0); }
+vec4 hash42(vec2 p){ vec4 p4 = fract(vec4(p.xyxy) * vec4(.1031, .1030, .0973, .1099)); p4 += dot(p4, p4.wzxy + 33.33); return fract((p4.xxyz + p4.yzzw) * p4.zywx); }
+float hash12(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * .1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+float noise3(vec3 p){ return texture(uNoise, p).r; }
+vec3 hemi(vec3 n){ return mix(uGround, uSky, n.y * 0.5 + 0.5); }
+float wrapD(vec3 n, vec3 l, float w){ return max(0.0, (dot(n, l) + w) / (1.0 + w)); }
+// soft shadow of a directional light by world ellipsoid proxies; mask bit i = ignore proxy i
+float proxyVis(vec3 p, vec3 Ld, int mask, float soft){
+  float v = 1.0;
+  for (int i = 0; i < 8; i++){
+    if (((mask >> i) & 1) == 1) continue;
+    vec3 o = (p - uPC[i]) / uPR[i];
+    vec3 d = Ld / uPR[i];
+    float t = -dot(o, d) / dot(d, d);
+    if (t <= 0.0) continue;
+    float m = length(o + d * t);
+    float w = soft * t + 0.06;
+    v *= mix(0.12, 1.0, smoothstep(1.0 - w, 1.0 + w * 0.6, m));
+  }
+  return v;
+}
+// analytic studio environment (for glossy eyes and yarn sheen)
+float softbox(vec3 r, vec3 dir, vec2 size, float round){
+  vec3 up = abs(dir.y) < 0.95 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+  vec3 bx = normalize(cross(up, dir)); vec3 by = cross(dir, bx);
+  float z = dot(r, dir); if (z <= 0.05) return 0.0;
+  vec2 p = vec2(dot(r, bx), dot(r, by)) / z;
+  vec2 q = abs(p) - size + round;
+  float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - round;
+  return 1.0 - smoothstep(-0.015, 0.02, d);
+}
+vec3 envStudio(vec3 r, float gain){
+  vec3 c = mix(uGround * 0.7, uSky * 1.1, smoothstep(-0.35, 0.7, r.y));
+  c += uKeyCol * 1.6 * gain * softbox(r, uKeyDir, vec2(0.42, 0.30), 0.12);
+  c += vec3(1.0) * 2.6 * gain * softbox(r, uCatchDir, vec2(0.16, 0.11), 0.06);
+  c += vec3(1.0) * 1.2 * gain * softbox(r, normalize(uCatchDir + vec3(0.55, 0.05, 0.0)), vec2(0.035, 0.035), 0.03);
+  c += uRimCol * 0.9 * gain * softbox(r, uRimDir, vec2(0.12, 0.45), 0.05);
+  c += uRim2Col * 0.6 * gain * softbox(r, uRim2Dir, vec2(0.12, 0.45), 0.05);
+  return c;
+}
+`;
+
+/* ---------------- Fur: shared vertex (base layer and shells) ---------------- */
+const FUR_VERT = /* glsl */`
+${GLSL_COMMON}
+attribute vec3 aComb;
+attribute vec4 aFur;          // x length scale, y light-patch region, z baked AO, w shadow-proxy mask
+#ifdef LIDS
+attribute float aLid;
+uniform mat4 uLidMat[4];
+#endif
+uniform float uShells, uFurLen, uCombAmt, uGravity, uWind;
+varying vec2 vUv;
+varying float vH;
+varying vec3 vRest;
+varying float vRegion;
+varying vec3 vDiff;
+varying vec3 vSpec;
+varying vec3 vBack;
+varying float vSil;
+varying float vAO;
+varying vec3 vWN;
+varying vec3 vWP;
+varying float vLen;
+void main(){
+  vec3 p = position; vec3 n = normal; vec3 cm = aComb;
+#ifdef LIDS
+  mat4 LM = uLidMat[int(aLid + 0.5)];
+  p = (LM * vec4(p, 1.0)).xyz; n = mat3(LM) * n; cm = mat3(LM) * cm;
+#endif
+  float h = 0.0;
+#ifdef SHELL
+  h = (float(gl_InstanceID) + 1.0) / uShells;
+#endif
+  float len = uFurLen * aFur.x;
+  vec3 wN = normalize(mat3(modelMatrix) * n);
+  vec3 wC = mat3(modelMatrix) * cm;
+  vec3 wP0 = (modelMatrix * vec4(p, 1.0)).xyz;
+  // lean: comb direction + gravity + slow breeze, mostly tangential
+  float breeze = sin(uTime * 1.3 + wP0.x * 3.0 + wP0.y * 2.0) * 0.5 + sin(uTime * 2.1 + wP0.z * 4.0) * 0.3;
+  vec3 lean = wC * uCombAmt + vec3(0.0, -1.0, 0.0) * uGravity + vec3(0.6, 0.1, 0.3) * breeze * uWind;
+  lean -= wN * dot(lean, wN) * 0.8;
+  vec3 wP = wP0 + wN * len * h + lean * len * h * h;
+  vec3 T = normalize(wN * 0.8 + normalize(wC + 1e-4) * 0.6 + lean * 2.0 * h);
+  vec3 V = normalize(cameraPosition - wP);
+  float ndv = dot(wN, V);
+  float sil = 1.0 - abs(ndv);
+  int mask = int(aFur.w + 0.5);
+  float ao = aFur.z;
+  // direct light, soft analytic shadows
+  float sKey = proxyVis(wP, uKeyDir, mask, 0.22);
+  float sRim = proxyVis(wP, uRimDir, mask, 0.3);
+  float sRim2 = proxyVis(wP, uRim2Dir, mask, 0.3);
+  vec3 diff = hemi(wN) * ao * 1.05;
+  vec3 keyD = uKeyCol * pow(wrapD(wN, uKeyDir, 0.3), 1.35) * sKey * mix(0.7, 1.0, ao);
+  diff += keyD;
+  diff += uFillCol * wrapD(wN, uFillDir, 0.6) * mix(0.55, 1.0, ao);
+  diff += uRimCol * pow(wrapD(wN, uRimDir, 0.25), 2.0) * sRim * 0.8;
+  diff += uRim2Col * pow(wrapD(wN, uRim2Dir, 0.25), 2.0) * sRim2 * 0.8;
+  // Kajiya-Kay fibre highlight (weak and broad on felt)
+  vec3 Hk = normalize(uKeyDir + V); float th = dot(T, Hk);
+  vec3 spec = uKeyCol * pow(max(0.0, 1.0 - th * th), 18.0) * sKey * 0.05 * ao;
+  vec3 Hr = normalize(uRimDir + V); float tr = dot(T, Hr);
+  spec += uRimCol * pow(max(0.0, 1.0 - tr * tr), 10.0) * sRim * 0.06 * wrapD(wN, uRimDir, 0.3);
+  // light scattered through thin backlit fibres at the silhouette
+  float bk = pow(sat(dot(-V, uRimDir)), 2.0) * sRim * wrapD(wN, uRimDir, 0.5) + pow(sat(dot(-V, uRim2Dir)), 2.0) * sRim2 * 0.7 * wrapD(wN, uRim2Dir, 0.5) + pow(sat(dot(-V, uKeyDir)), 2.0) * sKey * 0.6;
+  vec3 back = vec3(bk) * pow(sil, 2.2) * 1.6 + uKeyCol * pow(sil, 3.0) * wrapD(wN, uKeyDir, 0.8) * sKey * 0.35;
+  vUv = uv; vH = h; vRest = p; vRegion = aFur.y; vDiff = diff; vSpec = spec; vBack = back; vSil = sil; vAO = ao;
+  vWN = wN; vWP = wP; vLen = aFur.x;
+  gl_Position = projectionMatrix * viewMatrix * vec4(wP, 1.0);
+}
+`;
+
+/* ---------------- Fur: shell fragment ---------------- */
+const FUR_SHELL_FRAG = /* glsl */`
+${GLSL_COMMON}
+uniform vec3 uColA, uColB;        // body colour, light patch colour (linear)
+uniform float uRows, uRows2, uRootDark, uShells, uNoiseScale, uDensity2, uCurl, uClumpScale;
+varying vec2 vUv; varying float vH; varying vec3 vRest; varying float vRegion;
+varying vec3 vDiff; varying vec3 vSpec; varying vec3 vBack; varying float vSil; varying float vAO; varying float vLen;
+
+// one layer of strands laid out in latitude bands (cells stay near-square from pole to pole)
+// returns coverage, writes strand random + normalised height along the strand
+float strands(vec2 uv, float rows, float h, float lenMul, float rRoot, float rTip, float density, float seed, float clump, vec2 shift, out vec4 rnd, out float t){
+  float vr = uv.y * rows + shift.y;
+  float row = floor(vr);
+  float th = (row + 0.5) / rows * PI;
+  float around = max(3.0, floor(2.0 * rows * sin(th) + 0.5));
+  float ur = uv.x * around + shift.x;
+  vec2 id = vec2(floor(ur), row);
+  vec2 f = vec2(fract(ur), fract(vr));
+  rnd = hash42(id + seed);
+  float aaU = fwidth(uv.x) * around, aaV = fwidth(uv.y) * rows;
+  float aa = max(max(aaU, aaV), 1e-4);
+  float sl = mix(0.45, 1.0, rnd.z) * lenMul * mix(0.8, 1.12, clump);   // strand length (0..1 of shell stack)
+  t = h / max(sl, 1e-3);
+  float alive = (rnd.w < density && t <= 1.0) ? 1.0 : 0.0;
+  vec2 c = 0.5 + (rnd.xy - 0.5) * 0.26;
+  c += (rnd.yx - 0.5) * 0.5 * t;                       // per-strand lean (tips smear into streaks, not dots)
+  float ph = rnd.z * 6.2831 + t * mix(7.0, 15.0, rnd.w); // wool crimp: each fibre winds a small helix
+  c += vec2(cos(ph), sin(ph)) * 0.13 * smoothstep(0.0, 0.3, t);
+  float rad = mix(rRoot, rTip, pow(sat(t), 0.8));
+  float d = length(f - c);
+  float cov = (1.0 - smoothstep(rad - aa * 0.7, rad + aa * 0.7, d)) * alive;
+  // below ~1.5px per cell the pattern cannot be resolved: fade to its average coverage
+  float px = 1.0 / aa;
+  float mean = density * PI * rad * rad * step(t, 1.0) * sat(1.3 - h / max(lenMul, 1e-3) * 0.5);
+  return mix(mean, cov, smoothstep(0.9, 2.2, px));
+}
+
+void main(){
+  float h = vH;
+  // felt clumps: fibres in one clump bend the same way (matted, crimped look)
+  vec3 cp = vRest * uClumpScale;
+  float clump = noise3(cp);
+  vec2 cv = vec2(noise3(cp + vec3(0.31, 0.0, 0.0)), noise3(cp + vec3(0.0, 0.57, 0.13))) - 0.5;
+  float mott = noise3(vRest * uNoiseScale);
+  float lenMul = mix(0.72, 1.12, clump);
+  vec4 r1, r2; float t1, t2;
+  vec2 sh = cv * uCurl * h * h;
+  float c1 = strands(vUv, uRows, h, 0.8 * lenMul, 0.36, 0.12, 0.95, 0.0, clump, sh, r1, t1);             // dense undercoat
+  float c2 = strands(vUv, uRows2, h, 1.0 * lenMul, 0.24, 0.06, uDensity2, 17.0, clump, sh * 0.6, r2, t2); // longer guard fibres
+  float cov = 1.0 - (1.0 - c1) * (1.0 - c2);
+  if (cov < 0.004) discard;
+  float w2 = c2 / max(c1 + c2, 1e-4);
+  vec4 rnd = mix(r1, r2, w2);
+  float t = mix(t1, t2, w2);
+  // fibre-level dithered border between body and light patch
+  float isPatch = step(rnd.y, smoothstep(0.0, 1.0, vRegion));
+  vec3 alb = mix(uColA, uColB, isPatch);
+  alb *= 0.9 + 0.2 * rnd.x;                          // fibre-to-fibre value variation
+  alb *= 0.86 + 0.14 * mott + 0.12 * clump;          // felted mottling (matted clumps read darker)
+  alb = mix(alb, alb * vec3(1.06, 1.03, 0.97), step(0.93, rnd.z) * 0.6); // a few warmer stray fibres
+  float selfSh = mix(uRootDark, 1.0, pow(h, 0.75)) * mix(0.9, 1.03, clump);  // self shadowing towards the root and between clumps
+  // multiple scattering inside the wool: shadowed fibres get richer, not greyer
+  float lum = dot(vDiff, vec3(0.3, 0.59, 0.11));
+  float al = dot(alb, vec3(0.2126, 0.7152, 0.0722));
+  vec3 rich = max(vec3(0.0), mix(vec3(al), alb, mix(1.18, 1.0, smoothstep(0.3, 1.2, lum))));
+  vec3 col = rich * vDiff * selfSh;
+  // fine fibre tips catch light and look a touch paler (the misty edge of real wool)
+  col += mix(alb, vec3(al), 0.5) * vDiff * 0.1 * t * t;
+  col += vSpec * (0.4 + 1.2 * rnd.z) * t;
+  col += mix(alb, vec3(al), 0.2) * vBack * (0.3 + 0.7 * t) * 1.2;
+  float alpha = cov * (1.0 - 0.8 * smoothstep(0.45, 1.0, t));
+  alpha *= mix(1.0, 0.55, smoothstep(0.75, 1.0, vSil));   // soften stacked-slice look at grazing angles
+  gl_FragColor = vec4(col, alpha);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}
+`;
+
+/* ---------------- Fur: base layer (velvet) ---------------- */
+const FUR_BASE_FRAG = /* glsl */`
+${GLSL_COMMON}
+uniform vec3 uColA, uColB;
+uniform float uRootDark, uNoiseScale;
+varying vec2 vUv; varying float vH; varying vec3 vRest; varying float vRegion;
+varying vec3 vDiff; varying vec3 vSpec; varying vec3 vBack; varying float vSil; varying float vAO; varying vec3 vWN; varying vec3 vWP;
+void main(){
+  float clump = noise3(vRest * uNoiseScale);
+  vec3 alb = mix(uColA, uColB, smoothstep(0.1, 0.9, vRegion)) * (0.92 + 0.14 * clump);
+  vec3 V = normalize(cameraPosition - vWP);
+  float ndv = sat(dot(normalize(vWN), V));
+  // velvet / sheen: fibres standing on the surface light up at grazing view
+  float sheen = pow(1.0 - ndv, 3.0) * 0.6;
+  vec3 col = alb * vDiff * uRootDark * 1.15 + alb * vDiff * sheen * 0.5;
+  gl_FragColor = vec4(col, 1.0);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}
+`;
+
+/* ---------------- Strands: silhouette fringe + flyaways (camera-facing ribbons) ---------------- */
+const STRAND_VERT = /* glsl */`
+${GLSL_COMMON}
+attribute float aT;         // 0 root .. 1 tip
+attribute float aSide;      // -1 / 1
+attribute vec3 iRoot;
+attribute vec3 iN;
+attribute vec3 iDir;        // random tangent
+attribute vec4 iP;          // x length, y curl curvature, z width, w type (0 halo, 1 flyaway)
+attribute vec2 iR;          // x region, y random
+uniform float uPx;
+uniform float uGravity;
+uniform vec3 uColA, uColB;
+varying float vA; varying vec3 vCol; varying float vEdge; varying float vT;
+vec3 strandPos(float s, vec3 root, vec3 d0, vec3 b, float k, float wig, float L){
+  float a = k * s;
+  vec3 p = root + (abs(k) > 1e-3 ? (d0 * sin(a) + b * (1.0 - cos(a))) / k : d0 * s);
+  vec3 side = cross(d0, b);
+  p += side * sin(s / L * 9.0 + iR.y * 30.0) * wig * s;
+  p += vec3(0.0, -1.0, 0.0) * uGravity * s * s * 1.5;
+  p += vec3(0.7, 0.1, 0.35) * (sin(uTime * 1.3 + root.x * 3.0 + root.y * 2.0) * 0.5 + sin(uTime * 2.1 + root.z * 4.0) * 0.3) * 0.18 * s * s;
+  return p;
+}
+void main(){
+  vec3 wRoot = (modelMatrix * vec4(iRoot, 1.0)).xyz;
+  vec3 wN = normalize(mat3(modelMatrix) * iN);
+  vec3 wD = normalize(mat3(modelMatrix) * iDir);
+  wD = normalize(wD - wN * dot(wD, wN));
+  float isFly = iP.w;
+  float tilt = mix(mix(0.35, 0.9, iR.y), mix(0.5, 1.25, iR.y), isFly);
+  vec3 d0 = normalize(wN * cos(tilt) + wD * sin(tilt));
+  vec3 b = normalize(cross(d0, cross(wN, wD)) + wN * 0.2);
+  b = normalize(b - d0 * dot(b, d0));
+  float L = iP.x; float k = iP.y;
+  float wig = mix(0.05, 0.28, isFly);
+  float s = aT * L;
+  vec3 p = strandPos(s, wRoot, d0, b, k, wig, L);
+  vec3 pa = strandPos(max(s - 0.004, 0.0), wRoot, d0, b, k, wig, L);
+  vec3 pb = strandPos(s + 0.004, wRoot, d0, b, k, wig, L);
+  vec3 tang = normalize(pb - pa);
+  vec3 V = normalize(cameraPosition - p);
+  float dist = length(cameraPosition - p);
+  vec3 side = normalize(cross(tang, V));
+  float w = iP.z * mix(1.0, 0.35, aT);
+  float pxw = uPx * dist * 0.75;                 // never thinner than ~0.75 px; fade instead
+  float wc = max(w, pxw);
+  p += side * aSide * wc * 0.5;
+  // lighting
+  float ndv = dot(wN, V);
+  float sil = 1.0 - abs(ndv);
+  float sKey = proxyVis(p, uKeyDir, 0, 0.25);
+  vec3 alb = mix(uColA, uColB, step(iR.y, iR.x));
+  alb = mix(alb, vec3(dot(alb, vec3(0.2126, 0.7152, 0.0722))), 0.08) * 1.06;
+  float kd = sqrt(max(0.0, 1.0 - pow(dot(tang, uKeyDir), 2.0)));
+  vec3 lit = hemi(wN) * 1.0 + uKeyCol * wrapD(wN, uKeyDir, 0.6) * kd * sKey + uFillCol * wrapD(wN, uFillDir, 0.6);
+  float bk = pow(sat(dot(-V, uRimDir)), 2.0) * wrapD(wN, uRimDir, 0.5) + pow(sat(dot(-V, uRim2Dir)), 2.0) * 0.7 * wrapD(wN, uRim2Dir, 0.5);
+  lit += vec3(bk) * 1.8 * sil + uRimCol * wrapD(wN, uRimDir, 0.3) * 0.4;
+  vec3 Hk = normalize(uKeyDir + V); float th = dot(tang, Hk);
+  vCol = alb * lit + uKeyCol * pow(max(0.0, 1.0 - th * th), 30.0) * 0.12 * sKey;
+  float vis = isFly > 0.5 ? mix(0.28, 1.0, smoothstep(0.2, 0.8, sil)) : smoothstep(0.35, 0.85, sil);
+  vA = (w / wc) * vis * smoothstep(0.0, 0.25, aT) * mix(1.0, 0.45, aT) * mix(0.85, 0.65, isFly);
+  vEdge = aSide; vT = aT;
+  gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
+}
+`;
+const STRAND_FRAG = /* glsl */`
+varying float vA; varying vec3 vCol; varying float vEdge; varying float vT;
+void main(){
+  float e = 1.0 - vEdge * vEdge;
+  float a = vA * smoothstep(0.0, 0.6, e);
+  if (a < 0.004) discard;
+  gl_FragColor = vec4(vCol, a);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}
+`;
+
+/* ---------------- Knit (sweater) ---------------- */
+const KNIT_VERT = /* glsl */`
+${GLSL_COMMON}
+attribute vec4 aTan;       // xyz: tangent along stitch columns (u), w: rib flag
+attribute vec4 aK;         // x AO, y mask, z unused, w unused
+#ifdef SHELL
+uniform float uShells, uFurLen;
+#endif
+varying vec2 vSt; varying vec3 vWN; varying vec3 vWT; varying vec3 vWP; varying float vRib; varying float vAO; varying float vShadow; varying float vH; varying vec3 vRest;
+void main(){
+  float h = 0.0;
+#ifdef SHELL
+  h = (float(gl_InstanceID) + 1.0) / uShells;
+#endif
+  vec3 wN = normalize(mat3(modelMatrix) * normal);
+  vec3 wP = (modelMatrix * vec4(position, 1.0)).xyz;
+#ifdef SHELL
+  wP += wN * uFurLen * h + vec3(0.0, -1.0, 0.0) * uFurLen * 0.35 * h * h;
+#endif
+  vSt = uv; vWN = wN; vWT = normalize(mat3(modelMatrix) * aTan.xyz); vWP = wP; vRib = aTan.w; vAO = aK.x; vH = h; vRest = position;
+  vShadow = proxyVis(wP, uKeyDir, int(aK.y + 0.5), 0.22);
+  gl_Position = projectionMatrix * viewMatrix * vec4(wP, 1.0);
+}
+`;
+const KNIT_FUNCS = /* glsl */`
+// one yarn leg: an elongated dome, tilted; 'top' tucks under the next row
+float leg(vec2 p, vec2 c, float ang, vec2 ax, out float along){
+  vec2 d = p - c;
+  float s = sin(ang), co = cos(ang);
+  vec2 r = vec2(co * d.x + s * d.y, -s * d.x + co * d.y);
+  vec2 q = r / ax;
+  along = q.y;
+  float e = dot(q, q);
+  float dome = sqrt(max(0.0, 1.0 - e));
+  return dome * mix(1.0, 0.72, smoothstep(-0.1, 1.0, q.y));
+}
+// stockinette / 1x1 rib height field in stitch space (x: columns, y: rows)
+float knitH(vec2 st, float rib, out float ply, out vec2 cellId){
+  vec2 cell = floor(st);
+  cellId = cell;
+  float h = 0.0; ply = 0.0;
+  for (int k = -1; k <= 1; k++){
+    vec2 id = cell + vec2(0.0, float(k));
+    vec4 rr = hash42(id * 1.7 + 3.0);
+    vec2 f = st - id;
+    f.y *= 0.72;                                  // rows are ~0.72 of a column wide
+    float jit = (rr.x - 0.5) * 0.04;
+    float a1, a2;
+    float wv = mix(1.0, 0.72, rib);
+    vec2 ax = vec2(0.165 * wv, 0.5) * (0.97 + 0.06 * rr.y);
+    float l1 = leg(f, vec2(0.5 - 0.225 * wv + jit, 0.37), 0.5 * mix(1.0, 0.75, rib), ax, a1);
+    float l2 = leg(f, vec2(0.5 + 0.225 * wv + jit, 0.37), -0.5 * mix(1.0, 0.75, rib), ax, a2);
+    float m = max(l1, l2);
+    if (m > h){
+      h = m;
+      float a = l1 > l2 ? a1 : a2;
+      float side = l1 > l2 ? 1.0 : -1.0;
+      ply = sin((a * 5.5 + side * f.x * 3.0 + rr.z) * 6.2831);
+    }
+  }
+  if (rib > 0.5){
+    // purl valley between rib columns: every second column sinks
+    float colOdd = mod(cell.x, 2.0);
+    h *= mix(1.0, 0.35, colOdd);
+  }
+  return h;
+}
+`;
+const KNIT_FRAG = /* glsl */`
+${GLSL_COMMON}
+${KNIT_FUNCS}
+uniform vec3 uKnitA, uKnitHi, uKnitLo;
+varying vec2 vSt; varying vec3 vWN; varying vec3 vWT; varying vec3 vWP; varying float vRib; varying float vAO; varying float vShadow; varying float vH; varying vec3 vRest;
+void main(){
+  float ply; vec2 cid;
+  float e = 0.03;
+  float h0 = knitH(vSt, vRib, ply, cid);
+  float pd; vec2 cd;
+  float hx = knitH(vSt + vec2(e, 0.0), vRib, pd, cd);
+  float hy = knitH(vSt + vec2(0.0, e), vRib, pd, cd);
+  float hp = h0 + 0.05 * ply * h0;
+  // world-space derivatives of the stitch coordinates
+  vec3 dpdx = dFdx(vWP), dpdy = dFdy(vWP);
+  vec2 dsx = dFdx(vSt), dsy = dFdy(vSt);
+  float det = dsx.x * dsy.y - dsx.y * dsy.x;
+  vec3 Tu = normalize(vWT);
+  vec3 N = normalize(vWN);
+  vec3 Tv = normalize(cross(N, Tu));
+  // gradient in stitch space -> world bump
+  vec2 g = vec2(hx - h0, hy - h0) / e;
+  g += vec2(0.0, 0.4) * ply * h0;
+  vec3 Nb = normalize(N - (Tu * g.x + Tv * g.y) * 0.13);
+  vec3 V = normalize(cameraPosition - vWP);
+  vec4 cr = hash42(cid + 11.0);
+  float fuzz = noise3(vRest * 38.0);
+  vec3 alb = mix(mix(uKnitLo, uKnitA, 0.45), uKnitA, smoothstep(0.0, 0.6, hp));
+  alb = mix(alb, uKnitHi, smoothstep(0.75, 1.0, hp) * 0.3);
+  // fine yarn hairiness: high-frequency mottling on the yarn surface
+  alb *= 0.9 + 0.2 * noise3(vRest * 160.0);
+  alb *= 0.94 + 0.1 * cr.x;
+  alb *= 0.93 + 0.12 * fuzz;
+  float cav = mix(0.42, 1.0, smoothstep(0.0, 0.6, h0));  // yarn crevices
+  float ao = vAO * cav;
+  vec3 diff = hemi(Nb) * ao * 0.85;
+  // form light from the smooth normal, stitch relief from the bumped one
+  diff += uKeyCol * 1.25 * pow(wrapD(N, uKeyDir, 0.2), 1.4) * mix(0.55, 1.15, wrapD(Nb, uKeyDir, 0.6)) * vShadow * mix(0.6, 1.0, cav);
+  diff += uFillCol * wrapD(Nb, uFillDir, 0.5) * ao;
+  diff += uRimCol * pow(wrapD(Nb, uRimDir, 0.2), 2.0) * 0.7 * cav;
+  diff += uRim2Col * pow(wrapD(Nb, uRim2Dir, 0.2), 2.0) * 0.5 * cav;
+  float ndv = sat(dot(N, V));
+  vec3 sheen = (uKeyCol * wrapD(N, uKeyDir, 0.5) * vShadow + uRimCol * 0.6) * pow(1.0 - ndv, 2.5) * 0.3;
+  vec3 col = alb * diff + mix(alb, vec3(1.0), 0.15) * sheen;
+  gl_FragColor = vec4(col, 1.0);
+#ifdef DEBUG_KNIT
+  gl_FragColor = vec4(N * 0.5 + 0.5, 1.0); if (gl_FragCoord.x < 400.0) gl_FragColor = vec4(uKeyDir * 0.5 + 0.5, 1.0); return;
+#endif
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}
+`;
+/* mohair halo on the sweater: a few sparse, pale shells */
+const KNIT_SHELL_FRAG = /* glsl */`
+${GLSL_COMMON}
+uniform vec3 uKnitA, uKnitHi;
+varying vec2 vSt; varying vec3 vWN; varying vec3 vWT; varying vec3 vWP; varying float vRib; varying float vAO; varying float vShadow; varying float vH; varying vec3 vRest;
+void main(){
+  vec2 g = vSt * vec2(3.2, 2.4);
+  vec2 id = floor(g); vec2 f = fract(g);
+  vec4 r = hash42(id + 5.0);
+  if (r.w > 0.55) discard;
+  float t = vH / mix(0.4, 1.0, r.z);
+  if (t > 1.0) discard;
+  vec2 c = 0.5 + (r.xy - 0.5) * 0.4 + (r.yx - 0.5) * 0.35 * t;
+  float aa = max(fwidth(g.x), fwidth(g.y));
+  float rad = mix(0.16, 0.05, t);
+  float cov = 1.0 - smoothstep(rad - aa, rad + aa, length(f - c));
+  float px = 1.0 / max(aa, 1e-4);
+  cov = mix(0.2 * PI * rad * rad, cov, smoothstep(0.9, 2.2, px));
+  if (cov < 0.01) discard;
+  vec3 N = normalize(vWN);
+  vec3 V = normalize(cameraPosition - vWP);
+  float sil = 1.0 - abs(dot(N, V));
+  vec3 alb = mix(uKnitA, uKnitHi, 0.35);
+  vec3 lit = hemi(N) * vAO + uKeyCol * wrapD(N, uKeyDir, 0.6) * vShadow + uFillCol * wrapD(N, uFillDir, 0.6);
+  lit += vec3(pow(sat(dot(-V, uRimDir)), 2.0) + pow(sat(dot(-V, uRim2Dir)), 2.0) * 0.6) * pow(sil, 2.0) * 1.5;
+  gl_FragColor = vec4(alb * lit * mix(0.75, 1.0, vH), cov * mix(0.4, 0.85, sil) * (1.0 - t * 0.6));
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}
+`;
+
+/* ---------------- Eye ---------------- */
+const EYE_VERT = /* glsl */`
+${GLSL_COMMON}
+uniform mat3 uGaze;         // eyeball rotation inside its socket
+varying vec3 vLocal; varying vec3 vSock; varying vec3 vWP; varying vec3 vWN; varying vec3 vVL; varying float vShadow;
+void main(){
+  vec3 wP = (modelMatrix * vec4(position, 1.0)).xyz;
+  vLocal = position;
+  vSock = uGaze * position;
+  vWP = wP; vWN = normalize(mat3(modelMatrix) * normal);
+  vVL = normalize(transpose(mat3(modelMatrix)) * (cameraPosition - wP));
+  vShadow = proxyVis(wP, uKeyDir, 1 | 16 | 32, 0.22);
+  gl_Position = projectionMatrix * viewMatrix * vec4(wP, 1.0);
+}
+`;
+const EYE_FRAG = /* glsl */`
+${GLSL_COMMON}
+uniform vec3 uIrisA, uIrisB, uSclera;
+uniform vec4 uLidUp;      // socket-space pole of upper lid (xyz), cos of its edge angle (w)
+uniform vec4 uLidLo;
+uniform float uR;
+uniform mat4 modelMatrix;
+varying vec3 vLocal; varying vec3 vSock; varying vec3 vWP; varying vec3 vWN; varying vec3 vVL; varying float vShadow;
+void main(){
+  vec3 q = normalize(vLocal);
+  vec3 qs = normalize(vSock);
+  // iris with refraction parallax (the iris sits a little behind the clear cornea)
+  float front = smoothstep(0.55, 0.9, q.z);
+  vec2 ip = q.xy - vVL.xy / max(vVL.z, 0.35) * 0.075 * front;
+  float irisR = 0.5;
+  float rr = length(ip) / irisR;
+  float ang = atan(ip.y, ip.x);
+  float fib = hash12(vec2(floor(ang * 26.0), 3.0)) * 0.6 + hash12(vec2(floor(ang * 61.0), 7.0)) * 0.4;
+  vec3 iris = mix(uIrisA, uIrisB, smoothstep(0.35, 0.95, rr));
+  iris *= 0.78 + 0.4 * fib * smoothstep(0.3, 0.9, rr);
+  iris = mix(iris, iris * 1.5 + 0.03, smoothstep(0.08, 0.0, abs(rr - 0.52)) * 0.35); // collarette
+  iris *= 1.0 - 0.65 * smoothstep(0.78, 1.0, rr);   // limbal ring
+  float pupil = 1.0 - smoothstep(0.40, 0.44, rr);
+  iris = mix(iris, vec3(0.008, 0.009, 0.014), pupil);
+  float irisMask = 1.0 - smoothstep(0.98, 1.04, rr);
+  vec3 scl = uSclera * (1.0 - 0.18 * smoothstep(0.3, 0.95, 1.0 - q.z));
+  vec3 alb = mix(scl, iris, irisMask * step(0.0, q.z));
+  // lid occlusion: shadow band under the upper lid edge, contact under the lower lid
+  float du = dot(qs, uLidUp.xyz) - uLidUp.w;
+  float dl = dot(qs, uLidLo.xyz) - uLidLo.w;
+  float lidSh = pow(smoothstep(-0.85, -0.02, du), 1.6);
+  float lidCast = smoothstep(-0.34, -0.2, du);                    // sharper cast shadow of the rim under the key light
+  float occ = (1.0 - 0.72 * lidSh) * (1.0 - 0.35 * lidCast) * (1.0 - 0.45 * smoothstep(-0.2, 0.02, dl));
+  occ *= mix(0.55, 1.0, smoothstep(-0.1, 0.55, qs.z));   // socket
+  vec3 N = normalize(vWN);
+  vec3 V = normalize(cameraPosition - vWP);
+  vec3 diff = hemi(N) * 0.9 + uKeyCol * wrapD(N, uKeyDir, 0.5) * vShadow + uFillCol * wrapD(N, uFillDir, 0.5);
+  vec3 col = alb * diff * occ;
+  // wet cornea: bulged normal over the iris, analytic studio reflection
+  vec3 nc = normalize(vLocal - vec3(0.0, 0.0, uR * 0.42));
+  vec3 Nr = normalize(mix(q, nc, irisMask * front));
+  vec3 Nw = normalize(mat3(modelMatrix) * Nr);
+  vec3 R = reflect(-V, Nw);
+  float fr = 0.035 + 0.965 * pow(1.0 - sat(dot(Nw, V)), 5.0);
+  vec3 refl = envStudio(R, 16.0);
+#ifdef DEBUG_LID
+  gl_FragColor = vec4(lidSh, sat(du + 0.5), qs.z, 1.0); return;
+#endif
+  float specOcc = mix(0.05, 1.0, 1.0 - lidSh) * (1.0 - 0.8 * lidCast) * mix(0.3, 1.0, smoothstep(-0.1, 0.4, qs.z));
+  col += refl * fr * specOcc;
+  // tear line along the lower lid
+  col += vec3(0.9) * smoothstep(0.05, 0.0, abs(dl + 0.035)) * 0.25 * vShadow;
+  gl_FragColor = vec4(col, 1.0);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}
+`;
+
+/* ---------------- Backdrop and contact shadow ---------------- */
+const BG_VERT = `varying vec2 vUv; void main(){ vUv = position.xy * 0.5 + 0.5; gl_Position = vec4(position.xy, 0.99999, 1.0); }`;
+const BG_FRAG = /* glsl */`
+uniform vec3 uA, uB; uniform float uAspect; uniform vec2 uCenter;
+varying vec2 vUv;
+float h12(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * .1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+void main(){
+  vec2 p = vUv - uCenter; p.x *= uAspect;
+  float r = length(p);
+  vec3 c = mix(uA, uB, smoothstep(0.05, 1.0, r * 1.15));
+  c *= 1.0 - 0.06 * smoothstep(0.4, 0.0, vUv.y);
+  gl_FragColor = vec4(c, 1.0);
+  #include <colorspace_fragment>
+  gl_FragColor.rgb += (h12(gl_FragCoord.xy) - 0.5) / 255.0;
+}
+`;
+const GROUND_VERT = /* glsl */`
+varying vec3 vWP;
+void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vWP = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }
+`;
+const GROUND_FRAG = /* glsl */`
+${GLSL_COMMON}
+uniform vec3 uTint;
+varying vec3 vWP;
+void main(){
+  vec3 p = vWP;
+  // ambient occlusion from the proxies onto the floor + soft key shadow
+  float occ = 0.0;
+  for (int i = 0; i < 8; i++){
+    vec3 d = (uPC[i] - p);
+    float rad = (uPR[i].x + uPR[i].z) * 0.5;
+    float l = length(d);
+    float nd = max(0.0, d.y / l);
+    occ += pow(nd, 1.5) * (rad * rad) / (l * l) * 0.8;
+  }
+  float key = 1.0 - proxyVis(p, uKeyDir, 0, 0.5);
+  float s = 1.0 - exp(-occ * 1.1);
+  s = max(s, key * 0.25);
+  float fade = 1.0 - smoothstep(0.5, 1.8, length(p.xz));
+  gl_FragColor = vec4(uTint, s * 0.62 * fade);
+  #include <colorspace_fragment>
+}
+`;
+
+/* =====================================================================
+   Geometry builders
+   ===================================================================== */
+const TAU = Math.PI * 2;
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+const gauss2 = (x, y, cx, cy, sx, sy) => Math.exp(-(((x - cx) / sx) ** 2) - (((y - cy) / sy) ** 2));
+
+function basisFor(d) {
+  const a = Math.abs(d.z) < 0.9 ? new V3(0, 0, 1) : new V3(1, 0, 0);
+  const t1 = new V3().crossVectors(a, d).normalize();
+  const t2 = new V3().crossVectors(d, t1);
+  return [t1, t2];
+}
+
+/**
+ * Deformed-sphere fur part. The canonical pole is +Z; `pole` (quaternion) rotates it into part space.
+ * shape(dir) -> position in part space (star-shaped around the origin).
+ * UV = (azimuth / 2pi, inclination / pi) so the latitude-band strand cells stay square.
+ */
+function spherePart({ segU, segV, thetaMax = Math.PI, pole = new THREE.Quaternion(), shape, comb, fur, matrix }) {
+  segU = Math.max(12, Math.round(segU * KNOBS.meshLOD)); segV = Math.max(8, Math.round(segV * KNOBS.meshLOD));
+  const nv = (segU + 1) * (segV + 1);
+  const P = new Float32Array(nv * 3), N = new Float32Array(nv * 3), UV = new Float32Array(nv * 2), C = new Float32Array(nv * 3), F = new Float32Array(nv * 4);
+  const d = new V3(), dd = new V3(), p = new V3(), pa = new V3(), pb = new V3(), pc = new V3(), pd = new V3(), n = new V3();
+  const nm = new THREE.Matrix3().getNormalMatrix(matrix);
+  let k = 0;
+  for (let j = 0; j <= segV; j++) {
+    const th = (j / segV) * thetaMax;
+    for (let i = 0; i <= segU; i++, k++) {
+      const ph = (i / segU) * TAU;
+      d.set(Math.sin(th) * Math.cos(ph), Math.sin(th) * Math.sin(ph), Math.cos(th)).applyQuaternion(pole);
+      p.copy(shape(d));
+      const [t1, t2] = basisFor(d);
+      const e = 2e-3;
+      pa.copy(shape(dd.copy(d).addScaledVector(t1, e).normalize()));
+      pb.copy(shape(dd.copy(d).addScaledVector(t1, -e).normalize()));
+      pc.copy(shape(dd.copy(d).addScaledVector(t2, e).normalize()));
+      pd.copy(shape(dd.copy(d).addScaledVector(t2, -e).normalize()));
+      n.crossVectors(pa.sub(pb), pc.sub(pd)).normalize();
+      if (n.dot(d) < 0) n.negate();
+      const c = comb ? comb(d, p, n) : new V3();
+      c.addScaledVector(n, -c.dot(n));
+      const f = fur ? fur(d, p, n) : [1, 0, 1, 0];
+      const wp = p.clone().applyMatrix4(matrix), wn = n.clone().applyMatrix3(nm).normalize(), wc = c.applyMatrix3(nm);
+      P.set([wp.x, wp.y, wp.z], k * 3); N.set([wn.x, wn.y, wn.z], k * 3); C.set([wc.x, wc.y, wc.z], k * 3);
+      UV.set([i / segU, th / Math.PI], k * 2); F.set(f, k * 4);
+    }
+  }
+  const idx = [];
+  for (let j = 0; j < segV; j++) for (let i = 0; i < segU; i++) {
+    const a = j * (segU + 1) + i, b = a + segU + 1;
+    idx.push(a, b, a + 1, b, b + 1, a + 1);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(P, 3));
+  g.setAttribute("normal", new THREE.BufferAttribute(N, 3));
+  g.setAttribute("uv", new THREE.BufferAttribute(UV, 2));
+  g.setAttribute("aComb", new THREE.BufferAttribute(C, 3));
+  g.setAttribute("aFur", new THREE.BufferAttribute(F, 4));
+  g.setIndex(idx);
+  return g;
+}
+
+/** Generic (u around, v along) grid with finite-difference normals. fn(u, v) -> V3. */
+function gridPart({ segU, segV, fn, outward, extra }) {
+  segU = Math.max(8, Math.round(segU * KNOBS.meshLOD)); segV = Math.max(4, Math.round(segV * KNOBS.meshLOD));
+  const nv = (segU + 1) * (segV + 1);
+  const P = new Float32Array(nv * 3), N = new Float32Array(nv * 3);
+  const pts = [];
+  for (let j = 0; j <= segV; j++) for (let i = 0; i <= segU; i++) pts.push(fn(i / segU, j / segV));
+  const at = (i, j) => pts[Math.min(segV, Math.max(0, j)) * (segU + 1) + ((i % segU) + segU) % segU];
+  let k = 0;
+  const du = new V3(), dv = new V3(), n = new V3();
+  for (let j = 0; j <= segV; j++) for (let i = 0; i <= segU; i++, k++) {
+    const p = pts[k];
+    du.subVectors(at(i + 1, j), at(i - 1, j));
+    dv.subVectors(at(i, j + 1), at(i, j - 1));
+    n.crossVectors(du, dv);
+    if (n.lengthSq() < 1e-14) n.copy(outward(p, i / segU, j / segV));
+    n.normalize();
+    if (n.dot(outward(p, i / segU, j / segV)) < 0) n.negate();
+    P.set([p.x, p.y, p.z], k * 3); N.set([n.x, n.y, n.z], k * 3);
+  }
+  const idx = [];
+  for (let j = 0; j < segV; j++) for (let i = 0; i < segU; i++) {
+    const a = j * (segU + 1) + i, b = a + segU + 1;
+    idx.push(a, b, a + 1, b, b + 1, a + 1);
+  }
+  // winding must agree with the outward normals (front faces are the outside), else the
+  // outside is culled and the inside of the far wall shows through
+  {
+    let vote = 0; const e1 = new V3(), e2 = new V3(), fn = new V3(), vn = new V3();
+    for (let t = 0; t < idx.length; t += 3) {
+      const A = pts[idx[t]], Bp = pts[idx[t + 1]], Cp = pts[idx[t + 2]];
+      fn.crossVectors(e1.subVectors(Bp, A), e2.subVectors(Cp, A));
+      vn.set(N[idx[t] * 3], N[idx[t] * 3 + 1], N[idx[t] * 3 + 2]);
+      vote += Math.sign(fn.dot(vn));
+    }
+    if (vote < 0) for (let t = 0; t < idx.length; t += 3) { const tmp = idx[t + 1]; idx[t + 1] = idx[t + 2]; idx[t + 2] = tmp; }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(P, 3));
+  g.setAttribute("normal", new THREE.BufferAttribute(N, 3));
+  g.setIndex(idx);
+  if (extra) extra(g, pts, segU, segV);
+  return g;
+}
+
+function mergeGeoms(list) {
+  const out = new THREE.BufferGeometry();
+  const names = Object.keys(list[0].attributes);
+  let total = 0; for (const g of list) total += g.attributes.position.count;
+  for (const nm of names) {
+    const is = list[0].attributes[nm].itemSize;
+    const arr = new Float32Array(total * is);
+    let o = 0; for (const g of list) { arr.set(g.attributes[nm].array, o); o += g.attributes[nm].array.length; }
+    out.setAttribute(nm, new THREE.BufferAttribute(arr, is));
+  }
+  const idx = []; let base = 0;
+  for (const g of list) { for (const i of g.index.array) idx.push(i + base); base += g.attributes.position.count; }
+  out.setIndex(idx);
+  return out;
+}
+
+/* =====================================================================
+   Character design (all dimensions in world units; the character is ~2.4 tall)
+   ===================================================================== */
+const HEAD_POS = new V3(0, 1.66, 0.02);
+const HEAD_R = new V3(0.75, 0.63, 0.64);
+const EYE_R = 0.13;
+const EYE_DIR = [-1, 1].map((s) => new V3(s * 0.345, 0.07, 0.93).normalize());
+
+function headShape(d) {
+  const low = smooth(0.25, -0.6, d.y);
+  let x = d.x * HEAD_R.x * (1 + 0.075 * low);
+  let y = d.y * HEAD_R.y * (d.y > 0 ? 1 - 0.06 * d.y * d.y : 1);
+  let z = d.z * HEAD_R.z * (1 + 0.035 * low) * (1 - 0.07 * Math.max(0, d.z) ** 2);
+  const p = new V3(x, y, z);
+  const ne = new V3(x / HEAD_R.x ** 2, y / HEAD_R.y ** 2, z / HEAD_R.z ** 2).normalize();
+  const fz = smooth(0.15, 0.6, d.z);
+  let b = 0;
+  // two whisker pads + bridge (muzzle)
+  b += 0.062 * (gauss2(d.x, d.y, -0.13, -0.31, 0.17, 0.15) + gauss2(d.x, d.y, 0.13, -0.31, 0.17, 0.15)) * fz;
+  b += 0.03 * gauss2(d.x, d.y, 0, -0.2, 0.11, 0.12) * fz;
+  b += 0.02 * gauss2(d.x, d.y, 0, -0.47, 0.14, 0.07) * fz;          // chin
+  // brow ridges (inner end lower: grumpy) and eye sockets
+  for (const s of [-1, 1]) {
+    const bx = s * 0.33, by = 0.26 - 0.1 * (Math.abs(d.x) - 0.33) * -1;
+    b += 0.028 * gauss2(d.x, d.y, bx, by + (Math.abs(d.x) < 0.33 ? -0.035 * (0.33 - Math.abs(d.x)) / 0.33 : 0), 0.2, 0.065) * fz;
+    b -= 0.03 * gauss2(d.x, d.y, s * 0.345, 0.06, 0.14, 0.12) * fz;
+  }
+  // crown tuft bump
+  b += 0.012 * gauss2(d.x, d.z, 0.05, 0.1, 0.2, 0.25) * smooth(0.6, 0.95, d.y);
+  return p.addScaledVector(ne, b);
+}
+function headSurface(dir) { return headShape(dir.clone().normalize()); }
+const MUZZLE_C = new V3(0, -0.3, 0.95).normalize();
+function muzzleRegion(d) {
+  // light patch: whisker pads + chin, noisy edge is done per fibre in the shader
+  const a = gauss2(d.x, d.y, -0.12, -0.32, 0.21, 0.19) + gauss2(d.x, d.y, 0.12, -0.32, 0.21, 0.19) + gauss2(d.x, d.y, 0, -0.43, 0.2, 0.12);
+  return smooth(0.42, 0.62, a) * smooth(0.2, 0.55, d.z);
+}
+
+/* =====================================================================
+   AO bake against ellipsoid occluders (static, rest pose, part space -> character space)
+   ===================================================================== */
+const OCC = [];  // {inv: Matrix4, owner: bit}
+function addOcc(center, radii, owner, quat = new THREE.Quaternion()) {
+  const m = new THREE.Matrix4().compose(center, quat, radii);
+  const inv = m.clone().invert();
+  OCC.push({ inv, lin: new THREE.Matrix3().setFromMatrix4(inv), owner, c: center.clone(), r: Math.max(radii.x, radii.y, radii.z) });
+}
+const RAYS = (() => {
+  const out = []; const n = 24;
+  for (let i = 0; i < n; i++) {
+    const u = (i + 0.5) / n, phi = i * 2.399963;
+    const r = Math.sqrt(u), z = Math.sqrt(1 - u);
+    out.push(new V3(r * Math.cos(phi), r * Math.sin(phi), z));
+  }
+  return out;
+})();
+function bakeAO(geom, toChar, ownerOf, maxD = 0.5, strength = 1, target = "aFur", comp = 2) {
+  const P = geom.attributes.position, Nn = geom.attributes.normal, A = geom.attributes[target];
+  const p = new V3(), n = new V3(), o = new V3(), dir = new V3(), od = new V3();
+  const nm = new THREE.Matrix3().getNormalMatrix(toChar);
+  for (let i = 0; i < P.count; i++) {
+    p.fromBufferAttribute(P, i).applyMatrix4(toChar);
+    n.fromBufferAttribute(Nn, i).applyMatrix3(nm).normalize();
+    const owner = ownerOf(i);
+    const cand = OCC.filter((oc) => !(oc.owner & owner) && oc.c.distanceTo(p) < oc.r + maxD);
+    if (!cand.length) { A.array[i * A.itemSize + comp] = 1; continue; }
+    const [t1, t2] = basisFor(n);
+    let occ = 0;
+    const os = cand.map((oc) => o.copy(p).addScaledVector(n, 0.004).applyMatrix4(oc.inv).clone());
+    for (const r of RAYS) {
+      dir.set(0, 0, 0).addScaledVector(t1, r.x).addScaledVector(t2, r.y).addScaledVector(n, r.z);
+      let best = 0;
+      for (let ci = 0; ci < cand.length; ci++) {
+        const oc = cand[ci]; const ov = os[ci];
+        const dl = od.copy(dir).applyMatrix3(oc.lin);
+        const a = dl.dot(dl), b = 2 * ov.dot(dl), c = ov.dot(ov) - 1;
+        if (c < 0) { best = 1; break; }
+        const disc = b * b - 4 * a * c;
+        if (disc < 0) continue;
+        const t = (-b - Math.sqrt(disc)) / (2 * a);
+        if (t > 0 && t < maxD) best = Math.max(best, 1 - t / maxD);
+      }
+      occ += best;
+    }
+    const ao = 1 - strength * occ / RAYS.length;
+    A.array[i * A.itemSize + comp] = Math.max(0.15, ao);
+  }
+  A.needsUpdate = true;
+}
+
+/* =====================================================================
+   Materials
+   ===================================================================== */
+function furMaterials({ shells, len, rows, rows2, density2 = 0.55, comb = 0.5, gravity = 0.25, wind = 0.05, rootDark = 0.42, noiseScale = 1.2, lids = false, curl = 2.5, clumpScale = 1.4 }) {
+  const shared = {
+    uShells: { value: shells }, uFurLen: { value: len }, uCombAmt: { value: comb }, uGravity: { value: gravity }, uWind: { value: wind },
+    uColA: { value: new THREE.Color() }, uColB: { value: new THREE.Color() },
+    uRows: { value: rows }, uRows2: { value: rows2 }, uRootDark: { value: rootDark }, uNoiseScale: { value: noiseScale }, uDensity2: { value: density2 },
+    uCurl: { value: curl }, uClumpScale: { value: clumpScale },
+    uLidMat: { value: [new THREE.Matrix4(), new THREE.Matrix4(), new THREE.Matrix4(), new THREE.Matrix4()] },
+  };
+  const defs = lids ? { LIDS: 1 } : {};
+  const base = new THREE.ShaderMaterial({ uniforms: { ...U, ...shared }, vertexShader: FUR_VERT, fragmentShader: FUR_BASE_FRAG, defines: { ...defs } });
+  const shell = new THREE.ShaderMaterial({
+    uniforms: { ...U, ...shared }, vertexShader: FUR_VERT, fragmentShader: FUR_SHELL_FRAG, defines: { ...defs, SHELL: 1 },
+    transparent: true, depthWrite: false, side: THREE.FrontSide,
+  });
+  base.extensions = shell.extensions = {};
+  return { base, shell, u: shared };
+}
+
+function furMeshes(geom, mats, order) {
+  const base = new THREE.Mesh(geom, mats.base);
+  const ig = new THREE.InstancedBufferGeometry();
+  ig.index = geom.index; for (const k in geom.attributes) ig.setAttribute(k, geom.attributes[k]);
+  ig.instanceCount = mats.u.uShells.value;
+  const shell = new THREE.Mesh(ig, mats.shell);
+  shell.frustumCulled = false; base.frustumCulled = false;
+  shell.renderOrder = order;
+  return { base, shell, ig };
+}
+
+/* Strands sampled on a fur geometry by area */
+function strandGeometry(geomList, count, opts) {
+  const S = 6;
+  const base = new THREE.InstancedBufferGeometry();
+  const aT = [], aSide = [], idx = [];
+  for (let i = 0; i <= S; i++) { aT.push(i / S, i / S); aSide.push(-1, 1); }
+  for (let i = 0; i < S; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  base.setAttribute("position", new THREE.BufferAttribute(new Float32Array((S + 1) * 2 * 3), 3));
+  base.setAttribute("aT", new THREE.BufferAttribute(new Float32Array(aT), 1));
+  base.setAttribute("aSide", new THREE.BufferAttribute(new Float32Array(aSide), 1));
+  base.setIndex(idx);
+  // area-weighted triangle sampling
+  const tris = [];
+  let total = 0;
+  for (const { geom, weight, lenMul } of geomList) {
+    const P = geom.attributes.position, I = geom.index.array;
+    const a = new V3(), b = new V3(), c = new V3();
+    for (let t = 0; t < I.length; t += 3) {
+      a.fromBufferAttribute(P, I[t]); b.fromBufferAttribute(P, I[t + 1]); c.fromBufferAttribute(P, I[t + 2]);
+      const area = new V3().crossVectors(b.clone().sub(a), c.clone().sub(a)).length() * 0.5;
+      const w = area * (weight ? weight(I[t], geom) : 1);
+      if (w <= 0) continue;
+      total += w; tris.push({ geom, t, cum: total, lenMul });
+    }
+  }
+  let s = 987654;
+  const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const root = new Float32Array(count * 3), nor = new Float32Array(count * 3), dir = new Float32Array(count * 3), par = new Float32Array(count * 4), reg = new Float32Array(count * 2);
+  for (let i = 0; i < count; i++) {
+    const x = rnd() * total;
+    let lo = 0, hi = tris.length - 1;
+    while (lo < hi) { const m = (lo + hi) >> 1; if (tris[m].cum < x) lo = m + 1; else hi = m; }
+    const tr = tris[lo], g = tr.geom, I = g.index.array, P = g.attributes.position, N = g.attributes.normal, F = g.attributes.aFur, C = g.attributes.aComb;
+    let u = rnd(), v = rnd(); if (u + v > 1) { u = 1 - u; v = 1 - v; }
+    const w = 1 - u - v;
+    const ids = [I[tr.t], I[tr.t + 1], I[tr.t + 2]], ws = [w, u, v];
+    const p = new V3(), n = new V3(), cmb = new V3(); let region = 0, lenS = 0;
+    ids.forEach((id, k) => {
+      p.addScaledVector(new V3().fromBufferAttribute(P, id), ws[k]);
+      n.addScaledVector(new V3().fromBufferAttribute(N, id), ws[k]);
+      cmb.addScaledVector(new V3().fromBufferAttribute(C, id), ws[k]);
+      region += F.getY(id) * ws[k]; lenS += F.getX(id) * ws[k];
+    });
+    n.normalize();
+    const fly = rnd() < opts.flyFrac ? 1 : 0;
+    p.addScaledVector(n, opts.furLen * lenS * (fly ? 0.3 : 0.45));
+    const [t1, t2] = basisFor(n);
+    const a = rnd() * TAU;
+    const rd = t1.clone().multiplyScalar(Math.cos(a)).addScaledVector(t2, Math.sin(a)).addScaledVector(cmb, 1.2).normalize();
+    const len = fly ? opts.flyLen * (0.5 + rnd()) : opts.haloLen * lenS * tr.lenMul * (0.55 + 0.9 * rnd());
+    const curl = (rnd() - 0.5) * (fly ? opts.flyCurl : opts.haloCurl);
+    root.set([p.x, p.y, p.z], i * 3); nor.set([n.x, n.y, n.z], i * 3); dir.set([rd.x, rd.y, rd.z], i * 3);
+    par.set([len, curl, (fly ? opts.flyW : opts.haloW) * (0.7 + 0.6 * rnd()), fly], i * 4);
+    reg.set([region, rnd()], i * 2);
+  }
+  base.setAttribute("iRoot", new THREE.InstancedBufferAttribute(root, 3));
+  base.setAttribute("iN", new THREE.InstancedBufferAttribute(nor, 3));
+  base.setAttribute("iDir", new THREE.InstancedBufferAttribute(dir, 3));
+  base.setAttribute("iP", new THREE.InstancedBufferAttribute(par, 4));
+  base.setAttribute("iR", new THREE.InstancedBufferAttribute(reg, 2));
+  base.instanceCount = count;
+  return base;
+}
+function strandMaterial(gravity = 0.4) {
+  return new THREE.ShaderMaterial({
+    uniforms: { ...U, uColA: { value: new THREE.Color() }, uColB: { value: new THREE.Color() }, uGravity: { value: gravity } },
+    vertexShader: STRAND_VERT, fragmentShader: STRAND_FRAG, transparent: true, depthWrite: false, side: THREE.DoubleSide,
+  });
+}
+
+/* =====================================================================
+   Build the character
+   ===================================================================== */
+const character = new THREE.Group();
+scene.add(character);
+const bodyG = new THREE.Group(); character.add(bodyG);
+const headG = new THREE.Group(); headG.position.copy(HEAD_POS); character.add(headG);
+
+// ---- ownership bits for AO + shadow proxy masks
+const B = { HEAD: 1, EARL: 2, EARR: 4, EYE: 8, TORSO: 16, ARML: 32, ARMR: 64, PAWL: 128, PAWR: 256, FOOT: 512, LOWER: 1024, COLLAR: 2048, NOSE: 4096, LID: 8192 };
+// shadow proxies (GPU): 0 head, 1 torso, 2 arm L, 3 arm R, 4 ear L, 5 ear R, 6 lower body, 7 collar
+const PX = { head: 1, torso: 2, armL: 4, armR: 8, earL: 16, earR: 32, lower: 64, collar: 128 };
+
+// ---- ears
+const EAR = [-1, 1].map((s) => {
+  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.12, 0, s * -0.36));
+  const pos = headSurface(new V3(s * 0.52, 0.8, 0.02)).multiplyScalar(0.93);
+  return { s, q, pos };
+});
+function earShape(d) {
+  // rounded soft triangle, cupped on the front face
+  const y01 = (d.y + 1) / 2;
+  const taper = 1 - 0.55 * Math.pow(y01, 1.4);
+  let x = d.x * 0.25 * taper;
+  let y = d.y * 0.25 + 0.06;
+  let z = d.z * 0.1 * (1 - 0.35 * y01);
+  if (d.z > 0) z -= 0.05 * Math.max(0, 1 - (d.x * d.x) / 0.5) * smooth(-0.8, 0.2, d.y) * d.z; // cup
+  z -= 0.05 * y01 * y01;   // bend back
+  return new V3(x, y, z);
+}
+const earGeoms = EAR.map(({ s, q, pos }) => {
+  const m = new THREE.Matrix4().compose(pos, q, new V3(1, 1, 1));
+  return spherePart({
+    segU: 72, segV: 56, pole: new THREE.Quaternion().setFromUnitVectors(new V3(0, 0, 1), new V3(0, 1, 0)), shape: earShape, matrix: m,
+    comb: (d) => new V3(0, 1, 0),
+    fur: (d) => {
+      const inner = d.z > 0 ? smooth(0.05, 0.75, d.z) * smooth(1.0, 0.25, Math.abs(d.x) * 1.3) * smooth(-0.95, -0.1, d.y) * smooth(1.0, 0.35, d.y) : 0;
+      return [1.0 - 0.35 * inner, inner, 1, PX.head | PX.earL | PX.earR];
+    },
+  });
+});
+const earGeom = mergeGeoms(earGeoms);
+
+// ---- head
+const headGeom = spherePart({
+  segU: 176, segV: 128, shape: headShape, matrix: new THREE.Matrix4(), pole: new THREE.Quaternion().setFromUnitVectors(new V3(0, 0, 1), new V3(0.05, 1, 0.12).normalize()),
+  comb: (d, p, n) => {
+    // fibres radiate from the nose and flow back and down
+    const c = p.clone().sub(new V3(0, -0.1, 0.7)).normalize();
+    c.y -= 0.35; if (d.y > 0.6) c.z -= 0.6;
+    return c;
+  },
+  fur: (d, p) => {
+    let len = 1.0;
+    for (const e of EYE_DIR) { const de = d.clone().sub(e).length(); len *= (1 - 0.45 * Math.exp(-((de / 0.15) ** 2))) * (1 - 0.55 * Math.exp(-(((de - 0.19) / 0.05) ** 2))); }
+    const mz = muzzleRegion(d);
+    len *= 1 - 0.3 * mz;
+    len *= 1 + 0.22 * smooth(0.2, -0.3, d.y) * smooth(0.2, 0.85, Math.abs(d.x));   // cheek fluff
+    len *= 1 + 1.3 * gauss2(d.x, d.z, 0.05, 0.12, 0.16, 0.22) * smooth(0.75, 0.97, d.y); // crown tuft
+    len *= 1 - 0.55 * gauss2(d.x, d.y, 0, -0.18, 0.08, 0.06) * smooth(0.3, 0.7, d.z);  // under the nose
+    len *= 1 - 0.6 * Math.max(gauss2(d.x, d.y, 0, -0.26, 0.03, 0.05), gauss2(Math.abs(d.x), d.y, 0.06, -0.31, 0.06, 0.03)) * smooth(0.3, 0.7, d.z); // mouth groove
+    return [len, mz, 1, PX.head | PX.earL | PX.earR];
+  },
+});
+
+// ---- eyes, sockets
+const eyes = EYE_DIR.map((dir, k) => {
+  const s = k === 0 ? -1 : 1;
+  const surf = headSurface(dir);
+  const center = surf.clone().addScaledVector(dir, -EYE_R * 0.34);
+  const sock = new THREE.Group();
+  sock.position.copy(center);
+  // socket frame: forward = mostly +Z with a small outward yaw, up = +Y
+  sock.quaternion.setFromEuler(new THREE.Euler(0, s * 0.16, 0));
+  headG.add(sock);
+  return { s, dir, center, sock };
+});
+
+// ---- lids (upper + lower per eye) built in eye-local space; animated by uLidMat in the shader
+const LID = { rl: EYE_R * 1.27, tr: EYE_R * 0.1, upEdge: Math.PI * 0.5, loEdge: Math.PI * 0.27 };
+function lidGeom(lower, lidId, sockMatrix) {
+  const { rl, tr } = LID;
+  const thE = lower ? LID.loEdge : LID.upEdge;
+  const trr = lower ? tr * 0.55 : (rl - EYE_R - 0.004) / 2;
+  const rOut = lower ? EYE_R + 2 * trr + 0.004 : rl;
+  const s1 = 0.62, s2 = 0.9;
+  const pole = lower ? new V3(0, -1, 0) : new V3(0, 1, 0);
+  const qp = new THREE.Quaternion().setFromUnitVectors(new V3(0, 0, 1), pole);
+  const dirAt = (th, ph) => new V3(Math.sin(th) * Math.cos(ph), Math.sin(th) * Math.sin(ph), Math.cos(th)).applyQuaternion(qp);
+  const g = gridPart({
+    segU: 72, segV: 40,
+    fn: (u, v) => {
+      const ph = u * TAU;
+      if (v <= s1) { const th = (v / s1) * thE; return dirAt(th, ph).multiplyScalar(rOut); }
+      const radial = dirAt(thE, ph);
+      const tangent = dirAt(thE + 0.01, ph).sub(dirAt(thE - 0.01, ph)).normalize();
+      if (v <= s2) {
+        const psi = ((v - s1) / (s2 - s1)) * Math.PI;
+        return radial.clone().multiplyScalar(rOut - trr).addScaledVector(radial, trr * Math.cos(psi)).addScaledVector(tangent, trr * Math.sin(psi));
+      }
+      const th = thE - ((v - s2) / (1 - s2)) * 0.5;
+      return dirAt(th, ph).multiplyScalar(rOut - 2 * trr);
+    },
+    outward: (p, u, v) => {
+      if (v <= s1 + 0.01) return p.clone().normalize();
+      if (v >= s2) return p.clone().normalize().negate();
+      const radial = dirAt(thE, u * TAU);
+      return p.clone().sub(radial.clone().multiplyScalar(rOut - trr));
+    },
+    extra: (g, pts, segU, segV) => {
+      const n = pts.length;
+      const UV = new Float32Array(n * 2), C = new Float32Array(n * 3), F = new Float32Array(n * 4), Lid = new Float32Array(n);
+      let k = 0;
+      for (let j = 0; j <= segV; j++) for (let i = 0; i <= segU; i++, k++) {
+        const v = j / segV;
+        const thv = v <= s1 ? (v / s1) * thE : thE + ((v - s1) / (1 - s1)) * 0.6;
+        UV.set([i / segU, Math.min(1, (lower ? thv : thv) / Math.PI)], k * 2);
+        const edge = v > s1 ? 1 : 0;
+        const tng = dirAt(Math.min(thv, thE), (i / segU) * TAU).sub(pole.clone().multiplyScalar(Math.cos(Math.min(thv, thE)))).normalize();
+        C.set([tng.x, tng.y, tng.z], k * 3);
+        F.set([edge ? 0.45 : (lower ? 0.9 : 1.35), 0, 1, PX.head | PX.earL | PX.earR], k * 4);
+        Lid[k] = lidId;
+      }
+      g.setAttribute("uv", new THREE.BufferAttribute(UV, 2));
+      g.setAttribute("aComb", new THREE.BufferAttribute(C, 3));
+      g.setAttribute("aFur", new THREE.BufferAttribute(F, 4));
+      g.setAttribute("aLid", new THREE.BufferAttribute(Lid, 1));
+    },
+  });
+  return g;
+}
+const lidGeoms = [];
+eyes.forEach((e, k) => { lidGeoms.push(lidGeom(false, k * 2)); lidGeoms.push(lidGeom(true, k * 2 + 1)); });
+const lidGeomAll = mergeGeoms(lidGeoms);
+
+// ---- nose
+const NOSE_DIR = new V3(0, -0.135, 1).normalize();
+const NOSE_POS = headSurface(NOSE_DIR).addScaledVector(NOSE_DIR, 0.015);
+function noseShape(d) {
+  const t = 1 + 0.32 * d.y;       // wider on top: rounded triangle
+  return new V3(d.x * 0.1 * t, d.y * 0.068 + 0.006, d.z * 0.062 * (1 - 0.15 * Math.max(0, -d.y)));
+}
+const noseGeom = spherePart({
+  segU: 56, segV: 40, shape: noseShape, matrix: new THREE.Matrix4().compose(NOSE_POS, new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.18, 0, 0)), new V3(1, 1, 1)),
+  comb: (d) => new V3(d.x, d.y - 0.3, 0),
+  fur: () => [1, 0, 1, PX.head | PX.earL | PX.earR],
+});
+
+// ---- mouth: embroidered felt line on the muzzle
+const mouthPts = [
+  new V3(0, -0.215, 1), new V3(0, -0.275, 1), new V3(-0.045, -0.31, 1), new V3(-0.11, -0.33, 1),
+];
+function mouthCurve(sx) {
+  return new THREE.CatmullRomCurve3(mouthPts.map((p) => headSurface(new V3(p.x * sx, p.y, 0.95)).addScaledVector(new V3(p.x * sx, p.y, 0.95).normalize(), 0.012)));
+}
+
+// ---- body: sweater torso (lathe), collar, hem, sleeves, cuffs; fur paws, feet, lower body
+const TORSO_PROFILE = [ // [y, r]
+  [0.23, 0.495], [0.34, 0.535], [0.46, 0.55], [0.6, 0.54], [0.74, 0.505], [0.86, 0.45], [0.95, 0.38], [1.02, 0.32], [1.06, 0.28],
+];
+const ZS = 0.86;
+const profile = new THREE.SplineCurve(TORSO_PROFILE.map(([y, r]) => new THREE.Vector2(r, y)));
+const COLS = 92;
+function knitGrid({ segU, segV, fn, outward, cols, rowH, rib, ownerMask }) {
+  return gridPart({
+    segU, segV, fn, outward,
+    extra: (g, pts, su, sv) => {
+      const n = pts.length;
+      const UV = new Float32Array(n * 2), T = new Float32Array(n * 4), K = new Float32Array(n * 4);
+      // arc length along v (per column 0) for row coordinates
+      const arc = [0];
+      for (let j = 1; j <= sv; j++) {
+        let acc = 0; for (let i = 0; i < su; i += Math.max(1, su >> 3)) acc += pts[j * (su + 1) + i].distanceTo(pts[(j - 1) * (su + 1) + i]);
+        arc.push(arc[j - 1] + acc / Math.ceil(su / Math.max(1, su >> 3)));
+      }
+      let k = 0;
+      for (let j = 0; j <= sv; j++) for (let i = 0; i <= su; i++, k++) {
+        UV.set([(i / su) * cols, arc[j] / rowH], k * 2);
+        const a = pts[j * (su + 1) + ((i + 1) % su)], b = pts[j * (su + 1) + ((i - 1 + su) % su)];
+        const t = a.clone().sub(b).normalize();
+        T.set([t.x, t.y, t.z, rib], k * 4);
+        K.set([1, ownerMask, 0, 0], k * 4);
+      }
+      g.setAttribute("uv", new THREE.BufferAttribute(UV, 2));
+      g.setAttribute("aTan", new THREE.BufferAttribute(T, 4));
+      g.setAttribute("aK", new THREE.BufferAttribute(K, 4));
+    },
+  });
+}
+const colW = (TAU * 0.54 * 0.93) / COLS;
+const ROWH = colW * 0.72 / 0.72; // stitch space already squashes rows by 0.72 in the shader
+const torsoGeom = knitGrid({
+  segU: 128, segV: 72, cols: COLS, rowH: colW, rib: 0, ownerMask: PX.torso | PX.lower | PX.collar,
+  fn: (u, v) => {
+    const pr = profile.getPoint(v); const a = u * TAU;
+    return new V3(Math.sin(a) * pr.x, pr.y, Math.cos(a) * pr.x * ZS);
+  },
+  outward: (p) => new V3(p.x, (p.y - 0.6) * 0.3, p.z / ZS).normalize(),
+});
+function ribBand({ y0, y1, r0, r1, roll, cols, ownerMask, zs = ZS, cx = 0, top = false }) {
+  // a rib band with rounded rolled edge(s)
+  return knitGrid({
+    segU: 128, segV: 28, cols, rowH: colW * 0.9, rib: 1, ownerMask,
+    fn: (u, v) => {
+      const a = u * TAU;
+      // profile goes: inner-bottom -> round -> outer -> round -> inner-top
+      const ang = -Math.PI * 0.5 + v * Math.PI * 2 * 0.999;
+      let y, r;
+      if (v < 0.25) { const t = v / 0.25; const ph = -Math.PI / 2 + t * Math.PI / 2; y = y0 + roll + Math.sin(ph) * roll; r = r0 - roll + Math.cos(ph) * roll; }
+      else if (v < 0.75) { const t = (v - 0.25) / 0.5; y = y0 + roll + (y1 - y0 - 2 * roll) * t; r = r0 + (r1 - r0) * t; }
+      else { const t = (v - 0.75) / 0.25; const ph = t * Math.PI / 2; y = y1 - roll + Math.sin(ph) * roll; r = r1 - roll + Math.cos(ph) * roll; }
+      return new V3(cx + Math.sin(a) * r, y, Math.cos(a) * r * zs);
+    },
+    outward: (p) => new V3(p.x, 0, p.z / zs).normalize(),
+  });
+}
+const hemGeom = ribBand({ y0: 0.11, y1: 0.27, r0: 0.5, r1: 0.52, roll: 0.035, cols: COLS * 2, ownerMask: PX.torso | PX.lower });
+const collarGeom = ribBand({ y0: 0.97, y1: 1.13, r0: 0.37, r1: 0.31, roll: 0.055, cols: 52 * 2, ownerMask: PX.torso | PX.collar, zs: 0.92 });
+
+const ARM = [-1, 1].map((s) => {
+  const shoulder = new V3(s * 0.2, 0.86, 0.0), elbow = new V3(s * 0.55, 0.7, 0.05), wrist = new V3(s * 0.62, 0.44, 0.13);
+  const curve = new THREE.QuadraticBezierCurve3(shoulder, elbow, wrist);
+  return { s, curve, wrist, dir: wrist.clone().sub(elbow).normalize() };
+});
+function tubeKnit(curve, r0, r1, t0, t1, cols, rib, ownerMask, roll = 0) {
+  return knitGrid({
+    segU: 40, segV: rib ? 16 : 44, cols, rowH: colW * (rib ? 0.9 : 1), rib, ownerMask,
+    fn: (u, v) => {
+      const t = t0 + (t1 - t0) * v;
+      const c = curve.getPoint(t), tan = curve.getTangent(t);
+      const nrm = new V3(0, 0, 1).addScaledVector(tan, -tan.z).normalize(), bin = new V3().crossVectors(tan, nrm);
+      let r = r0 + (r1 - r0) * v;
+      let off = 0;
+      if (roll > 0 && v > 0.7) { const k = (v - 0.7) / 0.3; r -= roll * (1 - Math.cos(k * Math.PI / 2)); off = roll * Math.sin(k * Math.PI / 2) * 0.3; }
+      const a = u * TAU;
+      return c.addScaledVector(nrm, Math.cos(a) * r).addScaledVector(bin, Math.sin(a) * r).addScaledVector(tan, off);
+    },
+    outward: (p, u, v) => { const t = t0 + (t1 - t0) * v; return p.clone().sub(curve.getPoint(t)); },
+  });
+}
+const sleeveGeoms = ARM.flatMap((a) => [
+  tubeKnit(a.curve, 0.165, 0.138, 0.0, 0.87, 28, 0, PX.torso | (a.s < 0 ? PX.armL : PX.armR)),
+  tubeKnit(a.curve, 0.146, 0.142, 0.85, 1.0, 28 * 2, 1, PX.torso | (a.s < 0 ? PX.armL : PX.armR), 0.035),
+]);
+const knitGeom = mergeGeoms([torsoGeom, hemGeom, collarGeom, ...sleeveGeoms]);
+
+// fur paws, feet and lower body
+const pawGeoms = ARM.map((a) => spherePart({
+  segU: 48, segV: 36, pole: new THREE.Quaternion().setFromUnitVectors(new V3(0, 0, 1), a.dir),
+  shape: (d) => new V3(d.x * 0.108, d.y * 0.1, d.z * 0.1),
+  matrix: new THREE.Matrix4().compose(a.wrist.clone().addScaledVector(a.dir, 0.06), new THREE.Quaternion(), new V3(1, 1, 1)),
+  comb: (d) => a.dir.clone(), fur: () => [0.8, 0, 1, PX.armL | PX.armR],
+}));
+const FEET = [-1, 1].map((s) => new V3(s * 0.2, 0.075, 0.33));
+const footGeoms = FEET.map((c) => spherePart({
+  segU: 56, segV: 40, shape: (d) => new V3(d.x * 0.15, d.y * 0.085 * (d.y < 0 ? 0.75 : 1), d.z * 0.19), matrix: new THREE.Matrix4().makeTranslation(c.x, c.y, c.z),
+  comb: () => new V3(0, 0, 1), fur: () => [0.75, 0, 1, PX.lower | PX.torso],
+}));
+const lowerGeom = spherePart({
+  segU: 96, segV: 48, pole: new THREE.Quaternion().setFromUnitVectors(new V3(0, 0, 1), new V3(0, -1, 0)), thetaMax: Math.PI * 0.62,
+  shape: (d) => new V3(d.x * 0.47, d.y * 0.17, d.z * 0.41), matrix: new THREE.Matrix4().makeTranslation(0, 0.17, 0),
+  comb: () => new V3(0, -1, 0), fur: () => [0.8, 0, 1, PX.lower | PX.torso],
+});
+const neckGeom = spherePart({
+  segU: 72, segV: 32, pole: new THREE.Quaternion().setFromUnitVectors(new V3(0, 0, 1), new V3(0, 1, 0)),
+  shape: (d) => new V3(d.x * 0.3, d.y * 0.12, d.z * 0.27), matrix: new THREE.Matrix4().makeTranslation(0, 1.09, 0.0),
+  comb: () => new V3(0, -1, 0), fur: () => [0.8, 0, 1, PX.torso | PX.collar | PX.lower],
+});
+const bodyFurGeom = mergeGeoms([...pawGeoms, ...footGeoms, lowerGeom, neckGeom]);
+
+/* ---------------- AO bake (rest pose, character space) ---------------- */
+const headM = new THREE.Matrix4().makeTranslation(HEAD_POS.x, HEAD_POS.y, HEAD_POS.z);
+addOcc(HEAD_POS.clone(), HEAD_R.clone().multiplyScalar(1.02), B.HEAD);
+EAR.forEach(({ s, q, pos }) => addOcc(pos.clone().add(HEAD_POS).add(new V3(0, 0.06, -0.02).applyQuaternion(q)), new V3(0.2, 0.26, 0.09), s < 0 ? B.EARL : B.EARR, q));
+eyes.forEach((e) => addOcc(e.center.clone().add(HEAD_POS), new V3(1, 1, 1).multiplyScalar(LID.rl * 0.95), B.EYE | B.LID));
+addOcc(NOSE_POS.clone().add(HEAD_POS), new V3(0.1, 0.07, 0.065), B.NOSE);
+addOcc(new V3(0, 0.6, 0), new V3(0.54, 0.46, 0.47), B.TORSO | B.COLLAR | B.LOWER);
+addOcc(new V3(0, 1.05, 0), new V3(0.37, 0.08, 0.34), B.COLLAR);
+ARM.forEach((a) => {
+  const mid = a.curve.getPoint(0.55); const q = new THREE.Quaternion().setFromUnitVectors(new V3(0, 1, 0), a.curve.getTangent(0.55));
+  addOcc(mid, new V3(0.15, 0.27, 0.15), a.s < 0 ? B.ARML : B.ARMR, q);
+  addOcc(a.wrist.clone().addScaledVector(a.dir, 0.06), new V3(0.105, 0.105, 0.105), a.s < 0 ? B.PAWL : B.PAWR);
+});
+FEET.forEach((c) => addOcc(c, new V3(0.15, 0.085, 0.19), B.FOOT));
+addOcc(new V3(0, 0.17, 0), new V3(0.47, 0.17, 0.41), B.LOWER | B.TORSO);
+
+const t0 = performance.now();
+bakeAO(headGeom, headM, () => B.HEAD, 0.45, 1.0);
+bakeAO(earGeom, headM, (i) => (headGeom && i < earGeom.attributes.position.count / 2 ? B.EARL : B.EARR), 0.4, 0.9);
+bakeAO(noseGeom, headM, () => B.NOSE, 0.25, 0.8);
+{ // lids: bake in rest pose (socket space -> head space)
+  const tmp = lidGeomAll.clone();
+  const P = tmp.attributes.position, N = tmp.attributes.normal, Ld = tmp.attributes.aLid;
+  for (let i = 0; i < P.count; i++) {
+    const e = eyes[Math.floor(Ld.getX(i) / 2)];
+    const m = new THREE.Matrix4().compose(e.center, e.sock.quaternion, new V3(1, 1, 1));
+    const p = new V3().fromBufferAttribute(P, i).applyMatrix4(m), n = new V3().fromBufferAttribute(N, i).transformDirection(m);
+    P.setXYZ(i, p.x, p.y, p.z); N.setXYZ(i, n.x, n.y, n.z);
+  }
+  bakeAO(tmp, headM, () => B.EYE | B.LID, 0.12, 0.8);   // the head occludes the lid where it grows out of it
+  lidGeomAll.attributes.aFur.array.set(tmp.attributes.aFur.array);
+}
+bakeAO(knitGeom, new THREE.Matrix4(), (i) => B.TORSO | B.COLLAR | B.ARML | B.ARMR, 0.5, 1.0, "aK", 0);
+bakeAO(bodyFurGeom, new THREE.Matrix4(), (i) => B.FOOT | B.LOWER | B.PAWL | B.PAWR, 0.4, 1.0);
+const bakeMs = performance.now() - t0;
+
+/* ---------------- Materials + meshes ---------------- */
+const S = KNOBS.shells;
+const M = {
+  head: furMaterials({ shells: S, len: 0.046, rows: 700, rows2: 330, density2: 0.5, comb: 0.3, gravity: 0.2, curl: 3.0, clumpScale: 1.5 }),
+  ear: furMaterials({ shells: Math.round(S * 0.75), len: 0.036, rows: 420, rows2: 200, comb: 0.35, gravity: 0.12, curl: 2.5, clumpScale: 2.0 }),
+  lid: furMaterials({ shells: Math.round(S * 0.5), len: 0.02, rows: 300, rows2: 150, comb: 0.9, gravity: 0.05, noiseScale: 3, lids: true, rootDark: 0.5, curl: 1.2, clumpScale: 4 }),
+  nose: furMaterials({ shells: Math.round(S * 0.35), len: 0.01, rows: 170, rows2: 90, comb: 0.4, gravity: 0.0, noiseScale: 4, rootDark: 0.55, curl: 1.0, clumpScale: 5 }),
+  body: furMaterials({ shells: Math.round(S * 0.6), len: 0.034, rows: 240, rows2: 110, comb: 0.3, gravity: 0.2, curl: 2.5, clumpScale: 2.2 }),
+  mouth: furMaterials({ shells: 6, len: 0.004, rows: 40, rows2: 20, rootDark: 0.7, curl: 0.5, clumpScale: 6 }),
+};
+const headMesh = furMeshes(headGeom, M.head, 13);
+const earMesh = furMeshes(earGeom, M.ear, 10);
+const lidMesh = furMeshes(lidGeomAll, M.lid, 15);
+const noseMesh = furMeshes(noseGeom, M.nose, 14);
+const bodyFurMesh = furMeshes(bodyFurGeom, M.body, 11);
+[headMesh, earMesh, lidMesh, noseMesh].forEach((m) => { headG.add(m.base, m.shell); });
+bodyG.add(bodyFurMesh.base, bodyFurMesh.shell);
+// mouth: a thin felt tube with the fur base shader
+{
+  const tubes = [-1, 1].map((sx) => {
+    const g = new THREE.TubeGeometry(mouthCurve(sx), 24, 0.0045, 8, false);
+    const n = g.attributes.position.count;
+    g.setAttribute("aComb", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+    const F = new Float32Array(n * 4); for (let i = 0; i < n; i++) F.set([1, 0, 0.6, PX.head | PX.earL | PX.earR], i * 4);
+    g.setAttribute("aFur", new THREE.BufferAttribute(F, 4));
+    return g;
+  });
+  const mg = mergeGeoms(tubes.map((g) => { const ng = g.index ? g : g; return ng; }));
+  // tube uv: u along, v around -> reuse as strand cells
+  const mmesh = furMeshes(mg, M.mouth, 16);
+  headG.add(mmesh.base, mmesh.shell);
+}
+
+// eyes
+const eyeGeom = new THREE.SphereGeometry(EYE_R, 64, 48);
+const eyeMats = [];
+eyes.forEach((e) => {
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { ...U, uGaze: { value: new THREE.Matrix3() }, uIrisA: { value: new THREE.Color("#0f2f73") }, uIrisB: { value: new THREE.Color("#4c95f0") }, uSclera: { value: new THREE.Color("#e6e1d6") }, uLidUp: { value: new THREE.Vector4(0, 1, 0, 0) }, uLidLo: { value: new THREE.Vector4(0, -1, 0, 0.7) }, uR: { value: EYE_R } },
+    vertexShader: EYE_VERT, fragmentShader: EYE_FRAG, defines: Q.get("debug") === "lid" ? { DEBUG_LID: 1 } : {},
+  });
+  const ball = new THREE.Mesh(eyeGeom, mat);
+  e.sock.add(ball); e.ball = ball; e.mat = mat; eyeMats.push(mat);
+});
+
+// sweater
+const knitU = { uKnitA: { value: new THREE.Color() }, uKnitHi: { value: new THREE.Color() }, uKnitLo: { value: new THREE.Color() } };
+const knitMat = new THREE.ShaderMaterial({ uniforms: { ...U, ...knitU }, vertexShader: KNIT_VERT, fragmentShader: KNIT_FRAG, defines: Q.get("debug") === "knit" ? { DEBUG_KNIT: 1 } : {} });
+const knitMesh = new THREE.Mesh(knitGeom, knitMat); knitMesh.frustumCulled = false;
+bodyG.add(knitMesh);
+const KNIT_SHELLS = Math.max(4, Math.round(S * 0.25));
+const knitShellMat = new THREE.ShaderMaterial({
+  uniforms: { ...U, ...knitU, uShells: { value: KNIT_SHELLS }, uFurLen: { value: 0.03 } }, vertexShader: KNIT_VERT, fragmentShader: KNIT_SHELL_FRAG,
+  defines: { SHELL: 1 }, transparent: true, depthWrite: false,
+});
+const knitIG = new THREE.InstancedBufferGeometry(); knitIG.index = knitGeom.index; for (const k in knitGeom.attributes) knitIG.setAttribute(k, knitGeom.attributes[k]);
+knitIG.instanceCount = KNIT_SHELLS;
+const knitShell = new THREE.Mesh(knitIG, knitShellMat); knitShell.frustumCulled = false; knitShell.renderOrder = 12;
+bodyG.add(knitShell);
+
+// strands: halo + flyaways
+const SD = KNOBS.strands;
+const headStrandGeom = strandGeometry([
+  { geom: headGeom, lenMul: 1, weight: (i, g) => g.attributes.aFur.getX(i) },
+  { geom: earGeom, lenMul: 0.8 },
+], Math.round(32000 * SD), { furLen: 0.046, haloLen: 0.06, haloW: 0.0013, haloCurl: 55, flyFrac: 0.06, flyLen: 0.12, flyW: 0.001, flyCurl: 50 });
+const headStrandMat = strandMaterial(0.35);
+const headStrands = new THREE.Mesh(headStrandGeom, headStrandMat); headStrands.frustumCulled = false; headStrands.renderOrder = 20;
+headG.add(headStrands);
+const bodyStrandGeom = strandGeometry([{ geom: bodyFurGeom, lenMul: 1 }], Math.round(5000 * SD), { furLen: 0.034, haloLen: 0.05, haloW: 0.0013, haloCurl: 55, flyFrac: 0.05, flyLen: 0.09, flyW: 0.001, flyCurl: 50 });
+const bodyStrandMat = strandMaterial(0.35);
+const bodyStrands = new THREE.Mesh(bodyStrandGeom, bodyStrandMat); bodyStrands.frustumCulled = false; bodyStrands.renderOrder = 19;
+bodyG.add(bodyStrands);
+// mohair flyaways on the sweater: need aFur/aComb on the knit geometry for sampling
+{
+  const n = knitGeom.attributes.position.count;
+  const F = new Float32Array(n * 4); for (let i = 0; i < n; i++) F.set([1, 0, 1, 0], i * 4);
+  const kg = knitGeom.clone(); kg.setAttribute("aFur", new THREE.BufferAttribute(F, 4)); kg.setAttribute("aComb", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  var knitStrandGeom = strandGeometry([{ geom: kg, lenMul: 1 }], Math.round(10000 * SD), { furLen: 0.02, haloLen: 0.05, haloW: 0.0012, haloCurl: 50, flyFrac: 0.3, flyLen: 0.08, flyW: 0.0009, flyCurl: 70 });
+}
+const knitStrandMat = strandMaterial(0.2);
+const knitStrands = new THREE.Mesh(knitStrandGeom, knitStrandMat); knitStrands.frustumCulled = false; knitStrands.renderOrder = 18;
+bodyG.add(knitStrands);
+
+// backdrop + contact shadow
+const bgMat = new THREE.ShaderMaterial({ uniforms: { uA: { value: new THREE.Color() }, uB: { value: new THREE.Color() }, uAspect: { value: 1 }, uCenter: { value: new THREE.Vector2(0.5, 0.6) } }, vertexShader: BG_VERT, fragmentShader: BG_FRAG, depthTest: false, depthWrite: false, toneMapped: false });
+const bg = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), bgMat); bg.frustumCulled = false; bg.renderOrder = -100;
+scene.add(bg);
+const groundMat = new THREE.ShaderMaterial({ uniforms: { ...U, uTint: { value: new THREE.Color() } }, vertexShader: GROUND_VERT, fragmentShader: GROUND_FRAG, transparent: true, depthWrite: false, toneMapped: false });
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(6, 6).rotateX(-Math.PI / 2), groundMat); ground.renderOrder = -50;
+scene.add(ground);
+
+/* =====================================================================
+   Colour switching
+   ===================================================================== */
+let currentColor = qp("color", "blue");
+function setColor(id) {
+  if (!PALETTE[id]) return;
+  currentColor = id;
+  const c = feltColours(id);
+  const body = lin(c.body), patch = lin(c.patch), nose = lin(c.nose);
+  for (const k of ["head", "ear", "lid", "body"]) { M[k].u.uColA.value.copy(body); M[k].u.uColB.value.copy(patch); }
+  M.nose.u.uColA.value.copy(nose); M.nose.u.uColB.value.copy(nose);
+  M.mouth.u.uColA.value.copy(patch).multiplyScalar(0.42).lerp(nose, 0.35); M.mouth.u.uColB.value.copy(M.mouth.u.uColA.value);
+  for (const m of [headStrandMat, bodyStrandMat]) { m.uniforms.uColA.value.copy(body); m.uniforms.uColB.value.copy(patch); }
+  knitU.uKnitA.value.copy(lin(c.knit[0])); knitU.uKnitHi.value.copy(lin(c.knit[1])); knitU.uKnitLo.value.copy(lin(sat3(c.knit[2].map((v) => v * 0.8), 1.1)));
+  knitStrandMat.uniforms.uColA.value.copy(lin(mix3(c.knit[1], [1, 1, 1], 0.08))); knitStrandMat.uniforms.uColB.value.copy(knitStrandMat.uniforms.uColA.value);
+  bgMat.uniforms.uA.value.copy(lin(c.bgA)); bgMat.uniforms.uB.value.copy(lin(c.bgB));
+  groundMat.uniforms.uTint.value.copy(lin(sat3(c.bgB.map((v) => v * 0.35), 1.3)));
+  L.sky.copy(lin(mix3(c.bgA, [1, 1, 1], 0.75))).multiplyScalar(0.62);
+  L.fillCol.copy(lin(mix3(c.bgA, [1, 1, 1], 0.7))).multiplyScalar(0.36);
+  L.ground.copy(lin(mix3(c.bgB, [0.55, 0.5, 0.45], 0.6))).multiplyScalar(0.34);
+  document.documentElement.style.setProperty("--bg", `rgb(${c.bgA.map((v) => Math.round(v * 255)).join(",")})`);
+  requestRender();
+}
+
+/* =====================================================================
+   Animation state
+   ===================================================================== */
+const anim = { frozen: null, blinkT: -10, nextBlink: 2.2, lidHeavy: -0.12, gaze: new THREE.Vector2(0, 0), lidTilt: 0.2 };
+const tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpE = new THREE.Euler();
+function blinkAmount(t) {
+  // quick close (70 ms), short hold, slower open (140 ms)
+  const d = t - anim.blinkT;
+  if (d < 0 || d > 0.32) return 0;
+  if (d < 0.07) return d / 0.07;
+  if (d < 0.11) return 1;
+  return 1 - (d - 0.11) / 0.21;
+}
+function updateAnim(t) {
+  U.uTime.value = t;
+  // breathing: 4.2 s cycle, chest swells, head floats
+  const br = Math.sin(t * TAU / 4.2);
+  bodyG.scale.set(1 + 0.012 * br, 1 + 0.018 * br, 1 + 0.014 * br);
+  headG.position.set(HEAD_POS.x, HEAD_POS.y + 0.012 * br + 0.004 * Math.sin(t * 0.9), HEAD_POS.z);
+  headG.rotation.set(0.02 * Math.sin(t * 0.7), 0.035 * Math.sin(t * 0.43), 0.02 * Math.sin(t * 0.55 + 1));
+  // blink
+  if (anim.frozen === null && t > anim.nextBlink) { anim.blinkT = t; anim.nextBlink = t + 2.5 + Math.random() * 3.5; }
+  const bl = blinkAmount(t);
+  // gaze drift
+  const gx = anim.gaze.x + 0.05 * Math.sin(t * 0.31), gy = anim.gaze.y + 0.03 * Math.sin(t * 0.23 + 2);
+  eyes.forEach((e, k) => {
+    const s = e.s;
+    tmpQ.setFromEuler(tmpE.set(-gy, gx, 0));
+    e.ball.quaternion.copy(tmpQ);
+    const gm = new THREE.Matrix3().setFromMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(tmpQ));
+    e.mat.uniforms.uGaze.value.copy(gm);
+    // upper lid: rest heavy angle + blink; follows vertical gaze a little
+    const up = anim.lidHeavy + bl * (0.9 - anim.lidHeavy) - gy * 0.4;
+    const tilt = anim.lidTilt * s;   // inner corner lower
+    const mUp = new THREE.Matrix4().compose(e.center, e.sock.quaternion.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(up, 0, tilt))), new V3(1, 1, 1));
+    const lo = 0.02 - bl * 0.1;
+    const mLo = new THREE.Matrix4().compose(e.center, e.sock.quaternion.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(lo, 0, -tilt * 0.3))), new V3(1, 1, 1));
+    M.lid.u.uLidMat.value[k * 2].copy(mUp);
+    M.lid.u.uLidMat.value[k * 2 + 1].copy(mLo);
+    // lid planes in socket space for the eye shader
+    const upPole = new V3(0, 1, 0).applyEuler(new THREE.Euler(up, 0, tilt));
+    const loPole = new V3(0, -1, 0).applyEuler(new THREE.Euler(lo, 0, -tilt * 0.3));
+    e.mat.uniforms.uLidUp.value.set(upPole.x, upPole.y, upPole.z, Math.cos(LID.upEdge) - 0.02);
+    e.mat.uniforms.uLidLo.value.set(loPole.x, loPole.y, loPole.z, Math.cos(LID.loEdge));
+  });
+  // shadow proxies (world)
+  character.updateMatrixWorld(true);
+  const hp = headG.localToWorld(new V3(0, 0, 0));
+  const set = (i, c, r) => { U.uPC.value[i].copy(c); U.uPR.value[i].copy(r); };
+  set(0, hp, HEAD_R.clone().multiplyScalar(1.02));
+  set(1, bodyG.localToWorld(new V3(0, 0.6, 0)), new V3(0.54, 0.47, 0.47));
+  ARM.forEach((a, k) => set(2 + k, bodyG.localToWorld(a.curve.getPoint(0.6)), new V3(0.15, 0.24, 0.15)));
+  EAR.forEach((e, k) => set(4 + k, headG.localToWorld(e.pos.clone().add(new V3(0, 0.05, 0))), new V3(0.17, 0.22, 0.12)));
+  set(6, bodyG.localToWorld(new V3(0, 0.17, 0.0)), new V3(0.47, 0.17, 0.41));
+  set(7, bodyG.localToWorld(new V3(0, 1.05, 0)), new V3(0.36, 0.08, 0.33));
+}
+
+/* =====================================================================
+   Views
+   ===================================================================== */
+const VIEWS = {
+  front:        { pos: [0, 1.35, 7.4], target: [0, 1.18, 0], fov: 26 },
+  threequarter: { pos: [4.3, 1.9, 5.9], target: [0.02, 1.2, 0], fov: 26 },
+  close:        { pos: [0.55, 1.78, 3.35], target: [0, 1.62, 0.1], fov: 26 },
+  fur:          { pos: [-0.9, 1.72, 1.25], target: [-0.66, 1.55, 0.18], fov: 24 },
+  eyes:         { pos: [0.18, 1.7, 1.55], target: [0.05, 1.66, 0.45], fov: 24 },
+  knit:         { pos: [0.3, 0.75, 1.9], target: [0.05, 0.72, 0.4], fov: 26 },
+  bust:         { pos: [0, 1.62, 4.6], target: [0, 1.5, 0], fov: 26 },
+  side:         { pos: [7.2, 1.5, 0.4], target: [0, 1.2, 0], fov: 26 },
+  back:         { pos: [-2.5, 1.6, -6.6], target: [0, 1.2, 0], fov: 26 },
+};
+let viewName = qp("angle", qp("view", THUMB || LIST ? "bust" : "front"));
+function setView(name) {
+  const v = VIEWS[name]; if (!v) return;
+  viewName = name;
+  camera.position.set(...v.pos); camera.fov = v.fov; camera.lookAt(new V3(...v.target)); camera.updateProjectionMatrix();
+  // centre of the backdrop gradient follows the head on screen
+  const hp = new V3(0, 1.55, 0).project(camera);
+  bgMat.uniforms.uCenter.value.set(hp.x * 0.5 + 0.5, hp.y * 0.5 + 0.5);
+  requestRender();
+}
+
+/* =====================================================================
+   Loop
+   ===================================================================== */
+let needsRender = true;
+function requestRender() { needsRender = true; }
+function resize() {
+  const w = host.clientWidth || window.innerWidth, h = host.clientHeight || window.innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+  bgMat.uniforms.uAspect.value = w / h;
+  requestRender();
+}
+window.addEventListener("resize", () => { resize(); setView(viewName); });
+const clock0 = performance.now();
+let frames = 0, fpsT = performance.now(), fps = 0;
+function frame() {
+  const t = anim.frozen !== null ? anim.frozen : (performance.now() - clock0) / 1000;
+  updateAnim(t);
+  const h = renderer.getSize(new THREE.Vector2()).y;
+  U.uPx.value = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) / (h * renderer.getPixelRatio());
+  renderer.render(scene, camera);
+  frames++;
+  const now = performance.now();
+  if (now - fpsT > 1000) { fps = frames * 1000 / (now - fpsT); frames = 0; fpsT = now; hud(); }
+}
+function hud() {
+  const info = renderer.info.render;
+  document.getElementById("hud").textContent = `shell fur lookdev  ${currentColor}  ${viewName}\nshells ${S}  strands ${(headStrandGeom.instanceCount + bodyStrandGeom.instanceCount + knitStrandGeom.instanceCount)}  pr ${KNOBS.pixelRatio}\ncalls ${info.calls}  tris ${(info.triangles / 1e6).toFixed(2)}M  fps ${fps.toFixed(0)}  AO bake ${bakeMs.toFixed(0)} ms`;
+}
+function loop() {
+  if (anim.frozen === null || needsRender) { frame(); needsRender = false; }
+  requestAnimationFrame(loop);
+}
+
+/* =====================================================================
+   Public API
+   ===================================================================== */
+window.setView = setView;
+window.setColor = setColor;
+window.freeze = (t) => { anim.frozen = t === undefined || t === null ? null : +t; requestRender(); };
+window.blink = () => { anim.blinkT = anim.frozen ?? (performance.now() - clock0) / 1000; };
+window.setLid = (heavy) => { anim.lidHeavy = heavy; requestRender(); };
+window.setGaze = (x, y) => { anim.gaze.set(x, y); requestRender(); };
+window.setQuality = ({ shells, pixelRatio } = {}) => {
+  if (shells) {
+    const ratio = shells / S;
+    for (const [m, mesh] of [[M.head, headMesh], [M.ear, earMesh], [M.lid, lidMesh], [M.nose, noseMesh], [M.body, bodyFurMesh]]) {
+      const n = Math.max(2, Math.round(m.u.uShells.value * ratio)); m.u.uShells.value = n; mesh.ig.instanceCount = n;
+    }
+  }
+  if (pixelRatio) { renderer.setPixelRatio(pixelRatio); resize(); }
+  requestRender();
+};
+window.lookdev = { renderer, scene, camera, KNOBS, frame };
+
+resize();
+setColor(currentColor);
+setView(viewName);
+if (Q.has("t")) anim.frozen = +Q.get("t");
+if (Q.has("blink")) { anim.frozen = anim.frozen ?? 1; anim.blinkT = anim.frozen - +Q.get("blink"); }
+if (Q.has("lid")) anim.lidHeavy = +Q.get("lid");
+
+if (LIST) {
+  // 40 px list rows: render each palette colour through the same renderer and copy the pixels
+  const list = document.getElementById("list");
+  anim.frozen = 1.0;
+  renderer.setSize(80, 80, false); renderer.setPixelRatio(1); camera.aspect = 1; camera.updateProjectionMatrix(); bgMat.uniforms.uAspect.value = 1;
+  setView("bust");
+  for (const id of Object.keys(PALETTE)) {
+    setColor(id); frame();
+    const row = document.createElement("div"); row.className = "row";
+    const cv = document.createElement("canvas"); cv.width = 80; cv.height = 80;
+    cv.getContext("2d").drawImage(renderer.domElement, 0, 0, 80, 80);
+    const label = document.createElement("span"); label.textContent = id[0].toUpperCase() + id.slice(1) + " agent";
+    row.append(cv, label); list.append(row);
+  }
+} else {
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>

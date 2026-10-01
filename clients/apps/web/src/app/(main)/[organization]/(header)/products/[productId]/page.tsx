@@ -32,7 +32,7 @@ export async function generateMetadata(props: {
         {
           url:
             product.medias[0]?.public_url ??
-            `https://claidorhq.com/og?org=${organization.slug}`,
+            `https://simeonlabs.com/og?org=${organization.slug}`,
           width: 1200,
           height: 630,
         },
@@ -43,7 +43,7 @@ export async function generateMetadata(props: {
         {
           url:
             product.medias[0]?.public_url ??
-            `https://claidorhq.com/og?org=${organization.slug}`,
+            `https://simeonlabs.com/og?org=${organization.slug}`,
           width: 1200,
           height: 630,
           alt: `${product.name}`,

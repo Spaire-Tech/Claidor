@@ -112,7 +112,7 @@ test("Send marks the card sending and wakes the agent to deliver; Discard is a d
 });
 
 test("the card's state machine, on a real entry", async () => {
-  const dir = await mkdtemp(path.join(os.tmpdir(), "caisra-draft-state-"));
+  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-draft-state-"));
   const outfile = path.join(dir, "draft-state.mjs");
   // One bundle that exposes both the store and the class, so they share the transcript cache.
   const entry = path.join(dir, "entry.ts");

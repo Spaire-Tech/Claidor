@@ -1,18 +1,18 @@
 import pytest
 from sqlalchemy import select
 
-from polar.kit.utils import utc_now
-from polar.models import (
+from simeon.kit.utils import utc_now
+from simeon.models import (
     NotificationRecipient,
     OAuthAccount,
     Organization,
     User,
     UserOrganization,
 )
-from polar.models.user import OAuthPlatform
-from polar.postgres import AsyncSession
-from polar.user.schemas import UserDeletionBlockedReason
-from polar.user.service import user as user_service
+from simeon.models.user import OAuthPlatform
+from simeon.postgres import AsyncSession
+from simeon.user.schemas import UserDeletionBlockedReason
+from simeon.user.service import user as user_service
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_notification_recipient,

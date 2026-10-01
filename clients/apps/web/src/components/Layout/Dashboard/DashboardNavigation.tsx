@@ -1,7 +1,7 @@
 'use client'
 
 import ArrowBack from '@mui/icons-material/ArrowBack'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -9,7 +9,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   useSidebar,
-} from '@claidor/ui/components/atoms/Sidebar'
+} from '@simeon/ui/components/atoms/Sidebar'
 import Link from 'next/link'
 import { twMerge } from 'tailwind-merge'
 import {
@@ -48,8 +48,8 @@ export const OrganizationNavigation = ({
               className={twMerge(
                 'flex flex-row items-center rounded-lg border border-transparent px-2 transition-colors',
                 route.isActive
-                  ? ' border-gray-200 bg-white! text-black shadow-xs '
-                  : ' text-gray-500 hover:text-black',
+                  ? 'border-gray-200 bg-white! text-black shadow-xs'
+                  : 'text-gray-500 hover:text-black',
                 isCollapsed && '',
               )}
               href={route.link}
@@ -58,9 +58,7 @@ export const OrganizationNavigation = ({
                 <span
                   className={twMerge(
                     'flex flex-col items-center justify-center overflow-visible rounded-full bg-transparent text-[15px]',
-                    route.isActive
-                      ? 'text-blue-500'
-                      : 'bg-transparent',
+                    route.isActive ? 'text-blue-500' : 'bg-transparent',
                   )}
                 >
                   {route.icon}
@@ -78,7 +76,7 @@ export const OrganizationNavigation = ({
                       href={subRoute.link}
                       prefetch={true}
                       className={twMerge(
-                        ' ml-4 inline-flex flex-row items-center gap-x-2 text-sm font-medium text-gray-500 transition-colors hover:text-black',
+                        'ml-4 inline-flex flex-row items-center gap-x-2 text-sm font-medium text-gray-500 transition-colors hover:text-black',
                         subRoute.isActive && 'text-blue-500',
                       )}
                     >
@@ -131,8 +129,8 @@ export const AccountNavigation = () => {
               className={twMerge(
                 'flex flex-row items-center rounded-lg border border-transparent px-2 transition-colors',
                 route.isActive
-                  ? ' border-gray-200 bg-white text-black shadow-xs '
-                  : ' text-gray-500 hover:text-black',
+                  ? 'border-gray-200 bg-white text-black shadow-xs'
+                  : 'text-gray-500 hover:text-black',
                 isCollapsed && '',
               )}
               href={route.link}
@@ -141,9 +139,7 @@ export const AccountNavigation = () => {
                 <span
                   className={twMerge(
                     'flex flex-col items-center justify-center overflow-visible rounded-full bg-transparent text-[15px]',
-                    route.isActive
-                      ? 'text-blue-500'
-                      : 'bg-transparent',
+                    route.isActive ? 'text-blue-500' : 'bg-transparent',
                   )}
                 >
                   {route.icon}
@@ -161,7 +157,7 @@ export const AccountNavigation = () => {
                       href={subRoute.link}
                       prefetch={true}
                       className={twMerge(
-                        ' ml-4 inline-flex flex-row items-center gap-x-2 text-sm font-medium text-gray-500',
+                        'ml-4 inline-flex flex-row items-center gap-x-2 text-sm font-medium text-gray-500',
                         subRoute.isActive && 'text-blue-500',
                       )}
                     >

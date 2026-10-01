@@ -159,12 +159,28 @@ export function createDesktopPreloadBridge(options: {
     onWidgetGallery: (listener: (payload: unknown) => void) => subscribeIpc(ipc, "sand:dev-widget-gallery", listener),
     onForceOnboarding: (listener: () => void) => subscribe("force-onboarding", () => listener()),
     transcribeAudio: (audio: Uint8Array, mimeType: string, language?: string) => edge("transcribeAudio", { audio, mimeType, language }),
+    // Voice calls (30 September 2026): the chat header's phone button and the
+    // voice picker in the agent's character settings, patched into the
+    // pinned window by scripts/lib/router-renderer-patch.mjs.
+    voiceCall: {
+      getAvailability: () => edge("getVoiceCallAvailability"),
+      start: (agentId: string, agentName?: string) => edge("startVoiceCall", { agentId, agentName }),
+      noteAgent: (agentId: string | null, agentName?: string) => edge("noteVoiceCallAgent", { agentId, agentName }),
+      listVoices: () => edge("listVoiceCallVoices"),
+      getAgentVoice: (agentId: string) => edge("getAgentVoice", { agentId }),
+      setAgentVoice: (agentId: string, voiceId: string | null) => edge("setAgentVoice", { agentId, voiceId }),
+      previewUrl: (voiceId: string) => edge("getVoicePreviewUrl", { voiceId }),
+      // The thumbs on a finished call's card in the chat (2 October 2026).
+      rateCall: (conversationId: string, like: boolean | null) => edge("rateVoiceCall", { conversationId, like }),
+    },
     cursorAccount: {
       getStatus: () => edge("getCursorAuthStatus"),
       login: () => edge("loginCursor"),
       cancelLogin: () => edge("cancelCursorLogin"),
       logout: () => edge("logoutCursor"),
       updateName: (name: string) => edge("updateCursorAccountName", { name }),
+      // The name sheet after onboarding (1 October 2026): whether to ask, and Google's first name to offer.
+      getNamePrompt: () => edge("getCursorNamePrompt"),
       getAvatar: () => edge("getCursorAvatar"),
       getWeeklyUsage: () => edge("getCursorWeeklyUsage"),
       getUsageSummary: () => edge("getCursorUsageSummary"),

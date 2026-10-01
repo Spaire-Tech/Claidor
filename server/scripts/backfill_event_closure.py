@@ -11,10 +11,10 @@ from sqlalchemy import func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import aliased
 
-from polar.config import settings
-from polar.kit.db.postgres import AsyncSession, create_async_sessionmaker
-from polar.kit.db.postgres import create_async_engine as _create_async_engine
-from polar.models import Event, EventClosure
+from simeon.config import settings
+from simeon.kit.db.postgres import AsyncSession, create_async_sessionmaker
+from simeon.kit.db.postgres import create_async_engine as _create_async_engine
+from simeon.models import Event, EventClosure
 
 cli = typer.Typer()
 

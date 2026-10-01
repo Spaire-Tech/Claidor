@@ -2,14 +2,12 @@ export default {
   checkout: {
     footer: {
       poweredBy: 'Desenvolvido por',
-      merchantOfRecord:
-        'Este pedido é processado pela Polar, nossa parceira de vendas online, responsável pela cobrança, suporte ao pedido e devoluções.',
       mandateSubscriptionTrial:
-        'Ao clicar em "{buttonLabel}", você autoriza a Polar Software, Inc., nossa parceira de vendas online, a cobrar em sua forma de pagamento selecionada o valor exibido acima ao final do seu período de teste e em cada data de cobrança subsequente até que você cancele. Você pode cancelar a qualquer momento antes do final do teste para evitar a cobrança.',
+        'Ao clicar em "{buttonLabel}", você autoriza a Simeon Labs a cobrar em sua forma de pagamento selecionada o valor exibido acima ao final do seu período de teste e em cada data de cobrança subsequente até que você cancele. Você pode cancelar a qualquer momento antes do final do teste para evitar a cobrança.',
       mandateSubscription:
-        'Ao clicar em "{buttonLabel}", você autoriza a Polar Software, Inc., nossa parceira de vendas online, a cobrar imediatamente em sua forma de pagamento selecionada o valor exibido acima e a cobrar o mesmo valor em cada data de cobrança subsequente até que você cancele.',
+        'Ao clicar em "{buttonLabel}", você autoriza a Simeon Labs a cobrar imediatamente em sua forma de pagamento selecionada o valor exibido acima e a cobrar o mesmo valor em cada data de cobrança subsequente até que você cancele.',
       mandateOneTime:
-        'Ao clicar em "{buttonLabel}", você autoriza a Polar Software, Inc., nossa parceira de vendas online, a cobrar em sua forma de pagamento selecionada o valor exibido acima. Esta é uma cobrança única.',
+        'Ao clicar em "{buttonLabel}", você autoriza a Simeon Labs a cobrar em sua forma de pagamento selecionada o valor exibido acima. Esta é uma cobrança única.',
     },
     form: {
       email: 'E-mail',

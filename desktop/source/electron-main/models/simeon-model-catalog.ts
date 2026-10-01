@@ -1,0 +1,113 @@
+import { AvailableModelsResponse, AvailableModelsResponse_AvailableModel } from "../../packages/proto/generated/aiserver/v1/aiserver_pb.js";
+import { simeonApiData, type SimeonApiAuth } from "../../shared/node/cursor-backend/simeon-api.js";
+
+// The model picker, on Simeon Labs' server's own menu.
+//
+// Until 24 September 2026 the Mac's `getAvailableModels` binding
+// (`main-production-services.ts`, `fetchAvailableModels`) called
+// `aiserver.v1.AiService/AvailableModels` through `fetchSandAvailableModels`,
+// a Connect RPC that Simeon Labs' server never served, so the picker got a
+// 404 wrapped as a ConnectError and the renderer showed the error instead
+// of a list. The menu the server does serve is `GET /desktop/api/models/available`
+// (`server/simeon/desktop/endpoints.py`, `models_available`), one row per
+// `DesktopModel.available()` in `pricing.py`. This file reads that and hands
+// back the same `AvailableModelsResponse` the edge already serialises with
+// `toJson()`, so nothing between the binding and the renderer changed.
+//
+// `fetchSandAvailableModels` stays in the tree for the cloud-agent path
+// (`host/extensions/cloud-agents/model-catalog-fetch.ts` speaks the same
+// RPC); the Mac binding no longer calls it.
+
+export const SIMEON_AVAILABLE_MODELS_PATH = "models/available";
+
+/** One row of `/desktop/api/models/available`, as `pricing.py` writes it. */
+export interface SimeonAvailableModelRow {
+  readonly modelId: string;
+  readonly modelName?: string;
+  readonly provider?: string;
+  readonly description?: string;
+  readonly costMultiplier?: number;
+  /** The server's word; `available` is read too in case a row ever carries it. */
+  readonly accessible?: boolean;
+  readonly available?: boolean;
+  readonly supportsImage?: boolean;
+  readonly supportsThinking?: boolean;
+  readonly supportsToolCalling?: boolean;
+  readonly agenticReady?: boolean;
+  /** `primary`, `cheap` or `fallback` (`pricing.py`, `ModelRole`). */
+  readonly role?: string | null;
+  readonly contextWindow?: number;
+  readonly maxTokens?: number;
+}
+
+function isRow(value: unknown): value is SimeonAvailableModelRow {
+  return typeof value === "object" && value != null && !Array.isArray(value) && typeof (value as { modelId?: unknown }).modelId === "string" && (value as { modelId: string }).modelId.trim().length > 0;
+}
+
+function nonEmpty(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+/**
+ * The rows the window's model menu shows: the `primary` role and nothing
+ * else. `pricing.py`: "there is one model they talk to and cheap ones for
+ * machinery they never see"; the founder, 26 September 2026: "no one in
+ * [the upstream app] choose what model they want." So a `cheap` row (Luna) is not
+ * offered either, the way `fallback` ("never shown, never in a menu") and
+ * `video` (the watchVideo subagent's) never were, and a row marked not
+ * available is left off. The menu holds one row, on by default; the
+ * choice is the server's, made with a deploy (F-120).
+ */
+export function availableModelFromSimeonRow(row: SimeonAvailableModelRow): AvailableModelsResponse_AvailableModel | null {
+  if (row.accessible === false || row.available === false || row.role !== "primary") return null;
+  const displayName = nonEmpty(row.modelName);
+  const description = nonEmpty(row.description);
+  const vendor = nonEmpty(row.provider);
+  const contextTokenLimit = typeof row.contextWindow === "number" && Number.isFinite(row.contextWindow) && row.contextWindow > 0 ? Math.floor(row.contextWindow) : undefined;
+  return new AvailableModelsResponse_AvailableModel({
+    name: row.modelId,
+    defaultOn: row.role === "primary",
+    serverModelName: row.modelId,
+    ...(displayName === undefined ? {} : { clientDisplayName: displayName }),
+    ...(description === undefined ? {} : { tagline: description }),
+    supportsAgent: row.agenticReady !== false && row.supportsToolCalling !== false,
+    supportsImages: row.supportsImage !== false,
+    supportsThinking: row.supportsThinking === true,
+    supportsMaxMode: false,
+    supportsNonMaxMode: true,
+    isHidden: false,
+    isChatOnly: false,
+    isLongContextOnly: false,
+    ...(contextTokenLimit === undefined ? {} : { contextTokenLimit }),
+    ...(typeof row.costMultiplier === "number" && Number.isFinite(row.costMultiplier) ? { price: row.costMultiplier } : {}),
+    ...(vendor === undefined ? {} : { vendorName: vendor }),
+  });
+}
+
+export function availableModelsResponseFromSimeon(rows: unknown): AvailableModelsResponse {
+  const models: AvailableModelsResponse_AvailableModel[] = [];
+  if (Array.isArray(rows)) {
+    for (const row of rows) {
+      if (!isRow(row)) continue;
+      const model = availableModelFromSimeonRow(row);
+      if (model != null) models.push(model);
+    }
+  }
+  // Exactly one default: the first primary, or the first row when the
+  // server named none, so the picker never opens on nothing.
+  const firstDefault = models.findIndex((model) => model.defaultOn);
+  for (const [index, model] of models.entries()) model.defaultOn = index === (firstDefault < 0 ? 0 : firstDefault);
+  return new AvailableModelsResponse({ models });
+}
+
+export interface SimeonModelCatalogOptions extends SimeonApiAuth {
+  readonly fetch?: typeof fetch;
+}
+
+export async function fetchSimeonAvailableModels(options: SimeonModelCatalogOptions): Promise<AvailableModelsResponse> {
+  const rows = await simeonApiData<unknown>(options, SIMEON_AVAILABLE_MODELS_PATH, {
+    method: "GET",
+    ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
+  });
+  return availableModelsResponseFromSimeon(rows);
+}

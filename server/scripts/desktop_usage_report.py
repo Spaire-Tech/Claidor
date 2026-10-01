@@ -13,7 +13,7 @@ Nothing is written.
     python -m scripts.desktop_usage_report someone@example.com
     python -m scripts.desktop_usage_report someone@example.com --hours 48
 
-Run it where the server runs, so it reads the same ``CLAIDOR_POSTGRES_*``
+Run it where the server runs, so it reads the same ``SIMEON_POSTGRES_*``
 environment as the API.
 """
 
@@ -24,10 +24,10 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 
-from polar.desktop.pricing import CREDIT_USD_PER_MILLION_INPUT
-from polar.kit.db.postgres import AsyncSession, create_async_sessionmaker
-from polar.models import DesktopUsage, User
-from polar.postgres import create_async_engine
+from simeon.desktop.pricing import CREDIT_USD_PER_MILLION_INPUT
+from simeon.kit.db.postgres import AsyncSession, create_async_sessionmaker
+from simeon.models import DesktopUsage, User
+from simeon.postgres import create_async_engine
 
 BUCKET = timedelta(minutes=10)
 

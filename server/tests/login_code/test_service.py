@@ -1,9 +1,9 @@
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.login_code.service import LoginCodeInvalidOrExpired
-from polar.login_code.service import login_code as login_code_service
-from polar.postgres import AsyncSession
+from simeon.login_code.service import LoginCodeInvalidOrExpired
+from simeon.login_code.service import login_code as login_code_service
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_user
 
@@ -51,11 +51,11 @@ class TestAuthenticate:
         await save_fixture(existing_user)
 
         mocker.patch(
-            "polar.login_code.service.settings.APP_REVIEW_EMAIL",
+            "simeon.login_code.service.settings.APP_REVIEW_EMAIL",
             APP_REVIEW_TEST_EMAIL,
         )
         mocker.patch(
-            "polar.login_code.service.settings.APP_REVIEW_OTP_CODE",
+            "simeon.login_code.service.settings.APP_REVIEW_OTP_CODE",
             APP_REVIEW_TEST_CODE_VALID,
         )
 
@@ -76,11 +76,11 @@ class TestAuthenticate:
     ) -> None:
         """Test that app review bypass fails with wrong code."""
         mocker.patch(
-            "polar.login_code.service.settings.APP_REVIEW_EMAIL",
+            "simeon.login_code.service.settings.APP_REVIEW_EMAIL",
             APP_REVIEW_TEST_EMAIL,
         )
         mocker.patch(
-            "polar.login_code.service.settings.APP_REVIEW_OTP_CODE",
+            "simeon.login_code.service.settings.APP_REVIEW_OTP_CODE",
             APP_REVIEW_TEST_CODE_VALID,
         )
 
@@ -98,11 +98,11 @@ class TestAuthenticate:
     ) -> None:
         """Test that app review bypass fails with wrong email."""
         mocker.patch(
-            "polar.login_code.service.settings.APP_REVIEW_EMAIL",
+            "simeon.login_code.service.settings.APP_REVIEW_EMAIL",
             APP_REVIEW_TEST_EMAIL,
         )
         mocker.patch(
-            "polar.login_code.service.settings.APP_REVIEW_OTP_CODE",
+            "simeon.login_code.service.settings.APP_REVIEW_OTP_CODE",
             APP_REVIEW_TEST_CODE_VALID,
         )
 
@@ -126,11 +126,11 @@ class TestAuthenticate:
         await save_fixture(existing_user)
 
         mocker.patch(
-            "polar.login_code.service.settings.APP_REVIEW_EMAIL",
+            "simeon.login_code.service.settings.APP_REVIEW_EMAIL",
             APP_REVIEW_TEST_EMAIL,
         )
         mocker.patch(
-            "polar.login_code.service.settings.APP_REVIEW_OTP_CODE",
+            "simeon.login_code.service.settings.APP_REVIEW_OTP_CODE",
             APP_REVIEW_TEST_CODE_VALID,
         )
 

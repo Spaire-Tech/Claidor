@@ -1,5 +1,5 @@
 import { ProductFullMediasMixin } from '@/components/Products/ProductForm/ProductForm'
-import { Client, schemas, unwrap } from '@claidor/client'
+import { Client, schemas, unwrap } from '@simeon/client'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
 

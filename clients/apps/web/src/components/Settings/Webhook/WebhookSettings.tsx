@@ -1,10 +1,10 @@
 'use client'
 
 import { useListWebhooksEndpoints } from '@/hooks/queries'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
-import ShadowListGroup from '@claidor/ui/components/atoms/ShadowListGroup'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
+import ShadowListGroup from '@simeon/ui/components/atoms/ShadowListGroup'
 import { ArrowUpRightIcon } from 'lucide-react'
 import Link from 'next/link'
 import { InlineModal } from '../../Modal/InlineModal'
@@ -37,7 +37,7 @@ const WebhookSettings = (props: { org: schemas['Organization'] }) => {
           })
         ) : (
           <ShadowListGroup.Item>
-            <p className=" text-sm text-gray-500">
+            <p className="text-sm text-gray-500">
               {props.org.name} doesn&apos;t have any webhooks yet
             </p>
           </ShadowListGroup.Item>
@@ -48,7 +48,7 @@ const WebhookSettings = (props: { org: schemas['Organization'] }) => {
               Add Endpoint
             </Button>
             <Link
-              href="https://docs.claidorhq.com/integrate/webhooks/endpoints"
+              href="https://docs.simeonlabs.com/integrate/webhooks/endpoints"
               className="shrink-0"
             >
               <Button className="gap-x-1" asChild variant="ghost">
@@ -86,11 +86,11 @@ const Endpoint = ({
     <div className="flex items-center justify-between overflow-hidden">
       <div className="flex w-2/3 flex-col gap-y-1">
         <p className="truncate font-mono text-sm">{endpoint.url}</p>
-        <p className=" text-sm text-gray-500">
+        <p className="text-sm text-gray-500">
           <FormattedDateTime datetime={endpoint.created_at} dateStyle="long" />
         </p>
       </div>
-      <div className=" text-gray-500">
+      <div className="text-gray-500">
         <Link
           href={`/dashboard/${organization.slug}/settings/webhooks/endpoints/${endpoint.id}`}
         >

@@ -11,20 +11,20 @@ from typing import Any, Literal, Unpack
 import pytest_asyncio
 from typing_extensions import TypeIs
 
-from polar.enums import (
+from simeon.enums import (
     AccountType,
     PaymentProcessor,
     SubscriptionRecurringInterval,
     TaxBehavior,
     TaxProcessor,
 )
-from polar.kit.address import Address
-from polar.kit.currency import PresentmentCurrency
-from polar.kit.trial import TrialInterval
-from polar.kit.utils import utc_now
-from polar.meter.aggregation import Aggregation, CountAggregation
-from polar.meter.filter import Filter, FilterClause, FilterConjunction, FilterOperator
-from polar.models import (
+from simeon.kit.address import Address
+from simeon.kit.currency import PresentmentCurrency
+from simeon.kit.trial import TrialInterval
+from simeon.kit.utils import utc_now
+from simeon.meter.aggregation import Aggregation, CountAggregation
+from simeon.meter.filter import Filter, FilterClause, FilterConjunction, FilterOperator
+from simeon.models import (
     Account,
     Benefit,
     BillingEntry,
@@ -72,18 +72,18 @@ from polar.models import (
     WalletTransaction,
     WebhookEndpoint,
 )
-from polar.models.benefit import BenefitType
-from polar.models.benefit_grant import (
+from simeon.models.benefit import BenefitType
+from simeon.models.benefit_grant import (
     BenefitGrant,
     BenefitGrantScope,
 )
-from polar.models.billing_entry import BillingEntryDirection, BillingEntryType
-from polar.models.checkout import (
+from simeon.models.billing_entry import BillingEntryDirection, BillingEntryType
+from simeon.models.checkout import (
     CheckoutAnalyticsMetadata,
     CheckoutStatus,
     get_expires_at,
 )
-from polar.models.custom_field import (
+from simeon.models.custom_field import (
     CustomFieldCheckbox,
     CustomFieldCheckboxProperties,
     CustomFieldNumber,
@@ -95,34 +95,34 @@ from polar.models.custom_field import (
     CustomFieldTextProperties,
     CustomFieldType,
 )
-from polar.models.customer_seat import SeatStatus
-from polar.models.discount import (
+from simeon.models.customer_seat import SeatStatus
+from simeon.models.discount import (
     DiscountDuration,
     DiscountFixed,
     DiscountPercentage,
     DiscountType,
 )
-from polar.models.dispute import DisputeAlertProcessor, DisputeStatus
-from polar.models.event import EventSource
-from polar.models.member import MemberRole
-from polar.models.notification_recipient import NotificationRecipient
-from polar.models.order import OrderBillingReasonInternal, OrderStatus
-from polar.models.payment import PaymentStatus
-from polar.models.payout import PayoutStatus
-from polar.models.pledge import Pledge, PledgeState, PledgeType
-from polar.models.product_price import (
+from simeon.models.dispute import DisputeAlertProcessor, DisputeStatus
+from simeon.models.event import EventSource
+from simeon.models.member import MemberRole
+from simeon.models.notification_recipient import NotificationRecipient
+from simeon.models.order import OrderBillingReasonInternal, OrderStatus
+from simeon.models.payment import PaymentStatus
+from simeon.models.payout import PayoutStatus
+from simeon.models.pledge import Pledge, PledgeState, PledgeType
+from simeon.models.product_price import (
     ProductPriceAmountType,
     ProductPriceType,
 )
-from polar.models.subscription import SubscriptionStatus
-from polar.models.transaction import Processor, TransactionType
-from polar.models.user import OAuthAccount, OAuthPlatform
-from polar.models.wallet import WalletType
-from polar.models.webhook_endpoint import WebhookEventType, WebhookFormat
-from polar.notification_recipient.schemas import NotificationRecipientPlatform
-from polar.product.price_set import PriceSet
-from polar.tax.calculation import TaxabilityReason, TaxRate
-from polar.tax.tax_id import TaxID
+from simeon.models.subscription import SubscriptionStatus
+from simeon.models.transaction import Processor, TransactionType
+from simeon.models.user import OAuthAccount, OAuthPlatform
+from simeon.models.wallet import WalletType
+from simeon.models.webhook_endpoint import WebhookEventType, WebhookFormat
+from simeon.notification_recipient.schemas import NotificationRecipientPlatform
+from simeon.product.price_set import PriceSet
+from simeon.tax.calculation import TaxabilityReason, TaxRate
+from simeon.tax.tax_id import TaxID
 from tests.fixtures.database import SaveFixture
 
 
@@ -246,7 +246,7 @@ async def create_pledge(
     save_fixture: SaveFixture,
     organization: Organization,
     *,
-    issue_reference: str = "polarsource/polar/1",
+    issue_reference: str = "simeonlabs/simeon/1",
     pledging_organization: Organization | None = None,
     pledging_user: User | None = None,
     state: PledgeState = PledgeState.created,
@@ -2034,7 +2034,7 @@ async def create_payout(
         account_currency=account_currency,
         account_amount=account_amount,
         transaction=transaction,
-        invoice_number=invoice_number or rstr("POLAR-"),
+        invoice_number=invoice_number or rstr("SIMEON-"),
     )
     await save_fixture(payout)
     return payout

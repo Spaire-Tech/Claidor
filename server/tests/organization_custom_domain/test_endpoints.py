@@ -4,7 +4,7 @@ import pytest
 from httpx import AsyncClient
 from pytest_mock import MockerFixture
 
-from polar.models import Organization, UserOrganization
+from simeon.models import Organization, UserOrganization
 from tests.fixtures.auth import AuthSubjectFixture
 
 
@@ -73,7 +73,7 @@ class TestSetCustomDomain:
         user_organization: UserOrganization,
     ) -> None:
         enqueue_job_mock = mocker.patch(
-            "polar.organization_custom_domain.service.enqueue_job"
+            "simeon.organization_custom_domain.service.enqueue_job"
         )
 
         response = await client.put(
@@ -126,13 +126,13 @@ class TestVerifyCustomDomain:
         organization: Organization,
         user_organization: UserOrganization,
     ) -> None:
-        mocker.patch("polar.organization_custom_domain.service.enqueue_job")
+        mocker.patch("simeon.organization_custom_domain.service.enqueue_job")
 
         async def resolve(name: str, record_type: str) -> list[str]:
             return []
 
         mocker.patch(
-            "polar.organization_custom_domain.service.dns.resolve",
+            "simeon.organization_custom_domain.service.dns.resolve",
             side_effect=resolve,
         )
 
@@ -175,7 +175,7 @@ class TestDeleteCustomDomain:
         organization: Organization,
         user_organization: UserOrganization,
     ) -> None:
-        mocker.patch("polar.organization_custom_domain.service.enqueue_job")
+        mocker.patch("simeon.organization_custom_domain.service.enqueue_job")
         set_response = await client.put(
             f"/v1/organizations/{organization.id}/custom-domain",
             json={"domain": "learn.creator.com"},

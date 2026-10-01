@@ -1,4 +1,4 @@
-import { getCurrencyDecimalFactor, isDecimalCurrency } from '@claidor/currency'
+import { getCurrencyDecimalFactor, isDecimalCurrency } from '@simeon/currency'
 import {
   ChangeEvent,
   FocusEvent,
@@ -267,7 +267,7 @@ const MoneyInput = (props: Props) => {
   )
 
   const currencyLabel = (
-    <span className=" text-sm font-medium text-gray-500">
+    <span className="text-sm font-medium text-gray-500">
       {currency.toUpperCase()}
     </span>
   )
@@ -287,7 +287,7 @@ const MoneyInput = (props: Props) => {
       id={id}
       name={name}
       className={twMerge(
-        ' block w-full px-4 pl-14 text-base font-normal placeholder:text-gray-400',
+        'block w-full px-4 pl-14 text-base font-normal placeholder:text-gray-400',
         props.className ?? '',
       )}
       value={internalValue}

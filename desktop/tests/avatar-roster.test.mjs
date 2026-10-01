@@ -1,7 +1,7 @@
 /**
  * An agent's avatar reaches the roster (24 September 2026, night). The
  * founder: "upload and image generation none of them work." Audited in
- * docs/product/avatar-audit-2026-09-24.md: the picture landed as
+ * docs/services-agents.md: the picture landed as
  * avatar.png in the agent's directory and `buildSummary` never read it,
  * because it read only through an optional `readAvatar` callback that no
  * caller passed. Every roster row said avatarDataUrl: null.
@@ -30,7 +30,7 @@ const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
 
 test("a roster row carries the agent's avatar.png as a data URL, with no callback asked of the caller", async () => {
   const { module, dispose } = await load("source/host/extensions/session/session-summaries.ts", "session-summaries");
-  const root = await mkdtemp(path.join(os.tmpdir(), "caisra-avatar-roster-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-avatar-roster-"));
   try {
     const agentDir = path.join(root, "agent-1");
     await mkdir(agentDir, { recursive: true });
@@ -51,7 +51,7 @@ test("a roster row carries the agent's avatar.png as a data URL, with no callbac
 
 test("the gateway's avatar write refuses what is not an image, and answers with the picture when it is", async () => {
   const { module, dispose } = await load("source/host/extensions/session/session-mutations.ts", "session-mutations");
-  const root = await mkdtemp(path.join(os.tmpdir(), "caisra-avatar-write-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-avatar-write-"));
   try {
     const agentDir = path.join(root, "agent-1");
     await mkdir(agentDir, { recursive: true });

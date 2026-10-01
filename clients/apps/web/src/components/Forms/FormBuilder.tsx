@@ -8,25 +8,25 @@ import {
   useCreateForm,
   useUpdateForm,
 } from '@/hooks/queries/forms'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
-import Switch from '@claidor/ui/components/atoms/Switch'
-import TextArea from '@claidor/ui/components/atoms/TextArea'
+} from '@simeon/ui/components/atoms/Select'
+import Switch from '@simeon/ui/components/atoms/Switch'
+import TextArea from '@simeon/ui/components/atoms/TextArea'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
@@ -316,7 +316,9 @@ export const FormBuilder = ({
           <FormImageUpload
             organization={organization}
             imageUrl={imageUrl ?? null}
-            onChange={(url) => setValue('image_url', url, { shouldDirty: true })}
+            onChange={(url) =>
+              setValue('image_url', url, { shouldDirty: true })
+            }
             position={styleValue.media_position}
             onPositionChange={(media_position) => setStyle({ media_position })}
           />

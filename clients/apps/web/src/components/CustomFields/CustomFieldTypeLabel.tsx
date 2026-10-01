@@ -1,4 +1,4 @@
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import CustomFieldTypeIcon from './CustomFieldTypeIcon'
 
 const getLabel = (type: schemas['CustomFieldType']) => {

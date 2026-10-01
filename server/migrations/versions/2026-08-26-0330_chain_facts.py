@@ -1,6 +1,6 @@
 """The Chain's fact store: facts and refusals, cited to page and box
 
-Two tables behind `polar/tieout/chain/store.py`, the D2 contract
+Two tables behind `simeon/tieout/chain/store.py`, the D2 contract
 approved from the Scribe log. A fact is one printed number at one
 document version — page, box (PDF points, top-left origin), printed
 text, parsed value, its printed line for label anchoring, and the

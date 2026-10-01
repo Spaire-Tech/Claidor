@@ -1,7 +1,7 @@
 /**
  * Sand-shaped box tools on the loop's calling convention (25 September 2026).
  *
- * The reconstruction builds Grok Bot's box tools in the Sand SDK's shape:
+ * The reconstruction builds the upstream app's box tools in the Sand SDK's shape:
  * Computer and Screenshot as `execute(args, meta)` over a Zod `parameters`
  * (`sand-computer-tool.ts`), the fifteen browser tools as
  * `execute(context, args, metadata)` over a `{required, enum}` schema

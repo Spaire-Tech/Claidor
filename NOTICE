@@ -1,0 +1,14 @@
+Simeon
+Copyright 2026 Simeon Labs
+
+The server (server/) and the web app (clients/) are derived from Polar
+(https://github.com/polarsource/polar), Copyright 2023 Polar Software Inc.,
+licensed under the Apache License, Version 2.0 (see LICENSE). Simeon Labs
+has modified these files.
+
+The skills served to the Mac app (server/simeon/desktop/skills/) are from
+anthropics/skills, Copyright Anthropic PBC, under the Apache License,
+Version 2.0 (see server/simeon/desktop/skills/NOTICE and each skill's
+LICENSE.txt).
+
+The Mac app (desktop/) carries its own notices: desktop/NOTICE.md.

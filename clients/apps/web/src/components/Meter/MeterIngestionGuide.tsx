@@ -6,7 +6,7 @@ import {
   SyntaxHighlighterProvider,
 } from '@/components/SyntaxHighlighterShiki/SyntaxHighlighterClient'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
-import Button from '@claidor/ui/components/atoms/Button'
+import Button from '@simeon/ui/components/atoms/Button'
 import Link from 'next/link'
 import { useContext } from 'react'
 
@@ -23,12 +23,12 @@ export const MeterIngestionGuide = () => {
             </WellHeader>
             <WellContent className="flex grow flex-col justify-between gap-6">
               <div className="flex flex-col gap-4">
-                <p className=" text-gray-700">
+                <p className="text-gray-700">
                   Meters are aggregated filters on ingested events. They are
                   used to calculate your customer&apos;s usage of whatever you
                   choose to measure.
                 </p>
-                <p className=" text-gray-700">
+                <p className="text-gray-700">
                   For example, if you want to measure the number of API calls
                   your customer makes, you can create a meter that counts the
                   number of events with an arbitrary name like{' '}
@@ -39,9 +39,7 @@ export const MeterIngestionGuide = () => {
                 <Link
                   href={`/dashboard/${organization.slug}/integrations/setup-usage-billing`}
                 >
-                  <Button fullWidth>
-                    Set up with Claude
-                  </Button>
+                  <Button fullWidth>Set up with Claude</Button>
                 </Link>
                 <Link
                   href={`/dashboard/${organization.slug}/products/meters/create`}
@@ -53,17 +51,17 @@ export const MeterIngestionGuide = () => {
               </div>
             </WellContent>
           </div>
-          <Well className=" flex-1 shrink overflow-auto bg-white p-6 text-sm">
+          <Well className="flex-1 shrink overflow-auto bg-white p-6 text-sm">
             <SyntaxHighlighterClient
               lang="typescript"
-              code={`import { Claidor } from "@spaire/sdk";
+              code={`import { Simeon } from "@spaire/sdk";
 
-const claidor = new Claidor({
-  accessToken: process.env["CLAIDOR_ACCESS_TOKEN"] ?? "",
+const simeon = new Simeon({
+  accessToken: process.env["SIMEON_ACCESS_TOKEN"] ?? "",
 });
 
 export const GET = async (req: Request, res: Response) => {
-  await claidor.events.ingest({
+  await simeon.events.ingest({
     events: [
       {
         name: "api_call",

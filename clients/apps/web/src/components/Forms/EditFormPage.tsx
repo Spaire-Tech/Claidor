@@ -1,7 +1,7 @@
 'use client'
 
 import { useFormById } from '@/hooks/queries/forms'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { CreateFormSplitPage } from './CreateFormSplitPage'
 
 export const EditFormPage = ({

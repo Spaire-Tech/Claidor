@@ -4,12 +4,12 @@ from unittest.mock import MagicMock
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.held_balance.service import HeldBalanceService
-from polar.held_balance.service import held_balance as held_balance_service
-from polar.kit.db.postgres import AsyncSession
-from polar.models import Account, Organization, User
-from polar.models.organization import OrganizationStatus
-from polar.organization.tasks import (
+from simeon.held_balance.service import HeldBalanceService
+from simeon.held_balance.service import held_balance as held_balance_service
+from simeon.kit.db.postgres import AsyncSession
+from simeon.models import Account, Organization, User
+from simeon.models.organization import OrganizationStatus
+from simeon.organization.tasks import (
     OrganizationDoesNotExist,
     organization_created,
     organization_reviewed,
@@ -20,7 +20,7 @@ from tests.fixtures.database import SaveFixture
 
 @pytest.fixture(autouse=True)
 def enqueue_email_mock(mocker: MockerFixture) -> MagicMock:
-    return mocker.patch("polar.organization.tasks.enqueue_email", autospec=True)
+    return mocker.patch("simeon.organization.tasks.enqueue_email", autospec=True)
 
 
 @pytest.mark.asyncio
@@ -51,7 +51,7 @@ class TestOrganizationCreated:
         and begins only when the creator picks a plan and enters a card
         through upgrade-checkout."""
         ensure_customer_mock = mocker.patch(
-            "polar.organization.tasks.platform_billing.ensure_platform_customer",
+            "simeon.organization.tasks.platform_billing.ensure_platform_customer",
             return_value=None,
         )
 
@@ -90,10 +90,10 @@ class TestOrganizationUnderReview:
         session.expunge_all()
 
         create_organization_review_thread_mock = mocker.patch(
-            "polar.organization.tasks.plain_service.create_organization_review_thread"
+            "simeon.organization.tasks.plain_service.create_organization_review_thread"
         )
         get_admin_user_mock = mocker.patch(
-            "polar.organization.tasks.OrganizationRepository.get_admin_user",
+            "simeon.organization.tasks.OrganizationRepository.get_admin_user",
             return_value=user,
         )
 
@@ -122,10 +122,10 @@ class TestOrganizationUnderReview:
         session.expunge_all()
 
         create_organization_review_thread_mock = mocker.patch(
-            "polar.organization.tasks.plain_service.create_organization_review_thread"
+            "simeon.organization.tasks.plain_service.create_organization_review_thread"
         )
         get_admin_user_mock = mocker.patch(
-            "polar.organization.tasks.OrganizationRepository.get_admin_user",
+            "simeon.organization.tasks.OrganizationRepository.get_admin_user",
             return_value=user,
         )
 
@@ -164,7 +164,7 @@ class TestOrganizationReviewed:
             spec=HeldBalanceService.release_account,
         )
         get_admin_user_mock = mocker.patch(
-            "polar.organization.tasks.OrganizationRepository.get_admin_user",
+            "simeon.organization.tasks.OrganizationRepository.get_admin_user",
             return_value=user,
         )
 
@@ -197,7 +197,7 @@ class TestOrganizationReviewed:
             spec=HeldBalanceService.release_account,
         )
         get_admin_user_mock = mocker.patch(
-            "polar.organization.tasks.OrganizationRepository.get_admin_user",
+            "simeon.organization.tasks.OrganizationRepository.get_admin_user",
             return_value=user,
         )
 

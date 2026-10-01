@@ -9,7 +9,7 @@ import { getRequestPathModule } from "../utils/request-path.js";
 
 type Any = any;
 
-const logger = createLogger("@anysphere/agent:execute-plan");
+const logger = createLogger("@sand/agent:execute-plan");
 
 export interface ExecutePlanPlanFileAction {
   readonly planFilePath?: { unwrap(purpose: PrivacyCapability): string } | undefined;

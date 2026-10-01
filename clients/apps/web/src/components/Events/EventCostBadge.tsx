@@ -1,17 +1,14 @@
 import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown'
 import KeyboardArrowUp from '@mui/icons-material/KeyboardArrowUp'
-import { formatCurrency } from '@claidor/currency'
+import { formatCurrency } from '@simeon/currency'
 import { useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'
 
 const getIndicatorColor = (type: 'cost' | 'revenue' | 'neutral') => {
   const colors = {
-    positive:
-      'bg-emerald-50 text-emerald-500   group-hover:bg-emerald-100',
-    negative:
-      'bg-red-50 text-red-500   group-hover:bg-red-100',
-    neutral:
-      'bg-gray-100 text-gray-500   group-hover:bg-black/5',
+    positive: 'bg-emerald-50 text-emerald-500   group-hover:bg-emerald-100',
+    negative: 'bg-red-50 text-red-500   group-hover:bg-red-100',
+    neutral: 'bg-gray-100 text-gray-500   group-hover:bg-black/5',
   }
 
   if (type === 'cost') {

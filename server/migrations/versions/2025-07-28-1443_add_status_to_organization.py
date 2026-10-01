@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # Polar Custom Imports
-from polar.kit.extensions.sqlalchemy.types import StringEnum
-from polar.models.organization import Organization, OrganizationStatus
+from simeon.kit.extensions.sqlalchemy.types import StringEnum
+from simeon.models.organization import Organization, OrganizationStatus
 
 # revision identifiers, used by Alembic.
 revision = "24bff4469bc0"

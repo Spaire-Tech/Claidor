@@ -7,7 +7,7 @@ import AddOutlined from '@mui/icons-material/AddOutlined'
 import ArrowDownward from '@mui/icons-material/ArrowDownward'
 import ArrowUpward from '@mui/icons-material/ArrowUpward'
 import LinkOutlined from '@mui/icons-material/LinkOutlined'
-import Button from '@claidor/ui/components/atoms/Button'
+import Button from '@simeon/ui/components/atoms/Button'
 import { parseAsStringLiteral, useQueryState } from 'nuqs'
 import { useContext, useEffect, useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -62,7 +62,7 @@ export const CheckoutLinkList = ({
   }, [inViewport, hasNextPage, fetchNextPage])
 
   return (
-    <div className=" flex h-full flex-col divide-y divide-gray-200">
+    <div className="flex h-full flex-col divide-y divide-gray-200">
       <div className="flex flex-row items-center justify-between gap-6 px-4 py-4">
         <div>Checkout Links</div>
         <div className="flex flex-row items-center gap-4">
@@ -98,7 +98,7 @@ export const CheckoutLinkList = ({
           onChange={(productIds) => setProductIds(productIds)}
         />
       </div>
-      <div className=" flex h-full grow flex-col divide-y divide-gray-50 overflow-y-auto">
+      <div className="flex h-full grow flex-col divide-y divide-gray-50 overflow-y-auto">
         {checkoutLinks.map((checkoutLink) => {
           const productLabel =
             checkoutLink.products.length === 1
@@ -109,18 +109,15 @@ export const CheckoutLinkList = ({
             (checkoutLink.metadata as Record<string, unknown> | null)
               ?.is_active !== false
           const displayName =
-            checkoutLink.label ??
-            checkoutLink.products[0]?.name ??
-            'Untitled'
+            checkoutLink.label ?? checkoutLink.products[0]?.name ?? 'Untitled'
 
           return (
             <div
               key={checkoutLink.id}
               onClick={() => setSelectedCheckoutLinkId(checkoutLink.id)}
               className={twMerge(
-                ' cursor-pointer hover:bg-gray-100',
-                selectedCheckoutLinkId === checkoutLink.id &&
-                  ' bg-gray-100',
+                'cursor-pointer hover:bg-gray-100',
+                selectedCheckoutLinkId === checkoutLink.id && 'bg-gray-100',
               )}
             >
               <div className="flex flex-row items-center gap-3 px-4 py-3">
@@ -135,7 +132,7 @@ export const CheckoutLinkList = ({
                     {displayName}
                   </div>
                   <div>
-                    <div className=" w-full truncate text-sm text-gray-500">
+                    <div className="w-full truncate text-sm text-gray-500">
                       {productLabel}
                     </div>
                   </div>

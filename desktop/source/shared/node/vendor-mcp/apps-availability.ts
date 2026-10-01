@@ -1,12 +1,12 @@
 // Whether Simeon Labs' server serves apps right now (28 September 2026).
 //
 // The apps in the catalog (`appsToolkit`) sign in and run through our server
-// (`server/polar/desktop/apps.py`). The first time they shipped, the server
+// (`server/simeon/desktop/apps.py`). The first time they shipped, the server
 // had not been deployed and every card's sign-in went nowhere. So the
 // marketplace asks first: `GET /desktop/api/apps` answering
 // `{"available": true}` offers Connect; anything else (a 404 from a server
 // that predates the route, a 503 without the provider's key, no network, no
-// sign-in) keeps the cards Coming soon, the way Grok Bot only offers Connect
+// sign-in) keeps the cards Coming soon, the way the upstream app only offers Connect
 // for what can actually connect.
 
 import { getConfiguredBackendUrl } from "../cursor-token.js";

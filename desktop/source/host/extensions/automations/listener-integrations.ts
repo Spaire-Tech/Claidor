@@ -12,9 +12,9 @@ import {
 import { createSandCursorBackendClient } from "../../../shared/node/cursor-backend/cursor-inference.js";
 import { LISTENERS_COMING_SOON_SENTENCE, isListenerRelayServed } from "../../../shared/listener-availability.js";
 import { connectorManifests } from "../../../shared/channels.js";
-// Grok Bot sent "Connect" to cursor.com/dashboard?tab=integrations. There is
+// The upstream app sent "Connect" to cursor.com/dashboard?tab=integrations. There is
 // no such page for Simeon. Since 25 September 2026 the connect pages are on
-// Simeon Labs' server (polar/sand/listeners_connections.py): Slack's is
+// Simeon Labs' server (simeon/sand/listeners_connections.py): Slack's is
 // what `GetSlackInstallUrl` answers, GitHub's is `GITHUB_INSTALL_PATH` on
 // the backend host. This stays null as the fallback when the relay is
 // switched off (SAND_LISTENER_RELAY_SERVED=0) or no backend URL is known.

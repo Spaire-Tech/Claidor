@@ -1,13 +1,13 @@
-import { FormField, FormLabel } from '@claidor/ui/components/ui/form'
+import { FormField, FormLabel } from '@simeon/ui/components/ui/form'
 
 import ClearOutlined from '@mui/icons-material/ClearOutlined'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   FormControl,
   FormItem,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { useCallback } from 'react'
 import { useFieldArray, useFormContext } from 'react-hook-form'
 import { ProductFormType } from './ProductForm/ProductForm'
@@ -46,7 +46,7 @@ export const ProductMetadataForm = () => {
     <FormItem className="flex flex-col gap-2">
       <div className="flex flex-row items-center justify-between">
         <FormLabel>Metadata</FormLabel>
-        <p className=" text-sm text-gray-500">
+        <p className="text-sm text-gray-500">
           <Button
             size="sm"
             variant="secondary"
@@ -123,7 +123,7 @@ export const ProductMetadataForm = () => {
       )}
 
       {fields.length === 0 && (
-        <p className=" flex h-10 items-center justify-center rounded-2xl bg-gray-50 text-center text-sm text-gray-500 italic">
+        <p className="flex h-10 items-center justify-center rounded-2xl bg-gray-50 text-center text-sm text-gray-500 italic">
           No metadata added.
         </p>
       )}

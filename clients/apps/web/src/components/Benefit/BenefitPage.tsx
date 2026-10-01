@@ -6,11 +6,11 @@ import {
   parseSearchParams,
   serializeSearchParams,
 } from '@/utils/datatable'
-import { schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
-import Button from '@claidor/ui/components/atoms/Button'
-import { DataTable } from '@claidor/ui/components/atoms/DataTable'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
+import { schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
+import Button from '@simeon/ui/components/atoms/Button'
+import { DataTable } from '@simeon/ui/components/atoms/DataTable'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
 import { ColumnDef } from '@tanstack/react-table'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -102,7 +102,7 @@ export const BenefitPage = ({ benefit, organization }: BenefitPageProps) => {
                 <div className="w-full truncate text-sm">
                   {grant.customer.name ?? '—'}
                 </div>
-                <div className=" w-full truncate text-xs text-gray-500">
+                <div className="w-full truncate text-xs text-gray-500">
                   {grant.customer.email}
                 </div>
               </div>

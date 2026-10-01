@@ -1,14 +1,14 @@
 /**
- * The box desktop's stream, behind Grok Bot's network token (ledger F-135,
+ * The box desktop's stream, behind the upstream app's network token (ledger F-135,
  * 26 September 2026).
  *
- * Grok Bot never exposed noVNC bare in production. Its cloud box sat behind
+ * The upstream app never exposed noVNC bare in production. Its cloud box sat behind
  * the pod's egress proxy, which let a request through only with the box's
  * network token, as the `network_token` query parameter (the noVNC page and
  * its websockify URL, `buildSandBoxNoVncUrl`) or the `x-anyrun-network-token`
  * header (every other request of the page; the Electron box session adds it,
  * `vnc-trust.ts` `beforeSendHeaders`). The loopback box, which a local Docker
- * box uses, is Grok Bot's development path and published websockify's 6080
+ * box uses, is the upstream app's development path and published websockify's 6080
  * and 6081 with no credential, so any web page open on the Mac could open
  * ws://127.0.0.1:6080/websockify and drive the desktop that holds the
  * agent's signed-in browser.
@@ -18,8 +18,8 @@
  * the box's own loopback once the token matches. The Mac publishes these
  * listeners instead of websockify and hands the app the `vncProxy`
  * descriptor, so the coordinator (`box-vnc-proxy.ts`) and Electron carry the
- * token exactly as they do for Grok Bot's cloud box. Our cloud box's proxy
- * (`server/polar/sand/box_proxy.py`) checks the same token the same way.
+ * token exactly as they do for the upstream app's cloud box. Our cloud box's proxy
+ * (`server/simeon/sand/box_proxy.py`) checks the same token the same way.
  */
 import { timingSafeEqual } from "node:crypto";
 import { createServer, request as httpRequest, type IncomingMessage, type Server, type ServerResponse } from "node:http";
@@ -29,7 +29,7 @@ export const BOX_STREAM_NETWORK_TOKEN_HEADER = "x-anyrun-network-token";
 export const BOX_STREAM_NETWORK_TOKEN_QUERY = "network_token";
 /**
  * The token, in the box's environment, set by the Mac when it creates the
- * box: Grok Bot's pod receives its credentials the same way (F-148).
+ * box: the upstream app's pod receives its credentials the same way (F-148).
  */
 export const SAND_BOX_STREAM_NETWORK_TOKEN_ENV = "SAND_BOX_STREAM_NETWORK_TOKEN";
 /** websockify's ports inside the box, and the guard's, which the Mac publishes as 6080 and 6081. */
@@ -97,7 +97,7 @@ export async function startBoxStreamGuard(options: {
     refusals += 1;
     // One line for the first refusal and every hundredth after: a page
     // probing the port should be visible without flooding the log.
-    if (refusals === 1 || refusals % 100 === 0) options.log?.(`[claidor] box-stream refused ${what} without the network token (${refusals} so far)`);
+    if (refusals === 1 || refusals % 100 === 0) options.log?.(`[simeon] box-stream refused ${what} without the network token (${refusals} so far)`);
   };
   for (const route of routes) {
     const server = createServer((request: IncomingMessage, response: ServerResponse) => {
@@ -157,7 +157,7 @@ export async function startBoxStreamGuard(options: {
     ports.push(typeof address === "object" && address != null ? address.port : route.listenPort);
     servers.push(server);
   }
-  options.log?.(`[claidor] box-stream guarded on ${ports.join(", ")} -> ${routes.map((route) => route.targetPort).join(", ")} (network token required)`);
+  options.log?.(`[simeon] box-stream guarded on ${ports.join(", ")} -> ${routes.map((route) => route.targetPort).join(", ")} (network token required)`);
   return {
     ports,
     close: async () => {
@@ -192,7 +192,7 @@ export function startBoxStreamGuardFromEnv(options: {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (count >= maxAttempts) {
-        options.log(`[claidor] box-stream guard could not start (${message}); the desktop stream is unreachable until the host restarts`);
+        options.log(`[simeon] box-stream guard could not start (${message}); the desktop stream is unreachable until the host restarts`);
         return undefined;
       }
       await new Promise((resolve) => { const timer = setTimeout(resolve, retryDelayMs); timer.unref?.(); });

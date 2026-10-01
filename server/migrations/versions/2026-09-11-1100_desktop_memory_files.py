@@ -4,7 +4,7 @@ Revision ID: desktop_memory_0911
 Revises: desktop_sign_in_0909
 Create Date: 2026-09-11 11:00:00.000000
 
-One new table and nothing else touched. See polar/models/desktop.py and
+One new table and nothing else touched. See simeon/models/desktop.py and
 docs/maties/cloud.md.
 """
 

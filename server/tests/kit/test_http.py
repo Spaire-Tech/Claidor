@@ -1,6 +1,6 @@
 import pytest
 
-from polar.kit.http import get_safe_return_url
+from simeon.kit.http import get_safe_return_url
 
 
 @pytest.mark.asyncio

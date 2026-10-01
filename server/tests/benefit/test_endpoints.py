@@ -4,8 +4,8 @@ from typing import Any
 import pytest
 from httpx import AsyncClient
 
-from polar.auth.scope import Scope
-from polar.models import (
+from simeon.auth.scope import Scope
+from simeon.models import (
     Benefit,
     Customer,
     Member,
@@ -13,7 +13,7 @@ from polar.models import (
     Subscription,
     UserOrganization,
 )
-from polar.models.benefit import BenefitType
+from simeon.models.benefit import BenefitType
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_benefit, create_benefit_grant

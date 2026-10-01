@@ -1,7 +1,7 @@
 import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
 
-export const WINDOWS_INSTALLER_SIGNER_ALLOWLIST = ["Anysphere, Inc.", "Anysphere"] as const;
+export const WINDOWS_INSTALLER_SIGNER_ALLOWLIST = ["Simeon Labs, Inc.", "Simeon Labs"] as const;
 export const POWERSHELL_TIMEOUT_MS = 30_000;
 export class SandInstallerSignatureError extends Error {}
 const execFileAsync = promisify(execFile);

@@ -28,24 +28,24 @@ from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 from websockets.asyncio.server import serve
 
-from polar.config import settings
-from polar.models import SandBox, User
-from polar.postgres import AsyncSession
-from polar.sand import box_hosts, box_proxy, box_service
-from polar.sand.box_hosts import (
+from simeon.config import settings
+from simeon.models import SandBox, User
+from simeon.postgres import AsyncSession
+from simeon.sand import box_hosts, box_proxy, box_service
+from simeon.sand.box_hosts import (
     BOX_HOST_UNAVAILABLE_SENTENCE,
     BoxBlocked,
     BoxSpec,
     ProvisionedBox,
 )
-from polar.sand.box_service import (
+from simeon.sand.box_service import (
     PHASE_CREATING,
     PHASE_DONE,
     RUN_STATE_ABSENT,
     RUN_STATE_HIBERNATED,
     RUN_STATE_RUNNING,
 )
-from polar.sand.connect import decode_stream_frames
+from simeon.sand.connect import decode_stream_frames
 from tests.desktop.test_endpoints import _signed_in
 
 ENSURE = "/aiserver.v1.GrokBotService/EnsureSandBox"
@@ -190,7 +190,7 @@ class TestEnsureSandBox:
         # `/api/…` onto and the tunnel derivation swaps `/p/1340` → `/p/8790`.
         assert body["gatewayUrl"] == f"{settings.BASE_URL}/sand-box/{box_id}/p/1340"
         assert body["forkVncBaseUrl"] == f"{settings.BASE_URL}/sand-box/{box_id}/p/6081"
-        # `buildSandBoxNoVncUrl` in sand-box.ts, so the webview loads what Grok Bot's loads.
+        # `buildSandBoxNoVncUrl` in sand-box.ts, so the webview loads what the upstream app's loads.
         assert body["vncUrl"].startswith(
             f"{settings.BASE_URL}/sand-box/{box_id}/p/6080/vnc.html?network_token="
         )
@@ -200,7 +200,7 @@ class TestEnsureSandBox:
         env = dict(line.split("=", 1) for line in host.created[0].environment())
         assert env["SAND_GATEWAY_TOKEN"] == body["gatewayToken"]
         assert env["SAND_BACKEND_URL"] == settings.BASE_URL
-        assert env["SAND_INFERENCE_RENEWAL_CREDENTIAL"].startswith("claidor_db_")
+        assert env["SAND_INFERENCE_RENEWAL_CREDENTIAL"].startswith("simeon_db_")
         assert (
             env["SAND_SUPERVISOR_ENABLED"] == "1"
             and env["SAND_USE_EXISTING_BOX_EXEC_DAEMON"] == "1"
@@ -526,7 +526,7 @@ class TestLocalExecCredential:
         )
         assert minted.status_code == 200, minted.text
         credential = minted.json()["credential"]
-        assert credential.startswith("claidor_db_") and isinstance(
+        assert credential.startswith("simeon_db_") and isinstance(
             minted.json()["expiresAtMs"], int
         )
         # No cloud box yet: the daemon keeps what it has.
@@ -548,7 +548,7 @@ class TestLocalExecCredential:
         assert (
             await client.post(
                 "/sand-box/local-exec-connection",
-                json={"credential": "claidor_db_nope"},
+                json={"credential": "simeon_db_nope"},
             )
         ).status_code == 401
         assert (

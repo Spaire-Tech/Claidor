@@ -1,4 +1,4 @@
-const CLAIDOR_CHECKOUT_EVENT = 'CLAIDOR_CHECKOUT'
+const SIMEON_CHECKOUT_EVENT = 'SIMEON_CHECKOUT'
 
 /**
  * Message sent to the parent window when the embedded checkout is fully loaded.
@@ -46,7 +46,7 @@ type EmbedCheckoutMessage =
 const isEmbedCheckoutMessage = (
   message: any,
 ): message is EmbedCheckoutMessage => {
-  return message.type === CLAIDOR_CHECKOUT_EVENT
+  return message.type === SIMEON_CHECKOUT_EVENT
 }
 
 /**
@@ -84,7 +84,7 @@ class EmbedCheckout {
     targetOrigin: string,
   ): void {
     window.parent.postMessage(
-      { ...message, type: CLAIDOR_CHECKOUT_EVENT },
+      { ...message, type: SIMEON_CHECKOUT_EVENT },
       targetOrigin,
     )
   }
@@ -116,18 +116,18 @@ class EmbedCheckout {
 
     const styleSheet = document.createElement('style')
     styleSheet.innerText = `
-      .claidor-loader-spinner {
+      .simeon-loader-spinner {
         width: 20px;
         aspect-ratio: 1;
         border-radius: 50%;
         background: ${options?.theme === 'dark' ? '#000' : '#fff'};
         box-shadow: 0 0 0 0 ${options?.theme === 'dark' ? '#fff' : '#000'};
-        animation: claidor-loader-spinner-animation 1s infinite;
+        animation: simeon-loader-spinner-animation 1s infinite;
       }
-      @keyframes claidor-loader-spinner-animation {
+      @keyframes simeon-loader-spinner-animation {
         100% {box-shadow: 0 0 0 30px #0000}
       }
-      body.claidor-no-scroll {
+      body.simeon-no-scroll {
         overflow: hidden;
       }
     `
@@ -144,11 +144,11 @@ class EmbedCheckout {
 
     // Create spinning icon
     const spinner = document.createElement('div')
-    spinner.className = 'claidor-loader-spinner'
+    spinner.className = 'simeon-loader-spinner'
     loader.appendChild(spinner)
 
     // Insert into the DOM
-    document.body.classList.add('claidor-no-scroll')
+    document.body.classList.add('simeon-no-scroll')
     document.body.appendChild(loader)
 
     // Add query parameters to the Checkout Link
@@ -174,7 +174,7 @@ class EmbedCheckout {
     iframe.style.colorScheme = 'auto'
 
     // @ts-ignore
-    const origins = __CLAIDOR_CHECKOUT_EMBED_SCRIPT_ALLOWED_ORIGINS__
+    const origins = __SIMEON_CHECKOUT_EMBED_SCRIPT_ALLOWED_ORIGINS__
       .split(',')
       .join(' ')
     iframe.allow = `payment 'self' ${origins}; publickey-credentials-get 'self' ${origins};`
@@ -190,7 +190,11 @@ class EmbedCheckout {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         embedCheckout.close()
-        reject(new Error('[Claidor Checkout] Checkout failed to load within 30 seconds'))
+        reject(
+          new Error(
+            '[Simeon Checkout] Checkout failed to load within 30 seconds',
+          ),
+        )
       }, 30000)
       embedCheckout.addEventListener(
         'loaded',
@@ -206,18 +210,18 @@ class EmbedCheckout {
   /**
    * Initialize embedded checkout triggers.
    *
-   * This method will add a click event listener to all elements with the `data-claidor-checkout` attribute.
-   * The Checkout Link is either the `href` attribute for a link element or the value of `data-claidor-checkout` attribute.
+   * This method will add a click event listener to all elements with the `data-simeon-checkout` attribute.
+   * The Checkout Link is either the `href` attribute for a link element or the value of `data-simeon-checkout` attribute.
    *
-   * The theme can be optionally set using the `data-claidor-checkout-theme` attribute.
+   * The theme can be optionally set using the `data-simeon-checkout-theme` attribute.
    *
    * @example
    * ```html
-   * <a href="https://buy.claidorhq.com/claidor_cl_123" data-claidor-checkout data-claidor-checkout-theme="dark">Checkout</a>
+   * <a href="https://buy.simeonlabs.com/simeon_cl_123" data-simeon-checkout data-simeon-checkout-theme="dark">Checkout</a>
    * ```
    */
   public static init(): void {
-    const checkoutElements = document.querySelectorAll('[data-claidor-checkout]')
+    const checkoutElements = document.querySelectorAll('[data-simeon-checkout]')
     checkoutElements.forEach((checkoutElement) => {
       checkoutElement.removeEventListener(
         'click',
@@ -237,7 +241,7 @@ class EmbedCheckout {
     window.removeEventListener('message', this.windowMessageListener)
     if (document.body.contains(this.iframe))
       document.body.removeChild(this.iframe)
-    document.body.classList.remove('claidor-no-scroll')
+    document.body.classList.remove('simeon-no-scroll')
   }
 
   /**
@@ -306,7 +310,7 @@ class EmbedCheckout {
 
     // Find the closest parent element with the checkout data attribute,
     // in case the checkout element has children triggering the event.
-    while (!checkoutElement.hasAttribute('data-claidor-checkout')) {
+    while (!checkoutElement.hasAttribute('data-simeon-checkout')) {
       if (!checkoutElement.parentElement) {
         return
       }
@@ -315,8 +319,8 @@ class EmbedCheckout {
 
     const url =
       checkoutElement.getAttribute('href') ||
-      (checkoutElement.getAttribute('data-claidor-checkout') as string)
-    const theme = checkoutElement.getAttribute('data-claidor-checkout-theme') as
+      (checkoutElement.getAttribute('data-simeon-checkout') as string)
+    const theme = checkoutElement.getAttribute('data-simeon-checkout-theme') as
       | 'light'
       | 'dark'
       | undefined
@@ -392,7 +396,7 @@ class EmbedCheckout {
   private handleWindowMessage({ data, origin }: MessageEvent): void {
     if (
       // @ts-ignore
-      !__CLAIDOR_CHECKOUT_EMBED_SCRIPT_ALLOWED_ORIGINS__
+      !__SIMEON_CHECKOUT_EMBED_SCRIPT_ALLOWED_ORIGINS__
         .split(',')
         .includes(origin)
     ) {
@@ -409,14 +413,14 @@ class EmbedCheckout {
 
 declare global {
   interface Window {
-    Claidor: {
+    Simeon: {
       EmbedCheckout: typeof EmbedCheckout
     }
   }
 }
 
 if (typeof window !== 'undefined') {
-  window.Claidor = {
+  window.Simeon = {
     EmbedCheckout,
   }
 }
@@ -430,4 +434,4 @@ if (typeof document !== 'undefined') {
   }
 }
 
-export { EmbedCheckout as ClaidorEmbedCheckout }
+export { EmbedCheckout as SimeonEmbedCheckout }

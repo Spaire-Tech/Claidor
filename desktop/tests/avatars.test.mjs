@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { build } from "esbuild";
 
-// The founder's twenty-one avatars (docs/product/faces-adventurer-measured.md):
+// The founder's twenty-one avatars (brand/avatars):
 // what the port promised to keep, measured on the component and the generator
 // rather than reasoned about.
 
@@ -18,7 +18,7 @@ const LEGACY = ["blob", "pebble", "squircle", "tablet", "wedge", "hex", "cloud",
 let loaded = null;
 async function loadCharacter() {
   if (loaded != null) return loaded;
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-avatars-"));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-avatars-"));
   const output = path.join(temporary, "character.mjs");
   await build({
     entryPoints: [path.join(repoRoot, "tests/fixtures/avatars-entry.tsx")],
@@ -54,7 +54,7 @@ test("the generated module is what the sources and the measurements produce", as
   }
 });
 
-test("identity: a stored key is kept, a Grok Bot shape name maps onto the first eight, an unknown one hashes onto the twenty-one", async () => {
+test("identity: a stored key is kept, a the upstream app shape name maps onto the first eight, an unknown one hashes onto the twenty-one", async () => {
   const { AVATAR_KEYS, resolvePersonaShape, resolvePersonaColor, isAvatarKey } = await loadCharacter();
   assert.equal(AVATAR_KEYS.length, 21);
   for (const key of AVATAR_KEYS) assert.equal(resolvePersonaShape("any-agent", key), key);

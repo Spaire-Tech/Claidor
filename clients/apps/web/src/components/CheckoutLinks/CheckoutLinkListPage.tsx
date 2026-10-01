@@ -11,23 +11,6 @@ import {
   useUpdateCheckoutLink,
 } from '@/hooks/queries'
 import { useInViewport } from '@/hooks/utils'
-import { schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
-import Button from '@claidor/ui/components/atoms/Button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@claidor/ui/components/atoms/DropdownMenu'
-import Input from '@claidor/ui/components/atoms/Input'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@claidor/ui/components/ui/dialog'
 import AddOutlined from '@mui/icons-material/AddOutlined'
 import ArrowDownward from '@mui/icons-material/ArrowDownward'
 import ArrowUpward from '@mui/icons-material/ArrowUpward'
@@ -38,6 +21,23 @@ import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined'
 import OpenInNewOutlined from '@mui/icons-material/OpenInNewOutlined'
 import PowerSettingsNewOutlined from '@mui/icons-material/PowerSettingsNewOutlined'
 import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined'
+import { schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
+import Button from '@simeon/ui/components/atoms/Button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@simeon/ui/components/atoms/DropdownMenu'
+import Input from '@simeon/ui/components/atoms/Input'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@simeon/ui/components/ui/dialog'
 import { useRouter } from 'next/navigation'
 import {
   parseAsArrayOf,

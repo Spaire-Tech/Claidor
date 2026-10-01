@@ -2,7 +2,7 @@
  * The ignition.
  *
  * `source/electron-main/main.ts` and `source/host/main.ts` both EXPORT a start
- * function and neither calls it. Anysphere's build generated the entry that
+ * function and neither calls it. The upstream build generated the entry that
  * does, and the reconstruction reproduces that generation in
  * scripts/electron-main-production-activation.mjs and
  * scripts/host-production-activation.mjs.
@@ -11,7 +11,7 @@
  * binding they name resolves to a file in source/ — but because before emitting
  * anything they verify themselves against the extracted 0.18.0 app under
  * src/app/dist/: byte offsets in main.cjs, a runtime-deps manifest, anchor
- * needles. That app came from a DMG which Anysphere has since locked behind a
+ * needles. That app came from a DMG which the upstream maker has since locked behind a
  * 403 and which Gitee will not serve from a free repository's LFS. So the
  * self-check is unsatisfiable and takes the generation down with it.
  *
@@ -205,11 +205,12 @@ process.on("uncaughtException", (error) => {
  * `invariant(hasDesktopBridge(candidate.desktop))` before React mounts — a dark,
  * empty window with the error only visible in the devtools console.
  */
-const PRELOAD_ENTRYPOINTS = {
+export const PRELOAD_ENTRYPOINTS = {
   "preload": ["installPrimaryPreloadEntrypoint", "loadPrimaryPreloadElectron"],
   "preload-dev-controls": ["installDevControlsPreloadEntrypoint", "loadDevControlsPreloadElectron"],
   "preload-webview": ["installWebviewPreloadEntrypoint", "loadBrowserPreloadElectron"],
   "preload-vnc": ["installVncPreloadEntrypoint", "loadVncPreloadElectron"],
+  "preload-voice-call": ["installVoiceCallPreloadEntrypoint", "loadVoiceCallPreloadElectron"],
 };
 
 export function preloadEntrySource(name) {

@@ -2,7 +2,7 @@
  * The coordinator, the gateway and the box (25 September 2026,
  * design-audit-ledger.md clusters `unserved-transports` and `hatch-residue`).
  *
- * Grok Bot's Mac-and-box plumbing was built for Cursor's cloud and the
+ * The upstream app's Mac-and-box plumbing was built for Cursor's cloud and the
  * reconstruction pointed it at Simeon Labs' server without the "is this
  * served?" switch each path needs: the Statsig bootstrap asked every five
  * minutes, the local-exec credential every thirty seconds, the update feed
@@ -77,9 +77,9 @@ test("the hatch's plumbing is off the host path: no local reaction, no re-sort, 
   const main = await src("node-agent-coordinator/main.ts");
   assert.match(main, /let transcriptPostChain: Promise<void> = Promise\.resolve\(\);/);
   assert.match(main, /if \(permissionScope\(\) == null\) await fetchPermissionScopeSlot\(\);\n\s*server\.postEvent\(family, stampTranscriptEvent\(event\.payload, permissionScope\(\)\)\);/);
-  assert.match(main, /\{ sortByTimestamp: !routesClaidorThroughHost\(\) \}/);
+  assert.match(main, /\{ sortByTimestamp: !routesSimeonThroughHost\(\) \}/);
   assert.equal((await src("shared/deep-link.ts")).includes('SAND_HTTPS_DEEP_LINK_ORIGIN = "https://app.simeonlabs.com"'), true);
-  for (const [file, gone] of [["electron-main/coordinator/coordinator-port-ipc-guard.ts", "Sand app window"], ["electron-main/main-edge.ts", "Sand app window"], ["shared/node/cursor-backend/claidor-api.ts", "Claidor answered"], ["shared/node/cursor-backend/claidor-api.ts", "Claidor refused"]]) {
+  for (const [file, gone] of [["electron-main/coordinator/coordinator-port-ipc-guard.ts", "Sand app window"], ["electron-main/main-edge.ts", "Sand app window"], ["shared/node/cursor-backend/simeon-api.ts", "Simeon answered"], ["shared/node/cursor-backend/simeon-api.ts", "Simeon refused"]]) {
     assert.ok(!(await src(file)).includes(gone), `${file} no longer says ${gone}`);
   }
 });

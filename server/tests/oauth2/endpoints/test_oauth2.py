@@ -4,13 +4,13 @@ import pytest
 import pytest_asyncio
 from httpx import AsyncClient
 
-from polar.auth.scope import Scope
-from polar.auth.service import USER_SESSION_TOKEN_PREFIX
-from polar.config import settings
-from polar.kit.crypto import generate_token_hash_pair
-from polar.kit.db.postgres import Session
-from polar.kit.utils import utc_now
-from polar.models import (
+from simeon.auth.scope import Scope
+from simeon.auth.service import USER_SESSION_TOKEN_PREFIX
+from simeon.config import settings
+from simeon.kit.crypto import generate_token_hash_pair
+from simeon.kit.db.postgres import Session
+from simeon.kit.utils import utc_now
+from simeon.models import (
     OAuth2Client,
     OAuth2Grant,
     Organization,
@@ -18,8 +18,8 @@ from polar.models import (
     UserOrganization,
     UserSession,
 )
-from polar.oauth2.service.oauth2_grant import oauth2_grant as oauth2_grant_service
-from polar.oauth2.sub_type import SubType
+from simeon.oauth2.service.oauth2_grant import oauth2_grant as oauth2_grant_service
+from simeon.oauth2.sub_type import SubType
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 
@@ -29,9 +29,9 @@ from ..conftest import create_oauth2_authorization_code, create_oauth2_token
 @pytest_asyncio.fixture
 async def oauth2_client(save_fixture: SaveFixture, user: User) -> OAuth2Client:
     oauth2_client = OAuth2Client(
-        client_id="claidor_ci_123",
-        client_secret="claidor_cs_123",
-        registration_access_token="claidor_crt_123",
+        client_id="simeon_ci_123",
+        client_secret="simeon_cs_123",
+        registration_access_token="simeon_crt_123",
         user=user,
     )
     oauth2_client.set_client_metadata(
@@ -52,9 +52,9 @@ async def oauth2_client(save_fixture: SaveFixture, user: User) -> OAuth2Client:
 @pytest_asyncio.fixture
 async def public_oauth2_client(save_fixture: SaveFixture, user: User) -> OAuth2Client:
     oauth2_client = OAuth2Client(
-        client_id="claidor_ci_123",
-        client_secret="claidor_cs_123",
-        registration_access_token="claidor_crt_123",
+        client_id="simeon_ci_123",
+        client_secret="simeon_cs_123",
+        registration_access_token="simeon_crt_123",
         user=user,
     )
     oauth2_client.set_client_metadata(
@@ -77,9 +77,9 @@ async def first_party_oauth2_client(
     save_fixture: SaveFixture, user: User
 ) -> OAuth2Client:
     oauth2_client = OAuth2Client(
-        client_id="claidor_ci_123",
-        client_secret="claidor_cs_123",
-        registration_access_token="claidor_crt_123",
+        client_id="simeon_ci_123",
+        client_secret="simeon_cs_123",
+        registration_access_token="simeon_crt_123",
         first_party=True,
         user=user,
     )
@@ -103,9 +103,9 @@ async def web_grant_oauth2_client(
     save_fixture: SaveFixture, user: User
 ) -> OAuth2Client:
     oauth2_client = OAuth2Client(
-        client_id="claidor_ci_123",
-        client_secret="claidor_cs_123",
-        registration_access_token="claidor_crt_123",
+        client_id="simeon_ci_123",
+        client_secret="simeon_cs_123",
+        registration_access_token="simeon_crt_123",
         user=user,
     )
     oauth2_client.set_client_metadata(
@@ -941,9 +941,9 @@ class TestOAuth2Token:
         json = response.json()
 
         access_token = json["access_token"]
-        assert access_token.startswith("claidor_at_u_")
+        assert access_token.startswith("simeon_at_u_")
         refresh_token = json["refresh_token"]
-        assert refresh_token.startswith("claidor_rt_u_")
+        assert refresh_token.startswith("simeon_rt_u_")
 
     async def test_authorization_code_public_client(
         self,
@@ -978,9 +978,9 @@ class TestOAuth2Token:
         json = response.json()
 
         access_token = json["access_token"]
-        assert access_token.startswith("claidor_at_u_")
+        assert access_token.startswith("simeon_at_u_")
         refresh_token = json["refresh_token"]
-        assert refresh_token.startswith("claidor_rt_u_")
+        assert refresh_token.startswith("simeon_rt_u_")
 
     async def test_authorization_code_sub_organization(
         self,
@@ -1012,9 +1012,9 @@ class TestOAuth2Token:
         json = response.json()
 
         access_token = json["access_token"]
-        assert access_token.startswith("claidor_at_o_")
+        assert access_token.startswith("simeon_at_o_")
         refresh_token = json["refresh_token"]
-        assert refresh_token.startswith("claidor_rt_o_")
+        assert refresh_token.startswith("simeon_rt_o_")
 
     async def test_refresh_token_sub_user(
         self,
@@ -1045,9 +1045,9 @@ class TestOAuth2Token:
         json = response.json()
 
         access_token = json["access_token"]
-        assert access_token.startswith("claidor_at_u_")
+        assert access_token.startswith("simeon_at_u_")
         refresh_token = json["refresh_token"]
-        assert refresh_token.startswith("claidor_rt_u_")
+        assert refresh_token.startswith("simeon_rt_u_")
 
     async def test_refresh_token_sub_organization(
         self,
@@ -1078,9 +1078,9 @@ class TestOAuth2Token:
         json = response.json()
 
         access_token = json["access_token"]
-        assert access_token.startswith("claidor_at_o_")
+        assert access_token.startswith("simeon_at_o_")
         refresh_token = json["refresh_token"]
-        assert refresh_token.startswith("claidor_rt_o_")
+        assert refresh_token.startswith("simeon_rt_o_")
 
     async def test_refresh_token_unauthenticated_private_client(
         self,
@@ -1136,9 +1136,9 @@ class TestOAuth2Token:
         json = response.json()
 
         access_token = json["access_token"]
-        assert access_token.startswith("claidor_at_u_")
+        assert access_token.startswith("simeon_at_u_")
         refresh_token = json["refresh_token"]
-        assert refresh_token.startswith("claidor_rt_u_")
+        assert refresh_token.startswith("simeon_rt_u_")
 
     @pytest.mark.parametrize(
         "payload",
@@ -1302,7 +1302,7 @@ class TestOAuth2Token:
         json = response.json()
 
         access_token = json["access_token"]
-        assert access_token.startswith("claidor_at_u_")
+        assert access_token.startswith("simeon_at_u_")
         assert "refresh_token" not in json
 
     async def test_web_grant_sub_organization(
@@ -1342,5 +1342,5 @@ class TestOAuth2Token:
         json = response.json()
 
         access_token = json["access_token"]
-        assert access_token.startswith("claidor_at_o_")
+        assert access_token.startswith("simeon_at_o_")
         assert "refresh_token" not in json

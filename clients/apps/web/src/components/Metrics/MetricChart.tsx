@@ -1,6 +1,6 @@
 import { ParsedMetricPeriod } from '@/hooks/queries'
 import { getFormattedMetricValue, getTimestampFormatter } from '@/utils/metrics'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { useMemo } from 'react'
 import type { AxisTick } from 'recharts/types/util/types'
 import { GenericChart } from '../Charts/GenericChart'

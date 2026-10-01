@@ -2,7 +2,7 @@
  * Event listeners, served (25 September 2026): the app's own relay
  * client, fire consumer and connect reads, run offline against an
  * in-process HTTP server that answers the shapes Simeon Labs' server
- * answers (`server/polar/sand/listeners_relay.py`; the fixtures below are
+ * answers (`server/simeon/sand/listeners_relay.py`; the fixtures below are
  * shared by hand with `server/tests/sand/test_listeners.py`).
  *
  * `listeners-coming-soon.test.mjs` measures the `SAND_LISTENER_RELAY_SERVED=0`
@@ -34,7 +34,7 @@ function manualPolling() {
   return { policy: { name: "manual", start(tick) { ticks.push(tick); return { dispose() { ticks.splice(ticks.indexOf(tick), 1); } }; } }, tick: async () => { for (const tick of [...ticks]) await tick(); }, count: () => ticks.length };
 }
 
-// The server's answers, the bodies `polar/sand/listeners_relay.py` writes.
+// The server's answers, the bodies `simeon/sand/listeners_relay.py` writes.
 const SUBSCRIPTIONS_ANSWER = {
   slack: { status: "ok", teams: [{ teamId: "T123", teamName: "Simeon Labs", channels: [{ input: "#eng", channelId: "C_ENG", isBotMember: true }, { input: "#ops", channelId: "C_OPS", isBotMember: false }], unresolvedChannels: ["#nowhere"] }], unresolvedChannels: ["#nowhere"] },
   github: { status: "ok", repos: [{ repo: "simeon-labs/app", isSubscribed: true }, { repo: "simeon-labs/other", isSubscribed: false, detail: "Give Simeon's GitHub App access to simeon-labs/other (GitHub → Settings → Applications → Simeon → Repository access)." }] },

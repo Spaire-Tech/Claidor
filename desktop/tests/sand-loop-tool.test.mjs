@@ -1,5 +1,5 @@
 /**
- * Grok Bot's Sand-shaped box tools on the loop (25 September 2026).
+ * The upstream app's Sand-shaped box tools on the loop (25 September 2026).
  *
  * The founder's app, asked to open Render in the browser: "The browser
  * handoff hit a desktop error … tool3.serializeError is not a function".
@@ -11,7 +11,7 @@
  * browser tools and CloudAgent (no schema at all, so never on the wire).
  *
  * Offline, through the host's real tool loop against a fake Responses
- * server, the way `claidor-host-loop.test.mjs` drives it: (1) a Computer
+ * server, the way `simeon-host-loop.test.mjs` drives it: (1) a Computer
  * call reaches the box dependency with the parsed actions and its
  * screenshot reaches the model as an image; (2) a box that refuses the call
  * is an error result the model reads, not a crash; (3) the tool goes on
@@ -118,7 +118,7 @@ function pin(module, dataDir) {
   for (const key of ["SAND_DATA_ROOT", "SAND_BACKEND_URL"]) env.previous[key] = process.env[key];
   process.env.SAND_DATA_ROOT = dataDir;
   process.env.SAND_BACKEND_URL = "https://api.simeonlabs.com";
-  module.setClaidorCredentialSource({ getAccessToken: async () => "claidor_da_loop" });
+  module.setSimeonCredentialSource({ getAccessToken: async () => "simeon_da_loop" });
 }
 function unpin() {
   for (const [key, value] of Object.entries(env.previous)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }
@@ -158,7 +158,7 @@ test("a Computer call runs through the real loop: parsed actions reach the box, 
     assert.equal(tool.toolIdentifier, "OPENAI_COMPUTER_USE");
     assert.equal(typeof tool.serializeError, "function");
 
-    const executor = new loaded.module.SimplePromptToolExecutor(loaded.module.createProviderPromptSession("claidor").getExecutor(initialState()));
+    const executor = new loaded.module.SimplePromptToolExecutor(loaded.module.createProviderPromptSession("simeon").getExecutor(initialState()));
     const ctx = loaded.module.createContext();
     const handler = interactionHandler();
 
@@ -166,7 +166,7 @@ test("a Computer call runs through the real loop: parsed actions reach the box, 
     assert.equal(first.streamError, undefined);
     assert.equal(first.response.error, undefined);
     assert.ok(first.chunks.includes("tool-call"));
-    // The box got the click and the trailing screenshot Grok Bot appends,
+    // The box got the click and the trailing screenshot the upstream app appends,
     // under the loop's own tool-call id.
     assert.equal(box.calls.length, 1);
     assert.equal(box.calls[0].args.toolCallId, "call_1");
@@ -215,7 +215,7 @@ test("a box that refuses the Computer call is an error result the model reads, n
     };
     const box = computerDependencies(() => { throw new Error("the box exec daemon answers no Computer case"); });
     const tool = loaded.module.createTurnComputerToolFactory({ dependencies: box.dependencies })();
-    const executor = new loaded.module.SimplePromptToolExecutor(loaded.module.createProviderPromptSession("claidor").getExecutor(initialState()));
+    const executor = new loaded.module.SimplePromptToolExecutor(loaded.module.createProviderPromptSession("simeon").getExecutor(initialState()));
     const handler = interactionHandler();
 
     const first = await runStep(executor, loaded.module.createContext(), handler, tool);

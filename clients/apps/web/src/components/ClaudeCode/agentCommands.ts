@@ -26,8 +26,7 @@ export const CHECKOUT_COMMAND: AgentCommand = {
     },
     {
       title: 'Run the agent',
-      description:
-        'Open Claude Code in your project and type /setup-checkout',
+      description: 'Open Claude Code in your project and type /setup-checkout',
     },
     {
       title: 'Agent writes the code',
@@ -48,7 +47,8 @@ export const CHECKOUT_COMMAND: AgentCommand = {
     'Optionally wires up customer portal link and idempotent webhook handler with signature verification',
     'Provides revert instructions so you can undo every change',
   ],
-  docsLink: 'https://docs.claidorhq.com/integrate/agent-commands#setup-checkout',
+  docsLink:
+    'https://docs.simeonlabs.com/integrate/agent-commands#setup-checkout',
 }
 
 export const USAGE_BILLING_COMMAND: AgentCommand = {
@@ -84,14 +84,14 @@ export const USAGE_BILLING_COMMAND: AgentCommand = {
     'Checks prerequisites (SDK installed, access token set)',
     'Tells you exactly what meter to create in the dashboard — never creates billing objects silently',
     'Shows a full change summary and asks for confirmation before writing anything',
-    'Writes ingestion code directly into your project using the right SDK strategy (@claidor/ingestion for LLM/S3/Stream/DeltaTime, or @spaire/sdk for simple counting)',
+    'Writes ingestion code directly into your project using the right SDK strategy (@simeon/ingestion for LLM/S3/Stream/DeltaTime, or @spaire/sdk for simple counting)',
     'Walks you through metered pricing setup on your product',
     'Optionally sets up credits with balance-checking utilities',
     'Generates idempotent webhook handlers with signature verification',
     'Provides revert instructions so you can undo every change',
   ],
   docsLink:
-    'https://docs.claidorhq.com/integrate/agent-commands#setup-usage-billing',
+    'https://docs.simeonlabs.com/integrate/agent-commands#setup-usage-billing',
 }
 
 export const ALL_AGENT_COMMANDS: AgentCommand[] = [

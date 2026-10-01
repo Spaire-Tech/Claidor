@@ -169,7 +169,7 @@ export const UI_TEXT = {
   continueInBrowser: "Continue in your browser",
   copied: "Copied",
   copyVersionInfo: "Copy version info",
-  copyright: "Copyright © 2026 Spaire",
+  copyright: "Copyright © 2026 Simeon Labs",
   feedbackIntroduction: "Tell the Simeon team what happened or what you want changed. Reports go straight to the team.",
   feedbackPlaceholder: "What happened? What did you expect?",
   helpCenter: "Help Center",
@@ -184,7 +184,7 @@ export const UI_TEXT = {
   signIn: "Sign in",
   signInTagline: "Your team of always-on agents that you can give real work to.",
   signOut: "Sign out",
-  signOutDescription: "You’ll need to sign in again to use your Claidor account with Simeon.",
+  signOutDescription: "You’ll need to sign in again to use your Simeon account with Simeon.",
   signOutTitle: "Sign out?",
   title: "Simeon"
 } as const;

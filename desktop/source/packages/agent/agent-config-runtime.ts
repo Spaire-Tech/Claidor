@@ -5,11 +5,11 @@ import { filterByActorIdentity } from "./utils/scoped-rule-filtering.js";
 type Any = any;
 
 /**
- * The constructor-owned defaults from the shipped AnysphereAgent class.
+ * The constructor-owned defaults from the shipped SandAgent class.
  * Keep this projection internal to the package root; it is not a replacement
  * for the broader generated/config contract used by action handlers.
  */
-export function normalizeAnysphereAgentConfig(config: Any): Any {
+export function normalizeSandAgentConfig(config: Any): Any {
   if (config.systemPromptGenerator === undefined) {
     throw new Error("systemPromptGenerator is required");
   }

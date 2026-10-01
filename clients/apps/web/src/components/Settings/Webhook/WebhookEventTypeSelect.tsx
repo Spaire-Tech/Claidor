@@ -1,12 +1,12 @@
 'use client'
 
-import { enums } from '@claidor/client'
-import { Checkbox } from '@claidor/ui/components/ui/checkbox'
+import { enums } from '@simeon/client'
+import { Checkbox } from '@simeon/ui/components/ui/checkbox'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@claidor/ui/components/ui/popover'
+} from '@simeon/ui/components/ui/popover'
 import { ChevronDown } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 
@@ -66,7 +66,7 @@ export const WebhookEventTypeSelect = ({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className={`   flex h-10 items-center justify-between gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-xs hover:bg-gray-50 ${className ?? ''}`}
+          className={`flex h-10 items-center justify-between gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-xs hover:bg-gray-50 ${className ?? ''}`}
         >
           <span className="truncate">{triggerLabel}</span>
           <ChevronDown className="h-4 w-4 opacity-50" />
@@ -83,10 +83,10 @@ export const WebhookEventTypeSelect = ({
             placeholder="Search event types..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="  w-full rounded-md border-0 bg-gray-50 px-3 py-2 text-sm outline-none placeholder:text-gray-400"
+            className="w-full rounded-md border-0 bg-gray-50 px-3 py-2 text-sm outline-none placeholder:text-gray-400"
           />
         </div>
-        <div className=" flex items-center justify-between border-b px-3 py-2">
+        <div className="flex items-center justify-between border-b px-3 py-2">
           <span className="text-xs text-gray-500">
             {selectedEventTypes.length === 0
               ? 'All events'
@@ -107,7 +107,7 @@ export const WebhookEventTypeSelect = ({
             filteredEventTypes.map((eventType) => (
               <label
                 key={eventType}
-                className=" flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 hover:bg-gray-50"
+                className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 hover:bg-gray-50"
               >
                 <Checkbox
                   checked={selectedEventTypes.includes(eventType)}
@@ -117,7 +117,7 @@ export const WebhookEventTypeSelect = ({
               </label>
             ))
           ) : (
-            <div className=" py-4 text-center text-sm text-gray-500">
+            <div className="py-4 text-center text-sm text-gray-500">
               No event types found
             </div>
           )}

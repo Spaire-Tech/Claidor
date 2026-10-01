@@ -5,7 +5,7 @@ import { fromRedactedConversationStateStructure } from "../redacted-protos/gener
 
 /**
  * Action cases whose state restore must retain the agent-type transition
- * marker. This is the exact predicate used by AnysphereAgent.runStream for
+ * marker. This is the exact predicate used by SandAgent.runStream for
  * the initial and queued action restores.
  */
 const AGENT_TYPE_CHANGE_ACTIONS = new Set([

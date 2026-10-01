@@ -21,14 +21,14 @@ import * as React from 'react'
 
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import CalendarMonthOutlined from '@mui/icons-material/CalendarMonthOutlined'
-import { schemas } from '@claidor/client'
-import FormattedInterval from '@claidor/ui/components/atoms/FormattedInterval'
-import { Calendar } from '@claidor/ui/components/ui/calendar'
+import { schemas } from '@simeon/client'
+import FormattedInterval from '@simeon/ui/components/atoms/FormattedInterval'
+import { Calendar } from '@simeon/ui/components/ui/calendar'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@claidor/ui/components/ui/popover'
+} from '@simeon/ui/components/ui/popover'
 import { useContext } from 'react'
 import { twMerge } from 'tailwind-merge'
 
@@ -127,12 +127,12 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
   return (
     <div
       className={twMerge(
-        '  flex h-10 w-52 flex-row divide-x divide-gray-200 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xs',
+        'flex h-10 w-52 flex-row divide-x divide-gray-200 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xs',
         className,
       )}
     >
       <Popover>
-        <PopoverTrigger className=" flex cursor-pointer items-center justify-center px-4 py-3 duration-150 hover:bg-gray-100">
+        <PopoverTrigger className="flex cursor-pointer items-center justify-center px-4 py-3 duration-150 hover:bg-gray-100">
           <CalendarMonthOutlined fontSize="inherit" />
         </PopoverTrigger>
         <PopoverContent>
@@ -153,7 +153,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
       </Popover>
 
       <Popover>
-        <PopoverTrigger className=" flex-1 cursor-pointer truncate px-4 text-sm duration-150 hover:bg-gray-100">
+        <PopoverTrigger className="flex-1 cursor-pointer truncate px-4 text-sm duration-150 hover:bg-gray-100">
           {interval ? (
             interval.label
           ) : date?.from ? (
@@ -220,9 +220,8 @@ const DateRangeIntervals = ({
           onClick={() => onIntervalChange(int)}
           role="button"
           className={twMerge(
-            ' flex w-full items-center justify-between rounded-sm border border-transparent px-3 py-2 text-sm text-gray-500 select-none hover:bg-gray-100',
-            interval?.slug === int.slug &&
-              ' bg-gray-100 text-black ',
+            'flex w-full items-center justify-between rounded-sm border border-transparent px-3 py-2 text-sm text-gray-500 select-none hover:bg-gray-100',
+            interval?.slug === int.slug && 'bg-gray-100 text-black',
           )}
         >
           {int.label}

@@ -3,10 +3,10 @@ import uuid
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.models import Product
-from polar.postgres import AsyncSession
-from polar.subscription.service import SubscriptionService
-from polar.subscription.tasks import (  # type: ignore[attr-defined]
+from simeon.models import Product
+from simeon.postgres import AsyncSession
+from simeon.subscription.service import SubscriptionService
+from simeon.subscription.tasks import (  # type: ignore[attr-defined]
     SubscriptionTierDoesNotExist,
     subscription_service,
     subscription_update_product_benefits_grants,

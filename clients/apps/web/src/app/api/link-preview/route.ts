@@ -11,7 +11,8 @@ const CACHE_MAX_ENTRIES = 500
 const RATE_LIMIT_WINDOW_MS = 60 * 1000
 const RATE_LIMIT_MAX_REQUESTS = 30 // per IP per window
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; ClaidorLinkBot/1.0; +https://claidorhq.com)'
+const USER_AGENT =
+  'Mozilla/5.0 (compatible; SimeonLinkBot/1.0; +https://simeonlabs.com)'
 
 // ─── SSRF guard ───────────────────────────────────────────────────────────────
 
@@ -310,7 +311,10 @@ export async function GET(request: NextRequest) {
   // 1. Try oEmbed first
   if (oEmbedBuilder) {
     const res = await safeFetch(oEmbedBuilder(parsed.toString()), {
-      headers: { 'User-Agent': 'ClaidorLinkBot/1.0', Accept: 'application/json' },
+      headers: {
+        'User-Agent': 'SimeonLinkBot/1.0',
+        Accept: 'application/json',
+      },
     })
     if (res && res.status >= 200 && res.status < 300 && res.body) {
       try {

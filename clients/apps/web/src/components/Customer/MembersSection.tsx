@@ -2,25 +2,16 @@
 
 import { useMembers } from '@/hooks/queries/members'
 import { useOrganization } from '@/hooks/queries/org'
-import { DataTable } from '@claidor/ui/components/atoms/DataTable'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
-import { Status } from '@claidor/ui/components/atoms/Status'
+import { DataTable } from '@simeon/ui/components/atoms/DataTable'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
+import { Status } from '@simeon/ui/components/atoms/Status'
 import { useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'
 
 const roleDisplayConfig = {
-  owner: [
-    'Owner',
-    'bg-blue-100 text-blue-600 ',
-  ],
-  billing_manager: [
-    'Billing Manager',
-    'bg-sky-100 text-sky-600 ',
-  ],
-  member: [
-    'Member',
-    'bg-gray-100 text-gray-600 ',
-  ],
+  owner: ['Owner', 'bg-blue-100 text-blue-600 '],
+  billing_manager: ['Billing Manager', 'bg-sky-100 text-sky-600 '],
+  member: ['Member', 'bg-gray-100 text-gray-600 '],
 } as const
 
 interface MembersSectionProps {
@@ -91,7 +82,7 @@ export const MembersSection = ({
             header: 'External ID',
             accessorKey: 'external_id',
             cell: ({ row: { original } }) => (
-              <span className=" text-sm text-gray-500">
+              <span className="text-sm text-gray-500">
                 {original.external_id ?? '—'}
               </span>
             ),
@@ -100,7 +91,7 @@ export const MembersSection = ({
             header: 'Created',
             accessorKey: 'created_at',
             cell: ({ row: { original } }) => (
-              <span className=" text-sm text-gray-500">
+              <span className="text-sm text-gray-500">
                 <FormattedDateTime datetime={original.created_at} />
               </span>
             ),

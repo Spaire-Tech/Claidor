@@ -6,19 +6,19 @@ import { useAuth } from '@/hooks'
 import { useCreateOrganization } from '@/hooks/queries'
 import { getServerURL } from '@/utils/api'
 import { setValidationErrors } from '@/utils/api/errors'
-import { schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
-import { Checkbox } from '@claidor/ui/components/ui/checkbox'
+import { FormControl } from '@mui/material'
+import { schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
+import { Checkbox } from '@simeon/ui/components/ui/checkbox'
 import {
   Form,
   FormField,
   FormItem,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
-import { Label } from '@claidor/ui/components/ui/label'
-import { FormControl } from '@mui/material'
+} from '@simeon/ui/components/ui/form'
+import { Label } from '@simeon/ui/components/ui/label'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -135,7 +135,7 @@ const OrganizationSelectionPage = ({
         client={client}
         introduction={
           <>
-            Welcome to Polar!
+            Welcome to Simeon!
             <br />
             Create an organization and connect to{' '}
             <span className="font-medium text-gray-700">{clientName}</span>.
@@ -229,20 +229,13 @@ const OrganizationSelectionPage = ({
                         </label>
                         <ul className="flex flex-col gap-y-1 text-sm text-gray-500">
                           <li>
-                            <a
-                              href="https://docs.claidorhq.com/merchant-of-record/account-reviews"
-                              className="text-blue-600 hover:underline"
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              Account Reviews Policy
-                            </a>
+                            Account Reviews Policy
                             {' - '}I&apos;ll comply with KYC/AML requirements
                             including website and social verification
                           </li>
                           <li>
                             <a
-                              href="https://www.claidorhq.com/legal/terms-of-service"
+                              href="https://www.simeonlabs.com/legal/terms-of-service"
                               className="text-blue-600 hover:underline"
                               target="_blank"
                               rel="noreferrer"
@@ -252,7 +245,7 @@ const OrganizationSelectionPage = ({
                           </li>
                           <li>
                             <a
-                              href="https://www.claidorhq.com/legal/privacy-policy"
+                              href="https://www.simeonlabs.com/legal/privacy-policy"
                               className="text-blue-600 hover:underline"
                               target="_blank"
                               rel="noreferrer"
@@ -327,7 +320,7 @@ const OrganizationSelectionPage = ({
       introduction={
         <>
           <span className="font-medium text-gray-700">{clientName}</span> wants
-          to access one of your Polar organizations. Select one:
+          to access one of your Simeon organizations. Select one:
         </>
       }
     >

@@ -1,3 +1,4 @@
+import { VoiceCallChannel } from "./voice-call-channel.js";
 import { findConnectorManifest } from "../../../shared/channels.js";
 import { splitChannelCredential } from "../../../shared/channel-credential.js";
 import { dirname, join } from "node:path";
@@ -164,6 +165,7 @@ export class TranscriptManager {
   readonly automationRuntime = new AutomationRuntime(this);
   readonly workflowCommands = new WorkflowCommands(this);
   readonly widgetResponses = new WidgetResponses(this);
+  readonly voiceCalls = new VoiceCallChannel(this);
 
   memory: any = NO_MEMORY;
   contentSearch: any = NO_CONTENT_SEARCH;
@@ -424,6 +426,10 @@ export class TranscriptManager {
   }
   appendConnectorCard(...args: any[]) {
     return invoke(this.sendPipeline, "appendConnectorCard", args);
+  }
+  /** The voice channel: the Mac's call service opens, relays to, reads and ends a call here. */
+  voiceCall(args: unknown) {
+    return this.voiceCalls.handle(args);
   }
   appendSendMessage(...args: any[]) {
     return invoke(this.sendPipeline, "appendSendMessage", args);

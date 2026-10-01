@@ -6,7 +6,7 @@ import type { OnboardingCharacterState } from "../recovered/features/onboarding/
 // The founder's twenty-one avatars at the five sizes the app draws them, in
 // both themes, running through the seven states the sidebar shows. Built by
 // `node scripts/face-preview.mjs`, which also takes the screenshots in
-// docs/product/faces-adventurer/. Nothing here ships in the app.
+// .build/face-preview/shots/. Nothing here ships in the app.
 
 const SIZES = [16, 28, 36, 64, 80] as const;
 const STATES: readonly OnboardingCharacterState[] = ["idle", "thinking", "working", "searching", "excited", "celebrate", "sleeping"];

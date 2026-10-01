@@ -3,11 +3,11 @@
 import { ProfileCard } from '@/components/Profile/ProfileCard'
 import { useProducts } from '@/hooks/queries'
 import { DEFAULT_FORM_STYLE, FormPublic, useForms } from '@/hooks/queries/forms'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { DraggableBlocks } from './InlineEdit/DraggableBlocks'
 import { EditableProfileCard } from './InlineEdit/EditableProfileCard'
 
-// Renders the live preview of the user's Claidor Space inside the
+// Renders the live preview of the user's Simeon Space inside the
 // editor canvas. Both children subscribe to form state directly via
 // useFormContext, so we DON'T watch here — otherwise every keystroke
 // in the profile card would re-render the entire product/links grid.
@@ -28,7 +28,8 @@ export const SpaceEditorCanvas = ({
     is_archived: false,
     limit: 100,
   })
-  const products = (productsData?.items ?? []) as unknown as schemas['ProductStorefront'][]
+  const products = (productsData?.items ??
+    []) as unknown as schemas['ProductStorefront'][]
 
   // All of the org's forms (draft + published) so a just-added form shows on
   // the canvas immediately. Mapped to the public shape the resolver/blocks
@@ -49,7 +50,7 @@ export const SpaceEditorCanvas = ({
   }))
 
   return (
-    <div className={`canvas-wrap${hasSettingsPanel ? ' has-panel' : ''}`}>
+    <div className={`canvas-wrap${hasSettingsPanel ? 'has-panel' : ''}`}>
       <div className="canvas">
         <aside className="col-left">
           <div className="canvas-card">
@@ -63,7 +64,9 @@ export const SpaceEditorCanvas = ({
             forms={forms}
             onAddToSpace={onAddToSpace}
           />
-          <div className="footer-note">That&apos;s everything on your Space.</div>
+          <div className="footer-note">
+            That&apos;s everything on your Space.
+          </div>
         </main>
       </div>
     </div>
@@ -73,4 +76,3 @@ export const SpaceEditorCanvas = ({
 // Re-exported so we don't accidentally tree-shake out the read-only
 // ProfileCard (used by the published-preview branch elsewhere).
 export { ProfileCard }
-

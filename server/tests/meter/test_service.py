@@ -9,24 +9,24 @@ import pytest
 import pytest_asyncio
 from pytest_mock import MockerFixture
 
-from polar.auth.models import AuthSubject
-from polar.enums import SubscriptionRecurringInterval
-from polar.event.service import event as event_service
-from polar.event.system import SystemEvent
-from polar.exceptions import ClaidorRequestValidationError
-from polar.kit.time_queries import TimeInterval
-from polar.kit.utils import utc_now
-from polar.meter.aggregation import (
+from simeon.auth.models import AuthSubject
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.event.service import event as event_service
+from simeon.event.system import SystemEvent
+from simeon.exceptions import SimeonRequestValidationError
+from simeon.kit.time_queries import TimeInterval
+from simeon.kit.utils import utc_now
+from simeon.meter.aggregation import (
     Aggregation,
     AggregationFunction,
     CountAggregation,
     PropertyAggregation,
     UniqueAggregation,
 )
-from polar.meter.filter import Filter, FilterClause, FilterConjunction, FilterOperator
-from polar.meter.schemas import MeterCreate, MeterUpdate
-from polar.meter.service import meter as meter_service
-from polar.models import (
+from simeon.meter.filter import Filter, FilterClause, FilterConjunction, FilterOperator
+from simeon.meter.schemas import MeterCreate, MeterUpdate
+from simeon.meter.service import meter as meter_service
+from simeon.models import (
     Customer,
     Event,
     Meter,
@@ -35,10 +35,10 @@ from polar.models import (
     Product,
     Subscription,
 )
-from polar.models.billing_entry import BillingEntryDirection
-from polar.models.customer_seat import SeatStatus
-from polar.models.event import EventSource
-from polar.postgres import AsyncSession
+from simeon.models.billing_entry import BillingEntryDirection
+from simeon.models.customer_seat import SeatStatus
+from simeon.models.event import EventSource
+from simeon.postgres import AsyncSession
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
@@ -56,7 +56,7 @@ from tests.fixtures.random_objects import (
 
 @pytest.fixture
 def enqueue_job_mock(mocker: MockerFixture) -> AsyncMock:
-    return mocker.patch("polar.meter.service.enqueue_job")
+    return mocker.patch("simeon.meter.service.enqueue_job")
 
 
 @pytest.mark.asyncio
@@ -149,7 +149,7 @@ class TestUpdate:
             save_fixture, organization=organization, last_billed_event=event
         )
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await meter_service.update(session, meter, meter_update)
 
     @pytest.mark.parametrize(

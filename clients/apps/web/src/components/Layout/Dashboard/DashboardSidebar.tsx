@@ -5,33 +5,30 @@ import { isImpersonating } from '@/utils/impersonation'
 import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
 import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown'
 import ScienceOutlined from '@mui/icons-material/ScienceOutlined'
-import { schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
+import { schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarTrigger,
   useSidebar,
-} from '@claidor/ui/components/atoms/Sidebar'
+} from '@simeon/ui/components/atoms/Sidebar'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@claidor/ui/components/ui/dropdown-menu'
-import { Separator } from '@claidor/ui/components/ui/separator'
+} from '@simeon/ui/components/ui/dropdown-menu'
+import { Separator } from '@simeon/ui/components/ui/separator'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
-import { ClaidorLogotype } from '../Public/ClaidorLogotype'
+import { SimeonLogotype } from '../Public/SimeonLogotype'
 import {
   AccountNavigation,
   OrganizationNavigation,
@@ -80,7 +77,7 @@ export const DashboardSidebar = ({
             : 'flex-row items-center justify-between',
         )}
       >
-        {/* Client org logo at top — replaces Claidor logo */}
+        {/* Client org logo at top — replaces Simeon logo */}
         {type === 'organization' && organization ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -91,7 +88,10 @@ export const DashboardSidebar = ({
                   className="h-7 w-7"
                 />
                 {!isCollapsed && (
-                  <KeyboardArrowDown className="text-gray-400" fontSize="small" />
+                  <KeyboardArrowDown
+                    className="text-gray-400"
+                    fontSize="small"
+                  />
                 )}
               </button>
             </DropdownMenuTrigger>
@@ -128,18 +128,18 @@ export const DashboardSidebar = ({
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() =>
-                  router.push(`${CONFIG.BASE_URL}/v1/auth/logout`)
-                }
+                onClick={() => router.push(`${CONFIG.BASE_URL}/v1/auth/logout`)}
               >
                 Logout
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <ClaidorLogotype
+          <SimeonLogotype
             size={32}
-            href={organization ? `/dashboard/${organization.slug}` : '/dashboard'}
+            href={
+              organization ? `/dashboard/${organization.slug}` : '/dashboard'
+            }
           />
         )}
         <motion.div
@@ -172,11 +172,11 @@ export const DashboardSidebar = ({
         <Separator />
         {!CONFIG.IS_SANDBOX && (
           <Link
-            href="https://sandbox.claidorhq.com/start"
+            href="https://sandbox.simeonlabs.com/start"
             target="_blank"
             className={twMerge(
               'mt-2 flex cursor-pointer flex-row items-center rounded-lg border border-transparent px-2 text-sm transition-colors',
-              ' text-gray-500 hover:text-black',
+              'text-gray-500 hover:text-black',
             )}
           >
             <ScienceOutlined fontSize="inherit" />
@@ -186,9 +186,9 @@ export const DashboardSidebar = ({
         <Link
           className={twMerge(
             'flex flex-row items-center rounded-lg border border-transparent text-sm transition-colors',
-            ' text-gray-500 hover:text-black',
+            'text-gray-500 hover:text-black',
           )}
-          href="https://docs.claidorhq.com"
+          href="https://docs.simeonlabs.com"
           target="_blank"
         >
           <ArrowOutwardOutlined className="ml-2" fontSize="inherit" />

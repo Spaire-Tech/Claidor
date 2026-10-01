@@ -1,4 +1,4 @@
-import { Client } from '@claidor/client'
+import { Client } from '@simeon/client'
 import { cookies, headers } from 'next/headers'
 import { cache } from 'react'
 import { createServerSideAPI } from '.'

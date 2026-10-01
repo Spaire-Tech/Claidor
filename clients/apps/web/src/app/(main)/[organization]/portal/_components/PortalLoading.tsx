@@ -2,7 +2,7 @@
 
 // The portal's single loading treatment — black screen with the blue→white
 // gradient ring (styles in portal.css, unscoped so surfaces outside the
-// .claidor-portal wrapper can render it too).
+// .simeon-portal wrapper can render it too).
 //
 //   screen — fixed full-viewport black overlay; the portal boot state and
 //            cinematic surfaces (lesson viewer, community) use this.
@@ -14,7 +14,7 @@ export const PortalLoading = ({
   variant?: 'screen' | 'inline'
 }) => (
   <div
-    className={`sp-boot${variant === 'inline' ? ' sp-boot--inline' : ''}`}
+    className={`sp-boot${variant === 'inline' ? 'sp-boot--inline' : ''}`}
     role="status"
     aria-label="Loading"
   >

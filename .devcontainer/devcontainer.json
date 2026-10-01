@@ -1,5 +1,5 @@
 {
-  "name": "Polar",
+  "name": "Simeon",
   "dockerComposeFile": "docker-compose.yaml",
   "service": "app",
   "workspaceFolder": "/workspace",

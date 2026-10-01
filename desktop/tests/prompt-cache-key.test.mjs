@@ -1,10 +1,10 @@
 /**
  * The conversation's prompt cache key on the wire (26 September 2026).
  *
- * Grok Bot's loop puts the conversation id in the context
+ * The upstream app's loop puts the conversation id in the context
  * (`packages/agent/index.ts`, `conversationIdKey`) and its inference client
  * sends it on every request (`chat-inference-proto/client.ts`,
- * `InferenceStreamRequest.conversationId`). The claidor executor read the
+ * `InferenceStreamRequest.conversationId`). The simeon executor read the
  * context as `_ctx` and dropped it; on the founder's Mac the first call of
  * each turn then read 0 of ~50,000 tokens from cache. Offline: the executor
  * turns the context's id into OpenAI's `prompt_cache_key`, the same id gives
@@ -24,7 +24,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function load() {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-prompt-cache-key-"));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-prompt-cache-key-"));
   const outfile = path.join(temporary, "entry.mjs");
   await build({ entryPoints: [path.join(repoRoot, "tests/fixtures/prompt-cache-key-entry.ts")], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);
@@ -59,19 +59,19 @@ test("every step of a conversation carries one prompt cache key derived from its
     process.env.SAND_DATA_ROOT = loaded.dataDir;
     process.env.SAND_BACKEND_URL = "https://api.simeonlabs.com";
     globalThis.fetch = async (_input, init) => { requests.push(JSON.parse(init?.body ?? "{}")); return responsesStream("ok"); };
-    const { createProviderPromptSession, setClaidorCredentialSource, claidorPromptCacheKey, conversationIdKey, createContext, setModelCallLog } = loaded.module;
-    setClaidorCredentialSource({ getAccessToken: async () => "claidor_da_token" });
+    const { createProviderPromptSession, setSimeonCredentialSource, simeonPromptCacheKey, conversationIdKey, createContext, setModelCallLog } = loaded.module;
+    setSimeonCredentialSource({ getAccessToken: async () => "simeon_da_token" });
     setModelCallLog((line) => lines.push(line));
 
-    const key = claidorPromptCacheKey("agent-1");
+    const key = simeonPromptCacheKey("agent-1");
     assert.match(key, /^simeon-[0-9a-f]{32}$/);
-    assert.equal(claidorPromptCacheKey("agent-1"), key);
-    assert.notEqual(claidorPromptCacheKey("agent-2"), key);
-    assert.equal(claidorPromptCacheKey(""), undefined);
-    assert.equal(claidorPromptCacheKey(undefined), undefined);
+    assert.equal(simeonPromptCacheKey("agent-1"), key);
+    assert.notEqual(simeonPromptCacheKey("agent-2"), key);
+    assert.equal(simeonPromptCacheKey(""), undefined);
+    assert.equal(simeonPromptCacheKey(undefined), undefined);
     assert.ok(!key.includes("agent-1"), "the id itself never leaves the Mac");
 
-    const session = createProviderPromptSession("claidor");
+    const session = createProviderPromptSession("simeon");
     const ctx = createContext().with(conversationIdKey, "agent-1");
     const system = { role: "system", content: "You are Simeon." };
     // Two turns, as the loop runs them: a fresh executor per step.
@@ -116,10 +116,10 @@ test("a 400 naming prompt_cache_key is retried once without it and the key stays
       if ("prompt_cache_key" in body) return new Response(JSON.stringify({ error: { message: "Unknown parameter: 'prompt_cache_key'.", param: "prompt_cache_key" } }), { status: 400, headers: { "content-type": "application/json" } });
       return responsesStream("ok");
     };
-    const { createProviderPromptSession, setClaidorCredentialSource, conversationIdKey, createContext, resetPromptCacheKeyRefusalForTest } = loaded.module;
+    const { createProviderPromptSession, setSimeonCredentialSource, conversationIdKey, createContext, resetPromptCacheKeyRefusalForTest } = loaded.module;
     resetPromptCacheKeyRefusalForTest();
-    setClaidorCredentialSource({ getAccessToken: async () => "claidor_da_token" });
-    const session = createProviderPromptSession("claidor");
+    setSimeonCredentialSource({ getAccessToken: async () => "simeon_da_token" });
+    const session = createProviderPromptSession("simeon");
     const ctx = createContext().with(conversationIdKey, "agent-1");
     await drain(session.getExecutor([{ role: "user", content: "hi" }]).stream(ctx, "inv-1"));
     assert.equal(requests.length, 2);
@@ -144,6 +144,6 @@ test("the loop names the conversation in the context the executor reads", async 
   const composition = await readFile(path.join(repoRoot, "source/host/runner/turn-agent-composition.ts"), "utf8");
   assert.match(composition, /conversationId: input\.conversationId,/);
   const executor = await readFile(path.join(repoRoot, "source/host/extensions/inference/provider-session.ts"), "utf8");
-  assert.match(executor, /claidorPromptCacheKey\(conversationIdFromContext\(ctx\)\)/);
+  assert.match(executor, /simeonPromptCacheKey\(conversationIdFromContext\(ctx\)\)/);
   assert.match(executor, /import \{ conversationIdKey \} from "\.\.\/\.\.\/\.\.\/packages\/agent\/utils\/request-id\.js";/);
 });

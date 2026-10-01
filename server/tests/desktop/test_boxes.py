@@ -1,4 +1,4 @@
-"""The person's computer, brokered (`polar/desktop/boxes.py`).
+"""The person's computer, brokered (`simeon/desktop/boxes.py`).
 
 **Every test here replaces E2B.** This environment holds no E2B key, so
 nothing below has contacted a real sandbox and none of it should be read
@@ -24,12 +24,12 @@ import httpx
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.desktop import boxes as boxes_module
-from polar.desktop.boxes import BoxService, box_service
-from polar.desktop.pricing import BOX_MODEL_ID, credits_for_box
-from polar.models import DesktopBox, DesktopUsage, User
-from polar.postgres import AsyncSession
+from simeon.config import settings
+from simeon.desktop import boxes as boxes_module
+from simeon.desktop.boxes import BoxService, box_service
+from simeon.desktop.pricing import BOX_MODEL_ID, credits_for_box
+from simeon.models import DesktopBox, DesktopUsage, User
+from simeon.postgres import AsyncSession
 
 from .test_endpoints import _signed_in
 
@@ -567,7 +567,7 @@ class TestAwakeSecondsAreCharged:
         # anybody asking for anything.
         from datetime import timedelta
 
-        from polar.kit.utils import utc_now
+        from simeon.kit.utils import utc_now
 
         access, _ = await _signed_in(client, session, user)
         box_id = (await _ensure(client, access)).json()["boxId"]
@@ -1059,9 +1059,9 @@ class TestServiceInternals:
         # backup or a clock jump must not bill a decade of computer.
         from datetime import timedelta
 
-        from polar.desktop.pricing import BOX_MAX_SECONDS_PER_SETTLEMENT
-        from polar.kit.utils import utc_now
-        from polar.models import DesktopBoxState
+        from simeon.desktop.pricing import BOX_MAX_SECONDS_PER_SETTLEMENT
+        from simeon.kit.utils import utc_now
+        from simeon.models import DesktopBoxState
 
         service = BoxService()
         box = DesktopBox(
@@ -1122,7 +1122,7 @@ class TestExecDoesItsDatabaseWorkBeforeItStreams:
     """A bug the ordinary tests cannot see, so it gets its own.
 
     A streaming handler hands back its `StreamingResponse` immediately,
-    and `polar.postgres.get_db_session` commits the request's session at
+    and `simeon.postgres.get_db_session` commits the request's session at
     that moment — before the body has been streamed. Anything written
     from inside the generator lands in a transaction nothing commits and
     is **silently lost**: the box runs, the person is charged nothing,
@@ -1144,7 +1144,7 @@ class TestExecDoesItsDatabaseWorkBeforeItStreams:
     ) -> None:
         from datetime import timedelta
 
-        from polar.kit.utils import utc_now
+        from simeon.kit.utils import utc_now
 
         access, _ = await _signed_in(client, session, user)
         box_id = (await _ensure(client, access)).json()["boxId"]

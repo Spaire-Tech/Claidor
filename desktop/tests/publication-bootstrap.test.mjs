@@ -27,7 +27,7 @@ test("checked-in production bindings resolve only to reviewed source", async () 
 });
 
 test("bootstrap hydration verifies and extracts the minimum upstream runtime payload", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "grok-publication-bootstrap-"));
+  const root = await mkdtemp(path.join(tmpdir(), "simeon-publication-bootstrap-"));
   try {
     const source = path.join(root, "source");
     const destination = path.join(root, "destination");
@@ -70,7 +70,7 @@ test("a newer Applications Grok Bot is not the 0.18.0 runtime", () => {
   });
   assert.equal(newer.kind, "missing");
   assert.match(newer.message, /0\.57\.1/);
-  assert.match(newer.message, /Unset GROK_BOT_018_APP/);
+  assert.match(newer.message, /Unset SIMEON_UPSTREAM_APP/);
 
   const fallback = selectRuntimeSource({
     configuredPath: "/Applications/Grok Bot.app",

@@ -10,10 +10,10 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-import polar.meter.aggregation
+import simeon.meter.aggregation
 
 # Polar Custom Imports
-import polar.meter.filter
+import simeon.meter.filter
 
 # revision identifiers, used by Alembic.
 revision = "83ad16407f2f"
@@ -29,12 +29,12 @@ def upgrade() -> None:
         sa.Column("name", sa.String(), nullable=False),
         sa.Column(
             "filter",
-            polar.meter.filter.FilterType(astext_type=sa.Text()),
+            simeon.meter.filter.FilterType(astext_type=sa.Text()),
             nullable=False,
         ),
         sa.Column(
             "aggregation",
-            polar.meter.aggregation.AggregationType(astext_type=sa.Text()),
+            simeon.meter.aggregation.AggregationType(astext_type=sa.Text()),
             nullable=False,
         ),
         sa.Column("organization_id", sa.Uuid(), nullable=False),

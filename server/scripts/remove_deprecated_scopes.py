@@ -7,9 +7,9 @@ import structlog
 import typer
 from sqlalchemy import CursorResult, text
 
-from polar.config import settings
-from polar.kit.db.postgres import AsyncSession, create_async_sessionmaker
-from polar.kit.db.postgres import create_async_engine as _create_async_engine
+from simeon.config import settings
+from simeon.kit.db.postgres import AsyncSession, create_async_sessionmaker
+from simeon.kit.db.postgres import create_async_engine as _create_async_engine
 
 cli = typer.Typer()
 
@@ -23,6 +23,10 @@ DEPRECATED_SCOPES = [
     "issues:write",
     "repositories:read",
     "repositories:write",
+    "redline:read",
+    "redline:write",
+    "tieout:read",
+    "tieout:write",
 ]
 
 # Tables with a `scope` column (space-separated scopes)

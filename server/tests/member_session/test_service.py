@@ -4,16 +4,16 @@ from datetime import timedelta
 import pytest
 from pydantic import HttpUrl
 
-from polar.auth.models import AuthSubject
-from polar.auth.scope import Scope
-from polar.exceptions import ClaidorRequestValidationError, NotPermitted
-from polar.kit.utils import utc_now
-from polar.member_session.schemas import MemberSessionCreate
-from polar.member_session.service import member_session
-from polar.models import Member, Organization, User, UserOrganization
-from polar.models.member import MemberRole
-from polar.models.member_session import MEMBER_SESSION_TOKEN_PREFIX, MemberSession
-from polar.postgres import AsyncSession
+from simeon.auth.models import AuthSubject
+from simeon.auth.scope import Scope
+from simeon.exceptions import NotPermitted, SimeonRequestValidationError
+from simeon.kit.utils import utc_now
+from simeon.member_session.schemas import MemberSessionCreate
+from simeon.member_session.service import member_session
+from simeon.models import Member, Organization, User, UserOrganization
+from simeon.models.member import MemberRole
+from simeon.models.member_session import MEMBER_SESSION_TOKEN_PREFIX, MemberSession
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_customer
 
@@ -168,7 +168,7 @@ class TestCreate:
         auth_subject = AuthSubject(user, {Scope.web_write}, None)
         create_schema = MemberSessionCreate(member_id=uuid.uuid4())
 
-        with pytest.raises(ClaidorRequestValidationError) as exc_info:
+        with pytest.raises(SimeonRequestValidationError) as exc_info:
             await member_session.create(session, auth_subject, create_schema)
 
         assert exc_info.value.errors()[0]["loc"] == ("body", "member_id")
@@ -205,7 +205,7 @@ class TestCreate:
         auth_subject = AuthSubject(user, {Scope.web_write}, None)
         create_schema = MemberSessionCreate(member_id=member.id)
 
-        with pytest.raises(ClaidorRequestValidationError) as exc_info:
+        with pytest.raises(SimeonRequestValidationError) as exc_info:
             await member_session.create(session, auth_subject, create_schema)
 
         assert exc_info.value.errors()[0]["loc"] == ("body", "member_id")

@@ -1,9 +1,9 @@
 'use client'
 
-import { schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
-import TextArea from '@claidor/ui/components/atoms/TextArea'
+import { schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
+import TextArea from '@simeon/ui/components/atoms/TextArea'
 import { DetailRow } from '../Shared/DetailRow'
 import { SubscriptionStatus } from './SubscriptionStatus'
 

@@ -10,15 +10,15 @@ Read-only by default: it prints an inspection of BOTH orgs (name, status,
 counts of customers / orders / products) plus the exact plan, and changes
 nothing. Re-run with ``--apply`` to commit.
 
-Built for: moving "claidor" off a leftover test org onto the platform org so
+Built for: moving "simeon" off a leftover test org onto the platform org so
 invoices, card-statement descriptors, and billing-email From-addresses read
-"claidor" instead of the old slug.
+"simeon" instead of the old slug.
 
 Usage:
     python -m scripts.swap_org_slug run \
         --release-org <uuid currently holding the slug> \
         --claim-org   <uuid that should get the slug> \
-        [--slug claidor] [--release-slug claidor-test-xxxx] [--apply]
+        [--slug simeon] [--release-slug simeon-test-xxxx] [--apply]
 """
 
 import asyncio
@@ -32,9 +32,9 @@ import typer
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.models import Customer, Order, Organization, Product
-from polar.postgres import create_async_engine
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.models import Customer, Order, Organization, Product
+from simeon.postgres import create_async_engine
 
 cli = typer.Typer()
 
@@ -258,7 +258,7 @@ async def run(
     claim_org: str = typer.Option(
         ..., "--claim-org", help="UUID of the org that should get the slug."
     ),
-    slug: str = typer.Option("claidor", "--slug", help="The slug to move."),
+    slug: str = typer.Option("simeon", "--slug", help="The slug to move."),
     release_slug: str | None = typer.Option(
         None,
         "--release-slug",

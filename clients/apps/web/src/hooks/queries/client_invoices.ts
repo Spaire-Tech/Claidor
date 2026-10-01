@@ -1,6 +1,5 @@
 import { getQueryClient } from '@/utils/api/query'
 import { api } from '@/utils/client'
-import { unwrap } from '@claidor/client'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { defaultRetry } from './retry'
 
@@ -140,7 +139,10 @@ export const useClientInvoices = (
       if (error) {
         // Return empty data on error rather than throwing so the UI doesn't
         // enter an infinite retry loop while the endpoint is being set up.
-        return { items: [], pagination: { total_count: 0, max_page: 1 } } as ClientInvoiceList
+        return {
+          items: [],
+          pagination: { total_count: 0, max_page: 1 },
+        } as ClientInvoiceList
       }
       return data as ClientInvoiceList
     },
@@ -152,9 +154,12 @@ export const useClientInvoice = (id: string, initialData?: ClientInvoice) =>
   useQuery({
     queryKey: ['client_invoices', { id }],
     queryFn: async () => {
-      const { data, error } = await (api as any).GET('/v1/client-invoices/{id}', {
-        params: { path: { id } },
-      })
+      const { data, error } = await (api as any).GET(
+        '/v1/client-invoices/{id}',
+        {
+          params: { path: { id } },
+        },
+      )
       if (error) throw error
       return data as ClientInvoice
     },

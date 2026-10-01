@@ -2,13 +2,13 @@ import pytest
 import pytest_asyncio
 from httpx import AsyncClient
 
-from polar.auth.scope import Scope
-from polar.checkout.repository import CheckoutRepository
-from polar.checkout.service import CHECKOUT_CLIENT_SECRET_PREFIX
-from polar.enums import SubscriptionRecurringInterval
-from polar.kit.utils import utc_now
-from polar.models import Checkout, CheckoutLink, Product, UserOrganization
-from polar.postgres import AsyncSession
+from simeon.auth.scope import Scope
+from simeon.checkout.repository import CheckoutRepository
+from simeon.checkout.service import CHECKOUT_CLIENT_SECRET_PREFIX
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.kit.utils import utc_now
+from simeon.models import Checkout, CheckoutLink, Product, UserOrganization
+from simeon.postgres import AsyncSession
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (

@@ -2,8 +2,8 @@
 
 import { useCustomerUpdateSubscription } from '@/hooks/queries'
 import { setValidationErrors } from '@/utils/api/errors'
-import { Client, isValidationError, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { Client, isValidationError, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import { MinusIcon, PlusIcon } from 'lucide-react'
 import { useCallback } from 'react'
 import { useForm } from 'react-hook-form'
@@ -107,7 +107,7 @@ export const CustomerSeatQuantityManager = ({
             label="Total Seats"
             value={
               <div className="flex w-full flex-row items-center justify-between gap-2">
-                <span className=" font-medium">{seats}</span>
+                <span className="font-medium">{seats}</span>
                 <div className="flex flex-row items-center gap-2">
                   <Button
                     type="button"
@@ -135,19 +135,11 @@ export const CustomerSeatQuantityManager = ({
           />
           <DetailRow
             label="Assigned"
-            value={
-              <span className=" font-medium">
-                {assignedSeats}
-              </span>
-            }
+            value={<span className="font-medium">{assignedSeats}</span>}
           />
           <DetailRow
             label="Available"
-            value={
-              <span className=" font-medium">
-                {availableSeats}
-              </span>
-            }
+            value={<span className="font-medium">{availableSeats}</span>}
           />
         </div>
 

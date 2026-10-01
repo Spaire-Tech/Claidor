@@ -50,7 +50,7 @@ export interface ModeProcessingConfig {
   readonly askQuestionToolName?: string | undefined;
 }
 
-createLogger("@anysphere/agent:mode-processing");
+createLogger("@sand/agent:mode-processing");
 
 function agentModeToModeId(mode: AgentMode): string {
   switch (mode) {

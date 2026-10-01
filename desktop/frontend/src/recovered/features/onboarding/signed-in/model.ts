@@ -103,8 +103,8 @@ export const CHARACTER_COLORS = [
   { id: "gray", label: "Gray", value: "#777777" },
 ] as const;
 // Since 23 September 2026 a "shape" is one of the founder's twenty-one avatars
-// (docs/product/faces-adventurer-measured.md). The scene's "blob" and the eight
-// Grok Bot names map onto the first eight in character.tsx.
+// (brand/avatars). The scene's "blob" and the eight
+// The upstream app names map onto the first eight in character.tsx.
 export const CHARACTER_SHAPES = AVATAR_KEYS;
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5435957

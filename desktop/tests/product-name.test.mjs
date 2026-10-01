@@ -4,8 +4,8 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-// Phase 5: nothing a person or the agent can read says Cursor, Grok Bot,
-// or Anysphere. Internal identifiers stay. This contract reads the files
+// Nothing a person or the agent can read says Cursor or an earlier name of the
+// upstream app or its maker. Internal identifiers stay. This contract reads the files
 // that show, and asserts the plumbing names are still there.
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -14,24 +14,22 @@ async function read(relative) {
   return readFile(path.join(repoRoot, relative), "utf8");
 }
 
-test("Settings copy names Claidor and Simeon, not Cursor or Grok Bot", async () => {
+test("Settings copy names Simeon, not an earlier name", async () => {
   const patch = await read("scripts/lib/router-renderer-patch.mjs");
   const view = await read("frontend/src/recovered/features/settings/overlay/view.tsx");
   const router = await read("frontend/src/recovered/features/settings/overlay/router.ts");
   const panels = await read("frontend/src/recovered/features/settings/overlay/panels.tsx");
   assert.doesNotMatch(patch, /id:"router",label:"Router"/);
   assert.doesNotMatch(view, /id: "router"/);
-  const copyStart = patch.indexOf("COMPONENT_SOURCE = String.raw");
-  const settingsCopy = patch.slice(copyStart, patch.indexOf("`;", copyStart));
-  assert.ok(settingsCopy.length > 1000);
-  assert.doesNotMatch(settingsCopy, /Grok Bot/);
-  assert.match(router, /DEFAULT_ROUTER_PROVIDER: RouterProviderId = "claidor"/);
+  // The window patch injects no Settings copy of its own any more.
+  assert.doesNotMatch(patch, /COMPONENT_SOURCE|RRouterProviders|signed-in Claidor account/);
+  assert.match(router, /DEFAULT_ROUTER_PROVIDER: RouterProviderId = "simeon"/);
   assert.doesNotMatch(router, /signed-in Cursor account/);
   assert.match(panels, /Sign In with Simeon/);
   assert.doesNotMatch(panels, /Sign In with Cursor/);
 });
 
-test("sign-in errors name Simeon, not Cursor or Claidor (the account is Simeon since 25 September)", async () => {
+test("sign-in errors name Simeon, not an earlier name (the account is Simeon since 25 September)", async () => {
   const auth = await read("source/electron-main/account/cursor-auth.ts");
   const wiring = await read("source/electron-main/account/cursor-auth-wiring.ts");
   const mcp = await read("source/shared/node/mcp/mcp-manager.ts");
@@ -50,7 +48,7 @@ test("sign-in errors name Simeon, not Cursor or Claidor (the account is Simeon s
   assert.match(auth, /export interface CursorProfile/);
 });
 
-test("the agent's brief names Claidor and Simeon, not Cursor or Grok Bot", async () => {
+test("the agent's brief names Simeon, not an earlier name", async () => {
   const prompt = await read("source/host/runner/system-prompt.ts");
   const appUi = await read("source/host/runner/box-reference-docs.ts");
   const listeners = await read("source/host/runner/tools/listener-connect-cards.ts");

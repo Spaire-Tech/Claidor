@@ -1,18 +1,18 @@
 import revalidate from '@/app/actions'
 import { useUpdateCustomer } from '@/hooks/queries'
 import { setValidationErrors } from '@/utils/api/errors'
-import { enums, isValidationError, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import CountryPicker from '@claidor/ui/components/atoms/CountryPicker'
-import CountryStatePicker from '@claidor/ui/components/atoms/CountryStatePicker'
-import Input from '@claidor/ui/components/atoms/Input'
+import { enums, isValidationError, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import CountryPicker from '@simeon/ui/components/atoms/CountryPicker'
+import CountryStatePicker from '@simeon/ui/components/atoms/CountryStatePicker'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
+} from '@simeon/ui/components/atoms/Select'
 import {
   Form,
   FormControl,
@@ -21,7 +21,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { useEffect } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { toast } from '../Toast/use-toast'
@@ -52,8 +52,10 @@ export const EditCustomerModal = ({
   onClose: () => void
 }) => {
   const nameParts = customer.name?.split(' ') ?? []
-  const initialFirstName = nameParts.slice(0, -1).join(' ') || customer.name || ''
-  const initialLastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : ''
+  const initialFirstName =
+    nameParts.slice(0, -1).join(' ') || customer.name || ''
+  const initialLastName =
+    nameParts.length > 1 ? nameParts[nameParts.length - 1] : ''
 
   const form = useForm<CustomerUpdateForm>({
     defaultValues: {
@@ -111,10 +113,9 @@ export const EditCustomerModal = ({
         rest.name ||
         [first_name, last_name].filter(Boolean).join(' ') ||
         undefined,
-      billing_address:
-        billing_address?.country
-          ? (billing_address as schemas['AddressInput'])
-          : undefined,
+      billing_address: billing_address?.country
+        ? (billing_address as schemas['AddressInput'])
+        : undefined,
       metadata: customerUpdate.metadata?.reduce(
         (acc, { key, value }) => ({ ...acc, [key]: value }),
         {},

@@ -7,7 +7,7 @@ import { BlobNotFoundError } from "./blob-not-found-error.js";
 import { toHex } from "./serde.js";
 
 const SUBAGENT_STATE_BLOB_FETCH_CONCURRENCY = 8;
-const logger = createLogger("@anysphere/agent-kv:subagent-states");
+const logger = createLogger("@sand/agent-kv:subagent-states");
 
 export async function resolveSubagentPersistedStates<Context>(
   ctx: Context,

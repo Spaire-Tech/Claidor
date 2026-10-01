@@ -3,13 +3,13 @@ from typing import Literal
 import typer
 from sqlalchemy import select, update
 
-from polar.models import Customer, Order, Product
 from scripts.helper import (
     configure_script_logging,
     limit_bindparam,
     run_batched_update,
     typer_async,
 )
+from simeon.models import Customer, Order, Product
 
 cli = typer.Typer()
 

@@ -3,7 +3,7 @@ import { createLogger } from "../../context/logger.js";
 import { MAX_IMAGE_SIZE_BYTES, resizeImageBufferIfNeeded } from "../../utils/image-resize.js";
 
 type Loose = Record<string, any>;
-const logger = createLogger("@anysphere/chat-inference/image-resizing-middleware");
+const logger = createLogger("@sand/chat-inference/image-resizing-middleware");
 export const IMAGE_RESIZE_CONCURRENCY = 4;
 
 export async function resizeImagesInMessage(context: any, message: Loose): Promise<Loose> {

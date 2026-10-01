@@ -2,7 +2,7 @@
 
 import { Storefront } from '@/components/Profile/Storefront'
 import { FormPublic } from '@/hooks/queries/forms'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 
 const ClientPage = ({
   organization,

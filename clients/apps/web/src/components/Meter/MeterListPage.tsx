@@ -1,9 +1,9 @@
 'use client'
 
+import { DashboardBody } from '@/components/Layout/DashboardLayout'
 import CreateMeterModalContent from '@/components/Meter/CreateMeterModalContent'
 import { MeterDetailPanel } from '@/components/Meter/MeterDetailPanel'
 import { MeterIngestionGuide } from '@/components/Meter/MeterIngestionGuide'
-import { DashboardBody } from '@/components/Layout/DashboardLayout'
 import { InlineModal } from '@/components/Modal/InlineModal'
 import { useModal } from '@/components/Modal/useModal'
 import Spinner from '@/components/Shared/Spinner'
@@ -15,21 +15,17 @@ import ArrowUpward from '@mui/icons-material/ArrowUpward'
 import CheckOutlined from '@mui/icons-material/CheckOutlined'
 import FilterList from '@mui/icons-material/FilterList'
 import Search from '@mui/icons-material/Search'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
-import { Status } from '@claidor/ui/components/atoms/Status'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
+import { Status } from '@simeon/ui/components/atoms/Status'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@claidor/ui/components/ui/dropdown-menu'
-import {
-  parseAsStringLiteral,
-  parseAsString,
-  useQueryState,
-} from 'nuqs'
+} from '@simeon/ui/components/ui/dropdown-menu'
+import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs'
 import { useEffect, useMemo, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 
@@ -86,7 +82,8 @@ export const MeterListPage = ({ organization }: MeterListPageProps) => {
     if (inViewport && hasNextPage) fetchNextPage()
   }, [inViewport, hasNextPage, fetchNextPage])
 
-  const hasNoMeters = meters.length === 0 && !query && archivedFilter === 'active'
+  const hasNoMeters =
+    meters.length === 0 && !query && archivedFilter === 'active'
 
   return (
     <DashboardBody>
@@ -98,7 +95,7 @@ export const MeterListPage = ({ organization }: MeterListPageProps) => {
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-row items-center gap-3">
                 <div className="relative w-full md:max-w-64">
-                  <Search className=" absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                   <Input
                     className="pl-9"
                     placeholder="Search meters"
@@ -108,7 +105,11 @@ export const MeterListPage = ({ organization }: MeterListPageProps) => {
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button size="icon" variant="ghost" className="h-9 w-9 shrink-0">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-9 w-9 shrink-0"
+                    >
                       <FilterList fontSize="small" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -122,7 +123,9 @@ export const MeterListPage = ({ organization }: MeterListPageProps) => {
                       />
                       <span>All</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setArchivedFilter('active')}>
+                    <DropdownMenuItem
+                      onClick={() => setArchivedFilter('active')}
+                    >
                       <CheckOutlined
                         className={twMerge(
                           'h-4 w-4',
@@ -131,7 +134,9 @@ export const MeterListPage = ({ organization }: MeterListPageProps) => {
                       />
                       <span>Active</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setArchivedFilter('archived')}>
+                    <DropdownMenuItem
+                      onClick={() => setArchivedFilter('archived')}
+                    >
                       <CheckOutlined
                         className={twMerge(
                           'h-4 w-4',
@@ -164,47 +169,45 @@ export const MeterListPage = ({ organization }: MeterListPageProps) => {
                 <span>Create meter</span>
               </Button>
             </div>
-          <div className=" flex flex-col divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-200">
-            {meters.map((meter) => (
-              <button
-                key={meter.id}
-                type="button"
-                className=" flex flex-row items-center gap-4 px-6 py-4 text-left transition-colors hover:bg-gray-50"
-                onClick={() => setSelectedMeterId(meter.id)}
-              >
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <div className="flex items-center gap-x-2">
-                    {meter.archived_at && archivedFilter === 'all' && (
-                      <Status
-                        className="bg-red-50 text-xs font-medium text-red-500 "
-                        status="Archived"
-                      />
-                    )}
-                    <span className="truncate text-sm font-medium">
-                      {meter.name}
+            <div className="flex flex-col divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-200">
+              {meters.map((meter) => (
+                <button
+                  key={meter.id}
+                  type="button"
+                  className="flex flex-row items-center gap-4 px-6 py-4 text-left transition-colors hover:bg-gray-50"
+                  onClick={() => setSelectedMeterId(meter.id)}
+                >
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="flex items-center gap-x-2">
+                      {meter.archived_at && archivedFilter === 'all' && (
+                        <Status
+                          className="bg-red-50 text-xs font-medium text-red-500"
+                          status="Archived"
+                        />
+                      )}
+                      <span className="truncate text-sm font-medium">
+                        {meter.name}
+                      </span>
+                    </div>
+                    <span className="truncate text-xs text-gray-500 capitalize">
+                      {meter.aggregation.func}
                     </span>
                   </div>
-                  <span className=" truncate text-xs capitalize text-gray-500">
-                    {meter.aggregation.func}
-                  </span>
+                </button>
+              ))}
+              {hasNextPage && (
+                <div
+                  ref={loadingRef}
+                  className="flex w-full items-center justify-center py-6"
+                >
+                  <Spinner />
                 </div>
-              </button>
-            ))}
-            {hasNextPage && (
-              <div
-                ref={loadingRef}
-                className="flex w-full items-center justify-center py-6"
-              >
-                <Spinner />
-              </div>
-            )}
-          </div>
+              )}
+            </div>
           </>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <p className=" text-gray-500">
-              No meters found
-            </p>
+            <p className="text-gray-500">No meters found</p>
           </div>
         )}
       </div>

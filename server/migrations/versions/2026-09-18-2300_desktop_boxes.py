@@ -1,11 +1,11 @@
 """the person's computer: one box row per account
 
 Revision ID: desktop_boxes_0918
-Revises: sand_box_sleep_0928
+Revises: desktop_voice_calls_0930
 Create Date: 2026-09-18 23:00:00.000000
 
-One new table and nothing else touched. See polar/models/desktop.py,
-polar/desktop/boxes.py and docs/product/agent-computer-plan.md.
+One new table and nothing else touched. See simeon/models/desktop.py,
+simeon/desktop/boxes.py and docs/product/agent-computer-plan.md.
 
 The unique constraint is on (user_id, scope_key), and that pair is what
 makes `POST /box/sandboxes` mean « ensure » rather than « create »: the
@@ -15,17 +15,19 @@ a person's agents — so in practice there is one row per account, which
 is the founder's rule (*there is no "which computer", only this
 computer*). Each accidental extra row would be a second bill.
 
-Re-pointed three times, every time for the same reason. It was written
+Re-pointed four times, every time for the same reason. It was written
 against `maty_job_times_0912`; `desktop_box_credential_0925` landed on
 `main` against that same parent, and then five more (`sand_listeners`,
 `desktop_share_rooms`, `sand_cloud_agents`, `sand_boxes`, `sand_plugins`)
 chained behind it, which cost two re-pointings on 25 September. On 29
 September `sand_box_sleep_0928` landed on `main` against
-`sand_plugins_0925` — the parent this file had just been given — so
-`alembic heads` printed two heads again, and `upgrade head` refuses to
-run with two. It now stacks on `sand_box_sleep_0928`, `main`'s tip. The
-file is still dated the 18th because that is when it was written; the
-chain, not the filename, is what alembic reads.
+`sand_plugins_0925` — the parent this file had just been given — and on
+1 October `desktop_voice_calls_0930` landed against *that* one, each time
+printing two heads, and `upgrade head` refuses to run with two. Four
+re-pointings, one cause, every time. It now stacks on
+`desktop_voice_calls_0930`, `main`'s tip. The file is still dated the
+18th because that is when it was written; the chain, not the filename, is
+what alembic reads.
 
 Expect to do this again, and expect nothing to warn you: the suite builds
 its schema from `Model.metadata.create_all`, so every test passes with
@@ -39,7 +41,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "desktop_boxes_0918"
-down_revision = "sand_box_sleep_0928"
+down_revision = "desktop_voice_calls_0930"
 branch_labels: tuple[str] | None = None
 depends_on: tuple[str] | None = None
 

@@ -20,10 +20,10 @@ This will start a development server at [http://localhost:3000](http://localhost
 
 ## How to create a new email?
 
-1. On Python's side, in `server/polar/email/schemas.py`, add a new item to `EmailTemplate` and implement a Pydantic schema to describe the props of the email.
+1. On Python's side, in `server/simeon/email/schemas.py`, add a new item to `EmailTemplate` and implement a Pydantic schema to describe the props of the email.
 
 ```python
-# server/polar/email/schemas.py
+# server/simeon/email/schemas.py
 
 class EmailTemplate(StrEnum):
     # ...
@@ -55,8 +55,8 @@ uv run task emails
 Then, use the `render_email_template` function:
 
 ```python
-from polar.email.react import render_email_template
-from polar.email.schemas import CustomerGreetingsEmail, CustomerGreetingsProps
+from simeon.email.react import render_email_template
+from simeon.email.schemas import CustomerGreetingsEmail, CustomerGreetingsProps
 
 body = render_email_template(CustomerGreetingsEmail(
     props=CustomerGreetingsProps.model_validate({

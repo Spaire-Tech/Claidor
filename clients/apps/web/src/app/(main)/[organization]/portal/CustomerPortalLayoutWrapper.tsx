@@ -1,7 +1,7 @@
 'use client'
 
-import { schemas } from '@claidor/client'
-import { CustomerPortalProvider } from '@claidor/customer-portal/react'
+import { schemas } from '@simeon/client'
+import { CustomerPortalProvider } from '@simeon/customer-portal/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 interface CustomerPortalLayoutWrapperProps {

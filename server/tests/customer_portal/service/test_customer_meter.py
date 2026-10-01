@@ -3,13 +3,13 @@ from decimal import Decimal
 
 import pytest
 
-from polar.auth.models import AuthSubject
-from polar.customer_portal.service.customer_meter import (
+from simeon.auth.models import AuthSubject
+from simeon.customer_portal.service.customer_meter import (
     customer_meter as customer_meter_service,
 )
-from polar.kit.db.postgres import AsyncSession
-from polar.kit.pagination import PaginationParams
-from polar.models import Customer, CustomerMeter, Organization, SubscriptionMeter
+from simeon.kit.db.postgres import AsyncSession
+from simeon.kit.pagination import PaginationParams
+from simeon.models import Customer, CustomerMeter, Organization, SubscriptionMeter
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_active_subscription, create_meter
@@ -26,7 +26,7 @@ class TestList:
         organization: Organization,
         customer: Customer,
     ) -> None:
-        from polar.enums import SubscriptionRecurringInterval
+        from simeon.enums import SubscriptionRecurringInterval
         from tests.fixtures.random_objects import create_product
 
         # Create meters with different names
@@ -105,7 +105,7 @@ class TestList:
         customer: Customer,
     ) -> None:
         """Test that % in query is treated as literal, not wildcard."""
-        from polar.enums import SubscriptionRecurringInterval
+        from simeon.enums import SubscriptionRecurringInterval
         from tests.fixtures.random_objects import create_product
 
         meter_with_percent = await create_meter(
@@ -177,7 +177,7 @@ class TestList:
         customer: Customer,
     ) -> None:
         """Test that _ in query is treated as literal, not single-char wildcard."""
-        from polar.enums import SubscriptionRecurringInterval
+        from simeon.enums import SubscriptionRecurringInterval
         from tests.fixtures.random_objects import create_product
 
         meter_with_underscore = await create_meter(

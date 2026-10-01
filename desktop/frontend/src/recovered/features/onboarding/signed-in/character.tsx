@@ -7,7 +7,7 @@ import { ADVENTURER_CREDIT, AVATAR_KEYS, AVATAR_SOURCE_BOX, AVATARS, type Avatar
 // The shipped engine geometry is the inline 259px mark, not an image asset. The
 // box, its centre and the state table are kept; what is drawn inside the box is
 // one of the founder's twenty-one avatars (brand/avatars, DiceBear "Adventurer",
-// decided 23 September 2026, docs/product/faces-adventurer-measured.md). An
+// decided 23 September 2026). An
 // avatar is a finished drawing: no shape axis, no colour axis, no skin tone.
 // Choosing a different one changes the whole face. Nothing outside this file
 // paints the mark.
@@ -15,10 +15,10 @@ const VIEWBOX = "-15 -15 259 259";
 const CENTER = 114.2705;
 export { ADVENTURER_CREDIT, AVATAR_KEYS };
 
-// The eleven colour names Grok Bot stored per agent. They are still resolved
+// The eleven colour names the upstream app stored per agent. They are still resolved
 // (the sidebar wrapper writes `data-avatar-color`) but draw nothing now.
 const COLOR_KEYS = ["black", "brown", "red", "orange", "yellow", "green", "cyan", "blue", "violet", "magenta", "gray"] as const;
-// Grok Bot's eight shape names map onto the first eight avatars, so a scene
+// The upstream app's eight shape names map onto the first eight avatars, so a scene
 // or a stored agent that still says "blob" keeps a face.
 const LEGACY_SHAPES = ["blob", "pebble", "squircle", "tablet", "wedge", "hex", "cloud", "teardrop"] as const;
 

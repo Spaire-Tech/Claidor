@@ -10,7 +10,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function loadModule() {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "grok-inference-router-transcript-"));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-inference-router-transcript-"));
   const output = path.join(temporary, "inference-router.mjs");
   await build({
     entryPoints: [path.join(repoRoot, "source/node-agent-coordinator/inference-router.ts")],
@@ -66,9 +66,9 @@ test("hidden widget answers stay in history and do not paint a user bubble", asy
       schemaVersion: 2,
       agents: {
         agent: [
-          { provider: "claidor", role: "assistant", content: "", message: { type: "widget", widget: { prompt: "What first?", options: [{ label: "Research", value: "research" }] } }, id: "t0s1", respondedValue: "research", timestampMs: 1 },
-          { provider: "claidor", role: "user", content: "research", id: "t1u", hidden: true, timestampMs: 2 },
-          { provider: "claidor", role: "user", content: "typed later", id: "t2u", timestampMs: 3 },
+          { provider: "simeon", role: "assistant", content: "", message: { type: "widget", widget: { prompt: "What first?", options: [{ label: "Research", value: "research" }] } }, id: "t0s1", respondedValue: "research", timestampMs: 1 },
+          { provider: "simeon", role: "user", content: "research", id: "t1u", hidden: true, timestampMs: 2 },
+          { provider: "simeon", role: "user", content: "typed later", id: "t2u", timestampMs: 3 },
         ],
       },
     });

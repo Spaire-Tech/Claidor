@@ -1,11 +1,11 @@
-"""Cloud agents over the maty queue (`polar/sand/cloud_agents.py`,
+"""Cloud agents over the maty queue (`simeon/sand/cloud_agents.py`,
 25 September 2026).
 
 The app's client (`desktop/source/host/extensions/cloud-agents/`) is not
 changed; this measures the server it now has. Every call below is the
 request the manager composes, in the JSON the generated protos spell,
 and every assertion reads the field the client reads. The runner's side
-is driven through `/maty/runner/*` the way `claidor-maty-runner` speaks it.
+is driven through `/maty/runner/*` the way the cloud runner speaks it.
 """
 
 from __future__ import annotations
@@ -17,11 +17,10 @@ import httpx
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.maty.service import CANCELLED_REASON
-from polar.models import User
-from polar.postgres import AsyncSession
-
+from simeon.config import settings
+from simeon.maty.service import CANCELLED_REASON
+from simeon.models import User
+from simeon.postgres import AsyncSession
 from tests.desktop.test_endpoints import _signed_in
 
 BC = "/aiserver.v1.BackgroundComposerService"

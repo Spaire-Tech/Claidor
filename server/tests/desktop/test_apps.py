@@ -1,4 +1,4 @@
-"""Apps under Simeon's own name (`polar/desktop/apps.py`), end to end over
+"""Apps under Simeon's own name (`simeon/desktop/apps.py`), end to end over
 HTTP with the provider mocked: the MCP server per app, sign-in, status,
 disconnect, and that the provider's name never comes back."""
 
@@ -9,12 +9,12 @@ import pytest
 import respx
 from pytest_mock import MockerFixture
 
-from polar.config import settings
-from polar.desktop import apps as apps_module
-from polar.desktop.composio import composio_user_id
-from polar.desktop.service import desktop
-from polar.models import User
-from polar.postgres import AsyncSession
+from simeon.config import settings
+from simeon.desktop import apps as apps_module
+from simeon.desktop.composio import composio_user_id
+from simeon.desktop.service import desktop
+from simeon.models import User
+from simeon.postgres import AsyncSession
 
 API = settings.COMPOSIO_BASE_URL.rstrip("/")
 

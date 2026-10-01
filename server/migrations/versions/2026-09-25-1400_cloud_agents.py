@@ -5,7 +5,7 @@ Revises: desktop_box_credential_0925
 Create Date: 2026-09-25 14:00:00.000000
 
 The app's cloud agents (`aiserver.v1.BackgroundComposerService`) are
-served as a projection over the maty queue (`polar.sand.cloud_agents`).
+served as a projection over the maty queue (`simeon.sand.cloud_agents`).
 Four columns on `maty_jobs` — the conversation a turn continues, the job
 it continues, a cancel flag the runner reads off its heartbeat, and the
 artifacts the executor reported — and one side table, `sand_cloud_agents`,

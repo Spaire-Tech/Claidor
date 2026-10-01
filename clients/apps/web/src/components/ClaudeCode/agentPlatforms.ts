@@ -25,7 +25,7 @@ export interface AgentPlatform {
   /** Install command. Omit for IDE-based agents (Cursor, Copilot). */
   installCommand?: string
   howItWorks: { title: string; description: string }[]
-  /** Bash snippet to get the Claidor config file into the project */
+  /** Bash snippet to get the Simeon config file into the project */
   setupSnippet?: string
   /** Note shown below the setup snippet */
   setupNote?: string
@@ -33,7 +33,7 @@ export interface AgentPlatform {
   docsLink: string
 }
 
-const CDN_BASE = 'https://cdn.claidorhq.com'
+const CDN_BASE = 'https://cdn.simeonlabs.com'
 
 export const CLAUDE_CODE_PLATFORM: AgentPlatform = {
   slug: 'claude-code',
@@ -86,7 +86,7 @@ export const CLAUDE_CODE_PLATFORM: AgentPlatform = {
       detailPageSlug: 'setup-usage-billing',
     },
   ],
-  docsLink: 'https://docs.claidorhq.com/integrate/agent-commands',
+  docsLink: 'https://docs.simeonlabs.com/integrate/agent-commands',
 }
 
 export const CURSOR_PLATFORM: AgentPlatform = {
@@ -94,7 +94,7 @@ export const CURSOR_PLATFORM: AgentPlatform = {
   name: 'Cursor',
   tagline: 'Add a rules file, then ask Cursor to integrate Simeon.',
   description:
-    'Drop `.cursor/rules/claidor.mdc` into your project. When you open Cursor Agent mode and describe what you want, Cursor has full Simeon API and SDK context — so you don\'t have to explain it yourself.',
+    "Drop `.cursor/rules/simeon.mdc` into your project. When you open Cursor Agent mode and describe what you want, Cursor has full Simeon API and SDK context — so you don't have to explain it yourself.",
   categoryLabel: 'AI Code Editor',
   categoryColor: 'text-sky-600',
   categoryBg: 'bg-sky-50',
@@ -102,7 +102,7 @@ export const CURSOR_PLATFORM: AgentPlatform = {
     {
       title: 'Download the rules file',
       description:
-        'Run one command to add `.cursor/rules/claidor.mdc`. Commit it so every developer gets Simeon context in their Cursor.',
+        'Run one command to add `.cursor/rules/simeon.mdc`. Commit it so every developer gets Simeon context in their Cursor.',
     },
     {
       title: 'Open Cursor Chat (Agent mode)',
@@ -115,7 +115,7 @@ export const CURSOR_PLATFORM: AgentPlatform = {
         'Type your request. Cursor uses the rules file for Simeon API context and reads your code to write the integration.',
     },
   ],
-  setupSnippet: `mkdir -p .cursor/rules\ncurl -sL -o .cursor/rules/claidor.mdc \\\n  ${CDN_BASE}/cursor/rules/claidor.mdc`,
+  setupSnippet: `mkdir -p .cursor/rules\ncurl -sL -o .cursor/rules/simeon.mdc \\\n  ${CDN_BASE}/cursor/rules/simeon.mdc`,
   setupNote:
     'Cursor reads `.cursor/rules/*.mdc` files automatically in every chat session. Commit this file so your whole team gets Simeon context.',
   commands: [
@@ -138,7 +138,7 @@ export const CURSOR_PLATFORM: AgentPlatform = {
       snippetLabel: 'Paste in Cursor Chat (Agent mode)',
     },
   ],
-  docsLink: 'https://docs.claidorhq.com/integrate/agent-commands',
+  docsLink: 'https://docs.simeonlabs.com/integrate/agent-commands',
 }
 
 export const CODEX_PLATFORM: AgentPlatform = {
@@ -154,7 +154,8 @@ export const CODEX_PLATFORM: AgentPlatform = {
   howItWorks: [
     {
       title: 'Install Codex CLI',
-      description: 'One npm command gets the OpenAI Codex agent on your machine.',
+      description:
+        'One npm command gets the OpenAI Codex agent on your machine.',
     },
     {
       title: 'Add the context file',
@@ -190,7 +191,7 @@ export const CODEX_PLATFORM: AgentPlatform = {
       snippetLabel: 'Run in your project directory',
     },
   ],
-  docsLink: 'https://docs.claidorhq.com/integrate/agent-commands',
+  docsLink: 'https://docs.simeonlabs.com/integrate/agent-commands',
 }
 
 export const GITHUB_COPILOT_PLATFORM: AgentPlatform = {
@@ -242,7 +243,7 @@ export const GITHUB_COPILOT_PLATFORM: AgentPlatform = {
       snippetLabel: 'Paste in Copilot Chat (Agent mode)',
     },
   ],
-  docsLink: 'https://docs.claidorhq.com/integrate/agent-commands',
+  docsLink: 'https://docs.simeonlabs.com/integrate/agent-commands',
 }
 
 export const ALL_AGENT_PLATFORMS: AgentPlatform[] = [

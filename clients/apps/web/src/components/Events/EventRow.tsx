@@ -2,14 +2,14 @@ import { useInfiniteEvents } from '@/hooks/queries/events'
 import { getAnonymousCustomerName } from '@/utils/anonymous-customer'
 import KeyboardArrowDownOutlined from '@mui/icons-material/KeyboardArrowDownOutlined'
 import KeyboardArrowRightOutlined from '@mui/icons-material/KeyboardArrowRightOutlined'
-import { schemas } from '@claidor/client'
-import Avatar from '@claidor/ui/components/atoms/Avatar'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import Avatar from '@simeon/ui/components/atoms/Avatar'
+import Button from '@simeon/ui/components/atoms/Button'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@claidor/ui/components/ui/tooltip'
+} from '@simeon/ui/components/ui/tooltip'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useMemo, useState } from 'react'
@@ -111,7 +111,7 @@ export const EventRow = ({
     >
       <div
         className={twMerge(
-          '  flex flex-col rounded-xl border border-gray-200 bg-white font-mono text-sm transition-colors duration-150 hover:bg-gray-50',
+          'flex flex-col rounded-xl border border-gray-200 bg-white font-mono text-sm transition-colors duration-150 hover:bg-gray-50',
           isExpanded &&
             hasChildren &&
             renderChildren &&
@@ -125,7 +125,7 @@ export const EventRow = ({
         <div className="flex flex-row items-center justify-between p-3 select-none">
           <div className="flex flex-row items-center gap-x-4">
             {depth === 0 ? (
-              <div className=" flex flex-row items-center justify-center rounded-sm border border-gray-200 bg-gray-100 p-1 transition-colors duration-150 hover:bg-gray-200 ">
+              <div className="flex flex-row items-center justify-center rounded-sm border border-gray-200 bg-gray-100 p-1 transition-colors duration-150 hover:bg-gray-200">
                 {isExpanded ? (
                   <KeyboardArrowDownOutlined fontSize="inherit" />
                 ) : (
@@ -134,20 +134,20 @@ export const EventRow = ({
               </div>
             ) : (
               <div className="flex w-6 flex-col items-center justify-center">
-                <div className=" size-1.5 rounded-full bg-gray-200" />
+                <div className="size-1.5 rounded-full bg-gray-200" />
               </div>
             )}
             <div className="flex flex-row items-center gap-x-4">
               <span className="text-xs">{event.label}</span>
               <EventSourceBadge source={event.source} />
               {event.child_count > 0 && (
-                <span className=" text-xxs rounded-md bg-gray-100 px-2 py-1 text-gray-500 capitalize">
+                <span className="text-xxs rounded-md bg-gray-100 px-2 py-1 text-gray-500 capitalize">
                   {event.child_count}{' '}
                   {event.child_count === 1 ? 'child' : 'children'}
                 </span>
               )}
             </div>
-            <span className=" text-xs text-gray-500 capitalize">
+            <span className="text-xs text-gray-500 capitalize">
               {formattedTimestamp}
             </span>
           </div>
@@ -204,7 +204,7 @@ export const EventRow = ({
                       <span className="text-xs">
                         {event.customer?.name ?? '—'}
                       </span>
-                      <span className=" text-xxs font-mono text-gray-500">
+                      <span className="text-xxs font-mono text-gray-500">
                         {event.customer?.email}
                       </span>
                     </div>
@@ -233,7 +233,7 @@ export const EventRow = ({
                           )[0]
                         }
                       </span>
-                      <span className=" text-xxs font-mono text-gray-500">
+                      <span className="text-xxs font-mono text-gray-500">
                         {event.external_customer_id}
                       </span>
                     </div>
@@ -264,7 +264,7 @@ export const EventRow = ({
           ))}
           {hasNextPage && (
             <Button
-              className="  w-full rounded-none rounded-b-xl! border border-t-0! border-gray-200 bg-gray-50 text-xs"
+              className="w-full rounded-none rounded-b-xl! border border-t-0! border-gray-200 bg-gray-50 text-xs"
               variant="ghost"
               onClick={(e) => {
                 e.stopPropagation()

@@ -9,14 +9,14 @@ from rich import print
 from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.dialects.postgresql import insert
 
-from polar import tasks  # noqa: F401
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.models import Checkout, Customer, Order, Payment, Wallet
-from polar.models.order import OrderStatus
-from polar.models.payment import PaymentStatus
-from polar.models.wallet_transaction import WalletTransaction
-from polar.postgres import create_async_engine
-from polar.redis import create_redis
+from simeon import tasks  # noqa: F401
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.models import Checkout, Customer, Order, Payment, Wallet
+from simeon.models.order import OrderStatus
+from simeon.models.payment import PaymentStatus
+from simeon.models.wallet_transaction import WalletTransaction
+from simeon.postgres import create_async_engine
+from simeon.redis import create_redis
 
 cli = typer.Typer()
 

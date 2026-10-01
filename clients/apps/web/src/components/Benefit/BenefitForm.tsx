@@ -1,8 +1,8 @@
 import { useDiscordGuild } from '@/hooks/queries'
 import { getBotDiscordAuthorizeURL } from '@/utils/auth'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
@@ -12,9 +12,9 @@ import {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
-import TextArea from '@claidor/ui/components/atoms/TextArea'
-import { Checkbox } from '@claidor/ui/components/ui/checkbox'
+} from '@simeon/ui/components/atoms/Select'
+import TextArea from '@simeon/ui/components/atoms/TextArea'
+import { Checkbox } from '@simeon/ui/components/ui/checkbox'
 import {
   FormControl,
   FormDescription,
@@ -22,7 +22,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { usePathname } from 'next/navigation'
 import React, { useMemo } from 'react'
 import { useFormContext } from 'react-hook-form'
@@ -89,7 +89,7 @@ export const BenefitForm = ({
             <FormItem>
               <div className="flex flex-row items-center justify-between">
                 <FormLabel>Description</FormLabel>
-                <span className=" text-sm text-gray-400">
+                <span className="text-sm text-gray-400">
                   {field.value?.length ?? 0} / 42
                 </span>
               </div>
@@ -136,9 +136,7 @@ export const CustomBenefitForm = ({}: CustomBenefitFormProps) => {
             <FormItem>
               <div className="flex flex-row items-center justify-between">
                 <FormLabel>Private note</FormLabel>
-                <span className=" text-sm text-gray-500">
-                  Markdown Format
-                </span>
+                <span className="text-sm text-gray-500">Markdown Format</span>
               </div>
               <FormControl>
                 <TextArea
@@ -268,8 +266,8 @@ export const DiscordBenefitForm = () => {
                     </Select>
                   </FormControl>
                   <FormDescription>
-                    To grant a specific role, our Simeon bot role should be above
-                    it in the hierarchy list. You can do so from{' '}
+                    To grant a specific role, our Simeon bot role should be
+                    above it in the hierarchy list. You can do so from{' '}
                     <span className="font-medium">Server Settings</span> →{' '}
                     <span className="font-medium">Roles</span> in Discord.
                   </FormDescription>
@@ -327,8 +325,16 @@ const BenefitTypeSelect = () => {
                   <SelectValue placeholder="Select a benefit type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(['downloadables', 'discord', 'github_repository', 'license_keys', 'meter_credit', 'custom'] as const)
-                    .map((value) => (
+                  {(
+                    [
+                      'downloadables',
+                      'discord',
+                      'github_repository',
+                      'license_keys',
+                      'meter_credit',
+                      'custom',
+                    ] as const
+                  ).map((value) => (
                     <SelectItem key={value} value={value}>
                       {benefitsDisplayNames[value]}
                     </SelectItem>

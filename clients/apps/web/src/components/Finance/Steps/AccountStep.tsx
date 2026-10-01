@@ -1,9 +1,8 @@
 'use client'
 
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import { ArrowRight, Building2, Loader2, ShieldAlert } from 'lucide-react'
-import React from 'react'
 
 interface AccountStepProps {
   organizationAccount?: schemas['Account']
@@ -36,10 +35,8 @@ export default function AccountStep({
           <Building2 className="h-6 w-6 text-emerald-500" />
         </div>
         <div>
-          <h3 className="font-medium">
-            Payout account connected
-          </h3>
-          <p className=" mt-1 text-sm text-gray-500">
+          <h3 className="font-medium">Payout account connected</h3>
+          <p className="mt-1 text-sm text-gray-500">
             Your account is configured and ready to receive payouts.
           </p>
         </div>
@@ -54,10 +51,8 @@ export default function AccountStep({
           <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
         </div>
         <div>
-          <h3 className="font-medium">
-            Reviewing your information
-          </h3>
-          <p className=" mx-auto mt-1 max-w-sm text-sm text-gray-500">
+          <h3 className="font-medium">Reviewing your information</h3>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-gray-500">
             Stripe is verifying your account details. This can take a few
             minutes to a few hours. You&apos;ll be automatically moved to the
             next step once complete.
@@ -75,7 +70,7 @@ export default function AccountStep({
         </div>
         <div>
           <h3 className="font-medium">Admin required</h3>
-          <p className=" mx-auto mt-1 max-w-sm text-sm text-gray-500">
+          <p className="mx-auto mt-1 max-w-sm text-sm text-gray-500">
             Only the account admin can connect a payout account. You can skip
             this step and continue with identity verification.
           </p>
@@ -96,10 +91,8 @@ export default function AccountStep({
         <Building2 className="h-6 w-6 text-blue-500" />
       </div>
       <div>
-        <h3 className="font-medium">
-          Connect your payout account
-        </h3>
-        <p className=" mx-auto mt-1 max-w-sm text-sm text-gray-500">
+        <h3 className="font-medium">Connect your payout account</h3>
+        <p className="mx-auto mt-1 max-w-sm text-sm text-gray-500">
           Connect your bank account so Simeon can send you your earnings.
           You&apos;ll be redirected to Stripe to complete this step.
         </p>

@@ -2,9 +2,9 @@ import {
   useAddCustomerPaymentMethod,
   useConfirmCustomerPaymentMethod,
 } from '@/hooks/queries'
-import { type Client } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { ThemingPresetProps } from '@claidor/ui/hooks/theming'
+import { type Client } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { ThemingPresetProps } from '@simeon/ui/hooks/theming'
 import {
   Elements,
   ElementsConsumer,

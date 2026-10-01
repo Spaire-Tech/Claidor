@@ -3,7 +3,7 @@
  * design-audit-ledger.md clusters `executor-contract`, `child-state` and
  * `brief-text`).
  *
- * The claidor executor was bolted onto a loop built for Cursor's server
+ * The simeon executor was bolted onto a loop built for Cursor's server
  * and never given the loop's contract back: a 45 s deadline on the whole
  * streamed body, a silent swap to the cheap model on a rate limit, no
  * request id, a Cursor-era model name. A Task child ran on the parent's
@@ -36,13 +36,13 @@ test("the executor's deadline covers the headers only, the cheap swap is logged,
   const providers = await src("host/extensions/inference/provider-session.ts");
   assert.match(providers, /const headersDeadline = new AbortController\(\);/);
   assert.match(providers, /clearTimeout\(timer\);/);
-  assert.doesNotMatch(providers, /AbortSignal\.timeout\(CLAIDOR_FETCH_TIMEOUT_MS\)/, "no whole-request abort");
+  assert.doesNotMatch(providers, /AbortSignal\.timeout\(SIMEON_FETCH_TIMEOUT_MS\)/, "no whole-request abort");
   assert.match(providers, /withCheapRateLimitFallback\(startOrLegacy\(requested\), \(\) => startOrLegacy\(cheap\), \(error\) => modelCallLog\(`\$\{HOST_LOG_PREFIX\} model-fallback from=\$\{requested\} to=\$\{cheap\}/);
   assert.match(providers, /if \(onRequestId != null\) void race\(result\.response\)\.then/);
   assert.match(providers, /model-error-system \$\{clipForHostLog\(redactSandAutoReviewInlineSecrets\(systemPromptText\(messages\)\), 12000\)\}/);
   assert.match(await src("host/extensions/inference/inference-service.ts"), /createProviderPromptSession\(provider, sessionOptions, onRequestId\)/);
   const composition = await src("host/host-runner-composition.ts");
-  assert.match(composition, /export const DEFAULT_SAND_MODEL = configuredClaidorModel\(\);/);
+  assert.match(composition, /export const DEFAULT_SAND_MODEL = configuredSimeonModel\(\);/);
   assert.doesNotMatch(composition, /= "gpt-5\.5-high-fast"/);
   const { module, dispose } = await load("source/shared/inference/cheap-rate-limit-fallback.ts", "cheap-fallback-log");
   try {
@@ -100,7 +100,7 @@ test("the brief follows the tools it has and carries the founder's voice, and a 
     assert.match(prompt, /## Documents you make\nA report, plan, guide, memo, deck or spreadsheet the user asked for is a file, not a long chat reply: write a \.docx, \.pptx or \.xlsx/);
     assert.doesNotMatch(prompt, /read-only Screenshot tool|Screenshot views of the box/, "no Screenshot promise while the tool is withheld");
     assert.match(prompt, /a computerUse subagent's screenshots/);
-    // Since 25 September 2026 watchVideo is served (docs/product/video-served.md,
+    // Since 25 September 2026 watchVideo is served (docs/services-agents.md,
     // tests/watch-video.test.mjs): the brief delegates a video to it, and the
     // coming-soon sentence sits behind `SAND_VIDEO_SUBAGENT_SERVED=0`.
     assert.match(prompt, /dispatch Task with subagent_type watchVideo/);

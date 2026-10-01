@@ -1,5 +1,5 @@
 import LogoIcon from '@/components/Brand/LogoIcon'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 
 const generatePostOGFallbackPath = (slug: string, maxInt: number) => {
   let sum = 0
@@ -9,7 +9,7 @@ const generatePostOGFallbackPath = (slug: string, maxInt: number) => {
   return `${sum % maxInt}.jpg`
 }
 
-const imageBaseURL = 'https://claidorhq.com/assets/posts/og'
+const imageBaseURL = 'https://simeonlabs.com/assets/posts/og'
 
 const OpenGraphImageCreator = ({
   organization,

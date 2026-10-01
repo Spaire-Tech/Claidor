@@ -10,7 +10,7 @@ import { createChannelSocket, socketText, SOCKET_OPEN, type ChannelSocket, type 
  * heartbeats at the interval Discord names, MESSAGE_CREATE and
  * MESSAGE_REACTION_ADD become inbound envelopes, and delivery goes through
  * the REST API with the same bot token. Built 25 September 2026 against
- * the transcript manager's channel hooks (docs/product/channels-served.md).
+ * the transcript manager's channel hooks (docs/services-agents.md).
  */
 export const DISCORD_GATEWAY_URL = "wss://gateway.discord.gg/?v=10&encoding=json";
 export const DISCORD_API_BASE = "https://discord.com/api/v10";

@@ -30,11 +30,10 @@ of what they're going to be selling on Simeon. Once all required information is 
 you'll be able to configure their account using some tools provided to you.
 
 # About Simeon
-Simeon acts a Merchant of Record, handling international sales taxes and other cumbersome compliance administration,
-so that users can focus on building their product and business.
+Simeon handles checkout, subscriptions and billing, so that users can focus on building their product and business.
 
 <example prompt="What is Simeon?">
-Simeon acts as a Merchant of Record, handling international sales taxes and other cumbersome compliance administration, so that you can focus on building your product and business.
+Simeon handles checkout, subscriptions and billing, so that you can focus on building your product and business.
 
 You can sell various things on Simeon, typically configured as "Products" that grant "Benefits" to your customers. Benefits can include things like:
 
@@ -308,7 +307,7 @@ export async function POST(req: Request) {
     requiresToolAccess &&
     (!requiresClarification || lastUserMessages.length >= 5)
 
-  // --- Native Claidor API tools ---
+  // --- Native Simeon API tools ---
 
   const createMeter = tool({
     description:
@@ -330,7 +329,12 @@ export async function POST(req: Request) {
           'The event metadata property to aggregate on (required for sum and unique)',
         ),
     }),
-    execute: async ({ name, event_name, aggregation_type, aggregation_property }) => {
+    execute: async ({
+      name,
+      event_name,
+      aggregation_type,
+      aggregation_property,
+    }) => {
       const api = await getServerSideAPI()
 
       const aggregation =
@@ -346,9 +350,7 @@ export async function POST(req: Request) {
           organization_id: organizationId,
           filter: {
             conjunction: 'and',
-            clauses: [
-              { property: 'name', operator: 'eq', value: event_name },
-            ],
+            clauses: [{ property: 'name', operator: 'eq', value: event_name }],
           },
           aggregation,
         },
@@ -368,7 +370,9 @@ export async function POST(req: Request) {
     inputSchema: z.object({
       type: z
         .enum(['custom', 'license_keys', 'meter_credit', 'downloadables'])
-        .describe('The type of benefit to create. Use "downloadables" for ebooks, templates, presets, fonts, or any file-based digital product.'),
+        .describe(
+          'The type of benefit to create. Use "downloadables" for ebooks, templates, presets, fonts, or any file-based digital product.',
+        ),
       description: z
         .string()
         .describe(
@@ -451,7 +455,11 @@ export async function POST(req: Request) {
         return { success: false, error: JSON.stringify(error) }
       }
 
-      return { success: true, benefit_id: data.id, description: data.description }
+      return {
+        success: true,
+        benefit_id: data.id,
+        description: data.description,
+      }
     },
   })
 
@@ -559,7 +567,11 @@ export async function POST(req: Request) {
                 price_currency: currency,
                 seat_tiers: { tiers: seat_tiers! },
               }
-            : { amount_type: 'fixed', price_currency: currency, price_amount: price_amount! }) as never,
+            : {
+                amount_type: 'fixed',
+                price_currency: currency,
+                price_amount: price_amount!,
+              }) as never,
       )
 
       if (metered_price_meter_id && metered_price_unit_amount !== undefined) {
@@ -668,7 +680,13 @@ based on the conversation history whether you're done.
       tools: {
         redirectToManualSetup,
         ...(!requiresManualSetup
-          ? { createMeter, createBenefit, createProduct, updateProductBenefits, markAsDone }
+          ? {
+              createMeter,
+              createBenefit,
+              createProduct,
+              updateProductBenefits,
+              markAsDone,
+            }
           : {}),
       },
       toolChoice: requiresManualSetup
@@ -699,9 +717,9 @@ based on the conversation history whether you're done.
     return result.toUIMessageStreamResponse()
   } catch (err) {
     console.error('[onboarding/chat] streamText error:', err)
-    return new Response(
-      JSON.stringify({ error: String(err) }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } },
-    )
+    return new Response(JSON.stringify({ error: String(err) }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
 }

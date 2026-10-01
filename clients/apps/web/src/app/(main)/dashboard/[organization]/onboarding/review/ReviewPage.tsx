@@ -3,7 +3,7 @@
 import revalidate from '@/app/actions'
 import { ForceLightMode } from '@/components/Profile/ForceLightMode'
 import { toast } from '@/components/Toast/use-toast'
-import { useClaidorSubscription } from '@/hooks/queries/claidorTier'
+import { useSimeonSubscription } from '@/hooks/queries/simeonTier'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import { api } from '@/utils/client'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -15,7 +15,7 @@ import { useContext, useEffect, useRef } from 'react'
  * Onboarding is just two
  * visible steps — OrganizationStep ("name + slug + logo", /dashboard/create)
  * then PlanPage ("Choose your plan", /onboarding/plan). Plan selection hands
- * off to Polar-hosted checkout, which returns here with ?upgraded=1.
+ * off to the hosted checkout, which returns here with ?upgraded=1.
  *
  * This page no longer renders a "Create your Space Card" editor. It is an
  * invisible finishing step: it verifies the checkout actually converted the
@@ -24,7 +24,7 @@ import { useContext, useEffect, useRef } from 'react'
  * creation. The public storefront is intentionally NOT enabled here.
  */
 
-// The upgrade webhook can land a beat after Polar redirects back, so the
+// The upgrade webhook can land a beat after checkout redirects back, so the
 // subscription may still read as the auto-trial for a moment. Poll a few
 // times before concluding the checkout never completed.
 const MAX_VERIFY_ATTEMPTS = 6
@@ -34,9 +34,9 @@ export default function ReviewPage() {
   const { organization } = useContext(OrganizationContext)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const subscriptionQuery = useClaidorSubscription(organization.id)
+  const subscriptionQuery = useSimeonSubscription(organization.id)
 
-  // Polar redirects back here with ?upgraded=1 after checkout. Without it
+  // Checkout redirects back here with ?upgraded=1 after checkout. Without it
   // there is nothing to finish — send the creator back to pick a plan.
   const cameFromCheckout = searchParams.get('upgraded') === '1'
 

@@ -2,17 +2,17 @@ import { OrganizationContext } from '@/providers/maintainerOrganization'
 import { CONFIG } from '@/utils/config'
 import QrCode from '@mui/icons-material/QrCode'
 import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import CopyToClipboardInput from '@claidor/ui/components/atoms/CopyToClipboardInput'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import CopyToClipboardInput from '@simeon/ui/components/atoms/CopyToClipboardInput'
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@claidor/ui/components/atoms/Tabs'
-import { Checkbox } from '@claidor/ui/components/ui/checkbox'
-import { Label } from '@claidor/ui/components/ui/label'
+} from '@simeon/ui/components/atoms/Tabs'
+import { Checkbox } from '@simeon/ui/components/ui/checkbox'
+import { Label } from '@simeon/ui/components/ui/label'
 import Link from 'next/link'
 import { useContext, useMemo, useState } from 'react'
 import { Modal } from '../Modal'
@@ -41,15 +41,14 @@ export const CheckoutLinkPage = ({ checkoutLink }: CheckoutLinkPageProps) => {
     const theme = darkmode ? 'dark' : 'light'
 
     return `
-<a href="${checkoutLink?.url}" data-claidor-checkout data-claidor-checkout-theme="${theme}">Purchase</a>
+<a href="${checkoutLink?.url}" data-simeon-checkout data-simeon-checkout-theme="${theme}">Purchase</a>
 <script src="${CONFIG.CHECKOUT_EMBED_SCRIPT_SRC}" defer data-auto-init></script>
   `.trim()
   }, [checkoutLink, darkmode])
 
   const showDarkmodeToggle = embedType === 'svg' || embedType === 'checkout'
 
-  const triggerClassName =
-    ' data-[state=active]:bg-white w-full rounded-full!'
+  const triggerClassName = ' data-[state=active]:bg-white w-full rounded-full!'
 
   return (
     <div className="flex w-full flex-col gap-8">
@@ -57,7 +56,7 @@ export const CheckoutLinkPage = ({ checkoutLink }: CheckoutLinkPageProps) => {
         defaultValue={embedType}
         onValueChange={(value) => setEmbedType(value)}
       >
-        <TabsList className=" mb-4 w-full rounded-full bg-gray-100">
+        <TabsList className="mb-4 w-full rounded-full bg-gray-100">
           <TabsTrigger className={triggerClassName} value="link">
             Link
           </TabsTrigger>

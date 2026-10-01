@@ -14,7 +14,7 @@ import time
 
 import pytest
 
-from polar.integrations.resend.endpoints import _verify_svix_signature
+from simeon.integrations.resend.endpoints import _verify_svix_signature
 
 
 def _sign(payload: bytes, msg_id: str, ts: str, secret_b64: str) -> str:

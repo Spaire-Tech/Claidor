@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 
 export const DEFAULT_CURSOR_BACKEND_URL = "https://api2.cursor.sh";
-/** Where a run with no `SAND_BACKEND_URL` / `CURSOR_API_BASE_URL` goes: Simeon Labs' API, not Cursor's (25 September 2026, F-227). The packaged app always carries the variables (`scripts/lib/config.mjs`); this is the `npm start` case. `DEFAULT_CURSOR_BACKEND_URL` above stays what it is, Cursor's origin, which the sharing environment refuses. */
+/** Where a run with no `SAND_BACKEND_URL` / `SIMEON_API_BASE_URL` goes: Simeon Labs' API, not Cursor's (25 September 2026, F-227). The packaged app always carries the variables (`scripts/lib/config.mjs`); this is the `npm start` case. `DEFAULT_CURSOR_BACKEND_URL` above stays what it is, Cursor's origin, which the sharing environment refuses. */
 export const DEFAULT_SAND_BACKEND_URL = "https://api.simeonlabs.com";
 export const PROD_AUTH_CLIENT_ID = "KbZUR41cY7W6zRSdpSUJ7I7mLYBKOCmB";
 export const DEV_AUTH_CLIENT_ID = "OzaBXLClY5CAGxNzUhQ2vlknpi07tGuE";
@@ -38,7 +38,7 @@ export function getAccessTokenExpiryMs(token: string): number | null {
 }
 
 export function getConfiguredBackendUrl(env: NodeJS.ProcessEnv = process.env): string {
-  return new URL(env.SAND_BACKEND_URL ?? env.CURSOR_API_BASE_URL ?? DEFAULT_SAND_BACKEND_URL).toString();
+  return new URL(env.SAND_BACKEND_URL ?? env.SIMEON_API_BASE_URL ?? DEFAULT_SAND_BACKEND_URL).toString();
 }
 
 export function getAuthClientId(backendUrl: string, env: NodeJS.ProcessEnv = process.env): string {

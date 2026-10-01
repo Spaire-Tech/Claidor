@@ -1,4 +1,4 @@
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 
 // Client-side mirror of the backend's OrganizationStorefrontSettings
 // defaults. The generated OpenAPI type marks every defaulted field as

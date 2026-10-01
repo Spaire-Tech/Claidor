@@ -6,10 +6,10 @@ import {
   useDeleteOAuthClient,
   useUpdateOAuth2Client,
 } from '@/hooks/queries/oauth'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { ShadowBoxOnMd } from '@claidor/ui/components/atoms/ShadowBox'
-import { Form } from '@claidor/ui/components/ui/form'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { ShadowBoxOnMd } from '@simeon/ui/components/atoms/ShadowBox'
+import { Form } from '@simeon/ui/components/ui/form'
 import { useCallback, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import {
@@ -146,7 +146,7 @@ export const EditOAuthClientModal = ({
                   <h3 className="font-medium text-gray-950">
                     Delete OAuth Application
                   </h3>
-                  <p className=" text-sm text-gray-500">
+                  <p className="text-sm text-gray-500">
                     This action will delete the OAuth Application configuration
                     permanently
                   </p>

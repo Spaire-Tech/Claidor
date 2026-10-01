@@ -1,6 +1,6 @@
 // Vendor connectors as the MCP manager's account rows (24 September 2026).
 // The manager lists servers from an "account servers" provider, which was
-// Cursor's dashboard; Claidor serves none, so the answer is empty or
+// Cursor's dashboard; Simeon serves none, so the answer is empty or
 // unavailable. These rows sit beside it: one per installed live vendor
 // connector, with the vendor's endpoint as its HTTP config and one account
 // slot whose `hasToken` is whether a credential is held. Everything after

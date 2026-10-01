@@ -119,7 +119,7 @@ interface SelfSummaryRawResult {
   readonly text: string;
 }
 
-const logger = createLogger("@anysphere/agent");
+const logger = createLogger("@sand/agent");
 const TRANSIENT_SELF_SUMMARY_RETRY_DELAY_MS = 2_000;
 const TOOL_MESSAGE_DROP_THRESHOLD = 0.25;
 const selfSummaryInputTokens = createHistogram("self_summary.input_token", {

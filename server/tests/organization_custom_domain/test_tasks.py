@@ -1,7 +1,7 @@
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.organization_custom_domain.tasks import (
+from simeon.organization_custom_domain.tasks import (
     custom_domain_deprovision,
     custom_domain_provision,
 )
@@ -13,10 +13,10 @@ class TestProvisioningTasks:
         self, mocker: MockerFixture
     ) -> None:
         add_domain_mock = mocker.patch(
-            "polar.organization_custom_domain.tasks.vercel_domains.add_domain"
+            "simeon.organization_custom_domain.tasks.vercel_domains.add_domain"
         )
         mocker.patch(
-            "polar.organization_custom_domain.tasks.vercel_domains.is_configured",
+            "simeon.organization_custom_domain.tasks.vercel_domains.is_configured",
             return_value=False,
         )
 
@@ -26,10 +26,10 @@ class TestProvisioningTasks:
 
     async def test_provision_attaches_domain(self, mocker: MockerFixture) -> None:
         add_domain_mock = mocker.patch(
-            "polar.organization_custom_domain.tasks.vercel_domains.add_domain"
+            "simeon.organization_custom_domain.tasks.vercel_domains.add_domain"
         )
         mocker.patch(
-            "polar.organization_custom_domain.tasks.vercel_domains.is_configured",
+            "simeon.organization_custom_domain.tasks.vercel_domains.is_configured",
             return_value=True,
         )
 
@@ -39,10 +39,10 @@ class TestProvisioningTasks:
 
     async def test_deprovision_detaches_domain(self, mocker: MockerFixture) -> None:
         remove_domain_mock = mocker.patch(
-            "polar.organization_custom_domain.tasks.vercel_domains.remove_domain"
+            "simeon.organization_custom_domain.tasks.vercel_domains.remove_domain"
         )
         mocker.patch(
-            "polar.organization_custom_domain.tasks.vercel_domains.is_configured",
+            "simeon.organization_custom_domain.tasks.vercel_domains.is_configured",
             return_value=True,
         )
 

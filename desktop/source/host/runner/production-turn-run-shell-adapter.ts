@@ -81,8 +81,7 @@ export interface ProductionTurnRunShellAdapterInput {
   // the narrative reads, and the predicate that says an exchange is worth
   // remembering. Until 25 September 2026 the adapter's host carried none of
   // them, so turn-settle's shouldRemember was false on every production
-  // turn and nothing was ever remembered from conversation
-  // (docs/product/design-audit-ledger.md F-019, F-059, F-060).
+  // turn and nothing was ever remembered from conversation.
   readonly memoryStore?: TurnRunShellHost["memoryStore"];
   readonly episodeProgress?: TurnRunShellHost["episodeProgress"];
   readonly isMemorableExchange?: TurnRunShellHost["isMemorableExchange"];

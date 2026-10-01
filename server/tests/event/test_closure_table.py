@@ -1,11 +1,11 @@
 import pytest
 from sqlalchemy import func, select
 
-from polar.auth.models import AuthSubject
-from polar.event.schemas import EventCreateExternalCustomer, EventsIngest
-from polar.event.service import event as event_service
-from polar.kit.db.postgres import AsyncSession
-from polar.models import Event, EventClosure, Organization
+from simeon.auth.models import AuthSubject
+from simeon.event.schemas import EventCreateExternalCustomer, EventsIngest
+from simeon.event.service import event as event_service
+from simeon.kit.db.postgres import AsyncSession
+from simeon.models import Event, EventClosure, Organization
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (

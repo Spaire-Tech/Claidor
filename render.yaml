@@ -41,6 +41,16 @@ services:
       - key: CLAIDOR_MATY_RUNNER_TOKEN
         sync: false
 
+      # Voice calls (simeon/desktop/voice.py, docs/services-agents.md).
+      # ElevenLabs Agents: the API mints one conversation token per call
+      # with this key and the app never holds it. Only the API reads it,
+      # so it is here and not in claidor-shared: the worker has no use
+      # for it. Unset, the call routes answer 503 "Voice calls are not
+      # switched on on this server." Written with the SIMEON_ prefix,
+      # which the settings read first (the CLAIDOR_ spelling still works).
+      - key: SIMEON_ELEVENLABS_API_KEY
+        sync: false
+
       # --- database (Render-managed, Claidor's own) ---
       - key: CLAIDOR_POSTGRES_HOST
         fromDatabase: { name: claidor-postgres, property: host }
@@ -79,7 +89,7 @@ services:
     dockerContext: ./server
     plan: starter
     autoDeploy: true
-    dockerCommand: uv run dramatiq -p 2 -t 4 -f polar.worker.scheduler:start polar.worker.run
+    dockerCommand: uv run dramatiq -p 2 -t 4 -f simeon.worker.scheduler:start simeon.worker.run
     envVarGroups:
       - claidor-shared
     envVars:
@@ -114,34 +124,17 @@ services:
       - key: CLAIDOR_REDIS_PORT
         fromService: { name: claidor-redis, type: keyvalue, property: port }
 
-  # The cloud runner for Maties (docs/maties/cloud.md, section 4): it takes
-  # one job at a time off /maty/runner/claim, runs one model turn over the
-  # person's memory and the conversation through the API's metered proxy
-  # (`runner/src/engine.ts`; the OpenClaw engine left it on 25 September
-  # 2026) and reports the answer back. It is a worker, not a web service —
-  # nothing calls it, it calls us — so it has no port and no health check
-  # path.
-  #
-  # Built by Render from the repository like every other service here
-  # (the `type: worker` entry below, `runtime: docker`). The paragraphs that
-  # stood here until 26 September 2026 described the GHCR image GitHub
-  # Actions built with the engine and the desktop's patches, the manual
-  # "Deploy latest reference" step and the private-registry credential;
-  # none of that is in the path any more (`.github/workflows/runner_image.yml`
-  # is a by-hand publish that nothing consumes; ledger F-456).
-  #
-  # It touches neither the database nor Redis: everything it needs it asks
-  # the API for, and the only lasting credential it holds is its own
-  # service token. The person's own token is minted per job and dies with
-  # the lease.
+  # The cloud runner (`runner/`): it takes one job at a time off
+  # /maty/runner/claim, runs one model turn over the person's memory and the
+  # conversation through the API's metered proxy, and reports the answer
+  # back. It is a worker, not a web service (nothing calls it, it calls us),
+  # so it has no port and no health check path. It touches neither the
+  # database nor Redis; its only lasting credential is its own service token,
+  # and the person's token is minted per job and dies with the lease.
   - type: worker
     name: claidor-maty-runner
-    # Built by Render from the repository, like the API and the worker
-    # (25 September 2026). Until then the image came from GHCR, built by
-    # GitHub Actions, because it carried the OpenClaw engine and Render's
-    # build machine could not finish that build; the engine is gone from
-    # the runner (`runner/src/engine.ts`) and the image is a plain Node
-    # build again. The Dockerfile's context is the repository root.
+    # Built by Render from the repository, like the API and the worker.
+    # The Dockerfile's context is the repository root.
     runtime: docker
     repo: https://github.com/Spaire-Tech/Claidor
     branch: main
@@ -236,7 +229,7 @@ envVarGroups:
       # Composio carries most of the Apps cards. The key lives here and
       # nowhere else: the app never holds one ("my users should never put
       # a key. everything happens under the hood. not a setting."), and
-      # `polar/desktop/composio.py` is the only reader. Unset, every one
+      # `simeon/desktop/composio.py` is the only reader. Unset, every one
       # of the six proxied calls is refused here in a few milliseconds
       # with 503 "Apps are not configured on this server." — Composio is
       # never reached, and in the app every Connect and every Install

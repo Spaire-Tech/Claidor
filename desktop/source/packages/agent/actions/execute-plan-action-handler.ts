@@ -44,7 +44,7 @@ import { AbstractUserMessageActionHandler } from "./user-message-action/abstract
 
 type Any = any;
 
-const logger64 = createLogger("@anysphere/agent:execute-plan");
+const logger64 = createLogger("@sand/agent:execute-plan");
 
 function userMessagePlainText(message: Any): string | undefined {
   const content = message.content;

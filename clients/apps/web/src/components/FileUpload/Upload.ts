@@ -1,5 +1,5 @@
 import { api } from '@/utils/client'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { createSHA256 } from 'hash-wasm'
 
 const CHUNK_SIZE = 10000000 // 10MB
@@ -10,14 +10,19 @@ const CHUNK_SIZE = 10000000 // 10MB
  * Hand-maintained against the API, so it drifts silently: a variant added
  * server-side is one this union does not know about, and nothing says so
  * until the generated client catches up and the assignment stops
- * compiling. That is exactly how `DossierDocumentFileRead` came to be
- * missing — added months ago, invisible until the client was regenerated.
+ * compiling.
  *
  * Declared once, here, and imported everywhere else. It used to be copied
  * into `hooks/queries/files.ts` too, which is a second place to forget.
  */
+/** A retired type (stored value "dossier_document") can be read, never uploaded. */
+export type UploadableFileService = Exclude<
+  schemas['FileServiceTypes'],
+  'dossier_document'
+>
+
 export type FileRead =
-  | schemas['DossierDocumentFileRead']
+  | schemas['ArchivedDocumentFileRead']
   | schemas['DownloadableFileRead']
   | schemas['ProductMediaFileRead']
   | schemas['OrganizationAvatarFileRead']
@@ -26,7 +31,7 @@ export type FileRead =
 
 interface UploadProperties {
   organization: schemas['Organization']
-  service: schemas['FileServiceTypes']
+  service: UploadableFileService
   file: File
   onFileProcessing: (tempId: string, file: File) => void
   onFileCreate: (tempId: string, response: schemas['FileUpload']) => void
@@ -37,7 +42,7 @@ interface UploadProperties {
 
 export class Upload {
   organization: schemas['Organization']
-  service: schemas['FileServiceTypes']
+  service: UploadableFileService
   file: File
   tempId: string
   onFileProcessing: (tempId: string, file: File) => void

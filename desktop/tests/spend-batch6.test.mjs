@@ -38,7 +38,7 @@ test("the search call carries a client deadline and the server's searches count"
       calls.push({ url: String(url), init });
       return new Response(JSON.stringify({ answer: "Paris.", documents: [{ url: "https://example.org/paris", title: "Paris", text: "Paris is the capital." }], searches: 0 }), { status: 200, headers: { "content-type": "application/json" } });
     };
-    const search = loaded.module.createClaidorWebSearchService({ getAccessToken: async () => "claidor_da_x", backendUrl: "https://api.simeonlabs.com", fetch: fetchImpl });
+    const search = loaded.module.createSimeonWebSearchService({ getAccessToken: async () => "simeon_da_x", backendUrl: "https://api.simeonlabs.com", fetch: fetchImpl });
     const answer = await search({}, { searchTerm: "capital of France" });
     assert.equal(answer.answer, "Paris.");
     assert.equal(answer.searches, 0);
@@ -60,7 +60,7 @@ test("the escape-hatch turn runs under the hidden budget and the routed runner s
   const session = await read("source/host/extensions/inference/provider-session.ts");
   assert.match(session, /readonly budget\?: ModelCallBudget;\n\}\): Promise<string> \{/);
   assert.match(session, /if \(options\?\.budget != null\) spendModelCall\(options\.budget\);/);
-  assert.match(session, /claidorReasoningEffortForSession\(options\), options\?\.budget\)/);
+  assert.match(session, /simeonReasoningEffortForSession\(options\), options\?\.budget\)/);
 });
 
 test("the avatar asks for low quality, the image service passes usage through, and the result says to attach the file", async () => {

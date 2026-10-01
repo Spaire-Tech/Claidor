@@ -1,19 +1,19 @@
 'use client'
 
 import { CONFIG } from '@/utils/config'
-import Button from '@claidor/ui/components/atoms/Button'
+import Button from '@simeon/ui/components/atoms/Button'
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
-} from '@claidor/ui/components/atoms/InputOTP'
+} from '@simeon/ui/components/atoms/InputOTP'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 
@@ -85,7 +85,7 @@ const ClientPage = ({
                         <InputOTPSlot
                           key={index}
                           index={index}
-                          className=" h-12 w-12 border-gray-300 text-xl md:h-16 md:w-16 md:text-2xl"
+                          className="h-12 w-12 border-gray-300 text-xl md:h-16 md:w-16 md:text-2xl"
                         />
                       ))}
                     </InputOTPGroup>

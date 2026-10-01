@@ -1,11 +1,11 @@
 import { useMetrics } from '@/hooks/queries'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
-import Button from '@claidor/ui/components/atoms/Button'
+import Button from '@simeon/ui/components/atoms/Button'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@claidor/ui/components/ui/tooltip'
+} from '@simeon/ui/components/ui/tooltip'
 import {
   addMonths,
   endOfMonth,
@@ -62,7 +62,7 @@ export const MonthWidget = ({ className }: MonthWidgetProps) => {
   return (
     <div
       className={twMerge(
-        ' flex w-full flex-col rounded-4xl bg-gray-50 p-2 text-black',
+        'flex w-full flex-col rounded-4xl bg-gray-50 p-2 text-black',
         className,
       )}
     >
@@ -101,11 +101,13 @@ export const MonthWidget = ({ className }: MonthWidgetProps) => {
             })}
           </h3>
           <span className="text-lg">
-            {orderMetrics.data?.totals.orders === 1 ? 'Transaction' : 'Transactions'}
+            {orderMetrics.data?.totals.orders === 1
+              ? 'Transaction'
+              : 'Transactions'}
           </span>
         </div>
       </div>
-      <div className=" flex min-h-[300px] flex-col gap-y-4 rounded-3xl bg-white px-2 py-4">
+      <div className="flex min-h-[300px] flex-col gap-y-4 rounded-3xl bg-white px-2 py-4">
         {orderMetrics.isLoading ? (
           <div className="flex h-full w-full items-center justify-center">
             <Spinner />
@@ -114,10 +116,7 @@ export const MonthWidget = ({ className }: MonthWidgetProps) => {
           <>
             <div className="grid grid-cols-7 justify-items-center">
               {weekDays.map((day, index) => (
-                <div
-                  key={day + index}
-                  className=" text-sm text-gray-500"
-                >
+                <div key={day + index} className="text-sm text-gray-500">
                   {day}
                 </div>
               ))}
@@ -142,10 +141,8 @@ export const MonthWidget = ({ className }: MonthWidgetProps) => {
                       <TooltipTrigger
                         className={twMerge(
                           'relative flex h-8 w-8 items-center justify-center rounded-full text-sm',
-                          day.orders > 0 &&
-                            ' bg-gray-300 text-gray-500',
-                          isToday(day.timestamp) &&
-                            'bg-blue text-white ',
+                          day.orders > 0 && 'bg-gray-300 text-gray-500',
+                          isToday(day.timestamp) && 'bg-blue text-white',
                           isPreviousDay && '',
                         )}
                       >
@@ -160,14 +157,14 @@ export const MonthWidget = ({ className }: MonthWidgetProps) => {
                         ) : (
                           <div
                             className={twMerge(
-                              ' relative flex h-full w-full items-center justify-center overflow-hidden rounded-full border-2 text-sm text-gray-200',
+                              'relative flex h-full w-full items-center justify-center overflow-hidden rounded-full border-2 text-sm text-gray-200',
                               isToday(day.timestamp)
                                 ? 'border-blue'
-                                : ' border-gray-200',
+                                : 'border-gray-200',
                             )}
                           >
                             {day.orders === 0 && isPreviousDay ? (
-                              <span className=" h-1 w-1 rounded-full bg-gray-200" />
+                              <span className="h-1 w-1 rounded-full bg-gray-200" />
                             ) : isToday(day.timestamp) ? (
                               <span className="text-white">
                                 {day.orders.toLocaleString('en-US', {
@@ -181,7 +178,7 @@ export const MonthWidget = ({ className }: MonthWidgetProps) => {
                         )}
                       </TooltipTrigger>
                       <TooltipContent className="flex flex-col gap-1">
-                        <span className=" text-sm text-gray-500">
+                        <span className="text-sm text-gray-500">
                           {new Date(day.timestamp).toLocaleString('default', {
                             day: 'numeric',
                             month: 'short',

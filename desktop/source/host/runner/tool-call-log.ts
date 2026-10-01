@@ -2,7 +2,7 @@ import { clipForHostLog, HOST_LOG_PREFIX } from "../../shared/host-log.js";
 import { redactSandAutoReviewInlineSecrets } from "../../shared/sand-auto-review-redact.js";
 
 // One line per completed tool call in the host log. The model-call line
-// (`[claidor] model=… tools=SendMessage(…)`) says what the model asked for;
+// (`[simeon] model=… tools=SendMessage(…)`) says what the model asked for;
 // this line says what the tool answered, which is what the model reads next.
 // Until 23 September 2026 the only record of a tool result was inside the
 // loop's own logger, and the box silences that logger, so a SendMessage that

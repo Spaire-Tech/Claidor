@@ -29,10 +29,10 @@ const bob = { id: "b", name: "Bob", description: "design" };
 const cara = { id: "c", name: "Cara", description: "legal" };
 const members = [alice, bob, cara];
 
-test("a group text reaches every member, Grok Bot's rounds (restored 28 September 2026)", async () => {
+test("a group text reaches every member, the upstream app's rounds (restored 28 September 2026)", async () => {
   // 19 September (f278ec79) cut rooms to one Luna speaker with no tools and
   // the member's job description as its only identity; every member then
-  // answered "hi" by reciting that description. Grok Bot's own room is back.
+  // answered "hi" by reciting that description. The upstream app's own room is back.
   const loaded = await load("source/host/groups/group-chat.ts", "group-chat");
   try {
     const { GROUP_MAX_ROUNDS, buildGroupMemberSystemPrompt, buildGroupTurnPrompt, resolveResponders } = loaded.module;
@@ -55,40 +55,40 @@ test("a group text reaches every member, Grok Bot's rounds (restored 28 Septembe
 
 test("machinery sessions stay on Luna; unknown Cursor model ids cannot steal Terra", async () => {
   const loaded = await load("source/host/extensions/inference/provider-session.ts", "provider-session");
-  const previousModel = process.env.SAND_CLAIDOR_MODEL;
-  const previousCheap = process.env.SAND_CLAIDOR_CHEAP_MODEL;
+  const previousModel = process.env.SAND_SIMEON_MODEL;
+  const previousCheap = process.env.SAND_SIMEON_CHEAP_MODEL;
   try {
-    delete process.env.SAND_CLAIDOR_MODEL;
-    delete process.env.SAND_CLAIDOR_CHEAP_MODEL;
+    delete process.env.SAND_SIMEON_MODEL;
+    delete process.env.SAND_SIMEON_CHEAP_MODEL;
     const {
-      DEFAULT_CLAIDOR_MODEL,
-      DEFAULT_CLAIDOR_CHEAP_MODEL,
-      CLAIDOR_WORKING_CONTEXT_TOKENS,
-      claidorModelForSession,
+      DEFAULT_SIMEON_MODEL,
+      DEFAULT_SIMEON_CHEAP_MODEL,
+      SIMEON_WORKING_CONTEXT_TOKENS,
+      simeonModelForSession,
       createProviderPromptSession,
-      isConfiguredClaidorModelId,
+      isConfiguredSimeonModelId,
     } = loaded.module;
-    assert.equal(DEFAULT_CLAIDOR_MODEL, "gpt-6-sol");
-    assert.equal(DEFAULT_CLAIDOR_CHEAP_MODEL, "gpt-6-luna");
-    assert.equal(CLAIDOR_WORKING_CONTEXT_TOKENS, 200_000);
-    assert.equal(claidorModelForSession(), "gpt-6-sol");
-    assert.equal(claidorModelForSession({ cheap: true }), "gpt-6-luna");
-    assert.equal(claidorModelForSession({ isSummarizationSession: true, modelId: "gemini-2.5-flash" }), "gpt-6-luna");
-    assert.equal(claidorModelForSession({ isComputerUseSubagent: true }), "gpt-6-luna");
-    assert.equal(claidorModelForSession({ isBrowserUseSubagent: true }), "gpt-6-luna");
-    assert.equal(claidorModelForSession({ model: "gpt-6-luna" }), "gpt-6-luna");
-    assert.equal(claidorModelForSession({ modelId: "gpt-6-luna" }), "gpt-6-luna");
-    assert.equal(claidorModelForSession({ modelId: "grok-4.5" }), "gpt-6-sol");
-    assert.equal(claidorModelForSession({ model: "gemini-2.5-flash", cheap: true }), "gpt-6-luna");
-    assert.equal(isConfiguredClaidorModelId("gpt-6-luna"), true);
-    assert.equal(isConfiguredClaidorModelId("grok-4.5"), false);
-    assert.equal(createProviderPromptSession("claidor").getModelId(), "gpt-6-sol");
-    assert.equal(createProviderPromptSession("claidor", { cheap: true, isSummarizationSession: true }).getModelId(), "gpt-6-luna");
+    assert.equal(DEFAULT_SIMEON_MODEL, "gpt-6-sol");
+    assert.equal(DEFAULT_SIMEON_CHEAP_MODEL, "gpt-6-luna");
+    assert.equal(SIMEON_WORKING_CONTEXT_TOKENS, 200_000);
+    assert.equal(simeonModelForSession(), "gpt-6-sol");
+    assert.equal(simeonModelForSession({ cheap: true }), "gpt-6-luna");
+    assert.equal(simeonModelForSession({ isSummarizationSession: true, modelId: "gemini-2.5-flash" }), "gpt-6-luna");
+    assert.equal(simeonModelForSession({ isComputerUseSubagent: true }), "gpt-6-luna");
+    assert.equal(simeonModelForSession({ isBrowserUseSubagent: true }), "gpt-6-luna");
+    assert.equal(simeonModelForSession({ model: "gpt-6-luna" }), "gpt-6-luna");
+    assert.equal(simeonModelForSession({ modelId: "gpt-6-luna" }), "gpt-6-luna");
+    assert.equal(simeonModelForSession({ modelId: "grok-4.5" }), "gpt-6-sol");
+    assert.equal(simeonModelForSession({ model: "gemini-2.5-flash", cheap: true }), "gpt-6-luna");
+    assert.equal(isConfiguredSimeonModelId("gpt-6-luna"), true);
+    assert.equal(isConfiguredSimeonModelId("grok-4.5"), false);
+    assert.equal(createProviderPromptSession("simeon").getModelId(), "gpt-6-sol");
+    assert.equal(createProviderPromptSession("simeon", { cheap: true, isSummarizationSession: true }).getModelId(), "gpt-6-luna");
   } finally {
-    if (previousModel === undefined) delete process.env.SAND_CLAIDOR_MODEL;
-    else process.env.SAND_CLAIDOR_MODEL = previousModel;
-    if (previousCheap === undefined) delete process.env.SAND_CLAIDOR_CHEAP_MODEL;
-    else process.env.SAND_CLAIDOR_CHEAP_MODEL = previousCheap;
+    if (previousModel === undefined) delete process.env.SAND_SIMEON_MODEL;
+    else process.env.SAND_SIMEON_MODEL = previousModel;
+    if (previousCheap === undefined) delete process.env.SAND_SIMEON_CHEAP_MODEL;
+    else process.env.SAND_SIMEON_CHEAP_MODEL = previousCheap;
     await loaded.dispose();
   }
 });
@@ -101,7 +101,7 @@ test("the turn's model id reaches the executor through the owner input (24 Septe
   assert.match(composition, /onRequestId: requestIdForwarder\(hooks, "agent"\),\n(?:\s*\/\/.*\n)*\s*modelId: staticModelId,/);
 });
 
-test("local group turns run each member's own agent runner, as Grok Bot does", async () => {
+test("local group turns run each member's own agent runner, as the upstream app does", async () => {
   const glue = await readFile(path.join(repoRoot, "source/host/extensions/transcript/group-chat-glue.ts"), "utf8");
   const orchestrator = await readFile(path.join(repoRoot, "source/host/extensions/transcript/group-chat-orchestrator.ts"), "utf8");
   assert.match(glue, /pinMemberSessionForGroupTurn/);

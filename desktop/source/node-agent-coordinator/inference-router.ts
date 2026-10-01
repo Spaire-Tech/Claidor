@@ -5,24 +5,25 @@ import { basename, dirname, join } from "node:path";
 import { runRoutedProviderText } from "../host/extensions/inference/provider-session.js";
 import { resolveSandAgentStepCap } from "../shared/inference/turn-step-budget.js";
 import {
+  normalizeSandInferenceProvider,
   resolveProductInferenceProvider,
-  routesClaidorThroughHost,
-  SAND_CLAIDOR_FULL_AGENT_ENV,
+  routesSimeonThroughHost,
+  SAND_SIMEON_FULL_AGENT_ENV,
   SAND_INFERENCE_PROVIDERS,
   type SandInferenceProvider,
 } from "../shared/inference-router.js";
 import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
 import {
   asRecord,
-  executeGrokBotTool,
-  GROK_BOT_TOOLS,
-  isGrokBotHostToolName,
-  isGrokBotToolName,
+  executeSandTool,
+  SAND_TOOLS,
+  isSandHostToolName,
+  isSandToolName,
   resolveUserComputerPath,
   stringifyToolResult,
-  type GrokBotToolName,
-} from "../shared/grok-bot-tools.js";
-import { chatMessageFromTranscriptEntry, mergeHostAndLocalChatHistory } from "../shared/grok-bot-transcript.js";
+  type SandToolName,
+} from "../shared/sand-tools.js";
+import { chatMessageFromTranscriptEntry, mergeHostAndLocalChatHistory } from "../shared/sand-transcript.js";
 import { SAND_LOCAL_TOOLS_DENIED_MESSAGE } from "../shared/local-tool-permission-machinery.js";
 import {
   buildSandProductSystemPrompt,
@@ -73,9 +74,9 @@ export function parseInferenceRouterTranscriptStore(value: unknown): Store {
     const entries: StoredEntry[] = [];
     for (const raw of rawEntries) {
       const row = asRecord(raw);
-      if (row == null || !STORED_PROVIDERS.includes(String(row.provider)) || !["user", "assistant"].includes(String(row.role)) || typeof row.content !== "string" || typeof row.id !== "string" || typeof row.timestampMs !== "number" || (row.clientNonce !== undefined && typeof row.clientNonce !== "string") || (row.richText !== undefined && typeof row.richText !== "string") || (row.message !== undefined && asRecord(row.message) == null) || (row.respondedValue !== undefined && typeof row.respondedValue !== "string") || (row.hidden !== undefined && row.hidden !== true)) continue;
+      if (row == null || !STORED_PROVIDERS.includes(String(normalizeSandInferenceProvider(row.provider))) || !["user", "assistant"].includes(String(row.role)) || typeof row.content !== "string" || typeof row.id !== "string" || typeof row.timestampMs !== "number" || (row.clientNonce !== undefined && typeof row.clientNonce !== "string") || (row.richText !== undefined && typeof row.richText !== "string") || (row.message !== undefined && asRecord(row.message) == null) || (row.respondedValue !== undefined && typeof row.respondedValue !== "string") || (row.hidden !== undefined && row.hidden !== true)) continue;
       if (row.reactions !== undefined && (!Array.isArray(row.reactions) || row.reactions.some(reaction => asRecord(reaction) == null || typeof asRecord(reaction)!.emoji !== "string" || typeof asRecord(reaction)!.by !== "string"))) continue;
-      entries.push(row as unknown as StoredEntry);
+      entries.push({ ...row, provider: normalizeSandInferenceProvider(row.provider) } as unknown as StoredEntry);
     }
     agents[agentId] = entries.slice(-200);
   }
@@ -88,12 +89,12 @@ export function projectInferenceRouterTranscriptEntry(entry: StoredEntry): Recor
     : { kind: "send-message", id: entry.id, message: entry.message ?? { type: "text", content: entry.content }, timestampMs: entry.timestampMs, ...(entry.respondedValue === undefined ? {} : { respondedValue: entry.respondedValue }), ...(entry.reactions === undefined ? {} : { reactions: entry.reactions }) };
 }
 
-export { SAND_CLAIDOR_FULL_AGENT_ENV, routesClaidorThroughHost };
-// Product turns run Grok Bot's own loop on the host by default
-// (routesClaidorThroughHost): sendPrompt, respondToWidget and every transcript
+export { SAND_SIMEON_FULL_AGENT_ENV, routesSimeonThroughHost };
+// Product turns run the upstream app's own loop on the host by default
+// (routesSimeonThroughHost): sendPrompt, respondToWidget and every transcript
 // read pass straight through to the gateway, whose connect, send and roster
 // deadlines make a cold box fail instead of hang. Everything below the
-// dispatch is the SAND_CLAIDOR_FULL_AGENT=off escape hatch: a text-first turn
+// dispatch is the SAND_SIMEON_FULL_AGENT=off escape hatch: a text-first turn
 // answered on this Mac with a local transcript beside the host's.
 // Optional box reads (transcript tail, roster) must not stall a Mac-local turn
 // while Docker is pulling or the host is waiting for a credential.
@@ -108,7 +109,7 @@ export function createCoordinatorInferenceRouter(options: {
 }) {
   const settings = new SandSettingsStore(join(options.dataDir, "settings.json"));
   const handledLocally = (provider: SandInferenceProvider): provider is Exclude<SandInferenceProvider, "cursor"> =>
-    provider !== "cursor" && !(provider === "claidor" && routesClaidorThroughHost(options.env));
+    provider !== "cursor" && !(provider === "simeon" && routesSimeonThroughHost(options.env));
   const storePath = join(options.dataDir, "inference-router-transcript.json");
   const now = options.now ?? Date.now;
   const queues = new Map<string, Promise<unknown>>();
@@ -306,7 +307,7 @@ export function createCoordinatorInferenceRouter(options: {
       callTool: tool => options.dispatchRemote("executeRoutedMcpTool", { ...tool, agentId }),
     }) : null;
     const directTools = bridge == null ? await remoteOrUndefined("listRoutedMcpTools", {}) : undefined;
-    const tools = [...GROK_BOT_TOOLS, ...(Array.isArray(directTools) ? directTools as Record<string, any>[] : [])];
+    const tools = [...SAND_TOOLS, ...(Array.isArray(directTools) ? directTools as Record<string, any>[] : [])];
     const runHostAgentTool = async (name: string, toolArgs: unknown, toolCallId: string): Promise<unknown> => {
       try {
         return unwrapRoutedResult(await options.dispatchRemote("executeRoutedAgentTool", {
@@ -319,13 +320,13 @@ export function createCoordinatorInferenceRouter(options: {
         return { allowed: false, reason: `Couldn't reach your computer: ${error instanceof Error ? error.message : String(error)}` };
       }
     };
-    const runGrokBotTool = async (name: GrokBotToolName, toolArgs: unknown, toolCallId?: string) => {
+    const runSandTool = async (name: SandToolName, toolArgs: unknown, toolCallId?: string) => {
       const callId = toolCallId?.trim() || randomUUID();
       if (name === "ExternalShell" || name === "ExternalRead" || name === "ExternalAwaitShell") {
         const denied = deniedLocalToolReason(await runHostAgentTool(name, toolArgs, callId));
         if (denied != null) return denied;
         if (name === "ExternalAwaitShell") return "No background command is running on this computer right now.";
-        return await executeGrokBotTool(name, toolArgs, {
+        return await executeSandTool(name, toolArgs, {
           agentId,
           dispatchRemote: options.dispatchRemote,
           emitSendMessage,
@@ -359,13 +360,13 @@ export function createCoordinatorInferenceRouter(options: {
         await writeFile(dest, Buffer.from(bytesBase64, "base64"));
         return `Copied ${boxPath} from your box to ${dest}.`;
       }
-      if (isGrokBotHostToolName(name)) {
+      if (isSandHostToolName(name)) {
         const remote = await runHostAgentTool(name, toolArgs, callId);
         const denied = deniedLocalToolReason(remote);
         if (denied != null) return denied;
         return stringifyToolResult(remote);
       }
-      const result = await executeGrokBotTool(name, toolArgs, {
+      const result = await executeSandTool(name, toolArgs, {
         agentId,
         dispatchRemote: options.dispatchRemote,
         emitSendMessage,
@@ -380,8 +381,8 @@ export function createCoordinatorInferenceRouter(options: {
       budget,
       tools,
       executeTool: async (definition, toolArgs, toolCallId) => {
-        if (typeof definition.name === "string" && isGrokBotToolName(definition.name)) {
-          return await runGrokBotTool(definition.name, toolArgs, toolCallId);
+        if (typeof definition.name === "string" && isSandToolName(definition.name)) {
+          return await runSandTool(definition.name, toolArgs, toolCallId);
         }
         return await options.dispatchRemote("executeRoutedMcpTool", {
           providerIdentifier: definition.providerIdentifier,
@@ -392,9 +393,9 @@ export function createCoordinatorInferenceRouter(options: {
           agentId,
         });
       },
-    } : { budget, mcpServerUrl: bridge.url, tools: GROK_BOT_TOOLS, executeTool: async (definition, toolArgs, toolCallId) => {
-      if (typeof definition.name === "string" && isGrokBotToolName(definition.name)) {
-        return await runGrokBotTool(definition.name, toolArgs, toolCallId);
+    } : { budget, mcpServerUrl: bridge.url, tools: SAND_TOOLS, executeTool: async (definition, toolArgs, toolCallId) => {
+      if (typeof definition.name === "string" && isSandToolName(definition.name)) {
+        return await runSandTool(definition.name, toolArgs, toolCallId);
       }
       return undefined;
     } });

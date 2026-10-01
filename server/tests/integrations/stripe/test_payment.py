@@ -3,18 +3,18 @@ from datetime import timedelta
 import pytest
 from freezegun import freeze_time
 
-from polar.integrations.stripe.payment import handle_failure
-from polar.kit.db.postgres import AsyncSession
-from polar.kit.utils import utc_now
-from polar.models import (
+from simeon.integrations.stripe.payment import handle_failure
+from simeon.kit.db.postgres import AsyncSession
+from simeon.kit.utils import utc_now
+from simeon.models import (
     Customer,
     Product,
     Subscription,
 )
-from polar.models.order import OrderStatus
-from polar.models.subscription import SubscriptionStatus
-from polar.order.repository import OrderRepository
-from polar.subscription.repository import SubscriptionRepository
+from simeon.models.order import OrderStatus
+from simeon.models.subscription import SubscriptionStatus
+from simeon.order.repository import OrderRepository
+from simeon.subscription.repository import SubscriptionRepository
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_order,

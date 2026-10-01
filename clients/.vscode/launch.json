@@ -3,7 +3,7 @@
   "configurations": [
     {
       "command": "pnpm dev",
-      "name": "Polar (clients)",
+      "name": "Simeon (clients)",
       "request": "launch",
       "type": "node-terminal"
     }

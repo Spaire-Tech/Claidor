@@ -12,7 +12,7 @@
  * into the local network; the host log carried tool arguments verbatim;
  * credential files were written with the umask; the exec daemon and the
  * fork router were published on the Mac's loopback with a fixed bearer;
- * and the person still read "Claidor" in sign-in errors.
+ * and the person still read "Simeon" in sign-in errors.
  */
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm, writeFile, stat, mkdir } from "node:fs/promises";
@@ -91,14 +91,14 @@ test("web fetch checks every redirect hop, and the Mac-local hatch is covered by
 test("sign-out forgets the box's credential and stops the box; a 5xx on refresh is not a sign-out", async () => {
   const { module, dispose } = await load("source/electron-main/box/local-docker-host-connector.ts", "local-docker-forget");
   try {
-    const dir = await mkdtemp(path.join(os.tmpdir(), "caisra-forget-"));
+    const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-forget-"));
     const settingsPath = path.join(dir, "settings.json");
     // A plain token file left by a build before 26 September goes too.
     const file = path.join(dir, "local-docker-credential", "inference.json");
     await mkdir(path.dirname(file), { recursive: true });
-    await writeFile(file, JSON.stringify({ accessToken: "claidor_da_x", expiresAtMs: 1 }));
+    await writeFile(file, JSON.stringify({ accessToken: "simeon_da_x", expiresAtMs: 1 }));
     module.configureLocalDockerSecretStorage({ isEncryptionAvailable: () => true, encryptString: (value) => Buffer.from(value).reverse(), decryptString: (value) => Buffer.from(value).reverse().toString() });
-    await module.storeBoxCredential(settingsPath, "claidor_db_y");
+    await module.storeBoxCredential(settingsPath, "simeon_db_y");
     const lines = [];
     await module.forgetInferenceCredential(settingsPath, { log: (line) => lines.push(line) });
     await assert.rejects(() => stat(file), /ENOENT/);
@@ -126,12 +126,30 @@ test("the person's name comes from the profile route, and the person never reads
   const { module, dispose } = await load("source/host/extensions/auth/user-full-name-service.ts", "full-name");
   try {
     assert.equal(module.USER_PROFILE_PATH, "/desktop/api/user/profile");
-    assert.equal(module.fullNameFromProfileBody({ code: 0, data: { nickname: "Bass Fall", email: "b@x" } }), "Bass Fall");
+    // The chosen name, else Google's; never the e-mail-made nickname (1 October 2026).
+    assert.equal(module.fullNameFromProfileBody({ code: 0, data: { nickname: "Bxss Fall", email: "b@x" } }), undefined);
+    assert.equal(module.fullNameFromProfileBody({ code: 0, data: { nickname: "Bxss Fall", name: "Bass Fall" } }), "Bass Fall");
+    assert.equal(module.fullNameFromProfileBody({ code: 0, data: { nickname: "Bxss Fall", name: "Bass Fall", preferredName: "Bass" } }), "Bass");
+    // A name read once is read again after the refresh window, so a rename reaches the agent.
+    let clock = 0, calls = 0, name = "Bass";
+    const token = `x.${Buffer.from(JSON.stringify({ sub: "p1" })).toString("base64url")}.y`;
+    const resolver = module.createSandUserFullNameResolver({ getAccessToken: async () => token, peekAccessToken: () => token, getMachineId: async () => "m", fetchFullName: async () => { calls += 1; return name; }, log: () => {}, now: () => clock });
+    await resolver.refresh();
+    assert.equal(resolver.getUserFullName(), "Bass");
+    name = "Bassy"; clock += module.USER_NAME_REFRESH_MS;
+    assert.equal(resolver.getUserFullName(), "Bass", "the read that notices staleness still answers at once");
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    assert.equal(resolver.getUserFullName(), "Bassy");
+    assert.equal(calls, 2);
     assert.equal(module.fullNameFromProfileBody({ code: 40101, message: "expired" }), undefined);
-    assert.equal(module.fullNameFromProfileBody({ code: 0, data: { nickname: "  " } }), undefined);
+    assert.equal(module.fullNameFromProfileBody({ code: 0, data: { preferredName: "  " } }), undefined);
   } finally {
     await dispose();
   }
+  // The request context reads the name as a value: an `async` wrapper made it a Promise and the agent never had it.
+  const composition = await src("host/host-runner-composition.ts");
+  assert.match(composition, /getUserFullName: \(\) => method\(auth, "getUserFullName"\)\?\.\(\)/);
+  assert.doesNotMatch(composition, /getUserFullName: async/);
   const service = await src("host/extensions/auth/user-full-name-service.ts");
   assert.doesNotMatch(service, /new GetMeRequest|dashboard_connect\.js/);
   for (const [file, gone] of [

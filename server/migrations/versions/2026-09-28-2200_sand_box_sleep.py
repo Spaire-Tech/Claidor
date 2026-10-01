@@ -6,7 +6,7 @@ Create Date: 2026-09-28 22:00:00.000000
 
 `last_active_at` is Grok Bot's `last_active_at_ms` (`TeamMemberSandBoxPod`):
 the last time the box was busy, asked for or woken. `hibernated_at` is
-when the sleeper (`polar.sand.box_tasks`) last stopped it.
+when the sleeper (`simeon.sand.box_tasks`) last stopped it.
 """
 
 import sqlalchemy as sa

@@ -173,7 +173,7 @@ export function createRemoteHostConnector(deps: BrokerDeps, env: NodeJS.ProcessE
   // September 2026 it left out `issueBoxRenewalCredential`, and both
   // production call sites pass a fast path, so the local Docker connector
   // never minted the box's own renewal credential and logged "no box
-  // renewal credential" on every connect (docs/product/cursor-dependencies-map.md §5).
+  // renewal credential" on every connect (docs/services-agents.md §5).
   return {
     connect: createGatewayConnectFastPath(broker, descriptorFastPath),
     recreate: broker.recreate.bind(broker),

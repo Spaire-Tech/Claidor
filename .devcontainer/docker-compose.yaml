@@ -26,9 +26,9 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     environment:
-      POSTGRES_USER: claidor
-      POSTGRES_DB: claidor
-      POSTGRES_PASSWORD: claidor
+      POSTGRES_USER: simeon
+      POSTGRES_DB: simeon
+      POSTGRES_PASSWORD: simeon
 
   ingress:
     image: caddy:2.7

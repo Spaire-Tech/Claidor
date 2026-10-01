@@ -11,7 +11,7 @@ import {
   useUpdateEmailSubscriber,
 } from '@/hooks/queries/emailMarketing'
 import { getServerURL } from '@/utils/api'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { useCallback, useRef, useState } from 'react'
 import './audience.css'
 import {
@@ -95,20 +95,14 @@ export function AudienceTab({
   }
 
   const onDelete = (s: SubscriberRow) => {
-    if (
-      !window.confirm(
-        `Permanently delete ${s.email}? This can't be undone.`,
-      )
-    )
+    if (!window.confirm(`Permanently delete ${s.email}? This can't be undone.`))
       return
-    deleteMutation
-      .mutateAsync(s.id)
-      .catch((err: unknown) =>
-        toast({
-          title: "Couldn't delete subscriber",
-          description: err instanceof Error ? err.message : 'Please try again.',
-        }),
-      )
+    deleteMutation.mutateAsync(s.id).catch((err: unknown) =>
+      toast({
+        title: "Couldn't delete subscriber",
+        description: err instanceof Error ? err.message : 'Please try again.',
+      }),
+    )
   }
 
   const onExport = () =>
@@ -331,7 +325,8 @@ export function AudienceTab({
 
           <div className="a-foot">
             <span>
-              Showing {items.length} of {totalCount.toLocaleString()} subscribers
+              Showing {items.length} of {totalCount.toLocaleString()}{' '}
+              subscribers
             </span>
             <span className="pg">
               <button
@@ -386,7 +381,9 @@ function AddSubscriberSheet({
   const [form, setForm] = useState({ name: '', email: '' })
   const set = (p: Partial<typeof form>) => setForm((f) => ({ ...f, ...p }))
   const valid = /\S+@\S+\.\S+/.test(form.email.trim())
-  const initialChar = form.name.trim() ? form.name.trim()[0].toUpperCase() : null
+  const initialChar = form.name.trim()
+    ? form.name.trim()[0].toUpperCase()
+    : null
   const submit = () => {
     if (!valid || submitting) return
     onSubmit({ name: form.name.trim() || undefined, email: form.email.trim() })
@@ -403,8 +400,8 @@ function AddSubscriberSheet({
           </div>
           <div className="a-sheet-t">Add subscriber</div>
           <div className="a-sheet-s">
-            Add someone to your list by hand. They&apos;ll be marked as a manual,
-            active subscriber.
+            Add someone to your list by hand. They&apos;ll be marked as a
+            manual, active subscriber.
           </div>
         </div>
         <div className="a-sheet-body">

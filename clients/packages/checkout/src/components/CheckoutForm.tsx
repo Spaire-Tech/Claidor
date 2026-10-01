@@ -1,17 +1,14 @@
 'use client'
 
-import { formatCurrency } from '@claidor/currency'
-import { CountryAlpha2Input } from '@spaire/sdk/models/components/addressinput'
-import type { CheckoutConfirmStripe } from '@spaire/sdk/models/components/checkoutconfirmstripe'
-import type { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic'
-import type { CheckoutPublicConfirmed } from '@spaire/sdk/models/components/checkoutpublicconfirmed'
-import type { CheckoutUpdatePublic } from '@spaire/sdk/models/components/checkoutupdatepublic'
-import Button from '@claidor/ui/components/atoms/Button'
-import CountryPicker from '@claidor/ui/components/atoms/CountryPicker'
-import CountryStatePicker from '@claidor/ui/components/atoms/CountryStatePicker'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
-import Input from '@claidor/ui/components/atoms/Input'
-import { Checkbox } from '@claidor/ui/components/ui/checkbox'
+import { formatCurrency } from '@simeon/currency'
+import type { AcceptedLocale } from '@simeon/i18n'
+import { DEFAULT_LOCALE, useTranslations } from '@simeon/i18n'
+import Button from '@simeon/ui/components/atoms/Button'
+import CountryPicker from '@simeon/ui/components/atoms/CountryPicker'
+import CountryStatePicker from '@simeon/ui/components/atoms/CountryStatePicker'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
+import Input from '@simeon/ui/components/atoms/Input'
+import { Checkbox } from '@simeon/ui/components/ui/checkbox'
 import {
   Form,
   FormControl,
@@ -19,9 +16,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
-import { ThemingPresetProps } from '@claidor/ui/hooks/theming'
-import { cn } from '@claidor/ui/lib/utils'
+} from '@simeon/ui/components/ui/form'
+import { ThemingPresetProps } from '@simeon/ui/hooks/theming'
+import { cn } from '@simeon/ui/lib/utils'
+import { CountryAlpha2Input } from '@spaire/sdk/models/components/addressinput'
+import type { CheckoutConfirmStripe } from '@spaire/sdk/models/components/checkoutconfirmstripe'
+import type { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic'
+import type { CheckoutPublicConfirmed } from '@spaire/sdk/models/components/checkoutpublicconfirmed'
+import type { CheckoutUpdatePublic } from '@spaire/sdk/models/components/checkoutupdatepublic'
 import {
   Elements,
   ElementsConsumer,
@@ -39,6 +41,7 @@ import { hasProductCheckout } from '../guards'
 import { useDebouncedCallback } from '../hooks/debounce'
 import { isDisplayedField, isRequiredField } from '../utils/address'
 import { getDiscountDisplay } from '../utils/discount'
+import { convertLocaleToStripeElementLocale } from '../utils/locale'
 import {
   formatRecurringInterval,
   getMeteredPrices,
@@ -48,10 +51,7 @@ import {
 import AmountLabel from './AmountLabel'
 import CustomFieldInput from './CustomFieldInput'
 import MeteredPriceLabel from './MeteredPriceLabel'
-import ClaidorLogo from './ClaidorLogo'
-import type { AcceptedLocale } from '@claidor/i18n'
-import { DEFAULT_LOCALE, useTranslations } from '@claidor/i18n'
-import { convertLocaleToStripeElementLocale } from '../utils/locale'
+import SimeonLogo from './SimeonLogo'
 
 const DetailRow = ({
   title,
@@ -60,7 +60,7 @@ const DetailRow = ({
 }: PropsWithChildren<{ title: string; emphasis?: boolean }>) => {
   return (
     <div
-      className={`flex flex-row items-start justify-between gap-x-8 ${emphasis ? 'font-medium' : ' text-gray-500'}`}
+      className={`flex flex-row items-start justify-between gap-x-8 ${emphasis ? 'font-medium' : 'text-gray-500'}`}
     >
       <span>{title}</span>
       {children}
@@ -345,7 +345,9 @@ const BaseCheckoutForm = ({
     }
 
     if (checkout.isPaymentFormRequired) {
-      return interval ? t('checkout.cta.subscribeNow') : t('checkout.cta.payNow')
+      return interval
+        ? t('checkout.cta.subscribeNow')
+        : t('checkout.cta.payNow')
     }
 
     return t('checkout.cta.getFree')
@@ -449,7 +451,9 @@ const BaseCheckoutForm = ({
                       }}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('checkout.form.businessName')}</FormLabel>
+                          <FormLabel>
+                            {t('checkout.form.businessName')}
+                          </FormLabel>
                           <FormControl>
                             <Input
                               type="text"
@@ -465,7 +469,9 @@ const BaseCheckoutForm = ({
                   )}
 
                   <FormItem>
-                    <FormLabel>{t('checkout.form.billingAddress.label')}</FormLabel>
+                    <FormLabel>
+                      {t('checkout.form.billingAddress.label')}
+                    </FormLabel>
                     {isDisplayedField(checkout.billingAddressFields.line1) && (
                       <FormControl>
                         <FormField
@@ -483,7 +489,9 @@ const BaseCheckoutForm = ({
                               <Input
                                 type="text"
                                 autoComplete="billing address-line1"
-                                placeholder={t('checkout.form.billingAddress.line1')}
+                                placeholder={t(
+                                  'checkout.form.billingAddress.line1',
+                                )}
                                 {...field}
                                 value={field.value || ''}
                               />
@@ -510,7 +518,9 @@ const BaseCheckoutForm = ({
                               <Input
                                 type="text"
                                 autoComplete="billing address-line2"
-                                placeholder={t('checkout.form.billingAddress.line2')}
+                                placeholder={t(
+                                  'checkout.form.billingAddress.line2',
+                                )}
                                 {...field}
                                 value={field.value || ''}
                               />
@@ -544,7 +554,9 @@ const BaseCheckoutForm = ({
                                   <Input
                                     type="text"
                                     autoComplete="billing postal-code"
-                                    placeholder={t('checkout.form.billingAddress.postalCode')}
+                                    placeholder={t(
+                                      'checkout.form.billingAddress.postalCode',
+                                    )}
                                     {...field}
                                     value={field.value || ''}
                                   />
@@ -573,7 +585,9 @@ const BaseCheckoutForm = ({
                                   <Input
                                     type="text"
                                     autoComplete="billing address-level2"
-                                    placeholder={t('checkout.form.billingAddress.city')}
+                                    placeholder={t(
+                                      'checkout.form.billingAddress.city',
+                                    )}
                                     {...field}
                                     value={field.value || ''}
                                   />
@@ -656,7 +670,7 @@ const BaseCheckoutForm = ({
                         <FormItem>
                           <FormLabel className="flex flex-row items-center justify-between">
                             <div>{t('checkout.form.taxId')}</div>
-                            <div className=" text-xs text-gray-500">
+                            <div className="text-xs text-gray-500">
                               {t('checkout.form.optional')}
                             </div>
                           </FormLabel>
@@ -708,7 +722,7 @@ const BaseCheckoutForm = ({
                     <FormItem>
                       <FormLabel className="flex flex-row items-center justify-between">
                         <div>{t('checkout.form.discountCode')}</div>
-                        <div className=" text-xs font-normal text-gray-500">
+                        <div className="text-xs font-normal text-gray-500">
                           {t('checkout.form.optional')}
                         </div>
                       </FormLabel>
@@ -848,7 +862,7 @@ const BaseCheckoutForm = ({
                 {(checkout.trialEnd ||
                   (checkout.activeTrialInterval &&
                     checkout.activeTrialIntervalCount)) && (
-                  <div className=" mt-3 border-t border-gray-300 pt-4">
+                  <div className="mt-3 border-t border-gray-300 pt-4">
                     {checkout.activeTrialInterval &&
                       checkout.activeTrialIntervalCount && (
                         <DetailRow
@@ -859,7 +873,7 @@ const BaseCheckoutForm = ({
                         </DetailRow>
                       )}
                     {checkout.trialEnd && (
-                      <span className=" text-gray-500:w text-sm">
+                      <span className="text-gray-500:w text-sm">
                         Trial ends{' '}
                         <FormattedDateTime
                           datetime={checkout.trialEnd}
@@ -883,9 +897,7 @@ const BaseCheckoutForm = ({
                 {checkoutLabel}
               </Button>
               {loading && loadingLabel && (
-                <p className=" text-sm text-gray-500">
-                  {loadingLabel}
-                </p>
+                <p className="text-sm text-gray-500">{loadingLabel}</p>
               )}
               {disabled && !loading && (
                 <p className="text-sm text-red-500">
@@ -900,17 +912,14 @@ const BaseCheckoutForm = ({
             </div>
           </form>
         </Form>
-        <p className=" text-center text-xs text-gray-500">
-          {t('checkout.footer.merchantOfRecord')}
-        </p>
       </div>
       <a
-        href="https://www.claidorhq.com?utm_source=checkout"
-        className=" flex w-full flex-row items-center justify-center gap-x-3 text-sm text-gray-400"
+        href="https://www.simeonlabs.com?utm_source=checkout"
+        className="flex w-full flex-row items-center justify-center gap-x-3 text-sm text-gray-400"
         target="_blank"
       >
         <span>{t('checkout.footer.poweredBy')}</span>
-        <ClaidorLogo className="h-5" />
+        <SimeonLogo className="h-5" />
       </a>
     </div>
   )

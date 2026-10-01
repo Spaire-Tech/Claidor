@@ -17,7 +17,7 @@ import stripe as stripe_lib
 from alembic import op
 
 # Polar Custom Imports
-from polar.config import settings
+from simeon.config import settings
 
 # revision identifiers, used by Alembic.
 revision = "c4cf133e597c"

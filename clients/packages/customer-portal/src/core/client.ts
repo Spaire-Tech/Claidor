@@ -1,4 +1,4 @@
-import { createClient, type Client } from '@claidor/client'
+import { createClient, type Client } from '@simeon/client'
 import {
   PolarCustomerPortalError,
   RateLimitError,
@@ -24,7 +24,7 @@ export interface PortalClient {
 }
 
 export function createPortalClient(config: PortalClientConfig): PortalClient {
-  const baseUrl = config.baseUrl || 'https://api.polar.sh'
+  const baseUrl = config.baseUrl || 'https://api.simeonlabs.com'
   const client = createClient(baseUrl, config.token)
 
   const request = async <T>(

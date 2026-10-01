@@ -2,7 +2,7 @@
  * Pure geometry helpers for the virtual transcript plane.
  * No React, no DOM — just offsets, prefix sums, and mounted-range math.
  *
- * Golden constants from Grok bundle (index-UbX-y3il.js):
+ * Golden constants from the upstream bundle (index-UbX-y3il.js):
  *   Leading inset:    24 px (SMn=24)
  *   Trailing inset:   12 px (xMn=12)
  *   Overscan rows:     6   (IAn=6)
@@ -54,7 +54,7 @@ export type TranscriptEntryKind =
 
 /**
  * Estimate row height for an entry. Until slice 4 (measure/invalidate),
- * these are static guesses from the Grok bundle constants.
+ * these are static guesses from the upstream bundle constants.
  */
 export function estimateEntryHeightPx(kind: TranscriptEntryKind, hasAttachments?: boolean): number {
   switch (kind) {

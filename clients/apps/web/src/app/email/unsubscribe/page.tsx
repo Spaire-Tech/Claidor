@@ -91,7 +91,7 @@ export default function EmailUnsubscribePage() {
             marginBottom: 24,
           }}
         >
-          claidor
+          simeon
         </div>
 
         {status === 'pending' && (

@@ -5,23 +5,23 @@ import { toast } from '@/components/Toast/use-toast'
 import { useCreateCustomField, useCustomFields } from '@/hooks/queries'
 import ClearOutlined from '@mui/icons-material/ClearOutlined'
 import LockOutlined from '@mui/icons-material/LockOutlined'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
-import { List, ListItem } from '@claidor/ui/components/atoms/List'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
+import { List, ListItem } from '@simeon/ui/components/atoms/List'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
-import Switch from '@claidor/ui/components/atoms/Switch'
+} from '@simeon/ui/components/atoms/Select'
+import Switch from '@simeon/ui/components/atoms/Switch'
 import {
   FormControl,
   FormField,
   FormLabel,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { useMemo, useState } from 'react'
 import { useFieldArray, useFormContext } from 'react-hook-form'
 import { twMerge } from 'tailwind-merge'

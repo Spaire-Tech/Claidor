@@ -1,7 +1,7 @@
 import { projectSandSentryEnvelope } from "./sentry-scrub.gen.js";
 import type { SandSentryPrivacyTier } from "./sentry-privacy-mode.js";
 
-// Grok Bot's Sentry project on metrics.cursor.sh. Nothing in the tree
+// The upstream app's Sentry project on metrics.cursor.sh. Nothing in the tree
 // initialises it, and Simeon reports nowhere; the DSN is empty so that a
 // future caller cannot revive it by accident (ledger F-380).
 export const SAND_SENTRY_DSN = "";

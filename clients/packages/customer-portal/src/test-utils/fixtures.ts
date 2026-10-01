@@ -1,4 +1,4 @@
-import type { schemas } from '@claidor/client'
+import type { schemas } from '@simeon/client'
 
 export type CustomerPortalOrganization =
   schemas['CustomerSubscription']['product']['organization']

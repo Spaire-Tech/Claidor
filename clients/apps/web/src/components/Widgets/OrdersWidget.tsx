@@ -1,15 +1,11 @@
 import { useOrders } from '@/hooks/queries/orders'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import ShoppingCartOutlined from '@mui/icons-material/ShoppingCartOutlined'
-import { schemas } from '@claidor/client'
-import { formatCurrency } from '@claidor/currency'
-import Button from '@claidor/ui/components/atoms/Button'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-} from '@claidor/ui/components/atoms/Card'
-import { Status } from '@claidor/ui/components/atoms/Status'
+import { schemas } from '@simeon/client'
+import { formatCurrency } from '@simeon/currency'
+import Button from '@simeon/ui/components/atoms/Button'
+import { Card, CardContent, CardHeader } from '@simeon/ui/components/atoms/Card'
+import { Status } from '@simeon/ui/components/atoms/Status'
 import Link from 'next/link'
 import { useContext } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -46,10 +42,10 @@ const OrderCard = ({ className, order }: OrderCardProps) => {
     <Card
       className={twMerge(
         className,
-        ' flex flex-col gap-y-1 rounded-2xl border-none bg-white transition-opacity hover:opacity-60',
+        'flex flex-col gap-y-1 rounded-2xl border-none bg-white transition-opacity hover:opacity-60',
       )}
     >
-      <CardHeader className=" flex flex-row items-baseline justify-between bg-transparent p-4 pt-2 pb-0 text-sm text-gray-400">
+      <CardHeader className="flex flex-row items-baseline justify-between bg-transparent p-4 pt-2 pb-0 text-sm text-gray-400">
         <span>{displayDate}</span>
         <Status
           className={twMerge(
@@ -79,12 +75,7 @@ export const OrdersWidget = ({ className }: OrdersWidgetProps) => {
   const orders = useOrders(org.id, { limit: 10, sorting: ['-created_at'] })
 
   return (
-    <div
-      className={twMerge(
-        ' rounded-4xl bg-gray-50 p-2',
-        className,
-      )}
-    >
+    <div className={twMerge('rounded-4xl bg-gray-50 p-2', className)}>
       {(orders.data?.items.length ?? 0) > 0 ? (
         <div className="flex flex-col">
           <div className="flex items-center justify-between p-4">
@@ -111,14 +102,13 @@ export const OrdersWidget = ({ className }: OrdersWidgetProps) => {
           </div>
         </div>
       ) : (
-        <Card className=" flex h-full flex-col items-center justify-center gap-y-4 bg-gray-50 p-6 text-center text-gray-400">
-          <ShoppingCartOutlined
-            className=" text-gray-300"
-            fontSize="large"
-          />
+        <Card className="flex h-full flex-col items-center justify-center gap-y-4 bg-gray-50 p-6 text-center text-gray-400">
+          <ShoppingCartOutlined className="text-gray-300" fontSize="large" />
           <div className="flex flex-col gap-y-1">
             <h3 className="font-medium text-gray-700">No transactions yet</h3>
-            <p className="text-sm">Transactions will appear here as customers complete checkouts</p>
+            <p className="text-sm">
+              Transactions will appear here as customers complete checkouts
+            </p>
           </div>
         </Card>
       )}

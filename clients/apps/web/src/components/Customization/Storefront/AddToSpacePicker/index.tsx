@@ -1,7 +1,7 @@
 'use client'
 
 import { Portal } from '@/components/Customization/InlineEdit/Portal'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { useEffect, useState } from 'react'
 import { CatalogTab } from './CatalogTab'
 import { EmbedPickPayload, EmbedTab } from './EmbedTab'

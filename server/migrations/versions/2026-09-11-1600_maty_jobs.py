@@ -7,7 +7,7 @@ Create Date: 2026-09-11 16:00:00.000000
 One new table, `maty_jobs`, and one new nullable column on
 `desktop_sessions`. The column is what makes a job's credential a
 narrowed desktop session rather than a second kind of token: see
-polar/maty/service.py and docs/maties/cloud.md, section 4.
+simeon/maty/service.py and docs/maties/cloud.md, section 4.
 
 Nothing existing changes shape: `maty_jobs` is created first, then the
 nullable column that points at it, so the foreign key has a table to

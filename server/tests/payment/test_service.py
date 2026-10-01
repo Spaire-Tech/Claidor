@@ -1,12 +1,12 @@
 import pytest
 
-from polar.enums import PaymentProcessor
-from polar.models import Customer, Product
-from polar.models.payment import PaymentStatus
-from polar.models.wallet import WalletType
-from polar.payment.service import UnlinkedPaymentError
-from polar.payment.service import payment as payment_service
-from polar.postgres import AsyncSession
+from simeon.enums import PaymentProcessor
+from simeon.models import Customer, Product
+from simeon.models.payment import PaymentStatus
+from simeon.models.wallet import WalletType
+from simeon.payment.service import UnlinkedPaymentError
+from simeon.payment.service import payment as payment_service
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_checkout, create_order, create_wallet
 from tests.fixtures.stripe import build_stripe_charge, build_stripe_payment_intent

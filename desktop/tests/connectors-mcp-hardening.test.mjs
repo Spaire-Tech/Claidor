@@ -29,7 +29,7 @@ async function load(entry, name) {
 
 test("a Cursor Connect client answers Unimplemented at once and sends nothing for a service that is not served", async () => {
   // Since 25 September 2026 the DashboardService is served by default
-  // (polar/sand); "0" is the 24 September behaviour, measured here.
+  // (simeon/sand); "0" is the 24 September behaviour, measured here.
   process.env.SAND_CONNECT_SERVED = "0";
   const { module, dispose } = await load("source/shared/node/cursor-backend/cursor-inference.ts", "cursor-backend-client");
   const proto = await load("source/packages/proto/generated/aiserver/v1/dashboard_connect.ts", "dashboard-connect");
@@ -99,7 +99,7 @@ test("a refresh the vendor refuses for good drops the refresh token, and the too
   assert.match(await src("shared/node/vendor-mcp/box-pull.ts"), /holdUntilMs = now\(\) \+ BOX_STORE_PULL_FAILURE_HOLD_MS/);
   assert.match(await src("shared/node/cursor-backend/account-mcp.ts"), /cacheScope = accessToken\.length === 0 \? "local" : accountCacheScope\(accessToken\)/);
   assert.doesNotMatch(await src("shared/node/mcp/mcp-marketplace.ts"), /fetchPluginServers/);
-  // F-157 is served since 25 September 2026 (`polar/sand/skill_registry.py`,
+  // F-157 is served since 25 September 2026 (`simeon/sand/skill_registry.py`,
   // `tests/skill-publish-served.test.mjs`): a failure shows the server's own
   // sentence, and nothing here says coming soon.
   const skillPublish = await src("host/extensions/mcp/skill-publish.ts");

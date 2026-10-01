@@ -6,15 +6,15 @@ from unittest.mock import AsyncMock, call
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.auth.models import AuthSubject
-from polar.entitlements.exceptions import FeatureNotInPlanError
-from polar.entitlements.tiers import TierKey
-from polar.enums import SubscriptionRecurringInterval
-from polar.exceptions import ClaidorRequestValidationError
-from polar.kit.currency import PresentmentCurrency
-from polar.kit.pagination import PaginationParams
-from polar.kit.trial import TrialInterval
-from polar.models import (
+from simeon.auth.models import AuthSubject
+from simeon.entitlements.exceptions import FeatureNotInPlanError
+from simeon.entitlements.tiers import TierKey
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.exceptions import SimeonRequestValidationError
+from simeon.kit.currency import PresentmentCurrency
+from simeon.kit.pagination import PaginationParams
+from simeon.kit.trial import TrialInterval
+from simeon.models import (
     Benefit,
     File,
     Meter,
@@ -23,15 +23,15 @@ from polar.models import (
     User,
     UserOrganization,
 )
-from polar.models.benefit import BenefitType
-from polar.models.file import FileServiceTypes, ProductMediaFile
-from polar.models.product_price import (
+from simeon.models.benefit import BenefitType
+from simeon.models.file import FileServiceTypes, ProductMediaFile
+from simeon.models.product_price import (
     ProductPriceAmountType,
     ProductPriceFixed,
 )
-from polar.postgres import AsyncSession
-from polar.product.guard import is_metered_price, is_static_price
-from polar.product.schemas import (
+from simeon.postgres import AsyncSession
+from simeon.product.guard import is_metered_price, is_static_price
+from simeon.product.schemas import (
     ExistingProductPrice,
     ProductCreate,
     ProductCreateOneTime,
@@ -45,8 +45,8 @@ from polar.product.schemas import (
     ProductPriceSeatTiers,
     ProductUpdate,
 )
-from polar.product.service import product as product_service
-from polar.product.sorting import ProductSortProperty
+from simeon.product.service import product as product_service
+from simeon.product.sorting import ProductSortProperty
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
@@ -60,7 +60,7 @@ from tests.fixtures.random_objects import (
 
 @pytest.fixture
 def enqueue_job_mock(mocker: MockerFixture) -> AsyncMock:
-    return mocker.patch("polar.product.service.enqueue_job")
+    return mocker.patch("simeon.product.service.enqueue_job")
 
 
 @pytest.mark.asyncio
@@ -349,7 +349,7 @@ class TestCreate:
             ],
         )
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.create(session, create_schema, auth_subject)
 
     @pytest.mark.auth
@@ -372,7 +372,7 @@ class TestCreate:
             ],
         )
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.create(session, create_schema, auth_subject)
 
     @pytest.mark.auth
@@ -448,7 +448,7 @@ class TestCreate:
             ],
         )
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.create(session, create_schema, auth_subject)
 
     @pytest.mark.auth(AuthSubjectFixture(subject="organization"))
@@ -495,7 +495,7 @@ class TestCreate:
             medias=[uuid.uuid4()],
         )
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.create(session, create_schema, auth_subject)
 
     @pytest.mark.auth
@@ -545,7 +545,7 @@ class TestCreate:
             medias=[file.id],
         )
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.create(session, create_schema, auth_subject)
 
     @pytest.mark.auth
@@ -670,7 +670,7 @@ class TestCreate:
         user_organization: UserOrganization,
         meter: Meter,
     ) -> None:
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.create(
                 session,
                 ProductCreateOneTime(
@@ -700,7 +700,7 @@ class TestCreate:
         organization: Organization,
         user_organization: UserOrganization,
     ) -> None:
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.create(
                 session,
                 ProductCreateRecurring(
@@ -728,7 +728,7 @@ class TestCreate:
         user_organization: UserOrganization,
         meter: Meter,
     ) -> None:
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.create(
                 session,
                 ProductCreateOneTime(
@@ -755,7 +755,7 @@ class TestCreate:
         user_organization: UserOrganization,
         meter: Meter,
     ) -> None:
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.create(
                 session,
                 ProductCreateRecurring(
@@ -789,7 +789,7 @@ class TestCreate:
         user_organization: UserOrganization,
     ) -> None:
         """Test that multiple static prices in the same currency are not allowed"""
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.create(
                 session,
                 ProductCreateOneTime(
@@ -821,7 +821,7 @@ class TestCreate:
         meter: Meter,
     ) -> None:
         """Test that each currency must have the same set of prices"""
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.create(
                 session,
                 ProductCreateRecurring(
@@ -861,7 +861,7 @@ class TestCreate:
         meter: Meter,
     ) -> None:
         """Test that the default presentment currency is included in the product prices"""
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.create(
                 session,
                 ProductCreateRecurring(
@@ -980,7 +980,7 @@ class TestUpdateSeatPricingGate:
     ) -> None:
         # `product` has no seat price. Simulate a tier without the feature.
         require_feature = mocker.patch(
-            "polar.product.service.entitlements_service.require_feature",
+            "simeon.product.service.entitlements_service.require_feature",
             side_effect=FeatureNotInPlanError(
                 "seat_based_product_pricing", TierKey.starter
             ),
@@ -1012,7 +1012,7 @@ class TestUpdateSeatPricingGate:
             prices=[("seat", 1000, "usd")],
         )
         require_feature = mocker.patch(
-            "polar.product.service.entitlements_service.require_feature",
+            "simeon.product.service.entitlements_service.require_feature",
         )
 
         update_schema = ProductUpdate(name="Renamed seat product")
@@ -1034,7 +1034,7 @@ class TestUpdate:
         user_organization: UserOrganization,
     ) -> None:
         update_schema = ProductUpdate(prices=[])
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.update(
                 session,
                 product,
@@ -1253,7 +1253,7 @@ class TestUpdate:
         user_organization: UserOrganization,
     ) -> None:
         update_schema = ProductUpdate(medias=[uuid.uuid4()])
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.update(
                 session,
                 product,
@@ -1299,7 +1299,7 @@ class TestUpdate:
         await save_fixture(file)
 
         update_schema = ProductUpdate(medias=[file.id])
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.update(
                 session,
                 product,
@@ -1359,7 +1359,7 @@ class TestUpdate:
             recurring_interval=SubscriptionRecurringInterval.year
         )
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.update(
                 session,
                 product,
@@ -1383,7 +1383,7 @@ class TestUpdate:
         product to a one-time purchase."""
         update_schema = ProductUpdate(recurring_interval=None)
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.update(
                 session,
                 product,
@@ -1404,7 +1404,7 @@ class TestUpdate:
     ) -> None:
         update_schema = ProductUpdate(recurring_interval_count=6)
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.update(
                 session,
                 product,
@@ -1461,7 +1461,7 @@ class TestUpdate:
             ]
         )
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.update(
                 session,
                 product_recurring_monthly_and_yearly,
@@ -1558,7 +1558,7 @@ class TestUpdate:
                 ),
             ]
         )
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.update(
                 session,
                 product,
@@ -1587,7 +1587,7 @@ class TestUpdate:
                 ),
             ]
         )
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.update(
                 session,
                 product,
@@ -1610,7 +1610,7 @@ class TestUpdate:
             trial_interval=TrialInterval.month, trial_interval_count=1
         )
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.update(
                 session,
                 product_one_time,
@@ -1662,7 +1662,7 @@ class TestUpdateBenefits:
         )
         assert len(product.product_benefits) == len(benefits)
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.update_benefits(
                 session,
                 product,
@@ -1869,7 +1869,7 @@ class TestUpdateBenefits:
             properties={"note": None},
         )
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.update_benefits(
                 session,
                 product,
@@ -1905,7 +1905,7 @@ class TestUpdateBenefits:
             benefits=[not_selectable_benefit],
         )
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await product_service.update_benefits(
                 session,
                 product,

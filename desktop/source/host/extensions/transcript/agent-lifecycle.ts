@@ -148,7 +148,7 @@ export class AgentLifecycle {
               ? SAND_DISK_SAVER_KICKSTART_PROMPT
               : SAND_ONBOARDING_KICKSTART_PROMPT;
           // Hidden (nobody asked yet) but under the asked turn's budget:
-          // Grok Bot gave its first message the same 5,000-call cap as any
+          // The upstream app gave its first message the same 5,000-call cap as any
           // turn, and its cue may begin a described assignment at once.
           const result = await runner.run(prompt, { hidden: true, fullStepBudget: true });
           let delivered = result.sentMessageCount > 0;
@@ -159,7 +159,7 @@ export class AgentLifecycle {
             this.tm.upgradeResume.markAgentResumePending(session, "turn");
             session.db.setIntroductionPending(false);
           } else if (!result.aborted) {
-            // One attempt, delivered or not. Grok Bot kept the introduction
+            // One attempt, delivered or not. The upstream app kept the introduction
             // owed until a message landed, so every open of the agent ran
             // the whole first turn again; measured 22 September 2026, that
             // was 481 model calls with nothing on screen. Now the intro
@@ -524,6 +524,9 @@ export class AgentLifecycle {
       name: profile.name.trim(),
       description: profile.description.trim(),
       ...(profile.title === undefined ? {} : { title: profile.title.trim() }),
+      ...(typeof profile.voiceId === "string"
+        ? { voiceId: profile.voiceId.trim() }
+        : {}),
     };
     const stamp = this.tm.roster.reserveSnapshotStamp();
     const active = this.tm.sessions.activeSession;

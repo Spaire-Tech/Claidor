@@ -7,8 +7,8 @@ import { useModal } from '@/components/Modal/useModal'
 import PublicProfileDropdown from '@/components/Navigation/PublicProfileDropdown'
 import Popover from '@/components/Notifications/NotificationsPopover'
 import { usePostHog } from '@/hooks/posthog'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import { usePathname } from 'next/navigation'
 
 const TopbarRight = ({

@@ -10,7 +10,7 @@ import os from "node:os";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function loadStamp() {
-  const dir = await mkdtemp(path.join(os.tmpdir(), "caisra-permission-scope-"));
+  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-permission-scope-"));
   const outfile = path.join(dir, "stamp.mjs");
   await build({ entryPoints: [path.join(repoRoot, "source/node-agent-coordinator/permission-scope-stamp.ts")], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${outfile}?${Date.now()}`);
@@ -83,7 +83,7 @@ test("the coordinator stamps on the way through, and the desktop answers with th
   assert.match(main, /const permissionScopeRevision = Date\.now\(\)/);
   assert.match(main, /command<\{ slot\?: unknown \} \| null>\(commands, "getTranscriptAccountSlot", \{\}\)/);
   assert.match(main, /server\.postEvent\(family, stampTranscriptEvent\(event\.payload, permissionScope\(\)\)\)/);
-  assert.match(main, /stampTranscriptReply\(method, outcome\.value, permissionScope\(\), \{ sortByTimestamp: !routesClaidorThroughHost\(\) \}\)/);
+  assert.match(main, /stampTranscriptReply\(method, outcome\.value, permissionScope\(\), \{ sortByTimestamp: !routesSimeonThroughHost\(\) \}\)/);
   assert.match(executors, /async getTranscriptAccountSlot\(\)/);
   // The same slot rule the renderer applies to its dock.
   assert.match(renderer, /account\.authId \?\? account\.email \?\? "account"/);

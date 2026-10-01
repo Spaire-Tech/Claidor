@@ -1,7 +1,7 @@
 'use client'
 
 import { useProducts } from '@/hooks/queries'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { useFormContext } from 'react-hook-form'
 import { ProfileCard } from '../../Profile/ProfileCard'
 

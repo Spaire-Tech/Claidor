@@ -1,4 +1,4 @@
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import React, { createContext, ReactNode, useContext, useState } from 'react'
 
 interface PayoutContextType {

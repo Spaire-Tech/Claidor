@@ -17,7 +17,7 @@ import stripe as stripe_lib
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-from polar.config import settings
+from simeon.config import settings
 
 # Polar Custom Imports
 

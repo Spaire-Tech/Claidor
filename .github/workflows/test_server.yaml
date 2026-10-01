@@ -120,7 +120,7 @@ jobs:
             if [[ "$file" == server/migrations/* ]]; then
               continue
             fi
-            if [[ "$file" == server/polar/models/* ]]; then
+            if [[ "$file" == server/simeon/models/* ]]; then
               continue
             fi
             if [[ "$file" == .github/* ]]; then
@@ -191,18 +191,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      CLAIDOR_ENV: testing
-      POLAR_EMAIL_RENDERER_BINARY_PATH: ${{ github.workspace }}/server/emails/bin/react-email-pkg
+      SIMEON_ENV: testing
+      SIMEON_EMAIL_RENDERER_BINARY_PATH: ${{ github.workspace }}/server/emails/bin/react-email-pkg
 
     services:
       postgres:
         image: postgres:15.1-bullseye
         env:
-          # Must match .env.testing, which CLAIDOR_ENV=testing makes the
-          # app read. These said polar/polar_test, left over from upstream.
-          POSTGRES_USER: claidor
-          POSTGRES_PASSWORD: claidor
-          POSTGRES_DB: claidor_test
+          # Must match .env.testing, which SIMEON_ENV=testing makes the
+          # app read. These used the upstream project's names.
+          POSTGRES_USER: simeon
+          POSTGRES_PASSWORD: simeon
+          POSTGRES_DB: simeon_test
           POSTGRES_PORT: 5432
         options: >-
           --health-cmd pg_isready
@@ -219,9 +219,9 @@ jobs:
           - 9001:9001
         env:
           # Same reason as postgres above: .env.testing sets
-          # CLAIDOR_MINIO_USER/PWD to these.
-          MINIO_ROOT_USER: claidor
-          MINIO_ROOT_PASSWORD: claidorclaidor
+          # SIMEON_MINIO_USER/PWD to these.
+          MINIO_ROOT_USER: simeon
+          MINIO_ROOT_PASSWORD: simeonsimeon
         options: >-
           --health-cmd "curl -I http://127.0.0.1:9000/minio/health/live"
           --health-interval 10s
@@ -246,15 +246,15 @@ jobs:
         working-directory: ./server/.minio
         env:
           MINIO_HOST: 127.0.0.1
-          MINIO_ROOT_USER: claidor
-          MINIO_ROOT_PASSWORD: claidorclaidor
+          MINIO_ROOT_USER: simeon
+          MINIO_ROOT_PASSWORD: simeonsimeon
           # The app credentials and buckets .env.testing expects. The public
           # bucket is not overridden there, so it is config.py's default.
-          ACCESS_KEY: claidor-development
-          SECRET_ACCESS_KEY: claidor123456789
-          BUCKET_NAME: claidor-s3
-          PUBLIC_BUCKET_NAME: claidor-s3-public
-          BUCKET_TESTING_NAME: testing-claidor-s3
+          ACCESS_KEY: simeon-development
+          SECRET_ACCESS_KEY: simeon123456789
+          BUCKET_NAME: simeon-s3
+          PUBLIC_BUCKET_NAME: simeon-s3-public
+          BUCKET_TESTING_NAME: testing-simeon-s3
         run: bash github.sh
 
       - uses: pnpm/action-setup@v5

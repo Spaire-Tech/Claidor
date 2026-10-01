@@ -4,7 +4,7 @@ Revision ID: desktop_sign_in_0909
 Revises: house_rules_materiality_0901
 Create Date: 2026-09-09 03:00:00.000000
 
-Three new tables and nothing else touched. See polar/models/desktop.py.
+Three new tables and nothing else touched. See simeon/models/desktop.py.
 """
 
 import sqlalchemy as sa

@@ -22,7 +22,7 @@ export async function generateMetadata(props: {
   )
 
   return {
-    title: `Student Portal | ${organization.name}`, // " | Polar is added by the template"
+    title: `Student Portal | ${organization.name}`, // " | Simeon is added by the template"
     openGraph: {
       title: `Student Portal | ${organization.name} on Simeon`,
       description: `Student Portal | ${organization.name} on Simeon`,
@@ -30,7 +30,7 @@ export async function generateMetadata(props: {
       type: 'website',
       images: [
         {
-          url: `https://claidorhq.com/og?org=${organization.slug}`,
+          url: `https://simeonlabs.com/og?org=${organization.slug}`,
           width: 1200,
           height: 630,
         },
@@ -39,7 +39,7 @@ export async function generateMetadata(props: {
     twitter: {
       images: [
         {
-          url: `https://claidorhq.com/og?org=${organization.slug}`,
+          url: `https://simeonlabs.com/og?org=${organization.slug}`,
           width: 1200,
           height: 630,
           alt: `${organization.name}'s masterclasses on Simeon`,

@@ -4,10 +4,10 @@ import {
   useDeletePersonalAccessToken,
   usePersonalAccessTokens,
 } from '@/hooks/queries'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
-import ShadowListGroup from '@claidor/ui/components/atoms/ShadowListGroup'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import FormattedDateTime from '@simeon/ui/components/atoms/FormattedDateTime'
+import ShadowListGroup from '@simeon/ui/components/atoms/ShadowListGroup'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@claidor/ui/components/ui/alert-dialog'
+} from '@simeon/ui/components/ui/alert-dialog'
 import { useCallback } from 'react'
 import { toast } from '../Toast/use-toast'
 
@@ -47,7 +47,7 @@ const AccessToken = (props: schemas['PersonalAccessToken']) => {
         <div className="flex flex-row">
           <div className="gap-y flex flex-col">
             <h3 className="text-md">{props.comment}</h3>
-            <p className=" text-sm text-gray-500">
+            <p className="text-sm text-gray-500">
               {props.expires_at ? (
                 <>
                   Expires on{' '}
@@ -57,9 +57,7 @@ const AccessToken = (props: schemas['PersonalAccessToken']) => {
                   />
                 </>
               ) : (
-                <span className="text-red-500">
-                  Never expires
-                </span>
+                <span className="text-red-500">Never expires</span>
               )}{' '}
               —{' '}
               {props.last_used_at ? (
@@ -76,7 +74,7 @@ const AccessToken = (props: schemas['PersonalAccessToken']) => {
             </p>
           </div>
         </div>{' '}
-        <div className=" flex flex-row items-center gap-x-4 space-x-4 text-gray-500">
+        <div className="flex flex-row items-center gap-x-4 space-x-4 text-gray-500">
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive">Revoke</Button>
@@ -118,7 +116,7 @@ const AccessTokensSettings = () => {
           ))
         ) : (
           <ShadowListGroup.Item>
-            <p className=" text-sm text-gray-500">
+            <p className="text-sm text-gray-500">
               You don&apos;t have any active Personal Access Tokens.
             </p>
           </ShadowListGroup.Item>

@@ -14,7 +14,7 @@
 #   dev/heavy --try uv run ...   # give up immediately if one is running
 set -euo pipefail
 
-LOCK="/tmp/claidor-heavy.lock"
+LOCK="/tmp/simeon-heavy.lock"
 WHO="${LOCK}.who"
 
 impatient=""

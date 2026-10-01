@@ -3,15 +3,15 @@ from uuid import UUID
 import pytest
 from sqlalchemy import func, select
 
-from polar.kit.db.postgres import AsyncSession
-from polar.models import Discount, Organization, ProductBenefit
-from polar.models.benefit import BenefitType
-from polar.models.discount import DiscountDuration, DiscountType
 from scripts.transfer_products_between_organizations import (
     MixedOrganizationError,
     ProductTransferService,
     TransferValidationError,
 )
+from simeon.kit.db.postgres import AsyncSession
+from simeon.models import Discount, Organization, ProductBenefit
+from simeon.models.benefit import BenefitType
+from simeon.models.discount import DiscountDuration, DiscountType
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_benefit,
@@ -469,7 +469,7 @@ class TestProductTransferService:
         )
 
         # Create a discount using the helper function
-        from polar.models.discount import DiscountDuration, DiscountType
+        from simeon.models.discount import DiscountDuration, DiscountType
 
         discount = await create_discount(
             save_fixture,
@@ -518,7 +518,7 @@ class TestProductTransferService:
         )
 
         # Create a discount used by both products (needs splitting)
-        from polar.models.discount import DiscountDuration, DiscountType
+        from simeon.models.discount import DiscountDuration, DiscountType
 
         discount = await create_discount(
             save_fixture,

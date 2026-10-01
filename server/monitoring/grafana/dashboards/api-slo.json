@@ -1780,7 +1780,7 @@
   ],
   "refresh": "30s",
   "schemaVersion": 39,
-  "tags": ["polar", "api", "slo", "sli"],
+  "tags": ["simeon", "api", "slo", "sli"],
   "templating": {
     "list": [
       {
@@ -1895,8 +1895,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Polar API",
-  "uid": "polar-api-slo",
+  "title": "Simeon API",
+  "uid": "simeon-api-slo",
   "version": 1,
   "weekStart": ""
 }

@@ -5,13 +5,13 @@ import pytest
 import pytest_asyncio
 from pytest_mock.plugin import MockerFixture
 
-from polar.auth.models import AuthSubject
-from polar.enums import SubscriptionRecurringInterval
-from polar.exceptions import ClaidorRequestValidationError
-from polar.meter.service import meter as meter_service
-from polar.models import Benefit, Customer, Meter, Organization, Product, Subscription
-from polar.models.benefit import BenefitType
-from polar.postgres import AsyncSession
+from simeon.auth.models import AuthSubject
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.exceptions import SimeonRequestValidationError
+from simeon.meter.service import meter as meter_service
+from simeon.models import Benefit, Customer, Meter, Organization, Product, Subscription
+from simeon.models.benefit import BenefitType
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_active_subscription,
@@ -21,7 +21,7 @@ from tests.fixtures.random_objects import (
 
 @pytest.fixture
 def enqueue_job_mock(mocker: MockerFixture) -> MagicMock:
-    return mocker.patch("polar.meter.service.enqueue_job")
+    return mocker.patch("simeon.meter.service.enqueue_job")
 
 
 @pytest_asyncio.fixture
@@ -71,7 +71,7 @@ class TestMeterArchive:
         auth_subject: AuthSubject[Organization],
     ) -> None:
         # Try to archive meter that's attached to an active product
-        with pytest.raises(ClaidorRequestValidationError) as exc:
+        with pytest.raises(SimeonRequestValidationError) as exc:
             await meter_service.archive(session, meter)
         assert "Cannot archive meter that is still attached to active products" in str(
             exc.value
@@ -114,7 +114,7 @@ class TestMeterArchive:
         await save_fixture(benefit)
 
         # Try to archive meter that's referenced by an active benefit
-        with pytest.raises(ClaidorRequestValidationError) as exc:
+        with pytest.raises(SimeonRequestValidationError) as exc:
             await meter_service.archive(session, meter)
         assert (
             "Cannot archive meter that is still referenced by active benefits"

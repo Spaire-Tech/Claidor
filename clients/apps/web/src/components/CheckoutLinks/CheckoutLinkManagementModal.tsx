@@ -1,6 +1,6 @@
 'use client'
 
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { useState } from 'react'
 import { CheckoutLinkForm } from './CheckoutLinkForm'
 import { CheckoutLinkPreviewPanel } from './CheckoutLinkPreviewPanel'
@@ -21,7 +21,7 @@ export const CheckoutLinkManagementModal = ({
 
   return (
     <div className="flex h-full flex-row overflow-hidden">
-      <div className=" flex w-[480px] shrink-0 flex-col gap-8 overflow-y-auto border-r border-gray-200 px-8 py-12">
+      <div className="flex w-[480px] shrink-0 flex-col gap-8 overflow-y-auto border-r border-gray-200 px-8 py-12">
         <div className="flex flex-row items-center justify-between">
           <h1 className="text-xl">Create Payment Link</h1>
         </div>

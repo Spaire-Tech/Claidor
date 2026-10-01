@@ -17,19 +17,19 @@ from zoneinfo import ZoneInfo
 import pytest
 import pytest_asyncio
 
-from polar.auth.models import AuthSubject
-from polar.config import settings
-from polar.enums import SubscriptionRecurringInterval
-from polar.event.system import SystemEvent
-from polar.integrations.tinybird.client import TinybirdClient
-from polar.integrations.tinybird.service import (
+from simeon.auth.models import AuthSubject
+from simeon.config import settings
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.event.system import SystemEvent
+from simeon.integrations.tinybird.client import TinybirdClient
+from simeon.integrations.tinybird.service import (
     DATASOURCE_EVENTS,
     _event_to_tinybird,
 )
-from polar.kit.time_queries import TimeInterval
-from polar.metrics.schemas import MetricsPeriod, MetricsResponse
-from polar.metrics.service import metrics as metrics_service
-from polar.models import (
+from simeon.kit.time_queries import TimeInterval
+from simeon.metrics.schemas import MetricsPeriod, MetricsResponse
+from simeon.metrics.service import metrics as metrics_service
+from simeon.models import (
     Customer,
     Event,
     Organization,
@@ -38,10 +38,10 @@ from polar.models import (
     User,
     UserOrganization,
 )
-from polar.models.event import EventSource
-from polar.models.order import OrderStatus
-from polar.models.subscription import CustomerCancellationReason, SubscriptionStatus
-from polar.postgres import AsyncSession
+from simeon.models.event import EventSource
+from simeon.models.order import OrderStatus
+from simeon.models.subscription import CustomerCancellationReason, SubscriptionStatus
+from simeon.postgres import AsyncSession
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (

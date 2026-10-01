@@ -22,7 +22,7 @@ import { AbstractUserMessageActionHandler } from "./user-message-action/abstract
 
 type Any = any;
 
-const logger = createLogger("@anysphere/agent");
+const logger = createLogger("@sand/agent");
 
 export class AsyncAskQuestionCompletionActionHandler extends AbstractUserMessageActionHandler {
   async handle(

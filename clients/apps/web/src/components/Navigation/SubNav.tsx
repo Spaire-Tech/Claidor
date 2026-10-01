@@ -1,6 +1,6 @@
 'use client'
 
-import { Tabs, TabsList, TabsTrigger } from '@claidor/ui/components/atoms/Tabs'
+import { Tabs, TabsList, TabsTrigger } from '@simeon/ui/components/atoms/Tabs'
 import Link from 'next/link'
 import { SubRouteWithActive } from '../Dashboard/navigation'
 
@@ -9,7 +9,7 @@ export const SubNav = (props: { items: SubRouteWithActive[] }) => {
 
   return (
     <Tabs className="md:-mx-4" value={current?.title}>
-      <TabsList className="flex flex-row bg-transparent ring-0 ">
+      <TabsList className="flex flex-row bg-transparent ring-0">
         {props.items.map((item) => {
           return (
             <Link key={item.title} href={item.link}>

@@ -15,7 +15,7 @@ import { estimateTokenCount } from "./self-summary/token-estimate.js";
 import { drainPendingWritesOnRunStreamError } from "./abort-drain.js";
 import { buildRunStreamStateHandleOptions, shouldTrackAgentTypeChange, createRunStreamStateUpdateWithFlush } from "./run-stream-lifecycle.js";
 import { conversationGroupIdKey, conversationIdKey, bubbleRetryableTaskErrorsKey } from "./utils/request-id.js";
-import { normalizeAnysphereAgentConfig } from "./agent-config-runtime.js";
+import { normalizeSandAgentConfig } from "./agent-config-runtime.js";
 import { AbstractUserMessageActionHandler } from "./actions/user-message-action/abstract-user-message-action-handler.js";
 import { UserMessageActionHandler } from "./actions/user-message-action/user-message-action-handler.js";
 import { ResumeActionHandler } from "./actions/user-message-action/resume-action-handler.js";
@@ -37,7 +37,7 @@ const stateDeserializationDuration = createHistogram("agent.state_deserializatio
 const actionHandlerDuration = createHistogram("agent.action_handler_ms", { description: "Action handler duration", labelNames: ["action"] });
 
 /** The package-owned Agent root, reconstructed from the immutable Mac/Windows carrier. */
-export class AnysphereAgent {
+export class SandAgent {
   readonly config: Any;
   readonly promptSession: Any;
   readonly interactionListener: Any;
@@ -63,7 +63,7 @@ export class AnysphereAgent {
     this.blobStore = blobStore;
     this.summarizationHandler = summarizationHandler;
     this.conversationActionReceiver = conversationActionReceiver;
-    this.config = normalizeAnysphereAgentConfig(config);
+    this.config = normalizeSandAgentConfig(config);
     this.orchestrator = new SummarizationOrchestrator(summarizationHandler, undefined, this.config.backgroundSummarizationProps, this.config.selfSummaryConfig?.tokenLimit, this.config.selfSummaryConfig?.canUseSelfSummary);
     this.actionHandlers = new Map();
     const user = new UserMessageActionHandler(this.config, resourceAccessor, interactionListener, summarizationHandler, conversationActionReceiver, this.orchestrator);

@@ -46,9 +46,9 @@ export async function GET() {
 
               Simeon is made by all of our wonderful contributors.
 
-                    https://github.com/claidor-tech/claidor
+                    https://github.com/simeon-tech/simeon
 
-                Wanna work with us? https://claidorhq.com/company#open-roles
+                Wanna work with us? https://simeonlabs.com/company#open-roles
 
     `,
     {

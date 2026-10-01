@@ -46,7 +46,7 @@ interface OpenAIRawSummary {
   readonly outputTokens: number;
 }
 
-const logger = createLogger("@anysphere/agent");
+const logger = createLogger("@sand/agent");
 const compactionInputTokens = createHistogram("openai_compaction.input_token", {
   description: "Input tokens consumed during OpenAI compaction",
 });

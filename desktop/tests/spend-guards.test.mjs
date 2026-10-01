@@ -9,7 +9,7 @@ import { build } from "esbuild";
 
 // The spend guards, added 22 September 2026 after one unattended first-run
 // turn made 481 model calls in fifty minutes with nothing on screen
-// (docs/product/spend-guards.md). Each guard is read off the code that
+// (docs/services-core.md). Each guard is read off the code that
 // enforces it, not off a helper alone.
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -40,7 +40,7 @@ function pin(module, dataDir) {
   for (const key of ENV_KEYS) { previous[key] = process.env[key]; delete process.env[key]; }
   process.env.SAND_DATA_ROOT = dataDir;
   process.env.SAND_BACKEND_URL = "https://api.simeonlabs.com";
-  module.setClaidorCredentialSource({ getAccessToken: async () => "claidor_da_guard" });
+  module.setSimeonCredentialSource({ getAccessToken: async () => "simeon_da_guard" });
   return () => { for (const [key, value] of Object.entries(previous)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; } };
 }
 
@@ -51,8 +51,8 @@ async function drain(executor) {
   return result;
 }
 
-test("step caps: Grok Bot's 5,000 for an asked turn, 40 for a hidden one, both overridable", async () => {
-  const loaded = await loadModule("tests/fixtures/claidor-host-loop-entry.ts", "step-caps");
+test("step caps: the upstream app's 5,000 for an asked turn, 40 for a hidden one, both overridable", async () => {
+  const loaded = await loadModule("tests/fixtures/simeon-host-loop-entry.ts", "step-caps");
   try {
     const { module } = loaded;
     assert.equal(module.SAND_AGENT_MAX_STEPS, 5_000);
@@ -70,7 +70,7 @@ test("step caps: Grok Bot's 5,000 for an asked turn, 40 for a hidden one, both o
 });
 
 test("a hidden session refuses its 41st model call; an asked session keeps going", async () => {
-  const loaded = await loadModule("tests/fixtures/claidor-host-loop-entry.ts", "budget");
+  const loaded = await loadModule("tests/fixtures/simeon-host-loop-entry.ts", "budget");
   const unpin = pin(loaded.module, loaded.dataDir);
   const previousFetch = globalThis.fetch;
   let calls = 0;
@@ -78,13 +78,13 @@ test("a hidden session refuses its 41st model call; an asked session keeps going
     globalThis.fetch = async (input, init) => { calls += 1; return textStream("ok", JSON.parse(init?.body ?? "{}").model); };
     const state = [{ role: "system", content: "brief" }, { role: "user", content: [{ type: "text", text: "hi" }] }];
     process.env.SAND_HIDDEN_TURN_MAX_STEPS = "3";
-    const hidden = loaded.module.createProviderPromptSession("claidor", { hidden: true });
+    const hidden = loaded.module.createProviderPromptSession("simeon", { hidden: true });
     // The turn shell asks for a fresh executor per step; the budget is the session's.
     for (let step = 0; step < 3; step += 1) await drain(hidden.getExecutor(state));
     assert.throws(() => hidden.getExecutor(state).stream({}, "inv-4"), /without being asked and reached its budget of 3 model calls/);
     assert.equal(calls, 3);
 
-    const asked = loaded.module.createProviderPromptSession("claidor", {});
+    const asked = loaded.module.createProviderPromptSession("simeon", {});
     for (let step = 0; step < 5; step += 1) await drain(asked.getExecutor(state));
     assert.equal(calls, 8);
   } finally {
@@ -95,7 +95,7 @@ test("a hidden session refuses its 41st model call; an asked session keeps going
 });
 
 test("every model call writes one line with its tokens, and cached tokens are counted", async () => {
-  const loaded = await loadModule("tests/fixtures/claidor-host-loop-entry.ts", "call-log");
+  const loaded = await loadModule("tests/fixtures/simeon-host-loop-entry.ts", "call-log");
   const unpin = pin(loaded.module, loaded.dataDir);
   const previousFetch = globalThis.fetch;
   const lines = [];
@@ -103,13 +103,13 @@ test("every model call writes one line with its tokens, and cached tokens are co
     loaded.module.setModelCallLog((line) => lines.push(line));
     globalThis.fetch = async (input, init) => textStream("ok", JSON.parse(init?.body ?? "{}").model);
     const state = [{ role: "system", content: "brief" }, { role: "user", content: [{ type: "text", text: "hi" }] }];
-    const result = await drain(loaded.module.createProviderPromptSession("claidor", {}).getExecutor(state));
+    const result = await drain(loaded.module.createProviderPromptSession("simeon", {}).getExecutor(state));
     const usage = await result.extendedUsage;
     assert.equal(usage.cacheReadTokens, 59_000);
     assert.equal(usage.inputTokens, 1_000, "input is what was not cached");
     assert.equal(usage.outputTokens, 130);
     assert.equal(lines.length, 1);
-    assert.match(lines[0], /^\[claidor\] model=gpt-6-sol effort=high input=60000 cached=59000 output=130 reasoning=90 ms=\d+ tools=- offered=- budget=5000 prefix=sys:[0-9a-f]{8},tools:[0-9a-f]{8},key:-$/);
+    assert.match(lines[0], /^\[simeon\] model=gpt-6-sol effort=high input=60000 cached=59000 output=130 reasoning=90 ms=\d+ tools=- offered=- budget=5000 prefix=sys:[0-9a-f]{8},tools:[0-9a-f]{8},key:-$/);
     assert.equal(loaded.module.summarizeToolCalls([{ toolName: "SendMessage", args: { text: "hello there" } }, { toolName: "run_shell", args: { command: "ls" } }]), 'SendMessage({"text":"hello there"}) run_shell({"command":"ls"})');
   } finally {
     loaded.module.setModelCallLog(null);
@@ -119,11 +119,11 @@ test("every model call writes one line with its tokens, and cached tokens are co
   }
 });
 
-test("the intro is Grok Bot's own cue again, runs once, hidden, under the asked turn's budget", async () => {
-  const loaded = await loadModule("tests/fixtures/claidor-host-loop-entry.ts", "intro-prompt");
+test("the intro is the upstream app's own cue again, runs once, hidden, under the asked turn's budget", async () => {
+  const loaded = await loadModule("tests/fixtures/simeon-host-loop-entry.ts", "intro-prompt");
   try {
     const prompt = loaded.module.SAND_ONBOARDING_KICKSTART_PROMPT;
-    // Grok Bot's sentences (ce9fc2d8), restored 27 September 2026.
+    // The upstream app's sentences (ce9fc2d8), restored 27 September 2026.
     assert.match(prompt, /then start learning how to be useful\./);
     assert.match(prompt, /begin the assignment immediately, and use your first message for a useful result or the next approval you need/);
     assert.match(prompt, /The moment they hand you something real, drop the questions and just help\./);
@@ -139,7 +139,7 @@ test("the intro is Grok Bot's own cue again, runs once, hidden, under the asked 
   }
   const source = await readFile(path.join(repoRoot, "source/host/extensions/transcript/agent-lifecycle.ts"), "utf8");
   const kickstart = source.slice(source.indexOf("async kickstartAgent("), source.indexOf("async requestDiskSaverAudit("));
-  // Hidden (nobody asked yet) but with Grok Bot's 5,000-call budget.
+  // Hidden (nobody asked yet) but with the upstream app's 5,000-call budget.
   assert.match(kickstart, /await runner\.run\(prompt, \{ hidden: true, fullStepBudget: true \}\)/);
 });
 
@@ -156,7 +156,7 @@ test("the box's credentials survive a burst of concurrent connects", async () =>
   // concurrent writers once broke the token file). The encrypted store
   // takes one change at a time, so the burst yields one token, one file.
   const loaded = await loadModule("source/electron-main/box/local-docker-host-connector.ts", "token-file");
-  const dataDir = await mkdtemp(path.join(os.tmpdir(), "caisra-token-"));
+  const dataDir = await mkdtemp(path.join(os.tmpdir(), "simeon-token-"));
   try {
     const settingsPath = path.join(dataDir, "settings.json");
     loaded.module.configureLocalDockerSecretStorage({ isEncryptionAvailable: () => true, encryptString: (value) => Buffer.from(value).reverse(), decryptString: (value) => Buffer.from(value).reverse().toString() });
@@ -204,7 +204,7 @@ test("the narration prints the failure's sentence, not only its type", async () 
   assert.equal((client.match(/causeDetail: error instanceof Error \? error\.message : String\(error\)/g) ?? []).length, 2);
 });
 
-test("the first message and a routine get Grok Bot's 5,000 calls; nudges and wake-ups keep 40", async () => {
+test("the first message and a routine get the upstream app's 5,000 calls; nudges and wake-ups keep 40", async () => {
   const loaded = await loadModule("source/host/extensions/inference/provider-session.ts", "full-step-budget");
   try {
     const { createModelCallBudget, spendModelCall } = loaded.module;

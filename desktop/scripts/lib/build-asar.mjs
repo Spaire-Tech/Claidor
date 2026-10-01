@@ -78,11 +78,11 @@ function enableReconstructedDevSeams(source) {
   const replacements = [
     {
       from: "var devToolsGate = createDevToolsGate({ isDevBuild: !import_electron51.app.isPackaged });",
-      to: "var devToolsGate = createDevToolsGate({ isDevBuild: process.env.GROK_BOT_RECONSTRUCTED_DEV === \"1\" || !import_electron51.app.isPackaged });"
+      to: "var devToolsGate = createDevToolsGate({ isDevBuild: process.env.SIMEON_DEV === \"1\" || !import_electron51.app.isPackaged });"
     },
     {
       from: "registerDevWiring({\n    ipcMain: import_electron51.ipcMain,\n    isPackaged: import_electron51.app.isPackaged,",
-      to: "registerDevWiring({\n    ipcMain: import_electron51.ipcMain,\n    isPackaged: process.env.GROK_BOT_RECONSTRUCTED_DEV === \"1\" ? false : import_electron51.app.isPackaged,"
+      to: "registerDevWiring({\n    ipcMain: import_electron51.ipcMain,\n    isPackaged: process.env.SIMEON_DEV === \"1\" ? false : import_electron51.app.isPackaged,"
     }
   ];
 
@@ -100,11 +100,11 @@ function enableReconstructedRuntimeSeams(source) {
   const replacements = [
     {
       from: "var isSandLabBuild2 = appPackageJson.sandLab === true;",
-      to: "var isSandLabBuild2 = appPackageJson.sandLab === true || process.env.GROK_BOT_RECONSTRUCTED_DEV === \"1\";"
+      to: "var isSandLabBuild2 = appPackageJson.sandLab === true || process.env.SIMEON_DEV === \"1\";"
     },
     {
       from: "var isPrimaryInstance = !import_electron51.app.isPackaged || import_electron51.app.requestSingleInstanceLock();",
-      to: "var isPrimaryInstance = process.env.GROK_BOT_RECONSTRUCTED_DEV === \"1\" || !import_electron51.app.isPackaged || import_electron51.app.requestSingleInstanceLock();"
+      to: "var isPrimaryInstance = process.env.SIMEON_DEV === \"1\" || !import_electron51.app.isPackaged || import_electron51.app.requestSingleInstanceLock();"
     }
   ];
   let patched = source;
@@ -149,13 +149,13 @@ export async function buildAsar({
   // Electron reads app.name from the staged package.json's productName: the
   // application menu, "About …", the window title and the user-data folder
   // (~/Library/Application Support/<name>) all follow it. Until 22 September
-  // 2026 it stayed "Grok Bot", so the app shared that folder with Grok Bot.
+  // 2026 it stayed "the upstream app", so the app shared that folder with the upstream app.
   {
     const stagedPackagePath = path.join(stageRoot, "package.json");
     const stagedPackage = JSON.parse(await readFile(stagedPackagePath, "utf8"));
-    if (process.env.GROK_BOT_BUILD_DEV_APP === "1") {
+    if (process.env.SIMEON_BUILD_DEV_APP === "1") {
       stagedPackage.sandLab = true;
-      stagedPackage.productName = "Grok Bot 0.18 Dev";
+      stagedPackage.productName = "Simeon Dev";
     } else {
       stagedPackage.productName = simeonName;
     }
@@ -172,12 +172,12 @@ export async function buildAsar({
 
   const mainBundle = path.join(stageRoot, "dist", "electron-main", "main.cjs");
   let mainSource = await readFile(mainBundle, "utf8");
-  const dev = process.env.GROK_BOT_BUILD_DEV_APP === "1";
+  const dev = process.env.SIMEON_BUILD_DEV_APP === "1";
   mainSource = prepareReconstructedElectronMainArtifactFallback(mainSource, { dev });
   if (dev) console.log("Enabled reconstructed development seams (DevTools + control server).");
   await writeFile(mainBundle, mainSource);
 
-  const rendererOverride = process.env.GROK_BOT_RENDERER_SOURCE?.trim();
+  const rendererOverride = process.env.SIMEON_RENDERER_SOURCE?.trim();
   if (rendererOverride) {
     const rendererSource = path.resolve(repoRoot, rendererOverride);
     await readFile(path.join(rendererSource, "index.html"), "utf8");

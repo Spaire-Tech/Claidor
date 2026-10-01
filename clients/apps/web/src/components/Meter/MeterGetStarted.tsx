@@ -1,5 +1,5 @@
 import { CONFIG } from '@/utils/config'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 
 import {
   SyntaxHighlighterClient,
@@ -38,22 +38,22 @@ export const MeterGetStarted = ({ meter }: MeterGetStartedProps) => {
     : 'some_arbitrary_name'
 
   return (
-    <div className=" flex flex-col gap-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-6">
+    <div className="flex flex-col gap-y-4 rounded-2xl border border-gray-200 bg-gray-100 p-6">
       <div className="flex flex-col gap-y-2">
         <h2 className="text-xl">Get started with metering</h2>
-        <p className=" text-gray-500">
+        <p className="text-gray-500">
           Meter usage by sending events which match the Meter Filter, to the
           Simeon Ingestion API.
         </p>
       </div>
-      <pre className=" rounded-lg bg-white p-4 font-mono text-sm">
+      <pre className="rounded-lg bg-white p-4 font-mono text-sm">
         <SyntaxHighlighterProvider>
           <SyntaxHighlighterClient
             lang="typescript"
-            code={`import { Claidor } from "@spaire/sdk";
+            code={`import { Simeon } from "@spaire/sdk";
 
-const claidor = new Claidor({
-  accessToken: process.env["CLAIDOR_ACCESS_TOKEN"] ?? "",${
+const simeon = new Simeon({
+  accessToken: process.env["SIMEON_ACCESS_TOKEN"] ?? "",${
     CONFIG.IS_SANDBOX
       ? `
   server: "sandbox",`
@@ -62,7 +62,7 @@ const claidor = new Claidor({
 });
 
 export const GET = async (req: Request, res: Response) => {
-  await claidor.events.ingest({
+  await simeon.events.ingest({
     events: [
       {
         name: "${nameClauseValue}",

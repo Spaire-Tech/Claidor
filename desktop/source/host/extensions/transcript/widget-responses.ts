@@ -8,6 +8,7 @@ import {
   settlePendingLocalToolPermissionEntry,
 } from "../../../shared/transcript.js";
 import { buildSecretProvidedAck } from "../../runner/tools/sand-secret-request.js";
+import { storeAgentKey } from "../secrets/secrets-service.js";
 import { SPEND_GUARD_VALUE_PREFIX } from "./sand-automation-spend-guard.js";
 import {
   describeReactedMessageQuote,
@@ -373,7 +374,7 @@ export class WidgetResponses {
     )
       return;
     const request = (entry.message as any).secretRequest;
-    if (!this.routeSecret(session.id, request.target, trimmed)) {
+    if (!(await this.routeSecret(session.id, request.target, trimmed))) {
       this.tm.trayErrors.pushError({
         agentId: session.id,
         title: "Could not store the secret",
@@ -394,7 +395,9 @@ export class WidgetResponses {
     );
   }
 
-  routeSecret(agentId: string, target: any, value: string): boolean {
+  async routeSecret(agentId: string, target: any, value: string): Promise<boolean> {
+    // A key for any service but a messaging connector: a secret in the computer's environment.
+    if (target.kind === "box-secret") return typeof target.name === "string" && (await storeAgentKey(target.name, value));
     if (target.kind !== "channel-credential") return false;
     const stored = this.tm.sessionStore.storeConnectorCredential(
       agentId,

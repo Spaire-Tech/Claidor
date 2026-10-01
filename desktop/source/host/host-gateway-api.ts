@@ -96,7 +96,8 @@ export function createHostGatewayApi(
           : { avatarShape: args.avatarShape }),
         ...(args.avatarColor === undefined
           ? {}
-          : { avatarColor: args.avatarColor })
+          : { avatarColor: args.avatarColor }),
+        ...(typeof args.voiceId === "string" ? { voiceId: args.voiceId } : {})
       },
       args.origin,
       {
@@ -279,6 +280,7 @@ export function createHostGatewayApi(
       method(manager, "appendConnectorCard")(args),
     appendSendMessage: (args: any) =>
       method(manager, "appendSendMessage")(args),
+    voiceCall: (args: any) => method(manager, "voiceCall")(args),
     searchPlugins: async (args: any) =>
       searchPluginsForGateway(deps.extensions.api("mcp").management, typeof args?.query === "string" ? args.query : ""),
     getPlugin: async (args: any) =>

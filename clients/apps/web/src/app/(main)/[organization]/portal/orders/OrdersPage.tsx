@@ -1,7 +1,7 @@
 'use client'
 
 import { Pagination } from '@/components/CustomerPortal/Pagination'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'

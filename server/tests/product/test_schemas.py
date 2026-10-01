@@ -4,10 +4,10 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from polar.enums import SubscriptionRecurringInterval
-from polar.kit.currency import PresentmentCurrency
-from polar.models.product_price import ProductPriceAmountType
-from polar.product.schemas import (
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.kit.currency import PresentmentCurrency
+from simeon.models.product_price import ProductPriceAmountType
+from simeon.product.schemas import (
     ProductCreateRecurring,
     ProductPriceFixedCreate,
     ProductPriceMeteredUnitCreate,

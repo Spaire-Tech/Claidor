@@ -1,5 +1,5 @@
 import TextureOutlined from '@mui/icons-material/TextureOutlined'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { twMerge } from 'tailwind-merge'
 
 export const ProductThumbnail = ({
@@ -19,7 +19,7 @@ export const ProductThumbnail = ({
   return (
     <div
       className={twMerge(
-        ' hidden aspect-square h-10 shrink-0 grow-0 flex-col items-center justify-center border border-transparent bg-gray-100 text-center md:flex',
+        'hidden aspect-square h-10 shrink-0 grow-0 flex-col items-center justify-center border border-transparent bg-gray-100 text-center md:flex',
         sizeClassName,
       )}
     >
@@ -31,10 +31,7 @@ export const ProductThumbnail = ({
           className={twMerge('aspect-square h-10 object-cover', sizeClassName)}
         />
       ) : (
-        <TextureOutlined
-          fontSize="medium"
-          className=" text-gray-300"
-        />
+        <TextureOutlined fontSize="medium" className="text-gray-300" />
       )}
     </div>
   )

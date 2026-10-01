@@ -1,8 +1,8 @@
 import { useUpdateDiscount } from '@/hooks/queries'
 import { setValidationErrors } from '@/utils/api/errors'
-import { isValidationError, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { Form } from '@claidor/ui/components/ui/form'
+import { isValidationError, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { Form } from '@simeon/ui/components/ui/form'
 import { useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from '../Toast/use-toast'
@@ -64,7 +64,7 @@ const UpdateDiscountModalContent = ({
     <div className="flex flex-col gap-y-6 overflow-y-auto px-8 py-10">
       <div>
         <h2 className="text-lg">Update Discount</h2>
-        <p className=" mt-2 text-sm text-gray-500">
+        <p className="mt-2 text-sm text-gray-500">
           Amount and options cannot be changed.
         </p>
       </div>

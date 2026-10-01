@@ -1,11 +1,11 @@
 'use client'
 
 import { useExperiment } from '@/experiments/client'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { usePostHog } from 'posthog-js/react'
 import { useCallback, useMemo } from 'react'
 
-const ONBOARDING_COOKIE_NAME = 'polar_onboarding_session'
+const ONBOARDING_COOKIE_NAME = 'simeon_onboarding_session'
 const SESSION_TIMEOUT_HOURS = 24
 
 /** @deprecated 'lovable' and 'product' are kept for backward compatibility with existing components */
@@ -78,7 +78,11 @@ interface UseOnboardingTrackingReturn {
   trackStepCompleted: (step: OnboardingStep, organizationId?: string) => void
   trackStepSkipped: (step: OnboardingStep, organizationId?: string) => void
   trackCompleted: (organizationId: string) => void
-  updateSurveyAnswers: (answers: { business_type?: string; audience_type?: string; referral_source?: string }) => void
+  updateSurveyAnswers: (answers: {
+    business_type?: string
+    audience_type?: string
+    referral_source?: string
+  }) => void
   getSession: () => OnboardingSessionState | null
   clearSession: () => void
   experimentVariant: string
@@ -191,7 +195,11 @@ export const useOnboardingTracking = (): UseOnboardingTrackingReturn => {
   )
 
   const updateSurveyAnswers = useCallback(
-    (answers: { business_type?: string; audience_type?: string; referral_source?: string }): void => {
+    (answers: {
+      business_type?: string
+      audience_type?: string
+      referral_source?: string
+    }): void => {
       const session = getOnboardingSession()
       if (!session) return
 

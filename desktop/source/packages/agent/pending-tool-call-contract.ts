@@ -1,4 +1,4 @@
-import { CURSOR_DYNAMIC_TOOLS_NAMESPACE } from "../agent-exec/mcp.js";
+import { isFirstPartyToolsNamespace } from "../agent-exec/mcp.js";
 import {
   getEffectiveToolCallArgs,
   getEffectiveToolCallName,
@@ -267,7 +267,7 @@ export function resolveDescriptorForPendingToolCall(options: {
   ) {
     const outerArgs = outerDescriptor.args as Record<string, unknown>;
     const nestedArgs =
-      outerArgs.namespace === CURSOR_DYNAMIC_TOOLS_NAMESPACE &&
+      isFirstPartyToolsNamespace(outerArgs.namespace as string | undefined) &&
         outerArgs.toolName === options.contract.effectiveToolName
         ? parseNativeToolArguments(outerArgs.arguments)
         : undefined;

@@ -1,6 +1,6 @@
 import LoopOutlined from '@mui/icons-material/LoopOutlined'
 import ShoppingCartOutlined from '@mui/icons-material/ShoppingCartOutlined'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import React from 'react'
 
 interface ProductPriceTypeIconProps {

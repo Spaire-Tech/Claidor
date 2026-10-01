@@ -1,7 +1,7 @@
 'use client'
 
 import { api } from '@/utils/client'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { useRouter } from 'next/navigation'
 import { useCallback } from 'react'
 

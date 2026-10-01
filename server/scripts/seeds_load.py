@@ -8,42 +8,42 @@ import dramatiq
 import typer
 from sqlalchemy import select
 
-import polar.tasks  # noqa: F401
-from polar.auth.models import AuthSubject
-from polar.benefit.service import benefit as benefit_service
-from polar.benefit.strategies.custom.schemas import BenefitCustomCreate
-from polar.benefit.strategies.downloadables.schemas import BenefitDownloadablesCreate
+import simeon.tasks  # noqa: F401
+from simeon.auth.models import AuthSubject
+from simeon.benefit.service import benefit as benefit_service
+from simeon.benefit.strategies.custom.schemas import BenefitCustomCreate
+from simeon.benefit.strategies.downloadables.schemas import BenefitDownloadablesCreate
 
 # Import tasks to register all dramatiq actors
-from polar.benefit.strategies.license_keys.schemas import BenefitLicenseKeysCreate
-from polar.checkout_link.schemas import CheckoutLinkCreateProducts
-from polar.checkout_link.service import checkout_link as checkout_link_service
-from polar.customer.schemas.customer import CustomerCreate
-from polar.customer.service import customer as customer_service
-from polar.enums import AccountType, PaymentProcessor, SubscriptionRecurringInterval
-from polar.event.repository import EventRepository
-from polar.kit.currency import PresentmentCurrency
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.kit.utils import utc_now
-from polar.meter.aggregation import CountAggregation
-from polar.meter.filter import Filter, FilterClause, FilterConjunction, FilterOperator
-from polar.meter.schemas import MeterCreate
-from polar.meter.service import meter as meter_service
-from polar.models.account import Account
-from polar.models.benefit import BenefitType
-from polar.models.customer_seat import CustomerSeat, SeatStatus
-from polar.models.file import File, FileServiceTypes
-from polar.models.member import Member, MemberRole
-from polar.models.organization import OrganizationDetails, OrganizationStatus
-from polar.models.organization_review import OrganizationReview
-from polar.models.product_price import ProductPriceAmountType, ProductPriceSeatUnit
-from polar.models.subscription import Subscription, SubscriptionStatus
-from polar.models.subscription_product_price import SubscriptionProductPrice
-from polar.models.user import IdentityVerificationStatus
-from polar.organization.schemas import OrganizationCreate
-from polar.organization.service import organization as organization_service
-from polar.postgres import AsyncSession, create_async_engine
-from polar.product.schemas import (
+from simeon.benefit.strategies.license_keys.schemas import BenefitLicenseKeysCreate
+from simeon.checkout_link.schemas import CheckoutLinkCreateProducts
+from simeon.checkout_link.service import checkout_link as checkout_link_service
+from simeon.customer.schemas.customer import CustomerCreate
+from simeon.customer.service import customer as customer_service
+from simeon.enums import AccountType, PaymentProcessor, SubscriptionRecurringInterval
+from simeon.event.repository import EventRepository
+from simeon.kit.currency import PresentmentCurrency
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.kit.utils import utc_now
+from simeon.meter.aggregation import CountAggregation
+from simeon.meter.filter import Filter, FilterClause, FilterConjunction, FilterOperator
+from simeon.meter.schemas import MeterCreate
+from simeon.meter.service import meter as meter_service
+from simeon.models.account import Account
+from simeon.models.benefit import BenefitType
+from simeon.models.customer_seat import CustomerSeat, SeatStatus
+from simeon.models.file import File, FileServiceTypes
+from simeon.models.member import Member, MemberRole
+from simeon.models.organization import OrganizationDetails, OrganizationStatus
+from simeon.models.organization_review import OrganizationReview
+from simeon.models.product_price import ProductPriceAmountType, ProductPriceSeatUnit
+from simeon.models.subscription import Subscription, SubscriptionStatus
+from simeon.models.subscription_product_price import SubscriptionProductPrice
+from simeon.models.user import IdentityVerificationStatus
+from simeon.organization.schemas import OrganizationCreate
+from simeon.organization.service import organization as organization_service
+from simeon.postgres import AsyncSession, create_async_engine
+from simeon.product.schemas import (
     ProductCreate,
     ProductCreateOneTime,
     ProductCreateRecurring,
@@ -53,11 +53,11 @@ from polar.product.schemas import (
     ProductPriceSeatTier,
     ProductPriceSeatTiers,
 )
-from polar.product.service import product as product_service
-from polar.redis import Redis, create_redis
-from polar.user.repository import UserRepository
-from polar.user.service import user as user_service
-from polar.worker import JobQueueManager
+from simeon.product.service import product as product_service
+from simeon.redis import Redis, create_redis
+from simeon.user.repository import UserRepository
+from simeon.user.service import user as user_service
+from simeon.worker import JobQueueManager
 
 cli = typer.Typer()
 
@@ -455,13 +455,13 @@ async def create_seed_data(session: AsyncSession, redis: Redis) -> None:
         {
             "name": "Admin Org",
             "slug": "admin-org",
-            "email": "admin@polar.sh",
-            "website": "https://polar.sh",
-            "bio": "The admin organization of Polar",
+            "email": "admin@simeonlabs.com",
+            "website": "https://simeonlabs.com",
+            "bio": "The admin organization of Simeon",
             "status": OrganizationStatus.ACTIVE,
             "is_admin": True,
             "details": {
-                "about": "Polar is an open source payment infrastructure platform for developers",
+                "about": "Simeon is an open source payment infrastructure platform for developers",
                 "intended_use": "We provide payment processing and subscription management for developers and creators.",
                 "switching": False,
                 "switching_from": None,
@@ -472,8 +472,8 @@ async def create_seed_data(session: AsyncSession, redis: Redis) -> None:
             },
             "products": [
                 {
-                    "name": "Polar Pro",
-                    "description": "Monthly subscription to Polar Pro features",
+                    "name": "Simeon Pro",
+                    "description": "Monthly subscription to Simeon Pro features",
                     "price": 2000,
                     "recurring": SubscriptionRecurringInterval.month,
                 },
@@ -482,7 +482,7 @@ async def create_seed_data(session: AsyncSession, redis: Redis) -> None:
         {
             "name": "SeatBased Members Corp",
             "slug": "seatbased-members-corp",
-            "email": "admin@polar.sh",
+            "email": "admin@simeonlabs.com",
             "website": "https://seatbased-members.com",
             "bio": "Organization with seat-based pricing and members model enabled",
             "status": OrganizationStatus.ACTIVE,
@@ -511,7 +511,7 @@ async def create_seed_data(session: AsyncSession, redis: Redis) -> None:
             ],
             "seat_based_customers": [
                 {
-                    "email": "customer-with-members@polar.sh",
+                    "email": "customer-with-members@simeonlabs.com",
                     "name": "Customer With Members Inc",
                     "seats_purchased": 5,
                     "seats_allocated": 2,
@@ -521,7 +521,7 @@ async def create_seed_data(session: AsyncSession, redis: Redis) -> None:
         {
             "name": "SeatBased Only Corp",
             "slug": "seatbased-only-corp",
-            "email": "admin@polar.sh",
+            "email": "admin@simeonlabs.com",
             "website": "https://seatbased-only.com",
             "bio": "Organization with seat-based pricing but members model disabled",
             "status": OrganizationStatus.ACTIVE,
@@ -550,7 +550,7 @@ async def create_seed_data(session: AsyncSession, redis: Redis) -> None:
             ],
             "seat_based_customers": [
                 {
-                    "email": "customer-no-members@polar.sh",
+                    "email": "customer-no-members@simeonlabs.com",
                     "name": "Customer Without Members Inc",
                     "seats_purchased": 5,
                     "seats_allocated": 2,
@@ -840,7 +840,7 @@ async def create_seed_data(session: AsyncSession, redis: Redis) -> None:
         )
         for i in range(num_customers):
             # customer_email = f"customer_{org_data['slug']}_{i + 1}@example.com"
-            customer_email = f"customer_{org_data['slug']}_{i + 1}@polar.sh"
+            customer_email = f"customer_{org_data['slug']}_{i + 1}@simeonlabs.com"
             customer = await customer_service.create(
                 session=session,
                 customer_create=CustomerCreate(

@@ -4,19 +4,19 @@ import pytest
 from pytest_mock import MockerFixture
 from sqlalchemy.exc import IntegrityError
 
-from polar.auth.models import AuthSubject, is_user
-from polar.customer.schemas.customer import CustomerCreate, CustomerUpdate
-from polar.customer.service import customer as customer_service
-from polar.exceptions import ClaidorRequestValidationError
-from polar.kit.address import AddressInput, CountryAlpha2, CountryAlpha2Input
-from polar.kit.pagination import PaginationParams
-from polar.member.repository import MemberRepository
-from polar.models import Customer, Organization, User, UserOrganization
-from polar.models.member import MemberRole
-from polar.models.webhook_endpoint import CustomerWebhookEventType, WebhookEventType
-from polar.postgres import AsyncSession
-from polar.redis import Redis
-from polar.tax.tax_id import TaxIDFormat
+from simeon.auth.models import AuthSubject, is_user
+from simeon.customer.schemas.customer import CustomerCreate, CustomerUpdate
+from simeon.customer.service import customer as customer_service
+from simeon.exceptions import SimeonRequestValidationError
+from simeon.kit.address import AddressInput, CountryAlpha2, CountryAlpha2Input
+from simeon.kit.pagination import PaginationParams
+from simeon.member.repository import MemberRepository
+from simeon.models import Customer, Organization, User, UserOrganization
+from simeon.models.member import MemberRole
+from simeon.models.webhook_endpoint import CustomerWebhookEventType, WebhookEventType
+from simeon.postgres import AsyncSession
+from simeon.redis import Redis
+from simeon.tax.tax_id import TaxIDFormat
 from tests.fixtures.auth import AuthSubjectFixture
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_customer
@@ -87,7 +87,7 @@ class TestCreate:
         auth_subject: AuthSubject[User],
         organization: Organization,
     ) -> None:
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await customer_service.create(
                 session,
                 CustomerCreate(
@@ -114,7 +114,7 @@ class TestCreate:
         if is_user(auth_subject):
             payload["organization_id"] = str(organization.id)
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await customer_service.create(
                 session, CustomerCreate.model_validate(payload), auth_subject
             )
@@ -137,7 +137,7 @@ class TestCreate:
         if is_user(auth_subject):
             payload["organization_id"] = str(organization.id)
 
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await customer_service.create(
                 session, CustomerCreate.model_validate(payload), auth_subject
             )
@@ -252,11 +252,11 @@ class TestCreate:
         await save_fixture(organization)
 
         payload: dict[str, Any] = {
-            "email": "customer@polar.sh",
+            "email": "customer@simeonlabs.com",
             "name": "Customer Name",
             "external_id": "customer_ext_123",
             "owner": {
-                "email": "owner@polar.sh",
+                "email": "owner@simeonlabs.com",
                 "name": "Owner Name",
                 "external_id": "owner_ext_456",
             },
@@ -269,17 +269,17 @@ class TestCreate:
         )
         await session.flush()
 
-        assert customer.email == "customer@polar.sh"
+        assert customer.email == "customer@simeonlabs.com"
         assert customer.name == "Customer Name"
         assert customer.external_id == "customer_ext_123"
 
         member_repository = MemberRepository.from_session(session)
         member = await member_repository.get_by_customer_and_email(
-            session, customer, email="owner@polar.sh"
+            session, customer, email="owner@simeonlabs.com"
         )
         assert member is not None
         assert member.customer_id == customer.id
-        assert member.email == "owner@polar.sh"
+        assert member.email == "owner@simeonlabs.com"
         assert member.name == "Owner Name"
         assert member.external_id == "owner_ext_456"
         assert member.role == MemberRole.owner
@@ -300,11 +300,11 @@ class TestCreate:
         await save_fixture(organization)
 
         payload: dict[str, Any] = {
-            "email": "customer@polar.sh",
+            "email": "customer@simeonlabs.com",
             "name": "Customer Name",
             "external_id": "customer_ext_789",
             "owner": {
-                "email": "different.owner@polar.sh",
+                "email": "different.owner@simeonlabs.com",
             },
         }
         if is_user(auth_subject):
@@ -315,17 +315,17 @@ class TestCreate:
         )
         await session.flush()
 
-        assert customer.email == "customer@polar.sh"
+        assert customer.email == "customer@simeonlabs.com"
         assert customer.name == "Customer Name"
         assert customer.external_id == "customer_ext_789"
 
         member_repository = MemberRepository.from_session(session)
         member = await member_repository.get_by_customer_and_email(
-            session, customer, email="different.owner@polar.sh"
+            session, customer, email="different.owner@simeonlabs.com"
         )
         assert member is not None
         assert member.customer_id == customer.id
-        assert member.email == "different.owner@polar.sh"
+        assert member.email == "different.owner@simeonlabs.com"
         assert member.name == "Customer Name"
         assert member.external_id == "customer_ext_789"
         assert member.role == MemberRole.owner
@@ -346,7 +346,7 @@ class TestCreate:
         await save_fixture(organization)
 
         payload: dict[str, Any] = {
-            "email": "customer@polar.sh",
+            "email": "customer@simeonlabs.com",
             "name": "Customer Name",
             "external_id": "customer_ext_abc",
             "owner": {
@@ -365,7 +365,7 @@ class TestCreate:
         member = await member_repository.get_by_customer_and_email(session, customer)
         assert member is not None
         assert member.customer_id == customer.id
-        assert member.email == "customer@polar.sh"
+        assert member.email == "customer@simeonlabs.com"
         assert member.name == "Different Owner Name"
         assert member.external_id == "customer_ext_abc"
         assert member.role == MemberRole.owner
@@ -386,7 +386,7 @@ class TestCreate:
         await save_fixture(organization)
 
         payload: dict[str, Any] = {
-            "email": "customer@polar.sh",
+            "email": "customer@simeonlabs.com",
             "name": "Customer Name",
             "external_id": "customer_ext_xyz",
             "owner": {
@@ -405,7 +405,7 @@ class TestCreate:
         member = await member_repository.get_by_customer_and_email(session, customer)
         assert member is not None
         assert member.customer_id == customer.id
-        assert member.email == "customer@polar.sh"
+        assert member.email == "customer@simeonlabs.com"
         assert member.name == "Customer Name"
         assert member.external_id == "different_owner_ext_id"
         assert member.role == MemberRole.owner
@@ -416,7 +416,7 @@ class TestUpdate:
     async def test_existing_external_id(
         self, session: AsyncSession, customer: Customer, customer_external_id: Customer
     ) -> None:
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await customer_service.update(
                 session,
                 customer,
@@ -437,7 +437,7 @@ class TestUpdate:
         session: AsyncSession,
         customer_external_id: Customer,
     ) -> None:
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await customer_service.update(
                 session,
                 customer_external_id,
@@ -448,7 +448,7 @@ class TestUpdate:
     async def test_existing_email(
         self, session: AsyncSession, customer: Customer, customer_second: Customer
     ) -> None:
-        with pytest.raises(ClaidorRequestValidationError):
+        with pytest.raises(SimeonRequestValidationError):
             await customer_service.update(
                 session,
                 customer,
@@ -546,7 +546,7 @@ class TestUpdate:
         organization: Organization,
     ) -> None:
         """Test that customer type can be upgraded from individual to team."""
-        from polar.models.customer import CustomerType
+        from simeon.models.customer import CustomerType
 
         customer = await create_customer(
             save_fixture,
@@ -573,7 +573,7 @@ class TestUpdate:
         organization: Organization,
     ) -> None:
         """Test that customer type cannot be downgraded from team to individual."""
-        from polar.models.customer import CustomerType
+        from simeon.models.customer import CustomerType
 
         customer = await create_customer(
             save_fixture,
@@ -584,7 +584,7 @@ class TestUpdate:
         customer.type = CustomerType.team
         await save_fixture(customer)
 
-        with pytest.raises(ClaidorRequestValidationError) as exc_info:
+        with pytest.raises(SimeonRequestValidationError) as exc_info:
             await customer_service.update(
                 session,
                 customer,
@@ -600,7 +600,7 @@ class TestUpdate:
         organization: Organization,
     ) -> None:
         """Test that updating to the same type is allowed."""
-        from polar.models.customer import CustomerType
+        from simeon.models.customer import CustomerType
 
         customer = await create_customer(
             save_fixture,
@@ -807,7 +807,7 @@ class TestAnonymize:
         organization: Organization,
     ) -> None:
         """Billing address should be cleared (invoices retain original)."""
-        from polar.kit.address import Address
+        from simeon.kit.address import Address
 
         customer = await create_customer(
             save_fixture,
@@ -935,7 +935,7 @@ class TestWebhook:
         redis: Redis,
         customer: Customer,
     ) -> None:
-        send_mock = mocker.patch("polar.webhook.service.webhook.send")
+        send_mock = mocker.patch("simeon.webhook.service.webhook.send")
 
         await customer_service.webhook(session, redis, event_type, customer)
 
@@ -948,7 +948,7 @@ class TestWebhook:
         redis: Redis,
         customer: Customer,
     ) -> None:
-        send_mock = mocker.patch("polar.webhook.service.webhook.send")
+        send_mock = mocker.patch("simeon.webhook.service.webhook.send")
 
         await customer_service.webhook(
             session, redis, WebhookEventType.customer_state_changed, customer

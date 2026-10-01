@@ -1,10 +1,10 @@
 """The catalogue and the price table, on their own
-(`polar/desktop/pricing.py`). No settings, no database, no pydantic:
+(`simeon/desktop/pricing.py`). No settings, no database, no pydantic:
 this is the module that decides what a person is charged, and it can be
 read and run by itself — `pytest --noconftest tests/desktop/test_pricing.py`.
 """
 
-from polar.desktop.pricing import (
+from simeon.desktop.pricing import (
     CREDIT_USD_PER_MILLION_INPUT,
     MODELS,
     MODELS_OWNER,
@@ -315,13 +315,10 @@ class TestTallies:
 
 class TestTheMenuAnOpenAiCompatibleClientReads:
     """`GET /v1/models`, which is how a client that knows nothing about
-    Claidor finds out what it may name.
+    Simeon finds out what it may name.
 
-    Written when Claidor was connected to Rakazo, a server we did not
-    write. Its model connection speaks plain OpenAI and asks this one
-    question before any other
-    (the Rakazo attempt, removed 18 September; see `docs/product/going-back-brief.md`,
-    `probeOpenAiCompatibleModels`).
+    Such a client speaks plain OpenAI and asks this one question before
+    any other.
     """
 
     def test_the_completions_wire_offers_openai_models_and_not_claude(self) -> None:
@@ -369,7 +366,7 @@ class TestTheMenuAnOpenAiCompatibleClientReads:
                 assert model.reachable_on(spoken), (row["id"], spoken)
 
     def test_an_empty_catalogue_is_an_empty_list_not_a_failure(self) -> None:
-        # `offered_models()` drops every model of a provider Claidor holds
+        # `offered_models()` drops every model of a provider Simeon holds
         # no key for. With no OpenAI key the honest answer is a menu with
         # nothing on it, which a client reads as "nothing to connect".
         assert openai_models_list([], SpokenApi.openai_completions) == {

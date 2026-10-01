@@ -1,4 +1,4 @@
-import { CURSOR_DYNAMIC_TOOLS_NAMESPACE } from "../agent-exec/mcp.js";
+import { isFirstPartyToolsNamespace } from "../agent-exec/mcp.js";
 import { InteractionListenerStreamClosedError } from "../agent-core/interaction-listener.js";
 import { createKey, type Context } from "../context/core.js";
 import { createLogger } from "../context/logger.js";
@@ -439,7 +439,7 @@ export function resolveEffectiveToolCallDescriptor(
   const namespace = args.namespace;
   const toolName = args.toolName;
   if (
-    namespace !== CURSOR_DYNAMIC_TOOLS_NAMESPACE ||
+    !isFirstPartyToolsNamespace(namespace as string | undefined) ||
     typeof toolName !== "string" ||
     !executableToolNames.has(toolName)
   ) {

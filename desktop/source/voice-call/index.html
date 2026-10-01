@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- The call's own policy (30 September 2026): exactly what the ElevenLabs
+         SDK needs over WebRTC (its API and its LiveKit server), microphone and
+         playback streams, and the SDK's audio worklets, which it loads from
+         blob: URLs. Nothing else leaves the page. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; media-src 'self' blob: mediastream:; connect-src 'self' https://api.elevenlabs.io wss://api.elevenlabs.io https://*.elevenlabs.io wss://*.elevenlabs.io https://livekit.rtc.elevenlabs.io wss://livekit.rtc.elevenlabs.io; base-uri 'none'; form-action 'none'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simeon call</title>
+    <link rel="stylesheet" href="./banner.css" />
+    <script defer src="./banner.js"></script>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+      <symbol id="i-mic" viewBox="0 0 24 24"><path fill="currentColor" d="M12 14.5a3.5 3.5 0 0 0 3.5-3.5V5.5a3.5 3.5 0 1 0-7 0V11a3.5 3.5 0 0 0 3.5 3.5z"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M18.5 11a6.5 6.5 0 0 1-13 0M12 17.5V21"/></symbol>
+      <symbol id="i-micoff" viewBox="0 0 24 24"><path fill="currentColor" d="M12 14.5a3.5 3.5 0 0 0 3.5-3.5V5.5a3.5 3.5 0 1 0-7 0V11a3.5 3.5 0 0 0 3.5 3.5z"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M18.5 11a6.5 6.5 0 0 1-13 0M12 17.5V21M4 3l16 18"/></symbol>
+      <symbol id="i-end" viewBox="0 0 24 24"><path fill="currentColor" d="M12 9.2c-2.1 0-4 .4-5.6 1.1l-.1 2.3c0 .5-.3.9-.7 1.1-.9.4-1.8 1-2.6 1.6-.4.3-1 .3-1.4-.1L.4 14a1.1 1.1 0 0 1 0-1.6C3.4 9.6 7.5 8 12 8s8.6 1.6 11.6 4.4c.5.4.5 1.1 0 1.6l-1.2 1.2c-.4.4-1 .4-1.4.1-.8-.6-1.7-1.2-2.6-1.6-.4-.2-.7-.6-.7-1.1l-.1-2.3A14 14 0 0 0 12 9.2z"/></symbol>
+      <symbol id="i-talk" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M5 7h14M5 12h14M5 17h9"/></symbol>
+    </defs></svg>
+    <div class="banner" data-state="ringing" role="region" aria-label="Call">
+      <div class="top">
+        <div class="av" aria-hidden="true"></div>
+        <div class="id"><div class="nm"></div><div class="st" aria-live="polite">Calling…</div></div>
+        <button class="quick" type="button" aria-label="End call"><svg><use href="#i-end"/></svg></button>
+      </div>
+      <div class="wave" aria-hidden="true"></div>
+      <!-- What you both say, as it is said (2 October 2026): opened from Transcript. -->
+      <div class="live" role="log" aria-label="Transcript" aria-live="polite"><p class="empty">What you both say shows up here.</p></div>
+      <div class="seg">
+        <button class="mute" type="button" aria-pressed="false"><svg><use href="#i-mic"/></svg><span>Mute</span></button>
+        <button class="talk" type="button" aria-pressed="false"><svg><use href="#i-talk"/></svg><span>Transcript</span></button>
+        <button class="end" type="button"><svg><use href="#i-end"/></svg><span>End</span></button>
+        <button class="close" type="button"><span>Close</span></button>
+      </div>
+    </div>
+  </body>
+</html>

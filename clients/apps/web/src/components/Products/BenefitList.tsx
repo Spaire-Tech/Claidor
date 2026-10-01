@@ -1,4 +1,4 @@
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { ChevronDown, ChevronUp, Plus } from 'lucide-react'
 import React, { ReactNode, useState } from 'react'
 import { resolveBenefitIcon } from '../Benefit/utils'
@@ -19,8 +19,8 @@ const BenefitRow = ({
   children: ReactNode
 }) => {
   return (
-    <div className=" flex flex-row items-center gap-x-2 text-gray-600">
-      <span className=" flex h-4 w-4 items-center justify-center text-2xl text-gray-600">
+    <div className="flex flex-row items-center gap-x-2 text-gray-600">
+      <span className="flex h-4 w-4 items-center justify-center text-2xl text-gray-600">
         {icon}
       </span>
       <span className="text-sm">{children}</span>
@@ -52,7 +52,10 @@ export const BenefitList = ({
       {shown.map((benefit) => (
         <BenefitRow
           key={benefit.id}
-          icon={resolveBenefitIcon(benefit.type as schemas['BenefitType'], 'h-4 w-4')}
+          icon={resolveBenefitIcon(
+            benefit.type as schemas['BenefitType'],
+            'h-4 w-4',
+          )}
         >
           {benefit.description}
         </BenefitRow>
@@ -63,7 +66,10 @@ export const BenefitList = ({
             toggled.map((benefit) => (
               <BenefitRow
                 key={benefit.id}
-                icon={resolveBenefitIcon(benefit.type as schemas['BenefitType'], 'h-4 w-4')}
+                icon={resolveBenefitIcon(
+                  benefit.type as schemas['BenefitType'],
+                  'h-4 w-4',
+                )}
               >
                 {benefit.description}
               </BenefitRow>

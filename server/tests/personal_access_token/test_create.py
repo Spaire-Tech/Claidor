@@ -16,21 +16,21 @@ import pytest
 from fastapi import Request
 from httpx import AsyncClient
 
-from polar.auth.middlewares import get_auth_subject
-from polar.auth.models import AuthSubject
-from polar.auth.scope import Scope
-from polar.config import settings
-from polar.kit.crypto import get_token_hash
-from polar.models import User
-from polar.oauth2.exceptions import InvalidTokenError
-from polar.personal_access_token.service import (
+from simeon.auth.middlewares import get_auth_subject
+from simeon.auth.models import AuthSubject
+from simeon.auth.scope import Scope
+from simeon.config import settings
+from simeon.kit.crypto import get_token_hash
+from simeon.models import User
+from simeon.oauth2.exceptions import InvalidTokenError
+from simeon.personal_access_token.service import (
     MAX_LIFETIME,
     TokenScopeError,
 )
-from polar.personal_access_token.service import (
+from simeon.personal_access_token.service import (
     personal_access_token as personal_access_token_service,
 )
-from polar.postgres import AsyncSession
+from simeon.postgres import AsyncSession
 from tests.fixtures.auth import AuthSubjectFixture
 
 
@@ -40,7 +40,7 @@ def request_carrying(token: str) -> Request:
         {
             "type": "http",
             "method": "POST",
-            "path": "/v1/redline/check",
+            "path": "/v1/products/",
             "headers": [(b"authorization", f"Bearer {token}".encode())],
         }
     )
@@ -61,11 +61,11 @@ class TestCreate:
         record, token = await personal_access_token_service.create(
             session,
             auth_subject,
-            comment="Word add-in",
-            scopes={Scope.redline_read},
+            comment="Script",
+            scopes={Scope.products_read},
         )
 
-        assert token.startswith("claidor_pat_")
+        assert token.startswith("simeon_pat_")
         # What is stored must be the hash, never the token. If these were
         # ever equal, a database read would be a credential.
         assert record.token != token
@@ -81,14 +81,14 @@ class TestCreate:
         _, token = await personal_access_token_service.create(
             session,
             auth_subject,
-            comment="Word add-in",
-            scopes={Scope.redline_read},
+            comment="Script",
+            scopes={Scope.products_read},
         )
 
         found = await personal_access_token_service.get_by_token(session, token)
 
         assert found is not None
-        assert found.scopes == {Scope.redline_read}
+        assert found.scopes == {Scope.products_read}
 
     async def test_it_expires(
         self, session: AsyncSession, auth_subject: AuthSubject[User]
@@ -97,8 +97,8 @@ class TestCreate:
         record, _ = await personal_access_token_service.create(
             session,
             auth_subject,
-            comment="Word add-in",
-            scopes={Scope.redline_read},
+            comment="Script",
+            scopes={Scope.products_read},
         )
 
         assert record.expires_at is not None
@@ -114,14 +114,14 @@ class TestCreate:
                 session,
                 auth_subject,
                 comment="Sneaky",
-                scopes={Scope.redline_read, Scope.web_read},
+                scopes={Scope.products_read, Scope.web_read},
             )
 
-    @pytest.mark.auth(AuthSubjectFixture(scopes={Scope.redline_read}))
+    @pytest.mark.auth(AuthSubjectFixture(scopes={Scope.products_read}))
     async def test_a_token_cannot_mint_another_token(
         self, session: AsyncSession, auth_subject: AuthSubject[User]
     ) -> None:
-        # This subject holds redline:read and no reserved scope, which is
+        # This subject holds products:read and no reserved scope, which is
         # exactly what a bearer token looks like. If it could mint, a
         # narrowly-scoped token would be one request from a wide one, and
         # revoking the first would not revoke what it had issued.
@@ -149,7 +149,7 @@ class TestCreate:
                 session,
                 auth_subject,
                 comment="Forever",
-                scopes={Scope.redline_read},
+                scopes={Scope.products_read},
                 expires_in=MAX_LIFETIME + timedelta(days=1),
             )
 
@@ -159,7 +159,7 @@ class TestCreateRoute:
     async def test_anonymous_is_refused(self, client: AsyncClient) -> None:
         response = await client.post(
             "/v1/personal_access_tokens/",
-            json={"comment": "Word", "scopes": ["redline:read"]},
+            json={"comment": "Script", "scopes": ["products:read"]},
         )
 
         assert response.status_code == 401
@@ -168,14 +168,14 @@ class TestCreateRoute:
     async def test_it_returns_the_token_once(self, client: AsyncClient) -> None:
         response = await client.post(
             "/v1/personal_access_tokens/",
-            json={"comment": "Word add-in on my laptop", "scopes": ["redline:read"]},
+            json={"comment": "Script on my laptop", "scopes": ["products:read"]},
         )
 
         assert response.status_code == 201
         body = response.json()
-        assert body["token"].startswith("claidor_pat_")
-        assert body["personal_access_token"]["scopes"] == ["redline:read"]
-        assert body["personal_access_token"]["comment"] == "Word add-in on my laptop"
+        assert body["token"].startswith("simeon_pat_")
+        assert body["personal_access_token"]["scopes"] == ["products:read"]
+        assert body["personal_access_token"]["comment"] == "Script on my laptop"
 
         # And never again: the list route knows the token exists and cannot
         # say what it is.
@@ -200,7 +200,7 @@ class TestCreateRoute:
         # revoke from.
         response = await client.post(
             "/v1/personal_access_tokens/",
-            json={"comment": "", "scopes": ["redline:read"]},
+            json={"comment": "", "scopes": ["products:read"]},
         )
 
         assert response.status_code == 422
@@ -211,7 +211,7 @@ class TestCreateRoute:
     ) -> None:
         """Mint it through a browser session, then resolve it as a bearer.
 
-        Not through HTTP, and the reason matters. `polar/app.py` skips
+        Not through HTTP, and the reason matters. `simeon/app.py` skips
         AuthSubjectMiddleware entirely when `settings.is_testing()`, and the
         `client` fixture replaces the auth-subject dependency with a fixed
         value — so an Authorization header sent to `client` is decoration
@@ -226,16 +226,16 @@ class TestCreateRoute:
         """
         minted = await client.post(
             "/v1/personal_access_tokens/",
-            json={"comment": "Word add-in", "scopes": ["redline:read"]},
+            json={"comment": "Script", "scopes": ["products:read"]},
         )
         token = minted.json()["token"]
 
         subject = await get_auth_subject(request_carrying(token), session)
 
         assert isinstance(subject.subject, User)
-        assert subject.scopes == {Scope.redline_read}
-        # And the scopes it resolved to are ones the check route accepts.
-        assert subject.scopes & {Scope.redline_read, Scope.redline_write}
+        assert subject.scopes == {Scope.products_read}
+        # And the scopes it resolved to are ones the products routes accept.
+        assert subject.scopes & {Scope.products_read, Scope.products_write}
 
     async def test_a_made_up_token_resolves_to_nobody(
         self, session: AsyncSession
@@ -244,5 +244,5 @@ class TestCreateRoute:
         # make the test above pass for the wrong reason.
         with pytest.raises(InvalidTokenError):
             await get_auth_subject(
-                request_carrying("claidor_pat_notarealtokenatall"), session
+                request_carrying("simeon_pat_notarealtokenatall"), session
             )

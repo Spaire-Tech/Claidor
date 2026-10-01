@@ -9,16 +9,16 @@ import ArrowUpward from '@mui/icons-material/ArrowUpward'
 import CheckOutlined from '@mui/icons-material/CheckOutlined'
 import FilterList from '@mui/icons-material/FilterList'
 import Search from '@mui/icons-material/Search'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
-import { Status } from '@claidor/ui/components/atoms/Status'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
+import { Status } from '@simeon/ui/components/atoms/Status'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@claidor/ui/components/ui/dropdown-menu'
+} from '@simeon/ui/components/ui/dropdown-menu'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { parseAsStringLiteral, useQueryState } from 'nuqs'
@@ -87,7 +87,7 @@ export const MeterListSidebar: React.FC<MeterListSidebarProps> = ({
   }, [inViewport, hasNextPage, fetchNextPage])
 
   return (
-    <div className=" flex h-full flex-col divide-y divide-gray-200">
+    <div className="flex h-full flex-col divide-y divide-gray-200">
       <div className="flex flex-row items-center justify-between gap-6 px-4 py-4">
         <div>Meters</div>
         <div className="flex flex-row items-center gap-4">
@@ -151,11 +151,8 @@ export const MeterListSidebar: React.FC<MeterListSidebarProps> = ({
         </div>
       </div>
       <div className="flex flex-row items-center gap-3 px-4 py-2">
-        <div className=" flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
-          <Search
-            fontSize="inherit"
-            className=" text-gray-500"
-          />
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
+          <Search fontSize="inherit" className="text-gray-500" />
         </div>
         <Input
           className="w-full rounded-none border-none bg-transparent p-0 shadow-none! ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -164,7 +161,7 @@ export const MeterListSidebar: React.FC<MeterListSidebarProps> = ({
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
-      <div className=" flex h-full grow flex-col divide-y divide-gray-50 overflow-y-auto">
+      <div className="flex h-full grow flex-col divide-y divide-gray-50 overflow-y-auto">
         {meters.map((meter) => {
           const queryString = searchParams.toString()
           const meterHref = `/dashboard/${organization.slug}/products/meters/${meter.id}${queryString ? `?${queryString}` : ''}`
@@ -174,22 +171,22 @@ export const MeterListSidebar: React.FC<MeterListSidebarProps> = ({
               key={meter.id}
               href={meterHref}
               className={twMerge(
-                ' cursor-pointer hover:bg-gray-100',
-                selectedMeterId === meter.id && ' bg-gray-100',
+                'cursor-pointer hover:bg-gray-100',
+                selectedMeterId === meter.id && 'bg-gray-100',
               )}
             >
               <div className="flex min-w-0 flex-col gap-y-1 px-6 py-2">
                 <div className="flex items-center gap-x-2">
                   {meter.archived_at && archivedFilter === 'all' && (
                     <Status
-                      className="bg-red-50 text-xs font-medium text-red-500 "
+                      className="bg-red-50 text-xs font-medium text-red-500"
                       status="Archived"
                     />
                   )}
 
                   <div className="truncate text-sm">{meter.name}</div>
                 </div>
-                <div className=" w-full truncate text-xs text-gray-500 capitalize">
+                <div className="w-full truncate text-xs text-gray-500 capitalize">
                   {meter.aggregation.func}
                 </div>
               </div>

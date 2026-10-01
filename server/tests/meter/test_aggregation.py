@@ -1,16 +1,16 @@
 import pytest
 from sqlalchemy import func, select
 
-from polar.meter.aggregation import (
+from simeon.meter.aggregation import (
     Aggregation,
     AggregationFunction,
     CountAggregation,
     PropertyAggregation,
     UniqueAggregation,
 )
-from polar.models import Event, Organization
-from polar.models.event import EventSource
-from polar.postgres import AsyncSession
+from simeon.models import Event, Organization
+from simeon.models.event import EventSource
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_event
 

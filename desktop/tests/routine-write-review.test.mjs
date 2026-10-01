@@ -2,7 +2,7 @@
  * A routine write is reviewed like every other surface (25 September 2026,
  * design-audit-ledger.md F-034, F-090, F-353).
  *
- * Grok Bot 0.18 shipped `automationWrite: "off"` in every mode table, typed
+ * The upstream app 0.18 shipped `automationWrite: "off"` in every mode table, typed
  * as the literal "off": a surface not yet rolled out. The path behind it is
  * complete here (state tool → reviewSandAutomationWrite → the Luna
  * classifier → the auto-review-approval card), so under the founder's rule

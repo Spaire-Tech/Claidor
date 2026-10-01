@@ -235,7 +235,7 @@ SURGERY = r"""([TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML, MOBILE_HTM
   featureBox(/their own computers/).insertAdjacentHTML('beforeend', VM_HTML);
   featureBox(/Stay in control/).insertAdjacentHTML('beforeend', APPROVE_HTML);
   // Pricing: Standard, Pro, Max. The same Simeon on every plan, a 7-day trial on all three;
-  // what changes is the weekly usage, as in Grok Bot, whose plans differed by usage alone.
+  // what changes is the weekly usage.
   const plans = [
     { name: 'Standard', monthly: 20, usage: 'Weekly Simeon usage included' },
     { name: 'Pro', monthly: 60, usage: '5× the weekly usage of Standard' },
@@ -391,8 +391,8 @@ section[data-framer-name="Hero"] .framer-hy289i{display:none!important}
     -webkit-mask-image:linear-gradient(#0000 0,#000 9cqw);mask-image:linear-gradient(#0000 0,#000 9cqw)}
   .sd-m-feed{display:flex;flex-direction:column;gap:2.2cqw;padding:3cqw 0 2cqw}
   .sd-m-in,.sd-m-out{position:relative;max-width:88%;padding:2.6cqw 3.6cqw;border-radius:4.8cqw;font-size:3.9cqw;line-height:1.42}
-  /* The agent speaks on a white sheet, as in the app (AGENT_SHEET_CSS in router-renderer-patch.mjs). */
-  .sd-m-in{align-self:flex-start;background:#fff;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
+  /* The agent speaks on the Messages grey, as in the app (AGENT_SHEET_CSS in router-renderer-patch.mjs). */
+  .sd-m-in{align-self:flex-start;background:#e9e9eb;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
   .sd-m-out{align-self:flex-end;background:#255a93;color:#fff;margin:1.6cqw 0 2.4cqw;
     box-shadow:inset 0 .5px 0 rgba(255,255,255,.28),0 0 0 .5px rgba(20,45,90,.18),0 1px 2px rgba(20,45,90,.08)}
   .sd-m-react{position:absolute;right:-1.4cqw;bottom:-3.6cqw;display:grid;place-items:center;width:7cqw;height:7cqw;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.18);font-size:3.6cqw;line-height:1}
@@ -402,7 +402,7 @@ section[data-framer-name="Hero"] .framer-hy289i{display:none!important}
   .sd-m-tag{display:inline-flex;align-items:center;gap:.8cqw;font-weight:500;vertical-align:middle;position:relative;top:-.1em}
   .sd-m-tag img{width:4.4cqw;height:4.4cqw;object-fit:contain}
   .sd-m-in .sd-app{font-size:.96em}
-  .sd-m-file{align-self:flex-start;display:flex;align-items:center;gap:2.4cqw;padding:2.4cqw 4cqw 2.4cqw 2.6cqw;border-radius:3.6cqw;background:#fff;font-size:3.7cqw;
+  .sd-m-file{align-self:flex-start;display:flex;align-items:center;gap:2.4cqw;padding:2.4cqw 4cqw 2.4cqw 2.6cqw;border-radius:3.6cqw;background:#e9e9eb;font-size:3.7cqw;
     box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
   .sd-m-file img{width:7cqw;height:7cqw;object-fit:contain}
   .sd-m-compose{display:flex;align-items:center;gap:2.4cqw;margin:1cqw 3.6cqw 4cqw;padding:1.8cqw 1.8cqw 1.8cqw 2cqw;border-radius:99px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.09),0 2px 8px -4px rgba(0,0,0,.1)}
@@ -970,6 +970,8 @@ async def main():
     os.rename(f"{OUT}/app", f"{OUT}/app-staged"); os.makedirs(f"{OUT}/app"); os.rename(f"{OUT}/app-staged", f"{OUT}/{app_path}")
     home = open(f"{OUT}/index.html", encoding="utf-8").read()
     assert home.count('data-src="app/index.html"') == 1
+    # The preload of the app's script and stylesheet names the same folder.
+    home = home.replace("'app/assets/", f"'{app_path}/assets/")
     open(f"{OUT}/index.html", "w", encoding="utf-8").write(home.replace('data-src="app/index.html"', f'data-src="{app_path}/index.html"'))
     await posters(app_path)
     shutil.rmtree(TMP, ignore_errors=True)

@@ -53,7 +53,7 @@ glass tile, Iris, Otto and Nova talking, Otto's computer asking you to sign
 in, Iris asking before she sends an email. Pricing is Standard $20, Pro $60
 and Max $100 a month, 20% less yearly, 7-day trial on each.
 
-**`public/app/` is Grok Bot 0.18.0's renderer with Simeon's patches.** The
+**`public/app/` is the app's window: the upstream 0.18.0 renderer with Simeon's patches (see `desktop/NOTICE.md`).** The
 founder chose on 28 September 2026 to publish it with the site, knowing the
 repository otherwise keeps that code out of git (`desktop/.gitignore`,
 `/src/app/dist/`).

@@ -1,7 +1,7 @@
 /**
  * The PDF text extractor the Read tool asks for.
  *
- * Grok Bot's host ran this in a Piscina worker: `resolveWorkerLocation(
+ * The upstream app's host ran this in a Piscina worker: `resolveWorkerLocation(
  * __import_meta_url, "pdf-worker")`, `new Piscina({ filename:
  * ./pdf-worker.js })`, input `{ bytes }`, output `{ text }` (host-main.cjs
  * 578037-578056, anchored by scripts/host-production-activation.mjs). The

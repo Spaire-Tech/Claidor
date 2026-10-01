@@ -1,10 +1,10 @@
 import { InlineModal } from '@/components/Modal/InlineModal'
-import { enums, type schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import CountryPicker from '@claidor/ui/components/atoms/CountryPicker'
-import CountryStatePicker from '@claidor/ui/components/atoms/CountryStatePicker'
-import Input from '@claidor/ui/components/atoms/Input'
-import { DropdownMenuItem } from '@claidor/ui/components/ui/dropdown-menu'
+import { enums, type schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import CountryPicker from '@simeon/ui/components/atoms/CountryPicker'
+import CountryStatePicker from '@simeon/ui/components/atoms/CountryStatePicker'
+import Input from '@simeon/ui/components/atoms/Input'
+import { DropdownMenuItem } from '@simeon/ui/components/ui/dropdown-menu'
 import {
   Form,
   FormControl,
@@ -13,8 +13,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
-import { Textarea } from '@claidor/ui/components/ui/textarea'
+} from '@simeon/ui/components/ui/form'
+import { Textarea } from '@simeon/ui/components/ui/textarea'
 import { useCallback } from 'react'
 import { usePayoutContext } from './PayoutContext'
 import { useInvoiceDownload } from './useInvoiceDownload'

@@ -4,11 +4,11 @@ from unittest.mock import patch
 import pytest
 import stripe as stripe_lib
 
-from polar.enums import TaxBehavior
-from polar.kit.address import Address, CountryAlpha2
-from polar.tax.calculation import TaxCode
-from polar.tax.calculation.base import TaxCalculationTechnicalError
-from polar.tax.calculation.stripe import stripe_tax_service
+from simeon.enums import TaxBehavior
+from simeon.kit.address import Address, CountryAlpha2
+from simeon.tax.calculation import TaxCode
+from simeon.tax.calculation.base import TaxCalculationTechnicalError
+from simeon.tax.calculation.stripe import stripe_tax_service
 
 
 @pytest.fixture
@@ -35,11 +35,11 @@ class TestStripeCalculateTax:
 
         with (
             patch(
-                "polar.tax.calculation.stripe.stripe_service.create_tax_calculation",
+                "simeon.tax.calculation.stripe.stripe_service.create_tax_calculation",
                 side_effect=rate_limit_error,
             ),
             patch(
-                "polar.tax.calculation.stripe.settings.is_sandbox", return_value=True
+                "simeon.tax.calculation.stripe.settings.is_sandbox", return_value=True
             ),
         ):
             result = await stripe_tax_service.calculate(
@@ -70,11 +70,11 @@ class TestStripeCalculateTax:
 
         with (
             patch(
-                "polar.tax.calculation.stripe.stripe_service.create_tax_calculation",
+                "simeon.tax.calculation.stripe.stripe_service.create_tax_calculation",
                 side_effect=rate_limit_error,
             ),
             patch(
-                "polar.tax.calculation.stripe.settings.is_sandbox", return_value=False
+                "simeon.tax.calculation.stripe.settings.is_sandbox", return_value=False
             ),
         ):
             with pytest.raises(TaxCalculationTechnicalError):

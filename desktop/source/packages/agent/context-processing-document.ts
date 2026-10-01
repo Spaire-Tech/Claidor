@@ -44,7 +44,7 @@ export interface ProcessedSelectedDocumentAttachment {
   readonly documentFilePath: string | undefined;
 }
 
-const logger = createLogger("@anysphere/agent/context-processing");
+const logger = createLogger("@sand/agent/context-processing");
 
 // Extracted from ../packages/agent/dist/context-processing.js as an
 // uncomposed document-processing media leaf. The parent processSelectedContext

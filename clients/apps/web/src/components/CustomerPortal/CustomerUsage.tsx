@@ -2,10 +2,10 @@
 
 import { useCustomerCustomerMeters } from '@/hooks/queries'
 import Search from '@mui/icons-material/Search'
-import { Client } from '@claidor/client'
-import { DataTable } from '@claidor/ui/components/atoms/DataTable'
-import Input from '@claidor/ui/components/atoms/Input'
-import { Tabs, TabsContent } from '@claidor/ui/components/atoms/Tabs'
+import { Client } from '@simeon/client'
+import { DataTable } from '@simeon/ui/components/atoms/DataTable'
+import Input from '@simeon/ui/components/atoms/Input'
+import { Tabs, TabsContent } from '@simeon/ui/components/atoms/Tabs'
 import { useMemo, useState } from 'react'
 import FormattedUnits from '../Meter/FormattedUnits'
 export interface CustomerUsageProps {
@@ -20,8 +20,7 @@ const MeterRing = ({
   consumed: number
   credited: number
 }) => {
-  const ratio =
-    credited > 0 ? Math.max(0, Math.min(1, consumed / credited)) : 0
+  const ratio = credited > 0 ? Math.max(0, Math.min(1, consumed / credited)) : 0
   const deg = Math.round(ratio * 360)
   return (
     <div

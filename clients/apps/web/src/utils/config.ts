@@ -15,15 +15,19 @@ const defaults = {
   FRONTEND_BASE_URL:
     process.env.NEXT_PUBLIC_FRONTEND_BASE_URL || 'http://127.0.0.1:3000',
   SPACE_BASE_URL:
-    process.env.NEXT_PUBLIC_SPACE_BASE_URL || 'https://space.claidorhq.com',
+    process.env.NEXT_PUBLIC_SPACE_BASE_URL || 'https://space.simeonlabs.com',
   BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000',
-  AUTH_COOKIE_KEY: process.env.POLAR_AUTH_COOKIE_KEY || 'claidor_session',
+  AUTH_COOKIE_KEY:
+    process.env.SIMEON_AUTH_COOKIE_KEY ||
+    process.env.POLAR_AUTH_COOKIE_KEY ||
+    'simeon_session',
   AUTH_MCP_COOKIE_KEY:
-    process.env.POLAR_AUTH_MCP_COOKIE_KEY || 'claidor_mcp_session',
+    process.env.SIMEON_AUTH_MCP_COOKIE_KEY ||
+    process.env.POLAR_AUTH_MCP_COOKIE_KEY ||
+    'simeon_mcp_session',
   LOGIN_PATH: process.env.NEXT_PUBLIC_LOGIN_PATH || '/login',
   GOOGLE_ANALYTICS_ID: process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID || undefined,
-  GITHUB_APP_NAMESPACE:
-    process.env.NEXT_PUBLIC_GITHUB_APP_NAMESPACE || 'polar-sh',
+  GITHUB_APP_NAMESPACE: process.env.NEXT_PUBLIC_GITHUB_APP_NAMESPACE || '',
   GITHUB_BADGE_EMBED_DEFAULT_LABEL:
     process.env.NEXT_PUBLIC_GITHUB_BADGE_EMBED_DEFAULT_LABEL || 'Fund',
   SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN || undefined,
@@ -33,7 +37,7 @@ const defaults = {
     '<Replace with Apple Pay Domain Association from Stripe>',
   CHECKOUT_EMBED_SCRIPT_SRC:
     process.env.NEXT_PUBLIC_CHECKOUT_EMBED_SCRIPT_SRC ||
-    'node_modules/@claidor/checkout/dist/embed.global.js',
+    'node_modules/@simeon/checkout/dist/embed.global.js',
   CHECKOUT_EXTERNAL_WEBHOOKS_WAITING_LIMIT_MS: stringToNumber(
     process.env.NEXT_PUBLIC_CHECKOUT_EXTERNAL_WEBHOOKS_WAITING_LIMIT_MS,
     30000,

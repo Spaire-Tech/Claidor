@@ -1,18 +1,18 @@
 """The shared memory: the version dance, the caps and the sync over HTTP
-(`polar/desktop/service.py`, `polar/desktop/endpoints.py`)."""
+(`simeon/desktop/service.py`, `simeon/desktop/endpoints.py`)."""
 
 import httpx
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.desktop.service import (
+from simeon.desktop.service import (
     MEMORY_FILE_MAX_BYTES,
     DesktopMemoryRefused,
     IncomingMemoryFile,
     desktop,
 )
-from polar.models import DesktopMemoryFile, User
-from polar.postgres import AsyncSession
+from simeon.models import DesktopMemoryFile, User
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 
 
@@ -34,7 +34,7 @@ def _sent(name: str, content: str, base_version: int = 0) -> IncomingMemoryFile:
 
 @pytest.mark.asyncio
 class TestSyncMemoryFiles:
-    async def test_a_file_claidor_does_not_have_is_stored_as_sent_at_version_1(
+    async def test_a_file_the_server_does_not_have_is_stored_as_sent_at_version_1(
         self, session: AsyncSession, user: User
     ) -> None:
         synced = await desktop.sync_memory_files(
@@ -143,7 +143,7 @@ class TestSyncMemoryFiles:
             ("USER.md", True),
         ]
 
-    async def test_a_name_claidor_does_not_keep_refuses_the_whole_sync(
+    async def test_a_name_the_server_does_not_keep_refuses_the_whole_sync(
         self, session: AsyncSession, user: User
     ) -> None:
         with pytest.raises(DesktopMemoryRefused):
@@ -185,7 +185,7 @@ class TestSyncMemoryFiles:
     async def test_the_oldest_daily_notes_go_when_there_are_too_many(
         self, session: AsyncSession, user: User, mocker: MockerFixture
     ) -> None:
-        mocker.patch("polar.desktop.service.MEMORY_FILE_LIMIT", 3)
+        mocker.patch("simeon.desktop.service.MEMORY_FILE_LIMIT", 3)
         synced = await desktop.sync_memory_files(
             session,
             user,
@@ -318,7 +318,7 @@ class TestSyncMemoryFiles:
         assert synced.deleted == []
         assert await desktop.list_memory_files(session, user) == []
 
-    async def test_a_deleted_name_claidor_does_not_keep_refuses_the_sync(
+    async def test_a_deleted_name_the_server_does_not_keep_refuses_the_sync(
         self, session: AsyncSession, user: User
     ) -> None:
         with pytest.raises(DesktopMemoryRefused):
@@ -334,7 +334,7 @@ class TestSyncMemoryFiles:
             session, user, [_sent(name, "- (2026-08-01) x\n")]
         )
         await desktop.sync_memory_files(session, user, [], deleted=[name])
-        mocker.patch("polar.desktop.service.MEMORY_TOMBSTONE_DAYS", -1)
+        mocker.patch("simeon.desktop.service.MEMORY_TOMBSTONE_DAYS", -1)
         assert (await desktop.sync_memory_files(session, user, [])).deleted == []
         # Once forgotten, the name is a new file from anyone.
         again = await desktop.sync_memory_files(session, user, [_sent(name, "- x\n")])
@@ -408,7 +408,7 @@ class TestMemoryEndpoints:
             "files": [{"name": "USER.md", "version": 1, "size": 6}]
         }
 
-    async def test_a_name_claidor_does_not_keep_is_refused_on_the_wire(
+    async def test_a_name_the_server_does_not_keep_is_refused_on_the_wire(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:
         headers = await _bearer(client, session, user)

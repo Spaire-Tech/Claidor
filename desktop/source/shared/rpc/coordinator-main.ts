@@ -17,7 +17,18 @@ export const COORDINATOR_MAIN_METHOD_TABLE = {
   getConversationOutline: { args: "object" },
   getSubagents: { args: "object" },
   setDevGatewayOffline: { args: "object" },
-  setGatewayPaused: { args: "object" }
+  setGatewayPaused: { args: "object" },
+  // Voice calls (30 September 2026): the call banner hands work to the
+  // agent as a typed message, reads its recent chat and its replies, keeps
+  // its voice in its profile, and leaves the call's record in its chat.
+  sendPrompt: { args: "object" },
+  getAgentTranscriptTail: { args: "object" },
+  updateAgent: { args: "object" },
+  appendSendMessage: { args: "object" },
+  // The call as a channel into the agent, `voice:<call>` (1 October 2026).
+  voiceCall: { args: "object" },
+  // The agent's picture for the call banner (2 October 2026): the roster carries no picture.
+  getAgentAvatar: { args: "object" }
 } as const;
 
 export type CoordinatorMainMethod = keyof typeof COORDINATOR_MAIN_METHOD_TABLE;

@@ -3,12 +3,12 @@ from uuid import UUID, uuid4
 import pytest
 from pytest_mock import MockerFixture
 
-from polar.entitlements.service import entitlements
-from polar.entitlements.tiers import TierKey
-from polar.enums import SubscriptionRecurringInterval
-from polar.models import Organization, Product
-from polar.models.subscription import SubscriptionStatus
-from polar.postgres import AsyncSession
+from simeon.entitlements.service import entitlements
+from simeon.entitlements.tiers import TierKey
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.models import Organization, Product
+from simeon.models.subscription import SubscriptionStatus
+from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     PriceFixtureType,
@@ -20,7 +20,7 @@ from tests.fixtures.random_objects import (
 
 
 def _patch_platform_org_id(mocker: MockerFixture, org_id: UUID | None) -> None:
-    mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", org_id)
+    mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", org_id)
 
 
 async def _seed_tier_product(
@@ -102,7 +102,7 @@ class TestGetTier:
         customer = await create_customer(
             save_fixture,
             organization=platform_org,
-            email=f"creator-{creator.id}@billing.claidor",
+            email=f"creator-{creator.id}@billing.simeon",
             user_metadata={"creator_org_id": str(creator.id)},
         )
         # Subscription exists but is canceled.
@@ -147,7 +147,7 @@ class TestGetTier:
         customer = await create_customer(
             save_fixture,
             organization=platform_org,
-            email=f"creator-{creator.id}@billing.claidor",
+            email=f"creator-{creator.id}@billing.simeon",
             user_metadata={"creator_org_id": str(creator.id)},
         )
         await create_subscription(
@@ -177,7 +177,7 @@ class TestGetTier:
         customer = await create_customer(
             save_fixture,
             organization=platform_org,
-            email=f"creator-{creator.id}@billing.claidor",
+            email=f"creator-{creator.id}@billing.simeon",
             user_metadata={"creator_org_id": str(creator.id)},
         )
         await create_subscription(
@@ -197,7 +197,7 @@ class TestGetTier:
         session: AsyncSession,
         save_fixture: SaveFixture,
     ) -> None:
-        # While a Claidor charge is being retried (dunning window), the
+        # While a Simeon charge is being retried (dunning window), the
         # subscription is past_due but the creator KEEPS their tier — they
         # only drop to `inactive` once it's fully canceled.
         platform_org = await create_organization(save_fixture)
@@ -210,7 +210,7 @@ class TestGetTier:
         customer = await create_customer(
             save_fixture,
             organization=platform_org,
-            email=f"creator-{creator.id}@billing.claidor",
+            email=f"creator-{creator.id}@billing.simeon",
             user_metadata={"creator_org_id": str(creator.id)},
         )
         await create_subscription(
@@ -243,7 +243,7 @@ class TestGetTier:
         customer = await create_customer(
             save_fixture,
             organization=platform_org,
-            email=f"creator-{creator.id}@billing.claidor",
+            email=f"creator-{creator.id}@billing.simeon",
             user_metadata={"creator_org_id": str(creator.id)},
         )
         await create_subscription(
@@ -289,7 +289,7 @@ class TestGetForOrganization:
         customer = await create_customer(
             save_fixture,
             organization=platform_org,
-            email=f"creator-{creator.id}@billing.claidor",
+            email=f"creator-{creator.id}@billing.simeon",
             user_metadata={"creator_org_id": str(creator.id)},
         )
         await create_subscription(
@@ -334,7 +334,7 @@ class TestTierDefinitions:
     """Smoke-test the static tier definitions to guard the pricing-page contract."""
 
     def test_studio_shape(self) -> None:
-        from polar.entitlements.tiers import get_definition
+        from simeon.entitlements.tiers import get_definition
 
         studio = get_definition(TierKey.studio)
         assert studio.monthly_price_cents == 12900
@@ -348,7 +348,7 @@ class TestTierDefinitions:
         assert studio.features.custom_pricing_negotiation is False
 
     def test_starter_shape(self) -> None:
-        from polar.entitlements.tiers import get_definition
+        from simeon.entitlements.tiers import get_definition
 
         starter = get_definition(TierKey.starter)
         assert starter.monthly_price_cents == 4900
@@ -364,7 +364,7 @@ class TestTierDefinitions:
         assert starter.rate_limit_group == "elevated"
 
     def test_unmanaged_is_unlimited(self) -> None:
-        from polar.entitlements.tiers import get_definition
+        from simeon.entitlements.tiers import get_definition
 
         # unmanaged is the dev / self-host / platform-org fallback: unlimited.
         unmanaged = get_definition(TierKey.unmanaged)
@@ -372,7 +372,7 @@ class TestTierDefinitions:
         assert unmanaged.features.audit_logs is True
 
     def test_inactive_is_restrictive(self) -> None:
-        from polar.entitlements.tiers import get_definition
+        from simeon.entitlements.tiers import get_definition
 
         # inactive is a real creator with no plan: everything gated off, so
         # there is no free unlimited fallback.
@@ -383,7 +383,7 @@ class TestTierDefinitions:
         assert inactive.features.email_sequences_and_segments is False
 
     def test_scale_shape(self) -> None:
-        from polar.entitlements.tiers import get_definition
+        from simeon.entitlements.tiers import get_definition
 
         scale = get_definition(TierKey.scale)
         assert scale.monthly_price_cents == 29900

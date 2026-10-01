@@ -5,7 +5,7 @@ import {
   DEFAULT_FORM_STYLE,
   type FormAttachedCustomField,
 } from '@/hooks/queries/forms'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import type { FormBuilderValues } from './FormBuilder'
 import { LeadMagnetCard, type LeadMagnetCardForm } from './LeadMagnetCard'
 

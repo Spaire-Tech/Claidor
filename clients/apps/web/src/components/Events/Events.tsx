@@ -1,4 +1,4 @@
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { EventRow } from './EventRow'
 
 export const Events = ({

@@ -11,13 +11,13 @@ export const NATIVE_OBSERVATION_CLASSES = Object.freeze({
   productionStartup: "admissible-production-startup-observation",
 });
 export const NATIVE_OBSERVATION_ENV_DENYLIST = Object.freeze([
-  "GROK_BOT_RECONSTRUCTED_DEV",
+  "SIMEON_DEV",
   "ELECTRON_RUN_AS_NODE",
   "VITE_DEV_SERVER_URL",
   "SAND_DEV_LOGIN",
   "SAND_DEV_LOGIN_EMAIL",
   "SAND_BACKEND_URL",
-  "CURSOR_API_BASE_URL",
+  "SIMEON_API_BASE_URL",
   "NODE_PATH",
   "NODE_OPTIONS",
   "NODE_EXTRA_CA_CERTS",

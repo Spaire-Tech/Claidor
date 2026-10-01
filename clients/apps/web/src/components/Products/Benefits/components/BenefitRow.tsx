@@ -5,15 +5,15 @@ import {
   resolveBenefitIcon,
 } from '@/components/Benefit/utils'
 import { useDeleteBenefit } from '@/hooks/queries'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import { Checkbox } from '@claidor/ui/components/ui/checkbox'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import { Checkbox } from '@simeon/ui/components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@claidor/ui/components/ui/dropdown-menu'
+} from '@simeon/ui/components/ui/dropdown-menu'
 import { MoreVertical } from 'lucide-react'
 import { useCallback } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -70,9 +70,7 @@ export const BenefitRow = ({
       <div
         className={twMerge(
           'flex items-center justify-between px-4 py-3 transition-colors',
-          selected
-            ? ' bg-blue-50/50'
-            : ' hover:bg-gray-50',
+          selected ? 'bg-blue-50/50' : 'hover:bg-gray-50',
         )}
       >
         <div className="flex items-center gap-3">
@@ -80,8 +78,8 @@ export const BenefitRow = ({
             className={twMerge(
               'flex h-8 w-8 items-center justify-center rounded-lg',
               selected
-                ? 'bg-blue-100 text-blue-500 '
-                : ' bg-gray-100 text-gray-500',
+                ? 'bg-blue-100 text-blue-500'
+                : 'bg-gray-100 text-gray-500',
             )}
           >
             {resolveBenefitIcon(benefit.type, 'h-4 w-4')}
@@ -90,7 +88,7 @@ export const BenefitRow = ({
             <span className={twMerge('text-sm', selected ? 'font-medium' : '')}>
               {benefit.description}
             </span>
-            <span className=" text-xs text-gray-500">
+            <span className="text-xs text-gray-500">
               {benefitsDisplayNames[benefit.type]}
             </span>
           </div>
@@ -112,10 +110,7 @@ export const BenefitRow = ({
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className=" bg-gray-50 shadow-lg"
-            >
+            <DropdownMenuContent align="end" className="bg-gray-50 shadow-lg">
               <DropdownMenuItem onClick={toggleEdit}>Edit</DropdownMenuItem>
               {benefit.deletable && (
                 <DropdownMenuItem onClick={toggleDelete}>

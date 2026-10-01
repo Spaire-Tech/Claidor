@@ -26,6 +26,1019 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/desktop/login': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Desktop:Login */
+    get: operations['desktop:desktop:login']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/auth/exchange': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Desktop:Exchange */
+    post: operations['desktop:desktop:exchange']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/auth/refresh': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Desktop:Refresh */
+    post: operations['desktop:desktop:refresh']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/auth/logout': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Desktop:Logout */
+    post: operations['desktop:desktop:logout']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/box/renewal-credential': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Desktop:Box Renewal Credential
+     * @description The credential the person's box renews its own access token with
+     *     (`DesktopService.issue_box_credential`). The Mac asks once per box
+     *     and writes it into the box's token file; the box trades it at
+     *     `POST /sand-box/inference-credential`. It dies with this session.
+     */
+    post: operations['desktop:desktop:box_renewal_credential']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/user/profile': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Desktop:Profile
+     * @description The person's name, e-mail and picture. The box's host reads it
+     *     too, with its own credential, for the agent's user-info block
+     *     (`host/extensions/auth/user-full-name-service.ts`).
+     */
+    get: operations['desktop:desktop:profile']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/user/quota': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Desktop:Quota */
+    get: operations['desktop:desktop:quota']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/user/profile-summary': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Desktop:Profile Summary */
+    get: operations['desktop:desktop:profile_summary']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/feedback': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Desktop:Feedback
+     * @description Send Feedback, recorded as one log line against the person.
+     *
+     *     Added 24 September 2026. Until then the app posted its feedback to
+     *     `{api}/sand/feedback`, the upstream app's address at Cursor, which this
+     *     server answered 404, so every message a person wrote in the sheet
+     *     was lost and the sheet said « unavailable ». There is no table: a
+     *     log line with the user id is what the founder asked for, and it is
+     *     searchable where the rest of the server's lines are.
+     */
+    post: operations['desktop:desktop:feedback']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/memory/sync': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Desktop:Memory Sync
+     * @description The shared memory, one round (`docs/maties/cloud.md`, section 3).
+     *
+     *     The client sends every memory file it has and the version it last
+     *     saw for each; Simeon merges and answers with every file it holds,
+     *     so a fresh computer receives the whole memory by sending nothing.
+     *     Merging is Simeon's job alone, so two engines cannot disagree.
+     *
+     *     The caller is a signed-in desktop, a cloud job, or — since 25
+     *     September 2026 — the person's box: the host that keeps the memory
+     *     files runs there (`host/extensions/memory-sync/`), with the box's
+     *     own credential.
+     */
+    post: operations['desktop:desktop:memory_sync']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/memory': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Desktop:Memory List
+     * @description What Simeon holds, without the text of it: a cheap way for a
+     *     client to see whether it is behind before sending anything.
+     */
+    get: operations['desktop:desktop:memory_list']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/models/available': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Desktop:Models
+     * @description The menu. A provider Simeon holds no key for is not on it: a
+     *     missing key reads as « not available here », never as an error at the
+     *     moment somebody sends a message.
+     */
+    get: operations['desktop:desktop:models']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/models/pricing-catalog': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Desktop:Pricing */
+    get: operations['desktop:desktop:pricing']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/client-banners/active-list': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Desktop:Banners */
+    get: operations['desktop:desktop:banners']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/client-banners/active': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Desktop:Banner */
+    get: operations['desktop:desktop:banner']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/client-banners/snapshot': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Desktop:Banner Snapshot */
+    get: operations['desktop:desktop:banner_snapshot']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/updates/check-manual': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Desktop:Updates Manual
+     * @description The app asks whether a newer Maties exists.
+     *
+     *     Simeon does not publish desktop releases yet, so the answer is « nothing
+     *     newer »: the app reads ``data.value`` and treats ``None`` as up to date.
+     */
+    get: operations['desktop:desktop:updates_manual']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/updates/check': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Desktop:Updates
+     * @description The app asks whether a newer Maties exists.
+     *
+     *     Simeon does not publish desktop releases yet, so the answer is « nothing
+     *     newer »: the app reads ``data.value`` and treats ``None`` as up to date.
+     */
+    get: operations['desktop:desktop:updates']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/skill-store': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Desktop:Skill Store
+     * @description The skill marketplace: Anthropic's Apache-licensed skills.
+     *
+     *     The app reads ``data.value.marketplace`` (skills to install),
+     *     ``data.value.localSkill`` (names and descriptions for the bundled skills)
+     *     and ``data.value.marketTags``.
+     *
+     *     ``marketplace`` is the catalogue in ``simeon/desktop/skill_store.py``:
+     *     the skills of https://github.com/anthropics/skills that carry the
+     *     Apache License 2.0, vendored under ``skills/`` next to that module
+     *     and each downloadable as a zip from the route below. Four of that
+     *     repository's skills — docx, pdf, pptx, xlsx — are under a different
+     *     licence (« governed by your agreement with Anthropic ») and are not
+     *     here; the app bundles them itself. ``doc-coauthoring`` carries no
+     *     licence at all and is not here either. The full accounting is in
+     *     ``skills/NOTICE``.
+     *
+     *     ``localSkill`` stays empty. It would only add titles and descriptions
+     *     for skills that are already installed, and the app covers both without
+     *     us: names come from ``BUNDLED_SKILL_DISPLAY_NAMES``, which a test holds
+     *     against ``skills.config.json`` in both languages, and descriptions fall
+     *     back to the skill's own ``SKILL.md``. Sending them from here would be a
+     *     second copy to keep in step.
+     *
+     *     No bearer on either route: the app fetches the catalogue with a plain
+     *     ``https.get`` and the archive with a fetch that carries only a
+     *     User-Agent (``ipcHandlers/skills/handlers.ts``, ``downloadZipUrl``).
+     */
+    get: operations['desktop:desktop:skill_store']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/skill-store/{name}.zip': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Desktop:Skill Archive
+     * @description One skill as the archive the app installs from: ``<name>/SKILL.md``
+     *     and the rest of the skill beside it. A name the catalogue does not
+     *     offer is 404, which the app reports as a failed download.
+     */
+    get: operations['desktop:desktop:skill_archive']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/kit-store': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Desktop:Kit Store
+     * @description The kit store, and it is empty for a structural reason, not for want of
+     *     curation.
+     *
+     *     The app reads ``data.value.kits`` and appends its own built-in kits.
+     *     (Checked 25 September 2026: nothing in ``desktop/`` calls it; the
+     *     paths below name an earlier version of the app.)
+     *
+     *     Three facts settle what can honestly go here, all of them in the desktop
+     *     app rather than in this file:
+     *
+     *     1. Installing a kit always downloads a zip from the kit's ``bundleUrl``,
+     *        extracts it, and looks for directories containing ``SKILL.md``
+     *        (``desktop/src/main/ipcHandlers/kits/handlers.ts``). There is no
+     *        install-from-what-you-already-have path; even the one "built-in" kit,
+     *        Computer Use, is a hosted zip.
+     *     2. The skills the app bundles are enabled by
+     *        ``desktop/SKILLs/skills.config.json``; the skill store above serves
+     *        the rest of Anthropic's Apache-licensed skills one at a time.
+     *     3. Kit installs and bundled skills share one directory, and the installer
+     *        suffixes on collision. Shipping a kit of skills the app already has
+     *        would write ``pdf-1`` next to ``pdf``.
+     *
+     *     So a kit here would have to be a chosen set of the store's unbundled
+     *     skills, hosted as one zip. Which of them belong together is a product
+     *     decision nobody has taken; until then the store offers them singly.
+     */
+    get: operations['desktop:desktop:kit_store']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/mcp-marketplace': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Desktop:Mcp Marketplace
+     * @description The MCP marketplace. The app read ``data.value.categories`` and
+     *     ``data.value.servers``; the catalogue lives next to this module. No
+     *     caller in ``desktop/`` since the re-founding (checked 25 September 2026):
+     *     the app's catalogue is ``shared/node/vendor-mcp/catalog.ts``.
+     */
+    get: operations['desktop:desktop:mcp_marketplace']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/analytics/events': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Desktop:Analytics Events
+     * @description Usage events the app sends when the person allows usage statistics.
+     *
+     *     Acknowledged and discarded: Simeon keeps no usage analytics for the
+     *     desktop app yet. The app only checks that the request succeeded.
+     */
+    get: operations['desktop:desktop:analytics_events']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/enterprise/context': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Desktop:Enterprise Context
+     * @description Enterprise accounts do not exist on Simeon; every account is
+     *     personal. 41602 is the app's « not a member » code: it clears any
+     *     stale enterprise context and carries on.
+     */
+    get: operations['desktop:desktop:enterprise_context']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/client-activities/slot': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Desktop:Activity Slot
+     * @description Promotional activities (daily check-in, startup credits). Maties runs none.
+     */
+    get: operations['desktop:desktop:activity_slot']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/client-activities/{activity_code}/context': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Desktop:Activity Context */
+    get: operations['desktop:desktop:activity_context']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/client-activities/{activity_code}/actions/{action_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Desktop:Activity Action */
+    post: operations['desktop:desktop:activity_action']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/proxy/v1/messages': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Desktop:Messages
+     * @description Anthropic's Messages API, behind Simeon's key and the person's
+     *     monthly allowance. The body goes through untouched; the usage
+     *     Anthropic reports comes back as credits.
+     */
+    post: operations['desktop:desktop:messages']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/proxy/v1/chat/completions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Desktop:Chat Completions
+     * @description OpenAI's older Chat Completions API, behind Simeon's key and the
+     *     same allowance.
+     *
+     *     Not what our own engine is pointed at: this wire refuses reasoning
+     *     alongside function tools, and an agent always carries tools. See
+     *     `/api/proxy/v1/responses`.
+     *
+     *     It is, however, the wire every general OpenAI-compatible client
+     *     speaks, so a program we did not write can use the model proxy through
+     *     it with a personal access token.
+     */
+    post: operations['desktop:desktop:chat_completions']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/proxy/v1/responses': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Desktop:Responses
+     * @description OpenAI's Responses API, behind Simeon's key and the person's
+     *     monthly allowance.
+     *
+     *     The wire the engine speaks to every OpenAI model of ours, because it
+     *     is the only one that will take reasoning and function tools in the
+     *     same request. The engine implements it natively
+     *     (`openai-transport-stream.ts`); nothing here translates anything.
+     */
+    post: operations['desktop:desktop:responses']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/connectors': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Desktop:Connectors List
+     * @description What this person has connected, and whether they may connect more.
+     *
+     *     The body carries `entitled` in both cases, so an app that only reads
+     *     the body still draws the right shelf; the status is what a patched
+     *     one cannot argue with.
+     */
+    get: operations['desktop:desktop:desktop:connectors_list']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/connectors/{slug}/link': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Desktop:Connectors Link
+     * @description An address to open a window on, good for a few hours and one use.
+     *
+     *     Nothing is written down here: the person's identity at the provider
+     *     is created by this call and by no other, which is what makes them
+     *     cost money only once somebody actually clicks Connect (section 7).
+     */
+    post: operations['desktop:desktop:desktop:connectors_link']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/connectors/{account_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Desktop:Connectors Disconnect
+     * @description One connection, removed, from the same card that made it.
+     *
+     *     Whether the account is this person's is decided by the provider
+     *     against their own list, not by the id looking plausible.
+     */
+    delete: operations['desktop:desktop:desktop:connectors_disconnect']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/maty/jobs': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Desktop:Maty Jobs List
+     * @description This person's recent work in the cloud, newest first.
+     *
+     *     `available` rides along so one call tells the app both what has run
+     *     and whether anything can be started at all. It is answered even when
+     *     the cloud is off, because the history of what ran while it was on is
+     *     still the person's.
+     */
+    get: operations['desktop:desktop:desktop:maty_jobs_list']
+    put?: never
+    /**
+     * Desktop:Maty Jobs Create
+     * @description Ask for one piece of work in the cloud.
+     *
+     *     Every refusal this can give — 503 with no runner, 400 for an empty or
+     *     over-long prompt or for a `deliver`/`allow` the server will not take
+     *     from a client, 429 over the live-job cap — is raised by the service
+     *     and turned into `{error, detail}` by Simeon's own handler. Nothing
+     *     is written on any of those paths.
+     */
+    post: operations['desktop:desktop:desktop:maty_jobs_create']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/maty/jobs/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Desktop:Maty Jobs Get
+     * @description One job, if it is this person's. Somebody else's is 404.
+     */
+    get: operations['desktop:desktop:desktop:maty_jobs_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/desktop/api/maty/jobs/{id}/cancel': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Desktop:Maty Jobs Cancel
+     * @description Call off a job that has not started yet.
+     *
+     *     A job a runner is already holding is refused with 409 rather than
+     *     raced for it; `MatyJobNotCancellable` says why at length.
+     */
+    post: operations['desktop:desktop:desktop:maty_jobs_cancel']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/loginDeepControl': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Desktop:Deep Control */
+    get: operations['desktop:desktop:deep_control']
+    put?: never
+    /** Desktop:Deep Control Confirm */
+    post: operations['desktop:desktop:deep_control_confirm']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/auth/poll': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Desktop:Deep Control Poll
+     * @description 404 until the person has confirmed in the browser, then once with
+     *     the pair. The app reads 404 as « keep waiting » and resets its error
+     *     count on it, so it must not be an error shape.
+     *
+     *     The upstream app's protocol carries the PKCE verifier in the query string,
+     *     which lands in every access log (F-258). Since 25 September 2026 the
+     *     app posts it instead (`/auth/poll` with a JSON body, below); this GET
+     *     stays for a build from before that day.
+     */
+    get: operations['desktop:desktop:deep_control_poll']
+    put?: never
+    /**
+     * Desktop:Deep Control Poll Post
+     * @description The same poll with `{uuid, verifier}` in the body, so the verifier
+     *     is never written to an access log.
+     */
+    post: operations['desktop:desktop:deep_control_poll_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/oauth/token': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Desktop:Deep Control Refresh
+     * @description The refresh the app runs behind the person's back.
+     *
+     *     Its reading of the answer is worth knowing before changing any
+     *     status here. A non-2xx revokes the stored credentials and shows
+     *     « we couldn't confirm your sign-in ». A 200 carrying
+     *     `shouldLogout` is the gentler « your session ended ». So a refresh
+     *     token that is simply spent or expired gets the second, and only a
+     *     request that is malformed gets the first.
+     */
+    post: operations['desktop:desktop:deep_control_refresh']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/sand-box/inference-credential': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Desktop:Box Inference Credential
+     * @description The box's own renewal (25 September 2026). The upstream app's host renews
+     *     its inference credential at this path on its backend
+     *     (`desktop/source/host/extensions/auth/credential-renewer.ts`,
+     *     `RENEWAL_PATH`, `{credential}` in, `{accessToken, expiresAtMs}`
+     *     out), and it builds the path with a leading slash, so it lives at
+     *     the root like the sign-in routes. The credential is the one the Mac
+     *     asked for at `/desktop/api/box/renewal-credential` and wrote into
+     *     the box's token file; a box that outlives the app (routines fire
+     *     while the Mac is awake) renews here every hour without the Mac. A
+     *     refused credential is a 401, which the renewer reports and retries
+     *     with backoff; nothing here signs the desktop out.
+     */
+    post: operations['desktop:desktop:box_inference_credential']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/maty/runner/claim': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Maty:Runner Claim
+     * @description The oldest job that is due and nobody holds, under a lease.
+     *
+     *     `{"job": null}` means the queue had nothing for this runner, which is
+     *     the ordinary answer most of the time and not an error.
+     */
+    post: operations['maty:maty:runner_claim']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/maty/runner/jobs/{id}/heartbeat': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Maty:Runner Heartbeat
+     * @description « The work is still going »: the lease moves out, and the job's
+     *     access token with it. A job the caller does not hold is refused.
+     */
+    post: operations['maty:maty:runner_heartbeat']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/maty/runner/jobs/{id}/complete': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Maty:Runner Complete
+     * @description The answer, kept; the job is final and its token is dead.
+     */
+    post: operations['maty:maty:runner_complete']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/maty/runner/jobs/{id}/fail': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Maty:Runner Fail
+     * @description A try that did not work. Retryable and with tries left, the job
+     *     goes back to the queue after a backoff; otherwise it stops for good
+     *     with the reason kept.
+     */
+    post: operations['maty:maty:runner_fail']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/users/me': {
     parameters: {
       query?: never
@@ -108,7 +1121,7 @@ export interface paths {
      * Disconnect Oauth Account
      * @description Disconnect an OAuth account (GitHub or Google) from the authenticated user.
      *
-     *     This allows users to unlink their OAuth provider while keeping their Polar account.
+     *     This allows users to unlink their OAuth provider while keeping their Simeon account.
      *     They can still authenticate using other methods (email magic link or other OAuth providers).
      *
      *     Note: You cannot disconnect your last authentication method if your email is not verified.
@@ -2483,7 +3496,7 @@ export interface paths {
     put?: never
     /**
      * Create Upgrade Checkout
-     * @description Create a Polar checkout for the target Pro/Scale tier on the
+     * @description Create a Simeon checkout for the target Pro/Scale tier on the
      *     Simeon platform org. Returns a URL the creator visits to enter their
      *     card and complete the upgrade.
      *
@@ -2858,759 +3871,6 @@ export interface paths {
     get: operations['integrations_google:integrations_google_link:integrations.google.link.callback']
     put?: never
     post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/librarian/questions': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List Questions
-     * @description Your own questions asked outside a matter, most recent first.
-     */
-    get: operations['librarian:list_questions']
-    put?: never
-    post?: never
-    /**
-     * Clear Questions
-     * @description Empty your own Historique for this workspace.
-     */
-    delete: operations['librarian:clear_questions']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/librarian/questions/{question_id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /**
-     * Delete Question
-     * @description Remove one question from your Historique.
-     *
-     *     404 rather than 403 when it is not yours: whether a colleague's question
-     *     exists is itself none of your business.
-     */
-    delete: operations['librarian:delete_question']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/librarian/ask': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Ask
-     * @description Stream a grounded, cited answer from the legal corpus (SSE).
-     */
-    post: operations['librarian:ask']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/corpus/acts': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List Acts
-     * @description List the loaded acts with their versions.
-     */
-    get: operations['corpus:list_acts']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/corpus/versions/{version_id}/articles': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List Version Articles
-     * @description Ordered article list of one version — numbers only, no text.
-     */
-    get: operations['corpus:list_version_articles']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/corpus/articles/{article_id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Get Article
-     * @description Full article detail: text, equivalences and verified jurisprudence.
-     */
-    get: operations['corpus:get_article']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/corpus/decisions/{decision_id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Get Decision
-     * @description Full decision detail with its verified article links.
-     */
-    get: operations['corpus:get_decision']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/corpus/search': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Search
-     * @description Search the corpus the way practitioners look things up.
-     *
-     *     A citation-shaped query (« article 170 AUPSRVE », « CCJA 090/2018 »)
-     *     lands on the document itself; anything else is full-text with filters.
-     *     How the query was read is returned alongside the results, so a
-     *     surprising result set is explainable rather than mysterious.
-     */
-    get: operations['corpus:search']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/analyses/suggestions': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Suggestions
-     * @description Where to start, ranked out of the corpus rather than chosen by hand.
-     */
-    get: operations['analyses:suggestions']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/analyses/authority': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Authority
-     * @description Is this held repeatedly, or once — counted on one named article.
-     */
-    get: operations['analyses:authority']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/analyses/history': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * History
-     * @description The versions of a text, and which one governs on a given date.
-     */
-    get: operations['analyses:history']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/analyses/compare': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Compare
-     * @description The two texts side by side, with what moved between them.
-     */
-    get: operations['analyses:compare']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/analyses/citations': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Citations
-     * @description An article's life in the courts: who cites it, and with what.
-     */
-    get: operations['analyses:citations']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/prompts': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List Prompts
-     * @description The cabinet's saved prompts, most recent first.
-     */
-    get: operations['prompts:list_prompts']
-    put?: never
-    /**
-     * Create Prompt
-     * @description Save a question the cabinet asks often.
-     */
-    post: operations['prompts:create_prompt']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/prompts/{prompt_id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /**
-     * Delete Prompt
-     * @description Remove a saved prompt from the cabinet's library.
-     */
-    delete: operations['prompts:delete_prompt']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/veilles': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List Veilles
-     * @description What the cabinet is watching.
-     */
-    get: operations['veilles:list_veilles']
-    put?: never
-    /**
-     * Create Veille
-     * @description Watch an article or an act.
-     *
-     *     Created with the corpus as it stands already marked as seen: watching
-     *     art. 170 today must not report the decisions that cited it since 2001.
-     */
-    post: operations['veilles:create_veille']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/veilles/signals': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List Signals
-     * @description The recent signal feed, newest first.
-     */
-    get: operations['veilles:list_signals']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/veilles/{veille_id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    /**
-     * Update Veille
-     * @description Suspend or resume a watch.
-     */
-    patch: operations['veilles:update_veille']
-    trace?: never
-  }
-  '/v1/lecteur/review': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Review Document
-     * @description Check every text and decision a document cites.
-     *
-     *     The file is read and dropped: nothing about an opposing party's filing
-     *     is stored by this route.
-     */
-    post: operations['lecteur:review_document']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/lecteur/review/example': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Review Example
-     * @description The same check, run on an example filing.
-     *
-     *     The document is fictional; the verification is not — it runs against
-     *     the loaded corpus like any other.
-     */
-    post: operations['lecteur:review_example']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/redline/check': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Check Text
-     * @description Check document text for defined-term defects.
-     *
-     *     This is the add-in's route: Word has the document open, Office.js
-     *     reads its text, and the offsets that come back are into exactly the
-     *     string that was sent.
-     *
-     *     **Scopes**: `redline:read` `redline:write`
-     */
-    post: operations['redline:check_text']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/redline/terms': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Document Terms
-     * @description Every defined term in the document, with its meaning and its uses.
-     *
-     *     Nothing here is a defect. It is the map a reader wants when they open
-     *     a long agreement somebody else drafted: what does « Permitted
-     *     Encumbrance » mean, where does it bite, and what does its definition
-     *     rest on. No model is involved, so nothing here can be wrong about what
-     *     the document says.
-     *
-     *     **Scopes**: `redline:read` `redline:write`
-     */
-    post: operations['redline:document_terms']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/redline/judge': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Judge Text
-     * @description Contradictions and miscalculations, which need a model.
-     *
-     *     A separate route from ``/check`` on purpose. The mechanical checks
-     *     answer in milliseconds and this one reads the whole document a window
-     *     at a time, so joining them would make every check as slow as the
-     *     slowest. The panel runs this after it has already shown what it knows.
-     *
-     *     Nothing a model proposes reaches the response until code has checked
-     *     it: every quote must be in the document, and every sum is recomputed.
-     *     See :mod:`polar.redline.judgement`.
-     *
-     *     **Scopes**: `redline:read` `redline:write`
-     */
-    post: operations['redline:judge_text']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/redline/fix/document': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Fix Document
-     * @description Check a Word file and return it with the safe fixes as revisions.
-     *
-     *     The first route that writes. Only a wrong case is corrected — the term
-     *     is written one way and defined another, and the correction is the
-     *     defined form. Everything else needs a drafting decision.
-     *
-     *     Every edit is a tracked change. The counts come back in headers so the
-     *     caller knows what happened without parsing the document:
-     *     ``X-Redline-Applied`` and ``X-Redline-Needs-Decision``.
-     *
-     *     The file is read, edited in memory and returned. Nothing is stored.
-     *
-     *     **Scopes**: `redline:write`
-     */
-    post: operations['redline:fix_document']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/redline/check/document': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Check Document
-     * @description Check an uploaded Word file or PDF.
-     *
-     *     The file is read and dropped; nothing about it is stored.
-     *
-     *     **Scopes**: `redline:read` `redline:write`
-     */
-    post: operations['redline:check_document']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/dossiers': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List Dossiers
-     * @description The matters the caller is assigned to.
-     */
-    get: operations['dossiers:list_dossiers']
-    put?: never
-    /**
-     * Create Dossier
-     * @description Open a matter. The creator is assigned to it as lead.
-     */
-    post: operations['dossiers:create_dossier']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/dossiers/{dossier_id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Get Dossier */
-    get: operations['dossiers:get_dossier']
-    put?: never
-    post?: never
-    /**
-     * Delete Dossier
-     * @description Delete a matter — lead only.
-     *
-     *     A soft delete: the dossier disappears from the product (every read
-     *     filters on it), but its journalized record — who asked what, answered
-     *     on what basis — survives in the database. A matter's history is not
-     *     something a click should be able to destroy.
-     */
-    delete: operations['dossiers:delete_dossier']
-    options?: never
-    head?: never
-    /** Update Dossier */
-    patch: operations['dossiers:update_dossier']
-    trace?: never
-  }
-  '/v1/dossiers/{dossier_id}/members': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Add Member
-     * @description Assign a colleague to the matter — the only way to grant access.
-     *
-     *     By id, or by the email the colleague signs in with. Email resolution
-     *     requires an existing Simeon account: access is granted to a person the
-     *     system knows, never to an address on faith. (Inviting people who have
-     *     no account yet is an email feature, deliberately deferred until
-     *     sending is set up.)
-     */
-    post: operations['dossiers:add_member']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/dossiers/{dossier_id}/members/{user_id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /** Remove Member */
-    delete: operations['dossiers:remove_member']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/dossiers/{dossier_id}/documents': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Add Document
-     * @description Register an uploaded file as a piece of this matter, and read it.
-     *
-     *     Extraction runs here, in the open: the response already says whether
-     *     the piece is readable, so nobody discovers weeks later that a scan
-     *     contributed nothing to the answers.
-     */
-    post: operations['dossiers:add_document']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/dossiers/{dossier_id}/documents/{document_id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /**
-     * Remove Document
-     * @description Remove a piece from the matter.
-     *
-     *     Answers that relied on it keep their quotes: the record of what was
-     *     said, and on what basis, does not change because a document was
-     *     withdrawn later.
-     */
-    delete: operations['dossiers:remove_document']
-    options?: never
-    head?: never
-    /** Update Document */
-    patch: operations['dossiers:update_document']
-    trace?: never
-  }
-  '/v1/dossiers/{dossier_id}/questions': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List Questions
-     * @description The matter's shared record: every question asked, with its answer.
-     */
-    get: operations['dossiers:list_questions']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/dossiers/{dossier_id}/ask': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Ask
-     * @description Ask inside the matter: the corpus supplies the law, the file the facts.
-     */
-    post: operations['dossiers:ask']
     delete?: never
     options?: never
     head?: never
@@ -7688,71 +7948,62 @@ export interface components {
       detail: string
     }
     /**
-     * AnalysisSubject
-     * @description What the analysis was run on — echoed so the UI never guesses.
-     */
-    AnalysisSubject: {
-      /** Kind */
-      kind: string
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /** Label */
-      label: string
-    }
-    /**
-     * AnalysisSuggestions
-     * @description Entry points for the Analyses screen, computed from the corpus.
-     *
-     *     Four lists, one per analysis, each drawn from what the collection
-     *     actually holds: the most-cited provisions, the judgments that turn on
-     *     the most of them. Nothing here is chosen by hand, so the screen cannot
-     *     drift away from the corpus behind it.
-     */
-    AnalysisSuggestions: {
-      /** Authority */
-      authority: components['schemas']['AnalysisTarget'][]
-      /** History */
-      history: components['schemas']['AnalysisTarget'][]
-      /** Compare */
-      compare: components['schemas']['AnalysisTarget'][]
-      /** Citations */
-      citations: components['schemas']['AnalysisTarget'][]
-    }
-    /**
-     * AnalysisTarget
-     * @description One thing worth running an analysis on, as the corpus ranked it.
-     */
-    AnalysisTarget: {
-      /** Kind */
-      kind: string
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /** Label */
-      label: string
-    }
-    /**
      * AppealDecision
      * @enum {string}
      */
     AppealDecision: 'approved' | 'rejected'
     /**
-     * ArticleEquivalenceRelation
-     * @enum {string}
+     * ArchivedDocumentFileRead
+     * @description A private document of a retired file type. No new one can be
+     *     created; existing rows stay readable. Never a public file.
      */
-    ArticleEquivalenceRelation:
-      | 'unchanged'
-      | 'renumbered'
-      | 'amended'
-      | 'split'
-      | 'merged'
-      | 'new'
-      | 'repealed'
+    ArchivedDocumentFileRead: {
+      /**
+       * Id
+       * Format: uuid4
+       * @description The ID of the object.
+       */
+      id: string
+      /**
+       * Organization Id
+       * Format: uuid4
+       */
+      organization_id: string
+      /** Name */
+      name: string
+      /** Path */
+      path: string
+      /** Mime Type */
+      mime_type: string
+      /** Size */
+      size: number
+      /** Storage Version */
+      storage_version: string | null
+      /** Checksum Etag */
+      checksum_etag: string | null
+      /** Checksum Sha256 Base64 */
+      checksum_sha256_base64: string | null
+      /** Checksum Sha256 Hex */
+      checksum_sha256_hex: string | null
+      /** Last Modified At */
+      last_modified_at: string | null
+      /** Version */
+      version: string | null
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      service: 'dossier_document'
+      /** Is Uploaded */
+      is_uploaded: boolean
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /** Size Readable */
+      readonly size_readable: string
+    }
     /**
      * AttachedCustomField
      * @description Schema of a custom field attached to a resource.
@@ -7828,46 +8079,6 @@ export interface components {
       user_metadata?: {
         [key: string]: unknown
       }
-    }
-    /**
-     * AuthorityAnalysis
-     * @description « Vérifier l'autorité » — is this held once, or held repeatedly.
-     */
-    AuthorityAnalysis: {
-      subject: components['schemas']['AnalysisSubject']
-      /** Anchor Article Id */
-      anchor_article_id: string | null
-      /** Anchor Label */
-      anchor_label: string | null
-      /** Also Cited */
-      also_cited: string[]
-      /** Level */
-      level: string
-      /** Decision Count */
-      decision_count: number
-      /** Year Span */
-      year_span: number
-      /** Label */
-      label: string
-      /** Rows */
-      rows: components['schemas']['AuthorityRow'][]
-    }
-    /** AuthorityRow */
-    AuthorityRow: {
-      /**
-       * Decision Id
-       * Format: uuid
-       */
-      decision_id: string
-      /** Reference */
-      reference: string
-      /**
-       * Decided On
-       * Format: date
-       */
-      decided_on: string
-      /** Quote */
-      quote: string | null
     }
     /** AuthorizeOrganization */
     AuthorizeOrganization: {
@@ -7967,8 +8178,11 @@ export interface components {
        *       "notification_recipients:write": "Create or modify notification recipients",
        *       "organization_access_tokens:read": "Read organization access tokens",
        *       "organization_access_tokens:write": "Create or modify organization access tokens",
-       *       "redline:read": "Check documents for defects",
-       *       "redline:write": "Apply fixes to documents"
+       *       "redline:read": "Retired",
+       *       "redline:write": "Retired",
+       *       "tieout:read": "Retired",
+       *       "tieout:write": "Retired",
+       *       "model_proxy": "Send messages to models through your allowance"
        *     }
        */
       scope_display_names: {
@@ -8058,8 +8272,11 @@ export interface components {
        *       "notification_recipients:write": "Create or modify notification recipients",
        *       "organization_access_tokens:read": "Read organization access tokens",
        *       "organization_access_tokens:write": "Create or modify organization access tokens",
-       *       "redline:read": "Check documents for defects",
-       *       "redline:write": "Apply fixes to documents"
+       *       "redline:read": "Retired",
+       *       "redline:write": "Retired",
+       *       "tieout:read": "Retired",
+       *       "tieout:write": "Retired",
+       *       "model_proxy": "Send messages to models through your allowance"
        *     }
        */
       scope_display_names: {
@@ -8157,6 +8374,9 @@ export interface components {
       | 'organization_access_tokens:write'
       | 'redline:read'
       | 'redline:write'
+      | 'tieout:read'
+      | 'tieout:write'
+      | 'model_proxy'
     /**
      * BalanceCreditOrderEvent
      * @description An event created by Simeon when an order is paid via customer balance.
@@ -11105,6 +11325,21 @@ export interface components {
       /** Name */
       name: string
     }
+    /** Body_desktop:desktop:deep_control_confirm */
+    Body_desktop_desktop_deep_control_confirm: {
+      /**
+       * Challenge
+       * @default
+       */
+      challenge: string
+      /**
+       * Uuid
+       * @default
+       */
+      uuid: string
+      /** Redirecttarget */
+      redirectTarget?: string | null
+    }
     /** Body_email-update:verify_email_update */
     'Body_email-update_verify_email_update': {
       /** Token */
@@ -11120,14 +11355,6 @@ export interface components {
       state?: string | null
       /** Error */
       error?: string | null
-    }
-    /** Body_lecteur:review_document */
-    Body_lecteur_review_document: {
-      /**
-       * File
-       * Format: binary
-       */
-      file: string
     }
     /** Body_login_code:authenticate_login_code */
     Body_login_code_authenticate_login_code: {
@@ -11150,29 +11377,13 @@ export interface components {
        */
       file: string
     }
-    /** Body_redline:check_document */
-    Body_redline_check_document: {
-      /**
-       * File
-       * Format: binary
-       */
-      file: string
-    }
-    /** Body_redline:fix_document */
-    Body_redline_fix_document: {
-      /**
-       * File
-       * Format: binary
-       */
-      file: string
-    }
     /**
-     * CancelClaidorSubscription
+     * CancelSimeonSubscription
      * @description Schedule the current Simeon subscription for cancellation at the
      *     end of the current billing period. When the cancellation revokes, the
      *     org has no active plan and resolves to `inactive` (no free fallback).
      */
-    CancelClaidorSubscription: Record<string, never>
+    CancelSimeonSubscription: Record<string, never>
     /**
      * CardPayment
      * @description Schema of a payment with a card payment method.
@@ -11283,17 +11494,6 @@ export interface components {
        * @example 4242
        */
       last4: string
-    }
-    /** ChangeRow */
-    ChangeRow: {
-      /** Sign */
-      sign: string
-      /** Kind */
-      kind: string
-      /** Alinea */
-      alinea: number
-      /** Text */
-      text: string
     }
     /**
      * Checkout
@@ -13645,48 +13845,53 @@ export interface components {
       allow_trial?: false | null
     }
     /**
-     * CitationNature
-     * @description What a citation rests on — never mixed, always shown.
-     *
-     *     A date read off an exhibit and a rule read off an article are different
-     *     kinds of claim: one can be wrong because the file is wrong, the other
-     *     because the law was misread. The product labels them apart so a reader
-     *     always knows which is which.
-     * @enum {string}
+     * ClaimResponse
+     * @description `{"job": null}` when there is nothing to do, and the job with its
+     *     credential when there is. The route serialises only the fields that
+     *     were set, so « nothing to do » is the two words cloud.md writes and
+     *     not a shape padded out with nulls.
      */
-    CitationNature: 'fact' | 'law'
-    /** CitationRow */
-    CitationRow: {
-      /**
-       * Decision Id
-       * Format: uuid
-       */
-      decision_id: string
-      /** Reference */
-      reference: string
-      /**
-       * Decided On
-       * Format: date
-       */
-      decided_on: string
+    ClaimResponse: {
+      job?: components['schemas']['ClaimedJobBody'] | null
+      /** Access Token */
+      access_token?: string | null
+      /** Expires At */
+      expires_at?: string | null
     }
     /**
-     * CitationSourceKind
-     * @enum {string}
+     * ClaimedJobBody
+     * @description A job as the runner needs it: whose it is, what to do, where the
+     *     answer goes, and what it may touch.
      */
-    CitationSourceKind: 'document' | 'article' | 'decision'
-    /**
-     * CitationsAnalysis
-     * @description « Cartographier les citations » — an article's life in the courts.
-     */
-    CitationsAnalysis: {
-      subject: components['schemas']['AnalysisSubject']
-      /** Decision Count */
-      decision_count: number
-      /** Cited With */
-      cited_with: components['schemas']['CoCitedArticle'][]
-      /** Rows */
-      rows: components['schemas']['CitationRow'][]
+    ClaimedJobBody: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /** Kind */
+      kind: string
+      /** Prompt */
+      prompt: string
+      /** Deliver */
+      deliver: {
+        [key: string]: unknown
+      }
+      /** Allow */
+      allow: {
+        [key: string]: unknown
+      }
+      /**
+       * Executor
+       * @default maty-runner
+       */
+      executor: string
+      /** Conversation */
+      conversation?:
+        | {
+            [key: string]: unknown
+          }[]
+        | null
     }
     /** ClientInvoiceCreate */
     ClientInvoiceCreate: {
@@ -13751,7 +13956,7 @@ export interface components {
       show_logo: boolean
       /**
        * Show Mor Attribution
-       * @description Whether to show 'via claidor' label under the logo.
+       * @description Whether to show 'via Simeon' label under the logo.
        * @default true
        */
       show_mor_attribution: boolean
@@ -13901,7 +14106,7 @@ export interface components {
       show_logo: boolean
       /**
        * Show Mor Attribution
-       * @description Whether to show 'via claidor' label under the logo.
+       * @description Whether to show 'via Simeon' label under the logo.
        * @default true
        */
       show_mor_attribution: boolean
@@ -14011,18 +14216,6 @@ export interface components {
      * @enum {string}
      */
     ClientInvoiceStatus: 'draft' | 'open' | 'paid' | 'void' | 'uncollectible'
-    /** CoCitedArticle */
-    CoCitedArticle: {
-      /**
-       * Article Id
-       * Format: uuid
-       */
-      article_id: string
-      /** Label */
-      label: string
-      /** Count */
-      count: number
-    }
     /** CommunityPostNewOnCourseNotification */
     CommunityPostNewOnCourseNotification: {
       /**
@@ -14119,336 +14312,23 @@ export interface components {
       /** Post Url */
       readonly post_url: string
     }
-    /**
-     * CompareAnalysis
-     * @description « Comparer les versions » — the two texts, word for word.
-     */
-    CompareAnalysis: {
-      subject: components['schemas']['AnalysisSubject']
-      left: components['schemas']['ComparePane']
-      right: components['schemas']['ComparePane']
-      /** Changes */
-      changes: components['schemas']['ChangeRow'][]
-      /** Identical */
-      identical: boolean
-    }
-    /** ComparePane */
-    ComparePane: {
-      /** Title */
-      title: string
-      /** Version Label */
-      version_label: string
-      /** Alineas */
-      alineas: string[]
-      /** Highlighted */
-      highlighted: number[]
-    }
-    /**
-     * CorpusAct
-     * @description A uniform act with its loaded versions.
-     */
-    CorpusAct: {
+    /** CompleteBody */
+    CompleteBody: {
+      /** Runner */
+      runner: string
       /**
-       * Id
-       * Format: uuid4
+       * Result
+       * @default
        */
-      id: string
-      /** Short Code */
-      short_code: string
-      /** Title */
-      title: string
-      /** Versions */
-      versions: components['schemas']['CorpusActVersion'][]
-    }
-    /**
-     * CorpusActVersion
-     * @description One temporal expression of an act, as shown on the act page.
-     */
-    CorpusActVersion: {
-      /**
-       * Id
-       * Format: uuid4
-       */
-      id: string
-      /**
-       * Label
-       * @description Human label practitioners use: '1998', '2023'.
-       */
-      label: string
-      /** Adopted On */
-      adopted_on: string | null
-      /** In Force From */
-      in_force_from: string | null
-      /** Gazette Reference */
-      gazette_reference: string | null
-      /** Transitional Rule */
-      transitional_rule: string | null
-      /**
-       * Article Count
-       * @description Number of loaded articles.
-       */
-      article_count: number
-    }
-    /**
-     * CorpusArticleDetail
-     * @description Full article detail for the reading room hub page.
-     */
-    CorpusArticleDetail: {
-      /**
-       * Id
-       * Format: uuid4
-       */
-      id: string
-      /** Number */
-      number: string
-      /** Heading */
-      heading: string | null
-      /** Text */
-      text: string
-      /**
-       * Alineas
-       * @description Structured alinéa breakdown, falling back to text lines.
-       */
-      alineas: string[]
-      /** Version Label */
-      version_label: string
-      /** Act Short Code */
-      act_short_code: string
-      provenance: components['schemas']['CorpusProvenance'] | null
-      /** Equivalences */
-      equivalences: components['schemas']['CorpusArticleEquivalence'][]
-      /** Decisions */
-      decisions: components['schemas']['CorpusLinkedDecision'][]
-    }
-    /**
-     * CorpusArticleEquivalence
-     * @description Counterpart of an article in the other version of the act.
-     */
-    CorpusArticleEquivalence: {
-      /**
-       * Article Id
-       * Format: uuid4
-       */
-      article_id: string
-      /** Number */
-      number: string
-      /** Version Label */
-      version_label: string
-      relation: components['schemas']['ArticleEquivalenceRelation']
-      /** Note */
-      note: string | null
-    }
-    /**
-     * CorpusArticleListItem
-     * @description Sidebar-weight article entry: numbers only, no text.
-     */
-    CorpusArticleListItem: {
-      /**
-       * Id
-       * Format: uuid4
-       */
-      id: string
-      /** Number */
-      number: string
-      /** Sort Key */
-      sort_key: number
-      /** Heading */
-      heading: string | null
-    }
-    /**
-     * CorpusDecisionArticle
-     * @description An article cited by a decision (verified link).
-     */
-    CorpusDecisionArticle: {
-      /**
-       * Article Id
-       * Format: uuid4
-       */
-      article_id: string
-      /** Number */
-      number: string
-      /** Version Label */
-      version_label: string
-    }
-    /**
-     * CorpusDecisionDetail
-     * @description Full decision detail for the reading room decision page.
-     */
-    CorpusDecisionDetail: {
-      /**
-       * Id
-       * Format: uuid4
-       */
-      id: string
-      /** Number */
-      number: string
-      /**
-       * Decided On
-       * Format: date
-       */
-      decided_on: string
-      /** Chamber */
-      chamber: string | null
-      /** Urn Lex */
-      urn_lex: string | null
-      /** Ohadata Code */
-      ohadata_code: string | null
-      /** Source Url */
-      source_url: string | null
-      /** Summary */
-      summary: string | null
-      /** Full Text */
-      full_text: string | null
-      /** Articles */
-      articles: components['schemas']['CorpusDecisionArticle'][]
-      /** Argued */
-      argued?: string | null
-      /** Held */
-      held?: string | null
-      /**
-       * Similar
-       * @default []
-       */
-      similar: components['schemas']['CorpusSimilarDecision'][]
-    }
-    /**
-     * CorpusLinkedDecision
-     * @description A decision with a verified link to the article.
-     */
-    CorpusLinkedDecision: {
-      /**
-       * Id
-       * Format: uuid4
-       */
-      id: string
-      /** Number */
-      number: string
-      /**
-       * Decided On
-       * Format: date
-       */
-      decided_on: string
-      /** Summary */
-      summary: string | null
-      /** Treatment */
-      treatment: string | null
-    }
-    /**
-     * CorpusProvenance
-     * @description Where the article text came from and how it was verified.
-     */
-    CorpusProvenance: {
-      /** Source */
-      source: string | null
-      /** Kind */
-      kind: string | null
-      /** Authority Crosscheck */
-      authority_crosscheck: string | null
-    }
-    /** CorpusSearchArticleResult */
-    CorpusSearchArticleResult: {
-      /**
-       * Id
-       * Format: uuid4
-       */
-      id: string
-      /** Number */
-      number: string
-      /** Act Short Code */
-      act_short_code: string
-      /** Act Title */
-      act_title: string
-      /** Version Label */
-      version_label: string
-      /** In Force From */
-      in_force_from: string | null
-      /** Excerpt */
-      excerpt: string
-      /**
-       * Exact
-       * @description An exact citation landing, not a text match.
-       * @default false
-       */
-      exact: boolean
-    }
-    /** CorpusSearchDecisionResult */
-    CorpusSearchDecisionResult: {
-      /**
-       * Id
-       * Format: uuid4
-       */
-      id: string
-      /** Number */
-      number: string
-      /**
-       * Decided On
-       * Format: date
-       */
-      decided_on: string
-      /** Chamber */
-      chamber: string | null
-      /** Keyword Header */
-      keyword_header: string | null
-      /** Excerpt */
-      excerpt: string
-      /**
-       * Exact
-       * @default false
-       */
-      exact: boolean
-    }
-    /**
-     * CorpusSearchInterpretation
-     * @description How Simeon read the query — shown back, so it is never a mystery.
-     *
-     *     A lawyer who types « article 170 AUPSRVE » and gets a topic list should
-     *     see at once that the query was read as a topic, not as a citation.
-     */
-    CorpusSearchInterpretation: {
-      /**
-       * Kind
-       * @description article | decision | text
-       */
-      kind: string
-      /** Number */
-      number?: string | null
-      /** Act Code */
-      act_code?: string | null
-      /** Year */
-      year?: number | null
-    }
-    /** CorpusSearchResults */
-    CorpusSearchResults: {
-      interpretation: components['schemas']['CorpusSearchInterpretation']
-      /** Articles */
-      articles: components['schemas']['CorpusSearchArticleResult'][]
-      /** Decisions */
-      decisions: components['schemas']['CorpusSearchDecisionResult'][]
-      /**
-       * Chambers
-       * @description Distinct chambers, for the filter UI.
-       */
-      chambers?: string[]
-    }
-    /**
-     * CorpusSimilarDecision
-     * @description Another decision turning on the same provisions.
-     */
-    CorpusSimilarDecision: {
-      /**
-       * Decision Id
-       * Format: uuid4
-       */
-      decision_id: string
-      /** Number */
-      number: string
-      /**
-       * Decided On
-       * Format: date
-       */
-      decided_on: string
-      /** Shared Articles */
-      shared_articles: number
+      result: string
+      /** Usage */
+      usage?: {
+        [key: string]: unknown
+      } | null
+      /** Messages */
+      messages?: components['schemas']['TurnMessage'][] | null
+      /** Artifacts */
+      artifacts?: components['schemas']['TurnArtifact'][] | null
     }
     /** CostMetadata */
     'CostMetadata-Input': {
@@ -14988,11 +14868,42 @@ export interface components {
       | 'ZM'
       | 'ZW'
     /**
-     * CurrentClaidorSubscription
+     * CreateJobBody
+     * @description `{ kind?, prompt, deliver?, allow? }`.
+     *
+     *     `prompt` carries no length constraint here on purpose: the refusals
+     *     this route can give are meant to be shown to a person, and a pydantic
+     *     422 with a list of error dictionaries is not. Both « nothing to do »
+     *     and « too long » are decided in the service and come back as a 400
+     *     with a sentence, which is the same way the memory routes refuse a
+     *     file that is too big.
+     *
+     *     `deliver` and `allow` are declared, and refused if set. They are part
+     *     of the shape because they are part of a job and will one day be part
+     *     of this call; today the server decides both. Declaring them means an
+     *     app that sends them is told why, rather than having them silently
+     *     dropped — see `MatyService.create_for_person`.
+     */
+    CreateJobBody: {
+      /** @default task */
+      kind: components['schemas']['MatyJobKind']
+      /** Prompt */
+      prompt: string
+      /** Deliver */
+      deliver?: {
+        [key: string]: unknown
+      }
+      /** Allow */
+      allow?: {
+        [key: string]: unknown
+      }
+    }
+    /**
+     * CurrentSimeonSubscription
      * @description The caller's current Simeon subscription state (billing-side info,
      *     complementary to the entitlements snapshot).
      */
-    CurrentClaidorSubscription: {
+    CurrentSimeonSubscription: {
       tier: components['schemas']['TierKey']
       /**
        * Billing Interval
@@ -18949,7 +18860,7 @@ export interface components {
       name: string
       /** Position */
       position: number
-      /** Is Polar Bot */
+      /** Is Simeon Bot */
       is_polar_bot: boolean
       /**
        * Color
@@ -20077,325 +19988,6 @@ export interface components {
       | 'lost'
       | 'won'
     /**
-     * DocumentCategory
-     * @enum {string}
-     */
-    DocumentCategory:
-      | 'pleading'
-      | 'exhibit'
-      | 'contract'
-      | 'statement'
-      | 'correspondence'
-      | 'decision'
-      | 'other'
-    /** DossierAsk */
-    DossierAsk: {
-      /** Question */
-      question: string
-      /**
-       * Answer Both Versions
-       * @description When the question is version-dependent and no date can be established from the file, answer under both acts side by side instead of asking for the date.
-       * @default false
-       */
-      answer_both_versions: boolean
-    }
-    /** DossierCitationRead */
-    DossierCitationRead: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      nature: components['schemas']['CitationNature']
-      source_kind: components['schemas']['CitationSourceKind']
-      /** Source Id */
-      source_id: string | null
-      /** Title */
-      title: string
-      /** Quote */
-      quote: string
-    }
-    /** DossierCreate */
-    DossierCreate: {
-      /** Name */
-      name: string
-      /** Reference */
-      reference?: string | null
-      /** Client Name */
-      client_name?: string | null
-    }
-    /**
-     * DossierDocumentCreate
-     * @description Registers an already-uploaded file as a piece of this matter.
-     */
-    DossierDocumentCreate: {
-      /**
-       * File Id
-       * Format: uuid
-       */
-      file_id: string
-      /** Title */
-      title: string
-      /** @default other */
-      category: components['schemas']['DocumentCategory']
-      /** Piece Number */
-      piece_number?: number | null
-    }
-    /**
-     * DossierDocumentFileCreate
-     * @description Schema to create a pièce uploaded into a dossier.
-     *
-     *     Any document type is accepted — extraction decides afterwards, in the
-     *     open, whether the piece is readable. A scanned exhibit belongs in the
-     *     file even when the machine cannot read it.
-     */
-    DossierDocumentFileCreate: {
-      /** Organization Id */
-      organization_id?: string | null
-      /** Name */
-      name: string
-      /** Mime Type */
-      mime_type: string
-      /**
-       * Size
-       * @description Size of the file. A maximum of 100 MB is allowed for this type of file.
-       */
-      size: number
-      /** Checksum Sha256 Base64 */
-      checksum_sha256_base64?: string | null
-      upload: components['schemas']['S3FileCreateMultipart']
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      service: 'dossier_document'
-      /** Version */
-      version?: string | null
-    }
-    /**
-     * DossierDocumentFileRead
-     * @description A pièce uploaded into a dossier.
-     *
-     *     Deliberately NOT a public file: pieces are reachable only through the
-     *     dossier's own membership-gated endpoints, never by URL.
-     */
-    DossierDocumentFileRead: {
-      /**
-       * Id
-       * Format: uuid4
-       * @description The ID of the object.
-       */
-      id: string
-      /**
-       * Organization Id
-       * Format: uuid4
-       */
-      organization_id: string
-      /** Name */
-      name: string
-      /** Path */
-      path: string
-      /** Mime Type */
-      mime_type: string
-      /** Size */
-      size: number
-      /** Storage Version */
-      storage_version: string | null
-      /** Checksum Etag */
-      checksum_etag: string | null
-      /** Checksum Sha256 Base64 */
-      checksum_sha256_base64: string | null
-      /** Checksum Sha256 Hex */
-      checksum_sha256_hex: string | null
-      /** Last Modified At */
-      last_modified_at: string | null
-      /** Version */
-      version: string | null
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      service: 'dossier_document'
-      /** Is Uploaded */
-      is_uploaded: boolean
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /** Size Readable */
-      readonly size_readable: string
-    }
-    /** DossierDocumentRead */
-    DossierDocumentRead: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /** Title */
-      title: string
-      category: components['schemas']['DocumentCategory']
-      /** Piece Number */
-      piece_number: number | null
-      extraction_status: components['schemas']['ExtractionStatus']
-      /** File Name */
-      file_name: string
-      /** Mime Type */
-      mime_type: string
-      /** Size */
-      size: number
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /** Readable */
-      readable: boolean
-    }
-    /** DossierDocumentUpdate */
-    DossierDocumentUpdate: {
-      /** Title */
-      title?: string | null
-      category?: components['schemas']['DocumentCategory'] | null
-      /** Piece Number */
-      piece_number?: number | null
-    }
-    /** DossierListItem */
-    DossierListItem: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /** Name */
-      name: string
-      /** Reference */
-      reference: string | null
-      /** Client Name */
-      client_name: string | null
-      status: components['schemas']['DossierStatus']
-      /** Document Count */
-      document_count: number
-      /** Member Count */
-      member_count: number
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /** Modified At */
-      modified_at: string | null
-    }
-    /**
-     * DossierMemberAdd
-     * @description Assign by id, or by the email a colleague signs in with.
-     */
-    DossierMemberAdd: {
-      /** User Id */
-      user_id?: string | null
-      /** Email */
-      email?: string | null
-      /** @default member */
-      role: components['schemas']['DossierRole']
-    }
-    /** DossierMemberRead */
-    DossierMemberRead: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /**
-       * User Id
-       * Format: uuid
-       */
-      user_id: string
-      /** Email */
-      email: string
-      role: components['schemas']['DossierRole']
-    }
-    /** DossierQuestionRead */
-    DossierQuestionRead: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /** Question */
-      question: string
-      /** Answer */
-      answer: string | null
-      status: components['schemas']['QuestionStatus']
-      /** Versions Used */
-      versions_used: string[] | null
-      /** Authority Label */
-      authority_label: string | null
-      /** Authority Count */
-      authority_count: number | null
-      /** Asked By */
-      asked_by: string | null
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /** Answered At */
-      answered_at: string | null
-      /** Facts */
-      facts: components['schemas']['DossierCitationRead'][]
-      /** Law */
-      law: components['schemas']['DossierCitationRead'][]
-    }
-    /** DossierRead */
-    DossierRead: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /** Name */
-      name: string
-      /** Reference */
-      reference: string | null
-      /** Client Name */
-      client_name: string | null
-      status: components['schemas']['DossierStatus']
-      /** Notes */
-      notes: string | null
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /** Members */
-      members: components['schemas']['DossierMemberRead'][]
-      /** Documents */
-      documents: components['schemas']['DossierDocumentRead'][]
-    }
-    /**
-     * DossierRole
-     * @enum {string}
-     */
-    DossierRole: 'lead' | 'member'
-    /**
-     * DossierStatus
-     * @enum {string}
-     */
-    DossierStatus: 'open' | 'closed' | 'archived'
-    /** DossierUpdate */
-    DossierUpdate: {
-      /** Name */
-      name?: string | null
-      /** Reference */
-      reference?: string | null
-      /** Client Name */
-      client_name?: string | null
-      status?: components['schemas']['DossierStatus'] | null
-      /** Notes */
-      notes?: string | null
-    }
-    /**
      * DownloadableFileCreate
      * @description Schema to create a file to be associated with the downloadables benefit.
      */
@@ -20966,6 +20558,11 @@ export interface components {
        */
       duplicates: number
     }
+    /** ExchangeBody */
+    ExchangeBody: {
+      /** Authcode */
+      authCode: string
+    }
     /**
      * ExistingProductPrice
      * @description A price that already exists for this product.
@@ -20990,18 +20587,41 @@ export interface components {
       /** Detail */
       detail: string
     }
+    /** FailBody */
+    FailBody: {
+      /** Runner */
+      runner: string
+      /** Reason */
+      reason: string
+      /**
+       * Retryable
+       * @default false
+       */
+      retryable: boolean
+    }
     /**
-     * ExtractionStatus
-     * @enum {string}
+     * FeedbackBody
+     * @description What the app's Send Feedback sheet posts
+     *     (`desktop/source/electron-main/feedback/feedback-report.ts`). The app
+     *     also sends `submissionId`, `osVersion`, `conversationId` and
+     *     `sentryEventIds`; they are accepted and not read.
      */
-    ExtractionStatus: 'pending' | 'extracted' | 'unextractable' | 'failed'
+    FeedbackBody: {
+      /** Category */
+      category?: string | null
+      /** Message */
+      message: string
+      /** Appversion */
+      appVersion?: string | null
+      /** Platform */
+      platform?: string | null
+    }
     FileCreate:
       | components['schemas']['DownloadableFileCreate']
       | components['schemas']['ProductMediaFileCreate']
       | components['schemas']['OrganizationAvatarFileCreate']
       | components['schemas']['StorefrontHeaderFileCreate']
       | components['schemas']['StorefrontLinkFileCreate']
-      | components['schemas']['DossierDocumentFileCreate']
     /** FileDownload */
     FileDownload: {
       /**
@@ -21552,23 +21172,6 @@ export interface components {
       detail?: components['schemas']['ValidationError'][]
     }
     /**
-     * HistoryAnalysis
-     * @description « Retracer l'historique » — which version governs, and what moved.
-     */
-    HistoryAnalysis: {
-      subject: components['schemas']['AnalysisSubject']
-      /** Act Short Code */
-      act_short_code: string
-      /** Versions */
-      versions: components['schemas']['VersionRow'][]
-      /** Governing Label */
-      governing_label: string | null
-      /** Changes */
-      changes: components['schemas']['ChangeRow'][]
-      /** Changes Unavailable */
-      changes_unavailable: boolean
-    }
-    /**
      * IdentityVerificationStatus
      * @enum {string}
      */
@@ -21608,6 +21211,33 @@ export interface components {
       exp: number
       /** Iat */
       iat: number
+    }
+    /**
+     * JobStateResponse
+     * @description Where the job stands after the call.
+     */
+    JobStateResponse: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /** Status */
+      status: string
+      /** Attempts */
+      attempts: number
+      /**
+       * Scheduled At
+       * Format: date-time
+       */
+      scheduled_at: string
+      /** Lease Expires At */
+      lease_expires_at?: string | null
+      /**
+       * Cancel Requested
+       * @default false
+       */
+      cancel_requested: boolean
     }
     /** LLMMetadata */
     LLMMetadata: {
@@ -21651,43 +21281,6 @@ export interface components {
        * @description The total number of LLM tokens used for the event.
        */
       total_tokens: number
-    }
-    /**
-     * LecteurFinding
-     * @description One reference in the document, and what the corpus says about it.
-     */
-    LecteurFinding: {
-      /** Kind */
-      kind: string
-      /** Cite */
-      cite: string
-      /** Status */
-      status: string
-      /** Note */
-      note: string
-      /** Article Id */
-      article_id: string | null
-      /** Decision Id */
-      decision_id: string | null
-      /** Context */
-      context: string
-    }
-    /** LecteurReview */
-    LecteurReview: {
-      /** Document Name */
-      document_name: string
-      /** Page Count */
-      page_count: number | null
-      /** Meta */
-      meta: string
-      /** Findings */
-      findings: components['schemas']['LecteurFinding'][]
-      /** Verified Count */
-      verified_count: number
-      /** Unverified Count */
-      unverified_count: number
-      /** Weak Count */
-      weak_count: number
     }
     /**
      * LegacyOrganizationStatus
@@ -21904,74 +21497,6 @@ export interface components {
        * @constant
        */
       readonly legacy: true
-    }
-    /** LibrarianAsk */
-    LibrarianAsk: {
-      /** Question */
-      question: string
-      /**
-       * Answer Both Versions
-       * @description When the question is version-dependent and undated, answer under both acts side by side instead of asking for the date.
-       * @default false
-       */
-      answer_both_versions: boolean
-      /**
-       * Organization Id
-       * @description Workspace the question belongs to. When given, the question and its answer are kept in Historique.
-       */
-      organization_id?: string | null
-      /**
-       * Sources
-       * @description Source kinds to ground the answer in: 'au' (actes uniformes) and/or 'cj' (jurisprudence). Omitted means both. A kind left out is not retrieved at all.
-       */
-      sources?: string[] | null
-      /**
-       * Deep
-       * @description Widen retrieval: more of the decision collection enters the request. It reaches further into what we hold, not into sources we do not have.
-       * @default false
-       */
-      deep: boolean
-      /**
-       * Concise
-       * @description Answer in three sentences at most, keeping every citation.
-       * @default false
-       */
-      concise: boolean
-    }
-    /**
-     * LibrarianQuestionRead
-     * @description One line of Historique.
-     */
-    LibrarianQuestionRead: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /** Question */
-      question: string
-      /** Answer */
-      answer: string | null
-      status: components['schemas']['QuestionStatus']
-      /** Versions Used */
-      versions_used: string[] | null
-      /** Sources */
-      sources:
-        | {
-            [key: string]: unknown
-          }[]
-        | null
-      /** Authority Label */
-      authority_label: string | null
-      /** Authority Count */
-      authority_count: number | null
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /** Answered At */
-      answered_at: string | null
     }
     /** LicenseKeyActivate */
     LicenseKeyActivate: {
@@ -22484,7 +22009,7 @@ export interface components {
         | components['schemas']['OrganizationAvatarFileRead']
         | components['schemas']['StorefrontHeaderFileRead']
         | components['schemas']['StorefrontLinkFileRead']
-        | components['schemas']['DossierDocumentFileRead']
+        | components['schemas']['ArchivedDocumentFileRead']
       )[]
       pagination: components['schemas']['Pagination']
     }
@@ -22829,6 +22354,14 @@ export interface components {
       readonly perks_url: string
     }
     /**
+     * MatyJobKind
+     * @description Why the job exists. The runner lays out the same workspace for all
+     *     of them; the kind says what the engine is being asked to do and, with
+     *     `allow`, how much rope it gets.
+     * @enum {string}
+     */
+    MatyJobKind: 'routine' | 'mail' | 'task'
+    /**
      * Member
      * @description A member of a customer.
      */
@@ -22999,6 +22532,57 @@ export interface components {
        * @example member
        */
       role?: components['schemas']['MemberRole'] | null
+    }
+    /** MemoryListResponse */
+    MemoryListResponse: {
+      /** Files */
+      files: components['schemas']['MemoryListedFile'][]
+    }
+    /** MemoryListedFile */
+    MemoryListedFile: {
+      /** Name */
+      name: string
+      /** Version */
+      version: number
+      /** Size */
+      size: number
+    }
+    /** MemorySyncBody */
+    MemorySyncBody: {
+      /** Files */
+      files?: components['schemas']['MemorySyncFile'][]
+      /** Deleted */
+      deleted?: string[]
+    }
+    /** MemorySyncFile */
+    MemorySyncFile: {
+      /** Name */
+      name: string
+      /** Content */
+      content: string
+      /**
+       * Base Version
+       * @default 0
+       */
+      base_version: number
+    }
+    /** MemorySyncResponse */
+    MemorySyncResponse: {
+      /** Files */
+      files: components['schemas']['MemorySyncedFile'][]
+      /** Deleted */
+      deleted: string[]
+    }
+    /** MemorySyncedFile */
+    MemorySyncedFile: {
+      /** Name */
+      name: string
+      /** Content */
+      content: string
+      /** Version */
+      version: number
+      /** Changed */
+      changed: boolean
     }
     MetadataOutputType: {
       [key: string]: string | number | boolean
@@ -23811,7 +23395,7 @@ export interface components {
       response_types: 'code'[]
       /**
        * Scope
-       * @default openid profile email user:read user:write organizations:read organizations:write custom_fields:read custom_fields:write discounts:read discounts:write checkout_links:read checkout_links:write checkouts:read checkouts:write transactions:read transactions:write payouts:read payouts:write products:read products:write benefits:read benefits:write events:read events:write meters:read meters:write files:read files:write subscriptions:read subscriptions:write customers:read customers:write members:read members:write wallets:read wallets:write disputes:read customer_meters:read customer_sessions:write member_sessions:write customer_seats:read customer_seats:write orders:read orders:write client_invoices:read client_invoices:write refunds:read refunds:write payments:read email_subscribers:read email_subscribers:write email_broadcasts:read email_broadcasts:write forms:read forms:write metrics:read webhooks:read webhooks:write license_keys:read license_keys:write customer_portal:read customer_portal:write notifications:read notifications:write notification_recipients:read notification_recipients:write organization_access_tokens:read organization_access_tokens:write redline:read redline:write
+       * @default openid profile email user:read user:write organizations:read organizations:write custom_fields:read custom_fields:write discounts:read discounts:write checkout_links:read checkout_links:write checkouts:read checkouts:write transactions:read transactions:write payouts:read payouts:write products:read products:write benefits:read benefits:write events:read events:write meters:read meters:write files:read files:write subscriptions:read subscriptions:write customers:read customers:write members:read members:write wallets:read wallets:write disputes:read customer_meters:read customer_sessions:write member_sessions:write customer_seats:read customer_seats:write orders:read orders:write client_invoices:read client_invoices:write refunds:read refunds:write payments:read email_subscribers:read email_subscribers:write email_broadcasts:read email_broadcasts:write forms:read forms:write metrics:read webhooks:read webhooks:write license_keys:read license_keys:write customer_portal:read customer_portal:write notifications:read notifications:write notification_recipients:read notification_recipients:write organization_access_tokens:read organization_access_tokens:write redline:read redline:write tieout:read tieout:write model_proxy
        */
       scope: string
       /** Client Name */
@@ -23876,7 +23460,7 @@ export interface components {
       response_types: 'code'[]
       /**
        * Scope
-       * @default openid profile email user:read user:write organizations:read organizations:write custom_fields:read custom_fields:write discounts:read discounts:write checkout_links:read checkout_links:write checkouts:read checkouts:write transactions:read transactions:write payouts:read payouts:write products:read products:write benefits:read benefits:write events:read events:write meters:read meters:write files:read files:write subscriptions:read subscriptions:write customers:read customers:write members:read members:write wallets:read wallets:write disputes:read customer_meters:read customer_sessions:write member_sessions:write customer_seats:read customer_seats:write orders:read orders:write client_invoices:read client_invoices:write refunds:read refunds:write payments:read email_subscribers:read email_subscribers:write email_broadcasts:read email_broadcasts:write forms:read forms:write metrics:read webhooks:read webhooks:write license_keys:read license_keys:write customer_portal:read customer_portal:write notifications:read notifications:write notification_recipients:read notification_recipients:write organization_access_tokens:read organization_access_tokens:write redline:read redline:write
+       * @default openid profile email user:read user:write organizations:read organizations:write custom_fields:read custom_fields:write discounts:read discounts:write checkout_links:read checkout_links:write checkouts:read checkouts:write transactions:read transactions:write payouts:read payouts:write products:read products:write benefits:read benefits:write events:read events:write meters:read meters:write files:read files:write subscriptions:read subscriptions:write customers:read customers:write members:read members:write wallets:read wallets:write disputes:read customer_meters:read customer_sessions:write member_sessions:write customer_seats:read customer_seats:write orders:read orders:write client_invoices:read client_invoices:write refunds:read refunds:write payments:read email_subscribers:read email_subscribers:write email_broadcasts:read email_broadcasts:write forms:read forms:write metrics:read webhooks:read webhooks:write license_keys:read license_keys:write customer_portal:read customer_portal:write notifications:read notifications:write notification_recipients:read notification_recipients:write organization_access_tokens:read organization_access_tokens:write redline:read redline:write tieout:read tieout:write model_proxy
        */
       scope: string
       /** Client Name */
@@ -23922,7 +23506,7 @@ export interface components {
       response_types: 'code'[]
       /**
        * Scope
-       * @default openid profile email user:read user:write organizations:read organizations:write custom_fields:read custom_fields:write discounts:read discounts:write checkout_links:read checkout_links:write checkouts:read checkouts:write transactions:read transactions:write payouts:read payouts:write products:read products:write benefits:read benefits:write events:read events:write meters:read meters:write files:read files:write subscriptions:read subscriptions:write customers:read customers:write members:read members:write wallets:read wallets:write disputes:read customer_meters:read customer_sessions:write member_sessions:write customer_seats:read customer_seats:write orders:read orders:write client_invoices:read client_invoices:write refunds:read refunds:write payments:read email_subscribers:read email_subscribers:write email_broadcasts:read email_broadcasts:write forms:read forms:write metrics:read webhooks:read webhooks:write license_keys:read license_keys:write customer_portal:read customer_portal:write notifications:read notifications:write notification_recipients:read notification_recipients:write organization_access_tokens:read organization_access_tokens:write redline:read redline:write
+       * @default openid profile email user:read user:write organizations:read organizations:write custom_fields:read custom_fields:write discounts:read discounts:write checkout_links:read checkout_links:write checkouts:read checkouts:write transactions:read transactions:write payouts:read payouts:write products:read products:write benefits:read benefits:write events:read events:write meters:read meters:write files:read files:write subscriptions:read subscriptions:write customers:read customers:write members:read members:write wallets:read wallets:write disputes:read customer_meters:read customer_sessions:write member_sessions:write customer_seats:read customer_seats:write orders:read orders:write client_invoices:read client_invoices:write refunds:read refunds:write payments:read email_subscribers:read email_subscribers:write email_broadcasts:read email_broadcasts:write forms:read forms:write metrics:read webhooks:read webhooks:write license_keys:read license_keys:write customer_portal:read customer_portal:write notifications:read notifications:write notification_recipients:read notification_recipients:write organization_access_tokens:read organization_access_tokens:write redline:read redline:write tieout:read tieout:write model_proxy
        */
       scope: string
       /** Client Name */
@@ -26100,14 +25684,14 @@ export interface components {
       /**
        * Comment
        * @description What this token is for. Shown in the token list.
-       * @example Word add-in on my laptop
+       * @example Script on my laptop
        */
       comment: string
       /**
        * Scopes
        * @description What the token may do. Reserved scopes (web:read, web:write) are refused, and so is any scope the caller does not hold.
        * @example [
-       *       "redline:read"
+       *       "products:read"
        *     ]
        */
       scopes: components['schemas']['Scope'][]
@@ -26158,7 +25742,7 @@ export interface components {
     }
     /**
      * PlatformFeeType
-     * @description Type of fees applied by Polar, and billed to the users.
+     * @description Type of fees applied by Simeon, and billed to the users.
      * @enum {string}
      */
     PlatformFeeType:
@@ -27644,11 +27228,6 @@ export interface components {
       property: string
     }
     /**
-     * QuestionStatus
-     * @enum {string}
-     */
-    QuestionStatus: 'answered' | 'clarification_requested' | 'failed'
-    /**
      * QuotaKey
      * @enum {string}
      */
@@ -27683,89 +27262,10 @@ export interface components {
       /** Is Exceeded */
       is_exceeded: boolean
     }
-    /**
-     * RedlineFinding
-     * @description One defect, and everything the add-in needs to show and locate it.
-     */
-    RedlineFinding: {
-      /** Defect */
-      defect: string
-      /** Severity */
-      severity: string
-      /** Certainty */
-      certainty: string
-      /** Term */
-      term: string
-      /** Note */
-      note: string
-      /** Context */
-      context: string
-      /** Start */
-      start: number
-      /** End */
-      end: number
-      /** Literal */
-      literal: string
-      /** Occurrence */
-      occurrence: number
-    }
-    /**
-     * RedlineRequest
-     * @description Document text, as Office.js read it out of Word.
-     */
-    RedlineRequest: {
-      /** Text */
-      text: string
-    }
-    /**
-     * RedlineReview
-     * @description The Check panel's contents for one document.
-     */
-    RedlineReview: {
-      /** Findings */
-      findings: components['schemas']['RedlineFinding'][]
-      /** Critical Count */
-      critical_count: number
-      /** Warning Count */
-      warning_count: number
-      /** To Review Count */
-      to_review_count: number
-      /** Characters */
-      characters: number
-    }
-    /**
-     * RedlineTerm
-     * @description One defined term, as the panel shows it.
-     */
-    RedlineTerm: {
-      /** Term */
-      term: string
-      /** Meaning */
-      meaning: string
-      /** Kind */
-      kind: string
-      /** Start */
-      start: number
-      /** End */
-      end: number
-      /** Uses */
-      uses: number[]
-      /** Use Count */
-      use_count: number
-      /** Linked */
-      linked: string[]
-    }
-    /**
-     * RedlineTerms
-     * @description The document's definitions, in the order it defines them.
-     */
-    RedlineTerms: {
-      /** Terms */
-      terms: components['schemas']['RedlineTerm'][]
-      /** Unused Count */
-      unused_count: number
-      /** Characters */
-      characters: number
+    /** RefreshBody */
+    RefreshBody: {
+      /** Refreshtoken */
+      refreshToken: string
     }
     /** Refund */
     Refund: {
@@ -27983,6 +27483,14 @@ export interface components {
     }
     /** RevokeTokenResponse */
     RevokeTokenResponse: Record<string, never>
+    /**
+     * RunnerBody
+     * @description Every call names the runner making it.
+     */
+    RunnerBody: {
+      /** Runner */
+      runner: string
+    }
     /** S3DownloadURL */
     S3DownloadURL: {
       /** Url */
@@ -28058,30 +27566,6 @@ export interface components {
       headers: {
         [key: string]: string
       }
-    }
-    /** SavedPromptCreate */
-    SavedPromptCreate: {
-      /** Title */
-      title: string
-      /** Text */
-      text: string
-    }
-    /** SavedPromptRead */
-    SavedPromptRead: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /** Title */
-      title: string
-      /** Text */
-      text: string
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
     }
     /**
      * Scope
@@ -28161,6 +27645,8 @@ export interface components {
       | 'organization_access_tokens:write'
       | 'redline:read'
       | 'redline:write'
+      | 'tieout:read'
+      | 'tieout:write'
       | 'model_proxy'
     /** SearchResultCustomer */
     SearchResultCustomer: {
@@ -29109,7 +28595,7 @@ export interface components {
        *
        *     **IMPORTANT:**
        *     Do not use this to store internal notes! It's intended to be input
-       *     from the customer and is therefore also available in their Polar
+       *     from the customer and is therefore also available in their Simeon
        *     purchases library.
        *
        *     Only set this in case your own service is requesting the reason from the
@@ -29775,7 +29261,7 @@ export interface components {
        *
        *     **IMPORTANT:**
        *     Do not use this to store internal notes! It's intended to be input
-       *     from the customer and is therefore also available in their Polar
+       *     from the customer and is therefore also available in their Simeon
        *     purchases library.
        *
        *     Only set this in case your own service is requesting the reason from the
@@ -30784,6 +30270,43 @@ export interface components {
      * @enum {string}
      */
     TrialInterval: 'day' | 'week' | 'month' | 'year'
+    /**
+     * TurnArtifact
+     * @description A file the executor left behind, by its path in the run's
+     *     workspace. Today's runner reports none (`runner/README.md`).
+     */
+    TurnArtifact: {
+      /** Path */
+      path: string
+      /**
+       * Sizebytes
+       * @default 0
+       */
+      sizeBytes: number
+      /**
+       * Updatedatms
+       * @default 0
+       */
+      updatedAtMs: number
+    }
+    /**
+     * TurnMessage
+     * @description One message the run produced, for a job that carries a
+     *     conversation (a cloud agent's turn). `role` is `assistant` unless the
+     *     runner says otherwise.
+     */
+    TurnMessage: {
+      /**
+       * Role
+       * @default assistant
+       */
+      role: string
+      /**
+       * Text
+       * @default
+       */
+      text: string
+    }
     /** Unauthorized */
     Unauthorized: {
       /**
@@ -31134,97 +30657,6 @@ export interface components {
       /** Error Type */
       type: string
     }
-    /** VeilleCreate */
-    VeilleCreate: {
-      target: components['schemas']['WatchTarget']
-      /**
-       * Target Id
-       * Format: uuid
-       */
-      target_id: string
-      /**
-       * Label
-       * @description Defaults to the article's own label.
-       */
-      label?: string | null
-    }
-    /** VeilleRead */
-    VeilleRead: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      target: components['schemas']['WatchTarget']
-      /**
-       * Target Id
-       * Format: uuid
-       */
-      target_id: string
-      /** Label */
-      label: string
-      /** Active */
-      active: boolean
-      /** Signal Count */
-      signal_count: number
-      /** Last Signal At */
-      last_signal_at: string | null
-    }
-    /** VeilleSignalRead */
-    VeilleSignalRead: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /**
-       * Veille Id
-       * Format: uuid
-       */
-      veille_id: string
-      /** Text */
-      text: string
-      /** Source Kind */
-      source_kind: string
-      /** Source Id */
-      source_id: string | null
-      /** Happened On */
-      happened_on: string | null
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-    }
-    /** VeilleUpdate */
-    VeilleUpdate: {
-      /** Active */
-      active: boolean
-    }
-    /** VersionRow */
-    VersionRow: {
-      /**
-       * Version Id
-       * Format: uuid
-       */
-      version_id: string
-      /** Label */
-      label: string
-      /** In Force From */
-      in_force_from: string | null
-      /** In Force To */
-      in_force_to: string | null
-      /** Governs */
-      governs: boolean
-      /** Article Number */
-      article_number: string | null
-      /** Article Id */
-      article_id: string | null
-      /** Relation */
-      relation: string | null
-      /** Note */
-      note: string | null
-    }
     /**
      * Wallet
      * @description A wallet represents a customer's balance in your organization.
@@ -31296,17 +30728,6 @@ export interface components {
      * @enum {string}
      */
     WalletType: 'usage' | 'billing'
-    /**
-     * WatchTarget
-     * @description What is being watched. Only things the corpus can actually observe.
-     *
-     *     A watch on a topic would need someone to decide what counts as
-     *     relevant; a watch on an article is answerable from the citation graph,
-     *     and a watch on an act is answerable from its versions. Both are facts,
-     *     so both can be reported without judgement.
-     * @enum {string}
-     */
-    WatchTarget: 'article' | 'act'
     /**
      * WebhookBenefitCreatedPayload
      * @description Sent when a new benefit is created.
@@ -31727,7 +31148,7 @@ export interface components {
       /**
        * Secret
        * @description The secret used to sign the webhook events.
-       * @example claidor_whs_ovyN6cPrTv56AApvzCaJno08SSmGJmgbWilb33N2JuK
+       * @example simeon_whs_ovyN6cPrTv56AApvzCaJno08SSmGJmgbWilb33N2JuK
        */
       secret: string
       /**
@@ -32454,6 +31875,1199 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['SearchResults']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'desktop:desktop:login': {
+    parameters: {
+      query?: {
+        redirect_uri?: string | null
+        state?: string | null
+        source?: string | null
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'desktop:desktop:exchange': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ExchangeBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'desktop:desktop:refresh': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RefreshBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'desktop:desktop:logout': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:box_renewal_credential': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:profile': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:quota': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:profile_summary': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:feedback': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FeedbackBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'desktop:desktop:memory_sync': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MemorySyncBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MemorySyncResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'desktop:desktop:memory_list': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MemoryListResponse']
+        }
+      }
+    }
+  }
+  'desktop:desktop:models': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:pricing': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:banners': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:banner': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:banner_snapshot': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:updates_manual': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:updates': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:skill_store': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:skill_archive': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'desktop:desktop:kit_store': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:mcp_marketplace': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:analytics_events': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:enterprise_context': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:activity_slot': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:activity_context': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        activity_code: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'desktop:desktop:activity_action': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        activity_code: string
+        action_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'desktop:desktop:messages': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:chat_completions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:responses': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:desktop:connectors_list': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:desktop:connectors_link': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        slug: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'desktop:desktop:desktop:connectors_disconnect': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        account_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'desktop:desktop:desktop:maty_jobs_list': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:desktop:maty_jobs_create': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateJobBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'desktop:desktop:desktop:maty_jobs_get': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'desktop:desktop:desktop:maty_jobs_cancel': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'desktop:desktop:deep_control': {
+    parameters: {
+      query?: {
+        challenge?: string
+        uuid?: string
+        mode?: string
+        redirectTarget?: string | null
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'desktop:desktop:deep_control_confirm': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: {
+      content: {
+        'application/x-www-form-urlencoded': components['schemas']['Body_desktop_desktop_deep_control_confirm']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'desktop:desktop:deep_control_poll': {
+    parameters: {
+      query?: {
+        uuid?: string
+        verifier?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'desktop:desktop:deep_control_poll_post': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:deep_control_refresh': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'desktop:desktop:box_inference_credential': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  'maty:maty:runner_claim': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RunnerBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ClaimResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'maty:maty:runner_heartbeat': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RunnerBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['JobStateResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'maty:maty:runner_complete': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CompleteBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['JobStateResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'maty:maty:runner_fail': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FailBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['JobStateResponse']
         }
       }
       /** @description Validation Error */
@@ -37397,7 +38011,7 @@ export interface operations {
             | components['schemas']['OrganizationAvatarFileRead']
             | components['schemas']['StorefrontHeaderFileRead']
             | components['schemas']['StorefrontLinkFileRead']
-            | components['schemas']['DossierDocumentFileRead']
+            | components['schemas']['ArchivedDocumentFileRead']
         }
       }
       /** @description You don't have the permission to update this file. */
@@ -37504,7 +38118,7 @@ export interface operations {
             | components['schemas']['OrganizationAvatarFileRead']
             | components['schemas']['StorefrontHeaderFileRead']
             | components['schemas']['StorefrontLinkFileRead']
-            | components['schemas']['DossierDocumentFileRead']
+            | components['schemas']['ArchivedDocumentFileRead']
         }
       }
       /** @description You don't have the permission to update this file. */
@@ -38274,7 +38888,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CurrentClaidorSubscription']
+          'application/json': components['schemas']['CurrentSimeonSubscription']
         }
       }
       /** @description Validation Error */
@@ -38400,7 +39014,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': components['schemas']['CancelClaidorSubscription']
+        'application/json': components['schemas']['CancelSimeonSubscription']
       }
     }
     responses: {
@@ -38905,1274 +39519,6 @@ export interface operations {
         }
         content: {
           'application/json': unknown
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'librarian:list_questions': {
-    parameters: {
-      query: {
-        organization_id: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['LibrarianQuestionRead'][]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'librarian:clear_questions': {
-    parameters: {
-      query: {
-        organization_id: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'librarian:delete_question': {
-    parameters: {
-      query: {
-        organization_id: string
-      }
-      header?: never
-      path: {
-        question_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'librarian:ask': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['LibrarianAsk']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': unknown
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'corpus:list_acts': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CorpusAct'][]
-        }
-      }
-    }
-  }
-  'corpus:list_version_articles': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        version_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CorpusArticleListItem'][]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'corpus:get_article': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        article_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CorpusArticleDetail']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'corpus:get_decision': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        decision_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CorpusDecisionDetail']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'corpus:search': {
-    parameters: {
-      query?: {
-        /** @description Query as a lawyer types it. */
-        q?: string
-        /** @description Registry short code, e.g. AUPSRVE. */
-        act?: string | null
-        /** @description Version label, e.g. 1998. */
-        version?: string | null
-        decided_from?: string | null
-        decided_to?: string | null
-        chamber?: string | null
-        limit?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CorpusSearchResults']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'analyses:suggestions': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['AnalysisSuggestions']
-        }
-      }
-    }
-  }
-  'analyses:authority': {
-    parameters: {
-      query?: {
-        article_id?: string | null
-        decision_id?: string | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['AuthorityAnalysis']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'analyses:history': {
-    parameters: {
-      query: {
-        article_id: string
-        /** @description Date of the facts. */
-        on?: string | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HistoryAnalysis']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'analyses:compare': {
-    parameters: {
-      query: {
-        article_id: string
-        with_article_id?: string | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CompareAnalysis']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'analyses:citations': {
-    parameters: {
-      query: {
-        article_id: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CitationsAnalysis']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'prompts:list_prompts': {
-    parameters: {
-      query: {
-        organization_id: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SavedPromptRead'][]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'prompts:create_prompt': {
-    parameters: {
-      query: {
-        organization_id: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['SavedPromptCreate']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      201: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SavedPromptRead']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'prompts:delete_prompt': {
-    parameters: {
-      query: {
-        organization_id: string
-      }
-      header?: never
-      path: {
-        prompt_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'veilles:list_veilles': {
-    parameters: {
-      query: {
-        organization_id: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['VeilleRead'][]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'veilles:create_veille': {
-    parameters: {
-      query: {
-        organization_id: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['VeilleCreate']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      201: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['VeilleRead']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'veilles:list_signals': {
-    parameters: {
-      query: {
-        organization_id: string
-        limit?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['VeilleSignalRead'][]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'veilles:update_veille': {
-    parameters: {
-      query: {
-        organization_id: string
-      }
-      header?: never
-      path: {
-        veille_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['VeilleUpdate']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['VeilleRead']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'lecteur:review_document': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'multipart/form-data': components['schemas']['Body_lecteur_review_document']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['LecteurReview']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'lecteur:review_example': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['LecteurReview']
-        }
-      }
-    }
-  }
-  'redline:check_text': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['RedlineRequest']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['RedlineReview']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'redline:document_terms': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['RedlineRequest']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['RedlineTerms']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'redline:judge_text': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['RedlineRequest']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['RedlineReview']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'redline:fix_document': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'multipart/form-data': components['schemas']['Body_redline_fix_document']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': unknown
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'redline:check_document': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'multipart/form-data': components['schemas']['Body_redline_check_document']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['RedlineReview']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'dossiers:list_dossiers': {
-    parameters: {
-      query: {
-        organization_id: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['DossierListItem'][]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'dossiers:create_dossier': {
-    parameters: {
-      query: {
-        organization_id: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['DossierCreate']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      201: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['DossierRead']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'dossiers:get_dossier': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        dossier_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['DossierRead']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'dossiers:delete_dossier': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        dossier_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'dossiers:update_dossier': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        dossier_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['DossierUpdate']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['DossierRead']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'dossiers:add_member': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        dossier_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['DossierMemberAdd']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      201: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['DossierMemberRead']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'dossiers:remove_member': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        dossier_id: string
-        user_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'dossiers:add_document': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        dossier_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['DossierDocumentCreate']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      201: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['DossierDocumentRead']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'dossiers:remove_document': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        dossier_id: string
-        document_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'dossiers:update_document': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        dossier_id: string
-        document_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['DossierDocumentUpdate']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['DossierDocumentRead']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'dossiers:list_questions': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        dossier_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['DossierQuestionRead'][]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'dossiers:ask': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        dossier_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['DossierAsk']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      201: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['DossierQuestionRead']
         }
       }
       /** @description Validation Error */
@@ -51038,9 +50384,9 @@ export const aggregationFunctionValues: ReadonlyArray<
 export const appealDecisionValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['AppealDecision']
 > = ['approved', 'rejected']
-export const articleEquivalenceRelationValues: ReadonlyArray<
-  FlattenedDeepRequired<components>['schemas']['ArticleEquivalenceRelation']
-> = ['unchanged', 'renumbered', 'amended', 'split', 'merged', 'new', 'repealed']
+export const archivedDocumentFileReadServiceValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['ArchivedDocumentFileRead']['service']
+> = ['dossier_document']
 export const authorizeResponseOrganizationSub_typeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['AuthorizeResponseOrganization']['sub_type']
 > = ['organization']
@@ -51121,6 +50467,9 @@ export const availableScopeValues: ReadonlyArray<
   'organization_access_tokens:write',
   'redline:read',
   'redline:write',
+  'tieout:read',
+  'tieout:write',
+  'model_proxy',
 ]
 export const balanceCreditOrderEventNameValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['BalanceCreditOrderEvent']['name']
@@ -51248,12 +50597,6 @@ export const checkoutSortPropertyValues: ReadonlyArray<
 export const checkoutStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['CheckoutStatus']
 > = ['open', 'expired', 'confirmed', 'succeeded', 'failed']
-export const citationNatureValues: ReadonlyArray<
-  FlattenedDeepRequired<components>['schemas']['CitationNature']
-> = ['fact', 'law']
-export const citationSourceKindValues: ReadonlyArray<
-  FlattenedDeepRequired<components>['schemas']['CitationSourceKind']
-> = ['document', 'article', 'decision']
 export const clientInvoiceSortPropertyValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['ClientInvoiceSortProperty']
 > = [
@@ -51779,8 +51122,8 @@ export const countryAlpha2InputValues: ReadonlyArray<
   'ZM',
   'ZW',
 ]
-export const currentClaidorSubscriptionBilling_intervalAnyOf0Values: ReadonlyArray<
-  FlattenedDeepRequired<components>['schemas']['CurrentClaidorSubscription']['billing_interval']
+export const currentSimeonSubscriptionBilling_intervalAnyOf0Values: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['CurrentSimeonSubscription']['billing_interval']
 > = ['month', 'year']
 export const customFieldCheckboxTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['CustomFieldCheckbox']['type']
@@ -52013,29 +51356,6 @@ export const disputeStatusValues: ReadonlyArray<
   'lost',
   'won',
 ]
-export const documentCategoryValues: ReadonlyArray<
-  FlattenedDeepRequired<components>['schemas']['DocumentCategory']
-> = [
-  'pleading',
-  'exhibit',
-  'contract',
-  'statement',
-  'correspondence',
-  'decision',
-  'other',
-]
-export const dossierDocumentFileCreateServiceValues: ReadonlyArray<
-  FlattenedDeepRequired<components>['schemas']['DossierDocumentFileCreate']['service']
-> = ['dossier_document']
-export const dossierDocumentFileReadServiceValues: ReadonlyArray<
-  FlattenedDeepRequired<components>['schemas']['DossierDocumentFileRead']['service']
-> = ['dossier_document']
-export const dossierRoleValues: ReadonlyArray<
-  FlattenedDeepRequired<components>['schemas']['DossierRole']
-> = ['lead', 'member']
-export const dossierStatusValues: ReadonlyArray<
-  FlattenedDeepRequired<components>['schemas']['DossierStatus']
-> = ['open', 'closed', 'archived']
 export const downloadableFileCreateServiceValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['DownloadableFileCreate']['service']
 > = ['downloadable']
@@ -52090,9 +51410,6 @@ export const eventTypesSortPropertyValues: ReadonlyArray<
   'last_seen',
   '-last_seen',
 ]
-export const extractionStatusValues: ReadonlyArray<
-  FlattenedDeepRequired<components>['schemas']['ExtractionStatus']
-> = ['pending', 'extracted', 'unextractable', 'failed']
 export const fileServiceTypesValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['FileServiceTypes']
 > = [
@@ -52157,6 +51474,9 @@ export const maintainerNewProductSaleNotificationTypeValues: ReadonlyArray<
 export const maintainerPerksUnlockedNotificationTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['MaintainerPerksUnlockedNotification']['type']
 > = ['MaintainerPerksUnlockedNotification']
+export const matyJobKindValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['MatyJobKind']
+> = ['routine', 'mail', 'task']
 export const memberRoleValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['MemberRole']
 > = ['owner', 'billing_manager', 'member']
@@ -52617,9 +51937,6 @@ export const productVisibilityValues: ReadonlyArray<
 export const propertyAggregationFuncValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['PropertyAggregation']['func']
 > = ['avg', 'max', 'min', 'sum']
-export const questionStatusValues: ReadonlyArray<
-  FlattenedDeepRequired<components>['schemas']['QuestionStatus']
-> = ['answered', 'clarification_requested', 'failed']
 export const quotaKeyValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['QuotaKey']
 > = ['storage_gb']
@@ -52716,6 +52033,9 @@ export const scopeValues: ReadonlyArray<
   'organization_access_tokens:write',
   'redline:read',
   'redline:write',
+  'tieout:read',
+  'tieout:write',
+  'model_proxy',
 ]
 export const searchResultCustomerTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['SearchResultCustomer']['type']
@@ -53077,9 +52397,6 @@ export const walletSortPropertyValues: ReadonlyArray<
 export const walletTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['WalletType']
 > = ['usage', 'billing']
-export const watchTargetValues: ReadonlyArray<
-  FlattenedDeepRequired<components>['schemas']['WatchTarget']
-> = ['article', 'act']
 export const webhookEventTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['WebhookEventType']
 > = [

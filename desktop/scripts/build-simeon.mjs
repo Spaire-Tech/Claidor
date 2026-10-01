@@ -27,7 +27,8 @@ import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
 import react from "@vitejs/plugin-react";
 
-import { electronMainEntrySource, hostEntrySource, preloadEntrySource } from "./lib/simeon-entries.mjs";
+import { electronMainEntrySource, hostEntrySource, PRELOAD_ENTRYPOINTS, preloadEntrySource } from "./lib/simeon-entries.mjs";
+import { bundleVoiceCallPage } from "./lib/clean-build.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outRoot = path.join(repoRoot, "dist");
@@ -186,7 +187,7 @@ async function main() {
       { contents: await hostEntrySource(), sourcefile: "scripts/build-entry/simeon-host.ts" },
       "host/host-main.cjs",
     ],
-    ...Object.keys({ "preload": 0, "preload-dev-controls": 0, "preload-webview": 0, "preload-vnc": 0 }).map((name) => [
+    ...Object.keys(PRELOAD_ENTRYPOINTS).map((name) => [
       { contents: preloadEntrySource(name), sourcefile: `scripts/build-entry/simeon-${name}.ts` },
       `electron-preload/${name}.cjs`,
     ]),
@@ -195,6 +196,7 @@ async function main() {
   const results = [];
   for (const proc of [...ignition, ...PROCESSES]) results.push(await bundleProcess(proc));
   const renderer = await buildRenderer();
+  await bundleVoiceCallPage(path.join(outRoot, "voice-call"));
 
   await writeFile(
     path.join(outRoot, "simeon-build.json"),

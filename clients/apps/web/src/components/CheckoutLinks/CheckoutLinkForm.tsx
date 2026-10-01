@@ -9,18 +9,18 @@ import {
   normalizeValidationErrors,
   setValidationErrors,
 } from '@/utils/api/errors'
-import { isValidationError, schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
-import Input from '@claidor/ui/components/atoms/Input'
-import Switch from '@claidor/ui/components/atoms/Switch'
+import ClearOutlined from '@mui/icons-material/ClearOutlined'
+import { isValidationError, schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
+import Input from '@simeon/ui/components/atoms/Input'
+import Switch from '@simeon/ui/components/atoms/Switch'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
-import ClearOutlined from '@mui/icons-material/ClearOutlined'
+} from '@simeon/ui/components/ui/form'
 import { useCallback, useEffect, useMemo } from 'react'
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form'
 import ProductSelect from '../Products/ProductSelect'

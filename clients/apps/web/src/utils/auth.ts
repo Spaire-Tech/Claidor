@@ -1,5 +1,5 @@
 import { getPublicServerURL } from '@/utils/api'
-import { operations } from '@claidor/client'
+import { operations } from '@simeon/client'
 
 export const getGitHubAuthorizeLoginURL = (
   params: NonNullable<

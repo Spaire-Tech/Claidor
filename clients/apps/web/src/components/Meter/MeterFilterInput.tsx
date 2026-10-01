@@ -1,21 +1,21 @@
 'use client'
 
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
-import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
+} from '@simeon/ui/components/atoms/Select'
+import ShadowBox from '@simeon/ui/components/atoms/ShadowBox'
 import {
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
+} from '@simeon/ui/components/ui/form'
 import { PlusIcon, TrashIcon, XIcon } from 'lucide-react'
 import { useFieldArray, useFormContext } from 'react-hook-form'
 import { twMerge } from 'tailwind-merge'

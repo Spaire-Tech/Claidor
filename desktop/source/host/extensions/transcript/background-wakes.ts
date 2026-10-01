@@ -11,6 +11,7 @@ import {
   humanizeChannelDeliveryFailure,
 } from "../../../shared/channel-messaging.js";
 import { formatChannelAddress } from "../../../shared/channels.js";
+import { isVoiceAddress } from "../../../shared/voice-call/main-loop-voice.js";
 import { buildTimelineEventWakePrompt } from "../../../shared/sand-timeline-events.js";
 import { AgentToAgentMessaging } from "./agent-to-agent-messaging.js";
 import { describeAgentRunError } from "./agent-run-error.js";
@@ -96,6 +97,12 @@ export class BackgroundWakes {
     if (agentId == null) return;
     const outbound = buildChannelOutboundMessage(message as any);
     if (outbound == null) return;
+    // A voice call's address goes to the call (`voice-call-channel.ts`), never to a connector.
+    if (isVoiceAddress(addressToken)) {
+      if (!this.tm.voiceCalls.deliver(agentId, addressToken, outbound))
+        this.tm.trayErrors.pushError({ agentId, title: "Message not delivered", detail: "That call is not one of yours, so the message did not reach it." });
+      return;
+    }
     void this.tm
       .channelDelivery(agentId, addressToken, outbound)
       .catch((error: unknown) => {

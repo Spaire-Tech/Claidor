@@ -7,16 +7,16 @@ import {
   defaultRunExternalShell,
   stringifyToolResult,
   asRecord,
-} from "../../../shared/grok-bot-tools.js";
+} from "../../../shared/sand-tools.js";
 /**
- * What the text-only escape hatch (SAND_CLAIDOR_FULL_AGENT=off) answers for
+ * What the text-only escape hatch (SAND_SIMEON_FULL_AGENT=off) answers for
  * a tool that needs the full agent: the computer, the browser, Task,
  * GenerateImage, box hand-off and update_state. Until 26 September 2026 these
  * answered "The computer is still starting up", which was never the reason:
  * this path is a text call that cannot see an image, and the forever-box
- * `captureScreenshot` it asked was never given a dependency, in Grok Bot's
+ * `captureScreenshot` it asked was never given a dependency, in the upstream app's
  * own extension either (`ce9fc2d8`), so it was null forever (ledger F-144).
- * Grok Bot sees its screen through the loop's Screenshot and Computer tools,
+ * The upstream app sees its screen through the loop's Screenshot and Computer tools,
  * which is the default path here.
  */
 export const ROUTED_TEXT_ONLY_TOOL_MESSAGE = "This tool is not available in Simeon's text-only mode, which this conversation is running in. It cannot see or drive the computer, use the browser, start a subagent or make an image. Tell the person plainly that this needs the full agent, and do not retry it.";

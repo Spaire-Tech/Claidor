@@ -1,8 +1,8 @@
 from pytest_mock import MockerFixture
 
-from polar.customer_seat.sender import send_seat_invitation_email
-from polar.email.schemas import SeatInvitationEmail
-from polar.models import CustomerSeat, Organization
+from simeon.customer_seat.sender import send_seat_invitation_email
+from simeon.email.schemas import SeatInvitationEmail
+from simeon.models import CustomerSeat, Organization
 
 
 class TestSendSeatInvitationEmail:
@@ -12,9 +12,9 @@ class TestSendSeatInvitationEmail:
         customer_seat_pending: CustomerSeat,
         seat_enabled_organization: Organization,
     ) -> None:
-        mock_enqueue = mocker.patch("polar.customer_seat.sender.enqueue_email")
+        mock_enqueue = mocker.patch("simeon.customer_seat.sender.enqueue_email")
         mock_render = mocker.patch(
-            "polar.customer_seat.sender.render_email_template",
+            "simeon.customer_seat.sender.render_email_template",
             return_value="<html>Test Email</html>",
         )
 
@@ -48,8 +48,8 @@ class TestSendSeatInvitationEmail:
     ) -> None:
         customer_seat_claimed.invitation_token = None
 
-        mock_enqueue = mocker.patch("polar.customer_seat.sender.enqueue_email")
-        mock_log = mocker.patch("polar.customer_seat.sender.log")
+        mock_enqueue = mocker.patch("simeon.customer_seat.sender.enqueue_email")
+        mock_log = mocker.patch("simeon.customer_seat.sender.log")
 
         send_seat_invitation_email(
             customer_email="test@example.com",
@@ -69,10 +69,10 @@ class TestSendSeatInvitationEmail:
         seat_enabled_organization: Organization,
     ) -> None:
         mock_render = mocker.patch(
-            "polar.customer_seat.sender.render_email_template",
+            "simeon.customer_seat.sender.render_email_template",
             return_value="<html>Test Email</html>",
         )
-        mocker.patch("polar.customer_seat.sender.enqueue_email")
+        mocker.patch("simeon.customer_seat.sender.enqueue_email")
 
         send_seat_invitation_email(
             customer_email="test@example.com",

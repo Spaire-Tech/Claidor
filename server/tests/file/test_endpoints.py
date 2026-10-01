@@ -3,11 +3,11 @@ from urllib.parse import parse_qs, urlencode, urlparse
 import pytest
 from httpx import AsyncClient, ReadError
 
-from polar.file.repository import FileRepository
-from polar.file.s3 import S3_SERVICES
-from polar.integrations.aws.s3.exceptions import S3FileError
-from polar.models import Organization
-from polar.postgres import AsyncSession
+from simeon.file.repository import FileRepository
+from simeon.file.s3 import S3_SERVICES
+from simeon.integrations.aws.s3.exceptions import S3FileError
+from simeon.models import Organization
+from simeon.postgres import AsyncSession
 from tests.fixtures.file import TestFile, s3_backend_enforces_signatures
 
 

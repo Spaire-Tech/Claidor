@@ -2,7 +2,7 @@
  * Cloud agents and messaging channels were Coming Soon at every reach point
  * on 25 September 2026 (design-audit-ledger.md cluster `cloud-agents-channels`:
  * F-007, F-210, F-055, F-056, F-057, F-081, F-472), and both are served
- * since later that day: cloud agents by `polar/sand/cloud_agents.py`,
+ * since later that day: cloud agents by `simeon/sand/cloud_agents.py`,
  * channels by the connector runtime in the box (`host/extensions/channels/`,
  * tests/channels-runtime.test.mjs). This test keeps the Coming Soon branch
  * honest behind its switches (`SAND_CLOUD_AGENTS_SERVED=0`,
@@ -33,7 +33,7 @@ async function load(entry, name) {
 }
 
 test("SendMessage: cursor-agent served by default, a dropped channel, a refused secret-request; the flag at 0 restores coming soon", async () => {
-  // Cloud agents are served by default since 25 September 2026 (polar/sand/cloud_agents.py).
+  // Cloud agents are served by default since 25 September 2026 (simeon/sand/cloud_agents.py).
   process.env.SAND_CLOUD_AGENTS_SERVED = "0";
   process.env.SAND_CHANNELS_SERVED = "0";
   const { module, dispose } = await load("source/host/runner/tools/send-message-schema.ts", "send-message-schema");
@@ -41,14 +41,15 @@ test("SendMessage: cursor-agent served by default, a dropped channel, a refused 
     const off = { SAND_CLOUD_AGENTS_SERVED: "0", SAND_CHANNELS_SERVED: "0" };
     const types = module.describeSendMessageTypes(off);
     assert.match(types, /cursor-agent is not available: cloud agents are coming soon in Simeon/);
-    assert.match(types, /secret-request is not available: messaging channels are coming soon/);
+    assert.match(types, /secret-request to ask the user for a credential/, "a key for any service but a messaging connector works without channels");
     assert.doesNotMatch(types, /cursor-agent to reference a cloud agent/);
     assert.deepEqual(module.refineSendMessage({ type: "cursor-agent", bcId: "bc-1" }, off).map((issue) => issue.message), [
       "Cloud agents are coming soon in Simeon, so the CloudAgent tool and cloud-agent cards are not available here yet. Never claim you can launch or manage one.",
     ]);
     assert.match(module.refineSendMessage({ type: "secret-request", secret: { label: "Slack token", connector: "slack", field: "token" } }, off)[0].message, /Messaging channels \(Slack, Discord\) are coming soon on Simeon/);
     assert.deepEqual(module.refineSendMessage({ type: "secret-request", secret: { label: "Slack token", connector: "slack", field: "token" } }, {}), [], "served by default: the secret-request card is back (channels-runtime.test.mjs)");
-    assert.deepEqual(module.refineSendMessage({ type: "cursor-agent", bcId: "bc-1" }, {}), [], "served by default: Grok Bot's card is back");
+    assert.deepEqual(module.refineSendMessage({ type: "secret-request", secret: { label: "Render API key", connector: "render", field: "api_key" } }, off), [], "a Render key is a secret on the computer, channels or not");
+    assert.deepEqual(module.refineSendMessage({ type: "cursor-agent", bcId: "bc-1" }, {}), [], "served by default: the upstream app's card is back");
     assert.match(module.describeSendMessageTypes({}), /cursor-agent to reference a cloud agent/);
     assert.match(module.describeSendMessageTypes({}), /secret-request to ask the user for a credential/);
     const parsed = module.sendMessageParameters.safeParse({ type: "text", content: "Hi", channel: "slack:C1" });
@@ -66,10 +67,11 @@ test("SendMessage: cursor-agent served by default, a dropped channel, a refused 
   try {
     const description = tool.module.describeSendMessageTool({ SAND_CLOUD_AGENTS_SERVED: "0", SAND_CHANNELS_SERVED: "0" });
     assert.match(description, /Cloud agents are coming soon in Simeon/);
-    assert.match(description, /Messaging channels \(Slack, Discord\) are coming soon on Simeon/);
     assert.doesNotMatch(description, /"type":"cursor-agent"/);
-    assert.doesNotMatch(description, /"type":"secret-request"/);
-    assert.match(tool.module.SAND_SEND_MESSAGE_TOOL_DESCRIPTION, /"type":"cursor-agent"/, "Grok Bot's full text is kept");
+    assert.match(description, /"type":"secret-request"/, "the masked input asks for any service's key");
+    assert.match(description, /the value becomes an environment variable on your computer named for both \(RENDER_API_KEY\)/);
+    assert.doesNotMatch(description, /for a messaging connector \(discord, slack\) the value goes straight/, "no messaging connector to write to with channels off");
+    assert.match(tool.module.SAND_SEND_MESSAGE_TOOL_DESCRIPTION, /"type":"cursor-agent"/, "the upstream app's full text is kept");
   } finally {
     delete process.env.SAND_CLOUD_AGENTS_SERVED;
     await tool.dispose();
@@ -91,10 +93,10 @@ test("the brief: cloud agents coming soon, no admin, no Origin, no CloudAgent to
     assert.doesNotMatch(disabled, /CloudAgent tool/);
     assert.match(module.SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION, /^## Cloud agents coming soon\n/);
     assert.doesNotMatch(module.SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION, /admin/);
-    // Served since 25 September 2026 (polar/sand/cloud_agents.py): the enabled
-    // sections are on, and say Simeon where Grok Bot said Cursor
+    // Served since 25 September 2026 (simeon/sand/cloud_agents.py): the enabled
+    // sections are on, and say Simeon where the upstream app said Cursor
     // (tests/cloud-agents-served.test.mjs measures the sentences).
-    assert.match(module.buildSandBaseSystemPrompt({ cloudAgentsEnabled: true }), /## Repositories/, "Grok Bot's served structure is kept behind the flag, as Simeon's");
+    assert.match(module.buildSandBaseSystemPrompt({ cloudAgentsEnabled: true }), /## Repositories/, "the upstream app's served structure is kept behind the flag, as Simeon's");
     assert.match(module.DEFAULT_SAND_SYSTEM_PROMPT, /## Repositories/, "the bare fallback follows the switch too (F-280): served by default since 25 September");
   } finally {
     await dispose();

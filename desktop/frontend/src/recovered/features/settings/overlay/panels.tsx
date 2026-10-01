@@ -101,7 +101,7 @@ export function GeneralSettingsPanel({ account, accountPending = false, accountE
     return () => window.clearTimeout(timeout);
   }, [emailCopied]);
   const title = signedIn ? account.name : account.kind === "logging-in" ? "Signing in" : "Not signed in";
-  const detail = signedIn ? account.email ?? "Signed in to Claidor" : account.kind === "logging-in" ? "Finish signing in from your browser" : "Connect your Claidor account to Simeon";
+  const detail = signedIn ? account.email ?? "Signed in to Simeon" : account.kind === "logging-in" ? "Finish signing in from your browser" : "Connect your Simeon account to Simeon";
   const action = signedIn ? "Sign Out" : account.kind === "logging-in" ? "Cancel" : "Sign In with Simeon";
   // @evidence recovered/frontend/app/assets/index-BlqerJhg.js#L40-L50
   const copyEmail = async () => {

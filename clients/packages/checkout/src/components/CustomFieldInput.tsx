@@ -1,27 +1,27 @@
-import type { CustomField } from '@spaire/sdk/models/components/customfield'
-import type { CustomFieldCheckbox } from '@spaire/sdk/models/components/customfieldcheckbox'
-import type { CustomFieldDate } from '@spaire/sdk/models/components/customfielddate'
-import type { CustomFieldNumber } from '@spaire/sdk/models/components/customfieldnumber'
-import type { CustomFieldSelect } from '@spaire/sdk/models/components/customfieldselect'
-import type { CustomFieldText } from '@spaire/sdk/models/components/customfieldtext'
-import Input from '@claidor/ui/components/atoms/Input'
+import Input from '@simeon/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@claidor/ui/components/atoms/Select'
-import TextArea from '@claidor/ui/components/atoms/TextArea'
-import { Checkbox } from '@claidor/ui/components/ui/checkbox'
+} from '@simeon/ui/components/atoms/Select'
+import TextArea from '@simeon/ui/components/atoms/TextArea'
+import { Checkbox } from '@simeon/ui/components/ui/checkbox'
 import {
   FormControl,
   FormDescription,
   FormItem,
   FormLabel,
   FormMessage,
-} from '@claidor/ui/components/ui/form'
-import { ThemingPresetProps } from '@claidor/ui/hooks/theming'
+} from '@simeon/ui/components/ui/form'
+import { ThemingPresetProps } from '@simeon/ui/hooks/theming'
+import type { CustomField } from '@spaire/sdk/models/components/customfield'
+import type { CustomFieldCheckbox } from '@spaire/sdk/models/components/customfieldcheckbox'
+import type { CustomFieldDate } from '@spaire/sdk/models/components/customfielddate'
+import type { CustomFieldNumber } from '@spaire/sdk/models/components/customfieldnumber'
+import type { CustomFieldSelect } from '@spaire/sdk/models/components/customfieldselect'
+import type { CustomFieldText } from '@spaire/sdk/models/components/customfieldtext'
 import type { MarkdownToJSX } from 'markdown-to-jsx'
 import Markdown from 'markdown-to-jsx'
 import type { ControllerRenderProps } from 'react-hook-form'

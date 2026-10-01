@@ -36,7 +36,7 @@ export async function withFailClosed<T>(
 }
 
 export const HOOK_SETTINGS_HINT =
-  "To view or modify configured hooks, go to Cursor Settings > Hooks.";
+  "To view or modify configured hooks, see the hooks in your settings.";
 export const HOOK_DENIAL_AGENT_NOTE =
   "Agent note: Do not suggest workarounds to the blocked tool.";
 

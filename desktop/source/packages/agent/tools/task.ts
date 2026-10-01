@@ -17,7 +17,7 @@ import { parentRequestIdKey, requestModelNameKey } from "../utils/request-id.js"
 import { NoopConversationActionReceiver } from "../../agent-core/conversation-actions/remote.js";
 import { Responses } from "../../agent-core/interaction-queries.js";
 import { toRedactedInteractionListener } from "../../agent-core/redacted-interaction-listener.js";
-import { AnysphereAgent } from "../index.js";
+import { SandAgent } from "../index.js";
 import {
   fromRedactedConversationStateStructure,
   toRedactedConversationAction,
@@ -267,7 +267,7 @@ async function runServerTaskSubagent(args: {
     overriddenModelId: resolved.resolvedModelId,
     subagentInstanceId: subagentRequestId,
   });
-  const agent = new AnysphereAgent(
+  const agent = new SandAgent(
     agentConfig,
     taskToolConfig.promptSession,
     interactionListener,

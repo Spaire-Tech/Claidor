@@ -1,11 +1,11 @@
 import { ParsedMetricsResponse } from '@/hooks/queries/metrics'
-import { schemas } from '@claidor/client'
-import Button from '@claidor/ui/components/atoms/Button'
+import { schemas } from '@simeon/client'
+import Button from '@simeon/ui/components/atoms/Button'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@claidor/ui/components/ui/tooltip'
+} from '@simeon/ui/components/ui/tooltip'
 import domtoimage from 'dom-to-image'
 import { useCallback, useRef, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -63,7 +63,7 @@ export const ShareChartModal = ({
 
       const link = document.createElement('a')
       link.href = URL.createObjectURL(blob)
-      link.download = 'claidor-chart.png'
+      link.download = 'simeon-chart.png'
       link.click()
 
       toast({
@@ -99,7 +99,7 @@ export const ShareChartModal = ({
       <div className="flex flex-col items-start gap-8">
         <div
           ref={chartRef}
-          className=" flex w-full max-w-4xl flex-col items-center justify-center gap-12 rounded-4xl bg-blue-50 p-12"
+          className="flex w-full max-w-4xl flex-col items-center justify-center gap-12 rounded-4xl bg-blue-50 p-12"
           style={{
             backgroundImage:
               theme === 'mono'

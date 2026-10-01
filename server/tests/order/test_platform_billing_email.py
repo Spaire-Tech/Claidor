@@ -1,11 +1,10 @@
-"""Claidor self-billing emails use the Claidor-branded transactional templates
+"""Simeon self-billing emails use the Simeon-branded transactional templates
 — not the creator-commerce ones — and a $0 trial neither invoices the creator
-nor enrolls them in Claidor's marketing automation.
+nor enrolls them in Simeon's marketing automation.
 
-A creator's Claidor plan order is sold BY the platform org (Claidor) TO the
+A creator's Simeon plan order is sold BY the platform org (Simeon) TO the
 creator-as-customer. The generic order-confirmation path would render the
-platform org's own header ("Claidor / Claidor"), the "Merchant of Record … by
-Claidor, Inc" footer, and a $0 invoice for a free trial. These tests pin the
+platform org's own header ("Simeon / Simeon") and a $0 invoice for a free trial. These tests pin the
 new behavior:
   * trial start ($0)         -> platform_welcome, no invoice, no marketing
   * a real charge (> $0)     -> platform_receipt, with invoice
@@ -19,9 +18,9 @@ import pytest
 from pytest_mock import MockerFixture
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from polar.enums import SubscriptionRecurringInterval
-from polar.kit.address import Address, CountryAlpha2
-from polar.models import (
+from simeon.enums import SubscriptionRecurringInterval
+from simeon.kit.address import Address, CountryAlpha2
+from simeon.models import (
     Customer,
     Order,
     OrderItem,
@@ -29,9 +28,9 @@ from polar.models import (
     Product,
     Subscription,
 )
-from polar.models.order import OrderBillingReasonInternal, OrderStatus
-from polar.models.subscription import SubscriptionStatus
-from polar.order.service import order as order_service
+from simeon.models.order import OrderBillingReasonInternal, OrderStatus
+from simeon.models.subscription import SubscriptionStatus
+from simeon.order.service import order as order_service
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     create_customer,
@@ -44,9 +43,9 @@ from tests.fixtures.random_objects import (
 async def _platform_setup(
     save_fixture: SaveFixture, mocker: MockerFixture
 ) -> tuple[Organization, Product, Customer]:
-    """A platform (Claidor) org with a Studio plan + a creator-customer."""
+    """A platform (Simeon) org with a Studio plan + a creator-customer."""
     platform_org = await create_organization(save_fixture)
-    mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
+    mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
     product = await create_product(
         save_fixture,
         organization=platform_org,
@@ -81,7 +80,7 @@ def _order(
         applied_balance_amount=0,
         currency="usd",
         billing_reason=billing_reason,
-        invoice_number=f"CLAIDOR-{uuid.uuid4().hex[:6].upper()}-0001",
+        invoice_number=f"SIMEON-{uuid.uuid4().hex[:6].upper()}-0001",
         customer=customer,
         product=product,
         subscription=subscription,
@@ -128,9 +127,9 @@ class TestPlatformConfirmationEmail:
         await save_fixture(order)
 
         render = mocker.patch(
-            "polar.order.service.render_email_template", return_value="<html></html>"
+            "simeon.order.service.render_email_template", return_value="<html></html>"
         )
-        enqueue_email = mocker.patch("polar.order.service.enqueue_email")
+        enqueue_email = mocker.patch("simeon.order.service.enqueue_email")
         generate_invoice = mocker.patch.object(order_service, "generate_invoice")
 
         await order_service.send_confirmation_email(session, order)
@@ -165,9 +164,9 @@ class TestPlatformConfirmationEmail:
         await save_fixture(order)
 
         render = mocker.patch(
-            "polar.order.service.render_email_template", return_value="<html></html>"
+            "simeon.order.service.render_email_template", return_value="<html></html>"
         )
-        enqueue_email = mocker.patch("polar.order.service.enqueue_email")
+        enqueue_email = mocker.patch("simeon.order.service.enqueue_email")
 
         # Avoid real S3/PDF generation: pretend the invoice was produced.
         async def _gen(_session: AsyncSession, o: Order) -> Order:
@@ -185,7 +184,7 @@ class TestPlatformConfirmationEmail:
 
         await order_service.send_confirmation_email(session, order)
 
-        # Claidor-branded receipt WITH the invoice attached.
+        # Simeon-branded receipt WITH the invoice attached.
         assert render.call_args.args[0].template == "platform_receipt"
         generate_invoice.assert_called_once()
         attachments = enqueue_email.call_args.kwargs["attachments"]
@@ -223,9 +222,9 @@ class TestPlatformConfirmationEmail:
         await save_fixture(order)
 
         render = mocker.patch(
-            "polar.order.service.render_email_template", return_value="<html></html>"
+            "simeon.order.service.render_email_template", return_value="<html></html>"
         )
-        mocker.patch("polar.order.service.enqueue_email")
+        mocker.patch("simeon.order.service.enqueue_email")
         mocker.patch.object(order_service, "generate_invoice")
 
         await order_service.send_confirmation_email(session, order)
@@ -251,14 +250,14 @@ class TestPlatformMarketingSuppression:
             trial_end=datetime.now(UTC) + timedelta(days=14),
         )
 
-        enqueue = mocker.patch("polar.order.service.enqueue_job")
+        enqueue = mocker.patch("simeon.order.service.enqueue_job")
 
         # The real trial-start path: create_trial_order -> _on_order_paid.
         await order_service.create_trial_order(
             session, subscription, OrderBillingReasonInternal.subscription_create
         )
 
-        # The creator must NOT be enrolled into Claidor's marketing automation.
+        # The creator must NOT be enrolled into Simeon's marketing automation.
         subscribe_calls = [
             c
             for c in enqueue.call_args_list

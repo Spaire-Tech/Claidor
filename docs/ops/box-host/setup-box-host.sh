@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Simeon's cloud-computer host: one-shot setup for a fresh Ubuntu 24.04 VM
-# (25 September 2026; docs/product/cloud-computer-served.md is the record).
+# (25 September 2026; docs/services-core.md is the record).
 #
 # Run as root on the VM:
 #   BOX_HOST_NAME=box1.simeonlabs.com BOX_HOST_IP=2.28.35.75 \
@@ -12,7 +12,7 @@
 # copy /etc/docker/certs/ca.pem and ca-key.pem from the first server into a
 # folder here and add JOIN_CA_DIR=/that/folder. The server certificate is
 # then signed by that CA and no new client files are made; Render needs
-# only the new server in CLAIDOR_BOX_HOSTS (render-env.md).
+# only the new server in SIMEON_BOX_HOSTS (render-env.md).
 #
 # ADMIN_SSH_IP is the address you SSH from, or `any` to leave SSH open to
 # every address with key login only (password login is turned off when
@@ -34,8 +34,8 @@ set -euo pipefail
 
 CERT_DIR=/etc/docker/certs
 CLIENT_DIR=/root/box-host-client
-# The pinned image the server runs (CLAIDOR_BOX_IMAGE_DIGEST's default in
-# server/polar/config.py), not the moving sand-box-latest tag: the 28
+# The pinned image the server runs (SIMEON_BOX_IMAGE_DIGEST's default in
+# server/simeon/config.py), not the moving sand-box-latest tag: the 28
 # September build runs the image's own host (cloud-computer-served.md).
 BOX_IMAGE=${BOX_IMAGE:-public.ecr.aws/k0i0n2g5/cursorenvironments/universal:sand-box-latest@sha256:322c3a9031d61e210a05400dd74c82bbb1fdb42db315a8cf5ab39368c2f0c1c8}
 
@@ -171,7 +171,7 @@ docker pull "$BOX_IMAGE"
 echo
 if [ -n "${JOIN_CA_DIR:-}" ]; then
   echo "Done. This server trusts the client certificate Render already holds."
-  echo "Add it to CLAIDOR_BOX_HOSTS on Render (render-env.md), then prove it from Render's Shell:"
+  echo "Add it to SIMEON_BOX_HOSTS on Render (render-env.md), then prove it from Render's Shell:"
   echo "  curl --cacert /etc/secrets/ca.pem --cert /etc/secrets/cert.pem --key /etc/secrets/key.pem https://$BOX_HOST_NAME:2376/version"
 else
   echo "Done. Copy these three files to your Mac and add them on Render as secret files:"

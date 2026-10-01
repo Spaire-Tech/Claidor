@@ -3,13 +3,13 @@ from uuid import uuid4
 
 import pytest
 
-from polar.models import Account, Organization, User, UserOrganization
-from polar.user_organization.service import (
+from simeon.models import Account, Organization, User, UserOrganization
+from simeon.user_organization.service import (
     CannotRemoveOrganizationAdmin,
     OrganizationNotFound,
     UserNotMemberOfOrganization,
 )
-from polar.user_organization.service import (
+from simeon.user_organization.service import (
     user_organization as user_organization_service,
 )
 
@@ -73,8 +73,8 @@ class TestRemoveMemberSafe:
         save_fixture: Any,
     ) -> None:
         # Create user organization relationship for admin
-        from polar.kit.utils import utc_now
-        from polar.models import UserOrganization
+        from simeon.kit.utils import utc_now
+        from simeon.models import UserOrganization
 
         # The user fixture becomes the admin through organization_account fixture
         admin_user_org = UserOrganization(
@@ -102,8 +102,8 @@ class TestRemoveMemberSafe:
         save_fixture: Any,
     ) -> None:
         # Create user organization relationship for non-admin user
-        from polar.kit.utils import utc_now
-        from polar.models import UserOrganization
+        from simeon.kit.utils import utc_now
+        from simeon.models import UserOrganization
 
         user_org_relation = UserOrganization(
             user_id=user_second.id,
@@ -163,7 +163,7 @@ class TestRemoveMember:
         assert user_org is None
 
         # But the record still exists in DB with deleted_at set
-        from polar.postgres import sql
+        from simeon.postgres import sql
 
         result = await session.execute(
             sql.select(UserOrganization).where(

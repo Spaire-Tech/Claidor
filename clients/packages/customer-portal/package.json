@@ -1,6 +1,6 @@
 {
-  "name": "@claidor/customer-portal",
-  "description": "Claidor Customer Portal SDK",
+  "name": "@simeon/customer-portal",
+  "description": "Simeon Customer Portal SDK",
   "version": "0.0.1",
   "type": "module",
   "exports": {
@@ -23,7 +23,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@claidor/client": "workspace:*"
+    "@simeon/client": "workspace:*"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
@@ -38,8 +38,8 @@
     }
   },
   "devDependencies": {
-    "@claidor/eslint-config": "workspace:*",
-    "@claidor/typescript-config": "workspace:*",
+    "@simeon/eslint-config": "workspace:*",
+    "@simeon/typescript-config": "workspace:*",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.10",
     "eslint": "^9.39.2",

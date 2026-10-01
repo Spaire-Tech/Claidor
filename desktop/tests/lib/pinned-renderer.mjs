@@ -5,7 +5,7 @@
  * The bytes are not in the repository: `npm run bootstrap` hydrates them
  * into `src/app/dist/renderer` (`scripts/preflight-bootstrap.mjs` names
  * that path as the payload every build reads). Until 26 September 2026 the
- * tests looked only at `GROK_BOT_PINNED_RENDERER`, which nothing in the
+ * tests looked only at `SIMEON_PINNED_RENDERER`, which nothing in the
  * build loop sets, so they skipped on every Mac that had just bootstrapped
  * (ledger F-451) and a stale anchor was caught only at package time. Now
  * the variable still wins when set, and bootstrap's own path is the
@@ -20,12 +20,12 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 export const BOOTSTRAPPED_RENDERER = path.join(repoRoot, "src", "app", "dist", "renderer");
 
 export function resolvePinnedRenderer(env = process.env) {
-  const configured = env.GROK_BOT_PINNED_RENDERER?.trim();
+  const configured = env.SIMEON_PINNED_RENDERER?.trim();
   if (configured) return configured;
   return existsSync(path.join(BOOTSTRAPPED_RENDERER, "index.html")) ? BOOTSTRAPPED_RENDERER : undefined;
 }
 
-export const PINNED_RENDERER_SKIP = "no pinned renderer: set GROK_BOT_PINNED_RENDERER or run npm run bootstrap";
+export const PINNED_RENDERER_SKIP = "no pinned renderer: set SIMEON_PINNED_RENDERER or run npm run bootstrap";
 
 /** The pinned renderer's main chunk and stylesheet, read from `assets/`. */
 export async function readPinnedRendererAssets(pinned) {

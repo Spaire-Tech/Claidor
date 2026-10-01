@@ -1,5 +1,5 @@
 import { useToast } from '@/components/Toast/use-toast'
-import { schemas } from '@claidor/client'
+import { schemas } from '@simeon/client'
 import { FieldPath, FieldValues, UseFormSetError } from 'react-hook-form'
 
 type ValidationErrorsMap = Record<string, string[]>

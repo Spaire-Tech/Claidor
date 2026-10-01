@@ -259,7 +259,12 @@ export function createProductionMainRpcAdapter(
   return {
     create(context): MainEdge & Partial<ProductionDisposable> {
       const supplied = requireObject(ports.resolveDeps(context), "mainRpc.resolveDeps.result");
-      const resolved = { ...createExistingMainRpcCoreDeps(context, supplied), ...supplied };
+      const resolved = {
+        ...createExistingMainRpcCoreDeps(context, supplied),
+        // Voice calls (30 September 2026) ride the same edge when the root built them.
+        ...(context.voiceCalls == null ? {} : { voiceCalls: context.voiceCalls as unknown as NonNullable<MainEdgeWiringDeps["voiceCalls"]> }),
+        ...supplied,
+      };
       const edge = serveMainEdge(validateMainRpcDeps(withGeneratedMainRpc(resolved)));
       requireObject(edge as object | null, "mainRpc.edge");
       requireFunction((edge as { emit?: (...args: never[]) => unknown }).emit, "mainRpc.edge.emit");

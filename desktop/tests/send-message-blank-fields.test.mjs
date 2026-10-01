@@ -20,7 +20,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function loadSchema() {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-send-message-schema-"));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-send-message-schema-"));
   const output = path.join(temporary, "schema.mjs");
   await build({ entryPoints: [path.join(repoRoot, "source/host/runner/tools/send-message-schema.ts")], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);

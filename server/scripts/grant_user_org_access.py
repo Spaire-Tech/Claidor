@@ -4,14 +4,14 @@ Adds a `user_organizations` row linking the user to the org, which is
 the same membership the dashboard uses for "this user can manage this
 org." Idempotent — re-running for an existing membership is a no-op.
 
-Primary use: granting Claidor staff full access to the Claidor platform
+Primary use: granting Simeon staff full access to the Simeon platform
 org so they can manage Pro/Studio/Scale subscriptions from inside the
 dashboard.
 
 Usage:
     # Grant by email + slug (most common):
     python -m scripts.grant_user_org_access run \\
-        --email robin@simeonlabs.com --org claidor
+        --email robin@simeonlabs.com --org simeon
 
     # Or by IDs if you have them:
     python -m scripts.grant_user_org_access run \\
@@ -19,7 +19,7 @@ Usage:
 
     # Dry-run prints intended change without writing.
     python -m scripts.grant_user_org_access run \\
-        --email robin@simeonlabs.com --org claidor --dry-run
+        --email robin@simeonlabs.com --org simeon --dry-run
 """
 
 import asyncio
@@ -31,10 +31,10 @@ import structlog
 import typer
 from sqlalchemy import select
 
-from polar.kit.db.postgres import create_async_sessionmaker
-from polar.models import Organization, User
-from polar.models.user_organization import UserOrganization
-from polar.postgres import create_async_engine
+from simeon.kit.db.postgres import create_async_sessionmaker
+from simeon.models import Organization, User
+from simeon.models.user_organization import UserOrganization
+from simeon.postgres import create_async_engine
 
 cli = typer.Typer()
 

@@ -1,8 +1,8 @@
 // The backend the MCP manager talks to for HTTP servers, served locally for
-// vendor connectors (24 September 2026). Grok Bot's manager routes every
+// vendor connectors (24 September 2026). The upstream app's manager routes every
 // HTTP MCP server through one object with Cursor's backend behind it:
 // tool listing, tool calls, the OAuth start (checkAuthStatus), the OAuth
-// finish (completeOAuth), token checks and account removal. Claidor serves
+// finish (completeOAuth), token checks and account removal. Simeon serves
 // none of that, so until now a vendor connector could be installed and
 // nothing else. This object answers for the vendor connectors in our store
 // and hands anything else to the old backend unchanged.

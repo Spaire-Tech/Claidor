@@ -1,4 +1,4 @@
-"""The sharing relay (25 September 2026, `polar/sand/sharing.py`).
+"""The sharing relay (25 September 2026, `simeon/sand/sharing.py`).
 
 Two people, each signed in as the app does (`_signed_in`), speak to the
 relay the way `desktop/source/host/extensions/cross-user-sharing/xuser-relay.ts`
@@ -15,9 +15,9 @@ from typing import Any
 import httpx
 import pytest
 
-from polar.config import settings
-from polar.models import User
-from polar.postgres import AsyncSession
+from simeon.config import settings
+from simeon.models import User
+from simeon.postgres import AsyncSession
 from tests.desktop.test_endpoints import _signed_in
 
 

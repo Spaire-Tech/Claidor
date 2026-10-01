@@ -18,7 +18,7 @@ def wait_for_postgres(timeout: int = 60) -> bool:
     start_time = time.time()
     while time.time() - start_time < timeout:
         result = run_command(
-            ["docker", "compose", "exec", "-T", "db", "pg_isready", "-U", "polar"],
+            ["docker", "compose", "exec", "-T", "db", "pg_isready", "-U", "simeon"],
             cwd=SERVER_DIR,
             capture=True,
         )

@@ -108,14 +108,14 @@ test("the sign-in poll posts the verifier in a body, never in the query string",
       seen.push({ method: request.method, url: request.url, body });
       if (seen.length === 1) { response.writeHead(404, { "content-type": "application/json" }); response.end(JSON.stringify({ error: "not_found" })); return; }
       response.writeHead(200, { "content-type": "application/json" });
-      response.end(JSON.stringify({ accessToken: "eyJ.access", refreshToken: "claidor_dr_1" }));
+      response.end(JSON.stringify({ accessToken: "eyJ.access", refreshToken: "simeon_dr_1" }));
     });
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   try {
     const { port } = server.address();
     const tokens = await loaded.module.pollAuthenticationStatus({ uuid: "u-1", verifier: "secret-verifier", apiBaseUrl: `http://127.0.0.1:${port}` });
-    assert.deepEqual(tokens, { accessToken: "eyJ.access", refreshToken: "claidor_dr_1" });
+    assert.deepEqual(tokens, { accessToken: "eyJ.access", refreshToken: "simeon_dr_1" });
     assert.equal(seen.length, 2);
     for (const request of seen) {
       assert.equal(request.method, "POST");

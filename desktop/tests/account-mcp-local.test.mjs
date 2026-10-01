@@ -1,6 +1,6 @@
 /**
  * The account's MCP configuration lives on this machine (24 September 2026).
- * Grok Bot kept it on Cursor's server and the reconstruction still called
+ * The upstream app kept it on Cursor's server and the reconstruction still called
  * those RPCs (GetAvailableMcpServers, GetMcpConfig, SetMcpConfig,
  * InstallUserPlugin, UninstallUserPlugin, UpdateUserPluginInstall), which
  * Simeon Labs' server does not serve: reads came back unavailable and every
@@ -78,12 +78,12 @@ async function startCustomMcpServer({ requireBearer = false, apiKey } = {}) {
   return { origin, url: `${origin}/mcp`, hits, close: () => new Promise((resolve) => { server.closeAllConnections?.(); server.close(() => resolve()); }) };
 }
 
-const deps = (root, extra = {}) => ({ getAccessToken: async () => "claidor_da_test", getMachineId: async () => "machine", getBackendUrl: () => "https://api.simeonlabs.com", rootDir: () => root, ...extra });
+const deps = (root, extra = {}) => ({ getAccessToken: async () => "simeon_da_test", getMachineId: async () => "machine", getBackendUrl: () => "https://api.simeonlabs.com", rootDir: () => root, ...extra });
 const readStore = (root) => JSON.parse(readFileSync(path.join(root, "account-mcp-config.json"), "utf8"));
 
 test("SetMcpConfig then GetMcpConfig round-trips through account-mcp-config.json; a removal is a tombstone", async () => {
   const account = await load("source/shared/node/cursor-backend/account-mcp.ts", "account-mcp");
-  const root = await mkdtemp(path.join(os.tmpdir(), "caisra-account-mcp-store-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-account-mcp-store-"));
   try {
     const { createAccountMcpWriter, fetchAccountMcpServers } = account.module;
     const changes = [];
@@ -143,7 +143,7 @@ test("SetMcpConfig then GetMcpConfig round-trips through account-mcp-config.json
 test("the two copies merge newer-entry-wins per name, tombstones included, on both sides", async () => {
   const store = await load("source/shared/node/account-mcp/store.ts", "account-mcp-merge");
   const pull = await load("source/shared/node/account-mcp/box-pull.ts", "account-mcp-pull");
-  const root = await mkdtemp(path.join(os.tmpdir(), "caisra-account-mcp-merge-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-account-mcp-merge-"));
   try {
     const { setAccountMcpConfig, loadAccountMcpStore, adoptAccountMcpStore, mergeAccountMcpStores, listAccountMcpServers, parseAccountMcpStore } = store.module;
     setAccountMcpConfig(root, { mcpServers: { a: { url: "https://a.example/mcp" }, b: { url: "https://b.example/mcp" } } }, {}, { now: 1_000 });
@@ -206,7 +206,7 @@ test("the two copies merge newer-entry-wins per name, tombstones included, on bo
 test("a custom URL server's tools are listed and called through a streamable-HTTP MCP server, with its configured headers", async () => {
   const account = await load("source/shared/node/cursor-backend/account-mcp.ts", "account-mcp-http-writer");
   const backend = await load("source/shared/node/account-mcp/backend-exec.ts", "account-mcp-http-backend");
-  const root = await mkdtemp(path.join(os.tmpdir(), "caisra-account-mcp-http-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-account-mcp-http-"));
   const server = await startCustomMcpServer({ apiKey: "k3y" });
   try {
     const writer = account.module.createAccountMcpWriter(deps(root));
@@ -253,8 +253,8 @@ test("a custom URL server's tools are listed and called through a streamable-HTT
 test("a 401 from a custom server yields requiresAuth with an auth URL on the Mac, and never on the box", async () => {
   const account = await load("source/shared/node/cursor-backend/account-mcp.ts", "account-mcp-auth-writer");
   const backend = await load("source/shared/node/account-mcp/backend-exec.ts", "account-mcp-auth-backend");
-  const macRoot = await mkdtemp(path.join(os.tmpdir(), "caisra-account-mcp-mac-"));
-  const boxRoot = await mkdtemp(path.join(os.tmpdir(), "caisra-account-mcp-box-"));
+  const macRoot = await mkdtemp(path.join(os.tmpdir(), "simeon-account-mcp-mac-"));
+  const boxRoot = await mkdtemp(path.join(os.tmpdir(), "simeon-account-mcp-box-"));
   const server = await startCustomMcpServer({ requireBearer: true });
   try {
     const writer = account.module.createAccountMcpWriter(deps(macRoot));
@@ -347,7 +347,7 @@ test("a 401 from a custom server yields requiresAuth with an auth URL on the Mac
 
 test("install and uninstall of a plugin round-trip through the store", async () => {
   const account = await load("source/shared/node/cursor-backend/account-mcp.ts", "account-mcp-plugins");
-  const root = await mkdtemp(path.join(os.tmpdir(), "caisra-account-mcp-plugins-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-account-mcp-plugins-"));
   try {
     const { createAccountMcpWriter, fetchEffectiveUserPlugins, backfillUserPluginInstalls } = account.module;
     const writer = createAccountMcpWriter(deps(root));

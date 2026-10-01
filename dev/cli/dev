@@ -1,5 +1,5 @@
 #!/bin/bash
-# Polar Development CLI - Bootstrap wrapper
+# Simeon Development CLI - Bootstrap wrapper
 # This script ensures uv is installed, then runs the actual CLI
 
 set -e

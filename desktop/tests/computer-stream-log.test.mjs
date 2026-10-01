@@ -10,7 +10,7 @@ import { build } from "esbuild";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function load(entry) {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "caisra-computer-stream-"));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-computer-stream-"));
   const output = path.join(temporary, "module.mjs");
   await build({ entryPoints: [path.join(repoRoot, entry)], outfile: output, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent", external: ["electron"] });
   const module = await import(`${pathToFileURL(output).href}?${Date.now()}`);
