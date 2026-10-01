@@ -107,5 +107,7 @@ test("the in-page bridge bundles for the browser, and leaves the composer and th
   assert.match(bridge, /shell\.setAttribute\("inert", ""\)/, "the composer takes no focus or input");
   assert.match(bridge, /event\.key\.length === 1/, "typing anywhere is stopped, since the window forwards it to the composer");
   const backend = await readFile(path.join(repoRoot, "demo/backend.ts"), "utf8");
-  assert.match(backend, /get\("theme"\) === "dark"/);
+  // The demo follows the system appearance; ?theme=light or ?theme=dark forces one.
+  assert.match(backend, /get\("theme"\)/);
+  assert.match(backend, /matchMedia\("\(prefers-color-scheme: dark\)"\)/);
 });
