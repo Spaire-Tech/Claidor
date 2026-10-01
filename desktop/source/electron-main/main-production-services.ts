@@ -52,6 +52,7 @@ import { recordLocalToolApproval as persistLocalToolApproval, clearLocalToolAppr
 import { fetchSimeonAvailableModels } from "./models/simeon-model-catalog.js";
 import { migrationWatchForBoxRuntime } from "./box/box-recovery.js";
 import { createVoiceCallApi, type VoiceCallApi } from "./voice/voice-call-api.js";
+import { fetchPersonName } from "./account/cursor-profile.js";
 import { createVoiceCallService, type VoiceCallMenuItem, type VoiceCallService, type VoiceCallWindowPort } from "./voice/voice-call-service.js";
 import { createElectronVoiceCallWindow, createFileVoiceStore, createVoiceCallLog, createVoicePreviewCache, voiceCallResourcePaths, voiceCallsEnabled, VOICE_CALL_LOG_FILE, VOICE_CALL_STORE_FILE, VOICE_PREVIEW_DIR } from "./voice/voice-call-window.js";
 import type { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
@@ -766,6 +767,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
           previews: createVoicePreviewCache(join(userData, VOICE_PREVIEW_DIR)),
           focusAgentChat: (agentId) => { focusWindow(); requireValue(mainEdge, "main-edge").emit("focus-agent", { id: agentId }); },
           isEnabled: () => voiceCallsEnabled(env),
+          getPersonName: async () => await fetchPersonName(async () => await (await requireValue(account, "account").getAuthService()).getValidAccessToken(), {}),
           log,
           onMenuChanged: () => { for (const listener of [...voiceCallMenuListeners]) listener(); },
         });

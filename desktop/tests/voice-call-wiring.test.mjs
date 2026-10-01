@@ -47,15 +47,22 @@ test("an agent's voice round-trips through its profile, and a profile without on
 
 test("the voice-call anchors apply exactly once, and a second pass refuses", async () => {
   const { VOICE_CALL_REPLACEMENTS, patchOriginalVoiceCall, patchOriginalVoiceCallStylesheet, VOICE_CALL_MARKER } = await import(patchModule);
-  assert.deepEqual(VOICE_CALL_REPLACEMENTS.map(([label]) => label), ["voice-call-components", "voice-picker-under-character-color", "call-button-beside-agent-name"]);
+  assert.deepEqual(VOICE_CALL_REPLACEMENTS.map(([label]) => label), ["voice-call-components", "call-record-card", "name-sheet-at-root", "voice-picker-under-character-color", "call-button-beside-agent-name"]);
   const chunk = VOICE_CALL_REPLACEMENTS.map(([, before]) => before).join(";\n");
   const patched = patchOriginalVoiceCall(chunk);
   assert.match(patched, /function __simeonCallButton\(n\)\{/);
   assert.match(patched, /function __simeonVoicePicker\(n\)\{/);
   assert.match(patched, /p\.jsx\(__simeonCallButton,\{agentId:t\.id,agentName:t\.name\},"simeon-call"\)/);
   assert.match(patched, /children:\[v,E,p\.jsx\(__simeonVoicePicker,\{agentId:t\.id\},"simeon-voice"\)\]/);
+  // The call record is drawn as the card once the message is complete; any other message as before.
+  assert.match(patched, /\(!h&&__simeonCallRecordParse\(r\)!=null\?p\.jsx\(__simeonCallRecord,\{content:r\}\):p\.jsx\(JPn,/);
+  // The name sheet is mounted once, at the window's root.
+  assert.match(patched, /p\.jsx\(Yzn,\{children:p\.jsx\(\$zn,\{\}\)\}\),p\.jsx\(__simeonNameSheet,\{\},"simeon-name-sheet"\)\]/);
+  assert.match(patched, /What should your agents call you\?/);
   assert.throws(() => patchOriginalVoiceCall(patched), /anchor is missing or ambiguous/);
   const css = patchOriginalVoiceCallStylesheet(".x{}");
+  assert.match(css, /\.simeon-call-record\{display:grid;width:340px;max-width:100%\}/);
+  assert.match(css, /\.simeon-name-sheet\{position:fixed;inset:0/);
   assert.ok(css.includes(VOICE_CALL_MARKER));
   assert.match(css, /\.simeon-call-button\{position:absolute;left:100%;top:56px/);
   assert.throws(() => patchOriginalVoiceCallStylesheet(css), /already present/);
@@ -148,4 +155,16 @@ test("the package builds and ships the banner page and its preload", async () =>
   const page = await readFile(path.join(repoRoot, "source/voice-call/index.html"), "utf8");
   assert.match(page, /connect-src 'self' https:\/\/api\.elevenlabs\.io wss:\/\/api\.elevenlabs\.io https:\/\/\*\.elevenlabs\.io wss:\/\/\*\.elevenlabs\.io https:\/\/livekit\.rtc\.elevenlabs\.io wss:\/\/livekit\.rtc\.elevenlabs\.io/);
   assert.match(page, /media-src 'self' blob: mediastream:/);
+});
+
+test("a call record reads back as the card: its length, and the recap when there is one", async () => {
+  const { VOICE_CALL_COMPONENTS_SOURCE } = await import(patchModule);
+  const parse = new Function(`${VOICE_CALL_COMPONENTS_SOURCE};return __simeonCallRecordParse;`)();
+  const prompt = await loadModule("source/shared/voice-call/voice-call-prompt.ts", "call-record");
+  assert.deepEqual(parse(prompt.callRecordText(168, "Bass, you asked me to book a table.")), { duration: "2:48", recap: "Bass, you asked me to book a table." });
+  assert.deepEqual(parse(prompt.callRecordText(43, null)), { duration: "0:43", recap: null });
+  assert.deepEqual(parse(prompt.callRecordText(3723, "Line one.\n\nLine two.")), { duration: "1:02:03", recap: "Line one.\n\nLine two." });
+  assert.equal(parse("Voice call · soon"), null);
+  assert.equal(parse("We talked about the voice call · 0:43"), null);
+  assert.equal(parse(42), null);
 });

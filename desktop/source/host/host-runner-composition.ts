@@ -319,7 +319,7 @@ export interface HostRunnerCompositionDependencies<Runner extends ProductionSess
     transcriptsDir: string;
     getUserTimeZone(): unknown;
     resolveTeamRules(): Promise<unknown>;
-    getUserFullName(): Promise<unknown>;
+    getUserFullName(): unknown;
   }): unknown;
   createTranscriptMirror?(options: {
     transcriptsDir: string;
@@ -1216,8 +1216,10 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               extensions.api("managed-setup"),
               "resolveTeamRules"
             )?.(),
-          getUserFullName: async () =>
-            await method(auth, "getUserFullName")?.()
+          // Synchronous: the request context reads it as a value. Wrapped in
+          // `async` until 1 October 2026, it was always a Promise there and the
+          // agent never had the person's name.
+          getUserFullName: () => method(auth, "getUserFullName")?.()
         });
 
     const resolveCloudAgentTitle = async (_ctx: unknown, bcId: string) =>

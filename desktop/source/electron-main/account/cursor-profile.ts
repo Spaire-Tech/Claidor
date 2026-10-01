@@ -88,6 +88,10 @@ export interface SimeonProfileRow {
   readonly email?: string;
   readonly name?: string;
   readonly nickname?: string;
+  /** What the person asked their agents to call them (`POST user/name`). */
+  readonly preferredName?: string;
+  /** Google's first name, offered in the name sheet. */
+  readonly suggestedName?: string;
   readonly avatarUrl?: string | null;
   readonly phone?: string | null;
   readonly accountMode?: string;
@@ -121,7 +125,7 @@ function isoToMs(value: unknown): number | null { if (typeof value !== "string" 
 export function cursorProfileFromSimeon(row: SimeonProfileRow, localName: string | undefined): CursorProfile {
   const avatar = typeof row.avatarUrl === "string" ? nonEmpty(row.avatarUrl) : undefined;
   return {
-    displayName: localName ?? nonEmpty(row.name) ?? nonEmpty(row.nickname),
+    displayName: localName ?? nonEmpty(row.preferredName) ?? nonEmpty(row.name) ?? nonEmpty(row.nickname),
     email: nonEmpty(row.email),
     profilePictureUrl: avatar,
     isAnysphereUser: false,
@@ -228,8 +232,35 @@ export async function fetchCursorProfile(getAccessToken: AccessTokenReader, deps
 // is still attempted, where its "unimplemented" answer from Simeon Labs'
 // server is swallowed by `persistAccountDisplayName`. It already worked
 // that way; nothing here changed on 24 September 2026.
+// Since 1 October 2026 the name is the server's (`POST /desktop/api/user/name`):
+// what the person's agents, calls and recaps call them. The local copy stays
+// so the account menu shows it at once.
 export async function updateCursorProfileName(getAccessToken: AccessTokenReader, name: string, deps: CursorProfileDeps): Promise<void> {
-  await persistAccountDisplayName(name, () => profileClient(getAccessToken, deps).updateUserName(splitAccountName(name), { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS }).then(() => undefined));
+  await persistAccountDisplayName(name, () => saveSimeonPreferredName(getAccessToken, name, deps).then(() => undefined));
+}
+
+export const SIMEON_NAME_PATH = "user/name";
+export async function saveSimeonPreferredName(getAccessToken: AccessTokenReader, name: string, deps: CursorProfileDeps): Promise<SimeonProfileRow> {
+  return await simeonApiData<SimeonProfileRow>(simeonAuth(getAccessToken, deps), SIMEON_NAME_PATH, { method: "POST", json: { name }, ...(deps.fetch === undefined ? {} : { fetch: deps.fetch }) });
+}
+
+/**
+ * The name sheet after onboarding (1 October 2026): `needed` until the person
+ * has given a name, with Google's first name offered. Never the e-mail's
+ * local part: "bxss.fall" is not anyone's name.
+ */
+export interface NamePrompt { readonly needed: boolean; readonly suggested: string | null }
+export function namePromptFromSimeon(row: SimeonProfileRow): NamePrompt {
+  const preferred = nonEmpty(row.preferredName);
+  return { needed: preferred == null, suggested: preferred ?? nonEmpty(row.suggestedName) ?? null };
+}
+export async function fetchNamePrompt(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<NamePrompt> {
+  return namePromptFromSimeon(await readSimeonProfile(getAccessToken, deps));
+}
+/** The person's name for a voice call: the chosen one, else Google's first name. */
+export async function fetchPersonName(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<string | null> {
+  const row = await readSimeonProfile(getAccessToken, deps);
+  return nonEmpty(row.preferredName) ?? nonEmpty(row.suggestedName) ?? null;
 }
 // Simeon Labs' proxy trains nothing on anyone; the answer is stated, not
 // fetched from a dashboard RPC that 404s (ledger F-383).

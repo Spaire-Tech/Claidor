@@ -177,6 +177,8 @@ export function createDesktopPreloadBridge(options: {
       cancelLogin: () => edge("cancelCursorLogin"),
       logout: () => edge("logoutCursor"),
       updateName: (name: string) => edge("updateCursorAccountName", { name }),
+      // The name sheet after onboarding (1 October 2026): whether to ask, and Google's first name to offer.
+      getNamePrompt: () => edge("getCursorNamePrompt"),
       getAvatar: () => edge("getCursorAvatar"),
       getWeeklyUsage: () => edge("getCursorWeeklyUsage"),
       getUsageSummary: () => edge("getCursorUsageSummary"),

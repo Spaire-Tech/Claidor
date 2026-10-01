@@ -100,6 +100,7 @@ from .service import (
     provider_api_key,
     provider_base_url,
     provider_configured,
+    set_preferred_name,
     tally_for,
     usage_from_answer,
 )
@@ -313,6 +314,28 @@ async def profile(
     too, with its own credential, for the agent's user-info block
     (`host/extensions/auth/user-full-name-service.ts`)."""
     return _ok(desktop.user_payload(desktop_session.user))
+
+
+class NameBody(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    name: str
+
+
+@router.post("/api/user/name", name="desktop:name")
+async def set_name(
+    body: NameBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """What the person wants their agents to call them (the app's name
+    sheet, after onboarding). Answers the profile, as `GET` does."""
+    user = desktop_session.user
+    try:
+        set_preferred_name(user, body.name)
+    except ValueError as error:
+        return _fail(400, str(error), status=400)
+    session.add(user)
+    return _ok(desktop.user_payload(user))
 
 
 @router.get("/api/user/quota", name="desktop:quota")

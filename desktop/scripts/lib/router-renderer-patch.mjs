@@ -265,14 +265,38 @@ export const VOICE_CALL_COMPONENTS_SOURCE = [
   // A dropdown (the founder: "have voice be a drop down"), with a play button for the chosen voice beside it.
   "const cur=c?.voiceId??v?.[0]?.id??\"\",sel=v?.find(o=>o.id===cur)??null,pl=sel!=null&&g===sel.id;",
   `return p.jsxs("div",{"aria-label":"Voice",className:"simeon-voice-picker",children:[p.jsx("label",{className:"simeon-voice-picker__title",htmlFor:\`simeon-voice-\${n.agentId}\`,children:"Voice"}),x==null?null:p.jsx("div",{className:"simeon-voice-picker__note",role:"status",children:x}),v==null||v.length===0?null:p.jsxs("div",{className:"simeon-voice-picker__row",children:[p.jsx("select",{className:"simeon-voice-picker__select",id:\`simeon-voice-\${n.agentId}\`,value:cur,onChange:e=>{const o=v.find(q=>q.id===e.target.value);o!=null&&pick(o)},children:v.map(o=>{const t=line(o);return p.jsx("option",{value:o.id,children:t.length>0?\`\${o.name} \u2014 \${t}\`:o.name},o.id)})}),p.jsx("button",{"aria-label":sel==null?"Play":pl?\`Stop \${sel.name}\`:\`Play \${sel.name}\`,className:"simeon-voice-picker__play",disabled:sel==null||sel.hasPreview!==!0,onClick:()=>sel!=null&&play(sel),type:"button",children:p.jsx("svg",{"aria-hidden":!0,viewBox:"0 0 24 24",children:p.jsx("path",{fill:"currentColor",d:pl?"M7 5h4v14H7zM13 5h4v14h-4z":"M8 5.2v13.6L19 12z"})})})]})]})}`,
+  // The call in the chat (1 October 2026, the founder: "the user should click on the summary to see the summary"):
+  // a message that is a call record ("Voice call · 0:43", then the recap; `callRecordText` in
+  // source/shared/voice-call/voice-call-prompt.ts) is drawn as one quiet row that opens to the recap.
+  "function __simeonCallRecordParse(n){if(typeof n!==\"string\")return null;const m=/^Voice call · (\\d{1,2}:\\d{2}(?::\\d{2})?)(?:\\n\\n([\\s\\S]+))?$/.exec(n.trim());return m==null?null:{duration:m[1],recap:m[2]==null?null:m[2].trim()}}",
+  "function __simeonCallRecord(n){",
+  "const c=__simeonCallRecordParse(n.content),[o,so]=S.useState(!1);if(c==null)return null;const has=c.recap!=null&&c.recap.length>0;",
+  `return p.jsxs("div",{className:"simeon-call-record","data-open":o&&has?"true":"false",children:[p.jsxs("button",{type:"button",className:"simeon-call-record__head","aria-expanded":has?o:void 0,disabled:!has,onClick:()=>so(v=>!v),children:[p.jsx("span",{className:"simeon-call-record__glyph","aria-hidden":!0,children:p.jsx("svg",{viewBox:"0 0 24 24",children:p.jsx("path",{fill:"currentColor",d:"${PHONE_ICON_PATH}"})})}),p.jsxs("span",{className:"simeon-call-record__what",children:[p.jsx("b",{children:"Voice call"}),p.jsx("span",{children:c.duration})]}),has?p.jsx("svg",{className:"simeon-call-record__chevron",viewBox:"0 0 24 24","aria-hidden":!0,children:p.jsx("path",{fill:"none",stroke:"currentColor",strokeWidth:2.4,strokeLinecap:"round",strokeLinejoin:"round",d:"M9 6l6 6-6 6"})}):null]}),has?p.jsx("div",{className:"simeon-call-record__recap",children:p.jsx("div",{children:p.jsx("p",{children:c.recap})})}):null]})}`,
+  // The name sheet (1 October 2026): once, after onboarding, "What should your agents call you?",
+  // offered Google's first name, never one made from the e-mail. Saved through the account's own
+  // rename (`cursorAccount.updateName`, now `POST /desktop/api/user/name`). "Not now" asks again next launch.
+  "function __simeonNameSheet(){",
+  "const d=typeof window<\"u\"?window.desktop:void 0,a=d?.cursorAccount,[st,ss]=S.useState(\"idle\"),[v,sv]=S.useState(\"\"),[er,se]=S.useState(null),ip=S.useRef(null);",
+  "S.useEffect(()=>{if(a?.getNamePrompt==null||a?.updateName==null)return;let l=!0,t=null;const look=()=>{Promise.all([a.getNamePrompt(),d.onboarding?.getSeen?.()]).then(([q,seen])=>{if(!l)return;if(q?.needed===!0&&seen===!0){sv(typeof q.suggested===\"string\"?q.suggested:\"\");ss(\"ask\");return}if(q?.needed===!0)t=setTimeout(look,4e3)},()=>{l&&(t=setTimeout(look,15e3))})};look();return()=>{l=!1;t!=null&&clearTimeout(t)}},[]);",
+  "S.useEffect(()=>{st===\"ask\"&&setTimeout(()=>{ip.current?.focus();ip.current?.select()},60)},[st]);",
+  "if(st!==\"ask\"&&st!==\"saving\")return null;",
+  "const name=v.replace(/\\s+/g,\" \").trim(),ok=name.length>0&&name.length<=60&&st!==\"saving\";",
+  "const save=()=>{if(!ok)return;ss(\"saving\");se(null);Promise.resolve(a.updateName(name)).then(()=>ss(\"done\"),()=>{ss(\"ask\");se(\"Couldn’t save your name. Try again.\")})};",
+  `return p.jsx("div",{className:"simeon-name-sheet",role:"presentation",children:p.jsxs("form",{className:"simeon-name-sheet__card",role:"dialog","aria-modal":!0,"aria-labelledby":"simeon-name-sheet-title",onSubmit:e=>{e.preventDefault();save()},children:[p.jsx("h2",{id:"simeon-name-sheet-title",className:"simeon-name-sheet__title",children:"What should your agents call you?"}),p.jsx("p",{className:"simeon-name-sheet__note",children:"They’ll use it in chat and on calls. You can change it later."}),p.jsx("input",{ref:ip,id:"simeon-name-sheet-input",className:"simeon-name-sheet__input",type:"text",autoComplete:"given-name",maxLength:60,placeholder:"Your name",value:v,onChange:e=>sv(e.target.value),"aria-label":"Your name"}),er==null?null:p.jsx("p",{className:"simeon-name-sheet__error",role:"alert",children:er}),p.jsxs("div",{className:"simeon-name-sheet__actions",children:[p.jsx("button",{type:"button",className:"simeon-name-sheet__later",onClick:()=>ss("later"),children:"Not now"}),p.jsx("button",{type:"submit",className:"simeon-name-sheet__save",disabled:!ok,children:st==="saving"?"Saving…":"Continue"})]})]})})}`,
 ].join("");
 const VOICE_COMPONENTS_ANCHOR = "function e3n(n){";
 const VOICE_PICKER_BEFORE = 'let A;return e[21]!==E||e[22]!==v?(A=p.jsxs("div",{className:f,children:[v,E]}),e[21]=E,e[22]=v,e[23]=A):A=e[23],A}';
 const VOICE_PICKER_AFTER = 'return p.jsxs("div",{className:f,children:[v,E,p.jsx(__simeonVoicePicker,{agentId:t.id},"simeon-voice")]})}';
 const CALL_BUTTON_BEFORE = 'let B;e[97]!==N||e[98]!==E||e[99]!==A||e[100]!==I?(B=p.jsxs("div",{className:N,style:E,children:[A,I]}),e[97]=N,e[98]=E,e[99]=A,e[100]=I,e[101]=B):B=e[101];';
 const CALL_BUTTON_AFTER = 'const B=p.jsxs("div",{className:N,style:E,children:[A,p.jsx(__simeonCallButton,{agentId:t.id,agentName:t.name},"simeon-call"),I]});';
+const CALL_RECORD_BEFORE = 'p.jsx(JPn,{cachedLinkUrls:nMn,content:r,isStreaming:h,matcher:b,promoteStandaloneLinks:!1})';
+const CALL_RECORD_AFTER = `(!h&&__simeonCallRecordParse(r)!=null?p.jsx(__simeonCallRecord,{content:r}):${CALL_RECORD_BEFORE})`;
+const NAME_SHEET_BEFORE = 'p.jsx(BGn,{}),p.jsx(Yzn,{children:p.jsx($zn,{})})]';
+const NAME_SHEET_AFTER = 'p.jsx(BGn,{}),p.jsx(Yzn,{children:p.jsx($zn,{})}),p.jsx(__simeonNameSheet,{},"simeon-name-sheet")]';
 export const VOICE_CALL_REPLACEMENTS = Object.freeze([
   ["voice-call-components", VOICE_COMPONENTS_ANCHOR, `${VOICE_CALL_COMPONENTS_SOURCE}${VOICE_COMPONENTS_ANCHOR}`],
+  ["call-record-card", CALL_RECORD_BEFORE, CALL_RECORD_AFTER],
+  ["name-sheet-at-root", NAME_SHEET_BEFORE, NAME_SHEET_AFTER],
   ["voice-picker-under-character-color", VOICE_PICKER_BEFORE, VOICE_PICKER_AFTER],
   ["call-button-beside-agent-name", CALL_BUTTON_BEFORE, CALL_BUTTON_AFTER],
 ]);
@@ -308,6 +332,34 @@ export const voiceCallCss = () => `${VOICE_CALL_MARKER} (30 September 2026). */
 .simeon-voice-picker__play{width:30px;height:30px;padding:0;border:0;border-radius:999px;display:grid;place-items:center;cursor:pointer;color:var(--sand-text-primary);background:light-dark(rgba(120,120,128,.12),rgba(120,120,128,.24))}
 .simeon-voice-picker__play:disabled{opacity:.4;cursor:default}
 .simeon-voice-picker__play>svg{width:12px;height:12px}
+.simeon-call-record{display:grid;width:340px;max-width:100%}
+.simeon-call-record__head{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:10px;cursor:pointer;border-radius:12px;margin:-2px -6px;padding:2px 6px}
+.simeon-call-record__head:disabled{cursor:default}
+.simeon-call-record__head:focus-visible{outline:2px solid light-dark(${USER_BUBBLE_LIGHT},#5b9be0);outline-offset:1px}
+.simeon-call-record__glyph{flex:none;width:30px;height:30px;border-radius:999px;display:grid;place-items:center;color:var(--sand-text-primary);background:light-dark(rgba(0,0,0,.06),rgba(255,255,255,.10))}
+.simeon-call-record__glyph>svg{width:15px;height:15px}
+.simeon-call-record__what{display:grid;gap:1px;flex:1;min-width:0}
+.simeon-call-record__what>b{font-weight:600}
+.simeon-call-record__what>span{font-size:13px;line-height:17px;color:var(--sand-text-secondary);font-variant-numeric:tabular-nums}
+.simeon-call-record__chevron{flex:none;width:14px;height:14px;color:var(--sand-text-secondary);transition:transform .2s ease}
+.simeon-call-record[data-open="true"] .simeon-call-record__chevron{transform:rotate(90deg)}
+.simeon-call-record__recap{display:grid;grid-template-rows:0fr;transition:grid-template-rows .22s ease;width:0;min-width:100%}
+.simeon-call-record[data-open="true"] .simeon-call-record__recap{grid-template-rows:1fr}
+.simeon-call-record__recap>div{overflow:hidden}
+.simeon-call-record__recap p{margin:8px 0 0;padding:8px 0 0 40px;border-top:1px solid light-dark(rgba(0,0,0,.08),rgba(255,255,255,.10))}
+.simeon-name-sheet{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:16px;background:light-dark(rgba(0,0,0,.18),rgba(0,0,0,.45));-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.simeon-name-sheet__card{width:min(360px,100%);display:grid;gap:10px;padding:22px;border-radius:18px;background:light-dark(#fff,#2a2a2c);color:var(--sand-text-primary);box-shadow:0 24px 60px rgba(0,0,0,.22),0 0 0 1px light-dark(rgba(0,0,0,.06),rgba(255,255,255,.08))}
+.simeon-name-sheet__title{margin:0;font-size:17px;line-height:22px;font-weight:600}
+.simeon-name-sheet__note{margin:0;font-size:13px;line-height:18px;color:var(--sand-text-secondary)}
+.simeon-name-sheet__input{margin-top:4px;height:36px;padding:0 12px;border:0;border-radius:10px;font:inherit;font-size:15px;color:var(--sand-text-primary);background:light-dark(rgba(120,120,128,.12),rgba(120,120,128,.24));outline:none}
+.simeon-name-sheet__input:focus-visible{box-shadow:0 0 0 2px light-dark(${USER_BUBBLE_LIGHT},#5b9be0)}
+.simeon-name-sheet__error{margin:0;font-size:13px;color:light-dark(#c4302b,#ff6b63)}
+.simeon-name-sheet__actions{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+.simeon-name-sheet__actions>button{height:32px;padding:0 14px;border:0;border-radius:999px;font:inherit;font-size:14px;cursor:pointer}
+.simeon-name-sheet__later{background:transparent;color:var(--sand-text-secondary)}
+.simeon-name-sheet__save{background:light-dark(#1d1d1f,#f5f5f7);color:light-dark(#fff,#1d1d1f);font-weight:600}
+.simeon-name-sheet__save:disabled{opacity:.4;cursor:default}
+@media (prefers-reduced-motion:reduce){.simeon-call-record__chevron,.simeon-call-record__recap{transition:none}}
 `;
 
 export function patchOriginalVoiceCallStylesheet(css) {
