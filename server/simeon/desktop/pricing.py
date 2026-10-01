@@ -727,7 +727,7 @@ BOX_BILLING_UNIT_SECONDS = 1
 #: What a box usage row is called. Never a model anybody can talk to, and
 #: `model_by_id` does not find it — like speech and images, it is priced
 #: so its rows mean something and offered to nobody.
-BOX_MODEL_ID = "caisra-box"
+BOX_MODEL_ID = "simeon-box"
 
 BOX_PROVIDER_NOTE = (
     "A box row's provider column reads `openai` and the box is E2B's. "

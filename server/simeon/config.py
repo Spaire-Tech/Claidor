@@ -340,7 +340,7 @@ class Settings(BaseSettings):
     COMPOSIO_BASE_URL: str = "https://backend.composio.dev"
 
     # The person's computer, on E2B (simeon/desktop/boxes.py,
-    # docs/product/agent-computer-plan.md). The key is Claidor's and
+    # docs/product/agent-computer-plan.md). The key is Simeon Labs' and
     # stays here: the desktop app never talks to E2B, because a key
     # shipped inside an Electron app is a published key and one extracted
     # key bills every box we run. Left empty, every box route answers

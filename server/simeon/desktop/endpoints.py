@@ -1382,14 +1382,14 @@ async def proxy_speech(
 # The person's box, brokered. `simeon/desktop/boxes.py` holds the whole of
 # the reasoning and the E2B calls; these ten routes are the contract the
 # engine's box plugin was written against
-# (`docs/product/agent-computer-plan.md` §9, and
-# `openclaw-extensions/box/brokerClient.ts`, which is the contract in
-# executable form).
+# (`docs/product/agent-computer-plan.md` §9). That plugin went with the
+# 18 September re-founding of `desktop/`; the app asks for a box over
+# Connect RPC now. `docs/product/box-server-routes.md` §10 and §21.
 #
 # **They live under `/api/proxy/box/…` and they are declared here for a
 # reason.** The app reaches this server through its local token proxy,
-# which prefixes `/api/proxy` and injects the account's bearer
-# (`openclawTokenProxy.ts:219`). FastAPI takes the first route that
+# which prefixes `/api/proxy` and injects the account's bearer.
+# FastAPI takes the first route that
 # matches, and `/api/proxy/{path:path}` below would swallow every one of
 # these and answer 404 — the same trap the Composio block underneath
 # already documents. Moving these after it silently kills the box.

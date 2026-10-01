@@ -267,9 +267,9 @@ class DesktopVoiceCall(RecordModel):
 
 
 class DesktopBoxState(StrEnum):
-    """What Claidor last saw the person's box doing.
+    """What this server last saw the person's box doing.
 
-    Claidor's belief, not E2B's truth. The two can disagree — E2B can
+    This server's belief, not E2B's truth. The two can disagree — E2B can
     reap a sandbox, a pause can time out, a deploy can land mid-call —
     and the rule everywhere below is that **E2B wins**: a route that
     learns the real state writes it here rather than arguing with it.
@@ -370,7 +370,7 @@ class DesktopBox(RecordModel):
     billed_through: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True, default=None
     )
-    #: When Claidor last heard anything true about this box from E2B.
+    #: When this server last heard anything true about this box from E2B.
     last_seen_at: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True, default=None
     )

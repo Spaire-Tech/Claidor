@@ -7,7 +7,7 @@ across days. It runs on E2B, locked by the founder on 18 September:
 
 **The desktop app never talks to E2B, and this module is why.** The
 founder, 16 September: *"my users should never put a key. everything
-happens under the hood. not a setting."* So the E2B key is Claidor's,
+happens under the hood. not a setting."* So the E2B key is Simeon Labs',
 and it must not ship inside an Electron app: anyone with the app would
 have it, and one extracted key bills every box we run. The app holds an
 opaque handle; **no route here returns a key, and none returns an E2B
@@ -15,13 +15,20 @@ sandbox id either.** `boxId` is this server's own row id, so E2B's
 identifiers never leave the server and one account's box is not even
 nameable by another.
 
-The road the app takes is the local token proxy
-(`desktop/src/main/libs/openclawTokenProxy.ts`), which injects the
-account's access token and refreshes it. It prefixes `/api/proxy`, which
-is why these routes are served at `/api/proxy/box/…`. That proxy strips
+The road the app took was its local token proxy, which injected the
+account's access token and refreshed it, and prefixed `/api/proxy` — which
+is why these routes are served at `/api/proxy/box/…`. That proxy stripped
 the `upgrade` header, so there is no WebSocket: `/exec` is one chunked
 POST answering in NDJSON. All of this is the Box agent's finding, in
 `docs/product/agent-computer-plan.md` §6.
+
+**That client no longer exists.** The plugin this shape was written
+against went with the 18 September re-founding of `desktop/`, and the app
+asks for a box over Connect RPC now (`EnsureSandBox`, `RecreateSandBox`,
+`ForceRecreateSandBox`). The reasoning, the E2B calls and the metering
+below are transport-independent; the ten routes are not.
+`docs/product/box-server-routes.md` §10 and §21 are the record, and
+whether this half lands at all is still an open decision.
 
 **What makes this different from everything else on this server: a box
 costs money while nobody is using it.** A model call is free until
@@ -98,7 +105,7 @@ SHELL_TIMEOUT_SECONDS = 120.0
 
 
 class BoxNotConfigured(Exception):
-    """Claidor holds no E2B key. Never a fault of the person's request."""
+    """Simeon Labs holds no E2B key. Never a fault of the person's request."""
 
 
 class BoxNotFound(Exception):
@@ -179,7 +186,7 @@ def _translate(error: Exception, operation: str) -> Exception:
 
 
 class BoxService:
-    """Everything Claidor does to a person's computer."""
+    """Everything Simeon Labs does to a person's computer."""
 
     # --- E2B ----------------------------------------------------------
 
@@ -371,7 +378,7 @@ class BoxService:
     ) -> BoxState:
         """`GET /box/sandboxes/{boxId}`.
 
-        Asks E2B what is true rather than reporting Claidor's memory, and
+        Asks E2B what is true rather than reporting this server's memory, and
         settles what it finds — so simply looking keeps the meter honest.
         """
         box = await self._for_id(session, user, box_id)
@@ -435,7 +442,7 @@ class BoxService:
     async def reset(self, session: AsyncSession, user: User, box_id: str) -> BoxState:
         """`POST /box/sandboxes/{boxId}/reset`.
 
-        Back to the snapshot Claidor already holds — the last resort,
+        Back to the snapshot this server already holds — the last resort,
         because anything since that snapshot is gone. With no snapshot it
         builds a clean machine from the template, which loses the
         person's files entirely. The server cannot ask, so the app must
@@ -736,8 +743,8 @@ class BoxService:
                 # a security boundary — the key is — but it is what makes
                 # a stray sandbox traceable to an account.
                 metadata={
-                    "claidor_user": str(box.user_id),
-                    "claidor_scope": box.scope_key,
+                    "simeon_user": str(box.user_id),
+                    "simeon_scope": box.scope_key,
                 },
                 **self._api_params(),
             )
