@@ -48,6 +48,7 @@ class FakeElevenLabs(ElevenLabsClient):
         self.agents: dict[str, dict[str, Any]] = {}
         self.tools: dict[str, dict[str, Any]] = {}
         self.conversations: dict[str, dict[str, Any]] = {}
+        self.ratings: dict[str, bool | None] = {}
         self.voices: list[dict[str, Any]] = []
         self.account_voices: list[dict[str, Any]] = []
         self.token_error: ElevenLabsError | None = None
@@ -113,6 +114,10 @@ class FakeElevenLabs(ElevenLabsClient):
         if conversation_id not in self.conversations:
             raise ElevenLabsError(404, "conversation not found", "conversations")
         return self.conversations[conversation_id]
+
+    async def rate_conversation(self, conversation_id: str, like: bool | None) -> None:
+        self.calls.append("rate_conversation")
+        self.ratings[conversation_id] = like
 
     async def list_voices_by_id(self, voice_ids: list[str]) -> list[dict[str, Any]]:
         self.calls.append("list_voices_by_id")
@@ -208,6 +213,8 @@ class TestThePlatformAgent:
         assert set(prompt["built_in_tools"]) == {"end_call", "skip_turn"}
         assert sorted(prompt["tool_ids"]) == sorted(fake.tools)
         assert conversation["tts"]["model_id"] == VOICE_TTS_MODEL
+        # A steadier voice than ElevenLabs' default 0.5.
+        assert conversation["tts"]["stability"] == 0.7
         assert conversation["turn"] == {
             "turn_timeout": 7,
             "silence_end_call_timeout": 25,
@@ -233,7 +240,8 @@ class TestThePlatformAgent:
         assert hand["parameters"]["required"] == ["task"]
         assert hand["expects_response"] is True
         assert hand["response_timeout_secs"] == 20
-        assert hand["pre_tool_speech"] == "force"
+        # Its answer asks for the one acknowledgement; no forced speech before it.
+        assert hand["pre_tool_speech"] == "off"
         assert hand["parameters"]["properties"]["quote"]["type"] == "string"
         assert tools["recall_text_messages"]["expects_response"] is True
 
@@ -499,6 +507,44 @@ class TestEndingACall:
         }
         (call,) = await _voice_calls(session)
         assert call.duration_source == "app"
+
+    async def test_the_thumbs_reach_elevenlabs_for_the_callers_own_call(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        user_second: User,
+        fake: FakeElevenLabs,
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        agent_id = (await client.post(CALLS, headers=headers)).json()["agent_id"]
+        # Not billed yet: not a call this person can rate.
+        response = await client.post(
+            f"{CALLS}/conv_8/feedback", headers=headers, json={"like": True}
+        )
+        assert response.status_code == 404
+        fake.conversations["conv_8"] = _conversation(agent_id, 30)
+        assert (
+            await client.post(f"{CALLS}/conv_8/end", headers=headers, json={})
+        ).status_code == 200
+
+        for like in (True, False, None):
+            response = await client.post(
+                f"{CALLS}/conv_8/feedback", headers=headers, json={"like": like}
+            )
+            assert response.status_code == 200, response.text
+            assert fake.ratings["conv_8"] is like
+        bad = await client.post(
+            f"{CALLS}/conv_8/feedback", headers=headers, json={"like": "yes"}
+        )
+        assert bad.status_code == 400
+
+        other = await _signed_in(client, session, user_second)
+        response = await client.post(
+            f"{CALLS}/conv_8/feedback", headers=other, json={"like": False}
+        )
+        assert response.status_code == 404
+        assert fake.ratings["conv_8"] is None
 
     async def test_a_call_billed_to_one_person_is_not_anothers(
         self,

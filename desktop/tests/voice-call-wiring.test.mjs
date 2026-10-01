@@ -164,9 +164,11 @@ test("a call record reads back as the card: its length, and the recap when there
   const { VOICE_CALL_COMPONENTS_SOURCE } = await import(patchModule);
   const parse = new Function(`${VOICE_CALL_COMPONENTS_SOURCE};return __simeonCallRecordParse;`)();
   const prompt = await loadModule("source/shared/voice-call/voice-call-prompt.ts", "call-record");
-  assert.deepEqual(parse(prompt.callRecordText(168, "Bass, you asked me to book a table.")), { duration: "2:48", recap: "Bass, you asked me to book a table." });
-  assert.deepEqual(parse(prompt.callRecordText(43, null)), { duration: "0:43", recap: null });
-  assert.deepEqual(parse(prompt.callRecordText(3723, "Line one.\n\nLine two.")), { duration: "1:02:03", recap: "Line one.\n\nLine two." });
+  // Records written before 2 October 2026 ("Voice call · 2:48", then the recap).
+  assert.deepEqual(parse("Voice call · 2:48\n\nBass, you asked me to book a table."), { duration: "2:48", recap: "Bass, you asked me to book a table." });
+  assert.deepEqual(parse("Voice call · 0:43"), { duration: "0:43", recap: null });
+  assert.deepEqual(parse("Voice call · 1:02:03\n\nLine one.\n\nLine two."), { duration: "1:02:03", recap: "Line one.\n\nLine two." });
+  assert.equal(typeof prompt.parseCallRecord, "function");
   assert.equal(parse("Voice call · soon"), null);
   assert.equal(parse("We talked about the voice call · 0:43"), null);
   assert.equal(parse(42), null);

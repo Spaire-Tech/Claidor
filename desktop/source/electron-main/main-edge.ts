@@ -164,6 +164,7 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
     getAgentVoice: (raw) => invoke(voiceCalls(deps), "getAgentVoice", req(raw).agentId),
     setAgentVoice: (raw) => invoke(voiceCalls(deps), "setAgentVoice", req(raw).agentId, req(raw).voiceId ?? null),
     getVoicePreviewUrl: (raw) => invoke(voiceCalls(deps), "voicePreviewUrl", req(raw).voiceId),
+    rateVoiceCall: (raw) => invoke(voiceCalls(deps), "rateCall", req(raw).conversationId, req(raw).like),
     getExperimentsSnapshot: async () => invoke(req(await Promise.resolve(invoke(deps.experiments, "ensureService"))), "getSnapshot"),
     applyFeatureFlagOverride: async (raw) => { const service = req(await Promise.resolve(invoke(deps.experiments, "ensureService"))); invoke(service, "applyFeatureFlagOverrideCommand", req(raw).command); },
     refreshFeatureFlags: async () => { const service = req(await Promise.resolve(invoke(deps.experiments, "ensureService"))); await Promise.resolve(invoke(service, "refreshNow")); },
