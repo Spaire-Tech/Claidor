@@ -666,83 +666,6 @@ export function patchOriginalShapePickerStylesheet(css) {
 }
 
 /**
- * The cloud's fur (1 October 2026): the founder asked for "our absolute exact
- * cloud avatar, but change his skin to the fur" of the archived felt clouds
- * (`design/felt-characters/`), "just the skin". The skin is one SVG filter on
- * the body path, where the film grain was: the outline, the eyes, the
- * gradient and the animator's every frame (it rewrites the body's `d` and
- * transform, never the filter) are untouched, and the fur follows whatever
- * outline a state draws. In the body's own units (the 228.5 box), so it scales
- * with the mark:
- *   - pillow: the blurred silhouette lit from the top left, the felt clouds' volume;
- *   - body: the gradient nudged by soft lumps and fine hair noise, softened;
- *   - fuzz: the same pushed further and blurred, a short soft fringe under it;
- *   - curls: thin lines from turbulence's creases, the long light strands, lit
- *     over the body and, within a few units of the edge, the fly-aways;
- *   - hairs: a finer, denser set of short strands over the body.
- * Previewed on the real outline in all twelve palettes, light and dark, at
- * 260, 52 and 36 px before this was written.
- */
-export const FUR_FILTER = Object.freeze([
-  ["feGaussianBlur", { in: "SourceAlpha", stdDeviation: "9", result: "ha" }],
-  ["feDiffuseLighting", { in: "ha", surfaceScale: "9", diffuseConstant: "1", "lighting-color": "#fff", result: "pillow" }, [["feDistantLight", { azimuth: "250", elevation: "48" }]]],
-  ["feTurbulence", { type: "fractalNoise", baseFrequency: "0.07", numOctaves: "2", seed: "9", result: "lump" }],
-  ["feDisplacementMap", { in: "SourceGraphic", in2: "lump", scale: "7", xChannelSelector: "G", yChannelSelector: "B", result: "lumpy" }],
-  ["feTurbulence", { type: "fractalNoise", baseFrequency: "0.85", numOctaves: "1", seed: "4", result: "hair" }],
-  ["feDisplacementMap", { in: "lumpy", in2: "hair", scale: "12", xChannelSelector: "R", yChannelSelector: "G", result: "fuzzHard" }],
-  ["feGaussianBlur", { in: "fuzzHard", stdDeviation: "0.9", result: "fuzz" }],
-  ["feDisplacementMap", { in: "lumpy", in2: "hair", scale: "5", xChannelSelector: "G", yChannelSelector: "R", result: "bodyHard" }],
-  ["feGaussianBlur", { in: "bodyHard", stdDeviation: "0.5", result: "body" }],
-  ["feTurbulence", { type: "turbulence", baseFrequency: "0.05", numOctaves: "3", seed: "5", result: "t1" }],
-  ["feColorMatrix", { in: "t1", type: "matrix", values: "0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -8 0 0 0 1", result: "curls" }],
-  ["feMorphology", { in: "SourceGraphic", operator: "dilate", radius: "5", result: "spread" }],
-  ["feGaussianBlur", { in: "spread", stdDeviation: "2.5", result: "spreadSoft" }],
-  ["feComposite", { in: "spreadSoft", in2: "curls", operator: "in", result: "fly" }],
-  ["feDiffuseLighting", { in: "t1", surfaceScale: "1.3", diffuseConstant: "1", "lighting-color": "#fff", result: "strandLit" }, [["feDistantLight", { azimuth: "250", elevation: "62" }]]],
-  ["feComposite", { in: "body", in2: "strandLit", operator: "arithmetic", k1: "0.28", k2: "0.78", k3: "0", k4: "0", result: "s1" }],
-  ["feComposite", { in: "s1", in2: "pillow", operator: "arithmetic", k1: "0.42", k2: "0.62", k3: "0", k4: "0", result: "s2" }],
-  ["feComposite", { in: "s2", in2: "body", operator: "in", result: "core" }],
-  ["feTurbulence", { type: "turbulence", baseFrequency: "0.16 0.12", numOctaves: "2", seed: "23", result: "t3" }],
-  ["feColorMatrix", { in: "t3", type: "matrix", values: "0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -7 0 0 0 0.95", result: "short" }],
-  ["feComposite", { in: "curls", in2: "short", operator: "arithmetic", k1: "0", k2: "0.24", k3: "0.13", k4: "0", result: "hairs" }],
-  ["feColorMatrix", { in: "hairs", type: "matrix", values: "0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0", result: "sheen" }],
-  ["feComposite", { in: "sheen", in2: "core", operator: "in", result: "sheenIn" }],
-  ["feComposite", { in: "fuzz", in2: "pillow", operator: "arithmetic", k1: "0.35", k2: "0.7", k3: "0", k4: "0", result: "fuzzLit" }],
-  ["feMerge", {}, [["feMergeNode", { in: "fly" }], ["feMergeNode", { in: "fuzzLit" }], ["feMergeNode", { in: "core" }], ["feMergeNode", { in: "sheenIn" }]]],
-]);
-/** The filter's own box: room around the body for the fringe and the fly-aways. */
-const FUR_REGION = Object.freeze({ x: "-0.12", y: "-0.12", width: "1.24", height: "1.24" });
-// React names SVG attributes in camelCase (`lighting-color` is `lightingColor`).
-const jsxProp = (key) => key.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
-const furJsx = ([tag, attrs, children]) => {
-  const props = Object.entries(attrs).map(([key, value]) => `${jsxProp(key)}:${JSON.stringify(value)}`);
-  if (children != null) props.push(`children:[${children.map(furJsx).join(",")}]`);
-  return `p.jsx${children != null && children.length > 1 ? "s" : ""}("${tag}",{${props.join(",")}})`;
-};
-const furSvg = ([tag, attrs, children]) => {
-  const props = Object.entries(attrs).map(([key, value]) => ` ${key}="${value}"`).join("");
-  return children == null ? `<${tag}${props}/>` : `<${tag}${props}>${children.map(furSvg).join("")}</${tag}>`;
-};
-/** The animator's filter, as the bundle's JSX (`id` is `${N}-fur`). */
-export const FUR_FILTER_JSX = `p.jsxs("filter",{id:\`\${N}-fur\`,${Object.entries(FUR_REGION).map(([k, v]) => `${k}:${JSON.stringify(v)}`).join(",")},colorInterpolationFilters:"sRGB",children:[${FUR_FILTER.map(furJsx).join(",")}]})`;
-/**
- * The still drawings' fur. They are always small (the group avatars are 20 px), where the
- * fringe and fly-aways fall under a pixel and read as blur (the founder, 1 October 2026:
- * "Launch squad 3 avatars are kinda blurry"). The same texture and volume with a firm edge:
- * no fringe, no fly-aways, no softening, gentler lumps.
- */
-export const FUR_STILL_FILTER = Object.freeze(FUR_FILTER
-  .filter(([tag, attrs]) => !(tag === "feGaussianBlur" && attrs.in === "bodyHard"))
-  .map(([tag, attrs, children]) => {
-    if (tag === "feMerge") return [tag, attrs, children.filter(([, node]) => node.in !== "fly" && node.in !== "fuzzLit")];
-    if (attrs.result === "lumpy") return [tag, { ...attrs, scale: "4" }];
-    if (attrs.result === "bodyHard") return [tag, { ...attrs, scale: "3", result: "body" }];
-    return children == null ? [tag, attrs] : [tag, attrs, children];
-  }));
-/** The still drawing's filter, as SVG text (`id="fur"`). */
-export const FUR_FILTER_SVG = `<filter id="fur"${Object.entries(FUR_REGION).map(([k, v]) => ` ${k}="${v}"`).join("")} color-interpolation-filters="sRGB">${FUR_STILL_FILTER.map(furSvg).join("")}</filter>`;
-
-/**
  * The agents' colours, replaced whole on 23 September 2026 ("i wanna change
  * the color palettes choices of the bots. completely … replace all existing
  * colors with this"): twelve soft vertical gradients in the founder's
@@ -756,9 +679,8 @@ export const FUR_FILTER_SVG = `<filter id="fur"${Object.entries(FUR_REGION).map(
  * How the mark is painted after this patch: the `sd` and mirror spans set
  * --ink-from / --ink-mid / --ink-to next to --fg (the palette's middle
  * colour, which rings, particles and glyphs still use); the animator's SVG
- * always defines a three-stop gradient on those variables and the fur filter
- * (`FUR_FILTER`, film grain until 1 October 2026), and the body path is
- * filled with the gradient through the fur.
+ * always defines a three-stop gradient on those variables and a film-grain
+ * filter, and the body path is filled with the gradient through the grain.
  * The `inkGradient` prop path the animator had (two stops, never passed by
  * `sd`) is replaced by this. Colour is the same in light and dark.
  */
@@ -776,9 +698,9 @@ const PALETTE_K_T_AFTER = 'function OrbInk(n){const e=G_t[n]??G_t.black;return{f
 const PALETTE_Y_T_BEFORE = "function Y_t(n){const{from:e,to:t,angle:s}=K_t(n);return`linear-gradient(${s+90}deg, ${e}, ${t})`}";
 const PALETTE_Y_T_AFTER = "function Y_t(n){const{from:e,mid:r,to:t,angle:s}=K_t(n);return`linear-gradient(${s+90}deg, ${e}, ${r} 55%, ${t})`}";
 const PALETTE_DEFS_BEFORE = "b&&(()=>{const Q=(b.angle??90)%360*Math.PI/180,ae=Math.cos(Q)/2,ce=Math.sin(Q)/2;return p.jsxs(\"linearGradient\",{id:`${N}-ink`,x1:.5-ae,y1:.5-ce,x2:.5+ae,y2:.5+ce,children:[p.jsx(\"stop\",{offset:b.fromPos??0,style:{stopColor:b.from}}),p.jsx(\"stop\",{offset:Math.max(b.toPos??1,b.fromPos??0),style:{stopColor:b.to}})]})})()]})";
-const PALETTE_DEFS_AFTER = 'p.jsxs("linearGradient",{id:`${N}-ink`,x1:0,y1:0,x2:.15,y2:1,children:[p.jsx("stop",{offset:0,style:{stopColor:"var(--ink-from)"}}),p.jsx("stop",{offset:.55,style:{stopColor:"var(--ink-mid)"}}),p.jsx("stop",{offset:1,style:{stopColor:"var(--ink-to)"}})]}),' + `,${FUR_FILTER_JSX}]})`;
+const PALETTE_DEFS_AFTER = 'p.jsxs("linearGradient",{id:`${N}-ink`,x1:0,y1:0,x2:.15,y2:1,children:[p.jsx("stop",{offset:0,style:{stopColor:"var(--ink-from)"}}),p.jsx("stop",{offset:.55,style:{stopColor:"var(--ink-mid)"}}),p.jsx("stop",{offset:1,style:{stopColor:"var(--ink-to)"}})]}),p.jsxs("filter",{id:`${N}-grain`,x:0,y:0,width:1,height:1,children:[p.jsx("feTurbulence",{type:"fractalNoise",baseFrequency:.9,numOctaves:2,seed:7,result:"n"}),p.jsx("feColorMatrix",{in:"n",type:"matrix",values:"0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .35 0",result:"g"}),p.jsx("feBlend",{in:"SourceGraphic",in2:"g",mode:"overlay",result:"b"}),p.jsx("feComposite",{in:"b",in2:"SourceGraphic",operator:"in"})]})]})';
 const PALETTE_BODY_BEFORE = 'p.jsx("path",{ref:G,style:b?{fill:`url(#${N}-ink)`}:Rke,d:le.path})';
-const PALETTE_BODY_AFTER = 'p.jsx("path",{ref:G,style:{fill:`url(#${N}-ink)`,filter:`url(#${N}-fur)`},d:le.path})';
+const PALETTE_BODY_AFTER = 'p.jsx("path",{ref:G,style:{fill:`url(#${N}-ink)`,filter:`url(#${N}-grain)`},d:le.path})';
 const PALETTE_SD_STYLE_BEFORE = 'D={...Z.style,width:J,height:J,"--fg":r?.flat??MNe(t),"--bg":f??String(nd["--sand-bg-base"])}';
 const PALETTE_SD_STYLE_AFTER = 'D={...Z.style,width:J,height:J,"--fg":r?.flat??MNe(t),"--ink-from":r?.gradientFrom??OrbInk(t).from,"--ink-mid":r?.gradientFrom??OrbInk(t).mid,"--ink-to":r?.gradientTo??OrbInk(t).to,"--bg":f??String(nd["--sand-bg-base"])}';
 const PALETTE_MIRROR_STYLE_BEFORE = 'f={...x.style,width:m,height:m,"--fg":i?.flat??MNe(s),"--bg":o??String(nd["--sand-bg-base"])}';
@@ -792,11 +714,6 @@ const PALETTE_MIRROR_STYLE_AFTER = 'f={...x.style,width:m,height:m,"--fg":i?.fla
 const PALETTE_STILL_INK_BEFORE = "inkGradient:{light:{from:r,to:r},dark:{from:i,to:i}}";
 const PALETTE_STILL_INK_AFTER = "inkGradient:(e=>e?{light:{from:e.lightFrom,mid:e.lightMid,to:e.lightTo},dark:{from:e.darkFrom,mid:e.darkMid,to:e.darkTo}}:{light:{from:r,to:r},dark:{from:i,to:i}})(G_t[s])";
 const PALETTE_STILL_STOPS_BEFORE = '<stop offset="0" stop-color="${A.from}"/><stop offset="1" stop-color="${A.to}"/>';
-// The still drawing (group avatars, and every mark drawn as an image) wears the fur too: the
-// body is drawn alone through it and the eyes, holes in the one even-odd path before, are cut
-// by a mask, so the fringe never fills them.
-const PALETTE_STILL_FUR_BEFORE = 'x=`<path${r?\' class="b"\':""} fill="${t}" fill-rule="evenodd" d="${m}"/>`';
-const PALETTE_STILL_FUR_AFTER = 'x=`' + FUR_FILTER_SVG + '<mask id="eyes" maskUnits="userSpaceOnUse" x="-40" y="-40" width="310" height="310"><rect x="-40" y="-40" width="310" height="310" fill="#fff"/><path fill="#000" d="${nqe(l,u)} ${nqe(c,d)}"/></mask><g mask="url(#eyes)"><path${r?\' class="b"\':""} fill="${t}" filter="url(#fur)" d="${o.path}"/></g>`';
 const PALETTE_STILL_STOPS_AFTER = '<stop offset="0" stop-color="${A.from}"/>${A.mid?`<stop offset=".55" stop-color="${A.mid}"/>`:""}<stop offset="1" stop-color="${A.to}"/>';
 
 export const PALETTE_REPLACEMENTS = Object.freeze([
@@ -812,7 +729,6 @@ export const PALETTE_REPLACEMENTS = Object.freeze([
   ["palette-mirror-vars", PALETTE_MIRROR_STYLE_BEFORE, PALETTE_MIRROR_STYLE_AFTER],
   ["palette-still-ink", PALETTE_STILL_INK_BEFORE, PALETTE_STILL_INK_AFTER],
   ["palette-still-stops", PALETTE_STILL_STOPS_BEFORE, PALETTE_STILL_STOPS_AFTER],
-  ["palette-still-fur", PALETTE_STILL_FUR_BEFORE, PALETTE_STILL_FUR_AFTER],
 ]);
 
 export function patchOriginalPalette(source) {
