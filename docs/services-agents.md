@@ -535,9 +535,11 @@ the background while the call goes on, and says how it is going when asked.
   sample (downloaded once to `voice-previews/` in the app's folder and played through
   `sand-media:`), and saves through the host's `updateAgent`. The Mac also keeps each choice
   in `voice-calls.json`, used while the box's host is older than `voiceId`.
-- **App switch.** `SIMEON_VOICE_CALLS=0` (or `off`) in the app's environment hides the button,
-  the picker and the menu item. Otherwise calls are on, and the server decides: without its
-  key the banner says calls aren't switched on.
+- **App switch. Calls are hidden by default** (1 October 2026, until the call channel's host
+  part reaches every cloud computer). The phone button, the picker and the menu item only show
+  when `SIMEON_VOICE_CALLS=1` (or `on`) is in the app's environment, for example
+  `SIMEON_VOICE_CALLS=1 desktop/dist/Simeon.app/Contents/MacOS/Simeon`. On, the server decides:
+  without its key the banner says calls aren't switched on.
 - **Log.** `voice-call.log` in `~/Library/Application Support/Simeon`, also on stderr as
   `[simeon] voice-call …`: `call started`, `connect: token issued … (voice …)`, `connect: the
   server refused the call: …`, `connected: conversation …`, `call channel: …`, `banner: sdk error:

@@ -138,8 +138,11 @@ test("the preloads and the edge carry the voice methods; the banner window sits 
 
   const windowModule = await loadModule("source/electron-main/voice/voice-call-window.ts", "voice-call-window");
   assert.deepEqual(windowModule.bannerWindowBounds({ x: 0, y: 25, width: 1512, height: 920 }, 66), { x: 1138, y: 27, width: 386, height: 122 });
-  assert.equal(windowModule.voiceCallsEnabled({}), true);
+  // Hidden until the call channel ships to every cloud computer: off unless switched on.
+  assert.equal(windowModule.voiceCallsEnabled({}), false);
   assert.equal(windowModule.voiceCallsEnabled({ SIMEON_VOICE_CALLS: "off" }), false);
+  assert.equal(windowModule.voiceCallsEnabled({ SIMEON_VOICE_CALLS: "1" }), true);
+  assert.equal(windowModule.voiceCallsEnabled({ SIMEON_VOICE_CALLS: " On " }), true);
   assert.deepEqual(windowModule.voiceCallResourcePaths("/App/Contents/Resources/app.asar/dist/electron-main"), { preload: "/App/Contents/Resources/app.asar/dist/electron-preload/preload-voice-call.cjs", page: "/App/Contents/Resources/app.asar/dist/voice-call/index.html" });
 });
 
