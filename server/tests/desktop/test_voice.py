@@ -49,6 +49,7 @@ class FakeElevenLabs(ElevenLabsClient):
         self.tools: dict[str, dict[str, Any]] = {}
         self.conversations: dict[str, dict[str, Any]] = {}
         self.voices: list[dict[str, Any]] = []
+        self.account_voices: list[dict[str, Any]] = []
         self.token_error: ElevenLabsError | None = None
         self.conversation_error: ElevenLabsError | None = None
         self._next = 0
@@ -112,6 +113,10 @@ class FakeElevenLabs(ElevenLabsClient):
         if conversation_id not in self.conversations:
             raise ElevenLabsError(404, "conversation not found", "conversations")
         return self.conversations[conversation_id]
+
+    async def list_voices_by_id(self, voice_ids: list[str]) -> list[dict[str, Any]]:
+        self.calls.append("list_voices_by_id")
+        return [one for one in self.account_voices if one["voice_id"] in voice_ids]
 
     async def list_default_voices(self) -> list[dict[str, Any]]:
         self.calls.append("list_default_voices")
@@ -204,7 +209,8 @@ class TestThePlatformAgent:
         assert conversation["turn"] == {
             "turn_timeout": 7,
             "silence_end_call_timeout": 25,
-            "turn_eagerness": "normal",
+            "turn_eagerness": "eager",
+            "speculative_turn": True,
         }
         assert conversation["conversation"]["max_duration_seconds"] == 1800
         platform = config["platform_settings"]
@@ -280,30 +286,38 @@ class TestThePlatformAgent:
     ) -> None:
         # The first real call's agent was refused with `voice_not_found`: a
         # voice the workspace does not have fails the whole agent.
-        fake.voices = [
-            {"voice_id": "only-this-one", "name": "Someone"},
-            {"voice_id": "EXAVITQu4vr4xnSDxMaL", "name": "Sarah"},
-        ]
+        michael = "ljX1ZrXuDIIRVcmiVSyR"
+        fake.account_voices = [{"voice_id": michael, "name": "Michael (library)"}]
+        fake.voices = [{"voice_id": "default-1", "name": "Someone"}]
         agent_id = await ensure_agent(fake)
         tts = fake.agents[agent_id]["conversation_config"]["tts"]
-        assert tts["voice_id"] == "EXAVITQu4vr4xnSDxMaL"
+        assert tts["voice_id"] == michael, (
+            "the first of the founder's voices the account has"
+        )
 
         voice.forget_agent()
         fake.agents.clear()
-        fake.voices = [{"voice_id": "only-this-one", "name": "Someone"}]
-        agent_id = await ensure_agent(fake)
-        tts = fake.agents[agent_id]["conversation_config"]["tts"]
-        assert tts["voice_id"] == "only-this-one"
-
-        voice.forget_agent()
-        fake.agents.clear()
-        fake.voices = [
-            {"voice_id": "only-this-one", "name": "Someone"},
-            {"voice_id": voice.VOICE_DEFAULT_VOICE_ID, "name": "Eric"},
+        fake.account_voices = [
+            {"voice_id": michael, "name": "Michael"},
+            {"voice_id": voice.VOICE_DEFAULT_VOICE_ID, "name": "Jessica"},
         ]
         agent_id = await ensure_agent(fake)
         tts = fake.agents[agent_id]["conversation_config"]["tts"]
         assert tts["voice_id"] == voice.VOICE_DEFAULT_VOICE_ID
+
+        voice.forget_agent()
+        fake.agents.clear()
+        fake.account_voices = []
+        agent_id = await ensure_agent(fake)
+        tts = fake.agents[agent_id]["conversation_config"]["tts"]
+        assert tts["voice_id"] == "default-1", "none of them added: a default voice"
+
+        voice.forget_agent()
+        fake.agents.clear()
+        fake.voices = []
+        agent_id = await ensure_agent(fake)
+        tts = fake.agents[agent_id]["conversation_config"]["tts"]
+        assert tts["voice_id"] == voice.VOICE_FALLBACK_VOICE_ID
 
     async def test_an_agent_named_in_the_settings_is_never_touched(
         self, fake: FakeElevenLabs, mocker: MockerFixture
@@ -540,29 +554,27 @@ class TestEndingACall:
 
 @pytest.mark.asyncio
 class TestTheVoicePicker:
-    async def test_the_curated_voices_in_order_and_cached(
+    async def test_the_founders_voices_by_name_only_in_order_and_cached(
         self,
         client: httpx.AsyncClient,
         session: AsyncSession,
         user: User,
         fake: FakeElevenLabs,
     ) -> None:
-        fake.voices = [
+        fake.account_voices = [
             {
-                "voice_id": "cgSgspJ2msm6clMCkdW9",
-                "name": "Jessica",
-                "description": "Warm",
+                "voice_id": "ljX1ZrXuDIIRVcmiVSyR",
+                "name": "Michael - Deep, Resonant and Confident",
+                "description": "A deep voice for narration",
                 "labels": {"accent": "american"},
-                "preview_url": "https://cdn.test/jessica.mp3",
-                "category": "premade",
+                "preview_url": "https://cdn.test/michael.mp3",
             },
-            {"voice_id": "not-curated", "name": "Someone", "labels": {}},
             {
-                "voice_id": "cjVigY5qzO86Huf0OWal",
-                "name": "Eric",
+                "voice_id": "r1KmysJdVYZjJCm4mL3b",
+                "name": "Jessica - Playful, Bright, Warm",
                 "description": None,
                 "labels": None,
-                "preview_url": "https://cdn.test/eric.mp3",
+                "preview_url": "https://cdn.test/jessica.mp3",
             },
         ]
         headers = await _signed_in(client, session, user)
@@ -570,22 +582,45 @@ class TestTheVoicePicker:
         assert response.status_code == 200, response.text
         assert response.json() == [
             {
-                "id": "cjVigY5qzO86Huf0OWal",
-                "name": "Eric",
+                "id": "r1KmysJdVYZjJCm4mL3b",
+                "name": "Jessica",
                 "description": None,
                 "labels": {},
-                "preview_url": "https://cdn.test/eric.mp3",
+                "preview_url": "https://cdn.test/jessica.mp3",
             },
             {
-                "id": "cgSgspJ2msm6clMCkdW9",
-                "name": "Jessica",
-                "description": "Warm",
-                "labels": {"accent": "american"},
-                "preview_url": "https://cdn.test/jessica.mp3",
+                "id": "ljX1ZrXuDIIRVcmiVSyR",
+                "name": "Michael",
+                "description": None,
+                "labels": {},
+                "preview_url": "https://cdn.test/michael.mp3",
             },
         ]
         assert (await client.get(VOICES, headers=headers)).status_code == 200
-        assert fake.calls == ["list_default_voices"]
+        assert fake.calls == ["list_voices_by_id"]
+
+    async def test_without_any_of_them_the_defaults_are_offered(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        fake: FakeElevenLabs,
+    ) -> None:
+        fake.voices = [
+            {"voice_id": "cjVigY5qzO86Huf0OWal", "name": "Eric", "description": "x"}
+        ]
+        headers = await _signed_in(client, session, user)
+        rows = (await client.get(VOICES, headers=headers)).json()
+        assert [(row["id"], row["name"], row["description"]) for row in rows] == [
+            ("cjVigY5qzO86Huf0OWal", "Eric", None)
+        ]
+        assert fake.calls == ["list_voices_by_id", "list_default_voices"]
+
+    def test_fourteen_voices_each_once(self) -> None:
+        ids = [voice_id for voice_id, _ in voice.CURATED_VOICES]
+        assert len(ids) == 14
+        assert len(set(ids)) == 14
+        assert voice.CURATED_VOICES[0] == (voice.VOICE_DEFAULT_VOICE_ID, "Jessica")
 
     async def test_no_key_is_503(
         self,

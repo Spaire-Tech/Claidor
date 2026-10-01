@@ -201,7 +201,7 @@ test("the voice picker saves the agent's voice through updateAgent, keeps a Mac 
   const voices = memoryStore();
   let menuChanges = 0;
   const svc = service.createVoiceCallService({ legs, api: () => ({ listVoices: async () => api.parseVoiceOptions([{ id: "v1", name: "Alexandra", description: "Warm", labels: { accent: "american" }, preview_url: "https://x/y.mp3" }, { id: "", name: "bad" }]) }), window: fakeWindow(), voiceStore: voices, previews: { urlFor: async (voice) => `sand-media://attachment/${voice.id}` }, focusAgentChat: () => {}, isEnabled: () => true, log: () => {}, onMenuChanged: () => { menuChanges += 1; } });
-  assert.deepEqual(await svc.getAgentVoice("a1"), { voiceId: "cjVigY5qzO86Huf0OWal", isDefault: true });
+  assert.deepEqual(await svc.getAgentVoice("a1"), { voiceId: "r1KmysJdVYZjJCm4mL3b", isDefault: true });
   assert.deepEqual(await svc.setAgentVoice("a1", "v1"), { voiceId: "v1", isDefault: false });
   assert.deepEqual(calls.find(([name]) => name === "update")[1], { id: "a1", profile: { name: "Ada", description: "d", title: "t", voiceId: "v1" } });
   assert.equal(voices.map.get("a1"), "v1");

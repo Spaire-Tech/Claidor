@@ -78,7 +78,7 @@ VOICE_AGENT_NAME = "Simeon voice"
 
 #: Bump when anything in `agent_config` or `CLIENT_TOOLS` changes: the next
 #: call finds the agent without this version's tag and rewrites it.
-VOICE_AGENT_CONFIG_VERSION = 5
+VOICE_AGENT_CONFIG_VERSION = 6
 VOICE_AGENT_VERSION_TAG = f"simeon-voice-config-v{VOICE_AGENT_CONFIG_VERSION}"
 VOICE_AGENT_TAGS = ["simeon", "simeon-voice", VOICE_AGENT_VERSION_TAG]
 
@@ -92,12 +92,16 @@ VOICE_LLM = "gemini-2.5-flash"
 #: turbo or flash v2" (seen on the first real call, 30 September 2026).
 VOICE_TTS_MODEL = "eleven_flash_v2"
 
-#: The voice a call speaks in when the app names none: Eric, one of
-#: ElevenLabs' default voices (every workspace has those; a Voice Library
-#: voice exists only once added, and the first real call's agent was refused
-#: with `voice_not_found` for one, 30 September 2026). The agent is created
-#: with whichever voice `_pick_voice` finds in the workspace, this one first.
-VOICE_DEFAULT_VOICE_ID = "cjVigY5qzO86Huf0OWal"
+#: The voice a call speaks in when the app names none: the first of the
+#: founder's voices (`CURATED_VOICES`). The agent is created with whichever
+#: voice `_pick_voice` finds in the workspace, this one first; a voice
+#: ElevenLabs cannot find fails the whole agent (`voice_not_found`, the first
+#: real call, 30 September 2026).
+VOICE_DEFAULT_VOICE_ID = "r1KmysJdVYZjJCm4mL3b"
+
+#: Eric, one of ElevenLabs' default voices, which every workspace has: the
+#: voice of last resort when none of the founder's voices is in the account.
+VOICE_FALLBACK_VOICE_ID = "cjVigY5qzO86Huf0OWal"
 
 VOICE_DEFAULT_LANGUAGE = "en"
 VOICE_DEFAULT_FIRST_MESSAGE = "Hi, it's me. What's up?"
@@ -243,7 +247,10 @@ def agent_config(
             "turn": {
                 "turn_timeout": 7,
                 "silence_end_call_timeout": 25,
-                "turn_eagerness": "normal",
+                # Faster replies (the founder, 1 October 2026): answer soon
+                # after the caller stops, and start thinking during the pause.
+                "turn_eagerness": "eager",
+                "speculative_turn": True,
             },
             "conversation": {"max_duration_seconds": VOICE_CALL_MAX_SECONDS},
         },
@@ -272,20 +279,26 @@ def agent_config(
     }
 
 
-#: The voices the picker offers, in this order: conversational voices from
-#: ElevenLabs' default voices, which every workspace has. One the API no
-#: longer returns is skipped.
+#: The voices the picker offers, in this order, shown by these names only
+#: (the founder's own list, 1 October 2026: "the voice description / name
+#: makes no sense. should be just names"). Each must be added to the
+#: ElevenLabs account ("Add to my voices"); one the account does not have is
+#: skipped, and with none of them the picker offers ElevenLabs' defaults.
 CURATED_VOICES: tuple[tuple[str, str], ...] = (
-    (VOICE_DEFAULT_VOICE_ID, "Eric"),
-    ("EXAVITQu4vr4xnSDxMaL", "Sarah"),
-    ("cgSgspJ2msm6clMCkdW9", "Jessica"),
-    ("nPczCjzI2devNBz1zQrb", "Brian"),
-    ("FGY2WhTYpPnrIDTdsKV5", "Laura"),
-    ("JBFqnCBsd6RMkjVDRZzb", "George"),
-    ("Xb7hH8MSUJpSbSDYk0k2", "Alice"),
-    ("iP95p4xoKVk53GoZ742B", "Chris"),
-    ("pFZP5JQG7iQjIQuC4Bku", "Lily"),
-    ("onwK4e9ZLuTAKqWW03F9", "Daniel"),
+    (VOICE_DEFAULT_VOICE_ID, "Jessica"),
+    ("ljX1ZrXuDIIRVcmiVSyR", "Michael"),
+    ("1t1EeRixsJrKbiF1zwM6", "Jerry"),
+    ("XcXEQzuLXRU9RcfWzEJt", "Veda"),
+    ("s3TPKV1kjDlVtZbl4Ksh", "Adam"),
+    ("UgBBYS2sOqTuMpoF3BR0", "Mark"),
+    ("6OzrBCQf8cjERkYgzSg8", "Jamal"),
+    ("mhOEe36rlKIS1ExMEOyo", "Kass"),
+    ("Cz0K1kOv9tD8l0b5Qu53", "Jon"),
+    ("WI5pMmcGGS32yI7yttoP", "Amanda"),
+    ("snyKKuaGYk1VUEh42zbW", "Chris"),
+    ("gfRt6Z3Z8aTbpLfexQ7N", "Boyd"),
+    ("NHRgOEwqx5WZNClv5sat", "Chelsea"),
+    ("5u41aNhyCU6hXOcjPPv0", "Hope"),
 )
 VOICES_CACHE_SECONDS = 3600.0
 
@@ -420,6 +433,16 @@ class ElevenLabsClient:
 
     # voices
 
+    async def list_voices_by_id(self, voice_ids: list[str]) -> list[dict[str, Any]]:
+        """The account's voices among `voice_ids` (at most 100)."""
+        answer = await self._request(
+            "GET",
+            "/v2/voices",
+            params={"voice_ids": voice_ids[:100], "page_size": 100},
+        )
+        voices = answer.get("voices") if isinstance(answer, dict) else None
+        return [one for one in voices or [] if isinstance(one, dict)]
+
     async def list_default_voices(self) -> list[dict[str, Any]]:
         answer = await self._request(
             "GET",
@@ -495,23 +518,30 @@ def _oldest(agents: list[dict[str, Any]]) -> str | None:
     return str(named[0]["agent_id"])
 
 
+async def _available_voices(api: ElevenLabsClient) -> list[dict[str, Any]]:
+    """The curated voices the account has, else ElevenLabs' defaults."""
+    curated = await api.list_voices_by_id([voice_id for voice_id, _ in CURATED_VOICES])
+    if any(one.get("voice_id") in dict(CURATED_VOICES) for one in curated):
+        return curated
+    return await api.list_default_voices()
+
+
 async def _pick_voice(api: ElevenLabsClient) -> str:
-    """A voice the workspace has, for the agent's own: the default, else
-    the first curated one listed, else the first listed. A voice ElevenLabs
-    cannot find fails the whole agent (`voice_not_found`)."""
+    """A voice the workspace has, for the agent's own: the first curated one
+    it has, else the first default voice, else Eric."""
     try:
         listed = [
             one["voice_id"]
-            for one in await api.list_default_voices()
+            for one in await _available_voices(api)
             if isinstance(one.get("voice_id"), str)
         ]
     except ElevenLabsError as error:
         log.warning("desktop.voice.voices_unlisted", status=error.status)
-        return VOICE_DEFAULT_VOICE_ID
+        return VOICE_FALLBACK_VOICE_ID
     for voice_id, _ in CURATED_VOICES:
         if voice_id in listed:
             return voice_id
-    return listed[0] if listed else VOICE_DEFAULT_VOICE_ID
+    return listed[0] if listed else VOICE_FALLBACK_VOICE_ID
 
 
 async def _sync_agent(api: ElevenLabsClient) -> str:
@@ -877,25 +907,34 @@ def forget_voices() -> None:
     _voices.clear()
 
 
-def _voice_row(voice: dict[str, Any]) -> dict[str, Any]:
-    labels = voice.get("labels")
+def _voice_row(voice: dict[str, Any], name: str | None = None) -> dict[str, Any]:
+    """A picker row. A curated voice is shown by its name only; ElevenLabs'
+    own description and labels are left out."""
+    if name is not None:
+        return {
+            "id": voice.get("voice_id"),
+            "name": name,
+            "description": None,
+            "labels": {},
+            "preview_url": voice.get("preview_url"),
+        }
     return {
         "id": voice.get("voice_id"),
         "name": voice.get("name"),
-        "description": voice.get("description"),
-        "labels": labels if isinstance(labels, dict) else {},
+        "description": None,
+        "labels": {},
         "preview_url": voice.get("preview_url"),
     }
 
 
 def curate(voices: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """The curated voices among `voices`, in `CURATED_VOICES`' order.
-    Should none of them be there any more, every default voice rather
-    than an empty picker."""
+    """The curated voices among `voices`, in `CURATED_VOICES`' order and by
+    their names. Should none of them be there, every voice listed rather than
+    an empty picker."""
     by_id = {one.get("voice_id"): one for one in voices}
     picked = [
-        _voice_row(by_id[voice_id])
-        for voice_id, _ in CURATED_VOICES
+        _voice_row(by_id[voice_id], name)
+        for voice_id, name in CURATED_VOICES
         if voice_id in by_id
     ]
     if picked:
@@ -921,7 +960,7 @@ async def list_voices() -> Response:
             cached[1], headers={"cache-control": "private, max-age=3600"}
         )
     try:
-        voices = curate(await api.list_default_voices())
+        voices = curate(await _available_voices(api))
     except ElevenLabsError as error:
         return _upstream_failed(error, "the list of voices")
     _voices[api.cache_key] = (now + VOICES_CACHE_SECONDS, voices)

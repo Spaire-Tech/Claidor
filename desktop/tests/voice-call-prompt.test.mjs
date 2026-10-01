@@ -42,7 +42,8 @@ test("the chat becomes the latest person and agent lines, oldest first, cards an
   const lines = prompt.transcriptLinesFromEntries(many);
   assert.equal(lines.length, prompt.VOICE_CALL_TRANSCRIPT_LINES);
   assert.equal(lines.at(-1).text, "line 29");
-  assert.equal(lines[0].text, "line 10");
+  assert.equal(lines[0].text, "line 24");
+  assert.equal(prompt.VOICE_CALL_TRANSCRIPT_LINES, 6, "a short prompt, so each reply starts sooner");
 });
 
 test("the voice is the agent itself: first person, its recent chat, the upstream app's tools, never another agent", () => {
@@ -83,7 +84,7 @@ test("the overrides carry the prompt, greeting, language and the agent's voice, 
   // No voice chosen: the platform agent's own, which the server picked from
   // the workspace's voices (a voice it lacks fails the call: voice_not_found).
   assert.equal(prompt.buildVoiceCallOverrides({ agent: { name: "Ada" }, transcript: [], voiceId: "  ", pick: 0 }).tts, undefined);
-  assert.equal(prompt.VOICE_CALL_DEFAULT_VOICE_ID, "cjVigY5qzO86Huf0OWal");
+  assert.equal(prompt.VOICE_CALL_DEFAULT_VOICE_ID, "r1KmysJdVYZjJCm4mL3b");
 });
 
 test("the status line reads the task, then the agent's own activity", () => {
