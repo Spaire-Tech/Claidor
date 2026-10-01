@@ -42,8 +42,9 @@ type Row = DemoAgent & { readonly isGroup?: boolean; readonly memberIds?: readon
 
 export function createDemoBackend(hooks: DemoBackendHooks) {
   const scale = hooks.timeScale ?? 1;
-  // Light, as the founder asked for the demo; `?theme=dark` opens it dark to check the dark theme.
-  const dark = typeof location !== "undefined" && new URLSearchParams(location.search).get("theme") === "dark";
+  // Follows the Mac's appearance, so dark mode can be checked from the hosted link; `?theme=light` or `?theme=dark` forces one.
+  const asked = typeof location !== "undefined" ? new URLSearchParams(location.search).get("theme") : null;
+  const dark = asked === "dark" || (asked !== "light" && typeof matchMedia !== "undefined" && matchMedia("(prefers-color-scheme: dark)").matches);
   const theme = dark ? { preference: "dark", resolved: "dark" } : { preference: "light", resolved: "light" };
   const persisted = new Map<string, unknown>();
   const epoch = "demo-" + Math.random().toString(36).slice(2);
