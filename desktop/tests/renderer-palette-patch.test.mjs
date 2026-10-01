@@ -13,8 +13,8 @@ import { PINNED_RENDERER_SKIP, resolvePinnedRenderer } from "./lib/pinned-render
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const patchModule = pathToFileURL(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs")).href;
 
-test("twelve palettes replace the colour tables, every old id survives, and the mark paints a three-stop gradient through the fur", async () => {
-  const { AGENT_PALETTES, PALETTE_REPLACEMENTS, patchOriginalPalette, FUR_FILTER_JSX, FUR_FILTER_SVG } = await import(patchModule);
+test("twelve palettes replace the colour tables, every old id survives, and the mark paints a three-stop gradient through grain", async () => {
+  const { AGENT_PALETTES, PALETTE_REPLACEMENTS, patchOriginalPalette } = await import(patchModule);
   assert.equal(AGENT_PALETTES.length, 12);
   for (const id of ["black", "brown", "red", "orange", "yellow", "green", "cyan", "blue", "violet", "magenta", "gray", "mint"]) assert.ok(AGENT_PALETTES.some((p) => p.id === id), `${id} is a palette`);
   const chunk = PALETTE_REPLACEMENTS.map(([, before]) => before).join(";\n");
@@ -29,17 +29,8 @@ test("twelve palettes replace the colour tables, every old id survives, and the 
   assert.match(patched, /"--ink-from":r\?\.gradientFrom\?\?OrbInk\(t\)\.from,"--ink-mid":r\?\.gradientFrom\?\?OrbInk\(t\)\.mid,"--ink-to":r\?\.gradientTo\?\?OrbInk\(t\)\.to/);
   assert.match(patched, /"--ink-from":i\?\.gradientFrom\?\?OrbInk\(s\)\.from/, "mirrors set the variables too");
   assert.match(patched, /stopColor:"var\(--ink-from\)"[\s\S]*stopColor:"var\(--ink-mid\)"[\s\S]*stopColor:"var\(--ink-to\)"/);
-  // The skin is the fur (1 October 2026): one filter on the body path, the outline and the animator untouched.
-  assert.ok(patched.includes(FUR_FILTER_JSX), "the animator defines the fur filter");
-  assert.match(FUR_FILTER_JSX, /^p\.jsxs\("filter",\{id:`\$\{N\}-fur`,x:"-0\.12",y:"-0\.12",width:"1\.24",height:"1\.24",colorInterpolationFilters:"sRGB"/);
-  assert.match(FUR_FILTER_JSX, /lightingColor:"#fff"/, "React's camelCase attribute names");
-  assert.doesNotMatch(FUR_FILTER_JSX, /"[a-z]+-[a-z]+":/, "no hyphenated JSX props");
-  assert.match(patched, /style:\{fill:`url\(#\$\{N\}-ink\)`,filter:`url\(#\$\{N\}-fur\)`\},d:le\.path/);
-  assert.doesNotMatch(patched, /-grain/, "the film grain is gone");
-  // Stills: the body alone through the fur, the eyes cut by a mask so the fringe never fills them.
-  assert.ok(patched.includes(FUR_FILTER_SVG));
-  assert.match(patched, /<mask id="eyes"[^`]*<path fill="#000" d="\$\{nqe\(l,u\)\} \$\{nqe\(c,d\)\}"\/><\/mask><g mask="url\(#eyes\)"><path\$\{r\?' class="b"':""\} fill="\$\{t\}" filter="url\(#fur\)" d="\$\{o\.path\}"\/><\/g>/);
-  assert.doesNotMatch(patched, /fill-rule="evenodd" d="\$\{m\}"/);
+  assert.match(patched, /p\.jsx\("feTurbulence",\{type:"fractalNoise"/);
+  assert.match(patched, /style:\{fill:`url\(#\$\{N\}-ink\)`,filter:`url\(#\$\{N\}-grain\)`\},d:le\.path/);
   assert.doesNotMatch(patched, /b\?\{fill:`url/, "the never-passed inkGradient branch is gone");
   assert.match(patched, /linear-gradient\(\$\{s\+90\}deg, \$\{e\}, \$\{r\} 55%, \$\{t\}\)/, "the editor's swatch gradient has three stops");
   assert.match(patched, /inkGradient:\(e=>e\?\{light:\{from:e\.lightFrom,mid:e\.lightMid,to:e\.lightTo\}/, "still marks take the palette's three stops");
