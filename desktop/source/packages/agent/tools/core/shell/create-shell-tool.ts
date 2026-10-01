@@ -1,3 +1,4 @@
+import { redactSecretValues } from "../../../../../shared/box-secret-redaction.js";
 import type { Context } from "../../../../context/core.js";
 import { Struct, type JsonValue } from "@bufbuild/protobuf";
 import { createHash } from "node:crypto";
@@ -500,7 +501,9 @@ function shellArgs(rawArgs: Record<string, unknown>, analysis: ShellCommandAnaly
   });
 }
 
-function makeResultFromStream(command: string, workingDirectory: string, stdout: string, stderr: string, interleavedOutput: string, exit: Extract<ShellStream["event"], { case: "exit" }> | undefined, policy: SandboxPolicy | undefined): ShellResult {
+function makeResultFromStream(command: string, workingDirectory: string, rawStdout: string, rawStderr: string, rawInterleavedOutput: string, exit: Extract<ShellStream["event"], { case: "exit" }> | undefined, policy: SandboxPolicy | undefined): ShellResult {
+  // Secret values never reach the agent (shared/box-secret-redaction.ts).
+  const stdout = redactSecretValues(rawStdout), stderr = redactSecretValues(rawStderr), interleavedOutput = redactSecretValues(rawInterleavedOutput);
   if (exit === undefined) throw new Error("Shell exec stream closed without an exit event; result is unknown");
   const value = exit.value;
   const success = value.code === 0 && !value.aborted;
@@ -528,7 +531,7 @@ async function executeStream(ctx: Context, executor: ShellStreamExecutor, args: 
       case "sandboxUnsupported": throw new ToolCallUnexpectedEnvironmentError(event.event.value.reason);
       case "backgrounded": {
         options.onTelemetry?.(ctx, { type: "backgrounded", toolCallId: meta.toolCallId });
-        return new ShellResult({ result: { case: "success", value: new ShellSuccess({ command: event.event.value.command, workingDirectory: event.event.value.workingDirectory, shellId: event.event.value.shellId, ...(event.event.value.pid === undefined ? {} : { pid: event.event.value.pid }), ...(event.event.value.msToWait === undefined ? {} : { msToWait: event.event.value.msToWait }), ...(event.event.value.reason === undefined ? {} : { backgroundReason: event.event.value.reason }), stdout, stderr, interleavedOutput, executionTime: 0 }) }, isBackground: true, ...(policy === undefined ? {} : { sandboxPolicy: policy }) });
+        return new ShellResult({ result: { case: "success", value: new ShellSuccess({ command: event.event.value.command, workingDirectory: event.event.value.workingDirectory, shellId: event.event.value.shellId, ...(event.event.value.pid === undefined ? {} : { pid: event.event.value.pid }), ...(event.event.value.msToWait === undefined ? {} : { msToWait: event.event.value.msToWait }), ...(event.event.value.reason === undefined ? {} : { backgroundReason: event.event.value.reason }), stdout: redactSecretValues(stdout), stderr: redactSecretValues(stderr), interleavedOutput: redactSecretValues(interleavedOutput), executionTime: 0 }) }, isBackground: true, ...(policy === undefined ? {} : { sandboxPolicy: policy }) });
       }
       case "start": break;
       case "hookContext": break;
