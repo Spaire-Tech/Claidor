@@ -683,10 +683,14 @@ const SWITCH_AND_TILES_CSS = () => `[role=switch][aria-checked="true"]${HI}:not(
  * Messages grey again (AGENT_BUBBLE_LIGHT, #E9E9EB; the founder: "the grey
  * it was before … not super grey, but apple grey. that counts for all cards
  * too"). Only the colour changed: the edges, padding and type stay.
+ * Since 1 October the person's blue bubble has no edge at all: the white
+ * line along its top and the hairline ring around it read as a stray
+ * over/underline on the flat blue ("there's kind of probleme tho with the
+ * above/underline").
  */
 const AGENT_SHEET_CSS = () => `[data-theme*="light"] .sand-message.sand-1g0q52m:not(.sand-mvmkjj)${HI}{background:${AGENT_BUBBLE_LIGHT};color:#1d1d1f;padding:10px 15px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
 [data-theme*="light"] .sand-message-block:has(>.sand-message.sand-1g0q52m:not(.sand-mvmkjj))${HI}{gap:6px}
-[data-theme*="light"] .sand-message.sand-mvmkjj${HI}:not(#\\#){padding:10px 15px;box-shadow:inset 0 1px 0 rgba(255,255,255,.30),inset 0 0 0 .5px rgba(255,255,255,.12),0 0 0 .5px rgba(20,45,90,.24),0 1px 2px rgba(20,45,90,.10);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
+[data-theme*="light"] .sand-message.sand-mvmkjj${HI}:not(#\\#){padding:10px 15px;box-shadow:none;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
 [data-theme*="light"] .sand-agent-item[data-active="true"]${HI}:not(#\\#):not(#\\#){border-radius:14px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
 [data-theme*="light"] .sand-agent-item${HI}{border-radius:14px}
 [data-theme*="light"] .sand-agents-sidebar__search${HI}{background:#fff;border-radius:10px;box-shadow:0 0 0 .5px rgba(20,30,60,.09),0 1px 2px rgba(20,30,60,.05)}
@@ -820,26 +824,26 @@ export function patchOriginalPalette(source) {
 
 /**
  * The person's own chat bubble. It was iMessage blue from 23 September 2026
- * ("copy imessage style and make it blue"); since 27 September it is the
- * founder's "Sky wash, deepest": a sky blue gradient under film grain and a
- * horizontal brush texture ("these are the main color i like. kinda grainy,
- * artistic, painting"; "sky wash deepest is fine"). It first carried a teal
- * and a dusty rose stroke at the tail; they came out the same day ("too
- * noisy. keep the blue color, remove the purple/green accents"). White text
- * holds 5.9:1 to 7.1:1 on it, which the lighter first drafts did not ("the
- * white of the text wont be seen").
+ * ("copy imessage style and make it blue"), then from 27 September the
+ * "Sky wash": a gradient under film grain and a brush texture. Since 1 October
+ * it is one flat blue, no gradient, no texture ("the blue in the user chat
+ * looks dirty. make it one simple blue color, no gradiant or anything"). White
+ * text holds 7.1:1 on the light blue and 8.4:1 on the dark one. In dark mode,
+ * selected text on the bubble is drawn in white with the bubble's blue as its
+ * ink ("in dark mode, you can't see well when you select a text in the blue
+ * chat"); light mode keeps the system selection, which reads fine there.
  *
  * The renderer's theme variables are generated at runtime from a token list
  * in the chunk (`Ct("fill/bubble-user", El(light, dark, hcLight, hcDark))`,
  * emitted by `bzn` as `--sand-fill-bubble-user`); the stylesheet carries only
  * the light default for first paint. Both are patched to the painting's base
  * blue, which is also what `--cursor-foreground` (a checked checkbox) reads.
- * The painting itself is `USER_BUBBLE_PAINT_CSS`, appended to the stylesheet
- * on `.sand-mvmkjj`, the one atomic class that applies the bubble colour: it
- * occurs once in the pinned chunk, in the message's `user` style. It uses
- * `light-dark()` in the stops, the way the renderer's own palette does, so
- * dark mode runs one shade deeper. The text on the bubble is
- * `text/on-color`, white in every theme, and stays.
+ * `USER_BUBBLE_PAINT_CSS`, appended to the stylesheet on `.sand-mvmkjj`, the
+ * one atomic class that applies the bubble colour (it occurs once in the
+ * pinned chunk, in the message's `user` style), clears any background image
+ * so the token's flat colour is all that shows, and carries the dark-mode
+ * selection. The renderer marks dark mode as `data-theme="cursor-dark"` on
+ * the root. The text on the bubble is `text/on-color`, white in every theme.
  */
 export const USER_BUBBLE_LIGHT = "#255a93";
 export const USER_BUBBLE_DARK = "#1f5087";
@@ -856,11 +860,10 @@ export function patchOriginalBubble(source) {
   return out;
 }
 
-const GRAIN_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>";
-const BRUSH_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='120'><filter id='b'><feTurbulence type='fractalNoise' baseFrequency='.012 .35' numOctaves='2'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .22 -.04'/></filter><rect width='100%' height='100%' filter='url(%23b)'/></svg>";
-export const USER_BUBBLE_PAINT_MARKER = "/* Simeon: the person's bubble is painted, Sky wash";
-export const USER_BUBBLE_PAINT_CSS = `${USER_BUBBLE_PAINT_MARKER} (27 September 2026): grain and brush over the blue, no accent strokes. */
-.sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#){background-image:url("${GRAIN_SVG}"),url("${BRUSH_SVG}"),linear-gradient(165deg,light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK}),light-dark(#2e679f,#285c93));background-size:160px 160px,300px 100%,100% 100%;background-blend-mode:soft-light,overlay,normal}
+export const USER_BUBBLE_PAINT_MARKER = "/* Simeon: the person's bubble is one flat blue";
+export const USER_BUBBLE_PAINT_CSS = `${USER_BUBBLE_PAINT_MARKER} (1 October 2026), plain, and its selection reads in dark mode. */
+.sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#){background-image:none}
+[data-theme="cursor-dark"] .sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#)::selection,[data-theme="cursor-dark"] .sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#) *::selection{background-color:#ffffff;color:${USER_BUBBLE_DARK}}
 `;
 
 /**
