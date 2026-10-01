@@ -120,10 +120,10 @@ export function buildVoiceCallPrompt(args: { readonly agent: VoiceCallAgentProfi
     .filter((mate) => mate.name.length > 0 && mate.name !== name)
     .slice(0, VOICE_CALL_TEAMMATES_MAX);
   const teammates = team.length === 0
-    ? "You have no teammates yet; you can create one when asked."
+    ? "You have no teammates yet. When they ask for one, you can create one with send_task, and then message it."
     : [
         `Your teammates, other agents on ${person.length > 0 ? `${person}'s` : "their"} team that you can message, ask and hand work to: ${team.map((mate) => (mate.title.length > 0 ? `${mate.name} (${mate.title})` : mate.name)).join(", ")}.`,
-        "When they ask you to talk to, ask, tell or get something from a teammate, you can: set it going with send_task, naming the teammate. Never say you can't reach a teammate.",
+        "When they ask you to talk to, ask, tell or get something from a teammate, you can: set it going with send_task, naming the teammate. It works like texting: you message them now and their answer comes back to you a little later. Never say you can't reach, message or talk to a teammate.",
       ].join(" ");
   const recent = args.transcript.length === 0
     ? "You and they have not written to each other yet."

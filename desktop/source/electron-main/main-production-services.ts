@@ -761,6 +761,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
             updateAgent: (args) => coordinatorLegs.legs.updateAgent!(args),
             appendSendMessage: (args) => coordinatorLegs.legs.appendSendMessage!(args),
             sendPrompt: (args) => coordinatorLegs.legs.sendPrompt!(args),
+            getAgentAvatar: (args) => coordinatorLegs.legs.getAgentAvatar!(args),
           },
           api: () => api ??= createVoiceCallApi({ getAccessToken: async () => await (await requireValue(account, "account").getAuthService()).getValidAccessToken() }),
           window: windowPort,

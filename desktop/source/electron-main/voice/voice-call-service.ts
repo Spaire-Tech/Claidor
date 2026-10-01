@@ -28,6 +28,8 @@ import { CONVERSATION_ID_PATTERN, type VoiceCallApi, type VoiceOption } from "./
 export interface VoiceCallLegs extends CallChannelLegs {
   appendSendMessage(args: { readonly agentId: string; readonly message: { readonly type: "text"; readonly content: string } }): Promise<unknown>;
   updateAgent(args: { readonly id: string; readonly profile: Record<string, string> }): Promise<unknown>;
+  /** The agent's picture (`{ dataUrl }`), which the roster rows do not carry. */
+  getAgentAvatar?(args: { readonly id: string }): Promise<unknown>;
 }
 
 export interface VoiceCallWindowPort {
@@ -311,7 +313,13 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
         case "getSetup": {
           let row: Record<string, unknown> | null = null;
           try { row = await findAgent(active.agentId); } catch (error) { options.log(`setup: the roster could not be read: ${errorText(error)}`); }
-          const avatar = text(row?.avatarDataUrl);
+          let avatar = text(row?.avatarDataUrl);
+          if (avatar.length === 0 && options.legs.getAgentAvatar != null) {
+            try {
+              const answer = await options.legs.getAgentAvatar({ id: active.agentId });
+              avatar = isRecord(answer) ? text(answer.dataUrl) : "";
+            } catch (error) { options.log(`setup: the agent's picture could not be read: ${errorText(error)}`); }
+          }
           const setup: VoiceCallSetup = {
             agentId: active.agentId,
             name: text(row?.name).trim() || active.hintName || "Agent",
