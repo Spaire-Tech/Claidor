@@ -1135,3 +1135,101 @@ copies of the same files 5, mine a strict subset, both trees format clean.
 
 Unchanged: **nothing here has ever contacted E2B, no sandbox has been started,
 no command has run in a box, and CI has never executed a line of this diff.**
+
+---
+
+## §21 — the server package is `simeon` now, and this branch moved with it (1 October 2026)
+
+`main` moved `822d3850` → `8cc44299`: **56 commits**, the largest move since this
+PR opened, after thirty-six hours of quiet. Among them `ebd0d418`, *"Rename the
+server package from polar to simeon"*. Every path named in §1–§20 above has
+changed; those sections are the record of what was measured, not a current map.
+
+### What the rename actually did
+
+- `server/simeon/` holds the code. `server/polar/` is **five files** — a
+  deliberate shim whose own docstring says why: Render keeps each service's
+  start command in its own settings, so `uvicorn polar.app:app` and
+  `dramatiq … polar.worker.run` would stop starting after the rename; the shim
+  forwards them and goes once every service on Render starts `simeon.*`.
+- **`server/polar/desktop/` does not exist on `main`** — the home of every line
+  of this branch's code.
+- The env contract was migrated rather than broken, which is what CLAUDE.md's
+  safe-rename rule demanded: `SIMEON_` is the prefix, `CLAIDOR_` is read as a
+  legacy fallback, first match wins (`LEGACY_ENV_PREFIX`, and an explicit
+  `AliasChoices` where a name needed one). So nothing on Render breaks on the
+  old keys. Checked in `simeon/config.py`, not assumed.
+
+### The re-fit, and the one conflict that would have been silently wrong
+
+git carried most renames across by itself (`endpoints.py`, `pricing.py`,
+`models/__init__.py` auto-merged into `simeon/`, and it moved `boxes.py` to the
+right path and labelled it a *file location* conflict). Four content conflicts
+needed deciding; one of them mattered more than the others:
+
+**`simeon/models/desktop.py`.** Both sides added a new class at the same place —
+this branch's `DesktopBoxState` + `DesktopBox`, main's `DesktopVoiceCall` — and
+git split them into **two** conflict regions either side of a `user_id` block
+both classes share. Resolving region-by-region, mine-then-theirs, would have
+produced two classes with each other's fields. Rebuilt instead from main's file
+whole plus this branch's two classes whole, adding the three imports main's copy
+lacks (`StrEnum`, `Index`, `text`). All seven classes present afterwards.
+
+The others: `config.py` kept the eight E2B settings with their paths repointed;
+`repository.py` restored `RepositorySoftDeletionMixin`, which main's import had
+dropped and this branch's repository subclasses — checked it is still exported
+from `simeon/kit/repository/__init__.py`, which is a **package** now, not a
+module, so "the file does not exist" would have been the wrong conclusion;
+`uv.lock` had one conflict whose main side was *empty*, because the project's own
+entry sorts under `simeon` rather than `polar` — dropped this branch's block and
+ran `uv lock --offline`, which put `e2b` back into main's entry (247 packages).
+
+### The migration collided for the fourth time
+
+`main`'s `desktop_voice_calls_0930` declares `down_revision =
+"sand_box_sleep_0928"` — the parent this branch's migration was given on 29
+September. `alembic heads` printed two. Re-pointed onto main's tip; the
+docstring now records all four re-pointings and the one cause.
+
+Measured, not carried forward: the chain applied to a real PostgreSQL 16 through
+main's voice-calls migration into this one, `desktop_boxes` created with
+`ix_desktop_boxes_live_scope` on `(user_id, scope_key) WHERE deleted_at IS
+NULL`, `downgrade -1`, `to_regclass('desktop_boxes')` empty.
+
+### Two local things the rename broke, worth writing down for the next round
+
+The container's test setup is keyed to the old names and silently stops working:
+
+- **The Postgres role.** `POSTGRES_USER`/`PWD`/`DATABASE` now default to
+  `simeon`, not `claidor`. `CREATE ROLE simeon LOGIN SUPERUSER PASSWORD
+  'simeon'` and `CREATE DATABASE simeon OWNER simeon`.
+- **The dev JWKS.** `CURRENT_JWK_KID` is `simeon_dev`; a `.jwks.json` holding
+  `claidor_dev` makes every test fail at import with `ValueError: Key not
+  found`, from `simeon/oauth2/constants.py` — nothing about the key in the
+  message. `python -m simeon.kit.jwk simeon_dev > ./.jwks.json`.
+
+### Measured after the re-fit
+
+`pytest tests/desktop tests/maty tests/sand tests/integrations/google`:
+**14 failed / 559 passed / 1 skipped** (574 collected). The fourteen are the
+known set; the skip is main's Docker end-to-end gate. This branch's own tests
+run alone: **52 passed**. Ten `/api/proxy/box/*` routes at 1469, catch-all last
+at 1814, `hourly_exhausted` once, no duplicate top-level names. Ruff: **one**
+finding on my files (`models/__init__.py` RUF022), against **five** on main's
+own copies of the same files including that one — still a strict subset, and the
+re-fit incidentally sorted three import blocks main leaves unsorted. Both trees
+format clean.
+
+### What this means for the PR, plainly
+
+This is the **second** time the ground under #125 has moved wholesale — the 19
+September re-founding of `desktop/`, and now the package rename — while the
+decision it waits on has gone unanswered for twelve days. The box half is still
+E2B on ten REST routes; main's cloud box is still every person's computer and
+still meters nothing (§20, re-checked there). The re-fit was worth doing because
+a branch pointing at a deleted package is not a branch, but it is maintenance on
+a question nobody has answered, and that is worth saying rather than quietly
+repeating.
+
+Unchanged: **nothing here has ever contacted E2B, no sandbox has been started,
+no command has run in a box, and CI has never executed a line of this diff.**
