@@ -226,6 +226,18 @@ function isWorkspaceMutation(input: { readonly serverIdentifier: string; readonl
   return input.serverIdentifier.toLowerCase() === CURSOR_APP_CONTROL_SERVER && WORKSPACE_MUTATION_TOOLS.has(input.toolName.toLowerCase());
 }
 
+/**
+ * A model that fills in every field sends "" for the ones it means to leave
+ * out, so a blank field reads as left out: {"server":"gmail","toolName":"",
+ * "pattern":""} lists Gmail's tools instead of looking up a tool named ""
+ * (1 October 2026, an agent guessed Gmail tool names after that error).
+ */
+export function dropBlankArgs(raw: unknown, dynamic: boolean): unknown {
+  if (!isRecord(raw)) return raw;
+  const named = dynamic ? { ...raw, server: raw.namespace } : raw;
+  return Object.fromEntries(Object.entries(named).filter(([, value]) => !(typeof value === "string" && value.trim().length === 0)));
+}
+
 function validateArgs(args: GetMcpToolsArgsInput, dynamic: boolean): void {
   if (args.toolName !== undefined && args.server === undefined) {
     const container = dynamic ? "namespace" : "server";
@@ -280,10 +292,7 @@ export function createGetMcpToolsTool(mcpMetaToolOptions: McpMetaToolOptions, op
     pattern: z.string().optional().describe(`RE2 regex pattern to search namespace and tool names (max ${MAX_REGEX_PATTERN_LENGTH} chars). Optionally combine with namespace to scope the search.`),
   });
   const modelParameters = dynamic ? namespaceParameters : serverParameters;
-  const parsingParameters = z.preprocess(raw => {
-    if (!dynamic || !isRecord(raw)) return raw;
-    return { ...raw, server: raw.namespace };
-  }, z.object({ server: z.string().optional(), toolName: z.string().optional(), pattern: z.string().optional() }));
+  const parsingParameters = z.preprocess(raw => dropBlankArgs(raw, dynamic), z.object({ server: z.string().optional(), toolName: z.string().optional(), pattern: z.string().optional() }));
   const execute = async (parentCtx: Context, interactionHandler: unknown, rawArgs: unknown, meta: GetMcpToolsExecutionMeta): Promise<GetMcpToolsAgentResult> => {
     if (!isGetMcpToolsInteractionHandler(interactionHandler) || !isGetMcpToolsArgs(rawArgs)) throw new Error("GetMcpTools execution requires valid arguments and an interaction handler");
     const args = rawArgs;
@@ -373,7 +382,9 @@ export function createGetMcpToolsTool(mcpMetaToolOptions: McpMetaToolOptions, op
             const error = metaError(message, ToolErrorClassification.UNEXPECTED_ENVIRONMENT);
             reportError(ctx, GET_MCP_TOOLS_FAILURE_REASONS.TOOL_NOT_FOUND, error); throw error;
           }
-          const message = dynamic ? `Tool "${args.toolName}" not found in namespace "${args.server}".` : `MCP tool "${args.toolName}" not found on server "${args.server}".`;
+          const message = dynamic
+            ? `Tool "${args.toolName}" not found in namespace "${args.server}". Call this tool with {"namespace":"${args.server}"} alone to list its tools, or with a pattern to search them; don't guess names.`
+            : `MCP tool "${args.toolName}" not found on server "${args.server}". Call this tool with {"server":"${args.server}"} alone to list its tools, or with a pattern to search them; don't guess names.`;
           const error = metaError(message, ToolErrorClassification.UNEXPECTED_ENVIRONMENT);
           reportError(ctx, GET_MCP_TOOLS_FAILURE_REASONS.TOOL_NOT_FOUND, error); throw error;
         }
