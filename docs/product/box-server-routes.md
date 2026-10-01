@@ -1233,3 +1233,82 @@ repeating.
 
 Unchanged: **nothing here has ever contacted E2B, no sandbox has been started,
 no command has run in a box, and CI has never executed a line of this diff.**
+
+---
+
+## §22 — main added a name check in CI; it has never run, and this branch failed it (1 October 2026, evening)
+
+A check named **`check`**, from a workflow named **`Names`**, appeared on this
+branch's head and failed. I had not seen it before, so I read the job instead of
+assuming it was the dead runner again — and it *is* the dead runner (`runner_id:
+0`, empty `runner_name`, `created_at == started_at` at 18:17:03, dead in 2 s).
+So CI has told nobody anything, as usual.
+
+But the check itself is real, it is `main`'s standard since the rename, and
+**this branch failed it with 80 findings**: `.github/workflows/names.yml` runs
+`python3 scripts/check_names.py --summary`, which fails when an earlier product
+name appears anywhere outside `scripts/kept_names.json`.
+
+Fifteen were in `server/simeon/`. Checked each against `kept_names.json` rather
+than assuming an exemption covered it — **none did**. All fifteen are fixed
+(`9296af4d`); `server/` now returns clean.
+
+### Two of them were data, not prose, and the reason they are safe to rename is the one this PR keeps reporting
+
+- `"claidor_user"` / `"claidor_scope"` are **E2B sandbox metadata keys** — a
+  contract with a service we do not build, which is normally exactly what
+  `kept_names.json` protects. They are safe to rename only because **no sandbox
+  has ever been created**, so none carries them. Now `simeon_user` /
+  `simeon_scope`.
+- `BOX_MODEL_ID` is **written into `desktop_usage.model`**. Renaming a stored
+  value normally orphans history. Safe here only because **no box has ever been
+  metered**, so there is no history. Now `simeon-box`. Nothing asserts the
+  literal; the tests use the symbol, and 52 of them still pass.
+
+If either of those had ever run, the right answer would have been a
+`kept_names.json` rule, not a rename.
+
+### Three were stale maps, which matters more than the naming rule
+
+`boxes.py` and `endpoints.py` carried comments citing
+`desktop/src/main/libs/openclawTokenProxy.ts` and
+`openclaw-extensions/box/brokerClient.ts` — files deleted with the 18 September
+re-founding of `desktop/`. A comment pointing at a file that does not exist is
+worse than one using an old name, so those now say what is true: the client
+these ten routes were shaped against is gone, the app asks for a box over
+Connect RPC, and whether this half lands is still open.
+
+### The 65 left are in these three notes, and I have not touched them
+
+56 in this file, 6 in `maty-test-failures-measured.md`, 3 in
+`images-server-route.md` — every one a path that **was correct when it was
+measured** (`server/polar/desktop/capabilities.py`, `polar/maty/repository.py:46`,
+and §21's own account of the rename, which has to name both sides to mean
+anything).
+
+Rewriting them would make the record less true, and `kept_names.json`'s own
+vocabulary has the right shape for this already: *"record = a statement of
+origin that must name it"*, which is what it grants `docs/kept-names.md` and
+`desktop/NOTICE.md`.
+
+**So the fix is a one-rule addition, and I have not made it**, because
+`scripts/kept_names.json` is `main`'s enforcement file landed the same day and
+granting myself an exemption in someone else's check is not mine to do. The rule
+would be:
+
+```json
+{ "kind": "record",
+  "names": ["polar", "claidor", "caisra"],
+  "paths": ["docs/product/box-server-routes.md",
+            "docs/product/images-server-route.md",
+            "docs/product/maty-test-failures-measured.md"],
+  "reason": "Measurements taken before the renames; the paths named are the ones that existed when they were read." }
+```
+
+Nothing is blocked today — the workflow has never had a runner. Whoever owns the
+name check should decide between that rule and rewriting the notes; I would
+rather be told than assume.
+
+Unchanged: **nothing here has ever contacted E2B, no sandbox has been started,
+no command has run in a box, and CI has never executed a line of this diff** —
+which is, this time, also what made two of the renames safe.
