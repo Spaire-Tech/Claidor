@@ -273,21 +273,29 @@ export const VOICE_CALL_COMPONENTS_SOURCE = [
   "const c=__simeonCallRecordParse(n.content),[o,so]=S.useState(!1);if(c==null)return null;const has=c.recap!=null&&c.recap.length>0;",
   `return p.jsxs("div",{className:"simeon-call-record","data-open":o&&has?"true":"false",children:[p.jsxs("button",{type:"button",className:"simeon-call-record__head","aria-expanded":has?o:void 0,disabled:!has,onClick:()=>so(v=>!v),children:[p.jsx("span",{className:"simeon-call-record__glyph","aria-hidden":!0,children:p.jsx("svg",{viewBox:"0 0 24 24",children:p.jsx("path",{fill:"currentColor",d:"${PHONE_ICON_PATH}"})})}),p.jsxs("span",{className:"simeon-call-record__what",children:[p.jsx("b",{children:"Voice call"}),p.jsx("span",{children:c.duration})]}),has?p.jsx("svg",{className:"simeon-call-record__chevron",viewBox:"0 0 24 24","aria-hidden":!0,children:p.jsx("path",{fill:"none",stroke:"currentColor",strokeWidth:2.4,strokeLinecap:"round",strokeLinejoin:"round",d:"M9 6l6 6-6 6"})}):null]}),has?p.jsx("div",{className:"simeon-call-record__recap",children:p.jsx("div",{children:p.jsx("p",{children:c.recap})})}):null]})}`,
   // The call in the chat (2 October 2026, the founder: "the after chat is just a chat opened in a
-  // panel like the convo between agents, this time its just between us. we dont need to redesign
-  // anything"). The agent's host writes what was said as an exchange with one peer,
-  // `voice-call:<call>:<seconds>` (host/extensions/transcript/voice-call-channel.ts); the window's
-  // own "Messaged Dawn" line is drawn for it as "Voice chat · 02:30", and opens the window's own
-  // read-only exchange panel.
-  "function __simeonVoiceCall(n){const ps=n==null?null:n.kind===\"single\"?[n.peer]:n.peers;if(!Array.isArray(ps)||ps.length!==1||ps[0]==null)return null;const m=/^voice-call:[A-Za-z0-9_-]+:(\\d+)$/.exec(String(ps[0].id));if(m==null)return null;const t=Number(m[1]),h=Math.floor(t/3600),mm=String(Math.floor(t%3600/60)).padStart(2,\"0\"),ss=String(t%60).padStart(2,\"0\");return{peerId:ps[0].id,name:ps[0].name,duration:h>0?`${h}:${mm}:${ss}`:`${mm}:${ss}`}}",
-  // Inside the call's panel the person is the person (2 October 2026, the founder: "why not just use the
-  // real blue on me talking??? on the right side, like a real normal convo"): their lines lose the peer
-  // they were written with and draw as their own messages, and the header is the agent's own, not
-  // "Agent ⇄ <name>".
+  // panel like the convo between agents, this time its just between us"; 1 October 2026's second
+  // pass: "i want things to behave the same way as it should behave when i text"). The host writes
+  // one event entry where the call began, `{type:"voice-call", callId, status, seconds, lines}`
+  // (host/extensions/transcript/voice-call-channel.ts); the window draws it as one line, "Voice chat
+  // · 01:49" ("Voice chat · now" while the call is on), which opens the call in the window's own
+  // read-only exchange panel. Calls a host wrote before that are messages with one peer,
+  // `voice-call:<call>:<seconds>`, named for the person: they draw the same way.
+  "function __simeonVoiceDuration(t){const w=Math.max(0,Math.round(Number(t)||0)),h=Math.floor(w/3600),mm=String(Math.floor(w%3600/60)).padStart(2,\"0\"),ss=String(w%60).padStart(2,\"0\");return h>0?`${h}:${mm}:${ss}`:`${mm}:${ss}`}",
   "function __simeonIsVoicePeer(n){const id=typeof n===\"string\"?n:n?.id;return typeof id===\"string\"&&id.startsWith(\"voice-call:\")}",
-  "function __simeonVoiceTunnelEntries(n){return Array.isArray(n)?n.map(e=>e?.fromAgent!=null&&__simeonIsVoicePeer(e.fromAgent)?(({fromAgent:_f,...r})=>r)(e):e):n}",
+  // A call written before: the window's summary of its lines.
+  "function __simeonVoiceCall(n){const ps=n==null?null:n.kind===\"single\"?[n.peer]:n.peers;if(!Array.isArray(ps)||ps.length!==1||ps[0]==null)return null;const m=/^voice-call:[A-Za-z0-9_-]+:(\\d+)$/.exec(String(ps[0].id));if(m==null)return null;return{peerId:ps[0].id,name:ps[0].name,duration:__simeonVoiceDuration(Number(m[1]))}}",
+  // A call's own line: openable once it ended with something said.
+  "function __simeonVoiceCallOfEvent(t){const v=t?.event;if(v==null||v.type!==\"voice-call\"||typeof v.callId!==\"string\")return null;const ended=v.status===\"ended\"&&typeof v.seconds===\"number\",said=Array.isArray(v.lines)&&v.lines.length>0;return{peerId:ended&&said?`voice-call:${v.callId}`:null,name:\"Voice chat\",duration:ended?__simeonVoiceDuration(v.seconds):null}}",
+  // A call's lines never share a line with anything else: not with the agent's exchanges with
+  // teammates ("8 messages with 2 agents"), not with another call.
+  "function __simeonVoiceKey(t){const a=t?.fromAgent??t?.toAgent;return a!=null&&__simeonIsVoicePeer(a)?String(a.id):\"\"}",
+  // Inside the call's panel the person is the person (the founder: "why not just use the real blue on
+  // me talking??? on the right side, like a real normal convo"): their lines are their own messages,
+  // the agent's are the agent's, and the header is the agent's own, not "Agent ⇄ <name>".
+  "function __simeonTunnelEntries(n,id,self){if(!__simeonIsVoicePeer(id))return Uan(n,id,self);const ev=n.find(x=>x?.kind===\"event\"&&x.event?.type===\"voice-call\"&&`voice-call:${x.event.callId}`===id);if(ev!=null){const ls=Array.isArray(ev.event.lines)?ev.event.lines:[],at=typeof ev.timestampMs===\"number\"?ev.timestampMs:0;return ls.map((l,i)=>{const k=`${ev.id}:${i}`,c=typeof l?.text===\"string\"?l.text:\"\";return l?.speaker===\"agent\"?{kind:\"send-message\",id:k,message:{type:\"text\",content:c},author:self,timestampMs:at+i}:{kind:\"message\",id:k,role:\"user\",content:c,isStreaming:!1,timestampMs:at+i}})}return Uan(n,id,self).map(e=>e.kind===\"send-message\"&&e.author!=null&&__simeonIsVoicePeer(e.author)?{kind:\"message\",id:e.id,role:\"user\",content:e.message?.content??\"\",isStreaming:!1,...(e.timestampMs!=null?{timestampMs:e.timestampMs}:{})}:e)}",
   "function __simeonVoiceEvent(n){",
-  "const c=n.call,{openAgentExchange:r}=r1(),l=`Voice chat · ${c.duration}`;",
-  `return p.jsx(fre,{className:"sand-system-event",children:p.jsx(X4e,{"aria-label":\`Open \${l}\`,leading:p.jsx("svg",{"aria-hidden":!0,className:"simeon-voice-event__glyph",viewBox:"0 0 24 24",children:p.jsx("path",{fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",d:"M5 10v4M9 7v10M13 9v6M17 6v12M21 10v4"})}),leadingGap:4,onClick:m=>{m.stopPropagation(),r(c.peerId,c.name)},title:l,children:l})})}`,
+  "const c=n.call,{openAgentExchange:r}=r1(),l=c.duration!=null?`Voice chat · ${c.duration}`:\"Voice chat · now\",open=c.peerId!=null;",
+  `return p.jsx(fre,{className:"sand-system-event",children:p.jsx(X4e,{...(open?{"aria-label":\`Open \${l}\`,onClick:m=>{m.stopPropagation(),r(c.peerId,c.name)}}:{}),leading:p.jsx("svg",{"aria-hidden":!0,className:"simeon-voice-event__glyph",viewBox:"0 0 24 24",children:p.jsx("path",{fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",d:"M5 10v4M9 7v10M13 9v6M17 6v12M21 10v4"})}),leadingGap:4,title:l,children:l})})}`,
   // The name sheet (1 October 2026): once, after onboarding, "What should your agents call you?",
   // offered Google's first name, never one made from the e-mail. Saved through the account's own
   // rename (`cursorAccount.updateName`, now `POST /desktop/api/user/name`). "Not now" asks again next launch.
@@ -311,8 +319,12 @@ const VOICE_EVENT_BEFORE = "function vpt(n){const e=he.c(9),{summary:t}=n;";
 const VOICE_EVENT_AFTER = "function vpt(n){const __sv=__simeonVoiceCall(n.summary);if(__sv!=null)return p.jsx(__simeonVoiceEvent,{call:__sv});const e=he.c(9),{summary:t}=n;";
 const VOICE_EVENT_TEXT_BEFORE = "function JIn(n){switch(n.kind){";
 const VOICE_EVENT_TEXT_AFTER = "function JIn(n){const __sv=__simeonVoiceCall(n);if(__sv!=null)return`Voice chat · ${__sv.duration}`;switch(n.kind){";
-const VOICE_TUNNEL_ENTRIES_BEFORE = "p.jsx(JMn,{dockInsetPx:n.dockInsetPx,entries:e.tunnelEntries,";
-const VOICE_TUNNEL_ENTRIES_AFTER = "p.jsx(JMn,{dockInsetPx:n.dockInsetPx,entries:__simeonVoiceTunnelEntries(e.tunnelEntries),";
+const VOICE_PANEL_ENTRIES_BEFORE = "return Uan(u,v.id,De)},[v,u,O,t])";
+const VOICE_PANEL_ENTRIES_AFTER = "return __simeonTunnelEntries(u,v.id,De)},[v,u,O,t])";
+const VOICE_OWN_GROUP_BEFORE = 'for(const r of n){if(r.kind==="entry"&&VIn(r.entry)){t.push(r);continue}s(),e.push(r)}return s(),e}';
+const VOICE_OWN_GROUP_AFTER = 'for(const r of n){if(r.kind==="entry"&&VIn(r.entry)){t.length>0&&__simeonVoiceKey(t[0].entry)!==__simeonVoiceKey(r.entry)&&s();t.push(r);continue}s(),e.push(r)}return s(),e}';
+const VOICE_CALL_LINE_BEFORE = "function EIn(n){const e=he.c(4),{entry:t}=n;";
+const VOICE_CALL_LINE_AFTER = "function EIn(n){const __sc=__simeonVoiceCallOfEvent(n.entry);if(__sc!=null)return p.jsx(__simeonVoiceEvent,{call:__sc});const e=he.c(4),{entry:t}=n;";
 const VOICE_TUNNEL_HEADER_BEFORE = "exchange:l?null:e.tunnelExchange";
 const VOICE_TUNNEL_HEADER_AFTER = "exchange:l||__simeonIsVoicePeer(e.tunnelPeer)?null:e.tunnelExchange";
 const NAME_SHEET_BEFORE = 'p.jsx(BGn,{}),p.jsx(Yzn,{children:p.jsx($zn,{})})]';
@@ -322,7 +334,9 @@ export const VOICE_CALL_REPLACEMENTS = Object.freeze([
   ["call-record-card", CALL_RECORD_BEFORE, CALL_RECORD_AFTER],
   ["voice-chat-event", VOICE_EVENT_BEFORE, VOICE_EVENT_AFTER],
   ["voice-chat-event-text", VOICE_EVENT_TEXT_BEFORE, VOICE_EVENT_TEXT_AFTER],
-  ["voice-chat-person-is-person", VOICE_TUNNEL_ENTRIES_BEFORE, VOICE_TUNNEL_ENTRIES_AFTER],
+  ["voice-call-line", VOICE_CALL_LINE_BEFORE, VOICE_CALL_LINE_AFTER],
+  ["voice-chat-own-line", VOICE_OWN_GROUP_BEFORE, VOICE_OWN_GROUP_AFTER],
+  ["voice-chat-person-is-person", VOICE_PANEL_ENTRIES_BEFORE, VOICE_PANEL_ENTRIES_AFTER],
   ["voice-chat-agent-header", VOICE_TUNNEL_HEADER_BEFORE, VOICE_TUNNEL_HEADER_AFTER],
   ["name-sheet-at-root", NAME_SHEET_BEFORE, NAME_SHEET_AFTER],
   ["voice-picker-under-character-color", VOICE_PICKER_BEFORE, VOICE_PICKER_AFTER],

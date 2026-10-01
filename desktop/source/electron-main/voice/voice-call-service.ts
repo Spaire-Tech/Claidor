@@ -222,11 +222,12 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
         transcript = [...active.heard];
       }
       // The call's address closes, its record goes to the agent's voice-calls/ folder, and
-      // the host writes what was said into the agent's chat as an exchange with the person.
+      // the host fills in the call's line in the agent's chat (written when the call opened)
+      // with its duration and what was said.
       let written = 0;
       if (channel != null) { written = await channel.end({ seconds: whole, recap: summary, transcript, personName: active.personName }); channel.dispose(); }
       if (written > 0) return;
-      // A host from before 2 October 2026 writes no exchange: the call's line and recap instead.
+      // A host from before 2 October 2026 writes no line of its own: the call's line and recap instead.
       try {
         await options.legs.appendSendMessage({ agentId: active.agentId, message: { type: "text", content: callRecordText(whole, summary) } });
       } catch (error) {

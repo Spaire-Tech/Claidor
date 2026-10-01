@@ -302,10 +302,10 @@ export interface CallRecordLine {
 }
 
 /**
- * The line a call leaves in the agent's chat when its host writes no
- * exchange (a host from before 2 October 2026): "Voice call · 2:48", then the
- * summary when there is one. A current host writes the call into the chat as
- * an exchange with the person instead (`voice-call-channel.ts`).
+ * The line a call leaves in the agent's chat when its host writes none of its
+ * own (a host from before 2 October 2026): "Voice call · 2:48", then the
+ * summary when there is one. A current host writes one line where the call
+ * began and fills it in when it ends (`voice-call-channel.ts`).
  */
 export function callRecordText(seconds: number, summary: string | null | undefined): string {
   const head = `Voice call · ${formatCallDuration(seconds)}`;

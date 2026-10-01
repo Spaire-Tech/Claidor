@@ -63,16 +63,22 @@ function fakeHost({ dir, sends = [], running = false }) {
   const lanes = [];
   let interrupted = 0;
   const written = [];
-  const db = { getTranscriptEntries: () => written, appendTranscriptEntry: (entry) => { written.push(entry); } };
+  const removed = [];
+  const db = {
+    getTranscriptEntries: () => written,
+    appendTranscriptEntry: (entry) => { written.push(entry); },
+    updateTranscriptEntry: (id, update) => { const index = written.findIndex((entry) => entry.id === id); if (index >= 0) written[index] = update(written[index]); },
+    deleteTranscriptEntry: (id) => { const index = written.findIndex((entry) => entry.id === id); if (index >= 0) { written.splice(index, 1); removed.push(id); } return index >= 0; },
+  };
   const tm = {
     execution: { canExecute: true },
-    sessions: { resolveBackgroundSession: async (id) => ({ id, db }), activeSession: null },
+    sessions: { resolveBackgroundSession: async (id) => ({ id, db }), activeSession: null, inMemoryTranscriptAgentId: null },
     groupChat: { isGroupSession: () => false, isRemoteRoomSession: () => false },
     runnerRegistry: { getRunner: () => runner },
     runLifecycle: { runningAgentIds: () => new Set(running ? ["a1"] : []), beginSessionRun() {}, endSessionRun() {}, enqueueExclusiveRun: async (_id, run, options) => { lanes.push(options); await run(); } },
     backgroundWakes: { dmPreemptedWakeAgentIds: new Set() },
     turnRuntime: { activeRequestPrompts: new Map(), activeRequestSources: new Map() },
-    roster: { emitAgentUpdate: async () => {} },
+    roster: { emitAgentUpdate: async () => {}, emit() {} },
     sessionStore: { getAgentDir: () => dir, markSessionActivity() {} },
   };
   const runner = {
@@ -87,7 +93,7 @@ function fakeHost({ dir, sends = [], running = false }) {
     },
   };
   const channel = new channelModule.VoiceCallChannel(tm);
-  return { channel, prompts, lanes, interruptions: () => interrupted, tm, written };
+  return { channel, prompts, lanes, interruptions: () => interrupted, tm, written, removed };
 }
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
@@ -98,6 +104,12 @@ test("the call opens, relays mid-turn, carries the agent's answer back, nudges o
     const host = fakeHost({ dir, running: true, sends: [{ call: "voice:call-0001", text: "Moved it to Monday at ten." }, {}, {}, {}] });
     assert.deepEqual(await host.channel.handle({ agentId: "a1", callId: "call-0001", kind: "open" }), { address: "voice:call-0001" });
     await assert.rejects(() => host.channel.handle({ agentId: "a1", callId: "../x", kind: "open" }), /call id/);
+    await settle();
+    // The call's line goes into the chat where the call began, before anything it asks for.
+    assert.equal(host.written.length, 1);
+    assert.equal(host.written[0].kind, "event");
+    assert.match(host.written[0].id, /^event-/);
+    assert.deepEqual(host.written[0].event, { type: "voice-call", callId: "call-0001", status: "live" });
 
     assert.deepEqual(await host.channel.handle({ agentId: "a1", callId: "call-0001", kind: "request", request: "Move Friday's review to Monday", quotes: ["ten o'clock"] }), { accepted: true });
     await settle();
@@ -119,14 +131,12 @@ test("the call opens, relays mid-turn, carries the agent's answer back, nudges o
     const ended = await host.channel.handle({ agentId: "a1", callId: "call-0001", kind: "ended", record: { seconds: 61, recap: "Bass, you moved the review.", personName: "Bass", transcript: [{ speaker: "user", text: "Move it" }, { speaker: "user", text: "(Your work just came back. Tell me what it found.)" }, { speaker: "agent", text: "On it." }] } });
     await settle();
     assert.equal(ended.closed, true);
-    // What was said goes into the agent's chat as one exchange with the person, the app's nudge left out.
+    // The same line is filled in with the duration and what was said, the app's nudge left out.
     assert.equal(ended.exchange, 2);
-    const said = host.written.filter((entry) => entry.fromAgent != null || entry.toAgent != null);
-    assert.deepEqual(said.map((entry) => [entry.role, entry.content, (entry.fromAgent ?? entry.toAgent).id, (entry.fromAgent ?? entry.toAgent).name]), [
-      ["user", "Move it", "voice-call:call-0001:61", "Bass"],
-      ["assistant", "On it.", "voice-call:call-0001:61", "Bass"],
-    ]);
-    assert.ok(said[0].timestampMs < said[1].timestampMs, "the lines keep their order");
+    assert.equal(host.written.length, 1, "one line for the whole call");
+    assert.deepEqual(host.written[0].event, { type: "voice-call", callId: "call-0001", status: "ended", seconds: 61, lines: [{ speaker: "user", text: "Move it" }, { speaker: "agent", text: "On it." }] });
+    // The person is never written as a peer, so nothing can draw them as an agent.
+    assert.equal(host.written.some((entry) => entry.fromAgent != null || entry.toAgent != null), false);
     assert.match(host.prompts[3], /^\[inbound\] From voice:call-0001:\nThe call ended\. This channel is closed from now on/);
     assert.match(host.prompts[4], /^Your last turn sent nothing to this chat\./, "the call-ended turn that sent nothing is nudged once");
     assert.equal(host.channel.deliver("a1", "voice:call-0001", { kind: "text", text: "late" }), true, "a send on the closed address is dropped");
@@ -144,6 +154,22 @@ test("the call opens, relays mid-turn, carries the agent's answer back, nudges o
     assert.equal(record.requests, 2);
     assert.deepEqual(record.transcript, [{ speaker: "user", text: "Move it" }, { speaker: "agent", text: "On it." }]);
     assert.deepEqual(record.sentOnCall, ["Moved it to Monday at ten."]);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("a call that never connected leaves no line in the chat", async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-voice-agent-"));
+  try {
+    const host = fakeHost({ dir });
+    await host.channel.handle({ agentId: "a1", callId: "call-0003", kind: "open" });
+    await settle();
+    assert.equal(host.written.length, 1, "the line is up while the call connects");
+    const ended = await host.channel.handle({ agentId: "a1", callId: "call-0003", kind: "ended", record: { seconds: 0, transcript: [] } });
+    assert.equal(ended.exchange, 0);
+    assert.equal(host.written.length, 0);
+    assert.equal(host.removed.length, 1);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -176,4 +202,19 @@ test("the host carries the channel: the system prompt section, SendMessage keeps
   assert.match(gateway, /voiceCall: \(api: GatewayApi, body: string\) => api\.voiceCall\(parseCommandArgs\(body\)\)/);
   const serde = await src("host/extensions/session/agent-db-serde.ts");
   assert.match(serde, /"voice-call"/);
+});
+
+test("a call's line reads \"Voice chat · 01:49\", and the sidebar's preview says the same", async () => {
+  assert.equal(words.VOICE_CALL_EVENT, "voice-call");
+  assert.equal(words.voiceCallDuration(109), "01:49");
+  assert.equal(words.voiceCallDuration(3723), "1:02:03");
+  assert.equal(words.voiceCallLineText({ type: "voice-call", status: "ended", seconds: 109 }), "Voice chat · 01:49");
+  assert.equal(words.voiceCallLineText({ type: "voice-call", status: "live" }), "Voice chat");
+  assert.equal(words.voiceCallLineText({ type: "name-changed", to: "x" }), null);
+  const projection = await loadModule("source/host/extensions/session/session-projection.ts", "session-projection");
+  const before = { kind: "send-message", id: "m1", message: { type: "text", content: "Done." } };
+  const call = { kind: "event", id: "event-1", event: { type: "voice-call", callId: "c1", status: "ended", seconds: 109, lines: [] } };
+  assert.deepEqual(projection.getLastEntryFromTranscript([before, call]), { kind: "text", text: "Voice chat · 01:49" });
+  assert.deepEqual(projection.getLastEntryFromTranscript([call, before]), { kind: "text", text: "Done." }, "a message after the call is the preview");
+  assert.deepEqual(projection.getLastEntryFromTranscript([before, { kind: "event", id: "e2", event: { type: "name-changed", to: "Ada" } }]), { kind: "text", text: "Done." }, "other events stay out of the preview");
 });

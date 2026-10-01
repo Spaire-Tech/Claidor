@@ -548,14 +548,23 @@ the background while the call goes on, and says how it is going when asked.
     anything still owed into the chat, nudged once if it sent nothing.
   - Every agent's system prompt carries the `## Voice calls` section.
   - The host part ships with the host bundle (`npm run publish:host-bundle`).
-- **After.** "Call ended · 2:48" with Call Again and Chat; the banner leaves by itself after
-  12 s unless the pointer is on it. Main posts `voice/calls/{id}/end` with the seconds, asks
-  twice more for the summary (after 5 s and 10 s) if it is not ready, and adds
-  "Voice call · 2:48" plus the recap to the agent's chat as the agent's message (the host's
-  `appendSendMessage`), so the agent remembers the call. The window draws that message as a
-  card (`__simeonCallRecord`): a phone, "Voice call" and the length, opening to the recap on
-  a click. A banner closed mid-call still ends
-  and bills the call.
+- **After.** The banner says "Call ended", plays the hang-up tone and leaves by itself after
+  1.2 s. Main posts `voice/calls/{id}/end` with the seconds and asks twice more for the summary
+  (after 5 s and 10 s) if it is not ready.
+- **In the chat.** One line per call, where the call began (1 October 2026, the founder: "i
+  want things to behave the same way as it should behave when i text"). The host writes an
+  event entry, `{type:"voice-call", status:"live"}`, when the call opens, so everything the call
+  asks of the agent sits below it, as it would below a text. On hang-up the same entry is filled
+  in (`status:"ended"`, `seconds`, `lines`). The window draws it as "Voice chat · 01:49"
+  ("Voice chat · now" while the call is on); a click opens the call in the window's read-only
+  exchange panel, the person's lines as their own blue messages on the right and the agent's on
+  the left. The sidebar's preview reads "Voice chat · 01:49" until a later message. A call
+  that never connected leaves no line. The person is never written as a peer: calls a host
+  wrote before this (messages with a `voice-call:<call>:<seconds>` peer named for the person)
+  are drawn the same way, on a line of their own, never merged with the agent's exchanges with
+  teammates. A host from before 2 October 2026 writes no line, so main adds "Voice call · 2:48"
+  plus the recap as the agent's message (`appendSendMessage`), drawn as a card
+  (`__simeonCallRecord`). A banner closed mid-call still ends and bills the call.
 - **The voice.** Each agent's `voiceId` is in its profile (`host/agents/agent-profile.ts`;
   a profile without one reads as empty: the call then sends no voice and speaks in the
   platform agent's, which the server picked from the workspace's voices). The
@@ -569,9 +578,10 @@ the background while the call goes on, and says how it is going when asked.
   without its key the banner says calls aren't switched on.
 - **Log.** `voice-call.log` in `~/Library/Application Support/Simeon`, also on stderr as
   `[simeon] voice-call …`: `call started`, `connect: token issued … (voice …)`, `connect: the
-  server refused the call: …`, `connected: conversation …`, `call channel: …`, `banner: sdk error:
-  …`, `call ended: conversation …, 168s, billed …s, summary yes|no`, `call record not added
-  to the chat: …`.
+  server refused the call: …`, `connected: conversation …`, `call channel: …` (on hang-up
+  `closed (its line in the chat holds N line(s) of what was said)` or `closed (no line in the
+  chat)`), `banner: sdk error: …`, `call ended: conversation …, 168s, billed …s, summary
+  yes|no`, `call record not added to the chat: …`.
 - **Needs a new host bundle.** The voice is saved in the profile by the host in the box;
   until `npm run publish:host-bundle` has shipped this commit, the choice lives only on the
   Mac (above). Everything else uses host methods that already exist.
