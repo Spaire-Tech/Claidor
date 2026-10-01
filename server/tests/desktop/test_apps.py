@@ -197,6 +197,80 @@ class TestTheAppsMcpServer:
             )
         assert response.json()["error"]["code"] == -32602
 
+    async def test_every_tool_is_served_featured_first_with_its_name(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        # LinkedIn has 22 tools and 6 featured ones; only the 6 used to be
+        # served. The full list comes in two pages here.
+        def tool(n: int) -> dict:
+            return {
+                "slug": f"LINKEDIN_TOOL_{n}",
+                "name": f"LinkedIn tool {n} via Composio",
+                "description": f"Tool {n}.",
+                "input_parameters": {"type": "object", "properties": {}},
+                "is_deprecated": n == 21,
+            }
+
+        featured = [tool(n) for n in (15, 16, 17, 18, 19, 20)]
+
+        def tools(request: httpx.Request) -> httpx.Response:
+            params = request.url.params
+            if params.get("important") == "true":
+                return httpx.Response(
+                    200, json={"items": featured, "next_cursor": None}
+                )
+            if params.get("cursor") == "page-2":
+                items = [tool(n) for n in range(11, 22)]
+                return httpx.Response(200, json={"items": items, "next_cursor": None})
+            items = [tool(n) for n in range(11)]
+            return httpx.Response(200, json={"items": items, "next_cursor": "page-2"})
+
+        headers = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_accounts("ca_1")
+            )
+            mock.get(f"{API}/api/v3.1/tools").mock(side_effect=tools)
+            listed = await client.post(
+                "/desktop/api/apps/mcp/linkedin",
+                headers=headers,
+                json=_rpc("tools/list"),
+            )
+        assert listed.status_code == 200, listed.text
+        served = listed.json()["result"]["tools"]
+        names = [one["name"] for one in served]
+        assert len(names) == 21, "every tool but the deprecated one"
+        assert len(set(names)) == 21
+        assert names[:6] == [f"LINKEDIN_TOOL_{n}" for n in (15, 16, 17, 18, 19, 20)]
+        assert "LINKEDIN_TOOL_21" not in names
+        assert served[0]["title"] == "LinkedIn tool 15 via Simeon"
+        assert "composio" not in listed.text.lower()
+
+    async def test_github_still_gets_its_featured_tools_only(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        featured = [
+            {"slug": f"GITHUB_TOOL_{n}", "name": f"GitHub tool {n}"} for n in range(6)
+        ]
+        headers = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_accounts("ca_1")
+            )
+            route = mock.get(f"{API}/api/v3.1/tools").mock(
+                return_value=httpx.Response(200, json={"items": featured})
+            )
+            listed = await client.post(
+                "/desktop/api/apps/mcp/github",
+                headers=headers,
+                json=_rpc("tools/list"),
+            )
+        assert [one["name"] for one in listed.json()["result"]["tools"]] == [
+            f"GITHUB_TOOL_{n}" for n in range(6)
+        ]
+        assert route.call_count == 1
+        assert route.calls[0].request.url.params.get("important") == "true"
+
     async def test_signed_out_and_unconfigured_are_refused(
         self,
         client: httpx.AsyncClient,
