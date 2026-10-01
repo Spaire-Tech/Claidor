@@ -203,6 +203,8 @@ class TestThePlatformAgent:
         conversation = config["conversation_config"]
         prompt = conversation["agent"]["prompt"]
         assert prompt["llm"] == VOICE_LLM
+        # No thinking before a reply: it was the wait on every turn.
+        assert prompt["thinking_budget"] == 0
         assert set(prompt["built_in_tools"]) == {"end_call", "skip_turn"}
         assert sorted(prompt["tool_ids"]) == sorted(fake.tools)
         assert conversation["tts"]["model_id"] == VOICE_TTS_MODEL
@@ -729,3 +731,38 @@ def test_the_transcript_is_handed_back_for_the_record() -> None:
         {"speaker": "user", "text": "Move Friday's review to Monday."},
     ]
     assert _transcript(None) == []
+
+
+def test_the_call_latency_line_reads_elevenlabs_own_turn_metrics() -> None:
+    from simeon.desktop.voice import turn_latency
+
+    def turn(llm: float, tts: float) -> dict[str, Any]:
+        return {
+            "role": "agent",
+            "message": "Sure.",
+            "producing_llm": "gemini-2.5-flash",
+            "conversation_turn_metrics": {
+                "metrics": {
+                    "convai_llm_service_ttfb": {"elapsed_time": llm},
+                    "convai_tts_service_ttfb": {"elapsed_time": tts},
+                }
+            },
+        }
+
+    conversation = {
+        "transcript": [
+            {"role": "user", "message": "Hi"},
+            turn(0.4, 0.1),
+            turn(2.5, 0.2),
+            turn(0.6, 0.1),
+            {"role": "agent", "message": "No metrics."},
+        ]
+    }
+    assert turn_latency(conversation) == {
+        "convai_llm_service_ttfb_median": 0.6,
+        "convai_llm_service_ttfb_max": 2.5,
+        "convai_tts_service_ttfb_median": 0.1,
+        "convai_tts_service_ttfb_max": 0.2,
+        "llm": "gemini-2.5-flash",
+    }
+    assert turn_latency(None) == {}

@@ -135,6 +135,30 @@ test("a request that does not reach the agent gets the upstream app's soft fail;
   channel.dispose();
 });
 
+test("a host without the call channel gets the call through the agent's chat, and the agent's new texts are said", async () => {
+  const { legs, calls } = fakeLegs({ tail: [{ kind: "send-message", id: "s0", message: { type: "text", content: "Old news." } }], roster: [{ id: "a1", isRunning: false }] });
+  legs.voiceFails = true;
+  legs.sendPrompt = async (args) => { calls.push(["prompt", args]); return { accepted: true }; };
+  const said = [];
+  const scheduler = manualScheduler();
+  const channel = handoff.createCallChannel({ agentId: "a1", callId: "call-9999", legs, onStatus: () => {}, onSaid: (texts) => said.push(texts), schedule: scheduler.schedule });
+  assert.equal(await channel.open(), true, "the call still opens");
+  assert.match(await channel.sendTask({ task: "Create an agent called Max for research", quote: "call him Max" }), /^Sent\./);
+  assert.deepEqual(calls.find(([name]) => name === "prompt")[1], { agentId: "a1", prompt: "(On our call) Create an agent called Max for research\nMy words: \"call him Max\"\nAnswer here in a sentence or two of plain text; it is read out to me on the call." });
+  await scheduler.step();
+  assert.deepEqual(said, [], "what was in the chat before the call is not said");
+  legs.tail.push({ kind: "message", id: "u1", role: "user", content: "(On our call) …" }, { kind: "send-message", id: "s1", message: { type: "text", content: "Max is set up." } });
+  await scheduler.step();
+  assert.deepEqual(said, [["Max is set up."]]);
+  await scheduler.step();
+  assert.deepEqual(said, [["Max is set up."]], "a text is said once");
+  await channel.end({ seconds: 10, recap: null, transcript: [] });
+  assert.equal(calls.some(([name, args]) => name === "voiceCall" && args.kind === "ended"), false, "a host without the channel is not told the call ended");
+  delete legs.sendPrompt;
+  const plain = handoff.createCallChannel({ agentId: "a1", callId: "call-8888", legs, onStatus: () => {}, onSaid: () => {}, schedule: scheduler.schedule });
+  assert.equal(await plain.open(), false, "without a way into the chat, the call has no channel");
+});
+
 function fakeWindow() {
   const events = [];
   const window = { opened: 0, focused: 0, closed: 0, reloaded: 0, isOpenNow: false, heights: [], events,
