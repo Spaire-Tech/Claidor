@@ -262,6 +262,16 @@ class Settings(BaseSettings):
     ELEVENLABS_BASE_URL: str = "https://api.elevenlabs.io"
     ELEVENLABS_AGENT_ID: str = ""
 
+    # Flight search for the agents (simeon/desktop/flights.py, 2 October
+    # 2026). `SIMEON_DUFFEL_ACCESS_TOKEN` on Render, a read-write token from
+    # Duffel's dashboard (More → Developers → Access tokens); a
+    # `duffel_test_` token searches Duffel's test mode and the card says
+    # "Test results". Empty means the route answers 503. Past Duffel's free
+    # allowance every search is billed, so each person is capped per hour.
+    DUFFEL_ACCESS_TOKEN: str = ""
+    DUFFEL_BASE_URL: str = "https://api.duffel.com"
+    FLIGHT_SEARCHES_PER_HOUR: int = 30
+
     # The person's computer in the cloud (simeon/sand/box_broker.py, 25
     # September 2026). Empty provider: the broker answers `unavailable`
     # with one sentence and the app has no computer to run on.

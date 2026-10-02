@@ -671,15 +671,16 @@ export function patchOriginalHandoffStylesheet(css) {
  *       "carrier":"American Airlines","logo":"https://…","cabin":"Economy",
  *       "duration":"3h 10m","layover":"1h 38m in Phoenix"}, …]}]}
  *
- * Book raises `simeon:flight-book` with the offer on window; booking itself
- * is not built yet.
+ * Book raises a cancelable `simeon:flight-book` with the offer on window;
+ * until something handles it (booking is not built yet) the panel says so
+ * under the button. A round trip's return legs open with a heading.
  */
 const FLIGHT_CLOSE = '<path d="M7.5 7.5l9 9M16.5 7.5l-9 9"/>';
 const FLIGHT_CHEVRON = '<path d="M9.5 6.5 15 12l-5.5 5.5"/>';
 const FLIGHT_PLANE = '<path d="M21 15.2v-1.7l-7.6-4.6V4.1c0-.8-.6-1.6-1.4-1.6s-1.4.8-1.4 1.6v4.8L3 13.5v1.7l7.6-2.3v4.6l-2 1.5v1.4l3.4-1 3.4 1v-1.4l-2-1.5v-4.6z"/>';
 const FLIGHTS_SOURCE = [
   "function __simeonFlightsParse(n){if(typeof n!==\"string\")return null;const m=/^```simeon-flights[^\\n]*\\n([\\s\\S]*?)\\n?```$/.exec(n.trim());if(m==null)return null;try{const d=JSON.parse(m[1]);if(d==null||!Array.isArray(d.offers)||d.offers.length===0)return null;const s=v=>typeof v===\"string\"?v.trim():\"\";",
-  "const leg=l=>({from:s(l.from),fromCity:s(l.fromCity),to:s(l.to),toCity:s(l.toCity),depart:s(l.depart),arrive:s(l.arrive),flight:s(l.flight),carrier:s(l.carrier),logo:s(l.logo),cabin:s(l.cabin),duration:s(l.duration),layover:s(l.layover)});",
+  "const leg=l=>({from:s(l.from),fromCity:s(l.fromCity),to:s(l.to),toCity:s(l.toCity),depart:s(l.depart),arrive:s(l.arrive),flight:s(l.flight),carrier:s(l.carrier),logo:s(l.logo),cabin:s(l.cabin),duration:s(l.duration),layover:s(l.layover),heading:s(l.heading)});",
   "return{title:s(d.title),subtitle:s(d.subtitle),offers:d.offers.filter(o=>o!=null&&typeof o===\"object\").slice(0,8).map(o=>({airline:s(o.airline),logo:s(o.logo),price:s(o.price),priceNote:s(o.priceNote),date:s(o.date),from:s(o.from),fromCity:s(o.fromCity),to:s(o.to),toCity:s(o.toCity),depart:s(o.depart),arrive:s(o.arrive),duration:s(o.duration),stops:s(o.stops),refundable:s(o.refundable),changeable:s(o.changeable),bags:s(o.bags),legs:Array.isArray(o.legs)?o.legs.filter(l=>l!=null&&typeof l===\"object\").map(leg):[],raw:o}))}}catch{return null}}",
   "function __simeonInitials(n){const w=String(n||\"\").split(/\\s+/).filter(x=>x&&!/^(airlines?|airways|air)$/i.test(x));return(w.length>1?w[0][0]+w[1][0]:String(w[0]||\"?\").slice(0,2)).toUpperCase()}",
   "function __simeonAirlineMark(n){const[f,sf]=S.useState(!1),u=n.logo;return p.jsx(\"span\",{className:`simeon-flight-mark simeon-flight-mark--${n.size||\"row\"}`,\"aria-hidden\":!0,children:u&&!f?p.jsx(\"img\",{src:u,alt:\"\",draggable:!1,onError:()=>sf(!0)}):p.jsx(\"span\",{className:\"simeon-flight-mark__initials\",children:__simeonInitials(n.name)})})}",
@@ -700,7 +701,7 @@ const FLIGHTS_SOURCE = [
   "p.jsx(\"span\",{className:\"simeon-flights__price\",children:f.price}),p.jsx(__simeonIcon,{className:\"simeon-flights__chevron\",d:" + JSON.stringify(FLIGHT_CHEVRON) + "})]})},i))})]}),",
   "o!=null?Wr.createPortal(p.jsx(__simeonFlightPanel,{offer:o,onClose:()=>ss(null)}),document.body):null]})}",
   "function __simeonFlightPanel(n){const o=n.offer,first=o.legs[0],last=o.legs[o.legs.length-1],from=o.from||first?.from||\"\",to=o.to||last?.to||\"\",fromCity=o.fromCity||first?.fromCity||\"\",toCity=o.toCity||last?.toCity||\"\",depart=o.depart||first?.depart||\"\",arrive=o.arrive||last?.arrive||\"\";",
-  "const book=()=>{window.dispatchEvent(new CustomEvent(\"simeon:flight-book\",{detail:o.raw}))};",
+  "const[note,sn]=S.useState(!1);S.useEffect(()=>{sn(!1)},[o]);const book=()=>{const ev=new CustomEvent(\"simeon:flight-book\",{detail:o.raw,cancelable:!0});window.dispatchEvent(ev);ev.defaultPrevented||sn(!0)};",
   "const stop=(time,code,city,k)=>p.jsxs(\"div\",{className:\"simeon-flight-panel__stop\",children:[p.jsx(\"span\",{className:\"simeon-flight-panel__stop-time\",children:time}),p.jsx(\"span\",{className:\"simeon-flight-panel__node\",\"aria-hidden\":!0}),p.jsxs(\"span\",{className:\"simeon-flight-panel__stop-place\",children:[p.jsx(\"span\",{children:code}),city?p.jsx(\"span\",{className:\"simeon-flight-panel__muted\",children:city}):null]})]},k);",
   "const fare=[[\"Refundable\",o.refundable],[\"Changes\",o.changeable],[\"Bags\",o.bags]].filter(r=>r[1]);",
   "return p.jsxs(\"aside\",{className:\"simeon-flight-panel\",role:\"dialog\",\"aria-label\":`${from} to ${to}`,children:[p.jsx(\"header\",{className:\"simeon-flight-panel__bar\",children:p.jsx(\"button\",{type:\"button\",className:\"simeon-flight-panel__close\",\"aria-label\":\"Close\",onClick:n.onClose,children:p.jsx(__simeonIcon,{d:" + JSON.stringify(FLIGHT_CLOSE) + "})})}),",
@@ -710,12 +711,12 @@ const FLIGHTS_SOURCE = [
   "p.jsxs(\"div\",{className:\"simeon-flight-panel__between\",\"aria-hidden\":!0,children:[p.jsxs(\"span\",{className:\"simeon-flight-panel__path\",children:[p.jsx(\"span\",{}),p.jsx(__simeonIcon,{className:\"simeon-flight-panel__plane\",d:" + JSON.stringify(FLIGHT_PLANE) + "}),p.jsx(\"span\",{})]}),p.jsx(\"span\",{children:o.duration}),p.jsx(\"span\",{children:o.stops})]}),",
   "p.jsxs(\"div\",{className:\"simeon-flight-panel__end simeon-flight-panel__end--to\",children:[p.jsx(\"span\",{className:\"simeon-flight-panel__code\",children:to}),p.jsx(\"span\",{className:\"simeon-flight-panel__time\",children:arrive}),p.jsx(\"span\",{className:\"simeon-flight-panel__muted\",children:toCity})]})]}),",
   "o.price?p.jsxs(\"div\",{className:\"simeon-flight-panel__total\",children:[p.jsxs(\"span\",{children:[p.jsx(\"span\",{children:\"Total\"}),o.priceNote?p.jsx(\"span\",{className:\"simeon-flight-panel__muted\",children:o.priceNote}):null]}),p.jsx(\"span\",{className:\"simeon-flight-panel__amount\",children:o.price})]}):null,",
-  "o.legs.length>0?p.jsxs(\"section\",{children:[p.jsx(\"h4\",{className:\"simeon-flight-panel__label\",children:\"Itinerary\"}),p.jsx(\"div\",{className:\"simeon-flight-panel__group simeon-flight-panel__timeline\",children:o.legs.flatMap((l,i)=>[stop(l.depart,l.from,l.fromCity,`d${i}`),",
+  "o.legs.length>0?p.jsxs(\"section\",{children:[p.jsx(\"h4\",{className:\"simeon-flight-panel__label\",children:\"Itinerary\"}),p.jsx(\"div\",{className:\"simeon-flight-panel__group simeon-flight-panel__timeline\",children:o.legs.flatMap((l,i)=>[l.heading?p.jsx(\"div\",{className:\"simeon-flight-panel__heading\",children:l.heading},`h${i}`):null,stop(l.depart,l.from,l.fromCity,`d${i}`),",
   "p.jsxs(\"div\",{className:\"simeon-flight-panel__segment\",children:[p.jsx(\"span\",{}),p.jsx(\"span\",{className:\"simeon-flight-panel__rail\",\"aria-hidden\":!0}),p.jsxs(\"span\",{className:\"simeon-flight-panel__segment-body\",children:[p.jsx(__simeonAirlineMark,{logo:l.logo||o.logo,name:l.carrier||o.airline,size:\"tiny\"}),p.jsxs(\"span\",{children:[p.jsx(\"span\",{children:[l.flight,l.carrier&&l.carrier!==o.airline?l.carrier:\"\"].filter(Boolean).join(\" · \")}),p.jsx(\"span\",{className:\"simeon-flight-panel__muted\",children:[l.cabin,l.duration].filter(Boolean).join(\" · \")})]})]})]},`s${i}`),",
   "stop(l.arrive,l.to,l.toCity,`a${i}`),",
   "l.layover&&i<o.legs.length-1?p.jsxs(\"div\",{className:\"simeon-flight-panel__segment simeon-flight-panel__segment--layover\",children:[p.jsx(\"span\",{}),p.jsx(\"span\",{className:\"simeon-flight-panel__rail\",\"aria-hidden\":!0}),p.jsx(\"span\",{className:\"simeon-flight-panel__muted\",children:`Layover · ${l.layover}`})]},`l${i}`):null])})]}):null,",
   "fare.length>0?p.jsxs(\"section\",{children:[p.jsx(\"h4\",{className:\"simeon-flight-panel__label\",children:\"Fare\"}),p.jsx(\"div\",{className:\"simeon-flight-panel__group simeon-flight-panel__list\",children:fare.map(([k,v])=>p.jsxs(\"div\",{className:\"simeon-flight-panel__list-row\",children:[p.jsx(\"span\",{children:k}),p.jsx(\"span\",{className:\"simeon-flight-panel__muted\",children:v})]},k))})]}):null]}),",
-  "p.jsx(\"footer\",{className:\"simeon-flight-panel__foot\",children:p.jsx(\"button\",{type:\"button\",className:\"simeon-flight-panel__book\",onClick:book,children:\"Book with Simeon\"})})]})}",
+  "p.jsxs(\"footer\",{className:\"simeon-flight-panel__foot\",children:[p.jsx(\"button\",{type:\"button\",className:\"simeon-flight-panel__book\",onClick:book,children:\"Book with Simeon\"}),note?p.jsx(\"p\",{className:\"simeon-flight-panel__note\",role:\"status\",children:\"Booking isn\u2019t available yet.\"}):null]})]})}",
 ].join("");
 const FLIGHTS_COMPONENTS_ANCHOR = "function __simeonHandoffCard(n){";
 const FLIGHTS_MESSAGE_BEFORE = CALL_RECORD_AFTER;
@@ -819,6 +820,9 @@ main.sand-chat{transition:margin-right .3s cubic-bezier(.2,.8,.2,1)}
 .simeon-flight-panel__foot{flex:none;padding:12px 20px 20px;background:linear-gradient(to bottom,transparent,var(--f-panel) 30%)}
 .simeon-flight-panel__book{appearance:none;display:block;width:100%;height:50px;margin:0;border:0;border-radius:14px;background:var(--f-blue);color:#ffffff;font:inherit;font-size:17px;font-weight:500;letter-spacing:-.01em;cursor:default;transition:filter .15s,transform .1s}
 .simeon-flight-panel__book:hover{filter:brightness(1.08)}
+.simeon-flight-panel__note{margin:10px 0 0;font-size:13px;line-height:18px;color:var(--f-ink-2);text-align:center}
+.simeon-flight-panel__heading{margin:4px 0 10px;padding-top:12px;border-top:.5px solid var(--f-line);font-size:13px;line-height:18px;color:var(--f-ink-2)}
+.simeon-flight-panel__timeline>.simeon-flight-panel__heading:first-child{margin-top:0;padding-top:0;border-top:0}
 .simeon-flight-panel__book:active{transform:scale(.99)}
 .simeon-flight-panel__book:focus-visible{outline:none;box-shadow:0 0 0 3px light-dark(rgba(37,90,147,.3),rgba(47,109,176,.45))}
 `;

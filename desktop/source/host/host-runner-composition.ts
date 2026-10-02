@@ -77,6 +77,8 @@ import {
   SAND_EXTERNAL_READ_TOOL_NAME,
 } from "./sand-activity.js";
 import { connectorCardEmissionToMessage } from "./runner/tools/box-help-tool.js";
+import type { FlightSearchAnswer } from "./runner/tools/flight-search-tool.js";
+import { simeonApiData } from "../shared/node/cursor-backend/simeon-api.js";
 import { createRepeatSendGuard } from "./runner/repeat-send-guard.js";
 import { createAgentPromptSession } from "./extensions/inference/extension.js";
 import { connectorManifests } from "../shared/channels.js";
@@ -2320,6 +2322,24 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 },
               };
             },
+          }),
+      // SearchFlights (2 October 2026): flights through Simeon Labs' server and
+      // Duffel, the results posted as the flight card. Not for a child or a
+      // shared room.
+      ...(isSharedRoomTurn
+        ? {}
+        : {
+            createFlightToolInputs: turn => ({
+              dependencies: {
+                search: args => simeonApiData<FlightSearchAnswer>({ getAccessToken: async () => { const get = method(auth, "getAccessToken"); if (get === undefined) throw new Error("You are not signed in."); return String(await get()); } }, "flights/search", { method: "POST", json: args, signal: AbortSignal.timeout(60_000) }),
+                postMessage: (content, timestampMs) => {
+                  const update = { type: "send-message" as const, message: { type: "text", content }, timestampMs, ...(turn.ackToken === undefined ? {} : { ackToken: turn.ackToken }) };
+                  if (turn.emitUpdate === undefined) hooks.transport.onUpdate(update);
+                  else turn.emitUpdate(update);
+                  return hooks.transport.lastSentMessageId?.();
+                },
+              },
+            }),
           }),
       // request_box_help: the box hand-off card. The tool, the session's
       // hand-off service and the resume were all in the tree, the brief

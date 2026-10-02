@@ -66,6 +66,7 @@ import {
   type BoxHelpDependencies,
 } from "./box-help-tool.js";
 import { createDraftExternalMessageTool, createMarkDraftDeliveredTool, type DraftToolDependencies } from "./draft-message-tool.js";
+import { createSearchFlightsTool, type FlightSearchDependencies } from "./flight-search-tool.js";
 import {
   createGenerateImageTool,
   type GenerateImageToolDependencies,
@@ -555,6 +556,7 @@ export interface TurnToolFactories {
   screenshot?(): TurnTool;
   requestBoxHelp?(): TurnTool;
   drafts?(): readonly TurnTool[];
+  flights?(): TurnTool;
   mcpMeta?(dynamicToolRegistry?: DynamicToolRegistry): readonly TurnTool[];
   mcpManagement?(): readonly TurnTool[];
   subagentManagement?(): readonly TurnTool[];
@@ -689,6 +691,7 @@ export interface TurnToolsetFactoryInputs {
   readonly fileTransfer?: TurnFileTransferToolFactoryInput;
   readonly requestBoxHelp?: TurnBoxHelpToolFactoryInput;
   readonly drafts?: TurnDraftToolFactoryInput;
+  readonly flights?: TurnFlightToolFactoryInput;
   readonly generateImage?: TurnGenerateImageToolFactoryInput;
   readonly webSearch?: TurnWebSearchToolFactoryInput;
   readonly webFetch?: TurnWebFetchToolFactoryInput;
@@ -746,6 +749,10 @@ export interface TurnToolsetHostFactoryProvider {
     turn: TurnToolsetTurnInput,
     props: TurnToolsetBuildProps,
   ) => TurnDraftToolFactoryInput;
+  readonly createFlightToolInputs?: (
+    turn: TurnToolsetTurnInput,
+    props: TurnToolsetBuildProps,
+  ) => TurnFlightToolFactoryInput;
   readonly createGenerateImageToolInputs?: (
     turn: TurnToolsetTurnInput,
     props: TurnToolsetBuildProps,
@@ -965,6 +972,16 @@ export function createTurnDraftToolFactory(
   return () => [asTurnTool(createDraftExternalMessageTool(input.dependencies)), asTurnTool(createMarkDraftDeliveredTool(input.dependencies))];
 }
 
+export interface TurnFlightToolFactoryInput {
+  readonly dependencies: FlightSearchDependencies;
+}
+
+export function createTurnFlightToolFactory(
+  input: TurnFlightToolFactoryInput,
+): () => TurnTool {
+  return () => asTurnTool(createSearchFlightsTool(input.dependencies));
+}
+
 export function createTurnBoxHelpToolFactory(
   input: TurnBoxHelpToolFactoryInput,
 ): () => TurnTool {
@@ -1092,7 +1109,7 @@ export function createTurnToolsetFactories(
 ): Pick<
   TurnToolFactories,
   "task" | "mcpMeta" | "computer" | "browser" | "screenshot"
-  | "fileTransfer" | "requestBoxHelp" | "drafts" | "generateImage" | "webSearch" | "webFetch" | "externalAwait"
+  | "fileTransfer" | "requestBoxHelp" | "drafts" | "flights" | "generateImage" | "webSearch" | "webFetch" | "externalAwait"
   | "boxAwait" | "externalShell" | "externalRead" | "boxShell" | "boxRead"
   | "sendMessage" | "sendToAgent" | "reaction" | "createAgent" | "updateAgent" | "updateState"
   | "subagentManagement"
@@ -1126,6 +1143,9 @@ export function createTurnToolsetFactories(
     ...(input.drafts === undefined
       ? {}
       : { drafts: createTurnDraftToolFactory(input.drafts) }),
+    ...(input.flights === undefined
+      ? {}
+      : { flights: createTurnFlightToolFactory(input.flights) }),
     ...(input.generateImage === undefined
       ? {}
       : { generateImage: createTurnGenerateImageToolFactory(input.generateImage) }),
@@ -1226,6 +1246,9 @@ export function createTurnToolsetFactoriesForTurn(
     ...(provider.createDraftToolInputs === undefined
       ? {}
       : { drafts: provider.createDraftToolInputs(turn, props) }),
+    ...(provider.createFlightToolInputs === undefined
+      ? {}
+      : { flights: provider.createFlightToolInputs(turn, props) }),
     ...(provider.createGenerateImageToolInputs === undefined
       ? (() => {
         // Composition builds createSandGenerateImageService into runnerOptions
@@ -1477,6 +1500,8 @@ export function buildTurnTools(
   if (!host.isSubagentRunner) {
     const generateImage = factories.generateImage?.();
     if (generateImage !== undefined) tools.push(generateImage);
+    const flights = factories.flights?.();
+    if (flights !== undefined) tools.push(flights);
   }
 
   if (
