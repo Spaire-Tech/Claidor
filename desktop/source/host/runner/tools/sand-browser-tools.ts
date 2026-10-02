@@ -515,6 +515,7 @@ export function toBrowserReviewAction(
 export interface BrowserToolSchema {
   readonly required?: readonly string[];
   readonly enum?: Readonly<Record<string, readonly string[]>>;
+  readonly describe?: Readonly<Record<string, string>>;
 }
 
 export interface BrowserToolDefinition<Context> {
@@ -548,17 +549,22 @@ interface BrowserToolSpec {
   readonly skipScreenshot?: boolean;
 }
 
+// Auto-review refuses a click, a coordinate click or a drag that does not say
+// what it is aiming at (`sand-browser-auto-review.ts`), so the three tools ask
+// for it up front instead of failing their first try (2 October 2026).
+const ELEMENT_DESCRIPTION = "A short description of the target and why you are acting on it, for example \"Search flights button, to run the search\". Required: the action is refused without it.";
+
 const BROWSER_TOOL_SPECS: readonly BrowserToolSpec[] = [
   { id: "BROWSER_NAVIGATE", name: "browser_navigate", op: "navigate", description: "Navigate the box browser to a URL. By default reuses your tab; set newTab: true to open in a new tab. Returns the resulting page state with a screenshot.", schema: { required: ["url"] }, canNavigate: true },
   { id: "BROWSER_SNAPSHOT", name: "browser_snapshot", op: "snapshot", description: "Capture a structured snapshot of the current page with [ref=eN] handles for interactive elements. This is the source of truth for page structure; refs are tied to the latest snapshot for that tab. Better than a screenshot for deciding what to click or type." },
-  { id: "BROWSER_CLICK", name: "browser_click", op: "click", description: "Click an element by ref from browser_snapshot. Scrolls the element into view first.", schema: { required: ["ref"] }, canNavigate: true },
-  { id: "BROWSER_MOUSE_CLICK_XY", name: "browser_mouse_click_xy", op: "mouse_click_xy", description: "Click at viewport coordinates. Prefer browser_click with refs when possible.", schema: { required: ["x", "y"] }, canNavigate: true },
+  { id: "BROWSER_CLICK", name: "browser_click", op: "click", description: "Click an element by ref from browser_snapshot. Scrolls the element into view first. Pass ref and element.", schema: { required: ["ref", "element"], describe: { element: ELEMENT_DESCRIPTION } }, canNavigate: true },
+  { id: "BROWSER_MOUSE_CLICK_XY", name: "browser_mouse_click_xy", op: "mouse_click_xy", description: "Click at viewport coordinates. Prefer browser_click with refs when possible. Pass x, y and element.", schema: { required: ["x", "y", "element"], describe: { element: ELEMENT_DESCRIPTION } }, canNavigate: true },
   { id: "BROWSER_TYPE", name: "browser_type", op: "type", description: "Type text into an input, textarea, or contenteditable element by ref.", schema: { required: ["ref", "text"] }, canNavigate: true },
   { id: "BROWSER_FILL", name: "browser_fill", op: "fill", description: "Set the value of an input, textarea, or contenteditable element by ref.", schema: { required: ["ref", "value"] } },
   { id: "BROWSER_SELECT_OPTION", name: "browser_select_option", op: "select_option", description: "Select one or more options in a select element by ref.", schema: { required: ["ref", "values"] } },
   { id: "BROWSER_PRESS_KEY", name: "browser_press_key", op: "press_key", description: "Press a key in the browser page, for example Enter, Escape, Tab, ArrowDown, or a single character.", schema: { required: ["key"] }, canNavigate: true },
   { id: "BROWSER_SCROLL", name: "browser_scroll", op: "scroll", description: "Scroll the page or scroll an element into view (pass its ref)." },
-  { id: "BROWSER_DRAG", name: "browser_drag", op: "drag", description: "Drag an element by ref to another ref or viewport coordinates.", schema: { required: ["sourceRef"] } },
+  { id: "BROWSER_DRAG", name: "browser_drag", op: "drag", description: "Drag an element by ref to another ref (targetRef) or viewport coordinates (targetX, targetY). Pass sourceRef and element.", schema: { required: ["sourceRef", "element"], describe: { element: ELEMENT_DESCRIPTION } } },
   { id: "BROWSER_GET_BOUNDING_BOX", name: "browser_get_bounding_box", op: "get_bounding_box", description: "Get the viewport bounding box for an element ref.", schema: { required: ["ref"] }, skipScreenshot: true },
   { id: "BROWSER_HIGHLIGHT", name: "browser_highlight", op: "highlight", description: "Highlight an element by ref in the browser page for visual grounding. The returned screenshot shows the highlight.", schema: { required: ["ref"] } },
   { id: "BROWSER_CDP", name: "browser_cdp", op: "cdp", description: "Send a Chrome DevTools Protocol command to the target browser tab. Do not use CDP Input.* methods; use dedicated browser tools for clicks, text input, key presses, scrolling, and drag-and-drop. Browser-wide, storage, cookie, cache, permission, and target-management commands are denied.", schema: { required: ["method"] }, canNavigate: true },

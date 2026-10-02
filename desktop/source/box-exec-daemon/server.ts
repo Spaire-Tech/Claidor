@@ -1,6 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createServer, type Server } from "node:http";
-import { appendFile, lstat, mkdir, readFile, realpath, stat, writeFile } from "node:fs/promises";
+import { appendFile, lstat, mkdir, readFile, realpath, rename, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -44,6 +44,15 @@ import {
   ReadSuccess,
   type ReadArgs,
 } from "../packages/proto/generated/agent/v1/read_exec_pb.js";
+import {
+  WriteError,
+  WriteNoSpace,
+  WritePermissionDenied,
+  WriteRejected,
+  WriteResult,
+  WriteSuccess,
+  type WriteArgs,
+} from "../packages/proto/generated/agent/v1/write_exec_pb.js";
 import {
   ShellFailure,
   ShellResult,
@@ -164,13 +173,18 @@ function thrown(id: number, error: unknown, errorCode = "BOX_EXEC_DAEMON_ERROR")
   });
 }
 
+function isInside(root: string, target: string): boolean {
+  const relative = path.relative(root, target);
+  return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+}
+
 class BoxExecRuntime {
   readonly #environment: NodeJS.ProcessEnv;
   readonly #foreground = new Set<ChildProcessWithoutNullStreams>();
   readonly #background = new Map<number, BackgroundProcess>();
   #nextShellId = 1;
 
-  constructor(readonly workspaceRoot: string, readonly terminalsDirectory: string, environment: NodeJS.ProcessEnv) {
+  constructor(readonly workspaceRoot: string, readonly terminalsDirectory: string, environment: NodeJS.ProcessEnv, readonly tempRoot: string = path.resolve(tmpdir())) {
     this.#environment = { ...environment };
   }
 
@@ -239,6 +253,9 @@ class BoxExecRuntime {
         case "backgroundShellSpawnArgs":
           yield client(request.id, request.execId, { case: "backgroundShellSpawnResult", value: await this.spawnBackground(request.message.value) });
           break;
+        case "writeArgs":
+          yield client(request.id, request.execId, { case: "writeResult", value: await this.write(request.message.value) });
+          break;
         case "writeShellStdinArgs":
           yield client(request.id, request.execId, { case: "writeShellStdinResult", value: await this.writeStdin(request.message.value) });
           break;
@@ -286,6 +303,61 @@ class BoxExecRuntime {
       if (code === "EISDIR" || code === "EINVAL" || code === "ENAMETOOLONG") return new ReadResult({ result: { case: "invalidFile", value: new ReadInvalidFile({ path: args.path, reason: errorText(error) }) } });
       return new ReadResult({ result: { case: "error", value: new ReadError({ path: args.path, error: errorText(error) }) } });
     }
+  }
+
+  // Writes go where reads go, plus the box's temp folder: the host stages
+  // its browser driver in /tmp/.sand-browser and attachments in
+  // /workspace/uploads through this call. Until 2 October 2026 the daemon
+  // answered every write BOX_EXEC_UNSUPPORTED, so neither ever landed.
+  async write(args: WriteArgs): Promise<WriteResult> {
+    const fail = (error: unknown, directory: string): WriteResult => {
+      if (error instanceof PathRejectedError) return new WriteResult({ result: { case: "rejected", value: new WriteRejected({ path: args.path, reason: error.message }) } });
+      const code = typeof error === "object" && error != null && "code" in error ? String(error.code) : undefined;
+      if (code === "EACCES" || code === "EPERM" || code === "EROFS") return new WriteResult({ result: { case: "permissionDenied", value: new WritePermissionDenied({ path: args.path, directory, operation: "write", error: errorText(error), isReadonly: code === "EROFS" }) } });
+      if (code === "ENOSPC" || code === "EDQUOT") return new WriteResult({ result: { case: "noSpace", value: new WriteNoSpace({ path: args.path }) } });
+      return new WriteResult({ result: { case: "error", value: new WriteError({ path: args.path, error: errorText(error) }) } });
+    };
+    let directory = "";
+    try {
+      const target = this.resolveWritePath(args.path);
+      directory = path.dirname(target);
+      await mkdir(directory, { recursive: true });
+      this.assertWriteRootAllowed(await realpath(directory), args.path);
+      const existing = await lstat(target).catch(() => undefined);
+      if (existing?.isSymbolicLink() === true) throw new PathRejectedError(`Symbolic-link writes are not permitted: ${args.path}`);
+      if (existing?.isDirectory() === true) throw new PathRejectedError(`Path is a directory: ${args.path}`);
+      const data = args.fileBytes.byteLength > 0 ? Buffer.from(args.fileBytes) : Buffer.from(args.fileText, args.encodingHint === "latin1" ? "latin1" : "utf8");
+      const part = `${target}.daemon-${process.pid}-${Date.now()}.part`;
+      await writeFile(part, data);
+      await rename(part, target);
+      const text = data.toString("utf8");
+      return new WriteResult({ result: { case: "success", value: new WriteSuccess({
+        path: args.path,
+        linesCreated: data.byteLength === 0 ? 0 : text.split("\n").length,
+        fileSize: data.byteLength,
+        ...(args.returnFileContentAfterWrite ? { fileContentAfterWrite: text } : {}),
+      }) } });
+    } catch (error) {
+      return fail(error, directory);
+    }
+  }
+
+  resolveWritePath(requested: string): string {
+    try {
+      return this.resolvePath(requested);
+    } catch (error) {
+      if (!(error instanceof PathRejectedError) || !path.isAbsolute(requested)) throw error;
+      const resolved = path.resolve(requested);
+      if (isInside(this.tempRoot, resolved)) return resolved;
+      throw error;
+    }
+  }
+
+  assertWriteRootAllowed(canonicalDirectory: string, requested: string): void {
+    for (const root of [this.workspaceRoot, this.terminalsDirectory, this.tempRoot]) {
+      if (isInside(root, canonicalDirectory)) return;
+    }
+    throw new PathRejectedError(`Resolved path escapes configured roots: ${requested}`);
   }
 
   async shell(args: ShellArgs, signal: AbortSignal): Promise<ShellResult> {
@@ -462,7 +534,7 @@ export async function startBoxExecDaemon(options: BoxExecDaemonOptions): Promise
   await stat(workspaceRoot).then(info => {
     if (!info.isDirectory()) throw new Error(`workspaceRoot is not a directory: ${workspaceRoot}`);
   });
-  const runtime = new BoxExecRuntime(workspaceRoot, terminalsDirectory, options.environment ?? process.env);
+  const runtime = new BoxExecRuntime(workspaceRoot, terminalsDirectory, options.environment ?? process.env, await realpath(tmpdir()));
   const adapter = connectNodeAdapter({
     routes(router) {
       router.service(BoxControlService, {

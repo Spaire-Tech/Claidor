@@ -38,21 +38,49 @@ import { envGateOverride } from "./cursor-experiments.js";
 // bundled table; on since 25 September 2026, now that Simeon Labs' server
 // serves the stream (simeon/sand/notify.py) and the listener relay behind
 // it (simeon/sand/listeners*.py). The safety polls stay on.
-// Two gates this table does not name, and why (F-209, 25 September 2026):
-// `sand_browser_use_subagent` stays at its bundled default, off. The
-// browserUse child and its fifteen tools are wired
-// (`host-runner-composition.ts`) and were never run on a Mac, while the
-// computerUse child, which is on, drives the box's Chromium through the
-// screen; the founder decides when to try the dedicated child
-// (`SAND_FEATURE_GATE_OVERRIDES=sand_browser_use_subagent=1` tries it
-// without a rebuild). `sand_multitask` stays at its bundled default, on:
-// it is the upstream app's own loop ("i want literally everything", 22 September).
+//
+// Five more on since 2 October 2026 (the founder: "it all need to be on"):
+//
+// `sand_browser_use_subagent` — the browserUse child: a page read as text
+// and clicked by reference (`tools/sand-browser-tools.ts`), driven by
+// Playwright over the box's shell. The computerUse child drives the screen,
+// and the box's exec daemon serves no screen actions
+// (`box-exec-daemon/server.ts`, `computerUseSupported:false`), so on the box
+// the browser child is the one that can click at all. Its clicks and drags
+// carry the `element` field auto-review asks for.
+//
+// `sand_focus_staleness_catch_up` — when the window comes back to the
+// front, it reloads the agents, pins and chats from the box at once instead
+// of waiting for its next poll.
+//
+// `sand_agent_network` — the agents' org chart view in the window.
+//
+// `sand_auto_disk_saver` — when the box reports disk pressure, the window
+// starts an agent turn that audits the box's disk and frees space.
+//
+// `sand_memory_dreaming` — the memory synthesis between turns. Its
+// extension reads the gate through `pinGateOnAuthenticatedBootstrap`, which
+// waits for Cursor's experiments server and so never answered here; the
+// wrapper below answers it from this table.
+//
+// Not named, and why: `sand_teach_by_demonstration` stays off (the founder,
+// 2 October). `sand_computer_use_unicode_typing` and `grok_bot_dynamic_tools`
+// stay at their bundled default: the first changes how the screen executor
+// types, which the box does not serve; the second marks no tool as its own
+// here, so either switch would read as on and do nothing. `sand_multitask`
+// stays at its bundled default, on: it is the upstream app's own loop ("i
+// want literally everything", 22 September).
 export const SIMEON_FEATURE_GATE_DEFAULTS: Readonly<Record<string, boolean>> = Object.freeze({
   sand_usage_page: true,
   sand_auto_review: true,
   sand_product_analytics: false,
   sand_multiplayer: true,
   sand_notify_bus: true,
+  sand_browser_use_subagent: true,
+  sand_focus_staleness_catch_up: true,
+  sand_agent_network: true,
+  sand_auto_disk_saver: true,
+  sand_memory_dreaming: true,
 });
 
 export function simeonGateDefault(name: string, env: NodeJS.ProcessEnv = process.env): boolean | undefined {
@@ -75,6 +103,7 @@ export function withSimeonGateDefaults<Snapshot>(snapshot: Snapshot, env: NodeJS
 
 export interface GateDefaultableService<Snapshot> {
   checkFeatureGate(name: any): boolean;
+  pinGateOnAuthenticatedBootstrap?(name: any, pin: (value: boolean) => void): void;
   getSnapshot(): Snapshot;
   subscribe(listener: (snapshot: Snapshot) => void): () => void;
   getFeatureFlagOverridesRecord(): Record<string, unknown>;
@@ -87,7 +116,10 @@ export interface GateDefaultableService<Snapshot> {
  * subscriber, and the gate property an extension subscribes to
  * (`getFeatureGateProperty` builds it from the raw table, so the property
  * is set to Simeon's default when one exists; 25 September 2026, the
- * sharing gate). Everything else reaches the wrapped service untouched.
+ * sharing gate), and a gate pinned on the authenticated bootstrap, which
+ * is answered at once from Simeon's default because that bootstrap comes
+ * from Cursor's experiments server and never arrives here (2 October 2026,
+ * memory dreaming). Everything else reaches the wrapped service untouched.
  */
 export function applySimeonGateDefaults<Snapshot, Service extends GateDefaultableService<Snapshot>>(service: Service, env: NodeJS.ProcessEnv = process.env): Service {
   const overrides = () => service.getFeatureFlagOverridesRecord();
@@ -107,6 +139,13 @@ export function applySimeonGateDefaults<Snapshot, Service extends GateDefaultabl
           const value = resolve(name);
           if (value !== undefined && gate.get() !== value) gate.set(value);
           return gate;
+        };
+      }
+      if (property === "pinGateOnAuthenticatedBootstrap" && typeof target.pinGateOnAuthenticatedBootstrap === "function") {
+        return (name: string, pin: (value: boolean) => void) => {
+          const value = resolve(name);
+          if (value === undefined) target.pinGateOnAuthenticatedBootstrap!(name, pin);
+          else pin(value);
         };
       }
       if (property === "getSnapshot") return () => project(target.getSnapshot());
