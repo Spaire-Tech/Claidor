@@ -1454,3 +1454,20 @@ here, and the `Names` check has still never evaluated this branch — the 72
 findings remain theoretical rather than blocking. Per the standing rule the
 dead runner gets no further re-run and no further comment; the one re-run was
 spent and stood down on earlier.
+
+**Three failures per head is the full set, not a repeat.** Both heads pushed on
+2 October produced exactly three `failure` check runs, and reading all seven jobs
+shows they are one gate job per workflow, never the same job failing repeatedly:
+
+| Head | `Detect changes` (`Server`) | `Detect changes` (`Client`) | `check` (`Names`) |
+|---|---|---|---|
+| `2175c6e9` | 110967765973 | 110967764832 | 110967765313 |
+| `aa96e2ea` | 110968398943 | 110968397869 | 110968396277 |
+
+Every one of the seven: `runner_id: 0`, empty `runner_name`, logs **404**. Two
+workflows name their gate `Detect changes`, which is why the name arrives twice
+per head — so a burst of three CI-failure wakes on one head is the normal
+complete set for this repository, and counting the wakes instead of reading the
+jobs would read it as a job failing over and over. Already commented on and
+stood down; the three on the second head are the same condition on a new head,
+not a new failure.
