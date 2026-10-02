@@ -2944,6 +2944,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             // The first message and a routine are hidden but get the asked
             // turn's budget, as in the upstream app (27 September 2026).
             ...(runOptions.fullStepBudget === true ? { fullStepBudget: true } : {}),
+            // Why these calls are made, for the usage table: a routine, an
+            // agent waking another, a nudge (`SimeonCallReason`).
+            ...(typeof runOptions.callReason === "string" ? { callReason: runOptions.callReason } : {}),
             // The turn's prompt messages, for turn-settle's silent-tool-call
             // check (the closing-send nudge) and post-turn labelling. A
             // child runs headless and has no nudge; the agent's runner takes
@@ -3148,6 +3151,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               skipLabeling: true,
               // Nobody asked for the extraction: the hidden budget applies.
               hidden: true,
+              callReason: "memory",
             }).getExecutor(),
           ),
         }),

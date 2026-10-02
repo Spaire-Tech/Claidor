@@ -219,6 +219,7 @@ export class AgentToAgentMessaging {
               buildAgentInboundWakePrompt(message),
               {
                 hidden: true,
+                callReason: "agent_wake",
                 isSilenceAllowed: true,
                 ...(selectedImages.length === 0 ? {} : { selectedImages }),
               },

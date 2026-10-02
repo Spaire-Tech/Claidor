@@ -68,7 +68,8 @@ export function createMemoryProductionExtras(
         createExecutor: () => context.deps.inference.port.createSession(() => {}, {
           modelId: SAND_SUMMARIZATION_MODEL_ID,
           isSummarizationSession: true,
-          skipLabeling: true
+          skipLabeling: true,
+          callReason: "memory"
         }).getExecutor(),
         report: event => context.deps.telemetry.logs.reportMemorySynthesis(memorySynthesisTelemetryReport(event))
       });

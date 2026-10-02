@@ -230,6 +230,7 @@ export class AutomationRunPath {
                   // A routine does real work unattended; the upstream app ran it
                   // under the same 5,000-call cap as any turn.
                   fullStepBudget: true,
+                  callReason: "routine",
                   isSilenceAllowed: true,
                   automationWake: {
                     id: args.automation.id,

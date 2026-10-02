@@ -157,7 +157,7 @@ export class AgentLifecycle {
           // Hidden (nobody asked yet) but under the asked turn's budget:
           // The upstream app gave its first message the same 5,000-call cap as any
           // turn, and its cue may begin a described assignment at once.
-          const result = await runner.run(prompt, { hidden: true, fullStepBudget: true });
+          const result = await runner.run(prompt, { hidden: true, fullStepBudget: true, callReason: "first_message" });
           let delivered = result.sentMessageCount > 0;
           if (!result.aborted && result.sentMessageCount === 0)
             delivered =

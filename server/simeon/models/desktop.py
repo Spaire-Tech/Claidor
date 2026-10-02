@@ -192,6 +192,10 @@ class DesktopUsage(RecordModel):
     stream: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     #: The status the provider answered with; a failed call costs nothing.
     upstream_status: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    #: Why the app made the call (`chat`, `routine`, `agent_wake`, `helper`,
+    #: `safety`, `memory`, `summary`, …), from the `x-simeon-call-reason`
+    #: header; None for rows written before it and apps built before it.
+    reason: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
 
 class DesktopMemoryFile(RecordModel):

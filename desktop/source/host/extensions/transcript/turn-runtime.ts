@@ -559,6 +559,7 @@ export class TurnRuntime {
       attempts += 1;
       latest = await runner.run(REPLY_NUDGE_PROMPT, {
         hidden: true,
+        callReason: "nudge",
         ackToken,
         traceCtx,
         onModelResolved: (id: string) => turn?.setModel(id),
@@ -578,6 +579,7 @@ export class TurnRuntime {
       try {
         nudged = await runner.run(CLOSING_SEND_NUDGE_PROMPT, {
           hidden: true,
+          callReason: "nudge",
           ackToken,
           traceCtx,
           onModelResolved: (id: string) => turn?.setModel(id),

@@ -208,9 +208,9 @@ export class VoiceCallChannel {
         tm.turnRuntime.activeRequestSources.set(session.id, "voice-call");
         try {
           const before = call.sentOnCall;
-          const result = await runner.run(voiceRequestWake({ address: call.address, request, quotes, midTurn: wasWorking }), { hidden: true });
+          const result = await runner.run(voiceRequestWake({ address: call.address, request, quotes, midTurn: wasWorking }), { hidden: true, callReason: "voice" });
           if (!result.aborted && call.open && call.sentOnCall === before)
-            await runner.run(replyNudge({ address: call.address }), { hidden: true });
+            await runner.run(replyNudge({ address: call.address }), { hidden: true, callReason: "nudge" });
           await tm.roster.emitAgentUpdate(session.id);
         } finally {
           tm.runLifecycle.endSessionRun(session);
@@ -234,8 +234,8 @@ export class VoiceCallChannel {
         tm.turnRuntime.activeRequestPrompts.delete(session.id);
         tm.turnRuntime.activeRequestSources.set(session.id, "voice-call");
         try {
-          const result = await runner.run(voiceEndedWake({ address: call.address }), { hidden: true });
-          if (!result.aborted && result.sentMessageCount === 0) await runner.run(callEndedNudge(), { hidden: true });
+          const result = await runner.run(voiceEndedWake({ address: call.address }), { hidden: true, callReason: "voice" });
+          if (!result.aborted && result.sentMessageCount === 0) await runner.run(callEndedNudge(), { hidden: true, callReason: "nudge" });
           await tm.roster.emitAgentUpdate(session.id);
         } finally {
           tm.runLifecycle.endSessionRun(session);

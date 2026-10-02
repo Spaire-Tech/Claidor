@@ -184,6 +184,7 @@ export class CompletionRevivals {
             buildSubagentRevivalPrompt(completions),
             {
               hidden: true,
+              callReason: "wake",
               isSilenceAllowed: true,
               autoReviewEpoch: "continue",
               ...unanswered,
@@ -296,6 +297,7 @@ export class CompletionRevivals {
             buildShellRevivalPrompt(completions),
             {
               hidden: true,
+              callReason: "wake",
               isSilenceAllowed: true,
               autoReviewEpoch: "continue",
               ...this.tm.widgetResponses.collectUnansweredQuestionPrompts(

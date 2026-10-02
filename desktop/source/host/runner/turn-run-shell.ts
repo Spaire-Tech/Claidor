@@ -27,7 +27,7 @@ import type {
   PromptSnapshotStore,
 } from "./system-prompt-assembly.js";
 import type { SummarizationPromptSession } from "../../packages/agent-summarization/summarization-handler.js";
-import { createProviderPromptSession } from "../extensions/inference/provider-session.js";
+import { createProviderPromptSession, type SimeonCallReason } from "../extensions/inference/provider-session.js";
 import type { AgentProfilePromptSnapshot } from "./sand-agent-profile-prompt.js";
 import {
   ConversationAction,
@@ -99,6 +99,7 @@ export interface TurnAgentRunContextInput<ContextValue> {
   readonly isVideoSubagent?: boolean;
   readonly hidden?: boolean;
   readonly fullStepBudget?: boolean;
+  readonly callReason?: string;
   readonly lineage?: unknown;
   readonly canUseSelfSummary: () => boolean;
   readonly diskPressureReminder?: DiskPressureReminderEpisodes;
@@ -186,7 +187,11 @@ export async function createTurnAgentRunContext<ContextValue>(
   };
   const inferenceProvider = "simeon" as const;
   const hidden = input.hidden === true;
-  const agent = createProviderPromptSession(inferenceProvider, { ...sessionOptions, hidden, ...(input.fullStepBudget === true ? { fullStepBudget: true } : {}) }) as unknown as TurnAgentPromptSession;
+  // What the usage table calls these calls: the caller's word (a routine, an
+  // agent waking another), a helper for a subagent child, else read off the
+  // flags by `simeonCallReason` (a message the person sent is `chat`).
+  const callReason = (input.callReason ?? (input.isSubagentRunner ? "helper" : undefined)) as SimeonCallReason | undefined;
+  const agent = createProviderPromptSession(inferenceProvider, { ...sessionOptions, hidden, ...(input.fullStepBudget === true ? { fullStepBudget: true } : {}), ...(callReason === undefined ? {} : { callReason }) }) as unknown as TurnAgentPromptSession;
   const summarizationSession = createProviderPromptSession(inferenceProvider, { cheap: true, isSummarizationSession: true, hidden }) as unknown as SummarizationPromptSession;
   const summarization = summarizationSession ?? input.inference.createSession(
     input.onRequestId,
@@ -349,6 +354,8 @@ export interface TurnRunOptions {
    * upstream app ran under the same cap as any turn (27 September 2026).
    */
   readonly fullStepBudget?: boolean;
+  /** Why the run's model calls are made, for the usage table (`SimeonCallReason`). */
+  readonly callReason?: string;
   readonly isSilenceAllowed?: boolean;
   readonly autoReviewEpoch?: "continue" | "new";
   readonly lineage?: {

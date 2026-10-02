@@ -91,6 +91,7 @@ export interface ProductionTurnAgentOwnerInput {
   readonly isVideoSubagent?: boolean;
   readonly hidden?: boolean;
   readonly fullStepBudget?: boolean;
+  readonly callReason?: string;
   readonly lineage?: unknown;
   readonly profilePromptSnapshot?: AgentProfilePromptSnapshot;
   readonly profilePromptSnapshotStore?: PromptSnapshotStore;
@@ -177,6 +178,7 @@ export async function createProductionTurnAgentOwner(
     isSilenceAllowed: input.isSilenceAllowed,
     ...(input.hidden === undefined ? {} : { hidden: input.hidden }),
     ...(input.fullStepBudget === true ? { fullStepBudget: true } : {}),
+    ...(input.callReason === undefined ? {} : { callReason: input.callReason }),
     ...(input.lineage === undefined ? {} : { lineage: input.lineage }),
     canUseSelfSummary: input.canUseSelfSummary,
     ...(input.diskPressureReminder === undefined
