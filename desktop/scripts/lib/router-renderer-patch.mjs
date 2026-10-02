@@ -641,6 +641,147 @@ export function patchOriginalHandoffStylesheet(css) {
   return `${css}\n${switchBlueCss()}${handoffCss()}`;
 }
 
+/**
+ * Flight results (2 October 2026; the founder: "Design it exactly like muse.
+ * Make ours match our design. Premium please."). An agent's message whose
+ * whole text is one ```simeon-flights block of JSON is drawn as the results
+ * card Muse draws: a route line, then one row per offer (airline mark,
+ * airline · price, departure — duration · stops — arrival). A row opens the
+ * offer's details in a panel on the right: the route, the total, each leg
+ * (departing, arriving, flight, cabin, time in the air, bags), the fare's
+ * refund and change rules, and one Book button. The text stays the message's
+ * own, so an older window and the phone still show it, as a code block.
+ *
+ *   {"title":"Seattle → Los Angeles · Fri Oct 2 · refundable","offers":[{
+ *     "airline":"American Airlines","logo":"https://…/AA.svg","price":"$361.20",
+ *     "depart":"6:00am","arrive":"12:18pm","duration":"6h18m","stops":"1 stop",
+ *     "route":"SEA → LAX","refundable":"Yes, no fee","changeable":"Yes, no fee",
+ *     "bags":"1 carry-on, 0 checked bags","legs":[{"from":"SEA","to":"PHX",
+ *     "departs":"Fri Oct 2 at 6:00am","arrives":"Fri Oct 2 at 9:10am",
+ *     "flight":"AA3792","carrier":"American Airlines","logo":"https://…",
+ *     "cabin":"Economy","duration":"3h10m","bags":"1 carry-on, 0 checked bags"}]}]}
+ *
+ * Book sends `simeon:flight-book` with the offer on window; booking itself
+ * is not built yet.
+ */
+const FLIGHT_ARROW_OUT = '<path d="M7 17 17 7M9 7h8v8"/>';
+const FLIGHT_ARROW_IN = '<path d="M17 7 7 17M15 17H7V9"/>';
+const FLIGHT_CLOSE = '<path d="M7 7l10 10M17 7 7 17"/>';
+const FLIGHTS_SOURCE = [
+  "function __simeonFlightsParse(n){if(typeof n!==\"string\")return null;const m=/^```simeon-flights[^\\n]*\\n([\\s\\S]*?)\\n?```$/.exec(n.trim());if(m==null)return null;try{const d=JSON.parse(m[1]);if(d==null||!Array.isArray(d.offers)||d.offers.length===0)return null;const s=v=>typeof v===\"string\"?v.trim():\"\";return{title:s(d.title),offers:d.offers.filter(o=>o!=null&&typeof o===\"object\").slice(0,8).map(o=>({airline:s(o.airline),logo:s(o.logo),price:s(o.price),depart:s(o.depart),arrive:s(o.arrive),duration:s(o.duration),stops:s(o.stops),route:s(o.route),refundable:s(o.refundable),changeable:s(o.changeable),bags:s(o.bags),legs:Array.isArray(o.legs)?o.legs.filter(l=>l!=null&&typeof l===\"object\").map(l=>({from:s(l.from),to:s(l.to),departs:s(l.departs),arrives:s(l.arrives),flight:s(l.flight),carrier:s(l.carrier),logo:s(l.logo),cabin:s(l.cabin),duration:s(l.duration),bags:s(l.bags)})):[],raw:o}))}}catch{return null}}",
+  "function __simeonInitials(n){const w=String(n||\"\").split(/\\s+/).filter(x=>x&&!/^(airlines?|airways|air)$/i.test(x));return(w.length>1?w[0][0]+w[1][0]:String(w[0]||\"?\").slice(0,2)).toUpperCase()}",
+  "function __simeonAirlineMark(n){const[f,sf]=S.useState(!1),u=n.logo;return p.jsx(\"span\",{className:`simeon-flight-mark${n.small?\" simeon-flight-mark--small\":\"\"}`,\"aria-hidden\":!0,children:u&&!f?p.jsx(\"img\",{src:u,alt:\"\",draggable:!1,onError:()=>sf(!0)}):p.jsx(\"span\",{className:\"simeon-flight-mark__initials\",children:__simeonInitials(n.name)})})}",
+  "function __simeonIcon(n){return p.jsx(\"svg\",{viewBox:\"0 0 24 24\",\"aria-hidden\":!0,className:n.className,dangerouslySetInnerHTML:{__html:n.d}})}",
+  "let __simeonFlightCloseOpen=null;",
+  "function __simeonFlights(n){const d=__simeonFlightsParse(n.content),[sel,ss]=S.useState(null);",
+  "S.useEffect(()=>{if(sel==null)return;const close=()=>ss(null);__simeonFlightCloseOpen!=null&&__simeonFlightCloseOpen!==close&&__simeonFlightCloseOpen();__simeonFlightCloseOpen=close;const k=e=>{e.key===\"Escape\"&&ss(null)};window.addEventListener(\"keydown\",k);document.documentElement.classList.add(\"simeon-flight-open\");return()=>{window.removeEventListener(\"keydown\",k);__simeonFlightCloseOpen===close&&(__simeonFlightCloseOpen=null,document.documentElement.classList.remove(\"simeon-flight-open\"))}},[sel]);",
+  "if(d==null)return null;const o=sel==null?null:d.offers[sel]??null;",
+  "return p.jsxs(p.Fragment,{children:[p.jsxs(\"section\",{className:\"simeon-flights\",\"aria-label\":d.title||\"Flights\",children:[d.title?p.jsx(\"h3\",{className:\"simeon-flights__title\",children:d.title}):null,",
+  "p.jsx(\"ul\",{className:\"simeon-flights__list\",children:d.offers.map((f,i)=>p.jsx(\"li\",{children:p.jsxs(\"button\",{type:\"button\",className:\"simeon-flights__row\",\"aria-pressed\":sel===i,onClick:()=>ss(v=>v===i?null:i),children:[p.jsx(__simeonAirlineMark,{logo:f.logo,name:f.airline}),",
+  "p.jsxs(\"span\",{className:\"simeon-flights__body\",children:[p.jsxs(\"span\",{className:\"simeon-flights__name\",children:[p.jsx(\"span\",{className:\"simeon-flights__airline\",children:f.airline}),f.price?p.jsxs(\"span\",{className:\"simeon-flights__price\",children:[\" · \",f.price]}):null]}),",
+  "p.jsxs(\"span\",{className:\"simeon-flights__times\",children:[p.jsx(\"span\",{className:\"simeon-flights__time\",children:f.depart}),p.jsx(\"span\",{className:\"simeon-flights__rule\",\"aria-hidden\":!0}),p.jsx(\"span\",{className:\"simeon-flights__span\",children:[f.duration,f.stops].filter(Boolean).join(\" · \")}),p.jsx(\"span\",{className:\"simeon-flights__rule\",\"aria-hidden\":!0}),p.jsx(\"span\",{className:\"simeon-flights__time\",children:f.arrive})]})]})]})},i))})]}),",
+  "o!=null?Wr.createPortal(p.jsx(__simeonFlightPanel,{offer:o,onClose:()=>ss(null)}),document.body):null]})}",
+  "function __simeonFlightPanel(n){const o=n.offer,route=o.route||(o.legs.length>0?`${o.legs[0].from} → ${o.legs[o.legs.length-1].to}`:o.airline),sub=[o.stops,o.duration].filter(Boolean).join(\" · \");",
+  "const book=()=>{window.dispatchEvent(new CustomEvent(\"simeon:flight-book\",{detail:o.raw}))};",
+  "return p.jsxs(\"aside\",{className:\"simeon-flight-panel\",role:\"dialog\",\"aria-label\":route,children:[p.jsxs(\"header\",{className:\"simeon-flight-panel__bar\",children:[p.jsx(\"span\",{className:\"simeon-flight-panel__bar-title\",children:route}),p.jsx(\"button\",{type:\"button\",className:\"simeon-flight-panel__close\",\"aria-label\":\"Close\",onClick:n.onClose,children:p.jsx(__simeonIcon,{d:" + JSON.stringify(FLIGHT_CLOSE) + "})})]}),",
+  "p.jsxs(\"div\",{className:\"simeon-flight-panel__scroll\",children:[p.jsxs(\"div\",{className:\"simeon-flight-panel__hero\",children:[p.jsx(\"h2\",{children:route}),sub?p.jsx(\"p\",{children:sub}):null]}),",
+  "o.price?p.jsxs(\"div\",{className:\"simeon-flight-panel__total\",children:[p.jsx(\"span\",{children:\"Total price\"}),p.jsx(\"strong\",{children:o.price})]}):null,",
+  "o.legs.map((l,i)=>p.jsxs(\"section\",{className:\"simeon-flight-panel__group\",children:[p.jsxs(\"div\",{className:\"simeon-flight-panel__leg-head\",children:[p.jsx(\"h4\",{children:`${l.from} → ${l.to}`}),p.jsx(__simeonAirlineMark,{logo:l.logo||o.logo,name:l.carrier||o.airline,small:!0})]}),",
+  "p.jsxs(\"dl\",{className:\"simeon-flight-panel__times\",children:[p.jsx(__simeonIcon,{className:\"simeon-flight-panel__glyph\",d:" + JSON.stringify(FLIGHT_ARROW_OUT) + "}),p.jsx(\"dt\",{children:\"Departing\"}),p.jsx(\"dd\",{children:l.departs}),p.jsx(__simeonIcon,{className:\"simeon-flight-panel__glyph\",d:" + JSON.stringify(FLIGHT_ARROW_IN) + "}),p.jsx(\"dt\",{children:\"Arriving\"}),p.jsx(\"dd\",{children:l.arrives})]}),",
+  "p.jsx(\"div\",{className:\"simeon-flight-panel__facts\",children:[[l.flight,l.carrier].filter(Boolean).join(\" · \"),l.cabin,l.duration,l.bags].filter(Boolean).map((t,j)=>p.jsx(\"p\",{children:t},j))})]},i)),",
+  "o.refundable||o.changeable||o.bags?p.jsxs(\"section\",{className:\"simeon-flight-panel__group simeon-flight-panel__fare\",children:[o.refundable?p.jsxs(\"div\",{children:[p.jsx(\"span\",{children:\"Refundable\"}),p.jsx(\"span\",{children:o.refundable})]}):null,o.changeable?p.jsxs(\"div\",{children:[p.jsx(\"span\",{children:\"Changeable\"}),p.jsx(\"span\",{children:o.changeable})]}):null,o.bags?p.jsxs(\"div\",{children:[p.jsx(\"span\",{children:\"Bags\"}),p.jsx(\"span\",{children:o.bags})]}):null]}):null]}),",
+  "p.jsx(\"footer\",{className:\"simeon-flight-panel__foot\",children:p.jsx(\"button\",{type:\"button\",className:\"simeon-flight-panel__book\",onClick:book,children:\"Book with Simeon\"})})]})}",
+].join("");
+const FLIGHTS_COMPONENTS_ANCHOR = "function __simeonHandoffCard(n){";
+const FLIGHTS_MESSAGE_BEFORE = CALL_RECORD_AFTER;
+const FLIGHTS_MESSAGE_AFTER = `(!h&&__simeonFlightsParse(r)!=null?p.jsx(__simeonFlights,{content:r}):${CALL_RECORD_AFTER})`;
+export const FLIGHTS_REPLACEMENTS = Object.freeze([
+  ["flights-components", FLIGHTS_COMPONENTS_ANCHOR, `${FLIGHTS_SOURCE}${FLIGHTS_COMPONENTS_ANCHOR}`],
+  ["flights-message", FLIGHTS_MESSAGE_BEFORE, FLIGHTS_MESSAGE_AFTER],
+]);
+
+/** Runs after the voice-call and take-over patches: it wraps the one and sits beside the other. */
+export function patchOriginalFlights(source) {
+  let out = source;
+  for (const [label, before, after] of FLIGHTS_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export const FLIGHTS_MARKER = "/* Simeon: flight results";
+/**
+ * Measured on the founder's reference (Muse, 2 October 2026), at half its
+ * 2x pixels: a 32 pt airline mark in a white circle, 15 pt rows 44 pt apart,
+ * the route line 15 pt semibold over them; the panel 366 pt wide with a 15
+ * pt route in its bar, a 22 pt route over a 13 pt grey summary, the total on
+ * one line, then each leg as its own rounded group, and a full-width Book
+ * button at the foot. Ours: greys only, the window's own blue for Book and
+ * the selected row's ring, SF type, grouped panels as Settings draws them.
+ * As in Muse the panel takes its width from the chat (\`main.sand-chat\`),
+ * which steps aside rather than being covered.
+ */
+export const flightsCss = () => `${FLIGHTS_MARKER} (2 October 2026). */
+.simeon-flights,.simeon-flight-panel{--f-ink:light-dark(#1d1d1f,#f5f5f7);--f-ink-2:light-dark(#6e6e73,#98989d);--f-ink-3:light-dark(#aeaeb2,#636366);--f-line:light-dark(rgba(0,0,0,.08),rgba(255,255,255,.1));--f-group:light-dark(#f5f5f7,#2c2c2e);--f-panel:light-dark(#ffffff,#1c1c1e);--f-hover:light-dark(rgba(0,0,0,.04),rgba(255,255,255,.06));--f-blue:light-dark(${USER_BUBBLE_LIGHT},${SWITCH_BLUE_DARK});font-family:${PANE_FONT};color:var(--f-ink);-webkit-font-smoothing:antialiased}
+.simeon-flights{box-sizing:border-box;width:100%;min-width:300px;max-width:400px;padding:2px 0}
+.simeon-flights__title{margin:0 0 6px;font-size:15px;line-height:20px;font-weight:600;letter-spacing:-.01em}
+.simeon-flights__list{list-style:none;margin:0 -8px;padding:0}
+.simeon-flights__row{appearance:none;display:grid;grid-template-columns:36px minmax(0,1fr);align-items:center;gap:12px;width:100%;margin:0;padding:7px 8px;border:0;border-radius:12px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:default;transition:background-color .15s}
+.simeon-flights__row:hover{background:var(--f-hover)}
+.simeon-flights__row[aria-pressed="true"]{background:var(--f-hover);box-shadow:inset 0 0 0 1.5px var(--f-blue)}
+.simeon-flights__row:focus-visible{outline:none;box-shadow:0 0 0 3px light-dark(rgba(37,90,147,.3),rgba(47,109,176,.45))}
+.simeon-flights__body{display:flex;flex-direction:column;gap:2px;min-width:0}
+.simeon-flights__name{font-size:15px;line-height:20px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.simeon-flights__price{font-variant-numeric:tabular-nums}
+.simeon-flights__times{display:flex;align-items:center;gap:6px;font-size:13px;line-height:18px;font-variant-numeric:tabular-nums}
+.simeon-flights__time{flex:none;color:var(--f-ink)}
+.simeon-flights__span{flex:none;color:var(--f-ink-2)}
+.simeon-flights__rule{flex:1 1 12px;min-width:12px;height:0;border-top:1px dashed var(--f-ink-3)}
+.simeon-flight-mark{flex:none;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:#ffffff;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);overflow:hidden}
+.simeon-flight-mark img{width:24px;height:24px;object-fit:contain;display:block}
+.simeon-flight-mark__initials{font-size:12px;font-weight:600;letter-spacing:.02em;color:#3a3a3c}
+.simeon-flight-mark--small{width:28px;height:28px}
+.simeon-flight-mark--small img{width:18px;height:18px}
+.simeon-flight-mark--small .simeon-flight-mark__initials{font-size:10px}
+main.sand-chat{transition:margin-right .26s cubic-bezier(.2,.8,.2,1)}
+.simeon-flight-open main.sand-chat{margin-right:min(380px,100vw)}
+.simeon-flight-panel{position:fixed;z-index:60;top:0;right:0;bottom:0;width:min(380px,100vw);display:flex;flex-direction:column;background:var(--f-panel);box-shadow:-1px 0 0 var(--f-line),-24px 0 48px -24px rgba(0,0,0,.18);animation:simeon-flight-in .26s cubic-bezier(.2,.8,.2,1)}
+@keyframes simeon-flight-in{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.simeon-flight-panel{animation:none}}
+.simeon-flight-panel__bar{flex:none;display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 14px 0 20px;-webkit-app-region:no-drag}
+.simeon-flight-panel__bar-title{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.simeon-flight-panel__close{appearance:none;display:flex;align-items:center;justify-content:center;width:28px;height:28px;margin:0;padding:0;border:0;border-radius:50%;background:var(--f-group);color:var(--f-ink-2);cursor:default;transition:background-color .15s,color .15s}
+.simeon-flight-panel__close:hover{color:var(--f-ink);background:light-dark(#e8e8ed,#3a3a3c)}
+.simeon-flight-panel__close svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.simeon-flight-panel__scroll{flex:1;overflow:auto;padding:12px 20px 24px;display:flex;flex-direction:column;gap:12px}
+.simeon-flight-panel__hero h2{margin:0;font-size:22px;line-height:28px;font-weight:600;letter-spacing:-.02em}
+.simeon-flight-panel__hero p{margin:2px 0 0;font-size:13px;line-height:18px;color:var(--f-ink-2)}
+.simeon-flight-panel__total{display:flex;align-items:baseline;justify-content:space-between;padding:6px 0 4px;font-size:15px;font-weight:600}
+.simeon-flight-panel__total strong{font-size:20px;line-height:24px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.simeon-flight-panel__group{padding:14px 16px;border-radius:14px;background:var(--f-group)}
+.simeon-flight-panel__leg-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.simeon-flight-panel__leg-head h4{margin:0;font-size:15px;line-height:20px;font-weight:600}
+.simeon-flight-panel__times{display:grid;grid-template-columns:16px auto minmax(0,1fr);align-items:center;column-gap:10px;row-gap:8px;margin:0;padding-bottom:12px;border-bottom:1px solid var(--f-line);font-size:13px;line-height:18px}
+.simeon-flight-panel__times dt{color:var(--f-ink-2);padding-right:8px}
+.simeon-flight-panel__times dd{margin:0;font-variant-numeric:tabular-nums}
+.simeon-flight-panel__glyph{width:15px;height:15px;fill:none;stroke:var(--f-ink-2);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.simeon-flight-panel__facts{padding-top:10px;display:flex;flex-direction:column;gap:3px}
+.simeon-flight-panel__facts p{margin:0;font-size:13px;line-height:18px;color:var(--f-ink-2)}
+.simeon-flight-panel__facts p:first-child{color:var(--f-ink)}
+.simeon-flight-panel__fare{display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:18px}
+.simeon-flight-panel__fare div{display:flex;justify-content:space-between;gap:16px}
+.simeon-flight-panel__fare div span:first-child{color:var(--f-ink-2)}
+.simeon-flight-panel__fare div span:last-child{text-align:right}
+.simeon-flight-panel__foot{flex:none;padding:12px 20px 20px;border-top:1px solid var(--f-line)}
+.simeon-flight-panel__book{appearance:none;display:block;width:100%;height:44px;margin:0;border:0;border-radius:999px;background:var(--f-blue);color:#ffffff;font:inherit;font-size:15px;font-weight:600;letter-spacing:-.01em;cursor:default;transition:filter .15s}
+.simeon-flight-panel__book:hover{filter:brightness(1.08)}
+.simeon-flight-panel__book:active{filter:brightness(.95)}
+.simeon-flight-panel__book:focus-visible{outline:none;box-shadow:0 0 0 3px light-dark(rgba(37,90,147,.3),rgba(47,109,176,.45))}
+`;
+
+export function patchOriginalFlightsStylesheet(css) {
+  if (css.includes(FLIGHTS_MARKER)) throw new Error("Original renderer flight results block is already present.");
+  return `${css}\n${flightsCss()}`;
+}
+
 export function patchOriginalAgentPaneStylesheet(css) {
   if (css.includes(AGENT_PANE_MARKER)) throw new Error("Original renderer agent pane block is already present.");
   return `${css}\n${AGENT_PANE_CSS}`;
@@ -1293,7 +1434,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!AGENT_PANE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer agent pane anchors (the info pane, its view guard, the chat header's computer button) are not all in the mark chunk.");
   if (!HANDOFF_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer take-over card anchor is not in the mark chunk.");
   const logoAssets = await readLogoAssets();
-  const markPatched = patchOriginalHandoff(patchOriginalAgentPane(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions))))));
+  const markPatched = patchOriginalFlights(patchOriginalHandoff(patchOriginalAgentPane(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions)))))));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -1302,7 +1443,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  const stylesheetPatched = patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets))));
+  const stylesheetPatched = patchOriginalFlightsStylesheet(patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets)))));
   const chunkSources = [];
   for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
   const styleAnchors = {
@@ -1377,7 +1518,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "flight-results"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
