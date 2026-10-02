@@ -171,8 +171,9 @@ test("the name step: the apps step's agents gather over one field, and the last 
   assert.match(by["name-step-agents"], /^case"name":return\{\.\.\.t,\.\.\.__simeonNameSeat\[e\],opacity:1/);
   assert.match(by["name-step-component"], /title:"What should your agents call you\?"/);
   assert.match(by["name-step-component"], /a\.updateName\(name\)/, "saved through the account's own rename");
-  assert.match(by["name-step-component"], /`Hi, \$\{first\}\.`/);
+  assert.doesNotMatch(by["name-step-component"], /Hi, /, "no greeting bubble");
   for (const seat of ["weekly-standup", "invoice-chaser", "sales-forecast"]) assert.match(by["name-step-component"], new RegExp(`"${seat}":\\{"x"`));
   assert.equal(by["hand-off-text-only"], 'x=p.jsxs("div",{className:f,style:m.style,children:[v,b]})');
-  assert.match(NAME_CSS, /prefers-reduced-motion:reduce/);
+  assert.match(NAME_CSS, /background:light-dark\(#fff,#1c1c1e\)/, "a white field");
+  assert.match(NAME_CSS, /height:38px/);
 });

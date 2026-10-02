@@ -862,24 +862,23 @@ const COO_PIN_SOURCE = "var __simeonCooId=null;function __simeonFindCoo(n){let c
  * inherit the design we have, and remake the animation for What do you use
  * everyday avatars based on that").
  *
- * The three agents of the apps step bounce in and gather over one field, the
- * middle one greeting the name as it is typed ("Hi, Bass."), in the agents'
- * own grey bubble; on Next they fly from there to their places on the apps
+ * The three agents of the apps step bounce in and gather over one white field
+ * (the founder: "no grey, make it white. no Hi, bass. thinner writing box");
+ * on Next they fly from there to their places on the apps
  * step (the flow's own avatar choreography, `eqn`). The name is saved
  * through the account's own rename, the same as the name sheet, which then
  * never needs to ask. Empty is allowed: Next skips, and the sheet asks later.
  */
-const NAME_SEATS = Object.freeze({ "weekly-standup": { x: -168, y: -86, scale: 0.62 }, "invoice-chaser": { x: 0, y: -118, scale: 0.72 }, "sales-forecast": { x: 168, y: -86, scale: 0.62 } });
+const NAME_SEATS = Object.freeze({ "weekly-standup": { x: -168, y: -64, scale: 0.62 }, "invoice-chaser": { x: 0, y: -96, scale: 0.72 }, "sales-forecast": { x: 168, y: -64, scale: 0.62 } });
 const NAME_SOURCE = [
   `const __simeonNameSeat=${JSON.stringify(NAME_SEATS)};`,
   "function __simeonNameStep(n){const{headingId:t,onForward:r,onBack:i}=n,d=typeof window<\"u\"?window.desktop:void 0,a=d?.cursorAccount,[v,sv]=S.useState(\"\"),ip=S.useRef(null),touched=S.useRef(!1);",
   "S.useEffect(()=>{let l=!0;Promise.resolve(a?.getNamePrompt?.()).then(q=>{l&&!touched.current&&typeof q?.suggested===\"string\"&&sv(q.suggested)},()=>{});const f=setTimeout(()=>ip.current?.focus(),450);return()=>{l=!1;clearTimeout(f)}},[]);",
-  "const name=v.replace(/\\s+/g,\" \").trim().slice(0,60),first=name.split(\" \")[0]??\"\";",
+  "const name=v.replace(/\\s+/g,\" \").trim().slice(0,60);",
   "const go=()=>{name.length>0&&a?.updateName!=null&&Promise.resolve(a.updateName(name)).catch(()=>{});r()};",
-  "const hi=p.jsx(fde,{x:0,y:-34,ariaHidden:!0,className:\"simeon-name__hi-seat\",children:p.jsx(\"div\",{className:re(\"simeon-name__hi\",first.length>0&&\"is-on\"),children:first.length>0?`Hi, ${first}.`:\"Hi\"})},\"hi\");",
-  "const field=p.jsx(fde,{x:0,y:34,className:\"simeon-name__field-seat\",children:p.jsx(\"form\",{onSubmit:e=>{e.preventDefault();go()},children:p.jsx(\"input\",{ref:ip,className:\"simeon-name__input\",type:\"text\",autoComplete:\"given-name\",spellCheck:!1,maxLength:60,placeholder:\"Your name\",\"aria-label\":\"Your name\",value:v,onChange:e=>{touched.current=!0;sv(e.target.value)}})})},\"field\");",
-  "const note=p.jsx(fde,{x:0,y:86,className:\"simeon-name__note-seat\",children:p.jsx(\"p\",{className:\"simeon-name__note\",children:\"They’ll use it in chat and on calls. You can change it later.\"})},\"note\");",
-  "return p.jsx(tye,{className:re(\"sand-onboarding__name\",\"simeon-name\"),footer:p.jsx(nye,{onBack:i,onForward:go}),headingId:t,title:\"What should your agents call you?\",children:[hi,field,note]})}",
+  "const field=p.jsx(fde,{x:0,y:4,className:\"simeon-name__field-seat\",children:p.jsx(\"form\",{onSubmit:e=>{e.preventDefault();go()},children:p.jsx(\"input\",{ref:ip,className:\"simeon-name__input\",type:\"text\",autoComplete:\"given-name\",spellCheck:!1,maxLength:60,placeholder:\"Your name\",\"aria-label\":\"Your name\",value:v,onChange:e=>{touched.current=!0;sv(e.target.value)}})})},\"field\");",
+  "const note=p.jsx(fde,{x:0,y:44,className:\"simeon-name__note-seat\",children:p.jsx(\"p\",{className:\"simeon-name__note\",children:\"They’ll use it in chat and on calls. You can change it later.\"})},\"note\");",
+  "return p.jsx(tye,{className:re(\"sand-onboarding__name\",\"simeon-name\"),footer:p.jsx(nye,{onBack:i,onForward:go}),headingId:t,title:\"What should your agents call you?\",children:[field,note]})}",
 ].join("");
 export const NAME_STEP_REPLACEMENTS = Object.freeze([
   ["name-step-screen", "case\"tools\":return p.jsx(Ljn,{", "case\"name\":return p.jsx(__simeonNameStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>x.advance(ln)});case\"tools\":return p.jsx(Ljn,{"],
@@ -890,14 +889,11 @@ export const NAME_STEP_REPLACEMENTS = Object.freeze([
   ["hand-off-text-only", "x=p.jsxs(\"div\",{className:f,style:m.style,children:[y,v,b]})", "x=p.jsxs(\"div\",{className:f,style:m.style,children:[v,b]})"],
 ]);
 export const NAME_CSS = `/* Simeon: the name step */
-.simeon-name{--simeon-name-ink-2:light-dark(rgba(60,60,67,.6),rgba(235,235,245,.6));--simeon-name-fill:light-dark(rgba(120,120,128,.08),rgba(120,120,128,.24));--simeon-name-bubble:light-dark(#e9e9eb,#2c2c2e)}
-.simeon-name__input{box-sizing:border-box;width:320px;height:52px;padding:0 20px;border:0;border-radius:14px;background:var(--simeon-name-fill);color:inherit;font:inherit;font-size:20px;line-height:24px;letter-spacing:-.01em;text-align:center;outline:none;caret-color:#0a84ff;transition:box-shadow .2s,background-color .2s}
+.simeon-name{--simeon-name-ink-2:light-dark(rgba(60,60,67,.6),rgba(235,235,245,.6))}
+.simeon-name__input{box-sizing:border-box;width:300px;height:38px;padding:0 14px;border:1px solid light-dark(rgba(60,60,67,.16),rgba(235,235,245,.16));border-radius:10px;background:light-dark(#fff,#1c1c1e);color:inherit;font:inherit;font-size:16px;line-height:20px;letter-spacing:-.01em;text-align:center;outline:none;caret-color:#0a84ff;box-shadow:0 1px 2px light-dark(rgba(0,0,0,.04),rgba(0,0,0,.3));transition:border-color .2s,box-shadow .2s}
 .simeon-name__input::placeholder{color:light-dark(rgba(60,60,67,.3),rgba(235,235,245,.3))}
-.simeon-name__input:focus{box-shadow:0 0 0 4px light-dark(rgba(10,132,255,.18),rgba(10,132,255,.32))}
+.simeon-name__input:focus{border-color:light-dark(rgba(10,132,255,.55),rgba(10,132,255,.7));box-shadow:0 0 0 3px light-dark(rgba(10,132,255,.14),rgba(10,132,255,.28))}
 .simeon-name__note{margin:0;font-size:13px;line-height:18px;color:var(--simeon-name-ink-2);white-space:nowrap;text-align:center}
-.simeon-name__hi{padding:7px 14px;border-radius:18px;background:var(--simeon-name-bubble);font-size:15px;line-height:20px;letter-spacing:-.01em;white-space:nowrap;opacity:0;transform:translateY(6px) scale(.7);transform-origin:50% 0;transition:opacity .25s ease,transform .45s cubic-bezier(.34,1.56,.64,1)}
-.simeon-name__hi.is-on{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){.simeon-name__hi{transition:none}}
 `;
 
 export const FIRST_AGENT_REPLACEMENTS = Object.freeze([
