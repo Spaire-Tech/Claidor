@@ -132,6 +132,9 @@ export class Engine {
         headers: {
           authorization: `Bearer ${this.options.jobToken}`,
           'content-type': 'application/json',
+          // What the call is for, stored on the usage row beside the app's
+          // own reasons (`x-simeon-call-reason`, server/simeon/desktop/endpoints.py).
+          'x-simeon-call-reason': 'cloud_agent',
         },
         body: JSON.stringify(body),
         signal: controller.signal,

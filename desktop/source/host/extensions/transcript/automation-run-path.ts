@@ -55,8 +55,25 @@ function resolveAutomationStreamRetryPolicy(
   };
 }
 
+// At most this many unattended runs of one routine in 24 hours (2 October
+// 2026). The 15-minute gap still allows 96 a day, enough to spend a person's
+// whole month in a day; a routine past the cap waits until its oldest run of
+// the day is 24 hours old. Counted in memory: a restart of the host starts
+// the count again. Runs the person starts by hand are not counted.
+export const ROUTINE_MAX_RUNS_PER_DAY = 24;
+const DAY_MS = 24 * 60 * 60_000;
+
+/** Records a run at `now` and says true, or says false when `cap` runs already fell in the last day. */
+export function takeRoutineRunSlot(times: number[], now: number, cap: number): boolean {
+  while (times.length > 0 && now - times[0]! >= DAY_MS) times.shift();
+  if (times.length >= cap) return false;
+  times.push(now);
+  return true;
+}
+
 export class AutomationRunPath {
   readonly inFlightAutomationKeys = new Set<string>();
+  readonly unattendedRunTimes = new Map<string, number[]>();
   readonly automationFailureOccurrences = new Map<string, number>();
 
   constructor(
@@ -154,6 +171,20 @@ export class AutomationRunPath {
           return undefined;
         }
         spendGuardReminder = guard.reminder;
+        const times = this.unattendedRunTimes.get(runKey) ?? [];
+        this.unattendedRunTimes.set(runKey, times);
+        if (!takeRoutineRunSlot(times, Date.now(), readIntEnv("SAND_ROUTINE_MAX_RUNS_PER_DAY", ROUTINE_MAX_RUNS_PER_DAY, 1))) {
+          this.eventFires.reportFireDropped({
+            agentId: args.agentId,
+            trigger: args.trigger,
+            reason: "daily_run_cap",
+            ...(args.scheduledForMs === undefined
+              ? {}
+              : { scheduledForMs: args.scheduledForMs }),
+            ...(args.runUuid === undefined ? {} : { runUuid: args.runUuid }),
+          });
+          return undefined;
+        }
       }
       await this.tm.automationRuntime.enqueueAutomationLifecycleMutation({
         agentId: session.id,
@@ -230,6 +261,7 @@ export class AutomationRunPath {
                   // A routine does real work unattended; the upstream app ran it
                   // under the same 5,000-call cap as any turn.
                   fullStepBudget: true,
+                  callReason: "routine",
                   isSilenceAllowed: true,
                   automationWake: {
                     id: args.automation.id,

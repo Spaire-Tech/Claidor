@@ -691,6 +691,10 @@ class TestCron:
         await session.refresh(row)
         assert row.next_fire_at is not None
         assert row.next_fire_at > slot
+        # Every five minutes asked, every fifteen kept: the slot after a fire
+        # is at least ROUTINE_MIN_INTERVAL away.
+        assert row.next_fire_at - (slot + timedelta(seconds=1)) >= timedelta(minutes=14)
+        assert row.next_fire_at.minute % 5 == 0
         # The next slot is due too, but the first fire is still pending: no second one.
         assert (
             await listeners.fire_due_crons(

@@ -999,6 +999,7 @@ class DesktopService:
         usage: Usage,
         stream: bool,
         upstream_status: int,
+        reason: str | None = None,
     ) -> DesktopUsage:
         row = DesktopUsage(
             user_id=user_id,
@@ -1016,6 +1017,7 @@ class DesktopService:
             credits=credits_for(model, usage) if upstream_status == 200 else 0,
             stream=stream,
             upstream_status=upstream_status,
+            reason=reason,
         )
         session.add(row)
         await session.flush()

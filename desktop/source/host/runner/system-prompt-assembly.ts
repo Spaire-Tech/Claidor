@@ -31,7 +31,7 @@ import {
   SAND_MCP_MULTI_ACCOUNT_PROMPT_SECTION,
   SAND_SYSTEM_PROMPT_CLOUD_AGENTS_DISABLED,
 } from "./system-prompt.js";
-import { renderAutomationsSystemPrompt, type AutomationRecord } from "../automations/automation.js";
+import { renderAutomationListSystemPrompt, renderAutomationsSystemPrompt, type AutomationRecord } from "../automations/automation.js";
 import { renderTimeZoneSystemPrompt } from "../../shared/timezone.js";
 import { renderUserIdentitySystemPrompt } from "../sand-user-identity.js";
 import { renderWorkflowsSystemPrompt } from "../../shared/workflow-model.js";
@@ -217,8 +217,17 @@ export function createSystemPromptAssembly(deps: SystemPromptAssemblyDependencie
       (store.listDefinitions?.() ?? store.list()).slice(0, 100),
       modelVisibleLocation(store.getLocation()),
       deps.requestContext.resolve().timeZone,
+      { omitList: true },
     );
     return rendered.length > 0 ? rendered : null;
+  }
+
+  // The routines themselves, at the end of the prompt with the other lists
+  // that change (getSystemPrompt). Only where the guide above was rendered.
+  function getAutomationListSection(): string | null {
+    const store = deps.automationStore();
+    if (store == null || modelVisibleLocation(store.getLocation()) == null) return null;
+    return renderAutomationListSystemPrompt((store.listDefinitions?.() ?? store.list()).slice(0, 100));
   }
 
   function getWorkflowsSection(): string | null {
@@ -266,8 +275,16 @@ export function createSystemPromptAssembly(deps: SystemPromptAssemblyDependencie
     if (deps.isSystemPromptOverridden && !deps.isSubagentRunner && cloudDisabled) add(SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION);
     if (!deps.isSubagentRunner && deps.mcpManagement() != null && deps.isMcpMultiAccountEnabled?.() === true) add(SAND_MCP_MULTI_ACCOUNT_PROMPT_SECTION);
     add(getTimeZoneSection());
-    add(getMemorySection()); add(getAutomationsSection()); add(getWorkflowsSection()); add(getChannelsSection()); if (!deps.isSubagentRunner) add(voiceCallsSection()); add(getAgentDirectorySection());
-    add(deps.mcpCustomInstructionsSection()); add(deps.mcpDiscoveryStatusSection()); add(deps.remoteBoxSection()); add(deps.computerSection());
+    add(getMemorySection()); add(getAutomationsSection()); add(getWorkflowsSection()); if (!deps.isSubagentRunner) add(voiceCallsSection());
+    add(deps.remoteBoxSection()); add(deps.computerSection());
+    // Last, the sections that change while a conversation goes on: the
+    // channels connected, the teammates, the routines, the connected apps'
+    // instructions and whether discovering them failed this turn. OpenAI
+    // caches a prompt by its longest unchanged start, so with these at the
+    // end a new teammate or routine no longer sends the whole guide above
+    // back at full price (2 October 2026; it was in the middle until then).
+    add(getChannelsSection()); add(getAgentDirectorySection()); add(getAutomationListSection());
+    add(deps.mcpCustomInstructionsSection()); add(deps.mcpDiscoveryStatusSection());
     return sections.join("\n\n");
   }
 

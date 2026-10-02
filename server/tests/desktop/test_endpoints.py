@@ -488,6 +488,47 @@ class TestProxy:
         assert expected == 200
         assert quota.json()["data"]["creditsUsed"] == expected
 
+    @pytest.mark.parametrize(
+        ("sent", "stored"),
+        [("routine", "routine"), ("Agent_Wake", "agent_wake"), ("no spaces!", None)],
+    )
+    async def test_the_call_reason_is_stored_and_not_forwarded(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+        sent: str,
+        stored: str | None,
+    ) -> None:
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-test")
+        access, _ = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            route = mock.post(
+                f"{settings.DESKTOP_ANTHROPIC_BASE_URL}/v1/messages"
+            ).mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "id": "msg_1",
+                        "content": [{"type": "text", "text": "Hello"}],
+                        "usage": {"input_tokens": 100, "output_tokens": 20},
+                    },
+                )
+            )
+            response = await client.post(
+                "/desktop/api/proxy/v1/messages",
+                headers={
+                    "Authorization": f"Bearer {access}",
+                    "x-simeon-call-reason": sent,
+                },
+                json={"model": "claude-sonnet-5", "max_tokens": 64, "messages": []},
+            )
+        assert response.status_code == 200
+        assert "x-simeon-call-reason" not in route.calls[0].request.headers
+        rows = (await session.execute(DesktopUsage.__table__.select())).all()
+        assert [row.reason for row in rows] == [stored]
+
     async def test_a_streaming_call_relays_the_events_and_meters_at_the_end(
         self,
         client: httpx.AsyncClient,

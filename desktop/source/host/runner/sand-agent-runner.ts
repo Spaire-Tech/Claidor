@@ -1201,6 +1201,8 @@ export class SandAgentRunner<T = unknown> {
       readonly requestSource?: string;
       /** A hidden run that still gets the asked-turn call budget (the first message, a routine). */
       readonly fullStepBudget?: boolean;
+      /** Why the run's model calls are made, for the usage table (`SimeonCallReason`). */
+      readonly callReason?: string;
     } = {},
   ): Promise<T | SandAgentRunnerResult | undefined> {
     const trimmed = prompt.trim();

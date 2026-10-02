@@ -69,6 +69,7 @@ export const autoReviewExtension = defineHostExtension<
           modelId: SAND_SUMMARIZATION_MODEL_ID,
           isSummarizationSession: true,
           skipLabeling: true,
+          callReason: "safety",
         }).getExecutor() as Parameters<typeof createSimeonSmartModeClassifierExecutor>[0]["createExecutor"] extends () => infer R ? R : never,
       }),
     });

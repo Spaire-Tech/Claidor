@@ -109,7 +109,7 @@ test("every model call writes one line with its tokens, and cached tokens are co
     assert.equal(usage.inputTokens, 1_000, "input is what was not cached");
     assert.equal(usage.outputTokens, 130);
     assert.equal(lines.length, 1);
-    assert.match(lines[0], /^\[simeon\] model=gpt-6-sol effort=high input=60000 cached=59000 output=130 reasoning=90 ms=\d+ tools=- offered=- budget=5000 prefix=sys:[0-9a-f]{8},tools:[0-9a-f]{8},key:-$/);
+    assert.match(lines[0], /^\[simeon\] model=gpt-6-sol effort=medium input=60000 cached=59000 output=130 reasoning=90 ms=\d+ tools=- offered=- budget=5000 prefix=sys:[0-9a-f]{8},tools:[0-9a-f]{8},key:-$/);
     assert.equal(loaded.module.summarizeToolCalls([{ toolName: "SendMessage", args: { text: "hello there" } }, { toolName: "run_shell", args: { command: "ls" } }]), 'SendMessage({"text":"hello there"}) run_shell({"command":"ls"})');
   } finally {
     loaded.module.setModelCallLog(null);
@@ -140,7 +140,7 @@ test("the intro is the upstream app's own cue again, runs once, hidden, under th
   const source = await readFile(path.join(repoRoot, "source/host/extensions/transcript/agent-lifecycle.ts"), "utf8");
   const kickstart = source.slice(source.indexOf("async kickstartAgent("), source.indexOf("async requestDiskSaverAudit("));
   // Hidden (nobody asked yet) but with the upstream app's 5,000-call budget.
-  assert.match(kickstart, /await runner\.run\(prompt, \{ hidden: true, fullStepBudget: true \}\)/);
+  assert.match(kickstart, /await runner\.run\(prompt, \{ hidden: true, fullStepBudget: true, callReason: "first_message" \}\)/);
 });
 
 test("the intro runs once: the lifecycle stops owing it after one attempt, delivered or not", async () => {
@@ -222,12 +222,12 @@ test("the first message and a routine get the upstream app's 5,000 calls; nudges
     await loaded.dispose();
   }
   const routine = await readFile(path.join(repoRoot, "source/host/extensions/transcript/automation-run-path.ts"), "utf8");
-  assert.match(routine, /hidden: true,\n(?:\s*\/\/[^\n]*\n)*\s*fullStepBudget: true,\n\s*isSilenceAllowed: true,/);
+  assert.match(routine, /hidden: true,\n(?:\s*\/\/[^\n]*\n)*\s*fullStepBudget: true,\n\s*callReason: "routine",\n\s*isSilenceAllowed: true,/);
   const composition = await readFile(path.join(repoRoot, "source/host/host-runner-composition.ts"), "utf8");
   assert.match(composition, /\.\.\.\(runOptions\.fullStepBudget === true \? \{ fullStepBudget: true \} : \{\}\),/);
   const shell = await readFile(path.join(repoRoot, "source/host/runner/turn-run-shell.ts"), "utf8");
-  assert.match(shell, /createProviderPromptSession\(inferenceProvider, \{ \.\.\.sessionOptions, hidden, \.\.\.\(input\.fullStepBudget === true \? \{ fullStepBudget: true \} : \{\}\) \}\)/);
+  assert.match(shell, /createProviderPromptSession\(inferenceProvider, \{ \.\.\.sessionOptions, hidden, \.\.\.\(input\.fullStepBudget === true \? \{ fullStepBudget: true \} : \{\}\), \.\.\.\(callReason === undefined \? \{\} : \{ callReason \}\) \}\)/);
   // The reply nudge after an undelivered intro stays on the hidden budget.
   const lifecycle = await readFile(path.join(repoRoot, "source/host/extensions/transcript/automation-runtime.ts"), "utf8");
-  assert.match(lifecycle, /runner\.run\(REPLY_NUDGE_PROMPT, \{ hidden: true \}\)/);
+  assert.match(lifecycle, /runner\.run\(REPLY_NUDGE_PROMPT, \{ hidden: true, callReason: "nudge" \}\)/);
 });

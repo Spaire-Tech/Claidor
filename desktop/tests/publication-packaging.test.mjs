@@ -108,14 +108,14 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(providers, /parameters: jsonSchema\(parameters\)/);
   assert.match(providers, /You are Simeon, a warm, concise desktop assistant/);
   assert.match(providers, /recordRoutedUsage\(provider, usage\)/);
-  assert.match(providers, /return simeonExecutor\(this\.getMessages\(\), invocationId, definitions, undefined, this\.onUsage, this\.modelId, this\.reasoningEffort, this\.budget, this\.onRequestId, simeonPromptCacheKey\(conversationIdFromContext\(ctx\)\)\);/);
+  assert.match(providers, /return simeonExecutor\(this\.getMessages\(\), invocationId, definitions, undefined, this\.onUsage, this\.modelId, effort, this\.budget, this\.onRequestId, simeonPromptCacheKey\(conversationIdFromContext\(ctx\)\), this\.callReason\);/);
   assert.match(cursorSession, /routedProvider !== "cursor"/);
   assert.match(cursorSession, /createProviderPromptSession\(routedProvider, sessionOptions\)/);
   assert.match(cursorBackend, /routedProvider !== "cursor"/);
   assert.match(cursorBackend, /createProviderPromptSession\(routedProvider, \{ modelId: options\.requestedModel\.modelId \}\)/);
   assert.doesNotMatch(rendererPatch, /ANTHROPIC_API_KEY|OPENAI_API_KEY/);
   assert.match(turnShell, /const inferenceProvider = "simeon"/);
-  assert.match(turnShell, /createProviderPromptSession\(inferenceProvider, \{ \.\.\.sessionOptions, hidden, \.\.\.\(input\.fullStepBudget === true \? \{ fullStepBudget: true \} : \{\}\) \}\)/);
+  assert.match(turnShell, /createProviderPromptSession\(inferenceProvider, \{ \.\.\.sessionOptions, hidden, \.\.\.\(input\.fullStepBudget === true \? \{ fullStepBudget: true \} : \{\}\), \.\.\.\(callReason === undefined \? \{\} : \{ callReason \}\) \}\)/);
   assert.match(coordinator, /method !== "sendPrompt" \|\| !handledLocally\(provider\)/);
   assert.match(coordinator, /method === "respondToWidget" && handledLocally\(provider\)/);
   assert.match(coordinator, /skipTurn: true/);

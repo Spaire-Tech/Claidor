@@ -499,7 +499,7 @@ export class AutomationRuntime {
     return this.spendGuard.handleWidgetAnswer(args);
   }
   async ensureHiddenTurnReply(runner: any): Promise<boolean> {
-    const retry = await runner.run(REPLY_NUDGE_PROMPT, { hidden: true });
+    const retry = await runner.run(REPLY_NUDGE_PROMPT, { hidden: true, callReason: "nudge" });
     return !retry.aborted && !isDeliveryOwed(retry);
   }
 }
