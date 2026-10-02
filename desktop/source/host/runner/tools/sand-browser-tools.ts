@@ -1,5 +1,6 @@
 import { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
+import { gunzipSync } from "node:zlib";
 import { buildHostShellArgs } from "../../box/box-shell-command.js";
 import { navigationProbeCommand, normalizeNavigationUrl, parseNavigationProbeOutput } from "../sand-action-audit.js";
 import { SAND_BOX_NO_MONITOR_AVAILABLE_MESSAGE } from "../../ports/box.js";
@@ -18,8 +19,18 @@ import {
   SAND_BROWSER_DRIVER_SOURCE,
   SAND_BROWSER_RESULT_MARKER,
 } from "./sand-browser-driver-source.js";
+import { SAND_BROWSER_PLAYWRIGHT_FILES, SAND_BROWSER_PLAYWRIGHT_VERSION } from "./sand-browser-playwright.gen.js";
 
 export const BOX_CDP_PORT_BASE = 9_222;
+
+// The helper drives Chrome with playwright-core and first looks for the copy
+// the computer's image carries. Ours rides along in the host program
+// (`sand-browser-playwright.gen.ts`) and is written beside the helper the
+// first time it runs on a computer, so the helper works on an image without
+// one (2 October 2026). The folder is named by content, and its library
+// file is written last, so a folder holding it is complete.
+const PLAYWRIGHT_LIBRARY = "lib/playwright-core.cjs";
+export const SAND_BROWSER_PLAYWRIGHT_BOX_DIR = `${SAND_BROWSER_DRIVER_BOX_DIR}/playwright-core-${SAND_BROWSER_PLAYWRIGHT_VERSION}-${(SAND_BROWSER_PLAYWRIGHT_FILES[PLAYWRIGHT_LIBRARY]?.sha256 ?? "none").slice(0, 12)}`;
 export const PENDING_SCREENSHOT_CAP = 32;
 
 const pendingScreenshots = new Map<string, string>();
@@ -200,6 +211,7 @@ export interface BrowserDriverOutput {
 
 export class SandBrowserDriver<Context = unknown> {
   #uploaded: Promise<void> | undefined;
+  #playwright: Promise<string | undefined> | undefined;
   #windowIndex: Promise<number> | undefined;
 
   constructor(readonly dependencies: BrowserDriverDependencies<Context>) {}
@@ -210,7 +222,7 @@ export class SandBrowserDriver<Context = unknown> {
         if (index === undefined) {
           this.#windowIndex = undefined;
           throw new SandBrowserDriverError(
-            "The box has not assigned this agent a browser window yet; try again in a moment.",
+            "The browser on this computer isn't ready yet; try again in a moment.",
           );
         }
         return index;
@@ -235,10 +247,35 @@ export class SandBrowserDriver<Context = unknown> {
     ).catch((error: unknown) => {
       this.#uploaded = undefined;
       throw new SandBrowserDriverError(
-        `Could not install the browser driver on the box: ${error instanceof Error ? error.message : String(error)}`,
+        `The browser on this computer isn't ready yet; try again in a moment. (Setup failed: ${error instanceof Error ? error.message : String(error)})`,
       );
     });
     return this.#uploaded;
+  }
+
+  /** Our copy of playwright-core on the computer, written once; undefined when it could not be, and the helper then relies on the image's own. */
+  ensurePlaywright(context: Context): Promise<string | undefined> {
+    this.#playwright ??= (async () => {
+      const dir = SAND_BROWSER_PLAYWRIGHT_BOX_DIR;
+      const library = `${dir}/${PLAYWRIGHT_LIBRARY}`;
+      const probe = await this.dependencies.executeShell(context, {
+        command: `test -s ${library} && echo present || echo absent`,
+        name: "test",
+        workingDirectory: "/workspace",
+        toolCallId: "sand-browser-playwright-probe",
+      });
+      if (probe.case === "success" && (probe.stdout ?? "").includes("present")) return dir;
+      const names = Object.keys(SAND_BROWSER_PLAYWRIGHT_FILES).sort((a, b) => Number(a === PLAYWRIGHT_LIBRARY) - Number(b === PLAYWRIGHT_LIBRARY));
+      for (const name of names) {
+        const bytes = gunzipSync(Buffer.from(SAND_BROWSER_PLAYWRIGHT_FILES[name]!.gzipBase64, "base64"));
+        await this.dependencies.uploadFile(context, this.dependencies.getBoxId(), `${dir}/${name}`, bytes);
+      }
+      return dir;
+    })().catch(() => {
+      this.#playwright = undefined;
+      return undefined;
+    });
+    return this.#playwright;
   }
 
   async run(
@@ -250,9 +287,10 @@ export class SandBrowserDriver<Context = unknown> {
       readonly skipScreenshot?: boolean;
     },
   ): Promise<BrowserDriverOutput> {
-    const [windowIndex] = await Promise.all([
+    const [windowIndex, , playwrightRoot] = await Promise.all([
       this.resolveWindowIndex(context),
       this.ensureUploaded(context),
+      this.ensurePlaywright(context),
     ]);
 
     const screenshotPath = input.skipScreenshot === true
@@ -268,6 +306,7 @@ export class SandBrowserDriver<Context = unknown> {
         ? requestedViewId
         : this.dependencies.getDefaultViewId(),
       ...(screenshotPath == null ? {} : { screenshotPath }),
+      ...(playwrightRoot === undefined ? {} : { playwrightRoot }),
     };
     const encoded = Buffer.from(
       JSON.stringify(request),
@@ -282,7 +321,7 @@ export class SandBrowserDriver<Context = unknown> {
     });
     if (shell.case !== "success") {
       throw new SandBrowserDriverError(
-        `Browser driver shell failed (${shell.case || "unknown"})`,
+        `The browser on this computer did not respond (${shell.case || "unknown"}).`,
       );
     }
 
@@ -293,7 +332,7 @@ export class SandBrowserDriver<Context = unknown> {
         .filter((part) => part.length > 0)
         .join(" | ");
       throw new SandBrowserDriverError(
-        `Browser driver produced no result (exit ${shell.exitCode ?? "unknown"})${detail.length > 0 ? `: ${detail}` : ""}`,
+        `The browser on this computer did not respond (exit ${shell.exitCode ?? "unknown"})${detail.length > 0 ? `: ${detail}` : ""}`,
       );
     }
     if (!response.ok) {
@@ -515,6 +554,7 @@ export function toBrowserReviewAction(
 export interface BrowserToolSchema {
   readonly required?: readonly string[];
   readonly enum?: Readonly<Record<string, readonly string[]>>;
+  readonly describe?: Readonly<Record<string, string>>;
 }
 
 export interface BrowserToolDefinition<Context> {
@@ -548,17 +588,22 @@ interface BrowserToolSpec {
   readonly skipScreenshot?: boolean;
 }
 
+// Auto-review refuses a click, a coordinate click or a drag that does not say
+// what it is aiming at (`sand-browser-auto-review.ts`), so the three tools ask
+// for it up front instead of failing their first try (2 October 2026).
+const ELEMENT_DESCRIPTION = "A short description of the target and why you are acting on it, for example \"Search flights button, to run the search\". Required: the action is refused without it.";
+
 const BROWSER_TOOL_SPECS: readonly BrowserToolSpec[] = [
   { id: "BROWSER_NAVIGATE", name: "browser_navigate", op: "navigate", description: "Navigate the box browser to a URL. By default reuses your tab; set newTab: true to open in a new tab. Returns the resulting page state with a screenshot.", schema: { required: ["url"] }, canNavigate: true },
   { id: "BROWSER_SNAPSHOT", name: "browser_snapshot", op: "snapshot", description: "Capture a structured snapshot of the current page with [ref=eN] handles for interactive elements. This is the source of truth for page structure; refs are tied to the latest snapshot for that tab. Better than a screenshot for deciding what to click or type." },
-  { id: "BROWSER_CLICK", name: "browser_click", op: "click", description: "Click an element by ref from browser_snapshot. Scrolls the element into view first.", schema: { required: ["ref"] }, canNavigate: true },
-  { id: "BROWSER_MOUSE_CLICK_XY", name: "browser_mouse_click_xy", op: "mouse_click_xy", description: "Click at viewport coordinates. Prefer browser_click with refs when possible.", schema: { required: ["x", "y"] }, canNavigate: true },
+  { id: "BROWSER_CLICK", name: "browser_click", op: "click", description: "Click an element by ref from browser_snapshot. Scrolls the element into view first. Pass ref and element.", schema: { required: ["ref", "element"], describe: { element: ELEMENT_DESCRIPTION } }, canNavigate: true },
+  { id: "BROWSER_MOUSE_CLICK_XY", name: "browser_mouse_click_xy", op: "mouse_click_xy", description: "Click at viewport coordinates. Prefer browser_click with refs when possible. Pass x, y and element.", schema: { required: ["x", "y", "element"], describe: { element: ELEMENT_DESCRIPTION } }, canNavigate: true },
   { id: "BROWSER_TYPE", name: "browser_type", op: "type", description: "Type text into an input, textarea, or contenteditable element by ref.", schema: { required: ["ref", "text"] }, canNavigate: true },
   { id: "BROWSER_FILL", name: "browser_fill", op: "fill", description: "Set the value of an input, textarea, or contenteditable element by ref.", schema: { required: ["ref", "value"] } },
   { id: "BROWSER_SELECT_OPTION", name: "browser_select_option", op: "select_option", description: "Select one or more options in a select element by ref.", schema: { required: ["ref", "values"] } },
   { id: "BROWSER_PRESS_KEY", name: "browser_press_key", op: "press_key", description: "Press a key in the browser page, for example Enter, Escape, Tab, ArrowDown, or a single character.", schema: { required: ["key"] }, canNavigate: true },
   { id: "BROWSER_SCROLL", name: "browser_scroll", op: "scroll", description: "Scroll the page or scroll an element into view (pass its ref)." },
-  { id: "BROWSER_DRAG", name: "browser_drag", op: "drag", description: "Drag an element by ref to another ref or viewport coordinates.", schema: { required: ["sourceRef"] } },
+  { id: "BROWSER_DRAG", name: "browser_drag", op: "drag", description: "Drag an element by ref to another ref (targetRef) or viewport coordinates (targetX, targetY). Pass sourceRef and element.", schema: { required: ["sourceRef", "element"], describe: { element: ELEMENT_DESCRIPTION } } },
   { id: "BROWSER_GET_BOUNDING_BOX", name: "browser_get_bounding_box", op: "get_bounding_box", description: "Get the viewport bounding box for an element ref.", schema: { required: ["ref"] }, skipScreenshot: true },
   { id: "BROWSER_HIGHLIGHT", name: "browser_highlight", op: "highlight", description: "Highlight an element by ref in the browser page for visual grounding. The returned screenshot shows the highlight.", schema: { required: ["ref"] } },
   { id: "BROWSER_CDP", name: "browser_cdp", op: "cdp", description: "Send a Chrome DevTools Protocol command to the target browser tab. Do not use CDP Input.* methods; use dedicated browser tools for clicks, text input, key presses, scrolling, and drag-and-drop. Browser-wide, storage, cookie, cache, permission, and target-management commands are denied.", schema: { required: ["method"] }, canNavigate: true },

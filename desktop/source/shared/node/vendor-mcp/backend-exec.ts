@@ -48,6 +48,7 @@ export interface VendorMcpListedServer {
     readonly providerIdentifier: string;
     readonly toolName: string;
     readonly clientKey: string;
+    readonly title?: string;
     readonly description?: string;
     readonly inputSchema?: unknown;
   }[];
@@ -206,6 +207,7 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
           providerIdentifier: install.id,
           toolName: tool.name,
           clientKey: install.id,
+          ...(tool.title == null ? {} : { title: tool.title }),
           ...(tool.description == null ? {} : { description: tool.description }),
           ...(tool.inputSchema === undefined ? {} : { inputSchema: tool.inputSchema }),
         })),

@@ -60,11 +60,17 @@ _TOOLKIT = re.compile(r"^[a-z0-9_]{1,64}$")
 _TIMEOUT = httpx.Timeout(60.0, connect=10.0)
 _PROTOCOL_VERSION = "2025-06-18"
 _TOOLS_TTL_S = 600.0
-# A toolkit with hundreds of tools (GitHub has several hundred) would fill
-# the model's context; the featured ("important") tools are served when
-# there are enough of them, else the first of the full list.
-_MAX_TOOLS = 80
+# Every app is served its whole tool list, featured ("important") tools
+# first: the agent reads a tool's schema only when it needs it (GetMcpTools),
+# so a long list costs names, not schemas. Serving only the featured tools
+# whenever there were five of them left LinkedIn with 6 of its 22 (no post,
+# comment or delete) and most other apps short too (1 October 2026).
+# GitHub alone, at several hundred tools, still gets its featured tools.
+_FEATURED_ONLY = frozenset({"github"})
+_MAX_FEATURED = 80
 _MIN_IMPORTANT = 5
+_PAGE_LIMIT = 1000
+_MAX_PAGES = 5
 _OUTPUT_LIMIT = 60_000
 COMPOSIO_CALLBACK = "https://backend.composio.dev/api/v3/toolkits/auth/callback"
 NOT_CONFIGURED = "Apps are not switched on for this server yet."
@@ -163,27 +169,55 @@ async def toolkit_tools(toolkit: str) -> list[dict[str, Any]]:
     if cached is not None and time.monotonic() - cached[0] < _TOOLS_TTL_S:
         return cached[1]
 
-    async def fetch(important: bool) -> list[dict[str, Any]]:
-        params: dict[str, Any] = {"toolkit_slug": toolkit, "limit": _MAX_TOOLS}
-        if important:
-            params["important"] = "true"
-        status, payload = await _call("GET", "api/v3.1/tools", params=params)
-        if status >= 400 or not isinstance(payload, dict):
-            raise AppsUpstreamError(_upstream_message(payload), status)
-        return [
-            item
-            for item in payload.get("items") or []
-            if isinstance(item, dict)
-            and isinstance(item.get("slug"), str)
-            and not item.get("is_deprecated", False)
-        ]
+    async def fetch(important: bool, limit: int, pages: int) -> list[dict[str, Any]]:
+        items: list[dict[str, Any]] = []
+        cursor: str | None = None
+        for _ in range(pages):
+            params: dict[str, Any] = {"toolkit_slug": toolkit, "limit": limit}
+            if important:
+                params["important"] = "true"
+            if cursor is not None:
+                params["cursor"] = cursor
+            status, payload = await _call("GET", "api/v3.1/tools", params=params)
+            if status >= 400 or not isinstance(payload, dict):
+                raise AppsUpstreamError(_upstream_message(payload), status)
+            items.extend(
+                item
+                for item in payload.get("items") or []
+                if isinstance(item, dict)
+                and isinstance(item.get("slug"), str)
+                and not item.get("is_deprecated", False)
+            )
+            next_cursor = payload.get("next_cursor")
+            if not isinstance(next_cursor, str) or not next_cursor:
+                break
+            cursor = next_cursor
+        return items
 
-    items = await fetch(True)
-    if len(items) < _MIN_IMPORTANT:
-        items = await fetch(False)
+    if toolkit in _FEATURED_ONLY:
+        items = await fetch(True, _MAX_FEATURED, 1)
+        if len(items) < _MIN_IMPORTANT:
+            items = await fetch(False, _MAX_FEATURED, 1)
+        items = items[:_MAX_FEATURED]
+    else:
+        featured = await fetch(True, _PAGE_LIMIT, _MAX_PAGES)
+        everything = await fetch(False, _PAGE_LIMIT, _MAX_PAGES)
+        seen: set[str] = set()
+        items = []
+        for item in [*featured, *everything]:
+            if item["slug"] not in seen:
+                seen.add(item["slug"])
+                items.append(item)
     tools = [
         {
             "name": item["slug"],
+            # MCP's display name: the overlay shows "Create a LinkedIn post"
+            # instead of the slug.
+            **(
+                {"title": scrub(item["name"])}
+                if isinstance(item.get("name"), str) and item["name"]
+                else {}
+            ),
             "description": scrub(
                 str(item.get("description") or item.get("name") or item["slug"])
             ),
@@ -191,7 +225,7 @@ async def toolkit_tools(toolkit: str) -> list[dict[str, Any]]:
             if isinstance(item.get("input_parameters"), dict)
             else {"type": "object", "properties": {}},
         }
-        for item in items[:_MAX_TOOLS]
+        for item in items
     ]
     _tools_cache[toolkit] = (time.monotonic(), tools)
     return tools

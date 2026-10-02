@@ -21,6 +21,8 @@ export class VendorMcpAuthRequiredError extends VendorMcpHttpError {
 
 export interface VendorMcpListedTool {
   readonly name: string;
+  /** MCP's display name ("Create a LinkedIn post"); `name` is the call key. */
+  readonly title?: string;
   readonly description?: string;
   readonly inputSchema?: unknown;
 }
@@ -219,6 +221,7 @@ export async function vendorMcpListTools(args: VendorMcpClientArgs): Promise<Ven
         if (!isRecord(tool) || typeof tool.name !== "string" || tool.name.length === 0) continue;
         tools.push({
           name: tool.name,
+          ...(typeof tool.title === "string" && tool.title.length > 0 ? { title: tool.title } : {}),
           ...(typeof tool.description === "string" && tool.description.length > 0 ? { description: tool.description } : {}),
           ...(tool.inputSchema === undefined ? {} : { inputSchema: tool.inputSchema }),
         });

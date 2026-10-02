@@ -34,7 +34,7 @@ test("three agents and their group, every conversation a well-formed transcript 
   t.after(async () => { await backendModule.dispose(); await rpc.dispose(); });
   const backend = backendModule.module.createDemoBackend({ pushCoordinatorEvent: () => {}, pushMainEvent: () => {} });
   const roster = (await backend.coordinator("listAgents", {})).value;
-  assert.deepEqual(roster.map((agent) => agent.name).sort(), ["Launch squad", "Scout", "Simeon", "Yodo"]);
+  assert.deepEqual(roster.map((agent) => agent.name).sort(), ["Atlas", "Launch squad", "Scout", "Simeon", "Yodo"]);
   const group = roster.find((agent) => agent.isGroup);
   assert.equal(group.name, "Launch squad");
   assert.deepEqual(group.memberIds, ["simeon", "scout", "yodo"]);
@@ -107,5 +107,7 @@ test("the in-page bridge bundles for the browser, and leaves the composer and th
   assert.match(bridge, /shell\.setAttribute\("inert", ""\)/, "the composer takes no focus or input");
   assert.match(bridge, /event\.key\.length === 1/, "typing anywhere is stopped, since the window forwards it to the composer");
   const backend = await readFile(path.join(repoRoot, "demo/backend.ts"), "utf8");
-  assert.match(backend, /get\("theme"\) === "dark"/);
+  // The demo follows the system appearance; ?theme=light or ?theme=dark forces one.
+  assert.match(backend, /get\("theme"\)/);
+  assert.match(backend, /matchMedia\("\(prefers-color-scheme: dark\)"\)/);
 });

@@ -47,7 +47,7 @@ test("an agent's voice round-trips through its profile, and a profile without on
 
 test("the voice-call anchors apply exactly once, and a second pass refuses", async () => {
   const { VOICE_CALL_REPLACEMENTS, patchOriginalVoiceCall, patchOriginalVoiceCallStylesheet, VOICE_CALL_MARKER } = await import(patchModule);
-  assert.deepEqual(VOICE_CALL_REPLACEMENTS.map(([label]) => label), ["voice-call-components", "call-record-card", "voice-chat-event", "voice-chat-event-text", "voice-chat-person-is-person", "voice-chat-agent-header", "name-sheet-at-root", "voice-picker-under-character-color", "call-button-beside-agent-name"]);
+  assert.deepEqual(VOICE_CALL_REPLACEMENTS.map(([label]) => label), ["voice-call-components", "call-record-card", "voice-chat-event", "voice-chat-event-text", "voice-call-line", "voice-chat-own-line", "voice-chat-person-is-person", "voice-chat-agent-header", "name-sheet-at-root", "voice-picker-under-character-color", "call-button-beside-agent-name"]);
   const chunk = VOICE_CALL_REPLACEMENTS.map(([, before]) => before).join(";\n");
   const patched = patchOriginalVoiceCall(chunk);
   assert.match(patched, /function __simeonCallButton\(n\)\{/);
@@ -68,8 +68,8 @@ test("the voice-call anchors apply exactly once, and a second pass refuses", asy
   assert.throws(() => patchOriginalVoiceCallStylesheet(css), /already present/);
   const source = await readFile(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs"), "utf8");
   assert.match(source, /patchOriginalVoiceCall\(patchOriginalChatLayout\(/);
-  assert.match(source, /\.\.\.VOICE_CALL_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT\]\.map/);
-  assert.match(source, /"voice-call-button", "voice-picker"\]/);
+  assert.match(source, /\.\.\.VOICE_CALL_REPLACEMENTS, \.\.\.AGENT_PANE_REPLACEMENTS, \.\.\.HANDOFF_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT\]\.map/);
+  assert.match(source, /"voice-call-button", "voice-picker", "flight-results"\]/);
 });
 
 test("the pinned 0.18.0 renderer carries each voice-call anchor once, and the patched chunk parses", async (t) => {
@@ -190,19 +190,66 @@ test("a call written as an exchange is drawn as the window's own event line, Voi
   assert.deepEqual(opened, [["voice-call:call-1:150", "Bass"]]);
 });
 
-test("inside the call's panel the person's lines are their own messages, and the header is the agent's", async () => {
+// The window's own exchange-panel builder, `Uan` in the pinned chunk, verbatim: the panel's
+// entries are what it returns, so the person's lines are tested in that shape, not a guess at it.
+const PINNED_UAN = 'function Uan(n,e,t){const s=[];for(const r of n){if(r.kind!=="message")continue;const i=r.toAgent?.id===e,o=r.fromAgent?.id===e;if(!i&&!o)continue;const l=i?t:r.fromAgent;l!=null&&s.push({kind:"send-message",id:r.id,message:{type:"text",content:r.content,...r.images!=null&&r.images.length>0?{images:r.images}:{}},author:l,...r.timestampMs!=null?{timestampMs:r.timestampMs}:{}})}return s}';
+
+async function voiceHelpers() {
   const { VOICE_CALL_COMPONENTS_SOURCE } = await import(patchModule);
-  const { isPeer, entries } = new Function("p", "r1", "fre", "X4e", `${VOICE_CALL_COMPONENTS_SOURCE};return { isPeer: __simeonIsVoicePeer, entries: __simeonVoiceTunnelEntries };`)({}, () => ({}), "fre", "X4e");
-  const peer = { id: "voice-call:call-1:150", name: "Bass" };
-  const mine = { kind: "message", id: "u1", role: "user", content: "Hey.", fromAgent: peer };
-  const theirs = { kind: "message", id: "a1", role: "assistant", content: "Hi Bass.", toAgent: { ...peer, kind: "agent" } };
-  const dawn = { kind: "message", id: "u2", role: "user", content: "From Dawn", fromAgent: { id: "agent-2", name: "Dawn" } };
-  const out = entries([mine, theirs, dawn]);
-  assert.deepEqual(out[0], { kind: "message", id: "u1", role: "user", content: "Hey." }, "the person's line is a plain message of theirs: blue, on the right");
-  assert.equal(out[1], theirs, "the agent's line is unchanged");
-  assert.equal(out[2], dawn, "another agent's message keeps its sender");
+  return new Function("p", "r1", "fre", "X4e", "S", `${PINNED_UAN};${VOICE_CALL_COMPONENTS_SOURCE};return { isPeer: __simeonIsVoicePeer, panel: __simeonTunnelEntries, key: __simeonVoiceKey, ofEvent: __simeonVoiceCallOfEvent, ofSummary: __simeonVoiceCall, duration: __simeonVoiceDuration };`)({}, () => ({}), "fre", "X4e", {});
+}
+
+test("inside the call's panel the person's lines are their own messages, the agent's are the agent's", async () => {
+  const { isPeer, panel } = await voiceHelpers();
+  const self = { id: "agent-1", name: "Simeon" };
+  // A call as the host writes it now: one event with the call's lines.
+  const call = { kind: "event", id: "event-9", timestampMs: 1000, event: { type: "voice-call", callId: "call-1", status: "ended", seconds: 94, lines: [{ speaker: "user", text: "Hey." }, { speaker: "agent", text: "Hi Bass." }] } };
+  assert.deepEqual(panel([call], "voice-call:call-1", self), [
+    { kind: "message", id: "event-9:0", role: "user", content: "Hey.", isStreaming: false, timestampMs: 1000 },
+    { kind: "send-message", id: "event-9:1", message: { type: "text", content: "Hi Bass." }, author: self, timestampMs: 1001 },
+  ], "the person's line is a plain message of theirs (blue, on the right); the agent's is the agent's");
+  // A call a host wrote before: messages with one voice-call peer named for the person.
+  const peer = { id: "voice-call:call-2:150", name: "Bass" };
+  const mine = { kind: "message", id: "u1", role: "user", content: "Hey.", fromAgent: peer, timestampMs: 5 };
+  const theirs = { kind: "message", id: "a1", role: "assistant", content: "Hi Bass.", toAgent: { ...peer, kind: "agent" }, timestampMs: 6 };
+  const out = panel([mine, theirs], peer.id, self);
+  assert.deepEqual(out[0], { kind: "message", id: "u1", role: "user", content: "Hey.", isStreaming: false, timestampMs: 5 }, "never drawn as an agent named for the person");
+  assert.deepEqual(out[1], { kind: "send-message", id: "a1", message: { type: "text", content: "Hi Bass." }, author: self, timestampMs: 6 });
+  // Any other exchange is the window's own.
+  const dawn = { kind: "message", id: "u3", role: "user", content: "From Dawn", fromAgent: { id: "agent-2", name: "Dawn" } };
+  assert.deepEqual(panel([dawn], "agent-2", self), [{ kind: "send-message", id: "u3", message: { type: "text", content: "From Dawn" }, author: { id: "agent-2", name: "Dawn" } }]);
   assert.equal(isPeer("voice-call:x:3"), true);
-  assert.equal(isPeer({ id: "voice-call:x:3" }), true);
+  assert.equal(isPeer({ id: "voice-call:x" }), true);
   assert.equal(isPeer("agent-2"), false);
-  assert.equal(entries(null), null);
+});
+
+test("a call is its own line: \"Voice chat · 01:34\", openable once it ended with something said, never merged with an exchange", async () => {
+  const { key, ofEvent, ofSummary, duration } = await voiceHelpers();
+  assert.equal(duration(94), "01:34");
+  assert.equal(duration(3723), "1:02:03");
+  assert.deepEqual(ofEvent({ kind: "event", event: { type: "voice-call", callId: "c1", status: "ended", seconds: 94, lines: [{ speaker: "user", text: "Hi" }] } }), { peerId: "voice-call:c1", name: "Voice chat", duration: "01:34" });
+  assert.deepEqual(ofEvent({ kind: "event", event: { type: "voice-call", callId: "c1", status: "live" } }), { peerId: null, name: "Voice chat", duration: null }, "on now: a line, nothing to open yet");
+  assert.deepEqual(ofEvent({ kind: "event", event: { type: "voice-call", callId: "c1", status: "ended", seconds: 12, lines: [] } }), { peerId: null, name: "Voice chat", duration: "00:12" }, "nothing said: nothing to open");
+  assert.equal(ofEvent({ kind: "event", event: { type: "name-changed", to: "Ada" } }), null);
+  assert.deepEqual(ofSummary({ kind: "thread", messageCount: 4, peers: [{ id: "voice-call:c2:109", name: "Bass" }] }), { peerId: "voice-call:c2:109", name: "Bass", duration: "01:49" });
+  // The window folds consecutive exchange messages into one line; a call's lines are keyed apart
+  // from any agent's and from another call's, so each gets a line of its own.
+  const call = { kind: "message", fromAgent: { id: "voice-call:c2:109", name: "Bass" } };
+  const otherCall = { kind: "message", toAgent: { id: "voice-call:c3:20", name: "Bass", kind: "agent" } };
+  const teammate = { kind: "message", toAgent: { id: "scout", name: "Scout", kind: "agent" } };
+  assert.equal(key(call), "voice-call:c2:109");
+  assert.equal(key(otherCall), "voice-call:c3:20");
+  assert.equal(key(teammate), "");
+  const { VOICE_CALL_REPLACEMENTS } = await import(patchModule);
+  const ownLine = VOICE_CALL_REPLACEMENTS.find(([label]) => label === "voice-chat-own-line");
+  assert.ok(ownLine[2].includes("t.length>0&&__simeonVoiceKey(t[0].entry)!==__simeonVoiceKey(r.entry)&&s();t.push(r)"));
+  const line = VOICE_CALL_REPLACEMENTS.find(([label]) => label === "voice-call-line");
+  assert.ok(line[2].startsWith("function EIn(n){const __sc=__simeonVoiceCallOfEvent(n.entry);if(__sc!=null)return p.jsx(__simeonVoiceEvent,{call:__sc});"));
+});
+
+test("the pinned renderer's exchange-panel builder is the one these tests run", async (t) => {
+  const pinned = resolvePinnedRenderer();
+  if (!pinned) { t.skip(PINNED_RENDERER_SKIP); return; }
+  const chunk = await readFile(path.join(pinned, "assets", "index-UbX-y3il.js"), "utf8");
+  assert.ok(chunk.includes(PINNED_UAN));
 });

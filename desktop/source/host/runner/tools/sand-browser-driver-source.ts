@@ -116,8 +116,58 @@ async function ensureChrome(port, display) {
     await sleep(500);
   }
   throw new Error(
-    "The box browser's CDP endpoint did not come up on port " + String(port)
+    "The browser on this computer did not start (port " + String(port) + ")."
   );
+}
+
+// playwright-core from wherever the box image put it. The driver runs from
+// /tmp/.sand-browser, where a bare import only finds a node_modules above
+// /tmp, and an ES import ignores NODE_PATH, which the cloud computer sets to
+// /home/box/deps; the require fallbacks read it, and the usual global
+// folders (Simeon, 2 October 2026).
+let PLAYWRIGHT_ROOT = "";
+
+async function requirePlaywright(specifier) {
+  if (specifier === "playwright-core") {
+    try {
+      return await import("playwright-core");
+    } catch {}
+  }
+  const { createRequire } = await import("node:module");
+  const roots = [import.meta.url];
+  for (const folder of [
+    process.env.SAND_PLAYWRIGHT_NODE_MODULES,
+    ...String(process.env.NODE_PATH ?? "").split(":"),
+    "/workspace/node_modules",
+    "/home/box/node_modules",
+    "/usr/local/lib/node_modules",
+    "/usr/lib/node_modules",
+    "/opt/node_modules",
+  ]) {
+    if (folder) roots.push(folder.replace(/[/]+$/, "") + "/noop.js");
+  }
+  try {
+    const { execSync } = await import("node:child_process");
+    const globalRoot = execSync("npm root -g", { encoding: "utf8", timeout: 5000, stdio: ["ignore", "pipe", "ignore"] }).trim();
+    if (globalRoot) roots.push(globalRoot + "/noop.js");
+  } catch {}
+  let lastError;
+  // Simeon's own copy, written beside this helper by the host, after the
+  // image's: the host passes its folder in the request.
+  if (PLAYWRIGHT_ROOT) roots.push(PLAYWRIGHT_ROOT + "/lib/noop.js");
+  for (const root of roots) {
+    try {
+      if (PLAYWRIGHT_ROOT && root === PLAYWRIGHT_ROOT + "/lib/noop.js") {
+        const bundled = createRequire(root)("./playwright-core.cjs");
+        return specifier === "playwright-core" ? bundled.core : bundled.utilsBundle;
+      }
+      return createRequire(root)(specifier);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  void lastError;
+  throw new Error("The browser on this computer isn't ready yet: it could not be started. Try again in a minute; if it keeps happening, report that the browser could not start.");
 }
 
 // A minimal raw CDP socket for the pre-connect probe below. Uses the box
@@ -128,8 +178,7 @@ async function ensureChrome(port, display) {
 async function openCdpSocket(wsUrl) {
   let WS;
   try {
-    const { createRequire } = await import("node:module");
-    WS = createRequire(import.meta.url)("playwright-core/lib/utilsBundle").ws;
+    WS = (await requirePlaywright("playwright-core/lib/utilsBundle")).ws;
   } catch {
     return undefined;
   }
@@ -817,7 +866,7 @@ const OPS = {
 async function run(request) {
   await ensureChrome(request.cdpPort, request.display);
   await reviveDiscardedTabs(request.cdpPort);
-  const { chromium } = await import("playwright-core");
+  const { chromium } = await requirePlaywright("playwright-core");
   const browser = await chromium.connectOverCDP(
     "http://127.0.0.1:" + String(request.cdpPort),
     { timeout: 10000 }
@@ -885,7 +934,7 @@ async function run(request) {
 
 const watchdog = setTimeout(() => {
   process.stdout.write(
-    "\\n" + RESULT_MARKER + JSON.stringify({ ok: false, error: "Browser driver timed out after 90s" }) + "\\n"
+    "\\n" + RESULT_MARKER + JSON.stringify({ ok: false, error: "The browser took too long to respond (90 seconds)." }) + "\\n"
   );
   process.exit(0);
 }, 90000);
@@ -895,6 +944,7 @@ const watchdog = setTimeout(() => {
   try {
     const raw = process.argv[2] ?? "";
     const request = JSON.parse(Buffer.from(raw, "base64").toString("utf8"));
+    if (typeof request.playwrightRoot === "string") PLAYWRIGHT_ROOT = request.playwrightRoot;
     result = await run(request);
   } catch (error) {
     result = {

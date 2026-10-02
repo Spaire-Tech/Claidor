@@ -226,7 +226,7 @@ export interface BrowserShapedTool<Context> {
   readonly id: string;
   readonly name: string;
   readonly description: string;
-  readonly schema: { readonly required?: readonly string[]; readonly enum?: Readonly<Record<string, readonly string[]>> };
+  readonly schema: { readonly required?: readonly string[]; readonly enum?: Readonly<Record<string, readonly string[]>>; readonly describe?: Readonly<Record<string, string>> };
   execute(
     context: Context,
     args: Record<string, unknown>,
@@ -245,6 +245,9 @@ export function browserToolParameters(schema: BrowserShapedTool<unknown>["schema
   }
   for (const [key, values] of Object.entries(enums)) {
     if (shape[key] === undefined && values.length > 0) shape[key] = z.enum(values as [string, ...string[]]).optional();
+  }
+  for (const [key, text] of Object.entries(schema.describe ?? {})) {
+    if (shape[key] !== undefined) shape[key] = shape[key].describe(text);
   }
   return z.object(shape).passthrough();
 }

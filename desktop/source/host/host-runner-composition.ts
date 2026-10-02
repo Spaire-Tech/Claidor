@@ -77,6 +77,8 @@ import {
   SAND_EXTERNAL_READ_TOOL_NAME,
 } from "./sand-activity.js";
 import { connectorCardEmissionToMessage } from "./runner/tools/box-help-tool.js";
+import type { FlightSearchAnswer } from "./runner/tools/flight-search-tool.js";
+import { simeonApiData } from "../shared/node/cursor-backend/simeon-api.js";
 import { createRepeatSendGuard } from "./runner/repeat-send-guard.js";
 import { createAgentPromptSession } from "./extensions/inference/extension.js";
 import { connectorManifests } from "../shared/channels.js";
@@ -861,6 +863,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
 ): RecoveredHostRunnerComposition<Runner> {
   const { extensions, ctx } = deps;
   const auth = extensions.api("auth");
+  // SearchFlights' searches per turn, so the same search is not run twice in one turn.
+  const flightSearchesByTurn = new WeakMap<object, Set<string>>();
   const localToolPermission = extensions.api("local-tool-permission");
   const localToolPermissionSurfaces = new Map<string, () => void>();
   const ownedRunners = new Set<Runner>();
@@ -1247,6 +1251,11 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           description: input.description
         }, "user");
         const agent = result.agent;
+        // The new agent introduces itself to the person now, the way one they
+        // create themselves does: the window starts that for its own creations
+        // only, so an agent made here waited until its chat was opened, which
+        // on a call never happens (1 October 2026).
+        void Promise.resolve(method(transcript, "kickstartCreatedAgent")?.(agent.id)).catch(() => {});
         return {
           id: agent.id,
           name: agent.name,
@@ -2315,6 +2324,29 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 },
               };
             },
+          }),
+      // SearchFlights (2 October 2026): flights through Simeon Labs' server and
+      // Duffel, the results posted as the flight card. Not for a child or a
+      // shared room.
+      ...(isSharedRoomTurn
+        ? {}
+        : {
+            createFlightToolInputs: turn => ({
+              dependencies: {
+                seenSearches: (() => {
+                  let seen = flightSearchesByTurn.get(turn);
+                  if (seen === undefined) flightSearchesByTurn.set(turn, seen = new Set<string>());
+                  return seen;
+                })(),
+                search: args => simeonApiData<FlightSearchAnswer>({ getAccessToken: async () => { const get = method(auth, "getAccessToken"); if (get === undefined) throw new Error("You are not signed in."); return String(await get()); } }, "flights/search", { method: "POST", json: args, signal: AbortSignal.timeout(60_000) }),
+                postMessage: (content, timestampMs) => {
+                  const update = { type: "send-message" as const, message: { type: "text", content }, timestampMs, ...(turn.ackToken === undefined ? {} : { ackToken: turn.ackToken }) };
+                  if (turn.emitUpdate === undefined) hooks.transport.onUpdate(update);
+                  else turn.emitUpdate(update);
+                  return hooks.transport.lastSentMessageId?.();
+                },
+              },
+            }),
           }),
       // request_box_help: the box hand-off card. The tool, the session's
       // hand-off service and the resume were all in the tree, the brief

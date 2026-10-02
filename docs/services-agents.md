@@ -548,14 +548,23 @@ the background while the call goes on, and says how it is going when asked.
     anything still owed into the chat, nudged once if it sent nothing.
   - Every agent's system prompt carries the `## Voice calls` section.
   - The host part ships with the host bundle (`npm run publish:host-bundle`).
-- **After.** "Call ended · 2:48" with Call Again and Chat; the banner leaves by itself after
-  12 s unless the pointer is on it. Main posts `voice/calls/{id}/end` with the seconds, asks
-  twice more for the summary (after 5 s and 10 s) if it is not ready, and adds
-  "Voice call · 2:48" plus the recap to the agent's chat as the agent's message (the host's
-  `appendSendMessage`), so the agent remembers the call. The window draws that message as a
-  card (`__simeonCallRecord`): a phone, "Voice call" and the length, opening to the recap on
-  a click. A banner closed mid-call still ends
-  and bills the call.
+- **After.** The banner says "Call ended", plays the hang-up tone and leaves by itself after
+  1.2 s. Main posts `voice/calls/{id}/end` with the seconds and asks twice more for the summary
+  (after 5 s and 10 s) if it is not ready.
+- **In the chat.** One line per call, where the call began (1 October 2026, the founder: "i
+  want things to behave the same way as it should behave when i text"). The host writes an
+  event entry, `{type:"voice-call", status:"live"}`, when the call opens, so everything the call
+  asks of the agent sits below it, as it would below a text. On hang-up the same entry is filled
+  in (`status:"ended"`, `seconds`, `lines`). The window draws it as "Voice chat · 01:49"
+  ("Voice chat · now" while the call is on); a click opens the call in the window's read-only
+  exchange panel, the person's lines as their own blue messages on the right and the agent's on
+  the left. The sidebar's preview reads "Voice chat · 01:49" until a later message. A call
+  that never connected leaves no line. The person is never written as a peer: calls a host
+  wrote before this (messages with a `voice-call:<call>:<seconds>` peer named for the person)
+  are drawn the same way, on a line of their own, never merged with the agent's exchanges with
+  teammates. A host from before 2 October 2026 writes no line, so main adds "Voice call · 2:48"
+  plus the recap as the agent's message (`appendSendMessage`), drawn as a card
+  (`__simeonCallRecord`). A banner closed mid-call still ends and bills the call.
 - **The voice.** Each agent's `voiceId` is in its profile (`host/agents/agent-profile.ts`;
   a profile without one reads as empty: the call then sends no voice and speaks in the
   platform agent's, which the server picked from the workspace's voices). The
@@ -569,9 +578,10 @@ the background while the call goes on, and says how it is going when asked.
   without its key the banner says calls aren't switched on.
 - **Log.** `voice-call.log` in `~/Library/Application Support/Simeon`, also on stderr as
   `[simeon] voice-call …`: `call started`, `connect: token issued … (voice …)`, `connect: the
-  server refused the call: …`, `connected: conversation …`, `call channel: …`, `banner: sdk error:
-  …`, `call ended: conversation …, 168s, billed …s, summary yes|no`, `call record not added
-  to the chat: …`.
+  server refused the call: …`, `connected: conversation …`, `call channel: …` (on hang-up
+  `closed (its line in the chat holds N line(s) of what was said)` or `closed (no line in the
+  chat)`), `banner: sdk error: …`, `call ended: conversation …, 168s, billed …s, summary
+  yes|no`, `call record not added to the chat: …`.
 - **Needs a new host bundle.** The voice is saved in the profile by the host in the box;
   until `npm run publish:host-bundle` has shipped this commit, the choice lives only on the
   Mac (above). Everything else uses host methods that already exist.
@@ -625,3 +635,61 @@ the API):
   Mac: the banner was rendered in headless Chromium with a fake call, and the phone button
   and the picker in the patched window's demo, but the window, the microphone, WebRTC, the
   worklets under the page's policy and the ring have not run in the packaged app.
+
+## 10. Flight search
+
+**For the person.** Ask any agent for a flight ("cheapest refundable Seattle to LA tomorrow,
+landing before 2") and it answers with a results card of up to four distinct options, fastest
+whole journey first, each opening a panel with each leg, the layover, and the fare's
+cancellation and change terms and bags in plain words, then one short line with its pick.
+Booking is not built; the panel has no Book button.
+
+**How it works.**
+
+- The agent's `SearchFlights` tool (`host/runner/tools/flight-search-tool.ts`, main agents
+  only, not shared rooms) calls `POST /desktop/api/flights/search` with the box's own
+  credential (`get_desktop_or_box_session`). The brief tells agents to use it for every flight
+  question and never to look flights up on airline or travel sites.
+- The server (`server/simeon/desktop/flights.py`) turns a city into an airport through
+  Duffel's place suggestions (a city with one airport becomes that airport's code), makes one
+  Duffel offer request, drops offers that fail the filters asked for (refundable, named
+  airlines), and counts each complete itinerary once at its cheapest fare.
+- The shortlist follows Muse's own flight rules (2 October 2026, from Muse's booking and
+  Duffel skill files the founder shared): the shortest whole journey first (a connection must
+  save over 30 minutes a stop to lead over a nonstop), then the cheapest when it is at least
+  10% and $20 cheaper, then a refundable fare when none shown is, then other distinct trips;
+  a trip no faster, no cheaper and leaving within two hours of one shown is left out, and
+  a change of airports mid-journey only when nothing else is left. `priority: "cheapest"`
+  leads with the cheapest and keeps one at least 45 minutes faster. Each row says why it is
+  there (`label`: Fastest, Cheapest, Refundable) in the agent's summary.
+- The card shows every connection airport with its layover (`1 stop · PHX 1h 38m`), the
+  operating airline when another flies it, the fare brand, and "One way" or "Round trip"
+  with the price. A fact the airline does not give reads "Not stated", never "none".
+- The agent is told (tool description and brief) to learn the traveller from memory, past
+  trips, email and calendar before asking, to assume one adult one way and say so, to ask
+  only what would change the route, to run one targeted `airlines` search when an expected
+  airline is missing, and after the card to write one short line, never the card's details
+  again and never the data provider's name.
+- The tool posts the card itself, as a message that is one ```` ```simeon-flights ```` block
+  of JSON, which the window draws (`flights-components` in
+  `scripts/lib/router-renderer-patch.mjs`). The agent gets a short summary and writes only the
+  line under the card.
+- The tool asks the agent for the trip (`one_way` or `round_trip`); a return date goes to the
+  server only for a round trip. The same search twice in one turn is not run again and posts no
+  second card (2 October 2026: an agent ran one search six times).
+- Searches are capped per person per hour (`FLIGHT_SEARCHES_PER_HOUR`, default 30): past
+  Duffel's free allowance each search is billed.
+
+**Settings on Render.**
+
+- `SIMEON_DUFFEL_ACCESS_TOKEN`: a read-write token from Duffel's dashboard (More → Developers
+  → Access tokens). A `duffel_test_` token searches Duffel's test mode (its pretend airline,
+  Duffel Airways, and airlines' sandboxes, at unrealistic prices) and the card says "Test
+  results". Empty: the route answers 503 and the agent says flight search is not switched on.
+- `SIMEON_FLIGHT_SEARCHES_PER_HOUR` (default 30), `SIMEON_DUFFEL_BASE_URL` (default
+  `https://api.duffel.com`).
+
+**When it misbehaves.** Server log: `desktop.flights.search` (one line per search: route,
+date, `priority`, `airlines`, offers found and shown, `test`, milliseconds), `desktop.flights.upstream_refused` (what
+Duffel answered, in full) and `desktop.flights.rate_limited`. An agent that browsed instead of
+calling the tool shows no `desktop.flights.search` line for that request.

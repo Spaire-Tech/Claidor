@@ -47,11 +47,49 @@ export const card = (id: string, minutesAgo: number, message: Record<string, unk
 });
 const file = (id: string, minutesAgo: number, path: string): Entry => card(id, minutesAgo, { type: "attachment", url: `file:///home/box/${encodeURI(path)}` });
 
+/** One agent's message to a teammate, and the teammate's answer: the window's "Messaged …" exchange. */
+const toTeammate = (id: string, minutesAgo: number, peer: { id: string; name: string }, content: string): Entry => ({
+  kind: "message", id, role: "assistant", content, isStreaming: false, timestampMs: at(minutesAgo), toAgent: { ...peer, kind: "agent" },
+});
+const fromTeammate = (id: string, minutesAgo: number, peer: { id: string; name: string }, content: string): Entry => ({
+  kind: "message", id, role: "user", content, isStreaming: false, timestampMs: at(minutesAgo), fromAgent: peer,
+});
+
+/**
+ * A call's line as the host writes it now: one event where the call began, filled in when it
+ * ended with its duration and what was said (host/extensions/transcript/voice-call-channel.ts).
+ */
+export const voiceCall = (id: string, minutesAgo: number, callId: string, seconds: number, lines: readonly (readonly ["you" | "agent", string])[]): Entry => ({
+  kind: "event", id, timestampMs: at(minutesAgo),
+  event: { type: "voice-call", callId, status: "ended", seconds, lines: lines.map(([speaker, text]) => ({ speaker: speaker === "you" ? "user" : "agent", text })) },
+});
+
+/**
+ * A call as the host wrote it before 2 October 2026's second change: every line a message with
+ * one peer, `voice-call:<call>:<seconds>`, named for the person. Kept so the demo shows that
+ * calls already in people's chats draw as calls.
+ */
+const earlierCall = (prefix: string, minutesAgo: number, callId: string, seconds: number, lines: readonly (readonly ["you" | "agent", string])[]): Entry[] => {
+  const peer = { id: `voice-call:${callId}:${seconds}`, name: "Bass" };
+  return lines.map(([speaker, content], index) => speaker === "you"
+    ? fromTeammate(`${prefix}${index}`, minutesAgo, peer, content)
+    : toTeammate(`${prefix}${index}`, minutesAgo, peer, content));
+};
+
 export const AGENTS: readonly DemoAgent[] = [
   { id: "simeon", name: "Simeon", title: "Chief of staff", description: "Runs your day and keeps the team pointed at what matters.", color: "blue", minutesAgo: 0 },
   { id: "yodo", name: "Yodo", title: "Delivery", description: "Keeps the launch on track in Linear and Slack.", color: "red", minutesAgo: 95 },
   { id: "scout", name: "Scout", title: "Research", description: "Reads what customers say and brings back what matters.", color: "cyan", minutesAgo: 60 * 26 },
+  { id: "atlas", name: "Atlas", title: "Travel", description: "Finds and books your flights.", color: "green", minutesAgo: 12 },
 ];
+
+/**
+ * Flight results as an agent sends them (2 October 2026): one message that is a single
+ * simeon-flights block, which the window draws as the results card and, on a tap, the
+ * details panel; then a short message with the pick and the one assumption made. The
+ * request is the one the founder made of Muse, word for word.
+ */
+const FLIGHTS_SEA_LAX = "```simeon-flights\n{\"title\": \"Seattle to Los Angeles\", \"subtitle\": \"Fri, Oct 2 · Refundable · 1 adult\", \"offers\": [{\"airline\": \"American Airlines\", \"logo\": \"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/AA.svg\", \"price\": \"$361.20\", \"priceNote\": \"1 adult · Economy · One way\", \"date\": \"Fri, Oct 2\", \"from\": \"SEA\", \"fromCity\": \"Seattle\", \"to\": \"LAX\", \"toCity\": \"Los Angeles\", \"depart\": \"6:00 AM\", \"arrive\": \"12:18 PM\", \"duration\": \"6h 18m\", \"stops\": \"1 stop · PHX 1h 38m\", \"refundable\": \"Full refund\", \"changeable\": \"Free\", \"bags\": \"1 carry-on\", \"legs\": [{\"from\": \"SEA\", \"fromCity\": \"Seattle\", \"to\": \"PHX\", \"toCity\": \"Phoenix\", \"depart\": \"6:00 AM\", \"arrive\": \"9:10 AM\", \"flight\": \"AA 3792\", \"duration\": \"3h 10m\", \"layover\": \"1h 38m in Phoenix\", \"carrier\": \"American Airlines\", \"logo\": \"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/AA.svg\", \"cabin\": \"Economy\", \"departDay\": \"Fri, Oct 2\", \"arriveDay\": \"Fri, Oct 2\"}, {\"from\": \"PHX\", \"fromCity\": \"Phoenix\", \"to\": \"LAX\", \"toCity\": \"Los Angeles\", \"depart\": \"10:48 AM\", \"arrive\": \"12:18 PM\", \"flight\": \"AA 2027\", \"duration\": \"1h 30m\", \"carrier\": \"American Airlines\", \"logo\": \"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/AA.svg\", \"cabin\": \"Economy\", \"departDay\": \"Fri, Oct 2\", \"arriveDay\": \"Fri, Oct 2\"}], \"label\": \"Cheapest\"}, {\"airline\": \"Alaska Airlines\", \"logo\": \"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/AS.svg\", \"price\": \"$446.40\", \"priceNote\": \"1 adult · Economy · One way\", \"date\": \"Fri, Oct 2\", \"from\": \"SEA\", \"fromCity\": \"Seattle\", \"to\": \"LAX\", \"toCity\": \"Los Angeles\", \"depart\": \"6:49 AM\", \"arrive\": \"9:34 AM\", \"duration\": \"2h 45m\", \"stops\": \"Nonstop\", \"refundable\": \"Full refund\", \"changeable\": \"Free\", \"bags\": \"1 carry-on\", \"legs\": [{\"from\": \"SEA\", \"fromCity\": \"Seattle\", \"to\": \"LAX\", \"toCity\": \"Los Angeles\", \"depart\": \"6:49 AM\", \"arrive\": \"9:34 AM\", \"flight\": \"AS 1068\", \"duration\": \"2h 45m\", \"carrier\": \"Alaska Airlines\", \"logo\": \"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/AS.svg\", \"cabin\": \"Economy\", \"departDay\": \"Fri, Oct 2\", \"arriveDay\": \"Fri, Oct 2\"}], \"label\": \"Fastest\"}, {\"airline\": \"United Airlines\", \"logo\": \"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/UA.svg\", \"price\": \"$372.20\", \"priceNote\": \"1 adult · Economy · One way\", \"date\": \"Fri, Oct 2\", \"from\": \"SEA\", \"fromCity\": \"Seattle\", \"to\": \"LAX\", \"toCity\": \"Los Angeles\", \"depart\": \"7:11 AM\", \"arrive\": \"12:01 PM\", \"duration\": \"4h 50m\", \"stops\": \"1 stop · SFO 1h 09m\", \"refundable\": \"Full refund\", \"changeable\": \"Free\", \"bags\": \"1 carry-on\", \"legs\": [{\"from\": \"SEA\", \"fromCity\": \"Seattle\", \"to\": \"SFO\", \"toCity\": \"San Francisco\", \"depart\": \"7:11 AM\", \"arrive\": \"9:21 AM\", \"flight\": \"UA 1440\", \"duration\": \"2h 10m\", \"layover\": \"1h 09m in San Francisco\", \"carrier\": \"United Airlines\", \"logo\": \"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/UA.svg\", \"cabin\": \"Economy\", \"departDay\": \"Fri, Oct 2\", \"arriveDay\": \"Fri, Oct 2\"}, {\"from\": \"SFO\", \"fromCity\": \"San Francisco\", \"to\": \"LAX\", \"toCity\": \"Los Angeles\", \"depart\": \"10:30 AM\", \"arrive\": \"12:01 PM\", \"flight\": \"UA 2251\", \"duration\": \"1h 31m\", \"carrier\": \"United Airlines\", \"logo\": \"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/UA.svg\", \"cabin\": \"Economy\", \"departDay\": \"Fri, Oct 2\", \"arriveDay\": \"Fri, Oct 2\"}], \"label\": \"\"}, {\"airline\": \"Southwest Airlines\", \"logo\": \"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/WN.svg\", \"price\": \"$408.20\", \"priceNote\": \"1 adult · Economy · One way\", \"date\": \"Fri, Oct 2\", \"from\": \"SEA\", \"fromCity\": \"Seattle\", \"to\": \"LAX\", \"toCity\": \"Los Angeles\", \"depart\": \"5:30 AM\", \"arrive\": \"10:35 AM\", \"duration\": \"5h 05m\", \"stops\": \"1 stop · OAK 1h 35m\", \"refundable\": \"Full refund\", \"changeable\": \"Free\", \"bags\": \"2 checked bags\", \"legs\": [{\"from\": \"SEA\", \"fromCity\": \"Seattle\", \"to\": \"OAK\", \"toCity\": \"Oakland\", \"depart\": \"5:30 AM\", \"arrive\": \"7:35 AM\", \"flight\": \"WN 2210\", \"duration\": \"2h 05m\", \"layover\": \"1h 35m in Oakland\", \"carrier\": \"Southwest Airlines\", \"logo\": \"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/WN.svg\", \"cabin\": \"Economy\", \"departDay\": \"Fri, Oct 2\", \"arriveDay\": \"Fri, Oct 2\"}, {\"from\": \"OAK\", \"fromCity\": \"Oakland\", \"to\": \"LAX\", \"toCity\": \"Los Angeles\", \"depart\": \"9:10 AM\", \"arrive\": \"10:35 AM\", \"flight\": \"WN 1873\", \"duration\": \"1h 25m\", \"carrier\": \"Southwest Airlines\", \"logo\": \"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/WN.svg\", \"cabin\": \"Economy\", \"departDay\": \"Fri, Oct 2\", \"arriveDay\": \"Fri, Oct 2\"}], \"label\": \"\"}]}\n```";
 
 /** The group the three work in with you. */
 export const GROUP: DemoGroup = {
@@ -62,17 +100,39 @@ export const GROUP: DemoGroup = {
 /** Already written: what happened before the page opened. */
 export const TRANSCRIPTS: Record<string, Entry[]> = {
   simeon: [],
+  atlas: [
+    you("a0u", 13, "could you help me find a flight? I have to be in LA tomorrow at 2:00 p.m. and, uh, uh, I'm going from Seattle and I wanted you to sort of get me the cheapest flight, obviously refundable."),
+    says("a0c", 12, FLIGHTS_SEA_LAX),
+    says("a0s", 12, "American through Phoenix is the cheapest refundable fare and lands at 12:18, in time for 2. If you'd rather fly nonstop, Alaska is three and a half hours quicker for $85 more. I assumed one adult, one way, into LAX."),
+  ],
   scout: [
     you("s0u", 60 * 27, "What are customers saying about onboarding since the redesign?"),
     says("s0a", 60 * 26 + 30, "I read the 14 interview notes in **Notion** and 212 **Intercom** conversations from the last 30 days. Three things stand out:\n\n1. **Setup takes too long.** 9 of 14 people stalled at the workspace step.\n2. **Templates work.** People who picked one were twice as likely to invite a teammate.\n3. **The words confuse.** \"Workspace\" and \"project\" get mixed up in 31 tickets."),
     file("s0f", 60 * 26 + 29, "research/Onboarding research, September.pdf"),
     says("s0b", 60 * 26 + 29, "The quotes behind each theme are on page 3."),
+    // A call on its own: the window draws it as one "Voice chat" line.
+    ...earlierCall("s1c", 60 * 20, "call-demo-scout", 109, [
+      ["you", "Hey Scout, what's the one thing customers complain about most?"],
+      ["agent", "Setup. Nine of fourteen people stalled at the workspace step."],
+      ["you", "Okay. Put that at the top of the review doc."],
+      ["agent", "Done, it's the first slide now."],
+    ]),
   ],
   yodo: [
     you("y0u", 60 * 50, "Keep the launch on track. Post a standup in Slack every morning."),
     says("y0a", 60 * 50 - 1, "I'll need **Linear** and **Slack** for that."),
     card("y0c", 60 * 50 - 1, { type: "connectors", connectors: ["Linear", "Slack"] }),
     says("y0b", 60 * 50 - 3, "Both connected. Every morning at 9:00 I'll post the launch board in #launch and flag anything stuck for more than a day."),
+    // A call during which Yodo asked Scout something: the teammate exchange and the call's lines
+    // sit side by side in the chat.
+    toTeammate("y2t", 60 * 3, { id: "scout", name: "Scout" }, "Bass asked for the latest NPS for the launch review. Can you send it?"),
+    fromTeammate("y2f", 60 * 3, { id: "scout", name: "Scout" }, "NPS is 41, up from 34 last month."),
+    ...earlierCall("y2c", 60 * 3, "call-demo-yodo", 92, [
+      ["you", "Yodo, can you get the latest NPS from Scout for the review?"],
+      ["agent", "Asking Scout now."],
+      ["agent", "It's 41, up from 34 last month."],
+      ["you", "Great, thanks."],
+    ]),
     says("y1a", 95, "Today's standup is up in #launch:\n\n- **12 of 15** launch tickets done\n- 2 waiting on design review with Dana\n- **LIN-482**, the pricing page bug, is in code review"),
     file("y1f", 95, "launch/Launch tracker.xlsx"),
   ],
@@ -129,5 +189,25 @@ export function openingScript(): Beat[] {
     ...step(15500, "m7", "UpdateState", "Creating routine Monday launch check", "Created routine Monday launch check", 1000),
     { at: 16800, kind: "append", agent: "simeon", entry: says("m2a", 0, "Done. The agenda went out from **Gmail**.") },
     { at: 16900, kind: "typing", agent: "simeon", on: false },
+    // The agent hands the computer to the person: a SendMessage carrying the box request (the window's take-over card).
+    { at: 19000, kind: "user", agent: "simeon", entry: you("m3u", 0, "Can you post the launch note on our LinkedIn page too?") },
+    { at: 19600, kind: "typing", agent: "simeon", on: true },
+    ...step(20000, "m8", "Computer", "Opening LinkedIn on the computer", "Opened LinkedIn on the computer", 1600),
+    { at: 22000, kind: "append", agent: "simeon", entry: card("m3h", 0, { type: "text", content: "LinkedIn wants you to sign in." }, { boxRequestId: "demo-take-over", boxInstruction: "LinkedIn is asking for your password and a code from your phone. Take over to sign in, then hand it back and I'll post the note.", boxResolution: "waiting" }) },
+    { at: 22100, kind: "typing", agent: "simeon", on: false },
+    // A call: its line sits where the call began, the work it asked for below it, then the written
+    // follow-up, the way a text would read.
+    { at: 25000, kind: "append", agent: "simeon", entry: voiceCall("m4c", 0, "call-demo-simeon", 94, [
+      ["you", "Hey Simeon, can we move the launch review to Friday morning?"],
+      ["agent", "Sure. Friday at ten works for Dana and Marcus. I'll ask Yodo to move it."],
+      ["you", "Perfect. And tell the team in Slack."],
+      ["agent", "Will do. I'll post it in #launch once Yodo confirms."],
+      ["you", "Thanks, bye."],
+    ]) },
+    { at: 25300, kind: "typing", agent: "simeon", on: true },
+    ...step(25600, "m9", "SendToAgent", "Asking Yodo to move the review", "Messages to Yodo", 1200, undefined, "yodo"),
+    ...step(27000, "m10", "CallMcpTool", "Posting in #launch on Slack", "Posted in #launch on Slack", 1000, "Slack"),
+    { at: 28400, kind: "append", agent: "simeon", entry: says("m4a", 0, "As we said on the call: the review is now Friday at 10, Yodo moved it, and I posted it in #launch on **Slack**.") },
+    { at: 28500, kind: "typing", agent: "simeon", on: false },
   ];
 }

@@ -273,21 +273,29 @@ export const VOICE_CALL_COMPONENTS_SOURCE = [
   "const c=__simeonCallRecordParse(n.content),[o,so]=S.useState(!1);if(c==null)return null;const has=c.recap!=null&&c.recap.length>0;",
   `return p.jsxs("div",{className:"simeon-call-record","data-open":o&&has?"true":"false",children:[p.jsxs("button",{type:"button",className:"simeon-call-record__head","aria-expanded":has?o:void 0,disabled:!has,onClick:()=>so(v=>!v),children:[p.jsx("span",{className:"simeon-call-record__glyph","aria-hidden":!0,children:p.jsx("svg",{viewBox:"0 0 24 24",children:p.jsx("path",{fill:"currentColor",d:"${PHONE_ICON_PATH}"})})}),p.jsxs("span",{className:"simeon-call-record__what",children:[p.jsx("b",{children:"Voice call"}),p.jsx("span",{children:c.duration})]}),has?p.jsx("svg",{className:"simeon-call-record__chevron",viewBox:"0 0 24 24","aria-hidden":!0,children:p.jsx("path",{fill:"none",stroke:"currentColor",strokeWidth:2.4,strokeLinecap:"round",strokeLinejoin:"round",d:"M9 6l6 6-6 6"})}):null]}),has?p.jsx("div",{className:"simeon-call-record__recap",children:p.jsx("div",{children:p.jsx("p",{children:c.recap})})}):null]})}`,
   // The call in the chat (2 October 2026, the founder: "the after chat is just a chat opened in a
-  // panel like the convo between agents, this time its just between us. we dont need to redesign
-  // anything"). The agent's host writes what was said as an exchange with one peer,
-  // `voice-call:<call>:<seconds>` (host/extensions/transcript/voice-call-channel.ts); the window's
-  // own "Messaged Dawn" line is drawn for it as "Voice chat · 02:30", and opens the window's own
-  // read-only exchange panel.
-  "function __simeonVoiceCall(n){const ps=n==null?null:n.kind===\"single\"?[n.peer]:n.peers;if(!Array.isArray(ps)||ps.length!==1||ps[0]==null)return null;const m=/^voice-call:[A-Za-z0-9_-]+:(\\d+)$/.exec(String(ps[0].id));if(m==null)return null;const t=Number(m[1]),h=Math.floor(t/3600),mm=String(Math.floor(t%3600/60)).padStart(2,\"0\"),ss=String(t%60).padStart(2,\"0\");return{peerId:ps[0].id,name:ps[0].name,duration:h>0?`${h}:${mm}:${ss}`:`${mm}:${ss}`}}",
-  // Inside the call's panel the person is the person (2 October 2026, the founder: "why not just use the
-  // real blue on me talking??? on the right side, like a real normal convo"): their lines lose the peer
-  // they were written with and draw as their own messages, and the header is the agent's own, not
-  // "Agent ⇄ <name>".
+  // panel like the convo between agents, this time its just between us"; 1 October 2026's second
+  // pass: "i want things to behave the same way as it should behave when i text"). The host writes
+  // one event entry where the call began, `{type:"voice-call", callId, status, seconds, lines}`
+  // (host/extensions/transcript/voice-call-channel.ts); the window draws it as one line, "Voice chat
+  // · 01:49" ("Voice chat · now" while the call is on), which opens the call in the window's own
+  // read-only exchange panel. Calls a host wrote before that are messages with one peer,
+  // `voice-call:<call>:<seconds>`, named for the person: they draw the same way.
+  "function __simeonVoiceDuration(t){const w=Math.max(0,Math.round(Number(t)||0)),h=Math.floor(w/3600),mm=String(Math.floor(w%3600/60)).padStart(2,\"0\"),ss=String(w%60).padStart(2,\"0\");return h>0?`${h}:${mm}:${ss}`:`${mm}:${ss}`}",
   "function __simeonIsVoicePeer(n){const id=typeof n===\"string\"?n:n?.id;return typeof id===\"string\"&&id.startsWith(\"voice-call:\")}",
-  "function __simeonVoiceTunnelEntries(n){return Array.isArray(n)?n.map(e=>e?.fromAgent!=null&&__simeonIsVoicePeer(e.fromAgent)?(({fromAgent:_f,...r})=>r)(e):e):n}",
+  // A call written before: the window's summary of its lines.
+  "function __simeonVoiceCall(n){const ps=n==null?null:n.kind===\"single\"?[n.peer]:n.peers;if(!Array.isArray(ps)||ps.length!==1||ps[0]==null)return null;const m=/^voice-call:[A-Za-z0-9_-]+:(\\d+)$/.exec(String(ps[0].id));if(m==null)return null;return{peerId:ps[0].id,name:ps[0].name,duration:__simeonVoiceDuration(Number(m[1]))}}",
+  // A call's own line: openable once it ended with something said.
+  "function __simeonVoiceCallOfEvent(t){const v=t?.event;if(v==null||v.type!==\"voice-call\"||typeof v.callId!==\"string\")return null;const ended=v.status===\"ended\"&&typeof v.seconds===\"number\",said=Array.isArray(v.lines)&&v.lines.length>0;return{peerId:ended&&said?`voice-call:${v.callId}`:null,name:\"Voice chat\",duration:ended?__simeonVoiceDuration(v.seconds):null}}",
+  // A call's lines never share a line with anything else: not with the agent's exchanges with
+  // teammates ("8 messages with 2 agents"), not with another call.
+  "function __simeonVoiceKey(t){const a=t?.fromAgent??t?.toAgent;return a!=null&&__simeonIsVoicePeer(a)?String(a.id):\"\"}",
+  // Inside the call's panel the person is the person (the founder: "why not just use the real blue on
+  // me talking??? on the right side, like a real normal convo"): their lines are their own messages,
+  // the agent's are the agent's, and the header is the agent's own, not "Agent ⇄ <name>".
+  "function __simeonTunnelEntries(n,id,self){if(!__simeonIsVoicePeer(id))return Uan(n,id,self);const ev=n.find(x=>x?.kind===\"event\"&&x.event?.type===\"voice-call\"&&`voice-call:${x.event.callId}`===id);if(ev!=null){const ls=Array.isArray(ev.event.lines)?ev.event.lines:[],at=typeof ev.timestampMs===\"number\"?ev.timestampMs:0;return ls.map((l,i)=>{const k=`${ev.id}:${i}`,c=typeof l?.text===\"string\"?l.text:\"\";return l?.speaker===\"agent\"?{kind:\"send-message\",id:k,message:{type:\"text\",content:c},author:self,timestampMs:at+i}:{kind:\"message\",id:k,role:\"user\",content:c,isStreaming:!1,timestampMs:at+i}})}return Uan(n,id,self).map(e=>e.kind===\"send-message\"&&e.author!=null&&__simeonIsVoicePeer(e.author)?{kind:\"message\",id:e.id,role:\"user\",content:e.message?.content??\"\",isStreaming:!1,...(e.timestampMs!=null?{timestampMs:e.timestampMs}:{})}:e)}",
   "function __simeonVoiceEvent(n){",
-  "const c=n.call,{openAgentExchange:r}=r1(),l=`Voice chat · ${c.duration}`;",
-  `return p.jsx(fre,{className:"sand-system-event",children:p.jsx(X4e,{"aria-label":\`Open \${l}\`,leading:p.jsx("svg",{"aria-hidden":!0,className:"simeon-voice-event__glyph",viewBox:"0 0 24 24",children:p.jsx("path",{fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",d:"M5 10v4M9 7v10M13 9v6M17 6v12M21 10v4"})}),leadingGap:4,onClick:m=>{m.stopPropagation(),r(c.peerId,c.name)},title:l,children:l})})}`,
+  "const c=n.call,{openAgentExchange:r}=r1(),l=c.duration!=null?`Voice chat · ${c.duration}`:\"Voice chat · now\",open=c.peerId!=null;",
+  `return p.jsx(fre,{className:"sand-system-event",children:p.jsx(X4e,{...(open?{"aria-label":\`Open \${l}\`,onClick:m=>{m.stopPropagation(),r(c.peerId,c.name)}}:{}),leading:p.jsx("svg",{"aria-hidden":!0,className:"simeon-voice-event__glyph",viewBox:"0 0 24 24",children:p.jsx("path",{fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",d:"M5 10v4M9 7v10M13 9v6M17 6v12M21 10v4"})}),leadingGap:4,title:l,children:l})})}`,
   // The name sheet (1 October 2026): once, after onboarding, "What should your agents call you?",
   // offered Google's first name, never one made from the e-mail. Saved through the account's own
   // rename (`cursorAccount.updateName`, now `POST /desktop/api/user/name`). "Not now" asks again next launch.
@@ -311,8 +319,12 @@ const VOICE_EVENT_BEFORE = "function vpt(n){const e=he.c(9),{summary:t}=n;";
 const VOICE_EVENT_AFTER = "function vpt(n){const __sv=__simeonVoiceCall(n.summary);if(__sv!=null)return p.jsx(__simeonVoiceEvent,{call:__sv});const e=he.c(9),{summary:t}=n;";
 const VOICE_EVENT_TEXT_BEFORE = "function JIn(n){switch(n.kind){";
 const VOICE_EVENT_TEXT_AFTER = "function JIn(n){const __sv=__simeonVoiceCall(n);if(__sv!=null)return`Voice chat · ${__sv.duration}`;switch(n.kind){";
-const VOICE_TUNNEL_ENTRIES_BEFORE = "p.jsx(JMn,{dockInsetPx:n.dockInsetPx,entries:e.tunnelEntries,";
-const VOICE_TUNNEL_ENTRIES_AFTER = "p.jsx(JMn,{dockInsetPx:n.dockInsetPx,entries:__simeonVoiceTunnelEntries(e.tunnelEntries),";
+const VOICE_PANEL_ENTRIES_BEFORE = "return Uan(u,v.id,De)},[v,u,O,t])";
+const VOICE_PANEL_ENTRIES_AFTER = "return __simeonTunnelEntries(u,v.id,De)},[v,u,O,t])";
+const VOICE_OWN_GROUP_BEFORE = 'for(const r of n){if(r.kind==="entry"&&VIn(r.entry)){t.push(r);continue}s(),e.push(r)}return s(),e}';
+const VOICE_OWN_GROUP_AFTER = 'for(const r of n){if(r.kind==="entry"&&VIn(r.entry)){t.length>0&&__simeonVoiceKey(t[0].entry)!==__simeonVoiceKey(r.entry)&&s();t.push(r);continue}s(),e.push(r)}return s(),e}';
+const VOICE_CALL_LINE_BEFORE = "function EIn(n){const e=he.c(4),{entry:t}=n;";
+const VOICE_CALL_LINE_AFTER = "function EIn(n){const __sc=__simeonVoiceCallOfEvent(n.entry);if(__sc!=null)return p.jsx(__simeonVoiceEvent,{call:__sc});const e=he.c(4),{entry:t}=n;";
 const VOICE_TUNNEL_HEADER_BEFORE = "exchange:l?null:e.tunnelExchange";
 const VOICE_TUNNEL_HEADER_AFTER = "exchange:l||__simeonIsVoicePeer(e.tunnelPeer)?null:e.tunnelExchange";
 const NAME_SHEET_BEFORE = 'p.jsx(BGn,{}),p.jsx(Yzn,{children:p.jsx($zn,{})})]';
@@ -322,7 +334,9 @@ export const VOICE_CALL_REPLACEMENTS = Object.freeze([
   ["call-record-card", CALL_RECORD_BEFORE, CALL_RECORD_AFTER],
   ["voice-chat-event", VOICE_EVENT_BEFORE, VOICE_EVENT_AFTER],
   ["voice-chat-event-text", VOICE_EVENT_TEXT_BEFORE, VOICE_EVENT_TEXT_AFTER],
-  ["voice-chat-person-is-person", VOICE_TUNNEL_ENTRIES_BEFORE, VOICE_TUNNEL_ENTRIES_AFTER],
+  ["voice-call-line", VOICE_CALL_LINE_BEFORE, VOICE_CALL_LINE_AFTER],
+  ["voice-chat-own-line", VOICE_OWN_GROUP_BEFORE, VOICE_OWN_GROUP_AFTER],
+  ["voice-chat-person-is-person", VOICE_PANEL_ENTRIES_BEFORE, VOICE_PANEL_ENTRIES_AFTER],
   ["voice-chat-agent-header", VOICE_TUNNEL_HEADER_BEFORE, VOICE_TUNNEL_HEADER_AFTER],
   ["name-sheet-at-root", NAME_SHEET_BEFORE, NAME_SHEET_AFTER],
   ["voice-picker-under-character-color", VOICE_PICKER_BEFORE, VOICE_PICKER_AFTER],
@@ -394,6 +408,387 @@ export const voiceCallCss = () => `${VOICE_CALL_MARKER} (30 September 2026). */
 export function patchOriginalVoiceCallStylesheet(css) {
   if (css.includes(VOICE_CALL_MARKER)) throw new Error("Original renderer voice-call block is already present.");
   return `${css}\n${voiceCallCss()}`;
+}
+
+/**
+ * The agent's pane (1 October 2026, the founder: "the computer icon goes
+ * away. so the [panel] appears when you click on the avatar … no
+ * 'connected' … the choices on the picker are obviously avatar edit,
+ * routines, computer, channels … the apple style … no accent color, keep it
+ * simple and apple premium"). The window's own pane (`p3n`) kept three views
+ * behind a gear and a back arrow: an overview (the computer's preview, the
+ * routines, a link to Channels), Settings (avatar, name, title, description,
+ * notifications) and Channels. It is now one page: the agent's avatar with
+ * its pencil, the name and the title, then a segmented control, Profile ·
+ * Routines · Computer · Channels, over the same views the window already
+ * draws. Channels is offered only where the window would offer it (the
+ * channel manifests are served). The gear is gone; the back arrow is left
+ * for the one level that is deeper, a routine's editor. The chat header's
+ * computer button is gone, and the avatar in the header opens and closes
+ * the pane. The pane opens on Profile.
+ *
+ * View ids are the window's own: `settings` is Profile, `overview` is
+ * Computer, `channels` is Channels; `routines` is new and admitted by `pin`,
+ * the view guard. A request for a routine (`automationId`) lands on
+ * Routines, where the editor opens.
+ */
+const PANE_ICONS = {
+  // Line glyphs in the weight of SF Symbols' regular, on a 24 pt grid, stroked in the text colour.
+  settings: '<circle cx="12" cy="8.2" r="3.6"/><path d="M4.8 19.6c1.3-3.4 4-5.2 7.2-5.2s5.9 1.8 7.2 5.2"/>',
+  routines: '<circle cx="12" cy="12" r="8.2"/><path d="M12 7.4V12l3.1 2"/>',
+  overview: '<rect x="3.2" y="4.4" width="17.6" height="12" rx="2.2"/><path d="M8.8 19.8h6.4M12 16.4v3.4"/>',
+  channels: '<path d="M19.8 11.6c0 3.8-3.5 6.9-7.8 6.9-1 0-2-.2-2.9-.5l-4.4 1.4 1.3-3.5c-1.1-1.2-1.8-2.7-1.8-4.3 0-3.8 3.5-6.9 7.8-6.9s7.8 3.1 7.8 6.9z"/>',
+};
+const AGENT_PANE_COMPONENTS_SOURCE = [
+  `const __simeonPaneIcons=${JSON.stringify(PANE_ICONS)};`,
+  // Whether the pane, not the person, compacted the sidebar: kept across launches, so a pane left
+  // open at quit still gives the sidebar back when it closes.
+  "let __simeonPaneTookSidebar=(()=>{try{return localStorage.getItem(\"simeon.paneTookSidebar\")===\"1\"}catch{return!1}})();",
+  "function __simeonSetPaneTookSidebar(v){__simeonPaneTookSidebar=v;try{localStorage.setItem(\"simeon.paneTookSidebar\",v?\"1\":\"0\")}catch{}}",
+  "function __simeonPaneSegments(n){const{value:v,onChange:c,hasChannels:h}=n,items=[[\"settings\",\"Profile\"],[\"routines\",\"Routines\"],[\"overview\",\"Computer\"],...(h?[[\"channels\",\"Channels\"]]:[])],at=Math.max(0,items.findIndex(x=>x[0]===v));",
+  "return p.jsxs(\"div\",{className:\"simeon-segments\",role:\"tablist\",\"aria-label\":\"Agent\",style:{\"--simeon-seg-count\":items.length,\"--simeon-seg-index\":at},children:[p.jsx(\"span\",{className:\"simeon-segments__thumb\",\"aria-hidden\":!0}),...items.map(([id,label])=>p.jsx(yo,{content:label,children:p.jsx(\"button\",{type:\"button\",role:\"tab\",\"aria-selected\":id===v,\"aria-label\":label,\"data-segment\":id,className:\"simeon-segments__item\",onClick:()=>c(id),children:p.jsx(\"svg\",{viewBox:\"0 0 24 24\",\"aria-hidden\":!0,dangerouslySetInnerHTML:{__html:__simeonPaneIcons[id]}})})},id))]})}",
+].join("");
+const AGENT_PANE_ANCHOR = "function p3n(n){";
+const AGENT_PANE_BODY_BEFORE = "p.jsx(Ar,{className:re(\"sand-info-pane__section-content\",\"sand-1iyjqo2 sand-s83m0k sand-dl72j9 sand-2lwn1j\"),ref:Y,children:F===\"overview\"?p.jsxs(\"div\",{className:\"sand-9f619 sand-78zum5 sand-dt5ytf sand-1v2ro7d sand-1nn3v0j sand-yfqnmn sand-1l90r2v sand-nm25rq sand-1iyjqo2 sand-s83m0k sand-dl72j9\",children:[l,b?p.jsx(z2n,{agent:t,onOpenAgentChat:f}):null,p.jsxs(\"div\",{className:{0:{className:\"sand-78zum5 sand-dt5ytf sand-17d4w8g\"},1:{className:\"sand-78zum5 sand-dt5ytf sand-17d4w8g sand-1iyjqo2 sand-s83m0k sand-dl72j9 sand-2lwn1j\"}}[!!Cmt(x)<<0].className,children:[N.length>0?p.jsxs(\"div\",{className:\"sand-78zum5 sand-6s0dn4 sand-1qughib sand-167g77z sand-mix8c7\",children:[p.jsx(\"span\",{className:re(\"sand-info-pane__section-heading\",Fe(FUe.sectionHeading,Us.medium).className),id:ye,children:\"Routines\"}),p.jsx(yo,{content:\"Create Routine\",children:p.jsx(fr,{\"aria-label\":\"Create Routine\",className:\"sand-info-pane__section-heading-action\",\"data-routine-row\":\"new\",icon:\"plus\",onClick:xe,size:\"sm\",style:FUe.sectionHeadingAction})})]}):null,p.jsx(K2n,{agentId:t.id,labelledBy:ye,onCreateRoutine:xe,onOpenRoutine:Ie=>_({kind:\"existing\",id:Ie})})]}),k.length>0?p.jsx(D2n,{counts:I,onOpenSection:J,sections:k}):null]}):p.jsxs(\"div\",{className:\"sand-9f619 sand-78zum5 sand-dt5ytf sand-1v2ro7d sand-1nn3v0j sand-yfqnmn sand-1l90r2v sand-nm25rq sand-1iyjqo2 sand-s83m0k sand-dl72j9\",\"aria-labelledby\":ve,id:ge,role:\"region\",children:[F===\"settings\"?p.jsx(h3n,{agent:t,onDescriptionChange:m,onNameChange:u,onTitleChange:d}):null,F===\"channels\"?p.jsx(_0n,{agentId:t.id,labelledBy:ve}):null]})})";
+const AGENT_PANE_BODY_AFTER = 'p.jsx(Ar,{className:re("sand-info-pane__section-content","sand-1iyjqo2 sand-s83m0k sand-dl72j9 sand-2lwn1j"),ref:Y,children:p.jsxs("div",{className:"simeon-pane","data-segment":F,children:['
+  + 'p.jsxs("div",{className:"simeon-pane__head",children:[p.jsx(f3n,{agent:t}),p.jsx("div",{className:"simeon-pane__name",children:t.name}),typeof t.title==="string"&&t.title.trim().length>0?p.jsx("div",{className:"simeon-pane__title",children:t.title}):null]}),'
+  + 'p.jsx(__simeonPaneSegments,{value:F,onChange:J,hasChannels:k.some(Ie=>Ie.id==="channels")}),'
+  + 'p.jsxs("div",{className:"simeon-pane__body",id:ge,role:"tabpanel",children:['
+  + 'F==="settings"?p.jsx(h3n,{agent:t,onDescriptionChange:m,onNameChange:u,onTitleChange:d}):null,'
+  + 'F==="routines"?p.jsxs("div",{className:"simeon-pane__routines",children:[p.jsx("span",{id:ye,hidden:!0,children:"Routines"}),N.length>0?p.jsx("div",{className:"simeon-pane__add",children:p.jsxs("button",{type:"button","data-routine-row":"new",onClick:xe,children:[p.jsx(bt,{name:"plus",size:"sm"}),"New Routine"]})}):null,p.jsx(K2n,{agentId:t.id,labelledBy:ye,onCreateRoutine:xe,onOpenRoutine:Ie=>_({kind:"existing",id:Ie})})]}):null,'
+  + 'F==="overview"?p.jsxs("div",{className:"simeon-pane__computer",children:[l,b?p.jsx(z2n,{agent:t,onOpenAgentChat:f}):null]}):null,'
+  + 'F==="channels"?p.jsx(_0n,{agentId:t.id,labelledBy:ve}):null]})]})})';
+export const AGENT_PANE_REPLACEMENTS = Object.freeze([
+  ["agent-pane-components", AGENT_PANE_ANCHOR, `${AGENT_PANE_COMPONENTS_SOURCE}${AGENT_PANE_ANCHOR}`],
+  ["agent-pane-routines-view", 'function pin(n,e){return e==="overview"||e==="settings"||', 'function pin(n,e){return e==="overview"||e==="settings"||e==="routines"||'],
+  ["agent-pane-opens-on-profile", '[P,J]=S.useState("overview")', '[P,J]=S.useState("settings")'],
+  ["agent-pane-routine-request", 'J(r.section??"overview")', 'J(r.automationId!=null?"routines":r.section??"overview")'],
+  ["agent-pane-routine-editor", 'F!=="overview"&&O!=null&&_(null);const z=F==="overview"?O:null', 'F!=="routines"&&O!=null&&_(null);const z=F==="routines"?O:null'],
+  ["agent-pane-no-subpage-title", 'Ne=F!=="overview";', "Ne=!1;"],
+  ["agent-pane-no-gear", "(Ie={onOpenSettings:fe},", "(Ie={},"],
+  ["agent-pane-close-x", 'icon:"chevrons-right",iconSize:zwe,onClick:c,title:"Close details"', 'icon:"x",iconSize:zwe,onClick:c,title:"Close"'],
+  ["agent-pane-avatar-toggles", 'n.isOpen&&n.view==="settings"?"close":"open-settings"', 'n.isOpen?"close":"open-settings"'],
+  ["agent-pane-no-computer-button", "ne=!o||m?p.jsx(yo,{content:iSn", "ne=!1?p.jsx(yo,{content:iSn"],
+  ["agent-pane-one-page", AGENT_PANE_BODY_BEFORE, AGENT_PANE_BODY_AFTER],
+  // The sidebar steps back while the pane is open (1 October 2026, the founder: "whenever the right
+  // panel open, the left message sidebar should minimize like in mobile, and come back to normal once
+  // the right side is close"): opening the pane compacts an open sidebar to its avatar rail (the
+  // window's own ⌘B state, through the same `WFe`, which draws it on the shell and returns the
+  // layout to keep); closing it gives the sidebar back, unless the person compacted it themselves. Whether the pane fits, and how far the window grows for it, is reckoned with the
+  // rail it is about to have.
+  ["agent-pane-compacts-sidebar", 'setInfoPaneOpen:L=>{y||r.get().isOpen===L||(r.update(D=>({...D,isOpen:L})),N())}', 'setInfoPaneOpen:L=>{if(y||r.get().isOpen===L)return;r.update(D=>({...D,isOpen:L}));const __sb=s.get(),__sh=document.querySelector(".sand-shell"),__to=c=>__sh!=null?WFe(__sh,__sb,c,window.innerWidth):{...__sb,isCollapsed:c};if(L){__simeonSetPaneTookSidebar(!__sb.isCollapsed);__sb.isCollapsed||s.set(__to(!0))}else{__simeonPaneTookSidebar&&__sb.isCollapsed&&s.set(__to(!1));__simeonSetPaneTookSidebar(!1)}N()}'],
+  ["agent-pane-fits-beside-the-rail", 'A=S.useCallback(()=>{let V=h||E.current!=null;if(!h){', 'A=S.useCallback(()=>{const __fit=uan({windowWidth:window.innerWidth,sidebar:{...m,isCollapsed:!0},paneWidth:u});let V=__fit||E.current!=null;if(!__fit){'],
+  ["agent-pane-grows-beside-the-rail", 'G=dan({windowWidth:H,sidebar:m,paneWidth:u})', 'G=dan({windowWidth:H,sidebar:{...m,isCollapsed:!0},paneWidth:u})'],
+]);
+
+export function patchOriginalAgentPane(source) {
+  let out = source;
+  for (const [label, before, after] of AGENT_PANE_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export const AGENT_PANE_MARKER = "/* Simeon: the agent's pane, one page with a segmented control";
+const PANE_FONT = '-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif';
+export const AGENT_PANE_CSS = `${AGENT_PANE_MARKER} (1 October 2026). Measured on the founder's reference: a 96 pt avatar circle with a hairline and a 32 pt pencil on its edge, a 22 pt name, a 36 pt pill of icon segments, rows of 40 pt icon tiles with 15 pt titles, and air between them. No boxes, no accent. */
+.sand-agents-sidebar~.sand-info-pane,.sand-info-pane .sand-info-pane__inner{background-color:light-dark(#fbfbfd,#1c1c1e)!important}
+.simeon-pane{--simeon-ink:light-dark(#1d1d1f,#f5f5f7);--simeon-ink-2:light-dark(#86868b,#98989d);--simeon-fill:light-dark(#f2f2f4,#2c2c2e);--simeon-fill-2:light-dark(#e8e8ed,#3a3a3c);--simeon-hairline:light-dark(rgba(0,0,0,.08),rgba(255,255,255,.1));--simeon-paper:light-dark(#fbfbfd,#1c1c1e);display:flex;flex-direction:column;padding:6px 20px 40px;font-family:${PANE_FONT};-webkit-font-smoothing:antialiased;color:var(--simeon-ink);letter-spacing:-.01em}
+.simeon-pane__head{display:flex;flex-direction:column;align-items:center;padding:6px 0 0}
+.simeon-pane__head .sand-avatar-trigger-row{width:100%!important;height:auto!important;justify-content:center!important}
+.simeon-pane__head .sand-avatar-trigger{width:auto!important;height:auto!important}
+.simeon-pane__head .sand-avatar-trigger__button{position:relative;width:96px!important;height:96px!important;padding:0!important;overflow:visible!important;border-radius:50%!important;background:none!important;box-shadow:none!important}
+.simeon-pane__head .sand-avatar-trigger__button>span:first-child{display:flex!important;align-items:center;justify-content:center;width:96px!important;height:96px!important;border-radius:50%;overflow:hidden;background:light-dark(#ffffff,#2c2c2e);box-shadow:inset 0 0 0 1px var(--simeon-hairline)}
+.simeon-pane__head .sand-grok-bot-mark-avatar,.simeon-pane__head .sand-grok-bot-mark-avatar>svg{width:68px!important;height:68px!important}
+.simeon-pane__head .sand-avatar-trigger__button>span:first-child img{width:96px!important;height:96px!important;object-fit:cover}
+.simeon-pane__head .sand-avatar-trigger__overlay{position:absolute!important;inset:auto -3px -3px auto!important;width:32px!important;height:32px!important;border-radius:50%!important;opacity:1!important;-webkit-mask-image:none!important;mask-image:none!important;background:var(--simeon-fill)!important;box-shadow:0 0 0 3px var(--simeon-paper)!important;display:block!important;transition:background-color .15s}
+.simeon-pane__head .sand-avatar-trigger__overlay>*{display:none!important}
+.simeon-pane__head .sand-avatar-trigger__overlay::after{content:"";position:absolute;inset:7px;background:var(--simeon-ink);-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='M15.6 4.6a2.1 2.1 0 0 1 3 3L8.4 17.8l-4 1 1-4z'/><path d='M13.9 6.3l3 3'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='M15.6 4.6a2.1 2.1 0 0 1 3 3L8.4 17.8l-4 1 1-4z'/><path d='M13.9 6.3l3 3'/></svg>") center/contain no-repeat}
+.simeon-pane__head .sand-avatar-trigger__button:hover .sand-avatar-trigger__overlay{background:var(--simeon-fill-2)!important}
+.simeon-pane__name{margin-top:14px;font-size:22px;line-height:28px;font-weight:500;letter-spacing:-.022em;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.simeon-pane__title{margin-top:1px;font-size:15px;line-height:20px;color:var(--simeon-ink-2);text-align:center}
+.simeon-segments{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;height:36px;padding:3px;margin:32px 0 26px;border-radius:999px;background:var(--simeon-fill)}
+.simeon-segments__thumb{position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px) / var(--simeon-seg-count));transform:translateX(calc(var(--simeon-seg-index) * 100%));border-radius:999px;background:light-dark(#ffffff,#636366);box-shadow:0 1px 2px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.06);transition:transform .34s cubic-bezier(.32,.72,0,1)}
+.simeon-segments>:not(.simeon-segments__thumb){position:relative;z-index:1}
+.simeon-segments__item{display:flex;align-items:center;justify-content:center;width:100%;height:30px;appearance:none;border:0;margin:0;padding:0;background:none;border-radius:999px;color:light-dark(#6e6e73,#aeaeb2);cursor:default;outline:none;transition:color .2s}
+.simeon-segments__item[aria-selected="true"]{color:var(--simeon-ink)}
+.simeon-segments__item svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.simeon-segments__item:focus-visible{box-shadow:0 0 0 3px light-dark(rgba(0,0,0,.14),rgba(255,255,255,.24))}
+.simeon-segments>*+*::before{content:"";position:absolute;left:0;top:50%;height:16px;margin-top:-8px;width:1px;background:light-dark(#d8d8dd,#48484a);transition:opacity .2s}
+.simeon-segments__thumb+*::before{display:none}
+.simeon-segments>:has(>[aria-selected="true"])::before,.simeon-segments>:has(>[aria-selected="true"])+*::before,.simeon-segments>[aria-selected="true"]::before,.simeon-segments>[aria-selected="true"]+*::before{opacity:0}
+.simeon-pane__body{display:flex;flex-direction:column;gap:22px;font-size:15px;line-height:20px}
+.simeon-pane__body .sand-agent-settings{gap:22px!important}
+.simeon-pane__body .sand-agent-settings div:has(>.sand-avatar-trigger-row){display:none!important}
+.simeon-pane__body .sand-agent-settings>div:first-child{display:flex!important;flex-direction:column!important;gap:0!important}
+.simeon-pane__body .sand-agent-settings>div:first-child>div:not(:has(.sand-avatar-trigger-row)){margin:0!important;padding:14px 0 2px!important;font-size:13px!important;line-height:16px!important;font-weight:400!important;letter-spacing:0!important;color:var(--simeon-ink-2)!important}
+.simeon-pane__body .sand-agent-settings>div:first-child>div:nth-child(2){padding-top:0!important}
+.simeon-pane__body .sand-agent-settings>div:first-child>:is(input,textarea){margin:0!important;padding:4px 0 12px!important;min-height:0!important;border:0!important;border-bottom:1px solid var(--simeon-hairline)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;outline:none!important;font:inherit!important;font-size:15px!important;line-height:20px!important;color:var(--simeon-ink)!important}
+.simeon-pane__body .sand-agent-settings>div:first-child>:is(input,textarea):focus{border-bottom-color:var(--simeon-ink)!important}
+.simeon-pane__body .sand-agent-settings>div:first-child>textarea{resize:none!important;field-sizing:content;min-height:44px!important}
+.simeon-pane__body .sand-agent-settings__card{padding:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important}
+.simeon-pane__body .sand-agent-settings__row{display:grid!important;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:14px!important;padding:0!important}
+.simeon-pane__body .sand-agent-settings__row::before{content:"";width:40px;height:40px;border-radius:11px;background:var(--simeon-fill) no-repeat center/20px;background-image:none;-webkit-mask:none}
+.simeon-pane__body .sand-agent-settings__row::after{content:"";position:absolute;width:20px;height:20px;margin:10px;background:var(--simeon-ink);-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M6.2 16.6V11a5.8 5.8 0 0 1 11.6 0v5.6l1.5 1.6H4.7z'/><path d='M10 20.2a2.1 2.1 0 0 0 4 0'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M6.2 16.6V11a5.8 5.8 0 0 1 11.6 0v5.6l1.5 1.6H4.7z'/><path d='M10 20.2a2.1 2.1 0 0 0 4 0'/></svg>") center/contain no-repeat;pointer-events:none}
+.simeon-pane__body .sand-agent-settings__row{position:relative}
+.simeon-pane__body .sand-agent-settings__row::after{left:0;top:50%;margin:-10px 0 0 10px}
+.simeon-pane__body .sand-agent-settings__text>span:first-child{font-size:15px!important;line-height:20px!important;font-weight:500!important;color:var(--simeon-ink)!important}
+.simeon-pane__body .sand-agent-settings__text>span+span{font-size:13px!important;line-height:17px!important;color:var(--simeon-ink-2)!important}
+.simeon-pane__routines{display:flex;flex-direction:column;gap:6px}
+.simeon-pane__routines .sand-routine__empty{margin:0!important;font-size:15px!important;line-height:21px!important;color:var(--simeon-ink-2)!important;text-align:center}
+.simeon-pane__routines>div:has(>.sand-routine__empty){display:flex!important;flex-direction:column!important;align-items:center!important;gap:18px!important;padding:12px 8px 0!important}
+.simeon-pane__routines>div:has(>.sand-routine__empty)::before{content:"";width:56px;height:56px;border-radius:15px;background:var(--simeon-fill)}
+.simeon-pane__routines>div:has(>.sand-routine__empty)::after{content:"";position:absolute;width:26px;height:26px;margin-top:27px;background:var(--simeon-ink);-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='8.2'/><path d='M12 7.4V12l3.1 2'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='8.2'/><path d='M12 7.4V12l3.1 2'/></svg>") center/contain no-repeat}
+.simeon-pane__routines>div:has(>.sand-routine__empty){position:relative}
+.simeon-pane__routines>div:has(>.sand-routine__empty)::after{top:12px;margin:15px 0 0}
+.simeon-pane .sand-kit-button[data-routine-row="new"],.simeon-pane .sand-channel-row .sand-button{height:32px!important;padding:0 16px!important;border:0!important;border-radius:999px!important;background:var(--simeon-ink)!important;color:var(--simeon-paper)!important;box-shadow:none!important;font-size:14px!important;font-weight:500!important}
+.simeon-pane .sand-channel-row .sand-button{height:28px!important;padding:0 13px!important;font-size:13px!important;background:var(--simeon-fill)!important;color:var(--simeon-ink)!important}
+.simeon-pane__add{display:flex;justify-content:flex-end}
+.simeon-pane__add button{display:inline-flex;align-items:center;gap:5px;appearance:none;border:0;background:none;padding:2px 0;font:inherit;font-size:14px;font-weight:500;color:var(--simeon-ink);cursor:default}
+.simeon-pane__add button:hover{opacity:.65}
+.simeon-pane__body .sand-channels-tab{display:flex;flex-direction:column;gap:18px}
+.simeon-pane__body .sand-channels-tab>p span{font-size:13px!important;line-height:18px!important;color:var(--simeon-ink-2)!important}
+.simeon-pane__body .sand-channels-tab ul{display:flex!important;flex-direction:column!important;gap:16px!important}
+.simeon-pane__body .sand-channel-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important}
+.simeon-pane__body .sand-channel-row>div:first-child{display:grid!important;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:14px!important;min-width:0}
+.simeon-pane__body .sand-channel-row>div:first-child>span:first-child{width:40px!important;height:40px!important;border-radius:11px!important;background:var(--simeon-fill)!important;display:flex!important;align-items:center;justify-content:center}
+.simeon-pane__body .sand-channel-row>div:first-child>span:first-child svg{width:20px;height:20px}
+.simeon-pane__body .sand-channel-row>div:first-child>span:nth-child(2){gap:1px!important}
+.simeon-pane__body .sand-channel-row>div:first-child>span:nth-child(2)>span:first-child{font-size:15px!important;line-height:20px!important;font-weight:500!important;color:var(--simeon-ink)!important}
+.simeon-pane__body .sand-channel-row>div:first-child>span:nth-child(2)>span+span{font-size:13px!important;line-height:17px!important;color:var(--simeon-ink-2)!important;white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.simeon-pane__body .sand-channel-row>div+div{padding:0!important;margin:0!important}
+.simeon-pane__computer{display:flex;flex-direction:column;gap:10px}
+.simeon-pane__computer .sand-computer-preview{padding:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;gap:10px!important}
+.simeon-pane__computer .sand-computer-preview__frame{border-radius:14px!important;background:var(--simeon-fill)!important;border:0!important;box-shadow:inset 0 0 0 1px var(--simeon-hairline)!important}
+.simeon-pane__computer .sand-computer-stage__placeholder{background:transparent!important;box-shadow:none!important;font-size:14px}
+.simeon-pane__computer .sand-computer-stage__retry{height:28px!important;padding:0 13px!important;border-radius:999px!important;background:var(--simeon-fill-2)!important;border:0!important;box-shadow:none!important;color:var(--simeon-ink)!important;font-size:13px!important;font-weight:500!important}
+.simeon-pane__computer .sand-computer-preview>:last-child{font-size:13px!important;color:var(--simeon-ink-2)!important}
+`;
+
+/**
+ * Every switch in the window is the main blue when on (1 October 2026, the
+ * founder: "every single toggle get the main blue"): the person's bubble
+ * blue in light, one step brighter in dark so it reads on the dark pane.
+ * The knob stays white.
+ */
+export const SWITCH_BLUE_DARK = "#2f6db0";
+export const SWITCH_BLUE_MARKER = "/* Simeon: every switch is the main blue when on";
+export const switchBlueCss = () => `${SWITCH_BLUE_MARKER} (1 October 2026). */
+[role="switch"][aria-checked="true"]:not(#\\#):not(#\\#):not(#\\#):not(#\\#){background-color:light-dark(${USER_BUBBLE_LIGHT},${SWITCH_BLUE_DARK})!important;border-color:transparent!important}
+[role="switch"][aria-checked="true"]:not(#\\#):not(#\\#):not(#\\#):not(#\\#)>span{background-color:#ffffff!important}
+`;
+
+/**
+ * The agent asks the person to take over the computer (a SendMessage that
+ * carries `boxRequestId`; the window's own card is `Hbn`). Redrawn the
+ * Simeon way on 1 October 2026 ("can we design it differently, in our apple
+ * design"): the Messages grey of every card, a white 44 pt computer tile, "Your turn on the
+ * computer" over a quiet status with a pulsing blue dot while it waits, the
+ * agent's instruction in 15 pt, the screen's snapshot when the box sent one,
+ * then a blue Take over pill beside a grey I'm done, and Skip as a quiet
+ * link. Once settled the card says what happened (Done, Answered, Skipped)
+ * and offers Open computer. The window's handlers are the same ones.
+ */
+const HANDOFF_DISPLAY_ICON = '<rect x="3.2" y="4.4" width="17.6" height="12" rx="2.2"/><path d="M8.8 19.8h6.4M12 16.4v3.4"/>';
+const HANDOFF_CARD_SOURCE = [
+  `function __simeonHandoffCard(n){const{instruction:t,status:s,snapshotDataUrl:r,onOpen:o,onHandBack:hb,onDismiss:ds}=n,w=s==="waiting",done={handed_back:"Done",replied:"Answered",dismissed:"Skipped"}[s]??"Done",txt=typeof t==="string"?t.trim():"";`,
+  `return p.jsxs("article",{className:"simeon-handoff","data-status":s,"aria-label":w?"Your turn on the computer":"Computer",children:[`,
+  `p.jsxs("div",{className:"simeon-handoff__head",children:[p.jsx("span",{className:"simeon-handoff__tile","aria-hidden":!0,children:p.jsx("svg",{viewBox:"0 0 24 24",dangerouslySetInnerHTML:{__html:${JSON.stringify(HANDOFF_DISPLAY_ICON)}}})}),`,
+  `p.jsxs("div",{className:"simeon-handoff__titles",children:[p.jsx("div",{className:"simeon-handoff__title",children:w?"Your turn on the computer":"Computer"}),p.jsxs("div",{className:"simeon-handoff__status",role:"status",children:[p.jsx("span",{className:"simeon-handoff__dot","aria-hidden":!0}),w?"Waiting for you":done]})]})]}),`,
+  `txt.length>0?p.jsx("p",{className:"simeon-handoff__text",children:txt}):null,`,
+  `w&&r!=null?p.jsx("button",{type:"button",className:"simeon-handoff__screen",onClick:o,"aria-label":"Take over the computer",children:p.jsx("img",{src:r,alt:"",draggable:!1})}):null,`,
+  `w?p.jsxs("div",{className:"simeon-handoff__actions",children:[p.jsx("button",{type:"button",className:"simeon-handoff__primary",onClick:o,children:"Take over"}),p.jsx("button",{type:"button",className:"simeon-handoff__secondary",onClick:hb,children:"I’m done"}),p.jsx("button",{type:"button",className:"simeon-handoff__skip",onClick:ds,title:"Cancel this request without doing the step; the agent continues without it",children:"Skip"})]}):p.jsx("div",{className:"simeon-handoff__actions simeon-handoff__actions--settled",children:p.jsx("button",{type:"button",className:"simeon-handoff__secondary",onClick:o,children:"Open computer"})})]})}`,
+].join("");
+const HANDOFF_BEFORE = "function Hbn(n){const e=he.c(47),{instruction:t,status:s,snapshotDataUrl:r,onOpen:i,onHandBack:o,onDismiss:l}=n,";
+const HANDOFF_AFTER = `${HANDOFF_CARD_SOURCE}function Hbn(n){return p.jsx(__simeonHandoffCard,{...n})}function __simeonHbnOriginal(n){const e=he.c(47),{instruction:t,status:s,snapshotDataUrl:r,onOpen:i,onHandBack:o,onDismiss:l}=n,`;
+export const HANDOFF_REPLACEMENTS = Object.freeze([["handoff-card", HANDOFF_BEFORE, HANDOFF_AFTER]]);
+
+export function patchOriginalHandoff(source) {
+  let out = source;
+  for (const [label, before, after] of HANDOFF_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export const HANDOFF_MARKER = "/* Simeon: the take-over card";
+export const handoffCss = () => `${HANDOFF_MARKER} (1 October 2026). */
+.simeon-handoff{--h-ink:light-dark(#1d1d1f,#f5f5f7);--h-ink-2:light-dark(#6e6e73,#98989d);--h-fill:light-dark(#ffffff,#3a3a3c);--h-blue:light-dark(${USER_BUBBLE_LIGHT},${SWITCH_BLUE_DARK});box-sizing:border-box;width:100%;max-width:380px;display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:20px;background:light-dark(${AGENT_BUBBLE_LIGHT},#2c2c2e)!important;box-shadow:none;font-family:${PANE_FONT};-webkit-font-smoothing:antialiased;color:var(--h-ink);letter-spacing:-.01em}
+.simeon-handoff__head{display:grid;grid-template-columns:44px minmax(0,1fr);align-items:center;gap:12px}
+.simeon-handoff__tile{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;background:var(--h-fill)}
+.simeon-handoff__tile svg{width:22px;height:22px;fill:none;stroke:var(--h-ink);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.simeon-handoff__title{font-size:15px;line-height:20px;font-weight:600}
+.simeon-handoff__status{display:flex;align-items:center;gap:6px;margin-top:1px;font-size:13px;line-height:17px;color:var(--h-ink-2)}
+.simeon-handoff__dot{width:7px;height:7px;border-radius:50%;background:var(--h-ink-2)}
+.simeon-handoff[data-status="waiting"] .simeon-handoff__dot{background:var(--h-blue);animation:simeon-handoff-pulse 1.8s ease-in-out infinite}
+@keyframes simeon-handoff-pulse{0%,100%{box-shadow:0 0 0 0 light-dark(rgba(37,90,147,.35),rgba(47,109,176,.45))}50%{box-shadow:0 0 0 5px rgba(37,90,147,0)}}
+.simeon-handoff__text{margin:0;font-size:15px;line-height:21px;white-space:pre-wrap}
+.simeon-handoff:not([data-status="waiting"]) .simeon-handoff__text{color:var(--h-ink-2)}
+.simeon-handoff__screen{display:block;width:100%;aspect-ratio:16/10;padding:0;border:0;border-radius:12px;overflow:hidden;background:var(--h-fill);box-shadow:inset 0 0 0 1px light-dark(rgba(0,0,0,.06),rgba(255,255,255,.08));cursor:default}
+.simeon-handoff__screen img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
+.simeon-handoff__screen:hover img{transform:scale(1.02)}
+.simeon-handoff__actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.simeon-handoff__actions button{appearance:none;border:0;margin:0;font:inherit;cursor:default;outline:none}
+.simeon-handoff__primary,.simeon-handoff__secondary{height:36px;padding:0 16px;border-radius:999px;font-size:15px!important;font-weight:500!important;transition:filter .15s,background-color .15s}
+.simeon-handoff__primary{background:var(--h-blue);color:#ffffff}
+.simeon-handoff__primary:hover{filter:brightness(1.08)}
+.simeon-handoff__secondary{background:var(--h-fill);color:var(--h-ink)}
+.simeon-handoff__secondary:hover{background:light-dark(#f5f5f7,#48484a)}
+.simeon-handoff__skip{grid-column:1/-1;justify-self:center;height:24px;padding:0 8px;background:none;color:var(--h-ink-2);font-size:13px!important}
+.simeon-handoff__skip:hover{color:var(--h-ink)}
+.simeon-handoff__actions button:focus-visible{box-shadow:0 0 0 3px light-dark(rgba(37,90,147,.3),rgba(47,109,176,.45))}
+.simeon-handoff__actions--settled{display:flex}
+`;
+
+export function patchOriginalHandoffStylesheet(css) {
+  if (css.includes(HANDOFF_MARKER) || css.includes(SWITCH_BLUE_MARKER)) throw new Error("Original renderer take-over card or switch block is already present.");
+  return `${css}\n${switchBlueCss()}${handoffCss()}`;
+}
+
+/**
+ * Flight results (2 October 2026; the founder: "Design it exactly like muse.
+ * Make ours match our design. Premium please", then "apple doesnt have
+ * constant bold, apple is premium"). An agent's message whose whole text is
+ * one ```simeon-flights block of JSON is drawn as a results card, and a row
+ * opens that offer in a panel on the right that the chat steps aside for.
+ *
+ * The card is an Apple list: a quiet route line over the date and terms,
+ * then one row per offer, the times as the row's title, the airline, time
+ * in the air and stops under it in grey, then every connection airport with
+ * its layover on a line of its own (Muse's rule: no row hides its layovers),
+ * the price trailing, and a chevron.
+ * Weight comes from size and grey, not bold: regular throughout, medium
+ * only for the route line.
+ *
+ * The panel is described below, where it is drawn. The text stays the
+ * message's own, so an older window and the phone still show it.
+ *
+ *   {"title":"Seattle to Los Angeles","subtitle":"Fri, Oct 2 · Refundable · 1 adult",
+ *    "offers":[{"airline":"American Airlines","logo":"https://…/AA.svg",
+ *     "price":"$361.20","priceNote":"1 adult · Economy · One way","date":"Fri, Oct 2",
+ *     "from":"SEA","fromCity":"Seattle","to":"LAX","toCity":"Los Angeles",
+ *     "depart":"6:00 AM","arrive":"12:18 PM","duration":"6h 18m","stops":"1 stop · PHX 1h 38m",
+ *     "refundable":"Full refund","changeable":"Not stated","bags":"1 carry-on",
+ *     "label":"Cheapest",
+ *     "legs":[{"from":"SEA","fromCity":"Seattle","to":"PHX","toCity":"Phoenix",
+ *       "depart":"6:00 AM","arrive":"9:10 AM","flight":"AA 3792",
+ *       "carrier":"American Airlines","logo":"https://…","cabin":"Economy",
+ *       "duration":"3h 10m","layover":"1h 38m in Phoenix"}, …]}]}
+ *
+ * A row opens the offer in the agent's own pane (2 October 2026, the founder:
+ * "you see the right panel? should be one … the main right panel is when you
+ * click on avatar … re-design the flight panel, same size as avatar panel,
+ * same color"): the pane draws the flight in place of the profile page, in
+ * the profile's own type and layout, and its close, its width, the sidebar
+ * stepping back and the chat making room are all the pane's. Closing it
+ * forgets the flight. A round trip's return legs say so in their heading,
+ * and its row in the card says when the flight back leaves.
+ */
+const FLIGHT_CHEVRON = '<path d="M9.5 6.5 15 12l-5.5 5.5"/>';
+const FLIGHTS_SOURCE = [
+  "function __simeonFlightsParse(n){if(typeof n!==\"string\")return null;const m=/^```simeon-flights[^\\n]*\\n([\\s\\S]*?)\\n?```$/.exec(n.trim());if(m==null)return null;try{const d=JSON.parse(m[1]);if(d==null||!Array.isArray(d.offers)||d.offers.length===0)return null;const s=v=>typeof v===\"string\"?v.trim():\"\";",
+  "const leg=l=>({from:s(l.from),fromCity:s(l.fromCity),to:s(l.to),toCity:s(l.toCity),depart:s(l.depart),arrive:s(l.arrive),flight:s(l.flight),carrier:s(l.carrier),logo:s(l.logo),cabin:s(l.cabin),duration:s(l.duration),layover:s(l.layover),heading:s(l.heading),departDay:s(l.departDay),arriveDay:s(l.arriveDay)});",
+  "return{title:s(d.title),subtitle:s(d.subtitle),offers:d.offers.filter(o=>o!=null&&typeof o===\"object\").slice(0,8).map(o=>({airline:s(o.airline),logo:s(o.logo),price:s(o.price),priceNote:s(o.priceNote),date:s(o.date),from:s(o.from),fromCity:s(o.fromCity),to:s(o.to),toCity:s(o.toCity),depart:s(o.depart),arrive:s(o.arrive),duration:s(o.duration),stops:s(o.stops),refundable:s(o.refundable),changeable:s(o.changeable),bags:s(o.bags),returnTimes:s(o.returnTimes),legs:Array.isArray(o.legs)?o.legs.filter(l=>l!=null&&typeof l===\"object\").map(leg):[],raw:o}))}}catch{return null}}",
+  "function __simeonInitials(n){const w=String(n||\"\").split(/\\s+/).filter(x=>x&&!/^(airlines?|airways|air)$/i.test(x));return(w.length>1?w[0][0]+w[1][0]:String(w[0]||\"?\").slice(0,2)).toUpperCase()}",
+  "function __simeonAirlineMark(n){const[f,sf]=S.useState(!1),u=n.logo;return p.jsx(\"span\",{className:`simeon-flight-mark simeon-flight-mark--${n.size||\"row\"}`,\"aria-hidden\":!0,children:u&&!f?p.jsx(\"img\",{src:u,alt:\"\",draggable:!1,onError:()=>sf(!0)}):p.jsx(\"span\",{className:\"simeon-flight-mark__initials\",children:__simeonInitials(n.name)})})}",
+  "function __simeonIcon(n){return p.jsx(\"svg\",{viewBox:\"0 0 24 24\",\"aria-hidden\":!0,className:n.className,dangerouslySetInnerHTML:{__html:n.d}})}",
+  // One right-hand panel (2 October 2026, the founder: "the right panel? should be one … the
+  // main right panel is when you click on avatar"). A flight opens in the agent's own pane, in its
+  // place of the profile, and the pane's own close, sidebar and chat layout serve it. Which flight
+  // is open is one value the card and the pane both read.
+  "let __simeonFlightOpen=null,__simeonPaneSetOpen=null;const __simeonFlightSubs=new Set();",
+  "function __simeonSetFlight(v){if(__simeonFlightOpen===v)return;__simeonFlightOpen=v;for(const f of __simeonFlightSubs)f()}",
+  "function __simeonUseFlight(agentId){const[,bump]=S.useReducer(x=>x+1,0);S.useEffect(()=>{__simeonFlightSubs.add(bump);return()=>{__simeonFlightSubs.delete(bump)}},[]);const f=__simeonFlightOpen;if(f==null||agentId==null)return f;if(f.agentId==null)f.agentId=agentId;return f.agentId===agentId?f:null}",
+  "function __simeonOpenFlight(key,offer){if(__simeonFlightOpen?.key===key){__simeonPaneSetOpen?.(!1);__simeonSetFlight(null);return}__simeonSetFlight({key,offer});__simeonPaneSetOpen?.(!0)}",
+  "function __simeonFlights(n){const d=__simeonFlightsParse(n.content),fo=__simeonUseFlight();",
+  "if(d==null)return null;const base=`${n.content.length}:${n.content.slice(-64)}`;",
+  "return p.jsxs(\"section\",{className:\"simeon-flights\",\"aria-label\":d.title||\"Flights\",children:[d.title||d.subtitle?p.jsxs(\"header\",{className:\"simeon-flights__head\",children:[d.title?p.jsx(\"h3\",{children:d.title}):null,d.subtitle?p.jsx(\"p\",{children:d.subtitle}):null]}):null,",
+  "p.jsx(\"ul\",{className:\"simeon-flights__list\",children:d.offers.map((f,i)=>{const k=`${base}:${i}`;return p.jsx(\"li\",{children:p.jsxs(\"button\",{type:\"button\",className:\"simeon-flights__row\",\"aria-pressed\":fo?.key===k,onClick:()=>__simeonOpenFlight(k,f),children:[p.jsx(__simeonAirlineMark,{logo:f.logo,name:f.airline}),",
+  "p.jsxs(\"span\",{className:\"simeon-flights__body\",children:[p.jsx(\"span\",{className:\"simeon-flights__times\",children:[f.depart,f.arrive].filter(Boolean).join(\" – \")}),p.jsx(\"span\",{className:\"simeon-flights__meta\",children:[f.airline,f.duration,f.stops.split(\" · \")[0]].filter(Boolean).join(\" · \")}),f.stops.includes(\" · \")?p.jsx(\"span\",{className:\"simeon-flights__meta\",children:`${f.stops.slice(f.stops.indexOf(\" · \")+3)} layover`}):null,f.returnTimes?p.jsx(\"span\",{className:\"simeon-flights__meta\",children:f.returnTimes}):null]}),",
+  "p.jsx(\"span\",{className:\"simeon-flights__price\",children:f.price}),p.jsx(__simeonIcon,{className:\"simeon-flights__chevron\",d:" + JSON.stringify(FLIGHT_CHEVRON) + "})]})},i)})})]})}",
+  // The flight, drawn as the pane draws a profile: a centred head (the airline's mark where the
+  // avatar sits, the route as the name, the date, stops and time in the air as the title), then
+  // groups under 13 pt grey labels, rows of a 15 pt label and its value, hairlines between.
+  "function __simeonFlightRow(k,v,sub){return v?p.jsxs(\"div\",{className:\"simeon-flight-pane__row\",children:[p.jsx(\"span\",{children:k}),p.jsxs(\"span\",{className:\"simeon-flight-pane__value\",children:[v,sub?p.jsx(\"small\",{children:sub}):null]})]},k):null}",
+  "function __simeonFlightDetails(n){const o=n.offer,first=o.legs[0],last=o.legs[o.legs.length-1],from=o.from||first?.from||\"\",to=o.to||last?.to||\"\";",
+  "const when=(d,t)=>[d,t].filter(Boolean).join(\" · \"),row=__simeonFlightRow;",
+  "return p.jsxs(\"div\",{className:\"simeon-pane simeon-flight-pane\",children:[p.jsxs(\"div\",{className:\"simeon-flight-pane__head\",children:[p.jsx(__simeonAirlineMark,{logo:o.logo,name:o.airline,size:\"hero\"}),p.jsx(\"div\",{className:\"simeon-pane__name\",children:`${from} → ${to}`}),p.jsx(\"div\",{className:\"simeon-pane__title\",children:[o.date,o.duration,o.stops.split(\" · \")[0]].filter(Boolean).join(\" · \")})]}),",
+  "p.jsxs(\"div\",{className:\"simeon-flight-pane__body\",children:[o.price?p.jsxs(\"section\",{children:[p.jsx(\"h4\",{children:\"Price\"}),row(\"Total\",o.price,o.priceNote)]}):null,",
+  "...o.legs.map((l,i)=>p.jsxs(\"section\",{children:[p.jsx(\"h4\",{children:[l.heading,`${l.from} → ${l.to}`].filter(Boolean).join(\" · \")}),row(\"Departs\",when(l.departDay,l.depart)),row(\"Arrives\",when(l.arriveDay,l.arrive)),row(\"Flight\",[l.flight,l.carrier&&l.carrier!==o.airline?l.carrier:\"\"].filter(Boolean).join(\" · \")),row(\"Cabin\",l.cabin),row(\"Time in the air\",l.duration),",
+  "l.layover&&i<o.legs.length-1?p.jsx(\"p\",{className:\"simeon-flight-pane__note\",children:`${l.layover.replace(/ in /,\" layover in \")}`}):null]},`l${i}`)),",
+  "o.refundable||o.changeable||o.bags?p.jsxs(\"section\",{children:[p.jsx(\"h4\",{children:\"Fare\"}),row(\"Cancellation\",o.refundable),row(\"Changes\",o.changeable),row(\"Bags\",o.bags)]}):null]})]})}",
+].join("");
+const FLIGHTS_COMPONENTS_ANCHOR = "function __simeonHandoffCard(n){";
+const FLIGHTS_MESSAGE_BEFORE = CALL_RECORD_AFTER;
+const FLIGHTS_MESSAGE_AFTER = `(!h&&__simeonFlightsParse(r)!=null?p.jsx(__simeonFlights,{content:r}):${CALL_RECORD_AFTER})`;
+export const FLIGHTS_REPLACEMENTS = Object.freeze([
+  ["flights-components", FLIGHTS_COMPONENTS_ANCHOR, `${FLIGHTS_SOURCE}${FLIGHTS_COMPONENTS_ANCHOR}`],
+  ["flights-message", FLIGHTS_MESSAGE_BEFORE, FLIGHTS_MESSAGE_AFTER],
+  // The pane's own opener, so a flight row opens the one right-hand panel; closing it forgets the
+  // flight, so the avatar opens the profile again.
+  ["flights-pane-opener", "setInfoPaneOpen:L=>{if(y||r.get().isOpen===L)return;", "setInfoPaneOpen:__simeonPaneSetOpen=L=>{L||__simeonSetFlight(null);if(y||r.get().isOpen===L)return;"],
+  // The pane reads which flight is open, for this agent…
+  ["flights-pane-reads", "function p3n(n){", "function p3n(n){const __fo=__simeonUseFlight(n.agent?.id);"],
+  // …and draws it in place of the profile page.
+  ["flights-pane-body", 'ref:Y,children:p.jsxs("div",{className:"simeon-pane","data-segment":F,children:[', 'ref:Y,children:__fo!=null?p.jsx(__simeonFlightDetails,{offer:__fo.offer}):p.jsxs("div",{className:"simeon-pane","data-segment":F,children:['],
+]);
+
+/** Runs after the voice-call and take-over patches: it wraps the one and sits beside the other. */
+export function patchOriginalFlights(source) {
+  let out = source;
+  for (const [label, before, after] of FLIGHTS_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export const FLIGHTS_MARKER = "/* Simeon: flight results";
+/**
+ * Type on Apple's scale, SF at 400 with 500 for the few titles: 15 pt rows
+ * over 13 pt grey, a 17 pt route over the panel, 13 pt leg details. Greys
+ * are the system's (label, secondary, tertiary, separator, grouped fill);
+ * the one colour is the window's blue, on the focus ring. Rows separate with hairlines inset past the mark, the selected
+ * row takes the system fill. The flight itself is drawn in the agent's pane
+ * with the pane's own tokens (`AGENT_PANE_CSS`).
+ */
+export const flightsCss = () => `${FLIGHTS_MARKER} (2 October 2026). */
+.simeon-flights{--f-ink:light-dark(#1d1d1f,#f5f5f7);--f-ink-2:light-dark(#86868b,#98989d);--f-ink-3:light-dark(#c7c7cc,#48484a);--f-line:light-dark(rgba(60,60,67,.14),rgba(84,84,88,.5));--f-group:light-dark(#ffffff,#2c2c2e);--f-ground:light-dark(#f5f5f7,#1c1c1e);--f-panel:light-dark(#f5f5f7,#1c1c1e);--f-fill:light-dark(rgba(120,120,128,.1),rgba(120,120,128,.24));--f-blue:light-dark(${USER_BUBBLE_LIGHT},${SWITCH_BLUE_DARK});font-family:${PANE_FONT};font-weight:400;color:var(--f-ink);-webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1}
+.simeon-flights{box-sizing:border-box;width:min(420px,100%);min-width:0}
+.simeon-flights__head{padding:2px 0 8px}
+.simeon-flights__head h3{margin:0;font-size:15px;line-height:20px;font-weight:500;letter-spacing:-.01em}
+.simeon-flights__head p{margin:1px 0 0;font-size:13px;line-height:18px;color:var(--f-ink-2)}
+.simeon-flights__list{list-style:none;margin:0 -10px;padding:0}
+.simeon-flights__list li{position:relative}
+.simeon-flights__list li+li::before{content:"";position:absolute;top:0;left:58px;right:10px;height:.5px;background:var(--f-line)}
+.simeon-flights__row{appearance:none;display:grid;grid-template-columns:36px minmax(0,1fr) auto 12px;align-items:center;column-gap:12px;width:100%;margin:0;padding:10px;border:0;border-radius:12px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:default;transition:background-color .2s}
+.simeon-flights__list li:hover+li::before,.simeon-flights__list li:has(.simeon-flights__row:hover)::before,.simeon-flights__list li:has([aria-pressed="true"])::before,.simeon-flights__list li:has([aria-pressed="true"])+li::before{opacity:0}
+.simeon-flights__row:hover{background:var(--f-fill)}
+.simeon-flights__row[aria-pressed="true"]{background:var(--f-fill)}
+.simeon-flights__row:focus-visible{outline:none;box-shadow:0 0 0 3px light-dark(rgba(37,90,147,.28),rgba(47,109,176,.45))}
+.simeon-flights__body{display:flex;flex-direction:column;gap:1px;min-width:0}
+.simeon-flights__times{font-size:15px;line-height:20px;letter-spacing:-.01em;white-space:nowrap}
+.simeon-flights__meta{font-size:13px;line-height:18px;color:var(--f-ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.simeon-flights__price{font-size:15px;line-height:20px;letter-spacing:-.01em;white-space:nowrap}
+.simeon-flights__chevron{width:12px;height:12px;fill:none;stroke:var(--f-ink-3);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.simeon-flight-mark{flex:none;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#ffffff;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.12);overflow:hidden}
+.simeon-flight-mark img{object-fit:contain;display:block}
+.simeon-flight-mark__initials{font-weight:500;color:#6e6e73}
+.simeon-flight-mark--row{width:36px;height:36px}.simeon-flight-mark--row img{width:22px;height:22px}.simeon-flight-mark--row .simeon-flight-mark__initials{font-size:12px}
+.simeon-flight-mark--small{width:24px;height:24px}.simeon-flight-mark--small img{width:15px;height:15px}.simeon-flight-mark--small .simeon-flight-mark__initials{font-size:9px}
+.simeon-flight-mark--tiny{width:20px;height:20px}.simeon-flight-mark--tiny img{width:13px;height:13px}.simeon-flight-mark--tiny .simeon-flight-mark__initials{font-size:8px}
+.simeon-flight-mark--hero{width:72px;height:72px;box-shadow:inset 0 0 0 1px var(--simeon-hairline,rgba(0,0,0,.08))}.simeon-flight-mark--hero img{width:42px;height:42px}.simeon-flight-mark--hero .simeon-flight-mark__initials{font-size:20px}
+.simeon-flight-pane__head{display:flex;flex-direction:column;align-items:center;padding:12px 0 0}
+.simeon-flight-pane__head .simeon-pane__name{margin-top:14px}
+.simeon-flight-pane__body{display:flex;flex-direction:column;gap:22px;margin-top:30px}
+.simeon-flight-pane__body h4{margin:0 0 2px;font-size:13px;line-height:16px;font-weight:400;letter-spacing:0;color:var(--simeon-ink-2)}
+.simeon-flight-pane__row{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:.5px solid var(--simeon-hairline);font-size:15px;line-height:20px}
+.simeon-flight-pane__value{display:flex;flex-direction:column;align-items:flex-end;text-align:right;color:var(--simeon-ink-2)}
+.simeon-flight-pane__value small{font-size:13px;line-height:18px}
+.simeon-flight-pane__note{margin:10px 0 0;font-size:13px;line-height:18px;color:var(--simeon-ink-2)}
+`;
+
+export function patchOriginalFlightsStylesheet(css) {
+  if (css.includes(FLIGHTS_MARKER)) throw new Error("Original renderer flight results block is already present.");
+  return `${css}\n${flightsCss()}`;
+}
+
+export function patchOriginalAgentPaneStylesheet(css) {
+  if (css.includes(AGENT_PANE_MARKER)) throw new Error("Original renderer agent pane block is already present.");
+  return `${css}\n${AGENT_PANE_CSS}`;
 }
 
 /**
@@ -683,10 +1078,14 @@ const SWITCH_AND_TILES_CSS = () => `[role=switch][aria-checked="true"]${HI}:not(
  * Messages grey again (AGENT_BUBBLE_LIGHT, #E9E9EB; the founder: "the grey
  * it was before … not super grey, but apple grey. that counts for all cards
  * too"). Only the colour changed: the edges, padding and type stay.
+ * Since 1 October the person's blue bubble has no edge at all: the white
+ * line along its top and the hairline ring around it read as a stray
+ * over/underline on the flat blue ("there's kind of probleme tho with the
+ * above/underline").
  */
 const AGENT_SHEET_CSS = () => `[data-theme*="light"] .sand-message.sand-1g0q52m:not(.sand-mvmkjj)${HI}{background:${AGENT_BUBBLE_LIGHT};color:#1d1d1f;padding:10px 15px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
 [data-theme*="light"] .sand-message-block:has(>.sand-message.sand-1g0q52m:not(.sand-mvmkjj))${HI}{gap:6px}
-[data-theme*="light"] .sand-message.sand-mvmkjj${HI}:not(#\\#){padding:10px 15px;box-shadow:inset 0 1px 0 rgba(255,255,255,.30),inset 0 0 0 .5px rgba(255,255,255,.12),0 0 0 .5px rgba(20,45,90,.24),0 1px 2px rgba(20,45,90,.10);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
+[data-theme*="light"] .sand-message.sand-mvmkjj${HI}:not(#\\#){padding:10px 15px;box-shadow:none;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;font-weight:400;line-height:1.5;letter-spacing:-.003em;-webkit-font-smoothing:antialiased}
 [data-theme*="light"] .sand-agent-item[data-active="true"]${HI}:not(#\\#):not(#\\#){border-radius:14px;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
 [data-theme*="light"] .sand-agent-item${HI}{border-radius:14px}
 [data-theme*="light"] .sand-agents-sidebar__search${HI}{background:#fff;border-radius:10px;box-shadow:0 0 0 .5px rgba(20,30,60,.09),0 1px 2px rgba(20,30,60,.05)}
@@ -820,26 +1219,26 @@ export function patchOriginalPalette(source) {
 
 /**
  * The person's own chat bubble. It was iMessage blue from 23 September 2026
- * ("copy imessage style and make it blue"); since 27 September it is the
- * founder's "Sky wash, deepest": a sky blue gradient under film grain and a
- * horizontal brush texture ("these are the main color i like. kinda grainy,
- * artistic, painting"; "sky wash deepest is fine"). It first carried a teal
- * and a dusty rose stroke at the tail; they came out the same day ("too
- * noisy. keep the blue color, remove the purple/green accents"). White text
- * holds 5.9:1 to 7.1:1 on it, which the lighter first drafts did not ("the
- * white of the text wont be seen").
+ * ("copy imessage style and make it blue"), then from 27 September the
+ * "Sky wash": a gradient under film grain and a brush texture. Since 1 October
+ * it is one flat blue, no gradient, no texture ("the blue in the user chat
+ * looks dirty. make it one simple blue color, no gradiant or anything"). White
+ * text holds 7.1:1 on the light blue and 8.4:1 on the dark one. In dark mode,
+ * selected text on the bubble is drawn in white with the bubble's blue as its
+ * ink ("in dark mode, you can't see well when you select a text in the blue
+ * chat"); light mode keeps the system selection, which reads fine there.
  *
  * The renderer's theme variables are generated at runtime from a token list
  * in the chunk (`Ct("fill/bubble-user", El(light, dark, hcLight, hcDark))`,
  * emitted by `bzn` as `--sand-fill-bubble-user`); the stylesheet carries only
  * the light default for first paint. Both are patched to the painting's base
  * blue, which is also what `--cursor-foreground` (a checked checkbox) reads.
- * The painting itself is `USER_BUBBLE_PAINT_CSS`, appended to the stylesheet
- * on `.sand-mvmkjj`, the one atomic class that applies the bubble colour: it
- * occurs once in the pinned chunk, in the message's `user` style. It uses
- * `light-dark()` in the stops, the way the renderer's own palette does, so
- * dark mode runs one shade deeper. The text on the bubble is
- * `text/on-color`, white in every theme, and stays.
+ * `USER_BUBBLE_PAINT_CSS`, appended to the stylesheet on `.sand-mvmkjj`, the
+ * one atomic class that applies the bubble colour (it occurs once in the
+ * pinned chunk, in the message's `user` style), clears any background image
+ * so the token's flat colour is all that shows, and carries the dark-mode
+ * selection. The renderer marks dark mode as `data-theme="cursor-dark"` on
+ * the root. The text on the bubble is `text/on-color`, white in every theme.
  */
 export const USER_BUBBLE_LIGHT = "#255a93";
 export const USER_BUBBLE_DARK = "#1f5087";
@@ -856,11 +1255,10 @@ export function patchOriginalBubble(source) {
   return out;
 }
 
-const GRAIN_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>";
-const BRUSH_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='120'><filter id='b'><feTurbulence type='fractalNoise' baseFrequency='.012 .35' numOctaves='2'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .22 -.04'/></filter><rect width='100%' height='100%' filter='url(%23b)'/></svg>";
-export const USER_BUBBLE_PAINT_MARKER = "/* Simeon: the person's bubble is painted, Sky wash";
-export const USER_BUBBLE_PAINT_CSS = `${USER_BUBBLE_PAINT_MARKER} (27 September 2026): grain and brush over the blue, no accent strokes. */
-.sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#){background-image:url("${GRAIN_SVG}"),url("${BRUSH_SVG}"),linear-gradient(165deg,light-dark(${USER_BUBBLE_LIGHT},${USER_BUBBLE_DARK}),light-dark(#2e679f,#285c93));background-size:160px 160px,300px 100%,100% 100%;background-blend-mode:soft-light,overlay,normal}
+export const USER_BUBBLE_PAINT_MARKER = "/* Simeon: the person's bubble is one flat blue";
+export const USER_BUBBLE_PAINT_CSS = `${USER_BUBBLE_PAINT_MARKER} (1 October 2026), plain, and its selection reads in dark mode. */
+.sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#){background-image:none}
+[data-theme="cursor-dark"] .sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#)::selection,[data-theme="cursor-dark"] .sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#) *::selection{background-color:#ffffff;color:${USER_BUBBLE_DARK}}
 `;
 
 /**
@@ -1037,8 +1435,10 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!COPY_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer onboarding copy anchors are not all in the mark chunk.");
   if (!LOGO_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer file-kind and Plugins-button anchors are not all in the mark chunk.");
   if (!VOICE_CALL_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer voice-call anchors (chat header identity row, character settings) are not all in the mark chunk.");
+  if (!AGENT_PANE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer agent pane anchors (the info pane, its view guard, the chat header's computer button) are not all in the mark chunk.");
+  if (!HANDOFF_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer take-over card anchor is not in the mark chunk.");
   const logoAssets = await readLogoAssets();
-  const markPatched = patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions))));
+  const markPatched = patchOriginalFlights(patchOriginalHandoff(patchOriginalAgentPane(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions)))))));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -1047,7 +1447,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  const stylesheetPatched = patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets));
+  const stylesheetPatched = patchOriginalFlightsStylesheet(patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets)))));
   const chunkSources = [];
   for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
   const styleAnchors = {
@@ -1067,7 +1467,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const appIconAfter = await readFile(appIconTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
-    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos", "voice-call-styles"],
+    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, ...AGENT_PANE_REPLACEMENTS, ...HANDOFF_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos", "voice-call-styles", "agent-pane-styles", "switch-blue", "take-over-card-styles"],
     userBubble: { light: USER_BUBBLE_LIGHT, dark: USER_BUBBLE_DARK, stylesheet: path.relative(stageRoot, bubbleSheets[0].target) },
     // The stylesheet's hashes, so `npm run verify` can check the packaged
     // file against what this patch wrote (25 September 2026: verify read
@@ -1122,7 +1522,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "flight-results"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

@@ -237,7 +237,7 @@ export function createCallChannel(options: CallChannelOptions): CallChannel {
       try {
         const answer = await options.legs.voiceCall({ ...base, kind: "ended", record });
         const written = isRecord(answer) && typeof answer.exchange === "number" ? answer.exchange : 0;
-        log(`call channel: voice:${options.callId} closed (${written} line(s) in the chat)`);
+        log(`call channel: voice:${options.callId} closed (${written > 0 ? `its line in the chat holds ${written} line(s) of what was said` : "no line in the chat"})`);
         return written;
       } catch (error) {
         log(`call channel: the call's end did not reach the agent: ${errorText(error)}`);

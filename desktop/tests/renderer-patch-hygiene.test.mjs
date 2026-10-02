@@ -56,9 +56,11 @@ test("the patch records its style anchors and only the chunks a transform change
   assert.match(record, /features: \["brand-simeon",/);
 });
 
-test("the gate table says why browserUse stays off and multitask on", async () => {
+test("the gate table turns browserUse on, leaves teach-by-showing off, and says why", async () => {
   const gates = await readFile(path.join(repoRoot, "source/shared/node/experiments/simeon-gate-defaults.ts"), "utf8");
-  assert.match(gates, /`sand_browser_use_subagent` stays at its bundled default, off/);
-  assert.match(gates, /`sand_multitask` stays at its bundled default, on/);
-  assert.equal(/sand_browser_use_subagent: (true|false)/.test(gates), false, "the table itself does not set it");
+  // 2 October 2026: the founder asked for every switch on but teach by showing.
+  for (const name of ["sand_browser_use_subagent", "sand_focus_staleness_catch_up", "sand_agent_network", "sand_auto_disk_saver", "sand_memory_dreaming"]) assert.match(gates, new RegExp(`\\b${name}: true`), name);
+  assert.equal(/sand_teach_by_demonstration: (true|false)/.test(gates), false, "teach by showing stays at its bundled default");
+  assert.match(gates, /`sand_teach_by_demonstration` stays off/);
+  assert.match(gates, /`sand_multitask`(\s|\/\/)+stays at its bundled default, on/);
 });

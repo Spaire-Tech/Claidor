@@ -119,6 +119,26 @@ export function clampRelay(text: string): string {
   return collapsed.length > VOICE_RELAY_MAX_CHARS ? `${collapsed.slice(0, VOICE_RELAY_MAX_CHARS - 1).trimEnd()}…` : collapsed;
 }
 
+/** The event type of a call's line in the agent's chat (host/extensions/transcript/voice-call-channel.ts). */
+export const VOICE_CALL_EVENT = "voice-call";
+
+/** How long a call lasted, the way its line says it: "01:49", or "1:02:03" past an hour. */
+export function voiceCallDuration(seconds: number): string {
+  const whole = Math.max(0, Math.round(Number.isFinite(seconds) ? seconds : 0));
+  const hours = Math.floor(whole / 3600);
+  const minutes = String(Math.floor((whole % 3600) / 60)).padStart(2, "0");
+  const rest = String(whole % 60).padStart(2, "0");
+  return hours > 0 ? `${hours}:${minutes}:${rest}` : `${minutes}:${rest}`;
+}
+
+/** A call's line in words, for the sidebar's preview: "Voice chat · 01:49", or "Voice chat" while it is on. */
+export function voiceCallLineText(event: unknown): string | null {
+  if (typeof event !== "object" || event === null) return null;
+  const call = event as { type?: unknown; status?: unknown; seconds?: unknown };
+  if (call.type !== VOICE_CALL_EVENT) return null;
+  return call.status === "ended" && typeof call.seconds === "number" ? `Voice chat · ${voiceCallDuration(call.seconds)}` : "Voice chat";
+}
+
 /** A call id safe for an address and a file name. */
 export function isVoiceCallId(value: unknown): value is string {
   return typeof value === "string" && /^[A-Za-z0-9_-]{6,80}$/.test(value);
