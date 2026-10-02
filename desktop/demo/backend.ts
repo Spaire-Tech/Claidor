@@ -199,7 +199,7 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
       hooks.pushMainEvent("cursor-auth-changed", authStatus);
       setTimeout(() => { authStatus = signedIn; hooks.pushMainEvent("cursor-auth-changed", authStatus); }, 1800);
       // The window then shows "Setting up Simeon's computer" until the cloud computer answers.
-      setTimeout(() => hooks.reconnectCoordinator?.(), 5000);
+      setTimeout(() => hooks.reconnectCoordinator?.(), 8000);
       return authStatus;
     },
     cancelCursorLogin: () => { authStatus = { kind: "logged-out" }; hooks.pushMainEvent("cursor-auth-changed", authStatus); return authStatus; },

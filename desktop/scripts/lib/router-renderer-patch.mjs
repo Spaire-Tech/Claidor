@@ -802,6 +802,11 @@ export function patchOriginalAgentPaneStylesheet(css) {
 export const COPY_REPLACEMENTS = Object.freeze([
   ["copy-signin-tagline", 'tagline:"Your team of always-on agents that you can give real work to."', 'tagline:"Your personal team of agents for whatever needs doing."'],
   ["copy-meet-typed", 'const H2e="Hand off any task to your team of agents"', 'const H2e="Put any task in the hands of your agents"'],
+  // The boot screen as the founder asked, 3 October 2026: "remove the logo
+  // up there. and have only the setting up thing". The heading keeps the
+  // window's own moving light (`Ude`, the shimmer "Getting your team ready…"
+  // uses), and stays still for people who reduce motion, as before.
+  ["setup-screen-text-only", 'children:[p.jsx(tOt,{className:"sand-loading__mark",size:SRn}),p.jsx("span",{"aria-hidden":!0,className:re("sand-loading__heading"', 'children:[p.jsx("span",{"aria-hidden":!0,className:re("sand-loading__heading"'],
   ["copy-teammate-names", 'XBn={"invoice-chaser":"Invoice Chaser","weekly-standup":"Weekly Standup","sales-forecast":"Sales Forecast"}', 'XBn={"invoice-chaser":"Email Chaser","weekly-standup":"Flight Booker","sales-forecast":"Content Planner"}'],
 ]);
 
