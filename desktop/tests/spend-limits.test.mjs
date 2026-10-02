@@ -106,3 +106,25 @@ test("a routine due every minute runs at most once every 15 minutes on the Mac",
     await loaded.dispose();
   }
 });
+
+test("the wire keeps the latest three tool screenshots and every picture the person attached", async () => {
+  const loaded = await bundle("source/host/extensions/inference/provider-session.ts", "screenshots");
+  try {
+    const { toCoreMessages, SIMEON_KEPT_TOOL_IMAGES } = loaded.module;
+    assert.equal(SIMEON_KEPT_TOOL_IMAGES, 3);
+    const messages = [{ role: "user", content: [{ type: "text", text: "Look at this" }, { type: "image", image: "PERSON", mimeType: "image/png" }] }];
+    for (let step = 1; step <= 5; step += 1) {
+      messages.push({ role: "assistant", content: [{ type: "tool-call", toolCallId: `c${step}`, toolName: "Computer", args: { action: "click" } }] });
+      messages.push({ role: "tool", content: [{ type: "tool-result", toolCallId: `c${step}`, toolName: "Computer", result: undefined, experimental_content: [{ type: "text", text: `step ${step}` }, { type: "image", data: `SHOT${step}`, mimeType: "image/webp" }] }] });
+    }
+    const wire = toCoreMessages(messages);
+    const images = wire.flatMap((message) => Array.isArray(message.content) ? message.content.filter((part) => part.type === "image").map((part) => part.image) : []);
+    assert.deepEqual(images, ["PERSON", "SHOT3", "SHOT4", "SHOT5"]);
+    const dropped = wire.filter((message) => message.role === "user" && Array.isArray(message.content) && /Not shown again/.test(message.content[0]?.text ?? ""));
+    assert.equal(dropped.length, 2);
+    // The loop's own copy is untouched.
+    assert.equal(messages[2].content[0].experimental_content[1].data, "SHOT1");
+  } finally {
+    await loaded.dispose();
+  }
+});

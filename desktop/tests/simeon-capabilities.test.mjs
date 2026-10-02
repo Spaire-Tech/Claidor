@@ -132,7 +132,7 @@ test("image generation posts to Simeon and maps a 402 to the tool's restricted e
     assert.deepEqual(requests[0].body, {
       prompt: "a red boat",
       size: "1536x1024",
-      quality: "auto",
+      quality: "medium",
       reference_images: [{ data: "abc", mime_type: "image/png" }],
     });
 

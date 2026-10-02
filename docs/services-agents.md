@@ -42,7 +42,9 @@ answers in words only: it does not check out code, run commands or open pull req
   heartbeat. There is one environment, `simeon-computer` ("Simeon's computer").
 - Runner: `runner/` (Render service `claidor-maty-runner`) claims a job, lays out the person's
   memory, makes one model call over the conversation through the API's metered proxy on the
-  job's token (`runner/src/engine.ts`), and writes the reply back as the turn's message. Jobs
+  job's token (`runner/src/engine.ts`), and writes the reply back as the turn's message. The
+  call runs on the model the API names `primary` (`PersonClient.models` in `runner/src/api.ts`;
+  until 2 October 2026 it took the catalogue's first row, the Claude fallback). Jobs
   go through the `Executor` seam in `runner/src/executor.ts`; the only executor today is
   `maty-runner`. The model cannot write files, so a cloud turn writes nothing back to memory.
 - App: the CloudAgent tool (`host/cloud-agents/cloud-agent-tool.ts`), the manager and a poll
@@ -78,7 +80,8 @@ failed check, a new issue).
   box stops firing those routines itself (`shouldScheduleLocally`) and the server owns them.
 - **Cron.** The worker actor `sand.listeners.fire_due_crons` (`listeners_tasks.py`) runs every
   minute and queues one fire per due routine, never a second while one is pending, then moves
-  the routine's next slot (`listeners_cron.py`). A pending fire expires after two hours, so a
+  the routine's next slot (`listeners_cron.py`), at least 15 minutes on (`ROUTINE_MIN_INTERVAL`
+  in `listeners_service.py`; the Mac holds the same gap). A pending fire expires after two hours, so a
   computer that was off for a day runs a missed routine once, not once per missed slot.
 - **Events.** Webhooks arrive at the ingress routes (`listeners_ingress.py`), are checked,
   matched against each person's routines (`listeners_service.py`) and queued.

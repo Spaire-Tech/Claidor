@@ -182,9 +182,45 @@ only the `primary` row, so there is nothing for the person to choose
 (`desktop/source/electron-main/models/simeon-model-catalog.ts`). The proxy
 refuses any model with no role: "This model is not offered by the desktop app."
 
-**Effort.** The app sends reasoning effort by role: `high` for the agent loop
-and `low` for the cheap roles
-(`desktop/source/host/extensions/inference/provider-session.ts`).
+**Effort.** The app sends reasoning effort per call
+(`desktop/source/host/extensions/inference/provider-session.ts`):
+
+- The cheap roles (computer, browser and video helpers, summaries, memory,
+  safety checks) run at `low`.
+- Every other turn starts at `medium` and runs at `high` from its fifth model
+  call, when it is real work (`SIMEON_EFFORT_RAISE_AFTER_CALLS`).
+- A hidden turn no caller named runs at `low`.
+- `SAND_SIMEON_REASONING_EFFORT` set to a level holds that level for every
+  non-cheap call, with no climb.
+
+Until 2 October 2026 every call of the agent loop ran at `high`.
+
+**Output ceiling.** Every call carries `max_output_tokens` 32,000
+(`SAND_SIMEON_MAX_OUTPUT_TOKENS`), thinking included. A call that reaches it
+writes `[simeon] model-output-limit`.
+
+**Why each call was made.** Every request to the proxy carries
+`x-simeon-call-reason`, stored in `desktop_usage.reason`: `chat`, `helper`,
+`computer`, `browser`, `video`, `summary`, `memory`, `safety`, `routine`,
+`agent_wake`, `voice`, `nudge`, `wake`, `first_message`, `background` or
+`cheap`. Rows from older apps have none. To read what a person spent, per
+model and per reason:
+
+```sh
+cd server && uv run python -m scripts.desktop_usage_report someone@example.com --hours 48
+```
+
+**What the prompt keeps stable.** The system prompt puts the parts that change
+while a conversation goes on last: the channels, the teammates, the list of
+routines, the connected apps' instructions and the discovery notice
+(`desktop/source/host/runner/system-prompt-assembly.ts`). OpenAI caches a
+prompt by its longest unchanged start, so a new teammate or routine no longer
+sends the whole prompt back at full price. The `prefix=sys:…` hash on each
+`[simeon] model=` line changes only when that start changes.
+
+**Screenshots.** The request keeps the latest three tool screenshots
+(`SIMEON_KEPT_TOOL_IMAGES`); older ones are replaced by a line saying so.
+Pictures the person attached are always kept.
 
 **Older model ids.** If the server does not offer `gpt-6-sol` or `gpt-6-luna`
 yet, the app retries the step on the model it replaced (`gpt-5.6-terra` or
@@ -196,7 +232,7 @@ line. This means the server and the app can be deployed in either order.
 | Capability | Model | Price |
 |---|---|---|
 | Web search | `gpt-5.6-luna` with OpenAI's hosted `web_search` tool, one non-streaming call | tokens, plus $0.01 per search |
-| Images | `gpt-image-1` | $5 text in, $10 image in, $40 image out, per million tokens |
+| Images | `gpt-image-1`, quality `medium` unless asked (avatars `low`) | $5 text in, $10 image in, $40 image out, per million tokens |
 | Transcription | `gpt-4o-mini-transcribe` | $0.003 per minute of audio; 25 MB upload limit |
 | Speech | `gpt-4o-mini-tts`, voice `alloy` | $15 per million characters; 4,000 characters a call |
 
@@ -217,8 +253,20 @@ In the app, a turn has a limit on how many model calls it may make
 | Turn | Limit | Switch |
 |---|---|---|
 | A turn the person asked for | 5,000 calls | `SAND_AGENT_MAX_STEPS` |
-| The first message, a routine | 5,000 calls (`fullStepBudget`) | `SAND_AGENT_MAX_STEPS` |
+| The first message | 5,000 calls (`fullStepBudget`) | `SAND_AGENT_MAX_STEPS` |
+| A routine's run | 200 calls | `SAND_ROUTINE_MAX_STEPS` |
 | Any other hidden turn (reply nudges, wake-ups, memory extraction) | 40 calls | `SAND_HIDDEN_TURN_MAX_STEPS` |
+
+Three more limits on work nobody asked for (2 October 2026):
+
+- **Routines** run at most once every 15 minutes, whatever the schedule says:
+  on the Mac (`ROUTINE_MIN_INTERVAL_MS`, `sand-trigger-hub.ts`) and on the
+  server (`ROUTINE_MIN_INTERVAL`, `simeon/sand/listeners_service.py`).
+- **Agents messaging each other** may pass six messages in a row, each waking
+  the next (`SAND_AGENT_MESSAGE_MAX_HOPS`). The seventh is refused, and the
+  agent is told to tell the person instead.
+- **Reply nudges:** one, when a turn the person started ends without a reply
+  (`MAX_REPLY_NUDGES`; three until then).
 
 **Stopping the box on quit.** This applies only to the Docker box on the Mac,
 which is a testing path (`SAND_BOX_RUNTIME=local-docker`). When Simeon quits,
@@ -239,7 +287,10 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
 
 - `SAND_SIMEON_REASONING_EFFORT`, `SAND_SIMEON_CHEAP_REASONING_EFFORT`:
   override the effort (`none`, `low`, `medium`, `high`, `xhigh`, `max`).
-- `SAND_AGENT_MAX_STEPS`, `SAND_HIDDEN_TURN_MAX_STEPS`: the step limits.
+- `SAND_SIMEON_MAX_OUTPUT_TOKENS`: the output ceiling per call.
+- `SAND_AGENT_MAX_STEPS`, `SAND_HIDDEN_TURN_MAX_STEPS`, `SAND_ROUTINE_MAX_STEPS`:
+  the step limits.
+- `SAND_AGENT_MESSAGE_MAX_HOPS`: agent messages in a row.
 
 ### When it misbehaves
 

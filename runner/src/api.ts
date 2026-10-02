@@ -309,9 +309,11 @@ export class PersonClient {
   }
 
   /**
-   * The models this person may use. The runner takes the first one rather
-   * than naming a model anywhere in its own code: which models exist is
-   * the API's to decide and ours to follow.
+   * The models this person may use, the one the API names `primary` first.
+   * The runner takes the first one rather than naming a model anywhere in
+   * its own code: which models exist is the API's to decide and ours to
+   * follow. Until 2 October 2026 the list kept the API's catalogue order,
+   * where the Claude fallback comes first, so every job ran on it.
    */
   async models(): Promise<AvailableModel[]> {
     const answer = asRecord(
@@ -331,9 +333,11 @@ export class PersonClient {
           maxTokens: whole(model.maxTokens, 8_192),
           transportApi: text(model.transportApi) || (text(model.provider) === 'anthropic' ? 'anthropic-messages' : 'openai-responses'),
           accessible: model.accessible !== false,
+          primary: text(model.role) === 'primary',
         };
       })
       .filter((model) => model.id && model.accessible)
+      .sort((a, b) => Number(b.primary) - Number(a.primary))
       .map(({ id, contextWindow, maxTokens, transportApi }) => ({ id, contextWindow, maxTokens, transportApi }));
   }
 }

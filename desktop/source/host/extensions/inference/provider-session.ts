@@ -385,6 +385,16 @@ function partText(parts: readonly Loose[]): string {
   return parts.filter(part => part?.type === "text" && typeof part.text === "string").map(part => part.text as string).join("\n");
 }
 
+// How many tool screenshots the wire keeps: the latest few. Every Computer and
+// browser action returns a fresh screenshot and the loop keeps them all, so
+// by step 30 of a task each call re-sent 30 pictures (2 October 2026). The
+// helpers are told to act on the one fresh screenshot after each call; older
+// ones are replaced by a line saying so. Pictures the person attached are
+// never dropped: they arrive as user messages, not tool output.
+export const SIMEON_KEPT_TOOL_IMAGES = 3;
+const TOOL_IMAGE_INTRO = "Image output of the tool call(s) above.";
+const TOOL_IMAGE_DROPPED = "Image output of the tool call(s) above. (Not shown again: only the latest screenshots are kept; take a new one if you need to look.)";
+
 // The host loop appends messages in its own dialect of the AI SDK shape:
 // Cursor wire metadata under `providerOptions.cursor` (with `undefined` fields
 // the SDK's JSON validator refuses), tool results whose text may be empty and
@@ -392,6 +402,7 @@ function partText(parts: readonly Loose[]): string {
 // This is the copy the wire sees; the loop keeps its own.
 export function toCoreMessages(messages: readonly ProviderMessage[]): CoreMessage[] {
   const out: Loose[] = [];
+  const toolImageMessages: number[] = [];
   for (const message of messages) {
     const { role, content } = message;
     if (typeof content === "string") {
@@ -421,8 +432,12 @@ export function toCoreMessages(messages: readonly ProviderMessage[]): CoreMessag
     if (results.length > 0) out.push({ role, content: results });
     // The Responses wire takes no images inside a function output; the person's
     // model must still see the screenshot, so it follows as the next user turn.
-    if (images.length > 0) out.push({ role: "user", content: [{ type: "text", text: "Image output of the tool call(s) above." }, ...images] });
+    if (images.length > 0) {
+      toolImageMessages.push(out.length);
+      out.push({ role: "user", content: [{ type: "text", text: TOOL_IMAGE_INTRO }, ...images] });
+    }
   }
+  for (const index of toolImageMessages.slice(0, -SIMEON_KEPT_TOOL_IMAGES)) out[index] = { role: "user", content: [{ type: "text", text: TOOL_IMAGE_DROPPED }] };
   return out as CoreMessage[];
 }
 
