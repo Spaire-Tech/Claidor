@@ -132,8 +132,9 @@ test("the sign-in wordmark is set in Suravaram, carried inside the stylesheet", 
 
 test("the COO step sits after Meet Simeon, with Simeon at the centre and six agents leaving it", async () => {
   const { COO_REPLACEMENTS, COO_CSS, patchOriginalCooStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
-  const [list, screen, hero, component] = COO_REPLACEMENTS;
-  assert.match(list[2], /\["landing","meet","coo","computer-demo","jobs","tools","create"\]/);
+  const [list, title, screen, hero, component] = COO_REPLACEMENTS;
+  assert.match(list[2], /\["landing","meet","coo","computer-demo","tools","create"\]/, "the jobs step is out of the flow");
+  assert.equal(title[2], 'N="Your agents have their own computer and work just like you"');
   assert.match(screen[2], /^case"coo":return p\.jsx\(__simeonCooStep,\{headingId:xn,onBack:\(\)=>x\.goBack\(ln\),onForward:\(\)=>x\.advance\(ln\)\}\);/);
   assert.match(hero[2], /^case"coo":return\{\.\.\.e,x:0,y:-40,scale:1,opacity:1/);
   assert.match(component[2], /title:"Your personal COO"/);
