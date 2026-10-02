@@ -1,5 +1,6 @@
 import { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
+import { gunzipSync } from "node:zlib";
 import { buildHostShellArgs } from "../../box/box-shell-command.js";
 import { navigationProbeCommand, normalizeNavigationUrl, parseNavigationProbeOutput } from "../sand-action-audit.js";
 import { SAND_BOX_NO_MONITOR_AVAILABLE_MESSAGE } from "../../ports/box.js";
@@ -18,8 +19,18 @@ import {
   SAND_BROWSER_DRIVER_SOURCE,
   SAND_BROWSER_RESULT_MARKER,
 } from "./sand-browser-driver-source.js";
+import { SAND_BROWSER_PLAYWRIGHT_FILES, SAND_BROWSER_PLAYWRIGHT_VERSION } from "./sand-browser-playwright.gen.js";
 
 export const BOX_CDP_PORT_BASE = 9_222;
+
+// The helper drives Chrome with playwright-core and first looks for the copy
+// the computer's image carries. Ours rides along in the host program
+// (`sand-browser-playwright.gen.ts`) and is written beside the helper the
+// first time it runs on a computer, so the helper works on an image without
+// one (2 October 2026). The folder is named by content, and its library
+// file is written last, so a folder holding it is complete.
+const PLAYWRIGHT_LIBRARY = "lib/playwright-core.cjs";
+export const SAND_BROWSER_PLAYWRIGHT_BOX_DIR = `${SAND_BROWSER_DRIVER_BOX_DIR}/playwright-core-${SAND_BROWSER_PLAYWRIGHT_VERSION}-${(SAND_BROWSER_PLAYWRIGHT_FILES[PLAYWRIGHT_LIBRARY]?.sha256 ?? "none").slice(0, 12)}`;
 export const PENDING_SCREENSHOT_CAP = 32;
 
 const pendingScreenshots = new Map<string, string>();
@@ -200,6 +211,7 @@ export interface BrowserDriverOutput {
 
 export class SandBrowserDriver<Context = unknown> {
   #uploaded: Promise<void> | undefined;
+  #playwright: Promise<string | undefined> | undefined;
   #windowIndex: Promise<number> | undefined;
 
   constructor(readonly dependencies: BrowserDriverDependencies<Context>) {}
@@ -210,7 +222,7 @@ export class SandBrowserDriver<Context = unknown> {
         if (index === undefined) {
           this.#windowIndex = undefined;
           throw new SandBrowserDriverError(
-            "The box has not assigned this agent a browser window yet; try again in a moment.",
+            "The browser on this computer isn't ready yet; try again in a moment.",
           );
         }
         return index;
@@ -235,10 +247,35 @@ export class SandBrowserDriver<Context = unknown> {
     ).catch((error: unknown) => {
       this.#uploaded = undefined;
       throw new SandBrowserDriverError(
-        `Could not install the browser driver on the box: ${error instanceof Error ? error.message : String(error)}`,
+        `The browser on this computer isn't ready yet; try again in a moment. (Setup failed: ${error instanceof Error ? error.message : String(error)})`,
       );
     });
     return this.#uploaded;
+  }
+
+  /** Our copy of playwright-core on the computer, written once; undefined when it could not be, and the helper then relies on the image's own. */
+  ensurePlaywright(context: Context): Promise<string | undefined> {
+    this.#playwright ??= (async () => {
+      const dir = SAND_BROWSER_PLAYWRIGHT_BOX_DIR;
+      const library = `${dir}/${PLAYWRIGHT_LIBRARY}`;
+      const probe = await this.dependencies.executeShell(context, {
+        command: `test -s ${library} && echo present || echo absent`,
+        name: "test",
+        workingDirectory: "/workspace",
+        toolCallId: "sand-browser-playwright-probe",
+      });
+      if (probe.case === "success" && (probe.stdout ?? "").includes("present")) return dir;
+      const names = Object.keys(SAND_BROWSER_PLAYWRIGHT_FILES).sort((a, b) => Number(a === PLAYWRIGHT_LIBRARY) - Number(b === PLAYWRIGHT_LIBRARY));
+      for (const name of names) {
+        const bytes = gunzipSync(Buffer.from(SAND_BROWSER_PLAYWRIGHT_FILES[name]!.gzipBase64, "base64"));
+        await this.dependencies.uploadFile(context, this.dependencies.getBoxId(), `${dir}/${name}`, bytes);
+      }
+      return dir;
+    })().catch(() => {
+      this.#playwright = undefined;
+      return undefined;
+    });
+    return this.#playwright;
   }
 
   async run(
@@ -250,9 +287,10 @@ export class SandBrowserDriver<Context = unknown> {
       readonly skipScreenshot?: boolean;
     },
   ): Promise<BrowserDriverOutput> {
-    const [windowIndex] = await Promise.all([
+    const [windowIndex, , playwrightRoot] = await Promise.all([
       this.resolveWindowIndex(context),
       this.ensureUploaded(context),
+      this.ensurePlaywright(context),
     ]);
 
     const screenshotPath = input.skipScreenshot === true
@@ -268,6 +306,7 @@ export class SandBrowserDriver<Context = unknown> {
         ? requestedViewId
         : this.dependencies.getDefaultViewId(),
       ...(screenshotPath == null ? {} : { screenshotPath }),
+      ...(playwrightRoot === undefined ? {} : { playwrightRoot }),
     };
     const encoded = Buffer.from(
       JSON.stringify(request),
@@ -282,7 +321,7 @@ export class SandBrowserDriver<Context = unknown> {
     });
     if (shell.case !== "success") {
       throw new SandBrowserDriverError(
-        `Browser driver shell failed (${shell.case || "unknown"})`,
+        `The browser on this computer did not respond (${shell.case || "unknown"}).`,
       );
     }
 
@@ -293,7 +332,7 @@ export class SandBrowserDriver<Context = unknown> {
         .filter((part) => part.length > 0)
         .join(" | ");
       throw new SandBrowserDriverError(
-        `Browser driver produced no result (exit ${shell.exitCode ?? "unknown"})${detail.length > 0 ? `: ${detail}` : ""}`,
+        `The browser on this computer did not respond (exit ${shell.exitCode ?? "unknown"})${detail.length > 0 ? `: ${detail}` : ""}`,
       );
     }
     if (!response.ok) {

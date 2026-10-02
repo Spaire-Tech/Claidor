@@ -30,7 +30,8 @@
     "source:typecheck": "tsc --project source/tsconfig.json",
     "verify": "npm run preflight && node scripts/verify.mjs",
     "preflight": "node scripts/preflight-bootstrap.mjs",
-    "publish:host-bundle": "node scripts/publish-host-bundle.mjs"
+    "publish:host-bundle": "node scripts/publish-host-bundle.mjs",
+    "vendor:playwright-core": "node scripts/vendor-playwright-core.mjs"
   },
   "devDependencies": {
     "@electron/asar": "4.2.1",
@@ -46,6 +47,7 @@
     "node-addon-api": "8.5.0",
     "node-gyp": "12.1.0",
     "node-gyp-build": "4.8.4",
+    "playwright-core": "1.63.0",
     "sirv": "3.0.2",
     "typescript": "7.0.2",
     "vite": "8.2.1"

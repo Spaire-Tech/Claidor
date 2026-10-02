@@ -55,7 +55,77 @@ test("the driver finds playwright-core outside its own folder", async () => {
     assert.match(source, /const \{ chromium \} = await requirePlaywright\("playwright-core"\)/);
     assert.match(source, /requirePlaywright\("playwright-core\/lib\/utilsBundle"\)/);
     assert.match(source, /npm root -g/);
-    assert.doesNotMatch(source, /npm", \["install"/, "it never installs anything on the box");
+    assert.doesNotMatch(source, /npm", \["install"/, "it never installs anything from the network");
+    assert.match(source, /if \(PLAYWRIGHT_ROOT\) roots\.push/, "the host's own copy is tried after the image's");
+  } finally {
+    await dispose();
+  }
+});
+
+test("the packed playwright-core matches the pinned package, licence included", async () => {
+  const { renderPlaywrightGen } = await import(pathToFileURL(path.join(repoRoot, "scripts/vendor-playwright-core.mjs")).href);
+  const committed = await readFile(path.join(repoRoot, "source/host/runner/tools/sand-browser-playwright.gen.ts"), "utf8");
+  const shas = (text) => [...text.matchAll(/"([^"]+)": \{\n    sha256: "([0-9a-f]{64})"/g)].map((m) => `${m[1]}=${m[2]}`);
+  assert.deepEqual(shas(committed), shas(await renderPlaywrightGen()), "run npm run vendor:playwright-core");
+  for (const name of ["package.json", "browsers.json", "LICENSE", "NOTICE", "ThirdPartyNotices.txt", "lib/playwright-core.cjs"]) assert.ok(committed.includes(`"${name}": {`), name);
+});
+
+test("the host writes its playwright-core beside the helper once, library last, and the helper is told where", async () => {
+  const { module, dispose } = await load("source/host/runner/tools/sand-browser-tools.ts", "browser-tools-pw");
+  try {
+    const uploads = [];
+    const commands = [];
+    let present = false;
+    const deps = {
+      resourceAccessor: { get() { throw new Error("unused"); } },
+      async getWindowIndex() { return 1; },
+      getBoxId: () => "box",
+      getDefaultViewId: () => "v",
+      async uploadFile(_c, _b, p) { uploads.push(p); },
+      async downloadFile() { return new Uint8Array(); },
+      async executeShell(_c, input) {
+        commands.push(input.command);
+        if (input.command.startsWith("test -s")) return { case: "success", stdout: present ? "present\n" : "absent\n" };
+        return { case: "success", stdout: '\n__SAND_BROWSER_RESULT__{"ok":true,"summary":"Done"}\n' };
+      },
+    };
+    const dir = module.SAND_BROWSER_PLAYWRIGHT_BOX_DIR;
+    assert.match(dir, /^\/tmp\/\.sand-browser\/playwright-core-1\.63\.0-[0-9a-f]{12}$/);
+    const snapshot = module.createSandBrowserTools(deps).find((t) => t.name === "browser_snapshot");
+    await snapshot.execute({}, {}, { toolCallId: "a" });
+    const written = uploads.filter((p) => p.startsWith(dir));
+    assert.equal(written.length, 6);
+    assert.equal(written.at(-1), `${dir}/lib/playwright-core.cjs`, "the library is written last, so its presence means the folder is whole");
+    const request = JSON.parse(Buffer.from(commands.find((c) => c.startsWith("node ")).split(" ").at(-1), "base64").toString("utf8"));
+    assert.equal(request.playwrightRoot, dir);
+
+    uploads.length = 0;
+    present = true;
+    await module.createSandBrowserTools(deps).find((t) => t.name === "browser_snapshot").execute({}, {}, { toolCallId: "b" });
+    assert.deepEqual(uploads.filter((p) => p.startsWith(dir)), [], "a computer that has it is not written again");
+
+    present = false;
+    commands.length = 0;
+    const failing = { ...deps, async uploadFile(_c, _b, p) { if (p.startsWith(dir)) throw new Error("disk full"); } };
+    await module.createSandBrowserTools(failing).find((t) => t.name === "browser_snapshot").execute({}, {}, { toolCallId: "c" });
+    const fallback = JSON.parse(Buffer.from(commands.find((c) => c.startsWith("node ")).split(" ").at(-1), "base64").toString("utf8"));
+    assert.equal(fallback.playwrightRoot, undefined, "without our copy the helper still tries the image's own");
+  } finally {
+    await dispose();
+  }
+});
+
+test("what the browser says when it cannot start is plain words", async () => {
+  const { module, dispose } = await load("source/host/runner/tools/sand-browser-driver-source.ts", "driver-source-words");
+  try {
+    const source = module.SAND_BROWSER_DRIVER_SOURCE;
+    assert.match(source, /The browser on this computer isn't ready yet: it could not be started/);
+    assert.doesNotMatch(source, /new Error\([^)]*(playwright|CDP endpoint|on the box)/i);
+    const tools = await readFile(path.join(repoRoot, "source/host/runner/tools/sand-browser-tools.ts"), "utf8");
+    assert.doesNotMatch(tools, /Browser driver|browser driver on the box|The box has not assigned/);
+    const glue = await readFile(path.join(repoRoot, "source/host/runner/prompt-collector-glue.ts"), "utf8");
+    assert.match(glue, /Never name the libraries, ports, or programs behind the browser in your report/);
+    assert.match(glue, /never pass on the names of the programs, libraries, or ports behind it/);
   } finally {
     await dispose();
   }

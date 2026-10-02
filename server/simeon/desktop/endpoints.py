@@ -66,6 +66,7 @@ from .auth import (
 )
 from .capabilities import router as capabilities_router
 from .composio import forward as composio_forward
+from .flights import router as flights_router
 
 # Straight from the price list rather than through `service`, which
 # re-exports only what it uses itself — a name it merely passed through
@@ -1382,6 +1383,7 @@ router.include_router(voice_router)
 # Apps under Simeon's own name (`apps.py`): each app an MCP server of ours,
 # the sign-in link, status and disconnect; the provider behind them never named.
 router.include_router(apps_router)
+router.include_router(flights_router)
 
 
 # Apps through Composio: the app's six calls, forwarded with Simeon's

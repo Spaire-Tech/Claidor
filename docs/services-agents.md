@@ -635,3 +635,41 @@ the API):
   Mac: the banner was rendered in headless Chromium with a fake call, and the phone button
   and the picker in the patched window's demo, but the window, the microphone, WebRTC, the
   worklets under the page's policy and the ring have not run in the packaged app.
+
+## 10. Flight search
+
+**For the person.** Ask any agent for a flight ("cheapest refundable Seattle to LA tomorrow,
+landing before 2") and it answers with a results card: the four cheapest options that fit,
+each opening a panel with the itinerary, the fare's refund and change rules, bags and a Book
+button. Booking is not built yet; the panel says so under the button.
+
+**How it works.**
+
+- The agent's `SearchFlights` tool (`host/runner/tools/flight-search-tool.ts`, main agents
+  only, not shared rooms) calls `POST /desktop/api/flights/search` with the box's own
+  credential (`get_desktop_or_box_session`). The brief tells agents to use it for every flight
+  question and never to look flights up on airline or travel sites.
+- The server (`server/simeon/desktop/flights.py`) turns a city into an airport through
+  Duffel's place suggestions, makes one Duffel offer request, drops offers that fail the
+  filters asked for, keeps the cheapest fare of each itinerary and shapes the cheapest four
+  for the card: local times, layovers, bags, refund and change rules with their fee.
+- The tool posts the card itself, as a message that is one ```` ```simeon-flights ```` block
+  of JSON, which the window draws (`flights-components` in
+  `scripts/lib/router-renderer-patch.mjs`). The agent gets a short summary and writes only the
+  line under the card.
+- Searches are capped per person per hour (`FLIGHT_SEARCHES_PER_HOUR`, default 30): past
+  Duffel's free allowance each search is billed.
+
+**Settings on Render.**
+
+- `SIMEON_DUFFEL_ACCESS_TOKEN`: a read-write token from Duffel's dashboard (More → Developers
+  → Access tokens). A `duffel_test_` token searches Duffel's test mode (its pretend airline,
+  Duffel Airways, and airlines' sandboxes, at unrealistic prices) and the card says "Test
+  results". Empty: the route answers 503 and the agent says flight search is not switched on.
+- `SIMEON_FLIGHT_SEARCHES_PER_HOUR` (default 30), `SIMEON_DUFFEL_BASE_URL` (default
+  `https://api.duffel.com`).
+
+**When it misbehaves.** Server log: `desktop.flights.search` (one line per search: route,
+date, offers found and shown, `test`, milliseconds), `desktop.flights.upstream_refused` (what
+Duffel answered, in full) and `desktop.flights.rate_limited`. An agent that browsed instead of
+calling the tool shows no `desktop.flights.search` line for that request.
