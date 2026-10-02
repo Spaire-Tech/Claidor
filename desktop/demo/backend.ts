@@ -7,7 +7,7 @@
  * the way it draws a real session.
  */
 import {
-  AGENTS, GROUP, GROUP_TRANSCRIPT, TRANSCRIPTS, at, openingScript,
+  AGENTS, GROUP, GROUP_TRANSCRIPT, TRANSCRIPTS, at, onboardingScript, openingScript,
   type Beat, type DemoAgent, type Entry,
 } from "./scenario.js";
 import { CONNECTOR_MANIFESTS } from "../source/shared/channels.js";
@@ -47,6 +47,13 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
   const asked = typeof location !== "undefined" ? new URLSearchParams(location.search).get("theme") : null;
   const dark = asked === "dark" || (asked !== "light" && typeof matchMedia !== "undefined" && matchMedia("(prefers-color-scheme: dark)").matches);
   const theme = dark ? { preference: "dark", resolved: "dark" } : { preference: "light", resolved: "light" };
+  // `?onboarding`: a brand-new account, as the real window first meets it (the
+  // founder, 3 October 2026: "build a demo here of the real onboarding").
+  const params = typeof location !== "undefined" ? new URLSearchParams(location.search) : new URLSearchParams();
+  const fresh = params.has("onboarding");
+  let onboardingSeen = !fresh;
+  let personName: string | null = fresh ? null : "Bass";
+  let onboardingStage = 0;
   const persisted = new Map<string, unknown>();
   const epoch = "demo-" + Math.random().toString(36).slice(2);
   const sequences = new Map<string, number>();
@@ -57,7 +64,7 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
   };
 
   const group: Row = { id: GROUP.id, name: GROUP.name, title: "", description: GROUP.description, color: "blue", minutesAgo: GROUP.minutesAgo, isGroup: true, memberIds: GROUP.memberIds };
-  const rows = new Map<string, Row>([...AGENTS.map((a) => [a.id, a] as const), [group.id, group]]);
+  const rows = new Map<string, Row>(fresh ? [] : [...AGENTS.map((a) => [a.id, a] as const), [group.id, group]]);
   const nameOf = (id: string) => rows.get(id)?.name ?? id;
   const transcripts = new Map<string, Entry[]>(Object.entries(TRANSCRIPTS).map(([id, entries]) => [id, [...entries]]));
   transcripts.set(group.id, GROUP_TRANSCRIPT.map(({ author, entry }) => (author == null ? entry : { ...entry, author: { id: author, name: nameOf(author) } })));
@@ -174,8 +181,8 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
   const main: Record<string, (args: any) => unknown> = {
     getThemeState: () => theme,
     setThemePreference: () => theme,
-    getOnboardingSeen: () => true,
-    setOnboardingSeen: () => undefined,
+    getOnboardingSeen: () => onboardingSeen,
+    setOnboardingSeen: (args: any) => { onboardingSeen = args?.seen ?? args?.value ?? true; return undefined; },
     getWindowState: () => ({ isFullScreen: false, isMaximized: false, isFocused: true }),
     getTimeZone: () => ({ timeZone: "Europe/Zurich", override: null }),
     getSidebarCollapsed: () => false,
@@ -205,6 +212,9 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
     setAgentVoice: (args: any) => ({ voiceId: args?.voiceId ?? null, isDefault: false }),
     getVoicePreviewUrl: () => null,
     getCursorAvatar: () => null,
+    // A new account has not said what to call them yet: the window's name sheet.
+    getCursorNamePrompt: () => ({ needed: personName == null, suggested: "Bass" }),
+    updateCursorAccountName: (args: any) => { personName = typeof args?.name === "string" ? args.name : "Bass"; return { ok: true }; },
     resolveAttachmentMedia: () => null,
     getLinkMetadata: () => null,
     openExternal: () => undefined,
@@ -233,8 +243,24 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
       const agentId = args.agentId ?? activeAgentId;
       const updated = update(agentId, args.entryId, (e) => ({ ...e, respondedValue: args.value }));
       if (updated == null) return { accepted: false };
+      // A new account: each answer moves the first agent's getting-started on.
+      if (fresh && onboardingStage < 2) void play(onboardingScript(agentId, ++onboardingStage));
       return { accepted: true };
     },
+    createAgent: (args) => {
+      const id = `agent-${rows.size + 1}`;
+      const row: Row = { id, name: String(args?.name ?? "New Agent"), title: "", description: String(args?.description ?? ""), color: (args?.avatarColor ?? "blue") as DemoAgent["color"], minutesAgo: 0 };
+      rows.set(id, row);
+      transcripts.set(id, []);
+      lastActivity.set(id, Date.now());
+      const previous = activeAgentId;
+      activeAgentId = id;
+      pushAgent(previous);
+      pushAgent(id);
+      if (args?.isKickstartRequested === true) void play(onboardingScript(id, 0));
+      return { agent: summary(row) };
+    },
+    kickstartAgent: () => ({ isIntroductionInFlight: false }),
     dismissWidget: (args) => {
       update(args.agentId ?? activeAgentId, args.entryId, (e) => ({ ...e, widgetDismissed: true }));
       return {};
@@ -269,7 +295,7 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
   return {
     /** Simeon's conversation plays by itself as soon as the window is up. */
     onServing(): void {
-      if (openingStarted) return;
+      if (openingStarted || fresh) return;
       openingStarted = true;
       void play(openingScript());
     },
@@ -301,7 +327,7 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
       if (channel === "sand:client-persistence-remove") { persisted.delete(payload?.key); return undefined; }
       if (channel === "sand:client-persistence-list-keys") return [...persisted.keys()].filter((k) => k.startsWith(payload?.prefix ?? ""));
       if (channel === "sand:client-persistence-migrate") return undefined;
-      if (channel === "sand:mcp-list") return { servers: CONNECTED.map(connectedServer) };
+      if (channel === "sand:mcp-list") return { servers: fresh ? [] : CONNECTED.map(connectedServer) };
       if (channel === "sand:mcp-catalog") return { entries: [] };
       unanswered.ipc.add(channel);
       console.warn("[demo] ipc unanswered", channel, payload);
