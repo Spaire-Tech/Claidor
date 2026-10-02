@@ -43,7 +43,11 @@ import type {
 import { getTranscript, updateEntry } from "./transcript-store.js";
 import type { LiveTranscriptSession } from "./session-runtime.js";
 
-export const MAX_REPLY_NUDGES = 3;
+// One nudge when a turn the person started ends without a reply (three until
+// 2 October 2026): a turn that ignores "send your reply now" once ignores it
+// again, and each nudge is a whole hidden turn. The closing-send nudge below
+// still follows a turn that ended on silent tool calls.
+export const MAX_REPLY_NUDGES = 1;
 export const REPLY_NUDGE_PROMPT =
   "Your previous turn left the user without the result they're waiting on — you never called SendMessage that turn, or every SendMessage you tried failed to deliver. Either way they received nothing and are still waiting. Do not assume a send from an earlier turn covered it: an opening acknowledgement back then did not deliver this result (ack ≠ delivery). Deliver the result now by actually invoking the SendMessage tool — make a real tool/function call, not text you write. Plain assistant text is NEVER shown to the user; only a real SendMessage tool invocation reaches them, so if you don't call the tool they just keep seeing silence.";
 export const CLOSING_SEND_NUDGE_PROMPT =

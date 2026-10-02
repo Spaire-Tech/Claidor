@@ -93,14 +93,14 @@ export { SIMEON_WORKING_CONTEXT_TOKENS };
 // GPT-5.6's and reads as low.
 export const SIMEON_REASONING_EFFORTS = ["none", "low", "medium", "high", "xhigh", "max"] as const;
 export type SimeonReasoningEffort = (typeof SIMEON_REASONING_EFFORTS)[number];
-// Medium since 2 October 2026, not high: the person's messages, routines,
-// helpers and agents waking each other start at medium and a turn that keeps
-// working is raised to high (`simeonEffortForCall`); the turns that only
-// react (a reply nudge, a background wake) run at low. One fixed level for
-// everything thought as hard about "hello" as about a research task
-// (docs/services-core.md, "Spend").
+// Medium since 2 October 2026, not high: every turn starts at medium and a
+// turn that keeps working is raised to high (`simeonEffortForCall`). One
+// fixed level for everything thought as hard about "hello" as about a
+// research task (docs/services-core.md, "Spend"). Only a hidden turn no
+// caller named runs at low: a reply nudge, a helper's results coming back
+// or a channel message all end in something the person reads.
 export const DEFAULT_SIMEON_REASONING_EFFORT: SimeonReasoningEffort = "medium";
-export const SIMEON_LOW_EFFORT_CALL_REASONS: ReadonlySet<string> = new Set(["nudge", "wake", "background"]);
+export const SIMEON_LOW_EFFORT_CALL_REASONS: ReadonlySet<string> = new Set(["background"]);
 // A turn's calls after this many run at high: by then it is real work.
 export const SIMEON_EFFORT_RAISE_AFTER_CALLS = 4;
 export const DEFAULT_SIMEON_CHEAP_REASONING_EFFORT: SimeonReasoningEffort = "low";
@@ -712,16 +712,19 @@ function simeonExecutor(messages: readonly ProviderMessage[], invocationId: stri
 // the session hands out, because the turn shell asks for a fresh executor
 // per step. The cap is the upstream app's 5,000 for a turn the person asked for
 // and SAND_HIDDEN_TURN_MAX_STEPS for one nobody asked for.
-export interface ModelCallBudget { readonly limit: number; readonly hidden: boolean; readonly fullStepBudget?: boolean; used: number }
+export interface ModelCallBudget { readonly limit: number; readonly hidden: boolean; readonly fullStepBudget?: boolean; readonly routine?: boolean; used: number }
 
 export function createModelCallBudget(options?: SimeonSessionModelOptions, env: NodeJS.ProcessEnv = process.env): ModelCallBudget {
   const hidden = options?.hidden === true;
   const capped = hidden && options?.fullStepBudget !== true;
-  return { limit: resolveSandAgentStepCap({ hidden: capped }, env), hidden, used: 0, ...(hidden && !capped ? { fullStepBudget: true } : {}) };
+  // A routine is hidden with the full budget, then held to its own cap
+  // (SAND_ROUTINE_MAX_STEPS, 2 October 2026).
+  const routine = options?.callReason === "routine";
+  return { limit: resolveSandAgentStepCap({ hidden: capped, routine }, env), hidden, used: 0, ...(hidden && !capped ? { fullStepBudget: true } : {}), ...(routine ? { routine: true } : {}) };
 }
 
 export function spendModelCall(budget: ModelCallBudget): void {
-  if (budget.used >= budget.limit) throw new Error(stepBudgetExceededMessage(budget.limit, budget.hidden && budget.fullStepBudget !== true));
+  if (budget.used >= budget.limit) throw new Error(stepBudgetExceededMessage(budget.limit, budget.hidden && budget.fullStepBudget !== true, budget.routine === true));
   budget.used += 1;
 }
 

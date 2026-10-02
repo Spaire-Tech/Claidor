@@ -3,6 +3,11 @@ import { triggerCronSchedules, triggerListeners, type AutomationTrigger, type Ev
 import { automationAnchor, computeNextRunAt } from "../../../shared/automation-schedule.js";
 import { triggerMatchesEvent } from "../../automations/automation-trigger.js";
 
+// The shortest gap between two runs of one routine (15 minutes): each run is
+// a whole agent turn, and "every minute" is almost always a mistake. The
+// server's ROUTINE_MIN_INTERVAL is the same (simeon/sand/listeners_service.py).
+export const ROUTINE_MIN_INTERVAL_MS = 15 * 60_000;
+
 export interface TriggerSourceStatus { state: string; detail?: string; scopeIssues?: readonly unknown[] }
 export interface TriggerSource { kind: string; setListeners(listeners: readonly EventTrigger[]): void; start(accept: (event: Record<string, unknown>) => boolean): Promise<void>; stop(): Promise<void>; getStatus(): TriggerSourceStatus }
 export interface ScheduledAutomation { agentId: string; automation: { id?: string; isEnabled: boolean; trigger: AutomationTrigger; createdAt?: number; lastRunAt?: number | null } }
@@ -42,7 +47,11 @@ export class SandTriggerHub {
         const next = computeNextRunAt(schedule, effectiveAnchor, timeZone);
         if (next != null && (earliest == null || next < earliest)) earliest = next;
       }
-      if (earliest != null && earliest <= now) {
+      // At least ROUTINE_MIN_INTERVAL_MS after the routine's last run, whatever
+      // its schedule says: a slot that comes sooner waits for the next tick
+      // past the gap (2 October 2026; the server holds the same gap).
+      const lastFire = Math.max(automation.lastRunAt ?? 0, localFire ?? 0);
+      if (earliest != null && earliest <= now && now - lastFire >= ROUTINE_MIN_INTERVAL_MS) {
         this.lastLocalCronFireMs.set(key, now);
         try { await this.deps.fireCron!(agentId, automation); } catch {}
       }

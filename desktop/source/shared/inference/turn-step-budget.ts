@@ -11,19 +11,36 @@ export const SAND_AGENT_MAX_STEPS = 5_000;
 export const SAND_HIDDEN_TURN_MAX_STEPS = 40;
 export const SAND_AGENT_MAX_STEPS_ENV = "SAND_AGENT_MAX_STEPS";
 export const SAND_HIDDEN_TURN_MAX_STEPS_ENV = "SAND_HIDDEN_TURN_MAX_STEPS";
+// A routine's run, since 2 October 2026: 200 calls, not the asked turn's
+// 5,000. A routine runs unattended, often every day, so its worst run is
+// paid on every fire; 200 calls is a long task (a real turn rarely passes
+// 30) at a ceiling of a few dollars rather than tens.
+export const SAND_ROUTINE_MAX_STEPS = 200;
+export const SAND_ROUTINE_MAX_STEPS_ENV = "SAND_ROUTINE_MAX_STEPS";
+// How many messages agents may pass in a row, each waking the next, before a
+// person has to step in: three round trips (2 October 2026). The upstream app had
+// only a sentence in the prompt asking agents not to bounce back and forth.
+export const SAND_AGENT_MESSAGE_MAX_HOPS = 6;
+export const SAND_AGENT_MESSAGE_MAX_HOPS_ENV = "SAND_AGENT_MESSAGE_MAX_HOPS";
 
 function readStepCap(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
   const parsed = Number.parseInt(env[name]?.trim() ?? "", 10);
   return Number.isFinite(parsed) && parsed >= 1 ? parsed : fallback;
 }
 
-export function resolveSandAgentStepCap(options: { readonly hidden?: boolean } = {}, env: NodeJS.ProcessEnv = process.env): number {
+export function resolveSandAgentStepCap(options: { readonly hidden?: boolean; readonly routine?: boolean } = {}, env: NodeJS.ProcessEnv = process.env): number {
   const asked = readStepCap(env, SAND_AGENT_MAX_STEPS_ENV, SAND_AGENT_MAX_STEPS);
+  if (options.routine === true) return Math.min(asked, readStepCap(env, SAND_ROUTINE_MAX_STEPS_ENV, SAND_ROUTINE_MAX_STEPS));
   if (options.hidden !== true) return asked;
   return Math.min(asked, readStepCap(env, SAND_HIDDEN_TURN_MAX_STEPS_ENV, SAND_HIDDEN_TURN_MAX_STEPS));
 }
 
-export function stepBudgetExceededMessage(budget: number, hidden: boolean): string {
+export function resolveAgentMessageHopCap(env: NodeJS.ProcessEnv = process.env): number {
+  return readStepCap(env, SAND_AGENT_MESSAGE_MAX_HOPS_ENV, SAND_AGENT_MESSAGE_MAX_HOPS);
+}
+
+export function stepBudgetExceededMessage(budget: number, hidden: boolean, routine = false): string {
+  if (routine) return `This routine run reached its budget of ${budget} model calls (${SAND_ROUTINE_MAX_STEPS_ENV}). It stops here and runs again at its next scheduled time.`;
   return hidden
     ? `This turn ran without being asked and reached its budget of ${budget} model calls (${SAND_HIDDEN_TURN_MAX_STEPS_ENV}). It stops here; send a message to continue the work on purpose.`
     : `This turn reached its budget of ${budget} model calls (${SAND_AGENT_MAX_STEPS_ENV}). It stops here; send a message to continue.`;

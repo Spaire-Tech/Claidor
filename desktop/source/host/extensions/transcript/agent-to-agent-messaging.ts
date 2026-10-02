@@ -3,6 +3,7 @@ import {
   clampAgentMessage,
 } from "../../agents/agent-messaging.js";
 import { sandErrorDetail } from "../../ports/telemetry.js";
+import { resolveAgentMessageHopCap } from "../../../shared/inference/turn-step-budget.js";
 import { entryRaisesUserActivitySignal } from "../../../shared/transcript.js";
 import { describeAgentRunError } from "./agent-run-error.js";
 import { loadAgentInboundImages } from "./send-message-shaping.js";
@@ -19,6 +20,14 @@ export interface AgentInboundMessage {
   priority?: boolean;
   isDisplayed?: boolean;
   isRedriven?: boolean;
+  // How many agent messages in a row led here, each waking the next: 1 for a
+  // message sent from a turn a person (or a routine) started, one more for
+  // each message sent from a turn another agent's message woke.
+  hop?: number;
+}
+
+export function agentMessageHopRefusal(cap: number): string {
+  return `Not sent: agents have passed ${cap} messages in a row, each waking the next, without a person. Stop the back-and-forth here. If the person should know or decide something, tell them with SendMessage; once they reply, you can message other agents again.`;
 }
 export function partitionAgentInbound<T extends { priority?: boolean }>(
   messages: readonly T[],
@@ -47,6 +56,10 @@ export function mergeAgentInboundQueue<T extends { priority?: boolean }>(
 export class AgentToAgentMessaging {
   readonly pendingAgentInbound = new Map<string, AgentInboundMessage[]>();
   readonly revivingAgentInboundIds = new Set<string>();
+  // The hop of the agent message an agent's current turn was woken by, while
+  // that turn runs (runAgentInboundWake). A message it sends then is one hop
+  // further; one sent from any other turn starts again at 1.
+  readonly agentWakeHops = new Map<string, number>();
   constructor(readonly tm: TranscriptManagerLike) {}
 
   async sendToAgent(
@@ -84,6 +97,9 @@ export class AgentToAgentMessaging {
         );
       return notes.length === 0 ? ack : `${ack} ${notes.join(" ")}`;
     }
+    const hop = (this.agentWakeHops.get(fromAgentId) ?? 0) + 1;
+    const hopCap = resolveAgentMessageHopCap();
+    if (hop > hopCap) return agentMessageHopRefusal(hopCap);
     this.tm.productAnalytics.trackEvent("sand.agent_message.sent", {
       from_agent_id: fromAgentId,
       to_agent_id: toAgentId,
@@ -107,6 +123,7 @@ export class AgentToAgentMessaging {
       timestampMs: Date.now(),
       ...(images.length === 0 ? {} : { images }),
       ...(priority ? { priority: true } : {}),
+      hop,
     };
     const queued = this.pendingAgentInbound.get(toAgentId) ?? [];
     if (priority) {
@@ -215,6 +232,7 @@ export class AgentToAgentMessaging {
               return;
             }
             const selectedImages = await loadAgentInboundImages(message.images);
+            this.agentWakeHops.set(agentId, message.hop ?? 1);
             const result = await runner.run(
               buildAgentInboundWakePrompt(message),
               {
@@ -266,6 +284,7 @@ export class AgentToAgentMessaging {
             ...describeAgentRunError(error),
           });
         } finally {
+          this.agentWakeHops.delete(agentId);
           this.tm.runLifecycle.endSessionRun(session);
         }
       },

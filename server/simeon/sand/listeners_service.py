@@ -53,6 +53,11 @@ FIRE_TTL = timedelta(hours=2)
 #: A relay event nobody polled for in this long is dropped.
 RELAY_EVENT_TTL = timedelta(days=2)
 NEXT_POLL_AFTER_MS = 15_000
+#: The shortest gap between two runs of one routine, whatever its schedule
+#: says (2 October 2026): each run is a whole agent turn on the expensive
+#: model, and a schedule of "every minute" is almost always a mistake. The
+#: app holds the same gap on the Mac (`ROUTINE_MIN_INTERVAL_MS`).
+ROUTINE_MIN_INTERVAL = timedelta(minutes=15)
 WEBHOOK_PLATFORMS = ("linear", "sentry", "pagerduty")
 
 GITHUB_KINDS = (
@@ -719,7 +724,11 @@ class ListenersService:
         woken: set[UUID] = set()
         for automation in await automations.list_due(now):
             slot = automation.next_fire_at
-            following = next_workflow_fire(automation.workflow, now)
+            # The next slot at least ROUTINE_MIN_INTERVAL away: a schedule
+            # asking for every minute runs every fifteen (2 October 2026).
+            following = next_workflow_fire(
+                automation.workflow, now + ROUTINE_MIN_INTERVAL - timedelta(minutes=1)
+            )
             await automations.update(
                 automation, update_dict={"next_fire_at": following}
             )

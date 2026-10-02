@@ -138,7 +138,7 @@ test("GPT-6 reaches OpenAI as a reasoning model under its real name, and falls b
   }
 });
 
-test("a turn climbs from medium to high as it keeps working; a reacting turn stays low; a level in the environment holds", async () => {
+test("a turn climbs from medium to high as it keeps working; an unnamed hidden turn stays low; a level in the environment holds", async () => {
   const loaded = await loadHarness();
   const unpin = pin(loaded.module, loaded.dataDir);
   const previousFetch = globalThis.fetch;
@@ -154,14 +154,16 @@ test("a turn climbs from medium to high as it keeps working; a reacting turn sta
 
     await steps(undefined, 6);
     assert.deepEqual(requests.splice(0).map((body) => body.reasoning?.effort), ["medium", "medium", "medium", "medium", "high", "high"]);
-    await steps({ hidden: true, callReason: "nudge" }, 6);
+    await steps({ hidden: true }, 6);
     assert.deepEqual(requests.splice(0).map((body) => body.reasoning?.effort), ["low", "low", "low", "low", "low", "low"]);
+    await steps({ hidden: true, callReason: "nudge" }, 5);
+    assert.deepEqual(requests.splice(0).map((body) => body.reasoning?.effort), ["medium", "medium", "medium", "medium", "high"], "a reply nudge delivers what the person reads");
     await steps({ hidden: true, fullStepBudget: true, callReason: "routine" }, 5);
     assert.deepEqual(requests.splice(0).map((body) => body.reasoning?.effort), ["medium", "medium", "medium", "medium", "high"]);
     await steps({ isComputerUseSubagent: true }, 6);
     assert.deepEqual(requests.splice(0).map((body) => body.reasoning?.effort), ["low", "low", "low", "low", "low", "low"]);
     process.env.SAND_SIMEON_REASONING_EFFORT = "high";
-    await steps({ hidden: true, callReason: "nudge" }, 2);
+    await steps({ hidden: true }, 2);
     await steps(undefined, 6);
     assert.deepEqual(requests.splice(0).map((body) => body.reasoning?.effort), ["high", "high", "high", "high", "high", "high", "high", "high"]);
   } finally {
