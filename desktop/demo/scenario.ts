@@ -77,7 +77,7 @@ const earlierCall = (prefix: string, minutesAgo: number, callId: string, seconds
 };
 
 export const AGENTS: readonly DemoAgent[] = [
-  { id: "simeon", name: "Simeon", title: "Chief of staff", description: "Runs your day and keeps the team pointed at what matters.", color: "blue", minutesAgo: 0 },
+  { id: "simeon", name: "Simeon", title: "COO", description: "Runs your day and keeps the team pointed at what matters.", color: "blue", minutesAgo: 0 },
   { id: "yodo", name: "Yodo", title: "Delivery", description: "Keeps the launch on track in Linear and Slack.", color: "red", minutesAgo: 95 },
   { id: "scout", name: "Scout", title: "Research", description: "Reads what customers say and brings back what matters.", color: "cyan", minutesAgo: 60 * 26 },
   { id: "atlas", name: "Atlas", title: "Travel", description: "Finds and books your flights.", color: "green", minutesAgo: 12 },
@@ -209,5 +209,43 @@ export function openingScript(): Beat[] {
     ...step(27000, "m10", "CallMcpTool", "Posting in #launch on Slack", "Posted in #launch on Slack", 1000, "Slack"),
     { at: 28400, kind: "append", agent: "simeon", entry: says("m4a", 0, "As we said on the call: the review is now Friday at 10, Yodo moved it, and I posted it in #launch on **Slack**.") },
     { at: 28500, kind: "typing", agent: "simeon", on: false },
+  ];
+}
+
+/**
+ * A new account's first agent (`?onboarding`): what it says once the person
+ * presses Get started, then after each answer. It follows the first-run cue
+ * the real agent gets (`SAND_ONBOARDING_KICKSTART_PROMPT`,
+ * source/shared/agents/onboarding.ts): a short hello, then a question card
+ * with three or four options; once an answer shows where the work lives, the
+ * connectors that fit, then the next question.
+ */
+export function onboardingScript(agent: string, stage: number): Beat[] {
+  const typing = (at: number, on: boolean): Beat => ({ at, kind: "typing", agent, on });
+  const append = (at: number, entry: Entry): Beat => ({ at, kind: "append", agent, entry });
+  const question = (id: string, prompt: string, labels: readonly string[], helpText?: string) =>
+    card(id, 0, { type: "widget", widget: { prompt, ...(helpText == null ? {} : { helpText }), options: labels.map((label) => ({ label })), allowCustom: true } });
+  if (stage === 0) {
+    return [
+      typing(700, true),
+      append(2600, says("o0a", 0, "Hi Bass, I'm Simeon, your COO. Before I start staffing your team, I'd like to know where you want me first.")),
+      append(3600, question("o0q", "What should I mainly help you with?", ["Run my day: calendar and inbox", "Keep my projects moving", "Prepare me for meetings", "Lead my other agents"], "Pick one, or type your own. You can hand me a real task instead, and I'll just start on it.")),
+      typing(3700, false),
+    ];
+  }
+  if (stage === 1) {
+    return [
+      typing(500, true),
+      append(2200, says("o1a", 0, "Good. For that I need to see your calendar and your email.")),
+      append(2600, card("o1c", 0, { type: "connector", connector: "Google Calendar", variant: "connect", reason: "To know your day and protect your time" })),
+      append(2800, card("o1g", 0, { type: "connector", connector: "Gmail", variant: "connect", reason: "To sort what needs you and draft replies" })),
+      append(3800, question("o1q", "How should I check in with you?", ["A short brief every morning", "Only when something needs me", "A recap at the end of the day"])),
+      typing(3900, false),
+    ];
+  }
+  return [
+    typing(500, true),
+    append(2000, says("o2a", 0, "Got it. Connect those two and I'll send your first brief tomorrow at 8. Until then, hand me anything and I'll start on it.")),
+    typing(2100, false),
   ];
 }
