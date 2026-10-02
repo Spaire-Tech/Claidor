@@ -1326,3 +1326,101 @@ and still never be given a machine.
 Unchanged: **nothing here has ever contacted E2B, no sandbox has been started,
 no command has run in a box, and CI has never executed a line of this diff** —
 which is, this time, also what made two of the renames safe.
+
+---
+
+## §23 — 2 October: main added flight search; the merge was clean, and the box is still unmetered
+
+Main moved 28 commits, `8cc44299` → `80f36e1b`: 47 files under `desktop/`, six
+under `server/`, one under `docs/`. **This merge had no conflicts and no
+Alembic collision** — the first of the four where I had to re-point nothing.
+
+### What main put in `server/`
+
+`git diff --name-status 8cc44299..origin/main -- server/ runner/` — six files,
+nothing under `runner/`:
+
+- **`simeon/desktop/flights.py`, new, 1028 lines** — flight search through
+  Duffel, one route: `@router.post("/api/flights/search")`.
+- `simeon/desktop/endpoints.py` — **two lines**: the `flights_router` import and
+  its `include_router`, both in the include block around 1384.
+- `simeon/config.py` — three settings after `ELEVENLABS_*`:
+  `DUFFEL_ACCESS_TOKEN`, `DUFFEL_BASE_URL`, `FLIGHT_SEARCHES_PER_HOUR = 30`.
+- `simeon/desktop/apps.py` (+80/-23), and the tests
+  `tests/desktop/test_flights.py` (new, 534 lines) and `tests/desktop/test_apps.py`.
+
+### Why none of it touched my routes, checked rather than assumed
+
+The flights route is `/api/flights/search` — **outside `/api/proxy/`**, so it
+can neither shadow my ten `/api/proxy/box/*` routes nor be swallowed by
+`/api/proxy/{path:path}`. The two `endpoints.py` lines land at the include block
+near 1384, far above my region. Re-measured after the merge: the ten box routes
+declared 1470–1669, the catch-all at **1816** — still ten above it.
+
+`b09c2063` ("make the box write files") reads like mine and is not: all ten files
+are under `desktop/` — the Mac app's `box-exec-daemon`, which was answering
+`BOX_EXEC_UNSUPPORTED` to file writes. Nothing server-side.
+
+### Measured on the merged tree
+
+| Check | Result |
+|---|---|
+| `alembic heads` | **one**: `desktop_boxes_0918` (main added no migration) |
+| Scoped suite | **14 failed / 576 passed / 1 skipped**, 591 collected |
+| The fourteen | the same twelve `test_endpoints.py` proxy + two `tests/maty/test_service.py` |
+| Main's new tests | `test_flights.py` + `test_apps.py` → **27 passed** |
+| My own two files | **52 passed** |
+| `hourly_exhausted` in `endpoints.py` | 1 |
+| AST duplicate top-level names | none in `pricing/endpoints/boxes/models.desktop` |
+| `ruff check` / `format` on my files | **0 findings**, 4 files already formatted |
+| Migration up/down on a scratch db | chain ran to head, `ix_desktop_boxes_live_scope` present, `downgrade -1`, `to_regclass('desktop_boxes')` → null |
+
+Passed rose 559 → 576. The +17 is main's own new tests, not mine; I chased the
+changed count rather than assuming, and ran those two files on their own.
+
+**The one ruff overlap is not mine.** `simeon/models/__init__.py` is in my diff
+and does carry `RUF022 __all__ is not sorted` — but main's own copy, pulled with
+`git show origin/main:server/simeon/models/__init__.py` and linted against the
+same `pyproject.toml`, carries the identical finding at line 137 where mine is at
+139. The two lines of difference are my own `"DesktopBox"` and `"DesktopBoxState"`,
+both in correct alphabetical position. Across the whole tree ruff reports 53
+errors and 5 files to reformat; **none of the five, and none of the other 52, is
+among my twelve changed files.**
+
+### The `Names` check, and the count going up
+
+`python3 scripts/check_names.py --summary` exits **1** with **71 findings**. All
+71 are in my three working notes — 62 in this file, 6 in
+`maty-test-failures-measured.md`, 3 in `images-server-route.md`. **Zero in
+`server/`, zero in `runner/`, zero anywhere else.**
+
+The count rose 65 → 71 because §21 and §22 quote `polar` in order to *describe*
+the rename — and **72 once this section is in the file**, since the paragraph
+above quotes it once more. Writing the history of an earlier name is what trips
+the check, so the number climbs every time I record a rename honestly. The fix is
+still the one `record` rule in `scripts/kept_names.json` set out in §22, and it
+is still main's enforcement file and still not mine to edit.
+
+### Main capped a paid upstream per person per hour — and it is a cap, not a meter
+
+Worth recording precisely, because it is close to what I have been proposing and
+is not the same thing. `flights.py:859` does a Redis `INCR` on a per-person key
+with a 3600-second expiry and refuses past `FLIGHT_SEARCHES_PER_HOUR`, with the
+reason given in the file's own docstring: *"past Duffel's free allowance each one
+is billed, and a looping agent must not run that up."*
+
+So main now accepts that a billed upstream needs a per-person hourly ceiling. But
+it is a **rate cap with no usage row** — no `record_usage`, no credits charged. It
+supports the "cap" half of what the box needs and says nothing about the "bill"
+half.
+
+And the search that matters is unchanged. `grep -rnE
+"credits_for|desktop_usage|DesktopUsage|record_usage|billed_through" simeon/sand/`
+→ **no matches**, re-run on this tree rather than carried forward. Five weeks on,
+every person's cloud computer is still metered by nothing at all, and this round
+main spent its server work on flight search. Comment `5882313175` stands as
+written.
+
+Unchanged, and still the honest headline: **nothing here has ever contacted E2B,
+no sandbox has been started, no command has run in a box, and CI has never
+executed a line of this diff.**
