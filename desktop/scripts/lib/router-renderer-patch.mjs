@@ -828,16 +828,54 @@ const COO_SOURCE = [
 
 export const COO_REPLACEMENTS = Object.freeze([
   // "Give each Agent a job" is left out of the flow (the founder, the same day: "remove the give each agent a job step"); the COO step says it now.
-  ["coo-step-list", 'const Gse=["landing","meet","computer-demo","jobs","tools","create"]', 'const Gse=["landing","meet","coo","computer-demo","tools","create"]'],
+  ["coo-step-list", 'const Gse=["landing","meet","computer-demo","jobs","tools","create"]', 'const Gse=["landing","meet","coo","computer-demo","tools"]'],
   ["coo-computer-title", 'N="Grok Bot has its own computer and works just like you"', 'N="Your agents have their own computer and work just like you"'],
   ["coo-step-screen", 'case"computer-demo":return p.jsx(Yqn,{', 'case"coo":return p.jsx(__simeonCooStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>x.advance(ln)});case"computer-demo":return p.jsx(Yqn,{'],
   ["coo-step-hero", 'case"computer-demo":return{...e,x:$2e.x+n.demoCursor.x', `case"coo":return{...e,x:0,y:${COO_HERO_Y},scale:1,opacity:1,state:"proud",transition:"standard",isGazing:!0};case"computer-demo":return{...e,x:$2e.x+n.demoCursor.x`],
   ["coo-step-component", "function sjn(n){", `${COO_SOURCE}function sjn(n){`],
 ]);
 
+/**
+ * Simeon is the first agent, made for the person, and always pinned (3
+ * October 2026, the founder: "the create your first agent part is where we
+ * need gone. The first agent should automatically be Simeon. (Chief of
+ * Staff) But change the name Chief of Staff by COO … That's the first and
+ * Main. Now I want Simeon to always be pinned. Can't unpin him.").
+ *
+ * - Next on the apps step runs the flow's own create-and-finish (`Pe`: the
+ *   hand-off screen, the computer, the agent, the first-run cue) with
+ *   Simeon's profile instead of the form's. The "create" step is out of the
+ *   step list. The agent-creation path now carries a title, so Simeon's
+ *   profile reads COO.
+ * - The COO is the oldest agent titled "COO". The sidebar's pinned list
+ *   always starts with it, its menu has no Unpin, and the store refuses to
+ *   unpin it. An account made before this has no COO and is unchanged.
+ * - The Chief of Staff suggestion is gone from the new-agent picker: the
+ *   COO is that job, and there is one.
+ */
+export const SIMEON_COO_PROFILE = Object.freeze({ name: "Simeon", title: "COO", description: "Your COO: manages your other Agents and pulls you in for decisions.", avatarColor: "blue", avatarShape: "cloud", templateId: "chief-of-staff" });
+const COO_PIN_SOURCE = "var __simeonCooId=null;function __simeonFindCoo(n){let c=null;for(const a of n??[]){if(a!=null&&typeof a.title===\"string\"&&a.title.trim().toLowerCase()===\"coo\"&&(c==null||(a.createdAt??0)<(c.createdAt??0)))c=a}return c}function __simeonPinCoo(n,e){const c=__simeonFindCoo(n);__simeonCooId=c?.id??null;return c==null?e:[c.id,...(e??[]).filter(x=>x!==c.id)]}";
+export const FIRST_AGENT_REPLACEMENTS = Object.freeze([
+  ["first-agent-title", "isKickstartRequested:!0,...t.templateId!=null?{templateId:t.templateId}:{}", "isKickstartRequested:!0,...t.title!=null?{title:t.title}:{},...t.templateId!=null?{templateId:t.templateId}:{}"],
+  ["first-agent-simeon", "createTeammate:async _n=>(await y({name:A.name.trim(),description:A.description,avatarPngBase64:null,avatarColor:A.color,avatarShape:A.shape,onAgentCreated:_n,...A.pickedTemplateId==null?{}:{templateId:A.pickedTemplateId}})).agentId", `createTeammate:async _n=>(await y({...${JSON.stringify(SIMEON_COO_PROFILE)},avatarPngBase64:null,onAgentCreated:_n})).agentId`],
+  ["first-agent-from-apps", "onChange:x.chooseDailyTools,onForward:()=>x.advance(ln),picked:N", "onChange:x.chooseDailyTools,onForward:()=>{Pe()},picked:N"],
+  ["first-agent-no-cos-template", '{id:"chief-of-staff",name:"Chief of Staff",description:"Manages your other Bots and pulls you in for decisions",eligibility:{kind:"universal"}},', ""],
+  ["coo-pinned-split", "function t5e(n,e){const t=new Set(e);", `${COO_PIN_SOURCE}function t5e(n,e){e=__simeonPinCoo(n,e);const t=new Set(e);`],
+  ["coo-pinned-sections", "function Cct({agents:n,pinnedIds:e,sections:t}){if(t.length===0)return[];", "function Cct({agents:n,pinnedIds:e,sections:t}){e=__simeonPinCoo(n,e);if(t.length===0)return[];"],
+  ["coo-no-unpin-item", 'function scn(n){const e=he.c(9),{isPinned:t,onTogglePin:s,id:r}=n,i=t?"pin-slash":"pin";', 'function scn(n){const e=he.c(9),{isPinned:t,onTogglePin:s,id:r}=n,i=t?"pin-slash":"pin";if(r!=null&&r===__simeonCooId)return null;'],
+  ["coo-no-unpin-store", "B=(L,D)=>{if(y||L.length===0)return;const F=i.get();", "B=(L,D)=>{if(y||L.length===0||!D&&L===__simeonCooId)return;const F=i.get();"],
+  // Nor can the COO be hidden, deleted, duplicated or moved into a section: each would take him off the top.
+  ["coo-no-hide-item", "function ccn(n){const e=he.c(4),{id:t,onHideFromSidebar:s}=n;", "function ccn(n){const e=he.c(4),{id:t,onHideFromSidebar:s}=n;if(t===__simeonCooId)return null;"],
+  ["coo-no-duplicate-item", "function lcn(n){const e=he.c(4),{id:t,onDuplicate:s}=n;", "function lcn(n){const e=he.c(4),{id:t,onDuplicate:s}=n;if(t===__simeonCooId)return null;"],
+  ["coo-no-delete-item", "function mcn(n){const e=he.c(10),{id:t,batchCount:s,onRequestDelete:r}=n;", "function mcn(n){const e=he.c(10),{id:t,batchCount:s,onRequestDelete:r}=n;if(t===__simeonCooId)return null;"],
+  ["coo-no-section-item", "R=o||!l?null:p.jsx(rcn,{", "R=o||!l||t.id===__simeonCooId?null:p.jsx(rcn,{"],
+  ["coo-no-hide-action", "J=S.useCallback(L=>{f.setAgentHiddenFromSidebar(L,!0)},[f])", "J=S.useCallback(L=>{L!==__simeonCooId&&f.setAgentHiddenFromSidebar(L,!0)},[f])"],
+  ["coo-no-delete-action", "_=S.useCallback(L=>{const D=new Set(L),F=u.filter(z=>D.has(z.id));", "_=S.useCallback(L=>{const D=new Set(L),F=u.filter(z=>D.has(z.id)&&z.id!==__simeonCooId);"],
+]);
+
 export function patchOriginalCooStep(source) {
   let out = source;
-  for (const [label, before, after] of COO_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  for (const [label, before, after] of [...COO_REPLACEMENTS, ...FIRST_AGENT_REPLACEMENTS]) out = replaceExactlyOnce(out, before, after, label);
   return out;
 }
 
@@ -1621,7 +1659,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "flight-results"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "flight-results"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

@@ -133,7 +133,7 @@ test("the sign-in wordmark is set in Suravaram, carried inside the stylesheet", 
 test("the COO step sits after Meet Simeon, with Simeon at the centre and six agents leaving it", async () => {
   const { COO_REPLACEMENTS, COO_CSS, patchOriginalCooStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
   const [list, title, screen, hero, component] = COO_REPLACEMENTS;
-  assert.match(list[2], /\["landing","meet","coo","computer-demo","tools","create"\]/, "the jobs step is out of the flow");
+  assert.match(list[2], /\["landing","meet","coo","computer-demo","tools"\]/, "the jobs and create steps are out of the flow");
   assert.equal(title[2], 'N="Your agents have their own computer and work just like you"');
   assert.match(screen[2], /^case"coo":return p\.jsx\(__simeonCooStep,\{headingId:xn,onBack:\(\)=>x\.goBack\(ln\),onForward:\(\)=>x\.advance\(ln\)\}\);/);
   assert.match(hero[2], /^case"coo":return\{\.\.\.e,x:0,y:-40,scale:1,opacity:1/);
@@ -143,4 +143,23 @@ test("the COO step sits after Meet Simeon, with Simeon at the centre and six age
   new Function("p", "fde", "tye", "nye", "sd", "re", "Fo", component[2].replace(/function sjn\(n\)\{$/, ""));
   assert.match(COO_CSS, /prefers-reduced-motion:reduce/);
   assert.throws(() => patchOriginalCooStylesheet(patchOriginalCooStylesheet(".a{}")), /already present/);
+});
+
+test("Simeon is the first agent, titled COO, and always pinned", async () => {
+  const { FIRST_AGENT_REPLACEMENTS, SIMEON_COO_PROFILE } = await import("../scripts/lib/router-renderer-patch.mjs");
+  assert.deepEqual({ name: SIMEON_COO_PROFILE.name, title: SIMEON_COO_PROFILE.title }, { name: "Simeon", title: "COO" });
+  const by = Object.fromEntries(FIRST_AGENT_REPLACEMENTS.map(([label, , after]) => [label, after]));
+  assert.match(by["first-agent-simeon"], /"name":"Simeon","title":"COO"/);
+  assert.match(by["first-agent-from-apps"], /onForward:\(\)=>\{Pe\(\)\}/, "Next on the apps step makes Simeon and finishes");
+  assert.match(by["first-agent-title"], /\.\.\.t\.title!=null\?\{title:t\.title\}:\{\}/);
+  assert.equal(by["first-agent-no-cos-template"], "");
+  // The pin rule, run on its own: the oldest agent titled COO leads the pinned list, once.
+  const source = by["coo-pinned-split"].replace(/function t5e\(n,e\)\{.*$/, "");
+  const pinCoo = new Function(`${source};return {pin:__simeonPinCoo,id:()=>__simeonCooId}`)();
+  const agents = [{ id: "a", title: "Research" }, { id: "s2", title: "COO", createdAt: 9 }, { id: "s", title: "coo", createdAt: 1 }];
+  assert.deepEqual(pinCoo.pin(agents, ["a", "s"]), ["s", "a"]);
+  assert.equal(pinCoo.id(), "s");
+  assert.deepEqual(pinCoo.pin([{ id: "a", title: "" }], ["a"]), ["a"], "an account with no COO is unchanged");
+  for (const label of ["coo-no-unpin-item", "coo-no-hide-item", "coo-no-duplicate-item", "coo-no-delete-item"]) assert.match(by[label], /===__simeonCooId\)return null;$/);
+  assert.match(by["coo-no-unpin-store"], /!D&&L===__simeonCooId\)return;/);
 });

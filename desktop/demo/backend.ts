@@ -264,7 +264,7 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
     },
     createAgent: (args) => {
       const id = `agent-${rows.size + 1}`;
-      const row: Row = { id, name: String(args?.name ?? "New Agent"), title: "", description: String(args?.description ?? ""), color: (args?.avatarColor ?? "blue") as DemoAgent["color"], minutesAgo: 0 };
+      const row: Row = { id, name: String(args?.name ?? "New Agent"), title: String(args?.title ?? ""), description: String(args?.description ?? ""), color: (args?.avatarColor ?? "blue") as DemoAgent["color"], minutesAgo: 0 };
       rows.set(id, row);
       transcripts.set(id, []);
       lastActivity.set(id, Date.now());

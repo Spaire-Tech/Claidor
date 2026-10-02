@@ -77,7 +77,7 @@ const earlierCall = (prefix: string, minutesAgo: number, callId: string, seconds
 };
 
 export const AGENTS: readonly DemoAgent[] = [
-  { id: "simeon", name: "Simeon", title: "Chief of staff", description: "Runs your day and keeps the team pointed at what matters.", color: "blue", minutesAgo: 0 },
+  { id: "simeon", name: "Simeon", title: "COO", description: "Runs your day and keeps the team pointed at what matters.", color: "blue", minutesAgo: 0 },
   { id: "yodo", name: "Yodo", title: "Delivery", description: "Keeps the launch on track in Linear and Slack.", color: "red", minutesAgo: 95 },
   { id: "scout", name: "Scout", title: "Research", description: "Reads what customers say and brings back what matters.", color: "cyan", minutesAgo: 60 * 26 },
   { id: "atlas", name: "Atlas", title: "Travel", description: "Finds and books your flights.", color: "green", minutesAgo: 12 },
@@ -228,7 +228,7 @@ export function onboardingScript(agent: string, stage: number): Beat[] {
   if (stage === 0) {
     return [
       typing(700, true),
-      append(2600, says("o0a", 0, "Hi Bass, I'm your Chief of Staff. Before I start running things, I'd like to know where you want me first.")),
+      append(2600, says("o0a", 0, "Hi Bass, I'm Simeon, your COO. Before I start staffing your team, I'd like to know where you want me first.")),
       append(3600, question("o0q", "What should I mainly help you with?", ["Run my day: calendar and inbox", "Keep my projects moving", "Prepare me for meetings", "Lead my other agents"], "Pick one, or type your own. You can hand me a real task instead, and I'll just start on it.")),
       typing(3700, false),
     ];
