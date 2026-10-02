@@ -640,8 +640,8 @@ the API):
 
 **For the person.** Ask any agent for a flight ("cheapest refundable Seattle to LA tomorrow,
 landing before 2") and it answers with a results card: the four cheapest options that fit,
-each opening a panel with the itinerary, the fare's refund and change rules, bags and a Book
-button. Booking is not built yet; the panel says so under the button.
+each opening a panel with each leg, the layover, and the fare's cancellation and change
+terms and bags in plain words. Booking is not built; the panel has no Book button.
 
 **How it works.**
 
@@ -657,6 +657,9 @@ button. Booking is not built yet; the panel says so under the button.
   of JSON, which the window draws (`flights-components` in
   `scripts/lib/router-renderer-patch.mjs`). The agent gets a short summary and writes only the
   line under the card.
+- The tool asks the agent for the trip (`one_way` or `round_trip`); a return date goes to the
+  server only for a round trip. The same search twice in one turn is not run again and posts no
+  second card (2 October 2026: an agent ran one search six times).
 - Searches are capped per person per hour (`FLIGHT_SEARCHES_PER_HOUR`, default 30): past
   Duffel's free allowance each search is billed.
 
