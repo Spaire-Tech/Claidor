@@ -93,16 +93,22 @@ export { SIMEON_WORKING_CONTEXT_TOKENS };
 // GPT-5.6's and reads as low.
 export const SIMEON_REASONING_EFFORTS = ["none", "low", "medium", "high", "xhigh", "max"] as const;
 export type SimeonReasoningEffort = (typeof SIMEON_REASONING_EFFORTS)[number];
-// Medium since 2 October 2026, not high: every turn starts at medium and a
-// turn that keeps working is raised to high (`simeonEffortForCall`). One
-// fixed level for everything thought as hard about "hello" as about a
-// research task (docs/services-core.md, "Spend"). Only a hidden turn no
-// caller named runs at low: a reply nudge, a helper's results coming back
-// or a channel message all end in something the person reads.
+// Effort per call since 2 October 2026 (`simeonEffortForCall`); until then
+// every call ran at high, so "hello" thought as hard as a research task
+// (docs/services-core.md, "Spend"). The hard thinking in a task is at its
+// start, understanding the request and making the plan, and when something
+// goes wrong; the steps between mostly hand a tool's result to the next
+// tool. So:
+// - a turn's first call, on what the person (or a routine, or another
+//   agent) asked, runs at the session's level: medium, or low for a turn
+//   that only reacts (a reply nudge, a background wake, an unnamed one);
+// - a call that follows tool results runs at SIMEON_TOOL_RESULT_EFFORT
+//   (low), or at high when one of those results is an error.
 export const DEFAULT_SIMEON_REASONING_EFFORT: SimeonReasoningEffort = "medium";
-export const SIMEON_LOW_EFFORT_CALL_REASONS: ReadonlySet<string> = new Set(["background"]);
-// A turn's calls after this many run at high: by then it is real work.
-export const SIMEON_EFFORT_RAISE_AFTER_CALLS = 4;
+export const SIMEON_LOW_EFFORT_CALL_REASONS: ReadonlySet<string> = new Set(["nudge", "wake", "background"]);
+export const SIMEON_TOOL_RESULT_EFFORT: SimeonReasoningEffort = "low";
+export const SIMEON_RECOVERY_EFFORT: SimeonReasoningEffort = "high";
+export const SAND_SIMEON_TOOL_RESULT_EFFORT_ENV = "SAND_SIMEON_TOOL_RESULT_EFFORT";
 export const DEFAULT_SIMEON_CHEAP_REASONING_EFFORT: SimeonReasoningEffort = "low";
 export const SAND_SIMEON_REASONING_EFFORT_ENV = "SAND_SIMEON_REASONING_EFFORT";
 export const SAND_SIMEON_CHEAP_REASONING_EFFORT_ENV = "SAND_SIMEON_CHEAP_REASONING_EFFORT";
@@ -239,7 +245,8 @@ export function simeonModelForSession(options?: SimeonSessionModelOptions): stri
 // Effort follows the role, not the model: a loop turn that falls back to
 // Luna on a rate limit keeps the loop's effort. The cheap roles run at the
 // cheap level; a level set in the environment holds for the rest; otherwise
-// a turn that only reacts runs at low and everything else starts at medium.
+// a turn that only reacts starts at low and everything else at medium, and
+// each call then follows its step (`simeonEffortForCall`).
 export function simeonReasoningEffortForSession(options?: SimeonSessionModelOptions, env: NodeJS.ProcessEnv = process.env): SimeonReasoningEffort {
   if (isCheapSimeonSession(options)) return configuredSimeonCheapReasoningEffort(env);
   const explicit = explicitSimeonReasoningEffort(env);
@@ -247,17 +254,28 @@ export function simeonReasoningEffortForSession(options?: SimeonSessionModelOpti
   return SIMEON_LOW_EFFORT_CALL_REASONS.has(simeonCallReason(options)) ? "low" : DEFAULT_SIMEON_REASONING_EFFORT;
 }
 
-// Whether a session's effort climbs with its turn: only a session on the
-// default ladder (not cheap, no level in the environment, starting at medium).
-export function simeonEffortRaises(options?: SimeonSessionModelOptions, env: NodeJS.ProcessEnv = process.env): boolean {
-  return !isCheapSimeonSession(options) && explicitSimeonReasoningEffort(env) === undefined && simeonReasoningEffortForSession(options, env) === DEFAULT_SIMEON_REASONING_EFFORT;
+// Whether a session's effort follows its steps: not on the cheap roles
+// (always their own level) and not when the environment sets one level.
+export function simeonEffortFollowsSteps(options?: SimeonSessionModelOptions, env: NodeJS.ProcessEnv = process.env): boolean {
+  return !isCheapSimeonSession(options) && explicitSimeonReasoningEffort(env) === undefined;
 }
 
-// The effort of one call: the session's, raised to high from the call after
-// SIMEON_EFFORT_RAISE_AFTER_CALLS in a session that climbs. `callNumber`
-// counts this session's calls from 1 (the turn's budget counter).
-export function simeonEffortForCall(sessionEffort: SimeonReasoningEffort, raises: boolean, callNumber: number): SimeonReasoningEffort {
-  return raises && callNumber > SIMEON_EFFORT_RAISE_AFTER_CALLS ? "high" : sessionEffort;
+// The effort of one call, from what the call answers: the last message of
+// the loop's state. Tool results → SIMEON_TOOL_RESULT_EFFORT, or
+// SIMEON_RECOVERY_EFFORT when a result is an error; anything else (the
+// request itself, a reminder the loop added) → the session's level.
+export function simeonEffortForCall(sessionEffort: SimeonReasoningEffort, followsSteps: boolean, messages: readonly ProviderMessage[], env: NodeJS.ProcessEnv = process.env): SimeonReasoningEffort {
+  if (!followsSteps) return sessionEffort;
+  const last = messages.at(-1);
+  if (last?.role !== "tool") return sessionEffort;
+  // The loop marks a failed tool on the message's Cursor metadata
+  // (`highLevelToolCallResult.isError`, packages/agent/tool-stream-executor.ts);
+  // a result built elsewhere may carry `isError` on the part itself.
+  const parts = Array.isArray(last.content) ? last.content as readonly Loose[] : [];
+  const failed = (last as Loose).providerOptions?.cursor?.highLevelToolCallResult?.isError === true
+    || parts.some((part) => part?.type === "tool-result" && part.isError === true);
+  if (failed) return SIMEON_RECOVERY_EFFORT;
+  return parseReasoningEffort(readSimeonEnv(env, SAND_SIMEON_TOOL_RESULT_EFFORT_ENV), SIMEON_TOOL_RESULT_EFFORT);
 }
 
 // One definition of where the proxy lives, shared with the other three
@@ -391,7 +409,15 @@ function partText(parts: readonly Loose[]): string {
 // helpers are told to act on the one fresh screenshot after each call; older
 // ones are replaced by a line saying so. Pictures the person attached are
 // never dropped: they arrive as user messages, not tool output.
+//
+// They go in batches of SIMEON_TOOL_IMAGE_DROP_BATCH. The provider's cache
+// matches a request from its start; dropping the oldest picture on every
+// step would change the history in the middle every step, and everything
+// after it would miss the cache every step. Dropped five at a time, the
+// history stays the same between drops and misses once per five steps. So
+// the wire carries between 3 and 7 screenshots.
 export const SIMEON_KEPT_TOOL_IMAGES = 3;
+export const SIMEON_TOOL_IMAGE_DROP_BATCH = 5;
 const TOOL_IMAGE_INTRO = "Image output of the tool call(s) above.";
 const TOOL_IMAGE_DROPPED = "Image output of the tool call(s) above. (Not shown again: only the latest screenshots are kept; take a new one if you need to look.)";
 
@@ -437,7 +463,9 @@ export function toCoreMessages(messages: readonly ProviderMessage[]): CoreMessag
       out.push({ role: "user", content: [{ type: "text", text: TOOL_IMAGE_INTRO }, ...images] });
     }
   }
-  for (const index of toolImageMessages.slice(0, -SIMEON_KEPT_TOOL_IMAGES)) out[index] = { role: "user", content: [{ type: "text", text: TOOL_IMAGE_DROPPED }] };
+  const droppable = Math.max(0, toolImageMessages.length - SIMEON_KEPT_TOOL_IMAGES);
+  const dropped = droppable - (droppable % SIMEON_TOOL_IMAGE_DROP_BATCH);
+  for (const index of toolImageMessages.slice(0, dropped)) out[index] = { role: "user", content: [{ type: "text", text: TOOL_IMAGE_DROPPED }] };
   return out as CoreMessage[];
 }
 
@@ -552,7 +580,7 @@ function logModelCallError(error: unknown, callInfo: { readonly model: string; r
   modelCallLog(`${HOST_LOG_PREFIX} model-error-schemas ${clipForHostLog(toolSchemaSummary(tools), 6000)}`);
 }
 
-function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string; readonly prefix?: string }, tools?: ToolSet, messages?: readonly CoreMessage[], onRequestId?: (requestId: string) => void) {
+function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string; readonly prefix?: string }, tools?: ToolSet, messages?: readonly CoreMessage[], onRequestId?: (requestId: string) => void, onCutOff?: () => void) {
   const startedAtMs = Date.now();
   const failure = deferred<never>();
   failure.promise.catch(() => undefined);
@@ -576,7 +604,7 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
   if (onRequestId != null) void race(result.response).then((response) => { const id = (response as { id?: unknown } | undefined)?.id; if (typeof id === "string" && id.length > 0) onRequestId(id); }, () => undefined);
   const metadata = race(result.providerMetadata).then(value => (value?.openai ?? {}) as Record<string, unknown>, () => ({} as Record<string, unknown>));
   const toolCalls = race(result.toolCalls).then((calls) => calls as readonly { readonly toolName?: string; readonly args?: unknown }[], () => []);
-  void race(result.finishReason).then((reason) => { if (reason === "length") modelCallLog(`${HOST_LOG_PREFIX} model-output-limit model=${callInfo?.model ?? "?"} limit=${configuredSimeonMaxOutputTokens()}`); }, () => undefined);
+  void race(result.finishReason).then((reason) => { if (reason === "length") { modelCallLog(`${HOST_LOG_PREFIX} model-output-limit model=${callInfo?.model ?? "?"} limit=${configuredSimeonMaxOutputTokens()}`); onCutOff?.(); } }, () => undefined);
   const extendedUsage = Promise.all([race(result.usage), metadata, toolCalls]).then(([value, openai, calls]) => {
     const cached = typeof openai.cachedPromptTokens === "number" ? openai.cachedPromptTokens : 0;
     const reasoning = typeof openai.reasoningTokens === "number" ? openai.reasoningTokens : 0;
@@ -589,7 +617,7 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
   return { fullStream, response: race(result.response), usage: race(result.usage), extendedUsage, providerMetadata: race(result.providerMetadata), invocationId: Promise.resolve(invocationId) };
 }
 
-function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, openaiOptions: Record<string, unknown> = {}, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string }, onRequestId?: (requestId: string) => void, promptCacheKey?: string) {
+function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, openaiOptions: Record<string, unknown> = {}, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string }, onRequestId?: (requestId: string) => void, promptCacheKey?: string, onCutOff?: () => void) {
   const tools = toToolSet(definitions, executeTool);
   const coreMessages = toCoreMessages(messages);
   const prefixedCallInfo = callInfo === undefined ? undefined : { ...callInfo, prefix: promptPrefixFingerprint(coreMessages, definitions, promptCacheKey) };
@@ -608,7 +636,7 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
     maxSteps: tools === undefined || executeTool == null ? 1 : 8,
     providerOptions: { openai: { strictSchemas: false, ...openaiOptions } },
   });
-  return settleAiSdkStream(result, invocationId, onUsage, maxTokens, prefixedCallInfo, tools, coreMessages, onRequestId);
+  return settleAiSdkStream(result, invocationId, onUsage, maxTokens, prefixedCallInfo, tools, coreMessages, onRequestId, onCutOff);
 }
 
 // Simeon's metered proxy, on the Responses wire: the one that takes reasoning
@@ -708,7 +736,7 @@ function simeonExecutor(messages: readonly ProviderMessage[], invocationId: stri
   // model that cannot see the video is not an answer to a video question.
   if (isGeminiVideoModelId(requested)) return geminiExecutor(source, messages, invocationId, definitions, executeTool, onUsage, requested, reasoningEffort, budget, onRequestId, callReason);
   const cheap = configuredSimeonCheapModel();
-  const start = (id: string) => aiSdkExecutor(simeonLanguageModel(source, id, promptCacheKey, callReason), messages, invocationId, definitions, executeTool, onUsage, SIMEON_WORKING_CONTEXT_TOKENS, { reasoningEffort }, { model: id, effort: reasoningEffort, ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }) }, onRequestId, promptCacheKey);
+  const start = (id: string) => aiSdkExecutor(simeonLanguageModel(source, id, promptCacheKey, callReason), messages, invocationId, definitions, executeTool, onUsage, SIMEON_WORKING_CONTEXT_TOKENS, { reasoningEffort }, { model: id, effort: reasoningEffort, ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }) }, onRequestId, promptCacheKey, budget === undefined ? undefined : () => { budget.cutOffs = (budget.cutOffs ?? 0) + 1; });
 
   const startOrLegacy = (id: string) => {
     const legacy = LEGACY_SIMEON_MODELS[id];
@@ -727,7 +755,13 @@ function simeonExecutor(messages: readonly ProviderMessage[], invocationId: stri
 // the session hands out, because the turn shell asks for a fresh executor
 // per step. The cap is the upstream app's 5,000 for a turn the person asked for
 // and SAND_HIDDEN_TURN_MAX_STEPS for one nobody asked for.
-export interface ModelCallBudget { readonly limit: number; readonly hidden: boolean; readonly fullStepBudget?: boolean; readonly routine?: boolean; used: number }
+// `cutOffs` counts the session's calls that reached the output ceiling. A call
+// cut off inside a tool call sends the tool broken arguments; the tool
+// answers with an error and the next call tries again, at high effort, and
+// can be cut off the same way. The second cut-off ends the turn rather than
+// letting that repeat up to the call budget (2 October 2026).
+export const SIMEON_MAX_CUT_OFFS_PER_TURN = 2;
+export interface ModelCallBudget { readonly limit: number; readonly hidden: boolean; readonly fullStepBudget?: boolean; readonly routine?: boolean; used: number; cutOffs?: number }
 
 export function createModelCallBudget(options?: SimeonSessionModelOptions, env: NodeJS.ProcessEnv = process.env): ModelCallBudget {
   const hidden = options?.hidden === true;
@@ -739,6 +773,7 @@ export function createModelCallBudget(options?: SimeonSessionModelOptions, env: 
 }
 
 export function spendModelCall(budget: ModelCallBudget): void {
+  if ((budget.cutOffs ?? 0) >= SIMEON_MAX_CUT_OFFS_PER_TURN) throw new Error(`This turn stopped: ${SIMEON_MAX_CUT_OFFS_PER_TURN} answers ran past the ${configuredSimeonMaxOutputTokens().toLocaleString("en-US")}-token limit (SAND_SIMEON_MAX_OUTPUT_TOKENS). Ask for the work in smaller pieces.`);
   if (budget.used >= budget.limit) throw new Error(stepBudgetExceededMessage(budget.limit, budget.hidden && budget.fullStepBudget !== true, budget.routine === true));
   budget.used += 1;
 }
@@ -750,10 +785,10 @@ function conversationIdFromContext(ctx: unknown): unknown {
 }
 
 class ProviderPromptExecutor extends BasePromptExecutor<ProviderMessage> {
-  constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void, readonly modelId?: string, readonly reasoningEffort?: SimeonReasoningEffort, readonly budget?: ModelCallBudget, readonly onRequestId?: (requestId: string) => void, readonly callReason?: SimeonCallReason, readonly effortRaises = false) { super(new BasePromptBuilder(initialMessages)); }
+  constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void, readonly modelId?: string, readonly reasoningEffort?: SimeonReasoningEffort, readonly budget?: ModelCallBudget, readonly onRequestId?: (requestId: string) => void, readonly callReason?: SimeonCallReason, readonly effortFollowsSteps = false) { super(new BasePromptBuilder(initialMessages)); }
   stream(ctx: unknown, invocationId = crypto.randomUUID(), definitions?: readonly Loose[]) {
     if (this.budget != null) spendModelCall(this.budget);
-    const effort = this.reasoningEffort === undefined ? undefined : simeonEffortForCall(this.reasoningEffort, this.effortRaises, this.budget?.used ?? 1);
+    const effort = this.reasoningEffort === undefined ? undefined : simeonEffortForCall(this.reasoningEffort, this.effortFollowsSteps, this.getMessages());
     return simeonExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage, this.modelId, effort, this.budget, this.onRequestId, simeonPromptCacheKey(conversationIdFromContext(ctx)), this.callReason);
   }
 }
@@ -764,8 +799,8 @@ export function createProviderPromptSession(_provider: RoutedProvider, options?:
   const reasoningEffort = simeonReasoningEffortForSession(options);
   const budget = createModelCallBudget(options);
   const callReason = simeonCallReason(options);
-  const effortRaises = simeonEffortRaises(options);
-  return { getModelId: () => modelId, getExecutor: state => new ProviderPromptExecutor(provider, Array.isArray(state) ? state as ProviderMessage[] : undefined, usage => recordRoutedUsage(provider, usage), modelId, reasoningEffort, budget, onRequestId, callReason, effortRaises) };
+  const effortFollowsSteps = simeonEffortFollowsSteps(options);
+  return { getModelId: () => modelId, getExecutor: state => new ProviderPromptExecutor(provider, Array.isArray(state) ? state as ProviderMessage[] : undefined, usage => recordRoutedUsage(provider, usage), modelId, reasoningEffort, budget, onRequestId, callReason, effortFollowsSteps) };
 }
 
 export async function runRoutedProviderText(provider: RoutedProvider, messages: readonly ProviderMessage[], options?: {

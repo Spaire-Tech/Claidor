@@ -138,7 +138,7 @@ test("GPT-6 reaches OpenAI as a reasoning model under its real name, and falls b
   }
 });
 
-test("a turn climbs from medium to high as it keeps working; an unnamed hidden turn stays low; a level in the environment holds", async () => {
+test("effort follows the step: the request at the session's level, tool results at low, an error at high", async () => {
   const loaded = await loadHarness();
   const unpin = pin(loaded.module, loaded.dataDir);
   const previousFetch = globalThis.fetch;
@@ -149,25 +149,34 @@ test("a turn climbs from medium to high as it keeps working; an unnamed hidden t
       requests.push(body);
       return textStream("ok", body.model);
     };
-    const state = [{ role: "system", content: "You are the real system prompt." }, { role: "user", content: [{ type: "text", text: "hello" }] }];
-    const steps = async (options, count) => { const session = loaded.module.createProviderPromptSession("simeon", options); for (let i = 0; i < count; i += 1) await collect(session.getExecutor(state)); };
+    const system = { role: "system", content: "You are the real system prompt." };
+    const asked = [system, { role: "user", content: [{ type: "text", text: "plan my trip" }] }];
+    const call = { role: "assistant", content: [{ type: "tool-call", toolCallId: "c1", toolName: "Shell", args: { command: "ls" } }] };
+    const result = { role: "tool", content: [{ type: "tool-result", toolCallId: "c1", toolName: "Shell", result: "a b c" }] };
+    const failed = { role: "tool", content: [{ type: "tool-result", toolCallId: "c1", toolName: "Shell", result: "No such file" }], providerOptions: { cursor: { highLevelToolCallResult: { isError: true } } } };
+    const efforts = async (options, states) => { const session = loaded.module.createProviderPromptSession("simeon", options); for (const state of states) await collect(session.getExecutor(state)); return requests.splice(0).map((body) => body.reasoning?.effort); };
+    const steps = [asked, [...asked, call, result], [...asked, call, failed], [...asked, call, result, { role: "user", content: "reminder from the loop" }]];
 
-    await steps(undefined, 6);
-    assert.deepEqual(requests.splice(0).map((body) => body.reasoning?.effort), ["medium", "medium", "medium", "medium", "high", "high"]);
-    await steps({ hidden: true }, 6);
-    assert.deepEqual(requests.splice(0).map((body) => body.reasoning?.effort), ["low", "low", "low", "low", "low", "low"]);
-    await steps({ hidden: true, callReason: "nudge" }, 5);
-    assert.deepEqual(requests.splice(0).map((body) => body.reasoning?.effort), ["medium", "medium", "medium", "medium", "high"], "a reply nudge delivers what the person reads");
-    await steps({ hidden: true, fullStepBudget: true, callReason: "routine" }, 5);
-    assert.deepEqual(requests.splice(0).map((body) => body.reasoning?.effort), ["medium", "medium", "medium", "medium", "high"]);
-    await steps({ isComputerUseSubagent: true }, 6);
-    assert.deepEqual(requests.splice(0).map((body) => body.reasoning?.effort), ["low", "low", "low", "low", "low", "low"]);
+    assert.deepEqual(await efforts(undefined, steps), ["medium", "low", "high", "medium"]);
+    assert.deepEqual(await efforts({ hidden: true, fullStepBudget: true, callReason: "routine" }, steps), ["medium", "low", "high", "medium"]);
+    assert.deepEqual(await efforts({ hidden: true, callReason: "agent_wake" }, steps), ["medium", "low", "high", "medium"]);
+    // A turn that only reacts starts at low.
+    assert.deepEqual(await efforts({ hidden: true, callReason: "nudge" }, steps), ["low", "low", "high", "low"]);
+    assert.deepEqual(await efforts({ hidden: true, callReason: "wake" }, steps), ["low", "low", "high", "low"]);
+    assert.deepEqual(await efforts({ hidden: true }, steps), ["low", "low", "high", "low"]);
+    // The cheap roles keep their own level.
+    assert.deepEqual(await efforts({ isComputerUseSubagent: true }, steps), ["low", "low", "low", "low"]);
+    // The step level can be raised without a rebuild.
+    process.env.SAND_SIMEON_TOOL_RESULT_EFFORT = "medium";
+    assert.deepEqual(await efforts(undefined, steps), ["medium", "medium", "high", "medium"]);
+    delete process.env.SAND_SIMEON_TOOL_RESULT_EFFORT;
+    // One level in the environment holds everywhere but the cheap roles.
     process.env.SAND_SIMEON_REASONING_EFFORT = "high";
-    await steps({ hidden: true }, 2);
-    await steps(undefined, 6);
-    assert.deepEqual(requests.splice(0).map((body) => body.reasoning?.effort), ["high", "high", "high", "high", "high", "high", "high", "high"]);
+    assert.deepEqual(await efforts({ hidden: true, callReason: "nudge" }, steps), ["high", "high", "high", "high"]);
+    assert.deepEqual(await efforts(undefined, steps), ["high", "high", "high", "high"]);
   } finally {
     globalThis.fetch = previousFetch;
+    delete process.env.SAND_SIMEON_TOOL_RESULT_EFFORT;
     unpin();
     await loaded.dispose();
   }

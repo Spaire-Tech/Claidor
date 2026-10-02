@@ -187,23 +187,30 @@ refuses any model with no role: "This model is not offered by the desktop app."
 
 - The cheap roles (computer, browser and video helpers, summaries, memory,
   safety checks) run at `low`.
-- Every other turn starts at `medium` and runs at `high` from its fifth model
-  call, when it is real work (`SIMEON_EFFORT_RAISE_AFTER_CALLS`).
-- A hidden turn no caller named runs at `low`.
+- A turn's first call, on what was asked, runs at `medium`: a message from the
+  person, a routine, another agent's message, a helper's task, a voice call's
+  task, the first message. A turn that only reacts (a reply nudge, a
+  background wake, an unnamed hidden turn) starts at `low`.
+- A call that follows tool results runs at `low` (`SAND_SIMEON_TOOL_RESULT_EFFORT`):
+  most steps of a task hand one tool's result to the next tool.
+- A call that follows a failed tool runs at `high`: recovering is hard thinking.
 - `SAND_SIMEON_REASONING_EFFORT` set to a level holds that level for every
-  non-cheap call, with no climb.
+  non-cheap call.
 
 Until 2 October 2026 every call of the agent loop ran at `high`.
 
 **Output ceiling.** Every call carries `max_output_tokens` 32,000
 (`SAND_SIMEON_MAX_OUTPUT_TOKENS`), thinking included. A call that reaches it
-writes `[simeon] model-output-limit`.
+writes `[simeon] model-output-limit`. An answer cut off inside a tool call
+sends the tool broken arguments and the next call tries again, so the second
+cut-off in a turn ends the turn (`SIMEON_MAX_CUT_OFFS_PER_TURN`).
 
 **Why each call was made.** Every request to the proxy carries
 `x-simeon-call-reason`, stored in `desktop_usage.reason`: `chat`, `helper`,
 `computer`, `browser`, `video`, `summary`, `memory`, `safety`, `routine`,
 `agent_wake`, `voice`, `nudge`, `wake`, `first_message`, `background` or
-`cheap`. Rows from older apps have none. To read what a person spent, per
+`cheap` from the app, `cloud_agent` from the cloud runner. Web search, images,
+transcription and speech have their own routes and show by model name. Rows from older apps have none. To read what a person spent, per
 model and per reason:
 
 ```sh
@@ -218,8 +225,10 @@ prompt by its longest unchanged start, so a new teammate or routine no longer
 sends the whole prompt back at full price. The `prefix=sys:…` hash on each
 `[simeon] model=` line changes only when that start changes.
 
-**Screenshots.** The request keeps the latest three tool screenshots
-(`SIMEON_KEPT_TOOL_IMAGES`); older ones are replaced by a line saying so.
+**Screenshots.** Older tool screenshots are replaced by a line saying so,
+five at a time, keeping at least the latest three (`SIMEON_KEPT_TOOL_IMAGES`,
+`SIMEON_TOOL_IMAGE_DROP_BATCH`). In batches, the history stays the same
+between drops and the cache misses once every five steps, not every step.
 Pictures the person attached are always kept.
 
 **Older model ids.** If the server does not offer `gpt-6-sol` or `gpt-6-luna`
@@ -261,7 +270,10 @@ Three more limits on work nobody asked for (2 October 2026):
 
 - **Routines** run at most once every 15 minutes, whatever the schedule says:
   on the Mac (`ROUTINE_MIN_INTERVAL_MS`, `sand-trigger-hub.ts`) and on the
-  server (`ROUTINE_MIN_INTERVAL`, `simeon/sand/listeners_service.py`).
+  server (`ROUTINE_MIN_INTERVAL`, `simeon/sand/listeners_service.py`). And at
+  most 24 unattended runs in 24 hours (`SAND_ROUTINE_MAX_RUNS_PER_DAY`,
+  `automation-run-path.ts`), counted in memory, so a restart starts the count
+  again; a dropped run shows as `daily_run_cap`.
 - **Agents messaging each other** may pass six messages in a row, each waking
   the next (`SAND_AGENT_MESSAGE_MAX_HOPS`). The seventh is refused, and the
   agent is told to tell the person instead.

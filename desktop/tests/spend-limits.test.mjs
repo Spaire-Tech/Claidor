@@ -107,24 +107,96 @@ test("a routine due every minute runs at most once every 15 minutes on the Mac",
   }
 });
 
-test("the wire keeps the latest three tool screenshots and every picture the person attached", async () => {
+test("old tool screenshots leave the wire five at a time, so the history between drops stays the same; the person's pictures stay", async () => {
   const loaded = await bundle("source/host/extensions/inference/provider-session.ts", "screenshots");
   try {
-    const { toCoreMessages, SIMEON_KEPT_TOOL_IMAGES } = loaded.module;
+    const { toCoreMessages, SIMEON_KEPT_TOOL_IMAGES, SIMEON_TOOL_IMAGE_DROP_BATCH } = loaded.module;
     assert.equal(SIMEON_KEPT_TOOL_IMAGES, 3);
-    const messages = [{ role: "user", content: [{ type: "text", text: "Look at this" }, { type: "image", image: "PERSON", mimeType: "image/png" }] }];
-    for (let step = 1; step <= 5; step += 1) {
-      messages.push({ role: "assistant", content: [{ type: "tool-call", toolCallId: `c${step}`, toolName: "Computer", args: { action: "click" } }] });
-      messages.push({ role: "tool", content: [{ type: "tool-result", toolCallId: `c${step}`, toolName: "Computer", result: undefined, experimental_content: [{ type: "text", text: `step ${step}` }, { type: "image", data: `SHOT${step}`, mimeType: "image/webp" }] }] });
+    assert.equal(SIMEON_TOOL_IMAGE_DROP_BATCH, 5);
+    const history = (steps) => {
+      const messages = [{ role: "user", content: [{ type: "text", text: "Look at this" }, { type: "image", image: "PERSON", mimeType: "image/png" }] }];
+      for (let step = 1; step <= steps; step += 1) {
+        messages.push({ role: "assistant", content: [{ type: "tool-call", toolCallId: `c${step}`, toolName: "Computer", args: { action: "click" } }] });
+        messages.push({ role: "tool", content: [{ type: "tool-result", toolCallId: `c${step}`, toolName: "Computer", result: undefined, experimental_content: [{ type: "text", text: `step ${step}` }, { type: "image", data: `SHOT${step}`, mimeType: "image/webp" }] }] });
+      }
+      return messages;
+    };
+    const shots = (steps) => toCoreMessages(history(steps)).flatMap((message) => Array.isArray(message.content) ? message.content.filter((part) => part.type === "image").map((part) => part.image) : []);
+    assert.deepEqual(shots(7), ["PERSON", "SHOT1", "SHOT2", "SHOT3", "SHOT4", "SHOT5", "SHOT6", "SHOT7"]);
+    assert.deepEqual(shots(8), ["PERSON", "SHOT6", "SHOT7", "SHOT8"]);
+    assert.deepEqual(shots(12), ["PERSON", "SHOT6", "SHOT7", "SHOT8", "SHOT9", "SHOT10", "SHOT11", "SHOT12"]);
+    assert.deepEqual(shots(13), ["PERSON", "SHOT11", "SHOT12", "SHOT13"]);
+    // Between two drops, each request starts with the previous one unchanged.
+    for (let steps = 8; steps <= 11; steps += 1) {
+      const before = JSON.stringify(toCoreMessages(history(steps)));
+      const after = JSON.stringify(toCoreMessages(history(steps + 1)));
+      assert.ok(after.startsWith(before.slice(0, -1)), `step ${steps + 1} keeps step ${steps}'s history`);
     }
-    const wire = toCoreMessages(messages);
-    const images = wire.flatMap((message) => Array.isArray(message.content) ? message.content.filter((part) => part.type === "image").map((part) => part.image) : []);
-    assert.deepEqual(images, ["PERSON", "SHOT3", "SHOT4", "SHOT5"]);
-    const dropped = wire.filter((message) => message.role === "user" && Array.isArray(message.content) && /Not shown again/.test(message.content[0]?.text ?? ""));
-    assert.equal(dropped.length, 2);
     // The loop's own copy is untouched.
-    assert.equal(messages[2].content[0].experimental_content[1].data, "SHOT1");
+    const loop = history(13);
+    toCoreMessages(loop);
+    assert.equal(loop[2].content[0].experimental_content[1].data, "SHOT1");
   } finally {
+    await loaded.dispose();
+  }
+});
+
+test("a routine runs unattended at most 24 times in 24 hours", async () => {
+  const loaded = await bundle("source/host/extensions/transcript/automation-run-path.ts", "daily-cap");
+  try {
+    const { takeRoutineRunSlot, ROUTINE_MAX_RUNS_PER_DAY } = loaded.module;
+    assert.equal(ROUTINE_MAX_RUNS_PER_DAY, 24);
+    const times = [];
+    const start = 1_800_000_000_000;
+    const quarter = 15 * 60_000;
+    let ran = 0;
+    for (let slot = 0; slot < 96; slot += 1) if (takeRoutineRunSlot(times, start + slot * quarter, 24)) ran += 1;
+    assert.equal(ran, 24, "a 15-minute routine gets its first 24 runs of the day");
+    assert.equal(takeRoutineRunSlot(times, start + 24 * 60 * 60_000 - 1, 24), false);
+    assert.equal(takeRoutineRunSlot(times, start + 24 * 60 * 60_000, 24), true, "the oldest run turned a day old: one more");
+  } finally {
+    await loaded.dispose();
+  }
+});
+
+test("the second answer cut off by the output ceiling ends the turn", async () => {
+  const loaded = await bundle("tests/fixtures/prompt-cache-key-entry.ts", "cut-off");
+  const previousFetch = globalThis.fetch;
+  const previousDataRoot = process.env.SAND_DATA_ROOT;
+  const previousBackend = process.env.SAND_BACKEND_URL;
+  const lines = [];
+  try {
+    process.env.SAND_DATA_ROOT = os.tmpdir();
+    process.env.SAND_BACKEND_URL = "https://api.simeonlabs.com";
+    const cutOff = () => {
+      const events = [
+        { type: "response.created", response: { id: "resp_1", created_at: 1_700_000_000, model: "gpt-6-sol" } },
+        { type: "response.output_item.added", output_index: 0, item: { type: "message", id: "msg_1" } },
+        { type: "response.output_text.delta", delta: "a very long" },
+        { type: "response.incomplete", response: { incomplete_details: { reason: "max_output_tokens" }, usage: { input_tokens: 7, output_tokens: 32_000 } } },
+      ];
+      return new Response(events.map((event) => `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`).join(""), { status: 200, headers: { "content-type": "text/event-stream" } });
+    };
+    globalThis.fetch = async () => cutOff();
+    const { createProviderPromptSession, setSimeonCredentialSource, createContext, setModelCallLog } = loaded.module;
+    setSimeonCredentialSource({ getAccessToken: async () => "simeon_da_token" });
+    setModelCallLog((line) => lines.push(line));
+    const session = createProviderPromptSession("simeon");
+    const state = [{ role: "system", content: "You are Simeon." }, { role: "user", content: "write it all" }];
+    for (let call = 0; call < 2; call += 1) {
+      const result = session.getExecutor(state).stream(createContext(), `inv-${call}`);
+      for await (const _ of result.fullStream) { /* drain */ }
+      await result.response;
+      await result.extendedUsage.catch(() => undefined);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    assert.equal(lines.filter((line) => line.includes("model-output-limit")).length, 2);
+    assert.throws(() => session.getExecutor(state).stream(createContext(), "inv-3"), /This turn stopped: 2 answers ran past the 32,000-token limit/);
+  } finally {
+    globalThis.fetch = previousFetch;
+    loaded.module.setModelCallLog(null);
+    if (previousDataRoot === undefined) delete process.env.SAND_DATA_ROOT; else process.env.SAND_DATA_ROOT = previousDataRoot;
+    if (previousBackend === undefined) delete process.env.SAND_BACKEND_URL; else process.env.SAND_BACKEND_URL = previousBackend;
     await loaded.dispose();
   }
 });

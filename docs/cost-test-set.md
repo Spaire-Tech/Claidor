@@ -8,6 +8,10 @@ Every run costs real money: about 30 tasks at a few cents to a dollar each.
 
 ## How to run it
 
+0. **The first time, run it on the build before the change too.** That run is
+   the "before"; without it you can show the cost went down but not that the
+   answers held. For the cost changes of 2 October 2026, the "before" is the
+   app built from main at commit 360676f6.
 1. Install the build under test. Sign in with an account used for nothing else
    that day, so the usage report shows only this run.
 2. Create one fresh agent named "Test" (Simeon is created by onboarding).
@@ -72,8 +76,10 @@ deciding: one run is noisy.
   share on tasks 2–8 means something near the start of the prompt changed
   between messages: compare the `prefix=sys:…` hashes on the `[simeon] model=`
   lines in `/tmp/sand-host.log` in the box.
-- **Effort.** The `effort=` on each `[simeon] model=` line: `medium` for the
-  first calls of a turn, `high` from the fifth, `low` for the helpers.
+- **Effort.** The `effort=` on each `[simeon] model=` line: `medium` for a
+  turn's first call, `low` after tool results and for the helpers, `high`
+  after a tool failed. If answers after research read thin, set
+  `SAND_SIMEON_TOOL_RESULT_EFFORT=medium` and run the set again.
 - **Calls per task.** Tasks 1–8 should take two or three calls each. A greeting
   that takes ten is a bug.
 
