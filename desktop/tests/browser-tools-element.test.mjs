@@ -47,7 +47,7 @@ test("the browser child's brief names the element field", async () => {
   assert.match(glue, /Every browser_click, browser_mouse_click_xy and browser_drag carries `element`/);
 });
 
-test("the driver finds playwright-core outside its own folder, and installs it beside itself as a last resort", async () => {
+test("the driver finds playwright-core outside its own folder", async () => {
   const { module, dispose } = await load("source/host/runner/tools/sand-browser-driver-source.ts", "driver-source");
   try {
     const source = module.SAND_BROWSER_DRIVER_SOURCE;
@@ -55,7 +55,7 @@ test("the driver finds playwright-core outside its own folder, and installs it b
     assert.match(source, /const \{ chromium \} = await requirePlaywright\("playwright-core"\)/);
     assert.match(source, /requirePlaywright\("playwright-core\/lib\/utilsBundle"\)/);
     assert.match(source, /npm root -g/);
-    assert.match(source, /"--prefix", STATE_DIR, "playwright-core@1"/);
+    assert.doesNotMatch(source, /npm", \["install"/, "it never installs anything on the box");
   } finally {
     await dispose();
   }

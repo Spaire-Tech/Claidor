@@ -43,11 +43,9 @@ import { envGateOverride } from "./cursor-experiments.js";
 //
 // `sand_browser_use_subagent` — the browserUse child: a page read as text
 // and clicked by reference (`tools/sand-browser-tools.ts`), driven by
-// Playwright over the box's shell. The computerUse child drives the screen,
-// and the box's exec daemon serves no screen actions
-// (`box-exec-daemon/server.ts`, `computerUseSupported:false`), so on the box
-// the browser child is the one that can click at all. Its clicks and drags
-// carry the `element` field auto-review asks for.
+// Playwright over the box's shell, beside the computerUse child that drives
+// the screen. Its clicks and drags carry the `element` field auto-review
+// asks for.
 //
 // `sand_focus_staleness_catch_up` — when the window comes back to the
 // front, it reloads the agents, pins and chats from the box at once instead

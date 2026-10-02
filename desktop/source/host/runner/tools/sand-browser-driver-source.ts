@@ -122,8 +122,9 @@ async function ensureChrome(port, display) {
 
 // playwright-core from wherever the box image put it. The driver runs from
 // /tmp/.sand-browser, where a bare import only finds a node_modules above
-// /tmp; an image that installs it globally or under NODE_PATH is found by
-// the require fallbacks (Simeon, 2 October 2026).
+// /tmp, and an ES import ignores NODE_PATH, which the cloud computer sets to
+// /home/box/deps; the require fallbacks read it, and the usual global
+// folders (Simeon, 2 October 2026).
 async function requirePlaywright(specifier) {
   if (specifier === "playwright-core") {
     try {
@@ -148,7 +149,6 @@ async function requirePlaywright(specifier) {
     const globalRoot = execSync("npm root -g", { encoding: "utf8", timeout: 5000, stdio: ["ignore", "pipe", "ignore"] }).trim();
     if (globalRoot) roots.push(globalRoot + "/noop.js");
   } catch {}
-  roots.push(STATE_DIR + "/node_modules/noop.js");
   let lastError;
   for (const root of roots) {
     try {
@@ -156,14 +156,6 @@ async function requirePlaywright(specifier) {
     } catch (error) {
       lastError = error;
     }
-  }
-  // Last resort: the image has none, so install it once beside the driver.
-  try {
-    const { execFileSync } = await import("node:child_process");
-    execFileSync("npm", ["install", "--no-save", "--no-audit", "--no-fund", "--prefix", STATE_DIR, "playwright-core@1"], { timeout: 180000, stdio: "ignore" });
-    return createRequire(STATE_DIR + "/node_modules/noop.js")(specifier);
-  } catch (error) {
-    lastError = error;
   }
   throw new Error("playwright-core is not installed on the box: " + String(lastError?.message ?? lastError));
 }
