@@ -668,20 +668,16 @@ export function patchOriginalHandoffStylesheet(css) {
  *       "carrier":"American Airlines","logo":"https://…","cabin":"Economy",
  *       "duration":"3h 10m","layover":"1h 38m in Phoenix"}, …]}]}
  *
- * The panel (2 October 2026, the founder after the first live search: "too
- * big for nothin, not organized … compared to muse", and "that big massive
- * book with simeon remove for now") follows Muse's order at Apple's weights:
- * the route with date, stops and time in the air under it, the total, one
- * small card per leg (departing and arriving with their day, the flight,
- * cabin and time), the layover between them, and the fare in plain words.
- * No Book button until booking exists. A round trip's return legs open with
- * a heading, and its row in the card says when the flight back leaves.
+ * A row opens the offer in the agent's own pane (2 October 2026, the founder:
+ * "you see the right panel? should be one … the main right panel is when you
+ * click on avatar … re-design the flight panel, same size as avatar panel,
+ * same color"): the pane draws the flight in place of the profile page, in
+ * the profile's own type and layout, and its close, its width, the sidebar
+ * stepping back and the chat making room are all the pane's. Closing it
+ * forgets the flight. A round trip's return legs say so in their heading,
+ * and its row in the card says when the flight back leaves.
  */
-const FLIGHT_CLOSE = '<path d="M7.5 7.5l9 9M16.5 7.5l-9 9"/>';
-const FLIGHT_ARROW_OUT = '<path d="M7 17 17 7M9 7h8v8"/>';
-const FLIGHT_ARROW_IN = '<path d="M17 7 7 17M15 17H7V9"/>';
 const FLIGHT_CHEVRON = '<path d="M9.5 6.5 15 12l-5.5 5.5"/>';
-const FLIGHT_PLANE = '<path d="M21 15.2v-1.7l-7.6-4.6V4.1c0-.8-.6-1.6-1.4-1.6s-1.4.8-1.4 1.6v4.8L3 13.5v1.7l7.6-2.3v4.6l-2 1.5v1.4l3.4-1 3.4 1v-1.4l-2-1.5v-4.6z"/>';
 const FLIGHTS_SOURCE = [
   "function __simeonFlightsParse(n){if(typeof n!==\"string\")return null;const m=/^```simeon-flights[^\\n]*\\n([\\s\\S]*?)\\n?```$/.exec(n.trim());if(m==null)return null;try{const d=JSON.parse(m[1]);if(d==null||!Array.isArray(d.offers)||d.offers.length===0)return null;const s=v=>typeof v===\"string\"?v.trim():\"\";",
   "const leg=l=>({from:s(l.from),fromCity:s(l.fromCity),to:s(l.to),toCity:s(l.toCity),depart:s(l.depart),arrive:s(l.arrive),flight:s(l.flight),carrier:s(l.carrier),logo:s(l.logo),cabin:s(l.cabin),duration:s(l.duration),layover:s(l.layover),heading:s(l.heading),departDay:s(l.departDay),arriveDay:s(l.arriveDay)});",
@@ -689,33 +685,31 @@ const FLIGHTS_SOURCE = [
   "function __simeonInitials(n){const w=String(n||\"\").split(/\\s+/).filter(x=>x&&!/^(airlines?|airways|air)$/i.test(x));return(w.length>1?w[0][0]+w[1][0]:String(w[0]||\"?\").slice(0,2)).toUpperCase()}",
   "function __simeonAirlineMark(n){const[f,sf]=S.useState(!1),u=n.logo;return p.jsx(\"span\",{className:`simeon-flight-mark simeon-flight-mark--${n.size||\"row\"}`,\"aria-hidden\":!0,children:u&&!f?p.jsx(\"img\",{src:u,alt:\"\",draggable:!1,onError:()=>sf(!0)}):p.jsx(\"span\",{className:\"simeon-flight-mark__initials\",children:__simeonInitials(n.name)})})}",
   "function __simeonIcon(n){return p.jsx(\"svg\",{viewBox:\"0 0 24 24\",\"aria-hidden\":!0,className:n.className,dangerouslySetInnerHTML:{__html:n.d}})}",
-  "let __simeonFlightCloseOpen=null,__simeonSidebarStore=null;",
-  // The panel steps the sidebar back to its rail while it is open, as the agent's pane does, and
-  // brings it back on close only if it took it (the founder: "when the right panel open, the left
-  // goes thin, like for agent info").
-  "function __simeonSidebarTo(sb,c){const sh=document.querySelector(\".sand-shell\");return sh!=null?WFe(sh,sb,c,window.innerWidth):{...sb,isCollapsed:c}}",
-  "function __simeonTakeSidebar(){const st=__simeonSidebarStore;if(st==null)return!1;const sb=st.get();if(sb==null||sb.isCollapsed)return!1;st.set(__simeonSidebarTo(sb,!0));return!0}",
-  "function __simeonGiveSidebar(took){const st=__simeonSidebarStore;if(!took||st==null)return;const sb=st.get();sb!=null&&sb.isCollapsed&&st.set(__simeonSidebarTo(sb,!1))}",
-  "function __simeonFlights(n){const d=__simeonFlightsParse(n.content),[sel,ss]=S.useState(null);",
-  "S.useEffect(()=>{if(sel==null)return;const close=()=>ss(null);__simeonFlightCloseOpen!=null&&__simeonFlightCloseOpen!==close&&__simeonFlightCloseOpen();__simeonFlightCloseOpen=close;const k=e=>{e.key===\"Escape\"&&ss(null)};window.addEventListener(\"keydown\",k);document.documentElement.classList.add(\"simeon-flight-open\");return()=>{window.removeEventListener(\"keydown\",k);__simeonFlightCloseOpen===close&&(__simeonFlightCloseOpen=null,document.documentElement.classList.remove(\"simeon-flight-open\"))}},[sel]);S.useEffect(()=>{if(sel==null)return;const took=__simeonTakeSidebar();return()=>{__simeonGiveSidebar(took)}},[sel!=null]);",
-  "if(d==null)return null;const o=sel==null?null:d.offers[sel]??null;",
-  "return p.jsxs(p.Fragment,{children:[p.jsxs(\"section\",{className:\"simeon-flights\",\"aria-label\":d.title||\"Flights\",children:[d.title||d.subtitle?p.jsxs(\"header\",{className:\"simeon-flights__head\",children:[d.title?p.jsx(\"h3\",{children:d.title}):null,d.subtitle?p.jsx(\"p\",{children:d.subtitle}):null]}):null,",
-  "p.jsx(\"ul\",{className:\"simeon-flights__list\",children:d.offers.map((f,i)=>p.jsx(\"li\",{children:p.jsxs(\"button\",{type:\"button\",className:\"simeon-flights__row\",\"aria-pressed\":sel===i,onClick:()=>ss(v=>v===i?null:i),children:[p.jsx(__simeonAirlineMark,{logo:f.logo,name:f.airline}),",
+  // One right-hand panel (2 October 2026, the founder: "the right panel? should be one … the
+  // main right panel is when you click on avatar"). A flight opens in the agent's own pane, in its
+  // place of the profile, and the pane's own close, sidebar and chat layout serve it. Which flight
+  // is open is one value the card and the pane both read.
+  "let __simeonFlightOpen=null,__simeonPaneSetOpen=null;const __simeonFlightSubs=new Set();",
+  "function __simeonSetFlight(v){if(__simeonFlightOpen===v)return;__simeonFlightOpen=v;for(const f of __simeonFlightSubs)f()}",
+  "function __simeonUseFlight(agentId){const[,bump]=S.useReducer(x=>x+1,0);S.useEffect(()=>{__simeonFlightSubs.add(bump);return()=>{__simeonFlightSubs.delete(bump)}},[]);const f=__simeonFlightOpen;if(f==null||agentId==null)return f;if(f.agentId==null)f.agentId=agentId;return f.agentId===agentId?f:null}",
+  "function __simeonOpenFlight(key,offer){if(__simeonFlightOpen?.key===key){__simeonPaneSetOpen?.(!1);__simeonSetFlight(null);return}__simeonSetFlight({key,offer});__simeonPaneSetOpen?.(!0)}",
+  "function __simeonFlights(n){const d=__simeonFlightsParse(n.content),fo=__simeonUseFlight();",
+  "if(d==null)return null;const base=`${n.content.length}:${n.content.slice(-64)}`;",
+  "return p.jsxs(\"section\",{className:\"simeon-flights\",\"aria-label\":d.title||\"Flights\",children:[d.title||d.subtitle?p.jsxs(\"header\",{className:\"simeon-flights__head\",children:[d.title?p.jsx(\"h3\",{children:d.title}):null,d.subtitle?p.jsx(\"p\",{children:d.subtitle}):null]}):null,",
+  "p.jsx(\"ul\",{className:\"simeon-flights__list\",children:d.offers.map((f,i)=>{const k=`${base}:${i}`;return p.jsx(\"li\",{children:p.jsxs(\"button\",{type:\"button\",className:\"simeon-flights__row\",\"aria-pressed\":fo?.key===k,onClick:()=>__simeonOpenFlight(k,f),children:[p.jsx(__simeonAirlineMark,{logo:f.logo,name:f.airline}),",
   "p.jsxs(\"span\",{className:\"simeon-flights__body\",children:[p.jsx(\"span\",{className:\"simeon-flights__times\",children:[f.depart,f.arrive].filter(Boolean).join(\" – \")}),p.jsx(\"span\",{className:\"simeon-flights__meta\",children:[f.airline,f.stops,f.duration].filter(Boolean).join(\" · \")}),f.returnTimes?p.jsx(\"span\",{className:\"simeon-flights__meta\",children:f.returnTimes}):null]}),",
-  "p.jsx(\"span\",{className:\"simeon-flights__price\",children:f.price}),p.jsx(__simeonIcon,{className:\"simeon-flights__chevron\",d:" + JSON.stringify(FLIGHT_CHEVRON) + "})]})},i))})]}),",
-  "o!=null?Wr.createPortal(p.jsx(__simeonFlightPanel,{offer:o,onClose:()=>ss(null)}),document.body):null]})}",
-  "function __simeonFlightPanel(n){const o=n.offer,first=o.legs[0],last=o.legs[o.legs.length-1],from=o.from||first?.from||\"\",to=o.to||last?.to||\"\",sub=[o.date,o.stops,o.duration].filter(Boolean).join(\" · \");",
-  "const when=(d,t)=>[d,t].filter(Boolean).join(\" · \");",
-  "const fare=[[\"Cancellation\",o.refundable],[\"Changes\",o.changeable],[\"Bags\",o.bags]].filter(r=>r[1]);",
-  "return p.jsxs(\"aside\",{className:\"simeon-flight-panel\",role:\"dialog\",\"aria-label\":`${from} to ${to}`,children:[p.jsxs(\"header\",{className:\"simeon-flight-panel__bar\",children:[p.jsxs(\"div\",{className:\"simeon-flight-panel__titles\",children:[p.jsx(\"h2\",{children:`${from} → ${to}`}),sub?p.jsx(\"p\",{children:sub}):null]}),p.jsx(\"button\",{type:\"button\",className:\"simeon-flight-panel__close\",\"aria-label\":\"Close\",onClick:n.onClose,children:p.jsx(__simeonIcon,{d:" + JSON.stringify(FLIGHT_CLOSE) + "})})]}),",
-  "p.jsxs(\"div\",{className:\"simeon-flight-panel__scroll\",children:[",
-  "o.price?p.jsxs(\"div\",{className:\"simeon-flight-panel__total\",children:[p.jsxs(\"div\",{children:[p.jsx(\"span\",{children:\"Total\"}),o.priceNote?p.jsx(\"span\",{className:\"simeon-flight-panel__muted\",children:o.priceNote}):null]}),p.jsx(\"strong\",{children:o.price})]}):null,",
-  "o.legs.flatMap((l,i)=>[l.heading?p.jsx(\"p\",{className:\"simeon-flight-panel__heading\",children:l.heading},`h${i}`):null,",
-  "p.jsxs(\"section\",{className:\"simeon-flight-panel__leg\",children:[p.jsxs(\"div\",{className:\"simeon-flight-panel__leg-head\",children:[p.jsx(\"h3\",{children:`${l.from} → ${l.to}`}),p.jsx(__simeonAirlineMark,{logo:l.logo||o.logo,name:l.carrier||o.airline,size:\"small\"})]}),",
-  "p.jsxs(\"dl\",{className:\"simeon-flight-panel__times\",children:[p.jsx(__simeonIcon,{className:\"simeon-flight-panel__glyph\",d:" + JSON.stringify(FLIGHT_ARROW_OUT) + "}),p.jsx(\"dt\",{children:\"Departing\"}),p.jsx(\"dd\",{children:when(l.departDay,l.depart)}),p.jsx(__simeonIcon,{className:\"simeon-flight-panel__glyph\",d:" + JSON.stringify(FLIGHT_ARROW_IN) + "}),p.jsx(\"dt\",{children:\"Arriving\"}),p.jsx(\"dd\",{children:when(l.arriveDay,l.arrive)})]}),",
-  "p.jsxs(\"div\",{className:\"simeon-flight-panel__facts\",children:[p.jsx(\"p\",{children:[l.flight,l.carrier].filter(Boolean).join(\" · \")}),p.jsx(\"p\",{className:\"simeon-flight-panel__muted\",children:[l.cabin,l.duration].filter(Boolean).join(\" · \")})]})]},`l${i}`),",
-  "l.layover&&i<o.legs.length-1?p.jsx(\"p\",{className:\"simeon-flight-panel__layover\",children:`${l.layover.replace(/ in /,\" layover in \")}`},`w${i}`):null]),",
-  "fare.length>0?p.jsx(\"section\",{className:\"simeon-flight-panel__fare\",children:fare.map(([k,v])=>p.jsxs(\"div\",{children:[p.jsx(\"span\",{className:\"simeon-flight-panel__muted\",children:k}),p.jsx(\"span\",{children:v})]},k))}):null]})]})}",
+  "p.jsx(\"span\",{className:\"simeon-flights__price\",children:f.price}),p.jsx(__simeonIcon,{className:\"simeon-flights__chevron\",d:" + JSON.stringify(FLIGHT_CHEVRON) + "})]})},i)})})]})}",
+  // The flight, drawn as the pane draws a profile: a centred head (the airline's mark where the
+  // avatar sits, the route as the name, the date, stops and time in the air as the title), then
+  // groups under 13 pt grey labels, rows of a 15 pt label and its value, hairlines between.
+  "function __simeonFlightRow(k,v,sub){return v?p.jsxs(\"div\",{className:\"simeon-flight-pane__row\",children:[p.jsx(\"span\",{children:k}),p.jsxs(\"span\",{className:\"simeon-flight-pane__value\",children:[v,sub?p.jsx(\"small\",{children:sub}):null]})]},k):null}",
+  "function __simeonFlightDetails(n){const o=n.offer,first=o.legs[0],last=o.legs[o.legs.length-1],from=o.from||first?.from||\"\",to=o.to||last?.to||\"\";",
+  "const when=(d,t)=>[d,t].filter(Boolean).join(\" · \"),row=__simeonFlightRow;",
+  "return p.jsxs(\"div\",{className:\"simeon-pane simeon-flight-pane\",children:[p.jsxs(\"div\",{className:\"simeon-flight-pane__head\",children:[p.jsx(__simeonAirlineMark,{logo:o.logo,name:o.airline,size:\"hero\"}),p.jsx(\"div\",{className:\"simeon-pane__name\",children:`${from} → ${to}`}),p.jsx(\"div\",{className:\"simeon-pane__title\",children:[o.date,o.stops,o.duration].filter(Boolean).join(\" · \")})]}),",
+  "p.jsxs(\"div\",{className:\"simeon-flight-pane__body\",children:[o.price?p.jsxs(\"section\",{children:[p.jsx(\"h4\",{children:\"Price\"}),row(\"Total\",o.price,o.priceNote)]}):null,",
+  "...o.legs.map((l,i)=>p.jsxs(\"section\",{children:[p.jsx(\"h4\",{children:[l.heading,`${l.from} → ${l.to}`].filter(Boolean).join(\" · \")}),row(\"Departs\",when(l.departDay,l.depart)),row(\"Arrives\",when(l.arriveDay,l.arrive)),row(\"Flight\",[l.flight,l.carrier&&l.carrier!==o.airline?l.carrier:\"\"].filter(Boolean).join(\" · \")),row(\"Cabin\",l.cabin),row(\"Time in the air\",l.duration),",
+  "l.layover&&i<o.legs.length-1?p.jsx(\"p\",{className:\"simeon-flight-pane__note\",children:`${l.layover.replace(/ in /,\" layover in \")}`}):null]},`l${i}`)),",
+  "o.refundable||o.changeable||o.bags?p.jsxs(\"section\",{children:[p.jsx(\"h4\",{children:\"Fare\"}),row(\"Cancellation\",o.refundable),row(\"Changes\",o.changeable),row(\"Bags\",o.bags)]}):null]})]})}",
 ].join("");
 const FLIGHTS_COMPONENTS_ANCHOR = "function __simeonHandoffCard(n){";
 const FLIGHTS_MESSAGE_BEFORE = CALL_RECORD_AFTER;
@@ -723,8 +717,13 @@ const FLIGHTS_MESSAGE_AFTER = `(!h&&__simeonFlightsParse(r)!=null?p.jsx(__simeon
 export const FLIGHTS_REPLACEMENTS = Object.freeze([
   ["flights-components", FLIGHTS_COMPONENTS_ANCHOR, `${FLIGHTS_SOURCE}${FLIGHTS_COMPONENTS_ANCHOR}`],
   ["flights-message", FLIGHTS_MESSAGE_BEFORE, FLIGHTS_MESSAGE_AFTER],
-  // The sidebar's layout store, where the agent's pane already reaches it (agent-pane-compacts-sidebar).
-  ["flights-sidebar-store", "setInfoPaneOpen:L=>{if(y||r.get().isOpen===L)return;", "__simeonSidebarStore:(__simeonSidebarStore=s,void 0),setInfoPaneOpen:L=>{if(y||r.get().isOpen===L)return;"],
+  // The pane's own opener, so a flight row opens the one right-hand panel; closing it forgets the
+  // flight, so the avatar opens the profile again.
+  ["flights-pane-opener", "setInfoPaneOpen:L=>{if(y||r.get().isOpen===L)return;", "setInfoPaneOpen:__simeonPaneSetOpen=L=>{L||__simeonSetFlight(null);if(y||r.get().isOpen===L)return;"],
+  // The pane reads which flight is open, for this agent…
+  ["flights-pane-reads", "function p3n(n){", "function p3n(n){const __fo=__simeonUseFlight(n.agent?.id);"],
+  // …and draws it in place of the profile page.
+  ["flights-pane-body", 'ref:Y,children:p.jsxs("div",{className:"simeon-pane","data-segment":F,children:[', 'ref:Y,children:__fo!=null?p.jsx(__simeonFlightDetails,{offer:__fo.offer}):p.jsxs("div",{className:"simeon-pane","data-segment":F,children:['],
 ]);
 
 /** Runs after the voice-call and take-over patches: it wraps the one and sits beside the other. */
@@ -740,12 +739,12 @@ export const FLIGHTS_MARKER = "/* Simeon: flight results";
  * over 13 pt grey, a 17 pt route over the panel, 13 pt leg details. Greys
  * are the system's (label, secondary, tertiary, separator, grouped fill);
  * the one colour is the window's blue, on the focus ring. Rows separate with hairlines inset past the mark, the selected
- * row takes the system fill, and the panel takes its width from the chat
- * (`main.sand-chat`), which steps aside rather than being covered.
+ * row takes the system fill. The flight itself is drawn in the agent's pane
+ * with the pane's own tokens (`AGENT_PANE_CSS`).
  */
 export const flightsCss = () => `${FLIGHTS_MARKER} (2 October 2026). */
-.simeon-flights,.simeon-flight-panel{--f-ink:light-dark(#1d1d1f,#f5f5f7);--f-ink-2:light-dark(#86868b,#98989d);--f-ink-3:light-dark(#c7c7cc,#48484a);--f-line:light-dark(rgba(60,60,67,.14),rgba(84,84,88,.5));--f-group:light-dark(#ffffff,#2c2c2e);--f-ground:light-dark(#f5f5f7,#1c1c1e);--f-panel:light-dark(#f5f5f7,#1c1c1e);--f-fill:light-dark(rgba(120,120,128,.1),rgba(120,120,128,.24));--f-blue:light-dark(${USER_BUBBLE_LIGHT},${SWITCH_BLUE_DARK});font-family:${PANE_FONT};font-weight:400;color:var(--f-ink);-webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1}
-.simeon-flights{box-sizing:border-box;width:100%;min-width:320px;max-width:420px}
+.simeon-flights{--f-ink:light-dark(#1d1d1f,#f5f5f7);--f-ink-2:light-dark(#86868b,#98989d);--f-ink-3:light-dark(#c7c7cc,#48484a);--f-line:light-dark(rgba(60,60,67,.14),rgba(84,84,88,.5));--f-group:light-dark(#ffffff,#2c2c2e);--f-ground:light-dark(#f5f5f7,#1c1c1e);--f-panel:light-dark(#f5f5f7,#1c1c1e);--f-fill:light-dark(rgba(120,120,128,.1),rgba(120,120,128,.24));--f-blue:light-dark(${USER_BUBBLE_LIGHT},${SWITCH_BLUE_DARK});font-family:${PANE_FONT};font-weight:400;color:var(--f-ink);-webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1}
+.simeon-flights{box-sizing:border-box;width:min(420px,100%);min-width:0}
 .simeon-flights__head{padding:2px 0 8px}
 .simeon-flights__head h3{margin:0;font-size:15px;line-height:20px;font-weight:500;letter-spacing:-.01em}
 .simeon-flights__head p{margin:1px 0 0;font-size:13px;line-height:18px;color:var(--f-ink-2)}
@@ -768,37 +767,15 @@ export const flightsCss = () => `${FLIGHTS_MARKER} (2 October 2026). */
 .simeon-flight-mark--row{width:36px;height:36px}.simeon-flight-mark--row img{width:22px;height:22px}.simeon-flight-mark--row .simeon-flight-mark__initials{font-size:12px}
 .simeon-flight-mark--small{width:24px;height:24px}.simeon-flight-mark--small img{width:15px;height:15px}.simeon-flight-mark--small .simeon-flight-mark__initials{font-size:9px}
 .simeon-flight-mark--tiny{width:20px;height:20px}.simeon-flight-mark--tiny img{width:13px;height:13px}.simeon-flight-mark--tiny .simeon-flight-mark__initials{font-size:8px}
-main.sand-chat{transition:margin-right .3s cubic-bezier(.2,.8,.2,1)}
-.simeon-flight-open main.sand-chat{margin-right:min(360px,100vw)}
-.simeon-flight-panel{position:fixed;z-index:60;top:0;right:0;bottom:0;width:min(360px,100vw);box-sizing:border-box;display:flex;flex-direction:column;background:var(--f-panel);box-shadow:-.5px 0 0 var(--f-line);animation:simeon-flight-in .3s cubic-bezier(.2,.8,.2,1)}
-@keyframes simeon-flight-in{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.simeon-flight-panel,main.sand-chat{animation:none;transition:none}}
-.simeon-flight-panel__muted{color:var(--f-ink-2)}
-.simeon-flight-panel__bar{flex:none;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 16px 12px 20px;-webkit-app-region:no-drag}
-.simeon-flight-panel__titles h2{margin:0;font-size:17px;line-height:22px;font-weight:500;letter-spacing:-.01em}
-.simeon-flight-panel__titles p{margin:2px 0 0;font-size:13px;line-height:18px;color:var(--f-ink-2)}
-.simeon-flight-panel__close{appearance:none;flex:none;display:flex;align-items:center;justify-content:center;width:26px;height:26px;margin:0;padding:0;border:0;border-radius:50%;background:var(--f-fill);color:var(--f-ink-2);cursor:default;transition:color .15s}
-.simeon-flight-panel__close:hover{color:var(--f-ink)}
-.simeon-flight-panel__close svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
-.simeon-flight-panel__scroll{flex:1;overflow:auto;padding:4px 16px 20px;display:flex;flex-direction:column;gap:10px}
-.simeon-flight-panel__total{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 6px}
-.simeon-flight-panel__total>div{display:flex;flex-direction:column;font-size:15px;line-height:20px}
-.simeon-flight-panel__total>div .simeon-flight-panel__muted{font-size:13px;line-height:18px}
-.simeon-flight-panel__total strong{font-size:17px;line-height:22px;font-weight:500;letter-spacing:-.01em}
-.simeon-flight-panel__leg,.simeon-flight-panel__fare{padding:12px 14px;border-radius:12px;background:var(--f-group)}
-.simeon-flight-panel__leg-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.simeon-flight-panel__leg-head h3{margin:0;font-size:15px;line-height:20px;font-weight:500}
-.simeon-flight-panel__times{display:grid;grid-template-columns:14px auto minmax(0,1fr);align-items:center;column-gap:8px;row-gap:6px;margin:0;padding-bottom:10px;border-bottom:.5px solid var(--f-line);font-size:13px;line-height:18px}
-.simeon-flight-panel__times dt{color:var(--f-ink-2);padding-right:6px}
-.simeon-flight-panel__times dd{margin:0;text-align:right}
-.simeon-flight-panel__glyph{width:13px;height:13px;fill:none;stroke:var(--f-ink-2);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.simeon-flight-panel__facts{padding-top:8px}
-.simeon-flight-panel__facts p{margin:0;font-size:13px;line-height:18px}
-.simeon-flight-panel__layover,.simeon-flight-panel__heading{margin:0;font-size:12px;line-height:16px;color:var(--f-ink-2);text-align:center}
-.simeon-flight-panel__heading{margin-top:6px;text-align:left;padding-left:4px}
-.simeon-flight-panel__fare{display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:18px}
-.simeon-flight-panel__fare div{display:flex;justify-content:space-between;gap:16px}
-.simeon-flight-panel__fare div span:last-child{text-align:right}
+.simeon-flight-mark--hero{width:72px;height:72px;box-shadow:inset 0 0 0 1px var(--simeon-hairline,rgba(0,0,0,.08))}.simeon-flight-mark--hero img{width:42px;height:42px}.simeon-flight-mark--hero .simeon-flight-mark__initials{font-size:20px}
+.simeon-flight-pane__head{display:flex;flex-direction:column;align-items:center;padding:12px 0 0}
+.simeon-flight-pane__head .simeon-pane__name{margin-top:14px}
+.simeon-flight-pane__body{display:flex;flex-direction:column;gap:22px;margin-top:30px}
+.simeon-flight-pane__body h4{margin:0 0 2px;font-size:13px;line-height:16px;font-weight:400;letter-spacing:0;color:var(--simeon-ink-2)}
+.simeon-flight-pane__row{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:.5px solid var(--simeon-hairline);font-size:15px;line-height:20px}
+.simeon-flight-pane__value{display:flex;flex-direction:column;align-items:flex-end;text-align:right;color:var(--simeon-ink-2)}
+.simeon-flight-pane__value small{font-size:13px;line-height:18px}
+.simeon-flight-pane__note{margin:10px 0 0;font-size:13px;line-height:18px;color:var(--simeon-ink-2)}
 `;
 
 export function patchOriginalFlightsStylesheet(css) {
