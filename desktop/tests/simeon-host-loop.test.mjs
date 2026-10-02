@@ -146,8 +146,9 @@ test("the host's tool loop completes a two-step turn on the simeon provider", as
       assert.equal(request.url, "https://api.simeonlabs.com/desktop/api/proxy/v1/responses");
       assert.equal(request.headers.get("authorization"), "Bearer simeon_da_loop");
       assert.equal(request.body.model, "gpt-6-sol");
-      // The loop runs at the upstream app's effort (high), on every step.
-      assert.deepEqual(request.body.reasoning, { effort: "high" });
+      // The loop starts at medium (high once a turn keeps working, since
+      // 2 October 2026; the upstream app ran every step at high).
+      assert.deepEqual(request.body.reasoning, { effort: "medium" });
       // The host wraps tool schemas with the AI SDK's jsonSchema(); the wire
       // must see the bare schema, not the wrapper.
       assert.deepEqual(request.body.tools[0].parameters, { type: "object", properties: { command: { type: "string", description: "the command" } }, required: ["command"] });

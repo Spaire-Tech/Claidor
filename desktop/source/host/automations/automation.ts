@@ -21,6 +21,13 @@ export function renderAutomationsSystemPrompt(
   automations: readonly AutomationRecord[],
   location: string | null | undefined,
   timeZone?: string,
+  options?: {
+    // The list of routines goes in its own section at the end of the system
+    // prompt (`renderAutomationListSystemPrompt`), so a routine added or
+    // paused does not change the long guide above it, which the provider's
+    // prompt cache then keeps serving (2 October 2026).
+    readonly omitList?: boolean;
+  },
 ): string {
   if (location == null) return "";
   const scheduleTimeZoneNote = timeZone != null && timeZone.length > 0
@@ -103,15 +110,17 @@ export function renderAutomationsSystemPrompt(
       "  - Watch an inbox, queue, or ticket only as often, and inside the weekday hours, needed to surface useful new items.",
     ]),
   ];
-  if (automations.length > 0) {
-    lines.push("Current routines:");
-    for (const automation of automations) {
-      const state = automation.isEnabled ? "enabled" : "paused";
-      const raw = automation.trigger.type === "cron" ? ` (${automation.schedule})` : "";
-      lines.push(`- ${automation.name} [${state}] — ${describeTrigger(automation.trigger)}${raw}; folder ${automation.id}`);
-    }
-  } else {
-    lines.push("No routines yet.");
+  if (options?.omitList !== true) lines.push(renderAutomationListSystemPrompt(automations));
+  return lines.join("\n");
+}
+
+export function renderAutomationListSystemPrompt(automations: readonly AutomationRecord[]): string {
+  if (automations.length === 0) return "No routines yet.";
+  const lines = ["Current routines:"];
+  for (const automation of automations) {
+    const state = automation.isEnabled ? "enabled" : "paused";
+    const raw = automation.trigger.type === "cron" ? ` (${automation.schedule})` : "";
+    lines.push(`- ${automation.name} [${state}] — ${describeTrigger(automation.trigger)}${raw}; folder ${automation.id}`);
   }
   return lines.join("\n");
 }

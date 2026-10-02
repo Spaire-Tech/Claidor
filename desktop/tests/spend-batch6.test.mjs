@@ -58,9 +58,9 @@ test("the escape-hatch turn runs under the hidden budget and the routed runner s
   assert.match(router, /runRoutedProviderText\(provider, turnMessages, bridge == null \? \{\n\s*budget,/);
   assert.match(router, /: \{ budget, mcpServerUrl: bridge\.url,/);
   const session = await read("source/host/extensions/inference/provider-session.ts");
-  assert.match(session, /readonly budget\?: ModelCallBudget;\n\}\): Promise<string> \{/);
+  assert.match(session, /readonly budget\?: ModelCallBudget;\n(?:\s*\/\*\*.*\*\/\n\s*readonly callReason\?: SimeonCallReason;\n)?\}\): Promise<string> \{/);
   assert.match(session, /if \(options\?\.budget != null\) spendModelCall\(options\.budget\);/);
-  assert.match(session, /simeonReasoningEffortForSession\(options\), options\?\.budget\)/);
+  assert.match(session, /simeonReasoningEffortForSession\(options\), options\?\.budget[,)]/);
 });
 
 test("the avatar asks for low quality, the image service passes usage through, and the result says to attach the file", async () => {

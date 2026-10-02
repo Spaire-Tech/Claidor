@@ -69,6 +69,16 @@ export function isModelNotOfferedError(error: unknown): boolean {
   return /not offered by the desktop app/i.test(text);
 }
 export const SIMEON_FETCH_TIMEOUT_MS = 45_000;
+// The most one model call may write, thinking included (OpenAI's
+// `max_output_tokens`). A backstop, not a tuning knob: no reply or tool call
+// the loop makes comes near it, and it caps a runaway call at about $0.32 on
+// Sol. Until 2 October 2026 no limit was sent at all. A call that reaches it
+// writes a `[simeon] model-output-limit` line.
+export const SIMEON_MAX_OUTPUT_TOKENS = 32_000;
+export function configuredSimeonMaxOutputTokens(env: NodeJS.ProcessEnv = process.env): number {
+  const value = Number(readSimeonEnv(env, "SAND_SIMEON_MAX_OUTPUT_TOKENS")?.trim());
+  return Number.isInteger(value) && value >= 1_024 ? value : SIMEON_MAX_OUTPUT_TOKENS;
+}
 export const SIMEON_CREDENTIAL_WAIT_MS = 5_000;
 export { SIMEON_WORKING_CONTEXT_TOKENS };
 
@@ -83,7 +93,16 @@ export { SIMEON_WORKING_CONTEXT_TOKENS };
 // GPT-5.6's and reads as low.
 export const SIMEON_REASONING_EFFORTS = ["none", "low", "medium", "high", "xhigh", "max"] as const;
 export type SimeonReasoningEffort = (typeof SIMEON_REASONING_EFFORTS)[number];
-export const DEFAULT_SIMEON_REASONING_EFFORT: SimeonReasoningEffort = "high";
+// Medium since 2 October 2026, not high: the person's messages, routines,
+// helpers and agents waking each other start at medium and a turn that keeps
+// working is raised to high (`simeonEffortForCall`); the turns that only
+// react (a reply nudge, a background wake) run at low. One fixed level for
+// everything thought as hard about "hello" as about a research task
+// (docs/services-core.md, "Spend").
+export const DEFAULT_SIMEON_REASONING_EFFORT: SimeonReasoningEffort = "medium";
+export const SIMEON_LOW_EFFORT_CALL_REASONS: ReadonlySet<string> = new Set(["nudge", "wake", "background"]);
+// A turn's calls after this many run at high: by then it is real work.
+export const SIMEON_EFFORT_RAISE_AFTER_CALLS = 4;
 export const DEFAULT_SIMEON_CHEAP_REASONING_EFFORT: SimeonReasoningEffort = "low";
 export const SAND_SIMEON_REASONING_EFFORT_ENV = "SAND_SIMEON_REASONING_EFFORT";
 export const SAND_SIMEON_CHEAP_REASONING_EFFORT_ENV = "SAND_SIMEON_CHEAP_REASONING_EFFORT";
@@ -96,6 +115,14 @@ function parseReasoningEffort(value: string | undefined, fallback: SimeonReasoni
 
 export function configuredSimeonReasoningEffort(env: NodeJS.ProcessEnv = process.env): SimeonReasoningEffort {
   return parseReasoningEffort(readSimeonEnv(env, SAND_SIMEON_REASONING_EFFORT_ENV), DEFAULT_SIMEON_REASONING_EFFORT);
+}
+
+// The level set in the environment, when one is: it then holds for every
+// non-cheap call, with no ladder, as the single level did before 2 October.
+function explicitSimeonReasoningEffort(env: NodeJS.ProcessEnv): SimeonReasoningEffort | undefined {
+  const raw = readSimeonEnv(env, SAND_SIMEON_REASONING_EFFORT_ENV);
+  const valid = raw?.trim().toLowerCase() === "minimal" || (SIMEON_REASONING_EFFORTS as readonly string[]).includes(raw?.trim().toLowerCase() ?? "");
+  return valid ? parseReasoningEffort(raw, DEFAULT_SIMEON_REASONING_EFFORT) : undefined;
 }
 
 export function configuredSimeonCheapReasoningEffort(env: NodeJS.ProcessEnv = process.env): SimeonReasoningEffort {
@@ -210,9 +237,27 @@ export function simeonModelForSession(options?: SimeonSessionModelOptions): stri
 }
 
 // Effort follows the role, not the model: a loop turn that falls back to
-// Luna on a rate limit keeps the loop's effort.
+// Luna on a rate limit keeps the loop's effort. The cheap roles run at the
+// cheap level; a level set in the environment holds for the rest; otherwise
+// a turn that only reacts runs at low and everything else starts at medium.
 export function simeonReasoningEffortForSession(options?: SimeonSessionModelOptions, env: NodeJS.ProcessEnv = process.env): SimeonReasoningEffort {
-  return isCheapSimeonSession(options) ? configuredSimeonCheapReasoningEffort(env) : configuredSimeonReasoningEffort(env);
+  if (isCheapSimeonSession(options)) return configuredSimeonCheapReasoningEffort(env);
+  const explicit = explicitSimeonReasoningEffort(env);
+  if (explicit !== undefined) return explicit;
+  return SIMEON_LOW_EFFORT_CALL_REASONS.has(simeonCallReason(options)) ? "low" : DEFAULT_SIMEON_REASONING_EFFORT;
+}
+
+// Whether a session's effort climbs with its turn: only a session on the
+// default ladder (not cheap, no level in the environment, starting at medium).
+export function simeonEffortRaises(options?: SimeonSessionModelOptions, env: NodeJS.ProcessEnv = process.env): boolean {
+  return !isCheapSimeonSession(options) && explicitSimeonReasoningEffort(env) === undefined && simeonReasoningEffortForSession(options, env) === DEFAULT_SIMEON_REASONING_EFFORT;
+}
+
+// The effort of one call: the session's, raised to high from the call after
+// SIMEON_EFFORT_RAISE_AFTER_CALLS in a session that climbs. `callNumber`
+// counts this session's calls from 1 (the turn's budget counter).
+export function simeonEffortForCall(sessionEffort: SimeonReasoningEffort, raises: boolean, callNumber: number): SimeonReasoningEffort {
+  return raises && callNumber > SIMEON_EFFORT_RAISE_AFTER_CALLS ? "high" : sessionEffort;
 }
 
 // One definition of where the proxy lives, shared with the other three
@@ -516,6 +561,7 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
   if (onRequestId != null) void race(result.response).then((response) => { const id = (response as { id?: unknown } | undefined)?.id; if (typeof id === "string" && id.length > 0) onRequestId(id); }, () => undefined);
   const metadata = race(result.providerMetadata).then(value => (value?.openai ?? {}) as Record<string, unknown>, () => ({} as Record<string, unknown>));
   const toolCalls = race(result.toolCalls).then((calls) => calls as readonly { readonly toolName?: string; readonly args?: unknown }[], () => []);
+  void race(result.finishReason).then((reason) => { if (reason === "length") modelCallLog(`${HOST_LOG_PREFIX} model-output-limit model=${callInfo?.model ?? "?"} limit=${configuredSimeonMaxOutputTokens()}`); }, () => undefined);
   const extendedUsage = Promise.all([race(result.usage), metadata, toolCalls]).then(([value, openai, calls]) => {
     const cached = typeof openai.cachedPromptTokens === "number" ? openai.cachedPromptTokens : 0;
     const reasoning = typeof openai.reasoningTokens === "number" ? openai.reasoningTokens : 0;
@@ -543,6 +589,7 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
     messages: coreMessages,
     ...(tools === undefined ? {} : { tools }),
     toolCallStreaming: true,
+    maxTokens: configuredSimeonMaxOutputTokens(),
     maxSteps: tools === undefined || executeTool == null ? 1 : 8,
     providerOptions: { openai: { strictSchemas: false, ...openaiOptions } },
   });
@@ -685,10 +732,11 @@ function conversationIdFromContext(ctx: unknown): unknown {
 }
 
 class ProviderPromptExecutor extends BasePromptExecutor<ProviderMessage> {
-  constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void, readonly modelId?: string, readonly reasoningEffort?: SimeonReasoningEffort, readonly budget?: ModelCallBudget, readonly onRequestId?: (requestId: string) => void, readonly callReason?: SimeonCallReason) { super(new BasePromptBuilder(initialMessages)); }
+  constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void, readonly modelId?: string, readonly reasoningEffort?: SimeonReasoningEffort, readonly budget?: ModelCallBudget, readonly onRequestId?: (requestId: string) => void, readonly callReason?: SimeonCallReason, readonly effortRaises = false) { super(new BasePromptBuilder(initialMessages)); }
   stream(ctx: unknown, invocationId = crypto.randomUUID(), definitions?: readonly Loose[]) {
     if (this.budget != null) spendModelCall(this.budget);
-    return simeonExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage, this.modelId, this.reasoningEffort, this.budget, this.onRequestId, simeonPromptCacheKey(conversationIdFromContext(ctx)), this.callReason);
+    const effort = this.reasoningEffort === undefined ? undefined : simeonEffortForCall(this.reasoningEffort, this.effortRaises, this.budget?.used ?? 1);
+    return simeonExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage, this.modelId, effort, this.budget, this.onRequestId, simeonPromptCacheKey(conversationIdFromContext(ctx)), this.callReason);
   }
 }
 
@@ -698,7 +746,8 @@ export function createProviderPromptSession(_provider: RoutedProvider, options?:
   const reasoningEffort = simeonReasoningEffortForSession(options);
   const budget = createModelCallBudget(options);
   const callReason = simeonCallReason(options);
-  return { getModelId: () => modelId, getExecutor: state => new ProviderPromptExecutor(provider, Array.isArray(state) ? state as ProviderMessage[] : undefined, usage => recordRoutedUsage(provider, usage), modelId, reasoningEffort, budget, onRequestId, callReason) };
+  const effortRaises = simeonEffortRaises(options);
+  return { getModelId: () => modelId, getExecutor: state => new ProviderPromptExecutor(provider, Array.isArray(state) ? state as ProviderMessage[] : undefined, usage => recordRoutedUsage(provider, usage), modelId, reasoningEffort, budget, onRequestId, callReason, effortRaises) };
 }
 
 export async function runRoutedProviderText(provider: RoutedProvider, messages: readonly ProviderMessage[], options?: {
