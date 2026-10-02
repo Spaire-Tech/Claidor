@@ -21,12 +21,22 @@ What it does, in order:
 - One offer request, one way or a round trip, with the times asked for
   ("arrive by 2 PM" is an arrival window) and at most one connection unless
   only non-stops were asked for.
-- Offers that fail the filters asked for (refundable only) are dropped, the
-  same itinerary at several fares keeps its cheapest, and the cheapest four
-  are drawn.
-- Each is shaped for the card: times in the airports' own local time, the
-  layover between legs, the bags of the first leg, and the refund and change
-  rules with their fee.
+- Offers that fail the filters asked for (refundable only, the airlines
+  named) are dropped, and the same flights sold at several fares count as one
+  itinerary at its cheapest fare.
+- The shortlist is chosen the way Muse's own flight rules choose it (the
+  founder, 2 October 2026: "take example from muse ... ours isnt smart"): the
+  shortest whole journey first, nonstop preferred over a connection that
+  saves only minutes; then a meaningfully cheaper longer option; then a
+  refundable fare when none of those is one; then other distinct trips,
+  never a near-copy of one already shown (same shape, departing close to it,
+  no faster and no cheaper). Asked for the cheapest, it leads with the
+  cheapest and keeps a meaningfully faster one.
+- Each is shaped for the card: times in the airports' own local time, every
+  connection airport with its layover, the operating airline when another
+  one flies it, the fare brand, the bags of the first leg, and the refund
+  and change rules with their fee. A fact the airline does not give reads
+  "Not stated", never "none" or "no".
 
 Searches are capped per person per hour (`FLIGHT_SEARCHES_PER_HOUR`): past
 Duffel's free allowance each one is billed, and a looping agent must not run
@@ -77,6 +87,14 @@ _SYMBOLS = {
     "CHF": "CHF ",
 }
 MAX_OFFERS_SHOWN = 4
+NOT_STATED = "Not stated"
+# A connection has to save more than this, per stop, to lead over a nonstop.
+_STOP_PENALTY_MINUTES = 30
+# "Meaningfully" cheaper or faster, for the second pick.
+_CHEAPER_SHARE, _CHEAPER_AT_LEAST = 0.9, 20.0
+_FASTER_AT_LEAST_MINUTES = 45
+# Two trips leaving within this of each other are the same choice to a person.
+_NEAR_DEPARTURE_MINUTES = 120
 
 
 class DuffelError(Exception):
@@ -265,12 +283,13 @@ def _known(rule: Any) -> dict[str, Any] | None:
 
 def refund_terms(rule: Any) -> str:
     """Cancelling before departure, in the words a person reads on a fare:
-    `Full refund`, `Refund minus $75.00`, `No refund`, or `` when the
-    airline does not say (2 October 2026: the founder found "Yes, no fee"
-    meant nothing)."""
+    `Full refund`, `Refund minus $75.00`, `No refund`, or `Not stated` when
+    the airline does not say (2 October 2026: the founder found "Yes, no fee"
+    meant nothing; Muse's rules: an absent fact is "not stated", never
+    "none")."""
     known = _known(rule)
     if known is None:
-        return ""
+        return NOT_STATED
     if not known["allowed"]:
         return "No refund"
     fee = _fee(known)
@@ -278,10 +297,11 @@ def refund_terms(rule: Any) -> str:
 
 
 def change_terms(rule: Any) -> str:
-    """Changing before departure: `Free`, `$75.00 fee`, `Not allowed`, or ``."""
+    """Changing before departure: `Free`, `$75.00 fee`, `Not allowed`, or
+    `Not stated`."""
     known = _known(rule)
     if known is None:
-        return ""
+        return NOT_STATED
     if not known["allowed"]:
         return "Not allowed"
     fee = _fee(known)
@@ -289,10 +309,15 @@ def change_terms(rule: Any) -> str:
 
 
 def _bags(segment: dict[str, Any]) -> str:
+    """`1 carry-on, 1 checked bag`; `No bags included` when the fare lists
+    its bags and every count is zero; `Not stated` when it lists none."""
     passengers = segment.get("passengers")
     first = passengers[0] if isinstance(passengers, list) and passengers else {}
+    listed = first.get("baggages") if isinstance(first, dict) else None
+    if not isinstance(listed, list) or not listed:
+        return NOT_STATED
     carry = checked = 0
-    for bag in first.get("baggages") or [] if isinstance(first, dict) else []:
+    for bag in listed:
         if not isinstance(bag, dict):
             continue
         raw = bag.get("quantity")
@@ -302,7 +327,7 @@ def _bags(segment: dict[str, Any]) -> str:
         elif bag.get("type") == "checked":
             checked += quantity
     if carry == 0 and checked == 0:
-        return ""
+        return "No bags included"
     parts = []
     if carry:
         parts.append(f"{carry} carry-on")
@@ -324,18 +349,77 @@ def _cabin(segment: dict[str, Any], requested: str) -> str:
     return named or _CABIN_NAMES.get(requested, "")
 
 
+def _fare(segment: dict[str, Any], requested: str, brand: str) -> str:
+    """The cabin and, when the airline names one, its fare brand:
+    `Economy · Main Cabin`, `Economy · Basic`."""
+    cabin = _cabin(segment, requested)
+    if not brand or brand.lower() == cabin.lower():
+        return cabin
+    if brand.isupper():
+        brand = brand.title()
+    return f"{cabin} · {brand}" if cabin else brand
+
+
+def _carrier_flight(carrier: Any, number: Any) -> str:
+    return f"{_text(_dict(carrier).get('iata_code'))} {_text(number)}".strip()
+
+
+def _connections(slice_: dict[str, Any]) -> list[tuple[str, str]]:
+    """Each connection in a slice: `(airport, layover)`, the layover worked
+    out from the two segments' local times at that same airport, or
+    `layover length not stated` when it cannot be (a change of airports, or
+    a time missing), never guessed across time zones."""
+    segments = _segments(slice_)
+    found: list[tuple[str, str]] = []
+    for here, there in zip(segments, segments[1:], strict=False):
+        landed_at, leaves_from = (
+            _code(here.get("destination")),
+            _code(there.get("origin")),
+        )
+        landed, leaves = (
+            _local(here.get("arriving_at")),
+            _local(there.get("departing_at")),
+        )
+        if landed is None or leaves is None or landed_at != leaves_from:
+            found.append((landed_at or leaves_from, "layover length not stated"))
+            continue
+        found.append(
+            (landed_at, minutes_text(int((leaves - landed).total_seconds() // 60)))
+        )
+    return found
+
+
 def _stops(count: int) -> str:
     return "Nonstop" if count == 0 else f"{count} stop{'s' if count != 1 else ''}"
+
+
+def _stops_line(slice_: dict[str, Any]) -> str:
+    """`Nonstop`, or the stops with every connection airport and its layover:
+    `1 stop · PHX 1h 38m`."""
+    connections = _connections(slice_)
+    if not connections:
+        return "Nonstop"
+    where = ", ".join(f"{airport} {wait}".strip() for airport, wait in connections)
+    return f"{_stops(len(connections))} · {where}"
 
 
 def _segments(slice_: dict[str, Any]) -> list[dict[str, Any]]:
     return [one for one in slice_.get("segments") or [] if isinstance(one, dict)]
 
 
-def _leg(segment: dict[str, Any], requested_cabin: str) -> dict[str, str]:
+def _leg(
+    segment: dict[str, Any], requested_cabin: str, brand: str = ""
+) -> dict[str, str]:
     carrier = _dict(segment.get("marketing_carrier"))
-    number = _text(segment.get("marketing_carrier_flight_number"))
-    code = _text(carrier.get("iata_code"))
+    flight = _carrier_flight(carrier, segment.get("marketing_carrier_flight_number"))
+    operator = _dict(segment.get("operating_carrier"))
+    operator_name = _text(operator.get("name"))
+    if (
+        operator_name
+        and _text(operator.get("iata_code"))
+        and _text(operator.get("iata_code")) != _text(carrier.get("iata_code"))
+    ):
+        flight = f"{flight} · operated by {operator_name}"
     departs, arrives = (
         _local(segment.get("departing_at")),
         _local(segment.get("arriving_at")),
@@ -349,17 +433,17 @@ def _leg(segment: dict[str, Any], requested_cabin: str) -> dict[str, str]:
         "arrive": clock(arrives) + _days_later(departs, arrives),
         "departDay": day(departs),
         "arriveDay": day(arrives),
-        "flight": f"{code} {number}".strip(),
+        "flight": flight,
         "carrier": _text(carrier.get("name")),
         "logo": _text(carrier.get("logo_symbol_url")),
-        "cabin": _cabin(segment, requested_cabin),
+        "cabin": _fare(segment, requested_cabin, brand),
         "duration": duration(segment.get("duration")),
     }
 
 
 def _return_times(slices: list[dict[str, Any]]) -> str:
-    """`Return 7:46 PM – 10:40 PM` on a round trip's row, so two offers
-    that share the way out read as the different trips they are."""
+    """`Return 7:46 PM – 10:40 PM · Nonstop` on a round trip's row, so two
+    offers that share the way out read as the different trips they are."""
     if len(slices) < 2 or not _segments(slices[1]):
         return ""
     back = _segments(slices[1])
@@ -367,16 +451,36 @@ def _return_times(slices: list[dict[str, Any]]) -> str:
         _local(back[0].get("departing_at")),
         _local(back[-1].get("arriving_at")),
     )
-    return f"Return {clock(leaves)} – {clock(lands)}{_days_later(leaves, lands)}"
+    times = f"{clock(leaves)} – {clock(lands)}{_days_later(leaves, lands)}"
+    return f"Return {times} · {_stops_line(slices[1])}"
+
+
+def _slices(offer: dict[str, Any]) -> list[dict[str, Any]]:
+    return [one for one in offer.get("slices") or [] if isinstance(one, dict)]
 
 
 def _itinerary_key(offer: dict[str, Any]) -> tuple[str, ...]:
-    """The flights an offer flies, so one itinerary sold at several fares
-    is shown once, at its cheapest."""
+    """The complete itinerary an offer flies (every segment's airports,
+    local times and marketing and operating flight numbers, in order), so
+    one itinerary sold at several fares counts once."""
     return tuple(
-        f"{_text(segment.get('departing_at'))}/{_text((segment.get('marketing_carrier') or {}).get('iata_code'))}{_text(segment.get('marketing_carrier_flight_number'))}"
-        for slice_ in offer.get("slices") or []
-        if isinstance(slice_, dict)
+        "/".join(
+            (
+                _code(segment.get("origin")),
+                _text(segment.get("departing_at")),
+                _code(segment.get("destination")),
+                _text(segment.get("arriving_at")),
+                _carrier_flight(
+                    segment.get("marketing_carrier"),
+                    segment.get("marketing_carrier_flight_number"),
+                ),
+                _carrier_flight(
+                    segment.get("operating_carrier"),
+                    segment.get("operating_carrier_flight_number"),
+                ),
+            )
+        )
+        for slice_ in _slices(offer)
         for segment in _segments(slice_)
     )
 
@@ -399,22 +503,24 @@ def offer_for_card(
     legs: list[dict[str, str]] = []
     for index, slice_ in enumerate(slices):
         segments = _segments(slice_)
+        connections = _connections(slice_)
+        brand = _text(slice_.get("fare_brand_name"))
         for position, segment in enumerate(segments):
-            leg = _leg(segment, cabin)
-            if position + 1 < len(segments):
-                landed = _local(segment.get("arriving_at"))
-                leaves = _local(segments[position + 1].get("departing_at"))
-                if landed is not None and leaves is not None:
-                    wait = int((leaves - landed).total_seconds() // 60)
+            leg = _leg(segment, cabin, brand)
+            if position < len(connections):
+                wait = connections[position][1]
+                if wait == "layover length not stated":
                     leg["layover"] = (
-                        f"{minutes_text(wait)} in {leg['toCity'] or leg['to']}"
+                        f"Layover length not stated in {leg['toCity'] or leg['to']}"
                     )
+                else:
+                    leg["layover"] = f"{wait} in {leg['toCity'] or leg['to']}"
             if index > 0 and position == 0:
                 leg["heading"] = f"Return · {day(_local(segment.get('departing_at')))}"
             legs.append(leg)
 
     travellers = f"{adults} adult{'s' if adults != 1 else ''}"
-    cabin_name = _cabin(first, cabin)
+    cabin_name = _fare(first, cabin, _text(slices[0].get("fare_brand_name")))
     return {
         "airline": _text(owner.get("name")),
         "logo": _text(owner.get("logo_symbol_url")),
@@ -424,7 +530,7 @@ def offer_for_card(
             for part in (
                 travellers,
                 cabin_name,
-                "Round trip" if len(slices) > 1 else "",
+                "Round trip" if len(slices) > 1 else "One way",
             )
             if part
         ),
@@ -436,7 +542,7 @@ def offer_for_card(
         "depart": clock(departs),
         "arrive": clock(arrives) + _days_later(departs, arrives),
         "duration": duration(slices[0].get("duration")),
-        "stops": _stops(len(outbound) - 1),
+        "stops": _stops_line(slices[0]),
         "refundable": refund_terms(conditions.get("refund_before_departure")),
         "changeable": change_terms(conditions.get("change_before_departure")),
         "bags": _bags(first),
@@ -452,32 +558,197 @@ def _price(offer: dict[str, Any]) -> float:
         return float("inf")
 
 
+def iso_minutes(value: Any) -> int | None:
+    match = re.fullmatch(
+        r"P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:\d+(?:\.\d+)?S)?)?", _text(value)
+    )
+    if match is None or not any(match.groups()):
+        return None
+    days, hours, minutes = (int(part) if part else 0 for part in match.groups())
+    return days * 24 * 60 + hours * 60 + minutes
+
+
+def journey_minutes(offer: dict[str, Any]) -> float:
+    """The whole journey, connections included, from the airline's own
+    durations (never two airports' local clocks subtracted): each slice's
+    duration, or its segments' flying time and its layovers."""
+    total = 0
+    for slice_ in _slices(offer):
+        whole = iso_minutes(slice_.get("duration"))
+        if whole is None:
+            flying = [iso_minutes(one.get("duration")) for one in _segments(slice_)]
+            if not flying or any(part is None for part in flying):
+                return float("inf")
+            whole = sum(part for part in flying if part is not None)
+            for _airport, wait in _connections(slice_):
+                waited = re.fullmatch(r"(?:(\d+)h)?\s?(?:(\d+)m)?", wait)
+                if waited is None or not any(waited.groups()):
+                    return float("inf")
+                whole += int(waited.group(1) or 0) * 60 + int(waited.group(2) or 0)
+        total += whole
+    return float(total) if total else float("inf")
+
+
+def _stop_count(offer: dict[str, Any]) -> int:
+    return sum(max(0, len(_segments(one)) - 1) for one in _slices(offer))
+
+
+def _changes_airports(offer: dict[str, Any]) -> bool:
+    return any(
+        _code(here.get("destination")) != _code(there.get("origin"))
+        for slice_ in _slices(offer)
+        for here, there in zip(_segments(slice_), _segments(slice_)[1:], strict=False)
+    )
+
+
+def _carriers(offer: dict[str, Any]) -> set[str]:
+    codes = {_text(_dict(offer.get("owner")).get("iata_code")).upper()}
+    for slice_ in _slices(offer):
+        for segment in _segments(slice_):
+            for side in ("marketing_carrier", "operating_carrier"):
+                codes.add(_text(_dict(segment.get(side)).get("iata_code")).upper())
+    return codes - {""}
+
+
+def _refundable(offer: dict[str, Any]) -> bool:
+    rule = _dict(offer.get("conditions")).get("refund_before_departure")
+    return isinstance(rule, dict) and rule.get("allowed") is True
+
+
+def _departs(offer: dict[str, Any]) -> datetime | None:
+    slices = _slices(offer)
+    segments = _segments(slices[0]) if slices else []
+    return _local(segments[0].get("departing_at")) if segments else None
+
+
+def _speed(offer: dict[str, Any]) -> tuple[float, float]:
+    """Shortest reasonable journey first: a connection must save more than
+    half an hour a stop to lead over a nonstop; then the price."""
+    return (
+        journey_minutes(offer) + _STOP_PENALTY_MINUTES * _stop_count(offer),
+        _price(offer),
+    )
+
+
+def _cheapness(offer: dict[str, Any]) -> tuple[float, float]:
+    return (_price(offer), _speed(offer)[0])
+
+
+def _near_copy(offer: dict[str, Any], of: dict[str, Any]) -> bool:
+    """`offer` adds nothing next to `of`: no fewer stops, no shorter, no
+    cheaper, and leaving at much the same time."""
+    leaves, other = _departs(offer), _departs(of)
+    close = (
+        leaves is not None
+        and other is not None
+        and abs((leaves - other).total_seconds()) <= _NEAR_DEPARTURE_MINUTES * 60
+    )
+    return (
+        close
+        and _stop_count(of) <= _stop_count(offer)
+        and journey_minutes(of) <= journey_minutes(offer)
+        and _price(of) <= _price(offer)
+    )
+
+
 def pick_offers(
     offers: list[dict[str, Any]],
     *,
     refundable_only: bool,
+    priority: str = "fastest",
+    airlines: frozenset[str] = frozenset(),
     limit: int = MAX_OFFERS_SHOWN,
-) -> list[dict[str, Any]]:
-    """The cheapest `limit` offers that pass the filters, one per itinerary."""
-    kept: dict[tuple[str, ...], dict[str, Any]] = {}
+) -> list[tuple[dict[str, Any], str]]:
+    """The shortlist, in the order it is shown, each with why it is there:
+    `Fastest`, `Cheapest`, `Refundable`, or `` for another distinct trip."""
+    cheapest: dict[tuple[str, ...], dict[str, Any]] = {}
+    refundable: dict[tuple[str, ...], dict[str, Any]] = {}
     for offer in offers:
         if not isinstance(offer, dict):
             continue
-        if refundable_only:
-            rule = _dict(offer.get("conditions")).get("refund_before_departure")
-            if not isinstance(rule, dict) or rule.get("allowed") is not True:
-                continue
+        if refundable_only and not _refundable(offer):
+            continue
+        if airlines and not _carriers(offer) & airlines:
+            continue
         key = _itinerary_key(offer)
         if not key:
             continue
-        held = kept.get(key)
+        held = cheapest.get(key)
         if held is None or _price(offer) < _price(held):
-            kept[key] = offer
-    return sorted(kept.values(), key=_price)[:limit]
+            cheapest[key] = offer
+        if _refundable(offer):
+            held = refundable.get(key)
+            if held is None or _price(offer) < _price(held):
+                refundable[key] = offer
+    pool = list(cheapest.values())
+    # An airport change mid-journey is shown only when nothing else is left.
+    simple = [one for one in pool if not _changes_airports(one)]
+    pool = simple or pool
+    if not pool:
+        return []
+
+    by_speed = sorted(pool, key=_speed)
+    by_price = sorted(pool, key=_cheapness)
+    picked: list[tuple[dict[str, Any], str]] = []
+
+    def chosen(offer: dict[str, Any]) -> bool:
+        return any(offer is one for one, _why in picked)
+
+    if priority == "cheapest":
+        lead = by_price[0]
+        picked.append((lead, "Cheapest"))
+        fastest = by_speed[0]
+        if (
+            not chosen(fastest)
+            and journey_minutes(lead) - journey_minutes(fastest)
+            >= _FASTER_AT_LEAST_MINUTES
+        ):
+            picked.append((fastest, "Fastest"))
+    else:
+        lead = by_speed[0]
+        picked.append((lead, "Fastest"))
+        cheap = by_price[0]
+        if (
+            not chosen(cheap)
+            and _price(cheap) <= _price(lead) * _CHEAPER_SHARE
+            and _price(lead) - _price(cheap) >= _CHEAPER_AT_LEAST
+        ):
+            picked.append((cheap, "Cheapest"))
+
+    if not refundable_only and not any(_refundable(one) for one, _why in picked):
+        flexible = sorted(
+            (
+                one
+                for one in refundable.values()
+                if not (simple and _changes_airports(one))
+            ),
+            key=_speed if priority != "cheapest" else _cheapness,
+        )
+        if flexible and len(picked) < limit:
+            picked.append((flexible[0], "Refundable"))
+
+    order = by_price if priority == "cheapest" else by_speed
+    for offer in order:
+        if len(picked) >= limit:
+            break
+        if chosen(offer) or any(_near_copy(offer, one) for one, _why in picked):
+            continue
+        picked.append((offer, ""))
+    # Still short (every other trip was a near copy): fill in order.
+    for offer in order:
+        if len(picked) >= limit:
+            break
+        if not chosen(offer):
+            picked.append((offer, ""))
+
+    rank = {id(one): index for index, one in enumerate(order)}
+    head, rest = picked[:1], picked[1:]
+    rest.sort(key=lambda pair: rank.get(id(pair[0]), len(order)))
+    return head + rest
 
 
 def card_for(
-    offers: list[dict[str, Any]],
+    offers: list[tuple[dict[str, Any], str]],
     *,
     origin_city: str,
     destination_city: str,
@@ -488,11 +759,12 @@ def card_for(
     refundable_only: bool,
     test: bool,
 ) -> dict[str, Any]:
-    shown = [
-        card
-        for card in (offer_for_card(one, adults=adults, cabin=cabin) for one in offers)
-        if card
-    ]
+    shown = []
+    for offer, why in offers:
+        card = offer_for_card(offer, adults=adults, cabin=cabin)
+        if card:
+            card["label"] = why
+            shown.append(card)
     subtitle = [
         "Test results" if test else "",
         day(departure) + (f" – {day(return_date)}" if return_date else ""),
@@ -513,12 +785,15 @@ def summary_for(card: dict[str, Any]) -> list[dict[str, str]]:
         {
             key: offer.get(key, "")
             for key in (
+                "label",
                 "airline",
                 "price",
+                "priceNote",
                 "depart",
                 "arrive",
                 "stops",
                 "duration",
+                "returnTimes",
                 "refundable",
                 "changeable",
                 "bags",
@@ -563,8 +838,19 @@ async def resolve_place(api: DuffelClient, query: str) -> tuple[str, str]:
         return code, _city(named) if named else code
     for one in suggestions:
         code = _text(one.get("iata_code"))
-        if code:
-            return code.upper(), _city(one) or text
+        if not code:
+            continue
+        # A city with one airport is searched as that airport's exact code;
+        # a city with several (New York) keeps the city's code, and each row
+        # names the airports it really uses.
+        airports = [
+            _text(airport.get("iata_code"))
+            for airport in one.get("airports") or []
+            if isinstance(airport, dict) and _text(airport.get("iata_code"))
+        ]
+        if one.get("type") == "city" and len(airports) == 1:
+            code = airports[0]
+        return code.upper(), _city(one) or text
     raise SearchRefused(f"I couldn't find an airport for “{text}”.")
 
 
@@ -598,7 +884,8 @@ async def search_flights(
     redis: Redis = Depends(get_redis),
 ) -> JSONResponse:
     """`{origin, destination, date, return_date?, adults?, cabin?,
-    depart_after?, arrive_before?, refundable_only?, nonstop_only?}` in;
+    depart_after?, arrive_before?, refundable_only?, nonstop_only?,
+    priority?, airlines?}` in;
     `{card, summary, test, found}` out, `card` null when nothing matched."""
     if not settings.DUFFEL_ACCESS_TOKEN:
         return _refuse("Flight search is not switched on yet.", 503)
@@ -643,6 +930,18 @@ async def search_flights(
         arrive_before = _parse_time(body.get("arrive_before"), "arrive_before")
         refundable_only = body.get("refundable_only") is True
         nonstop_only = body.get("nonstop_only") is True
+        priority = _text(body.get("priority")).lower() or "fastest"
+        if priority not in {"fastest", "cheapest"}:
+            raise SearchRefused("priority must be fastest or cheapest.")
+        named = body.get("airlines") or []
+        if not isinstance(named, list) or not all(
+            isinstance(one, str) and re.fullmatch(r"[A-Za-z0-9]{2}", one.strip())
+            for one in named
+        ):
+            raise SearchRefused(
+                'airlines must be two-letter airline codes, like ["AS", "DL"].'
+            )
+        airlines = frozenset(one.strip().upper() for one in named)
 
         origin, origin_city = await resolve_place(api, _text(body.get("origin")))
         destination, destination_city = await resolve_place(
@@ -691,7 +990,9 @@ async def search_flights(
         return _refuse("The flight search did not answer; try again in a moment.", 502)
 
     offers = [one for one in found.get("offers") or [] if isinstance(one, dict)]
-    picked = pick_offers(offers, refundable_only=refundable_only)
+    picked = pick_offers(
+        offers, refundable_only=refundable_only, priority=priority, airlines=airlines
+    )
     card = card_for(
         picked,
         origin_city=origin_city,
@@ -710,6 +1011,8 @@ async def search_flights(
         destination=destination,
         date=departure.isoformat(),
         round_trip=return_date is not None,
+        priority=priority,
+        airlines=sorted(airlines),
         found=len(offers),
         shown=len(card["offers"]),
         test=api.is_test,

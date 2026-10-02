@@ -65,7 +65,8 @@ test("the tool posts the card, tells the agent not to repeat it, and flags test 
     assert.match(text, /The results card is shown to the user \(entry m-1\)/);
     assert.match(text, /Do not list these flights again/);
     assert.match(text, /1\. Duffel Airways · \$361\.20 · 6:00 AM–12:18 PM · 1 stop · 6h 18m \(cancellation: Full refund; changes: \$75\.00 fee; bags: 1 carry-on\)/);
-    assert.match(text, /test-mode results/);
+    assert.match(text, /These are test results/);
+    assert.doesNotMatch(text, /Duffel\b(?! Airways)/, "the data provider is never named to the agent's user");
   } finally {
     await dispose();
   }
@@ -135,6 +136,24 @@ test("one way drops a stray return date, a round trip needs one, and the same se
     assert.equal(posted.length, 1, "one card, not six");
     await run(module.createSearchFlightsTool(deps), { ...ask, date: "2026-10-03" });
     assert.equal(searches, 2, "a different search runs");
+  } finally {
+    await dispose();
+  }
+});
+
+test("the agent is told Muse's flight rules, and ranking and airlines reach the server", async () => {
+  const { module, dispose } = await load("source/host/runner/tools/flight-search-tool.ts", "flight-tool-muse");
+  try {
+    const description = module.SEARCH_FLIGHTS_DESCRIPTION;
+    for (const rule of [/memory, past trips, email and calendar/, /one adult, one way, and say that assumption/, /Ask before searching only when a missing fact would change the route/, /airlines set to it/, /not that the airline doesn't fly there/, /Do not repeat prices, times or terms/, /ask the user to type which flight/, /Never name the flight data provider/]) {
+      assert.match(description, rule);
+    }
+    const searched = [];
+    const tool = module.createSearchFlightsTool({ search: async (args) => { searched.push(args); return ANSWER; }, postMessage: () => "m-2" });
+    const text = await run(tool, { origin: "SEA", destination: "LAX", trip: "one_way", date: "2026-10-02", priority: "cheapest", airlines: ["AS"] });
+    assert.deepEqual(searched[0].airlines, ["AS"]);
+    assert.equal(searched[0].priority, "cheapest");
+    assert.match(text, /cheapest first, out of 12 offers/);
   } finally {
     await dispose();
   }
