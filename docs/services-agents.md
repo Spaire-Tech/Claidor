@@ -639,9 +639,10 @@ the API):
 ## 10. Flight search
 
 **For the person.** Ask any agent for a flight ("cheapest refundable Seattle to LA tomorrow,
-landing before 2") and it answers with a results card: the four cheapest options that fit,
-each opening a panel with each leg, the layover, and the fare's cancellation and change
-terms and bags in plain words. Booking is not built; the panel has no Book button.
+landing before 2") and it answers with a results card of up to four distinct options, fastest
+whole journey first, each opening a panel with each leg, the layover, and the fare's
+cancellation and change terms and bags in plain words, then one short line with its pick.
+Booking is not built; the panel has no Book button.
 
 **How it works.**
 
@@ -650,9 +651,25 @@ terms and bags in plain words. Booking is not built; the panel has no Book butto
   credential (`get_desktop_or_box_session`). The brief tells agents to use it for every flight
   question and never to look flights up on airline or travel sites.
 - The server (`server/simeon/desktop/flights.py`) turns a city into an airport through
-  Duffel's place suggestions, makes one Duffel offer request, drops offers that fail the
-  filters asked for, keeps the cheapest fare of each itinerary and shapes the cheapest four
-  for the card: local times, layovers, bags, refund and change rules with their fee.
+  Duffel's place suggestions (a city with one airport becomes that airport's code), makes one
+  Duffel offer request, drops offers that fail the filters asked for (refundable, named
+  airlines), and counts each complete itinerary once at its cheapest fare.
+- The shortlist follows Muse's own flight rules (2 October 2026, from Muse's booking and
+  Duffel skill files the founder shared): the shortest whole journey first (a connection must
+  save over 30 minutes a stop to lead over a nonstop), then the cheapest when it is at least
+  10% and $20 cheaper, then a refundable fare when none shown is, then other distinct trips;
+  a trip no faster, no cheaper and leaving within two hours of one shown is left out, and
+  a change of airports mid-journey only when nothing else is left. `priority: "cheapest"`
+  leads with the cheapest and keeps one at least 45 minutes faster. Each row says why it is
+  there (`label`: Fastest, Cheapest, Refundable) in the agent's summary.
+- The card shows every connection airport with its layover (`1 stop · PHX 1h 38m`), the
+  operating airline when another flies it, the fare brand, and "One way" or "Round trip"
+  with the price. A fact the airline does not give reads "Not stated", never "none".
+- The agent is told (tool description and brief) to learn the traveller from memory, past
+  trips, email and calendar before asking, to assume one adult one way and say so, to ask
+  only what would change the route, to run one targeted `airlines` search when an expected
+  airline is missing, and after the card to write one short line, never the card's details
+  again and never the data provider's name.
 - The tool posts the card itself, as a message that is one ```` ```simeon-flights ```` block
   of JSON, which the window draws (`flights-components` in
   `scripts/lib/router-renderer-patch.mjs`). The agent gets a short summary and writes only the
@@ -673,6 +690,6 @@ terms and bags in plain words. Booking is not built; the panel has no Book butto
   `https://api.duffel.com`).
 
 **When it misbehaves.** Server log: `desktop.flights.search` (one line per search: route,
-date, offers found and shown, `test`, milliseconds), `desktop.flights.upstream_refused` (what
+date, `priority`, `airlines`, offers found and shown, `test`, milliseconds), `desktop.flights.upstream_refused` (what
 Duffel answered, in full) and `desktop.flights.rate_limited`. An agent that browsed instead of
 calling the tool shows no `desktop.flights.search` line for that request.

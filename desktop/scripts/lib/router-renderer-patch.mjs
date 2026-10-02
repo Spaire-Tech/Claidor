@@ -649,8 +649,10 @@ export function patchOriginalHandoffStylesheet(css) {
  * opens that offer in a panel on the right that the chat steps aside for.
  *
  * The card is an Apple list: a quiet route line over the date and terms,
- * then one row per offer, the times as the row's title, the airline, stops
- * and time in the air under it in grey, the price trailing, and a chevron.
+ * then one row per offer, the times as the row's title, the airline, time
+ * in the air and stops under it in grey, then every connection airport with
+ * its layover on a line of its own (Muse's rule: no row hides its layovers),
+ * the price trailing, and a chevron.
  * Weight comes from size and grey, not bold: regular throughout, medium
  * only for the route line.
  *
@@ -659,10 +661,11 @@ export function patchOriginalHandoffStylesheet(css) {
  *
  *   {"title":"Seattle to Los Angeles","subtitle":"Fri, Oct 2 · Refundable · 1 adult",
  *    "offers":[{"airline":"American Airlines","logo":"https://…/AA.svg",
- *     "price":"$361.20","priceNote":"1 adult · Economy","date":"Fri, Oct 2",
+ *     "price":"$361.20","priceNote":"1 adult · Economy · One way","date":"Fri, Oct 2",
  *     "from":"SEA","fromCity":"Seattle","to":"LAX","toCity":"Los Angeles",
- *     "depart":"6:00 AM","arrive":"12:18 PM","duration":"6h 18m","stops":"1 stop",
- *     "refundable":"Yes, no fee","changeable":"Yes, no fee","bags":"1 carry-on",
+ *     "depart":"6:00 AM","arrive":"12:18 PM","duration":"6h 18m","stops":"1 stop · PHX 1h 38m",
+ *     "refundable":"Full refund","changeable":"Not stated","bags":"1 carry-on",
+ *     "label":"Cheapest",
  *     "legs":[{"from":"SEA","fromCity":"Seattle","to":"PHX","toCity":"Phoenix",
  *       "depart":"6:00 AM","arrive":"9:10 AM","flight":"AA 3792",
  *       "carrier":"American Airlines","logo":"https://…","cabin":"Economy",
@@ -697,7 +700,7 @@ const FLIGHTS_SOURCE = [
   "if(d==null)return null;const base=`${n.content.length}:${n.content.slice(-64)}`;",
   "return p.jsxs(\"section\",{className:\"simeon-flights\",\"aria-label\":d.title||\"Flights\",children:[d.title||d.subtitle?p.jsxs(\"header\",{className:\"simeon-flights__head\",children:[d.title?p.jsx(\"h3\",{children:d.title}):null,d.subtitle?p.jsx(\"p\",{children:d.subtitle}):null]}):null,",
   "p.jsx(\"ul\",{className:\"simeon-flights__list\",children:d.offers.map((f,i)=>{const k=`${base}:${i}`;return p.jsx(\"li\",{children:p.jsxs(\"button\",{type:\"button\",className:\"simeon-flights__row\",\"aria-pressed\":fo?.key===k,onClick:()=>__simeonOpenFlight(k,f),children:[p.jsx(__simeonAirlineMark,{logo:f.logo,name:f.airline}),",
-  "p.jsxs(\"span\",{className:\"simeon-flights__body\",children:[p.jsx(\"span\",{className:\"simeon-flights__times\",children:[f.depart,f.arrive].filter(Boolean).join(\" – \")}),p.jsx(\"span\",{className:\"simeon-flights__meta\",children:[f.airline,f.stops,f.duration].filter(Boolean).join(\" · \")}),f.returnTimes?p.jsx(\"span\",{className:\"simeon-flights__meta\",children:f.returnTimes}):null]}),",
+  "p.jsxs(\"span\",{className:\"simeon-flights__body\",children:[p.jsx(\"span\",{className:\"simeon-flights__times\",children:[f.depart,f.arrive].filter(Boolean).join(\" – \")}),p.jsx(\"span\",{className:\"simeon-flights__meta\",children:[f.airline,f.duration,f.stops.split(\" · \")[0]].filter(Boolean).join(\" · \")}),f.stops.includes(\" · \")?p.jsx(\"span\",{className:\"simeon-flights__meta\",children:`${f.stops.slice(f.stops.indexOf(\" · \")+3)} layover`}):null,f.returnTimes?p.jsx(\"span\",{className:\"simeon-flights__meta\",children:f.returnTimes}):null]}),",
   "p.jsx(\"span\",{className:\"simeon-flights__price\",children:f.price}),p.jsx(__simeonIcon,{className:\"simeon-flights__chevron\",d:" + JSON.stringify(FLIGHT_CHEVRON) + "})]})},i)})})]})}",
   // The flight, drawn as the pane draws a profile: a centred head (the airline's mark where the
   // avatar sits, the route as the name, the date, stops and time in the air as the title), then
@@ -705,7 +708,7 @@ const FLIGHTS_SOURCE = [
   "function __simeonFlightRow(k,v,sub){return v?p.jsxs(\"div\",{className:\"simeon-flight-pane__row\",children:[p.jsx(\"span\",{children:k}),p.jsxs(\"span\",{className:\"simeon-flight-pane__value\",children:[v,sub?p.jsx(\"small\",{children:sub}):null]})]},k):null}",
   "function __simeonFlightDetails(n){const o=n.offer,first=o.legs[0],last=o.legs[o.legs.length-1],from=o.from||first?.from||\"\",to=o.to||last?.to||\"\";",
   "const when=(d,t)=>[d,t].filter(Boolean).join(\" · \"),row=__simeonFlightRow;",
-  "return p.jsxs(\"div\",{className:\"simeon-pane simeon-flight-pane\",children:[p.jsxs(\"div\",{className:\"simeon-flight-pane__head\",children:[p.jsx(__simeonAirlineMark,{logo:o.logo,name:o.airline,size:\"hero\"}),p.jsx(\"div\",{className:\"simeon-pane__name\",children:`${from} → ${to}`}),p.jsx(\"div\",{className:\"simeon-pane__title\",children:[o.date,o.stops,o.duration].filter(Boolean).join(\" · \")})]}),",
+  "return p.jsxs(\"div\",{className:\"simeon-pane simeon-flight-pane\",children:[p.jsxs(\"div\",{className:\"simeon-flight-pane__head\",children:[p.jsx(__simeonAirlineMark,{logo:o.logo,name:o.airline,size:\"hero\"}),p.jsx(\"div\",{className:\"simeon-pane__name\",children:`${from} → ${to}`}),p.jsx(\"div\",{className:\"simeon-pane__title\",children:[o.date,o.duration,o.stops.split(\" · \")[0]].filter(Boolean).join(\" · \")})]}),",
   "p.jsxs(\"div\",{className:\"simeon-flight-pane__body\",children:[o.price?p.jsxs(\"section\",{children:[p.jsx(\"h4\",{children:\"Price\"}),row(\"Total\",o.price,o.priceNote)]}):null,",
   "...o.legs.map((l,i)=>p.jsxs(\"section\",{children:[p.jsx(\"h4\",{children:[l.heading,`${l.from} → ${l.to}`].filter(Boolean).join(\" · \")}),row(\"Departs\",when(l.departDay,l.depart)),row(\"Arrives\",when(l.arriveDay,l.arrive)),row(\"Flight\",[l.flight,l.carrier&&l.carrier!==o.airline?l.carrier:\"\"].filter(Boolean).join(\" · \")),row(\"Cabin\",l.cabin),row(\"Time in the air\",l.duration),",
   "l.layover&&i<o.legs.length-1?p.jsx(\"p\",{className:\"simeon-flight-pane__note\",children:`${l.layover.replace(/ in /,\" layover in \")}`}):null]},`l${i}`)),",

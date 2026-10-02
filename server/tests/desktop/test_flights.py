@@ -1,7 +1,8 @@
 """Flight search (`simeon/desktop/flights.py`), end to end over HTTP with
 Duffel mocked: cities turned into airports, the request Duffel is sent, the
-cheapest offers that pass the filters shaped for the card, the per-hour
-cap, and a sentence when Duffel fails."""
+shortlist chosen the way Muse chooses it (shortest journey first, then a
+meaningfully cheaper one, then a refundable fare, never a near copy), shaped
+for the card, the per-hour cap, and a sentence when Duffel fails."""
 
 import json
 from datetime import date, timedelta
@@ -177,7 +178,7 @@ def _keyed(mocker: MockerFixture) -> None:
 
 @pytest.mark.asyncio
 class TestFlightSearch:
-    async def test_the_cheapest_refundable_flights_come_back_as_the_card(
+    async def test_the_fastest_then_a_cheaper_refundable_flight_come_back_as_the_card(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:
         headers = await _signed_in(client, session, user)
@@ -218,24 +219,24 @@ class TestFlightSearch:
             card["subtitle"]
             == f"Test results · {flights.day(DAY)} · Refundable · 1 adult"
         )
-        assert [offer["airline"] for offer in card["offers"]] == [
-            "American Airlines",
-            "Alaska Airlines",
+        assert [(offer["airline"], offer["label"]) for offer in card["offers"]] == [
+            ("Alaska Airlines", "Fastest"),
+            ("American Airlines", "Cheapest"),
         ], "United is not refundable; American's dearer fare is the same flights"
-        american = card["offers"][0]
+        american = card["offers"][1]
         assert american["price"] == "$361.20"
         assert (
             american["depart"],
             american["arrive"],
             american["duration"],
             american["stops"],
-        ) == ("6:00 AM", "12:18 PM", "6h 18m", "1 stop")
+        ) == ("6:00 AM", "12:18 PM", "6h 18m", "1 stop · PHX 1h 38m")
         assert (american["refundable"], american["changeable"], american["bags"]) == (
             "Full refund",
             "$75.00 fee",
             "1 carry-on",
         )
-        assert american["priceNote"] == "1 adult · Economy", (
+        assert american["priceNote"] == "1 adult · Economy · One way", (
             "Duffel's ECONOMY reads as Economy"
         )
         assert american["legs"][0]["departDay"] == flights.day(DAY)
@@ -243,8 +244,9 @@ class TestFlightSearch:
         assert [leg["flight"] for leg in american["legs"]] == ["AA 3792", "AA 2027"]
         assert american["legs"][0]["layover"] == "1h 38m in Phoenix"
         assert "layover" not in american["legs"][1]
-        assert card["offers"][1]["stops"] == "Nonstop"
-        assert data["summary"][0]["price"] == "$361.20"
+        assert card["offers"][0]["stops"] == "Nonstop"
+        assert data["summary"][1]["price"] == "$361.20"
+        assert data["summary"][1]["label"] == "Cheapest"
 
     async def test_nothing_matching_is_no_card(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
@@ -383,7 +385,8 @@ class TestShaping:
             == "Refund minus $75.00"
         )
         assert flights.refund_terms({"allowed": False}) == "No refund"
-        assert flights.refund_terms(None) == ""
+        assert flights.refund_terms(None) == "Not stated"
+        assert flights.change_terms({"allowed": None}) == "Not stated"
         assert flights.change_terms({"allowed": True, "penalty_amount": None}) == "Free"
         assert (
             flights.change_terms(
@@ -417,8 +420,115 @@ class TestShaping:
         card = flights.offer_for_card(offer, adults=2, cabin="economy")
         assert card is not None
         assert card["priceNote"] == "2 adults · Economy · Round trip"
-        assert card["refundable"] == "", "the airline did not say"
-        assert card["returnTimes"] == "Return 11:30 PM – 7:05 AM +1"
-        assert card["changeable"] == ""
+        assert card["refundable"] == "Not stated", "the airline did not say"
+        assert card["returnTimes"] == "Return 11:30 PM – 7:05 AM +1 · Nonstop"
+        assert card["changeable"] == "Not stated"
         assert card["legs"][2]["heading"] == f"Return · {flights.day(DAY)}"
         assert card["legs"][2]["arrive"] == "7:05 AM +1"
+
+
+def _nonstop(
+    amount: str,
+    departs: str,
+    arrives: str,
+    number: str,
+    length: str,
+    *,
+    refund: dict[str, Any] | None = None,
+    carrier: tuple[str, str] = AS,
+) -> dict[str, Any]:
+    return _offer(
+        amount,
+        carrier,
+        [_segment(SEA, LAX, departs, arrives, carrier, number, length)],
+        length,
+        refund=refund,
+    )
+
+
+class TestShortlist:
+    def test_shortest_first_then_a_cheaper_one_then_a_refundable_fare(self) -> None:
+        fast = _nonstop("300", "07:00", "09:40", "1", "PT2H40M")
+        dearer_same = _nonstop("320", "07:00", "09:40", "1", "PT2H40M")
+        near_copy = _nonstop("310", "08:00", "10:45", "2", "PT2H45M")
+        evening = _nonstop("305", "18:00", "20:45", "3", "PT2H45M")
+        flexible = _nonstop("420", "12:00", "14:45", "4", "PT2H45M", refund=FREE)
+        cheap = _offer("199", AA, AMERICAN, "PT6H18M", refund={"allowed": False})
+        picked = flights.pick_offers(
+            [cheap, near_copy, dearer_same, flexible, evening, fast],
+            refundable_only=False,
+        )
+        assert [(offer, why) for offer, why in picked] == [
+            (fast, "Fastest"),
+            (evening, ""),
+            (flexible, "Refundable"),
+            (cheap, "Cheapest"),
+        ], (
+            "shortest first after the lead; the 8 AM is no faster or cheaper than the 7 AM; one itinerary at two fares counts once"
+        )
+
+    def test_a_nonstop_leads_over_a_connection_that_saves_minutes(self) -> None:
+        nonstop = _nonstop("300", "07:00", "10:00", "1", "PT3H")
+        connection = _offer(
+            "300",
+            AA,
+            [
+                _segment(SEA, PHX, "07:00", "08:30", AA, "10", "PT1H30M"),
+                _segment(PHX, LAX, "09:00", "09:50", AA, "11", "PT50M"),
+            ],
+            "PT2H50M",
+            refund=None,
+        )
+        picked = flights.pick_offers([connection, nonstop], refundable_only=False)
+        assert picked[0] == (nonstop, "Fastest")
+
+    def test_a_price_first_ask_keeps_a_much_faster_option(self) -> None:
+        fast = _nonstop("300", "07:00", "09:40", "1", "PT2H40M")
+        cheap = _offer("199", AA, AMERICAN, "PT6H18M", refund=None)
+        picked = flights.pick_offers(
+            [fast, cheap], refundable_only=False, priority="cheapest"
+        )
+        assert picked == [(cheap, "Cheapest"), (fast, "Fastest")]
+
+    def test_named_airlines_and_airport_changes(self) -> None:
+        alaska = _nonstop("300", "07:00", "09:40", "1", "PT2H40M")
+        united = _nonstop("250", "09:00", "11:40", "2", "PT2H40M", carrier=UA)
+        assert flights.pick_offers(
+            [alaska, united], refundable_only=False, airlines=frozenset({"UA"})
+        ) == [(united, "Fastest")]
+        swap = _offer(
+            "100",
+            AA,
+            [
+                _segment(SEA, PHX, "06:00", "09:10", AA, "1", "PT3H10M"),
+                _segment(("AZA", "Phoenix"), LAX, "11:00", "12:30", AA, "2", "PT1H30M"),
+            ],
+            "PT6H30M",
+            refund=None,
+        )
+        assert [
+            offer
+            for offer, _why in flights.pick_offers(
+                [swap, alaska], refundable_only=False
+            )
+        ] == [alaska], "changing airports mid-journey only when nothing else is left"
+        card = flights.offer_for_card(swap, adults=1, cabin="economy")
+        assert card is not None
+        assert card["stops"] == "1 stop · PHX layover length not stated"
+
+    def test_operating_carrier_fare_brand_and_bags(self) -> None:
+        segment = _segment(
+            SEA, LAX, "07:00", "09:40", AS, "1068", "PT2H40M", carry_on=0
+        )
+        segment["operating_carrier"] = {"iata_code": "QX", "name": "Horizon Air"}
+        offer = _offer("300", AS, [segment], "PT2H40M", refund=None)
+        offer["slices"][0]["fare_brand_name"] = "Saver"
+        card = flights.offer_for_card(offer, adults=1, cabin="economy")
+        assert card is not None
+        assert card["legs"][0]["flight"] == "AS 1068 · operated by Horizon Air"
+        assert card["legs"][0]["cabin"] == "Economy · Saver"
+        assert card["bags"] == "No bags included"
+        segment["passengers"][0].pop("baggages")
+        unlisted = flights.offer_for_card(offer, adults=1, cabin="economy")
+        assert unlisted is not None
+        assert unlisted["bags"] == "Not stated"
