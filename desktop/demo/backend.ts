@@ -15,6 +15,8 @@ import { CONNECTOR_MANIFESTS } from "../source/shared/channels.js";
 export interface DemoBackendHooks {
   readonly pushCoordinatorEvent: (family: string, payload: unknown) => void;
   readonly pushMainEvent: (event: string, payload: unknown) => void;
+  /** Hands the window a fresh coordinator port, as the app does once a sign-in has started the cloud computer. */
+  readonly reconnectCoordinator?: () => void;
   /** Multiplies every scripted delay; tests play the story at 1/100 speed-up. */
   readonly timeScale?: number;
 }
@@ -54,6 +56,9 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
   let onboardingSeen = !fresh;
   let personName: string | null = fresh ? null : "Bass";
   let onboardingStage = 0;
+  // A new account starts signed out: the window's sign-in screen comes first.
+  const signedIn = { kind: "logged-in", authId: "demo|bass", email: "bass@simeonlabs.com", displayName: "Bass F", freshness: 1 };
+  let authStatus: Record<string, unknown> = fresh ? { kind: "logged-out" } : signedIn;
   const persisted = new Map<string, unknown>();
   const epoch = "demo-" + Math.random().toString(36).slice(2);
   const sequences = new Map<string, number>();
@@ -187,7 +192,17 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
     getTimeZone: () => ({ timeZone: "Europe/Zurich", override: null }),
     getSidebarCollapsed: () => false,
     markDeepLinksReady: () => undefined,
-    getCursorAuthStatus: () => ({ kind: "logged-in", authId: "demo|bass", email: "bass@simeonlabs.com", displayName: "Bass F", freshness: 1 }),
+    getCursorAuthStatus: () => authStatus,
+    // In the app, Sign in opens the browser on app.simeonlabs.com and the window waits; here the browser step passes by itself.
+    loginCursor: () => {
+      authStatus = { kind: "logging-in" };
+      hooks.pushMainEvent("cursor-auth-changed", authStatus);
+      setTimeout(() => { authStatus = signedIn; hooks.pushMainEvent("cursor-auth-changed", authStatus); }, 1800);
+      // The window then shows "Setting up Simeon's computer" until the cloud computer answers.
+      setTimeout(() => hooks.reconnectCoordinator?.(), 5000);
+      return authStatus;
+    },
+    cancelCursorLogin: () => { authStatus = { kind: "logged-out" }; hooks.pushMainEvent("cursor-auth-changed", authStatus); return authStatus; },
     getSandAccess: () => ({ state: "granted", reason: "none" }),
     getSandAccessFresh: () => ({ state: "granted", reason: "none" }),
     getEgressTunnelStatus: () => null,
