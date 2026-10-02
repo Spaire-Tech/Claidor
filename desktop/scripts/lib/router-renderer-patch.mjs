@@ -684,9 +684,15 @@ const FLIGHTS_SOURCE = [
   "function __simeonInitials(n){const w=String(n||\"\").split(/\\s+/).filter(x=>x&&!/^(airlines?|airways|air)$/i.test(x));return(w.length>1?w[0][0]+w[1][0]:String(w[0]||\"?\").slice(0,2)).toUpperCase()}",
   "function __simeonAirlineMark(n){const[f,sf]=S.useState(!1),u=n.logo;return p.jsx(\"span\",{className:`simeon-flight-mark simeon-flight-mark--${n.size||\"row\"}`,\"aria-hidden\":!0,children:u&&!f?p.jsx(\"img\",{src:u,alt:\"\",draggable:!1,onError:()=>sf(!0)}):p.jsx(\"span\",{className:\"simeon-flight-mark__initials\",children:__simeonInitials(n.name)})})}",
   "function __simeonIcon(n){return p.jsx(\"svg\",{viewBox:\"0 0 24 24\",\"aria-hidden\":!0,className:n.className,dangerouslySetInnerHTML:{__html:n.d}})}",
-  "let __simeonFlightCloseOpen=null;",
+  "let __simeonFlightCloseOpen=null,__simeonSidebarStore=null;",
+  // The panel steps the sidebar back to its rail while it is open, as the agent's pane does, and
+  // brings it back on close only if it took it (the founder: "when the right panel open, the left
+  // goes thin, like for agent info").
+  "function __simeonSidebarTo(sb,c){const sh=document.querySelector(\".sand-shell\");return sh!=null?WFe(sh,sb,c,window.innerWidth):{...sb,isCollapsed:c}}",
+  "function __simeonTakeSidebar(){const st=__simeonSidebarStore;if(st==null)return!1;const sb=st.get();if(sb==null||sb.isCollapsed)return!1;st.set(__simeonSidebarTo(sb,!0));return!0}",
+  "function __simeonGiveSidebar(took){const st=__simeonSidebarStore;if(!took||st==null)return;const sb=st.get();sb!=null&&sb.isCollapsed&&st.set(__simeonSidebarTo(sb,!1))}",
   "function __simeonFlights(n){const d=__simeonFlightsParse(n.content),[sel,ss]=S.useState(null);",
-  "S.useEffect(()=>{if(sel==null)return;const close=()=>ss(null);__simeonFlightCloseOpen!=null&&__simeonFlightCloseOpen!==close&&__simeonFlightCloseOpen();__simeonFlightCloseOpen=close;const k=e=>{e.key===\"Escape\"&&ss(null)};window.addEventListener(\"keydown\",k);document.documentElement.classList.add(\"simeon-flight-open\");return()=>{window.removeEventListener(\"keydown\",k);__simeonFlightCloseOpen===close&&(__simeonFlightCloseOpen=null,document.documentElement.classList.remove(\"simeon-flight-open\"))}},[sel]);",
+  "S.useEffect(()=>{if(sel==null)return;const close=()=>ss(null);__simeonFlightCloseOpen!=null&&__simeonFlightCloseOpen!==close&&__simeonFlightCloseOpen();__simeonFlightCloseOpen=close;const k=e=>{e.key===\"Escape\"&&ss(null)};window.addEventListener(\"keydown\",k);document.documentElement.classList.add(\"simeon-flight-open\");return()=>{window.removeEventListener(\"keydown\",k);__simeonFlightCloseOpen===close&&(__simeonFlightCloseOpen=null,document.documentElement.classList.remove(\"simeon-flight-open\"))}},[sel]);S.useEffect(()=>{if(sel==null)return;const took=__simeonTakeSidebar();return()=>{__simeonGiveSidebar(took)}},[sel!=null]);",
   "if(d==null)return null;const o=sel==null?null:d.offers[sel]??null;",
   "return p.jsxs(p.Fragment,{children:[p.jsxs(\"section\",{className:\"simeon-flights\",\"aria-label\":d.title||\"Flights\",children:[d.title||d.subtitle?p.jsxs(\"header\",{className:\"simeon-flights__head\",children:[d.title?p.jsx(\"h3\",{children:d.title}):null,d.subtitle?p.jsx(\"p\",{children:d.subtitle}):null]}):null,",
   "p.jsx(\"ul\",{className:\"simeon-flights__list\",children:d.offers.map((f,i)=>p.jsx(\"li\",{children:p.jsxs(\"button\",{type:\"button\",className:\"simeon-flights__row\",\"aria-pressed\":sel===i,onClick:()=>ss(v=>v===i?null:i),children:[p.jsx(__simeonAirlineMark,{logo:f.logo,name:f.airline}),",
@@ -717,6 +723,8 @@ const FLIGHTS_MESSAGE_AFTER = `(!h&&__simeonFlightsParse(r)!=null?p.jsx(__simeon
 export const FLIGHTS_REPLACEMENTS = Object.freeze([
   ["flights-components", FLIGHTS_COMPONENTS_ANCHOR, `${FLIGHTS_SOURCE}${FLIGHTS_COMPONENTS_ANCHOR}`],
   ["flights-message", FLIGHTS_MESSAGE_BEFORE, FLIGHTS_MESSAGE_AFTER],
+  // The sidebar's layout store, where the agent's pane already reaches it (agent-pane-compacts-sidebar).
+  ["flights-sidebar-store", "setInfoPaneOpen:L=>{if(y||r.get().isOpen===L)return;", "__simeonSidebarStore:(__simeonSidebarStore=s,void 0),setInfoPaneOpen:L=>{if(y||r.get().isOpen===L)return;"],
 ]);
 
 /** Runs after the voice-call and take-over patches: it wraps the one and sits beside the other. */
