@@ -129,3 +129,17 @@ test("the sign-in wordmark is set in Suravaram, carried inside the stylesheet", 
   assert.throws(() => patchOriginalWordmarkStylesheet(css, wordmarkFont), /already present/);
   assert.throws(() => patchOriginalWordmarkStylesheet(".a{}", ""), /did not load/);
 });
+
+test("the COO step sits after Meet Simeon, with Simeon at the centre and six agents leaving it", async () => {
+  const { COO_REPLACEMENTS, COO_CSS, patchOriginalCooStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const [list, screen, hero, component] = COO_REPLACEMENTS;
+  assert.match(list[2], /\["landing","meet","coo","computer-demo","jobs","tools","create"\]/);
+  assert.match(screen[2], /^case"coo":return p\.jsx\(__simeonCooStep,\{headingId:xn,onBack:\(\)=>x\.goBack\(ln\),onForward:\(\)=>x\.advance\(ln\)\}\);/);
+  assert.match(hero[2], /^case"coo":return\{\.\.\.e,x:0,y:-40,scale:1,opacity:1/);
+  assert.match(component[2], /title:"Your personal COO"/);
+  assert.match(component[2], /Simeon staffs an agent for whatever needs doing\./);
+  assert.equal((component[2].match(/"label":/g) ?? []).length, 6);
+  new Function("p", "fde", "tye", "nye", "sd", "re", "Fo", component[2].replace(/function sjn\(n\)\{$/, ""));
+  assert.match(COO_CSS, /prefers-reduced-motion:reduce/);
+  assert.throws(() => patchOriginalCooStylesheet(patchOriginalCooStylesheet(".a{}")), /already present/);
+});
