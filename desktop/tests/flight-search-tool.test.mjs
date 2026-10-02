@@ -39,14 +39,14 @@ const CARD = {
   offers: [{
     airline: "Duffel Airways", logo: "https://assets.duffel.com/ZZ.svg", price: "$361.20", priceNote: "1 adult · Economy", date: "Fri, Oct 2",
     from: "SEA", fromCity: "Seattle", to: "LAX", toCity: "Los Angeles", depart: "6:00 AM", arrive: "12:18 PM", duration: "6h 18m", stops: "1 stop",
-    refundable: "Yes, no fee", changeable: "Yes, $75.00 fee", bags: "1 carry-on",
+    refundable: "Full refund", changeable: "$75.00 fee", bags: "1 carry-on",
     legs: [
       { from: "SEA", fromCity: "Seattle", to: "PHX", toCity: "Phoenix", depart: "6:00 AM", arrive: "9:10 AM", flight: "ZZ 3792", carrier: "Duffel Airways", logo: "", cabin: "Economy", duration: "3h 10m", layover: "1h 38m in Phoenix" },
       { from: "PHX", fromCity: "Phoenix", to: "LAX", toCity: "Los Angeles", depart: "10:48 AM", arrive: "12:18 PM", flight: "ZZ 2027", carrier: "Duffel Airways", logo: "", cabin: "Economy", duration: "1h 30m" },
     ],
   }],
 };
-const ANSWER = { card: CARD, summary: [{ airline: "Duffel Airways", price: "$361.20", depart: "6:00 AM", arrive: "12:18 PM", stops: "1 stop", duration: "6h 18m", refundable: "Yes, no fee", changeable: "Yes, $75.00 fee", bags: "1 carry-on" }], test: true, found: 12 };
+const ANSWER = { card: CARD, summary: [{ airline: "Duffel Airways", price: "$361.20", depart: "6:00 AM", arrive: "12:18 PM", stops: "1 stop", duration: "6h 18m", refundable: "Full refund", changeable: "$75.00 fee", bags: "1 carry-on" }], test: true, found: 12 };
 
 test("the tool posts the card, tells the agent not to repeat it, and flags test results", async () => {
   const { module, dispose } = await load("source/host/runner/tools/flight-search-tool.ts", "flight-tool");
@@ -56,14 +56,15 @@ test("the tool posts the card, tells the agent not to repeat it, and flags test 
     const tool = module.createSearchFlightsTool({ search: async (args) => { searched.push(args); return ANSWER; }, postMessage: (content, at) => { posted.push(content); return "m-1"; }, now: () => 5 });
     assert.equal(tool.name, "SearchFlights");
     assert.match(tool.descriptionGenerator?.() ?? tool.description, /Never look up flights on airline websites, Google Flights/);
-    const args = { origin: "Seattle", destination: "Los Angeles", date: "2026-10-02", arrive_before: "14:00", refundable_only: true };
+    const args = { origin: "Seattle", destination: "Los Angeles", trip: "one_way", date: "2026-10-02", arrive_before: "14:00", refundable_only: true };
     const text = await run(tool, args);
-    assert.deepEqual(searched, [args]);
+    const { trip: _trip, ...sent } = args;
+    assert.deepEqual(searched, [sent], "the trip is folded away; the server only sees whether a return date goes with it");
     assert.equal(posted.length, 1);
     assert.equal(posted[0], `\`\`\`simeon-flights\n${JSON.stringify(CARD)}\n\`\`\``);
     assert.match(text, /The results card is shown to the user \(entry m-1\)/);
     assert.match(text, /Do not list these flights again/);
-    assert.match(text, /1\. Duffel Airways · \$361\.20 · 6:00 AM–12:18 PM · 1 stop · 6h 18m \(refundable: Yes, no fee; changes: Yes, \$75\.00 fee; bags: 1 carry-on\)/);
+    assert.match(text, /1\. Duffel Airways · \$361\.20 · 6:00 AM–12:18 PM · 1 stop · 6h 18m \(cancellation: Full refund; changes: \$75\.00 fee; bags: 1 carry-on\)/);
     assert.match(text, /test-mode results/);
   } finally {
     await dispose();
@@ -75,9 +76,9 @@ test("no match and a refusal post nothing and tell the agent what to say", async
   try {
     const posted = [];
     const empty = module.createSearchFlightsTool({ search: async () => ({ card: null, summary: [], test: false, found: 3 }), postMessage: (c) => { posted.push(c); } });
-    assert.match(await run(empty, { origin: "SEA", destination: "LAX", date: "2026-10-02" }), /No flights matched \(3 found before the filters\)/);
+    assert.match(await run(empty, { origin: "SEA", destination: "LAX", trip: "one_way", date: "2026-10-02" }), /No flights matched \(3 found before the filters\)/);
     const refused = module.createSearchFlightsTool({ search: async () => { throw new Error("Flight search is not switched on yet."); }, postMessage: (c) => { posted.push(c); } });
-    const said = await run(refused, { origin: "SEA", destination: "LAX", date: "2026-10-02" });
+    const said = await run(refused, { origin: "SEA", destination: "LAX", trip: "one_way", date: "2026-10-02" });
     assert.match(said, /Flight search is not switched on yet\./);
     assert.match(said, /do not look the flights up on a website instead/);
     assert.deepEqual(posted, []);
@@ -97,7 +98,7 @@ test("the window reads the card the tool posts", async () => {
     assert.equal(card.title, "Seattle to Los Angeles");
     assert.equal(card.subtitle, "Test results · Fri, Oct 2 · Refundable · 1 adult");
     assert.equal(card.offers[0].legs[0].layover, "1h 38m in Phoenix");
-    assert.equal(card.offers[0].changeable, "Yes, $75.00 fee");
+    assert.equal(card.offers[0].changeable, "$75.00 fee");
     assert.equal(parse("just text"), null);
   } finally {
     await dispose();
@@ -112,4 +113,29 @@ test("main agents get the tool and the rule; children and shared rooms do not ge
   assert.match(composition, /simeonApiData<FlightSearchAnswer>\(.*"flights\/search", \{ method: "POST", json: args/);
   const prompt = await readFile(path.join(repoRoot, "source/host/runner/system-prompt.ts"), "utf8");
   assert.match(prompt, /Flights go through SearchFlights whenever you have it/);
+});
+
+test("one way drops a stray return date, a round trip needs one, and the same search is not run twice in a turn", async () => {
+  const { module, dispose } = await load("source/host/runner/tools/flight-search-tool.ts", "flight-tool-trip");
+  try {
+    assert.deepEqual(module.serverSearchArgs({ origin: "SEA", destination: "LAX", trip: "one_way", date: "2026-10-02", return_date: "2026-10-02" }), { origin: "SEA", destination: "LAX", date: "2026-10-02" });
+    assert.match(module.serverSearchArgs({ origin: "SEA", destination: "LAX", trip: "round_trip", date: "2026-10-02" }), /needs return_date/);
+    assert.match(module.serverSearchArgs({ origin: "SEA", destination: "LAX", trip: "round_trip", date: "2026-10-05", return_date: "2026-10-02" }), /before date/);
+    assert.deepEqual(module.serverSearchArgs({ origin: "SEA", destination: "LAX", trip: "round_trip", date: "2026-10-02", return_date: "2026-10-04" }).return_date, "2026-10-04");
+
+    const posted = [];
+    let searches = 0;
+    const seen = new Set();
+    const deps = { search: async () => { searches += 1; return ANSWER; }, postMessage: (c) => { posted.push(c); }, seenSearches: seen };
+    const ask = { origin: "Seattle", destination: "Los Angeles", trip: "one_way", date: "2026-10-02" };
+    await run(module.createSearchFlightsTool(deps), ask);
+    const again = await run(module.createSearchFlightsTool(deps), ask);
+    assert.match(again, /You already ran this exact search in this turn/);
+    assert.equal(searches, 1, "a tool rebuilt in the same turn still remembers");
+    assert.equal(posted.length, 1, "one card, not six");
+    await run(module.createSearchFlightsTool(deps), { ...ask, date: "2026-10-03" });
+    assert.equal(searches, 2, "a different search runs");
+  } finally {
+    await dispose();
+  }
 });

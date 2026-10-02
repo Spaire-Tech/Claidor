@@ -70,7 +70,7 @@ def _segment(
         "duration": length,
         "passengers": [
             {
-                "cabin_class_marketing_name": "Economy",
+                "cabin_class_marketing_name": "ECONOMY",
                 "baggages": [
                     {"type": "carry_on", "quantity": carry_on},
                     {"type": "checked", "quantity": 0},
@@ -231,11 +231,15 @@ class TestFlightSearch:
             american["stops"],
         ) == ("6:00 AM", "12:18 PM", "6h 18m", "1 stop")
         assert (american["refundable"], american["changeable"], american["bags"]) == (
-            "Yes, no fee",
-            "Yes, $75.00 fee",
+            "Full refund",
+            "$75.00 fee",
             "1 carry-on",
         )
-        assert american["priceNote"] == "1 adult · Economy"
+        assert american["priceNote"] == "1 adult · Economy", (
+            "Duffel's ECONOMY reads as Economy"
+        )
+        assert american["legs"][0]["departDay"] == flights.day(DAY)
+        assert american["returnTimes"] == ""
         assert [leg["flight"] for leg in american["legs"]] == ["AA 3792", "AA 2027"]
         assert american["legs"][0]["layover"] == "1h 38m in Phoenix"
         assert "layover" not in american["legs"][1]
@@ -367,6 +371,28 @@ class TestFlightSearch:
 
 
 class TestShaping:
+    def test_fare_terms_read_as_a_person_would_say_them(self) -> None:
+        assert (
+            flights.refund_terms({"allowed": True, "penalty_amount": "0.00"})
+            == "Full refund"
+        )
+        assert (
+            flights.refund_terms(
+                {"allowed": True, "penalty_amount": "75", "penalty_currency": "USD"}
+            )
+            == "Refund minus $75.00"
+        )
+        assert flights.refund_terms({"allowed": False}) == "No refund"
+        assert flights.refund_terms(None) == ""
+        assert flights.change_terms({"allowed": True, "penalty_amount": None}) == "Free"
+        assert (
+            flights.change_terms(
+                {"allowed": True, "penalty_amount": "50", "penalty_currency": "USD"}
+            )
+            == "$50.00 fee"
+        )
+        assert flights.change_terms({"allowed": False}) == "Not allowed"
+
     def test_durations_money_and_clocks(self) -> None:
         assert flights.duration("PT6H18M") == "6h 18m"
         assert flights.duration("PT45M") == "45m"
@@ -392,6 +418,7 @@ class TestShaping:
         assert card is not None
         assert card["priceNote"] == "2 adults · Economy · Round trip"
         assert card["refundable"] == "", "the airline did not say"
+        assert card["returnTimes"] == "Return 11:30 PM – 7:05 AM +1"
         assert card["changeable"] == ""
         assert card["legs"][2]["heading"] == f"Return · {flights.day(DAY)}"
         assert card["legs"][2]["arrive"] == "7:05 AM +1"

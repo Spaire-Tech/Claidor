@@ -863,6 +863,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
 ): RecoveredHostRunnerComposition<Runner> {
   const { extensions, ctx } = deps;
   const auth = extensions.api("auth");
+  // SearchFlights' searches per turn, so the same search is not run twice in one turn.
+  const flightSearchesByTurn = new WeakMap<object, Set<string>>();
   const localToolPermission = extensions.api("local-tool-permission");
   const localToolPermissionSurfaces = new Map<string, () => void>();
   const ownedRunners = new Set<Runner>();
@@ -2331,6 +2333,11 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         : {
             createFlightToolInputs: turn => ({
               dependencies: {
+                seenSearches: (() => {
+                  let seen = flightSearchesByTurn.get(turn);
+                  if (seen === undefined) flightSearchesByTurn.set(turn, seen = new Set<string>());
+                  return seen;
+                })(),
                 search: args => simeonApiData<FlightSearchAnswer>({ getAccessToken: async () => { const get = method(auth, "getAccessToken"); if (get === undefined) throw new Error("You are not signed in."); return String(await get()); } }, "flights/search", { method: "POST", json: args, signal: AbortSignal.timeout(60_000) }),
                 postMessage: (content, timestampMs) => {
                   const update = { type: "send-message" as const, message: { type: "text", content }, timestampMs, ...(turn.ackToken === undefined ? {} : { ackToken: turn.ackToken }) };

@@ -249,20 +249,43 @@ def _code(place: Any) -> str:
     return _text(place.get("iata_code")) if isinstance(place, dict) else ""
 
 
-def _condition(rule: Any) -> str:
-    """Refund or change: `Yes, no fee`, `Yes, $75.00 fee`, `No`, or `` when
-    the airline does not say."""
-    if not isinstance(rule, dict) or not isinstance(rule.get("allowed"), bool):
-        return ""
-    if not rule["allowed"]:
-        return "No"
+def _fee(rule: dict[str, Any]) -> str:
     try:
         fee = float(rule.get("penalty_amount") or 0)
     except (TypeError, ValueError):
         fee = 0.0
-    if fee <= 0:
-        return "Yes, no fee"
-    return f"Yes, {money(fee, rule.get('penalty_currency'))} fee"
+    return money(fee, rule.get("penalty_currency")) if fee > 0 else ""
+
+
+def _known(rule: Any) -> dict[str, Any] | None:
+    if not isinstance(rule, dict) or not isinstance(rule.get("allowed"), bool):
+        return None
+    return rule
+
+
+def refund_terms(rule: Any) -> str:
+    """Cancelling before departure, in the words a person reads on a fare:
+    `Full refund`, `Refund minus $75.00`, `No refund`, or `` when the
+    airline does not say (2 October 2026: the founder found "Yes, no fee"
+    meant nothing)."""
+    known = _known(rule)
+    if known is None:
+        return ""
+    if not known["allowed"]:
+        return "No refund"
+    fee = _fee(known)
+    return f"Refund minus {fee}" if fee else "Full refund"
+
+
+def change_terms(rule: Any) -> str:
+    """Changing before departure: `Free`, `$75.00 fee`, `Not allowed`, or ``."""
+    known = _known(rule)
+    if known is None:
+        return ""
+    if not known["allowed"]:
+        return "Not allowed"
+    fee = _fee(known)
+    return f"{fee} fee" if fee else "Free"
 
 
 def _bags(segment: dict[str, Any]) -> str:
@@ -296,6 +319,8 @@ def _cabin(segment: dict[str, Any], requested: str) -> str:
         if isinstance(first, dict)
         else ""
     )
+    if named.isupper():
+        named = named.title()
     return named or _CABIN_NAMES.get(requested, "")
 
 
@@ -322,12 +347,27 @@ def _leg(segment: dict[str, Any], requested_cabin: str) -> dict[str, str]:
         "toCity": _city(segment.get("destination")),
         "depart": clock(departs),
         "arrive": clock(arrives) + _days_later(departs, arrives),
+        "departDay": day(departs),
+        "arriveDay": day(arrives),
         "flight": f"{code} {number}".strip(),
         "carrier": _text(carrier.get("name")),
         "logo": _text(carrier.get("logo_symbol_url")),
         "cabin": _cabin(segment, requested_cabin),
         "duration": duration(segment.get("duration")),
     }
+
+
+def _return_times(slices: list[dict[str, Any]]) -> str:
+    """`Return 7:46 PM – 10:40 PM` on a round trip's row, so two offers
+    that share the way out read as the different trips they are."""
+    if len(slices) < 2 or not _segments(slices[1]):
+        return ""
+    back = _segments(slices[1])
+    leaves, lands = (
+        _local(back[0].get("departing_at")),
+        _local(back[-1].get("arriving_at")),
+    )
+    return f"Return {clock(leaves)} – {clock(lands)}{_days_later(leaves, lands)}"
 
 
 def _itinerary_key(offer: dict[str, Any]) -> tuple[str, ...]:
@@ -397,10 +437,11 @@ def offer_for_card(
         "arrive": clock(arrives) + _days_later(departs, arrives),
         "duration": duration(slices[0].get("duration")),
         "stops": _stops(len(outbound) - 1),
-        "refundable": _condition(conditions.get("refund_before_departure")),
-        "changeable": _condition(conditions.get("change_before_departure")),
+        "refundable": refund_terms(conditions.get("refund_before_departure")),
+        "changeable": change_terms(conditions.get("change_before_departure")),
         "bags": _bags(first),
         "legs": legs,
+        "returnTimes": _return_times(slices),
     }
 
 
