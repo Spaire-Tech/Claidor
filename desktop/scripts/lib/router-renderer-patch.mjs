@@ -888,6 +888,11 @@ export const NAME_STEP_REPLACEMENTS = Object.freeze([
   // The last screen keeps only its line ("Getting your team ready…", with its moving light): the mark and the name above it go, as on the boot screen.
   ["hand-off-text-only", "x=p.jsxs(\"div\",{className:f,style:m.style,children:[y,v,b]})", "x=p.jsxs(\"div\",{className:f,style:m.style,children:[v,b]})"],
 ]);
+export const COO_LOCK_CSS = `/* Simeon: the COO's profile is read only */
+.simeon-coo-avatar{pointer-events:none}
+.simeon-coo-avatar .sand-avatar-trigger__button>:not(:first-child),.simeon-coo-avatar .sand-avatar-trigger>:not(.sand-avatar-trigger__button){display:none!important}
+.sand-info-pane input[readonly],.sand-info-pane textarea[readonly],input[aria-label^="Agent "][readonly],textarea[aria-label^="Agent "][readonly]{cursor:default;caret-color:transparent}
+`;
 export const NAME_CSS = `/* Simeon: the name step */
 .simeon-name{--simeon-name-ink-2:light-dark(rgba(60,60,67,.6),rgba(235,235,245,.6))}
 .simeon-name__input{box-sizing:border-box;width:300px;height:38px;padding:0 14px;border:1px solid light-dark(rgba(60,60,67,.16),rgba(235,235,245,.16));border-radius:10px;background:light-dark(#fff,#1c1c1e);color:inherit;font:inherit;font-size:16px;line-height:20px;letter-spacing:-.01em;text-align:center;outline:none;caret-color:#0a84ff;box-shadow:0 1px 2px light-dark(rgba(0,0,0,.04),rgba(0,0,0,.3));transition:border-color .2s,box-shadow .2s}
@@ -912,6 +917,16 @@ export const FIRST_AGENT_REPLACEMENTS = Object.freeze([
   ["coo-no-section-item", "R=o||!l?null:p.jsx(rcn,{", "R=o||!l||t.id===__simeonCooId?null:p.jsx(rcn,{"],
   ["coo-no-hide-action", "J=S.useCallback(L=>{f.setAgentHiddenFromSidebar(L,!0)},[f])", "J=S.useCallback(L=>{L!==__simeonCooId&&f.setAgentHiddenFromSidebar(L,!0)},[f])"],
   ["coo-no-delete-action", "_=S.useCallback(L=>{const D=new Set(L),F=u.filter(z=>D.has(z.id));", "_=S.useCallback(L=>{const D=new Set(L),F=u.filter(z=>D.has(z.id)&&z.id!==__simeonCooId);"],
+  // Simeon's profile is read only (the founder, 3 October 2026: "make the simeon uneditable"): his
+  // name, title and description show as text in his pane, and his avatar has no editor. The title
+  // is what makes him the COO, so it can never be typed away.
+  ["coo-readonly-name", 'p.jsx(Uwe,{ariaLabel:"Agent name",initialValue:t.name,', 'p.jsx(Uwe,{readOnly:t.id===__simeonCooId,ariaLabel:"Agent name",initialValue:t.name,'],
+  ["coo-readonly-title", 'p.jsx(Uwe,{ariaLabel:"Agent title",initialValue:t.title,', 'p.jsx(Uwe,{readOnly:t.id===__simeonCooId,ariaLabel:"Agent title",initialValue:t.title,'],
+  ["coo-readonly-description", 'p.jsx(Uwe,{ariaLabel:"Agent description",initialValue:t.description,', 'p.jsx(Uwe,{readOnly:t.id===__simeonCooId,ariaLabel:"Agent description",initialValue:t.description,'],
+  ["coo-readonly-field", 'N={"aria-label":t,placeholder:o,spellCheck:!1,value:d,onFocus:x}', 'N={"aria-label":t,placeholder:o,spellCheck:!1,value:d,onFocus:x,readOnly:n.readOnly===!0}'],
+  ["coo-readonly-commit", "y=_=>{if(h.current){h.current=!1,m(s);return}", "y=_=>{if(n.readOnly===!0){m(s);return}if(h.current){h.current=!1,m(s);return}"],
+  ["coo-readonly-avatar", "children:p.jsx(f3n,{agent:t})", "children:t.id===__simeonCooId?p.jsx(\"div\",{className:\"simeon-coo-avatar\",children:p.jsx(f3n,{agent:t})}):p.jsx(f3n,{agent:t})"],
+  ["coo-readonly-pane-avatar", "p.jsxs(\"div\",{className:\"simeon-pane__head\",children:[p.jsx(f3n,{agent:t}),", "p.jsxs(\"div\",{className:\"simeon-pane__head\",children:[t.id===__simeonCooId?p.jsx(\"div\",{className:\"simeon-coo-avatar\",children:p.jsx(f3n,{agent:t})}):p.jsx(f3n,{agent:t}),"],
 ]);
 
 export function patchOriginalCooStep(source) {
@@ -941,7 +956,7 @@ export const COO_CSS = `${COO_MARKER} */
 
 export function patchOriginalCooStylesheet(css) {
   if (css.includes(COO_MARKER)) throw new Error("Original renderer COO step block is already present.");
-  return `${css}\n${COO_CSS}\n${NAME_CSS}`;
+  return `${css}\n${COO_CSS}\n${NAME_CSS}\n${COO_LOCK_CSS}`;
 }
 
 export function patchOriginalAgentPaneStylesheet(css) {

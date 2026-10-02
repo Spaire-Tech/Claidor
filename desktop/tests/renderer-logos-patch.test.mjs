@@ -177,3 +177,13 @@ test("the name step: the apps step's agents gather over one field, and the last 
   assert.match(NAME_CSS, /background:light-dark\(#fff,#1c1c1e\)/, "a white field");
   assert.match(NAME_CSS, /height:38px/);
 });
+
+test("Simeon's profile is read only: fields, commit and avatar", async () => {
+  const { FIRST_AGENT_REPLACEMENTS, COO_LOCK_CSS } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const by = Object.fromEntries(FIRST_AGENT_REPLACEMENTS.map(([label, , after]) => [label, after]));
+  for (const field of ["name", "title", "description"]) assert.match(by[`coo-readonly-${field}`], /^p\.jsx\(Uwe,\{readOnly:t\.id===__simeonCooId,/);
+  assert.match(by["coo-readonly-field"], /readOnly:n\.readOnly===!0\}$/);
+  assert.match(by["coo-readonly-commit"], /^y=_=>\{if\(n\.readOnly===!0\)\{m\(s\);return\}/, "a read-only field never commits");
+  for (const label of ["coo-readonly-avatar", "coo-readonly-pane-avatar"]) assert.match(by[label], /t\.id===__simeonCooId\?p\.jsx\("div",\{className:"simeon-coo-avatar"/);
+  assert.match(COO_LOCK_CSS, /\.simeon-coo-avatar\{pointer-events:none\}/);
+});
