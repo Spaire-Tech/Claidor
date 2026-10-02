@@ -828,7 +828,7 @@ const COO_SOURCE = [
 
 export const COO_REPLACEMENTS = Object.freeze([
   // "Give each Agent a job" is left out of the flow (the founder, the same day: "remove the give each agent a job step"); the COO step says it now.
-  ["coo-step-list", 'const Gse=["landing","meet","computer-demo","jobs","tools","create"]', 'const Gse=["landing","meet","coo","computer-demo","tools"]'],
+  ["coo-step-list", 'const Gse=["landing","meet","computer-demo","jobs","tools","create"]', 'const Gse=["landing","meet","coo","computer-demo","name","tools"]'],
   ["coo-computer-title", 'N="Grok Bot has its own computer and works just like you"', 'N="Your agents have their own computer and work just like you"'],
   ["coo-step-screen", 'case"computer-demo":return p.jsx(Yqn,{', 'case"coo":return p.jsx(__simeonCooStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>x.advance(ln)});case"computer-demo":return p.jsx(Yqn,{'],
   ["coo-step-hero", 'case"computer-demo":return{...e,x:$2e.x+n.demoCursor.x', `case"coo":return{...e,x:0,y:${COO_HERO_Y},scale:1,opacity:1,state:"proud",transition:"standard",isGazing:!0};case"computer-demo":return{...e,x:$2e.x+n.demoCursor.x`],
@@ -855,6 +855,51 @@ export const COO_REPLACEMENTS = Object.freeze([
  */
 export const SIMEON_COO_PROFILE = Object.freeze({ name: "Simeon", title: "COO", description: "Your COO: manages your other Agents and pulls you in for decisions.", avatarColor: "blue", avatarShape: "cloud", templateId: "chief-of-staff" });
 const COO_PIN_SOURCE = "var __simeonCooId=null;function __simeonFindCoo(n){let c=null;for(const a of n??[]){if(a!=null&&typeof a.title===\"string\"&&a.title.trim().toLowerCase()===\"coo\"&&(c==null||(a.createdAt??0)<(c.createdAt??0)))c=a}return c}function __simeonPinCoo(n,e){const c=__simeonFindCoo(n);__simeonCooId=c?.id??null;return c==null?e:[c.id,...(e??[]).filter(x=>x!==c.id)]}";
+/**
+ * "What should your agents call you?" as a step of the flow, after the
+ * computer (3 October 2026, the founder: "have their a step … that's the
+ * name part. And i want you to design it better than you did. make it
+ * inherit the design we have, and remake the animation for What do you use
+ * everyday avatars based on that").
+ *
+ * The three agents of the apps step bounce in and gather over one field, the
+ * middle one greeting the name as it is typed ("Hi, Bass."), in the agents'
+ * own grey bubble; on Next they fly from there to their places on the apps
+ * step (the flow's own avatar choreography, `eqn`). The name is saved
+ * through the account's own rename, the same as the name sheet, which then
+ * never needs to ask. Empty is allowed: Next skips, and the sheet asks later.
+ */
+const NAME_SEATS = Object.freeze({ "weekly-standup": { x: -168, y: -86, scale: 0.62 }, "invoice-chaser": { x: 0, y: -118, scale: 0.72 }, "sales-forecast": { x: 168, y: -86, scale: 0.62 } });
+const NAME_SOURCE = [
+  `const __simeonNameSeat=${JSON.stringify(NAME_SEATS)};`,
+  "function __simeonNameStep(n){const{headingId:t,onForward:r,onBack:i}=n,d=typeof window<\"u\"?window.desktop:void 0,a=d?.cursorAccount,[v,sv]=S.useState(\"\"),ip=S.useRef(null),touched=S.useRef(!1);",
+  "S.useEffect(()=>{let l=!0;Promise.resolve(a?.getNamePrompt?.()).then(q=>{l&&!touched.current&&typeof q?.suggested===\"string\"&&sv(q.suggested)},()=>{});const f=setTimeout(()=>ip.current?.focus(),450);return()=>{l=!1;clearTimeout(f)}},[]);",
+  "const name=v.replace(/\\s+/g,\" \").trim().slice(0,60),first=name.split(\" \")[0]??\"\";",
+  "const go=()=>{name.length>0&&a?.updateName!=null&&Promise.resolve(a.updateName(name)).catch(()=>{});r()};",
+  "const hi=p.jsx(fde,{x:0,y:-34,ariaHidden:!0,className:\"simeon-name__hi-seat\",children:p.jsx(\"div\",{className:re(\"simeon-name__hi\",first.length>0&&\"is-on\"),children:first.length>0?`Hi, ${first}.`:\"Hi\"})},\"hi\");",
+  "const field=p.jsx(fde,{x:0,y:34,className:\"simeon-name__field-seat\",children:p.jsx(\"form\",{onSubmit:e=>{e.preventDefault();go()},children:p.jsx(\"input\",{ref:ip,className:\"simeon-name__input\",type:\"text\",autoComplete:\"given-name\",spellCheck:!1,maxLength:60,placeholder:\"Your name\",\"aria-label\":\"Your name\",value:v,onChange:e=>{touched.current=!0;sv(e.target.value)}})})},\"field\");",
+  "const note=p.jsx(fde,{x:0,y:86,className:\"simeon-name__note-seat\",children:p.jsx(\"p\",{className:\"simeon-name__note\",children:\"They’ll use it in chat and on calls. You can change it later.\"})},\"note\");",
+  "return p.jsx(tye,{className:re(\"sand-onboarding__name\",\"simeon-name\"),footer:p.jsx(nye,{onBack:i,onForward:go}),headingId:t,title:\"What should your agents call you?\",children:[hi,field,note]})}",
+].join("");
+export const NAME_STEP_REPLACEMENTS = Object.freeze([
+  ["name-step-screen", "case\"tools\":return p.jsx(Ljn,{", "case\"name\":return p.jsx(__simeonNameStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>x.advance(ln)});case\"tools\":return p.jsx(Ljn,{"],
+  ["name-step-agents", "case\"tools\":return{...t,x:r.x,y:r.y,scale:r.scale,opacity:1,state:\"idle\",transition:\"standard\",bob:YBn[e]}", "case\"name\":return{...t,...__simeonNameSeat[e],opacity:1,state:\"happy\",transition:\"bounce\",isGazing:!0};case\"tools\":return{...t,x:r.x,y:r.y,scale:r.scale,opacity:1,state:\"idle\",transition:\"standard\",bob:YBn[e]}"],
+  ["name-step-hero", "case\"coo\":return{...e,x:0,y:", "case\"name\":return{...e,x:$2e.x,y:$2e.y,scale:Vve,opacity:0,state:\"happy\",transition:\"exit\"};case\"coo\":return{...e,x:0,y:"],
+  ["name-step-component", "function __simeonCooStep(n){", `${NAME_SOURCE}function __simeonCooStep(n){`],
+  // The last screen keeps only its line ("Getting your team ready…", with its moving light): the mark and the name above it go, as on the boot screen.
+  ["hand-off-text-only", "x=p.jsxs(\"div\",{className:f,style:m.style,children:[y,v,b]})", "x=p.jsxs(\"div\",{className:f,style:m.style,children:[v,b]})"],
+]);
+export const NAME_CSS = `/* Simeon: the name step */
+.simeon-name{--simeon-name-ink-2:light-dark(rgba(60,60,67,.6),rgba(235,235,245,.6));--simeon-name-fill:light-dark(rgba(120,120,128,.08),rgba(120,120,128,.24));--simeon-name-bubble:light-dark(#e9e9eb,#2c2c2e)}
+.simeon-name__input{box-sizing:border-box;width:320px;height:52px;padding:0 20px;border:0;border-radius:14px;background:var(--simeon-name-fill);color:inherit;font:inherit;font-size:20px;line-height:24px;letter-spacing:-.01em;text-align:center;outline:none;caret-color:#0a84ff;transition:box-shadow .2s,background-color .2s}
+.simeon-name__input::placeholder{color:light-dark(rgba(60,60,67,.3),rgba(235,235,245,.3))}
+.simeon-name__input:focus{box-shadow:0 0 0 4px light-dark(rgba(10,132,255,.18),rgba(10,132,255,.32))}
+.simeon-name__note{margin:0;font-size:13px;line-height:18px;color:var(--simeon-name-ink-2);white-space:nowrap;text-align:center}
+.simeon-name__hi{padding:7px 14px;border-radius:18px;background:var(--simeon-name-bubble);font-size:15px;line-height:20px;letter-spacing:-.01em;white-space:nowrap;opacity:0;transform:translateY(6px) scale(.7);transform-origin:50% 0;transition:opacity .25s ease,transform .45s cubic-bezier(.34,1.56,.64,1)}
+.simeon-name__hi.is-on{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.simeon-name__hi{transition:none}}
+`;
+
 export const FIRST_AGENT_REPLACEMENTS = Object.freeze([
   ["first-agent-title", "isKickstartRequested:!0,...t.templateId!=null?{templateId:t.templateId}:{}", "isKickstartRequested:!0,...t.title!=null?{title:t.title}:{},...t.templateId!=null?{templateId:t.templateId}:{}"],
   ["first-agent-simeon", "createTeammate:async _n=>(await y({name:A.name.trim(),description:A.description,avatarPngBase64:null,avatarColor:A.color,avatarShape:A.shape,onAgentCreated:_n,...A.pickedTemplateId==null?{}:{templateId:A.pickedTemplateId}})).agentId", `createTeammate:async _n=>(await y({...${JSON.stringify(SIMEON_COO_PROFILE)},avatarPngBase64:null,onAgentCreated:_n})).agentId`],
@@ -875,7 +920,7 @@ export const FIRST_AGENT_REPLACEMENTS = Object.freeze([
 
 export function patchOriginalCooStep(source) {
   let out = source;
-  for (const [label, before, after] of [...COO_REPLACEMENTS, ...FIRST_AGENT_REPLACEMENTS]) out = replaceExactlyOnce(out, before, after, label);
+  for (const [label, before, after] of [...COO_REPLACEMENTS, ...FIRST_AGENT_REPLACEMENTS, ...NAME_STEP_REPLACEMENTS]) out = replaceExactlyOnce(out, before, after, label);
   return out;
 }
 
@@ -900,7 +945,7 @@ export const COO_CSS = `${COO_MARKER} */
 
 export function patchOriginalCooStylesheet(css) {
   if (css.includes(COO_MARKER)) throw new Error("Original renderer COO step block is already present.");
-  return `${css}\n${COO_CSS}`;
+  return `${css}\n${COO_CSS}\n${NAME_CSS}`;
 }
 
 export function patchOriginalAgentPaneStylesheet(css) {
@@ -1659,7 +1704,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "flight-results"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

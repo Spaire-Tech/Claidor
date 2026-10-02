@@ -133,7 +133,7 @@ test("the sign-in wordmark is set in Suravaram, carried inside the stylesheet", 
 test("the COO step sits after Meet Simeon, with Simeon at the centre and six agents leaving it", async () => {
   const { COO_REPLACEMENTS, COO_CSS, patchOriginalCooStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
   const [list, title, screen, hero, component] = COO_REPLACEMENTS;
-  assert.match(list[2], /\["landing","meet","coo","computer-demo","tools"\]/, "the jobs and create steps are out of the flow");
+  assert.match(list[2], /\["landing","meet","coo","computer-demo","name","tools"\]/, "the jobs and create steps are out; the name step follows the computer");
   assert.equal(title[2], 'N="Your agents have their own computer and work just like you"');
   assert.match(screen[2], /^case"coo":return p\.jsx\(__simeonCooStep,\{headingId:xn,onBack:\(\)=>x\.goBack\(ln\),onForward:\(\)=>x\.advance\(ln\)\}\);/);
   assert.match(hero[2], /^case"coo":return\{\.\.\.e,x:0,y:-40,scale:1,opacity:1/);
@@ -162,4 +162,17 @@ test("Simeon is the first agent, titled COO, and always pinned", async () => {
   assert.deepEqual(pinCoo.pin([{ id: "a", title: "" }], ["a"]), ["a"], "an account with no COO is unchanged");
   for (const label of ["coo-no-unpin-item", "coo-no-hide-item", "coo-no-duplicate-item", "coo-no-delete-item"]) assert.match(by[label], /===__simeonCooId\)return null;$/);
   assert.match(by["coo-no-unpin-store"], /!D&&L===__simeonCooId\)return;/);
+});
+
+test("the name step: the apps step's agents gather over one field, and the last screen keeps only its line", async () => {
+  const { NAME_STEP_REPLACEMENTS, NAME_CSS } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const by = Object.fromEntries(NAME_STEP_REPLACEMENTS.map(([label, , after]) => [label, after]));
+  assert.match(by["name-step-screen"], /^case"name":return p\.jsx\(__simeonNameStep,/);
+  assert.match(by["name-step-agents"], /^case"name":return\{\.\.\.t,\.\.\.__simeonNameSeat\[e\],opacity:1/);
+  assert.match(by["name-step-component"], /title:"What should your agents call you\?"/);
+  assert.match(by["name-step-component"], /a\.updateName\(name\)/, "saved through the account's own rename");
+  assert.match(by["name-step-component"], /`Hi, \$\{first\}\.`/);
+  for (const seat of ["weekly-standup", "invoice-chaser", "sales-forecast"]) assert.match(by["name-step-component"], new RegExp(`"${seat}":\\{"x"`));
+  assert.equal(by["hand-off-text-only"], 'x=p.jsxs("div",{className:f,style:m.style,children:[v,b]})');
+  assert.match(NAME_CSS, /prefers-reduced-motion:reduce/);
 });
