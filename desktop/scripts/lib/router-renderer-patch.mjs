@@ -878,7 +878,7 @@ const NAME_SOURCE = [
   "const go=()=>{name.length>0&&a?.updateName!=null&&Promise.resolve(a.updateName(name)).catch(()=>{});r()};",
   "const field=p.jsx(fde,{x:0,y:4,className:\"simeon-name__field-seat\",children:p.jsx(\"form\",{onSubmit:e=>{e.preventDefault();go()},children:p.jsx(\"input\",{ref:ip,className:\"simeon-name__input\",type:\"text\",autoComplete:\"given-name\",spellCheck:!1,maxLength:60,placeholder:\"Your name\",\"aria-label\":\"Your name\",value:v,onChange:e=>{touched.current=!0;sv(e.target.value)}})})},\"field\");",
   "const note=p.jsx(fde,{x:0,y:44,className:\"simeon-name__note-seat\",children:p.jsx(\"p\",{className:\"simeon-name__note\",children:\"They’ll use it in chat and on calls. You can change it later.\"})},\"note\");",
-  "return p.jsx(tye,{className:re(\"sand-onboarding__name\",\"simeon-name\"),footer:p.jsx(nye,{onBack:i,onForward:go}),headingId:t,title:\"What should your agents call you?\",children:[field,note]})}",
+  "return p.jsx(tye,{className:re(\"sand-onboarding__name\",\"simeon-name\"),footer:p.jsx(nye,{onBack:i,onForward:go}),headingId:t,title:\"How should we call you?\",children:[field,note]})}",
 ].join("");
 export const NAME_STEP_REPLACEMENTS = Object.freeze([
   ["name-step-screen", "case\"tools\":return p.jsx(Ljn,{", "case\"name\":return p.jsx(__simeonNameStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>x.advance(ln)});case\"tools\":return p.jsx(Ljn,{"],

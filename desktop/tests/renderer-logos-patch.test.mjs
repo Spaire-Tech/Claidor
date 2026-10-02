@@ -169,7 +169,7 @@ test("the name step: the apps step's agents gather over one field, and the last 
   const by = Object.fromEntries(NAME_STEP_REPLACEMENTS.map(([label, , after]) => [label, after]));
   assert.match(by["name-step-screen"], /^case"name":return p\.jsx\(__simeonNameStep,/);
   assert.match(by["name-step-agents"], /^case"name":return\{\.\.\.t,\.\.\.__simeonNameSeat\[e\],opacity:1/);
-  assert.match(by["name-step-component"], /title:"What should your agents call you\?"/);
+  assert.match(by["name-step-component"], /title:"How should we call you\?"/);
   assert.match(by["name-step-component"], /a\.updateName\(name\)/, "saved through the account's own rename");
   assert.doesNotMatch(by["name-step-component"], /Hi, /, "no greeting bubble");
   for (const seat of ["weekly-standup", "invoice-chaser", "sales-forecast"]) assert.match(by["name-step-component"], new RegExp(`"${seat}":\\{"x"`));
