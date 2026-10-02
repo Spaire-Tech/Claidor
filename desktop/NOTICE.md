@@ -45,3 +45,7 @@ trademark, third-party dependency and service-terms obligations.
 - App logos: `brand/app-logos/` (Simple Icons, CC0; other marks belong to
   their owners).
 - npm dependencies keep their own licences in `node_modules`.
+- playwright-core (Apache-2.0, Microsoft Corporation): the host program
+  carries a packed copy (`source/host/runner/tools/sand-browser-playwright.gen.ts`)
+  and writes it, with its LICENSE, NOTICE and ThirdPartyNotices.txt, onto a
+  cloud computer whose image has none.
