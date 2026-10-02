@@ -550,6 +550,7 @@ const delegations: ReadonlyArray<[string, keyof TranscriptManager]> = [
   ["createAgent", "agentLifecycle"],
   ["createBackgroundAgent", "agentLifecycle"],
   ["kickstartAgent", "agentLifecycle"],
+  ["kickstartCreatedAgent", "agentLifecycle"],
   ["requestDiskSaverAudit", "agentLifecycle"],
   ["cloneAgent", "agentLifecycle"],
   ["deleteAgent", "agentLifecycle"],

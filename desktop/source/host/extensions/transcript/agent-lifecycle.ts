@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { isSandAgentLimitError } from "../../../shared/agents/agents.js";
 import { errorLogTag } from "../../../shared/errors.js";
+import { isAgentPeerMessageEntry } from "../../../shared/transcript.js";
 import {
   cloneAgentDir,
   cloneAgentDisplayName,
@@ -26,7 +27,7 @@ import { describeAgentRunError } from "./agent-run-error.js";
 import { isUserMessageEntry } from "./send-message-shaping.js";
 import { getTranscript } from "./transcript-store.js";
 import { classifyAgentError } from "./turn-runtime.js";
-import type { TranscriptManagerLike } from "./transcript-hub.js";
+import type { TranscriptEntry, TranscriptManagerLike } from "./transcript-hub.js";
 
 export class SandAgentLifecycleError extends Error {}
 interface CreateOptions {
@@ -130,7 +131,13 @@ export class AgentLifecycle {
       !session.db.getIntroductionPending()
     )
       return false;
-    if (session.db.getTranscriptEntries().some(isUserMessageEntry)) {
+    // No introduction is owed once the person has written, or once the agent
+    // has already spoken to them. A brief from the agent that created it is
+    // neither (1 October 2026, the founder: "when the agent creates another
+    // agent for me, the new agent dont send me a message to sort of onboard
+    // me"): it arrives as an inbound agent message, which cancelled the
+    // greeting before the person ever opened the new chat.
+    if (session.db.getTranscriptEntries().some((entry: TranscriptEntry) => (isUserMessageEntry(entry) && !isAgentPeerMessageEntry(entry)) || entry.kind === "send-message")) {
       session.db.setIntroductionPending(false);
       return false;
     }
